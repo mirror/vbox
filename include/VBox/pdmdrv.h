@@ -1457,11 +1457,28 @@ DECLINLINE(void) PDMDrvHlpSTAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAM
  * @param   pCounter            Pointer to the counter variable.
  * @param   pszName             The name of the sample.  This is prefixed with
  *                              "/Drivers/<drivername>-<instance no>/".
+ * @param   enmUnit             The unit.
+ * @param   pszDesc             The description.
  */
-DECLINLINE(void) PDMDrvHlpSTAMRegCounter(PPDMDRVINS pDrvIns, PSTAMCOUNTER pCounter, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+DECLINLINE(void) PDMDrvHlpSTAMRegCounterEx(PPDMDRVINS pDrvIns, PSTAMCOUNTER pCounter, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
     pDrvIns->pHlpR3->pfnSTAMRegisterF(pDrvIns, pCounter, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, enmUnit, pszDesc,
                                       "/Drivers/%s-%u/%s", pDrvIns->pReg->szName, pDrvIns->iInstance, pszName);
+}
+
+/**
+ * Convenience wrapper that registers counter which is always visible and has
+ * the STAMUNIT_COUNT unit.
+ *
+ * @param   pDrvIns             The driver instance.
+ * @param   pCounter            Pointer to the counter variable.
+ * @param   pszName             The name of the sample.  This is prefixed with
+ *                              "/Drivers/<drivername>-<instance no>/".
+ * @param   pszDesc             The description.
+ */
+DECLINLINE(void) PDMDrvHlpSTAMRegCounter(PPDMDRVINS pDrvIns, PSTAMCOUNTER pCounter, const char *pszName, const char *pszDesc)
+{
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, pCounter, pszName, STAMUNIT_COUNT, pszDesc);
 }
 
 /**
@@ -1471,8 +1488,42 @@ DECLINLINE(void) PDMDrvHlpSTAMRegCounter(PPDMDRVINS pDrvIns, PSTAMCOUNTER pCount
  * @param   pProfile            Pointer to the profiling variable.
  * @param   pszName             The name of the sample.  This is prefixed with
  *                              "/Drivers/<drivername>-<instance no>/".
+ * @param   enmUnit             The unit.
+ * @param   pszDesc             The description.
  */
-DECLINLINE(void) PDMDrvHlpSTAMRegProfile(PPDMDRVINS pDrvIns, PSTAMPROFILE pProfile, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+DECLINLINE(void) PDMDrvHlpSTAMRegProfileEx(PPDMDRVINS pDrvIns, PSTAMPROFILE pProfile, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+{
+    pDrvIns->pHlpR3->pfnSTAMRegisterF(pDrvIns, pProfile, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, enmUnit, pszDesc,
+                                      "/Drivers/%s-%u/%s", pDrvIns->pReg->szName, pDrvIns->iInstance, pszName);
+}
+
+/**
+ * Convenience wrapper that registers profiling sample which is always visible
+ * hand counts ticks per call (STAMUNIT_TICKS_PER_CALL).
+ *
+ * @param   pDrvIns             The driver instance.
+ * @param   pProfile            Pointer to the profiling variable.
+ * @param   pszName             The name of the sample.  This is prefixed with
+ *                              "/Drivers/<drivername>-<instance no>/".
+ * @param   pszDesc             The description.
+ */
+DECLINLINE(void) PDMDrvHlpSTAMRegProfile(PPDMDRVINS pDrvIns, PSTAMPROFILE pProfile, const char *pszName, const char *pszDesc)
+{
+    PDMDrvHlpSTAMRegProfileEx(pDrvIns, pProfile, pszName, STAMUNIT_TICKS_PER_CALL, pszDesc);
+}
+
+/**
+ * Convenience wrapper that registers an advanced profiling sample which is
+ * always visible.
+ *
+ * @param   pDrvIns             The driver instance.
+ * @param   pProfile            Pointer to the profiling variable.
+ * @param   enmUnit             The unit.
+ * @param   pszName             The name of the sample.  This is prefixed with
+ *                              "/Drivers/<drivername>-<instance no>/".
+ * @param   pszDesc             The description.
+ */
+DECLINLINE(void) PDMDrvHlpSTAMRegProfileAdvEx(PPDMDRVINS pDrvIns, PSTAMPROFILEADV pProfile, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
     pDrvIns->pHlpR3->pfnSTAMRegisterF(pDrvIns, pProfile, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, enmUnit, pszDesc,
                                       "/Drivers/%s-%u/%s", pDrvIns->pReg->szName, pDrvIns->iInstance, pszName);
@@ -1486,11 +1537,11 @@ DECLINLINE(void) PDMDrvHlpSTAMRegProfile(PPDMDRVINS pDrvIns, PSTAMPROFILE pProfi
  * @param   pProfile            Pointer to the profiling variable.
  * @param   pszName             The name of the sample.  This is prefixed with
  *                              "/Drivers/<drivername>-<instance no>/".
+ * @param   pszDesc             The description.
  */
-DECLINLINE(void) PDMDrvHlpSTAMRegProfileAdv(PPDMDRVINS pDrvIns, PSTAMPROFILEADV pProfile, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+DECLINLINE(void) PDMDrvHlpSTAMRegProfileAdv(PPDMDRVINS pDrvIns, PSTAMPROFILEADV pProfile, const char *pszName, const char *pszDesc)
 {
-    pDrvIns->pHlpR3->pfnSTAMRegisterF(pDrvIns, pProfile, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, enmUnit, pszDesc,
-                                      "/Drivers/%s-%u/%s", pDrvIns->pReg->szName, pDrvIns->iInstance, pszName);
+    PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, pProfile, pszName, STAMUNIT_TICKS_PER_CALL, pszDesc);
 }
 
 /**

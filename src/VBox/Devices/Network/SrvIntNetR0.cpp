@@ -2621,6 +2621,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
      */
     AssertPtr(pThis);
     AssertPtr(pNetwork);
+    AssertPtr(pIfSender);
     AssertPtr(pSG);
     Assert(fDst);
     AssertReturnVoid(pThis->pIfPort);
@@ -2692,12 +2693,14 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
      * Note! The trunk implementation will re-check that the trunk is active                                                               .
      *       before sending, so we don't have to duplicate that effort here.
      */
+    STAM_REL_PROFILE_START(&pIfSender->pIntBuf->StatSend2, a);
     int rc;
     if (   pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID
         || intnetR0TrunkIfCanHandleGsoFrame(pThis, pSG, fDst) )
         rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pIfSender->pvIfData, pSG, fDst);
     else
         rc = intnetR0TrunkIfSendGsoFallback(pThis, pIfSender, pSG, fDst);
+    STAM_REL_PROFILE_STOP(&pIfSender->pIntBuf->StatSend2, a);
 
     /** @todo failure statistics? */
     Log2(("intnetR0TrunkIfSend: %Rrc fDst=%d\n", rc, fDst)); NOREF(rc);
@@ -3337,6 +3340,7 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
     PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
         return VERR_INVALID_HANDLE;
+    STAM_REL_PROFILE_START(&pIf->pIntBuf->StatSend1, a);
 
     /*
      * Make sure we've got a network.
@@ -3424,6 +3428,7 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
      * Release the interface.
      */
     intnetR0BusyDecIf(pIf);
+    STAM_REL_PROFILE_STOP(&pIf->pIntBuf->StatSend1, a);
     intnetR0IfRelease(pIf, pSession);
     return rc;
 }

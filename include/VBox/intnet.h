@@ -133,8 +133,18 @@ typedef struct INTNETBUF
     STAMCOUNTER     cStatBadFrames;
     /** Reserved for future use. */
     STAMCOUNTER     aStatReserved[2];
+    /** Reserved for future send profiling. */
+    STAMPROFILE     StatSend1;
+    /** Reserved for future send profiling. */
+    STAMPROFILE     StatSend2;
+    /** Reserved for future receive profiling. */
+    STAMPROFILE     StatRecv1;
+    /** Reserved for future receive profiling. */
+    STAMPROFILE     StatRecv2;
+    /** Reserved for future profiling. */
+    STAMPROFILE     StatReserved;
 } INTNETBUF;
-AssertCompileSize(INTNETBUF, 160);
+AssertCompileSize(INTNETBUF, 320);
 AssertCompileMemberOffset(INTNETBUF, Recv, 16);
 AssertCompileMemberOffset(INTNETBUF, Send, 64);
 
@@ -396,8 +406,8 @@ typedef struct INTNETTRUNKSWPORT
      * @param   pvHdrs      Pointer to the packet headers.
      * @param   cbHdrs      Size of the packet headers.  This must be at least 6
      *                      bytes (the destination MAC address), but should if
-     *                      possibly also include any VLAN tag and network layer
-     *                      header (wireless mac address sharing).
+     *                      possible also include any VLAN tag and network
+     *                      layer header (wireless mac address sharing).
      * @param   fSrc        Where this frame comes from.  Only one bit should be
      *                      set!
      *
