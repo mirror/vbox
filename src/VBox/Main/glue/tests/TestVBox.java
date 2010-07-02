@@ -206,21 +206,44 @@ public class TestVBox
         }
     }
 
-    static void testEvents(VirtualBoxManager mgr, IEventSource es)
+    static class EventHandler
     {
-        IEventListener listener = es.createListener();
+        EventHandler() {}
+        public void handleEvent(IEvent ev)
+        {
+            try {
+                processEvent(ev);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+    }
+
+    static void testEvents(VirtualBoxManager mgr, IEventSource es, boolean active)
+    {
+        // active mode for Java doesn't fully work yet, and using passive
+        // is more portable (the only mode for MSCOM and WS) and thus generally 
+        // recommended
+        IEventListener listener = active ? mgr.createListener(new EventHandler()) : es.createListener();
 
         es.registerListener(listener, Arrays.asList(VBoxEventType.Any), false);
 
         try {
             for (int i=0; i<100; i++)
             {
-                IEvent ev = es.getEvent(listener, 1000);
                 System.out.print(".");
-                if (ev != null)
+                if (active)
                 {
-                    processEvent(ev);
-                    es.eventProcessed(listener, ev);
+                    mgr.waitForEvents(500);
+                }
+                else
+                {
+                    IEvent ev = es.getEvent(listener, 1000);
+                    if (ev != null)
+                    {
+                        processEvent(ev);
+                        es.eventProcessed(listener, ev);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -262,7 +285,7 @@ public class TestVBox
             testEnumeration(mgr, vbox);
             testStart(mgr, vbox);
             //testCallbacks(mgr, vbox);
-            testEvents(mgr, vbox.getEventSource());
+            testEvents(mgr, vbox.getEventSource(), false);
 
             System.out.println("done, press Enter...");
             int ch = System.in.read();
