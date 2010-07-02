@@ -48,20 +48,22 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
- * FreeBSD multiple release event semaphore.
+ * Solaris multiple release event semaphore.
  */
 typedef struct RTSEMEVENTMULTIINTERNAL
 {
     /** Magic value (RTSEMEVENTMULTI_MAGIC). */
     uint32_t volatile   u32Magic;
     /** The number of waiting threads. */
-    uint32_t volatile   cWaiters;
+    uint32_t            cWaiters;
     /** Set if the event object is signaled. */
-    uint8_t volatile    fSignaled;
+    uint8_t             fSignaled;
     /** The number of threads in the process of waking up, doubles up as a ref counter. */
-    uint32_t volatile   cWaking;
-    /** Object version that is incremented every time the object is signaled. */
-    uint32_t volatile   u32Version;
+    uint32_t            cWaking;
+    /** Object generation.
+     * This is incremented every time the object is signalled and used to
+     * check for spurious wake-ups. */
+    uint32_t            uSignalGen;
     /** The Solaris mutex protecting this structure and pairing up the with the cv. */
     kmutex_t            Mtx;
     /** The Solaris condition variable. */
@@ -87,11 +89,11 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
     PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (pThis)
     {
-        pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
-        pThis->cWaiters = 0;
-        pThis->cWaking = 0;
-        pThis->fSignaled = 0;
-        pThis->u32Version = 0;
+        pThis->u32Magic   = RTSEMEVENTMULTI_MAGIC;
+        pThis->cWaiters   = 0;
+        pThis->cWaking    = 0;
+        pThis->fSignaled  = 0;
+        pThis->uSignalGen = 0;
         mutex_init(&pThis->Mtx, "IPRT Multiple Release Event Semaphore", MUTEX_DRIVER, (void *)ipltospl(DISP_LEVEL));
         cv_init(&pThis->Cnd, "IPRT CV", CV_DRIVER, NULL);
 
@@ -112,12 +114,16 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
     RT_ASSERT_INTS_ON();
 
     mutex_enter(&pThis->Mtx);
-    ASMAtomicIncU32(&pThis->u32Magic); /* make the handle invalid */
+
+    Assert(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC);
+    pThis->u32Magic = RTSEMEVENTMULTI_MAGIC_DEAD;
     if (pThis->cWaiters > 0)
     {
         /* abort waiting thread, last man cleans up. */
-        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
+        pThis->cWaking += pThis->cWaiters;
+        pThis->cWaiters = 0;
         cv_broadcast(&pThis->Cnd);
+
         mutex_exit(&pThis->Mtx);
     }
     else if (pThis->cWaking)
@@ -126,6 +132,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
     else
     {
         mutex_exit(&pThis->Mtx);
+
         cv_destroy(&pThis->Cnd);
         mutex_destroy(&pThis->Mtx);
         RTMemFree(pThis);
@@ -165,12 +172,12 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
         mutex_enter(&pThis->Mtx);
     }
 
-    ASMAtomicXchgU8(&pThis->fSignaled, true);
+    pThis->fSignaled = true;
+    pThis->uSignalGen++;
     if (pThis->cWaiters > 0)
     {
-        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
-        ASMAtomicXchgU32(&pThis->cWaiters, 0);
-        ASMAtomicIncU32(&pThis->u32Version);
+        pThis->cWaking += pThis->cWaiters;
+        pThis->cWaiters = 0;
         cv_broadcast(&pThis->Cnd);
     }
 
@@ -211,7 +218,7 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
         mutex_enter(&pThis->Mtx);
     }
 
-    ASMAtomicXchgU8(&pThis->fSignaled, false);
+    pThis->fSignaled = false;
     mutex_exit(&pThis->Mtx);
 
     RT_ASSERT_PREEMPT_CPUID();
@@ -219,12 +226,16 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 }
 
 
+/**
+ * Translate milliseconds into ticks and go to sleep using the right method.
+ *
+ * @retval  >0 on normal or spurious wake-up.
+ * @retval  -1 on timeout.
+ * @retval  0 on signal.
+ */
 static int rtSemEventMultiWaitWorker(PRTSEMEVENTMULTIINTERNAL pThis, RTMSINTERVAL cMillies, bool fInterruptible)
 {
-    /*
-     * Translate milliseconds into ticks and go to sleep.
-     */
-    int rc = 0;
+    int rc;
     if (cMillies != RT_INDEFINITE_WAIT)
     {
         clock_t cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
@@ -268,34 +279,29 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
         rc = VERR_TIMEOUT;
     else
     {
-        ASMAtomicIncU32(&pThis->cWaiters);
+        pThis->cWaiters++;
+
+        /* This loop is only for continuing after a spurious wake-up. */
         for (;;)
         {
-            uint32_t u32VersionBeforeWait = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->u32Version);
+            uint32_t const uSignalGenBeforeWait = pThis->uSignalGen;
             rc = rtSemEventMultiWaitWorker(pThis, cMillies, fInterruptible);
-            uint32_t u32Version = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->u32Version);
             if (rc > 0)
             {
                 if (RT_LIKELY(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC))
                 {
+                    if (pThis->uSignalGen == uSignalGenBeforeWait)
+                        continue; /* Spurious wake-up, go back to waiting. */
+
                     /* Retured due to call to cv_signal() or cv_broadcast() */
-                    if (u32Version != u32VersionBeforeWait)
-                    {
-                        rc = VINF_SUCCESS;
-                        ASMAtomicDecU32(&pThis->cWaking);
-                        break;
-                    }
-                    else
-                    {
-                        /* Spurious wakeup, go back to waiting */
-                        continue;
-                    }
+                    pThis->cWaking--;
+                    rc = VINF_SUCCESS;
                 }
                 else
                 {
                     /* We're being destroyed */
                     rc = VERR_SEM_DESTROYED;
-                    if (!ASMAtomicDecU32(&pThis->cWaking))
+                    if (!--pThis->cWaiters)
                     {
                         mutex_exit(&pThis->Mtx);
                         cv_destroy(&pThis->Cnd);
@@ -303,25 +309,23 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
                         RTMemFree(pThis);
                         return rc;
                     }
-                    break;
                 }
             }
             else if (rc == -1)
             {
                 /* Returned due to timeout being reached */
                 if (pThis->cWaiters > 0)
-                    ASMAtomicDecU32(&pThis->cWaiters);
+                    pThis->cWaiters--;
                 rc = VERR_TIMEOUT;
-                break;
             }
             else
             {
                 /* Returned due to pending signal */
                 if (pThis->cWaiters > 0)
-                    ASMAtomicDecU32(&pThis->cWaiters);
+                    pThis->cWaiters--;
                 rc = VERR_INTERRUPTED;
-                break;
             }
+            break;
         }
     }
 
