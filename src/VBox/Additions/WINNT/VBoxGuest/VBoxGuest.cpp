@@ -259,6 +259,9 @@ static NTSTATUS VBoxGuestAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevOb
     hlpRegisterBugCheckCallback(pDevExt); /* ignore failure! */
 #endif
 
+    /* VBoxGuestPower is pageable; ensure we are not called at elevated IRQL */
+    deviceObject->Flags |= DO_POWER_PAGABLE;
+
     /* Driver is ready now. */
     deviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
 
