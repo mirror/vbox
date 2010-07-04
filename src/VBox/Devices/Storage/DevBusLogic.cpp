@@ -796,7 +796,8 @@ static void buslogicSetInterrupt(PBUSLOGIC pBusLogic)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
     pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_INTERRUPT_VALID;
-    PDMDevHlpPCISetIrqNoWait(pBusLogic->CTX_SUFF(pDevIns), 0, 1);
+    if (pBusLogic->fIRQEnabled)
+        PDMDevHlpPCISetIrqNoWait(pBusLogic->CTX_SUFF(pDevIns), 0, 1);
 }
 
 #if defined(IN_RING3)
@@ -880,8 +881,15 @@ static void buslogicCommandComplete(PBUSLOGIC pBusLogic)
         pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_DATA_IN_REGISTER_READY;
         pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_COMMAND_COMPLETE;
 
-        if (pBusLogic->fIRQEnabled)
-            buslogicSetInterrupt(pBusLogic);
+        /*
+         * SCO OpenServer requires that this flag is set after the ECHO COMMAND
+         * DATA command. Doesn't look like it breaks other guests
+         * but we just set it if the command was actually issued just to be sure.
+         */
+        if (pBusLogic->uOperationCode == BUSLOGICCOMMAND_ECHO_COMMAND_DATA)
+            pBusLogic->regStatus |= BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
+
+        buslogicSetInterrupt(pBusLogic);
     }
 
     pBusLogic->uOperationCode = 0xff;
@@ -942,8 +950,7 @@ static void buslogicSendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE 
         pBusLogic->uMailboxIncomingPositionCurrent = 0;
 
     pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_INCOMING_MAILBOX_LOADED;
-    if (pBusLogic->fIRQEnabled)
-        buslogicSetInterrupt(pBusLogic);
+    buslogicSetInterrupt(pBusLogic);
 
     PDMCritSectLeave(&pBusLogic->CritSectIntr);
 }
@@ -1296,7 +1303,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         case BUSLOGICCOMMAND_INQUIRE_BOARD_ID:
         {
             pBusLogic->aReplyBuffer[0] = '0'; /* @todo figure out what to write here. */
-            pBusLogic->aReplyBuffer[1] = '0'; /* @todo figure out what to write here. */
+            pBusLogic->aReplyBuffer[1] = '1'; /* @todo figure out what to write here - can't be '0' or 'B'. */
 
             /* We report version 5.07B. This reply will provide the first two digits. */
             pBusLogic->aReplyBuffer[2] = '5'; /* Major version 5 */
@@ -1451,6 +1458,12 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
                 pBusLogic->fIRQEnabled = true;
             break;
         }
+        case BUSLOGICCOMMAND_ECHO_COMMAND_DATA:
+        {
+            pBusLogic->aReplyBuffer[0] = pBusLogic->aCommandBuffer[0];
+            pBusLogic->cbReplyParametersLeft = 1;
+            break;
+        }
         case BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND: /* Should be handled already. */
         default:
             AssertMsgFailed(("Invalid command %#x\n", pBusLogic->uOperationCode));
@@ -1505,6 +1518,7 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
             pBusLogic->iReply++;
             pBusLogic->cbReplyParametersLeft--;
 
+            LogFlowFunc(("cbReplyParametersLeft=%u\n", pBusLogic->cbReplyParametersLeft));
             if (!pBusLogic->cbReplyParametersLeft)
             {
                 /*
@@ -1556,7 +1570,15 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                 return rc;
 
             if (uVal & BUSLOGIC_REGISTER_CONTROL_INTERRUPT_RESET)
+            {
                 buslogicClearInterrupt(pBusLogic);
+                /*
+                 * Clear the flag in case it is set
+                 * to avoid confusing other guests.
+                 * SCO OpenServer doesn't need it anymore to be set.
+                 */
+                pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
+            }
 
             PDMCritSectLeave(&pBusLogic->CritSectIntr);
 
@@ -1619,6 +1641,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                     case BUSLOGICCOMMAND_SET_CCB_FORMAT:
                     case BUSLOGICCOMMAND_INQUIRE_SYNCHRONOUS_PERIOD:
                     case BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT:
+                    case BUSLOGICCOMMAND_ECHO_COMMAND_DATA:
                         pBusLogic->cbCommandParametersLeft = 1;
                         break;
                     case BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM:
@@ -1771,7 +1794,7 @@ static int  buslogicIsaIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
     Assert(cb == 1);
 
     if (!pBusLogic->fISAEnabled)
-        return VERR_IOM_IOPORT_UNUSED;
+        return VINF_SUCCESS;
 
     rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_ISA_IO_PORT), pu32);
 
@@ -1855,7 +1878,7 @@ static int buslogicIsaIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
     Assert(cb == 1);
 
     if (!pBusLogic->fISAEnabled)
-        return VERR_IOM_IOPORT_UNUSED;
+        return VINF_SUCCESS;
 
     rc = vboxscsiWriteRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_ISA_IO_PORT), (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
