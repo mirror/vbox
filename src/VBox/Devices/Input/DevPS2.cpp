@@ -1486,7 +1486,8 @@ static DECLCALLBACK(void)  kbdReset(PPDMDEVINS pDevIns)
 
     kbd_reset(pThis);
     /* Activate the PS/2 keyboard by default. */
-    pThis->Keyboard.pDrv->pfnSetActive(pThis->Keyboard.pDrv, true);
+    if (pThis->Keyboard.pDrv)
+        pThis->Keyboard.pDrv->pfnSetActive(pThis->Keyboard.pDrv, true);
 }
 
 
