@@ -236,6 +236,16 @@ DECLCALLBACK(int) VMMDev::GetHeightReduction(PPDMIVMMDEVCONNECTOR pInterface, ui
     return VINF_SUCCESS;
 }
 
+DECLCALLBACK(int) VMMDev::QueryBalloonSize(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pu32BalloonSize)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+    (void)pDrv;
+
+    AssertPtr(pu32BalloonSize);
+    *pu32BalloonSize = 0;
+    return VINF_SUCCESS;
+}
+
 #ifdef VBOX_WITH_HGCM
 
 /* HGCM connector interface */
@@ -384,6 +394,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint3
     pData->Connector.pfnGetHeightReduction      = VMMDev::GetHeightReduction;
     pData->Connector.pfnSetVisibleRegion        = iface_SetVisibleRegion;
     pData->Connector.pfnQueryVisibleRegion      = iface_QueryVisibleRegion;
+    pData->Connector.pfnQueryBalloonSize        = VMMDev::QueryBalloonSize;
 
 #ifdef VBOX_WITH_HGCM
     if (fActivateHGCM())

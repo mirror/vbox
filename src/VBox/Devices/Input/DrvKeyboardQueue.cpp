@@ -146,6 +146,8 @@ static DECLCALLBACK(void) drvKbdPassThruLedsChange(PPDMIKEYBOARDCONNECTOR pInter
 static DECLCALLBACK(void) drvKbdPassThruSetActive(PPDMIKEYBOARDCONNECTOR pInterface, bool fActive)
 {
     PDRVKBDQUEUE pDrv = PPDMIKEYBOARDCONNECTOR_2_DRVKBDQUEUE(pInterface);
+
+    AssertPtr(pDrv->pDownConnector->pfnSetActive);
     pDrv->pDownConnector->pfnSetActive(pDrv->pDownConnector, fActive);
 }
 
