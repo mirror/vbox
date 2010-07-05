@@ -3236,8 +3236,8 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                         IDirect3DDevice9 *pDevice9If = NULL;
                         D3DPRESENT_PARAMETERS params;
                         memset(&params, 0, sizeof (params));
-                        //            params.BackBufferWidth = 0;
-                        //            params.BackBufferHeight = 0;
+                        params.BackBufferWidth = pResource->pSurfList[0].Width;
+                        params.BackBufferHeight = pResource->pSurfList[0].Height;
                         params.BackBufferFormat = vboxDDI2D3DFormat(pResource->Format);
                         Assert(pResource->SurfCount);
                         params.BackBufferCount = pResource->SurfCount - 1;
@@ -4550,10 +4550,12 @@ static HRESULT APIENTRY vboxWddmDDevDestroyOverlay(HANDLE hDevice, CONST D3DDDIA
 }
 static HRESULT APIENTRY vboxWddmDDevQueryResourceResidency(HANDLE hDevice, CONST D3DDDIARG_QUERYRESOURCERESIDENCY* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    AssertBreakpoint();
+    HRESULT hr = S_OK;
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
 }
 
 static HRESULT vboxAllocationInit(PVBOXWDDMDISP_ALLOCATION pAlloc, D3DDDI_OPENALLOCATIONINFO *pInfo)
