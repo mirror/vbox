@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -35,6 +35,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <dlfcn.h>
 
 #include "VBoxXPCOMCGlue.h"
@@ -137,7 +138,7 @@ static int tryLoadOne(const char *pszHome, int fSetAppHome)
     if (g_hVBoxXPCOMC)
     {
         PFNVBOXGETXPCOMCFUNCTIONS pfnGetFunctions;
-        pfnGetFunctions = (PFNVBOXGETXPCOMCFUNCTIONS)
+        pfnGetFunctions = (PFNVBOXGETXPCOMCFUNCTIONS)(uintptr_t)
             dlsym(g_hVBoxXPCOMC, VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME);
         if (pfnGetFunctions)
         {

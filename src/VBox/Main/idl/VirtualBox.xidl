@@ -7121,7 +7121,7 @@
           Virtual machine not in state Saved.
         </result>
       </desc>
-      <param name="remove" type="boolean" dir="in">
+      <param name="removeFile" type="boolean" dir="in">
         <desc>If @c true remove the saved state file.</desc>
       </param>
     </method>
