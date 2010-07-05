@@ -2591,6 +2591,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                         if (    PGM_PAGE_IS_ZERO(pPage)
                             ||  PGM_PAGE_IS_BALLOONED(pPage))
                             break;
+                        AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_INTERNAL_ERROR_5); 
                         /* Allocated before (prealloc), so free it now. */
                         rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
                         AssertRC(rc);
