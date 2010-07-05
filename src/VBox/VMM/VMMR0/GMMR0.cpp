@@ -2967,7 +2967,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
         {
             case GMMBALLOONACTION_INFLATE:
             {
-                if (pGVM->gmm.s.Allocated.cBasePages + cBalloonedPages <= pGVM->gmm.s.Reserved.cBasePages)
+                if (RT_LIKELY(pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cBalloonedPages <= pGVM->gmm.s.Reserved.cBasePages))
                 {
                     /*
                      * Record the ballooned memory.
