@@ -109,6 +109,9 @@ class nsEmbedCString : public nsCStringContainer
         }
 
       nsEmbedCString(const self_type& aString)
+#ifdef VBOX
+            : nsCStringContainer()
+#endif
         {
           NS_CStringContainerInit(*this);
           NS_CStringCopy(*this, aString);
@@ -116,6 +119,9 @@ class nsEmbedCString : public nsCStringContainer
 
       explicit
       nsEmbedCString(const abstract_string_type& aReadable)
+#ifdef VBOX
+            : nsCStringContainer()
+#endif
         {
           NS_CStringContainerInit(*this);
           NS_CStringCopy(*this, aReadable);
@@ -123,6 +129,9 @@ class nsEmbedCString : public nsCStringContainer
 
       explicit
       nsEmbedCString(const char_type* aData, size_type aLength = PR_UINT32_MAX)
+#ifdef VBOX
+            : nsCStringContainer()
+#endif
         {
           NS_CStringContainerInit(*this);
           NS_CStringSetData(*this, aData, aLength);
