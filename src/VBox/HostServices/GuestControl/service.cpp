@@ -717,24 +717,35 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
     {
         switch (eFunction)
         {
-            /* The guest asks the host for the next messsage to process. */
+            /* 
+             * The guest asks the host for the next messsage to process. 
+             */
             case GUEST_GET_HOST_MSG:
                 LogFlowFunc(("GUEST_GET_HOST_MSG\n"));
                 rc = retrieveNextHostCmd(u32ClientID, callHandle, cParms, paParms);
                 break;
 
+            /*
+             * The guest wants to shut down and asks us (this service) to cancel
+             * all blocking pending waits (VINF_HGCM_ASYNC_EXECUTE) so that the
+             * guest can gracefully shut down.
+             */
             case GUEST_CANCEL_PENDING_WAITS:
                 LogFlowFunc(("GUEST_CANCEL_PENDING_WAITS\n"));
                 rc = cancelPendingWaits(u32ClientID);
                 break;
 
-            /* The guest notifies the host that some output at stdout/stderr is available. */
+            /*
+             * The guest notifies the host that some output at stdout/stderr is available. 
+             */
             case GUEST_EXEC_SEND_OUTPUT:
                 LogFlowFunc(("GUEST_EXEC_SEND_OUTPUT\n"));
                 rc = notifyHost(eFunction, cParms, paParms);
                 break;
 
-            /* The guest notifies the host of the current client status. */
+            /* 
+             * The guest notifies the host of the current client status. 
+             */
             case GUEST_EXEC_SEND_STATUS:
                 LogFlowFunc(("SEND_STATUS\n"));
                 rc = notifyHost(eFunction, cParms, paParms);
