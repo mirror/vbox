@@ -48,145 +48,6 @@
 
 using namespace com;
 
-/**
- * IVirtualBoxCallback implementation for handling the GuestPropertyCallback in
- * relation to the "guestproperty wait" command.
- */
-class GuestPropertyCallback :
-  VBOX_SCRIPTABLE_IMPL(IVirtualBoxCallback)
-{
-public:
-    GuestPropertyCallback(const char *pszPatterns, Guid aUuid)
-        : mSignalled(false), mPatterns(pszPatterns), mUuid(aUuid)
-    {
-#ifndef VBOX_WITH_XPCOM
-        refcnt = 0;
-#endif
-    }
-
-    virtual ~GuestPropertyCallback()
-    {
-    }
-
-#ifndef VBOX_WITH_XPCOM
-    STDMETHOD_(ULONG, AddRef)()
-    {
-        return ::InterlockedIncrement(&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement(&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif /* !VBOX_WITH_XPCOM */
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IVirtualBoxCallback)
-
-    NS_DECL_ISUPPORTS
-
-    STDMETHOD(OnMachineStateChange)(IN_BSTR machineId,
-                                    MachineState_T state)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnMachineDataChange)(IN_BSTR machineId)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnExtraDataCanChange)(IN_BSTR machineId, IN_BSTR key,
-                                    IN_BSTR value, BSTR *error,
-                                    BOOL *changeAllowed)
-    {
-        /* we never disagree */
-        if (!changeAllowed)
-            return E_INVALIDARG;
-        *changeAllowed = TRUE;
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnExtraDataChange)(IN_BSTR machineId, IN_BSTR key,
-                                 IN_BSTR value)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnMediumRegistered)(IN_BSTR mediaId,
-                                  DeviceType_T mediaType, BOOL registered)
-    {
-        NOREF(mediaId);
-        NOREF(mediaType);
-        NOREF(registered);
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnMachineRegistered)(IN_BSTR machineId, BOOL registered)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-     STDMETHOD(OnSessionStateChange)(IN_BSTR machineId,
-                                    SessionState_T state)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnSnapshotTaken)(IN_BSTR aMachineId,
-                               IN_BSTR aSnapshotId)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnSnapshotDeleted)(IN_BSTR aMachineId,
-                                 IN_BSTR aSnapshotId)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnSnapshotChange)(IN_BSTR aMachineId,
-                                IN_BSTR aSnapshotId)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnGuestPropertyChange)(IN_BSTR machineId,
-                                     IN_BSTR name, IN_BSTR value,
-                                     IN_BSTR flags)
-    {
-        Utf8Str utf8Name(name);
-        Guid uuid(machineId);
-        if (   uuid == mUuid
-            && RTStrSimplePatternMultiMatch(mPatterns, RTSTR_MAX,
-                                            utf8Name.raw(), RTSTR_MAX, NULL))
-        {
-            RTPrintf("Name: %lS, value: %lS, flags: %lS\n", name, value, flags);
-            ASMAtomicWriteBool(&mSignalled, true);
-            com::EventQueue::getMainEventQueue()->interruptEventQueueProcessing();
-        }
-        return S_OK;
-    }
-
-    bool Signalled(void) const
-    {
-        return mSignalled;
-    }
-
-private:
-    bool volatile mSignalled;
-    const char *mPatterns;
-    Guid mUuid;
-#ifndef VBOX_WITH_XPCOM
-    long refcnt;
-#endif
-};
-
-#ifdef VBOX_WITH_XPCOM
-NS_DECL_CLASSINFO(GuestPropertyCallback)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestPropertyCallback, IVirtualBoxCallback)
-#endif /* VBOX_WITH_XPCOM */
-
 void usageGuestProperty(void)
 {
     RTPrintf("VBoxManage guestproperty    get <vmname>|<uuid>\n"
@@ -438,23 +299,21 @@ static int handleWaitGuestProperty(HandlerArg *a)
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 
     /*
-     * Set up the callback and loop until signal or timeout.
-     *
-     * We do this in 1000 ms chunks to be on the safe side (there used to be
-     * better reasons for it).
+     * Set up the event listener and wait until found match or timeout.
      */
-    Bstr uuid;
-    machine->COMGETTER(Id)(uuid.asOutParam());
-    GuestPropertyCallback *cbImpl = new GuestPropertyCallback(pszPatterns, uuid);
-    ComPtr<IVirtualBoxCallback> callback;
-    rc = createCallbackWrapper((IVirtualBoxCallback *)cbImpl, callback.asOutParam());
-    if (FAILED(rc))
-    {
-        RTPrintf("Error creating callback wrapper: %Rhrc\n", rc);
-        return 1;
-    }
-    a->virtualBox->RegisterCallback(callback);
+    Bstr aMachStrGuid;
+    machine->COMGETTER(Id)(aMachStrGuid.asOutParam());
+    Guid aMachGuid(aMachStrGuid);
+    ComPtr<IEventSource> es;
+    CHECK_ERROR(a->virtualBox, COMGETTER(EventSource)(es.asOutParam()));
+    ComPtr<IEventListener> listener;
+    CHECK_ERROR(es, CreateListener(listener.asOutParam()));
+    com::SafeArray <VBoxEventType_T> eventTypes(1);
+    eventTypes.push_back(VBoxEventType_OnGuestPropertyChange);
+    CHECK_ERROR(es, RegisterListener(listener, ComSafeArrayAsInParam(eventTypes), false));
+
     uint64_t u64Started = RTTimeMilliTS();
+    bool fSignalled = false;
     do
     {
         unsigned cMsWait;
@@ -467,19 +326,47 @@ static int handleWaitGuestProperty(HandlerArg *a)
                 break; /* timed out */
             cMsWait = RT_MIN(1000, cMsTimeout - (uint32_t)cMsElapsed);
         }
-        int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(cMsWait);
-        if (    RT_FAILURE(vrc)
-            &&  vrc != VERR_TIMEOUT)
-        {
-            RTPrintf("Error waiting for event: %Rrc\n", vrc);
-            return 1;
-        }
-    } while (!cbImpl->Signalled());
 
-    a->virtualBox->UnregisterCallback(callback);
+        ComPtr<IEvent> ev;
+        int vrc = es->GetEvent(listener, cMsWait, ev.asOutParam());
+        if (ev)
+        {
+            VBoxEventType_T aType ;
+            vrc = ev->COMGETTER(Type)(&aType);
+            switch (aType)
+            {
+                case VBoxEventType_OnGuestPropertyChange:
+                {
+                    ComPtr<IGuestPropertyChangeEvent> gpcev = ev;
+                    Assert(ev);
+                    Bstr aNextStrGuid;
+                    gpcev->COMGETTER(MachineId)(aNextStrGuid.asOutParam());
+                    if (aMachGuid  != Guid(aNextStrGuid))
+                        continue;
+                    Bstr aNextName;
+                    gpcev->COMGETTER(Name)(aNextName.asOutParam());
+                    if (RTStrSimplePatternMultiMatch(pszPatterns, RTSTR_MAX,
+                                                     Utf8Str(aNextName).raw(), RTSTR_MAX, NULL))
+                    {
+                        Bstr aNextValue, aNextFlags;
+                        gpcev->COMGETTER(Value)(aNextValue.asOutParam());
+                        gpcev->COMGETTER(Flags)(aNextFlags.asOutParam());
+                        RTPrintf("Name: %lS, value: %lS, flags: %lS\n", 
+                                 aNextName.raw(), aNextValue.raw(), aNextFlags.raw());
+                        fSignalled = true;
+                        break;
+                    }
+                }
+                default:
+                     AssertFailed();
+            }
+        }
+    } while (!fSignalled);
+
+    es->UnregisterListener(listener);
 
     int rcRet = 0;
-    if (!cbImpl->Signalled())
+    if (!fSignalled)
     {
         RTPrintf("Time out or interruption while waiting for a notification.\n");
         if (fFailOnTimeout)
