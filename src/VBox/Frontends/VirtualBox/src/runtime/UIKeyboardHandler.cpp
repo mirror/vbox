@@ -52,6 +52,10 @@ const int XKeyRelease = KeyRelease;
 # include "XKeyboard.h"
 #endif /* Q_WS_X11 */
 
+#ifdef Q_WS_MAC
+# include "DarwinKeyboard.h"
+#endif /* Q_WS_MAC */
+
 /* Enums representing different keyboard-states: */
 enum { KeyExtended = 0x01, KeyPressed = 0x02, KeyPause = 0x04, KeyPrint = 0x08 };
 enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
