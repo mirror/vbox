@@ -4815,9 +4815,9 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
      * @todo: better solution
      */
 #ifdef RT_OS_WINDOWS
-    CONSOLE_DO_CALLBACKS7(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, mCallbackData.mpsc.shape.raw());
+    CONSOLE_DO_CALLBACKS7(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, pShape);
 #else
-    CONSOLE_DO_CALLBACKS8(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, mCallbackData.mpsc.shape.size(), mCallbackData.mpsc.shape.raw());
+    CONSOLE_DO_CALLBACKS8(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, pShapeSize, pShape);
 #endif
 
 #if 0
