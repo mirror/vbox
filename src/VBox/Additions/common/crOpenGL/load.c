@@ -993,7 +993,8 @@ stubInit(void)
 
 #if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
     /*@todo when vm boots with compiz turned on, new code causes hang in xcb_wait_for_reply in the sync thread*/
-    if (!crStrcmp(response, "compiz") || !crStrcmp(response, "compiz_real"))
+    if (!crStrcmp(response, "compiz") || !crStrcmp(response, "compiz_real")
+	|| !crStrcmp(response, "compiz-bin"))
     {
         disable_sync = 1;
     }

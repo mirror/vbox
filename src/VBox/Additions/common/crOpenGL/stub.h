@@ -45,7 +45,7 @@
 #include <X11/extensions/Xdamage.h>
 #endif
 
-#if defined(WINDOWS) || defined(Linux)
+#if defined(WINDOWS) || defined(Linux) || defined(SunOS)
 # define CR_NEWWINTRACK
 #endif
 
