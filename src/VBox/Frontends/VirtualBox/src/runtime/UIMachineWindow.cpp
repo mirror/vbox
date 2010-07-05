@@ -133,6 +133,11 @@ CSession& UIMachineWindow::session() const
     return uisession()->session();
 }
 
+void UIMachineWindow::setMask(const QRegion &region)
+{
+    machineWindow()->setMask(region);
+}
+
 void UIMachineWindow::retranslateUi()
 {
 #ifdef VBOX_OSE

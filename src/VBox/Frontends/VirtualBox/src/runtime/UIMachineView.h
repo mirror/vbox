@@ -67,11 +67,6 @@ public:
     /* Public members: */
     virtual void normalizeGeometry(bool /* bAdjustPosition = false */) = 0;
 
-protected slots:
-
-    /* Console callback handlers: */
-    virtual void sltMachineStateChanged();
-
 signals:
 
     /* Keyboard state-change signals: */
@@ -79,6 +74,11 @@ signals:
 
     /* Utility signals: */
     void resizeHintDone();
+
+protected slots:
+
+    /* Console callback handlers: */
+    virtual void sltMachineStateChanged();
 
 protected:
 
