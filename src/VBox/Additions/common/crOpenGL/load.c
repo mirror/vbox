@@ -759,6 +759,18 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
         }
 
         hNewRgn = stubMakeRegionFromRects(pRegions->pRegions, 1);
+
+#if 0
+        /* may be needed in the future for proper resize handling */
+        {
+            BOOL bRc = MoveWindow(pRegions->hWnd, winX, winY, winW, winH, FALSE /*BOOL bRepaint*/);
+            if (!bRc)
+            {
+                DWORD winEr = GetLastError();
+                crWarning("stubSyncTrUpdateWindowCB: MoveWindow failed winEr(%d)", winEr);
+            }
+        }
+#endif
     }
     else
     {
