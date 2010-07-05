@@ -553,6 +553,7 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
 #elif defined(Q_WS_MAC)
     , m_darwinKeyModifiers(0)
     , m_fKeyboardGrabbed(false)
+    , m_iKeyboardGrabViewIndex(-1)
 #endif
 {
     /* Prepare: */
@@ -684,14 +685,35 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                 break;
             }
 #elif defined(Q_WS_MAC)
-            /* Install the keyboard event handler: */
             case QEvent::WindowActivate:
-                darwinGrabKeyboardEvents(true);
+            {
+                /* If keyboard event handler is NOT currently installed;
+                 * Or installed but NOT for that window: */
+                if (m_iKeyboardGrabViewIndex != uScreenId)
+                {
+                    /* If keyboard event handler is NOT currently installed: */
+                    if (m_iKeyboardGrabViewIndex == -1)
+                    {
+                        /* Install the keyboard event handler: */
+                        darwinGrabKeyboardEvents(true);
+                    }
+                    /* Update the id: */
+                    m_iKeyboardGrabViewIndex = uScreenId;
+                }
                 break;
-            /* Remove the keyboard event handler: */
+            }
             case QEvent::WindowDeactivate:
-                darwinGrabKeyboardEvents(false);
+            {
+                /* If keyboard event handler is installed exactly for that window: */
+                if (m_iKeyboardGrabViewIndex == uScreenId)
+                {
+                    /* Remove the keyboard event handler: */
+                    darwinGrabKeyboardEvents(false);
+                    /* Update the id: */
+                    m_iKeyboardGrabViewIndex = -1;
+                }
                 break;
+            }
 #endif
             default:
                 break;
@@ -922,7 +944,7 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
                 cbWritten = 0;
             ucs[cbWritten / sizeof(wchar_t)] = 0; /* The api doesn't terminate it. */
 
-            ret = keyEvent(keyCode, scanCode, flags, uScreenId, ucs[0] ? ucs : NULL);
+            ret = keyEvent(keyCode, scanCode, flags, m_iKeyboardGrabViewIndex, ucs[0] ? ucs : NULL);
         }
     }
     else
@@ -951,7 +973,7 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
                     if (scanCode & VBOXKEY_EXTENDED)
                         flags |= KeyExtended;
                     scanCode &= VBOXKEY_SCANCODE_MASK;
-                    ret |= keyEvent(keyCode, scanCode & 0xff, flags, uScreenId);
+                    ret |= keyEvent(keyCode, scanCode & 0xff, flags, m_iKeyboardGrabViewIndex);
                 }
                 else
                 {
@@ -959,8 +981,8 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
                     if (scanCode & VBOXKEY_EXTENDED)
                         flags |= KeyExtended;
                     scanCode &= VBOXKEY_SCANCODE_MASK;
-                    keyEvent(keyCode, scanCode, flags | KeyPressed, uScreenId);
-                    keyEvent(keyCode, scanCode, flags, uScreenId);
+                    keyEvent(keyCode, scanCode, flags | KeyPressed, m_iKeyboardGrabViewIndex);
+                    keyEvent(keyCode, scanCode, flags, m_iKeyboardGrabViewIndex);
                 }
             }
         }

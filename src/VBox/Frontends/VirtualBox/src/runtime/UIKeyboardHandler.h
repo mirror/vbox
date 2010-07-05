@@ -164,6 +164,7 @@ protected:
      * key was pressed when we get a kEventRawKeyModifiersChanged event. */
     UInt32 m_darwinKeyModifiers;
     bool m_fKeyboardGrabbed;
+    int m_iKeyboardGrabViewIndex;
 #endif
 };
 
