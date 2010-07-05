@@ -699,13 +699,13 @@ int Guest::notifyCtrlExecOut(uint32_t             u32Function,
         /* Was progress cancelled before? */
         BOOL fCancelled;
         ComAssert(it->second.pProgress.isNotNull());
-        it->second.pProgress->COMGETTER(Canceled)(&fCancelled);
-
-        if (!fCancelled)
-            it->second.pProgress->notifyComplete(S_OK);
-        else
+        if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCancelled) && fCancelled))
+        {
             it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR, COM_IIDOF(IGuest),
-                                          (CBSTR)Guest::getComponentName(), Guest::tr("The output operation was cancelled"));
+                                                 (CBSTR)Guest::getComponentName(), Guest::tr("The output operation was cancelled"));
+        }
+        else
+            it->second.pProgress->notifyComplete(S_OK);
     }
     else
         LogFlowFunc(("Unexpected callback (magic=%u, context ID=%u) arrived\n", pData->hdr.u32Magic, pData->hdr.u32ContextID));
