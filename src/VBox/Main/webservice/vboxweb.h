@@ -40,6 +40,16 @@ void WebLog(const char *pszFormat, ...);
 
 /****************************************************************************
  *
+ * typedefs
+ *
+ ****************************************************************************/
+
+// type used by gSOAP-generated code
+typedef std::string WSDLT_ID;               // combined managed object ref (session ID plus object ID)
+typedef std::string vbox__uuid;
+
+/****************************************************************************
+ *
  * global variables
  *
  ****************************************************************************/
@@ -52,15 +62,7 @@ extern PRTSTREAM g_pstrLog;
 extern util::WriteLockHandle  *g_pAuthLibLockHandle;
 extern util::WriteLockHandle  *g_pSessionsLockHandle;
 
-/****************************************************************************
- *
- * typedefs
- *
- ****************************************************************************/
-
-// type used by gSOAP-generated code
-typedef std::string WSDLT_ID;               // combined managed object ref (session ID plus object ID)
-typedef std::string vbox__uuid;
+extern const WSDLT_ID          g_EmptyWSDLID;
 
 /****************************************************************************
  *
@@ -120,14 +122,14 @@ class WebServiceSession
         int authenticate(const char *pcszUsername,
                          const char *pcszPassword);
 
-        ManagedObjectRef* findRefFromPtr(const ComPtr<IUnknown> &pcu);
+        ManagedObjectRef* findRefFromPtr(const IUnknown *pObject);
 
         uint64_t getID() const
         {
             return _uSessionID;
         }
 
-        WSDLT_ID getSessionObject() const;
+        const WSDLT_ID& getSessionWSDLID() const;
 
         void touch();
 
@@ -156,9 +158,14 @@ class ManagedObjectRef
         // owning session:
         WebServiceSession           &_session;
 
-        // value:
-        ComPtr<IUnknown>            _pObj;
-        const char                  *_pcszInterface;
+
+        IUnknown                    *_pobjUnknown;          // pointer to IUnknown interface for this MOR
+
+        void                        *_pobjInterface;        // pointer to COM interface represented by _guidInterface, for which this MOR
+                                                            // was created; this may be an IUnknown or something more specific
+        com::Guid                   _guidInterface;         // the interface which _pvObj represents
+
+        const char                  *_pcszInterface;        // string representation of that interface (e.g. "IMachine")
 
         // keys:
         uint64_t                    _id;
@@ -169,8 +176,10 @@ class ManagedObjectRef
 
     public:
         ManagedObjectRef(WebServiceSession &session,
-                         const char *pcszInterface,
-                         const ComPtr<IUnknown> &obj);
+                         IUnknown *pobjUnknown,
+                         void *pobjInterface,
+                         const com::Guid &guidInterface,
+                         const char *pcszInterface);
         ~ManagedObjectRef();
 
         uint64_t getID()
@@ -178,12 +187,31 @@ class ManagedObjectRef
             return _id;
         }
 
-        ComPtr<IUnknown> getComPtr()
+        /**
+         * Returns the contained COM pointer and the UUID of the COM interface
+         * which it supports.
+         * @param
+         * @return
+         */
+        const com::Guid& getPtr(void **ppobjInterface,
+                                IUnknown **ppobjUnknown)
         {
-            return _pObj;
+            *ppobjInterface = _pobjInterface;
+            *ppobjUnknown = _pobjUnknown;
+            return _guidInterface;
         }
 
-        WSDLT_ID toWSDL() const;
+        /**
+         * Returns the ID of this managed object reference to string
+         * form, for returning with SOAP data or similar.
+         *
+         * @return The ID in string form.
+         */
+        const WSDLT_ID& getWSDLID() const
+        {
+            return _strID;
+        }
+
         const char* getInterfaceName() const
         {
             return _pcszInterface;
@@ -201,12 +229,18 @@ class ManagedObjectRef
 
 /**
  * Template function that resolves a managed object reference to a COM pointer
- * of the template class T. Gets called from tons of generated code in
- * methodmaps.cpp.
+ * of the template class T.
+ *
+ * This gets called only from tons of generated code in methodmaps.cpp to
+ * resolve objects in *input* parameters to COM methods (i.e. translate
+ * MOR strings to COM objects which should exist already).
  *
  * This is a template function so that we can support ComPtr's for arbitrary
  * interfaces and automatically verify that the managed object reference on
- * the internal stack actually is of the expected interface.
+ * the internal stack actually is of the expected interface. We also now avoid
+ * calling QueryInterface for the case that the interface desired by the caller
+ * is the same as the interface for which the MOR was originally created. In
+ * that case, the lookup is very fast.
  *
  * @param soap
  * @param id in: integer managed object reference, as passed in by web service client
@@ -230,19 +264,42 @@ int findComPtrFromId(struct soap *soap,
     int rc;
     ManagedObjectRef *pRef;
     if ((rc = ManagedObjectRef::findRefFromId(id, &pRef, fNullAllowed)))
+        // error:
         RaiseSoapInvalidObjectFault(soap, id);
     else
     {
         if (fNullAllowed && pRef == NULL)
         {
+            WEBDEBUG(("   %s(): returning NULL object as permitted\n", __FUNCTION__));
             pComPtr.setNull();
             return 0;
         }
 
-        // pRef->getComPtr returns a ComPtr<IUnknown>; by casting it to
-        // ComPtr<T>, we implicitly do a COM queryInterface() call
-        if (pComPtr = pRef->getComPtr())
+        const com::Guid &guidCaller = COM_IIDOF(T);
+
+        // pRef->getPtr returns both a void* for its specific interface pointer as well as a generic IUnknown*
+        void *pobjInterface;
+        IUnknown *pobjUnknown;
+        const com::Guid &guidInterface = pRef->getPtr(&pobjInterface, &pobjUnknown);
+
+        if (guidInterface == guidCaller)
+        {
+            // same interface: then no QueryInterface needed
+            WEBDEBUG(("   %s(): returning original %s*=0x%lX (IUnknown*=0x%lX)\n", __FUNCTION__, pRef->getInterfaceName(), pobjInterface, pobjUnknown));
+            pComPtr = (T*)pobjInterface;        // this calls AddRef() once
             return 0;
+        }
+
+        // QueryInterface tests whether p actually supports the templated T interface desired by caller
+        T *pT;
+        pobjUnknown->QueryInterface(guidCaller, (void**)&pT);      // this adds a reference count
+        if (pT)
+        {
+            // assign to caller's ComPtr<T>; use asOutParam() to avoid adding another reference, QueryInterface() already added one
+            WEBDEBUG(("   %s(): returning pointer 0x%lX for queried interface %RTuuid (IUnknown*=0x%lX)\n", __FUNCTION__, pT, guidCaller.raw(), pobjUnknown));
+            *(pComPtr.asOutParam()) = pT;
+            return 0;
+        }
 
         WEBDEBUG(("    Interface not supported for object reference %s, which is of class %s\n", id.c_str(), pRef->getInterfaceName()));
         rc = VERR_WEB_UNSUPPORTED_INTERFACE;
@@ -253,40 +310,49 @@ int findComPtrFromId(struct soap *soap,
 }
 
 /**
- * Template function that creates a new managed object for the given COM
- * pointer of the template class T. If a reference already exists for the
- * given pointer, then that reference's ID is returned instead.
+ * Creates a new managed object for the given COM pointer. If a reference already exists
+ * for the given pointer, then that reference's ID is returned instead.
+ *
+ * This gets called from tons of generated code in methodmaps.cpp to
+ * resolve objects *returned* from COM methods (i.e. create MOR strings from COM objects
+ * which might have been newly created).
  *
  * @param idParent managed object reference of calling object; used to extract session ID
  * @param pc COM object for which to create a reference
  * @return existing or new managed object reference
  */
 template <class T>
-WSDLT_ID createOrFindRefFromComPtr(const WSDLT_ID &idParent,
-                                   const char *pcszInterface,
-                                   const ComPtr<T> &pc)
+const WSDLT_ID& createOrFindRefFromComPtr(const WSDLT_ID &idParent,
+                                          const char *pcszInterface,
+                                          ComPtr<T> &pc)
 {
     // NULL comptr should return NULL MOR
     if (pc.isNull())
     {
-        WEBDEBUG(("   createOrFindRefFromComPtr(): returning empty MOR for NULL %s pointer\n", pcszInterface));
-        return "";
+        WEBDEBUG(("   createOrFindRefFromComPtr(): returning empty MOR for NULL COM pointer\n"));
+        return g_EmptyWSDLID;
     }
 
     util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
     WebServiceSession *pSession;
     if ((pSession = WebServiceSession::findSessionFromRef(idParent)))
     {
-        // WEBDEBUG(("\n-- found session for %s\n", idParent.c_str()));
         ManagedObjectRef *pRef;
-        if (    ((pRef = pSession->findRefFromPtr(pc)))
-             || ((pRef = new ManagedObjectRef(*pSession, pcszInterface, pc)))
+
+        // we need an IUnknown pointer for the MOR
+        ComPtr<IUnknown> pobjUnknown = pc;
+
+        if (    ((pRef = pSession->findRefFromPtr(pobjUnknown)))
+             || ((pRef = new ManagedObjectRef(*pSession,
+                                              pobjUnknown,          // IUnknown *pobjUnknown
+                                              pc,                   // void *pobjInterface
+                                              COM_IIDOF(T),
+                                              pcszInterface)))
            )
-            return pRef->toWSDL();
+            return pRef->getWSDLID();
     }
 
     // session has expired, return an empty MOR instead of allocating a
     // new reference which couldn't be used anyway.
-    return "";
+    return g_EmptyWSDLID;
 }
-
