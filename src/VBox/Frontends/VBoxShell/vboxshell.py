@@ -31,109 +31,6 @@ import re
 import platform
 from optparse import OptionParser
 
-# Simple implementation of IConsoleCallback, one can use it as skeleton
-# for custom implementations
-class GuestMonitor:
-    def __init__(self, mach):
-        self.mach = mach
-
-    def onMousePointerShapeChange(self, visible, alpha, xHot, yHot, width, height, shape):
-        print  "%s: onMousePointerShapeChange: visible=%d shape=%d bytes" %(self.mach.name, visible,len(shape))
-
-    def onMouseCapabilityChange(self, supportsAbsolute, supportsRelative, needsHostCursor):
-        print  "%s: onMouseCapabilityChange: supportsAbsolute = %d, supportsRelative = %d, needsHostCursor = %d" %(self.mach.name, supportsAbsolute, supportsRelative, needsHostCursor)
-
-    def onKeyboardLedsChange(self, numLock, capsLock, scrollLock):
-        print  "%s: onKeyboardLedsChange capsLock=%d"  %(self.mach.name, capsLock)
-
-    def onStateChange(self, state):
-        print  "%s: onStateChange state=%d" %(self.mach.name, state)
-
-    def onAdditionsStateChange(self):
-        print  "%s: onAdditionsStateChange" %(self.mach.name)
-
-    def onNetworkAdapterChange(self, adapter):
-        print  "%s: onNetworkAdapterChange" %(self.mach.name)
-
-    def onSerialPortChange(self, port):
-        print  "%s: onSerialPortChange" %(self.mach.name)
-
-    def onParallelPortChange(self, port):
-        print  "%s: onParallelPortChange" %(self.mach.name)
-
-    def onStorageControllerChange(self):
-        print  "%s: onStorageControllerChange" %(self.mach.name)
-
-    def onMediumChange(self, attachment):
-        print  "%s: onMediumChange" %(self.mach.name)
-
-    def onVRDPServerChange(self):
-        print  "%s: onVRDPServerChange" %(self.mach.name)
-
-    def onUSBControllerChange(self):
-        print  "%s: onUSBControllerChange" %(self.mach.name)
-
-    def onUSBDeviceStateChange(self, device, attached, error):
-        print  "%s: onUSBDeviceStateChange" %(self.mach.name)
-
-    def onSharedFolderChange(self, scope):
-        print  "%s: onSharedFolderChange" %(self.mach.name)
-
-    def onRuntimeError(self, fatal, id, message):
-        print  "%s: onRuntimeError fatal=%d message=%s" %(self.mach.name, fatal, message)
-
-    def onCanShowWindow(self):
-        print  "%s: onCanShowWindow" %(self.mach.name)
-        return True
-
-    def onShowWindow(self, winId):
-        print  "%s: onShowWindow: %d" %(self.mach.name, winId)
-
-class VBoxMonitor:
-    def __init__(self, params):
-        self.vbox = params[0]
-        self.isMscom = params[1]
-        pass
-
-    def onMachineStateChange(self, id, state):
-        print "onMachineStateChange: %s %d" %(id, state)
-
-    def onMachineDataChange(self,id):
-        print "onMachineDataChange: %s" %(id)
-
-    def onExtraDataCanChange(self, id, key, value):
-        print "onExtraDataCanChange: %s %s=>%s" %(id, key, value)
-        # Witty COM bridge thinks if someone wishes to return tuple, hresult
-        # is one of values we want to return
-        if self.isMscom:
-            return "", 0, True
-        else:
-            return True, ""
-
-    def onExtraDataChange(self, id, key, value):
-        print "onExtraDataChange: %s %s=>%s" %(id, key, value)
-
-    def onMediaRegistered(self, id, type, registered):
-        print "onMediaRegistered: %s" %(id)
-
-    def onMachineRegistered(self, id, registred):
-        print "onMachineRegistered: %s" %(id)
-
-    def onSessionStateChange(self, id, state):
-        print "onSessionStateChange: %s %d" %(id, state)
-
-    def onSnapshotTaken(self, mach, id):
-        print "onSnapshotTaken: %s %s" %(mach, id)
-
-    def onSnapshotDeleted(self, mach, id):
-        print "onSnapshotDeleted: %s %s" %(mach, id)
-
-    def onSnapshotChange(self, mach, id):
-        print "onSnapshotChange: %s %s" %(mach, id)
-
-    def onGuestPropertyChange(self, id, name, newValue, flags):
-       print "onGuestPropertyChange: %s: %s=%s" %(id, name, newValue)
-
 g_batchmode = False
 g_scripfile = None
 g_cmd = None
@@ -397,47 +294,18 @@ def perfStats(ctx,mach):
 def guestExec(ctx, machine, console, cmds):
     exec cmds
 
-def monitorGuest(ctx, machine, console, dur):
-    cb = ctx['global'].createCallback('IConsoleCallback', GuestMonitor, machine)
-    console.registerCallback(cb)
-    if dur == -1:
-        # not infinity, but close enough
-        dur = 100000
-    try:
-        end = time.time() + dur
-        while  time.time() < end:
-            ctx['global'].waitForEvents(500)
-    # We need to catch all exceptions here, otherwise callback will never be unregistered
-    except:
-        pass
-    console.unregisterCallback(cb)
-
-
-def monitorVBox(ctx, dur):
-    vbox = ctx['vb']
-    isMscom = (ctx['global'].type == 'MSCOM')
-    cb = ctx['global'].createCallback('IVirtualBoxCallback', VBoxMonitor, [vbox, isMscom])
-    vbox.registerCallback(cb)
-    if dur == -1:
-        # not infinity, but close enough
-        dur = 100000
-    try:
-        end = time.time() + dur
-        while  time.time() < end:
-            ctx['global'].waitForEvents(500)
-    # We need to catch all exceptions here, otherwise callback will never be unregistered
-    except:
-        pass
-    vbox.unregisterCallback(cb)
-
 def monitorSource(ctx, es, active, dur):
     def handleEventImpl(ev):
          type = ev.type
-         print "got event: %s %s" %(str(ev.type), asEnumElem(ctx, 'VBoxEventType', type))
-         if ev.type == ctx['global'].constants.VBoxEventType_OnMachineStateChange:
+         print "got event: %s %s" %(str(type), asEnumElem(ctx, 'VBoxEventType', type))
+         if type == ctx['global'].constants.VBoxEventType_OnMachineStateChange:
              scev = ctx['global'].queryInterface(ev, 'IMachineStateChangeEvent')
              if scev:
-                 print "state event: mach=%s state=%s" %(scev.machineId, scev.state)
+                 print "machine state event: mach=%s state=%s" %(scev.machineId, scev.state)
+         elif  type == ctx['global'].constants.VBoxEventType_OnGuestPropertyChange:
+             gpcev = ctx['global'].queryInterface(ev, 'IGuestPropertyChangeEvent')
+             if gpcev:
+                 print "guest property change: name=%s value=%s" %(gpcev.name, gpcev.value)
          elif  type == ctx['global'].constants.VBoxEventType_OnMousePointerShapeChange:
              psev = ctx['global'].queryInterface(ev, 'IMousePointerShapeChangeEvent')
              if psev:
@@ -479,6 +347,7 @@ def monitorSource(ctx, es, active, dur):
                     es.eventProcessed(listener, ev)
     # We need to catch all exceptions here, otherwise listener will never be unregistered
     except:
+        traceback.print_exc()
         pass
     if listener and registered:
         es.unregisterListener(listener)
@@ -644,7 +513,6 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'guest':           lambda: guestExec(ctx, mach, console, args),
          'ginfo':           lambda: ginfo(ctx, console, args),
          'guestlambda':     lambda: args[0](ctx, mach, console, args[1:]),
-         'monitorGuest':    lambda: monitorGuest(ctx, mach, console, args),
          'save':            lambda: progressBar(ctx,console.saveState()),
          'screenshot':      lambda: takeScreenshot(ctx,console,args),
          'teleport':        lambda: teleport(ctx,session,console,args),
@@ -1432,22 +1300,10 @@ def monitorGuestCmd(ctx, args):
     dur = 5
     if len(args) > 2:
         dur = float(args[2])
-    cmdExistingVm(ctx, mach, 'monitorGuest', dur)
-    return 0
-
-def monitorGuest2Cmd(ctx, args):
-    if (len(args) < 2):
-        print "usage: monitorGuest2 name (duration)"
-        return 0
-    mach = argsToMach(ctx,args)
-    if mach == None:
-        return 0
-    dur = 5
-    if len(args) > 2:
-        dur = float(args[2])
-    active = True
+    active = False
     cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args:  monitorSource(ctx, console.eventSource, active, dur)])
     return 0
+
 
 def monitorVBoxCmd(ctx, args):
     if (len(args) > 2):
@@ -1456,18 +1312,8 @@ def monitorVBoxCmd(ctx, args):
     dur = 5
     if len(args) > 1:
         dur = float(args[1])
-    monitorVBox(ctx, dur)
-    return 0
-
-def monitorVBox2Cmd(ctx, args):
-    if (len(args) > 2):
-        print "usage: monitorVBox2 (duration)"
-        return 0
-    dur = 5
-    if len(args) > 1:
-        dur = float(args[1])
     vbox = ctx['vb']
-    active = True
+    active = False
     monitorSource(ctx, vbox.eventSource, active, dur)
     return 0
 
@@ -2938,9 +2784,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'host':['Show host information', hostCmd, 0],
             'guest':['Execute command for guest: guest Win32 \'console.mouse.putMouseEvent(20, 20, 0, 0, 0)\'', guestCmd, 0],
             'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd, 0],
-            'monitorGuest2':['Monitor what happens with the guest for some time: monitorGuest2 Win32 10', monitorGuest2Cmd, 0],
             'monitorVBox':['Monitor what happens with Virtual Box for some time: monitorVBox 10', monitorVBoxCmd, 0],
-            'monitorVBox2':['(temp)Monitor what happens with Virtual Box for some time: monitorVBox2 10', monitorVBox2Cmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],
             'findLog':['Show entries matching pattern in log file of the VM, : findLog Win32 PDM|CPUM', findLogCmd, 0],
