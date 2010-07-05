@@ -15401,8 +15401,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IUSBDevceStateChangeEvent" extends="IEvent"
-     uuid="A7894AB1-3615-4F79-8E39-255DEDC03EAE"
+     name="IUSBDeviceStateChangeEvent" extends="IEvent"
+     uuid="806da61b-6679-422a-b629-51b06b0c6d93"
      wsmap="managed" autogen="VBoxEvent" id="OnUSBDeviceStateChange"
      >
     <desc>
