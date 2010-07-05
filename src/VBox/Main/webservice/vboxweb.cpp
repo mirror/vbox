@@ -129,6 +129,9 @@ SessionsMap         g_mapSessions;
 ULONG64             g_iMaxManagedObjectID = 0;
 ULONG64             g_cManagedObjects = 0;
 
+// this mutex protects g_mapThreads
+util::RWLockHandle  *g_pThreadsLockHandle;
+
 // Threads map, so we can quickly map an RTTHREAD struct to a logger prefix
 typedef std::map<RTTHREAD, com::Utf8Str> ThreadsMap;
 ThreadsMap          g_mapThreads;
@@ -325,6 +328,7 @@ public:
                                              *this,
                                              m_soap);
             m_llAllThreads.push_back(pst);
+            util::AutoWriteLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
             g_mapThreads[pst->m_pThread] = com::Utf8StrFmt("[%3u]", pst->m_u);
             ++m_cIdleThreads;
         }
@@ -454,9 +458,11 @@ void WebLog(const char *pszFormat, ...)
     va_end(args);
 
     const char *pcszPrefix = "[   ]";
+    util::AutoReadLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
     ThreadsMap::iterator it = g_mapThreads.find(RTThreadSelf());
     if (it != g_mapThreads.end())
         pcszPrefix = it->second.c_str();
+    thrLock.release();
 
     // terminal
     RTPrintf("%s %s", pcszPrefix, psz);
@@ -556,7 +562,9 @@ void doQueuesLoop()
 int fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
 {
     // store a log prefix for this thread
+    util::AutoWriteLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
     g_mapThreads[RTThreadSelf()] = "[ P ]";
+    thrLock.release();
 
     doQueuesLoop();
 
@@ -700,6 +708,7 @@ int main(int argc, char* argv[])
     // create the global mutexes
     g_pAuthLibLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
     g_pSessionsLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
+    g_pThreadsLockHandle = new util::RWLockHandle(util::LOCKCLASS_OBJECTSTATE);
 
     // SOAP queue pumper thread
     RTTHREAD  tQPumper;
@@ -764,7 +773,9 @@ int main(int argc, char* argv[])
 int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
 {
     // store a log prefix for this thread
+    util::AutoWriteLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
     g_mapThreads[RTThreadSelf()] = "[W  ]";
+    thrLock.release();
 
     WEBDEBUG(("Watchdog thread started\n"));
 
