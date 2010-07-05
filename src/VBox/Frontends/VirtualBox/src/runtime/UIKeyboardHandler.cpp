@@ -54,6 +54,7 @@ const int XKeyRelease = KeyRelease;
 
 #ifdef Q_WS_MAC
 # include "DarwinKeyboard.h"
+# include "UICocoaApplication.h"
 #endif /* Q_WS_MAC */
 
 /* Enums representing different keyboard-states: */
