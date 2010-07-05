@@ -33,6 +33,7 @@ HRESULT vboxDispMpTstStop();
 #endif
 
 #define VBOXWDDMDISP_WITH_TMPWORKAROUND 1
+#define VBOXDISP_TMP_NEWCREATEDEVICE 1
 
 #define VBOXWDDMOVERLAY_TEST
 
@@ -3576,7 +3577,7 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
         Assert(pDevice->pDevice9If);
-#if 0
+#if 1
         hr = pDevice->pDevice9If->Present(NULL, /* CONST RECT * pSourceRect */
                 NULL, /* CONST RECT * pDestRect */
                 NULL, /* HWND hDestWindowOverride */
@@ -3627,12 +3628,14 @@ static HRESULT APIENTRY vboxWddmDDevFlush(HANDLE hDevice)
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
         Assert(pDevice->pDevice9If);
+#if 0
         hr = pDevice->pDevice9If->Present(NULL, /* CONST RECT * pSourceRect */
                 NULL, /* CONST RECT * pDestRect */
                 NULL, /* HWND hDestWindowOverride */
                 NULL /*CONST RGNDATA * pDirtyRegion */
                 );
         Assert(hr == S_OK);
+#endif
     }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
