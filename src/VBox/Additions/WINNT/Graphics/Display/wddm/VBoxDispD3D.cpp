@@ -2933,6 +2933,32 @@ static D3DDDICB_ALLOCATE* vboxWddmRequestAllocAlloc(D3DDDIARG_CREATERESOURCE* pR
     }
     return NULL;
 }
+
+static HRESULT vboxWddmSurfSynchMem(PVBOXWDDMDISP_RESOURCE pRc, PVBOXWDDMDISP_ALLOCATION pAllocation)
+{
+    HRESULT hr = S_OK;
+    Assert(pAllocation->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
+    if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
+    {
+        Assert(pAllocation->pvMem);
+        D3DLOCKED_RECT lockInfo;
+        IDirect3DSurface9 *pD3D9Surf = (IDirect3DSurface9*)pAllocation->pD3DIf;
+        hr = pD3D9Surf->LockRect(&lockInfo, NULL, D3DLOCK_DISCARD);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            vboxWddmLockUnlockMemSynch(pAllocation, &lockInfo, NULL, true /*bool bToLockInfo*/);
+            HRESULT tmpHr = pD3D9Surf->UnlockRect();
+            Assert(tmpHr == S_OK);
+        }
+    }
+    else
+    {
+        Assert(!pAllocation->pvMem);
+    }
+    return hr;
+}
+
 static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CREATERESOURCE* pResource)
 {
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
@@ -3007,23 +3033,8 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                         Assert(pD3D9Surf);
                         pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
                         pAllocation->pD3DIf = pD3D9Surf;
-                        if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
-                        {
-                            Assert(pAllocation->pvMem);
-                            D3DLOCKED_RECT lockInfo;
-                            hr = pD3D9Surf->LockRect(&lockInfo, NULL, D3DLOCK_DISCARD);
-                            Assert(hr == S_OK);
-                            if (hr == S_OK)
-                            {
-                                vboxWddmLockUnlockMemSynch(pAllocation, &lockInfo, NULL, true /*bool bToLockInfo*/);
-                                HRESULT tmpHr = pD3D9Surf->UnlockRect();
-                                Assert(tmpHr == S_OK);
-                            }
-                        }
-                        else
-                        {
-                            Assert(!pAllocation->pvMem);
-                        }
+                        hr = vboxWddmSurfSynchMem(pRc, pAllocation);
+                        Assert(hr == S_OK);
                     }
                     else
                     {
@@ -3209,7 +3220,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
             else if (pResource->Flags.RenderTarget)
             {
                 HWND hWnd = NULL;
-                bool bDevCreated = false;
+                bIssueCreateResource = true;
                 Assert(pResource->SurfCount);
                 if (!pDevice->pDevice9If)
                 {
@@ -3248,104 +3259,70 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                         {
                             pDevice->pDevice9If = pDevice9If;
                             pDevice->hWnd = hWnd;
-                            bDevCreated = true;
-#ifdef VBOXDISP_TMP_NEWCREATEDEVICE
+                            pDevice->pRenderTargetRc = pRc;
+#if 0
                             IDirect3DSwapChain9 *pSwapChain;
                             hr = pDevice->pDevice9If->GetSwapChain(0, &pSwapChain);
                             Assert(hr == S_OK);
                             if (hr == S_OK)
                             {
-                                PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
+                                UINT i = 0, iAlloc = 0;
                                 IDirect3DSurface9* pD3D9Surf;
-                                hr = pSwapChain->GetFrontBufferData(&pD3D9Surf);
-                                Assert(hr == S_OK);
-                                if (hr == S_OK)
+                                for (; i < pResource->SurfCount; ++i)
                                 {
-                                    Assert(pD3D9Surf);
-                                    pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
-                                    pAllocation->pD3DIf = pD3D9Surf;
-                                    if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
+                                    iAlloc = (i < pResource->SurfCount - 1) ? i+1 : 0;
+                                    PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[iAlloc];
+                                    hr = pSwapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pD3D9Surf);
+                                    Assert(hr == S_OK);
+                                    if (hr == S_OK)
                                     {
-                                        Assert(pAllocation->pvMem);
-                                        D3DLOCKED_RECT lockInfo;
-                                        hr = pD3D9Surf->LockRect(&lockInfo, NULL, D3DLOCK_DISCARD);
+                                        Assert(pD3D9Surf);
+                                        pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
+                                        pAllocation->pD3DIf = pD3D9Surf;
+                                        hr = vboxWddmSurfSynchMem(pRc, pAllocation);
                                         Assert(hr == S_OK);
                                         if (hr == S_OK)
                                         {
-                                            vboxWddmLockUnlockMemSynch(pAllocation, &lockInfo, NULL, true /*bool bToLockInfo*/);
-                                            HRESULT tmpHr = pD3D9Surf->UnlockRect();
-                                            Assert(tmpHr == S_OK);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Assert(!pAllocation->pvMem);
-                                    }
-
-                                    pD3D9Surf->Release();
-
-                                    if (hr == S_OK)
-                                    {
-                                        UINT i = 1;
-                                        for (; i < pResource->SurfCount; ++i)
-                                        {
-                                            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
-                                            hr = pSwapChain->GetBackBuffer(i - 1, D3DBACKBUFFER_TYPE_MONO, &pD3D9Surf);
+                                            hr = pSwapChain->Present(NULL, NULL, NULL, NULL, 0);
                                             Assert(hr == S_OK);
                                             if (hr == S_OK)
                                             {
-                                                Assert(pD3D9Surf);
-                                                pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
-                                                pAllocation->pD3DIf = pD3D9Surf;
-                                                if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
-                                                {
-                                                    Assert(pAllocation->pvMem);
-                                                    D3DLOCKED_RECT lockInfo;
-                                                    hr = pD3D9Surf->LockRect(&lockInfo, NULL, D3DLOCK_DISCARD);
-                                                    Assert(hr == S_OK);
-                                                    if (hr == S_OK)
-                                                    {
-                                                        vboxWddmLockUnlockMemSynch(pAllocation, &lockInfo, NULL, true /*bool bToLockInfo*/);
-                                                        HRESULT tmpHr = pD3D9Surf->UnlockRect();
-                                                        Assert(tmpHr == S_OK);
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    Assert(!pAllocation->pvMem);
-                                                }
-                                                pD3D9Surf->Release();
-                                            }
-                                            else
-                                            {
-                                                for (UINT j = 0; j < i; ++j)
-                                                {
-                                                    pRc->aAllocations[j].pD3DIf->Release();
-                                                }
-                                                break;
+                                                continue;
                                             }
                                         }
+                                        pD3D9Surf->Release();
+                                    }
+
+                                    /* above we are enumerating from 1..N-1, 0,
+                                     * should neve release [0], as it was released above on failure */
+                                    for (UINT j = 1; j < iAlloc ? iAlloc : pResource->SurfCount - 1; ++j)
+                                    {
+                                        pRc->aAllocations[j].pD3DIf->Release();
                                     }
                                 }
+                                pSwapChain->Release();
                             }
+
+                            if (hr != S_OK)
+                                pDevice9If->Release();
 #endif
                         }
-                    }
-#ifdef VBOXDISP_TMP_NEWCREATEDEVICE
-                    break;
-#endif
-                }
-                else
-                {
-                    Assert(pDevice->hWnd);
-                }
 
-#ifndef VBOXDISP_TMP_NEWCREATEDEVICE
+                        if (hr != S_OK)
+                        {
+                            HRESULT tmpHr = VBoxDispWndDestroy(pAdapter, pDevice->hWnd);
+                            Assert(tmpHr == S_OK);
+                        }
+                    }
+                }
+#ifdef VBOXDISP_TMP_NEWCREATEDEVICE
+                else
+#else
                 if (hr == S_OK)
 #endif
                 {
+                    Assert(pDevice->hWnd);
                     Assert(pDevice->pDevice9If);
-                    bIssueCreateResource = true;
                     for (UINT i = 0; i < pResource->SurfCount; ++i)
                     {
                         PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
@@ -3366,44 +3343,22 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                             Assert(pD3D9Surf);
                             pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
                             pAllocation->pD3DIf = pD3D9Surf;
-                            if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
-                            {
-                                Assert(pAllocation->pvMem);
-                                D3DLOCKED_RECT lockInfo;
-                                hr = pD3D9Surf->LockRect(&lockInfo, NULL, D3DLOCK_DISCARD);
-                                Assert(hr == S_OK);
-                                if (hr == S_OK)
-                                {
-                                    vboxWddmLockUnlockMemSynch(pAllocation, &lockInfo, NULL, true /*bool bToLockInfo*/);
-                                    HRESULT tmpHr = pD3D9Surf->UnlockRect();
-                                    Assert(tmpHr == S_OK);
-                                }
-                            }
-                            else
-                            {
-                                Assert(!pAllocation->pvMem);
-                            }
+                            hr = vboxWddmSurfSynchMem(pRc, pAllocation);
+                            Assert(hr == S_OK);
+                            if (hr == S_OK)
+                                continue;
+
+                            /* fail branch */
+                            pD3D9Surf->Release();
                         }
-                        else
+
+                        for (UINT j = 0; j < i; ++j)
                         {
-                            for (UINT j = 0; j < i; ++j)
-                            {
-                                pRc->aAllocations[j].pD3DIf->Release();
-                            }
-                            break;
+                            pRc->aAllocations[j].pD3DIf->Release();
                         }
+                        break;
                     }
                 }
-#ifndef VBOXDISP_TMP_NEWCREATEDEVICE
-                if (hr != S_OK)
-                {
-                    if (bDevCreated)
-                    {
-                        VBoxDispWndDestroy(pAdapter, hWnd);
-                        pDevice->pDevice9If->Release();
-                    }
-                }
-#endif
             }
             else
             {
@@ -3596,6 +3551,8 @@ static HRESULT APIENTRY vboxWddmDDevSetDisplayMode(HANDLE hDevice, CONST D3DDDIA
     D3DDDICB_SETDISPLAYMODE DdiDm = {0};
     DdiDm.hPrimaryAllocation = pAlloc->hAllocation;
 //    DdiDm.PrivateDriverFormatAttribute = 0;
+    Assert(pDevice->pRenderTargetRc == pRc);
+
 #if 0
     IDirect3DSurface9 *pD3DIfSurf = (IDirect3DSurface9*)pAlloc->pD3DIf;
     hr = pDevice->pDevice9If->SetRenderTarget(0, pD3DIfSurf);
@@ -4179,10 +4136,22 @@ static HRESULT APIENTRY vboxWddmDDevSetRenderTarget(HANDLE hDevice, CONST D3DDDI
     PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hRenderTarget;
     Assert(pRc);
     Assert(pData->SubResourceIndex < pRc->cAllocations);
-    IDirect3DSurface9 *pD3D9Surf = (IDirect3DSurface9*)pRc->aAllocations[pData->SubResourceIndex].pD3DIf;
-    Assert(pD3D9Surf);
-    HRESULT hr = pDevice->pDevice9If->SetRenderTarget(pData->RenderTargetIndex, pD3D9Surf);
-    Assert(hr == S_OK);
+    HRESULT hr = S_OK;
+#ifdef VBOXDISP_TMP_NEWCREATEDEVICE
+    if (pRc != pDevice->pRenderTargetRc || pRc->cAllocations > 1 || pData->RenderTargetIndex)
+#endif
+    {
+        IDirect3DSurface9 *pD3D9Surf;
+        hr = vboxWddmSurfGet(pRc, pData->SubResourceIndex, &pD3D9Surf);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            Assert(pD3D9Surf);
+            hr = pDevice->pDevice9If->SetRenderTarget(pData->RenderTargetIndex, pD3D9Surf);
+            Assert(hr == S_OK);
+            pD3D9Surf->Release();
+        }
+    }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
