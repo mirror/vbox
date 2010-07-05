@@ -145,21 +145,33 @@ void crGetProcName( char *name, int maxLen )
 	tmp = tmpnam(NULL);
 	if (!tmp)
 		return;
-
 	/* pipe output of ps to temp file */
+#ifndef SunOS
 	sprintf(command, "ps > %s", tmp);
+#else
+	sprintf(command, "ps -e -o 'pid tty time comm'> %s", tmp);
+#endif
 	system(command);
 
 	/* open/scan temp file */
 	f = fopen(tmp, "r");
 	if (f) {
-		char buffer[1000], cmd[1000];
+		char buffer[1000], cmd[1000], *psz, *pname;
 		while (!feof(f)) {
 			int id;
 			fgets(buffer, 999, f);
 			sscanf(buffer, "%d %*s %*s %999s", &id, cmd);
 			if (id == pid) {
-				crStrncpy(name, cmd, maxLen);
+				for (pname=psz=&cmd[0]; *psz!=0; psz++)
+				{
+					switch (*psz)
+					{
+						case '/':
+						pname = psz+1;
+						break;
+					}
+				}
+				crStrncpy(name, pname, maxLen);
 				break;
 			}
 		}
