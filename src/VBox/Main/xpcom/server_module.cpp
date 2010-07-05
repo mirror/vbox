@@ -240,7 +240,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                 break;
 
             rc = dconServ->CreateInstance (serverID,
-                                           (nsCID) NS_VIRTUALBOX_CID,
+                                           CLSID_VirtualBox,
                                            aIID, aResult);
             if (NS_SUCCEEDED(rc))
                 break;

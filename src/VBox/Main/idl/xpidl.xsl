@@ -101,6 +101,20 @@
 
 #include "nsISupports.idl"
 #include "nsIException.idl"
+
+%{C++
+/**
+ * For escaping compound expression so they don't cause trouble when -pedantic
+ * is used.
+ * @internal
+ */
+#if defined(__cplusplus) &amp;&amp; defined(__GNUC__)
+# define VBOX_GCC_EXTENSION __extension__
+#endif
+#ifndef VBOX_GCC_EXTENSION
+# define VBOX_GCC_EXTENSION
+#endif
+%}
 </xsl:text>
   <!-- native typedefs for the 'mod="ptr"' attribute -->
   <xsl:text>
@@ -678,7 +692,7 @@
   <xsl:text>// for compatibility with Win32&#x0A;</xsl:text>
   <xsl:text>#define CLSID_</xsl:text>
   <xsl:value-of select="@name"/>
-  <xsl:text> (nsCID) NS_</xsl:text>
+  <xsl:text> VBOX_GCC_EXTENSION (nsCID) NS_</xsl:text>
   <xsl:call-template name="uppercase">
     <xsl:with-param name="str" select="@name"/>
   </xsl:call-template>
