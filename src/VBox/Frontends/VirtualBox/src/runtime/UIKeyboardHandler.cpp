@@ -53,6 +53,7 @@ const int XKeyRelease = KeyRelease;
 #endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
 # include "DarwinKeyboard.h"
 # include "UICocoaApplication.h"
 #endif /* Q_WS_MAC */
