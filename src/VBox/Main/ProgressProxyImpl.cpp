@@ -291,7 +291,7 @@ bool ProgressProxy::setOtherProgressObject(IProgress *pOtherProgress)
  */
 void ProgressProxy::clearOtherProgressObjectInternal(bool fEarly)
 {
-    if (mptrOtherProgress.isNotNull())
+    if (!mptrOtherProgress.isNull())
     {
         ComPtr<IProgress> ptrOtherProgress = mptrOtherProgress;
         mptrOtherProgress.setNull();
@@ -501,7 +501,7 @@ STDMETHODIMP ProgressProxy::COMGETTER(Canceled)(BOOL *aCanceled)
         hrc = Progress::COMGETTER(Canceled)(aCanceled);
         if (   SUCCEEDED(hrc)
             && !*aCanceled
-            && mptrOtherProgress.isNotNull()
+            && !mptrOtherProgress.isNull()
             && mCancelable)
         {
             hrc = mptrOtherProgress->COMGETTER(Canceled)(aCanceled);

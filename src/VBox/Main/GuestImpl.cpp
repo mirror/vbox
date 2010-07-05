@@ -564,7 +564,7 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
 
         /* Was progress cancelled before? */
         BOOL fCancelled;
-        ComAssert(it->second.pProgress.isNotNull());
+        ComAssert(!it->second.pProgress.isNull());
         it->second.pProgress->COMGETTER(Canceled)(&fCancelled);
 
         Utf8Str errMsg;
@@ -698,7 +698,7 @@ int Guest::notifyCtrlExecOut(uint32_t             u32Function,
 
         /* Was progress cancelled before? */
         BOOL fCancelled;
-        ComAssert(it->second.pProgress.isNotNull());
+        ComAssert(!it->second.pProgress.isNull());
         if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCancelled)) && fCancelled)
         {
             it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR, COM_IIDOF(IGuest),
@@ -752,7 +752,8 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackMapIter it)
     }
 
     /* Notify outstanding waits for progress ... */
-    if (it->second.pProgress && it->second.pProgress.isNotNull())
+    if (    it->second.pProgress
+         && !it->second.pProgress.isNull())
     {
         LogFlowFunc(("Handling progress of context ID=%u ...\n", it->first));
 
@@ -1001,7 +1002,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 BOOL fCancelled = FALSE;
                 if (it != mCallbackMap.end())
                 {
-                    ComAssert(it->second.pProgress.isNotNull());
+                    ComAssert(!it->second.pProgress.isNull());
 
                     /*
                      * Wait for the first stage (=0) to complete (that is starting the process).
@@ -1250,7 +1251,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
             BOOL fCancelled = FALSE;
             if (it != mCallbackMap.end())
             {
-                ComAssert(it->second.pProgress.isNotNull());
+                ComAssert(!it->second.pProgress.isNull());
 
                 /* Wait until operation completed. */
                 rc = it->second.pProgress->WaitForCompletion(aTimeoutMS);

@@ -135,7 +135,7 @@ HRESULT ProgressBase::protectedInit (AutoInitSpan &aAutoInitSpan,
     if (aInitiator)
     {
         ComObjPtr<VirtualBox> pVirtualBox(mParent);
-        if (!pVirtualBox.equalsTo(aInitiator))
+        if (!(pVirtualBox == aInitiator))
             unconst(mInitiator) = aInitiator;
     }
 #else

@@ -20,15 +20,18 @@
 # include <objbase.h>
 
 #else /* !defined (VBOX_WITH_XPCOM) */
-
 # include <stdlib.h>
-
 # include <nsCOMPtr.h>
 # include <nsIServiceManagerUtils.h>
-
+# include <nsIComponentManager.h>
+# include <ipcIService.h>
+# include <ipcCID.h>
+# include <ipcIDConnectService.h>
 # include <nsIInterfaceInfo.h>
 # include <nsIInterfaceInfoManager.h>
-
+// official XPCOM headers don't define it yet
+#define IPC_DCONNECTSERVICE_CONTRACTID \
+    "@mozilla.org/ipc/dconnect-service;1"
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
 #include "VBox/com/com.h"
@@ -129,6 +132,48 @@ void GetInterfaceNameByIID(const GUID &aIID, BSTR *aName)
 
 #endif /* !defined (VBOX_WITH_XPCOM) */
 }
+
+#ifdef VBOX_WITH_XPCOM
+
+HRESULT GlueCreateObjectOnServer(const CLSID &clsid,
+                                 const char *serverName,
+                                 const nsIID &id,
+                                 void** ppobj)
+{
+    HRESULT rc;
+    nsCOMPtr<ipcIService> ipcServ = do_GetService(IPC_SERVICE_CONTRACTID, &rc);
+    if (SUCCEEDED(rc))
+    {
+        PRUint32 serverID = 0;
+        rc = ipcServ->ResolveClientName(serverName, &serverID);
+        if (SUCCEEDED (rc))
+        {
+            nsCOMPtr<ipcIDConnectService> dconServ = do_GetService(IPC_DCONNECTSERVICE_CONTRACTID, &rc);
+            if (SUCCEEDED(rc))
+                rc = dconServ->CreateInstance(serverID,
+                                              clsid,
+                                              id,
+                                              ppobj);
+        }
+    }
+    return rc;
+}
+
+HRESULT GlueCreateInstance(const CLSID &clsid,
+                           const nsIID &id,
+                           void** ppobj)
+{
+    nsCOMPtr<nsIComponentManager> manager;
+    HRESULT rc = NS_GetComponentManager(getter_AddRefs(manager));
+    if (SUCCEEDED(rc))
+        rc = manager->CreateInstance(clsid,
+                                     nsnull,
+                                     id,
+                                     ppobj);
+    return rc;
+}
+
+#endif // VBOX_WITH_XPCOM
 
 int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen)
 {

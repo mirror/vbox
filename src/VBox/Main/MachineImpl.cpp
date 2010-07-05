@@ -2961,7 +2961,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                     if (pMedium.isNull())
                         continue;
 
-                    if (pMedium->getBase(&level).equalsTo(medium))
+                    if (pMedium->getBase(&level) == medium)
                     {
                         /* skip the hard disk if its currently attached (we
                          * cannot attach the same hard disk twice) */
@@ -3036,7 +3036,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         continue;
 
                     uint32_t level = 0;
-                    if (pMedium->getBase(&level).equalsTo(medium))
+                    if (pMedium->getBase(&level) == medium)
                     {
                         /* matched device, channel and bus (i.e. attached to the
                          * same place) will win and immediately stop the search;
@@ -8558,7 +8558,7 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
     {
         MediumAttachment *pAttach = *it;
         ComObjPtr<Medium> pMediumThis = pAttach->getMedium();
-        if (pMediumThis.equalsTo(pMedium))
+        if (pMediumThis == pMedium)
             return pAttach;
     }
 
@@ -8686,7 +8686,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
                     ++oldIt)
             {
                 MediumAttachment *pOldAttach = *oldIt;
-                if (pOldAttach->getMedium().equalsTo(pMedium))
+                if (pOldAttach->getMedium() == pMedium)
                 {
                     LogFlowThisFunc(("--> medium '%s' was attached before, will not remove\n", pMedium->getName().raw()));
 
@@ -9717,8 +9717,8 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     }
 
     /* remove the association between the peer machine and this session machine */
-    Assert(mData->mSession.mMachine == this ||
-           aReason == Uninit::Unexpected);
+    Assert(   (SessionMachine*)mData->mSession.mMachine == this
+            || aReason == Uninit::Unexpected);
 
     /* reset the rest of session data */
     mData->mSession.mMachine.setNull();
@@ -10035,7 +10035,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
      * thus locking it here is required by the lock order rules. */
     AutoMultiWriteLock2 alock(mParent->lockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    if (control.equalsTo(mData->mSession.mDirectControl))
+    if (control == mData->mSession.mDirectControl)
     {
         ComAssertRet(aProgress, E_POINTER);
 
@@ -10084,7 +10084,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
             mData->mSession.mRemoteControls.begin();
         while (it != mData->mSession.mRemoteControls.end())
         {
-            if (control.equalsTo(*it))
+            if (control == *it)
                 break;
             ++it;
         }
