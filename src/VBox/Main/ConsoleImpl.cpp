@@ -558,6 +558,11 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
 
     /* Create associated child COM objects */
 
+    // Event source may be needed by other children
+    unconst(mEventSource).createObject();
+    rc = mEventSource->init(static_cast<IConsole*>(this));
+    AssertComRCReturnRC(rc);
+
     unconst(mGuest).createObject();
     rc = mGuest->init(this);
     AssertComRCReturnRC(rc);
@@ -599,10 +604,6 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
 
     unconst(mAudioSniffer) = new AudioSniffer(this);
     AssertReturn(mAudioSniffer, E_FAIL);
-
-    unconst(mEventSource).createObject();
-    rc = mEventSource->init(static_cast<IConsole*>(this));
-    AssertComRCReturnRC(rc);
 
 #ifdef RT_OS_WINDOWS
     if (SUCCEEDED(rc))
@@ -4803,10 +4804,7 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
 
     com::SafeArray <BYTE> aShape(ComSafeArrayInArg (pShape));
     if (aShape.size() != 0)
-    {
-        mCallbackData.mpsc.shape.resize(aShape.size());
-        ::memcpy( mCallbackData.mpsc.shape.raw(), aShape.raw(), aShape.size());
-    }
+        mCallbackData.mpsc.shape.initFrom(aShape);
     else
         mCallbackData.mpsc.shape.resize(0);
     mCallbackData.mpsc.valid = true;
@@ -4817,9 +4815,9 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
      * @todo: better solution
      */
 #ifdef RT_OS_WINDOWS
-    CONSOLE_DO_CALLBACKS7(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, pShape);
+    CONSOLE_DO_CALLBACKS7(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, mCallbackData.mpsc.shape.raw());
 #else
-    CONSOLE_DO_CALLBACKS8(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, pShapeSize, pShape);
+    CONSOLE_DO_CALLBACKS8(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, mCallbackData.mpsc.shape.size(), mCallbackData.mpsc.shape.raw());
 #endif
 
 #if 0

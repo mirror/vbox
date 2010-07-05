@@ -92,7 +92,7 @@ typedef struct _DISPLAYFBINFO
 
 class ATL_NO_VTABLE Display :
     public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IConsoleCallback),
+    VBOX_SCRIPTABLE_IMPL(IEventListener),
     public VirtualBoxSupportErrorInfoImpl<Display, IDisplay>,
     public VirtualBoxSupportTranslation<Display>,
     VBOX_SCRIPTABLE_IMPL(IDisplay)
@@ -110,7 +110,7 @@ public:
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IDisplay)
         COM_INTERFACE_ENTRY2(IDispatch,IDisplay)
-        COM_INTERFACE_ENTRY(IConsoleCallback)
+        COM_INTERFACE_ENTRY(IEventListener)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (Display)
@@ -147,104 +147,8 @@ public:
     void VideoAccelVRDP (bool fEnable);
 #endif /* VBOX_WITH_VRDP */
 
-    // IConsoleCallback methods
-    STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                         ULONG width, ULONG height, ComSafeArrayIn(BYTE,shape))
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnStateChange)(MachineState_T machineState);
-
-    STDMETHOD(OnAdditionsStateChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnStorageControllerChange) ()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnMediumChange)(IMediumAttachment *aMediumAttachment)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnVRDPServerChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnRemoteDisplayInfoChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnUSBControllerChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *device, BOOL attached,
-                                      IVirtualBoxErrorInfo *message)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnSharedFolderChange) (Scope_T aScope)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTR id, IN_BSTR message)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnCanShowWindow)(BOOL *canShow)
-    {
-        if (canShow)
-            *canShow = TRUE;
-        return S_OK;
-    }
-
-    STDMETHOD(OnShowWindow)(ULONG64 *winId)
-    {
-        if (winId)
-            *winId = 0;
-        return S_OK;
-    }
+    // IEventListener methods
+    STDMETHOD(HandleEvent)(IEvent * aEvent);
 
     // IDisplay methods
     STDMETHOD(GetScreenResolution)(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel);

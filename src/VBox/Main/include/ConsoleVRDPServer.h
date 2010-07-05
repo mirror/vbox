@@ -177,7 +177,7 @@ private:
 
     IFramebuffer *maFramebuffers[SchemaDefs::MaxGuestMonitors];
 
-    IConsoleCallback *mConsoleCallback;
+    IEventListener *mConsoleListener;
 
     VRDPInputSynch m_InputSynch;
 
