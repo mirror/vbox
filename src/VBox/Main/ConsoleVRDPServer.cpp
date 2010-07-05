@@ -1158,7 +1158,7 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
         console->COMGETTER(EventSource)(es.asOutParam());
         mConsoleListener = new VRDPConsoleListener(this);
         mConsoleListener->AddRef();
-        com::SafeArray <VBoxEventType_T> eventTypes(3);
+        com::SafeArray <VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnMousePointerShapeChange);
         eventTypes.push_back(VBoxEventType_OnMouseCapabilityChange);
         eventTypes.push_back(VBoxEventType_OnKeyboardLedsChange);
