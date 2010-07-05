@@ -361,9 +361,7 @@ typedef struct BUSLOGIC
     /** Queue to send tasks to R3. - RC ptr */
     RCPTRTYPE(PPDMQUEUE)            pNotifierQueueRC;
 
-#if HC_ARCH_BITS == 64
     uint32_t                        Alignment2;
-#endif
 
     /** Critical section protecting access to the interrupt status register. */
     PDMCRITSECT                     CritSectIntr;
