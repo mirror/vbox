@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,219 +36,232 @@
 #endif
 
 #if !defined (VBOX_WITH_XPCOM)
-
-#include <atlbase.h>
-
-#ifndef _ATL_IIDOF
-# define _ATL_IIDOF(c) __uuidof(c)
-#endif
-
-#else /* !defined (VBOX_WITH_XPCOM) */
-
-#include <nsXPCOM.h>
-#include <nsIComponentManager.h>
-#include <nsCOMPtr.h>
-#include <ipcIService.h>
-#include <nsIServiceManagerUtils.h>
-#include <ipcCID.h>
-#include <ipcIDConnectService.h>
-
-// official XPCOM headers don't define it yet
-#define IPC_DCONNECTSERVICE_CONTRACTID \
-    "@mozilla.org/ipc/dconnect-service;1"
-
+ #include <atlbase.h>
+ #ifndef _ATL_IIDOF
+ # define _ATL_IIDOF(c) __uuidof(c)
+ #endif
+#else
+ #include <nsISupportsUtils.h>
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
-#include <VBox/com/defs.h>
-#include <VBox/com/assert.h>
-
-#define LOGREF(prefix, pObj, cRefs) com::LogRef("%s {%p} cRefs=%d\n", (prefix), (pObj), (cRefs))
-
-namespace com
-{
-    void LogRef(const char *pcszFormat, ...);
-}
+#include <VBox/com/com.h>
 
 /**
- *  Returns @c true if two interface pointers are equal.
+ *  COM autopointer class which takes care of all required reference counting.
  *
- *  According to the COM Identity Rule, interface pointers are considered to be
- *  equal if and only if IUnknown pointers queried on these interfaces pointers
- *  are equal (e.g. have the same binary value). Equal interface pointers
- *  represent the same object even if they are pointers to different interfaces.
+ *  This automatically calls the required basic COM methods on COM pointers
+ *  given to it:
  *
- *  @param I1   Class of the first interface pointer (must be derived from
- *              IUnknown).
- *  @param I2   Class of the second interface pointer (must be derived from
- *              IUnknown).
+ *  --  AddRef() gets called automatically whenever a new COM pointer is assigned
+ *      to the ComPtr instance (either in the copy constructor or by assignment);
+ *
+ *  --  Release() gets called automatically by the destructor and when an existing
+ *      object gets released in assignment;
+ *
+ *  --  QueryInterface() gets called automatically when COM pointers get converted
+ *      from one interface to another.
+ *
+ *  Example usage:
+ *
+ *  @code
+ *
+ *  {
+ *      ComPtr<IMachine> pMachine = findMachine("blah");         // calls AddRef()
+ *      ComPtr<IUnknown> pUnknown = pMachine;                    // calls QueryInterface()
+ *  }           # ComPtr destructor of both instances calls Release()
+ *
+ *  @endcode
  */
-template <class I1, class I2>
-inline bool ComPtrEquals(I1 *aThis, I2 *aThat)
-{
-    IUnknown *thatUnk = NULL, *thisUnk = NULL;
-    if (aThat)
-        aThat->QueryInterface(COM_IIDOF(IUnknown), (void**)&thatUnk);
-    if (aThis)
-        aThis->QueryInterface(COM_IIDOF(IUnknown), (void**)&thisUnk);
-    bool equal = (thisUnk == thatUnk);
-    if (thisUnk)
-        thisUnk->Release();
-    if (thatUnk)
-        thatUnk->Release();
-    return equal;
-}
-
-/* specialization for <Any, IUnknown> */
-template <class I1>
-inline bool ComPtrEquals(I1 *aThis, IUnknown *aThat)
-{
-    IUnknown *thisUnk = NULL;
-    if (aThis)
-        aThis->QueryInterface(COM_IIDOF(IUnknown), (void**)&thisUnk);
-    bool equal = (thisUnk == aThat);
-    if (thisUnk)
-        thisUnk->Release();
-    return equal;
-}
-
-/** Specialization for <IUnknown, Any> */
-template <class I2>
-inline bool ComPtrEquals(IUnknown *aThis, I2 *aThat)
-{
-    IUnknown *thatUnk = NULL;
-    if (aThat)
-        aThat->QueryInterface(COM_IIDOF(IUnknown), (void**)&thatUnk);
-    bool equal = (aThis == thatUnk);
-    if (thatUnk)
-        thatUnk->Release();
-    return equal;
-}
-
-/* specialization for IUnknown */
-template<>
-inline bool ComPtrEquals<IUnknown, IUnknown>(IUnknown *aThis, IUnknown *aThat)
-{
-    return aThis == aThat;
-}
-
-/**
- *  Base template for smart COM pointers. Not intended to be used directly.
- */
-template <class C>
-class ComPtrBase
+template <class T>
+class ComPtr
 {
 public:
 
-    /* special template to disable AddRef()/Release() */
-    template <class I>
-    class NoAddRefRelease : public I
+    /**
+     * Default constructor, sets up a NULL pointer.
+     */
+    ComPtr()
+        : m_p(NULL)
+    { }
+
+    /**
+     * Destructor. Calls Release() on the contained COM object.
+     */
+    ~ComPtr()
     {
-        private:
-#if !defined (VBOX_WITH_XPCOM)
-            STDMETHOD_(ULONG, AddRef)() = 0;
-            STDMETHOD_(ULONG, Release)() = 0;
-#else /* !defined (VBOX_WITH_XPCOM) */
-            NS_IMETHOD_(nsrefcnt) AddRef(void) = 0;
-            NS_IMETHOD_(nsrefcnt) Release(void) = 0;
-#endif /* !defined (VBOX_WITH_XPCOM) */
-    };
-
-protected:
-
-    ComPtrBase()
-        : p(NULL)
-    {}
-
-    ComPtrBase(const ComPtrBase &that)
-        : p(that.p)
-    {
-        addref();
+        cleanup();
     }
 
-    ComPtrBase(C *that_p)
-        : p(that_p)
+    /**
+     * Copy constructor from another ComPtr of any interface.
+     *
+     * This calls QueryInterface(T) and can result in a NULL pointer if the input
+     * pointer p does not support the ComPtr interface T.
+     *
+     * Does not call AddRef explicitly because if QueryInterface succeeded, then
+     * the refcount will have been increased by one already .
+     */
+    template <class T2>
+    ComPtr(const ComPtr<T2> &that)
     {
-        addref();
+        m_p = NULL;
+        if (!that.isNull())
+            that->QueryInterface(COM_IIDOF(T), (void**)&m_p);
     }
 
-    ~ComPtrBase()
+    /**
+     * Specialization: copy constructor from another ComPtr<T>. Calls AddRef().
+     */
+    ComPtr(const ComPtr &that)
     {
-        release();
+        copyFrom(that.m_p);
     }
 
-    ComPtrBase &operator=(const ComPtrBase &that)
+    /**
+     * Copy constructor from another interface pointer of any interface.
+     *
+     * This calls QueryInterface(T) and can result in a NULL pointer if the input
+     * pointer p does not support the ComPtr interface T.
+     *
+     * Does not call AddRef explicitly because if QueryInterface succeeded, then
+     * the refcount will have been increased by one already .
+     */
+    template <class T2>
+    ComPtr(T2 *p)
     {
-        safe_assign(that.p);
+        m_p = NULL;
+        if (p)
+            p->QueryInterface(COM_IIDOF(T), (void**)&m_p);
+    }
+
+    /**
+     * Specialization: copy constructor from a plain T* pointer. Calls AddRef().
+     */
+    ComPtr(T *that_p)
+    {
+        copyFrom(that_p);
+    }
+
+    /**
+     * Assignment from another ComPtr of any interface.
+     *
+     * This calls QueryInterface(T) and can result in a NULL pointer if the input
+     * pointer p does not support the ComPtr interface T.
+     *
+     * Does not call AddRef explicitly because if QueryInterface succeeded, then
+     * the refcount will have been increased by one already .
+     */
+    template <class T2>
+    ComPtr& operator=(const ComPtr<T2> &that)
+    {
+        return operator=((T2*)that);
+    }
+
+    /**
+     * Specialization of the previous: assignment from another ComPtr<T>.
+     * Calls Release() on the previous member pointer, if any, and AddRef() on the new one.
+     */
+    ComPtr& operator=(const ComPtr &that)
+    {
+        return operator=((T*)that);
+    }
+
+    /**
+     * Assignment from another interface pointer of any interface.
+     *
+     * This calls QueryInterface(T) and can result in a NULL pointer if the input
+     * pointer p does not support the ComPtr interface T.
+     *
+     * Does not call AddRef explicitly because if QueryInterface succeeded, then
+     * the refcount will have been increased by one already .
+     */
+    template <class T2>
+    ComPtr& operator=(T2 *p)
+    {
+        cleanup();
+        if (p)
+            p->QueryInterface(COM_IIDOF(T), (void**)&m_p);
         return *this;
     }
 
-    ComPtrBase &operator=(C *that_p)
+    /**
+     * Specialization of the previous: assignment from a plain T* pointer.
+     * Calls Release() on the previous member pointer, if any, and AddRef() on the new one.
+     */
+    ComPtr& operator=(T *p)
     {
-        safe_assign(that_p);
+        cleanup();
+        copyFrom(p);
         return *this;
     }
 
-public:
-
+    /**
+     * Resets the ComPtr to NULL. Works like a NULL assignment except it avoids the templates.
+     */
     void setNull()
     {
-        release();
-        p = NULL;
+        cleanup();
     }
 
+    /**
+     * Returns true if the pointer is NULL.
+     */
     bool isNull() const
     {
-        return (p == NULL);
+        return (m_p == NULL);
     }
 
-    bool isNotNull() const
+    bool operator<(T* p) const
     {
-        return (p != NULL);
+        return m_p < p;
     }
 
-    bool operator!() const { return isNull(); }
-
-    bool operator<(C* that_p) const { return p < that_p; }
-    bool operator==(C* that_p) const { return p == that_p; }
-
-    template <class I>
-    bool equalsTo(I *aThat) const
+    /**
+     * Conversion operator, most often used to pass ComPtr instances as
+     * parameters to COM method calls.
+     */
+    operator T*() const
     {
-        return ComPtrEquals(p, aThat);
+        return m_p;
     }
-
-    template <class OC>
-    bool equalsTo(const ComPtrBase <OC> &oc) const
-    {
-        return equalsTo((OC*)oc);
-    }
-
-    /** Intended to pass instances as in parameters to interface methods */
-    operator C*() const { return p; }
 
     /**
      *  Dereferences the instance (redirects the -> operator to the managed
      *  pointer).
      */
-#ifndef IN_SLICKEDIT
-    NoAddRefRelease<C>* operator->() const
+    T* operator->() const
     {
-        AssertMsg(p, ("Managed pointer must not be null\n"));
-        return (NoAddRefRelease<C>*)p;
+        return m_p;
     }
-#else  /* IN_SLICKEDIT - The editor doesn't quite grok the above magic, sorry about the mess. */
-    C *operator->() const { return this->p; }
-#endif
 
-    template <class I>
-    HRESULT queryInterfaceTo(I **pp) const
+    /**
+     * Special method which allows using a ComPtr as an output argument of a COM method.
+     * The ComPtr will then accept the method's interface pointer without calling AddRef()
+     * itself, since by COM convention this must has been done by the method which created
+     * the object that is being accepted.
+     *
+     * The ComPtr destructor will then still invoke Release() so that the returned object
+     * can get cleaned up properly.
+     */
+    T** asOutParam()
+    {
+        cleanup();
+        return &m_p;
+    }
+
+    /**
+     * Converts the contained pointer to a different interface
+     * by calling QueryInterface() on it.
+     * @param pp
+     * @return
+     */
+    template <class T2>
+    HRESULT queryInterfaceTo(T2 **pp) const
     {
         if (pp)
         {
-            if (p)
-            {
-                return p->QueryInterface(COM_IIDOF(I), (void**)pp);
-            }
+            if (m_p)
+                return m_p->QueryInterface(COM_IIDOF(T2), (void**)pp);
             else
             {
                 *pp = NULL;
@@ -259,109 +272,45 @@ public:
         return E_INVALIDARG;
     }
 
-    /** Intended to pass instances as out parameters to interface methods */
-    C **asOutParam()
+    /**
+     * Equality test operator. By COM definition, two COM objects are considered
+     * equal if their IUnknown interface pointers are equal.
+     */
+    template <class T2>
+    bool operator==(T2* p)
     {
-        setNull();
-        return &p;
-    }
+        IUnknown *p1 = NULL;
+        bool fNeedsRelease1 = false;
+        if (m_p)
+            fNeedsRelease1 = (SUCCEEDED(m_p->QueryInterface(COM_IIDOF(IUnknown), (void**)&p1)));
 
-private:
-
-    void addref()
-    {
+        IUnknown *p2 = NULL;
+        bool fNeedsRelease2 = false;
         if (p)
-            p->AddRef();
-    }
+            fNeedsRelease2 = (SUCCEEDED(p->QueryInterface(COM_IIDOF(IUnknown), (void**)&p2)));
 
-    void release()
-    {
-        if (p)
-            p->Release();
-    }
-
-    void safe_assign (C *that_p)
-    {
-        /* be aware of self-assignment */
-        if (that_p)
-            that_p->AddRef();
-        release();
-        p = that_p;
-    }
-
-    C *p;
-};
-
-/**
- *  Smart COM pointer wrapper that automatically manages refcounting of
- *  interface pointers.
- *
- *  @param I    COM interface class
- */
-template <class I>
-class ComPtr : public ComPtrBase<I>
-{
-    typedef ComPtrBase<I> Base;
-
-public:
-
-    ComPtr() : Base() {}
-    ComPtr(const ComPtr &that) : Base(that) {}
-    ComPtr& operator=(const ComPtr &that)
-    {
-        Base::operator= (that);
-        return *this;
-    }
-
-    template <class OI>
-    ComPtr(OI *that_p) : Base() { operator=(that_p); }
-
-    /* specialization for I */
-    ComPtr(I *that_p) : Base(that_p) {}
-
-    template <class OC>
-    ComPtr(const ComPtr<OC> &oc) : Base() { operator=((OC*)oc); }
-
-    template <class OI>
-    ComPtr &operator=(OI *that_p)
-    {
-        if (that_p)
-            that_p->QueryInterface(COM_IIDOF(I), (void**)Base::asOutParam());
-        else
-            Base::setNull();
-        return *this;
-    }
-
-    /* specialization for I */
-    ComPtr &operator=(I *that_p)
-    {
-        Base::operator=(that_p);
-        return *this;
-    }
-
-    template <class OC>
-    ComPtr &operator=(const ComPtr<OC> &oc)
-    {
-        return operator=((OC*)oc);
+        bool f = p1 == p2;
+        if (fNeedsRelease1)
+            p1->Release();
+        if (fNeedsRelease2)
+            p2->Release();
+        return f;
     }
 
     /**
      *  Creates an in-process object of the given class ID and starts to
      *  manage a reference to the created object in case of success.
      */
-    HRESULT createInprocObject (const CLSID &clsid)
+    HRESULT createInprocObject(const CLSID &clsid)
     {
         HRESULT rc;
-        I *obj = NULL;
+        T *obj = NULL;
 #if !defined (VBOX_WITH_XPCOM)
-        rc = CoCreateInstance(clsid, NULL, CLSCTX_INPROC_SERVER, _ATL_IIDOF(I),
+        rc = CoCreateInstance(clsid, NULL, CLSCTX_INPROC_SERVER, _ATL_IIDOF(T),
                               (void**)&obj);
 #else /* !defined (VBOX_WITH_XPCOM) */
-        nsCOMPtr<nsIComponentManager> manager;
-        rc = NS_GetComponentManager(getter_AddRefs(manager));
-        if (SUCCEEDED(rc))
-            rc = manager->CreateInstance(clsid, nsnull, NS_GET_IID(I),
-                                         (void **) &obj);
+        using namespace com;
+        rc = GlueCreateInstance(clsid, NS_GET_IID(T), (void**)&obj);
 #endif /* !defined (VBOX_WITH_XPCOM) */
         *this = obj;
         if (SUCCEEDED(rc))
@@ -382,8 +331,8 @@ public:
     {
 #if !defined (VBOX_WITH_XPCOM)
         HRESULT rc;
-        I *obj = NULL;
-        rc = CoCreateInstance(clsid, NULL, CLSCTX_LOCAL_SERVER, _ATL_IIDOF(I),
+        T *obj = NULL;
+        rc = CoCreateInstance(clsid, NULL, CLSCTX_LOCAL_SERVER, _ATL_IIDOF(T),
                               (void**)&obj);
         *this = obj;
         if (SUCCEEDED(rc))
@@ -403,115 +352,75 @@ public:
      */
     HRESULT createObjectOnServer(const CLSID &clsid, const char *serverName)
     {
-        HRESULT rc;
-        I *obj = NULL;
-        nsCOMPtr<ipcIService> ipcServ = do_GetService(IPC_SERVICE_CONTRACTID, &rc);
-        if (SUCCEEDED(rc))
-        {
-            PRUint32 serverID = 0;
-            rc = ipcServ->ResolveClientName(serverName, &serverID);
-            if (SUCCEEDED (rc))
-            {
-                nsCOMPtr<ipcIDConnectService> dconServ = do_GetService(IPC_DCONNECTSERVICE_CONTRACTID, &rc);
-                if (SUCCEEDED(rc))
-                    rc = dconServ->CreateInstance(serverID, clsid, NS_GET_IID(I),
-                                                  (void**)&obj);
-            }
-        }
+        T *obj = NULL;
+        HRESULT rc = GlueCreateObjectOnServer(clsid, serverName, NS_GET_IID(T), (void**)&obj);
         *this = obj;
         if (SUCCEEDED(rc))
             obj->Release();
         return rc;
     }
 #endif
+
+protected:
+    void copyFrom(T* p)
+    {
+        if ((m_p = p))
+            m_p->AddRef();
+    }
+
+    void cleanup()
+    {
+        if (m_p)
+        {
+            m_p->Release();
+            m_p = NULL;
+        }
+    }
+
+    T *m_p;
 };
 
 /**
- *  Specialization of ComPtr<> for IUnknown to guarantee identity
- *  by always doing QueryInterface() when constructing or assigning from
- *  another interface pointer disregarding its type.
- */
-template<>
-class ComPtr<IUnknown> : public ComPtrBase<IUnknown>
-{
-    typedef ComPtrBase<IUnknown> Base;
-
-public:
-
-    ComPtr() : Base() {}
-    ComPtr(const ComPtr &that) : Base (that) {}
-    ComPtr& operator=(const ComPtr &that)
-    {
-        Base::operator=(that);
-        return *this;
-    }
-
-    template <class OI>
-    ComPtr(OI *that_p) : Base() { operator=(that_p); }
-
-    template <class OC>
-    ComPtr(const ComPtr<OC> &oc) : Base() { operator=((OC*)oc); }
-
-    template <class OI>
-    ComPtr &operator=(OI *that_p)
-    {
-        if (that_p)
-            that_p->QueryInterface(COM_IIDOF(IUnknown), (void**)Base::asOutParam());
-        else
-            Base::setNull();
-        return *this;
-    }
-
-    template <class OC>
-    ComPtr &operator=(const ComPtr<OC> &oc)
-    {
-        return operator=((OC*)oc);
-    }
-};
-
-/**
- *  Smart COM pointer wrapper that automatically manages refcounting of
- *  pointers to interface implementation classes created on the component's
- *  (i.e. the server's) side. Differs from ComPtr by providing additional
- *  platform independent operations for creating new class instances.
+ * ComObjPtr is a more specialized variant of ComPtr designed to be used for implementation
+ * objects. For example, use ComPtr<IMachine> for a client pointer that calls the interface
+ * but ComObjPtr<Machine> for a pointer to an implementation object.
  *
- *  @param C    class that implements some COM interface
+ * The methods behave the same except that ComObjPtr has the additional createObject()
+ * method which allows for instantiating a new implementation object.
  */
-template <class C>
-class ComObjPtr : public ComPtrBase<C>
+template <class T>
+class ComObjPtr : public ComPtr<T>
 {
-    typedef ComPtrBase<C> Base;
-
 public:
 
-    ComObjPtr() : Base() {}
-    ComObjPtr(const ComObjPtr &that) : Base(that) {}
-    ComObjPtr(C *that_p) : Base(that_p) {}
+    ComObjPtr()
+        : ComPtr<T>()
+    {}
+
+    ComObjPtr(const ComObjPtr &that)
+        : ComPtr<T>(that)
+    {}
+
+    ComObjPtr(T *that_p)
+        : ComPtr<T>(that_p)
+    {}
 
     ComObjPtr& operator=(const ComObjPtr &that)
     {
-        Base::operator=(that);
+        ComPtr<T>::operator=(that);
         return *this;
     }
 
-    ComObjPtr& operator=(C *that_p)
+    ComObjPtr& operator=(T *that_p)
     {
-        Base::operator=(that_p);
+        ComPtr<T>::operator=(that_p);
         return *this;
     }
-
-#ifdef IN_SLICKEDIT /* Doesn't fully grok the stuff otherwise, sorry for the bloat. */
-    C *operator->() const { return this->p; }
-#endif
 
     /**
      *  Creates a new server-side object of the given component class and
      *  immediately starts to manage a pointer to the created object (the
      *  previous pointer, if any, is of course released when appropriate).
-     *
-     *  @note This method should be used with care on weakly referenced
-     *  smart pointers because it leaves the newly created object completely
-     *  unreferenced (i.e., with reference count equal to zero),
      *
      *  @note Win32: when VBOX_COM_OUTOFPROC_MODULE is defined, the created
      *  object doesn't increase the lock count of the server module, as it
@@ -522,7 +431,7 @@ public:
         HRESULT rc;
 #if !defined (VBOX_WITH_XPCOM)
 #   ifdef VBOX_COM_OUTOFPROC_MODULE
-        CComObjectNoLock<C> *obj = new CComObjectNoLock<C>();
+        CComObjectNoLock<T> *obj = new CComObjectNoLock<T>();
         if (obj)
         {
             obj->InternalFinalConstructAddRef();
@@ -532,11 +441,11 @@ public:
         else
             rc = E_OUTOFMEMORY;
 #   else
-        CComObject<C> *obj = NULL;
-        rc = CComObject<C>::CreateInstance(&obj);
+        CComObject<T> *obj = NULL;
+        rc = CComObject<T>::CreateInstance(&obj);
 #   endif
 #else /* !defined (VBOX_WITH_XPCOM) */
-        CComObject<C> *obj = new CComObject<C>();
+        CComObject<T> *obj = new CComObject<T>();
         if (obj)
             rc = obj->FinalConstruct();
         else
