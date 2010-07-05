@@ -83,7 +83,7 @@
    experimenting with different constants, and turns out to be a prime.
    this is one of the algorithms used in berkeley db (see sleepycat) and
    elsewhere. */
-inline uint32_t sdbm(const char *str, size_t *pcch)
+DECLINLINE(uint32_t) sdbm(const char *str, size_t *pcch)
 {
     uint8_t *pu8 = (uint8_t *)str;
     uint32_t hash = 0;
@@ -92,7 +92,7 @@ inline uint32_t sdbm(const char *str, size_t *pcch)
     while ((c = *pu8++))
         hash = c + (hash << 6) + (hash << 16) - hash;
 
-    *pcch = (uintptr_t)pu8 - (uintptr_t)str;
+    *pcch = (uintptr_t)pu8 - (uintptr_t)str - 1;
     return hash;
 }
 
@@ -119,7 +119,7 @@ RTDECL(bool) RTStrSpaceInsert(PRTSTRSPACE pStrSpace, PRTSTRSPACECORE pStr)
             return false;
     pStr->pList = pMatch->pList;
     pMatch->pList = pStr;
-    return false;
+    return true;
 }
 RT_EXPORT_SYMBOL(RTStrSpaceInsert);
 
