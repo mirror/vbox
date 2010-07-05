@@ -636,7 +636,7 @@ static const nsModuleComponentInfoEx components[] =
 {
     nsModuleComponentInfoEx(
         "VirtualBox component",
-        (nsCID) NS_VIRTUALBOX_CID,
+        CLSID_VirtualBox,
         NS_VIRTUALBOX_CONTRACTID,
         VirtualBoxConstructor, // constructor funcion
         NULL, // registration function
