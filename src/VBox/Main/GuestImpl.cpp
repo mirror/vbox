@@ -699,7 +699,7 @@ int Guest::notifyCtrlExecOut(uint32_t             u32Function,
         /* Was progress cancelled before? */
         BOOL fCancelled;
         ComAssert(it->second.pProgress.isNotNull());
-        if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCancelled) && fCancelled))
+        if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCancelled)) && fCancelled)
         {
             it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR, COM_IIDOF(IGuest),
                                                  (CBSTR)Guest::getComponentName(), Guest::tr("The output operation was cancelled"));
