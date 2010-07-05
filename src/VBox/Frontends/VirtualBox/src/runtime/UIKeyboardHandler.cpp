@@ -56,6 +56,7 @@ const int XKeyRelease = KeyRelease;
 # include "VBoxUtils-darwin.h"
 # include "DarwinKeyboard.h"
 # include "UICocoaApplication.h"
+# include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
 /* Enums representing different keyboard-states: */

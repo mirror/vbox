@@ -27,6 +27,10 @@
 #include "UIMachineDefs.h"
 #include "COMDefs.h"
 
+#ifdef Q_WS_MAC
+# include <CoreFoundation/CFBase.h>
+#endif /* Q_WS_MAC */
+
 /* Global forwards */
 class QWidget;
 
