@@ -104,7 +104,7 @@
           <xsl:value-of select="concat('ComSafeArrayIn(',$elemtype,',', $param,')')"/>
         </xsl:when>
         <xsl:when test="$param and ($dir='out')">
-          <xsl:value-of select="concat('ComSafeArrayOut(',$elemtype,',', $param,')')"/>
+          <xsl:value-of select="concat('ComSafeArrayOut(',$elemtype,', ', $param, ')')"/>
         </xsl:when>
         <xsl:otherwise>
           <xsl:value-of select="concat('com::SafeArray&lt;',$elemtype,'&gt;')"/>
@@ -199,7 +199,16 @@
   <xsl:param name="safearray"/>
   <xsl:choose>
     <xsl:when test="$safearray='yes'">
-      <xsl:value-of select="concat('         ', $member, '.detachTo(ComSafeArrayOutArg (', $param, '));&#10;')"/>
+      <xsl:variable name="elemtype">
+        <xsl:call-template name="typeIdl2Back">
+             <xsl:with-param name="type" select="@type" />
+             <xsl:with-param name="safearray" select="''" />
+             <xsl:with-param name="dir" select="'in'" />
+        </xsl:call-template>
+      </xsl:variable>
+      <xsl:value-of select="concat('         SafeArray&lt;', $elemtype,'&gt; result;&#10;')"/>
+      <xsl:value-of select="concat('         ', $member, '.cloneTo(result);&#10;')"/>
+      <xsl:value-of select="concat('         result.detachTo(ComSafeArrayOutArg(', $param, '));&#10;')"/>
     </xsl:when>
     <xsl:otherwise>
       <xsl:choose>
@@ -475,7 +484,7 @@
     }
 ]]></xsl:text>
   <xsl:choose>
-    <xsl:when test="$isVeto">
+    <xsl:when test="$isVeto='yes'">
 <xsl:text><![CDATA[
     HRESULT init (IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable = TRUE)
     {
@@ -495,8 +504,8 @@
        return mEvent->GetVetos(ComSafeArrayOutArg(aVetos));
     }
 private:
+    ComObjPtr<VBoxVetoEvent>      mEvent;
 ]]></xsl:text>
-      <xsl:value-of select="       '    ComObjPtr&lt;VBoxVetoEvent&gt;      mEvent;&#10;'" />
     </xsl:when>
     <xsl:otherwise>
 <xsl:text><![CDATA[
@@ -505,8 +514,8 @@ private:
         return mEvent->init(aSource, aType, aWaitable);
     }
 private:
+    ComObjPtr<VBoxEvent>      mEvent;
 ]]></xsl:text>
-      <xsl:value-of select="       '    ComObjPtr&lt;VBoxEvent&gt;      mEvent;&#10;'" />
     </xsl:otherwise>
   </xsl:choose>
   <xsl:call-template name="genAttrCode">
@@ -606,7 +615,9 @@ HRESULT VBoxEventDesc::init(IEventSource* aSource, VBoxEventType_T aType, ...)
     <xsl:choose>
       <xsl:when test="$G_kind='VBoxEvent'">
         <xsl:variable name="isVeto">
-          <xsl:value-of select="@extends='IVetoEvent'" />
+          <xsl:if test="@extends='IVetoEvent'">
+            <xsl:value-of select="'yes'" />
+          </xsl:if>
         </xsl:variable>
         <xsl:call-template name="genEventImpl">
           <xsl:with-param name="implName" select="$implName" />

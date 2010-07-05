@@ -646,7 +646,14 @@ HRESULT Display::init (Console *aParent)
 #endif /* VBOX_WITH_HGSMI */
     }
 
-    mParent->RegisterCallback (this);
+    {
+        // register listener for state change events
+        ComPtr<IEventSource> es;
+        mParent->COMGETTER(EventSource)(es.asOutParam());
+        com::SafeArray <VBoxEventType_T> eventTypes;
+        eventTypes.push_back(VBoxEventType_OnStateChange);
+        es->RegisterListener(this, ComSafeArrayAsInParam(eventTypes), true);
+    }
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -672,7 +679,11 @@ void Display::uninit()
         maFramebuffers[ul].pFramebuffer = NULL;
 
     if (mParent)
-        mParent->UnregisterCallback (this);
+    {
+        ComPtr<IEventSource> es;
+        mParent->COMGETTER(EventSource)(es.asOutParam());
+        es->UnregisterListener(this);
+    }
 
     unconst(mParent) = NULL;
 
@@ -724,20 +735,36 @@ int Display::registerSSM(PVM pVM)
     return VINF_SUCCESS;
 }
 
-// IConsoleCallback method
-STDMETHODIMP Display::OnStateChange(MachineState_T machineState)
+// IEventListener method
+STDMETHODIMP Display::HandleEvent(IEvent * aEvent)
 {
-    if (   machineState == MachineState_Running
-        || machineState == MachineState_Teleporting
-        || machineState == MachineState_LiveSnapshotting
-       )
-    {
-        LogFlowFunc(("Machine is running.\n"));
+    VBoxEventType_T aType = VBoxEventType_Invalid;
 
-        mfMachineRunning = true;
+    aEvent->COMGETTER(Type)(&aType);
+    switch (aType)
+    {
+        case VBoxEventType_OnStateChange:
+        {
+            ComPtr<IStateChangeEvent> scev = aEvent;
+            Assert(scev);
+            MachineState_T machineState;
+            scev->COMGETTER(State)(&machineState);
+            if (   machineState == MachineState_Running
+                   || machineState == MachineState_Teleporting
+                   || machineState == MachineState_LiveSnapshotting
+                   )
+            {
+                LogFlowFunc(("Machine is running.\n"));
+
+                mfMachineRunning = true;
+            }
+            else
+                mfMachineRunning = false;
+            break;
+        }
+        default:
+            AssertFailed();
     }
-    else
-        mfMachineRunning = false;
 
     return S_OK;
 }

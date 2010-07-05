@@ -1840,7 +1840,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         CHECK_ERROR(virtualBox, COMGETTER(EventSource)(es.asOutParam()));
         vboxListener = new VBoxSDLEventListener();
         vboxListener->AddRef();
-        com::SafeArray <VBoxEventType_T> eventTypes(1);
+        com::SafeArray <VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnExtraDataChange);
         CHECK_ERROR(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true));
     }
@@ -1851,7 +1851,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         CHECK_ERROR(gConsole, COMGETTER(EventSource)(es.asOutParam()));
         consoleListener = new VBoxSDLConsoleEventListener();
         consoleListener->AddRef();
-        com::SafeArray <VBoxEventType_T> eventTypes(7);
+        com::SafeArray <VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnMousePointerShapeChange);
         eventTypes.push_back(VBoxEventType_OnMouseCapabilityChange);
         eventTypes.push_back(VBoxEventType_OnKeyboardLedsChange);

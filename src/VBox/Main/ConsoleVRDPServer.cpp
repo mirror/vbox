@@ -35,11 +35,11 @@
 #include <VBox/VRDPOrders.h>
 #endif /* VBOX_WITH_VRDP */
 
-class VRDPConsoleCallback :
-    VBOX_SCRIPTABLE_IMPL(IConsoleCallback)
+class VRDPConsoleListener :
+    VBOX_SCRIPTABLE_IMPL(IEventListener)
 {
 public:
-    VRDPConsoleCallback(ConsoleVRDPServer *server)
+    VRDPConsoleListener(ConsoleVRDPServer *server)
         : m_server(server)
     {
 #ifndef VBOX_WITH_XPCOM
@@ -47,7 +47,7 @@ public:
 #endif /* !VBOX_WITH_XPCOM */
     }
 
-    virtual ~VRDPConsoleCallback() {}
+    virtual ~VRDPConsoleListener() {}
 
     NS_DECL_ISUPPORTS
 
@@ -65,12 +65,12 @@ public:
     STDMETHOD(QueryInterface)(REFIID riid , void **ppObj)
     {
         if (riid == IID_IUnknown) {
-            *ppObj = this;
+            *ppObj = (IUnknown*)this;
             AddRef();
             return S_OK;
         }
-        if (riid == IID_IConsoleCallback) {
-            *ppObj = this;
+        if (riid == IID_IEventListener) {
+            *ppObj = (IEventListener*)this;
             AddRef();
             return S_OK;
         }
@@ -80,117 +80,70 @@ public:
 #endif /* !VBOX_WITH_XPCOM */
 
 
-    STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                         ULONG width, ULONG height, ComSafeArrayIn(BYTE,shape));
-
-    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor)
+    STDMETHOD(HandleEvent)(IEvent * aEvent)
     {
-        if (m_server)
+        VBoxEventType_T aType = VBoxEventType_Invalid;
+
+        aEvent->COMGETTER(Type)(&aType);
+        switch (aType)
         {
-            m_server->NotifyAbsoluteMouse(!!supportsAbsolute);
+            case VBoxEventType_OnMousePointerShapeChange:
+            {
+                ComPtr<IMousePointerShapeChangeEvent> mpscev = aEvent;
+                Assert(mpscev);
+                BOOL    visible,  alpha;
+                ULONG   xHot, yHot, width, height;
+                com::SafeArray <BYTE> shape;
+
+                mpscev->COMGETTER(Visible)(&visible);
+                mpscev->COMGETTER(Alpha)(&alpha);
+                mpscev->COMGETTER(Xhot)(&xHot);
+                mpscev->COMGETTER(Yhot)(&yHot);
+                mpscev->COMGETTER(Width)(&width);
+                mpscev->COMGETTER(Height)(&height);
+                mpscev->COMGETTER(Shape)(ComSafeArrayAsOutParam(shape));
+
+                OnMousePointerShapeChange(visible, alpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shape));
+                break;
+            }
+            case VBoxEventType_OnMouseCapabilityChange:
+            {
+                ComPtr<IMouseCapabilityChangeEvent> mccev = aEvent;
+                Assert(mccev);
+                if (m_server)
+                {
+                    BOOL fAbsoluteMouse;
+                    mccev->COMGETTER(SupportsAbsolute)(&fAbsoluteMouse);
+                    m_server->NotifyAbsoluteMouse(!!fAbsoluteMouse);
+                }
+                break;
+            }
+            case VBoxEventType_OnKeyboardLedsChange:
+            {
+                ComPtr<IKeyboardLedsChangeEvent> klcev = aEvent;
+                Assert(klcev);
+
+                if (m_server)
+                {
+                    BOOL fNumLock, fCapsLock, fScrollLock;
+                    klcev->COMGETTER(NumLock)(&fNumLock);
+                    klcev->COMGETTER(CapsLock)(&fCapsLock);
+                    klcev->COMGETTER(ScrollLock)(&fScrollLock);
+                    m_server->NotifyKeyboardLedsChange(fNumLock, fCapsLock, fScrollLock);
+                }
+                 break;
+            }
+
+            default:
+                AssertFailed();
         }
-        return S_OK;
-    }
 
-    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
-    {
-        if (m_server)
-        {
-            m_server->NotifyKeyboardLedsChange(fNumLock, fCapsLock, fScrollLock);
-        }
-        return S_OK;
-    }
-
-    STDMETHOD(OnStateChange)(MachineState_T machineState)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnAdditionsStateChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnMediumChange)(IMediumAttachment *aAttachment)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *aNetworkAdapter)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnSerialPortChange)(ISerialPort *aSerialPort)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnParallelPortChange)(IParallelPort *aParallelPort)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnStorageControllerChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnVRDPServerChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnRemoteDisplayInfoChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnUSBControllerChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *aDevice, BOOL aAttached,
-                                      IVirtualBoxErrorInfo *aError)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnSharedFolderChange)(Scope_T aScope)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTR id, IN_BSTR message)
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnCanShowWindow)(BOOL *canShow)
-    {
-        if (!canShow)
-            return E_POINTER;
-        /* we don't manage window activation here: always agree */
-        *canShow = TRUE;
-        return S_OK;
-    }
-
-    STDMETHOD(OnShowWindow)(ULONG64 *winId)
-    {
-        if (!winId)
-            return E_POINTER;
-        /* we don't manage window activation here */
-        *winId = 0;
         return S_OK;
     }
 
 private:
+    STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
+                                         ULONG width, ULONG height, ComSafeArrayIn(BYTE,shape));
     ConsoleVRDPServer *m_server;
 #ifndef VBOX_WITH_XPCOM
     long refcnt;
@@ -199,8 +152,8 @@ private:
 
 #ifdef VBOX_WITH_XPCOM
 #include <nsMemory.h>
-NS_DECL_CLASSINFO(VRDPConsoleCallback)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDPConsoleCallback, IConsoleCallback)
+NS_DECL_CLASSINFO(VRDPConsoleListener)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDPConsoleListener, IEventListener)
 #endif /* VBOX_WITH_XPCOM */
 
 #ifdef DEBUG_sunlover
@@ -424,7 +377,7 @@ static void mousePointerGenerateANDMask(uint8_t *pu8DstAndMask, int cbDstAndMask
     }
 }
 
-STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange(BOOL visible,
+STDMETHODIMP VRDPConsoleListener::OnMousePointerShapeChange(BOOL visible,
                                                             BOOL alpha,
                                                             ULONG xHot,
                                                             ULONG yHot,
@@ -432,7 +385,7 @@ STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange(BOOL visible,
                                                             ULONG height,
                                                             ComSafeArrayIn(BYTE,inShape))
 {
-    LogSunlover(("VRDPConsoleCallback::OnMousePointerShapeChange: %d, %d, %lux%lu, @%lu,%lu\n", visible, alpha, width, height, xHot, yHot));
+    LogSunlover(("VRDPConsoleListener::OnMousePointerShapeChange: %d, %d, %lux%lu, @%lu,%lu\n", visible, alpha, width, height, xHot, yHot));
 
     if (m_server)
     {
@@ -1200,9 +1153,17 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
 
     memset (maFramebuffers, 0, sizeof (maFramebuffers));
 
-    mConsoleCallback = new VRDPConsoleCallback(this);
-    mConsoleCallback->AddRef();
-    console->RegisterCallback(mConsoleCallback);
+    {
+        ComPtr<IEventSource> es;
+        console->COMGETTER(EventSource)(es.asOutParam());
+        mConsoleListener = new VRDPConsoleListener(this);
+        mConsoleListener->AddRef();
+        com::SafeArray <VBoxEventType_T> eventTypes(3);
+        eventTypes.push_back(VBoxEventType_OnMousePointerShapeChange);
+        eventTypes.push_back(VBoxEventType_OnMouseCapabilityChange);
+        eventTypes.push_back(VBoxEventType_OnKeyboardLedsChange);
+        es->RegisterListener(mConsoleListener, ComSafeArrayAsInParam(eventTypes), true);
+    }
 
     mVRDPBindPort = -1;
 #endif /* VBOX_WITH_VRDP */
@@ -1215,11 +1176,13 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
     Stop ();
 
 #ifdef VBOX_WITH_VRDP
-    if (mConsoleCallback)
+    if (mConsoleListener)
     {
-        mConsole->UnregisterCallback(mConsoleCallback);
-        mConsoleCallback->Release();
-        mConsoleCallback = NULL;
+        ComPtr<IEventSource> es;
+        mConsole->COMGETTER(EventSource)(es.asOutParam());
+        es->UnregisterListener(mConsoleListener);
+        mConsoleListener->Release();
+        mConsoleListener = NULL;
     }
 
     unsigned i;

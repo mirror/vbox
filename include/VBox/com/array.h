@@ -949,6 +949,12 @@ public:
         AssertFailedReturn (*this);
     }
 
+    void cloneTo (SafeArray<T>& aOther) const
+    {
+        aOther.reset(size());
+        aOther.initFrom(*this);
+    }
+
 
     /**
      * Transfers the ownership of this array's data to the specified location
@@ -1004,7 +1010,7 @@ public:
         return *this;
     }
 
-    inline void initFrom(com::SafeArray<T> & aRef);
+    inline void initFrom(const com::SafeArray<T> & aRef);
 
     // Public methods for internal purposes only.
 
@@ -1205,9 +1211,9 @@ protected:
     Data m;
 };
 
-/* Few fast specializations for primitive array types */ 
+/* Few fast specializations for primitive array types */
 template<>
-inline void com::SafeArray<BYTE>::initFrom(com::SafeArray<BYTE> & aRef)
+inline void com::SafeArray<BYTE>::initFrom(const com::SafeArray<BYTE> & aRef)
 {
     size_t sSize = aRef.size();
     resize(sSize);
