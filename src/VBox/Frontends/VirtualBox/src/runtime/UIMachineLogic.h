@@ -38,6 +38,7 @@ class CUSBDevice;
 class CVirtualBoxErrorInfo;
 class UISession;
 class UIActionsPool;
+class UIKeyboardHandler;
 class UIMouseHandler;
 class UIMachineWindow;
 class UIMachineView;
@@ -68,6 +69,7 @@ public:
     UIActionsPool* actionsPool() const { return m_pActionsPool; }
     UIVisualStateType visualStateType() const { return m_visualStateType; }
     const QList<UIMachineWindow*>& machineWindows() const { return m_machineWindowsList; }
+    UIKeyboardHandler* keyboardHandler() const { return m_pKeyboardHandler; }
     UIMouseHandler* mouseHandler() const { return m_pMouseHandler; }
     UIMachineWindow* mainMachineWindow() const;
     UIMachineWindow* defaultMachineWindow() const;
@@ -101,6 +103,7 @@ protected:
     void setMachineWindowsCreated(bool fIsWindowsCreated) { m_fIsWindowsCreated = fIsWindowsCreated; }
 
     /* Protected members: */
+    void setKeyboardHandler(UIKeyboardHandler *pKeyboardHandler);
     void setMouseHandler(UIMouseHandler *pMouseHandler);
     void addMachineWindow(UIMachineWindow *pMachineWindow);
     void retranslateUi();
@@ -196,6 +199,7 @@ private:
     UISession *m_pSession;
     UIActionsPool *m_pActionsPool;
     UIVisualStateType m_visualStateType;
+    UIKeyboardHandler *m_pKeyboardHandler;
     UIMouseHandler *m_pMouseHandler;
     QList<UIMachineWindow*> m_machineWindowsList;
 

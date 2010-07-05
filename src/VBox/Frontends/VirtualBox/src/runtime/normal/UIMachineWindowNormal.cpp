@@ -31,6 +31,7 @@
 #include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIIndicatorsPool.h"
+#include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindowNormal.h"
@@ -493,13 +494,13 @@ void UIMachineWindowNormal::prepareMachineView()
     if (machineView())
     {
         /* Keyboard state-change updater: */
-        connect(machineView(), SIGNAL(keyboardStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Hostkey), SLOT(setState(int)));
+        connect(machineLogic()->keyboardHandler(), SIGNAL(keyboardStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Hostkey), SLOT(setState(int)));
 
         /* Mouse state-change updater: */
         connect(machineLogic()->mouseHandler(), SIGNAL(mouseStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Mouse), SLOT(setState(int)));
 
         /* Early initialize required connections: */
-        indicatorsPool()->indicator(UIIndicatorIndex_Hostkey)->setState(machineView()->keyboardState());
+        indicatorsPool()->indicator(UIIndicatorIndex_Hostkey)->setState(machineLogic()->keyboardHandler()->keyboardState());
         indicatorsPool()->indicator(UIIndicatorIndex_Mouse)->setState(machineLogic()->mouseHandler()->mouseState());
     }
 }

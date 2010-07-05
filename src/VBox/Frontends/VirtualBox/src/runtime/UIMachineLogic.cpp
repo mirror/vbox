@@ -23,6 +23,7 @@
 #include "UIActionsPool.h"
 #include "UIDownloaderAdditions.h"
 #include "UIIconPool.h"
+#include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
 #include "UIMachineLogic.h"
 #include "UIMachineLogicFullscreen.h"
@@ -373,6 +374,11 @@ void UIMachineLogic::addMachineWindow(UIMachineWindow *pMachineWindow)
     m_machineWindowsList << pMachineWindow;
 }
 
+void UIMachineLogic::setKeyboardHandler(UIKeyboardHandler *pKeyboardHandler)
+{
+    m_pKeyboardHandler = pKeyboardHandler;
+}
+
 void UIMachineLogic::setMouseHandler(UIMouseHandler *pMouseHandler)
 {
     m_pMouseHandler = pMouseHandler;
@@ -555,6 +561,9 @@ void UIMachineLogic::prepareActionGroups()
 
 void UIMachineLogic::prepareHandlers()
 {
+    /* Create keyboard-handler: */
+    setKeyboardHandler(UIKeyboardHandler::create(this, visualStateType()));
+
     /* Create mouse-handler: */
     setMouseHandler(UIMouseHandler::create(this, visualStateType()));
 }
@@ -657,6 +666,9 @@ void UIMachineLogic::cleanupHandlers()
 {
     /* Cleanup mouse-handler: */
     UIMouseHandler::destroy(mouseHandler());
+
+    /* Cleanup keyboard-handler: */
+    UIKeyboardHandler::destroy(keyboardHandler());
 }
 
 void UIMachineLogic::sltMachineStateChanged()

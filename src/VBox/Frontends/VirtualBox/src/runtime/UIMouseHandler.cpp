@@ -24,10 +24,25 @@
 /* Local includes */
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
+
+#ifdef Q_WS_X11
+# include <X11/XKBlib.h>
+# ifdef KeyPress
+const int XFocusOut = FocusOut;
+const int XFocusIn = FocusIn;
+const int XKeyPress = KeyPress;
+const int XKeyRelease = KeyRelease;
+#  undef KeyRelease
+#  undef KeyPress
+#  undef FocusOut
+#  undef FocusIn
+# endif /* KeyPress */
+#endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
 # include "VBoxUtils-darwin.h"
@@ -210,6 +225,36 @@ void UIMouseHandler::setMouseCoalescingEnabled(bool fOn)
     ::darwinSetMouseCoalescingEnabled(fOn);
 }
 #endif /* Q_WS_MAC */
+
+#ifdef Q_WS_X11
+bool UIMouseHandler::x11EventFilter(XEvent *pEvent, ulong /* uScreenId */)
+{
+    /* Check if some system event should be filtered-out.
+     * Returning 'true' means filtering-out,
+     * Returning 'false' means passing event to Qt. */
+    bool fResult = false; /* Pass to Qt by default: */
+    switch (pEvent->type)
+    {
+        /* We have to handle XFocusOut right here as this event is not passed to UIMachineView::event().
+         * Handling this event is important for releasing the keyboard before the screen saver gets active.
+         * See public ticket #3894: Apparently this makes problems with newer versions of Qt
+         * and this hack is probably not necessary anymore. So disable it for Qt >= 4.5.0. */
+        case XFocusOut:
+        {
+            if (uisession()->isRunning())
+            {
+                if (VBoxGlobal::qtRTVersion() < ((4 << 16) | (5 << 8) | 0))
+                    releaseMouse();
+            }
+            fResult = false;
+        }
+        default:
+            break;
+    }
+    /* Return result: */
+    return fResult;
+}
+#endif /* Q_WS_X11 */
 
 /* Machine state-change handler: */
 void UIMouseHandler::sltMachineStateChanged()
@@ -482,7 +527,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                      * So all mouse events are registered in the VM.
                      * Only do this if the keyboard/mouse is grabbed
                      * (this is when we have a valid event handler): */
-                    if (m_views[uScreenId]->isKeyboardGrabbed())
+                    if (machineLogic()->keyboardHandler()->isKeyboardGrabbed())
                         setMouseCoalescingEnabled(false);
                     break;
                 }
@@ -544,8 +589,8 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
 
 #ifdef Q_WS_MAC
     /* Simulate the right click on host-key + left-mouse-button: */
-    if (m_views[uScreenId]->isHostKeyPressed() &&
-        m_views[uScreenId]->isHostKeyAlone() &&
+    if (machineLogic()->keyboardHandler()->isHostKeyPressed() &&
+        machineLogic()->keyboardHandler()->isHostKeyAlone() &&
         iMouseButtonsState == KMouseButtonState_LeftButton)
         iMouseButtonsState = KMouseButtonState_RightButton;
 #endif /* Q_WS_MAC */
@@ -743,10 +788,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                          * otherwise the mouse is immediately ungrabbed again: */
                         qApp->processEvents();
 #endif
-                        /* Actually that will be a call to keyboard-handler, not no machine-view,
-                         * but now keyboard-handler is not implemented yet. */
-                        m_views[uScreenId]->captureKbd(true);
-
+                        machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
                         captureMouse(uScreenId);
                     }
                 }

@@ -35,6 +35,9 @@ class CSession;
 class UISession;
 class UIMachineLogic;
 class UIMachineView;
+#ifdef Q_WS_X11
+typedef union  _XEvent XEvent;
+#endif /* Q_WS_X11 */
 
 /* Delegate to control VM mouse functionality: */
 class UIMouseHandler : public QObject
@@ -68,6 +71,10 @@ public:
      * So all mouse events are registered in the VM. */
     void setMouseCoalescingEnabled(bool fOn);
 #endif /* Q_WS_MAC */
+
+#ifdef Q_WS_X11
+    bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
+#endif /* Q_WS_X11 */
 
 signals:
 

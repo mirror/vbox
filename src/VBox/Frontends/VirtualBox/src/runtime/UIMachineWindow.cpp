@@ -34,6 +34,7 @@
 
 #include "UISession.h"
 #include "UIActionsPool.h"
+#include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
@@ -465,6 +466,9 @@ void UIMachineWindow::prepareMachineViewContainer()
 
 void UIMachineWindow::prepareHandlers()
 {
+    /* Register keyboard-handler: */
+    machineLogic()->keyboardHandler()->prepareListener(m_uScreenId, this);
+
     /* Register machine-view in mouse-handler: */
     machineLogic()->mouseHandler()->addMachineView(m_uScreenId, this->machineView());
 }
@@ -473,6 +477,9 @@ void UIMachineWindow::cleanupHandlers()
 {
     /* Unregister machine-view from mouse-handler: */
     machineLogic()->mouseHandler()->delMachineView(m_uScreenId);
+
+    /* Unregister keyboard-handler: */
+    machineLogic()->keyboardHandler()->cleanupListener(m_uScreenId);
 }
 
 void UIMachineWindow::updateAppearanceOf(int iElement)
