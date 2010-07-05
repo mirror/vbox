@@ -230,20 +230,20 @@ static RTSEMEVENT g_EventSemSDLEvents;
 static volatile int32_t g_cNotifyUpdateEventsPending;
 
 /**
- * Callback handler for VirtualBox events
+ * Event handler for VirtualBox events
  */
-class VBoxSDLCallback :
-  VBOX_SCRIPTABLE_IMPL(IVirtualBoxCallback)
+class VBoxSDLEventListener :
+  VBOX_SCRIPTABLE_IMPL(IEventListener)
 {
 public:
-    VBoxSDLCallback()
+    VBoxSDLEventListener()
     {
 #if defined(RT_OS_WINDOWS)
         refcnt = 0;
 #endif
     }
 
-    virtual ~VBoxSDLCallback()
+    virtual ~VBoxSDLEventListener()
     {
     }
 
@@ -260,99 +260,56 @@ public:
         return cnt;
     }
 #endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IVirtualBoxCallback)
+    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventHandler)
 
     NS_DECL_ISUPPORTS
 
-    STDMETHOD(OnMachineStateChange)(IN_BSTR machineId, MachineState_T state)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
 
-    STDMETHOD(OnMachineDataChange)(IN_BSTR machineId)
+    STDMETHOD(HandleEvent)(IEvent * aEvent)
     {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
+        VBoxEventType_T aType = VBoxEventType_Invalid;
 
-    STDMETHOD(OnExtraDataCanChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value,
-                                    BSTR *error, BOOL *changeAllowed)
-    {
-        /* we never disagree */
-        if (!changeAllowed)
-            return E_INVALIDARG;
-        *changeAllowed = TRUE;
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnExtraDataChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value)
-    {
-#ifdef VBOX_SECURELABEL
-        Assert(key);
-        if (gMachine)
+        aEvent->COMGETTER(Type)(&aType);
+        switch (aType)
         {
-            /*
-             * check if we're interested in the message
-             */
-            Bstr ourGuid;
-            gMachine->COMGETTER(Id)(ourGuid.asOutParam());
-            if (ourGuid == machineId)
+            case VBoxEventType_OnExtraDataChange:
             {
-                Bstr keyString = key;
-                if (keyString && keyString == VBOXSDL_SECURELABEL_EXTRADATA)
+#ifdef VBOX_SECURELABEL
+                ComPtr<IExtraDataChangeEvent> edcev = aEvent;
+                Assert(edcev);
+                Bstr key, machineId;
+                edcev->COMGETTER(MachineId)(machineId.asOutParam());
+                if (gMachine)
                 {
                     /*
-                     * Notify SDL thread of the string update
+                     * check if we're interested in the message
                      */
-                    SDL_Event event  = {0};
-                    event.type       = SDL_USEREVENT;
-                    event.user.type  = SDL_USER_EVENT_SECURELABEL_UPDATE;
-                    PushSDLEventForSure(&event);
+                    Bstr ourGuid;
+                    gMachine->COMGETTER(Id)(ourGuid.asOutParam());
+                    if (ourGuid == machineId)
+                    {
+                        Bstr keyString;
+                        edcev->COMGETTER(Key)(keyString.asOutParam());
+                        if (keyString && keyString == VBOXSDL_SECURELABEL_EXTRADATA)
+                        {
+                            /*
+                             * Notify SDL thread of the string update
+                             */
+                            SDL_Event event  = {0};
+                            event.type       = SDL_USEREVENT;
+                            event.user.type  = SDL_USER_EVENT_SECURELABEL_UPDATE;
+                            PushSDLEventForSure(&event);
+                        }
+                    }
                 }
+#endif
+                break;
             }
+            default:
+                AssertFailed();
         }
+
         return S_OK;
-#else
-        return VBOX_E_DONT_CALL_AGAIN;
-#endif /* VBOX_SECURELABEL */
-    }
-
-    STDMETHOD(OnMediumRegistered)(IN_BSTR mediaId, DeviceType_T mediaType,
-                                  BOOL registered)
-    {
-        NOREF(mediaId);
-        NOREF(mediaType);
-        NOREF(registered);
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnMachineRegistered)(IN_BSTR machineId, BOOL registered)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnSessionStateChange)(IN_BSTR machineId, SessionState_T state)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnSnapshotTaken)(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnSnapshotDeleted)(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnSnapshotChange)(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnGuestPropertyChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value, IN_BSTR flags)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
     }
 
 private:
@@ -363,20 +320,20 @@ private:
 };
 
 /**
- * Callback handler for machine events
+ * Event handler for machine events
  */
-class VBoxSDLConsoleCallback :
-    VBOX_SCRIPTABLE_IMPL(IConsoleCallback)
+class VBoxSDLConsoleEventListener :
+    VBOX_SCRIPTABLE_IMPL(IEventListener)
 {
 public:
-    VBoxSDLConsoleCallback() : m_fIgnorePowerOffEvents(false)
+    VBoxSDLConsoleEventListener() : m_fIgnorePowerOffEvents(false)
     {
 #if defined(RT_OS_WINDOWS)
         refcnt = 0;
 #endif
     }
 
-    virtual ~VBoxSDLConsoleCallback()
+    virtual ~VBoxSDLConsoleEventListener()
     {
     }
 
@@ -393,207 +350,187 @@ public:
         return cnt;
     }
 #endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IConsoleCallback)
+    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
 
     NS_DECL_ISUPPORTS
 
-    STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                         ULONG width, ULONG height, ComSafeArrayIn(BYTE, shape))
+    STDMETHOD(HandleEvent)(IEvent * aEvent)
     {
-        PointerShapeChangeData *data;
-        data = new PointerShapeChangeData(visible, alpha, xHot, yHot, width, height,
-                                          ComSafeArrayInArg(shape));
-        Assert(data);
-        if (!data)
-            return E_FAIL;
+        VBoxEventType_T aType = VBoxEventType_Invalid;
 
-        SDL_Event event  = {0};
-        event.type       = SDL_USEREVENT;
-        event.user.type  = SDL_USER_EVENT_POINTER_CHANGE;
-        event.user.data1 = data;
-
-        int rc = PushSDLEventForSure(&event);
-        if (rc)
-            delete data;
-
-        return S_OK;
-    }
-
-    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor)
-    {
-        LogFlow(("OnMouseCapabilityChange: supportsAbsolute = %d, supportsRelative = %d, needsHostCursor = %d\n",
-                 supportsAbsolute, supportsRelative, needsHostCursor));
-        gfAbsoluteMouseGuest   = supportsAbsolute;
-        gfRelativeMouseGuest   = supportsRelative;
-        gfGuestNeedsHostCursor = needsHostCursor;
-
-        SDL_Event event = {0};
-        event.type      = SDL_USEREVENT;
-        event.user.type = SDL_USER_EVENT_GUEST_CAP_CHANGED;
-
-        PushSDLEventForSure(&event);
-        return S_OK;
-    }
-
-    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
-    {
-        /* Don't bother the guest with NumLock scancodes if he doesn't set the NumLock LED */
-        if (gfGuestNumLockPressed != fNumLock)
-            gcGuestNumLockAdaptions = 2;
-        if (gfGuestCapsLockPressed != fCapsLock)
-            gcGuestCapsLockAdaptions = 2;
-        gfGuestNumLockPressed    = fNumLock;
-        gfGuestCapsLockPressed   = fCapsLock;
-        gfGuestScrollLockPressed = fScrollLock;
-        return S_OK;
-    }
-
-    STDMETHOD(OnStateChange)(MachineState_T machineState)
-    {
-        LogFlow(("OnStateChange: machineState = %d (%s)\n", machineState, GetStateName(machineState)));
-        SDL_Event event = {0};
-
-        if (     machineState == MachineState_Aborted
-            ||   machineState == MachineState_Teleported
-            ||  (machineState == MachineState_Saved      && !m_fIgnorePowerOffEvents)
-            ||  (machineState == MachineState_PoweredOff && !m_fIgnorePowerOffEvents)
-           )
+        aEvent->COMGETTER(Type)(&aType);
+        // likely all this double copy is now excessive, and we can just use existing event object
+        // @todo: eliminate it
+        switch (aType)
         {
-            /*
-             * We have to inform the SDL thread that the application has be terminated
-             */
-            event.type      = SDL_USEREVENT;
-            event.user.type = SDL_USER_EVENT_TERMINATE;
-            event.user.code = machineState == MachineState_Aborted
+            case VBoxEventType_OnMousePointerShapeChange:
+            {
+                ComPtr<IMousePointerShapeChangeEvent> mpscev = aEvent;
+                Assert(mpscev);
+                PointerShapeChangeData *data;
+                BOOL    visible,  alpha;
+                ULONG   xHot, yHot, width, height;
+                com::SafeArray <BYTE> shape;
+
+                mpscev->COMGETTER(Visible)(&visible);
+                mpscev->COMGETTER(Alpha)(&alpha);
+                mpscev->COMGETTER(Xhot)(&xHot);
+                mpscev->COMGETTER(Yhot)(&yHot);
+                mpscev->COMGETTER(Width)(&width);
+                mpscev->COMGETTER(Height)(&height);
+                mpscev->COMGETTER(Shape)(ComSafeArrayAsOutParam(shape));
+                data = new PointerShapeChangeData(visible, alpha, xHot, yHot, width, height,
+                                                  ComSafeArrayAsInParam(shape));
+                Assert(data);
+                if (!data)
+                    break;
+
+                SDL_Event event  = {0};
+                event.type       = SDL_USEREVENT;
+                event.user.type  = SDL_USER_EVENT_POINTER_CHANGE;
+                event.user.data1 = data;
+
+                int rc = PushSDLEventForSure(&event);
+                if (rc)
+                    delete data;
+
+                break;
+            }
+            case VBoxEventType_OnMouseCapabilityChange:
+            {
+                ComPtr<IMouseCapabilityChangeEvent> mccev = aEvent;
+                Assert(mccev);
+                mccev->COMGETTER(SupportsAbsolute)(&gfAbsoluteMouseGuest);
+                mccev->COMGETTER(SupportsRelative)(&gfRelativeMouseGuest);
+                mccev->COMGETTER(NeedsHostCursor)(&gfGuestNeedsHostCursor);
+                SDL_Event event = {0};
+                event.type      = SDL_USEREVENT;
+                event.user.type = SDL_USER_EVENT_GUEST_CAP_CHANGED;
+
+                PushSDLEventForSure(&event);
+                break;
+            }
+            case VBoxEventType_OnKeyboardLedsChange:
+            {
+                ComPtr<IKeyboardLedsChangeEvent> klcev = aEvent;
+                Assert(klcev);
+                BOOL fNumLock, fCapsLock, fScrollLock;
+                klcev->COMGETTER(NumLock)(&fNumLock);
+                klcev->COMGETTER(CapsLock)(&fCapsLock);
+                klcev->COMGETTER(ScrollLock)(&fScrollLock);
+                /* Don't bother the guest with NumLock scancodes if he doesn't set the NumLock LED */
+                if (gfGuestNumLockPressed != fNumLock)
+                    gcGuestNumLockAdaptions = 2;
+                if (gfGuestCapsLockPressed != fCapsLock)
+                    gcGuestCapsLockAdaptions = 2;
+                gfGuestNumLockPressed    = fNumLock;
+                gfGuestCapsLockPressed   = fCapsLock;
+                gfGuestScrollLockPressed = fScrollLock;
+                break;
+            }
+
+            case VBoxEventType_OnStateChange:
+            {
+                ComPtr<IStateChangeEvent> scev = aEvent;
+                Assert(scev);
+                MachineState_T machineState;
+                scev->COMGETTER(State)(&machineState);
+                LogFlow(("OnStateChange: machineState = %d (%s)\n", machineState, GetStateName(machineState)));
+                SDL_Event event = {0};
+
+                if (     machineState == MachineState_Aborted
+                         ||   machineState == MachineState_Teleported
+                         ||  (machineState == MachineState_Saved      && !m_fIgnorePowerOffEvents)
+                         ||  (machineState == MachineState_PoweredOff && !m_fIgnorePowerOffEvents)
+                         )
+                {
+                    /*
+                     * We have to inform the SDL thread that the application has be terminated
+                     */
+                    event.type      = SDL_USEREVENT;
+                    event.user.type = SDL_USER_EVENT_TERMINATE;
+                    event.user.code = machineState == MachineState_Aborted
                             ? VBOXSDL_TERM_ABEND
                             : VBOXSDL_TERM_NORMAL;
-        }
-        else
-        {
-            /*
-             * Inform the SDL thread to refresh the titlebar
-             */
-            event.type      = SDL_USEREVENT;
-            event.user.type = SDL_USER_EVENT_UPDATE_TITLEBAR;
-        }
+                }
+                else
+                {
+                    /*
+                     * Inform the SDL thread to refresh the titlebar
+                     */
+                    event.type      = SDL_USEREVENT;
+                    event.user.type = SDL_USER_EVENT_UPDATE_TITLEBAR;
+                }
 
-        PushSDLEventForSure(&event);
-        return S_OK;
-    }
+                PushSDLEventForSure(&event);
+                break;
+            }
 
-    STDMETHOD(OnAdditionsStateChange)()
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
+            case VBoxEventType_OnRuntimeError:
+            {
+                ComPtr<IRuntimeErrorEvent> rteev = aEvent;
+                Assert(rteev);
+                Bstr id, message;
+                BOOL fFatal;
 
-    STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *aNetworkAdapter)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
+                rteev->COMGETTER(Fatal)(&fFatal);
+                MachineState_T machineState;
+                gMachine->COMGETTER(State)(&machineState);
+                const char *pszType;
+                bool fPaused = machineState == MachineState_Paused;
+                if (fFatal)
+                    pszType = "FATAL ERROR";
+                else if (machineState == MachineState_Paused)
+                    pszType = "Non-fatal ERROR";
+                else
+                    pszType = "WARNING";
+                rteev->COMGETTER(Id)(id.asOutParam());
+                rteev->COMGETTER(Message)(message.asOutParam());
+                RTPrintf("\n%s: ** %lS **\n%lS\n%s\n", pszType, id.raw(), message.raw(),
+                         fPaused ? "The VM was paused. Continue with HostKey + P after you solved the problem.\n" : "");
+                break;
+            }
 
-    STDMETHOD(OnSerialPortChange)(ISerialPort *aSerialPort)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnParallelPortChange)(IParallelPort *aParallelPort)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnVRDPServerChange)()
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnRemoteDisplayInfoChange)()
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnUSBControllerChange)()
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *aDevice, BOOL aAttached,
-                                     IVirtualBoxErrorInfo *aError)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnSharedFolderChange)(Scope_T aScope)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnStorageControllerChange)()
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnMediumChange)(IMediumAttachment * /*aMediumAttachment*/)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnCPUChange)(ULONG /*aCPU*/, BOOL /* aRemove */)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnRuntimeError)(BOOL fFatal, IN_BSTR id, IN_BSTR message)
-    {
-        MachineState_T machineState;
-        gMachine->COMGETTER(State)(&machineState);
-        const char *pszType;
-        bool fPaused = machineState == MachineState_Paused;
-        if (fFatal)
-            pszType = "FATAL ERROR";
-        else if (machineState == MachineState_Paused)
-            pszType = "Non-fatal ERROR";
-        else
-            pszType = "WARNING";
-        RTPrintf("\n%s: ** %lS **\n%lS\n%s\n", pszType, id, message,
-                     fPaused ? "The VM was paused. Continue with HostKey + P after you solved the problem.\n" : "");
-        return S_OK;
-    }
-
-    STDMETHOD(OnCanShowWindow)(BOOL *canShow)
-    {
-        if (!canShow)
-            return E_POINTER;
+            case VBoxEventType_OnCanShowWindow:
+            {
+                ComPtr<ICanShowWindowEvent> cswev = aEvent;
+                Assert(cswev);
 #ifdef RT_OS_DARWIN
-        /* SDL feature not available on Quartz */
-        *canShow = TRUE;
+                /* SDL feature not available on Quartz */
 #else
-        SDL_SysWMinfo info;
-        SDL_VERSION(&info.version);
-        *canShow = !!SDL_GetWMInfo(&info);
+                SDL_SysWMinfo info;
+                SDL_VERSION(&info.version);
+                if (!SDL_GetWMInfo(&info))
+                    cswev->AddVeto(NULL);
 #endif
-        return S_OK;
-    }
+                break;
+            }
 
-    STDMETHOD(OnShowWindow)(ULONG64 *winId)
-    {
+            case VBoxEventType_OnShowWindow:
+            {
+                ComPtr<IShowWindowEvent> swev = aEvent;
+                Assert(swev);
 #ifndef RT_OS_DARWIN
-        SDL_SysWMinfo info;
-        SDL_VERSION(&info.version);
-        if (SDL_GetWMInfo(&info))
-        {
+                SDL_SysWMinfo info;
+                SDL_VERSION(&info.version);
+                if (SDL_GetWMInfo(&info))
+                {
 #if defined(VBOXSDL_WITH_X11)
-            *winId = (ULONG64)info.info.x11.wmwindow;
+                    swev->COMSETTER(WinId)((ULONG64)info.info.x11.wmwindow);
 #elif defined(RT_OS_WINDOWS)
-            *winId = (ULONG64)info.window;
+                    swev->COMSETTER(WinId)((ULONG64)info.window);
 #else
-            AssertFailed();
-            return E_FAIL;
+                    AssertFailed();
 #endif
-            return S_OK;
-        }
+                }
 #endif /* !RT_OS_DARWIN */
-        AssertFailed();
-        return E_FAIL;
+                break;
+            }
+
+            default:
+                AssertFailed();
+        }
+        return S_OK;
     }
 
     static const char *GetStateName(MachineState_T machineState)
@@ -636,10 +573,10 @@ private:
 };
 
 #ifdef VBOX_WITH_XPCOM
-NS_DECL_CLASSINFO(VBoxSDLCallback)
-NS_IMPL_ISUPPORTS1_CI(VBoxSDLCallback, IVirtualBoxCallback)
-NS_DECL_CLASSINFO(VBoxSDLConsoleCallback)
-NS_IMPL_ISUPPORTS1_CI(VBoxSDLConsoleCallback, IConsoleCallback)
+NS_DECL_CLASSINFO(VBoxSDLEventListener)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxSDLEventListener, IEventListener)
+NS_DECL_CLASSINFO(VBoxSDLConsoleEventListener)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxSDLConsoleEventListener, IEventListener)
 #endif /* VBOX_WITH_XPCOM */
 
 static void show_usage()
@@ -850,11 +787,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     DeviceType_T bootDevice = DeviceType_Null;
     uint32_t memorySize = 0;
     uint32_t vramSize = 0;
-    VBoxSDLCallback *cbVBoxImpl = NULL;
-    /* wrapper around above object */
-    ComPtr<IVirtualBoxCallback> callback;
-    VBoxSDLConsoleCallback *cbConsoleImpl = NULL;
-    ComPtr<IConsoleCallback> consoleCallback;
+    VBoxSDLEventListener *vboxListener = NULL;
+    VBoxSDLConsoleEventListener *consoleListener = NULL;
 
     bool fFullscreen = false;
     bool fResizable = true;
@@ -1900,21 +1834,35 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         gpFramebuffer[i]->setOrigin(xOrigin, yOrigin);
     }
 
-    // register a callback for global events
-    cbVBoxImpl = new VBoxSDLCallback();
-    rc = createCallbackWrapper((IVirtualBoxCallback*)cbVBoxImpl, callback.asOutParam());
-    if (FAILED(rc))
-        goto leave;
-    virtualBox->RegisterCallback(callback);
+    {
+        // register listener for global events
+        ComPtr<IEventSource> es;
+        CHECK_ERROR(virtualBox, COMGETTER(EventSource)(es.asOutParam()));
+        vboxListener = new VBoxSDLEventListener();
+        vboxListener->AddRef();
+        com::SafeArray <VBoxEventType_T> eventTypes(1);
+        eventTypes.push_back(VBoxEventType_OnExtraDataChange);
+        CHECK_ERROR(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true));
+    }
 
-    // register a callback for machine events
-    cbConsoleImpl = new VBoxSDLConsoleCallback();
-    rc = createCallbackWrapper((IConsoleCallback*)cbConsoleImpl, consoleCallback.asOutParam());
-    if (FAILED(rc))
-        goto leave;
-    gConsole->RegisterCallback(consoleCallback);
-    // until we've tried to to start the VM, ignore power off events
-    cbConsoleImpl->ignorePowerOffEvents(true);
+    {
+        // register listener for machine events
+        ComPtr<IEventSource> es;
+        CHECK_ERROR(gConsole, COMGETTER(EventSource)(es.asOutParam()));
+        consoleListener = new VBoxSDLConsoleEventListener();
+        consoleListener->AddRef();
+        com::SafeArray <VBoxEventType_T> eventTypes(7);
+        eventTypes.push_back(VBoxEventType_OnMousePointerShapeChange);
+        eventTypes.push_back(VBoxEventType_OnMouseCapabilityChange);
+        eventTypes.push_back(VBoxEventType_OnKeyboardLedsChange);
+        eventTypes.push_back(VBoxEventType_OnStateChange);
+        eventTypes.push_back(VBoxEventType_OnRuntimeError);
+        eventTypes.push_back(VBoxEventType_OnCanShowWindow);
+        eventTypes.push_back(VBoxEventType_OnShowWindow);
+        CHECK_ERROR(es, RegisterListener(consoleListener, ComSafeArrayAsInParam(eventTypes), true));
+        // until we've tried to to start the VM, ignore power off events
+        consoleListener->ignorePowerOffEvents(true);
+    }
 
 #ifdef VBOX_WITH_VRDP
     if (portVRDP)
@@ -2221,7 +2169,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     // accept power off events from now on because we're running
     // note that there's a possible race condition here...
-    cbConsoleImpl->ignorePowerOffEvents(false);
+    consoleListener->ignorePowerOffEvents(false);
 
     rc = gConsole->COMGETTER(Keyboard)(gKeyboard.asOutParam());
     if (!gKeyboard)
@@ -2752,7 +2700,7 @@ leave:
        )
     do
     {
-        cbConsoleImpl->ignorePowerOffEvents(true);
+        consoleListener->ignorePowerOffEvents(true);
         ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK(gConsole, PowerDown(progress.asOutParam()));
         CHECK_ERROR_BREAK(progress, WaitForCompletion(-1));
@@ -2772,6 +2720,16 @@ leave:
             break;
         }
     } while (0);
+
+    /* unregister console listener */
+    if (consoleListener)
+    {
+        ComPtr<IEventSource> es;
+        CHECK_ERROR(gConsole, COMGETTER(EventSource)(es.asOutParam()));
+        CHECK_ERROR(es, UnregisterListener(consoleListener));
+        consoleListener->Release();
+        consoleListener = NULL;
+    }
 
     /*
      * Now we discard all settings so that our changes will
@@ -2833,7 +2791,8 @@ leave:
     {
         for (unsigned i = 0; i < gcMonitors; i++)
             gDisplay->SetFramebuffer(i, NULL);
-    }
+    }    
+
     gMouse = NULL;
     gKeyboard = NULL;
     gVrdpServer = NULL;
@@ -2861,10 +2820,15 @@ leave:
         RTLdrClose(gLibrarySDL_ttf);
 #endif
 
-    /* VirtualBox callback unregistration. */
-    if (!virtualBox.isNull() && !callback.isNull())
-        virtualBox->UnregisterCallback(callback);
-
+    /* global listener unregistration. */
+    if (vboxListener)
+    {
+        ComPtr<IEventSource> es;
+        CHECK_ERROR(virtualBox, COMGETTER(EventSource)(es.asOutParam()));
+        CHECK_ERROR(es, UnregisterListener(vboxListener));
+        vboxListener->Release();
+        vboxListener = NULL;
+    }
     LogFlow(("Releasing machine, session...\n"));
     gMachine = NULL;
     session = NULL;
@@ -2876,9 +2840,6 @@ leave:
     }
 
     /* Must be before com::Shutdown() */
-    callback.setNull();
-    consoleCallback.setNull();
-
     LogFlow(("Uninitializing COM...\n"));
     com::Shutdown();
 
