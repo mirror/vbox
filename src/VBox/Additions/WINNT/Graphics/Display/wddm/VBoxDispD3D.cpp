@@ -4554,6 +4554,17 @@ static HRESULT APIENTRY vboxWddmDDevQueryResourceResidency(HANDLE hDevice, CONST
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     AssertBreakpoint();
     HRESULT hr = S_OK;
+#if 0
+    for (UINT i = 0; i < pData->NumResources; ++i)
+    {
+        PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->pHandleList[i];
+        Assert(pRc->pDevice == pDevice);
+        if (pRc->hKMResource)
+        {
+
+        }
+    }
+#endif
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return hr;
 }
