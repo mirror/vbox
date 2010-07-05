@@ -51,7 +51,6 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
-static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys);
 
 
 /*
@@ -3709,7 +3708,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
  *
  * @remarks The caller must own the PGM lock.
  */
-static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys)
+int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys)
 {
     /*
      * Assert sanity.

@@ -2523,17 +2523,38 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
     uint32_t        iPage    = UINT32_MAX - 10;
     PPGMROMRANGE    pRom     = NULL;
     PPGMMMIO2RANGE  pMmio2   = NULL;
+
+    /*
+     * We batch up pages that should be freed instead of calling GMM for
+     * each and every one of them.
+     */
+    uint32_t            cPendingPages = 0;
+    PGMMFREEPAGESREQ    pReq;
+    int rc = GMMR3FreePagesPrepare(pVM, &pReq, 128 /* batch size */, GMMACCOUNT_BASE);
+    AssertLogRelRCReturn(rc, rc);
+
     for (;;)
     {
         /*
          * Get the record type and flags.
          */
         uint8_t u8;
-        int rc = SSMR3GetU8(pSSM, &u8);
+        rc = SSMR3GetU8(pSSM, &u8);
         if (RT_FAILURE(rc))
             return rc;
         if (u8 == PGM_STATE_REC_END)
+        {
+            /*
+             * Finish off any pages pending freeing.
+             */
+            if (cPendingPages)
+            {
+                rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
+                AssertLogRelRCReturn(rc, rc);
+            }
+            GMMR3FreePagesCleanup(pReq);
             return VINF_SUCCESS;
+        }
         AssertLogRelMsgReturn((u8 & ~PGM_STATE_REC_FLAG_ADDR) <= PGM_STATE_REC_LAST, ("%#x\n", u8), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
         switch (u8 & ~PGM_STATE_REC_FLAG_ADDR)
         {
@@ -2570,12 +2591,9 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                         if (    PGM_PAGE_IS_ZERO(pPage)
                             ||  PGM_PAGE_IS_BALLOONED(pPage))
                             break;
-                        /** @todo implement zero page replacing. */
-                        AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_INTERNAL_ERROR_5);
-                        void *pvDstPage;
-                        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDstPage);
-                        AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp %R[pgmpage] rc=%Rrc\n", GCPhys, pPage, rc), rc);
-                        ASMMemZeroPage(pvDstPage);
+                        /* Allocated before (prealloc), so free it now. */
+                        rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
+                        AssertRC(rc);
                         break;
                     }
 
