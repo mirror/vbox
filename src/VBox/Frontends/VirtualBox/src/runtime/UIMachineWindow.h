@@ -54,7 +54,7 @@ public:
 
     /* Public members: */
     virtual void reshow() {}
-    virtual void setMask(const QRegion &region) { machineWindow()->setMask(region); }
+    virtual void setMask(const QRegion &region);
 
 protected:
 
