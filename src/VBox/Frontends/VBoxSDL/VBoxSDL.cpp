@@ -260,7 +260,7 @@ public:
         return cnt;
     }
 #endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventHandler)
+    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
 
     NS_DECL_ISUPPORTS
 
