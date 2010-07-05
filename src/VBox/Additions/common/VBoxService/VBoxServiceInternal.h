@@ -288,7 +288,7 @@ extern int  VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pB
 extern uint32_t VBoxServiceBalloonQueryPages(uint32_t cbPage);
 #endif
 #if defined(VBOX_WITH_PAGE_SHARING) && defined(RT_OS_WINDOWS)
-extern void VBoxServicePageSharingInitFork();
+extern RTEXITCODE VBoxServicePageSharingInitFork(void);
 #endif
 
 RT_C_DECLS_END
