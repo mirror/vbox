@@ -220,7 +220,7 @@ void importOVF(ComPtr<IVirtualBox> &pVirtualBox,
                 break;
 
                 default:
-                    throw MyError(-1, "Invalid VirtualSystemDescriptionType");
+                    throw MyError(E_UNEXPECTED, "Invalid VirtualSystemDescriptionType");
                 break;
             }
 
@@ -255,7 +255,7 @@ void copyDummyDiskImage(std::list<Utf8Str> &llFiles2Delete, const char *pcszDest
 {
     int vrc = RTFileCopy("ovf-testcases/ovf-dummy.vmdk", pcszDest);
     if (RT_FAILURE(vrc))
-        throw MyError(-1, "Cannot copy ovf-dummy.vmdk");
+        throw MyError(E_UNEXPECTED, "Cannot copy ovf-dummy.vmdk");
     llFiles2Delete.push_back(pcszDest);
 }
 
