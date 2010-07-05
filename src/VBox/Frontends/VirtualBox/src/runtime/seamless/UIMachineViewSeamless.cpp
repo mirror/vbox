@@ -84,9 +84,6 @@ UIMachineViewSeamless::~UIMachineViewSeamless()
     /* Cleanup seamless mode: */
     cleanupSeamless();
 
-    /* Cleanup common things: */
-    cleanupCommon();
-
     /* Cleanup frame buffer: */
     cleanupFrameBuffer();
 }
@@ -223,24 +220,6 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
                 m_pSyncBlocker->quit();
 
             return true;
-        }
-
-        case QEvent::KeyPress:
-        case QEvent::KeyRelease:
-        {
-            /* Get key-event: */
-            QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
-
-            /* Process Host+Home for menu popup: */
-            if (isHostKeyPressed() && pEvent->type() == QEvent::KeyPress)
-            {
-                if (pKeyEvent->key() == Qt::Key_Home)
-                    QTimer::singleShot(0, machineWindowWrapper()->machineWindow(), SLOT(sltPopupMainMenu()));
-                else
-                    pEvent->ignore();
-            }
-
-            break;
         }
 
         default:

@@ -77,9 +77,6 @@ UIMachineViewNormal::~UIMachineViewNormal()
     /* Save machine view settings: */
     saveMachineViewSettings();
 
-    /* Cleanup common things: */
-    cleanupCommon();
-
     /* Cleanup frame buffer: */
     cleanupFrameBuffer();
 }
@@ -204,58 +201,6 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
 
             return true;
         }
-
-#ifndef Q_WS_MAC
-        /* We don't want this on the Mac, cause there the menu bar isn't within the
-         * window and popping up a menu there looks really ugly. */
-        case QEvent::KeyPress:
-        case QEvent::KeyRelease:
-        {
-            /* Get key-event: */
-            QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
-
-            /* Process Host+Home as menu-bar activator: */
-            if (isHostKeyPressed() && pEvent->type() == QEvent::KeyPress)
-            {
-                if (pKeyEvent->key() == Qt::Key_Home)
-                {
-                    /* Trying to get menu-bar: */
-                    QMenuBar *pMenuBar = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                                         qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->menuBar() : 0;
-
-                    /* If menu-bar is present and have actions: */
-                    if (pMenuBar && !pMenuBar->actions().isEmpty())
-                    {
-                        /* If 'active' action is NOT chosen: */
-                        if (!pMenuBar->activeAction())
-                            /* Set first menu-bar action as 'active': */
-                            pMenuBar->setActiveAction(pMenuBar->actions()[0]);
-
-                        /* If 'active' action is chosen: */
-                        if (pMenuBar->activeAction())
-                        {
-                            /* Activate 'active' menu-bar action: */
-                            pMenuBar->activeAction()->activate(QAction::Trigger);
-
-#ifdef Q_WS_WIN
-                            /* Windows host needs separate 'focus set'
-                             * to let menubar operate while popped up: */
-                            pMenuBar->setFocus();
-#endif /* Q_WS_WIN */
-
-                            /* Accept this event: */
-                            pEvent->accept();
-                            return true;
-                        }
-                    }
-                }
-                else
-                    pEvent->ignore();
-            }
-
-            break;
-        }
-#endif /* !Q_WS_MAC */
 
         default:
             break;

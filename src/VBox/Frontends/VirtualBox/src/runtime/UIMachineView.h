@@ -36,7 +36,6 @@ class UISession;
 class UIMachineLogic;
 class UIMachineWindow;
 class UIFrameBuffer;
-class VBoxGlobalSettings;
 
 class UIMachineView : public QAbstractScrollArea
 {
@@ -58,9 +57,6 @@ public:
     /* Factory function to destroy required machine-view: */
     static void destroy(UIMachineView *pMachineView);
 
-    /* Public getters: */
-    int keyboardState() const;
-
     /* Public setters: */
     virtual void setGuestAutoresizeEnabled(bool /* fEnabled */) {}
 
@@ -68,9 +64,6 @@ public:
     virtual void normalizeGeometry(bool /* bAdjustPosition = false */) = 0;
 
 signals:
-
-    /* Keyboard state-change signals: */
-    void keyboardStateChanged(int iState);
 
     /* Utility signals: */
     void resizeHintDone();
@@ -103,7 +96,7 @@ protected:
     //virtual void saveMachineViewSettings() {}
     //virtual void cleanupConsoleConnections() {}
     //virtual void cleanupFilters() {}
-    virtual void cleanupCommon();
+    //virtual void cleanupCommon() {}
     virtual void cleanupFrameBuffer();
 
     /* Protected getters: */
@@ -120,18 +113,12 @@ protected:
     int visibleHeight() const;
     ulong screenId() const { return m_uScreenId; }
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
-    bool isHostKeyPressed() const { return m_bIsHostkeyPressed; }
     bool isMachineWindowResizeIgnored() const { return m_bIsMachineWindowResizeIgnored; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
     QSize storedConsoleSize() const { return m_storedConsoleSize; }
     DesktopGeo desktopGeometryType() const { return m_desktopGeometryType; }
     QSize desktopGeometry() const;
     QSize guestSizeHint();
-#ifdef Q_WS_MAC
-    /* These getters are temporary here while UIKeyboardHandler is not implemented: */
-    bool isHostKeyAlone() const { return m_bIsHostkeyAlone; }
-    bool isKeyboardGrabbed() const { return m_fKeyboardGrabbed; }
-#endif /* Q_WS_MAC */
 
     /* Protected setters: */
     void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
@@ -144,14 +131,8 @@ protected:
     virtual void calculateDesktopGeometry() = 0;
     virtual void maybeRestrictMinimumSize() = 0;
     virtual void updateSliders();
-    void fixModifierState(LONG *piCodes, uint *puCount);
     QPoint viewportToContents(const QPoint &vp) const;
     void scrollBy(int dx, int dy);
-    void emitKeyboardStateChanged();
-    void captureKbd(bool fCapture, bool fEmitSignal = true);
-    void saveKeyStates();
-    void releaseAllPressedKeys(bool aReleaseHostKey = true);
-    void sendChangedKeyStates();
     static void dimImage(QImage &img);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void scrollContentsBy(int dx, int dy);
@@ -165,29 +146,20 @@ protected:
     /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
-    void focusEvent(bool aHasFocus, bool aReleaseHostKey = true);
-    bool keyEvent(int aKey, uint8_t aScan, int aFlags, wchar_t *aUniKey = NULL);
     void resizeEvent(QResizeEvent *pEvent);
     void moveEvent(QMoveEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
 
     /* Platform specific event processors: */
 #if defined(Q_WS_WIN)
-    static LRESULT CALLBACK lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
-    bool winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event);
     bool winEvent(MSG *pMsg, long *puResult);
 #elif defined(Q_WS_X11)
     bool x11Event(XEvent *event);
-#elif defined(Q_WS_MAC)
-    void darwinGrabKeyboardEvents(bool fGrab);
-    static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
-    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
 #endif
 
     /* Private members: */
     UIMachineWindow *m_pMachineWindow;
     ulong m_uScreenId;
-    const VBoxGlobalSettings &m_globalSettings;
     UIFrameBuffer *m_pFrameBuffer;
     KMachineState m_previousState;
 
@@ -195,29 +167,15 @@ protected:
     QSize m_desktopGeometry;
     QSize m_storedConsoleSize;
 
-    uint8_t m_pressedKeys[128];
-    uint8_t m_pressedKeysCopy[128];
-
-    bool m_bIsKeyboardCaptured : 1;
-    bool m_bIsHostkeyPressed : 1;
-    bool m_bIsHostkeyAlone : 1;
-    bool m_bIsHostkeyInCapture : 1;
     bool m_bIsMachineWindowResizeIgnored : 1;
-    bool m_fPassCAD : 1;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo : 1;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-#ifdef Q_WS_MAC
-    /** The current modifier key mask. Used to figure out which modifier
-     *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
-    UInt32 m_darwinKeyModifiers;
-    bool m_fKeyboardGrabbed;
-#endif /* Q_WS_MAC */
-
     QPixmap m_pauseShot;
 
     /* Friend classes: */
+    friend class UIKeyboardHandler;
     friend class UIMouseHandler;
     friend class UIMachineLogic;
     friend class UIFrameBuffer;
