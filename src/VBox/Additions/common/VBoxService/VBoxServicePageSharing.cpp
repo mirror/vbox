@@ -606,13 +606,25 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
 }
 
 #ifdef RT_OS_WINDOWS
-void VBoxServicePageSharingInitFork()
+
+/**
+ * This gets control when VBoxService is launched with -pagefusionfork by
+ * VBoxServicePageSharingWorkerProcess().
+ *
+ * @returns RTEXITCODE_SUCCESS.
+ *
+ * @remarks It won't normally return since the parent drops the shutdown hint
+ *          via RTProcTerminate().
+ */
+RTEXITCODE VBoxServicePageSharingInitFork(void)
 {
     VBoxServiceVerbose(3, "VBoxServicePageSharingInitFork\n");
 
     bool fShutdown = false;
     VBoxServicePageSharingInit();
     VBoxServicePageSharingWorker(&fShutdown);
+
+    return RTEXITCODE_SUCCESS;
 }
 
 /** @copydoc VBOXSERVICE::pfnWorker */
@@ -648,7 +660,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
                 pszArgs[0] = pszExeName;
                 pszArgs[1] = "-pagefusionfork";
                 pszArgs[2] = NULL;
-                /* Start a 2nd VBoxService process to deal with page fusion as we do not wish to dummy load 
+                /* Start a 2nd VBoxService process to deal with page fusion as we do not wish to dummy load
                  * dlls into this process. (first load with DONT_RESOLVE_DLL_REFERENCES, 2nd normal -> dll init routines not called!)
                  */
                 rc = RTProcCreate(pszExeName, pszArgs, RTENV_DEFAULT, 0 /* normal child */, &hProcess);
@@ -685,7 +697,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
     return 0;
 }
 
-#endif
+#endif /* RT_OS_WINDOWS */
 
 /** @copydoc VBOXSERVICE::pfnTerm */
 static DECLCALLBACK(void) VBoxServicePageSharingTerm(void)
