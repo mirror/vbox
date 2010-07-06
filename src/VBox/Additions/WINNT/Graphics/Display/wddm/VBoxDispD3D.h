@@ -102,6 +102,7 @@ typedef struct VBOXWDDMDISP_DEVICE
     D3DDDI_CREATEDEVICEFLAGS fFlags;
     HWND hWnd;
     struct VBOXWDDMDISP_RESOURCE *pRenderTargetRc;
+    uint32_t iRenderTargetFrontBuf;
     /* number of StreamSources set */
     UINT cStreamSources;
     VBOXWDDMDISP_STREAMSOURCEUM aStreamSourceUm[VBOXWDDMDISP_MAX_VERTEX_STREAMS];

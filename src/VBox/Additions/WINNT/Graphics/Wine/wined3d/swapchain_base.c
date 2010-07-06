@@ -102,6 +102,15 @@ HRESULT WINAPI IWineD3DBaseSwapChainImpl_GetBackBuffer(IWineD3DSwapChain *iface,
 
     IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl *)iface;
 
+#ifdef VBOXWDDM
+    if (iBackBuffer == ~0UL)
+    {
+        *ppBackBuffer = This->frontBuffer;
+        if(*ppBackBuffer) IWineD3DSurface_AddRef(*ppBackBuffer);
+        return WINED3D_OK;
+    }
+#endif
+
     if (iBackBuffer > This->presentParms.BackBufferCount - 1) {
         TRACE("Back buffer count out of range\n");
         /* Native d3d9 doesn't set NULL here, just as wine's d3d9. But set it
