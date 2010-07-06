@@ -39,10 +39,6 @@
 #include "UIMouseHandler.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
-#include "UIMachineView.h"
-#include "UIMachineWindowNormal.h"
-#include "UIMachineWindowFullscreen.h"
-#include "UIMachineWindowSeamless.h"
 #include "UIMachineViewNormal.h"
 #include "UIMachineViewFullscreen.h"
 #include "UIMachineViewSeamless.h"
@@ -161,7 +157,7 @@ void UIMachineView::sltMachineStateChanged()
                 }
                 m_pauseShot = QPixmap::fromImage(shot);
                 /* Fully repaint to pick up m_pauseShot: */
-                viewport()->repaint();
+                viewport()->update();
             }
             break;
         }
