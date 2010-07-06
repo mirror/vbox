@@ -33,11 +33,10 @@
 #include "VBoxGlobal.h"
 #include "UISession.h"
 #include "UIActionsPool.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
-#include "UIFrameBuffer.h"
 #include "UIMachineLogicFullscreen.h"
+#include "UIMachineWindow.h"
 #include "UIMachineViewFullscreen.h"
+#include "UIFrameBuffer.h"
 
 UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
                                                  , ulong uScreenId
