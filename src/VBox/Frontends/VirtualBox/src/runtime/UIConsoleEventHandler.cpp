@@ -116,8 +116,8 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
             this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigSharedFolderChange(Scope_T)),
-            this, SIGNAL(sigSharedFolderChange(Scope_T)),
+    connect(pListener, SIGNAL(sigSharedFolderChange()),
+            this, SIGNAL(sigSharedFolderChange()),
             Qt::QueuedConnection);
 
     connect(pListener, SIGNAL(sigRuntimeError(bool, QString, QString)),

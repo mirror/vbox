@@ -185,7 +185,7 @@ private slots:
     void sltKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
-    void sltSharedFolderChange(Scope_T scope);
+    void sltSharedFolderChange();
 
 private:
 
