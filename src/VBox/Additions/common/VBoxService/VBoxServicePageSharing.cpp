@@ -619,10 +619,12 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
         {
             bool fUnregister = false; 
 
-            VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: VM was restored!!\n"));
+            VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: VM was restored!!\n");
             /* The VM was restored, so reregister all modules the next time. */ 
             RTAvlPVDestroy(&g_pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, &fUnregister); 
-            g_pKnownModuleTree = NULL; 
+            g_pKnownModuleTree = NULL;
+
+            g_idSession = idNewSession;
         }
 
     }
