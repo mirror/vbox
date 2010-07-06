@@ -26,7 +26,6 @@
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/asm.h>
-#include <iprt/cpp/utils.h>
 
 #include <VBox/pdmdrv.h>
 #ifdef DEBUG /* for VM_ASSERT_EMT(). */

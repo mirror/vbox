@@ -30,7 +30,6 @@
 #include <iprt/dir.h>
 #include <iprt/process.h>
 #include <iprt/ldr.h>
-#include <iprt/cpp/utils.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>

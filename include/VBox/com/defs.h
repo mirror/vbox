@@ -534,6 +534,62 @@ private:
     HRESULT mRC;
 };
 
+/**
+ * "Last worst" result type.
+ *
+ * Variables of this class are used instead of HRESULT variables when it is
+ * desirable to memorize the "last worst" result code instead of the last
+ * assigned one. In other words, an assignment operation to a variable of this
+ * class will succeed only if the result code to assign has the same or worse
+ * severity. The following table demonstrate this (the first column lists the
+ * previous result code stored in the variable, the first row lists the new
+ * assigned, 'A' means the assignment will take place, '> S_OK' means a warning
+ * result code):
+ *
+ * {{{
+ *             FAILED    > S_OK    S_OK
+ * FAILED        A         -         -
+ * > S_OK        A         A         -
+ * S_OK          A         A         -
+ *
+ * }}}
+ *
+ * In practice, you will need to use a LWResult variable when you call some COM
+ * method B after COM method A fails and want to return the result code of B
+ * if B also fails, but still want to return the failed result code of A if B
+ * issues a warning or succeeds.
+ */
+class LWResult
+{
+
+public:
+
+    /**
+     * Constructs a new variable. Note that by default this constructor sets the
+     * result code to E_FAIL to make sure a failure is returned to the caller if
+     * the variable is never assigned another value (which is considered as the
+     * improper use of this class).
+     */
+    LWResult (HRESULT aRC = E_FAIL) : mRC (aRC) {}
+
+    LWResult &operator= (HRESULT aRC)
+    {
+        if (FAILED (aRC) ||
+            (SUCCEEDED (mRC) && aRC != S_OK))
+            mRC = aRC;
+
+        return *this;
+    }
+
+    operator HRESULT() const { return mRC; }
+
+    HRESULT *operator&() { return &mRC; }
+
+private:
+
+    HRESULT mRC;
+};
+
 // use this macro to implement scriptable interfaces
 #ifdef RT_OS_WINDOWS
 #define VBOX_SCRIPTABLE_IMPL(iface)                                          \
