@@ -628,6 +628,41 @@ typedef STAMPROFILE *PSTAMPROFILE;
 typedef const STAMPROFILE *PCSTAMPROFILE;
 
 
+/** @def STAM_REL_PROFILE_ADD_PERIOD
+ * Adds a period.
+ *
+ * @param   pProfileAdv     Pointer to the STAMPROFILEADV structure to operate on.
+ * @param   cTicksInPeriod  The number of tick (or whatever) of the preiod
+ *                          being added.  This is only referenced once.
+ */
+#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+# define STAM_REL_PROFILE_ADD_PERIOD(pProfile, cTicksInPeriod) \
+    do { \
+        uint64_t const StamPrefix_cTicks = (cTicksInPeriod); \
+        (pProfile)->cTicks += StamPrefix_cTicks; \
+        (pProfile)->cPeriods++; \
+        if ((pProfile)->cTicksMax < StamPrefix_cTicks) \
+            (pProfile)->cTicksMax = StamPrefix_cTicks; \
+        if ((pProfile)->cTicksMin > StamPrefix_cTicks) \
+            (pProfile)->cTicksMin = StamPrefix_cTicks; \
+    } while (0)
+#else
+# define STAM_REL_PROFILE_ADD_PERIOD(pProfile, cTicksInPeriod) do { } while (0)
+#endif
+/** @def STAM_PROFILE_ADD_PERIOD
+ * Adds a period.
+ *
+ * @param   pProfileAdv     Pointer to the STAMPROFILEADV structure to operate on.
+ * @param   cTicksInPeriod  The number of tick (or whatever) of the preiod
+ *                          being added.  This is only referenced once.
+ */
+#ifdef VBOX_WITH_STATISTICS
+# define STAM_PROFILE_ADD_PERIOD(pProfile, cTicksInPeriod) STAM_REL_PROFILE_ADD_PERIOD(pProfile, cTicksInPeriod)
+#else
+# define STAM_PROFILE_ADD_PERIOD(pProfile, cTicksInPeriod) do { } while (0)
+#endif
+
+
 /** @def STAM_REL_PROFILE_START
  * Samples the start time of a profiling period.
  *

@@ -633,19 +633,27 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     {
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.offTSCRawSrc,          STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source",           "/TM/TSC/offCPU%u", i);
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsTotal,              STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Total CPU run time.",                          "/TM/CPU/%02u", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsExecuting,          STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent executing guest code.",             "/TM/CPU/%02u/NsExecuting", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsHalted,             STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent halted.",                           "/TM/CPU/%02u/NsHalted", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsOther,              STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent in the VMM or preempted.",          "/TM/CPU/%02u/NsOther", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctExecuting, STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent executing guest code recently.",    "/TM/CPU/%02u/PctExecuting", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctHalted,    STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent halted recently.",                  "/TM/CPU/%02u/PctHalted", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctOther,     STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent in the VMM or preempted recently.", "/TM/CPU/%02u/PctOther", i);
+# ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsTotal,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,               "Resettable: Total CPU run time.",   "/TM/CPU/%02u", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecuting,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code.",    "/TM/CPU/%02u/PrfExecuting", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsHalted,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent halted.",                  "/TM/CPU/%02u/PrfHalted", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsOther,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent in the VMM or preempted.", "/TM/CPU/%02u/PrfOther", i);
+# endif
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsTotal,              STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Total CPU run time.",                          "/TM/CPU/%02u/cNsTotal", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsExecuting,          STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent executing guest code.",             "/TM/CPU/%02u/cNsExecuting", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsHalted,             STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent halted.",                           "/TM/CPU/%02u/cNsHalted", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsOther,              STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent in the VMM or preempted.",          "/TM/CPU/%02u/cNsOther", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cPeriodsExecuting,     STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Times executed guest code.",                   "/TM/CPU/%02u/cPeriodsExecuting", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cPeriodsHalted,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Times halted.",                                "/TM/CPU/%02u/cPeriodsHalted", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctExecuting, STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent executing guest code recently.",    "/TM/CPU/%02u/pctExecuting", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctHalted,    STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent halted recently.",                  "/TM/CPU/%02u/pctHalted", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctOther,     STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent in the VMM or preempted recently.", "/TM/CPU/%02u/pctOther", i);
 #endif
     }
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
-    STAMR3RegisterF(pVM, &pVM->tm.s.CpuLoad.cPctExecuting, STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent executing guest code recently.",    "/TM/CPU/PctExecuting");
-    STAMR3RegisterF(pVM, &pVM->tm.s.CpuLoad.cPctHalted,    STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent halted recently.",                  "/TM/CPU/PctHalted");
-    STAMR3RegisterF(pVM, &pVM->tm.s.CpuLoad.cPctOther,     STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent in the VMM or preempted recently.", "/TM/CPU/PctOther");
+    STAMR3RegisterF(pVM, &pVM->tm.s.CpuLoad.cPctExecuting, STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent executing guest code recently.",    "/TM/CPU/pctExecuting");
+    STAMR3RegisterF(pVM, &pVM->tm.s.CpuLoad.cPctHalted,    STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent halted recently.",                  "/TM/CPU/pctHalted");
+    STAMR3RegisterF(pVM, &pVM->tm.s.CpuLoad.cPctOther,     STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent in the VMM or preempted recently.", "/TM/CPU/pctOther");
 #endif
 
 #ifdef VBOX_WITH_STATISTICS
