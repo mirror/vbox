@@ -54,15 +54,12 @@ bool UIKeyboardHandlerSeamless::eventFilter(QObject *pWatchedObject, QEvent *pEv
                 /* Get key-event: */
                 QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
                 /* Process Host+Home for menu popup: */
-                if (isHostKeyPressed() && pEvent->type() == QEvent::KeyPress)
+                if (isHostKeyPressed() && pKeyEvent->key() == Qt::Key_Home)
                 {
-                    if (pKeyEvent->key() == Qt::Key_Home)
-                    {
-                        /* Post request to show popup-menu: */
-                        QTimer::singleShot(0, m_windows[uScreenId]->machineWindow(), SLOT(sltPopupMainMenu()));
-                        /* Filter-out this event: */
-                        return true;
-                    }
+                    /* Post request to show popup-menu: */
+                    QTimer::singleShot(0, m_windows[uScreenId]->machineWindow(), SLOT(sltPopupMainMenu()));
+                    /* Filter-out this event: */
+                    return true;
                 }
                 break;
             }
