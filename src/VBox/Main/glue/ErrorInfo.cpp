@@ -43,7 +43,7 @@ namespace com
 // ErrorInfo class
 ////////////////////////////////////////////////////////////////////////////////
 
-ErrorInfo::ErrorInfo(const ErrorInfo &x)
+void ErrorInfo::copyFrom(const ErrorInfo &x)
 {
     mIsBasicAvailable = x.mIsBasicAvailable;
     mIsFullAvailable = x.mIsFullAvailable;
@@ -65,13 +65,25 @@ ErrorInfo::ErrorInfo(const ErrorInfo &x)
     mErrorInfo = x.mErrorInfo;
 }
 
-ErrorInfo::~ErrorInfo()
+void ErrorInfo::cleanup()
 {
+    mIsBasicAvailable = false;
+    mIsFullAvailable = false;
+
     if (m_pNext)
     {
         delete m_pNext;
         m_pNext = NULL;
     }
+
+    mResultCode = S_OK;
+    mInterfaceID.clear();
+    mComponent.setNull();
+    mText.setNull();
+    mInterfaceName.setNull();
+    mCalleeIID.clear();
+    mCalleeName.setNull();
+    mErrorInfo.setNull();
 }
 
 void ErrorInfo::init(bool aKeepObj /* = false */)
