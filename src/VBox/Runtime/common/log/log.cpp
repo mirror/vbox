@@ -271,7 +271,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
     *ppLogger = NULL;
 
     if (pszErrorMsg)
-        RTStrPrintf(pszErrorMsg, cchErrorMsg, "unknown error");
+        RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("unknown error"));
 
     /*
      * Allocate a logger instance.
@@ -323,7 +323,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         {
 # ifdef RT_OS_LINUX
             if (pszErrorMsg) /* Most probably SELinux causing trouble since the larger RTMemAlloc succeeded. */
-                RTStrPrintf(pszErrorMsg, cchErrorMsg, "mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?");
+                RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?"));
 # endif
             rc = VERR_NO_MEMORY;
         }
@@ -392,7 +392,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                     fOpen |= RTFILE_O_WRITE_THROUGH;
                 rc = RTFileOpen(&pLogger->File, pLogger->pszFilename, fOpen);
                 if (RT_FAILURE(rc) && pszErrorMsg)
-                    RTStrPrintf(pszErrorMsg, cchErrorMsg, "could not open file '%s' (fOpen=%#x)", pLogger->pszFilename, fOpen);
+                    RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("could not open file '%s' (fOpen=%#x)"), pLogger->pszFilename, fOpen);
             }
 #endif  /* IN_RING3 */
 
@@ -421,7 +421,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                 }
 
                 if (pszErrorMsg)
-                    RTStrPrintf(pszErrorMsg, cchErrorMsg, "failed to create sempahore");
+                    RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("failed to create sempahore"));
             }
 #ifdef IN_RING3
             RTFileClose(pLogger->File);
