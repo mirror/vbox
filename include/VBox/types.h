@@ -825,8 +825,6 @@ typedef enum PGMROMPROT
 /**
  * Page mapping lock.
  *
- * @remarks This doesn't work in structures shared between
- *          ring-3, ring-0 and/or GC.
  */
 typedef struct PGMPAGEMAPLOCK
 {
@@ -834,6 +832,10 @@ typedef struct PGMPAGEMAPLOCK
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     /** Just a dummy for the time being. */
     uint32_t    u32Dummy;
+    uint32_t    u32Dummy1;
+# if HC_ARCH_BITS == 64
+    uint32_t    u32Align[2];
+# endif
 #else
     /** Pointer to the PGMPAGE and lock type.
      * bit-0 abuse: set=write, clear=read. */
