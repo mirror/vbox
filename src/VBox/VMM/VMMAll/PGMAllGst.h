@@ -58,7 +58,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
 
 #elif PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
 
-# if PGM_GST_TYPE != PGM_MODE_AMD64
+# if PGM_GST_TYPE != PGM_TYPE_AMD64
     /* Boundary check. */
     if (GCPtr >= _4G)
         return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -180,7 +180,7 @@ PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t f
 
     Assert((cb & PAGE_OFFSET_MASK) == 0);
 
-# if PGM_GST_TYPE != PGM_MODE_AMD64
+# if PGM_GST_TYPE != PGM_TYPE_AMD64
     /* Boundary check. */
     if (GCPtr >= _4G)
         return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -291,7 +291,7 @@ PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
  || PGM_GST_TYPE == PGM_TYPE_PAE   \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
-# if PGM_GST_TYPE != PGM_MODE_AMD64
+# if PGM_GST_TYPE != PGM_TYPE_AMD64
     /* Boundary check. */
     if (GCPtr >= _4G)
         return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -337,7 +337,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
 #endif
 
     RTGCPTR         GCPtr  = pCur->Core.Key;
-#if PGM_GST_TYPE != PGM_MODE_AMD64
+#if PGM_GST_TYPE != PGM_TYPE_AMD64
     /* skip all stuff above 4GB if not AMD64 mode. */
     if (GCPtr >= _4G)
         return 0;
