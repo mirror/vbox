@@ -106,9 +106,6 @@ typedef struct GMMPERVM
     /** Whether shared paging is enabled or not. */
     bool                fSharedPagingEnabled;
 
-    /** First GMMR0CheckSharedModules call? */
-    bool                fFirstCheckSharedModule;
-
     /** Whether the VM is allowed to allocate memory or not.
      * This is used when the reservation update request fails or when the VM has
      * been told to suspend/save/die in an out-of-memory case. */

@@ -792,9 +792,6 @@ GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM)
     pGVM->gmm.s.enmPolicy = GMMOCPOLICY_INVALID;
     pGVM->gmm.s.enmPriority = GMMPRIORITY_INVALID;
     pGVM->gmm.s.fMayAllocate = false;
-
-    /* Mark first call of GMMR0CheckSharedModules. */
-    pGVM->gmm.s.fFirstCheckSharedModule = true;
 }
 
 
@@ -4175,15 +4172,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
         Info.idCpu    = pVCpu->idCpu;
 
         RTAvlGCPtrDoWithAll(&pGVM->gmm.s.pSharedModuleTree, true /* fFromLeft */, gmmR0CheckSharedModule, &Info);
-
-        if (pGVM->gmm.s.fFirstCheckSharedModule)
-        {
-            /* To make sure the guest additions can detect a VM restore as that needs a reregistration of all modules. */
-            rc = VERR_PGM_SHARED_MODULE_FIRST_CHECK;
-            pGVM->gmm.s.fFirstCheckSharedModule = false;
-        }
-        else
-            rc = VINF_SUCCESS;
+        rc = VINF_SUCCESS;
 
         Log(("GMMR0CheckSharedModules done!\n"));
 
