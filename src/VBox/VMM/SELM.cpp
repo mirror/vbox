@@ -1951,7 +1951,7 @@ VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned 
     if (RT_FAILURE(rc))
     {
         /* fatal */
-        AssertMsgFailed(("Can't read LDT descriptor for selector=%04X\n", SelLdt));
+        Log(("Can't read LDT descriptor for selector=%04X\n", SelLdt));
         return VERR_SELECTOR_NOT_PRESENT;
     }
 
