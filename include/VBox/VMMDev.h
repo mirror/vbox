@@ -175,6 +175,7 @@ typedef enum
     VMMDevReq_CheckSharedModules         = 214,
     VMMDevReq_GetPageSharingStatus       = 215,
     VMMDevReq_DebugIsPageShared          = 216,
+    VMMDevReq_GetSessionId               = 217, /* since version 3.2.6 */
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -1204,6 +1205,20 @@ typedef struct
     bool                        fAlignment[3];
 } VMMDevPageIsSharedRequest;
 
+/**
+ * Session id request structure.
+ *
+ * Used by VMMDevReq_GetSessionId.
+ */
+typedef struct
+{
+    /** Header */
+    VMMDevRequestHeader header;
+    /** OUT: unique session id; the id will be different after each start, reset or restore of the VM */
+    uint64_t            idSession;
+} VMMDevReqSessionId;
+AssertCompileSize(VMMDevReqSessionId, 24+8);
+
 #pragma pack()
 
 
@@ -1716,6 +1731,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevPageSharingStatusRequest);
         case VMMDevReq_DebugIsPageShared:
             return sizeof(VMMDevPageIsSharedRequest);
+        case VMMDevReq_GetSessionId:
+            return sizeof(VMMDevReqSessionId);
         default:
             return 0;
     }
