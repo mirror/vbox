@@ -23,7 +23,6 @@
 
 /* Qt includes */
 #include <QObject>
-#include <QRect>
 
 class CVirtualBox;
 
@@ -76,17 +75,6 @@ public:
         CIShared <VBoxGlobalSettingsData>::operator= (that);
         return *this;
     }
-
-    static void writeExtraDataString(CVirtualBox &vbox, const QString &key, const QString &data);
-    static QString readExtraDataString(CVirtualBox &vbox, const QString &key);
-    static void writeExtraDataBool(CVirtualBox &vbox, const QString &key, bool data);
-    static bool readExtraDataBool(CVirtualBox &vbox, const QString &key);
-    static void writeExtraDataRect(CVirtualBox &vbox, const QString &key, const QRect &data);
-    static QRect readExtraDataRect(CVirtualBox &vbox, const QString &key);
-    static void writeExtraDataStringList(CVirtualBox &vbox, const QString &key, const QStringList &data);
-    static QStringList readExtraDataStringList(CVirtualBox &vbox, const QString &key);
-    static void writeExtraDataIntList(CVirtualBox &vbox, const QString &key, const QList<int> &data);
-    static QList<int> readExtraDataIntList(CVirtualBox &vbox, const QString &key);
 
     // Properties
 
