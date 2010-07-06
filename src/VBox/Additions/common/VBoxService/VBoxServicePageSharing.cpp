@@ -487,20 +487,9 @@ skipkernelmodules:
     RTAvlPVDestroy(&pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, NULL);
 
     /* Check all registered modules. */
-    int rc = VbglR3CheckSharedModules();
-    if (    rc == VERR_PGM_SHARED_MODULE_FIRST_CHECK
-        &&  !fFirstCheck)
-    {
-        bool fUnregister = false;
-        /* The VM was restored, so reregister all modules the next time. */
-        RTAvlPVDestroy(&pNewTree, VBoxServicePageSharingEmptyTreeCallback, &fUnregister);
-        pKnownModuleTree = NULL;
-    }
-    else
-    {
-        /* Activate new module tree. */
-        pKnownModuleTree = pNewTree;
-    }
+    VbglR3CheckSharedModules();
+    /* Activate new module tree. */
+    pKnownModuleTree = pNewTree;
 }
 
 /**
