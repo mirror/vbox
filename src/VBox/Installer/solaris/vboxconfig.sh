@@ -15,18 +15,17 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-
 # Never use exit 2 or exit 20 etc., the return codes are used in
 # SRv4 postinstall procedures which carry special meaning. Just use exit 1 for failure.
 
 # S10 or OpenSoalris
 HOST_OS_MAJORVERSION=`uname -r`
 # Which OpenSolaris version (snv_xxx)?
-HOST_OS_MINORVERSION=`uname -v | sed -e "s/snv_//" -e "s/[^0-9]//"`
+HOST_OS_MINORVERSION=`uname -v | grep 'snv' | sed -e "s/snv_//" -e "s/[^0-9]//"`
 
-DIR_VBOXBASE=/opt/VirtualBox
-DIR_CONF="/platform/i86pc/kernel/drv"
-DIR_MOD_32="/platform/i86pc/kernel/drv"
+DIR_VBOXBASE=${BASEDIR}/opt/VirtualBox
+DIR_CONF="${BASEDIR}/platform/i86pc/kernel/drv"
+DIR_MOD_32="${BASEDIR}/platform/i86pc/kernel/drv"
 DIR_MOD_64=$DIR_MOD_32/amd64
 
 BIN_ADDDRV=/usr/sbin/add_drv
@@ -62,6 +61,7 @@ DESC_VBOXUSBMON="USBMonitor"
 MOD_VBOXUSB=vboxusb
 DESC_VBOXUSB="USB"
 
+REMOTEINST=0
 FATALOP=fatal
 NULLOP=nulloutput
 SILENTOP=silent
@@ -148,6 +148,33 @@ check_root()
     fi
 }
 
+# get_sysinfo
+# cannot fail
+get_sysinfo()
+{
+    if test "$REMOTEINST" -eq 1 || test -z "$HOST_OS_MINORVERSION" || test -z "$HOST_OS_MAJORVERSION"; then
+        if test -f "${BASEDIR}/etc/release"; then
+            HOST_OS_MAJORVERSION=`cat ${BASEDIR}/etc/release | grep "Solaris 10"`
+            if test -n "$HOST_OS_MAJORVERSION"; then
+                HOST_OS_MAJORVERSION="5.10"
+            else
+                HOST_OS_MAJORVERSION=`cat ${BASEDIR}/etc/release | grep "snv_"`
+                if test -n "$HOST_OS_MAJORVERSION"; then
+                    HOST_OS_MAJORVERSION="5.11"
+                fi
+            fi
+            if test "$HOST_OS_MAJORVERSION" != "5.10"; then
+                HOST_OS_MINORVERSION=`cat ${BASEDIR}/etc/release | tr ' ' '\n' | grep 'snv_' | sed -e "s/snv_//" -e "s/[^0-9]//"`
+            else
+                HOST_OS_MINORVERSION=""
+            fi
+        else
+            HOST_OS_MAJORVERSION=""
+            HOST_OS_MINORVERSION=""
+        fi
+    fi
+}
+
 # check_zone()
 # !! failure is always fatal
 check_zone()
@@ -191,8 +218,8 @@ module_added()
     fi
 
     # Add a space at end of module name to make sure we have a perfect match to avoid
-    # any substring matches: e.g "vboxusb" & "vboxusbmon"
-    loadentry=`cat /etc/name_to_major | grep "$1 "`
+    # any substring matches: e.g "vboxusb" & "vbo $BASEDIR_OPT xusbmon"
+    loadentry=`cat ${BASEDIR}/etc/name_to_major | grep "$1 "`
     if test -z "$loadentry"; then
         return 1
     fi
@@ -234,15 +261,15 @@ add_driver()
 
     if test -n "$modperm"; then
         if test "$nullop" = "$NULLOP"; then
-            $BIN_ADDDRV -m"$modperm" $modname  >/dev/null 2>&1
+            $BIN_ADDDRV $BASEDIR_OPT -m"$modperm" $modname  >/dev/null 2>&1
         else
-            $BIN_ADDDRV -m"$modperm" $modname
+            $BIN_ADDDRV $BASEDIR_OPT -m"$modperm" $modname
         fi
     else
         if test "$nullop" = "$NULLOP"; then
-            $BIN_ADDDRV $modname >/dev/null 2>&1
+            $BIN_ADDDRV $BASEDIR_OPT $modname >/dev/null 2>&1
         else
-            $BIN_ADDDRV $modname
+            $BIN_ADDDRV $BASEDIR_OPT $modname
         fi
     fi
 
@@ -252,6 +279,8 @@ add_driver()
             exit 1
         fi
         return 1
+    elif test "$REMOTEINST" -eq 1 && test "$?" -eq 0; then
+        subprint "Added: $moddesc driver"
     fi
     return 0
 }
@@ -268,13 +297,15 @@ rem_driver()
     modname=$1
     moddesc=$2
     fatal=$3
+
     module_added $modname
     if test "$?" -eq 0; then
         if test "$ISIPS" != "$IPSOP"; then
-            $BIN_REMDRV $modname
+            $BIN_REMDRV $BASEDIR_OPT $modname
         else
-            $BIN_REMDRV $modname >/dev/null 2>&1
+            $BIN_REMDRV $BASEDIR_OPT $modname >/dev/null 2>&1
         fi
+        # for remote installs, don't bother with return values of rem_drv
         if test $? -eq 0; then
             subprint "Removed: $moddesc module"
             return 0
@@ -295,6 +326,11 @@ unload_module()
     if test -z "$1" || test -z "$2"; then
         errorprint "missing argument to unload_module()"
         exit 1
+    fi
+
+    # No-OP for non-root installs
+    if test "$REMOTEINST" -eq 1; then
+        return 0
     fi
 
     modname=$1
@@ -324,6 +360,11 @@ load_module()
     if test -z "$1" || test -z "$2"; then
         errorprint "missing argument to load_module()"
         exit 1
+    fi
+
+    # No-OP for non-root installs
+    if test "$REMOTEINST" -eq 1; then
+        return 0
     fi
 
     modname=$1
@@ -359,58 +400,72 @@ install_drivers()
     fi
 
     # Add vboxdrv to devlink.tab
-    sed -e '/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
-    echo "type=ddi_pseudo;name=vboxdrv	\D" >> /etc/devlink.vbox
-    mv -f /etc/devlink.vbox /etc/devlink.tab
+    if test -f "${BASEDIR}/etc/devlink.tab"; then
+        sed -e '/name=vboxdrv/d' ${BASEDIR}/etc/devlink.tab > ${BASEDIR}/etc/devlink.vbox
+        echo "type=ddi_pseudo;name=vboxdrv	\D" >> ${BASEDIR}/etc/devlink.vbox
+        mv -f ${BASEDIR}/etc/devlink.vbox ${BASEDIR}/etc/devlink.tab
+    else
+        errorprint "Missing ${BASEDIR}/etc/devlink.tab, aborting install"
+        return 1
+    fi
 
-    # Create the device link
-    /usr/sbin/devfsadm -i "$MOD_VBOXDRV"
-
-    if test $? -eq 0 && test -h "/dev/vboxdrv"; then
-
-        if test -f "$DIR_CONF/vboxnet.conf"; then
-            add_driver "$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
-            load_module "drv/$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
+    # Create the device link for non-remote installs
+    if test "$REMOTEINST" -eq 0; then
+        /usr/sbin/devfsadm -i "$MOD_VBOXDRV"
+        if test $? -ne 0 || test ! -h "/dev/vboxdrv"; then
+            errorprint "Failed to create device link for $MOD_VBOXDRV."
+            exit 1
         fi
+    fi
 
-        if test -f "$DIR_CONF/vboxflt.conf"; then
-            add_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
-            load_module "drv/$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
-        fi
+    # Load VBoxNetAdp
+    if test -f "$DIR_CONF/vboxnet.conf"; then
+        add_driver "$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
+        load_module "drv/$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
+    fi
 
-        if test -f "$DIR_CONF/vboxusbmon.conf" && test "$HOST_OS_MAJORVERSION" != "5.10"; then
-            # For VirtualBox 3.1 the new USB code requires Nevada > 123
-            if test "$HOST_OS_MINORVERSION" -gt 123; then
-                add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
-                load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
+    # Load VBoxNetFlt
+    if test -f "$DIR_CONF/vboxflt.conf"; then
+        add_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
+        load_module "drv/$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
+    fi
 
-                # Add vboxusbmon to devlink.tab
-                sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
-                echo "type=ddi_pseudo;name=vboxusbmon	\D" >> /etc/devlink.vbox
-                mv -f /etc/devlink.vbox /etc/devlink.tab
+    # Load VBoxUSBMon, VBoxUSB
+    if test -f "$DIR_CONF/vboxusbmon.conf" && test "$HOST_OS_MAJORVERSION" != "5.10"; then
+        # For VirtualBox 3.1 the new USB code requires Nevada > 123
+        if test "$HOST_OS_MINORVERSION" -gt 123; then
+            add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
+            load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
 
-                # Create the device link
+            # Add vboxusbmon to devlink.tab
+            sed -e '/name=vboxusbmon/d' ${BASEDIR}/etc/devlink.tab > ${BASEDIR}/etc/devlink.vbox
+            echo "type=ddi_pseudo;name=vboxusbmon	\D" >> ${BASEDIR}/etc/devlink.vbox
+            mv -f ${BASEDIR}/etc/devlink.vbox ${BASEDIR}/etc/devlink.tab
+
+            # Create the device link for non-remote installs
+            if test "$REMOTEINST" -eq 0; then
                 /usr/sbin/devfsadm -i  "$MOD_VBOXUSBMON"
                 if test $? -ne 0; then
                     errorprint "Failed to create device link for $MOD_VBOXUSBMON."
                     exit 1
                 fi
+            fi
 
-                # Add vboxusb if present
-                # This driver is special, we need it in the boot-archive but since there is no
-                # USB device to attach to now (it's done at runtime) it will fail to attach so
-                # redirect attaching failure output to /dev/null
-                if test -f "$DIR_CONF/vboxusb.conf"; then
-                    add_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP" "$NULLOP"
-                    load_module "drv/$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP"
-                fi
-            else
+            # Add vboxusb if present
+            # This driver is special, we need it in the boot-archive but since there is no
+            # USB device to attach to now (it's done at runtime) it will fail to attach so
+            # redirect attaching failure output to /dev/null
+            if test -f "$DIR_CONF/vboxusb.conf"; then
+                add_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP" "$NULLOP"
+                load_module "drv/$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP"
+            fi
+        else
+            if test -n "$HOST_OS_MINORVERSION"; then
                 warnprint "Solaris 5.11 snv_124 or higher required for USB support. Skipped installing USB support."
+            else
+                warnprint "Failed to determine Solaris 5.11 snv version. Skipped installing USB support."
             fi
         fi
-    else
-        errorprint "Failed to create device link for $MOD_VBOXDRV."
-        exit 1
     fi
 
     return $?
@@ -423,17 +478,19 @@ remove_drivers()
     fatal=$1
 
     # Remove vboxdrv from devlink.tab
-    devlinkfound=`cat /etc/devlink.tab | grep vboxdrv`
-    if test -n "$devlinkfound"; then
-        sed -e '/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
-        mv -f /etc/devlink.vbox /etc/devlink.tab
-    fi
+    if test -f ${BASEDIR}/etc/devlink.tab; then
+        devlinkfound=`cat ${BASEDIR}/etc/devlink.tab | grep vboxdrv`
+        if test -n "$devlinkfound"; then
+            sed -e '/name=vboxdrv/d' ${BASEDIR}/etc/devlink.tab > ${BASEDIR}/etc/devlink.vbox
+            mv -f ${BASEDIR}/etc/devlink.vbox ${BASEDIR}/etc/devlink.tab
+        fi
 
-    # Remove vboxusbmon from devlink.tab
-    devlinkfound=`cat /etc/devlink.tab | grep vboxusbmon`
-    if test -n "$devlinkfound"; then
-        sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
-        mv -f /etc/devlink.vbox /etc/devlink.tab
+        # Remove vboxusbmon from devlink.tab
+        devlinkfound=`cat ${BASEDIR}/etc/devlink.tab | grep vboxusbmon`
+        if test -n "$devlinkfound"; then
+            sed -e '/name=vboxusbmon/d' ${BASEDIR}/etc/devlink.tab > ${BASEDIR}/etc/devlink.vbox
+            mv -f ${BASEDIR}/etc/devlink.vbox ${BASEDIR}/etc/devlink.tab
+        fi
     fi
 
     unload_module "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$fatal"
@@ -455,15 +512,15 @@ remove_drivers()
 #    unload_module "$MOD_VBI" "$DESC_VBI" "$fatal"
 
     # remove devlinks
-    if test -h "/dev/vboxdrv" || test -f "/dev/vboxdrv"; then
-        rm -f /dev/vboxdrv
+    if test -h "${BASEDIR}/dev/vboxdrv" || test -f "${BASEDIR}/dev/vboxdrv"; then
+        rm -f ${BASEDIR}/dev/vboxdrv
     fi
-    if test -h "/dev/vboxusbmon" || test -f "/dev/vboxusbmon"; then
-        rm -f /dev/vboxusbmon
+    if test -h "${BASEDIR}/dev/vboxusbmon" || test -f "${BASEDIR}/dev/vboxusbmon"; then
+        rm -f ${BASEDIR}/dev/vboxusbmon
     fi
 
     # unpatch nwam/dhcpagent fix
-    nwamfile=/etc/nwam/llp
+    nwamfile=${BASEDIR}/etc/nwam/llp
     nwambackupfile=$nwamfile.vbox
     if test -f "$nwamfile"; then
         sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
@@ -471,7 +528,7 @@ remove_drivers()
     fi
 
     # remove netmask configuration
-    nmaskfile=/etc/netmasks
+    nmaskfile=${BASEDIR}/etc/netmasks
     nmaskbackupfile=$nmaskfile.vbox
     if test -f "$nmaskfile"; then
         sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
@@ -518,11 +575,17 @@ cleanup_install()
 {
     fatal=$1
 
-    # stop and unregister webservice SMF
+    # No-Op for remote installs
+    if test "$REMOTEINST" -eq 1; then
+        return 0
+    fi
+
+    # stop webservice
     servicefound=`$BIN_SVCS -a | grep "virtualbox/webservice" 2>/dev/null`
     if test ! -z "$servicefound"; then
         $BIN_SVCADM disable -s svc:/application/virtualbox/webservice:default
-        $BIN_SVCCFG delete svc:/application/virtualbox/webservice:default
+        # Don't delete the manifest, this is handled by the manifest class action
+        # $BIN_SVCCFG delete svc:/application/virtualbox/webservice:default
         if test "$?" -eq 0; then
             subprint "Unloaded: Web service"
         else
@@ -530,11 +593,12 @@ cleanup_install()
         fi
     fi
 
-    # stop and unregister zoneaccess SMF
+    # stop zoneaccess service
     servicefound=`$BIN_SVCS -a | grep "virtualbox/zoneaccess" 2>/dev/null`
     if test ! -z "$servicefound"; then
         $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess
-        $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
+        # Don't delete the manifest, this is handled by the manifest class action
+        # $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
         if test "$?" -eq 0; then
             subprint "Unloaded: Zone access service"
         else
@@ -542,7 +606,7 @@ cleanup_install()
         fi
     fi
 
-    # unplumb all vboxnet instances
+    # unplumb all vboxnet instances for non-remote installs
     inst=0
     while test $inst -ne $MOD_VBOXNET_INST; do
         vboxnetup=`$BIN_IFCONFIG vboxnet$inst >/dev/null 2>&1`
@@ -583,7 +647,7 @@ postinstall()
     if test "$?" -eq 0; then
         if test -f "$DIR_CONF/vboxnet.conf"; then
             # nwam/dhcpagent fix
-            nwamfile=/etc/nwam/llp
+            nwamfile=${BASEDIR}/etc/nwam/llp
             nwambackupfile=$nwamfile.vbox
             if test -f "$nwamfile"; then
                 sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
@@ -599,97 +663,101 @@ postinstall()
                 mv -f $nwambackupfile $nwamfile
             fi
 
-            # plumb and configure vboxnet0
-            $BIN_IFCONFIG vboxnet0 plumb up
-            if test "$?" -eq 0; then
-                $BIN_IFCONFIG vboxnet0 192.168.56.1 netmask 255.255.255.0 up
+            # plumb and configure vboxnet0 for non-remote installs
+            if test "$REMOTEINST" -eq 0; then
+                $BIN_IFCONFIG vboxnet0 plumb up
+                if test "$?" -eq 0; then
+                    $BIN_IFCONFIG vboxnet0 192.168.56.1 netmask 255.255.255.0 up
 
-                # add the netmask to stay persistent across host reboots
-                nmaskfile=/etc/netmasks
-                nmaskbackupfile=$nmaskfile.vbox
-                if test -f $nmaskfile; then
-                    sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
-                    echo "#VirtualBox_SectionStart" >> $nmaskbackupfile
-                    inst=0
-                    networkn=56
-                    while test $inst -ne 1; do
-                        echo "192.168.$networkn.0 255.255.255.0" >> $nmaskbackupfile
-                        inst=`expr $inst + 1`
-                        networkn=`expr $networkn + 1`
-                    done
-                    echo "#VirtualBox_SectionEnd" >> $nmaskbackupfile
-                    mv -f $nmaskbackupfile $nmaskfile
+                    # add the netmask to stay persistent across host reboots
+                    nmaskfile=${BASEDIR}/etc/netmasks
+                    nmaskbackupfile=$nmaskfile.vbox
+                    if test -f $nmaskfile; then
+                        sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
+                        echo "#VirtualBox_SectionStart" >> $nmaskbackupfile
+                        inst=0
+                        networkn=56
+                        while test $inst -ne 1; do
+                            echo "192.168.$networkn.0 255.255.255.0" >> $nmaskbackupfile
+                            inst=`expr $inst + 1`
+                            networkn=`expr $networkn + 1`
+                        done
+                        echo "#VirtualBox_SectionEnd" >> $nmaskbackupfile
+                        mv -f $nmaskbackupfile $nmaskfile
+                    fi
+                else
+                    # Should this be fatal?
+                    warnprint "Failed to bring up vboxnet0!!"
                 fi
-            else
-                # Should this be fatal?
-                warnprint "Failed to bring up vboxnet0!!"
             fi
         fi
 
-        if test -f /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml || test -f /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml; then
+        if test -f ${BASEDIR}/var/svc/manifest/application/virtualbox/virtualbox-webservice.xml || test -f ${BASEDIR}/var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml; then
             infoprint "Configuring services..."
-        fi
-
-        # Web service
-        if test -f /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml; then
-            /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml
-            /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
-            if test "$?" -eq 0; then
-                subprint "Loaded: Web service"
-            else
-                subprint "Loading: Web service  ...ERROR(S)."
+            if test "$REMOTEINST" -eq 1; then
+                subprint "Skipped for targetted installs."
             fi
         fi
 
-        # Zone access service
-        if test -f /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml; then
-            /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml
-            /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
-            if test "$?" -eq 0; then
-                subprint "Loaded: Zone access service"
-            else
-                subprint "Loading: Zone access service  ...ERROR(S)."
+        # Enable Zone access service for non-remote installs, other services (Webservice) are delivered disabled by the manifest class action
+        if test "$REMOTEINST" -eq 0; then
+            servicefound=`$BIN_SVCS -a | grep "virtualbox/zoneaccess" | grep "disabled" 2>/dev/null`
+            if test ! -z "$servicefound"; then
+                /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
+                if test "$?" -eq 0; then
+                    subprint "Loaded: Zone access service"
+                else
+                    subprint "Loading Zone access service  ...FAILED."
+                fi
             fi
         fi
 
-        # Install python bindings
-        if test -f "$DIR_VBOXBASE/sdk/installer/vboxapisetup.py" || test -h "$DIR_VBOXBASE/sdk/installer/vboxapisetup.py"; then
-            PYTHONBIN=`which python 2> /dev/null`
-            if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
-                infoprint "Installing Python bindings..."
+        # Install python bindings for non-remote installs
+        if test "$REMOTEINST" -eq 0; then
+            if test -f "$DIR_VBOXBASE/sdk/installer/vboxapisetup.py" || test -h "$DIR_VBOXBASE/sdk/installer/vboxapisetup.py"; then
+                PYTHONBIN=`which python 2> /dev/null`
+                if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
+                    infoprint "Installing Python bindings..."
 
-                INSTALLEDIT=1
-                PYTHONBIN=`which python2.4 2>/dev/null`
-                install_python_bindings "$PYTHONBIN" "Python 2.4"
-                if test "$?" -eq 0; then
-                    INSTALLEDIT=0
-                fi
-                PYTHONBIN=`which python2.5 2>/dev/null`
-                install_python_bindings "$PYTHONBIN"  "Python 2.5"
-                if test "$?" -eq 0; then
-                    INSTALLEDIT=0
-                fi
-                PYTHONBIN=`which python2.6 2>/dev/null`
-                install_python_bindings "$PYTHONBIN" "Python 2.6"
-                if test "$?" -eq 0; then
-                    INSTALLEDIT=0
-                fi
+                    INSTALLEDIT=1
+                    PYTHONBIN=`which python2.4 2>/dev/null`
+                    install_python_bindings "$PYTHONBIN" "Python 2.4"
+                    if test "$?" -eq 0; then
+                        INSTALLEDIT=0
+                    fi
+                    PYTHONBIN=`which python2.5 2>/dev/null`
+                    install_python_bindings "$PYTHONBIN"  "Python 2.5"
+                    if test "$?" -eq 0; then
+                        INSTALLEDIT=0
+                    fi
+                    PYTHONBIN=`which python2.6 2>/dev/null`
+                    install_python_bindings "$PYTHONBIN" "Python 2.6"
+                    if test "$?" -eq 0; then
+                        INSTALLEDIT=0
+                    fi
 
-                # remove files installed by Python build
-                rm -rf $DIR_VBOXBASE/sdk/installer/build
+                    # remove files installed by Python build
+                    rm -rf $DIR_VBOXBASE/sdk/installer/build
 
-                if test "$INSTALLEDIT" -ne 0; then
-                    warnprint "No suitable Python version found. Required Python 2.4, 2.5 or 2.6."
-                    warnprint "Skipped installing the Python bindings."
+                    if test "$INSTALLEDIT" -ne 0; then
+                        warnprint "No suitable Python version found. Required Python 2.4, 2.5 or 2.6."
+                        warnprint "Skipped installing the Python bindings."
+                    fi
+                else
+                    warnprint "Python not found, skipped installed Python bindings."
                 fi
-            else
-                warnprint "Python not found, skipped installed Python bindings."
             fi
+        else
+            warnprint "Skipped installing Python bindings. Run, as root, 'vboxapisetup.py install' manually from the booted system."
         fi
 
         # Update boot archive
         infoprint "Updating the boot archive..."
-        $BIN_BOOTADM update-archive > /dev/null
+        if test "$REMOTEINST" -eq 0; then
+            $BIN_BOOTADM update-archive > /dev/null
+        else
+            $BIN_BOOTADM update-archive -R ${BASEDIR} > /dev/null
+        fi
 
         return 0
     else
@@ -721,6 +789,12 @@ check_root
 check_isa
 check_zone
 find_bins
+get_sysinfo
+
+if test "x${BASEDIR}" != "x/"; then
+    BASEDIR_OPT="-b ${BASEDIR}"
+    REMOTEINST=1
+fi
 
 # Get command line options
 while test $# -gt 0;

@@ -18,10 +18,11 @@
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    /opt/VirtualBox/pkginstall.sh --srv4
+    ${BASEDIR}/opt/VirtualBox/pkginstall.sh --srv4
     rc=$?
 fi
 
+# installf inherits ${PKG_INSTALL_ROOT} from pkgadd, no need to explicitly specify
 /usr/sbin/installf -f $PKGINST
 
 # return 20 = requires reboot, 2 = partial failure, 0  = success
