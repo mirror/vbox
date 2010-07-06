@@ -298,7 +298,7 @@ GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3);
 GMMR0DECL(int)  GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
 GMMR0DECL(int)  GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
 GMMR0DECL(int)  GMMR0UnregisterAllSharedModules(PVM pVM, VMCPUID idCpu);
-GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu);
+GMMR0DECL(int)  GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu);
 GMMR0DECL(int)  GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu);
 #ifdef LOG_ENABLED
 GMMR0DECL(int) GMMR0CheckSharedModulesStart(PVM pVM);
@@ -499,6 +499,20 @@ typedef struct GMMREGISTERSHAREDMODULEREQ
 typedef GMMREGISTERSHAREDMODULEREQ *PGMMREGISTERSHAREDMODULEREQ;
 
 GMMR0DECL(int) GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq);
+
+
+/**
+ * Request buffer for VMMR0_DO_GMM_CHECK_SHARED_MODULES.
+ */
+typedef struct GMMCHECKSHAREDMODULEREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR              Hdr;
+    /** return code. */
+    uint32_t                    rc;
+} GMMCHECKSHAREDMODULEREQ;
+/** Pointer to a VMMR0_DO_GMM_CHECK_SHARED_MODULES request buffer. */
+typedef GMMCHECKSHAREDMODULEREQ *PGMMCHECKSHAREDMODULEREQ;
 
 /**
  * Shared region descriptor
