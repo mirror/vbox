@@ -4179,7 +4179,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
         if (pGVM->gmm.s.fFirstCheckSharedModule)
         {
             /* To make sure the guest additions can detect a VM restore as that needs a reregistration of all modules. */
-            rc = VINF_PGM_SHARED_MODULE_FIRST_CHECK;
+            rc = VERR_PGM_SHARED_MODULE_FIRST_CHECK;
             pGVM->gmm.s.fFirstCheckSharedModule = false;
         }
         else

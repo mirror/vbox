@@ -488,7 +488,7 @@ skipkernelmodules:
 
     /* Check all registered modules. */
     int rc = VbglR3CheckSharedModules();
-    if (    rc == VINF_PGM_SHARED_MODULE_FIRST_CHECK
+    if (    rc == VERR_PGM_SHARED_MODULE_FIRST_CHECK
         &&  !fFirstCheck)
     {
         bool fUnregister = false;

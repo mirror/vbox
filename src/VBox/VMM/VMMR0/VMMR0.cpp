@@ -956,13 +956,10 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 #ifdef VBOX_WITH_PAGE_SHARING
         case VMMR0_DO_GMM_CHECK_SHARED_MODULES:
         {
-            PGMMCHECKSHAREDMODULEREQ pReq = (PGMMCHECKSHAREDMODULEREQ)pReqHdr;
-
             if (idCpu == NIL_VMCPUID)
                 return VERR_INVALID_CPU_ID;
             if (    u64Arg
-                ||  !pReq
-                ||  pReq->Hdr.cbReq != sizeof(*pReq))
+                ||  pReqHdr)
                 return VERR_INVALID_PARAMETER;
 
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
@@ -975,16 +972,16 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             int rc = GMMR0CheckSharedModulesStart(pVM);
             if (rc == VINF_SUCCESS)
             {
-                pReq->rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, GMMR0CheckSharedModules, pVM, pVCpu); /* this may resume code. */
+                rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, GMMR0CheckSharedModules, pVM, pVCpu); /* this may resume code. */
                 GMMR0CheckSharedModulesEnd(pVM);
             }
 # else
-            pReq->rc = GMMR0CheckSharedModules(pVM, pVCpu);
+            int rc = GMMR0CheckSharedModules(pVM, pVCpu);
 # endif
 
             /* Clear the VCPU context. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-            return VINF_SUCCESS;
+            return rc;
         }
 #endif
 
