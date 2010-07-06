@@ -33,10 +33,9 @@
 #include "VBoxGlobal.h"
 #include "UISession.h"
 #include "UIMachineWindow.h"
-#include "UIMachineLogic.h"
-#include "UIFrameBuffer.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineViewSeamless.h"
+#include "UIFrameBuffer.h"
 
 UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
                                              , ulong uScreenId
