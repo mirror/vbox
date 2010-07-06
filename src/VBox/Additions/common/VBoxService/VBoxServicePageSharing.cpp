@@ -344,7 +344,6 @@ void VBoxServicePageSharingInspectGuest()
     HANDLE hSnapshot;
     PAVLPVNODECORE pNewTree = NULL;
     DWORD dwProcessId = GetCurrentProcessId();
-    bool fFirstCheck = (pKnownModuleTree == NULL);
 
     VBoxServiceVerbose(3, "VBoxServicePageSharingInspectGuest\n");
 
