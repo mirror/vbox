@@ -57,32 +57,29 @@ bool UIKeyboardHandlerNormal::eventFilter(QObject *pWatchedObject, QEvent *pEven
                 /* Get key-event: */
                 QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
                 /* Process Host+Home as menu-bar activator: */
-                if (isHostKeyPressed() && pEvent->type() == QEvent::KeyPress)
+                if (isHostKeyPressed() && pKeyEvent->key() == Qt::Key_Home)
                 {
-                    if (pKeyEvent->key() == Qt::Key_Home)
+                    /* Trying to get menu-bar: */
+                    QMenuBar *pMenuBar = qobject_cast<QMainWindow*>(m_windows[uScreenId]->machineWindow())->menuBar();
+                    /* If menu-bar is present and have actions: */
+                    if (pMenuBar && !pMenuBar->actions().isEmpty())
                     {
-                        /* Trying to get menu-bar: */
-                        QMenuBar *pMenuBar = qobject_cast<QMainWindow*>(m_windows[uScreenId]->machineWindow())->menuBar();
-                        /* If menu-bar is present and have actions: */
-                        if (pMenuBar && !pMenuBar->actions().isEmpty())
+                        /* If 'active' action is NOT chosen: */
+                        if (!pMenuBar->activeAction())
+                            /* Set first menu-bar action as 'active': */
+                            pMenuBar->setActiveAction(pMenuBar->actions()[0]);
+                        /* If 'active' action is chosen: */
+                        if (pMenuBar->activeAction())
                         {
-                            /* If 'active' action is NOT chosen: */
-                            if (!pMenuBar->activeAction())
-                                /* Set first menu-bar action as 'active': */
-                                pMenuBar->setActiveAction(pMenuBar->actions()[0]);
-                            /* If 'active' action is chosen: */
-                            if (pMenuBar->activeAction())
-                            {
-                                /* Activate 'active' menu-bar action: */
-                                pMenuBar->activeAction()->activate(QAction::Trigger);
+                            /* Activate 'active' menu-bar action: */
+                            pMenuBar->activeAction()->activate(QAction::Trigger);
 #ifdef Q_WS_WIN
-                                /* Windows host needs separate 'focus set'
-                                 * to let menubar operate while popped up: */
-                                pMenuBar->setFocus();
+                            /* Windows host needs separate 'focus set'
+                             * to let menubar operate while popped up: */
+                            pMenuBar->setFocus();
 #endif /* Q_WS_WIN */
-                                /* Filter-out this event: */
-                                return true;
-                            }
+                            /* Filter-out this event: */
+                            return true;
                         }
                     }
                 }
