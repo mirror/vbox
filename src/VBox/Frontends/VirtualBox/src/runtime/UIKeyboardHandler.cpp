@@ -689,7 +689,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
             {
                 /* If keyboard event handler is NOT currently installed;
                  * Or installed but NOT for that window: */
-                if (m_iKeyboardGrabViewIndex != uScreenId)
+                if (m_iKeyboardGrabViewIndex != (int)uScreenId)
                 {
                     /* If keyboard event handler is NOT currently installed: */
                     if (m_iKeyboardGrabViewIndex == -1)
@@ -705,7 +705,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
             case QEvent::WindowDeactivate:
             {
                 /* If keyboard event handler is installed exactly for that window: */
-                if (m_iKeyboardGrabViewIndex == uScreenId)
+                if (m_iKeyboardGrabViewIndex == (int)uScreenId)
                 {
                     /* Remove the keyboard event handler: */
                     darwinGrabKeyboardEvents(false);
@@ -882,7 +882,7 @@ void UIKeyboardHandler::darwinGrabKeyboardEvents(bool fGrab)
         UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
                                                                 UIKeyboardHandler::darwinEventHandlerProc, this);
 
-        ::DarwinGrabKeyboard(false);
+        ::DarwinGrabKeyboard (false);
     }
     else
     {
@@ -906,7 +906,7 @@ bool UIKeyboardHandler::darwinEventHandlerProc(const void *pvCocoaEvent, const v
     /* All keyboard class events needs to be handled. */
     if (eventClass == kEventClassKeyboard)
     {
-        if (pKeyboardHandler->darwinKeyboardEvent(pvCocoaEvent, inEvent))
+        if (pKeyboardHandler->darwinKeyboardEvent (pvCocoaEvent, inEvent))
             return true;
     }
     /* Pass the event along. */
