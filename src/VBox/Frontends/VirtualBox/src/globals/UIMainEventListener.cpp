@@ -33,7 +33,7 @@ UIMainEventListener::UIMainEventListener(QObject * /* pParent */)
 //  : QObject(pParent) /* Todo: Not sure if pParent should delete this. Especially on Win there is ref counting implemented. */
   : QObject()
 #ifdef Q_WS_WIN
-  , m_refcnt
+  , m_refcnt(0)
 #endif /* Q_WS_WIN */
 {
     /* For queued events we have to extra register our enums/interface classes
