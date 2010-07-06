@@ -84,7 +84,7 @@ static PFNZWQUERYSYSTEMINFORMATION ZwQuerySystemInformation = NULL;
 static HMODULE hNtdll = 0;
 
 
-static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *);
+static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *pvUser);
 
 static PAVLPVNODECORE   pKnownModuleTree = NULL;
 
@@ -486,24 +486,42 @@ skipkernelmodules:
     RTAvlPVDestroy(&pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, NULL);
 
     /* Check all registered modules. */
-    VbglR3CheckSharedModules();
-
-    /* Activate new module tree. */
-    pKnownModuleTree = pNewTree;
+    int rc = VbglR3CheckSharedModules();
+    if (rc == VINF_PGM_SHARED_MODULE_NONE_REGISTERED)
+    {
+        bool fUnregister = false;
+        /* The VM was restored, so reregister all modules the next time. */
+        RTAvlPVDestroy(&pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, &fUnregister);
+        pKnownModuleTree = NULL;
+    }
+    else
+    {
+        /* Activate new module tree. */
+        pKnownModuleTree = pNewTree;
+    }
 }
 
 /**
  * RTAvlPVDestroy callback.
  */
-static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *)
+static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *pvUser)
 {
     PKNOWN_MODULE pModule = (PKNOWN_MODULE)pNode;
+    bool *pfUnregister = (bool *)pvUser;
 
     VBoxServiceVerbose(3, "VBoxServicePageSharingEmptyTreeCallback %s %s\n", pModule->Info.szModule, pModule->szFileVersion);
 
-    /* Defererence module in the hypervisor. */
-    int rc = VbglR3UnregisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR64)pModule->Info.modBaseAddr, pModule->Info.modBaseSize);
-    AssertRC(rc);
+    /* Dereference module in the hypervisor. */
+    if (    !pfUnregister
+        ||  *pfUnregister == true)
+    {
+    #ifdef RT_ARCH_X86
+        int rc = VbglR3UnregisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR32)pModule->Info.modBaseAddr, pModule->Info.modBaseSize);
+    #else
+        int rc = VbglR3UnregisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR64)pModule->Info.modBaseAddr, pModule->Info.modBaseSize);
+    #endif
+        AssertRC(rc);
+    }
 
     if (pModule->hModule)
         FreeLibrary(pModule->hModule);
