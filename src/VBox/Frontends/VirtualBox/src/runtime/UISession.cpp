@@ -116,8 +116,8 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     connect(gConsoleEvents, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
             this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)));
 
-    connect(gConsoleEvents, SIGNAL(sigSharedFolderChange(Scope_T)),
-            this, SLOT(sltSharedFolderChange(Scope_T)));
+    connect(gConsoleEvents, SIGNAL(sigSharedFolderChange()),
+            this, SLOT(sltSharedFolderChange()));
 
     connect(gConsoleEvents, SIGNAL(sigRuntimeError(bool, QString, QString)),
             this, SIGNAL(sigRuntimeError(bool, QString, QString)));
@@ -580,7 +580,7 @@ void UISession::sltAdditionsChange()
     }
 }
 
-void UISession::sltSharedFolderChange(Scope_T /* scope */)
+void UISession::sltSharedFolderChange()
 {
     emit sigSharedFolderChange();
 }

@@ -79,7 +79,7 @@ signals:
     void sigMediumChange(CMediumAttachment attachment);
     void sigUSBControllerChange();
     void sigUSBDeviceStateChange(CUSBDevice device, bool fAttached, CVirtualBoxErrorInfo error);
-    void sigSharedFolderChange(Scope_T scope);
+    void sigSharedFolderChange();
     void sigRuntimeError(bool fFatal, QString strId, QString strMessage);
     void sigCanShowWindow(bool &fVeto, QString &strReason); /* use Qt::DirectConnection */
     void sigShowWindow(ULONG64 &winId); /* use Qt::DirectConnection */

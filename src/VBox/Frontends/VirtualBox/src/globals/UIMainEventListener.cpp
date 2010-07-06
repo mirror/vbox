@@ -42,7 +42,6 @@ UIMainEventListener::UIMainEventListener(QObject * /* pParent */)
      * from xslt. */
     qRegisterMetaType<KMachineState>("KMachineState");
     qRegisterMetaType<KSessionState>("KSessionState");
-    qRegisterMetaType<Scope_T>("Scope_T");
     qRegisterMetaType< QVector<uint8_t> >("QVector<uint8_t>");
     qRegisterMetaType<CNetworkAdapter>("CNetworkAdapter");
     qRegisterMetaType<CMediumAttachment>("CMediumAttachment");
@@ -184,7 +183,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         case KVBoxEventType_OnSharedFolderChange:
         {
             CSharedFolderChangeEvent es(event);
-            emit sigSharedFolderChange(es.GetScope());
+            emit sigSharedFolderChange();
             break;
         }
         case KVBoxEventType_OnRuntimeError:
