@@ -11,6 +11,6 @@ HOTLINE="Please contact your local service provider"
 BASEDIR="/"
 MAXINST=1
 EMAIL="info@virtualbox.org"
-CLASSES=none sed
+CLASSES=none manifest
 DESC="A powerful PC virtualization solution"
 

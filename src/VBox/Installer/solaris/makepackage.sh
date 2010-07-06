@@ -78,6 +78,12 @@ filelist_fixup()
   mv -f "tmp-$1" "$1"
 }
 
+dirlist_fixup()
+{
+  "$VBOX_AWK" 'NF == 6 && $1 == "d" && '"$2"' { '"$3"' } { print }' "$1" > "tmp-$1"
+  mv -f "tmp-$1" "$1"
+}
+
 hardlink_fixup()
 {
   "$VBOX_AWK" 'NF == 3 && $1=="l" && '"$2"' { '"$3"' } { print }' "$1" > "tmp-$1"
@@ -131,8 +137,10 @@ fi
 cd "$PKG_BASE_DIR"
 find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|checkinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.depend|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
 
-# Include only opt/VirtualBox and subdirectories as we want uninstall to clean up directory structure as well
-find . -type d | $VBOX_GGREP -E 'opt/VirtualBox' | pkgproto >> prototype
+# Include opt/VirtualBox and subdirectories as we want uninstall to clean up directory structure.
+# Include usr/bin, because remote installs with symlinks when usr/bin/ doesn't need not fail.
+# Inlcude var/svc for manifest class action script does not create them.
+find . -type d | $VBOX_GGREP -E 'opt/VirtualBox|usr/bin|var/svc/manifest/application/virtualbox' | pkgproto >> prototype
 
 # fix up file permissions (owner/group)
 # don't grok for class-specific files (like sed, if any)
@@ -165,6 +173,11 @@ filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxusbmon"'   
 # USB Client vboxusb
 filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxusb"'                                   '$6 = "sys"'
 filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxusb"'                             '$6 = "sys"'
+
+# Manifest class action scripts
+filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/virtualbox-webservice.xml"'    '$2 = "manifest";$6 = "sys"'
+filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml"'    '$2 = "manifest";$6 = "sys"'
+dirlist_fixup prototype      '$3 == "var/svc/manifest/application/virtualbox"'                              '$6 = "sys"'
 
 # hardening requires some executables to be marked setuid.
 if test -n "$HARDENED"; then

@@ -22,6 +22,10 @@ abort_error()
     exit 1
 }
 
+# nothing to check for targetted install
+if test "x${BASEDIR}" != "x/"; then
+    exit 0
+fi
 
 # Check if VBoxSVC is currently running
 VBOXSVC_PID=`ps -eo pid,fname | grep VBoxSVC | grep -v grep | awk '{ print $1 }'`
@@ -36,7 +40,8 @@ if test ! -z "$servicefound"; then
     echo "## VirtualBox's zone access service appears to still be running."
     echo "## Halting & removing zone access service..."
     /usr/sbin/svcadm disable -s svc:/application/virtualbox/zoneaccess
-    /usr/sbin/svccfg delete svc:/application/virtualbox/zoneaccess
+    # Don't delete the service, handled by manifest class action
+    # /usr/sbin/svccfg delete svc:/application/virtualbox/zoneaccess
 fi
 
 # Check if the Web service is running, if so stop & remove it
@@ -45,7 +50,8 @@ if test ! -z "$servicefound"; then
     echo "## VirtualBox web service appears to still be running."
     echo "## Halting & removing webservice..."
     /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice
-    /usr/sbin/svccfg delete svc:/application/virtualbox/webservice
+    # Don't delete the service, handled by manifest class action
+    # /usr/sbin/svccfg delete svc:/application/virtualbox/webservice
 fi
 
 # Check if vboxnet is still plumbed, if so try unplumb it

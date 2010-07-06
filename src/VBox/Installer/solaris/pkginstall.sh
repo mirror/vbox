@@ -28,11 +28,11 @@ else
     ISIPS=""
 fi
 
-/opt/VirtualBox/vboxconfig.sh --preremove --fatal "$ISIPS"
+${BASEDIR}/opt/VirtualBox/vboxconfig.sh --preremove --fatal "$ISIPS"
 
 if test "$?" -eq 0; then
     echo "Installing new ones..."
-    /opt/VirtualBox/vboxconfig.sh --postinstall
+    ${BASEDIR}/opt/VirtualBox/vboxconfig.sh --postinstall
     rc=$?
     if test "$rc" -ne 0; then
         echo "Completed but with errors."
