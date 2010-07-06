@@ -565,10 +565,10 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
 
     if (hNtdll)
         ZwQuerySystemInformation = (PFNZWQUERYSYSTEMINFORMATION)GetProcAddress(hNtdll, "ZwQuerySystemInformation");
-#endif
 
     rc =  VbglR3GetSessionId(&g_idSession);
     AssertRCReturn(rc, rc);
+#endif
 
     /* Never fail here. */
     return VINF_SUCCESS;
