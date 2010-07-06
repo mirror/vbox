@@ -123,9 +123,22 @@ public:
         init(pObj, aIID);
     }
 
-    ErrorInfo(const ErrorInfo &x);
+    ErrorInfo(const ErrorInfo &x)
+    {
+        copyFrom(x);
+    }
 
-    virtual ~ErrorInfo();
+    virtual ~ErrorInfo()
+    {
+        cleanup();
+    }
+
+    ErrorInfo& operator=(const ErrorInfo& x)
+    {
+        cleanup();
+        copyFrom(x);
+        return *this;
+    }
 
     /**
      *  Returns whether basic error info is actually available for the current
@@ -239,23 +252,7 @@ public:
      */
     void setNull()
     {
-        mIsBasicAvailable = false;
-        mIsFullAvailable = false;
-
-        if (m_pNext)
-        {
-            delete m_pNext;
-            m_pNext = NULL;
-        }
-
-        mResultCode = S_OK;
-        mInterfaceID.clear();
-        mComponent.setNull();
-        mText.setNull();
-        mInterfaceName.setNull();
-        mCalleeIID.clear();
-        mCalleeName.setNull();
-        mErrorInfo.setNull();
+        cleanup();
     }
 
 protected:
@@ -266,6 +263,9 @@ protected:
           mResultCode(S_OK),
           m_pNext(NULL)
     { }
+
+    void copyFrom(const ErrorInfo &x);
+    void cleanup();
 
     void init(bool aKeepObj = false);
     void init(IUnknown *aUnk, const GUID &aIID, bool aKeepObj = false);
