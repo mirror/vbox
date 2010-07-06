@@ -42,9 +42,27 @@
  #endif
 #else
  #include <nsISupportsUtils.h>
+
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
-#include <VBox/com/com.h>
+#include <VBox/com/defs.h>
+
+#ifdef VBOX_WITH_XPCOM
+
+namespace com
+{
+// declare a couple of XPCOM helper methods (defined in glue/com.cpp)
+// so we don't have to include a ton of XPCOM implementation headers here
+HRESULT GlueCreateObjectOnServer(const CLSID &clsid,
+                                 const char *serverName,
+                                 const nsIID &id,
+                                 void** ppobj);
+HRESULT GlueCreateInstance(const CLSID &clsid,
+                           const nsIID &id,
+                           void** ppobj);
+}
+
+#endif // VBOX_WITH_XPCOM
 
 /**
  *  COM autopointer class which takes care of all required reference counting.

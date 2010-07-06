@@ -2007,7 +2007,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     rc = gConsole->PowerUp(gProgress.asOutParam());
     if (rc != S_OK)
     {
-        com::ErrorInfo info(gConsole);
+        com::ErrorInfo info(gConsole, COM_IIDOF(IConsole));
         if (info.isBasicAvailable())
             PrintError("Failed to power up VM", info.getText().raw());
         else
@@ -2791,7 +2791,7 @@ leave:
     {
         for (unsigned i = 0; i < gcMonitors; i++)
             gDisplay->SetFramebuffer(i, NULL);
-    }    
+    }
 
     gMouse = NULL;
     gKeyboard = NULL;

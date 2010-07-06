@@ -23,7 +23,9 @@
 
 #include <VBox/com/array.h>
 #include <VBox/pdmdrv.h>
+
 #include <iprt/asm.h>
+#include <iprt/cpp/utils.h>
 
 // defines
 ////////////////////////////////////////////////////////////////////////////////

@@ -912,15 +912,17 @@ std::string ConvertComString(const com::Guid &uuid)
 }
 
 /**
- * Raises a SOAP runtime fault.
+ * Raises a SOAP runtime fault. Implementation for the RaiseSoapRuntimeFault template
+ * function in vboxweb.h.
  *
  * @param pObj
  */
-void RaiseSoapRuntimeFault(struct soap *soap,
-                           HRESULT apirc,
-                           IUnknown *pObj)
+void RaiseSoapRuntimeFault2(struct soap *soap,
+                            HRESULT apirc,
+                            IUnknown *pObj,
+                            const com::Guid &iid)
 {
-    com::ErrorInfo info(pObj);
+    com::ErrorInfo info(pObj, iid);
 
     WEBDEBUG(("   error, raising SOAP exception\n"));
 

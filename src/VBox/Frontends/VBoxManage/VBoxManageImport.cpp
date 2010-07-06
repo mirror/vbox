@@ -266,7 +266,7 @@ int handleImportAppliance(HandlerArg *arg)
         // to tinker with the error info a bit
         RTPrintf("Interpreting %ls...\n", path.raw());
         rc = pAppliance->Interpret();
-        com::ErrorInfo info0(pAppliance);
+        com::ErrorInfo info0(pAppliance, COM_IIDOF(IAppliance));
 
         com::SafeArray<BSTR> aWarnings;
         if (SUCCEEDED(pAppliance->GetWarnings(ComSafeArrayAsOutParam(aWarnings))))

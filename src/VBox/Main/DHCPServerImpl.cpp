@@ -22,6 +22,8 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
+#include <iprt/cpp/utils.h>
+
 #include <VBox/settings.h>
 
 #include "VirtualBoxImpl.h"
