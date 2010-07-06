@@ -28,7 +28,6 @@
 namespace com
 {
 
-
 void GluePrintErrorInfo(com::ErrorInfo &info)
 {
     Utf8Str str = Utf8StrFmt("ERROR: %ls\n"
@@ -74,7 +73,7 @@ void GlueHandleComError(ComPtr<IUnknown> iface,
                         uint32_t ulLine)
 {
     // if we have full error info, print something nice, and start with the actual error message
-    com::ErrorInfo info(iface);
+    com::ErrorInfo info(iface, COM_IIDOF(IUnknown));
     if (info.isFullAvailable() || info.isBasicAvailable())
         GluePrintErrorInfo(info);
     else

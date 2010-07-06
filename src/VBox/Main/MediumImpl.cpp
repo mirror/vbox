@@ -33,6 +33,7 @@
 #include <iprt/path.h>
 #include <iprt/file.h>
 #include <iprt/tcp.h>
+#include <iprt/cpp/utils.h>
 
 #include <VBox/VBoxHDD.h>
 

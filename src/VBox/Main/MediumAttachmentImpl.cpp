@@ -23,6 +23,8 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
+#include <iprt/cpp/utils.h>
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // private member data definition

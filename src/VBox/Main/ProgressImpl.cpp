@@ -33,6 +33,7 @@
 
 #include <iprt/time.h>
 #include <iprt/semaphore.h>
+#include <iprt/cpp/utils.h>
 
 #include <VBox/err.h>
 

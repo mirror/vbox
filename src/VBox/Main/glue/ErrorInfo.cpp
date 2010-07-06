@@ -43,7 +43,7 @@ namespace com
 // ErrorInfo class
 ////////////////////////////////////////////////////////////////////////////////
 
-void ErrorInfo::init (bool aKeepObj /* = false */)
+void ErrorInfo::init(bool aKeepObj /* = false */)
 {
     HRESULT rc = E_FAIL;
 
@@ -143,7 +143,9 @@ void ErrorInfo::init (bool aKeepObj /* = false */)
 #endif // defined (VBOX_WITH_XPCOM)
 }
 
-void ErrorInfo::init (IUnknown *aI, const GUID &aIID, bool aKeepObj /* = false */)
+void ErrorInfo::init(IUnknown *aI,
+                     const GUID &aIID,
+                     bool aKeepObj /* = false */)
 {
     Assert(aI);
     if (!aI)
@@ -174,7 +176,7 @@ void ErrorInfo::init (IUnknown *aI, const GUID &aIID, bool aKeepObj /* = false *
     }
 }
 
-void ErrorInfo::init (IVirtualBoxErrorInfo *info)
+void ErrorInfo::init(IVirtualBoxErrorInfo *info)
 {
     AssertReturnVoid (info);
 
@@ -205,17 +207,18 @@ void ErrorInfo::init (IVirtualBoxErrorInfo *info)
     gotSomething |= SUCCEEDED(rc);
     gotAll &= SUCCEEDED(rc);
 
+    m_pNext = NULL;
+
     ComPtr<IVirtualBoxErrorInfo> next;
     rc = info->COMGETTER(Next) (next.asOutParam());
     if (SUCCEEDED(rc) && !next.isNull())
     {
-        mNext.reset (new ErrorInfo (next));
-        Assert(mNext.get());
-        if (!mNext.get())
+        m_pNext = new ErrorInfo(next);
+        Assert(m_pNext);
+        if (!m_pNext)
             rc = E_OUTOFMEMORY;
     }
-    else
-        mNext.reset();
+
     gotSomething |= SUCCEEDED(rc);
     gotAll &= SUCCEEDED(rc);
 
@@ -227,6 +230,11 @@ void ErrorInfo::init (IVirtualBoxErrorInfo *info)
 
 ErrorInfo::~ErrorInfo()
 {
+    if (m_pNext)
+    {
+        delete m_pNext;
+        m_pNext = NULL;
+    }
 }
 
 // ProgressErrorInfo class

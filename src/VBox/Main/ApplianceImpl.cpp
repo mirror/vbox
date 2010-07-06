@@ -17,6 +17,7 @@
  */
 
 #include <iprt/path.h>
+#include <iprt/cpp/utils.h>
 
 #include <VBox/com/array.h>
 

@@ -43,7 +43,6 @@
 
 #include "VBox/com/string.h"
 
-#include <iprt/cpp/utils.h>
 #include <iprt/uuid.h>
 
 namespace com
