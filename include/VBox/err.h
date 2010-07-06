@@ -478,8 +478,8 @@
 #define VINF_PGM_SHARED_MODULE_COLLISION        (1649)
 /** Inconsistent local and global registration records. */
 #define VERR_PGM_SHARED_MODULE_REGISTRATION_INCONSISTENCY (-1650)
-/** No registered modules. */
-#define VINF_PGM_SHARED_MODULE_NONE_REGISTERED  (1651)
+/** First shared module check. */
+#define VINF_PGM_SHARED_MODULE_FIRST_CHECK      (1651)
 /** @} */
 
 
