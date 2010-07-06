@@ -32,6 +32,7 @@
 #include <VBox/vm.h> /* for VM_IS_EMT */
 
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
 #include <iprt/string.h>
@@ -1879,12 +1880,31 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 #endif
+
+        /*
+         * Get a unique session id for this VM; the id will be different after each start, reset or restore of the VM
+         * This can be used for restore detection inside the guest.
+         */
+        case VMMDevReq_GetSessionId:
+        {
+            if (pRequestHeader->size != sizeof(VMMDevReqSessionId))
+            {
+                AssertMsgFailed(("VMMDevReq_GetSessionId request size too small.\n"));
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevReqSessionId *pReq = (VMMDevReqSessionId *)pRequestHeader;
+                pReq->idSession = pThis->idSession;
+                pRequestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
+
         default:
         {
             pRequestHeader->rc = VERR_NOT_IMPLEMENTED;
-
             Log(("VMMDev unknown request type %d\n", pRequestHeader->requestType));
-
             break;
         }
     }
@@ -2706,6 +2726,11 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
         pThis->pDrv->pfnUpdateGuestVersion(pThis->pDrv, &pThis->guestInfo);
     if (fCapsChanged)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
+
+    /* Generate a unique session id for this VM; it will be changed for each start, reset or restore. 
+     * This can be used for restore detection inside the guest.
+     */
+    pThis->idSession = ASMReadTSC();
 }
 
 
@@ -2929,6 +2954,10 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMemBalloonChunks, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Memory balloon size", "/Devices/VMMDev/BalloonChunks");
 
+    /* Generate a unique session id for this VM; it will be changed for each start, reset or restore. 
+     * This can be used for restore detection inside the guest.
+     */
+    pThis->idSession = ASMReadTSC();
     return rc;
 }
 

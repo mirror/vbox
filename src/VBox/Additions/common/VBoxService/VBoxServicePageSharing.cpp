@@ -86,7 +86,8 @@ static HMODULE hNtdll = 0;
 
 static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *pvUser);
 
-static PAVLPVNODECORE   pKnownModuleTree = NULL;
+static PAVLPVNODECORE   g_pKnownModuleTree = NULL;
+static uint64_t         g_idSession = 0;
 
 /**
  * Registers a new module with the VMM
@@ -301,7 +302,7 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
         PAVLPVNODECORE pRec = RTAvlPVGet(ppNewTree, ModuleInfo.modBaseAddr);
         if (!pRec)
         {
-            pRec = RTAvlPVRemove(&pKnownModuleTree, ModuleInfo.modBaseAddr);
+            pRec = RTAvlPVRemove(&g_pKnownModuleTree, ModuleInfo.modBaseAddr);
             if (!pRec)
             {
                 /* New module; register it. */
@@ -410,7 +411,7 @@ void VBoxServicePageSharingInspectGuest()
             PAVLPVNODECORE pRec = RTAvlPVGet(&pNewTree, pSystemModules->Modules[i].ImageBase);
             if (!pRec)
             {
-                pRec = RTAvlPVRemove(&pKnownModuleTree, pSystemModules->Modules[i].ImageBase);
+                pRec = RTAvlPVRemove(&g_pKnownModuleTree, pSystemModules->Modules[i].ImageBase);
                 if (!pRec)
                 {
                     /* New module; register it. */
@@ -483,12 +484,13 @@ skipkernelmodules:
     }
 
     /* Delete leftover modules in the old tree. */
-    RTAvlPVDestroy(&pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, NULL);
+    RTAvlPVDestroy(&g_pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, NULL);
 
     /* Check all registered modules. */
     VbglR3CheckSharedModules();
+
     /* Activate new module tree. */
-    pKnownModuleTree = pNewTree;
+    g_pKnownModuleTree = pNewTree;
 }
 
 /**
@@ -565,6 +567,9 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
         ZwQuerySystemInformation = (PFNZWQUERYSYSTEMINFORMATION)GetProcAddress(hNtdll, "ZwQuerySystemInformation");
 #endif
 
+    rc =  VbglR3GetSessionId(&g_idSession);
+    AssertRCReturn(rc, rc);
+
     /* Never fail here. */
     return VINF_SUCCESS;
 }
@@ -583,6 +588,8 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
      */
     for (;;)
     {
+        uint64_t idNewSession;
+
         VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: enabled=%d\n", VbglR3PageSharingIsEnabled());
 
         if (VbglR3PageSharingIsEnabled())
@@ -604,6 +611,20 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
             VBoxServiceError("RTSemEventMultiWait failed; rc=%Rrc\n", rc);
             break;
         }
+        idNewSession = g_idSession;
+        rc =  VbglR3GetSessionId(&idNewSession);
+        AssertRC(rc);
+
+        if (idNewSession != g_idSession)
+        {
+            bool fUnregister = false; 
+
+            VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: VM was restored!!\n"));
+            /* The VM was restored, so reregister all modules the next time. */ 
+            RTAvlPVDestroy(&g_pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, &fUnregister); 
+            g_pKnownModuleTree = NULL; 
+        }
+
     }
 
     RTSemEventMultiDestroy(g_PageSharingEvent);

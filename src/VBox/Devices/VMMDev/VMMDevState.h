@@ -163,6 +163,9 @@ typedef struct VMMDevState
 
     /* guest ram size */
     uint64_t    cbGuestRAM;
+    
+    /* unique session id; the id will be different after each start, reset or restore of the VM. */
+    uint64_t    idSession;
 
     /* statistics interval change request */
     uint32_t    u32StatIntervalSize, u32LastStatIntervalSize;
