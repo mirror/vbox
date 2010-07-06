@@ -491,7 +491,7 @@ skipkernelmodules:
     {
         bool fUnregister = false;
         /* The VM was restored, so reregister all modules the next time. */
-        RTAvlPVDestroy(&pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, &fUnregister);
+        RTAvlPVDestroy(&pNewTree, VBoxServicePageSharingEmptyTreeCallback, &fUnregister);
         pKnownModuleTree = NULL;
     }
     else
