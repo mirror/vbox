@@ -416,7 +416,14 @@ GMMR3DECL(int) GMMR3ResetSharedModules(PVM pVM)
  */
 GMMR3DECL(int)  GMMR3CheckSharedModules(PVM pVM)
 {
-    return VMMR3CallR0(pVM, VMMR0_DO_GMM_CHECK_SHARED_MODULES, 0, NULL);
+    GMMCHECKSHAREDMODULEREQ Req;
+    Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    Req.Hdr.cbReq = sizeof(Req);
+
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_CHECK_SHARED_MODULES, 0, &Req.Hdr);
+    if (rc == VINF_SUCCESS)
+        rc = Req.rc;
+    return rc;
 }
 
 #if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
