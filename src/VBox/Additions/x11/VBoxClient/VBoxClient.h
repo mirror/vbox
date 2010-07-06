@@ -25,7 +25,7 @@ namespace VBoxClient {
 
 /** A simple class describing a service.  VBoxClient will run exactly one
  * service per invocation. */
-class Service : public iprt::non_copyable
+class Service : public stdx::non_copyable
 {
 public:
     /** Get the services default path to pidfile, relative to $HOME */

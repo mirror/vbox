@@ -146,7 +146,7 @@ typedef std::list <GuestCall> CallList;
 /**
  * Class containing the shared information service functionality.
  */
-class Service : public iprt::non_copyable
+class Service : public stdx::non_copyable
 {
 private:
     /** Type definition for use in callback functions */

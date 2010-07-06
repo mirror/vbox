@@ -23,8 +23,6 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
-#include <iprt/cpp/utils.h>
-
 #include <VBox/err.h>
 
 #include <VBox/vrdpapi.h>

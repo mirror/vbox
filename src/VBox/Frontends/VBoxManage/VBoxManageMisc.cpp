@@ -386,9 +386,9 @@ int handleStartVM(HandlerArg *a)
         CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
         if (FAILED(iRc))
         {
-            ComPtr<IVirtualBoxErrorInfo> errorInfo;
+            ComPtr <IVirtualBoxErrorInfo> errorInfo;
             CHECK_ERROR_RET(progress, COMGETTER(ErrorInfo)(errorInfo.asOutParam()), 1);
-            ErrorInfo info(errorInfo, COM_IIDOF(IVirtualBoxErrorInfo));
+            ErrorInfo info (errorInfo);
             com::GluePrintErrorInfo(info);
         }
         else

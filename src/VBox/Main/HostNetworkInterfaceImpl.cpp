@@ -22,8 +22,6 @@
 #include "Logging.h"
 #include "netif.h"
 
-#include <iprt/cpp/utils.h>
-
 #ifdef RT_OS_FREEBSD
 # include <netinet/in.h> /* INADDR_NONE */
 #endif /* RT_OS_FREEBSD */

@@ -29,7 +29,6 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/alloca.h>
-#include <iprt/cpp/utils.h>
 
 #include <VBox/err.h>
 #ifdef VBOX_WITH_VRDP
