@@ -871,7 +871,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                                 /*
                                  * Tell the control thread that it can continue
                                  * spawning services. This needs to be done after the new
-                                 * process has been started because otherwise signal handling 
+                                 * process has been started because otherwise signal handling
                                  * on (Open) Solaris does not work correctly (see #5068).
                                  */
                                 int rc2 = RTThreadUserSignal(RTThreadSelf());
@@ -940,9 +940,9 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
     VBoxServiceVerbose(3, "ControlExec: Thread of process \"%s\" (PID: %u) ended with rc=%Rrc\n",
                        pData->pszCmd, pData->uPID, rc);
 
-    /* 
+    /*
      * If something went wrong signal the user event so that others don't wait
-     * forever on this thread. 
+     * forever on this thread.
      */
     if (RT_FAILURE(rc) && !fSignalled)
         RTThreadUserSignal(RTThreadSelf());
