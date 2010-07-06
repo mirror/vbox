@@ -35,6 +35,8 @@
 #include "AutoCaller.h"
 
 #include <iprt/path.h>
+#include <iprt/cpp/utils.h>
+
 #include <VBox/param.h>
 #include <VBox/err.h>
 

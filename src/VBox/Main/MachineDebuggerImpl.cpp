@@ -32,6 +32,7 @@
 #include <VBox/tm.h>
 #include <VBox/err.h>
 #include <VBox/hwaccm.h>
+#include <iprt/cpp/utils.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////

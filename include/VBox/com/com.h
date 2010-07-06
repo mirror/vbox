@@ -58,25 +58,6 @@ HRESULT Shutdown();
  */
 void GetInterfaceNameByIID(const GUID &aIID, BSTR *aName);
 
-#ifdef VBOX_WITH_XPCOM
-
-/**
- *  Helper method to keep all the XPCOM headers out of include/VBox/com/ptr.h.
- */
-HRESULT GlueCreateObjectOnServer(const CLSID &clsid,
-                                 const char *serverName,
-                                 const nsIID &id,
-                                 void** ppobj);
-
-/**
- *  Helper method to keep all the XPCOM headers out of include/VBox/com/ptr.h.
- */
-HRESULT GlueCreateInstance(const CLSID &clsid,
-                           const nsIID &id,
-                           void** ppobj);
-
-#endif // VBOX_WITH_XPCOM
-
 /**
  *  Returns the VirtualBox user home directory.
  *

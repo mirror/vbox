@@ -26,6 +26,8 @@
 /* Local includes */
 #include "COMDefs.h"
 
+#include <iprt/cpp/utils.h>
+
 /**
  * Cache used to override some attributes in the user-friendly "don't show diffs" mode.
  */

@@ -83,8 +83,6 @@
 #include <QList>
 #include <QMetaType>
 
-#include <iprt/memory> // for auto_copy_ptr
-
 /*
  * Additional COM / XPCOM defines and includes
  */
@@ -122,13 +120,34 @@ class COMErrorInfo
 public:
 
     COMErrorInfo()
-        : mIsNull (true)
-        , mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK) {}
+        : mIsNull(true),
+          mIsBasicAvailable(false),
+          mIsFullAvailable(false),
+          mResultCode(S_OK),
+          m_pNext(NULL)
+    {}
 
-    COMErrorInfo (const CVirtualBoxErrorInfo &info) { init (info); }
+    COMErrorInfo(const COMErrorInfo &info)
+    {
+        copyFrom(info);
+    }
 
-    /* the default copy ctor and assignment op are ok */
+    COMErrorInfo(const CVirtualBoxErrorInfo &info)
+    {
+        init(info);
+    }
+
+    ~COMErrorInfo()
+    {
+        cleanup();
+    }
+
+    COMErrorInfo& operator=(const COMErrorInfo &info)
+    {
+        cleanup();
+        copyFrom(info);
+        return *this;
+    }
 
     bool isNull() const { return mIsNull; }
 
@@ -140,16 +159,17 @@ public:
     QString component() const { return mComponent; }
     QString text() const { return mText; }
 
-    const COMErrorInfo *next() const { return mNext.get(); }
+    const COMErrorInfo *next() const { return m_pNext; }
 
     QString interfaceName() const { return mInterfaceName; }
     QUuid calleeIID() const { return mCalleeIID; }
     QString calleeName() const { return mCalleeName; }
 
 private:
-
-    void init (const CVirtualBoxErrorInfo &info);
-    void fetchFromCurrentThread (IUnknown *callee, const GUID *calleeIID);
+    void init(const CVirtualBoxErrorInfo &info);
+    void fetchFromCurrentThread(IUnknown *callee, const GUID *calleeIID);
+    void copyFrom(const COMErrorInfo &x);
+    void cleanup();
 
     static QString getInterfaceNameFromIID (const QUuid &id);
 
@@ -162,7 +182,7 @@ private:
     QString mComponent;
     QString mText;
 
-    cppx::auto_copy_ptr <COMErrorInfo> mNext;
+    COMErrorInfo *m_pNext;
 
     QString mInterfaceName;
     QUuid mCalleeIID;
@@ -536,9 +556,10 @@ public:
     /**
      * Queries the current result code and error info from the given component.
      */
-    COMResult (const COMBaseWithEI &aComponent)
-        : mRC (aComponent.lastRC())
-        , mErrInfo (aComponent.errorInfo()) {}
+    COMResult(const COMBaseWithEI &aComponent)
+        : mRC(aComponent.lastRC()),
+          mErrInfo(aComponent.errorInfo())
+    { }
 
     /**
      * Queries the current result code from the given component.

@@ -15,6 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <iprt/cpp/utils.h>
+
 #include "MouseImpl.h"
 #include "DisplayImpl.h"
 #include "VMMDev.h"
@@ -23,7 +25,9 @@
 #include "Logging.h"
 
 #include <VBox/pdmdrv.h>
+
 #include <iprt/asm.h>
+
 #include <VBox/VMMDev.h>
 
 /** @name Mouse device capabilities bitfield

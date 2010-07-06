@@ -138,10 +138,10 @@ int main (int argc, char **argv)
             CHECK_ERROR_BREAK (progress, COMGETTER(ResultCode) (&resultCode));
             if (FAILED (resultCode))
             {
-                ComPtr <IVirtualBoxErrorInfo> errorInfo;
-                CHECK_ERROR_BREAK (progress,
-                                   COMGETTER(ErrorInfo) (errorInfo.asOutParam()));
-                ErrorInfo info (errorInfo);
+                ComPtr<IVirtualBoxErrorInfo> errorInfo;
+                CHECK_ERROR_BREAK(progress,
+                                  COMGETTER(ErrorInfo) (errorInfo.asOutParam()));
+                ErrorInfo info(errorInfo, COM_IIDOF(IVirtualBoxErrorInfo));
                 com::GluePrintErrorInfo(info);
             }
             else
@@ -174,10 +174,10 @@ int main (int argc, char **argv)
                 CHECK_ERROR_BREAK (progress, COMGETTER(ResultCode) (&resultCode));
                 if (FAILED (resultCode))
                 {
-                    ComPtr <IVirtualBoxErrorInfo> errorInfo;
-                    CHECK_ERROR_BREAK (progress,
-                                       COMGETTER(ErrorInfo) (errorInfo.asOutParam()));
-                    ErrorInfo info (errorInfo);
+                    ComPtr<IVirtualBoxErrorInfo> errorInfo;
+                    CHECK_ERROR_BREAK(progress,
+                                      COMGETTER(ErrorInfo) (errorInfo.asOutParam()));
+                    ErrorInfo info(errorInfo, COM_IIDOF(IVirtualBoxErrorInfo));
                     com::GluePrintErrorInfo(info);
                 }
                 else
