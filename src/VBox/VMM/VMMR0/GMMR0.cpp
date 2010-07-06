@@ -792,6 +792,9 @@ GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM)
     pGVM->gmm.s.enmPolicy = GMMOCPOLICY_INVALID;
     pGVM->gmm.s.enmPriority = GMMPRIORITY_INVALID;
     pGVM->gmm.s.fMayAllocate = false;
+
+    /* Mark first call of GMMR0CheckSharedModules. */
+    pGVM->gmm.s.fFirstCheckSharedModule = true;
 }
 
 
