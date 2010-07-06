@@ -1609,7 +1609,8 @@ int walkDirectory(const char *pcszPath, pathHandler *pHandler, bool useRealPath)
         if (useRealPath)
         {
             rc = RTPathReal(szPath, szAbsPath, sizeof(szAbsPath));
-            AssertRCBreak(rc);  /* sysfs should guarantee that this exists */
+            if (RT_FAILURE(rc))
+                break;  /* The file can vanish if a device is unplugged. */
             if (!pHandler->doHandle(szAbsPath))
                 break;
         }
