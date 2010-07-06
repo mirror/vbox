@@ -611,6 +611,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
             VBoxServiceError("RTSemEventMultiWait failed; rc=%Rrc\n", rc);
             break;
         }
+#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
         idNewSession = g_idSession;
         rc =  VbglR3GetSessionId(&idNewSession);
         AssertRC(rc);
@@ -626,7 +627,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
 
             g_idSession = idNewSession;
         }
-
+#endif
     }
 
     RTSemEventMultiDestroy(g_PageSharingEvent);
