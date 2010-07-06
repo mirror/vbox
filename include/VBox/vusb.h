@@ -26,8 +26,12 @@
 #ifndef ___VBox_vusb_h
 #define ___VBox_vusb_h
 
-#include <VBox/cdefs.h>
-#include <VBox/types.h>
+#ifndef RDESKTOP
+# include <VBox/cdefs.h>
+# include <VBox/types.h>
+#else
+# include "runtime.h"
+#endif
 
 RT_C_DECLS_BEGIN
 
@@ -353,6 +357,7 @@ typedef struct VUSBPORTBITMAP
 /** Pointer to a VBox USB port bitmap. */
 typedef VUSBPORTBITMAP *PVUSBPORTBITMAP;
 
+#ifndef RDESKTOP
 
 /**
  * The VUSB RootHub port interface provided by the HCI (down).
@@ -610,6 +615,7 @@ DECLINLINE(int) VUSBIRhDestroyProxyDevice(PVUSBIRHCONFIG pInterface, PCRTUUID pU
 }
 #endif /* IN_RING3 */
 
+#endif /* ! RDESKTOP */
 
 
 /**
@@ -651,6 +657,7 @@ typedef enum VUSBDEVICESTATE
     VUSB_DEVICE_STATE_32BIT_HACK = 0x7fffffff
 } VUSBDEVICESTATE;
 
+#ifndef RDESKTOP
 
 /**
  * USB Device Interface (up).
@@ -780,6 +787,7 @@ DECLINLINE(VUSBDEVICESTATE) VUSBIDevGetState(PVUSBIDEVICE pInterface)
 }
 #endif /* IN_RING3 */
 
+#endif /* ! RDESKTOP */
 
 /** @name URB
  * @{ */
@@ -909,6 +917,17 @@ typedef struct VUSBURB
     /** URB description, can be null. intended for logging. */
     char           *pszDesc;
 
+#ifdef RDESKTOP
+    /** The next URB in rdesktop-vrdp's linked list */
+    PVUSBURB        pNext;
+    /** The previous URB in rdesktop-vrdp's linked list */
+    PVUSBURB        pPrev;
+    /** The vrdp handle for the URB */
+    uint32_t        handle;
+    /** Pointer used to find the usb proxy device */
+    struct VUSBDEV *pDev;
+#endif
+
     /** The VUSB data. */
     struct VUSBURBVUSB
     {
@@ -971,9 +990,11 @@ typedef struct VUSBURB
         PVUSBURB        pNext;
     } Dev;
 
+#ifndef RDESKTOP
     /** The USB device instance this belongs to.
      * This is NULL if the device address is invalid, in which case this belongs to the hub. */
     PPDMUSBINS      pUsbIns;
+#endif
     /** The device address.
      * This is set at allocation time. */
     uint8_t         DstAddress;
