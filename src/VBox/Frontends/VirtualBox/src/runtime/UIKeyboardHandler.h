@@ -29,6 +29,7 @@
 
 #ifdef Q_WS_MAC
 # include <CoreFoundation/CFBase.h>
+# include "VBoxUtils-darwin.h"
 #endif /* Q_WS_MAC */
 
 /* Global forwards */

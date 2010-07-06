@@ -26,10 +26,6 @@
 #include "UIKeyboardHandlerFullscreen.h"
 #include "UIMachineWindow.h"
 
-#ifdef Q_WS_MAC
-# include <Carbon/Carbon.h>
-#endif /* Q_WS_MAC */
-
 /* Fullscreen keyboard-handler constructor: */
 UIKeyboardHandlerFullscreen::UIKeyboardHandlerFullscreen(UIMachineLogic* pMachineLogic)
     : UIKeyboardHandler(pMachineLogic)
