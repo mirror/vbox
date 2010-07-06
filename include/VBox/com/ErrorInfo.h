@@ -123,6 +123,8 @@ public:
         init(pObj, aIID);
     }
 
+    ErrorInfo(const ErrorInfo &x);
+
     virtual ~ErrorInfo();
 
     /**
@@ -284,9 +286,6 @@ protected:
     Bstr mCalleeName;
 
     ComPtr<IUnknown> mErrorInfo;
-
-private:
-    ErrorInfo(const ErrorInfo&);
 };
 
 /**
