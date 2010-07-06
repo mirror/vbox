@@ -24,6 +24,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "UIIconPool.h"
+#include "UIExtraDataEventHandler.h"
 
 /* Qt includes */
 #include <QMenu>
@@ -66,10 +67,10 @@ void VBoxHelpActions::setup (QObject *aParent)
     QObject::connect (aboutAction, SIGNAL (triggered()),
                       &vboxProblem(), SLOT (showHelpAboutDialog()));
 
-    QObject::connect (&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
-                      registerAction, SLOT (setEnabled (bool)));
-    QObject::connect (&vboxGlobal(), SIGNAL (canShowUpdDlg (bool)),
-                      updateAction, SLOT (setEnabled (bool)));
+    QObject::connect (gEDataEvents, SIGNAL(sigCanShowRegistrationDlg(bool)),
+                      registerAction, SLOT(setEnabled(bool)));
+    QObject::connect (gEDataEvents, SIGNAL(sigCanShowUpdateDlg(bool)),
+                      updateAction, SLOT(setEnabled(bool)));
 }
 
 void VBoxHelpActions::addTo (QMenu *aMenu)

@@ -65,9 +65,9 @@ private slots:
     void showSnapshotDetails();
     void takeSnapshot();
 
-    void machineDataChanged (const VBoxMachineDataChangeEvent &aEvent);
-    void machineStateChanged (const VBoxMachineStateChangeEvent &aEvent);
-    void sessionStateChanged (const VBoxSessionStateChangeEvent &aEvent);
+    void machineDataChanged(QString strId);
+    void machineStateChanged(QString strId, KMachineState state);
+    void sessionStateChanged(QString strId, KSessionState state);
 
     void updateSnapshotsAge();
 

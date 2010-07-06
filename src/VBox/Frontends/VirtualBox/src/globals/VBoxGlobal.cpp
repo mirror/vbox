@@ -28,6 +28,7 @@
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
+#include "UIExtraDataEventHandler.h"
 
 #include "UIMachine.h"
 #include "UISession.h"
@@ -102,6 +103,7 @@
 #include <iprt/file.h>
 #include <iprt/ldr.h>
 #include <iprt/system.h>
+#include <iprt/stream.h>
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 #include <iprt/process.h>
@@ -156,350 +158,6 @@ public:
     /** Whether this is the last event for the given enumeration or not */
     const bool mLast;
 };
-
-// VirtualBox callback class
-/////////////////////////////////////////////////////////////////////////////
-
-class VBoxCallback : VBOX_SCRIPTABLE_IMPL(IVirtualBoxCallback)
-{
-public:
-
-    VBoxCallback (VBoxGlobal &aGlobal)
-        : mGlobal (aGlobal)
-        , mIsRegDlgOwner (false)
-        , mIsUpdDlgOwner (false)
-#ifdef VBOX_GUI_WITH_SYSTRAY
-        , mIsTrayIconOwner (false)
-#endif
-    {
-#if defined (Q_OS_WIN32)
-        refcnt = 0;
-#endif
-    }
-
-    virtual ~VBoxCallback() {}
-
-    NS_DECL_ISUPPORTS
-
-#if defined (Q_OS_WIN32)
-    STDMETHOD_(ULONG, AddRef)()
-    {
-        return ::InterlockedIncrement (&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement (&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IVirtualBoxCallback)
-
-    // IVirtualBoxCallback methods
-
-    // Note: we need to post custom events to the GUI event queue
-    // instead of doing what we need directly from here because on Win32
-    // these callback methods are never called on the main GUI thread.
-    // Another reason to handle events asynchronously is that internally
-    // most callback interface methods are called from under the initiator
-    // object's lock, so accessing the initiator object (for example, reading
-    // some property) directly from the callback method will definitely cause
-    // a deadlock.
-
-    STDMETHOD(OnMachineStateChange) (IN_BSTR id, MachineState_T state)
-    {
-        postEvent (new VBoxMachineStateChangeEvent (QString::fromUtf16(id),
-                                                    (KMachineState) state));
-        return S_OK;
-    }
-
-    STDMETHOD(OnMachineDataChange) (IN_BSTR id)
-    {
-        postEvent (new VBoxMachineDataChangeEvent (QString::fromUtf16(id)));
-        return S_OK;
-    }
-
-    STDMETHOD(OnExtraDataCanChange)(IN_BSTR id,
-                                    IN_BSTR key, IN_BSTR value,
-                                    BSTR *error, BOOL *allowChange)
-    {
-        if (!error || !allowChange)
-            return E_INVALIDARG;
-
-        if (com::asGuidStr(id).isEmpty())
-        {
-            /* it's a global extra data key someone wants to change */
-            QString sKey = QString::fromUtf16 (key);
-            QString sVal = QString::fromUtf16 (value);
-            if (sKey.startsWith ("GUI/"))
-            {
-                if (sKey == VBoxDefs::GUI_RegistrationDlgWinID)
-                {
-                    if (mIsRegDlgOwner)
-                    {
-                        if (sVal.isEmpty() ||
-                            sVal == QString ("%1")
-                                .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
-                            *allowChange = TRUE;
-                        else
-                            *allowChange = FALSE;
-                    }
-                    else
-                        *allowChange = TRUE;
-                    return S_OK;
-                }
-
-                if (sKey == VBoxDefs::GUI_UpdateDlgWinID)
-                {
-                    if (mIsUpdDlgOwner)
-                    {
-                        if (sVal.isEmpty() ||
-                            sVal == QString ("%1")
-                                .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
-                            *allowChange = TRUE;
-                        else
-                            *allowChange = FALSE;
-                    }
-                    else
-                        *allowChange = TRUE;
-                    return S_OK;
-                }
-#ifdef VBOX_GUI_WITH_SYSTRAY
-                if (sKey == VBoxDefs::GUI_TrayIconWinID)
-                {
-                    if (mIsTrayIconOwner)
-                    {
-                        if (sVal.isEmpty() ||
-                            sVal == QString ("%1")
-                                .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
-                            *allowChange = TRUE;
-                        else
-                            *allowChange = FALSE;
-                    }
-                    else
-                        *allowChange = TRUE;
-                    return S_OK;
-                }
-#endif
-                /* try to set the global setting to check its syntax */
-                VBoxGlobalSettings gs (false /* non-null */);
-                if (gs.setPublicProperty (sKey, sVal))
-                {
-                    /* this is a known GUI property key */
-                    if (!gs)
-                    {
-                        /* disallow the change when there is an error*/
-                        *error = SysAllocString ((const OLECHAR *)
-                            (gs.lastError().isNull() ? 0 : gs.lastError().utf16()));
-                        *allowChange = FALSE;
-                    }
-                    else
-                        *allowChange = TRUE;
-                    return S_OK;
-                }
-            }
-        }
-
-        /* not interested in this key -- never disagree */
-        *allowChange = TRUE;
-        return S_OK;
-    }
-
-    STDMETHOD(OnExtraDataChange) (IN_BSTR id,
-                                  IN_BSTR key, IN_BSTR value)
-    {
-        if (com::asGuidStr(id).isEmpty())
-        {
-            QString sKey = QString::fromUtf16 (key);
-            QString sVal = QString::fromUtf16 (value);
-            if (sKey.startsWith ("GUI/"))
-            {
-                if (sKey == VBoxDefs::GUI_RegistrationDlgWinID)
-                {
-                    if (sVal.isEmpty())
-                    {
-                        mIsRegDlgOwner = false;
-                        QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (true));
-                    }
-                    else if (sVal == QString ("%1")
-                             .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
-                    {
-                        mIsRegDlgOwner = true;
-                        QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (true));
-                    }
-                    else
-                        QApplication::postEvent (&mGlobal, new VBoxCanShowRegDlgEvent (false));
-                }
-                if (sKey == VBoxDefs::GUI_UpdateDlgWinID)
-                {
-                    if (sVal.isEmpty())
-                    {
-                        mIsUpdDlgOwner = false;
-                        QApplication::postEvent (&mGlobal, new VBoxCanShowUpdDlgEvent (true));
-                    }
-                    else if (sVal == QString ("%1")
-                             .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
-                    {
-                        mIsUpdDlgOwner = true;
-                        QApplication::postEvent (&mGlobal, new VBoxCanShowUpdDlgEvent (true));
-                    }
-                    else
-                        QApplication::postEvent (&mGlobal, new VBoxCanShowUpdDlgEvent (false));
-                }
-                if (sKey == "GUI/LanguageID")
-                    QApplication::postEvent (&mGlobal, new VBoxChangeGUILanguageEvent (sVal));
-#ifdef VBOX_GUI_WITH_SYSTRAY
-                if (sKey == "GUI/MainWindowCount")
-                    QApplication::postEvent (&mGlobal, new VBoxMainWindowCountChangeEvent (sVal.toInt()));
-                if (sKey == VBoxDefs::GUI_TrayIconWinID)
-                {
-                    if (sVal.isEmpty())
-                    {
-                        mIsTrayIconOwner = false;
-                        QApplication::postEvent (&mGlobal, new VBoxCanShowTrayIconEvent (true));
-                    }
-                    else if (sVal == QString ("%1")
-                             .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
-                    {
-                        mIsTrayIconOwner = true;
-                        QApplication::postEvent (&mGlobal, new VBoxCanShowTrayIconEvent (true));
-                    }
-                    else
-                        QApplication::postEvent (&mGlobal, new VBoxCanShowTrayIconEvent (false));
-                }
-                if (sKey == "GUI/TrayIcon/Enabled")
-                    QApplication::postEvent (&mGlobal, new VBoxChangeTrayIconEvent ((sVal.toLower() == "true") ? true : false));
-#endif
-#ifdef Q_WS_MAC
-                if (sKey == VBoxDefs::GUI_PresentationModeEnabled)
-                {
-                    /* Default to true if it is an empty value */
-                    QString testStr = sVal.toLower();
-                    bool f = (testStr.isEmpty() || testStr == "false");
-                    QApplication::postEvent (&mGlobal, new VBoxChangePresentationModeEvent (f));
-                }
-#endif
-
-                mMutex.lock();
-                mGlobal.gset.setPublicProperty (sKey, sVal);
-                mMutex.unlock();
-                Assert (!!mGlobal.gset);
-            }
-        }
-#ifdef Q_WS_MAC
-        else if (mGlobal.isVMConsoleProcess())
-        {
-            /* Check for the currently running machine */
-            if (QString::fromUtf16(id) == mGlobal.vmUuid)
-            {
-                QString strKey = QString::fromUtf16(key);
-                QString strVal = QString::fromUtf16(value);
-                // TODO_NEW_CORE: we should cleanup
-                // VBoxChangeDockIconUpdateEvent to have no parameters. So it
-                // could really be use for both events and the consumer should
-                // ask per GetExtraData how the current values are.
-                if (   strKey == VBoxDefs::GUI_RealtimeDockIconUpdateEnabled
-                    || strKey == VBoxDefs::GUI_RealtimeDockIconUpdateMonitor)
-                {
-                    /* Default to true if it is an empty value */
-                    bool f = strVal.toLower() == "false" ? false : true;
-                    QApplication::postEvent(&mGlobal, new VBoxChangeDockIconUpdateEvent(f));
-                }
-            }
-        }
-#endif /* Q_WS_MAC */
-        return S_OK;
-    }
-
-    STDMETHOD(OnMediumRegistered) (IN_BSTR id, DeviceType_T type,
-                                   BOOL registered)
-    {
-        /** @todo */
-        Q_UNUSED (id);
-        Q_UNUSED (type);
-        Q_UNUSED (registered);
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-    STDMETHOD(OnMachineRegistered) (IN_BSTR id, BOOL registered)
-    {
-        postEvent (new VBoxMachineRegisteredEvent (QString::fromUtf16(id),
-                                                   registered));
-        return S_OK;
-    }
-
-    STDMETHOD(OnSessionStateChange) (IN_BSTR id, SessionState_T state)
-    {
-        postEvent (new VBoxSessionStateChangeEvent (QString::fromUtf16(id),
-                                                    (KSessionState) state));
-        return S_OK;
-    }
-
-    STDMETHOD(OnSnapshotTaken) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
-    {
-        postEvent (new VBoxSnapshotEvent (QString::fromUtf16(aMachineId),
-                                          QString::fromUtf16(aSnapshotId),
-                                          VBoxSnapshotEvent::Taken));
-        return S_OK;
-    }
-
-    STDMETHOD(OnSnapshotDeleted) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
-    {
-        postEvent (new VBoxSnapshotEvent (QString::fromUtf16(aMachineId),
-                                          QString::fromUtf16(aSnapshotId),
-                                          VBoxSnapshotEvent::Deleted));
-        return S_OK;
-    }
-
-    STDMETHOD(OnSnapshotChange) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
-    {
-        postEvent (new VBoxSnapshotEvent (QString::fromUtf16(aMachineId),
-                                          QString::fromUtf16(aSnapshotId),
-                                          VBoxSnapshotEvent::Changed));
-        return S_OK;
-    }
-
-    STDMETHOD(OnGuestPropertyChange) (IN_BSTR /* id */,
-                                      IN_BSTR /* key */,
-                                      IN_BSTR /* value */,
-                                      IN_BSTR /* flags */)
-    {
-        return VBOX_E_DONT_CALL_AGAIN;
-    }
-
-private:
-
-    void postEvent (QEvent *e)
-    {
-        // currently, we don't post events if we are in the VM execution
-        // console mode, to save some CPU ticks (so far, there was no need
-        // to handle VirtualBox callback events in the execution console mode)
-        if (!mGlobal.isVMConsoleProcess())
-            QApplication::postEvent (&mGlobal, e);
-    }
-
-    VBoxGlobal &mGlobal;
-
-    /** protects #OnExtraDataChange() */
-    QMutex mMutex;
-
-    bool mIsRegDlgOwner;
-    bool mIsUpdDlgOwner;
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    bool mIsTrayIconOwner;
-#endif
-
-#if defined (Q_OS_WIN32)
-private:
-    long refcnt;
-#endif
-};
-
-#if !defined (Q_OS_WIN32)
-NS_DECL_CLASSINFO (VBoxCallback)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VBoxCallback, IVirtualBoxCallback)
-#endif
 
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
@@ -702,7 +360,7 @@ uint VBoxGlobal::qtCTVersion()
 /**
  *  Sets the new global settings and saves them to the VirtualBox server.
  */
-bool VBoxGlobal::setSettings (const VBoxGlobalSettings &gs)
+bool VBoxGlobal::setSettings (VBoxGlobalSettings &gs)
 {
     gs.save (mVBox);
 
@@ -909,7 +567,7 @@ bool VBoxGlobal::trayIconInstall()
          * It will be the tray icon menu then. */
         if (mVBox.isOk())
         {
-            emit trayIconShow (*(new VBoxShowTrayIconEvent (true)));
+            emit sigTrayIconShow(true);
             return true;
         }
     }
@@ -4659,6 +4317,11 @@ void VBoxGlobal::perDayNewVersionNotifier()
     showUpdateDialog (false /* force show? */);
 }
 
+void VBoxGlobal::sltGUILanguageChange(QString strLang)
+{
+    loadLanguage(strLang);
+}
+
 // Protected members
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -4699,82 +4362,6 @@ bool VBoxGlobal::event (QEvent *e)
             return true;
         }
 
-        /* VirtualBox callback events */
-
-        case VBoxDefs::MachineStateChangeEventType:
-        {
-            emit machineStateChanged (*(VBoxMachineStateChangeEvent *) e);
-            return true;
-        }
-        case VBoxDefs::MachineDataChangeEventType:
-        {
-            emit machineDataChanged (*(VBoxMachineDataChangeEvent *) e);
-            return true;
-        }
-        case VBoxDefs::MachineRegisteredEventType:
-        {
-            emit machineRegistered (*(VBoxMachineRegisteredEvent *) e);
-            return true;
-        }
-        case VBoxDefs::SessionStateChangeEventType:
-        {
-            emit sessionStateChanged (*(VBoxSessionStateChangeEvent *) e);
-            return true;
-        }
-        case VBoxDefs::SnapshotEventType:
-        {
-            emit snapshotChanged (*(VBoxSnapshotEvent *) e);
-            return true;
-        }
-        case VBoxDefs::CanShowRegDlgEventType:
-        {
-            emit canShowRegDlg (((VBoxCanShowRegDlgEvent *) e)->mCanShow);
-            return true;
-        }
-        case VBoxDefs::CanShowUpdDlgEventType:
-        {
-            emit canShowUpdDlg (((VBoxCanShowUpdDlgEvent *) e)->mCanShow);
-            return true;
-        }
-        case VBoxDefs::ChangeGUILanguageEventType:
-        {
-            loadLanguage (static_cast<VBoxChangeGUILanguageEvent*> (e)->mLangId);
-            return true;
-        }
-#ifdef VBOX_GUI_WITH_SYSTRAY
-        case VBoxDefs::MainWindowCountChangeEventType:
-
-            emit mainWindowCountChanged (*(VBoxMainWindowCountChangeEvent *) e);
-            return true;
-
-        case VBoxDefs::CanShowTrayIconEventType:
-        {
-            emit trayIconCanShow (*(VBoxCanShowTrayIconEvent *) e);
-            return true;
-        }
-        case VBoxDefs::ShowTrayIconEventType:
-        {
-            emit trayIconShow (*(VBoxShowTrayIconEvent *) e);
-            return true;
-        }
-        case VBoxDefs::TrayIconChangeEventType:
-        {
-            emit trayIconChanged (*(VBoxChangeTrayIconEvent *) e);
-            return true;
-        }
-#endif
-#if defined(Q_WS_MAC)
-        case VBoxDefs::ChangeDockIconUpdateEventType:
-        {
-            emit dockIconUpdateChanged (*(VBoxChangeDockIconUpdateEvent *) e);
-            return true;
-        }
-        case VBoxDefs::ChangePresentationmodeEventType:
-        {
-            emit presentationModeChanged (*(VBoxChangePresentationModeEvent *) e);
-            return true;
-        }
-#endif
         default:
             break;
     }
@@ -4848,6 +4435,9 @@ void VBoxGlobal::init()
         loadLanguage (sLanguageId);
 
     retranslateUi();
+
+    connect(gEDataEvents, SIGNAL(sigGUILanguageChange(QString)),
+            this, SLOT(sltGUILanguageChange(QString)));
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     {
@@ -5183,13 +4773,6 @@ void VBoxGlobal::init()
 
     vm_render_mode = vboxGetRenderMode (vm_render_mode_str);
 
-    /* setup the callback */
-    callback = CVirtualBoxCallback (new VBoxCallback (*this));
-    mVBox.RegisterCallback (callback);
-    AssertWrapperOk (mVBox);
-    if (!mVBox.isOk())
-        return;
-
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* setup the debugger gui. */
     if (RTEnvExist("VBOX_GUI_NO_DEBUGGER"))
@@ -5243,12 +4826,8 @@ void VBoxGlobal::cleanup()
     }
 #endif
 
-    if (!callback.isNull())
-    {
-        mVBox.UnregisterCallback (callback);
-        AssertWrapperOk (mVBox);
-        callback.detach();
-    }
+    /* Destroy our event handlers */
+    UIExtraDataEventHandler::destroy();
 
     if (mMediaEnumThread)
     {

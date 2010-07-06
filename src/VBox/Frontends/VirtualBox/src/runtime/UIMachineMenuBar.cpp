@@ -23,6 +23,7 @@
 #include "UIActionsPool.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "UIExtraDataEventHandler.h"
 
 /* Global includes */
 #include <QMenuBar>
@@ -247,10 +248,10 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu, UIActionsPool *pActionsPool
                             &vboxProblem(), SLOT(showHelpAboutDialog()));
 
 #ifdef VBOX_WITH_REGISTRATION
-        VBoxGlobal::connect(&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
+        VBoxGlobal::connect(gEDataEvents, SIGNAL(sigCanShowRegistrationDlg(bool)),
                             pActionsPool->action(UIActionIndex_Simple_Register), SLOT(setEnabled(bool)));
 #endif /* VBOX_WITH_REGISTRATION */
-        VBoxGlobal::connect(&vboxGlobal(), SIGNAL (canShowUpdDlg (bool)),
+        VBoxGlobal::connect(gEDataEvents, SIGNAL(sigCanShowUpdateDlg(bool)),
                             pActionsPool->action(UIActionIndex_Simple_Update), SLOT(setEnabled(bool)));
 
         m_fIsFirstTime = false;

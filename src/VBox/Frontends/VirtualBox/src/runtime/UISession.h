@@ -158,13 +158,7 @@ signals:
     void sigMachineStateChange();
     void sigAdditionsStateChange();
     void sigNetworkAdapterChange(const CNetworkAdapter &networkAdapter);
-    /* Not used: void sigSerialPortChange(const CSerialPort &serialPort); */
-    /* Not used: void sigParallelPortChange(const CParallelPort &parallelPort); */
-    /* Not used: void sigStorageControllerChange(); */
     void sigMediumChange(const CMediumAttachment &mediumAttachment);
-    /* Not used: void sigCPUChange(ulong uCPU, bool bRemove); */
-    /* Not used: void sigVRDPServerChange(); */
-    /* Not used: void sigRemoteDisplayInfoChange(); */
     void sigUSBControllerChange();
     void sigUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
     void sigSharedFolderChange();
@@ -185,13 +179,18 @@ private slots:
     /* Close uisession handler: */
     void sltCloseVirtualSession();
 
+    /* Console events slots */
+    void sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
+    void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fNeedsHostCursor);
+    void sltKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
+    void sltStateChange(KMachineState state);
+    void sltAdditionsChange();
+    void sltSharedFolderChange(Scope_T scope);
+
 private:
 
     /* Private getters: */
     UIMachine* uimachine() const { return m_pMachine; }
-
-    /* Event handlers: */
-    bool event(QEvent *pEvent);
 
     /* Prepare helpers: */
     void prepareMenuPool();
@@ -258,7 +257,7 @@ private:
     bool m_fIsHidingHostPointer : 1;
 
     /* Friend classes: */
-    friend class UIConsoleCallback;
+    friend class UIConsoleEventHandler;
 };
 
 #endif // !___UIConsole_h___

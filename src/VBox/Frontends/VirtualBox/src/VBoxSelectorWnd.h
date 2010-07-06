@@ -33,20 +33,21 @@
     #include <QSystemTrayIcon>
 #endif
 
-class VBoxSnapshotsWgt;
-class VBoxVMDetailsView;
-class VBoxVMDescriptionPage;
-class VBoxVMLogViewer;
-class UIVMListView;
-class UIVMItemModel;
-class UIVMItem;
-class VBoxTrayIcon;
-class VBoxToolBar;
-class UIOSDMenu;
+/* Local forward declarations */
 class QITabWidget;
+class UIVMItem;
+class UIVMItemModel;
+class UIVMListView;
+class VBoxSnapshotsWgt;
+class VBoxToolBar;
+class VBoxTrayIcon;
+class VBoxVMDescriptionPage;
+class VBoxVMDetailsView;
+class VBoxVMLogViewer;
 
-class QListView;
+/* Global forward declarations */
 class QEvent;
+class QListView;
 
 class VBoxSelectorWnd : public QIWithRetranslateUI2 <QMainWindow>
 {
@@ -125,16 +126,16 @@ private slots:
 
     /* VirtualBox callback events we're interested in */
 
-    void machineStateChanged (const VBoxMachineStateChangeEvent &e);
-    void machineDataChanged (const VBoxMachineDataChangeEvent &e);
-    void machineRegistered (const VBoxMachineRegisteredEvent &e);
-    void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
-    void snapshotChanged (const VBoxSnapshotEvent &e);
+    void machineStateChanged(QString strId, KMachineState state);
+    void machineDataChanged(QString strId);
+    void machineRegistered(QString strID, bool fRegistered);
+    void sessionStateChanged(QString strId, KSessionState state);
+    void snapshotChanged(QString strId, QString strSnapshotId);
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    void mainWindowCountChanged (const VBoxMainWindowCountChangeEvent &aEvent);
-    void trayIconCanShow (const VBoxCanShowTrayIconEvent &e);
-    void trayIconShow (const VBoxShowTrayIconEvent &e);
-    void trayIconChanged (const VBoxChangeTrayIconEvent &e);
+    void mainWindowCountChanged(int count);
+    void trayIconCanShow(bool fEnabled);
+    void trayIconShow(bool fEnabled);
+    void trayIconChanged(bool fEnabled);
 #endif
 
     void sltDownloaderUserManualEmbed();

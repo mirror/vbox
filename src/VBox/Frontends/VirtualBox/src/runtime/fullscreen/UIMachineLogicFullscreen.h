@@ -25,7 +25,6 @@
 /* Local forwards */
 class UIActionsPool;
 class UIMultiScreenLayout;
-class VBoxChangePresentationModeEvent;
 
 class UIMachineLogicFullscreen : public UIMachineLogic
 {
@@ -47,7 +46,7 @@ protected:
 private slots:
 
 #ifdef RT_OS_DARWIN
-    void sltChangePresentationMode(const VBoxChangePresentationModeEvent &event);
+    void sltChangePresentationMode(bool fEnabled);
     void sltScreenLayoutChanged();
 #endif /* RT_OS_DARWIN */
 
