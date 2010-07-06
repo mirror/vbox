@@ -146,7 +146,7 @@ typedef std::list< HostCmd >::const_iterator HostCmdListIterConst;
 /**
  * Class containing the shared information service functionality.
  */
-class Service : public stdx::non_copyable
+class Service : public iprt::non_copyable
 {
 private:
     /** Type definition for use in callback functions. */
@@ -717,8 +717,8 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
     {
         switch (eFunction)
         {
-            /* 
-             * The guest asks the host for the next messsage to process. 
+            /*
+             * The guest asks the host for the next messsage to process.
              */
             case GUEST_GET_HOST_MSG:
                 LogFlowFunc(("GUEST_GET_HOST_MSG\n"));
@@ -736,15 +736,15 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                 break;
 
             /*
-             * The guest notifies the host that some output at stdout/stderr is available. 
+             * The guest notifies the host that some output at stdout/stderr is available.
              */
             case GUEST_EXEC_SEND_OUTPUT:
                 LogFlowFunc(("GUEST_EXEC_SEND_OUTPUT\n"));
                 rc = notifyHost(eFunction, cParms, paParms);
                 break;
 
-            /* 
-             * The guest notifies the host of the current client status. 
+            /*
+             * The guest notifies the host of the current client status.
              */
             case GUEST_EXEC_SEND_STATUS:
                 LogFlowFunc(("SEND_STATUS\n"));

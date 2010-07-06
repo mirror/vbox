@@ -323,17 +323,13 @@ static int handleExecProgram(HandlerArg *a)
             {
                 /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
                  * because it contains more accurate info about what went wrong. */
-                ErrorInfo info(guest);
+                ErrorInfo info(guest, COM_IIDOF(IGuest));
                 if (info.isFullAvailable())
                 {
                     if (rc == VBOX_E_IPRT_ERROR)
-                    {
                         RTPrintf("%ls.\n", info.getText().raw());
-                    }
                     else
-                    {
                         RTPrintf("ERROR: %ls (%Rhrc).\n", info.getText().raw(), info.getResultCode());
-                    }
                 }
                 break;
             }
@@ -397,7 +393,7 @@ static int handleExecProgram(HandlerArg *a)
                         {
                             /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
                              * because it contains more accurate info about what went wrong. */
-                            ErrorInfo info(guest);
+                            ErrorInfo info(guest, COM_IIDOF(IGuest));
                             if (info.isFullAvailable())
                             {
                                 if (rc == VBOX_E_IPRT_ERROR)
@@ -492,7 +488,7 @@ static int handleExecProgram(HandlerArg *a)
                     {
                         ComPtr<IVirtualBoxErrorInfo> execError;
                         rc = progress->COMGETTER(ErrorInfo)(execError.asOutParam());
-                        com::ErrorInfo info (execError);
+                        com::ErrorInfo info(execError, COM_IIDOF(IVirtualBoxErrorInfo));
                         if (SUCCEEDED(rc) && info.isFullAvailable())
                         {
                             /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way

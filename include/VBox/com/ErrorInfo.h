@@ -32,8 +32,6 @@
 #include "VBox/com/Guid.h"
 #include "VBox/com/assert.h"
 
-#include <iprt/memory> // for auto_copy_ptr
-
 struct IProgress;
 struct IVirtualBoxErrorInfo;
 
@@ -108,57 +106,22 @@ public:
      *  pointer available.
      */
     explicit ErrorInfo()
-        : mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK)
-        { init(); }
+        : mIsBasicAvailable(false),
+          mIsFullAvailable(false),
+          mResultCode(S_OK),
+          m_pNext(NULL)
+    {
+        init();
+    }
 
-    /**
-     *  Constructs a new, "interfaceless" ErrorInfo instance that takes
-     *  the error information possibly set on the current thread by an
-     *  interface method of the given interface pointer.
-
-     *  If the given interface does not support providing error information or,
-     *  for some reason didn't set any error information, both
-     *  #isFullAvailable() and #isBasicAvailable() will return |false|.
-     *
-     *  @param aPtr pointer to the interface whose method returned an
-     *              error
-     */
-    template <class I> ErrorInfo (I *aPtr)
-        : mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK)
-        { init (aPtr, COM_IIDOF(I)); }
-
-    /**
-     *  Constructs a new ErrorInfo instance from the smart interface pointer.
-     *  See template <class I> ErrorInfo (I *aPtr) for details
-     *
-     *  @param aPtr smart pointer to the interface whose method returned
-     *              an error
-     */
-    template <class I> ErrorInfo (const ComPtr <I> &aPtr)
-        : mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK)
-        { init (static_cast <I*> (aPtr), COM_IIDOF(I)); }
-
-    /** Specialization for the IVirtualBoxErrorInfo smart pointer */
-    ErrorInfo (const ComPtr <IVirtualBoxErrorInfo> &aPtr)
-        : mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK)
-        { init (aPtr); }
-
-    /**
-     *  Constructs a new ErrorInfo instance from the IVirtualBoxErrorInfo
-     *  interface pointer. If this pointer is not NULL, both #isFullAvailable()
-     *  and #isBasicAvailable() will return |true|.
-     *
-     *  @param aInfo    pointer to the IVirtualBoxErrorInfo interface that
-     *                  holds error info to be fetched by this instance
-     */
-    ErrorInfo (IVirtualBoxErrorInfo *aInfo)
-        : mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK)
-        { init (aInfo); }
+    ErrorInfo(IUnknown *pObj, const GUID &aIID)
+        : mIsBasicAvailable(false),
+          mIsFullAvailable(false),
+          mResultCode(S_OK),
+          m_pNext(NULL)
+    {
+        init(pObj, aIID);
+    }
 
     virtual ~ErrorInfo();
 
@@ -174,7 +137,10 @@ public:
      *  The appropriate methods of this class provide meaningful info only when
      *  this method returns true (otherwise they simply return NULL-like values).
      */
-    bool isBasicAvailable() const { return mIsBasicAvailable; }
+    bool isBasicAvailable() const
+    {
+        return mIsBasicAvailable;
+    }
 
     /**
      *  Returns whether full error info is actually available for the current
@@ -188,43 +154,58 @@ public:
      *  The appropriate methods of this class provide meaningful info only when
      *  this method returns true (otherwise they simply return NULL-like values).
      */
-    bool isFullAvailable() const { return mIsFullAvailable; }
-
-    /**
-     *  Returns @c true if both isBasicAvailable() and isFullAvailable() are
-     *  @c false.
-     */
-    bool isNull() const { return !mIsBasicAvailable && !mIsFullAvailable; }
+    bool isFullAvailable() const
+    {
+        return mIsFullAvailable;
+    }
 
     /**
      *  Returns the COM result code of the failed operation.
      */
-    HRESULT getResultCode() const { return mResultCode; }
+    HRESULT getResultCode() const
+    {
+        return mResultCode;
+    }
 
     /**
      *  Returns the IID of the interface that defined the error.
      */
-    const Guid &getInterfaceID() const { return mInterfaceID; }
+    const Guid& getInterfaceID() const
+    {
+        return mInterfaceID;
+    }
 
     /**
      *  Returns the name of the component that generated the error.
      */
-    const Bstr &getComponent() const { return mComponent; }
+    const Bstr& getComponent() const
+    {
+        return mComponent;
+    }
 
     /**
      *  Returns the textual description of the error.
      */
-    const Bstr &getText() const { return mText; }
+    const Bstr& getText() const
+    {
+        return mText;
+    }
 
     /**
      *  Returns the next error information object or @c NULL if there is none.
      */
-    const ErrorInfo *getNext() const { return mNext.get(); }
+    const ErrorInfo* getNext() const
+    {
+        return m_pNext;
+    }
 
     /**
      *  Returns the name of the interface that defined the error
      */
-    const Bstr &getInterfaceName() const { return mInterfaceName; }
+    const Bstr& getInterfaceName() const
+    {
+        return mInterfaceName;
+    }
 
     /**
      *  Returns the IID of the interface that returned the error.
@@ -233,7 +214,10 @@ public:
      *  using #template <class I> ErrorInfo (I *i) or
      *  template <class I> ErrorInfo (const ComPtr <I> &i) constructor.
      */
-    const Guid &getCalleeIID() const { return mCalleeIID; }
+    const Guid& getCalleeIID() const
+    {
+        return mCalleeIID;
+    }
 
     /**
      *  Returns the name of the interface that returned the error
@@ -242,7 +226,10 @@ public:
      *  using #template <class I> ErrorInfo (I *i) or
      *  template <class I> ErrorInfo (const ComPtr <I> &i) constructor.
      */
-    const Bstr &getCalleeName() const { return mCalleeName; }
+    const Bstr& getCalleeName() const
+    {
+        return mCalleeName;
+    }
 
     /**
      *  Resets all collected error information. #isNull() will
@@ -253,11 +240,16 @@ public:
         mIsBasicAvailable = false;
         mIsFullAvailable = false;
 
+        if (m_pNext)
+        {
+            delete m_pNext;
+            m_pNext = NULL;
+        }
+
         mResultCode = S_OK;
         mInterfaceID.clear();
         mComponent.setNull();
         mText.setNull();
-        mNext.reset();
         mInterfaceName.setNull();
         mCalleeIID.clear();
         mCalleeName.setNull();
@@ -266,14 +258,16 @@ public:
 
 protected:
 
-    ErrorInfo (bool /* aDummy */)
-        : mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK)
-        {}
+    ErrorInfo(bool /* aDummy */)
+        : mIsBasicAvailable(false),
+          mIsFullAvailable(false),
+          mResultCode(S_OK),
+          m_pNext(NULL)
+    { }
 
-    void init (bool aKeepObj = false);
-    void init (IUnknown *aUnk, const GUID &aIID, bool aKeepObj = false);
-    void init (IVirtualBoxErrorInfo *aInfo);
+    void init(bool aKeepObj = false);
+    void init(IUnknown *aUnk, const GUID &aIID, bool aKeepObj = false);
+    void init(IVirtualBoxErrorInfo *aInfo);
 
     bool mIsBasicAvailable : 1;
     bool mIsFullAvailable : 1;
@@ -283,13 +277,16 @@ protected:
     Bstr    mComponent;
     Bstr    mText;
 
-    cppx::auto_copy_ptr <ErrorInfo> mNext;
+    ErrorInfo *m_pNext;
 
     Bstr mInterfaceName;
     Guid mCalleeIID;
     Bstr mCalleeName;
 
-    ComPtr <IUnknown> mErrorInfo;
+    ComPtr<IUnknown> mErrorInfo;
+
+private:
+    ErrorInfo(const ErrorInfo&);
 };
 
 /**
@@ -310,7 +307,7 @@ public:
      *
      *  @param  progress    the progress object representing a failed operation
      */
-    ProgressErrorInfo (IProgress *progress);
+    ProgressErrorInfo(IProgress *progress);
 };
 
 /**
@@ -380,7 +377,7 @@ public:
     {
         setNull();
         mForgot = false;
-        init (true /* aKeepObj */);
+        init(true /* aKeepObj */);
     }
 
     /**

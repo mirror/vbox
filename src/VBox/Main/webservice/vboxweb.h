@@ -72,7 +72,20 @@ extern const WSDLT_ID          g_EmptyWSDLID;
 
 void RaiseSoapInvalidObjectFault(struct soap *soap, WSDLT_ID obj);
 
-void RaiseSoapRuntimeFault(struct soap *soap, HRESULT apirc, IUnknown *pObj);
+void RaiseSoapRuntimeFault2(struct soap *soap, HRESULT apirc, IUnknown *pObj, const com::Guid &iid);
+
+/**
+ * Template function called everywhere from methodmaps.cpp which calls
+ * RaiseSoapRuntimeFault2() with the correct COM interface ID.
+ * @param soap
+ * @param apirc
+ * @param pObj
+ */
+template <class T>
+void RaiseSoapRuntimeFault(struct soap *soap, HRESULT apirc, const ComPtr<T> &pObj)
+{
+    RaiseSoapRuntimeFault2(soap, apirc, pObj, COM_IIDOF(T));
+}
 
 /****************************************************************************
  *

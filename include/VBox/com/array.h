@@ -168,8 +168,6 @@
 #include "VBox/com/ptr.h"
 #include "VBox/com/assert.h"
 
-#include "iprt/cpp/utils.h"
-
 #if defined (VBOX_WITH_XPCOM)
 
 /**

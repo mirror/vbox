@@ -223,7 +223,7 @@ void COMBase::FromSafeArray (const com::SafeGUIDArray &aArr,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void COMErrorInfo::init (const CVirtualBoxErrorInfo &info)
+void COMErrorInfo::init(const CVirtualBoxErrorInfo &info)
 {
     AssertReturnVoid (!info.isNull());
 
@@ -248,14 +248,15 @@ void COMErrorInfo::init (const CVirtualBoxErrorInfo &info)
     gotSomething |= info.isOk();
     gotAll &= info.isOk();
 
+    m_pNext = NULL;
+
     CVirtualBoxErrorInfo next = info.GetNext();
     if (info.isOk() && !next.isNull())
     {
-        mNext.reset (new COMErrorInfo (next));
-        Assert (mNext.get());
+        m_pNext = new COMErrorInfo(next);
+        Assert(m_pNext);
     }
-    else
-        mNext.reset();
+
     gotSomething |= info.isOk();
     gotAll &= info.isOk();
 
@@ -265,6 +266,36 @@ void COMErrorInfo::init (const CVirtualBoxErrorInfo &info)
     mIsNull = gotSomething;
 
     AssertMsg (gotSomething, ("Nothing to fetch!\n"));
+}
+
+void COMErrorInfo::copyFrom(const COMErrorInfo &x)
+{
+    mIsNull = x.mIsNull;
+    mIsBasicAvailable = x.mIsBasicAvailable;
+    mIsFullAvailable = x.mIsFullAvailable;
+
+    mResultCode = x.mResultCode;
+    mInterfaceID = x.mInterfaceID;
+    mComponent = x.mComponent;
+    mText = mText;
+
+    if (x.m_pNext)
+        m_pNext = new COMErrorInfo(*x.m_pNext);
+    else
+        m_pNext = NULL;
+
+    mInterfaceName = x.mInterfaceName;
+    mCalleeIID = x.mCalleeIID;
+    mCalleeName = x.mCalleeName;
+}
+
+void COMErrorInfo::cleanup()
+{
+    if (m_pNext)
+    {
+        delete m_pNext;
+        m_pNext = NULL;
+    }
 }
 
 /**
@@ -277,7 +308,7 @@ void COMErrorInfo::init (const CVirtualBoxErrorInfo &info)
  *  @param  calleeIID
  *      UUID of the callee's interface. Ignored when callee is NULL
  */
-void COMErrorInfo::fetchFromCurrentThread (IUnknown *callee, const GUID *calleeIID)
+void COMErrorInfo::fetchFromCurrentThread(IUnknown *callee, const GUID *calleeIID)
 {
     mIsNull = true;
     mIsFullAvailable = mIsBasicAvailable = false;
