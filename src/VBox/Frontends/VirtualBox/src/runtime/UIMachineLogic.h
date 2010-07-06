@@ -43,7 +43,6 @@ class UIMouseHandler;
 class UIMachineWindow;
 class UIMachineView;
 class UIDockIconPreview;
-class VBoxChangeDockIconUpdateEvent;
 
 class UIMachineLogic : public QIWithRetranslateUI3<QObject>
 {
@@ -185,7 +184,7 @@ private slots:
 #ifdef RT_OS_DARWIN /* Something is *really* broken in regards of the moc here */
     void sltDockPreviewModeChanged(QAction *pAction);
     void sltDockPreviewMonitorChanged(QAction *pAction);
-    void sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event);
+    void sltChangeDockIconUpdate(bool fEnabled);
 #endif /* RT_OS_DARWIN */
 
 private:

@@ -37,6 +37,7 @@
 #include "VBoxToolBar.h"
 #include "VBoxUtils.h"
 #include "VBoxVMLogViewer.h"
+#include "UIVirtualBoxEventHandler.h"
 
 #include "UIDownloaderUserManual.h"
 
@@ -514,7 +515,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     pSplitter->addWidget(pLeftWidget);
 #endif /* MAC_LEOPARD_STYLE */
 
-    /* VM tab widget containing details and snapshots tabs */
+     /* VM tab widget containing details and snapshots tabs */
     mVmTabWidget = new QITabWidget();
     pSplitter->addWidget (mVmTabWidget);
 
@@ -721,7 +722,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
              this, SLOT (showContextMenu (const QPoint &)));
 
     connect (mVmDetailsView, SIGNAL (linkClicked (const QString &)),
-            this, SLOT (vmSettings (const QString &)));
+             this, SLOT(vmSettings(const QString &)));
 
     /* listen to media enumeration signals */
     connect (&vboxGlobal(), SIGNAL (mediumEnumStarted()),
@@ -729,26 +730,26 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)),
              this, SLOT (mediumEnumFinished (const VBoxMediaList &)));
 
-    /* connect VirtualBox callback events */
-    connect (&vboxGlobal(), SIGNAL (machineStateChanged (const VBoxMachineStateChangeEvent &)),
-             this, SLOT (machineStateChanged (const VBoxMachineStateChangeEvent &)));
-    connect (&vboxGlobal(), SIGNAL (machineDataChanged (const VBoxMachineDataChangeEvent &)),
-             this, SLOT (machineDataChanged (const VBoxMachineDataChangeEvent &)));
-    connect (&vboxGlobal(), SIGNAL (machineRegistered (const VBoxMachineRegisteredEvent &)),
-             this, SLOT (machineRegistered (const VBoxMachineRegisteredEvent &)));
-    connect (&vboxGlobal(), SIGNAL (sessionStateChanged (const VBoxSessionStateChangeEvent &)),
-             this, SLOT (sessionStateChanged (const VBoxSessionStateChangeEvent &)));
-    connect (&vboxGlobal(), SIGNAL (snapshotChanged (const VBoxSnapshotEvent &)),
-             this, SLOT (snapshotChanged (const VBoxSnapshotEvent &)));
+    /* connect VirtualBox events */
+    connect (gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
+             this, SLOT(machineStateChanged(QString, KMachineState)));
+    connect (gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
+             this, SLOT(machineDataChanged(QString)));
+    connect (gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)),
+             this, SLOT(machineRegistered(QString, bool)));
+    connect (gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
+             this, SLOT(sessionStateChanged(QString, KSessionState)));
+    connect (gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)),
+             this, SLOT(snapshotChanged(QString, QString)));
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    connect (&vboxGlobal(), SIGNAL (mainWindowCountChanged (const VBoxMainWindowCountChangeEvent &)),
-             this, SLOT (mainWindowCountChanged (const VBoxMainWindowCountChangeEvent &)));
-    connect (&vboxGlobal(), SIGNAL (trayIconCanShow (const VBoxCanShowTrayIconEvent &)),
-             this, SLOT (trayIconCanShow (const VBoxCanShowTrayIconEvent &)));
-    connect (&vboxGlobal(), SIGNAL (trayIconShow (const VBoxShowTrayIconEvent &)),
-             this, SLOT (trayIconShow (const VBoxShowTrayIconEvent &)));
-    connect (&vboxGlobal(), SIGNAL (trayIconChanged (const VBoxChangeTrayIconEvent &)),
-             this, SLOT (trayIconChanged (const VBoxChangeTrayIconEvent &)));
+    connect (gEDataEvents, SIGNAL(sigMainWindowCountChange(int)),
+             this, SLOT(mainWindowCountChanged(int)));
+    connect (gEDataEvents, SIGNAL(sigCanShowTrayIcon(bool)),
+             this, SLOT(trayIconCanShow(bool)));
+    connect (gEDataEvents, SIGNAL(sigTrayIconChange(bool)),
+             this, SLOT(trayIconChanged(bool)));
+    connect (&vboxGlobal(), SIGNAL(sigTrayIconShow(bool)),
+             this, SLOT(trayIconShow(bool)));
 #endif
 
     /* Listen to potential downloaders signals: */
@@ -760,6 +761,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
 VBoxSelectorWnd::~VBoxSelectorWnd()
 {
+    /* Destroy our event handlers */
+    UIVirtualBoxEventHandler::destroy();
+
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     /* Save the position of the window */
@@ -1723,7 +1727,7 @@ void VBoxSelectorWnd::mediumEnumFinished (const VBoxMediaList &list)
     while (0);
 }
 
-void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
+void VBoxSelectorWnd::machineStateChanged(QString strId, KMachineState /* state */)
 {
 #ifdef VBOX_GUI_WITH_SYSTRAY
     if (vboxGlobal().isTrayMenu())
@@ -1738,7 +1742,7 @@ void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
     }
 #endif
 
-    refreshVMItem (e.id,
+    refreshVMItem (strId,
                    false /* aDetails */,
                    false /* aSnapshots */,
                    false /* aDescription */);
@@ -1747,20 +1751,20 @@ void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
     mVmDescriptionPage->updateState();
 }
 
-void VBoxSelectorWnd::machineDataChanged (const VBoxMachineDataChangeEvent &e)
+void VBoxSelectorWnd::machineDataChanged(QString strId)
 {
-    refreshVMItem (e.id,
+    refreshVMItem (strId,
                    true  /* aDetails */,
                    false /* aSnapshots */,
                    true  /* aDescription */);
 }
 
-void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
+void VBoxSelectorWnd::machineRegistered(QString strId, bool fRegistered)
 {
-    if (e.registered)
+    if (fRegistered)
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        CMachine m = vbox.GetMachine (e.id);
+        CMachine m = vbox.GetMachine (strId);
         if (!m.isNull())
         {
             mVMModel->addItem (new UIVMItem (m));
@@ -1776,7 +1780,7 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
     }
     else
     {
-        UIVMItem *item = mVMModel->itemById (e.id);
+        UIVMItem *item = mVMModel->itemById (strId);
         if (item)
         {
             int row = mVMModel->rowById (item->id());
@@ -1790,9 +1794,9 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
     }
 }
 
-void VBoxSelectorWnd::sessionStateChanged (const VBoxSessionStateChangeEvent &e)
+void VBoxSelectorWnd::sessionStateChanged(QString strId, KSessionState /* state */)
 {
-    refreshVMItem (e.id,
+    refreshVMItem (strId,
                    true  /* aDetails */,
                    false /* aSnapshots */,
                    false /* aDescription */);
@@ -1801,9 +1805,9 @@ void VBoxSelectorWnd::sessionStateChanged (const VBoxSessionStateChangeEvent &e)
     mVmDescriptionPage->updateState();
 }
 
-void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
+void VBoxSelectorWnd::snapshotChanged(QString strId, QString /* strSnapshotId */)
 {
-    refreshVMItem (aEvent.machineId,
+    refreshVMItem (strId,
                    false /* aDetails */,
                    true  /* aSnapshot */,
                    false /* aDescription */);
@@ -1811,24 +1815,24 @@ void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 
-void VBoxSelectorWnd::mainWindowCountChanged (const VBoxMainWindowCountChangeEvent &aEvent)
+void VBoxSelectorWnd::mainWindowCountChanged(int count)
 {
-    if (vboxGlobal().isTrayMenu() && aEvent.mCount <= 1)
+    if (vboxGlobal().isTrayMenu() && count <= 1)
         fileExit();
 }
 
-void VBoxSelectorWnd::trayIconCanShow (const VBoxCanShowTrayIconEvent &aEvent)
+void VBoxSelectorWnd::trayIconCanShow(bool fEnabled)
 {
-    emit trayIconChanged (VBoxChangeTrayIconEvent (vboxGlobal().settings().trayIconEnabled()));
+    emit trayIconChanged(VBoxChangeTrayIconEvent (vboxGlobal().settings().trayIconEnabled()));
 }
 
-void VBoxSelectorWnd::trayIconShow (const VBoxShowTrayIconEvent &aEvent)
+void VBoxSelectorWnd::trayIconShow(bool fEnabled)
 {
     if (vboxGlobal().isTrayMenu() && mTrayIcon)
-        mTrayIcon->trayIconShow (aEvent.mShow);
+        mTrayIcon->trayIconShow(fEnabled);
 }
 
-void VBoxSelectorWnd::trayIconChanged (const VBoxChangeTrayIconEvent &aEvent)
+void VBoxSelectorWnd::trayIconChanged(bool fEnabled)
 {
     /* Not used yet. */
 }

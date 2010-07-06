@@ -42,176 +42,6 @@ class QLabel;
 class QToolButton;
 class UIMachine;
 
-// VirtualBox callback events
-////////////////////////////////////////////////////////////////////////////////
-
-class VBoxMachineStateChangeEvent : public QEvent
-{
-public:
-    VBoxMachineStateChangeEvent (const QString &aId, KMachineState aState)
-        : QEvent ((QEvent::Type) VBoxDefs::MachineStateChangeEventType)
-        , id (aId), state (aState)
-        {}
-
-    const QString id;
-    const KMachineState state;
-};
-
-class VBoxMachineDataChangeEvent : public QEvent
-{
-public:
-    VBoxMachineDataChangeEvent (const QString &aId)
-        : QEvent ((QEvent::Type) VBoxDefs::MachineDataChangeEventType)
-        , id (aId)
-        {}
-
-    const QString id;
-};
-
-class VBoxMachineRegisteredEvent : public QEvent
-{
-public:
-    VBoxMachineRegisteredEvent (const QString &aId, bool aRegistered)
-        : QEvent ((QEvent::Type) VBoxDefs::MachineRegisteredEventType)
-        , id (aId), registered (aRegistered)
-        {}
-
-    const QString id;
-    const bool registered;
-};
-
-class VBoxSessionStateChangeEvent : public QEvent
-{
-public:
-    VBoxSessionStateChangeEvent (const QString &aId, KSessionState aState)
-        : QEvent ((QEvent::Type) VBoxDefs::SessionStateChangeEventType)
-        , id (aId), state (aState)
-        {}
-
-    const QString id;
-    const KSessionState state;
-};
-
-class VBoxSnapshotEvent : public QEvent
-{
-public:
-
-    enum What { Taken, Deleted, Changed };
-
-    VBoxSnapshotEvent (const QString &aMachineId, const QString &aSnapshotId,
-                       What aWhat)
-        : QEvent ((QEvent::Type) VBoxDefs::SnapshotEventType)
-        , what (aWhat)
-        , machineId (aMachineId), snapshotId (aSnapshotId)
-        {}
-
-    const What what;
-
-    const QString machineId;
-    const QString snapshotId;
-};
-
-class VBoxCanShowRegDlgEvent : public QEvent
-{
-public:
-    VBoxCanShowRegDlgEvent (bool aCanShow)
-        : QEvent ((QEvent::Type) VBoxDefs::CanShowRegDlgEventType)
-        , mCanShow (aCanShow)
-        {}
-
-    const bool mCanShow;
-};
-
-class VBoxCanShowUpdDlgEvent : public QEvent
-{
-public:
-    VBoxCanShowUpdDlgEvent (bool aCanShow)
-        : QEvent ((QEvent::Type) VBoxDefs::CanShowUpdDlgEventType)
-        , mCanShow (aCanShow)
-        {}
-
-    const bool mCanShow;
-};
-
-class VBoxChangeGUILanguageEvent : public QEvent
-{
-public:
-    VBoxChangeGUILanguageEvent (QString aLangId)
-        : QEvent ((QEvent::Type) VBoxDefs::ChangeGUILanguageEventType)
-        , mLangId (aLangId)
-        {}
-
-    const QString mLangId;
-};
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-class VBoxMainWindowCountChangeEvent : public QEvent
-{
-public:
-    VBoxMainWindowCountChangeEvent (int aCount)
-        : QEvent ((QEvent::Type) VBoxDefs::MainWindowCountChangeEventType)
-        , mCount (aCount)
-        {}
-
-    const int mCount;
-};
-
-class VBoxCanShowTrayIconEvent : public QEvent
-{
-public:
-    VBoxCanShowTrayIconEvent (bool aCanShow)
-        : QEvent ((QEvent::Type) VBoxDefs::CanShowTrayIconEventType)
-        , mCanShow (aCanShow)
-        {}
-
-    const bool mCanShow;
-};
-
-class VBoxShowTrayIconEvent : public QEvent
-{
-public:
-    VBoxShowTrayIconEvent (bool aShow)
-        : QEvent ((QEvent::Type) VBoxDefs::ShowTrayIconEventType)
-        , mShow (aShow)
-        {}
-
-    const bool mShow;
-};
-
-class VBoxChangeTrayIconEvent : public QEvent
-{
-public:
-    VBoxChangeTrayIconEvent (bool aChanged)
-        : QEvent ((QEvent::Type) VBoxDefs::TrayIconChangeEventType)
-        , mChanged (aChanged)
-        {}
-
-    const bool mChanged;
-};
-#endif
-
-class VBoxChangeDockIconUpdateEvent : public QEvent
-{
-public:
-    VBoxChangeDockIconUpdateEvent (bool aChanged)
-        : QEvent ((QEvent::Type) VBoxDefs::ChangeDockIconUpdateEventType)
-        , mChanged (aChanged)
-        {}
-
-    const bool mChanged;
-};
-
-class VBoxChangePresentationModeEvent : public QEvent
-{
-public:
-    VBoxChangePresentationModeEvent (bool aChanged)
-        : QEvent ((QEvent::Type) VBoxDefs::ChangePresentationmodeEventType)
-        , mChanged (aChanged)
-        {}
-
-    const bool mChanged;
-};
-
 class Process : public QProcess
 {
     Q_OBJECT;
@@ -300,8 +130,8 @@ public:
 
     CVirtualBox virtualBox() const { return mVBox; }
 
-    const VBoxGlobalSettings &settings() const { return gset; }
-    bool setSettings (const VBoxGlobalSettings &gs);
+    VBoxGlobalSettings &settings() { return gset; }
+    bool setSettings (VBoxGlobalSettings &gs);
 
     VBoxSelectorWnd &selectorWnd();
 
@@ -838,26 +668,9 @@ signals:
     /** Emitted when the media is removed using #removeMedia(). */
     void mediumRemoved (VBoxDefs::MediumType, const QString &);
 
-    /* signals emitted when the VirtualBox callback is called by the server
-     * (note that currently these signals are emitted only when the application
-     * is the in the VM selector mode) */
-
-    void machineStateChanged (const VBoxMachineStateChangeEvent &e);
-    void machineDataChanged (const VBoxMachineDataChangeEvent &e);
-    void machineRegistered (const VBoxMachineRegisteredEvent &e);
-    void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
-    void snapshotChanged (const VBoxSnapshotEvent &e);
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    void mainWindowCountChanged (const VBoxMainWindowCountChangeEvent &e);
-    void trayIconCanShow (const VBoxCanShowTrayIconEvent &e);
-    void trayIconShow (const VBoxShowTrayIconEvent &e);
-    void trayIconChanged (const VBoxChangeTrayIconEvent &e);
+    void sigTrayIconShow(bool fEnabled);
 #endif
-    void dockIconUpdateChanged (const VBoxChangeDockIconUpdateEvent &e);
-    void presentationModeChanged (const VBoxChangePresentationModeEvent &e);
-
-    void canShowRegDlg (bool aCanShow);
-    void canShowUpdDlg (bool aCanShow);
 
 public slots:
 
@@ -866,6 +679,7 @@ public slots:
     void showRegistrationDialog (bool aForce = true);
     void showUpdateDialog (bool aForce = true);
     void perDayNewVersionNotifier();
+    void sltGUILanguageChange(QString strLang);
 
 protected:
 
@@ -934,8 +748,6 @@ private:
     DWORD dwHTMLHelpCookie;
 #endif
 
-    CVirtualBoxCallback callback;
-
     QString mVerString;
     QString mBrandingConfig;
 
@@ -976,7 +788,6 @@ private:
     QPixmap mWarningIcon, mErrorIcon;
 
     friend VBoxGlobal &vboxGlobal();
-    friend class VBoxCallback;
 };
 
 inline VBoxGlobal &vboxGlobal() { return VBoxGlobal::instance(); }

@@ -40,6 +40,7 @@
 #include "VBoxVMSettingsSF.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
+# include "UIExtraDataEventHandler.h"
 #endif /* Q_WS_MAC */
 
 /* Global includes */
@@ -591,8 +592,8 @@ void UIMachineLogic::prepareDock()
 
     connect(pDockPreviewModeGroup, SIGNAL(triggered(QAction*)),
             this, SLOT(sltDockPreviewModeChanged(QAction*)));
-    connect(&vboxGlobal(), SIGNAL(dockIconUpdateChanged(const VBoxChangeDockIconUpdateEvent &)),
-            this, SLOT(sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &)));
+    connect(gEDataEvents, SIGNAL(sigDockIconAppearanceChange(bool)),
+            this, SLOT(sltChangeDockIconUpdate(bool)));
 
     /* Monitor selection if there are more than one monitor */
     int cGuestScreens = uisession()->session().GetMachine().GetMonitorCount();
@@ -1568,14 +1569,14 @@ void UIMachineLogic::sltDockPreviewMonitorChanged(QAction *pAction)
     }
 }
 
-void UIMachineLogic::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event)
+void UIMachineLogic::sltChangeDockIconUpdate(bool fEnabled)
 {
     if (isMachineWindowsCreated())
     {
-        setDockIconPreviewEnabled(event.mChanged);
+        setDockIconPreviewEnabled(fEnabled);
         if (m_pDockPreviewSelectMonitorGroup)
         {
-            m_pDockPreviewSelectMonitorGroup->setEnabled(event.mChanged);
+            m_pDockPreviewSelectMonitorGroup->setEnabled(fEnabled);
             CMachine machine = session().GetMachine();
             m_DockIconPreviewMonitor = qMin(machine.GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt(), (int)machine.GetMonitorCount() - 1);
         }

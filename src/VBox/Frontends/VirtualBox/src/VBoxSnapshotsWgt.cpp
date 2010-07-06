@@ -27,6 +27,7 @@
 #include "VBoxSnapshotsWgt.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxToolBar.h"
+#include "UIVirtualBoxEventHandler.h"
 
 /* Global includes */
 #include <QDateTime>
@@ -399,12 +400,12 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     connect (mShowSnapshotDetailsAction, SIGNAL (triggered()), this, SLOT (showSnapshotDetails()));
     connect (mTakeSnapshotAction, SIGNAL (triggered()), this, SLOT (takeSnapshot()));
 
-    connect (&vboxGlobal(), SIGNAL (machineDataChanged (const VBoxMachineDataChangeEvent&)),
-             this, SLOT (machineDataChanged (const VBoxMachineDataChangeEvent&)));
-    connect (&vboxGlobal(), SIGNAL (machineStateChanged (const VBoxMachineStateChangeEvent&)),
-             this, SLOT (machineStateChanged (const VBoxMachineStateChangeEvent&)));
-    connect (&vboxGlobal(), SIGNAL (sessionStateChanged (const VBoxSessionStateChangeEvent&)),
-             this, SLOT (sessionStateChanged (const VBoxSessionStateChangeEvent&)));
+    connect (gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
+             this, SLOT(machineDataChanged(QString)));
+    connect (gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
+             this, SLOT(machineStateChanged(QString, KMachineState)));
+    connect (gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
+             this, SLOT(sessionStateChanged(QString, KSessionState)));
 
     connect (&mAgeUpdateTimer, SIGNAL (timeout()), this, SLOT (updateSnapshotsAge()));
 
@@ -664,35 +665,35 @@ void VBoxSnapshotsWgt::takeSnapshot()
 }
 
 
-void VBoxSnapshotsWgt::machineDataChanged (const VBoxMachineDataChangeEvent &aEvent)
+void VBoxSnapshotsWgt::machineDataChanged(QString strId)
 {
     SnapshotEditBlocker guardBlock (mEditProtector);
 
-    if (aEvent.id != mMachineId)
+    if (strId != mMachineId)
         return;
 
     curStateItem()->recache();
 }
 
-void VBoxSnapshotsWgt::machineStateChanged (const VBoxMachineStateChangeEvent &aEvent)
+void VBoxSnapshotsWgt::machineStateChanged(QString strId, KMachineState state)
 {
     SnapshotEditBlocker guardBlock (mEditProtector);
 
-    if (aEvent.id != mMachineId)
+    if (strId != mMachineId)
         return;
 
     curStateItem()->recache();
-    curStateItem()->updateCurrentState (aEvent.state);
+    curStateItem()->updateCurrentState(state);
 }
 
-void VBoxSnapshotsWgt::sessionStateChanged (const VBoxSessionStateChangeEvent &aEvent)
+void VBoxSnapshotsWgt::sessionStateChanged(QString strId, KSessionState state)
 {
     SnapshotEditBlocker guardBlock (mEditProtector);
 
-    if (aEvent.id != mMachineId)
+    if (strId != mMachineId)
         return;
 
-    mSessionState = aEvent.state;
+    mSessionState = state;
     onCurrentChanged (mTreeWidget->currentItem());
 }
 

@@ -33,8 +33,8 @@
 #include "UIMultiScreenLayout.h"
 #include "UISession.h"
 
-
 #ifdef Q_WS_MAC
+# include "UIExtraDataEventHandler.h"
 # include "VBoxUtils.h"
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
@@ -167,8 +167,8 @@ int UIMachineLogicFullscreen::hostScreenForGuestScreen(int screenId) const
 void UIMachineLogicFullscreen::prepareCommonConnections()
 {
     /* Presentation mode connection */
-    connect (&vboxGlobal(), SIGNAL(presentationModeChanged(const VBoxChangePresentationModeEvent &)),
-             this, SLOT(sltChangePresentationMode(const VBoxChangePresentationModeEvent &)));
+    connect(gEDataEvents, SIGNAL(sigPresentationModeChange(bool)),
+            this, SLOT(sltChangePresentationMode(bool)));
 }
 #endif /* Q_WS_MAC */
 
@@ -244,7 +244,7 @@ void UIMachineLogicFullscreen::cleanupActionGroups()
 }
 
 #ifdef Q_WS_MAC
-void UIMachineLogicFullscreen::sltChangePresentationMode(const VBoxChangePresentationModeEvent & /* event */)
+void UIMachineLogicFullscreen::sltChangePresentationMode(bool /* fEnabled */)
 {
     setPresentationModeEnabled(true);
 }

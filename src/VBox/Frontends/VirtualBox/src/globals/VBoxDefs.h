@@ -75,42 +75,16 @@ struct VBoxDefs
         , ResizeEventType
         , RepaintEventType
         , SetRegionEventType
-        , MouseCapabilityEventType
-        , MousePointerChangeEventType
-        , MachineStateChangeEventType
-        , AdditionsStateChangeEventType
-        , MediaDriveChangeEventType
-        , MachineDataChangeEventType
-        , MachineRegisteredEventType
-        , SessionStateChangeEventType
-        , SnapshotEventType
-        , CanShowRegDlgEventType
-        , CanShowUpdDlgEventType
-        , NetworkAdapterChangeEventType
-        , USBCtlStateChangeEventType
-        , USBDeviceStateChangeEventType
-        , SharedFolderChangeEventType
-        , RuntimeErrorEventType
         , ModifierKeyChangeEventType
         , MediaEnumEventType
 #if defined (Q_WS_WIN)
         , ShellExecuteEventType
 #endif
-        , ActivateMenuEventType /* remove when new core is active */
-        , ActivateActionEventType /* New name for new core */
+        , ActivateActionEventType
 #if defined (Q_WS_MAC)
         , ShowWindowEventType
 #endif
-        , ChangeGUILanguageEventType
-#if defined (VBOX_GUI_WITH_SYSTRAY)
-        , CanShowTrayIconEventType
-        , ShowTrayIconEventType
-        , TrayIconChangeEventType
-        , MainWindowCountChangeEventType
-#endif
         , AddVDMUrlsEventType
-        , ChangeDockIconUpdateEventType
-        , ChangePresentationmodeEventType
 #ifdef VBOX_GUI_USE_QGL
         , VHWACommandProcessType
 #endif
@@ -143,6 +117,7 @@ struct VBoxDefs
     static const char* GUI_RestrictedCloseActions;
     static const char* GUI_SuppressMessages;
     static const char* GUI_PermanentSharedFoldersAtRuntime;
+    static const char* GUI_LanguageId;
 #ifdef Q_WS_X11
     static const char* GUI_LicenseKey;
 #endif
@@ -156,6 +131,7 @@ struct VBoxDefs
     static const char* GUI_RenderMode;
 #ifdef VBOX_GUI_WITH_SYSTRAY
     static const char* GUI_TrayIconWinID;
+    static const char* GUI_TrayIconEnabled;
     static const char* GUI_MainWindowCount;
 #endif
 #ifdef Q_WS_MAC

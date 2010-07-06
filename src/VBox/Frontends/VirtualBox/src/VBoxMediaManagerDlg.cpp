@@ -42,6 +42,7 @@
 #include "QIFileDialog.h"
 #include "QILabel.h"
 #include "UIIconPool.h"
+#include "UIVirtualBoxEventHandler.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 class AddVDMUrlsEvent: public QEvent
@@ -516,12 +517,12 @@ void VBoxMediaManagerDlg::showModeless (QWidget *aCenterWidget /* = 0 */, bool a
          * the contents of the modeless dialog */
         /// @todo refreshAll() may be slow, so it may be better to analyze
         //  event details and update only what is changed */
-        connect (&vboxGlobal(), SIGNAL (machineDataChanged (const VBoxMachineDataChangeEvent &)),
-                 mModelessDialog, SLOT (refreshAll()));
-        connect (&vboxGlobal(), SIGNAL (machineRegistered (const VBoxMachineRegisteredEvent &)),
-                 mModelessDialog, SLOT (refreshAll()));
-        connect (&vboxGlobal(), SIGNAL (snapshotChanged (const VBoxSnapshotEvent &)),
-                 mModelessDialog, SLOT (refreshAll()));
+        connect (gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
+                 mModelessDialog, SLOT(refreshAll()));
+        connect (gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)),
+                 mModelessDialog, SLOT(refreshAll()));
+        connect (gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)),
+                 mModelessDialog, SLOT(refreshAll()));
     }
 
     mModelessDialog->show();
@@ -1442,9 +1443,9 @@ void VBoxMediaManagerDlg::showContextMenu (const QPoint &aPos)
     }
 }
 
-void VBoxMediaManagerDlg::machineStateChanged (const VBoxMachineStateChangeEvent &aEvent)
+void VBoxMediaManagerDlg::machineStateChanged(QString /* strId */, KMachineState state)
 {
-    switch (aEvent.state)
+    switch (state)
     {
         case KMachineState_PoweredOff:
         case KMachineState_Aborted:
