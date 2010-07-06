@@ -344,6 +344,7 @@ void VBoxServicePageSharingInspectGuest()
     HANDLE hSnapshot;
     PAVLPVNODECORE pNewTree = NULL;
     DWORD dwProcessId = GetCurrentProcessId();
+    bool fFirstCheck = (pKnownModuleTree == NULL);
 
     VBoxServiceVerbose(3, "VBoxServicePageSharingInspectGuest\n");
 
@@ -481,8 +482,6 @@ skipkernelmodules:
         if (pBuffer)
             RTMemFree(pBuffer);
     }
-
-    bool fFirstCheck = (pKnownModuleTree == NULL);
 
     /* Delete leftover modules in the old tree. */
     RTAvlPVDestroy(&pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, NULL);
