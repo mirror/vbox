@@ -24,7 +24,6 @@
 #include <QLabel>
 
 /* Local includes */
-#include "VBoxDefs.h"
 #include "QIWithRetranslateUI.h"
 #include "UIMachineWindow.h"
 
