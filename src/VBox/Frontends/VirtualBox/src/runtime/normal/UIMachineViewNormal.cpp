@@ -31,8 +31,8 @@
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
-#include "UIFrameBuffer.h"
 #include "UIMachineViewNormal.h"
+#include "UIFrameBuffer.h"
 
 UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
                                          , ulong uScreenId
