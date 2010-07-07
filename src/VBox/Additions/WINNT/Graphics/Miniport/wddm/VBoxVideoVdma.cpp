@@ -136,6 +136,7 @@ NTSTATUS vboxVdmaPipeSvrCmdGetList(PVBOXVDMAPIPE pPipe, PLIST_ENTRY pDetachHead)
     VBOXVDMAPIPE_STATE enmState = VBOXVDMAPIPE_STATE_CLOSED;
     do
     {
+        bool bListEmpty = true;
         KeAcquireSpinLock(&pPipe->SinchLock, &OldIrql);
         Assert(pPipe->enmState == VBOXVDMAPIPE_STATE_OPENNED
                 || pPipe->enmState == VBOXVDMAPIPE_STATE_CLOSING);
@@ -144,7 +145,8 @@ NTSTATUS vboxVdmaPipeSvrCmdGetList(PVBOXVDMAPIPE pPipe, PLIST_ENTRY pDetachHead)
         if (enmState >= VBOXVDMAPIPE_STATE_OPENNED)
         {
             vboxVideoLeDetach(&pPipe->CmdListHead, pDetachHead);
-            pPipe->bNeedNotify = false;
+            bListEmpty = IsListEmpty(pDetachHead);
+            pPipe->bNeedNotify = bListEmpty;
         }
         else
         {
@@ -155,7 +157,7 @@ NTSTATUS vboxVdmaPipeSvrCmdGetList(PVBOXVDMAPIPE pPipe, PLIST_ENTRY pDetachHead)
 
         KeReleaseSpinLock(&pPipe->SinchLock, OldIrql);
 
-        if (!IsListEmpty(pDetachHead))
+        if (!bListEmpty)
         {
             Assert(Status == STATUS_SUCCESS);
             break;
@@ -163,10 +165,6 @@ NTSTATUS vboxVdmaPipeSvrCmdGetList(PVBOXVDMAPIPE pPipe, PLIST_ENTRY pDetachHead)
 
         if (enmState == VBOXVDMAPIPE_STATE_OPENNED)
         {
-            KeAcquireSpinLock(&pPipe->SinchLock, &OldIrql);
-            pPipe->bNeedNotify = true;
-            KeReleaseSpinLock(&pPipe->SinchLock, OldIrql);
-
             Status = KeWaitForSingleObject(&pPipe->Event, Executive, KernelMode, FALSE, NULL /* PLARGE_INTEGER Timeout */);
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
