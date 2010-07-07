@@ -393,6 +393,7 @@ VirtualBox_SOURCES = \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/VBoxUpdateDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
+	src/UIVMItem.cpp \
 	src/UIVMListView.cpp \
 	src/UIVirtualBoxEventHandler.cpp \
 	src/VBoxVMLogViewer.cpp \

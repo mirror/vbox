@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIVMItem, UIVMItemModel, UIVMListView, UIVMItemPainter class declarations
+ * UIVMItemModel, UIVMListView, UIVMItemPainter class declarations
  */
 
 /*
@@ -19,72 +19,13 @@
 #ifndef __UIVMListView_h__
 #define __UIVMListView_h__
 
+/* Self includes */
 #include "VBoxGlobal.h"
 #include "QIListView.h"
+#include "UIVMItem.h"
 
 /* Qt includes */
 #include <QAbstractListModel>
-#include <QDateTime>
-
-class VBoxSelectorWnd;
-
-class UIVMItem
-{
-public:
-
-    UIVMItem(const CMachine &aMachine);
-    virtual ~UIVMItem();
-
-    CMachine machine() const { return m_machine; }
-
-    QString name() const { return m_strName; }
-    QIcon osIcon() const { return m_fAccessible ? vboxGlobal().vmGuestOSTypeIcon(m_strOSTypeId) : QPixmap(":/os_other.png"); }
-    QString osTypeId() const { return m_strOSTypeId; }
-    QString id() const { return m_strId; }
-
-    QString sessionStateName() const;
-    QIcon sessionStateIcon() const { return m_fAccessible ? vboxGlobal().toIcon(m_state) : QPixmap(":/state_aborted_16px.png"); }
-
-    QString snapshotName() const { return m_strSnapshotName; }
-    ULONG snapshotCount() const { return m_cSnaphot; }
-
-    QString toolTipText() const;
-
-    bool accessible() const { return m_fAccessible; }
-    const CVirtualBoxErrorInfo &accessError() const { return m_accessError; }
-    KMachineState state() const { return m_state; }
-    KSessionState sessionState() const { return m_sessionState; }
-
-    bool recache();
-
-    bool canSwitchTo() const;
-    bool switchTo();
-
-private:
-
-    /* Private member vars */
-    CMachine m_machine;
-
-    /* Cached machine data (to minimize server requests) */
-    QString m_strId;
-    QString m_strSettingsFile;
-
-    bool m_fAccessible;
-    CVirtualBoxErrorInfo m_accessError;
-
-    QString m_strName;
-    QString m_strSnapshotName;
-    KMachineState m_state;
-    QDateTime m_lastStateChange;
-    KSessionState m_sessionState;
-    QString m_strOSTypeId;
-    ULONG m_cSnaphot;
-
-    ULONG m_pid;
-};
-
-/* Make the pointer of this class public to the QVariant framework */
-Q_DECLARE_METATYPE(UIVMItem *);
 
 class UIVMItemModel: public QAbstractListModel
 {
