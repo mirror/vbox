@@ -879,14 +879,6 @@ static void buslogicCommandComplete(PBUSLOGIC pBusLogic)
         pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_DATA_IN_REGISTER_READY;
         pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_COMMAND_COMPLETE;
 
-        /*
-         * SCO OpenServer requires that this flag is set after the ECHO COMMAND
-         * DATA command. Doesn't look like it breaks other guests
-         * but we just set it if the command was actually issued just to be sure.
-         */
-        if (pBusLogic->uOperationCode == BUSLOGICCOMMAND_ECHO_COMMAND_DATA)
-            pBusLogic->regStatus |= BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
-
         buslogicSetInterrupt(pBusLogic);
     }
 
@@ -1356,10 +1348,13 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             PReplyInquireExtendedSetupInformation pReply = (PReplyInquireExtendedSetupInformation)pBusLogic->aReplyBuffer;
             memset(pReply, 0, sizeof(ReplyInquireExtendedSetupInformation));
 
+            //@todo: should this reflect the RAM contents (AutoSCSIRam)?
+            pReply->uBusType = 'E';         /* EISA style */
+            pReply->u16ScatterGatherLimit = 8192;
+            pReply->fLevelSensitiveInterrupt = true;
             pReply->fHostWideSCSI = true;
             pReply->fHostUltraSCSI = true;
-            pReply->u16ScatterGatherLimit = 8192;
-            pBusLogic->regStatus |= BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
+            memcpy(pReply->aFirmwareRevision, "07B", sizeof(pReply->aFirmwareRevision));
 
             break;
         }
@@ -1583,15 +1578,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                 return rc;
 
             if (uVal & BUSLOGIC_REGISTER_CONTROL_INTERRUPT_RESET)
-            {
                 buslogicClearInterrupt(pBusLogic);
-                /*
-                 * Clear the flag in case it is set
-                 * to avoid confusing other guests.
-                 * SCO OpenServer doesn't need it anymore to be set.
-                 */
-                pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
-            }
 
             PDMCritSectLeave(&pBusLogic->CritSectIntr);
 
