@@ -242,8 +242,8 @@ public:
 signals:
     void clicked(int iSegment);
 
-private:
-    /* Private member vars */
+protected:
+    /* Protected member vars */
     QList<QIToolButton*> m_pButtons;
     QSignalMapper *m_pSignalMapper;
 };
@@ -253,8 +253,7 @@ class UITexturedSegmentedButton: public UIRoundRectSegmentedButton
     Q_OBJECT;
 
 public:
-    UITexturedSegmentedButton(int cCount, QWidget *pParent = 0)
-      : UIRoundRectSegmentedButton(cCount, pParent) {}
+    UITexturedSegmentedButton(int cCount, QWidget *pParent = 0);
 };
 
 /********************************************************************************

@@ -291,6 +291,16 @@ void UIRoundRectSegmentedButton::animateClick(int iSegment)
     m_pButtons.at(iSegment)->animateClick();
 }
 
+UITexturedSegmentedButton::UITexturedSegmentedButton(int cCount, QWidget *pParent /* = 0 */)
+  : UIRoundRectSegmentedButton(cCount, pParent)
+{
+    for (int i=0; i < m_pButtons.size(); ++i)
+    {
+        m_pButtons.at(i)->setAutoExclusive(true);
+        m_pButtons.at(i)->setCheckable(true);
+    }
+}
+
 /********************************************************************************
  *
  * A search field  for the other OS's.
