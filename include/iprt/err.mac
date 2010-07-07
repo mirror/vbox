@@ -103,9 +103,7 @@
 %define VERR_IGNORED    (-91)
 %define VERR_CONCURRENT_ACCESS    (-92)
 %define VERR_CALLER_NO_REFERENCE    (-93)
-%define VERR_NO_CHANGE    (-95)
-%define VINF_NO_CHANGE    95
-%define VERR_NO_EXEC_MEMORY    (-96)
+%define VERR_LOGON_FAILURE    (-94)
 %define VERR_FILE_IO_ERROR    (-100)
 %define VERR_OPEN_FAILED    (-101)
 %define VERR_FILE_NOT_FOUND    (-102)

@@ -1897,7 +1897,6 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     rc = CFGMR3InsertInteger(pInst, "Trusted",        1);           /* boolean */   UPDATE_RC();
     rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",    4);                           UPDATE_RC();
     rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",  0);                           UPDATE_RC();
-    rc = CFGMR3InsertInteger(pCfg,  "RamSize",        g_u32MemorySizeMB * _1M);     UPDATE_RC();
 
     /* the VMM device's Main driver */
     rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                     UPDATE_RC();
