@@ -163,7 +163,7 @@ typedef struct VMMDevState
 
     /* guest ram size */
     uint64_t    cbGuestRAM;
-    
+
     /* unique session id; the id will be different after each start, reset or restore of the VM. */
     uint64_t    idSession;
 
@@ -214,15 +214,23 @@ typedef struct VMMDevState
     } SharedFolders;
 
     /** FLag whether CPU hotplug events are monitored */
-    bool                 fCpuHotPlugEventsEnabled;
+    bool                fCpuHotPlugEventsEnabled;
     /** CPU hotplug event */
-    VMMDevCpuEventType   enmCpuHotPlugEvent;
+    VMMDevCpuEventType  enmCpuHotPlugEvent;
     /** Core id of the CPU to change */
-    uint32_t             idCpuCore;
+    uint32_t            idCpuCore;
     /** Package id of the CPU to changhe */
-    uint32_t             idCpuPackage;
+    uint32_t            idCpuPackage;
 
-    uint32_t             StatMemBalloonChunks;
+    uint32_t            StatMemBalloonChunks;
+
+    /** Set if RC/R0 is enabled. */
+    bool                fRZEnabled;
+    /** Set if testing is enabled. */
+    bool                fTestingEnabled;
+    /** The high timestamp value. */
+    uint32_t            u32TestingHighTimestamp;
+
 } VMMDevState;
 AssertCompileMemberAlignment(VMMDevState, CritSect, 8);
 

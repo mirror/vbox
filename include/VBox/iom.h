@@ -90,7 +90,8 @@ RT_C_DECLS_BEGIN
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
  * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.
+ * @param   pu32        Where to store the result.  This is always a 32-bit
+ *                      variable regardless of what @a cb might say.
  * @param   cb          Number of bytes read.
  */
 typedef DECLCALLBACK(int) FNIOMIOPORTIN(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
