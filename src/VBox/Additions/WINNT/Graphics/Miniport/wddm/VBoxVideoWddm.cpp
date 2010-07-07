@@ -1553,12 +1553,14 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                             }
                             else
 #endif
-                            if (pAllocInfo->fFlags.RenderTarget)
                             {
-                                pAllocationInfo->Flags.CpuVisible = 1;
                                 Assert(pAllocation->SurfDesc.bpp);
                                 Assert(pAllocation->SurfDesc.pitch);
                                 Assert(pAllocation->SurfDesc.cbSize);
+                                if (!pAllocInfo->fFlags.SharedResource)
+                                {
+                                    pAllocationInfo->Flags.CpuVisible = 1;
+                                }
                             }
                         }
 //                        else
