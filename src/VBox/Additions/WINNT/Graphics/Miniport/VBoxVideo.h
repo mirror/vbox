@@ -698,7 +698,10 @@ DECLINLINE(bool) vboxWddmCmpSurfDescsBase(VBOXWDDM_SURFACE_DESC *pDesc1, VBOXWDD
 DECLINLINE(void) vboxWddmAssignShadow(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
     if (pSource->pShadowAllocation == pAllocation)
+    {
+        Assert(pAllocation->bAssigned);
         return;
+    }
 
     if (pSource->pShadowAllocation)
     {
@@ -713,6 +716,8 @@ DECLINLINE(void) vboxWddmAssignShadow(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURC
 
     if (pAllocation)
     {
+        Assert(!pAllocation->bAssigned);
+        Assert(!pAllocation->bVisible);
         pAllocation->bVisible = FALSE;
         /* this check ensures the shadow is not used for other source simultaneously */
         Assert(pAllocation->SurfDesc.VidPnSourceId == D3DDDI_ID_UNINITIALIZED);
