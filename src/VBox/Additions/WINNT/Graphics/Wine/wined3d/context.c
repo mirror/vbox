@@ -483,7 +483,7 @@ static void context_apply_fbo_state(struct wined3d_context *context)
         context_bind_fbo(context, GL_FRAMEBUFFER, NULL);
     }
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(DEBUG_misha)
     context_check_fbo_status(context);
 #endif
 }

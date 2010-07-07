@@ -3481,11 +3481,6 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
             {
                 hr = E_OUTOFMEMORY;
             }
-
-            if (hr == S_OK)
-                pResource->hResource = pRc;
-            else
-                vboxResourceFree(pRc);
         }
 
         if (hr == S_OK)
