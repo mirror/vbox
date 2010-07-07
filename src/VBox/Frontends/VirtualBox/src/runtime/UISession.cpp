@@ -117,7 +117,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
             this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)));
 
     connect(gConsoleEvents, SIGNAL(sigSharedFolderChange()),
-            this, SLOT(sltSharedFolderChange()));
+            this, SIGNAL(sigSharedFolderChange()));
 
     connect(gConsoleEvents, SIGNAL(sigRuntimeError(bool, QString, QString)),
             this, SIGNAL(sigRuntimeError(bool, QString, QString)));
@@ -578,11 +578,6 @@ void UISession::sltAdditionsChange()
         /* Notify listeners about guest additions state changed: */
         emit sigAdditionsStateChange();
     }
-}
-
-void UISession::sltSharedFolderChange()
-{
-    emit sigSharedFolderChange();
 }
 
 void UISession::prepareMenuPool()
