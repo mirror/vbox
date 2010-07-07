@@ -905,8 +905,9 @@ int Appliance::TaskOVF::startThread()
                              0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
                              "Appliance::Task");
 
-    ComAssertMsgRCRet(vrc,
-                      ("Could not create OVF task thread (%Rrc)\n", vrc), E_FAIL);
+    if (RT_FAILURE(vrc))
+        return Appliance::setErrorStatic(E_FAIL,
+                                         Utf8StrFmt("Could not create OVF task thread (%Rrc)\n", vrc));
 
     return S_OK;
 }

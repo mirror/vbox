@@ -98,6 +98,12 @@ public:
 
     /* public methods only for internal purposes */
 
+    static HRESULT setErrorStatic(HRESULT aResultCode,
+                                  const Utf8Str &aText)
+    {
+        return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
+    }
+
     /* private instance data */
 private:
     /** weak VirtualBox parent */

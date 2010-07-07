@@ -156,12 +156,9 @@ public:
 #define ComAssert(expr)    \
     do { \
         if (RT_UNLIKELY(!(expr))) \
-            setErrorInternal(E_FAIL, \
-                             getStaticClassIID(), \
-                             getStaticComponentName(), \
-                             Utf8StrFmt("Assertion failed: [%s] at '%s' (%d) in %s.\nPlease contact the product vendor!", \
-                                        #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__), \
-                             false, true); \
+            setError(E_FAIL, \
+                     "Assertion failed: [%s] at '%s' (%d) in %s.\nPlease contact the product vendor!", \
+                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
     } while (0)
 #endif
 
@@ -180,12 +177,9 @@ public:
 #define ComAssertMsg(expr, a)  \
     do { \
         if (RT_UNLIKELY(!(expr))) \
-            setErrorInternal(E_FAIL, \
-                             getStaticClassIID(), \
-                             getStaticComponentName(), \
-                             Utf8StrFmt("Assertion failed: [%s] at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!", \
-                                        #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__), \
-                             false, true); \
+            setError(E_FAIL, \
+                     "Assertion failed: [%s] at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!", \
+                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
     } while (0)
 #endif
 

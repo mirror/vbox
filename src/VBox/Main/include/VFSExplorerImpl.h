@@ -64,6 +64,14 @@ class ATL_NO_VTABLE VFSExplorer :
 
     STDMETHOD(Remove)(ComSafeArrayIn(IN_BSTR, aNames), IProgress **aProgress);
 
+    /* public methods only for internal purposes */
+
+    static HRESULT setErrorStatic(HRESULT aResultCode,
+                                  const Utf8Str &aText)
+    {
+        return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
+    }
+
 private:
     /* Private member vars */
     VirtualBox * const  mVirtualBox;

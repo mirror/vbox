@@ -195,8 +195,8 @@ int VFSExplorer::TaskVFSExplorer::startThread()
                              0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
                              "Explorer::Task");
 
-    ComAssertMsgRCRet(vrc,
-                      ("Could not create taskThreadVFS (%Rrc)\n", vrc), E_FAIL);
+    if (RT_FAILURE(vrc))
+        return VFSExplorer::setErrorStatic(E_FAIL, Utf8StrFmt("Could not create taskThreadVFS (%Rrc)\n", vrc));
 
     return vrc;
 }
