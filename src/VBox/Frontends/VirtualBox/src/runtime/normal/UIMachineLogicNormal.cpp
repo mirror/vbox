@@ -29,7 +29,6 @@
 #include "UIActionsPool.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineWindow.h"
-#include "UIMachineView.h"
 #include "UIDownloaderAdditions.h"
 
 #ifdef Q_WS_MAC
