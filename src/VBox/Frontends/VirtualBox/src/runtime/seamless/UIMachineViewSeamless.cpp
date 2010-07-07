@@ -32,8 +32,8 @@
 /* Local includes */
 #include "VBoxGlobal.h"
 #include "UISession.h"
-#include "UIMachineWindow.h"
 #include "UIMachineLogicSeamless.h"
+#include "UIMachineWindow.h"
 #include "UIMachineViewSeamless.h"
 #include "UIFrameBuffer.h"
 
