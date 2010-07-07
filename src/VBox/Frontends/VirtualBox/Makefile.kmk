@@ -404,6 +404,7 @@ VirtualBox_SOURCES = \
 	src/globals/UIIconPool.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \
+	src/globals/UIImageTools.cpp \
 	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
