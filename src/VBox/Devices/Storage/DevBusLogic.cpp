@@ -839,7 +839,7 @@ static int buslogicHwReset(PBUSLOGIC pBusLogic)
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
 
     /* Reset registers to default value. */
-    pBusLogic->regStatus = BUSLOGIC_REGISTER_STATUS_HOST_ADAPTER_READY;
+    pBusLogic->regStatus = BUSLOGIC_REGISTER_STATUS_HOST_ADAPTER_READY | BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
     pBusLogic->regInterrupt = 0;
     pBusLogic->regGeometry = BUSLOGIC_REGISTER_GEOMETRY_EXTENTED_TRANSLATION_ENABLED;
     pBusLogic->uOperationCode = 0xff; /* No command executing. */
@@ -1300,8 +1300,8 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         }
         case BUSLOGICCOMMAND_INQUIRE_BOARD_ID:
         {
-            pBusLogic->aReplyBuffer[0] = '0'; /* @todo figure out what to write here. */
-            pBusLogic->aReplyBuffer[1] = '1'; /* @todo figure out what to write here - can't be '0' or 'B'. */
+            pBusLogic->aReplyBuffer[0] = 'A'; /* Firmware option bytes */
+            pBusLogic->aReplyBuffer[1] = 'A';
 
             /* We report version 5.07B. This reply will provide the first two digits. */
             pBusLogic->aReplyBuffer[2] = '5'; /* Major version 5 */
@@ -1325,11 +1325,11 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         {
             /* The reply length is set by the guest and is found in the first byte of the command buffer. */
             pBusLogic->cbReplyParametersLeft = pBusLogic->aCommandBuffer[0];
-            memset(pBusLogic->aReplyBuffer, 0, pBusLogic->cbReplyParametersLeft);
+            memset(pBusLogic->aReplyBuffer, ' ', pBusLogic->cbReplyParametersLeft);
             const char aModelName[] = "958";
-            int cCharsToTransfer =   (pBusLogic->cbReplyParametersLeft <= sizeof(aModelName))
+            int cCharsToTransfer =   (pBusLogic->cbReplyParametersLeft <= (sizeof(aModelName) - 1))
                                    ? pBusLogic->cbReplyParametersLeft
-                                   : sizeof(aModelName);
+                                   : sizeof(aModelName) - 1;
 
             for (int i = 0; i < cCharsToTransfer; i++)
                 pBusLogic->aReplyBuffer[i] = aModelName[i];
@@ -1397,6 +1397,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             Log(("GCPhysAddrMailboxOutgoingBase=%RGp\n", pBusLogic->GCPhysAddrMailboxIncomingBase));
             Log(("cMailboxes=%u\n", pBusLogic->cMailbox));
 
+            pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
             pBusLogic->cbReplyParametersLeft = 0;
             break;
         }
@@ -1462,12 +1463,26 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pBusLogic->cbReplyParametersLeft = 1;
             break;
         }
+        case BUSLOGICCOMMAND_SET_PREEMPT_TIME_ON_BUS:
+        {
+            pBusLogic->cbReplyParametersLeft = 0;
+            pBusLogic->LocalRam.structured.autoSCSIData.uBusOnDelay = pBusLogic->aCommandBuffer[0];
+            Log(("Bus-on time: %d\n", pBusLogic->aCommandBuffer[0]));
+            break;
+        }
+        case BUSLOGICCOMMAND_SET_TIME_OFF_BUS:
+        {
+            pBusLogic->cbReplyParametersLeft = 0;
+            pBusLogic->LocalRam.structured.autoSCSIData.uBusOffDelay = pBusLogic->aCommandBuffer[0];
+            Log(("Bus-off time: %d\n", pBusLogic->aCommandBuffer[0]));
+            break;
+        }
         case BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND: /* Should be handled already. */
         default:
             AssertMsgFailed(("Invalid command %#x\n", pBusLogic->uOperationCode));
     }
 
-    Log(("cbReplyParametersLeft=%d\n", pBusLogic->cbReplyParametersLeft));
+    Log(("uOperationCode=%#x, cbReplyParametersLeft=%d\n", pBusLogic->uOperationCode, pBusLogic->cbReplyParametersLeft));
 
     /* Set the data in ready bit in the status register in case the command has a reply. */
     if (pBusLogic->cbReplyParametersLeft)
@@ -1640,6 +1655,8 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                     case BUSLOGICCOMMAND_INQUIRE_SYNCHRONOUS_PERIOD:
                     case BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT:
                     case BUSLOGICCOMMAND_ECHO_COMMAND_DATA:
+                    case BUSLOGICCOMMAND_SET_PREEMPT_TIME_ON_BUS:
+                    case BUSLOGICCOMMAND_SET_TIME_OFF_BUS:
                         pBusLogic->cbCommandParametersLeft = 1;
                         break;
                     case BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM:
