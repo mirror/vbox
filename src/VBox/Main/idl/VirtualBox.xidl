@@ -15012,7 +15012,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="ISessionStateEvent" extends="IMachineEvent"
+      name="ISessionStateChangeEvent" extends="IMachineEvent"
       uuid="714a3eef-799a-4489-86cd-fe8e45b2ff8e"
       wsmap="managed" autogen="VBoxEvent" id="OnSessionStateChange"
       >
@@ -15252,7 +15252,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IAdditionsChangeEvent" extends="IEvent"
+     name="IAdditionsStateChangeEvent" extends="IEvent"
      uuid="D70F7915-DA7C-44C8-A7AC-9F173490446A"
      wsmap="managed" autogen="VBoxEvent" id="OnAdditionsStateChange"
      >

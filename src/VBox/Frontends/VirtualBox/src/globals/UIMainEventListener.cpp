@@ -103,7 +103,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         case KVBoxEventType_OnSessionStateChange:
         {
-            CSessionStateEvent es(event);
+            CSessionStateChangeEvent es(event);
             emit sigSessionStateChange(es.GetMachineId(), es.GetState());
             break;
         }
