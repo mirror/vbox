@@ -176,7 +176,7 @@ filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxusb"'      
 # Manifest class action scripts
 filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/virtualbox-webservice.xml"'    '$2 = "manifest";$6 = "sys"'
 filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml"'    '$2 = "manifest";$6 = "sys"'
-dirlist_fixup prototype      '$3 == "var/svc/manifest/application/virtualbox"'                              '$6 = "sys"'
+dirlist_fixup prototype  '$3 == "var/svc/manifest/application/virtualbox"'                              '$6 = "sys"'
 
 # hardening requires some executables to be marked setuid.
 if test -n "$HARDENED"; then
