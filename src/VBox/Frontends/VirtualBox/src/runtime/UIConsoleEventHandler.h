@@ -22,7 +22,7 @@
 /* Local includes */
 #include "COMDefs.h"
 
-/* Local forward includes */
+/* Local forward declarations */
 class UISession;
 
 class UIConsoleEventHandler: public QObject
