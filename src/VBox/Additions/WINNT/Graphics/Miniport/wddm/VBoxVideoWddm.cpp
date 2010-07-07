@@ -2125,6 +2125,7 @@ DxgkDdiSubmitCommand(
                             {
                                 RECT rect;
                                 Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_SYSTEM);
+                                vboxWddmAssignShadow(pDevExt, pSource, pSrcAlloc, pDstAlloc->SurfDesc.VidPnSourceId);
                                 vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
                                 if (pBlt->DstRects.UpdateRects.cRects)
                                 {
