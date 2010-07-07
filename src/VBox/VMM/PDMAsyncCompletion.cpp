@@ -788,7 +788,7 @@ static void pdmR3AsyncCompletionPutTask(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, P
 
     if (RT_UNLIKELY(tsRun >= (uint64_t)10*1000*1000*1000))
     {
-        LogRel(("AsyncCompletion: Task completed after %llu seconds\n", tsRun / ((uint64_t)1000*1000*1000)));
+        LogRel(("AsyncCompletion: Task %#p completed after %llu seconds\n", pTask, tsRun / ((uint64_t)1000*1000*1000)));
     }
 
 #ifdef VBOX_WITH_STATISTICS
