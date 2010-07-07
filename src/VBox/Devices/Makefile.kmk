@@ -309,7 +309,6 @@ DevicesR3_SOURCES       = \
 	PC/DevPcArch.c \
 	VMMDev/VMMDev.cpp \
 	VMMDev/VMMDevHGCM.cpp \
-	VMMDev/VMMDevTesting.cpp \
 	Network/DevPCNet.cpp \
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \
@@ -539,6 +538,7 @@ ifdef VBOX_WITH_RAW_MODE
  # VBoxDDGC (sysmod)
  #
  VBoxDDGC_TEMPLATE       = VBoxRc
+ VBoxDDGC_SYSSUFF        = .gc
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBoxDDGC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
  endif
@@ -556,8 +556,7 @@ ifdef VBOX_WITH_RAW_MODE
  	Storage/DevATA.cpp \
  	Network/DevPCNet.cpp \
  	Serial/DevSerial.cpp \
- 	Parallel/DevParallel.cpp \
-	VMMDev/VMMDevTesting.cpp
+ 	Parallel/DevParallel.cpp
 
  ifdef VBOX_DYNAMIC_NET_ATTACH
   VBoxDDGC_DEFS        += VBOX_DYNAMIC_NET_ATTACH
@@ -652,6 +651,7 @@ endif # VBOX_WITH_RAW_MODE
 # VBoxDDR0 (sysmod)
 #
 VBoxDDR0_TEMPLATE       = VBoxR0
+VBoxDDR0_SYSSUFF        = .r0
 VBoxDDR0_DEFS.darwin.x86= VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 VBOX_WITH_2X_4GB_ADDR_SPACE
 VBoxDDR0_DEFS           = IN_RT_R0
 VBoxDDR0_INCS          := \
@@ -668,7 +668,6 @@ VBoxDDR0_SOURCES        = \
 	Network/DevPCNet.cpp \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp \
-	VMMDev/VMMDevTesting.cpp \
 	\
 	Network/DrvIntNet.cpp \
 	Network/DrvDedicatedNic.cpp
@@ -766,6 +765,7 @@ ifdef VBOX_WITH_RAW_MODE
  #
  VBoxDD2GC_TEMPLATE       = VBoxRc
  VBoxDD2GC_DEFS           =
+ VBoxDD2GC_SYSSUFF        = .gc
  VBoxDD2GC_INCS          := \
  	$(PATH_SUB_CURRENT)
  VBoxDD2GC_SOURCES        = \
@@ -782,6 +782,7 @@ endif
 #
 VBoxDD2R0_TEMPLATE       = VBoxR0
 VBoxDD2R0_DEFS           = IN_RT_R0
+VBoxDD2R0_SYSSUFF        = .r0
 VBoxDD2R0_INCS          := \
 	$(PATH_SUB_CURRENT)
 VBoxDD2R0_SOURCES        = \
