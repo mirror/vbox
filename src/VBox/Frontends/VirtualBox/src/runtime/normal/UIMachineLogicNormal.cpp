@@ -25,15 +25,16 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
-#include "UIActionsPool.h"
-#include "UIMouseHandler.h"
-#include "UIDownloaderAdditions.h"
-#include "UIMachineLogicNormal.h"
-#include "UIMachineView.h"
-#include "UIMachineWindow.h"
 #include "UISession.h"
+#include "UIActionsPool.h"
+#include "UIMachineLogicNormal.h"
+#include "UIMachineWindow.h"
+#include "UIMachineView.h"
+#include "UIDownloaderAdditions.h"
 
+#ifdef Q_WS_MAC
 #include "VBoxUtils.h"
+#endif /* Q_WS_MAC */
 
 UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
     : UIMachineLogic(pParent, pSession, pActionsPool, UIVisualStateType_Normal)

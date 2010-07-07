@@ -25,13 +25,11 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
+#include "UISession.h"
 #include "UIActionsPool.h"
-#include "UIMouseHandler.h"
 #include "UIMachineLogicFullscreen.h"
-#include "UIMachineWindow.h"
 #include "UIMachineWindowFullscreen.h"
 #include "UIMultiScreenLayout.h"
-#include "UISession.h"
 
 #ifdef Q_WS_MAC
 # include "UIExtraDataEventHandler.h"
