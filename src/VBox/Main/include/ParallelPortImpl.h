@@ -28,12 +28,11 @@ namespace settings
 
 class ATL_NO_VTABLE ParallelPort :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<ParallelPort, IParallelPort>,
     public VirtualBoxSupportTranslation<ParallelPort>,
     VBOX_SCRIPTABLE_IMPL(IParallelPort)
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (ParallelPort)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(ParallelPort, IParallelPort)
 
     DECLARE_NOT_AGGREGATABLE(ParallelPort)
 
@@ -80,9 +79,6 @@ public:
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"ParallelPort"; }
 
 private:
     HRESULT checkSetPath(const Utf8Str &str);

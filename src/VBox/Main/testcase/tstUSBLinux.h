@@ -38,10 +38,16 @@ enum { S_OK = 0, E_NOTIMPL = 1 };
 class USBProxyServiceLinux
 {
 public:
-    USBProxyServiceLinux() : mLastError(VINF_SUCCESS) {}
+    USBProxyServiceLinux()
+        : mLastError(VINF_SUCCESS)
+    {}
+
     HRESULT initSysfs(void);
     PUSBDEVICE getDevicesFromSysfs(void);
-    int getLastError(void) { return mLastError; }
+    int getLastError(void)
+    {
+        return mLastError;
+    }
 
 private:
     int start(void) { return VINF_SUCCESS; }

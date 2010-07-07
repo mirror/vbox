@@ -65,12 +65,12 @@
 struct VBoxEvent::Data
 {
     Data()
-        :
-        mType(VBoxEventType_Invalid),
-        mWaitEvent(NIL_RTSEMEVENT),
-        mWaitable(FALSE),
-        mProcessed(FALSE)
+        : mType(VBoxEventType_Invalid),
+          mWaitEvent(NIL_RTSEMEVENT),
+          mWaitable(FALSE),
+          mProcessed(FALSE)
     {}
+
     VBoxEventType_T         mType;
     RTSEMEVENT              mWaitEvent;
     BOOL                    mWaitable;
@@ -94,7 +94,6 @@ void VBoxEvent::FinalRelease()
     }
 }
 
-
 HRESULT VBoxEvent::init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWaitable)
 {
     HRESULT rc = S_OK;
@@ -112,7 +111,7 @@ HRESULT VBoxEvent::init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWait
     do {
         if (aWaitable)
         {
-            int vrc = ::RTSemEventCreate (&m->mWaitEvent);
+            int vrc = ::RTSemEventCreate(&m->mWaitEvent);
 
             if (RT_FAILURE(vrc))
             {
@@ -914,13 +913,12 @@ STDMETHODIMP EventSource::EventProcessed(IEventListener * aListener,
  */
 class ATL_NO_VTABLE PassiveEventListener :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<PassiveEventListener, IEventListener>,
     public VirtualBoxSupportTranslation<PassiveEventListener>,
     VBOX_SCRIPTABLE_IMPL(IEventListener)
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PassiveEventListener)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PassiveEventListener, IEventListener)
 
     DECLARE_NOT_AGGREGATABLE(PassiveEventListener)
 
@@ -950,8 +948,6 @@ public:
         ComAssertMsgRet(false, ("HandleEvent() of wrapper shall never be called"),
                         E_FAIL);
     }
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"PassiveEventListener"; }
 };
 
 #ifdef VBOX_WITH_XPCOM

@@ -103,12 +103,13 @@ HRESULT ProgressBase::FinalConstruct()
  *
  * @return              COM result indicator.
  */
-HRESULT ProgressBase::protectedInit (AutoInitSpan &aAutoInitSpan,
+HRESULT ProgressBase::protectedInit(AutoInitSpan &aAutoInitSpan,
 #if !defined (VBOX_COM_INPROC)
-                            VirtualBox *aParent,
+                                    VirtualBox *aParent,
 #endif
-                            IUnknown *aInitiator,
-                            CBSTR aDescription, OUT_GUID aId /* = NULL */)
+                                    IUnknown *aInitiator,
+                                    CBSTR aDescription,
+                                    OUT_GUID aId /* = NULL */)
 {
     /* Guarantees subclasses call this method at the proper time */
     NOREF (aAutoInitSpan);
@@ -531,46 +532,6 @@ STDMETHODIMP ProgressBase::COMGETTER(Timeout)(ULONG *aTimeout)
 
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Sets the error info stored in the given progress object as the error info on
- * the current thread.
- *
- * This method is useful if some other COM method uses IProgress to wait for
- * something and then wants to return a failed result of the operation it was
- * waiting for as its own result retaining the extended error info.
- *
- * If the operation tracked by this progress object is completed successfully
- * and returned S_OK, this method does nothing but returns S_OK. Otherwise, the
- * failed warning or error result code specified at progress completion is
- * returned and the extended error info object (if any) is set on the current
- * thread.
- *
- * Note that the given progress object must be completed, otherwise this method
- * will assert and fail.
- */
-/* static */
-HRESULT ProgressBase::setErrorInfoOnThread (IProgress *aProgress)
-{
-    AssertReturn(aProgress != NULL, E_INVALIDARG);
-
-    LONG iRc;
-    HRESULT rc = aProgress->COMGETTER(ResultCode) (&iRc);
-    AssertComRCReturnRC(rc);
-    HRESULT resultCode = iRc;
-
-    if (resultCode == S_OK)
-        return resultCode;
-
-    ComPtr<IVirtualBoxErrorInfo> errorInfo;
-    rc = aProgress->COMGETTER(ErrorInfo) (errorInfo.asOutParam());
-    AssertComRCReturnRC(rc);
-
-    if (!errorInfo.isNull())
-        setErrorInfo (errorInfo);
-
-    return resultCode;
-}
 
 /**
  * Sets the cancelation callback, checking for cancelation first.
@@ -1153,13 +1114,13 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode)
  */
 HRESULT Progress::notifyComplete(HRESULT aResultCode,
                                  const GUID &aIID,
-                                 const Bstr &aComponent,
+                                 const char *pcszComponent,
                                  const char *aText,
                                  ...)
 {
     va_list va;
     va_start(va, aText);
-    HRESULT hrc = notifyCompleteV(aResultCode, aIID, aComponent, aText, va);
+    HRESULT hrc = notifyCompleteV(aResultCode, aIID, pcszComponent, aText, va);
     va_end(va);
     return hrc;
 }
@@ -1179,7 +1140,7 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode,
  */
 HRESULT Progress::notifyCompleteV(HRESULT aResultCode,
                                   const GUID &aIID,
-                                  const Bstr &aComponent,
+                                  const char *pcszComponent,
                                   const char *aText,
                                   va_list va)
 {
@@ -1205,7 +1166,7 @@ HRESULT Progress::notifyCompleteV(HRESULT aResultCode,
     AssertComRC (rc);
     if (SUCCEEDED(rc))
     {
-        errorInfo->init(aResultCode, aIID, aComponent, Bstr(text));
+        errorInfo->init(aResultCode, aIID, pcszComponent, text);
         errorInfo.queryInterfaceTo(mErrorInfo.asOutParam());
     }
 

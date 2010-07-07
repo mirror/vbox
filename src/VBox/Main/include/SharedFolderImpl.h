@@ -25,7 +25,6 @@ class Console;
 
 class ATL_NO_VTABLE SharedFolder :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxSupportErrorInfoImpl<SharedFolder, ISharedFolder>,
     public VirtualBoxSupportTranslation<SharedFolder>,
     VBOX_SCRIPTABLE_IMPL(ISharedFolder)
 {
@@ -41,7 +40,7 @@ public:
         Bstr       lastAccessError;
     };
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (SharedFolder)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(SharedFolder, ISharedFolder)
 
     DECLARE_NOT_AGGREGATABLE(SharedFolder)
 
@@ -81,9 +80,6 @@ public:
     const Bstr& getName() const { return m.name; }
     const Bstr& getHostPath() const { return m.hostPath; }
     BOOL isWritable() const { return m.writable; }
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"SharedFolder"; }
 
 protected:
 

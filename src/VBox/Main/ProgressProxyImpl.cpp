@@ -163,7 +163,7 @@ HRESULT ProgressProxy::notifyComplete(HRESULT aResultCode)
  *  the result locally. */
 HRESULT ProgressProxy::notifyComplete(HRESULT aResultCode,
                                       const GUID &aIID,
-                                      const Bstr &aComponent,
+                                      const char *pcszComponent,
                                       const char *aText,
                                       ...)
 {
@@ -175,7 +175,7 @@ HRESULT ProgressProxy::notifyComplete(HRESULT aResultCode,
     {
         va_list va;
         va_start(va, aText);
-        hrc = Progress::notifyCompleteV(aResultCode, aIID, aComponent, aText, va);
+        hrc = Progress::notifyCompleteV(aResultCode, aIID, pcszComponent, aText, va);
         va_end(va);
     }
     return hrc;
@@ -371,12 +371,17 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
 
                         Utf8Str strText(bstrText);
                         LogFlowThisFunc(("Got ErrorInfo(%s); hrcResult=%Rhrc\n", strText.c_str(), hrcResult));
-                        Progress::notifyComplete((HRESULT)hrcResult, Guid(bstrIID), bstrComponent, "%s", strText.c_str());
+                        Progress::notifyComplete((HRESULT)hrcResult,
+                                                 Guid(bstrIID),
+                                                 Utf8Str(bstrComponent).c_str(),
+                                                 "%s", strText.c_str());
                     }
                     else
                     {
                         LogFlowThisFunc(("ErrorInfo failed with hrc=%Rhrc; hrcResult=%Rhrc\n", hrc, hrcResult));
-                        Progress::notifyComplete((HRESULT)hrcResult, COM_IIDOF(IProgress), Bstr("ProgressProxy"),
+                        Progress::notifyComplete((HRESULT)hrcResult,
+                                                 COM_IIDOF(IProgress),
+                                                 "ProgressProxy",
                                                  tr("No error info"));
                     }
                 }

@@ -34,13 +34,12 @@ namespace settings
 
 class ATL_NO_VTABLE SystemProperties :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<SystemProperties, ISystemProperties>,
     public VirtualBoxSupportTranslation<SystemProperties>,
     VBOX_SCRIPTABLE_IMPL(ISystemProperties)
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (SystemProperties)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (SystemProperties, ISystemProperties)
 
     DECLARE_NOT_AGGREGATABLE(SystemProperties)
 
@@ -112,9 +111,6 @@ public:
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"SystemProperties"; }
 
 private:
 

@@ -47,12 +47,12 @@ class Progress;
 #endif
 
 class ATL_NO_VTABLE Guest :
-    public VirtualBoxSupportErrorInfoImpl<Guest, IGuest>,
     public VirtualBoxSupportTranslation<Guest>,
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IGuest)
 {
 public:
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Guest, IGuest)
 
     DECLARE_NOT_AGGREGATABLE(Guest)
 
@@ -108,9 +108,6 @@ public:
 
     HRESULT SetStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
 
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Guest"; }
-
 # ifdef VBOX_WITH_GUEST_CONTROL
     /** Static callback for handling guest notifications. */
     static DECLCALLBACK(int) doGuestCtrlNotification(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
@@ -122,7 +119,7 @@ private:
     struct CallbackContext
     {
         eVBoxGuestCtrlCallbackType  mType;
-        /** Pointer to user-supplied data. */        
+        /** Pointer to user-supplied data. */
         void                       *pvData;
         /** Size of user-supplied data. */
         uint32_t                    cbData;

@@ -224,7 +224,7 @@ typedef const OLECHAR *CBSTR;
  *
  *  @param i    interface class
  */
-#define COM_IIDOF(I) _ATL_IIDOF (I)
+#define COM_IIDOF(I) _ATL_IIDOF(I)
 
 #else /* defined (RT_OS_WINDOWS) */
 
@@ -348,7 +348,7 @@ typedef nsIID   IID;
 #define STDMETHOD(a) NS_IMETHOD a
 #define STDMETHODIMP NS_IMETHODIMP
 
-#define COM_IIDOF(I) NS_GET_IID (I)
+#define COM_IIDOF(I) NS_GET_IID(I)
 
 /* A few very simple ATL emulator classes to provide
  * FinalConstruct()/FinalRelease() functionality on Linux. */

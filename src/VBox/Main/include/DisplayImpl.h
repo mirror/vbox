@@ -93,14 +93,12 @@ typedef struct _DISPLAYFBINFO
 class ATL_NO_VTABLE Display :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IEventListener),
-    public VirtualBoxSupportErrorInfoImpl<Display, IDisplay>,
     public VirtualBoxSupportTranslation<Display>,
     VBOX_SCRIPTABLE_IMPL(IDisplay)
 {
-
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Display)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Display, IDisplay)
 
     DECLARE_NOT_AGGREGATABLE(Display)
 
@@ -163,9 +161,6 @@ public:
     STDMETHOD(SetSeamlessMode)(BOOL enabled);
 
     STDMETHOD(CompleteVHWACommand)(BYTE *pCommand);
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Display"; }
 
     static const PDMDRVREG  DrvReg;
 

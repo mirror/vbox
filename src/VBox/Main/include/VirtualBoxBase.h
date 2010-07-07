@@ -156,9 +156,12 @@ public:
 #define ComAssert(expr)    \
     do { \
         if (RT_UNLIKELY(!(expr))) \
-            setError(E_FAIL, "Assertion failed: [%s] at '%s' (%d) in %s.\n" \
-                             "Please contact the product vendor!", \
-                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+            setErrorInternal(E_FAIL, \
+                             getStaticClassIID(), \
+                             getStaticComponentName(), \
+                             Utf8StrFmt("Assertion failed: [%s] at '%s' (%d) in %s.\nPlease contact the product vendor!", \
+                                        #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__), \
+                             false, true); \
     } while (0)
 #endif
 
@@ -177,10 +180,12 @@ public:
 #define ComAssertMsg(expr, a)  \
     do { \
         if (RT_UNLIKELY(!(expr))) \
-            setError(E_FAIL, "Assertion failed: [%s] at '%s' (%d) in %s.\n" \
-                             "%s.\n" \
-                             "Please contact the product vendor!", \
-                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__, Utf8StrFmt a .raw()); \
+            setErrorInternal(E_FAIL, \
+                             getStaticClassIID(), \
+                             getStaticComponentName(), \
+                             Utf8StrFmt("Assertion failed: [%s] at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!", \
+                                        #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__), \
+                             false, true); \
     } while (0)
 #endif
 
@@ -392,8 +397,8 @@ public:
     do { \
         if (RT_UNLIKELY(ComSafeArrayOutIsNull(arg))) \
             return setError(E_POINTER, \
-                tr("Output argument %s points to invalid memory location (%p)"), \
-                #arg, (void *) (arg)); \
+                            tr("Output argument %s points to invalid memory location (%p)"), \
+                            #arg, (void*)(arg)); \
     } while (0)
 
 /**
@@ -434,38 +439,66 @@ public:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#define VIRTUALBOXBASE_ADD_VIRTUAL_COMPONENT_METHODS(cls, iface) \
+    virtual const IID& getClassIID() const \
+    { \
+        return cls::getStaticClassIID(); \
+    } \
+    static const IID& getStaticClassIID() \
+    { \
+        return COM_IIDOF(iface); \
+    } \
+    virtual const char* getComponentName() const \
+    { \
+        return cls::getStaticComponentName(); \
+    } \
+    static const char* getStaticComponentName() \
+    { \
+        return #cls; \
+    }
+
 /**
- * This enum is used in the virtual method VirtualBoxBasePro::getClassID() to
- * allow VirtualBox classes to identify themselves. Subclasses can override
- * that method and return a value from this enum if run-time identification is
- * needed anywhere.
+ * VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT:
+ * This macro must be used once in the declaration of any class derived
+ * from VirtualBoxBase. It implements the pure virtual getClassIID() and
+ * getComponentName() methods. If this macro is not present, instances
+ * of a class derived from VirtualBoxBase cannot be instantiated.
+ *
+ * @param X The class name, e.g. "Class".
+ * @param IX The interface name which this class implements, e.g. "IClass".
  */
-enum VBoxClsID
-{
-    clsidVirtualBox,
-    clsidHost,
-    clsidMachine,
-    clsidSessionMachine,
-    clsidSnapshotMachine,
-    clsidSnapshot,
-    clsidOther
-};
+#ifdef VBOX_WITH_XPCOM
+  #define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(cls, iface) \
+    VIRTUALBOXBASE_ADD_VIRTUAL_COMPONENT_METHODS(cls, iface)
+#else // #ifdef VBOX_WITH_XPCOM
+  #define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(cls, iface) \
+    VIRTUALBOXBASE_ADD_VIRTUAL_COMPONENT_METHODS(cls, iface) \
+    STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid) \
+    { \
+        const _ATL_INTMAP_ENTRY* pEntries = cls::_GetEntries(); \
+        Assert(pEntries); \
+        if (!pEntries) \
+            return S_FALSE; \
+        BOOL bSupports = FALSE; \
+        BOOL bISupportErrorInfoFound = FALSE; \
+        while (pEntries->pFunc != NULL && !bSupports) \
+        { \
+            if (!bISupportErrorInfoFound) \
+                bISupportErrorInfoFound = InlineIsEqualGUID(*(pEntries->piid), IID_ISupportErrorInfo); \
+            else \
+                bSupports = InlineIsEqualGUID(*(pEntries->piid), riid); \
+            pEntries++; \
+        } \
+        Assert(bISupportErrorInfoFound); \
+        return bSupports ? S_OK : S_FALSE; \
+    }
+#endif // #ifdef VBOX_WITH_XPCOM
 
 /**
  * Abstract base class for all component classes implementing COM
  * interfaces of the VirtualBox COM library.
  *
  * Declares functionality that should be available in all components.
- *
- * Note that this class is always subclassed using the virtual keyword so
- * that only one instance of its VTBL and data is present in each derived class
- * even in case if VirtualBoxBaseProto appears more than once among base classes
- * of the particular component as a result of multiple inheritance.
- *
- * This makes it possible to have intermediate base classes used by several
- * components that implement some common interface functionality but still let
- * the final component classes choose what VirtualBoxBase variant it wants to
- * use.
  *
  * Among the basic functionality implemented by this class is the primary object
  * state that indicates if the object is ready to serve the calls, and if not,
@@ -518,6 +551,9 @@ enum VBoxClsID
 class ATL_NO_VTABLE VirtualBoxBase
     : public Lockable,
       public CComObjectRootEx<CComMultiThreadModel>
+#if !defined (VBOX_WITH_XPCOM)
+    , public ISupportErrorInfo
+#endif
 {
 public:
     enum State { NotReady, Ready, InInit, InUninit, InitFailed, Limited };
@@ -527,8 +563,6 @@ public:
 
     static const char *translate(const char *context, const char *sourceText,
                                  const char *comment = 0);
-
-public:
 
     /**
      * Unintialization method.
@@ -547,7 +581,8 @@ public:
      */
     virtual void uninit() {}
 
-    virtual HRESULT addCaller(State *aState = NULL, bool aLimited = false);
+    virtual HRESULT addCaller(State *aState = NULL,
+                              bool aLimited = false);
     virtual void releaseCaller();
 
     /**
@@ -561,18 +596,27 @@ public:
     }
 
     /**
-     * Simple run-time type identification without having to enable C++ RTTI.
-     * The class IDs are defined in VirtualBoxBase.h.
-     * @return
+     * Pure virtual method for simple run-time type identification without
+     * having to enable C++ RTTI.
+     *
+     * This *must* be implemented by every subclass deriving from VirtualBoxBase;
+     * use the VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT macro to do that most easily.
      */
-    virtual VBoxClsID getClassID() const
-    {
-        return clsidOther;
-    }
+    virtual const IID& getClassIID() const = 0;
 
     /**
-     * Override of the default locking class to be used for validating lock
-     * order with the standard member lock handle.
+     * Pure virtual method for simple run-time type identification without
+     * having to enable C++ RTTI.
+     *
+     * This *must* be implemented by every subclass deriving from VirtualBoxBase;
+     * use the VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT macro to do that most easily.
+     */
+    virtual const char* getComponentName() const = 0;
+
+    /**
+     * Virtual method which determins the locking class to be used for validating
+     * lock order with the standard member lock handle. This method is overridden
+     * in a number of subclasses.
      */
     virtual VBoxLockingClass getLockingClass() const
     {
@@ -588,6 +632,17 @@ public:
      * be requested while holding this lock!
      */
     WriteLockHandle *stateLockHandle() { return &mStateLock; }
+
+    static HRESULT setErrorInternal(HRESULT aResultCode,
+                                    const GUID &aIID,
+                                    const char *aComponent,
+                                    const Utf8Str &aText,
+                                    bool aWarning,
+                                    bool aLogIt);
+
+    HRESULT setError(HRESULT aResultCode, const char *pcsz, ...);
+    HRESULT setWarning(HRESULT aResultCode, const char *pcsz, ...);
+    HRESULT setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...);
 
 private:
 
@@ -621,45 +676,6 @@ private:
     friend class AutoReinitSpan;
     friend class AutoUninitSpan;
 };
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// VirtualBoxSupportTranslation, VirtualBoxSupportErrorInfoImpl
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  This macro adds the error info support to methods of the VirtualBoxBase
- *  class (by overriding them). Place it to the public section of the
- *  VirtualBoxBase subclass and the following methods will set the extended
- *  error info in case of failure instead of just returning the result code:
- *
- *  <ul>
- *      <li>VirtualBoxBase::addCaller()
- *  </ul>
- *
- *  @note The given VirtualBoxBase subclass must also inherit from both
- *  VirtualBoxSupportErrorInfoImpl and VirtualBoxSupportTranslation templates!
- *
- *  @param C    VirtualBoxBase subclass to add the error info support to
- */
-#define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(C) \
-    virtual HRESULT addCaller(VirtualBoxBase::State *aState = NULL, \
-                              bool aLimited = false) \
-    { \
-        VirtualBoxBase::State protoState; \
-        HRESULT rc = VirtualBoxBase::addCaller(&protoState, aLimited); \
-        if (FAILED(rc)) \
-        { \
-            if (protoState == VirtualBoxBase::Limited) \
-                rc = setError(rc, tr("The object functionality is limited")); \
-            else \
-                rc = setError(rc, tr("The object is not ready")); \
-        } \
-        if (aState) \
-            *aState = protoState; \
-        return rc; \
-    } \
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -763,503 +779,6 @@ const char *VirtualBoxSupportTranslation<C>::sClassName = NULL;
 #define Q_OBJECT
 
 ////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Helper for the VirtualBoxSupportErrorInfoImpl template.
- */
-/// @todo switch to com::SupportErrorInfo* and remove
-class VirtualBoxSupportErrorInfoImplBase
-{
-    static HRESULT setErrorInternal(HRESULT aResultCode,
-                                    const GUID &aIID,
-                                    const wchar_t *aComponent,
-                                    const Bstr &aText,
-                                    bool aWarning,
-                                    bool aLogIt);
-
-protected:
-
-    /**
-     * The MultiResult class is a com::FWResult enhancement that also acts as a
-     * switch to turn on multi-error mode for #setError() or #setWarning()
-     * calls.
-     *
-     * When an instance of this class is created, multi-error mode is turned on
-     * for the current thread and the turn-on counter is increased by one. In
-     * multi-error mode, a call to #setError() or #setWarning() does not
-     * overwrite the current error or warning info object possibly set on the
-     * current thread by other method calls, but instead it stores this old
-     * object in the IVirtualBoxErrorInfo::next attribute of the new error
-     * object being set.
-     *
-     * This way, error/warning objects are stacked together and form a chain of
-     * errors where the most recent error is the first one retrieved by the
-     * calling party, the preceding error is what the
-     * IVirtualBoxErrorInfo::next attribute of the first error points to, and so
-     * on, up to the first error or warning occurred which is the last in the
-     * chain. See IVirtualBoxErrorInfo documentation for more info.
-     *
-     * When the instance of the MultiResult class goes out of scope and gets
-     * destroyed, it automatically decreases the turn-on counter by one. If
-     * the counter drops to zero, multi-error mode for the current thread is
-     * turned off and the thread switches back to single-error mode where every
-     * next error or warning object overwrites the previous one.
-     *
-     * Note that the caller of a COM method uses a non-S_OK result code to
-     * decide if the method has returned an error (negative codes) or a warning
-     * (positive non-zero codes) and will query extended error info only in
-     * these two cases. However, since multi-error mode implies that the method
-     * doesn't return control return to the caller immediately after the first
-     * error or warning but continues its execution, the functionality provided
-     * by the base com::FWResult class becomes very useful because it allows to
-     * preserve the error or the warning result code even if it is later assigned
-     * a S_OK value multiple times. See com::FWResult for details.
-     *
-     * Here is the typical usage pattern:
-     *  <code>
-
-        HRESULT Bar::method()
-        {
-            // assume multi-errors are turned off here...
-
-            if (something)
-            {
-                // Turn on multi-error mode and make sure severity is preserved
-                MultiResult rc = foo->method1();
-
-                // return on fatal error, but continue on warning or on success
-                if (FAILED(rc)) return rc;
-
-                rc = foo->method2();
-                // no matter what result, stack it and continue
-
-                // ...
-
-                // return the last worst result code (it will be preserved even if
-                // foo->method2() returns S_OK.
-                return rc;
-            }
-
-            // multi-errors are turned off here again...
-
-            return S_OK;
-        }
-
-     *  </code>
-     *
-     *
-     * @note This class is intended to be instantiated on the stack, therefore
-     *       You cannot create them using new(). Although it is possible to copy
-     *       instances of MultiResult or return them by value, please never do
-     *       that as it is breaks the class semantics (and will assert).
-     */
-    class MultiResult : public com::FWResult
-    {
-    public:
-
-        /**
-         * @copydoc com::FWResult::FWResult().
-         */
-        MultiResult(HRESULT aRC = E_FAIL) : FWResult(aRC) { init(); }
-
-        MultiResult(const MultiResult &aThat) : FWResult(aThat)
-        {
-            /* We need this copy constructor only for GCC that wants to have
-             * it in case of expressions like |MultiResult rc = E_FAIL;|. But
-             * we assert since the optimizer should actually avoid the
-             * temporary and call the other constructor directly instead. */
-            AssertFailed();
-            init();
-        }
-
-        ~MultiResult();
-
-        MultiResult &operator=(HRESULT aRC)
-        {
-            com::FWResult::operator=(aRC);
-            return *this;
-        }
-
-        MultiResult &operator=(const MultiResult &aThat)
-        {
-            /* We need this copy constructor only for GCC that wants to have
-             * it in case of expressions like |MultiResult rc = E_FAIL;|. But
-             * we assert since the optimizer should actually avoid the
-             * temporary and call the other constructor directly instead. */
-            AssertFailed();
-            com::FWResult::operator=(aThat);
-            return *this;
-        }
-
-    private:
-
-        DECLARE_CLS_NEW_DELETE_NOOP(MultiResult)
-
-        void init();
-
-        static RTTLS sCounter;
-
-        friend class VirtualBoxSupportErrorInfoImplBase;
-    };
-
-    static HRESULT setError(HRESULT aResultCode,
-                            const GUID &aIID,
-                            const wchar_t *aComponent,
-                            const Bstr &aText,
-                            bool aLogIt = true)
-    {
-        return setErrorInternal(aResultCode, aIID, aComponent, aText,
-                                false /* aWarning */, aLogIt);
-    }
-
-    static HRESULT setWarning(HRESULT aResultCode,
-                              const GUID &aIID,
-                              const wchar_t *aComponent,
-                              const Bstr &aText)
-    {
-        return setErrorInternal(aResultCode, aIID, aComponent, aText,
-                                true /* aWarning */, true /* aLogIt */);
-    }
-
-    static HRESULT setError(HRESULT aResultCode,
-                            const GUID &aIID,
-                            const wchar_t *aComponent,
-                            const char *aText, va_list aArgs, bool aLogIt = true)
-    {
-        return setErrorInternal(aResultCode, aIID, aComponent,
-                                Utf8StrFmtVA (aText, aArgs),
-                                false /* aWarning */, aLogIt);
-    }
-
-    static HRESULT setWarning(HRESULT aResultCode,
-                              const GUID &aIID,
-                              const wchar_t *aComponent,
-                              const char *aText, va_list aArgs)
-    {
-        return setErrorInternal(aResultCode, aIID, aComponent,
-                                Utf8StrFmtVA (aText, aArgs),
-                                true /* aWarning */, true /* aLogIt */);
-    }
-};
-
-/**
- *  This template implements ISupportErrorInfo for the given component class
- *  and provides the #setError() method to conveniently set the error information
- *  from within interface methods' implementations.
- *
- *  On Windows, the template argument must define a COM interface map using
- *  BEGIN_COM_MAP / END_COM_MAP macros and this map must contain a
- *  COM_INTERFACE_ENTRY(ISupportErrorInfo) definition. All interface entries
- *  that follow it will be considered to support IErrorInfo, i.e. the
- *  InterfaceSupportsErrorInfo() implementation will return S_OK for the
- *  corresponding IID.
- *
- *  On all platforms, the template argument must also define the following
- *  method: |public static const wchar_t *C::getComponentName()|. See
- *  #setError(HRESULT, const char *, ...) for a description on how it is
- *  used.
- *
- *  @param C
- *      component class that implements one or more COM interfaces
- *  @param I
- *      default interface for the component. This interface's IID is used
- *      by the shortest form of #setError, for convenience.
- */
-/// @todo switch to com::SupportErrorInfo* and remove
-template<class C, class I>
-class ATL_NO_VTABLE VirtualBoxSupportErrorInfoImpl
-    : protected VirtualBoxSupportErrorInfoImplBase
-#if !defined (VBOX_WITH_XPCOM)
-    , public ISupportErrorInfo
-#else
-#endif
-{
-public:
-
-#if !defined (VBOX_WITH_XPCOM)
-    STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid)
-    {
-        const _ATL_INTMAP_ENTRY* pEntries = C::_GetEntries();
-        Assert(pEntries);
-        if (!pEntries)
-            return S_FALSE;
-
-        BOOL bSupports = FALSE;
-        BOOL bISupportErrorInfoFound = FALSE;
-
-        while (pEntries->pFunc != NULL && !bSupports)
-        {
-            if (!bISupportErrorInfoFound)
-            {
-                // skip the com map entries until ISupportErrorInfo is found
-                bISupportErrorInfoFound =
-                    InlineIsEqualGUID(*(pEntries->piid), IID_ISupportErrorInfo);
-            }
-            else
-            {
-                // look for the requested interface in the rest of the com map
-                bSupports = InlineIsEqualGUID(*(pEntries->piid), riid);
-            }
-            pEntries++;
-        }
-
-        Assert(bISupportErrorInfoFound);
-
-        return bSupports ? S_OK : S_FALSE;
-    }
-#endif // !defined (VBOX_WITH_XPCOM)
-
-protected:
-
-    /**
-     *  Sets the error information for the current thread.
-     *  This information can be retrieved by a caller of an interface method
-     *  using IErrorInfo on Windows or nsIException on Linux, or the cross-platform
-     *  IVirtualBoxErrorInfo interface that provides extended error info (only
-     *  for components from the VirtualBox COM library). Alternatively, the
-     *  platform-independent class com::ErrorInfo (defined in VBox[XP]COM.lib)
-     *  can be used to retrieve error info in a convenient way.
-     *
-     *  It is assumed that the interface method that uses this function returns
-     *  an unsuccessful result code to the caller (otherwise, there is no reason
-     *  for the caller to try to retrieve error info after method invocation).
-     *
-     *  Here is a table of correspondence between this method's arguments
-     *  and IErrorInfo/nsIException/IVirtualBoxErrorInfo attributes/methods:
-     *
-     *  argument    IErrorInfo      nsIException    IVirtualBoxErrorInfo
-     *  ----------------------------------------------------------------
-     *  resultCode  --              result          resultCode
-     *  iid         GetGUID         --              interfaceID
-     *  component   GetSource       --              component
-     *  text        GetDescription  message         text
-     *
-     *  This method is rarely needs to be used though. There are more convenient
-     *  overloaded versions, that automatically substitute some arguments
-     *  taking their values from the template parameters. See
-     *  #setError(HRESULT, const char *, ...) for an example.
-     *
-     *  @param  aResultCode result (error) code, must not be S_OK
-     *  @param  aIID        IID of the interface that defines the error
-     *  @param  aComponent  name of the component that generates the error
-     *  @param  aText       error message (must not be null), an RTStrPrintf-like
-     *                      format string in UTF-8 encoding
-     *  @param  ...         list of arguments for the format string
-     *
-     *  @return
-     *      the error argument, for convenience, If an error occurs while
-     *      creating error info itself, that error is returned instead of the
-     *      error argument.
-     */
-    static HRESULT setError(HRESULT aResultCode, const GUID &aIID,
-                            const wchar_t *aComponent,
-                            const char *aText, ...)
-    {
-        va_list args;
-        va_start(args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(aResultCode,
-                                                                  aIID,
-                                                                  aComponent,
-                                                                  aText,
-                                                                  args,
-                                                                  true /* aLogIt */);
-        va_end(args);
-        return rc;
-    }
-
-    /**
-     *  This method is the same as #setError() except that it makes sure @a
-     *  aResultCode doesn't have the error severity bit (31) set when passed
-     *  down to the created IVirtualBoxErrorInfo object.
-     *
-     *  The error severity bit is always cleared by this call, thereof you can
-     *  use ordinary E_XXX result code constants, for convenience. However, this
-     *  behavior may be non-standard on some COM platforms.
-     */
-    static HRESULT setWarning(HRESULT aResultCode, const GUID &aIID,
-                              const wchar_t *aComponent,
-                              const char *aText, ...)
-    {
-        va_list args;
-        va_start(args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning(
-            aResultCode, aIID, aComponent, aText, args);
-        va_end(args);
-        return rc;
-    }
-
-    /**
-     *  Sets the error information for the current thread.
-     *  A convenience method that automatically sets the default interface
-     *  ID (taken from the I template argument) and the component name
-     *  (a value of C::getComponentName()).
-     *
-     *  See #setError(HRESULT, const GUID &, const wchar_t *, const char *text, ...)
-     *  for details.
-     *
-     *  This method is the most common (and convenient) way  to set error
-     *  information from within interface methods. A typical pattern of usage
-     *  is looks like this:
-     *
-     *  <code>
-     *      return setError(E_FAIL, "Terrible Error");
-     *  </code>
-     *  or
-     *  <code>
-     *      HRESULT rc = setError(E_FAIL, "Terrible Error");
-     *      ...
-     *      return rc;
-     *  </code>
-     */
-    static HRESULT setError(HRESULT aResultCode, const char *aText, ...)
-    {
-        va_list args;
-        va_start(args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(aResultCode,
-                                                                  COM_IIDOF(I),
-                                                                  C::getComponentName(),
-                                                                  aText,
-                                                                  args,
-                                                                  true /* aLogIt */);
-        va_end(args);
-        return rc;
-    }
-
-    /**
-     *  This method is the same as #setError() except that it makes sure @a
-     *  aResultCode doesn't have the error severity bit (31) set when passed
-     *  down to the created IVirtualBoxErrorInfo object.
-     *
-     *  The error severity bit is always cleared by this call, thereof you can
-     *  use ordinary E_XXX result code constants, for convenience. However, this
-     *  behavior may be non-standard on some COM platforms.
-     */
-    static HRESULT setWarning(HRESULT aResultCode, const char *aText, ...)
-    {
-        va_list args;
-        va_start(args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning(aResultCode,
-                                                                    COM_IIDOF(I),
-                                                                    C::getComponentName(),
-                                                                    aText,
-                                                                    args);
-        va_end(args);
-        return rc;
-    }
-
-    /**
-     *  Sets the error information for the current thread, va_list variant.
-     *  A convenience method that automatically sets the default interface
-     *  ID (taken from the I template argument) and the component name
-     *  (a value of C::getComponentName()).
-     *
-     *  See #setError(HRESULT, const GUID &, const wchar_t *, const char *text, ...)
-     *  and #setError(HRESULT, const char *, ...)  for details.
-     */
-    static HRESULT setErrorV(HRESULT aResultCode, const char *aText,
-                             va_list aArgs)
-    {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(aResultCode,
-                                                                  COM_IIDOF(I),
-                                                                  C::getComponentName(),
-                                                                  aText,
-                                                                  aArgs,
-                                                                  true /* aLogIt */);
-        return rc;
-    }
-
-    /**
-     *  This method is the same as #setErrorV() except that it makes sure @a
-     *  aResultCode doesn't have the error severity bit (31) set when passed
-     *  down to the created IVirtualBoxErrorInfo object.
-     *
-     *  The error severity bit is always cleared by this call, thereof you can
-     *  use ordinary E_XXX result code constants, for convenience. However, this
-     *  behavior may be non-standard on some COM platforms.
-     */
-    static HRESULT setWarningV(HRESULT aResultCode, const char *aText,
-                               va_list aArgs)
-    {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning(aResultCode,
-                                                                    COM_IIDOF(I),
-                                                                    C::getComponentName(),
-                                                                    aText,
-                                                                    aArgs);
-        return rc;
-    }
-
-    /**
-     *  Sets the error information for the current thread.
-     *  A convenience method that automatically sets the component name
-     *  (a value of C::getComponentName()), but allows to specify the interface
-     *  id manually.
-     *
-     *  See #setError(HRESULT, const GUID &, const wchar_t *, const char *text, ...)
-     *  for details.
-     */
-    static HRESULT setError(HRESULT aResultCode, const GUID &aIID,
-                            const char *aText, ...)
-    {
-        va_list args;
-        va_start(args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(aResultCode,
-                                                                  aIID,
-                                                                  C::getComponentName(),
-                                                                  aText,
-                                                                  args,
-                                                                  true /* aLogIt */);
-        va_end(args);
-        return rc;
-    }
-
-    /**
-     *  This method is the same as #setError() except that it makes sure @a
-     *  aResultCode doesn't have the error severity bit (31) set when passed
-     *  down to the created IVirtualBoxErrorInfo object.
-     *
-     *  The error severity bit is always cleared by this call, thereof you can
-     *  use ordinary E_XXX result code constants, for convenience. However, this
-     *  behavior may be non-standard on some COM platforms.
-     */
-    static HRESULT setWarning(HRESULT aResultCode, const GUID &aIID,
-                              const char *aText, ...)
-    {
-        va_list args;
-        va_start(args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning(aResultCode,
-                                                                    aIID,
-                                                                    C::getComponentName(),
-                                                                    aText,
-                                                                    args);
-        va_end(args);
-        return rc;
-    }
-
-    /**
-     *  Sets the error information for the current thread but doesn't put
-     *  anything in the release log. This is very useful for avoiding
-     *  harmless error from causing confusion.
-     *
-     *  It is otherwise identical to #setError(HRESULT, const char *text, ...).
-     */
-    static HRESULT setErrorNoLog(HRESULT aResultCode, const char *aText, ...)
-    {
-        va_list args;
-        va_start(args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(aResultCode,
-                                                                  COM_IIDOF(I),
-                                                                  C::getComponentName(),
-                                                                  aText,
-                                                                  args,
-                                                                  false /* aLogIt */);
-        va_end(args);
-        return rc;
-    }
-
-private:
-
-};
-
 
 /**
  * Base class to track VirtualBoxBaseNEXT chlidren of the component.
@@ -1440,7 +959,6 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/// @todo (dmik) remove after we switch to VirtualBoxBaseNEXT completely
 /**
  *  Simple template that manages data structure allocation/deallocation
  *  and supports data pointer sharing (the instance that shares the pointer is

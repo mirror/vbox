@@ -1268,8 +1268,8 @@ HRESULT Console::loadDataFromSavedState()
 
     if (RT_FAILURE(vrc))
         rc = setError(VBOX_E_FILE_ERROR,
-            tr("The saved state file '%ls' is invalid (%Rrc). Delete the saved state and try again"),
-            savedStateFile.raw(), vrc);
+                      tr("The saved state file '%ls' is invalid (%Rrc). Delete the saved state and try again"),
+                      savedStateFile.raw(), vrc);
 
     mSavedStateDataLoaded = true;
 
@@ -1515,7 +1515,7 @@ HRESULT Console::doEnumerateGuestProperties(CBSTR aPatterns,
     }
     if (VERR_BUFFER_OVERFLOW == vrc)
         return setError(E_UNEXPECTED,
-            tr("Temporary failure due to guest activity, please retry"));
+                        tr("Temporary failure due to guest activity, please retry"));
 
     /*
      * Finally we have to unpack the data returned by the service into the safe
@@ -1870,9 +1870,7 @@ STDMETHODIMP Console::Reset()
         && mMachineState != MachineState_LiveSnapshotting
         /** @todo r=bird: This should be allowed on paused VMs as well. Later.  */
        )
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %s"),
-            Global::stringifyMachineState(mMachineState));
+        return setInvalidMachineStateError();
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -1885,8 +1883,8 @@ STDMETHODIMP Console::Reset()
 
     HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
         setError(VBOX_E_VM_ERROR,
-            tr("Could not reset the machine (%Rrc)"),
-            vrc);
+                 tr("Could not reset the machine (%Rrc)"),
+                 vrc);
 
     LogFlowThisFunc(("mMachineState=%d, rc=%08X\n", mMachineState, rc));
     LogFlowThisFuncLeave();
@@ -1921,9 +1919,7 @@ HRESULT Console::doCPURemove(ULONG aCpu)
         && mMachineState != MachineState_Teleporting
         && mMachineState != MachineState_LiveSnapshotting
        )
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %s"),
-            Global::stringifyMachineState(mMachineState));
+        return setInvalidMachineStateError();
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -2076,9 +2072,7 @@ HRESULT Console::doCPUAdd(ULONG aCpu)
         && mMachineState != MachineState_LiveSnapshotting
         /** @todo r=bird: This should be allowed on paused VMs as well. Later.  */
        )
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %s"),
-            Global::stringifyMachineState(mMachineState));
+        return setInvalidMachineStateError();
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -2117,8 +2111,8 @@ HRESULT Console::doCPUAdd(ULONG aCpu)
 
     rc = RT_SUCCESS(vrc) ? S_OK :
         setError(VBOX_E_VM_ERROR,
-            tr("Could not add CPU to the machine (%Rrc)"),
-            vrc);
+                 tr("Could not add CPU to the machine (%Rrc)"),
+                 vrc);
 
     if (RT_SUCCESS(vrc))
     {
@@ -2159,9 +2153,7 @@ STDMETHODIMP Console::Pause()
             return setError(VBOX_E_INVALID_VM_STATE, tr("Already paused"));
 
         default:
-            return setError(VBOX_E_INVALID_VM_STATE,
-                            tr("Invalid machine state: %s"),
-                            Global::stringifyMachineState(mMachineState));
+            return setInvalidMachineStateError();
     }
 
     /* protect mpVM */
@@ -2195,8 +2187,8 @@ STDMETHODIMP Console::Resume()
 
     if (mMachineState != MachineState_Paused)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot resume the machine as it is not paused (machine state: %s)"),
-            Global::stringifyMachineState(mMachineState));
+                        tr("Cannot resume the machine as it is not paused (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -2215,8 +2207,8 @@ STDMETHODIMP Console::Resume()
 
     HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
         setError(VBOX_E_VM_ERROR,
-            tr("Could not resume the machine execution (%Rrc)"),
-            vrc);
+                 tr("Could not resume the machine execution (%Rrc)"),
+                 vrc);
 
     LogFlowThisFunc(("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
@@ -2236,9 +2228,7 @@ STDMETHODIMP Console::PowerButton()
         && mMachineState != MachineState_Teleporting
         && mMachineState != MachineState_LiveSnapshotting
        )
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %s"),
-            Global::stringifyMachineState(mMachineState));
+        return setInvalidMachineStateError();
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -2255,8 +2245,8 @@ STDMETHODIMP Console::PowerButton()
 
     HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
         setError(VBOX_E_PDM_ERROR,
-            tr("Controlled power off failed (%Rrc)"),
-            vrc);
+                 tr("Controlled power off failed (%Rrc)"),
+                 vrc);
 
     LogFlowThisFunc(("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
@@ -2279,9 +2269,7 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
         && mMachineState != MachineState_Teleporting
         && mMachineState != MachineState_LiveSnapshotting
        )
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %s"),
-            Global::stringifyMachineState(mMachineState));
+        return setInvalidMachineStateError();
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -2359,9 +2347,7 @@ STDMETHODIMP Console::SleepButton()
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mMachineState != MachineState_Running) /** @todo Live Migration: ??? */
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %s)"),
-            Global::stringifyMachineState(mMachineState));
+        return setInvalidMachineStateError();
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -3202,6 +3188,34 @@ STDMETHODIMP Console::UnregisterCallback(IConsoleCallback *aCallback)
 // Non-interface public methods
 /////////////////////////////////////////////////////////////////////////////
 
+/*static*/
+HRESULT Console::setErrorStatic(HRESULT aResultCode, const char *pcsz, ...)
+{
+    va_list args;
+    va_start(args, pcsz);
+    HRESULT rc = setErrorInternal(aResultCode,
+                                  getStaticClassIID(),
+                                  getStaticComponentName(),
+                                  Utf8StrFmtVA(pcsz, args),
+                                  false /* aWarning */,
+                                  true /* aLogIt */);
+    va_end(args);
+    return rc;
+}
+
+HRESULT Console::setAuthLibraryError(const char *filename, int rc)
+{
+    return setError(E_FAIL, tr("Could not load the external authentication library '%s' (%Rrc)"), filename, rc);
+}
+
+HRESULT Console::setInvalidMachineStateError()
+{
+    return setError(VBOX_E_INVALID_VM_STATE,
+                    tr("Invalid machine state: %s"),
+                    Global::stringifyMachineState(mMachineState));
+}
+
+
 /**
  * @copydoc VirtualBox::handleUnexpectedExceptions
  */
@@ -3215,14 +3229,16 @@ HRESULT Console::handleUnexpectedExceptions(RT_SRC_POS_DECL)
     }
     catch (const std::exception &err)
     {
-        return setError(E_FAIL, tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
-                                err.what(), typeid(err).name(),
-                                pszFile, iLine, pszFunction);
+        return setErrorStatic(E_FAIL,
+                              tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
+                              err.what(), typeid(err).name(),
+                              pszFile, iLine, pszFunction);
     }
     catch (...)
     {
-        return setError(E_FAIL, tr("Unknown exception\n%s[%d] (%s)"),
-                                pszFile, iLine, pszFunction);
+        return setErrorStatic(E_FAIL,
+                              tr("Unknown exception\n%s[%d] (%s)"),
+                              pszFile, iLine, pszFunction);
     }
 
     /* should not get here */
@@ -3469,7 +3485,12 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
             break;
 
         case VMSTATE_RUNNING_LS:
-            return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot change drive during live migration"));
+            return setErrorInternal(VBOX_E_INVALID_VM_STATE,
+                                    COM_IIDOF(IConsole),
+                                    getStaticComponentName(),
+                                    Utf8Str(tr("Cannot change drive during live migration")),
+                                    false /*aWarning*/,
+                                    true /*aLogIt*/);
 
         default:
             AssertMsgFailedReturn(("enmVMState=%d\n", enmVMState), VERR_ACCESS_DENIED);
@@ -4550,9 +4571,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
             break;
 
         default:
-            return setError(VBOX_E_INVALID_VM_STATE,
-                            tr("Invalid machine state: %s"),
-                            Global::stringifyMachineState(mMachineState));
+            return setInvalidMachineStateError();
     }
 
     SafeIfaceArray<IStorageController> ctrls;
@@ -7474,7 +7493,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
             }
             LogRel(("Failed to launch VRDP server (%Rrc), error message: '%s'\n",
                      vrc, errMsg.raw()));
-            throw setError(E_FAIL, errMsg.c_str());
+            throw setErrorStatic(E_FAIL, errMsg.c_str());
         }
 
 #endif /* VBOX_WITH_VRDP */
@@ -7676,7 +7695,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
             /* Set the error message as the COM error.
              * Progress::notifyComplete() will pick it up later. */
-            throw setError(E_FAIL, task->mErrorMsg.c_str());
+            throw setErrorStatic(E_FAIL, task->mErrorMsg.c_str());
         }
     }
     catch (HRESULT aRC) { rc = aRC; }
@@ -7911,13 +7930,13 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                &fSuspenededBySave);
             alock.enter();
             if (RT_FAILURE(vrc))
-                throw setError(E_FAIL,
-                               tr("Failed to save the machine state to '%s' (%Rrc)"),
-                               strSavedStateFile.c_str(), vrc);
+                throw setErrorStatic(E_FAIL,
+                                     tr("Failed to save the machine state to '%s' (%Rrc)"),
+                                     strSavedStateFile.c_str(), vrc);
 
             pTask->mProgress->setCancelCallback(NULL, NULL);
             if (!pTask->mProgress->notifyPointOfNoReturn())
-                throw setError(E_FAIL, tr("Cancelled"));
+                throw setErrorStatic(E_FAIL, tr("Cancelled"));
             that->mptrCancelableProgress.setNull();
 
             // STEP 4: reattach hard disks
@@ -7991,7 +8010,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                       that->mMachineState,
                                       &rc);
                 if (RT_FAILURE(vrc))
-                    throw setError(E_FAIL, Console::tr("%Rrc"), vrc);
+                    throw setErrorStatic(E_FAIL, Console::tr("%Rrc"), vrc);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -8049,7 +8068,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 alock.enter();
                 if (RT_FAILURE(vrc))
                 {
-                    rc = setError(VBOX_E_VM_ERROR, tr("Could not resume the machine execution (%Rrc)"), vrc);
+                    rc = setErrorStatic(VBOX_E_VM_ERROR, tr("Could not resume the machine execution (%Rrc)"), vrc);
                     pTask->mProgress->notifyComplete(rc);
                     if (that->mMachineState == MachineState_Saving)
                         that->setMachineStateLocally(MachineState_Paused);
@@ -8209,7 +8228,7 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
         if (errMsg.length())
             task->mProgress->notifyComplete(rc,
                                             COM_IIDOF(IConsole),
-                                            (CBSTR)Console::getComponentName(),
+                                            Console::getStaticComponentName(),
                                             errMsg.c_str());
         else
             task->mProgress->notifyComplete(rc);

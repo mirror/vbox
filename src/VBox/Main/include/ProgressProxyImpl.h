@@ -32,7 +32,10 @@ class ATL_NO_VTABLE ProgressProxy :
     public VirtualBoxSupportTranslation<ProgressProxy>
 {
 public:
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(ProgressProxy, IProgress)
+
     VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(ProgressProxy)
+
     DECLARE_NOT_AGGREGATABLE(ProgressProxy)
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
@@ -91,9 +94,9 @@ public:
     HRESULT notifyComplete(HRESULT aResultCode);
     HRESULT notifyComplete(HRESULT aResultCode,
                            const GUID &aIID,
-                           const Bstr &aComponent,
+                           const char *pcszComponent,
                            const char *aText, ...);
-    bool    setOtherProgressObject(IProgress *pOtherProgress);
+    bool setOtherProgressObject(IProgress *pOtherProgress);
 
     /** For com::SupportErrorInfoImpl. */
     static const char *ComponentName() { return "ProgressProxy"; }

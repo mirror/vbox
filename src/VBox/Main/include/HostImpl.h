@@ -35,11 +35,11 @@ namespace settings
 
 class ATL_NO_VTABLE Host :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<Host, IHost>,
     public VirtualBoxSupportTranslation<Host>,
     VBOX_SCRIPTABLE_IMPL(IHost)
 {
 public:
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Host, IHost)
 
     DECLARE_NOT_AGGREGATABLE(Host)
 
@@ -97,16 +97,6 @@ public:
     // public methods only for internal purposes
 
     /**
-     * Simple run-time type identification without having to enable C++ RTTI.
-     * The class IDs are defined in VirtualBoxBase.h.
-     * @return
-     */
-    virtual VBoxClsID getClassID() const
-    {
-        return clsidHost;
-    }
-
-    /**
      * Override of the default locking class to be used for validating lock
      * order with the standard member lock handle.
      */
@@ -135,9 +125,6 @@ public:
     void getUSBFilters(USBDeviceFilterList *aGlobalFiltes);
     HRESULT checkUSBProxyService();
 #endif /* !VBOX_WITH_USB */
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Host"; }
 
 private:
 

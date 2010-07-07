@@ -81,7 +81,6 @@ namespace settings
 
 class ATL_NO_VTABLE Machine :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxSupportErrorInfoImpl<Machine, IMachine>,
     public VirtualBoxSupportTranslation<Machine>,
     VBOX_SCRIPTABLE_IMPL(IMachine)
 {
@@ -318,7 +317,7 @@ public:
         AttachmentList mAttachments;
     };
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Machine)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Machine, IMachine)
 
     DECLARE_NOT_AGGREGATABLE(Machine)
 
@@ -510,14 +509,14 @@ public:
 
     // public methods only for internal purposes
 
-    /**
-     * Simple run-time type identification without having to enable C++ RTTI.
-     * The class IDs are defined in VirtualBoxBase.h.
-     * @return
-     */
-    virtual VBoxClsID getClassID() const
+    virtual bool isSnapshotMachine() const
     {
-        return clsidMachine;
+        return false;
+    }
+
+    virtual bool isSessionMachine() const
+    {
+        return false;
     }
 
     /**
@@ -692,9 +691,6 @@ public:
                                MachineState_T *aState = NULL,
                                BOOL *aRegistered = NULL);
     void releaseStateDependency();
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Machine"; }
 
 protected:
 
@@ -925,14 +921,9 @@ public:
 
     // public methods only for internal purposes
 
-    /**
-     * Simple run-time type identification without having to enable C++ RTTI.
-     * The class IDs are defined in VirtualBoxBase.h.
-     * @return
-     */
-    virtual VBoxClsID getClassID() const
+    virtual bool isSessionMachine() const
     {
-        return clsidSessionMachine;
+        return true;
     }
 
     bool checkForDeath();
@@ -1105,14 +1096,9 @@ public:
 
     // public methods only for internal purposes
 
-    /**
-     * Simple run-time type identification without having to enable C++ RTTI.
-     * The class IDs are defined in VirtualBoxBase.h.
-     * @return
-     */
-    virtual VBoxClsID getClassID() const
+    virtual bool isSnapshotMachine() const
     {
-        return clsidSnapshotMachine;
+        return true;
     }
 
     HRESULT onSnapshotChange(Snapshot *aSnapshot);
@@ -1133,9 +1119,9 @@ private:
 
 inline const Guid &Machine::getSnapshotId() const
 {
-    return getClassID() != clsidSnapshotMachine
-                ? Guid::Empty
-                : static_cast<const SnapshotMachine*>(this)->getSnapshotId();
+    return (isSnapshotMachine())
+                ? static_cast<const SnapshotMachine*>(this)->getSnapshotId()
+                : Guid::Empty;
 }
 
 

@@ -21,14 +21,16 @@
 // public initializer/uninitializer for internal purposes only
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT VirtualBoxErrorInfo::init (HRESULT aResultCode, const GUID &aIID,
-                                   CBSTR aComponent, CBSTR aText,
-                                   IVirtualBoxErrorInfo *aNext)
+HRESULT VirtualBoxErrorInfo::init(HRESULT aResultCode,
+                                  const GUID &aIID,
+                                  const char *pcszComponent,
+                                  const Utf8Str &strText,
+                                  IVirtualBoxErrorInfo *aNext)
 {
-    mResultCode = aResultCode;
-    mIID = aIID;
-    mComponent = aComponent;
-    mText = aText;
+    m_resultCode = aResultCode;
+    m_IID = aIID;
+    m_strComponent = pcszComponent;
+    m_strText = strText;
     mNext = aNext;
 
     return S_OK;
@@ -41,7 +43,7 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultCode) (LONG *aResultCode)
 {
     CheckComArgOutPointerValid(aResultCode);
 
-    *aResultCode = mResultCode;
+    *aResultCode = m_resultCode;
     return S_OK;
 }
 
@@ -49,7 +51,7 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(InterfaceID) (BSTR *aIID)
 {
     CheckComArgOutPointerValid(aIID);
 
-    mIID.toUtf16().cloneTo(aIID);
+    m_IID.toUtf16().cloneTo(aIID);
     return S_OK;
 }
 
@@ -57,7 +59,7 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(Component) (BSTR *aComponent)
 {
     CheckComArgOutPointerValid(aComponent);
 
-    mComponent.cloneTo(aComponent);
+    m_strComponent.cloneTo(aComponent);
     return S_OK;
 }
 
@@ -65,7 +67,7 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(Text) (BSTR *aText)
 {
     CheckComArgOutPointerValid(aText);
 
-    mText.cloneTo(aText);
+    m_strText.cloneTo(aText);
     return S_OK;
 }
 
@@ -93,13 +95,17 @@ HRESULT VirtualBoxErrorInfo::init (IErrorInfo *aInfo)
      * protect ourselves from bad IErrorInfo implementations (the
      * corresponding fields will simply remain null in this case). */
 
-    mResultCode = S_OK;
-    rc = aInfo->GetGUID (mIID.asOutParam());
+    m_resultCode = S_OK;
+    rc = aInfo->GetGUID(m_IID.asOutParam());
     AssertComRC (rc);
-    rc = aInfo->GetSource (mComponent.asOutParam());
+    Bstr bstrComponent;
+    rc = aInfo->GetSource(bstrComponent.asOutParam());
     AssertComRC (rc);
-    rc = aInfo->GetDescription (mText.asOutParam());
+    m_strComponent = bstrComponent;
+    Bstr bstrText;
+    rc = aInfo->GetDescription(bstrText.asOutParam());
     AssertComRC (rc);
+    m_strText = bstrText;
 
     return S_OK;
 }
@@ -152,7 +158,7 @@ HRESULT VirtualBoxErrorInfo::init(nsIException *aInfo)
      * protect ourselves from bad nsIException implementations (the
      * corresponding fields will simply remain null in this case). */
 
-    rc = aInfo->GetResult(&mResultCode);
+    rc = aInfo->GetResult(&m_resultCode);
     AssertComRC(rc);
 
     char *pszMsg;             /* No Utf8Str.asOutParam, different allocator! */
@@ -160,11 +166,11 @@ HRESULT VirtualBoxErrorInfo::init(nsIException *aInfo)
     AssertComRC(rc);
     if (NS_SUCCEEDED(rc))
     {
-        mText = Bstr(pszMsg);
+        m_strText = pszMsg;
         nsMemory::Free(pszMsg);
     }
     else
-        mText.setNull();
+        m_strText.setNull();
 
     return S_OK;
 }
@@ -177,7 +183,7 @@ NS_IMETHODIMP VirtualBoxErrorInfo::GetMessage (char **aMessage)
 {
     CheckComArgOutPointerValid(aMessage);
 
-    Utf8Str (mText).cloneTo(aMessage);
+    m_strText.cloneTo(aMessage);
     return S_OK;
 }
 

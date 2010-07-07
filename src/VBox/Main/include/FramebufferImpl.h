@@ -31,7 +31,7 @@ class ATL_NO_VTABLE Framebuffer :
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Framebuffer)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Framebuffer, IFramebuffer)
 
     DECLARE_NOT_AGGREGATABLE (Framebuffer)
 

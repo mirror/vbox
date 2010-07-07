@@ -226,7 +226,7 @@ HRESULT Host::init(VirtualBox *aParent)
 # elif defined (RT_OS_LINUX)
     m->pUSBProxyService = new USBProxyServiceLinux(this);
 # elif defined (RT_OS_OS2)
-    m->pUSBProxyService = new USBProxyServiceOs2 (this);
+    m->pUSBProxyService = new USBProxyServiceOs2(this);
 # elif defined (RT_OS_SOLARIS)
     m->pUSBProxyService = new USBProxyServiceSolaris(this);
 # elif defined (RT_OS_WINDOWS)
@@ -1394,9 +1394,9 @@ STDMETHODIMP Host::FindUSBDeviceByAddress(IN_BSTR aAddress,
         }
     }
 
-    return setErrorNoLog (VBOX_E_OBJECT_NOT_FOUND, tr (
-        "Could not find a USB device with address '%ls'"),
-        aAddress);
+    return setErrorNoLog(VBOX_E_OBJECT_NOT_FOUND,
+                         tr("Could not find a USB device with address '%ls'"),
+                         aAddress);
 
 #else   /* !VBOX_WITH_USB */
     NOREF(aAddress);
@@ -2301,10 +2301,9 @@ HRESULT Host::checkUSBProxyService()
          * USB proxy service could not start. */
 
         if (m->pUSBProxyService->getLastError() == VERR_FILE_NOT_FOUND)
-            return setWarning (E_FAIL,
-                tr ("Could not load the Host USB Proxy Service (%Rrc). "
-                    "The service might not be installed on the host computer"),
-                m->pUSBProxyService->getLastError());
+            return setWarning(E_FAIL,
+                              tr("Could not load the Host USB Proxy Service (%Rrc). The service might not be installed on the host computer"),
+                              m->pUSBProxyService->getLastError());
         if (m->pUSBProxyService->getLastError() == VINF_SUCCESS)
 #ifdef RT_OS_LINUX
             return setWarning (VBOX_E_HOST_ERROR,

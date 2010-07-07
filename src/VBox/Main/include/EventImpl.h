@@ -22,12 +22,11 @@
 
 class ATL_NO_VTABLE VBoxEvent :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<VBoxEvent, IEvent>,
     public VirtualBoxSupportTranslation<VBoxEvent>,
     VBOX_SCRIPTABLE_IMPL(IEvent)
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VBoxEvent)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VBoxEvent, IEvent)
 
     DECLARE_NOT_AGGREGATABLE(VBoxEvent)
 
@@ -58,9 +57,6 @@ public:
     STDMETHOD(SetProcessed)();
     STDMETHOD(WaitProcessed)(LONG aTimeout, BOOL *aResult);
 
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Event"; }
-
 private:
     struct Data;
 
@@ -72,7 +68,7 @@ class ATL_NO_VTABLE VBoxVetoEvent :
     VBOX_SCRIPTABLE_IMPL(IVetoEvent)
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VBoxVetoEvent)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VBoxVetoEvent, IVetoEvent)
 
     DECLARE_NOT_AGGREGATABLE(VBoxVetoEvent)
 
@@ -124,9 +120,6 @@ public:
     STDMETHOD(IsVetoed)(BOOL *aResult);
     STDMETHOD(GetVetos)(ComSafeArrayOut(BSTR, aVetos));
 
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"VetoEvent"; }
-
 private:
     struct Data;
 
@@ -135,13 +128,12 @@ private:
 
 class ATL_NO_VTABLE EventSource :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<EventSource, IEventSource>,
     public VirtualBoxSupportTranslation<EventSource>,
     VBOX_SCRIPTABLE_IMPL(IEventSource)
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(EventSource)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(EventSource, IEventSource)
 
     DECLARE_NOT_AGGREGATABLE(EventSource)
 
@@ -176,9 +168,6 @@ public:
                         IEvent  * *aEvent);
     STDMETHOD(EventProcessed)(IEventListener * aListener,
                               IEvent *         aEvent);
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"EventSource"; }
 
 private:
     struct Data;

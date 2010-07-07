@@ -28,13 +28,12 @@ typedef _VRDPUSBDEVICEDESC VRDPUSBDEVICEDESC;
 
 class ATL_NO_VTABLE RemoteUSBDevice :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<RemoteUSBDevice, IHostUSBDevice>,
     public VirtualBoxSupportTranslation<RemoteUSBDevice>,
     VBOX_SCRIPTABLE_IMPL(IHostUSBDevice)
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (OUSBDevice)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(RemoteUSBDevice, IHostUSBDevice)
 
     DECLARE_NOT_AGGREGATABLE (RemoteUSBDevice)
 
@@ -94,9 +93,6 @@ public:
             mData.state = USBDeviceState_Available;
         }
     }
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"RemoteUSBDevice"; }
 
 private:
 

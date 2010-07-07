@@ -50,14 +50,13 @@ class ATL_NO_VTABLE Mouse :
     public VirtualBoxBase
 #ifndef VBOXBFE_WITHOUT_COM
     ,
-    public VirtualBoxSupportErrorInfoImpl<Mouse, IMouse>,
     public VirtualBoxSupportTranslation<Mouse>,
     VBOX_SCRIPTABLE_IMPL(IMouse)
 #endif
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Mouse)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Mouse, IMouse)
 
     DECLARE_NOT_AGGREGATABLE(Mouse)
 
@@ -88,9 +87,6 @@ public:
                              LONG buttonState);
     STDMETHOD(PutMouseEventAbsolute)(LONG x, LONG y, LONG dz, LONG dw,
                                      LONG buttonState);
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Mouse"; }
 
     static const PDMDRVREG  DrvReg;
 

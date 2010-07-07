@@ -30,12 +30,13 @@ namespace settings
 }
 
 class ATL_NO_VTABLE BIOSSettings :
-    public VirtualBoxSupportErrorInfoImpl<BIOSSettings, IBIOSSettings>,
     public VirtualBoxSupportTranslation<BIOSSettings>,
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IBIOSSettings)
 {
 public:
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(BIOSSettings, IBIOSSettings)
+
     DECLARE_NOT_AGGREGATABLE(BIOSSettings)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
@@ -83,9 +84,6 @@ public:
     void commit();
     void copyFrom (BIOSSettings *aThat);
     void applyDefaults (GuestOSType *aOsType);
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"BIOSSettings"; }
 
 private:
     struct Data;
