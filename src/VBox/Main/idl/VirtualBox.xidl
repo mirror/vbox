@@ -14767,8 +14767,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <see>IRemoteDisplayInfoChangeEvent</see>
       </desc>
     </const>
+    <const name="OnEventSourceChange" value="62">
+      <desc>
+        <see>IEventSourceChangeEvent</see>
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="62">
+    <const name="Last" value="63">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -15537,6 +15542,30 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      <attribute name="message" type="wstring" readonly="yes">
       <desc>
         Optional error message.
+      </desc>
+    </attribute>
+  </interface>
+
+
+   <interface
+     name="IEventSourceChangeEvent" extends="IEvent"
+     uuid="e7932cb8-f6d4-4ab6-9cbf-558eb8959a6a"
+     waitable="yes"
+     wsmap="managed" autogen="VBoxEvent" id="OnEventSourceChange"
+     >
+    <desc>
+      Notification when an event source state changes (listener added or removed).
+    </desc>
+
+    <attribute name="listener" type="IEventListener" readonly="yes">
+      <desc>
+        Event listener which has changed.
+      </desc>
+    </attribute>
+
+    <attribute name="add" type="boolean" readonly="yes">
+      <desc>
+        Flag whether listener was added or removed.
       </desc>
     </attribute>
   </interface>
