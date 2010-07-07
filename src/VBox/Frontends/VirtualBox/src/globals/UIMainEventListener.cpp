@@ -49,6 +49,11 @@ UIMainEventListener::UIMainEventListener(QObject * /* pParent */)
     qRegisterMetaType<CVirtualBoxErrorInfo>("CVirtualBoxErrorInfo");
 }
 
+
+/**
+ * @todo: instead of double wrapping of events into signals maybe it
+ * make sense to use passive listeners, and peek up events in main thread.
+ */
 STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
 {
     CEvent event(pEvent);
@@ -216,4 +221,3 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
     }
     return S_OK;
 }
-

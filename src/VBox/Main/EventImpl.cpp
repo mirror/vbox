@@ -15,6 +15,39 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/**
+ * Theory of operations.
+ *
+ * This code implements easily extensible event mechanism, letting us
+ * to make any VirtualBox object an event source (by aggregating an EventSource instance).
+ * Another entity could subscribe to the event source for events it is interested in.
+ * If an event is waitable, it's possible to wait until all listeners
+ * registered at the moment of firing event as ones interested in this
+ * event acknowledged that they finished event processing (thus allowing
+ * vetoable events).
+ *
+ * Listeners can be registered as active or passive ones, defining policy of delivery.
+ * For *active* listeners, their HandleEvent() method is invoked when event is fired by
+ * the event source (pretty much callbacks).
+ * For *passive* listeners, it's up to an event consumer to perform GetEvent() operation
+ * with given listener, and then perform desired operation with returned event, if any.
+ * For passive listeners case, listener instance serves as merely a key referring to
+ * particular event consumer, thus HandleEvent() implementation isn't that important.
+ * IEventSource's CreateListener() could be used to create such a listener.
+ * Passive mode is designed for transports not allowing callbacks, such as webservices
+ * running on top of HTTP, and for situations where consumer wants exact control on
+ * context where event handler is executed (such as GUI thread for some toolkits).
+ *
+ * Internal EventSource data structures are optimized for fast event delivery, while
+ * listener registration/unregistration operations are expected being pretty rare.
+ * Passive mode listeners keep an internal event queue for all events they receive,
+ * and all waitable events are addded to the pending events map. This map keeps track
+ * of how many listeners are still not acknowledged their event, and once this counter
+ * reach zero, element is removed from pending events map, and event is marked as processed.
+ * Thus if passive listener's user forgets to call IEventSource's EventProcessed()
+ * waiters may never know that event processing finished.
+ */
+
 #include <list>
 #include <map>
 #include <deque>
@@ -190,6 +223,7 @@ STDMETHODIMP VBoxEvent::WaitProcessed(LONG aTimeout, BOOL *aResult)
         }
     }
 
+    /* @todo: maybe while loop for spurious wakeups? */
     int vrc = ::RTSemEventWait(m->mWaitEvent, aTimeout);
     AssertMsg(RT_SUCCESS(vrc) || vrc == VERR_TIMEOUT || vrc == VERR_INTERRUPTED,
               ("RTSemEventWait returned %Rrc\n", vrc));
@@ -497,6 +531,29 @@ ListenerRecord::~ListenerRecord()
 
     if (!mActive)
     {
+        // at this moment nobody could add elements to our queue, so we can safely
+        // clean it up, otherwise there will be pending events map elements
+        PendingEventsMap* aPem = &mOwner->m->mPendingMap;
+        while (true)
+        {
+            ComPtr<IEvent> aEvent;
+
+            if (mQueue.empty())
+                break;
+
+            mQueue.front().queryInterfaceTo(aEvent.asOutParam());
+            mQueue.pop_front();
+
+            BOOL aWaitable = FALSE;
+            aEvent->COMGETTER(Waitable)(&aWaitable);
+            if (aWaitable)
+            {
+                PendingEventsMap::iterator pit = aPem->find(aEvent);
+                if (pit != aPem->end())
+                    eventProcessed(aEvent, pit);
+            }
+        }
+
         ::RTCritSectDelete(&mcsQLock);
         ::RTSemEventDestroy(mQEvent);
     }
@@ -846,7 +903,7 @@ STDMETHODIMP EventSource::EventProcessed(IEventListener * aListener,
 /**
  * This class serves as feasible listener implementation
  * which could be used by clients not able to create local
- * COM objects, but still willing to recieve event
+ * COM objects, but still willing to receive event
  * notifications in passive mode, such as webservices.
  */
 class ATL_NO_VTABLE PassiveEventListener :

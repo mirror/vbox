@@ -14618,153 +14618,153 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <const name="OnMachineStateChange" value="32">
       <desc>
-        <see>IVirtualBoxCallback::onMachineStateChange</see>
+        <see>IMachineStateChangeEvent</see>
       </desc>
     </const>
     <const name="OnMachineDataChange" value="33">
       <desc>
-        <see>IVirtualBoxCallback::onMachineDataChange</see>
+        <see>IMachineDataChangeEvent</see>
       </desc>
     </const>
     <const name="OnExtraDataChange" value="34">
       <desc>
-        <see>IVirtualBoxCallback::onExtraDataChange</see>
+        <see>IExtraDataChangeEvent</see>
       </desc>
     </const>
      <const name="OnExtraDataCanChange" value="35">
       <desc>
-        <see>IVirtualBoxCallback::onExtraDataChange</see>
+        <see>IExtraDataCanChangeEvent</see>
       </desc>
     </const>
     <const name="OnMediumRegistered" value="36">
       <desc>
-        <see>IVirtualBoxCallback::onMediumRegistered</see>
+        <see>IMediumRegistered</see>
       </desc>
     </const>
     <const name="OnMachineRegistered" value="37">
       <desc>
-        <see>IVirtualBoxCallback::onMachineRegistered</see>
+        <see>IMachineRegisteredEvent</see>
       </desc>
     </const>
     <const name="OnSessionStateChange" value="38">
       <desc>
-        <see>IVirtualBoxCallback::onSessionStateChange</see>
+        <see>ISessionStateChangeEvent</see>
       </desc>
     </const>
     <const name="OnSnapshotTaken" value="39">
       <desc>
-        <see>IVirtualBoxCallback::onSnapshotTaken</see>
+        <see>ISnapshotTakenEvent</see>
       </desc>
     </const>
     <const name="OnSnapshotDeleted" value="40">
       <desc>
-        <see>IVirtualBoxCallback::onSnapshotDeleted</see>
+        <see>ISnapshotDeletedEvent</see>
       </desc>
     </const>
     <const name="OnSnapshotChange" value="41">
       <desc>
-        <see>IVirtualBoxCallback::onSnapshotChange</see>
+        <see>ISnapshotChangeEvent</see>
       </desc>
     </const>
     <const name="OnGuestPropertyChange" value="42">
       <desc>
-        <see>IVirtualBoxCallback::onGuestPropertyChange</see>
+        <see>IGuestPropertyChangeEvent</see>
       </desc>
     </const>
     <!-- Console events -->
     <const name="OnMousePointerShapeChange" value="43">
       <desc>
-        <see>IConsoleCallback::onMousePointerShapeChange</see>
+        <see>IMousePointerShapeChangeEvent</see>
       </desc>
     </const>
     <const name="OnMouseCapabilityChange" value="44">
       <desc>
-        <see>IConsoleCallback::onMouseCapabilityChange</see>
+        <see>IMouseCapabilityChangeEvent</see>
       </desc>
     </const>
     <const name="OnKeyboardLedsChange" value="45">
       <desc>
-        <see>IConsoleCallback::onKeyboardLedsChange</see>
+        <see>IKeyboardLedsChangeEvent</see>
       </desc>
     </const>
     <const name="OnStateChange" value="46">
       <desc>
-        <see>IConsoleCallback::onStateChange</see>
+        <see>IStateChangeEvent</see>
       </desc>
     </const>
     <const name="OnAdditionsStateChange" value="47">
       <desc>
-        <see>IConsoleCallback::onAdditionsStateChange</see>
+        <see>IAdditionsStateChangeEvent</see>
       </desc>
     </const>
     <const name="OnNetworkAdapterChange" value="48">
       <desc>
-        <see>IConsoleCallback::onNetworkAdapterChange</see>
+        <see>INetworkAdapterChangeEvent</see>
       </desc>
     </const>
     <const name="OnSerialPortChange" value="49">
       <desc>
-        <see>IConsoleCallback::onSerialPortChange</see>
+        <see>ISerialPortChangeEvent</see>
       </desc>
     </const>
     <const name="OnParallelPortChange" value="50">
       <desc>
-        <see>IConsoleCallback::onParallelPortChange</see>
+        <see>IParallelPortChangeEvent</see>
       </desc>
     </const>
     <const name="OnStorageControllerChange" value="51">
       <desc>
-        <see>IConsoleCallback::onStorageControllerChange</see>
+        <see>IStorageControllerChangeEvent</see>
       </desc>
     </const>
     <const name="OnMediumChange" value="52">
       <desc>
-        <see>IConsoleCallback::onMediumChange</see>
+        <see>IMediumChangeEvent</see>
       </desc>
     </const>
     <const name="OnVRDPServerChange" value="53">
       <desc>
-        <see>IConsoleCallback::onVRDPServerChange</see>
+        <see>IVRDPServerChangeEvent</see>
       </desc>
     </const>
     <const name="OnUSBControllerChange" value="54">
       <desc>
-        <see>IConsoleCallback::onUSBControllerChange</see>
+        <see>IUSBControllerChangeEvent</see>
       </desc>
     </const>
     <const name="OnUSBDeviceStateChange" value="55">
       <desc>
-        <see>IConsoleCallback::onUSBDeviceStateChange</see>
+        <see>IUSBDeviceStateChangeEvent</see>
       </desc>
     </const>
     <const name="OnSharedFolderChange" value="56">
       <desc>
-        <see>IConsoleCallback::onSharedFolderChange</see>
+        <see>ISharedFolderChangeEvent</see>
       </desc>
     </const>
     <const name="OnRuntimeError" value="57">
       <desc>
-        <see>IConsoleCallback::onRuntimeError</see>
+        <see>IRuntimeErrorEvent</see>
       </desc>
     </const>
     <const name="OnCanShowWindow" value="58">
       <desc>
-        <see>IConsoleCallback::onCanShowWindow</see>
+        <see>ICanShowWindowEvent</see>
       </desc>
     </const>
     <const name="OnShowWindow" value="59">
       <desc>
-        <see>IConsoleCallback::onShowWindow</see>
+        <see>IShowWindowEvent</see>
       </desc>
     </const>
     <const name="OnCPUChange" value="60">
       <desc>
-        <see>IConsoleCallback::onCPUChange</see>
+        <see>ICPUChangeEvent</see>
       </desc>
     </const>
     <const name="OnRemoteDisplayInfoChange" value="61">
       <desc>
-        <see>IConsoleCallback::onRemoteDisplayInfoChange</see>
+        <see>IRemoteDisplayInfoChangeEvent</see>
       </desc>
     </const>
     <!-- Last event marker -->
@@ -14893,8 +14893,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="handleEvent">
       <desc>
-        Handle event callback (called directly by IEventSource in active mode, or by event processor thread
-        in passive mode).
+        Handle event callback (called directly by IEventSource in active mode, or could be
+        called by event processor thread in passive mode).
       </desc>
       <param name="event" type="IEvent" dir="in">
         <desc>Event available.</desc>
@@ -14908,7 +14908,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      uuid="0ca2adba-8f30-401b-a8cd-fe31dbe839c0"
      wsmap="managed"
      >
-    <desc>Generic event, aiming to replace callbacks mechanism.</desc>
+    <desc>
+      Generic event. Usually events implements some of IEvent subinterfaces, so
+      standard use pattern is to check 'type' attribute and downcast (with QueryInterface())
+      appropraitely.
+    </desc>
 
     <attribute name="type" readonly="yes" type="VBoxEventType">
       <desc>
