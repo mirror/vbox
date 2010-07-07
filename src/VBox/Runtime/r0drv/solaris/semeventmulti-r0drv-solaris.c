@@ -283,7 +283,6 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
         rc = VERR_TIMEOUT;
     else
     {
-
         /* This loop is only for continuing after a spurious wake-up. */
         for (;;)
         {

@@ -54,12 +54,18 @@ typedef struct RTSEMEVENTINTERNAL
 {
     /** Magic value (RTSEMEVENT_MAGIC). */
     uint32_t volatile   u32Magic;
-    /** The number of waiting threads. */
-    uint32_t volatile   cWaiters;
-    /** The number of signalled threads. */
-    uint32_t volatile   cWakeUp;
     /** The number of threads referencing this object. */
     uint32_t volatile   cRefs;
+    /** Set if the object is signalled when there are no waiters. */
+    bool                fSignaled;
+    /** Object generation.
+     * This is incremented every time the object is signalled and used to
+     * check for spurious wake-ups. */
+    uint32_t            uSignalGen;
+    /** The number of waiting threads. */
+    uint32_t            cWaiters;
+    /** The number of signalled threads. */
+    uint32_t            cWakeUp;
     /** The Solaris mutex protecting this structure and pairing up the with the cv. */
     kmutex_t            Mtx;
     /** The Solaris condition variable. */
@@ -86,9 +92,11 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
         return VERR_NO_MEMORY;
 
     pThis->u32Magic       = RTSEMEVENT_MAGIC;
+    pThis->cRefs          = 1;
+    pThis->fSignaled      = false;
+    pThis->uSignalGen     = 0;
     pThis->cWaiters       = 0;
     pThis->cWakeUp        = 0;
-    pThis->cRefs          = 1;
     mutex_init(&pThis->Mtx, "IPRT Event Semaphore", MUTEX_DRIVER, (void *)ipltospl(DISP_LEVEL));
     cv_init(&pThis->Cnd, "IPRT CV", CV_DRIVER, NULL);
 
@@ -110,7 +118,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
 
     ASMAtomicDecU32(&pThis->cRefs);
 
-    ASMAtomicIncU32(&pThis->u32Magic); /* make the handle invalid */
+    pThis->u32Magic = RTSEMEVENT_MAGIC_DEAD; /* make the handle invalid */
     if (pThis->cWaiters > 0)
     {
         /*
@@ -174,7 +182,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
         mutex_enter(&pThis->Mtx);
     }
 
-    ASMAtomicIncU32(&pThis->cWakeUp);
+    pThis->cWakeUp++;
     if (pThis->cWakeUp <= pThis->cWaiters)
     {
         /*
@@ -183,7 +191,10 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
          * 0 even when there are threads actually waiting.
          */
         cv_signal(&pThis->Cnd);
+        pThis->uSignalGen++;
     }
+    else
+        pThis->fSignaled = true;
 
     mutex_exit(&pThis->Mtx);
 
@@ -236,74 +247,54 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fInt
 
     ASMAtomicIncU32(&pThis->cRefs);
 
-    if (pThis->cWakeUp > 0)
+    if (pThis->fSignaled)
     {
         /*
          * The last signal occurred without any waiters and now we're the first thread
          * waiting for the event signal. So no real need to wait for one.
          */
         Assert(!pThis->cWaiters);
-        ASMAtomicWriteU32((uint32_t volatile *)&pThis->cWakeUp, 0);
+        pThis->fSignaled = false;
+        pThis->cWakeUp = 0;
         rc = VINF_SUCCESS;
     }
     else if (!cMillies)
         rc = VERR_TIMEOUT;
     else
     {
-        uint32_t cWakeUp = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->cWakeUp);
-        ASMAtomicIncU32(&pThis->cWaiters);
+        pThis->cWaiters++;
+        /* This loop is only for continuing after a spurious wake-up. */
         for (;;)
         {
+            uint32_t const uSignalGenBeforeWait = pThis->uSignalGen;
             rc = rtSemEventWaitWorker(pThis, cMillies, fInterruptible);
             if (rc > 0)
             {
-                if (pThis->u32Magic != RTSEMEVENT_MAGIC)
+                if (pThis->u32Magic == RTSEMEVENT_MAGIC)
                 {
-                    /*
-                     * We're being destroyed.
-                     */
-                    ASMAtomicDecU32(&pThis->cWaiters);
-                    rc = VERR_SEM_DESTROYED;
-                    break;
-                }
-                else
-                {
-                    uint32_t cWakeUpNow = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->cWakeUp);
-                    if (cWakeUpNow > cWakeUp)
+                    if (pThis->uSignalGen != uSignalGenBeforeWait)
                     {
-                        /*
-                         * We've been signaled by RTSemEventSignal(), consume the wake up.
-                         */
-                        ASMAtomicDecU32(&pThis->cWaiters);
-                        ASMAtomicDecU32(&pThis->cWakeUp);
+                        /* We've been signaled by cv_signal(), consume the wake up. */
+                        --pThis->cWakeUp;
                         rc = VINF_SUCCESS;
-                        break;
                     }
                     else
-                    {
-                        /*
-                         * Premature wakeup due to some signal, go back to waiting.
-                         */
+                        /* Spurious wakeup due to some signal, go back to waiting. */
                         continue;
-                    }
                 }
+                else
+                    /* We're being destroyed. */
+                    rc = VERR_SEM_DESTROYED;
             }
             else if (rc == -1)
-            {
-                /*
-                 * Timeout reached.
-                 */
-                ASMAtomicDecU32(&pThis->cWaiters);
+                /* Timeout reached. */
                 rc = VERR_TIMEOUT;
-                break;
-            }
             else
-            {
                 /* Returned due to pending signal */
-                ASMAtomicDecU32(&pThis->cWaiters);
                 rc = VERR_INTERRUPTED;
-                break;
-            }
+
+            --pThis->cWaiters;
+            break;
         }
     }
 
