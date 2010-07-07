@@ -6759,7 +6759,8 @@ Console::usbDetachCallback(Console *that, USBDeviceList::iterator *aIt, PCRTUUID
     BOOL fRemote = FALSE;
 
     HRESULT hrc2 = (**aIt)->COMGETTER(Remote)(&fRemote);
-    ComAssertComRC(hrc2);
+    if (FAILED(hrc2))
+        setErrorStatic(hrc2, "GetRemote() failed");
 
     if (fRemote)
     {
@@ -7901,9 +7902,10 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
          * state file is non-null only when the VM is paused
          * (i.e. creating a snapshot online)
          */
-        ComAssertThrow(    (!pTask->bstrSavedStateFile.isEmpty() &&  pTask->fTakingSnapshotOnline)
-                        || ( pTask->bstrSavedStateFile.isEmpty() && !pTask->fTakingSnapshotOnline),
-                       rc = E_FAIL);
+        bool f =     (!pTask->bstrSavedStateFile.isEmpty() &&  pTask->fTakingSnapshotOnline)
+                  || ( pTask->bstrSavedStateFile.isEmpty() && !pTask->fTakingSnapshotOnline);
+        if (!f)
+            throw setErrorStatic(E_FAIL, "Invalid state of saved state file");
 
         /* sync the state with the server */
         if (pTask->lastMachineState == MachineState_Running)
