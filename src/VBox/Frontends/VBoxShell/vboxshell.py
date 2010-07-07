@@ -309,7 +309,6 @@ def monitorSource(ctx, es, active, dur):
          elif  type == ctx['global'].constants.VBoxEventType_OnMousePointerShapeChange:
              psev = ctx['global'].queryInterface(ev, 'IMousePointerShapeChangeEvent')
              if psev:
-                 print "pointer shape event: w=%d h=%d" %(psev.width, psev.height)
                  shape = ctx['global'].getArray(psev, 'shape')
                  if shape is None:
                      print "pointer shape event - empty shape"
