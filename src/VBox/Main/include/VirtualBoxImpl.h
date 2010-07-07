@@ -57,7 +57,6 @@ namespace settings
 
 class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<VirtualBox, IVirtualBox>,
     public VirtualBoxSupportTranslation<VirtualBox>,
     VBOX_SCRIPTABLE_IMPL(IVirtualBox)
 #ifdef RT_OS_WINDOWS
@@ -75,7 +74,7 @@ public:
     class CallbackEvent;
     friend class CallbackEvent;
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VirtualBox)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VirtualBox, IVirtualBox)
 
     DECLARE_CLASSFACTORY_SINGLETON(VirtualBox)
 
@@ -190,16 +189,6 @@ public:
     /* public methods only for internal purposes */
 
     /**
-     * Simple run-time type identification without having to enable C++ RTTI.
-     * The class IDs are defined in VirtualBoxBase.h.
-     * @return
-     */
-    virtual VBoxClsID getClassID() const
-    {
-        return clsidVirtualBox;
-    }
-
-    /**
      * Override of the default locking class to be used for validating lock
      * order with the standard member lock handle.
      */
@@ -302,10 +291,13 @@ public:
 
     RWLockHandle& getMediaTreeLockHandle();
 
-    /* for VirtualBoxSupportErrorInfoImpl */
-    static const wchar_t *getComponentName() { return L"VirtualBox"; }
-
 private:
+
+    static HRESULT setErrorStatic(HRESULT aResultCode,
+                                  const Utf8Str &aText)
+    {
+        return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
+    }
 
     HRESULT checkMediaForConflicts2(const Guid &aId, const Utf8Str &aLocation,
                                     Utf8Str &aConflictType);

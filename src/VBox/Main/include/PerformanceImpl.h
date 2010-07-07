@@ -51,6 +51,7 @@ class ATL_NO_VTABLE PerformanceMetric :
     VBOX_SCRIPTABLE_IMPL(IPerformanceMetric)
 {
 public:
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PerformanceMetric, IPerformanceMetric)
 
     DECLARE_NOT_AGGREGATABLE (PerformanceMetric)
 
@@ -114,13 +115,12 @@ private:
 
 class ATL_NO_VTABLE PerformanceCollector :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<PerformanceCollector, IPerformanceCollector>,
     public VirtualBoxSupportTranslation<PerformanceCollector>,
     VBOX_SCRIPTABLE_IMPL(IPerformanceCollector)
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (PerformanceCollector)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PerformanceCollector, IPerformanceCollector)
 
     DECLARE_NOT_AGGREGATABLE (PerformanceCollector)
 
@@ -186,9 +186,6 @@ public:
     // (ensure there is a caller and a read lock before calling them!)
 
     pm::CollectorHAL *getHAL() { return m.hal; };
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"PerformanceCollector"; }
 
 private:
     HRESULT toIPerformanceMetric(pm::Metric *src, IPerformanceMetric **dst);

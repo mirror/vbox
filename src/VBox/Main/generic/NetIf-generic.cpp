@@ -148,7 +148,9 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
             int rc = RTPathExecDir(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME " add"));
             if (RT_FAILURE(rc))
             {
-                progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(),
+                progress->notifyComplete(E_FAIL,
+                                         COM_IIDOF(IHostNetworkInterface),
+                                         HostNetworkInterface::getStaticComponentName(),
                                          "Failed to get program path, rc=%Rrc\n", rc);
                 return rc;
             }
@@ -175,7 +177,9 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
                         rc = NetIfGetConfigByName(pInfo);
                         if (RT_FAILURE(rc))
                         {
-                            progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(),
+                            progress->notifyComplete(E_FAIL,
+                                                     COM_IIDOF(IHostNetworkInterface),
+                                                     HostNetworkInterface::getStaticComponentName(),
                                                      "Failed to get config info for %s (as reported by '" VBOXNETADPCTL_NAME " add')\n", szBuf);
                         }
                         else
@@ -193,7 +197,10 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
                 }
                 if ((rc = pclose(fp)) != 0)
                 {
-                    progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(), "Failed to execute '"VBOXNETADPCTL_NAME " add' (exit status: %d)", rc);
+                    progress->notifyComplete(E_FAIL,
+                                             COM_IIDOF(IHostNetworkInterface),
+                                             HostNetworkInterface::getStaticComponentName(),
+                                             "Failed to execute '"VBOXNETADPCTL_NAME " add' (exit status: %d)", rc);
                     rc = VERR_INTERNAL_ERROR;
                 }
             }
@@ -240,7 +247,10 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
             progress.queryInterfaceTo(aProgress);
             rc = NetIfAdpCtl(Utf8Str(ifname).c_str(), "remove", NULL, NULL);
             if (RT_FAILURE(rc))
-                progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(), "Failed to execute '"VBOXNETADPCTL_NAME "' (exit status: %d)", rc);
+                progress->notifyComplete(E_FAIL,
+                                         COM_IIDOF(IHostNetworkInterface),
+                                         HostNetworkInterface::getStaticComponentName(),
+                                         "Failed to execute '"VBOXNETADPCTL_NAME "' (exit status: %d)", rc);
             else
                 progress->notifyComplete(S_OK);
         }

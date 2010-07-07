@@ -26,13 +26,12 @@ class Console;
 
 class ATL_NO_VTABLE MachineDebugger :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<MachineDebugger, IMachineDebugger>,
     public VirtualBoxSupportTranslation<MachineDebugger>,
     VBOX_SCRIPTABLE_IMPL(IMachineDebugger)
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (MachineDebugger)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (MachineDebugger, IMachineDebugger)
 
     DECLARE_NOT_AGGREGATABLE (MachineDebugger)
 
@@ -83,9 +82,6 @@ public:
 
     // "public-private methods"
     void flushQueuedSettings();
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"MachineDebugger"; }
 
 private:
     // private methods

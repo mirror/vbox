@@ -22,11 +22,11 @@
 
 class ATL_NO_VTABLE MediumAttachment :
     public VirtualBoxBase,
-    public com::SupportErrorInfoImpl<MediumAttachment, IMediumAttachment>,
     public VirtualBoxSupportTranslation<MediumAttachment>,
     VBOX_SCRIPTABLE_IMPL(IMediumAttachment)
 {
 public:
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(MediumAttachment, IMediumAttachment)
 
     DECLARE_NOT_AGGREGATABLE(MediumAttachment)
 
@@ -88,9 +88,6 @@ public:
 
     /** Get a unique and somewhat descriptive name for logging. */
     const char* getLogName(void) const { return mLogName.c_str(); }
-
-    /** For com::SupportErrorInfoImpl. */
-    static const char *ComponentName() { return "MediumAttachment"; }
 
 private:
     struct Data;

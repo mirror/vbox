@@ -20,7 +20,6 @@
 
 class ATL_NO_VTABLE CallbackWrapper :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<CallbackWrapper, IVirtualBoxCallback>,
     public VirtualBoxSupportTranslation<CallbackWrapper>,
     VBOX_SCRIPTABLE_IMPL(ILocalOwner),
     VBOX_SCRIPTABLE_IMPL(IConsoleCallback),
@@ -30,6 +29,8 @@ class ATL_NO_VTABLE CallbackWrapper :
 #endif
 {
 public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(CallbackWrapper, IVirtualBoxCallback)
 
     DECLARE_CLASSFACTORY()
 
@@ -93,9 +94,6 @@ public:
     STDMETHOD(OnRuntimeError)(BOOL fFatal, IN_BSTR id, IN_BSTR message);
     STDMETHOD(OnCanShowWindow)(BOOL *canShow);
     STDMETHOD(OnShowWindow)(ULONG64 *winId);
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"CallbackWrapper"; }
 
 private:
     ComPtr<IVirtualBoxCallback> mVBoxCallback;

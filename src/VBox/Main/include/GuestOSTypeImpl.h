@@ -25,13 +25,11 @@
 
 class ATL_NO_VTABLE GuestOSType :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<GuestOSType, IGuestOSType>,
     public VirtualBoxSupportTranslation<GuestOSType>,
     VBOX_SCRIPTABLE_IMPL(IGuestOSType)
 {
 public:
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (GuestOSType)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(GuestOSType, IGuestOSType)
 
     DECLARE_NOT_AGGREGATABLE(GuestOSType)
 
@@ -91,9 +89,6 @@ public:
     bool recommendedEFI() const { return !!(mOSHint & VBOXOSHINT_EFI); }
     NetworkAdapterType_T networkAdapterType() const { return mNetworkAdapterType; }
     uint32_t numSerialEnabled() const { return mNumSerialEnabled; }
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"GuestOSType"; }
 
 private:
 

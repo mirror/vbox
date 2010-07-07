@@ -45,14 +45,12 @@ class Console;
 
 class ATL_NO_VTABLE Keyboard :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<Keyboard, IKeyboard>,
     public VirtualBoxSupportTranslation<Keyboard>,
     VBOX_SCRIPTABLE_IMPL(IKeyboard)
 {
-
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Keyboard)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Keyboard, IKeyboard)
 
     DECLARE_NOT_AGGREGATABLE(Keyboard)
 
@@ -77,9 +75,6 @@ public:
     STDMETHOD(PutScancodes)(ComSafeArrayIn (LONG, scancodes),
                             ULONG *codesStored);
     STDMETHOD(PutCAD)();
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Keyboard"; }
 
     static const PDMDRVREG  DrvReg;
 

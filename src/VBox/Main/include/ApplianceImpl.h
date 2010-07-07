@@ -48,12 +48,11 @@ namespace settings
 
 class ATL_NO_VTABLE Appliance :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<Appliance, IAppliance>,
     public VirtualBoxSupportTranslation<Appliance>,
     VBOX_SCRIPTABLE_IMPL(IAppliance)
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Appliance)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Appliance, IAppliance)
 
     DECLARE_NOT_AGGREGATABLE(Appliance)
 
@@ -81,9 +80,6 @@ public:
     HRESULT init(VirtualBox *aVirtualBox);
     void uninit();
 
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Appliance"; }
-
     /* IAppliance properties */
     STDMETHOD(COMGETTER(Path))(BSTR *aPath);
     STDMETHOD(COMGETTER(Disks))(ComSafeArrayOut(BSTR, aDisks));
@@ -110,7 +106,7 @@ private:
     struct Data;            // opaque, defined in ApplianceImpl.cpp
     Data *m;
 
-    bool isApplianceIdle() const;
+    bool isApplianceIdle();
 
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
@@ -126,7 +122,7 @@ private:
 
     struct LocationInfo;
     void parseURI(Utf8Str strUri, LocationInfo &locInfo) const;
-    void parseBucket(Utf8Str &aPath, Utf8Str &aBucket) const;
+    void parseBucket(Utf8Str &aPath, Utf8Str &aBucket);
     Utf8Str manifestFileName(Utf8Str aPath) const;
 
     HRESULT readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
@@ -194,14 +190,13 @@ struct VirtualSystemDescriptionEntry
 
 class ATL_NO_VTABLE VirtualSystemDescription :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<VirtualSystemDescription, IVirtualSystemDescription>,
     public VirtualBoxSupportTranslation<VirtualSystemDescription>,
     VBOX_SCRIPTABLE_IMPL(IVirtualSystemDescription)
 {
     friend class Appliance;
 
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (VirtualSystemDescription)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VirtualSystemDescription, IVirtualSystemDescription)
 
     DECLARE_NOT_AGGREGATABLE(VirtualSystemDescription)
 
@@ -221,9 +216,6 @@ public:
 
     HRESULT init();
     void uninit();
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"VirtualSystemDescription"; }
 
     /* IVirtualSystemDescription properties */
     STDMETHOD(COMGETTER(Count))(ULONG *aCount);

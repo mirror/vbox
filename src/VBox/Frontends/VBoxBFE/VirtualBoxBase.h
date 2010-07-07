@@ -276,7 +276,7 @@ static inline int setError(int iNum, const char *pszFormat, ...)
 #define DEFINE_EMPTY_CTOR_DTOR(cls) \
     cls::cls () {}; cls::~cls () {};
 
-#define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(cls)
+#define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(cls, iface)
 
 ////////////////////////////////////////////////////////////////////////////////
 

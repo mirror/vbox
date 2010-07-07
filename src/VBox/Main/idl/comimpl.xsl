@@ -66,10 +66,10 @@
     <xsl:value-of select="//interface[@name=$name]/@extends" />
   </xsl:variable>
 
-  <xsl:value-of select="concat('      COM_INTERFACE_ENTRY(', $name, ')&#10;')" />
+  <xsl:value-of select="concat('        COM_INTERFACE_ENTRY(', $name, ')&#10;')" />
   <xsl:choose>
     <xsl:when test="$extends='$unknown'">
-      <xsl:value-of select="   '      COM_INTERFACE_ENTRY(IDispatch)&#10;'" />
+      <xsl:value-of select="   '        COM_INTERFACE_ENTRY(IDispatch)&#10;'" />
     </xsl:when>
     <xsl:when test="//interface[@name=$extends]">
       <xsl:call-template name="genComEntry">
@@ -380,7 +380,7 @@
     <xsl:value-of select="       'private:&#10;'" />
     <xsl:value-of select="concat('    ', $mType, '    ', $mName,';&#10;')" />
     <xsl:value-of select="       'public:&#10;'" />
-    <xsl:value-of select="concat('    STDMETHOD(COMGETTER(', $capsName,'))(',$pTypeNameOut,') {&#10;')" />
+    <xsl:value-of select="concat('    STDMETHOD(COMGETTER(', $capsName,'))(',$pTypeNameOut,')&#10;    {&#10;')" />
     <xsl:call-template name="genRetParam">
       <xsl:with-param name="type" select="@type" />
       <xsl:with-param name="member" select="$mName" />
@@ -391,7 +391,7 @@
     <xsl:value-of select="       '    }&#10;'" />
 
     <xsl:if test="not(@readonly='yes')">
-      <xsl:value-of select="concat('    STDMETHOD(COMSETTER(', $capsName,'))(',$pTypeNameIn,') {&#10;')" />
+      <xsl:value-of select="concat('    STDMETHOD(COMSETTER(', $capsName,'))(',$pTypeNameIn,')&#10;    {&#10;')" />
       <xsl:call-template name="genSetParam">
         <xsl:with-param name="type" select="@type" />
         <xsl:with-param name="member" select="$mName" />
@@ -403,7 +403,7 @@
     </xsl:if>
 
     <xsl:value-of select="       '    // purely internal setter&#10;'" />
-    <xsl:value-of select="concat('    int set_', @name,'(',$pTypeNameIn, ') {&#10;')" />
+    <xsl:value-of select="concat('    HRESULT set_', @name,'(',$pTypeNameIn, ')&#10;    {&#10;')" />
     <xsl:call-template name="genSetParam">
       <xsl:with-param name="type" select="@type" />
       <xsl:with-param name="member" select="$mName" />
@@ -438,24 +438,26 @@
   <xsl:param name="isVeto" />
 
   <xsl:value-of select="concat('class ATL_NO_VTABLE ',$implName,
-                        ' : public VirtualBoxBase, VBOX_SCRIPTABLE_IMPL(',
+                        '&#10;    : public VirtualBoxBase,&#10;      VBOX_SCRIPTABLE_IMPL(',
                         @name, ')&#10;{&#10;')" />
   <xsl:value-of select="'public:&#10;'" />
-  <xsl:value-of select="concat('   DECLARE_NOT_AGGREGATABLE(', $implName, ')&#10;')" />
-  <xsl:value-of select="       '   DECLARE_PROTECT_FINAL_CONSTRUCT()&#10;'" />
-  <xsl:value-of select="concat('   BEGIN_COM_MAP(', $implName, ')&#10;')" />
+  <xsl:value-of select="concat('    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(', $implName, ', ', @name, ')&#10;')" />
+  <xsl:value-of select="concat('    DECLARE_NOT_AGGREGATABLE(', $implName, ')&#10;')" />
+  <xsl:value-of select="       '    DECLARE_PROTECT_FINAL_CONSTRUCT()&#10;'" />
+  <xsl:value-of select="concat('    BEGIN_COM_MAP(', $implName, ')&#10;')" />
   <xsl:call-template name="genComEntry">
     <xsl:with-param name="name" select="@name" />
   </xsl:call-template>
-  <xsl:value-of select="       '   END_COM_MAP()&#10;'" />
-  <xsl:value-of select="concat('   ', $implName, '() {}&#10;')" />
-  <xsl:value-of select="concat('   virtual ~', $implName, '() {}&#10;')" />
+  <xsl:value-of select="       '    END_COM_MAP()&#10;'" />
+  <xsl:value-of select="concat('    ', $implName, '() {}&#10;')" />
+  <xsl:value-of select="concat('    virtual ~', $implName, '() {}&#10;')" />
   <xsl:text><![CDATA[
     HRESULT FinalConstruct()
     {
         return mEvent.createObject();
     }
-    void FinalRelease() {
+    void FinalRelease()
+    {
         mEvent->FinalRelease();
     }
     STDMETHOD(COMGETTER(Type)) (VBoxEventType_T *aType)
@@ -486,7 +488,7 @@
   <xsl:choose>
     <xsl:when test="$isVeto='yes'">
 <xsl:text><![CDATA[
-    HRESULT init (IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable = TRUE)
+    HRESULT init(IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable = TRUE)
     {
         NOREF(aWaitable);
         return mEvent->init(aSource, aType);
@@ -509,7 +511,7 @@ private:
     </xsl:when>
     <xsl:otherwise>
 <xsl:text><![CDATA[
-    HRESULT init (IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable)
+    HRESULT init(IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable)
     {
         return mEvent->init(aSource, aType, aWaitable);
     }
@@ -574,7 +576,7 @@ HRESULT VBoxEventDesc::init(IEventSource* aSource, VBoxEventType_T aType, ...)
 
   <xsl:for-each select="//interface[@autogen=$G_kind]">
     <xsl:variable name="implName">
-      <xsl:value-of select="concat(@name,'Impl')" />
+      <xsl:value-of select="substring(@name, 2)" />
     </xsl:variable>
     <xsl:call-template name="genSwitchCase">
       <xsl:with-param name="implName" select="$implName" />
@@ -609,7 +611,7 @@ HRESULT VBoxEventDesc::init(IEventSource* aSource, VBoxEventType_T aType, ...)
   <xsl:for-each select="//interface[@autogen=$G_kind]">
     <xsl:value-of select="concat('// ', @name,  ' implementation code &#10;')" />
     <xsl:variable name="implName">
-      <xsl:value-of select="concat(@name,'Impl')" />
+      <xsl:value-of select="substring(@name, 2)" />
     </xsl:variable>
 
     <xsl:choose>

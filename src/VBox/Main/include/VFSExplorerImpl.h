@@ -24,11 +24,10 @@
 
 class ATL_NO_VTABLE VFSExplorer :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<VFSExplorer, IVFSExplorer>,
     public VirtualBoxSupportTranslation<VFSExplorer>,
     VBOX_SCRIPTABLE_IMPL(IVFSExplorer)
 {
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (VFSExplorer)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VFSExplorer, IVFSExplorer)
 
     DECLARE_NOT_AGGREGATABLE(VFSExplorer)
 
@@ -48,9 +47,6 @@ class ATL_NO_VTABLE VFSExplorer :
 
     HRESULT init(VFSType_T aType, Utf8Str aFilePath, Utf8Str aHostname, Utf8Str aUsername, Utf8Str aPassword, VirtualBox *aVirtualBox);
     void uninit();
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"VFSExplorer"; }
 
     /* IVFSExplorer properties */
     STDMETHOD(COMGETTER(Path))(BSTR *aPath);

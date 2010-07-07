@@ -625,7 +625,8 @@ HRESULT Machine::tryCreateMachineConfigFile(BOOL aOverride)
  */
 HRESULT Machine::registeredInit()
 {
-    AssertReturn(getClassID() == clsidMachine, E_FAIL);
+    AssertReturn(!isSessionMachine(), E_FAIL);
+    AssertReturn(!isSnapshotMachine(), E_FAIL);
     AssertReturn(!mData->mUuid.isEmpty(), E_FAIL);
     AssertReturn(!mData->mAccessible, E_FAIL);
 
@@ -725,7 +726,8 @@ void Machine::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    Assert(getClassID() == clsidMachine);
+    Assert(!isSnapshotMachine());
+    Assert(!isSessionMachine());
     Assert(!!mData);
 
     LogFlowThisFunc(("initFailed()=%d\n", autoUninitSpan.initFailed()));
@@ -880,8 +882,8 @@ STDMETHODIMP Machine::COMGETTER(AccessError)(IVirtualBoxErrorInfo **aAccessError
     {
         errorInfo->init(mData->mAccessError.getResultCode(),
                         mData->mAccessError.getInterfaceID(),
-                        mData->mAccessError.getComponent(),
-                        mData->mAccessError.getText());
+                        Utf8Str(mData->mAccessError.getComponent()).c_str(),
+                        Utf8Str(mData->mAccessError.getText()));
         rc = errorInfo.queryInterfaceTo(aAccessError);
     }
 
@@ -2421,7 +2423,7 @@ STDMETHODIMP Machine::COMSETTER(TeleporterEnabled)(BOOL aEnabled)
        (Clearing it is always permitted.) */
     if (    aEnabled
         &&  mData->mRegistered
-        &&  (   getClassID() != clsidSessionMachine
+        &&  (   !isSessionMachine()
              || (   mData->mMachineState != MachineState_PoweredOff
                  && mData->mMachineState != MachineState_Teleported
                  && mData->mMachineState != MachineState_Aborted
@@ -2560,7 +2562,7 @@ STDMETHODIMP Machine::COMSETTER(RTCUseUTC)(BOOL aEnabled)
        (Clearing it is always permitted.) */
     if (    aEnabled
         &&  mData->mRegistered
-        &&  (   getClassID() != clsidSessionMachine
+        &&  (   !isSessionMachine()
              || (   mData->mMachineState != MachineState_PoweredOff
                  && mData->mMachineState != MachineState_Teleported
                  && mData->mMachineState != MachineState_Aborted
@@ -3640,7 +3642,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
         // data is changing and change not vetoed: then write it out under the lock
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        if (getClassID() == clsidSnapshotMachine)
+        if (isSnapshotMachine())
         {
             HRESULT rc = checkStateDependency(MutableStateDep);
             if (FAILED(rc)) return rc;
@@ -6161,7 +6163,7 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
         case MutableStateDep:
         {
             if (   mData->mRegistered
-                && (   getClassID() != clsidSessionMachine  /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
+                && (   !isSessionMachine()  /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
                     || (   mData->mMachineState != MachineState_Paused
                         && mData->mMachineState != MachineState_Running
                         && mData->mMachineState != MachineState_Aborted
@@ -6178,7 +6180,7 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
         case MutableOrSavedStateDep:
         {
             if (   mData->mRegistered
-                && (   getClassID() != clsidSessionMachine  /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
+                && (   !isSessionMachine() /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
                     || (   mData->mMachineState != MachineState_Paused
                         && mData->mMachineState != MachineState_Running
                         && mData->mMachineState != MachineState_Aborted
@@ -6351,9 +6353,8 @@ void Machine::uninitDataAndChildObjects()
      * a result of unregistering or deleting the snapshot), outdated hard
      * disk attachments will already be uninitialized and deleted, so this
      * code will not affect them. */
-    VBoxClsID clsid = getClassID();
     if (    !!mMediaData
-         && (clsid == clsidMachine || clsid == clsidSnapshotMachine)
+         && (!isSessionMachine())
        )
     {
         for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
@@ -6368,7 +6369,7 @@ void Machine::uninitDataAndChildObjects()
         }
     }
 
-    if (getClassID() == clsidMachine)
+    if (!isSessionMachine() && !isSnapshotMachine())
     {
         // clean up the snapshots list (Snapshot::uninit() will handle the snapshot's children recursively)
         if (mData->mFirstSnapshot)
@@ -6403,7 +6404,7 @@ void Machine::uninitDataAndChildObjects()
  */
 Machine* Machine::getMachine()
 {
-    if (getClassID() == clsidSessionMachine)
+    if (isSessionMachine())
         return (Machine*)mPeer;
     return this;
 }
@@ -6652,7 +6653,8 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
                               const Guid &aCurSnapshotId,
                               Snapshot *aParentSnapshot)
 {
-    AssertReturn(getClassID() == clsidMachine, E_FAIL);
+    AssertReturn(!isSnapshotMachine(), E_FAIL);
+    AssertReturn(!isSessionMachine(), E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -6723,7 +6725,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
  */
 HRESULT Machine::loadHardware(const settings::Hardware &data)
 {
-    AssertReturn(getClassID() == clsidMachine || getClassID() == clsidSnapshotMachine, E_FAIL);
+    AssertReturn(!isSessionMachine(), E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -6930,7 +6932,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
 HRESULT Machine::loadStorageControllers(const settings::Storage &data,
                                         const Guid *aSnapshotId /* = NULL */)
 {
-    AssertReturn(getClassID() == clsidMachine || getClassID() == clsidSnapshotMachine, E_FAIL);
+    AssertReturn(!isSessionMachine(), E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -6999,10 +7001,6 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                     const settings::StorageController &data,
                                     const Guid *aSnapshotId /*= NULL*/)
 {
-    AssertReturn(   (getClassID() == clsidMachine && aSnapshotId == NULL)
-                 || (getClassID() == clsidSnapshotMachine && aSnapshotId != NULL),
-                 E_FAIL);
-
     HRESULT rc = S_OK;
 
     /* paranoia: detect duplicate attachments */
@@ -7095,8 +7093,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                 rc = mParent->findHardDisk(&dev.uuid, NULL, true /* aDoSetError */, &medium);
                 if (FAILED(rc))
                 {
-                    VBoxClsID clsid = getClassID();
-                    if (clsid == clsidSnapshotMachine)
+                    if (isSnapshotMachine())
                     {
                         // wrap another error message around the "cannot find hard disk" set by findHardDisk
                         // so the user knows that the bad disk is in a snapshot somewhere
@@ -7114,7 +7111,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
                 if (medium->getType() == MediumType_Immutable)
                 {
-                    if (getClassID() == clsidSnapshotMachine)
+                    if (isSnapshotMachine())
                         return setError(E_FAIL,
                                         tr("Immutable hard disk '%s' with UUID {%RTuuid} cannot be directly attached to snapshot with UUID {%RTuuid} "
                                            "of the virtual machine '%ls' ('%s')"),
@@ -7132,7 +7129,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                     mData->m_strConfigFileFull.raw());
                 }
 
-                if (    getClassID() != clsidSnapshotMachine
+                if (    !isSnapshotMachine()
                      && medium->getChildren().size() != 0
                    )
                     return setError(E_FAIL,
@@ -7182,7 +7179,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         /* associate the medium with this machine and snapshot */
         if (!medium.isNull())
         {
-            if (getClassID() == clsidSnapshotMachine)
+            if (isSnapshotMachine())
                 rc = medium->attachTo(mData->mUuid, *aSnapshotId);
             else
                 rc = medium->attachTo(mData->mUuid);
@@ -7564,8 +7561,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
      * saving them */
     ensureNoStateDependencies();
 
-    AssertReturn(    getClassID() == clsidMachine
-                  || getClassID() == clsidSessionMachine,
+    AssertReturn(!isSnapshotMachine(),
                  E_FAIL);
 
     HRESULT rc = S_OK;
@@ -7654,7 +7650,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
          * mutable Machine instances are always not registered (i.e. private
          * to the client process that creates them) and thus don't need to
          * inform callbacks. */
-        if (getClassID() == clsidSessionMachine)
+        if (isSessionMachine())
             mParent->onMachineDataChange(mData->mUuid);
     }
 
@@ -8396,7 +8392,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
 
     if (FAILED(rc))
     {
-        MultiResultRef mrc(rc);
+        MultiResult mrc = rc;
 
         mrc = deleteImplicitDiffs(pfNeedsSaveSettings);
     }
@@ -8743,7 +8739,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
     /* commit the hard disk changes */
     mMediaData.commit();
 
-    if (getClassID() == clsidSessionMachine)
+    if (isSessionMachine())
     {
         /* attach new data to the primary machine and reshare it */
         mPeer->mMediaData.attach(mMediaData);
@@ -9094,7 +9090,7 @@ void Machine::commit()
         }
     }
 
-    if (getClassID() == clsidSessionMachine)
+    if (isSessionMachine())
     {
         /* attach new data to the primary machine and reshare it */
         mPeer->mUserData.attach(mUserData);
@@ -9119,8 +9115,8 @@ void Machine::commit()
  */
 void Machine::copyFrom(Machine *aThat)
 {
-    AssertReturnVoid(getClassID() == clsidMachine || getClassID() == clsidSessionMachine);
-    AssertReturnVoid(aThat->getClassID() == clsidSnapshotMachine);
+    AssertReturnVoid(!isSnapshotMachine());
+    AssertReturnVoid(aThat->isSnapshotMachine());
 
     AssertReturnVoid(!Global::IsOnline(mData->mMachineState));
 

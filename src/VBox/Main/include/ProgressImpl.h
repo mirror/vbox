@@ -32,13 +32,14 @@
  */
 class ATL_NO_VTABLE ProgressBase :
     public VirtualBoxBase,
-    public com::SupportErrorInfoBase,
     public VirtualBoxSupportTranslation<ProgressBase>,
     VBOX_SCRIPTABLE_IMPL(IProgress)
 {
 protected:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (ProgressBase)
+//  VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(ProgressBase, IProgress)
+//  cannot be added here or Windows will not buuld; as a result, ProgressBase cannot be
+//  instantiated, but we're not doing that anyway (but only its children)
 
     DECLARE_EMPTY_CTOR_DTOR (ProgressBase)
 
@@ -78,7 +79,6 @@ public:
 
     // public methods only for internal purposes
 
-    static HRESULT setErrorInfoOnThread (IProgress *aProgress);
     bool setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
 
 
@@ -133,13 +133,14 @@ protected:
  * Normal progress object.
  */
 class ATL_NO_VTABLE Progress :
-    public com::SupportErrorInfoDerived<ProgressBase, Progress, IProgress>,
+    public ProgressBase,
     public VirtualBoxSupportTranslation<Progress>
 {
 
 public:
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Progress, IProgress)
 
-    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE (Progress)
+    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(Progress)
 
     DECLARE_NOT_AGGREGATABLE (Progress)
 
@@ -259,18 +260,15 @@ public:
     HRESULT notifyComplete(HRESULT aResultCode);
     HRESULT notifyComplete(HRESULT aResultCode,
                            const GUID &aIID,
-                           const Bstr &aComponent,
+                           const char *pcszComponent,
                            const char *aText,
                            ...);
     HRESULT notifyCompleteV(HRESULT aResultCode,
                             const GUID &aIID,
-                            const Bstr &aComponent,
+                            const char *pcszComponent,
                             const char *aText,
                             va_list va);
     bool notifyPointOfNoReturn(void);
-
-    /** For com::SupportErrorInfoImpl. */
-    static const char *ComponentName() { return "Progress"; }
 
 private:
 

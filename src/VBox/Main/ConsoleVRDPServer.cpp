@@ -1512,7 +1512,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
 
         if (RT_FAILURE(rc))
         {
-            mConsole->reportAuthLibraryError(filename.raw(), rc);
+            mConsole->setAuthLibraryError(filename.raw(), rc);
 
             mpfnAuthEntry = NULL;
             mpfnAuthEntry2 = NULL;

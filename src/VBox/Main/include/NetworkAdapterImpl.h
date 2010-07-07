@@ -32,7 +32,6 @@ namespace settings
 
 class ATL_NO_VTABLE NetworkAdapter :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<NetworkAdapter, INetworkAdapter>,
     public VirtualBoxSupportTranslation<NetworkAdapter>,
     VBOX_SCRIPTABLE_IMPL(INetworkAdapter)
 {
@@ -72,7 +71,7 @@ public:
         ULONG mBootPriority;
     };
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (NetworkAdapter)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(NetworkAdapter, INetworkAdapter)
 
     DECLARE_NOT_AGGREGATABLE(NetworkAdapter)
 
@@ -142,9 +141,6 @@ public:
     void commit();
     void copyFrom (NetworkAdapter *aThat);
     void applyDefaults (GuestOSType *aOsType);
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"NetworkAdapter"; }
 
 private:
 

@@ -33,13 +33,12 @@ namespace settings
 
 class ATL_NO_VTABLE DHCPServer :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<DHCPServer, IDHCPServer>,
     public VirtualBoxSupportTranslation<DHCPServer>,
     VBOX_SCRIPTABLE_IMPL(IDHCPServer)
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (DHCPServer)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(DHCPServer, IDHCPServer)
 
     DECLARE_NOT_AGGREGATABLE (DHCPServer)
 
@@ -77,9 +76,6 @@ public:
 
     STDMETHOD(Start)(IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BSTR aTrunkType);
     STDMETHOD(Stop)();
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"DHCPServer"; }
 
 private:
     /** weak VirtualBox parent */

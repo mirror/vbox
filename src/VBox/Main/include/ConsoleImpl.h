@@ -80,7 +80,6 @@ typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 /** IConsole implementation class */
 class ATL_NO_VTABLE Console :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxSupportErrorInfoImpl<Console, IConsole>,
     public VirtualBoxSupportTranslation<Console>,
     VBOX_SCRIPTABLE_IMPL(IConsole)
 #ifdef RT_OS_WINDOWS
@@ -92,6 +91,8 @@ class ATL_NO_VTABLE Console :
     Q_OBJECT
 
 public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Console, IConsole)
 
     DECLARE_NOT_AGGREGATABLE(Console)
 
@@ -239,18 +240,14 @@ public:
 
     static const PDMDRVREG DrvStatusReg;
 
-    void reportAuthLibraryError(const char *filename, int rc)
-    {
-        setError(E_FAIL, tr("Could not load the external authentication library '%s' (%Rrc)"), filename, rc);
-    }
+    static HRESULT setErrorStatic(HRESULT aResultCode, const char *pcsz, ...);
+    HRESULT setAuthLibraryError(const char *filename, int rc);
+    HRESULT setInvalidMachineStateError();
 
     static HRESULT handleUnexpectedExceptions(RT_SRC_POS_DECL);
 
     static const char *convertControllerTypeToDev(StorageControllerType_T enmCtrlType);
     static HRESULT convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun);
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Console"; }
 
 private:
 

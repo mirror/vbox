@@ -231,13 +231,12 @@ class Console;
 
 class ATL_NO_VTABLE RemoteDisplayInfo :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<RemoteDisplayInfo, IRemoteDisplayInfo>,
     public VirtualBoxSupportTranslation<RemoteDisplayInfo>,
     VBOX_SCRIPTABLE_IMPL(IRemoteDisplayInfo)
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (RemoteDisplayInfo)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(RemoteDisplayInfo, IRemoteDisplayInfo)
 
     DECLARE_NOT_AGGREGATABLE(RemoteDisplayInfo)
 
@@ -276,9 +275,6 @@ public:
         DECL_GETTER (ULONG,   ClientVersion);
         DECL_GETTER (ULONG,   EncryptionStyle);
     #undef DECL_GETTER
-
-    /* For VirtualBoxSupportErrorInfoImpl. */
-    static const wchar_t *getComponentName() { return L"RemoteDisplayInfo"; }
 
 private:
 

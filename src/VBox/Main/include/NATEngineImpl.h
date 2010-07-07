@@ -31,7 +31,6 @@ namespace settings
 
 class ATL_NO_VTABLE NATEngine :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<NATEngine, INATEngine>,
     public VirtualBoxSupportTranslation<NATEngine>,
     VBOX_SCRIPTABLE_IMPL(INATEngine)
 {
@@ -68,7 +67,7 @@ class ATL_NO_VTABLE NATEngine :
         /* Alias service */
         ULONG    mAliasMode;
     };
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (NATEngine)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(NATEngine, INATEngine)
 
     DECLARE_NOT_AGGREGATABLE(NATEngine)
 
@@ -125,7 +124,6 @@ class ATL_NO_VTABLE NATEngine :
     STDMETHOD(AddRedirect)(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USHORT aHostPort, IN_BSTR aGuestIP, USHORT aGuestPort);
     STDMETHOD(RemoveRedirect)(IN_BSTR aName);
 
-    static const wchar_t *getComponentName() { return L"NATEngine"; }
 private:
     Backupable<Data> mData;
     bool m_fModified;

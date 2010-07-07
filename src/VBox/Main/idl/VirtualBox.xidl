@@ -3821,10 +3821,10 @@
     <method name="endPowerUp">
       <desc>
         Tells VBoxSVC that <link to="IConsole::powerUp"/> has completed.
-	This method may query status information from the progress object it
-	received in <link to="IInternalMachineControl::beginPowerUp"/> and copy
-	it over to any in progress <link to="IVirtualBox::openRemoteSession"/>
-	call in order to complete that progress object.
+        This method may query status information from the progress object it
+        received in <link to="IInternalMachineControl::beginPowerUp"/> and copy
+        it over to any in progress <link to="IVirtualBox::openRemoteSession"/>
+        call in order to complete that progress object.
       </desc>
       <param name="result" type="long" dir="in"/>
     </method>
@@ -9043,7 +9043,6 @@
     </method>
 
   </interface>
-
 
   <!--
   // ISnapshot

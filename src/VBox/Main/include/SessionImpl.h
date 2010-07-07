@@ -28,9 +28,6 @@
 /** @def VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
  *  Use SYS V IPC for watching a session.
  *  This is defined in the Makefile since it's also used by MachineImpl.h/cpp.
- *
- *  @todo Dmitry, feel free to completely change this (and/or write a better description).
- *        (The same goes for the other darwin changes.)
  */
 #ifdef DOXYGEN_RUNNING
 # define VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
@@ -38,7 +35,6 @@
 
 class ATL_NO_VTABLE Session :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<Session, ISession>,
     public VirtualBoxSupportTranslation<Session>,
     VBOX_SCRIPTABLE_IMPL(ISession),
     VBOX_SCRIPTABLE_IMPL(IInternalSessionControl)
@@ -47,6 +43,8 @@ class ATL_NO_VTABLE Session :
 #endif
 {
 public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Session, ISession)
 
     DECLARE_CLASSFACTORY()
 
@@ -111,9 +109,6 @@ public:
                                  BOOL aMergeForward, IMedium *aParentForTarget,
                                  ComSafeArrayIn(IMedium *, aChildrenToReparent),
                                  IProgress *aProgress);
-
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Session"; }
 
 private:
 

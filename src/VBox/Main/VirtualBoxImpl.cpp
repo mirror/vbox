@@ -2395,8 +2395,8 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
 {
     LogFlowFuncEnter();
 
-    std::auto_ptr <StartSVCHelperClientData>
-        d(static_cast <StartSVCHelperClientData *>(aUser));
+    std::auto_ptr<StartSVCHelperClientData>
+        d(static_cast<StartSVCHelperClientData*>(aUser));
 
     HRESULT rc = S_OK;
     bool userFuncCalled = false;
@@ -2424,8 +2424,8 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
                                        id.raw()).c_str());
         if (RT_FAILURE(vrc))
         {
-            rc = setError(E_FAIL,
-                          tr("Could not create the communication channel (%Rrc)"), vrc);
+            rc = d->that->setError(E_FAIL,
+                                   tr("Could not create the communication channel (%Rrc)"), vrc);
             break;
         }
 
@@ -2466,12 +2466,12 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
                 /* hide excessive details in case of a frequent error
                  * (pressing the Cancel button to close the Run As dialog) */
                 if (vrc2 == VERR_CANCELLED)
-                    rc = setError(E_FAIL,
-                                  tr("Operation cancelled by the user"));
+                    rc = d->that->setError(E_FAIL,
+                                           tr("Operation cancelled by the user"));
                 else
-                    rc = setError(E_FAIL,
-                                  tr("Could not launch a privileged process '%s' (%Rrc)"),
-                                  exePath, vrc2);
+                    rc = d->that->setError(E_FAIL,
+                                           tr("Could not launch a privileged process '%s' (%Rrc)"),
+                                           exePath, vrc2);
                 break;
             }
         }
@@ -2481,8 +2481,8 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
             vrc = RTProcCreate(exePath, args, RTENV_DEFAULT, 0, &pid);
             if (RT_FAILURE(vrc))
             {
-                rc = setError(E_FAIL,
-                              tr("Could not launch a process '%s' (%Rrc)"), exePath, vrc);
+                rc = d->that->setError(E_FAIL,
+                                       tr("Could not launch a process '%s' (%Rrc)"), exePath, vrc);
                 break;
             }
         }
@@ -2505,8 +2505,8 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
 
         if (SUCCEEDED(rc) && RT_FAILURE(vrc))
         {
-            rc = setError(E_FAIL,
-                          tr("Could not operate the communication channel (%Rrc)"), vrc);
+            rc = d->that->setError(E_FAIL,
+                                   tr("Could not operate the communication channel (%Rrc)"), vrc);
             break;
         }
     }
@@ -4039,10 +4039,10 @@ HRESULT VirtualBox::ensureFilePathExists(const Utf8Str &strFileName)
     {
         int vrc = RTDirCreateFullPath(strDir.c_str(), 0777);
         if (RT_FAILURE(vrc))
-            return setError(E_FAIL,
-                            tr("Could not create the directory '%s' (%Rrc)"),
-                            strDir.c_str(),
-                            vrc);
+            return setErrorStatic(E_FAIL,
+                                  Utf8StrFmt(tr("Could not create the directory '%s' (%Rrc)"),
+                                             strDir.c_str(),
+                                             vrc));
     }
 
     return S_OK;
@@ -4080,20 +4080,23 @@ HRESULT VirtualBox::handleUnexpectedExceptions(RT_SRC_POS_DECL)
     }
     catch (const xml::Error &err)
     {
-        return setError(E_FAIL, tr("%s.\n%s[%d] (%s)"),
-                                err.what(),
-                                pszFile, iLine, pszFunction);
+        return setErrorStatic(E_FAIL,
+                              Utf8StrFmt(tr("%s.\n%s[%d] (%s)"),
+                                         err.what(),
+                                         pszFile, iLine, pszFunction).c_str());
     }
     catch (const std::exception &err)
     {
-        return setError(E_FAIL, tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
-                                err.what(), typeid(err).name(),
-                                pszFile, iLine, pszFunction);
+        return setErrorStatic(E_FAIL,
+                              Utf8StrFmt(tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
+                                         err.what(), typeid(err).name(),
+                                         pszFile, iLine, pszFunction).c_str());
     }
     catch (...)
     {
-        return setError(E_FAIL, tr("Unknown exception\n%s[%d] (%s)"),
-                                pszFile, iLine, pszFunction);
+        return setErrorStatic(E_FAIL,
+                              Utf8StrFmt(tr("Unknown exception\n%s[%d] (%s)"),
+                                         pszFile, iLine, pszFunction).c_str());
     }
 
     /* should not get here */

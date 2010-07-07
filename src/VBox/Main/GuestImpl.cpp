@@ -649,8 +649,10 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
             if (   errMsg.length()
                 || fCancelled) /* If cancelled we have to report E_FAIL! */
             {
-                HRESULT hr2 = it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR, COM_IIDOF(IGuest),
-                                                                  (CBSTR)Guest::getComponentName(), errMsg.c_str());
+                HRESULT hr2 = it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR,
+                                                                   COM_IIDOF(IGuest),
+                                                                   Guest::getStaticComponentName(),
+                                                                   "%s", errMsg.c_str());
                 AssertComRC(hr2);
                 LogFlowFunc(("Process (context ID=%u, status=%u) reported error: %s\n",
                              pData->hdr.u32ContextID, pData->u32Status, errMsg.c_str()));
@@ -704,8 +706,10 @@ int Guest::notifyCtrlExecOut(uint32_t             u32Function,
         ComAssert(!it->second.pProgress.isNull());
         if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCancelled)) && fCancelled)
         {
-            it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR, COM_IIDOF(IGuest),
-                                                 (CBSTR)Guest::getComponentName(), Guest::tr("The output operation was cancelled"));
+            it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR,
+                                                 COM_IIDOF(IGuest),
+                                                 Guest::getStaticComponentName(),
+                                                 Guest::tr("The output operation was cancelled"));
         }
         else
             it->second.pProgress->notifyComplete(S_OK);
@@ -782,8 +786,10 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackMapIter it)
              * have to abort here to make sure the host never hangs/gets stuck while waiting for the
              * progress object to become signalled.
              */
-            it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR, COM_IIDOF(IGuest),
-                                                 (CBSTR)Guest::getComponentName(), Guest::tr("The operation was cancelled because client is shutting down"));
+            it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR,
+                                                 COM_IIDOF(IGuest),
+                                                 Guest::getStaticComponentName(),
+                                                 Guest::tr("The operation was cancelled because client is shutting down"));
         }
         /*
          * Do *not* NULL pProgress here, because waiting function like executeProcess()
