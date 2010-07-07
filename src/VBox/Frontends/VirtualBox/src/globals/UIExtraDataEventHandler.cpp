@@ -239,7 +239,7 @@ UIExtraDataEventHandler* UIExtraDataEventHandler::instance()
 /* static */
 void UIExtraDataEventHandler::destroy()
 {
-    if (!m_pInstance)
+    if (m_pInstance)
     {
         delete m_pInstance;
         m_pInstance = 0;
