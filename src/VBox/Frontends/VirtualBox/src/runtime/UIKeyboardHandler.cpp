@@ -305,7 +305,7 @@ bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
             }
 
             /* Scancodes 0x80 and 0x00 are ignored: */
-            uint8_t scan = (pMsg->lParam >> 16) & 0x7F;
+            unsigned scan = (pMsg->lParam >> 16) & 0x7F;
             if (!scan)
             {
                 fResult = true;
@@ -448,7 +448,7 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
         case XKeyRelease:
         {
             /* Translate the keycode to a PC scan code. */
-            uint8_t scan = handleXKeyEvent(pEvent);
+            unsigned scan = handleXKeyEvent(pEvent);
 
             /* Scancodes 0x00 (no valid translation) and 0x80 are ignored: */
             if (!scan & 0x7F)
@@ -922,7 +922,7 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
         /* Convert keycode to set 1 scan code. */
         UInt32 keyCode = ~0U;
         ::GetEventParameter(inEvent, kEventParamKeyCode, typeUInt32, NULL, sizeof (keyCode), NULL, &keyCode);
-        uint8_t scanCode = ::DarwinKeycodeToSet1Scancode(keyCode);
+        unsigned scanCode = ::DarwinKeycodeToSet1Scancode(keyCode);
         if (scanCode)
         {
             /* Calc flags. */
@@ -961,7 +961,7 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
             {
                 if (!(changed & (1 << bit)))
                     continue;
-                uint8_t scanCode = ::DarwinModifierMaskToSet1Scancode(1 << bit);
+                unsigned scanCode = ::DarwinModifierMaskToSet1Scancode(1 << bit);
                 if (!scanCode)
                     continue;
                 unsigned keyCode = ::DarwinModifierMaskToDarwinKeycode(1 << bit);
