@@ -1105,11 +1105,12 @@ include $(KBUILD_PATH)/subfooter.kmk
 # Generate x86.mac and err.mac.
 #
 incs:
-	$(SED) -f include/VBox/err.sed     --output include/VBox/err.mac   include/VBox/err.h
+	$(SED) -f include/VBox/err.sed     --output include/VBox/err.mac           include/VBox/err.h
 	$(APPEND) include/VBox/err.mac '%include "iprt/err.mac"'
-	$(SED) -f include/VBox/err.sed     --output include/iprt/err.mac   include/iprt/err.h
-	$(SED) -f include/VBox/various.sed --output include/VBox/x86.mac   include/VBox/x86.h
-	$(SED) -f include/VBox/various.sed --output include/VBox/param.mac include/VBox/param.h
+	$(SED) -f include/VBox/err.sed     --output include/iprt/err.mac           include/iprt/err.h
+	$(SED) -f include/VBox/various.sed --output include/VBox/x86.mac           include/VBox/x86.h
+	$(SED) -f include/VBox/various.sed --output include/VBox/param.mac         include/VBox/param.h
+	$(SED) -f include/VBox/various.sed --output include/VBox/VMMDevTesting.mac include/VBox/VMMDevTesting.h
 
 
 #
