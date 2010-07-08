@@ -2377,7 +2377,7 @@ HRESULT VirtualBox::startSVCHelperClient(bool aPrivileged,
                              0, RTTHREADTYPE_MAIN_WORKER,
                              RTTHREADFLAGS_WAITABLE, "SVCHelper");
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL; "Could not create SVCHelper thread (%Rrc)", vrc);
+        return setError(E_FAIL, "Could not create SVCHelper thread (%Rrc)", vrc);
 
     /* d is now owned by SVCHelperClientThread(), so release it */
     d.release();
