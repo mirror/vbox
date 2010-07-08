@@ -1283,7 +1283,7 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
     if (RT_SUCCESS(vrc))
     {
         LogRel(("Teleporter: Incoming VM from %RTnaddr!\n", &Addr));
-        hrc = pState->mptrProgress->SetNextOperation(Bstr(Utf8StrFmt(tr("Teleporting VM from %RTnaddr"), &Addr)), 8);
+        hrc = pState->mptrProgress->SetNextOperation(BstrFmt(tr("Teleporting VM from %RTnaddr"), &Addr), 8);
     }
     else
     {
