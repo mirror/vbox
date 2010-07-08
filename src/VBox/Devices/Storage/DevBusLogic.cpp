@@ -789,8 +789,9 @@ static void buslogicClearInterrupt(PBUSLOGIC pBusLogic)
  *
  * @returns nothing.
  * @param   pBusLogic  Pointer to the BusLogic device instance.
+ * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of fIRQEnabled
  */
-static void buslogicSetInterrupt(PBUSLOGIC pBusLogic)
+static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
     pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_INTERRUPT_VALID;
@@ -861,9 +862,10 @@ static int buslogicHwReset(PBUSLOGIC pBusLogic)
  * Resets the command state machine for the next command and notifies the guest.
  *
  * @returns nothing.
- * @param   pBusLogic   Pointer to the BusLogic device instance
+ * @param   pBusLogic       Pointer to the BusLogic device instance
+ * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of current state
  */
-static void buslogicCommandComplete(PBUSLOGIC pBusLogic)
+static void buslogicCommandComplete(PBUSLOGIC pBusLogic, bool fSuppressIrq)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
 
@@ -879,7 +881,7 @@ static void buslogicCommandComplete(PBUSLOGIC pBusLogic)
         pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_DATA_IN_REGISTER_READY;
         pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_COMMAND_COMPLETE;
 
-        buslogicSetInterrupt(pBusLogic);
+        buslogicSetInterrupt(pBusLogic, fSuppressIrq);
     }
 
     pBusLogic->uOperationCode = 0xff;
@@ -940,7 +942,7 @@ static void buslogicSendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE 
         pBusLogic->uMailboxIncomingPositionCurrent = 0;
 
     pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_INCOMING_MAILBOX_LOADED;
-    buslogicSetInterrupt(pBusLogic);
+    buslogicSetInterrupt(pBusLogic, false);
 
     PDMCritSectLeave(&pBusLogic->CritSectIntr);
 }
@@ -1263,6 +1265,7 @@ static int buslogicSenseBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
 static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
 {
     int rc = VINF_SUCCESS;
+    bool fSuppressIrq = false;
 
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
     AssertMsg(pBusLogic->uOperationCode != 0xff, ("There is no command to execute\n"));
@@ -1450,6 +1453,8 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
                 pBusLogic->fIRQEnabled = false;
             else
                 pBusLogic->fIRQEnabled = true;
+            /* No interrupt signaled regardless of enable/disable. */
+            fSuppressIrq = true;
             break;
         }
         case BUSLOGICCOMMAND_ECHO_COMMAND_DATA:
@@ -1483,7 +1488,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
     if (pBusLogic->cbReplyParametersLeft)
         pBusLogic->regStatus |= BUSLOGIC_REGISTER_STATUS_DATA_IN_REGISTER_READY;
     else
-        buslogicCommandComplete(pBusLogic);
+        buslogicCommandComplete(pBusLogic, fSuppressIrq);
 
     return rc;
 }
@@ -1533,7 +1538,7 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
                  * Reply finished, set command complete bit, unset data in ready bit and
                  * interrupt the guest if enabled.
                  */
-                buslogicCommandComplete(pBusLogic);
+                buslogicCommandComplete(pBusLogic, false);
             }
             break;
         }
