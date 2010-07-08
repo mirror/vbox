@@ -63,6 +63,7 @@ inline C* unconst(const C *that) { return const_cast<C*>(that); }
 
 namespace iprt
 {
+
 /**
  * A simple class used to prevent copying and assignment.  Inherit from this
  * class in order to prevent automatic generation of the copy constructor
