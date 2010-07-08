@@ -936,9 +936,9 @@ static void ataSetIRQ(ATADevState *s)
             /** @todo experiment with adaptive IRQ delivery: for reads it is
              * better to wait for IRQ delivery, as it reduces latency. */
             if (pCtl->irq == 16)
-                PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 1);
+                PDMDevHlpPCISetIrq(pDevIns, 0, 1);
             else
-                PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 1);
+                PDMDevHlpISASetIrq(pDevIns, pCtl->irq, 1);
         }
     }
     s->fIrqPending = true;
@@ -958,9 +958,9 @@ static void ataUnsetIRQ(ATADevState *s)
         if (s == &pCtl->aIfs[pCtl->iSelectedIf])
         {
             if (pCtl->irq == 16)
-                PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
+                PDMDevHlpPCISetIrq(pDevIns, 0, 0);
             else
-                PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 0);
+                PDMDevHlpISASetIrq(pDevIns, pCtl->irq, 0);
         }
     }
     s->fIrqPending = false;
@@ -3858,17 +3858,17 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
                          * for a rising edge. */
                         pCtl->BmDma.u8Status |= BM_STATUS_INT;
                         if (pCtl->irq == 16)
-                            PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 1);
+                            PDMDevHlpPCISetIrq(pDevIns, 0, 1);
                         else
-                            PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 1);
+                            PDMDevHlpISASetIrq(pDevIns, pCtl->irq, 1);
                     }
                     else
                     {
                         Log2(("%s: LUN#%d deasserting IRQ (drive select change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
                         if (pCtl->irq == 16)
-                            PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
+                            PDMDevHlpPCISetIrq(pDevIns, 0, 0);
                         else
-                            PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 0);
+                            PDMDevHlpISASetIrq(pDevIns, pCtl->irq, 0);
                     }
                 }
             }
@@ -4137,17 +4137,17 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
              * edge. */
             pCtl->BmDma.u8Status |= BM_STATUS_INT;
             if (pCtl->irq == 16)
-                PDMDevHlpPCISetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), 0, 1);
+                PDMDevHlpPCISetIrq(CONTROLLER_2_DEVINS(pCtl), 0, 1);
             else
-                PDMDevHlpISASetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), pCtl->irq, 1);
+                PDMDevHlpISASetIrq(CONTROLLER_2_DEVINS(pCtl), pCtl->irq, 1);
         }
         else
         {
             Log2(("%s: LUN#%d deasserting IRQ (interrupt disable change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
             if (pCtl->irq == 16)
-                PDMDevHlpPCISetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), 0, 0);
+                PDMDevHlpPCISetIrq(CONTROLLER_2_DEVINS(pCtl), 0, 0);
             else
-                PDMDevHlpISASetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), pCtl->irq, 0);
+                PDMDevHlpISASetIrq(CONTROLLER_2_DEVINS(pCtl), pCtl->irq, 0);
         }
     }
 
