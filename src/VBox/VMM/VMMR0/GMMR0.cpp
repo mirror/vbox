@@ -4307,7 +4307,7 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
         Info.pGMM            = pGMM;
         Info.pSourcePage     = pbSourcePage;
         Info.fFoundDuplicate = false;
-        RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0FindDupPageInChunk, pGVM);
+        RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0FindDupPageInChunk, &Info);
 
         pReq->fDuplicate = Info.fFoundDuplicate;
     }
