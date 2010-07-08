@@ -4186,6 +4186,7 @@ static DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHL
     unsigned cZero = 0;
     unsigned cUnique = 0;
     unsigned cDuplicate = 0;
+    unsigned cAllocZero = 0;
     unsigned cPages = 0;
 
     pgmLock(pVM);
@@ -4215,12 +4216,23 @@ static DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHL
 
                     case PGM_PAGE_STATE_ALLOCATED:
                     case PGM_PAGE_STATE_WRITE_MONITORED:
+                    {
+                        const void *pvPage;
+                        /* Check if the page was allocated, but completely zero. */
+                        int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvPage);
+                        if (    rc == VINF_SUCCESS
+                            &&  !memcmp(pVM->pgm.s.pvZeroPgR3, pvPage, PAGE_SIZE))
+                        {
+                            cAllocZero++;
+                        }
+                        else
                         if (GMMR3IsDuplicatePage(pVM, PGM_PAGE_GET_PAGEID(pPage)))
                             cDuplicate++;
                         else
                             cUnique++;
 
                         break;
+                    }
 
                     default:
                         AssertFailed();
@@ -4240,6 +4252,7 @@ static DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHL
     pgmUnlock(pVM);
 
     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\nNumber of zero pages      %x\n", cZero);
+    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of alloczero pages %x\n", cAllocZero);    
     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of ballooned pages %x\n", cBallooned);
     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of shared pages    %x\n", cShared);
     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of unique pages    %x\n", cUnique);
