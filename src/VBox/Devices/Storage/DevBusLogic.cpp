@@ -781,7 +781,7 @@ static void buslogicClearInterrupt(PBUSLOGIC pBusLogic)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
     pBusLogic->regInterrupt = 0;
-    PDMDevHlpPCISetIrqNoWait(pBusLogic->CTX_SUFF(pDevIns), 0, 0);
+    PDMDevHlpPCISetIrq(pBusLogic->CTX_SUFF(pDevIns), 0, 0);
 }
 
 /**
@@ -795,7 +795,7 @@ static void buslogicSetInterrupt(PBUSLOGIC pBusLogic)
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
     pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_INTERRUPT_VALID;
     if (pBusLogic->fIRQEnabled)
-        PDMDevHlpPCISetIrqNoWait(pBusLogic->CTX_SUFF(pDevIns), 0, 1);
+        PDMDevHlpPCISetIrq(pBusLogic->CTX_SUFF(pDevIns), 0, 1);
 }
 
 #if defined(IN_RING3)

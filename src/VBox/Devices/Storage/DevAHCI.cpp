@@ -940,7 +940,7 @@ RT_C_DECLS_END
 static void ahciHbaClearInterrupt(PAHCI pAhci)
 {
     Log(("%s: Clearing interrupt\n", __FUNCTION__));
-    PDMDevHlpPCISetIrqNoWait(pAhci->CTX_SUFF(pDevIns), 0, 0);
+    PDMDevHlpPCISetIrq(pAhci->CTX_SUFF(pDevIns), 0, 0);
 }
 
 /**
@@ -967,7 +967,7 @@ static void ahciHbaSetInterrupt(PAHCI pAhci, uint8_t iPort)
                 if (!(pAhci->u32PortsInterrupted & ~(1 << pAhci->uCccPortNr)))
                 {
                     Log(("P%u: %s: Fire interrupt\n", iPort, __FUNCTION__));
-                    PDMDevHlpPCISetIrqNoWait(pAhci->CTX_SUFF(pDevIns), 0, 1);
+                    PDMDevHlpPCISetIrq(pAhci->CTX_SUFF(pDevIns), 0, 1);
                 }
             }
         }
@@ -982,7 +982,7 @@ static void ahciHbaSetInterrupt(PAHCI pAhci, uint8_t iPort)
             if (!(pAhci->u32PortsInterrupted & ~(1 << iPort)))
             {
                 Log(("P%u: %s: Fire interrupt\n", iPort, __FUNCTION__));
-                PDMDevHlpPCISetIrqNoWait(pAhci->CTX_SUFF(pDevIns), 0, 1);
+                PDMDevHlpPCISetIrq(pAhci->CTX_SUFF(pDevIns), 0, 1);
             }
         }
     }
@@ -1621,8 +1621,8 @@ static int HbaInterruptStatus_w(PAHCI ahci, uint32_t iReg, uint32_t u32Value)
              * line is still high.
              * We need to clear it first because the PCI bus only calls the interrupt controller if the state changes.
              */
-            PDMDevHlpPCISetIrqNoWait(ahci->CTX_SUFF(pDevIns), 0, 0);
-            PDMDevHlpPCISetIrqNoWait(ahci->CTX_SUFF(pDevIns), 0, 1);
+            PDMDevHlpPCISetIrq(ahci->CTX_SUFF(pDevIns), 0, 0);
+            PDMDevHlpPCISetIrq(ahci->CTX_SUFF(pDevIns), 0, 1);
         }
     }
 

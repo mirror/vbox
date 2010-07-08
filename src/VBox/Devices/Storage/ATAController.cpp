@@ -465,7 +465,7 @@ static void ataSetIRQ(AHCIATADevState *s)
             pCtl->BmDma.u8Status |= BM_STATUS_INT;
         /* Only actually set the IRQ line if updating the currently selected drive. */
         if (s == &pCtl->aIfs[pCtl->iSelectedIf])
-            PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 1);
+            PDMDevHlpISASetIrq(pDevIns, pCtl->irq, 1);
     }
     s->fIrqPending = true;
 }
@@ -482,7 +482,7 @@ static void ataUnsetIRQ(AHCIATADevState *s)
         Log2(("%s: LUN#%d deasserting IRQ\n", __FUNCTION__, s->iLUN));
         /* Only actually unset the IRQ line if updating the currently selected drive. */
         if (s == &pCtl->aIfs[pCtl->iSelectedIf])
-            PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 0);
+            PDMDevHlpISASetIrq(pDevIns, pCtl->irq, 0);
     }
     s->fIrqPending = false;
 }
@@ -3217,17 +3217,17 @@ static int ataIOPortWriteU8(PAHCIATACONTROLLER pCtl, uint32_t addr, uint32_t val
                          * for a rising edge. */
                         pCtl->BmDma.u8Status |= BM_STATUS_INT;
                         if (pCtl->irq == 16)
-                            PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 1);
+                            PDMDevHlpPCISetIrq(pDevIns, 0, 1);
                         else
-                            PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 1);
+                            PDMDevHlpISASetIrq(pDevIns, pCtl->irq, 1);
                     }
                     else
                     {
                         Log2(("%s: LUN#%d deasserting IRQ (drive select change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
                         if (pCtl->irq == 16)
-                            PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
+                            PDMDevHlpPCISetIrq(pDevIns, 0, 0);
                         else
-                            PDMDevHlpISASetIrqNoWait(pDevIns, pCtl->irq, 0);
+                            PDMDevHlpISASetIrq(pDevIns, pCtl->irq, 0);
                     }
                 }
             }
@@ -3465,17 +3465,17 @@ static int ataControlWrite(PAHCIATACONTROLLER pCtl, uint32_t addr, uint32_t val)
              * edge. */
             pCtl->BmDma.u8Status |= BM_STATUS_INT;
             if (pCtl->irq == 16)
-                PDMDevHlpPCISetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), 0, 1);
+                PDMDevHlpPCISetIrq(CONTROLLER_2_DEVINS(pCtl), 0, 1);
             else
-                PDMDevHlpISASetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), pCtl->irq, 1);
+                PDMDevHlpISASetIrq(CONTROLLER_2_DEVINS(pCtl), pCtl->irq, 1);
         }
         else
         {
             Log2(("%s: LUN#%d deasserting IRQ (interrupt disable change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
             if (pCtl->irq == 16)
-                PDMDevHlpPCISetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), 0, 0);
+                PDMDevHlpPCISetIrq(CONTROLLER_2_DEVINS(pCtl), 0, 0);
             else
-                PDMDevHlpISASetIrqNoWait(CONTROLLER_2_DEVINS(pCtl), pCtl->irq, 0);
+                PDMDevHlpISASetIrq(CONTROLLER_2_DEVINS(pCtl), pCtl->irq, 0);
         }
     }
 
