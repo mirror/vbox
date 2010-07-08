@@ -788,14 +788,14 @@ static void buslogicClearInterrupt(PBUSLOGIC pBusLogic)
  * Assert IRQ line of the BusLogic adapter.
  *
  * @returns nothing.
- * @param   pBusLogic  Pointer to the BusLogic device instance.
+ * @param   pBusLogic       Pointer to the BusLogic device instance.
  * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of fIRQEnabled
  */
 static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
     pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_INTERRUPT_VALID;
-    if (pBusLogic->fIRQEnabled)
+    if (pBusLogic->fIRQEnabled && !fSuppressIrq)
         PDMDevHlpPCISetIrq(pBusLogic->CTX_SUFF(pDevIns), 0, 1);
 }
 
