@@ -499,7 +499,7 @@ RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz
             *ppsz = NULL;
             fShouldFree = true;
             cch = RT_MAX(cch, cchResult + 1);
-            pszResult = (char *)RTMemAlloc(cch);
+            pszResult = (char *)RTStrAlloc(cch);
         }
         if (pszResult)
         {
@@ -511,7 +511,7 @@ RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz
             }
 
             if (fShouldFree)
-                RTMemFree(pszResult);
+                RTStrFree(pszResult);
         }
         else
             rc = VERR_NO_STR_MEMORY;
