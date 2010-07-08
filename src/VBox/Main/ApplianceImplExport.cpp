@@ -1616,12 +1616,12 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
                            tr("Could not create manifest file '%s' (%Rrc)"),
                            pcszManifestFileOnly, vrc);
     }
-    catch(xml::Error &x)
+    catch (iprt::Error &x)  // includes all XML exceptions
     {
         rc = setError(VBOX_E_FILE_ERROR,
                       x.what());
     }
-    catch(HRESULT aRC)
+    catch (HRESULT aRC)
     {
         rc = aRC;
     }

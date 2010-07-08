@@ -33,7 +33,7 @@
 #include <list>
 #include <memory>
 
-#include <iprt/cpp/ministring.h>
+#include <iprt/cpp/exception.h>
 
 /* Forwards */
 typedef struct _xmlParserInput xmlParserInput;
@@ -52,67 +52,23 @@ namespace xml
 // Exceptions
 //////////////////////////////////////////////////////////////////////////////
 
-/**
- * Base exception class.
- */
-class RT_DECL_CLASS Error : public std::exception
-{
-public:
-
-    Error(const char *pcszMessage)
-        : m_s(pcszMessage)
-    {
-    }
-
-    Error(const Error &s)
-        : std::exception(s),
-          m_s(s.what())
-    {
-    }
-
-    virtual ~Error() throw()
-    {
-    }
-
-    void operator=(const Error &s)
-    {
-        m_s = s.what();
-    }
-
-    void setWhat(const char *pcszMessage)
-    {
-        m_s = pcszMessage;
-    }
-
-    virtual const char* what() const throw()
-    {
-        return m_s.c_str();
-    }
-
-private:
-    // hide the default constructor to make sure the extended one above is always used
-    Error();
-
-    iprt::MiniString m_s;
-};
-
-class RT_DECL_CLASS LogicError : public Error
+class RT_DECL_CLASS LogicError : public iprt::Error
 {
 public:
 
     LogicError(const char *aMsg = NULL)
-        : xml::Error(aMsg)
+        : iprt::Error(aMsg)
     {}
 
     LogicError(RT_SRC_POS_DECL);
 };
 
-class RT_DECL_CLASS RuntimeError : public Error
+class RT_DECL_CLASS RuntimeError : public iprt::Error
 {
 public:
 
     RuntimeError(const char *aMsg = NULL)
-        : xml::Error(aMsg)
+        : iprt::Error(aMsg)
     {}
 };
 
@@ -172,7 +128,6 @@ public:
 private:
     int mRC;
 };
-
 
 /**
  * The Stream class is a base class for I/O streams.
