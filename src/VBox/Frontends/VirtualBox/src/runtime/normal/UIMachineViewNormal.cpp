@@ -52,6 +52,9 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
     /* Load machine view settings: */
     loadMachineViewSettings();
 
+    /* Prepare viewport: */
+    prepareViewport();
+
     /* Prepare frame buffer: */
     prepareFrameBuffer();
 
