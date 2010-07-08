@@ -23,6 +23,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include "VBox/com/ErrorInfo.h"
+
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
 #ifdef VBOX_WITH_GUEST_CONTROL
