@@ -18,6 +18,9 @@
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
 
+// for some reason Windows burns in sdk\...\winsock.h if this isn't included first
+#include "VBox/com/ptr.h"
+
 #include "HostImpl.h"
 
 #ifdef VBOX_WITH_USB
