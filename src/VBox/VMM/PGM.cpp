@@ -4251,12 +4251,12 @@ static DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHL
     }
     pgmUnlock(pVM);
 
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\nNumber of zero pages      %x\n", cZero);
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of alloczero pages %x\n", cAllocZero);    
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of ballooned pages %x\n", cBallooned);
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of shared pages    %x\n", cShared);
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of unique pages    %x\n", cUnique);
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of duplicate pages %x\n", cDuplicate);
+    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\nNumber of zero pages      %08x (%d MB)\n", cZero, cZero / 256);
+    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of alloczero pages %08x (%d MB)\n", cAllocZero, cAllocZero / 256);    
+    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of ballooned pages %08x (%d MB)\n", cBallooned, cBallooned / 256);
+    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of shared pages    %08x (%d MB)\n", cShared, cShared / 256);
+    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of unique pages    %08x (%d MB)\n", cUnique, cUnique / 256);
+    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of duplicate pages %08x (%d MB)\n", cDuplicate, cDuplicate / 256);
     return VINF_SUCCESS;
 }
 
