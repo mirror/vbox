@@ -10235,11 +10235,7 @@ pci_routing_table_structure:
   db 0x24, 0x50, 0x49, 0x52  ;; "$PIR" signature
   db 0, 1 ;; version
 #ifdef VBOX
-#if 0
   dw 32 + (30 * 16) ;; table size
-#else
-  dw 32 + (20 * 16) ;; table size
-#endif
 #else /* !VBOX */
   dw 32 + (6 * 16) ;; table size
 #endif /* !VBOX */
