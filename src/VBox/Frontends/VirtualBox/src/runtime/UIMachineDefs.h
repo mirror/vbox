@@ -27,7 +27,8 @@ enum UIVisualStateType
 {
     UIVisualStateType_Normal,
     UIVisualStateType_Fullscreen,
-    UIVisualStateType_Seamless
+    UIVisualStateType_Seamless,
+    UIVisualStateType_Scale
 };
 
 /* Machine elements enum: */

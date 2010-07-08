@@ -176,7 +176,8 @@ VBOX_GUI_INC_DIRS = \
 	./src/runtime \
 	./src/runtime/normal \
 	./src/runtime/fullscreen \
-	./src/runtime/seamless
+	./src/runtime/seamless \
+	./src/runtime/scale
 
 ifdef VBOX_WITH_REGISTRATION
  VBOX_GUI_INC_DIRS += \
@@ -346,7 +347,11 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/seamless/UIKeyboardHandlerSeamless.h \
 	src/runtime/seamless/UIMachineLogicSeamless.h \
 	src/runtime/seamless/UIMachineWindowSeamless.h \
-	src/runtime/seamless/UIMachineViewSeamless.h
+	src/runtime/seamless/UIMachineViewSeamless.h \
+	src/runtime/scale/UIKeyboardHandlerScale.h \
+	src/runtime/scale/UIMachineLogicScale.h \
+	src/runtime/scale/UIMachineWindowScale.h \
+	src/runtime/scale/UIMachineViewScale.h
 
 ifdef VBOX_WITH_REGISTRATION
  VirtualBox_QT_MOCHDRS += \
@@ -497,7 +502,11 @@ VirtualBox_SOURCES = \
 	src/runtime/seamless/UIKeyboardHandlerSeamless.cpp \
 	src/runtime/seamless/UIMachineLogicSeamless.cpp \
 	src/runtime/seamless/UIMachineWindowSeamless.cpp \
-	src/runtime/seamless/UIMachineViewSeamless.cpp
+	src/runtime/seamless/UIMachineViewSeamless.cpp \
+	src/runtime/scale/UIKeyboardHandlerScale.cpp \
+	src/runtime/scale/UIMachineLogicScale.cpp \
+	src/runtime/scale/UIMachineWindowScale.cpp \
+	src/runtime/scale/UIMachineViewScale.cpp
 VirtualBox_SOURCES.win += \
 	src/runtime/UIFrameBufferDirectDraw.cpp
 VirtualBox_SOURCES.darwin += \

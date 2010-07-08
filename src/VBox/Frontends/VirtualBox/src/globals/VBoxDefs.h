@@ -100,6 +100,7 @@ struct VBoxDefs
 
     static const char* GUI_LastWindowPosition;
     static const char* GUI_LastNormalWindowPosition;
+    static const char* GUI_LastScaleWindowPosition;
     static const char* GUI_LastWindowState_Max;
     static const char* GUI_SplitterSizes;
     static const char* GUI_Toolbar;
@@ -107,6 +108,7 @@ struct VBoxDefs
     static const char* GUI_LastGuestSizeHint;
     static const char* GUI_Fullscreen;
     static const char* GUI_Seamless;
+    static const char* GUI_Scale;
     static const char* GUI_VirtualScreenToHostScreen;
     static const char* GUI_AutoresizeGuest;
     static const char* GUI_FirstRun;

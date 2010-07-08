@@ -27,12 +27,14 @@
 #include "UIKeyboardHandlerNormal.h"
 #include "UIKeyboardHandlerFullscreen.h"
 #include "UIKeyboardHandlerSeamless.h"
+#include "UIKeyboardHandlerScale.h"
 #include "UIMouseHandler.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindowNormal.h"
 #include "UIMachineWindowFullscreen.h"
 #include "UIMachineWindowSeamless.h"
+#include "UIMachineWindowScale.h"
 #include "UIMachineView.h"
 
 #ifdef Q_WS_X11
@@ -85,6 +87,9 @@ UIKeyboardHandler* UIKeyboardHandler::create(UIMachineLogic *pMachineLogic,
         case UIVisualStateType_Seamless:
             pKeyboardHandler = new UIKeyboardHandlerSeamless(pMachineLogic);
             break;
+        case UIVisualStateType_Scale:
+            pKeyboardHandler = new UIKeyboardHandlerScale(pMachineLogic);
+            break;
         default:
             break;
     }
@@ -126,6 +131,9 @@ void UIKeyboardHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineW
                 break;
             case UIVisualStateType_Seamless:
                 static_cast<UIMachineWindowSeamless*>(m_windows[uIndex])->installEventFilter(this);
+                break;
+            case UIVisualStateType_Scale:
+                static_cast<UIMachineWindowScale*>(m_windows[uIndex])->installEventFilter(this);
                 break;
             default:
                 break;
@@ -187,6 +195,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         {
             /* If window is moveable we are making passive keyboard grab: */
             case UIVisualStateType_Normal:
+            case UIVisualStateType_Scale:
             {
                 XGrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[m_iKeyboardCaptureViewIndex]->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync);
                 break;
@@ -244,6 +253,7 @@ void UIKeyboardHandler::releaseKeyboard()
         {
             /* If window is moveable we are making passive keyboard ungrab: */
             case UIVisualStateType_Normal:
+            case UIVisualStateType_Scale:
             {
                 XUngrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[m_iKeyboardCaptureViewIndex]->machineWindow()->winId());
                 break;
@@ -1481,6 +1491,16 @@ UIMachineWindow* UIKeyboardHandler::isItListenedWindow(QObject *pWatchedObject) 
             case UIVisualStateType_Seamless:
             {
                 UIMachineWindowSeamless *pIteratedWindow = static_cast<UIMachineWindowSeamless*>(i.value());
+                if (pIteratedWindow == pWatchedObject)
+                {
+                    pResultWindow = pIteratedWindow;
+                    continue;
+                }
+                break;
+            }
+            case UIVisualStateType_Scale:
+            {
+                UIMachineWindowScale *pIteratedWindow = static_cast<UIMachineWindowScale*>(i.value());
                 if (pIteratedWindow == pWatchedObject)
                 {
                     pResultWindow = pIteratedWindow;
