@@ -82,6 +82,7 @@ EXPORTS
     RTTimeNanoTSLFenceSync
     RTTimeNanoTSLFenceAsync
     RTTimeSystemNanoTS
+    RTTimeNanoTS
     ASMMultU64ByU32DivByU32             ; not-os2
     ASMAtomicXchgU8                     ; not-x86
     nocrt_memchr

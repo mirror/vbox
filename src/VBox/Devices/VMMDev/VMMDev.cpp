@@ -26,7 +26,6 @@
 #include <VBox/VMMDev.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
-#include <VBox/mm.h>
 #include <VBox/pgm.h>
 #include <VBox/err.h>
 #include <VBox/vm.h> /* for VM_IS_EMT */
@@ -47,6 +46,9 @@
 #include "VMMDevState.h"
 #ifdef VBOX_WITH_HGCM
 # include "VMMDevHGCM.h"
+#endif
+#ifndef VBOX_WITHOUT_TESTING_FEATURES
+# include "VMMDevTesting.h"
 #endif
 
 
@@ -2727,10 +2729,20 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     if (fCapsChanged)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
 
-    /* Generate a unique session id for this VM; it will be changed for each start, reset or restore. 
+    /* Generate a unique session id for this VM; it will be changed for each start, reset or restore.
      * This can be used for restore detection inside the guest.
      */
     pThis->idSession = ASMReadTSC();
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnRelocate}
+ */
+static DECLCALLBACK(void) vmmdevRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+{
+    NOREF(pDevIns);
+    NOREF(offDelta);
 }
 
 
@@ -2744,37 +2756,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     Assert(iInstance == 0);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-
-    /*
-     * Validate and read the configuration.
-     */
-    if (!CFGMR3AreValuesValid(pCfg,
-                              "GetHostTimeDisabled\0"
-                              "BackdoorLogDisabled\0"
-                              "KeepCredentials\0"
-                              "HeapEnabled\0"
-                              ))
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-
-    rc = CFGMR3QueryBoolDef(pCfg, "GetHostTimeDisabled", &pThis->fGetHostTimeDisabled, false);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed querying \"GetHostTimeDisabled\" as a boolean"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "BackdoorLogDisabled", &pThis->fBackdoorLogDisabled, false);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed querying \"BackdoorLogDisabled\" as a boolean"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "KeepCredentials", &pThis->fKeepCredentials, false);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed querying \"KeepCredentials\" as a boolean"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "HeapEnabled", &pThis->fHeapEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed querying \"HeapEnabled\" as a boolean"));
 
     /*
      * Initialize data (most of it anyway).
@@ -2827,8 +2808,59 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->IHGCMPort.pfnCompleted          = hgcmCompleted;
 #endif
 
-    /** @todo convert this into a config parameter like we do everywhere else! */
-    pThis->cbGuestRAM = MMR3PhysGetRamSize(PDMDevHlpGetVM(pDevIns));
+    /*
+     * Validate and read the configuration.
+     */
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns,
+                                  "GetHostTimeDisabled|"
+                                  "BackdoorLogDisabled|"
+                                  "KeepCredentials|"
+                                  "HeapEnabled|"
+                                  "RamSize|"
+                                  "TestingEnabled"
+                                  ,
+                                  "");
+
+    rc = CFGMR3QueryU64(pCfg, "RamSize", &pThis->cbGuestRAM);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"RamSize\" as a 64-bit unsigned integer"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "GetHostTimeDisabled", &pThis->fGetHostTimeDisabled, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"GetHostTimeDisabled\" as a boolean"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "BackdoorLogDisabled", &pThis->fBackdoorLogDisabled, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"BackdoorLogDisabled\" as a boolean"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "KeepCredentials", &pThis->fKeepCredentials, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"KeepCredentials\" as a boolean"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "HeapEnabled", &pThis->fHeapEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"HeapEnabled\" as a boolean"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &pThis->fRZEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"RZEnabled\" as a boolean"));
+
+#ifndef VBOX_WITHOUT_TESTING_FEATURES
+    rc = CFGMR3QueryBoolDef(pCfg, "TestingEnabled", &pThis->fTestingEnabled, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"TestingEnabled\" as a boolean"));
+# ifdef DEBUG_bird /* lazy bird */
+    pThis->fTestingEnabled = true;
+# endif
+    /** @todo image-to-load-filename? */
+#endif
 
     /*
      * Create the critical section for the device.
@@ -2889,6 +2921,15 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
             return rc;
     }
 
+#ifndef VBOX_WITHOUT_TESTING_FEATURES
+    /*
+     * Initialize testing.
+     */
+    rc = vmmdevTestingInitialize(pDevIns);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+
     /*
      * Get the corresponding connector interface
      */
@@ -2948,13 +2989,14 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
     pThis->u32HGCMEnabled = 0;
 #endif /* VBOX_WITH_HGCM */
+
     /* In this version of VirtualBox the GUI checks whether "needs host cursor"
      * changes. */
     pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMemBalloonChunks, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Memory balloon size", "/Devices/VMMDev/BalloonChunks");
 
-    /* Generate a unique session id for this VM; it will be changed for each start, reset or restore. 
+    /* Generate a unique session id for this VM; it will be changed for each start, reset or restore.
      * This can be used for restore detection inside the guest.
      */
     pThis->idSession = ASMReadTSC();
@@ -2971,13 +3013,13 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
     /* szName */
     "VMMDev",
     /* szRCMod */
-    "",
+    "VBoxDDGC.gc",
     /* szR0Mod */
-    "",
+    "VBoxDDR0.r0",
     /* pszDescription */
     "VirtualBox VMM Device\n",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_VMM_DEV,
     /* cMaxInstances */
@@ -2989,7 +3031,7 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
     /* pfnDestruct */
     NULL,
     /* pfnRelocate */
-    NULL,
+    vmmdevRelocate,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

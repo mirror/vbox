@@ -90,6 +90,7 @@ EXPORTS
     RTTimeNanoTSLegacyAsync
     RTTimeNanoTSLFenceSync
     RTTimeNanoTSLFenceAsync
+    RTTimeNanoTS
     RTCrc32
     ASMMultU64ByU32DivByU32             ; not-os2
 
