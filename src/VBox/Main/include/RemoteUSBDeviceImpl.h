@@ -28,7 +28,6 @@ typedef _VRDPUSBDEVICEDESC VRDPUSBDEVICEDESC;
 
 class ATL_NO_VTABLE RemoteUSBDevice :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<RemoteUSBDevice>,
     VBOX_SCRIPTABLE_IMPL(IHostUSBDevice)
 {
 public:

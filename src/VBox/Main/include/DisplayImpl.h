@@ -93,7 +93,6 @@ typedef struct _DISPLAYFBINFO
 class ATL_NO_VTABLE Display :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IEventListener),
-    public VirtualBoxSupportTranslation<Display>,
     VBOX_SCRIPTABLE_IMPL(IDisplay)
 {
 public:

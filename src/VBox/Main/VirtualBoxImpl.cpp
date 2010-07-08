@@ -2376,9 +2376,8 @@ HRESULT VirtualBox::startSVCHelperClient(bool aPrivileged,
                              static_cast <void *>(d.get()),
                              0, RTTHREADTYPE_MAIN_WORKER,
                              RTTHREADFLAGS_WAITABLE, "SVCHelper");
-
-    ComAssertMsgRCRet(vrc, ("Could not create SVCHelper thread (%Rrc)", vrc),
-                       E_FAIL);
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL; "Could not create SVCHelper thread (%Rrc)", vrc);
 
     /* d is now owned by SVCHelperClientThread(), so release it */
     d.release();

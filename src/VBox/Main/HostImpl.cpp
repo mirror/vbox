@@ -136,10 +136,11 @@ extern bool is3DAccelerationSupported();
 #include <VBox/settings.h>
 #include <VBox/sup.h>
 
+#include "VBox/com/MultiResult.h"
+
 #include <stdio.h>
 
 #include <algorithm>
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //

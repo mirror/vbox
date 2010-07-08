@@ -33,7 +33,6 @@ namespace settings
 
 class ATL_NO_VTABLE DHCPServer :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<DHCPServer>,
     VBOX_SCRIPTABLE_IMPL(IDHCPServer)
 {
 public:

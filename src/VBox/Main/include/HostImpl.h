@@ -35,7 +35,6 @@ namespace settings
 
 class ATL_NO_VTABLE Host :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<Host>,
     VBOX_SCRIPTABLE_IMPL(IHost)
 {
 public:

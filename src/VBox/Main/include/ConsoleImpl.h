@@ -80,7 +80,6 @@ typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 /** IConsole implementation class */
 class ATL_NO_VTABLE Console :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxSupportTranslation<Console>,
     VBOX_SCRIPTABLE_IMPL(IConsole)
 #ifdef RT_OS_WINDOWS
     , public CComCoClass<Console, &CLSID_Console>

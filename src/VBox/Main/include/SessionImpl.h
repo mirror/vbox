@@ -35,7 +35,6 @@
 
 class ATL_NO_VTABLE Session :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<Session>,
     VBOX_SCRIPTABLE_IMPL(ISession),
     VBOX_SCRIPTABLE_IMPL(IInternalSessionControl)
 #ifdef RT_OS_WINDOWS

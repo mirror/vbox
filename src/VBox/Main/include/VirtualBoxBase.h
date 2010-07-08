@@ -23,9 +23,9 @@
 #include <list>
 #include <map>
 
-#include "VBox/com/ErrorInfo.h"
-#include "VBox/com/SupportErrorInfo.h"
 #include "VBox/com/AutoLock.h"
+#include "VBox/com/string.h"
+#include "VBox/com/Guid.h"
 
 #include "VBox/com/VirtualBox.h"
 
@@ -236,15 +236,6 @@ public:
 /** Special version of ComAssertRC that returns ret if vrc does not succeed */
 #define ComAssertRCRet(vrc, ret)            \
     do { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) return (ret); } while (0)
-/** Special version of ComAssertMsgRC that returns ret if vrc does not succeed */
-#define ComAssertMsgRCRet(vrc, msg, ret)    \
-    do { ComAssertMsgRC(vrc, msg); if (!RT_SUCCESS(vrc)) return (ret); } while (0)
-/** Special version of ComAssertFailed that returns ret */
-#define ComAssertFailedRet(ret)             \
-    do { ComAssertFailed(); return (ret); } while (0)
-/** Special version of ComAssertMsgFailed that returns ret */
-#define ComAssertMsgFailedRet(msg, ret)     \
-    do { ComAssertMsgFailed(msg); return (ret); } while (0)
 /** Special version of ComAssertComRC that returns ret if rc does not succeed */
 #define ComAssertComRCRet(rc, ret)          \
     do { ComAssertComRC(rc); if (!SUCCEEDED(rc)) return (ret); } while (0)
@@ -262,9 +253,6 @@ public:
 /** Special version of ComAssertRC that evaluates eval and breaks if vrc does not succeed */
 #define ComAssertRCBreak(vrc, eval)               \
     if (1)  { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) { eval; break; } } else do {} while (0)
-/** Special version of ComAssertMsgRC that evaluates eval and breaks if vrc does not succeed */
-#define ComAssertMsgRCBreak(vrc, msg, eval)       \
-    if (1)  { ComAssertMsgRC(vrc, msg); if (!RT_SUCCESS(vrc)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertFailed that evaluates eval and breaks */
 #define ComAssertFailedBreak(eval)                \
     if (1)  { ComAssertFailed(); { eval; break; } } else do {} while (0)
@@ -282,21 +270,9 @@ public:
 /** Special version of ComAssert that evaluates eval and throws it if expr fails */
 #define ComAssertThrow(expr, eval)                \
     if (1) { ComAssert(expr); if (!(expr)) { throw (eval); } } else do {} while (0)
-/** Special version of ComAssertMsg that evaluates eval and throws it if expr fails */
-#define ComAssertMsgThrow(expr, a, eval)          \
-    if (1)  { ComAssertMsg(expr, a); if (!(expr)) { throw (eval); } } else do {} while (0)
 /** Special version of ComAssertRC that evaluates eval and throws it if vrc does not succeed */
 #define ComAssertRCThrow(vrc, eval)               \
     if (1)  { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) { throw (eval); } } else do {} while (0)
-/** Special version of ComAssertMsgRC that evaluates eval and throws it if vrc does not succeed */
-#define ComAssertMsgRCThrow(vrc, msg, eval)       \
-    if (1)  { ComAssertMsgRC(vrc, msg); if (!RT_SUCCESS(vrc)) { throw (eval); } } else do {} while (0)
-/** Special version of ComAssertFailed that evaluates eval and throws it */
-#define ComAssertFailedThrow(eval)                \
-    if (1)  { ComAssertFailed(); { throw (eval); } } else do {} while (0)
-/** Special version of ComAssertMsgFailed that evaluates eval and throws it */
-#define ComAssertMsgFailedThrow(msg, eval)        \
-    if (1)  { ComAssertMsgFailed (msg); { throw (eval); } } else do {} while (0)
 /** Special version of ComAssertComRC that evaluates eval and throws it if rc does not succeed */
 #define ComAssertComRCThrow(rc, eval)             \
     if (1)  { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { throw (eval); } } else do {} while (0)
@@ -427,6 +403,59 @@ public:
     cls::cls()  { /*empty*/ } \
     cls::~cls() { /*empty*/ }
 
+/**
+ * Parent class of VirtualBoxBase which enables translation support (which
+ * Main doesn't have yet, but this provides the tr() function which will one
+ * day provide translations).
+ *
+ * This class sits in between Lockable and VirtualBoxBase only for the one
+ * reason that the USBProxyService wants translation support but is not
+ * implemented as a COM object, which VirtualBoxBase implies.
+ */
+class ATL_NO_VTABLE VirtualBoxTranslatable
+    : public Lockable
+{
+public:
+
+    /**
+     * Placeholder method with which translations can one day be implemented
+     * in Main. This gets called by the tr() function.
+     * @param context
+     * @param pcszSourceText
+     * @param comment
+     * @return
+     */
+    static const char *translate(const char *context,
+                                 const char *pcszSourceText,
+                                 const char *comment = 0)
+    {
+        NOREF(context);
+        NOREF(comment);
+        return pcszSourceText;
+    }
+
+    /**
+     * Translates the given text string by calling translate() and passing
+     * the name of the C class as the first argument ("context of
+     * translation"). See VirtualBoxBase::translate() for more info.
+     *
+     * @param aSourceText   String to translate.
+     * @param aComment      Comment to the string to resolve possible
+     *                      ambiguities (NULL means no comment).
+     *
+     * @return Translated version of the source string in UTF-8 encoding, or
+     *      the source string itself if the translation is not found in the
+     *      specified context.
+     */
+    inline static const char *tr(const char *pcszSourceText,
+                                 const char *aComment = NULL)
+    {
+        return VirtualBoxTranslatable::translate(NULL, // getComponentName(), eventually
+                                                 pcszSourceText,
+                                                 aComment);
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // VirtualBoxBase
@@ -543,7 +572,7 @@ public:
  *    not recommended.
  */
 class ATL_NO_VTABLE VirtualBoxBase
-    : public Lockable,
+    : public VirtualBoxTranslatable,
       public CComObjectRootEx<CComMultiThreadModel>
 #if !defined (VBOX_WITH_XPCOM)
     , public ISupportErrorInfo
@@ -554,9 +583,6 @@ public:
 
     VirtualBoxBase();
     virtual ~VirtualBoxBase();
-
-    static const char *translate(const char *context, const char *sourceText,
-                                 const char *comment = 0);
 
     /**
      * Unintialization method.
@@ -573,7 +599,8 @@ public:
      *       #addCaller() call not paired by #releaseCaller() because it is a
      *       guaranteed deadlock. See AutoUninitSpan for details.
      */
-    virtual void uninit() {}
+    virtual void uninit()
+    { }
 
     virtual HRESULT addCaller(State *aState = NULL,
                               bool aLimited = false);
@@ -670,99 +697,6 @@ private:
     friend class AutoReinitSpan;
     friend class AutoUninitSpan;
 };
-
-////////////////////////////////////////////////////////////////////////////////
-
-/** Helper for VirtualBoxSupportTranslation. */
-class VirtualBoxSupportTranslationBase
-{
-protected:
-    static bool cutClassNameFrom__PRETTY_FUNCTION__(char *aPrettyFunctionName);
-};
-
-/**
- * The VirtualBoxSupportTranslation template implements the NLS string
- * translation support for the given class.
- *
- * Translation support is provided by the static #tr() function. This function,
- * given a string in UTF-8 encoding, looks up for a translation of the given
- * string by calling the VirtualBoxBase::translate() global function which
- * receives the name of the enclosing class ("context of translation") as the
- * additional argument and returns a translated string based on the currently
- * active language.
- *
- * @param C     Class that needs to support the string translation.
- *
- * @note Every class that wants to use the #tr() function in its own methods
- *       must inherit from this template, regardless of whether its base class
- *       (if any) inherits from it or not. Otherwise, the translation service
- *       will not work correctly. However, the declaration of the derived
- *       class must contain
- *       the <tt>COM_SUPPORTTRANSLATION_OVERRIDE (<ClassName>)</tt> macro if one
- *       of its base classes also inherits from this template (to resolve the
- *       ambiguity of the #tr() function).
- */
-template<class C>
-class VirtualBoxSupportTranslation : virtual protected VirtualBoxSupportTranslationBase
-{
-public:
-
-    /**
-     * Translates the given text string by calling VirtualBoxBase::translate()
-     * and passing the name of the C class as the first argument ("context of
-     * translation") See VirtualBoxBase::translate() for more info.
-     *
-     * @param aSourceText   String to translate.
-     * @param aComment      Comment to the string to resolve possible
-     *                      ambiguities (NULL means no comment).
-     *
-     * @return Translated version of the source string in UTF-8 encoding, or
-     *      the source string itself if the translation is not found in the
-     *      specified context.
-     */
-    inline static const char *tr(const char *aSourceText,
-                                 const char *aComment = NULL)
-    {
-        return VirtualBoxBase::translate(className(), aSourceText, aComment);
-    }
-
-protected:
-
-    static const char *className()
-    {
-        static char fn[sizeof(__PRETTY_FUNCTION__) + 1];
-        if (!sClassName)
-        {
-            strcpy(fn, __PRETTY_FUNCTION__);
-            cutClassNameFrom__PRETTY_FUNCTION__(fn);
-            sClassName = fn;
-        }
-        return sClassName;
-    }
-
-private:
-
-    static const char *sClassName;
-};
-
-template<class C>
-const char *VirtualBoxSupportTranslation<C>::sClassName = NULL;
-
-/**
- * This macro must be invoked inside the public section of the declaration of
- * the class inherited from the VirtualBoxSupportTranslation template in case
- * if one of its other base classes also inherits from that template. This is
- * necessary to resolve the ambiguity of the #tr() function.
- *
- * @param C     Class that inherits the VirtualBoxSupportTranslation template
- *              more than once (through its other base clases).
- */
-#define VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(C) \
-    inline static const char *tr(const char *aSourceText, \
-                                 const char *aComment = NULL) \
-    { \
-        return VirtualBoxSupportTranslation<C>::tr(aSourceText, aComment); \
-    }
 
 /**
  * Dummy macro that is used to shut down Qt's lupdate tool warnings in some

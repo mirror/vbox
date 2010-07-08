@@ -714,7 +714,6 @@ VBoxCOM_SOURCES         = \
 	glue/EventQueue.cpp \
 	glue/ErrorInfo.cpp \
 	glue/errorprint.cpp \
-	glue/SupportErrorInfo.cpp \
 	glue/VirtualBoxErrorInfo.cpp
 VBoxCOM_INCS          += \
 	include

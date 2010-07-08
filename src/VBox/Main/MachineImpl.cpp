@@ -77,6 +77,8 @@
 # include <VBox/com/array.h>
 #endif
 
+#include "VBox/com/MultiResult.h"
+
 #include <algorithm>
 
 #include <typeinfo>

@@ -1163,7 +1163,9 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
 
             // CPU count
             std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->findByType(VirtualSystemDescriptionType_CPU);
-            ComAssertMsgThrow(vsdeCPU.size() == 1, ("CPU count missing"), E_FAIL);
+            if (vsdeCPU.size() != 1)
+                throw setError(VBOX_E_FILE_ERROR, tr("CPU count missing"));
+
             const Utf8Str &cpuVBox = vsdeCPU.front()->strVboxCurrent;
             stack.cCPUs = (uint32_t)RTStrToUInt64(cpuVBox.c_str());
             // We need HWVirt & IO-APIC if more than one CPU is requested
@@ -1175,7 +1177,8 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
 
             // RAM
             std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
-            ComAssertMsgThrow(vsdeRAM.size() == 1, ("RAM size missing"), E_FAIL);
+            if (vsdeRAM.size() != 1)
+                throw setError(VBOX_E_FILE_ERROR, tr("RAM size missing"));
             const Utf8Str &memoryVBox = vsdeRAM.front()->strVboxCurrent;
             stack.ulMemorySizeMB = (uint32_t)RTStrToUInt64(memoryVBox.c_str());
 

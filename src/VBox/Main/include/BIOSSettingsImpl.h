@@ -30,7 +30,6 @@ namespace settings
 }
 
 class ATL_NO_VTABLE BIOSSettings :
-    public VirtualBoxSupportTranslation<BIOSSettings>,
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IBIOSSettings)
 {

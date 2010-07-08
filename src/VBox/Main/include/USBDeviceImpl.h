@@ -27,7 +27,6 @@
  */
 class ATL_NO_VTABLE OUSBDevice :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<OUSBDevice>,
     VBOX_SCRIPTABLE_IMPL(IUSBDevice)
 {
 public:

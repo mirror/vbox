@@ -24,7 +24,6 @@
 
 class ATL_NO_VTABLE VFSExplorer :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<VFSExplorer>,
     VBOX_SCRIPTABLE_IMPL(IVFSExplorer)
 {
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VFSExplorer, IVFSExplorer)

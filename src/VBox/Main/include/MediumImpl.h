@@ -38,7 +38,6 @@ namespace settings
  */
 class ATL_NO_VTABLE Medium :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<Medium>,
     VBOX_SCRIPTABLE_IMPL(IMedium)
 {
 public:

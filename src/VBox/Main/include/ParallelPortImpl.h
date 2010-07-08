@@ -28,7 +28,6 @@ namespace settings
 
 class ATL_NO_VTABLE ParallelPort :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<ParallelPort>,
     VBOX_SCRIPTABLE_IMPL(IParallelPort)
 {
 public:
