@@ -1911,7 +1911,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
     ComPtr<IGuest> guest;
     rc = console->COMGETTER(Guest)(guest.asOutParam());
-    if (RT_SUCCESS(rc))
+    if (SUCCEEDED(rc))
     {
         Bstr guestString;
         rc = guest->COMGETTER(OSTypeId)(guestString.asOutParam());
