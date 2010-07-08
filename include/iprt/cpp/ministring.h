@@ -41,7 +41,6 @@ namespace iprt
  * else except IPRT memory management functions.  Semantics are like in
  * std::string, except it can do a lot less.
  *
- *
  * Note that MiniString does not differentiate between NULL strings and
  * empty strings. In other words, MiniString("") and MiniString(NULL)
  * behave the same. In both cases, MiniString allocates no memory, reports
@@ -152,14 +151,9 @@ public:
              && cb > m_cbLength + 1
            )
         {
-            char *pszNew = (char*)RTMemRealloc(m_psz, cb);
-            if (RT_LIKELY(pszNew))
-            {
-                if (!m_psz)
-                    *pszNew = '\0';
-                m_psz = pszNew;
+            int vrc = RTStrRealloc(&m_psz, cb);
+            if (RT_SUCCESS(vrc))
                 m_cbAllocated = cb;
-            }
 #ifdef RT_EXCEPTIONS_ENABLED
             else
                 throw std::bad_alloc();
@@ -520,7 +514,7 @@ protected:
     {
         if (m_psz)
         {
-            RTMemFree(m_psz);
+            RTStrFree(m_psz);
             m_psz = NULL;
             m_cbLength = 0;
             m_cbAllocated = 0;
@@ -549,7 +543,7 @@ protected:
         if ((m_cbLength = s.m_cbLength))
         {
             m_cbAllocated = m_cbLength + 1;
-            m_psz = (char *)RTMemAlloc(m_cbAllocated);
+            m_psz = (char *)RTStrAlloc(m_cbAllocated);
             if (RT_LIKELY(m_psz))
                 memcpy(m_psz, s.m_psz, m_cbAllocated);      // include 0 terminator
             else
@@ -588,7 +582,7 @@ protected:
         {
             m_cbLength = strlen(pcsz);
             m_cbAllocated = m_cbLength + 1;
-            m_psz = (char *)RTMemAlloc(m_cbAllocated);
+            m_psz = (char *)RTStrAlloc(m_cbAllocated);
             if (RT_LIKELY(m_psz))
                 memcpy(m_psz, pcsz, m_cbAllocated);     // include 0 terminator
             else

@@ -2003,7 +2003,7 @@ RTDECL(int)  RTUtf16ToUtf8(PCRTUTF16 pwszString, char **ppszString);
  *                          a buffer of the specified size, or pointer to a NULL pointer.
  *                          If *ppsz is NULL or cch is zero a buffer of at least cch chars
  *                          will be allocated to hold the translated string.
- *                          If a buffer was requested it must be freed using RTUtf16Free().
+ *                          If a buffer was requested it must be freed using RTStrFree().
  * @param   cch             The buffer size in chars (the type). This includes the terminator.
  * @param   pcch            Where to store the length of the translated string,
  *                          excluding the terminator. (Optional)
