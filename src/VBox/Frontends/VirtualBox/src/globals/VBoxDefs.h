@@ -99,7 +99,8 @@ struct VBoxDefs
     };
 
     static const char* GUI_LastWindowPosition;
-    static const char* GUI_LastWindowPosition_Max;
+    static const char* GUI_LastNormalWindowPosition;
+    static const char* GUI_LastWindowState_Max;
     static const char* GUI_SplitterSizes;
     static const char* GUI_Toolbar;
     static const char* GUI_Statusbar;
