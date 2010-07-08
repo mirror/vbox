@@ -512,42 +512,45 @@ void UIMachineWindowNormal::loadWindowSettings()
 
     /* Load extra-data settings: */
     {
-        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastWindowPosition) :
-                                     QString("%1%2").arg(VBoxDefs::GUI_LastWindowPosition).arg(m_uScreenId);
-        QString strPositionSettings = machine.GetExtraData(strPositionAddress);
+        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastNormalWindowPosition) :
+                                     QString("%1%2").arg(VBoxDefs::GUI_LastNormalWindowPosition).arg(m_uScreenId);
+        QStringList strPositionSettings = machine.GetExtraDataStringList(strPositionAddress);
 
-        bool ok = false, max = false;
+        bool ok = true, max = false;
         int x = 0, y = 0, w = 0, h = 0;
-        x = strPositionSettings.section(',', 0, 0).toInt(&ok);
-        if (ok)
-            y = strPositionSettings.section(',', 1, 1).toInt(&ok);
-        if (ok)
-            w = strPositionSettings.section(',', 2, 2).toInt(&ok);
-        if (ok)
-            h = strPositionSettings.section(',', 3, 3).toInt(&ok);
-        if (ok)
-            max = strPositionSettings.section(',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
+        if (ok && strPositionSettings.size() > 0)
+            x = strPositionSettings[0].toInt(&ok);
+        if (ok && strPositionSettings.size() > 1)
+            y = strPositionSettings[1].toInt(&ok);
+        if (ok && strPositionSettings.size() > 2)
+            w = strPositionSettings[2].toInt(&ok);
+        if (ok && strPositionSettings.size() > 3)
+            h = strPositionSettings[3].toInt(&ok);
+        if (ok && strPositionSettings.size() > 4)
+            max = strPositionSettings[4] == VBoxDefs::GUI_LastWindowState_Max;
 
         QRect ar = ok ? QApplication::desktop()->availableGeometry(QPoint(x, y)) :
                         QApplication::desktop()->availableGeometry(machineWindow());
 
-        if (ok /* if previous parameters were read correctly */)
+        /* If previous parameters were read correctly: */
+        if (ok)
         {
+            /* If previous machine state is SAVED: */
             if (machine.GetState() == KMachineState_Saved)
             {
-                /* restore from a saved state: restore window size and position */
+                /* Restore window size and position: */
                 m_normalGeometry = QRect(x, y, w, h);
                 setGeometry(m_normalGeometry);
             }
+            /* If previous machine state is not SAVED: */
             else
             {
-                /* not restored from a saved state: restore only the last position */
-                move(x, y);
+                /* Restore only window position: */
+                m_normalGeometry = QRect(x, y, width(), height());
+                setGeometry(m_normalGeometry);
                 if (machineView())
                     machineView()->normalizeGeometry(false /* adjust position? */);
-
             }
-
             /* Maximize if needed: */
             if (max)
                 setWindowState(windowState() | Qt::WindowMaximized);
@@ -557,7 +560,6 @@ void UIMachineWindowNormal::loadWindowSettings()
             /* Normalize view early to the optimal size: */
             if (machineView())
                 machineView()->normalizeGeometry(true /* adjust position? */);
-
             /* Move newly created window to the screen center: */
             m_normalGeometry = geometry();
             m_normalGeometry.moveCenter(ar.center());
@@ -613,9 +615,9 @@ void UIMachineWindowNormal::saveWindowSettings()
                                     .arg(m_normalGeometry.x()).arg(m_normalGeometry.y())
                                     .arg(m_normalGeometry.width()).arg(m_normalGeometry.height());
         if (isMaximizedChecked())
-            strWindowPosition += QString(",%1").arg(VBoxDefs::GUI_LastWindowPosition_Max);
-        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastWindowPosition) :
-                                     QString("%1%2").arg(VBoxDefs::GUI_LastWindowPosition).arg(m_uScreenId);
+            strWindowPosition += QString(",%1").arg(VBoxDefs::GUI_LastWindowState_Max);
+        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastNormalWindowPosition) :
+                                     QString("%1%2").arg(VBoxDefs::GUI_LastNormalWindowPosition).arg(m_uScreenId);
         machine.SetExtraData(strPositionAddress, strWindowPosition);
     }
 }

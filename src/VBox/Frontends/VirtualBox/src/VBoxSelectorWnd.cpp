@@ -634,7 +634,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
         if (ok)
             h = winPos.section (',', 3, 3).toInt (&ok);
         if (ok)
-            max = winPos.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
+            max = winPos.section (',', 4, 4) == VBoxDefs::GUI_LastWindowState_Max;
 
         QRect ar = ok ? QApplication::desktop()->availableGeometry (QPoint (x, y)) :
                         QApplication::desktop()->availableGeometry (this);
@@ -778,7 +778,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 #else /* Q_WS_MAC */
         if (isMaximized())
 #endif /* !Q_WS_MAC */
-            winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
+            winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowState_Max);
 
         vbox.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);
     }
