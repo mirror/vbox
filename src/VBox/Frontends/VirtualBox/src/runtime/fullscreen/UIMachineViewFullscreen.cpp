@@ -57,6 +57,9 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
     /* Load machine view settings: */
     loadMachineViewSettings();
 
+    /* Prepare viewport: */
+    prepareViewport();
+
     /* Prepare frame buffer: */
     prepareFrameBuffer();
 

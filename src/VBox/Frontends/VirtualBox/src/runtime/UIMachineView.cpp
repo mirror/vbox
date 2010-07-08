@@ -208,7 +208,7 @@ UIMachineView::~UIMachineView()
 {
 }
 
-void UIMachineView::prepareFrameBuffer()
+void UIMachineView::prepareViewport()
 {
     /* Prepare viewport: */
 #ifdef VBOX_GUI_USE_QGLFB
@@ -225,11 +225,11 @@ void UIMachineView::prepareFrameBuffer()
     UIViewport *pViewport = new UIViewport(this);
 #endif /* !VBOX_GUI_USE_QGLFB */
     setViewport(pViewport);
+}
 
-    CDisplay display = session().GetConsole().GetDisplay();
-    Assert(!display.isNull());
-    m_pFrameBuffer = NULL;
-
+void UIMachineView::prepareFrameBuffer()
+{
+    /* Prepare frame-buffer depending on render-mode: */
     switch (vboxGlobal().vmRenderMode())
     {
 #ifdef VBOX_GUI_USE_QIMAGE
@@ -344,16 +344,20 @@ void UIMachineView::prepareFrameBuffer()
             qApp->exit(1);
             break;
     }
+
+    /* If frame-buffer was prepared: */
     if (m_pFrameBuffer)
     {
+        /* Prepare display: */
+        CDisplay display = session().GetConsole().GetDisplay();
+        Assert(!display.isNull());
 #ifdef VBOX_WITH_VIDEOHWACCEL
         CFramebuffer fb(NULL);
         if (m_fAccelerate2DVideo)
         {
             LONG XOrigin, YOrigin;
-            /* check if the framebuffer is already assigned
-             * in this case we do not need to re-assign it
-             * neither do we need to AddRef */
+            /* Check if the framebuffer is already assigned;
+             * in this case we do not need to re-assign it neither do we need to AddRef. */
             display.GetFramebuffer(m_uScreenId, fb, XOrigin, YOrigin);
         }
         if (fb.raw() != m_pFrameBuffer) /* <-this will evaluate to true iff m_fAccelerate2DVideo is disabled or iff no framebuffer is yet assigned */
@@ -361,8 +365,7 @@ void UIMachineView::prepareFrameBuffer()
         {
             m_pFrameBuffer->AddRef();
         }
-
-        /* always perform SetFramebuffer to ensure 3D gets notified */
+        /* Always perform SetFramebuffer to ensure 3D gets notified: */
         display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
     }
 

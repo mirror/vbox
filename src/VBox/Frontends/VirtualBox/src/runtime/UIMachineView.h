@@ -86,6 +86,7 @@ protected:
     virtual ~UIMachineView();
 
     /* Prepare routines: */
+    virtual void prepareViewport();
     virtual void prepareFrameBuffer();
     virtual void prepareCommon();
     virtual void prepareFilters();
@@ -98,6 +99,7 @@ protected:
     //virtual void cleanupFilters() {}
     //virtual void cleanupCommon() {}
     virtual void cleanupFrameBuffer();
+    //virtual void cleanupViewport();
 
     /* Protected getters: */
     UIMachineWindow* machineWindowWrapper() const { return m_pMachineWindow; }
