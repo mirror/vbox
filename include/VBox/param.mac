@@ -1,20 +1,20 @@
 %ifndef ___VBox_param_h
 %define ___VBox_param_h
 %define VBOX_MAX_ALLOC_PAGE_COUNT   (256U * _1M / PAGE_SIZE)
-%define MM_HYPER_AREA_ADDRESS       UINT32_C(0xa0000000)
+%define MM_HYPER_AREA_ADDRESS       0xa0000000
 %define MM_HYPER_AREA_MAX_SIZE      (40U * _1M)
 %define MM_HYPER_DYNAMIC_SIZE       (16U * PAGE_SIZE)
-%define MM_RAM_MIN                  UINT32_C(0x00400000)
+%define MM_RAM_MIN                  0x00400000
 %if HC_ARCH_BITS == 64
  %define MM_RAM_MAX                 UINT64_C(0x400000000)
 %else
  %define MM_RAM_MAX                 UINT64_C(0x0E0000000)
 %endif
-%define MM_RAM_MIN_IN_MB            UINT32_C(4)
+%define MM_RAM_MIN_IN_MB            4
 %if HC_ARCH_BITS == 64
- %define MM_RAM_MAX_IN_MB           UINT32_C(16384)
+ %define MM_RAM_MAX_IN_MB           16384
 %else
- %define MM_RAM_MAX_IN_MB           UINT32_C(3584)
+ %define MM_RAM_MAX_IN_MB           3584
 %endif
 %define MM_RAM_HOLE_SIZE_DEFAULT    (512U * _1M)
 %define PGM_HANDY_PAGES             128

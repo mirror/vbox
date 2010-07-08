@@ -31,6 +31,11 @@
 #define VMMDEV_TESTING_MMIO_NOP         (VMMDEV_TESTING_MMIO_BASE + 0x000)
 /** The XXX MMIO register - 124 RW. */
 #define VMMDEV_TESTING_MMIO_TODO        (VMMDEV_TESTING_MMIO_BASE + 0x004)
+/** The real mode selector to use.
+ * @remarks Requires that the A20 gate is enabled. */
+#define VMMDEV_TESTING_MMIO_RM_SEL       0xffff
+/** Calculate the real mode offset of a MMIO register. */
+#define VMMDEV_TESTING_MMIO_RM_OFF(val)  ((val) - 0xffff0)
 
 /** The base port of the I/O range used for testing. */
 #define VMMDEV_TESTING_IOPORT_BASE      0x0510

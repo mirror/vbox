@@ -201,8 +201,8 @@
 %define X86_DR7_RW3_MASK                    (3 << 28)
 %define X86_DR7_LEN3_MASK                   (3 << 30)
 %define X86_DR7_MB1_MASK                    (RT_BIT(10))
-%define X86_DR7_L(iBp)                      ( UINT32_C(1) << (iBp * 2) )
-%define X86_DR7_G(iBp)                      ( UINT32_C(1) << (iBp * 2 + 1) )
+%define X86_DR7_L(iBp)                      ( 1 << (iBp * 2) )
+%define X86_DR7_G(iBp)                      ( 1 << (iBp * 2 + 1) )
 %define X86_DR7_RW_EO                       0
 %define X86_DR7_RW_WO                       1
 %define X86_DR7_RW_IO                       2
