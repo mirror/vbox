@@ -93,7 +93,9 @@
 ;;
 ; Global marker which is DECLASM() compatible.
 %macro GLOBALNAME 1,
+%ifndef ASM_FORMAT_BIN
 global NAME(%1)
+%endif
 NAME(%1):
 %endmacro
 
