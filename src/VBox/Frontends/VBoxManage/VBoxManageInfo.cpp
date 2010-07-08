@@ -1905,10 +1905,49 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         }
     }
 
-    ULONG guestVal;
+
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("Guest:\n\n");
 
+    ComPtr<IGuest> guest;
+    rc = console->COMGETTER(Guest)(guest.asOutParam());
+    if (RT_SUCCESS(rc))
+    {
+        Bstr guestString;
+        rc = guest->COMGETTER(OSTypeId)(guestString.asOutParam());
+        if (   SUCCEEDED(rc)
+            && !guestString.isEmpty())
+        {
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("GuestOSType=\"%lS\"\n", guestString.raw());
+            else
+                RTPrintf("OS type:                             %lS\n", guestString.raw());
+        }
+
+        BOOL guestFlag;
+        rc = guest->COMGETTER(AdditionsActive)(&guestFlag);
+        if (SUCCEEDED(rc))
+        {
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("GuestAdditionsActive=%s\n", guestFlag ? "on" : "off");
+            else
+                RTPrintf("Additions active:                    %s\n", guestFlag ? "yes" : "no");
+        }
+
+        if (details == VMINFO_FULL)
+        {
+            rc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
+            if (SUCCEEDED(rc))
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("GuestAdditionsAPIVersion=\"%lS\"\n", guestString.raw());
+                else
+                    RTPrintf("Additions API version:               %lS\n\n", guestString.raw());
+            }
+        }
+    }
+
+    ULONG guestVal;
     rc = machine->COMGETTER(MemoryBalloonSize)(&guestVal);
     if (SUCCEEDED(rc))
     {
