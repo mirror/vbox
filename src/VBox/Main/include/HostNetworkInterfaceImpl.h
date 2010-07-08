@@ -31,7 +31,6 @@ struct NETIFINFO;
 
 class ATL_NO_VTABLE HostNetworkInterface :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<HostNetworkInterface>,
     VBOX_SCRIPTABLE_IMPL(IHostNetworkInterface)
 {
 public:

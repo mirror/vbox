@@ -38,7 +38,7 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/com/string.h>
-
+#include "VBox/com/ErrorInfo.h"
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *

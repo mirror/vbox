@@ -25,7 +25,6 @@
 
 class ATL_NO_VTABLE GuestOSType :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<GuestOSType>,
     VBOX_SCRIPTABLE_IMPL(IGuestOSType)
 {
 public:

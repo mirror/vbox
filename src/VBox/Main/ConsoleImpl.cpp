@@ -66,6 +66,7 @@
 #include "Logging.h"
 
 #include <VBox/com/array.h>
+#include "VBox/com/ErrorInfo.h"
 
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
@@ -1839,7 +1840,8 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
                              (void *) task.get(), 0,
                              RTTHREADTYPE_MAIN_WORKER, 0,
                              "VMPowerDown");
-    ComAssertMsgRCRet(vrc, ("Could not create VMPowerDown thread (%Rrc)", vrc), E_FAIL);
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL, "Could not create VMPowerDown thread (%Rrc)", vrc);
 
     /* task is now owned by powerDownThread(), so release it */
     task.release();
@@ -2470,9 +2472,11 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
         /* create a thread to wait until the VM state is saved */
         int vrc = RTThreadCreate(NULL, Console::saveStateThread, (void *) task.get(),
                                  0, RTTHREADTYPE_MAIN_WORKER, 0, "VMSave");
-
-        ComAssertMsgRCBreak(vrc, ("Could not create VMSave thread (%Rrc)", vrc),
-                            rc = E_FAIL);
+        if (RT_FAILURE(vrc))
+        {
+            rc = setError(E_FAIL, "Could not create VMSave thread (%Rrc)", vrc);
+            break;
+        }
 
         /* task is now owned by saveStateThread(), so release it */
         task.release();
@@ -5588,9 +5592,8 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
     int vrc = RTThreadCreate(NULL, Console::powerUpThread, (void *) task.get(),
                              0, RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
-
-    ComAssertMsgRCRet(vrc, ("Could not create VMPowerUp thread (%Rrc)", vrc),
-                      E_FAIL);
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL, "Could not create VMPowerUp thread (%Rrc)", vrc);
 
     /* task is now owned by powerUpThread(), so release it */
     task.release();

@@ -31,7 +31,6 @@ namespace settings
 
 class ATL_NO_VTABLE SerialPort :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<SerialPort>,
     VBOX_SCRIPTABLE_IMPL(ISerialPort)
 {
 public:

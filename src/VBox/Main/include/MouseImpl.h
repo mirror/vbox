@@ -49,9 +49,7 @@ typedef ConsoleEventBuffer<MouseEvent> MouseEventBuffer;
 class ATL_NO_VTABLE Mouse :
     public VirtualBoxBase
 #ifndef VBOXBFE_WITHOUT_COM
-    ,
-    public VirtualBoxSupportTranslation<Mouse>,
-    VBOX_SCRIPTABLE_IMPL(IMouse)
+    , VBOX_SCRIPTABLE_IMPL(IMouse)
 #endif
 {
 public:

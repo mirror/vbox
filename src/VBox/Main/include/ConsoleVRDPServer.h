@@ -231,7 +231,6 @@ class Console;
 
 class ATL_NO_VTABLE RemoteDisplayInfo :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<RemoteDisplayInfo>,
     VBOX_SCRIPTABLE_IMPL(IRemoteDisplayInfo)
 {
 public:

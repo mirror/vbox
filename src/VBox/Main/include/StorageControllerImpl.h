@@ -24,7 +24,6 @@
 
 class ATL_NO_VTABLE StorageController :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<StorageController>,
     VBOX_SCRIPTABLE_IMPL(IStorageController)
 {
 public:

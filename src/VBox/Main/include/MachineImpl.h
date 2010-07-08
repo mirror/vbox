@@ -38,7 +38,7 @@
 // generated header
 #include "SchemaDefs.h"
 
-#include <VBox/types.h>
+#include "VBox/com/ErrorInfo.h"
 
 #include <iprt/file.h>
 #include <iprt/thread.h>
@@ -81,7 +81,6 @@ namespace settings
 
 class ATL_NO_VTABLE Machine :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxSupportTranslation<Machine>,
     VBOX_SCRIPTABLE_IMPL(IMachine)
 {
     Q_OBJECT
@@ -848,13 +847,11 @@ protected:
  *  instance is also locked in the same lock mode. Keep it in mind.
  */
 class ATL_NO_VTABLE SessionMachine :
-    public VirtualBoxSupportTranslation<SessionMachine>,
     public Machine,
     VBOX_SCRIPTABLE_IMPL(IInternalMachineControl)
 {
 public:
-
-    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(SessionMachine)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(SessionMachine, IMachine)
 
     DECLARE_NOT_AGGREGATABLE(SessionMachine)
 
@@ -1058,12 +1055,10 @@ private:
  *  instance is also locked in the same lock mode. Keep it in mind.
  */
 class ATL_NO_VTABLE SnapshotMachine :
-    public VirtualBoxSupportTranslation<SnapshotMachine>,
     public Machine
 {
 public:
-
-    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(SnapshotMachine)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(SnapshotMachine, IMachine)
 
     DECLARE_NOT_AGGREGATABLE(SnapshotMachine)
 

@@ -31,7 +31,6 @@ namespace settings
 
 class ATL_NO_VTABLE VRDPServer :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<VRDPServer>,
     VBOX_SCRIPTABLE_IMPL(IVRDPServer)
 {
 public:

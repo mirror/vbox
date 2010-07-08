@@ -48,7 +48,6 @@ namespace settings
 
 class ATL_NO_VTABLE Appliance :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<Appliance>,
     VBOX_SCRIPTABLE_IMPL(IAppliance)
 {
 public:
@@ -196,7 +195,6 @@ struct VirtualSystemDescriptionEntry
 
 class ATL_NO_VTABLE VirtualSystemDescription :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<VirtualSystemDescription>,
     VBOX_SCRIPTABLE_IMPL(IVirtualSystemDescription)
 {
     friend class Appliance;

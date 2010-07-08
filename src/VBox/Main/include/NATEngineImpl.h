@@ -31,7 +31,6 @@ namespace settings
 
 class ATL_NO_VTABLE NATEngine :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<NATEngine>,
     VBOX_SCRIPTABLE_IMPL(INATEngine)
 {
     public:

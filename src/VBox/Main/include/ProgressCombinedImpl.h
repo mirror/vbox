@@ -65,15 +65,11 @@
  *       will be in a loop calling a method that returns immediately.
  */
 class ATL_NO_VTABLE CombinedProgress :
-//     public com::SupportErrorInfoDerived<ProgressBase, CombinedProgress, IProgress>,
-    public Progress,
-    public VirtualBoxSupportTranslation<CombinedProgress>
+    public Progress
 {
 
 public:
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(CombinedProgress, IProgress)
-
-    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(CombinedProgress)
 
     DECLARE_NOT_AGGREGATABLE(CombinedProgress)
 

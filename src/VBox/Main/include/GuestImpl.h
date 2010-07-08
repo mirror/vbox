@@ -47,7 +47,6 @@ class Progress;
 #endif
 
 class ATL_NO_VTABLE Guest :
-    public VirtualBoxSupportTranslation<Guest>,
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IGuest)
 {

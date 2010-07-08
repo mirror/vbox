@@ -24,7 +24,8 @@
 #include "Logging.h"
 
 #include <VBox/com/array.h>
-#include <VBox/com/SupportErrorInfo.h>
+#include "VBox/com/MultiResult.h"
+#include "VBox/com/ErrorInfo.h"
 
 #include <VBox/err.h>
 #include <VBox/settings.h>
@@ -5013,10 +5014,7 @@ HRESULT Medium::startThread(Medium::Task *pTask)
     if (RT_FAILURE(vrc))
     {
         delete pTask;
-        ComAssertMsgRCRet(vrc,
-                          ("Could not create Medium::Task thread (%Rrc)\n",
-                           vrc),
-                          E_FAIL);
+        return setError(E_FAIL, "Could not create Medium::Task thread (%Rrc)\n",  vrc);
     }
 
     return S_OK;

@@ -22,7 +22,6 @@
 
 class ATL_NO_VTABLE VBoxEvent :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<VBoxEvent>,
     VBOX_SCRIPTABLE_IMPL(IEvent)
 {
 public:
@@ -128,7 +127,6 @@ private:
 
 class ATL_NO_VTABLE EventSource :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<EventSource>,
     VBOX_SCRIPTABLE_IMPL(IEventSource)
 {
 public:

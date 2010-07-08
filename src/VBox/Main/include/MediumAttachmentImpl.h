@@ -22,7 +22,6 @@
 
 class ATL_NO_VTABLE MediumAttachment :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<MediumAttachment>,
     VBOX_SCRIPTABLE_IMPL(IMediumAttachment)
 {
 public:

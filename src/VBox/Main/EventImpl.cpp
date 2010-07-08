@@ -913,7 +913,6 @@ STDMETHODIMP EventSource::EventProcessed(IEventListener * aListener,
  */
 class ATL_NO_VTABLE PassiveEventListener :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<PassiveEventListener>,
     VBOX_SCRIPTABLE_IMPL(IEventListener)
 {
 public:

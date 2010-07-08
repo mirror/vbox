@@ -29,7 +29,6 @@ namespace settings
 
 class ATL_NO_VTABLE AudioAdapter :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<AudioAdapter>,
     VBOX_SCRIPTABLE_IMPL(IAudioAdapter)
 {
 public:

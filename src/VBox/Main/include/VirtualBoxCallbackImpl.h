@@ -20,7 +20,6 @@
 
 class ATL_NO_VTABLE CallbackWrapper :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<CallbackWrapper>,
     VBOX_SCRIPTABLE_IMPL(ILocalOwner),
     VBOX_SCRIPTABLE_IMPL(IConsoleCallback),
     VBOX_SCRIPTABLE_IMPL(IVirtualBoxCallback)

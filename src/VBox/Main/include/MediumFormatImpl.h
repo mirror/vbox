@@ -39,7 +39,6 @@ struct VDBACKENDINFO;
  */
 class ATL_NO_VTABLE MediumFormat :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<MediumFormat>,
     VBOX_SCRIPTABLE_IMPL(IMediumFormat)
 {
 public:

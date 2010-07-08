@@ -28,13 +28,10 @@
  */
 class ATL_NO_VTABLE ProgressProxy :
     //public com::SupportErrorInfoDerived<Progress, ProgressProxy, IProgress>,
-    public Progress,
-    public VirtualBoxSupportTranslation<ProgressProxy>
+    public Progress
 {
 public:
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(ProgressProxy, IProgress)
-
-    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(ProgressProxy)
 
     DECLARE_NOT_AGGREGATABLE(ProgressProxy)
     DECLARE_PROTECT_FINAL_CONSTRUCT()

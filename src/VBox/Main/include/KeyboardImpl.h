@@ -45,7 +45,6 @@ class Console;
 
 class ATL_NO_VTABLE Keyboard :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<Keyboard>,
     VBOX_SCRIPTABLE_IMPL(IKeyboard)
 {
 public:

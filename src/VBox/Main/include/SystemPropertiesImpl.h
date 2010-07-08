@@ -34,7 +34,6 @@ namespace settings
 
 class ATL_NO_VTABLE SystemProperties :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<SystemProperties>,
     VBOX_SCRIPTABLE_IMPL(ISystemProperties)
 {
 public:

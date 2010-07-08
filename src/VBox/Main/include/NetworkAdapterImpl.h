@@ -32,7 +32,6 @@ namespace settings
 
 class ATL_NO_VTABLE NetworkAdapter :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<NetworkAdapter>,
     VBOX_SCRIPTABLE_IMPL(INetworkAdapter)
 {
 public:

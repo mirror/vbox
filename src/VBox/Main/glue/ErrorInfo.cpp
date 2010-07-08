@@ -18,19 +18,17 @@
  */
 
 #if !defined (VBOX_WITH_XPCOM)
-
 #else
-
-#include <nsIServiceManager.h>
-#include <nsIExceptionService.h>
-#include <nsCOMPtr.h>
-
+ #include <nsIServiceManager.h>
+ #include <nsIExceptionService.h>
+ #include <nsCOMPtr.h>
 #endif
 
 #include "VBox/com/VirtualBox.h"
 #include "VBox/com/ErrorInfo.h"
 #include "VBox/com/assert.h"
 #include "VBox/com/com.h"
+#include "VBox/com/MultiResult.h"
 
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -40,7 +38,10 @@
 namespace com
 {
 
+////////////////////////////////////////////////////////////////////////////////
+//
 // ErrorInfo class
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 void ErrorInfo::copyFrom(const ErrorInfo &x)
@@ -271,7 +272,10 @@ void ErrorInfo::init(IVirtualBoxErrorInfo *info)
     AssertMsg (gotSomething, ("Nothing to fetch!\n"));
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
 // ProgressErrorInfo class
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 ProgressErrorInfo::ProgressErrorInfo (IProgress *progress) :
@@ -287,7 +291,10 @@ ProgressErrorInfo::ProgressErrorInfo (IProgress *progress) :
         init (info);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
 // ErrorInfoKeeper class
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT ErrorInfoKeeper::restore()

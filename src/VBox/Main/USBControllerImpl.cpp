@@ -26,6 +26,7 @@
 # include "HostUSBDeviceImpl.h"
 # include "USBProxyService.h"
 #endif
+#include "USBDeviceFilterImpl.h"
 
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
@@ -167,7 +168,7 @@ HRESULT USBController::init(Machine *aParent, USBController *aPeer)
     {
         ComObjPtr<USBDeviceFilter> filter;
         filter.createObject();
-        filter->init (this, *it);
+        filter->init(this, *it);
         m->llDeviceFilters->push_back(filter);
         ++ it;
     }

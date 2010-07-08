@@ -32,7 +32,6 @@ namespace settings
 
 class ATL_NO_VTABLE USBController :
     public VirtualBoxBase,
-    public VirtualBoxSupportTranslation<USBController>,
     VBOX_SCRIPTABLE_IMPL(IUSBController)
 {
 public:
