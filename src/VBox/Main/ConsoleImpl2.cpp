@@ -309,7 +309,7 @@ static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRea
     return rc;
 }
 
-class RT_DECL_CLASS ConfigError : public iprt::Error
+class DECLEXPORT_CLASS ConfigError : public iprt::Error
 {
 public:
 
@@ -1533,7 +1533,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             afPciDeviceNo[iPciDeviceNo] = true;
             InsertConfigInteger(pInst, "PCIFunctionNo",        0);
             InsertConfigNode(pInst, "Config", &pCfg);
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE   not safe here yet. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE   /* not safe here yet. */
             if (pDev == pDevPCNet)
             {
                 InsertConfigInteger(pCfg, "R0Enabled",    false);
