@@ -1690,14 +1690,16 @@ VMMR3DECL(int) CFGMR3InsertInteger(PCFGMNODE pNode, const char *pszName, uint64_
 
 
 /**
- * Inserts a new string value.
+ * Inserts a new string value. This variant expects that the caller know the length
+ * of the string already so we can avoid calling strlen() here.
  *
  * @returns VBox status code.
  * @param   pNode           Parent node.
  * @param   pszName         Value name.
- * @param   pszString       The value.
+ * @param   pszString       The value. Must not be NULL.
+ * @param   cbString        The length of the string including the null terminator (i.e. strlen(pszString) + 1).
  */
-VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const char *pszString)
+VMMR3DECL(int) CFGMR3InsertStringLengthKnown(PCFGMNODE pNode, const char *pszName, const char *pszString, size_t cbString)
 {
     int rc;
     if (pNode)
@@ -1705,7 +1707,6 @@ VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const ch
         /*
          * Allocate string object first.
          */
-        size_t cbString = strlen(pszString) + 1;
         char *pszStringCopy = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_STRING, cbString);
         if (pszStringCopy)
         {
@@ -1732,6 +1733,21 @@ VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const ch
         rc = VERR_CFGM_NO_PARENT;
 
     return rc;
+}
+
+
+/**
+ * Inserts a new string value. Calls strlen(pszString) internally; if you know the
+ * length of the string, CFGMR3InsertStringLengthKnown() is faster.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Parent node.
+ * @param   pszName         Value name.
+ * @param   pszString       The value.
+ */
+VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const char *pszString)
+{
+    return CFGMR3InsertStringLengthKnown(pNode, pszName, pszString, strlen(pszString) + 1);
 }
 
 /**

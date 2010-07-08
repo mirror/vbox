@@ -355,7 +355,12 @@ void InsertConfigString(PCFGMNODE pNode,
                         const char *pcszName,
                         const Utf8Str &strValue)
 {
-    InsertConfigString(pNode, pcszName, strValue.c_str());
+    int vrc = CFGMR3InsertStringLengthKnown(pNode,
+                                            pcszName,
+                                            strValue.c_str(),
+                                            strValue.length() + 1);
+    if (RT_FAILURE(vrc))
+        throw ConfigError("CFGMR3InsertStringLengthKnown", vrc, pcszName);
 }
 
 /**
@@ -369,7 +374,7 @@ void InsertConfigString(PCFGMNODE pNode,
                         const char *pcszName,
                         const Bstr &bstrValue)
 {
-    InsertConfigString(pNode, pcszName, Utf8Str(bstrValue).c_str());
+    InsertConfigString(pNode, pcszName, Utf8Str(bstrValue));
 }
 
 /**
@@ -1191,9 +1196,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigInteger(pCfg, "RamSize",          cbRam);
             InsertConfigInteger(pCfg, "RamHoleSize",      cbRamHole);
             InsertConfigInteger(pCfg, "NumCPUs",          cCpus);
-            InsertConfigString(pCfg,   "EfiRom",           efiRomFile.raw());
-            InsertConfigString(pCfg,   "BootArgs",         Utf8Str(bootArgs).raw());
-            InsertConfigString(pCfg,   "DeviceProps",      Utf8Str(deviceProps).raw());
+            InsertConfigString(pCfg,   "EfiRom",           efiRomFile);
+            InsertConfigString(pCfg,   "BootArgs",         bootArgs);
+            InsertConfigString(pCfg,   "DeviceProps",      deviceProps);
             InsertConfigInteger(pCfg, "IOAPIC",           fIOAPIC);
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigInteger(pCfg, "64BitEntry", f64BitEntry); /* boolean */
@@ -2325,12 +2330,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             const char *pszExtraDataKey = strKey.raw() + sizeof("VBoxInternal/") - 1;
 
             // get the value
-            Bstr strExtraDataValue;
+            Bstr bstrExtraDataValue;
             if (i2 < cGlobalValues)
                 // this is still one of the global values:
-                hrc = virtualBox->GetExtraData(Bstr(strKey), strExtraDataValue.asOutParam());
+                hrc = virtualBox->GetExtraData(Bstr(strKey), bstrExtraDataValue.asOutParam());
             else
-                hrc = pMachine->GetExtraData(Bstr(strKey), strExtraDataValue.asOutParam());
+                hrc = pMachine->GetExtraData(Bstr(strKey), bstrExtraDataValue.asOutParam());
             if (FAILED(hrc))
                 LogRel(("Warning: Cannot get extra data key %s, rc = %Rrc\n", strKey.raw(), hrc));
 
@@ -2378,30 +2383,28 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
              * Empty strings means that we should remove the value, which we've
              * already done above.
              */
-            Utf8Str strCFGMValueUtf8(strExtraDataValue);
-            const char *pszCFGMValue = strCFGMValueUtf8.raw();
-            if (    pszCFGMValue
-                && *pszCFGMValue)
+            Utf8Str strCFGMValueUtf8(bstrExtraDataValue);
+            if (!strCFGMValueUtf8.isEmpty())
             {
                 uint64_t u64Value;
 
                 /* check for type prefix first. */
-                if (!strncmp(pszCFGMValue, "string:", sizeof("string:") - 1))
-                    InsertConfigString(pNode, pszCFGMValueName, pszCFGMValue + sizeof("string:") - 1);
-                else if (!strncmp(pszCFGMValue, "integer:", sizeof("integer:") - 1))
+                if (!strncmp(strCFGMValueUtf8.c_str(), "string:", sizeof("string:") - 1))
+                    InsertConfigString(pNode, pszCFGMValueName, strCFGMValueUtf8.c_str() + sizeof("string:") - 1);
+                else if (!strncmp(strCFGMValueUtf8.c_str(), "integer:", sizeof("integer:") - 1))
                 {
-                    rc = RTStrToUInt64Full(pszCFGMValue + sizeof("integer:") - 1, 0, &u64Value);
+                    rc = RTStrToUInt64Full(strCFGMValueUtf8.c_str() + sizeof("integer:") - 1, 0, &u64Value);
                     if (RT_SUCCESS(rc))
                         rc = CFGMR3InsertInteger(pNode, pszCFGMValueName, u64Value);
                 }
-                else if (!strncmp(pszCFGMValue, "bytes:", sizeof("bytes:") - 1))
+                else if (!strncmp(strCFGMValueUtf8.c_str(), "bytes:", sizeof("bytes:") - 1))
                     rc = VERR_NOT_IMPLEMENTED;
                 /* auto detect type. */
-                else if (RT_SUCCESS(RTStrToUInt64Full(pszCFGMValue, 0, &u64Value)))
+                else if (RT_SUCCESS(RTStrToUInt64Full(strCFGMValueUtf8.c_str(), 0, &u64Value)))
                     rc = CFGMR3InsertInteger(pNode, pszCFGMValueName, u64Value);
                 else
-                    InsertConfigString(pNode, pszCFGMValueName, pszCFGMValue);
-                AssertLogRelMsgRC(rc, ("failed to insert CFGM value '%s' to key '%s'\n", pszCFGMValue, pszExtraDataKey));
+                    InsertConfigString(pNode, pszCFGMValueName, strCFGMValueUtf8);
+                AssertLogRelMsgRC(rc, ("failed to insert CFGM value '%s' to key '%s'\n", strCFGMValueUtf8.c_str(), pszExtraDataKey));
             }
         }
     }
@@ -3128,9 +3131,7 @@ int Console::configNetwork(const char *pszDevice,
                 InsertConfigNode(pLunL0, "Config", &pCfg);
                 hrc = aNetworkAdapter->COMGETTER(TraceFile)(bstr.asOutParam());             H();
                 if (!bstr.isEmpty()) /* check convention for indicating default file. */
-                {
                     InsertConfigString(pCfg, "File", bstr);
-                }
             }
         }
         else if (fAttachDetach && !fSniffer)
@@ -3151,9 +3152,7 @@ int Console::configNetwork(const char *pszDevice,
             InsertConfigNode(pLunL0, "Config", &pCfg);
             hrc = aNetworkAdapter->COMGETTER(TraceFile)(bstr.asOutParam());                 H();
             if (!bstr.isEmpty()) /* check convention for indicating default file. */
-            {
                 InsertConfigString(pCfg, "File", bstr);
-            }
         }
 
         Bstr networkName, trunkName, trunkType;
@@ -3169,30 +3168,22 @@ int Console::configNetwork(const char *pszDevice,
                 ComPtr<INATEngine> natDriver;
                 hrc = aNetworkAdapter->COMGETTER(NatDriver)(natDriver.asOutParam());        H();
                 if (fSniffer)
-                {
                     InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-                }
                 else
-                {
                     InsertConfigNode(pInst, "LUN#0", &pLunL0);
-                }
                 InsertConfigString(pLunL0, "Driver", "NAT");
                 InsertConfigNode(pLunL0, "Config", &pCfg);
 
                 /* Configure TFTP prefix and boot filename. */
                 hrc = virtualBox->COMGETTER(HomeFolder)(bstr.asOutParam());                 H();
                 if (!bstr.isEmpty())
-                {
                     InsertConfigString(pCfg, "TFTPPrefix", Utf8StrFmt("%ls%c%s", bstr.raw(), RTPATH_DELIMITER, "TFTP"));
-                }
                 hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                         H();
                 InsertConfigString(pCfg, "BootFile", Utf8StrFmt("%ls.pxe", bstr.raw()));
 
                 hrc = natDriver->COMGETTER(Network)(bstr.asOutParam());                     H();
                 if (!bstr.isEmpty())
-                {
                     InsertConfigString(pCfg, "Network", bstr);
-                }
                 else
                 {
                     ULONG uSlot;
@@ -3201,9 +3192,7 @@ int Console::configNetwork(const char *pszDevice,
                 }
                 hrc = natDriver->COMGETTER(HostIP)(bstr.asOutParam());                      H();
                 if (!bstr.isEmpty())
-                {
                     InsertConfigString(pCfg, "BindIP", bstr);
-                }
                 ULONG mtu = 0;
                 ULONG sockSnd = 0;
                 ULONG sockRcv = 0;
@@ -3211,25 +3200,15 @@ int Console::configNetwork(const char *pszDevice,
                 ULONG tcpRcv = 0;
                 hrc = natDriver->GetNetworkSettings(&mtu, &sockSnd, &sockRcv, &tcpSnd, &tcpRcv); H();
                 if (mtu)
-                {
                     InsertConfigInteger(pCfg, "SlirpMTU", mtu);
-                }
                 if (sockRcv)
-                {
                     InsertConfigInteger(pCfg, "SockRcv", sockRcv);
-                }
                 if (sockSnd)
-                {
                     InsertConfigInteger(pCfg, "SockSnd", sockSnd);
-                }
                 if (tcpRcv)
-                {
                     InsertConfigInteger(pCfg, "TcpRcv", tcpRcv);
-                }
                 if (tcpSnd)
-                {
                     InsertConfigInteger(pCfg, "TcpSnd", tcpSnd);
-                }
                 hrc = natDriver->COMGETTER(TftpPrefix)(bstr.asOutParam());                  H();
                 if (!bstr.isEmpty())
                 {
@@ -3244,9 +3223,7 @@ int Console::configNetwork(const char *pszDevice,
                 }
                 hrc = natDriver->COMGETTER(TftpNextServer)(bstr.asOutParam());              H();
                 if (!bstr.isEmpty())
-                {
                     InsertConfigString(pCfg, "NextServer", bstr);
-                }
                 BOOL fDnsFlag;
                 hrc = natDriver->COMGETTER(DnsPassDomain)(&fDnsFlag);                       H();
                 InsertConfigInteger(pCfg, "PassDomain", fDnsFlag);
@@ -3324,15 +3301,11 @@ int Console::configNetwork(const char *pszDevice,
 
                     port = RTStrToUInt16(strHostPort.raw());
                     if (port)
-                    {
                         InsertConfigInteger(pPF, "HostPort", port);
-                    }
 
                     port = RTStrToUInt16(strGuestPort.raw());
                     if (port)
-                    {
                         InsertConfigInteger(pPF, "GuestPort", port);
-                    }
                 }
                 break;
             }
@@ -3623,9 +3596,7 @@ int Console::configNetwork(const char *pszDevice,
                 /** @todo Come up with a better deal here. Problem is that IHostNetworkInterface is completely useless here. */
                 if (    strstr(pszHifName, "Wireless")
                     ||  strstr(pszHifName, "AirPort" ))
-                {
                     InsertConfigInteger(pCfg, "SharedMacOnWire", true);
-                }
 # elif defined(RT_OS_LINUX)
                 int iSock = socket(AF_INET, SOCK_DGRAM, 0);
                 if (iSock >= 0)

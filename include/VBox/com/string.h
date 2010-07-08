@@ -551,34 +551,7 @@ public:
 
 protected:
 
-    /**
-     * As with the ministring::copyFrom() variants, this unconditionally
-     * sets the members to a copy of the given other strings and makes
-     * no assumptions about previous contents. This can therefore be used
-     * both in copy constructors, when member variables have no defined
-     * value, and in assignments after having called cleanup().
-     *
-     * This variant converts from a UTF-16 string, most probably from
-     * a Bstr assignment.
-     *
-     * @param rs
-     */
-    void copyFrom(CBSTR s)
-    {
-        if (s && *s)
-        {
-            RTUtf16ToUtf8((PRTUTF16)s, &m_psz); /** @todo r=bird: This isn't throwing std::bad_alloc / handling return codes.
-                                                 * Also, this technically requires using RTStrFree, ministring::cleanup() uses RTMemFree. */
-            m_cbLength = strlen(m_psz);         /** @todo optimize by using a different RTUtf* function */
-            m_cbAllocated = m_cbLength + 1;
-        }
-        else
-        {
-            m_cbLength = 0;
-            m_cbAllocated = 0;
-            m_psz = NULL;
-        }
-    }
+    void copyFrom(CBSTR s);
 
     friend class Bstr; /* to access our raw_copy() */
 };
@@ -613,15 +586,12 @@ public:
     }
 
 protected:
-
-    Utf8StrFmt() {}
+    Utf8StrFmt()
+    { }
 
     void init(const char *format, va_list args);
 
 private:
-
-    static DECLCALLBACK(size_t) strOutput(void *pvArg, const char *pachChars,
-                                          size_t cbChars);
 };
 
 /**
