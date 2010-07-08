@@ -431,7 +431,8 @@ GMMR3DECL(bool) GMMR3IsDuplicatePage(PVM pVM, uint32_t idPage)
     Req.idPage       = idPage;
     Req.fDuplicate   = false;
 
-    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_FIND_DUPLICATE_PAGE, 0, &Req.Hdr);
+    /* Must be callable from any thread, so can't use VMMR3CallR0. */
+    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_GMM_FIND_DUPLICATE_PAGE, 0, &Req.Hdr);
     if (rc == VINF_SUCCESS)
         return Req.fDuplicate;
     else
