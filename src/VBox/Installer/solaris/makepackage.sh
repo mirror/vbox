@@ -176,7 +176,10 @@ filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxusb"'      
 # Manifest class action scripts
 filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/virtualbox-webservice.xml"'    '$2 = "manifest";$6 = "sys"'
 filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml"'    '$2 = "manifest";$6 = "sys"'
-dirlist_fixup prototype  '$3 == "var/svc/manifest/application/virtualbox"'                              '$6 = "sys"'
+
+# Use 'root' as group so as to match attributes with the previous installation and prevent a conflict. Otherwise pkgadd bails out thinking
+# we're violating directory attributes of another (non existing) package
+dirlist_fixup prototype  '$3 == "var/svc/manifest/application/virtualbox"'                              '$6 = "root"'
 
 # hardening requires some executables to be marked setuid.
 if test -n "$HARDENED"; then
