@@ -4221,7 +4221,7 @@ static DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHL
                         /* Check if the page was allocated, but completely zero. */
                         int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvPage);
                         if (    rc == VINF_SUCCESS
-                            &&  !memcmp(pVM->pgm.s.pvZeroPgR3, pvPage, PAGE_SIZE))
+                            &&  ASMMemIsZeroPage(pvPage))
                         {
                             cAllocZero++;
                         }
