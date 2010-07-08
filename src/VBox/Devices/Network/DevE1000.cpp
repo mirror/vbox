@@ -1785,7 +1785,6 @@ PDMBOTHCBDECL(int) e1kRaiseInterrupt(E1KSTATE *pState, int rcBusy, uint32_t u32I
                 /* Got at least one unmasked interrupt cause */
                 pState->fIntRaised = true;
                 /* Raise(1) INTA(0) */
-                //PDMDevHlpPCISetIrqNoWait(pState->CTXSUFF(pInst), 0, 1);
                 //e1kMutexRelease(pState);
                 E1kLogRel(("E1000: irq RAISED icr&mask=0x%x, icr=0x%x\n", ICR & IMS, ICR));
                 PDMDevHlpPCISetIrq(pState->CTX_SUFF(pDevIns), 0, 1);
@@ -2442,7 +2441,6 @@ static int e1kRegReadICR(E1KSTATE* pState, uint32_t offset, uint32_t index, uint
                 ICR = 0;
                 pState->fIntRaised = false;
                 /* Lower(0) INTA(0) */
-                //PDMDevHlpPCISetIrqNoWait(pState->CTX_SUFF(pDevIns), 0, 0);
                 //e1kMutexRelease(pState);
                 PDMDevHlpPCISetIrq(pState->CTX_SUFF(pDevIns), 0, 0);
                 //e1kMutexAcquire(pState, RT_SRC_POS);

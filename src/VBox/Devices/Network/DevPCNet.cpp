@@ -1407,7 +1407,7 @@ static void pcnetUpdateIrq(PCNetState *pThis)
     if (RT_UNLIKELY(iISR != pThis->iISR))
     {
         Log(("#%d INTA=%d\n", PCNET_INST_NR, iISR));
-        PDMDevHlpPCISetIrqNoWait(PCNETSTATE_2_DEVINS(pThis), 0, iISR);
+        PDMDevHlpPCISetIrq(PCNETSTATE_2_DEVINS(pThis), 0, iISR);
         pThis->iISR = iISR;
     }
     STAM_PROFILE_ADV_STOP(&pThis->StatInterrupt, a);
