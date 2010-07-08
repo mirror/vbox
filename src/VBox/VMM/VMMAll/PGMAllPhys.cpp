@@ -437,6 +437,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 
     if (PGM_PAGE_IS_SHARED(pPage))
     {
+        /* Mark this shared page for freeing/derefencing. */
         pVM->pgm.s.aHandyPages[iHandyPage].idSharedPage = PGM_PAGE_GET_PAGEID(pPage);
         Assert(PGM_PAGE_GET_PAGEID(pPage) != NIL_GMM_PAGEID);
         VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
