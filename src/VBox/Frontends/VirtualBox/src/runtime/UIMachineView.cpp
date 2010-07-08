@@ -42,6 +42,7 @@
 #include "UIMachineViewNormal.h"
 #include "UIMachineViewFullscreen.h"
 #include "UIMachineViewSeamless.h"
+#include "UIMachineViewScale.h"
 
 #ifdef Q_WS_X11
 # include <QX11Info>
@@ -119,6 +120,14 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                                      , bAccelerate2DVideo
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                                                      );
+            break;
+        case UIVisualStateType_Scale:
+            pMachineView = new UIMachineViewScale(  pMachineWindow
+                                                  , uScreenId
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                                                  , bAccelerate2DVideo
+#endif
+                                                  );
             break;
         default:
             break;

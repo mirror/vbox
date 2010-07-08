@@ -22,6 +22,7 @@
 
 const char* VBoxDefs::GUI_LastWindowPosition = "GUI/LastWindowPosition";
 const char* VBoxDefs::GUI_LastNormalWindowPosition = "GUI/LastNormalWindowPosition";
+const char* VBoxDefs::GUI_LastScaleWindowPosition = "GUI/LastScaleWindowPosition";
 const char* VBoxDefs::GUI_LastWindowState_Max = "max";
 const char* VBoxDefs::GUI_LastGuestSizeHint = "GUI/LastGuestSizeHint";
 const char* VBoxDefs::GUI_Toolbar = "GUI/Toolbar";
@@ -29,6 +30,7 @@ const char* VBoxDefs::GUI_Statusbar = "GUI/Statusbar";
 const char* VBoxDefs::GUI_SplitterSizes = "GUI/SplitterSizes";
 const char* VBoxDefs::GUI_Fullscreen = "GUI/Fullscreen";
 const char* VBoxDefs::GUI_Seamless = "GUI/Seamless";
+const char* VBoxDefs::GUI_Scale = "GUI/Scale";
 const char* VBoxDefs::GUI_VirtualScreenToHostScreen = "GUI/VirtualScreenToHostScreen";
 const char* VBoxDefs::GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
 const char* VBoxDefs::GUI_FirstRun = "GUI/FirstRun";

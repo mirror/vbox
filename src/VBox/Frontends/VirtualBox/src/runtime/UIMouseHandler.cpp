@@ -29,6 +29,7 @@
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
+#include "UIFrameBuffer.h"
 
 #ifdef Q_WS_X11
 # include <X11/XKBlib.h>
@@ -61,6 +62,7 @@ UIMouseHandler* UIMouseHandler::create(UIMachineLogic *pMachineLogic,
         case UIVisualStateType_Normal:
         case UIVisualStateType_Fullscreen:
         case UIVisualStateType_Seamless:
+        case UIVisualStateType_Scale:
             pMouseHandler = new UIMouseHandler(pMachineLogic);
             break;
         default:
@@ -745,19 +747,33 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                 if (iDx != 0 || iDy != 0) m_views[uScreenId]->scrollBy(iDx, iDy);
             }
 
+            /* Get mouse-pointer location: */
             QPoint cpnt = m_views[uScreenId]->viewportToContents(relativePos);
+
+            /* Determine scaling: */
+            UIFrameBuffer *pFrameBuffer = m_views[uScreenId]->frameBuffer();
+            QSize scaledSize = pFrameBuffer->scaledSize();
+            double xRatio = scaledSize.isValid() ? (double)pFrameBuffer->width() / (double)scaledSize.width() : 1;
+            double yRatio = scaledSize.isValid() ? (double)pFrameBuffer->height() / (double)scaledSize.height() : 1;
+            /* Set scaling if scale-factor is present: */
+            cpnt.setX(cpnt.x() * xRatio);
+            cpnt.setY(cpnt.y() * yRatio);
+
+            /* Bound coordinates: */
             if (cpnt.x() < 0) cpnt.setX(0);
             else if (cpnt.x() > iCw - 1) cpnt.setX(iCw - 1);
             if (cpnt.y() < 0) cpnt.setY(0);
             else if (cpnt.y() > iCh - 1) cpnt.setY(iCh - 1);
 
-            /* Get & Setup absolute-event shift: */
+            /* Determine shifting: */
             CFramebuffer framebuffer;
             LONG xShift = 0, yShift = 0;
             session().GetConsole().GetDisplay().GetFramebuffer(uScreenId, framebuffer, xShift, yShift);
+            /* Set shifting: */
             cpnt.setX(cpnt.x() + xShift);
             cpnt.setY(cpnt.y() + yShift);
 
+            /* Post absolute mouse-event into guest: */
             CMouse mouse = session().GetConsole().GetMouse();
             mouse.PutMouseEventAbsolute(cpnt.x() + 1, cpnt.y() + 1, iWheelVertical, iWheelHorizontal, iMouseButtonsState);
             return true;

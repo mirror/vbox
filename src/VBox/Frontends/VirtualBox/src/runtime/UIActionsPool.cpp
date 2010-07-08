@@ -283,6 +283,37 @@ protected:
     }
 };
 
+class ToggleScaleModeAction : public UIToggleAction
+{
+    Q_OBJECT;
+
+public:
+
+    ToggleScaleModeAction(QObject *pParent)
+        : UIToggleAction(pParent,
+                         ":/scaled_on_16px.png", ":/scaled_16px.png",
+                         ":/scaled_on_disabled_16px.png", ":/scaled_disabled_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        if (!isChecked())
+        {
+            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Enter &Scale Mode"), "C"));
+            setStatusTip(QApplication::translate("UIActionsPool", "Switch to scale mode"));
+        }
+        else
+        {
+            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Exit &Scale Mode"), "C"));
+            setStatusTip(QApplication::translate("UIActionsPool", "Switch to normal mode"));
+        }
+    }
+};
+
 class ToggleGuestAutoresizeAction : public UIToggleAction
 {
     Q_OBJECT;
@@ -1147,6 +1178,7 @@ UIActionsPool::UIActionsPool(QObject *pParent)
     /* "Machine" menu actions: */
     m_actionsPool[UIActionIndex_Toggle_Fullscreen] = new ToggleFullscreenModeAction(this);
     m_actionsPool[UIActionIndex_Toggle_Seamless] = new ToggleSeamlessModeAction(this);
+    m_actionsPool[UIActionIndex_Toggle_Scale] = new ToggleScaleModeAction(this);
     m_actionsPool[UIActionIndex_Toggle_GuestAutoresize] = new ToggleGuestAutoresizeAction(this);
     m_actionsPool[UIActionIndex_Simple_AdjustWindow] = new PerformWindowAdjustAction(this);
     m_actionsPool[UIActionIndex_Toggle_MouseIntegration] = new ToggleMouseIntegrationAction(this);

@@ -29,6 +29,7 @@
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineLogicSeamless.h"
+#include "UIMachineLogicScale.h"
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
 #include "UISession.h"
@@ -253,6 +254,9 @@ UIMachineLogic* UIMachineLogic::create(QObject *pParent,
             break;
         case UIVisualStateType_Seamless:
             logic = new UIMachineLogicSeamless(pParent, pSession, pActionsPool);
+            break;
+        case UIVisualStateType_Scale:
+            logic = new UIMachineLogicScale(pParent, pSession, pActionsPool);
             break;
     }
     return logic;
@@ -534,6 +538,7 @@ void UIMachineLogic::prepareActionGroups()
     /* Move actions into running actions group: */
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Fullscreen));
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Seamless));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Scale));
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize));
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_AdjustWindow));
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_TypeCAD));

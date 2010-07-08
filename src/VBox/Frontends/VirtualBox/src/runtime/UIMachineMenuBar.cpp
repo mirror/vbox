@@ -142,6 +142,7 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsP
     /* Machine submenu: */
     pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Fullscreen));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Seamless));
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Scale));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_GuestAutoresize));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_AdjustWindow));
     pMenu->addSeparator();

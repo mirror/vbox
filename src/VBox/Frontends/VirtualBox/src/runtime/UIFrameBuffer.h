@@ -176,6 +176,9 @@ public:
     ulong width() { return m_width; }
     ulong height() { return m_height; }
 
+    virtual QSize scaledSize() const { return m_scaledSize; }
+    virtual void setScaledSize(const QSize &size = QSize()) { m_scaledSize = size; }
+
     virtual ulong pixelFormat()
     {
         return FramebufferPixelFormat_FOURCC_RGB;
@@ -234,6 +237,7 @@ protected:
     RTCRITSECT m_critSect;
     int m_width;
     int m_height;
+    QSize m_scaledSize;
     uint64_t m_uWinId;
     bool m_fIsDeleted;
 
