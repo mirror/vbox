@@ -1149,15 +1149,6 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
 
     Assert(!skb_shinfo(pBuf)->frag_list);
 
-    if (fSrc & INTNETTRUNKDIR_WIRE)
-    {
-        /*
-         * The packet came from wire, ethernet header was removed by device driver.
-         * Restore it.
-         */
-        skb_push(pBuf, ETH_HLEN);
-    }
-
     if (!pGsoCtx)
         IntNetSgInitTempSegs(pSG, pBuf->len, cSegs, 0 /*cSegsUsed*/);
     else
@@ -1245,6 +1236,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
     Log3(("vboxNetFltLinuxPacketHandler: skb len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x\n",
           pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type));
+    Log4(("vboxNetFltLinuxPacketHandler: packet dump follows:\n%.*Rhxd\n", pBuf->len-pBuf->data_len, skb_mac_header(pBuf)));
 #else
     Log3(("vboxNetFltLinuxPacketHandler: skb len=%u data_len=%u truesize=%u next=%p nr_frags=%u tso_size=%u tso_seqs=%u frag_list=%p pkt_type=%x\n",
           pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->tso_size, skb_shinfo(pBuf)->tso_segs, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type));
@@ -1287,6 +1279,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
         Log3(("vboxNetFltLinuxPacketHandler: skb copy len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x\n",
               pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type));
+        Log4(("vboxNetFltLinuxPacketHandler: packet dump follows:\n%.*Rhxd\n", pBuf->len-pBuf->data_len, skb_mac_header(pBuf)));
 # else
         Log3(("vboxNetFltLinuxPacketHandler: skb copy len=%u data_len=%u truesize=%u next=%p nr_frags=%u tso_size=%u tso_seqs=%u frag_list=%p pkt_type=%x\n",
               pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->tso_size, skb_shinfo(pBuf)->tso_segs, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type));
@@ -1425,22 +1418,39 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
         Log5(("vboxNetFltLinuxCanForwardAsGso: gso_size=%#x skb_len=%#x (max=%#x)\n", skb_shinfo(pSkb)->gso_size, pSkb->len, VBOX_MAX_GSO_SIZE));
         return false;
     }
+    /*
+     * It is possible to receive GSO packets from wire if GRO is enabled.
+     */
     if (RT_UNLIKELY(fSrc & INTNETTRUNKDIR_WIRE))
     {
         Log5(("vboxNetFltLinuxCanForwardAsGso: fSrc=wire\n"));
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+        /*
+         * The packet came from the wire and the driver has already consumed
+         * mac header. We need to restore it back.
+         */
+        pSkb->mac_len = pSkb->network_header - pSkb->mac_header;
+        skb_push(pSkb, pSkb->mac_len);
+        Log5(("vboxNetFltLinuxCanForwardAsGso: mac_len=%d data=%p mac_header=%p network_header=%p\n",
+              pSkb->mac_len, pSkb->data, skb_mac_header(pSkb), skb_network_header(pSkb)));
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
+        /* Older kernels didn't have GRO. */
         return false;
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
     }
-
-    /*
-     * skb_gso_segment does the following. Do we need to do it as well?
-     */
+    else 
+    {
+        /*
+         * skb_gso_segment does the following. Do we need to do it as well?
+         */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
-    skb_reset_mac_header(pSkb);
-    pSkb->mac_len = pSkb->network_header - pSkb->mac_header;
+        skb_reset_mac_header(pSkb);
+        pSkb->mac_len = pSkb->network_header - pSkb->mac_header;
 #else
-    pSkb->mac.raw = pSkb->data;
-    pSkb->mac_len = pSkb->nh.raw - pSkb->data;
+        pSkb->mac.raw = pSkb->data;
+        pSkb->mac_len = pSkb->nh.raw - pSkb->data;
 #endif
+    }
 
     /*
      * Switch on the ethertype.
@@ -1638,6 +1648,15 @@ static int vboxNetFltLinuxForwardSegment(PVBOXNETFLTINS pThis, struct sk_buff *p
         PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
         if (RT_LIKELY(pSG))
         {
+            if (fSrc & INTNETTRUNKDIR_WIRE)
+            {
+                /*
+                 * The packet came from wire, ethernet header was removed by device driver.
+                 * Restore it.
+                 */
+                skb_push(pBuf, ETH_HLEN);
+            }
+
             vboxNetFltLinuxSkBufToSG(pThis, pBuf, pSG, cSegs, fSrc, NULL /*pGsoCtx*/);
 
             vboxNetFltDumpPacket(pSG, false, (fSrc & INTNETTRUNKDIR_HOST) ? "host" : "wire", 1);
