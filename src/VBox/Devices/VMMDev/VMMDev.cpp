@@ -471,7 +471,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_ReportGuestInfo:
         {
-            if (pRequestHeader->size < sizeof(VMMDevReportGuestInfo))
+            if (pRequestHeader->size != sizeof(VMMDevReportGuestInfo))
             {
                 AssertMsgFailed(("VMMDev guest information structure has an invalid size!\n"));
                 pRequestHeader->rc = VERR_INVALID_PARAMETER;
@@ -491,7 +491,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     LogRel(("Guest Additions information report: Interface = 0x%08X osType = 0x%08X\n",
                             pThis->guestInfo.additionsVersion,
                             pThis->guestInfo.osType));
-                    pThis->pDrv->pfnUpdateGuestVersion(pThis->pDrv, &pThis->guestInfo);
+                    pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
                 }
 
                 if (pThis->fu32AdditionsOk)
@@ -508,7 +508,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
         case VMMDevReq_ReportGuestInfo2:
         {
-            if (pRequestHeader->size < sizeof(VMMDevReportGuestInfo2))
+            if (pRequestHeader->size != sizeof(VMMDevReportGuestInfo2))
             {
                 AssertMsgFailed(("VMMDev guest information 2 structure has an invalid size!\n"));
                 pRequestHeader->rc = VERR_INVALID_PARAMETER;
@@ -519,6 +519,23 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 LogRel(("Guest Additions information report: Version %d.%d.%d r%d '%.*s'\n",
                         guestInfo2->additionsMajor, guestInfo2->additionsMinor, guestInfo2->additionsBuild,
                         guestInfo2->additionsRevision, sizeof(guestInfo2->szName), guestInfo2->szName));
+                pRequestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
+
+        case VMMDevReq_ReportGuestStatus:
+        {
+            if (pRequestHeader->size != sizeof(VMMDevReportGuestStatus))
+            {
+                AssertMsgFailed(("VMMDev guest status structure has an invalid size!\n"));
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VBoxGuestStatus *guestStatus = &((VMMDevReportGuestStatus*)pRequestHeader)->guestStatus;
+                pThis->pDrv->pfnUpdateGuestStatus(pThis->pDrv, guestStatus);
+
                 pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
@@ -2588,7 +2605,7 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 pThis->guestInfo.additionsVersion,
                 pThis->guestInfo.osType));
         if (pThis->pDrv)
-            pThis->pDrv->pfnUpdateGuestVersion(pThis->pDrv, &pThis->guestInfo);
+            pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
     }
     if (pThis->pDrv)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
@@ -2725,7 +2742,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
      * Call the update functions as required.
      */
     if (fVersionChanged)
-        pThis->pDrv->pfnUpdateGuestVersion(pThis->pDrv, &pThis->guestInfo);
+        pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
     if (fCapsChanged)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
 

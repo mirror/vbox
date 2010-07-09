@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -68,16 +68,29 @@ public:
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    // public initializer/uninitializer for internal purposes only
+    // Public initializer/uninitializer for internal purposes only
     HRESULT init (Console *aParent);
     void uninit();
 
     // IGuest properties
     STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
+#if 0
+    /** @todo Will replace old AdditionsActive call. */
+    STDMETHOD(COMGETTER(AdditionsActive)) (ULONG aLevel, BOOL *aAdditionsActive);
+#endif
     STDMETHOD(COMGETTER(AdditionsActive)) (BOOL *aAdditionsActive);
+#if 0
+    /** @todo Will replace AdditionsVersion to be more clear. */
+    STDMETHOD(COMGETTER(AdditionsAPIVersion)) (BSTR *aAdditionsVersion);
+#endif
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
+    /** @todo Remove */
     STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
     STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
+#if 0
+    /** @todo Will replace SupportsSeamless, SupportsGraphics, ... */
+    STDMETHOD(COMGETTER(AdditionsFeatureAvailable)) (ULONG64 aFeature, BOOL *aActive, BOOL *aAvailable);
+#endif
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
     STDMETHOD(COMGETTER(PageFusionEnabled)) (BOOL *aPageFusionEnabled);
@@ -98,14 +111,11 @@ public:
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
 
-    // public methods that are not in IDL
-    void setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType);
-
-    void setSupportsSeamless (BOOL aSupportsSeamless);
-
-    void setSupportsGraphics (BOOL aSupportsGraphics);
-
-    HRESULT SetStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
+    // Public methods that are not in IDL (only called internally).
+    void setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType);
+    void setAdditionsStatus(ULONG ulFacility, ULONG ulStatus, ULONG ulFlags);
+    void setSupportedFeatures(ULONG64 ulCaps, ULONG64 ulActive);
+    HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
 
 # ifdef VBOX_WITH_GUEST_CONTROL
     /** Static callback for handling guest notifications. */

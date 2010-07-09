@@ -832,7 +832,7 @@ static uint32_t guestAtomicBitsTestAndClear(void *pu32Bits, uint32_t u32Mask)
  */
 NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    dprintf(("VBoxGuest::VBoxGuestDeviceControl\n"));
+    //dprintf(("VBoxGuest::VBoxGuestDeviceControl\n"));
 
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -872,7 +872,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
              * array of counters for each event, event mask is computed, each
              * time a wait event is arrived.
              */
-            dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_WAITEVENT\n"));
+            //dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_WAITEVENT\n"));
 
             if (pStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(VBoxGuestWaitEventInfo))
             {
@@ -926,7 +926,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                 rc = KeWaitForSingleObject (&pDevExt->keventNotification, Executive /** @todo UserRequest? */,
                                             KernelMode, TRUE, &timeout);
-                dprintf(("VBOXGUEST_IOCTL_WAITEVENT: Wait returned %d -> event %x\n", rc, eventInfo->u32EventFlagsOut));
+                //dprintf(("VBOXGUEST_IOCTL_WAITEVENT: Wait returned %d -> event %x\n", rc, eventInfo->u32EventFlagsOut));
 
                 if (!fTimeout && rc == STATUS_TIMEOUT)
                     continue;
@@ -1429,8 +1429,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
-    dprintf(("VBoxGuest::VBoxGuestDeviceControl: returned cbOut=%d rc=%#x\n", cbOut, Status));
-
+    //dprintf(("VBoxGuest::VBoxGuestDeviceControl: returned cbOut=%d rc=%#x\n", cbOut, Status));
     return Status;
 }
 
