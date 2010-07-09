@@ -618,11 +618,11 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
 
         if (idNewSession != g_idSession)
         {
-            bool fUnregister = false; 
+            bool fUnregister = false;
 
             VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: VM was restored!!\n");
-            /* The VM was restored, so reregister all modules the next time. */ 
-            RTAvlPVDestroy(&g_pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, &fUnregister); 
+            /* The VM was restored, so reregister all modules the next time. */
+            RTAvlPVDestroy(&g_pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, &fUnregister);
             g_pKnownModuleTree = NULL;
 
             g_idSession = idNewSession;
@@ -676,9 +676,10 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
      */
     for (;;)
     {
-        VBoxServiceVerbose(3, "VBoxServicePageSharingWorkerProcess: enabled=%d\n", VbglR3PageSharingIsEnabled());
+        BOOL fEnabled = VbglR3PageSharingIsEnabled();
+        VBoxServiceVerbose(3, "VBoxServicePageSharingWorkerProcess: Enabled = %s\n", fEnabled ? "Yes" : "No");
 
-        if (    VbglR3PageSharingIsEnabled()
+        if (    fEnabled
             &&  hProcess == NIL_RTPROCESS)
         {
             char szExeName[256];
@@ -719,7 +720,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
         }
     }
 
-    if (hProcess)
+    if (hProcess != NIL_RTPROCESS)
         RTProcTerminate(hProcess);
 
     RTSemEventMultiDestroy(g_PageSharingEvent);
