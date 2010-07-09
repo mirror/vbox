@@ -1939,7 +1939,8 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             if (details == VMINFO_FULL)
             {
                 rc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
-                if (SUCCEEDED(rc))
+                if (   SUCCEEDED(rc)
+                    && !guestString.isEmpty())
                 {
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("GuestAdditionsVersion=\"%lS\"\n", guestString.raw());
