@@ -121,6 +121,18 @@
 
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+/** This enables or disables handling of GSO frames coming from the wire (GRO). */
+# define VBOXNETFLT_WITH_GRO                1
+#endif
+/*
+ * GRO support was backported to RHEL 5.4
+ */
+#ifdef RHEL_RELEASE_CODE
+# if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(5, 4)
+#  define VBOXNETFLT_WITH_GRO               1
+# endif
+#endif
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -1424,7 +1436,7 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
     if (RT_UNLIKELY(fSrc & INTNETTRUNKDIR_WIRE))
     {
         Log5(("vboxNetFltLinuxCanForwardAsGso: fSrc=wire\n"));
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+#ifdef VBOXNETFLT_WITH_GRO
         /*
          * The packet came from the wire and the driver has already consumed
          * mac header. We need to restore it back.
@@ -1433,10 +1445,10 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
         skb_push(pSkb, pSkb->mac_len);
         Log5(("vboxNetFltLinuxCanForwardAsGso: mac_len=%d data=%p mac_header=%p network_header=%p\n",
               pSkb->mac_len, pSkb->data, skb_mac_header(pSkb), skb_network_header(pSkb)));
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
+#else /* !VBOXNETFLT_WITH_GRO */
         /* Older kernels didn't have GRO. */
         return false;
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
+#endif /* !VBOXNETFLT_WITH_GRO */
     }
     else 
     {
