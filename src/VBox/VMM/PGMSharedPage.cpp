@@ -198,7 +198,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU
     pgmLock(pVM);
     rc = GMMR3CheckSharedModules(pVM);
     pgmUnlock(pVM);
-
+    AssertLogRelRC(rc);
     return rc;
 }
 
