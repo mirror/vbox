@@ -23,27 +23,12 @@
 /* VBox includes */
 #include "VirtualBoxBase.h"
 
-/* VBox forward declarations */
-class Progress;
-class VirtualSystemDescription;
-struct VirtualSystemDescriptionEntry;
-
 namespace ovf
 {
     struct HardDiskController;
     struct VirtualSystem;
     class OVFReader;
     struct DiskImage;
-}
-
-namespace xml
-{
-    class ElementNode;
-}
-
-namespace settings
-{
-    class MachineConfigFile;
 }
 
 class ATL_NO_VTABLE Appliance :

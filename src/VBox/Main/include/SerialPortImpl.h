@@ -22,13 +22,6 @@
 
 #include "VirtualBoxBase.h"
 
-class GuestOSType;
-
-namespace settings
-{
-    struct SerialPort;
-}
-
 class ATL_NO_VTABLE SerialPort :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(ISerialPort)

@@ -29,11 +29,14 @@
 
 #include "VBox/com/VirtualBox.h"
 
-// avoid including VBox/settings.h and VBox/xml.h;
-// only declare the classes
+// empty-declare a bunch of classes that are commonly used in VirtualBox
+// headers; this avoids having to include all the headers in every
+// single implementation .cpp file
+
 namespace xml
 {
-class File;
+    class ElementNode;
+    class File;
 }
 
 using namespace com;
@@ -42,11 +45,84 @@ using namespace util;
 class AutoInitSpan;
 class AutoUninitSpan;
 
-class VirtualBox;
-class Machine;
-class Medium;
+class AudioSniffer;
+class AudioAdapter;
+class Appliance;
+class BIOSSettings;
+class Console;
+class ConsoleCallbackRegistration;
+class ConsoleVRDPServer;
+class DHCPServer;
+class Display;
+class Guest;
+class GuestOSType;
 class Host;
+class HostUSBDevice;
+class HostUSBDeviceFilter;
+class Keyboard;
+class Machine;
+class MachineDebugger;
+class Medium;
+class MediumAttachment;
+class MediumFormat;
+class MediumLockList;
+class Mouse;
+class NetworkAdapter;
+class NATEngine;
+class OUSBDevice;
+class ParallelPort;
+class PerformanceCollector;
+class Progress;
+class ProgressProxy;
+class RemoteDisplayInfo;
+class RemoteUSBDevice;
+class SerialPort;
+class SessionMachine;
+class SharedFolder;
+class Snapshot;
+class SnapshotMachine;
+class StorageController;
+class SystemProperties;
+class USBController;
+class USBDeviceFilter;
+class USBProxyService;
+class TeleporterStateSrc;
+class VMMDev;
+class VirtualBox;
+class VirtualSystemDescription;
+struct VirtualSystemDescriptionEntry;
+class VRDPServer;
+
 typedef std::list< ComObjPtr<Medium> > MediaList;
+typedef std::list< ComObjPtr<MediumAttachment> > MediumAttachmentsList;
+
+namespace settings
+{
+    struct AudioAdapter;
+    struct Hardware;
+    struct Host;
+    class  MainConfigFile;
+    class  MachineConfigFile;
+    struct MachineRegistryEntry;
+    struct Medium;
+    struct NAT;
+    struct NetworkAdapter;
+    struct ParallelPort;
+    struct SerialPort;
+    struct Snapshot;
+    struct Storage;
+    struct StorageController;
+    struct SystemProperties;
+    struct USBController;
+}
+
+namespace pm
+{
+    class Metric;
+    class BaseMetric;
+    class CollectorHAL;
+    class CollectorGuestHAL;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -138,6 +214,15 @@ public:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef DEBUG
+    // the following two are defined in glue/errorprint.cpp because they are included
+    // in the ComAssert macro below thousands of times in release builds
+extern const char *g_pcszComAssertFailedString;
+    // "Assertion failed: [%s] at '%s' (%d) in %s.\nPlease contact the product vendor!"
+extern const char *g_pcszComAssertMsgFailedString;
+    // "Assertion failed: [%s] at '%s' (%d) in %s.\n%s\nPlease contact the product vendor!"
+#endif
+
 /**
  *  Special version of the Assert macro to be used within VirtualBoxBase
  *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
@@ -157,7 +242,7 @@ public:
     do { \
         if (RT_UNLIKELY(!(expr))) \
             setError(E_FAIL, \
-                     "Assertion failed: [%s] at '%s' (%d) in %s.\nPlease contact the product vendor!", \
+                     g_pcszComAssertFailedString, \
                      #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
     } while (0)
 #endif
@@ -178,8 +263,8 @@ public:
     do { \
         if (RT_UNLIKELY(!(expr))) \
             setError(E_FAIL, \
-                     "Assertion failed: [%s] at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!", \
-                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+                     g_pcszComAssertMsgFailedString, \
+                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__, Utf8StrFmt a .c_str()); \
     } while (0)
 #endif
 

@@ -20,61 +20,13 @@
 
 #include "VirtualBoxBase.h"
 #include "SnapshotImpl.h"
-#include "VRDPServerImpl.h"
-#include "MediumAttachmentImpl.h"
-#include "MediumLock.h"
-#include "NetworkAdapterImpl.h"
-#include "AudioAdapterImpl.h"
-#include "SerialPortImpl.h"
-#include "ParallelPortImpl.h"
-#include "BIOSSettingsImpl.h"
-#include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
-#include "VBox/settings.h"
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-#include "Performance.h"
-#include "PerformanceImpl.h"
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 // generated header
 #include "SchemaDefs.h"
 
 #include "VBox/com/ErrorInfo.h"
 
-#include <iprt/file.h>
-#include <iprt/thread.h>
-#include <iprt/time.h>
-
 #include <list>
-
-// defines
-////////////////////////////////////////////////////////////////////////////////
-
-// helper declarations
-////////////////////////////////////////////////////////////////////////////////
-
-class Progress;
-class ProgressProxy;
-class Keyboard;
-class Mouse;
-class Display;
-class MachineDebugger;
-class USBController;
-class Snapshot;
-class SharedFolder;
-class HostUSBDevice;
-class StorageController;
-
-class SessionMachine;
-
-namespace settings
-{
-    class MachineConfigFile;
-    struct Snapshot;
-    struct Hardware;
-    struct Storage;
-    struct StorageController;
-    struct MachineRegistryEntry;
-}
 
 // Machine class
 ////////////////////////////////////////////////////////////////////////////////
@@ -92,229 +44,11 @@ public:
         AnyStateDep = 0, MutableStateDep, MutableOrSavedStateDep
     };
 
-    /**
-     * Internal machine data.
-     *
-     * Only one instance of this data exists per every machine -- it is shared
-     * by the Machine, SessionMachine and all SnapshotMachine instances
-     * associated with the given machine using the util::Shareable template
-     * through the mData variable.
-     *
-     * @note |const| members are persistent during lifetime so can be
-     * accessed without locking.
-     *
-     * @note There is no need to lock anything inside init() or uninit()
-     * methods, because they are always serialized (see AutoCaller).
-     */
-    struct Data
-    {
-        /**
-         * Data structure to hold information about sessions opened for the
-         * given machine.
-         */
-        struct Session
-        {
-            /** Control of the direct session opened by openSession() */
-            ComPtr<IInternalSessionControl> mDirectControl;
-
-            typedef std::list<ComPtr<IInternalSessionControl> > RemoteControlList;
-
-            /** list of controls of all opened remote sessions */
-            RemoteControlList mRemoteControls;
-
-            /** openRemoteSession() and OnSessionEnd() progress indicator */
-            ComObjPtr<ProgressProxy> mProgress;
-
-            /**
-             * PID of the session object that must be passed to openSession() to
-             * finalize the openRemoteSession() request (i.e., PID of the
-             * process created by openRemoteSession())
-             */
-            RTPROCESS mPid;
-
-            /** Current session state */
-            SessionState_T mState;
-
-            /** Session type string (for indirect sessions) */
-            Bstr mType;
-
-            /** Session machine object */
-            ComObjPtr<SessionMachine> mMachine;
-
-            /** Medium object lock collection. */
-            MediumLockListMap mLockedMedia;
-        };
-
-        Data();
-        ~Data();
-
-        const Guid          mUuid;
-        BOOL                mRegistered;
-
-        /** Flag indicating that the config file is read-only. */
-        Utf8Str             m_strConfigFile;
-        Utf8Str             m_strConfigFileFull;
-
-        // machine settings XML file
-        settings::MachineConfigFile *pMachineConfigFile;
-        uint32_t            flModifications;
-
-        BOOL                mAccessible;
-        com::ErrorInfo      mAccessError;
-
-        MachineState_T      mMachineState;
-        RTTIMESPEC          mLastStateChange;
-
-        /* Note: These are guarded by VirtualBoxBase::stateLockHandle() */
-        uint32_t            mMachineStateDeps;
-        RTSEMEVENTMULTI     mMachineStateDepsSem;
-        uint32_t            mMachineStateChangePending;
-
-        BOOL                mCurrentStateModified;
-        /** Guest properties have been modified and need saving since the
-         * machine was started, or there are transient properties which need
-         * deleting and the machine is being shut down. */
-        BOOL                mGuestPropertiesModified;
-
-        Session             mSession;
-
-        ComObjPtr<Snapshot> mFirstSnapshot;
-        ComObjPtr<Snapshot> mCurrentSnapshot;
-    };
-
-    /**
-     *  Saved state data.
-     *
-     *  It's actually only the state file path string, but it needs to be
-     *  separate from Data, because Machine and SessionMachine instances
-     *  share it, while SnapshotMachine does not.
-     *
-     *  The data variable is |mSSData|.
-     */
-    struct SSData
-    {
-        Utf8Str mStateFilePath;
-    };
-
-    /**
-     *  User changeable machine data.
-     *
-     *  This data is common for all machine snapshots, i.e. it is shared
-     *  by all SnapshotMachine instances associated with the given machine
-     *  using the util::Backupable template through the |mUserData| variable.
-     *
-     *  SessionMachine instances can alter this data and discard changes.
-     *
-     *  @note There is no need to lock anything inside init() or uninit()
-     *  methods, because they are always serialized (see AutoCaller).
-     */
-    struct UserData
-    {
-        UserData();
-        ~UserData();
-
-        Bstr    mName;
-        BOOL    mNameSync;
-        Bstr    mDescription;
-        Bstr    mOSTypeId;
-        Bstr    mSnapshotFolder;
-        Bstr    mSnapshotFolderFull;
-        BOOL    mTeleporterEnabled;
-        ULONG   mTeleporterPort;
-        Bstr    mTeleporterAddress;
-        Bstr    mTeleporterPassword;
-        BOOL    mRTCUseUTC;
-    };
-
-    /**
-     *  Hardware data.
-     *
-     *  This data is unique for a machine and for every machine snapshot.
-     *  Stored using the util::Backupable template in the |mHWData| variable.
-     *
-     *  SessionMachine instances can alter this data and discard changes.
-     */
-    struct HWData
-    {
-        /**
-         * Data structure to hold information about a guest property.
-         */
-        struct GuestProperty {
-            /** Property name */
-            Utf8Str strName;
-            /** Property value */
-            Utf8Str strValue;
-            /** Property timestamp */
-            ULONG64 mTimestamp;
-            /** Property flags */
-            ULONG mFlags;
-        };
-
-        HWData();
-        ~HWData();
-
-        Bstr                 mHWVersion;
-        Guid                 mHardwareUUID;   /**< If Null, use mData.mUuid. */
-        ULONG                mMemorySize;
-        ULONG                mMemoryBalloonSize;
-        BOOL                 mPageFusionEnabled;
-        ULONG                mVRAMSize;
-        ULONG                mMonitorCount;
-        BOOL                 mHWVirtExEnabled;
-        BOOL                 mHWVirtExExclusive;
-        BOOL                 mHWVirtExNestedPagingEnabled;
-        BOOL                 mHWVirtExLargePagesEnabled;
-        BOOL                 mHWVirtExVPIDEnabled;
-        BOOL                 mAccelerate2DVideoEnabled;
-        BOOL                 mPAEEnabled;
-        BOOL                 mSyntheticCpu;
-        ULONG                mCPUCount;
-        BOOL                 mCPUHotPlugEnabled;
-        BOOL                 mAccelerate3DEnabled;
-        BOOL                 mHpetEnabled;
-
-        BOOL                 mCPUAttached[SchemaDefs::MaxCPUCount];
-
-        settings::CpuIdLeaf  mCpuIdStdLeafs[10];
-        settings::CpuIdLeaf  mCpuIdExtLeafs[10];
-
-        DeviceType_T         mBootOrder[SchemaDefs::MaxBootPosition];
-
-        typedef std::list< ComObjPtr<SharedFolder> > SharedFolderList;
-        SharedFolderList     mSharedFolders;
-
-        ClipboardMode_T      mClipboardMode;
-
-        typedef std::list<GuestProperty> GuestPropertyList;
-        GuestPropertyList    mGuestProperties;
-        Utf8Str              mGuestPropertyNotificationPatterns;
-
-        FirmwareType_T       mFirmwareType;
-        KeyboardHidType_T    mKeyboardHidType;
-        PointingHidType_T    mPointingHidType;
-
-        BOOL                 mIoCacheEnabled;
-        ULONG                mIoCacheSize;
-        ULONG                mIoBandwidthMax;
-    };
-
-    /**
-     *  Hard disk and other media data.
-     *
-     *  The usage policy is the same as for HWData, but a separate structure
-     *  is necessary because hard disk data requires different procedures when
-     *  taking or deleting snapshots, etc.
-     *
-     *  The data variable is |mMediaData|.
-     */
-    struct MediaData
-    {
-        MediaData();
-        ~MediaData();
-
-        typedef std::list< ComObjPtr<MediumAttachment> > AttachmentList;
-        AttachmentList mAttachments;
-    };
+    struct Data;            // machine data
+    struct SSData;          // saved state data
+    struct UserData;        // user data
+    struct HWData;          // hardware data
+    struct MediaData;       // media data
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Machine, IMachine)
 
@@ -530,7 +264,7 @@ public:
     /// @todo (dmik) add lock and make non-inlined after revising classes
     //  that use it. Note: they should enter Machine lock to keep the returned
     //  information valid!
-    bool isRegistered() { return !!mData->mRegistered; }
+    bool isRegistered() const;
 
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
@@ -544,42 +278,21 @@ public:
      */
     VirtualBox* getVirtualBox() const { return mParent; }
 
-    /**
-     * Returns this machine ID.
-     *
-     * @note This method doesn't check this object's readiness. Intended to be
-     * used by ready Machine children (whose readiness is bound to the parent's
-     * one) or after adding a caller manually.
-     */
-    const Guid& getId() const { return mData->mUuid; }
+    const Guid& getId() const;
 
     /**
-     * Returns the snapshot ID this machine represents or an empty UUID if this
-     * instance is not SnapshotMachine.
-     *
-     * @note This method doesn't check this object's readiness. Intended to be
-     * used by ready Machine children (whose readiness is bound to the parent's
-     * one) or after adding a caller manually.
+     * Virtual method that returns the snapshot a Machine object is attached
+     * to. This implementation returns Guid::Empty, but the SnapshotMachine
+     * override will return a real snapshot ID.
      */
-    inline const Guid& getSnapshotId() const;
+    virtual const Guid& getSnapshotId() const
+    {
+        return Guid::Empty;
+    }
 
-    /**
-     * Returns this machine's full settings file path.
-     *
-     * @note This method doesn't lock this object or check its readiness.
-     * Intended to be used only after doing addCaller() manually and locking it
-     * for reading.
-     */
-    const Utf8Str& getSettingsFileFull() const { return mData->m_strConfigFileFull; }
+    const Utf8Str& getSettingsFileFull() const;
 
-    /**
-     * Returns this machine name.
-     *
-     * @note This method doesn't lock this object or check its readiness.
-     * Intended to be used only after doing addCaller() manually and locking it
-     * for reading.
-     */
-    const Bstr& getName() const { return mUserData->mName; }
+    const Bstr& getName() const;
 
     enum
     {
@@ -623,24 +336,14 @@ public:
                               ProgressProxy *aProgress);
     HRESULT openExistingSession(IInternalSessionControl *aControl);
 
-    HRESULT getDirectControl(ComPtr<IInternalSessionControl> *directControl)
-    {
-        HRESULT rc;
-        *directControl = mData->mSession.mDirectControl;
-
-        if (!*directControl)
-            rc = E_ACCESSDENIED;
-        else
-            rc = S_OK;
-
-        return rc;
-    }
+    HRESULT getDirectControl(ComPtr<IInternalSessionControl> &directControl);
 
 #if defined(RT_OS_WINDOWS)
 
     bool isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
                        ComPtr<IInternalSessionControl> *aControl = NULL,
-                       HANDLE *aIPCSem = NULL, bool aAllowClosing = false);
+                       HANDLE *aIPCSem = NULL,
+                       bool aAllowClosing = false);
     bool isSessionSpawning(RTPROCESS *aPID = NULL);
 
     bool isSessionOpenOrClosing(ComObjPtr<SessionMachine> &aMachine,
@@ -652,7 +355,8 @@ public:
 
     bool isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
                        ComPtr<IInternalSessionControl> *aControl = NULL,
-                       HMTX *aIPCSem = NULL, bool aAllowClosing = false);
+                       HMTX *aIPCSem = NULL,
+                       bool aAllowClosing = false);
 
     bool isSessionSpawning(RTPROCESS *aPID = NULL);
 
@@ -727,7 +431,7 @@ protected:
                                        bool aSetError = false);
 
     HRESULT getMediumAttachmentsOfController(CBSTR aName,
-                                             MediaData::AttachmentList &aAttachments);
+                                             MediumAttachmentsList &aAttachments);
 
     enum
     {
@@ -759,13 +463,13 @@ protected:
                                 bool *pfNeedsSaveSettings);
     HRESULT deleteImplicitDiffs(bool *pfNeedsSaveSettings);
 
-    MediumAttachment* findAttachment(const MediaData::AttachmentList &ll,
+    MediumAttachment* findAttachment(const MediumAttachmentsList &ll,
                                      IN_BSTR aControllerName,
                                      LONG aControllerPort,
                                      LONG aDevice);
-    MediumAttachment* findAttachment(const MediaData::AttachmentList &ll,
+    MediumAttachment* findAttachment(const MediumAttachmentsList &ll,
                                      ComObjPtr<Medium> pMedium);
-    MediumAttachment* findAttachment(const MediaData::AttachmentList &ll,
+    MediumAttachment* findAttachment(const MediumAttachmentsList &ll,
                                      Guid &id);
 
     void commitMedia(bool aOnline = false);
@@ -1101,7 +805,15 @@ public:
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
 
-    const Guid& getSnapshotId() const { return mSnapshotId; }
+    /**
+     * Override of Machine::getSnapshotId(). Whereas the parent returns an empty Guid,
+     * this returns the snapshot that this machine is attached to.
+     * @return
+     */
+    virtual const Guid& getSnapshotId() const
+    {
+        return mSnapshotId;
+    }
 
 private:
 
@@ -1110,15 +822,4 @@ private:
     friend class Snapshot;
 };
 
-// third party methods that depend on SnapshotMachine definiton
-
-inline const Guid &Machine::getSnapshotId() const
-{
-    return (isSnapshotMachine())
-                ? static_cast<const SnapshotMachine*>(this)->getSnapshotId()
-                : Guid::Empty;
-}
-
-
 #endif // ____H_MACHINEIMPL
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */

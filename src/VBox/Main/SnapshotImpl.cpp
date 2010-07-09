@@ -20,11 +20,20 @@
 #include "Logging.h"
 #include "SnapshotImpl.h"
 
-#include "MachineImpl.h"
-#include "MediumImpl.h"
-#include "MediumFormatImpl.h"
 #include "Global.h"
+
+#include "AudioAdapterImpl.h"
+#include "BIOSSettingsImpl.h"
+#include "MachineImplPrivate.h"
+#include "MediumImpl.h"
+#include "MediumAttachmentImpl.h"
+#include "MediumFormatImpl.h"
+#include "NetworkAdapterImpl.h"
+#include "ParallelPortImpl.h"
 #include "ProgressImpl.h"
+#include "SerialPortImpl.h"
+#include "StorageControllerImpl.h"
+#include "VRDPServerImpl.h"
 
 // @todo these three includes are required for about one or two lines, try
 // to remove them and put that code in shared code in MachineImplcpp
@@ -34,11 +43,14 @@
 
 #include "AutoCaller.h"
 
+#include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/cpp/utils.h>
 
 #include <VBox/param.h>
 #include <VBox/err.h>
+
+#include <VBox/com/array.h>
 
 #include <VBox/settings.h>
 
@@ -895,7 +907,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
 
     /* associate hard disks with the snapshot
      * (Machine::uninitDataAndChildObjects() will deassociate at destruction) */
-    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
+    for (MediumAttachmentsList::const_iterator it = mMediaData->mAttachments.begin();
          it != mMediaData->mAttachments.end();
          ++it)
     {
@@ -1594,7 +1606,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
 
     ULONG ulOpCount = 1;            // one for preparations
     ULONG ulTotalWeight = 1;        // one for preparations
-    for (MediaData::AttachmentList::iterator it = pSnapMachine->mMediaData->mAttachments.begin();
+    for (MediumAttachmentsList::iterator it = pSnapMachine->mMediaData->mAttachments.begin();
          it != pSnapMachine->mMediaData->mAttachments.end();
          ++it)
     {
@@ -1824,7 +1836,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
          * become unused and need to be auto-deleted */
         std::list< ComObjPtr<MediumAttachment> > llDiffAttachmentsToDelete;
 
-        for (MediaData::AttachmentList::const_iterator it = mMediaData.backedUpData()->mAttachments.begin();
+        for (MediumAttachmentsList::const_iterator it = mMediaData.backedUpData()->mAttachments.begin();
              it != mMediaData.backedUpData()->mAttachments.end();
              ++it)
         {
@@ -2052,7 +2064,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     }
 
     // count normal hard disks and add their sizes to the weight
-    for (MediaData::AttachmentList::iterator it = pSnapMachine->mMediaData->mAttachments.begin();
+    for (MediumAttachmentsList::iterator it = pSnapMachine->mMediaData->mAttachments.begin();
          it != pSnapMachine->mMediaData->mAttachments.end();
          ++it)
     {
@@ -2268,7 +2280,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         // state we're restoring to; for each such medium, we will need to
         // merge it with its one and only child (the diff image holding the
         // changes written after the snapshot was taken).
-        for (MediaData::AttachmentList::iterator it = pSnapMachine->mMediaData->mAttachments.begin();
+        for (MediumAttachmentsList::iterator it = pSnapMachine->mMediaData->mAttachments.begin();
              it != pSnapMachine->mMediaData->mAttachments.end();
              ++it)
         {

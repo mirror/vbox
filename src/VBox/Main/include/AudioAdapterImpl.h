@@ -22,11 +22,6 @@
 
 #include "VirtualBoxBase.h"
 
-namespace settings
-{
-    struct AudioAdapter;
-}
-
 class ATL_NO_VTABLE AudioAdapter :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IAudioAdapter)

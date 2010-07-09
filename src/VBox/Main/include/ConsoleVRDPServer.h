@@ -20,7 +20,9 @@
 #ifndef ____H_CONSOLEVRDPSERVER
 #define ____H_CONSOLEVRDPSERVER
 
-#include "RemoteUSBBackend.h"
+class Console;
+class RemoteUSBBackend;
+
 #include <hgcm/HGCM.h>
 
 #include <VBox/VRDPAuth.h>
@@ -52,8 +54,8 @@ typedef struct _VRDPInputSynch
 class ConsoleVRDPServer
 {
 public:
-    ConsoleVRDPServer (Console *console);
-    ~ConsoleVRDPServer ();
+    ConsoleVRDPServer(Console *console);
+    ~ConsoleVRDPServer();
 
     int Launch (void);
 
