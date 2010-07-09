@@ -62,6 +62,8 @@
 
 #include <VBox/com/array.h>
 
+class ListenerRecord;
+
 struct VBoxEvent::Data
 {
     Data()
@@ -349,8 +351,213 @@ static const int FirstEvent = (int)VBoxEventType_LastWildcard + 1;
 static const int LastEvent  = (int)VBoxEventType_Last;
 static const int NumEvents  = LastEvent - FirstEvent;
 
-class ListenerRecord;
-typedef std::list<ListenerRecord*> EventMap[NumEvents];
+/**
+ * Class replacing std::list and able to provide required stability
+ * during iteration. It's acheived by delaying structural modifications
+ * to the list till the moment particular element is no longer used by
+ * current iterators.
+ */
+class EventMapRecord
+{
+private:
+    /**
+     * We have to be double linked, as structural modifications in list are delayed
+     * till element removed, so we have to know our previous one to update its next
+     */
+    EventMapRecord* mNext;
+    EventMapRecord* mPrev;
+    ListenerRecord* mRef; /* must be weak reference */
+    int32_t         mRefCnt;
+    bool            mAlive;
+public:
+    EventMapRecord(ListenerRecord* aRef)
+        :
+        mNext(0),
+        mPrev(0),
+        mRef(aRef),
+        mRefCnt(1),
+        mAlive(true)
+    {}
+
+    EventMapRecord(EventMapRecord& aOther)
+    {
+        mNext = aOther.mNext;
+        mPrev = aOther.mPrev;
+        mRef = aOther.mRef;
+        mRefCnt = aOther.mRefCnt;
+        mAlive = aOther.mAlive;
+    }
+
+    ~EventMapRecord()
+    {
+        if (mNext)
+            mNext->mPrev = mPrev;
+        if (mPrev)
+            mPrev->mNext = mNext;
+    }
+
+    void addRef()
+    {
+        ASMAtomicIncS32(&mRefCnt);
+    }
+
+    void release()
+    {
+        if (ASMAtomicDecS32(&mRefCnt) <= 0) delete this;
+    }
+
+    // Called when an element is no longer needed
+    void kill()
+    {
+        mAlive = false;
+        release();
+    }
+
+    ListenerRecord* ref()
+    {
+        return mAlive ? mRef : 0;
+    }
+
+    friend class EventMapList;
+};
+
+
+class EventMapList
+{
+    EventMapRecord* mHead;
+    uint32_t        mSize;
+public:
+    EventMapList()
+        :
+        mHead(0),
+        mSize(0)
+    {}
+    ~EventMapList()
+    {
+        EventMapRecord* aCur = mHead;
+        while (aCur)
+        {
+            EventMapRecord* aNext = aCur->mNext;
+            aCur->release();
+            aCur = aNext;
+        }
+    }
+
+    /*
+     * Elements have to be added to the front of the list, to make sure
+     * that iterators doesn't see newly added listeners, and iteration
+     * will always complete.
+     */
+    void add(ListenerRecord* aRec)
+    {
+        EventMapRecord* aNew = new EventMapRecord(aRec);
+        aNew->mNext = mHead;
+        if (mHead)
+            mHead->mPrev = aNew;
+        mHead = aNew;
+        mSize++;
+    }
+
+    /*
+     * Mark element as removed, actual removal could be delayed until
+     * all consumers release it too. This helps to keep list stable
+     * enough for iterators to allow long and probably intrusive callbacks.
+     */
+    void remove(ListenerRecord* aRec)
+    {
+        EventMapRecord* aCur = mHead;
+        while (aCur)
+        {
+            EventMapRecord* aNext = aCur->mNext;
+            if (aCur->ref() == aRec)
+            {
+                if (aCur == mHead)
+                    mHead = aNext;
+                aCur->kill();
+                mSize--;
+                // break?
+            }
+            aCur = aNext;
+        }
+    }
+
+    uint32_t size() const
+    {
+        return mSize;
+    }
+
+    struct iterator
+    {
+      EventMapRecord* mCur;
+
+      iterator()
+      : mCur(0)
+      {}
+
+      explicit
+      iterator(EventMapRecord* aCur)
+      : mCur(aCur)
+      {
+          // Prevent element removal, till we're at it
+          if (mCur)
+              mCur->addRef();
+      }
+
+      ~iterator()
+      {
+          if (mCur)
+              mCur->release();
+      }
+
+      ListenerRecord*
+      operator*() const
+      {
+          return mCur->ref();
+      }
+
+      EventMapList::iterator&
+      operator++()
+      {
+          EventMapRecord* aPrev = mCur;
+          do {
+              mCur = mCur->mNext;
+          } while (mCur && !mCur->mAlive);
+
+          // now we can safely release previous element
+          aPrev->release();
+
+          // And grab the new current
+          if (mCur)
+              mCur->addRef();
+
+          return *this;
+      }
+
+      bool
+      operator==(const EventMapList::iterator& aOther) const
+      {
+          return mCur == aOther.mCur;
+      }
+
+      bool
+      operator!=(const EventMapList::iterator& aOther) const
+      {
+          return mCur != aOther.mCur;
+      }
+    };
+
+    iterator begin()
+    {
+        return iterator(mHead);
+    }
+
+    iterator end()
+    {
+        return iterator(0);
+    }
+};
+
+typedef EventMapList EventMap[NumEvents];
 typedef std::map<IEvent*, int32_t> PendingEventsMap;
 typedef std::deque<ComPtr<IEvent> > PassiveQueue;
 
@@ -393,44 +600,45 @@ public:
     friend class EventSource;
 };
 
-/* Handy class with semantics close to ComPtr, but for ListenerRecord */
-class ListenerRecordHolder
+/* Handy class with semantics close to ComPtr, but for list records */
+template<typename Held>
+class RecordHolder
 {
 public:
-    ListenerRecordHolder(ListenerRecord* lr)
+    RecordHolder(Held* lr)
     :
     held(lr)
     {
         addref();
     }
-    ListenerRecordHolder(const ListenerRecordHolder& that)
+    RecordHolder(const RecordHolder& that)
     :
     held(that.held)
     {
         addref();
     }
-    ListenerRecordHolder()
+    RecordHolder()
     :
     held(0)
     {
     }
-    ~ListenerRecordHolder()
+    ~RecordHolder()
     {
         release();
     }
 
-    ListenerRecord* obj()
+    Held* obj()
     {
         return held;
     }
 
-    ListenerRecordHolder &operator=(const ListenerRecordHolder &that)
+    RecordHolder &operator=(const RecordHolder &that)
     {
         safe_assign(that.held);
         return *this;
     }
 private:
-    ListenerRecord* held;
+    Held* held;
 
     void addref()
     {
@@ -442,7 +650,7 @@ private:
         if (held)
             held->release();
     }
-    void safe_assign (ListenerRecord *that_p)
+    void safe_assign (Held *that_p)
     {
         if (that_p)
             that_p->addRef();
@@ -451,7 +659,7 @@ private:
     }
 };
 
-typedef std::map<IEventListener*, ListenerRecordHolder>  Listeners;
+typedef std::map<IEventListener*, RecordHolder<ListenerRecord> >  Listeners;
 
 struct EventSource::Data
 {
@@ -507,7 +715,7 @@ ListenerRecord::ListenerRecord(IEventListener*                  aListener,
             VBoxEventType_T candidate = (VBoxEventType_T)j;
             if (implies(interested, candidate))
             {
-                (*aEvMap)[j - FirstEvent].push_back(this);
+                (*aEvMap)[j - FirstEvent].add(this);
             }
         }
     }
@@ -604,11 +812,11 @@ HRESULT ListenerRecord::dequeue (IEvent*       *aEvent,
 {
     AssertMsg(!mActive, ("must be passive\n"));
 
+    // retain listener record
+    RecordHolder<ListenerRecord> holder(this);
+
     ::RTCritSectEnter(&mcsQLock);
-    if (mQueue.empty())
-    {
-        // retain listener record
-        ListenerRecordHolder holder(this);
+    if (mQueue.empty())    {
         ::RTCritSectLeave(&mcsQLock);
         // Speed up common case
         if (aTimeout == 0)
@@ -707,7 +915,7 @@ STDMETHODIMP EventSource::RegisterListener(IEventListener * aListener,
                             tr("This listener already registered"));
 
         com::SafeArray<VBoxEventType_T> interested(ComSafeArrayInArg (aInterested));
-        ListenerRecordHolder lrh(new ListenerRecord(aListener, interested, aActive, this));
+        RecordHolder<ListenerRecord> lrh(new ListenerRecord(aListener, interested, aActive, this));
         m->mListeners.insert(Listeners::value_type(aListener, lrh));
     }
 
@@ -775,7 +983,7 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
         hrc = aEvent->COMGETTER(Type)(&evType);
         AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
 
-        std::list<ListenerRecord*>& listeners = m->mEvMap[(int)evType-FirstEvent];
+        EventMapList& listeners = m->mEvMap[(int)evType-FirstEvent];
 
         /* Anyone interested in this event? */
         uint32_t cListeners = listeners.size();
@@ -794,12 +1002,12 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
             // pending events lookup
             pit = m->mPendingMap.find(aEvent);
         }
-        for(std::list<ListenerRecord*>::const_iterator it = listeners.begin();
+        for(EventMapList::iterator it = listeners.begin();
             it != listeners.end(); ++it)
         {
             HRESULT cbRc;
             // keep listener record reference, in case someone will remove it while in callback
-            ListenerRecordHolder record(*it);
+            RecordHolder<ListenerRecord> record(*it);
 
             /**
              * We pass lock here to allow modifying ops on EventSource inside callback
