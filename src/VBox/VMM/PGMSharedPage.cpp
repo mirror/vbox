@@ -400,7 +400,7 @@ DECLCALLBACK(int)  pgmR3CmdShowSharedModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
             pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Shared module %s (%s):\n", pSharedModules[i]->szName, pSharedModules[i]->szVersion); 
             for (unsigned j = 0; j < pSharedModules[i]->cRegions; j++)
             {
-                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "--- Region %d: base %RGv size %x\n", pSharedModules[i]->aRegions[j].GCRegionAddr, pSharedModules[i]->aRegions[j].cbRegion);
+                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "--- Region %d: base %RGv size %x\n", j, pSharedModules[i]->aRegions[j].GCRegionAddr, pSharedModules[i]->aRegions[j].cbRegion);
             }
             i++;
         }
