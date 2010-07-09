@@ -489,6 +489,20 @@ extern const char *g_pcszComAssertMsgFailedString;
     cls::~cls() { /*empty*/ }
 
 /**
+ *  A variant of 'throw' that hits a debug breakpoint first to make
+ *  finding the actual thrower possible.
+ */
+#if defined (DEBUG)
+#define DebugBreakThrow(a) throw (a)
+#else
+#define DebugBreakThrow(a) \
+    do { \
+        RTAssertDebugBreak(); \
+        throw (a); \
+    } while (0)
+#endif
+
+/**
  * Parent class of VirtualBoxBase which enables translation support (which
  * Main doesn't have yet, but this provides the tr() function which will one
  * day provide translations).
