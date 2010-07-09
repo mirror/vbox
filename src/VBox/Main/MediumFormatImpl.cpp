@@ -23,8 +23,6 @@
 
 #include <VBox/VBoxHDD.h>
 
-#include <VBox/com/array.h>
-
 #include <iprt/cpp/utils.h>
 
 // constructor / destructor

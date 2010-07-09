@@ -21,6 +21,15 @@
 #define ____H_MEDIUMIMPL
 
 #include "VirtualBoxBase.h"
+#include "MediumLock.h"
+
+class Progress;
+class MediumFormat;
+
+namespace settings
+{
+    struct Medium;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

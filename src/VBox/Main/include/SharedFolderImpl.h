@@ -21,6 +21,8 @@
 #include "VirtualBoxBase.h"
 #include <VBox/shflsvc.h>
 
+class Console;
+
 class ATL_NO_VTABLE SharedFolder :
     public VirtualBoxBaseWithChildrenNEXT,
     VBOX_SCRIPTABLE_IMPL(ISharedFolder)

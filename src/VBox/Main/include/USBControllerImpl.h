@@ -22,6 +22,14 @@
 
 #include "VirtualBoxBase.h"
 
+class HostUSBDevice;
+class USBDeviceFilter;
+
+namespace settings
+{
+    struct USBController;
+}
+
 class ATL_NO_VTABLE USBController :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IUSBController)

@@ -22,8 +22,6 @@
 
 #include "VirtualBoxBase.h"
 
-#include "DHCPServerRunner.h"
-
 #ifdef VBOX_WITH_HOSTNETIF_API
 struct NETIFINFO;
 #endif

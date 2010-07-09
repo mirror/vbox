@@ -21,6 +21,11 @@
 
 #include "VirtualBoxBase.h"
 
+namespace settings
+{
+    struct ParallelPort;
+}
+
 class ATL_NO_VTABLE ParallelPort :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IParallelPort)
@@ -45,8 +50,8 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Machine *aParent, ULONG aSlot);
-    HRESULT init(Machine *aParent, ParallelPort *aThat);
+    HRESULT init (Machine *aParent, ULONG aSlot);
+    HRESULT init (Machine *aParent, ParallelPort *aThat);
     HRESULT initCopy (Machine *parent, ParallelPort *aThat);
     void uninit();
 

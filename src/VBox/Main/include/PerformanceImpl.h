@@ -22,15 +22,28 @@
 
 #include "VirtualBoxBase.h"
 
-// #include <VBox/com/com.h>
-// #include <VBox/com/array.h>
+#include <VBox/com/com.h>
+#include <VBox/com/array.h>
+//#ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include <iprt/timer.h>
+//#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
+#include <list>
+
+namespace pm
+{
+    class Metric;
+    class BaseMetric;
+    class CollectorHAL;
+}
 
 #undef min
 #undef max
 
 /* Each second we obtain new CPU load stats. */
 #define VBOX_USAGE_SAMPLER_MIN_INTERVAL 1000
+
+class HostUSBDevice;
 
 class ATL_NO_VTABLE PerformanceMetric :
     public VirtualBoxBase,

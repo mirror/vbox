@@ -61,9 +61,10 @@
 #include "USBControllerImpl.h"
 #include "SystemPropertiesImpl.h"
 #include "GuestOSTypeImpl.h"
+#include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-# include "PerformanceImpl.h"
+#include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 #include "EventImpl.h"
 
@@ -249,8 +250,6 @@ typedef ObjectsList<DHCPServer> DHCPServersOList;
 
 typedef std::map<Guid, ComPtr<IProgress> > ProgressMap;
 typedef std::map<Guid, ComObjPtr<Medium> > HardDiskMap;
-
-typedef std::list< VirtualBoxCallbackRegistration > CallbackList;
 
 /**
  *  Main VirtualBox data structure.

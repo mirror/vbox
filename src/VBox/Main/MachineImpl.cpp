@@ -33,41 +33,28 @@
 
 #include "Logging.h"
 #include "VirtualBoxImpl.h"
-#include "MachineImplPrivate.h"
-
-#include "VirtualBoxErrorInfoImpl.h"
-
-#include "AudioAdapterImpl.h"
-#include "BIOSSettingsImpl.h"
-#include "GuestImpl.h"
-#include "GuestOSTypeImpl.h"
-#include "HostImpl.h"
+#include "MachineImpl.h"
+#include "ProgressImpl.h"
+#include "ProgressProxyImpl.h"
 #include "MediumAttachmentImpl.h"
 #include "MediumImpl.h"
 #include "MediumLock.h"
-#include "NetworkAdapterImpl.h"
-#include "ParallelPortImpl.h"
-#include "ProgressProxyImpl.h"
 #include "USBControllerImpl.h"
-#include "SerialPortImpl.h"
+#include "HostImpl.h"
 #include "SharedFolderImpl.h"
+#include "GuestOSTypeImpl.h"
+#include "VirtualBoxErrorInfoImpl.h"
+#include "GuestImpl.h"
 #include "StorageControllerImpl.h"
-#include "VRDPServerImpl.h"
 
 #ifdef VBOX_WITH_USB
 # include "USBProxyService.h"
 #endif
 
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-# include "Performance.h"
-# include "PerformanceImpl.h"
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
 #include "AutoCaller.h"
 #include "Performance.h"
 
 #include <iprt/asm.h>
-#include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
@@ -2922,7 +2909,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     {
         if (aType == DeviceType_HardDisk && mMediaData.isBackedUp())
         {
-            const MediumAttachmentsList &oldAtts = mMediaData.backedUpData()->mAttachments;
+            const MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
 
             /* check if the medium was attached to the VM before we started
              * changing attachments in which case the attachment just needs to
@@ -2962,12 +2949,12 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
              * another device slot w/o losing their contents */
             if (mMediaData.isBackedUp())
             {
-                const MediumAttachmentsList &oldAtts = mMediaData.backedUpData()->mAttachments;
+                const MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
 
-                MediumAttachmentsList::const_iterator foundIt = oldAtts.end();
+                MediaData::AttachmentList::const_iterator foundIt = oldAtts.end();
                 uint32_t foundLevel = 0;
 
-                for (MediumAttachmentsList::const_iterator it = oldAtts.begin();
+                for (MediaData::AttachmentList::const_iterator it = oldAtts.begin();
                      it != oldAtts.end();
                      ++it)
                 {
@@ -3037,12 +3024,12 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             {
                 AutoReadLock snapLock(snap COMMA_LOCKVAL_SRC_POS);
 
-                const MediumAttachmentsList &snapAtts = snap->getSnapshotMachine()->mMediaData->mAttachments;
+                const MediaData::AttachmentList &snapAtts = snap->getSnapshotMachine()->mMediaData->mAttachments;
 
-                MediumAttachmentsList::const_iterator foundIt = snapAtts.end();
+                MediaData::AttachmentList::const_iterator foundIt = snapAtts.end();
                 uint32_t foundLevel = 0;
 
-                for (MediumAttachmentsList::const_iterator it = snapAtts.begin();
+                for (MediaData::AttachmentList::const_iterator it = snapAtts.begin();
                      it != snapAtts.end();
                      ++it)
                 {
@@ -4386,7 +4373,7 @@ STDMETHODIMP Machine::EnumerateGuestProperties(IN_BSTR aPatterns,
 STDMETHODIMP Machine::GetMediumAttachmentsOfController(IN_BSTR aName,
                                                        ComSafeArrayOut(IMediumAttachment*, aAttachments))
 {
-    MediumAttachmentsList atts;
+    MediaData::AttachmentList atts;
 
     HRESULT rc = getMediumAttachmentsOfController(aName, atts);
     if (FAILED(rc)) return rc;
@@ -4552,7 +4539,7 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
 
     /* We can remove the controller only if there is no device attached. */
     /* check if the device slot is already busy */
-    for (MediumAttachmentsList::const_iterator it = mMediaData->mAttachments.begin();
+    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
          it != mMediaData->mAttachments.end();
          ++it)
     {
@@ -5050,59 +5037,8 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSaf
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Returns true if the machine is registered.
- *
- * @note This method doesn't check this object's readiness. Intended to be
- * used by ready Machine children (whose readiness is bound to the parent's
- * one) or after doing addCaller() manually.
- */
-bool Machine::isRegistered() const
-{
-    return !!mData->mRegistered;
-}
-
-/**
- * Returns this machine ID.
- *
- * @note This method doesn't check this object's readiness. Intended to be
- * used by ready Machine children (whose readiness is bound to the parent's
- * one) or after adding a caller manually.
- */
-const Guid& Machine::getId() const
-{
-    return mData->mUuid;
-}
-
-/**
- * Returns this machine's full settings file path.
- *
- * @note This method doesn't lock this object or check its readiness.
- * Intended to be used only after doing addCaller() manually and locking it
- * for reading.
- */
-const Utf8Str& Machine::getSettingsFileFull() const
-{
-    return mData->m_strConfigFileFull;
-}
-
-/**
- * Returns this machine name.
- *
- * @note This method doesn't lock this object or check its readiness.
- * Intended to be used only after doing addCaller() manually and locking it
- * for reading.
- */
-const Bstr& Machine::getName() const
-{
-    return mUserData->mName;
-}
-
-
-/**
  * Adds the given IsModified_* flag to the dirty flags of the machine.
- *
  * This must be called either during loadSettings or under the machine write lock.
- *
  * @param fl
  */
 void Machine::setModified(uint32_t fl)
@@ -5772,16 +5708,6 @@ HRESULT Machine::openExistingSession(IInternalSessionControl *aControl)
     return S_OK;
 }
 
-HRESULT Machine::getDirectControl(ComPtr<IInternalSessionControl> &directControl)
-{
-    directControl = mData->mSession.mDirectControl;
-
-    if (directControl.isNull())
-        return E_ACCESSDENIED;
-
-    return S_OK;
-}
-
 /**
  * Returns @c true if the given machine has an open direct session and returns
  * the session machine instance and additional session data (on some platforms)
@@ -6433,7 +6359,7 @@ void Machine::uninitDataAndChildObjects()
          && (!isSessionMachine())
        )
     {
-        for (MediumAttachmentsList::const_iterator it = mMediaData->mAttachments.begin();
+        for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
              it != mMediaData->mAttachments.end();
              ++it)
         {
@@ -7380,14 +7306,14 @@ HRESULT Machine::getStorageControllerByName(const Utf8Str &aName,
 }
 
 HRESULT Machine::getMediumAttachmentsOfController(CBSTR aName,
-                                                  MediumAttachmentsList &atts)
+                                                  MediaData::AttachmentList &atts)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    for (MediumAttachmentsList::iterator it = mMediaData->mAttachments.begin();
+    for (MediaData::AttachmentList::iterator it = mMediaData->mAttachments.begin();
          it != mMediaData->mAttachments.end();
          ++it)
     {
@@ -8143,13 +8069,13 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
 HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageController,
                                     settings::StorageController &data)
 {
-    MediumAttachmentsList atts;
+    MediaData::AttachmentList atts;
 
     HRESULT rc = getMediumAttachmentsOfController(Bstr(aStorageController->getName()), atts);
     if (FAILED(rc)) return rc;
 
     data.llAttachedDevices.clear();
-    for (MediumAttachmentsList::const_iterator it = atts.begin();
+    for (MediaData::AttachmentList::const_iterator it = atts.begin();
          it != atts.end();
          ++it)
     {
@@ -8309,7 +8235,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
         {
             /* lock all attached hard disks early to detect "in use"
              * situations before creating actual diffs */
-            for (MediumAttachmentsList::const_iterator it = mMediaData->mAttachments.begin();
+            for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
                  it != mMediaData->mAttachments.end();
                  ++it)
             {
@@ -8349,14 +8275,14 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
 
         /* remember the current list (note that we don't use backup() since
          * mMediaData may be already backed up) */
-        MediumAttachmentsList atts = mMediaData->mAttachments;
+        MediaData::AttachmentList atts = mMediaData->mAttachments;
 
         /* start from scratch */
         mMediaData->mAttachments.clear();
 
         /* go through remembered attachments and create diffs for normal hard
          * disks and attach them */
-        for (MediumAttachmentsList::const_iterator it = atts.begin();
+        for (MediaData::AttachmentList::const_iterator it = atts.begin();
              it != atts.end();
              ++it)
         {
@@ -8500,12 +8426,12 @@ HRESULT Machine::deleteImplicitDiffs(bool *pfNeedsSaveSettings)
 
     HRESULT rc = S_OK;
 
-    MediumAttachmentsList implicitAtts;
+    MediaData::AttachmentList implicitAtts;
 
-    const MediumAttachmentsList &oldAtts = mMediaData.backedUpData()->mAttachments;
+    const MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
 
     /* enumerate new attachments */
-    for (MediumAttachmentsList::const_iterator it = mMediaData->mAttachments.begin();
+    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
          it != mMediaData->mAttachments.end();
          ++it)
     {
@@ -8558,7 +8484,7 @@ HRESULT Machine::deleteImplicitDiffs(bool *pfNeedsSaveSettings)
 
         alock.leave();
 
-        for (MediumAttachmentsList::const_iterator it = implicitAtts.begin();
+        for (MediaData::AttachmentList::const_iterator it = implicitAtts.begin();
              it != implicitAtts.end();
              ++it)
         {
@@ -8593,12 +8519,12 @@ HRESULT Machine::deleteImplicitDiffs(bool *pfNeedsSaveSettings)
  * @param aDevice
  * @return
  */
-MediumAttachment* Machine::findAttachment(const MediumAttachmentsList &ll,
+MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
                                           IN_BSTR aControllerName,
                                           LONG aControllerPort,
                                           LONG aDevice)
 {
-   for (MediumAttachmentsList::const_iterator it = ll.begin();
+   for (MediaData::AttachmentList::const_iterator it = ll.begin();
          it != ll.end();
          ++it)
     {
@@ -8621,10 +8547,10 @@ MediumAttachment* Machine::findAttachment(const MediumAttachmentsList &ll,
  * @param aDevice
  * @return
  */
-MediumAttachment* Machine::findAttachment(const MediumAttachmentsList &ll,
+MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
                                           ComObjPtr<Medium> pMedium)
 {
-   for (MediumAttachmentsList::const_iterator it = ll.begin();
+   for (MediaData::AttachmentList::const_iterator it = ll.begin();
          it != ll.end();
          ++it)
     {
@@ -8648,10 +8574,10 @@ MediumAttachment* Machine::findAttachment(const MediumAttachmentsList &ll,
  * @param aDevice
  * @return
  */
-MediumAttachment* Machine::findAttachment(const MediumAttachmentsList &ll,
+MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
                                           Guid &id)
 {
-   for (MediumAttachmentsList::const_iterator it = ll.begin();
+   for (MediaData::AttachmentList::const_iterator it = ll.begin();
          it != ll.end();
          ++it)
     {
@@ -8693,11 +8619,11 @@ void Machine::commitMedia(bool aOnline /*= false*/)
     if (!mMediaData.isBackedUp())
         return;
 
-    MediumAttachmentsList &oldAtts = mMediaData.backedUpData()->mAttachments;
+    MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
     bool fMediaNeedsLocking = false;
 
     /* enumerate new attachments */
-    for (MediumAttachmentsList::const_iterator it = mMediaData->mAttachments.begin();
+    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
             it != mMediaData->mAttachments.end();
             ++it)
     {
@@ -8753,7 +8679,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
         if (pMedium)
         {
             /* was this medium attached before? */
-            for (MediumAttachmentsList::iterator oldIt = oldAtts.begin();
+            for (MediaData::AttachmentList::iterator oldIt = oldAtts.begin();
                     oldIt != oldAtts.end();
                     ++oldIt)
             {
@@ -8772,7 +8698,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
 
     /* enumerate remaining old attachments and de-associate from the
      * current machine state */
-    for (MediumAttachmentsList::const_iterator it = oldAtts.begin();
+    for (MediaData::AttachmentList::const_iterator it = oldAtts.begin();
          it != oldAtts.end();
          ++it)
     {
@@ -8851,7 +8777,7 @@ void Machine::rollbackMedia()
         return;
 
     /* enumerate new attachments */
-    for (MediumAttachmentsList::const_iterator it = mMediaData->mAttachments.begin();
+    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
             it != mMediaData->mAttachments.end();
             ++it)
     {
@@ -10934,7 +10860,7 @@ HRESULT SessionMachine::lockMedia()
     MultiResult mrc(S_OK);
 
     /* Collect locking information for all medium objects attached to the VM. */
-    for (MediumAttachmentsList::const_iterator it = mMediaData->mAttachments.begin();
+    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
          it != mMediaData->mAttachments.end();
          ++it)
     {

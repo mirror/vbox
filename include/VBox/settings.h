@@ -840,14 +840,12 @@ class MachineConfigFile : public ConfigFileBase
 {
 public:
     com::Guid               uuid;
-
-    com::Utf8Str            strStateFile;
-    com::Guid               uuidCurrentSnapshot;
-
     com::Utf8Str            strName;
     bool                    fNameSync;
     com::Utf8Str            strDescription;
     com::Utf8Str            strOsType;
+    com::Utf8Str            strStateFile;
+    com::Guid               uuidCurrentSnapshot;
     com::Utf8Str            strSnapshotFolder;
     bool                    fTeleporterEnabled;
     uint32_t                uTeleporterPort;

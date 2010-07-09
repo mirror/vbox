@@ -23,7 +23,7 @@ if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin"  # No hardene
 # Files from Main needed for building VBoxBFE
 #
 VBOXBFE_MAIN_CPP = MouseImpl.cpp
-VBOXBFE_MAIN_H   = MouseImpl.h
+VBOXBFE_MAIN_H   = MouseImpl.h ConsoleEvents.h
 
 #
 # Targets.

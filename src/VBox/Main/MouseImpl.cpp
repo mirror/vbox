@@ -20,7 +20,6 @@
 #include "MouseImpl.h"
 #include "DisplayImpl.h"
 #include "VMMDev.h"
-#include "ConsoleImpl.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -58,6 +57,7 @@ struct DRVMAINMOUSE
     /** The capabilities of this device. */
     uint32_t                    u32DevCaps;
 };
+
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////

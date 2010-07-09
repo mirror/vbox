@@ -41,6 +41,11 @@ typedef enum
     GUESTSTATTYPE_MAX         = 9
 } GUESTSTATTYPE;
 
+class Console;
+#ifdef VBOX_WITH_GUEST_CONTROL
+class Progress;
+#endif
+
 class ATL_NO_VTABLE Guest :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IGuest)

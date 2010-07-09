@@ -21,6 +21,16 @@
 #define ____H_SYSTEMPROPERTIESIMPL
 
 #include "VirtualBoxBase.h"
+#include "MediumFormatImpl.h"
+
+#include <VBox/com/array.h>
+
+#include <list>
+
+namespace settings
+{
+    struct SystemProperties;
+}
 
 class ATL_NO_VTABLE SystemProperties :
     public VirtualBoxBase,
