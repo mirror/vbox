@@ -20,19 +20,6 @@
 
 #include "VirtualBoxBase.h"
 
-class HostUSBDeviceFilter;
-class USBProxyService;
-class SessionMachine;
-class Progress;
-class PerformanceCollector;
-
-namespace settings
-{
-    struct Host;
-}
-
-#include <list>
-
 class ATL_NO_VTABLE Host :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IHost)

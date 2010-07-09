@@ -132,7 +132,7 @@ int CollectorGuestHAL::enable()
     {
         ComPtr<IInternalSessionControl> directControl;
 
-        ret = mMachine->getDirectControl(&directControl);
+        ret = mMachine->getDirectControl(directControl);
         if (ret != S_OK)
             return ret;
 

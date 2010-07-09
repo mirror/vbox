@@ -20,6 +20,8 @@
 #include "SystemPropertiesImpl.h"
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
+#include "MediumFormatImpl.h"
+
 #include "AutoCaller.h"
 #include "Logging.h"
 
@@ -36,6 +38,8 @@
 #include <VBox/param.h>
 #include <VBox/settings.h>
 #include <VBox/VBoxHDD.h>
+
+#include <VBox/com/array.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////

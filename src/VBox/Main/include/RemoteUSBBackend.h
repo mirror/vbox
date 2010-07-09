@@ -32,11 +32,7 @@
 //    RDLObtained
 //} RDLState;
 
-class Console;
-class ConsoleVRDPServer;
-
 DECLCALLBACK(int) USBClientResponseCallback (void *pv, uint32_t u32ClientId, uint8_t code, const void *pvRet, uint32_t cbRet);
-
 
 /* How many remote devices can be attached to a remote client.
  * Normally a client computer has 2-8 physical USB ports, so 16 devices

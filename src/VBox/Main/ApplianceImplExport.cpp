@@ -16,24 +16,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/param.h>
 #include <iprt/s3.h>
 #include <iprt/manifest.h>
 
-#include <VBox/version.h>
-
-#include "ApplianceImpl.h"
+#include "AudioAdapterImpl.h"
 #include "VirtualBoxImpl.h"
-
 #include "ProgressImpl.h"
-#include "MachineImpl.h"
+#include "MachineImplPrivate.h"
+#include "MediumAttachmentImpl.h"
+
+#include "ApplianceImplPrivate.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
 
-#include "ApplianceImplPrivate.h"
+#include <VBox/version.h>
+#include <VBox/com/array.h>
 
 using namespace std;
 
@@ -274,7 +276,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 //     <const name="Floppy" value="18" />
 //     <const name="CDROM" value="19" />
 
-        MediaData::AttachmentList::iterator itA;
+        MediumAttachmentsList::iterator itA;
         for (itA = mMediaData->mAttachments.begin();
              itA != mMediaData->mAttachments.end();
              ++itA)

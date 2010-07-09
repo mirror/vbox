@@ -22,8 +22,6 @@
 
 #include "VirtualBoxBase.h"
 
-class GuestOSType;
-
 namespace settings
 {
     struct BIOSSettings;

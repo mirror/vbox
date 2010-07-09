@@ -19,19 +19,20 @@
 #include <iprt/path.h>
 #include <iprt/cpp/utils.h>
 
-#include <VBox/com/array.h>
-
-#include "ApplianceImpl.h"
 #include "VFSExplorerImpl.h"
 #include "VirtualBoxImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
 
+#include "ApplianceImplPrivate.h"
+
 #include "AutoCaller.h"
 #include "Logging.h"
 
-#include "ApplianceImplPrivate.h"
+#include "VBox/settings.h"
+
+#include <VBox/com/array.h>
 
 using namespace std;
 
