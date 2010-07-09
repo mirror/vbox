@@ -157,14 +157,43 @@ int VMMDev::SetCredentialsJudgementResult (uint32_t u32Flags)
 
 
 /**
- * Report guest OS version.
+ * Reports Guest Additions status.
+ * Called whenever the Additions issue a guest status report request or the VM is reset.
+ *
+ * @param   pInterface          Pointer to this interface.
+ * @param   guestInfo           Pointer to guest information structure
+ * @thread  The emulation thread.
+ */
+DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestStatus *guestStatus)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+
+    Assert(guestStatus);
+    if (!guestStatus)
+        return;
+
+    /* Store that information in IGuest */
+    Guest* guest = pDrv->pVMMDev->getParent()->getGuest();
+    Assert(guest);
+    if (!guest)
+        return;
+
+    guest->setAdditionsStatus(guestStatus->facility,
+                              guestStatus->status,
+                              guestStatus->flags);
+    pDrv->pVMMDev->getParent()->onAdditionsStateChange();
+}
+
+
+/**
+ * Reports Guest Additions API and OS version.
  * Called whenever the Additions issue a guest version report request or the VM is reset.
  *
  * @param   pInterface          Pointer to this interface.
  * @param   guestInfo           Pointer to guest information structure
  * @thread  The emulation thread.
  */
-DECLCALLBACK(void) vmmdevUpdateGuestVersion(PPDMIVMMDEVCONNECTOR pInterface, VBoxGuestInfo *guestInfo)
+DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestInfo *guestInfo)
 {
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
 
@@ -172,7 +201,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestVersion(PPDMIVMMDEVCONNECTOR pInterface, VBo
     if (!guestInfo)
         return;
 
-    /* store that information in IGuest */
+    /* Store that information in IGuest */
     Guest* guest = pDrv->pVMMDev->getParent()->getGuest();
     Assert(guest);
     if (!guest)
@@ -182,7 +211,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestVersion(PPDMIVMMDEVCONNECTOR pInterface, VBo
     {
         char version[20];
         RTStrPrintf(version, sizeof(version), "%d", guestInfo->additionsVersion);
-        guest->setAdditionsVersion(Bstr(version), guestInfo->osType);
+        guest->setAdditionsInfo(Bstr(version), guestInfo->osType);
 
         /*
          * Tell the console interface about the event
@@ -199,7 +228,11 @@ DECLCALLBACK(void) vmmdevUpdateGuestVersion(PPDMIVMMDEVCONNECTOR pInterface, VBo
          * The guest additions was disabled because of a reset
          * or driver unload.
          */
-        guest->setAdditionsVersion (Bstr(), guestInfo->osType);
+        guest->setAdditionsInfo(Bstr(), guestInfo->osType);
+        guest->setAdditionsStatus(0,  /* Facility; 0 = Global GA status.  May be changed
+                                       * later to VBoxService' own facility. */
+                                  0,  /* Status; 0 = Not active */
+                                  0); /* Flags; not used. */
         pDrv->pVMMDev->getParent()->onAdditionsStateChange();
     }
 }
@@ -223,8 +256,10 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
     if (!guest)
         return;
 
-    guest->setSupportsSeamless(BOOL (newCapabilities & VMMDEV_GUEST_SUPPORTS_SEAMLESS));
-    guest->setSupportsGraphics(BOOL (newCapabilities & VMMDEV_GUEST_SUPPORTS_GRAPHICS));
+    /*
+     * Report our current capabilites (and assume none is active yet).
+     */
+    guest->setSupportedFeatures((ULONG64)newCapabilities, 0 /* Active capabilities, not used here. */);
 
     /*
      * Tell the console interface about the event
@@ -542,32 +577,32 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
         return VERR_INVALID_PARAMETER; /** @todo wrong error */
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_IDLE)
-        guest->SetStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUIDLE, pGuestStats->u32CpuLoad_Idle);
+        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUIDLE, pGuestStats->u32CpuLoad_Idle);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_KERNEL)
-        guest->SetStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUKERNEL, pGuestStats->u32CpuLoad_Kernel);
+        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUKERNEL, pGuestStats->u32CpuLoad_Kernel);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_USER)
-        guest->SetStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUUSER, pGuestStats->u32CpuLoad_User);
+        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUUSER, pGuestStats->u32CpuLoad_User);
 
 
     /** @todo r=bird: Convert from 4KB to 1KB units?
      *        CollectorGuestHAL::getGuestMemLoad says it returns KB units to
      *        preCollect().  I might be wrong ofc, this is convoluted code... */
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_TOTAL)
-        guest->SetStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMTOTAL, pGuestStats->u32PhysMemTotal);
+        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMTOTAL, pGuestStats->u32PhysMemTotal);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_AVAIL)
-        guest->SetStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMFREE, pGuestStats->u32PhysMemAvail);
+        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMFREE, pGuestStats->u32PhysMemAvail);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_BALLOON)
-        guest->SetStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMBALLOON, pGuestStats->u32PhysMemBalloon);
+        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMBALLOON, pGuestStats->u32PhysMemBalloon);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_MEM_SYSTEM_CACHE)
-        guest->SetStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMCACHE, pGuestStats->u32MemSystemCache);
+        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMCACHE, pGuestStats->u32MemSystemCache);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PAGE_FILE_SIZE)
-        guest->SetStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_PAGETOTAL, pGuestStats->u32PageFileSize);
+        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_PAGETOTAL, pGuestStats->u32PageFileSize);
 
     return VINF_SUCCESS;
 }
@@ -761,7 +796,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
      */
     pDrvIns->IBase.pfnQueryInterface                  = VMMDev::drvQueryInterface;
 
-    pData->Connector.pfnUpdateGuestVersion            = vmmdevUpdateGuestVersion;
+    pData->Connector.pfnUpdateGuestStatus             = vmmdevUpdateGuestStatus;
+    pData->Connector.pfnUpdateGuestInfo               = vmmdevUpdateGuestInfo;
     pData->Connector.pfnUpdateGuestCapabilities       = vmmdevUpdateGuestCapabilities;
     pData->Connector.pfnUpdateMouseCapabilities       = vmmdevUpdateMouseCapabilities;
     pData->Connector.pfnUpdatePointerShape            = vmmdevUpdatePointerShape;

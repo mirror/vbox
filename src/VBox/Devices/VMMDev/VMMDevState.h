@@ -126,8 +126,7 @@ typedef struct VMMDevState
      */
     VBoxGuestInfo guestInfo;
 
-    /** Information reported by guest via VMMDevReportGuestCapabilities
-     */
+    /** Information reported by guest via VMMDevReportGuestCapabilities. */
     uint32_t      guestCaps;
 
     /** "Additions are Ok" indicator, set to true after processing VMMDevReportGuestInfo,

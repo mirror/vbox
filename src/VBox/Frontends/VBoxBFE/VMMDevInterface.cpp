@@ -107,14 +107,14 @@ PPDMIVMMDEVPORT VMMDev::getVMMDevPort()
 
 
 /**
- * Report guest OS version.
+ * Report guest information.
  * Called whenever the Additions issue a guest version report request.
  *
  * @param   pInterface          Pointer to this interface.
  * @param   guestInfo           Pointer to guest information structure
  * @thread  The emulation thread.
  */
-DECLCALLBACK(void) VMMDev::UpdateGuestVersion(PPDMIVMMDEVCONNECTOR pInterface, VBoxGuestInfo *guestInfo)
+DECLCALLBACK(void) VMMDev::UpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestInfo *guestInfo)
 {
     return;
 }
@@ -384,7 +384,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint3
      */
     pDrvIns->IBase.pfnQueryInterface            = VMMDev::drvQueryInterface;
 
-    pData->Connector.pfnUpdateGuestVersion      = VMMDev::UpdateGuestVersion;
+    pData->Connector.pfnUpdateGuestInfo         = VMMDev::UpdateGuestInfo;
     pData->Connector.pfnUpdateGuestCapabilities = VMMDev::UpdateGuestCapabilities;
     pData->Connector.pfnUpdateMouseCapabilities = VMMDev::UpdateMouseCapabilities;
     pData->Connector.pfnUpdatePointerShape      = VMMDev::UpdatePointerShape;

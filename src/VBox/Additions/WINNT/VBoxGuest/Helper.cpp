@@ -190,8 +190,12 @@ void hlpVBoxUnmapVMMDevMemory (PVBOXGUESTDEVEXT pDevExt)
     pDevExt->memoryLength = 0;
 }
 
-/** @todo maybe we should drop this routine entirely later because we detecting
- *        the running OS via VBoxService in ring 3 using guest properties since a while. */
+/** @todo Maybe we should drop this routine entirely later because we detecting
+ *        the running OS via VBoxService in ring 3 using guest properties since a while.
+ *
+ *  @todo Consider of using vboxGuestInitReportGuestInfo in the ..\common\Helper.cpp
+ *        module to have a common base and less redundant code.
+ */
 NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
 {
     VMMDevReportGuestInfo *pReq = NULL;
@@ -233,7 +237,7 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
         rc = VbglGRPerform (&pReq->header);
         if (RT_FAILURE(rc))
         {
-            dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: error reporting guest info to VMMDev. "
+            dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: Error reporting guest info to VMMDev. "
                      "rc = %Rrc\n", rc));
         }
 
@@ -257,13 +261,33 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
         rc = VbglGRPerform (&pReq2->header);
         if (RT_FAILURE(rc))
         {
-            dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: error reporting guest info to VMMDev. "
+            dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: Error reporting guest info to VMMDev. "
                      "rc = %Rrc\n", rc));
         }
-        if (rc == VERR_NOT_IMPLEMENTED)
+        if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
             rc = VINF_SUCCESS;
-
         VbglGRFree (&pReq2->header);
+    }
+
+    /*
+     * Report guest status to host.  Because the host set the "Guest Additions active" flag as soon
+     * as he received the VMMDevReportGuestInfo above to make sure all is compatible with older Guest
+     * Additions we now have to disable that flag again here (too early, VBoxService and friends need
+     * to start up first).
+     */
+    VMMDevReportGuestStatus *pReq3;
+    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq3, sizeof(*pReq3), VMMDevReq_ReportGuestStatus);
+    if (RT_SUCCESS(rc))
+    {
+        pReq3->guestStatus.facility = VBoxGuestStatusFacility_VBoxGuestDriver;
+        pReq3->guestStatus.status = VBoxGuestStatusCurrent_Active; /** @todo Are we actually *really* active at this point? */
+        pReq3->guestStatus.flags = 0;
+        rc = VbglGRPerform(&pReq3->header);
+        if (RT_FAILURE(rc))
+            dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: Reporting guest status failed with rc=%Rrc\n", rc));
+        if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
+            rc = VINF_SUCCESS;
+        VbglGRFree(&pReq3->header);
     }
 
     return RT_FAILURE(rc) ? STATUS_UNSUCCESSFUL : STATUS_SUCCESS;

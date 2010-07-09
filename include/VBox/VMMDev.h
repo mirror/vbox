@@ -137,6 +137,7 @@ typedef enum
     VMMDevReq_CtlGuestFilterMask         = 42,
     VMMDevReq_ReportGuestInfo            = 50,
     VMMDevReq_ReportGuestInfo2           = 58, /* since version 3.2.0 */
+    VMMDevReq_ReportGuestStatus          = 59, /* since version 3.2.8 */
     VMMDevReq_GetDisplayChangeRequest    = 51,
     VMMDevReq_VideoModeSupported         = 52,
     VMMDevReq_GetHeightReduction         = 53,
@@ -433,7 +434,7 @@ typedef struct
 } VMMDevReqGuestCapabilities2;
 AssertCompileSize(VMMDevReqGuestCapabilities2, 24+8);
 
-/** @name Guest capability bits .
+/** @name Guest capability bits.
  * Used by VMMDevReq_ReportGuestCapabilities and VMMDevReq_SetGuestCapabilities.
  * @{ */
 /** The guest supports seamless display rendering. */
@@ -644,6 +645,67 @@ typedef struct
     VBoxGuestInfo2 guestInfo;
 } VMMDevReportGuestInfo2;
 AssertCompileSize(VMMDevReportGuestInfo2, 24+144);
+
+
+/**
+ * Guest status facility.
+ */
+typedef enum
+{
+    VBoxGuestStatusFacility_Unknown         = 0,
+    VBoxGuestStatusFacility_VBoxGuestDriver = 20,
+    VBoxGuestStatusFacility_VBoxService     = 100,
+    VBoxGuestStatusFacility_VBoxTray        = 101,
+    VBoxGuestStatusFacility_All             = 999,
+    VBoxGuestStatusFacility_SizeHack        = 0x7fffffff
+} VBoxGuestStatusFacility;
+AssertCompileSize(VBoxGuestStatusFacility, 4);
+
+/**
+ * The current guest status of a facility.
+ */
+typedef enum
+{
+    VBoxGuestStatusCurrent_Disabled    = 0,
+    VBoxGuestStatusCurrent_Inactive    = 1,
+    VBoxGuestStatusCurrent_PreInit     = 20,
+    VBoxGuestStatusCurrent_Init        = 30,
+    VBoxGuestStatusCurrent_Active      = 50,
+    VBoxGuestStatusCurrent_Terminating = 100,
+    VBoxGuestStatusCurrent_Terminated  = 101,
+    VBoxGuestStatusCurrent_SizeHack    = 0x7fffffff
+} VBoxGuestStatusCurrent;
+AssertCompileSize(VBoxGuestStatusCurrent, 4);
+
+/**
+ * Guest status structure.
+ *
+ * Used by VMMDevReqGuestStatus.
+ */
+typedef struct VBoxGuestStatus
+{
+    /** Facility the status is indicated for. */
+    uint32_t facility;
+    /** Current guest status. */
+    uint32_t status;
+    /** Flags, not used. */
+    uint32_t flags;
+} VBoxGuestStatus;
+AssertCompileSize(VBoxGuestStatus, 12);
+
+/**
+ * Guest Additions status structure.
+ *
+ * Used by VMMDevReq_ReportGuestStatus.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** Guest information. */
+    VBoxGuestStatus guestStatus;
+} VMMDevReportGuestStatus;
+AssertCompileSize(VMMDevReportGuestStatus, 24+12);
 
 
 /**
@@ -1664,6 +1726,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevReportGuestInfo);
         case VMMDevReq_ReportGuestInfo2:
             return sizeof(VMMDevReportGuestInfo2);
+        case VMMDevReq_ReportGuestStatus:
+            return sizeof(VMMDevReportGuestStatus);
         case VMMDevReq_GetDisplayChangeRequest:
             return sizeof(VMMDevDisplayChangeRequest);
         case VMMDevReq_GetDisplayChangeRequest2:

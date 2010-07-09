@@ -262,6 +262,9 @@ static int vboxGuestSetFilterMask(PVBOXGUESTDEVEXT pDevExt, uint32_t fMask)
  */
 static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType)
 {
+    /*
+     * Report general info + capabilities to host.
+     */
     VMMDevReportGuestInfo *pReq;
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_ReportGuestInfo);
     if (RT_SUCCESS(rc))
@@ -270,7 +273,7 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
         pReq->guestInfo.osType = enmOSType;
         rc = VbglGRPerform(&pReq->header);
         if (RT_FAILURE(rc))
-            LogRel(("vboxGuestInitReportGuestInfo: 1st part failed with rc=%Rrc\n", rc));
+            LogRel(("Guest Additions: Reporting guest info 1 failed with rc=%Rrc\n", rc));
         VbglGRFree(&pReq->header);
     }
     VMMDevReportGuestInfo2 *pReq2;
@@ -285,11 +288,32 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
         pReq2->guestInfo.additionsFeatures = 0;
         RTStrCopy(pReq2->guestInfo.szName, sizeof(pReq2->guestInfo.szName), VBOX_VERSION_STRING);
         rc = VbglGRPerform(&pReq2->header);
-        if (rc == VERR_NOT_IMPLEMENTED) /* compatibility with older hosts */
+        if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
             rc = VINF_SUCCESS;
         if (RT_FAILURE(rc))
-            LogRel(("vboxGuestInitReportGuestInfo: 2nd part failed with rc=%Rrc\n", rc));
+            LogRel(("Guest Additions: Reporting guest info 2 failed with rc=%Rrc\n", rc));
         VbglGRFree(&pReq2->header);
+    }
+
+    /*
+     * Report guest status to host.  Because the host set the "Guest Additions active" flag as soon
+     * as he received the VMMDevReportGuestInfo above to make sure all is compatible with older Guest
+     * Additions we now have to disable that flag again here (too early, VBoxService and friends need
+     * to start up first).
+     */
+    VMMDevReportGuestStatus *pReq3;
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq3, sizeof(*pReq3), VMMDevReq_ReportGuestStatus);
+    if (RT_SUCCESS(rc))
+    {
+        pReq3->guestStatus.facility = VBoxGuestStatusFacility_VBoxGuestDriver;
+        pReq3->guestStatus.status = VBoxGuestStatusCurrent_Active; /** @todo Are we actually *really* active at this point? */
+        pReq3->guestStatus.flags = 0;
+        rc = VbglGRPerform(&pReq3->header);
+        if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
+            rc = VINF_SUCCESS;
+        if (RT_FAILURE(rc))
+            LogRel(("Guest Additions: Reporting guest status failed with rc=%Rrc\n", rc));
+        VbglGRFree(&pReq3->header);
     }
     return rc;
 }

@@ -1942,9 +1942,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 if (SUCCEEDED(rc))
                 {
                     if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("GuestAdditionsAPIVersion=\"%lS\"\n", guestString.raw());
+                        RTPrintf("GuestAdditionsVersion=\"%lS\"\n", guestString.raw());
                     else
-                        RTPrintf("Additions API version:               %lS\n\n", guestString.raw());
+                        RTPrintf("Additions version:                   %lS\n\n", guestString.raw());
                 }
             }
         }

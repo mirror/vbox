@@ -437,6 +437,13 @@ void VBoxServiceMainWait(void)
 {
     int rc;
 
+    /* Report the host that we're up and running! */
+    rc = VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility_VBoxService,
+                                     VBoxGuestStatusCurrent_Active,
+                                     0); /* Flags; not used. */
+    if (RT_FAILURE(rc))
+        VBoxServiceError("Failed to report Guest Additions status to the host! rc=%Rrc\n", rc);
+
 #ifdef RT_OS_WINDOWS
     /*
      * Wait for the semaphore to be signalled.

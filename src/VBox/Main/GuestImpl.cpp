@@ -105,8 +105,8 @@ HRESULT Guest::init (Console *aParent)
 }
 
 /**
- *  Uninitializes the instance and sets the ready flag to FALSE.
- *  Called either from FinalRelease() or by the parent when it gets destroyed.
+ * Uninitializes the instance and sets the ready flag to FALSE.
+ * Called either from FinalRelease() or by the parent when it gets destroyed.
  */
 void Guest::uninit()
 {
@@ -382,7 +382,7 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
     return S_OK;
 }
 
-HRESULT Guest::SetStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
+HRESULT Guest::setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1415,40 +1415,84 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-void Guest::setAdditionsVersion(Bstr aVersion, VBOXOSTYPE aOsType)
+/**
+ * Sets the general Guest Additions information like
+ * API version and OS type.
+ *
+ * @param aVersion
+ * @param aOsType
+ */
+void Guest::setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    /*
+     * Set the Guest Additions API (interface) version.
+     * Note that this is *not* the actual Guest Additions version and may differ!
+     */
     mData.mAdditionsVersion = aVersion;
+    /*
+     * Older Additions rely on the Additions API version whether they
+     * are assumed to be active or not. Newer additions will disable
+     * this immediately.
+     */
     mData.mAdditionsActive = !aVersion.isEmpty();
-    /* Older Additions didn't have this finer grained capability bit,
+    /*
+     * Older Additions didn't have this finer grained capability bit,
      * so enable it by default.  Newer Additions will disable it immediately
-     * if relevant. */
+     * if relevant.
+     */
     mData.mSupportsGraphics = mData.mAdditionsActive;
+
+    /*
+     * Note! There is a race going on between setting mAdditionsActive and
+     * mSupportsGraphics here and disabling/enabling it later according to
+     * its real status when using new(er) Guest Additions.
+     */
 
     mData.mOSTypeId = Global::OSTypeId (aOsType);
 }
 
-void Guest::setSupportsSeamless (BOOL aSupportsSeamless)
+/**
+ * Sets the status of a certain Guest Additions facility.
+ *
+ * @param ulFacility
+ * @param ulStatus
+ * @param ulFlags
+ */
+void Guest::setAdditionsStatus (ULONG ulFacility, ULONG ulStatus, ULONG ulFlags)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mSupportsSeamless = aSupportsSeamless;
+    /*
+     * Only mark Guest Additions as active when VBoxService started up.
+     */
+    mData.mAdditionsActive = (   ulFacility == VBoxGuestStatusFacility_VBoxService
+                              && ulStatus   == VBoxGuestStatusCurrent_Active) ? TRUE : FALSE;
 }
 
-void Guest::setSupportsGraphics (BOOL aSupportsGraphics)
+/**
+ * Sets the supported features (and whether they are active or not).
+ *
+ * @param ulCaps
+ * @param ulActive
+ */
+void Guest::setSupportedFeatures (ULONG64 ulCaps, ULONG64 ulActive)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mSupportsGraphics = aSupportsGraphics;
+    mData.mSupportsSeamless = (ulCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS);
+    /** @todo Add VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING */
+    mData.mSupportsGraphics = (ulCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS);
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
+
