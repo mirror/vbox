@@ -440,7 +440,6 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         /* Mark this shared page for freeing/derefencing. */
         pVM->pgm.s.aHandyPages[iHandyPage].idSharedPage = PGM_PAGE_GET_PAGEID(pPage);
         Assert(PGM_PAGE_GET_PAGEID(pPage) != NIL_GMM_PAGEID);
-        VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
 
         Log(("PGM: Replaced shared page %#x at %RGp with %#x / %RHp\n", PGM_PAGE_GET_PAGEID(pPage),
              GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
@@ -456,7 +455,6 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         Log2(("PGM: Replaced zero page %RGp with %#x / %RHp\n", GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
         STAM_COUNTER_INC(&pVM->pgm.s.StatRZPageReplaceZero);
         pVM->pgm.s.cZeroPages--;
-        Assert(pVM->pgm.s.aHandyPages[iHandyPage].idSharedPage == NIL_GMM_PAGEID);
     }
 
     /*
