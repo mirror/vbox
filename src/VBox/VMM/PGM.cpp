@@ -640,9 +640,6 @@ static DECLCALLBACK(int)  pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
 # ifdef VBOX_STRICT
 static DECLCALLBACK(int)  pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 # endif
-# if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
-static DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-# endif
 static DECLCALLBACK(int)  pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 #endif
 
@@ -678,6 +675,7 @@ static const DBGCCMD    g_aCmds[] =
 #endif
 #if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
     { "pgmcheckduppages", 0, 0,     NULL,                     0,            NULL,               0,          pgmR3CmdCheckDuplicatePages,  "",           "Check for duplicate pages in all running VMs." },
+    { "pgmsharedmodules", 0, 0,     NULL,                     0,            NULL,               0,          pgmR3CmdShowSharedModules,  "",             "Print shared modules info." },
 #endif
     { "pgmsyncalways", 0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
     { "pgmphystofile", 1, 2,        &g_aPgmPhysToFileArgs[0], 2,            NULL,               0,          pgmR3CmdPhysToFile, "",                     "Save the physical memory to file." },
@@ -4167,100 +4165,6 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     return VINF_SUCCESS;
 }
 #endif /* VBOX_STRICT */
-
-#if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
-/**
- * The '.pgmcheckduppages' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
- */
-static DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
-{
-    unsigned cBallooned = 0;
-    unsigned cShared = 0;
-    unsigned cZero = 0;
-    unsigned cUnique = 0;
-    unsigned cDuplicate = 0;
-    unsigned cAllocZero = 0;
-    unsigned cPages = 0;
-
-    pgmLock(pVM);
-
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
-    {
-        PPGMPAGE    pPage  = &pRam->aPages[0];
-        RTGCPHYS    GCPhys = pRam->GCPhys;
-        uint32_t    cLeft  = pRam->cb >> PAGE_SHIFT;
-        while (cLeft-- > 0)
-        {
-            if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
-            {
-                switch (PGM_PAGE_GET_STATE(pPage))
-                {
-                    case PGM_PAGE_STATE_ZERO:
-                        cZero++;
-                        break;
-
-                    case PGM_PAGE_STATE_BALLOONED:
-                        cBallooned++;
-                        break;
-
-                    case PGM_PAGE_STATE_SHARED:
-                        cShared++;
-                        break;
-
-                    case PGM_PAGE_STATE_ALLOCATED:
-                    case PGM_PAGE_STATE_WRITE_MONITORED:
-                    {
-                        const void *pvPage;
-                        /* Check if the page was allocated, but completely zero. */
-                        int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvPage);
-                        if (    rc == VINF_SUCCESS
-                            &&  ASMMemIsZeroPage(pvPage))
-                        {
-                            cAllocZero++;
-                        }
-                        else
-                        if (GMMR3IsDuplicatePage(pVM, PGM_PAGE_GET_PAGEID(pPage)))
-                            cDuplicate++;
-                        else
-                            cUnique++;
-
-                        break;
-                    }
-
-                    default:
-                        AssertFailed();
-                        break;
-                }
-            }
-
-            /* next */
-            pPage++;
-            GCPhys += PAGE_SIZE;
-            cPages++;
-            /* Give some feedback for every processed megabyte. */
-            if ((cPages & 0x7f) == 0)
-                pCmdHlp->pfnPrintf(pCmdHlp, NULL, ".");
-        }
-    }
-    pgmUnlock(pVM);
-
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\nNumber of zero pages      %08x (%d MB)\n", cZero, cZero / 256);
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of alloczero pages %08x (%d MB)\n", cAllocZero, cAllocZero / 256);    
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of ballooned pages %08x (%d MB)\n", cBallooned, cBallooned / 256);
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of shared pages    %08x (%d MB)\n", cShared, cShared / 256);
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of unique pages    %08x (%d MB)\n", cUnique, cUnique / 256);
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of duplicate pages %08x (%d MB)\n", cDuplicate, cDuplicate / 256);
-    return VINF_SUCCESS;
-}
-
-#endif /* VBOX_STRICT && HC_ARCH_BITS == 64*/
 
 
 /**

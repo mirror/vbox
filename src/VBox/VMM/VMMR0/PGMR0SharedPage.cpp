@@ -37,11 +37,11 @@
  * @returns The following VBox status codes.
  *
  * @param   pVM         The VM handle.
+ * @param   pGVM        Pointer to the GVM instance data.
  * @param   idCpu       VCPU id
  * @param   pModule     Module description
  * @param   cRegions    Number of regions
  * @param   pRegions    Region array
- * @param   pGVM        Pointer to the GVM instance data.
  */
 VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, uint32_t cRegions, PGMMSHAREDREGIONDESC pRegions)
 {
