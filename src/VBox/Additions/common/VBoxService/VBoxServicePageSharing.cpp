@@ -589,10 +589,11 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
     for (;;)
     {
         uint64_t idNewSession;
+        BOOL fEnabled = VbglR3PageSharingIsEnabled();
 
-        VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: enabled=%d\n", VbglR3PageSharingIsEnabled());
+        VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: enabled=%d\n", fEnabled);
 
-        if (VbglR3PageSharingIsEnabled())
+        if (fEnabled)
             VBoxServicePageSharingInspectGuest();
 
         /*
@@ -677,7 +678,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
     for (;;)
     {
         BOOL fEnabled = VbglR3PageSharingIsEnabled();
-        VBoxServiceVerbose(3, "VBoxServicePageSharingWorkerProcess: Enabled = %s\n", fEnabled ? "Yes" : "No");
+        VBoxServiceVerbose(3, "VBoxServicePageSharingWorkerProcess: enabled=%d\n", fEnabled);
 
         if (    fEnabled
             &&  hProcess == NIL_RTPROCESS)
