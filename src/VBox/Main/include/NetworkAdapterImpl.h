@@ -21,6 +21,14 @@
 #define ____H_NETWORKADAPTER
 
 #include "VirtualBoxBase.h"
+#include "NATEngineImpl.h"
+
+class GuestOSType;
+
+namespace settings
+{
+    struct NetworkAdapter;
+}
 
 class ATL_NO_VTABLE NetworkAdapter :
     public VirtualBoxBase,

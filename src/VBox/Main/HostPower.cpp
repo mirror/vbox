@@ -29,11 +29,6 @@
 
 #include <iprt/mem.h>
 
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
- #include "Performance.h"
- #include "PerformanceImpl.h"
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
 HostPowerService::HostPowerService (VirtualBox *aVirtualBox)
 {
     Assert(aVirtualBox != NULL);

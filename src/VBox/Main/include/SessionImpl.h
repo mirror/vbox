@@ -19,6 +19,7 @@
 #define ____H_SESSIONIMPL
 
 #include "VirtualBoxBase.h"
+#include "ConsoleImpl.h"
 
 #ifdef RT_OS_WINDOWS
 # include "win/resource.h"

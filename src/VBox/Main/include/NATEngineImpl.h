@@ -24,6 +24,11 @@
 #include "VirtualBoxBase.h"
 #include <VBox/settings.h>
 
+namespace settings
+{
+    struct NAT;
+}
+
 class ATL_NO_VTABLE NATEngine :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(INATEngine)

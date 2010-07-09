@@ -15,7 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "RemoteUSBBackend.h"
 #include "ConsoleVRDPServer.h"
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"

@@ -27,8 +27,6 @@
 #include <VBox/err.h>
 #include <VBox/settings.h>
 
-#include <VBox/com/array.h>
-
 #include <vector>
 #include <algorithm>
 #include <functional>

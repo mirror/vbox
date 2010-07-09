@@ -22,6 +22,10 @@
 
 #include "VirtualBoxBase.h"
 
+#include <VBox/com/array.h>
+
+#include <list>
+
 struct VDBACKENDINFO;
 
 /**

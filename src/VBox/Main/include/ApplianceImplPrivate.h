@@ -18,7 +18,8 @@
 #ifndef ____H_APPLIANCEIMPLPRIVATE
 #define ____H_APPLIANCEIMPLPRIVATE
 
-#include "ApplianceImpl.h"
+class VirtualSystemDescription;
+
 #include "ovfreader.h"
 
 ////////////////////////////////////////////////////////////////////////////////

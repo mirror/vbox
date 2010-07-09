@@ -23,21 +23,22 @@
 #include <iprt/sha.h>
 #include <iprt/manifest.h>
 
+#include <VBox/com/array.h>
+
+#include "ApplianceImpl.h"
 #include "VirtualBoxImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
 
-#include "ApplianceImplPrivate.h"
-
 #include "AutoCaller.h"
 #include "Logging.h"
+
+#include "ApplianceImplPrivate.h"
 
 #include <VBox/param.h>
 #include <VBox/version.h>
 #include <VBox/settings.h>
-
-#include <VBox/com/array.h>
 
 using namespace std;
 

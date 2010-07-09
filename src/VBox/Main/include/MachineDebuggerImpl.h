@@ -22,6 +22,8 @@
 
 #include "VirtualBoxBase.h"
 
+class Console;
+
 class ATL_NO_VTABLE MachineDebugger :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IMachineDebugger)

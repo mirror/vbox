@@ -20,8 +20,18 @@
 #ifndef ____H_MEDIUMLOCK
 #define ____H_MEDIUMLOCK
 
+/* interface definitions */
+#include "VBox/com/VirtualBox.h"
 #include "VirtualBoxBase.h"
 #include "AutoCaller.h"
+
+#include <iprt/types.h>
+
+#include <list>
+#include <map>
+
+class Medium;
+class MediumAttachment;
 
 /**
  * Single entry for medium lock lists. Has a medium object reference,

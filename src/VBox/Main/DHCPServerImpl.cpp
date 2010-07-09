@@ -17,6 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
 #include "AutoCaller.h"
 #include "Logging.h"

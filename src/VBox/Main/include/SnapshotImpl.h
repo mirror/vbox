@@ -24,6 +24,13 @@
 
 #include <iprt/time.h>
 
+class SnapshotMachine;
+
+namespace settings
+{
+    struct Snapshot;
+}
+
 class ATL_NO_VTABLE Snapshot :
     public VirtualBoxBase, // WithTypedChildren<Snapshot>,
     VBOX_SCRIPTABLE_IMPL(ISnapshot)
