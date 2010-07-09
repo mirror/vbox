@@ -21,6 +21,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/err.h>
+#include <VBox/dbg.h>
 #include <VBox/stam.h>
 #include <VBox/param.h>
 #include <VBox/vmm.h>
@@ -3440,6 +3441,11 @@ PX86PD          pgmGstLazyMap32BitPD(PPGMCPU pPGM);
 PX86PDPT        pgmGstLazyMapPaePDPT(PPGMCPU pPGM);
 PX86PDPAE       pgmGstLazyMapPaePD(PPGMCPU pPGM, uint32_t iPdpt);
 PX86PML4        pgmGstLazyMapPml4(PPGMCPU pPGM);
+
+# if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
+DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+DECLCALLBACK(int)  pgmR3CmdShowSharedModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+# endif
 
 RT_C_DECLS_END
 
