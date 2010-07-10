@@ -247,7 +247,7 @@ typedef struct VMMDevState
     /** Set if testing is enabled. */
     bool                fTestingEnabled;
     /** Alignment padding. */
-    bool                afPadding9[HC_ARCH_BITS == 32 ? 2 : 2];
+    bool                afPadding9[HC_ARCH_BITS == 32 ? 2 : 6];
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     /** The high timestamp value. */
     uint32_t            u32TestingHighTimestamp;
