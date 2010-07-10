@@ -41,12 +41,64 @@
 #define VMMDEV_TESTING_IOPORT_BASE      0x0510
 /** The number of I/O ports reserved for testing. */
 #define VMMDEV_TESTING_IOPORT_COUNT     0x0010
-/** The NOP I/O port - 124 RW. */
+/** The NOP I/O port - 1,2,4 RW. */
 #define VMMDEV_TESTING_IOPORT_NOP       (VMMDEV_TESTING_IOPORT_BASE + 0)
 /** The low nanosecond timestamp - 4 RO.  */
 #define VMMDEV_TESTING_IOPORT_TS_LOW    (VMMDEV_TESTING_IOPORT_BASE + 1)
 /** The high nanosecond timestamp - 4 RO.  Read this after the low one!  */
 #define VMMDEV_TESTING_IOPORT_TS_HIGH   (VMMDEV_TESTING_IOPORT_BASE + 2)
+/** Command register usually used for preparing the data register - 4 WO. */
+#define VMMDEV_TESTING_IOPORT_CMD       (VMMDEV_TESTING_IOPORT_BASE + 3)
+/** Data register which use depends on the current command - 1s, 4 WO. */
+#define VMMDEV_TESTING_IOPORT_DATA      (VMMDEV_TESTING_IOPORT_BASE + 4)
+
+/** @name Commands.
+ * @{ */
+/** Initialize test, sending name (zero terminated string). (RTTestCreate) */
+#define VMMDEV_TESTING_CMD_INIT         UINT32_C(0xcab1e000)
+/** Test done, no data. (RTTestSummaryAndDestroy) */
+#define VMMDEV_TESTING_CMD_TERM         UINT32_C(0xcab1e001)
+/** Start a new sub-test, sending name (zero terminated string). (RTTestSub) */
+#define VMMDEV_TESTING_CMD_SUB_NEW      UINT32_C(0xcab1e002)
+/** Sub-test is done, sending 32-bit error count for it. (RTTestDone) */
+#define VMMDEV_TESTING_CMD_SUB_DONE     UINT32_C(0xcab1e003)
+/** Report a failure, sending reason (zero terminated string). (RTTestFailed) */
+#define VMMDEV_TESTING_CMD_FAILED       UINT32_C(0xcab1e004)
+/** Report a value, sending the 64-bit value (2x4), the 32-bit unit (4), and
+ * finally the name (zero terminated string).  (RTTestValue) */
+#define VMMDEV_TESTING_CMD_VALUE        UINT32_C(0xcab1e005)
+/** @} */
+
+/** @name Value units
+ * @{ */
+#define VMMDEV_TESTING_UNIT_PCT                 UINT8_C(0x01)   /**< Percentage. */
+#define VMMDEV_TESTING_UNIT_BYTES               UINT8_C(0x02)   /**< Bytes. */
+#define VMMDEV_TESTING_UNIT_BYTES_PER_SEC       UINT8_C(0x03)   /**< Bytes per second. */
+#define VMMDEV_TESTING_UNIT_KILOBYTES           UINT8_C(0x04)   /**< Kilobytes. */
+#define VMMDEV_TESTING_UNIT_KILOBYTES_PER_SEC   UINT8_C(0x05)   /**< Kilobytes per second. */
+#define VMMDEV_TESTING_UNIT_MEGABYTES           UINT8_C(0x06)   /**< Megabytes. */
+#define VMMDEV_TESTING_UNIT_MEGABYTES_PER_SEC   UINT8_C(0x07)   /**< Megabytes per second. */
+#define VMMDEV_TESTING_UNIT_PACKETS             UINT8_C(0x08)   /**< Packets. */
+#define VMMDEV_TESTING_UNIT_PACKETS_PER_SEC     UINT8_C(0x09)   /**< Packets per second. */
+#define VMMDEV_TESTING_UNIT_FRAMES              UINT8_C(0x0a)   /**< Frames. */
+#define VMMDEV_TESTING_UNIT_FRAMES_PER_SEC      UINT8_C(0x0b)   /**< Frames per second. */
+#define VMMDEV_TESTING_UNIT_OCCURRENCES         UINT8_C(0x0c)   /**< Occurrences. */
+#define VMMDEV_TESTING_UNIT_OCCURRENCES_PER_SEC UINT8_C(0x0d)   /**< Occurrences per second. */
+#define VMMDEV_TESTING_UNIT_CALLS               UINT8_C(0x0e)   /**< Calls. */
+#define VMMDEV_TESTING_UNIT_CALLS_PER_SEC       UINT8_C(0x0f)   /**< Calls per second. */
+#define VMMDEV_TESTING_UNIT_ROUND_TRIP          UINT8_C(0x10)   /**< Round trips. */
+#define VMMDEV_TESTING_UNIT_SECS                UINT8_C(0x11)   /**< Seconds. */
+#define VMMDEV_TESTING_UNIT_MS                  UINT8_C(0x12)   /**< Milliseconds. */
+#define VMMDEV_TESTING_UNIT_NS                  UINT8_C(0x13)   /**< Nanoseconds. */
+#define VMMDEV_TESTING_UNIT_NS_PER_CALL         UINT8_C(0x14)   /**< Nanoseconds per call. */
+#define VMMDEV_TESTING_UNIT_NS_PER_FRAME        UINT8_C(0x15)   /**< Nanoseconds per frame. */
+#define VMMDEV_TESTING_UNIT_NS_PER_OCCURRENCE   UINT8_C(0x16)   /**< Nanoseconds per occurrence. */
+#define VMMDEV_TESTING_UNIT_NS_PER_PACKET       UINT8_C(0x17)   /**< Nanoseconds per frame. */
+#define VMMDEV_TESTING_UNIT_NS_PER_ROUND_TRIP   UINT8_C(0x18)   /**< Nanoseconds per round trip. */
+#define VMMDEV_TESTING_UNIT_INSTRS              UINT8_C(0x19)   /**< Instructions. */
+#define VMMDEV_TESTING_UNIT_INSTRS_PER_SEC      UINT8_C(0x1a)   /**< Instructions per second. */
+/** @}  */
+
 
 /** What the NOP accesses returns. */
 #define VMMDEV_TESTING_NOP_RET          UINT32_C(0x64726962) /* bird */

@@ -23,6 +23,8 @@
 #include <VBox/types.h>
 #include <VBox/x86.h>
 
+
+#define VBOX_WITH_HGCM                  /* grumble */
 #define VBOX_DEVICE_STRUCT_TESTCASE
 #undef LOG_GROUP
 #include "../Bus/DevPCI.cpp"

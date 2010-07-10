@@ -542,7 +542,7 @@ ifdef VBOX_WITH_RAW_MODE
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBoxDDGC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
  endif
- VBoxDDGC_DEFS           =
+ VBoxDDGC_DEFS           = VBOX_WITH_HGCM
  VBoxDDGC_INCS          := \
  	$(PATH_SUB_CURRENT)
  VBoxDDGC_SOURCES        = \
@@ -653,7 +653,7 @@ endif # VBOX_WITH_RAW_MODE
 #
 VBoxDDR0_TEMPLATE       = VBoxR0
 VBoxDDR0_DEFS.darwin.x86= VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 VBOX_WITH_2X_4GB_ADDR_SPACE
-VBoxDDR0_DEFS           = IN_RT_R0
+VBoxDDR0_DEFS           = IN_RT_R0 VBOX_WITH_HGCM # - WTF is IN_RT_R0 doing here?
 VBoxDDR0_INCS          := \
 	$(PATH_SUB_CURRENT)
 VBoxDDR0_SOURCES        = \
