@@ -47,6 +47,10 @@ s/\([[:space:]][0-9][0-9]*\)ULL\([[:space:]]*\))$/\1\2)/
 
 s/UINT32_C([[:space:]]*\(0[xX][0-9a-fA-F][0-9a-fA-F]*\)[[:space:]]*)/\1/
 s/UINT32_C([[:space:]]*\([0-9][0-9]*\)[[:space:]]*)/\1/
+s/UINT16_C([[:space:]]*\(0[xX][0-9a-fA-F][0-9a-fA-F]*\)[[:space:]]*)/\1/
+s/UINT16_C([[:space:]]*\([0-9][0-9]*\)[[:space:]]*)/\1/
+s/UINT8_C([[:space:]]*\(0[xX][0-9a-fA-F][0-9a-fA-F]*\)[[:space:]]*)/\1/
+s/UINT8_C([[:space:]]*\([0-9][0-9]*\)[[:space:]]*)/\1/
 
 b end
 

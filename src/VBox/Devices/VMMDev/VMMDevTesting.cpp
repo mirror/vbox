@@ -28,6 +28,9 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#ifdef IN_RING3
+# include <iprt/stream.h>
+#endif
 
 #include "VMMDevState.h"
 #include "VMMDevTesting.h"
@@ -105,6 +108,8 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCP
  */
 PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
+    VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+
     switch (Port)
     {
         case VMMDEV_TESTING_IOPORT_NOP:
@@ -125,6 +130,130 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 
         case VMMDEV_TESTING_IOPORT_TS_HIGH:
             break;
+
+        case VMMDEV_TESTING_IOPORT_CMD:
+            if (cb == 4)
+            {
+                pThis->u32TestingCmd  = u32;
+                pThis->offTestingData = 0;
+                RT_ZERO(pThis->TestingData);
+                return VINF_SUCCESS;
+            }
+            break;
+
+        case VMMDEV_TESTING_IOPORT_DATA:
+        {
+            uint32_t uCmd = pThis->u32TestingCmd;
+            uint32_t off  = pThis->offTestingData;
+            switch (uCmd)
+            {
+                case VMMDEV_TESTING_CMD_INIT:
+                case VMMDEV_TESTING_CMD_SUB_NEW:
+                case VMMDEV_TESTING_CMD_FAILED:
+                    if (   off < sizeof(pThis->TestingData.String.sz) - 1
+                        && cb == 1)
+                    {
+                        if (u32)
+                        {
+                            pThis->TestingData.String.sz[off] = u32;
+                            pThis->offTestingData = off + 1;
+                        }
+                        else
+                        {
+#ifdef IN_RING3
+                            switch (uCmd)
+                            {
+                                case VMMDEV_TESTING_CMD_INIT:
+                                    RTPrintf("testing: INIT '%.*s'\n", sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz);
+                                    break;
+                                case VMMDEV_TESTING_CMD_SUB_NEW:
+                                    RTPrintf("testing: SUB_NEW  '%.*s'\n", sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz);
+                                    break;
+                                case VMMDEV_TESTING_CMD_FAILED:
+                                    RTPrintf("testing: FAILED '%.*s'\n", sizeof(pThis->TestingData.String.sz) - 1, pThis->TestingData.String.sz);
+                                    break;
+                            }
+#else
+                            return VINF_IOM_HC_IOPORT_WRITE;
+#endif
+                        }
+                        return VINF_SUCCESS;
+                    }
+                    break;
+
+                case VMMDEV_TESTING_CMD_TERM:
+                case VMMDEV_TESTING_CMD_SUB_DONE:
+                    if (   off == 0
+                        && cb  == 4)
+                    {
+#ifdef IN_RING3
+                        pThis->TestingData.Error.c = u32;
+                        if (uCmd == VMMDEV_TESTING_CMD_TERM)
+                            RTPrintf("testing: TERM - %u errors\n", u32);
+                        else
+                            RTPrintf("testing: SUB_DONE - %u errors\n", u32);
+                        return VINF_SUCCESS;
+#else
+                        return VINF_IOM_HC_IOPORT_WRITE;
+#endif
+                    }
+                    break;
+
+                case VMMDEV_TESTING_CMD_VALUE:
+                    if (cb == 4)
+                    {
+                        if (off == 0)
+                            pThis->TestingData.Value.u64Value.s.Lo = u32;
+                        else if (off == 4)
+                            pThis->TestingData.Value.u64Value.s.Hi = u32;
+                        else if (off == 8)
+                            pThis->TestingData.Value.u32Unit = u32;
+                        else
+                            break;
+                        pThis->offTestingData = off + 4;
+                        return VINF_SUCCESS;
+                    }
+                    if (   off >= 12
+                        && cb  == 1
+                        && off < sizeof(pThis->TestingData.Value.szName) - 1 - 12)
+                    {
+                        if (u32)
+                        {
+                            pThis->TestingData.Value.szName[off - 12] = u32;
+                            pThis->offTestingData = off + 1;
+                        }
+                        else
+                        {
+#ifdef IN_RING3
+                            RTPrintf("testing: VALUE '%.*s' = %#llx (%llu) [%u]\n",
+                                     sizeof(pThis->TestingData.Value.szName) - 1, pThis->TestingData.Value.szName,
+                                     pThis->TestingData.Value.u64Value.u, pThis->TestingData.Value.u64Value.u,
+                                     pThis->TestingData.Value.u32Unit);
+#else
+                            return VINF_IOM_HC_IOPORT_WRITE;
+#endif
+                        }
+                        return VINF_SUCCESS;
+
+#ifdef IN_RING3
+                        pThis->TestingData.Error.c = u32;
+                        if (uCmd == VMMDEV_TESTING_CMD_TERM)
+                            RTPrintf("testing: TERM - %u errors\n", u32);
+                        else
+                            RTPrintf("testing: SUB_DONE - %u errors\n", u32);
+                        return VINF_SUCCESS;
+#else
+                        return VINF_IOM_HC_IOPORT_WRITE;
+#endif
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+            Log(("VMMDEV_TESTING_IOPORT_CMD: bad access; cmd=%#x off=%#x cb=%#x u32=%#x\n", uCmd, off, cb, u32));
+            return VINF_SUCCESS;
+        }
 
         default:
             break;
@@ -173,6 +302,10 @@ PDMBOTHCBDECL(int) vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                 *pu32 = pThis->u32TestingHighTimestamp;
                 return VINF_SUCCESS;
             }
+            break;
+
+        case VMMDEV_TESTING_IOPORT_CMD:
+        case VMMDEV_TESTING_IOPORT_DATA:
             break;
 
         default:
