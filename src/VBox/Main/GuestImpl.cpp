@@ -1184,7 +1184,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
             RTMemFree(papszArgv);
         }
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(vrc))
             LogRel(("Executing guest process \"%s\" as user \"%s\" failed with %Rrc\n",
                     Utf8Command.raw(), Utf8UserName.raw(), vrc));
     }
