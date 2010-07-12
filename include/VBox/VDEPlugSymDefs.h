@@ -25,6 +25,7 @@
 
 #include <stddef.h>
 #include <sys/types.h>
+
 /** Opaque connection type */
 struct vdeconn;
 typedef struct vdeconn VDECONN;
@@ -33,11 +34,11 @@ typedef struct vdeconn VDECONN;
  * All members can be left zero to use the default values. */
 struct vde_open_args
 {
-    /** The port of the switch to connect to */
+    /** The port of the switch to connect to. */
     int port;
-    /** The group to set ownership of the port socket to */
+    /** The group to set ownership of the port socket to. */
     char *group;
-    /** The file mode to set the port socket to */
+    /** The file mode to set the port socket to. */
     mode_t mode;
 };
 
@@ -54,10 +55,10 @@ struct vde_open_args
                (const char *vde_switch, const char *descr, int interface_version, struct vde_open_args *open_args), \
                (vde_switch, descr, interface_version, open_args)) \
  RT_PROXY_STUB(vde_recv, size_t, \
-               (VDECONN *conn,void *buf,size_t len,int flags), \
+               (VDECONN *conn, void *buf,size_t len, int flags), \
                (conn, buf, len, flags)) \
  RT_PROXY_STUB(vde_send, size_t, \
-               (VDECONN *conn,const void *buf,size_t len,int flags), \
+               (VDECONN *conn, const void *buf, size_t len, int flags), \
                (conn, buf, len, flags)) \
  RT_PROXY_STUB(vde_datafd, int, (VDECONN *conn), (conn)) \
  RT_PROXY_STUB(vde_close, void, (VDECONN *conn), (conn))
@@ -73,9 +74,9 @@ struct vde_open_args
 # include <iprt/runtime-loader.h>
 # undef RT_RUNTIME_LOADER_GENERATE_BODY_STUBS
 #else
-# error This file should only be included to generate stubs for loading the \
-libvdeplug library at runtime
+# error This file should only be included to generate stubs for loading the libvdeplug library at runtime
 #endif
 
 #undef RT_RUNTIME_LOADER_LIB_NAME
 #undef RT_RUNTIME_LOADER_INSERT_SYMBOLS
+

@@ -157,9 +157,11 @@ VMMDECL(int)        EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
 VMMDECL(int)        EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 VMMDECL(bool)       EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx);
 
-/* Wrap EMInterpretInstructionCPUEx for supervisor code only interpretation.
+/**
+ * Wrap EMInterpretInstructionCPUEx for supervisor code only interpretation.
  */
-inline int EMInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+DECLINLINE(int) EMInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame,
+                                          RTGCPTR pvFault, uint32_t *pcbSize)
 {
     return EMInterpretInstructionCPUEx(pVM, pVCpu, pDISState, pRegFrame, pvFault, pcbSize, EMCODETYPE_SUPERVISOR);
 }

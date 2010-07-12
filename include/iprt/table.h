@@ -421,7 +421,7 @@ DECLINLINE(PRTTAB) RTTabDuplicate(PCRTTAB pTab, PFNRTTABDUPLICATE pfnDuplicate, 
  */
 DECLINLINE(void) RTTabDestroy(PRTTAB pTab)
 {
-    return pTab->pOps->pfnDestroy(pTab);
+    pTab->pOps->pfnDestroy(pTab);
 }
 
 /**

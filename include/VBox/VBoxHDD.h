@@ -273,8 +273,8 @@ typedef const VDINTERFACE *PCVDINTERFACE;
  */
 DECLINLINE(PVDINTERFACE) VDInterfaceGet(PVDINTERFACE pVDIfs, VDINTERFACETYPE enmInterface)
 {
-    AssertMsgReturn(   (enmInterface >= VDINTERFACETYPE_FIRST)
-                    && (enmInterface < VDINTERFACETYPE_INVALID),
+    AssertMsgReturn(   enmInterface >= VDINTERFACETYPE_FIRST
+                    && enmInterface < VDINTERFACETYPE_INVALID,
                     ("enmInterface=%u", enmInterface), NULL);
 
     while (pVDIfs)
@@ -307,10 +307,9 @@ DECLINLINE(int) VDInterfaceAdd(PVDINTERFACE pInterface, const char *pszName,
                                VDINTERFACETYPE enmInterface, void *pCallbacks,
                                void *pvUser, PVDINTERFACE *ppVDIfs)
 {
-
-    /** Argument checks. */
-    AssertMsgReturn(   (enmInterface >= VDINTERFACETYPE_FIRST)
-                    && (enmInterface < VDINTERFACETYPE_INVALID),
+    /* Argument checks. */
+    AssertMsgReturn(   enmInterface >= VDINTERFACETYPE_FIRST
+                    && enmInterface < VDINTERFACETYPE_INVALID,
                     ("enmInterface=%u", enmInterface), VERR_INVALID_PARAMETER);
 
     AssertMsgReturn(VALID_PTR(pCallbacks),
@@ -346,7 +345,7 @@ DECLINLINE(int) VDInterfaceRemove(PVDINTERFACE pInterface, PVDINTERFACE *ppVDIfs
 {
     int rc = VERR_NOT_FOUND;
 
-    /** Argument checks. */
+    /* Argument checks. */
     AssertMsgReturn(VALID_PTR(pInterface),
                     ("pInterface=%#p", pInterface),
                     VERR_INVALID_PARAMETER);
@@ -435,16 +434,18 @@ typedef struct VDINTERFACEERROR
  */
 DECLINLINE(PVDINTERFACEERROR) VDGetInterfaceError(PVDINTERFACE pInterface)
 {
+    PVDINTERFACEERROR pInterfaceError;
+
     /* Check that the interface descriptor is a error interface. */
-    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_ERROR)
-                    && (pInterface->cbSize == sizeof(VDINTERFACE)),
+    AssertMsgReturn(   pInterface->enmInterface == VDINTERFACETYPE_ERROR
+                    && pInterface->cbSize == sizeof(VDINTERFACE),
                     ("Not an error interface"), NULL);
 
-    PVDINTERFACEERROR pInterfaceError = (PVDINTERFACEERROR)pInterface->pCallbacks;
+    pInterfaceError = (PVDINTERFACEERROR)pInterface->pCallbacks;
 
     /* Do basic checks. */
-    AssertMsgReturn(   (pInterfaceError->cbSize == sizeof(VDINTERFACEERROR))
-                    && (pInterfaceError->enmInterface == VDINTERFACETYPE_ERROR),
+    AssertMsgReturn(   pInterfaceError->cbSize == sizeof(VDINTERFACEERROR)
+                    && pInterfaceError->enmInterface == VDINTERFACETYPE_ERROR,
                     ("A non error callback table attached to a error interface descriptor\n"), NULL);
 
     return pInterfaceError;
@@ -631,12 +632,14 @@ typedef struct VDINTERFACEASYNCIO
  */
 DECLINLINE(PVDINTERFACEASYNCIO) VDGetInterfaceAsyncIO(PVDINTERFACE pInterface)
 {
+    PVDINTERFACEASYNCIO pInterfaceAsyncIO;
+
     /* Check that the interface descriptor is a async I/O interface. */
     AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_ASYNCIO)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
                     ("Not an async I/O interface"), NULL);
 
-    PVDINTERFACEASYNCIO pInterfaceAsyncIO = (PVDINTERFACEASYNCIO)pInterface->pCallbacks;
+    pInterfaceAsyncIO = (PVDINTERFACEASYNCIO)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceAsyncIO->cbSize == sizeof(VDINTERFACEASYNCIO))
@@ -690,13 +693,15 @@ typedef struct VDINTERFACEPROGRESS
  */
 DECLINLINE(PVDINTERFACEPROGRESS) VDGetInterfaceProgress(PVDINTERFACE pInterface)
 {
+    PVDINTERFACEPROGRESS pInterfaceProgress;
+
     /* Check that the interface descriptor is a progress interface. */
     AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_PROGRESS)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
                     ("Not a progress interface"), NULL);
 
 
-    PVDINTERFACEPROGRESS pInterfaceProgress = (PVDINTERFACEPROGRESS)pInterface->pCallbacks;
+    pInterfaceProgress = (PVDINTERFACEPROGRESS)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceProgress->cbSize == sizeof(VDINTERFACEPROGRESS))
@@ -771,12 +776,14 @@ typedef struct VDINTERFACECONFIG
  */
 DECLINLINE(PVDINTERFACECONFIG) VDGetInterfaceConfig(PVDINTERFACE pInterface)
 {
+    PVDINTERFACECONFIG pInterfaceConfig;
+
     /* Check that the interface descriptor is a config interface. */
     AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_CONFIG)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
                     ("Not a config interface"), NULL);
 
-    PVDINTERFACECONFIG pInterfaceConfig = (PVDINTERFACECONFIG)pInterface->pCallbacks;
+    pInterfaceConfig = (PVDINTERFACECONFIG)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceConfig->cbSize == sizeof(VDINTERFACECONFIG))
@@ -976,19 +983,20 @@ DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
     int rc = pCfgIf->pfnQuerySize(pvUser, pszName, &cb);
     if (RT_SUCCESS(rc))
     {
+        char *pbData;
         Assert(cb);
 
-        char *pvData = (char *)RTMemAlloc(cb);
-        if (pvData)
+        pbData = (char *)RTMemAlloc(cb);
+        if (pbData)
         {
-            rc = pCfgIf->pfnQuery(pvUser, pszName, pvData, cb);
+            rc = pCfgIf->pfnQuery(pvUser, pszName, pbData, cb);
             if (RT_SUCCESS(rc))
             {
-                *ppvData = pvData;
+                *ppvData = pbData;
                 *pcbData = cb - 1; /* Exclude terminator of the queried string. */
             }
             else
-                RTMemFree(pvData);
+                RTMemFree(pbData);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -1122,12 +1130,14 @@ ion.
  */
 DECLINLINE(PVDINTERFACETCPNET) VDGetInterfaceTcpNet(PVDINTERFACE pInterface)
 {
+    PVDINTERFACETCPNET pInterfaceTcpNet;
+
     /* Check that the interface descriptor is a TCP network stack interface. */
     AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_TCPNET)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
                     ("Not a TCP network stack interface"), NULL);
 
-    PVDINTERFACETCPNET pInterfaceTcpNet = (PVDINTERFACETCPNET)pInterface->pCallbacks;
+    pInterfaceTcpNet = (PVDINTERFACETCPNET)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceTcpNet->cbSize == sizeof(VDINTERFACETCPNET))
@@ -1180,12 +1190,14 @@ typedef struct VDINTERFACEPARENTSTATE
  */
 DECLINLINE(PVDINTERFACEPARENTSTATE) VDGetInterfaceParentState(PVDINTERFACE pInterface)
 {
+    PVDINTERFACEPARENTSTATE pInterfaceParentState;
+
     /* Check that the interface descriptor is a parent state interface. */
     AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_PARENTSTATE)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
                     ("Not a parent state interface"), NULL);
 
-    PVDINTERFACEPARENTSTATE pInterfaceParentState = (PVDINTERFACEPARENTSTATE)pInterface->pCallbacks;
+    pInterfaceParentState = (PVDINTERFACEPARENTSTATE)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceParentState->cbSize == sizeof(VDINTERFACEPARENTSTATE))
@@ -1259,12 +1271,14 @@ typedef struct VDINTERFACETHREADSYNC
  */
 DECLINLINE(PVDINTERFACETHREADSYNC) VDGetInterfaceThreadSync(PVDINTERFACE pInterface)
 {
+    PVDINTERFACETHREADSYNC pInterfaceThreadSync;
+
     /* Check that the interface descriptor is a thread synchronization interface. */
     AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_THREADSYNC)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
                     ("Not a thread synchronization interface"), NULL);
 
-    PVDINTERFACETHREADSYNC pInterfaceThreadSync = (PVDINTERFACETHREADSYNC)pInterface->pCallbacks;
+    pInterfaceThreadSync = (PVDINTERFACETHREADSYNC)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceThreadSync->cbSize == sizeof(VDINTERFACETHREADSYNC))
@@ -1641,12 +1655,14 @@ typedef struct VDINTERFACEIO
  */
 DECLINLINE(PVDINTERFACEIO) VDGetInterfaceIO(PVDINTERFACE pInterface)
 {
+    PVDINTERFACEIO pInterfaceIO;
+
     /* Check that the interface descriptor is a async I/O interface. */
     AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_IO)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
                     ("Not an I/O interface"), NULL);
 
-    PVDINTERFACEIO pInterfaceIO = (PVDINTERFACEIO)pInterface->pCallbacks;
+    pInterfaceIO = (PVDINTERFACEIO)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceIO->cbSize == sizeof(VDINTERFACEIO))
