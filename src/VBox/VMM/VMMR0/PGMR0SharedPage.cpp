@@ -46,8 +46,7 @@
 VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, uint32_t cRegions, PGMMSHAREDREGIONDESC pRegions)
 {
     int                rc = VINF_SUCCESS;
-    PGMMSHAREDPAGEDESC paPageDesc = NULL;
-    uint32_t           cbPreviousRegion  = 0;
+    GMMSHAREDPAGEDESC  PageDesc;
     bool               fFlushTLBs = false;
     PVMCPU             pVCpu = &pVM->aCpus[idCpu];
 
@@ -64,22 +63,6 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
         RTGCPTR  GCRegion  = pRegions[idxRegion].GCRegionAddr;
         unsigned cbRegion = pRegions[idxRegion].cbRegion & ~0xfff;
         unsigned idxPage = 0;
-        bool     fValidChanges = false;
-
-        if (cbPreviousRegion < cbRegion)
-        {
-            if (paPageDesc)
-                RTMemFree(paPageDesc);
-
-            paPageDesc = (PGMMSHAREDPAGEDESC)RTMemAlloc((cbRegion >> PAGE_SHIFT) * sizeof(*paPageDesc));
-            if (!paPageDesc)
-            {
-                AssertFailed();
-                rc = VERR_NO_MEMORY;
-                goto end;
-            }
-            cbPreviousRegion  = cbRegion;
-        }
 
         while (cbRegion)
         {
@@ -96,88 +79,58 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
                 if (    pPage
                     &&  PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)
                 {
-                    fValidChanges = true;
-                    paPageDesc[idxPage].uHCPhysPageId = PGM_PAGE_GET_PAGEID(pPage);
-                    paPageDesc[idxPage].HCPhys        = PGM_PAGE_GET_HCPHYS(pPage);
-                    paPageDesc[idxPage].GCPhys        = GCPhys;
+                    PageDesc.uHCPhysPageId = PGM_PAGE_GET_PAGEID(pPage);
+                    PageDesc.HCPhys        = PGM_PAGE_GET_HCPHYS(pPage);
+                    PageDesc.GCPhys        = GCPhys;
+
+                    rc = GMMR0SharedModuleCheckPage(pGVM, pModule, idxRegion, idxPage, &PageDesc);
+                    if (rc == VINF_SUCCESS)
+                    {
+                        /* Any change for this page? */
+                        if (PageDesc.uHCPhysPageId != NIL_GMM_PAGEID)
+                        {
+                            Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+
+                            Log(("PGMR0SharedModuleCheck: shared page gc virt=%RGv phys %RGp host %RHp->%RHp\n", pRegions[idxRegion].GCRegionAddr + idxPage * PAGE_SIZE, PageDesc.GCPhys, PGM_PAGE_GET_HCPHYS(pPage), PageDesc.HCPhys));
+                            if (PageDesc.HCPhys != PGM_PAGE_GET_HCPHYS(pPage))
+                            {
+                                bool fFlush = false;
+
+                                /* Page was replaced by an existing shared version of it; clear all references first. */
+                                rc = pgmPoolTrackUpdateGCPhys(pVM, PageDesc.GCPhys, pPage, true /* clear the entries */, &fFlush);
+                                Assert(rc == VINF_SUCCESS || (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3) && (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)));
+                                if (rc == VINF_SUCCESS)
+                                    fFlushTLBs |= fFlush;
+
+                                /* Update the physical address and page id now. */
+                                PGM_PAGE_SET_HCPHYS(pPage, PageDesc.HCPhys);
+                                PGM_PAGE_SET_PAGEID(pPage, PageDesc.uHCPhysPageId);
+
+                                /* Invalidate page map TLB entry for this page too. */
+                                PGMPhysInvalidatePageMapTLBEntry(pVM, PageDesc.GCPhys);
+                                pVM->pgm.s.cReusedSharedPages++;
+                            }
+                            /* else nothing changed (== this page is now a shared page), so no need to flush anything. */
+
+                            pVM->pgm.s.cSharedPages++;
+                            pVM->pgm.s.cPrivatePages--;
+                            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_SHARED);
+                        }
+                    }
+                    else
+                        break;
                 }
-                else
-                    paPageDesc[idxPage].uHCPhysPageId = NIL_GMM_PAGEID;
             }
-            else
-                paPageDesc[idxPage].uHCPhysPageId = NIL_GMM_PAGEID;
 
             idxPage++;
             GCRegion += PAGE_SIZE;
             cbRegion -= PAGE_SIZE;
         }
-
-        if (fValidChanges)
-        {
-            rc = GMMR0SharedModuleCheckRange(pGVM, pModule, idxRegion, idxPage, paPageDesc);
-            AssertRC(rc);
-            if (RT_FAILURE(rc))
-                break;
-
-            for (unsigned i = 0; i < idxPage; i++)
-            {
-                /* Any change for this page? */
-                if (paPageDesc[i].uHCPhysPageId != NIL_GMM_PAGEID)
-                {
-                    /** todo: maybe cache these to prevent the nth lookup. */
-                    PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, paPageDesc[i].GCPhys);
-                    if (!pPage)
-                    {
-                        /* Should never happen. */
-                        AssertFailed();
-                        rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
-                        goto end;
-                    }
-                    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
-
-                    Log(("PGMR0SharedModuleCheck: shared page gc virt=%RGv phys %RGp host %RHp->%RHp\n", pRegions[idxRegion].GCRegionAddr + i * PAGE_SIZE, paPageDesc[i].GCPhys, PGM_PAGE_GET_HCPHYS(pPage), paPageDesc[i].HCPhys));
-                    if (paPageDesc[i].HCPhys != PGM_PAGE_GET_HCPHYS(pPage))
-                    {
-                        bool fFlush = false;
-
-                        /* Page was replaced by an existing shared version of it; clear all references first. */
-                        rc = pgmPoolTrackUpdateGCPhys(pVM, paPageDesc[i].GCPhys, pPage, true /* clear the entries */, &fFlush);
-                        if (RT_FAILURE(rc))
-                        {
-                            AssertRC(rc);
-                            goto end;
-                        }
-                        Assert(rc == VINF_SUCCESS || (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3) && (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)));
-                        if (rc == VINF_SUCCESS)
-                            fFlushTLBs |= fFlush;
-
-                        /* Update the physical address and page id now. */
-                        PGM_PAGE_SET_HCPHYS(pPage, paPageDesc[i].HCPhys);
-                        PGM_PAGE_SET_PAGEID(pPage, paPageDesc[i].uHCPhysPageId);
-
-                        /* Invalidate page map TLB entry for this page too. */
-                        PGMPhysInvalidatePageMapTLBEntry(pVM, paPageDesc[i].GCPhys);
-                        pVM->pgm.s.cReusedSharedPages++;
-                    }
-                    /* else nothing changed (== this page is now a shared page), so no need to flush anything. */
-
-                    pVM->pgm.s.cSharedPages++;
-                    pVM->pgm.s.cPrivatePages--;
-                    PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_SHARED);
-                }
-            }
-        }
-        else
-            rc = VINF_SUCCESS;  /* nothing to do. */
     }
 
-end:
     pgmUnlock(pVM);
     if (fFlushTLBs)
         PGM_INVL_ALL_VCPU_TLBS(pVM);
-
-    if (paPageDesc)
-        RTMemFree(paPageDesc);
 
     return rc;
 }
