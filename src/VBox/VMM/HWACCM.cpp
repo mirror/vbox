@@ -289,18 +289,20 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     AssertCompile(sizeof(pVM->hwaccm.s) <= sizeof(pVM->hwaccm.padding));
 
     /* Some structure checks. */
-    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, u8Reserved3) == 0xC0, ("u8Reserved3 offset = %x\n", RT_OFFSETOF(SVM_VMCB, u8Reserved3)));
     AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, ctrl.EventInject) == 0xA8, ("ctrl.EventInject offset = %x\n", RT_OFFSETOF(SVM_VMCB, ctrl.EventInject)));
     AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, ctrl.ExitIntInfo) == 0x88, ("ctrl.ExitIntInfo offset = %x\n", RT_OFFSETOF(SVM_VMCB, ctrl.ExitIntInfo)));
     AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, ctrl.TLBCtrl) == 0x58, ("ctrl.TLBCtrl offset = %x\n", RT_OFFSETOF(SVM_VMCB, ctrl.TLBCtrl)));
 
     AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest) == 0x400, ("guest offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest)));
-    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved4) == 0x4A0, ("guest.u8Reserved4 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved4)));
-    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved6) == 0x4D8, ("guest.u8Reserved6 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved6)));
-    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved7) == 0x580, ("guest.u8Reserved7 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved7)));
-    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved9) == 0x648, ("guest.u8Reserved9 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved9)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.TR) == 0x490, ("guest.TR offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.TR)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u8CPL) == 0x4CB, ("guest.u8CPL offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8CPL)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u64EFER) == 0x4D0, ("guest.u64EFER offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u64EFER)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u64CR4) == 0x548, ("guest.u64CR4 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u64CR4)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u64RIP) == 0x578, ("guest.u64RIP offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u64RIP)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u64RSP) == 0x5D8, ("guest.u64RSP offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u64RSP)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u64CR2) == 0x640, ("guest.u64CR2 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u64CR2)));
     AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u64GPAT) == 0x668, ("guest.u64GPAT offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u64GPAT)));
-    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, u8Reserved10) == 0x698, ("u8Reserved3 offset = %x\n", RT_OFFSETOF(SVM_VMCB, u8Reserved10)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u64LASTEXCPTO) == 0x690, ("guest.u64LASTEXCPTO offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u64LASTEXCPTO)));
     AssertReleaseMsg(sizeof(SVM_VMCB) == 0x1000, ("SVM_VMCB size = %x\n", sizeof(SVM_VMCB)));
 
 

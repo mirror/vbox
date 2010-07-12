@@ -685,10 +685,20 @@ typedef struct _SVM_VMCB
 #pragma pack()
 AssertCompileSize(SVM_VMCB, 0x1000);
 AssertCompileMemberOffset(SVM_VMCB, ctrl.u16InterceptRdCRx, 0x000);
+AssertCompileMemberOffset(SVM_VMCB, ctrl.TLBCtrl,           0x058);
+AssertCompileMemberOffset(SVM_VMCB, ctrl.ExitIntInfo,       0x088);
+AssertCompileMemberOffset(SVM_VMCB, ctrl.EventInject,       0x0A8);
 AssertCompileMemberOffset(SVM_VMCB, ctrl.abInstr,           0x0D1);
+AssertCompileMemberOffset(SVM_VMCB, guest,                  0x400);
 AssertCompileMemberOffset(SVM_VMCB, guest.ES,               0x400);
+AssertCompileMemberOffset(SVM_VMCB, guest.u8Reserved4,      0x4A0);
 AssertCompileMemberOffset(SVM_VMCB, guest.u8CPL,            0x4CB);
+AssertCompileMemberOffset(SVM_VMCB, guest.u8Reserved6,      0x4D8);
+AssertCompileMemberOffset(SVM_VMCB, guest.u8Reserved7,      0x580);
+AssertCompileMemberOffset(SVM_VMCB, guest.u8Reserved9,      0x648);
+AssertCompileMemberOffset(SVM_VMCB, guest.u64GPAT,          0x668);
 AssertCompileMemberOffset(SVM_VMCB, guest.u64LASTEXCPTO,    0x690);
+AssertCompileMemberOffset(SVM_VMCB, u8Reserved10,           0x698);
 
 #ifdef IN_RING0
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
