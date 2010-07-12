@@ -1,8 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * X11 keyboard driver interface
- *
+ * Frontends/Common - X11 keyboard driver interface.
  */
 
 /*
@@ -30,8 +27,8 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-#ifndef __H_KEYBOARD
-#define __H_KEYBOARD
+#ifndef ___VBox_VBoxKeyboard_h
+#define ___VBox_VBoxKeyboard_h
 
 #include <X11/Xlib.h>
 
@@ -52,5 +49,5 @@ extern CCALL unsigned X11DRV_InitKeyboard(Display *dpy, unsigned *byLayoutOK, un
 extern CCALL unsigned X11DRV_KeyEvent(Display *dpy, KeyCode code);
 #endif
 
-#endif /* __H_KEYBOARD */
+#endif
 

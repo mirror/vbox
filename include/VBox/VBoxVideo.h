@@ -468,7 +468,7 @@ typedef struct _VBOXVHWA_OVERLAYFX
 #define VBOXVHWA_SD_HEIGHT              0x00000002
 #define VBOXVHWA_SD_PITCH               0x00000008
 #define VBOXVHWA_SD_PIXELFORMAT         0x00001000
-//#define VBOXVHWA_SD_REFRESHRATE       0x00040000
+/*#define VBOXVHWA_SD_REFRESHRATE       0x00040000*/
 #define VBOXVHWA_SD_WIDTH               0x00000004
 
 #define VBOXVHWA_CKEYCAPS_DESTBLT                  0x00000001
@@ -528,8 +528,8 @@ typedef struct _VBOXVHWA_OVERLAYFX
 #define VBOXVHWA_CAPS2_CANRENDERWINDOWED            0x00080000
 #define VBOXVHWA_CAPS2_WIDESURFACES                 0x00001000
 #define VBOXVHWA_CAPS2_COPYFOURCC                   0x00008000
-//#define VBOXVHWA_CAPS2_FLIPINTERVAL                 0x00200000
-//#define VBOXVHWA_CAPS2_FLIPNOVSYNC                  0x00400000
+/*#define VBOXVHWA_CAPS2_FLIPINTERVAL                 0x00200000*/
+/*#define VBOXVHWA_CAPS2_FLIPNOVSYNC                  0x00400000*/
 
 
 #define VBOXVHWA_OFFSET64_VOID        (UINT64_MAX)
@@ -1061,9 +1061,11 @@ typedef struct VBOXSHGSMIHEADER
  * must not be cleared once set, the command completion is performed by issuing a host->guest completion command
  * while keeping this flag unchanged */
 #define VBOXSHGSMI_FLAG_HG_ASYNCH               0x00010000
-///* if set     - asynch completion is performed by issuing the event,
-// * if cleared - asynch completion is performed by calling a callback */
-//#define VBOXSHGSMI_FLAG_GH_ASYNCH_EVENT         0x00000001
+#if 0
+/* if set     - asynch completion is performed by issuing the event,
+ * if cleared - asynch completion is performed by calling a callback */
+#define VBOXSHGSMI_FLAG_GH_ASYNCH_EVENT         0x00000001
+#endif
 /* issue interrupt on asynch completion, used for critical G->H commands,
  * i.e. for completion of which guest is waiting. */
 #define VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ           0x00000002
@@ -1162,7 +1164,7 @@ typedef struct VBOXVDMA_SURF_DESC
     uint32_t fFlags;
 } VBOXVDMA_SURF_DESC, *PVBOXVDMA_SURF_DESC;
 
-//typedef uint64_t VBOXVDMAPHADDRESS;
+/*typedef uint64_t VBOXVDMAPHADDRESS;*/
 typedef uint64_t VBOXVDMASURFHANDLE;
 
 typedef uint64_t VBOXVIDEOOFFSET;

@@ -80,6 +80,7 @@ typedef struct CPUMSYSENTER
 /**
  * CPU context core.
  */
+#ifndef VBOX_WITHOUT_UNNAMED_UNIONS
 #pragma pack(1)
 typedef struct CPUMCTXCORE
 {
@@ -180,12 +181,16 @@ typedef struct CPUMCTXCORE
 
 } CPUMCTXCORE;
 #pragma pack()
+#else  /* VBOX_WITHOUT_UNNAMED_UNIONS */
+typedef struct CPUMCTXCORE CPUMCTXCORE;
+#endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
 
 
 /**
  * CPU context.
  */
-#pragma pack(1)
+#ifndef VBOX_WITHOUT_UNNAMED_UNIONS
+# pragma pack(1)
 typedef struct CPUMCTX
 {
     /** FPU state. (16-byte alignment)
@@ -347,12 +352,15 @@ typedef struct CPUMCTX
     CPUMSELREGHID   trHid;
     /** @} */
 
-#if 0
+# if 0
     /** Padding to align the size on a 64 byte boundrary. */
     uint32_t        padding[6];
-#endif
+# endif
 } CPUMCTX;
-#pragma pack()
+# pragma pack()
+#else  /* VBOX_WITHOUT_UNNAMED_UNIONS */
+typedef struct CPUMCTX CPUMCTX;
+#endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
 
 /**
  * Gets the CPUMCTXCORE part of a CPUMCTX.
@@ -378,7 +386,8 @@ typedef struct CPUMSELREGHID_VER1_6
  * CPU context, for version 1.6 saved state.
  * @remarks PATM uses this, which is why it has to be here.
  */
-#pragma pack(1)
+#ifndef VBOX_WITHOUT_UNNAMED_UNIONS
+# pragma pack(1)
 typedef struct CPUMCTX_VER1_6
 {
     /** FPU state. (16-byte alignment)
@@ -540,6 +549,9 @@ typedef struct CPUMCTX_VER1_6
     uint32_t        padding[2];
 } CPUMCTX_VER1_6;
 #pragma pack()
+#else  /* VBOX_WITHOUT_UNNAMED_UNIONS */
+typedef struct CPUMCTX_VER1_6 CPUMCTX_VER1_6;
+#endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
 
 /**
  * Guest MSR state.
@@ -724,6 +736,8 @@ VMMDECL(bool)       CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInLongMode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInPAEMode(PVMCPU pVCpu);
 
+#ifndef VBOX_WITHOUT_UNNAMED_UNIONS
+
 /**
  * Tests if the guest is running in real mode or not.
  *
@@ -799,6 +813,8 @@ DECLINLINE(bool)    CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
             &&  CPUMIsGuestInPagedProtectedModeEx(pCtx)
             &&  !CPUMIsGuestInLongModeEx(pCtx));
 }
+
+#endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
 
 /** @} */
 

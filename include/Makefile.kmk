@@ -21,11 +21,18 @@ include $(KBUILD_PATH)/header.kmk
 
 LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeRC
 
-cpp_hdrs := \
+# Omit headers that are using C++ features and upsets gcc.
+cpp_features_hdrs := \
+	VBox/hwaccm.h \
+	VBox/hwacc_vmx.h
+
+# Omit headers that are C++ and ring-3.
+r3_cpp_hdrs := \
 	VBox/dbggui.h \
 	VBox/settings.h \
 	$(wildcard iprt/*_cpp.h iprt/cpp/*.h )
 
+# Ring-3 only headers.
 r3_only_hdrs := \
 	VBox/vrdpapi.h \
         VBox/vrdpusb.h \
@@ -33,52 +40,64 @@ r3_only_hdrs := \
 	VBox/VBoxHDD-Plugin.h \
 	VBox/dbus.h \
 	VBox/uvm.h \
+	VBox/vscsi.h \
 	iprt/tcp.h \
 	iprt/localipc.h \
 	iprt/linux/sysfs.h \
+	iprt/socket.h
 
 # We omit a few headers which have platform specific issues or are templates.
 hdrs := $(filter-out \
 	VBox/VBoxGuest16.h \
 	VBox/VBoxGL2D.h \
 	VBox/WinNetConfig.h \
-	VBox/dbus-calls.h \
 	VBox/usblib-win.h \
 	VBox/usblib-solaris.h \
+	VBox/VDEPlug.h \
+	\
+	VBox/dbus-calls.h \
+	VBox/VDEPlugSymDefs.h \
+	VBox/VBoxKeyboard.h \
+	iprt/runtime-loader.h \
+	\
 	$(foreach os,$(filter-out $(KBUILD_TARGET),$(KBUILD_OSES)),iprt/$(os)/% VBox/$(os)/%) \
 	$(xforeach arch,$(KBUILD_ARCHES),iprt/nocrt/$(arch)/%) \
 	, $(wildcard VBox/*.h iprt/*.h iprt/*/*.h))
 
+# ring-3, ring-0 and raw-mode context specific exclusions.
 hdrs.r3 := $(filter-out , $(hdrs))
-hdrs.r0 := $(filter-out $(cpp_hdrs) $(r3_only_hdrs), $(hdrs))
-hdrs.gc := $(filter-out \
+hdrs.r0 := $(filter-out $(r3_cpp_hdrs) $(r3_only_hdrs), $(hdrs))
+hdrs.rc := $(filter-out \
 	VBox/VBoxGuestLib.h \
 	VBox/gvm.h \
 	iprt/thread.h \
 	iprt/mem.h \
 	iprt/alloc.h \
 	iprt/alloca.h \
-	$(cpp_hdrs) \
+	$(r3_cpp_hdrs) \
 	$(r3_only_hdrs) \
 	, $(hdrs))
 
 SyntaxVBoxIncludeR3_TEMPLATE = VBOXMAINEXE
 SyntaxVBoxIncludeR3_DEFS = VBOX_WITH_HGCM
+SyntaxVBoxIncludeR3_CDEFS = VBOX_WITHOUT_UNNAMED_UNIONS
 SyntaxVBoxIncludeR3_SOURCES := \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.r3)))) \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.r3))))
 
 SyntaxVBoxIncludeR0_TEMPLATE = VBoxR0
 SyntaxVBoxIncludeR0_DEFS = VBOX_WITH_HGCM
+SyntaxVBoxIncludeR0_CDEFS = VBOX_WITHOUT_UNNAMED_UNIONS
 SyntaxVBoxIncludeR0_SOURCES := \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.r0)))) \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.r0))))
 
 SyntaxVBoxIncludeRC_TEMPLATE = VBoxRc
 SyntaxVBoxIncludeRC_DEFS = VBOX_WITH_HGCM
+SyntaxVBoxIncludeRC_CDEFS = VBOX_WITHOUT_UNNAMED_UNIONS
 SyntaxVBoxIncludeRC_SOURCES := \
-	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.gc)))) \
-	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.gc))))
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.rc)))) \
+	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.rc))))
 
 
 # Comment out the next line to simplify header correction.
@@ -93,7 +112,7 @@ $$(PATH_TARGET)/$(flatname)-cpp.cpp: $$(PATH_TARGET)/
 	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 
 $$(PATH_TARGET)/$(flatname)-c.c: $(VBOX_ROOT_INCLUDE_MAKEFILE)  | $$(PATH_TARGET)/
-ifn1of ($(hdr), $(cpp_hdrs) )
+ifn1of ($(hdr), $(r3_cpp_hdrs) $(cpp_features_hdrs) )
 	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 else
 	$(QUIET)$$(APPEND) -t -n $$@ 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'

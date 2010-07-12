@@ -71,17 +71,17 @@ RT_C_DECLS_BEGIN
 
 typedef struct PATMGCSTATE
 {
-    // Virtual Flags register (IF + more later on)
+    /* Virtual Flags register (IF + more later on) */
     uint32_t  uVMFlags;
 
     /* Pending PATM actions (internal use only) */
     uint32_t  uPendingAction;
 
-    // Records the number of times all patches are called (indicating how many exceptions we managed to avoid)
+    /* Records the number of times all patches are called (indicating how many exceptions we managed to avoid) */
     uint32_t  uPatchCalls;
-    // Scratchpad dword
+    /* Scratchpad dword */
     uint32_t  uScratch;
-    // Debugging info
+    /* Debugging info */
     uint32_t  uIretEFlags, uIretCS, uIretEIP;
 
     /* PATM stack pointer */
@@ -109,11 +109,11 @@ typedef struct PATMGCSTATE
 
 typedef struct PATMTRAPREC
 {
-    // pointer to original guest code instruction (for emulation)
+    /* pointer to original guest code instruction (for emulation) */
     RTRCPTR pNewEIP;
-    // pointer to the next guest code instruction
+    /* pointer to the next guest code instruction */
     RTRCPTR pNextInstr;
-    //pointer to the corresponding next instruction in the patch block
+    /* pointer to the corresponding next instruction in the patch block */
     RTRCPTR pNextPatchInstr;
 } PATMTRAPREC, *PPATMTRAPREC;
 

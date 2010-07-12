@@ -33,6 +33,8 @@
 # include "runtime.h"
 #endif
 
+struct PDMLED;
+
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_vusb  VBox USB API
