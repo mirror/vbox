@@ -413,9 +413,9 @@ public:
         RTAssertDebugBreak(); \
         throw (a); \
 } while (0)
-#endif
 #else
 #define DebugBreakThrow(a) throw (a)
+#endif
 
 /**
  * Parent class of VirtualBoxBase which enables translation support (which
