@@ -1071,6 +1071,7 @@ static HRESULT vboxWddmRenderTargetUpdateSurface(PVBOXWDDMDISP_DEVICE pDevice, P
     Assert(hr == S_OK);
     if (hr == S_OK)
     {
+        Assert(pD3D9Surf);
         Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
         if (pAlloc->pD3DIf)
             pAlloc->pD3DIf->Release();
@@ -1098,9 +1099,30 @@ static HRESULT vboxWddmRenderTargetUpdate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
         Assert(tmpHr == S_OK);
     }
 
+#ifdef VBOXWDDM_WITH_VISIBLE_FB
     pAlloc = &pRc->aAllocations[iNewRTFB];
     HRESULT tmpHr = vboxWddmRenderTargetUpdateSurface(pDevice, pAlloc, ~0UL /* <- for the frontbuffer */);
     Assert(tmpHr == S_OK);
+#else
+    pAlloc = &pRc->aAllocations[iNewRTFB];
+    if (pAlloc->pD3DIf)
+    {
+        pAlloc->pD3DIf->Release();
+        pAlloc->pD3DIf = NULL;
+    }
+#endif
+
+#ifdef DEBUG
+    for (UINT i = 0; i < pRc->cAllocations; ++i)
+    {
+        pAlloc = &pRc->aAllocations[i];
+        for (UINT j = i+1; j < pRc->cAllocations; ++j)
+        {
+            PVBOXWDDMDISP_ALLOCATION pAllocJ = &pRc->aAllocations[j];
+            Assert(pAlloc->pD3DIf != pAllocJ->pD3DIf);
+        }
+    }
+#endif
     return S_OK;
 }
 
@@ -2381,6 +2403,8 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
 
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
+        Assert(pRc != pDevice->pRenderTargetRc || pDevice->iRenderTargetFrontBuf != pData->SubResourceIndex);
+
         if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE)
         {
             PVBOXWDDMDISP_ALLOCATION pTexAlloc = &pRc->aAllocations[0];
@@ -3324,6 +3348,27 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                                     }
                                 }
 
+#ifndef VBOXWDDM_WITH_VISIBLE_FB
+                                if (hr == S_OK)
+                                {
+                                    IDirect3DSurface9* pD3D9Surf;
+                                    hr = pDevice->pDevice9If->CreateRenderTarget(pRc->aAllocations[0].SurfDesc.width,
+                                            pRc->aAllocations[0].SurfDesc.height,
+                                            vboxDDI2D3DFormat(pResource->Format),
+                                            vboxDDI2D3DMultiSampleType(pResource->MultisampleType),
+                                            pResource->MultisampleQuality,
+                                            !pResource->Flags.NotLockable /* BOOL Lockable */,
+                                            &pD3D9Surf,
+                                            NULL /* HANDLE* pSharedHandle */
+                                            );
+                                    Assert(hr == S_OK);
+                                    if (hr == S_OK)
+                                    {
+                                        pDevice->pRenderTargetFbCopy = pD3D9Surf;
+                                    }
+                                }
+#endif
+
                                 if (hr != S_OK)
                                 {
                                     for (UINT i = 0; i < pResource->SurfCount; ++i)
@@ -3988,31 +4033,91 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
     PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
     Assert(pDstRc->cAllocations > pData->DstSubResourceIndex);
     Assert(pSrcRc->cAllocations > pData->SrcSubResourceIndex);
+    Assert(pDstRc != pDevice->pRenderTargetRc || pDevice->iRenderTargetFrontBuf != pData->DstSubResourceIndex);
     HRESULT hr = S_OK;
     /* try StretchRect */
     IDirect3DSurface9 *pSrcSurfIf = NULL;
     IDirect3DSurface9 *pDstSurfIf = NULL;
-    hr = vboxWddmSurfGet(pSrcRc, pData->SrcSubResourceIndex, &pSrcSurfIf);
+    hr = vboxWddmSurfGet(pDstRc, pData->DstSubResourceIndex, &pDstSurfIf);
     Assert(hr == S_OK);
     if (hr == S_OK)
     {
-        Assert(pSrcSurfIf);
-        hr = vboxWddmSurfGet(pDstRc, pData->DstSubResourceIndex, &pDstSurfIf);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
+        Assert(pDstSurfIf);
+        do
         {
-            Assert(pDstSurfIf);
-            /* we support only Point & Linear, we ignore [Begin|Continue|End]PresentToDwm */
-            Assert((pData->Flags.Value & (~(0x00000100 | 0x00000200 | 0x00000400 | 0x00000001  | 0x00000002))) == 0);
-            hr = pDevice->pDevice9If->StretchRect(pSrcSurfIf,
-                                &pData->SrcRect,
-                                pDstSurfIf,
-                                &pData->DstRect,
-                                vboxDDI2D3DBltFlags(pData->Flags));
-            Assert(hr == S_OK);
-            pDstSurfIf->Release();
-        }
-        pSrcSurfIf->Release();
+#ifndef VBOXWDDM_WITH_VISIBLE_FB
+            if (pSrcRc == pDevice->pRenderTargetRc && pDevice->iRenderTargetFrontBuf == pData->SrcSubResourceIndex)
+            {
+                PVBOXWDDMDISP_ALLOCATION pSrcAlloc = &pSrcRc->aAllocations[pData->SrcSubResourceIndex];
+                PVBOXWDDMDISP_ALLOCATION pDstAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
+//                Assert(pSrcAlloc->SurfDesc.width == pDstAlloc->SurfDesc.width);
+//                Assert(pSrcAlloc->SurfDesc.height == pDstAlloc->SurfDesc.height);
+//                Assert(pSrcAlloc->SurfDesc.format == pDstAlloc->SurfDesc.format);
+//                Assert(pSrcAlloc->SurfDesc.bpp == pDstAlloc->SurfDesc.bpp);
+//                Assert(pSrcAlloc->SurfDesc.pitch == pDstAlloc->SurfDesc.pitch);
+//                Assert(pSrcAlloc->SurfDesc.depth == pDstAlloc->SurfDesc.depth);
+//                Assert(pSrcAlloc->SurfDesc.slicePitch == pDstAlloc->SurfDesc.slicePitch);
+//                Assert(pSrcAlloc->SurfDesc.cbSize == pDstAlloc->SurfDesc.cbSize);
+//                Assert(pData->DstRect.left == 0);
+//                Assert(pData->DstRect.top == 0);
+//                Assert(pData->DstRect.right == pDstAlloc->SurfDesc.width);
+//                Assert(pData->DstRect.bottom == pDstAlloc->SurfDesc.height);
+//                Assert(pData->SrcRect.left == 0);
+//                Assert(pData->SrcRect.top == 0);
+//                Assert(pData->SrcRect.right == pSrcAlloc->SurfDesc.width);
+//                Assert(pData->SrcRect.bottom == pSrcAlloc->SurfDesc.height);
+#if 0
+                if (pData->DstRect.left == 0 && pData->DstRect.top == 0
+                        && pData->DstRect.right == pDstAlloc->SurfDesc.width
+                        && pData->DstRect.bottom == pDstAlloc->SurfDesc.height
+                        && pData->SrcRect.left == 0 && pData->SrcRect.top == 0
+                        && pData->SrcRect.right == pSrcAlloc->SurfDesc.width
+                        && pData->SrcRect.bottom == pSrcAlloc->SurfDesc.height
+                        && pSrcAlloc->SurfDesc.width == pDstAlloc->SurfDesc.width
+                        && pSrcAlloc->SurfDesc.height == pDstAlloc->SurfDesc.height
+                        && pSrcAlloc->SurfDesc.format == pDstAlloc->SurfDesc.format)
+                {
+                    hr = pDevice->pDevice9If->GetFrontBufferData(0, pDstSurfIf);
+                    Assert(hr == S_OK);
+                    break;
+                }
+                else
+#endif
+                {
+                    pSrcSurfIf = pDevice->pRenderTargetFbCopy;
+                    Assert(pSrcSurfIf);
+                    hr = pDevice->pDevice9If->GetFrontBufferData(0, pDevice->pRenderTargetFbCopy);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        /* do pSrcSurfIf->AddRef since we do a Release in the following if (hr == S_OK) branch */
+                        pSrcSurfIf->AddRef();
+                    }
+                }
+            }
+            else
+#endif
+            {
+                hr = vboxWddmSurfGet(pSrcRc, pData->SrcSubResourceIndex, &pSrcSurfIf);
+                Assert(hr == S_OK);
+            }
+
+            if (hr == S_OK)
+            {
+                Assert(pSrcSurfIf);
+                /* we support only Point & Linear, we ignore [Begin|Continue|End]PresentToDwm */
+                Assert((pData->Flags.Value & (~(0x00000100 | 0x00000200 | 0x00000400 | 0x00000001  | 0x00000002))) == 0);
+                hr = pDevice->pDevice9If->StretchRect(pSrcSurfIf,
+                                    &pData->SrcRect,
+                                    pDstSurfIf,
+                                    &pData->DstRect,
+                                    vboxDDI2D3DBltFlags(pData->Flags));
+                Assert(hr == S_OK);
+                pSrcSurfIf->Release();
+            }
+        } while (0);
+
+        pDstSurfIf->Release();
     }
 
     if (hr != S_OK)
@@ -4403,6 +4508,9 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
     PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
     if (pDevice->pDevice9If)
     {
+#ifndef VBOXWDDM_WITH_VISIBLE_FB
+        pDevice->pRenderTargetFbCopy->Release();
+#endif
         pDevice->pDevice9If->Release();
         Assert(pDevice->hWnd);
         HRESULT tmpHr = VBoxDispWndDestroy(pAdapter, pDevice->hWnd);

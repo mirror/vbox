@@ -336,7 +336,7 @@ NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsInfo)
             if (pCmd->RectsInfo.cRects)
             {
                 bool bSend = false;
-                Assert(pCmd->fFlags.Value == 0);
+                pCmd->fFlags.Value = 0;
                 pCmd->fFlags.bAddHiddenRects = 1;
                 if (pCurContext->pLastReportedRects)
                 {
