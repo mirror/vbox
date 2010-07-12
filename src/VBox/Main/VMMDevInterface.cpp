@@ -178,8 +178,8 @@ DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, cons
     if (!guest)
         return;
 
-    guest->setAdditionsStatus(guestStatus->facility,
-                              guestStatus->status,
+    guest->setAdditionsStatus((VBoxGuestStatusFacility)guestStatus->facility,
+                              (VBoxGuestStatusCurrent)guestStatus->status,
                               guestStatus->flags);
     pDrv->pVMMDev->getParent()->onAdditionsStateChange();
 }
@@ -229,9 +229,8 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
          * or driver unload.
          */
         guest->setAdditionsInfo(Bstr(), guestInfo->osType);
-        guest->setAdditionsStatus(0,  /* Facility; 0 = Global GA status.  May be changed
-                                       * later to VBoxService' own facility. */
-                                  0,  /* Status; 0 = Not active */
+        guest->setAdditionsStatus(VBoxGuestStatusFacility_Unknown,
+                                  VBoxGuestStatusCurrent_Disabled,
                                   0); /* Flags; not used. */
         pDrv->pVMMDev->getParent()->onAdditionsStateChange();
     }

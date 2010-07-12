@@ -113,7 +113,7 @@ public:
 
     // Public methods that are not in IDL (only called internally).
     void setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType);
-    void setAdditionsStatus(ULONG ulFacility, ULONG ulStatus, ULONG ulFlags);
+    void setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags);
     void setSupportedFeatures(ULONG64 ulCaps, ULONG64 ulActive);
     HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
 
