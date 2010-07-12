@@ -273,7 +273,7 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
         pReq->guestInfo.osType = enmOSType;
         rc = VbglGRPerform(&pReq->header);
         if (RT_FAILURE(rc))
-            LogRel(("Guest Additions: Reporting guest info 1 failed with rc=%Rrc\n", rc));
+            LogRel(("vboxGuestInitReportGuestInfo: 1st part failed with rc=%Rrc\n", rc));
         VbglGRFree(&pReq->header);
     }
     VMMDevReportGuestInfo2 *pReq2;
@@ -291,7 +291,7 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
         if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
             rc = VINF_SUCCESS;
         if (RT_FAILURE(rc))
-            LogRel(("Guest Additions: Reporting guest info 2 failed with rc=%Rrc\n", rc));
+            LogRel(("vboxGuestInitReportGuestInfo: 2nd part failed with rc=%Rrc\n", rc));
         VbglGRFree(&pReq2->header);
     }
 
@@ -312,7 +312,7 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
         if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
             rc = VINF_SUCCESS;
         if (RT_FAILURE(rc))
-            LogRel(("Guest Additions: Reporting guest status failed with rc=%Rrc\n", rc));
+            LogRel(("vboxGuestInitReportGuestInfo: reporting status failed with rc=%Rrc\n", rc));
         VbglGRFree(&pReq3->header);
     }
     return rc;
