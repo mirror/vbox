@@ -407,15 +407,15 @@ public:
  *  A variant of 'throw' that hits a debug breakpoint first to make
  *  finding the actual thrower possible.
  */
-#if defined (DEBUG)
-#define DebugBreakThrow(a) throw (a)
-#else
+#ifdef DEBUG
 #define DebugBreakThrow(a) \
     do { \
         RTAssertDebugBreak(); \
         throw (a); \
-    } while (0)
+} while (0)
 #endif
+#else
+#define DebugBreakThrow(a) throw (a)
 
 /**
  * Parent class of VirtualBoxBase which enables translation support (which
