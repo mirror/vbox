@@ -101,6 +101,9 @@ typedef struct VBOXWDDMDISP_DEVICE
     UINT cbCmdBuffer;
     D3DDDI_CREATEDEVICEFLAGS fFlags;
     HWND hWnd;
+#ifndef VBOXWDDM_WITH_VISIBLE_FB
+    IDirect3DSurface9 *pRenderTargetFbCopy;
+#endif
     struct VBOXWDDMDISP_RESOURCE *pRenderTargetRc;
     uint32_t iRenderTargetFrontBuf;
     /* number of StreamSources set */
