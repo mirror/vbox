@@ -4060,6 +4060,7 @@ typedef struct
 {
     PGVM                    pGVM;
     VMCPUID                 idCpu;
+    int                     rc;
 } GMMCHECKSHAREDMODULEINFO, *PGMMCHECKSHAREDMODULEINFO;
 
 /**
@@ -4075,7 +4076,9 @@ DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *pvUser)
         &&  pGlobalModule)
     {
         Log(("gmmR0CheckSharedModule: check %s %s base=%RGv size=%x collision=%d\n", pGlobalModule->szName, pGlobalModule->szVersion, pGlobalModule->Core.Key, pGlobalModule->cbModule, pLocalModule->fCollision));
-        PGMR0SharedModuleCheck(pInfo->pGVM->pVM, pInfo->pGVM, pInfo->idCpu, pGlobalModule, pLocalModule->cRegions, pLocalModule->aRegions);
+        pInfo->rc = PGMR0SharedModuleCheck(pInfo->pGVM->pVM, pInfo->pGVM, pInfo->idCpu, pGlobalModule, pLocalModule->cRegions, pLocalModule->aRegions);
+        if (RT_FAILURE(pInfo->rc))
+            return 1;   /* stop enumeration. */
     }
     return 0;
 }
@@ -4162,9 +4165,11 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
         Log(("GMMR0CheckSharedModules\n"));
         Info.pGVM     = pGVM;
         Info.idCpu    = pVCpu->idCpu;
+        Info.rc       = VINF_SUCCESS;
 
         RTAvlGCPtrDoWithAll(&pGVM->gmm.s.pSharedModuleTree, true /* fFromLeft */, gmmR0CheckSharedModule, &Info);
-        rc = VINF_SUCCESS;
+
+        rc = Info.rc;
 
         Log(("GMMR0CheckSharedModules done!\n"));
 
