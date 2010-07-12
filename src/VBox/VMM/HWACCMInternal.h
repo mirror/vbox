@@ -24,6 +24,7 @@
 #include <VBox/stam.h>
 #include <VBox/dis.h>
 #include <VBox/hwaccm.h>
+#include <VBox/hwacc_vmx.h>
 #include <VBox/pgm.h>
 #include <VBox/cpum.h>
 #include <iprt/memobj.h>
