@@ -146,7 +146,7 @@ static int vbglR3CloseAdditionsWinStoragePath(HKEY hKey)
  * @param uStatus
  * @param uFlags
  */
-VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, uint32_t uFlags)
+VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent StatusCurrent, uint32_t uFlags)
 {
     VMMDevReportGuestStatus Report;
     RT_ZERO(Report);
@@ -155,7 +155,7 @@ VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility Facility, VB
     {
 
         Report.guestStatus.facility = Facility;
-        Report.guestStatus.status = Status;
+        Report.guestStatus.status = StatusCurrent;
         Report.guestStatus.flags = uFlags;
 
         rc = vbglR3GRPerform(&Report.header);

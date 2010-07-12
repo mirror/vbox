@@ -412,7 +412,7 @@ VBGLR3DECL(void)    VbglR3ClosePidFile(const char *pszPath, RTFILE hFile);
 VBGLR3DECL(int)     VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot);
 VBGLR3DECL(int)     VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfEvents);
 
-VBGLR3DECL(int)     VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, uint32_t uFlags);
+VBGLR3DECL(int)     VbglR3ReportAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent StatusCurrent, uint32_t uFlags);
 VBGLR3DECL(int)     VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev);
 VBGLR3DECL(int)     VbglR3GetAdditionsInstallationPath(char **ppszPath);
 VBGLR3DECL(int)     VbglR3GetSessionId(uint64_t *pu64IdSession);
