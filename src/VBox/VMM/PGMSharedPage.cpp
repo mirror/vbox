@@ -154,7 +154,8 @@ VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *p
 # if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
     for (unsigned i = 0; i < cSharedModules; i++)
     {
-        if (    !strcmp(pSharedModules[i]->szName, pszModuleName)
+        if (    pSharedModules[i]
+            &&  !strcmp(pSharedModules[i]->szName, pszModuleName)
             &&  !strcmp(pSharedModules[i]->szVersion, pszVersion))
         {
             RTMemFree(pSharedModules[i]);
