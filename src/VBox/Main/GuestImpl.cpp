@@ -564,11 +564,11 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
 
         Utf8Str errMsg;
 
-        /* Was progress cancelled before? */
-        BOOL fCancelled;
+        /* Was progress canceled before? */
+        BOOL fCanceled;
         ComAssert(!it->second.pProgress.isNull());
-        if (   SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCancelled))
-            && !fCancelled)
+        if (   SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCanceled))
+            && !fCanceled)
         {
             /* Do progress handling. */
             HRESULT hr;
@@ -642,12 +642,12 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
             }
         }
         else
-            errMsg = Utf8StrFmt(Guest::tr("Process execution cancelled"));
+            errMsg = Utf8StrFmt(Guest::tr("Process execution canceled"));
 
         if (!it->second.pProgress->getCompleted())
         {
             if (   errMsg.length()
-                || fCancelled) /* If cancelled we have to report E_FAIL! */
+                || fCanceled) /* If canceled we have to report E_FAIL! */
             {
                 HRESULT hr2 = it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR,
                                                                    COM_IIDOF(IGuest),
@@ -701,15 +701,15 @@ int Guest::notifyCtrlExecOut(uint32_t             u32Function,
             pCBData->cbData = 0;
         }
 
-        /* Was progress cancelled before? */
-        BOOL fCancelled;
+        /* Was progress canceled before? */
+        BOOL fCanceled;
         ComAssert(!it->second.pProgress.isNull());
-        if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCancelled)) && fCancelled)
+        if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCanceled)) && fCanceled)
         {
             it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR,
                                                  COM_IIDOF(IGuest),
                                                  Guest::getStaticComponentName(),
-                                                 Guest::tr("The output operation was cancelled"));
+                                                 Guest::tr("The output operation was canceled"));
         }
         else
             it->second.pProgress->notifyComplete(S_OK);
@@ -774,9 +774,9 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackMapIter it)
         {
             LogFlowFunc(("Progress of CID=%u *not* completed, cancelling ...\n", it->first));
 
-            /* Only cancel if not cancelled before! */
-            BOOL fCancelled;
-            if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCancelled)) && !fCancelled)
+            /* Only cancel if not canceled before! */
+            BOOL fCanceled;
+            if (SUCCEEDED(it->second.pProgress->COMGETTER(Canceled)(&fCanceled)) && !fCanceled)
                 it->second.pProgress->Cancel();
 
             /*
@@ -789,7 +789,7 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackMapIter it)
             it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR,
                                                  COM_IIDOF(IGuest),
                                                  Guest::getStaticComponentName(),
-                                                 Guest::tr("The operation was cancelled because client is shutting down"));
+                                                 Guest::tr("The operation was canceled because client is shutting down"));
         }
         /*
          * Do *not* NULL pProgress here, because waiting function like executeProcess()
@@ -1020,7 +1020,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                  * get the PID.
                  */
                 CallbackMapIter it = getCtrlCallbackContextByID(uContextID);
-                BOOL fCancelled = FALSE;
+                BOOL fCanceled = FALSE;
                 if (it != mCallbackMap.end())
                 {
                     ComAssert(!it->second.pProgress.isNull());
@@ -1032,11 +1032,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     rc = it->second.pProgress->WaitForOperationCompletion(0, aTimeoutMS);
                     if (SUCCEEDED(rc))
                     {
-                        /* Was the operation cancelled by one of the parties? */
-                        rc = it->second.pProgress->COMGETTER(Canceled)(&fCancelled);
+                        /* Was the operation canceled by one of the parties? */
+                        rc = it->second.pProgress->COMGETTER(Canceled)(&fCanceled);
                         if (FAILED(rc)) throw rc;
 
-                        if (!fCancelled)
+                        if (!fCanceled)
                         {
                             AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1080,7 +1080,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                                     break;
                             }
                         }
-                        else /* Operation was cancelled. */
+                        else /* Operation was canceled. */
                             vrc = VERR_CANCELLED;
                     }
                     else /* Operation did not complete within time. */
@@ -1120,7 +1120,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                         else if (vrc == VERR_CANCELLED)
                         {
                             rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The execution operation was cancelled"));
+                                          tr("The execution operation was canceled"));
                         }
                         else if (vrc == VERR_PERMISSION_DENIED)
                         {
@@ -1203,7 +1203,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
          * Create progress object.
          * This progress object, compared to the one in executeProgress() above,
          * is only local and is used to determine whether the operation finished
-         * or got cancelled.
+         * or got canceled.
          */
         ComObjPtr <Progress> progress;
         rc = progress.createObject();
@@ -1269,7 +1269,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
              * get the PID.
              */
             CallbackMapIter it = getCtrlCallbackContextByID(uContextID);
-            BOOL fCancelled = FALSE;
+            BOOL fCanceled = FALSE;
             if (it != mCallbackMap.end())
             {
                 ComAssert(!it->second.pProgress.isNull());
@@ -1278,11 +1278,11 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                 rc = it->second.pProgress->WaitForCompletion(aTimeoutMS);
                 if (FAILED(rc)) throw rc;
 
-                /* Was the operation cancelled by one of the parties? */
-                rc = it->second.pProgress->COMGETTER(Canceled)(&fCancelled);
+                /* Was the operation canceled by one of the parties? */
+                rc = it->second.pProgress->COMGETTER(Canceled)(&fCanceled);
                 if (FAILED(rc)) throw rc;
 
-                if (!fCancelled)
+                if (!fCanceled)
                 {
                     BOOL fCompleted;
                     if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
@@ -1311,7 +1311,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                     else /* If callback not called within time ... well, that's a timeout! */
                         vrc = VERR_TIMEOUT;
                 }
-                else /* Operation was cancelled. */
+                else /* Operation was canceled. */
                 {
                     vrc = VERR_CANCELLED;
                 }
@@ -1331,7 +1331,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                     else if (vrc == VERR_CANCELLED)
                     {
                         rc = setError(VBOX_E_IPRT_ERROR,
-                                      tr("The output operation was cancelled"));
+                                      tr("The output operation was canceled"));
                     }
                     else
                     {

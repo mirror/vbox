@@ -6412,7 +6412,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                     that->setMachineState(MachineState_Saved);
                     break;
                 case MachineState_TeleportingIn:
-                    /* Teleportation failed or was cancelled.  Back to powered off. */
+                    /* Teleportation failed or was canceled.  Back to powered off. */
                     that->setMachineState(MachineState_PoweredOff);
                     break;
                 case MachineState_TeleportingPausedVM:
@@ -7941,7 +7941,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
 
             pTask->mProgress->setCancelCallback(NULL, NULL);
             if (!pTask->mProgress->notifyPointOfNoReturn())
-                throw setErrorStatic(E_FAIL, tr("Cancelled"));
+                throw setErrorStatic(E_FAIL, tr("Canceled"));
             that->mptrCancelableProgress.setNull();
 
             // STEP 4: reattach hard disks
