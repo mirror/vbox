@@ -31,10 +31,7 @@
 #include "UIMouseHandler.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
-#include "UIMachineWindowNormal.h"
-#include "UIMachineWindowFullscreen.h"
-#include "UIMachineWindowSeamless.h"
-#include "UIMachineWindowScale.h"
+#include "UIMachineWindow.h"
 #include "UIMachineView.h"
 
 #ifdef Q_WS_X11
@@ -121,23 +118,7 @@ void UIKeyboardHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineW
         /* Add window: */
         m_windows.insert(uIndex, pMachineWindow);
         /* Install event-filter for window: */
-        switch (machineLogic()->visualStateType())
-        {
-            case UIVisualStateType_Normal:
-                static_cast<UIMachineWindowNormal*>(m_windows[uIndex])->installEventFilter(this);
-                break;
-            case UIVisualStateType_Fullscreen:
-                static_cast<UIMachineWindowFullscreen*>(m_windows[uIndex])->installEventFilter(this);
-                break;
-            case UIVisualStateType_Seamless:
-                static_cast<UIMachineWindowSeamless*>(m_windows[uIndex])->installEventFilter(this);
-                break;
-            case UIVisualStateType_Scale:
-                static_cast<UIMachineWindowScale*>(m_windows[uIndex])->installEventFilter(this);
-                break;
-            default:
-                break;
-        }
+        m_windows[uIndex]->machineWindow()->installEventFilter(this);
     }
 
     /* If that view is NOT registered yet: */
@@ -1466,50 +1447,11 @@ UIMachineWindow* UIKeyboardHandler::isItListenedWindow(QObject *pWatchedObject) 
     QMap<ulong, UIMachineWindow*>::const_iterator i = m_windows.constBegin();
     while (!pResultWindow && i != m_windows.constEnd())
     {
-        switch (machineLogic()->visualStateType())
+        UIMachineWindow *pIteratedWindow = i.value();
+        if (pIteratedWindow->machineWindow() == pWatchedObject)
         {
-            case UIVisualStateType_Normal:
-            {
-                UIMachineWindowNormal *pIteratedWindow = static_cast<UIMachineWindowNormal*>(i.value());
-                if (pIteratedWindow == pWatchedObject)
-                {
-                    pResultWindow = pIteratedWindow;
-                    continue;
-                }
-                break;
-            }
-            case UIVisualStateType_Fullscreen:
-            {
-                UIMachineWindowFullscreen *pIteratedWindow = static_cast<UIMachineWindowFullscreen*>(i.value());
-                if (pIteratedWindow == pWatchedObject)
-                {
-                    pResultWindow = pIteratedWindow;
-                    continue;
-                }
-                break;
-            }
-            case UIVisualStateType_Seamless:
-            {
-                UIMachineWindowSeamless *pIteratedWindow = static_cast<UIMachineWindowSeamless*>(i.value());
-                if (pIteratedWindow == pWatchedObject)
-                {
-                    pResultWindow = pIteratedWindow;
-                    continue;
-                }
-                break;
-            }
-            case UIVisualStateType_Scale:
-            {
-                UIMachineWindowScale *pIteratedWindow = static_cast<UIMachineWindowScale*>(i.value());
-                if (pIteratedWindow == pWatchedObject)
-                {
-                    pResultWindow = pIteratedWindow;
-                    continue;
-                }
-                break;
-            }
-            default:
-                break;
+            pResultWindow = pIteratedWindow;
+            continue;
         }
         ++i;
     }
@@ -1522,7 +1464,7 @@ UIMachineView* UIKeyboardHandler::isItListenedView(QObject *pWatchedObject) cons
     QMap<ulong, UIMachineView*>::const_iterator i = m_views.constBegin();
     while (!pResultView && i != m_views.constEnd())
     {
-        UIMachineView *pIteratedView = qobject_cast<UIMachineView*>(i.value());
+        UIMachineView *pIteratedView = i.value();
         if (pIteratedView == pWatchedObject)
         {
             pResultView = pIteratedView;
