@@ -577,10 +577,18 @@ typedef struct _SVM_VMCB
         uint64_t    u64NestedPagingCR3;
         /** Offset 0xB8 - LBR Virtualization. */
         uint64_t    u64LBRVirt;
+        /** Offset 0xC0 - VMCB Clean Bits. */
+        uint64_t    u64VMCBCleanBits;
+        /** Offset 0xC8 - Next sequential instruction pointer. */
+        uint64_t    u64NextRIP;
+        /** Offset 0xD0 - Number of bytes fetched. */
+        uint8_t     cbInstrFetched;
+        /** Offset 0xD1 - Number of bytes fetched. */
+        uint8_t     abInstr[15];
     } ctrl;
 
     /** Offset 0xC0-0x3FF - Reserved. */
-    uint8_t     u8Reserved3[0x400-0xC0];
+    uint8_t     u8Reserved3[0x400-0xE0];
 
     /** State Save Area. Starts at offset 0x400. */
     struct
@@ -675,6 +683,12 @@ typedef struct _SVM_VMCB
     uint8_t     u8Reserved10[0x1000-0x698];
 } SVM_VMCB;
 #pragma pack()
+AssertCompileSize(SVM_VMCB, 0x1000);
+AssertCompileMemberOffset(SVM_VMCB, ctrl.u16InterceptRdCRx, 0x000);
+AssertCompileMemberOffset(SVM_VMCB, ctrl.abInstr,           0x0D1);
+AssertCompileMemberOffset(SVM_VMCB, guest.ES,               0x400);
+AssertCompileMemberOffset(SVM_VMCB, guest.u8CPL,            0x4CB);
+AssertCompileMemberOffset(SVM_VMCB, guest.u64LASTEXCPTO,    0x690);
 
 #ifdef IN_RING0
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
