@@ -121,6 +121,15 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
                         break;
                 }
             }
+            else
+            {
+                Assert(    rc == VINF_SUCCESS 
+                       ||  rc == VERR_PAGE_NOT_PRESENT
+                       ||  rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT
+                       ||  rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT
+                       ||  rc == VERR_PAGE_TABLE_NOT_PRESENT);  
+                rc = VINF_SUCCESS;  /* ignore error */
+            }
 
             idxPage++;
             GCRegion += PAGE_SIZE;
