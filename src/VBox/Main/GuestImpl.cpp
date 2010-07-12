@@ -575,11 +575,13 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
             switch (pData->u32Status)
             {
                 case PROC_STS_STARTED:
+                    LogRel(("Guest process (PID %u) started\n", pCBData->u32PID)); /** @todo Add process name */
                     hr = it->second.pProgress->SetNextOperation(BstrFmt(tr("Waiting for process to exit ...")), 1 /* Weight */);
                     AssertComRC(hr);
                     break;
 
                 case PROC_STS_TEN: /* Terminated normally. */
+                    LogRel(("Guest process (PID %u) exited normally\n", pCBData->u32PID)); /** @todo Add process name */
                     hr = it->second.pProgress->notifyComplete(S_OK);
                     AssertComRC(hr);
                     LogFlowFunc(("Proccess (context ID=%u, status=%u) terminated successfully\n",
@@ -587,28 +589,37 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
                     break;
 
                 case PROC_STS_TEA: /* Terminated abnormally. */
+                    LogRel(("Guest process (PID %u) terminated abnormally with exit code = %u\n",
+                            pCBData->u32PID, pCBData->u32Flags)); /** @todo Add process name */
                     errMsg = Utf8StrFmt(Guest::tr("Process terminated abnormally with status '%u'"),
                                         pCBData->u32Flags);
                     break;
 
                 case PROC_STS_TES: /* Terminated through signal. */
+                    LogRel(("Guest process (PID %u) terminated through signal with exit code = %u\n",
+                            pCBData->u32PID, pCBData->u32Flags)); /** @todo Add process name */
                     errMsg = Utf8StrFmt(Guest::tr("Process terminated via signal with status '%u'"),
                                         pCBData->u32Flags);
                     break;
 
                 case PROC_STS_TOK:
+                    LogRel(("Guest process (PID %u) timed out and was killed\n", pCBData->u32PID)); /** @todo Add process name */
                     errMsg = Utf8StrFmt(Guest::tr("Process timed out and was killed"));
                     break;
 
                 case PROC_STS_TOA:
+                    LogRel(("Guest process (PID %u) timed out and could not be killed\n", pCBData->u32PID)); /** @todo Add process name */
                     errMsg = Utf8StrFmt(Guest::tr("Process timed out and could not be killed"));
                     break;
 
                 case PROC_STS_DWN:
+                    LogRel(("Guest process (PID %u) exited because system is shutting down\n", pCBData->u32PID)); /** @todo Add process name */
                     errMsg = Utf8StrFmt(Guest::tr("Process exited because system is shutting down"));
                     break;
 
                 case PROC_STS_ERROR:
+                    LogRel(("Guest process (PID %u) could not be started because of rc=%Rrc\n",
+                            pCBData->u32PID, pCBData->u32Flags)); /** @todo Add process name */
                     errMsg = Utf8StrFmt(Guest::tr("Process execution failed with rc=%Rrc"), pCBData->u32Flags);
                     break;
 
@@ -963,6 +974,9 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     }
                 }
 
+                LogRel(("Executing guest process \"%s\" as user \"%s\" ...\n",
+                        Utf8Command.raw(), Utf8UserName.raw()));
+
                 if (RT_SUCCESS(vrc))
                 {
                     PCALLBACKDATAEXECSTATUS pData = (PCALLBACKDATAEXECSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECSTATUS));
@@ -1169,6 +1183,10 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 RTMemFree(papszArgv[i]);
             RTMemFree(papszArgv);
         }
+
+        if (RT_FAILURE(rc))
+            LogRel(("Executing guest process \"%s\" as user \"%s\" failed with %Rrc\n",
+                    Utf8Command.raw(), Utf8UserName.raw(), vrc));
     }
     catch (std::bad_alloc &)
     {
