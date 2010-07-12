@@ -3818,8 +3818,8 @@ GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREG
  * Checks specified shared module range for changes
  *
  * Performs the following tasks:
- * - if a shared page is new, then it changes the GMM page type to shared and returns it in the paPageDesc array
- * - if a shared page already exists, then it checks if the VM page is identical and if so frees the VM page and returns the shared page in the paPageDesc array
+ * - if a shared page is new, then it changes the GMM page type to shared and returns it in the pPageDesc descriptor
+ * - if a shared page already exists, then it checks if the VM page is identical and if so frees the VM page and returns the shared page in pPageDesc descriptor
  *
  * Note: assumes the caller has acquired the GMM semaphore!!
  *
@@ -3828,22 +3828,22 @@ GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREG
  * @param   pGVM                Pointer to the GVM instance data.
  * @param   pModule             Module description
  * @param   idxRegion           Region index
- * @param   cPages              Number of entries in the paPageDesc array
- * @param   paPageDesc          Page descriptor array (in/out)
+ * @param   idxPage             Page index
+ * @param   paPageDesc          Page descriptor
  */
-GMMR0DECL(int) GMMR0SharedModuleCheckRange(PGVM pGVM, PGMMSHAREDMODULE pModule, unsigned idxRegion, unsigned cPages, PGMMSHAREDPAGEDESC paPageDesc)
+GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, unsigned idxRegion, unsigned idxPage, PGMMSHAREDPAGEDESC pPageDesc)
 {
     int rc = VINF_SUCCESS;
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    unsigned cPages = pModule->aRegions[idxRegion].cbRegion >> PAGE_SHIFT;
 
     AssertReturn(idxRegion < pModule->cRegions, VERR_INVALID_PARAMETER);
-    AssertReturn(cPages == (pModule->aRegions[idxRegion].cbRegion >> PAGE_SHIFT), VERR_INVALID_PARAMETER);
+    AssertReturn(idxPage < cPages, VERR_INVALID_PARAMETER);
 
-    Log(("GMMR0SharedModuleCheckRange %s base %RGv region %d cPages %d\n", pModule->szName, pModule->Core.Key, idxRegion, cPages));
+    LogFlow(("GMMR0SharedModuleCheckRange %s base %RGv region %d idxPage %d\n", pModule->szName, pModule->Core.Key, idxRegion, idxPage));
 
     PGMMSHAREDREGIONDESC pGlobalRegion = &pModule->aRegions[idxRegion];
-
     if (!pGlobalRegion->paHCPhysPageID)
     {
         /* First time; create a page descriptor array. */
@@ -3860,122 +3860,114 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PGVM pGVM, PGMMSHAREDMODULE pModule, 
             pGlobalRegion->paHCPhysPageID[i] = NIL_GMM_PAGEID;
     }
 
-    /* Check all pages in the region. */
-    for (unsigned i = 0; i < cPages; i++)
+    /* We've seen this shared page for the first time? */
+    if (pGlobalRegion->paHCPhysPageID[idxPage] == NIL_GMM_PAGEID)
     {
-        /* Valid page present? */
-        if (paPageDesc[i].uHCPhysPageId != NIL_GMM_PAGEID)
-        {
-            /* We've seen this shared page for the first time? */
-            if (pGlobalRegion->paHCPhysPageID[i] == NIL_GMM_PAGEID)
-            {
 new_shared_page:
-                Log(("New shared page guest %RGp host %RHp\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys));
+        Log(("New shared page guest %RGp host %RHp\n", pPageDesc->GCPhys, pPageDesc->HCPhys));
 
-                /* Easy case: just change the internal page type. */
-                PGMMPAGE pPage = gmmR0GetPage(pGMM, paPageDesc[i].uHCPhysPageId);
-                if (!pPage)
-                {
-                    AssertFailed();
-                    rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
-                    goto end;
-                }
+        /* Easy case: just change the internal page type. */
+        PGMMPAGE pPage = gmmR0GetPage(pGMM, pPageDesc->uHCPhysPageId);
+        if (!pPage)
+        {
+            AssertFailed();
+            rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
+            goto end;
+        }
 
-                AssertMsg(paPageDesc[i].GCPhys == (pPage->Private.pfn << 12), ("desc %RGp gmm %RGp\n", paPageDesc[i].HCPhys, (pPage->Private.pfn << 12)));
+        AssertMsg(pPageDesc->GCPhys == (pPage->Private.pfn << 12), ("desc %RGp gmm %RGp\n", pPageDesc->HCPhys, (pPage->Private.pfn << 12)));
 
-                gmmR0ConvertToSharedPage(pGMM, pGVM, paPageDesc[i].HCPhys, paPageDesc[i].uHCPhysPageId, pPage);
+        gmmR0ConvertToSharedPage(pGMM, pGVM, pPageDesc->HCPhys, pPageDesc->uHCPhysPageId, pPage);
 
-                /* Keep track of these references. */
-                pGlobalRegion->paHCPhysPageID[i] = paPageDesc[i].uHCPhysPageId;
-            }
-            else
+        /* Keep track of these references. */
+        pGlobalRegion->paHCPhysPageID[idxPage] = pPageDesc->uHCPhysPageId;
+    }
+    else
+    {
+        uint8_t  *pbLocalPage, *pbSharedPage;
+        uint8_t  *pbChunk;
+        PGMMCHUNK pChunk;
+
+        Assert(pPageDesc->uHCPhysPageId != pGlobalRegion->paHCPhysPageID[idxPage]);
+
+        Log(("Replace existing page guest %RGp host %RHp id %x -> id %x\n", pPageDesc->GCPhys, pPageDesc->HCPhys, pPageDesc->uHCPhysPageId, pGlobalRegion->paHCPhysPageID[idxPage]));
+
+        /* Get the shared page source. */
+        PGMMPAGE pPage = gmmR0GetPage(pGMM, pGlobalRegion->paHCPhysPageID[idxPage]);
+        if (!pPage)
+        {
+            AssertFailed();
+            rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
+            goto end;
+        }
+        if (pPage->Common.u2State != GMM_PAGE_STATE_SHARED)
+        {
+            /* Page was freed at some point; invalidate this entry. */
+            /** todo this isn't really bullet proof. */
+            Log(("Old shared page was freed -> create a new one\n"));
+            pGlobalRegion->paHCPhysPageID[idxPage] = NIL_GMM_PAGEID;
+            goto new_shared_page; /* ugly goto */
+        }
+
+        Log(("Replace existing page guest host %RHp -> %RHp\n", pPageDesc->HCPhys, ((uint64_t)pPage->Shared.pfn) << PAGE_SHIFT));
+
+        /* Calculate the virtual address of the local page. */
+        pChunk = gmmR0GetChunk(pGMM, pPageDesc->uHCPhysPageId >> GMM_CHUNKID_SHIFT);
+        if (pChunk)
+        {
+            if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
             {
-                uint8_t  *pbLocalPage, *pbSharedPage;
-                uint8_t  *pbChunk;
-                PGMMCHUNK pChunk;
+                AssertFailed();
+                rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
+                goto end;
+            }
+            pbLocalPage = pbChunk + ((pPageDesc->uHCPhysPageId & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+        }
+        else
+        {
+            AssertFailed();
+            rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
+            goto end;
+        }
 
-                Assert(paPageDesc[i].uHCPhysPageId != pGlobalRegion->paHCPhysPageID[i]);
+        /* Calculate the virtual address of the shared page. */
+        pChunk = gmmR0GetChunk(pGMM, pGlobalRegion->paHCPhysPageID[idxPage] >> GMM_CHUNKID_SHIFT);
+        Assert(pChunk); /* can't fail as gmmR0GetPage succeeded. */
 
-                Log(("Replace existing page guest %RGp host %RHp id %x -> id %x\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys, paPageDesc[i].uHCPhysPageId, pGlobalRegion->paHCPhysPageID[i]));
-
-                /* Get the shared page source. */
-                PGMMPAGE pPage = gmmR0GetPage(pGMM, pGlobalRegion->paHCPhysPageID[i]);
-                if (!pPage)
-                {
-                    AssertFailed();
-                    rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
-                    goto end;
-                }
-                if (pPage->Common.u2State != GMM_PAGE_STATE_SHARED)
-                {
-                    /* Page was freed at some point; invalidate this entry. */
-                    /** todo this isn't really bullet proof. */
-                    Log(("Old shared page was freed -> create a new one\n"));
-                    pGlobalRegion->paHCPhysPageID[i] = NIL_GMM_PAGEID;
-                    goto new_shared_page; /* ugly goto */
-                }
-
-                Log(("Replace existing page guest host %RHp -> %RHp\n", paPageDesc[i].HCPhys, ((uint64_t)pPage->Shared.pfn) << PAGE_SHIFT));
-
-                /* Calculate the virtual address of the local page. */
-                pChunk = gmmR0GetChunk(pGMM, paPageDesc[i].uHCPhysPageId >> GMM_CHUNKID_SHIFT);
-                if (pChunk)
-                {
-                    if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
-                    {
-                        AssertFailed();
-                        rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
-                        goto end;
-                    }
-                    pbLocalPage = pbChunk + ((paPageDesc[i].uHCPhysPageId & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
-                }
-                else
-                {
-                    AssertFailed();
-                    rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
-                    goto end;
-                }
-
-                /* Calculate the virtual address of the shared page. */
-                pChunk = gmmR0GetChunk(pGMM, pGlobalRegion->paHCPhysPageID[i] >> GMM_CHUNKID_SHIFT);
-                Assert(pChunk); /* can't fail as gmmR0GetPage succeeded. */
-
-                /* Get the virtual address of the physical page; map the chunk into the VM process if not already done. */
-                if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
-                {
-                    Log(("Map chunk into process!\n"));
-                    rc = gmmR0MapChunk(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk);
-                    if (rc != VINF_SUCCESS)
-                    {
-                        AssertRC(rc);
-                        goto end;
-                    }
-                }
-                pbSharedPage = pbChunk + ((pGlobalRegion->paHCPhysPageID[i] & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
-
-                /** todo write ASMMemComparePage. */
-                if (memcmp(pbSharedPage, pbLocalPage, PAGE_SIZE))
-                {
-                    Log(("Unexpected differences found between local and shared page; skip\n"));
-                    /* Signal to the caller that this one hasn't changed. */
-                    paPageDesc[i].uHCPhysPageId = NIL_GMM_PAGEID;
-                    continue;
-                }
-
-                /* Free the old local page. */
-                GMMFREEPAGEDESC PageDesc;
-
-                PageDesc.idPage = paPageDesc[i].uHCPhysPageId;
-                rc = gmmR0FreePages(pGMM, pGVM, 1, &PageDesc, GMMACCOUNT_BASE);
-                AssertRCReturn(rc, rc);
-
-                gmmR0UseSharedPage(pGMM, pGVM, pPage);
-
-                /* Pass along the new physical address & page id. */
-                paPageDesc[i].HCPhys        = ((uint64_t)pPage->Shared.pfn) << PAGE_SHIFT;
-                paPageDesc[i].uHCPhysPageId = pGlobalRegion->paHCPhysPageID[i];
+        /* Get the virtual address of the physical page; map the chunk into the VM process if not already done. */
+        if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
+        {
+            Log(("Map chunk into process!\n"));
+            rc = gmmR0MapChunk(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk);
+            if (rc != VINF_SUCCESS)
+            {
+                AssertRC(rc);
+                goto end;
             }
         }
+        pbSharedPage = pbChunk + ((pGlobalRegion->paHCPhysPageID[idxPage] & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+
+        /** todo write ASMMemComparePage. */
+        if (memcmp(pbSharedPage, pbLocalPage, PAGE_SIZE))
+        {
+            Log(("Unexpected differences found between local and shared page; skip\n"));
+            /* Signal to the caller that this one hasn't changed. */
+            pPageDesc->uHCPhysPageId = NIL_GMM_PAGEID;
+            goto end;
+        }
+
+        /* Free the old local page. */
+        GMMFREEPAGEDESC PageDesc;
+
+        PageDesc.idPage = pPageDesc->uHCPhysPageId;
+        rc = gmmR0FreePages(pGMM, pGVM, 1, &PageDesc, GMMACCOUNT_BASE);
+        AssertRCReturn(rc, rc);
+
+        gmmR0UseSharedPage(pGMM, pGVM, pPage);
+
+        /* Pass along the new physical address & page id. */
+        pPageDesc->HCPhys        = ((uint64_t)pPage->Shared.pfn) << PAGE_SHIFT;
+        pPageDesc->uHCPhysPageId = pGlobalRegion->paHCPhysPageID[idxPage];
     }
 end:
     return rc;
