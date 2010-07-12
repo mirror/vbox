@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * X11 keyboard handler library
+ * VBox/Frontends/Common - X11 keyboard handler library.
  */
 
 /* This code is originally from the Wine project. */

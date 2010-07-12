@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * X11 keyboard driver translation tables (keyboard layouts)
+ * VBox/Frontends/Common - X11 keyboard driver translation tables (keyboard layouts).
  *
  */
 
@@ -38,7 +37,7 @@
 
 #ifndef ___VBox_keyboard_tables_h
 # error This file must be included from within keyboard-tables.h
-#endif /* ___VBox_keyboard_tables_h */
+#endif /* !___VBox_keyboard_tables_h */
 
 /* This file contains a more or less complete dump of all keyboard
    layouts known to my version of X.org.  Duplicate layouts have

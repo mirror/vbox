@@ -1,9 +1,7 @@
+/* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * X11 keyboard driver translation tables (PC scan code mappings for known
- * keyboard maps)
- *
+ * VBox/Frontends/Common - X11 keyboard driver translation tables (PC scan code
+ *                         mappings for known keyboard maps).
  */
 
 /*
