@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -518,7 +518,7 @@ static DECLCALLBACK(int) teleporterTcpOpIsOk(void *pvUser)
 /**
  * @copydoc SSMSTRMOPS::pfnClose
  */
-static DECLCALLBACK(int) teleporterTcpOpClose(void *pvUser, bool fCancelled)
+static DECLCALLBACK(int) teleporterTcpOpClose(void *pvUser, bool fCanceled)
 {
     TeleporterState *pState = (TeleporterState *)pvUser;
 
@@ -526,7 +526,7 @@ static DECLCALLBACK(int) teleporterTcpOpClose(void *pvUser, bool fCancelled)
     {
         TELEPORTERTCPHDR EofHdr;
         EofHdr.u32Magic = TELEPORTERTCPHDR_MAGIC;
-        EofHdr.cb       = fCancelled ? UINT32_MAX : 0;
+        EofHdr.cb       = fCanceled ? UINT32_MAX : 0;
         int rc = RTTcpWrite(pState->mhSocket, &EofHdr, sizeof(EofHdr));
         if (RT_SUCCESS(rc))
             rc = RTTcpFlush(pState->mhSocket);
@@ -589,9 +589,9 @@ static DECLCALLBACK(int) teleporterProgressCallback(PVM pVM, unsigned uPercent, 
         if (FAILED(hrc))
         {
             /* check if the failure was caused by cancellation. */
-            BOOL fCancelled;
-            hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCancelled);
-            if (SUCCEEDED(hrc) && fCancelled)
+            BOOL fCanceled;
+            hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCanceled);
+            if (SUCCEEDED(hrc) && fCanceled)
             {
                 SSMR3Cancel(pState->mpVM);
                 return VERR_SSM_CANCELLED;
@@ -630,12 +630,12 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
      */
     { AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS); }
 
-    BOOL fCancelled = TRUE;
-    HRESULT hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCancelled);
+    BOOL fCanceled = TRUE;
+    HRESULT hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCanceled);
     if (FAILED(hrc))
         return hrc;
-    if (fCancelled)
-        return setError(E_FAIL, tr("cancelled"));
+    if (fCanceled)
+        return setError(E_FAIL, tr("canceled"));
 
     /*
      * Try connect to the destination machine.
@@ -777,7 +777,7 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
     if (FAILED(hrc))
         pState->mptrProgress->notifyComplete(hrc);
 
-    /* We can no longer be cancelled (success), or it doesn't matter any longer (failure). */
+    /* We can no longer be canceled (success), or it doesn't matter any longer (failure). */
     pState->mptrProgress->setCancelCallback(NULL, NULL);
 
     /*
@@ -1124,9 +1124,9 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, Utf8Str *pErrorMsg, bool fSt
                     }
                     else if (vrc == VERR_TCP_SERVER_SHUTDOWN)
                     {
-                        BOOL fCancelled = TRUE;
-                        hrc = pProgress->COMGETTER(Canceled)(&fCancelled);
-                        if (FAILED(hrc) || fCancelled)
+                        BOOL fCanceled = TRUE;
+                        hrc = pProgress->COMGETTER(Canceled)(&fCanceled);
+                        if (FAILED(hrc) || fCanceled)
                             hrc = setError(E_FAIL, tr("Teleporting canceled"));
                         else
                             hrc = setError(E_FAIL, tr("Teleporter timed out waiting for incoming connection"));
