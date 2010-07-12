@@ -1459,11 +1459,11 @@ void Guest::setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType)
 /**
  * Sets the status of a certain Guest Additions facility.
  *
- * @param ulFacility
- * @param ulStatus
+ * @param Facility
+ * @param Status
  * @param ulFlags
  */
-void Guest::setAdditionsStatus (ULONG ulFacility, ULONG ulStatus, ULONG ulFlags)
+void Guest::setAdditionsStatus (VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -1473,8 +1473,8 @@ void Guest::setAdditionsStatus (ULONG ulFacility, ULONG ulStatus, ULONG ulFlags)
     /*
      * Only mark Guest Additions as active when VBoxService started up.
      */
-    mData.mAdditionsActive = (   ulFacility == VBoxGuestStatusFacility_VBoxService
-                              && ulStatus   == VBoxGuestStatusCurrent_Active) ? TRUE : FALSE;
+    mData.mAdditionsActive = (   Facility == VBoxGuestStatusFacility_VBoxService
+                              && Status   == VBoxGuestStatusCurrent_Active) ? TRUE : FALSE;
 }
 
 /**
