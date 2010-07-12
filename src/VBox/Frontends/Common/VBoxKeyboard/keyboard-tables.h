@@ -1,8 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * X11 keyboard driver translation tables
- *
+ * VBox/Frontends/Common - X11 keyboard driver translation tables.
  */
 
 /* This code is originally from the Wine project. It was split off from
@@ -238,5 +236,5 @@ static const unsigned sun_key_scan[256] =
     0, 0, 0, 0, 0, 0, 0, 0                                      /* 1005FFF8 */
 };
 
-#endif /* ___VBox_keyboard_tables_h */
+#endif /* !___VBox_keyboard_tables_h */
 
