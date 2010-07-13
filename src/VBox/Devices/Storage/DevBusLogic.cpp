@@ -1295,8 +1295,12 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         }
         case BUSLOGICCOMMAND_INQUIRE_BOARD_ID:
         {
+            /* The special option byte is important: If it is '0' or 'B', Windows NT drivers
+             * for Adaptec AHA-154x may claim the adapter. The BusLogic drivers will claim
+             * the adapter only when the byte is *not* '0' or 'B'.
+             */
             pBusLogic->aReplyBuffer[0] = 'A'; /* Firmware option bytes */
-            pBusLogic->aReplyBuffer[1] = 'A';
+            pBusLogic->aReplyBuffer[1] = 'A'; /* Special option byte */
 
             /* We report version 5.07B. This reply will provide the first two digits. */
             pBusLogic->aReplyBuffer[2] = '5'; /* Major version 5 */
