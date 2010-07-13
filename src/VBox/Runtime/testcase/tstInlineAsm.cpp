@@ -135,16 +135,20 @@ void tstASMCpuId(void)
      */
     ASMCpuId(0, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
 
-    uint32_t u32 = ASMCpuId_ECX(0);
-    CHECKVAL(u32, s.uECX, "%x");
+    uint32_t u32;
 
+    u32 = ASMCpuId_EAX(0);
+    CHECKVAL(u32, s.uEAX, "%x");
+    u32 = ASMCpuId_EBX(0);
+    CHECKVAL(u32, s.uEBX, "%x");
+    u32 = ASMCpuId_ECX(0);
+    CHECKVAL(u32, s.uECX, "%x");
     u32 = ASMCpuId_EDX(0);
     CHECKVAL(u32, s.uEDX, "%x");
 
     uint32_t uECX2 = s.uECX - 1;
     uint32_t uEDX2 = s.uEDX - 1;
     ASMCpuId_ECX_EDX(0, &uECX2, &uEDX2);
-
     CHECKVAL(uECX2, s.uECX, "%x");
     CHECKVAL(uEDX2, s.uEDX, "%x");
 
@@ -164,6 +168,21 @@ void tstASMCpuId(void)
         ASMCpuId(iStd, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
         RTPrintf("%08x  %08x %08x %08x %08x%s\n",
                  iStd, s.uEAX, s.uEBX, s.uECX, s.uEDX, iStd <= cFunctions ? "" : "*");
+
+        u32 = ASMCpuId_EAX(iStd);
+        CHECKVAL(u32, s.uEAX, "%x");
+        u32 = ASMCpuId_EBX(iStd);
+        CHECKVAL(u32, s.uEBX, "%x");
+        u32 = ASMCpuId_ECX(iStd);
+        CHECKVAL(u32, s.uECX, "%x");
+        u32 = ASMCpuId_EDX(iStd);
+        CHECKVAL(u32, s.uEDX, "%x");
+
+        uECX2 = s.uECX - 1;
+        uEDX2 = s.uEDX - 1;
+        ASMCpuId_ECX_EDX(iStd, &uECX2, &uEDX2);
+        CHECKVAL(uECX2, s.uECX, "%x");
+        CHECKVAL(uEDX2, s.uEDX, "%x");
     }
 
     /*
@@ -269,6 +288,21 @@ void tstASMCpuId(void)
         ASMCpuId(iExt, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
         RTPrintf("%08x  %08x %08x %08x %08x%s\n",
                  iExt, s.uEAX, s.uEBX, s.uECX, s.uEDX, iExt <= cExtFunctions ? "" : "*");
+
+        u32 = ASMCpuId_EAX(iExt);
+        CHECKVAL(u32, s.uEAX, "%x");
+        u32 = ASMCpuId_EBX(iExt);
+        CHECKVAL(u32, s.uEBX, "%x");
+        u32 = ASMCpuId_ECX(iExt);
+        CHECKVAL(u32, s.uECX, "%x");
+        u32 = ASMCpuId_EDX(iExt);
+        CHECKVAL(u32, s.uEDX, "%x");
+
+        uECX2 = s.uECX - 1;
+        uEDX2 = s.uEDX - 1;
+        ASMCpuId_ECX_EDX(iExt, &uECX2, &uEDX2);
+        CHECKVAL(uECX2, s.uECX, "%x");
+        CHECKVAL(uEDX2, s.uEDX, "%x");
     }
 
     /*
