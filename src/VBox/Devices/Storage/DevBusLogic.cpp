@@ -874,8 +874,7 @@ static void buslogicCommandComplete(PBUSLOGIC pBusLogic, bool fSuppressIrq)
     pBusLogic->iReply = 0;
 
     /* Modify I/O address does not generate an interrupt. */
-    if (   (pBusLogic->uOperationCode != BUSLOGICCOMMAND_MODIFY_IO_ADDRESS)
-        && (pBusLogic->uOperationCode != BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND))
+    if (pBusLogic->uOperationCode != BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND)
     {
         /* Notify that the command is complete. */
         pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_DATA_IN_REGISTER_READY;
@@ -1291,6 +1290,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
                 Log(("Disabling ISA I/O ports.\n"));
                 pBusLogic->fISAEnabled = false;
             }
+            fSuppressIrq = true;
             break;
         }
         case BUSLOGICCOMMAND_INQUIRE_BOARD_ID:
