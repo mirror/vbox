@@ -3338,6 +3338,78 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
     return INT32_MAX;
 }
 
+/**
+ * Rendezvous callback used by pgmR3PhysUnmapChunk that clears all shadow pages
+ * and all modification counters.
+ *
+ * This is only called on one of the EMTs while the other ones are waiting for
+ * it to complete this function.
+ *
+ * @returns VINF_SUCCESS (VBox strict status code).
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
+ * @param   pvUser      User pointer. Unused
+ *
+ */
+DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+    pgmLock(pVM);
+
+    if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
+    {
+        /*
+         * Request the ring-0 part to unmap a chunk to make space in the mapping cache.
+         */
+        GMMMAPUNMAPCHUNKREQ Req;
+        Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        Req.Hdr.cbReq = sizeof(Req);
+        Req.pvR3 = NULL;
+        Req.idChunkMap = NIL_GMM_CHUNKID;
+        Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
+
+        rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
+        if (RT_SUCCESS(rc))
+        {
+            /* remove the unmapped one. */
+            PPGMCHUNKR3MAP pUnmappedChunk = (PPGMCHUNKR3MAP)RTAvlU32Remove(&pVM->pgm.s.ChunkR3Map.pTree, Req.idChunkUnmap);
+            AssertRelease(pUnmappedChunk);
+            pUnmappedChunk->pv = NULL;
+            pUnmappedChunk->Core.Key = UINT32_MAX;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+            MMR3HeapFree(pUnmappedChunk);
+#else
+            MMR3UkHeapFree(pVM, pUnmappedChunk, MM_TAG_PGM_CHUNK_MAPPING);
+#endif
+            pVM->pgm.s.ChunkR3Map.c--;
+
+            /* Chunk removed, so clear the chunk map TLB; PGMR3PhysChunkInvalidateTLB clears the page map TLB as well. */
+            PGMR3PhysChunkInvalidateTLB(pVM);
+
+            /* Flush all REM caches. */
+            REMFlushTBs(pVM);
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+                CPUMSetChangedFlags(&pVM->aCpus[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+
+            /* Flush the pgm pool cache; call the internal rendezvous handler as we're already in a rendezvous handler here. */
+            pgmR3PoolClearAllRendezvous(pVM, &pVM->aCpus[0], false /* no need to flush the REM TLB as we already did that above */);
+        }
+    }
+    pgmUnlock(pVM);
+    return rc;
+}
+
+/**
+ * Unmap a chunk to free up virtual address space (request packet handler for pgmR3PhysChunkMap)
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+void pgmR3PhysUnmapChunk(PVM pVM)
+{
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysUnmapChunkRendezvous, NULL);
+    AssertRC(rc);
+}
 
 /**
  * Maps the given chunk into the ring-3 mapping cache.
@@ -3373,8 +3445,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     pChunk->pv = NULL;
 
     /*
-     * Request the ring-0 part to map the chunk in question and if
-     * necessary unmap another one to make space in the mapping cache.
+     * Request the ring-0 part to map the chunk in question.
      */
     GMMMAPUNMAPCHUNKREQ Req;
     Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
@@ -3382,8 +3453,6 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     Req.pvR3 = NULL;
     Req.idChunkMap = idChunk;
     Req.idChunkUnmap = NIL_GMM_CHUNKID;
-    if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
-        Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
 
     /* Must be callable from any thread, so can't use VMMR3CallR0. */
     rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
@@ -3402,22 +3471,12 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         fRc = RTAvllU32Insert(&pVM->pgm.s.ChunkR3Map.pAgeTree, &pChunk->AgeCore);
         AssertRelease(fRc);
 
-        /* remove the unmapped one. */
-        if (Req.idChunkUnmap != NIL_GMM_CHUNKID)
+        /* If we're running out of virtual address space, then we should unmap another chunk. */
+        if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
         {
-            PPGMCHUNKR3MAP pUnmappedChunk = (PPGMCHUNKR3MAP)RTAvlU32Remove(&pVM->pgm.s.ChunkR3Map.pTree, Req.idChunkUnmap);
-            AssertRelease(pUnmappedChunk);
-            pUnmappedChunk->pv = NULL;
-            pUnmappedChunk->Core.Key = UINT32_MAX;
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-            MMR3HeapFree(pUnmappedChunk);
-#else
-            MMR3UkHeapFree(pVM, pUnmappedChunk, MM_TAG_PGM_CHUNK_MAPPING);
-#endif
-            pVM->pgm.s.ChunkR3Map.c--;
-
-            /* Chunk removed, so clear the page map TLB as well (might still be referenced). */
-            PGMPhysInvalidatePageMapTLB(pVM);
+            /* Postpone the unmap operation (which requires a rendezvous operation) as we own the PGM lock here. */
+            int rc = VMR3ReqCallNoWaitU(pVM->pUVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysUnmapChunk, 1, pVM);
+            AssertRC(rc);
         }
     }
     else
