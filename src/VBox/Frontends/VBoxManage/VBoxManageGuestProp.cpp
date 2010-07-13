@@ -202,7 +202,7 @@ static int handleEnumGuestProperty(HandlerArg *a)
     /*
      * Pack the patterns
      */
-    Utf8Str Utf8Patterns(a->argc > 2 ? a->argv[2] : "*");
+    Utf8Str Utf8Patterns(a->argc > 2 ? a->argv[2] : "");
     for (int i = 3; i < a->argc; ++i)
         Utf8Patterns = Utf8StrFmt ("%s,%s", Utf8Patterns.raw(), a->argv[i]);
 
