@@ -655,7 +655,7 @@ DECLINLINE(uint32_t) ASMCpuId_EAX(uint32_t uOperator)
 # elif RT_INLINE_ASM_USES_INTRIN
     int aInfo[4];
     __cpuid(aInfo, uOperator);
-    xDX = aInfo[0];
+    xAX = aInfo[0];
 
 # else
     __asm
