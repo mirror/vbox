@@ -198,12 +198,12 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
     uint64_t const cNsExecutingNew   = pVCpu->tm.s.cNsExecuting + cNsExecutingDelta;
     uint64_t const cNsOtherNew       = cNsTotalNew - cNsExecutingNew - pVCpu->tm.s.cNsHalted;
 
-    STAM_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsExecuting, cNsExecutingDelta);
-    STAM_COUNTER_ADD(&pVCpu->tm.s.StatNsTotal, cNsTotalNew - pVCpu->tm.s.cNsTotal);
-# ifdef VBOX_WITH_STATISTICS
+# if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
+    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsExecuting, cNsExecutingDelta);
+    STAM_REL_COUNTER_ADD(&pVCpu->tm.s.StatNsTotal, cNsTotalNew - pVCpu->tm.s.cNsTotal);
     int64_t  const cNsOtherNewDelta  = cNsOtherNew - pVCpu->tm.s.cNsOther;
     if (cNsOtherNewDelta > 0)
-        STAM_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsOther, cNsOtherNewDelta); /* (the period before execution) */
+        STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsOther, cNsOtherNewDelta); /* (the period before execution) */
 # endif
 
     uint32_t uGen = ASMAtomicIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
@@ -265,12 +265,12 @@ VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
     uint64_t const cNsHaltedNew   = pVCpu->tm.s.cNsHalted + cNsHaltedDelta;
     uint64_t const cNsOtherNew    = cNsTotalNew - pVCpu->tm.s.cNsExecuting - cNsHaltedNew;
 
-    STAM_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsHalted, cNsHaltedDelta);
-    STAM_COUNTER_ADD(&pVCpu->tm.s.StatNsTotal, cNsTotalNew - pVCpu->tm.s.cNsTotal);
-# ifdef VBOX_WITH_STATISTICS
+# if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
+    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsHalted, cNsHaltedDelta);
+    STAM_REL_COUNTER_ADD(&pVCpu->tm.s.StatNsTotal, cNsTotalNew - pVCpu->tm.s.cNsTotal);
     int64_t  const cNsOtherNewDelta  = cNsOtherNew - pVCpu->tm.s.cNsOther;
     if (cNsOtherNewDelta > 0)
-        STAM_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsOther, cNsOtherNewDelta); /* (the period before halting) */
+        STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsOther, cNsOtherNewDelta); /* (the period before halting) */
 # endif
 
     uint32_t uGen = ASMAtomicIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);

@@ -629,7 +629,7 @@ typedef struct TMCPU
     uint64_t                    cPeriodsHalted;
     /** The number of guest execution runs. */
     uint64_t                    cPeriodsExecuting;
-# ifdef VBOX_WITH_STATISTICS
+# if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
     /** Resettable version of cNsTotal. */
     STAMCOUNTER                 StatNsTotal;
     /** Resettable version of cNsExecuting. */
