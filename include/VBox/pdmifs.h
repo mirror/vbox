@@ -2077,6 +2077,8 @@ struct VBVAMEMORY;
 struct VBoxGuestInfo;
 /** Forward declaration of the guest statistics structure */
 struct VBoxGuestStatistics;
+/** Forward declaration of the guest status structure */
+struct VBoxGuestStatus;
 /** Pointer to video accelerator command memory. */
 typedef struct VBVAMEMORY *PVBVAMEMORY;
 
