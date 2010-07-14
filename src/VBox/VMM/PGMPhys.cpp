@@ -3383,6 +3383,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
             pVM->pgm.s.ChunkR3Map.c--;
 
             /* Flush dangling PGM pointers (R3 & R0 ptrs to GC physical addresses) */
+            /* todo: we should not flush chunks which include cr3 mappings. */
             for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
             {
                 PVMCPU pVCpu = &pVM->aCpus[idCpu];
@@ -3392,7 +3393,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
                 pPGM->pGstPaePdptR3    = NULL;
                 pPGM->pGstAmd64Pml4R3  = NULL;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                pPGM->pGst32BitPdR0    = NIL_RTR0PTR:
+                pPGM->pGst32BitPdR0    = NIL_RTR0PTR;
                 pPGM->pGstPaePdptR0    = NIL_RTR0PTR;
                 pPGM->pGstAmd64Pml4R0  = NIL_RTR0PTR;
 #endif
