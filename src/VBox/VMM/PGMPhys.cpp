@@ -3280,7 +3280,7 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE p
             /*
              * Check that it's not in any of the TLBs.
              */
-            PVM pVM = (PVM)pvUser;
+            PVM pVM = (PGMR3PHYSCHUNKUNMAPCB()pvUser)->pVM;
             for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
                 if (pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk == pChunk)
                 {
@@ -3333,8 +3333,12 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
     PGMR3PHYSCHUNKUNMAPCB Args;
     Args.pVM = pVM;
     Args.pChunk = NULL;
-    if (RTAvllU32DoWithAll(&pVM->pgm.s.ChunkR3Map.pAgeTree, true /*fFromLeft*/, pgmR3PhysChunkUnmapCandidateCallback, pVM))
-        return Args.pChunk->Core.Key;
+    if (RTAvllU32DoWithAll(&pVM->pgm.s.ChunkR3Map.pAgeTree, true /*fFromLeft*/, pgmR3PhysChunkUnmapCandidateCallback, &Args))
+    {
+        Assert(Args.pChunk);
+        if (Args.pChunk)
+            return Args.pChunk->Core.Key;
+    }
     return INT32_MAX;
 }
 
