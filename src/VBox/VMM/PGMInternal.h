@@ -1164,7 +1164,7 @@ typedef struct PGMRAMRANGE
     /** Start of the HC mapping of the range. This is only used for MMIO2. */
     R3PTRTYPE(void *)                   pvR3;
     /** Live save per page tracking data. */
-    R3PTRTYPE(PPGMLIVESAVERAMPAGE)         paLSPages;
+    R3PTRTYPE(PPGMLIVESAVERAMPAGE)      paLSPages;
     /** The range description. */
     R3PTRTYPE(const char *)             pszDesc;
     /** Pointer to self - R0 pointer. */

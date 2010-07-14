@@ -3187,7 +3187,7 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
     }
 }
 
-
+#if 1 /* HC_ARCH_BITS == 32 */
 /**
  * Tree enumeration callback for dealing with age rollover.
  * It will perform a simple compression of the current age.
@@ -3382,13 +3382,34 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
 #endif
             pVM->pgm.s.ChunkR3Map.c--;
 
-            /* Chunk removed, so clear the chunk map TLB; PGMR3PhysChunkInvalidateTLB clears the page map TLB as well. */
-            PGMR3PhysChunkInvalidateTLB(pVM);
-
-            /* Flush all REM caches. */
-            REMFlushTBs(pVM);
+            /* Flush dangling PGM pointers (R3 & R0 ptrs to GC physical addresses) */
             for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-                CPUMSetChangedFlags(&pVM->aCpus[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+            {
+                PVMCPU pVCpu = &pVM->aCpus[idCpu];
+                PPGMCPU pPGM = &pVCpu->pgm.s;
+
+                pPGM->pGst32BitPdR3    = NULL;
+                pPGM->pGstPaePdptR3    = NULL;
+                pPGM->pGstAmd64Pml4R3  = NULL;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+                pPGM->pGst32BitPdR0    = NIL_RTR0PTR:
+                pPGM->pGstPaePdptR0    = NIL_RTR0PTR;
+                pPGM->pGstAmd64Pml4R0  = NIL_RTR0PTR;
+#endif
+                for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.apGstPaePDsR3); i++)
+                {
+                    pPGM->apGstPaePDsR3[i]             = NULL;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+                    pPGM->apGstPaePDsR0[i]             = NIL_RTR0PTR;
+#endif
+                }
+
+                /* Flush REM TLBs. */
+                CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+            }
+
+            /* Flush REM translation blocks. */
+            REMFlushTBs(pVM);
 
             /* Flush the pgm pool cache; call the internal rendezvous handler as we're already in a rendezvous handler here. */
             pgmR3PoolClearAllRendezvous(pVM, &pVM->aCpus[0], false /* no need to flush the REM TLB as we already did that above */);
@@ -3409,6 +3430,7 @@ void pgmR3PhysUnmapChunk(PVM pVM)
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysUnmapChunkRendezvous, NULL);
     AssertRC(rc);
 }
+#endif /* HC_ARCH_BITS == 32 */
 
 /**
  * Maps the given chunk into the ring-3 mapping cache.
