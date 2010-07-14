@@ -433,7 +433,6 @@ Global::vboxStatusCodeFromCOM(HRESULT aComStatus)
         case VBOX_E_XML_ERROR:                  return VERR_COM_XML_ERROR;
         case VBOX_E_INVALID_SESSION_STATE:      return VERR_COM_INVALID_SESSION_STATE;
         case VBOX_E_OBJECT_IN_USE:              return VERR_COM_OBJECT_IN_USE;
-        case VBOX_E_DONT_CALL_AGAIN:            return VERR_COM_DONT_CALL_AGAIN;
 
         default:
             if (SUCCEEDED(aComStatus))
@@ -479,7 +478,6 @@ Global::vboxStatusCodeToCOM(int aVBoxStatus)
         case VERR_COM_XML_ERROR:                return VBOX_E_XML_ERROR;
         case VERR_COM_INVALID_SESSION_STATE:    return VBOX_E_INVALID_SESSION_STATE;
         case VERR_COM_OBJECT_IN_USE:            return VBOX_E_OBJECT_IN_USE;
-        case VERR_COM_DONT_CALL_AGAIN:          return VBOX_E_DONT_CALL_AGAIN;
 
         /* Other errors. */
         case VERR_UNRESOLVED_ERROR:             return E_FAIL;

@@ -370,7 +370,7 @@ private:
     EventMapRecord* mPrev;
     ListenerRecord* mRef; /* must be weak reference */
     int32_t         mRefCnt;
-    
+
 public:
     EventMapRecord(ListenerRecord* aRef)
         :

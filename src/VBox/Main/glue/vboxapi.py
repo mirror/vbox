@@ -216,7 +216,6 @@ class PlatformMSCOM:
             DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr
             win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
             win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
-            win32com.client.gencache.EnsureDispatch('VirtualBox.CallbackWrapper')
 
     def getSessionObject(self, vbox):
         import win32com
@@ -245,35 +244,6 @@ class PlatformMSCOM:
         import pythoncom
         pythoncom.CoUninitialize()
 
-    def createCallback(self, iface, impl, arg):
-        d = {}
-        d['BaseClass'] = impl
-        d['arg'] = arg
-        d['tlb_guid'] = PlatformMSCOM.VBOX_TLB_GUID
-        str = ""
-        str += "import win32com.server.util\n"
-        str += "import pythoncom\n"
-
-        str += "class "+iface+"Impl(BaseClass):\n"
-        str += "   _com_interfaces_ = ['"+iface+"']\n"
-        str += "   _typelib_guid_ = tlb_guid\n"
-        str += "   _typelib_version_ = 1, 0\n"
-        str += "   _reg_clsctx_ = pythoncom.CLSCTX_INPROC_SERVER\n"
-        # Maybe we'd better implement Dynamic invoke policy, to be more flexible here
-        str += "   _reg_policy_spec_ = 'win32com.server.policy.EventHandlerPolicy'\n"
-
-        # generate capitalized version of callback methods -
-        # that's how Python COM looks them up
-        for m in dir(impl):
-           if m.startswith("on"):
-             str += "   "+ComifyName(m)+"=BaseClass."+m+"\n"
-
-        str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
-        str += "result = win32com.client.Dispatch('VirtualBox.CallbackWrapper')\n"
-        str += "result.SetLocalObject(win32com.server.util.wrap("+iface+"Impl()))\n"
-        exec (str,d,d)
-        return d['result']
-
     def createListener(self, impl, arg):
         d = {}
         d['BaseClass'] = impl
@@ -291,7 +261,7 @@ class PlatformMSCOM:
         # Maybe we'd better implement Dynamic invoke policy, to be more flexible here
         str += "   _reg_policy_spec_ = 'win32com.server.policy.EventHandlerPolicy'\n"
 
-        # capitalized version of callback method
+        # capitalized version of listener method
         str += "   HandleEvent=BaseClass.handleEvent\n"
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
         str += "result = win32com.server.util.wrap(ListenerImpl())\n"
@@ -369,20 +339,6 @@ class PlatformXPCOM:
     def deinitPerThread(self):
         import xpcom
         xpcom._xpcom.DetachThread()
-
-    def createCallback(self, iface, impl, arg):
-        d = {}
-        d['BaseClass'] = impl
-        d['arg'] = arg
-        str = ""
-        str += "import xpcom.components\n"
-        str += "class "+iface+"Impl(BaseClass):\n"
-        str += "   _com_interfaces_ = xpcom.components.interfaces."+iface+"\n"
-        str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
-        str += "result = xpcom.components.classes['@virtualbox.org/CallbackWrapper;1'].createInstance()\n"
-        str += "result.setLocalObject("+iface+"Impl())\n"
-        exec (str,d,d)
-        return d['result']
 
     def createListener(self, impl, arg):
         d = {}
@@ -476,9 +432,6 @@ class PlatformWEBSERVICE:
 
     def deinitPerThread(self):
         pass
-
-    def createCallback(self, iface, impl, arg):
-        raise Exception("no callbacks for webservices")
 
     def createListener(self, impl, arg):
         raise Exception("no active listeners for webservices")
@@ -579,9 +532,6 @@ class VirtualBoxManager:
 
     def deinitPerThread(self):
         self.platform.deinitPerThread()
-
-    def createCallback(self, iface, impl, arg):
-        return self.platform.createCallback(iface, impl, arg)
 
     def createListener(self, impl, arg = None):
         return self.platform.createListener(impl, arg)

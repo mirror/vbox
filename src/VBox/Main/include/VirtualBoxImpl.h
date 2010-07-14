@@ -60,14 +60,11 @@ class ATL_NO_VTABLE VirtualBox :
     VBOX_SCRIPTABLE_IMPL(IVirtualBox)
 #ifdef RT_OS_WINDOWS
     , public CComCoClass<VirtualBox, &CLSID_VirtualBox>
-    , public IConnectionPointContainerImpl<VirtualBox>
-    , public IConnectionPointImpl<VirtualBox, &IID_IVirtualBoxCallback, CComDynamicUnkArray>
 #endif
 {
 
 public:
 
-    typedef std::list< VirtualBoxCallbackRegistration > CallbackList;
     typedef std::list< ComPtr<IInternalSessionControl> > InternalControlList;
 
     class CallbackEvent;
@@ -88,14 +85,6 @@ public:
         COM_INTERFACE_ENTRY(IVirtualBox)
         COM_INTERFACE_ENTRY(IConnectionPointContainer)
     END_COM_MAP()
-
-#ifdef RT_OS_WINDOWS
-    BEGIN_CONNECTION_POINT_MAP(VirtualBox)
-         CONNECTION_POINT_ENTRY(IID_IVirtualBoxCallback)
-    END_CONNECTION_POINT_MAP()
-
-    typedef CComDynamicUnkArray EventListenersList;
-#endif
 
     // to postpone generation of the default ctor/dtor
     VirtualBox();
@@ -173,9 +162,6 @@ public:
                                   IProgress **aProgress);
     STDMETHOD(OpenExistingSession) (ISession *aSession, IN_BSTR aMachineId);
 
-    STDMETHOD(RegisterCallback) (IVirtualBoxCallback *aCallback);
-    STDMETHOD(UnregisterCallback) (IVirtualBoxCallback *aCallback);
-
     STDMETHOD(WaitForPropertyChange) (IN_BSTR aWhat, ULONG aTimeout,
                                       BSTR *aChanged, BSTR *aValues);
 
@@ -215,8 +201,6 @@ public:
 
     void addProcessToReap (RTPROCESS pid);
     void updateClientWatcher();
-
-    void removeDeadCallback(const ComPtr<IVirtualBoxCallback> &aCallback);
 
     void onMachineStateChange(const Guid &aId, MachineState_T aState);
     void onMachineDataChange(const Guid &aId);

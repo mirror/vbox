@@ -117,10 +117,6 @@ Bstr VirtualBox::sPackageType;
 class VirtualBoxCallbackRegistration
 {
 public:
-    ComPtr<IVirtualBoxCallback> ptrICb;
-    /** Bitmap of disabled callback methods, that is methods that has return
-     * VBOX_E_DONT_CALL_AGAIN. */
-    uint32_t                    bmDisabled;
     /** Callback bit indexes (for bmDisabled). */
     typedef enum
     {
@@ -137,8 +133,7 @@ public:
         kOnGuestPropertyChange
     } CallbackBit;
 
-    VirtualBoxCallbackRegistration(IVirtualBoxCallback *pIVirtualBoxCallback)
-        : ptrICb(pIVirtualBoxCallback), bmDisabled(0)
+    VirtualBoxCallbackRegistration()
     {
         /* nothing */
     }
@@ -146,32 +141,6 @@ public:
     ~VirtualBoxCallbackRegistration()
     {
        /* nothing */
-    }
-
-    /** Equal operator for std::find. */
-    bool operator==(const VirtualBoxCallbackRegistration &rThat) const
-    {
-        return this->ptrICb == rThat.ptrICb;
-    }
-
-    /**
-     * Checks if the callback is wanted, i.e. if the method hasn't yet returned
-     * VBOX_E_DONT_CALL_AGAIN.
-     * @returns @c true if it is wanted, @c false if not.
-     * @param   enmBit      The callback, be sure to get this one right!
-     */
-    inline bool isWanted(CallbackBit enmBit) const
-    {
-        return !ASMBitTest(&bmDisabled, enmBit);
-    }
-
-    /**
-     * Called in response to VBOX_E_DONT_CALL_AGAIN.
-     * @param   enmBit      The callback, be sure to get this one right!
-     */
-    inline void setDontCallAgain(CallbackBit enmBit)
-    {
-        ASMAtomicBitSet(&bmDisabled, enmBit);
     }
 };
 
@@ -203,12 +172,7 @@ public:
 
     void *handler();
 
-    virtual HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback) = 0;
     virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc) = 0;
-
-#ifdef RT_OS_WINDOWS
-    virtual HRESULT prepareComEventDesc(ComEventDesc& aEvDesc) = 0;
-#endif
 
 private:
 
@@ -217,9 +181,7 @@ private:
      *  is bound to the lifetime of the VirtualBox instance, so it's safe.
      */
     VirtualBox        *mVirtualBox;
-
 protected:
-    /** The callback being called, used for handling VBOX_E_DONT_CALL_AGAIN. */
     VirtualBoxCallbackRegistration::CallbackBit mWhat;
 };
 
@@ -342,7 +304,6 @@ struct VirtualBox::Data
 
     RWLockHandle                        mtxProgressOperations;
     ProgressMap                         mapProgressOperations;
-    CallbackList                        llCallbacks;
 
     // the following are data for the client watcher thread
     const UPDATEREQTYPE                 updateReq;
@@ -599,10 +560,6 @@ HRESULT VirtualBox::init()
         }
     }
 
-#ifdef RT_OS_WINDOWS
-    if (SUCCEEDED(rc))
-        rc = m->mComEvHelper.init(IID_IVirtualBoxCallback);
-#endif
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
         autoInitSpan.setSucceeded();
@@ -752,15 +709,6 @@ void VirtualBox::uninit()
         unconst(m->pPerformanceCollector).setNull();
     }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
-    LogFlowThisFunc(("Releasing callbacks...\n"));
-    if (m->llCallbacks.size())
-    {
-        /* release all callbacks */
-        LogWarningFunc(("%d unregistered callbacks!\n",
-                        m->llCallbacks.size()));
-        m->llCallbacks.clear();
-    }
 
     LogFlowThisFunc(("Terminating the async event handler...\n"));
     if (m->threadAsyncEvent != NIL_RTTHREAD)
@@ -2112,61 +2060,6 @@ STDMETHODIMP VirtualBox::OpenExistingSession(ISession *aSession,
     return rc;
 }
 
-/**
- *  @note Locks this object for writing.
- */
-STDMETHODIMP VirtualBox::RegisterCallback(IVirtualBoxCallback *aCallback)
-{
-    LogFlowThisFunc(("aCallback=%p\n", aCallback));
-
-    CheckComArgNotNull(aCallback);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* Query the interface we associate with IVirtualBoxCallback as the caller
-       might've been compiled against a different SDK. */
-    void *pvCallback;
-    HRESULT hrc = aCallback->QueryInterface(COM_IIDOF(IVirtualBoxCallback), &pvCallback);
-    if (FAILED(hrc))
-        return setError(hrc, tr("Incompatible IVirtualBoxCallback interface - version mismatch?"));
-    aCallback = (IVirtualBoxCallback *)pvCallback;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    m->llCallbacks.push_back(CallbackList::value_type(aCallback));
-
-    aCallback->Release();
-    return S_OK;
-}
-
-/**
- *  @note Locks this object for writing.
- */
-STDMETHODIMP VirtualBox::UnregisterCallback(IVirtualBoxCallback *aCallback)
-{
-    CheckComArgNotNull(aCallback);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT rc = S_OK;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    CallbackList::iterator it;
-    it = std::find(m->llCallbacks.begin(),
-                   m->llCallbacks.end(),
-                   CallbackList::value_type(aCallback));
-    if (it == m->llCallbacks.end())
-        rc = E_INVALIDARG;
-    else
-        m->llCallbacks.erase(it);
-
-    LogFlowThisFunc(("aCallback=%p, rc=%08X\n", aCallback, rc));
-    return rc;
-}
-
-
 STDMETHODIMP VirtualBox::WaitForPropertyChange(IN_BSTR /* aWhat */,
                                                ULONG /* aTimeout */,
                                                BSTR * /* aChanged */,
@@ -2571,24 +2464,6 @@ void VirtualBox::addProcessToReap(RTPROCESS pid)
 #endif
 }
 
-/**
- * Removes a dead callback.
- * @param aCallback     The reference to the registered callback interface.
- */
-void VirtualBox::removeDeadCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
-{
-    /* find and delete */
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    CallbackList::iterator it = std::find(m->llCallbacks.begin(),
-                                          m->llCallbacks.end(),
-                                          CallbackList::value_type(aCallback));
-    if (it != m->llCallbacks.end())
-    {
-        LogRel(("Removing dead callback: %p\n", &*it));
-        m->llCallbacks.erase(it);
-    }
-}
-
 /** Event for onMachineStateChange(), onMachineDataChange(), onMachineRegistered() */
 struct MachineEvent : public VirtualBox::CallbackEvent
 {
@@ -2606,54 +2481,6 @@ struct MachineEvent : public VirtualBox::CallbackEvent
         , registered(aRegistered)
         {}
 
-    HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
-    {
-        switch (mWhat)
-        {
-            case VirtualBoxCallbackRegistration::kOnMachineDataChange:
-                LogFlow(("OnMachineDataChange: id={%ls}\n", id.raw()));
-                return aCallback->OnMachineDataChange(id);
-
-            case VirtualBoxCallbackRegistration::kOnMachineStateChange:
-                LogFlow(("OnMachineStateChange: id={%ls}, state=%d\n",
-                         id.raw(), state));
-                return aCallback->OnMachineStateChange(id, state);
-
-            case VirtualBoxCallbackRegistration::kOnMachineRegistered:
-                LogFlow(("OnMachineRegistered: id={%ls}, registered=%d\n",
-                         id.raw(), registered));
-                return aCallback->OnMachineRegistered(id, registered);
-
-            default:
-                AssertFailedReturn(S_OK);
-        }
-    }
-#ifdef RT_OS_WINDOWS
-    HRESULT prepareComEventDesc(ComEventDesc& aEvDesc)
-    {
-        switch (mWhat)
-        {
-            case VirtualBoxCallbackRegistration::kOnMachineDataChange:
-                aEvDesc.init("OnMachineDataChange", 1);
-                aEvDesc.add(id);
-                break;
-
-            case VirtualBoxCallbackRegistration::kOnMachineStateChange:
-                aEvDesc.init("OnMachineStateChange", 2);
-                aEvDesc.add(id).add((int)state);
-                break;
-
-            case VirtualBoxCallbackRegistration::kOnMachineRegistered:
-                aEvDesc.init("OnMachineRegistered", 2);
-                aEvDesc.add(id).add(registered);
-                break;
-
-            default:
-                AssertFailedReturn(S_OK);
-         }
-         return S_OK;
-    }
-#endif
     virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
     {
         switch (mWhat)
@@ -2709,48 +2536,8 @@ BOOL VirtualBox::onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aVa
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    CallbackList list;
-    {
-        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        list = m->llCallbacks;
-    }
-
     BOOL allowChange = TRUE;
-    CallbackList::iterator it = list.begin();
     Bstr id = aId.toUtf16();
-    while ((it != list.end()) && allowChange)
-    {
-        if (it->isWanted(VirtualBoxCallbackRegistration::kOnExtraDataCanChange))
-        {
-            HRESULT rc = it->ptrICb->OnExtraDataCanChange(id, aKey, aValue,
-                                                          aError.asOutParam(),
-                                                          &allowChange);
-            if (FAILED(rc))
-            {
-                if (rc == VBOX_E_DONT_CALL_AGAIN)
-                {
-                    /* Have to update the original. */
-                    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-                    CallbackList::iterator itOrg;
-                    itOrg = std::find(m->llCallbacks.begin(),
-                                      m->llCallbacks.end(),
-                                      CallbackList::value_type(it->ptrICb));
-                    if (itOrg != m->llCallbacks.end())
-                        itOrg->setDontCallAgain(VirtualBoxCallbackRegistration::kOnExtraDataCanChange);
-                }
-                else if (FAILED_DEAD_INTERFACE(rc))
-                    removeDeadCallback(it->ptrICb);
-
-                /* if a call to this method fails for some reason (for ex., because
-                 * the other side is dead), we ensure allowChange stays true
-                 * (MS COM RPC implementation seems to zero all output vars before
-                 * issuing an IPC call or after a failure, so it's essential
-                 * there) */
-                allowChange = TRUE;
-            }
-        }
-        ++it;
-    }
 
     VBoxEventDesc evDesc;
     evDesc.init(m->pEventSource, VBoxEventType_OnExtraDataCanChange, id.raw(), aKey, aValue);
@@ -2790,20 +2577,6 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
         , machineId(aMachineId.toUtf16()), key(aKey), val(aVal)
     {}
 
-    HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
-    {
-        LogFlow(("OnExtraDataChange: machineId={%ls}, key='%ls', val='%ls'\n",
-                 machineId.raw(), key.raw(), val.raw()));
-        return aCallback->OnExtraDataChange(machineId, key, val);
-    }
-#ifdef RT_OS_WINDOWS
-    HRESULT prepareComEventDesc(ComEventDesc& aEvDesc)
-    {
-       aEvDesc.init("OnExtraDataChange", 3);
-       aEvDesc.add(machineId).add(key).add(val);
-       return S_OK;
-    }
-#endif
     virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
     {
         return aEvDesc.init(aSource, VBoxEventType_OnExtraDataChange, machineId.raw(), key.raw(), val.raw());
@@ -2836,21 +2609,6 @@ struct SessionEvent : public VirtualBox::CallbackEvent
         , machineId(aMachineId.toUtf16()), sessionState(aState)
     {}
 
-    HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
-    {
-        LogFlow(("OnSessionStateChange: machineId={%ls}, sessionState=%d\n",
-                 machineId.raw(), sessionState));
-        return aCallback->OnSessionStateChange(machineId, sessionState);
-    }
-
-#ifdef RT_OS_WINDOWS
-    HRESULT prepareComEventDesc(ComEventDesc& aEvDesc)
-    {
-       aEvDesc.init("OnSessionStateChange", 2);
-       aEvDesc.add(machineId).add((int)sessionState);
-       return S_OK;
-    }
-#endif
     virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
     {
         return aEvDesc.init(aSource, VBoxEventType_OnSessionStateChange, machineId.raw(), sessionState);
@@ -2876,41 +2634,6 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
         , machineId(aMachineId), snapshotId(aSnapshotId)
         {}
 
-    HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
-    {
-        Bstr mid = machineId.toUtf16();
-        Bstr sid = snapshotId.toUtf16();
-
-        switch (mWhat)
-        {
-            case VirtualBoxCallbackRegistration::kOnSnapshotTaken:
-                LogFlow(("OnSnapshotTaken: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
-                          machineId.ptr(), snapshotId.ptr()));
-                return aCallback->OnSnapshotTaken(mid, sid);
-
-            case VirtualBoxCallbackRegistration::kOnSnapshotDeleted:
-                LogFlow(("OnSnapshotDeleted: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
-                          machineId.ptr(), snapshotId.ptr()));
-                return aCallback->OnSnapshotDeleted(mid, sid);
-
-            case VirtualBoxCallbackRegistration::kOnSnapshotChange:
-                LogFlow(("OnSnapshotChange: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
-                          machineId.ptr(), snapshotId.ptr()));
-                return aCallback->OnSnapshotChange(mid, sid);
-
-            default:
-                AssertFailedReturn(S_OK);
-        }
-    }
-
-#ifdef RT_OS_WINDOWS
-    HRESULT prepareComEventDesc(ComEventDesc& aEvDesc)
-    {
-       aEvDesc.init("OnSnapshotTaken", 2);
-       aEvDesc.add(machineId.toUtf16()).add(snapshotId.toUtf16());
-       return S_OK;
-    }
-#endif
     virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
     {
         return aEvDesc.init(aSource, VBoxEventType_OnSnapshotTaken,
@@ -2960,21 +2683,6 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
           flags(aFlags)
     {}
 
-    HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
-    {
-        LogFlow(("OnGuestPropertyChange: machineId={%RTuuid}, name='%ls', value='%ls', flags='%ls'\n",
-                 machineId.ptr(), name.raw(), value.raw(), flags.raw()));
-        return aCallback->OnGuestPropertyChange(machineId.toUtf16(), name, value, flags);
-    }
-
-#ifdef RT_OS_WINDOWS
-    HRESULT prepareComEventDesc(ComEventDesc& aEvDesc)
-    {
-       aEvDesc.init("OnGuestPropertyChange", 4);
-       aEvDesc.add(machineId.toUtf16()).add(name).add(value).add(flags);
-       return S_OK;
-    }
-#endif
     virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
     {
         return aEvDesc.init(aSource, VBoxEventType_OnGuestPropertyChange,
@@ -4668,84 +4376,12 @@ void *VirtualBox::CallbackEvent::handler()
         return NULL;
     }
 
-    CallbackList callbacks;
-#ifdef RT_OS_WINDOWS
-    EventListenersList listeners;
-#endif
-    {
-        /* Make a copy to release the lock before iterating */
-        AutoReadLock alock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-        callbacks = mVirtualBox->m->llCallbacks;
-#ifdef RT_OS_WINDOWS
-	IUnknown** pp;
-	for (pp = mVirtualBox->m_vec.begin(); pp < mVirtualBox->m_vec.end(); pp++)
-	{
-            listeners.Add(*pp);
-        }
-#endif
-    }
-
-
-#ifdef RT_OS_WINDOWS
-    {
-     ComEventDesc evDesc;
-
-     int nConnections = listeners.GetSize();
-     /* Only prepare args if someone really needs them */
-     if (nConnections)
-        prepareComEventDesc(evDesc);
-
-     for (int i=0; i<nConnections; i++)
-     {
-        ComPtr<IUnknown> sp = listeners.GetAt(i);
-        ComPtr<IVirtualBoxCallback> cbI;
-        ComPtr<IDispatch> cbD;
-
-        cbI = sp;
-        cbD = sp;
-
-        /**
-         * Would be just handleCallback(cbI) in an ideal world, unfortunately our
-	 * consumers want to be invoked via IDispatch, thus going the hard way.
-         */
-        if (cbI != NULL && cbD != NULL)
-        {
-             CComVariant varResult;
-             mVirtualBox->m->mComEvHelper.fire(cbD, evDesc, &varResult);
-             // what we gonna do with the result?
-        }
-     }
-    }
-#endif
 
     {
         VBoxEventDesc evDesc;
         prepareEventDesc(mVirtualBox->m->pEventSource, evDesc);
 
         evDesc.fire(/* don't wait for delivery */0);
-    }
-
-    for (CallbackList::const_iterator it = callbacks.begin();
-         it != callbacks.end();
-         ++it)
-    {
-        if (it->isWanted(mWhat))
-        {
-            HRESULT hrc = handleCallback(it->ptrICb);
-            if (hrc == VBOX_E_DONT_CALL_AGAIN)
-            {
-                /* Have to update the original. */
-                AutoReadLock alock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-                CallbackList::iterator itOrg;
-                itOrg = std::find(mVirtualBox->m->llCallbacks.begin(),
-                                  mVirtualBox->m->llCallbacks.end(),
-                                  CallbackList::value_type(it->ptrICb));
-                if (itOrg != mVirtualBox->m->llCallbacks.end())
-                    itOrg->setDontCallAgain(mWhat);
-            }
-            else if (FAILED_DEAD_INTERFACE(hrc))
-                mVirtualBox->removeDeadCallback(it->ptrICb);
-        }
     }
 
     mVirtualBox = NULL; /* Not needed any longer. Still make sense to do this? */
