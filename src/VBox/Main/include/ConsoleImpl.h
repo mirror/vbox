@@ -98,7 +98,6 @@ public:
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IConsole)
         COM_INTERFACE_ENTRY(IDispatch)
-        COM_INTERFACE_ENTRY(IConnectionPointContainer)
     END_COM_MAP()
 
     Console();
