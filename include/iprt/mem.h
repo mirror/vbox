@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -253,6 +253,15 @@ RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW;
  */
 RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect) RT_NO_THROW;
 
+/**
+ * Goes thru some pains to make sure the specified memory block is thoroughly
+ * scrambled.
+ *
+ * @param   pv          The start of the memory block.
+ * @param   cb          The size of the memory block.
+ * @param   cMinPasses  The minimum number of passes to make.
+ */
+RTDECL(void) RTMemWipeThoroughly(void *pv, size_t cb, size_t cMinPasses) RT_NO_THROW;
 
 #ifdef IN_RING0
 
