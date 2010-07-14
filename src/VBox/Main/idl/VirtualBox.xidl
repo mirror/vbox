@@ -371,13 +371,6 @@
     </desc>
   </result>
 
-  <result name="VBOX_E_DONT_CALL_AGAIN" value="0x80BB000D">
-    <desc>
-      Returned by callback methods which does not need to be called again
-      because the client does not actually make use of them.
-    </desc>
-  </result>
-
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express
@@ -1204,302 +1197,10 @@
 
   </interface>
 
-  <interface
-     name="ILocalOwner" extends="$unknown"
-     uuid="308FF42A-DC45-49D4-A950-B1EEE5E00BB5" wsmap="suppress"
-     >
-    <desc>
-      The ILocalOwner interface allows to register local objects
-      (created without COM calls, but with new()).
-      Once registered, calls to methods of such objects can be made
-      from remote COM processes.
-      The main usecase is the event callback implementation where
-      API clients provide callback objects.
-    </desc>
-    <method name="setLocalObject">
-      <desc>
-        Set local object.
-      </desc>
-      <param name="object" type="$unknown" dir="in">
-        <desc>Local object to forward requests to.
-          If null, clears currently set local object.</desc>
-      </param>
-    </method>
-  </interface>
-
   <!--
   // IVirtualBox
   /////////////////////////////////////////////////////////////////////////
   -->
-
-  <interface
-     name="IVirtualBoxCallback" extends="$unknown"
-     uuid="7f6a65b6-ad5d-4a67-8872-0b11cb7ea95c"
-     wsmap="suppress"
-     >
-
-    <method name="onMachineStateChange">
-      <desc>
-        The execution state of the given machine has changed.
-        <see>IMachine::state</see>
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="machineId" type="uuid" mod="string" dir="in">
-        <desc>ID of the machine this event relates to.</desc>
-      </param>
-      <param name="state" type="MachineState" dir="in">
-        <desc>New execution state.</desc>
-      </param>
-    </method>
-
-    <method name="onMachineDataChange">
-      <desc>
-        Any of the settings of the given machine has changed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="machineId" type="uuid" mod="string" dir="in">
-        <desc>ID of the machine this event relates to.</desc>
-      </param>
-    </method>
-
-    <method name="onExtraDataCanChange">
-      <desc>
-        Notification when someone tries to change extra data for
-        either the given machine or (if @c null) global extra data.
-        This gives the chance to veto against changes.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP. Change is allowed.
-        </result>
-      </desc>
-      <param name="machineId" type="uuid" mod="string" dir="in">
-        <desc>
-          ID of the machine this event relates to
-          (@c null ID for global extra data change requests).
-        </desc>
-      </param>
-      <param name="key" type="wstring" dir="in">
-        <desc>
-          Extra data key for the attempted write.
-        </desc>
-      </param>
-      <param name="value" type="wstring" dir="in">
-        <desc>
-          Extra data value for the given key.
-        </desc>
-      </param>
-      <param name="error" type="wstring" dir="out">
-        <desc>
-          Optional error message describing the reason of the
-          veto (ignored if this notification returns @c true).
-        </desc>
-      </param>
-      <param name="allowChange" type="boolean" dir="return">
-        <desc>
-          Flag to indicate whether the callee agrees (@c true)
-          or vetoes against the change (@c false).
-        </desc>
-      </param>
-    </method>
-
-    <method name="onExtraDataChange">
-      <desc>
-        Notification when machine specific or global extra data
-        has changed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="machineId" type="uuid" mod="string" dir="in">
-        <desc>
-          ID of the machine this event relates to.
-          Null for global extra data changes.
-        </desc>
-      </param>
-      <param name="key" type="wstring" dir="in">
-        <desc>
-          Extra data key that has changed.
-        </desc>
-      </param>
-      <param name="value" type="wstring" dir="in">
-        <desc>
-          Extra data value for the given key.
-        </desc>
-      </param>
-    </method>
-
-    <method name="onMediumRegistered">
-      <desc>
-        The given medium was registered or unregistered
-        within this VirtualBox installation.
-
-        The @a mediumType parameter describes what type of
-        medium the specified @a mediumId refers to. Possible
-        values are:
-
-        <ul>
-        <li><link to="DeviceType_HardDisk"/>: the medium is a hard disk
-        that, if registered, can be obtained using the
-        <link to="IVirtualBox::getHardDisk"/> call.</li>
-        <li><link to="DeviceType_DVD"/>: the medium is a CD/DVD image
-        that, if registered, can be obtained using the
-        <link to="IVirtualBox::getDVDImage"/> call.</li>
-        <li><link to="DeviceType_Floppy"/>: the medium is a Floppy image
-        that, if registered, can be obtained using the
-        <link to="IVirtualBox::getFloppyImage"/> call.</li>
-        </ul>
-
-        Note that if this is a deregistration notification,
-        there is no way to access the object representing the
-        unregistered medium. It is supposed that the
-        application will do required cleanup based on the
-        @a mediumId value.
-
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="mediumId" type="uuid" mod="string" dir="in">
-        <desc>ID of the medium this event relates to.</desc>
-      </param>
-      <param name="mediumType" type="DeviceType" dir="in">
-        <desc>Type of the medium this event relates to.</desc>
-      </param>
-      <param name="registered" type="boolean" dir="in">
-        <desc>
-          If @c true, the medium was registered, otherwise it was
-          unregistered.
-        </desc>
-      </param>
-    </method>
-
-    <method name="onMachineRegistered">
-      <desc>
-        The given machine was registered or unregistered
-        within this VirtualBox installation.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="machineId" type="uuid" mod="string" dir="in">
-        <desc>ID of the machine this event relates to.</desc>
-      </param>
-      <param name="registered" type="boolean" dir="in">
-        <desc>
-          If @c true, the machine was registered, otherwise it was
-          unregistered.
-        </desc>
-      </param>
-    </method>
-
-    <method name="onSessionStateChange">
-      <desc>
-        The state of the session for the given machine was changed.
-        <see>IMachine::sessionState</see>
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="machineId" type="uuid" mod="string" dir="in">
-        <desc>ID of the machine this event relates to.</desc>
-      </param>
-      <param name="state" type="SessionState" dir="in">
-        <desc>New session state.</desc>
-      </param>
-    </method>
-
-    <method name="onSnapshotTaken">
-      <desc>
-        A new snapshot of the machine has been taken.
-        <see>ISnapshot</see>
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="machineId" type="uuid" mod="string" dir="in">
-        <desc>ID of the machine this event relates to.</desc>
-      </param>
-      <param name="snapshotId" type="uuid" mod="string" dir="in">
-        <desc>ID of the new snapshot.</desc>
-      </param>
-    </method>
-
-    <method name="onSnapshotDeleted">
-      <desc>
-        Snapshot of the given machine has been deleted.
-
-        <note>
-          This notification is delivered <b>after</b> the snapshot
-          object has been uninitialized on the server (so that any
-          attempt to call its methods will return an error).
-        </note>
-
-        <see>ISnapshot</see>
-
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="machineId" type="uuid" mod="string" dir="in">
-        <desc>ID of the machine this event relates to.</desc>
-      </param>
-      <param name="snapshotId" type="uuid" mod="string" dir="in">
-        <desc>
-          ID of the deleted snapshot. @c null means the current machine
-          state has been deleted (restored from the current snapshot).
-        </desc>
-      </param>
-    </method>
-
-    <method name="onSnapshotChange">
-      <desc>
-        Snapshot properties (name and/or description) have been changed.
-        <see>ISnapshot</see>
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="machineId" type="uuid" mod="string" dir="in">
-        <desc>ID of the machine this event relates to.</desc>
-      </param>
-      <param name="snapshotId" type="uuid" mod="string" dir="in">
-        <desc>ID of the changed snapshot.</desc>
-      </param>
-    </method>
-
-    <method name="onGuestPropertyChange">
-      <desc>
-        Notification when a guest property has changed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="machineId" type="uuid" mod="string" dir="in">
-        <desc>
-          ID of the machine this event relates to.
-        </desc>
-      </param>
-      <param name="name" type="wstring" dir="in">
-        <desc>
-          The name of the property that has changed.
-        </desc>
-      </param>
-      <param name="value" type="wstring" dir="in">
-        <desc>
-          The new property value.
-        </desc>
-      </param>
-      <param name="flags" type="wstring" dir="in">
-        <desc>
-          The new property flags.
-        </desc>
-      </param>
-    </method>
-
-  </interface>
 
   <interface
     name="IDHCPServer" extends="$unknown"
@@ -1958,8 +1659,7 @@
         <link to="#createMachine"/> or opened using
         <link to="#openMachine"/> within this VirtualBox installation. After
         successful method invocation, the
-        <link to="IVirtualBoxCallback::onMachineRegistered"/> signal is sent
-        to all registered callbacks.
+        <link to="IMachineRegisteredEvent"/> event is fired.
 
         <note>
           This method implicitly calls <link to="IMachine::saveSettings"/>
@@ -2012,8 +1712,7 @@
 
         Unregisters the machine previously registered using
         <link to="#registerMachine"/>. After successful method invocation, the
-        <link to="IVirtualBoxCallback::onMachineRegistered"/> signal is sent
-        to all registered callbacks.
+        <link to="IMachineRegisteredEvent"/> event is fired.
 
         <note>
           The specified machine must not be in the Saved state, have an open
@@ -2570,15 +2269,15 @@
 
         <note>
           Before performing the actual data change, this method will ask all
-          registered callbacks using the
-          <link to="IVirtualBoxCallback::onExtraDataCanChange"/>
-          notification for a permission. If one of the callbacks refuses the
+          registered event listener using the
+          <link to="IExtraDataCanChangeEvent"/>
+          notification for a permission. If one of the listeners refuses the
           new value, the change will not be performed.
         </note>
         <note>
           On success, the
-          <link to="IVirtualBoxCallback::onExtraDataChange"/> notification
-          is called to inform all registered callbacks about a successful data
+          <link to="IExtraDataChanged"/> notification
+          is called to inform all registered listeners about a successful data
           change.
         </note>
 
@@ -2853,36 +2552,6 @@
       </param>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the virtual machine to open a session with.</desc>
-      </param>
-    </method>
-
-    <method name="registerCallback">
-      <desc>
-        Registers a new global VirtualBox callback. The methods of the given
-        callback object will be called by VirtualBox when an appropriate
-        event occurs.
-
-        <result name="E_INVALIDARG">
-          A @c null callback cannot be registered.
-        </result>
-
-      </desc>
-      <param name="callback" type="IVirtualBoxCallback" dir="in">
-        <desc>Callback object to register.</desc>
-      </param>
-    </method>
-
-    <method name="unregisterCallback">
-      <desc>
-        Unregisters the previously registered global VirtualBox callback.
-
-        <result name="E_INVALIDARG">
-          Specified @a callback not registered.
-        </result>
-
-      </desc>
-      <param name="callback" type="IVirtualBoxCallback" dir="in">
-        <desc>Callback object to unregister.</desc>
       </param>
     </method>
 
@@ -4724,7 +4393,7 @@
       <desc>
         A comma-separated list of simple glob patterns.  Changes to guest
         properties whose name matches one of the patterns will generate an
-        <link to="IVirtualBoxCallback::onGuestPropertyChange"/> signal.
+        <link to="IGuestPropertyChangedEvent"/> signal.
       </desc>
     </attribute>
 
@@ -5288,15 +4957,15 @@
 
         <note>
           Before performing the actual data change, this method will ask all
-          registered callbacks using the
-          <link to="IVirtualBoxCallback::onExtraDataCanChange"/>
-          notification for a permission. If one of the callbacks refuses the
+          registered listeners using the
+          <link to="IExtraDataCanChangeEvent"/>
+          notification for a permission. If one of the listeners refuses the
           new value, the change will not be performed.
         </note>
         <note>
           On success, the
-          <link to="IVirtualBoxCallback::onExtraDataChange"/> notification
-          is called to inform all registered callbacks about a successful data
+          <link to="IExtraDataChangedEvent"/> notification
+          is called to inform all registered listeners about a successful data
           change.
         </note>
         <note>
@@ -5524,7 +5193,7 @@
         other VirtualBox clients after successful invocation of this
         method.
         <note>
-          The method sends <link to="IVirtualBoxCallback::onMachineDataChange"/>
+          The method sends <link to="IMachineDataChangedEvent"/>
           notification event after the configuration has been successfully
           saved (only for registered machines).
         </note>
@@ -6152,483 +5821,6 @@
   // IConsole
   /////////////////////////////////////////////////////////////////////////
   -->
-
-  <interface
-     name="IConsoleCallback" extends="$unknown"
-     uuid="60703f8d-81e4-4b45-a147-dcfd07692b19"
-     wsmap="suppress"
-     >
-
-    <desc>
-        This interface is used by a client of the Main API that need to
-        be notified of events. For example, a graphical user interface
-        can use this to learn about machine state changes so they can
-        update the list of virtual machines without having to rely
-        on polling.
-
-        Whenever relevant events occur in VirtualBox, the callbacks in
-        objects of this interface are called. In order for this to be
-        useful, a client needs to create its own subclass that implements
-        this interface in which the methods for the relevant callbacks
-        are overridden. An instance of this subclass interface can then
-        be passed to <link to="IConsole::registerCallback" />.
-    </desc>
-
-    <method name="onMousePointerShapeChange">
-      <desc>
-        Notification when the guest mouse pointer shape has
-        changed. The new shape data is given.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="visible" type="boolean" dir="in">
-        <desc>
-          Flag whether the pointer is visible.
-        </desc>
-      </param>
-      <param name="alpha" type="boolean" dir="in">
-        <desc>
-          Flag whether the pointer has an alpha channel.
-        </desc>
-      </param>
-      <param name="xHot" type="unsigned long" dir="in">
-        <desc>
-          The pointer hot spot x coordinate.
-        </desc>
-      </param>
-      <param name="yHot" type="unsigned long" dir="in">
-        <desc>
-          The pointer hot spot y coordinate.
-        </desc>
-      </param>
-      <param name="width" type="unsigned long" dir="in">
-        <desc>
-          Width of the pointer shape in pixels.
-        </desc>
-      </param>
-      <param name="height" type="unsigned long" dir="in">
-        <desc>
-          Height of the pointer shape in pixels.
-        </desc>
-      </param>
-      <param name="shape" type="octet" safearray="yes" dir="in">
-        <desc>
-          Shape buffer arrays.
-
-          The @a shape buffer contains a 1-bpp (bits per pixel) AND mask
-          followed by a 32-bpp XOR (color) mask.
-
-          For pointers without alpha channel the XOR mask pixels are 32
-          bit values: (lsb)BGR0(msb). For pointers with alpha channel
-          the XOR mask consists of (lsb)BGRA(msb) 32 bit values.
-
-          An AND mask is used for pointers with alpha channel, so if the
-          callback does not support alpha, the pointer could be
-          displayed as a normal color pointer.
-
-          The AND mask is a 1-bpp bitmap with byte aligned scanlines. The
-          size of the AND mask therefore is <tt>cbAnd = (width + 7) / 8 *
-          height</tt>. The padding bits at the end of each scanline are
-          undefined.
-
-          The XOR mask follows the AND mask on the next 4-byte aligned
-          offset: <tt>uint8_t *pXor = pAnd + (cbAnd + 3) &amp; ~3</tt>.
-          Bytes in the gap between the AND and the XOR mask are undefined.
-          The XOR mask scanlines have no gap between them and the size of
-          the XOR mask is: <tt>cXor = width * 4 * height</tt>.
-
-          <note>
-            If @a shape is 0, only the pointer visibility is changed.
-          </note>
-        </desc>
-      </param>
-    </method>
-
-    <method name="onMouseCapabilityChange">
-      <desc>
-        Notification when the mouse capabilities reported by the
-        guest have changed. The new capabilities are passed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="supportsAbsolute" type="boolean" dir="in"/>
-      <param name="supportsRelative" type="boolean" dir="in"/>
-      <param name="needsHostCursor" type="boolean" dir="in"/>
-    </method>
-
-    <method name="onKeyboardLedsChange">
-      <desc>
-        Notification when the guest OS executes the KBD_CMD_SET_LEDS command
-        to alter the state of the keyboard LEDs.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="numLock" type="boolean" dir="in"/>
-      <param name="capsLock" type="boolean" dir="in"/>
-      <param name="scrollLock" type="boolean" dir="in"/>
-    </method>
-
-    <method name="onStateChange">
-      <desc>
-        Notification when the execution state of the machine has changed.
-        The new state will be given.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="state" type="MachineState" dir="in"/>
-    </method>
-
-    <method name="onAdditionsStateChange">
-      <desc>
-        Notification when a Guest Additions property changes.
-        Interested callees should query IGuest attributes to
-        find out what has changed.
-      </desc>
-    </method>
-
-    <method name="onNetworkAdapterChange">
-      <desc>
-        Notification when a property of one of the
-        virtual <link to="IMachine::getNetworkAdapter">network adapters</link>
-        changes.  Interested callees should use INetworkAdapter methods and
-        attributes to find out what has changed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="networkAdapter" type="INetworkAdapter" dir="in">
-        <desc>Network adapter that is subject to change.</desc>
-      </param>
-    </method>
-
-    <method name="onSerialPortChange">
-      <desc>
-        Notification when a property of one of the
-        virtual <link to="IMachine::getSerialPort">serial ports</link> changes.
-        Interested callees should use ISerialPort methods and attributes
-        to find out what has changed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="serialPort" type="ISerialPort" dir="in">
-        <desc>Serial port that is subject to change.</desc>
-      </param>
-    </method>
-
-    <method name="onParallelPortChange">
-      <desc>
-        Notification when a property of one of the
-        virtual <link to="IMachine::getParallelPort">parallel ports</link>
-        changes.  Interested callees should use ISerialPort methods and
-        attributes to find out what has changed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="parallelPort" type="IParallelPort" dir="in">
-        <desc>Parallel port that is subject to change.</desc>
-      </param>
-    </method>
-
-    <method name="onStorageControllerChange">
-      <desc>
-        Notification when a property of one of the
-        virtual <link to="IMachine::storageControllers">storage controllers</link>
-        changes. Interested callees should query the corresponding collections
-        to find out what has changed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-    </method>
-
-    <method name="onMediumChange">
-      <desc>
-        Notification when a
-        <link to="IMachine::mediumAttachments">medium attachment</link>
-        changes.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="mediumAttachment" type="IMediumAttachment" dir="in">
-        <desc>Medium attachment that is subject to change.</desc>
-      </param>
-    </method>
-
-    <method name="onCPUChange">
-      <desc>
-        Notification when a CPU changes.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="cpu" type="unsigned long" dir="in">
-        <desc>The CPU which changed</desc>
-      </param>
-      <param name="add" type="boolean" dir="in">
-        <desc>Flag whether the CPU was added or removed</desc>
-      </param>
-    </method>
-
-    <method name="onVRDPServerChange">
-      <desc>
-        Notification when a property of the
-        <link to="IMachine::VRDPServer">VRDP server</link> changes.
-        Interested callees should use IVRDPServer methods and attributes to
-        find out what has changed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-    </method>
-
-    <method name="onRemoteDisplayInfoChange">
-      <desc>
-        Notification when the status of the VRDP server changes. Interested callees
-        should use <link to="IConsole::RemoteDisplayInfo">IRemoteDisplayInfo</link>
-        attributes to find out what is the current status.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-    </method>
-
-    <method name="onUSBControllerChange">
-      <desc>
-        Notification when a property of the virtual
-        <link to="IMachine::USBController">USB controller</link> changes.
-        Interested callees should use IUSBController methods and attributes to
-        find out what has changed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-    </method>
-
-    <method name="onUSBDeviceStateChange">
-      <desc>
-        Notification when a USB device is attached to or detached from
-        the virtual USB controller.
-
-        This notification is sent as a result of the indirect
-        request to attach the device because it matches one of the
-        machine USB filters, or as a result of the direct request
-        issued by <link to="IConsole::attachUSBDevice"/> or
-        <link to="IConsole::detachUSBDevice"/>.
-        This notification is sent in case of both a succeeded and a
-        failed request completion. When the request succeeds, the
-        @a error parameter is @c null, and the given device has been
-        already added to (when @a attached is @c true) or removed from
-        (when @a attached is @c false) the collection represented by
-        <link to="IConsole::USBDevices"/>. On failure, the collection
-        doesn't change and the @a error parameter represents the error
-        message describing the failure.
-
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="device" type="IUSBDevice" dir="in">
-        <desc>Device that is subject to state change.</desc>
-      </param>
-      <param name="attached" type="boolean" dir="in">
-        <desc>
-          @c true if the device was attached and @c false otherwise.
-        </desc>
-      </param>
-      <param name="error" type="IVirtualBoxErrorInfo" dir="in">
-        <desc>
-          @c null on success or an error message object on failure.
-        </desc>
-      </param>
-    </method>
-
-    <method name="onSharedFolderChange">
-      <desc>
-        Notification when a shared folder is added or removed.
-        The @a scope argument defines one of three scopes:
-        <link to="IVirtualBox::sharedFolders">global shared folders</link>
-        (<link to="Scope_Global">Global</link>),
-        <link to="IMachine::sharedFolders">permanent shared folders</link> of
-        the machine (<link to="Scope_Machine">Machine</link>) or <link
-        to="IConsole::sharedFolders">transient shared folders</link> of the
-        machine (<link to="Scope_Session">Session</link>). Interested callees
-        should use query the corresponding collections to find out what has
-        changed.
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="scope" type="Scope" dir="in">
-        <desc>Scope of the notification.</desc>
-      </param>
-    </method>
-
-    <method name="onRuntimeError">
-      <desc>
-        Notification when an error happens during the virtual
-        machine execution.
-
-        There are three kinds of runtime errors:
-        <ul>
-          <li><i>fatal</i></li>
-          <li><i>non-fatal with retry</i></li>
-          <li><i>non-fatal warnings</i></li>
-        </ul>
-
-        <b>Fatal</b> errors are indicated by the @a fatal parameter set
-        to @c true. In case of fatal errors, the virtual machine
-        execution is always paused before calling this notification, and
-        the notification handler is supposed either to immediately save
-        the virtual machine state using <link to="IConsole::saveState"/>
-        or power it off using <link to="IConsole::powerDown"/>.
-        Resuming the execution can lead to unpredictable results.
-
-        <b>Non-fatal</b> errors and warnings are indicated by the
-        @a fatal parameter set to @c false. If the virtual machine
-        is in the Paused state by the time the error notification is
-        received, it means that the user can <i>try to resume</i> the machine
-        execution after attempting to solve the problem that caused the
-        error. In this case, the notification handler is supposed
-        to show an appropriate message to the user (depending on the
-        value of the @a id parameter) that offers several actions such
-        as <i>Retry</i>, <i>Save</i> or <i>Power Off</i>. If the user
-        wants to retry, the notification handler should continue
-        the machine execution using the <link to="IConsole::resume"/>
-        call. If the machine execution is not Paused during this
-        notification, then it means this notification is a <i>warning</i>
-        (for example, about a fatal condition that can happen very soon);
-        no immediate action is required from the user, the machine
-        continues its normal execution.
-
-        Note that in either case the notification handler
-        <b>must not</b> perform any action directly on a thread
-        where this notification is called. Everything it is allowed to
-        do is to post a message to another thread that will then talk
-        to the user and take the corresponding action.
-
-        Currently, the following error identifiers are known:
-        <ul>
-          <li><tt>"HostMemoryLow"</tt></li>
-          <li><tt>"HostAudioNotResponding"</tt></li>
-          <li><tt>"VDIStorageFull"</tt></li>
-          <li><tt>"3DSupportIncompatibleAdditions"</tt></li>
-        </ul>
-
-        <note>
-          This notification is not designed to be implemented by
-          more than one callback at a time. If you have multiple
-          IConsoleCallback instances registered on the given
-          IConsole object, make sure you simply do nothing but
-          return @c S_OK from all but one of them that does actual
-          user notification and performs necessary actions.
-        </note>
-
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="fatal" type="boolean" dir="in">
-        <desc>Whether the error is fatal or not</desc>
-      </param>
-      <param name="id" type="wstring" dir="in">
-        <desc>Error identifier</desc>
-      </param>
-      <param name="message" type="wstring" dir="in">
-        <desc>Optional error message</desc>
-      </param>
-    </method>
-
-    <method name="onCanShowWindow">
-      <desc>
-        Notification when a call to
-        <link to="IMachine::canShowConsoleWindow"/> is made by a
-        front-end to check if a subsequent call to
-        <link to="IMachine::showConsoleWindow"/> can succeed.
-
-        The callee should give an answer appropriate to the current
-        machine state in the @a canShow argument. This answer must
-        remain valid at least until the next
-        <link to="IConsole::state">machine state</link> change.
-
-        <note>
-          This notification is not designed to be implemented by
-          more than one callback at a time. If you have multiple
-          IConsoleCallback instances registered on the given
-          IConsole object, make sure you simply do nothing but
-          return @c true and @c S_OK from all but one of them that
-          actually manages console window activation.
-        </note>
-
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="canShow" type="boolean" dir="return">
-        <desc>
-          @c true if the console window can be shown and @c false otherwise.
-        </desc>
-      </param>
-    </method>
-
-    <method name="onShowWindow">
-      <desc>
-        Notification when a call to
-        <link to="IMachine::showConsoleWindow"/>
-        requests the console window to be activated and brought to
-        foreground on the desktop of the host PC.
-
-        This notification should cause the VM console process to
-        perform the requested action as described above. If it is
-        impossible to do it at a time of this notification, this
-        method should return a failure.
-
-        Note that many modern window managers on many platforms
-        implement some sort of focus stealing prevention logic, so
-        that it may be impossible to activate a window without the
-        help of the currently active application (which is supposedly
-        an initiator of this notification). In this case, this method
-        must return a non-zero identifier that represents the
-        top-level window of the VM console process. The caller, if it
-        represents a currently active process, is responsible to use
-        this identifier (in a platform-dependent manner) to perform
-        actual window activation.
-
-        This method must set @a winId to zero if it has performed all
-        actions necessary to complete the request and the console
-        window is now active and in foreground, to indicate that no
-        further action is required on the caller's side.
-
-        <note>
-          This notification is not designed to be implemented by
-          more than one callback at a time. If you have multiple
-          IConsoleCallback instances registered on the given
-          IConsole object, make sure you simply do nothing but
-          return @c S_OK from all but one of them that actually
-          manages console window activation.
-        </note>
-
-        <result name="VBOX_E_DONT_CALL_AGAIN">
-          Do not call again, this method is a NOP.
-        </result>
-      </desc>
-      <param name="winId" type="unsigned long long" dir="return">
-        <desc>
-          Platform-dependent identifier of the top-level VM console
-          window, or zero if this method has performed all actions
-          necessary to implement the <i>show window</i> semantics for
-          the given platform and/or this VirtualBox front-end.
-        </desc>
-      </param>
-    </method>
-
-  </interface>
 
   <interface
      name="IRemoteDisplayInfo" extends="$unknown"
@@ -7453,25 +6645,6 @@
       </param>
     </method>
 
-    <method name="registerCallback">
-      <desc>
-        Registers a new console callback on this instance. The methods of the
-        callback interface will be called by this instance when the appropriate
-        event occurs.
-      </desc>
-      <param name="callback" type="IConsoleCallback" dir="in"/>
-    </method>
-
-    <method name="unregisterCallback">
-      <desc>
-        Unregisters the console callback previously registered using
-        <link to="#registerCallback"/>.
-        <result name="E_INVALIDARG">
-          Given @a callback handler is not registered.
-        </result>
-      </desc>
-      <param name="callback" type="IConsoleCallback" dir="in"/>
-    </method>
   </interface>
 
   <!--
@@ -11041,8 +10214,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Whether the guest OS supports absolute mouse pointer positioning
         or not.
         <note>
-          You can use the <link to="IConsoleCallback::onMouseCapabilityChange"/>
-          callback to be instantly informed about changes of this attribute
+          You can use the <link to="IMouseCapabilityChangedEvent"/>
+          event to be instantly informed about changes of this attribute
           during virtual machine execution.
         </note>
         <see><link to="#putMouseEventAbsolute"/></see>
@@ -11054,8 +10227,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Whether the guest OS supports relative mouse pointer positioning
         or not.
         <note>
-          You can use the <link to="IConsoleCallback::onMouseCapabilityChange"/>
-          callback to be instantly informed about changes of this attribute
+          You can use the <link to="IMouseCapabilityChangedEvent"/>
+          event to be instantly informed about changes of this attribute
           during virtual machine execution.
         </note>
         <see><link to="#putMouseEvent"/></see>
@@ -11067,8 +10240,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Whether the guest OS can currently switch to drawing it's own mouse
         cursor on demand.
         <note>
-          You can use the <link to="IConsoleCallback::onMouseCapabilityChange"/>
-          callback to be instantly informed about changes of this attribute
+          You can use the <link to="IMouseCapabilityChangedEvent"/>
+          event to be instantly informed about changes of this attribute
           during virtual machine execution.
         </note>
         <see><link to="#putMouseEvent"/></see>
@@ -13441,9 +12614,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Called by <link to="IMachine::canShowConsoleWindow"/> and by
         <link to="IMachine::showConsoleWindow"/> in order to notify
-        console callbacks
-        <link to="IConsoleCallback::onCanShowWindow"/>
-        and <link to="IConsoleCallback::onShowWindow"/>.
+        console listeners
+        <link to="ICanShowWindowEvent"/>
+        and <link to="IShowWindowEvent"/>.
 
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Session type prevents operation.
@@ -14617,17 +13790,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <const name="OnMachineStateChange" value="32">
       <desc>
-        <see>IMachineStateChangeEvent</see>
+        <see>IMachineStateChangedEvent</see>
       </desc>
     </const>
     <const name="OnMachineDataChange" value="33">
       <desc>
-        <see>IMachineDataChangeEvent</see>
+        <see>IMachineDataChangedEvent</see>
       </desc>
     </const>
     <const name="OnExtraDataChange" value="34">
       <desc>
-        <see>IExtraDataChangeEvent</see>
+        <see>IExtraDataChangedEvent</see>
       </desc>
     </const>
      <const name="OnExtraDataCanChange" value="35">
@@ -14647,7 +13820,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="OnSessionStateChange" value="38">
       <desc>
-        <see>ISessionStateChangeEvent</see>
+        <see>ISessionStateChangedEvent</see>
       </desc>
     </const>
     <const name="OnSnapshotTaken" value="39">
@@ -14662,83 +13835,83 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="OnSnapshotChange" value="41">
       <desc>
-        <see>ISnapshotChangeEvent</see>
+        <see>ISnapshotChangedEvent</see>
       </desc>
     </const>
     <const name="OnGuestPropertyChange" value="42">
       <desc>
-        <see>IGuestPropertyChangeEvent</see>
+        <see>IGuestPropertyChangedEvent</see>
       </desc>
     </const>
     <!-- Console events -->
     <const name="OnMousePointerShapeChange" value="43">
       <desc>
-        <see>IMousePointerShapeChangeEvent</see>
+        <see>IMousePointerShapeChangedEvent</see>
       </desc>
     </const>
     <const name="OnMouseCapabilityChange" value="44">
       <desc>
-        <see>IMouseCapabilityChangeEvent</see>
+        <see>IMouseCapabilityChangedEvent</see>
       </desc>
     </const>
     <const name="OnKeyboardLedsChange" value="45">
       <desc>
-        <see>IKeyboardLedsChangeEvent</see>
+        <see>IKeyboardLedsChangedEvent</see>
       </desc>
     </const>
     <const name="OnStateChange" value="46">
       <desc>
-        <see>IStateChangeEvent</see>
+        <see>IStateChangedEvent</see>
       </desc>
     </const>
     <const name="OnAdditionsStateChange" value="47">
       <desc>
-        <see>IAdditionsStateChangeEvent</see>
+        <see>IAdditionsStateChangedEvent</see>
       </desc>
     </const>
     <const name="OnNetworkAdapterChange" value="48">
       <desc>
-        <see>INetworkAdapterChangeEvent</see>
+        <see>INetworkAdapterChangedEvent</see>
       </desc>
     </const>
     <const name="OnSerialPortChange" value="49">
       <desc>
-        <see>ISerialPortChangeEvent</see>
+        <see>ISerialPortChangedEvent</see>
       </desc>
     </const>
     <const name="OnParallelPortChange" value="50">
       <desc>
-        <see>IParallelPortChangeEvent</see>
+        <see>IParallelPortChangedEvent</see>
       </desc>
     </const>
     <const name="OnStorageControllerChange" value="51">
       <desc>
-        <see>IStorageControllerChangeEvent</see>
+        <see>IStorageControllerChangedEvent</see>
       </desc>
     </const>
     <const name="OnMediumChange" value="52">
       <desc>
-        <see>IMediumChangeEvent</see>
+        <see>IMediumChangedEvent</see>
       </desc>
     </const>
     <const name="OnVRDPServerChange" value="53">
       <desc>
-        <see>IVRDPServerChangeEvent</see>
+        <see>IVRDPServerChangedEvent</see>
       </desc>
     </const>
     <const name="OnUSBControllerChange" value="54">
       <desc>
-        <see>IUSBControllerChangeEvent</see>
+        <see>IUSBControllerChangedEvent</see>
       </desc>
     </const>
     <const name="OnUSBDeviceStateChange" value="55">
       <desc>
-        <see>IUSBDeviceStateChangeEvent</see>
+        <see>IUSBDeviceStateChangedEvent</see>
       </desc>
     </const>
     <const name="OnSharedFolderChange" value="56">
       <desc>
-        <see>ISharedFolderChangeEvent</see>
+        <see>ISharedFolderChangedEvent</see>
       </desc>
     </const>
     <const name="OnRuntimeError" value="57">
@@ -14758,17 +13931,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="OnCPUChange" value="60">
       <desc>
-        <see>ICPUChangeEvent</see>
+        <see>ICPUChangedEvent</see>
       </desc>
     </const>
     <const name="OnRemoteDisplayInfoChange" value="61">
       <desc>
-        <see>IRemoteDisplayInfoChangeEvent</see>
+        <see>IRemoteDisplayInfoChangedEvent</see>
       </desc>
     </const>
     <const name="OnEventSourceChange" value="62">
       <desc>
-        <see>IEventSourceChangeEvent</see>
+        <see>IEventSourceChangedEvent</see>
       </desc>
     </const>
     <!-- Last event marker -->
@@ -14976,7 +14149,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IMachineStateChangeEvent" extends="IMachineEvent"
+      name="IMachineStateChangedEvent" extends="IMachineEvent"
       uuid="5748F794-48DF-438D-85EB-98FFD70D18C9"
       wsmap="managed" autogen="VBoxEvent" id="OnMachineStateChange"
       >
@@ -14988,7 +14161,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IMachineDataChangeEvent" extends="IMachineEvent"
+      name="IMachineDataChangedEvent" extends="IMachineEvent"
       uuid="6AA70A6C-0DCA-4810-8C5C-457B278E3D49"
       wsmap="managed" autogen="VBoxEvent" id="OnMachineDataChange"
       >
@@ -15016,7 +14189,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="ISessionStateChangeEvent" extends="IMachineEvent"
+      name="ISessionStateChangedEvent" extends="IMachineEvent"
       uuid="714a3eef-799a-4489-86cd-fe8e45b2ff8e"
       wsmap="managed" autogen="VBoxEvent" id="OnSessionStateChange"
       >
@@ -15033,7 +14206,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IGuestPropertyChangeEvent" extends="IMachineEvent"
+      name="IGuestPropertyChangedEvent" extends="IMachineEvent"
       uuid="3f63597a-26f1-4edb-8dd2-6bddd0912368"
       wsmap="managed" autogen="VBoxEvent" id="OnGuestPropertyChange"
       >
@@ -15104,7 +14277,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="ISnapshotChangeEvent" extends="ISnapshotEvent"
+     name="ISnapshotChangedEvent" extends="ISnapshotEvent"
      uuid="07541941-8079-447a-a33e-47a69c7980db"
      wsmap="managed" autogen="VBoxEvent" id="OnSnapshotChange"
      >
@@ -15115,7 +14288,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IMousePointerShapeChangeEvent" extends="IEvent"
+     name="IMousePointerShapeChangedEvent" extends="IEvent"
      uuid="a6dcf6e8-416b-4181-8c4a-45ec95177aef"
      wsmap="managed" autogen="VBoxEvent" id="OnMousePointerShapeChange"
      >
@@ -15188,7 +14361,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IMouseCapabilityChangeEvent" extends="IEvent"
+     name="IMouseCapabilityChangedEvent" extends="IEvent"
      uuid="d633ad48-820c-4207-b46c-6bd3596640d5"
      wsmap="managed" autogen="VBoxEvent" id="OnMouseCapabilityChange"
      >
@@ -15214,7 +14387,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IKeyboardLedsChangeEvent" extends="IEvent"
+     name="IKeyboardLedsChangedEvent" extends="IEvent"
      uuid="6DDEF35E-4737-457B-99FC-BC52C851A44F"
      wsmap="managed" autogen="VBoxEvent" id="OnKeyboardLedsChange"
      >
@@ -15240,7 +14413,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IStateChangeEvent" extends="IEvent"
+     name="IStateChangedEvent" extends="IEvent"
      uuid="4376693C-CF37-453B-9289-3B0F521CAF27"
      wsmap="managed" autogen="VBoxEvent" id="OnStateChange"
      >
@@ -15256,7 +14429,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IAdditionsStateChangeEvent" extends="IEvent"
+     name="IAdditionsStateChangedEvent" extends="IEvent"
      uuid="D70F7915-DA7C-44C8-A7AC-9F173490446A"
      wsmap="managed" autogen="VBoxEvent" id="OnAdditionsStateChange"
      >
@@ -15268,7 +14441,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="INetworkAdapterChangeEvent" extends="IEvent"
+     name="INetworkAdapterChangedEvent" extends="IEvent"
      uuid="08889892-1EC6-4883-801D-77F56CFD0103"
      wsmap="managed" autogen="VBoxEvent" id="OnNetworkAdapterChange"
      >
@@ -15286,7 +14459,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="ISerialPortChangeEvent" extends="IEvent"
+     name="ISerialPortChangedEvent" extends="IEvent"
      uuid="3BA329DC-659C-488B-835C-4ECA7AE71C6C"
      wsmap="managed" autogen="VBoxEvent" id="OnSerialPortChange"
      >
@@ -15304,7 +14477,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IParallelPortChangeEvent" extends="IEvent"
+     name="IParallelPortChangedEvent" extends="IEvent"
      uuid="813C99FC-9849-4F47-813E-24A75DC85615"
      wsmap="managed" autogen="VBoxEvent" id="OnParallelPortChange"
      >
@@ -15322,7 +14495,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IStorageControllerChangeEvent" extends="IEvent"
+     name="IStorageControllerChangedEvent" extends="IEvent"
      uuid="715212BF-DA59-426E-8230-3831FAA52C56"
      wsmap="managed" autogen="VBoxEvent" id="OnStorageControllerChange"
      >
@@ -15334,7 +14507,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IMediumChangeEvent" extends="IEvent"
+     name="IMediumChangedEvent" extends="IEvent"
      uuid="0FE2DA40-5637-472A-9736-72019EABD7DE"
      wsmap="managed" autogen="VBoxEvent" id="OnMediumChange"
      >
@@ -15351,7 +14524,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
    <interface
-     name="ICPUChangeEvent" extends="IEvent"
+     name="ICPUChangedEvent" extends="IEvent"
      uuid="D0F0BECC-EE17-4D17-A8CC-383B0EB55E9D"
      wsmap="managed" autogen="VBoxEvent" id="OnCPUChange"
      >
@@ -15371,7 +14544,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IVRDPServerChangeEvent" extends="IEvent"
+     name="IVRDPServerChangedEvent" extends="IEvent"
      uuid="726038B6-6279-4A7A-8037-D041693D1915"
      wsmap="managed" autogen="VBoxEvent" id="OnVRDPServerChange"
      >
@@ -15384,7 +14557,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
    <interface
-     name="IRemoteDisplayInfoChangeEvent" extends="IEvent"
+     name="IRemoteDisplayInfoChangedEvent" extends="IEvent"
      uuid="65B556C5-2A99-47D8-B311-FC177F0914CD"
      wsmap="managed" autogen="VBoxEvent" id="OnRemoteDisplayInfoChange"
      >
@@ -15396,7 +14569,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IUSBControllerChangeEvent" extends="IEvent"
+     name="IUSBControllerChangedEvent" extends="IEvent"
      uuid="93BADC0C-61D9-4940-A084-E6BB29AF3D83"
      wsmap="managed" autogen="VBoxEvent" id="OnUSBControllerChange"
      >
@@ -15409,7 +14582,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IUSBDeviceStateChangeEvent" extends="IEvent"
+     name="IUSBDeviceStateChangedEvent" extends="IEvent"
      uuid="806da61b-6679-422a-b629-51b06b0c6d93"
      wsmap="managed" autogen="VBoxEvent" id="OnUSBDeviceStateChange"
      >
@@ -15450,7 +14623,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
    <interface
-     name="ISharedFolderChangeEvent" extends="IEvent"
+     name="ISharedFolderChangedEvent" extends="IEvent"
      uuid="B66349B5-3534-4239-B2DE-8E1535D94C0B"
      wsmap="managed" autogen="VBoxEvent" id="OnSharedFolderChange"
      >
@@ -15547,7 +14720,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
    <interface
-     name="IEventSourceChangeEvent" extends="IEvent"
+     name="IEventSourceChangedEvent" extends="IEvent"
      uuid="e7932cb8-f6d4-4ab6-9cbf-558eb8959a6a"
      waitable="yes"
      wsmap="managed" autogen="VBoxEvent" id="OnEventSourceChange"
@@ -15570,7 +14743,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IExtraDataChangeEvent" extends="IEvent"
+      name="IExtraDataChangedEvent" extends="IEvent"
       uuid="024F00CE-6E0B-492A-A8D0-968472A94DC7"
       wsmap="managed" autogen="VBoxEvent" id="OnExtraDataChange"
       >
@@ -15733,7 +14906,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"
            namespace="virtualbox.org">
       <interface name="IVirtualBox" default="yes"/>
-      <eventsink name="IVirtualBoxCallback" default="yes"/>
     </class>
   </module>
 
@@ -15746,14 +14918,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <class name="Console" uuid="577230FF-164F-4CAC-8548-312D8275A4A7"
            namespace="virtualbox.org">
       <interface name="IConsole" default="yes"/>
-      <eventsink name="IConsoleCallback" default="yes"/>
-    </class>
-
-    <class name="CallbackWrapper" uuid="0AD9C4CE-3C33-4C2D-AC7B-B008196787A0"
-           namespace="virtualbox.org">
-      <interface name="ILocalOwner" default="yes"/>
-      <interface name="IVirtualBoxCallback"/>
-      <interface name="IConsoleCallback"/>
     </class>
   </module>
 

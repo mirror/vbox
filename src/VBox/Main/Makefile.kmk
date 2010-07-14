@@ -638,7 +638,6 @@ VBoxC_SOURCES = \
 	ProgressImpl.cpp \
 	SharedFolderImpl.cpp \
 	SessionImpl.cpp \
-	VirtualBoxCallbackImpl.cpp \
 	ConsoleImpl.cpp \
 	ConsoleImpl2.cpp \
 	ConsoleImplTeleporter.cpp \
@@ -658,8 +657,7 @@ VBoxC_SOURCES = \
 VBoxC_SOURCES.win = \
 	win/dllmain.cpp \
 	win/VBoxC.def \
-	win/VBoxC.rc \
-	win/VBoxComEvents.cpp
+	win/VBoxC.rc
 
 
 ifdef VBOX_WITH_XPCOM

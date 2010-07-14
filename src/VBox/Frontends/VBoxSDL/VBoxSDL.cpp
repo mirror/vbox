@@ -275,7 +275,7 @@ public:
             case VBoxEventType_OnExtraDataChange:
             {
 #ifdef VBOX_SECURELABEL
-                ComPtr<IExtraDataChangeEvent> edcev = aEvent;
+                ComPtr<IExtraDataChangedEvent> edcev = aEvent;
                 Assert(edcev);
                 Bstr key, machineId;
                 edcev->COMGETTER(MachineId)(machineId.asOutParam());
@@ -365,7 +365,7 @@ public:
         {
             case VBoxEventType_OnMousePointerShapeChange:
             {
-                ComPtr<IMousePointerShapeChangeEvent> mpscev = aEvent;
+                ComPtr<IMousePointerShapeChangedEvent> mpscev = aEvent;
                 Assert(mpscev);
                 PointerShapeChangeData *data;
                 BOOL    visible,  alpha;
@@ -398,7 +398,7 @@ public:
             }
             case VBoxEventType_OnMouseCapabilityChange:
             {
-                ComPtr<IMouseCapabilityChangeEvent> mccev = aEvent;
+                ComPtr<IMouseCapabilityChangedEvent> mccev = aEvent;
                 Assert(mccev);
                 mccev->COMGETTER(SupportsAbsolute)(&gfAbsoluteMouseGuest);
                 mccev->COMGETTER(SupportsRelative)(&gfRelativeMouseGuest);
@@ -412,7 +412,7 @@ public:
             }
             case VBoxEventType_OnKeyboardLedsChange:
             {
-                ComPtr<IKeyboardLedsChangeEvent> klcev = aEvent;
+                ComPtr<IKeyboardLedsChangedEvent> klcev = aEvent;
                 Assert(klcev);
                 BOOL fNumLock, fCapsLock, fScrollLock;
                 klcev->COMGETTER(NumLock)(&fNumLock);
@@ -431,7 +431,7 @@ public:
 
             case VBoxEventType_OnStateChange:
             {
-                ComPtr<IStateChangeEvent> scev = aEvent;
+                ComPtr<IStateChangedEvent> scev = aEvent;
                 Assert(scev);
                 MachineState_T machineState;
                 scev->COMGETTER(State)(&machineState);

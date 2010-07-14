@@ -35,7 +35,6 @@ class SharedFolder;
 class RemoteDisplayInfo;
 class AudioSniffer;
 class ConsoleVRDPServer;
-class ConsoleCallbackRegistration;      /* See ConsoleImpl.cpp. */
 class VMMDev;
 class Progress;
 
@@ -83,8 +82,6 @@ class ATL_NO_VTABLE Console :
     VBOX_SCRIPTABLE_IMPL(IConsole)
 #ifdef RT_OS_WINDOWS
     , public CComCoClass<Console, &CLSID_Console>
-    , public IConnectionPointContainerImpl<Console>
-    , public IConnectionPointImpl<Console, &IID_IConsoleCallback, CComDynamicUnkArray>
 #endif
 {
     Q_OBJECT
@@ -103,13 +100,6 @@ public:
         COM_INTERFACE_ENTRY(IDispatch)
         COM_INTERFACE_ENTRY(IConnectionPointContainer)
     END_COM_MAP()
-
-#ifdef RT_OS_WINDOWS
-    BEGIN_CONNECTION_POINT_MAP(Console)
-         CONNECTION_POINT_ENTRY(IID_IConsoleCallback)
-    END_CONNECTION_POINT_MAP()
-#endif
-
 
     Console();
     ~Console();
@@ -162,8 +152,6 @@ public:
     STDMETHOD(DeleteSnapshot)(IN_BSTR aId, IProgress **aProgress);
     STDMETHOD(RestoreSnapshot)(ISnapshot *aSnapshot, IProgress **aProgress);
     STDMETHOD(Teleport)(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxDowntime, IProgress **aProgress);
-    STDMETHOD(RegisterCallback)(IConsoleCallback *aCallback);
-    STDMETHOD(UnregisterCallback)(IConsoleCallback *aCallback);
 
     // public methods for internal purposes only
 
@@ -681,9 +669,6 @@ private:
      * operation before starting. */
     ComObjPtr<Progress> mptrCancelableProgress;
 
-    typedef std::list<ConsoleCallbackRegistration> CallbackList;
-    CallbackList mCallbacks;
-
     struct
     {
         /** OnMousePointerShapeChange() cache */
@@ -731,10 +716,6 @@ private:
         }
     }
     mCallbackData;
-
-#ifdef RT_OS_WINDOWS
-    ComEventsHelper                     mComEvHelper;
-#endif
 
     friend struct VMTask;
 };

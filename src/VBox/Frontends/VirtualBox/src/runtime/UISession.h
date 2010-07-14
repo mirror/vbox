@@ -33,7 +33,6 @@ class QMenuBar;
 
 /* Local forwards */
 class UIActionsPool;
-class UIConsoleCallback;
 class UIFrameBuffer;
 class UIMachine;
 class UIMachineLogic;
@@ -208,7 +207,6 @@ private:
     /* Private variables: */
     UIMachine *m_pMachine;
     CSession &m_session;
-    const CConsoleCallback m_callback;
 
     UIMachineMenuBar *m_pMenuPool;
 
@@ -260,4 +258,3 @@ private:
 };
 
 #endif // !___UIConsole_h___
-

@@ -337,7 +337,7 @@ static int handleWaitGuestProperty(HandlerArg *a)
             {
                 case VBoxEventType_OnGuestPropertyChange:
                 {
-                    ComPtr<IGuestPropertyChangeEvent> gpcev = ev;
+                    ComPtr<IGuestPropertyChangedEvent> gpcev = ev;
                     Assert(gpcev);
                     Bstr aNextStrGuid;
                     gpcev->COMGETTER(MachineId)(aNextStrGuid.asOutParam());

@@ -746,7 +746,7 @@ STDMETHODIMP Display::HandleEvent(IEvent * aEvent)
     {
         case VBoxEventType_OnStateChange:
         {
-            ComPtr<IStateChangeEvent> scev = aEvent;
+            ComPtr<IStateChangedEvent> scev = aEvent;
             Assert(scev);
             MachineState_T machineState;
             scev->COMGETTER(State)(&machineState);

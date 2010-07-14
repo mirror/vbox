@@ -65,13 +65,13 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
          */
         case KVBoxEventType_OnMachineStateChange:
         {
-            CMachineStateChangeEvent es(event);
+            CMachineStateChangedEvent es(event);
             emit sigMachineStateChange(es.GetMachineId(), es.GetState());
             break;
         }
         case KVBoxEventType_OnMachineDataChange:
         {
-            CMachineDataChangeEvent es(event);
+            CMachineDataChangedEvent es(event);
             emit sigMachineDataChange(es.GetMachineId());
             break;
         }
@@ -88,7 +88,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         case KVBoxEventType_OnExtraDataChange:
         {
-            CExtraDataChangeEvent es(event);
+            CExtraDataChangedEvent es(event);
             emit sigExtraDataChange(es.GetMachineId(), es.GetKey(), es.GetValue());
             break;
         }
@@ -103,7 +103,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         case KVBoxEventType_OnSessionStateChange:
         {
-            CSessionStateChangeEvent es(event);
+            CSessionStateChangedEvent es(event);
             emit sigSessionStateChange(es.GetMachineId(), es.GetState());
             break;
         }
@@ -113,7 +113,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
          */
         case KVBoxEventType_OnSnapshotChange:
         {
-            CSnapshotChangeEvent es(event);
+            CSnapshotChangedEvent es(event);
             emit sigSnapshotChange(es.GetMachineId(), es.GetSnapshotId());
             break;
         }
@@ -125,25 +125,25 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
          */
         case KVBoxEventType_OnMousePointerShapeChange:
         {
-            CMousePointerShapeChangeEvent es(event);
+            CMousePointerShapeChangedEvent es(event);
             emit sigMousePointerShapeChange(es.GetVisible(), es.GetAlpha(), QPoint(es.GetXhot(), es.GetYhot()), QSize(es.GetWidth(), es.GetHeight()), es.GetShape());
             break;
         }
         case KVBoxEventType_OnMouseCapabilityChange:
         {
-            CMouseCapabilityChangeEvent es(event);
+            CMouseCapabilityChangedEvent es(event);
             emit sigMouseCapabilityChange(es.GetSupportsAbsolute(), es.GetSupportsRelative(), es.GetNeedsHostCursor());
             break;
         }
         case KVBoxEventType_OnKeyboardLedsChange:
         {
-            CKeyboardLedsChangeEvent es(event);
+            CKeyboardLedsChangedEvent es(event);
             emit sigKeyboardLedsChangeEvent(es.GetNumLock(), es.GetCapsLock(), es.GetScrollLock());
             break;
         }
         case KVBoxEventType_OnStateChange:
         {
-            CStateChangeEvent es(event);
+            CStateChangedEvent es(event);
             emit sigStateChange(es.GetState());
             break;
         }
@@ -154,7 +154,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         case KVBoxEventType_OnNetworkAdapterChange:
         {
-            CNetworkAdapterChangeEvent es(event);
+            CNetworkAdapterChangedEvent es(event);
             emit sigNetworkAdapterChange(es.GetNetworkAdapter());
             break;
         }
@@ -165,7 +165,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
          */
         case KVBoxEventType_OnMediumChange:
         {
-            CMediumChangeEvent es(event);
+            CMediumChangedEvent es(event);
             emit sigMediumChange(es.GetMediumAttachment());
             break;
         }
@@ -181,13 +181,13 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         case KVBoxEventType_OnUSBDeviceStateChange:
         {
-            CUSBDeviceStateChangeEvent es(event);
+            CUSBDeviceStateChangedEvent es(event);
             emit sigUSBDeviceStateChange(es.GetDevice(), es.GetAttached(), es.GetError());
             break;
         }
         case KVBoxEventType_OnSharedFolderChange:
         {
-            CSharedFolderChangeEvent es(event);
+            CSharedFolderChangedEvent es(event);
             emit sigSharedFolderChange();
             break;
         }

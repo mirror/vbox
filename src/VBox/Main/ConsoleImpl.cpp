@@ -254,10 +254,6 @@ struct VMSaveTask : public VMProgressTask
 class ConsoleCallbackRegistration
 {
 public:
-    ComPtr<IConsoleCallback> ptrICb;
-    /** Bitmap of disabled callback methods, that is methods that has return
-     * VBOX_E_DONT_CALL_AGAIN. */
-    uint32_t                    bmDisabled;
     /** Callback bit indexes (for bmDisabled). */
     typedef enum
     {
@@ -282,8 +278,7 @@ public:
         kOnShowWindow
     } CallbackBit;
 
-    ConsoleCallbackRegistration(IConsoleCallback *pIConsoleCallback)
-        : ptrICb(pIConsoleCallback), bmDisabled(0)
+    ConsoleCallbackRegistration()
     {
         /* nothing */
     }
@@ -291,49 +286,6 @@ public:
     ~ConsoleCallbackRegistration()
     {
        /* nothing */
-    }
-
-    /** Equal operator for std::find. */
-    bool operator==(const ConsoleCallbackRegistration &rThat) const
-    {
-        return this->ptrICb == rThat.ptrICb;
-    }
-
-    /**
-     * Checks if the callback is wanted, i.e. if the method hasn't yet returned
-     * VBOX_E_DONT_CALL_AGAIN.
-     * @returns @c true if it is wanted, @c false if not.
-     * @param   enmBit      The callback, be sure to get this one right!
-     */
-    inline bool isWanted(CallbackBit enmBit) const
-    {
-        return !ASMBitTest(&bmDisabled, enmBit);
-    }
-
-    /**
-     * Called in response to VBOX_E_DONT_CALL_AGAIN.
-     * @param   enmBit      The callback, be sure to get this one right!
-     */
-    inline void setDontCallAgain(CallbackBit enmBit)
-    {
-        ASMAtomicBitSet(&bmDisabled, enmBit);
-    }
-
-    /**
-     * Handle a callback return code, picking up VBOX_E_DONT_CALL_AGAIN.
-     *
-     * @returns hrc or S_OK if VBOX_E_DONT_CALL_AGAIN.
-     * @param   enmBit      The callback, be sure to get this one right!
-     * @param   hrc         The status code returned by the callback.
-     */
-    inline HRESULT handleResult(CallbackBit enmBit, HRESULT hrc)
-    {
-        if (hrc == VBOX_E_DONT_CALL_AGAIN)
-        {
-            setDontCallAgain(enmBit);
-            hrc = S_OK;
-        }
-        return hrc;
     }
 };
 
@@ -348,135 +300,39 @@ public:
 #define PREP_ARGS7(a1,a2,a3,a4,a5,a6,a7)     a1, a2, a3, a4, a5, a6, a7
 #define PREP_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8)  a1, a2, a3, a4, a5, a6, a7, a8
 
-#ifdef RT_OS_WINDOWS
-
 /**
- * Macro used to prepare for COM event firing, note CComObjectRootEx locking.
- */
-#define CONSOLE_COM_EVENTS_START(name,count)    \
-   {                                            \
-      ComEventDesc evDesc;                      \
-                                                \
-      this->Lock();                             \
-      int nConnections = this->m_vec.GetSize(); \
-      if (nConnections)                         \
-         evDesc.init(#name, count);
-
-/**
- * Actual event firing for all connection points.
- * Note some subtlety in the fact that connection point list access
- * must be synchronized with CComObjectRootEx Lock()/Unlock() methods.
- */
-#define CONSOLE_COM_EVENTS_END()                                \
-    for (int i=0; i<nConnections; i++)                          \
-    {                                                           \
-        ComPtr<IUnknown> sp = this->m_vec.GetAt(i);             \
-        ComPtr<IDispatch> cbD;                                  \
-        cbD = sp;                                               \
-        if (cbD != NULL)                                        \
-        {                                                       \
-            CComVariant varResult;                              \
-            this->mComEvHelper.fire(cbD, evDesc, &varResult);   \
-        }                                                       \
-    }                                                           \
-    this->Unlock();                                             \
-   }
-
-/**
- * A bit non-trivial part about those macros is that we rely heavily on C++ type
- * casting and assignment operator overloading in CComVariant when instantiating
- * member template add(), and every add() here could be, ofc, different function.
- */
-#define PREP_COM_ARGS0()
-#define PREP_COM_ARGS1(a1)                      if (nConnections) evDesc.add(a1)
-#define PREP_COM_ARGS2(a1,a2)                   if (nConnections) evDesc.add(a1).add(a2)
-#define PREP_COM_ARGS3(a1,a2,a3)                if (nConnections) evDesc.add(a1).add(a2).add(a3)
-#define PREP_COM_ARGS4(a1,a2,a3,a4)             if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4)
-#define PREP_COM_ARGS5(a1,a2,a3,a4,a5)          if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5)
-#define PREP_COM_ARGS6(a1,a2,a3,a4,a5,a6)       if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6)
-#define PREP_COM_ARGS7(a1,a2,a3,a4,a5,a6,a7)    if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6).add(a7)
-#define PREP_COM_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8) if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6).add(a7).add(a8)
-
-#else
-
-/**
- * No COM events for XPCOM targets ofc.
- */
-#define CONSOLE_COM_EVENTS_START(name,count)
-#define CONSOLE_COM_EVENTS_END()
-#define PREP_COM_ARGS0()
-#define PREP_COM_ARGS1(a1)
-#define PREP_COM_ARGS2(a1,a2)
-#define PREP_COM_ARGS3(a1,a2,a3)
-#define PREP_COM_ARGS4(a1,a2,a3,a4)
-#define PREP_COM_ARGS5(a1,a2,a3,a4,a5)
-#define PREP_COM_ARGS6(a1,a2,a3,a4,a5,a6)
-#define PREP_COM_ARGS7(a1,a2,a3,a4,a5,a6,a7)
-#define PREP_COM_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8)
-
-#endif
-
-/**
- * Macro for iterating the callback list (Console::mCallbacks) and invoking the
- * given method on each entry, along with firing appropriate COM events on Windows.
- *
- * This handles VBOX_E_DONT_CALL_AGAIN as well as removing dead interfaces
- * which.  This makes the code a big and clunky, thus this macro.  It may make
- * debugging and selective logging a bit of a pain, but duplicating this code
- * some seventeen times is much more of a pain.
- *
- * The caller must hold the console object lock - read or write, we don't care.
- * The caller must be a Console method - the console members accessible thru the
- * 'this' pointer.
+ * Macro for firing appropriate event.
  *
  * @param   CallbackMethod      The callback method, like OnKeyboardLedsChange.
  * @param   InvokeCb            Callbacks invocation code
  * @param   PreprEvent          Event preparation code
  * @param   Args                Number of callback arguments
  */
-#define CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, Argc, Args, PrepComArgs, MaybeComma) \
+#define CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, Args, MaybeComma) \
     do \
     { \
-        CONSOLE_COM_EVENTS_START(CallbackMethod,Argc);   \
-        PrepComArgs; \
-        CONSOLE_COM_EVENTS_END();  \
         VBoxEventDesc evDesc; \
         evDesc.init(mEventSource, VBoxEventType_##CallbackMethod MaybeComma Args);     \
         evDesc.fire(/* don't wait for delivery */ 0); \
-        CallbackList::iterator it = this->mCallbacks.begin(); \
-        while (it != this->mCallbacks.end()) \
-        { \
-            if (it->isWanted(ConsoleCallbackRegistration::k ## CallbackMethod)) \
-            { \
-                HRESULT hrc = it->ptrICb-> CallbackMethod (Args);                   \
-                hrc = it->handleResult(ConsoleCallbackRegistration::k ## CallbackMethod, hrc); \
-                if (FAILED_DEAD_INTERFACE(hrc)) \
-                { \
-                    it = this->mCallbacks.erase(it); \
-                    continue; \
-                } \
-            } \
-            ++it; \
-        } \
     } while (0)
 
 #define COMMA ,
 #define NO_COMMA
 /* Actual invocation macroses for different number of parameters */
 #define CONSOLE_DO_CALLBACKS0(CallbackMethod)                           \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod,  0, PREP_ARGS0(), PREP_COM_ARGS0(), NO_COMMA)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod,  PREP_ARGS0(), NO_COMMA)
 #define CONSOLE_DO_CALLBACKS1(CallbackMethod,Arg1)                      \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 1, PREP_ARGS1(Arg1), PREP_COM_ARGS1(Arg1), COMMA)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS1(Arg1), COMMA)
 #define CONSOLE_DO_CALLBACKS2(CallbackMethod,Arg1,Arg2)                 \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 2, PREP_ARGS2(Arg1,Arg2),PREP_COM_ARGS2(Arg1,Arg2), COMMA)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS2(Arg1,Arg2),COMMA)
 #define CONSOLE_DO_CALLBACKS3(CallbackMethod,Arg1,Arg2,Arg3)            \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 3, PREP_ARGS3(Arg1,Arg2,Arg3), PREP_COM_ARGS3(Arg1,Arg2,Arg3), COMMA)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS3(Arg1,Arg2,Arg3), COMMA)
 #define CONSOLE_DO_CALLBACKS4(CallbackMethod,Arg1,Arg2,Arg3,Arg4)       \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 4, PREP_ARGS4(Arg1,Arg2,Arg3,Arg4), PREP_COM_ARGS4(Arg1,Arg2,Arg3,Arg4), COMMA)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS4(Arg1,Arg2,Arg3,Arg4), COMMA)
 #define CONSOLE_DO_CALLBACKS7(CallbackMethod,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7) \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 7, PREP_ARGS7(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), PREP_COM_ARGS7(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), COMMA)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS7(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), COMMA)
 #define CONSOLE_DO_CALLBACKS8(CallbackMethod,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8) \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 8, PREP_ARGS8(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8), PREP_COM_ARGS8(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7, Arg8), COMMA)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS8(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8), COMMA)
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -545,8 +401,6 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     unconst(mMachine) = aMachine;
     unconst(mControl) = aControl;
 
-    mCallbackData.clear();
-
     /* Cache essential properties and objects */
 
     rc = mMachine->COMGETTER(State)(&mMachineState);
@@ -605,11 +459,6 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
 
     unconst(mAudioSniffer) = new AudioSniffer(this);
     AssertReturn(mAudioSniffer, E_FAIL);
-
-#ifdef RT_OS_WINDOWS
-    if (SUCCEEDED(rc))
-        rc = mComEvHelper.init(IID_IConsoleCallback);
-#endif
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -726,12 +575,6 @@ void Console::uninit()
 
     // we don't perform uninit() as it's possible that some pending event refers to this source
     unconst(mEventSource).setNull();
-
-    /* Release all callbacks. Do this after uninitializing the components,
-     * as some of them are well-behaved and unregister their callbacks.
-     * These would trigger error messages complaining about trying to
-     * unregister a non-registered callback. */
-    mCallbacks.clear();
 
     /* dynamically allocated members of mCallbackData are uninitialized
      * at the end of powerDown() */
@@ -3108,79 +2951,6 @@ STDMETHODIMP Console::RestoreSnapshot(ISnapshot *aSnapshot, IProgress **aProgres
     return S_OK;
 }
 
-STDMETHODIMP Console::RegisterCallback(IConsoleCallback *aCallback)
-{
-    CheckComArgNotNull(aCallback);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* Query the interface we associate with IConsoleCallback as the caller
-       might've been compiled against a different SDK. */
-    void *pvCallback;
-    HRESULT hrc = aCallback->QueryInterface(COM_IIDOF(IConsoleCallback), &pvCallback);
-    if (FAILED(hrc))
-        return setError(hrc, tr("Incompatible IConsoleCallback interface - version mismatch?"));
-    aCallback = (IConsoleCallback *)pvCallback;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    mCallbacks.push_back(CallbackList::value_type(aCallback));
-
-    /* Inform the callback about the current status (for example, the new
-     * callback must know the current mouse capabilities and the pointer
-     * shape in order to properly integrate the mouse pointer). */
-
-    if (mCallbackData.mpsc.valid)
-        aCallback->OnMousePointerShapeChange(mCallbackData.mpsc.visible,
-                                             mCallbackData.mpsc.alpha,
-                                             mCallbackData.mpsc.xHot,
-                                             mCallbackData.mpsc.yHot,
-                                             mCallbackData.mpsc.width,
-                                             mCallbackData.mpsc.height,
-                                             ComSafeArrayAsInParam(mCallbackData.mpsc.shape));
-    if (mCallbackData.mcc.valid)
-        aCallback->OnMouseCapabilityChange(mCallbackData.mcc.supportsAbsolute,
-                                           mCallbackData.mcc.supportsRelative,
-                                           mCallbackData.mcc.needsHostCursor);
-
-    aCallback->OnAdditionsStateChange();
-
-    if (mCallbackData.klc.valid)
-        aCallback->OnKeyboardLedsChange(mCallbackData.klc.numLock,
-                                        mCallbackData.klc.capsLock,
-                                        mCallbackData.klc.scrollLock);
-
-    /* Note: we don't call OnStateChange for new callbacks because the
-     * machine state is a) not actually changed on callback registration
-     * and b) can be always queried from Console. */
-
-    /* Drop the reference we got via QueryInterface. */
-    aCallback->Release();
-    return S_OK;
-}
-
-STDMETHODIMP Console::UnregisterCallback(IConsoleCallback *aCallback)
-{
-    CheckComArgNotNull(aCallback);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    CallbackList::iterator it;
-    it = std::find(mCallbacks.begin(),
-                   mCallbacks.end(),
-                   CallbackList::value_type(aCallback));
-    if (it == mCallbacks.end())
-        return setError(E_INVALIDARG,
-            tr("The given callback handler is not registered"));
-
-    mCallbacks.erase(it);
-    return S_OK;
-}
-
 // Non-interface public methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -4964,29 +4734,10 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
     AssertComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    CallbackList::iterator it = mCallbacks.begin();
     VBoxEventDesc evDesc;
 
     if (aCheck)
     {
-        while (it != mCallbacks.end())
-        {
-            if (it->isWanted(ConsoleCallbackRegistration::kOnCanShowWindow))
-            {
-                BOOL canShow = FALSE;
-                HRESULT hrc = it->ptrICb->OnCanShowWindow(&canShow);
-                hrc = it->handleResult(ConsoleCallbackRegistration::kOnCanShowWindow, hrc);
-                if (FAILED_DEAD_INTERFACE(hrc))
-                {
-                    it = this->mCallbacks.erase(it);
-                    continue;
-                }
-                AssertComRC(hrc);
-                if (FAILED(hrc) || !canShow)
-                    return hrc;
-            }
-            ++it;
-        }
         evDesc.init(mEventSource, VBoxEventType_OnCanShowWindow);
         BOOL fDelivered = evDesc.fire(5000); /* Wait up to 5 secs for delivery */
         //Assert(fDelivered);
@@ -5013,29 +4764,6 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
     }
     else
     {
-        while (it != mCallbacks.end())
-        {
-            if (it->isWanted(ConsoleCallbackRegistration::kOnShowWindow))
-            {
-                ULONG64 winId = 0;
-                HRESULT hrc = it->ptrICb->OnShowWindow(&winId);
-                hrc = it->handleResult(ConsoleCallbackRegistration::kOnCanShowWindow, hrc);
-                if (FAILED_DEAD_INTERFACE(hrc))
-                {
-                    it = this->mCallbacks.erase(it);
-                    continue;
-                }
-                AssertComRC(hrc);
-                if (FAILED(hrc))
-                    return hrc;
-
-                /* only one callback may return non-null winId */
-                Assert(*aWinId == 0 || winId == 0);
-                if (*aWinId == 0)
-                    *aWinId = winId;
-            }
-            ++it;
-        }
         evDesc.init(mEventSource, VBoxEventType_OnShowWindow, UINT64_C(0));
         BOOL fDelivered = evDesc.fire(5000); /* Wait up to 5 secs for delivery */
         //Assert(fDelivered);
