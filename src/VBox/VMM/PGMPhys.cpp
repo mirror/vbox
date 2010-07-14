@@ -3205,12 +3205,6 @@ static DECLCALLBACK(int) pgmR3PhysChunkAgeingRolloverCallback(PAVLU32NODECORE pN
         pChunk->iAge = 1;
     else /* iAge = 0 */
         pChunk->iAge = 4;
-
-    /* reinsert */
-    PVM pVM = (PVM)pvUser;
-    RTAvllU32Remove(&pVM->pgm.s.ChunkR3Map.pAgeTree, pChunk->AgeCore.Key);
-    pChunk->AgeCore.Key = pChunk->iAge;
-    RTAvllU32Insert(&pVM->pgm.s.ChunkR3Map.pAgeTree, &pChunk->AgeCore);
     return 0;
 }
 
@@ -3225,11 +3219,8 @@ static DECLCALLBACK(int) pgmR3PhysChunkAgeingCallback(PAVLU32NODECORE pNode, voi
     if (!pChunk->iAge)
     {
         PVM pVM = (PVM)pvUser;
-        RTAvllU32Remove(&pVM->pgm.s.ChunkR3Map.pAgeTree, pChunk->AgeCore.Key);
-        pChunk->AgeCore.Key = pChunk->iAge = pVM->pgm.s.ChunkR3Map.iNow;
-        RTAvllU32Insert(&pVM->pgm.s.ChunkR3Map.pAgeTree, &pChunk->AgeCore);
+        pChunk->iAge = pVM->pgm.s.ChunkR3Map.iNow;
     }
-
     return 0;
 }
 
@@ -3262,6 +3253,7 @@ typedef struct PGMR3PHYSCHUNKUNMAPCB
 {
     PVM                 pVM;            /**< The VM handle. */
     PPGMCHUNKR3MAP      pChunk;         /**< The chunk to unmap. */
+    int32_t             iLastAge;       /**< Highest age found so far. */
 } PGMR3PHYSCHUNKUNMAPCB, *PPGMR3PHYSCHUNKUNMAPCB;
 
 
@@ -3272,13 +3264,16 @@ typedef struct PGMR3PHYSCHUNKUNMAPCB
 static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE pNode, void *pvUser)
 {
     PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)((uint8_t *)pNode - RT_OFFSETOF(PGMCHUNKR3MAP, AgeCore));
+    PPGMR3PHYSCHUNKUNMAPCB pArg = (PPGMR3PHYSCHUNKUNMAPCB)pvUser;
+
     if (    pChunk->iAge
-        &&  !pChunk->cRefs)
+        &&  !pChunk->cRefs
+        &&  pArg->iLastAge < pChunk->iAge)
     {
         /*
          * Check that it's not in any of the TLBs.
          */
-        PVM pVM = ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pVM;
+        PVM pVM = pArg->pVM;
         for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
             if (pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk == pChunk)
             {
@@ -3294,8 +3289,8 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE p
                 }
         if (pChunk)
         {
-            ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pChunk = pChunk;
-            return 1; /* done */
+            pArg->pChunk = pChunk;
+            pArg->iLastAge = pChunk->iAge;
         }
     }
     return 0;
@@ -3325,14 +3320,14 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
      * Enumerate the age tree starting with the left most node.
      */
     PGMR3PHYSCHUNKUNMAPCB Args;
-    Args.pVM = pVM;
-    Args.pChunk = NULL;
-    if (RTAvllU32DoWithAll(&pVM->pgm.s.ChunkR3Map.pAgeTree, true /*fFromLeft*/, pgmR3PhysChunkUnmapCandidateCallback, &Args))
-    {
-        Assert(Args.pChunk);
-        if (Args.pChunk)
-            return Args.pChunk->Core.Key;
-    }
+    Args.pVM      = pVM;
+    Args.pChunk   = NULL;
+    Args.iLastAge = 0;
+    RTAvlU32DoWithAll(&pVM->pgm.s.ChunkR3Map.pTree, true /*fFromLeft*/, pgmR3PhysChunkUnmapCandidateCallback, &Args);
+    Assert(Args.pChunk);
+    if (Args.pChunk)
+        return Args.pChunk->Core.Key;
+
     return INT32_MAX;
 }
 
@@ -3369,50 +3364,53 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
         Req.idChunkMap = NIL_GMM_CHUNKID;
         Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
 
-        rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
-        if (RT_SUCCESS(rc))
+        if (Req.idChunkUnmap != INT32_MAX)
         {
-            /* remove the unmapped one. */
-            PPGMCHUNKR3MAP pUnmappedChunk = (PPGMCHUNKR3MAP)RTAvlU32Remove(&pVM->pgm.s.ChunkR3Map.pTree, Req.idChunkUnmap);
-            AssertRelease(pUnmappedChunk);
-            pUnmappedChunk->pv = NULL;
-            pUnmappedChunk->Core.Key = UINT32_MAX;
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-            MMR3HeapFree(pUnmappedChunk);
-#else
-            MMR3UkHeapFree(pVM, pUnmappedChunk, MM_TAG_PGM_CHUNK_MAPPING);
-#endif
-            pVM->pgm.s.ChunkR3Map.c--;
-            pVM->pgm.s.cUnmappedChunks++;
-
-            /* Flush dangling PGM pointers (R3 & R0 ptrs to GC physical addresses) */
-            /* todo: we should not flush chunks which include cr3 mappings. */
-            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+            rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
+            if (RT_SUCCESS(rc))
             {
-                PPGMCPU pPGM = &pVM->aCpus[idCpu].pgm.s;
+                /* remove the unmapped one. */
+                PPGMCHUNKR3MAP pUnmappedChunk = (PPGMCHUNKR3MAP)RTAvlU32Remove(&pVM->pgm.s.ChunkR3Map.pTree, Req.idChunkUnmap);
+                AssertRelease(pUnmappedChunk);
+                pUnmappedChunk->pv = NULL;
+                pUnmappedChunk->Core.Key = UINT32_MAX;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+                MMR3HeapFree(pUnmappedChunk);
+#else
+                MMR3UkHeapFree(pVM, pUnmappedChunk, MM_TAG_PGM_CHUNK_MAPPING);
+#endif
+                pVM->pgm.s.ChunkR3Map.c--;
+                pVM->pgm.s.cUnmappedChunks++;
 
-                pPGM->pGst32BitPdR3    = NULL;
-                pPGM->pGstPaePdptR3    = NULL;
-                pPGM->pGstAmd64Pml4R3  = NULL;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                pPGM->pGst32BitPdR0    = NIL_RTR0PTR;
-                pPGM->pGstPaePdptR0    = NIL_RTR0PTR;
-                pPGM->pGstAmd64Pml4R0  = NIL_RTR0PTR;
-#endif
-                for (unsigned i = 0; i < RT_ELEMENTS(pPGM->apGstPaePDsR3); i++)
+                /* Flush dangling PGM pointers (R3 & R0 ptrs to GC physical addresses) */
+                /* todo: we should not flush chunks which include cr3 mappings. */
+                for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                 {
-                    pPGM->apGstPaePDsR3[i]             = NULL;
+                    PPGMCPU pPGM = &pVM->aCpus[idCpu].pgm.s;
+
+                    pPGM->pGst32BitPdR3    = NULL;
+                    pPGM->pGstPaePdptR3    = NULL;
+                    pPGM->pGstAmd64Pml4R3  = NULL;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                    pPGM->apGstPaePDsR0[i]             = NIL_RTR0PTR;
+                    pPGM->pGst32BitPdR0    = NIL_RTR0PTR;
+                    pPGM->pGstPaePdptR0    = NIL_RTR0PTR;
+                    pPGM->pGstAmd64Pml4R0  = NIL_RTR0PTR;
 #endif
+                    for (unsigned i = 0; i < RT_ELEMENTS(pPGM->apGstPaePDsR3); i++)
+                    {
+                        pPGM->apGstPaePDsR3[i]             = NULL;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+                        pPGM->apGstPaePDsR0[i]             = NIL_RTR0PTR;
+#endif
+                    }
+
+                    /* Flush REM TLBs. */
+                    CPUMSetChangedFlags(&pVM->aCpus[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
                 }
 
-                /* Flush REM TLBs. */
-                CPUMSetChangedFlags(&pVM->aCpus[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+                /* Flush REM translation blocks. */
+                REMFlushTBs(pVM);
             }
-
-            /* Flush REM translation blocks. */
-            REMFlushTBs(pVM);
         }
     }
     pgmUnlock(pVM);
@@ -3459,7 +3457,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
 #endif
     AssertReturn(pChunk, VERR_NO_MEMORY);
     pChunk->Core.Key = idChunk;
-    pChunk->AgeCore.Key = pVM->pgm.s.ChunkR3Map.iNow;
+    pChunk->iAge     = pVM->pgm.s.ChunkR3Map.iNow;
 
     /*
      * Request the ring-0 part to map the chunk in question.
@@ -3485,9 +3483,6 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         AssertRelease(fRc);
         pVM->pgm.s.ChunkR3Map.c++;
         pVM->pgm.s.cMappedChunks++;
-
-        fRc = RTAvllU32Insert(&pVM->pgm.s.ChunkR3Map.pAgeTree, &pChunk->AgeCore);
-        AssertRelease(fRc);
 
         /* If we're running out of virtual address space, then we should unmap another chunk. */
         if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)

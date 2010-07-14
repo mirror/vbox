@@ -1400,14 +1400,11 @@ typedef PPGMCHUNKR3MAP *PPPGMCHUNKR3MAP;
  * Ring-3 tracking structore for an allocation chunk ring-3 mapping.
  *
  * The primary tree (Core) uses the chunk id as key.
- * The secondary tree (AgeCore) is used for ageing and uses ageing sequence number as key.
  */
 typedef struct PGMCHUNKR3MAP
 {
     /** The key is the chunk id. */
     AVLU32NODECORE                      Core;
-    /** The key is the ageing sequence number. */
-    AVLLU32NODECORE                     AgeCore;
     /** The current age thingy. */
     uint32_t                            iAge;
     /** The current reference count. */
@@ -2669,8 +2666,6 @@ typedef struct PGM
 #else
         R3R0PTRTYPE(PAVLU32NODECORE) pTree;
 #endif
-        /** The chunk age tree, ordered by ageing sequence number. */
-        R3PTRTYPE(PAVLLU32NODECORE) pAgeTree;
         /** The chunk mapping TLB. */
         PGMCHUNKR3MAPTLB            Tlb;
         /** The number of mapped chunks. */
