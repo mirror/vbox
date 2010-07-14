@@ -3458,7 +3458,6 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
 #endif
     AssertReturn(pChunk, VERR_NO_MEMORY);
     pChunk->Core.Key = idChunk;
-    pChunk->iAge     = pVM->pgm.s.ChunkR3Map.iNow;
 
     /*
      * Request the ring-0 part to map the chunk in question.
