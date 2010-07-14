@@ -233,13 +233,13 @@ HRESULT vboxDispCmSessionCmdGet(PVBOXDISPCM_SESSION pSession, PVBOXDISPIFESCAPE_
                 return WAIT_TIMEOUT;
             }
             default:
-                AssertBreakpoint();
+                Assert(0);
                 return E_FAIL;
         }
     } while (1);
 
     /* should never be here */
-    AssertBreakpoint();
+    Assert(0);
     return E_FAIL;
 }
 
