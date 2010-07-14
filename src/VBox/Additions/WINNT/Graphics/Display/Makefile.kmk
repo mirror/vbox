@@ -105,5 +105,15 @@ VBoxDispD3D64_SOURCES  = $(subst VBoxDispD3D.def,VBoxDispD3D64.def,$(VBoxDispD3D
  endif
 endif
 
+ifdef VBOXVIDEOWINDBG
+DLLS += vbvdbg
+vbvdbg_TEMPLATE = VBOXR3STATIC
+vbvdbg_DEFS     = UNICODE _UNICODE
+vbvdbg_SOURCES  = \
+	wddm/dbg/VBoxVideoWinDbg.cpp \
+	wddm/dbg/VBoxVideoWinDbg.def
+vbvdbg_SDKS     = WINDDKWLH
+endif
+
 include	$(KBUILD_PATH)/subfooter.kmk
 

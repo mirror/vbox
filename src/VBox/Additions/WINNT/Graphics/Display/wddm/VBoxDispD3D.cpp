@@ -1083,28 +1083,22 @@ static HRESULT vboxWddmRenderTargetUpdate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
 {
     PVBOXWDDMDISP_ALLOCATION pAlloc;
     UINT iBBuf = 0;
-    for (UINT i = iNewRTFB + 1; i < pRc->cAllocations; ++i, ++iBBuf)
+    Assert(iNewRTFB < pRc->cAllocations);
+
+    for (UINT i = 1; i < pRc->cAllocations; ++i, ++iBBuf)
     {
-        pAlloc = &pRc->aAllocations[i];
-        Assert(i != iNewRTFB);
+        UINT iAlloc = (iNewRTFB + i) % pRc->cAllocations;
+        Assert(iAlloc != iNewRTFB);
+        pAlloc = &pRc->aAllocations[iAlloc];
         HRESULT tmpHr = vboxWddmRenderTargetUpdateSurface(pDevice, pAlloc, iBBuf);
         Assert(tmpHr == S_OK);
     }
 
-    for (UINT i = 0; iBBuf < pRc->cAllocations-1; ++i, ++iBBuf)
-    {
-        Assert(i != iNewRTFB);
-        pAlloc = &pRc->aAllocations[i];
-        HRESULT tmpHr = vboxWddmRenderTargetUpdateSurface(pDevice, pAlloc, iBBuf);
-        Assert(tmpHr == S_OK);
-    }
-
-#ifdef VBOXWDDM_WITH_VISIBLE_FB
     pAlloc = &pRc->aAllocations[iNewRTFB];
+#ifdef VBOXWDDM_WITH_VISIBLE_FB
     HRESULT tmpHr = vboxWddmRenderTargetUpdateSurface(pDevice, pAlloc, ~0UL /* <- for the frontbuffer */);
     Assert(tmpHr == S_OK);
 #else
-    pAlloc = &pRc->aAllocations[iNewRTFB];
     if (pAlloc->pD3DIf)
     {
         pAlloc->pD3DIf->Release();
@@ -1116,6 +1110,11 @@ static HRESULT vboxWddmRenderTargetUpdate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
     for (UINT i = 0; i < pRc->cAllocations; ++i)
     {
         pAlloc = &pRc->aAllocations[i];
+        if (iNewRTFB == i)
+        {
+            Assert(!pAlloc->pD3DIf);
+        }
+
         for (UINT j = i+1; j < pRc->cAllocations; ++j)
         {
             PVBOXWDDMDISP_ALLOCATION pAllocJ = &pRc->aAllocations[j];
@@ -1125,6 +1124,64 @@ static HRESULT vboxWddmRenderTargetUpdate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
 #endif
     return S_OK;
 }
+
+#ifdef DEBUG
+static void vboxWddmDbgRenderTargetUpdateCheckSurface(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pAlloc, uint32_t iBBuf)
+{
+    IDirect3DSurface9 *pD3D9Surf;
+    Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
+    HRESULT hr = pDevice->pDevice9If->GetBackBuffer(0 /*UINT iSwapChain*/,
+            iBBuf, D3DBACKBUFFER_TYPE_MONO, &pD3D9Surf);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        Assert(pD3D9Surf);
+        Assert(pD3D9Surf == pAlloc->pD3DIf);
+        pD3D9Surf->Release();
+    }
+}
+
+static void vboxWddmDbgRenderTargetCheck(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_RESOURCE pRc, uint32_t iNewRTFB)
+{
+    PVBOXWDDMDISP_ALLOCATION pAlloc;
+    UINT iBBuf = 0;
+    Assert(iNewRTFB < pRc->cAllocations);
+
+    for (UINT i = 1; i < pRc->cAllocations; ++i, ++iBBuf)
+    {
+        UINT iAlloc = (iNewRTFB + i) % pRc->cAllocations;
+        Assert(iAlloc != iNewRTFB);
+        pAlloc = &pRc->aAllocations[iAlloc];
+        vboxWddmDbgRenderTargetUpdateCheckSurface(pDevice, pAlloc, iBBuf);
+    }
+
+    pAlloc = &pRc->aAllocations[iNewRTFB];
+#ifdef VBOXWDDM_WITH_VISIBLE_FB
+    vboxWddmDbgRenderTargetUpdateCheckSurface(pDevice, pAlloc, ~0UL /* <- for the frontbuffer */);
+#else
+    Assert(pAlloc->pD3DIf == NULL);
+#endif
+
+    for (UINT i = 0; i < pRc->cAllocations; ++i)
+    {
+        pAlloc = &pRc->aAllocations[i];
+        if (iNewRTFB == i)
+        {
+            Assert(!pAlloc->pD3DIf);
+        }
+
+        for (UINT j = i+1; j < pRc->cAllocations; ++j)
+        {
+            PVBOXWDDMDISP_ALLOCATION pAllocJ = &pRc->aAllocations[j];
+            Assert(pAlloc->pD3DIf != pAllocJ->pD3DIf);
+        }
+    }
+}
+
+# define VBOXVDBG_RTGT_STATECHECK(_pDev) (vboxWddmDbgRenderTargetCheck((_pDev), (_pDev)->pRenderTargetRc, (_pDev)->iRenderTargetFrontBuf))
+#else
+# define VBOXVDBG_RTGT_STATECHECK(_pDev) do{}while(0)
+#endif
 
 static D3DFORMAT vboxDDI2D3DFormat(D3DDDIFORMAT format)
 {
@@ -1151,7 +1208,7 @@ D3DPOOL vboxDDI2D3DPool(D3DDDI_POOL enmPool)
         /* @todo: what would be propper here? */
         return D3DPOOL_DEFAULT;
     default:
-        AssertBreakpoint();
+        Assert(0);
     }
     return D3DPOOL_DEFAULT;
 }
@@ -1288,6 +1345,9 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
     {
         case DLL_PROCESS_ATTACH:
         {
+#ifdef VBOXWDDMDISP_DEBUG
+            vboxVDbgVEHandlerRegister();
+#endif
             RTR3Init();
 
             HRESULT hr = vboxDispCmInit();
@@ -1310,6 +1370,9 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 
         case DLL_PROCESS_DETACH:
         {
+#ifdef VBOXWDDMDISP_DEBUG
+            vboxVDbgVEHandlerUnregister();
+#endif
             HRESULT hr;
 #ifdef VBOXDISPMP_TEST
             hr = vboxDispMpTstStop();
@@ -1431,7 +1494,7 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
             Assert(pData->DataSize == VBOX_QUERYTYPE_COUNT() * sizeof (D3DDDIQUERYTYPE));
             memcpy(pData->pData, gVBoxQueryTypes, VBOX_QUERYTYPE_COUNT() * sizeof (D3DDDIQUERYTYPE));
 #else
-            AssertBreakpoint();
+            Assert(0);
             memset(pData->pData, 0, pData->DataSize);
 #endif
             break;
@@ -1524,7 +1587,7 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         case D3DDDICAPS_GETD3D9CAPS:
         {
             Assert(pData->DataSize >= sizeof (D3DCAPS9));
-//            AssertBreakpoint();
+//            Assert(0);
             if (pData->DataSize >= sizeof (D3DCAPS9))
             {
                 Assert(VBOXDISPMODE_IS_3D(pAdapter));
@@ -1578,7 +1641,7 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                         }
                         else
                         {
-                            AssertBreakpoint();
+                            Assert(0);
                         }
 #endif
                         break;
@@ -1626,13 +1689,13 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         case D3DDDICAPS_GETEXTENSIONGUIDS:
         case D3DDDICAPS_GETEXTENSIONCAPS:
             vboxVDbgPrint((__FUNCTION__": unimplemented caps type(%d)\n", pData->Type));
-            AssertBreakpoint();
+            Assert(0);
             if (pData->pData && pData->DataSize)
                 memset(pData->pData, 0, pData->DataSize);
             break;
         default:
             vboxVDbgPrint((__FUNCTION__": unknown caps type(%d)\n", pData->Type));
-            AssertBreakpoint();
+            Assert(0);
     }
 
     vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p), caps type(%d)\n", hAdapter, pData->Type));
@@ -1662,7 +1725,7 @@ static HRESULT APIENTRY vboxWddmDDevUpdateWInfo(HANDLE hDevice, CONST D3DDDIARG_
 static HRESULT APIENTRY vboxWddmDDevValidateDevice(HANDLE hDevice, D3DDDIARG_VALIDATETEXTURESTAGESTATE* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -1757,7 +1820,7 @@ static HRESULT APIENTRY vboxWddmDDevSetStreamSourceUm(HANDLE hDevice, CONST D3DD
 //    {
 //        if (pStreamData)
 //        {
-//            AssertBreakpoint();
+//            Assert(0);
 //            /* @todo: impl! */
 //        }
 //        else
@@ -1840,7 +1903,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
         else
         {
             /* todo: impl */
-            AssertBreakpoint();
+            Assert(0);
         }
     }
     else
@@ -1942,7 +2005,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
                                     cbType = 2 * 4;
                                     break;
                                 default:
-                                    AssertBreakpoint();
+                                    Assert(0);
                                     cbType = 1;
                             }
                             cbVertex += cbType;
@@ -1969,7 +2032,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
                                     cVertexes = pData->PrimitiveCount + 2;
                                     break;
                                 default:
-                                    AssertBreakpoint();
+                                    Assert(0);
                                     cVertexes = pData->PrimitiveCount;
                             }
                             UINT cbVertexes = cVertexes * cbVertex;
@@ -2083,7 +2146,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive(HANDLE hDevice, CONST D
 static HRESULT APIENTRY vboxWddmDDevDrawRectPatch(HANDLE hDevice, CONST D3DDDIARG_DRAWRECTPATCH* pData, CONST D3DDDIRECTPATCH_INFO* pInfo, CONST FLOAT* pPatch)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -2091,7 +2154,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawRectPatch(HANDLE hDevice, CONST D3DDDIAR
 static HRESULT APIENTRY vboxWddmDDevDrawTriPatch(HANDLE hDevice, CONST D3DDDIARG_DRAWTRIPATCH* pData, CONST D3DDDITRIPATCH_INFO* pInfo, CONST FLOAT* pPatch)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -2167,7 +2230,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIA
 static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST D3DDDIARG_DRAWINDEXEDPRIMITIVE2* pData, UINT dwIndicesSize, CONST VOID* pIndexBuffer, CONST UINT* pFlagBuffer)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -2175,7 +2238,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST 
 static HRESULT APIENTRY vboxWddmDDevVolBlt(HANDLE hDevice, CONST D3DDDIARG_VOLUMEBLT* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -2183,7 +2246,7 @@ static HRESULT APIENTRY vboxWddmDDevVolBlt(HANDLE hDevice, CONST D3DDDIARG_VOLUM
 static HRESULT APIENTRY vboxWddmDDevBufBlt(HANDLE hDevice, CONST D3DDDIARG_BUFFERBLT* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -2217,13 +2280,13 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
         }
         else
         {
-            AssertBreakpoint();
+            Assert(0);
             /* @todo: impl */
         }
     }
     else
     {
-        AssertBreakpoint();
+        Assert(0);
         /* @todo: impl */
     }
 
@@ -2234,14 +2297,14 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
 static HRESULT APIENTRY vboxWddmDDevStateSet(HANDLE hDevice, D3DDDIARG_STATESET* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevSetPriority(HANDLE hDevice, CONST D3DDDIARG_SETPRIORITY* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -2273,7 +2336,7 @@ static HRESULT APIENTRY vboxWddmDDevClear(HANDLE hDevice, CONST D3DDDIARG_CLEAR*
 static HRESULT APIENTRY vboxWddmDDevUpdatePalette(HANDLE hDevice, CONST D3DDDIARG_UPDATEPALETTE* pData, CONST PALETTEENTRY* pPaletteData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -2281,7 +2344,7 @@ static HRESULT APIENTRY vboxWddmDDevUpdatePalette(HANDLE hDevice, CONST D3DDDIAR
 static HRESULT APIENTRY vboxWddmDDevSetPalette(HANDLE hDevice, CONST D3DDDIARG_SETPALETTE* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -2303,14 +2366,14 @@ static HRESULT APIENTRY vboxWddmDDevSetVertexShaderConst(HANDLE hDevice, CONST D
 static HRESULT APIENTRY vboxWddmDDevMultiplyTransform(HANDLE hDevice, CONST D3DDDIARG_MULTIPLYTRANSFORM* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevSetTransform(HANDLE hDevice, CONST D3DDDIARG_SETTRANSFORM* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -2345,28 +2408,28 @@ static HRESULT APIENTRY vboxWddmDDevSetZRange(HANDLE hDevice, CONST D3DDDIARG_ZR
 static HRESULT APIENTRY vboxWddmDDevSetMaterial(HANDLE hDevice, CONST D3DDDIARG_SETMATERIAL* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevSetLight(HANDLE hDevice, CONST D3DDDIARG_SETLIGHT* pData, CONST D3DDDI_LIGHT* pLightProperties)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevCreateLight(HANDLE hDevice, CONST D3DDDIARG_CREATELIGHT* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevDestroyLight(HANDLE hDevice, CONST D3DDDIARG_DESTROYLIGHT* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -2385,7 +2448,7 @@ static HRESULT APIENTRY vboxWddmDDevSetClipPlane(HANDLE hDevice, CONST D3DDDIARG
 static HRESULT APIENTRY vboxWddmDDevGetInfo(HANDLE hDevice, UINT DevInfoID, VOID* pDevInfoStruct, UINT DevInfoSize)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_NOTIMPL;
 }
@@ -2707,7 +2770,7 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
         }
         else
         {
-            AssertBreakpoint();
+            Assert(0);
         }
     }
     else
@@ -2743,7 +2806,7 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
             else if (pData->Flags.BoxValid)
             {
                 vboxVDbgPrintF((__FUNCTION__": Implement Box area"));
-                AssertBreakpoint();
+                Assert(0);
             }
             else
             {
@@ -2905,7 +2968,7 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
         }
         else
         {
-            AssertBreakpoint();
+            Assert(0);
         }
     }
     else
@@ -2938,21 +3001,21 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
 static HRESULT APIENTRY vboxWddmDDevLockAsync(HANDLE hDevice, D3DDDIARG_LOCKASYNC* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevUnlockAsync(HANDLE hDevice, CONST D3DDDIARG_UNLOCKASYNC* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevRename(HANDLE hDevice, CONST D3DDDIARG_RENAME* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -3073,7 +3136,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
         {
             if (pResource->Flags.SharedResource)
             {
-                AssertBreakpoint(); /* <-- need to test that */
+                Assert(0); /* <-- need to test that */
                 bIssueCreateResource = true;
             }
 
@@ -3644,6 +3707,8 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
     {
         Assert(pDevice->pDevice9If);
 #if 1
+        VBOXVDBG_RTGT_STATECHECK(pDevice);
+
         hr = pDevice->pDevice9If->Present(NULL, /* CONST RECT * pSourceRect */
                 NULL, /* CONST RECT * pDestRect */
                 NULL, /* HWND hDestWindowOverride */
@@ -3664,9 +3729,7 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
             Assert(pRc->cAllocations >= 2);
             Assert(pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
             Assert(pRc->RcDesc.fFlags.RenderTarget);
-            uint32_t iNewRTFB = pDevice->iRenderTargetFrontBuf + 1;
-            if (iNewRTFB >= pRc->cAllocations)
-                iNewRTFB = 0;
+            uint32_t iNewRTFB = (pDevice->iRenderTargetFrontBuf + 1) % pRc->cAllocations;
 
             Assert(pDevice->iRenderTargetFrontBuf != iNewRTFB);
             Assert(pData->SrcSubResourceIndex == iNewRTFB);
@@ -3675,6 +3738,8 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
 
             /* assign a new frontbuffer index */
             pDevice->iRenderTargetFrontBuf = iNewRTFB;
+
+            VBOXVDBG_RTGT_STATECHECK(pDevice);
         }
         D3DDDICB_PRESENT DdiPresent = {0};
         if (pData->hSrcResource)
@@ -3906,21 +3971,21 @@ static HRESULT APIENTRY vboxWddmDDevSetStreamSource(HANDLE hDevice, CONST D3DDDI
 static HRESULT APIENTRY vboxWddmDDevSetStreamSourceFreq(HANDLE hDevice, CONST D3DDDIARG_SETSTREAMSOURCEFREQ* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevSetConvolutionKernelMono(HANDLE hDevice, CONST D3DDDIARG_SETCONVOLUTIONKERNELMONO* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevComposeRects(HANDLE hDevice, CONST D3DDDIARG_COMPOSERECTS* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -3951,7 +4016,7 @@ static HRESULT vboxWddmLockRect(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc,
             break;
         }
         default:
-            AssertBreakpoint();
+            Assert(0);
             break;
     }
     return hr;
@@ -3979,7 +4044,7 @@ static HRESULT vboxWddmUnlockRect(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc)
             break;
         }
         default:
-            AssertBreakpoint();
+            Assert(0);
             hr = E_FAIL;
             break;
     }
@@ -4016,12 +4081,31 @@ static HRESULT vboxWddmSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, IDirect3
             break;
         }
         default:
-            AssertBreakpoint();
+            Assert(0);
             hr = E_FAIL;
             break;
     }
     return hr;
 }
+
+#ifdef DEBUG_misha
+static void vboxWddmDbgSurfData(PVBOXWDDMDISP_ALLOCATION pAlloc, IDirect3DSurface9 *pSurf)
+{
+    D3DLOCKED_RECT Lr;
+    HRESULT tmpHr = pSurf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
+    Assert(tmpHr == S_OK);
+    if (tmpHr == S_OK)
+    {
+        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
+        Assert(bpp == pAlloc->SurfDesc.bpp);
+        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
+        vboxVDbgPrintF(("!vbvdbg.ms 0x%p 0x%x 0x%x 0x%x 0x%x\n",
+                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
+        Assert(0);
+        tmpHr = pSurf->UnlockRect();
+    }
+}
+#endif
 
 static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pData)
 {
@@ -4105,6 +4189,49 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
             if (hr == S_OK)
             {
                 Assert(pSrcSurfIf);
+
+#ifdef DEBUG_misha
+                {
+                    D3DLOCKED_RECT Lr;
+                    PVBOXWDDMDISP_ALLOCATION pAlloc = &pSrcRc->aAllocations[pData->SrcSubResourceIndex];
+                    HRESULT srcHr = pSrcSurfIf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
+                    Assert(srcHr == S_OK);
+                    if (srcHr == S_OK)
+                    {
+                        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
+                        Assert(bpp == pAlloc->SurfDesc.bpp);
+                        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
+                        vboxVDbgPrintF(("src: !vbvdbg.ms 0x%p 0x%x 0x%x 0x%x 0x%x\n",
+                                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
+                    }
+
+                    pAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
+                    HRESULT dstHr = pDstSurfIf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
+                    Assert(dstHr == S_OK);
+                    if (dstHr == S_OK)
+                    {
+                        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
+                        Assert(bpp == pAlloc->SurfDesc.bpp);
+                        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
+                        vboxVDbgPrintF(("dst: !vbvdbg.ms 0x%p 0x%x 0x%x 0x%x 0x%x\n",
+                                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
+                    }
+
+                    Assert(0);
+
+                    if (srcHr == S_OK)
+                    {
+                        srcHr = pSrcSurfIf->UnlockRect();
+                        Assert(srcHr == S_OK);
+                    }
+
+                    if (dstHr == S_OK)
+                    {
+                        dstHr = pDstSurfIf->UnlockRect();
+                        Assert(dstHr == S_OK);
+                    }
+                }
+#endif
                 /* we support only Point & Linear, we ignore [Begin|Continue|End]PresentToDwm */
                 Assert((pData->Flags.Value & (~(0x00000100 | 0x00000200 | 0x00000400 | 0x00000001  | 0x00000002))) == 0);
                 hr = pDevice->pDevice9If->StretchRect(pSrcSurfIf,
@@ -4113,6 +4240,49 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
                                     &pData->DstRect,
                                     vboxDDI2D3DBltFlags(pData->Flags));
                 Assert(hr == S_OK);
+
+#ifdef DEBUG_misha
+                {
+                    D3DLOCKED_RECT Lr;
+                    PVBOXWDDMDISP_ALLOCATION pAlloc = &pSrcRc->aAllocations[pData->SrcSubResourceIndex];
+                    HRESULT srcHr = pSrcSurfIf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
+                    Assert(srcHr == S_OK);
+                    if (srcHr == S_OK)
+                    {
+                        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
+                        Assert(bpp == pAlloc->SurfDesc.bpp);
+                        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
+                        vboxVDbgPrintF(("src: !vbvdbg.ms 0x%p 0x%x 0x%x 0x%x 0x%x\n",
+                                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
+                    }
+
+                    pAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
+                    HRESULT dstHr = pDstSurfIf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
+                    Assert(dstHr == S_OK);
+                    if (dstHr == S_OK)
+                    {
+                        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
+                        Assert(bpp == pAlloc->SurfDesc.bpp);
+                        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
+                        vboxVDbgPrintF(("dst: !vbvdbg.ms 0x%p 0x%x 0x%x 0x%x 0x%x\n",
+                                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
+                    }
+
+                    Assert(0);
+
+                    if (srcHr == S_OK)
+                    {
+                        srcHr = pSrcSurfIf->UnlockRect();
+                        Assert(srcHr == S_OK);
+                    }
+
+                    if (dstHr == S_OK)
+                    {
+                        dstHr = pDstSurfIf->UnlockRect();
+                        Assert(dstHr == S_OK);
+                    }
+                }
+#endif
                 pSrcSurfIf->Release();
             }
         } while (0);
@@ -4123,7 +4293,7 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
     if (hr != S_OK)
     {
         /* todo: fallback to memcpy or whatever ? */
-        AssertBreakpoint();
+        Assert(0);
     }
 
 
@@ -4181,13 +4351,13 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
             else
             {
 
-                AssertBreakpoint();
+                Assert(0);
                 /* @todo: impl */
             }
         }
         else
         {
-            AssertBreakpoint();
+            Assert(0);
             /* @todo: impl */
         }
     }
@@ -4225,7 +4395,7 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
         }
         else
         {
-            AssertBreakpoint();
+            Assert(0);
             /* @todo: impl */
         }
     }
@@ -4237,42 +4407,42 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
 static HRESULT APIENTRY vboxWddmDDevColorFill(HANDLE hDevice, CONST D3DDDIARG_COLORFILL* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevDepthFill(HANDLE hDevice, CONST D3DDDIARG_DEPTHFILL* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevCreateQuery(HANDLE hDevice, D3DDDIARG_CREATEQUERY* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevDestroyQuery(HANDLE hDevice, HANDLE hQuery)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevIssueQuery(HANDLE hDevice, CONST D3DDDIARG_ISSUEQUERY* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevGetQueryData(HANDLE hDevice, CONST D3DDDIARG_GETQUERYDATA* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -4332,7 +4502,7 @@ static HRESULT APIENTRY vboxWddmDDevSetDepthStencil(HANDLE hDevice, CONST D3DDDI
 static HRESULT APIENTRY vboxWddmDDevGenerateMipSubLevels(HANDLE hDevice, CONST D3DDDIARG_GENERATEMIPSUBLEVELS* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -4391,112 +4561,112 @@ static HRESULT APIENTRY vboxWddmDDevDeletePixelShader(HANDLE hDevice, HANDLE hSh
 static HRESULT APIENTRY vboxWddmDDevCreateDecodeDevice(HANDLE hDevice, D3DDDIARG_CREATEDECODEDEVICE* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevDestroyDecodeDevice(HANDLE hDevice, HANDLE hDecodeDevice)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevSetDecodeRenderTarget(HANDLE hDevice, CONST D3DDDIARG_SETDECODERENDERTARGET* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevDecodeBeginFrame(HANDLE hDevice, D3DDDIARG_DECODEBEGINFRAME* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevDecodeEndFrame(HANDLE hDevice, D3DDDIARG_DECODEENDFRAME* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevDecodeExecute(HANDLE hDevice, CONST D3DDDIARG_DECODEEXECUTE* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevDecodeExtensionExecute(HANDLE hDevice, CONST D3DDDIARG_DECODEEXTENSIONEXECUTE* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevCreateVideoProcessDevice(HANDLE hDevice, D3DDDIARG_CREATEVIDEOPROCESSDEVICE* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevDestroyVideoProcessDevice(HANDLE hDevice, HANDLE hVideoProcessor)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevVideoProcessBeginFrame(HANDLE hDevice, HANDLE hVideoProcess)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevVideoProcessEndFrame(HANDLE hDevice, D3DDDIARG_VIDEOPROCESSENDFRAME* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevSetVideoProcessRenderTarget(HANDLE hDevice, CONST D3DDDIARG_SETVIDEOPROCESSRENDERTARGET* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevVideoProcessBlt(HANDLE hDevice, CONST D3DDDIARG_VIDEOPROCESSBLT* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevCreateExtensionDevice(HANDLE hDevice, D3DDDIARG_CREATEEXTENSIONDEVICE* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevDestroyExtensionDevice(HANDLE hDevice, HANDLE hExtension)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevExtensionExecute(HANDLE hDevice, CONST D3DDDIARG_EXTENSIONEXECUTE* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -4679,14 +4849,14 @@ static HRESULT APIENTRY vboxWddmDDevFlipOverlay(HANDLE hDevice, CONST D3DDDIARG_
 static HRESULT APIENTRY vboxWddmDDevGetOverlayColorControls(HANDLE hDevice, D3DDDIARG_GETOVERLAYCOLORCONTROLS* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 static HRESULT APIENTRY vboxWddmDDevSetOverlayColorControls(HANDLE hDevice, CONST D3DDDIARG_SETOVERLAYCOLORCONTROLS* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -4715,7 +4885,7 @@ static HRESULT APIENTRY vboxWddmDDevQueryResourceResidency(HANDLE hDevice, CONST
 {
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-    AssertBreakpoint();
+    Assert(0);
     HRESULT hr = S_OK;
 #if 0
     for (UINT i = 0; i < pData->NumResources; ++i)
@@ -4804,7 +4974,7 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
                         pRc->RcDesc.RefreshRate = pAllocInfo->SurfDesc.RefreshRate;
                         break;
                     default:
-                        AssertBreakpoint();
+                        Assert(0);
                         hr = E_INVALIDARG;
                 }
             }
@@ -4813,7 +4983,7 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
         }
         else
         {
-            AssertBreakpoint(); /* <-- need to test that */
+            Assert(0); /* <-- need to test that */
 
             /* this is a "generic" resource whose creation is initiaded by the UMD */
             Assert(pData->PrivateDriverDataSize == sizeof (VBOXWDDM_RCINFO));
@@ -4858,7 +5028,7 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
 static HRESULT APIENTRY vboxWddmDDevGetCaptureAllocationHandle(HANDLE hDevice, D3DDDIARG_GETCAPTUREALLOCATIONHANDLE* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -4866,7 +5036,7 @@ static HRESULT APIENTRY vboxWddmDDevGetCaptureAllocationHandle(HANDLE hDevice, D
 static HRESULT APIENTRY vboxWddmDDevCaptureToSysMem(HANDLE hDevice, CONST D3DDDIARG_CAPTURETOSYSMEM* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -4876,7 +5046,7 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
     HRESULT hr = S_OK;
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p), Interface(%d), Version(%d)\n", hAdapter, pCreateData->Interface, pCreateData->Version));
 
-//    AssertBreakpoint();
+//    Assert(0);
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(sizeof (VBOXWDDMDISP_DEVICE));
     if (pDevice)
@@ -5043,7 +5213,7 @@ static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
 {
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
-//    AssertBreakpoint();
+//    Assert(0);
 
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
     if (VBOXDISPMODE_IS_3D(pAdapter))
@@ -5184,4 +5354,36 @@ VOID vboxVDbgDoPrint(LPCSTR szString, ...)
 
     OutputDebugStringA(szBuffer);
 }
+
+static PVOID g_VBoxWDbgVEHandler = NULL;
+LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
+{
+    PEXCEPTION_RECORD pExceptionRecord = pExceptionInfo->ExceptionRecord;
+    PCONTEXT pContextRecord = pExceptionInfo->ContextRecord;
+    switch (pExceptionRecord->ExceptionCode)
+    {
+        case 0x40010006: /* <- OutputDebugString exception, ignore */
+            break;
+        default:
+            Assert(0);
+            break;
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+void vboxVDbgVEHandlerRegister()
+{
+    Assert(!g_VBoxWDbgVEHandler);
+    g_VBoxWDbgVEHandler = AddVectoredExceptionHandler(1,vboxVDbgVectoredHandler);
+    Assert(g_VBoxWDbgVEHandler);
+}
+
+void vboxVDbgVEHandlerUnregister()
+{
+    Assert(g_VBoxWDbgVEHandler);
+    ULONG uResult = RemoveVectoredExceptionHandler(g_VBoxWDbgVEHandler);
+    Assert(uResult);
+    g_VBoxWDbgVEHandler = NULL;
+}
+
 #endif

@@ -36,6 +36,7 @@
 
 #ifdef DEBUG
 # define VBOXWDDMDISP_DEBUG
+# define VBOXWDDMDISP_DEBUG_FLOW
 #endif
 
 #if 0
@@ -55,6 +56,8 @@
 
 #ifdef VBOXWDDMDISP_DEBUG
 VOID vboxVDbgDoPrint(LPCSTR szString, ...);
+void vboxVDbgVEHandlerRegister();
+void vboxVDbgVEHandlerUnregister();
 
 #define vboxVDbgBreak() AssertBreakpoint()
 #define vboxVDbgPrint(_m) \
@@ -62,7 +65,11 @@ VOID vboxVDbgDoPrint(LPCSTR szString, ...);
         vboxVDbgDoPrint _m ; \
     } while (0)
 #define vboxVDbgPrintR vboxVDbgPrint
-#define vboxVDbgPrintF(_m)  do {} while (0)
+#ifdef VBOXWDDMDISP_DEBUG_FLOW
+# define vboxVDbgPrintF  vboxVDbgPrint
+#else
+# define vboxVDbgPrintF(_m)  do {} while (0)
+#endif
 #else
 #define vboxVDbgBreak() do {} while (0)
 #define vboxVDbgPrint(_m)  do {} while (0)
