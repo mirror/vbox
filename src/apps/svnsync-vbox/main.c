@@ -1971,6 +1971,18 @@ open_file(const char *path,
     }
     else
     {
+      if (!file_added_this_changeset)
+      {
+        svn_node_kind_t nodekind;
+        /* Verify that the previous source was exported to the destination
+         * repository. */
+        SVN_ERR(svn_ra_check_path(eb->to_session_prop,
+                                  STRIP_LEADING_SLASH(path),
+                                  SVN_IGNORED_REVNUM, &nodekind, pool));
+        if (nodekind == svn_node_none || nodekind != svn_node_file)
+          fb->prev_process = FALSE;
+      }
+
       if (fb->prev_process)
       {
         /* File disappears due to changes to the process settings. */
