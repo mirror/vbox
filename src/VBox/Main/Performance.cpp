@@ -119,17 +119,43 @@ int CollectorHAL::getHostCpuMHz(ULONG *mhz)
 }
 
 #ifndef VBOX_COLLECTOR_TEST_CASE
+
+uint32_t CollectorGuestHAL::cVMsEnabled = 0;
+
+CollectorGuestHAL::CollectorGuestHAL(Machine *machine, CollectorHAL *hostHAL)
+    : CollectorHAL(), cEnabled(0), mMachine(machine), mConsole(NULL),
+      mGuest(NULL), mLastTick(0), mHostHAL(hostHAL), mCpuUser(0),
+      mCpuKernel(0), mCpuIdle(0), mMemTotal(0), mMemFree(0),
+      mMemBalloon(0), mMemShared(0), mMemCache(0), mPageTotal(0)
+{
+    Assert(mMachine);
+    /* cannot use ComObjPtr<Machine> in Performance.h, do it manually */
+    mMachine->AddRef();
+}
+
 CollectorGuestHAL::~CollectorGuestHAL()
 {
+    /* cannot use ComObjPtr<Machine> in Performance.h, do it manually */
+    mMachine->Release();
     Assert(!cEnabled);
 }
 
 int CollectorGuestHAL::enable()
 {
+    /* Must make sure that the machine object does not get uninitialized
+     * in the middle of enabling this collector. Causes timing-related
+     * behavior otherwise, which we don't want. In particular the
+     * GetRemoteConsole call below can hang if the VM didn't completely
+     * terminate (the VM processes stop processing events shortly before
+     * closing the session). This avoids the hang. */
+    AutoCaller autoCaller(mMachine);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     HRESULT ret = S_OK;
 
     if (ASMAtomicIncU32(&cEnabled) == 1)
     {
+        ASMAtomicIncU32(&cVMsEnabled);
         ComPtr<IInternalSessionControl> directControl;
 
         ret = mMachine->getDirectControl(&directControl);
@@ -152,6 +178,11 @@ int CollectorGuestHAL::disable()
 {
     if (ASMAtomicDecU32(&cEnabled) == 0)
     {
+        if (ASMAtomicDecU32(&cVMsEnabled) == 0)
+        {
+            if (mHostHAL)
+                mHostHAL->setMemHypervisorStats(0 /* ulMemAllocTotal */, 0 /* ulMemFreeTotal */, 0 /* ulMemBalloonTotal */, 0 /* ulMemSharedTotal */);
+        }
         Assert(mGuest && mConsole);
         mGuest->COMSETTER(StatisticsUpdateInterval)(0 /* off */);
     }
