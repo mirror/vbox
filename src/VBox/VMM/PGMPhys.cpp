@@ -3339,8 +3339,7 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
 }
 
 /**
- * Rendezvous callback used by pgmR3PhysUnmapChunk that clears all shadow pages
- * and all modification counters.
+ * Rendezvous callback used by pgmR3PhysUnmapChunk that unmaps a chunk
  *
  * This is only called on one of the EMTs while the other ones are waiting for
  * it to complete this function.
