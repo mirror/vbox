@@ -3253,7 +3253,7 @@ typedef struct PGMR3PHYSCHUNKUNMAPCB
 {
     PVM                 pVM;            /**< The VM handle. */
     PPGMCHUNKR3MAP      pChunk;         /**< The chunk to unmap. */
-    int32_t             iLastAge;       /**< Highest age found so far. */
+    uint32_t            iLastAge;       /**< Highest age found so far. */
 } PGMR3PHYSCHUNKUNMAPCB, *PPGMR3PHYSCHUNKUNMAPCB;
 
 
