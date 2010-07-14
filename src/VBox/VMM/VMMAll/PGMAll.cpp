@@ -1366,7 +1366,6 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t 
     return rc;
 }
 
-#ifdef IN_RING3
 
 /**
  * Performs the lazy mapping of the 32-bit guest PD.
@@ -1425,7 +1424,6 @@ PX86PDPT pgmGstLazyMapPaePDPT(PPGMCPU pPGM)
     return pPGM->CTX_SUFF(pGstPaePdpt);
 }
 
-#endif /* IN_RING3  */
 
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 /**
@@ -1491,8 +1489,7 @@ PX86PDPAE pgmGstLazyMapPaePD(PPGMCPU pPGM, uint32_t iPdpt)
 }
 #endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
-
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R3
+#ifndef IN_RC
 /**
  * Performs the lazy mapping of the 32-bit guest PD.
  *
@@ -1520,8 +1517,7 @@ PX86PML4 pgmGstLazyMapPml4(PPGMCPU pPGM)
     pgmUnlock(pVM);
     return pPGM->CTX_SUFF(pGstAmd64Pml4);
 }
-#endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R3 */
-
+#endif
 
 /**
  * Gets the specified page directory pointer table entry.
