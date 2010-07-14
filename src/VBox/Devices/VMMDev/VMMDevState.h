@@ -53,6 +53,33 @@ typedef struct DISPLAYCHANGEDATA
 } DISPLAYCHANGEDATA;
 
 
+/**
+ * Credentials for automatic guest logon and host configured logon (?).
+ *
+ * This is not stored in the same block as the instance data in order to make it
+ * harder to access.
+ */
+typedef struct VMMDEVCREDS
+{
+    /** credentials for guest logon purposes */
+    struct
+    {
+        char szUserName[VMMDEV_CREDENTIALS_STRLEN];
+        char szPassword[VMMDEV_CREDENTIALS_STRLEN];
+        char szDomain[VMMDEV_CREDENTIALS_STRLEN];
+        bool fAllowInteractiveLogon;
+    } Logon;
+
+    /** credentials for verification by guest */
+    struct
+    {
+        char szUserName[VMMDEV_CREDENTIALS_STRLEN];
+        char szPassword[VMMDEV_CREDENTIALS_STRLEN];
+        char szDomain[VMMDEV_CREDENTIALS_STRLEN];
+    } Judge;
+} VMMDEVCREDS;
+
+
 /** device structure containing all state information */
 typedef struct VMMDevState
 {
@@ -151,24 +178,10 @@ typedef struct VMMDevState
 
     DISPLAYCHANGEDATA displayChangeData;
 
-    /** credentials for guest logon purposes */
-    struct
-    {
-        char szUserName[VMMDEV_CREDENTIALS_STRLEN];
-        char szPassword[VMMDEV_CREDENTIALS_STRLEN];
-        char szDomain[VMMDEV_CREDENTIALS_STRLEN];
-        bool fAllowInteractiveLogon;
-    } credentialsLogon;
+    /** Pointer to the credentials. */
+    R3PTRTYPE(VMMDEVCREDS *) pCredentials;
 
-    /** credentials for verification by guest */
-    struct
-    {
-        char szUserName[VMMDEV_CREDENTIALS_STRLEN];
-        char szPassword[VMMDEV_CREDENTIALS_STRLEN];
-        char szDomain[VMMDEV_CREDENTIALS_STRLEN];
-    } credentialsJudge;
-
-    bool afAlignment4[HC_ARCH_BITS == 32 ? 7 : 7];
+    bool afAlignment4[HC_ARCH_BITS == 32 ? 3 : 7];
 
     /* memory balloon change request */
     uint32_t    u32MemoryBalloonSize, u32LastMemoryBalloonSize;

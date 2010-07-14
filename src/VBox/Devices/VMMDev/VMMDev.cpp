@@ -1637,9 +1637,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 /* should we return whether we got credentials for a logon? */
                 if (credentials->u32Flags & VMMDEV_CREDENTIALS_QUERYPRESENCE)
                 {
-                    if (   pThis->credentialsLogon.szUserName[0]
-                        || pThis->credentialsLogon.szPassword[0]
-                        || pThis->credentialsLogon.szDomain[0])
+                    if (   pThis->pCredentials->Logon.szUserName[0]
+                        || pThis->pCredentials->Logon.szPassword[0]
+                        || pThis->pCredentials->Logon.szDomain[0])
                     {
                         credentials->u32Flags |= VMMDEV_CREDENTIALS_PRESENT;
                     }
@@ -1652,13 +1652,13 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 /* does the guest want to read logon credentials? */
                 if (credentials->u32Flags & VMMDEV_CREDENTIALS_READ)
                 {
-                    if (pThis->credentialsLogon.szUserName[0])
-                        strcpy(credentials->szUserName, pThis->credentialsLogon.szUserName);
-                    if (pThis->credentialsLogon.szPassword[0])
-                        strcpy(credentials->szPassword, pThis->credentialsLogon.szPassword);
-                    if (pThis->credentialsLogon.szDomain[0])
-                        strcpy(credentials->szDomain, pThis->credentialsLogon.szDomain);
-                    if (!pThis->credentialsLogon.fAllowInteractiveLogon)
+                    if (pThis->pCredentials->Logon.szUserName[0])
+                        strcpy(credentials->szUserName, pThis->pCredentials->Logon.szUserName);
+                    if (pThis->pCredentials->Logon.szPassword[0])
+                        strcpy(credentials->szPassword, pThis->pCredentials->Logon.szPassword);
+                    if (pThis->pCredentials->Logon.szDomain[0])
+                        strcpy(credentials->szDomain, pThis->pCredentials->Logon.szDomain);
+                    if (!pThis->pCredentials->Logon.fAllowInteractiveLogon)
                         credentials->u32Flags |= VMMDEV_CREDENTIALS_NOLOCALLOGON;
                     else
                         credentials->u32Flags &= ~VMMDEV_CREDENTIALS_NOLOCALLOGON;
@@ -1669,29 +1669,29 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     /* does the caller want us to destroy the logon credentials? */
                     if (credentials->u32Flags & VMMDEV_CREDENTIALS_CLEAR)
                     {
-                        memset(pThis->credentialsLogon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                        memset(pThis->credentialsLogon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                        memset(pThis->credentialsLogon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                        memset(pThis->pCredentials->Logon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                        memset(pThis->pCredentials->Logon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                        memset(pThis->pCredentials->Logon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
                     }
                 }
 
                 /* does the guest want to read credentials for verification? */
                 if (credentials->u32Flags & VMMDEV_CREDENTIALS_READJUDGE)
                 {
-                    if (pThis->credentialsJudge.szUserName[0])
-                        strcpy(credentials->szUserName, pThis->credentialsJudge.szUserName);
-                    if (pThis->credentialsJudge.szPassword[0])
-                        strcpy(credentials->szPassword, pThis->credentialsJudge.szPassword);
-                    if (pThis->credentialsJudge.szDomain[0])
-                        strcpy(credentials->szDomain, pThis->credentialsJudge.szDomain);
+                    if (pThis->pCredentials->Judge.szUserName[0])
+                        strcpy(credentials->szUserName, pThis->pCredentials->Judge.szUserName);
+                    if (pThis->pCredentials->Judge.szPassword[0])
+                        strcpy(credentials->szPassword, pThis->pCredentials->Judge.szPassword);
+                    if (pThis->pCredentials->Judge.szDomain[0])
+                        strcpy(credentials->szDomain, pThis->pCredentials->Judge.szDomain);
                 }
 
                 /* does the caller want us to destroy the judgement credentials? */
                 if (credentials->u32Flags & VMMDEV_CREDENTIALS_CLEARJUDGE)
                 {
-                    memset(pThis->credentialsJudge.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                    memset(pThis->credentialsJudge.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                    memset(pThis->credentialsJudge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                    memset(pThis->pCredentials->Judge.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                    memset(pThis->pCredentials->Judge.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                    memset(pThis->pCredentials->Judge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
                 }
 
                 pRequestHeader->rc = VINF_SUCCESS;
@@ -2335,18 +2335,18 @@ static DECLCALLBACK(int) vmmdevSetCredentials(PPDMIVMMDEVPORT pInterface, const 
     if (u32Flags & VMMDEV_SETCREDENTIALS_GUESTLOGON)
     {
         /* memorize the data */
-        strcpy(pThis->credentialsLogon.szUserName, pszUsername);
-        strcpy(pThis->credentialsLogon.szPassword, pszPassword);
-        strcpy(pThis->credentialsLogon.szDomain,   pszDomain);
-        pThis->credentialsLogon.fAllowInteractiveLogon = !(u32Flags & VMMDEV_SETCREDENTIALS_NOLOCALLOGON);
+        strcpy(pThis->pCredentials->Logon.szUserName, pszUsername);
+        strcpy(pThis->pCredentials->Logon.szPassword, pszPassword);
+        strcpy(pThis->pCredentials->Logon.szDomain,   pszDomain);
+        pThis->pCredentials->Logon.fAllowInteractiveLogon = !(u32Flags & VMMDEV_SETCREDENTIALS_NOLOCALLOGON);
     }
     /* credentials verification mode? */
     else if (u32Flags & VMMDEV_SETCREDENTIALS_JUDGE)
     {
         /* memorize the data */
-        strcpy(pThis->credentialsJudge.szUserName, pszUsername);
-        strcpy(pThis->credentialsJudge.szPassword, pszPassword);
-        strcpy(pThis->credentialsJudge.szDomain,   pszDomain);
+        strcpy(pThis->pCredentials->Judge.szUserName, pszUsername);
+        strcpy(pThis->pCredentials->Judge.szPassword, pszPassword);
+        strcpy(pThis->pCredentials->Judge.szDomain,   pszDomain);
 
         VMMDevNotifyGuest (pThis, VMMDEV_EVENT_JUDGE_CREDENTIALS);
     }
@@ -2681,13 +2681,13 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /* credentials have to go away (by default) */
     if (!pThis->fKeepCredentials)
     {
-        memset(pThis->credentialsLogon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-        memset(pThis->credentialsLogon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-        memset(pThis->credentialsLogon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+        memset(pThis->pCredentials->Logon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
+        memset(pThis->pCredentials->Logon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
+        memset(pThis->pCredentials->Logon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
     }
-    memset(pThis->credentialsJudge.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-    memset(pThis->credentialsJudge.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-    memset(pThis->credentialsJudge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+    memset(pThis->pCredentials->Judge.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
+    memset(pThis->pCredentials->Judge.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
+    memset(pThis->pCredentials->Judge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
 
     /* Reset means that additions will report again. */
     const bool fVersionChanged = pThis->fu32AdditionsOk
@@ -2764,6 +2764,28 @@ static DECLCALLBACK(void) vmmdevRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) vmmdevDestroy(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+
+    /*
+     * Wipe and free the credentials.
+     */
+    if (pThis->pCredentials)
+    {
+        RTMemWipeThoroughly(pThis->pCredentials, sizeof(*pThis->pCredentials), 10);
+        RTMemFree(pThis->pCredentials);
+        pThis->pCredentials = NULL;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -2825,6 +2847,11 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->IHGCMPort.pfnCompleted          = hgcmCompleted;
 #endif
 
+    pThis->pCredentials = (VMMDEVCREDS *)RTMemAllocZ(sizeof(*pThis->pCredentials));
+    if (!pThis->pCredentials)
+        return VERR_NO_MEMORY;
+
+
     /*
      * Validate and read the configuration.
      */
@@ -2873,7 +2900,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"TestingEnabled\" as a boolean"));
-# ifdef DEBUG_bird /* lazy bird */
+# if 1 //def DEBUG_bird /* lazy bird */ - do not commit this!!!!
     pThis->fTestingEnabled = true;
 # endif
     /** @todo image-to-load-filename? */
