@@ -3377,7 +3377,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
         {
             STAM_PROFILE_START(&pVM->pgm.s.StatChunkUnmap, a);
             rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
-            STAM_PROFILE_START(&pVM->pgm.s.StatChunkUnmap, a);
+            STAM_PROFILE_STOP(&pVM->pgm.s.StatChunkUnmap, a);
             if (RT_SUCCESS(rc))
             {
                 /* remove the unmapped one. */
