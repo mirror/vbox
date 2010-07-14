@@ -214,6 +214,7 @@ public:
     void onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId);
     void onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue,
                                IN_BSTR aFlags);
+    void onMachineUninit(Machine *aMachine);
 
     ComObjPtr<GuestOSType> getUnknownOSType();
 

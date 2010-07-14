@@ -356,6 +356,11 @@ public:
 
     void uninit();
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    // Needed from VirtualBox, for the delayed metrics cleanup.
+    void unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine);
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
 protected:
     HRESULT initImpl(VirtualBox *aParent,
                      const Utf8Str &strConfigFile);
@@ -800,7 +805,6 @@ protected:
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     void registerMetrics(PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid);
-    void unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine);
 
     pm::CollectorGuestHAL  *mGuestHAL;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
