@@ -589,10 +589,8 @@ DECLINLINE(X86PDE) pgmGstGet32bitPDE(PPGMCPU pPGM, RTGCPTR GCPtr)
     }
 #else
     PX86PD pGuestPD = pPGM->CTX_SUFF(pGst32BitPd);
-# ifdef IN_RING3
-    if (!pGuestPD)
+    if (RT_UNLIKELY(!pGuestPD))
         pGuestPD = pgmGstLazyMap32BitPD(pPGM);
-# endif
 #endif
     return pGuestPD->a[GCPtr >> X86_PD_SHIFT];
 }
@@ -613,10 +611,8 @@ DECLINLINE(PX86PDE) pgmGstGet32bitPDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
     AssertRCReturn(rc, NULL);
 #else
     PX86PD pGuestPD = pPGM->CTX_SUFF(pGst32BitPd);
-# ifdef IN_RING3
-    if (!pGuestPD)
+    if (RT_UNLIKELY(!pGuestPD))
         pGuestPD = pgmGstLazyMap32BitPD(pPGM);
-# endif
 #endif
     return &pGuestPD->a[GCPtr >> X86_PD_SHIFT];
 }
@@ -636,10 +632,8 @@ DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PPGMCPU pPGM)
     AssertRCReturn(rc, NULL);
 #else
     PX86PD pGuestPD = pPGM->CTX_SUFF(pGst32BitPd);
-# ifdef IN_RING3
-    if (!pGuestPD)
+    if (RT_UNLIKELY(!pGuestPD))
         pGuestPD = pgmGstLazyMap32BitPD(pPGM);
-# endif
 #endif
     return pGuestPD;
 }
@@ -660,10 +654,8 @@ DECLINLINE(PX86PDPT) pgmGstGetPaePDPTPtr(PPGMCPU pPGM)
     AssertRCReturn(rc, NULL);
 #else
     PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePdpt);
-# ifdef IN_RING3
-    if (!pGuestPDPT)
+    if (RT_UNLIKELY(!pGuestPDPT))
         pGuestPDPT = pgmGstLazyMapPaePDPT(pPGM);
-# endif
 #endif
     return pGuestPDPT;
 }
@@ -687,10 +679,8 @@ DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
     AssertRCReturn(rc, 0);
 #else
     PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePdpt);
-# ifdef IN_RING3
-    if (!pGuestPDPT)
+    if (RT_UNLIKELY(!pGuestPDPT))
         pGuestPDPT = pgmGstLazyMapPaePDPT(pPGM);
-# endif
 #endif
     return &pGuestPDPT->a[(GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];
 }
@@ -857,10 +847,8 @@ DECLINLINE(PX86PML4) pgmGstGetLongModePML4Ptr(PPGMCPU pPGM)
     AssertRCReturn(rc, NULL);
 #else
     PX86PML4 pGuestPml4 = pPGM->CTX_SUFF(pGstAmd64Pml4);
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R3
-    if (!pGuestPml4)
+    if (RT_UNLIKELY(!pGuestPml4))
         pGuestPml4 = pgmGstLazyMapPml4(pPGM);
-# endif
     Assert(pGuestPml4);
 #endif
     return pGuestPml4;
@@ -882,10 +870,8 @@ DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGMCPU pPGM, unsigned int iPml4
     AssertRCReturn(rc, NULL);
 #else
     PX86PML4 pGuestPml4 = pPGM->CTX_SUFF(pGstAmd64Pml4);
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R3
-    if (!pGuestPml4)
+    if (RT_UNLIKELY(!pGuestPml4))
         pGuestPml4 = pgmGstLazyMapPml4(pPGM);
-# endif
     Assert(pGuestPml4);
 #endif
     return &pGuestPml4->a[iPml4];
@@ -911,10 +897,8 @@ DECLINLINE(X86PML4E) pgmGstGetLongModePML4E(PPGMCPU pPGM, unsigned int iPml4)
     }
 #else
     PX86PML4 pGuestPml4 = pPGM->CTX_SUFF(pGstAmd64Pml4);
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R3
     if (!pGuestPml4)
         pGuestPml4 = pgmGstLazyMapPml4(pPGM);
-# endif
     Assert(pGuestPml4);
 #endif
     return pGuestPml4->a[iPml4];
