@@ -1249,10 +1249,10 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
                            );
     AssertLogRelRCReturn(rc, rc);
 
-#if HC_ARCH_BITS == 64 || 1 /** @todo 4GB/32-bit: remove || 1 later and adjust the limit. */
-    rc = CFGMR3QueryU32Def(pCfgPGM, "MaxRing3Chunks", &pVM->pgm.s.ChunkR3Map.cMax, UINT32_MAX);
-#else
+#ifdef VBOX_WITH_LARGE_ADDRESS_SPACE_ON_32_BIT_HOST
     rc = CFGMR3QueryU32Def(pCfgPGM, "MaxRing3Chunks", &pVM->pgm.s.ChunkR3Map.cMax, _1G / GMM_CHUNK_SIZE);
+#else
+    rc = CFGMR3QueryU32Def(pCfgPGM, "MaxRing3Chunks", &pVM->pgm.s.ChunkR3Map.cMax, UINT32_MAX);
 #endif
     AssertLogRelRCReturn(rc, rc);
     for (uint32_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
