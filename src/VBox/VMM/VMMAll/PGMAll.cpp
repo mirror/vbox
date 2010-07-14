@@ -1367,6 +1367,7 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t 
 }
 
 
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 /**
  * Performs the lazy mapping of the 32-bit guest PD.
  *
@@ -1425,7 +1426,6 @@ PX86PDPT pgmGstLazyMapPaePDPT(PPGMCPU pPGM)
 }
 
 
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 /**
  * Performs the lazy mapping / updating of a PAE guest PD.
  *
