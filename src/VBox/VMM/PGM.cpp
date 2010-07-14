@@ -1212,10 +1212,15 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
 
         pPGM->GCPhysCR3        = NIL_RTGCPHYS;
 
+        pPGM->pGst32BitPdR3    = NULL;
         pPGM->pGstPaePdptR3    = NULL;
+        pPGM->pGstAmd64Pml4R3  = NULL;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+        pPGM->pGst32BitPdR0    = NIL_RTR0PTR:
         pPGM->pGstPaePdptR0    = NIL_RTR0PTR;
+        pPGM->pGstAmd64Pml4R0  = NIL_RTR0PTR;
 #endif
+        pPGM->pGst32BitPdRC    = NIL_RTRCPTR;
         pPGM->pGstPaePdptRC    = NIL_RTRCPTR;
         for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.apGstPaePDsR3); i++)
         {
