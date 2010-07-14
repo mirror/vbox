@@ -3381,6 +3381,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
             MMR3UkHeapFree(pVM, pUnmappedChunk, MM_TAG_PGM_CHUNK_MAPPING);
 #endif
             pVM->pgm.s.ChunkR3Map.c--;
+            pVM->pgm.s.cUnmappedChunks++;
 
             /* Flush dangling PGM pointers (R3 & R0 ptrs to GC physical addresses) */
             /* todo: we should not flush chunks which include cr3 mappings. */
@@ -3413,6 +3414,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
             REMFlushTBs(pVM);
 
             /* Flush the pgm pool cache; call the internal rendezvous handler as we're already in a rendezvous handler here. */
+            /* todo: also not really efficient to unmap a chunk that contains PD or PT pages. */
             pgmR3PoolClearAllRendezvous(pVM, &pVM->aCpus[0], false /* no need to flush the REM TLB as we already did that above */);
         }
     }
@@ -3489,6 +3491,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         bool fRc = RTAvlU32Insert(&pVM->pgm.s.ChunkR3Map.pTree, &pChunk->Core);
         AssertRelease(fRc);
         pVM->pgm.s.ChunkR3Map.c++;
+        pVM->pgm.s.cMappedChunks++;
 
         fRc = RTAvllU32Insert(&pVM->pgm.s.ChunkR3Map.pAgeTree, &pChunk->AgeCore);
         AssertRelease(fRc);
