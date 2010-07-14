@@ -3187,7 +3187,7 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
     }
 }
 
-#if 1 /* HC_ARCH_BITS == 32 */
+#ifdef VBOX_WITH_LARGE_ADDRESS_SPACE_ON_32_BIT_HOST
 /**
  * Tree enumeration callback for dealing with age rollover.
  * It will perform a simple compression of the current age.
@@ -3432,7 +3432,7 @@ void pgmR3PhysUnmapChunk(PVM pVM)
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysUnmapChunkRendezvous, NULL);
     AssertRC(rc);
 }
-#endif /* HC_ARCH_BITS == 32 */
+#endif /* VBOX_WITH_LARGE_ADDRESS_SPACE_ON_32_BIT_HOST */
 
 /**
  * Maps the given chunk into the ring-3 mapping cache.
@@ -3498,9 +3498,13 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         /* If we're running out of virtual address space, then we should unmap another chunk. */
         if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
         {
+#ifdef VBOX_WITH_LARGE_ADDRESS_SPACE_ON_32_BIT_HOST
             /* Postpone the unmap operation (which requires a rendezvous operation) as we own the PGM lock here. */
             rc = VMR3ReqCallNoWaitU(pVM->pUVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysUnmapChunk, 1, pVM);
             AssertRC(rc);
+#else
+            AssertFatalFailed();  /* can't happen */
+#endif
         }
     }
     else
