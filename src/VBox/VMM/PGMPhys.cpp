@@ -3271,39 +3271,34 @@ typedef struct PGMR3PHYSCHUNKUNMAPCB
  */
 static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE pNode, void *pvUser)
 {
-    do
+    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)((uint8_t *)pNode - RT_OFFSETOF(PGMCHUNKR3MAP, AgeCore));
+    if (    pChunk->iAge
+        &&  !pChunk->cRefs)
     {
-        PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)((uint8_t *)pNode - RT_OFFSETOF(PGMCHUNKR3MAP, AgeCore));
-        if (    pChunk->iAge
-            &&  !pChunk->cRefs)
-        {
-            /*
-             * Check that it's not in any of the TLBs.
-             */
-            PVM pVM = ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pVM;
-            for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
-                if (pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk == pChunk)
+        /*
+            * Check that it's not in any of the TLBs.
+            */
+        PVM pVM = ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pVM;
+        for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
+            if (pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk == pChunk)
+            {
+                pChunk = NULL;
+                break;
+            }
+        if (pChunk)
+            for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
+                if (pVM->pgm.s.PhysTlbHC.aEntries[i].pMap == pChunk)
                 {
                     pChunk = NULL;
                     break;
                 }
-            if (pChunk)
-                for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
-                    if (pVM->pgm.s.PhysTlbHC.aEntries[i].pMap == pChunk)
-                    {
-                        pChunk = NULL;
-                        break;
-                    }
-            if (pChunk)
-            {
-                ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pChunk = pChunk;
-                return 1; /* done */
-            }
+        if (pChunk)
+        {
+            ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pChunk = pChunk;
+            return 1; /* done */
         }
+    }
 
-        /* next with the same age - this version of the AVL API doesn't enumerate the list, so we have to do it. */
-        pNode = pNode->pList;
-    } while (pNode);
     return 0;
 }
 
