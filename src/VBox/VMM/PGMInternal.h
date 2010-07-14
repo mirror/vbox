@@ -2891,6 +2891,11 @@ typedef struct PGM
     STAMPROFILE                 StatR3IsValidLargePage;
     /** pgmPhysIsValidLargePage profiling - RZ*/
     STAMPROFILE                 StatRZIsValidLargePage;
+
+    STAMPROFILE                 StatChunkAging;
+    STAMPROFILE                 StatChunkFindCandidate;
+    STAMPROFILE                 StatChunkUnmap;
+    STAMPROFILE                 StatChunkMap;
 #endif
 } PGM;
 #ifndef IN_TSTVMSTRUCTGC /* HACK */

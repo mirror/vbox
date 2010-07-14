@@ -3314,11 +3314,16 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
      * Do tree ageing first?
      */
     if (pVM->pgm.s.ChunkR3Map.AgeingCountdown-- == 0)
+    {
+        STAM_PROFILE_START(&pVM->pgm.s.StatChunkAging, a);
         PGMR3PhysChunkAgeing(pVM);
+        STAM_PROFILE_STOP(&pVM->pgm.s.StatChunkAging, a);
+    }
 
     /*
      * Enumerate the age tree starting with the left most node.
      */
+    STAM_PROFILE_START(&pVM->pgm.s.StatChunkFindCandidate, a);
     PGMR3PHYSCHUNKUNMAPCB Args;
     Args.pVM      = pVM;
     Args.pChunk   = NULL;
@@ -3326,8 +3331,12 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
     RTAvlU32DoWithAll(&pVM->pgm.s.ChunkR3Map.pTree, true /*fFromLeft*/, pgmR3PhysChunkUnmapCandidateCallback, &Args);
     Assert(Args.pChunk);
     if (Args.pChunk)
+    {
+        STAM_PROFILE_STOP(&pVM->pgm.s.StatChunkFindCandidate, a);
         return Args.pChunk->Core.Key;
+    }
 
+    STAM_PROFILE_STOP(&pVM->pgm.s.StatChunkFindCandidate, a);
     return INT32_MAX;
 }
 
@@ -3366,7 +3375,9 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
 
         if (Req.idChunkUnmap != INT32_MAX)
         {
+            STAM_PROFILE_START(&pVM->pgm.s.StatChunkUnmap, a);
             rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
+            STAM_PROFILE_START(&pVM->pgm.s.StatChunkUnmap, a);
             if (RT_SUCCESS(rc))
             {
                 /* remove the unmapped one. */
@@ -3470,7 +3481,9 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     Req.idChunkUnmap = NIL_GMM_CHUNKID;
 
     /* Must be callable from any thread, so can't use VMMR3CallR0. */
+    STAM_PROFILE_START(&pVM->pgm.s.StatChunkMap, a);
     rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
+    STAM_PROFILE_STOP(&pVM->pgm.s.StatChunkMap, a);
     if (RT_SUCCESS(rc))
     {
         /*

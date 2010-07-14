@@ -1644,6 +1644,11 @@ static void pgmR3InitStats(PVM pVM)
 
     PGM_REG_COUNTER(&pPGM->StatRZChunkR3MapTlbHits,           "/PGM/ChunkR3Map/TlbHitsRZ",          "TLB hits.");
     PGM_REG_COUNTER(&pPGM->StatRZChunkR3MapTlbMisses,         "/PGM/ChunkR3Map/TlbMissesRZ",        "TLB misses.");
+    PGM_REG_PROFILE(&pPGM->StatChunkAging,                    "/PGM/ChunkR3Map/Map/Aging",          "Chunk aging profiling.");
+    PGM_REG_PROFILE(&pPGM->StatChunkFindCandidate,            "/PGM/ChunkR3Map/Map/Find",           "Chunk unmap find profiling.");
+    PGM_REG_PROFILE(&pPGM->StatChunkUnmap,                    "/PGM/ChunkR3Map/Map/Unmap",          "Chunk unmap of address space profiling.");
+    PGM_REG_PROFILE(&pPGM->StatChunkMap,                      "/PGM/ChunkR3Map/Map/Map",            "Chunk map of address space profiling.");
+
     PGM_REG_COUNTER(&pPGM->StatRZPageMapTlbHits,              "/PGM/RZ/Page/MapTlbHits",            "TLB hits.");
     PGM_REG_COUNTER(&pPGM->StatRZPageMapTlbMisses,            "/PGM/RZ/Page/MapTlbMisses",          "TLB misses.");
     PGM_REG_COUNTER(&pPGM->StatR3ChunkR3MapTlbHits,           "/PGM/ChunkR3Map/TlbHitsR3",          "TLB hits.");
