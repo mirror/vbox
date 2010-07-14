@@ -1,13 +1,13 @@
 /* $Id$ */
 /** @file
- * tstDeviceStructSizeGC - Generate structure member and size checks from the GC perspective.
+ * tstDeviceStructSizeGC - Generate structure member and size checks from the RC perspective.
  *
  * This is built using the VBoxRc template but linked into a host
  * ring-3 executable, rather hacky.
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1450,15 +1450,7 @@ int main()
     GEN_CHECK_OFF(VMMDevState, fu32AdditionsOk);
     GEN_CHECK_OFF(VMMDevState, u32VideoAccelEnabled);
     GEN_CHECK_OFF(VMMDevState, displayChangeData);
-    GEN_CHECK_OFF(VMMDevState, credentialsLogon);
-    GEN_CHECK_OFF(VMMDevState, credentialsLogon.szUserName);
-    GEN_CHECK_OFF(VMMDevState, credentialsLogon.szPassword);
-    GEN_CHECK_OFF(VMMDevState, credentialsLogon.szDomain);
-    GEN_CHECK_OFF(VMMDevState, credentialsLogon.fAllowInteractiveLogon);
-    GEN_CHECK_OFF(VMMDevState, credentialsJudge);
-    GEN_CHECK_OFF(VMMDevState, credentialsJudge.szUserName);
-    GEN_CHECK_OFF(VMMDevState, credentialsJudge.szPassword);
-    GEN_CHECK_OFF(VMMDevState, credentialsJudge.szDomain);
+    GEN_CHECK_OFF(VMMDevState, pCredentials);
     GEN_CHECK_OFF(VMMDevState, u32MemoryBalloonSize);
     GEN_CHECK_OFF(VMMDevState, u32LastMemoryBalloonSize);
     GEN_CHECK_OFF(VMMDevState, cbGuestRAM);
