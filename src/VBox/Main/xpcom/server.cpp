@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -77,10 +77,10 @@
 #include <SerialPortImpl.h>
 #include <ParallelPortImpl.h>
 #include <USBControllerImpl.h>
-#include "USBDeviceFilterImpl.h"
 #include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
 #ifdef VBOX_WITH_USB
+# include "USBDeviceFilterImpl.h"
 # include <HostUSBDeviceImpl.h>
 # include <USBDeviceImpl.h>
 #endif

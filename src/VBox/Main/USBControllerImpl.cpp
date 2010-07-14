@@ -392,9 +392,7 @@ STDMETHODIMP USBController::COMGETTER(USBStandard) (USHORT *aUSBStandard)
  */
 class ATL_NO_VTABLE USBDeviceFilter :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<USBDeviceFilter, IUSBDeviceFilter>,
-    public VirtualBoxSupportTranslation<USBDeviceFilter>,
-    public IUSBDeviceFilter
+    VBOX_SCRIPTABLE_IMPL(IUSBDeviceFilter)
 {
 public:
     DECLARE_NOT_AGGREGATABLE(USBDeviceFilter)
