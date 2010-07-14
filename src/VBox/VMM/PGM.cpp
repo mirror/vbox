@@ -1249,7 +1249,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
                            );
     AssertLogRelRCReturn(rc, rc);
 
-#ifdef VBOX_WITH_LARGE_ADDRESS_SPACE_ON_32_BIT_HOST
+#ifdef PGM_WITH_LARGE_ADDRESS_SPACE_ON_32_BIT_HOST
     rc = CFGMR3QueryU32Def(pCfgPGM, "MaxRing3Chunks", &pVM->pgm.s.ChunkR3Map.cMax, _1G / GMM_CHUNK_SIZE);
 #else
     rc = CFGMR3QueryU32Def(pCfgPGM, "MaxRing3Chunks", &pVM->pgm.s.ChunkR3Map.cMax, UINT32_MAX);
