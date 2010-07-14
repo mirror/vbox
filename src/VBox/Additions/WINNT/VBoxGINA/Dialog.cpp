@@ -1,8 +1,11 @@
+/* $Id$ */
 /** @file
+ * VBoxGINA - Windows Logon DLL for VirtualBox, Dialog Code.
+ */
+
+/*
  *
- * VBoxGINA -- Windows Logon DLL for VirtualBox Dialog Code
- *
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,9 +45,9 @@
 #define IDC_WLXLOGGEDOUTSAS_DOMAIN2       1504
 #define IDC_WLXWKSTALOCKEDSAS_DOMAIN      1856
 
-static DLGPROC pfWlxLoggedOutSASDlgProc   = NULL;
+static DLGPROC g_pfnWlxLoggedOutSASDlgProc = NULL;
 
-static PWLX_DIALOG_BOX_PARAM pfWlxDialogBoxParam = NULL;
+static PWLX_DIALOG_BOX_PARAM g_pfnWlxDialogBoxParam = NULL;
 
 int WINAPI MyWlxDialogBoxParam (HANDLE, HANDLE, LPWSTR, HWND, DLGPROC, LPARAM);
 
@@ -57,35 +60,35 @@ void hookDialogBoxes(PVOID pWinlogonFunctions, DWORD dwWlxVersion)
     {
         case WLX_VERSION_1_0:
         {
-            pfWlxDialogBoxParam = ((PWLX_DISPATCH_VERSION_1_0)pWinlogonFunctions)->WlxDialogBoxParam;
+            g_pfnWlxDialogBoxParam = ((PWLX_DISPATCH_VERSION_1_0)pWinlogonFunctions)->WlxDialogBoxParam;
             ((PWLX_DISPATCH_VERSION_1_0)pWinlogonFunctions)->WlxDialogBoxParam = MyWlxDialogBoxParam;
             break;
         }
 
         case WLX_VERSION_1_1:
         {
-            pfWlxDialogBoxParam = ((PWLX_DISPATCH_VERSION_1_1)pWinlogonFunctions)->WlxDialogBoxParam;
+            g_pfnWlxDialogBoxParam = ((PWLX_DISPATCH_VERSION_1_1)pWinlogonFunctions)->WlxDialogBoxParam;
             ((PWLX_DISPATCH_VERSION_1_1)pWinlogonFunctions)->WlxDialogBoxParam = MyWlxDialogBoxParam;
             break;
         }
 
         case WLX_VERSION_1_2:
         {
-            pfWlxDialogBoxParam = ((PWLX_DISPATCH_VERSION_1_2)pWinlogonFunctions)->WlxDialogBoxParam;
+            g_pfnWlxDialogBoxParam = ((PWLX_DISPATCH_VERSION_1_2)pWinlogonFunctions)->WlxDialogBoxParam;
             ((PWLX_DISPATCH_VERSION_1_2)pWinlogonFunctions)->WlxDialogBoxParam = MyWlxDialogBoxParam;
             break;
         }
 
         case WLX_VERSION_1_3:
         {
-            pfWlxDialogBoxParam = ((PWLX_DISPATCH_VERSION_1_3)pWinlogonFunctions)->WlxDialogBoxParam;
+            g_pfnWlxDialogBoxParam = ((PWLX_DISPATCH_VERSION_1_3)pWinlogonFunctions)->WlxDialogBoxParam;
             ((PWLX_DISPATCH_VERSION_1_3)pWinlogonFunctions)->WlxDialogBoxParam = MyWlxDialogBoxParam;
             break;
         }
 
         case WLX_VERSION_1_4:
         {
-            pfWlxDialogBoxParam = ((PWLX_DISPATCH_VERSION_1_4)pWinlogonFunctions)->WlxDialogBoxParam;
+            g_pfnWlxDialogBoxParam = ((PWLX_DISPATCH_VERSION_1_4)pWinlogonFunctions)->WlxDialogBoxParam;
             ((PWLX_DISPATCH_VERSION_1_4)pWinlogonFunctions)->WlxDialogBoxParam = MyWlxDialogBoxParam;
             break;
         }
@@ -187,7 +190,7 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
     //
     // Pass on to MSGINA first.
     //
-    bResult = pfWlxLoggedOutSASDlgProc(hwndDlg, uMsg, wParam, lParam);
+    bResult = g_pfnWlxLoggedOutSASDlgProc(hwndDlg, uMsg, wParam, lParam);
 
     //
     // We are only interested in the WM_INITDIALOG message.
@@ -302,9 +305,9 @@ int WINAPI MyWlxDialogBoxParam(HANDLE  hWlx,
          case IDD_WLXLOGGEDOUTSAS_DIALOG2:
          {
             Log(("VBoxGINA::MyWlxDialogBoxParam: returning hooked logged out dialog\n"));
-            pfWlxLoggedOutSASDlgProc = dlgprc;
-            return pfWlxDialogBoxParam(hWlx, hInst, lpszTemplate, hwndOwner,
-                                       MyWlxLoggedOutSASDlgProc, dwInitParam);
+            g_pfnWlxLoggedOutSASDlgProc = dlgprc;
+            return g_pfnWlxDialogBoxParam(hWlx, hInst, lpszTemplate, hwndOwner,
+                                          MyWlxLoggedOutSASDlgProc, dwInitParam);
          }
       }
    }
@@ -312,6 +315,7 @@ int WINAPI MyWlxDialogBoxParam(HANDLE  hWlx,
    //
    // The rest will not be redirected.
    //
-   return pfWlxDialogBoxParam(hWlx, hInst, lpszTemplate,
-                              hwndOwner, dlgprc, dwInitParam);
+   return g_pfnWlxDialogBoxParam(hWlx, hInst, lpszTemplate,
+                                 hwndOwner, dlgprc, dwInitParam);
 }
+

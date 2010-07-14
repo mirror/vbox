@@ -859,9 +859,9 @@ typedef struct
 AssertCompileSize(VMMDevGetStatisticsChangeRequest, 24+8);
 
 
-/** The length of a string field in the credentials request.
+/** The size of a string field in the credentials request (including '\\0').
  * @see VMMDevCredentials  */
-#define VMMDEV_CREDENTIALS_STRLEN           128
+#define VMMDEV_CREDENTIALS_SZ_SIZE          128
 
 /**
  * Credentials request structure.
@@ -876,11 +876,11 @@ typedef struct
     /** IN/OUT: Request flags. */
     uint32_t u32Flags;
     /** OUT: User name (UTF-8). */
-    char szUserName[VMMDEV_CREDENTIALS_STRLEN];
+    char szUserName[VMMDEV_CREDENTIALS_SZ_SIZE];
     /** OUT: Password (UTF-8). */
-    char szPassword[VMMDEV_CREDENTIALS_STRLEN];
+    char szPassword[VMMDEV_CREDENTIALS_SZ_SIZE];
     /** OUT: Domain name (UTF-8). */
-    char szDomain[VMMDEV_CREDENTIALS_STRLEN];
+    char szDomain[VMMDEV_CREDENTIALS_SZ_SIZE];
 } VMMDevCredentials;
 AssertCompileSize(VMMDevCredentials, 24+4+3*128);
 #pragma pack()
