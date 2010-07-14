@@ -3280,7 +3280,7 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE p
             /*
              * Check that it's not in any of the TLBs.
              */
-            PVM pVM = (PGMR3PHYSCHUNKUNMAPCB()pvUser)->pVM;
+            PVM pVM = ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pVM;
             for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
                 if (pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk == pChunk)
                 {
