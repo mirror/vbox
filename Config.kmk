@@ -308,7 +308,7 @@ VBOX_WITH_PDM_LOCK = 1
 VBOX_WITH_HGCM = 1
 ## Build the bugcheck detection code.
 #VBOX_WITH_GUEST_BUGCHECK_DETECTION =
-# Enable the USB feature. This incluses VBOX_WITH_VUSB!
+# Enable the USB feature. This includes VBOX_WITH_VUSB!
 VBOX_WITH_USB = 1
 # Enable the USB 1.1 controller plus virtual USB HID devices.
 VBOX_WITH_VUSB = 1

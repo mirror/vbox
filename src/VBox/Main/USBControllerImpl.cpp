@@ -25,8 +25,8 @@
 # include "USBDeviceImpl.h"
 # include "HostUSBDeviceImpl.h"
 # include "USBProxyService.h"
+# include "USBDeviceFilterImpl.h"
 #endif
-#include "USBDeviceFilterImpl.h"
 
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
