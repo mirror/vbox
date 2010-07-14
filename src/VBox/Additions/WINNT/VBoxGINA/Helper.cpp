@@ -23,9 +23,9 @@
 #include <iprt/string.h>
 
 /* the credentials */
-wchar_t g_Username[VMMDEV_CREDENTIALS_STRLEN];
-wchar_t g_Password[VMMDEV_CREDENTIALS_STRLEN];
-wchar_t g_Domain[VMMDEV_CREDENTIALS_STRLEN];
+wchar_t g_Username[VMMDEV_CREDENTIALS_SZ_SIZE];
+wchar_t g_Password[VMMDEV_CREDENTIALS_SZ_SIZE];
+wchar_t g_Domain[VMMDEV_CREDENTIALS_SZ_SIZE];
 
 
 HANDLE getVBoxDriver(void)

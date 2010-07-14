@@ -1630,9 +1630,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevCredentials *credentials = (VMMDevCredentials*)pRequestHeader;
 
                 /* let's start by nulling out the data */
-                memset(credentials->szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                memset(credentials->szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                memset(credentials->szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                memset(credentials->szUserName, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
+                memset(credentials->szPassword, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
+                memset(credentials->szDomain, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
 
                 /* should we return whether we got credentials for a logon? */
                 if (credentials->u32Flags & VMMDEV_CREDENTIALS_QUERYPRESENCE)
@@ -1669,9 +1669,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     /* does the caller want us to destroy the logon credentials? */
                     if (credentials->u32Flags & VMMDEV_CREDENTIALS_CLEAR)
                     {
-                        memset(pThis->pCredentials->Logon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                        memset(pThis->pCredentials->Logon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                        memset(pThis->pCredentials->Logon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                        memset(pThis->pCredentials->Logon.szUserName, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
+                        memset(pThis->pCredentials->Logon.szPassword, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
+                        memset(pThis->pCredentials->Logon.szDomain, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
                     }
                 }
 
@@ -1689,9 +1689,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 /* does the caller want us to destroy the judgement credentials? */
                 if (credentials->u32Flags & VMMDEV_CREDENTIALS_CLEARJUDGE)
                 {
-                    memset(pThis->pCredentials->Judge.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                    memset(pThis->pCredentials->Judge.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-                    memset(pThis->pCredentials->Judge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+                    memset(pThis->pCredentials->Judge.szUserName, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
+                    memset(pThis->pCredentials->Judge.szPassword, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
+                    memset(pThis->pCredentials->Judge.szDomain, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
                 }
 
                 pRequestHeader->rc = VINF_SUCCESS;
@@ -2681,13 +2681,13 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /* credentials have to go away (by default) */
     if (!pThis->fKeepCredentials)
     {
-        memset(pThis->pCredentials->Logon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-        memset(pThis->pCredentials->Logon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-        memset(pThis->pCredentials->Logon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+        memset(pThis->pCredentials->Logon.szUserName, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
+        memset(pThis->pCredentials->Logon.szPassword, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
+        memset(pThis->pCredentials->Logon.szDomain, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
     }
-    memset(pThis->pCredentials->Judge.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-    memset(pThis->pCredentials->Judge.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-    memset(pThis->pCredentials->Judge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+    memset(pThis->pCredentials->Judge.szUserName, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
+    memset(pThis->pCredentials->Judge.szPassword, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
+    memset(pThis->pCredentials->Judge.szDomain, '\0', VMMDEV_CREDENTIALS_SZ_SIZE);
 
     /* Reset means that additions will report again. */
     const bool fVersionChanged = pThis->fu32AdditionsOk

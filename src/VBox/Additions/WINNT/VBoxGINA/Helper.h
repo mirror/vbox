@@ -1,8 +1,9 @@
 /** @file
- *
- * VBoxGINA -- Windows Logon DLL for VirtualBox Helper Functions
- *
- * Copyright (C) 2006-2007 Oracle Corporation
+ * VBoxGINA - Windows Logon DLL for VirtualBox, Helper Functions.
+ */
+
+/*
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -13,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __H_GINAHELPER
-#define __H_GINAHELPER
+#ifndef ___H_GINAHELPER
+#define ___H_GINAHELPER
 
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
@@ -30,4 +31,5 @@ bool credentialsRetrieve(void);
 bool credentialsPollerCreate(void);
 bool credentialsPollerTerminate(void);
 
-#endif /* __H_GINAHELPER */
+#endif /* !___H_GINAHELPER */
+

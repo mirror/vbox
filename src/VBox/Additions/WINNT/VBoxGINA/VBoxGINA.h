@@ -1,8 +1,9 @@
 /** @file
- *
- * VBoxGINA -- Windows Logon DLL for VirtualBox
- *
- * Copyright (C) 2006-2007 Oracle Corporation
+ * VBoxGINA - Windows Logon DLL for VirtualBox.
+ */
+
+/*
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -13,13 +14,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __H_VBOXGINA
-#define __H_VBOXGINA
+#ifndef ___H_VBOXGINA
+#define ___H_VBOXGINA
 
 #include <iprt/initterm.h>
-#include <iprt/log.h>
-
-#include <VBox/Log.h>
+#include <VBox/log.h>
 
 /** Handle to Winlogon service */
 extern HANDLE hGinaWlx;
@@ -27,8 +26,8 @@ extern HANDLE hGinaWlx;
 extern PWLX_DISPATCH_VERSION_1_1 pWlxFuncs;
 
 
-/**
- * GINA entry point calls
+/** @name GINA entry point calls
+ * @{
  */
 typedef BOOL (WINAPI *PGWLXNEGOTIATE)(DWORD, DWORD*);
 typedef BOOL (WINAPI *PGWLXINITIALIZE)(LPWSTR, HANDLE, PVOID, PVOID, PVOID*);
@@ -55,7 +54,7 @@ typedef BOOL (WINAPI *PGWLXREMOVESTATUSMESSAGE)(PVOID);
 typedef BOOL (WINAPI *PGWLXGETCONSOLESWITCHCREDENTIALS)(PVOID, PVOID);
 typedef VOID (WINAPI *PGWLXRECONNECTNOTIFY)(PVOID);
 typedef VOID (WINAPI *PGWLXDISCONNECTNOTIFY)(PVOID);
+/** @}  */
 
+#endif /* !___H_VBOXGINA */
 
-
-#endif /* __H_VBOXGINA */
