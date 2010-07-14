@@ -3276,8 +3276,8 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE p
         &&  !pChunk->cRefs)
     {
         /*
-            * Check that it's not in any of the TLBs.
-            */
+         * Check that it's not in any of the TLBs.
+         */
         PVM pVM = ((PPGMR3PHYSCHUNKUNMAPCB)pvUser)->pVM;
         for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
             if (pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk == pChunk)
@@ -3298,7 +3298,6 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE p
             return 1; /* done */
         }
     }
-
     return 0;
 }
 
@@ -3454,17 +3453,13 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
      * Allocate a new tracking structure first.
      */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3HeapAlloc(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk));
+    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3HeapAllocZ(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk));
 #else
-    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3UkHeapAlloc(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk), NULL);
+    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3UkHeapAllocZ(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk), NULL);
 #endif
     AssertReturn(pChunk, VERR_NO_MEMORY);
     pChunk->Core.Key = idChunk;
     pChunk->AgeCore.Key = pVM->pgm.s.ChunkR3Map.iNow;
-    pChunk->iAge = 0;
-    pChunk->cRefs = 0;
-    pChunk->cPermRefs = 0;
-    pChunk->pv = NULL;
 
     /*
      * Request the ring-0 part to map the chunk in question.
