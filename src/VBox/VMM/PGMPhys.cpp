@@ -3401,7 +3401,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
                 pPGM->pGstPaePdptR0    = NIL_RTR0PTR;
                 pPGM->pGstAmd64Pml4R0  = NIL_RTR0PTR;
 #endif
-                for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.apGstPaePDsR3); i++)
+                for (unsigned i = 0; i < RT_ELEMENTS(pPGM->apGstPaePDsR3); i++)
                 {
                     pPGM->apGstPaePDsR3[i]             = NULL;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
