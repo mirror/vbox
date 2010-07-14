@@ -224,12 +224,14 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         s->next_periodic_time = ASMMultU64ByU32DivByU32(next_irq_clock, freq, 32768) + 1;
         TMTimerSet(s->CTX_SUFF(pPeriodicTimer), s->next_periodic_time);
 
+#ifdef IN_RING3
         if (period != s->CurPeriod)
         {
             if (s->cRelLogEntries++ < 64)
                 LogRel(("RTC: period=%#x (%d) %u Hz\n", period, period, _32K / period));
             s->CurPeriod = period;
         }
+#endif
     } else {
         if (TMTimerIsActive(s->CTX_SUFF(pPeriodicTimer)) && s->cRelLogEntries++ < 64)
             LogRel(("RTC: stopped the periodic timer\n"));
