@@ -327,6 +327,29 @@ RTDECL(bool) RTStrIsValidEncoding(const char *psz)
 RT_EXPORT_SYMBOL(RTStrIsValidEncoding);
 
 
+RTDECL(size_t) RTStrPurgeEncoding(char *psz)
+{
+    size_t cErrors = 0;
+    for (;;)
+    {
+        RTUNICP Cp;
+        int rc = RTStrGetCpEx((const char **)&psz, &Cp);
+        if (RT_SUCCESS(rc))
+        {
+            if (!Cp)
+                break;
+        }
+        else
+        {
+            psz[-1] = '?';
+            cErrors++;
+        }
+    }
+    return cErrors;
+}
+RT_EXPORT_SYMBOL(RTStrPurgeEncoding);
+
+
 RTDECL(int) RTStrToUni(const char *pszString, PRTUNICP *ppaCps)
 {
     /*

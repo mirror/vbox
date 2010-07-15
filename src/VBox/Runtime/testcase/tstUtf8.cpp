@@ -790,6 +790,63 @@ void TstRTStrXCmp(RTTEST hTest)
 
 
 /**
+ * Check case insensitivity.
+ */
+void TstRTStrPurgeEncoding(RTTEST hTest)
+{
+    RTTestSub(hTest, "RTStrPurgeEncoding");
+
+    /*
+     * Test some good strings.
+     */
+    char sz1[] = "1234567890wertyuiopsdfghjklzxcvbnm";
+    char sz1Copy[sizeof(sz1)];
+    memcpy(sz1Copy, sz1, sizeof(sz1));
+
+    RTTESTI_CHECK_RETV(RTStrPurgeEncoding(sz1) == 0);
+    RTTESTI_CHECK_RETV(!memcmp(sz1, sz1Copy, sizeof(sz1)));
+
+    char *pszAll = RTStrDup(g_szAll);
+    if (pszAll)
+    {
+        RTTESTI_CHECK(RTStrPurgeEncoding(pszAll) == 0);
+        RTTESTI_CHECK(!memcmp(pszAll, g_szAll, sizeof(g_szAll)));
+        RTStrFree(pszAll);
+    }
+
+    /*
+     * Test some bad stuff.
+     */
+    struct
+    {
+        size_t          cErrors;
+        unsigned char   szIn[5];
+        const char     *pszExpect;
+    } aTests[] =
+    {
+        { 0, {  '1',  '2',  '3',  '4', '\0' }, "1234" },
+        { 1, { 0x80,  '2',  '3',  '4', '\0' }, "?234" },
+        { 1, {  '1', 0x80,  '3',  '4', '\0' }, "1?34" },
+        { 1, {  '1',  '2', 0x80,  '4', '\0' }, "12?4" },
+        { 1, {  '1',  '2',  '3', 0x80, '\0' }, "123?" },
+        { 2, { 0x80, 0x81,  '3',  '4', '\0' }, "??34" },
+        { 2, {  '1', 0x80, 0x81,  '4', '\0' }, "1??4" },
+        { 2, {  '1',  '2', 0x80, 0x81, '\0' }, "12??" },
+    };
+    for (size_t i = 0; i < RT_ELEMENTS(aTests); i++)
+    {
+        size_t cErrors = RTStrPurgeEncoding((char *)aTests[i].szIn);
+        if (cErrors != aTests[i].cErrors)
+            RTTestFailed(hTest, "#%u: cErrors=%u expected %u\n", i, cErrors, aTests[i].cErrors);
+        else if (strcmp((char *)aTests[i].szIn, aTests[i].pszExpect))
+            RTTestFailed(hTest, "#%u: %.5Rhxs expected %.5Rhxs (%s)\n", i, aTests[i].szIn, aTests[i].pszExpect, aTests[i].pszExpect);
+    }
+
+    RTTestSubDone(hTest);
+}
+
+
+/**
  * Benchmark stuff.
  */
 void Benchmarks(RTTEST hTest)
@@ -1237,6 +1294,7 @@ int main()
     test2(hTest);
     test3(hTest);
     TstRTStrXCmp(hTest);
+    TstRTStrPurgeEncoding(hTest);
     testStrEnd(hTest);
     testStrStr(hTest);
     testMinistring(hTest);
