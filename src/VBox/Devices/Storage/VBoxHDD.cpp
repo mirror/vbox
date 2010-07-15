@@ -710,6 +710,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
         pIoCtx->Type.Root.pvUser2     = pvUser2;
     }
 
+    LogFlow(("Allocated root I/O context %#p\n", pIoCtx));
     return pIoCtx;
 }
 
@@ -735,6 +736,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxChildAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
         pIoCtx->Type.Child.cbWriteParent       = cbWriteParent;
     }
 
+    LogFlow(("Allocated child I/O context %#p\n", pIoCtx));
     return pIoCtx;
 }
 
@@ -775,8 +777,12 @@ DECLINLINE(PVDIOTASK) vdIoTaskMetaAlloc(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLE
 
 DECLINLINE(void) vdIoCtxFree(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
 {
+    LogFlow(("Freeing I/O context %#p\n", pIoCtx));
     if (pIoCtx->pvAllocation)
         RTMemFree(pIoCtx->pvAllocation);
+#ifdef DEBUG
+    memset(pIoCtx, 0xff, sizeof(VDIOCTX));
+#endif
     RTMemCacheFree(pDisk->hMemCacheIoCtx, pIoCtx);
 }
 
@@ -844,11 +850,16 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
 
     LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
 
+    RTCritSectEnter(&pDisk->CritSect);
+
     if (   !pIoCtx->cbTransferLeft
         && !pIoCtx->cMetaTransfersPending
         && !pIoCtx->cDataTransfersPending
         && !pIoCtx->pfnIoCtxTransfer)
-        return VINF_VD_ASYNC_IO_FINISHED;
+    {
+        rc = VINF_VD_ASYNC_IO_FINISHED;
+        goto out;
+    }
 
     /*
      * We complete the I/O context in case of an error
@@ -857,16 +868,22 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
     if (   RT_FAILURE(pIoCtx->rcReq)
         && !pIoCtx->cMetaTransfersPending
         && !pIoCtx->cDataTransfersPending)
-        return VINF_VD_ASYNC_IO_FINISHED;
+    {
+        rc = VINF_VD_ASYNC_IO_FINISHED;
+        goto out;
+    }
 
-    /* Don't change anything if there is a metadata transfer pending. */
-    if (pIoCtx->cMetaTransfersPending)
-        return VERR_VD_ASYNC_IO_IN_PROGRESS;
+    /* Don't change anything if there is a metadata transfer pending or we are blocked. */
+    if (   pIoCtx->cMetaTransfersPending
+        || pIoCtx->fBlocked)
+    {
+        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+        goto out;
+    }
 
     if (pIoCtx->pfnIoCtxTransfer)
     {
         /* Call the transfer function advancing to the next while there is no error. */
-        RTCritSectEnter(&pDisk->CritSect);
         while (   pIoCtx->pfnIoCtxTransfer
                && RT_SUCCESS(rc))
         {
@@ -880,7 +897,6 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
                 pIoCtx->pfnIoCtxTransferNext = NULL;
             }
         }
-        RTCritSectLeave(&pDisk->CritSect);
     }
 
     if (   RT_SUCCESS(rc)
@@ -903,6 +919,9 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
         else
             rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
     }
+
+out:
+    RTCritSectLeave(&pDisk->CritSect);
 
     LogFlowFunc(("pIoCtx=%#p rc=%Rrc cbTransferLeft=%u cMetaTransfersPending=%u fComplete=%RTbool\n",
                  pIoCtx, rc, pIoCtx->cbTransferLeft, pIoCtx->cMetaTransfersPending,
@@ -1553,6 +1572,8 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
 
                 LogFlowFunc(("Deferring write pIoCtx=%#p\n", pIoCtx));
 
+                Assert(!pIoCtx->pIoCtxParent && !pIoCtx->fBlocked);
+
                 RTListInit(&pDeferred->NodeDeferred);
                 pDeferred->pIoCtx = pIoCtx;
                 RTListAppend(&pDisk->ListWriteGrowing, &pDeferred->NodeDeferred);
@@ -1617,7 +1638,14 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                     rc = VINF_SUCCESS;
                 }
                 else
+                {
                     LogFlow(("Child write pending\n"));
+                    pIoCtx->fBlocked = true;
+                    rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+                    cbWrite -= cbThisWrite;
+                    uOffset += cbThisWrite;
+                    break;
+                }
             }
         }
 
@@ -1942,17 +1970,21 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
                 /* Update the parent state. */
                 Assert(!pIoCtxParent->pIoCtxParent);
                 Assert(pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE);
+                Assert(pIoCtxParent->cbTransferLeft >= pIoCtx->Type.Child.cbTransferParent);
                 ASMAtomicSubU32(&pIoCtxParent->cbTransferLeft, pIoCtx->Type.Child.cbTransferParent);
 
                 if (RT_FAILURE(pIoCtx->rcReq))
                     ASMAtomicCmpXchgS32(&pIoCtxParent->rcReq, pIoCtx->rcReq, VINF_SUCCESS);
 
                 /*
-                 * A completed child write means that we finsihed growing the image.
+                 * A completed child write means that we finished growing the image.
                  * We have to process any pending writes now.
                  */
                 Assert(pDisk->fGrowing);
                 ASMAtomicWriteBool(&pDisk->fGrowing, false);
+
+                /* Unblock the parent */
+                pIoCtxParent->fBlocked = false;
 
                 rc = vdIoCtxProcess(pIoCtxParent);
 
@@ -1967,10 +1999,10 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
                     vdIoCtxFree(pDisk, pIoCtxParent);
                 }
 
-                /* Process any pending writes. */
+                /* Process any pending writes if the current request didn't caused another growing. */
                 RTCritSectEnter(&pDisk->CritSect);
 
-                if (!RTListIsEmpty(&pDisk->ListWriteGrowing))
+                if (!RTListIsEmpty(&pDisk->ListWriteGrowing) && !pDisk->fGrowing)
                 {
                     RTLISTNODE ListTmp;
 
@@ -1995,10 +2027,9 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
                         RTListNodeRemove(&pDeferred->NodeDeferred);
                         RTMemFree(pDeferred);
 
-                        pIoCtxWait->fBlocked = false;
-
                         Assert(!pIoCtxWait->pIoCtxParent);
 
+                        pIoCtxWait->fBlocked = false;
                         LogFlowFunc(("Processing waiting I/O context pIoCtxWait=%#p\n", pIoCtxWait));
 
                         rc = vdIoCtxProcess(pIoCtxWait);
@@ -2051,11 +2082,16 @@ static int vdUserXferCompleted(PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
     LogFlowFunc(("pIoStorage=%#p pIoCtx=%#p pfnComplete=%#p pvUser=%#p cbTransfer=%zu rcReq=%Rrc\n",
                  pIoStorage, pIoCtx, pfnComplete, pvUser, cbTransfer, rcReq));
 
+    Assert(pIoCtx->cbTransferLeft >= cbTransfer);
     ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbTransfer);
     ASMAtomicDecU32(&pIoCtx->cDataTransfersPending);
 
     if (pfnComplete)
+    {
+        RTCritSectEnter(&pDisk->CritSect);
         rc = pfnComplete(pIoStorage->pImage->pvBackendData, pIoCtx, pvUser, rcReq);
+        RTCritSectLeave(&pDisk->CritSect);
+    }
 
     if (RT_SUCCESS(rc))
         rc = vdIoCtxContinue(pIoCtx, rcReq);
@@ -2073,22 +2109,23 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
 {
     PVBOXHDD pDisk = pIoStorage->pImage->pDisk;
     RTLISTNODE ListIoCtxWaiting;
-    bool fFlush = VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_FLUSH;
+    bool fFlush;
 
     LogFlowFunc(("pIoStorage=%#p pfnComplete=%#p pvUser=%#p pMetaXfer=%#p rcReq=%Rrc\n",
                  pIoStorage, pfnComplete, pvUser, pMetaXfer, rcReq));
 
+    RTCritSectEnter(&pDisk->CritSect);
+    fFlush = VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_FLUSH;
     VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_NONE);
 
     if (!fFlush)
     {
-        RTCritSectEnter(&pDisk->CritSect);
-
         RTListMove(&ListIoCtxWaiting, &pMetaXfer->ListIoCtxWaiting);
 
         if (RT_FAILURE(rcReq))
         {
             /* Remove from the AVL tree. */
+            LogFlow(("Removing meta xfer=%#p\n", pMetaXfer));
             bool fRemoved = RTAvlrFileOffsetRemove(pIoStorage->pTreeMetaXfers, pMetaXfer->Core.Key);
             Assert(fRemoved);
             RTMemFree(pMetaXfer);
@@ -2098,17 +2135,10 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
             /* Increase the reference counter to make sure it doesn't go away before the last context is processed. */
             pMetaXfer->cRefs++;
         }
-
-        RTCritSectLeave(&pDisk->CritSect);
     }
     else
-    {
-        /*
-         *  Flushes don't need the critical section because they are never accessed concurrently
-         * (they also have only one context attached).
-         */
         RTListMove(&ListIoCtxWaiting, &pMetaXfer->ListIoCtxWaiting);
-    }
+    RTCritSectLeave(&pDisk->CritSect);
 
     /* Go through the waiting list and continue the I/O contexts. */
     while (!RTListIsEmpty(&ListIoCtxWaiting))
@@ -2123,7 +2153,11 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
         ASMAtomicDecU32(&pIoCtx->cMetaTransfersPending);
 
         if (pfnComplete)
+        {
+            RTCritSectEnter(&pDisk->CritSect);
             rc = pfnComplete(pIoStorage->pImage->pvBackendData, pIoCtx, pvUser, rcReq);
+            RTCritSectLeave(&pDisk->CritSect);
+        }
 
         LogFlow(("Completion callback for I/O context %#p returned %Rrc\n", pIoCtx, rc));
 
@@ -2141,9 +2175,10 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
     {
         RTCritSectEnter(&pDisk->CritSect);
         pMetaXfer->cRefs--;
-        if (!pMetaXfer->cRefs)
+        if (!pMetaXfer->cRefs && RTListIsEmpty(&pMetaXfer->ListIoCtxWaiting))
         {
             /* Remove from the AVL tree. */
+            LogFlow(("Removing meta xfer=%#p\n", pMetaXfer));
             bool fRemoved = RTAvlrFileOffsetRemove(pIoStorage->pTreeMetaXfers, pMetaXfer->Core.Key);
             Assert(fRemoved);
             RTMemFree(pMetaXfer);
@@ -2429,7 +2464,9 @@ static int vdIOWriteUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
 static int vdIOReadMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
                              uint64_t uOffset, void *pvBuf,
                              size_t cbRead, PVDIOCTX pIoCtx,
-                             PPVDMETAXFER ppMetaXfer)
+                             PPVDMETAXFER ppMetaXfer,
+                             PFNVDXFERCOMPLETED pfnComplete,
+                             void *pvCompleteUser)
 {
     PVDIMAGE pImage = (PVDIMAGE)pvUser;
     PVBOXHDD pDisk  = pImage->pDisk;
@@ -2447,12 +2484,18 @@ static int vdIOReadMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
     pMetaXfer = (PVDMETAXFER)RTAvlrFileOffsetGet(pIoStorage->pTreeMetaXfers, uOffset);
     if (!pMetaXfer)
     {
+#ifdef RT_STRICT
+        pMetaXfer = (PVDMETAXFER)RTAvlrFileOffsetGetBestFit(pIoStorage->pTreeMetaXfers, uOffset, false /* fAbove */);
+        AssertMsg(!pMetaXfer || (pMetaXfer->Core.Key + pMetaXfer->cbMeta <= uOffset),
+                  ("Overlapping meta transfers!\n"));
+#endif
+
         /* Allocate a new meta transfer. */
         pMetaXfer = vdMetaXferAlloc(pImage, pIoStorage, uOffset, cbRead);
         if (!pMetaXfer)
             return VERR_NO_MEMORY;
 
-        pIoTask = vdIoTaskMetaAlloc(pIoStorage, NULL, NULL, pMetaXfer);
+        pIoTask = vdIoTaskMetaAlloc(pIoStorage, pfnComplete, pvCompleteUser, pMetaXfer);
         if (!pIoTask)
         {
             RTMemFree(pMetaXfer);
@@ -2468,26 +2511,27 @@ static int vdIOReadMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
                                                              uOffset, &Seg, 1,
                                                              cbRead, pIoTask,
                                                              &pvTask);
-        if (RT_SUCCESS(rc))
-        {
-            VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_NONE);
-            vdIoTaskFree(pDisk, pIoTask);
-        }
-        else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-            rc = VERR_VD_NOT_ENOUGH_METADATA;
 
-        if (RT_SUCCESS(rc) || rc == VERR_VD_NOT_ENOUGH_METADATA)
+        if (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         {
             bool fInserted = RTAvlrFileOffsetInsert(pIoStorage->pTreeMetaXfers, &pMetaXfer->Core);
             Assert(fInserted);
         }
         else
             RTMemFree(pMetaXfer);
+
+        if (RT_SUCCESS(rc))
+        {
+            VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_NONE);
+            vdIoTaskFree(pDisk, pIoTask);
+        }
+        else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS && !pfnComplete)
+            rc = VERR_VD_NOT_ENOUGH_METADATA;
     }
 
     Assert(VALID_PTR(pMetaXfer) || RT_FAILURE(rc));
 
-    if (RT_SUCCESS(rc) || rc == VERR_VD_NOT_ENOUGH_METADATA)
+    if (RT_SUCCESS(rc) || rc == VERR_VD_NOT_ENOUGH_METADATA || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
     {
         /* If it is pending add the request to the list. */
         if (VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_READ)
@@ -2507,6 +2551,7 @@ static int vdIOReadMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
             /* Transfer the data. */
             pMetaXfer->cRefs++;
             Assert(pMetaXfer->cbMeta >= cbRead);
+            Assert(pMetaXfer->Core.Key == (RTFOFF)uOffset);
             memcpy(pvBuf, pMetaXfer->abData, cbRead);
             *ppMetaXfer = pMetaXfer;
         }
@@ -2527,6 +2572,7 @@ static int vdIOWriteMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
     RTSGSEG Seg;
     PVDIOTASK pIoTask;
     PVDMETAXFER pMetaXfer = NULL;
+    bool fInTree = false;
     void *pvTask = NULL;
 
     LogFlowFunc(("pvUser=%#p pIoStorage=%#p uOffset=%llu pvBuf=%#p cbWrite=%u\n",
@@ -2541,55 +2587,70 @@ static int vdIOWriteMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
         pMetaXfer = vdMetaXferAlloc(pImage, pIoStorage, uOffset, cbWrite);
         if (!pMetaXfer)
             return VERR_NO_MEMORY;
+    }
+    else
+    {
+        Assert(pMetaXfer->cbMeta >= cbWrite);
+        Assert(pMetaXfer->Core.Key == (RTFOFF)uOffset);
+        fInTree = true;
+    }
 
-        pIoTask = vdIoTaskMetaAlloc(pIoStorage, pfnComplete, pvCompleteUser, pMetaXfer);
-        if (!pIoTask)
+    Assert(VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_NONE);
+
+    pIoTask = vdIoTaskMetaAlloc(pIoStorage, pfnComplete, pvCompleteUser, pMetaXfer);
+    if (!pIoTask)
+    {
+        RTMemFree(pMetaXfer);
+        return VERR_NO_MEMORY;
+    }
+
+    memcpy(pMetaXfer->abData, pvBuf, cbWrite);
+    Seg.cbSeg = cbWrite;
+    Seg.pvSeg = pMetaXfer->abData;
+
+    ASMAtomicIncU32(&pIoCtx->cMetaTransfersPending);
+
+    VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_WRITE);
+    rc = pDisk->pInterfaceAsyncIOCallbacks->pfnWriteAsync(pDisk->pInterfaceAsyncIO->pvUser,
+                                                          pIoStorage->u.pStorage,
+                                                          uOffset, &Seg, 1,
+                                                          cbWrite, pIoTask,
+                                                          &pvTask);
+    if (RT_SUCCESS(rc))
+    {
+        VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_NONE);
+        ASMAtomicDecU32(&pIoCtx->cMetaTransfersPending);
+        vdIoTaskFree(pDisk, pIoTask);
+        if (fInTree && !pMetaXfer->cRefs)
         {
-            RTMemFree(pMetaXfer);
-            return VERR_NO_MEMORY;
-        }
-
-        memcpy(pMetaXfer->abData, pvBuf, cbWrite);
-        Seg.cbSeg = cbWrite;
-        Seg.pvSeg = pMetaXfer->abData;
-
-        ASMAtomicIncU32(&pIoCtx->cMetaTransfersPending);
-
-        VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_WRITE);
-        rc = pDisk->pInterfaceAsyncIOCallbacks->pfnWriteAsync(pDisk->pInterfaceAsyncIO->pvUser,
-                                                              pIoStorage->u.pStorage,
-                                                              uOffset, &Seg, 1,
-                                                              cbWrite, pIoTask,
-                                                              &pvTask);
-        if (RT_SUCCESS(rc))
-        {
-            VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_NONE);
-            ASMAtomicDecU32(&pIoCtx->cMetaTransfersPending);
-            vdIoTaskFree(pDisk, pIoTask);
-            RTMemFree(pMetaXfer);
-            pMetaXfer = NULL;
-        }
-        else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-        {
-            PVDIOCTXDEFERRED pDeferred = (PVDIOCTXDEFERRED)RTMemAllocZ(sizeof(VDIOCTXDEFERRED));
-            AssertPtr(pDeferred);
-
-            RTListInit(&pDeferred->NodeDeferred);
-            pDeferred->pIoCtx = pIoCtx;
-
-            bool fInserted = RTAvlrFileOffsetInsert(pIoStorage->pTreeMetaXfers, &pMetaXfer->Core);
-            Assert(fInserted);
-
-            RTListAppend(&pMetaXfer->ListIoCtxWaiting, &pDeferred->NodeDeferred);
-        }
-        else
-        {
+            LogFlow(("Removing meta xfer=%#p\n", pMetaXfer));
+            bool fRemoved = RTAvlrFileOffsetRemove(pIoStorage->pTreeMetaXfers, pMetaXfer->Core.Key);
+            AssertMsg(fRemoved, ("Metadata transfer wasn't removed\n"));
             RTMemFree(pMetaXfer);
             pMetaXfer = NULL;
         }
     }
+    else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+    {
+        PVDIOCTXDEFERRED pDeferred = (PVDIOCTXDEFERRED)RTMemAllocZ(sizeof(VDIOCTXDEFERRED));
+        AssertPtr(pDeferred);
 
-    Assert(VALID_PTR(pMetaXfer) || RT_SUCCESS(rc) || rc != VERR_VD_ASYNC_IO_IN_PROGRESS);
+        RTListInit(&pDeferred->NodeDeferred);
+        pDeferred->pIoCtx = pIoCtx;
+
+        if (!fInTree)
+        {
+            bool fInserted = RTAvlrFileOffsetInsert(pIoStorage->pTreeMetaXfers, &pMetaXfer->Core);
+            Assert(fInserted);
+        }
+
+        RTListAppend(&pMetaXfer->ListIoCtxWaiting, &pDeferred->NodeDeferred);
+    }
+    else
+    {
+        RTMemFree(pMetaXfer);
+        pMetaXfer = NULL;
+    }
 
     return rc;
 }
@@ -2611,6 +2672,7 @@ static void vdIOMetaXferRelease(void *pvUser, PVDMETAXFER pMetaXfer)
         && VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_NONE)
     {
         /* Free the meta data entry. */
+        LogFlow(("Removing meta xfer=%#p\n", pMetaXfer));
         bool fRemoved = RTAvlrFileOffsetRemove(pIoStorage->pTreeMetaXfers, pMetaXfer->Core.Key);
         AssertMsg(fRemoved, ("Metadata transfer wasn't removed\n"));
 

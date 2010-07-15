@@ -566,9 +566,9 @@ static int parallelsRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     }
     else
     {
-        /** Calculate offset in the real file. */
+        /* Calculate offset in the real file. */
         uSector = uOffset / 512;
-        /** One chunk in the file is always one track big. */
+        /* One chunk in the file is always one track big. */
         iIndexInAllocationTable = (uint32_t)(uSector / pImage->PCHSGeometry.cSectors);
         uSector = uSector % pImage->PCHSGeometry.cSectors;
 

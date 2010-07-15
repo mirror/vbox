@@ -219,7 +219,7 @@ static int vdiFileReadMetaAsync(PVDIIMAGEDESC pImage, uint64_t off, void *pvBuf,
     return pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
                                                            pImage->pStorage,
                                                            off, pvBuf, cbRead, pIoCtx,
-                                                           NULL);
+                                                           NULL, NULL, NULL);
 }
 
 static bool vdiFileOpened(PVDIIMAGEDESC pImage)

@@ -1028,8 +1028,7 @@ typedef struct VDINTERFACETCPNET
      * @return  iprt status code.
      * @param   pszAddress      The address to connect to.
      * @param   uPort           The port to connect to.
-     * @param   pSock           Where to store the handle to the established connect
-ion.
+     * @param   pSock           Where to store the handle to the established connection.
      */
     DECLR3CALLBACKMEMBER(int, pfnClientConnect, (const char *pszAddress, uint32_t uPort, PRTSOCKET pSock));
 
@@ -1038,7 +1037,6 @@ ion.
      *
      * @return  iprt status code.
      * @param   Sock            Socket descriptor.
-ion.
      */
     DECLR3CALLBACKMEMBER(int, pfnClientClose, (RTSOCKET Sock));
 
@@ -1542,18 +1540,22 @@ typedef struct VDINTERFACEIO
      * The current I/O context will be halted.
      *
      * @returns VBox status code.
-     * @param   pvUser        The opaque user data passed on container creation.
-     * @param   pStorage      The storage handle.
-     * @param   uOffset       Offset to start reading from.
-     * @param   pvBuf         Where to store the data.
-     * @param   cbRead        How many bytes to read.
-     * @param   pIoCtx        The I/O context which triggered the read.
-     * @param   ppMetaXfer    Where to store the metadata transfer handle on success.
+     * @param   pvUser         The opaque user data passed on container creation.
+     * @param   pStorage       The storage handle.
+     * @param   uOffset        Offset to start reading from.
+     * @param   pvBuf          Where to store the data.
+     * @param   cbRead         How many bytes to read.
+     * @param   pIoCtx         The I/O context which triggered the read.
+     * @param   ppMetaXfer     Where to store the metadata transfer handle on success.
+     * @param   pfnCompleted   Completion callback.
+     * @param   pvCompleteUser Opaque user data passed in the completion callback.
      */
     DECLR3CALLBACKMEMBER(int, pfnReadMetaAsync, (void *pvUser, PVDIOSTORAGE pStorage,
                                                  uint64_t uOffset, void *pvBuf,
                                                  size_t cbRead, PVDIOCTX pIoCtx,
-                                                 PPVDMETAXFER ppMetaXfer));
+                                                 PPVDMETAXFER ppMetaXfer,
+                                                 PFNVDXFERCOMPLETED pfnComplete,
+                                                 void *pvCompleteUser));
 
     /**
      * Writes metadata asynchronously to storage.

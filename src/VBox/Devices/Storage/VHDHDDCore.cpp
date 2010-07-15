@@ -2327,7 +2327,8 @@ static int vhdAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
         rc = pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
                                                              pImage->pStorage,
                                                              ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
-                                                             pImage->pu8Bitmap, pImage->cbDataBlockBitmap, pIoCtx, &pMetaXfer);
+                                                             pImage->pu8Bitmap, pImage->cbDataBlockBitmap, pIoCtx, &pMetaXfer,
+                                                             NULL, NULL);
 
         if (RT_SUCCESS(rc))
         {
@@ -2574,7 +2575,8 @@ static int vhdAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
             rc = pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
                                                                  pImage->pStorage,
                                                                  ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
-                                                                 pImage->pu8Bitmap, pImage->cbDataBlockBitmap, pIoCtx, &pMetaXfer);
+                                                                 pImage->pu8Bitmap, pImage->cbDataBlockBitmap, pIoCtx, &pMetaXfer,
+                                                                 NULL, NULL);
             if (RT_SUCCESS(rc))
             {
                 pImage->pInterfaceIOCallbacks->pfnMetaXferRelease(pImage->pInterfaceIO->pvUser, pMetaXfer);
