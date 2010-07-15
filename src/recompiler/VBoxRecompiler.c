@@ -4166,11 +4166,13 @@ int cpu_get_pic_interrupt(CPUState *env)
 
 /* -+- local apic -+- */
 
+#if 0 /* CPUMSetGuestMsr does this now. */
 void cpu_set_apic_base(CPUX86State *env, uint64_t val)
 {
     int rc = PDMApicSetBase(env->pVM, val);
     LogFlow(("cpu_set_apic_base: val=%#llx rc=%Rrc\n", val, rc)); NOREF(rc);
 }
+#endif
 
 uint64_t cpu_get_apic_base(CPUX86State *env)
 {
@@ -4204,38 +4206,34 @@ uint8_t cpu_get_apic_tpr(CPUX86State *env)
     return 0;
 }
 
-
-uint64_t cpu_apic_rdmsr(CPUX86State *env, uint32_t reg)
-{
-    uint64_t value;
-    int rc = PDMApicReadMSR(env->pVM, 0/* cpu */, reg, &value);
-    if (RT_SUCCESS(rc))
-    {
-        LogFlow(("cpu_apic_rdms returns %#x\n", value));
-        return value;
-    }
-    /** @todo: exception ? */
-    LogFlow(("cpu_apic_rdms returns 0 (rc=%Rrc)\n", rc));
-    return value;
-}
-
-void     cpu_apic_wrmsr(CPUX86State *env, uint32_t reg, uint64_t value)
-{
-    int rc = PDMApicWriteMSR(env->pVM, 0 /* cpu */, reg, value);
-    /** @todo: exception if error ? */
-    LogFlow(("cpu_apic_wrmsr: rc=%Rrc\n", rc)); NOREF(rc);
-}
-
-uint64_t cpu_rdmsr(CPUX86State *env, uint32_t msr)
+/**
+ * Read an MSR.
+ *
+ * @retval 0 success.
+ * @retval -1 failure, raise \#GP(0).
+ * @param   env     The cpu state.
+ * @param   idMsr   The MSR to read.
+ * @param   puValue Where to return the value.
+ */
+int cpu_rdmsr(CPUX86State *env, uint32_t idMsr, uint64_t *puValue)
 {
     Assert(env->pVCpu);
-    return CPUMGetGuestMsr(env->pVCpu, msr);
+    return CPUMQueryGuestMsr(env->pVCpu, idMsr, puValue) == VINF_SUCCESS ? 0 : -1;
 }
 
-void cpu_wrmsr(CPUX86State *env, uint32_t msr, uint64_t val)
+/**
+ * Write to an MSR.
+ *
+ * @retval 0 success.
+ * @retval -1 failure, raise \#GP(0).
+ * @param   env     The cpu state.
+ * @param   idMsr   The MSR to read.
+ * @param   puValue Where to return the value.
+ */
+int cpu_wrmsr(CPUX86State *env, uint32_t idMsr, uint64_t uValue)
 {
     Assert(env->pVCpu);
-    CPUMSetGuestMsr(env->pVCpu, msr, val);
+    return CPUMSetGuestMsr(env->pVCpu, idMsr, uValue) == VINF_SUCCESS ? 0 : -1;
 }
 
 /* -+- I/O Ports -+- */

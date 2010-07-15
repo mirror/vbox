@@ -337,6 +337,7 @@ VMMDECL(PGMMODE)    PGMGetGuestMode(PVMCPU pVCpu);
 VMMDECL(PGMMODE)    PGMGetShadowMode(PVMCPU pVCpu);
 VMMDECL(PGMMODE)    PGMGetHostMode(PVM pVM);
 VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode);
+VMM_INT_DECL(void)  PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe);
 VMMDECL(bool)       PGMHasDirtyPages(PVM pVM);
 VMMDECL(int)        PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                                  R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,

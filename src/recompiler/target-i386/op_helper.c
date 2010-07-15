@@ -3689,7 +3689,10 @@ void helper_rdtscp(void)
     val = cpu_get_tsc(env);
     EAX = (uint32_t)(val);
     EDX = (uint32_t)(val >> 32);
-    ECX = cpu_rdmsr(env, MSR_K8_TSC_AUX);
+    if (cpu_rdmsr(env, MSR_K8_TSC_AUX, &val) == 0)
+        ECX = (uint32_t)(val);
+    else
+        ECX = 0;
 }
 #endif
 
@@ -3742,7 +3745,9 @@ void helper_wrmsr(void)
         env->sysenter_eip = val;
         break;
     case MSR_IA32_APICBASE:
+#ifndef VBOX /* The CPUMSetGuestMsr call below does this now. */
         cpu_set_apic_base(env, val);
+#endif
         break;
     case MSR_EFER:
         {
@@ -3794,21 +3799,17 @@ void helper_wrmsr(void)
     default:
 #ifndef VBOX
         /* XXX: exception ? */
+#endif
         break;
-#else  /* VBOX */
+    }
+
+#ifdef VBOX
+    /* call CPUM. */
+    if (cpu_wrmsr(env, (uint32_t)ECX, val) != 0)
     {
-        uint32_t ecx = (uint32_t)ECX;
-        /* In X2APIC specification this range is reserved for APIC control. */
-        if (ecx >= MSR_APIC_RANGE_START && ecx < MSR_APIC_RANGE_END)
-            cpu_apic_wrmsr(env, ecx, val);
-        /** @todo else exception? */
-        break;
+        /** @todo be a brave man and raise a \#GP(0) here as we should... */
     }
-    case MSR_K8_TSC_AUX:
-            cpu_wrmsr(env, MSR_K8_TSC_AUX, val);
-            break;
-#endif /* VBOX */
-    }
+#endif
 }
 
 void helper_rdmsr(void)
@@ -3841,14 +3842,7 @@ void helper_rdmsr(void)
     case MSR_VM_HSAVE_PA:
         val = env->vm_hsave;
         break;
-#ifdef VBOX
-    case MSR_IA32_PERF_STATUS:
-    case MSR_IA32_PLATFORM_INFO:
-    case MSR_IA32_FSB_CLOCK_STS:
-    case MSR_IA32_THERM_STATUS:
-        val = CPUMGetGuestMsr(env->pVCpu, (uint32_t)ECX);
-        break;
-#else
+#ifndef VBOX /* forward to CPUMQueryGuestMsr. */
     case MSR_IA32_PERF_STATUS:
         /* tsc_increment_by_tick */
         val = 1000ULL;
@@ -3889,25 +3883,23 @@ void helper_rdmsr(void)
 #ifndef VBOX
         /* XXX: exception ? */
         val = 0;
-        break;
 #else  /* VBOX */
+        if (cpu_rdmsr(env, (uint32_t)ECX, &val) != 0)
         {
-            uint32_t ecx = (uint32_t)ECX;
-            /* In X2APIC specification this range is reserved for APIC control. */
-            if (ecx >= MSR_APIC_RANGE_START && ecx < MSR_APIC_RANGE_END)
-                val = cpu_apic_rdmsr(env, ecx);
-            else
-                val = 0; /** @todo else exception? */
-            break;
+            /** @todo be a brave man and raise a \#GP(0) here as we should... */
+            val = 0;
         }
-        case MSR_IA32_TSC:
-        case MSR_K8_TSC_AUX:
-            val = cpu_rdmsr(env, (uint32_t)ECX);
-            break;
-#endif /* VBOX */
+#endif
+        break;
     }
     EAX = (uint32_t)(val);
     EDX = (uint32_t)(val >> 32);
+
+#ifdef VBOX_STRICT
+    if (cpu_rdmsr(env, (uint32_t)ECX, &val) != 0)
+        val = 0;
+    AssertMsg(val == RT_MAKE_U32(EAX, EDX), ("idMsr=%#x val=%#llx eax:edx=%#llx\n", (uint32_t)ECX, val, RT_MAKE_U32(EAX, EDX)));
+#endif
 }
 #endif
 
