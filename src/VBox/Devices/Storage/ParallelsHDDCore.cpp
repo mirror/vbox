@@ -661,7 +661,6 @@ static int parallelsWrite(void *pBackendData, uint64_t uOffset, const void *pvBu
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
-
 }
 
 static int parallelsFlush(void *pBackendData)
@@ -1176,30 +1175,166 @@ static int parallelsSetParentFilename(void *pvBackendData, const char *pszParent
 
 static bool parallelsIsAsyncIOSupported(void *pvBackendData)
 {
+#if 0 /** @todo: Remove when tested */
+    return true;
+#else
     return false;
+#endif
 }
 
-static int parallelsAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
+static int parallelsAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbToRead,
                               PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("pvBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
+                 pvBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
+    int rc = VINF_SUCCESS;
+    PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pvBackendData;
+    uint64_t uSector;
+    uint64_t uOffsetInFile;
+    uint32_t iIndexInAllocationTable;
+
+    Assert(pImage);
+    Assert(uOffset % 512 == 0);
+    Assert(cbToRead % 512 == 0);
+
+    if (pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
+    {
+        rc = pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
+                                                             pImage->pStorage,
+                                                             uOffset, pIoCtx, cbToRead);
+    }
+    else
+    {
+        /* Calculate offset in the real file. */
+        uSector = uOffset / 512;
+        /* One chunk in the file is always one track big. */
+        iIndexInAllocationTable = (uint32_t)(uSector / pImage->PCHSGeometry.cSectors);
+        uSector = uSector % pImage->PCHSGeometry.cSectors;
+
+        cbToRead = RT_MIN(cbToRead, (pImage->PCHSGeometry.cSectors - uSector)*512);
+
+        if (pImage->pAllocationBitmap[iIndexInAllocationTable] == 0)
+        {
+            rc = VERR_VD_BLOCK_FREE;
+        }
+        else
+        {
+            uOffsetInFile = (pImage->pAllocationBitmap[iIndexInAllocationTable] + uSector) * 512;
+            rc = pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
+                                                                 pImage->pStorage,
+                                                                 uOffsetInFile, pIoCtx, cbToRead);
+        }
+    }
+
+    *pcbActuallyRead = cbToRead;
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
-static int parallelsAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+static int parallelsAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbToWrite,
                                PVDIOCTX pIoCtx,
                                size_t *pcbWriteProcess, size_t *pcbPreRead,
                                size_t *pcbPostRead, unsigned fWrite)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("pvBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p\n",
+                 pvBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess));
+    int rc = VINF_SUCCESS;
+    PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pvBackendData;
+    uint64_t uSector;
+    uint64_t uOffsetInFile;
+    uint32_t iIndexInAllocationTable;
+
+    Assert(pImage);
+    Assert(uOffset % 512 == 0);
+    Assert(cbToWrite % 512 == 0);
+
+    if (pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
+    {
+        rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                              pImage->pStorage,
+                                                              uOffset, pIoCtx, cbToWrite,
+                                                              NULL, NULL);
+    }
+    else
+    {
+        /* Calculate offset in the real file. */
+        uSector = uOffset / 512;
+        /* One chunk in the file is always one track big. */
+        iIndexInAllocationTable = (uint32_t)(uSector / pImage->PCHSGeometry.cSectors);
+        uSector = uSector % pImage->PCHSGeometry.cSectors;
+
+        cbToWrite = RT_MIN(cbToWrite, (pImage->PCHSGeometry.cSectors - uSector)*512);
+
+        if (pImage->pAllocationBitmap[iIndexInAllocationTable] == 0)
+        {
+            if (fWrite & VD_WRITE_NO_ALLOC)
+            {
+                *pcbPreRead  = uSector * 512;
+                *pcbPostRead = pImage->PCHSGeometry.cSectors * 512 - cbToWrite - *pcbPreRead;
+
+                if (pcbWriteProcess)
+                    *pcbWriteProcess = cbToWrite;
+                return VERR_VD_BLOCK_FREE;
+            }
+
+            /* Allocate new chunk in the file. */
+            Assert(uSector == 0);
+            AssertMsg(pImage->cbFileCurrent % 512 == 0, ("File size is not a multiple of 512\n"));
+            pImage->pAllocationBitmap[iIndexInAllocationTable] = (uint32_t)(pImage->cbFileCurrent / 512);
+            pImage->cbFileCurrent += pImage->PCHSGeometry.cSectors * 512;
+            pImage->fAllocationBitmapChanged = true;
+            uOffsetInFile = (uint64_t)pImage->pAllocationBitmap[iIndexInAllocationTable] * 512;
+
+            /*
+             * Write the new block at the current end of the file.
+             */
+            rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                                  pImage->pStorage,
+                                                                  uOffsetInFile, pIoCtx, cbToWrite,
+                                                                  NULL, NULL);
+            if (RT_SUCCESS(rc) || (rc == VERR_VD_ASYNC_IO_IN_PROGRESS))
+            {
+                /* Write the changed allocation bitmap entry. */
+                /** @todo: Error handling. */
+                rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pImage->pInterfaceIO->pvUser,
+                                                                      pImage->pStorage,
+                                                                      sizeof(ParallelsHeader) + iIndexInAllocationTable * sizeof(uint32_t),
+                                                                      &pImage->pAllocationBitmap[iIndexInAllocationTable],
+                                                                      sizeof(uint32_t),
+                                                                      pIoCtx,
+                                                                      NULL, NULL);
+            }
+        }
+        else
+        {
+            uOffsetInFile = (pImage->pAllocationBitmap[iIndexInAllocationTable] + uSector) * 512;
+            rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                                  pImage->pStorage,
+                                                                  uOffsetInFile, pIoCtx, cbToWrite,
+                                                                  NULL, NULL);
+        }
+    }
+
+    if (pcbWriteProcess)
+        *pcbWriteProcess = cbToWrite;
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
 static int parallelsAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pvBackendData;
+
+    LogFlowFunc(("pImage=#%p\n", pImage));
+
+    /* Flush the file, everything is up to date already. */
+    rc = pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
+                                                      pImage->pStorage, pIoCtx,
+                                                      NULL, NULL);
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1211,7 +1346,7 @@ VBOXHDDBACKEND g_ParallelsBackend =
     /* cbSize */
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
-    VD_CAP_FILE | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC,
+    VD_CAP_FILE | VD_CAP_ASYNC,
     /* papszFileExtensions */
     s_apszParallelsFileExtensions,
     /* paConfigInfo */
