@@ -2783,7 +2783,26 @@ DxgkDdiEscape(
                 VBoxWddmInvalidateModesTable(pDevExt);
                 Status = STATUS_SUCCESS;
                 break;
+            case VBOXESC_DBGPRINT:
+            {
+                /* use RT_OFFSETOF instead of sizeof since sizeof will give an aligned size that might
+                 * be bigger than the VBOXDISPIFESCAPE_DBGPRINT with a data containing just a few chars */
+                Assert(pEscape->PrivateDriverDataSize >= RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[1]));
+                /* only do DbgPrint when pEscape->PrivateDriverDataSize > RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[1])
+                 * since == RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[1]) means the buffer contains just \0,
+                 * i.e. no need to print it */
+                if (pEscape->PrivateDriverDataSize > RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[1]))
+                {
+                    PVBOXDISPIFESCAPE_DBGPRINT pDbgPrint = (PVBOXDISPIFESCAPE_DBGPRINT)pEscapeHdr;
+                    /* ensure the last char is \0*/
+                    *((uint8_t*)pDbgPrint + pEscape->PrivateDriverDataSize - 1) = '\0';
+                    DbgPrint(pDbgPrint->aStringBuf);
+                }
+                Status = STATUS_SUCCESS;
+                break;
+            }
             default:
+                Assert(0);
                 drprintf((__FUNCTION__": unsupported escape code (0x%x)\n", pEscapeHdr->escapeCode));
                 break;
         }
