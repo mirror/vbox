@@ -494,6 +494,30 @@ typedef struct VMDKDEFLATESTATE
     ssize_t iOffset;
 } VMDKDEFLATESTATE;
 
+/** Tracks async grain allocation. */
+typedef struct VMDKGRAINALLOCASYNC
+{
+    /** Old size of the extent. Used for rollback after an error. */
+    uint64_t    cbExtentOld;
+    /** Flag whether the allocation failed. */
+    bool        fIoErr;
+    /** Current number of transfers pending.
+     * If reached 0 and there is an error the old state is restored. */
+    unsigned    cIoXfersPending;
+    /** Sector number */
+    uint64_t    uSector;
+    /** Flag whether the grain table needs to be updated. */
+    bool        fGTUpdateNeeded;
+    /** Extent the allocation happens. */
+    PVMDKEXTENT pExtent;
+    /** New size of the extent, required for the grain table update. */
+    uint64_t    cbExtentSize;
+    /** Grain table sector. */
+    uint64_t    uGTSector;
+    /** Backup grain table sector. */
+    uint64_t    uRGTSector;
+} VMDKGRAINALLOCASYNC, *PVMDKGRAINALLOCASYNC;
+
 /*******************************************************************************
  *   Static Variables                                                           *
  *******************************************************************************/
@@ -519,6 +543,7 @@ static int vmdkFlushImage(PVMDKIMAGE pImage);
 static int vmdkSetImageComment(PVMDKIMAGE pImage, const char *pszComment);
 static void vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete);
 
+static int vmdkAllocGrainAsyncComplete(void *pvBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq);
 
 /**
  * Internal: signal an error to the frontend.
@@ -2895,6 +2920,70 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent, uint64_t uOffset)
     return rc;
 }
 
+/**
+ * Internal: write/update the metadata for a sparse extent - async version.
+ */
+static int vmdkWriteMetaSparseExtentAsync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
+                                          uint64_t uOffset, PVDIOCTX pIoCtx)
+{
+    SparseExtentHeader Header;
+
+    memset(&Header, '\0', sizeof(Header));
+    Header.magicNumber = RT_H2LE_U32(VMDK_SPARSE_MAGICNUMBER);
+    Header.version = RT_H2LE_U32(pExtent->uVersion);
+    Header.flags = RT_H2LE_U32(RT_BIT(0));
+    if (pExtent->pRGD)
+        Header.flags |= RT_H2LE_U32(RT_BIT(1));
+    if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+        Header.flags |= RT_H2LE_U32(RT_BIT(16) | RT_BIT(17));
+    Header.capacity = RT_H2LE_U64(pExtent->cSectors);
+    Header.grainSize = RT_H2LE_U64(pExtent->cSectorsPerGrain);
+    Header.descriptorOffset = RT_H2LE_U64(pExtent->uDescriptorSector);
+    Header.descriptorSize = RT_H2LE_U64(pExtent->cDescriptorSectors);
+    Header.numGTEsPerGT = RT_H2LE_U32(pExtent->cGTEntries);
+    if (pExtent->fFooter && uOffset == 0)
+    {
+        if (pExtent->pRGD)
+        {
+            Assert(pExtent->uSectorRGD);
+            Header.rgdOffset = RT_H2LE_U64(VMDK_GD_AT_END);
+            Header.gdOffset = RT_H2LE_U64(VMDK_GD_AT_END);
+        }
+        else
+        {
+            Header.gdOffset = RT_H2LE_U64(VMDK_GD_AT_END);
+        }
+    }
+    else
+    {
+        if (pExtent->pRGD)
+        {
+            Assert(pExtent->uSectorRGD);
+            Header.rgdOffset = RT_H2LE_U64(pExtent->uSectorRGD);
+            Header.gdOffset = RT_H2LE_U64(pExtent->uSectorGD);
+        }
+        else
+        {
+            Header.gdOffset = RT_H2LE_U64(pExtent->uSectorGD);
+        }
+    }
+    Header.overHead = RT_H2LE_U64(pExtent->cOverheadSectors);
+    Header.uncleanShutdown = pExtent->fUncleanShutdown;
+    Header.singleEndLineChar = '\n';
+    Header.nonEndLineChar = ' ';
+    Header.doubleEndLineChar1 = '\r';
+    Header.doubleEndLineChar2 = '\n';
+    Header.compressAlgorithm = RT_H2LE_U16(pExtent->uCompression);
+
+    int rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pImage->pInterfaceIO->pvUser,
+                                                              pExtent->pFile->pStorage,
+                                                              uOffset, &Header, sizeof(Header),
+                                                              pIoCtx, NULL, NULL);
+    if (RT_FAILURE(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
+        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error writing extent header in '%s'"), pExtent->pszFullname);
+    return rc;
+}
+
 #ifdef VBOX_WITH_VMDK_ESX
 /**
  * Internal: unused code to read the metadata of a sparse ESX extent.
@@ -4396,6 +4485,8 @@ static int vmdkGetSectorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx,
         return VINF_SUCCESS;
     }
 
+    LogFlowFunc(("uGTSector=%llu\n", uGTSector));
+
     uGTBlock = uSector / (pExtent->cSectorsPerGrain * VMDK_GT_CACHELINE_SIZE);
     uGTHash = vmdkGTCacheHash(pCache, uGTBlock, pExtent->uExtent);
     pGTCacheEntry = &pCache->aGTCache[uGTHash];
@@ -4407,7 +4498,7 @@ static int vmdkGetSectorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx,
         rc = pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
                                                              pExtent->pFile->pStorage,
                                                              VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
-                                                             aGTDataTmp, sizeof(aGTDataTmp), pIoCtx, &pMetaXfer);
+                                                             aGTDataTmp, sizeof(aGTDataTmp), pIoCtx, &pMetaXfer, NULL, NULL);
         if (RT_FAILURE(rc))
             return rc;
         /* We can release the metadata transfer immediately. */
@@ -4695,6 +4786,322 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         pExtent->fMetaDirty = true;
     }
 #endif /* VBOX_WITH_VMDK_ESX */
+    return rc;
+}
+
+/**
+ * Internal: Updates the grain table during a async grain allocation.
+ */
+static int vmdkAllocGrainAsyncGTUpdate(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
+                                       PVMDKGTCACHE pCache, PVDIOCTX pIoCtx,
+                                       PVMDKGRAINALLOCASYNC pGrainAlloc)
+{
+    int rc = VINF_SUCCESS;
+    uint32_t aGTDataTmp[VMDK_GT_CACHELINE_SIZE];
+    uint32_t uGTHash, uGTBlockIndex;
+    uint64_t uGDIndex, uGTSector, uRGTSector, uGTBlock;
+    uint64_t uSector = pGrainAlloc->uSector;
+    PVMDKGTCACHEENTRY pGTCacheEntry;
+
+    LogFlowFunc(("pImage=%#p pExtent=%#p pCache=%#p pIoCtx=%#p pGrainAlloc=%#p\n",
+                 pImage, pExtent, pCache, pIoCtx, pGrainAlloc));
+
+    uGTSector = pGrainAlloc->uGTSector;
+    uRGTSector = pGrainAlloc->uRGTSector;
+    LogFlow(("uGTSector=%llu uRGTSector=%llu\n", uGTSector, uRGTSector));
+
+    /* Update the grain table (and the cache). */
+    uGTBlock = uSector / (pExtent->cSectorsPerGrain * VMDK_GT_CACHELINE_SIZE);
+    uGTHash = vmdkGTCacheHash(pCache, uGTBlock, pExtent->uExtent);
+    pGTCacheEntry = &pCache->aGTCache[uGTHash];
+    if (    pGTCacheEntry->uExtent != pExtent->uExtent
+        ||  pGTCacheEntry->uGTBlock != uGTBlock)
+    {
+        /* Cache miss, fetch data from disk. */
+        LogFlow(("Cache miss, fetch data from disk\n"));
+        PVDMETAXFER pMetaXfer = NULL;
+        rc = pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
+                                                             pExtent->pFile->pStorage,
+                                                             VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                                                             aGTDataTmp, sizeof(aGTDataTmp), pIoCtx,
+                                                             &pMetaXfer,
+                                                             vmdkAllocGrainAsyncComplete, pGrainAlloc);
+        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+        {
+            pGrainAlloc->cIoXfersPending++;
+            pGrainAlloc->fGTUpdateNeeded = true;
+            /* Leave early, we will be called  again after the read completed. */
+            LogFlowFunc(("Metadata read in progress, leaving\n"));
+            return rc;
+        }
+        else if (RT_FAILURE(rc))
+            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot read allocated grain table entry in '%s'"), pExtent->pszFullname);
+        pImage->pInterfaceIOCallbacks->pfnMetaXferRelease(pExtent->pImage->pInterfaceIO->pvUser, pMetaXfer);
+        pGTCacheEntry->uExtent = pExtent->uExtent;
+        pGTCacheEntry->uGTBlock = uGTBlock;
+        for (unsigned i = 0; i < VMDK_GT_CACHELINE_SIZE; i++)
+            pGTCacheEntry->aGTData[i] = RT_LE2H_U32(aGTDataTmp[i]);
+    }
+    else
+    {
+        /* Cache hit. Convert grain table block back to disk format, otherwise
+         * the code below will write garbage for all but the updated entry. */
+        for (unsigned i = 0; i < VMDK_GT_CACHELINE_SIZE; i++)
+            aGTDataTmp[i] = RT_H2LE_U32(pGTCacheEntry->aGTData[i]);
+    }
+    pGrainAlloc->fGTUpdateNeeded = false;
+    uGTBlockIndex = (uSector / pExtent->cSectorsPerGrain) % VMDK_GT_CACHELINE_SIZE;
+    aGTDataTmp[uGTBlockIndex] = RT_H2LE_U32(VMDK_BYTE2SECTOR(pGrainAlloc->cbExtentSize));
+    pGTCacheEntry->aGTData[uGTBlockIndex] = VMDK_BYTE2SECTOR(pGrainAlloc->cbExtentSize);
+    /* Update grain table on disk. */
+    rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
+                                                          pExtent->pFile->pStorage,
+                                                          VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                                                          aGTDataTmp, sizeof(aGTDataTmp), pIoCtx,
+                                                          vmdkAllocGrainAsyncComplete, pGrainAlloc);
+    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+        pGrainAlloc->cIoXfersPending++;
+    else if (RT_FAILURE(rc))
+        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated grain table in '%s'"), pExtent->pszFullname);
+    if (pExtent->pRGD)
+    {
+        /* Update backup grain table on disk. */
+        rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
+                                                              pExtent->pFile->pStorage,
+                                                              VMDK_SECTOR2BYTE(uRGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                                                              aGTDataTmp, sizeof(aGTDataTmp), pIoCtx,
+                                                              vmdkAllocGrainAsyncComplete, pGrainAlloc);
+        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+            pGrainAlloc->cIoXfersPending++;
+        else if (RT_FAILURE(rc))
+            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated backup grain table in '%s'"), pExtent->pszFullname);
+    }
+#ifdef VBOX_WITH_VMDK_ESX
+    if (RT_SUCCESS(rc) && pExtent->enmType == VMDKETYPE_ESX_SPARSE)
+    {
+        pExtent->uFreeSector = uGTSector + VMDK_BYTE2SECTOR(cbWrite);
+        pExtent->fMetaDirty = true;
+    }
+#endif /* VBOX_WITH_VMDK_ESX */
+
+    LogFlowFunc(("leaving rc=%Rrc\n", rc));
+
+    return rc;
+}
+
+/**
+ * Internal - complete the grain allocation by updating disk grain table if required.
+ */
+static int vmdkAllocGrainAsyncComplete(void *pvBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq)
+{
+    int rc = VINF_SUCCESS;
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+    PVMDKGRAINALLOCASYNC pGrainAlloc = (PVMDKGRAINALLOCASYNC)pvUser;
+    PVMDKEXTENT pExtent = pGrainAlloc->pExtent;
+
+    LogFlowFunc(("pvBackendData=%#p pIoCtx=%#p pvUser=%#p rcReq=%Rrc\n",
+                 pvBackendData, pIoCtx, pvUser, rcReq));
+
+    pGrainAlloc->cIoXfersPending--;
+    if (!pGrainAlloc->cIoXfersPending && pGrainAlloc->fGTUpdateNeeded)
+        rc = vmdkAllocGrainAsyncGTUpdate(pImage, pGrainAlloc->pExtent, pImage->pGTCache,
+                                         pIoCtx, pGrainAlloc);
+
+    if (!pGrainAlloc->cIoXfersPending)
+    {
+        /* Grain allocation completed. */
+        RTMemFree(pGrainAlloc);
+    }
+
+    LogFlowFunc(("Leaving rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Internal. Allocates a new grain table (if necessary) - async version.
+ */
+static int vmdkAllocGrainAsync(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
+                               PVDIOCTX pIoCtx, uint64_t uSector,
+                               uint64_t cbWrite)
+{
+    uint64_t uGDIndex, uGTSector, uRGTSector, uGTBlock;
+    uint64_t cbExtentSize;
+    uint32_t aGTDataTmp[VMDK_GT_CACHELINE_SIZE];
+    PVMDKGRAINALLOCASYNC pGrainAlloc = NULL;
+    PVMDKIMAGE pImage = pExtent->pImage;
+    int rc;
+
+    LogFlowFunc(("pCache=%#p pExtent=%#p pIoCtx=%#p uSector=%llu cbWrite=%llu\n",
+                 pCache, pExtent, pIoCtx, uSector, cbWrite));
+
+    AssertReturn(!(pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED), VERR_NOT_SUPPORTED);
+
+    pGrainAlloc = (PVMDKGRAINALLOCASYNC)RTMemAllocZ(sizeof(VMDKGRAINALLOCASYNC));
+    if (!pGrainAlloc)
+        return VERR_NO_MEMORY;
+
+    pGrainAlloc->pExtent = pExtent;
+    pGrainAlloc->uSector = uSector;
+
+    uGDIndex = uSector / pExtent->cSectorsPerGDE;
+    if (uGDIndex >= pExtent->cGDEntries)
+        return VERR_OUT_OF_RANGE;
+    uGTSector = pExtent->pGD[uGDIndex];
+    if (pExtent->pRGD)
+        uRGTSector = pExtent->pRGD[uGDIndex];
+    else
+        uRGTSector = 0; /**< avoid compiler warning */
+    if (!uGTSector)
+    {
+        LogFlow(("Allocating new grain table\n"));
+
+        /* There is no grain table referenced by this grain directory
+         * entry. So there is absolutely no data in this area. Allocate
+         * a new grain table and put the reference to it in the GDs. */
+        rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+        if (RT_FAILURE(rc))
+            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+        Assert(!(cbExtentSize % 512));
+
+        pGrainAlloc->cbExtentOld = cbExtentSize;
+
+        cbExtentSize = RT_ALIGN_64(cbExtentSize, 512);
+        uGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
+
+        /* Normally the grain table is preallocated for hosted sparse extents
+         * that support more than 32 bit sector numbers. So this shouldn't
+         * ever happen on a valid extent. */
+        if (uGTSector > UINT32_MAX)
+            return VERR_VD_VMDK_INVALID_HEADER;
+
+        /* Write grain table by writing the required number of grain table
+         * cache chunks. Allocate memory dynamically here or we flood the
+         * metadata cache with very small entries.
+         */
+        size_t cbGTDataTmp = (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE) * VMDK_GT_CACHELINE_SIZE * sizeof(uint32_t);
+        uint32_t *paGTDataTmp = (uint32_t *)RTMemTmpAllocZ(cbGTDataTmp);
+
+        if (!paGTDataTmp)
+            return VERR_NO_MEMORY;
+
+        memset(paGTDataTmp, '\0', cbGTDataTmp);
+        rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
+                                                              pExtent->pFile->pStorage,
+                                                              VMDK_SECTOR2BYTE(uGTSector),
+                                                              paGTDataTmp, cbGTDataTmp, pIoCtx,
+                                                              vmdkAllocGrainAsyncComplete, pGrainAlloc);
+        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+            pGrainAlloc->cIoXfersPending++;
+        else if (RT_FAILURE(rc))
+        {
+            RTMemTmpFree(paGTDataTmp);
+            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain table allocation in '%s'"), pExtent->pszFullname);
+        }
+
+        if (pExtent->pRGD)
+        {
+            AssertReturn(!uRGTSector, VERR_VD_VMDK_INVALID_HEADER);
+            rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+            if (RT_FAILURE(rc))
+                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+            Assert(!(cbExtentSize % 512));
+            uRGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
+
+            /* Normally the redundant grain table is preallocated for hosted
+             * sparse extents that support more than 32 bit sector numbers. So
+             * this shouldn't ever happen on a valid extent. */
+            if (uRGTSector > UINT32_MAX)
+            {
+                RTMemTmpFree(paGTDataTmp);
+                return VERR_VD_VMDK_INVALID_HEADER;
+            }
+            /* Write backup grain table by writing the required number of grain
+             * table cache chunks. */
+            rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
+                                                                  pExtent->pFile->pStorage,
+                                                                  VMDK_SECTOR2BYTE(uRGTSector),
+                                                                  paGTDataTmp, cbGTDataTmp, pIoCtx,
+                                                                  vmdkAllocGrainAsyncComplete, pGrainAlloc);
+            if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                pGrainAlloc->cIoXfersPending++;
+            else if (RT_FAILURE(rc))
+            {
+                RTMemTmpFree(paGTDataTmp);
+                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain table allocation in '%s'"), pExtent->pszFullname);
+            }
+        }
+
+        RTMemTmpFree(paGTDataTmp);
+
+        /* Update the grain directory on disk (doing it before writing the
+         * grain table will result in a garbled extent if the operation is
+         * aborted for some reason. Otherwise the worst that can happen is
+         * some unused sectors in the extent. */
+        uint32_t uGTSectorLE = RT_H2LE_U64(uGTSector);
+        rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
+                                                              pExtent->pFile->pStorage,
+                                                              VMDK_SECTOR2BYTE(pExtent->uSectorGD) + uGDIndex * sizeof(uGTSectorLE),
+                                                              &uGTSectorLE, sizeof(uGTSectorLE), pIoCtx,
+                                                              vmdkAllocGrainAsyncComplete, pGrainAlloc);
+        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+            pGrainAlloc->cIoXfersPending++;
+        else if (RT_FAILURE(rc))
+            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain directory entry in '%s'"), pExtent->pszFullname);
+        if (pExtent->pRGD)
+        {
+            uint32_t uRGTSectorLE = RT_H2LE_U64(uRGTSector);
+            rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
+                                                                  pExtent->pFile->pStorage,
+                                                                  VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + uGDIndex * sizeof(uGTSectorLE),
+                                                                  &uRGTSectorLE, sizeof(uRGTSectorLE), pIoCtx,
+                                                                  vmdkAllocGrainAsyncComplete, pGrainAlloc);
+            if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                pGrainAlloc->cIoXfersPending++;
+            else if (RT_FAILURE(rc))
+                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain directory entry in '%s'"), pExtent->pszFullname);
+        }
+
+        /* As the final step update the in-memory copy of the GDs. */
+        pExtent->pGD[uGDIndex] = uGTSector;
+        if (pExtent->pRGD)
+            pExtent->pRGD[uGDIndex] = uRGTSector;
+    }
+
+    LogFlow(("uGTSector=%llu uRGTSector=%llu\n", uGTSector, uRGTSector));
+    pGrainAlloc->uGTSector = uGTSector;
+    pGrainAlloc->uRGTSector = uRGTSector;
+
+    rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+    if (RT_FAILURE(rc))
+        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+    Assert(!(cbExtentSize % 512));
+
+    if (!pGrainAlloc->cbExtentOld)
+        pGrainAlloc->cbExtentOld = cbExtentSize;
+
+    pGrainAlloc->cbExtentSize = cbExtentSize;
+
+    /* Write the data. Always a full grain, or we're in big trouble. */
+    rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                          pExtent->pFile->pStorage,
+                                                          cbExtentSize,
+                                                          pIoCtx, cbWrite,
+                                                          vmdkAllocGrainAsyncComplete, pGrainAlloc);
+    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+        pGrainAlloc->cIoXfersPending++;
+    else if (RT_FAILURE(rc))
+        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated data block in '%s'"), pExtent->pszFullname);
+
+    rc = vmdkAllocGrainAsyncGTUpdate(pImage, pExtent, pCache, pIoCtx, pGrainAlloc);
+
+    if (!pGrainAlloc->cIoXfersPending)
+    {
+        /* Grain allocation completed. */
+        RTMemFree(pGrainAlloc);
+    }
+
+    LogFlowFunc(("leaving rc=%Rrc\n", rc));
+
     return rc;
 }
 
@@ -6066,7 +6473,7 @@ static bool vmdkIsAsyncIOSupported(void *pvBackendData)
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
 
-#if 1
+#if 1 /** @todo: Remove once the async support is tested throughly */
     bool fAsyncIOSupported = false;
 
     if (pImage)
@@ -6252,12 +6659,9 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                      * Check if the caller wants to avoid the automatic alloc. */
                     if (!(fWrite & VD_WRITE_NO_ALLOC))
                     {
-                        AssertMsgFailed(("Implement\n"));
-#if 0
                         /* Allocate GT and find out where to store the grain. */
-                        rc = vmdkAllocGrain(pImage->pGTCache, pExtent,
-                                            uSectorExtentRel, pvBuf, cbWrite);
-#endif
+                        rc = vmdkAllocGrainAsync(pImage->pGTCache, pExtent, pIoCtx,
+                                                 uSectorExtentRel, cbWrite);
                     }
                     else
                         rc = VERR_VD_BLOCK_FREE;
@@ -6322,8 +6726,20 @@ static int vmdkAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
 #ifdef VBOX_WITH_VMDK_ESX
                 case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-                    /** @todo: Fake success for now */
-                    rc = VINF_SUCCESS;
+                    rc = vmdkWriteMetaSparseExtentAsync(pImage, pExtent, 0, pIoCtx);
+                    if (RT_FAILURE(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
+                        goto out;
+                    if (pExtent->fFooter)
+                    {
+                        uint64_t cbSize;
+                        rc = vmdkFileGetSize(pExtent->pFile, &cbSize);
+                        if (RT_FAILURE(rc))
+                            goto out;
+                        cbSize = RT_ALIGN_64(cbSize, 512);
+                        rc = vmdkWriteMetaSparseExtent(pExtent, cbSize - 2*512);
+                        if (RT_FAILURE(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
+                            goto out;
+                    }
                     break;
                 case VMDKETYPE_VMFS:
                 case VMDKETYPE_FLAT:
