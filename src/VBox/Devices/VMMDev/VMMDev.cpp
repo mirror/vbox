@@ -2900,9 +2900,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"TestingEnabled\" as a boolean"));
-# if 1 //def DEBUG_bird /* lazy bird */ - do not commit this!!!!
-    pThis->fTestingEnabled = true;
-# endif
     /** @todo image-to-load-filename? */
 #endif
 
