@@ -344,7 +344,8 @@ endif
 ifdef VBOX_WITH_VRDP
  SOLARIS_STRIP_BINS += \
 	VBoxVRDP.so \
-	VRDPAuth.so
+	VRDPAuth.so \
+	VRDPAuthSimple.so
  SOLARIS_COMMON += \
 	rdesktop-vrdp.tar.gz
  ifdef VBOX_WITH_VRDP_RDESKTOP
