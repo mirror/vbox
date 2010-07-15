@@ -23,6 +23,8 @@
 #include <VBox/cpum.h>
 #include <VBox/patm.h>
 #include <VBox/dbgf.h>
+#include <VBox/pdm.h>
+#include <VBox/pgm.h>
 #include <VBox/mm.h>
 #include "CPUMInternal.h"
 #include <VBox/vm.h>
@@ -729,71 +731,114 @@ VMMDECL(void) CPUMSetGuestEFER(PVMCPU pVCpu, uint64_t val)
 }
 
 
-VMMDECL(uint64_t)  CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr)
+/**
+ * Query an MSR.
+ *
+ * The caller is responsible for checking privilege if the call is the result
+ * of a RDMSR instruction.  We'll do the rest.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_CPUM_RAISE_GP_0 on failure (invalid MSR), the caller is
+ *          expected to take the appropriate actions. @a *puValue is set to 0.
+ * @param   pVCpu               The virtual CPU to operate on.
+ * @param   idMsr               The MSR.
+ * @param   puValue             Where to return the value..
+ *
+ * @remarks This will always return the right values, even when we're in the
+ *          recompiler.
+ */
+VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
 {
-    uint64_t u64 = 0;
-    uint8_t  u8Multiplier = 4;
+    /*
+     * If we don't indicate MSR support in the CPUID feature bits, indicate
+     * that a #GP(0) should be raised.
+     */
+    if (!(pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdStd[1].edx & X86_CPUID_FEATURE_EDX_MSR))
+    {
+        *puValue = 0;
+        return VERR_CPUM_RAISE_GP_0;
+    }
 
+    int rc = VINF_SUCCESS;
+    uint8_t const u8Multiplier = 4;
     switch (idMsr)
     {
         case MSR_IA32_TSC:
-            u64 = TMCpuTickGet(pVCpu);
+            *puValue = TMCpuTickGet(pVCpu);
+            break;
+
+        case MSR_IA32_APICBASE:
+            rc = PDMApicGetBase(pVCpu->CTX_SUFF(pVM), puValue);
+            if (RT_SUCCESS(rc))
+                rc = VINF_SUCCESS;
+            else
+            {
+                *puValue = 0;
+                rc = VERR_CPUM_RAISE_GP_0;
+            }
             break;
 
         case MSR_IA32_CR_PAT:
-            u64 = pVCpu->cpum.s.Guest.msrPAT;
+            *puValue = pVCpu->cpum.s.Guest.msrPAT;
             break;
 
         case MSR_IA32_SYSENTER_CS:
-            u64 = pVCpu->cpum.s.Guest.SysEnter.cs;
+            *puValue = pVCpu->cpum.s.Guest.SysEnter.cs;
             break;
 
         case MSR_IA32_SYSENTER_EIP:
-            u64 = pVCpu->cpum.s.Guest.SysEnter.eip;
+            *puValue = pVCpu->cpum.s.Guest.SysEnter.eip;
             break;
 
         case MSR_IA32_SYSENTER_ESP:
-            u64 = pVCpu->cpum.s.Guest.SysEnter.esp;
+            *puValue = pVCpu->cpum.s.Guest.SysEnter.esp;
             break;
 
         case MSR_K6_EFER:
-            u64 = pVCpu->cpum.s.Guest.msrEFER;
+            *puValue = pVCpu->cpum.s.Guest.msrEFER;
             break;
 
         case MSR_K8_SF_MASK:
-            u64 = pVCpu->cpum.s.Guest.msrSFMASK;
+            *puValue = pVCpu->cpum.s.Guest.msrSFMASK;
             break;
 
         case MSR_K6_STAR:
-            u64 = pVCpu->cpum.s.Guest.msrSTAR;
+            *puValue = pVCpu->cpum.s.Guest.msrSTAR;
             break;
 
         case MSR_K8_LSTAR:
-            u64 = pVCpu->cpum.s.Guest.msrLSTAR;
+            *puValue = pVCpu->cpum.s.Guest.msrLSTAR;
             break;
 
         case MSR_K8_CSTAR:
-            u64 = pVCpu->cpum.s.Guest.msrCSTAR;
+            *puValue = pVCpu->cpum.s.Guest.msrCSTAR;
+            break;
+
+        case MSR_K8_FS_BASE:
+            *puValue = pVCpu->cpum.s.Guest.fsHid.u64Base;
+            break;
+
+        case MSR_K8_GS_BASE:
+            *puValue = pVCpu->cpum.s.Guest.gsHid.u64Base;
             break;
 
         case MSR_K8_KERNEL_GS_BASE:
-            u64 = pVCpu->cpum.s.Guest.msrKERNELGSBASE;
+            *puValue = pVCpu->cpum.s.Guest.msrKERNELGSBASE;
             break;
 
         case MSR_K8_TSC_AUX:
-            u64 = pVCpu->cpum.s.GuestMsr.msr.tscAux;
+            *puValue = pVCpu->cpum.s.GuestMsr.msr.tscAux;
             break;
 
         case MSR_IA32_PERF_STATUS:
-            /** @todo: could really be not exactly correct, maybe use host's values */
-            /* Keep consistent with helper_rdmsr() in REM */
-            u64 =     (1000ULL                      /* TSC increment by tick */)
-                    | ((uint64_t)u8Multiplier << 24 /* CPU multiplier (aka bus ratio) min */       )
-                    | ((uint64_t)u8Multiplier << 40 /* CPU multiplier (aka bus ratio) max */       );
+            /** @todo could really be not exactly correct, maybe use host's values */
+            *puValue = UINT64_C(1000)                 /* TSC increment by tick */
+                     | ((uint64_t)u8Multiplier << 24) /* CPU multiplier (aka bus ratio) min */
+                     | ((uint64_t)u8Multiplier << 40) /* CPU multiplier (aka bus ratio) max */;
             break;
 
-        case  MSR_IA32_FSB_CLOCK_STS:
-            /**
+        case MSR_IA32_FSB_CLOCK_STS:
+            /*
              * Encoded as:
              * 0 - 266
              * 1 - 133
@@ -801,55 +846,231 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr)
              * 3 - return 166
              * 5 - return 100
              */
-            u64 = (2 << 4);
+            *puValue = (2 << 4);
             break;
 
         case MSR_IA32_PLATFORM_INFO:
-            u64 =     ((u8Multiplier)<<8              /* Flex ratio max */)
-                    | ((uint64_t)u8Multiplier << 40   /* Flex ratio min */ );
+            *puValue = (u8Multiplier << 8)            /* Flex ratio max */
+                     | ((uint64_t)u8Multiplier << 40) /* Flex ratio min */;
             break;
 
         case MSR_IA32_THERM_STATUS:
             /* CPU temperature reltive to TCC, to actually activate, CPUID leaf 6 EAX[0] must be set */
-            u64 = (1 << 31) /* validity bit */ |
-                  (20 << 16) /* degrees till TCC */;
+            *puValue = ( 1 << 31) /* validity bit */
+                     | (20 << 16) /* degrees till TCC */;
             break;
 
         case MSR_IA32_MISC_ENABLE:
 #if 0
             /* Needs to be tested more before enabling. */
-            u64 = pVCpu->cpum.s.GuestMsr.msr.miscEnable;
+            *puValue = pVCpu->cpum.s.GuestMsr.msr.miscEnable;
 #else
-            u64 = 0;
+            *puValue = 0;
 #endif
             break;
 
-        /* fs & gs base skipped on purpose as the current context might not be up-to-date. */
+#if 0 /*def IN_RING0 */
+        case MSR_IA32_PLATFORM_ID:
+        case MSR_IA32_BIOS_SIGN_ID:
+            if (CPUMGetCPUVendor(pVM) == CPUMCPUVENDOR_INTEL)
+            {
+                /* Available since the P6 family. VT-x implies that this feature is present. */
+                if (idMsr == MSR_IA32_PLATFORM_ID)
+                    *puValue = ASMRdMsr(MSR_IA32_PLATFORM_ID);
+                else if (idMsr == MSR_IA32_BIOS_SIGN_ID)
+                    *puValue = ASMRdMsr(MSR_IA32_BIOS_SIGN_ID);
+                break;
+            }
+            /* no break */
+#endif
+
         default:
-            AssertFailed();
+            /* In X2APIC specification this range is reserved for APIC control. */
+            if (    idMsr >= MSR_IA32_APIC_START
+                &&  idMsr <  MSR_IA32_APIC_END)
+            {
+                rc = PDMApicReadMSR(pVCpu->CTX_SUFF(pVM), pVCpu->idCpu, idMsr, puValue);
+                if (RT_SUCCESS(rc))
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    *puValue = 0;
+                    rc = VERR_CPUM_RAISE_GP_0;
+                }
+            }
+            else
+            {
+                *puValue = 0;
+                rc = VERR_CPUM_RAISE_GP_0;
+            }
             break;
     }
-    return u64;
+
+    return rc;
 }
 
-VMMDECL(void) CPUMSetGuestMsr(PVMCPU pVCpu, unsigned idMsr, uint64_t valMsr)
+
+/**
+ * Sets the MSR.
+ *
+ * The caller is responsible for checking privilege if the call is the result
+ * of a WRMSR instruction.  We'll do the rest.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_CPUM_RAISE_GP_0 on failure, the caller is expected to take the
+ *          appropriate actions.
+ *
+ * @param   pVCpu       The virtual CPU to operate on.
+ * @param   idMsr       The MSR id.
+ * @param   uValue      The value to set.
+ *
+ * @remarks Everyone changing MSR values, including the recompiler, shall do it
+ *          by calling this method.  This makes sure we have current values and
+ *          that we trigger all the right actions when something changes.
+ */
+VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
 {
-    /* On purpose only a limited number of MSRs; use the emulation function to update the others. */
+    /*
+     * If we don't indicate MSR support in the CPUID feature bits, indicate
+     * that a #GP(0) should be raised.
+     */
+    if (!(pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdStd[1].edx & X86_CPUID_FEATURE_EDX_MSR))
+        return VERR_CPUM_RAISE_GP_0;
+
+    int rc = VINF_SUCCESS;
     switch (idMsr)
     {
-        case MSR_K8_TSC_AUX:
-            pVCpu->cpum.s.GuestMsr.msr.tscAux = valMsr;
+        case MSR_IA32_MISC_ENABLE:
+            pVCpu->cpum.s.GuestMsr.msr.miscEnable = uValue;
             break;
 
-        case MSR_IA32_MISC_ENABLE:
-            pVCpu->cpum.s.GuestMsr.msr.miscEnable = valMsr;
+        case MSR_IA32_TSC:
+            TMCpuTickSet(pVCpu->CTX_SUFF(pVM), pVCpu, uValue);
+            break;
+
+        case MSR_IA32_APICBASE:
+            rc = PDMApicSetBase(pVCpu->CTX_SUFF(pVM), uValue);
+            if (rc != VINF_SUCCESS)
+                rc = VERR_CPUM_RAISE_GP_0;
+            break;
+
+        case MSR_IA32_CR_PAT:
+            pVCpu->cpum.s.Guest.msrPAT      = uValue;
+            break;
+
+        case MSR_IA32_SYSENTER_CS:
+            pVCpu->cpum.s.Guest.SysEnter.cs = uValue & 0xffff; /* 16 bits selector */
+            break;
+
+        case MSR_IA32_SYSENTER_EIP:
+            pVCpu->cpum.s.Guest.SysEnter.eip = uValue;
+            break;
+
+        case MSR_IA32_SYSENTER_ESP:
+            pVCpu->cpum.s.Guest.SysEnter.esp = uValue;
+            break;
+
+        case MSR_K6_EFER:
+        {
+            PVM             pVM          = pVCpu->CTX_SUFF(pVM);
+            uint64_t const  uOldEFER     = pVCpu->cpum.s.Guest.msrEFER;
+            uint32_t const  fExtFeatures = pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
+                                         ? pVM->cpum.s.aGuestCpuIdExt[1].edx
+                                         : 0;
+            uint64_t        fMask        = 0;
+
+            /* Filter out those bits the guest is allowed to change. (e.g. LMA is read-only) */
+            if (fExtFeatures & X86_CPUID_AMD_FEATURE_EDX_NX)
+                fMask |= MSR_K6_EFER_NXE;
+            if (fExtFeatures & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
+                fMask |= MSR_K6_EFER_LME;
+            if (fExtFeatures & X86_CPUID_AMD_FEATURE_EDX_SEP)
+                fMask |= MSR_K6_EFER_SCE;
+            if (fExtFeatures & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
+                fMask |= MSR_K6_EFER_FFXSR;
+
+            /* Check for illegal MSR_K6_EFER_LME transitions: not allowed to change LME if
+               paging is enabled. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
+            if (    (uOldEFER & MSR_K6_EFER_LME) != (uValue & fMask & MSR_K6_EFER_LME)
+                &&  (pVCpu->cpum.s.Guest.cr0 & X86_CR0_PG))
+            {
+                Log(("Illegal MSR_K6_EFER_LME change: paging is enabled!!\n"));
+                return VERR_CPUM_RAISE_GP_0;
+            }
+
+            /* There are a few more: e.g. MSR_K6_EFER_LMSLE */
+            AssertMsg(!(uValue & ~(MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA /* ignored anyway */ | MSR_K6_EFER_SCE | MSR_K6_EFER_FFXSR)),
+                      ("Unexpected value %RX64\n", uValue));
+            pVCpu->cpum.s.Guest.msrEFER = (uOldEFER & ~fMask) | (uValue & fMask);
+
+            /* AMD64 Architecture Programmer's Manual: 15.15 TLB Control; flush the TLB
+               if MSR_K6_EFER_NXE, MSR_K6_EFER_LME or MSR_K6_EFER_LMA are changed. */
+            if (   (uValue                      & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA))
+                != (pVCpu->cpum.s.Guest.msrEFER & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA)))
+            {
+                /// @todo PGMFlushTLB(pVCpu, cr3, true /*fGlobal*/);
+                HWACCMFlushTLB(pVCpu);
+
+                /* Notify PGM about NXE changes. */
+                if (   (uValue        & MSR_K6_EFER_NXE)
+                    != (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE))
+                    PGMNotifyNxeChanged(pVCpu, !!(uValue & MSR_K6_EFER_NXE));
+            }
+            break;
+        }
+
+        case MSR_K8_SF_MASK:
+            pVCpu->cpum.s.Guest.msrSFMASK       = uValue;
+            break;
+
+        case MSR_K6_STAR:
+            pVCpu->cpum.s.Guest.msrSTAR         = uValue;
+            break;
+
+        case MSR_K8_LSTAR:
+            pVCpu->cpum.s.Guest.msrLSTAR        = uValue;
+            break;
+
+        case MSR_K8_CSTAR:
+            pVCpu->cpum.s.Guest.msrCSTAR        = uValue;
+            break;
+
+        case MSR_K8_FS_BASE:
+            pVCpu->cpum.s.Guest.fsHid.u64Base   = uValue;
+            break;
+
+        case MSR_K8_GS_BASE:
+            pVCpu->cpum.s.Guest.gsHid.u64Base   = uValue;
+            break;
+
+        case MSR_K8_KERNEL_GS_BASE:
+            pVCpu->cpum.s.Guest.msrKERNELGSBASE = uValue;
+            break;
+
+        case MSR_K8_TSC_AUX:
+            pVCpu->cpum.s.GuestMsr.msr.tscAux   = uValue;
             break;
 
         default:
-            AssertFailed();
+            /* In X2APIC specification this range is reserved for APIC control. */
+            if (    idMsr >= MSR_IA32_APIC_START
+                &&  idMsr <  MSR_IA32_APIC_END)
+            {
+                rc = PDMApicWriteMSR(pVCpu->CTX_SUFF(pVM), pVCpu->idCpu, idMsr, uValue);
+                if (rc != VINF_SUCCESS)
+                    rc = VERR_CPUM_RAISE_GP_0;
+            }
+            else
+            {
+                /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
+                /** @todo rc = VERR_CPUM_RAISE_GP_0 */
+                Log(("CPUMSetGuestMsr: Unknown MSR %#x attempted set to %#llx\n", idMsr, uValue));
+            }
             break;
     }
+    return rc;
 }
+
 
 VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
 {

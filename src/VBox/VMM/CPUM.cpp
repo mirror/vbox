@@ -841,7 +841,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     if (pCPUM->aGuestCpuIdExt[0].eax >= UINT32_C(0x80000008))
     {
-        /* Only expose the virtual and physical address sizes to the guest. (EAX completely) */
+        /* Only expose the virtual and physical address sizes to the guest. */
         pCPUM->aGuestCpuIdExt[8].eax &= UINT32_C(0x0000ffff);
         pCPUM->aGuestCpuIdExt[8].ebx = pCPUM->aGuestCpuIdExt[8].edx = 0;  /* reserved */
         /* Set APICIdCoreIdSize to zero (use legacy method to determine the number of cores per cpu)
@@ -2282,6 +2282,10 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
         LogRel(("CPUM: Missing state!\n"));
         return VERR_INTERNAL_ERROR_2;
     }
+
+    /* Notify PGM of the NXE states in case they've changed. */
+    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+        PGMNotifyNxeChanged(&pVM->aCpus[iCpu], !!(pVM->aCpus[iCpu].cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE));
     return VINF_SUCCESS;
 }
 
