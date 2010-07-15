@@ -2495,7 +2495,8 @@ VMMDECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     pCtx->rax = (uint32_t)uTicks;
     pCtx->rdx = (uTicks >> 32ULL);
     /* Low dword of the TSC_AUX msr only. */
-    pCtx->rcx = (uint32_t)CPUMGetGuestMsr(pVCpu, MSR_K8_TSC_AUX);
+    CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &pCtx->rcx);
+    pCtx->rcx &= UINT32_C(0xffffffff);
 
     return VINF_SUCCESS;
 }
@@ -2736,130 +2737,26 @@ static const char *emMSRtoString(uint32_t uMsr)
  * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
- *
  */
 VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
-    uint32_t u32Dummy, u32Features, cpl;
-    uint64_t val;
-    CPUMCTX *pCtx;
-    int      rc = VINF_SUCCESS;
-
     /** @todo According to the Intel manuals, there's a REX version of RDMSR that is slightly different.
      *  That version clears the high dwords of both RDX & RAX */
-    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
     /* Get the current privilege level. */
-    cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
-    if (cpl != 0)
+    if (CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
-    CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
-    if (!(u32Features & X86_CPUID_FEATURE_EDX_MSR))
-        return VERR_EM_INTERPRETER; /* not supported */
-
-    switch (pRegFrame->ecx)
+    uint64_t uValue;
+    int rc = CPUMQueryGuestMsr(pVCpu, pRegFrame->ecx, &uValue);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-    case MSR_IA32_TSC:
-        val = TMCpuTickGet(pVCpu);
-        break;
-
-    case MSR_IA32_APICBASE:
-        rc = PDMApicGetBase(pVM, &val);
-        AssertRC(rc);
-        break;
-
-    case MSR_IA32_CR_PAT:
-        val = pCtx->msrPAT;
-        break;
-
-    case MSR_IA32_SYSENTER_CS:
-        val = pCtx->SysEnter.cs;
-        break;
-
-    case MSR_IA32_SYSENTER_EIP:
-        val = pCtx->SysEnter.eip;
-        break;
-
-    case MSR_IA32_SYSENTER_ESP:
-        val = pCtx->SysEnter.esp;
-        break;
-
-    case MSR_K6_EFER:
-        val = pCtx->msrEFER;
-        break;
-
-    case MSR_K8_SF_MASK:
-        val = pCtx->msrSFMASK;
-        break;
-
-    case MSR_K6_STAR:
-        val = pCtx->msrSTAR;
-        break;
-
-    case MSR_K8_LSTAR:
-        val = pCtx->msrLSTAR;
-        break;
-
-    case MSR_K8_CSTAR:
-        val = pCtx->msrCSTAR;
-        break;
-
-    case MSR_K8_FS_BASE:
-        val = pCtx->fsHid.u64Base;
-        break;
-
-    case MSR_K8_GS_BASE:
-        val = pCtx->gsHid.u64Base;
-        break;
-
-    case MSR_K8_KERNEL_GS_BASE:
-        val = pCtx->msrKERNELGSBASE;
-        break;
-
-    case MSR_K8_TSC_AUX:
-        val = CPUMGetGuestMsr(pVCpu, MSR_K8_TSC_AUX);
-        break;
-
-    case MSR_IA32_PERF_STATUS:
-    case MSR_IA32_PLATFORM_INFO:
-    case MSR_IA32_MISC_ENABLE:
-    case MSR_IA32_FSB_CLOCK_STS:
-    case MSR_IA32_THERM_STATUS:
-        val = CPUMGetGuestMsr(pVCpu, pRegFrame->ecx);
-        break;
-
-#if 0 /*def IN_RING0 */
-    case MSR_IA32_PLATFORM_ID:
-    case MSR_IA32_BIOS_SIGN_ID:
-        if (CPUMGetCPUVendor(pVM) == CPUMCPUVENDOR_INTEL)
-        {
-            /* Available since the P6 family. VT-x implies that this feature is present. */
-            if (pRegFrame->ecx == MSR_IA32_PLATFORM_ID)
-                val = ASMRdMsr(MSR_IA32_PLATFORM_ID);
-            else
-            if (pRegFrame->ecx == MSR_IA32_BIOS_SIGN_ID)
-                val = ASMRdMsr(MSR_IA32_BIOS_SIGN_ID);
-            break;
-        }
-        /* no break */
-#endif
-    default:
-        /* In X2APIC specification this range is reserved for APIC control. */
-        if (    pRegFrame->ecx >= MSR_IA32_APIC_START
-            &&  pRegFrame->ecx <  MSR_IA32_APIC_END)
-            rc = PDMApicReadMSR(pVM, pVCpu->idCpu, pRegFrame->ecx, &val);
-        else
-            /* We should actually trigger a #GP here, but don't as that will cause more trouble. */
-            val = 0;
-        break;
+        Assert(rc == VERR_CPUM_RAISE_GP_0);
+        return VERR_EM_INTERPRETER;
     }
-    LogFlow(("EMInterpretRdmsr %s (%x) -> val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
-    if (rc == VINF_SUCCESS)
-    {
-        pRegFrame->rax = (uint32_t) val;
-        pRegFrame->rdx = (uint32_t)(val >> 32);
-    }
+    pRegFrame->rax = (uint32_t) uValue;
+    pRegFrame->rdx = (uint32_t)(uValue >> 32);
+    LogFlow(("EMInterpretRdmsr %s (%x) -> %RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, uValue));
     return rc;
 }
 
@@ -2869,7 +2766,8 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
  */
 static int emInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    /* Note: the Intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
+    /* Note: The Intel manual claims there's a REX version of RDMSR that's slightly
+             different, so we play safe by completely disassembling the instruction. */
     Assert(!(pDis->prefix & PREFIX_REX));
     return EMInterpretRdmsr(pVM, pVCpu, pRegFrame);
 }
@@ -2885,131 +2783,19 @@ static int emInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  */
 VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
-    uint32_t u32Dummy, u32Features, cpl;
-    uint64_t val;
-    CPUMCTX *pCtx;
+    /* Check the current privilege level, this instruction is supervisor only. */
+    if (CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
+        return VERR_EM_INTERPRETER; /** @todo raise \#GP(0) */
 
-    /* Note: works the same in 32 and 64 bits modes. */
-    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-
-    /* Get the current privilege level. */
-    cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
-    if (cpl != 0)
-        return VERR_EM_INTERPRETER; /* supervisor only */
-
-    CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
-    if (!(u32Features & X86_CPUID_FEATURE_EDX_MSR))
-        return VERR_EM_INTERPRETER; /* not supported */
-
-    val = RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx);
-    LogFlow(("EMInterpretWrmsr %s (%x) val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
-    switch (pRegFrame->ecx)
+    int rc = CPUMSetGuestMsr(pVCpu, pRegFrame->ecx, RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx));
+    if (rc != VINF_SUCCESS)
     {
-    case MSR_IA32_TSC:
-        TMCpuTickSet(pVM, pVCpu, val);
-        break;
-
-    case MSR_IA32_APICBASE:
-    {
-        int rc = PDMApicSetBase(pVM, val);
-        AssertRC(rc);
-        break;
+        Assert(rc == VERR_CPUM_RAISE_GP_0);
+        return VERR_EM_INTERPRETER;
     }
-
-    case MSR_IA32_CR_PAT:
-        pCtx->msrPAT = val;
-        break;
-
-    case MSR_IA32_SYSENTER_CS:
-        pCtx->SysEnter.cs = val & 0xffff; /* 16 bits selector */
-        break;
-
-    case MSR_IA32_SYSENTER_EIP:
-        pCtx->SysEnter.eip = val;
-        break;
-
-    case MSR_IA32_SYSENTER_ESP:
-        pCtx->SysEnter.esp = val;
-        break;
-
-    case MSR_K6_EFER:
-    {
-        uint64_t uMask = 0;
-        uint64_t oldval = pCtx->msrEFER;
-
-        /* Filter out those bits the guest is allowed to change. (e.g. LMA is read-only) */
-        CPUMGetGuestCpuId(pVCpu, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
-        if (u32Features & X86_CPUID_AMD_FEATURE_EDX_NX)
-            uMask |= MSR_K6_EFER_NXE;
-        if (u32Features & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
-            uMask |= MSR_K6_EFER_LME;
-        if (u32Features & X86_CPUID_AMD_FEATURE_EDX_SEP)
-            uMask |= MSR_K6_EFER_SCE;
-        if (u32Features & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
-            uMask |= MSR_K6_EFER_FFXSR;
-
-        /* Check for illegal MSR_K6_EFER_LME transitions: not allowed to change LME if paging is enabled. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
-        if (    ((pCtx->msrEFER & MSR_K6_EFER_LME) != (val & uMask & MSR_K6_EFER_LME))
-            &&  (pCtx->cr0 & X86_CR0_PG))
-        {
-            AssertMsgFailed(("Illegal MSR_K6_EFER_LME change: paging is enabled!!\n"));
-            return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
-        }
-
-        /* There are a few more: e.g. MSR_K6_EFER_LMSLE */
-        AssertMsg(!(val & ~(MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA /* ignored anyway */ |MSR_K6_EFER_SCE|MSR_K6_EFER_FFXSR)), ("Unexpected value %RX64\n", val));
-        pCtx->msrEFER = (pCtx->msrEFER & ~uMask) | (val & uMask);
-
-        /* AMD64 Architecture Programmer's Manual: 15.15 TLB Control; flush the TLB if MSR_K6_EFER_NXE, MSR_K6_EFER_LME or MSR_K6_EFER_LMA are changed. */
-        if ((oldval & (MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA)) != (pCtx->msrEFER & (MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA)))
-            HWACCMFlushTLB(pVCpu);
-
-        break;
-    }
-
-    case MSR_K8_SF_MASK:
-        pCtx->msrSFMASK = val;
-        break;
-
-    case MSR_K6_STAR:
-        pCtx->msrSTAR = val;
-        break;
-
-    case MSR_K8_LSTAR:
-        pCtx->msrLSTAR = val;
-        break;
-
-    case MSR_K8_CSTAR:
-        pCtx->msrCSTAR = val;
-        break;
-
-    case MSR_K8_FS_BASE:
-        pCtx->fsHid.u64Base = val;
-        break;
-
-    case MSR_K8_GS_BASE:
-        pCtx->gsHid.u64Base = val;
-        break;
-
-    case MSR_K8_KERNEL_GS_BASE:
-        pCtx->msrKERNELGSBASE = val;
-        break;
-
-    case MSR_K8_TSC_AUX:
-    case MSR_IA32_MISC_ENABLE:
-        CPUMSetGuestMsr(pVCpu, pRegFrame->ecx, val);
-        break;
-
-    default:
-        /* In X2APIC specification this range is reserved for APIC control. */
-        if (    pRegFrame->ecx >= MSR_IA32_APIC_START
-            &&  pRegFrame->ecx <  MSR_IA32_APIC_END)
-            return PDMApicWriteMSR(pVM, pVCpu->idCpu, pRegFrame->ecx, val);
-
-        /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
-        break;
-    }
-    return VINF_SUCCESS;
+    LogFlow(("EMInterpretWrmsr %s (%x) val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx,
+             RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx)));
+    return rc;
 }
 
 

@@ -937,7 +937,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE
 
         if (HWACCMIsNestedPagingActive(pVM) || !CPUMIsGuestPagingEnabled(pVCpu))
         {
-            /* AMD-V nested paging or real/protected mode without paging */
+            /* AMD-V nested paging or real/protected mode without paging. */
             GCPdPt  = (RTGCPTR64)iPdPt << X86_PDPT_SHIFT;
             enmKind = PGMPOOLKIND_PAE_PD_PHYS;
         }
@@ -980,7 +980,9 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE
                  | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
 # if defined(IN_RC)
-        /* In 32 bits PAE mode we *must* invalidate the TLB when changing a PDPT entry; the CPU fetches them only during cr3 load, so any
+        /*
+         * In 32 bits PAE mode we *must* invalidate the TLB when changing a
+         * PDPT entry; the CPU fetches them only during cr3 load, so any
          * non-present PDPT will continue to cause page faults.
          */
         ASMReloadCR3();
@@ -2098,6 +2100,19 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
         case PGMMODE_EPT:       return "EPT";
         default:                return "unknown mode value";
     }
+}
+
+
+
+/**
+ * Notification from CPUM that the EFER.NXE bit has changed.
+ *
+ * @param   pVCpu       The virtual CPU for which EFER changed.
+ * @param   fNxe        The new NXE state.
+ */
+VMM_INT_DECL(void) PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe)
+{
+    /* later */
 }
 
 
