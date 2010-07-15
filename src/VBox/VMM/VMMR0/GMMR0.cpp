@@ -488,7 +488,7 @@ typedef struct GMM
     GMMCHUNKFREESET     Shared;
 
     /** Shared module tree (global). */
-    /** todo seperate trees for distinctly different guest OSes. */
+    /** @todo seperate trees for distinctly different guest OSes. */
     PAVLGCPTRNODECORE   pGlobalSharedModuleTree;
 
     /** The maximum number of pages we're allowed to allocate.
@@ -866,7 +866,8 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
              * and left over mappings. (This'll only catch private pages, shared
              * pages will be 'left behind'.)
              */
-            /* todo this might be kind of expensive with a lot of VMs and memory hanging around... */
+            /** @todo this might be kind of expensive with a lot of VMs and
+             *   memory hanging around... */
             uint64_t cPrivatePages = pGVM->gmm.s.cPrivatePages; /* save */
             RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0CleanupVMScanChunk, pGVM);
             if (pGVM->gmm.s.cPrivatePages)
@@ -3459,13 +3460,15 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
     {
         /* Grab the lock. */
         rc = RTSemFastMutexRequest(pGMM->Mtx);
-        AssertRCReturn(rc, rc);
-
-        /*
-         * Add a new chunk with our hGVM.
-         */
-        rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, MemObj, pGVM->hSelf, GMMCHUNKTYPE_NON_CONTINUOUS);
-        RTSemFastMutexRelease(pGMM->Mtx);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Add a new chunk with our hGVM.
+             */
+            rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, MemObj, pGVM->hSelf, GMMCHUNKTYPE_NON_CONTINUOUS);
+            RTSemFastMutexRelease(pGMM->Mtx);
+        }
 
         if (RT_FAILURE(rc))
             RTR0MemObjFree(MemObj, false /* fFreeMappings */);
@@ -3493,7 +3496,7 @@ DECLCALLBACK(int) gmmR0CheckForIdenticalModule(PAVLGCPTRNODECORE pNode, void *pv
 
     if (    pInfo
         &&  pInfo->enmGuestOS == pModule->enmGuestOS
-        /** todo replace with RTStrNCmp */
+        /** @todo replace with RTStrNCmp */
         &&  !strcmp(pModule->szName, pInfo->pszModuleName)
         &&  !strcmp(pModule->szVersion, pInfo->pszVersion))
     {
@@ -3616,7 +3619,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
             pGlobalModule->Core.Key = GCBaseAddr;
             pGlobalModule->cbModule = cbModule;
             /* Input limit already safe; no need to check again. */
-            /** todo replace with RTStrCopy */
+            /** @todo replace with RTStrCopy */
             strcpy(pGlobalModule->szName, pszModuleName);
             strcpy(pGlobalModule->szVersion, pszVersion);
 
@@ -3648,7 +3651,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
             Assert(pGlobalModule->cUsers > 0);
 
             /* Make sure the name and version are identical. */
-            /** todo replace with RTStrNCmp */
+            /** @todo replace with RTStrNCmp */
             if (    !strcmp(pGlobalModule->szName, pszModuleName)
                 &&  !strcmp(pGlobalModule->szVersion, pszVersion))
             {
@@ -3742,49 +3745,48 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
         PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)RTAvlGCPtrGet(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
-        if (!pRecVM)
+        if (pRecVM)
         {
-            rc = VERR_PGM_SHARED_MODULE_NOT_FOUND;
-            goto end;
-        }
-        /* Remove reference to global shared module. */
-        if (!pRecVM->fCollision)
-        {
-            PGMMSHAREDMODULE pRec = pRecVM->pGlobalModule;
-            Assert(pRec);
-
-            if (pRec)   /* paranoia */
+            /* Remove reference to global shared module. */
+            if (!pRecVM->fCollision)
             {
-                Assert(pRec->cUsers);
-                pRec->cUsers--;
-                if (pRec->cUsers == 0)
-                {
-                    /* Free the ranges, but leave the pages intact as there might still be references; they will be cleared by the COW mechanism. */
-                    for (unsigned i = 0; i < pRec->cRegions; i++)
-                        if (pRec->aRegions[i].paHCPhysPageID)
-                            RTMemFree(pRec->aRegions[i].paHCPhysPageID);
+                PGMMSHAREDMODULE pRec = pRecVM->pGlobalModule;
+                Assert(pRec);
 
-                    /* Remove from the tree and free memory. */
-                    RTAvlGCPtrRemove(&pGMM->pGlobalSharedModuleTree, GCBaseAddr);
-                    RTMemFree(pRec);
+                if (pRec)   /* paranoia */
+                {
+                    Assert(pRec->cUsers);
+                    pRec->cUsers--;
+                    if (pRec->cUsers == 0)
+                    {
+                        /* Free the ranges, but leave the pages intact as there might still be references; they will be cleared by the COW mechanism. */
+                        for (unsigned i = 0; i < pRec->cRegions; i++)
+                            if (pRec->aRegions[i].paHCPhysPageID)
+                                RTMemFree(pRec->aRegions[i].paHCPhysPageID);
+
+                        /* Remove from the tree and free memory. */
+                        RTAvlGCPtrRemove(&pGMM->pGlobalSharedModuleTree, GCBaseAddr);
+                        RTMemFree(pRec);
+                    }
                 }
+                else
+                    rc = VERR_PGM_SHARED_MODULE_REGISTRATION_INCONSISTENCY;
             }
             else
-                rc = VERR_PGM_SHARED_MODULE_REGISTRATION_INCONSISTENCY;
+                Assert(!pRecVM->pGlobalModule);
+
+            /* Remove from the tree and free memory. */
+            RTAvlGCPtrRemove(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
+            RTMemFree(pRecVM);
         }
         else
-            Assert(!pRecVM->pGlobalModule);
-
-        /* Remove from the tree and free memory. */
-        RTAvlGCPtrRemove(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
-        RTMemFree(pRecVM);
+            rc = VERR_PGM_SHARED_MODULE_NOT_FOUND;
 
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
         rc = VERR_INTERNAL_ERROR_5;
 
-end:
     RTSemFastMutexRelease(pGMM->Mtx);
     return rc;
 #else
@@ -3903,7 +3905,7 @@ new_shared_page:
         if (pPage->Common.u2State != GMM_PAGE_STATE_SHARED)
         {
             /* Page was freed at some point; invalidate this entry. */
-            /** todo this isn't really bullet proof. */
+            /** @todo this isn't really bullet proof. */
             Log(("Old shared page was freed -> create a new one\n"));
             pGlobalRegion->paHCPhysPageID[idxPage] = NIL_GMM_PAGEID;
             goto new_shared_page; /* ugly goto */
@@ -3947,7 +3949,7 @@ new_shared_page:
         }
         pbSharedPage = pbChunk + ((pGlobalRegion->paHCPhysPageID[idxPage] & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
 
-        /** todo write ASMMemComparePage. */
+        /** @todo write ASMMemComparePage. */
         if (memcmp(pbSharedPage, pbLocalPage, PAGE_SIZE))
         {
             Log(("Unexpected differences found between local and shared page; skip\n"));
