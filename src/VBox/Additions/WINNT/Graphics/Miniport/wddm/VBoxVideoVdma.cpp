@@ -145,7 +145,7 @@ NTSTATUS vboxVdmaPipeSvrCmdGetList(PVBOXVDMAPIPE pPipe, PLIST_ENTRY pDetachHead)
         if (enmState >= VBOXVDMAPIPE_STATE_OPENNED)
         {
             vboxVideoLeDetach(&pPipe->CmdListHead, pDetachHead);
-            bListEmpty = IsListEmpty(pDetachHead);
+            bListEmpty = !!(IsListEmpty(pDetachHead));
             pPipe->bNeedNotify = bListEmpty;
         }
         else

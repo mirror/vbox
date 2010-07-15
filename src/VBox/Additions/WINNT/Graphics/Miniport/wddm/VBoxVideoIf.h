@@ -231,6 +231,14 @@ typedef struct VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD
 AssertCompile((sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD) & 7) == 0);
 AssertCompile(RT_OFFSETOF(VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD, EscapeHdr) == 0);
 
+typedef struct VBOXDISPIFESCAPE_DBGPRINT
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    /* null-terminated string to DbgPrint including \0 */
+    char aStringBuf[1];
+} VBOXDISPIFESCAPE_DBGPRINT, *PVBOXDISPIFESCAPE_DBGPRINT;
+AssertCompile(RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, EscapeHdr) == 0);
+
 /* query info func */
 typedef struct VBOXWDDM_QI
 {

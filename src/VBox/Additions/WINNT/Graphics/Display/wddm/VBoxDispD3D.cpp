@@ -1884,6 +1884,12 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
     Assert(!pFlagBuffer);
     HRESULT hr = S_OK;
 
+#ifdef DEBUG_misha
+    uint32_t iBackBuf = (pDevice->iRenderTargetFrontBuf + 1) % pDevice->pRenderTargetRc->cAllocations;
+    vboxVDbgDumpSurfData((pDevice, ">>>DrawPrimitive:\n", pDevice->pRenderTargetRc, iBackBuf,
+            NULL, (IDirect3DSurface9*)pDevice->pRenderTargetRc->aAllocations[iBackBuf].pD3DIf, "\n"));
+#endif
+
     if (!pDevice->cStreamSources)
     {
         if (pDevice->aStreamSourceUm[0].pvBuffer)
@@ -1899,6 +1905,8 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
                                       ((uint8_t*)pDevice->aStreamSourceUm[0].pvBuffer) + pData->VStart * pDevice->aStreamSourceUm[0].cbStride,
                                       pDevice->aStreamSourceUm[0].cbStride);
             Assert(hr == S_OK);
+
+            vboxVDbgMpPrint((pDevice, __FUNCTION__": DrawPrimitiveUP\n"));
         }
         else
         {
@@ -1908,10 +1916,32 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
     }
     else
     {
+
+#ifdef DEBUG
+            for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSourceUm); ++i)
+            {
+                Assert(!pDevice->aStreamSourceUm[i].pvBuffer);
+            }
+
+            uint32_t cStreams = 0;
+            for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSource); ++i)
+            {
+                if (pDevice->aStreamSource[i])
+                {
+                    ++cStreams;
+                    Assert(!pDevice->aStreamSource[i]->LockInfo.cLocks);
+                }
+            }
+
+            Assert(cStreams);
+            Assert(cStreams == pDevice->cStreamSources);
+#endif
         hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType,
                                                 pData->VStart,
                                                 pData->PrimitiveCount);
         Assert(hr == S_OK);
+
+        vboxVDbgMpPrint((pDevice, __FUNCTION__": DrawPrimitive\n"));
 #if 0
         IDirect3DVertexDeclaration9* pDecl;
         hr = pDevice->pDevice9If->GetVertexDeclaration(&pDecl);
@@ -2120,6 +2150,13 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
         }
 #endif
     }
+
+#ifdef DEBUG_misha
+    iBackBuf = (pDevice->iRenderTargetFrontBuf + 1) % pDevice->pRenderTargetRc->cAllocations;
+    vboxVDbgDumpSurfData((pDevice, "<<<DrawPrimitive:\n", pDevice->pRenderTargetRc, iBackBuf,
+            NULL, (IDirect3DSurface9*)pDevice->pRenderTargetRc->aAllocations[iBackBuf].pD3DIf, "\n"));
+#endif
+
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
@@ -2130,6 +2167,35 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive(HANDLE hDevice, CONST D
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
     Assert(pDevice->pDevice9If);
+#ifdef DEBUG_misha
+    uint32_t iBackBuf = (pDevice->iRenderTargetFrontBuf + 1) % pDevice->pRenderTargetRc->cAllocations;
+    vboxVDbgDumpSurfData((pDevice, ">>>DrawIndexedPrimitive:\n", pDevice->pRenderTargetRc, iBackBuf,
+            NULL, (IDirect3DSurface9*)pDevice->pRenderTargetRc->aAllocations[iBackBuf].pD3DIf, "\n"));
+#endif
+
+#ifdef DEBUG
+            for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSourceUm); ++i)
+            {
+                Assert(!pDevice->aStreamSourceUm[i].pvBuffer);
+            }
+
+            Assert(pDevice->pIndicesAlloc);
+            Assert(!pDevice->pIndicesAlloc->LockInfo.cLocks);
+
+            uint32_t cStreams = 0;
+            for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSource); ++i)
+            {
+                if (pDevice->aStreamSource[i])
+                {
+                    ++cStreams;
+                    Assert(!pDevice->aStreamSource[i]->LockInfo.cLocks);
+                }
+            }
+
+            Assert(cStreams);
+            Assert(cStreams == pDevice->cStreamSources);
+#endif
+
     HRESULT hr = pDevice->pDevice9If->DrawIndexedPrimitive(
             pData->PrimitiveType,
             pData->BaseVertexIndex,
@@ -2138,6 +2204,13 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive(HANDLE hDevice, CONST D
             pData->StartIndex,
             pData->PrimitiveCount);
     Assert(hr == S_OK);
+
+#ifdef DEBUG_misha
+    iBackBuf = (pDevice->iRenderTargetFrontBuf + 1) % pDevice->pRenderTargetRc->cAllocations;
+    vboxVDbgDumpSurfData((pDevice, "<<<DrawIndexedPrimitive:\n", pDevice->pRenderTargetRc, iBackBuf,
+            NULL, (IDirect3DSurface9*)pDevice->pRenderTargetRc->aAllocations[iBackBuf].pD3DIf, "\n"));
+#endif
+
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
@@ -2196,30 +2269,60 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIA
 
     hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType, pData->FirstVertexOffset, pData->PrimitiveCount);
 #else
+#ifdef DEBUG_misha
+    uint32_t iBackBuf = (pDevice->iRenderTargetFrontBuf + 1) % pDevice->pRenderTargetRc->cAllocations;
+    vboxVDbgDumpSurfData((pDevice, ">>>DrawPrimitive2:\n", pDevice->pRenderTargetRc, iBackBuf,
+            NULL, (IDirect3DSurface9*)pDevice->pRenderTargetRc->aAllocations[iBackBuf].pD3DIf, "\n"));
+#endif
+
+#ifdef DEBUG
+    uint32_t cStreams = 0;
+#endif
+
     int stream;
     for (stream=0; stream<VBOXWDDMDISP_MAX_VERTEX_STREAMS; ++stream)
     {
         if (pDevice->aStreamSource[stream])
         {
+#ifdef DEBUG
+            ++cStreams;
+#endif
             Assert(stream==0); /*only stream 0 should be accessed here*/
             Assert(pDevice->StreamSourceInfo[stream].uiStride!=0);
             VBOXWDDMDISP_LOCKINFO *pLock = &pDevice->aStreamSource[stream]->LockInfo;
 
             if (pDevice->aStreamSource[stream]->LockInfo.cLocks)
             {
+                vboxVDbgMpPrint((pDevice, __FUNCTION__": DrawPrimitiveUP\n"));
+
                 Assert(pLock->fFlags.MightDrawFromLocked && (pLock->fFlags.Discard || pLock->fFlags.NoOverwrite));
                 hr = pDevice->pDevice9If->DrawPrimitiveUP(pData->PrimitiveType, pData->PrimitiveCount,
                         (void*)((uintptr_t)pDevice->aStreamSource[stream]->pvMem+pDevice->StreamSourceInfo[stream].uiOffset+pData->FirstVertexOffset),
                          pDevice->StreamSourceInfo[stream].uiStride);
                 Assert(hr == S_OK);
                 hr = pDevice->pDevice9If->SetStreamSource(stream, (IDirect3DVertexBuffer9*)pDevice->aStreamSource[stream]->pD3DIf, pDevice->StreamSourceInfo[stream].uiOffset, pDevice->StreamSourceInfo[stream].uiStride);
+                Assert(hr == S_OK);
             }
             else
             {
+                vboxVDbgMpPrint((pDevice, __FUNCTION__": DrawPrimitive\n"));
+
                 hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType, pData->FirstVertexOffset/pDevice->StreamSourceInfo[stream].uiStride, pData->PrimitiveCount);
+                Assert(hr == S_OK);
             }
         }
     }
+
+#ifdef DEBUG
+    Assert(cStreams);
+    Assert(cStreams == pDevice->cStreamSources);
+#endif
+#endif
+
+#ifdef DEBUG_misha
+    iBackBuf = (pDevice->iRenderTargetFrontBuf + 1) % pDevice->pRenderTargetRc->cAllocations;
+    vboxVDbgDumpSurfData((pDevice, "<<<DrawPrimitive2:\n", pDevice->pRenderTargetRc, iBackBuf,
+            NULL, (IDirect3DSurface9*)pDevice->pRenderTargetRc->aAllocations[iBackBuf].pD3DIf, "\n"));
 #endif
 
     Assert(hr == S_OK);
@@ -2259,6 +2362,9 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
     Assert(pDevice->pDevice9If);
     PVBOXWDDMDISP_RESOURCE pDstRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
     PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
+    /* requirements for D3DDevice9::UpdateTexture */
+    Assert(pSrcRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
+    Assert(pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM);
     IDirect3DTexture9 *pD3DIfSrcTex = (IDirect3DTexture9*)pSrcRc->aAllocations[0].pD3DIf;
     IDirect3DTexture9 *pD3DIfDstTex = (IDirect3DTexture9*)pDstRc->aAllocations[0].pD3DIf;
     Assert(pD3DIfSrcTex);
@@ -4088,25 +4194,6 @@ static HRESULT vboxWddmSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, IDirect3
     return hr;
 }
 
-#ifdef DEBUG_misha
-static void vboxWddmDbgSurfData(PVBOXWDDMDISP_ALLOCATION pAlloc, IDirect3DSurface9 *pSurf)
-{
-    D3DLOCKED_RECT Lr;
-    HRESULT tmpHr = pSurf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
-    Assert(tmpHr == S_OK);
-    if (tmpHr == S_OK)
-    {
-        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
-        Assert(bpp == pAlloc->SurfDesc.bpp);
-        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-        vboxVDbgPrintF(("!vbvdbg.ms 0x%p 0x%x 0x%x 0x%x 0x%x\n",
-                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
-        Assert(0);
-        tmpHr = pSurf->UnlockRect();
-    }
-}
-#endif
-
 static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pData)
 {
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
@@ -4117,6 +4204,9 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
     PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
     Assert(pDstRc->cAllocations > pData->DstSubResourceIndex);
     Assert(pSrcRc->cAllocations > pData->SrcSubResourceIndex);
+//    Assert(pSrcRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM);
+    /* @todo: use UpdateRect in case of Src is a D3DDDIPOOL_SYSTEMMEM */
+    Assert(pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM);
     Assert(pDstRc != pDevice->pRenderTargetRc || pDevice->iRenderTargetFrontBuf != pData->DstSubResourceIndex);
     HRESULT hr = S_OK;
     /* try StretchRect */
@@ -4190,48 +4280,10 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
             {
                 Assert(pSrcSurfIf);
 
-#ifdef DEBUG_misha
-                {
-                    D3DLOCKED_RECT Lr;
-                    PVBOXWDDMDISP_ALLOCATION pAlloc = &pSrcRc->aAllocations[pData->SrcSubResourceIndex];
-                    HRESULT srcHr = pSrcSurfIf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
-                    Assert(srcHr == S_OK);
-                    if (srcHr == S_OK)
-                    {
-                        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
-                        Assert(bpp == pAlloc->SurfDesc.bpp);
-                        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-                        vboxVDbgPrintF(("src: !vbvdbg.ms 0x%p 0x%x 0x%x 0x%x 0x%x\n",
-                                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
-                    }
-
-                    pAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
-                    HRESULT dstHr = pDstSurfIf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
-                    Assert(dstHr == S_OK);
-                    if (dstHr == S_OK)
-                    {
-                        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
-                        Assert(bpp == pAlloc->SurfDesc.bpp);
-                        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-                        vboxVDbgPrintF(("dst: !vbvdbg.ms 0x%p 0x%x 0x%x 0x%x 0x%x\n",
-                                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
-                    }
-
-                    Assert(0);
-
-                    if (srcHr == S_OK)
-                    {
-                        srcHr = pSrcSurfIf->UnlockRect();
-                        Assert(srcHr == S_OK);
-                    }
-
-                    if (dstHr == S_OK)
-                    {
-                        dstHr = pDstSurfIf->UnlockRect();
-                        Assert(dstHr == S_OK);
-                    }
-                }
-#endif
+//#ifdef DEBUG_misha
+//                vboxVDbgDumpSurfData((pDevice, "Blt-pre Src:\n", pSrcRc, pData->SrcSubResourceIndex, &pData->SrcRect, pSrcSurfIf, "\n"));
+//                vboxVDbgDumpSurfData((pDevice, "Blt-pre Dst:\n", pDstRc, pData->DstSubResourceIndex, &pData->DstRect, pDstSurfIf, "\n"));
+//#endif
                 /* we support only Point & Linear, we ignore [Begin|Continue|End]PresentToDwm */
                 Assert((pData->Flags.Value & (~(0x00000100 | 0x00000200 | 0x00000400 | 0x00000001  | 0x00000002))) == 0);
                 hr = pDevice->pDevice9If->StretchRect(pSrcSurfIf,
@@ -4241,48 +4293,10 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
                                     vboxDDI2D3DBltFlags(pData->Flags));
                 Assert(hr == S_OK);
 
-#ifdef DEBUG_misha
-                {
-                    D3DLOCKED_RECT Lr;
-                    PVBOXWDDMDISP_ALLOCATION pAlloc = &pSrcRc->aAllocations[pData->SrcSubResourceIndex];
-                    HRESULT srcHr = pSrcSurfIf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
-                    Assert(srcHr == S_OK);
-                    if (srcHr == S_OK)
-                    {
-                        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
-                        Assert(bpp == pAlloc->SurfDesc.bpp);
-                        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-                        vboxVDbgPrintF(("src: !vbvdbg.ms 0x%p 0x%x 0x%x 0x%x 0x%x\n",
-                                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
-                    }
-
-                    pAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
-                    HRESULT dstHr = pDstSurfIf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
-                    Assert(dstHr == S_OK);
-                    if (dstHr == S_OK)
-                    {
-                        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
-                        Assert(bpp == pAlloc->SurfDesc.bpp);
-                        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-                        vboxVDbgPrintF(("dst: !vbvdbg.ms 0x%p 0x%x 0x%x 0x%x 0x%x\n",
-                                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
-                    }
-
-                    Assert(0);
-
-                    if (srcHr == S_OK)
-                    {
-                        srcHr = pSrcSurfIf->UnlockRect();
-                        Assert(srcHr == S_OK);
-                    }
-
-                    if (dstHr == S_OK)
-                    {
-                        dstHr = pDstSurfIf->UnlockRect();
-                        Assert(dstHr == S_OK);
-                    }
-                }
-#endif
+//#ifdef DEBUG_misha
+//                vboxVDbgDumpSurfData((pDevice, "Blt-post Src:\n", pSrcRc, pData->SrcSubResourceIndex, &pData->SrcRect, pSrcSurfIf, "\n"));
+//                vboxVDbgDumpSurfData((pDevice, "Blt-post Dst:\n", pDstRc, pData->DstSubResourceIndex, &pData->DstRect, pDstSurfIf, "\n"));
+//#endif
                 pSrcSurfIf->Release();
             }
         } while (0);
@@ -4455,6 +4469,13 @@ static HRESULT APIENTRY vboxWddmDDevSetRenderTarget(HANDLE hDevice, CONST D3DDDI
     PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hRenderTarget;
     Assert(pRc);
     Assert(pData->SubResourceIndex < pRc->cAllocations);
+    Assert(pRc == pDevice->pRenderTargetRc);
+    if (pRc == pDevice->pRenderTargetRc)
+    {
+        /* backbuffer */
+        Assert(pData->SubResourceIndex == ((pDevice->iRenderTargetFrontBuf + 1) % pDevice->pRenderTargetRc->cAllocations));
+    }
+
     HRESULT hr = S_OK;
     IDirect3DSurface9 *pD3D9Surf;
     if (pRc == pDevice->pRenderTargetRc && pRc->cAllocations == 1 && pData->RenderTargetIndex == 0)
@@ -5344,6 +5365,109 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 }
 
 #ifdef VBOXWDDMDISP_DEBUG
+VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const RECT *pRect, IDirect3DSurface9 *pSurf, const char* pSuffix)
+{
+    if (pPrefix)
+    {
+        vboxVDbgMpPrint((pDevice, "%s", pPrefix));
+    }
+
+    Assert(pRc->cAllocations > iAlloc);
+    PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[iAlloc];
+
+    vboxVDbgMpPrintAlloc((pDevice, "allocation info:\n", pRc, iAlloc, "\n"));
+
+    D3DLOCKED_RECT Lr;
+    if (pRect)
+    {
+        Assert(pRect->right > pRect->left);
+        Assert(pRect->bottom > pRect->top);
+        vboxVDbgMpPrintRect((pDevice, "rect: ", pRect, "\n"));
+    }
+    HRESULT srcHr = pSurf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
+    Assert(srcHr == S_OK);
+    if (srcHr == S_OK)
+    {
+        UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
+//        Assert(bpp == pAlloc->SurfDesc.bpp);
+//        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
+        vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
+        if (pRect)
+        {
+            vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
+                    ((uint8_t*)Lr.pBits) + (pRect->top * Lr.Pitch) + ((pRect->left * bpp) >> 3),
+                    pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, Lr.Pitch));
+        }
+        Assert(0);
+
+        srcHr = pSurf->UnlockRect();
+        Assert(srcHr == S_OK);
+    }
+    if (pSuffix)
+    {
+        vboxVDbgMpPrint((pDevice, "%s\n", pSuffix));
+    }
+}
+
+void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix)
+{
+    Assert(pRc->cAllocations > iAlloc);
+    PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[iAlloc];
+    vboxVDbgDoMpPrintF(pDevice, "%s width(%d), height(%d), format(%d), usage(%s), %s", pPrefix,
+            pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, pAlloc->SurfDesc.format,
+            pRc == pDevice->pRenderTargetRc ?
+                    (iAlloc == pDevice->iRenderTargetFrontBuf ? "Front Buffer" : "Back Buffer")
+                    : "?Everage? Alloc",
+            pSuffix);
+}
+
+void vboxVDbgDoMpPrintRect(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const RECT *pRect, const char * pSuffix)
+{
+    vboxVDbgDoMpPrintF(pDevice, "%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix);
+}
+
+VOID vboxVDbgDoMpPrint(const PVBOXWDDMDISP_DEVICE pDevice, LPCSTR szString)
+{
+    uint32_t cbString = strlen(szString) + 1;
+    uint32_t cbCmd = RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[cbString]);
+    PVBOXDISPIFESCAPE_DBGPRINT pCmd = (PVBOXDISPIFESCAPE_DBGPRINT)RTMemAllocZ(cbCmd);
+    Assert(pCmd);
+    if (pCmd)
+    {
+        pCmd->EscapeHdr.escapeCode = VBOXESC_DBGPRINT;
+        memcpy(pCmd->aStringBuf, szString, cbString);
+
+        D3DDDICB_ESCAPE DdiEscape = {0};
+        DdiEscape.hContext = NULL;
+        DdiEscape.hDevice = NULL;
+        DdiEscape.Flags.Value = 0;
+        DdiEscape.pPrivateDriverData = pCmd;
+        DdiEscape.PrivateDriverDataSize = cbCmd;
+
+        HRESULT hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
+        Assert(hr == S_OK);
+
+        RTMemFree(pCmd);
+    }
+}
+VOID vboxVDbgDoMpPrintF(const PVBOXWDDMDISP_DEVICE pDevice, LPCSTR szString, ...)
+{
+    char szBuffer[4096] = {0};
+    va_list pArgList;
+    va_start(pArgList, szString);
+    _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), szString, pArgList);
+    va_end(pArgList);
+
+    if (pDevice)
+    {
+        vboxVDbgDoMpPrint(pDevice, szBuffer);
+    }
+    else
+    {
+        OutputDebugStringA(szBuffer);
+    }
+}
 VOID vboxVDbgDoPrint(LPCSTR szString, ...)
 {
     char szBuffer[1024] = {0};

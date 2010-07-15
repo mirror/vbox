@@ -55,7 +55,11 @@
 #endif
 
 #ifdef VBOXWDDMDISP_DEBUG
+VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const RECT *pRect, IDirect3DSurface9 *pSurf, const char* pSuffix);
+void vboxVDbgDoMpPrintRect(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const RECT *pRect, const char * pSuffix);
+void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix);
 VOID vboxVDbgDoPrint(LPCSTR szString, ...);
+VOID vboxVDbgDoMpPrintF(const PVBOXWDDMDISP_DEVICE pDevice, LPCSTR szString, ...);
 void vboxVDbgVEHandlerRegister();
 void vboxVDbgVEHandlerUnregister();
 
@@ -65,12 +69,32 @@ void vboxVDbgVEHandlerUnregister();
         vboxVDbgDoPrint _m ; \
     } while (0)
 #define vboxVDbgPrintR vboxVDbgPrint
+#define vboxVDbgMpPrint(_m) \
+    do { \
+        vboxVDbgDoMpPrintF _m ; \
+    } while (0)
+#define vboxVDbgMpPrintRect(_m) \
+    do { \
+        vboxVDbgDoMpPrintRect _m ; \
+    } while (0)
+#define vboxVDbgMpPrintAlloc(_m) \
+    do { \
+        vboxVDbgDoMpPrintAlloc _m ; \
+    } while (0)
+#define vboxVDbgDumpSurfData(_m) \
+    do { \
+        vboxVDbgDoDumpSurfData _m ; \
+    } while (0)
 #ifdef VBOXWDDMDISP_DEBUG_FLOW
 # define vboxVDbgPrintF  vboxVDbgPrint
 #else
 # define vboxVDbgPrintF(_m)  do {} while (0)
 #endif
 #else
+#define vboxVDbgMpPrint(_m) do {} while (0)
+#define vboxVDbgMpPrintRect(_m) do {} while (0)
+#define vboxVDbgMpPrintAlloc(_m) do {} while (0)
+#define vboxVDbgDumpSurfData(_m) do {} while (0)
 #define vboxVDbgBreak() do {} while (0)
 #define vboxVDbgPrint(_m)  do {} while (0)
 #define vboxVDbgPrintR vboxVDbgPrint
