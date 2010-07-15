@@ -379,6 +379,14 @@ RTDECL(int) RTStrValidateEncodingEx(const char *psz, size_t cch, uint32_t fFlags
 RTDECL(bool) RTStrIsValidEncoding(const char *psz);
 
 /**
+ * Purge all bad UTF-8 encoding in the string, replacing it with '?'.
+ *
+ * @returns The number of bad characters (0 if nothing was done).
+ * @param   psz         The string to purge.
+ */
+RTDECL(size_t) RTStrPurgeEncoding(char *psz);
+
+/**
  * Gets the number of code points the string is made up of, excluding
  * the terminator.
  *
@@ -516,7 +524,8 @@ RTDECL(RTUNICP) RTStrGetCpInternal(const char *psz);
  *
  * @returns iprt status code
  * @returns VERR_INVALID_UTF8_ENCODING if the encoding is invalid.
- * @param   ppsz        The string.
+ * @param   ppsz        The string cursor.
+ *                      This is advanced one character forward on failure.
  * @param   pCp         Where to store the unicode code point.
  *                      Stores RTUNICP_INVALID if the encoding is invalid.
  */
@@ -582,6 +591,7 @@ DECLINLINE(RTUNICP) RTStrGetCp(const char *psz)
  * @returns iprt status code.
  * @param   ppsz        Pointer to the string pointer. This will be updated to
  *                      point to the char following the current code point.
+ *                      This is advanced one character forward on failure.
  * @param   pCp         Where to store the code point.
  *                      RTUNICP_INVALID is stored here on failure.
  *
