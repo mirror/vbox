@@ -486,10 +486,17 @@
  */
 /** Attempt to register a RAM range of which parts are already
  * covered by existing RAM ranges. */
-#define VERR_MM_RAM_CONFLICT                (-1700)
+#define VERR_MM_RAM_CONFLICT                    (-1700)
 /** Hypervisor memory allocation failed. */
-#define VERR_MM_HYPER_NO_MEMORY             (-1701)
+#define VERR_MM_HYPER_NO_MEMORY                 (-1701)
+/** @} */
 
+
+/** @name CPU Monitor (CPUM) Status Codes
+ * @{
+ */
+/** The caller shall raise an \#GP(0) exception. */
+#define VERR_CPUM_RAISE_GP_0                    (-1750)
 /** @} */
 
 

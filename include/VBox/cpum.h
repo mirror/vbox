@@ -674,8 +674,8 @@ VMMDECL(uint32_t)   CPUMGetGuestCpuIdStdMax(PVM pVM);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdExtMax(PVM pVM);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdCentaurMax(PVM pVM);
 VMMDECL(uint64_t)   CPUMGetGuestEFER(PVMCPU pVCpu);
-VMMDECL(uint64_t)   CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr);
-VMMDECL(void)       CPUMSetGuestMsr(PVMCPU pVCpu, unsigned idMsr, uint64_t valMsr);
+VMMDECL(int)        CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue);
+VMMDECL(int)        CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetGuestCpuVendor(PVM pVM);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetHostCpuVendor(PVM pVM);
 /** @} */

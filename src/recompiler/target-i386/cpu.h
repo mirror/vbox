@@ -600,11 +600,11 @@ typedef struct CPUX86State {
 
     /* sysenter registers */
     uint32_t sysenter_cs;
-    uint64_t sysenter_esp;
-    uint64_t sysenter_eip;
 #ifdef VBOX
     uint32_t alignment0;
 #endif
+    uint64_t sysenter_esp;
+    uint64_t sysenter_eip;
     uint64_t efer;
     uint64_t star;
 
@@ -925,10 +925,8 @@ void cpu_set_apic_tpr(CPUX86State *env, uint8_t val);
 uint8_t cpu_get_apic_tpr(CPUX86State *env);
 #endif
 #ifdef VBOX
-uint64_t cpu_apic_rdmsr(CPUX86State *env, uint32_t reg);
-void     cpu_apic_wrmsr(CPUX86State *env, uint32_t reg, uint64_t value);
-uint64_t cpu_rdmsr(CPUX86State *env, uint32_t msr);
-void     cpu_wrmsr(CPUX86State *env, uint32_t msr, uint64_t val);
+int cpu_rdmsr(CPUX86State *env, uint32_t idMsr, uint64_t *puValue);
+int cpu_wrmsr(CPUX86State *env, uint32_t idMsr, uint64_t uValue);
 #endif
 void cpu_smm_update(CPUX86State *env);
 
