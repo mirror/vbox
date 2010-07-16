@@ -231,6 +231,7 @@ static int vboxserviceVMInfoWriteUsers(void)
     /** @todo OS/2: Port logged on (LAN/local/whatever) user info retrival. */
     rc = VERR_NOT_IMPLEMENTED;
 #else
+    /** @todo Add utmpx support? */
     rc = utmpname(UTMP_FILE);
 # ifdef RT_OS_SOLARIS
     if (rc != 1)
@@ -243,27 +244,64 @@ static int vboxserviceVMInfoWriteUsers(void)
     }
     else
         rc = VINF_SUCCESS;
+
     setutent();
     utmp *ut_user;
+    uint32_t cUtmpEntries = 0;
+
+    /* Count all users to allocate a sufficient big array. */
     while ((ut_user = getutent()))
     {
         /* Make sure we don't add user names which are not
          * part of type USER_PROCESS. */
-
-        /** @todo Do we want to filter out user names? What if a user is logged in twice? */
         if (ut_user->ut_type == USER_PROCESS)
+            cUtmpEntries++;
+    }
+
+    if (cUtmpEntries) /* Do we have some users at all? */
+    {
+        setutent(); /* Rewind utmp file pointer to start from beginning. */
+
+        /* Build up array with logged in users. */
+        char *aUsers = RTMemAlloc(cUtmpEntries * sizeof(char*));
+        if (aUsers)
         {
-            if (cUsersInList > 0)
+            /* Store user in array. */
+            while (   (ut_user = getutent())
+                   && RT_SUCCESS(rc))
             {
-                rc = RTStrAAppend(&pszUserList, ",");
+                if (ut_user->ut_type == USER_PROCESS)
+                {
+                    bool fFound = false;
+                    for (uint32_t u = 0; u < cUsersInList && !fFound; u++)
+                        fFound = (strcmp(aUsers[u], ut_user->ut_user) == 0) ? true : false;
+
+                    if (!fFound)
+                        rc = RTStrAAppend(aUsers[cUsersInList++], ut_user->ut_user);
+                }
+            }
+
+            /* Build final user list. */
+            for (uint32_t u = 0; u < cUsersInList; u++)
+            {
+                if (u > 0)
+                {
+                    rc = RTStrAAppend(&pszUserList, ",");
+                    AssertRCBreakStmt(rc, RTStrFree(pszUserList));
+                }
+                rc = RTStrAAppend(&pszUserList, aUsers[u]);
                 AssertRCBreakStmt(rc, RTStrFree(pszUserList));
             }
-            rc = RTStrAAppend(&pszUserList, ut_user->ut_user);
-            AssertRCBreakStmt(rc, RTStrFree(pszUserList));
-            cUsersInList++;
+
+            /* Cleanup. */
+            for (uint32_t u = 0; u < cUsersInList; u++)
+                RTStrFree(aUsers[u]);
+            RTMemFree(aUsers);
         }
+        else
+            rc = VERR_NO_MEMORY;
     }
-    endutent();
+    endutent(); /* Close utmp file. */
 #endif
     Assert(RT_FAILURE(rc) || cUsersInList == 0 || (pszUserList && *pszUserList));
     if (RT_FAILURE(rc))
