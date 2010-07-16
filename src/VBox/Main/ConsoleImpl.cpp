@@ -257,22 +257,22 @@ public:
     /** Callback bit indexes (for bmDisabled). */
     typedef enum
     {
-        kOnMousePointerShapeChange = 0,
-        kOnMouseCapabilityChange,
-        kOnKeyboardLedsChange,
-        kOnStateChange,
-        kOnAdditionsStateChange,
-        kOnNetworkAdapterChange,
-        kOnSerialPortChange,
-        kOnParallelPortChange,
-        kOnStorageControllerChange,
-        kOnMediumChange,
-        kOnCPUChange,
-        kOnVRDPServerChange,
-        kOnRemoteDisplayInfoChange,
-        kOnUSBControllerChange,
-        kOnUSBDeviceStateChange,
-        kOnSharedFolderChange,
+        kOnMousePointerShapeChanged = 0,
+        kOnMouseCapabilityChanged,
+        kOnKeyboardLedsChanged,
+        kOnStateChanged,
+        kOnAdditionsStateChanged,
+        kOnNetworkAdapterChanged,
+        kOnSerialPortChanged,
+        kOnParallelPortChanged,
+        kOnStorageControllerChanged,
+        kOnMediumChanged,
+        kOnCPUChanged,
+        kOnVRDPServerChanged,
+        kOnRemoteDisplayInfoChanged,
+        kOnUSBControllerChanged,
+        kOnUSBDeviceStateChanged,
+        kOnSharedFolderChanged,
         kOnRuntimeError,
         kOnCanShowWindow,
         kOnShowWindow
@@ -303,16 +303,16 @@ public:
 /**
  * Macro for firing appropriate event.
  *
- * @param   CallbackMethod      The callback method, like OnKeyboardLedsChange.
+ * @param   Event               Event, like OnKeyboardLedsChanged.
  * @param   InvokeCb            Callbacks invocation code
  * @param   PreprEvent          Event preparation code
  * @param   Args                Number of callback arguments
  */
-#define CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, Args, MaybeComma) \
+#define CONSOLE_DO_CALLBACKS_GEN(Event, Args, MaybeComma) \
     do \
     { \
         VBoxEventDesc evDesc; \
-        evDesc.init(mEventSource, VBoxEventType_##CallbackMethod MaybeComma Args);     \
+        evDesc.init(mEventSource, VBoxEventType_##Event MaybeComma Args);     \
         evDesc.fire(/* don't wait for delivery */ 0); \
     } while (0)
 
@@ -2711,7 +2711,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
     mSharedFolders.insert(std::make_pair(aName, sharedFolder));
 
     /* notify console callbacks after the folder is added to the list */
-    CONSOLE_DO_CALLBACKS1(OnSharedFolderChange, Scope_Session);
+    CONSOLE_DO_CALLBACKS1(OnSharedFolderChanged, Scope_Session);
 
     return rc;
 }
@@ -2768,7 +2768,7 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
     mSharedFolders.erase(aName);
 
     /* notify console callbacks after the folder is removed to the list */
-    CONSOLE_DO_CALLBACKS1(OnSharedFolderChange, Scope_Session);
+    CONSOLE_DO_CALLBACKS1(OnSharedFolderChanged, Scope_Session);
 
     return rc;
 }
@@ -3441,7 +3441,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS1(OnNetworkAdapterChange, aNetworkAdapter);
+        CONSOLE_DO_CALLBACKS1(OnNetworkAdapterChanged, aNetworkAdapter);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -3657,7 +3657,7 @@ HRESULT Console::onSerialPortChange(ISerialPort *aSerialPort)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS1(OnSerialPortChange, aSerialPort);
+        CONSOLE_DO_CALLBACKS1(OnSerialPortChanged, aSerialPort);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -3691,7 +3691,7 @@ HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS1(OnParallelPortChange, aParallelPort);
+        CONSOLE_DO_CALLBACKS1(OnParallelPortChanged, aParallelPort);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -3725,7 +3725,7 @@ HRESULT Console::onStorageControllerChange()
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS0(OnStorageControllerChange);
+        CONSOLE_DO_CALLBACKS0(OnStorageControllerChanged);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -3759,7 +3759,7 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForc
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS1(OnMediumChange, aMediumAttachment);
+        CONSOLE_DO_CALLBACKS1(OnMediumChanged, aMediumAttachment);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -3796,7 +3796,7 @@ HRESULT Console::onCPUChange(ULONG aCPU, BOOL aRemove)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS2(OnCPUChange, aCPU, aRemove);
+        CONSOLE_DO_CALLBACKS2(OnCPUChanged, aCPU, aRemove);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -3860,7 +3860,7 @@ HRESULT Console::onVRDPServerChange(BOOL aRestart)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS0(OnVRDPServerChange);
+        CONSOLE_DO_CALLBACKS0(OnVRDPServerChanged);
 
     return rc;
 }
@@ -3875,7 +3875,7 @@ void Console::onRemoteDisplayInfoChange()
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CONSOLE_DO_CALLBACKS0(OnRemoteDisplayInfoChange);
+    CONSOLE_DO_CALLBACKS0(OnRemoteDisplayInfoChanged);
 }
 
 
@@ -3915,7 +3915,7 @@ HRESULT Console::onUSBControllerChange()
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS0(OnUSBControllerChange);
+        CONSOLE_DO_CALLBACKS0(OnUSBControllerChanged);
 
     return rc;
 }
@@ -3940,9 +3940,9 @@ HRESULT Console::onSharedFolderChange(BOOL aGlobal)
     if (SUCCEEDED(rc))
     {
         if (aGlobal)
-            CONSOLE_DO_CALLBACKS1(OnSharedFolderChange, Scope_Global);
+            CONSOLE_DO_CALLBACKS1(OnSharedFolderChanged, Scope_Global);
         else
-            CONSOLE_DO_CALLBACKS1(OnSharedFolderChange, Scope_Machine);
+            CONSOLE_DO_CALLBACKS1(OnSharedFolderChanged, Scope_Machine);
     }
 
     return rc;
@@ -4600,9 +4600,9 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
      * @todo: better solution
      */
 #ifdef RT_OS_WINDOWS
-    CONSOLE_DO_CALLBACKS7(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, pShape);
+    CONSOLE_DO_CALLBACKS7(OnMousePointerShapeChanged, fVisible, fAlpha, xHot, yHot, width, height, pShape);
 #else
-    CONSOLE_DO_CALLBACKS8(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, pShapeSize, pShape);
+    CONSOLE_DO_CALLBACKS8(OnMousePointerShapeChanged, fVisible, fAlpha, xHot, yHot, width, height, pShapeSize, pShape);
 #endif
 
 #if 0
@@ -4630,7 +4630,7 @@ void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelati
     mCallbackData.mcc.needsHostCursor = needsHostCursor;
     mCallbackData.mcc.valid = true;
 
-    CONSOLE_DO_CALLBACKS3(OnMouseCapabilityChange, supportsAbsolute, supportsRelative, needsHostCursor);
+    CONSOLE_DO_CALLBACKS3(OnMouseCapabilityChanged, supportsAbsolute, supportsRelative, needsHostCursor);
 }
 
 /**
@@ -4642,7 +4642,7 @@ void Console::onStateChange(MachineState_T machineState)
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    CONSOLE_DO_CALLBACKS1(OnStateChange, machineState);
+    CONSOLE_DO_CALLBACKS1(OnStateChanged, machineState);
 }
 
 /**
@@ -4654,7 +4654,7 @@ void Console::onAdditionsStateChange()
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    CONSOLE_DO_CALLBACKS0(OnAdditionsStateChange);
+    CONSOLE_DO_CALLBACKS0(OnAdditionsStateChanged);
 }
 
 /**
@@ -4691,7 +4691,7 @@ void Console::onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLo
     mCallbackData.klc.scrollLock = fScrollLock;
     mCallbackData.klc.valid = true;
 
-    CONSOLE_DO_CALLBACKS3(OnKeyboardLedsChange, fNumLock, fCapsLock, fScrollLock);
+    CONSOLE_DO_CALLBACKS3(OnKeyboardLedsChanged, fNumLock, fCapsLock, fScrollLock);
 }
 
 /**
@@ -4704,7 +4704,7 @@ void Console::onUSBDeviceStateChange(IUSBDevice *aDevice, bool aAttached,
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    CONSOLE_DO_CALLBACKS3(OnUSBDeviceStateChange, aDevice, aAttached, aError);
+    CONSOLE_DO_CALLBACKS3(OnUSBDeviceStateChanged, aDevice, aAttached, aError);
 }
 
 /**

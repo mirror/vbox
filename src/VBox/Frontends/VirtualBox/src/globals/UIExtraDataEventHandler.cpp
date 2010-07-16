@@ -256,7 +256,7 @@ UIExtraDataEventHandler::UIExtraDataEventHandler()
     QVector<KVBoxEventType> events;
     events
         << KVBoxEventType_OnExtraDataCanChange
-        << KVBoxEventType_OnExtraDataChange;
+        << KVBoxEventType_OnExtraDataChanged;
 
     vbox.GetEventSource().RegisterListener(m_mainEventListener, events, TRUE);
     AssertWrapperOk(vbox);
@@ -317,4 +317,3 @@ UIExtraDataEventHandler::~UIExtraDataEventHandler()
 }
 
 #include "UIExtraDataEventHandler.moc"
-

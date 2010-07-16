@@ -298,15 +298,15 @@ def monitorSource(ctx, es, active, dur):
     def handleEventImpl(ev):
          type = ev.type
          print "got event: %s %s" %(str(type), asEnumElem(ctx, 'VBoxEventType', type))
-         if type == ctx['global'].constants.VBoxEventType_OnMachineStateChange:
+         if type == ctx['global'].constants.VBoxEventType_OnMachineStateChanged:
              scev = ctx['global'].queryInterface(ev, 'IMachineStateChangedEvent')
              if scev:
                  print "machine state event: mach=%s state=%s" %(scev.machineId, scev.state)
-         elif  type == ctx['global'].constants.VBoxEventType_OnGuestPropertyChange:
+         elif  type == ctx['global'].constants.VBoxEventType_OnGuestPropertyChanged:
              gpcev = ctx['global'].queryInterface(ev, 'IGuestPropertyChangedEvent')
              if gpcev:
                  print "guest property change: name=%s value=%s" %(gpcev.name, gpcev.value)
-         elif  type == ctx['global'].constants.VBoxEventType_OnMousePointerShapeChange:
+         elif  type == ctx['global'].constants.VBoxEventType_OnMousePointerShapeChanged:
              psev = ctx['global'].queryInterface(ev, 'IMousePointerShapeChangedEvent')
              if psev:
                  shape = ctx['global'].getArray(psev, 'shape')

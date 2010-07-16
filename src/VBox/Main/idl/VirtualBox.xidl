@@ -13741,7 +13741,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
      name="VBoxEventType"
-     uuid="25bf47c8-9972-4274-86ea-e6c479796c4a">
+     uuid="7d695029-32b8-4855-86d3-75de9082923b">
 
     <desc>
       Type of an event.
@@ -13788,17 +13788,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
-    <const name="OnMachineStateChange" value="32">
+    <const name="OnMachineStateChanged" value="32">
       <desc>
         <see>IMachineStateChangedEvent</see>
       </desc>
     </const>
-    <const name="OnMachineDataChange" value="33">
+    <const name="OnMachineDataChanged" value="33">
       <desc>
         <see>IMachineDataChangedEvent</see>
       </desc>
     </const>
-    <const name="OnExtraDataChange" value="34">
+    <const name="OnExtraDataChanged" value="34">
       <desc>
         <see>IExtraDataChangedEvent</see>
       </desc>
@@ -13818,7 +13818,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <see>IMachineRegisteredEvent</see>
       </desc>
     </const>
-    <const name="OnSessionStateChange" value="38">
+    <const name="OnSessionStateChanged" value="38">
       <desc>
         <see>ISessionStateChangedEvent</see>
       </desc>
@@ -13833,83 +13833,83 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <see>ISnapshotDeletedEvent</see>
       </desc>
     </const>
-    <const name="OnSnapshotChange" value="41">
+    <const name="OnSnapshotChanged" value="41">
       <desc>
         <see>ISnapshotChangedEvent</see>
       </desc>
     </const>
-    <const name="OnGuestPropertyChange" value="42">
+    <const name="OnGuestPropertyChanged" value="42">
       <desc>
         <see>IGuestPropertyChangedEvent</see>
       </desc>
     </const>
     <!-- Console events -->
-    <const name="OnMousePointerShapeChange" value="43">
+    <const name="OnMousePointerShapeChanged" value="43">
       <desc>
         <see>IMousePointerShapeChangedEvent</see>
       </desc>
     </const>
-    <const name="OnMouseCapabilityChange" value="44">
+    <const name="OnMouseCapabilityChanged" value="44">
       <desc>
         <see>IMouseCapabilityChangedEvent</see>
       </desc>
     </const>
-    <const name="OnKeyboardLedsChange" value="45">
+    <const name="OnKeyboardLedsChanged" value="45">
       <desc>
         <see>IKeyboardLedsChangedEvent</see>
       </desc>
     </const>
-    <const name="OnStateChange" value="46">
+    <const name="OnStateChanged" value="46">
       <desc>
         <see>IStateChangedEvent</see>
       </desc>
     </const>
-    <const name="OnAdditionsStateChange" value="47">
+    <const name="OnAdditionsStateChanged" value="47">
       <desc>
         <see>IAdditionsStateChangedEvent</see>
       </desc>
     </const>
-    <const name="OnNetworkAdapterChange" value="48">
+    <const name="OnNetworkAdapterChanged" value="48">
       <desc>
         <see>INetworkAdapterChangedEvent</see>
       </desc>
     </const>
-    <const name="OnSerialPortChange" value="49">
+    <const name="OnSerialPortChanged" value="49">
       <desc>
         <see>ISerialPortChangedEvent</see>
       </desc>
     </const>
-    <const name="OnParallelPortChange" value="50">
+    <const name="OnParallelPortChanged" value="50">
       <desc>
         <see>IParallelPortChangedEvent</see>
       </desc>
     </const>
-    <const name="OnStorageControllerChange" value="51">
+    <const name="OnStorageControllerChanged" value="51">
       <desc>
         <see>IStorageControllerChangedEvent</see>
       </desc>
     </const>
-    <const name="OnMediumChange" value="52">
+    <const name="OnMediumChanged" value="52">
       <desc>
         <see>IMediumChangedEvent</see>
       </desc>
     </const>
-    <const name="OnVRDPServerChange" value="53">
+    <const name="OnVRDPServerChanged" value="53">
       <desc>
         <see>IVRDPServerChangedEvent</see>
       </desc>
     </const>
-    <const name="OnUSBControllerChange" value="54">
+    <const name="OnUSBControllerChanged" value="54">
       <desc>
         <see>IUSBControllerChangedEvent</see>
       </desc>
     </const>
-    <const name="OnUSBDeviceStateChange" value="55">
+    <const name="OnUSBDeviceStateChanged" value="55">
       <desc>
         <see>IUSBDeviceStateChangedEvent</see>
       </desc>
     </const>
-    <const name="OnSharedFolderChange" value="56">
+    <const name="OnSharedFolderChanged" value="56">
       <desc>
         <see>ISharedFolderChangedEvent</see>
       </desc>
@@ -13929,17 +13929,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <see>IShowWindowEvent</see>
       </desc>
     </const>
-    <const name="OnCPUChange" value="60">
+    <const name="OnCPUChanged" value="60">
       <desc>
         <see>ICPUChangedEvent</see>
       </desc>
     </const>
-    <const name="OnRemoteDisplayInfoChange" value="61">
+    <const name="OnRemoteDisplayInfoChanged" value="61">
       <desc>
         <see>IRemoteDisplayInfoChangedEvent</see>
       </desc>
     </const>
-    <const name="OnEventSourceChange" value="62">
+    <const name="OnEventSourceChanged" value="62">
       <desc>
         <see>IEventSourceChangedEvent</see>
       </desc>
@@ -14151,7 +14151,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="IMachineStateChangedEvent" extends="IMachineEvent"
       uuid="5748F794-48DF-438D-85EB-98FFD70D18C9"
-      wsmap="managed" autogen="VBoxEvent" id="OnMachineStateChange"
+      wsmap="managed" autogen="VBoxEvent" id="OnMachineStateChanged"
       >
     <desc>Machine state change event.</desc>
 
@@ -14163,7 +14163,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="IMachineDataChangedEvent" extends="IMachineEvent"
       uuid="6AA70A6C-0DCA-4810-8C5C-457B278E3D49"
-      wsmap="managed" autogen="VBoxEvent" id="OnMachineDataChange"
+      wsmap="managed" autogen="VBoxEvent" id="OnMachineDataChanged"
       >
     <desc>
       Any of the settings of the given machine has changed.
@@ -14191,7 +14191,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="ISessionStateChangedEvent" extends="IMachineEvent"
       uuid="714a3eef-799a-4489-86cd-fe8e45b2ff8e"
-      wsmap="managed" autogen="VBoxEvent" id="OnSessionStateChange"
+      wsmap="managed" autogen="VBoxEvent" id="OnSessionStateChanged"
       >
     <desc>
       The state of the session for the given machine was changed.
@@ -14208,7 +14208,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="IGuestPropertyChangedEvent" extends="IMachineEvent"
       uuid="3f63597a-26f1-4edb-8dd2-6bddd0912368"
-      wsmap="managed" autogen="VBoxEvent" id="OnGuestPropertyChange"
+      wsmap="managed" autogen="VBoxEvent" id="OnGuestPropertyChanged"
       >
     <desc>
       Notification when a guest property has changed.
@@ -14279,7 +14279,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="ISnapshotChangedEvent" extends="ISnapshotEvent"
      uuid="07541941-8079-447a-a33e-47a69c7980db"
-     wsmap="managed" autogen="VBoxEvent" id="OnSnapshotChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnSnapshotChanged"
      >
     <desc>
       Snapshot properties (name and/or description) have been changed.
@@ -14290,7 +14290,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IMousePointerShapeChangedEvent" extends="IEvent"
      uuid="a6dcf6e8-416b-4181-8c4a-45ec95177aef"
-     wsmap="managed" autogen="VBoxEvent" id="OnMousePointerShapeChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnMousePointerShapeChanged"
      >
     <desc>
       Notification when the guest mouse pointer shape has
@@ -14363,7 +14363,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IMouseCapabilityChangedEvent" extends="IEvent"
      uuid="d633ad48-820c-4207-b46c-6bd3596640d5"
-     wsmap="managed" autogen="VBoxEvent" id="OnMouseCapabilityChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnMouseCapabilityChanged"
      >
     <desc>
       Notification when the mouse capabilities reported by the
@@ -14389,7 +14389,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IKeyboardLedsChangedEvent" extends="IEvent"
      uuid="6DDEF35E-4737-457B-99FC-BC52C851A44F"
-     wsmap="managed" autogen="VBoxEvent" id="OnKeyboardLedsChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnKeyboardLedsChanged"
      >
     <desc>
       Notification when the guest OS executes the KBD_CMD_SET_LEDS command
@@ -14415,7 +14415,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IStateChangedEvent" extends="IEvent"
      uuid="4376693C-CF37-453B-9289-3B0F521CAF27"
-     wsmap="managed" autogen="VBoxEvent" id="OnStateChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnStateChanged"
      >
     <desc>
       Notification when the execution state of the machine has changed.
@@ -14431,7 +14431,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IAdditionsStateChangedEvent" extends="IEvent"
      uuid="D70F7915-DA7C-44C8-A7AC-9F173490446A"
-     wsmap="managed" autogen="VBoxEvent" id="OnAdditionsStateChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnAdditionsStateChanged"
      >
     <desc>
       Notification when a Guest Additions property changes.
@@ -14443,7 +14443,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="INetworkAdapterChangedEvent" extends="IEvent"
      uuid="08889892-1EC6-4883-801D-77F56CFD0103"
-     wsmap="managed" autogen="VBoxEvent" id="OnNetworkAdapterChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnNetworkAdapterChanged"
      >
     <desc>
       Notification when a property of one of the
@@ -14461,7 +14461,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="ISerialPortChangedEvent" extends="IEvent"
      uuid="3BA329DC-659C-488B-835C-4ECA7AE71C6C"
-     wsmap="managed" autogen="VBoxEvent" id="OnSerialPortChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnSerialPortChanged"
      >
     <desc>
       Notification when a property of one of the
@@ -14479,7 +14479,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IParallelPortChangedEvent" extends="IEvent"
      uuid="813C99FC-9849-4F47-813E-24A75DC85615"
-     wsmap="managed" autogen="VBoxEvent" id="OnParallelPortChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnParallelPortChanged"
      >
     <desc>
       Notification when a property of one of the
@@ -14497,7 +14497,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IStorageControllerChangedEvent" extends="IEvent"
      uuid="715212BF-DA59-426E-8230-3831FAA52C56"
-     wsmap="managed" autogen="VBoxEvent" id="OnStorageControllerChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnStorageControllerChanged"
      >
     <desc>
       Notification when a
@@ -14509,7 +14509,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IMediumChangedEvent" extends="IEvent"
      uuid="0FE2DA40-5637-472A-9736-72019EABD7DE"
-     wsmap="managed" autogen="VBoxEvent" id="OnMediumChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnMediumChanged"
      >
     <desc>
       Notification when a
@@ -14526,7 +14526,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
    <interface
      name="ICPUChangedEvent" extends="IEvent"
      uuid="D0F0BECC-EE17-4D17-A8CC-383B0EB55E9D"
-     wsmap="managed" autogen="VBoxEvent" id="OnCPUChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnCPUChanged"
      >
     <desc>
       Notification when a CPU changes.
@@ -14546,7 +14546,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IVRDPServerChangedEvent" extends="IEvent"
      uuid="726038B6-6279-4A7A-8037-D041693D1915"
-     wsmap="managed" autogen="VBoxEvent" id="OnVRDPServerChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnVRDPServerChanged"
      >
     <desc>
       Notification when a property of the
@@ -14559,7 +14559,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
    <interface
      name="IRemoteDisplayInfoChangedEvent" extends="IEvent"
      uuid="65B556C5-2A99-47D8-B311-FC177F0914CD"
-     wsmap="managed" autogen="VBoxEvent" id="OnRemoteDisplayInfoChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnRemoteDisplayInfoChanged"
      >
     <desc>
       Notification when the status of the VRDP server changes. Interested callees
@@ -14571,7 +14571,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IUSBControllerChangedEvent" extends="IEvent"
      uuid="93BADC0C-61D9-4940-A084-E6BB29AF3D83"
-     wsmap="managed" autogen="VBoxEvent" id="OnUSBControllerChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnUSBControllerChanged"
      >
     <desc>
       Notification when a property of the virtual
@@ -14584,7 +14584,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IUSBDeviceStateChangedEvent" extends="IEvent"
      uuid="806da61b-6679-422a-b629-51b06b0c6d93"
-     wsmap="managed" autogen="VBoxEvent" id="OnUSBDeviceStateChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnUSBDeviceStateChanged"
      >
     <desc>
       Notification when a USB device is attached to or detached from
@@ -14625,7 +14625,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
    <interface
      name="ISharedFolderChangedEvent" extends="IEvent"
      uuid="B66349B5-3534-4239-B2DE-8E1535D94C0B"
-     wsmap="managed" autogen="VBoxEvent" id="OnSharedFolderChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnSharedFolderChanged"
      >
     <desc>
       Notification when a shared folder is added or removed.
@@ -14723,7 +14723,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      name="IEventSourceChangedEvent" extends="IEvent"
      uuid="e7932cb8-f6d4-4ab6-9cbf-558eb8959a6a"
      waitable="yes"
-     wsmap="managed" autogen="VBoxEvent" id="OnEventSourceChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnEventSourceChanged"
      >
     <desc>
       Notification when an event source state changes (listener added or removed).
@@ -14745,7 +14745,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="IExtraDataChangedEvent" extends="IEvent"
       uuid="024F00CE-6E0B-492A-A8D0-968472A94DC7"
-      wsmap="managed" autogen="VBoxEvent" id="OnExtraDataChange"
+      wsmap="managed" autogen="VBoxEvent" id="OnExtraDataChanged"
       >
     <desc>
       Notification when machine specific or global extra data

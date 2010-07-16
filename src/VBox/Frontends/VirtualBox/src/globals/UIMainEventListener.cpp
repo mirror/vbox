@@ -63,13 +63,13 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         /*
          * All VirtualBox Events
          */
-        case KVBoxEventType_OnMachineStateChange:
+        case KVBoxEventType_OnMachineStateChanged:
         {
             CMachineStateChangedEvent es(event);
             emit sigMachineStateChange(es.GetMachineId(), es.GetState());
             break;
         }
-        case KVBoxEventType_OnMachineDataChange:
+        case KVBoxEventType_OnMachineDataChanged:
         {
             CMachineDataChangedEvent es(event);
             emit sigMachineDataChange(es.GetMachineId());
@@ -86,7 +86,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
                 es.AddVeto(strReason);
             break;
         }
-        case KVBoxEventType_OnExtraDataChange:
+        case KVBoxEventType_OnExtraDataChanged:
         {
             CExtraDataChangedEvent es(event);
             emit sigExtraDataChange(es.GetMachineId(), es.GetKey(), es.GetValue());
@@ -101,7 +101,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
             emit sigMachineRegistered(es.GetMachineId(), es.GetRegistered());
             break;
         }
-        case KVBoxEventType_OnSessionStateChange:
+        case KVBoxEventType_OnSessionStateChanged:
         {
             CSessionStateChangedEvent es(event);
             emit sigSessionStateChange(es.GetMachineId(), es.GetState());
@@ -111,7 +111,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         case KVBoxEventType_OnSnapshotTaken:
         case KVBoxEventType_OnSnapshotDeleted:
          */
-        case KVBoxEventType_OnSnapshotChange:
+        case KVBoxEventType_OnSnapshotChanged:
         {
             CSnapshotChangedEvent es(event);
             emit sigSnapshotChange(es.GetMachineId(), es.GetSnapshotId());
@@ -123,47 +123,47 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         /*
          * All Console Events
          */
-        case KVBoxEventType_OnMousePointerShapeChange:
+        case KVBoxEventType_OnMousePointerShapeChanged:
         {
             CMousePointerShapeChangedEvent es(event);
             emit sigMousePointerShapeChange(es.GetVisible(), es.GetAlpha(), QPoint(es.GetXhot(), es.GetYhot()), QSize(es.GetWidth(), es.GetHeight()), es.GetShape());
             break;
         }
-        case KVBoxEventType_OnMouseCapabilityChange:
+        case KVBoxEventType_OnMouseCapabilityChanged:
         {
             CMouseCapabilityChangedEvent es(event);
             emit sigMouseCapabilityChange(es.GetSupportsAbsolute(), es.GetSupportsRelative(), es.GetNeedsHostCursor());
             break;
         }
-        case KVBoxEventType_OnKeyboardLedsChange:
+        case KVBoxEventType_OnKeyboardLedsChanged:
         {
             CKeyboardLedsChangedEvent es(event);
             emit sigKeyboardLedsChangeEvent(es.GetNumLock(), es.GetCapsLock(), es.GetScrollLock());
             break;
         }
-        case KVBoxEventType_OnStateChange:
+        case KVBoxEventType_OnStateChanged:
         {
             CStateChangedEvent es(event);
             emit sigStateChange(es.GetState());
             break;
         }
-        case KVBoxEventType_OnAdditionsStateChange:
+        case KVBoxEventType_OnAdditionsStateChanged:
         {
             emit sigAdditionsChange();
             break;
         }
-        case KVBoxEventType_OnNetworkAdapterChange:
+        case KVBoxEventType_OnNetworkAdapterChanged:
         {
             CNetworkAdapterChangedEvent es(event);
             emit sigNetworkAdapterChange(es.GetNetworkAdapter());
             break;
         }
         /* Not used *
-        case KVBoxEventType_OnSerialPortChange:
-        case KVBoxEventType_OnParallelPortChange:
-        case KVBoxEventType_OnStorageControllerChange:
+        case KVBoxEventType_OnSerialPortChanged:
+        case KVBoxEventType_OnParallelPortChanged:
+        case KVBoxEventType_OnStorageControllerChanged:
          */
-        case KVBoxEventType_OnMediumChange:
+        case KVBoxEventType_OnMediumChanged:
         {
             CMediumChangedEvent es(event);
             emit sigMediumChange(es.GetMediumAttachment());
@@ -174,18 +174,18 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         case KVBoxEventType_OnVRDPServerChange:
         case KVBoxEventType_OnRemoteDisplayInfoChange:
          */
-        case KVBoxEventType_OnUSBControllerChange:
+        case KVBoxEventType_OnUSBControllerChanged:
         {
             emit sigUSBControllerChange();
             break;
         }
-        case KVBoxEventType_OnUSBDeviceStateChange:
+        case KVBoxEventType_OnUSBDeviceStateChanged:
         {
             CUSBDeviceStateChangedEvent es(event);
             emit sigUSBDeviceStateChange(es.GetDevice(), es.GetAttached(), es.GetError());
             break;
         }
-        case KVBoxEventType_OnSharedFolderChange:
+        case KVBoxEventType_OnSharedFolderChanged:
         {
             CSharedFolderChangedEvent es(event);
             emit sigSharedFolderChange();

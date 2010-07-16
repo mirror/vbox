@@ -88,7 +88,7 @@ public:
         aEvent->COMGETTER(Type)(&aType);
         switch (aType)
         {
-            case VBoxEventType_OnMousePointerShapeChange:
+            case VBoxEventType_OnMousePointerShapeChanged:
             {
                 ComPtr<IMousePointerShapeChangedEvent> mpscev = aEvent;
                 Assert(mpscev);
@@ -107,7 +107,7 @@ public:
                 OnMousePointerShapeChange(visible, alpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shape));
                 break;
             }
-            case VBoxEventType_OnMouseCapabilityChange:
+            case VBoxEventType_OnMouseCapabilityChanged:
             {
                 ComPtr<IMouseCapabilityChangedEvent> mccev = aEvent;
                 Assert(mccev);
@@ -119,7 +119,7 @@ public:
                 }
                 break;
             }
-            case VBoxEventType_OnKeyboardLedsChange:
+            case VBoxEventType_OnKeyboardLedsChanged:
             {
                 ComPtr<IKeyboardLedsChangedEvent> klcev = aEvent;
                 Assert(klcev);
@@ -1160,9 +1160,9 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
         mConsoleListener = new VRDPConsoleListener(this);
         mConsoleListener->AddRef();
         com::SafeArray <VBoxEventType_T> eventTypes;
-        eventTypes.push_back(VBoxEventType_OnMousePointerShapeChange);
-        eventTypes.push_back(VBoxEventType_OnMouseCapabilityChange);
-        eventTypes.push_back(VBoxEventType_OnKeyboardLedsChange);
+        eventTypes.push_back(VBoxEventType_OnMousePointerShapeChanged);
+        eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);
+        eventTypes.push_back(VBoxEventType_OnKeyboardLedsChanged);
         es->RegisterListener(mConsoleListener, ComSafeArrayAsInParam(eventTypes), true);
     }
 

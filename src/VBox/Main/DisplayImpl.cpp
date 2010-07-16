@@ -652,7 +652,7 @@ HRESULT Display::init (Console *aParent)
         ComPtr<IEventSource> es;
         mParent->COMGETTER(EventSource)(es.asOutParam());
         com::SafeArray <VBoxEventType_T> eventTypes;
-        eventTypes.push_back(VBoxEventType_OnStateChange);
+        eventTypes.push_back(VBoxEventType_OnStateChanged);
         es->RegisterListener(this, ComSafeArrayAsInParam(eventTypes), true);
     }
 
@@ -744,7 +744,7 @@ STDMETHODIMP Display::HandleEvent(IEvent * aEvent)
     aEvent->COMGETTER(Type)(&aType);
     switch (aType)
     {
-        case VBoxEventType_OnStateChange:
+        case VBoxEventType_OnStateChanged:
         {
             ComPtr<IStateChangedEvent> scev = aEvent;
             Assert(scev);

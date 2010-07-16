@@ -120,17 +120,17 @@ public:
     /** Callback bit indexes (for bmDisabled). */
     typedef enum
     {
-        kOnMachineStateChange = 0,
-        kOnMachineDataChange,
+        kOnMachineStateChanged = 0,
+        kOnMachineDataChanged,
         kOnExtraDataCanChange,
-        kOnExtraDataChange,
+        kOnExtraDataChanged,
         kOnMediumRegistered,
         kOnMachineRegistered,
-        kOnSessionStateChange,
+        kOnSessionStateChanged,
         kOnSnapshotTaken,
         kOnSnapshotDeleted,
-        kOnSnapshotChange,
-        kOnGuestPropertyChange
+        kOnSnapshotChanged,
+        kOnGuestPropertyChanged
     } CallbackBit;
 
     VirtualBoxCallbackRegistration()
@@ -2468,11 +2468,11 @@ void VirtualBox::addProcessToReap(RTPROCESS pid)
 struct MachineEvent : public VirtualBox::CallbackEvent
 {
     MachineEvent(VirtualBox *aVB, const Guid &aId)
-        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineDataChange), id(aId.toUtf16())
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineDataChanged), id(aId.toUtf16())
         {}
 
     MachineEvent(VirtualBox *aVB, const Guid &aId, MachineState_T aState)
-        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineStateChange), id(aId.toUtf16())
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineStateChanged), id(aId.toUtf16())
         , state(aState)
         {}
 
@@ -2485,12 +2485,12 @@ struct MachineEvent : public VirtualBox::CallbackEvent
     {
         switch (mWhat)
         {
-            case VirtualBoxCallbackRegistration::kOnMachineDataChange:
-                aEvDesc.init(aSource, VBoxEventType_OnMachineDataChange, id.raw());
+            case VirtualBoxCallbackRegistration::kOnMachineDataChanged:
+                aEvDesc.init(aSource, VBoxEventType_OnMachineDataChanged, id.raw());
                 break;
 
-            case VirtualBoxCallbackRegistration::kOnMachineStateChange:
-                aEvDesc.init(aSource, VBoxEventType_OnMachineStateChange, id.raw(), state);
+            case VirtualBoxCallbackRegistration::kOnMachineStateChanged:
+                aEvDesc.init(aSource, VBoxEventType_OnMachineStateChanged, id.raw(), state);
                 break;
 
             case VirtualBoxCallbackRegistration::kOnMachineRegistered:
@@ -2573,13 +2573,13 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
 {
     ExtraDataEvent(VirtualBox *aVB, const Guid &aMachineId,
                    IN_BSTR aKey, IN_BSTR aVal)
-        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnExtraDataChange)
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnExtraDataChanged)
         , machineId(aMachineId.toUtf16()), key(aKey), val(aVal)
     {}
 
     virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
     {
-        return aEvDesc.init(aSource, VBoxEventType_OnExtraDataChange, machineId.raw(), key.raw(), val.raw());
+        return aEvDesc.init(aSource, VBoxEventType_OnExtraDataChanged, machineId.raw(), key.raw(), val.raw());
     }
 
     Bstr machineId, key, val;
@@ -2605,13 +2605,13 @@ void VirtualBox::onMachineRegistered(const Guid &aId, BOOL aRegistered)
 struct SessionEvent : public VirtualBox::CallbackEvent
 {
     SessionEvent(VirtualBox *aVB, const Guid &aMachineId, SessionState_T aState)
-        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnSessionStateChange)
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnSessionStateChanged)
         , machineId(aMachineId.toUtf16()), sessionState(aState)
     {}
 
     virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
     {
-        return aEvDesc.init(aSource, VBoxEventType_OnSessionStateChange, machineId.raw(), sessionState);
+        return aEvDesc.init(aSource, VBoxEventType_OnSessionStateChanged, machineId.raw(), sessionState);
     }
     Bstr machineId;
     SessionState_T sessionState;
@@ -2668,7 +2668,7 @@ void VirtualBox::onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshot
 void VirtualBox::onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId)
 {
     postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
-                                VirtualBoxCallbackRegistration::kOnSnapshotChange));
+                                VirtualBoxCallbackRegistration::kOnSnapshotChanged));
 }
 
 /** Event for onGuestPropertyChange() */
@@ -2676,7 +2676,7 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 {
     GuestPropertyEvent(VirtualBox *aVBox, const Guid &aMachineId,
                        IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
-        : CallbackEvent(aVBox, VirtualBoxCallbackRegistration::kOnGuestPropertyChange),
+        : CallbackEvent(aVBox, VirtualBoxCallbackRegistration::kOnGuestPropertyChanged),
           machineId(aMachineId),
           name(aName),
           value(aValue),
@@ -2685,7 +2685,7 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 
     virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
     {
-        return aEvDesc.init(aSource, VBoxEventType_OnGuestPropertyChange,
+        return aEvDesc.init(aSource, VBoxEventType_OnGuestPropertyChanged,
                             machineId.toUtf16().raw(), name.raw(), value.raw(), flags.raw());
     }
 
