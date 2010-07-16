@@ -1796,6 +1796,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                 alock.leave();
 
                 /* copy the state file */
+                RTFileDelete(stateFilePath.c_str());
                 int vrc = RTFileCopyEx(snapStateFilePath.c_str(),
                                        stateFilePath.c_str(),
                                        0,
