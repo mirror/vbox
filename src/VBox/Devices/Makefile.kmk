@@ -318,6 +318,13 @@ DevicesR3_SOURCES       = \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
 
+ifdef VBOX_WITH_AUDIO_INTELHD
+    DevicesR3_SOURCES += Audio/DevIchIntelHDA.cpp
+    DevicesR3_SOURCES += Audio/DevCodec.cpp
+    DevicesR3_DEFS    += VBOX_WITH_AUDIO_INTELHD
+    VBoxDD_DEFS    += VBOX_WITH_AUDIO_INTELHD
+endif
+
 ifdef VBOX_DYNAMIC_NET_ATTACH
  DevicesR3_DEFS        += VBOX_DYNAMIC_NET_ATTACH
 endif
