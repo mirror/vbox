@@ -202,7 +202,7 @@ $(VBOX_JXPCOM_GEN)/jxpcomgen.list: \
 		$$(addprefix $(VBOX_PATH_XPCOM_SRC)/,$$(XPCOM_IDLFILES)) \
 		$(VBOX_XPIDL) \
 		| $(VBOX_JXPCOM_GEN)/java/
-	$(call MSG_L1,Generating Java interface files from IDL)
+	$(call MSG_L1,Generating XPCOM Java interface files from IDL)
 	$(QUIET)$(RM) -f $(filter-out %/XPCOMError.java, $(wildcard $(VBOX_JXPCOM_GEN)/java/*.java))
 	$(foreach idl, $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl $(addprefix $(VBOX_PATH_XPCOM_SRC)/,$(XPCOM_IDLFILES))\
 		, $(NLTAB)$(QUIET)$(VBOX_XPIDL) -m java $(XPIDL_INCS) -e $(VBOX_JXPCOM_GEN)/java/$(basename $(notdir $(idl))).java $(idl) )
