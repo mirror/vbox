@@ -1252,13 +1252,17 @@ VBOXWDDMDISP_TSS_LOOKUP vboxDDI2D3DTestureStageStateType(D3DDDITEXTURESTAGESTATE
         {FALSE, D3DTSS_COLORARG0},               /* 26, D3DDDITSS_COLORARG0 */
         {FALSE, D3DTSS_ALPHAARG0},               /* 27, D3DDDITSS_ALPHAARG0 */
         {FALSE, D3DTSS_RESULTARG},               /* 28, D3DDDITSS_RESULTARG */
-        {FALSE, D3DTSS_FORCE_DWORD},             /* 29, D3DDDITSS_SRGBTEXTURE */
-        {FALSE, D3DTSS_FORCE_DWORD},             /* 30, D3DDDITSS_ELEMENTINDEX */
-        {FALSE, D3DTSS_FORCE_DWORD},             /* 31, D3DDDITSS_DMAPOFFSET */
+        {TRUE, D3DSAMP_SRGBTEXTURE},             /* 29, D3DDDITSS_SRGBTEXTURE */
+        {TRUE, D3DSAMP_ELEMENTINDEX},            /* 30, D3DDDITSS_ELEMENTINDEX */
+        {TRUE, D3DSAMP_DMAPOFFSET},              /* 31, D3DDDITSS_DMAPOFFSET */
         {FALSE, D3DTSS_CONSTANT},                /* 32, D3DDDITSS_CONSTANT */
         {FALSE, D3DTSS_FORCE_DWORD},             /* 33, D3DDDITSS_DISABLETEXTURECOLORKEY */
         {FALSE, D3DTSS_FORCE_DWORD},             /* 34, D3DDDITSS_TEXTURECOLORKEYVAL */
     };
+
+    Assert(enmType > 0);
+    Assert(enmType < RT_ELEMENTS(lookup));
+    Assert(lookup[enmType].dType != D3DTSS_FORCE_DWORD);
 
     return lookup[enmType];
 }
@@ -4469,7 +4473,6 @@ static HRESULT APIENTRY vboxWddmDDevSetRenderTarget(HANDLE hDevice, CONST D3DDDI
     PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hRenderTarget;
     Assert(pRc);
     Assert(pData->SubResourceIndex < pRc->cAllocations);
-    Assert(pRc == pDevice->pRenderTargetRc);
     if (pRc == pDevice->pRenderTargetRc)
     {
         /* backbuffer */

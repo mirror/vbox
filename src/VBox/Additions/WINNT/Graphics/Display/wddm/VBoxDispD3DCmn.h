@@ -37,6 +37,7 @@
 #ifdef DEBUG
 # define VBOXWDDMDISP_DEBUG
 # define VBOXWDDMDISP_DEBUG_FLOW
+//# define VBOXWDDMDISP_DEBUG_DUMPSURFDATA
 #endif
 
 #if 0
@@ -81,10 +82,14 @@ void vboxVDbgVEHandlerUnregister();
     do { \
         vboxVDbgDoMpPrintAlloc _m ; \
     } while (0)
+#ifdef VBOXWDDMDISP_DEBUG_DUMPSURFDATA
 #define vboxVDbgDumpSurfData(_m) \
     do { \
         vboxVDbgDoDumpSurfData _m ; \
     } while (0)
+#else
+#define vboxVDbgDumpSurfData(_m) do {} while (0)
+#endif
 #ifdef VBOXWDDMDISP_DEBUG_FLOW
 # define vboxVDbgPrintF  vboxVDbgPrint
 #else
