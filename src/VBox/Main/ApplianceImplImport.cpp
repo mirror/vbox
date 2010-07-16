@@ -1093,16 +1093,14 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (!isApplianceIdle())
-        return E_ACCESSDENIED;
-
     Assert(!pProgress.isNull());
 
     // Change the appliance state so we can safely leave the lock while doing time-consuming
     // disk imports; also the below method calls do all kinds of locking which conflicts with
     // the appliance object lock
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
+    if (!isApplianceIdle())
+        return E_ACCESSDENIED;
     m->state = Data::ApplianceImporting;
     appLock.release();
 
