@@ -60,6 +60,9 @@ extern const PDMDEVREG g_DeviceINIP;
 #endif
 extern const PDMDEVREG g_DeviceICHAC97;
 extern const PDMDEVREG g_DeviceSB16;
+#ifdef VBOX_WITH_AUDIO_INTELHD
+extern const PDMDEVREG g_DeviceICHINTELHD;
+#endif
 extern const PDMDEVREG g_DeviceAudioSniffer;
 extern const PDMDEVREG g_DeviceOHCI;
 extern const PDMDEVREG g_DeviceEHCI;
