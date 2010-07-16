@@ -286,8 +286,7 @@ RTR3DECL(int) RTProcTerminate(RTPROCESS Process);
 RTR3DECL(uint64_t) RTProcGetAffinityMask(void);
 
 /**
- * Gets the executable image name of the current process.
- *
+ * Gets the executable image name (full path) of the current process.
  *
  * @returns pszExecName on success. NULL on buffer overflow or other errors.
  *
