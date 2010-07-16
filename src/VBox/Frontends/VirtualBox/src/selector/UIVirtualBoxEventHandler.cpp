@@ -64,23 +64,23 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
     vbox.GetEventSource().RegisterListener(m_mainEventListener, events, TRUE);
     AssertWrapperOk(vbox);
 
-    connect(pListener, SIGNAL(sigMachineStateChanged(QString, KMachineState)),
+    connect(pListener, SIGNAL(sigMachineStateChange(QString, KMachineState)),
             this, SIGNAL(sigMachineStateChange(QString, KMachineState)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigMachineDataChanged(QString)),
+    connect(pListener, SIGNAL(sigMachineDataChange(QString)),
             this, SIGNAL(sigMachineDataChange(QString)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigMachineRegistered(QString, bool)),
-            this, SIGNAL(sigMachineRegistered(QString, bool)),
+    connect(pListener, SIGNAL(sigMachineRegistere(QString, bool)),
+            this, SIGNAL(sigMachineRegistere(QString, bool)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigSessionStateChanged(QString, KSessionState)),
+    connect(pListener, SIGNAL(sigSessionStateChange(QString, KSessionState)),
             this, SIGNAL(sigSessionStateChange(QString, KSessionState)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigSnapshotChanged(QString, QString)),
+    connect(pListener, SIGNAL(sigSnapshotChange(QString, QString)),
             this, SIGNAL(sigSnapshotChange(QString, QString)),
             Qt::QueuedConnection);
 }
