@@ -358,15 +358,15 @@ int main(int argc, char *argv[])
 //                 }
 //             }
 
-            RTPrintf("  Deleting machine %ls...\n", bstrUUID.raw());
-            pVirtualBox->UnregisterMachine(bstrUUID, pMachine.asOutParam());
-            if (FAILED(rc)) throw MyError(rc, "VirtualBox::UnregisterMachine() failed\n");
-
-            if (!pMachine.isNull())
-            {
-                rc = pMachine->DeleteSettings();
-                if (FAILED(rc)) throw MyError(rc, "Machine::DeleteSettings() failed\n");
-            }
+//             RTPrintf("  Deleting machine %ls...\n", bstrUUID.raw());
+//             pVirtualBox->UnregisterMachine(bstrUUID, pMachine.asOutParam());
+//             if (FAILED(rc)) throw MyError(rc, "VirtualBox::UnregisterMachine() failed\n");
+//
+//             if (!pMachine.isNull())
+//             {
+//                 rc = pMachine->DeleteSettings();
+//                 if (FAILED(rc)) throw MyError(rc, "Machine::DeleteSettings() failed\n");
+//             }
         }
     }
     catch (MyError &e)
