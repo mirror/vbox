@@ -17,14 +17,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Local includes */
+#include "QISplitter.h"
+
 /* Global includes */
 #include <QApplication>
 #include <QEvent>
 #include <QPainter>
 #include <QPaintEvent>
-
-/* Local includes */
-#include "QISplitter.h"
 
 /* A simple shaded line. */
 class QIShadeSplitterHandle: public QSplitterHandle
@@ -120,7 +120,7 @@ QISplitter::QISplitter(QWidget *pParent /* = 0 */)
     qApp->installEventFilter(this);
 }
 
-QISplitter::QISplitter(Qt::Orientation orientation /* = Qt::Horizontal */, QWidget *pParent /* = 0 */)
+QISplitter::QISplitter(Qt::Orientation orientation, QWidget *pParent /* = 0 */)
     : QSplitter(orientation, pParent)
     , m_fPolished(false)
     , m_type(Shade)

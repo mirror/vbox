@@ -31,6 +31,7 @@ public:
     UISpacerWidget(QWidget *pParent = 0)
       : QWidget(pParent)
     {
+        setContentsMargins(0, 0, 0, 0);
         setOrientation(Qt::Horizontal);
     }
 
@@ -44,7 +45,7 @@ public:
     }
     Qt::Orientation orientation() const { return m_orientation; }
 
-    QSize sizeHint() const { return QSize(1, 1); }
+    QSize sizeHint() const { return QSize(0, 0); }
 
 private:
     /* Private member vars */

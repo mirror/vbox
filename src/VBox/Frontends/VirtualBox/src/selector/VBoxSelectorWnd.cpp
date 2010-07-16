@@ -20,352 +20,34 @@
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "QISplitter.h"
-#include "QITabWidget.h"
+#include "UIBar.h"
+#include "UIDownloaderUserManual.h"
 #include "UIExportApplianceWzd.h"
 #include "UIIconPool.h"
 #include "UIImportApplianceWzd.h"
 #include "UINewVMWzd.h"
-#include "UISpacerWidgets.h"
-#include "UISpecialControls.h"
+#include "UIVMDesktop.h"
 #include "UIVMListView.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxSettingsDialogSpecific.h"
-#include "VBoxSnapshotsWgt.h"
 #include "VBoxToolBar.h"
-#include "VBoxUtils.h"
 #include "VBoxVMLogViewer.h"
-#include "UIVirtualBoxEventHandler.h"
 
-#include "UIDownloaderUserManual.h"
-
-#ifdef Q_WS_X11
-#include <iprt/env.h>
-#endif
-
-/* Qt includes */
-#include <QTextBrowser>
-#include <QMenuBar>
-#include <QMenu>
-#include <QMenuItem>
-#include <QStackedWidget>
+/* Global includes */
 #include <QDesktopWidget>
-#include <QToolButton>
+#include <QMenuBar>
+#include <QResizeEvent>
 
 #include <iprt/buildconfig.h>
 #include <VBox/version.h>
+#ifdef Q_WS_X11
+# include <iprt/env.h>
+#endif
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-// VBoxVMDetailsView class
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Two-page widget stack to represent VM details: one page for normal details
- *  and another one for inaccessibility errors.
- */
-class VBoxVMDetailsView : public QIWithRetranslateUI<QStackedWidget>
-{
-    Q_OBJECT;
-
-public:
-
-    VBoxVMDetailsView (QWidget *aParent,
-                       QAction *aRefreshAction = NULL);
-
-    void setDetailsText (const QString &aText)
-    {
-        mDetailsText->setText (aText);
-        setCurrentIndex (0);
-    }
-
-    void setErrorText (const QString &aText)
-    {
-        createErrPage();
-        mErrText->setText (aText);
-        setCurrentIndex (1);
-    }
-
-    void setEmpty()
-    {
-        mDetailsText->setText (QString::null);
-        setCurrentIndex (0);
-    }
-
-signals:
-
-    void linkClicked (const QString &aURL);
-
-protected:
-
-    void retranslateUi();
-
-private slots:
-
-    void gotLinkClicked (const QUrl &aURL)
-    {
-        emit linkClicked (aURL.toString());
-    }
-
-private:
-
-    void createErrPage();
-
-    QRichTextBrowser *mDetailsText;
-
-    QWidget *mErrBox;
-    QLabel *mErrLabel;
-    QTextBrowser *mErrText;
-    QToolButton *mRefreshButton;
-    QAction *mRefreshAction;
-};
-
-VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent,
-                                      QAction *aRefreshAction /* = NULL */)
-    : QIWithRetranslateUI<QStackedWidget> (aParent)
-    , mErrBox (NULL), mErrLabel (NULL), mErrText (NULL)
-    , mRefreshButton (NULL)
-    , mRefreshAction (aRefreshAction)
-{
-    Assert (mRefreshAction);
-
-    /* create normal details page */
-
-    mDetailsText = new QRichTextBrowser (mErrBox);
-    mDetailsText->setViewportMargins (10, 10, 10, 10);
-    mDetailsText->setFocusPolicy (Qt::StrongFocus);
-    mDetailsText->document()->setDefaultStyleSheet ("a { text-decoration: none; }");
-    /* make "transparent" */
-    mDetailsText->setFrameShape (QFrame::NoFrame);
-    mDetailsText->viewport()->setAutoFillBackground (false);
-    mDetailsText->setOpenLinks (false);
-
-    connect (mDetailsText, SIGNAL (anchorClicked (const QUrl &)),
-             this, SLOT (gotLinkClicked (const QUrl &)));
-
-    addWidget (mDetailsText);
-}
-
-void VBoxVMDetailsView::createErrPage()
-{
-    /* create inaccessible details page */
-
-    if (mErrBox)
-        return;
-
-    mErrBox = new QWidget();
-
-    QVBoxLayout *vLayout = new QVBoxLayout (mErrBox);
-    vLayout->setSpacing (10);
-
-    mErrLabel = new QLabel (mErrBox);
-    mErrLabel->setWordWrap (true);
-    mErrLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
-    vLayout->addWidget (mErrLabel);
-
-    mErrText = new QTextBrowser (mErrBox);
-    mErrText->setFocusPolicy (Qt::StrongFocus);
-    mErrText->document()->setDefaultStyleSheet ("a { text-decoration: none; }");
-    vLayout->addWidget (mErrText);
-
-    if (mRefreshAction)
-    {
-        mRefreshButton = new QToolButton (mErrBox);
-        mRefreshButton->setFocusPolicy (Qt::StrongFocus);
-
-        QHBoxLayout *hLayout = new QHBoxLayout ();
-        vLayout->addLayout (hLayout);
-        hLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Expanding,
-                                                 QSizePolicy::Minimum));
-        hLayout->addWidget (mRefreshButton);
-
-        connect (mRefreshButton, SIGNAL (clicked()),
-                 mRefreshAction, SIGNAL (triggered()));
-    }
-
-    vLayout->addItem (new QSpacerItem (0, 0, QSizePolicy::Minimum,
-                                             QSizePolicy::Expanding));
-
-    addWidget (mErrBox);
-
-    retranslateUi();
-}
-
-void VBoxVMDetailsView::retranslateUi()
-{
-    if (mErrLabel)
-        mErrLabel->setText (tr (
-            "The selected virtual machine is <i>inaccessible</i>. Please "
-            "inspect the error message shown below and press the "
-            "<b>Refresh</b> button if you want to repeat the accessibility "
-            "check:"));
-
-    if (mRefreshAction && mRefreshButton)
-    {
-        mRefreshButton->setText (mRefreshAction->text());
-        mRefreshButton->setIcon (mRefreshAction->icon());
-        mRefreshButton->setToolButtonStyle (Qt::ToolButtonTextBesideIcon);
-    }
-}
-
-// VBoxVMDescriptionPage class
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Comments page widget to represent VM comments.
- */
-class VBoxVMDescriptionPage : public QIWithRetranslateUI<QWidget>
-{
-    Q_OBJECT;
-
-public:
-
-    VBoxVMDescriptionPage (VBoxSelectorWnd *);
-    ~VBoxVMDescriptionPage() {}
-
-    void setMachineItem (UIVMItem *aItem);
-
-    void updateState();
-
-protected:
-
-    void retranslateUi();
-
-private slots:
-
-    void goToSettings();
-
-private:
-
-    UIVMItem *mItem;
-
-    VBoxSelectorWnd *mParent;
-    QToolButton *mBtnEdit;
-    QTextBrowser *mBrowser;
-    QLabel *mLabel;
-};
-
-VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent)
-    : QIWithRetranslateUI<QWidget> (aParent)
-    , mItem (NULL), mParent (aParent)
-    , mBtnEdit (0), mBrowser (0), mLabel (0)
-{
-    /* main layout */
-    QVBoxLayout *vMainLayout = new QVBoxLayout (this);
-    vMainLayout->setSpacing (10);
-    VBoxGlobal::setLayoutMargin (vMainLayout, 0);
-
-    /* mBrowser */
-    mBrowser = new QTextBrowser (this);
-    mBrowser->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
-    mBrowser->setFocusPolicy (Qt::StrongFocus);
-    mBrowser->document()->setDefaultStyleSheet ("a { text-decoration: none; }");
-    vMainLayout->addWidget (mBrowser);
-    /* hidden by default */
-    mBrowser->setHidden (true);
-
-    mLabel = new QLabel (this);
-    mLabel->setFrameStyle (mBrowser->frameStyle());
-    mLabel->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
-    mLabel->setAlignment (Qt::AlignCenter);
-    mLabel->setWordWrap (true);
-    vMainLayout->addWidget (mLabel);
-    /* always disabled */
-    mLabel->setEnabled (false);
-
-    /* button layout */
-    QHBoxLayout *hBtnLayout = new QHBoxLayout ();
-    vMainLayout->addLayout (hBtnLayout);
-    hBtnLayout->setSpacing (10);
-    hBtnLayout->addItem (new QSpacerItem (0, 0,
-                                          QSizePolicy::Expanding,
-                                          QSizePolicy::Minimum));
-
-    /* button */
-    mBtnEdit = new QToolButton (this);
-    mBtnEdit->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Fixed);
-    mBtnEdit->setFocusPolicy (Qt::StrongFocus);
-    mBtnEdit->setIcon(UIIconPool::iconSet(":/edit_description_16px.png",
-                                          ":/edit_description_disabled_16px.png"));
-    mBtnEdit->setToolButtonStyle (Qt::ToolButtonTextBesideIcon);
-    connect (mBtnEdit, SIGNAL (clicked()), this, SLOT (goToSettings()));
-    hBtnLayout->addWidget (mBtnEdit);
-
-    vMainLayout->addItem (new QSpacerItem (0, 0,
-                                           QSizePolicy::Expanding,
-                                           QSizePolicy::Minimum));
-
-    /* apply language settings */
-    retranslateUi();
-
-    updateState();
-}
-
-/**
- * The machine list @a aItem is used to access cached machine data w/o making
- * unnecessary RPC calls.
- */
-void VBoxVMDescriptionPage::setMachineItem (UIVMItem *aItem)
-{
-    mItem = aItem;
-
-    QString text = aItem ? aItem->machine().GetDescription() : QString::null;
-
-    if (!text.isEmpty())
-    {
-        mLabel->setHidden (true);
-        mBrowser->setText (text);
-        mBrowser->setVisible (true);
-    }
-    else
-    {
-        mBrowser->setHidden (true);
-        mBrowser->clear();
-        mLabel->setVisible (true);
-    }
-
-    /* check initial machine and session states */
-    updateState();
-}
-
-void VBoxVMDescriptionPage::retranslateUi()
-{
-    mLabel->setText (tr ("No description. Press the Edit button below to add it."));
-
-    mBtnEdit->setText (tr ("Edit"));
-    mBtnEdit->setShortcut (QKeySequence ("Ctrl+E"));
-    mBtnEdit->setToolTip (tr ("Edit (Ctrl+E)"));
-    mBtnEdit->adjustSize();
-    mBtnEdit->updateGeometry();
-}
-
-/**
- * Called by the parent from machineStateChanged() and sessionStateChanged()
- * signal handlers. We cannot connect to these signals ourselves because we
- * use the UIVMListBoxItem which needs to be properly updated by the parent
- * first.
- */
-void VBoxVMDescriptionPage::updateState()
-{
-    /// @todo disabling the edit button for a saved VM will not be necessary
-    /// when we implement the selective VM Settings dialog, where only fields
-    /// that can be changed in the saved state, can be changed.
-
-    if (mItem)
-    {
-        bool saved = mItem->state() == KMachineState_Saved;
-        bool busy = mItem->sessionState() != KSessionState_Closed;
-        mBtnEdit->setEnabled (!saved && !busy);
-    }
-    else
-        mBtnEdit->setEnabled (false);
-}
-
-void VBoxVMDescriptionPage::goToSettings()
-{
-    mParent->vmSettings ("#general", "mTeDescription");
-}
 
 // VBoxSelectorWnd class
 ////////////////////////////////////////////////////////////////////////////////
@@ -473,11 +155,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     mHelpActions.setup (this);
 
-    QISplitter *pSplitter = new QISplitter(this);
-    pSplitter->setHandleType(QISplitter::Native);
-    /* Central widget @ horizontal layout */
-    setCentralWidget(pSplitter);
-
     /* VM list toolbar */
     mVMToolBar = new VBoxToolBar(this);
     mVMToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -501,56 +178,45 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     if (mVMListView->style()->styleHint (QStyle::SH_ItemView_ActivateItemOnSingleClick, 0, mVMListView))
         mVMListView->setStyleSheet ("activate-on-singleclick : 0");
 
+    m_pSplitter = new QISplitter(this);
+    m_pSplitter->setHandleType(QISplitter::Native);
+
+#define BIG_TOOLBAR
 #if MAC_LEOPARD_STYLE
     /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
     addToolBar (mVMToolBar);
     mVMToolBar->setMacToolbar();
-    pSplitter->addWidget (mVMListView);
+    /* Central widget @ horizontal layout */
+    setCentralWidget(m_pSplitter);
+    m_pSplitter->addWidget (mVMListView);
 #else /* MAC_LEOPARD_STYLE */
+//    mVMToolBar->setContentsMargins(5, 5, 0, 0);
+//    addToolBar (mVMToolBar);
+//    m_pSplitter->addWidget (mVMListView);
     QWidget *pLeftWidget = new QWidget(this);
     QVBoxLayout *pLeftVLayout = new QVBoxLayout(pLeftWidget);
-    pLeftVLayout->setContentsMargins(5, 5, 0, 0);
+    pLeftVLayout->setContentsMargins(0, 0, 0, 0);
+    pLeftVLayout->setSpacing(0);
+# ifdef BIG_TOOLBAR
+    m_pBar = new UIBar(this);
+    m_pBar->setContentWidget(mVMToolBar);
+    pLeftVLayout->addWidget(m_pBar);
+    pLeftVLayout->addWidget(m_pSplitter);
+    setCentralWidget(pLeftWidget);
+    m_pSplitter->addWidget(mVMListView);
+# else /* BIG_TOOLBAR */
     pLeftVLayout->addWidget(mVMToolBar);
     pLeftVLayout->addWidget(mVMListView);
-    pSplitter->addWidget(pLeftWidget);
+    setCentralWidget(m_pSplitter);
+    m_pSplitter->addWidget(pLeftWidget);
+# endif /* BIG_TOOLBAR */
 #endif /* MAC_LEOPARD_STYLE */
-
-     /* VM tab widget containing details and snapshots tabs */
-    mVmTabWidget = new QITabWidget();
-    pSplitter->addWidget (mVmTabWidget);
-
-    /* Set the initial distribution. The right site is bigger. */
-    pSplitter->setStretchFactor(0, 2);
-    pSplitter->setStretchFactor(1, 3);
-
-
-    /* VM details view */
-    mVmDetailsView = new VBoxVMDetailsView (NULL, mVmRefreshAction);
-    mVmTabWidget->addTab(mVmDetailsView,
-                         UIIconPool::iconSet(":/settings_16px.png"),
-                         QString::null);
-
-    /* VM snapshots list */
-    mVmSnapshotsWgt = new VBoxSnapshotsWgt (NULL);
-    mVmTabWidget->addTab(mVmSnapshotsWgt,
-                         UIIconPool::iconSet(":/take_snapshot_16px.png",
-                                             ":/take_snapshot_dis_16px.png"),
-                         QString::null);
-    mVmSnapshotsWgt->setContentsMargins (10, 10, 10, 10);
-
-    /* VM comments page */
-    mVmDescriptionPage = new VBoxVMDescriptionPage (this);
-    mVmTabWidget->addTab(mVmDescriptionPage,
-                         UIIconPool::iconSet(":/description_16px.png",
-                                             ":/description_disabled_16px.png"),
-                         QString::null);
-    mVmDescriptionPage->setContentsMargins (10, 10, 10, 10);
 
     /* add actions to the toolbar */
 
     mVMToolBar->setIconSize (QSize (32, 32));
     mVMToolBar->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
-    mVMToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
+//    mVMToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
 
     mVMToolBar->addAction (mVmNewAction);
     mVMToolBar->addAction (mVmConfigAction);
@@ -559,6 +225,20 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 #endif
     mVMToolBar->addAction (mVmStartAction);
     mVMToolBar->addAction (mVmDiscardAction);
+
+    /* VM tab widget containing details and snapshots tabs */
+    QWidget *w = new QWidget();
+    QVBoxLayout *pVBox = new QVBoxLayout(w);
+    pVBox->setContentsMargins(0, 0, 0, 0);
+
+    m_pVMDesktop = new UIVMDesktop(mVMToolBar, mVmRefreshAction, this);
+    pVBox->addWidget(m_pVMDesktop);
+
+    m_pSplitter->addWidget (w);
+
+    /* Set the initial distribution. The right site is bigger. */
+    m_pSplitter->setStretchFactor(0, 2);
+    m_pSplitter->setStretchFactor(1, 3);
 
     /* Configure menubar */
     menuBar()->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -674,15 +354,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* Read the splitter handle position */
     {
-        QString sliderPos = vbox.GetExtraData(VBoxDefs::GUI_SplitterSizes);
-        QStringList strSizes = sliderPos.split(",");
-        if (strSizes.size() == 2)
-        {
-            QList<int> sizes;
-            for (int i=0; i <  strSizes.size(); ++i)
-                sizes << strSizes.at(i).toInt();
-            pSplitter->setSizes(sizes);
-        }
+        QList<int> sizes = vbox.GetExtraDataIntList(VBoxDefs::GUI_SplitterSizes);
+        if (sizes.size() == 2)
+            m_pSplitter->setSizes(sizes);
     }
 
     /* Restore toolbar and statusbar visibility */
@@ -690,7 +364,11 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
         QString strToolbar = vbox.GetExtraData(VBoxDefs::GUI_Toolbar);
         QString strStatusbar = vbox.GetExtraData(VBoxDefs::GUI_Statusbar);
 
+#ifdef Q_WS_MAC
         mVMToolBar->setVisible(strToolbar.isEmpty() || strToolbar == "true");
+#else /* Q_WS_MAC */
+        m_pBar->setVisible(strToolbar.isEmpty() || strToolbar == "true");
+#endif /* !Q_WS_MAC */
         statusBar()->setVisible(strStatusbar.isEmpty() || strStatusbar == "true");
     }
 
@@ -721,7 +399,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect (mVMListView, SIGNAL (customContextMenuRequested (const QPoint &)),
              this, SLOT (showContextMenu (const QPoint &)));
 
-    connect (mVmDetailsView, SIGNAL (linkClicked (const QString &)),
+    connect (m_pVMDesktop, SIGNAL(linkClicked(const QString &)),
              this, SLOT(vmSettings(const QString &)));
 
     /* listen to media enumeration signals */
@@ -761,10 +439,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
 VBoxSelectorWnd::~VBoxSelectorWnd()
 {
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+
     /* Destroy our event handlers */
     UIVirtualBoxEventHandler::destroy();
-
-    CVirtualBox vbox = vboxGlobal().virtualBox();
 
     /* Save the position of the window */
     {
@@ -794,12 +472,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 
     /* Save the splitter handle position */
     {
-        QSplitter *pSplitter = static_cast<QSplitter*>(centralWidget());
-        QList<int> sizes = pSplitter->sizes();
-        QStringList strSizes;
-        for (int i=0; i < sizes.size(); ++i)
-            strSizes << QString::number(sizes.at(i));
-        vbox.SetExtraData(VBoxDefs::GUI_SplitterSizes, strSizes.join(","));
+        vbox.SetExtraDataIntList(VBoxDefs::GUI_SplitterSizes, m_pSplitter->sizes());
     }
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
@@ -892,7 +565,8 @@ void VBoxSelectorWnd::vmNew()
 /**
  *  Opens the VM settings dialog.
  */
-void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aControl,
+void VBoxSelectorWnd::vmSettings (const QString &aCategory /* = QString::null */,
+                                  const QString &aControl /* = QString::null */,
                                   const QString &aUuid /* = QString::null */)
 {
     if (!aCategory.isEmpty() && aCategory [0] != '#')
@@ -900,6 +574,18 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
         /* Assume it's a href from the Details HTML */
         vboxGlobal().openURL (aCategory);
         return;
+    }
+    QString strCategory = aCategory;
+    QString strControl = aControl;
+    /* Maybe the control is coded into the URL by %% */
+    if (aControl == QString::null)
+    {
+        QStringList parts = aCategory.split("%%");
+        if (parts.size() == 2)
+        {
+            strCategory = parts.at(0);
+            strControl = parts.at(1);
+        }
     }
 
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
@@ -916,7 +602,7 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
     CMachine m = session.GetMachine();
     AssertMsgReturn (!m.isNull(), ("Machine must not be null"), (void) 0);
 
-    VBoxSettingsDialog *dlg = new VBoxVMSettingsDlg (this, m, aCategory, aControl);
+    VBoxSettingsDialog *dlg = new VBoxVMSettingsDlg (this, m, strCategory, strControl);
     dlg->getFrom();
 
     if (dlg->exec() == QDialog::Accepted)
@@ -1377,10 +1063,6 @@ void VBoxSelectorWnd::retranslateUi()
 
     setWindowTitle (title);
 
-    mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmDetailsView), tr ("&Details"));
-    /* note: Snapshots and Details tabs are changed dynamically by
-     * vmListViewCurrentChanged() */
-
     /* ensure the details and screenshot view are updated */
     vmListViewCurrentChanged();
 
@@ -1509,34 +1191,11 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         bool modifyEnabled = !running && state != KMachineState_Saved;
 
         if (aRefreshDetails)
-        {
-            mVmDetailsView->setDetailsText (
-                vboxGlobal().detailsReport (m, modifyEnabled /* withLinks */));
-        }
+            m_pVMDesktop->updateDetails(item, m);
         if (aRefreshSnapshots)
-        {
-            /* update the snapshots tab name */
-            QString name = tr ("&Snapshots");
-            ULONG count = item->snapshotCount();
-            if (count)
-                name += QString (" (%1)").arg (count);
-            mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmSnapshotsWgt), name);
-            /* refresh the snapshots widget */
-            mVmSnapshotsWgt->setMachine (m);
-            /* ensure the tab is enabled */
-            mVmTabWidget->setTabEnabled (mVmTabWidget->indexOf (mVmSnapshotsWgt), true);
-        }
+            m_pVMDesktop->updateSnapshots(item, m);
         if (aRefreshDescription)
-        {
-            /* update the description tab name */
-            QString name = m.GetDescription().isEmpty() ?
-                tr ("D&escription") : tr ("D&escription *");
-            mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmDescriptionPage), name);
-            /* refresh the description widget */
-            mVmDescriptionPage->setMachineItem (item);
-            /* ensure the tab is enabled */
-            mVmTabWidget->setTabEnabled (mVmTabWidget->indexOf (mVmDescriptionPage), true);
-        }
+            m_pVMDesktop->updateDescription(item, m);
 
         /* enable/disable modify actions */
         mVmConfigAction->setEnabled (modifyEnabled);
@@ -1624,41 +1283,35 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         if (item)
         {
             /* the VM is inaccessible */
-            mVmDetailsView->setErrorText (
-                VBoxProblemReporter::formatErrorInfo (item->accessError()));
-            mVmRefreshAction->setEnabled (true);
+            m_pVMDesktop->updateDetailsErrorText(
+                VBoxProblemReporter::formatErrorInfo(item->accessError()));
+            mVmRefreshAction->setEnabled(true);
         }
         else
         {
             /* default HTML support in Qt is terrible so just try to get
              * something really simple */
-            mVmDetailsView->setDetailsText
-                (tr ("<h3>"
-                     "Welcome to VirtualBox!</h3>"
-                     "<p>The left part of this window is  "
-                     "a list of all virtual machines on your computer. "
-                     "The list is empty now because you haven't created any virtual "
-                     "machines yet."
-                     "<img src=:/welcome.png align=right/></p>"
-                     "<p>In order to create a new virtual machine, press the "
-                     "<b>New</b> button in the main tool bar located "
-                     "at the top of the window.</p>"
-                     "<p>You can press the <b>%1</b> key to get instant help, "
-                     "or visit "
-                     "<a href=http://www.virtualbox.org>www.virtualbox.org</a> "
-                     "for the latest information and news.</p>").arg (QKeySequence (QKeySequence::HelpContents).toString (QKeySequence::NativeText)));
-            mVmRefreshAction->setEnabled (false);
+            m_pVMDesktop->updateDetailsText(
+                tr("<h3>"
+                   "Welcome to VirtualBox!</h3>"
+                   "<p>The left part of this window is  "
+                   "a list of all virtual machines on your computer. "
+                   "The list is empty now because you haven't created any virtual "
+                   "machines yet."
+                   "<img src=:/welcome.png align=right/></p>"
+                   "<p>In order to create a new virtual machine, press the "
+                   "<b>New</b> button in the main tool bar located "
+                   "at the top of the window.</p>"
+                   "<p>You can press the <b>%1</b> key to get instant help, "
+                   "or visit "
+                   "<a href=http://www.virtualbox.org>www.virtualbox.org</a> "
+                   "for the latest information and news.</p>").arg (QKeySequence (QKeySequence::HelpContents).toString (QKeySequence::NativeText)));
+            mVmRefreshAction->setEnabled(false);
         }
 
         /* empty and disable other tabs */
-
-        mVmSnapshotsWgt->setMachine (CMachine());
-        mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmSnapshotsWgt), tr ("&Snapshots"));
-        mVmTabWidget->setTabEnabled (mVmTabWidget->indexOf (mVmSnapshotsWgt), false);
-
-        mVmDescriptionPage->setMachineItem (NULL);
-        mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmDescriptionPage), tr ("D&escription"));
-        mVmTabWidget->setTabEnabled (mVmTabWidget->indexOf (mVmDescriptionPage), false);
+        m_pVMDesktop->updateSnapshots(0, CMachine());
+        m_pVMDesktop->updateDescription(0, CMachine());
 
         /* disable modify actions */
         mVmConfigAction->setEnabled (false);
@@ -1748,7 +1401,7 @@ void VBoxSelectorWnd::machineStateChanged(QString strId, KMachineState /* state 
                    false /* aDescription */);
 
     /* simulate a state change signal */
-    mVmDescriptionPage->updateState();
+    m_pVMDesktop->updateDescriptionState();
 }
 
 void VBoxSelectorWnd::machineDataChanged(QString strId)
@@ -1802,7 +1455,7 @@ void VBoxSelectorWnd::sessionStateChanged(QString strId, KSessionState /* state 
                    false /* aDescription */);
 
     /* simulate a state change signal */
-    mVmDescriptionPage->updateState();
+    m_pVMDesktop->updateDescriptionState();
 }
 
 void VBoxSelectorWnd::snapshotChanged(QString strId, QString /* strSnapshotId */)
@@ -2251,12 +1904,20 @@ void VBoxSelectorWnd::showViewContextMenu(const QPoint &pos)
     {
         if (pResult->isChecked())
         {
+#ifdef Q_WS_MAC
             mVMToolBar->show();
+#else /* Q_WS_MAC */
+            m_pBar->show();
+#endif /* !Q_WS_MAC */
             vbox.SetExtraData(VBoxDefs::GUI_Toolbar, "true");
         }
         else
         {
+#ifdef Q_WS_MAC
             mVMToolBar->hide();
+#else /* Q_WS_MAC */
+            m_pBar->hide();
+#endif /* !Q_WS_MAC */
             vbox.SetExtraData(VBoxDefs::GUI_Toolbar, "false");
         }
     }else if (pResult == pShowStatusBar)
@@ -2274,4 +1935,3 @@ void VBoxSelectorWnd::showViewContextMenu(const QPoint &pos)
     }
 }
 
-#include "VBoxSelectorWnd.moc"
