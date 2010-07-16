@@ -49,21 +49,19 @@ struct MyError
             IProgress *pProgress = NULL)
         : m_rc(rc)
     {
-        m_str = pcsz;
+        m_str = "ERROR: ";
+        m_str += pcsz;
 
         if (pProgress)
         {
             com::ProgressErrorInfo info(pProgress);
             com::GluePrintErrorInfo(info);
         }
-        else
+        else if (rc)
         {
             com::ErrorInfo info;
             if (!info.isFullAvailable() && !info.isBasicAvailable())
-            {
                 com::GluePrintRCMessage(rc);
-                m_str.append("Most likely, the VirtualBox COM server is not running or failed to start.");
-            }
             else
                 com::GluePrintErrorInfo(info);
         }
@@ -79,40 +77,41 @@ struct MyError
  * @param pVirtualBox VirtualBox instance.
  * @param pcszOVF File to import.
  */
-void importOVF(ComPtr<IVirtualBox> &pVirtualBox,
+void importOVF(const char *pcszPrefix,
+               ComPtr<IVirtualBox> &pVirtualBox,
                const char *pcszOVF0)
 {
     char szAbsOVF[RTPATH_MAX];
     RTPathAbs(pcszOVF0, szAbsOVF, sizeof(szAbsOVF));
 
-    RTPrintf("Reading appliance \"%s\"...\n", szAbsOVF);
+    RTPrintf("%s: reading appliance \"%s\"...\n", pcszPrefix, szAbsOVF);
     ComPtr<IAppliance> pAppl;
     HRESULT rc = pVirtualBox->CreateAppliance(pAppl.asOutParam());
     if (FAILED(rc))
-        throw MyError(rc, "failed to create appliace");
+        throw MyError(rc, "failed to create appliance\n");
 
     ComPtr<IProgress> pProgress;
     rc = pAppl->Read(Bstr(szAbsOVF), pProgress.asOutParam());
     if (FAILED(rc))
-        throw MyError(rc, "Appliance::Read() failed");
+        throw MyError(rc, "Appliance::Read() failed\n");
     rc = pProgress->WaitForCompletion(-1);
     if (FAILED(rc))
-        throw MyError(rc, "Progress::WaitForCompletion() failed");
+        throw MyError(rc, "Progress::WaitForCompletion() failed\n");
     LONG rc2;
     pProgress->COMGETTER(ResultCode)(&rc2);
     if (FAILED(rc2))
-        throw MyError(rc2, "Appliance::Read() failed", pProgress);
+        throw MyError(rc2, "Appliance::Read() failed\n", pProgress);
 
-    RTPrintf("Interpreting appliance \"%s\"...\n", szAbsOVF);
+    RTPrintf("%s: interpreting appliance \"%s\"...\n", pcszPrefix, szAbsOVF);
     rc = pAppl->Interpret();
     if (FAILED(rc))
-        throw MyError(rc, "Appliance::Interpret() failed");
+        throw MyError(rc, "Appliance::Interpret() failed\n");
 
     com::SafeIfaceArray<IVirtualSystemDescription> aDescriptions;
     rc = pAppl->COMGETTER(VirtualSystemDescriptions)(ComSafeArrayAsOutParam(aDescriptions));
     for (uint32_t u = 0;
-            u < aDescriptions.size();
-            ++u)
+         u < aDescriptions.size();
+         ++u)
     {
         ComPtr<IVirtualSystemDescription> pVSys = aDescriptions[u];
 
@@ -127,8 +126,8 @@ void importOVF(ComPtr<IVirtualBox> &pVirtualBox,
                                    ComSafeArrayAsOutParam(aVboxValues),
                                    ComSafeArrayAsOutParam(aExtraConfigValues));
         for (uint32_t u2 = 0;
-                u2 < aTypes.size();
-                ++u2)
+             u2 < aTypes.size();
+             ++u2)
         {
             const char *pcszType;
 
@@ -220,7 +219,7 @@ void importOVF(ComPtr<IVirtualBox> &pVirtualBox,
                 break;
 
                 default:
-                    throw MyError(E_UNEXPECTED, "Invalid VirtualSystemDescriptionType");
+                    throw MyError(E_UNEXPECTED, "Invalid VirtualSystemDescriptionType\n");
                 break;
             }
 
@@ -228,20 +227,21 @@ void importOVF(ComPtr<IVirtualBox> &pVirtualBox,
                      u, u2, t, pcszType,
                      aOvfValues[u2],
                      aVboxValues[u2],
-                     aExtraConfigValues[u2]                         );
+                     aExtraConfigValues[u2]);
         }
     }
 
-    RTPrintf("Importing machines...\n");
+    RTPrintf("%s: importing %d machine(s)...\n", pcszPrefix, aDescriptions.size());
     rc = pAppl->ImportMachines(pProgress.asOutParam());
     if (FAILED(rc))
-        throw MyError(rc, "Appliance::ImportMachines() failed");
+        throw MyError(rc, "Appliance::ImportMachines() failed\n");
     rc = pProgress->WaitForCompletion(-1);
     if (FAILED(rc))
-        throw MyError(rc, "Progress::WaitForCompletion() failed");
+        throw MyError(rc, "Progress::WaitForCompletion() failed\n");
     pProgress->COMGETTER(ResultCode)(&rc2);
     if (FAILED(rc2))
-        throw MyError(rc2, "Appliance::ImportMachines() failed", pProgress);
+        throw MyError(rc2, "Progress::GetResultCode() failed\n");
+    RTPrintf("%s: success!\n", pcszPrefix);
 }
 
 /**
@@ -255,7 +255,7 @@ void copyDummyDiskImage(std::list<Utf8Str> &llFiles2Delete, const char *pcszDest
 {
     int vrc = RTFileCopy("ovf-testcases/ovf-dummy.vmdk", pcszDest);
     if (RT_FAILURE(vrc))
-        throw MyError(E_UNEXPECTED, "Cannot copy ovf-dummy.vmdk");
+        throw MyError(0, Utf8StrFmt("Cannot copy ovf-dummy.vmdk to %s: %Rra\n", pcszDest, vrc).c_str());
     llFiles2Delete.push_back(pcszDest);
 }
 
@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
         RTPrintf("Initializing COM...\n");
         rc = com::Initialize();
         if (FAILED(rc))
-            throw MyError(rc, "failed to initialize COM!");
+            throw MyError(rc, "failed to initialize COM!\n");
 
         ComPtr<IVirtualBox> pVirtualBox;
         ComPtr<ISession> pSession;
@@ -286,29 +286,34 @@ int main(int argc, char *argv[])
         RTPrintf("Creating VirtualBox object...\n");
         rc = pVirtualBox.createLocalObject(CLSID_VirtualBox);
         if (FAILED(rc))
-            throw MyError(rc, "failed to create the VirtualBox object!");
+            throw MyError(rc, "failed to create the VirtualBox object!\n");
 
         rc = pSession.createInprocObject(CLSID_Session);
         if (FAILED(rc))
-            throw MyError(rc, "failed to create a session object!");
+            throw MyError(rc, "failed to create a session object!\n");
 
         // create the event queue
         // (here it is necessary only to process remaining XPCOM/IPC events after the session is closed)
         EventQueue eventQ;
 
         // testcase 1: import ovf-joomla-0.9/joomla-1.1.4-ovf.ovf
-        copyDummyDiskImage(llFiles2Delete, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf-0.vmdk");
-        copyDummyDiskImage(llFiles2Delete, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf-1.vmdk");
-        importOVF(pVirtualBox, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf.ovf");
+//         copyDummyDiskImage(llFiles2Delete, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf-0.vmdk");
+//         copyDummyDiskImage(llFiles2Delete, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf-1.vmdk");
+//         importOVF("joomla-0.9", pVirtualBox, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf.ovf");
 
-        RTPrintf ("tstOVF all done, no errors!.\n");
+        // testcase 2: import ovf-winxp-vbox-sharedfolders/winxp.ovf
+        copyDummyDiskImage(llFiles2Delete, "ovf-testcases/ovf-winxp-vbox-sharedfolders/Windows 5.1 XP 1 merged.vmdk");
+        copyDummyDiskImage(llFiles2Delete, "ovf-testcases/ovf-winxp-vbox-sharedfolders/smallvdi.vmdk");
+        importOVF("winxp-vbox-sharedfolders", pVirtualBox, "ovf-testcases/ovf-winxp-vbox-sharedfolders/winxp.ovf");
+
+        RTPrintf ("tstOVF all done, no errors.\n");
 
         // todo: cleanup created machines, created disk images
     }
     catch (MyError &e)
     {
         rc = e.m_rc;
-        RTPrintf("%s\n", e.m_str.c_str());
+        RTPrintf("%s", e.m_str.c_str());
     }
 
     // clean up
