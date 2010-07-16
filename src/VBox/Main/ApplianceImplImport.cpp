@@ -1113,6 +1113,9 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
     // rollback for errors:
     ImportStack stack(locInfo, reader.m_mapDisks, pProgress);
 
+    // clear the list of imported machines, if any
+    m->llGuidsMachinesCreated.clear();
+
     try
     {
         // if a manifest file exists, verify the content; we then need all files which are referenced by the OVF & the OVF itself
@@ -1258,12 +1261,12 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
         }
 
         // finally, deregister and remove all machines
-        list<Bstr>::iterator itID;
-        for (itID = stack.llMachinesRegistered.begin();
-             itID != stack.llMachinesRegistered.end();
+        for (list<Guid>::iterator itID = m->llGuidsMachinesCreated.begin();
+             itID != m->llGuidsMachinesCreated.end();
              ++itID)
         {
-            Bstr bstrGuid = *itID;      // make a copy, Windows can't handle const Bstr
+            Guid guid = *itID;
+            Bstr bstrGuid = guid.toUtf16();
             ComPtr<IMachine> failedMachine;
             rc2 = mVirtualBox->UnregisterMachine(bstrGuid, failedMachine.asOutParam());
             if (SUCCEEDED(rc2))
@@ -1737,7 +1740,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     Bstr bstrNewMachineId;
     rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
     if (FAILED(rc)) DebugBreakThrow(rc);
-    stack.llMachinesRegistered.push_back(bstrNewMachineId);
+    m->llGuidsMachinesCreated.push_back(Guid(bstrNewMachineId));
 
     // Add floppies and CD-ROMs to the appropriate controllers.
     std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
@@ -2152,7 +2155,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
     Bstr bstrNewMachineId;
     rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
     if (FAILED(rc)) DebugBreakThrow(rc);
-    stack.llMachinesRegistered.push_back(bstrNewMachineId);
+    m->llGuidsMachinesCreated.push_back(Guid(bstrNewMachineId));
 }
 
 /**
