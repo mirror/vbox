@@ -913,7 +913,7 @@ void UIDetailsPagePrivate::sltContextMenuRequested(const QPoint &pos)
     QList<QAction*> actions = m_actions.values();
     if (!m_fUSBAvailable)
         actions.removeOne(m_actions.value(USBSec));
-    QAction *pReturn = QMenu::exec(actions, m_pDetails->mapToGlobal(pos), 0, this);
+    QAction *pReturn = QMenu::exec(actions, m_pDetails->mapToGlobal(pos), 0);
     if (pReturn)
     {
         UIPopupBox *pBox = m_secBoxes.value(static_cast<Section>(pReturn->data().toInt()));
