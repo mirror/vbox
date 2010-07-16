@@ -83,6 +83,7 @@ public:
     STDMETHOD(COMGETTER(Path))(BSTR *aPath);
     STDMETHOD(COMGETTER(Disks))(ComSafeArrayOut(BSTR, aDisks));
     STDMETHOD(COMGETTER(VirtualSystemDescriptions))(ComSafeArrayOut(IVirtualSystemDescription*, aVirtualSystemDescriptions));
+    STDMETHOD(COMGETTER(Machines))(ComSafeArrayOut(BSTR, aMachines));
 
     /* IAppliance methods */
     /* Import methods */

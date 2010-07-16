@@ -1392,6 +1392,8 @@ STDMETHODIMP VirtualBox::UnregisterMachine(IN_BSTR  aId,
     /* save the global registry */
     rc = saveSettings();
 
+    alock.release();
+
     /* return the unregistered machine to the caller */
     pMachine.queryInterfaceTo(aMachine);
 

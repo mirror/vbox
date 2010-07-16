@@ -1315,7 +1315,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="f0c2e058-8c72-4d56-95e7-3107627aba6e"
+    uuid="2275c97d-31b0-41c7-a138-c77d3c28406e"
     wsmap="managed"
   >
     <desc>
@@ -1709,7 +1709,6 @@
 
     <method name="unregisterMachine">
       <desc>
-
         Unregisters the machine previously registered using
         <link to="#registerMachine"/>. After successful method invocation, the
         <link to="IMachineRegisteredEvent"/> event is fired.
@@ -2893,7 +2892,7 @@
 
   <interface
      name="IAppliance" extends="$unknown"
-     uuid="e3ba9ab9-ac2c-4266-8bd2-91c4bf721ceb"
+     uuid="fb61a4fc-57e7-48d6-859b-71f37d484cf2"
      wsmap="managed"
      >
     <desc>
@@ -2945,7 +2944,8 @@
 
           <li>Finally, call <link to="#importMachines" /> to  create virtual machines in
               VirtualBox as instances of <link to="IMachine" /> that match the information in the
-              virtual system descriptions.
+              virtual system descriptions. After this call suceeded, the UUIDs of the machines created
+              can be found in the <link to="#machines" /> array attribute.
           </li>
         </ol>
 
@@ -3026,6 +3026,14 @@
       </desc>
     </attribute>
 
+    <attribute name="machines" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        Contains the UUIDs of the machines created from the information in this appliances. This is only
+        relevant for the import case, and will only contain data after a call to <link to="#importMachines" />
+        succeeded.
+      </desc>
+    </attribute>
+
     <method name="read">
       <desc>
         Reads an OVF file into the appliance object.
@@ -3075,6 +3083,9 @@
         Since importing the appliance will most probably involve copying and converting
         disk images, which can take a long time, this method operates asynchronously and
         returns an IProgress object to allow the caller to monitor the progress.
+
+        After the import succeeded, the UUIDs of the IMachine instances created can be
+        retrieved from the <link to="#machines" /> array attribute.
       </desc>
 
       <param name="aProgress" type="IProgress" dir="return">

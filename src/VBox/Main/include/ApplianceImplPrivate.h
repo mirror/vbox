@@ -79,6 +79,8 @@ struct Appliance::Data
     ULONG               ulTotalDisksMB;
     ULONG               cDisks;
     Utf8Str             strOVFSHA1Digest;
+
+    std::list<Guid>     llGuidsMachinesCreated;
 };
 
 struct Appliance::XMLStack
@@ -165,7 +167,6 @@ struct Appliance::ImportStack
     // and will be cleaned up on errors
     std::list<MyHardDiskAttachment> llHardDiskAttachments;      // disks that were attached
     std::list< ComPtr<IMedium> >    llHardDisksCreated;         // media that were created
-    std::list<Bstr>                 llMachinesRegistered;       // machines that were registered; list of string UUIDs
 
     ImportStack(const LocationInfo &aLocInfo,
                 const ovf::DiskImagesMap &aMapDisks,
