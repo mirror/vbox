@@ -390,10 +390,10 @@
     QRect GetExtraDataRect(const QString &amp;strKey, const QRect &amp;def = QRect());
 
     void SetExtraDataStringList(const QString &amp;strKey, const QStringList &amp;value);
-    QStringList GetExtraDataStringList(const QString &amp;strKey);
+    QStringList GetExtraDataStringList(const QString &amp;strKey, QStringList def = QStringList());
 
     void SetExtraDataIntList(const QString &amp;strKey, const QList&lt;int&gt; &amp;value);
-    QList&lt;int&gt; GetExtraDataIntList(const QString &amp;strKey);
+    QList&lt;int&gt; GetExtraDataIntList(const QString &amp;strKey, QList&lt;int&gt; def = QList&lt;int&gt;());
 
 </xsl:text>
 
@@ -782,10 +782,14 @@
 
   <xsl:text>QStringList C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
-  <xsl:text>::GetExtraDataStringList(const QString &amp;strKey)</xsl:text>
+  <xsl:text>::GetExtraDataStringList(const QString &amp;strKey, QStringList def /* = QStringList() */)</xsl:text>
 <xsl:text>
 {
-    return GetExtraData(strKey).split(",");
+    QString strValue = GetExtraData(strKey);
+    if (strValue.isEmpty())
+        return def;
+    else
+        return strValue.split(",");
 }
 
 </xsl:text>
@@ -805,20 +809,23 @@
 
   <xsl:text>QList&lt;int&gt; C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
-  <xsl:text>::GetExtraDataIntList(const QString &amp;strKey)</xsl:text>
+  <xsl:text>::GetExtraDataIntList(const QString &amp;strKey, QList&lt;int&gt; def /* = QList&lt;int&gt;() */)</xsl:text>
 <xsl:text>
 {
-    bool fOk;
-    QList&lt;int&gt; intList;
     QStringList strList = GetExtraDataStringList(strKey);
-    for (int i=0; i &lt; strList.size(); ++i)
+    if (strList.size() > 0)
     {
-        intList &lt;&lt; strList.at(i).toInt(&amp;fOk);
-        if (!fOk)
-            return QList&lt;int&gt;();
-
+        QList&lt;int&gt; intList;
+        bool fOk;
+        for (int i=0; i &lt; strList.size(); ++i)
+        {
+            intList &lt;&lt; strList.at(i).toInt(&amp;fOk);
+            if (!fOk)
+                return def;
+        }
+        return intList;
     }
-    return intList;
+    return def;
 }
 
 </xsl:text>
