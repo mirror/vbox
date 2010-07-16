@@ -1,4 +1,4 @@
-/* $Id$ */
+266/* $Id$ */
 /** @file
  * VBoxService - Virtual Machine Information for the Host.
  */
@@ -263,7 +263,7 @@ static int vboxserviceVMInfoWriteUsers(void)
         setutent(); /* Rewind utmp file pointer to start from beginning. */
 
         /* Build up array with logged in users. */
-        char *aUsers = RTMemAlloc(cUtmpEntries * sizeof(char*));
+        char **aUsers = (char**)RTMemAlloc(cUtmpEntries * sizeof(char*));
         if (aUsers)
         {
             /* Store user in array. */
@@ -274,10 +274,10 @@ static int vboxserviceVMInfoWriteUsers(void)
                 {
                     bool fFound = false;
                     for (uint32_t u = 0; u < cUsersInList && !fFound; u++)
-                        fFound = (strcmp(aUsers[u], ut_user->ut_user) == 0) ? true : false;
+                        fFound = (strcmp((const char*)aUsers[u], ut_user->ut_user) == 0) ? true : false;
 
                     if (!fFound)
-                        rc = RTStrAAppend(aUsers[cUsersInList++], ut_user->ut_user);
+                        rc = RTStrAAppend(&aUsers[cUsersInList++], (const char*)ut_user->ut_user);
                 }
             }
 
@@ -289,7 +289,7 @@ static int vboxserviceVMInfoWriteUsers(void)
                     rc = RTStrAAppend(&pszUserList, ",");
                     AssertRCBreakStmt(rc, RTStrFree(pszUserList));
                 }
-                rc = RTStrAAppend(&pszUserList, aUsers[u]);
+                rc = RTStrAAppend(&pszUserList, (const char*)aUsers[u]);
                 AssertRCBreakStmt(rc, RTStrFree(pszUserList));
             }
 
