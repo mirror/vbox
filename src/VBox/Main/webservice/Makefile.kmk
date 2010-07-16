@@ -286,6 +286,66 @@ endif
  vboxwebsrv_ORDERDEPS = $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
  endif # !VBOX_ONLY_SDK
 
+ifdef VBOX_WITH_JWS
+INSTALLS += VBoxJWs-inst-jar
+
+#
+# Java glue JAR files
+#
+VBOX_JWS_JAR     = $(VBoxJWs-inst-jar_0_OUTDIR)/vboxjws.jar
+VBOX_JWS_TARGET := $(PATH_TARGET)/vboxjws-gen
+VBOX_JWS_GEN     = $(VBOX_JWS_TARGET)/jwsgen
+VBOX_JWS_JDEST  := $(VBOX_JWS_TARGET)/jdest
+VBOX_GLUE_XSLT_DIR := $(PATH_ROOT)/src/VBox/Main/glue
+VBOX_JAXLIB_DIR    := $(PATH_ROOT)/src/VBox/Main/webservice/jaxlibs
+
+VBoxJWs-inst-jar_INST = $(INST_SDK)bindings/webservice/java/jax-ws/vboxjws.jar
+VBoxJWs-inst-jar_SOURCES = \
+	$(VBOX_JWS_JAR)
+VBoxJWs-inst-jar_CLEAN = \
+	$(VBOX_JWS_JAR) \
+	$(VBOX_JWS_GEN)/jwsglue.list \
+	$(wildcard \
+		$(VBOX_JWS_GEN)/java/*.java \
+	        $(VBOX_JWS_GEN)/java/jws/*/*/*.java \
+		$(VBOX_JWS_JDEST)/*.class \
+		$(VBOX_JWS_JDEST)/*/*.class \
+		$(VBOX_JWS_JDEST)/*/*/*.class \
+		$(VBOX_JWS_JDEST)/*/*/*/*.class \
+	)
+VBoxJWs-inst-jar_BLDDIRS += $(VBOX_JWS_GEN)/java $(VBOX_JWS_GEN)/java/jws
+
+$(VBOX_JWS_GEN)/jwsglue.list:  \
+		$(VBOX_XIDL_FILE)    \
+                $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
+                $(VBOX_FILESPLIT)    \
+	        | $(VBOX_JWS_GEN)/java/jws/
+	$(call MSG_L1,Generating JAX-WS Java glue files from XIDL)
+	$(RM) -f $(VBOX_JWS_GEN)/java/*.java
+	$(QUIET)$(VBOX_XSLTPROC) \
+              --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
+              --stringparam G_vboxGlueStyle jaxws              \
+              -o $(VBOX_JWS_GEN)/java/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
+	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JWS_GEN)/java/merged.file $(VBOX_JWS_GEN)/java
+	$(call MSG_GENERATE,,$@,JAX-WS for Java 1.6 bindings using $(VBOXWEBSERVICE_WSDL))
+	$(VBOX_WSIMPORT) -Xnocompile -p $(VBOX_JAVA_PACKAGE) -d $(VBOX_JWS_GEN)/java/jws $(VBOXWEBSERVICE_WSDL)
+	$(QUIET)echo $(VBOX_JWS_GEN)/java/*.java > $@
+	$(QUIET)echo $(VBOX_JWS_GEN)/java/jws/*/*/*.java >> $@
+
+$$(VBOX_JWS_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL) | $$(dir $$@)
+	$(call MSG_TOOL,javac,$(notdir $@),jwsgen.list,)
+	$(QUIET)$(RM) -Rf $(VBOX_JWS_JDEST)
+	$(QUIET)$(MKDIR) -p $(VBOX_JWS_JDEST)
+	$(call MSG_L1,Compiling bridge code)
+	$(VBOX_JAVAC) $(VBOX_JAVAC_OPTS) \
+                @$(VBOX_JWS_GEN)/jwsglue.list \
+		-d $(VBOX_JWS_JDEST) -classpath $(VBOX_JWS_JDEST)
+	$(QUIET)$(SED) -e "s/vboxweb.wsdl/vboxweb$(VBOX_API_SUFFIX).wsdl/" <  $(VBOXWEBSERVICE_WSDL) > $(VBOX_JWS_JDEST)/vboxwebService$(VBOX_API_SUFFIX).wsdl
+	$(QUIET)$(CP) -f $(VBOXWEB_WSDL) $(VBOX_JWS_JDEST)/vboxweb$(VBOX_API_SUFFIX).wsdl
+	$(call MSG_LINK,$(notdir $@),$@)
+	$(VBOX_JAR) cf $@ -C $(VBOX_JWS_JDEST) .
+
+endif # VBOX_WITH_JWS
 
  ifndef VBOX_ONLY_SDK
  #
@@ -385,7 +445,6 @@ endef
  ifndef VBOX_WSIMPORT16
   $(error Failed to autodetect VBOX_WSIMPORT16, please set it manually)
  endif
- VBOX_JAR                      = jar
 
  VBOXWEB_OTHERS               += \
 	$(VBOXWEB_GLUE_JAVA_TMP) \

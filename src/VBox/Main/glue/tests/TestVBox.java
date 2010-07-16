@@ -106,7 +106,31 @@ public class TestVBox
     {
         VirtualBoxManager mgr = VirtualBoxManager.getInstance(null);
 
-        System.out.println("\n--> initialized\n");
+        boolean ws = false;
+        String  url = null;
+        String  user = null;
+        String  passwd = null;
+
+        for (int i = 0; i<args.length; i++)
+        {
+            if ("-w".equals(args[i]))
+                ws = true;
+            else if ("-url".equals(args[i]))
+                url = args[++i];
+            else if ("-user".equals(args[i]))
+                user = args[++i];
+            else if ("-passwd".equals(args[i]))
+                passwd = args[++i];
+        }
+
+        if (ws)
+        {
+            try {
+                mgr.connect(url, user, passwd);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
         try
         {
@@ -124,9 +148,17 @@ public class TestVBox
             e.printStackTrace();
         }
 
+        if (ws)
+        {
+            try {
+                mgr.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         mgr.cleanup();
 
-        System.out.println("\n--< done\n");
     }
 
 }

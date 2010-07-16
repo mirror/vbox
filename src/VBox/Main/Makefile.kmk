@@ -873,7 +873,7 @@ $(VBOX_JMSCOM_GEN)/jmscomglue.list:  \
                 $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
                 $(VBOX_FILESPLIT)    \
 		| $(VBOX_JMSCOM_GEN)/java/
-	$(call MSG_L1,Generating Java glue files from XIDL)
+	$(call MSG_L1,Generating Java MSCOM glue files from XIDL)
 	$(QUIET)$(RM) -f $(wildcard $(VBOX_JMSCOM_GEN)/java/*.java)
 	$(QUIET)$(VBOX_XSLTPROC) \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
