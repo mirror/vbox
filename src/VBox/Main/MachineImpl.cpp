@@ -9170,6 +9170,9 @@ void Machine::copyFrom(Machine *aThat)
 
 void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid)
 {
+    AssertReturnVoid(isWriteLockOnCurrentThread());
+    AssertPtrReturnVoid(aCollector);
+
     pm::CollectorHAL *hal = aCollector->getHAL();
     /* Create sub metrics */
     pm::SubMetric *cpuLoadUser = new pm::SubMetric("CPU/Load/User",
@@ -9286,11 +9289,19 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
 
 void Machine::unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine)
 {
-    aCollector->unregisterMetricsFor(aMachine);
-    aCollector->unregisterBaseMetricsFor(aMachine);
+    AssertReturnVoid(isWriteLockOnCurrentThread());
+
+    if (aCollector)
+    {
+        aCollector->unregisterMetricsFor(aMachine);
+        aCollector->unregisterBaseMetricsFor(aMachine);
+    }
 
     if (mGuestHAL)
+    {
         delete mGuestHAL;
+        mGuestHAL = NULL;
+    }
 }
 
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
