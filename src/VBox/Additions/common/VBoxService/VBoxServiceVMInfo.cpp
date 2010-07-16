@@ -1,4 +1,4 @@
-266/* $Id$ */
+/* $Id$ */
 /** @file
  * VBoxService - Virtual Machine Information for the Host.
  */
