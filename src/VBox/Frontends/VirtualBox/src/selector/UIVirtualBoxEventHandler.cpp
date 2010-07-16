@@ -72,8 +72,8 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
             this, SIGNAL(sigMachineDataChange(QString)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigMachineRegistere(QString, bool)),
-            this, SIGNAL(sigMachineRegistere(QString, bool)),
+    connect(pListener, SIGNAL(sigMachineRegistered(QString, bool)),
+            this, SIGNAL(sigMachineRegistered(QString, bool)),
             Qt::QueuedConnection);
 
     connect(pListener, SIGNAL(sigSessionStateChange(QString, KSessionState)),
