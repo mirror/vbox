@@ -243,6 +243,42 @@ public:
     MiniString &append(char c);
 
     /**
+     * Shortcut to append(), MiniString variant.
+     *
+     * @param that              The string to append.
+     *
+     * @returns Reference to the object.
+     */
+    MiniString &operator+=(const MiniString &that)
+    {
+        return append(that);
+    }
+
+    /**
+     * Shortcut to append(), const char* variant.
+     *
+     * @param pszThat           The C string to append.
+     *
+     * @returns                 Reference to the object.
+     */
+    MiniString &operator+=(const char *pszThat)
+    {
+        return append(pszThat);
+    }
+
+    /**
+     * Shortcut to append(), char variant.
+     *
+     * @param pszThat           The character to append.
+     *
+     * @returns                 Reference to the object.
+     */
+    MiniString &operator+=(char c)
+    {
+        return append(c);
+    }
+
+    /**
      * Index operator.
      *
      * Returns the byte at the given index, or a null byte if the index is not
