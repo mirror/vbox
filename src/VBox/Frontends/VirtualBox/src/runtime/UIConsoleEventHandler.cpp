@@ -62,16 +62,16 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
     m_mainEventListener = CEventListener(pListener);
     QVector<KVBoxEventType> events;
     events
-        << KVBoxEventType_OnMousePointerShapeChange
-        << KVBoxEventType_OnMouseCapabilityChange
-        << KVBoxEventType_OnKeyboardLedsChange
-        << KVBoxEventType_OnStateChange
-        << KVBoxEventType_OnAdditionsStateChange
-        << KVBoxEventType_OnNetworkAdapterChange
-        << KVBoxEventType_OnMediumChange
-        << KVBoxEventType_OnUSBControllerChange
-        << KVBoxEventType_OnUSBDeviceStateChange
-        << KVBoxEventType_OnSharedFolderChange
+        << KVBoxEventType_OnMousePointerShapeChanged
+        << KVBoxEventType_OnMouseCapabilityChanged
+        << KVBoxEventType_OnKeyboardLedsChanged
+        << KVBoxEventType_OnStateChanged
+        << KVBoxEventType_OnAdditionsStateChanged
+        << KVBoxEventType_OnNetworkAdapterChanged
+        << KVBoxEventType_OnMediumChanged
+        << KVBoxEventType_OnUSBControllerChanged
+        << KVBoxEventType_OnUSBDeviceStateChanged
+        << KVBoxEventType_OnSharedFolderChanged
         << KVBoxEventType_OnRuntimeError
         << KVBoxEventType_OnCanShowWindow
         << KVBoxEventType_OnShowWindow;

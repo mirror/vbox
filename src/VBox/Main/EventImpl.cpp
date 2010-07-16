@@ -681,20 +681,26 @@ static BOOL implies(VBoxEventType_T who, VBoxEventType_T what)
         case VBoxEventType_Any:
             return TRUE;
         case VBoxEventType_MachineEvent:
-            return     (what == VBoxEventType_OnMachineStateChange)
-                    || (what == VBoxEventType_OnMachineDataChange)
+            return     (what == VBoxEventType_OnMachineStateChanged)
+                    || (what == VBoxEventType_OnMachineDataChanged)
                     || (what == VBoxEventType_OnMachineRegistered)
-                    || (what == VBoxEventType_OnSessionStateChange)
-                    || (what == VBoxEventType_OnGuestPropertyChange);
+                    || (what == VBoxEventType_OnSessionStateChanged)
+                    || (what == VBoxEventType_OnGuestPropertyChanged);
         case VBoxEventType_SnapshotEvent:
             return     (what == VBoxEventType_OnSnapshotTaken)
                     || (what == VBoxEventType_OnSnapshotDeleted)
-                    || (what == VBoxEventType_OnSnapshotChange)
+                    || (what == VBoxEventType_OnSnapshotChanged)
+                    ;
+        case VBoxEventType_InputEvent:
+            return     (what == VBoxEventType_OnKeyboardLedsChanged)
+                    || (what == VBoxEventType_OnMousePointerShapeChanged)
+                    || (what == VBoxEventType_OnMouseCapabilityChanged)
                     ;
         case VBoxEventType_Invalid:
             return FALSE;
+        default:
+            return who == what;
     }
-    return who == what;
 }
 
 ListenerRecord::ListenerRecord(IEventListener*                  aListener,
@@ -922,7 +928,7 @@ STDMETHODIMP EventSource::RegisterListener(IEventListener * aListener,
     }
 
     VBoxEventDesc evDesc;
-    evDesc.init(this, VBoxEventType_OnEventSourceChange, aListener, TRUE);
+    evDesc.init(this, VBoxEventType_OnEventSourceChanged, aListener, TRUE);
     evDesc.fire(0);
 
     return S_OK;
@@ -957,7 +963,7 @@ STDMETHODIMP EventSource::UnregisterListener(IEventListener * aListener)
     if (SUCCEEDED(rc))
     {
         VBoxEventDesc evDesc;
-        evDesc.init(this, VBoxEventType_OnEventSourceChange, aListener, FALSE);
+        evDesc.init(this, VBoxEventType_OnEventSourceChanged, aListener, FALSE);
         evDesc.fire(0);
     }
 

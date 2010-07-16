@@ -152,7 +152,7 @@ public:
         aEvent->COMGETTER(Type)(&aType);
         switch (aType)
         {
-            case VBoxEventType_OnGuestPropertyChange:
+            case VBoxEventType_OnGuestPropertyChanged:
             {
                 ComPtr<IGuestPropertyChangedEvent> gpcev = aEvent;
                 Assert(gpcev);
@@ -285,7 +285,7 @@ public:
         aEvent->COMGETTER(Type)(&aType);
         switch (aType)
         {
-            case VBoxEventType_OnMouseCapabilityChange:
+            case VBoxEventType_OnMouseCapabilityChanged:
             {
 
                 ComPtr<IMouseCapabilityChangedEvent> mccev = aEvent;
@@ -310,7 +310,7 @@ public:
 #endif
                 break;
             }
-            case VBoxEventType_OnStateChange:
+            case VBoxEventType_OnStateChanged:
             {
                 ComPtr<IStateChangedEvent> scev = aEvent;
                 Assert(scev);
@@ -321,7 +321,7 @@ public:
                 gEventQ->postEvent(new StateChangeEvent(machineState));
                 break;
             }
-            case VBoxEventType_OnRemoteDisplayInfoChange:
+            case VBoxEventType_OnRemoteDisplayInfoChanged:
             {
                 ComPtr<IRemoteDisplayInfoChangedEvent> rdicev = aEvent;
                 Assert(rdicev);
@@ -995,9 +995,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             consoleListener = new ConsoleEventListener();
             consoleListener->AddRef();
             com::SafeArray <VBoxEventType_T> eventTypes;
-            eventTypes.push_back(VBoxEventType_OnMouseCapabilityChange);
-            eventTypes.push_back(VBoxEventType_OnStateChange);
-            eventTypes.push_back(VBoxEventType_OnRemoteDisplayInfoChange);
+            eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);
+            eventTypes.push_back(VBoxEventType_OnStateChanged);
+            eventTypes.push_back(VBoxEventType_OnRemoteDisplayInfoChanged);
             eventTypes.push_back(VBoxEventType_OnCanShowWindow);
             eventTypes.push_back(VBoxEventType_OnShowWindow);
             CHECK_ERROR(es, RegisterListener(consoleListener, ComSafeArrayAsInParam(eventTypes), true));
@@ -1090,7 +1090,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             vboxListener = new VirtualBoxEventListener();
             vboxListener->AddRef();
             com::SafeArray <VBoxEventType_T> eventTypes;
-            eventTypes.push_back(VBoxEventType_OnGuestPropertyChange);
+            eventTypes.push_back(VBoxEventType_OnGuestPropertyChanged);
             CHECK_ERROR(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true));
         }
 

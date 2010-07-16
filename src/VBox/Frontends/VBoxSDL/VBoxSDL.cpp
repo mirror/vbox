@@ -272,7 +272,7 @@ public:
         aEvent->COMGETTER(Type)(&aType);
         switch (aType)
         {
-            case VBoxEventType_OnExtraDataChange:
+            case VBoxEventType_OnExtraDataChanged:
             {
 #ifdef VBOX_SECURELABEL
                 ComPtr<IExtraDataChangedEvent> edcev = aEvent;
@@ -363,7 +363,7 @@ public:
         // @todo: eliminate it
         switch (aType)
         {
-            case VBoxEventType_OnMousePointerShapeChange:
+            case VBoxEventType_OnMousePointerShapeChanged:
             {
                 ComPtr<IMousePointerShapeChangedEvent> mpscev = aEvent;
                 Assert(mpscev);
@@ -396,7 +396,7 @@ public:
 
                 break;
             }
-            case VBoxEventType_OnMouseCapabilityChange:
+            case VBoxEventType_OnMouseCapabilityChanged:
             {
                 ComPtr<IMouseCapabilityChangedEvent> mccev = aEvent;
                 Assert(mccev);
@@ -410,7 +410,7 @@ public:
                 PushSDLEventForSure(&event);
                 break;
             }
-            case VBoxEventType_OnKeyboardLedsChange:
+            case VBoxEventType_OnKeyboardLedsChanged:
             {
                 ComPtr<IKeyboardLedsChangedEvent> klcev = aEvent;
                 Assert(klcev);
@@ -429,7 +429,7 @@ public:
                 break;
             }
 
-            case VBoxEventType_OnStateChange:
+            case VBoxEventType_OnStateChanged:
             {
                 ComPtr<IStateChangedEvent> scev = aEvent;
                 Assert(scev);
@@ -1841,7 +1841,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         vboxListener = new VBoxSDLEventListener();
         vboxListener->AddRef();
         com::SafeArray <VBoxEventType_T> eventTypes;
-        eventTypes.push_back(VBoxEventType_OnExtraDataChange);
+        eventTypes.push_back(VBoxEventType_OnExtraDataChanged);
         CHECK_ERROR(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true));
     }
 
@@ -1852,10 +1852,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         consoleListener = new VBoxSDLConsoleEventListener();
         consoleListener->AddRef();
         com::SafeArray <VBoxEventType_T> eventTypes;
-        eventTypes.push_back(VBoxEventType_OnMousePointerShapeChange);
-        eventTypes.push_back(VBoxEventType_OnMouseCapabilityChange);
-        eventTypes.push_back(VBoxEventType_OnKeyboardLedsChange);
-        eventTypes.push_back(VBoxEventType_OnStateChange);
+        eventTypes.push_back(VBoxEventType_OnMousePointerShapeChanged);
+        eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);
+        eventTypes.push_back(VBoxEventType_OnKeyboardLedsChanged);
+        eventTypes.push_back(VBoxEventType_OnStateChanged);
         eventTypes.push_back(VBoxEventType_OnRuntimeError);
         eventTypes.push_back(VBoxEventType_OnCanShowWindow);
         eventTypes.push_back(VBoxEventType_OnShowWindow);

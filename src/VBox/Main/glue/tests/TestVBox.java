@@ -26,7 +26,7 @@ public class TestVBox
 
         switch (type)
         {
-            case OnMachineStateChange:
+            case OnMachineStateChanged:
                 IMachineStateChangedEvent mcse = IMachineStateChangedEvent.queryInterface(ev);
                 if (mcse == null)
                     System.out.println("Cannot query an interface");
