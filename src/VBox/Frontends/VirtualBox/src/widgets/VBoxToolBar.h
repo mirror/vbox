@@ -72,9 +72,11 @@ public:
     {
         ::darwinSetShowsToolbarButton (this, aShow);
     }
+#endif /* Q_WS_MAC */
 
     void updateLayout()
     {
+#ifdef Q_WS_MAC
         /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
            the necessary size of the toolbar is increased. Also for some languages
            the with doesn't match if the text increase. So manually adjust the size
@@ -85,8 +87,8 @@ public:
         setSizePolicy(sp);
         layout()->invalidate();
         layout()->activate();
-    }
 #endif /* Q_WS_MAC */
+    }
 
     void setUsesTextLabel (bool aEnable)
     {
