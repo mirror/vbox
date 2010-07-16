@@ -80,7 +80,7 @@
 #include <QRect>
 #include <QUuid>
 #include <QVector>
-#include <QList>
+#include <QStringList>
 #include <QMetaType>
 
 /*
