@@ -158,14 +158,16 @@ void UIVMPreviewWindow::paintEvent(QPaintEvent *pEvent)
         /* Make a little magic to find out if the given text fits into
          * our rectangle. Decrease the font pixel size as long as it
          * doesn't fit. */
+        int cMax = 30;
         do
         {
             h = h * .8;
             font.setPixelSize(h);
             painter.setFont(font);
             r = painter.boundingRect(m_vRect, fFlags, strName);
-        }while (   r.height() > m_vRect.height()
-                || r.width() > m_vRect.width());
+        }while ((   r.height() > m_vRect.height()
+                 || r.width() > m_vRect.width())
+                && cMax-- != 0);
         painter.setPen(Qt::white);
         painter.drawText(m_vRect, fFlags, strName);
     }
