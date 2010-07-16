@@ -31,7 +31,7 @@ public:
     enum Type { Native, Shade };
 
     QISplitter(QWidget *pParent = 0);
-    QISplitter(Qt::Orientation orientation = Qt::Horizontal, QWidget *pParent = 0);
+    QISplitter(Qt::Orientation orientation, QWidget *pParent = 0);
 
     void setHandleType(Type type) { m_type = type; }
     Type handleType() const { return m_type; }

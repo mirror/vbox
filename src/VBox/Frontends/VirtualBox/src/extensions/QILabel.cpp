@@ -238,6 +238,12 @@ void QILabel::paintEvent (QPaintEvent *aEvent)
     }
 }
 
+void QILabel::showEvent(QShowEvent *pEvent)
+{
+    QLabel::showEvent(pEvent);
+    emit shown();
+}
+
 void QILabel::init()
 {
     /* Initial setup */

@@ -25,7 +25,6 @@ FORMS = \
     src/VBoxVMInformationDlg.ui \
     src/VBoxMediaManagerDlg.ui \
     src/VBoxSnapshotDetailsDlg.ui \
-    src/VBoxSnapshotsWgt.ui \
     src/VBoxTakeSnapshotDlg.ui \
     src/VBoxUpdateDlg.ui \
     src/VBoxVMLogViewer.ui \
@@ -67,7 +66,8 @@ FORMS = \
     src/wizards/importappliance/UIImportApplianceWzdPage1.ui \
     src/wizards/importappliance/UIImportApplianceWzdPage2.ui \
     src/wizards/registration/UIRegistrationWzdPage1.ui \
-    src/widgets/VBoxApplianceEditorWgt.ui
+    src/widgets/VBoxApplianceEditorWgt.ui \
+    src/selector/VBoxSnapshotsWgt.ui
 
 TRANSLATIONS = \
 	nls/VirtualBox_en.ts \

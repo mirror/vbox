@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,6 +47,9 @@ public:
     /* Default QLabel methods */
     QString text() const;
 
+signals:
+    void shown();
+
 public slots:
 
     void clear();
@@ -63,6 +66,7 @@ protected:
     void focusInEvent (QFocusEvent *aEvent);
     void focusOutEvent (QFocusEvent *aEvent);
     void paintEvent (QPaintEvent *aEvent);
+    void showEvent(QShowEvent *pEvent);
 
 private:
 

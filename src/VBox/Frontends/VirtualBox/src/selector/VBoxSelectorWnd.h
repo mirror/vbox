@@ -19,37 +19,31 @@
 #ifndef __VBoxSelectorWnd_h__
 #define __VBoxSelectorWnd_h__
 
+/* Local includes */
 #include "COMDefs.h"
-
 #include "QIWithRetranslateUI.h"
-
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
 #include "VBoxHelpActions.h"
+#include "VBoxProblemReporter.h"
 
-/* Qt includes */
+/* Global includes */
 #include <QMainWindow>
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    #include <QSystemTrayIcon>
+# include <QSystemTrayIcon>
 #endif
 
 /* Local forward declarations */
-class QITabWidget;
+class QISplitter;
+class UIBar;
+class UIVMDesktop;
 class UIVMItem;
 class UIVMItemModel;
 class UIVMListView;
-class VBoxSnapshotsWgt;
 class VBoxToolBar;
 class VBoxTrayIcon;
-class VBoxVMDescriptionPage;
-class VBoxVMDetailsView;
 class VBoxVMLogViewer;
 
-/* Global forward declarations */
-class QEvent;
-class QListView;
-
-class VBoxSelectorWnd : public QIWithRetranslateUI2 <QMainWindow>
+class VBoxSelectorWnd : public QIWithRetranslateUI2<QMainWindow>
 {
     Q_OBJECT;
 
@@ -149,12 +143,17 @@ private:
     QMenu *mVMMenu;
     QMenu *mHelpMenu;
 
+    /* Central splitter window */
+    QISplitter *m_pSplitter;
+
     /* Main toolbar */
+#ifndef Q_WS_MAC
+    UIBar *m_pBar;
+#endif /* !Q_WS_MAC */
     VBoxToolBar *mVMToolBar;
 
     /* VM list context menu */
     QMenu *mVMCtxtMenu;
-//    UIOSDMenu *mVMCtxtMenu;
 
     /* Actions */
     QAction *mFileMediaMgrAction;
@@ -183,10 +182,7 @@ private:
     UIVMItemModel *mVMModel;
 
     /* The right information widgets */
-    QITabWidget *mVmTabWidget;
-    VBoxVMDetailsView *mVmDetailsView;
-    VBoxSnapshotsWgt *mVmSnapshotsWgt;
-    VBoxVMDescriptionPage *mVmDescriptionPage;
+    UIVMDesktop *m_pVMDesktop;
 
     QRect mNormalGeo;
 
