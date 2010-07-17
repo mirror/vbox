@@ -2392,7 +2392,10 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PGSTPDE pPdeSrc, 
             pPteSrc = &PteSrc;
         }
         else
-            AssertRCReturn(rc, rc);
+        {
+            AssertRC(rc);
+            return rc;
+        }
 
         /*
          * Real page fault?
