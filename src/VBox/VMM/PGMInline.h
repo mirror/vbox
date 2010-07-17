@@ -678,7 +678,7 @@ DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PVMCPU pVCpu, RTGCPTR GCPtr)
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pGuestPDPT = NULL;
-    int rc = pgmR0DynMapGCPageOffInlined(&pVCpu->CTX_SUCC(pVM)->pgm.s, pPGM->GCPhysCR3, (void **)&pGuestPDPT);
+    int rc = pgmR0DynMapGCPageOffInlined(&pVCpu->CTX_SUFF(pVM)->pgm.s, pVCpu->pgm.s.GCPhysCR3, (void **)&pGuestPDPT);
     AssertRCReturn(rc, NULL);
 #else
     PX86PDPT pGuestPDPT = pVCpu->pgm.s.CTX_SUFF(pGstPaePdpt);
@@ -797,7 +797,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, unsigned *p
 DECLINLINE(int) pgmGstGetLongModePML4PtrEx(PVMCPU pVCpu, PX86PML4 *ppPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    int rc = pgmR0DynMapGCPageInlined(&pVCpu->CTX_SUFF(pVM)->pgm.s, pPGM->GCPhysCR3, (void **)ppPml4);
+    int rc = pgmR0DynMapGCPageInlined(&pVCpu->CTX_SUFF(pVM)->pgm.s, pVCpu->pgm.s.GCPhysCR3, (void **)ppPml4);
     if (RT_FAILURE(rc))
     {
         *ppPml4 = NULL;
@@ -839,7 +839,7 @@ DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PVMCPU pVCpu, unsigned int iPml4
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
-    int rc = pgmR0DynMapGCPageInlined(PGMCPU2PGM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPml4);
+    int rc = pgmR0DynMapGCPageInlined(&pVCpu->CTX_SUFF(pVM)->pgm.s, pVCpu->pgm.s.GCPhysCR3, (void **)&pGuestPml4);
     AssertRCReturn(rc, NULL);
 #else
     PX86PML4 pGuestPml4 = pVCpu->pgm.s.CTX_SUFF(pGstAmd64Pml4);
