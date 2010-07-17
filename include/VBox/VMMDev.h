@@ -176,7 +176,7 @@ typedef enum
     VMMDevReq_CheckSharedModules         = 214,
     VMMDevReq_GetPageSharingStatus       = 215,
     VMMDevReq_DebugIsPageShared          = 216,
-    VMMDevReq_GetSessionId               = 217, /* since version 3.2.6 */
+    VMMDevReq_GetSessionId               = 217, /* since version 3.2.8 */
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
