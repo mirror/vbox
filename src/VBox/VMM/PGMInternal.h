@@ -90,6 +90,14 @@
 #endif
 
 /**
+ * Enables optimizations for MMIO handlers that exploits X86_TRAP_PF_RSVD and
+ * VMX_EXIT_EPT_MISCONFIG.
+ */
+#if 0 /* ! remember to disable before committing ! XXX TODO  */
+# define PGM_WITH_MMIO_OPTIMIZATIONS
+#endif
+
+/**
  * Chunk unmapping code activated on 32-bit hosts for > 1.5/2 GB guest memory support
  */
 #if (HC_ARCH_BITS == 32) && !defined(RT_OS_DARWIN)
@@ -265,6 +273,26 @@
 #else
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
      PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1 /* one page only */, (PRTR3PTR)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
+#endif
+
+/** @def PGM_GCPHYS_2_PTR_BY_VMCPU
+ * Maps a GC physical page address to a virtual address.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu   The current CPU.
+ * @param   GCPhys  The GC physical address to map to a virtual one.
+ * @param   ppv     Where to store the virtual address. No need to cast this.
+ *
+ * @remark  In RC this uses PGMGCDynMapGCPage(), so it will consume of the
+ *          small page window employeed by that function. Be careful.
+ * @remark  There is no need to assert on the result.
+ */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+# define PGM_RCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhys, ppv) \
+     pgmR0DynMapGCPageInlined(&(pVCpu)->CTX_SUFF(pVM)->pgm.s, GCPhys, (void **)(ppv))
+#else
+# define PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhys, ppv) \
+     PGM_GCPHYS_2_PTR((pVCpu)->CTX_SUFF(pVM), GCPhys, ppv)
 #endif
 
 /** @def PGM_GCPHYS_2_PTR_BY_PGMCPU
@@ -1763,7 +1791,7 @@ typedef enum PGMPOOLKIND
     PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD,
     /** Shw: PAE page directory;    Gst: PAE page directory. */
     PGMPOOLKIND_PAE_PD_FOR_PAE_PD,
-    /** Shw: PAE page directory;    Gst: no paging. */
+    /** Shw: PAE page directory;    Gst: no paging.             Note: +NP. */
     PGMPOOLKIND_PAE_PD_PHYS,
 
     /** Shw: PAE page directory pointer table (legacy, 4 entries);  Gst 32 bits paging. */
@@ -1880,7 +1908,8 @@ typedef struct PGMPOOLPAGE
     /** This is used by the R3 access handlers when invoked by an async thread.
      * It's a hack required because of REMR3NotifyHandlerPhysicalDeregister. */
     bool volatile       fReusedFlushPending;
-    /** Used to mark the page as dirty (write monitoring if temporarily off. */
+    /** Used to mark the page as dirty (write monitoring is temporarily
+     *  off). */
     bool                fDirty;
 
     /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages). */
@@ -2268,8 +2297,125 @@ typedef struct PGMTREES
 typedef PGMTREES *PPGMTREES;
 
 
+/**
+ * Page fault guest state for the AMD64 paging mode.
+ */
+typedef struct PGMPTWALKCORE
+{
+    /** The guest virtual address that is being resolved by the walk
+     *  (input). */
+    RTGCPTR         GCPtr;
+
+    /** The guest physcial address that is the result of the walk.
+     * @remarks only valid if fSucceeded is set.  */
+    RTGCPHYS        GCPhys;
+
+    /** Set if the walk succeeded, i.d. GCPhys is valid. */
+    bool            fSucceeded;
+    /** The level problem arrised at.
+     * PTE is level 1, PDE is level 2, PDPE is level 3, PML4 is level 4, CR3 is
+     * level 8.  This is 0 on success. */
+    uint8_t         uLevel;
+    /** Set if the page isn't present. */
+    bool            fNotPresent;
+    /** Encountered a bad physical address. */
+    bool            fBadPhysAddr;
+    /** Set if there was reserved bit violations. */
+    bool            fRsvdError;
+    /** Set if it involves a big page (2/4 MB). */
+    bool            fBigPage;
+    /** Set if it involves a gigantic page (1 GB). */
+    bool            fGigantPage;
+#if 0
+    /** Set if write access was attempted and not possible. */
+    bool            fWriteError;
+    /** Set if execute access was attempted and not possible. */
+    bool            fExecuteError;
+#endif
+    /** Unused. */
+    bool            afUnused[3];
+} PGMPTWALKCORE;
+
+
+/**
+ * Guest page table walk for the AMD64 mode.
+ */
+typedef struct PGMPTWALKGSTAMD64
+{
+    /** The common core. */
+    PGMPTWALKCORE   Core;
+
+    PX86PML4        pPml4;
+    PX86PML4E       pPml4e;
+    X86PML4E        Pml4e;
+
+    PX86PDPT        pPdpt;
+    PX86PDPE        pPdpe;
+    X86PDPE         Pdpe;
+
+    PX86PDPAE       pPd;
+    PX86PDEPAE      pPde;
+    X86PDEPAE       Pde;
+
+    PX86PTPAE       pPt;
+    PX86PTEPAE      pPte;
+    X86PTEPAE       Pte;
+} PGMPTWALKGSTAMD64;
+/** Pointer to a AMD64 guest page table walk. */
+typedef PGMPTWALKGSTAMD64 *PPGMPTWALKGSTAMD64;
+/** Pointer to a const AMD64 guest page table walk. */
+typedef PGMPTWALKGSTAMD64 const *PCPGMPTWALKGSTAMD64;
+
+/**
+ * Guest page table walk for the PAE mode.
+ */
+typedef struct PGMPTWALKGSTPAE
+{
+    /** The common core. */
+    PGMPTWALKCORE   Core;
+
+    PX86PDPT        pPdpt;
+    PX86PDPE        pPdpe;
+    X86PDPE         Pdpe;
+
+    PX86PDPAE       pPd;
+    PX86PDEPAE      pPde;
+    X86PDEPAE       Pde;
+
+    PX86PTPAE       pPt;
+    PX86PTEPAE      pPte;
+    X86PTEPAE       Pte;
+} PGMPTWALKGSTPAE;
+/** Pointer to a PAE guest page table walk. */
+typedef PGMPTWALKGSTPAE *PPGMPTWALKGSTPAE;
+/** Pointer to a const AMD64 guest page table walk. */
+typedef PGMPTWALKGSTPAE const *PCPGMPTWALKGSTPAE;
+
+/**
+ * Guest page table walk for the 32-bit mode.
+ */
+typedef struct PGMPTWALKGST32BIT
+{
+    /** The common core. */
+    PGMPTWALKCORE   Core;
+
+    PX86PD          pPd;
+    PX86PDE         pPde;
+    X86PDE          Pde;
+
+    PX86PT          pPt;
+    PX86PTE         pPte;
+    X86PTE          Pte;
+} PGMPTWALKGST32BIT;
+/** Pointer to a 32-bit guest page table walk. */
+typedef PGMPTWALKGST32BIT *PPGMPTWALKGST32BIT;
+/** Pointer to a const 32-bit guest page table walk. */
+typedef PGMPTWALKGST32BIT const *PCPGMPTWALKGST32BIT;
+
+
 /** @name Paging mode macros
- * @{ */
+ * @{
+ */
 #ifdef IN_RC
 # define PGM_CTX(a,b)                   a##RC##b
 # define PGM_CTX_STR(a,b)               a "GC" b
@@ -2496,8 +2642,11 @@ typedef struct PGM
      * This is used to prevent conflicts between live saving and page sharing
      * detection. */
     bool                            fPhysWriteMonitoringEngaged;
+    /** Set if the CPU has less than 52-bit physical address width.
+     * This is used  */
+    bool                            fLessThan52PhysicalAddressBits;
     /** Alignment padding. */
-    bool                            afAlignment0[2];
+    bool                            afAlignment0[1];
 
     /*
      * This will be redefined at least two more times before we're done, I'm sure.
@@ -2518,6 +2667,9 @@ typedef struct PGM
 
     /** 4 MB page mask; 32 or 36 bits depending on PSE-36 (identical for all VCPUs) */
     RTGCPHYS                        GCPhys4MBPSEMask;
+    /** Mask containing the invalid bits of a guest physical address.
+     * @remarks this does not stop at bit 52.  */
+    RTGCPHYS                        GCPhysInvAddrMask;
 
     /** Pointer to the list of RAM ranges (Phys GC -> Phys HC conversion) - for R3.
      * This is sorted by physical address and contains no overlapping ranges. */
@@ -2705,6 +2857,20 @@ typedef struct PGM
     /** The GC mapping of the zero page. */
     RTGCPTR                         pvZeroPgRC;
     /** @}*/
+
+    /** @name   The Invalid MMIO page.
+     * This page is filled with 0xfeedface.
+     * @{ */
+    /** The host physical address of the invalid MMIO page. */
+    RTHCPHYS                        HCPhysMmioPg;
+    /** The host pysical address of the invalid MMIO page pluss all invalid
+     * physical address bits set.  This is used to trigger X86_TRAP_PF_RSVD.
+     * @remarks Check fLessThan52PhysicalAddressBits before use. */
+    RTHCPHYS                        HCPhysInvMmioPg;
+    /** The ring-3 mapping of the invalid MMIO page. */
+    RTR3PTR                         pvMmioPgR3;
+    /** @} */
+
 
     /** The number of handy pages. */
     uint32_t                        cHandyPages;
@@ -2919,14 +3085,14 @@ typedef PGM *PPGM;
  * @returns Pointer to the VM structure the PGM is part of.
  * @param   pPGM   Pointer to PGMCPU instance data.
  */
-#define PGMCPU2VM(pPGM)  ( (PVM)((char*)pPGM - pPGM->offVM) )
+#define PGMCPU2VM(pPGM)         ( (PVM)((char*)(pPGM) - (pPGM)->offVM) )
 
 /**
  * Converts a PGMCPU pointer into a PGM pointer.
  * @returns Pointer to the VM structure the PGM is part of.
  * @param   pPGM   Pointer to PGMCPU instance data.
  */
-#define PGMCPU2PGM(pPGMCpu)  ( (PPGM)((char*)pPGMCpu - pPGMCpu->offPGM) )
+#define PGMCPU2PGM(pPGMCpu)     ( (PPGM)((char *)(pPGMCpu) - (pPGMCpu)->offPGM) )
 
 /**
  * PGMCPU Data (part of VMCPU).
@@ -2978,6 +3144,12 @@ typedef struct PGMCPU
 #endif
     /** The guest's page directory, static RC mapping. */
     RCPTRTYPE(PX86PD)               pGst32BitPdRC;
+    /** Mask containing the MBZ bits of a big page PDE. */
+    uint32_t                        fGst32BitMbzBigPdeMask;
+    /** Set if the page size extension (PSE) is enabled. */
+    bool                            fGst32BitPageSizeExtension;
+    /** Alignment padding. */
+    bool                            afAlignment4[3];
     /** @} */
 
     /** @name PAE Guest Paging.
@@ -3008,6 +3180,14 @@ typedef struct PGMCPU
     RTGCPHYS                        aGCPhysGstPaePDs[4];
     /** The physical addresses of the monitored guest page directories (PAE). */
     RTGCPHYS                        aGCPhysGstPaePDsMonitored[4];
+    /** Mask containing the MBZ PTE bits. */
+    uint64_t                        fGstPaeMbzPteMask;
+    /** Mask containing the MBZ PDE bits. */
+    uint64_t                        fGstPaeMbzPdeMask;
+    /** Mask containing the MBZ big page PDE bits. */
+    uint64_t                        fGstPaeMbzBigPdeMask;
+    /** Mask containing the MBZ PDPE bits. */
+    uint64_t                        fGstPaeMbzPdpeMask;
     /** @} */
 
     /** @name AMD64 Guest Paging.
@@ -3020,6 +3200,18 @@ typedef struct PGMCPU
 #else
     RTR0PTR                         alignment6b; /**< alignment equalizer. */
 #endif
+    /** Mask containing the MBZ PTE bits. */
+    uint64_t                        fGstAmd64MbzPteMask;
+    /** Mask containing the MBZ PDE bits. */
+    uint64_t                        fGstAmd64MbzPdeMask;
+    /** Mask containing the MBZ big page PDE bits. */
+    uint64_t                        fGstAmd64MbzBigPdeMask;
+    /** Mask containing the MBZ PDPE bits. */
+    uint64_t                        fGstAmd64MbzPdpeMask;
+    /** Mask containing the MBZ big page PDPE bits. */
+    uint64_t                        fGstAmd64MbzBigPdpeMask;
+    /** Mask containing the MBZ PML4E bits. */
+    uint64_t                        fGstAmd64MbzPml4eMask;
     /** @} */
 
     /** Pointer to the page of the current active CR3 - R3 Ptr. */
@@ -3450,10 +3642,10 @@ int             pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E
 #endif
 int             pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
 
-PX86PD          pgmGstLazyMap32BitPD(PPGMCPU pPGM);
-PX86PDPT        pgmGstLazyMapPaePDPT(PPGMCPU pPGM);
-PX86PDPAE       pgmGstLazyMapPaePD(PPGMCPU pPGM, uint32_t iPdpt);
-PX86PML4        pgmGstLazyMapPml4(PPGMCPU pPGM);
+int             pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd);
+int             pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt);
+int             pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd);
+int             pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4);
 
 # if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
 DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);

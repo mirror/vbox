@@ -1114,15 +1114,23 @@ typedef X86PGPAEUINT const *PCX86PGPAEUINT;
 #define X86_PTE_PG_MASK                     ( 0xfffff000 )
 
 /** Bits 12-51 - - PAE - Physical Page number of the next level. */
-#if 1 /* we're using this internally and have to mask of the top 16-bit. */
+#if 1 /* we're using this internally and have to mask of the top 16-bit. */ /** @todo this should be safe to ditch now */
 #define X86_PTE_PAE_PG_MASK                 ( 0x0000fffffffff000ULL )
 /** @todo Get rid of the above hack; makes code unreadable. */
 #define X86_PTE_PAE_PG_MASK_FULL            ( 0x000ffffffffff000ULL )
 #else
 #define X86_PTE_PAE_PG_MASK                 ( 0x000ffffffffff000ULL )
 #endif
-/** Bits 63 - NX - PAE - No execution flag. */
+/** Bits 63 - NX - PAE/LM - No execution flag. */
 #define X86_PTE_PAE_NX                      RT_BIT_64(63)
+/** Bits 62-52 - - PAE - MBZ bits when NX is active. */
+#define X86_PTE_PAE_MBZ_MASK_NX             UINT64_C(0x7ff0000000000000)
+/** Bits 63-52 - - PAE - MBZ bits when no NX. */
+#define X86_PTE_PAE_MBZ_MASK_NO_NX          UINT64_C(0xfff0000000000000)
+/** No bits -    - LM  - MBZ bits when NX is active. */
+#define X86_PTE_LM_MBZ_MASK_NX              UINT64_C(0x0000000000000000)
+/** Bits 63 -    - LM  - MBZ bits when no NX. */
+#define X86_PTE_LM_MBZ_MASK_NO_NX           UINT64_C(0x8000000000000000)
 
 /**
  * Page table entry.
@@ -1316,8 +1324,16 @@ typedef const X86PTPAE *PCX86PTPAE;
 #else
 #define X86_PDE_PAE_PG_MASK                 ( 0x000ffffffffff000ULL )
 #endif
-/** Bits 63 - NX - PAE - No execution flag. */
+/** Bits 63 - NX - PAE/LM - No execution flag. */
 #define X86_PDE_PAE_NX                      RT_BIT_64(63)
+/** Bits 62-52, 7 - - PAE - MBZ bits when NX is active. */
+#define X86_PDE_PAE_MBZ_MASK_NX             UINT64_C(0x7ff0000000000080)
+/** Bits 63-52, 7 - - PAE - MBZ bits when no NX. */
+#define X86_PDE_PAE_MBZ_MASK_NO_NX          UINT64_C(0xfff0000000000080)
+/** Bit 7 -         - LM  - MBZ bits when NX is active. */
+#define X86_PDE_LM_MBZ_MASK_NX              UINT64_C(0x0000000000000080)
+/** Bits 63, 7 -    - LM  - MBZ bits when no NX. */
+#define X86_PDE_LM_MBZ_MASK_NO_NX           UINT64_C(0x8000000000000080)
 
 /**
  * Page directory entry.
@@ -1426,16 +1442,26 @@ typedef const X86PDEPAEBITS *PCX86PDEPAEBITS;
 #define X86_PDE4M_PAT_SHIFT                 (12 - 7)
 /** Bits 22-31 - - Physical Page number. */
 #define X86_PDE4M_PG_MASK                   ( 0xffc00000 )
-/** Bits 13-20 - - Physical Page number high part (32-39 bits). AMD64 hack. */
+/** Bits 20-13 - - Physical Page number high part (32-39 bits). AMD64 hack. */
 #define X86_PDE4M_PG_HIGH_MASK              ( 0x001fe000 )
 /** The number of bits to the high part of the page number. */
 #define X86_PDE4M_PG_HIGH_SHIFT             19
+/** Bit 21 -     - MBZ bits for AMD CPUs, no PSE36. */
+#define X86_PDE4M_MBZ_MASK                  RT_BIT_32(21)
 
-/** Bits 21-51 - - PAE & AMD64 - Physical Page number.
+/** Bits 21-51 - - PAE/LM - Physical Page number.
  * (Bits 40-51 (long mode) & bits 36-51 (pae legacy) are reserved according to the Intel docs; AMD allows for more.) */
-#define X86_PDE2M_PAE_PG_MASK               ( 0x000fffffffe00000ULL )
-/** Bits 63 - NX - PAE & AMD64 - No execution flag. */
-#define X86_PDE2M_PAE_NX                    X86_PDE2M_PAE_NX
+#define X86_PDE2M_PAE_PG_MASK               UINT64_C(0x000fffffffe00000)
+/** Bits 63 - NX - PAE/LM - No execution flag. */
+#define X86_PDE2M_PAE_NX                    RT_BIT_64(63)
+/** Bits 62-52, 20-13 - - PAE - MBZ bits when NX is active. */
+#define X86_PDE2M_PAE_MBZ_MASK_NX           UINT64_C(0x7ff00000001fe000)
+/** Bits 63-52, 20-13 - - PAE - MBZ bits when no NX. */
+#define X86_PDE2M_PAE_MBZ_MASK_NO_NX        UINT64_C(0xfff00000001fe000)
+/** Bits 20-13        - - LM  - MBZ bits when NX is active. */
+#define X86_PDE2M_LM_MBZ_MASK_NX            UINT64_C(0x00000000001fe000)
+/** Bits 63, 20-13    - - LM  - MBZ bits when no NX. */
+#define X86_PDE2M_LM_MBZ_MASK_NO_NX         UINT64_C(0x80000000001fe000)
 
 /**
  * 4MB page directory entry.
@@ -1626,18 +1652,31 @@ typedef const X86PDPAE *PCX86PDPAE;
 #define X86_PDPE_PCD                        RT_BIT(4)
 /** Bit 5 -  A  - Access bit. Long Mode only. */
 #define X86_PDPE_A                          RT_BIT(5)
+/** Bit 7 - PS  - Page size (1GB). Long Mode only. */
+#define X86_PDPE_LM_PS                      RT_BIT(7)
 /** Bits 9-11 - - Available for use to system software. */
 #define X86_PDPE_AVL_MASK                   (RT_BIT(9) | RT_BIT(10) | RT_BIT(11))
 /** Bits 12-51 - - PAE - Physical Page number of the next level. */
 #if 1 /* we're using this internally and have to mask of the top 16-bit. */
-#define X86_PDPE_PG_MASK                    ( 0x0000fffffffff000ULL )
+#define X86_PDPE_PG_MASK                    UINT64_C(0x0000fffffffff000)
 /** @todo Get rid of the above hack; makes code unreadable. */
-#define X86_PDPE_PG_MASK_FULL               ( 0x000ffffffffff000ULL )
+#define X86_PDPE_PG_MASK_FULL               UINT64_C(0x000ffffffffff000)
 #else
-#define X86_PDPE_PG_MASK                    ( 0x000ffffffffff000ULL )
+#define X86_PDPE_PG_MASK                    UINT64_C(0x000ffffffffff000)
 #endif
-/** Bits 63 - NX - PAE - No execution flag. Long Mode only. */
-#define X86_PDPE_NX                         RT_BIT_64(63)
+/** Bits 63-52, 8-5, 2-1 - - PAE - MBZ bits (NX is long mode only). */
+#define X86_PDPE_PAE_MBZ_MASK               UINT64_C(0xfff00000000001e6)
+/** Bits 63 - NX - LM - No execution flag. Long Mode only. */
+#define X86_PDPE_LM_NX                      RT_BIT_64(63)
+/** Bits 8, 7 - - LM - MBZ bits when NX is active. */
+#define X86_PDPE_LM_MBZ_MASK_NX             UINT64_C(0x0000000000000180)
+/** Bits 63, 8, 7 - - LM - MBZ bits when no NX. */
+#define X86_PDPE_LM_MBZ_MASK_NO_NX          UINT64_C(0x8000000000000180)
+/** Bits 29-13 - - LM - MBZ bits for 1GB page entry when NX is active. */
+#define X86_PDPE1G_LM_MBZ_MASK_NX           UINT64_C(0x000000003fffe000)
+/** Bits 63, 29-13 - - LM - MBZ bits for 1GB page entry when no NX. */
+#define X86_PDPE1G_LM_MBZ_MASK_NO_NX        UINT64_C(0x800000003fffe000)
+
 
 /**
  * Page directory pointer table entry.
@@ -1775,6 +1814,10 @@ typedef const X86PDPT *PCX86PDPT;
 #else
 #define X86_PML4E_PG_MASK                   ( 0x000ffffffffff000ULL )
 #endif
+/** Bits 8, 7 - - MBZ bits when NX is active. */
+#define X86_PML4E_MBZ_MASK_NX               UINT64_C(0x0000000000000080)
+/** Bits 63, 7 - - MBZ bits when no NX. */
+#define X86_PML4E_MBZ_MASK_NO_NX            UINT64_C(0x8000000000000080)
 /** Bits 63 - NX - PAE - No execution flag. */
 #define X86_PML4E_NX                        RT_BIT_64(63)
 

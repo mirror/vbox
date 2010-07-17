@@ -1279,7 +1279,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
     for (int iPDPTE = X86_PG_PAE_PDPE_ENTRIES - 1; iPDPTE >= 0; iPDPTE--)
     {
         unsigned  iPDSrc;
-        PX86PDPAE pPDSrc = pgmGstGetPaePDPtr(&pVCpu->pgm.s, (RTGCPTR32)iPDPTE << X86_PDPT_SHIFT, &iPDSrc, NULL);
+        PX86PDPAE pPDSrc = pgmGstGetPaePDPtr(pVCpu, (RTGCPTR32)iPDPTE << X86_PDPT_SHIFT, &iPDSrc, NULL);
 
         /*
          * Scan for free page directory entries.

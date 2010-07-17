@@ -293,7 +293,12 @@ typedef const EPTPD *PCEPTPD;
 #pragma pack(1)
 typedef struct EPTPTEBITS
 {
-    /** Present bit. */
+    /** Present bit.
+     * @remark This is a convenience "misnomer".  The bit actually indicates
+     *         read access and the CPU will consider an entry with any of the
+     *         first three bits set as present.  Since all our valid entries
+     *         will have this bit set, it can be used as a present indicator
+     *         and allow some code sharing. */
     uint64_t    u1Present       : 1;
     /** Writable bit. */
     uint64_t    u1Write         : 1;
@@ -307,7 +312,7 @@ typedef struct EPTPTEBITS
     uint64_t    u5Available     : 5;
     /** Physical address of page. Restricted by maximum physical address width of the cpu. */
     uint64_t    u40PhysAddr     : 40;
-    /** Availabe for software. */
+    /** Available for software. */
     uint64_t    u12Available    : 12;
 } EPTPTEBITS;
 #pragma pack()

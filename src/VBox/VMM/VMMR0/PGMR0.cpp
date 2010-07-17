@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2007-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,7 +29,10 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 
-RT_C_DECLS_BEGIN
+
+/*
+ * Instantiate the ring-0 header/code templates.
+ */
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_PROT(name)
 #include "PGMR0Bth.h"
 #undef PGM_BTH_NAME
@@ -45,8 +48,6 @@ RT_C_DECLS_BEGIN
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_PROT(name)
 #include "PGMR0Bth.h"
 #undef PGM_BTH_NAME
-
-RT_C_DECLS_END
 
 
 /**
@@ -161,6 +162,7 @@ VMMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu)
     return rc;
 }
 
+
 /**
  * Worker function for PGMR3PhysAllocateLargeHandyPage
  *
@@ -186,6 +188,7 @@ VMMR0DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu)
     return rc;
 }
 
+
 /**
  * #PF Handler for nested paging.
  *
@@ -207,7 +210,9 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
     STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
 
     /* AMD uses the host's paging mode; Intel has a single mode (EPT). */
-    AssertMsg(enmShwPagingMode == PGMMODE_32_BIT || enmShwPagingMode == PGMMODE_PAE || enmShwPagingMode == PGMMODE_PAE_NX || enmShwPagingMode == PGMMODE_AMD64 || enmShwPagingMode == PGMMODE_AMD64_NX || enmShwPagingMode == PGMMODE_EPT, ("enmShwPagingMode=%d\n", enmShwPagingMode));
+    AssertMsg(   enmShwPagingMode == PGMMODE_32_BIT || enmShwPagingMode == PGMMODE_PAE      || enmShwPagingMode == PGMMODE_PAE_NX
+              || enmShwPagingMode == PGMMODE_AMD64  || enmShwPagingMode == PGMMODE_AMD64_NX || enmShwPagingMode == PGMMODE_EPT,
+              ("enmShwPagingMode=%d\n", enmShwPagingMode));
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -252,47 +257,48 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
     /*
      * Call the worker.
      *
-     * We pretend the guest is in protected mode without paging, so we can use existing code to build the
-     * nested page tables.
+     * Note! We pretend the guest is in protected mode without paging, so we
+     *       can use existing code to build the nested page tables.
      */
     bool fLockTaken = false;
     switch(enmShwPagingMode)
     {
-    case PGMMODE_32_BIT:
-        rc = PGM_BTH_NAME_32BIT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
-        break;
-    case PGMMODE_PAE:
-    case PGMMODE_PAE_NX:
-        rc = PGM_BTH_NAME_PAE_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
-        break;
-    case PGMMODE_AMD64:
-    case PGMMODE_AMD64_NX:
-        rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
-        break;
-    case PGMMODE_EPT:
-        rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
-        break;
-    default:
-        AssertFailed();
-        rc = VERR_INVALID_PARAMETER;
-        break;
+        case PGMMODE_32_BIT:
+            rc = PGM_BTH_NAME_32BIT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+            break;
+        case PGMMODE_PAE:
+        case PGMMODE_PAE_NX:
+            rc = PGM_BTH_NAME_PAE_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+            break;
+        case PGMMODE_AMD64:
+        case PGMMODE_AMD64_NX:
+            rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+            break;
+        case PGMMODE_EPT:
+            rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+            break;
+        default:
+            AssertFailed();
+            rc = VERR_INVALID_PARAMETER;
+            break;
     }
     if (fLockTaken)
     {
         Assert(PGMIsLockOwner(pVM));
         pgmUnlock(pVM);
     }
+
     if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
         rc = VINF_SUCCESS;
-    else
     /* Note: hack alert for difficult to reproduce problem. */
-    if (    rc == VERR_PAGE_NOT_PRESENT                 /* SMP only ; disassembly might fail. */
-        ||  rc == VERR_PAGE_TABLE_NOT_PRESENT           /* seen with UNI & SMP */
-        ||  rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT   /* seen with SMP */
-        ||  rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)     /* precaution */
+    else if (   rc == VERR_PAGE_NOT_PRESENT                 /* SMP only ; disassembly might fail. */
+             || rc == VERR_PAGE_TABLE_NOT_PRESENT           /* seen with UNI & SMP */
+             || rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT   /* seen with SMP */
+             || rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)     /* precaution */
     {
         Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT (%d) for page fault at %RGp error code %x (rip=%RGv)\n", rc, pvFault, uErr, pRegFrame->rip));
-        /* Some kind of inconsistency in the SMP case; it's safe to just execute the instruction again; not sure about single VCPU VMs though. */
+        /* Some kind of inconsistency in the SMP case; it's safe to just execute the instruction again; not sure about
+           single VCPU VMs though. */
         rc = VINF_SUCCESS;
     }
 

@@ -592,25 +592,13 @@
 #include <VBox/err.h>
 
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/env.h>
 #include <iprt/mem.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
-
-
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-/** Saved state data unit version for 2.5.x and later. */
-#define PGM_SAVED_STATE_VERSION                 9
-/** Saved state data unit version for 2.2.2 and later. */
-#define PGM_SAVED_STATE_VERSION_2_2_2           8
-/** Saved state data unit version for 2.2.0. */
-#define PGM_SAVED_STATE_VERSION_RR_DESC         7
-/** Saved state data unit version. */
-#define PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE   6
 
 
 /*******************************************************************************
@@ -1315,7 +1303,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pVM->pgm.s.pTreesRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pTreesR3);
 
         /*
-         * Alocate the zero page.
+         * Allocate the zero page.
          */
         rc = MMHyperAlloc(pVM, PAGE_SIZE, PAGE_SIZE, MM_TAG_PGM, &pVM->pgm.s.pvZeroPgR3);
     }
@@ -1325,6 +1313,19 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
         pVM->pgm.s.HCPhysZeroPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3);
         AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
+
+        /*
+         * Allocate the invalid MMIO page.
+         * (The invalid bits in HCPhysInvMmioPg are set later on init complete.)
+         */
+        rc = MMHyperAlloc(pVM, PAGE_SIZE, PAGE_SIZE, MM_TAG_PGM, &pVM->pgm.s.pvMmioPgR3);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        ASMMemFill32(pVM->pgm.s.pvMmioPgR3, PAGE_SIZE, 0xfeedface);
+        pVM->pgm.s.HCPhysMmioPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvMmioPgR3);
+        AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS);
+        pVM->pgm.s.HCPhysInvMmioPg = pVM->pgm.s.HCPhysMmioPg;
 
         /*
          * Init the paging.
@@ -1418,7 +1419,7 @@ VMMR3DECL(int) PGMR3InitCPU(PVM pVM)
  * been initialized.
  *
  * @returns VBox status code.
- * @param   pVM     VM handle.
+ * @param   pVM                 VM handle.
  */
 static int pgmR3InitPaging(PVM pVM)
 {
@@ -1551,7 +1552,6 @@ static int pgmR3InitPaging(PVM pVM)
                 MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[1]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[2]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[3]),
                 MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPT64)));
 #endif
-
         return VINF_SUCCESS;
     }
 
@@ -2012,15 +2012,68 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     }
 
     /*
+     * Determin the max physical address width (MAXPHYADDR) and apply it to
+     * all the mask members and stuff.
+     */
+    uint32_t cMaxPhysAddrWidth;
+    uint32_t uMaxExtLeaf = ASMCpuId_EAX(0x80000000);
+    if (   uMaxExtLeaf >= 0x80000008
+        && uMaxExtLeaf <= 0x80000fff)
+    {
+        cMaxPhysAddrWidth = ASMCpuId_EAX(0x80000008) & 0xff;
+        LogRel(("PGM: The CPU physical address width is %u bits\n", cMaxPhysAddrWidth));
+        cMaxPhysAddrWidth = RT_MIN(52, cMaxPhysAddrWidth);
+        pVM->pgm.s.fLessThan52PhysicalAddressBits = cMaxPhysAddrWidth < 52;
+        for (uint32_t iBit = cMaxPhysAddrWidth; iBit < 52; iBit++)
+            pVM->pgm.s.HCPhysInvMmioPg |= RT_BIT_64(iBit);
+    }
+    else
+    {
+        LogRel(("PGM: ASSUMING CPU physical address width of 48 bits (uMaxExtLeaf=%#x)\n", uMaxExtLeaf));
+        cMaxPhysAddrWidth = 48;
+        pVM->pgm.s.fLessThan52PhysicalAddressBits = true;
+        pVM->pgm.s.HCPhysInvMmioPg |= UINT64_C(0x000f0000000000);
+    }
+
+    pVM->pgm.s.GCPhysInvAddrMask = 0;
+    for (uint32_t iBit = cMaxPhysAddrWidth; iBit < 64; iBit++)
+        pVM->pgm.s.GCPhysInvAddrMask |= RT_BIT_64(iBit);
+
+    /*
+     * Initialize the invalid paging entry masks, assuming NX is disabled.
+     */
+    uint64_t fMbzPageFrameMask = pVM->pgm.s.GCPhysInvAddrMask & UINT64_C(0x000ffffffffff000);
+    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[iCpu];
+
+        /** @todo The manuals are not entirely clear whether the physical
+         *        address width is relevant.  See table 5-9 in the intel
+         *        manual vs the PDE4M descriptions.  Write testcase (NP). */
+        pVCpu->pgm.s.fGst32BitMbzBigPdeMask  = (uint32_t)(fMbzPageFrameMask >> (32 - 13)) | X86_PDE4M_MBZ_MASK;
+
+        pVCpu->pgm.s.fGstPaeMbzPteMask       = fMbzPageFrameMask | X86_PTE_PAE_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstPaeMbzPdeMask       = fMbzPageFrameMask | X86_PDE_PAE_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstPaeMbzBigPdeMask    = fMbzPageFrameMask | X86_PDE2M_PAE_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstPaeMbzPdpeMask      = fMbzPageFrameMask | X86_PDPE_PAE_MBZ_MASK;
+
+        pVCpu->pgm.s.fGstAmd64MbzPteMask     = fMbzPageFrameMask | X86_PTE_LM_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPdeMask     = fMbzPageFrameMask | X86_PDE_LM_MBZ_MASK_NX;
+        pVCpu->pgm.s.fGstAmd64MbzBigPdeMask  = fMbzPageFrameMask | X86_PDE2M_LM_MBZ_MASK_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPdpeMask    = fMbzPageFrameMask | X86_PDPE_LM_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstAmd64MbzBigPdpeMask = fMbzPageFrameMask | X86_PDPE1G_LM_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPml4eMask   = fMbzPageFrameMask | X86_PML4E_MBZ_MASK_NO_NX;
+    }
+
+    /*
      * Note that AMD uses all the 8 reserved bits for the address (so 40 bits in total);
      * Intel only goes up to 36 bits, so we stick to 36 as well.
+     * Update: More recent intel manuals specifies 40 bits just like AMD.
      */
-    /** @todo How to test for the 40 bits support? Long mode seems to be the test criterium. */
     uint32_t u32Dummy, u32Features;
     CPUMGetGuestCpuId(VMMGetCpu(pVM), 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
-
     if (u32Features & X86_CPUID_FEATURE_EDX_PSE36)
-        pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(36) - 1;
+        pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(RT_MAX(36, cMaxPhysAddrWidth)) - 1;
     else
         pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1;
 
@@ -2477,7 +2530,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
     /*
      * Get page directory addresses.
      */
-    PX86PD     pPDSrc = pgmGstGet32bitPDPtr(&pVCpu->pgm.s);
+    PX86PD     pPDSrc = pgmGstGet32bitPDPtr(pVCpu);
     Assert(pPDSrc);
     Assert(PGMPhysGCPhys2R3PtrAssert(pVM, (RTGCPHYS)(CPUMGetGuestCR3(pVCpu) & X86_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 
@@ -3881,7 +3934,7 @@ VMMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHY
     PGMPAGEMAPLOCK LockCr3;
 
     int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, cr3 & X86_CR3_PAGE_MASK, (const void **)&pPD, &LockCr3);
-    if (    RT_FAILURE(rc) 
+    if (    RT_FAILURE(rc)
         ||  !pPD)
     {
         Log(("Page directory at %#x was not found in the page pool!\n", cr3 & X86_CR3_PAGE_MASK));

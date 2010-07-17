@@ -614,7 +614,7 @@ VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32
      */
     const bool fWrite = !!(fAccess & X86_PTE_RW);
     const bool fUser  = !!(fAccess & X86_PTE_US);
-    if (  !(fPageGst & X86_PTE_P)
+    if (   !(fPageGst & X86_PTE_P)
         || (fWrite  && !(fPageGst & X86_PTE_RW))
         || (fUser   && !(fPageGst & X86_PTE_US)) )
     {
@@ -632,9 +632,9 @@ VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32
             ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
         {
             /*
-            * Page is not present in our page tables.
-            * Try to sync it!
-            */
+             * Page is not present in our page tables.
+             * Try to sync it!
+             */
             Assert(X86_TRAP_PF_RW == X86_PTE_RW && X86_TRAP_PF_US == X86_PTE_US);
             uint32_t uErr = fAccess & (X86_TRAP_PF_RW | X86_TRAP_PF_US);
             rc = PGM_BTH_PFN(VerifyAccessSyncPage, pVCpu)(pVCpu, Addr, fPageGst, uErr);
@@ -649,7 +649,7 @@ VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32
     /*
      * This check is a bit paranoid, but useful.
      */
-    /** @note this will assert when writing to monitored pages (a bit annoying actually) */
+    /* Note! This will assert when writing to monitored pages (a bit annoying actually). */
     uint64_t fPageShw;
     rc = PGMShwGetPage(pVCpu, (RTGCPTR)Addr, &fPageShw, NULL);
     if (    (rc == VERR_PAGE_NOT_PRESENT || RT_FAILURE(rc))
@@ -1370,61 +1370,89 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t 
 
 
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+
 /**
  * Performs the lazy mapping of the 32-bit guest PD.
  *
- * @returns Pointer to the mapping.
- * @param   pPGM        The PGM instance data.
+ * @returns VBox status code.
+ * @param   pVCpu       The current CPU.
+ * @param   ppPd        Where to return the pointer to the mapping.  This is
+ *                      always set.
  */
-PX86PD pgmGstLazyMap32BitPD(PPGMCPU pPGM)
+int pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd)
 {
-    Assert(!pPGM->CTX_SUFF(pGst32BitPd));
-    PVM pVM = PGMCPU2VM(pPGM);
+    PVM         pVM       = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
 
-    PPGMPAGE    pPage = pgmPhysGetPage(&pVM->pgm.s, pPGM->GCPhysCR3);
-    AssertReturn(pPage, NULL);
+    Assert(!pVCpu->pgm.s.CTX_SUFF(pGst32BitPd));
 
-    RTHCPTR     HCPtrGuestCR3;
-    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pPGM->GCPhysCR3 & X86_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3);
-    AssertRCReturn(rc, NULL);
-
-    pPGM->pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
+    RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAGE_MASK;
+    PPGMPAGE    pPage;
+    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysCR3, &pPage);
+    if (RT_SUCCESS(rc))
+    {
+        RTHCPTR HCPtrGuestCR3;
+        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
+        if (RT_SUCCESS(rc))
+        {
+            pVCpu->pgm.s.pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pPGM->pGst32BitPdR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
+            pVCpu->pgm.s.pGst32BitPdR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
 # endif
+            *ppPd = (PX86PD)HCPtrGuestCR3;
 
+            pgmUnlock(pVM);
+            return VINF_SUCCESS;
+        }
+
+        AssertRC(rc);
+    }
     pgmUnlock(pVM);
-    return pPGM->CTX_SUFF(pGst32BitPd);
+
+    *ppPd = NULL;
+    return rc;
 }
 
 
 /**
  * Performs the lazy mapping of the PAE guest PDPT.
  *
- * @returns Pointer to the mapping.
- * @param   pPGM        The PGM instance data.
+ * @returns VBox status code.
+ * @param   pVCpu       The current CPU.
+ * @param   ppPdpt      Where to return the pointer to the mapping.  This is
+ *                      always set.
  */
-PX86PDPT pgmGstLazyMapPaePDPT(PPGMCPU pPGM)
+int pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt)
 {
-    Assert(!pPGM->CTX_SUFF(pGstPaePdpt));
-    PVM pVM = PGMCPU2VM(pPGM);
+    Assert(!pVCpu->pgm.s.CTX_SUFF(pGstPaePdpt));
+    PVM     pVM = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
 
-    PPGMPAGE    pPage = pgmPhysGetPage(&pVM->pgm.s, pPGM->GCPhysCR3);
-    AssertReturn(pPage, NULL);
-
-    RTHCPTR     HCPtrGuestCR3;
-    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pPGM->GCPhysCR3 & X86_CR3_PAE_PAGE_MASK, (void **)&HCPtrGuestCR3); /** @todo r=bird: This GCPhysR3 masking isn't necessary. */
-    AssertRCReturn(rc, NULL);
-
-    pPGM->pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+    RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAE_PAGE_MASK;
+    PPGMPAGE    pPage;
+    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysCR3, &pPage);
+    if (RT_SUCCESS(rc))
+    {
+        RTHCPTR HCPtrGuestCR3;
+        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
+        if (RT_SUCCESS(rc))
+        {
+            pVCpu->pgm.s.pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pPGM->pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+            pVCpu->pgm.s.pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
 # endif
+            *ppPdpt = (PX86PDPT)HCPtrGuestCR3;
+
+            pgmUnlock(pVM);
+            return VINF_SUCCESS;
+        }
+
+        AssertRC(rc);
+    }
 
     pgmUnlock(pVM);
-    return pPGM->CTX_SUFF(pGstPaePdpt);
+    *ppPdpt = NULL;
+    return rc;
 }
 
 
@@ -1432,24 +1460,27 @@ PX86PDPT pgmGstLazyMapPaePDPT(PPGMCPU pPGM)
  * Performs the lazy mapping / updating of a PAE guest PD.
  *
  * @returns Pointer to the mapping.
- * @param   pPGM        The PGM instance data.
+ * @returns VBox status code.
+ * @param   pVCpu       The current CPU.
  * @param   iPdpt       Which PD entry to map (0..3).
+ * @param   ppPd        Where to return the pointer to the mapping.  This is
+ *                      always set.
  */
-PX86PDPAE pgmGstLazyMapPaePD(PPGMCPU pPGM, uint32_t iPdpt)
+int pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
 {
-    PVM             pVM         = PGMCPU2VM(pPGM);
+    PVM             pVM         = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
 
-    PX86PDPT        pGuestPDPT  = pPGM->CTX_SUFF(pGstPaePdpt);
+    PX86PDPT        pGuestPDPT  = pVCpu->pgm.s.CTX_SUFF(pGstPaePdpt);
     Assert(pGuestPDPT);
     Assert(pGuestPDPT->a[iPdpt].n.u1Present);
-    RTGCPHYS        GCPhys      = pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK;
-    bool const      fChanged    = pPGM->aGCPhysGstPaePDs[iPdpt] != GCPhys;
+    RTGCPHYS        GCPhys      = pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK_FULL;
+    bool const      fChanged    = pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt] != GCPhys;
 
-    PPGMPAGE        pPage       = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
-    if (RT_LIKELY(pPage))
+    PPGMPAGE        pPage;
+    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+    if (RT_SUCCESS(rc))
     {
-        int         rc          = VINF_SUCCESS;
         RTRCPTR     RCPtr       = NIL_RTRCPTR;
         RTHCPTR     HCPtr       = NIL_RTHCPTR;
 #if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
@@ -1463,62 +1494,76 @@ PX86PDPAE pgmGstLazyMapPaePD(PPGMCPU pPGM, uint32_t iPdpt)
         }
         if (RT_SUCCESS(rc))
         {
-            pPGM->apGstPaePDsR3[iPdpt]          = (R3PTRTYPE(PX86PDPAE))HCPtr;
+            pVCpu->pgm.s.apGstPaePDsR3[iPdpt]          = (R3PTRTYPE(PX86PDPAE))HCPtr;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-            pPGM->apGstPaePDsR0[iPdpt]          = (R0PTRTYPE(PX86PDPAE))HCPtr;
+            pVCpu->pgm.s.apGstPaePDsR0[iPdpt]          = (R0PTRTYPE(PX86PDPAE))HCPtr;
 # endif
             if (fChanged)
             {
-                pPGM->aGCPhysGstPaePDs[iPdpt]   = GCPhys;
-                pPGM->apGstPaePDsRC[iPdpt]      = (RCPTRTYPE(PX86PDPAE))RCPtr;
+                pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt]   = GCPhys;
+                pVCpu->pgm.s.apGstPaePDsRC[iPdpt]      = (RCPTRTYPE(PX86PDPAE))RCPtr;
             }
 
+            *ppPd = pVCpu->pgm.s.CTX_SUFF(apGstPaePDs)[iPdpt];
             pgmUnlock(pVM);
-            return pPGM->CTX_SUFF(apGstPaePDs)[iPdpt];
+            return VINF_SUCCESS;
         }
     }
 
     /* Invalid page or some failure, invalidate the entry. */
-    pPGM->aGCPhysGstPaePDs[iPdpt]   = NIL_RTGCPHYS;
-    pPGM->apGstPaePDsR3[iPdpt]      = 0;
+    pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt]   = NIL_RTGCPHYS;
+    pVCpu->pgm.s.apGstPaePDsR3[iPdpt]      = 0;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pPGM->apGstPaePDsR0[iPdpt]      = 0;
+    pVCpu->pgm.s.apGstPaePDsR0[iPdpt]      = 0;
 # endif
-    pPGM->apGstPaePDsRC[iPdpt]      = 0;
+    pVCpu->pgm.s.apGstPaePDsRC[iPdpt]      = 0;
 
     pgmUnlock(pVM);
-    return NULL;
+    return rc;
 }
-#endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
+#endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 #if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+
 /**
  * Performs the lazy mapping of the 32-bit guest PD.
  *
- * @returns Pointer to the mapping.
- * @param   pPGM        The PGM instance data.
+ * @returns VBox status code.
+ * @param   pVCpu       The current CPU.
+ * @param   ppPml4      Where to return the pointer to the mapping.  This will
+ *                      always be set.
  */
-PX86PML4 pgmGstLazyMapPml4(PPGMCPU pPGM)
+int pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4)
 {
-    Assert(!pPGM->CTX_SUFF(pGstAmd64Pml4));
-    PVM pVM = PGMCPU2VM(pPGM);
+    Assert(!pVCpu->pgm.s.CTX_SUFF(pGstAmd64Pml4));
+    PVM         pVM = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
 
-    PPGMPAGE    pPage = pgmPhysGetPage(&pVM->pgm.s, pPGM->GCPhysCR3);
-    AssertReturn(pPage, NULL);
+    RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_AMD64_PAGE_MASK;
+    PPGMPAGE    pPage;
+    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysCR3, &pPage);
+    if (RT_SUCCESS(rc))
+    {
+        RTHCPTR HCPtrGuestCR3;
+        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
+        if (RT_SUCCESS(rc))
+        {
+            pVCpu->pgm.s.pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pVCpu->pgm.s.pGstAmd64Pml4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
+#  endif
+            *ppPml4 = (PX86PML4)HCPtrGuestCR3;
 
-    RTHCPTR     HCPtrGuestCR3;
-    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pPGM->GCPhysCR3 & X86_CR3_AMD64_PAGE_MASK, (void **)&HCPtrGuestCR3); /** @todo r=bird: This GCPhysCR3 masking isn't necessary. */
-    AssertRCReturn(rc, NULL);
-
-    pPGM->pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pPGM->pGstAmd64Pml4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
-# endif
+            pgmUnlock(pVM);
+            return VINF_SUCCESS;
+        }
+    }
 
     pgmUnlock(pVM);
-    return pPGM->CTX_SUFF(pGstAmd64Pml4);
+    *ppPml4 = NULL;
+    return rc;
 }
+
 #endif
 
 /**
@@ -1531,7 +1576,7 @@ PX86PML4 pgmGstLazyMapPml4(PPGMCPU pPGM)
 VMMDECL(X86PDPE) PGMGstGetPaePDPtr(PVMCPU pVCpu, unsigned iPdpt)
 {
     Assert(iPdpt <= 3);
-    return pgmGstGetPaePDPTPtr(&pVCpu->pgm.s)->a[iPdpt & 3];
+    return pgmGstGetPaePDPTPtr(pVCpu)->a[iPdpt & 3];
 }
 
 
@@ -1691,17 +1736,17 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
     RTGCPHYS GCPhysCR3;
     switch (pVCpu->pgm.s.enmGuestMode)
     {
-    case PGMMODE_PAE:
-    case PGMMODE_PAE_NX:
-        GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
-        break;
-    case PGMMODE_AMD64:
-    case PGMMODE_AMD64_NX:
-        GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_AMD64_PAGE_MASK);
-        break;
-    default:
-        GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
-        break;
+        case PGMMODE_PAE:
+        case PGMMODE_PAE_NX:
+            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
+            break;
+        case PGMMODE_AMD64:
+        case PGMMODE_AMD64_NX:
+            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_AMD64_PAGE_MASK);
+            break;
+        default:
+            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
+            break;
     }
 
     if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
@@ -2112,7 +2157,35 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
  */
 VMM_INT_DECL(void) PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe)
 {
-    /* later */
+    Log(("PGMNotifyNxeChanged: fNxe=%RTbool\n", fNxe));
+    if (fNxe)
+    {
+        /*pVCpu->pgm.s.fGst32BitMbzBigPdeMask - N/A */
+        pVCpu->pgm.s.fGstPaeMbzPteMask       &= ~X86_PTE_PAE_NX;
+        pVCpu->pgm.s.fGstPaeMbzPdeMask       &= ~X86_PDE_PAE_NX;
+        pVCpu->pgm.s.fGstPaeMbzBigPdeMask    &= ~X86_PDE2M_PAE_NX;
+        /*pVCpu->pgm.s.fGstPaeMbzPdpeMask - N/A */
+        pVCpu->pgm.s.fGstAmd64MbzPteMask     &= ~X86_PTE_PAE_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPdeMask     &= ~X86_PDE_PAE_NX;
+        pVCpu->pgm.s.fGstAmd64MbzBigPdeMask  &= ~X86_PDE2M_PAE_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPdpeMask    &= ~X86_PDPE_LM_NX;
+        pVCpu->pgm.s.fGstAmd64MbzBigPdpeMask &= ~X86_PDPE_LM_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPml4eMask   &= ~X86_PML4E_NX;
+    }
+    else
+    {
+        /*pVCpu->pgm.s.fGst32BitMbzBigPdeMask - N/A */
+        pVCpu->pgm.s.fGstPaeMbzPteMask       |= X86_PTE_PAE_NX;
+        pVCpu->pgm.s.fGstPaeMbzPdeMask       |= X86_PDE_PAE_NX;
+        pVCpu->pgm.s.fGstPaeMbzBigPdeMask    |= X86_PDE2M_PAE_NX;
+        /*pVCpu->pgm.s.fGstPaeMbzPdpeMask - N/A */
+        pVCpu->pgm.s.fGstAmd64MbzPteMask     |= X86_PTE_PAE_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPdeMask     |= X86_PDE_PAE_NX;
+        pVCpu->pgm.s.fGstAmd64MbzBigPdeMask  |= X86_PDE2M_PAE_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPdpeMask    |= X86_PDPE_LM_NX;
+        pVCpu->pgm.s.fGstAmd64MbzBigPdpeMask |= X86_PDPE_LM_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPml4eMask   |= X86_PML4E_NX;
+    }
 }
 
 
