@@ -412,7 +412,7 @@ PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
     PX86PML4E   pPml4eIgn;
     X86PDPE     PdpeIgn;
-    unsigned    iPd;
+    unsigned    iPd = 0;                /* shut up gcc */
     PCX86PDPAE  pPd = pgmGstGetLongModePDPtr(pVCpu, GCPtr, &pPml4eIgn, &PdpeIgn, &iPd);
     /* Note! We do not return an effective PDE here like we do for the PTE in GetPage method. */
 # endif
