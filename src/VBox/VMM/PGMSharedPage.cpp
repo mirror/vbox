@@ -23,16 +23,17 @@
 #include <VBox/pgm.h>
 #include <VBox/stam.h>
 #include "PGMInternal.h"
-#include "PGMInline.h"
 #include <VBox/vm.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <iprt/assert.h>
 #include <iprt/asm.h>
-#include <iprt/string.h>
+#include <iprt/assert.h>
 #include <iprt/mem.h>
+#include <iprt/string.h>
+
+#include "PGMInline.h"
 
 #if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
 /* Keep a copy of all registered shared modules for the .pgmcheckduppages debugger command. */
@@ -371,7 +372,7 @@ DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdH
     pgmUnlock(pVM);
 
     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\nNumber of zero pages      %08x (%d MB)\n", cZero, cZero / 256);
-    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of alloczero pages %08x (%d MB)\n", cAllocZero, cAllocZero / 256);    
+    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of alloczero pages %08x (%d MB)\n", cAllocZero, cAllocZero / 256);
     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of ballooned pages %08x (%d MB)\n", cBallooned, cBallooned / 256);
     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of shared pages    %08x (%d MB)\n", cShared, cShared / 256);
     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Number of unique pages    %08x (%d MB)\n", cUnique, cUnique / 256);
@@ -398,7 +399,7 @@ DECLCALLBACK(int)  pgmR3CmdShowSharedModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
     {
         if (pSharedModules[i])
         {
-            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Shared module %s (%s):\n", pSharedModules[i]->szName, pSharedModules[i]->szVersion); 
+            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Shared module %s (%s):\n", pSharedModules[i]->szName, pSharedModules[i]->szVersion);
             for (unsigned j = 0; j < pSharedModules[i]->cRegions; j++)
             {
                 pCmdHlp->pfnPrintf(pCmdHlp, NULL, "--- Region %d: base %RGv size %x\n", j, pSharedModules[i]->aRegions[j].GCRegionAddr, pSharedModules[i]->aRegions[j].cbRegion);
