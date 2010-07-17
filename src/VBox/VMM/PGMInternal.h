@@ -288,7 +288,7 @@
  * @remark  There is no need to assert on the result.
  */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-# define PGM_RCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhys, ppv) \
+# define PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhys, ppv) \
      pgmR0DynMapGCPageInlined(&(pVCpu)->CTX_SUFF(pVM)->pgm.s, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhys, ppv) \
