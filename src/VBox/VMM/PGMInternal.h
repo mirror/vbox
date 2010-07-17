@@ -2855,7 +2855,8 @@ typedef struct PGM
     /** The ring-0 mapping of the zero page. */
     RTR0PTR                         pvZeroPgR0;
     /** The GC mapping of the zero page. */
-    RTGCPTR                         pvZeroPgRC;
+    RTRCPTR                         pvZeroPgRC;
+    RTRCPTR                         RCPtrAlignment3;
     /** @}*/
 
     /** @name   The Invalid MMIO page.
@@ -2869,6 +2870,9 @@ typedef struct PGM
     RTHCPHYS                        HCPhysInvMmioPg;
     /** The ring-3 mapping of the invalid MMIO page. */
     RTR3PTR                         pvMmioPgR3;
+#if HC_ARCH_BITS == 32
+    RTR3PTR                         R3PtrAlignment4;
+#endif
     /** @} */
 
 
