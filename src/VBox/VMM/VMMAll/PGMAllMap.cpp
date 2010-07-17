@@ -291,7 +291,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                         GstPdpe.u = X86_PDPE_P;
                     else
                     {
-                        PX86PDPE pGstPdpe = pgmGstGetPaePDPEPtr(&pVCpu->pgm.s, iPdPt << X86_PDPT_SHIFT);
+                        PX86PDPE pGstPdpe = pgmGstGetPaePDPEPtr(pVCpu, iPdPt << X86_PDPT_SHIFT);
                         if (pGstPdpe)
                             GstPdpe = *pGstPdpe;
                         else
@@ -720,7 +720,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
         /*
          * Resolve the page directory.
          */
-        PX86PD pPD = pgmGstGet32bitPDPtr(&pVCpu->pgm.s);
+        PX86PD pPD = pgmGstGet32bitPDPtr(pVCpu);
         Assert(pPD);
 
         for (PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings); pCur; pCur = pCur->CTX_SUFF(pNext))
@@ -758,7 +758,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
             unsigned  iPT = pCur->cb >> X86_PD_PAE_SHIFT;
             while (iPT-- > 0)
             {
-                X86PDEPAE Pde = pgmGstGetPaePDE(&pVCpu->pgm.s, GCPtr);
+                X86PDEPAE Pde = pgmGstGetPaePDE(pVCpu, GCPtr);
 
                 if (   Pde.n.u1Present
                     && (pVM->fRawR0Enabled || Pde.n.u1User))
@@ -809,7 +809,7 @@ int pgmMapResolveConflicts(PVM pVM)
         /*
          * Resolve the page directory.
          */
-        PX86PD pPD = pgmGstGet32bitPDPtr(&pVCpu->pgm.s);
+        PX86PD pPD = pgmGstGet32bitPDPtr(pVCpu);
         Assert(pPD);
 
         /*
@@ -861,7 +861,7 @@ int pgmMapResolveConflicts(PVM pVM)
             unsigned    iPT   = pCur->cb >> X86_PD_PAE_SHIFT;
             while (iPT-- > 0)
             {
-                X86PDEPAE Pde = pgmGstGetPaePDE(&pVCpu->pgm.s, GCPtr);
+                X86PDEPAE Pde = pgmGstGetPaePDE(pVCpu, GCPtr);
 
                 if (   Pde.n.u1Present
                     && (pVM->fRawR0Enabled || Pde.n.u1User))

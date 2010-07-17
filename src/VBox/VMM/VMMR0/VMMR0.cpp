@@ -1308,8 +1308,8 @@ VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchB
 #endif
 }
 
-
 #ifdef LOG_ENABLED
+
 /**
  * Disables flushing of the ring-0 debug log.
  *
@@ -1334,7 +1334,8 @@ VMMR0DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
     if (pVCpu->vmm.s.pR0LoggerR0)
         pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
 }
-#endif
+
+#endif /* LOG_ENABLED */
 
 /**
  * Jump back to ring-3 if we're the EMT and the longjmp is armed.

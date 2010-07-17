@@ -1005,16 +1005,16 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
 
             /* AMD64 Architecture Programmer's Manual: 15.15 TLB Control; flush the TLB
                if MSR_K6_EFER_NXE, MSR_K6_EFER_LME or MSR_K6_EFER_LMA are changed. */
-            if (   (uValue                      & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA))
+            if (   (uOldEFER                    & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA))
                 != (pVCpu->cpum.s.Guest.msrEFER & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA)))
             {
                 /// @todo PGMFlushTLB(pVCpu, cr3, true /*fGlobal*/);
                 HWACCMFlushTLB(pVCpu);
 
                 /* Notify PGM about NXE changes. */
-                if (   (uValue        & MSR_K6_EFER_NXE)
+                if (   (uOldEFER                    & MSR_K6_EFER_NXE)
                     != (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE))
-                    PGMNotifyNxeChanged(pVCpu, !!(uValue & MSR_K6_EFER_NXE));
+                    PGMNotifyNxeChanged(pVCpu, !(uOldEFER & MSR_K6_EFER_NXE));
             }
             break;
         }
