@@ -406,7 +406,7 @@ PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
     PX86PD      pPd = pgmGstGet32bitPDPtr(pVCpu);
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
-    unsigned    iPd;
+    unsigned    iPd = 0;                /* shut up gcc */
     PCX86PDPAE  pPd = pgmGstGetPaePDPtr(pVCpu, GCPtr, &iPd, NULL);
 
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
