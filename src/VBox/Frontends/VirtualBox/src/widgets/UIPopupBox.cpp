@@ -264,8 +264,8 @@ void UIPopupBox::updateHover(bool fForce /* = false */)
         QPixmap i = m_icon.pixmap(16, 16);
 #ifdef Q_WS_MAC
         /* todo: fix this */
-        if (!m_fHeaderHover)
-            i = QPixmap::fromImage(toGray(i.toImage()));
+//        if (!m_fHeaderHover)
+//            i = QPixmap::fromImage(toGray(i.toImage()));
 #endif /* Q_WS_MAC */
         m_pTitleIcon->setPixmap(i);
         update();
