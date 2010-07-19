@@ -69,7 +69,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
             RTGCPHYS GCPhys;
             uint64_t fFlags;
 
-            /** todo: inefficient to fetch each guest page like this... */
+            /** @todo inefficient to fetch each guest page like this... */
             rc = PGMGstGetPage(pVCpu, GCRegion, &fFlags, &GCPhys);
             if (    rc == VINF_SUCCESS
                 &&  !(fFlags & X86_PTE_RW)) /* important as we make assumptions about this below! */
@@ -123,11 +123,11 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
             }
             else
             {
-                Assert(    rc == VINF_SUCCESS 
+                Assert(    rc == VINF_SUCCESS
                        ||  rc == VERR_PAGE_NOT_PRESENT
                        ||  rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT
                        ||  rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT
-                       ||  rc == VERR_PAGE_TABLE_NOT_PRESENT);  
+                       ||  rc == VERR_PAGE_TABLE_NOT_PRESENT);
                 rc = VINF_SUCCESS;  /* ignore error */
             }
 
