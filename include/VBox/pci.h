@@ -449,6 +449,27 @@ DECLINLINE(uint16_t) PCIDevGetSubSystemId(PPCIDEVICE pPciDev)
     return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_SUBSYSTEM_ID], pPciDev->config[VBOX_PCI_SUBSYSTEM_ID + 1]));
 }
 
+/**
+ * Sets offset to capability list.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u8Offset        The offset to capability list.
+ */
+DECLINLINE(void) PCIDevSetCapabilityList(PPCIDEVICE pPciDev, uint8_t u8Offset)
+{
+    pPciDev->config[VBOX_PCI_CAPABILITY_LIST] = u8Offset;
+} 
+
+/**
+ * Returns offset to capability list.
+ *
+ * @returns offset to capability list.
+ * @param   pPciDev         The PCI device.
+ */
+DECLINLINE(uint8_t) PCIDevGetCapabilityList(PPCIDEVICE pPciDev)
+{
+    return pPciDev->config[VBOX_PCI_CAPABILITY_LIST];
+} 
 
 /**
  * Sets the interrupt line config register.
