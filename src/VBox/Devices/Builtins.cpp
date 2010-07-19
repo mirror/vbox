@@ -121,7 +121,7 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 #ifdef VBOX_WITH_AUDIO_INTELHD
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceICHINTELHD);
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceICH6_HDA);
     if (RT_FAILURE(rc))
         return rc;
 #endif
