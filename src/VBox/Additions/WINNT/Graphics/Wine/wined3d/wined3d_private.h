@@ -1823,7 +1823,12 @@ HRESULT resource_get_private_data(IWineD3DResource *iface, REFGUID guid,
         void *data, DWORD *data_size) DECLSPEC_HIDDEN;
 HRESULT resource_init(IWineD3DResource *iface, WINED3DRESOURCETYPE resource_type,
         IWineD3DDeviceImpl *device, UINT size, DWORD usage, const struct wined3d_format_desc *format_desc,
-        WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops) DECLSPEC_HIDDEN;
+        WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
+#ifdef VBOXWDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        ) DECLSPEC_HIDDEN;
 WINED3DRESOURCETYPE resource_get_type(IWineD3DResource *iface) DECLSPEC_HIDDEN;
 DWORD resource_set_priority(IWineD3DResource *iface, DWORD new_priority) DECLSPEC_HIDDEN;
 HRESULT resource_set_private_data(IWineD3DResource *iface, REFGUID guid,
@@ -1941,7 +1946,12 @@ typedef struct IWineD3DTextureImpl
 
 HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT levels,
         IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format, WINED3DPOOL pool,
-        IUnknown *parent, const struct wined3d_parent_ops *parent_ops) DECLSPEC_HIDDEN;
+        IUnknown *parent, const struct wined3d_parent_ops *parent_ops
+#ifdef VBOXWDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        ) DECLSPEC_HIDDEN;
 
 /*****************************************************************************
  * IWineD3DCubeTexture implementation structure (extends IWineD3DBaseTextureImpl)
@@ -2130,7 +2140,12 @@ void surface_gdi_cleanup(IWineD3DSurfaceImpl *This) DECLSPEC_HIDDEN;
 HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type, UINT alignment,
         UINT width, UINT height, UINT level, BOOL lockable, BOOL discard, WINED3DMULTISAMPLE_TYPE multisample_type,
         UINT multisample_quality, IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format,
-        WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops) DECLSPEC_HIDDEN;
+        WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
+#ifdef VBOXWDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        ) DECLSPEC_HIDDEN;
 
 /* Predeclare the shared Surface functions */
 HRESULT WINAPI IWineD3DBaseSurfaceImpl_QueryInterface(IWineD3DSurface *iface,
@@ -2212,6 +2227,14 @@ void flip_surface(IWineD3DSurfaceImpl *front, IWineD3DSurfaceImpl *back) DECLSPE
 #define SFLAG_INOVERLAYDRAW 0x00800000 /* Overlay drawing is in progress. Recursion prevention */
 #define SFLAG_SWAPCHAIN     0x01000000 /* The surface is part of a swapchain */
 
+#ifdef VBOXWDDM
+# define SFLAG_CLIENTMEM     0x10000000 /* SYSMEM surface using client-supplied memory buffer */
+
+# define SFLAG_DONOTFREE_VBOXWDDM SFLAG_CLIENTMEM
+#else
+# define SFLAG_DONOTFREE_VBOXWDDM 0
+#endif
+
 /* In some conditions the surface memory must not be freed:
  * SFLAG_CONVERTED: Converting the data back would take too long
  * SFLAG_DIBSECTION: The dib code manages the memory
@@ -2226,7 +2249,9 @@ void flip_surface(IWineD3DSurfaceImpl *front, IWineD3DSurfaceImpl *back) DECLSPE
                              SFLAG_DYNLOCK    | \
                              SFLAG_USERPTR    | \
                              SFLAG_PBO        | \
-                             SFLAG_CLIENT)
+                             SFLAG_CLIENT     | \
+                             SFLAG_DONOTFREE_VBOXWDDM \
+                             )
 
 #define SFLAG_LOCATIONS     (SFLAG_INSYSMEM   | \
                              SFLAG_INTEXTURE  | \

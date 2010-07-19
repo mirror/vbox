@@ -43,7 +43,11 @@ HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DR
     HRESULT hr;
 
     hr = resource_init((IWineD3DResource *)texture, resource_type, device,
-            size, usage, format_desc, pool, parent, parent_ops);
+            size, usage, format_desc, pool, parent, parent_ops
+#ifdef VBOXWDDM
+            , NULL, NULL /* <- no need this info here */
+#endif
+            );
     if (FAILED(hr))
     {
         WARN("Failed to initialize resource, returning %#x\n", hr);

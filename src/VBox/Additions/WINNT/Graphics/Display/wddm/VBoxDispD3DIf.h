@@ -21,6 +21,8 @@
 
 #include <D3D9.h>
 
+#include "../../Wine/vbox/VBoxWineEx.h"
+
 /* D3D functionality the VBOXDISPD3D provides */
 typedef HRESULT WINAPI FNVBOXDISPD3DCREATE9EX(UINT SDKVersion, IDirect3D9Ex **ppD3D);
 typedef FNVBOXDISPD3DCREATE9EX *PFNVBOXDISPD3DCREATE9EX;
@@ -29,6 +31,8 @@ typedef struct VBOXDISPD3D
 {
     /* D3D functionality the VBOXDISPD3D provides */
     PFNVBOXDISPD3DCREATE9EX pfnDirect3DCreate9Ex;
+
+    PFNVBOXWINEEXD3DDEV9_CREATETEXTURE pfnVBoxWineExD3DDev9CreateTexture;
 
     /* module handle */
     HMODULE hD3DLib;

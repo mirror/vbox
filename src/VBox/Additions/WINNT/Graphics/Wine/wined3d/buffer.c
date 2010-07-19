@@ -1472,7 +1472,11 @@ HRESULT buffer_init(struct wined3d_buffer *buffer, IWineD3DDeviceImpl *device,
     buffer->vtbl = &wined3d_buffer_vtbl;
 
     hr = resource_init((IWineD3DResource *)buffer, WINED3DRTYPE_BUFFER,
-            device, size, usage, format_desc, pool, parent, parent_ops);
+            device, size, usage, format_desc, pool, parent, parent_ops
+#ifdef VBOXWDDM
+            , NULL, NULL /* <- no need this info here so far */
+#endif
+            );
     if (FAILED(hr))
     {
         WARN("Failed to initialize resource, hr %#x\n", hr);

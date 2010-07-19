@@ -33,7 +33,14 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
         pD3D->pfnDirect3DCreate9Ex = (PFNVBOXDISPD3DCREATE9EX)GetProcAddress(pD3D->hD3DLib, "Direct3DCreate9Ex");
         Assert(pD3D->pfnDirect3DCreate9Ex);
         if (pD3D->pfnDirect3DCreate9Ex)
-            return S_OK;
+        {
+            pD3D->pfnVBoxWineExD3DDev9CreateTexture = (PFNVBOXWINEEXD3DDEV9_CREATETEXTURE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9CreateTexture");
+            Assert(pD3D->pfnVBoxWineExD3DDev9CreateTexture);
+            if (pD3D->pfnVBoxWineExD3DDev9CreateTexture)
+            {
+                return S_OK;
+            }
+        }
         else
         {
             DWORD winErr = GetLastError();

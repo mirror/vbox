@@ -47,6 +47,10 @@
 #include "d3d9.h"
 #include "wine/wined3d.h"
 
+#ifdef VBOXWDDM
+#include "../vbox/VBoxWineEx.h"
+#endif
+
 /* ===========================================================================
    Internal use
    =========================================================================== */
@@ -315,7 +319,12 @@ typedef struct IDirect3DSurface9Impl
 
 HRESULT surface_init(IDirect3DSurface9Impl *surface, IDirect3DDevice9Impl *device,
         UINT width, UINT height, D3DFORMAT format, BOOL lockable, BOOL discard, UINT level,
-        DWORD usage, D3DPOOL pool, D3DMULTISAMPLE_TYPE multisample_type, DWORD multisample_quality) DECLSPEC_HIDDEN;
+        DWORD usage, D3DPOOL pool, D3DMULTISAMPLE_TYPE multisample_type, DWORD multisample_quality
+#ifdef VBOXWDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        ) DECLSPEC_HIDDEN;
 
 /* ---------------------- */
 /* IDirect3DVertexBuffer9 */
@@ -427,7 +436,12 @@ typedef struct IDirect3DTexture9Impl
 } IDirect3DTexture9Impl;
 
 HRESULT texture_init(IDirect3DTexture9Impl *texture, IDirect3DDevice9Impl *device,
-        UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool) DECLSPEC_HIDDEN;
+        UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool
+#ifdef VBOXWDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        ) DECLSPEC_HIDDEN;
 
 /* ----------------------- */
 /* IDirect3DVolumeTexture9 */
