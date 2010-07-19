@@ -1172,6 +1172,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     rc = setError(VBOX_E_VM_ERROR,
                                   tr("The guest execution service is not ready"));
                 }
+                else if (vrc == VERR_HGCM_SERVICE_NOT_FOUND)
+                {
+                    rc = setError(VBOX_E_VM_ERROR,
+                                  tr("The guest execution service is not available"));
+                }
                 else /* HGCM call went wrong. */
                 {
                     rc = setError(E_UNEXPECTED,
