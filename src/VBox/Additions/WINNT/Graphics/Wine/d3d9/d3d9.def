@@ -14,4 +14,3 @@ EXPORTS
   DebugSetMute@0=DebugSetMute
   Direct3DCreate9@4=Direct3DCreate9
   Direct3DCreate9Ex@8=Direct3DCreate9Ex
-  VBoxWineExD3DDev9CreateTexture
