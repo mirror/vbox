@@ -3940,11 +3940,12 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
 
         if (!(uImageFlags & VD_IMAGE_FLAGS_FIXED))
         {
+            /* fPreAlloc should never be false because VMware can't use such images. */
             rc = vmdkCreateGrainDirectory(pExtent,
                                           RT_MAX(  pExtent->uDescriptorSector
                                                  + pExtent->cDescriptorSectors,
                                                  1),
-                                          true);
+                                          true /* fPreAlloc */);
             if (RT_FAILURE(rc))
                 return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new grain directory in '%s'"), pExtent->pszFullname);
         }
@@ -6473,28 +6474,8 @@ static bool vmdkIsAsyncIOSupported(void *pvBackendData)
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
 
-#if 1 /** @todo: Remove once the async support is tested throughly */
-    bool fAsyncIOSupported = false;
-
-    if (pImage)
-    {
-        fAsyncIOSupported = true;
-        for (unsigned i = 0; i < pImage->cExtents; i++)
-        {
-            if  (    pImage->pExtents[i].enmType != VMDKETYPE_FLAT
-                 &&  pImage->pExtents[i].enmType != VMDKETYPE_ZERO)
-            {
-                fAsyncIOSupported = false;
-                break; /* Stop search */
-            }
-        }
-    }
-
-    return fAsyncIOSupported;
-#else
     /* We do not support async I/O for stream optimized VMDK images. */
     return (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED) == 0;
-#endif
 }
 
 static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
