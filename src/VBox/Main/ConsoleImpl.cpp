@@ -576,11 +576,7 @@ void Console::uninit()
     // we don't perform uninit() as it's possible that some pending event refers to this source
     unconst(mEventSource).setNull();
 
-    /* dynamically allocated members of mCallbackData are uninitialized
-     * at the end of powerDown() */
-    Assert(!mCallbackData.mpsc.valid && mCallbackData.mpsc.shape.isNull());
-    Assert(!mCallbackData.mcc.valid);
-    Assert(!mCallbackData.klc.valid);
+    mCallbackData.clear();
 
     LogFlowThisFuncLeave();
 }
