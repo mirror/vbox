@@ -2824,7 +2824,7 @@ ResumeExecution:
                 {   /* A genuine pagefault.
                      * Forward the trap to the guest by injecting the exception and resuming execution.
                      */
-                    Log(("Guest page fault at %RGv cr2=%RGv error code %x rsp=%RGv\n", (RTGCPTR)pCtx->rip, exitQualification, errCode, (RTGCPTR)pCtx->rsp));
+                    Log(("Guest page fault at %RGv cr2=%RGv error code %RGv rsp=%RGv\n", (RTGCPTR)pCtx->rip, exitQualification, errCode, (RTGCPTR)pCtx->rsp));
 
                     Assert(CPUMIsGuestInPagedProtectedModeEx(pCtx));
 
