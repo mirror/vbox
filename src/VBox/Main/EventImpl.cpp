@@ -15,7 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/**
+/** @page pg_main_events    Events
+ *
  * Theory of operations.
  *
  * This code implements easily extensible event mechanism, letting us
