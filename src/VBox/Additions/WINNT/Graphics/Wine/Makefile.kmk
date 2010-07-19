@@ -185,6 +185,9 @@ VBoxD3D8_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOC
 ifneq ($(KBUILD_TYPE),debug)
  VBoxD3D8_DEFS       += WINE_NO_DEBUG_MSGS
 endif
+#ifdef VBOXWDDM
+# VBoxD3D8_DEFS        += VBOXWDDM IN_VBOXWINEEX 
+#endif
 VBoxD3D8_INCS         := $(PATH_SUB_CURRENT)/include
 VBoxD3D8_SOURCES      := \
     d3d8/cubetexture.c \
@@ -205,7 +208,6 @@ VBoxD3D8_SOURCES      := \
 VBoxD3D8_LIBS = \
     $(PATH_LIB)/libWine$(VBOX_SUFF_LIB) \
     $(PATH_LIB)/wined3d$(VBOX_SUFF_LIB)
-
 DLLS += VBoxD3D9
 
 VBoxD3D9_TEMPLATE     = VBOXGUESTR3NPDLL
@@ -219,6 +221,9 @@ VBoxD3D9_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOC
     BIN_TO_DATADIR=\"\"
 ifneq ($(KBUILD_TYPE),debug)
  VBoxD3D9_DEFS       += WINE_NO_DEBUG_MSGS
+endif
+ifdef VBOXWDDM
+ VBoxD3D9_DEFS        += VBOXWDDM IN_VBOXWINEEX 
 endif
 VBoxD3D9_INCS         := $(PATH_SUB_CURRENT)/include
 VBoxD3D9_SOURCES      := \

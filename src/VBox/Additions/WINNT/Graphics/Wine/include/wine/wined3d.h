@@ -2688,7 +2688,12 @@ typedef struct IWineD3DDeviceParentVtbl {
         WINED3DPOOL pool,
         UINT level,
         WINED3DCUBEMAP_FACES face,
-        IWineD3DSurface **surface);
+        IWineD3DSurface **surface
+#ifdef VBOXWDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        );
 
     HRESULT (STDMETHODCALLTYPE *CreateRenderTarget)(
         IWineD3DDeviceParent* This,
@@ -2741,7 +2746,11 @@ interface IWineD3DDeviceParent {
 #define IWineD3DDeviceParent_Release(This) (This)->lpVtbl->Release(This)
 /*** IWineD3DDeviceParent methods ***/
 #define IWineD3DDeviceParent_WineD3DDeviceCreated(This,device) (This)->lpVtbl->WineD3DDeviceCreated(This,device)
+#ifdef VBOXWDDM
+#define IWineD3DDeviceParent_CreateSurface(This,superior,width,height,format,usage,pool,level,face,surface,shared_handle,pvClientMem) (This)->lpVtbl->CreateSurface(This,superior,width,height,format,usage,pool,level,face,surface,shared_handle,pvClientMem)
+#else
 #define IWineD3DDeviceParent_CreateSurface(This,superior,width,height,format,usage,pool,level,face,surface) (This)->lpVtbl->CreateSurface(This,superior,width,height,format,usage,pool,level,face,surface)
+#endif
 #define IWineD3DDeviceParent_CreateRenderTarget(This,superior,width,height,format,multisample_type,multisample_quality,lockable,surface) (This)->lpVtbl->CreateRenderTarget(This,superior,width,height,format,multisample_type,multisample_quality,lockable,surface)
 #define IWineD3DDeviceParent_CreateDepthStencilSurface(This,superior,width,height,format,multisample_type,multisample_quality,discard,surface) (This)->lpVtbl->CreateDepthStencilSurface(This,superior,width,height,format,multisample_type,multisample_quality,discard,surface)
 #define IWineD3DDeviceParent_CreateVolume(This,superior,width,height,depth,format,pool,usage,volume) (This)->lpVtbl->CreateVolume(This,superior,width,height,depth,format,pool,usage,volume)
@@ -7355,7 +7364,12 @@ typedef struct IWineD3DDeviceVtbl {
         DWORD multisample_quality,
         WINED3DSURFTYPE surface_type,
         IUnknown *parent,
-        const struct wined3d_parent_ops *parent_ops);
+        const struct wined3d_parent_ops *parent_ops
+#ifdef VBOXWDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        );
 
     HRESULT (STDMETHODCALLTYPE *CreateRendertargetView)(
         IWineD3DDevice* This,
@@ -7373,7 +7387,12 @@ typedef struct IWineD3DDeviceVtbl {
         WINED3DPOOL pool,
         IWineD3DTexture **texture,
         IUnknown *parent,
-        const struct wined3d_parent_ops *parent_ops);
+        const struct wined3d_parent_ops *parent_ops
+#ifdef VBOXWDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        );
 
     HRESULT (STDMETHODCALLTYPE *CreateVolumeTexture)(
         IWineD3DDevice* This,
@@ -8053,9 +8072,17 @@ interface IWineD3DDevice {
 #define IWineD3DDevice_CreateVertexBuffer(This,length,usage,pool,vertex_buffer,parent,parent_ops) (This)->lpVtbl->CreateVertexBuffer(This,length,usage,pool,vertex_buffer,parent,parent_ops)
 #define IWineD3DDevice_CreateIndexBuffer(This,length,usage,pool,index_buffer,parent,parent_ops) (This)->lpVtbl->CreateIndexBuffer(This,length,usage,pool,index_buffer,parent,parent_ops)
 #define IWineD3DDevice_CreateStateBlock(This,type,stateblock,parent) (This)->lpVtbl->CreateStateBlock(This,type,stateblock,parent)
+#ifdef VBOXWDDM
+#define IWineD3DDevice_CreateSurface(This,width,height,format,lockable,discard,level,surface,usage,pool,multisample_type,multisample_quality,surface_type,parent,parent_ops,shared_handle,pvClientMem) (This)->lpVtbl->CreateSurface(This,width,height,format,lockable,discard,level,surface,usage,pool,multisample_type,multisample_quality,surface_type,parent,parent_ops,shared_handle,pvClientMem)
+#else
 #define IWineD3DDevice_CreateSurface(This,width,height,format,lockable,discard,level,surface,usage,pool,multisample_type,multisample_quality,surface_type,parent,parent_ops) (This)->lpVtbl->CreateSurface(This,width,height,format,lockable,discard,level,surface,usage,pool,multisample_type,multisample_quality,surface_type,parent,parent_ops)
+#endif
 #define IWineD3DDevice_CreateRendertargetView(This,resource,parent,rendertarget_view) (This)->lpVtbl->CreateRendertargetView(This,resource,parent,rendertarget_view)
+#ifdef VBOXWDDM
+#define IWineD3DDevice_CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pvClientMem) (This)->lpVtbl->CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pvClientMem)
+#else
 #define IWineD3DDevice_CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops)
+#endif
 #define IWineD3DDevice_CreateVolumeTexture(This,width,height,depth,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateVolumeTexture(This,width,height,depth,levels,usage,format,pool,texture,parent,parent_ops)
 #define IWineD3DDevice_CreateVolume(This,width,height,depth,usage,format,pool,volume,parent,parent_ops) (This)->lpVtbl->CreateVolume(This,width,height,depth,usage,format,pool,volume,parent,parent_ops)
 #define IWineD3DDevice_CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops)

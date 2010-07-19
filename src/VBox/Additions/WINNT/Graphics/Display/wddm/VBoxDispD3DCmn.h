@@ -37,7 +37,7 @@
 #ifdef DEBUG
 # define VBOXWDDMDISP_DEBUG
 # define VBOXWDDMDISP_DEBUG_FLOW
-//# define VBOXWDDMDISP_DEBUG_DUMPSURFDATA
+# define VBOXWDDMDISP_DEBUG_DUMPSURFDATA
 #endif
 
 #if 0
@@ -56,6 +56,9 @@
 #endif
 
 #ifdef VBOXWDDMDISP_DEBUG
+extern bool g_VDbgTstDumpEnable;
+extern bool g_VDbgTstDumpOnSys2VidSameSizeEnable;
+
 VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const RECT *pRect, IDirect3DSurface9 *pSurf, const char* pSuffix);
 void vboxVDbgDoMpPrintRect(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const RECT *pRect, const char * pSuffix);
 void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix);

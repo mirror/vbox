@@ -534,8 +534,16 @@ HRESULT cubetexture_init(IWineD3DCubeTextureImpl *texture, UINT edge_length, UIN
                 GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB,
             };
 
+#ifdef VBOXWDDM
             hr = IWineD3DDeviceParent_CreateSurface(device->device_parent, parent, tmp_w, tmp_w,
-                    format, usage, pool, i /* Level */, j, &texture->surfaces[j][i]);
+                    format, usage, pool, i /* Level */, j, &texture->surfaces[j][i]
+                    , NULL, NULL /* <- no need this info here */
+                );
+#else
+            hr = IWineD3DDeviceParent_CreateSurface(device->device_parent, parent, tmp_w, tmp_w,
+                    format, usage, pool, i /* Level */, j, &texture->surfaces[j][i]
+                );
+#endif
             if (FAILED(hr))
             {
                 FIXME("(%p) Failed to create surface, hr %#x.\n", texture, hr);

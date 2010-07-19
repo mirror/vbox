@@ -38,7 +38,12 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 
 HRESULT resource_init(IWineD3DResource *iface, WINED3DRESOURCETYPE resource_type,
         IWineD3DDeviceImpl *device, UINT size, DWORD usage, const struct wined3d_format_desc *format_desc,
-        WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops)
+        WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
+#ifdef VBOXWDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        )
 {
     struct IWineD3DResourceClass *resource = &((IWineD3DResourceImpl *)iface)->resource;
 
@@ -54,20 +59,30 @@ HRESULT resource_init(IWineD3DResource *iface, WINED3DRESOURCETYPE resource_type
     resource->parent_ops = parent_ops;
     list_init(&resource->privateData);
 
-    if (size)
+#ifdef VBOXWDDM
+    if (pool == WINED3DPOOL_SYSTEMMEM && pvClientMem)
     {
-        resource->heapMemory = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size + RESOURCE_ALIGNMENT);
-        if (!resource->heapMemory)
-        {
-            ERR("Out of memory!\n");
-            return WINED3DERR_OUTOFVIDEOMEMORY;
-        }
-    }
-    else
-    {
+        resource->allocatedMemory = pvClientMem;
         resource->heapMemory = NULL;
     }
-    resource->allocatedMemory = (BYTE *)(((ULONG_PTR)resource->heapMemory + (RESOURCE_ALIGNMENT - 1)) & ~(RESOURCE_ALIGNMENT - 1));
+    else
+#endif
+    {
+        if (size)
+        {
+            resource->heapMemory = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size + RESOURCE_ALIGNMENT);
+            if (!resource->heapMemory)
+            {
+                ERR("Out of memory!\n");
+                return WINED3DERR_OUTOFVIDEOMEMORY;
+            }
+        }
+        else
+        {
+            resource->heapMemory = NULL;
+        }
+        resource->allocatedMemory = (BYTE *)(((ULONG_PTR)resource->heapMemory + (RESOURCE_ALIGNMENT - 1)) & ~(RESOURCE_ALIGNMENT - 1));
+    }
 
     /* Check that we have enough video ram left */
     if (pool == WINED3DPOOL_DEFAULT)

@@ -407,7 +407,11 @@ HRESULT volume_init(IWineD3DVolumeImpl *volume, IWineD3DDeviceImpl *device, UINT
     volume->lpVtbl = &IWineD3DVolume_Vtbl;
 
     hr = resource_init((IWineD3DResource *)volume, WINED3DRTYPE_VOLUME, device,
-            width * height * depth * format_desc->byte_count, usage, format_desc, pool, parent, parent_ops);
+            width * height * depth * format_desc->byte_count, usage, format_desc, pool, parent, parent_ops
+#ifdef VBOXWDDM
+            , NULL, NULL
+#endif
+            );
     if (FAILED(hr))
     {
         WARN("Failed to initialize resource, returning %#x.\n", hr);
