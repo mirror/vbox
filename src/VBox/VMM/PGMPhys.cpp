@@ -3361,7 +3361,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
     {
         /* Flush the pgm pool cache; call the internal rendezvous handler as we're already in a rendezvous handler here. */
         /* todo: also not really efficient to unmap a chunk that contains PD or PT pages. */
-        pgmR3PoolClearAllRendezvous(pVM, &pVM->aCpus[0], false /* no need to flush the REM TLB as we already did that above */);
+        pgmR3PoolClearAllRendezvous(pVM, &pVM->aCpus[0], NULL /* no need to flush the REM TLB as we already did that above */);
 
         /*
          * Request the ring-0 part to unmap a chunk to make space in the mapping cache.
