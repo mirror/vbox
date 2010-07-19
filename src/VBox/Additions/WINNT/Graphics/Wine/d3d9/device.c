@@ -712,13 +712,13 @@ static void WINAPI IDirect3DDevice9Impl_GetGammaRamp(LPDIRECT3DDEVICE9EX iface, 
     wined3d_mutex_unlock();
 }
 
-#ifdef VBOXWDDM
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *iface,
         UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format,
         D3DPOOL pool, IDirect3DTexture9 **texture, HANDLE *shared_handle,
         void *pvClientMem) /* <- extension arg to pass in the client memory buffer,
                             *    applicable ONLY for SYSMEM textures */
 {
+#ifdef VBOXWDDM
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
     IDirect3DTexture9Impl *object;
     HRESULT hr;
@@ -734,10 +734,8 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *ifac
     }
 
     hr = texture_init(object, This, width, height, levels, usage, format, pool
-#ifdef VBOXWDDM
         , shared_handle
         , pvClientMem
-#endif
             );
     if (FAILED(hr))
     {
@@ -750,8 +748,10 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *ifac
     *texture = (IDirect3DTexture9 *)object;
 
     return D3D_OK;
-}
+#else
+    return E_NOTIMPL;
 #endif
+}
 
 static HRESULT WINAPI IDirect3DDevice9Impl_CreateTexture(IDirect3DDevice9Ex *iface,
         UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format,
