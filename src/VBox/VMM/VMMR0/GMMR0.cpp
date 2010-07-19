@@ -3820,10 +3820,13 @@ GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREG
  * Checks specified shared module range for changes
  *
  * Performs the following tasks:
- * - if a shared page is new, then it changes the GMM page type to shared and returns it in the pPageDesc descriptor
- * - if a shared page already exists, then it checks if the VM page is identical and if so frees the VM page and returns the shared page in pPageDesc descriptor
+ *  - If a shared page is new, then it changes the GMM page type to shared and
+ *    returns it in the pPageDesc descriptor.
+ *  - If a shared page already exists, then it checks if the VM page is
+ *    identical and if so frees the VM page and returns the shared page in
+ *    pPageDesc descriptor.
  *
- * Note: assumes the caller has acquired the GMM semaphore!!
+ * @remarks ASSUMES the caller has acquired the GMM semaphore!!
  *
  * @returns VBox status code.
  * @param   pGMM                Pointer to the GMM instance data.
@@ -3833,7 +3836,8 @@ GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREG
  * @param   idxPage             Page index
  * @param   paPageDesc          Page descriptor
  */
-GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, unsigned idxRegion, unsigned idxPage, PGMMSHAREDPAGEDESC pPageDesc)
+GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, unsigned idxRegion, unsigned idxPage,
+                                          PGMMSHAREDPAGEDESC pPageDesc)
 {
     int rc = VINF_SUCCESS;
     PGMM pGMM;
@@ -3872,6 +3876,8 @@ new_shared_page:
         PGMMPAGE pPage = gmmR0GetPage(pGMM, pPageDesc->uHCPhysPageId);
         if (!pPage)
         {
+            Log(("GMMR0SharedModuleCheckPage: Invalid idPage=%#x #1 (GCPhys=%RGp HCPhys=%RHp idxRegion=%#x idxPage=%#x)\n",
+                 pPageDesc->uHCPhysPageId, pPageDesc->GCPhys, pPageDesc->HCPhys, idxRegion, idxPage));
             AssertFailed();
             rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
             goto end;
@@ -3898,6 +3904,8 @@ new_shared_page:
         PGMMPAGE pPage = gmmR0GetPage(pGMM, pGlobalRegion->paHCPhysPageID[idxPage]);
         if (!pPage)
         {
+            Log(("GMMR0SharedModuleCheckPage: Invalid idPage=%#x #2 (idxRegion=%#x idxPage=%#x)\n",
+                 pPageDesc->uHCPhysPageId, idxRegion, idxPage));
             AssertFailed();
             rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
             goto end;
@@ -3919,6 +3927,7 @@ new_shared_page:
         {
             if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
             {
+                Log(("GMMR0SharedModuleCheckPage: Invalid idPage=%#x #3\n", pPageDesc->uHCPhysPageId));
                 AssertFailed();
                 rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
                 goto end;
@@ -3927,6 +3936,7 @@ new_shared_page:
         }
         else
         {
+            Log(("GMMR0SharedModuleCheckPage: Invalid idPage=%#x #4\n", pPageDesc->uHCPhysPageId));
             AssertFailed();
             rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
             goto end;
