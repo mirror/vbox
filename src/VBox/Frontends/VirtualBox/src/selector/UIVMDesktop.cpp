@@ -1295,7 +1295,9 @@ UIVMDesktop::UIVMDesktop(VBoxToolBar *pToolBar, QAction *pRefreshAction, QWidget
     {
         pToolBar->addWidget(new UIHorizontalSpacerWidget(this));
         pToolBar->addWidget(m_pHeaderBtn);
-        pToolBar->addWidget(new UIHorizontalSpacerWidget(this));
+        QWidget *pSpace = new QWidget(this);
+        pSpace->setFixedSize(10, 1);
+        pToolBar->addWidget(pSpace);
         pToolBar->updateLayout();
     } else
 #else /* DARWIN_USE_TOOLBAR */
