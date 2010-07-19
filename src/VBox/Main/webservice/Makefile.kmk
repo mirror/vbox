@@ -307,7 +307,7 @@ VBoxJWs-inst-jar_CLEAN = \
 	$(VBOX_JWS_GEN)/jwsglue.list \
 	$(wildcard \
 		$(VBOX_JWS_GEN)/java/*.java \
-	        $(VBOX_JWS_GEN)/java/jws/*/*/*.java \
+	        $(VBOX_JWS_GEN)/java/jws/*/*/*/*.java \
 		$(VBOX_JWS_JDEST)/*.class \
 		$(VBOX_JWS_JDEST)/*/*.class \
 		$(VBOX_JWS_JDEST)/*/*/*.class \
@@ -328,9 +328,9 @@ $(VBOX_JWS_GEN)/jwsglue.list:  \
               -o $(VBOX_JWS_GEN)/java/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
 	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JWS_GEN)/java/merged.file $(VBOX_JWS_GEN)/java
 	$(call MSG_GENERATE,,$@,JAX-WS for Java 1.6 bindings using $(VBOXWEBSERVICE_WSDL))
-	$(VBOX_WSIMPORT) -Xnocompile -p $(VBOX_JAVA_PACKAGE) -d $(VBOX_JWS_GEN)/java/jws $(VBOXWEBSERVICE_WSDL)
+	$(VBOX_WSIMPORT) -Xnocompile -p $(VBOX_JAVA_PACKAGE).jaxws -d $(VBOX_JWS_GEN)/java/jws $(VBOXWEBSERVICE_WSDL)
 	$(QUIET)echo $(VBOX_JWS_GEN)/java/*.java > $@
-	$(QUIET)echo $(VBOX_JWS_GEN)/java/jws/*/*/*.java >> $@
+	$(QUIET)echo $(VBOX_JWS_GEN)/java/jws/*/*/*/*.java >> $@
 
 $$(VBOX_JWS_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL) | $$(dir $$@)
 	$(call MSG_TOOL,javac,$(notdir $@),jwsgen.list,)
