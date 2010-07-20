@@ -302,7 +302,7 @@ DECLINLINE(bool) vboxVdmaDirtyRectsIsCover(const RECT *paRects, uint32_t cRects,
 /**
  * @param pDevExt
  */
-NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsInfo)
+static NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsInfo)
 {
     PVBOXWDDM_CONTEXT pContext = pRectsInfo->pContext;
     PDEVICE_EXTENSION pDevExt = pContext->pDevice->pAdapter;
@@ -495,6 +495,61 @@ NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsInfo)
     return Status;
 }
 
+static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCF)
+{
+    NTSTATUS Status = STATUS_UNSUCCESSFUL;
+    PVBOXWDDM_CONTEXT pContext = pCF->pContext;
+    PDEVICE_EXTENSION pDevExt = pContext->pDevice->pAdapter;
+    Assert (pDevExt->pvVisibleVram);
+    if (pDevExt->pvVisibleVram)
+    {
+        PVBOXWDDM_ALLOCATION pAlloc = pCF->pAllocation;
+        Assert(pAlloc->offVram != VBOXVIDEOOFFSET_VOID);
+        if (pAlloc->offVram != VBOXVIDEOOFFSET_VOID)
+        {
+            uint8_t *pvMem = pDevExt->pvVisibleVram + pAlloc->offVram;
+            UINT bpp = pAlloc->SurfDesc.bpp;
+            Assert(bpp);
+            Assert(((bpp * pAlloc->SurfDesc.width) >> 3) == pAlloc->SurfDesc.pitch);
+            switch (bpp)
+            {
+                case 32:
+                {
+                    uint8_t bytestPP = bpp >> 3;
+                    for (UINT i = 0; i < pCF->Rects.cRects; ++i)
+                    {
+                        RECT *pRect = &pCF->Rects.aRects[i];
+                        for (LONG ir = pRect->top; ir < pRect->bottom; ++ir)
+                        {
+                            uint32_t * pvU32Mem = (uint32_t*)(pvMem + (ir * pAlloc->SurfDesc.pitch) + (pRect->left * bytestPP));
+                            uint32_t cRaw = (pRect->right - pRect->left) * bytestPP;
+                            Assert(pRect->left >= 0);
+                            Assert(pRect->right <= (LONG)pAlloc->SurfDesc.width);
+                            Assert(pRect->top >= 0);
+                            Assert(pRect->bottom <= (LONG)pAlloc->SurfDesc.height);
+                            for (UINT j = 0; j < cRaw; ++j)
+                            {
+                                *pvU32Mem = pCF->Color;
+                                ++pvU32Mem;
+                            }
+                        }
+                    }
+                    Status = STATUS_SUCCESS;
+                    break;
+                }
+                case 16:
+                case 8:
+                default:
+                    AssertBreakpoint();
+                    break;
+            }
+        }
+    }
+
+    NTSTATUS cmplStatus = vboxWddmDmaCmdNotifyCompletion(pDevExt, pContext, pCF->SubmissionFenceId);
+    Assert(cmplStatus == STATUS_SUCCESS);
+    return Status;
+}
 
 static VOID vboxVdmaGgWorkerThread(PVOID pvUser)
 {
@@ -523,7 +578,13 @@ static VOID vboxVdmaGgWorkerThread(PVOID pvUser)
                             Assert(Status == STATUS_SUCCESS);
                             break;
                         }
-                        case VBOXVDMAPIPE_CMD_TYPE_DMACMD:
+                        case VBOXVDMAPIPE_CMD_TYPE_DMACMD_CLRFILL:
+                        {
+                            PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCF = (PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL)pDr;
+                            Status = vboxVdmaGgDmaColorFill(pCF);
+                            Assert(Status == STATUS_SUCCESS);
+                            break;
+                        }
                         default:
                             AssertBreakpoint();
                     }
@@ -619,7 +680,7 @@ static int vboxWddmVdmaSubmitHgsmi(struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAI
 #define vboxWddmVdmaSubmit vboxWddmVdmaSubmitHgsmi
 #endif
 
-static int vboxVdmaInformHost (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, VBOXVDMA_CTL_TYPE enmCtl)
+static int vboxVdmaInformHost(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, VBOXVDMA_CTL_TYPE enmCtl)
 {
     int rc = VINF_SUCCESS;
 
@@ -673,7 +734,7 @@ static int vboxVdmaInformHost (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, V
 }
 
 /* create a DMACommand buffer */
-int vboxVdmaCreate (PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuffer, ULONG cbBuffer)
+int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuffer, ULONG cbBuffer)
 {
     Assert((offBuffer & 0xfff) == 0);
     Assert((cbBuffer & 0xfff) == 0);

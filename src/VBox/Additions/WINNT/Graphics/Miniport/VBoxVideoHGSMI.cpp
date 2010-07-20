@@ -1022,6 +1022,13 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         }
 #endif
 
+        rc = VBoxMapAdapterMemory(PrimaryExtension, (void**)&PrimaryExtension->pvVisibleVram,
+                                       0,
+                                       vboxWddmVramCpuVisibleSize(PrimaryExtension));
+        Assert(rc == VINF_SUCCESS);
+        if (rc != VINF_SUCCESS)
+            PrimaryExtension->pvVisibleVram = NULL;
+
         if (RT_FAILURE(rc))
             PrimaryExtension->u.primary.bHGSMI = FALSE;
     }
@@ -1048,6 +1055,11 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
 int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension)
 {
     int rc = VINF_SUCCESS;
+
+    Assert(PrimaryExtension->pvVisibleVram);
+    if (PrimaryExtension->pvVisibleVram)
+        VBoxUnmapAdapterMemory(PrimaryExtension, (void**)&PrimaryExtension->pvVisibleVram, vboxWddmVramCpuVisibleSize(PrimaryExtension));
+
     for (int i = PrimaryExtension->u.primary.cDisplays-1; i >= 0; --i)
     {
         rc = vboxVbvaDisable(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva);

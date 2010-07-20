@@ -298,6 +298,8 @@ typedef struct _DEVICE_EXTENSION
 #ifdef VBOXWDDM
    PDEVICE_OBJECT pPDO;
 
+   uint8_t * pvVisibleVram;
+
    VBOXVIDEOCM_MGR CmMgr;
    LIST_ENTRY ContextList3D;
    /* mutex for context list operations */
