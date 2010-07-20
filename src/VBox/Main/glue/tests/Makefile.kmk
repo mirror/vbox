@@ -37,7 +37,7 @@ else
  SEP=:
 endif
 
-VBOX_JAR_WS=$(VBOX_SDK)bindings/webservice/java/jax-ws/vboxjws.jar
+VBOX_JAR_WS=$(VBOX_SDK)/bindings/webservice/java/jax-ws/vboxjws.jar
 
 JAVA_ARGS += -Dvbox.home=$(VBOX_BIN)
 CLASSPATH  := $(CLASSPATH)$(VBOX_JAR)$(SEP).
@@ -51,4 +51,4 @@ testvb:
 
 testws:
 	javac -cp $(VBOX_JAR_WS) TestVBox.java
-	java $(JAVA_ARGS) -cp $(VBOX_JAR_WS) TestVBox -w -url http://localhost:18083
+	java $(JAVA_ARGS) -cp $(VBOX_JAR_WS)$(SEP)$(CLASSPATH) TestVBox -w -url http://localhost:18083
