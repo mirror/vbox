@@ -129,19 +129,23 @@ public class TestVBox
                 mgr.connect(url, user, passwd);
             } catch (Exception e) {
                 e.printStackTrace();
+                System.out.println("Cannot connect, start webserver first!");                
             }
         }
 
         try
         {
             IVirtualBox vbox = mgr.getVBox();
-            System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
-            testEnumeration(mgr, vbox);
-            testStart(mgr, vbox);
-            testEvents(mgr, vbox.getEventSource(), false);
+            if (vbox != null)
+            {
+                System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
+                testEnumeration(mgr, vbox);
+                testStart(mgr, vbox);
+                testEvents(mgr, vbox.getEventSource(), false);
 
-            System.out.println("done, press Enter...");
-            int ch = System.in.read();
+                System.out.println("done, press Enter...");
+                int ch = System.in.read();
+            }
         }
         catch (Throwable e)
         {
