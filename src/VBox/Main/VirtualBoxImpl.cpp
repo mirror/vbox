@@ -1309,7 +1309,10 @@ STDMETHODIMP VirtualBox::GetMachine(IN_BSTR aId, IMachine **aMachine)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Machine> machine;
-    HRESULT rc = findMachine(Guid(aId), true /* setError */, &machine);
+    HRESULT rc = findMachine(Guid(aId),
+                             true /* fPermitInaccessible */,
+                             true /* setError */,
+                             &machine);
 
     /* the below will set *aMachine to NULL if machine is null */
     machine.queryInterfaceTo(aMachine);
@@ -1380,7 +1383,10 @@ STDMETHODIMP VirtualBox::UnregisterMachine(IN_BSTR aId,
 
     // find machine from the given ID
     ComObjPtr<Machine> pMachine;
-    HRESULT rc = findMachine(id, true /* setError */, &pMachine);
+    HRESULT rc = findMachine(id,
+                             true /* fPermitInaccessible */,
+                             true /* setError */,
+                             &pMachine);
     if (FAILED(rc)) return rc;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1948,7 +1954,10 @@ STDMETHODIMP VirtualBox::OpenSession(ISession *aSession, IN_BSTR aMachineId)
     Guid id(aMachineId);
     ComObjPtr<Machine> machine;
 
-    HRESULT rc = findMachine(id, true /* setError */, &machine);
+    HRESULT rc = findMachine(id,
+                             false /* fPermitInaccessible */,
+                             true /* setError */,
+                             &machine);
     if (FAILED(rc)) return rc;
 
     /* check the session state */
@@ -2004,7 +2013,10 @@ STDMETHODIMP VirtualBox::OpenRemoteSession(ISession *aSession,
     Guid id(aMachineId);
     ComObjPtr<Machine> machine;
 
-    HRESULT rc = findMachine(id, true /* setError */, &machine);
+    HRESULT rc = findMachine(id,
+                             false /* fPermitInaccessible */,
+                             true /* setError */,
+                             &machine);
     if (FAILED(rc)) return rc;
 
     /* check the session state */
@@ -2070,7 +2082,10 @@ STDMETHODIMP VirtualBox::OpenExistingSession(ISession *aSession,
     Guid id(aMachineId);
     ComObjPtr<Machine> machine;
 
-    HRESULT rc = findMachine(id, true /* setError */, &machine);
+    HRESULT rc = findMachine(id,
+                             false /* fPermitInaccessible */,
+                             true /* setError */,
+                             &machine);
     if (FAILED(rc)) return rc;
 
     /* check the session state */
@@ -2841,23 +2856,18 @@ void VirtualBox::getOpenedMachines(SessionMachinesList &aMachines,
 }
 
 /**
- *  Searches for a Machine object with the given ID in the collection
+ *  Searches for a machine object with the given ID in the collection
  *  of registered machines.
  *
- *  @param id
- *      ID of the machine
- *  @param doSetError
- *      if TRUE, the appropriate error info is set in case when the machine
- *      is not found
- *  @param machine
- *      where to store the found machine object (can be NULL)
- *
- *  @return
- *      S_OK when found or VBOX_E_OBJECT_NOT_FOUND when not found
- *
- *  @note Locks this object for reading.
+ * @param aId Machine UUID to look for.
+ * @param aPermitInaccessible If true, inaccessible machines will be found;
+ *                  if false, this will fail if the given machine is inaccessible.
+ * @param aSetError If true, set errorinfo if the machine is not found.
+ * @param aMachine Returned machine, if found.
+ * @return
  */
 HRESULT VirtualBox::findMachine(const Guid &aId,
+                                bool fPermitInaccessible,
                                 bool aSetError,
                                 ComObjPtr<Machine> *aMachine /* = NULL */)
 {
@@ -2874,10 +2884,14 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
              ++it)
         {
             ComObjPtr<Machine> pMachine2 = *it;
-            AutoCaller machCaller(pMachine2);
-            /* skip inaccessible machines */
-            if (FAILED(machCaller.rc()))
-                continue;
+
+            if (!fPermitInaccessible)
+            {
+                // skip inaccessible machines
+                AutoCaller machCaller(pMachine2);
+                if (FAILED(machCaller.rc()))
+                    continue;
+            }
 
             if (pMachine2->getId() == aId)
             {
@@ -3554,7 +3568,10 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
 
     {
         ComObjPtr<Machine> pMachine;
-        rc = findMachine(aMachine->getId(), false /* aDoSetError */, &pMachine);
+        rc = findMachine(aMachine->getId(),
+                         true /* fPermitInaccessible */,
+                         false /* aDoSetError */,
+                         &pMachine);
         if (SUCCEEDED(rc))
         {
             /* sanity */

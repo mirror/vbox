@@ -226,7 +226,9 @@ public:
         return SUCCEEDED(findMachine(aId, false /* aSetError */, NULL));
     }
 
-    HRESULT findMachine (const Guid &aId, bool aSetError,
+    HRESULT findMachine (const Guid &aId,
+                         bool fPermitInaccessible,
+                         bool aSetError,
                          ComObjPtr<Machine> *machine = NULL);
 
     HRESULT findHardDisk(const Guid *aId, CBSTR aLocation,
