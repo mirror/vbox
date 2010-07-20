@@ -6048,7 +6048,9 @@ HRESULT Machine::prepareUnregister(bool fCloseMedia,
     }
     else
         // caller wants no automatic detachment: then fail if there are any
-        if (mMediaData->mAttachments.size())
+        if (    !mMediaData.isNull()      // can be NULL if machine is inaccessible
+             && mMediaData->mAttachments.size()
+           )
             return setError(VBOX_E_INVALID_OBJECT_STATE,
                             tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
                                mMediaData->mAttachments.size());
