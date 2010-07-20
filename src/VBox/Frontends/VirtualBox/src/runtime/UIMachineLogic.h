@@ -121,6 +121,9 @@ protected:
     virtual void prepareDock();
 #endif /* Q_WS_MAC */
     virtual void prepareRequiredFeatures();
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    virtual void prepareDebugger();
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* Cleanup helpers: */
     //virtual void cleanupRequiredFeatures() {}
