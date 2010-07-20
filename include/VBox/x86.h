@@ -2117,26 +2117,26 @@ typedef const X86DESCGENERIC *PCX86DESCGENERIC;
  */
 typedef struct X86DESCGATE
 {
-    /** Target code segment offset - Low word.
+    /** 00 - Target code segment offset - Low word.
      * Ignored if task-gate. */
     unsigned    u16OffsetLow : 16;
-    /** Target code segment selector for call-, interrupt- and trap-gates,
+    /** 10 - Target code segment selector for call-, interrupt- and trap-gates,
      * TSS selector if task-gate. */
     unsigned    u16Sel : 16;
-    /** Number of parameters for a call-gate.
+    /** 20 - Number of parameters for a call-gate.
      * Ignored if interrupt-, trap- or task-gate. */
     unsigned    u4ParmCount : 4;
-    /** Reserved / ignored. */
+    /** 24 - Reserved / ignored. */
     unsigned    u4Reserved : 4;
-    /** Segment Type. */
+    /** 28 - Segment Type. */
     unsigned    u4Type : 4;
-    /** Descriptor Type (0 = system). */
+    /** 2c - Descriptor Type (0 = system). */
     unsigned    u1DescType : 1;
-    /** Descriptor Privelege level. */
+    /** 2d - Descriptor Privelege level. */
     unsigned    u2Dpl : 2;
-    /** Flags selector present(=1) or not. */
+    /** 2f - Flags selector present(=1) or not. */
     unsigned    u1Present : 1;
-    /** Target code segment offset - High word.
+    /** 30 - Target code segment offset - High word.
      * Ignored if task-gate. */
     unsigned    u16OffsetHigh : 16;
 } X86DESCGATE;
@@ -2479,16 +2479,17 @@ typedef PCX86DESC   PCX86DESCHC;
 
 /** @name AMD64 System Selector Types.
  * @{ */
+/** LDT selector. */
 #define AMD64_SEL_TYPE_SYS_LDT              2
-/** 286 TSS selector - Busy. */
+/** TSS selector - Busy. */
 #define AMD64_SEL_TYPE_SYS_TSS_AVAIL        9
-/** 386 TSS selector - Busy. */
+/** TSS selector - Busy. */
 #define AMD64_SEL_TYPE_SYS_TSS_BUSY         0xB
-/** 386 Callgate selector. */
+/** Callgate selector. */
 #define AMD64_SEL_TYPE_SYS_CALL_GATE        0xC
-/** 386 Interruptgate selector. */
+/** Interruptgate selector. */
 #define AMD64_SEL_TYPE_SYS_INT_GATE         0xE
-/** 386 Trapgate selector. */
+/** Trapgate selector. */
 #define AMD64_SEL_TYPE_SYS_TRAP_GATE        0xF
 /** @} */
 
