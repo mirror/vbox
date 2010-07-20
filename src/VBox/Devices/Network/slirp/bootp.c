@@ -312,12 +312,6 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
     }
 
 skip_dns_servers:
-    if (LIST_EMPTY(&pData->pDomainList))
-    {
-            /* Microsoft dhcp client doen't like domain-less dhcp and trimmed packets*/
-            /* dhcpcd client very sad if no domain name is passed */
-            FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, 1, " ");
-    }
     if (pData->fPassDomain && !pData->fUseHostResolver)
     {
         LIST_FOREACH(dd, &pData->pDomainList, dd_list)
