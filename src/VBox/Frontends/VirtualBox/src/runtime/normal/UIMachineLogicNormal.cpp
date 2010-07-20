@@ -94,6 +94,10 @@ void UIMachineLogicNormal::initialize()
     sltAdditionsStateChanged();
     sltMouseCapabilityChanged();
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    prepareDebugger();
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
     /* Retranslate logic part: */
     retranslateUi();
 }
