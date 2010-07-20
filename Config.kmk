@@ -689,9 +689,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_VRDP_RDESKTOP=
  # Permanent (no working SDL).
  VBOX_WITH_VBOXSDL=
- ifeq ($(KBUILD_TARGET_ARCH),amd64)
-  VBOX_WITH_VBOXBFE=
- endif
+ VBOX_WITH_VBOXBFE=
 endif
 
 ifeq ($(KBUILD_TARGET),freebsd)
