@@ -26,6 +26,47 @@
 %ifndef ___iprt_asmdefs_mac
 %define ___iprt_asmdefs_mac
 
+
+;; @defgroup grp_rt_cdefs_size     Size Constants
+; (Of course, these are binary computer terms, not SI.)
+; @{
+;; 1 K (Kilo)                     (1 024).
+%define _1K                     000000400h
+;; 4 K (Kilo)                     (4 096).
+%define _4K                     000001000h
+;; 32 K (Kilo)                   (32 678).
+%define _32K                    000008000h
+;; 64 K (Kilo)                   (65 536).
+%define _64K                    000010000h
+;; 128 K (Kilo)                 (131 072).
+%define _128K                   000020000h
+;; 256 K (Kilo)                 (262 144).
+%define _256K                   000040000h
+;; 512 K (Kilo)                 (524 288).
+%define _512K                   000080000h
+;; 1 M (Mega)                 (1 048 576).
+%define _1M                     000100000h
+;; 2 M (Mega)                 (2 097 152).
+%define _2M                     000200000h
+;; 4 M (Mega)                 (4 194 304).
+%define _4M                     000400000h
+;; 1 G (Giga)             (1 073 741 824).
+%define _1G                     040000000h
+;; 2 G (Giga)             (2 147 483 648).
+%define _2G             00000000080000000h
+;; 4 G (Giga)             (4 294 967 296).
+%define _4G             00000000100000000h
+;; 1 T (Tera)         (1 099 511 627 776).
+%define _1T             00000010000000000h
+;; 1 P (Peta)     (1 125 899 906 842 624).
+%define _1P             00004000000000000h
+;; 1 E (Exa)  (1 152 921 504 606 846 976).
+%define _1E             01000000000000000h
+;; 2 E (Exa)  (2 305 843 009 213 693 952).
+%define _2E             02000000000000000h
+;; @}
+
+
 ;;
 ; Make the mask for the given bit.
 %define RT_BIT(bit)        (1 << bit)
