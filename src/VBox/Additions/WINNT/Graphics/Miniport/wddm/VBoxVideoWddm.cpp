@@ -1131,7 +1131,7 @@ NTSTATUS DxgkDdiSetPowerState(
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 
     /* @todo: */
-    vboxVDbgBreakF();
+//    vboxVDbgBreakF();
 
     dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 
@@ -3211,23 +3211,30 @@ DxgkDdiSetVidPnSourceVisibility(
         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceVisibility->VidPnSourceId];
         PVBOXWDDM_ALLOCATION pAllocation = pSource->pPrimaryAllocation;
 
-        Assert(pAllocation->bVisible != pSetVidPnSourceVisibility->Visible);
-        if (pAllocation->bVisible != pSetVidPnSourceVisibility->Visible)
+        if (pAllocation)
         {
-            pAllocation->bVisible = pSetVidPnSourceVisibility->Visible;
+            Assert(pAllocation->bVisible != pSetVidPnSourceVisibility->Visible);
+            if (pAllocation->bVisible != pSetVidPnSourceVisibility->Visible)
+            {
+                pAllocation->bVisible = pSetVidPnSourceVisibility->Visible;
 #ifndef VBOXWDDM_RENDER_FROM_SHADOW
-            if (pAllocation->bVisible)
-            {
-                Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource);
-                Assert(Status == STATUS_SUCCESS);
-                if (Status != STATUS_SUCCESS)
-                    drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
-            }
-            else
-            {
-                vboxVdmaFlush (pDevExt, &pDevExt->u.primary.Vdma);
-            }
+                if (pAllocation->bVisible)
+                {
+                    Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource);
+                    Assert(Status == STATUS_SUCCESS);
+                    if (Status != STATUS_SUCCESS)
+                        drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
+                }
+                else
+                {
+                    vboxVdmaFlush (pDevExt, &pDevExt->u.primary.Vdma);
+                }
 #endif
+            }
+        }
+        else
+        {
+            Assert(!pSetVidPnSourceVisibility->Visible);
         }
     }
     else

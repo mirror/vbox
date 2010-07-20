@@ -1625,7 +1625,7 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(struct _DEVICE_EXTENSION* pDevExt, co
     {
         CONST D3DKMDT_VIDPN_SOURCE_MODE* pPinnedVidPnSourceModeInfo;
         Status = pCurVidPnSourceModeSetInterface->pfnAcquirePinnedModeInfo(hCurVidPnSourceModeSet, &pPinnedVidPnSourceModeInfo);
-        Assert(Status == STATUS_SUCCESS);
+        Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_MODE_NOT_PINNED);
         if (Status == STATUS_SUCCESS)
         {
             Assert(pPinnedVidPnSourceModeInfo);
@@ -1664,7 +1664,10 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(struct _DEVICE_EXTENSION* pDevExt, co
             pCurVidPnSourceModeSetInterface->pfnReleaseModeInfo(hCurVidPnSourceModeSet, pPinnedVidPnSourceModeInfo);
         }
         else if (Status == STATUS_GRAPHICS_MODE_NOT_PINNED)
-            drprintf((__FUNCTION__": no pPinnedVidPnSourceModeInfo available for source id (%d)\n", srcId));
+        {
+            Status = vboxVidPnCommitSourceMode(pDevExt, srcId, pPinnedVidPnSourceModeInfo, pAllocation);
+            Assert(Status == STATUS_SUCCESS);
+        }
         else
             drprintf((__FUNCTION__": pfnAcquirePinnedModeInfo failed Status(0x%x)\n", Status));
 
