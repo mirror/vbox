@@ -58,6 +58,7 @@ void* vboxVideoCmCmdReinitForContext(void *pvCmd, PVBOXVIDEOCM_CTX pContext)
 {
     PVBOXVIDEOCM_CMD_DR pHdr = VBOXVIDEOCM_HEAD(pvCmd);
     pHdr->pContext = pContext;
+    pHdr->CmdHdr.u64UmData = pContext->u64UmData;
     return pvCmd;
 }
 
