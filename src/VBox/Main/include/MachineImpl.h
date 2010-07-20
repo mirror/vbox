@@ -681,7 +681,8 @@ public:
 
     bool checkForSpawnFailure();
 
-    HRESULT trySetRegistered(BOOL aRegistered);
+    HRESULT prepareRegister();
+    HRESULT prepareUnregister(bool fDetachMedia, MediaList &llMedia);
 
     HRESULT getSharedFolder(CBSTR aName,
                             ComObjPtr<SharedFolder> &aSharedFolder,

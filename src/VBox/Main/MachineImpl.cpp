@@ -5918,20 +5918,13 @@ bool Machine::checkForSpawnFailure()
 }
 
 /**
- *  Checks that the registered flag of the machine can be set according to
- *  the argument and sets it. On success, commits and saves all settings.
- *
- *  @note When this machine is inaccessible, the only valid value for \a
- *  aRegistered is FALSE (i.e. unregister the machine) because unregistered
- *  inaccessible machines are not currently supported. Note that unregistering
- *  an inaccessible machine will \b uninitialize this machine object. Therefore,
- *  the caller must make sure there are no active Machine::addCaller() calls
- *  on the current thread because this will block Machine::uninit().
+ *  Checks whether the machine can be registered. If so, commits and saves
+ *  all settings.
  *
  *  @note Must be called from mParent's write lock. Locks this object and
  *  children for writing.
  */
-HRESULT Machine::trySetRegistered(BOOL argNewRegistered)
+HRESULT Machine::prepareRegister()
 {
     AssertReturn(mParent->isWriteLockOnCurrentThread(), E_FAIL);
 
@@ -5943,76 +5936,26 @@ HRESULT Machine::trySetRegistered(BOOL argNewRegistered)
     /* wait for state dependants to drop to zero */
     ensureNoStateDependencies();
 
-    ComAssertRet(mData->mRegistered != argNewRegistered, E_FAIL);
-
     if (!mData->mAccessible)
-    {
-        /* A special case: the machine is not accessible. */
-
-        /* inaccessible machines can only be unregistered */
-        AssertReturn(!argNewRegistered, E_FAIL);
-
-        /* Uninitialize ourselves here because currently there may be no
-         * unregistered that are inaccessible (this state combination is not
-         * supported). Note releasing the caller and leaving the lock before
-         * calling uninit() */
-
-        alock.leave();
-        autoCaller.release();
-
-        uninit();
-
-        return S_OK;
-    }
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("The machine '%ls' with UUID {%s} is inaccessible and cannot be registered"),
+                        mUserData->mName.raw(),
+                        mData->mUuid.toString().raw());
 
     AssertReturn(autoCaller.state() == Ready, E_FAIL);
 
-    if (argNewRegistered)
-    {
-        if (mData->mRegistered)
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("The machine '%ls' with UUID {%s} is already registered"),
-                            mUserData->mName.raw(),
-                            mData->mUuid.toString().raw());
-    }
-    else
-    {
-        if (mData->mMachineState == MachineState_Saved)
-            return setError(VBOX_E_INVALID_VM_STATE,
-                            tr("Cannot unregister the machine '%ls' because it is in the Saved state"),
-                            mUserData->mName.raw());
-
-        size_t snapshotCount = 0;
-        if (mData->mFirstSnapshot)
-            snapshotCount = mData->mFirstSnapshot->getAllChildrenCount() + 1;
-        if (snapshotCount)
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
-                            mUserData->mName.raw(), snapshotCount);
-
-        if (mData->mSession.mState != SessionState_Closed)
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot unregister the machine '%ls' because it has an open session"),
-                            mUserData->mName.raw());
-
-        if (mMediaData->mAttachments.size() != 0)
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot unregister the machine '%ls' because it has %d medium attachments"),
-                            mUserData->mName.raw(),
-                            mMediaData->mAttachments.size());
-
-        /* Note that we do not prevent unregistration of a DVD or Floppy image
-         * is attached: as opposed to hard disks detaching such an image
-         * implicitly in this method (which we will do below) won't have any
-         * side effects (like detached orphan base and diff hard disks etc).*/
-    }
+    if (mData->mRegistered)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("The machine '%ls' with UUID {%s} is already registered"),
+                        mUserData->mName.raw(),
+                        mData->mUuid.toString().raw());
 
     HRESULT rc = S_OK;
 
     // Ensure the settings are saved. If we are going to be registered and
     // no config file exists yet, create it by calling saveSettings() too.
     if (    (mData->flModifications)
-         || (argNewRegistered && !mData->pMachineConfigFile->fileExists())
+         || (!mData->pMachineConfigFile->fileExists())
        )
     {
         rc = saveSettings(NULL);
@@ -6028,7 +5971,7 @@ HRESULT Machine::trySetRegistered(BOOL argNewRegistered)
         /* we may have had implicit modifications we want to fix on success */
         commit();
 
-        mData->mRegistered = argNewRegistered;
+        mData->mRegistered = true;
     }
     else
     {
@@ -6037,6 +5980,78 @@ HRESULT Machine::trySetRegistered(BOOL argNewRegistered)
     }
 
     return rc;
+}
+
+/**
+ * Called from VirtualBox::UnregisterMachine() with the flags given there to
+ * give the machine a chance to clean up for itself.
+ * @param fDetachMedia As passed to VirtualBox::UnregisterMachine(). If true, all
+ *                     media are detached from the machine and its snapshots.
+ * @param llFiles
+ * @return
+ */
+HRESULT Machine::prepareUnregister(bool fCloseMedia,
+                                   MediaList &llMedia)
+{
+    AutoLimitedCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mData->mSession.mState != SessionState_Closed)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Cannot unregister the machine '%ls' because it has an open session"),
+                        mUserData->mName.raw());
+
+    // @todo optionally discard saved state
+    if (mData->mMachineState == MachineState_Saved)
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Cannot unregister the machine '%ls' because it is in the Saved state"),
+                        mUserData->mName.raw());
+
+    // @todo optionally nuke snapshots
+    size_t snapshotCount = 0;
+    if (mData->mFirstSnapshot)
+        snapshotCount = mData->mFirstSnapshot->getAllChildrenCount() + 1;
+    if (snapshotCount)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
+                        mUserData->mName.raw(), snapshotCount);
+
+    if (fCloseMedia)
+    {
+        // caller wants automatic detachment: then do that and report all media to the array
+        MediaData::AttachmentList::iterator it = mMediaData->mAttachments.begin();
+        while (it != mMediaData->mAttachments.end())
+        {
+            ComObjPtr<MediumAttachment> pAttach = *it;
+            ComObjPtr<Medium> pMedium = pAttach->getMedium();
+
+            if (!pMedium.isNull())
+                llMedia.push_back(pMedium);
+
+            setModified(IsModified_Storage);
+            mMediaData.backup();
+
+            // for non-hard disk media, detach straight away
+            // (same logic as in DetachDevice())
+            if (!pMedium.isNull())
+                pMedium->detachFrom(mData->mUuid);
+
+            // remove this attachment; erase() returns the iterator of the next element
+            it = mMediaData->mAttachments.erase(it);
+        }
+    }
+    else
+        // caller wants no automatic detachment: then fail if there are any
+        if (mMediaData->mAttachments.size())
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
+                               mMediaData->mAttachments.size());
+
+    mData->mRegistered = false;
+
+    return S_OK;
 }
 
 /**

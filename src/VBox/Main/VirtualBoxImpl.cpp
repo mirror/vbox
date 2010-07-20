@@ -1366,7 +1366,9 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aName, IMachine **aMachine)
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::UnregisterMachine(IN_BSTR  aId,
+STDMETHODIMP VirtualBox::UnregisterMachine(IN_BSTR aId,
+                                           BOOL fCloseMedia,
+                                           ComSafeArrayOut(BSTR, aFiles),
                                            IMachine **aMachine)
 {
     Guid id(aId);
@@ -1381,15 +1383,43 @@ STDMETHODIMP VirtualBox::UnregisterMachine(IN_BSTR  aId,
     HRESULT rc = findMachine(id, true /* setError */, &pMachine);
     if (FAILED(rc)) return rc;
 
-    // trySetRegistered needs VirtualBox object write lock
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    rc = pMachine->trySetRegistered(FALSE);
+
+    MediaList llMedia;
+    rc = pMachine->prepareUnregister(fCloseMedia, llMedia);
     if (FAILED(rc)) return rc;
 
-    /* remove from the collection of registered machines */
+    // remove from the collection of registered machines
     m->allMachines.removeChild(pMachine);
 
-    /* save the global registry */
+    if (fCloseMedia)
+    {
+        // now go thru the list of attached media reported by prepareUnregister() and close them all
+        SafeArray<BSTR> sfaFiles(llMedia.size());
+        size_t u = 0;
+        for (MediaList::const_iterator it = llMedia.begin();
+             it != llMedia.end();
+             ++it)
+        {
+            ComObjPtr<Medium> pMedium = *it;
+            Bstr bstrFile = pMedium->getLocationFull();
+
+            AutoCaller autoCaller2(pMedium);
+            if (FAILED(autoCaller2.rc())) return autoCaller2.rc();
+
+            pMedium->close(NULL /*fNeedsSaveSettings*/,     // we'll call saveSettings() in any case below
+                           autoCaller2);
+                // this uninitializes the medium
+
+            // report the path to the caller
+            bstrFile.detachTo(&sfaFiles[u]);
+            ++u;
+        }
+        // report all paths to the caller
+        sfaFiles.detachTo(ComSafeArrayOutArg(aFiles));
+    }
+
+    // save the global registry
     rc = saveSettings();
 
     alock.release();
@@ -3543,7 +3573,7 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
 
     if (autoCaller.state() != InInit)
     {
-        rc = aMachine->trySetRegistered(TRUE);
+        rc = aMachine->prepareRegister();
         if (FAILED(rc)) return rc;
     }
 

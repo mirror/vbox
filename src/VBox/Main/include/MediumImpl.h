@@ -197,6 +197,7 @@ public:
                               bool aWait,
                               bool *pfNeedsSaveSettings);
 
+    HRESULT close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller);
     HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, bool *pfNeedsSaveSettings);
     HRESULT markForDeletion();
     HRESULT unmarkForDeletion();
@@ -231,17 +232,7 @@ private:
 
     HRESULT queryInfo();
 
-    /**
-     * Performs extra checks if the medium can be closed and returns S_OK in
-     * this case. Otherwise, returns a respective error message. Called by
-     * Close() under the medium tree lock and the medium lock.
-     */
     HRESULT canClose();
-
-    /**
-     * Unregisters this medium with mVirtualBox. Called by Close() under
-     * the medium tree lock.
-     */
     HRESULT unregisterWithVirtualBox(bool *pfNeedsSaveSettings);
 
     HRESULT setStateError();

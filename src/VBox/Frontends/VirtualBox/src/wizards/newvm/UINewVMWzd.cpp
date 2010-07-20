@@ -781,7 +781,9 @@ bool UINewVMWzdPage5::constructMachine()
         if (!success)
         {
             /* Unregister on failure */
-            vbox.UnregisterMachine(machineId);
+            QVector<QString> files;
+            CMachine machine;
+            vbox.UnregisterMachine(machineId, false /*fDetachMedia*/, files, machine);
             if (vbox.isOk())
                 m_Machine.DeleteSettings();
             return false;

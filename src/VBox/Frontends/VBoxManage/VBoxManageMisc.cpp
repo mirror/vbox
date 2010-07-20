@@ -161,7 +161,11 @@ int handleUnregisterVM(HandlerArg *a)
         Bstr uuid;
         machine->COMGETTER(Id)(uuid.asOutParam());
         machine = NULL;
-        CHECK_ERROR(a->virtualBox, UnregisterMachine(uuid, machine.asOutParam()));
+        SafeArray<BSTR> abstrFiles;
+        CHECK_ERROR(a->virtualBox, UnregisterMachine(uuid,
+                                                     false /* fDetachMedia */,
+                                                     ComSafeArrayAsOutParam(abstrFiles),
+                                                     machine.asOutParam()));
         if (SUCCEEDED(rc) && machine && fDelete)
             CHECK_ERROR(machine, DeleteSettings());
     }
