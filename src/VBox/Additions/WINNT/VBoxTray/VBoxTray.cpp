@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,6 +39,8 @@ SERVICE_STATUS        gVBoxServiceStatus;
 SERVICE_STATUS_HANDLE gVBoxServiceStatusHandle;
 HINSTANCE             gInstance;
 HWND                  gToolWindow;
+NOTIFYICONDATA        gNotifyIconData;
+DWORD                 gMajorVersion;
 
 /* Prototypes */
 VOID DisplayChangeThread(void *dummy);
@@ -84,7 +86,57 @@ static VBOXSERVICEINFO vboxServiceTable[] =
     }
 };
 
-static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
+static BOOL vboxTrayIconAdd()
+{
+    HICON hIcon = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
+    if (hIcon == NULL)
+    {
+        Log(("Could not load tray icon, err %08X\n", GetLastError()));
+        return FALSE;
+    }
+
+    /* Prepare the system tray icon. */
+    RT_ZERO(gNotifyIconData);
+    gNotifyIconData.cbSize           = NOTIFYICONDATA_V1_SIZE; // sizeof(NOTIFYICONDATA);
+    gNotifyIconData.hWnd             = gToolWindow;
+    gNotifyIconData.uID              = ID_TRAYICON;
+    gNotifyIconData.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+    gNotifyIconData.uCallbackMessage = WM_VBOX_TRAY;
+    gNotifyIconData.hIcon            = hIcon;
+
+    sprintf(gNotifyIconData.szTip, "%s Guest Additions %d.%d.%dr%d",
+            VBOX_PRODUCT, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
+
+    BOOL fCreated = Shell_NotifyIcon(NIM_ADD, &gNotifyIconData);
+    if (!fCreated)
+    {
+        Log(("Could not create tray icon, err %08X\n", GetLastError()));
+        RT_ZERO(gNotifyIconData);
+    }
+
+    if (hIcon)
+        DestroyIcon(hIcon);
+    return fCreated;
+}
+
+static void vboxTrayIconRemove()
+{
+    if (gNotifyIconData.cbSize > 0)
+    {
+        /* Remove the system tray icon and refresh system tray. */
+        Shell_NotifyIcon(NIM_DELETE, &gNotifyIconData);
+        HWND hTrayWnd = FindWindow("Shell_TrayWnd", NULL); /* We assume we only have one tray atm. */
+        if (hTrayWnd)
+        {
+            HWND hTrayNotifyWnd = FindWindowEx(hTrayWnd, 0, "TrayNotifyWnd", NULL);
+            if (hTrayNotifyWnd)
+                SendMessage(hTrayNotifyWnd, WM_PAINT, 0, NULL);
+        }
+        RT_ZERO(gNotifyIconData);
+    }
+}
+
+static int vboxStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
     Log(("VBoxTray: Starting services...\n"));
 
@@ -158,7 +210,7 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
     return VINF_SUCCESS;
 }
 
-static void vboxStopServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
+static void vboxStopServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
     if (!pEnv->hStopEvent)
     {
@@ -235,7 +287,7 @@ void WINAPI VBoxServiceStart(void)
 
     DWORD status = NO_ERROR;
 
-    /* open VBox guest driver */
+    /* Open VBox guest driver. */
     gVBoxDriver = CreateFile(VBOXGUEST_DEVICE_NAME,
                              GENERIC_READ | GENERIC_WRITE,
                              FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -253,7 +305,7 @@ void WINAPI VBoxServiceStart(void)
 
     if (status == NO_ERROR)
     {
-        /* create a custom window class */
+        /* Create a custom window class. */
         WNDCLASS windowClass = {0};
         windowClass.style         = CS_NOCLOSE;
         windowClass.lpfnWndProc   = (WNDPROC)VBoxToolWndProc;
@@ -268,7 +320,7 @@ void WINAPI VBoxServiceStart(void)
 
     if (status == NO_ERROR)
     {
-        /* create our window */
+        /* Create our (invisible) tool window. */
         gToolWindow = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
                                      "VirtualBoxTool", "VirtualBoxTool",
                                      WS_POPUPWINDOW,
@@ -281,13 +333,13 @@ void WINAPI VBoxServiceStart(void)
 
     Log(("VBoxTray: Window Handle = %p, Status = %p\n", gToolWindow, status));
 
-    OSVERSIONINFO           info;
-    DWORD                   dwMajorVersion = 5; /* default XP */
+    OSVERSIONINFO info;
+    gMajorVersion = 5; /* default XP */
     info.dwOSVersionInfoSize = sizeof(info);
     if (GetVersionEx(&info))
     {
-        Log(("VBoxTray: Windows version major %d minor %d\n", info.dwMajorVersion, info.dwMinorVersion));
-        dwMajorVersion = info.dwMajorVersion;
+        Log(("VBoxTray: Windows version major %d minor %d.\n", info.dwMajorVersion, info.dwMinorVersion));
+        gMajorVersion = info.dwMajorVersion;
     }
 
     if (status == NO_ERROR)
@@ -313,7 +365,7 @@ void WINAPI VBoxServiceStart(void)
             Log(("VBoxTray: SetSecurityDescriptorDacl failed with %d\n", GetLastError()));
 
         /* For Vista and up we need to change the integrity of the security descriptor too */
-        if (dwMajorVersion >= 6)
+        if (gMajorVersion >= 6)
         {
             HMODULE hModule;
 
@@ -348,7 +400,7 @@ void WINAPI VBoxServiceStart(void)
             }
         }
 
-        if (dwMajorVersion >= 5)        /* Only for W2K and up ... */
+        if (gMajorVersion >= 5)        /* Only for W2K and up ... */
         {
             ghSeamlessNotifyEvent = CreateEvent(&SecAttr, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
             if (ghSeamlessNotifyEvent == NULL)
@@ -368,13 +420,15 @@ void WINAPI VBoxServiceStart(void)
     /* initializes disp-if to default (XPDM) mode */
     status = VBoxDispIfInit(&svcEnv.dispIf);
 #ifdef VBOXWDDM
-    /* for now the display mode will be adjusted to WDDM mode if needed
-     * on display service initialization when it detects the display driver type */
+    /*
+     * For now the display mode will be adjusted to WDDM mode if needed
+     * on display service initialization when it detects the display driver type.
+     */
 #endif
 
     if (status == NO_ERROR)
     {
-        int rc = vboxStartServices (&svcEnv, vboxServiceTable);
+        int rc = vboxStartServices(&svcEnv, vboxServiceTable);
 
         if (RT_FAILURE (rc))
         {
@@ -385,23 +439,20 @@ void WINAPI VBoxServiceStart(void)
     /* terminate service if something went wrong */
     if (status != NO_ERROR)
     {
-        vboxStopServices (&svcEnv, vboxServiceTable);
+        vboxStopServices(&svcEnv, vboxServiceTable);
         return;
     }
 
-    BOOL fTrayIconCreated = false;
-
-    /* prepare the system tray icon */
-    NOTIFYICONDATA ndata;
-    RT_ZERO (ndata);
-    ndata.cbSize           = NOTIFYICONDATA_V1_SIZE; // sizeof(NOTIFYICONDATA);
-    ndata.hWnd             = gToolWindow;
-    ndata.uID              = ID_TRAYICON;
-    ndata.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
-    ndata.uCallbackMessage = WM_VBOX_TRAY;
-    ndata.hIcon            = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
-    sprintf(ndata.szTip, "%s Guest Additions %d.%d.%dr%d", VBOX_PRODUCT, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
-    Log(("VBoxTray: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
+    if (   vboxTrayIconAdd()
+        && gMajorVersion >= 5) /* Only for W2K and up ... */
+    {
+        /* We're ready to create the tooltip balloon. */
+        /* Check in 10 seconds (@todo make seconds configurable) ... */
+        SetTimer(gToolWindow,
+                 WM_VBOX_CHECK_HOSTVERSION,
+                 10 * 1000, /* 10 seconds */
+                 NULL       /* No timerproc */);
+    }
 
     /* Boost thread priority to make sure we wake up early for seamless window notifications (not sure if it actually makes any difference though) */
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
@@ -418,13 +469,13 @@ void WINAPI VBoxServiceStart(void)
         dwEventCount = 1;
 
     Log(("VBoxTray: Number of events to wait in main loop: %ld\n", dwEventCount));
-
-    while(true)
+    while (true)
     {
         DWORD waitResult = MsgWaitForMultipleObjectsEx(dwEventCount, hWaitEvent, 500, QS_ALLINPUT, 0);
         waitResult = waitResult - WAIT_OBJECT_0;
 
-        Log(("VBoxTray: Wait result  = %ld.\n", waitResult));
+        /* Only enable for message debugging, lots of traffic! */
+        //Log(("VBoxTray: Wait result  = %ld.\n", waitResult));
 
         if (waitResult == 0)
         {
@@ -432,7 +483,8 @@ void WINAPI VBoxServiceStart(void)
             /* exit */
             break;
         }
-        else if ((waitResult == 1) && (ghSeamlessNotifyEvent!=0))       /* Only jump in, if seamless is active! */
+        else if (   (waitResult == 1)
+                 && (ghSeamlessNotifyEvent!=0)) /* Only jump in, if seamless is active! */
         {
             Log(("VBoxTray: Event 'Seamless' triggered.\n"));
 
@@ -455,41 +507,20 @@ void WINAPI VBoxServiceStart(void)
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
-            /* we might have to repeat this operation because the shell might not be loaded yet */
-            if (!fTrayIconCreated)
-            {
-                fTrayIconCreated = Shell_NotifyIcon(NIM_ADD, &ndata);
-                Log(("VBoxTray: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
-
-                /* We're ready to create the tooltip balloon. */
-                if (fTrayIconCreated && dwMajorVersion >= 5)
-                {
-                    /* Check in 10 seconds (@todo make seconds configurable) ... */
-                    SetTimer(gToolWindow,
-                             WM_VBOX_CHECK_HOSTVERSION,
-                             10000, /* 10 seconds */
-                             NULL   /* no timerproc */);
-                }
-            }
         }
     }
 
     Log(("VBoxTray: Returned from main loop, exiting ...\n"));
 
-    /* remove the system tray icon and refresh system tray */
-    Shell_NotifyIcon(NIM_DELETE, &ndata);
-    HWND hTrayWnd = FindWindow("Shell_TrayWnd", NULL); /* We assume we only have one tray atm */
-    HWND hTrayNotifyWnd = FindWindowEx(hTrayWnd, 0, "TrayNotifyWnd", NULL);
-    if (hTrayNotifyWnd)
-        SendMessage(hTrayNotifyWnd, WM_PAINT, 0, NULL);
+    vboxTrayIconRemove();
 
-    Log(("VBoxTray: waiting for display change thread ...\n"));
+    Log(("VBoxTray: Waiting for display change thread ...\n"));
 
-    vboxStopServices (&svcEnv, vboxServiceTable);
+    vboxStopServices(&svcEnv, vboxServiceTable);
 
     Log(("VBoxTray: Destroying tool window ...\n"));
 
-    /* destroy the tool window */
+    /* Destroy the tool window. */
     DestroyWindow(gToolWindow);
 
     UnregisterClass("VirtualBoxTool", gInstance);
@@ -550,12 +581,22 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
  */
 LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    static UINT s_uTaskbarCreated = 0;
+
     switch (msg)
     {
+        case WM_CREATE:
+            Log(("VBoxTray: Tool window created.\n"));
+            s_uTaskbarCreated = RegisterWindowMessage(TEXT("TaskbarCreated"));
+            if (!s_uTaskbarCreated)
+                Log(("VBoxTray: Cannot register message \"TaskbarCreated\"! Error = %ld\n", GetLastError()));
+            break;
+
         case WM_CLOSE:
             break;
 
         case WM_DESTROY:
+            Log(("VBoxTray: Tool window destroyed.\n"));
             KillTimer(gToolWindow, WM_VBOX_CHECK_HOSTVERSION);
             break;
 
@@ -608,9 +649,15 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             break;
 
         default:
-            return DefWindowProc(hwnd, msg, wParam, lParam);
+
+            if(msg == s_uTaskbarCreated)
+            {
+                Log(("VBoxTray: Taskbar (re-)created, installing tray icon ...\n"));
+                vboxTrayIconAdd();
+            }
+            break;
     }
-    return 0;
+    return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 /* display driver interface abstraction for XPDM & WDDM
