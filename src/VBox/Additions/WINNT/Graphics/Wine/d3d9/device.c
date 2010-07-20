@@ -713,6 +713,8 @@ static void WINAPI IDirect3DDevice9Impl_GetGammaRamp(LPDIRECT3DDEVICE9EX iface, 
 }
 
 #ifdef VBOXWDDM
+#pragma comment(linker, "/export:VBoxWineExD3DDev9CreateTexture=_VBoxWineExD3DDev9CreateTexture@40")
+
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *iface,
         UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format,
         D3DPOOL pool, IDirect3DTexture9 **texture, HANDLE *shared_handle,
