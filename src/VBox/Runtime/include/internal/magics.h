@@ -102,8 +102,6 @@
 #define RTRANDINT_MAGIC                 UINT32_C(0x19531118)
 /** Magic for the event semaphore structure. (Neil Gaiman) */
 #define RTSEMEVENT_MAGIC                UINT32_C(0x19601110)
-/** Dead magic value for event semaphore structures. */
-#define RTSEMEVENT_MAGIC_DEAD           UINT32_C(0x19930517)
 /** Magic for the multiple release event semaphore structure. (Isaac Asimov) */
 #define RTSEMEVENTMULTI_MAGIC           UINT32_C(0x19200102)
 /** Dead magic value for multiple release event semaphore structures. */

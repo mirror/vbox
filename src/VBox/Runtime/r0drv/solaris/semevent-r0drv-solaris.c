@@ -118,7 +118,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
 
     ASMAtomicDecU32(&pThis->cRefs);
 
-    pThis->u32Magic = RTSEMEVENT_MAGIC_DEAD; /* make the handle invalid */
+    pThis->u32Magic = ~RTSEMEVENT_MAGIC; /* make the handle invalid */
     if (pThis->cWaiters > 0)
     {
         /*
