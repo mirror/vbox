@@ -1227,8 +1227,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
 
         HRESULT rc2;
         // detach all hard disks from all machines we created
-        list<MyHardDiskAttachment>::iterator itM;
-        for (itM = stack.llHardDiskAttachments.begin();
+        for (list<MyHardDiskAttachment>::iterator itM = stack.llHardDiskAttachments.begin();
              itM != stack.llHardDiskAttachments.end();
              ++itM)
         {
@@ -1249,8 +1248,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
         }
 
         // now clean up all hard disks we created
-        list< ComPtr<IMedium> >::iterator itHD;
-        for (itHD = stack.llHardDisksCreated.begin();
+        for (list< ComPtr<IMedium> >::iterator itHD = stack.llHardDisksCreated.begin();
              itHD != stack.llHardDisksCreated.end();
              ++itHD)
         {
@@ -1268,7 +1266,8 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
             Guid guid = *itID;
             Bstr bstrGuid = guid.toUtf16();
             ComPtr<IMachine> failedMachine;
-            rc2 = mVirtualBox->UnregisterMachine(bstrGuid, failedMachine.asOutParam());
+            SafeArray<BSTR> abstrPaths;
+            rc2 = mVirtualBox->UnregisterMachine(bstrGuid, false, ComSafeArrayAsOutParam(abstrPaths), failedMachine.asOutParam());
             if (SUCCEEDED(rc2))
                 rc2 = failedMachine->DeleteSettings();
         }

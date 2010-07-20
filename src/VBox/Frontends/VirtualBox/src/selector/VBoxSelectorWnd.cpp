@@ -678,8 +678,9 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /* = QString::null */)
 
         if (ok)
         {
-            CMachine machine = item->machine();
-            vbox.UnregisterMachine (id);
+            QVector<QString> files;
+            CMachine machine;
+            vbox.UnregisterMachine(id, false /*fDetachMedia*/, files, machine);
             if (vbox.isOk() && item->accessible())
             {
                 /* delete machine settings */

@@ -1903,55 +1903,11 @@ STDMETHODIMP Medium::Close()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    // we're accessing parent/child and backrefs, so lock the tree first, then ourselves
-    AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
-                                  this->lockHandle()
-                                  COMMA_LOCKVAL_SRC_POS);
-
-    bool wasCreated = true;
-    bool fNeedsSaveSettings = false;
-
-    switch (m->state)
-    {
-        case MediumState_NotCreated:
-            wasCreated = false;
-            break;
-        case MediumState_Created:
-        case MediumState_Inaccessible:
-            break;
-        default:
-            return setStateError();
-    }
-
-    if (m->backRefs.size() != 0)
-        return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Medium '%s' is attached to %d virtual machines"),
-                        m->strLocationFull.raw(), m->backRefs.size());
-
-    /* perform extra media-dependent close checks */
-    HRESULT rc = canClose();
-    if (FAILED(rc)) return rc;
-
-    if (wasCreated)
-    {
-        /* remove from the list of known media before performing actual
-         * uninitialization (to keep the media registry consistent on
-         * failure to do so) */
-        rc = unregisterWithVirtualBox(&fNeedsSaveSettings);
-        if (FAILED(rc)) return rc;
-    }
-
     // make a copy of VirtualBox pointer which gets nulled by uninit()
     ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
 
-    // leave the AutoCaller, as otherwise uninit() will simply hang
-    autoCaller.release();
-
-    /* Keep the locks held until after uninit, as otherwise the consistency
-     * of the medium tree cannot be guaranteed. */
-    uninit();
-
-    multilock.release();
+    bool fNeedsSaveSettings = false;
+    HRESULT rc = close(&fNeedsSaveSettings, autoCaller);
 
     if (fNeedsSaveSettings)
     {
@@ -1959,7 +1915,7 @@ STDMETHODIMP Medium::Close()
         pVirtualBox->saveSettings();
     }
 
-    return S_OK;
+    return rc;
 }
 
 STDMETHODIMP Medium::GetProperty(IN_BSTR aName, BSTR *aValue)
@@ -3824,6 +3780,71 @@ HRESULT Medium::setStateError()
 }
 
 /**
+ * Implementation for the public Medium::Close() with the exception of calling
+ * VirtualBox::saveSettings(), in case someone wants to call this for several
+ * media.
+ *
+ * After this returns with success, uninit() has been called on the medium, and
+ * the object is no longer usable ("not ready" state).
+ *
+ * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
+ *                This only works in "wait" mode; otherwise saveSettings gets called automatically by the thread that was created,
+ *                and this parameter is ignored.
+ * @param autoCaller AutoCaller instance which must have been created on the caller's stack for this medium. This gets released here
+ *                   upon which the Medium instance gets uninitialized.
+ * @return
+ */
+HRESULT Medium::close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller)
+{
+    // we're accessing parent/child and backrefs, so lock the tree first, then ourselves
+    AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
+                                   this->lockHandle()
+                                           COMMA_LOCKVAL_SRC_POS);
+
+    bool wasCreated = true;
+
+    switch (m->state)
+    {
+        case MediumState_NotCreated:
+            wasCreated = false;
+            break;
+        case MediumState_Created:
+        case MediumState_Inaccessible:
+            break;
+        default:
+            return setStateError();
+    }
+
+    if (m->backRefs.size() != 0)
+        return setError(VBOX_E_OBJECT_IN_USE,
+                        tr("Medium '%s' is attached to %d virtual machines"),
+                           m->strLocationFull.raw(), m->backRefs.size());
+
+    // perform extra media-dependent close checks
+    HRESULT rc = canClose();
+    if (FAILED(rc)) return rc;
+
+    if (wasCreated)
+    {
+        // remove from the list of known media before performing actual
+        // uninitialization (to keep the media registry consistent on
+        // failure to do so)
+        rc = unregisterWithVirtualBox(pfNeedsSaveSettings);
+        if (FAILED(rc)) return rc;
+    }
+
+    // leave the AutoCaller, as otherwise uninit() will simply hang
+    autoCaller.release();
+
+    // Keep the locks held until after uninit, as otherwise the consistency
+    // of the medium tree cannot be guaranteed.
+    uninit();
+
+    return rc;
+}
+
+/**
  * Deletes the hard disk storage unit.
  *
  * If @a aProgress is not NULL but the object it points to is @c null then a new
@@ -4788,6 +4809,10 @@ HRESULT Medium::setFormat(CBSTR aFormat)
 }
 
 /**
+ * Performs extra checks if the medium can be closed and returns S_OK in
+ * this case. Otherwise, returns a respective error message. Called by
+ * Close() under the medium tree lock and the medium lock.
+ *
  * @note Also reused by Medium::Reset().
  *
  * @note Caller must hold the media tree write lock!
@@ -4805,7 +4830,9 @@ HRESULT Medium::canClose()
 }
 
 /**
- * Calls either VirtualBox::unregisterImage or VirtualBox::unregisterHardDisk depending
+ * Unregisters this medium with mVirtualBox. Called by close() under the medium tree lock.
+ *
+ * This calls either VirtualBox::unregisterImage or VirtualBox::unregisterHardDisk depending
  * on the device type of this medium.
  *
  * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
@@ -4849,8 +4876,7 @@ HRESULT Medium::unregisterWithVirtualBox(bool *pfNeedsSaveSettings)
     {
         if (pParentBackup)
         {
-            /* re-associate with the parent as we are still relatives in the
-             * registry */
+            // re-associate with the parent as we are still relatives in the registry
             m->pParent = pParentBackup;
             m->pParent->m->llChildren.push_back(this);
         }

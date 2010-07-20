@@ -1741,12 +1741,26 @@
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Machine has snapshot or open session or medium attached.
         </result>
-
       </desc>
+
       <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the machine to unregister.</desc>
       </param>
-      <param name="machine" type="IMachine" dir="return">
+      <param name="fCloseMedia" type="boolean" dir="in">
+        <desc>If true, the method will automatically detach all media from the
+          machine and its snapshots, call <link to="IMedium::close" /> on each
+          medium, and the paths of all media files involved will be reported to
+          the caller in the @a aFiles array so the caller can then delete the
+          image files.
+          If false, the method will fail if media attachments are present.</desc>
+      </param>
+      <param name="aFiles" type="wstring" safearray="yes" dir="out">
+        <desc>
+          List of all files detached from medium attachments of the machine, if
+          @a fDetachMedia is true.
+        </desc>
+      </param>
+      <param name="machine" type="IMachine" dir="out">
         <desc>Unregistered machine object.</desc>
       </param>
     </method>

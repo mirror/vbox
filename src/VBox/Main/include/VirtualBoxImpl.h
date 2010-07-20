@@ -99,23 +99,23 @@ public:
     void uninit();
 
     /* IVirtualBox properties */
-    STDMETHOD(COMGETTER(Version)) (BSTR *aVersion);
-    STDMETHOD(COMGETTER(Revision)) (ULONG *aRevision);
-    STDMETHOD(COMGETTER(PackageType)) (BSTR *aPackageType);
-    STDMETHOD(COMGETTER(HomeFolder)) (BSTR *aHomeFolder);
-    STDMETHOD(COMGETTER(SettingsFilePath)) (BSTR *aSettingsFilePath);
-    STDMETHOD(COMGETTER(Host)) (IHost **aHost);
-    STDMETHOD(COMGETTER(SystemProperties)) (ISystemProperties **aSystemProperties);
-    STDMETHOD(COMGETTER(Machines)) (ComSafeArrayOut (IMachine *, aMachines));
-    STDMETHOD(COMGETTER(HardDisks)) (ComSafeArrayOut (IMedium *, aHardDisks));
-    STDMETHOD(COMGETTER(DVDImages)) (ComSafeArrayOut (IMedium *, aDVDImages));
-    STDMETHOD(COMGETTER(FloppyImages)) (ComSafeArrayOut (IMedium *, aFloppyImages));
-    STDMETHOD(COMGETTER(ProgressOperations)) (ComSafeArrayOut (IProgress *, aOperations));
-    STDMETHOD(COMGETTER(GuestOSTypes)) (ComSafeArrayOut (IGuestOSType *, aGuestOSTypes));
-    STDMETHOD(COMGETTER(SharedFolders)) (ComSafeArrayOut (ISharedFolder *, aSharedFolders));
-    STDMETHOD(COMGETTER(PerformanceCollector)) (IPerformanceCollector **aPerformanceCollector);
-    STDMETHOD(COMGETTER(DHCPServers)) (ComSafeArrayOut (IDHCPServer *, aDHCPServers));
-    STDMETHOD(COMGETTER(EventSource)) (IEventSource ** aEventSource);
+    STDMETHOD(COMGETTER(Version))               (BSTR *aVersion);
+    STDMETHOD(COMGETTER(Revision))              (ULONG *aRevision);
+    STDMETHOD(COMGETTER(PackageType))           (BSTR *aPackageType);
+    STDMETHOD(COMGETTER(HomeFolder))            (BSTR *aHomeFolder);
+    STDMETHOD(COMGETTER(SettingsFilePath))      (BSTR *aSettingsFilePath);
+    STDMETHOD(COMGETTER(Host))                  (IHost **aHost);
+    STDMETHOD(COMGETTER(SystemProperties))      (ISystemProperties **aSystemProperties);
+    STDMETHOD(COMGETTER(Machines))              (ComSafeArrayOut(IMachine *, aMachines));
+    STDMETHOD(COMGETTER(HardDisks))             (ComSafeArrayOut(IMedium *, aHardDisks));
+    STDMETHOD(COMGETTER(DVDImages))             (ComSafeArrayOut(IMedium *, aDVDImages));
+    STDMETHOD(COMGETTER(FloppyImages))          (ComSafeArrayOut(IMedium *, aFloppyImages));
+    STDMETHOD(COMGETTER(ProgressOperations))    (ComSafeArrayOut(IProgress *, aOperations));
+    STDMETHOD(COMGETTER(GuestOSTypes))          (ComSafeArrayOut(IGuestOSType *, aGuestOSTypes));
+    STDMETHOD(COMGETTER(SharedFolders))         (ComSafeArrayOut(ISharedFolder *, aSharedFolders));
+    STDMETHOD(COMGETTER(PerformanceCollector))  (IPerformanceCollector **aPerformanceCollector);
+    STDMETHOD(COMGETTER(DHCPServers))           (ComSafeArrayOut(IDHCPServer *, aDHCPServers));
+    STDMETHOD(COMGETTER(EventSource))           (IEventSource ** aEventSource);
 
     /* IVirtualBox methods */
 
@@ -127,7 +127,7 @@ public:
     STDMETHOD(RegisterMachine) (IMachine *aMachine);
     STDMETHOD(GetMachine) (IN_BSTR aId, IMachine **aMachine);
     STDMETHOD(FindMachine) (IN_BSTR aName, IMachine **aMachine);
-    STDMETHOD(UnregisterMachine) (IN_BSTR aId, IMachine **aMachine);
+    STDMETHOD(UnregisterMachine) (IN_BSTR aId, BOOL fCloseMedia, ComSafeArrayOut(BSTR, aFiles), IMachine **aMachine);
     STDMETHOD(CreateAppliance) (IAppliance **anAppliance);
 
     STDMETHOD(CreateHardDisk)(IN_BSTR aFormat, IN_BSTR aLocation,

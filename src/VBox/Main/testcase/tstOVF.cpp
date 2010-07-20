@@ -237,7 +237,7 @@ void importOVF(const char *pcszPrefix,
     rc = pProgress->WaitForCompletion(-1);
     if (FAILED(rc)) throw MyError(rc, "Progress::WaitForCompletion() failed\n");
     pProgress->COMGETTER(ResultCode)(&rc2);
-    if (FAILED(rc2)) throw MyError(rc2, "Progress::GetResultCode() failed\n");
+    if (FAILED(rc2)) throw MyError(rc2, "Appliance::ImportMachines() failed\n", pProgress);
 
     com::SafeArray<BSTR> aMachineUUIDs;
     rc = pAppl->COMGETTER(Machines)(ComSafeArrayAsOutParam(aMachineUUIDs));
@@ -261,8 +261,12 @@ void importOVF(const char *pcszPrefix,
  * @param llFiles2Delete List of strings to append the target file path to.
  * @param pcszDest Target for dummy VMDK.
  */
-void copyDummyDiskImage(std::list<Utf8Str> &llFiles2Delete, const char *pcszDest)
+void copyDummyDiskImage(const char *pcszPrefix,
+                        std::list<Utf8Str> &llFiles2Delete,
+                        const char *pcszDest)
 {
+    RTPrintf("%s: copying ovf-dummy.vmdk to \"%s\"...\n", pcszPrefix, pcszDest);
+
     int vrc = RTFileCopy("ovf-testcases/ovf-dummy.vmdk", pcszDest);
     if (RT_FAILURE(vrc)) throw MyError(0, Utf8StrFmt("Cannot copy ovf-dummy.vmdk to %s: %Rra\n", pcszDest, vrc).c_str());
     llFiles2Delete.push_back(pcszDest);
@@ -305,13 +309,13 @@ int main(int argc, char *argv[])
         EventQueue eventQ;
 
         // testcase 1: import ovf-joomla-0.9/joomla-1.1.4-ovf.ovf
-        copyDummyDiskImage(llFiles2Delete, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf-0.vmdk");
-        copyDummyDiskImage(llFiles2Delete, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf-1.vmdk");
+        copyDummyDiskImage("joomla-0.9", llFiles2Delete, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf-0.vmdk");
+        copyDummyDiskImage("joomla-0.9", llFiles2Delete, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf-1.vmdk");
         importOVF("joomla-0.9", pVirtualBox, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf.ovf", llMachinesCreated);
 
         // testcase 2: import ovf-winxp-vbox-sharedfolders/winxp.ovf
-        copyDummyDiskImage(llFiles2Delete, "ovf-testcases/ovf-winxp-vbox-sharedfolders/Windows 5.1 XP 1 merged.vmdk");
-        copyDummyDiskImage(llFiles2Delete, "ovf-testcases/ovf-winxp-vbox-sharedfolders/smallvdi.vmdk");
+        copyDummyDiskImage("winxp-vbox-sharedfolders", llFiles2Delete, "ovf-testcases/ovf-winxp-vbox-sharedfolders/Windows 5.1 XP 1 merged.vmdk");
+        copyDummyDiskImage("winxp-vbox-sharedfolders", llFiles2Delete, "ovf-testcases/ovf-winxp-vbox-sharedfolders/smallvdi.vmdk");
         importOVF("winxp-vbox-sharedfolders", pVirtualBox, "ovf-testcases/ovf-winxp-vbox-sharedfolders/winxp.ovf", llMachinesCreated);
 
         RTPrintf("Machine imports done, no errors. Cleaning up...\n");
@@ -329,44 +333,30 @@ int main(int argc, char *argv[])
              it != llMachinesCreated.end();
              ++it)
         {
-//             const Guid &uuid = *it;
-//             Bstr bstrUUID(uuid.toUtf16());
-//             ComPtr<IMachine> pMachine;
-//             rc = pVirtualBox->GetMachine(bstrUUID, pMachine.asOutParam());
-//             if (FAILED(rc)) throw MyError(rc, "VirtualBox::FindMachine() failed\n");
-//
-//             SafeIfaceArray<IMediumAttachment> aMediumAttachments;
-//             rc = pMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(aMediumAttachments));
-//             if (FAILED(rc)) throw MyError(rc, "Machine::MediumAttachments() failed\n");
-//
-//             for (size_t u2 = 0;
-//                  u2 < aMediumAttachments.size();
-//                  ++u2)
-//             {
-//                 ComPtr<IMediumAttachment> pMediumAttachment(aMediumAttachments[u2]);
-//                 ComPtr<IMedium> pMedium;
-//                 rc = pMediumAttachment->COMGETTER(Medium)(pMedium.asOutParam());
-//                 if (FAILED(rc)) throw MyError(rc, "MediumAttachment::GetMedium() failed\n");
-//
-//                 if (!pMedium.isNull())
-//                 {
-//                     Bstr bstrLocation;
-//                     rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
-//                     if (FAILED(rc)) throw MyError(rc, "Medium::GetLocation() failed\n");
-//
-//                     llFiles2Delete.push_back(bstrLocation);
-//                 }
-//             }
+            const Guid &uuid = *it;
+            Bstr bstrUUID(uuid.toUtf16());
+            ComPtr<IMachine> pMachine;
+            rc = pVirtualBox->GetMachine(bstrUUID, pMachine.asOutParam());
+            if (FAILED(rc)) throw MyError(rc, "VirtualBox::FindMachine() failed\n");
 
-//             RTPrintf("  Deleting machine %ls...\n", bstrUUID.raw());
-//             pVirtualBox->UnregisterMachine(bstrUUID, pMachine.asOutParam());
-//             if (FAILED(rc)) throw MyError(rc, "VirtualBox::UnregisterMachine() failed\n");
-//
-//             if (!pMachine.isNull())
-//             {
-//                 rc = pMachine->DeleteSettings();
-//                 if (FAILED(rc)) throw MyError(rc, "Machine::DeleteSettings() failed\n");
-//             }
+            RTPrintf("  Deleting machine %ls...\n", bstrUUID.raw());
+            SafeArray<BSTR> sfaFiles;
+            rc = pVirtualBox->UnregisterMachine(bstrUUID,
+                                                true /* fDetachMedia */,
+                                                ComSafeArrayAsOutParam(sfaFiles),
+                                                pMachine.asOutParam());
+            if (FAILED(rc)) throw MyError(rc, "VirtualBox::UnregisterMachine() failed\n");
+
+            for (size_t u = 0;
+                 u < sfaFiles.size();
+                 ++u)
+            {
+                RTPrintf("    UnregisterMachine reported disk image %ls\n", sfaFiles[u]);
+                llFiles2Delete.push_back(sfaFiles[u]);
+            }
+
+            rc = pMachine->DeleteSettings();
+            if (FAILED(rc)) throw MyError(rc, "Machine::DeleteSettings() failed\n");
         }
     }
     catch (MyError &e)
@@ -381,6 +371,7 @@ int main(int argc, char *argv[])
          ++it)
     {
         const Utf8Str &strFile = *it;
+        RTPrintf("Deleting file %s...\n", strFile.c_str());
         RTFileDelete(strFile.c_str());
     }
 
