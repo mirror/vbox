@@ -251,6 +251,16 @@ typedef enum ISCSISTATE
     ISCSISTATE_IN_LOGOUT
 } ISCSISTATE;
 
+/**
+ * iSCSI PDU send flags (and maybe more in the future). */
+typedef enum ISCSIPDUFLAGS
+{
+    /** No special flags */
+    ISCSIPDU_DEFAULT = 0,
+    /** Do not attempt to re-attach to the target if the connection is lost */
+    ISCSIPDU_NO_REATTACH = RT_BIT(1)
+} ISCSIPDUFLAGS;
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -489,7 +499,7 @@ static const VDCONFIGINFO s_iscsiConfigInfo[] =
 
 /* iSCSI low-level functions (only to be used from the iSCSI high-level functions). */
 static uint32_t iscsiNewITT(PISCSIIMAGE pImage);
-static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq);
+static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq, uint32_t uFlags);
 static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes);
 static int drvISCSIValidatePDU(PISCSIRES paRes, uint32_t cnRes);
 static int iscsiTextAddKeyValue(uint8_t *pbBuf, size_t cbBuf, size_t *pcbBufCurr, const char *pcszKey, const char *pcszValue, size_t cbValue);
@@ -625,6 +635,7 @@ static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned
                 /* The other end has closed the connection. */
                 pImage->pInterfaceNetCallbacks->pfnClientClose(pImage->Socket);
                 pImage->Socket = NIL_RTSOCKET;
+                pImage->state = ISCSISTATE_FREE;
                 rc = VERR_NET_CONNECTION_RESET;
                 break;
             }
@@ -710,7 +721,7 @@ static int iscsiTransportWrite(PISCSIIMAGE pImage, PISCSIREQ paRequest, unsigned
     uint32_t pad = 0;
     unsigned int i;
 
-    LogFlow(("iscsiTransportWrite: cnRequest=%d (%s:%d)\n", cnRequest, pImage->pszHostname, pImage->uPort));
+    LogFlowFunc(("cnRequest=%d (%s:%d)\n", cnRequest, pImage->pszHostname, pImage->uPort));
     if (pImage->Socket == NIL_RTSOCKET)
     {
         /* Attempt to reconnect if the connection was previously broken. */
@@ -765,7 +776,7 @@ static int iscsiTransportWrite(PISCSIIMAGE pImage, PISCSIREQ paRequest, unsigned
         rc = VERR_BROKEN_PIPE;
     }
 
-    LogFlow(("iscsiTransportWrite: returns %Rrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1084,7 +1095,7 @@ restart:
         aISCSIReq[cnISCSIReq].cbSeg = cbBuf;
         cnISCSIReq++;
 
-        rc = iscsiSendPDU(pImage, aISCSIReq, cnISCSIReq);
+        rc = iscsiSendPDU(pImage, aISCSIReq, cnISCSIReq, ISCSIPDU_NO_REATTACH);
         if (RT_SUCCESS(rc))
         {
             ISCSIOPCODE cmd;
@@ -1346,7 +1357,7 @@ static int iscsiDetach(PISCSIIMAGE pImage)
     uint32_t cnISCSIReq = 0;
     ISCSIREQ aISCSIReq[4];
     uint32_t aReqBHS[12];
-    LogFlow(("iscsiDetach: entering\n"));
+    LogFlowFunc(("entering\n"));
 
     RTSemMutexRequest(pImage->Mutex, RT_INDEFINITE_WAIT);
 
@@ -1376,7 +1387,7 @@ static int iscsiDetach(PISCSIIMAGE pImage)
         aISCSIReq[cnISCSIReq].cbSeg = sizeof(aReqBHS);
         cnISCSIReq++;
 
-        rc = iscsiSendPDU(pImage, aISCSIReq, cnISCSIReq);
+        rc = iscsiSendPDU(pImage, aISCSIReq, cnISCSIReq, ISCSIPDU_NO_REATTACH);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -1414,7 +1425,7 @@ static int iscsiDetach(PISCSIIMAGE pImage)
 
     RTSemMutexRelease(pImage->Mutex);
 
-    LogFlow(("iscsiDetach: leaving\n"));
+    LogFlowFunc(("leaving\n"));
     LogRel(("iSCSI: logout to target %s\n", pImage->pszTargetName));
     return VINF_SUCCESS;
 }
@@ -1446,7 +1457,7 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
     uint32_t ExpDataSN = 0;
     bool final = false;
 
-    LogFlow(("iscsiCommand: entering, CmdSN=%d\n", pImage->CmdSN));
+    LogFlowFunc(("entering, CmdSN=%d\n", pImage->CmdSN));
 
     Assert(pRequest->enmXfer != SCSIXFER_TO_FROM_TARGET);   /**< @todo not yet supported, would require AHS. */
     Assert(pRequest->cbI2TData <= 0xffffff);    /* larger transfers would require R2T support. */
@@ -1503,7 +1514,7 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
         cnISCSIReq++;
     }
 
-    rc = iscsiSendPDU(pImage, aISCSIReq, cnISCSIReq);
+    rc = iscsiSendPDU(pImage, aISCSIReq, cnISCSIReq, ISCSIPDU_DEFAULT);
     if (RT_FAILURE(rc))
         goto out_release;
 
@@ -1646,7 +1657,7 @@ out_release:
     RTSemMutexRelease(pImage->Mutex);
 
 out:
-    LogFlow(("iscsiCommand: returns %Rrc\n", rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1676,14 +1687,15 @@ static uint32_t iscsiNewITT(PISCSIIMAGE pImage)
  * @param   pImage      The iSCSI connection state to be used.
  * @param   paReq       Pointer to array of iSCSI request sections.
  * @param   cnReq       Number of valid iSCSI request sections in the array.
+ * @param   uFlags      Flags controlling the exact send semantics.
  */
-static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq)
+static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq,
+                        uint32_t uFlags)
 {
     int rc = VINF_SUCCESS;
     /** @todo return VERR_VD_ISCSI_INVALID_STATE in the appropriate situations,
      * needs cleaning up of timeout/disconnect handling a bit, as otherwise
      * too many incorrect errors are signalled. */
-    Assert(pImage->paCurrReq == NULL);
     Assert(cnReq >= 1);
     Assert(paReq[0].cbSeg >= ISCSI_BHS_SIZE);
 
@@ -1692,7 +1704,8 @@ static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq)
         rc = iscsiTransportWrite(pImage, paReq, cnReq);
         if (RT_SUCCESS(rc))
             break;
-        if (rc != VERR_BROKEN_PIPE && rc != VERR_NET_CONNECTION_REFUSED)
+        if (   (uFlags & ISCSIPDU_NO_REATTACH)
+            || (rc != VERR_BROKEN_PIPE && rc != VERR_NET_CONNECTION_REFUSED))
             break;
         /* No point in reestablishing the connection for a logout */
         if (pImage->state == ISCSISTATE_IN_LOGOUT)
@@ -1753,7 +1766,7 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
                 }
                 if (pImage->paCurrReq != NULL)
                 {
-                    rc = iscsiSendPDU(pImage, pImage->paCurrReq, pImage->cnCurrReq);
+                    rc = iscsiSendPDU(pImage, pImage->paCurrReq, pImage->cnCurrReq, ISCSIPDU_DEFAULT);
                     if (RT_FAILURE(rc))
                         break;
                 }
@@ -1873,7 +1886,7 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
                 aISCSIReq[cnISCSIReq].cbSeg = sizeof(aReqBHS);
                 cnISCSIReq++;
 
-                iscsiSendPDU(pImage, aISCSIReq, cnISCSIReq);
+                iscsiSendPDU(pImage, aISCSIReq, cnISCSIReq, ISCSIPDU_NO_REATTACH);
             }
         }
     }
@@ -1963,7 +1976,7 @@ static int drvISCSIValidatePDU(PISCSIRES paRes, uint32_t cnRes)
         case ISCSIOP_REJECT:
         default:
             /* Do some logging, ignore PDU. */
-            LogFlow(("drvISCSIValidatePDU: ignore unhandled PDU, first word %#08x\n", RT_N2H_U32(pcrgResBHS[0])));
+            LogFlowFunc(("ignore unhandled PDU, first word %#08x\n", RT_N2H_U32(pcrgResBHS[0])));
             return VERR_PARSE_ERROR;
     }
     /* A target must not send PDUs with MaxCmdSN less than ExpCmdSN-1. */
