@@ -622,7 +622,7 @@ static void vboxNetFltLinuxQdiscRemove(PVBOXNETFLTINS pThis, struct net_device *
     int i;
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
     PVBOXNETQDISCPRIV pPriv;
-    struct Qdisc *pQdisc;
+    struct Qdisc *pQdisc, *pChild;
     if (!pDev)
         pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
     if (!VALID_PTR(pDev))
@@ -645,6 +645,8 @@ static void vboxNetFltLinuxQdiscRemove(PVBOXNETFLTINS pThis, struct net_device *
     pPriv = qdisc_priv(pQdisc);
     Assert(pPriv->pVBoxNetFlt == pThis);
     ASMAtomicWriteNullPtr(&pPriv->pVBoxNetFlt);
+    pChild = ASMAtomicXchgPtrT(&pPriv->pChild, &noop_qdisc, struct Qdisc *);
+    qdisc_destroy(pChild); /* It won't be the last reference. */
 
     QDISC_LOG(("vboxNetFltLinuxQdiscRemove: refcnt=%d num_tx_queues=%d\n",
                atomic_read(&pQdisc->refcnt), pDev->num_tx_queues));
