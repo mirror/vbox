@@ -882,6 +882,9 @@ public:
                          uint32_t fl,
                          std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
 
+    static bool isAudioDriverAllowedOnThisHost(AudioDriverType_T drv);
+    static AudioDriverType_T getHostDefaultAudioDriver();
+
 private:
     void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);
     void readAttachedNetworkMode(const xml::ElementNode &pelmMode, bool fEnabled, NetworkAdapter &nic);
@@ -889,6 +892,7 @@ private:
     void readCpuTree(const xml::ElementNode &elmCpu, CpuList &ll);
     void readSerialPorts(const xml::ElementNode &elmUART, SerialPortsList &ll);
     void readParallelPorts(const xml::ElementNode &elmLPT, ParallelPortsList &ll);
+    void readAudioAdapter(const xml::ElementNode &elmAudioAdapter, AudioAdapter &aa);
     void readGuestProperties(const xml::ElementNode &elmGuestProperties, Hardware &hw);
     void readStorageControllerAttributes(const xml::ElementNode &elmStorageController, StorageController &sctl);
     void readHardware(const xml::ElementNode &elmHardware, Hardware &hw, Storage &strg);

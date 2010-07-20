@@ -59,6 +59,9 @@
 #include <iprt/stream.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>
+#include <iprt/process.h>
+#include <iprt/ldr.h>
+#include <iprt/cpp/lock.h>
 
 // generated header
 #include "SchemaDefs.h"
@@ -2025,6 +2028,62 @@ void MachineConfigFile::readParallelPorts(const xml::ElementNode &elmLPT,
 }
 
 /**
+ * Called from MachineConfigFile::readHardware() to read audio adapter information
+ * and maybe fix driver information depending on the current host hardware.
+ *
+ * @param elmAudioAdapter "AudioAdapter" XML element.
+ * @param hw
+ */
+void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter,
+                                         AudioAdapter &aa)
+{
+    elmAudioAdapter.getAttributeValue("enabled", aa.fEnabled);
+
+    Utf8Str strTemp;
+    if (elmAudioAdapter.getAttributeValue("controller", strTemp))
+    {
+        if (strTemp == "SB16")
+            aa.controllerType = AudioControllerType_SB16;
+        else if (strTemp == "AC97")
+            aa.controllerType = AudioControllerType_AC97;
+        else
+            throw ConfigFileError(this, &elmAudioAdapter, N_("Invalid value '%s' in AudioAdapter/@controller attribute"), strTemp.c_str());
+    }
+
+    if (elmAudioAdapter.getAttributeValue("driver", strTemp))
+    {
+        // settings before 1.3 used lower case so make sure this is case-insensitive
+        strTemp.toUpper();
+        if (strTemp == "NULL")
+            aa.driverType = AudioDriverType_Null;
+        else if (strTemp == "WINMM")
+            aa.driverType = AudioDriverType_WinMM;
+        else if ( (strTemp == "DIRECTSOUND") || (strTemp == "DSOUND") )
+            aa.driverType = AudioDriverType_DirectSound;
+        else if (strTemp == "SOLAUDIO")
+            aa.driverType = AudioDriverType_SolAudio;
+        else if (strTemp == "ALSA")
+            aa.driverType = AudioDriverType_ALSA;
+        else if (strTemp == "PULSE")
+            aa.driverType = AudioDriverType_Pulse;
+        else if (strTemp == "OSS")
+            aa.driverType = AudioDriverType_OSS;
+        else if (strTemp == "COREAUDIO")
+            aa.driverType = AudioDriverType_CoreAudio;
+        else if (strTemp == "MMPM")
+            aa.driverType = AudioDriverType_MMPM;
+        else
+            throw ConfigFileError(this, &elmAudioAdapter, N_("Invalid value '%s' in AudioAdapter/@driver attribute"), strTemp.c_str());
+
+        // now check if this is actually supported on the current host platform;
+        // people might be opening a file created on a Windows host, and that
+        // VM should still start on a Linux host
+        if (!isAudioDriverAllowedOnThisHost(aa.driverType))
+            aa.driverType = getHostDefaultAudioDriver();
+    }
+}
+
+/**
  * Called from MachineConfigFile::readHardware() to read guest property information.
  * @param elmGuestProperties
  * @param hw
@@ -2414,45 +2473,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 )
             readParallelPorts(*pelmHwChild, hw.llParallelPorts);
         else if (pelmHwChild->nameEquals("AudioAdapter"))
-        {
-            pelmHwChild->getAttributeValue("enabled", hw.audioAdapter.fEnabled);
-
-            Utf8Str strTemp;
-            if (pelmHwChild->getAttributeValue("controller", strTemp))
-            {
-                if (strTemp == "SB16")
-                    hw.audioAdapter.controllerType = AudioControllerType_SB16;
-                else if (strTemp == "AC97")
-                    hw.audioAdapter.controllerType = AudioControllerType_AC97;
-                else
-                    throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in AudioAdapter/@controller attribute"), strTemp.c_str());
-            }
-            if (pelmHwChild->getAttributeValue("driver", strTemp))
-            {
-                // settings before 1.3 used lower case so make sure this is case-insensitive
-                strTemp.toUpper();
-                if (strTemp == "NULL")
-                    hw.audioAdapter.driverType = AudioDriverType_Null;
-                else if (strTemp == "WINMM")
-                    hw.audioAdapter.driverType = AudioDriverType_WinMM;
-                else if ( (strTemp == "DIRECTSOUND") || (strTemp == "DSOUND") )
-                    hw.audioAdapter.driverType = AudioDriverType_DirectSound;
-                else if (strTemp == "SOLAUDIO")
-                    hw.audioAdapter.driverType = AudioDriverType_SolAudio;
-                else if (strTemp == "ALSA")
-                    hw.audioAdapter.driverType = AudioDriverType_ALSA;
-                else if (strTemp == "PULSE")
-                    hw.audioAdapter.driverType = AudioDriverType_Pulse;
-                else if (strTemp == "OSS")
-                    hw.audioAdapter.driverType = AudioDriverType_OSS;
-                else if (strTemp == "COREAUDIO")
-                    hw.audioAdapter.driverType = AudioDriverType_CoreAudio;
-                else if (strTemp == "MMPM")
-                    hw.audioAdapter.driverType = AudioDriverType_MMPM;
-                else
-                    throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in AudioAdapter/@driver attribute"), strTemp.c_str());
-            }
-        }
+            readAudioAdapter(*pelmHwChild, hw.audioAdapter);
         else if (pelmHwChild->nameEquals("SharedFolders"))
         {
             xml::NodesLoop nl2(*pelmHwChild, "SharedFolder");
@@ -3905,6 +3926,108 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
 }
 
 /**
+ * Returns true only if the given AudioDriverType is supported on
+ * the current host platform. For example, this would return false
+ * for AudioDriverType_DirectSound when compiled on a Linux host.
+ * @param drv AudioDriverType_* enum to test.
+ * @return true only if the current host supports that driver.
+ */
+/*static*/
+bool MachineConfigFile::isAudioDriverAllowedOnThisHost(AudioDriverType_T drv)
+{
+    switch (drv)
+    {
+        case AudioDriverType_Null:
+#ifdef RT_OS_WINDOWS
+# ifdef VBOX_WITH_WINMM
+        case AudioDriverType_WinMM:
+# endif
+        case AudioDriverType_DirectSound:
+#endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_SOLARIS
+        case AudioDriverType_SolAudio:
+#endif
+#ifdef RT_OS_LINUX
+# ifdef VBOX_WITH_ALSA
+        case AudioDriverType_ALSA:
+# endif
+# ifdef VBOX_WITH_PULSE
+        case AudioDriverType_Pulse:
+# endif
+#endif /* RT_OS_LINUX */
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD) || defined(VBOX_WITH_SOLARIS_OSS)
+        case AudioDriverType_OSS:
+#endif
+#ifdef RT_OS_FREEBSD
+# ifdef VBOX_WITH_PULSE
+        case AudioDriverType_Pulse:
+# endif
+#endif
+#ifdef RT_OS_DARWIN
+        case AudioDriverType_CoreAudio:
+#endif
+#ifdef RT_OS_OS2
+        case AudioDriverType_MMPM:
+#endif
+            return true;
+    }
+
+    return false;
+}
+
+/**
+ * Returns the AudioDriverType_* which should be used by default on this
+ * host platform. On Linux, this will check at runtime whether PulseAudio
+ * or ALSA are actually supported on the first call.
+ * @return
+ */
+/*static*/
+AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
+{
+#if defined(RT_OS_WINDOWS)
+# ifdef VBOX_WITH_WINMM
+    return AudioDriverType_WinMM;
+# else /* VBOX_WITH_WINMM */
+    return AudioDriverType_DirectSound;
+# endif /* !VBOX_WITH_WINMM */
+#elif defined(RT_OS_SOLARIS)
+    return AudioDriverType_SolAudio;
+#elif defined(RT_OS_LINUX)
+    // on Linux, we need to check at runtime what's actually supported...
+    static RTLockMtx s_mtx;
+    static AudioDriverType_T s_linuxDriver = -1;
+    RTLock lock(s_mtx);
+    if (s_linuxDriver == (AudioDriverType_T)-1)
+    {
+# if defined(VBOX_WITH_PULSE)
+        /* Check for the pulse library & that the pulse audio daemon is running. */
+        if (RTProcIsRunningByName("pulseaudio") &&
+            RTLdrIsLoadable("libpulse.so.0"))
+            s_linuxDriver = AudioDriverType_Pulse;
+        else
+# endif /* VBOX_WITH_PULSE */
+# if defined(VBOX_WITH_ALSA)
+            /* Check if we can load the ALSA library */
+            if (RTLdrIsLoadable("libasound.so.2"))
+                s_linuxDriver = AudioDriverType_ALSA;
+       else
+# endif /* VBOX_WITH_ALSA */
+            s_linuxDriver = AudioDriverType_OSS;
+    }
+    return s_linuxDriver;
+// end elif defined(RT_OS_LINUX)
+#elif defined(RT_OS_DARWIN)
+    return AudioDriverType_CoreAudio;
+#elif defined(RT_OS_OS2)
+    return AudioDriverType_MMP;
+#elif defined(RT_OS_FREEBSD)
+    return AudioDriverType_OSS;
+#else
+    return AudioDriverType_Null;
+#endif
+}
+
+/**
  * Called from write() before calling ConfigFileBase::createStubDocument().
  * This adjusts the settings version in m->sv if incompatible settings require
  * a settings bump, whereas otherwise we try to preserve the settings version
@@ -3958,7 +4081,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                  ++it2)
             {
                 // we can only write the StorageController/@Instance attribute with v1.9
-                if (sctl.ulInstance != 0)      
+                if (sctl.ulInstance != 0)
                 {
                     if (m->sv < SettingsVersion_v1_9)
                         m->sv = SettingsVersion_v1_9;

@@ -245,59 +245,19 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
 
     if (mData->mAudioDriver != aAudioDriver)
     {
-        /*
-         * which audio driver type are we supposed to use?
-         */
-        switch (aAudioDriver)
+        if (settings::MachineConfigFile::isAudioDriverAllowedOnThisHost(aAudioDriver))
         {
-            case AudioDriverType_Null:
-#ifdef RT_OS_WINDOWS
-# ifdef VBOX_WITH_WINMM
-            case AudioDriverType_WinMM:
-# endif
-            case AudioDriverType_DirectSound:
-#endif /* RT_OS_WINDOWS */
-#ifdef RT_OS_SOLARIS
-            case AudioDriverType_SolAudio:
-#endif
-#ifdef RT_OS_LINUX
-# ifdef VBOX_WITH_ALSA
-            case AudioDriverType_ALSA:
-# endif
-# ifdef VBOX_WITH_PULSE
-            case AudioDriverType_Pulse:
-# endif
-#endif /* RT_OS_LINUX */
-#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD) || defined(VBOX_WITH_SOLARIS_OSS)
-            case AudioDriverType_OSS:
-#endif
-#ifdef RT_OS_FREEBSD
-# ifdef VBOX_WITH_PULSE
-            case AudioDriverType_Pulse:
-# endif
-#endif
-#ifdef RT_OS_DARWIN
-            case AudioDriverType_CoreAudio:
-#endif
-#ifdef RT_OS_OS2
-            case AudioDriverType_MMPM:
-#endif
-            {
-                mData.backup();
-                mData->mAudioDriver = aAudioDriver;
+            mData.backup();
+            mData->mAudioDriver = aAudioDriver;
 
-                alock.release();
-                AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-                mParent->setModified(Machine::IsModified_AudioAdapter);
-                break;
-            }
-
-            default:
-            {
-                AssertMsgFailed (("Wrong audio driver type %d\n",
-                                  aAudioDriver));
-                rc = E_FAIL;
-            }
+            alock.release();
+            AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+            mParent->setModified(Machine::IsModified_AudioAdapter);
+        }
+        else
+        {
+            AssertMsgFailed(("Wrong audio driver type %d\n", aAudioDriver));
+            rc = E_FAIL;
         }
     }
 

@@ -135,7 +135,6 @@ private:
     Utf8Str             m_strRemoteDisplayAuthLibrary;
     Utf8Str             m_strWebServiceAuthLibrary;
     ULONG               mLogHistoryCount;
-    AudioDriverType_T   mDefaultAudioDriver;
 
     friend class VirtualBox;
 };

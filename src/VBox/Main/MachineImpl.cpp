@@ -366,8 +366,10 @@ HRESULT Machine::init(VirtualBox *aParent,
 /**
  *  Initializes a new instance with data from machine XML (formerly Init_Registered).
  *  Gets called in two modes:
+ *
  *      -- from VirtualBox::initMachines() during VirtualBox startup; in that case, the
  *         UUID is specified and we mark the machine as "registered";
+ *
  *      -- from the public VirtualBox::OpenMachine() API, in which case the UUID is NULL
  *         and the machine remains unregistered until RegisterMachine() is called.
  *
@@ -457,7 +459,7 @@ HRESULT Machine::init(VirtualBox *aParent,
 
 /**
  *  Initializes a new instance from a machine config that is already in memory
- *  (import OVF import case). Since we are importing, the UUID in the machine
+ *  (import OVF case). Since we are importing, the UUID in the machine
  *  config is ignored and we always generate a fresh one.
  *
  *  @param strName  Name for the new machine; this overrides what is specified in config and is used
