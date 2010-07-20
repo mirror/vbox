@@ -3214,47 +3214,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
                         tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
                         aDevice, aControllerPort, aControllerName);
 
-    ComObjPtr<Medium> oldmedium = pAttach->getMedium();
-    DeviceType_T mediumType = pAttach->getType();
-
-    if (pAttach->isImplicit())
-    {
-        /* attempt to implicitly delete the implicitly created diff */
-
-        /// @todo move the implicit flag from MediumAttachment to Medium
-        /// and forbid any hard disk operation when it is implicit. Or maybe
-        /// a special media state for it to make it even more simple.
-
-        Assert(mMediaData.isBackedUp());
-
-        /* will leave the lock before the potentially lengthy operation, so
-         * protect with the special state */
-        MachineState_T oldState = mData->mMachineState;
-        setMachineState(MachineState_SettingUp);
-
-        alock.leave();
-
-        rc = oldmedium->deleteStorage(NULL /*aProgress*/, true /*aWait*/,
-                                      &fNeedsSaveSettings);
-
-        alock.enter();
-
-        setMachineState(oldState);
-
-        if (FAILED(rc)) return rc;
-    }
-
-    setModified(IsModified_Storage);
-    mMediaData.backup();
-
-    /* we cannot use erase (it) below because backup() above will create
-     * a copy of the list and make this copy active, but the iterator
-     * still refers to the original and is not valid for the copy */
-    mMediaData->mAttachments.remove(pAttach);
-
-    /* For non-hard disk media, detach straight away. */
-    if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
-        oldmedium->detachFrom(mData->mUuid);
+    rc = detachDevice(pAttach, alock, &fNeedsSaveSettings);
 
     if (fNeedsSaveSettings)
     {
@@ -6020,40 +5980,42 @@ HRESULT Machine::prepareUnregister(bool fCloseMedia,
                         tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
                         mUserData->mName.raw(), snapshotCount);
 
-    if (fCloseMedia)
+    if (    !mMediaData.isNull()      // can be NULL if machine is inaccessible
+         && mMediaData->mAttachments.size()
+       )
     {
-        // call backup before iterating over the media, because backup WILL change
-        // the pointers and invalidate iterators (grrrrr)
-        setModified(IsModified_Storage);
-        mMediaData.backup();         // do not call this or iterators will be invalidated
-
-        // caller wants automatic detachment: then do that and report all media to the array
-        MediaData::AttachmentList::iterator it = mMediaData->mAttachments.begin();
-        while (it != mMediaData->mAttachments.end())
+        // we have media attachments:
+        if (fCloseMedia)
         {
-            ComObjPtr<MediumAttachment> pAttach = *it;
-            ComObjPtr<Medium> pMedium = pAttach->getMedium();
+            // caller wants automatic detachment: then do that and report all media to the array
 
-            if (!pMedium.isNull())
-                llMedia.push_back(pMedium);
+            // make a temporary list because detachDevice invalidates iterators into
+            // mMediaData->mAttachments
+            MediaData::AttachmentList llAttachments2 = mMediaData->mAttachments;
 
-            // for non-hard disk media, detach straight away
-            // (same logic as in DetachDevice())
-            if (!pMedium.isNull())
-                pMedium->detachFrom(mData->mUuid);
+            for (MediaData::AttachmentList::iterator it = llAttachments2.begin();
+                 it != llAttachments2.end();
+                 ++it)
+            {
+                ComObjPtr<MediumAttachment> pAttach = *it;
+                ComObjPtr<Medium> pMedium = pAttach->getMedium();
 
-            // remove this attachment; erase() returns the iterator behind the thing that got deleted
-            it = mMediaData->mAttachments.erase(it);
-        };
-    }
-    else
-        // caller wants no automatic detachment: then fail if there are any
-        if (    !mMediaData.isNull()      // can be NULL if machine is inaccessible
-             && mMediaData->mAttachments.size()
-           )
+                if (!pMedium.isNull())
+                    llMedia.push_back(pMedium);
+
+                detachDevice(pAttach,
+                             alock,
+                             NULL /* pfNeedsSaveSettings */);
+            };
+        }
+        else
             return setError(VBOX_E_INVALID_OBJECT_STATE,
                             tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
                                mMediaData->mAttachments.size());
+    }
+
+    // commit all the media changes made above
+    commitMedia();
 
     mData->mRegistered = false;
 
@@ -8547,8 +8509,8 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
                                           LONG aDevice)
 {
    for (MediaData::AttachmentList::const_iterator it = ll.begin();
-         it != ll.end();
-         ++it)
+        it != ll.end();
+        ++it)
     {
         MediumAttachment *pAttach = *it;
         if (pAttach->matches(aControllerName, aControllerPort, aDevice))
@@ -8573,8 +8535,8 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
                                           ComObjPtr<Medium> pMedium)
 {
    for (MediaData::AttachmentList::const_iterator it = ll.begin();
-         it != ll.end();
-         ++it)
+        it != ll.end();
+        ++it)
     {
         MediumAttachment *pAttach = *it;
         ComObjPtr<Medium> pMediumThis = pAttach->getMedium();
@@ -8613,6 +8575,65 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
 }
 
 /**
+ * Main implementation for Machine::DetachDevice. This also gets called
+ * from Machine::prepareUnregister() so it has been taken out for simplicity.
+ *
+ * @param pAttach Medium attachment to detach.
+ * @param writeLock Machine write lock which the caller must have locked once. This may be released temporarily in here.
+ * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
+ * @return
+ */
+HRESULT Machine::detachDevice(MediumAttachment *pAttach,
+                              AutoWriteLock &writeLock,
+                              bool *pfNeedsSaveSettings)
+{
+    ComObjPtr<Medium> oldmedium = pAttach->getMedium();
+    DeviceType_T mediumType = pAttach->getType();
+
+    if (pAttach->isImplicit())
+    {
+        /* attempt to implicitly delete the implicitly created diff */
+
+            /// @todo move the implicit flag from MediumAttachment to Medium
+            /// and forbid any hard disk operation when it is implicit. Or maybe
+            /// a special media state for it to make it even more simple.
+
+        Assert(mMediaData.isBackedUp());
+
+            /* will leave the lock before the potentially lengthy operation, so
+            * protect with the special state */
+        MachineState_T oldState = mData->mMachineState;
+        setMachineState(MachineState_SettingUp);
+
+        writeLock.release();
+
+        HRESULT rc = oldmedium->deleteStorage(NULL /*aProgress*/, true /*aWait*/,
+                                              pfNeedsSaveSettings);
+
+        writeLock.acquire();
+
+        setMachineState(oldState);
+
+        if (FAILED(rc)) return rc;
+    }
+
+    setModified(IsModified_Storage);
+    mMediaData.backup();
+
+    /* we cannot use erase (it) below because backup() above will create
+    * a copy of the list and make this copy active, but the iterator
+    * still refers to the original and is not valid for the copy */
+    mMediaData->mAttachments.remove(pAttach);
+
+    /* For non-hard disk media, detach straight away. */
+    if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
+        oldmedium->detachFrom(mData->mUuid);
+
+    return S_OK;
+}
+
+/**
  * Perform deferred hard disk detachments.
  *
  * Does nothing if the hard disk attachment data (mMediaData) is not changed (not
@@ -8646,8 +8667,8 @@ void Machine::commitMedia(bool aOnline /*= false*/)
 
     /* enumerate new attachments */
     for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
-            it != mMediaData->mAttachments.end();
-            ++it)
+         it != mMediaData->mAttachments.end();
+         ++it)
     {
         MediumAttachment *pAttach = *it;
 
@@ -8668,9 +8689,9 @@ void Machine::commitMedia(bool aOnline /*= false*/)
             pAttach->setImplicit(false);
 
             if (    aOnline
-                    && pMedium
-                    && pAttach->getType() == DeviceType_HardDisk
-                )
+                 && pMedium
+                 && pAttach->getType() == DeviceType_HardDisk
+               )
             {
                 ComObjPtr<Medium> parent = pMedium->getParent();
                 AutoWriteLock parentLock(parent COMMA_LOCKVAL_SRC_POS);
@@ -8702,8 +8723,8 @@ void Machine::commitMedia(bool aOnline /*= false*/)
         {
             /* was this medium attached before? */
             for (MediaData::AttachmentList::iterator oldIt = oldAtts.begin();
-                    oldIt != oldAtts.end();
-                    ++oldIt)
+                 oldIt != oldAtts.end();
+                 ++oldIt)
             {
                 MediumAttachment *pOldAttach = *oldIt;
                 if (pOldAttach->getMedium() == pMedium)

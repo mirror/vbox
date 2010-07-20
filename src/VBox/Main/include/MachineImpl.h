@@ -774,6 +774,10 @@ protected:
     MediumAttachment* findAttachment(const MediaData::AttachmentList &ll,
                                      Guid &id);
 
+    HRESULT detachDevice(MediumAttachment *pAttach,
+                         AutoWriteLock &writeLock,
+                         bool *pfNeedsSaveSettings);
+
     void commitMedia(bool aOnline = false);
     void rollbackMedia();
 
