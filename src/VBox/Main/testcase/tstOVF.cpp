@@ -308,6 +308,11 @@ int main(int argc, char *argv[])
         // (here it is necessary only to process remaining XPCOM/IPC events after the session is closed)
         EventQueue eventQ;
 
+        // for each testcase, we will copy the dummy VMDK image to the subdirectory with the OVF testcase
+        // so that the import will find the disks it expects; this is just for testing the import since
+        // the imported machines will obviously not be usable.
+        // llFiles2Delete receives the paths of all the files that we need to clean up later.
+
         // testcase 1: import ovf-joomla-0.9/joomla-1.1.4-ovf.ovf
         copyDummyDiskImage("joomla-0.9", llFiles2Delete, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf-0.vmdk");
         copyDummyDiskImage("joomla-0.9", llFiles2Delete, "ovf-testcases/ovf-joomla-0.9/joomla-1.1.4-ovf-1.vmdk");
@@ -317,6 +322,9 @@ int main(int argc, char *argv[])
         copyDummyDiskImage("winxp-vbox-sharedfolders", llFiles2Delete, "ovf-testcases/ovf-winxp-vbox-sharedfolders/Windows 5.1 XP 1 merged.vmdk");
         copyDummyDiskImage("winxp-vbox-sharedfolders", llFiles2Delete, "ovf-testcases/ovf-winxp-vbox-sharedfolders/smallvdi.vmdk");
         importOVF("winxp-vbox-sharedfolders", pVirtualBox, "ovf-testcases/ovf-winxp-vbox-sharedfolders/winxp.ovf", llMachinesCreated);
+
+        // testcase 3: import ovf-winxp-vbox-sharedfolders/winxp.ovf
+        importOVF("winhost-audio-nodisks", pVirtualBox, "ovf-testcases/ovf-winhost-audio-nodisks/WinXP.ovf", llMachinesCreated);
 
         RTPrintf("Machine imports done, no errors. Cleaning up...\n");
     }

@@ -92,6 +92,7 @@ ovf-testcases_INST = $(INST_BIN)ovf-testcases/
 ovf-testcases_SOURCES = \
 	ovf-dummy.vmdk \
 	ovf-joomla-0.9/joomla-1.1.4-ovf.ovf=>ovf-joomla-0.9/joomla-1.1.4-ovf.ovf \
+	ovf-winhost-audio-nodisks/WinXP.ovf=>ovf-winhost-audio-nodisks/WinXP.ovf \
 	ovf-winxp-vbox-sharedfolders/winxp.ovf=>ovf-winxp-vbox-sharedfolders/winxp.ovf
 endif
 
