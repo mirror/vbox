@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -182,14 +182,13 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
         mutex_enter(&pThis->Mtx);
     }
 
+    /*
+     * If there are more waiting threads, wake them up. Otherwise leave the
+     * semaphore in the signalled state.
+     */
     pThis->cWakeUp++;
-    if (pThis->cWakeUp <= pThis->cWaiters)
+    if (pThis->cWakeUp <= pThis->cWaiters) /** @todo r=bird: see cWakeup = 0 below. */
     {
-        /*
-         * We decrement waiters here so that we don't keep signalling threads that
-         * have already been signalled but not yet scheduled. So cWaiters might be
-         * 0 even when there are threads actually waiting.
-         */
         cv_signal(&pThis->Cnd);
         pThis->uSignalGen++;
     }
@@ -255,7 +254,12 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fInt
          */
         Assert(!pThis->cWaiters);
         pThis->fSignaled = false;
-        pThis->cWakeUp = 0;
+        /** @todo r=bird: This will get out of whack if someone is in the
+         *        process of waking up (waiting to be scheduled). Further
+         *        more, a race between a cv_signal and a
+         *        timeout/interruption may cause wakeups to go unconsumed.
+         *        Not sure how we could easily deal with this rigth now... */
+        pThis->cWakeUp   = 0;
         rc = VINF_SUCCESS;
     }
     else if (!cMillies)
@@ -275,7 +279,7 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fInt
                     if (pThis->uSignalGen != uSignalGenBeforeWait)
                     {
                         /* We've been signaled by cv_signal(), consume the wake up. */
-                        --pThis->cWakeUp;
+                        --pThis->cWakeUp; /** @todo r=bird: May cause underflow, see above. */
                         rc = VINF_SUCCESS;
                     }
                     else
@@ -293,9 +297,9 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fInt
                 /* Returned due to pending signal */
                 rc = VERR_INTERRUPTED;
 
-            --pThis->cWaiters;
             break;
         }
+        --pThis->cWaiters;
     }
 
     if (!ASMAtomicDecU32(&pThis->cRefs))
