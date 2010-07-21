@@ -127,7 +127,6 @@ public:
     STDMETHOD(RegisterMachine) (IMachine *aMachine);
     STDMETHOD(GetMachine) (IN_BSTR aId, IMachine **aMachine);
     STDMETHOD(FindMachine) (IN_BSTR aName, IMachine **aMachine);
-    STDMETHOD(UnregisterMachine) (IN_BSTR aId, BOOL fCloseMedia, ComSafeArrayOut(BSTR, aFiles), IMachine **aMachine);
     STDMETHOD(CreateAppliance) (IAppliance **anAppliance);
 
     STDMETHOD(CreateHardDisk)(IN_BSTR aFormat, IN_BSTR aLocation,
@@ -263,6 +262,8 @@ public:
     HRESULT registerImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsSaveSettings);
     HRESULT unregisterImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsSaveSettings);
 
+    HRESULT unregisterMachine(Machine *pMachine);
+
     void rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDir,
                                            const Utf8Str &strNewConfigDir);
 
@@ -287,7 +288,7 @@ private:
     HRESULT checkMediaForConflicts2(const Guid &aId, const Utf8Str &aLocation,
                                     Utf8Str &aConflictType);
 
-    HRESULT registerMachine (Machine *aMachine);
+    HRESULT registerMachine(Machine *aMachine);
 
     HRESULT registerDHCPServer(DHCPServer *aDHCPServer,
                                bool aSaveRegistry = true);

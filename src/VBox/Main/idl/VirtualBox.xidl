@@ -1104,7 +1104,7 @@
 
   <interface
      name="IVirtualBoxErrorInfo" extends="$errorinfo"
-     uuid="4b86d186-407e-4f9e-8be8-e50061be8725"
+     uuid="e053d3c0-f493-491b-a735-3a9f0b1feed4"
      supportsErrorInfo="no"
      wsmap="managed"
      >
@@ -1705,64 +1705,6 @@
       </desc>
       <param name="name" type="wstring" dir="in"/>
       <param name="machine" type="IMachine" dir="return"/>
-    </method>
-
-    <method name="unregisterMachine">
-      <desc>
-        Unregisters the machine previously registered using
-        <link to="#registerMachine"/>. After successful method invocation, the
-        <link to="IMachineRegisteredEvent"/> event is fired.
-
-        <note>
-          The specified machine must not be in the Saved state, have an open
-          (or a spawning) direct session associated with it, have snapshots or
-          have any medium attached.
-        </note>
-
-        <note>
-          This method implicitly calls <link to="IMachine::saveSettings"/> to
-          save all current machine settings before unregistering it.
-        </note>
-
-        <note>
-          If the given machine is inaccessible (see
-          <link to="IMachine::accessible"/>), it will be unregistered and
-          fully uninitialized right afterwards. As a result, the returned
-          machine object will be unusable and an attempt to call
-          <b>any</b> method will return the "Object not ready" error.
-        </note>
-
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          Could not find registered machine matching @a id.
-        </result>
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Machine is in Saved state.
-        </result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Machine has snapshot or open session or medium attached.
-        </result>
-      </desc>
-
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the machine to unregister.</desc>
-      </param>
-      <param name="fCloseMedia" type="boolean" dir="in">
-        <desc>If true, the method will automatically detach all media from the
-          machine and its snapshots, call <link to="IMedium::close" /> on each
-          medium, and the paths of all media files involved will be reported to
-          the caller in the @a aFiles array so the caller can then delete the
-          image files.
-          If false, the method will fail if media attachments are present.</desc>
-      </param>
-      <param name="aFiles" type="wstring" safearray="yes" dir="out">
-        <desc>
-          List of all files detached from medium attachments of the machine, if
-          @a fDetachMedia is true.
-        </desc>
-      </param>
-      <param name="machine" type="IMachine" dir="out">
-        <desc>Unregistered machine object.</desc>
-      </param>
     </method>
 
     <method name="createAppliance">
@@ -3925,7 +3867,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="6d9212cb-a5c0-48b7-bbc1-3fa2ba2ee6d2"
+     uuid="276e0f43-889b-4b87-b05f-35f1db814700"
      wsmap="managed"
      >
     <desc>
@@ -3997,7 +3939,7 @@
 
         The only possible action you can perform on an inaccessible
         machine is to unregister it using the
-        <link to="IVirtualBox::unregisterMachine"/> call (or, to check
+        <link to="#unregisterMachine"/> call (or, to check
         for the accessibility state once more by querying this
         property).
 
@@ -4268,7 +4210,7 @@
           created by <link to="IVirtualBox::createMachine"/> or opened
           by <link to="IVirtualBox::openMachine"/> but not
           yet registered, or on unregistered machines after calling
-          <link to="IVirtualBox::unregisterMachine"/>. For all other
+          <link to="#unregisterMachine"/>. For all other
           cases, the settings can never be modified.
         </note>
         <note>
@@ -5227,7 +5169,7 @@
           by <link to="ISession::machine"/> and on new machines
           created by <link to="IVirtualBox::createMachine"/> but not
           yet registered, or on unregistered machines after calling
-          <link to="IVirtualBox::unregisterMachine"/>.
+          <link to="#unregisterMachine"/>.
         </note>
 
         <result name="VBOX_E_FILE_ERROR">
@@ -5254,7 +5196,7 @@
           created by <link to="IVirtualBox::createMachine"/> or
           opened by <link to="IVirtualBox::openMachine"/> but not
           yet registered, or on unregistered machines after calling
-          <link to="IVirtualBox::unregisterMachine"/>.
+          <link to="#unregisterMachine"/>.
         </note>
 
         <result name="VBOX_E_INVALID_VM_STATE">
@@ -5264,11 +5206,60 @@
       </desc>
     </method>
 
-    <method name="deleteSettings">
+    <method name="unregister">
       <desc>
-        Deletes the settings file of this machine from disk.
-        The machine must not be registered in order for this operation
-        to succeed.
+        Unregisters the machine, which must have been previously registered using
+        <link to="IVirtualBox::registerMachine"/>. After successful method invocation,
+        the <link to="IMachineRegisteredEvent"/> event is fired.
+
+        <note>
+          The specified machine must not be in the Saved state nor have an open
+          (or a spawning) direct session associated with it.
+        </note>
+
+        <note>
+          This method implicitly calls <link to="#saveSettings"/> to
+          save all current machine settings before unregistering it.
+        </note>
+
+        <note>
+          If the given machine is inaccessible (see <link to="#accessible"/>), it
+          will be unregistered and fully uninitialized right afterwards. As a result,
+          the returned machine object will be unusable and an attempt to call
+          <b>any</b> method will return the "Object not ready" error.
+        </note>
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Could not find registered machine matching @a id.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine is in Saved state.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Machine has snapshot or open session or medium attached.
+        </result>
+      </desc>
+
+      <param name="fCloseMedia" type="boolean" dir="in">
+        <desc>If true, the method will automatically detach all media from the
+          machine and its snapshots, call <link to="IMedium::close" /> on each
+          medium, and the paths of all media files involved will be reported to
+          the caller in the @a aFiles array so the caller can then delete the
+          image files.
+          If false, the method will fail if media attachments are present.</desc>
+      </param>
+      <param name="aFiles" type="wstring" safearray="yes" dir="return">
+        <desc>
+          List of all files detached from medium attachments of the machine, if
+          @a fCloseMedia is true.
+        </desc>
+      </param>
+    </method>
+
+    <method name="delete">
+      <desc>
+        Deletes the settings (machine XML) file of this machine from disk. The machine
+        must not be registered in order for this operation to succeed.
         <note>
           <link to="#settingsModified"/> will return @c true after this
           method successfully returns.
@@ -5279,7 +5270,7 @@
           created by <link to="IVirtualBox::createMachine"/> or
           opened by <link to="IVirtualBox::openMachine"/> but not
           yet registered, or on unregistered machines after calling
-          <link to="IVirtualBox::unregisterMachine"/>.
+          <link to="#unregisterMachine"/>.
         </note>
         <note>
           The deleted machine settings file can be restored (saved again)
