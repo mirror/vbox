@@ -564,6 +564,10 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCF)
                         VBOXVBVA_OP_WITHLOCK(ReportDirtyRect, pDevExt, &pSource->Vbva, &UnionRect);
                     }
                 }
+                else
+                {
+                    AssertBreakpoint();
+                }
             }
         }
     }
@@ -572,8 +576,6 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCF)
     uint32_t cNew = ASMAtomicDecU32(&pDevExt->cDMACmdsOutstanding);
     Assert(cNew < UINT32_MAX/2);
 
-    NTSTATUS cmplStatus = vboxWddmDmaCmdNotifyCompletion(pDevExt, pContext, pCF->SubmissionFenceId);
-    Assert(cmplStatus == STATUS_SUCCESS);
     return Status;
 }
 
