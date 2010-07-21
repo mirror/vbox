@@ -678,7 +678,7 @@
       <desc>
         The machine is about to be teleported to a different host or process.
         It is possible to pause a machine in this state, but it will go to the
-        <link to="MachineState::PausedTeleporting"/> state and it will not be
+        @c TeleportingPausedVM state and it will not be
         possible to resume it again unless the teleportation fails.
       </desc>
     </const>
@@ -687,7 +687,7 @@
         A live snapshot is being taken.  The machine is running normally, but
         some of the runtime configuration options are inaccessible.  Also, if
         paused while in this state it will transition to
-        <link to="MachineState::Saving"/> and it will not be resume the
+        @c Saving and it will not be resume the
         execution until the snapshot operation has completed.
       </desc>
     </const>
@@ -719,7 +719,7 @@
       <desc>
         The machine is being teleported to another host or process, but it is
         not running.  This is the paused variant of the
-        <link to="MachineState::Teleporting"/> state.
+        @c state.
       </desc>
     </const>
     <const name="TeleportingIn"         value="15">
@@ -2231,7 +2231,7 @@
         </note>
         <note>
           On success, the
-          <link to="IExtraDataChanged"/> notification
+          <link to="IExtraDataChangedEvent"/> notification
           is called to inform all registered listeners about a successful data
           change.
         </note>
@@ -3939,7 +3939,7 @@
 
         The only possible action you can perform on an inaccessible
         machine is to unregister it using the
-        <link to="#unregisterMachine"/> call (or, to check
+        <link to="IMachine::unregister"/> call (or, to check
         for the accessibility state once more by querying this
         property).
 
@@ -4210,7 +4210,7 @@
           created by <link to="IVirtualBox::createMachine"/> or opened
           by <link to="IVirtualBox::openMachine"/> but not
           yet registered, or on unregistered machines after calling
-          <link to="#unregisterMachine"/>. For all other
+          <link to="IMachine::unregister"/>. For all other
           cases, the settings can never be modified.
         </note>
         <note>
@@ -4288,9 +4288,9 @@
       <desc>
         Current snapshot of this machine. This is @c null if the machine
         currently has no snapshots. If it is not @c null, then it was
-        set by one of <link to="Console::takeSnapshot" />,
-        <link to="Console::deleteSnapshot" />
-        or <link to="Console::restoreSnapshot" />, depending on which
+        set by one of <link to="IConsole::takeSnapshot" />,
+        <link to="IConsole::deleteSnapshot" />
+        or <link to="IConsole::restoreSnapshot" />, depending on which
         was called last. See <link to="ISnapshot"/> for details.
       </desc>
     </attribute>
@@ -4503,7 +4503,7 @@
 
         This method is intended for managing storage devices in general (it works
         for both fixed and removable media). For storage devices supporting removable
-        media (such as DVDs and floppies), you can also use <link to="IMedium::mountMedium"/>
+        media (such as DVDs and floppies), you can also use <link to="IMachine::mountMedium"/>
         for changing the media while the machine is running.
 
         In a VM's default configuration of virtual machines, the secondary
@@ -5169,7 +5169,7 @@
           by <link to="ISession::machine"/> and on new machines
           created by <link to="IVirtualBox::createMachine"/> but not
           yet registered, or on unregistered machines after calling
-          <link to="#unregisterMachine"/>.
+          <link to="IMachine::unregister"/>.
         </note>
 
         <result name="VBOX_E_FILE_ERROR">
@@ -5196,7 +5196,7 @@
           created by <link to="IVirtualBox::createMachine"/> or
           opened by <link to="IVirtualBox::openMachine"/> but not
           yet registered, or on unregistered machines after calling
-          <link to="#unregisterMachine"/>.
+          <link to="IMachine::unregister"/>.
         </note>
 
         <result name="VBOX_E_INVALID_VM_STATE">
@@ -5270,7 +5270,7 @@
           created by <link to="IVirtualBox::createMachine"/> or
           opened by <link to="IVirtualBox::openMachine"/> but not
           yet registered, or on unregistered machines after calling
-          <link to="#unregisterMachine"/>.
+          <link to="IMachine::unregister"/>.
         </note>
         <note>
           The deleted machine settings file can be restored (saved again)
@@ -7087,8 +7087,7 @@
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>
-          Filter name. See <link to="IHostUSBDeviceFilter::name"/>
-          for more info.
+          Filter name. See <link to="IUSBDeviceFilter::name"/> for more information.
         </desc>
       </param>
       <param name="filter" type="IHostUSBDeviceFilter" dir="return">
@@ -7472,7 +7471,7 @@
         format specified by this argument will be used.
 
         The list of supported medium formats may be obtained by the
-        <link  to="#mediaFormats"/> call. Note that the default medium
+        <link  to="#mediumFormats"/> call. Note that the default medium
         format must have a capability to create differencing media;
         otherwise operations that create media implicitly may fail
         unexpectedly.
@@ -7486,7 +7485,7 @@
         </note>
 
         <see>
-          <link to="#mediaFormats"/>,
+          <link to="#mediumFormats"/>,
           <link to="IMediumFormat::id"/>,
           <link to="IVirtualBox::createHardDisk"/>
         </see>
@@ -9158,7 +9157,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <note>
           For media whose state is <link to="#state"/> is <link
           to="MediumState_Inaccessible"/>, the value of this property is the
-          last known logical size. For <link to="MediumaState_NotCreated"/>
+          last known logical size. For <link to="MediumState_NotCreated"/>
           media, the returned value is zero.
         </note>
       </desc>
@@ -10040,7 +10039,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         format.
 
         The list of all supported medium formats can be obtained using
-        <link to="ISystemProperties::mediaFormats"/>.
+        <link to="ISystemProperties::mediumFormats"/>.
 
         <see>IMedium</see>
     </desc>
@@ -12061,7 +12060,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       host's USB controller.
 
       <note>
-        The <link to="#remote"/> attribute is ignored by this type of
+        The <link to="IUSBDeviceFilter::remote"/> attribute is ignored by this type of
         filters, because it makes sense only for
         <link to="IUSBController::deviceFilters">machine USB filters</link>.
       </note>
@@ -13761,6 +13760,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <desc>
       Type of an event.
+      See <link to="IEvent" /> for an introduction to VirtualBox event handling.
     </desc>
 
     <const name="Invalid" value="0">
@@ -13976,16 +13976,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      >
     <desc>
       Event source. Generally, any object which could generate events can be an event source,
-      or aggregate one. To simplify using one-way protocols, such as webservices running on top of HTTP(S),
-      event source can work with listeners in either active or passive mode. In active mode it's up to
-      IEventSource implementation to call handleEvent(), in passive mode event source keeps track of
-      pending events for each listener and returns available events on demand.
+      or aggregate one. To simplify using one-way protocols such as webservices running on top of HTTP(S),
+      an event source can work with listeners in either active or passive mode. In active mode it is up to
+      the IEventSource implementation to call <link to="IEventListener::handleEvent" />, in passive mode the
+      event source keeps track of pending events for each listener and returns available events on demand.
+
+      See <link to="IEvent" /> for an introduction to VirtualBox event handling.
     </desc>
 
     <method name="createListener">
       <desc>
-        Creates new listener object, useful for passive mode.
-        <see>IEventListener</see>
+        Creates a new listener object, useful for passive mode.
       </desc>
       <param name="listener" type="IEventListener" dir="return"/>
     </method>
@@ -14005,12 +14006,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="active" type="boolean" dir="in">
         <desc>
-          Which mode this listener shall function in.
-          If in active mode, IEventListener's handleEvent() is called directly.
-          If in passive mode - for this IEventListener internal event queue is created.
-          When next event comes, it's added to queues for all interested registered passive
-          listeners. It's up to external code to call listener's handleEvent() then.
-          When done with event, it shall call source's eventComplete().
+          Which mode this listener is operating in.
+          In active mode, <link to="IEventListener::handleEvent" /> is called directly.
+          In passive mode, an internal event queue is created for this this IEventListener.
+          For each event coming in, it is added to queues for all interested registered passive
+          listeners. It is then up to the external code to call the listener's
+          <link to="IEventListener::handleEvent" /> method. When done with an event, the
+          external code must call eventComplete().
         </desc>
       </param>
     </method>
@@ -14046,7 +14048,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="getEvent">
       <desc>
         Get events from this peer's event queue (for passive mode). Consumer's implementation
-        must call listener's handleEvent() once event is available.
+        must call <link to="IEventListener::handleEvent" /> once the event is available.
       </desc>
       <param name="listener" type="IEventListener" dir="in">
         <desc>Which listener get data for.</desc>
@@ -14081,7 +14083,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      wsmap="managed"
      >
     <desc>
-      Event listener. Event listener can work in either active, or passive mode, depending on the way it's registered.
+      Event listener. An event listener can work in either active or passive mode, depending on the way
+      it was registered.
+      See <link to="IEvent" /> for an introduction to VirtualBox event handling.
     </desc>
 
     <method name="handleEvent">
@@ -14102,9 +14106,77 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      wsmap="managed"
      >
     <desc>
-      Generic event. Usually events implements some of IEvent subinterfaces, so
-      standard use pattern is to check 'type' attribute and downcast (with QueryInterface())
-      appropraitely.
+      Abstract parent interface for VirtualBox events. Actual events will typically implement
+      a more specific interface which derives from this (see below).
+
+      <b>Introduction to VirtualBox events</b>
+
+      Starting with VirtualBox 3.3, support for generic events was introduced.
+      It provides a uniform mechanism to register for and consume specific events.
+      Previously, several callback interfaces were used which means that clients
+      were called for each event in the interface. Also, this mechanism was not
+      compatible with scripting languages, local Java bindings and remote web
+      services as they do not support callbacks.
+
+      To overcome those issues, the notion of events and listeners was introduced.
+      Generally speaking, an event represents the information that something happened,
+      while a listener represents an entity that is interested in certain events.
+      In order for this to work with unidirectional protocols (i.e. web services),
+      the concept of passive and active listeners is used.
+
+      Event consumers can register themselves as listeners, providing an array of
+      events they are interested in. When an event triggers, the listener is
+      notified about the event. The exact mechanism of the notification
+      depends on the way the listener was registered - as an active or passive listener:
+
+      <ul>
+        <li>An active listener is very similar to a traditional callback - i.e. it is a
+        function invoked by the API implementation.
+        The main difference here is that there's an event object notion, not individual
+        callback parameters.</li>
+
+        <li>Passive listeners are somewhat trickier: internally the
+        <link to="IEventSource" /> implementation maintains an event queue for each passive
+        listener, and newly arrived events are put in this queue. When the listener calls
+        <link to="IEventSource::getEvent"/>, all elements from its internal event queue are
+        returned. When the client completes processing of an event, the
+        <link to="IEventSource::eventProcessed" /> function must be called, acknowledging
+        that the events were processed. It supports implementing waitable events. On passive
+        listener unregistration, all events from its queue are auto-acknowledged.</li>
+      </ul>
+
+      Waitable events are useful in situations where the event generator wants to track
+      delivery or a party wants to wait until all listeners have completed the event. A
+      typical example would be a vetoable event where a listeners might put a veto on
+      a certain action, and thus the event producer has to make sure that all listeners have
+      processed the event and not vetoed before taking the action.
+
+      A given event may have both passive and active listeners at the same time.
+
+      <b>Using events</b>
+
+      Any VirtualBox object capable of producing externally visible events provides an
+      @c eventSource read-only attribute, which is of the type <link to="IEventSource" />.
+      This event source object is notified by VirtualBox once something has happened, so
+      consumers may register event listeners with this event source. To register a listener,
+      an object implementing the <link to="IEventListener" /> interface must be provided.
+      For active listeners, such an object is typically created by the consumer, while for
+      passive listeners <link to="IEventSource::createListener" /> should  be used. Please
+      note that a listener created with @c CreateListener() must not be used as an active listener.
+
+      Once created, the listener must be registered to listen for the desired events, providing
+      an array of <link to="VBoxEventType" /> enums. Those elements can either be the individual
+      event IDs or wildcards matching multiple event IDs.
+
+      After registration, the callback's <link to="IEventListener::handleEvent" /> method is
+      called automatically when the event is triggered, while passive listeners have to call
+      <link to="IEventSource::getEvent" /> and <link to="IEventSource::eventProcessed" /> in
+      an event processing loop.
+
+      This interface (IEvent) is an abstract parent interface for all such VirtualBox events
+      coming in. As a result, the standard use pattern inside <link to="IEventListener::handleEvent" />
+      or the event processing loop is to check the <link to="#type" /> attribute of the event and
+      then cast to the appropriate specific interface using @c QueryInterface().
     </desc>
 
     <attribute name="type" readonly="yes" type="VBoxEventType">
@@ -14579,7 +14651,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      >
     <desc>
       Notification when the status of the VRDP server changes. Interested callees
-      should use <link to="IConsole::RemoteDisplayInfo">IRemoteDisplayInfo</link>
+      should use <link to="IConsole::remoteDisplayInfo">IRemoteDisplayInfo</link>
       attributes to find out what is the current status.
     </desc>
   </interface>
