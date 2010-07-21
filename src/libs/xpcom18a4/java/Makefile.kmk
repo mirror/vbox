@@ -157,7 +157,7 @@ VBoxJXpcom-inst-jar_CLEAN = \
 		$(VBOX_JXPCOM_JDEST)/*/*/*/*/*.class \
 		$(VBOX_JXPCOM_JDEST)/*/*/*/*/*/*.class \
 	)
-VBoxJXpcom-inst-jar_BLDDIRS += $(VBOX_JXPCOM_GEN)/java $(VBOX_JXPCOM_GEN)/java/glue
+VBoxJXpcom-inst-jar_BLDDIRS += $(VBOX_JXPCOM_GEN)/java $(VBOX_JXPCOM_GEN)/java/glue $(VBOX_JXPCOM_GEN)/java/interfaces
 
 #
 # For VBoxJXpcom, not currently used.
@@ -179,16 +179,16 @@ $(VBOX_JXPCOM_NSERROR): $(VBOX_PATH_XPCOM_SRC)/xpcom/base/nsError.h $(VBOX_JXPCO
 
 ifndef VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 #
-# Generate .java interface files from XPCOM's typelib.
+# Generate .java interface files from .xidl
 #
-VBOX_TEMP_HOME=$(shell echo /tmp/vboxhome$$$$)
-$(VBOX_JXPCOM_GEN)/jxpcomgen.list: $(GENJIFACES_BIN) $(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt | $(VBOX_JXPCOM_GEN)/java/
+
+$(VBOX_JXPCOM_GEN)/jxpcomgen.list: $(VBOX_XIDL_FILE) $(VBOX_JXPCOM_SRC)/tools/genjifaces.xsl | $(VBOX_JXPCOM_GEN)/java/interfaces/
 	$(QUIET)echo Generating Java interface files
-	$(call preprocess_exebld,$(GENJIFACES_BIN))
-	$(QUIET) $(MKDIR) -p $(VBOX_TEMP_HOME)
-	VBOX_USER_HOME=$(VBOX_TEMP_HOME) $(GENJIFACES_BIN) -d $(VBOX_JXPCOM_GEN)/java
-	$(QUIET) rm -rf $(VBOX_TEMP_HOME)
-	$(QUIET)echo $$(ls $(VBOX_JXPCOM_GEN)/java/*.java) > $@
+	$(QUIET)$(RM) -f $(wildcard $(VBOX_JXPCOM_GEN)/java/interfaces/*.java)
+	$(QUIET)$(VBOX_XSLTPROC)   \
+              -o $(VBOX_JXPCOM_GEN)/java/interfaces/merged.file $(VBOX_JXPCOM_SRC)/tools/genjifaces.xsl $<
+	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JXPCOM_GEN)/java/interfaces/merged.file $(VBOX_JXPCOM_GEN)/java/interfaces
+	$(QUIET)echo $(VBOX_JXPCOM_GEN)/java/interfaces/*.java > $@
 
 else  # VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 #
