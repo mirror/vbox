@@ -495,34 +495,35 @@ void VBoxServiceMainWait(void)
 
 int main(int argc, char **argv)
 {
-    int rc = VINF_SUCCESS;
     /*
      * Init globals and such.
      */
     RTR3Init();
 
     /*
-     * Connect to the kernel part before daemonizing so we can fail
-     * and complain if there is some kind of problem. We need to initialize
-     * the guest lib *before* we do the pre-init just in case one of services
-     * needs do to some initial stuff with it.
+     * Connect to the kernel part before daemonizing so we can fail and
+     * complain if there is some kind of problem.  We need to initialize the
+     * guest lib *before* we do the pre-init just in case one of services needs
+     * do to some initial stuff with it.
      */
     VBoxServiceVerbose(2, "Calling VbgR3Init()\n");
-    rc = VbglR3Init();
+    int rc = VbglR3Init();
     if (RT_FAILURE(rc))
         return VBoxServiceError("VbglR3Init failed with rc=%Rrc.\n", rc);
 
 #ifdef RT_OS_WINDOWS
-    /* Special forked VBoxService.exe process for handling page fusion. */
-    /* Note: ugly hack, but annoying to install additional executables. */
+    /*
+     * Check if we're the specially spawned VBoxService.exe process that
+     * handles page fusion.  This saves an extra executable.
+     */
     if (    argc == 2
-        &&  !strcmp(argv[1], "-pagefusionfork"))
-    {
+        &&  !strcmp(argv[1], "--pagefusionfork"))
         return VBoxServicePageSharingInitFork();
-    }
 #endif
 
-    /* Do pre-init of services. */
+    /*
+     * Do pre-init of services.
+     */
     g_pszProgName = RTPathFilename(argv[0]);
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
     {
@@ -532,9 +533,13 @@ int main(int argc, char **argv)
     }
 
 #ifdef RT_OS_WINDOWS
-    /* Make sure only one instance of VBoxService runs at a time. Create a global mutex for that.
-       Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
-    HANDLE hMutexAppRunning = CreateMutex (NULL, FALSE, VBOXSERVICE_NAME);
+    /*
+     * Make sure only one instance of VBoxService runs at a time.  Create a
+     * global mutex for that.  Do not use a global namespace ("Global\\") for
+     * mutex name here, will blow up NT4 compatibility!
+     */
+    /** @todo r=bird: Use Global\\ prefix or this serves no purpose on terminal servers. */
+    HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, VBOXSERVICE_NAME);
     if (   hMutexAppRunning != NULL
         && GetLastError() == ERROR_ALREADY_EXISTS)
     {
@@ -543,6 +548,11 @@ int main(int argc, char **argv)
         /* Close the mutex for this application instance. */
         CloseHandle(hMutexAppRunning);
         hMutexAppRunning = NULL;
+
+        /** @todo r=bird: How does this cause us to terminate?  Btw. Why do
+         *        we do this before parsing parameters?  'VBoxService --help'
+         *        and 'VBoxService --version' won't work now when the service
+         *        is running... */
     }
 #endif
 
