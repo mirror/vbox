@@ -71,61 +71,6 @@ VBOX_JXPCOM_GENH = \
 	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_JavaXPCOMMethods.h \
 	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_ProfileLock.h
 
-
-ifndef VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
- #
- # genjifaces - using VBoxXPCOM and associates.
- #
- PROGRAMS += genjifaces
- TEMPLATE_XPCOMEXEBLD                   = XPCOM Build executable
- TEMPLATE_XPCOMEXEBLD_EXTENDS           = XPCOMBLDPROG
- TEMPLATE_XPCOMEXEBLD_EXTENDS_BY        = appending
- TEMPLATE_XPCOMEXEBLD_CXXFLAGS          = $(TEMPLATE_XPCOM_CXXFLAGS)
- TEMPLATE_XPCOMEXEBLD_INCS              = \
-	$(TEMPLATE_XPCOM_INCS) \
-	$(VBOX_PATH_XPCOM_SRC) \
-	$(VBOX_PATH_XPCOM_SRC)/xpcom/build \
-	$(VBOX_PATH_XPCOM_SRC)/xpcom/ds
- TEMPLATE_XPCOMEXEBLD_DEFS              = VBOX_WITH_XPCOM
- TEMPLATE_XPCOMEXEBLD_LIBS              = $(VBoxXPCOM_LIBS) $(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
- # This is OK on Linux even with hardening
- TEMPLATE_XPCOMEXEBLD_LIBS.linux        = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
- TEMPLATE_XPCOMEXEBLD_LIBS.solaris      = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
- TEMPLATE_XPCOMEXEBLD_INCS.darwin       = $(TEMPLATE_XPCOM_INCS.darwin)
- TEMPLATE_XPCOMEXEBLD_LDFLAGS.darwin    =  \
-	-framework CoreServices   \
-	-framework CoreFoundation \
-	-framework Foundation     \
-	-framework AppKit         \
-	-framework Carbon
- TEMPLATE_XPCOMEXEBLD_LDFLAGS.linux     = '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
-
- ifeq ($(KBUILD_TARGET),darwin)
-  define preprocess_exebld
-   $(shell install_name_tool -change $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib $(PATH_BIN)/VBoxRT.dylib $(1))
-  endef
- else
-  define preprocess_exebld
-  endef
- endif
-
- genjifaces_TEMPLATE = XPCOMEXEBLD
- genjifaces_INCS     =    \
-         src
- genjifaces_DEFS     =    \
-         EXPORT_XPTI_API  \
-         EXPORT_XPT_API
-
- genjifaces_SOURCES  =    \
-        ../xpcom/build/nsStringAPI.cpp  \
-         ../xpcom/build/nsXPComInit.cpp \
-         tools/genifaces/GenerateJavaInterfaces.cpp \
-         src/nsFileStreams.cpp
- genjifaces_INST = $(INST_BIN)
- genjifaces_DEPS = $(PATH_TARGET)/VBox-xpcom-idl-timestamp
- GENJIFACES_BIN := $(PATH_BIN)/genjifaces$(HOSTSUFF_EXE)
-endif # !VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
-
 #
 # Install JAR files
 #
