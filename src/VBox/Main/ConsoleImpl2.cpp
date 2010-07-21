@@ -329,13 +329,13 @@ public:
 /**
  * Helper that calls CFGMR3InsertString and throws an iprt::Error if that
  * fails (C-string variant).
- * @param pParent
- * @param pcszNodeName
- * @param strValue
+ * @param   pParent         See CFGMR3InsertStringN.
+ * @param   pcszNodeName    See CFGMR3InsertStringN.
+ * @param   pcszValue       The string value.
  */
-void InsertConfigString(PCFGMNODE pNode,
-                        const char *pcszName,
-                        const char *pcszValue)
+static void InsertConfigString(PCFGMNODE pNode,
+                               const char *pcszName,
+                               const char *pcszValue)
 {
     int vrc = CFGMR3InsertString(pNode,
                                  pcszName,
@@ -347,18 +347,18 @@ void InsertConfigString(PCFGMNODE pNode,
 /**
  * Helper that calls CFGMR3InsertString and throws an iprt::Error if that
  * fails (Utf8Str variant).
- * @param pParent
- * @param pcszNodeName
- * @param strValue
+ * @param   pParent         See CFGMR3InsertStringN.
+ * @param   pcszNodeName    See CFGMR3InsertStringN.
+ * @param   rStrValue       The string value.
  */
-void InsertConfigString(PCFGMNODE pNode,
-                        const char *pcszName,
-                        const Utf8Str &strValue)
+static void InsertConfigString(PCFGMNODE pNode,
+                               const char *pcszName,
+                               const Utf8Str &rStrValue)
 {
-    int vrc = CFGMR3InsertStringLengthKnown(pNode,
-                                            pcszName,
-                                            strValue.c_str(),
-                                            strValue.length() + 1);
+    int vrc = CFGMR3InsertStringN(pNode,
+                                  pcszName,
+                                  rStrValue.c_str(),
+                                  rStrValue.length());
     if (RT_FAILURE(vrc))
         throw ConfigError("CFGMR3InsertStringLengthKnown", vrc, pcszName);
 }
@@ -366,28 +366,30 @@ void InsertConfigString(PCFGMNODE pNode,
 /**
  * Helper that calls CFGMR3InsertString and throws an iprt::Error if that
  * fails (Bstr variant).
- * @param pParent
- * @param pcszNodeName
- * @param strValue
+ *
+ * @param   pParent         See CFGMR3InsertStringN.
+ * @param   pcszNodeName    See CFGMR3InsertStringN.
+ * @param   rBstrValue       The string value.
  */
-void InsertConfigString(PCFGMNODE pNode,
-                        const char *pcszName,
-                        const Bstr &bstrValue)
+static void InsertConfigString(PCFGMNODE pNode,
+                               const char *pcszName,
+                               const Bstr &rBstrValue)
 {
-    InsertConfigString(pNode, pcszName, Utf8Str(bstrValue));
+    InsertConfigString(pNode, pcszName, Utf8Str(rBstrValue));
 }
 
 /**
+ * Helper that calls CFGMR3InsertBytes and throws an iprt::Error if that fails.
  *
- * @param pNode
- * @param pcszName
- * @param pvBytes
- * @param cbBytes
+ * @param   pNode           See CFGMR3InsertBytes.
+ * @param   pcszName        See CFGMR3InsertBytes.
+ * @param   pvBytes         See CFGMR3InsertBytes.
+ * @param   cbBytes         See CFGMR3InsertBytes.
  */
-void InsertConfigBytes(PCFGMNODE pNode,
-                       const char *pcszName,
-                       const void *pvBytes,
-                       size_t cbBytes)
+static void InsertConfigBytes(PCFGMNODE pNode,
+                              const char *pcszName,
+                              const void *pvBytes,
+                              size_t cbBytes)
 {
     int vrc = CFGMR3InsertBytes(pNode,
                                 pcszName,
@@ -398,14 +400,16 @@ void InsertConfigBytes(PCFGMNODE pNode,
 }
 
 /**
+ * Helper that calls CFGMR3InsertInteger and thows an iprt::Error if that
+ * fails.
  *
- * @param pNode
- * @param pcszName
- * @param u64Integer
+ * @param   pNode           See CFGMR3InsertInteger.
+ * @param   pcszName        See CFGMR3InsertInteger.
+ * @param   u64Integer      See CFGMR3InsertInteger.
  */
-void InsertConfigInteger(PCFGMNODE pNode,
-                         const char *pcszName,
-                         uint64_t u64Integer)
+static void InsertConfigInteger(PCFGMNODE pNode,
+                                const char *pcszName,
+                                uint64_t u64Integer)
 {
     int vrc = CFGMR3InsertInteger(pNode,
                                   pcszName,
@@ -415,14 +419,15 @@ void InsertConfigInteger(PCFGMNODE pNode,
 }
 
 /**
+ * Helper that calls CFGMR3InsertNode and throws an iprt::Error if that fails.
  *
- * @param pNode
- * @param pcszName
- * @param ppChild
+ * @param   pNode           See CFGMR3InsertNode.
+ * @param   pcszName        See CFGMR3InsertNode.
+ * @param   ppChild         See CFGMR3InsertNode.
  */
-void InsertConfigNode(PCFGMNODE pNode,
-                      const char *pcszName,
-                      PCFGMNODE *ppChild)
+static void InsertConfigNode(PCFGMNODE pNode,
+                             const char *pcszName,
+                             PCFGMNODE *ppChild)
 {
     int vrc = CFGMR3InsertNode(pNode, pcszName, ppChild);
     if (RT_FAILURE(vrc))
@@ -430,17 +435,19 @@ void InsertConfigNode(PCFGMNODE pNode,
 }
 
 /**
+ * Helper that calls CFGMR3RemoveValue and throws an iprt::Error if that fails.
  *
- * @param pNode
- * @param pcszName
+ * @param   pNode           See CFGMR3RemoveValue.
+ * @param   pcszName        See CFGMR3RemoveValue.
  */
-void RemoveConfigValue(PCFGMNODE pNode,
-                       const char *pcszName)
+static void RemoveConfigValue(PCFGMNODE pNode,
+                              const char *pcszName)
 {
     int vrc = CFGMR3RemoveValue(pNode, pcszName);
     if (RT_FAILURE(vrc))
         throw ConfigError("CFGMR3RemoveValue", vrc, pcszName);
 }
+
 
 /**
  *  Construct the VM configuration tree (CFGM).
@@ -885,7 +892,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
 
             InsertConfigString(pCfg,   "DeviceKey", bstrKey);
-            InsertConfigInteger(pCfg, "GetKeyFromRealSMC", fGetKeyFromRealSMC);
+            InsertConfigInteger(pCfg,  "GetKeyFromRealSMC", fGetKeyFromRealSMC);
         }
 
         /*
@@ -916,13 +923,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigNode(pInst,    "LUN#0", &pLunL0);
         InsertConfigString(pLunL0, "Driver",               "KeyboardQueue");
         InsertConfigNode(pLunL0,   "Config", &pCfg);
-        InsertConfigInteger(pCfg, "QueueSize",            64);
+        InsertConfigInteger(pCfg,  "QueueSize",            64);
 
         InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
         InsertConfigString(pLunL1, "Driver",               "MainKeyboard");
         InsertConfigNode(pLunL1,   "Config", &pCfg);
         Keyboard *pKeyboard = pConsole->mKeyboard;
-        InsertConfigInteger(pCfg, "Object",     (uintptr_t)pKeyboard);
+        InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);
 
         InsertConfigNode(pInst,    "LUN#1", &pLunL0);
         InsertConfigString(pLunL0, "Driver",               "MouseQueue");
@@ -933,7 +940,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigString(pLunL1, "Driver",               "MainMouse");
         InsertConfigNode(pLunL1,   "Config", &pCfg);
         Mouse *pMouse = pConsole->mMouse;
-        InsertConfigInteger(pCfg, "Object",     (uintptr_t)pMouse);
+        InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
 
         /*
          * i8254 Programmable Interval Timer And Dummy Speaker
@@ -962,8 +969,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigNode(pDev, "0", &pInst);
         InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
         InsertConfigNode(pInst,    "Config", &pCfg);
-        InsertConfigInteger(pCfg, "IOAPIC", fIOAPIC);
-        InsertConfigInteger(pCfg, "NumCPUs", cCpus);
+        InsertConfigInteger(pCfg,  "IOAPIC", fIOAPIC);
+        InsertConfigInteger(pCfg,  "NumCPUs", cCpus);
 
         if (fIOAPIC)
         {
@@ -984,7 +991,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigNode(pInst,    "Config", &pCfg);
         BOOL fRTCUseUTC;
         hrc = pMachine->COMGETTER(RTCUseUTC)(&fRTCUseUTC);                                  H();
-        InsertConfigInteger(pCfg, "UseUTC", fRTCUseUTC ? 1 : 0);
+        InsertConfigInteger(pCfg,  "UseUTC", fRTCUseUTC ? 1 : 0);
 
         /*
          * VGA.
@@ -999,12 +1006,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigNode(pInst,    "Config", &pCfg);
         ULONG cVRamMBs;
         hrc = pMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                     H();
-        InsertConfigInteger(pCfg, "VRamSize",             cVRamMBs * _1M);
+        InsertConfigInteger(pCfg,  "VRamSize",             cVRamMBs * _1M);
         ULONG cMonitorCount;
         hrc = pMachine->COMGETTER(MonitorCount)(&cMonitorCount);                            H();
-        InsertConfigInteger(pCfg, "MonitorCount",         cMonitorCount);
+        InsertConfigInteger(pCfg,  "MonitorCount",         cMonitorCount);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        InsertConfigInteger(pCfg, "R0Enabled",            fHWVirtExEnabled);
+        InsertConfigInteger(pCfg,  "R0Enabled",            fHWVirtExEnabled);
 #endif
 
         /*
@@ -1012,13 +1019,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         BOOL fFadeIn;
         hrc = biosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                                H();
-        InsertConfigInteger(pCfg, "FadeIn",  fFadeIn ? 1 : 0);
+        InsertConfigInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);
         BOOL fFadeOut;
         hrc = biosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                              H();
-        InsertConfigInteger(pCfg, "FadeOut", fFadeOut ? 1: 0);
+        InsertConfigInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);
         ULONG logoDisplayTime;
         hrc = biosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);                   H();
-        InsertConfigInteger(pCfg, "LogoTime", logoDisplayTime);
+        InsertConfigInteger(pCfg,  "LogoTime", logoDisplayTime);
         Bstr logoImagePath;
         hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());           H();
         InsertConfigString(pCfg,   "LogoFile", Utf8Str(logoImagePath ? logoImagePath : "") );
@@ -1063,14 +1070,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             /* If framebuffer is not available, there is no height reduction. */
             ulHeightReduction = 0;
         }
-        InsertConfigInteger(pCfg, "HeightReduction", ulHeightReduction);
+        InsertConfigInteger(pCfg,  "HeightReduction", ulHeightReduction);
 
         /* Attach the display. */
         InsertConfigNode(pInst,    "LUN#0", &pLunL0);
         InsertConfigString(pLunL0, "Driver",               "MainDisplay");
         InsertConfigNode(pLunL0,   "Config", &pCfg);
         Display *pDisplay = pConsole->mDisplay;
-        InsertConfigInteger(pCfg, "Object", (uintptr_t)pDisplay);
+        InsertConfigInteger(pCfg,  "Object", (uintptr_t)pDisplay);
 
 
         /*
@@ -1093,15 +1100,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pBiosCfg);
-            InsertConfigInteger(pBiosCfg, "RamSize",              cbRam);
-            InsertConfigInteger(pBiosCfg, "RamHoleSize",          cbRamHole);
-            InsertConfigInteger(pBiosCfg, "NumCPUs",              cCpus);
+            InsertConfigInteger(pBiosCfg,  "RamSize",              cbRam);
+            InsertConfigInteger(pBiosCfg,  "RamHoleSize",          cbRamHole);
+            InsertConfigInteger(pBiosCfg,  "NumCPUs",              cCpus);
             InsertConfigString(pBiosCfg,   "HardDiskDevice",       "piix3ide");
             InsertConfigString(pBiosCfg,   "FloppyDevice",         "i82078");
-            InsertConfigInteger(pBiosCfg, "IOAPIC",               fIOAPIC);
-            InsertConfigInteger(pBiosCfg, "PXEDebug",             fPXEDebug);
+            InsertConfigInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);
+            InsertConfigInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);
             InsertConfigBytes(pBiosCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
-            InsertConfigNode(pBiosCfg,   "NetBoot", &pNetBootCfg);
+            InsertConfigNode(pBiosCfg,     "NetBoot", &pNetBootCfg);
 
             DeviceType_T bootDevice;
             if (SchemaDefs::MaxBootPosition > 9)
@@ -1193,18 +1200,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
-            InsertConfigInteger(pCfg, "RamSize",          cbRam);
-            InsertConfigInteger(pCfg, "RamHoleSize",      cbRamHole);
-            InsertConfigInteger(pCfg, "NumCPUs",          cCpus);
+            InsertConfigInteger(pCfg,  "RamSize",          cbRam);
+            InsertConfigInteger(pCfg,  "RamHoleSize",      cbRamHole);
+            InsertConfigInteger(pCfg,  "NumCPUs",          cCpus);
             InsertConfigString(pCfg,   "EfiRom",           efiRomFile);
             InsertConfigString(pCfg,   "BootArgs",         bootArgs);
             InsertConfigString(pCfg,   "DeviceProps",      deviceProps);
-            InsertConfigInteger(pCfg, "IOAPIC",           fIOAPIC);
+            InsertConfigInteger(pCfg,  "IOAPIC",           fIOAPIC);
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
-            InsertConfigInteger(pCfg, "64BitEntry", f64BitEntry); /* boolean */
-            InsertConfigInteger(pCfg, "GopMode", u32GopMode);
-            InsertConfigInteger(pCfg, "UgaHorizontalResolution", u32UgaHorisontal);
-            InsertConfigInteger(pCfg, "UgaVerticalResolution", u32UgaVertical);
+            InsertConfigInteger(pCfg,  "64BitEntry", f64BitEntry); /* boolean */
+            InsertConfigInteger(pCfg,  "GopMode", u32GopMode);
+            InsertConfigInteger(pCfg,  "UgaHorizontalResolution", u32UgaHorisontal);
+            InsertConfigInteger(pCfg,  "UgaVerticalResolution", u32UgaVertical);
 
             /* For OS X guests we'll force passing host's DMI info to the guest */
             if (fOsXGuest)
@@ -1271,10 +1278,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",               "MainStatus");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg, "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedScsi]);
-                    InsertConfigInteger(pCfg, "First",    0);
+                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedScsi]);
+                    InsertConfigInteger(pCfg,  "First",    0);
                     Assert(cLedScsi >= 16);
-                    InsertConfigInteger(pCfg, "Last",     15);
+                    InsertConfigInteger(pCfg,  "Last",     15);
                     paLedDevType = &pConsole->maStorageDevType[iLedScsi];
                     break;
                 }
@@ -1290,10 +1297,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",               "MainStatus");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg, "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedScsi]);
-                    InsertConfigInteger(pCfg, "First",    0);
+                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedScsi]);
+                    InsertConfigInteger(pCfg,  "First",    0);
                     Assert(cLedScsi >= 16);
-                    InsertConfigInteger(pCfg, "Last",     15);
+                    InsertConfigInteger(pCfg,  "Last",     15);
                     paLedDevType = &pConsole->maStorageDevType[iLedScsi];
                     break;
                 }
@@ -1334,9 +1341,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigString(pLunL0, "Driver",               "MainStatus");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
                     AssertRelease(cPorts <= cLedSata);
-                    InsertConfigInteger(pCfg, "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedSata]);
-                    InsertConfigInteger(pCfg, "First",    0);
-                    InsertConfigInteger(pCfg, "Last",     cPorts - 1);
+                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedSata]);
+                    InsertConfigInteger(pCfg,  "First",    0);
+                    InsertConfigInteger(pCfg,  "Last",     cPorts - 1);
                     paLedDevType = &pConsole->maStorageDevType[iLedSata];
                     break;
                 }
@@ -1352,16 +1359,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     Assert(!afPciDeviceNo[1]);
                     afPciDeviceNo[1] = true;
                     InsertConfigInteger(pCtlInst, "PCIFunctionNo",        1);
-                    InsertConfigString(pCfg,  "Type", controllerString(enmCtrlType));
+                    InsertConfigString(pCfg,   "Type", controllerString(enmCtrlType));
 
                     /* Attach the status driver */
                     InsertConfigNode(pCtlInst,    "LUN#999", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",               "MainStatus");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg, "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedIde]);
-                    InsertConfigInteger(pCfg, "First",    0);
+                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedIde]);
+                    InsertConfigInteger(pCfg,  "First",    0);
                     Assert(cLedIde >= 4);
-                    InsertConfigInteger(pCfg, "Last",     3);
+                    InsertConfigInteger(pCfg,  "Last",     3);
                     paLedDevType = &pConsole->maStorageDevType[iLedIde];
 
                     /* IDE flavors */
@@ -1386,10 +1393,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",               "MainStatus");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg, "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedFloppy]);
-                    InsertConfigInteger(pCfg, "First",    0);
+                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedFloppy]);
+                    InsertConfigInteger(pCfg,  "First",    0);
                     Assert(cLedFloppy >= 1);
-                    InsertConfigInteger(pCfg, "Last",     0);
+                    InsertConfigInteger(pCfg,  "Last",     0);
                     paLedDevType = &pConsole->maStorageDevType[iLedFloppy];
                     break;
                 }
@@ -1407,10 +1414,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",               "MainStatus");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg, "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedSas]);
-                    InsertConfigInteger(pCfg, "First",    0);
+                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedSas]);
+                    InsertConfigInteger(pCfg,  "First",    0);
                     Assert(cLedSas >= 8);
-                    InsertConfigInteger(pCfg, "Last",     7);
+                    InsertConfigInteger(pCfg,  "Last",     7);
                     paLedDevType = &pConsole->maStorageDevType[iLedSas];
                     break;
                 }
@@ -1623,7 +1630,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigNode(pInst,    "LUN#999", &pLunL0);
             InsertConfigString(pLunL0, "Driver",               "MainStatus");
             InsertConfigNode(pLunL0,   "Config", &pCfg);
-            InsertConfigInteger(pCfg, "papLeds", (uintptr_t)&pConsole->mapNetworkLeds[ulInstance]);
+            InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapNetworkLeds[ulInstance]);
 
             /*
              * Configure the network card now
@@ -1702,14 +1709,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pLunL0,    "AttachedDriver", &pLunL1);
                     InsertConfigString(pLunL1,  "Driver", "NamedPipe");
                     InsertConfigNode(pLunL1,    "Config", &pLunL2);
-                    InsertConfigString(pLunL2, "Location", bstr);
+                    InsertConfigString(pLunL2,  "Location", bstr);
                     InsertConfigInteger(pLunL2, "IsServer", fServer);
                 }
                 else if (eHostMode == PortMode_HostDevice)
                 {
                     InsertConfigString(pLunL0,  "Driver", "Host Serial");
                     InsertConfigNode(pLunL0,    "Config", &pLunL1);
-                    InsertConfigString(pLunL1, "DevicePath", bstr);
+                    InsertConfigString(pLunL1,  "DevicePath", bstr);
                 }
                 else if (eHostMode == PortMode_RawFile)
                 {
@@ -1717,7 +1724,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pLunL0,    "AttachedDriver", &pLunL1);
                     InsertConfigString(pLunL1,  "Driver", "RawFile");
                     InsertConfigNode(pLunL1,    "Config", &pLunL2);
-                    InsertConfigString(pLunL2, "Location", bstr);
+                    InsertConfigString(pLunL2,  "Location", bstr);
                 }
             }
         }
@@ -1746,7 +1753,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigInteger(pCfg, "IRQ", ulIRQ);
             ULONG ulIOBase;
             hrc = parallelPort->COMGETTER(IOBase)(&ulIOBase);                               H();
-            InsertConfigInteger(pCfg, "IOBase", ulIOBase);
+            InsertConfigInteger(pCfg,   "IOBase", ulIOBase);
             InsertConfigNode(pInst,     "LUN#0", &pLunL0);
             InsertConfigString(pLunL0,  "Driver", "HostParallel");
             InsertConfigNode(pLunL0,    "AttachedDriver", &pLunL1);
@@ -1776,7 +1783,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigString(pLunL0, "Driver",               "HGCM");
         InsertConfigNode(pLunL0,   "Config", &pCfg);
         VMMDev *pVMMDev = pConsole->mVMMDev;
-        InsertConfigInteger(pCfg, "Object", (uintptr_t)pVMMDev);
+        InsertConfigInteger(pCfg,  "Object", (uintptr_t)pVMMDev);
 
         /*
          * Attach the status driver.
@@ -1784,9 +1791,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigNode(pInst,    "LUN#999", &pLunL0);
         InsertConfigString(pLunL0, "Driver",               "MainStatus");
         InsertConfigNode(pLunL0,   "Config", &pCfg);
-        InsertConfigInteger(pCfg, "papLeds", (uintptr_t)&pConsole->mapSharedFolderLed);
-        InsertConfigInteger(pCfg, "First",    0);
-        InsertConfigInteger(pCfg, "Last",     0);
+        InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapSharedFolderLed);
+        InsertConfigInteger(pCfg,  "First",    0);
+        InsertConfigInteger(pCfg,  "Last",     0);
 
         /*
          * Audio Sniffer Device
@@ -1800,7 +1807,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigString(pLunL0, "Driver",               "MainAudioSniffer");
         InsertConfigNode(pLunL0,   "Config", &pCfg);
         AudioSniffer *pAudioSniffer = pConsole->mAudioSniffer;
-        InsertConfigInteger(pCfg, "Object", (uintptr_t)pAudioSniffer);
+        InsertConfigInteger(pCfg,  "Object", (uintptr_t)pAudioSniffer);
 
         /*
          * AC'97 ICH / SoundBlaster16 audio
@@ -1837,11 +1844,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
                     InsertConfigNode(pInst,    "Config", &pCfg);
-                    InsertConfigInteger(pCfg, "IRQ", 5);
-                    InsertConfigInteger(pCfg, "DMA", 1);
-                    InsertConfigInteger(pCfg, "DMA16", 5);
-                    InsertConfigInteger(pCfg, "Port", 0x220);
-                    InsertConfigInteger(pCfg, "Version", 0x0405);
+                    InsertConfigInteger(pCfg,  "IRQ", 5);
+                    InsertConfigInteger(pCfg,  "DMA", 1);
+                    InsertConfigInteger(pCfg,  "DMA16", 5);
+                    InsertConfigInteger(pCfg,  "Port", 0x220);
+                    InsertConfigInteger(pCfg,  "Version", 0x0405);
                     break;
                 }
             }
@@ -1956,8 +1963,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 InsertConfigString(pLunL0, "Driver",               "MainStatus");
                 InsertConfigNode(pLunL0,   "Config", &pCfg);
                 InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed[0]);
-                InsertConfigInteger(pCfg, "First",    0);
-                InsertConfigInteger(pCfg, "Last",     0);
+                InsertConfigInteger(pCfg,  "First",    0);
+                InsertConfigInteger(pCfg,  "Last",     0);
 
 #ifdef VBOX_WITH_EHCI
                 BOOL fEhciEnabled;
@@ -1984,8 +1991,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigString(pLunL0, "Driver",               "MainStatus");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
                     InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapUSBLed[1]);
-                    InsertConfigInteger(pCfg, "First",    0);
-                    InsertConfigInteger(pCfg, "Last",     0);
+                    InsertConfigInteger(pCfg,  "First",    0);
+                    InsertConfigInteger(pCfg,  "Last",     0);
                 }
 #endif
 
@@ -2026,7 +2033,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 InsertConfigString(pLunL1, "Driver", "Block");
                 InsertConfigNode(pLunL1,   "Config", &pCfg);
                 InsertConfigString(pCfg,   "Type", "HardDisk");
-                InsertConfigInteger(pCfg, "Mountable", 0);
+                InsertConfigInteger(pCfg,  "Mountable", 0);
 
                 InsertConfigNode(pLunL1,   "AttachedDriver", &pLunL2);
                 InsertConfigString(pLunL2, "Driver", "VD");
@@ -2055,13 +2062,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pInst,    "LUN#0", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",        "MouseQueue");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg, "QueueSize",            128);
+                    InsertConfigInteger(pCfg,  "QueueSize",            128);
 
                     InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
                     InsertConfigString(pLunL1, "Driver",        "MainMouse");
                     InsertConfigNode(pLunL1,   "Config", &pCfg);
                     pMouse = pConsole->mMouse;
-                    InsertConfigInteger(pCfg, "Object",     (uintptr_t)pMouse);
+                    InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
                 }
 
                 /* Virtual USB Keyboard */
@@ -2076,13 +2083,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pInst,    "LUN#0", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",               "KeyboardQueue");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg, "QueueSize",            64);
+                    InsertConfigInteger(pCfg,  "QueueSize",            64);
 
                     InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
                     InsertConfigString(pLunL1, "Driver",               "MainKeyboard");
                     InsertConfigNode(pLunL1,   "Config", &pCfg);
                     pKeyboard = pConsole->mKeyboard;
-                    InsertConfigInteger(pCfg, "Object",     (uintptr_t)pKeyboard);
+                    InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);
                 }
             }
         }
@@ -2232,23 +2239,23 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
-            InsertConfigInteger(pCfg, "RamSize",          cbRam);
-            InsertConfigInteger(pCfg, "RamHoleSize",      cbRamHole);
-            InsertConfigInteger(pCfg, "NumCPUs",          cCpus);
+            InsertConfigInteger(pCfg,  "RamSize",          cbRam);
+            InsertConfigInteger(pCfg,  "RamHoleSize",      cbRamHole);
+            InsertConfigInteger(pCfg,  "NumCPUs",          cCpus);
 
-            InsertConfigInteger(pCfg, "IOAPIC", fIOAPIC);
-            InsertConfigInteger(pCfg, "FdcEnabled", fFdcEnabled);
-            InsertConfigInteger(pCfg, "HpetEnabled", fHpetEnabled);
-            InsertConfigInteger(pCfg, "SmcEnabled", fSmcEnabled);
-            InsertConfigInteger(pCfg, "ShowRtc",    fOsXGuest);
+            InsertConfigInteger(pCfg,  "IOAPIC", fIOAPIC);
+            InsertConfigInteger(pCfg,  "FdcEnabled", fFdcEnabled);
+            InsertConfigInteger(pCfg,  "HpetEnabled", fHpetEnabled);
+            InsertConfigInteger(pCfg,  "SmcEnabled", fSmcEnabled);
+            InsertConfigInteger(pCfg,  "ShowRtc",    fOsXGuest);
             if (fOsXGuest && !llBootNics.empty())
             {
                 BootNic aNic = llBootNics.front();
                 uint32_t u32NicPciAddr = (aNic.mPciDev << 16) | aNic.mPciFn;
                 InsertConfigInteger(pCfg, "NicPciAddress",    u32NicPciAddr);
             }
-            InsertConfigInteger(pCfg, "ShowCpu", fShowCpu);
-            InsertConfigInteger(pCfg, "CpuHotPlug", fCpuHotPlug);
+            InsertConfigInteger(pCfg,  "ShowCpu", fShowCpu);
+            InsertConfigInteger(pCfg,  "CpuHotPlug", fCpuHotPlug);
             InsertConfigInteger(pInst, "PCIDeviceNo",          7);
             Assert(!afPciDeviceNo[7]);
             afPciDeviceNo[7] = true;

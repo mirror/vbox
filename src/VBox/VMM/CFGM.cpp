@@ -1697,20 +1697,24 @@ VMMR3DECL(int) CFGMR3InsertInteger(PCFGMNODE pNode, const char *pszName, uint64_
  * @param   pNode           Parent node.
  * @param   pszName         Value name.
  * @param   pszString       The value. Must not be NULL.
- * @param   cbString        The length of the string including the null terminator (i.e. strlen(pszString) + 1).
+ * @param   cchString       The length of the string excluding the
+ *                          terminator.
  */
-VMMR3DECL(int) CFGMR3InsertStringLengthKnown(PCFGMNODE pNode, const char *pszName, const char *pszString, size_t cbString)
+VMMR3DECL(int) CFGMR3InsertStringN(PCFGMNODE pNode, const char *pszName, const char *pszString, size_t cchString)
 {
+    Assert(RTStrNLen(pszString, cchString) == cchString);
+
     int rc;
     if (pNode)
     {
         /*
          * Allocate string object first.
          */
-        char *pszStringCopy = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_STRING, cbString);
+        char *pszStringCopy = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_STRING, cchString + 1);
         if (pszStringCopy)
         {
-            memcpy(pszStringCopy, pszString, cbString);
+            memcpy(pszStringCopy, pszString, cchString);
+            pszStringCopy[cchString] = '\0';
 
             /*
              * Create value leaf and set it to string type.
@@ -1721,7 +1725,7 @@ VMMR3DECL(int) CFGMR3InsertStringLengthKnown(PCFGMNODE pNode, const char *pszNam
             {
                 pLeaf->enmType = CFGMVALUETYPE_STRING;
                 pLeaf->Value.String.psz = pszStringCopy;
-                pLeaf->Value.String.cb  = cbString;
+                pLeaf->Value.String.cb  = cchString + 1;
             }
             else
                 MMR3HeapFree(pszStringCopy);
@@ -1747,8 +1751,95 @@ VMMR3DECL(int) CFGMR3InsertStringLengthKnown(PCFGMNODE pNode, const char *pszNam
  */
 VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const char *pszString)
 {
-    return CFGMR3InsertStringLengthKnown(pNode, pszName, pszString, strlen(pszString) + 1);
+    return CFGMR3InsertStringN(pNode, pszName, pszString, strlen(pszString));
 }
+
+
+/**
+ * Same as CFGMR3InsertString except the string value given in RTStrPrintfV
+ * fashion.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Parent node.
+ * @param   pszName         Value name.
+ * @param   pszFormat       The value given as a format string.
+ * @param   va              Argument to pszFormat.
+ */
+VMMR3DECL(int) CFGMR3InsertStringFV(PCFGMNODE pNode, const char *pszName, const char *pszFormat, va_list va)
+{
+    int rc;
+    if (pNode)
+    {
+        /*
+         * Allocate string object first.
+         */
+        char *pszString = MMR3HeapAPrintfVU(pNode->pVM->pUVM, MM_TAG_CFGM_STRING, pszFormat, va);
+        if (pszString)
+        {
+            /*
+             * Create value leaf and set it to string type.
+             */
+            PCFGMLEAF pLeaf;
+            rc = cfgmR3InsertLeaf(pNode, pszName, &pLeaf);
+            if (RT_SUCCESS(rc))
+            {
+                pLeaf->enmType = CFGMVALUETYPE_STRING;
+                pLeaf->Value.String.psz = pszString;
+                pLeaf->Value.String.cb  = strlen(pszString) + 1;
+            }
+            else
+                MMR3HeapFree(pszString);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = VERR_CFGM_NO_PARENT;
+
+    return rc;
+}
+
+
+/**
+ * Same as CFGMR3InsertString except the string value given in RTStrPrintf
+ * fashion.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Parent node.
+ * @param   pszName         Value name.
+ * @param   pszFormat       The value given as a format string.
+ * @param   ...             Argument to pszFormat.
+ */
+VMMR3DECL(int) CFGMR3InsertStringF(PCFGMNODE pNode, const char *pszName, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = CFGMR3InsertStringFV(pNode, pszName, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * Same as CFGMR3InsertString except the string value given as a UTF-16 string.
+ *
+ * @returns VBox status code.
+ * @param   pNode           Parent node.
+ * @param   pszName         Value name.
+ * @param   pwszValue       The string value (UTF-16).
+ */
+VMMR3DECL(int) CFGMR3InsertStringW(PCFGMNODE pNode, const char *pszName, PCRTUTF16 pwszValue)
+{
+    char *pszValue;
+    int rc = RTUtf16ToUtf8(pwszValue, &pszValue);
+    if (RT_SUCCESS(rc))
+    {
+        rc = CFGMR3InsertString(pNode, pszName, pszValue);
+        RTStrFree(pszValue);
+    }
+    return rc;
+}
+
 
 /**
  * Inserts a new integer value.
