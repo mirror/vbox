@@ -256,15 +256,22 @@ RT_EXPORT_SYMBOL(RTTimeIsLeapYear);
  */
 RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 {
+    int64_t         i64Div;
+    int32_t         i32Div;
+    int32_t         i32Rem;
+    unsigned        iYear;
+    const uint16_t *paiDayOfYear;
+    int             iMonth;
+
     AssertMsg(VALID_PTR(pTime), ("%p\n", pTime));
     AssertMsg(VALID_PTR(pTimeSpec), ("%p\n", pTime));
 
     /*
      * The simple stuff first.
      */
-    pTime->fFlags        = RTTIME_FLAGS_TYPE_UTC;
-    int64_t i64Div = pTimeSpec->i64NanosecondsRelativeToUnixEpoch;
-    int32_t i32Rem = (int32_t)(i64Div % 1000000000);
+    pTime->fFlags = RTTIME_FLAGS_TYPE_UTC;
+    i64Div = pTimeSpec->i64NanosecondsRelativeToUnixEpoch;
+    i32Rem = (int32_t)(i64Div % 1000000000);
     i64Div /= 1000000000;
     if (i32Rem < 0)
     {
@@ -284,7 +291,7 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
     pTime->u8Second      = i32Rem;
 
     /* minute */
-    int32_t i32Div = (int32_t)i64Div;   /* 60,000,000,000 > 33bit, so 31bit suffices. */
+    i32Div = (int32_t)i64Div;   /* 60,000,000,000 > 33bit, so 31bit suffices. */
     i32Rem = i32Div % 60;
     i32Div /= 60;
     if (i32Rem < 0)
@@ -313,7 +320,7 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
      * the represenation we've got only supports a few hundred years, so we can
      * generate a table and perform a simple two way search from the modulus 365 derived.
      */
-    unsigned iYear = OFF_YEAR_IDX_EPOCH + i32Div / 365;
+    iYear = OFF_YEAR_IDX_EPOCH + i32Div / 365;
     while (g_aoffYear[iYear + 1] <= i32Div)
         iYear++;
     while (g_aoffYear[iYear] > i32Div)
@@ -326,7 +333,6 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
      * Figuring out the month is done in a manner similar to the year, only here we
      * ensure that the index is matching or too small.
      */
-    const uint16_t *paiDayOfYear;
     if (rtTimeIsLeapYear(pTime->i32Year))
     {
         pTime->fFlags   |= RTTIME_FLAGS_LEAP_YEAR;
@@ -337,7 +343,7 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
         pTime->fFlags   |= RTTIME_FLAGS_COMMON_YEAR;
         paiDayOfYear = &g_aiDayOfYear[0];
     }
-    int iMonth = i32Div / 32;
+    iMonth = i32Div / 32;
     i32Div++;
     while (paiDayOfYear[iMonth + 1] <= i32Div)
         iMonth++;
@@ -369,6 +375,10 @@ RT_EXPORT_SYMBOL(RTTimeExplode);
  */
 RTDECL(PRTTIMESPEC) RTTimeImplode(PRTTIMESPEC pTimeSpec, PCRTTIME pTime)
 {
+    int32_t     i32Days;
+    uint32_t    u32Secs;
+    int64_t     i64Nanos;
+
     /*
      * Validate input.
      */
@@ -385,15 +395,15 @@ RTDECL(PRTTIMESPEC) RTTimeImplode(PRTTIMESPEC pTimeSpec, PCRTTIME pTime)
     /*
      * Do the conversion to nanoseconds.
      */
-    int32_t i32Days  = g_aoffYear[pTime->i32Year - OFF_YEAR_IDX_0_YEAR]
-                     + pTime->u16YearDay - 1;
+    i32Days  = g_aoffYear[pTime->i32Year - OFF_YEAR_IDX_0_YEAR]
+             + pTime->u16YearDay - 1;
     AssertMsgReturn(i32Days <= RTTIME_MAX_DAY && i32Days >= RTTIME_MIN_DAY, ("%RI32\n", i32Days), NULL);
 
-    uint32_t u32Secs = pTime->u8Second
-                     + pTime->u8Minute * 60
-                     + pTime->u8Hour   * 3600;
-    int64_t i64Nanos = (uint64_t)pTime->u32Nanosecond
-                     + u32Secs * UINT64_C(1000000000);
+    u32Secs  = pTime->u8Second
+             + pTime->u8Minute * 60
+             + pTime->u8Hour   * 3600;
+    i64Nanos = (uint64_t)pTime->u32Nanosecond
+             + u32Secs * UINT64_C(1000000000);
     AssertMsgReturn(i32Days != RTTIME_MAX_DAY || i64Nanos <= RTTIME_MAX_DAY_NANO, ("%RI64\n", i64Nanos), NULL);
     AssertMsgReturn(i32Days != RTTIME_MIN_DAY || i64Nanos >= RTTIME_MIN_DAY_NANO, ("%RI64\n", i64Nanos), NULL);
 
@@ -411,10 +421,15 @@ RT_EXPORT_SYMBOL(RTTimeImplode);
  */
 PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
 {
+    unsigned    uSecond;
+    unsigned    uMinute;
+    unsigned    uHour;
+    bool        fLeapYear;
+
     /*
      * Fix the YearDay and Month/MonthDay.
      */
-    bool fLeapYear = rtTimeIsLeapYear(pTime->i32Year);
+    fLeapYear = rtTimeIsLeapYear(pTime->i32Year);
     if (!pTime->u16YearDay)
     {
         /*
@@ -468,21 +483,25 @@ PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
         {
             do
             {
+                uint16_t u16YearDay;
+
                 /* If you change one, zero the other to make clear what you mean. */
                 AssertBreak(pTime->u8Month <= 12);
                 AssertBreak(pTime->u8MonthDay <= (fLeapYear
                                                   ? g_acDaysInMonthsLeap[pTime->u8Month - 1]
                                                   : g_acDaysInMonths[pTime->u8Month - 1]));
-                uint16_t u16YearDay = pTime->u8MonthDay - 1
-                                    + (fLeapYear
-                                       ? g_aiDayOfYearLeap[pTime->u8Month - 1]
-                                       : g_aiDayOfYear[pTime->u8Month - 1]);
+                u16YearDay = pTime->u8MonthDay - 1
+                           + (fLeapYear
+                              ? g_aiDayOfYearLeap[pTime->u8Month - 1]
+                              : g_aiDayOfYear[pTime->u8Month - 1]);
                 AssertBreak(u16YearDay == pTime->u16YearDay);
                 fRecalc = false;
             } while (0);
         }
         if (fRecalc)
         {
+            const uint16_t *paiDayOfYear;
+
             /* overflow adjust YearDay */
             while (pTime->u16YearDay > (fLeapYear ? 366 : 365))
             {
@@ -493,9 +512,9 @@ PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
             }
 
             /* calc Month and MonthDay */
-            const uint16_t *paiDayOfYear = fLeapYear
-                                         ? &g_aiDayOfYearLeap[0]
-                                         : &g_aiDayOfYear[0];
+            paiDayOfYear = fLeapYear
+                         ? &g_aiDayOfYearLeap[0]
+                         : &g_aiDayOfYear[0];
             pTime->u8Month = 1;
             while (pTime->u16YearDay > paiDayOfYear[pTime->u8Month])
                 pTime->u8Month++;
@@ -508,9 +527,9 @@ PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
      * Fixup time overflows.
      * Use unsigned int values internally to avoid overflows.
      */
-    unsigned uSecond = pTime->u8Second;
-    unsigned uMinute = pTime->u8Minute;
-    unsigned uHour   = pTime->u8Hour;
+    uSecond = pTime->u8Second;
+    uMinute = pTime->u8Minute;
+    uHour   = pTime->u8Hour;
 
     while (pTime->u32Nanosecond >= 1000000000)
     {
@@ -667,14 +686,16 @@ RT_EXPORT_SYMBOL(RTTimeNormalize);
  */
 RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb)
 {
+    size_t cch;
+
     /* (Default to UTC if not specified) */
     if (    (pTime->fFlags & RTTIME_FLAGS_TYPE_MASK) == RTTIME_FLAGS_TYPE_LOCAL
         &&  pTime->offUTC)
     {
-        Assert(pTime->offUTC <= 840 && pTime->offUTC >= -840);
         int32_t offUTCHour   = pTime->offUTC / 60;
         int32_t offUTCMinute = pTime->offUTC % 60;
-        char chSign;
+        char    chSign;
+        Assert(pTime->offUTC <= 840 && pTime->offUTC >= -840);
         if (pTime->offUTC >= 0)
             chSign = '+';
         else
@@ -683,20 +704,20 @@ RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb)
             offUTCMinute = -offUTCMinute;
             offUTCHour = -offUTCHour;
         }
-        size_t cch = RTStrPrintf(psz, cb,
-                                 "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32%c%02%02",
-                                 pTime->i32Year, pTime->u8Month, pTime->u8MonthDay,
-                                 pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond,
-                                 chSign, offUTCHour, offUTCMinute);
+        cch = RTStrPrintf(psz, cb,
+                          "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32%c%02%02",
+                          pTime->i32Year, pTime->u8Month, pTime->u8MonthDay,
+                          pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond,
+                          chSign, offUTCHour, offUTCMinute);
         if (    cch <= 15
             ||  psz[cch - 5] != chSign)
             return NULL;
     }
     else
     {
-        size_t cch = RTStrPrintf(psz, cb, "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32Z",
-                                 pTime->i32Year, pTime->u8Month, pTime->u8MonthDay,
-                                 pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond);
+        cch = RTStrPrintf(psz, cb, "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32Z",
+                          pTime->i32Year, pTime->u8Month, pTime->u8MonthDay,
+                          pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond);
         if (    cch <= 15
             ||  psz[cch - 1] != 'Z')
             return NULL;
