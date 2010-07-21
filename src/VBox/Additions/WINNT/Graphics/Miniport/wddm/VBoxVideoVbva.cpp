@@ -102,6 +102,9 @@ int vboxVbvaDisable (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva)
 int vboxVbvaCreate(PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva, ULONG offBuffer, ULONG cbBuffer, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
     memset(pVbva, 0, sizeof(VBOXVBVAINFO));
+
+    KeInitializeSpinLock(&pVbva->Lock);
+
     int rc = VBoxMapAdapterMemory (pDevExt,
                                        (void**)&pVbva->pVBVA,
                                        offBuffer,

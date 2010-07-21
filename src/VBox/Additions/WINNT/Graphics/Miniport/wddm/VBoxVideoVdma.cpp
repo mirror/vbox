@@ -18,6 +18,7 @@
 #include "VBoxVideoVdma.h"
 #include "../VBoxVideo.h"
 
+#include <iprt/asm.h>
 
 NTSTATUS vboxVdmaPipeConstruct(PVBOXVDMAPIPE pPipe)
 {
@@ -507,6 +508,7 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCF)
         Assert(pAlloc->offVram != VBOXVIDEOOFFSET_VOID);
         if (pAlloc->offVram != VBOXVIDEOOFFSET_VOID)
         {
+            RECT UnionRect = {0};
             uint8_t *pvMem = pDevExt->pvVisibleVram + pAlloc->offVram;
             UINT bpp = pAlloc->SurfDesc.bpp;
             Assert(bpp);
@@ -533,6 +535,7 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCF)
                                 ++pvU32Mem;
                             }
                         }
+                        vboxWddmRectUnited(&UnionRect, &UnionRect, pRect);
                     }
                     Status = STATUS_SUCCESS;
                     break;
@@ -543,8 +546,31 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCF)
                     AssertBreakpoint();
                     break;
             }
+
+            if (Status == STATUS_SUCCESS)
+            {
+                if (pCF->VidPnSourceId != D3DDDI_ID_UNINITIALIZED
+                        && pAlloc->bAssigned
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+                        && pAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE
+#else
+                        && pAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
+#endif
+                        )
+                {
+                    if (!vboxWddmRectIsEmpty(&UnionRect))
+                    {
+                        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pCF->VidPnSourceId];
+                        VBOXVBVA_OP_WITHLOCK(ReportDirtyRect, pDevExt, &pSource->Vbva, &UnionRect);
+                    }
+                }
+            }
         }
     }
+
+
+    uint32_t cNew = ASMAtomicDecU32(&pDevExt->cDMACmdsOutstanding);
+    Assert(cNew < UINT32_MAX/2);
 
     NTSTATUS cmplStatus = vboxWddmDmaCmdNotifyCompletion(pDevExt, pContext, pCF->SubmissionFenceId);
     Assert(cmplStatus == STATUS_SUCCESS);
