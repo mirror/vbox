@@ -42,12 +42,14 @@
 /////////////////////////////////////////////////////////////////////////////
 
 SystemProperties::SystemProperties()
-    : mParent(NULL)
+    : mParent(NULL),
+      m(new settings::SystemProperties)
 {
 }
 
 SystemProperties::~SystemProperties()
 {
+    delete m;
 }
 
 
@@ -87,7 +89,7 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
 
     setRemoteDisplayAuthLibrary(Utf8Str::Null);
 
-    mLogHistoryCount = 3;
+    m->ulLogHistoryCount = 3;
 
     HRESULT rc = S_OK;
 
@@ -111,7 +113,7 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
             rc = hdf->init(&aVDInfo[i]);
             if (FAILED(rc)) break;
 
-            mMediumFormats.push_back(hdf);
+            m_llMediumFormats.push_back(hdf);
         }
     }
 
@@ -576,7 +578,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MediumFormats)(ComSafeArrayOut(IMediumF
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SafeIfaceArray<IMediumFormat> mediumFormats(mMediumFormats);
+    SafeIfaceArray<IMediumFormat> mediumFormats(m_llMediumFormats);
     mediumFormats.detachTo(ComSafeArrayOutArg(aMediumFormats));
 
     return S_OK;
@@ -591,7 +593,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat)(BSTR *aDefaultHa
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m_strDefaultHardDiskFormat.cloneTo(aDefaultHardDiskFormat);
+    m->strDefaultHardDiskFormat.cloneTo(aDefaultHardDiskFormat);
 
     return S_OK;
 }
@@ -672,7 +674,7 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary)(BSTR *aRemote
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m_strRemoteDisplayAuthLibrary.cloneTo(aRemoteDisplayAuthLibrary);
+    m->strRemoteDisplayAuthLibrary.cloneTo(aRemoteDisplayAuthLibrary);
 
     return S_OK;
 }
@@ -705,7 +707,7 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary)(BSTR *aWebServic
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m_strWebServiceAuthLibrary.cloneTo(aWebServiceAuthLibrary);
+    m->strWebServiceAuthLibrary.cloneTo(aWebServiceAuthLibrary);
 
     return S_OK;
 }
@@ -738,7 +740,7 @@ STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount)(ULONG *count)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *count = mLogHistoryCount;
+    *count = m->ulLogHistoryCount;
 
     return S_OK;
 }
@@ -749,7 +751,7 @@ STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount)(ULONG count)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mLogHistoryCount = count;
+    m->ulLogHistoryCount = count;
     alock.release();
 
     // VirtualBox::saveSettings() needs vbox write lock
@@ -800,7 +802,7 @@ HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
     rc = setWebServiceAuthLibrary(data.strWebServiceAuthLibrary);
     if (FAILED(rc)) return rc;
 
-    mLogHistoryCount = data.ulLogHistoryCount;
+    m->ulLogHistoryCount = data.ulLogHistoryCount;
 
     return S_OK;
 }
@@ -812,12 +814,7 @@ HRESULT SystemProperties::saveSettings(settings::SystemProperties &data)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    data.strDefaultMachineFolder = m_strDefaultMachineFolder;
-    data.strDefaultHardDiskFolder = m_strDefaultHardDiskFolder;
-    data.strDefaultHardDiskFormat = m_strDefaultHardDiskFormat;
-    data.strRemoteDisplayAuthLibrary = m_strRemoteDisplayAuthLibrary;
-    data.strWebServiceAuthLibrary = m_strWebServiceAuthLibrary;
-    data.ulLogHistoryCount = mLogHistoryCount;
+    data = *m;
 
     return S_OK;
 }
@@ -839,8 +836,9 @@ ComObjPtr<MediumFormat> SystemProperties::mediumFormat (CBSTR aFormat)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    for (MediumFormatList::const_iterator it = mMediumFormats.begin();
-         it != mMediumFormats.end(); ++ it)
+    for (MediumFormatList::const_iterator it = m_llMediumFormats.begin();
+         it != m_llMediumFormats.end();
+         ++ it)
     {
         /* MediumFormat is all const, no need to lock */
 
@@ -872,7 +870,7 @@ HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &aPath)
                         path.raw(),
                         vrc);
 
-    m_strDefaultMachineFolder = path;
+    m->strDefaultMachineFolder = path;
     m_strDefaultMachineFolderFull = folder;
 
     return S_OK;
@@ -893,7 +891,7 @@ HRESULT SystemProperties::setDefaultHardDiskFolder(const Utf8Str &aPath)
                         path.raw(),
                         vrc);
 
-    m_strDefaultHardDiskFolder = path;
+    m->strDefaultHardDiskFolder = path;
     m_strDefaultHardDiskFolderFull = folder;
 
     return S_OK;
@@ -902,9 +900,9 @@ HRESULT SystemProperties::setDefaultHardDiskFolder(const Utf8Str &aPath)
 HRESULT SystemProperties::setDefaultHardDiskFormat(const Utf8Str &aFormat)
 {
     if (!aFormat.isEmpty())
-        m_strDefaultHardDiskFormat = aFormat;
+        m->strDefaultHardDiskFormat = aFormat;
     else
-        m_strDefaultHardDiskFormat = "VDI";
+        m->strDefaultHardDiskFormat = "VDI";
 
     return S_OK;
 }
@@ -912,9 +910,9 @@ HRESULT SystemProperties::setDefaultHardDiskFormat(const Utf8Str &aFormat)
 HRESULT SystemProperties::setRemoteDisplayAuthLibrary(const Utf8Str &aPath)
 {
     if (!aPath.isEmpty())
-        m_strRemoteDisplayAuthLibrary = aPath;
+        m->strRemoteDisplayAuthLibrary = aPath;
     else
-        m_strRemoteDisplayAuthLibrary = "VRDPAuth";
+        m->strRemoteDisplayAuthLibrary = "VRDPAuth";
 
     return S_OK;
 }
@@ -922,9 +920,9 @@ HRESULT SystemProperties::setRemoteDisplayAuthLibrary(const Utf8Str &aPath)
 HRESULT SystemProperties::setWebServiceAuthLibrary(const Utf8Str &aPath)
 {
     if (!aPath.isEmpty())
-        m_strWebServiceAuthLibrary = aPath;
+        m->strWebServiceAuthLibrary = aPath;
     else
-        m_strWebServiceAuthLibrary = "VRDPAuth";
+        m->strWebServiceAuthLibrary = "VRDPAuth";
 
     return S_OK;
 }
