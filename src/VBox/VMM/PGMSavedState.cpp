@@ -1595,14 +1595,6 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
                         if (RT_SUCCESS(rc))
                         {
-                            /* Skip allocated pages that are zero. */
-                            if (    !fLiveSave
-                                &&  ASMMemIsZeroPage(pvPage))
-                            {
-                                fZero = true;
-                                goto save_zero_page;
-                            }
-
                             memcpy(abPage, pvPage, PAGE_SIZE);
 #ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
                             if (paLSPages)
@@ -1612,18 +1604,31 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         pgmUnlock(pVM);
                         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
 
-                        if (GCPhys == GCPhysLast + PAGE_SIZE)
-                            SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW);
+                        /* Try save some memory when restoring. */
+                        if (!ASMMemIsZeroPage(pvPage))
+                        {
+                            if (GCPhys == GCPhysLast + PAGE_SIZE)
+                                SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW);
+                            else
+                            {
+                                SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
+                                SSMR3PutGCPhys(pSSM, GCPhys);
+                            }
+                            rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+                        }
                         else
                         {
-                            SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
-                            SSMR3PutGCPhys(pSSM, GCPhys);
+                            if (GCPhys == GCPhysLast + PAGE_SIZE)
+                                rc = SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_ZERO);
+                            else
+                            {
+                                SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_ZERO | PGM_STATE_REC_FLAG_ADDR);
+                                rc = SSMR3PutGCPhys(pSSM, GCPhys);
+                            }
                         }
-                        rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
                     }
                     else
                     {
-save_zero_page:
                         /*
                          * Dirty zero page.
                          */
@@ -2600,7 +2605,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                         if (    PGM_PAGE_IS_ZERO(pPage)
                             ||  PGM_PAGE_IS_BALLOONED(pPage))
                             break;
-                        AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_INTERNAL_ERROR_5); 
+                        AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_INTERNAL_ERROR_5);
                         /* Allocated before (prealloc), so free it now. */
                         rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
                         AssertRC(rc);
