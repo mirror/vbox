@@ -693,9 +693,9 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
             if (pszExeName)
             {
                 char const *papszArgs[3];
-                pszArgs[0] = pszExeName;
-                pszArgs[1] = "--pagefusionfork";
-                pszArgs[2] = NULL;
+                papszArgs[0] = pszExeName;
+                papszArgs[1] = "--pagefusionfork";
+                papszArgs[2] = NULL;
                 rc = RTProcCreate(pszExeName, papszArgs, RTENV_DEFAULT, 0 /* normal child */, &hProcess);
                 if (RT_FAILURE(rc))
                     VBoxServiceError("RTProcCreate %s failed; rc=%Rrc\n", pszExeName, rc);
