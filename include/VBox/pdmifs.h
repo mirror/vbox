@@ -2070,15 +2070,15 @@ typedef struct PDMIHPETLEGACYNOTIFY
 #define VMMDEV_SETCREDENTIALS_JUDGE                         RT_BIT(15)
 /** @} */
 
-
-/** Forward declaration of the video accelerator command memory. */
-struct VBVAMEMORY;
 /** Forward declaration of the guest information structure. */
 struct VBoxGuestInfo;
 /** Forward declaration of the guest statistics structure */
 struct VBoxGuestStatistics;
 /** Forward declaration of the guest status structure */
 struct VBoxGuestStatus;
+
+/** Forward declaration of the video accelerator command memory. */
+struct VBVAMEMORY;
 /** Pointer to video accelerator command memory. */
 typedef struct VBVAMEMORY *PVBVAMEMORY;
 
