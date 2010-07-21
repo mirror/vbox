@@ -305,6 +305,7 @@ typedef struct _DEVICE_EXTENSION
    /* mutex for context list operations */
    FAST_MUTEX ContextMutex;
    volatile uint32_t cContexts3D;
+   volatile uint32_t cDMACmdsOutstanding;
 
    VBOXSHGSMILIST CtlList;
    VBOXSHGSMILIST DmaCmdList;

@@ -20,6 +20,7 @@ typedef struct VBOXVBVAINFO
     BOOL  fHwBufferOverflow;
     VBVARECORD *pRecord;
     D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId;
+    KSPIN_LOCK Lock;
 } VBOXVBVAINFO;
 
 int vboxVbvaEnable (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva);
@@ -32,10 +33,28 @@ BOOL vboxVbvaBufferBeginUpdate (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO 
 void vboxVbvaBufferEndUpdate (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva);
 
 #define VBOXVBVA_OP(_op, _pdext, _pvbva, _arg) \
-        if (vboxVbvaBufferBeginUpdate(_pdext, _pvbva)) \
-        { \
-            vboxVbva##_op(_pdext, _pvbva, _arg); \
-            vboxVbvaBufferEndUpdate(_pdext, _pvbva); \
-        }
+        do { \
+            if (vboxVbvaBufferBeginUpdate(_pdext, _pvbva)) \
+            { \
+                vboxVbva##_op(_pdext, _pvbva, _arg); \
+                vboxVbvaBufferEndUpdate(_pdext, _pvbva); \
+            } \
+        } while (0)
+
+#define VBOXVBVA_OP_WITHLOCK_ATDPC(_op, _pdext, _pvbva, _arg) \
+        do { \
+            KeAcquireSpinLockAtDpcLevel(&(_pvbva)->Lock);  \
+            VBOXVBVA_OP(_op, _pdext, _pvbva, _arg);        \
+            KeReleaseSpinLockFromDpcLevel(&(_pvbva)->Lock);\
+        } while (0)
+
+#define VBOXVBVA_OP_WITHLOCK(_op, _pdext, _pvbva, _arg) \
+        do { \
+            KIRQL OldIrql; \
+            KeAcquireSpinLock(&(_pvbva)->Lock, &OldIrql);  \
+            VBOXVBVA_OP(_op, _pdext, _pvbva, _arg);        \
+            KeReleaseSpinLock(&(_pvbva)->Lock, OldIrql);   \
+        } while (0)
+
 
 #endif /* #ifndef ___VBoxVideoVbva_h___ */

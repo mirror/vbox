@@ -223,41 +223,6 @@ bool vboxWddmCheckUpdateShadowAddress(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURC
 
     return true;
 }
-
-bool vboxWddmRectIsEmpty(RECTL * pRect)
-{
-    return pRect->left == pRect->right-1 && pRect->top == pRect->bottom-1;
-}
-
-bool vboxWddmRectIntersect(RECTL * pRect1, RECTL * pRect2)
-{
-    return !((pRect1->left < pRect2->left && pRect1->right < pRect2->left)
-            || (pRect2->left < pRect1->left && pRect2->right < pRect1->left)
-            || (pRect1->top < pRect2->top && pRect1->bottom < pRect2->top)
-            || (pRect2->top < pRect1->top && pRect2->bottom < pRect1->top));
-}
-
-bool vboxWddmRectInclude(RECTL * pRect1, RECTL * pRect2)
-{
-    return ((pRect1->left <= pRect2->left && pRect1->right >= pRect2->right)
-            && (pRect1->top <= pRect2->top && pRect1->bottom >= pRect2->bottom));
-}
-
-void vboxWddmRectUnited(RECT * pDst, const RECT * pRect1, const RECT * pRect2)
-{
-    pDst->left = RT_MIN(pRect1->left, pRect2->left);
-    pDst->top = RT_MIN(pRect1->top, pRect2->top);
-    pDst->right = RT_MAX(pRect1->right, pRect2->right);
-    pDst->bottom = RT_MAX(pRect1->bottom, pRect2->bottom);
-}
-
-void vboxWddmRectTranslate(RECTL * pRect, int x, int y)
-{
-    pRect->left   += x;
-    pRect->top    += y;
-    pRect->right  += x;
-    pRect->bottom += y;
-}
 #endif
 
 HGSMIHEAP* vboxWddmHgsmiGetHeapFromCmdOffset(PDEVICE_EXTENSION pDevExt, HGSMIOFFSET offCmd)
@@ -2114,7 +2079,14 @@ DxgkDdiSubmitCommand(
             VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->SrcAllocInfo.srcId];
             vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
             PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW pRFS = (PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW)pPrivateData;
-            VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &pRFS->rect);
+            uint32_t cDMACmdsOutstanding = ASMAtomicReadU32(&pDevExt->cDMACmdsOutstanding);
+            if (!cDMACmdsOutstanding)
+                VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &pRFS->rect);
+            else
+            {
+                Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
+                VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, &pSource->Vbva, &pRFS->rect);
+            }
             /* get DPC data at IRQL */
 
             Status = vboxWddmDmaCmdNotifyCompletion(pDevExt, pPrivateData->pContext, pSubmitCommand->SubmissionFenceId);
@@ -2159,7 +2131,14 @@ DxgkDdiSubmitCommand(
                                 else
                                     rect = pBlt->DstRects.ContextRect;
 
-                                VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &rect);
+                                uint32_t cDMACmdsOutstanding = ASMAtomicReadU32(&pDevExt->cDMACmdsOutstanding);
+                                if (!cDMACmdsOutstanding)
+                                    VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &rect);
+                                else
+                                {
+                                    Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
+                                    VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, &pSource->Vbva, &rect);
+                                }
                                 vboxWddmSubmitBltCmd(pDevExt, pContext, pBlt);
                                 break;
                             }
@@ -2240,25 +2219,39 @@ DxgkDdiSubmitCommand(
             {
                 PVBOXWDDM_ALLOCATION pDstAlloc = pPrivateData->DstAllocInfo.pAlloc;
                 Assert(pDstAlloc);
+                D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
                 if (pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
                         && pDstAlloc->bAssigned)
                 {
+                    VidPnSourceId = pPrivateData->DstAllocInfo.srcId;
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
                     VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->DstAllocInfo.srcId];
                     Assert(pSource->pPrimaryAllocation == pDstAlloc);
 
                     Assert(pSource->pShadowAllocation);
                     if (pSource->pShadowAllocation)
                         pDstAlloc = pSource->pShadowAllocation;
+#endif
+                }
+                else
+                {
+                    VidPnSourceId = D3DDDI_ID_UNINITIALIZED;
                 }
                 pCFCmd->pContext = pContext;
                 pCFCmd->pAllocation = pDstAlloc;
                 pCFCmd->SubmissionFenceId = pSubmitCommand->SubmissionFenceId;
+                pCFCmd->VidPnSourceId = VidPnSourceId;
                 pCFCmd->Color = pCF->Color;
                 memcpy(&pCFCmd->Rects, &pCF->Rects, RT_OFFSETOF(VBOXWDDM_RECTS_INFO, aRects[pCF->Rects.cRects]));
+                ASMAtomicIncU32(&pDevExt->cDMACmdsOutstanding);
                 submStatus = vboxVdmaGgCmdSubmit(&pDevExt->u.primary.Vdma.DmaGg, &pCFCmd->Hdr);
                 Assert(submStatus == STATUS_SUCCESS);
                 if (submStatus != STATUS_SUCCESS)
+                {
+                    uint32_t cNew = ASMAtomicDecU32(&pDevExt->cDMACmdsOutstanding);
+                    Assert(cNew < UINT32_MAX/2);
                     vboxVdmaGgCmdDestroy(&pCFCmd->Hdr);
+                }
             }
 
             if (submStatus != STATUS_SUCCESS)
@@ -2290,7 +2283,7 @@ DxgkDdiSubmitCommand(
         //        pDr->u64GuestContext = NULL;
             pDr->Location.phBuf = pSubmitCommand->DmaBufferPhysicalAddress.QuadPart + pSubmitCommand->DmaBufferSubmissionStartOffset;
 
-            vboxVdmaCBufDrSubmit (pDevExt, &pDevExt->u.primary.Vdma, pDr);
+            vboxVdmaCBufDrSubmit(pDevExt, &pDevExt->u.primary.Vdma, pDr);
             break;
         }
     }
@@ -4166,7 +4159,7 @@ DxgkDdiPresent(
         if (pDstAlloc)
         {
             UINT cbCmd = pPresent->DmaBufferPrivateDataSize;
-            pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_BLT;
+            pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL;
 
             vboxWddmPopulateDmaAllocInfo(&pPrivateData->DstAllocInfo, pDstAlloc, pDst);
 
