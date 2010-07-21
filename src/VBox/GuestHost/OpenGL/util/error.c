@@ -99,7 +99,7 @@ static void outputChromiumMessage( FILE *output, char *str )
             );
     fflush( output );
 
-#if defined(DEBUG) && defined(WINDOWS)
+#if defined(DEBUG) && defined(WINDOWS) && !defined(DEBUG_misha)
     OutputDebugString(str);
     OutputDebugString("\n");
 #endif
@@ -304,7 +304,7 @@ DECLEXPORT(void) crDebug( char *format, ... )
         }
         else
         {
-#if defined(WINDOWS) && defined(IN_GUEST) && (defined(DEBUG_leo) || defined(DEBUG_ll158262) || defined(DEBUG_misha))
+#if defined(WINDOWS) && defined(IN_GUEST) && (defined(DEBUG_leo) || defined(DEBUG_ll158262))
             crRedirectIOToConsole();
 #endif
             output = stderr;

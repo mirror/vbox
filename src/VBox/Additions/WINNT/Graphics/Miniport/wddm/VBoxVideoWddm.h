@@ -49,6 +49,7 @@ PVOID vboxWddmMemAllocZero(IN SIZE_T cbSize);
 VOID vboxWddmMemFree(PVOID pvMem);
 
 NTSTATUS vboxWddmDmaCmdNotifyCompletion(PDEVICE_EXTENSION pDevExt, struct VBOXWDDM_CONTEXT *pContext, UINT SubmissionFenceId);
+NTSTATUS vboxWddmCallIsr(PDEVICE_EXTENSION pDevExt);
 
 /* allocation */
 //#define VBOXWDDM_ALLOCATIONINDEX_VOID (~0U)

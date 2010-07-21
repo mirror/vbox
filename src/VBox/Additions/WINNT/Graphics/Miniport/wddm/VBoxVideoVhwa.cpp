@@ -83,8 +83,15 @@ void vboxVhwaCommandSubmitAsynchByEvent(PDEVICE_EXTENSION pDevExt, VBOXVHWACMD* 
 }
 #endif
 
+void vboxVhwaCommandCheckCompletion(PDEVICE_EXTENSION pDevExt)
+{
+    NTSTATUS Status = vboxWddmCallIsr(pDevExt);
+    Assert(Status == STATUS_SUCCESS);
+}
+
 VBOXVHWACMD* vboxVhwaCommandCreate(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, VBOXVHWACMD_TYPE enmCmd, VBOXVHWACMD_LENGTH cbCmd)
 {
+    vboxVhwaCommandCheckCompletion(pDevExt);
 #ifdef VBOXVHWA_WITH_SHGSMI
     VBOXVHWACMD* pHdr = (VBOXVHWACMD*)VBoxSHGSMICommandAlloc(&pDevExt->u.primary.hgsmiAdapterHeap,
                               cbCmd + VBOXVHWACMD_HEADSIZE(),
@@ -306,6 +313,8 @@ int vboxVhwaEnable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID src
 
 int vboxVhwaDisable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
+    vboxVhwaCommandCheckCompletion(pDevExt);
+
     int rc = VERR_GENERAL_FAILURE;
     VBOXVHWACMD* pCmd;
 
