@@ -364,6 +364,9 @@ typedef struct VUSBROOTHUB
     /** Version of the attached Host Controller. */
     uint32_t                fHcVersions;
 #ifdef VBOX_WITH_STATISTICS
+#if HC_ARCH_BITS == 32
+    uint32_t                Alignment0; /**< Counters must be 64-bit aligned. */
+#endif
     VUSBROOTHUBTYPESTATS    Total;
     VUSBROOTHUBTYPESTATS    aTypes[VUSBXFERTYPE_MSG];
     STAMCOUNTER             StatIsocReqPkts;
