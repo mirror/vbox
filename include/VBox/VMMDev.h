@@ -684,13 +684,11 @@ AssertCompileSize(VBoxGuestStatusCurrent, 4);
  */
 typedef struct VBoxGuestStatus
 {
-    /** Facility the status is indicated for.
-     * @todo Change to VBoxGuestStatusFacility. */
-    uint32_t facility;
-    /** Current guest status.
-     * @todo Change to VBoxGuestStatusCurrent  */
-    uint32_t status;
-    /** Flags, not used. */
+    /** Facility the status is indicated for. */
+    VBoxGuestStatusFacility facility;
+    /** Current guest status. */
+    VBoxGuestStatusCurrent status;
+    /** Flags, not used at the moment. */
     uint32_t flags;
 } VBoxGuestStatus;
 AssertCompileSize(VBoxGuestStatus, 12);
