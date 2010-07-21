@@ -517,37 +517,42 @@ static void pdmacFileBwUnref(PPDMACFILEBWMGR pBwMgr)
 
 bool pdmacFileBwMgrIsTransferAllowed(PPDMACFILEBWMGR pBwMgr, uint32_t cbTransfer)
 {
-    bool fAllowed = false;
+    bool fAllowed = true;
 
     LogFlowFunc(("pBwMgr=%p cbTransfer=%u\n", pBwMgr, cbTransfer));
 
-    uint32_t cbOld = ASMAtomicSubU32(&pBwMgr->cbVMTransferAllowed, cbTransfer);
-    if (RT_LIKELY(cbOld >= cbTransfer))
-        fAllowed = true;
-    else
+    if (pBwMgr->cbVMTransferPerSecMax != UINT32_MAX) /* No need to check if bandwidth is unlimited. */
     {
-        /* We are out of ressources  Check if we can update again. */
-        uint64_t tsNow          = RTTimeSystemNanoTS();
-        uint64_t tsUpdatedLast  = ASMAtomicUoReadU64(&pBwMgr->tsUpdatedLast);
-
-        if (tsNow - tsUpdatedLast >= (1000*1000*1000))
-        {
-            if (ASMAtomicCmpXchgU64(&pBwMgr->tsUpdatedLast, tsNow, tsUpdatedLast))
-            {
-                if (pBwMgr->cbVMTransferPerSecStart < pBwMgr->cbVMTransferPerSecMax)
-                {
-                   pBwMgr->cbVMTransferPerSecStart = RT_MIN(pBwMgr->cbVMTransferPerSecMax, pBwMgr->cbVMTransferPerSecStart + pBwMgr->cbVMTransferPerSecStep);
-                   LogFlow(("AIOMgr: Increasing maximum bandwidth to %u bytes/sec\n", pBwMgr->cbVMTransferPerSecStart));
-                }
-
-                /* Update */
-                ASMAtomicWriteU32(&pBwMgr->cbVMTransferAllowed, pBwMgr->cbVMTransferPerSecStart - cbTransfer);
-                fAllowed = true;
-                LogFlow(("AIOMgr: Refreshed bandwidth\n"));
-            }
-        }
+        uint32_t cbOld = ASMAtomicSubU32(&pBwMgr->cbVMTransferAllowed, cbTransfer);
+        if (RT_LIKELY(cbOld >= cbTransfer))
+            fAllowed = true;
         else
-            ASMAtomicAddU32(&pBwMgr->cbVMTransferAllowed, cbTransfer);
+        {
+            fAllowed = false;
+
+            /* We are out of ressources  Check if we can update again. */
+            uint64_t tsNow          = RTTimeSystemNanoTS();
+            uint64_t tsUpdatedLast  = ASMAtomicUoReadU64(&pBwMgr->tsUpdatedLast);
+
+            if (tsNow - tsUpdatedLast >= (1000*1000*1000))
+            {
+                if (ASMAtomicCmpXchgU64(&pBwMgr->tsUpdatedLast, tsNow, tsUpdatedLast))
+                {
+                    if (pBwMgr->cbVMTransferPerSecStart < pBwMgr->cbVMTransferPerSecMax)
+                    {
+                       pBwMgr->cbVMTransferPerSecStart = RT_MIN(pBwMgr->cbVMTransferPerSecMax, pBwMgr->cbVMTransferPerSecStart + pBwMgr->cbVMTransferPerSecStep);
+                       LogFlow(("AIOMgr: Increasing maximum bandwidth to %u bytes/sec\n", pBwMgr->cbVMTransferPerSecStart));
+                    }
+
+                    /* Update */
+                    ASMAtomicWriteU32(&pBwMgr->cbVMTransferAllowed, pBwMgr->cbVMTransferPerSecStart - cbTransfer);
+                    fAllowed = true;
+                    LogFlow(("AIOMgr: Refreshed bandwidth\n"));
+                }
+            }
+            else
+                ASMAtomicAddU32(&pBwMgr->cbVMTransferAllowed, cbTransfer);
+        }
     }
 
     LogFlowFunc(("fAllowed=%RTbool\n", fAllowed));
