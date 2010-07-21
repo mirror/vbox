@@ -125,7 +125,7 @@ wined3d_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK
     BIN_TO_DLLDIR=\"\" \
     LIB_TO_DATADIR=\"\" \
     BIN_TO_DATADIR=\"\"
-ifneq ($(KBUILD_TYPE),debug)
+if "$(KBUILD_TYPE)" != "debug" || !defined(DEBUG_misha)
  wined3d_DEFS        += WINE_NO_DEBUG_MSGS
 endif
 ifdef VBOXWDDM
@@ -182,7 +182,7 @@ VBoxD3D8_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOC
     BIN_TO_DLLDIR=\"\" \
     LIB_TO_DATADIR=\"\" \
     BIN_TO_DATADIR=\"\"
-ifneq ($(KBUILD_TYPE),debug)
+if "$(KBUILD_TYPE)" != "debug" || !defined(DEBUG_misha)
  VBoxD3D8_DEFS       += WINE_NO_DEBUG_MSGS
 endif
 #ifdef VBOXWDDM
@@ -219,7 +219,7 @@ VBoxD3D9_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOC
     BIN_TO_DLLDIR=\"\" \
     LIB_TO_DATADIR=\"\" \
     BIN_TO_DATADIR=\"\"
-ifneq ($(KBUILD_TYPE),debug)
+if "$(KBUILD_TYPE)" != "debug" || !defined(DEBUG_misha)
  VBoxD3D9_DEFS       += WINE_NO_DEBUG_MSGS
 endif
 ifdef VBOXWDDM

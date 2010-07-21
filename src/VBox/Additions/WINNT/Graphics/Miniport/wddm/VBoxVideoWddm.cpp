@@ -889,6 +889,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
         if (!vboxSHGSMIListIsEmpty(&VhwaCmdList))
         {
             vboxSHGSMIListCat(&pDevExt->VhwaCmdList, &VhwaCmdList);
+            bNeedDpc = TRUE;
         }
 
         if (pDevExt->bSetNotifyDxDpc)
@@ -909,6 +910,10 @@ BOOLEAN DxgkDdiInterruptRoutine(
             uint32_t flags = pDevExt->u.primary.pHostFlags->u32HostFlags;
             Assert(flags == 0);
 #endif
+        }
+
+        if (bNeedDpc)
+        {
             BOOLEAN bDpcQueued = pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
             Assert(bDpcQueued);
         }
@@ -1979,7 +1984,6 @@ DxgkDdiPatch(
     return Status;
 }
 
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
 typedef struct VBOXWDDM_SHADOW_UPDATE_COMPLETION
 {
     PDEVICE_EXTENSION pDevExt;
@@ -2024,7 +2028,34 @@ NTSTATUS vboxWddmDmaCmdNotifyCompletion(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CON
     Assert(Status == STATUS_SUCCESS);
     return Status;
 }
-#endif
+
+typedef struct VBOXWDDM_CALL_ISR
+{
+    PDEVICE_EXTENSION pDevExt;
+    ULONG MessageNumber;
+} VBOXWDDM_CALL_ISR, *PVBOXWDDM_CALL_ISR;
+
+static BOOLEAN vboxWddmCallIsrCb(PVOID Context)
+{
+    PVBOXWDDM_CALL_ISR pdc = (PVBOXWDDM_CALL_ISR)Context;
+    return DxgkDdiInterruptRoutine(pdc->pDevExt, pdc->MessageNumber);
+}
+
+NTSTATUS vboxWddmCallIsr(PDEVICE_EXTENSION pDevExt)
+{
+    VBOXWDDM_CALL_ISR context;
+    context.pDevExt = pDevExt;
+    context.MessageNumber = 0;
+    BOOLEAN bRet;
+    NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
+            pDevExt->u.primary.DxgkInterface.DeviceHandle,
+            vboxWddmCallIsrCb,
+            &context,
+            0, /* IN ULONG MessageNumber */
+            &bRet);
+    Assert(Status == STATUS_SUCCESS);
+    return Status;
+}
 
 static void vboxWddmSubmitBltCmd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CONTEXT pContext, PVBOXWDDM_DMA_PRESENT_BLT pBlt)
 {

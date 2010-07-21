@@ -524,7 +524,7 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCF)
                         for (LONG ir = pRect->top; ir < pRect->bottom; ++ir)
                         {
                             uint32_t * pvU32Mem = (uint32_t*)(pvMem + (ir * pAlloc->SurfDesc.pitch) + (pRect->left * bytestPP));
-                            uint32_t cRaw = (pRect->right - pRect->left) * bytestPP;
+                            uint32_t cRaw = pRect->right - pRect->left;
                             Assert(pRect->left >= 0);
                             Assert(pRect->right <= (LONG)pAlloc->SurfDesc.width);
                             Assert(pRect->top >= 0);
