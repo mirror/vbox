@@ -729,12 +729,14 @@
     </const>
     <const name="DeletingSnapshotOnline" value="16">
       <desc>
-        Teleporting the machine state in from another host or process.
+        Like @c DeletingSnapshot, but the merging of media is ongoing in
+        the background while the machine is running.
       </desc>
     </const>
     <const name="DeletingSnapshotPaused" value="17">
       <desc>
-        Teleporting the machine state in from another host or process.
+        Like @c DeletingSnapshot, but the machine is being paused while the
+        merging of differencing media is ongoing.
       </desc>
     </const>
     <const name="RestoringSnapshot"     value="18">
@@ -745,7 +747,8 @@
     <const name="DeletingSnapshot"      value="19">
       <desc>
         A machine snapshot is being deleted; this can take a long time since this
-        may require merging differencing media.
+        may require merging differencing media. This value indicates that the
+        machine is not running while the snapshot is being deleted.
       </desc>
     </const>
     <const name="SettingUp"             value="20">
