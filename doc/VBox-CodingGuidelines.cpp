@@ -29,6 +29,10 @@
  * @section sec_vbox_guideline_compulsory       Compulsory
  *
  *
+ *      - The indentation size is 4 chars.
+ *
+ *      - Tabs are only ever used in makefiles.
+ *
  *      - Use RT and VBOX types.
  *
  *      - Use Runtime functions.
@@ -257,19 +261,36 @@
  *
  * @section sec_vbox_guideline_optional         Optional
  *
- * First part is the actual coding style and all the prefixes. The second part
+ * First part is the actual coding style and all the prefixes.  The second part
  * is a bunch of good advice.
  *
  *
  * @subsection sec_vbox_guideline_optional_layout   The code layout
  *
- *      - Curly brackets are not indented.
+ *      - Max line length is 130 chars.  Exceptions are table-like
+ *        code/initializers and Log*() statements (don't waste unnecessary
+ *        vertical space on debug logging).
  *
- *      - Space before the parenthesis when it comes after a C keyword.
+ *      - Comments should try stay within the usual 80 columns.
  *
- *      - No space between argument and parenthesis. Exception for complex
- *        expression.
- *        Example:
+ *      - Curly brackets are not indented.  Example:
+ *        @code
+ *              if (true)
+ *              {
+ *                  Something1();
+ *                  Something2();
+ *              }
+ *              else
+ *              {
+ *                  SomethingElse1().
+ *                  SomethingElse2().
+ *              }
+ *        @endcode
+ *
+ *      - Space before the parentheses when it comes after a C keyword.
+ *
+ *      - No space between argument and parentheses. Exception for complex
+ *        expression.  Example:
  *        @code
  *              if (PATMR3IsPatchGCAddr(pVM, GCPtr))
  *        @endcode
@@ -278,8 +299,7 @@
  *        stuff before it!)
  *
  *      - else and if go on the same line if no { compound statement }
- *        follows the if.
- *        Example:
+ *        follows the if.  Example:
  *        @code
  *              if (fFlags & MYFLAGS_1)
  *                  fFlags &= ~MYFLAGS_10;
@@ -291,7 +311,34 @@
  *              else if (fFlags & MYFLAGS_3)
  *        @endcode
  *
- *      - The case is indented from the switch.
+ *
+ *      - Slightly complex boolean expressions are split into multiple lines,
+ *        putting the operators first on the line and indenting it all according
+ *        to the nesting of the expression. The purpose is to make it as easy as
+ *        possible to read.  Example:
+ *        @code
+ *              if (    RT_SUCCESS(rc)
+ *                  ||  (fFlags & SOME_FLAG))
+ *        @endcode
+ *
+ *      - When 'if' or  'while' statements gets long, the closing parentheses
+ *        goes right below the opening parentheses.  This may be applied to
+ *        sub-expression.  Example:
+ *        @code
+ *              if (    RT_SUCCESS(rc)
+ *                  ||  (   fSomeStuff
+ *                       && fSomeOtherStuff
+ *                       && fEvenMoreStuff
+ *                      )
+ *                  ||  SomePredicateFunction()
+ *                 )
+ *              {
+ *                  ...
+ *              }
+ *        @endcode
+ *
+ *      - The case is indented from the switch (to avoid having the braces for
+ *        the 'case' at the same level as the 'switch' statement).
  *
  *      - If a case needs curly brackets they contain the entire case, are not
  *        indented from the case, and the break or return is placed inside them.
@@ -322,22 +369,34 @@
  *              } while (i > 0);
  *        @endcode
  *
- *      - Comments are in C style. C++ style comments are used for temporary
+ *      - Comments are in C style.  C++ style comments are used for temporary
  *        disabling a few lines of code.
- *
- *      - Slightly complex boolean expressions are split into multiple lines,
- *        putting the operators first on the line and indenting it all according
- *        to the nesting of the expression. The purpose is to make it as easy as
- *        possible to read.
- *        Example:
- *        @code
- *              if (    RT_SUCCESS(rc)
- *                  ||  (fFlags & SOME_FLAG))
- *        @endcode
  *
  *      - No unnecessary parentheses in expressions (just don't over do this
  *        so that gcc / msc starts bitching). Find a correct C/C++ operator
  *        precedence table if needed.
+ *
+ *      - 'for (;;)' is preferred over 'while (true)' and 'while (1)'.
+ *
+ *      - Parameters are indented to the start parentheses when breaking up
+ *        function calls, declarations or prototypes.  (This is in line with
+ *        how 'if', 'for' and 'while' statements are done as well.) Example:
+ *        @code
+ *              RTPROCESS hProcess;
+ *              int rc = RTProcCreateEx(papszArgs[0],
+ *                                      papszArgs,
+ *                                      RTENV_DEFAULT,
+ *                                      fFlags,
+ *                                      NULL,           // phStdIn
+ *                                      NULL,           // phStdOut
+ *                                      NULL,           // phStdErr
+ *                                      NULL,           // pszAsUser
+ *                                      NULL,           // pszPassword
+ *                                      &hProcess);
+ *        @endcode
+ *
+ *      - That Dijkstra is dead is no excuse for using gotos.
+ *
  *
  *
  * @subsection sec_vbox_guideline_optional_prefix   Variable / Member Prefixes
@@ -348,58 +407,104 @@
  *
  *      - The 'm_' (or 'm') prefix means a class data member.
  *
- *        In new code in Main, use "m_" (and common sense). As an exception, in Main,
- *        if a class encapsulates its member variables in an anonymous
+ *        In new code in Main, use "m_" (and common sense).  As an exception,
+ *        in Main, if a class encapsulates its member variables in an anonymous
  *        structure which is declared in the class, but defined only in the
- *        implementation (like this: "class X { struct Data; Data *m; }"), then
- *        the pointer to that struct is called "m" itself and its members then need no prefix,
- *        because the members are accessed with "m->member" already which is clear enough.
+ *        implementation (like this: 'class X { struct Data; Data *m; }'), then
+ *        the pointer to that struct is called 'm' itself and its members then
+ *        need no prefix, because the members are accessed with 'm->member'
+ *        already which is clear enough.
  *
- *      - The 'p' prefix means pointer. For instance 'pVM' is pointer to VM.
+ *      - The 'a_' prefix means a parameter (argument) variable.  This is
+ *        sometimes written 'a' in parts of the source code that does not use
+ *        the array prefix.
  *
- *      - The 'a' prefix means array. For instance 'aPages' could be read as array
- *        of pages.
+ *      - The 'p' prefix means pointer.  For instance 'pVM' is pointer to VM.
  *
- *      - The 'c' prefix means count. For instance 'cbBlock' could be read, count
- *        of bytes in block.
+ *      - The 'r' prefix means that something is passed by reference.
+ *
+ *      - The 'k' prefix means that something is a constant.  For instance
+ *        'enum { kStuff };'.  This is usually not used in combination with
+ *        'p', 'r' or any such thing, it's main main use is to make enums
+ *        easily identifiable.
+ *
+ *      - The 'a' prefix means array.  For instance 'aPages' could be read as
+ *        array of pages.
+ *
+ *      - The 'c' prefix means count.  For instance 'cbBlock' could be read,
+ *        count of bytes in block.
  *
  *      - The 'off' prefix means offset.
  *
- *      - The 'i' or 'idx' prefixes usually means index. Although the 'i' one can
- *        sometimes just mean signed integer.
+ *      - The 'i' or 'idx' prefixes usually means index.  Although the 'i' one
+ *        can sometimes just mean signed integer.
+ *
+ *      - The 'i[1-9]+' prefix means a fixed bit size variable.  Frequently
+ *        used with the int[1-9]+_t types.  [type]
  *
  *      - The 'e' (or 'enm') prefix means enum.
  *
- *      - The 'u' prefix usually means unsigned integer. Exceptions follows.
+ *      - The 'u' prefix usually means unsigned integer.  Exceptions follows.
  *
- *      - The 'u[1-9]+' prefix means a fixed bit size variable. Frequently used
- *        with the uint[1-9]+_t types and with bitfields.
+ *      - The 'u[1-9]+' prefix means a fixed bit size variable.  Frequently
+ *        used with the uint[1-9]+_t types and with bitfields.  [type]
  *
- *      - The 'b' prefix means byte or bytes.
+ *      - The 'b' prefix means byte or bytes.  [type]
  *
- *      - The 'f' prefix means flags. Flags are unsigned integers of some kind or bools.
+ *      - The 'f' prefix means flags.  Flags are unsigned integers of some kind
+ *        or booleans.
  *
- *      - The 'ch' prefix means a char, the (signed) char type.
+ *      - TODO: need prefix for real float.  [type]
  *
- *      - The 'wc' prefix means a wide/windows char, the RTUTF16 type.
+ *      - The 'rd' prefix means real double and is used for 'double' variables.
+ *        [type]
  *
- *      - The 'uc' prefix means a Unicode Code point, the RTUNICP type.
+ *      - The 'lrd' prefix means long real double and is used for 'long double'
+ *        variables. [type]
  *
- *      - The 'uch' prefix means unsigned char. It's rarely used.
+ *      - The 'ch' prefix means a char, the (signed) char type.  [type]
  *
- *      - The 'sz' prefix means zero terminated character string (array of chars). (UTF-8)
+ *      - The 'wc' prefix means a wide/windows char, the RTUTF16 type.  [type]
  *
- *      - The 'wsz' prefix means zero terminated wide/windows character string (array of RTUTF16).
+ *      - The 'uc' prefix means a Unicode Code point, the RTUNICP type.  [type]
  *
- *      - The 'usz' prefix means zero terminated Unicode string (array of RTUNICP).
+ *      - The 'uch' prefix means unsigned char.  It's rarely used.  [type]
+ *
+ *      - The 'sz' prefix means zero terminated character string (array of
+ *        chars). (UTF-8)
+ *
+ *      - The 'wsz' prefix means zero terminated wide/windows character string
+ *        (array of RTUTF16).
+ *
+ *      - The 'usz' prefix means zero terminated Unicode string (array of
+ *        RTUNICP).
  *
  *      - The 'str' prefix means C++ string; either a std::string or, in Main,
- *        a Utf8Str or, in Qt, a QString
+ *        a Utf8Str or, in Qt, a QString.  When used with 'p', 'r', 'a' or 'c'
+ *        the first letter should be capitalized.
  *
- *      - The 'bstr' prefix, in Main, means a UTF-16 Bstr.
+ *      - The 'bstr' prefix, in Main, means a UTF-16 Bstr. When used with 'p',
+ *        'r', 'a' or 'c' the first letter should be capitalized.
  *
  *      - The 'pfn' prefix means pointer to function. Common usage is 'pfnCallback'
  *        and such like.
+ *
+ *      - The 'psz' prefix is a combination of 'p' and 'sz' and thus means
+ *        pointer to a zero terminated character string. (UTF-8)
+ *
+ *      - The 'pcsz' prefix is used to indicate constant string pointers in
+ *        parts of the code.  Most code uses 'psz' for const and non-const
+ *        string pointers.
+ *
+ *      - The 'l' prefix means (signed) long.  We try avoid using this,
+ *        expecially with the 'LONG' types in Main as these are not 'long' on
+ *        64-bit non-Windows platforms and can cause confusion. Alternatives:
+ *        'i' or 'i32'.  [type]
+ *
+ *      - The 'ul' prefix means unsigned long.  We try avoid using this,
+ *        expecially with the 'ULONG' types in Main as these are not 'unsigned
+ *        long' on 64-bit non-Windows platforms and can cause confusion.
+ *        Alternatives: 'u' or 'u32'.  [type]
  *
  *
  * @subsection sec_vbox_guideline_optional_misc     Misc / Advice / Stuff
