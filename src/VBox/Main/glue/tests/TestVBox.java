@@ -127,9 +127,9 @@ public class TestVBox
         {
             try {
                 mgr.connect(url, user, passwd);
-            } catch (Exception e) {
+            } catch (VBoxException e) {
                 e.printStackTrace();
-                System.out.println("Cannot connect, start webserver first!");                
+                System.out.println("Cannot connect, start webserver first!");
             }
         }
 
@@ -147,7 +147,12 @@ public class TestVBox
                 int ch = System.in.read();
             }
         }
-        catch (Throwable e)
+        catch (VBoxException e)
+        {
+            System.out.println("VBox error: "+e.getMessage()+" original="+e.getWrapped());
+            e.printStackTrace();
+        }
+        catch (java.io.IOException e)
         {
             e.printStackTrace();
         }
@@ -156,7 +161,7 @@ public class TestVBox
         {
             try {
                 mgr.disconnect();
-            } catch (Exception e) {
+            } catch (VBoxException e) {
                 e.printStackTrace();
             }
         }
