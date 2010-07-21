@@ -2413,7 +2413,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     psz += RTStrFormatNumber(psz, Time.u8Second, 10, 2, 0, RTSTR_F_ZEROPAD);
                     *psz++ = '.';
                     psz += RTStrFormatNumber(psz, Time.u32Nanosecond / 1000000, 10, 3, 0, RTSTR_F_ZEROPAD);
-                    *psz++ = ' ';                                                                   /* +13 (2+1+2+1+2+1+3+1) */
+                    *psz++ = ' ';                                                                   /* +17 (3+1+3+1+3+1+4+1) */
 #else
                     memset(psz, ' ', 13);
                     psz += 13;
@@ -2432,7 +2432,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     psz += RTStrFormatNumber(psz, u32 / 1000, 10, 2, 0, RTSTR_F_ZEROPAD);
                     *psz++ = '.';
                     psz += RTStrFormatNumber(psz, u32 % 1000, 10, 3, 0, RTSTR_F_ZEROPAD);
-                    *psz++ = ' ';                                                               /* +13 (2+1+2+1+2+1+3+1) */
+                    *psz++ = ' ';                                                               /* +20 (9+1+2+1+2+1+3+1) */
 #else
                     memset(psz, ' ', 13);
                     psz += 13;
