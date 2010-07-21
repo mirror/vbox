@@ -2212,7 +2212,7 @@ DxgkDdiSubmitCommand(
         {
             PVBOXWDDM_DMA_PRESENT_CLRFILL pCF = (PVBOXWDDM_DMA_PRESENT_CLRFILL)pPrivateData;
             PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pSubmitCommand->hContext;
-            PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCFCmd = (PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_RECTSINFO, RT_OFFSETOF(VBOXVDMAPIPE_CMD_DMACMD_CLRFILL, Rects.aRects[pCF->Rects.cRects]));
+            PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCFCmd = (PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_DMACMD_CLRFILL, RT_OFFSETOF(VBOXVDMAPIPE_CMD_DMACMD_CLRFILL, Rects.aRects[pCF->Rects.cRects]));
             NTSTATUS submStatus = STATUS_UNSUCCESSFUL;
             Assert(pCFCmd);
             if (pCFCmd)
@@ -2252,13 +2252,11 @@ DxgkDdiSubmitCommand(
                     Assert(cNew < UINT32_MAX/2);
                     vboxVdmaGgCmdDestroy(&pCFCmd->Hdr);
                 }
+
             }
 
-            if (submStatus != STATUS_SUCCESS)
-            {
-                Status = vboxWddmDmaCmdNotifyCompletion(pDevExt, pPrivateData->pContext, pSubmitCommand->SubmissionFenceId);
-            }
-            /* else - command will be completed in the clrfill handler */
+            Status = vboxWddmDmaCmdNotifyCompletion(pDevExt, pPrivateData->pContext, pSubmitCommand->SubmissionFenceId);
+            Assert(Status == STATUS_SUCCESS);
 
             break;
         }
