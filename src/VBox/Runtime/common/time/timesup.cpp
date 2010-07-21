@@ -81,17 +81,17 @@ static uint32_t             g_iWorker = 0;
  * This array is indexed by g_iWorker. */
 static const PFNTIMENANOTSINTERNAL g_apfnWorkers[] =
 {
-#define RTTIMENANO_WORKER_DETECT        0
+# define RTTIMENANO_WORKER_DETECT        0
     rtTimeNanoTSInternalRediscover,
-#define RTTIMENANO_WORKER_SYNC_CPUID    1
+# define RTTIMENANO_WORKER_SYNC_CPUID    1
     RTTimeNanoTSLegacySync,
-#define RTTIMENANO_WORKER_ASYNC_CPUID   2
+# define RTTIMENANO_WORKER_ASYNC_CPUID   2
     RTTimeNanoTSLegacyAsync,
-#define RTTIMENANO_WORKER_SYNC_LFENCE   3
+# define RTTIMENANO_WORKER_SYNC_LFENCE   3
     RTTimeNanoTSLFenceSync,
-#define RTTIMENANO_WORKER_ASYNC_LFENCE  4
+# define RTTIMENANO_WORKER_ASYNC_LFENCE  4
     RTTimeNanoTSLFenceAsync,
-#define RTTIMENANO_WORKER_FALLBACK      5
+# define RTTIMENANO_WORKER_FALLBACK      5
     rtTimeNanoTSInternalFallback,
 };
 
@@ -127,11 +127,11 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pDa
              || pGip->u32Mode == SUPGIPMODE_ASYNC_TSC))
         return rtTimeNanoTSInternalRediscover(pData);
     NOREF(pData);
-#if defined(IN_RING3) /** @todo Add ring-0 RTTimeSystemNanoTS to all hosts. */
+# ifndef IN_RC
     return RTTimeSystemNanoTS();
-#else
+# else
     return 0;
-#endif
+# endif
 }
 
 
