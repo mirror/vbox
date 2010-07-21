@@ -1397,6 +1397,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/utf-16.cpp \
 	common/string/utf-8.cpp \
 	common/table/avlpv.cpp \
+	common/time/time.cpp \
 	generic/RTLogWriteStdErr-stub-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
