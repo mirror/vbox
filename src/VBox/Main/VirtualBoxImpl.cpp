@@ -1368,77 +1368,6 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aName, IMachine **aMachine)
     return rc;
 }
 
-/** @note Locks objects! */
-STDMETHODIMP VirtualBox::UnregisterMachine(IN_BSTR aId,
-                                           BOOL fCloseMedia,
-                                           ComSafeArrayOut(BSTR, aFiles),
-                                           IMachine **aMachine)
-{
-    Guid id(aId);
-    if (id.isEmpty())
-        return E_INVALIDARG;
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    // find machine from the given ID
-    ComObjPtr<Machine> pMachine;
-    HRESULT rc = findMachine(id,
-                             true /* fPermitInaccessible */,
-                             true /* setError */,
-                             &pMachine);
-    if (FAILED(rc)) return rc;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    MediaList llMedia;
-    rc = pMachine->prepareUnregister(fCloseMedia, llMedia);
-    if (FAILED(rc)) return rc;
-
-    // remove from the collection of registered machines
-    m->allMachines.removeChild(pMachine);
-
-    if (fCloseMedia)
-    {
-        // now go thru the list of attached media reported by prepareUnregister() and close them all
-        SafeArray<BSTR> sfaFiles(llMedia.size());
-        size_t u = 0;
-        for (MediaList::const_iterator it = llMedia.begin();
-             it != llMedia.end();
-             ++it)
-        {
-            ComObjPtr<Medium> pMedium = *it;
-            Bstr bstrFile = pMedium->getLocationFull();
-
-            AutoCaller autoCaller2(pMedium);
-            if (FAILED(autoCaller2.rc())) return autoCaller2.rc();
-
-            pMedium->close(NULL /*fNeedsSaveSettings*/,     // we'll call saveSettings() in any case below
-                           autoCaller2);
-                // this uninitializes the medium
-
-            // report the path to the caller
-            bstrFile.detachTo(&sfaFiles[u]);
-            ++u;
-        }
-        // report all paths to the caller
-        sfaFiles.detachTo(ComSafeArrayOutArg(aFiles));
-    }
-
-    // save the global registry
-    rc = saveSettings();
-
-    alock.release();
-
-    /* return the unregistered machine to the caller */
-    pMachine.queryInterfaceTo(aMachine);
-
-    /* fire an event */
-    onMachineRegistered(id, FALSE);
-
-    return rc;
-}
-
 STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
                                         IN_BSTR aLocation,
                                         IMedium **aHardDisk)
@@ -3822,6 +3751,32 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
 
     if (pfNeedsSaveSettings)
         *pfNeedsSaveSettings = true;
+
+    return rc;
+}
+
+/**
+ * Removes the given machine object from the internal list of registered machines.
+ * Called from Machine::Unregister().
+ * @param pMachine
+ * @return
+ */
+HRESULT VirtualBox::unregisterMachine(Machine *pMachine)
+{
+    const Guid &id = pMachine->getId();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    // remove from the collection of registered machines
+    m->allMachines.removeChild(pMachine);
+
+    // save the global registry
+    HRESULT rc = saveSettings();
+
+    alock.release();
+
+    /* fire an event */
+    onMachineRegistered(id, FALSE);
 
     return rc;
 }

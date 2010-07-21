@@ -3686,7 +3686,111 @@ STDMETHODIMP Machine::DiscardSettings()
     return S_OK;
 }
 
-STDMETHODIMP Machine::DeleteSettings()
+/** @note Locks objects! */
+STDMETHODIMP Machine::Unregister(BOOL fCloseMedia,
+                                 ComSafeArrayOut(BSTR, aFiles))
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    MediaList llMedia;
+    if (mData->mSession.mState != SessionState_Closed)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Cannot unregister the machine '%ls' because it has an open session"),
+                           mUserData->mName.raw());
+
+    // @todo optionally discard saved state
+    if (mData->mMachineState == MachineState_Saved)
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Cannot unregister the machine '%ls' because it is in the Saved state"),
+                           mUserData->mName.raw());
+
+    // @todo optionally nuke snapshots
+    size_t snapshotCount = 0;
+    if (mData->mFirstSnapshot)
+        snapshotCount = mData->mFirstSnapshot->getAllChildrenCount() + 1;
+    if (snapshotCount)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
+                           mUserData->mName.raw(), snapshotCount);
+
+    if (    !mMediaData.isNull()      // can be NULL if machine is inaccessible
+         && mMediaData->mAttachments.size()
+       )
+    {
+        // we have media attachments:
+        if (fCloseMedia)
+        {
+            // caller wants automatic detachment: then do that and report all media to the array
+
+            // make a temporary list because detachDevice invalidates iterators into
+            // mMediaData->mAttachments
+            MediaData::AttachmentList llAttachments2 = mMediaData->mAttachments;
+
+            for (MediaData::AttachmentList::iterator it = llAttachments2.begin();
+                 it != llAttachments2.end();
+                 ++it)
+            {
+                ComObjPtr<MediumAttachment> pAttach = *it;
+                ComObjPtr<Medium> pMedium = pAttach->getMedium();
+
+                if (!pMedium.isNull())
+                    llMedia.push_back(pMedium);
+
+                detachDevice(pAttach,
+                             alock,
+                             NULL /* pfNeedsSaveSettings */);
+            };
+        }
+        else
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
+                               mMediaData->mAttachments.size());
+    }
+
+    // commit all the media changes made above
+    commitMedia();
+
+    mData->mRegistered = false;
+
+    // machine lock no longer needed
+    alock.release();
+
+    if (fCloseMedia)
+    {
+        // now go thru the list of attached media reported by prepareUnregister() and close them all
+        SafeArray<BSTR> sfaFiles(llMedia.size());
+        size_t u = 0;
+        for (MediaList::const_iterator it = llMedia.begin();
+             it != llMedia.end();
+             ++it)
+        {
+            ComObjPtr<Medium> pMedium = *it;
+            Bstr bstrFile = pMedium->getLocationFull();
+
+            AutoCaller autoCaller2(pMedium);
+            if (FAILED(autoCaller2.rc())) return autoCaller2.rc();
+
+            pMedium->close(NULL /*fNeedsSaveSettings*/,     // we'll call saveSettings() in any case below
+                           autoCaller2);
+                // this uninitializes the medium
+
+            // report the path to the caller
+            bstrFile.detachTo(&sfaFiles[u]);
+            ++u;
+        }
+        // report all paths to the caller
+        sfaFiles.detachTo(ComSafeArrayOutArg(aFiles));
+    }
+
+    mParent->unregisterMachine(this);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::Delete()
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -5942,84 +6046,6 @@ HRESULT Machine::prepareRegister()
     }
 
     return rc;
-}
-
-/**
- * Called from VirtualBox::UnregisterMachine() with the flags given there to
- * give the machine a chance to clean up for itself.
- * @param fDetachMedia As passed to VirtualBox::UnregisterMachine(). If true, all
- *                     media are detached from the machine and its snapshots.
- * @param llFiles
- * @return
- */
-HRESULT Machine::prepareUnregister(bool fCloseMedia,
-                                   MediaList &llMedia)
-{
-    AutoLimitedCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (mData->mSession.mState != SessionState_Closed)
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot unregister the machine '%ls' because it has an open session"),
-                        mUserData->mName.raw());
-
-    // @todo optionally discard saved state
-    if (mData->mMachineState == MachineState_Saved)
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot unregister the machine '%ls' because it is in the Saved state"),
-                        mUserData->mName.raw());
-
-    // @todo optionally nuke snapshots
-    size_t snapshotCount = 0;
-    if (mData->mFirstSnapshot)
-        snapshotCount = mData->mFirstSnapshot->getAllChildrenCount() + 1;
-    if (snapshotCount)
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
-                        mUserData->mName.raw(), snapshotCount);
-
-    if (    !mMediaData.isNull()      // can be NULL if machine is inaccessible
-         && mMediaData->mAttachments.size()
-       )
-    {
-        // we have media attachments:
-        if (fCloseMedia)
-        {
-            // caller wants automatic detachment: then do that and report all media to the array
-
-            // make a temporary list because detachDevice invalidates iterators into
-            // mMediaData->mAttachments
-            MediaData::AttachmentList llAttachments2 = mMediaData->mAttachments;
-
-            for (MediaData::AttachmentList::iterator it = llAttachments2.begin();
-                 it != llAttachments2.end();
-                 ++it)
-            {
-                ComObjPtr<MediumAttachment> pAttach = *it;
-                ComObjPtr<Medium> pMedium = pAttach->getMedium();
-
-                if (!pMedium.isNull())
-                    llMedia.push_back(pMedium);
-
-                detachDevice(pAttach,
-                             alock,
-                             NULL /* pfNeedsSaveSettings */);
-            };
-        }
-        else
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
-                               mMediaData->mAttachments.size());
-    }
-
-    // commit all the media changes made above
-    commitMedia();
-
-    mData->mRegistered = false;
-
-    return S_OK;
 }
 
 /**

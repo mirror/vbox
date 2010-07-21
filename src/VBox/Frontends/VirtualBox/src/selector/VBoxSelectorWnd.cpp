@@ -678,21 +678,20 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /* = QString::null */)
 
         if (ok)
         {
-            QVector<QString> files;
-            CMachine machine;
-            vbox.UnregisterMachine(id, false /*fDetachMedia*/, files, machine);
-            if (vbox.isOk() && item->accessible())
+            CMachine machine = item->machine();
+            QVector<QString> files = machine.Unregister(false /*fDetachMedia*/);
+            if (machine.isOk() && item->accessible())
             {
                 /* delete machine settings */
-                machine.DeleteSettings();
+                machine.Delete();
                 /* remove the item shortly: cmachine it refers to is no longer valid! */
                 int row = mVMModel->rowById (item->id());
                 mVMModel->removeItem (item);
                 delete item;
                 mVMListView->ensureSomeRowSelected (row);
             }
-            if (!vbox.isOk() || !machine.isOk())
-                vboxProblem().cannotDeleteMachine (vbox, machine);
+            if (!machine.isOk())
+                vboxProblem().cannotDeleteMachine(machine);
         }
     }
 }

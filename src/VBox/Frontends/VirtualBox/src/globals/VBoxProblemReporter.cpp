@@ -789,16 +789,15 @@ void VBoxProblemReporter::cannotStopMachine (const CProgress &progress)
         formatErrorInfo (progress.GetErrorInfo()));
 }
 
-void VBoxProblemReporter::cannotDeleteMachine (const CVirtualBox &vbox,
-                                               const CMachine &machine)
+void VBoxProblemReporter::cannotDeleteMachine(const CMachine &machine)
 {
     /* preserve the current error info before calling the object again */
     COMResult res (machine);
 
-    message (mainWindowShown(), Error,
-        tr ("Failed to remove the virtual machine <b>%1</b>.")
-            .arg (machine.GetName()),
-        !vbox.isOk() ? formatErrorInfo (vbox) : formatErrorInfo (res));
+    message(mainWindowShown(),
+            Error,
+            tr("Failed to remove the virtual machine <b>%1</b>.").arg(machine.GetName()),
+            !machine.isOk() ? formatErrorInfo(machine) : formatErrorInfo(res));
 }
 
 void VBoxProblemReporter::cannotDiscardSavedState (const CConsole &console)
