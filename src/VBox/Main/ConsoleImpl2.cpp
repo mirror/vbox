@@ -309,7 +309,7 @@ static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRea
     return rc;
 }
 
-class DECLEXPORT_CLASS ConfigError : public iprt::Error
+class ConfigError : public iprt::Error
 {
 public:
 
