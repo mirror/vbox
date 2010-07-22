@@ -4337,18 +4337,20 @@ ifeq ($(KBUILD_TARGET), darwin)
 
 else
 
-ifeq ($(KBUILD_TARGET), linux)
- VBOX_JAVA_HOME ?= $(firstword $(wildcard $(PATH_DEVTOOLS)/linux.x86/jdk1.6.0_21) /usr/lib/jvm/java-6-sun)
-endif
+ ifeq ($(KBUILD_TARGET), linux)
+  ifeq ($(origin VBOX_JAVA_HOME), undefined)
+   VBOX_JAVA_HOME := $(firstword $(wildcard $(PATH_DEVTOOLS)/linux.x86/jdk1.6.0_21) /usr/lib/jvm/java-6-sun)
+  endif
+ endif
 
-ifeq ($(KBUILD_TARGET), solaris)
- # VBOX_JAVA_HOME ?= /usr/jdk/jdk1.6.0
-   VBOX_JAVA_HOME ?= /usr/java
-endif
+ ifeq ($(KBUILD_TARGET), solaris)
+  # VBOX_JAVA_HOME ?= /usr/jdk/jdk1.6.0
+  VBOX_JAVA_HOME ?= /usr/java
+ endif
 
-ifeq ($(KBUILD_TARGET), win)
- VBOX_JAVA_HOME ?= c:/jdk
-endif
+ ifeq ($(KBUILD_TARGET), win)
+  VBOX_JAVA_HOME ?= c:/jdk
+ endif
 
  VBOX_JAVAC     = $(VBOX_JAVA_HOME)/bin/javac
  VBOX_JAVAH     = $(VBOX_JAVA_HOME)/bin/javah
