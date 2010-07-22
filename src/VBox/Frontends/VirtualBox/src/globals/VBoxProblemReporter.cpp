@@ -1608,7 +1608,7 @@ void VBoxProblemReporter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent
                 "from the <b>Machine</b> menu. "
                 "If they are installed but the machine is not yet fully started "
                 "then shared folders will be available once it is.</p>"),
-             "remindAboutGuestAdditionsAreNotInstalled");
+             "remindAboutGuestAdditionsAreNotActive");
 }
 
 int VBoxProblemReporter::cannotFindGuestAdditions (const QString &aSrc1,
