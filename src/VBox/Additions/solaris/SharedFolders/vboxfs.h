@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,7 +32,7 @@ extern "C" {
 
 #ifdef _KERNEL
 
-#include "../../common/VBoxGuestLib/VBoxCalls.h"
+#include "../../common/VBoxGuestLib/VBoxGuestR0LibSharedFolders.h"
 #include <sys/vfs.h>
 
 /** VNode for VBoxVFS */
