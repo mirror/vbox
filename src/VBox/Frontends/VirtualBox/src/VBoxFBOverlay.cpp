@@ -469,7 +469,7 @@ private:
 
 int VBoxVHWAGlShader::init()
 {
-    int rc = VERR_GENERAL_FAILURE;
+    int rc;
     GLint *length;
     const char **sources;
     length = new GLint[mcComponents];
@@ -480,7 +480,7 @@ int VBoxVHWAGlShader::init()
         rc = maComponents[i]->init();
         AssertRC(rc);
         if(RT_FAILURE(rc))
-            goto exit;
+            return rc;
         sources[i] = maComponents[i]->contents();
     }
 
@@ -511,14 +511,13 @@ int VBoxVHWAGlShader::init()
     GLchar * pBuf = new GLchar[16300];
     vboxglGetShaderInfoLog(mShader, 16300, NULL, pBuf);
     VBOXQGLLOG(("\ncompile log:\n-----------\n%s\n---------\n", pBuf));
-    delete[] pBuf;
+    delete pBuf;
 #endif
 
     Assert(compiled);
     if(compiled)
     {
-        rc = VINF_SUCCESS;
-        goto exit;
+        return VINF_SUCCESS;
     }
 
 
@@ -527,10 +526,9 @@ int VBoxVHWAGlShader::init()
             );
     mShader = 0;
 
-exit:
     delete[] length;
     delete[] sources;
-    return rc;
+    return VERR_GENERAL_FAILURE;
 }
 
 class VBoxVHWAGlProgram
