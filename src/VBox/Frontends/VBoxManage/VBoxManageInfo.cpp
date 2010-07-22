@@ -2134,7 +2134,8 @@ int handleShowVMInfo(HandlerArg *a)
         ComPtr<IConsole> console;
 
         /* open an existing session for the VM */
-        rc = machine->LockForSession(a->session, true /* fPermitShared */, NULL);
+        SessionType_T st;
+        rc = machine->LockForSession(a->session, true /* fPermitShared */, &st);
         if (SUCCEEDED(rc))
             /* get the session machine */
             rc = a->session->COMGETTER(Machine)(machine.asOutParam());

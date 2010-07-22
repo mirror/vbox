@@ -311,7 +311,8 @@ int handleModifyVM(HandlerArg *a)
     }
 
     /* open a session for the VM */
-    CHECK_ERROR_RET(machine, LockForSession(a->session, false /* fPermitShared */, NULL), 1);
+    SessionType_T st;
+    CHECK_ERROR_RET(machine, LockForSession(a->session, false /* fPermitShared */, &st), 1);
 
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());

@@ -823,7 +823,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
               Utf8Str(id).raw()));
 
         // open a session
-        CHECK_ERROR_BREAK(m, LockForSession(session, false /* fPermitShared */, NULL));
+        SessionType_T st;
+        CHECK_ERROR_BREAK(m, LockForSession(session, false /* fPermitShared */, &st));
         fSessionOpened = true;
 
         /* get the console */

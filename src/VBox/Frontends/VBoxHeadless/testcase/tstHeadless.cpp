@@ -149,7 +149,8 @@ int main (int argc, char **argv)
         else
         {
             RTPrintf ("Opening an existing session...\n");
-            CHECK_ERROR_BREAK(m, LockForSession(session, true /* fPermitShared */, NULL));
+            SessionType_T st;
+            CHECK_ERROR_BREAK(m, LockForSession(session, true /* fPermitShared */, &st));
 
             ComPtr <IConsole> console;
             CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
