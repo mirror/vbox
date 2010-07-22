@@ -536,6 +536,7 @@ struct SharedFolder
 {
     SharedFolder()
         : fWritable(false)
+        , fAutoMount(false)
     {}
 
     bool operator==(const SharedFolder &a) const;
@@ -543,6 +544,7 @@ struct SharedFolder
     com::Utf8Str    strName,
                     strHostPath;
     bool            fWritable;
+    bool            fAutoMount;
 };
 typedef std::list<SharedFolder> SharedFoldersList;
 

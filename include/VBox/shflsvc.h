@@ -1,9 +1,9 @@
 /** @file
- * Shared Folders: Common header for host service and guest clients. (ADD,HSvc)
+ * Shared Folders: Common header for host service and guest clients.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -133,6 +133,8 @@ typedef uint64_t SHFLHANDLE;
 #define SHFL_HANDLE_NIL  ((SHFLHANDLE)~0LL)
 #define SHFL_HANDLE_ROOT ((SHFLHANDLE)0LL)
 
+/** Hardcoded maximum length (in chars) of a shared folder name. */
+#define SHFL_MAX_LEN         (256)
 /** Hardcoded maximum number of shared folder mapping available to the guest. */
 #define SHFL_MAX_MAPPINGS    (64)
 
@@ -165,12 +167,12 @@ typedef SHFLSTRING *PSHFLSTRING;
 typedef const SHFLSTRING *PCSHFLSTRING;
 
 /** Calculate size of the string. */
-DECLINLINE(uint32_t) ShflStringSizeOfBuffer (PCSHFLSTRING pString)
+DECLINLINE(uint32_t) ShflStringSizeOfBuffer(PCSHFLSTRING pString)
 {
     return pString? sizeof (SHFLSTRING) - sizeof (pString->String) + pString->u16Size: 0;
 }
 
-DECLINLINE(uint32_t) ShflStringLength (PCSHFLSTRING pString)
+DECLINLINE(uint32_t) ShflStringLength(PCSHFLSTRING pString)
 {
     return pString? pString->u16Length: 0;
 }
@@ -419,10 +421,15 @@ typedef struct _SHFLVOLINFO
 /**
  * SHFL_FN_QUERY_MAPPINGS
  */
-
-#define SHFL_MF_UCS2 (0x00000000)
+/** Validation mask.  Needs to be adjusted
+  * whenever a new SHFL_MF_ flag is added. */
+#define SHFL_MF_MASK       (0x00000011)
+/** UC2 enconded strings. */
+#define SHFL_MF_UCS2       (0x00000000)
 /** Guest uses UTF8 strings, if not set then the strings are unicode (UCS2). */
-#define SHFL_MF_UTF8 (0x00000001)
+#define SHFL_MF_UTF8       (0x00000001)
+/** Just handle the auto-mounted folders. */
+#define SHFL_MF_AUTOMOUNT  (0x00000010)
 
 /** Type of guest system. For future system dependent features. */
 #define SHFL_MF_SYSTEM_MASK    (0x0000FF00)
@@ -989,6 +996,13 @@ typedef struct _VBoxSFRename
  */
 
 #define SHFL_CPARMS_ADD_MAPPING  (3)
+
+/**
+ * SHFL_FN_ADD_MAPPING, with auto-mount flag.
+ * Host call, no guest structure is used.
+ */
+
+#define SHFL_CPARMS_ADD_MAPPING2 (4)
 
 /**
  * SHFL_FN_REMOVE_MAPPING

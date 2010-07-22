@@ -21,6 +21,7 @@
 #include "VBoxRestore.h"
 #include "VBoxVRDP.h"
 #include "VBoxHostVersion.h"
+#include "VBoxSharedFolders.h"
 #include <VBoxHook.h>
 #include "resource.h"
 #include <malloc.h>
@@ -453,6 +454,8 @@ void WINAPI VBoxServiceStart(void)
                  10 * 1000, /* 10 seconds */
                  NULL       /* No timerproc */);
     }
+
+    VBoxSharedFoldersAutoMount();
 
     /* Boost thread priority to make sure we wake up early for seamless window notifications (not sure if it actually makes any difference though) */
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);

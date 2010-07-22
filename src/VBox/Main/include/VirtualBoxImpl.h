@@ -149,7 +149,7 @@ public:
     STDMETHOD(FindFloppyImage) (IN_BSTR aLocation, IMedium **aFloppyImage);
 
     STDMETHOD(GetGuestOSType) (IN_BSTR aId, IGuestOSType **aType);
-    STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable);
+    STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount);
     STDMETHOD(RemoveSharedFolder) (IN_BSTR aName);
     STDMETHOD(GetExtraDataKeys) (ComSafeArrayOut(BSTR, aKeys));
     STDMETHOD(GetExtraData) (IN_BSTR aKey, BSTR *aValue);

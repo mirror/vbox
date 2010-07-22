@@ -80,7 +80,7 @@ private:
 
     void showEvent (QShowEvent *aEvent);
 
-    void createSharedFolder (const QString &aName, const QString &aPath, bool aWritable, SFDialogType aType);
+    void createSharedFolder (const QString &aName, const QString &aPath, bool aWritable, bool aAutoMount, SFDialogType aType);
     void removeSharedFolder (const QString &aName, const QString &aPath, SFDialogType aType);
 
     void getFrom (const CSharedFolderVector &aVec, SFTreeViewItem *aItem);
@@ -99,6 +99,7 @@ private:
     CConsole  mConsole;
     QString   mTrFull;
     QString   mTrReadOnly;
+    QString   mTrYes;
 };
 
 #endif // __VBoxVMSettingsSF_h__

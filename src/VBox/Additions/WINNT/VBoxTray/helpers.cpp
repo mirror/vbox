@@ -253,3 +253,4 @@ int showBalloonTip (HINSTANCE hInst, HWND hWnd, UINT uID, const char *pszMsg, co
         return GetLastError();
     return 0;
 }
+

@@ -77,6 +77,9 @@ enum g_eUsage
 #ifdef VBOX_WITH_GUEST_PROPS
     GUEST_PROP,
 #endif
+#ifdef VBOX_WITH_SHARED_FOLDERS
+    GUEST_SHAREDFOLDERS,
+#endif
     USAGE_ALL = UINT32_MAX
 };
 
@@ -112,6 +115,12 @@ static void usage(g_eUsage eWhich = USAGE_ALL)
         doUsage("wait <patterns>", g_pszProgName, "guestproperty");
         doUsage("[-timestamp <last timestamp>]");
         doUsage("[-timeout <timeout in ms>");
+    }
+#endif
+#ifdef VBOX_WITH_SHARED_FOLDERS
+    if ((GUEST_SHAREDFOLDERS == eWhich) || (USAGE_ALL == eWhich))
+    {
+        doUsage("list [-automount]", g_pszProgName, "sharedfolder");
     }
 #endif
 }
@@ -1254,7 +1263,99 @@ static int handleGuestProperty(int argc, char *argv[])
     usage(GUEST_PROP);
     return 1;
 }
+#endif
 
+#ifdef VBOX_WITH_SHARED_FOLDERS
+/**
+ * Lists the Shared Folders provided by the host.
+ */
+int listSharedFolders(int argc, char **argv)
+{
+    bool usageOK = true;
+    bool fOnlyShowAutoMount = false;
+    if (   argc == 1
+        && (   RTStrICmp(argv[0], "-automount") == 0
+            || RTStrICmp(argv[0], "/automount") == 0)
+       )
+    {
+        fOnlyShowAutoMount = true;
+    }
+    else if (argc > 1)
+        usageOK = false;
+
+    if (!usageOK)
+    {
+        usage(GUEST_SHAREDFOLDERS);
+        return 1;
+    }
+
+    uint32_t u32ClientId;
+    int rc = VbglR3SharedFolderConnect(&u32ClientId);
+    if (!RT_SUCCESS(rc))
+        VBoxControlError("Failed to connect to the shared folder service, error %Rrc\n", rc);
+    else
+    {
+        uint32_t cMappings = 64; /* See shflsvc.h for define; should be used later. */
+        uint32_t cbMappings = cMappings * sizeof(VBGLR3SHAREDFOLDERMAPPING);
+        VBGLR3SHAREDFOLDERMAPPING *pMappings = (VBGLR3SHAREDFOLDERMAPPING*)RTMemAlloc(cbMappings);
+
+        if (pMappings)
+        {
+            rc = VbglR3SharedFolderGetMappings(u32ClientId, fOnlyShowAutoMount,
+                                               pMappings, cbMappings,
+                                               &cMappings);
+            if (RT_SUCCESS(rc))
+            {
+                RT_CLAMP(cMappings, 0, 64); /* Maximum mappings, see shflsvc.h */
+                RTPrintf("Shared Folder Mappings (%u):\n\n", cMappings);
+                for (uint32_t i = 0; i < cMappings; i++)
+                {
+                    char *ppszName = NULL;
+                    uint32_t pcbLen = 0;
+                    rc = VbglR3SharedFolderGetName(u32ClientId, pMappings[i].u32Root,
+                                                   &ppszName, &pcbLen);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTPrintf("%02u - %s\n", i + 1, ppszName);
+                        RTStrFree(ppszName);
+                    }
+                    else
+                        VBoxControlError("Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
+                                         pMappings[i].u32Root, rc);
+                }
+                if (cMappings == 0)
+                    RTPrintf("No Shared Folders available.\n");
+            }
+            else
+                VBoxControlError("Error while getting the shared folder mappings, rc = %Rrc\n", rc);
+            RTMemFree(pMappings);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+        VbglR3SharedFolderDisconnect(u32ClientId);
+    }
+    return RT_SUCCESS(rc) ? 0 : 1;
+}
+
+/**
+ * Handles Shared Folders control.
+ *
+ * @returns 0 on success, 1 on failure
+ * @note see the command line API description for parameters
+ */
+static int handleSharedFolder(int argc, char *argv[])
+{
+    if (0 == argc)
+    {
+        usage(GUEST_SHAREDFOLDERS);
+        return 1;
+    }
+    if (0 == strcmp(argv[0], "list"))
+        return listSharedFolders(argc - 1, argv + 1);
+    /* else */
+    usage(GUEST_SHAREDFOLDERS);
+    return 1;
+}
 #endif
 
 /** command handler type */
@@ -1278,6 +1379,9 @@ struct COMMANDHANDLER
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
     { "guestproperty", handleGuestProperty },
+#endif
+#ifdef VBOX_WITH_SHARED_FOLDERS
+    { "sharedfolder", handleSharedFolder },
 #endif
     { NULL, NULL }  /* terminator */
 };

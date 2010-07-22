@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -506,6 +506,31 @@ VBGLR3DECL(int)     VbglR3HostVersionLastCheckedLoad(uint32_t u32ClientId, char 
 VBGLR3DECL(int)     VbglR3HostVersionLastCheckedStore(uint32_t u32ClientId, const char *pszVer);
 /** @}  */
 # endif /* VBOX_WITH_GUEST_PROPS defined */
+
+# ifdef VBOX_WITH_SHARED_FOLDERS
+/** @name Shared folders
+ * @{ */
+/**
+ * Structure containing mapping information for a shared folder.
+ */
+struct VBGLR3SHAREDFOLDERMAPPING
+{
+    /** Mapping status. */
+    uint32_t u32Status;
+    /** Root handle. */
+    uint32_t u32Root;
+};
+typedef VBGLR3SHAREDFOLDERMAPPING *PVBGLR3SHAREDFOLDERMAPPING;
+/** @todo Docs. */
+VBGLR3DECL(int)     VbglR3SharedFolderConnect(uint32_t *pu32ClientId);
+VBGLR3DECL(int)     VbglR3SharedFolderDisconnect(uint32_t u32ClientId);
+VBGLR3DECL(int)     VbglR3SharedFolderGetMappings(uint32_t                   u32ClientId,  bool      bAutoMountOnly,
+                                                  VBGLR3SHAREDFOLDERMAPPING  paMappings[], uint32_t  cbMappings,
+                                                  uint32_t                  *pcMapCount);
+VBGLR3DECL(int)     VbglR3SharedFolderGetName(uint32_t   u32ClientId,uint32_t  u32Root,
+                                              char     **ppszName,   uint32_t *pcbLen);
+/** @}  */
+# endif /* VBOX_WITH_SHARED_FOLDERS defined */
 
 # ifdef VBOX_WITH_GUEST_CONTROL
 /** @name Guest control

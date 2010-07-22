@@ -1323,7 +1323,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="2275c97d-31b0-41c7-a138-c77d3c28406e"
+    uuid="ec6cc7e7-06a2-4c5d-8993-1e3619c53817"
     wsmap="managed"
   >
     <desc>
@@ -2172,6 +2172,10 @@
       </param>
       <param name="writable" type="boolean" dir="in">
         <desc>Whether the share is writable or readonly</desc>
+      </param>
+      <param name="automount" type="boolean" dir="in">
+        <desc>Whether the share gets automatically mounted by the guest
+          or not.</desc>
       </param>
     </method>
 
@@ -3875,7 +3879,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="276e0f43-889b-4b87-b05f-35f1db814700"
+     uuid="de8f0b23-f285-4779-acf4-08eddda7ec75"
      wsmap="managed"
      >
     <desc>
@@ -5381,7 +5385,11 @@
         <desc>Full path to the shared folder in the host file system.</desc>
       </param>
       <param name="writable" type="boolean" dir="in">
-        <desc>Whether the share is writable or readonly</desc>
+        <desc>Whether the share is writable or readonly.</desc>
+      </param>
+      <param name="automount" type="boolean" dir="in">
+        <desc>Whether the share gets automatically mounted by the guest
+          or not.</desc>
       </param>
     </method>
 
@@ -5956,7 +5964,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="6375231a-c17c-464b-92cb-ae9e128d71c3"
+     uuid="9e467cff-98fc-4f5b-83aa-048d903694c9"
      wsmap="managed"
      >
     <desc>
@@ -6469,6 +6477,10 @@
       </param>
       <param name="writable" type="boolean" dir="in">
         <desc>Whether the share is writable or readonly</desc>
+      </param>
+      <param name="automount" type="boolean" dir="in">
+        <desc>Whether the share gets automatically mounted by the guest
+          or not.</desc>
       </param>
     </method>
 
@@ -12258,7 +12270,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="ISharedFolder" extends="$unknown"
-     uuid="64637bb2-9e17-471c-b8f3-f8968dd9884e"
+     uuid="8388da11-b559-4574-a5b7-2bd7acd5cef8"
      wsmap="struct"
      >
     <desc>
@@ -12333,6 +12345,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Whether the folder defined by the host path is writable or
         not.
+      </desc>
+    </attribute>
+
+    <attribute name="autoMount" type="boolean" readonly="yes">
+      <desc>
+        Whether the folder gets automatically mounted by the guest or not.
       </desc>
     </attribute>
 

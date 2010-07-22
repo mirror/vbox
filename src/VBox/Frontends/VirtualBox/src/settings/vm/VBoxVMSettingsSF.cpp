@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -344,6 +344,7 @@ void VBoxVMSettingsSF::retranslateUi()
 
     mTrFull = tr ("Full");
     mTrReadOnly = tr ("Read-only");
+    mTrYes = tr ("Yes"); /** @todo Need to figure out if this string is necessary at all! */
 }
 
 void VBoxVMSettingsSF::addTriggered()
@@ -363,6 +364,7 @@ void VBoxVMSettingsSF::addTriggered()
         /* Appending a new listview item to the root */
         QStringList fields;
         fields << name /* name */ << path /* path */
+               << (dlg.isAutoMounted() ? mTrYes : "" /* auto mount? */)
                << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */)
                << "edited" /* mark item as edited */;
         SFTreeViewItem *item = new SFTreeViewItem (root, fields, SFTreeViewItem::EllipsisFile);
@@ -391,7 +393,8 @@ void VBoxVMSettingsSF::edtTriggered()
     dlg.setPath (item->getText (1));
     dlg.setName (item->getText (0));
     dlg.setPermanent ((SFDialogType)item->parent()->text (1).toInt() != ConsoleType);
-    dlg.setWriteable (item->getText (2) == mTrFull);
+    dlg.setAutoMount (item->getText (2) == mTrYes);
+    dlg.setWriteable (item->getText (3) == mTrFull);
     if (dlg.exec() == QDialog::Accepted)
     {
         QString name = dlg.name();
@@ -405,6 +408,7 @@ void VBoxVMSettingsSF::edtTriggered()
         /* Updating an edited listview item */
         QStringList fields;
         fields << name /* name */ << path /* path */
+               << (dlg.isAutoMounted() ? mTrYes : "" /* auto mount? */)
                << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */)
                << "edited" /* mark item as edited */;
         item->updateText (fields);
@@ -515,7 +519,8 @@ void VBoxVMSettingsSF::showEvent (QShowEvent *aEvent)
     QTimer::singleShot (0, this, SLOT (adjustList()));
 }
 
-void VBoxVMSettingsSF::createSharedFolder (const QString &aName, const QString &aPath, bool aWritable, SFDialogType aType)
+void VBoxVMSettingsSF::createSharedFolder (const QString &aName, const QString &aPath,
+                                           bool aWritable, bool aAutoMount, SFDialogType aType)
 {
     switch (aType)
     {
@@ -528,7 +533,7 @@ void VBoxVMSettingsSF::createSharedFolder (const QString &aName, const QString &
         case MachineType:
         {
             Assert (!mMachine.isNull());
-            mMachine.CreateSharedFolder (aName, aPath, aWritable);
+            mMachine.CreateSharedFolder (aName, aPath, aWritable, aAutoMount);
             if (!mMachine.isOk())
                 vboxProblem().cannotCreateSharedFolder (this, mMachine, aName, aPath);
             break;
@@ -536,7 +541,7 @@ void VBoxVMSettingsSF::createSharedFolder (const QString &aName, const QString &
         case ConsoleType:
         {
             Assert (!mConsole.isNull());
-            mConsole.CreateSharedFolder (aName, aPath, aWritable);
+            mConsole.CreateSharedFolder (aName, aPath, aWritable, aAutoMount);
             if (!mConsole.isOk())
                 vboxProblem().cannotCreateSharedFolder (this, mConsole, aName, aPath);
             break;
@@ -588,7 +593,8 @@ void VBoxVMSettingsSF::getFrom (const CSharedFolderVector &aVec, SFTreeViewItem 
         CSharedFolder sf = aVec [i];
         QStringList fields;
         fields << sf.GetName() /* name */ << sf.GetHostPath() /* path */
-               << (sf.GetWritable() ? mTrFull : mTrReadOnly /* writable? */)
+               << (sf.GetAutoMount() ? mTrYes : "") /* auto mount? */
+               << (sf.GetWritable() ? mTrFull : mTrReadOnly) /* writable? */
                << "not edited" /* initially not edited */;
         new SFTreeViewItem (aRoot, fields, SFTreeViewItem::EllipsisFile);
     }
@@ -603,6 +609,8 @@ void VBoxVMSettingsSF::putBackTo (CSharedFolderVector &aVec, SFTreeViewItem *aRo
     Assert (!aRoot->text (1).isNull());
     SFDialogType type = (SFDialogType) aRoot->text (1).toInt();
 
+    /** @todo Use enums rather than numbers for the text fields (like  item->getText (4)). */
+
     /* Delete all changed folders from vm */
     for (int idx = 0; idx < aVec.size(); ++ idx)
     {
@@ -613,7 +621,7 @@ void VBoxVMSettingsSF::putBackTo (CSharedFolderVector &aVec, SFTreeViewItem *aRo
         for (; i < aRoot->childCount(); ++ i)
         {
             SFTreeViewItem *item = aRoot->child (i);
-            if (item->getText (0) == sf.GetName() && item->getText (3) == "not edited")
+            if (item->getText (0) == sf.GetName() && item->getText (4) == "not edited")
                 break;
         }
 
@@ -626,8 +634,10 @@ void VBoxVMSettingsSF::putBackTo (CSharedFolderVector &aVec, SFTreeViewItem *aRo
     {
         SFTreeViewItem *item = aRoot->child (i);
 
-        if (!item->getText (0).isNull() && !item->getText (1).isNull() && item->getText (3) == "edited")
-            createSharedFolder (item->getText (0), item->getText (1), item->getText (2) == mTrFull ? true : false, type);
+        if (!item->getText (0).isNull() && !item->getText (1).isNull() && item->getText (4) == "edited")
+            createSharedFolder (item->getText (0), item->getText (1),
+                                item->getText (3) == mTrFull ? true : false, item->getText (2) == mTrYes ? true : false,
+                                type);
     }
 }
 

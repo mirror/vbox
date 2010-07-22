@@ -170,11 +170,10 @@ static void vbsfRootHandleRemove(SHFLROOT iMapping)
 
 
 /*
- *
  * We are always executed from one specific HGCM thread. So thread safe.
- *
  */
-int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWritable)
+int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
+                     uint32_t    fWritable,   uint32_t    fAutoMount)
 {
     unsigned i;
 
@@ -217,9 +216,10 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWr
             FolderMapping[i].pMapName->u16Size   = pMapName->u16Size;
             memcpy(FolderMapping[i].pMapName->String.ucs2, pMapName->String.ucs2, pMapName->u16Size);
 
-            FolderMapping[i].fValid    = true;
-            FolderMapping[i].cMappings = 0;
-            FolderMapping[i].fWritable = !!fWritable;
+            FolderMapping[i].fValid     = true;
+            FolderMapping[i].cMappings  = 0;
+            FolderMapping[i].fWritable  = !!fWritable;
+            FolderMapping[i].fAutoMount = !!fAutoMount;
 
             /* Check if the host file system is case sensitive */
             RTFSPROPERTIES prop;
@@ -342,16 +342,21 @@ int vbsfMappingsQuery (SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t
     for (uint32_t i=0;i<cMaxMappings;i++)
     {
         MAPPING *pFolderMapping = vbsfMappingGetByRoot(i);
-        if (pFolderMapping != NULL && pFolderMapping->fValid == true)
+        if (   pFolderMapping != NULL
+            && pFolderMapping->fValid == true)
         {
+            /* Skip mappings which are not marked for auto-mounting if
+             * the SHFL_MF_AUTOMOUNT flag ist set. */
+            if (   (pClient->fu32Flags & SHFL_MF_AUTOMOUNT)
+                && !pFolderMapping->fAutoMount)
+                continue;
+
             pMappings[*pcMappings].u32Status = SHFL_MS_NEW;
             pMappings[*pcMappings].root = i;
             *pcMappings = *pcMappings + 1;
         }
     }
-
     LogFlow(("vbsfMappingsQuery: return rc = %Rrc\n", rc));
-
     return rc;
 }
 
@@ -370,7 +375,7 @@ int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *p
 
     if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
     {
-        /* not implemented */
+        /* Not implemented. */
         AssertFailed();
         return VERR_INVALID_PARAMETER;
     }
@@ -407,6 +412,29 @@ int vbsfMappingsQueryWritable (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWr
         rc = VERR_FILE_NOT_FOUND;
 
     LogFlow(("vbsfMappingsQuery:Writable return rc = %Rrc\n", rc));
+
+    return rc;
+}
+
+int vbsfMappingsQueryAutoMount (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fAutoMount)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlow(("vbsfMappingsQueryAutoMount: pClient = %p, root = %d\n",
+             pClient, root));
+
+    MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
+    if (pFolderMapping == NULL)
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
+    if (pFolderMapping->fValid == true)
+        *fAutoMount = pFolderMapping->fAutoMount;
+    else
+        rc = VERR_FILE_NOT_FOUND;
+
+    LogFlow(("vbsfMappingsQueryAutoMount:Writable return rc = %Rrc\n", rc));
 
     return rc;
 }

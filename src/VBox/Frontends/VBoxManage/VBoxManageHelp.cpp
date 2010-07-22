@@ -601,7 +601,7 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage sharedfolder     add <vmname>|<uuid>\n"
                  "                            --name <name> --hostpath <hostpath>\n"
-                 "                            [--transient] [--readonly]\n"
+                 "                            [--transient] [--readonly] [--automount]\n"
                  "\n");
     }
 

@@ -51,6 +51,9 @@ public:
     void setWriteable (bool aWriteable);
     bool isWriteable() const;
 
+    void setAutoMount (bool aAutoMount);
+    bool isAutoMounted() const;
+
     void setPermanent (bool aPermanent);
     bool isPermanent() const;
 
