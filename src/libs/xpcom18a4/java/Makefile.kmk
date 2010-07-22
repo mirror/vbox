@@ -127,7 +127,11 @@ ifndef VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 # Generate .java interface files from .xidl
 #
 
-$(VBOX_JXPCOM_GEN)/jxpcomgen.list: $(VBOX_XIDL_FILE) $(VBOX_JXPCOM_SRC)/tools/genjifaces.xsl | $(VBOX_JXPCOM_GEN)/java/interfaces/
+$(VBOX_JXPCOM_GEN)/jxpcomgen.list: \
+               $(VBOX_XIDL_FILE)   \
+               $(VBOX_FILESPLIT)   \
+               $(VBOX_JXPCOM_SRC)/tools/genjifaces.xsl \
+               | $(VBOX_JXPCOM_GEN)/java/interfaces/
 	$(QUIET)echo Generating Java interface files
 	$(QUIET)$(RM) -f $(wildcard $(VBOX_JXPCOM_GEN)/java/interfaces/*.java)
 	$(QUIET)$(VBOX_XSLTPROC)   \
