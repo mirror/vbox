@@ -126,7 +126,6 @@ struct Appliance::TaskOVF
 
 struct MyHardDiskAttachment
 {
-    Bstr                bstrUuid;
     ComPtr<IMachine>    pMachine;
     Bstr                controllerType;
     int32_t             lControllerPort;        // 0-29 for SATA

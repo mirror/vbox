@@ -1315,6 +1315,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     EventQueue* eventQ = com::EventQueue::getMainEventQueue();
     const CLSID sessionID = CLSID_Session;
 
+    ComPtr<IMachine> pMachine;
+
     rc = virtualBox.createLocalObject(CLSID_VirtualBox);
     if (FAILED(rc))
     {
@@ -1338,13 +1340,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      */
     if (vmName && uuidVM.isEmpty())
     {
-        ComPtr<IMachine> aMachine;
         Bstr  bstrVMName = vmName;
-        rc = virtualBox->FindMachine(bstrVMName, aMachine.asOutParam());
-        if ((rc == S_OK) && aMachine)
+        rc = virtualBox->FindMachine(bstrVMName, pMachine.asOutParam());
+        if ((rc == S_OK) && pMachine)
         {
             Bstr id;
-            aMachine->COMGETTER(Id)(id.asOutParam());
+            pMachine->COMGETTER(Id)(id.asOutParam());
             uuidVM = Guid(id);
         }
         else
@@ -1363,7 +1364,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     vrc = RTSemEventCreate(&g_EventSemSDLEvents);
     AssertReleaseRC(vrc);
 
-    rc = virtualBox->OpenSession(session, uuidVM.toUtf16());
+    rc = pMachine->LockForSession(session, false /* fPermitShared */, NULL);
     if (FAILED(rc))
     {
         com::ErrorInfo info;
@@ -1378,7 +1379,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         goto leave;
     }
     sessionOpened = true;
-    // get the VM we're dealing with
+    // get the mutable VM we're dealing with
     session->COMGETTER(Machine)(gMachine.asOutParam());
     if (!gMachine)
     {

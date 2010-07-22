@@ -932,7 +932,7 @@ void UIDetailsPagePrivate::setMachine(const CMachine& machine)
     else
     {
         KMachineState state = m_machine.GetState();
-        bool running = m_machine.GetSessionState() != KSessionState_Closed;
+        bool running = m_machine.GetSessionState() != KSessionState_Unlocked;
         m_fChangeable = !running && state != KMachineState_Saved;
     }
 
@@ -1252,7 +1252,7 @@ void UIDescriptionPagePrivate::updateState()
     if (m_pVMItem)
     {
         bool saved = m_pVMItem->state() == KMachineState_Saved;
-        bool busy = m_pVMItem->sessionState() != KSessionState_Closed;
+        bool busy = m_pVMItem->sessionState() != KSessionState_Unlocked;
         m_pEditBtn->setEnabled(!saved && !busy);
     }
     else

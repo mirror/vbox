@@ -509,10 +509,10 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
-    CSession openSession (const QString &aId, bool aExisting = false);
+    CSession openSession(const QString &aId, bool aExisting = false);
 
     /** Shortcut to openSession (aId, true). */
-    CSession openExistingSession (const QString &aId) { return openSession (aId, true); }
+    CSession openExistingSession(const QString &aId) { return openSession (aId, true); }
 
     bool startMachine(const QString &strId);
 

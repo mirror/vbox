@@ -274,7 +274,7 @@ int handleModifyVM(HandlerArg *a)
     int c;
     HRESULT rc;
     Bstr name;
-    Bstr machineuuid (a->argv[0]);
+    Bstr machineuuid(a->argv[0]);
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetOptState;
     ComPtr <IMachine> machine;
@@ -311,7 +311,7 @@ int handleModifyVM(HandlerArg *a)
     }
 
     /* open a session for the VM */
-    CHECK_ERROR_RET(a->virtualBox, OpenSession(a->session, machineuuid), 1);
+    CHECK_ERROR_RET(machine, LockForSession(a->session, false /* fPermitShared */, NULL), 1);
 
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());

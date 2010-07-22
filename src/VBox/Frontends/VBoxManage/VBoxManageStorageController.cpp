@@ -59,7 +59,6 @@ int handleStorageAttach(HandlerArg *a)
     HRESULT rc = S_OK;
     ULONG port   = ~0U;
     ULONG device = ~0U;
-    bool fRunTime = false;
     bool fForceUnmount = false;
     const char *pszCtl  = NULL;
     const char *pszType = NULL;
@@ -147,7 +146,7 @@ int handleStorageAttach(HandlerArg *a)
             }
         }
     }
-    
+
     if (FAILED(rc))
         return 1;
 
@@ -172,15 +171,10 @@ int handleStorageAttach(HandlerArg *a)
         machine->COMGETTER(Id)(machineuuid.asOutParam());
     }
 
-    /* open a session for the VM */
-    rc = a->virtualBox->OpenSession(a->session, machineuuid);
-    if (FAILED(rc))
-    {
-        /* try to open an existing session for the VM */
-        CHECK_ERROR_RET(a->virtualBox, OpenExistingSession(a->session, machineuuid), 1);
-        fRunTime = true;
-    }
-
+    /* open a session for the VM (new or shared) */
+    SessionType_T type;
+    rc = machine->LockForSession(a->session, true /* fPermitShared */, &type);
+    bool fRunTime = (type == SessionType_Shared);
     if (fRunTime && !RTStrICmp(pszType, "hdd"))
     {
         errorArgument("Hard disk drives cannot be changed while the VM is running\n");
@@ -760,7 +754,7 @@ int handleStorageController(HandlerArg *a)
     }
 
     /* open a session for the VM */
-    CHECK_ERROR_RET(a->virtualBox, OpenSession (a->session, machineuuid), 1);
+    CHECK_ERROR_RET(machine, LockForSession(a->session, false /* fPermitShared */, NULL), 1);
 
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());

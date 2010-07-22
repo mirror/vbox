@@ -214,7 +214,7 @@ QVariant UIVMItemModel::data(const QModelIndex &aIndex, int aRole) const
         {
             QFont f = qApp->font();
             f.setPointSize(f.pointSize());
-            if (m_VMItemList.at(aIndex.row())->sessionState() != KSessionState_Closed)
+            if (m_VMItemList.at(aIndex.row())->sessionState() != KSessionState_Unlocked)
                 f.setItalic(true);
             v = f;
             break;

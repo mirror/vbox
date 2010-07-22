@@ -226,10 +226,9 @@ public class clienttest
                 String sessionType = "gui";
                 String env = "DISPLAY=:0.0";
                 IProgress oProgress =
-                    vbox.openRemoteSession(oSession,
-                                            uuid,
-                                            sessionType,
-                                            env);
+                    oMachine.launchVMProcess(oSession,
+                                             sessionType,
+                                             env);
                 System.out.println("Session for VM " + uuid + " is opening...");
                 oProgress.waitForCompletion(10000);
 

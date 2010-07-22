@@ -2131,10 +2131,10 @@ int handleShowVMInfo(HandlerArg *a)
         else
             details = VMINFO_STANDARD;
 
-        ComPtr <IConsole> console;
+        ComPtr<IConsole> console;
 
         /* open an existing session for the VM */
-        rc = a->virtualBox->OpenExistingSession(a->session, uuid);
+        rc = machine->LockForSession(a->session, true /* fPermitShared */, NULL);
         if (SUCCEEDED(rc))
             /* get the session machine */
             rc = a->session->COMGETTER(Machine)(machine.asOutParam());

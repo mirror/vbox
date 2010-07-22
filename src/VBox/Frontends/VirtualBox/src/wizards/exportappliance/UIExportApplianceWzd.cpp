@@ -180,7 +180,7 @@ void UIExportApplianceWzdPage1::populateVMSelectorItems()
             pixIcon = vboxGlobal().vmGuestOSTypeIcon(m.GetOSTypeId()).scaled(16, 16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
             strName = m.GetName();
             strUuid = m.GetId();
-            bEnabled = m.GetSessionState() == KSessionState_Closed;
+            bEnabled = m.GetSessionState() == KSessionState_Unlocked;
         }
         else
         {

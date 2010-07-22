@@ -105,10 +105,9 @@ public class VirtualBoxManager
         ISession session = makeSession();
 
 
-        String mid = m.getId();
         if (type == null)
             type = "gui";
-        IProgress p = vbox.openRemoteSession(session, mid, type, "");
+        IProgress p = m.openRemoteSession(session, type, "");
         progressBar(p, timeout);
         session.close();
         return true;

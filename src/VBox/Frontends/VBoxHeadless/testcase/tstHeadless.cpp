@@ -111,21 +111,18 @@ int main (int argc, char **argv)
         // after the session is closed)
         EventQueue eventQ;
 
-        // find ID by name
-        Bstr id;
-        {
-            ComPtr <IMachine> m;
-            CHECK_ERROR_BREAK (virtualBox, FindMachine (Bstr (name), m.asOutParam()));
-            CHECK_ERROR_BREAK (m, COMGETTER(Id) (id.asOutParam()));
-        }
+        ComPtr <IMachine> m;
 
-        if (!strcmp (operation, "on"))
+        // find ID by name
+        CHECK_ERROR_BREAK(virtualBox, FindMachine(Bstr(name), m.asOutParam()));
+
+        if (!strcmp(operation, "on"))
         {
             ComPtr <IProgress> progress;
             RTPrintf ("Opening a new (remote) session...\n");
-            CHECK_ERROR_BREAK (virtualBox,
-                               OpenRemoteSession (session, id, Bstr ("vrdp"),
-                                                  NULL, progress.asOutParam()));
+            CHECK_ERROR_BREAK (m,
+                               LaunchVMProcess(session, Bstr("vrdp"),
+                                               NULL, progress.asOutParam()));
 
             RTPrintf ("Waiting for the remote session to open...\n");
             CHECK_ERROR_BREAK (progress, WaitForCompletion (-1));
@@ -152,10 +149,10 @@ int main (int argc, char **argv)
         else
         {
             RTPrintf ("Opening an existing session...\n");
-            CHECK_ERROR_BREAK (virtualBox, OpenExistingSession (session, id));
+            CHECK_ERROR_BREAK(m, LockForSession(session, true /* fPermitShared */, NULL));
 
             ComPtr <IConsole> console;
-            CHECK_ERROR_BREAK (session, COMGETTER (Console) (console.asOutParam()));
+            CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
 
             if (!strcmp (operation, "off"))
             {

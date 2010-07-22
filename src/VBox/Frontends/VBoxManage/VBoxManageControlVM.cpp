@@ -72,7 +72,7 @@ int handleControlVM(HandlerArg *a)
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Bstr machineuuid (a->argv[0]);
+    Bstr machineuuid(a->argv[0]);
     if (!Guid(machineuuid).isEmpty())
     {
         CHECK_ERROR(a->virtualBox, GetMachine(machineuuid, machine.asOutParam()));
@@ -87,7 +87,7 @@ int handleControlVM(HandlerArg *a)
         return 1;
 
     /* open a session for the VM */
-    CHECK_ERROR_RET(a->virtualBox, OpenExistingSession(a->session, machineuuid), 1);
+    CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, NULL), 1);
 
     do
     {

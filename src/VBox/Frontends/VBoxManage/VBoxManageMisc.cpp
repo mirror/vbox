@@ -355,10 +355,6 @@ int handleStartVM(HandlerArg *a)
     }
     if (machine)
     {
-        Bstr uuid;
-        machine->COMGETTER(Id)(uuid.asOutParam());
-
-
         Bstr env;
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
         /* make sure the VM process will start on the same display as VBoxManage */
@@ -372,8 +368,7 @@ int handleStartVM(HandlerArg *a)
         env = str;
 #endif
         ComPtr<IProgress> progress;
-        CHECK_ERROR_RET(a->virtualBox, OpenRemoteSession(a->session, uuid, sessionType,
-                                                         env, progress.asOutParam()), rc);
+        CHECK_ERROR_RET(machine, LaunchVMProcess(a->session, sessionType, env, progress.asOutParam()), rc);
         RTPrintf("Waiting for the VM to power on...\n");
         CHECK_ERROR_RET(progress, WaitForCompletion(-1), 1);
 
@@ -422,9 +417,7 @@ int handleDiscardState(HandlerArg *a)
         do
         {
             /* we have to open a session for this task */
-            Bstr guid;
-            machine->COMGETTER(Id)(guid.asOutParam());
-            CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, guid));
+            CHECK_ERROR_BREAK(machine, LockForSession(a->session, false /* fPermitShared */, NULL));
             do
             {
                 ComPtr<IConsole> console;
@@ -458,9 +451,7 @@ int handleAdoptState(HandlerArg *a)
         do
         {
             /* we have to open a session for this task */
-            Bstr guid;
-            machine->COMGETTER(Id)(guid.asOutParam());
-            CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, guid));
+            CHECK_ERROR_BREAK(machine, LockForSession(a->session, false /* fPermitShared */, NULL));
             do
             {
                 ComPtr<IConsole> console;
@@ -670,8 +661,6 @@ int handleSharedFolder(HandlerArg *a)
     }
     if (!machine)
         return 1;
-    Bstr uuid;
-    machine->COMGETTER(Id)(uuid.asOutParam());
 
     if (!strcmp(a->argv[0], "add"))
     {
@@ -736,7 +725,7 @@ int handleSharedFolder(HandlerArg *a)
             ComPtr <IConsole> console;
 
             /* open an existing session for the VM */
-            CHECK_ERROR_RET(a->virtualBox, OpenExistingSession(a->session, uuid), 1);
+            CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, NULL), 1);
             /* get the session machine */
             CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
             /* get the session console */
@@ -750,7 +739,7 @@ int handleSharedFolder(HandlerArg *a)
         else
         {
             /* open a session for the VM */
-            CHECK_ERROR_RET(a->virtualBox, OpenSession(a->session, uuid), 1);
+            CHECK_ERROR_RET(machine, LockForSession(a->session, false /* fPermitShared */, NULL), 1);
 
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -800,7 +789,7 @@ int handleSharedFolder(HandlerArg *a)
             ComPtr <IConsole> console;
 
             /* open an existing session for the VM */
-            CHECK_ERROR_RET(a->virtualBox, OpenExistingSession(a->session, uuid), 1);
+            CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, NULL), 1);
             /* get the session machine */
             CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
             /* get the session console */
@@ -814,7 +803,7 @@ int handleSharedFolder(HandlerArg *a)
         else
         {
             /* open a session for the VM */
-            CHECK_ERROR_RET(a->virtualBox, OpenSession(a->session, uuid), 1);
+            CHECK_ERROR_RET(machine, LockForSession(a->session, false /* fPermitShared */, NULL), 1);
 
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -841,14 +830,14 @@ int handleVMStatistics(HandlerArg *a)
         return errorSyntax(USAGE_VM_STATISTICS, "Incorrect number of parameters");
 
     /* try to find the given machine */
-    ComPtr <IMachine> machine;
-    Bstr uuid (a->argv[0]);
-    if (!Guid (a->argv[0]).isEmpty())
+    ComPtr<IMachine> machine;
+    Bstr uuid(a->argv[0]);
+    if (!Guid(a->argv[0]).isEmpty())
         CHECK_ERROR(a->virtualBox, GetMachine(uuid, machine.asOutParam()));
     else
     {
         CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
             machine->COMGETTER(Id)(uuid.asOutParam());
     }
     if (FAILED(rc))
@@ -884,7 +873,7 @@ int handleVMStatistics(HandlerArg *a)
 
 
     /* open an existing session for the VM. */
-    CHECK_ERROR(a->virtualBox, OpenExistingSession(a->session, uuid));
+    CHECK_ERROR(machine, LockForSession(a->session, true /* fPermitShared */, NULL));
     if (SUCCEEDED(rc))
     {
         /* get the session console. */
