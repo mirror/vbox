@@ -250,56 +250,56 @@ static int vboxserviceVMInfoWriteUsers(void)
     uint32_t cUtmpEntries = 0;
     uint32_t cListSize = 32;
 
-	/* Allocate a first array to hold 32 users max. */
-	char **aUsers = (char**)RTMemAllocZ(cListSize * sizeof(char*));
-	if (aUsers == NULL)
-		rc = VERR_NO_MEMORY;
+    /* Allocate a first array to hold 32 users max. */
+    char **aUsers = (char**)RTMemAllocZ(cListSize * sizeof(char*));
+    if (aUsers == NULL)
+        rc = VERR_NO_MEMORY;
 
-	/* Process all entries in the utmp file. */
-    while (   (ut_user = getutent()) 
+    /* Process all entries in the utmp file. */
+    while (   (ut_user = getutent())
            && RT_SUCCESS(rc))
     {
-		VBoxServiceVerbose(1, "bar: %s\n", ut_user->ut_user);
-		
-		if (cUtmpEntries > cListSize)
-		{
-			cListSize += 32;
-			aUsers = (char**)RTMemRealloc(aUsers, cListSize * sizeof(char*));
-			AssertPtrBreakStmt(aUsers, rc = VERR_NO_MEMORY);
-		}
-		
+        VBoxServiceVerbose(1, "bar: %s\n", ut_user->ut_user);
+
+        if (cUtmpEntries > cListSize)
+        {
+            cListSize += 32;
+            aUsers = (char**)RTMemRealloc(aUsers, cListSize * sizeof(char*));
+            AssertPtrBreakStmt(aUsers, rc = VERR_NO_MEMORY);
+        }
+
         /* Make sure we don't add user names which are not
          * part of type USER_PROCESS. */
         if (ut_user->ut_type == USER_PROCESS)
-        {		
-			cUtmpEntries++;
-			
-			bool fFound = false;
-			for (uint32_t u = 0; u < cUsersInList && !fFound; u++)
-				fFound = (strcmp((const char*)aUsers[u], ut_user->ut_user) == 0) ? true : false;
+        {
+            cUtmpEntries++;
+
+            bool fFound = false;
+            for (uint32_t u = 0; u < cUsersInList && !fFound; u++)
+                fFound = (strcmp((const char*)aUsers[u], ut_user->ut_user) == 0) ? true : false;
 
             if (!fFound)
-				rc = RTStrAAppend(&aUsers[cUsersInList++], (const char*)ut_user->ut_user);
-		}
+                rc = RTStrAAppend(&aUsers[cUsersInList++], (const char*)ut_user->ut_user);
+        }
     }
-    
-    /* Build final user list. */
-	for (uint32_t u = 0; u < cUsersInList; u++)
-	{
-		if (u > 0)
-		{
-			rc = RTStrAAppend(&pszUserList, ",");
-			AssertRCBreakStmt(rc, RTStrFree(pszUserList));
-		}
-		rc = RTStrAAppend(&pszUserList, (const char*)aUsers[u]);
-		AssertRCBreakStmt(rc, RTStrFree(pszUserList));
-	}
 
-	/* Cleanup. */
-	for (uint32_t u = 0; u < cUsersInList; u++)
-		RTStrFree(aUsers[u]);
-	RTMemFree(aUsers);  
-    
+    /* Build final user list. */
+    for (uint32_t u = 0; u < cUsersInList; u++)
+    {
+        if (u > 0)
+        {
+            rc = RTStrAAppend(&pszUserList, ",");
+            AssertRCBreakStmt(rc, RTStrFree(pszUserList));
+        }
+        rc = RTStrAAppend(&pszUserList, (const char*)aUsers[u]);
+        AssertRCBreakStmt(rc, RTStrFree(pszUserList));
+    }
+
+    /* Cleanup. */
+    for (uint32_t u = 0; u < cUsersInList; u++)
+        RTStrFree(aUsers[u]);
+    RTMemFree(aUsers);
+
     endutent(); /* Close utmp file. */
 #endif
     Assert(RT_FAILURE(rc) || cUsersInList == 0 || (pszUserList && *pszUserList));
