@@ -232,8 +232,7 @@ def startVm(ctx,mach,type):
     vb = ctx['vb']
     perf = ctx['perf']
     session = mgr.getSessionObject(vb)
-    uuid = mach.id
-    progress = vb.openRemoteSession(session, uuid, type, "")
+    progress = mach.launchVMProcess(session, type, "")
     if progressBar(ctx, progress, 100) and int(progress.resultCode) == 0:
         # we ignore exceptions to allow starting VM even if
         # perf collector cannot be started
@@ -491,13 +490,13 @@ def cmdExistingVm(ctx,mach,cmd,args):
     try:
         vb = ctx['vb']
         session = ctx['mgr'].getSessionObject(vb)
-        vb.openExistingSession(session, mach.id)
+        mach.lockForSession(session, True)
     except Exception,e:
         printErr(ctx, "Session to '%s' not open: %s" %(mach.name,str(e)))
         if g_verbose:
             traceback.print_exc()
         return
-    if session.state != ctx['const'].SessionState_Open:
+    if session.state != ctx['const'].SessionState_Locked:
         print "Session to '%s' in wrong state: %s" %(mach.name, session.state)
         session.close()
         return
@@ -535,7 +534,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
 
 
 def cmdClosedVm(ctx,mach,cmd,args=[],save=True):
-    session = ctx['global'].openMachineSession(mach.id)
+    session = ctx['global'].openMachineSession(mach, False)
     mach = session.machine
     try:
         cmd(ctx, mach, args)
@@ -550,7 +549,7 @@ def cmdClosedVm(ctx,mach,cmd,args=[],save=True):
 
 
 def cmdAnyVm(ctx,mach,cmd, args=[],save=False):
-    session = ctx['global'].openMachineSession(mach.id)
+    session = ctx['global'].openMachineSession(mach)
     mach = session.machine
     try:
          cmd(ctx, mach, session.console, args)
@@ -1038,7 +1037,7 @@ def guestCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    if str(mach.sessionState) != str(ctx['const'].SessionState_Open):
+    if str(mach.sessionState) != str(ctx['const'].SessionState_Locked):
         cmdClosedVm(ctx, mach, lambda ctx, mach, a: guestExec (ctx, mach, None, ' '.join(args[2:])))
     else:
         cmdExistingVm(ctx, mach, 'guest', ' '.join(args[2:]))
@@ -1128,7 +1127,7 @@ def plugcpuCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    if str(mach.sessionState) != str(ctx['const'].SessionState_Open):
+    if str(mach.sessionState) != str(ctx['const'].SessionState_Locked):
         if mach.CPUHotPlugEnabled:
             cmdClosedVm(ctx, mach, plugcpu, [True, int(args[2])])
     else:
@@ -1142,7 +1141,7 @@ def unplugcpuCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    if str(mach.sessionState) != str(ctx['const'].SessionState_Open):
+    if str(mach.sessionState) != str(ctx['const'].SessionState_Locked):
         if mach.CPUHotPlugEnabled:
             cmdClosedVm(ctx, mach, plugcpu, [False, int(args[2])])
     else:
@@ -1347,7 +1346,7 @@ def portForwardCmd(ctx, args):
     hostPort = int(args[3])
     guestPort = int(args[4])
     proto = "TCP"
-    session = ctx['global'].openMachineSession(mach.id)
+    session = ctx['global'].openMachineSession(mach)
     mach = session.machine
 
     adapter = mach.getNetworkAdapter(adapterNum)
@@ -2532,7 +2531,7 @@ def natCmd(ctx, args):
     session = None
     if len(cmdargs) > 1:
         rosession = 0
-        session = ctx['global'].openMachineSession(mach.id);
+        session = ctx['global'].openMachineSession(mach, False);
         mach = session.machine;
 
     adapter = mach.getNetworkAdapter(nicnum)
@@ -2709,7 +2708,7 @@ def nicCmd(ctx, args):
     cmdargs = args[3:]
     func = args[3]
     session = None
-    session = ctx['global'].openMachineSession(vm.id)
+    session = ctx['global'].openMachineSession(vm)
     vm = session.machine
     adapter = vm.getNetworkAdapter(nicnum)
     (rc, report) = niccomand[func](ctx, vm, nicnum, adapter, cmdargs)
