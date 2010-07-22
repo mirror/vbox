@@ -1596,6 +1596,21 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
              formatErrorInfo (res));
 }
 
+void VBoxProblemReporter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent)
+{
+    message (pParent, Warning,
+             tr("<p>The VirtualBox Guest Additions do not appear to be "
+                "available on this virtual machine, and shared folders "
+                "cannot be used without them. To use shared folders inside "
+                "the virtual machine, please install the Guest Additions "
+                "if they are not installed, or re-install them if they are "
+                "not working correctly, by selecting <b>Install Guest Additions</b> "
+                "from the <b>Machine</b> menu. "
+                "If they are installed but the machine is not yet fully started "
+                "then shared folders will be available once it is.</p>"),
+             "remindAboutGuestAdditionsAreNotInstalled");
+}
+
 int VBoxProblemReporter::cannotFindGuestAdditions (const QString &aSrc1,
                                                    const QString &aSrc2)
 {

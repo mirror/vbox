@@ -306,6 +306,7 @@ public:
     void cannotRemoveSharedFolder (QWidget *, const CConsole &,
                                    const QString &, const QString &);
 
+    void remindAboutGuestAdditionsAreNotActive(QWidget *pParent);
     int cannotFindGuestAdditions (const QString &aSrc1, const QString &aSrc2);
     void cannotDownloadGuestAdditions (const QString &aURL, const QString &aReason);
     void cannotMountGuestAdditions (const QString &aMachineName);

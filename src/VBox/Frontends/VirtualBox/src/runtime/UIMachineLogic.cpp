@@ -1456,6 +1456,8 @@ void UIMachineLogic::sltOpenSharedFoldersDialog()
 
     /* Show shared folders settings dialog: */
     UISharedFoldersDialog dlg(defaultMachineWindow()->machineWindow(), session());
+    if (!uisession()->isGuestAdditionsActive())
+        vboxProblem().remindAboutGuestAdditionsAreNotActive(defaultMachineWindow()->machineWindow());
     dlg.exec();
 }
 
