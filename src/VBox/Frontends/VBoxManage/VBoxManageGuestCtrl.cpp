@@ -285,8 +285,7 @@ static int handleExecProgram(HandlerArg *a)
         do
         {
             /* open an existing session for VM */
-            SessionType_T st;
-            CHECK_ERROR_BREAK(machine, LockForSession(a->session, true /* fPermitShared */, &st));
+            CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Shared));
             // @todo r=dj assert that it's an existing session
 
             /* get the mutable session machine */

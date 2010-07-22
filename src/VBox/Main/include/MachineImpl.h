@@ -114,7 +114,7 @@ public:
          */
         struct Session
         {
-            /** Control of the direct session opened by lockForSession() */
+            /** Control of the direct session opened by lockMachine() */
             ComPtr<IInternalSessionControl> mDirectControl;
 
             typedef std::list<ComPtr<IInternalSessionControl> > RemoteControlList;
@@ -454,7 +454,7 @@ public:
     STDMETHOD(COMSETTER(IoBandwidthMax)) (ULONG  aIoBandwidthMax);
 
     // IMachine methods
-    STDMETHOD(LockForSession)(ISession *aSession, BOOL fPermitShared, SessionType_T *sessionType);
+    STDMETHOD(LockMachine)(ISession *aSession, LockType_T lockType);
     STDMETHOD(LaunchVMProcess)(ISession *aSession,  IN_BSTR aType, IN_BSTR aEnvironment, IProgress **aProgress);
 
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);
@@ -626,11 +626,9 @@ public:
     void getLogFolder(Utf8Str &aLogFolder);
     Utf8Str queryLogFilename(ULONG idx);
 
-    HRESULT openSession(IInternalSessionControl *aControl);
     HRESULT openRemoteSession(IInternalSessionControl *aControl,
                               IN_BSTR aType, IN_BSTR aEnvironment,
                               ProgressProxy *aProgress);
-    HRESULT openExistingSession(IInternalSessionControl *aControl);
 
     HRESULT getDirectControl(ComPtr<IInternalSessionControl> *directControl)
     {

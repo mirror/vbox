@@ -817,14 +817,14 @@
         In <link to="ISession::state"/>, this means that a machine is
         currently locked for this session, and the mutable machine object
         can be found in the <link to="ISession::machine"/> attribute
-        (see <link to="IMachine::lockForSession" /> for details).
+        (see <link to="IMachine::lockMachine" /> for details).
       </desc>
     </const>
     <const name="Spawning"              value="3">
       <desc>
         A new process is being spawned for the machine as a result of
         <link to="IMachine::launchVMProcess"/> call. This state also occurs
-        as a short transient state during an <link to="IMachine::lockForSession"/>
+        as a short transient state during an <link to="IMachine::lockMachine"/>
         call.
       </desc>
     </const>
@@ -905,6 +905,21 @@
   </enum>
 
   <enum
+   name="LockType"
+   uuid="138b53f8-db4b-47c5-b32b-4ef52f769413"
+  >
+    <desc>
+      Used with <link to="IMachine::lockMachine" />.
+    </desc>
+    <const name="Write" value="2">
+      <desc>Lock the machine for writing.</desc>
+    </const>
+    <const name="Shared" value="1">
+      <desc>Request only a shared read lock for remote-controlling the machine.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="SessionType"
     uuid="A13C02CB-0C2C-421E-8317-AC0E8AAA153A"
   >
@@ -916,22 +931,22 @@
     <const name="Null"                  value="0">
       <desc>Null value (never used by the API).</desc>
     </const>
-    <const name="Direct"                value="1">
+    <const name="WriteLock"             value="1">
       <desc>
-        Direct session
-        (used with <link to="IMachine::lockForSession"/>)
+        Session has acquired an exclusive write lock on a machine
+        using <link to="IMachine::lockMachine"/>.
       </desc>
     </const>
     <const name="Remote"                value="2">
       <desc>
-        Remote VM process
-        (opened by <link to="IMachine::launchVMProcess"/>)
+        Session has launched a VM process using
+        <link to="IMachine::launchVMProcess"/>
       </desc>
     </const>
     <const name="Shared"                value="3">
       <desc>
-        Shared session; remote link to an existing direct session opened
-        by <link to="IMachine::lockForSession"/> with fPermitShared = true
+        Session has obtained a link to another session using
+        <link to="IMachine::lockMachine"/>
       </desc>
     </const>
   </enum>
@@ -3654,7 +3669,7 @@
       and method descriptions.
 
       In order to change a machine setting, a session for this machine must be
-      opened using one of the <link to="IMachine::lockForSession" /> or
+      opened using one of the <link to="IMachine::lockMachine" /> or
       <link to="IMachine::launchVMProcess"/> methods. After the
       machine has been successfully locked for a session, a mutable machine object
       needs to be queried from the session object and then the desired settings
@@ -3996,8 +4011,8 @@
         SessionSpawning or SessionOpen, this attribute contains the
         same value as passed to the
         <link to="IMachine::launchVMProcess"/> method in the
-        @a type parameter. If the session was opened directly using
-        <link to="IMachine::lockForSession" />, or if
+        @a type parameter. If the session was used with
+        <link to="IMachine::lockMachine" />, or if
         <link to="#sessionState"/> is SessionClosed, the value of this
         attribute is an empty string.
       </desc>
@@ -4006,12 +4021,10 @@
     <attribute name="sessionPid" type="unsigned long" readonly="yes">
       <desc>
         Identifier of the session process. This attribute contains the
-        platform-dependent identifier of the process that has opened a
-        direct session for this machine using the
-        <link to="IMachine::lockForSession" /> call. The returned value
-        is only valid if <link to="#sessionState"/> is SessionOpen or
-        SessionClosing (i.e. a session is currently open or being
-        closed) by the time this property is read.
+        platform-dependent identifier of the process whose session was
+        used with <link to="IMachine::lockMachine" /> call. The returned
+        value is only valid if <link to="#sessionState"/> is Locked or
+        Unlocking by the time this property is read.
       </desc>
     </attribute>
 
@@ -4192,44 +4205,68 @@
       </desc>
     </attribute>
 
-    <method name="lockForSession">
+    <method name="lockMachine">
       <desc>
         Locks the machine for the given session to enable the caller
-        to make changes to the machine or start the VM.
+        to make changes to the machine or start the VM or control
+        VM execution.
 
-        A single machine can only be locked for a single sesseion
-        at a time, protecting the VM from being manipulated by
-        conflicting actions from different processes. Only after this
-        method has been called, one can change all VM settings
-        or execute the VM in the process space of the session object.
-        See <link to="ISession">ISession</link> for details.
+        There are two ways to lock a machine for such uses:
 
-        Locking the machine for a session creates a second copy of
-        the IMachine object. It is this second object upon which
-        changes can be made; in VirtualBox terminology, the second
-        copy is "mutable". It is only this second, mutable machine
-        object upon which you can call methods that change the
-        machine state. After having called this method, you can
-        obtain this second, mutable machine object using the
-        <link to="ISession::machine" /> attribute. This way, you can
-        also get access to the <link to="IConsole" /> object which
-        controls VM execution.
+        <ul>
+          <li>If you want to make changes to the machine settings,
+            you must obtain an exclusive write lock on the machine
+            by setting @a lockType to @c Write.
 
-        <note>Unless you are writing a new VM frontend, you will not
-        want to execute a VM in the current process. To spawn a new
-        process that executes a VM, use <link to="IMachine::launchVMProcess" />
-        instead.</note>
+            This will only succeed if no other process has locked
+            the machine to prevent conflicting changes. Only after
+            an exclusive write lock has been obtained using this method, one
+            can change all VM settings or execute the VM in the process
+            space of the session object. (Note that the latter is only of
+            interest if you actually want to write a new front-end for
+            virtual machines; but this API gets called internally by
+            the existing front-ends such as VBoxHeadless and the VirtualBox
+            GUI to acquire a write lock on the machine that they are running.)
 
-        One must always call <link to="ISession::close" /> to release the
-        lock on the machine, or the machine's state will eventually be
-        set to "Aborted".
+            On success, write-locking the machine for a session creates
+            a second copy of the IMachine object. It is this second object
+            upon which changes can be made; in VirtualBox terminology, the
+            second copy is "mutable". It is only this second, mutable machine
+            object upon which you can call methods that change the
+            machine state. After having called this method, you can
+            obtain this second, mutable machine object using the
+            <link to="ISession::machine" /> attribute.
+          </li>
+          <li>If you only want to check the machine state or control
+            machine execution without actually changing machine
+            settings (e.g. to get access to VM statistics or take
+            a snapshot or save the machine state), then set the
+            @a lockType argument to @c Shared.
 
-        In other words, to change settings on a machine, the following
-        sequence is typically performed:
+            If no other session has obtained a lock, you will obtain an
+            exclusive write lock as described above. However, if another
+            session has already obtained such a lock, then a link to that
+            existing session will be established which allows you
+            to control that existing session.
+
+            To find out which type of lock was obtained, you can
+            inspect <link to="ISession::type" />, which will have been
+            set to either @c WriteLock or @c Shared.
+          </li>
+        </ul>
+
+        In either case, you can get access to the <link to="IConsole" />
+        object which controls VM execution.
+
+        Also in all of the above cases, one must always call <link to="ISession::close" />
+        to release the lock on the machine, or the machine's state will
+        eventually be set to "Aborted".
+
+        To change settings on a machine, the following sequence is typically
+        performed:
 
         <ol>
-          <li>Call this method (openSession) to have a machine locked for
-            the current session.</li>
+          <li>Call this method to obtain an exclusive write lock for the current session.</li>
 
           <li>Obtain a mutable IMachine object from <link to="ISession::machine" />.</li>
 
@@ -4239,22 +4276,6 @@
 
           <li>Close the session by calling <link to="ISession::close"/>.</li>
         </ol>
-
-        If the @a fPermitShared parameter is set to true, this method will also
-        succeed on a machine which has already been locked by another session.
-        The caller will then be attached to that existing session, and its own
-        session will be marked as "Shared". While not all machine settings can
-        be changed in that case, an IConsole object will still be created which
-        provides to the caller some level of control over the VM execution, for
-        example to pause the machine. The number of such shared sessions per
-        machine is not limited by the API.
-
-        The return value will then indicate whether a direct session was opened
-        (<link to="SessionType::Direct" />) or whether an existing direct session
-        was shared ((<link to="SessionType::Shared" />).
-
-        If the @a fPermitShared parameter is @c false, then this can only
-        possibly return <link to="SessionType::Direct" />.
 
         <result name="E_UNEXPECTED">
           Virtual machine not registered.
@@ -4274,13 +4295,11 @@
           Session object for which the machine will be locked.
         </desc>
       </param>
-      <param name="fPermitShared" type="boolean" dir="in">
+      <param name="lockType" type="LockType" dir="in">
         <desc>
-          Whether to allow for sharing a direct session remotely.
-        </desc>
-      </param>
-      <param name="sessionType" type="SessionType" dir="return">
-        <desc>
+          If set to @c Write, then attempt to acquire an exclusive write lock or fail.
+          If set to @c Shared, then either acquire an exclusive write lock or establish
+          a link to an existing session.
         </desc>
       </param>
     </method>
@@ -4311,7 +4330,7 @@
         by the new VM process. It receives its own <link to="IConsole" />
         object which can be used to control machine execution, but it cannot
         be used to change all VM settings which would be available after
-        a <link to="#lockForSession" /> call.
+        a <link to="#lockMachine" /> call.
 
         As with all <link to="ISession" /> objects, it is recommended to call
         <link to="ISession::close" /> on the local session object once this call
@@ -5923,7 +5942,7 @@
       machine execution.
 
       A console object gets created when a machine has been locked for a
-      particular session (client process) using <link to="IMachine::lockForSession" />
+      particular session (client process) using <link to="IMachine::lockMachine" />
       or <link to="IMachine::launchVMProcess"/>. The console object can
       then be found in the session's <link to="ISession::console" /> attribute.
 
@@ -12754,7 +12773,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       <ul>
         <li>To alter machine settings, one needs to lock a machine for a given session
-          (client process) by calling <link to="IMachine::lockForSession"/>. While a
+          (client process) by calling <link to="IMachine::lockMachine"/>. While a
           machine is thus locked, no any other process may lock the machine again.
 
           The same applies for any process which indends to actually run a virtual
@@ -12822,7 +12841,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         Calling this method is eventually required every time a machine has been
         locked for a particular session using the <link to="IMachine::launchVMProcess" />
-        or <link to="IMachine::lockForSession" />) calls. Otherwise the state of
+        or <link to="IMachine::lockMachine" />) calls. Otherwise the state of
         the machine will be set to <link to="MachineState_Aborted" /> on the
         server, and changes made to the machine settings will be lost.
 

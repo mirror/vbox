@@ -1364,8 +1364,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     vrc = RTSemEventCreate(&g_EventSemSDLEvents);
     AssertReleaseRC(vrc);
 
-    SessionType_T st;
-    rc = pMachine->LockForSession(session, false /* fPermitShared */, &st);
+    rc = pMachine->LockMachine(session, LockType_Write);
     if (FAILED(rc))
     {
         com::ErrorInfo info;

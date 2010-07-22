@@ -416,8 +416,7 @@ int handleUSBFilter (HandlerArg *a)
     else
     {
         /* open a session for the VM */
-        SessionType_T st;
-        CHECK_ERROR_RET(cmd.mMachine, LockForSession(a->session, false /* fPermitShared */, &st), 1);
+        CHECK_ERROR_RET(cmd.mMachine, LockMachine(a->session, LockType_Write), 1);
         /* get the mutable session machine */
         a->session->COMGETTER(Machine)(cmd.mMachine.asOutParam());
         /* and get the USB controller */

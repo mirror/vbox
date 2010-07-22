@@ -3722,7 +3722,7 @@ RWLockHandle& VirtualBox::getMediaTreeLockHandle()
 
 /**
  *  Thread function that watches the termination of all client processes
- *  that have opened sessions using IMachine::LockForSession()
+ *  that have opened sessions using IMachine::LockMachine()
  */
 // static
 DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
