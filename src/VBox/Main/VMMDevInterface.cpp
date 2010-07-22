@@ -178,9 +178,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, cons
     if (!guest)
         return;
 
-    guest->setAdditionsStatus((VBoxGuestStatusFacility)guestStatus->facility,
-                              (VBoxGuestStatusCurrent)guestStatus->status,
-                              guestStatus->flags);
+    guest->setAdditionsStatus(guestStatus->facility, guestStatus->status, guestStatus->flags);
     pDrv->pVMMDev->getParent()->onAdditionsStateChange();
 }
 
