@@ -26,7 +26,7 @@
 # include <linux/backing-dev.h>
 #endif
 
-#include "VBoxCalls.h"
+#include "VBoxGuestR0LibSharedFolders.h"
 #include "vbsfmount.h"
 
 #define DIR_BUFFER_SIZE (16*_1K)
