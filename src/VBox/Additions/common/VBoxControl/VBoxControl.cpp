@@ -1297,12 +1297,12 @@ int listSharedFolders(int argc, char **argv)
     {
         uint32_t cMappings = 64; /* See shflsvc.h for define; should be used later. */
         uint32_t cbMappings = cMappings * sizeof(VBGLR3SHAREDFOLDERMAPPING);
-        VBGLR3SHAREDFOLDERMAPPING *pMappings = (VBGLR3SHAREDFOLDERMAPPING*)RTMemAlloc(cbMappings);
+        VBGLR3SHAREDFOLDERMAPPING *paMappings = (PVBGLR3SHAREDFOLDERMAPPING)RTMemAlloc(cbMappings);
 
-        if (pMappings)
+        if (paMappings)
         {
             rc = VbglR3SharedFolderGetMappings(u32ClientId, fOnlyShowAutoMount,
-                                               pMappings, cbMappings,
+                                               paMappings, cbMappings,
                                                &cMappings);
             if (RT_SUCCESS(rc))
             {
@@ -1310,25 +1310,23 @@ int listSharedFolders(int argc, char **argv)
                 RTPrintf("Shared Folder Mappings (%u):\n\n", cMappings);
                 for (uint32_t i = 0; i < cMappings; i++)
                 {
-                    char *ppszName = NULL;
-                    uint32_t pcbLen = 0;
-                    rc = VbglR3SharedFolderGetName(u32ClientId, pMappings[i].u32Root,
-                                                   &ppszName, &pcbLen);
+                    char *pszName;
+                    rc = VbglR3SharedFolderGetName(u32ClientId, paMappings[i].u32Root, &pszName);
                     if (RT_SUCCESS(rc))
                     {
-                        RTPrintf("%02u - %s\n", i + 1, ppszName);
-                        RTStrFree(ppszName);
+                        RTPrintf("%02u - %s\n", i + 1, pszName);
+                        RTStrFree(pszName);
                     }
                     else
                         VBoxControlError("Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
-                                         pMappings[i].u32Root, rc);
+                                         paMappings[i].u32Root, rc);
                 }
                 if (cMappings == 0)
                     RTPrintf("No Shared Folders available.\n");
             }
             else
                 VBoxControlError("Error while getting the shared folder mappings, rc = %Rrc\n", rc);
-            RTMemFree(pMappings);
+            RTMemFree(paMappings);
         }
         else
             rc = VERR_NO_MEMORY;
