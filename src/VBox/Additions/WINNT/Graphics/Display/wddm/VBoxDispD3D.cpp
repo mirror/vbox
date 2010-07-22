@@ -1402,6 +1402,63 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
     return bOk;
 }
 
+static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_ADAPTER pAdapter, D3DCAPS9 *pCaps)
+{
+    HRESULT hr = pAdapter->pD3D9If->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pCaps);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        pCaps->Caps2 |= D3DCAPS2_CANSHARERESOURCE | 0x00080000 /*D3DCAPS2_CANRENDERWINDOWED*/;
+        pCaps->DevCaps |= D3DDEVCAPS_FLOATTLVERTEX /* <- must be set according to the docs */
+                /*| D3DDEVCAPS_HWVERTEXBUFFER | D3DDEVCAPS_HWINDEXBUFFER |  D3DDEVCAPS_SUBVOLUMELOCK */;
+        pCaps->PrimitiveMiscCaps |= D3DPMISCCAPS_INDEPENDENTWRITEMASKS
+                | D3DPMISCCAPS_FOGINFVF
+                | D3DPMISCCAPS_SEPARATEALPHABLEND | D3DPMISCCAPS_MRTINDEPENDENTBITDEPTHS;
+        pCaps->RasterCaps |= D3DPRASTERCAPS_SUBPIXEL | D3DPRASTERCAPS_STIPPLE | D3DPRASTERCAPS_ZBIAS | D3DPRASTERCAPS_COLORPERSPECTIVE /* keep */;
+        pCaps->TextureCaps |= D3DPTEXTURECAPS_TRANSPARENCY | D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE;
+        pCaps->TextureAddressCaps |= D3DPTADDRESSCAPS_MIRRORONCE;
+        pCaps->VolumeTextureAddressCaps |= D3DPTADDRESSCAPS_MIRRORONCE;
+        pCaps->GuardBandLeft = -8192.;
+        pCaps->GuardBandTop = -8192.;
+        pCaps->GuardBandRight = 8192.;
+        pCaps->GuardBandBottom = 8192.;
+        pCaps->StencilCaps |= D3DSTENCILCAPS_TWOSIDED;
+        pCaps->DeclTypes |= D3DDTCAPS_FLOAT16_2 | D3DDTCAPS_FLOAT16_4;
+        pCaps->VS20Caps.DynamicFlowControlDepth = 24;
+        pCaps->VS20Caps.NumTemps = D3DVS20_MAX_NUMTEMPS;
+        pCaps->PS20Caps.DynamicFlowControlDepth = 24;
+        pCaps->PS20Caps.NumTemps = D3DVS20_MAX_NUMTEMPS;
+        pCaps->VertexTextureFilterCaps |= D3DPTFILTERCAPS_MINFPOINT | D3DPTFILTERCAPS_MAGFPOINT;
+#if 1 /* workaround for wine not returning InstructionSlots correctly for  shaders v3.0 */
+        if ((pCaps->VertexShaderVersion & 0xff00) == 0x0300)
+        {
+            pCaps->MaxVertexShader30InstructionSlots = RT_MIN(32768, pCaps->MaxVertexShader30InstructionSlots);
+            pCaps->MaxPixelShader30InstructionSlots = RT_MIN(32768, pCaps->MaxPixelShader30InstructionSlots);
+        }
+#endif
+#ifdef DEBUG
+        if ((pCaps->VertexShaderVersion & 0xff00) == 0x0300)
+        {
+            Assert(pCaps->MaxVertexShader30InstructionSlots >= 512);
+            Assert(pCaps->MaxVertexShader30InstructionSlots <= 32768);
+            Assert(pCaps->MaxPixelShader30InstructionSlots >= 512);
+            Assert(pCaps->MaxPixelShader30InstructionSlots <= 32768);
+        }
+        else if ((pCaps->VertexShaderVersion & 0xff00) == 0x0200)
+        {
+            Assert(pCaps->MaxVertexShader30InstructionSlots == 0);
+            Assert(pCaps->MaxPixelShader30InstructionSlots == 0);
+        }
+        else
+        {
+            Assert(0);
+        }
+#endif
+    }
+
+    return hr;
+}
+
 static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GETCAPS* pData)
 {
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p), caps type(%d)\n", hAdapter, pData->Type));
@@ -1590,7 +1647,7 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
             break;
         case D3DDDICAPS_GETD3D9CAPS:
         {
-            Assert(pData->DataSize >= sizeof (D3DCAPS9));
+            Assert(pData->DataSize == sizeof (D3DCAPS9));
 //            Assert(0);
             if (pData->DataSize >= sizeof (D3DCAPS9))
             {
@@ -1598,65 +1655,44 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                 if (VBOXDISPMODE_IS_3D(pAdapter))
                 {
                     D3DCAPS9* pCaps = (D3DCAPS9*)pData->pData;
-                    hr = pAdapter->pD3D9If->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pCaps);
+                    hr = vboxWddmGetD3D9Caps(pAdapter, pCaps);
                     Assert(hr == S_OK);
                     if (hr == S_OK)
-                    {
-                        pCaps->Caps2 |= D3DCAPS2_CANSHARERESOURCE | 0x00080000 /*D3DCAPS2_CANRENDERWINDOWED*/;
-                        pCaps->DevCaps |= D3DDEVCAPS_FLOATTLVERTEX /* <- must be set according to the docs */
-                                /*| D3DDEVCAPS_HWVERTEXBUFFER | D3DDEVCAPS_HWINDEXBUFFER |  D3DDEVCAPS_SUBVOLUMELOCK */;
-                        pCaps->PrimitiveMiscCaps |= D3DPMISCCAPS_INDEPENDENTWRITEMASKS
-                                | D3DPMISCCAPS_FOGINFVF
-                                | D3DPMISCCAPS_SEPARATEALPHABLEND | D3DPMISCCAPS_MRTINDEPENDENTBITDEPTHS;
-                        pCaps->RasterCaps |= D3DPRASTERCAPS_SUBPIXEL | D3DPRASTERCAPS_STIPPLE | D3DPRASTERCAPS_ZBIAS | D3DPRASTERCAPS_COLORPERSPECTIVE /* keep */;
-                        pCaps->TextureCaps |= D3DPTEXTURECAPS_TRANSPARENCY | D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE;
-                        pCaps->TextureAddressCaps |= D3DPTADDRESSCAPS_MIRRORONCE;
-                        pCaps->VolumeTextureAddressCaps |= D3DPTADDRESSCAPS_MIRRORONCE;
-                        pCaps->GuardBandLeft = -8192.;
-                        pCaps->GuardBandTop = -8192.;
-                        pCaps->GuardBandRight = 8192.;
-                        pCaps->GuardBandBottom = 8192.;
-                        pCaps->StencilCaps |= D3DSTENCILCAPS_TWOSIDED;
-                        pCaps->DeclTypes |= D3DDTCAPS_FLOAT16_2 | D3DDTCAPS_FLOAT16_4;
-                        pCaps->VS20Caps.DynamicFlowControlDepth = 24;
-                        pCaps->VS20Caps.NumTemps = D3DVS20_MAX_NUMTEMPS;
-                        pCaps->PS20Caps.DynamicFlowControlDepth = 24;
-                        pCaps->PS20Caps.NumTemps = D3DVS20_MAX_NUMTEMPS;
-                        pCaps->VertexTextureFilterCaps |= D3DPTFILTERCAPS_MINFPOINT | D3DPTFILTERCAPS_MAGFPOINT;
-#if 1 /* workaround for wine not returning InstructionSlots correctly for  shaders v3.0 */
-                        if ((pCaps->VertexShaderVersion & 0xff00) == 0x0300)
-                        {
-                            pCaps->MaxVertexShader30InstructionSlots = RT_MIN(32768, pCaps->MaxVertexShader30InstructionSlots);
-                            pCaps->MaxPixelShader30InstructionSlots = RT_MIN(32768, pCaps->MaxPixelShader30InstructionSlots);
-                        }
-#endif
-#ifdef DEBUG
-                        if ((pCaps->VertexShaderVersion & 0xff00) == 0x0300)
-                        {
-                            Assert(pCaps->MaxVertexShader30InstructionSlots >= 512);
-                            Assert(pCaps->MaxVertexShader30InstructionSlots <= 32768);
-                            Assert(pCaps->MaxPixelShader30InstructionSlots >= 512);
-                            Assert(pCaps->MaxPixelShader30InstructionSlots <= 32768);
-                        }
-                        else if ((pCaps->VertexShaderVersion & 0xff00) == 0x0200)
-                        {
-                            Assert(pCaps->MaxVertexShader30InstructionSlots == 0);
-                            Assert(pCaps->MaxPixelShader30InstructionSlots == 0);
-                        }
-                        else
-                        {
-                            Assert(0);
-                        }
-#endif
                         break;
-                    }
 
-                    vboxVDbgPrintR((__FUNCTION__": GetDeviceCaps hr(%d)\n", hr));
+                    vboxVDbgPrintR((__FUNCTION__": GetDeviceCaps Failed hr(%d)\n", hr));
                     /* let's fall back to the 3D disabled case */
                     hr = S_OK;
                 }
 
                 memset(pData->pData, 0, sizeof (D3DCAPS9));
+            }
+            else
+                hr = E_INVALIDARG;
+            break;
+        }
+        case D3DDDICAPS_GETD3D8CAPS:
+        {
+            Assert(pData->DataSize == RT_OFFSETOF(D3DCAPS9, DevCaps2));
+            if (pData->DataSize == RT_OFFSETOF(D3DCAPS9, DevCaps2))
+            {
+                Assert(VBOXDISPMODE_IS_3D(pAdapter));
+                if (VBOXDISPMODE_IS_3D(pAdapter))
+                {
+                    D3DCAPS9 Caps9;
+                    hr = vboxWddmGetD3D9Caps(pAdapter, &Caps9);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        memcpy(pData->pData, &Caps9, RT_OFFSETOF(D3DCAPS9, DevCaps2));
+                        break;
+                    }
+
+                    vboxVDbgPrintR((__FUNCTION__": GetDeviceCaps Failed hr(%d)\n", hr));
+                    /* let's fall back to the 3D disabled case */
+                    hr = S_OK;
+                }
+
             }
             else
                 hr = E_INVALIDARG;
@@ -1675,7 +1711,6 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         case D3DDDICAPS_GETMULTISAMPLEQUALITYLEVELS:
         case D3DDDICAPS_GETD3D5CAPS:
         case D3DDDICAPS_GETD3D6CAPS:
-        case D3DDDICAPS_GETD3D8CAPS:
         case D3DDDICAPS_GETDECODEGUIDS:
         case D3DDDICAPS_GETDECODERTFORMATCOUNT:
         case D3DDDICAPS_GETDECODERTFORMATS:
@@ -2557,10 +2592,31 @@ static HRESULT APIENTRY vboxWddmDDevSetClipPlane(HANDLE hDevice, CONST D3DDDIARG
 
 static HRESULT APIENTRY vboxWddmDDevGetInfo(HANDLE hDevice, UINT DevInfoID, VOID* pDevInfoStruct, UINT DevInfoSize)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_NOTIMPL;
+    HRESULT hr = S_OK;
+    switch (DevInfoID)
+    {
+        case D3DDDIDEVINFOID_VCACHE:
+        {
+            Assert(DevInfoSize == sizeof (D3DDDIDEVINFO_VCACHE));
+            if (DevInfoSize == sizeof (D3DDDIDEVINFO_VCACHE))
+            {
+                D3DDDIDEVINFO_VCACHE *pVCache = (D3DDDIDEVINFO_VCACHE*)pDevInfoStruct;
+                pVCache->Pattern = MAKEFOURCC('C', 'A', 'C', 'H');
+                pVCache->OptMethod = 0 /* D3DXMESHOPT_STRIPREORDER */;
+                pVCache->CacheSize = 0;
+                pVCache->MagicNumber = 0;
+            }
+            else
+                hr = E_INVALIDARG;
+            break;
+        }
+        default:
+            Assert(0);
+            hr = E_NOTIMPL;
+    }
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 
 static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
@@ -3943,17 +3999,41 @@ static HRESULT APIENTRY vboxWddmDDevCreateVertexShaderDecl(HANDLE hDevice, D3DDD
     Assert(pDevice->pDevice9If);
     IDirect3DVertexDeclaration9 *pDecl;
     static D3DVERTEXELEMENT9 DeclEnd = D3DDECL_END();
-    Assert(!memcmp(&DeclEnd, &pVertexElements[pData->NumVertexElements], sizeof (DeclEnd)));
-    HRESULT hr = pDevice->pDevice9If->CreateVertexDeclaration(
-            (CONST D3DVERTEXELEMENT9*)pVertexElements,
-            &pDecl
-          );
-    Assert(hr == S_OK);
+    D3DVERTEXELEMENT9* pVe;
+    HRESULT hr = S_OK;
+    bool bFreeVe = false;
+    if(memcmp(&DeclEnd, &pVertexElements[pData->NumVertexElements], sizeof (DeclEnd)))
+    {
+        pVe = (D3DVERTEXELEMENT9*)RTMemAlloc(sizeof (D3DVERTEXELEMENT9) * (pData->NumVertexElements + 1));
+        if (pVe)
+        {
+            memcpy(pVe, pVertexElements, sizeof (D3DVERTEXELEMENT9) * pData->NumVertexElements);
+            pVe[pData->NumVertexElements] = DeclEnd;
+            bFreeVe = true;
+        }
+        else
+            hr = E_OUTOFMEMORY;
+    }
+    else
+        pVe = (D3DVERTEXELEMENT9*)pVertexElements;
+
     if (hr == S_OK)
     {
-        Assert(pDecl);
-        pData->ShaderHandle = pDecl;
+        hr = pDevice->pDevice9If->CreateVertexDeclaration(
+                pVe,
+                &pDecl
+              );
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            Assert(pDecl);
+            pData->ShaderHandle = pDecl;
+        }
     }
+
+    if (bFreeVe)
+        RTMemFree((void*)pVe);
+
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
