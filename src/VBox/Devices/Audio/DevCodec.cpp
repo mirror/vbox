@@ -216,12 +216,15 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         /* Root Node*/
         case 0:
             pNode->root.node.name = "Root";
+            //** @todo r=michaln: I fear the use of RT_MAKE_U32_FROM_U8() here makes the
+            // code much harder to read, not easier.
             pNode->node.au32F00_param[0] = RT_MAKE_U32_FROM_U8(0x80, 0x76, 0x84, 0x83); /* VendorID = STAC9220/ DevId = 0x7680 */
             pNode->node.au32F00_param[2] = RT_MAKE_U32_FROM_U8(0x1, 0x31, 0x10, 0x00); /* rev id */
             pNode->node.au32F00_param[4] = RT_MAKE_U32_FROM_U8(0x1, 0x00, 0x01, 0x00); /* node info (start node: 1, start id = 1) */
             break;
         case 1:
             pNode->afg.node.name = "AFG";
+            //** @todo r=michaln: Are the comments right? Looks like copy & paste.
             pNode->node.au32F00_param[4] = RT_MAKE_U32_FROM_U8(0x1a, 0x00, 0x02, 0x00); /* node info (start node: 1, start id = 1) */
             pNode->node.au32F00_param[5] = RT_MAKE_U32_FROM_U8(0x1, 0x01, 0x00, 0x0); /* node info (start node: 1, start id = 1) */
             pNode->node.au32F00_param[8] = RT_MAKE_U32_FROM_U8(0x0d, 0x0d, 0x01, 0x0); /* Capabilities */
@@ -387,6 +390,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 0x16:
             pNode->node.name = "VolumeKnob";
             pNode->node.au32F00_param[0x9] = (0x6 << 20);
+            //** @todo r=michaln: The next assignment is out of array bounds (0x13 items in array);
+            //  the array needs to be bigger.
             pNode->node.au32F00_param[0x13] = RT_BIT(7)| 0x7F;
             pNode->node.au32F00_param[0xe] = 0x4;
             *(uint32_t *)pNode->node.au8F02_param = RT_MAKE_U32_FROM_U8(0x2, 0x3, 0x4, 0x5);
@@ -576,6 +581,7 @@ int stac9220Construct(CODECState *pState)
     pState->pVerbs = (CODECVERB *)&STAC9220VERB;
     pState->cVerbs = STAC9220_VERB_SIZE;
     pState->pfnLookup = codecLookup;
+    //** @todo r=michaln: Where is this memory freed?
     pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * STAC9220_NODE_COUNT);
     uint8_t i;
     for (i = 0; i < STAC9220_NODE_COUNT; ++i)

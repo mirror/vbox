@@ -90,6 +90,10 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define INTCTL_SX(pState, X) (HDA_REG_FLAG_VALUE((pState), INTCTL, S##X))
 #define INTCTL_SALL(pState) (INTCTL((pState)) & 0xFF)
 
+/* Note: The HDA specification defines a SSYNC register at offset 0x38. The
+ * ICH6/ICH9 datahseet defines SSYNC at offset 0x34. The Linux HDA driver matches
+ * the datasheet.
+ */
 #define ICH6_HDA_REG_SSYNC  12 /* 0x34 */
 #define SSYNC(pState) (HDA_REG((pState), SSYNC))
 
@@ -423,7 +427,6 @@ const static struct stIchIntelHDRegMap
     const char *name;
 } s_ichIntelHDRegMap[] =
 {
-    //** @todo r=michaln: Please align the table properly for reasier readability.
     /* offset  size     read mask   write mask         read callback         write callback         abbrev      full name                     */
     /*-------  -------  ----------  ----------  -----------------------  ------------------------ ----------    ------------------------------*/
     { 0x00000, 0x00002, 0x0000FFFB, 0x00000000, hdaRegReadGCAP         , hdaRegWriteUnimplemented, "GCAP"      , "Global Capabilities" },
@@ -437,7 +440,9 @@ const static struct stIchIntelHDRegMap
     { 0x00010, 0x00002, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "GSTS"      , "Global Status" },
     { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, hdaRegReadU32          , hdaRegWriteU32          , "INTCTL"    , "Interrupt Control" },
     { 0x00024, 0x00004, 0xC00000FF, 0x400000FF, hdaRegReadINTSTS       , hdaRegWriteINTSTS       , "INTSTS"    , "Interrupt Status" },
+    //** @todo r=michaln: Are guests really not reading the WALCLK register at all?
     { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "WALCLK"    , "Wall Clock Counter" },
+    //** @todo r=michaln: Doesn't the SSYNC register need to actually stop the stream(s)?
     { 0x00034, 0x00004, 0x000000FF, 0x000000FF, hdaRegReadU32          , hdaRegWriteU32          , "SSYNC"     , "Stream Synchronization" },
     { 0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteBase         , "CORBLBASE" , "CORB Lower Base Address" },
     { 0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase         , "CORBUBASE" , "CORB Upper Base Address" },
@@ -1320,6 +1325,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     pThis->hda.cdwCorbBuf = CORBSIZE(&pThis->hda);
     pThis->hda.cbCorbBuf = CORBSIZE(&pThis->hda) * sizeof(uint32_t);
 
+    //** @todo r=michaln: Where are the Corb/RirbBuf allocations freed?
     if (pThis->hda.pu32CorbBuf)
         memset(pThis->hda.pu32CorbBuf, 0, pThis->hda.cbCorbBuf);
     else
