@@ -513,22 +513,22 @@ VBGLR3DECL(int)     VbglR3HostVersionLastCheckedStore(uint32_t u32ClientId, cons
 /**
  * Structure containing mapping information for a shared folder.
  */
-struct VBGLR3SHAREDFOLDERMAPPING
+typedef struct VBGLR3SHAREDFOLDERMAPPING
 {
     /** Mapping status. */
     uint32_t u32Status;
     /** Root handle. */
     uint32_t u32Root;
-};
+} VBGLR3SHAREDFOLDERMAPPING;
+/** Pointer to a shared folder mapping information struct. */
 typedef VBGLR3SHAREDFOLDERMAPPING *PVBGLR3SHAREDFOLDERMAPPING;
-/** @todo Docs. */
+
 VBGLR3DECL(int)     VbglR3SharedFolderConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3SharedFolderDisconnect(uint32_t u32ClientId);
-VBGLR3DECL(int)     VbglR3SharedFolderGetMappings(uint32_t                   u32ClientId,  bool      bAutoMountOnly,
-                                                  VBGLR3SHAREDFOLDERMAPPING  paMappings[], uint32_t  cbMappings,
-                                                  uint32_t                  *pcMapCount);
-VBGLR3DECL(int)     VbglR3SharedFolderGetName(uint32_t   u32ClientId,uint32_t  u32Root,
-                                              char     **ppszName,   uint32_t *pcbLen);
+VBGLR3DECL(int)     VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMountOnly,
+                                                  PVBGLR3SHAREDFOLDERMAPPING paMappings, uint32_t cbMappings,
+                                                  uint32_t *pcMappings);
+VBGLR3DECL(int)     VbglR3SharedFolderGetName(uint32_t  u32ClientId,uint32_t u32Root, char **ppszName);
 /** @}  */
 # endif /* VBOX_WITH_SHARED_FOLDERS defined */
 

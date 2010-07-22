@@ -38,6 +38,7 @@
 
 #include "VBGLR3Internal.h"
 
+
 /**
  * Connects to the shared folder service.
  *
@@ -89,18 +90,32 @@ VBGLR3DECL(int) VbglR3SharedFolderDisconnect(uint32_t u32ClientId)
  *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
- * @param   bAutoMountOnly  Flag whether only auto-mounted shared folders should be reported.
+ * @param   fAutoMountOnly  Flag whether only auto-mounted shared folders
+ *                          should be reported.
  * @param   paMappings      Pointer to a preallocated array which will retrieve the mapping info.
  * @param   cbMappings      Size (in bytes) of the provided array.
- * @param   pcMapCount      Number of mappings returned.
+ * @param   pcMappings      On input, the size of @a paMappings gives as an
+ *                          item count.  On output, the number of mappings
+ *                          returned in @a paMappings.
+ *
+ * @todo    r=bird: cbMappings and @a *pcMappings overlap.  The better API
+ *          would be to change cbMappings to cMappings (the entries are fixed
+ *          sized) and move the move the input aspect of @a *pcMappings to it.
+ *
+ *          However, it would be better if this function would do the array
+ *          allocation.  This way you could deal with too-much-data conditions
+ *          here (or hide the max-number-of-shared-folders-per-vm-define).
+ *          Then paMappings would become ppaMappings and cbMappings could be
+ *          removed altogether. *pcMappings would only be output.  A
+ *          corresponding VbglR3SharedFolderFreeMappings would be required for
+ *          a 100% clean API (this is an (/going to be) offical API for C/C++
+ *          programs).
  */
-VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t                   u32ClientId,  bool      bAutoMountOnly,
-                                              VBGLR3SHAREDFOLDERMAPPING  paMappings[], uint32_t  cbMappings,
-                                              uint32_t                  *pcMapCount)
+VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMountOnly,
+                                              PVBGLR3SHAREDFOLDERMAPPING paMappings, uint32_t cbMappings,
+                                              uint32_t *pcMappings)
 {
-    int rc;
-
-    AssertPtr(pcMapCount);
+    AssertPtr(pcMappings);
 
     VBoxSFQueryMappings Msg;
 
@@ -110,19 +125,19 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t                   u32Clie
     Msg.callInfo.cParms = 3;
 
     /* Set the mapping flags. */
-    uint32_t u32Flags = 0; /* @todo SHFL_MF_UTF8 is not implemented yet. */
-    if (bAutoMountOnly) /* We only want the mappings which get auto-mounted. */
+    uint32_t u32Flags = 0; /** @todo SHFL_MF_UTF8 is not implemented yet. */
+    if (fAutoMountOnly) /* We only want the mappings which get auto-mounted. */
         u32Flags |= SHFL_MF_AUTOMOUNT;
     VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
 
     /* Init the rest of the message. */
-    VbglHGCMParmUInt32Set(&Msg.numberOfMappings, *pcMapCount);
+    VbglHGCMParmUInt32Set(&Msg.numberOfMappings, *pcMappings);
     VbglHGCMParmPtrSet(&Msg.mappings, &paMappings[0], cbMappings);
 
-    rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        VbglHGCMParmUInt32Get(&Msg.numberOfMappings, pcMapCount);
+        VbglHGCMParmUInt32Get(&Msg.numberOfMappings, pcMappings);
         rc = Msg.callInfo.result;
     }
     return rc;
@@ -135,16 +150,12 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t                   u32Clie
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
  * @param   u32Root         Root ID of shared folder to get the name for.
- * @param   ppszName        Name of the shared folder.
- * @param   pcbLen          Length (in bytes) of shared folder name.
+ * @param   ppszName        Where to return the name string.  This shall be
+ *                          freed by calling RTStrFree.
  */
-VBGLR3DECL(int) VbglR3SharedFolderGetName(uint32_t   u32ClientId, uint32_t  u32Root,
-                                          char     **ppszName,    uint32_t *pcbLen)
+VBGLR3DECL(int) VbglR3SharedFolderGetName(uint32_t u32ClientId, uint32_t u32Root, char **ppszName)
 {
-    int rc;
-
     AssertPtr(ppszName);
-    AssertPtr(pcbLen);
 
     VBoxSFQueryMapName Msg;
 
@@ -153,7 +164,8 @@ VBGLR3DECL(int) VbglR3SharedFolderGetName(uint32_t   u32ClientId, uint32_t  u32R
     Msg.callInfo.u32Function = SHFL_FN_QUERY_MAP_NAME;
     Msg.callInfo.cParms = 2;
 
-    uint32_t cbString = sizeof(SHFLSTRING) + SHFL_MAX_LEN;
+    int         rc;
+    uint32_t    cbString = sizeof(SHFLSTRING) + SHFL_MAX_LEN;
     PSHFLSTRING pString = (PSHFLSTRING)RTMemAlloc(cbString);
     if (pString)
     {
@@ -167,10 +179,9 @@ VBGLR3DECL(int) VbglR3SharedFolderGetName(uint32_t   u32ClientId, uint32_t  u32R
         if (RT_SUCCESS(rc))
         {
             *ppszName = NULL;
-            rc = RTUtf16ToUtf8Ex((PCRTUTF16)&pString->String.ucs2, RTSTR_MAX,
-                                 ppszName, (size_t)pcbLen, NULL);
+            rc = RTUtf16ToUtf8(&pString->String.ucs2[0], ppszName);
             if (RT_SUCCESS(rc))
-                rc = Msg.callInfo.result;
+                rc = Msg.callInfo.result; /** @todo r=bird: Shouldn't you check this *before* doing the conversion? */
         }
         RTMemFree(pString);
     }
