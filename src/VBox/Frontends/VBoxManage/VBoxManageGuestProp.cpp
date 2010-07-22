@@ -152,7 +152,7 @@ static int handleSetGuestProperty(HandlerArg *a)
     if (machine)
     {
         /* open a session for the VM - new or existing */
-        CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
+        CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
 
         /* get the mutable session machine */
         a->session->COMGETTER(Machine)(machine.asOutParam());
