@@ -1810,7 +1810,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigInteger(pCfg,  "Object", (uintptr_t)pAudioSniffer);
 
         /*
-         * AC'97 ICH / SoundBlaster16 audio
+         * AC'97 ICH / SoundBlaster16 audio / Intel HD Audio
          */
         BOOL enabled;
         ComPtr<IAudioAdapter> audioAdapter;
@@ -1828,7 +1828,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 {
                     /* default: ICH AC97 */
                     InsertConfigNode(pDevices, "ichac97", &pDev);
-                    rc = CFGMR3InsertNode(pDev,     "0", &pInst);
+                    InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
                     InsertConfigInteger(pInst, "PCIDeviceNo",      5);
                     Assert(!afPciDeviceNo[5]);
@@ -1850,6 +1850,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigInteger(pCfg,  "Port", 0x220);
                     InsertConfigInteger(pCfg,  "Version", 0x0405);
                     break;
+                }
+                case AudioControllerType_HDA:
+                {
+                    /* Intel HD Audio */
+                    InsertConfigNode(pDevices, "hda", &pDev);
+                    InsertConfigNode(pDev,     "0", &pInst);
+                    InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
+                    InsertConfigInteger(pInst, "PCIDeviceNo",      5);
+                    Assert(!afPciDeviceNo[5]);
+                    afPciDeviceNo[5] = true;
+                    InsertConfigInteger(pInst, "PCIFunctionNo",    0);
+                    InsertConfigNode(pInst,    "Config", &pCfg);
                 }
             }
 

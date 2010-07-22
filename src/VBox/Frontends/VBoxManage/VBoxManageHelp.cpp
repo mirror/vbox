@@ -294,7 +294,7 @@ void printUsage(USAGECATEGORY u64Cmd)
             RTPrintf(                        "|coreaudio");
         }
         RTPrintf(                            "]\n");
-        RTPrintf("                            [--audiocontroller ac97|sb16]\n"
+        RTPrintf("                            [--audiocontroller ac97|hda|sb16]\n"
                  "                            [--clipboard disabled|hosttoguest|guesttohost|\n"
                  "                                         bidirectional]\n");
         if (fVRDP)

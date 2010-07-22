@@ -420,7 +420,7 @@ void SoapThread::process()
     while (1)
     {
         // wait for a socket to arrive on the queue
-        size_t cIdleThreads, cThreads;
+        size_t cIdleThreads = 0, cThreads = 0;
         m_soap->socket = m_pQ->get(cIdleThreads, cThreads);
 
         WebLog("Processing connection from IP=%lu.%lu.%lu.%lu socket=%d (%d out of %d threads idle)\n",

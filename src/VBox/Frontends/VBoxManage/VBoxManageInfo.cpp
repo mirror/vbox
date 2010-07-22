@@ -1214,6 +1214,12 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     else
                         pszCtrl = "SB16";
                     break;
+                case AudioControllerType_HDA:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        pszCtrl = "hda";
+                    else
+                        pszCtrl = "HDA";
+                    break;
             }
         }
         else

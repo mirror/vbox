@@ -2743,6 +2743,8 @@ void VBoxGlobal::retranslateUi()
         tr ("ICH AC97", "AudioControllerType");
     mAudioControllerTypes [KAudioControllerType_SB16] =
         tr ("SoundBlaster 16", "AudioControllerType");
+    mAudioControllerTypes [KAudioControllerType_HDA] =
+    tr ("Intel HD Audio", "AudioControllerType");
 
     mNetworkAdapterTypes [KNetworkAdapterType_Am79C970A] =
         tr ("PCnet-PCI II (Am79C970A)", "NetworkAdapterType");

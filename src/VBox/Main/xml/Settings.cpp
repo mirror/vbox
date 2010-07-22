@@ -29,8 +29,8 @@
  *      the default value will have been set by the constructor.
  *
  *   3) In the settings writer method, write the setting _only_ if the current settings
- *      version (stored in m->sv) is high enough. That is, for VirtualBox 3.2, write it
- *      only if (m->sv >= SettingsVersion_v1_10).
+ *      version (stored in m->sv) is high enough. That is, for VirtualBox 3.3, write it
+ *      only if (m->sv >= SettingsVersion_v1_11).
  *
  *   4) In MachineConfigFile::bumpSettingsVersionIfNeeded(), check if the new setting has
  *      a non-default value (i.e. that differs from the constructor). If so, bump the
@@ -81,7 +81,7 @@ using namespace settings;
 #define VBOX_XML_NAMESPACE      "http://www.innotek.de/VirtualBox-settings"
 
 /** VirtualBox XML settings version number substring ("x.y")  */
-#define VBOX_XML_VERSION        "1.10"
+#define VBOX_XML_VERSION        "1.11"
 
 /** VirtualBox XML settings version platform substring */
 #if defined (RT_OS_DARWIN)
@@ -282,7 +282,9 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
                     m->sv = SettingsVersion_v1_9;
                 else if (ulMinor == 10)
                     m->sv = SettingsVersion_v1_10;
-                else if (ulMinor > 10)
+                else if (ulMinor == 11)
+                    m->sv = SettingsVersion_v1_11;
+                else if (ulMinor > 11)
                     m->sv = SettingsVersion_Future;
             }
             else if (ulMajor > 1)
@@ -302,7 +304,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     {
         // creating new settings file:
         m->strSettingsVersionFull = VBOX_XML_VERSION_FULL;
-        m->sv = SettingsVersion_v1_10;
+        m->sv = SettingsVersion_v1_11;
     }
 }
 
@@ -2046,6 +2048,8 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
             aa.controllerType = AudioControllerType_SB16;
         else if (strTemp == "AC97")
             aa.controllerType = AudioControllerType_AC97;
+        else if (strTemp == "HDA")
+            aa.controllerType = AudioControllerType_HDA;
         else
             throw ConfigFileError(this, &elmAudioAdapter, N_("Invalid value '%s' in AudioAdapter/@controller attribute"), strTemp.c_str());
     }
@@ -3414,7 +3418,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         else
         {
             /* m->sv >= SettingsVersion_v1_10 */
-            xml::ElementNode *pelmDisabledNode;
+            xml::ElementNode *pelmDisabledNode= NULL;
             if (nic.fHasDisabledNAT)
                 pelmDisabledNode = pelmAdapter->createChild("DisabledModes");
             if (nic.fHasDisabledNAT)
@@ -3475,9 +3479,26 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     }
 
     xml::ElementNode *pelmAudio = pelmHardware->createChild("AudioAdapter");
-    pelmAudio->setAttribute("controller", (hw.audioAdapter.controllerType == AudioControllerType_SB16) ? "SB16" : "AC97");
+    const char *pcszController;
+    switch (hw.audioAdapter.controllerType)
+    {
+        case AudioControllerType_SB16:
+            pcszController = "SB16";
+            break;
+        case AudioControllerType_HDA:
+            if (m->sv >= SettingsVersion_v1_11)
+            {
+                pcszController = "HDA";
+                break;
+            }
+            /* fall through */
+        case AudioControllerType_AC97:
+        default:
+            pcszController = "AC97"; break;
+    }
+    pelmAudio->setAttribute("controller", pcszController);
 
-    if (   m->sv >= SettingsVersion_v1_10)
+    if (m->sv >= SettingsVersion_v1_10)
     {
         xml::ElementNode *pelmRTC = pelmHardware->createChild("RTC");
         pelmRTC->setAttribute("localOrUTC", fRTCUseUTC ? "UTC" : "local");

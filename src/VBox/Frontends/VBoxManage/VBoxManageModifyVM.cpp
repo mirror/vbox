@@ -1725,6 +1725,8 @@ int handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_SB16));
                 else if (!strcmp(ValueUnion.psz, "ac97"))
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_AC97));
+                else if (!strcmp(ValueUnion.psz, "hda"))
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_HDA));
                 else
                 {
                     errorArgument("Invalid --audiocontroller argument '%s'", ValueUnion.psz);

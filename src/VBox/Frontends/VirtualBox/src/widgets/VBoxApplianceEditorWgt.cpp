@@ -405,6 +405,7 @@ QWidget * HardwareItem::createEditor (QWidget *aParent, const QStyleOptionViewIt
                     QComboBox *e = new QComboBox (aParent);
                     e->addItem (vboxGlobal().toString (KAudioControllerType_AC97), KAudioControllerType_AC97);
                     e->addItem (vboxGlobal().toString (KAudioControllerType_SB16), KAudioControllerType_SB16);
+                    e->addItem (vboxGlobal().toString (KAudioControllerType_HDA),  KAudioControllerType_HDA);
                     editor = e;
                     break;
                 }
