@@ -3807,7 +3807,12 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
      * Tell the trunk if necessary.
      */
     if (pTrunk && pTrunk->pIfPort)
+    {
+        if (!fActive)
+            intnetR0BusyWait(pNetwork, &pTrunk->cBusy);
+
         pTrunk->pIfPort->pfnSetState(pTrunk->pIfPort, fActive ? INTNETTRUNKIFSTATE_ACTIVE : INTNETTRUNKIFSTATE_INACTIVE);
+    }
 
     RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
 
