@@ -235,15 +235,11 @@ int handleSnapshot(HandlerArg *a)
     }
     if (!pMachine)
         return 1;
-    Bstr guidMachine;
-    pMachine->COMGETTER(Id)(guidMachine.asOutParam());
 
     do
     {
-        /* we have to open a session for this task. First try an existing session */
-        rc = a->virtualBox->OpenExistingSession(a->session, guidMachine);
-        if (FAILED(rc))
-            CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, guidMachine));
+        /* we have to open a session for this task (new or shared) */
+        rc = pMachine->LockForSession(a->session, true /* fPermitShared */, NULL);
         ComPtr<IConsole> console;
         CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
 

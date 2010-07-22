@@ -115,7 +115,7 @@ Machine::Data::Data()
     mGuestPropertiesModified = FALSE;
 
     mSession.mPid = NIL_RTPROCESS;
-    mSession.mState = SessionState_Closed;
+    mSession.mState = SessionState_Unlocked;
 }
 
 Machine::Data::~Data()
@@ -2677,6 +2677,121 @@ STDMETHODIMP Machine::COMSETTER(IoBandwidthMax)(ULONG  aIoBandwidthMax)
     return S_OK;
 }
 
+/**
+ *  @note Locks objects!
+ */
+STDMETHODIMP Machine::LockForSession(ISession *aSession,
+                                     BOOL fPermitShared,
+                                     SessionType_T *pSessionType)
+{
+    CheckComArgNotNull(aSession);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* check the session state */
+    SessionState_T state;
+    HRESULT rc = aSession->COMGETTER(State)(&state);
+    if (FAILED(rc)) return rc;
+
+    if (state != SessionState_Unlocked)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("The given session is busy"));
+
+    /* get the IInternalSessionControl interface */
+    ComPtr<IInternalSessionControl> control = aSession;
+    ComAssertMsgRet(!!control, ("No IInternalSessionControl interface"),
+                    E_INVALIDARG);
+
+    rc = openSession(control);
+
+    if (FAILED(rc) && fPermitShared)
+        // try again @todo r=dj check exact error code!
+        rc = openExistingSession(control);
+
+    if (SUCCEEDED(rc))
+    {
+        /*
+        *  tell the client watcher thread to update the set of
+        *  machines that have open sessions
+        */
+        mParent->updateClientWatcher();
+
+        /* fire an event */
+        mParent->onSessionStateChange(getId(), SessionState_Locked);
+
+        // return session type to caller
+        if (pSessionType)
+            aSession->COMGETTER(Type)(pSessionType);
+    }
+
+    return rc;
+}
+
+/**
+ *  @note Locks objects!
+ */
+STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
+                                      IN_BSTR aType,
+                                      IN_BSTR aEnvironment,
+                                      IProgress **aProgress)
+{
+    CheckComArgNotNull(aSession);
+    CheckComArgStrNotEmptyOrNull(aType);
+    CheckComArgOutSafeArrayPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* check the session state */
+    SessionState_T state;
+    HRESULT rc = aSession->COMGETTER(State)(&state);
+    if (FAILED(rc)) return rc;
+
+    if (state != SessionState_Unlocked)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("The given session is busy"));
+
+    /* get the IInternalSessionControl interface */
+    ComPtr<IInternalSessionControl> control = aSession;
+    ComAssertMsgRet(!!control, ("No IInternalSessionControl interface"),
+                      E_INVALIDARG);
+
+    /* get the teleporter enable state for the progress object init. */
+    BOOL fTeleporterEnabled;
+    rc = COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
+    if (FAILED(rc))
+        return rc;
+
+    /* create a progress object */
+    ComObjPtr<ProgressProxy> progress;
+    progress.createObject();
+    rc = progress->init(mParent,
+                        static_cast<IMachine*>(this),
+                        Bstr(tr("Spawning session")),
+                        TRUE /* aCancelable */,
+                        fTeleporterEnabled ? 20 : 10 /* uTotalOperationsWeight */,
+                        Bstr(tr("Spawning session")),
+                        2 /* uFirstOperationWeight */,
+                        fTeleporterEnabled ? 3 : 1 /* cOtherProgressObjectOperations */);
+    if (SUCCEEDED(rc))
+    {
+        rc = openRemoteSession(control, aType, aEnvironment, progress);
+        if (SUCCEEDED(rc))
+        {
+            progress.queryInterfaceTo(aProgress);
+
+            /* signal the client watcher thread */
+            mParent->updateClientWatcher();
+
+            /* fire an event */
+            mParent->onSessionStateChange(getId(), SessionState_Spawning);
+        }
+    }
+
+    return rc;
+}
+
 STDMETHODIMP Machine::SetBootOrder(ULONG aPosition, DeviceType_T aDevice)
 {
     if (aPosition < 1 || aPosition > SchemaDefs::MaxBootPosition)
@@ -3696,9 +3811,9 @@ STDMETHODIMP Machine::Unregister(BOOL fCloseMedia,
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     MediaList llMedia;
-    if (mData->mSession.mState != SessionState_Closed)
+    if (mData->mSession.mState != SessionState_Unlocked)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot unregister the machine '%ls' because it has an open session"),
+                        tr("Cannot unregister the machine '%ls' while it is locked"),
                            mUserData->mName.raw());
 
     // @todo optionally discard saved state
@@ -4013,9 +4128,9 @@ STDMETHODIMP Machine::CanShowConsoleWindow(BOOL *aCanShow)
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        if (mData->mSession.mState != SessionState_Open)
+        if (mData->mSession.mState != SessionState_Locked)
             return setError(VBOX_E_INVALID_VM_STATE,
-                            tr("Machine session is not open (session state: %s)"),
+                            tr("Machine is not locked for session (session state: %s)"),
                             Global::stringifySessionState(mData->mSession.mState));
 
         directControl = mData->mSession.mDirectControl;
@@ -4040,9 +4155,9 @@ STDMETHODIMP Machine::ShowConsoleWindow(ULONG64 *aWinId)
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        if (mData->mSession.mState != SessionState_Open)
+        if (mData->mSession.mState != SessionState_Locked)
             return setError(E_FAIL,
-                            tr("Machine session is not open (session state: %s)"),
+                            tr("Machine is not locked for session (session state: %s)"),
                             Global::stringifySessionState(mData->mSession.mState));
 
         directControl = mData->mSession.mDirectControl;
@@ -5264,7 +5379,7 @@ HRESULT Machine::openSession(IInternalSessionControl *aControl)
      * which allows waiting for the session to be closed, take the opportunity
      * and do a limited wait (max. 1 second). This helps a lot when the system
      * is busy and thus session closing can take a little while. */
-    if (    mData->mSession.mState == SessionState_Closing
+    if (    mData->mSession.mState == SessionState_Unlocking
         &&  mData->mSession.mProgress)
     {
         alock.leave();
@@ -5273,10 +5388,11 @@ HRESULT Machine::openSession(IInternalSessionControl *aControl)
         LogFlowThisFunc(("after waiting: mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
     }
 
-    if (mData->mSession.mState == SessionState_Open ||
-        mData->mSession.mState == SessionState_Closing)
+    if (    mData->mSession.mState == SessionState_Locked
+         || mData->mSession.mState == SessionState_Unlocking
+       )
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("A session for the machine '%ls' is currently open (or being closed)"),
+                        tr("The machine '%ls' is already locked for a session (or being unlocked)"),
                         mUserData->mName.raw());
 
     /* may not be busy */
@@ -5300,9 +5416,8 @@ HRESULT Machine::openSession(IInternalSessionControl *aControl)
 
         if (mData->mSession.mPid != pid)
             return setError(E_ACCESSDENIED,
-                            tr("An unexpected process (PID=0x%08X) has tried to open a direct "
-                               "session with the machine named '%ls', while only a process "
-                               "started by OpenRemoteSession (PID=0x%08X) is allowed"),
+                            tr("An unexpected process (PID=0x%08X) has tried to lock the "
+                               "machine '%ls', while only the process started by launchVMProcess (PID=0x%08X) is allowed"),
                             pid, mUserData->mName.raw(), mData->mSession.mPid);
     }
 
@@ -5417,7 +5532,7 @@ HRESULT Machine::openSession(IInternalSessionControl *aControl)
             }
 
             mData->mSession.mRemoteControls.clear();
-            mData->mSession.mState = SessionState_Closed;
+            mData->mSession.mState = SessionState_Unlocked;
         }
     }
     else
@@ -5431,7 +5546,7 @@ HRESULT Machine::openSession(IInternalSessionControl *aControl)
     {
         /* memorize the direct session control and cache IUnknown for it */
         mData->mSession.mDirectControl = aControl;
-        mData->mSession.mState = SessionState_Open;
+        mData->mSession.mState = SessionState_Locked;
         /* associate the SessionMachine with this Machine */
         mData->mSession.mMachine = sessionMachine;
 
@@ -5481,11 +5596,11 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
 
     LogFlowThisFunc(("mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
-    if (mData->mSession.mState == SessionState_Open ||
-        mData->mSession.mState == SessionState_Spawning ||
-        mData->mSession.mState == SessionState_Closing)
+    if (    mData->mSession.mState == SessionState_Locked
+         || mData->mSession.mState == SessionState_Spawning
+         || mData->mSession.mState == SessionState_Unlocking)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("A session for the machine '%ls' is currently open (or being opened or closed)"),
+                        tr("The machine '%ls' is already locked by a session (or being locked or unlocked)"),
                         mUserData->mName.raw());
 
     /* may not be busy */
@@ -5668,7 +5783,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
     if (FAILED(rc))
     {
         /* restore the session state */
-        mData->mSession.mState = SessionState_Closed;
+        mData->mSession.mState = SessionState_Unlocked;
         /* The failure may occur w/o any error info (from RPC), so provide one */
         return setError(VBOX_E_VM_ERROR,
                         tr("Failed to assign the machine to the session (%Rrc)"), rc);
@@ -5709,9 +5824,9 @@ HRESULT Machine::openExistingSession(IInternalSessionControl *aControl)
 
     LogFlowThisFunc(("mSession.state=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
-    if (mData->mSession.mState != SessionState_Open)
+    if (mData->mSession.mState != SessionState_Locked)
         return setError(VBOX_E_INVALID_SESSION_STATE,
-                        tr("The machine '%ls' does not have an open session"),
+                        tr("The machine '%ls' is not currently locked for a session"),
                         mUserData->mName.raw());
 
     ComAssertRet(!mData->mSession.mDirectControl.isNull(), E_FAIL);
@@ -5755,12 +5870,12 @@ HRESULT Machine::openExistingSession(IInternalSessionControl *aControl)
     alock.enter();
 
     /* need to revalidate the state after entering the lock again */
-    if (mData->mSession.mState != SessionState_Open)
+    if (mData->mSession.mState != SessionState_Locked)
     {
         aControl->Uninitialize();
 
         return setError(VBOX_E_INVALID_SESSION_STATE,
-                        tr("The machine '%ls' does not have an open session"),
+                        tr("The machine '%ls' is not currently locked for a session"),
                         mUserData->mName.raw());
     }
 
@@ -5809,8 +5924,9 @@ bool Machine::isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mData->mSession.mState == SessionState_Open ||
-        (aAllowClosing && mData->mSession.mState == SessionState_Closing))
+    if (    mData->mSession.mState == SessionState_Locked
+         || (aAllowClosing && mData->mSession.mState == SessionState_Unlocking)
+       )
     {
         AssertReturn(!mData->mSession.mMachine.isNull(), false);
 
@@ -5960,7 +6076,7 @@ bool Machine::checkForSpawnFailure()
         }
 
         mData->mSession.mRemoteControls.clear();
-        mData->mSession.mState = SessionState_Closed;
+        mData->mSession.mState = SessionState_Unlocked;
 
         /* finalize the progress after setting the state */
         if (!mData->mSession.mProgress.isNull())
@@ -5972,7 +6088,7 @@ bool Machine::checkForSpawnFailure()
         mParent->addProcessToReap(mData->mSession.mPid);
         mData->mSession.mPid = NIL_RTPROCESS;
 
-        mParent->onSessionStateChange(mData->mUuid, SessionState_Closed);
+        mParent->onSessionStateChange(mData->mUuid, SessionState_Unlocked);
         return true;
     }
 
@@ -9717,7 +9833,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     if (!mData->mSession.mType.isEmpty())
     {
         /* mType is not null when this machine's process has been started by
-         * VirtualBox::OpenRemoteSession(), therefore it is our child.  We
+         * Machine::launchVMProcess(), therefore it is our child.  We
          * need to queue the PID to reap the process (and avoid zombies on
          * Linux). */
         Assert(mData->mSession.mPid != NIL_RTPROCESS);
@@ -9777,7 +9893,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     {
         /* this must be null here (see #OnSessionEnd()) */
         Assert(mData->mSession.mDirectControl.isNull());
-        Assert(mData->mSession.mState == SessionState_Closing);
+        Assert(mData->mSession.mState == SessionState_Unlocking);
         Assert(!mData->mSession.mProgress.isNull());
     }
     if (mData->mSession.mProgress)
@@ -9798,7 +9914,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
 
     /* reset the rest of session data */
     mData->mSession.mMachine.setNull();
-    mData->mSession.mState = SessionState_Closed;
+    mData->mSession.mState = SessionState_Unlocked;
     mData->mSession.mType.setNull();
 
     /* close the interprocess semaphore before leaving the exclusive lock */
@@ -9822,7 +9938,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
 #endif
 
     /* fire an event */
-    mParent->onSessionStateChange(mData->mUuid, SessionState_Closed);
+    mParent->onSessionStateChange(mData->mUuid, SessionState_Unlocked);
 
     uninitDataAndChildObjects();
 
@@ -9917,7 +10033,7 @@ STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mData->mSession.mState != SessionState_Open)
+    if (mData->mSession.mState != SessionState_Locked)
         return VBOX_E_INVALID_OBJECT_STATE;
 
     if (!mData->mSession.mProgress.isNull())
@@ -9937,7 +10053,7 @@ STDMETHODIMP SessionMachine::EndPowerUp(LONG iResult)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mData->mSession.mState != SessionState_Open)
+    if (mData->mSession.mState != SessionState_Locked)
         return VBOX_E_INVALID_OBJECT_STATE;
 
     /* Finalize the openRemoteSession progress object. */
@@ -10132,8 +10248,8 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
 
         /* go to the closing state (essential for all open*Session() calls and
          * for #checkForDeath()) */
-        Assert(mData->mSession.mState == SessionState_Open);
-        mData->mSession.mState = SessionState_Closing;
+        Assert(mData->mSession.mState == SessionState_Locked);
+        mData->mSession.mState = SessionState_Unlocking;
 
         /* set direct control to NULL to release the remote instance */
         mData->mSession.mDirectControl.setNull();
@@ -10512,7 +10628,7 @@ bool SessionMachine::checkForDeath()
          * because it simply forgot to call ISession::Close() before exiting. We
          * threat the latter also as an abnormal termination (see
          * Session::uninit() for details). */
-        reason = mData->mSession.mState == SessionState_Closing ?
+        reason = mData->mSession.mState == SessionState_Unlocking ?
                  Uninit::Normal :
                  Uninit::Abnormal;
 
@@ -11264,7 +11380,7 @@ HRESULT SessionMachine::updateMachineStateOnClient()
          * operation to complete. For now, we accept this inconsitent behavior
          * and simply do nothing here. */
 
-        if (mData->mSession.mState == SessionState_Closing)
+        if (mData->mSession.mState == SessionState_Unlocking)
             return S_OK;
 
         AssertReturn(!directControl.isNull(), E_FAIL);

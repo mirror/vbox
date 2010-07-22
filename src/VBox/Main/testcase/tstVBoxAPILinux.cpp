@@ -265,9 +265,7 @@ void createVM(IVirtualBox *virtualBox)
             return;
         }
 
-        nsXPIDLString machineUUID;
-        machine->GetId(getter_Copies(machineUUID));
-        rc = virtualBox->OpenSession(session, machineUUID);
+        machine->LockForSession(session, false /* fPermitShared */, NULL);
         if (NS_FAILED(rc))
         {
             printf("Error, could not open session! rc=0x%x\n", rc);

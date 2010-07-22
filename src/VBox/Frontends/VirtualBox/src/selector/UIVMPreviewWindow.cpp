@@ -244,7 +244,7 @@ void UIVMPreviewWindow::sltRecreatePreview()
                 if (!session.isNull())
                 {
                     CVirtualBox vbox = vboxGlobal().virtualBox();
-                    vbox.OpenExistingSession(session, m_machine.GetId());
+                    m_machine.LockForSession(session, true /* fPermitShared */);
                     if (vbox.isOk())
                     {
                         CDisplay display = session.GetConsole().GetDisplay();

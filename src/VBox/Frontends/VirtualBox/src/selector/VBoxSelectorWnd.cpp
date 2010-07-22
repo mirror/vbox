@@ -756,10 +756,10 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /* = QString::null */)
         env.append(QString("XAUTHORITY=%1\n").arg(xauth));
 #endif
 
-    CProgress progress = vbox.OpenRemoteSession (session, id, "GUI/Qt", env);
+    CProgress progress = item->machine().LaunchVMProcess(session, "GUI/Qt", env);
     if (!vbox.isOk())
     {
-        vboxProblem().cannotOpenSession (vbox, item->machine());
+        vboxProblem().cannotOpenSession(vbox, item->machine());
         return;
     }
 
@@ -790,10 +790,13 @@ void VBoxSelectorWnd::vmDiscard (const QString &aUuid /* = QString::null */)
     session.createInstance (CLSID_Session);
     if (session.isNull())
     {
-        vboxProblem().cannotOpenSession (session);
+        vboxProblem().cannotOpenSession(session);
         return;
     }
-    vbox.OpenSession (session, id);
+
+    CMachine foundMachine = vbox.GetMachine(id);
+    if (!foundMachine.isNull())
+        foundMachine.LockForSession(session, false /* fPermitShared */);
     if (!vbox.isOk())
     {
         vboxProblem().cannotOpenSession (vbox, item->machine());
@@ -1187,7 +1190,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         CMachine m = item->machine();
 
         KMachineState state = item->state();
-        bool running = item->sessionState() != KSessionState_Closed;
+        bool running = item->sessionState() != KSessionState_Unlocked;
         bool modifyEnabled = !running && state != KMachineState_Saved;
 
         if (aRefreshDetails)
@@ -1614,7 +1617,7 @@ void VBoxTrayIcon::showSubMenu ()
         /* look at vmListViewCurrentChanged() */
         CMachine m = pItem->machine();
         KMachineState s = pItem->state();
-        bool running = pItem->sessionState() != KSessionState_Closed;
+        bool running = pItem->sessionState() != KSessionState_Unlocked;
         bool modifyEnabled = !running && s != KMachineState_Saved;
 
         /* Settings */

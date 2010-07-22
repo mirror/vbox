@@ -208,8 +208,8 @@ int testStartVM(IVirtualBox *virtualBox)
             }
 
             /* Start a VM session using the delivered VBox GUI. */
-            rc = virtualBox->OpenRemoteSession (session, guid, sessiontype,
-                                                NULL, &progress);
+            rc = machine->LaunchVMProcess(session, sessiontype,
+                                          NULL, &progress);
             if (!SUCCEEDED(rc))
             {
                 printf("Could not open remote session! rc = 0x%x\n", rc);

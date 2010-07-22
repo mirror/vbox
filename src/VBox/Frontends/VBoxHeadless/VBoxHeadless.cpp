@@ -802,10 +802,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
 
+        ComPtr<IMachine> m;
+
         /* find ID by name */
         if (id.isEmpty())
         {
-            ComPtr <IMachine> m;
             rc = virtualBox->FindMachine(Bstr(name), m.asOutParam());
             if (FAILED(rc))
             {
@@ -822,18 +823,18 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
               Utf8Str(id).raw()));
 
         // open a session
-        CHECK_ERROR_BREAK(virtualBox, OpenSession(session, id));
+        CHECK_ERROR_BREAK(m, LockForSession(session, false /* fPermitShared */, NULL));
         fSessionOpened = true;
 
         /* get the console */
-        ComPtr <IConsole> console;
+        ComPtr<IConsole> console;
         CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
 
-        /* get the machine */
-        ComPtr <IMachine> machine;
+        /* get the mutable machine */
+        ComPtr<IMachine> machine;
         CHECK_ERROR_BREAK(console, COMGETTER(Machine)(machine.asOutParam()));
 
-        ComPtr <IDisplay> display;
+        ComPtr<IDisplay> display;
         CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
 
 #ifdef VBOX_FFMPEG

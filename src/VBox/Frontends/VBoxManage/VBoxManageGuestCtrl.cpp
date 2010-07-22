@@ -284,11 +284,9 @@ static int handleExecProgram(HandlerArg *a)
     {
         do
         {
-            Bstr uuid;
-            machine->COMGETTER(Id)(uuid.asOutParam());
-
-            /* open an existing session for VM - so the VM has to be running */
-            CHECK_ERROR_BREAK(a->virtualBox, OpenExistingSession(a->session, uuid));
+            /* open an existing session for VM */
+            CHECK_ERROR_BREAK(machine, LockForSession(a->session, true /* fPermitShared */, NULL));
+            // @todo r=dj assert that it's an existing session
 
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());

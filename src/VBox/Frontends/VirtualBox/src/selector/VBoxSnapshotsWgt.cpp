@@ -443,7 +443,7 @@ void VBoxSnapshotsWgt::onCurrentChanged (QTreeWidgetItem *aItem)
     }
 
     /* Whether another direct session is open or not */
-    bool busy = mSessionState != KSessionState_Closed;
+    bool busy = mSessionState != KSessionState_Unlocked;
 
     /* Machine state of the current state item */
     KMachineState s = KMachineState_Null;
@@ -570,7 +570,7 @@ void VBoxSnapshotsWgt::deleteSnapshot()
 
 
     /* Open a direct session (this call will handle all errors) */
-    bool busy = mSessionState != KSessionState_Closed;
+    bool busy = mSessionState != KSessionState_Unlocked;
     CSession session = vboxGlobal().openSession (mMachineId, busy /* aExisting */);
     if (session.isNull())
         return;
@@ -640,7 +640,7 @@ void VBoxSnapshotsWgt::takeSnapshot()
     if (dlg.exec() == QDialog::Accepted)
     {
         /* Open a direct session (this call will handle all errors) */
-        bool busy = mSessionState != KSessionState_Closed;
+        bool busy = mSessionState != KSessionState_Unlocked;
         CSession session = vboxGlobal().openSession (mMachineId, busy /* aExisting */);
         if (session.isNull())
             return;

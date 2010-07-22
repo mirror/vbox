@@ -154,11 +154,6 @@ public:
     STDMETHOD(GetExtraDataKeys) (ComSafeArrayOut(BSTR, aKeys));
     STDMETHOD(GetExtraData) (IN_BSTR aKey, BSTR *aValue);
     STDMETHOD(SetExtraData) (IN_BSTR aKey, IN_BSTR aValue);
-    STDMETHOD(OpenSession) (ISession *aSession, IN_BSTR aMachineId);
-    STDMETHOD(OpenRemoteSession) (ISession *aSession, IN_BSTR aMachineId,
-                                  IN_BSTR aType, IN_BSTR aEnvironment,
-                                  IProgress **aProgress);
-    STDMETHOD(OpenExistingSession) (ISession *aSession, IN_BSTR aMachineId);
 
     STDMETHOD(WaitForPropertyChange) (IN_BSTR aWhat, ULONG aTimeout,
                                       BSTR *aChanged, BSTR *aValues);

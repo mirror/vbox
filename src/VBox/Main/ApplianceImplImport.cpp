@@ -1232,8 +1232,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
              ++itM)
         {
             const MyHardDiskAttachment &mhda = *itM;
-            Bstr bstrUuid(mhda.bstrUuid);           // make a copy, Windows can't handle const Bstr
-            rc2 = mVirtualBox->OpenSession(stack.pSession, bstrUuid);
+            rc2 = mhda.pMachine->LockForSession(stack.pSession, false /* fPermitShared */, NULL);
             if (SUCCEEDED(rc2))
             {
                 ComPtr<IMachine> sMachine;
@@ -1760,7 +1759,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         try
         {
             // to attach things we need to open a session for the new machine
-            rc = mVirtualBox->OpenSession(stack.pSession, bstrNewMachineId);
+            rc = pNewMachine->LockForSession(stack.pSession, false /* fPermitShared */, NULL);
             if (FAILED(rc)) DebugBreakThrow(rc);
             stack.fSessionOpen = true;
 
@@ -1781,7 +1780,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 // this is for rollback later
                 MyHardDiskAttachment mhda;
-                mhda.bstrUuid = bstrNewMachineId;
                 mhda.pMachine = pNewMachine;
                 mhda.controllerType = bstrName;
                 mhda.lControllerPort = 0;
@@ -1827,7 +1825,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 // this is for rollback later
                 MyHardDiskAttachment mhda;
-                mhda.bstrUuid = bstrNewMachineId;
                 mhda.pMachine = pNewMachine;
 
                 convertDiskAttachmentValues(*pController,
@@ -1874,7 +1871,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         try
         {
             // to attach things we need to open a session for the new machine
-            rc = mVirtualBox->OpenSession(stack.pSession, bstrNewMachineId);
+            rc = pNewMachine->LockForSession(stack.pSession, false /* fPermitShared */, NULL);
             if (FAILED(rc)) DebugBreakThrow(rc);
             stack.fSessionOpen = true;
 
@@ -1920,7 +1917,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 // this is for rollback later
                 MyHardDiskAttachment mhda;
-                mhda.bstrUuid = bstrNewMachineId;
                 mhda.pMachine = pNewMachine;
 
                 convertDiskAttachmentValues(hdc,

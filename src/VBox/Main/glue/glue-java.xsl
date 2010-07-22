@@ -2493,26 +2493,11 @@ public class VirtualBoxManager
                                             org.mozilla.interfaces.ISession.ISESSION_IID));
     }
 
-    public ISession openMachineSession(String mid) throws Exception
-    {
-        ISession s = getSessionObject();
-        try {
-          this.vbox.openExistingSession(s, mid);
-          return s;
-        } catch (Exception e) {
-          try {
-            this.vbox.openSession(s, mid);
-            return s;
-          } catch (Exception e1) {
-            closeMachineSession(s);
-            throw e1;
-          }
-        }
-    }
-
     public ISession openMachineSession(IMachine m) throws Exception
     {
-          return openMachineSession(m.getId());
+        ISession s = getSessionObject();
+        m.lockForSession(s, true /* fPermitShared */);
+        return s;
     }
 
     public void closeMachineSession(ISession s)
@@ -2579,10 +2564,9 @@ public class VirtualBoxManager
             return false;
         ISession session = getSessionObject();
 
-        String mid = m.getId();
         if (type == null)
             type = "gui";
-        IProgress p = vbox.openRemoteSession(session, mid, type, "");
+        IProgress p = m.launchVMProcess(session, type, "");
         progressBar(p, timeout);
         session.close();
         return true;
@@ -3471,26 +3455,11 @@ public class VirtualBoxManager
         }
     }
 
-    public ISession openMachineSession(String mid) throws Exception
-    {
-        ISession s = getSessionObject();
-        try {
-          this.vbox.openExistingSession(s, mid);
-          return s;
-        } catch (Exception e) {
-          try {
-            this.vbox.openSession(s, mid);
-            return s;
-          } catch (Exception e1) {
-            closeMachineSession(s);
-            throw e1;
-          }
-        }
-    }
-
     public ISession openMachineSession(IMachine m) throws Exception
     {
-          return openMachineSession(m.getId());
+        ISession s = getSessionObject();
+        m.lockForSession(s, true /* fPermitShared */ );
+        return s;
     }
 
     public void closeMachineSession(ISession s)
@@ -3539,10 +3508,9 @@ public class VirtualBoxManager
             return false;
         ISession session = getSessionObject();
 
-        String mid = m.getId();
         if (type == null)
             type = "gui";
-        IProgress p = vbox.openRemoteSession(session, mid, type, "");
+        IProgress p = m.launchVMProcess(session, type, "");
         progressBar(p, timeout);
         session.close();
         return true;

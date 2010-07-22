@@ -86,12 +86,8 @@ static int handleGetGuestProperty(HandlerArg *a)
     }
     if (machine)
     {
-        Bstr uuid;
-        machine->COMGETTER(Id)(uuid.asOutParam());
-
         /* open a session for the VM - new or existing */
-        if (FAILED (a->virtualBox->OpenSession(a->session, uuid)))
-            CHECK_ERROR_RET(a->virtualBox, OpenExistingSession(a->session, uuid), 1);
+        CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, NULL), 1);
 
         /* get the mutable session machine */
         a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -155,12 +151,8 @@ static int handleSetGuestProperty(HandlerArg *a)
     }
     if (machine)
     {
-        Bstr uuid;
-        machine->COMGETTER(Id)(uuid.asOutParam());
-
         /* open a session for the VM - new or existing */
-        if (FAILED (a->virtualBox->OpenSession(a->session, uuid)))
-            CHECK_ERROR_RET (a->virtualBox, OpenExistingSession(a->session, uuid), 1);
+        CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, NULL), 1);
 
         /* get the mutable session machine */
         a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -219,20 +211,16 @@ static int handleEnumGuestProperty(HandlerArg *a)
     }
     if (machine)
     {
-        Bstr uuid;
-        machine->COMGETTER(Id)(uuid.asOutParam());
-
         /* open a session for the VM - new or existing */
-        if (FAILED(a->virtualBox->OpenSession(a->session, uuid)))
-            CHECK_ERROR_RET (a->virtualBox, OpenExistingSession(a->session, uuid), 1);
+        CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, NULL), 1);
 
         /* get the mutable session machine */
         a->session->COMGETTER(Machine)(machine.asOutParam());
 
-        com::SafeArray <BSTR> names;
-        com::SafeArray <BSTR> values;
-        com::SafeArray <ULONG64> timestamps;
-        com::SafeArray <BSTR> flags;
+        com::SafeArray<BSTR> names;
+        com::SafeArray<BSTR> values;
+        com::SafeArray<ULONG64> timestamps;
+        com::SafeArray<BSTR> flags;
         CHECK_ERROR(machine, EnumerateGuestProperties(Bstr(Utf8Patterns),
                                                       ComSafeArrayAsOutParam(names),
                                                       ComSafeArrayAsOutParam(values),

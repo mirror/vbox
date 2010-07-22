@@ -2165,33 +2165,34 @@ bool VBoxGlobal::showVirtualBoxLicense()
  *                      which is already running, @c false to open a new direct
  *                      session.
  */
-CSession VBoxGlobal::openSession (const QString &aId, bool aExisting /* = false */)
+CSession VBoxGlobal::openSession(const QString &aId, bool aExisting /* = false */)
 {
     CSession session;
-    session.createInstance (CLSID_Session);
+    session.createInstance(CLSID_Session);
     if (session.isNull())
     {
         vboxProblem().cannotOpenSession (session);
         return session;
     }
 
-    if (aExisting)
-        mVBox.OpenExistingSession (session, aId);
-    else
+    CMachine foundMachine = CVirtualBox(mVBox).GetMachine(aId);
+    if (!foundMachine.isNull())
     {
-        mVBox.OpenSession (session, aId);
-        CMachine machine = session.GetMachine ();
-        /* Make sure that the language is in two letter code.
-         * Note: if languageId() returns an empty string lang.name() will
-         * return "C" which is an valid language code. */
-        QLocale lang (VBoxGlobal::languageId());
-        machine.SetGuestPropertyValue ("/VirtualBox/HostInfo/GUI/LanguageID", lang.name());
+        KSessionType t = foundMachine.LockForSession(session, aExisting /* fPermitShared */);
+        if (t == KSessionType_Shared)
+        {
+            CMachine machine = session.GetMachine();
+            /* Make sure that the language is in two letter code.
+             * Note: if languageId() returns an empty string lang.name() will
+             * return "C" which is an valid language code. */
+            QLocale lang(VBoxGlobal::languageId());
+            machine.SetGuestPropertyValue ("/VirtualBox/HostInfo/GUI/LanguageID", lang.name());
+        }
     }
 
     if (!mVBox.isOk())
     {
-        CMachine machine = CVirtualBox (mVBox).GetMachine (aId);
-        vboxProblem().cannotOpenSession (mVBox, machine);
+        vboxProblem().cannotOpenSession(mVBox, foundMachine);
         session.detach();
     }
 
@@ -2666,10 +2667,10 @@ void VBoxGlobal::retranslateUi()
     mMachineStates [KMachineState_DeletingSnapshotPaused] = tr ("Deleting Snapshot", "MachineState");
     mMachineStates [KMachineState_SettingUp] =  tr ("Setting Up", "MachineState");
 
-    mSessionStates [KSessionState_Closed] =     tr ("Closed", "SessionState");
-    mSessionStates [KSessionState_Open] =       tr ("Open", "SessionState");
+    mSessionStates [KSessionState_Unlocked] =   tr ("Unlocked", "SessionState");
+    mSessionStates [KSessionState_Locked] =     tr ("Locked", "SessionState");
     mSessionStates [KSessionState_Spawning] =   tr ("Spawning", "SessionState");
-    mSessionStates [KSessionState_Closing] =    tr ("Closing", "SessionState");
+    mSessionStates [KSessionState_Unlocking] =  tr ("Unlocking", "SessionState");
 
     mDeviceTypes [KDeviceType_Null] =           tr ("None", "DeviceType");
     mDeviceTypes [KDeviceType_Floppy] =         tr ("Floppy", "DeviceType");

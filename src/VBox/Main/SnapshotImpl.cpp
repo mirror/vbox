@@ -3119,9 +3119,9 @@ HRESULT SessionMachine::onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMe
         {
             AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-            if (mData->mSession.mState != SessionState_Open)
+            if (mData->mSession.mState != SessionState_Locked)
                 throw setError(VBOX_E_INVALID_VM_STATE,
-                                tr("Machine session is not open (session state: %s)"),
+                                tr("Machine is not locked by a session (session state: %s)"),
                                 Global::stringifySessionState(mData->mSession.mState));
             directControl = mData->mSession.mDirectControl;
         }

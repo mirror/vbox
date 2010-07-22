@@ -415,14 +415,12 @@ int handleUSBFilter (HandlerArg *a)
         CHECK_ERROR_RET (a->virtualBox, COMGETTER(Host) (host.asOutParam()), 1);
     else
     {
-        Bstr uuid;
-        cmd.mMachine->COMGETTER(Id)(uuid.asOutParam());
         /* open a session for the VM */
-        CHECK_ERROR_RET (a->virtualBox, OpenSession(a->session, uuid), 1);
+        CHECK_ERROR_RET(cmd.mMachine, LockForSession(a->session, false /* fPermitShared */, NULL), 1);
         /* get the mutable session machine */
         a->session->COMGETTER(Machine)(cmd.mMachine.asOutParam());
         /* and get the USB controller */
-        CHECK_ERROR_RET (cmd.mMachine, COMGETTER(USBController) (ctl.asOutParam()), 1);
+        CHECK_ERROR_RET(cmd.mMachine, COMGETTER(USBController)(ctl.asOutParam()), 1);
     }
 
     switch (cmd.mAction)
