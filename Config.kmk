@@ -466,7 +466,7 @@ if1of ($(KBUILD_TARGET), )
  # Enable Java<->MSCOM glue, bridge is provided by an external lib (Jacob)
  VBOX_WITH_JMSCOM ?= 1
 endif
-if1of ($(KBUILD_TARGET), linux solaris darwin)
+if1of ($(KBUILD_TARGET), darwin)
  # Enable Java<->JAX-WS bridge
  VBOX_WITH_JWS ?= 1
 endif
