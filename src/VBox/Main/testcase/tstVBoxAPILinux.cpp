@@ -265,7 +265,7 @@ void createVM(IVirtualBox *virtualBox)
             return;
         }
 
-        machine->LockForSession(session, false /* fPermitShared */, NULL);
+        machine->LockMachine(session, LockType_Write);
         if (NS_FAILED(rc))
         {
             printf("Error, could not open session! rc=0x%x\n", rc);

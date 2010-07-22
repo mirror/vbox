@@ -2496,7 +2496,7 @@ public class VirtualBoxManager
     public ISession openMachineSession(IMachine m) throws Exception
     {
         ISession s = getSessionObject();
-        m.lockForSession(s, true /* fPermitShared */);
+        m.lockMachine(s, LockType.Shared);
         return s;
     }
 
@@ -3458,7 +3458,7 @@ public class VirtualBoxManager
     public ISession openMachineSession(IMachine m) throws Exception
     {
         ISession s = getSessionObject();
-        m.lockForSession(s, true /* fPermitShared */ );
+        m.lockMachine(s, LockType.Shared);
         return s;
     }
 

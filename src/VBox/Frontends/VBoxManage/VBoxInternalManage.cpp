@@ -1863,8 +1863,7 @@ int CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<I
     if (FAILED(rc) || ptrMachine.isNull())
         CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]), ptrMachine.asOutParam()), 1);
 
-    SessionType_T st;
-    CHECK_ERROR_RET(ptrMachine, LockForSession(aSession, true /* fPermitShared */, &st), 1);
+    CHECK_ERROR_RET(ptrMachine, LockMachine(aSession, LockType_Shared), 1);
 
     /*
      * Get the debugger interface.

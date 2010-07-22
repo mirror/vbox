@@ -239,8 +239,7 @@ int handleSnapshot(HandlerArg *a)
     do
     {
         /* we have to open a session for this task (new or shared) */
-        SessionType_T st;
-        rc = pMachine->LockForSession(a->session, true /* fPermitShared */, &st);
+        rc = pMachine->LockMachine(a->session, LockType_Shared);
         ComPtr<IConsole> console;
         CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
 

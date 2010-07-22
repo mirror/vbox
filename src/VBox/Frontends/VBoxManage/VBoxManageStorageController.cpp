@@ -172,9 +172,11 @@ int handleStorageAttach(HandlerArg *a)
     }
 
     /* open a session for the VM (new or shared) */
-    SessionType_T type;
-    rc = machine->LockForSession(a->session, true /* fPermitShared */, &type);
-    bool fRunTime = (type == SessionType_Shared);
+    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+    SessionType_T st;
+    CHECK_ERROR_RET(a->session, COMGETTER(Type)(&st), 1);
+    bool fRunTime = (st == SessionType_Shared);
+
     if (fRunTime && !RTStrICmp(pszType, "hdd"))
     {
         errorArgument("Hard disk drives cannot be changed while the VM is running\n");
@@ -754,8 +756,7 @@ int handleStorageController(HandlerArg *a)
     }
 
     /* open a session for the VM */
-    SessionType_T st;
-    CHECK_ERROR_RET(machine, LockForSession(a->session, false /* fPermitShared */, &st), 1);
+    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
 
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());

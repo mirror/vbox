@@ -417,8 +417,7 @@ int handleDiscardState(HandlerArg *a)
         do
         {
             /* we have to open a session for this task */
-            SessionType_T st;
-            CHECK_ERROR_BREAK(machine, LockForSession(a->session, false /* fPermitShared */, &st));
+            CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Write));
             do
             {
                 ComPtr<IConsole> console;
@@ -452,8 +451,7 @@ int handleAdoptState(HandlerArg *a)
         do
         {
             /* we have to open a session for this task */
-            SessionType_T st;
-            CHECK_ERROR_BREAK(machine, LockForSession(a->session, false /* fPermitShared */, &st));
+            CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Write));
             do
             {
                 ComPtr<IConsole> console;
@@ -727,8 +725,7 @@ int handleSharedFolder(HandlerArg *a)
             ComPtr <IConsole> console;
 
             /* open an existing session for the VM */
-            SessionType_T st;
-            CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, &st), 1);
+            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
             /* get the session machine */
             CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
             /* get the session console */
@@ -743,7 +740,7 @@ int handleSharedFolder(HandlerArg *a)
         {
             /* open a session for the VM */
             SessionType_T st;
-            CHECK_ERROR_RET(machine, LockForSession(a->session, false /* fPermitShared */, &st), 1);
+            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
 
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -793,8 +790,7 @@ int handleSharedFolder(HandlerArg *a)
             ComPtr <IConsole> console;
 
             /* open an existing session for the VM */
-            SessionType_T st;
-            CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, &st), 1);
+            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
             /* get the session machine */
             CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
             /* get the session console */
@@ -808,8 +804,7 @@ int handleSharedFolder(HandlerArg *a)
         else
         {
             /* open a session for the VM */
-            SessionType_T st;
-            CHECK_ERROR_RET(machine, LockForSession(a->session, false /* fPermitShared */, &st), 1);
+            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
 
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -879,8 +874,7 @@ int handleVMStatistics(HandlerArg *a)
 
 
     /* open an existing session for the VM. */
-    SessionType_T st;
-    CHECK_ERROR(machine, LockForSession(a->session, true /* fPermitShared */, &st));
+    CHECK_ERROR(machine, LockMachine(a->session, LockType_Shared));
     if (SUCCEEDED(rc))
     {
         /* get the session console. */

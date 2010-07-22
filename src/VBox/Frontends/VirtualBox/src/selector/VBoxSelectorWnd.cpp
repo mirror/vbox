@@ -796,7 +796,7 @@ void VBoxSelectorWnd::vmDiscard (const QString &aUuid /* = QString::null */)
 
     CMachine foundMachine = vbox.GetMachine(id);
     if (!foundMachine.isNull())
-        foundMachine.LockForSession(session, false /* fPermitShared */);
+        foundMachine.LockMachine(session, KLockType_Write);
     if (!vbox.isOk())
     {
         vboxProblem().cannotOpenSession (vbox, item->machine());
