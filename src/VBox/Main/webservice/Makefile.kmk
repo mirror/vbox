@@ -286,6 +286,9 @@ endif
  vboxwebsrv_ORDERDEPS = $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
  endif # !VBOX_ONLY_SDK
 
+VBOXWEB_WSDL                   = $(VBOX_PATH_SDK)/bindings/webservice/vboxweb.wsdl
+VBOXWEBSERVICE_WSDL            = $(VBOX_PATH_SDK)/bindings/webservice/vboxwebService.wsdl
+
 ifdef VBOX_WITH_JWS
 INSTALLS += VBoxJWs-inst-jar
 
@@ -475,9 +478,6 @@ endef
 	samples/python/Makefile.glue=>python/lib/Makefile
 
 endif # VBOX_ONLY_SDK
-
-VBOXWEB_WSDL                   = $(VBOX_PATH_SDK)/bindings/webservice/vboxweb.wsdl
-VBOXWEBSERVICE_WSDL            = $(VBOX_PATH_SDK)/bindings/webservice/vboxwebService.wsdl
 
 ## @todo VBOXWEB_WSDL and VBOXWEBSERVICE_WSDL should be an install target.
 VBOXWEB_OTHERS += \
