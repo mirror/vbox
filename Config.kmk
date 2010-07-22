@@ -4338,7 +4338,7 @@ ifeq ($(KBUILD_TARGET), darwin)
 else
 
 ifeq ($(KBUILD_TARGET), linux)
- VBOX_JAVA_HOME ?= $(firstword $(wildcard $(PATH_DEVTOOLS)/linux.x86/jdk1.6.0_21)) /usr/lib/jvm/java-6-sun)
+ VBOX_JAVA_HOME ?= $(firstword $(wildcard $(PATH_DEVTOOLS)/linux.x86/jdk1.6.0_21) /usr/lib/jvm/java-6-sun)
 endif
 
 ifeq ($(KBUILD_TARGET), solaris)
