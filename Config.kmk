@@ -458,7 +458,7 @@ VBOX_WITH_VBOXBFE = 1
 #VBOX_WITH_VBOXFB = 1
 # Enables the Python<->XPCOM and Python<->COM bindings.
 VBOX_WITH_PYTHON ?= 1
-if1of ($(KBUILD_TARGET), linux solaris darwin)
+if1of ($(KBUILD_TARGET), darwin linux solaris)
  # Enable Java<->XPCOM bridge + glue code
  VBOX_WITH_JXPCOM ?= 1
 endif
@@ -466,7 +466,7 @@ if1of ($(KBUILD_TARGET), )
  # Enable Java<->MSCOM glue, bridge is provided by an external lib (Jacob)
  VBOX_WITH_JMSCOM ?= 1
 endif
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET), darwin linux)
  # Enable Java<->JAX-WS bridge
  VBOX_WITH_JWS ?= 1
 endif
