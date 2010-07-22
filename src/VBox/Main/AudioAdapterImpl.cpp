@@ -300,6 +300,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioController)(AudioControllerType_T aAud
         {
             case AudioControllerType_AC97:
             case AudioControllerType_SB16:
+            case AudioControllerType_HDA:
             {
                 mData.backup();
                 mData->mAudioController = aAudioController;

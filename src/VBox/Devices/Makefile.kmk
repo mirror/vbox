@@ -313,17 +313,12 @@ DevicesR3_SOURCES       = \
 	Network/DevPCNet.cpp \
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \
+	Audio/DevIchIntelHDA.cpp \
+	Audio/DevCodec.cpp \
 	PC/DevDMA.cpp \
 	Storage/fdc.c \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
-
-ifdef VBOX_WITH_AUDIO_INTELHD
-    DevicesR3_SOURCES += Audio/DevIchIntelHDA.cpp
-    DevicesR3_SOURCES += Audio/DevCodec.cpp
-    DevicesR3_DEFS    += VBOX_WITH_AUDIO_INTELHD
-    VBoxDD_DEFS    += VBOX_WITH_AUDIO_INTELHD
-endif
 
 ifdef VBOX_DYNAMIC_NET_ATTACH
  DevicesR3_DEFS        += VBOX_DYNAMIC_NET_ATTACH

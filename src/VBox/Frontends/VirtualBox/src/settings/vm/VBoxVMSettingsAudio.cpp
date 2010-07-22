@@ -107,6 +107,8 @@ void VBoxVMSettingsAudio::prepareComboboxes()
     mCbAudioController->clear();
     /* Refill them */
     mCbAudioController->insertItem (mCbAudioController->count(),
+        vboxGlobal().toString (KAudioControllerType_HDA));
+    mCbAudioController->insertItem (mCbAudioController->count(),
         vboxGlobal().toString (KAudioControllerType_AC97));
     mCbAudioController->insertItem (mCbAudioController->count(),
         vboxGlobal().toString (KAudioControllerType_SB16));

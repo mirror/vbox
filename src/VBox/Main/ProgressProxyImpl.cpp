@@ -312,6 +312,8 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
 {
     HRESULT hrc;
     LogFlowThisFunc(("\n"));
+    
+    NOREF(fEarly);
 
     /*
      * No point in doing this if the progress object was canceled already.
