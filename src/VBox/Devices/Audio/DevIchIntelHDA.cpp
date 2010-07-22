@@ -57,8 +57,20 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define HDA_REG_FLAG_VALUE(pState, reg, val) (HDA_REG((pState),reg) & (((HDA_REG_FIELD_FLAG_MASK(reg, val)))))
 #define HDA_REG_SVALUE(pState, reg, val) (HDA_REG_VALUE(pState, reg, val) >> (HDA_REG_FIELD_SHIFT(reg, val)))
 
-#define ICH6_HDA_REG_GCAP 0 /* range 0x00*/
+#define ICH6_HDA_REG_GCAP 0 /* range 0x00-0x01*/
 #define GCAP(pState) (HDA_REG((pState), GCAP))
+
+#define ICH6_HDA_REG_VMIN 1 /* range 0x02 */
+#define VMIN(pState) (HDA_REG((pState), VMIN))
+
+#define ICH6_HDA_REG_VMAJ 2 /* range 0x03 */
+#define VMAJ(pState) (HDA_REG((pState), VMAJ))
+
+#define ICH6_HDA_REG_OUTPAY 3 /* range 0x04-0x05 */
+#define OUTPAY(pState) (HDA_REG((pState), OUTPAY))
+
+#define ICH6_HDA_REG_INPAY 4 /* range 0x06-0x07 */
+#define INPAY(pState) (HDA_REG((pState), INPAY))
 
 #define ICH6_HDA_REG_GCTL (5)
 #define ICH6_HDA_GCTL_RST_SHIFT (0)
@@ -430,10 +442,10 @@ const static struct stIchIntelHDRegMap
     /* offset  size     read mask   write mask         read callback         write callback         abbrev      full name                     */
     /*-------  -------  ----------  ----------  -----------------------  ------------------------ ----------    ------------------------------*/
     { 0x00000, 0x00002, 0x0000FFFB, 0x00000000, hdaRegReadGCAP         , hdaRegWriteUnimplemented, "GCAP"      , "Global Capabilities" },
-    { 0x00002, 0x00001, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "VMIN"      , "Minor Version" },
-    { 0x00003, 0x00001, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "VMAJ"      , "Major Version" },
-    { 0x00004, 0x00002, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "OUTPAY"    , "Output Payload Capabilities" },
-    { 0x00006, 0x00002, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "INPAY"     , "Input Payload Capabilities" },
+    { 0x00002, 0x00001, 0x000000FF, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimplemented, "VMIN"      , "Minor Version" },
+    { 0x00003, 0x00001, 0x000000FF, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimplemented, "VMAJ"      , "Major Version" },
+    { 0x00004, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimplemented, "OUTPAY"    , "Output Payload Capabilities" },
+    { 0x00006, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimplemented, "INPAY"     , "Input Payload Capabilities" },
     { 0x00008, 0x00004, 0x00000103, 0x00000103, hdaRegReadGCTL         , hdaRegWriteGCTL         , "GCTL"      , "Global Control" },
     { 0x0000c, 0x00002, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "WAKEEN"    , "Wake Enable" },
     { 0x0000e, 0x00002, 0x00000007, 0x00000007, hdaRegReadU8           , hdaRegWriteSTATESTS     , "STATESTS"  , "State Change Status" },
@@ -1313,6 +1325,11 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     GCAP(&pThis->hda) = 0x4401; /* see 6.2.1 */
+    VMIN(&pThis->hda) = 0x00;       /* see 6.2.2 */
+    VMAJ(&pThis->hda) = 0x01;       /* see 6.2.3 */
+    VMAJ(&pThis->hda) = 0x01;       /* see 6.2.3 */
+    OUTPAY(&pThis->hda) = 0x003C;   /* see 6.2.4 */
+    INPAY(&pThis->hda)  = 0x001D;   /* see 6.2.5 */
     pThis->hda.au32Regs[ICH6_HDA_REG_CORBSIZE] = 0x42; /* see 6.2.1 */
     pThis->hda.au32Regs[ICH6_HDA_REG_RIRBSIZE] = 0x42; /* see 6.2.1 */
     STATES(&pThis->hda) = 0x5;
