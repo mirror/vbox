@@ -4197,6 +4197,10 @@ static HRESULT vboxWddmSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, IDirect3
         }
         case VBOXDISP_D3DIFTYPE_TEXTURE:
         {
+            Assert(pRc->cAllocations == 1); /* <- vboxWddmSurfGet is typically used in Blt & ColorFill functions
+                                             * in this case, if texture is used as a destination,
+                                             * we should update sub-layers as well which is not done currently
+                                             * so for now check vboxWddmSurfGet is used for one-level textures */
             IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pRc->aAllocations[0].pD3DIf;
             IDirect3DSurface9 *pSurfaceLevel;
             Assert(pD3DIfTex);
@@ -4474,10 +4478,27 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
 }
 static HRESULT APIENTRY vboxWddmDDevColorFill(HANDLE hDevice, CONST D3DDDIARG_COLORFILL* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    Assert(pDevice->pDevice9If);
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hResource;
+    Assert(pRc);
+    IDirect3DSurface9 *pSurfIf = NULL;
+    HRESULT hr = vboxWddmSurfGet(pRc, pData->SubResourceIndex, &pSurfIf);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        Assert(pSurfIf);
+        hr = pDevice->pDevice9If->ColorFill(pSurfIf, &pData->DstRect, pData->Color);
+        Assert(hr == S_OK);
+        /* @todo: check what need to do when PresentToDwm flag is set */
+        Assert(pData->Flags.Value == 0);
+
+        pSurfIf->Release();
+    }
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevDepthFill(HANDLE hDevice, CONST D3DDDIARG_DEPTHFILL* pData)
 {
