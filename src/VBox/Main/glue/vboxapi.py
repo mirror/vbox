@@ -518,12 +518,9 @@ class VirtualBoxManager:
     def initPerThread(self):
         self.platform.initPerThread()
 
-    def openMachineSession(self, machineId):
+    def openMachineSession(self, mach, permitSharing = True):
          session = self.mgr.getSessionObject(self.vbox)
-         try:
-             self.vbox.openExistingSession(session, machineId)
-         except:
-             self.vbox.openSession(session, machineId)
+         mach.lockForSession(session, permitSharing)
          return session
 
     def closeMachineSession(self, session):
