@@ -435,7 +435,7 @@ endef
 	/usr/jdk/jdk1.5*/bin/java  \
 	/opt/sun-jdk-1.5*/bin/java \
         /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Commands/java))
- ifndef VBOX_JAVA15
+ ifeq ($(strip $(VBOX_JAVA15)),)
   $(error Failed to autodetect VBOX_JAVA15, please set it manually)
  endif
  VBOX_JAVA16                   = java
@@ -446,7 +446,7 @@ endef
 	/usr/jdk/jdk1.6*/bin/wsimport \
 	/usr/bin/wsimport \
 	/opt/sun-jdk-1.6*/bin/wsimport))
- ifndef VBOX_WSIMPORT16
+ ifeq ($(strip $(VBOX_WSIMPORT16)),)
   $(error Failed to autodetect VBOX_WSIMPORT16, please set it manually)
  endif
 
