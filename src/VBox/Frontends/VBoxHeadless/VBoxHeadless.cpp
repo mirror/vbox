@@ -818,6 +818,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (FAILED(rc))
                 break;
         }
+        else
+        {
+            /* Use the GUID. */
+            rc = virtualBox->GetMachine(id, m.asOutParam());
+            if (FAILED(rc))
+            {
+                LogError("Invalid machine uid!\n", rc);
+                break;
+            }
+        }
 
         Log(("VBoxHeadless: Opening a session with machine (id={%s})...\n",
               Utf8Str(id).raw()));
