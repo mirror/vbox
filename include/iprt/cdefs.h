@@ -1293,7 +1293,7 @@
                 |            (uint8_t)(b0) ))
 
 /** @def RT_MAKE_U16
- * Constructs a uint32_t value from two uint16_t values.
+ * Constructs a uint16_t value from two uint8_t values.
  */
 #define RT_MAKE_U16(Lo, Hi) \
     ((uint16_t)(  (uint16_t)((uint8_t)(Hi)) << 8 \
