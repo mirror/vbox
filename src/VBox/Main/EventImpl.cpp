@@ -60,6 +60,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/critsect.h>
 #include <iprt/asm.h>
+#include <iprt/time.h>
 
 #include <VBox/com/array.h>
 
@@ -575,6 +576,7 @@ private:
     RTCRITSECT                    mcsQLock;
     PassiveQueue                  mQueue;
     int32_t                       mRefCnt;
+    uint64_t                      mLastRead;
 
 public:
     ListenerRecord(IEventListener*                    aListener,
@@ -733,6 +735,7 @@ ListenerRecord::ListenerRecord(IEventListener*                  aListener,
     {
         ::RTCritSectInit(&mcsQLock);
         ::RTSemEventCreate (&mQEvent);
+        mLastRead = RTTimeMilliTS();
     }
 }
 
@@ -804,8 +807,18 @@ HRESULT ListenerRecord::process(IEvent*                     aEvent,
 HRESULT ListenerRecord::enqueue (IEvent* aEvent)
 {
     AssertMsg(!mActive, ("must be passive\n"));
+
     // put an event the queue
     ::RTCritSectEnter(&mcsQLock);
+
+    // If there was no events reading from the listener for the long time, 
+    // and events keep coming we shall unregister it.
+    if ((mQueue.size() > 200) && ((RTTimeMilliTS() - mLastRead) > 60 * 1000))
+    {
+        ::RTCritSectLeave(&mcsQLock);
+        return E_ABORT;
+    }
+
     mQueue.push_back(aEvent);
     ::RTCritSectLeave(&mcsQLock);
 
@@ -825,6 +838,9 @@ HRESULT ListenerRecord::dequeue (IEvent*       *aEvent,
     RecordHolder<ListenerRecord> holder(this);
 
     ::RTCritSectEnter(&mcsQLock);
+
+    mLastRead = RTTimeMilliTS();
+
     if (mQueue.empty())    {
         ::RTCritSectLeave(&mcsQLock);
         // Speed up common case
@@ -1025,7 +1041,7 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
              */
             cbRc = record.obj()->process(aEvent, aWaitable, pit, alock);
 
-            if (FAILED_DEAD_INTERFACE(cbRc))
+            if (FAILED_DEAD_INTERFACE(cbRc) || (cbRc == E_ABORT))
             {
                 Listeners::iterator lit = m->mListeners.find(record.obj()->mListener);
                 if (lit != m->mListeners.end())
