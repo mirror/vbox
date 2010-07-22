@@ -87,7 +87,8 @@ int handleControlVM(HandlerArg *a)
         return 1;
 
     /* open a session for the VM */
-    CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, NULL), 1);
+    SessionType_T st;
+    CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, &st), 1);
 
     do
     {

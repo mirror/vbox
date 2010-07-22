@@ -87,7 +87,8 @@ static int handleGetGuestProperty(HandlerArg *a)
     if (machine)
     {
         /* open a session for the VM - new or existing */
-        CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, NULL), 1);
+        SessionType_T st;
+        CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, &st), 1);
 
         /* get the mutable session machine */
         a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -152,7 +153,8 @@ static int handleSetGuestProperty(HandlerArg *a)
     if (machine)
     {
         /* open a session for the VM - new or existing */
-        CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, NULL), 1);
+        SessionType_T st;
+        CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, &st), 1);
 
         /* get the mutable session machine */
         a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -212,7 +214,8 @@ static int handleEnumGuestProperty(HandlerArg *a)
     if (machine)
     {
         /* open a session for the VM - new or existing */
-        CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, NULL), 1);
+        SessionType_T st;
+        CHECK_ERROR_RET(machine, LockForSession(a->session, true /* fPermitShared */, &st), 1);
 
         /* get the mutable session machine */
         a->session->COMGETTER(Machine)(machine.asOutParam());
