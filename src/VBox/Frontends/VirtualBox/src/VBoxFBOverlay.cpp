@@ -469,7 +469,7 @@ private:
 
 int VBoxVHWAGlShader::init()
 {
-    int rc;
+    int rc = VERR_GENERAL_FAILURE;
     GLint *length;
     const char **sources;
     length = new GLint[mcComponents];
@@ -480,55 +480,59 @@ int VBoxVHWAGlShader::init()
         rc = maComponents[i]->init();
         AssertRC(rc);
         if(RT_FAILURE(rc))
-            return rc;
+            break;
         sources[i] = maComponents[i]->contents();
     }
 
-#ifdef DEBUG
-    VBOXQGLLOG(("\ncompiling shaders:\n------------\n"));
-    for(int i = 0; i < mcComponents; i++)
+    if(RT_SUCCESS(rc))
     {
-        VBOXQGLLOG(("**********\n%s\n***********\n", sources[i]));
-    }
-    VBOXQGLLOG(("------------\n"));
+#ifdef DEBUG
+        VBOXQGLLOG(("\ncompiling shaders:\n------------\n"));
+        for(int i = 0; i < mcComponents; i++)
+        {
+            VBOXQGLLOG(("**********\n%s\n***********\n", sources[i]));
+        }
+        VBOXQGLLOG(("------------\n"));
 #endif
-    mShader = vboxglCreateShader(mType);
+        mShader = vboxglCreateShader(mType);
 
-    VBOXQGL_CHECKERR(
-            vboxglShaderSource(mShader, mcComponents, sources, length);
-            );
+        VBOXQGL_CHECKERR(
+                vboxglShaderSource(mShader, mcComponents, sources, length);
+                );
 
-    VBOXQGL_CHECKERR(
-            vboxglCompileShader(mShader);
-            );
+        VBOXQGL_CHECKERR(
+                vboxglCompileShader(mShader);
+                );
 
-    GLint compiled;
-    VBOXQGL_CHECKERR(
-            vboxglGetShaderiv(mShader, GL_COMPILE_STATUS, &compiled);
-            );
+        GLint compiled;
+        VBOXQGL_CHECKERR(
+                vboxglGetShaderiv(mShader, GL_COMPILE_STATUS, &compiled);
+                );
 
 #ifdef DEBUG
-    GLchar * pBuf = new GLchar[16300];
-    vboxglGetShaderInfoLog(mShader, 16300, NULL, pBuf);
-    VBOXQGLLOG(("\ncompile log:\n-----------\n%s\n---------\n", pBuf));
-    delete pBuf;
+        GLchar * pBuf = new GLchar[16300];
+        vboxglGetShaderInfoLog(mShader, 16300, NULL, pBuf);
+        VBOXQGLLOG(("\ncompile log:\n-----------\n%s\n---------\n", pBuf));
+        delete[] pBuf;
 #endif
 
-    Assert(compiled);
-    if(compiled)
-    {
-        return VINF_SUCCESS;
+        Assert(compiled);
+        if(compiled)
+        {
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            VBOXQGL_CHECKERR(
+                    vboxglDeleteShader(mShader);
+                    );
+            mShader = 0;
+        }
     }
-
-
-    VBOXQGL_CHECKERR(
-            vboxglDeleteShader(mShader);
-            );
-    mShader = 0;
 
     delete[] length;
     delete[] sources;
-    return VERR_GENERAL_FAILURE;
+    return rc;
 }
 
 class VBoxVHWAGlProgram
