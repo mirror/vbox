@@ -248,63 +248,58 @@ static int vboxserviceVMInfoWriteUsers(void)
     setutent();
     utmp *ut_user;
     uint32_t cUtmpEntries = 0;
+    uint32_t cListSize = 32;
 
-    /* Count all users to allocate a sufficient big array. */
-    while ((ut_user = getutent()))
+	/* Allocate a first array to hold 32 users max. */
+	char **aUsers = (char**)RTMemAllocZ(cListSize * sizeof(char*));
+	if (aUsers == NULL)
+		rc = VERR_NO_MEMORY;
+
+	/* Process all entries in the utmp file. */
+    while (   (ut_user = getutent()) 
+           && RT_SUCCESS(rc))
     {
+		VBoxServiceVerbose(1, "bar: %s\n", ut_user->ut_user);
+		
+		if (cUtmpEntries > cListSize)
+		{
+			cListSize += 32;
+			aUsers = (char**)RTMemRealloc(aUsers, cListSize * sizeof(char*));
+			AssertPtrBreakStmt(aUsers, rc = VERR_NO_MEMORY);
+		}
+		
         /* Make sure we don't add user names which are not
          * part of type USER_PROCESS. */
         if (ut_user->ut_type == USER_PROCESS)
-            cUtmpEntries++;
+        {		
+			cUtmpEntries++;
+			
+			bool fFound = false;
+			for (uint32_t u = 0; u < cUsersInList && !fFound; u++)
+				fFound = (strcmp((const char*)aUsers[u], ut_user->ut_user) == 0) ? true : false;
+
+            if (!fFound)
+				rc = RTStrAAppend(&aUsers[cUsersInList++], (const char*)ut_user->ut_user);
+		}
     }
-    /** @todo r=bird: Guess what happens if someone logs in right now.
-     *        Better do all in a single loop and dynamically resize arrays. */
+    
+    /* Build final user list. */
+	for (uint32_t u = 0; u < cUsersInList; u++)
+	{
+		if (u > 0)
+		{
+			rc = RTStrAAppend(&pszUserList, ",");
+			AssertRCBreakStmt(rc, RTStrFree(pszUserList));
+		}
+		rc = RTStrAAppend(&pszUserList, (const char*)aUsers[u]);
+		AssertRCBreakStmt(rc, RTStrFree(pszUserList));
+	}
 
-    if (cUtmpEntries) /* Do we have some users at all? */
-    {
-        setutent(); /* Rewind utmp file pointer to start from beginning. */
-
-        /* Build up array with logged in users. */
-        char **aUsers = (char**)RTMemAlloc(cUtmpEntries * sizeof(char*));
-        if (aUsers)
-        {
-            /* Store user in array. */
-            while (   (ut_user = getutent())
-                   && RT_SUCCESS(rc))
-            {
-                if (ut_user->ut_type == USER_PROCESS)
-                {
-                    bool fFound = false;
-                    for (uint32_t u = 0; u < cUsersInList && !fFound; u++)
-                        fFound = (strcmp((const char*)aUsers[u], ut_user->ut_user) == 0) ? true : false;
-
-                    if (!fFound)
-/** @todo r=bird: RTStrAAppend on an uninitailized variable. Didn't use
- *        RTMemAllocZ!. */
-                        rc = RTStrAAppend(&aUsers[cUsersInList++], (const char*)ut_user->ut_user);
-                }
-            }
-
-            /* Build final user list. */
-            for (uint32_t u = 0; u < cUsersInList; u++)
-            {
-                if (u > 0)
-                {
-                    rc = RTStrAAppend(&pszUserList, ",");
-                    AssertRCBreakStmt(rc, RTStrFree(pszUserList));
-                }
-                rc = RTStrAAppend(&pszUserList, (const char*)aUsers[u]);
-                AssertRCBreakStmt(rc, RTStrFree(pszUserList));
-            }
-
-            /* Cleanup. */
-            for (uint32_t u = 0; u < cUsersInList; u++)
-                RTStrFree(aUsers[u]);
-            RTMemFree(aUsers);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
+	/* Cleanup. */
+	for (uint32_t u = 0; u < cUsersInList; u++)
+		RTStrFree(aUsers[u]);
+	RTMemFree(aUsers);  
+    
     endutent(); /* Close utmp file. */
 #endif
     Assert(RT_FAILURE(rc) || cUsersInList == 0 || (pszUserList && *pszUserList));
