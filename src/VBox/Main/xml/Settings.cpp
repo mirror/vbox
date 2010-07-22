@@ -1437,6 +1437,7 @@ bool SharedFolder::operator==(const SharedFolder &g) const
              || (    (strName       == g.strName)
                   && (strHostPath   == g.strHostPath)
                   && (fWritable     == g.fWritable)
+                  && (fAutoMount    == g.fAutoMount)
                 )
            );
 }
@@ -2496,6 +2497,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmFolder->getAttributeValue("name", sf.strName);
                 pelmFolder->getAttributeValue("hostPath", sf.strHostPath);
                 pelmFolder->getAttributeValue("writable", sf.fWritable);
+                pelmFolder->getAttributeValue("autoMount", sf.fAutoMount);
                 hw.llSharedFolders.push_back(sf);
             }
         }
@@ -3539,6 +3541,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmThis->setAttribute("name", sf.strName);
         pelmThis->setAttribute("hostPath", sf.strHostPath);
         pelmThis->setAttribute("writable", sf.fWritable);
+        pelmThis->setAttribute("autoMount", sf.fAutoMount);
     }
 
     xml::ElementNode *pelmClip = pelmHardware->createChild("Clipboard");

@@ -683,6 +683,7 @@ int handleSharedFolder(HandlerArg *a)
         char *hostpath = NULL;
         bool fTransient = false;
         bool fWritable = true;
+        bool fAutoMount = false;
 
         for (int i = 2; i < a->argc; i++)
         {
@@ -712,6 +713,11 @@ int handleSharedFolder(HandlerArg *a)
             {
                 fTransient = true;
             }
+            else if (   !strcmp(a->argv[i], "--automount")
+                     || !strcmp(a->argv[i], "-automount"))
+            {
+                fAutoMount = true;
+            }
             else
                 return errorSyntax(USAGE_SHAREDFOLDER_ADD, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
         }
@@ -736,8 +742,8 @@ int handleSharedFolder(HandlerArg *a)
             /* get the session console */
             CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), 1);
 
-            CHECK_ERROR(console, CreateSharedFolder(Bstr(name), Bstr(hostpath), fWritable));
-
+            CHECK_ERROR(console, CreateSharedFolder(Bstr(name), Bstr(hostpath),
+                                                    fWritable, fAutoMount));
             if (console)
                 a->session->Close();
         }
@@ -749,8 +755,8 @@ int handleSharedFolder(HandlerArg *a)
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
 
-            CHECK_ERROR(machine, CreateSharedFolder(Bstr(name), Bstr(hostpath), fWritable));
-
+            CHECK_ERROR(machine, CreateSharedFolder(Bstr(name), Bstr(hostpath),
+                                                    fWritable, fAutoMount));
             if (SUCCEEDED(rc))
                 CHECK_ERROR(machine, SaveSettings());
 

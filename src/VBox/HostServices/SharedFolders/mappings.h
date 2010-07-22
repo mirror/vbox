@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,25 +29,26 @@ typedef struct
     bool        fHostCaseSensitive;
     bool        fGuestCaseSensitive;
     bool        fWritable;
+    bool        fAutoMount;
 } MAPPING, *PMAPPING;
 
 void vbsfMappingInit(void);
 
 bool vbsfMappingQuery(uint32_t iMapping, PMAPPING *pMapping);
 
-int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWritable);
-int vbsfMappingsRemove (PSHFLSTRING pMapName);
+int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWritable, uint32_t fAutoMount);
+int vbsfMappingsRemove(PSHFLSTRING pMapName);
 
-int vbsfMappingsQuery (SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t *pcMappings);
-int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pString);
-int vbsfMappingsQueryWritable (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWritable);
+int vbsfMappingsQuery(SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t *pcMappings);
+int vbsfMappingsQueryName(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pString);
+int vbsfMappingsQueryWritable(SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWritable);
 
-int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 delimiter, bool fCaseSensitive, SHFLROOT *pRoot);
-int vbsfUnmapFolder (SHFLCLIENTDATA *pClient, SHFLROOT root);
+int vbsfMapFolder(SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 delimiter, bool fCaseSensitive, SHFLROOT *pRoot);
+int vbsfUnmapFolder(SHFLCLIENTDATA *pClient, SHFLROOT root);
 
-PCRTUTF16     vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot);
-bool          vbsfIsGuestMappingCaseSensitive (SHFLROOT root);
-bool          vbsfIsHostMappingCaseSensitive (SHFLROOT root);
+PCRTUTF16 vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot);
+bool vbsfIsGuestMappingCaseSensitive (SHFLROOT root);
+bool vbsfIsHostMappingCaseSensitive (SHFLROOT root);
 
 int vbsfMappingLoaded (const MAPPING *pLoadedMapping, SHFLROOT root);
 MAPPING *vbsfMappingGetByRoot(SHFLROOT root);

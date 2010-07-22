@@ -1,9 +1,10 @@
 /** @file
- * VBoxRestore - Restore notification
+ * VBoxHostVersion - Checks the host's VirtualBox version and notifies
+ *                   the user in case of an update.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;

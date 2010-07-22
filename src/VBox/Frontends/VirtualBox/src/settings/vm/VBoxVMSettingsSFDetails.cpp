@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -97,6 +97,16 @@ void VBoxVMSettingsSFDetails::setWriteable (bool aWritable)
 bool VBoxVMSettingsSFDetails::isWriteable() const
 {
     return !mCbReadonly->isChecked();
+}
+
+void VBoxVMSettingsSFDetails::setAutoMount (bool aAutoMount)
+{
+    mCbAutoMount->setChecked (aAutoMount);
+}
+
+bool VBoxVMSettingsSFDetails::isAutoMounted() const
+{
+    return mCbAutoMount->isChecked();
 }
 
 void VBoxVMSettingsSFDetails::setPermanent (bool aPermanent)

@@ -3937,7 +3937,7 @@ STDMETHODIMP Machine::SetCurrentSnapshot(IN_BSTR /* aId */)
     return setError(E_NOTIMPL, "Not implemented");
 }
 
-STDMETHODIMP Machine::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
+STDMETHODIMP Machine::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount)
 {
     CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgStrNotEmptyOrNull(aHostPath);
@@ -3958,7 +3958,7 @@ STDMETHODIMP Machine::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL 
                         aName);
 
     sharedFolder.createObject();
-    rc = sharedFolder->init(getMachine(), aName, aHostPath, aWritable);
+    rc = sharedFolder->init(getMachine(), aName, aHostPath, aWritable, aAutoMount);
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_SharedFolders);
@@ -6894,7 +6894,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
              ++it)
         {
             const settings::SharedFolder &sf = *it;
-            rc = CreateSharedFolder(Bstr(sf.strName), Bstr(sf.strHostPath), sf.fWritable);
+            rc = CreateSharedFolder(Bstr(sf.strName), Bstr(sf.strHostPath), sf.fWritable, sf.fAutoMount);
             if (FAILED(rc)) return rc;
         }
 
@@ -7958,6 +7958,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
             sf.strName = pFolder->getName();
             sf.strHostPath = pFolder->getHostPath();
             sf.fWritable = !!pFolder->isWritable();
+            sf.fAutoMount = !!pFolder->isAutoMounted();
 
             data.llSharedFolders.push_back(sf);
         }

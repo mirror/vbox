@@ -309,8 +309,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 uint32_t cbMappings    = paParms[2].u.pointer.size;
 
                 /* Verify parameters values. */
-                if (   (fu32Flags & ~SHFL_MF_UTF8) != 0
-                    || cbMappings / sizeof (SHFLMAPPING) < cMappings
+                if (   (fu32Flags & ~SHFL_MF_MASK) != 0
+                    || cbMappings / sizeof (SHFLMAPPING) != cMappings
                    )
                 {
                     rc = VERR_INVALID_PARAMETER;
@@ -319,15 +319,14 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 {
                     /* Execute the function. */
                     if (fu32Flags & SHFL_MF_UTF8)
-                    {
                         pClient->fu32Flags |= SHFL_CF_UTF8;
-                    }
+                    if (fu32Flags & SHFL_MF_AUTOMOUNT)
+                        pClient->fu32Flags |= SHFL_MF_AUTOMOUNT;
 
-                    rc = vbsfMappingsQuery (pClient, pMappings, &cMappings);
-
+                    rc = vbsfMappingsQuery(pClient, pMappings, &cMappings);
                     if (RT_SUCCESS(rc))
                     {
-                        /* Update parameters.*/
+                        /* Update parameters. */
                         paParms[1].u.uint32 = cMappings;
                     }
                 }
@@ -345,8 +344,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             {
                 rc = VERR_INVALID_PARAMETER;
             }
-            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* root */
-                     || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR     /* name */
+            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* Root. */
+                     || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR   /* Name. */
                     )
             {
                 rc = VERR_INVALID_PARAMETER;
@@ -365,12 +364,12 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 {
                     /* Execute the function. */
-                    rc = vbsfMappingsQueryName (pClient, root, pString);
+                    rc = vbsfMappingsQueryName(pClient, root, pString);
 
                     if (RT_SUCCESS(rc))
                     {
                         /* Update parameters.*/
-                        ; /* none */
+                        ; /* None. */
                     }
                 }
             }
@@ -1161,14 +1160,18 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 paParms[2].u.uint32 ? "writable" : "read-only"));
 
         /* Verify parameter count and types. */
-        if (cParms != SHFL_CPARMS_ADD_MAPPING)
+        if (   (cParms != SHFL_CPARMS_ADD_MAPPING)
+            && (cParms != SHFL_CPARMS_ADD_MAPPING2) /* With auto-mount flag. */
+           )
         {
             rc = VERR_INVALID_PARAMETER;
         }
         else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR     /* host folder name */
                  || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR     /* guest map name */
                  || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT   /* fWritable */
-                )
+                 /* With auto-mount flag? */
+                 || (   cParms == SHFL_CPARMS_ADD_MAPPING2
+                     && paParms[3].type != VBOX_HGCM_SVC_PARM_32BIT))
         {
             rc = VERR_INVALID_PARAMETER;
         }
@@ -1178,6 +1181,11 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             SHFLSTRING *pFolderName = (SHFLSTRING *)paParms[0].u.pointer.addr;
             SHFLSTRING *pMapName    = (SHFLSTRING *)paParms[1].u.pointer.addr;
             uint32_t fWritable      = paParms[2].u.uint32;
+            uint32_t fAutoMount     = 0; /* Disabled by default. */
+
+            /* Handle auto-mount flag if present. */
+            if (cParms == SHFL_CPARMS_ADD_MAPPING2)
+                fAutoMount = paParms[3].u.uint32;
 
             /* Verify parameters values. */
             if (    !ShflStringIsValid(pFolderName, paParms[0].u.pointer.size)
@@ -1189,8 +1197,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             else
             {
                 /* Execute the function. */
-                rc = vbsfMappingsAdd (pFolderName, pMapName, fWritable);
-
+                rc = vbsfMappingsAdd(pFolderName, pMapName, fWritable, fAutoMount);
                 if (RT_SUCCESS(rc))
                 {
                     /* Update parameters.*/

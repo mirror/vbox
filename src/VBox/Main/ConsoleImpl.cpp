@@ -1173,6 +1173,9 @@ Console::saveStateFileExec(PSSMHANDLE pSSM, void *pvUser)
 
         vrc = SSMR3PutBool(pSSM, !!folder->isWritable());
         AssertRC(vrc);
+
+        vrc = SSMR3PutBool(pSSM, !!folder->isAutoMounted());
+        AssertRC(vrc);
     }
 
     return;
@@ -1235,6 +1238,7 @@ Console::loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
         Bstr name;
         Bstr hostPath;
         bool writable = true;
+        bool autoMount = false;
 
         uint32_t szBuf = 0;
         char *buf = NULL;
@@ -1258,9 +1262,12 @@ Console::loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
         if (u32Version > 0x00010000)
             SSMR3GetBool(pSSM, &writable);
 
+        if (u32Version > 0x00010000) // ???
+            SSMR3GetBool(pSSM, &autoMount);
+
         ComObjPtr<SharedFolder> sharedFolder;
         sharedFolder.createObject();
-        HRESULT rc = sharedFolder->init(this, name, hostPath, writable);
+        HRESULT rc = sharedFolder->init(this, name, hostPath, writable, autoMount);
         AssertComRCReturn(rc, VERR_INTERNAL_ERROR);
 
         mSharedFolders.insert(std::make_pair(name, sharedFolder));
@@ -2659,7 +2666,7 @@ STDMETHODIMP Console::FindUSBDeviceById(IN_BSTR aId, IUSBDevice **aDevice)
 }
 
 STDMETHODIMP
-Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
+Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount)
 {
     CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgStrNotEmptyOrNull(aHostPath);
@@ -2691,7 +2698,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
             aName);
 
     sharedFolder.createObject();
-    rc = sharedFolder->init(this, aName, aHostPath, aWritable);
+    rc = sharedFolder->init(this, aName, aHostPath, aWritable, aAutoMount);
     if (FAILED(rc)) return rc;
 
     /* protect mpVM (if not NULL) */
@@ -2711,7 +2718,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
         }
 
         /* second, create the given folder */
-        rc = createSharedFolder(aName, SharedFolderData(aHostPath, aWritable));
+        rc = createSharedFolder(aName, SharedFolderData(aHostPath, aWritable, aAutoMount));
         if (FAILED(rc)) return rc;
     }
 
@@ -5122,7 +5129,9 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         /* third, insert console folders */
         for (SharedFolderMap::const_iterator it = mSharedFolders.begin();
              it != mSharedFolders.end(); ++ it)
-            sharedFolders[it->first] = SharedFolderData(it->second->getHostPath(), it->second->isWritable());
+            sharedFolders[it->first] = SharedFolderData(it->second->getHostPath(),
+                                                        it->second->isWritable(),
+                                                        it->second->isAutoMounted());
     }
 
     Bstr savedStateFile;
@@ -5750,14 +5759,18 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
             Bstr name;
             Bstr hostPath;
             BOOL writable;
+            BOOL autoMount;
 
             rc = folder->COMGETTER(Name)(name.asOutParam());
             if (FAILED(rc)) break;
             rc = folder->COMGETTER(HostPath)(hostPath.asOutParam());
             if (FAILED(rc)) break;
             rc = folder->COMGETTER(Writable)(&writable);
+            if (FAILED(rc)) break;
+            rc = folder->COMGETTER(AutoMount)(&autoMount);
+            if (FAILED(rc)) break;
 
-            mMachineSharedFolders.insert(std::make_pair(name, SharedFolderData(hostPath, writable)));
+            mMachineSharedFolders.insert(std::make_pair(name, SharedFolderData(hostPath, writable, autoMount)));
 
             /* send changes to HGCM if the VM is running */
             /// @todo report errors as runtime warnings through VMSetError
@@ -5779,7 +5792,7 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
                                 mGlobalSharedFolders.end())
                             rc = removeSharedFolder(name);
                         /* create the new machine folder */
-                        rc = createSharedFolder(name, SharedFolderData(hostPath, writable));
+                        rc = createSharedFolder(name, SharedFolderData(hostPath, writable, autoMount));
                     }
                 }
                 /* forget the processed (or identical) folder */
@@ -5867,7 +5880,7 @@ HRESULT Console::createSharedFolder(CBSTR aName, SharedFolderData aData)
     AssertReturn(mpVM, E_FAIL);
     AssertReturn(mVMMDev->isShFlActive(), E_FAIL);
 
-    VBOXHGCMSVCPARM parms[SHFL_CPARMS_ADD_MAPPING];
+    VBOXHGCMSVCPARM parms[SHFL_CPARMS_ADD_MAPPING2];
     SHFLSTRING *pFolderName, *pMapName;
     size_t cbString;
 
@@ -5907,9 +5920,18 @@ HRESULT Console::createSharedFolder(CBSTR aName, SharedFolderData aData)
     parms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
     parms[2].u.uint32 = aData.mWritable;
 
+    /*
+     * Auto-mount flag; is indicated by using the SHFL_CPARMS_ADD_MAPPING2
+     * define below.  This shows the host service that we have supplied
+     * an additional parameter (auto-mount) and keeps the actual command
+     * backwards compatible.
+     */
+    parms[3].type = VBOX_HGCM_SVC_PARM_32BIT;
+    parms[3].u.uint32 = aData.mAutoMount;
+
     int vrc = mVMMDev->hgcmHostCall("VBoxSharedFolders",
                                     SHFL_FN_ADD_MAPPING,
-                                    SHFL_CPARMS_ADD_MAPPING, &parms[0]);
+                                    SHFL_CPARMS_ADD_MAPPING2, &parms[0]);
     RTMemFree(pFolderName);
     RTMemFree(pMapName);
 

@@ -486,7 +486,7 @@ public:
     STDMETHOD(GetSnapshot)(IN_BSTR aId, ISnapshot **aSnapshot);
     STDMETHOD(FindSnapshot)(IN_BSTR aName, ISnapshot **aSnapshot);
     STDMETHOD(SetCurrentSnapshot)(IN_BSTR aId);
-    STDMETHOD(CreateSharedFolder)(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable);
+    STDMETHOD(CreateSharedFolder)(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount);
     STDMETHOD(RemoveSharedFolder)(IN_BSTR aName);
     STDMETHOD(CanShowConsoleWindow)(BOOL *aCanShow);
     STDMETHOD(ShowConsoleWindow)(ULONG64 *aWinId);

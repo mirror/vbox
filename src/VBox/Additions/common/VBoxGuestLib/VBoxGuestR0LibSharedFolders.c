@@ -1,10 +1,10 @@
 /* $Revision$ */
 /** @file
- * VBoxGuestLibR0 - Central calls.
+ * VBoxGuestR0LibSharedFolders - Ring 0 Shared Folders calls.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,10 +28,10 @@
 #ifndef VBGL_VBOXGUEST
 
 #ifdef RT_OS_LINUX
-# include "VBoxCalls.h"
+# include "VBoxGuestR0LibSharedFolders.h"
 # define DbgPrint RTAssertMsg2Weak
 #else
-# include "VBoxCalls.h"
+# include "VBoxGuestR0LibSharedFolders.h"
 #endif
 #include <iprt/time.h>
 #include <iprt/mem.h>

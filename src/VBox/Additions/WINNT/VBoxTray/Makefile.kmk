@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -40,6 +40,13 @@ ifdef VBOX_WITH_GUEST_PROPS
  VBoxTray_DEFS     +=  _WIN32_IE=0x500 VBOX_WITH_GUEST_PROPS
  VBoxTray_SOURCES  += \
 	VBoxHostVersion.cpp
+endif
+ifdef VBOX_WITH_SHARED_FOLDERS
+ VBoxTray_DEFS     +=  VBOX_WITH_SHARED_FOLDERS
+ VBoxTray_SOURCES  += \
+	VBoxSharedFolders.cpp
+ VBoxTray_LIBS.win += \
+	mpr.lib
 endif
 
 VBoxTray_LIBS     = \
