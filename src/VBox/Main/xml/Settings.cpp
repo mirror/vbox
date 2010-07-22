@@ -528,16 +528,24 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
     {
         case SettingsVersion_v1_8:
             pcszVersion = "1.8";
-        break;
+            break;
 
         case SettingsVersion_v1_9:
             pcszVersion = "1.9";
-        break;
+            break;
 
         case SettingsVersion_v1_10:
-        case SettingsVersion_Future:                // can be set if this code runs on XML files that were created by a future version of VBox;
-                                                    // in that case, downgrade to current version when writing since we can't write future versions...
             pcszVersion = "1.10";
+            break;
+
+        case SettingsVersion_v1_11:
+            pcszVersion = "1.11";
+            break;
+
+        case SettingsVersion_Future:
+            // can be set if this code runs on XML files that were created by a future version of VBox;
+            // in that case, downgrade to current version when writing since we can't write future versions...
+            pcszVersion = "1.11";
             m->sv = SettingsVersion_v1_10;
         break;
 
@@ -4198,7 +4206,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             }
         }
     }
-    // Check for non default I/O settings and bump the settings version.
+    // VirtualBox 3.2: Check for non default I/O settings and bump the settings version.
     if (m->sv < SettingsVersion_v1_10)
     {
         if (   hardwareMachine.ioSettings.fIoCacheEnabled != true
@@ -4209,11 +4217,17 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 
     // VirtualBox 3.2 adds support for VRDP video channel
     if (    m->sv < SettingsVersion_v1_10
-         && (    hardwareMachine.vrdpSettings.fVideoChannel
-            )
+        && (    hardwareMachine.vrdpSettings.fVideoChannel
+           )
        )
         m->sv = SettingsVersion_v1_10;
 
+    // VirtualBox 3.3 adds support for HD audio
+    if (    m->sv < SettingsVersion_v1_11
+        && (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
+            )
+       )
+        m->sv = SettingsVersion_v1_11;
 }
 
 /**
