@@ -415,8 +415,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
     }
     return VINF_SUCCESS;
 }
-#define STAC9220_VERB_SIZE 61
-static CODECVERB STAC9220VERB[STAC9220_VERB_SIZE] =
+
+static CODECVERB STAC9220VERB[] =
 {
 /*    verb     | verb mask              | callback               */
 /*  -----------  --------------------   -----------------------  */
@@ -576,7 +576,7 @@ int stac9220Construct(CODECState *pState)
 {
     audsettings_t as;
     pState->pVerbs = (CODECVERB *)&STAC9220VERB;
-    pState->cVerbs = STAC9220_VERB_SIZE;
+    pState->cVerbs = sizeof(STAC9220VERB)/sizeof(CODECVERB);
     pState->pfnLookup = codecLookup;
     pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * STAC9220_NODE_COUNT);
     uint8_t i;
