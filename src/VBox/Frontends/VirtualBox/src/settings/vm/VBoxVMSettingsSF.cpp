@@ -234,6 +234,11 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (int aType, QWidget *aParent)
     retranslateUi();
 }
 
+void VBoxVMSettingsSF::resizeEvent (QResizeEvent *aEvent)
+{
+    adjustList();
+}
+
 void VBoxVMSettingsSF::getFromGlobal()
 {
     AssertMsgFailed (("Global shared folders are not supported now!\n"));
@@ -476,19 +481,33 @@ void VBoxVMSettingsSF::showContextMenu (const QPoint &aPos)
 
 void VBoxVMSettingsSF::adjustList()
 {
-    /* Calculating required columns size & watching those columns (0 and 2) to feat 1/3 of total width. */
+    /*
+     * Calculates required columns sizes to max out column 2
+     * and let all other columns stay at their minimum sizes.
+     *
+     * Columns
+     * 0 = Tree view
+     * 1 = Shared Folder name
+     * 2 = Auto-mount flag
+     * 3 = Writable flag
+     */
     QAbstractItemView *itemView = mTwFolders;
     QHeaderView *itemHeader = mTwFolders->header();
     int total = mTwFolders->viewport()->width();
+
     int mw0 = qMax (itemView->sizeHintForColumn (0), itemHeader->sectionSizeHint (0));
     int mw2 = qMax (itemView->sizeHintForColumn (2), itemHeader->sectionSizeHint (2));
-    int w0 = mw0 < total / 3 ? mw0 : total / 3;
-    int w2 = mw2 < total / 3 ? mw2 : total / 3;
+    int mw3 = qMax (itemView->sizeHintForColumn (3), itemHeader->sectionSizeHint (3));
+
+    int w0 = mw0 < total / 4 ? mw0 : total / 4;
+    int w2 = mw2 < total / 4 ? mw2 : total / 4;
+    int w3 = mw3 < total / 4 ? mw3 : total / 4;
 
     /* Giving 1st column all the available space. */
     mTwFolders->setColumnWidth (0, w0);
-    mTwFolders->setColumnWidth (1, total - w0 - w2);
+    mTwFolders->setColumnWidth (1, total - w0 - w2 - w3);
     mTwFolders->setColumnWidth (2, w2);
+    mTwFolders->setColumnWidth (3, w3);
 }
 
 void VBoxVMSettingsSF::adjustFields()
