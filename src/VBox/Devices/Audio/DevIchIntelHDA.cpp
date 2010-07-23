@@ -363,7 +363,6 @@ typedef struct INTELHDLinkState
     uint64_t    u64RIRBBase;
     uint64_t    u64DPBase;
     uint8_t     u8CORBRP;
-    uint8_t     cResponse;
     /* pointer on CORB buf */
     uint32_t    *pu32CorbBuf;
     /* size in bytes of CORB buf */
@@ -674,6 +673,7 @@ static int hdaCORBCmdProcess(INTELHDLinkState *pState)
     uint8_t corbRp;
     uint8_t corbWp;
     uint8_t rirbWp;
+    uint8_t u8Counter = 0;
 
     PFNCODECVERBPROCESSOR pfn = (PFNCODECVERBPROCESSOR)NULL;
     
@@ -693,22 +693,23 @@ static int hdaCORBCmdProcess(INTELHDLinkState *pState)
         rc = (pState)->Codec.pfnLookup(&pState->Codec, cmd, &pfn);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
+        Assert(pfn);
         (rirbWp)++;
         rc = pfn(&pState->Codec, cmd, &pState->pu64RirbBuf[rirbWp]);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
-        pState->cResponse++;
+        u8Counter++;
+        if (u8Counter == RINTCNT_N(pState))
+            break;
     }
     pState->au32Regs[ICH6_HDA_REG_CORBRP] = corbRp;
     pState->au32Regs[ICH6_HDA_REG_RIRBWP] = rirbWp;
     rc = hdaCmdSync(pState, false);
     Log(("hda: CORB(RP:%x, WP:%x) RIRBWP:%x\n", CORBRP(pState), CORBWP(pState), RIRBWP(pState)));
-    if (   RIRBCTL_RIRB_RIC(pState)
-        && (pState)->cResponse == RINTCNT_N(pState))
+    if (RIRBCTL_RIRB_RIC(pState))
     {
         RIRBSTS((pState)) |= HDA_REG_FIELD_FLAG_MASK(RIRBSTS,RINTFL);
         rc = hdaProcessInterrupt(pState);
-        (pState)->cResponse = 0;
     }
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
