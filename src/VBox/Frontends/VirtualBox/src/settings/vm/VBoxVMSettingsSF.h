@@ -78,6 +78,8 @@ private slots:
 
 private:
 
+    void resizeEvent (QResizeEvent *aEvent);
+
     void showEvent (QShowEvent *aEvent);
 
     void createSharedFolder (const QString &aName, const QString &aPath, bool aWritable, bool aAutoMount, SFDialogType aType);
