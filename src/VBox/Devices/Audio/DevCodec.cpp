@@ -89,7 +89,7 @@ static int codecUnimplemented(struct CODECState *pState, uint32_t cmd, uint64_t 
     Log(("codecUnimplemented: cmd(raw:%x: cad:%x, d:%c, nid:%x, verb:%x)\n", cmd,
         CODEC_CAD(cmd), CODEC_DIRECT(cmd) ? 'N' : 'Y', CODEC_NID(cmd), CODEC_VERBDATA(cmd)));
     if (CODEC_CAD(cmd) != 0)
-        *pResp = ((uint64_t)CODEC_CAD(cmd) << 4)| 0xFFFFFFFF;
+        *pResp = ((uint64_t)CODEC_CAD(cmd) << 4)| 0x0;
     else
         *pResp = 0;
     return VINF_SUCCESS;
@@ -224,9 +224,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             break;
         case 1:
             pNode->afg.node.name = "AFG";
-            //** @todo r=michaln: Are the comments right? Looks like copy & paste.
-            pNode->node.au32F00_param[4] = RT_MAKE_U32_FROM_U8(0x1a, 0x00, 0x02, 0x00); /* node info (start node: 1, start id = 1) */
-            pNode->node.au32F00_param[5] = RT_MAKE_U32_FROM_U8(0x1, 0x01, 0x00, 0x0); /* node info (start node: 1, start id = 1) */
+            pNode->node.au32F00_param[4] = RT_MAKE_U32_FROM_U8(0x1a, 0x00, 0x02, 0x00); 
+            pNode->node.au32F00_param[5] = RT_MAKE_U32_FROM_U8(0x1, 0x01, 0x00, 0x0); 
             pNode->node.au32F00_param[8] = RT_MAKE_U32_FROM_U8(0x0d, 0x0d, 0x01, 0x0); /* Capabilities */
             //pNode->node.au32F00_param[0xa] = RT_BIT(19)|RT_BIT(18)|RT_BIT(17)|RT_BIT(10)|RT_BIT(9)|RT_BIT(8)|RT_BIT(7)|RT_BIT(6)|RT_BIT(5);
             pNode->node.au32F00_param[0xa] = RT_BIT(17)|RT_BIT(5);
@@ -390,8 +389,6 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 0x16:
             pNode->node.name = "VolumeKnob";
             pNode->node.au32F00_param[0x9] = (0x6 << 20);
-            //** @todo r=michaln: The next assignment is out of array bounds (0x13 items in array);
-            //  the array needs to be bigger.
             pNode->node.au32F00_param[0x13] = RT_BIT(7)| 0x7F;
             pNode->node.au32F00_param[0xe] = 0x4;
             *(uint32_t *)pNode->node.au8F02_param = RT_MAKE_U32_FROM_U8(0x2, 0x3, 0x4, 0x5);
@@ -581,7 +578,6 @@ int stac9220Construct(CODECState *pState)
     pState->pVerbs = (CODECVERB *)&STAC9220VERB;
     pState->cVerbs = STAC9220_VERB_SIZE;
     pState->pfnLookup = codecLookup;
-    //** @todo r=michaln: Where is this memory freed?
     pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * STAC9220_NODE_COUNT);
     uint8_t i;
     for (i = 0; i < STAC9220_NODE_COUNT; ++i)
@@ -609,4 +605,8 @@ int stac9220Construct(CODECState *pState)
     AUD_set_volume_out(pState->voice_po, mute, lvol, rvol);
     return VINF_SUCCESS;
 }
-int stac9220Destruct(CODECState *pCodecState);
+int stac9220Destruct(CODECState *pCodecState)
+{
+    RTMemFree(pCodecState->pNodes);
+    return VINF_SUCCESS;
+}
