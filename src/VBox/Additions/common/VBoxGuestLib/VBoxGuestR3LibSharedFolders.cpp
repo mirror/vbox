@@ -89,31 +89,15 @@ VBGLR3DECL(int) VbglR3SharedFolderDisconnect(uint32_t u32ClientId)
  * Get the list of available shared folders.
  *
  * @returns VBox status code.
- * @param   u32ClientId     The client id returned by VbglR3InvsSvcConnect().
+ * @param   u32ClientId     The client id returned by VbglR3SharedFolderConnect().
  * @param   fAutoMountOnly  Flag whether only auto-mounted shared folders
  *                          should be reported.
- * @param   paMappings      Pointer to a preallocated array which will retrieve the mapping info.
- * @param   cbMappings      Size (in bytes) of the provided array.
- * @param   pcMappings      On input, the size of @a paMappings gives as an
- *                          item count.  On output, the number of mappings
- *                          returned in @a paMappings.
- *
- * @todo    r=bird: cbMappings and @a *pcMappings overlap.  The better API
- *          would be to change cbMappings to cMappings (the entries are fixed
- *          sized) and move the move the input aspect of @a *pcMappings to it.
- *
- *          However, it would be better if this function would do the array
- *          allocation.  This way you could deal with too-much-data conditions
- *          here (or hide the max-number-of-shared-folders-per-vm-define).
- *          Then paMappings would become ppaMappings and cbMappings could be
- *          removed altogether. *pcMappings would only be output.  A
- *          corresponding VbglR3SharedFolderFreeMappings would be required for
- *          a 100% clean API (this is an (/going to be) offical API for C/C++
- *          programs).
+ * @param   ppaMappings     Allocated array which will retrieve the mapping info.  Needs
+ *                          to be freed with VbglR3SharedFolderFreeMappings() later.
+ * @param   pcMappings      The number of mappings returned in @a ppaMappings.
  */
 VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMountOnly,
-                                              PVBGLR3SHAREDFOLDERMAPPING paMappings, uint32_t cbMappings,
-                                              uint32_t *pcMappings)
+                                              PVBGLR3SHAREDFOLDERMAPPING *ppaMappings, uint32_t *pcMappings)
 {
     AssertPtr(pcMappings);
 
@@ -130,17 +114,61 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMo
         u32Flags |= SHFL_MF_AUTOMOUNT;
     VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
 
-    /* Init the rest of the message. */
-    VbglHGCMParmUInt32Set(&Msg.numberOfMappings, *pcMappings);
-    VbglHGCMParmPtrSet(&Msg.mappings, &paMappings[0], cbMappings);
+    /*
+     * Prepare and get the actual mappings from the host service.
+     */
+    int rc = VINF_SUCCESS;
+    uint32_t cMappings = 8; /* Should be a good default value. */
+    uint32_t cbSize = cMappings * sizeof(VBGLR3SHAREDFOLDERMAPPING);
+    VBGLR3SHAREDFOLDERMAPPING *ppaMappingsTemp = (PVBGLR3SHAREDFOLDERMAPPING)RTMemAllocZ(cbSize);
+    if (ppaMappingsTemp == NULL)
+        rc = VERR_NO_MEMORY;
 
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    *pcMappings = 0;
+    do
     {
-        VbglHGCMParmUInt32Get(&Msg.numberOfMappings, pcMappings);
-        rc = Msg.callInfo.result;
-    }
+        VbglHGCMParmUInt32Set(&Msg.numberOfMappings, cMappings);
+        VbglHGCMParmPtrSet(&Msg.mappings, ppaMappingsTemp, cbSize);
+
+        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            rc = Msg.callInfo.result;
+            if (RT_SUCCESS(rc))
+            {
+                VbglHGCMParmUInt32Get(&Msg.numberOfMappings, pcMappings);
+
+                /* Do we have more mappings than we have allocated space for? */
+                if (rc == VINF_BUFFER_OVERFLOW)
+                {
+                    cMappings = *pcMappings;
+                    cbSize = cMappings * sizeof(VBGLR3SHAREDFOLDERMAPPING);
+                    void *pvNew = RTMemRealloc(ppaMappingsTemp, cbSize);
+                    AssertPtrBreakStmt(pvNew, rc = VERR_NO_MEMORY);
+                    ppaMappingsTemp = (PVBGLR3SHAREDFOLDERMAPPING)pvNew;
+                }
+                else
+                    *ppaMappings = ppaMappingsTemp;
+            }
+        }
+    } while (rc == VINF_BUFFER_OVERFLOW);
+
+    if (RT_FAILURE(rc) && ppaMappingsTemp)
+        RTMemFree(ppaMappingsTemp);
+
     return rc;
+}
+
+
+/**
+ * Frees the shared folder mappings allocated by
+ * VbglR3SharedFolderGetMappings() before.
+ *
+ * @param   paMappings     What
+ */
+VBGLR3DECL(void) VbglR3SharedFolderFreeMappings(PVBGLR3SHAREDFOLDERMAPPING paMappings)
+{
+    RTMemFree(paMappings);
 }
 
 
@@ -178,10 +206,12 @@ VBGLR3DECL(int) VbglR3SharedFolderGetName(uint32_t u32ClientId, uint32_t u32Root
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
         if (RT_SUCCESS(rc))
         {
-            *ppszName = NULL;
-            rc = RTUtf16ToUtf8(&pString->String.ucs2[0], ppszName);
+            rc = Msg.callInfo.result;
             if (RT_SUCCESS(rc))
-                rc = Msg.callInfo.result; /** @todo r=bird: Shouldn't you check this *before* doing the conversion? */
+            {
+                *ppszName = NULL;
+                rc = RTUtf16ToUtf8(&pString->String.ucs2[0], ppszName);
+            }
         }
         RTMemFree(pString);
     }

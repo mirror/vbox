@@ -378,7 +378,7 @@ typedef struct _SHFLMAPPING
     /** Root handle. */
     SHFLROOT root;
 } SHFLMAPPING;
-
+/** Pointer to a SHFLMAPPING structure. */
 typedef SHFLMAPPING *PSHFLMAPPING;
 
 /** @} */

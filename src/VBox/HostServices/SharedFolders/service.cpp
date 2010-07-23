@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -326,6 +326,11 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     rc = vbsfMappingsQuery(pClient, pMappings, &cMappings);
                     if (RT_SUCCESS(rc))
                     {
+                        /* Report that there are more mappings to get if
+                         * handed in buffer is too small. */
+                        if (paParms[1].u.uint32 < cMappings)
+                            rc = VINF_BUFFER_OVERFLOW;
+
                         /* Update parameters. */
                         paParms[1].u.uint32 = cMappings;
                     }

@@ -1273,12 +1273,15 @@ int listSharedFolders(int argc, char **argv)
 {
     bool usageOK = true;
     bool fOnlyShowAutoMount = false;
-    if (   argc == 1
-        && (   RTStrICmp(argv[0], "-automount") == 0
-            || RTStrICmp(argv[0], "/automount") == 0)
-       )
+    if (argc == 1)
     {
-        fOnlyShowAutoMount = true;
+        if (   RTStrICmp(argv[0], "-automount") == 0
+            || RTStrICmp(argv[0], "/automount") == 0)
+        {
+            fOnlyShowAutoMount = true;
+        }
+        else
+            usageOK = false;
     }
     else if (argc > 1)
         usageOK = false;
@@ -1295,43 +1298,36 @@ int listSharedFolders(int argc, char **argv)
         VBoxControlError("Failed to connect to the shared folder service, error %Rrc\n", rc);
     else
     {
-        uint32_t cMappings = 64; /* See shflsvc.h for define; should be used later. */
-        uint32_t cbMappings = cMappings * sizeof(VBGLR3SHAREDFOLDERMAPPING);
-        VBGLR3SHAREDFOLDERMAPPING *paMappings = (PVBGLR3SHAREDFOLDERMAPPING)RTMemAlloc(cbMappings);
-
-        if (paMappings)
+        PVBGLR3SHAREDFOLDERMAPPING paMappings;
+        uint32_t cMappings;
+        rc = VbglR3SharedFolderGetMappings(u32ClientId, fOnlyShowAutoMount,
+                                           &paMappings, &cMappings);
+        if (RT_SUCCESS(rc))
         {
-            rc = VbglR3SharedFolderGetMappings(u32ClientId, fOnlyShowAutoMount,
-                                               paMappings, cbMappings,
-                                               &cMappings);
-            if (RT_SUCCESS(rc))
-            {
-                /* Maximum mappings, see shflsvc.h */
-                if (cMappings > 64)
-                    cMappings = 64;
-                RTPrintf("Shared Folder Mappings (%u):\n\n", cMappings);
-                for (uint32_t i = 0; i < cMappings; i++)
-                {
-                    char *pszName;
-                    rc = VbglR3SharedFolderGetName(u32ClientId, paMappings[i].u32Root, &pszName);
-                    if (RT_SUCCESS(rc))
-                    {
-                        RTPrintf("%02u - %s\n", i + 1, pszName);
-                        RTStrFree(pszName);
-                    }
-                    else
-                        VBoxControlError("Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
-                                         paMappings[i].u32Root, rc);
-                }
-                if (cMappings == 0)
-                    RTPrintf("No Shared Folders available.\n");
-            }
+            if (fOnlyShowAutoMount)
+                RTPrintf("Auto-mounted Shared Folder mappings (%u):\n\n", cMappings);
             else
-                VBoxControlError("Error while getting the shared folder mappings, rc = %Rrc\n", rc);
-            RTMemFree(paMappings);
+                RTPrintf("Shared Folder mappings (%u):\n\n", cMappings);
+
+            for (uint32_t i = 0; i < cMappings; i++)
+            {
+                char *pszName;
+                rc = VbglR3SharedFolderGetName(u32ClientId, paMappings[i].u32Root, &pszName);
+                if (RT_SUCCESS(rc))
+                {
+                    RTPrintf("%02u - %s\n", i + 1, pszName);
+                    RTStrFree(pszName);
+                }
+                else
+                    VBoxControlError("Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
+                                     paMappings[i].u32Root, rc);
+            }
+            if (cMappings == 0)
+                RTPrintf("No Shared Folders available.\n");
+            VbglR3SharedFolderFreeMappings(paMappings);
         }
         else
-            rc = VERR_NO_MEMORY;
+            VBoxControlError("Error while getting the shared folder mappings, rc = %Rrc\n", rc);
         VbglR3SharedFolderDisconnect(u32ClientId);
     }
     return RT_SUCCESS(rc) ? 0 : 1;

@@ -36,7 +36,7 @@ void vbsfMappingInit(void)
     }
 }
 
-int vbsfMappingLoaded (const MAPPING *pLoadedMapping, SHFLROOT root)
+int vbsfMappingLoaded(const PMAPPING pLoadedMapping, SHFLROOT root)
 {
     /* Mapping loaded from the saved state with the index. Which means
      * the guest uses the iMapping as root handle for this folder.
@@ -172,8 +172,8 @@ static void vbsfRootHandleRemove(SHFLROOT iMapping)
 /*
  * We are always executed from one specific HGCM thread. So thread safe.
  */
-int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
-                     uint32_t    fWritable,   uint32_t    fAutoMount)
+int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
+                    uint32_t fWritable, uint32_t fAutoMount)
 {
     unsigned i;
 
@@ -254,7 +254,7 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
     return VINF_SUCCESS;
 }
 
-int vbsfMappingsRemove (PSHFLSTRING pMapName)
+int vbsfMappingsRemove(PSHFLSTRING pMapName)
 {
     unsigned i;
 
@@ -293,7 +293,7 @@ int vbsfMappingsRemove (PSHFLSTRING pMapName)
     return VINF_SUCCESS;
 }
 
-PCRTUTF16 vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot)
+PCRTUTF16 vbsfMappingsQueryHostRoot(SHFLROOT root, uint32_t *pcbRoot)
 {
     MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
     if (pFolderMapping == NULL)
@@ -306,7 +306,7 @@ PCRTUTF16 vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot)
     return &pFolderMapping->pFolderName->String.ucs2[0];
 }
 
-bool vbsfIsGuestMappingCaseSensitive (SHFLROOT root)
+bool vbsfIsGuestMappingCaseSensitive(SHFLROOT root)
 {
     MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
     if (pFolderMapping == NULL)
@@ -318,7 +318,7 @@ bool vbsfIsGuestMappingCaseSensitive (SHFLROOT root)
     return pFolderMapping->fGuestCaseSensitive;
 }
 
-bool vbsfIsHostMappingCaseSensitive (SHFLROOT root)
+bool vbsfIsHostMappingCaseSensitive(SHFLROOT root)
 {
     MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
     if (pFolderMapping == NULL)
@@ -330,37 +330,52 @@ bool vbsfIsHostMappingCaseSensitive (SHFLROOT root)
     return pFolderMapping->fHostCaseSensitive;
 }
 
-int vbsfMappingsQuery (SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t *pcMappings)
+/**
+ * Note: If pMappings/*pcMappings is smaller than the actual amount of mappings
+ *       that *could* have been returned *pcMappings contains the required buffer size
+ *       so that the caller can retry the operation if wanted.
+ */
+int vbsfMappingsQuery(PSHFLCLIENTDATA pClient, PSHFLMAPPING pMappings, uint32_t *pcMappings)
 {
     int rc = VINF_SUCCESS;
-    uint32_t cMaxMappings = RT_MIN(*pcMappings, SHFL_MAX_MAPPINGS);
+
+    uint32_t cMappings = 0; /* Will contain actual valid mappings. */
+    uint32_t idx = 0;       /* Current index in mappings buffer. */
 
     LogFlow(("vbsfMappingsQuery: pClient = %p, pMappings = %p, pcMappings = %p, *pcMappings = %d\n",
              pClient, pMappings, pcMappings, *pcMappings));
 
-    *pcMappings = 0;
-    for (uint32_t i=0;i<cMaxMappings;i++)
+    for (uint32_t i = 0; i < SHFL_MAX_MAPPINGS; i++)
     {
         MAPPING *pFolderMapping = vbsfMappingGetByRoot(i);
         if (   pFolderMapping != NULL
             && pFolderMapping->fValid == true)
         {
-            /* Skip mappings which are not marked for auto-mounting if
-             * the SHFL_MF_AUTOMOUNT flag ist set. */
-            if (   (pClient->fu32Flags & SHFL_MF_AUTOMOUNT)
-                && !pFolderMapping->fAutoMount)
-                continue;
+            if (idx < *pcMappings)
+            {
+                /* Skip mappings which are not marked for auto-mounting if
+                 * the SHFL_MF_AUTOMOUNT flag ist set. */
+                if (   (pClient->fu32Flags & SHFL_MF_AUTOMOUNT)
+                    && !pFolderMapping->fAutoMount)
+                    continue;
 
-            pMappings[*pcMappings].u32Status = SHFL_MS_NEW;
-            pMappings[*pcMappings].root = i;
-            *pcMappings = *pcMappings + 1;
+                pMappings[idx].u32Status = SHFL_MS_NEW;
+                pMappings[idx].root = i;
+                idx++;
+            }
+            cMappings++;
         }
     }
+
+    /* Return actual number of mappings, regardless whether the handed in
+     * mapping buffer was big enough. */
+    *pcMappings = cMappings;
+
     LogFlow(("vbsfMappingsQuery: return rc = %Rrc\n", rc));
     return rc;
 }
 
-int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pString)
+int vbsfMappingsQueryName(PSHFLCLIENTDATA pClient, SHFLROOT root, SHFLSTRING *pString)
 {
     int rc = VINF_SUCCESS;
 
@@ -393,7 +408,7 @@ int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *p
     return rc;
 }
 
-int vbsfMappingsQueryWritable (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWritable)
+int vbsfMappingsQueryWritable(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fWritable)
 {
     int rc = VINF_SUCCESS;
 
@@ -416,7 +431,7 @@ int vbsfMappingsQueryWritable (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWr
     return rc;
 }
 
-int vbsfMappingsQueryAutoMount (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fAutoMount)
+int vbsfMappingsQueryAutoMount(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fAutoMount)
 {
     int rc = VINF_SUCCESS;
 
@@ -439,7 +454,8 @@ int vbsfMappingsQueryAutoMount (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fA
     return rc;
 }
 
-int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 delimiter, bool fCaseSensitive, SHFLROOT *pRoot)
+int vbsfMapFolder(PSHFLCLIENTDATA pClient, PSHFLSTRING pszMapName,
+                  RTUTF16 delimiter, bool fCaseSensitive, SHFLROOT *pRoot)
 {
     MAPPING *pFolderMapping = NULL;
 
@@ -489,7 +505,7 @@ int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 deli
     return VINF_SUCCESS;
 }
 
-int vbsfUnmapFolder (SHFLCLIENTDATA *pClient, SHFLROOT root)
+int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root)
 {
     int rc = VINF_SUCCESS;
 
