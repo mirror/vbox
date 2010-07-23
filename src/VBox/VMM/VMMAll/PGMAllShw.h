@@ -212,7 +212,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
         if (pfFlags)
         {
             *pfFlags = (Pde.u & ~SHW_PDE_PG_MASK);
-# if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE)
+# if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE)    /** @todo why do we have to check the guest state here? */
             if ((Pde.u & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu))
                 *pfFlags |= X86_PTE_PAE_NX;
 # endif
@@ -265,7 +265,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     {
         *pfFlags = (Pte.u & ~SHW_PTE_PG_MASK)
                  & ((Pde.u & (X86_PTE_RW | X86_PTE_US)) | ~(uint64_t)(X86_PTE_RW | X86_PTE_US));
-# if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE)
+# if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE) /** @todo why do we have to check the guest state here? */
         /* The NX bit is determined by a bitwise OR between the PT and PD */
         if (((Pte.u | Pde.u) & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu))
             *pfFlags |= X86_PTE_PAE_NX;
