@@ -405,10 +405,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         if (    PdeSrc.b.u1Size
-#   if PGM_GST_TYPE == PGM_TYPE_32BIT
-            &&  CPUMIsGuestPageSizeExtEnabled(pVCpu)
-#   endif
-            )
+            &&  GST_IS_PSE_ACTIVE(pVCpu))
             GCPhys = GST_GET_PDE_BIG_PG_GCPHYS(pVM, PdeSrc)
                     | ((RTGCPHYS)pvFault & (GST_BIG_PAGE_OFFSET_MASK ^ PAGE_OFFSET_MASK));
         else
@@ -1137,12 +1134,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     else
         PdeSrc.u = 0;
 # endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
-
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
-    const bool      fIsBigPage  = PdeSrc.b.u1Size && CPUMIsGuestPageSizeExtEnabled(pVCpu);
-# else
-    const bool      fIsBigPage  = PdeSrc.b.u1Size;
-# endif
+    const bool      fIsBigPage  = PdeSrc.b.u1Size && GST_IS_PSE_ACTIVE(pVCpu);
 
 # ifdef IN_RING3
     /*
@@ -1760,11 +1752,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     /*
      * Check that the page is present and that the shadow PDE isn't out of sync.
      */
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
-    const bool      fBigPage  = PdeSrc.b.u1Size && CPUMIsGuestPageSizeExtEnabled(pVCpu);
-# else
-    const bool      fBigPage  = PdeSrc.b.u1Size;
-# endif
+    const bool      fBigPage  = PdeSrc.b.u1Size && GST_IS_PSE_ACTIVE(pVCpu);
     const bool      fPdeValid = !fBigPage ? GST_IS_PDE_VALID(pVCpu, PdeSrc) : GST_IS_BIG_PDE_VALID(pVCpu, PdeSrc);
     RTGCPHYS        GCPhys;
     if (!fBigPage)
@@ -1789,7 +1777,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
         &&  PdeSrc.n.u1User == PdeDst.n.u1User
         &&  (PdeSrc.n.u1Write == PdeDst.n.u1Write || !PdeDst.n.u1Write)
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-        &&  (PdeSrc.n.u1NoExecute == PdeDst.n.u1NoExecute || !CPUMIsGuestNXEnabled(pVCpu))
+        &&  (PdeSrc.n.u1NoExecute == PdeDst.n.u1NoExecute || !GST_IS_NX_ACTIVE(pVCpu))
 # endif
        )
     {
@@ -2260,7 +2248,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PGSTPDE pPdeSrc, 
     bool        fUserLevelFault      = !!(uErr & X86_TRAP_PF_US);
     bool        fWriteFault          = !!(uErr & X86_TRAP_PF_RW);
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-    bool        fMaybeNXEFault       =   (uErr & X86_TRAP_PF_ID) && CPUMIsGuestNXEnabled(pVCpu);
+    bool        fMaybeNXEFault       =   (uErr & X86_TRAP_PF_ID) && GST_IS_NX_ACTIVE(pVCpu);
 # endif
     bool        fMaybeWriteProtFault = fWriteFault && (fUserLevelFault || CPUMIsGuestR0WriteProtEnabled(pVCpu));
     PVM         pVM                  = pVCpu->CTX_SUFF(pVM);
@@ -2336,11 +2324,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PGSTPDE pPdeSrc, 
      */
     if (!pPdeSrc->n.u1Present)
         return PGM_BTH_NAME(CheckPageFaultReturnNP)(pVCpu, uErr, GCPtrPage, 2);
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
-    bool const fBigPage = pPdeSrc->b.u1Size && CPUMIsGuestPageSizeExtEnabled(pVCpu);
-# else
-    bool const fBigPage = pPdeSrc->b.u1Size;
-# endif
+    bool const fBigPage = pPdeSrc->b.u1Size && GST_IS_PSE_ACTIVE(pVCpu);
     if (!fBigPage ? !GST_IS_PDE_VALID(pVCpu, *pPdeSrc) : !GST_IS_BIG_PDE_VALID(pVCpu, *pPdeSrc))
         return PGM_BTH_NAME(CheckPageFaultReturnRSVD)(pVCpu, uErr, GCPtrPage, 2);
     if (   (fMaybeWriteProtFault && !pPdeSrc->n.u1Write)
@@ -2454,11 +2438,6 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PGSTPDE pPdeSrc, 
  */
 PGM_BTH_DECL(int, CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, PGSTPDE pPdeSrc, RTGCPTR GCPtrPage)
 {
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
-    const bool  fBigPagesSupported = CPUMIsGuestPageSizeExtEnabled(pVCpu);
-# else
-    const bool  fBigPagesSupported = true;
-# endif
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL    pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
@@ -2467,7 +2446,7 @@ PGM_BTH_DECL(int, CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPde
     /*
      * Handle big page.
      */
-    if (pPdeSrc->b.u1Size && fBigPagesSupported)
+    if (pPdeSrc->b.u1Size && GST_IS_PSE_ACTIVE(pVCpu))
     {
         if (    pPdeDst->n.u1Present
             &&  (pPdeDst->u & PGM_PDFLAGS_TRACK_DIRTY))
@@ -2753,11 +2732,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
          * Allocate & map the page table.
          */
         PSHWPT          pPTDst;
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
-        const bool      fPageTable = !PdeSrc.b.u1Size || !CPUMIsGuestPageSizeExtEnabled(pVCpu);
-# else
-        const bool      fPageTable = !PdeSrc.b.u1Size;
-# endif
+        const bool      fPageTable = !PdeSrc.b.u1Size || !GST_IS_PSE_ACTIVE(pVCpu);
         PPGMPOOLPAGE    pShwPage;
         RTGCPHYS        GCPhys;
         if (fPageTable)
@@ -2773,7 +2748,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
         {
             PGMPOOLACCESS enmAccess;
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-            const bool fNoExecute = PdeSrc.n.u1NoExecute && CPUMIsGuestNXEnabled(pVCpu);
+            const bool fNoExecute = PdeSrc.n.u1NoExecute && GST_IS_NX_ACTIVE(pVCpu);
 # else
             const bool fNoExecute = false;
 # endif
@@ -3778,11 +3753,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
     || PGM_GST_TYPE == PGM_TYPE_PAE \
     || PGM_GST_TYPE == PGM_TYPE_AMD64
 
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
-    bool            fBigPagesSupported = CPUMIsGuestPageSizeExtEnabled(pVCpu);
-# else
-    bool            fBigPagesSupported = true;
-# endif
+    bool            fBigPagesSupported = GST_IS_PSE_ACTIVE(pVCpu);
     PPGMCPU         pPGM = &pVCpu->pgm.s;
     RTGCPHYS        GCPhysGst;              /* page address derived from the guest page tables. */
     RTHCPHYS        HCPhysShw;              /* page address derived from the shadow page tables. */

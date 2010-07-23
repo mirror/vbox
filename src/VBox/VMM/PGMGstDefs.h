@@ -81,7 +81,7 @@
 #  define GSTPDE                                SHWPDE
 #  define PGSTPDE                               PSHWPDE
 #  define GST_PTE_PG_MASK                       SHW_PTE_PG_MASK
-#  define GST_IS_NX_ACTIVE(pVCpu)               (CPUMIsGuestNXEnabled(pVCpu)) /** @todo shadow this variable */
+#  define GST_IS_NX_ACTIVE(pVCpu)               (pgmGstIsNoExecuteActive(pVCpu))
 #  if PGM_GST_TYPE == PGM_TYPE_PROT             /* (comment at top of PGMAllBth.h) */
 #   define BTH_IS_NP_ACTIVE(pVM)                (pVM->pgm.s.fNestedPaging)
 #  else
@@ -126,7 +126,7 @@
 //# define GST_IS_PDPE_VALID(pVCpu, Pdpe)         (false)
 //# define GST_IS_BIG_PDPE_VALID(pVCpu, Pdpe)     (false)
 //# define GST_IS_PML4E_VALID(pVCpu, Pml4e)       (false)
-# define GST_IS_PSE_ACTIVE(pVCpu)               (CPUMIsGuestPageSizeExtEnabled(pVCpu)) /** @todo ( (pVCpu)->pgm.s.fGst32BitPageSizeExtension ) */
+# define GST_IS_PSE_ACTIVE(pVCpu)               pgmGstIsPageSizeExtActive(pVCpu)
 # define GST_IS_NX_ACTIVE(pVCpu)                (false)
 # define BTH_IS_NP_ACTIVE(pVM)                  (false)
 
@@ -185,7 +185,8 @@
 # define GST_PT_SHIFT                           X86_PT_PAE_SHIFT
 # define GST_PT_MASK                            X86_PT_PAE_MASK
 # define GST_IS_PSE_ACTIVE(pVCpu)               (true)
-# define GST_IS_NX_ACTIVE(pVCpu)                (CPUMIsGuestNXEnabled(pVCpu)) /** @todo shadow this variable */
+# define GST_IS_NX_ACTIVE(pVCpu)                (pgmGstIsNoExecuteActive(pVCpu))
 # define BTH_IS_NP_ACTIVE(pVM)                  (false)
 #endif
+
 
