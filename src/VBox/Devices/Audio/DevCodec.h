@@ -196,6 +196,7 @@ typedef enum
 
 typedef struct CODECState
 {
+    uint16_t                id;
     CODECVERB               *pVerbs;
     int                     cVerbs;
     PCODECNODE               pNodes;
