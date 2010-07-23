@@ -905,7 +905,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 #   ifdef VBOX_STRICT
                         RTGCPHYS GCPhys2;
                         uint64_t fPageGst;
-                        Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
                         if (!pVM->pgm.s.fNestedPaging)
                         {
                             rc = PGMGstGetPage(pVCpu, pvFault, &fPageGst, &GCPhys2);
@@ -2079,7 +2078,6 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     /* Can happen in the guest SMP case; other VCPU activated this PDE while we were blocking to handle the page fault. */
     if (PdeDst.n.u1Size)
     {
-        Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
         Assert(pVM->pgm.s.fNestedPaging);
         Log(("CPU%d: SyncPage: Pde (big:%RX64) at %RGv changed behind our back!\n", pVCpu->idCpu, PdeDst.u, GCPtrPage));
         return VINF_SUCCESS;
@@ -3460,7 +3458,6 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
 
     LogFlow(("VerifyAccessSyncPage: GCPtrPage=%RGv fPage=%#x uErr=%#x\n", GCPtrPage, fPage, uErr));
 
-    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
     Assert(!pVM->pgm.s.fNestedPaging);
 #if   (   PGM_GST_TYPE == PGM_TYPE_32BIT \
        || PGM_GST_TYPE == PGM_TYPE_REAL \
@@ -4653,7 +4650,6 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
        && (   PGM_GST_TYPE != PGM_TYPE_REAL   \
            && PGM_GST_TYPE != PGM_TYPE_PROT))
 
-    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
     Assert(!pVM->pgm.s.fNestedPaging);
 
     /*
@@ -4801,7 +4797,6 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
            || PGM_SHW_TYPE == PGM_TYPE_AMD64))
 
 #  if PGM_GST_TYPE != PGM_TYPE_REAL
-    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
     Assert(!pVM->pgm.s.fNestedPaging);
 #  endif
 
