@@ -58,6 +58,7 @@ extern "C" {
 #define CODEC_B_SIDE(cmd)       (((cmd) & CODEC_VERB_B_SIDE) >> 13)
 #define CODEC_B_INDEX(cmd)      ((cmd) & CODEC_VERB_B_INDEX)
 
+//** @todo r=michaln: Please document why this is bit 36 (it's not the same as the link format)
 #define CODEC_RESPONSE_UNSOLICITED RT_BIT_64(36)
 
 #define STAC9220_NODE_COUNT 0x1C
@@ -88,7 +89,10 @@ static int codecUnimplemented(struct CODECState *pState, uint32_t cmd, uint64_t 
 {
     Log(("codecUnimplemented: cmd(raw:%x: cad:%x, d:%c, nid:%x, verb:%x)\n", cmd,
         CODEC_CAD(cmd), CODEC_DIRECT(cmd) ? 'N' : 'Y', CODEC_NID(cmd), CODEC_VERBDATA(cmd)));
+    //** @todo r=michaln: The zero used as a codec ID shouldn't be hardcoded!
     if (CODEC_CAD(cmd) != 0)
+        //** @todo r=michaln: Are we really supposed to respond to commands sent to nonexistent codecs??
+        //** @todo r=michaln: Where in the specs is this response format defined?
         *pResp = ((uint64_t)CODEC_CAD(cmd) << 4)| 0xFF;
     else
         *pResp = 0;
@@ -484,6 +488,8 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
         || CODEC_VERBDATA(cmd) == 0)
     {
         *pfn = CODEC_CAD(cmd) != 0 ? codecUnimplemented : codecBreak;
+        //** @todo r=michaln: Why "intelHD" and not e.g. "HDAcodec"?
+        //** @todo r=michaln: There needs to be a counter to avoid log flooding (see e.g. DevRTC.cpp)
         LogRel(("intelHD: cmd %x was ignored\n", cmd));
         return VINF_SUCCESS;
     }
