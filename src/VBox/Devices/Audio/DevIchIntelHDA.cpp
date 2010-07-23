@@ -1158,6 +1158,13 @@ static uint32_t write_audio(INTELHDLinkState *pState, int avail, bool *fStop)
     return written;
 }
 
+DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
+{
+    INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pHDAState;
+    STATESTS(pState) |= 1 << (pCodecState->id);
+    INTSTS(pState) |= HDA_REG_FIELD_FLAG_MASK(INTSTS, CIS);
+    return VINF_SUCCESS;
+}
 DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int avail)
 {
     bool fStop = false;
@@ -1530,7 +1537,9 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
     hdaReset (pDevIns);
+    pThis->hda.Codec.id = 0;
     pThis->hda.Codec.pfnTransfer = hdaTransfer;
+    pThis->hda.Codec.pfnReset = hdaCodecReset;
     /* 
      * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
      * hdaReset shouldn't affects these registers.

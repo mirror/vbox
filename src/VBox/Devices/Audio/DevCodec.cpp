@@ -88,6 +88,11 @@ extern "C" {
 #define STAC9220_IS_ADCMUX_CMD(cmd) (   \
        CODEC_NID(cmd) == 0x12           \
     || CODEC_NID(cmd) == 0x13)
+
+
+static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode);
+
+
 static int codecUnimplemented(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Log(("codecUnimplemented: cmd(raw:%x: cad:%x, d:%c, nid:%x, verb:%x)\n", cmd,
@@ -184,6 +189,25 @@ static int codecGetSubId(struct CODECState *pState, uint32_t cmd, uint64_t *pRes
     return VINF_SUCCESS;
 }
 
+static int codecReset(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == 0));
+    Assert(STAC9220_IS_AFG_CMD(cmd));
+    if(STAC9220_IS_AFG_CMD(cmd))
+    {
+        uint8_t i;
+        Log(("HDAcodec: enters reset\n"));
+        for (i = 0; i < STAC9220_NODE_COUNT; ++i)
+        {
+            stac9220ResetNode(pState, i, &pState->pNodes[i]);
+        }
+        pState->pfnReset(pState);
+        Log(("HDAcodec: exits reset\n"));
+    }
+    *pResp = 0;
+    return VINF_SUCCESS;
+}
+
 #if 0
 static int codecGetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
@@ -262,7 +286,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xd] = RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
             pNode->node.au32F00_param[0x12] = RT_BIT(31)|(0x2 << 16)|(0x7f << 8)|0x7f;
             pNode->afg.u32F05_param = (0x2) << 4 | 0x2; /* PS-Act: 0x2, D2 */
-            pNode->afg.u32F20_param = 0x106b0800; /* Old Intel Mac */
+            pNode->afg.u32F20_param = 0x83847626; /*STAC9271X */
             pNode->afg.u32F08_param = 0;
             break;
         case 2:
@@ -458,6 +482,7 @@ static CODECVERB STAC9220VERB[] =
     {0x00070700, CODEC_VERB_8BIT_CMD , stac9220GetPinCtrl},
     {0x000F0200, CODEC_VERB_8BIT_CMD , codecGetF02       },
     {0x000F2000, CODEC_VERB_8BIT_CMD , codecGetSubId     },
+    {0x0007FF00, CODEC_VERB_8BIT_CMD , codecReset        },
 #if 0
     {0x000F0500, CODEC_VERB_8BIT_CMD , codecGetPowerState},
 #endif
