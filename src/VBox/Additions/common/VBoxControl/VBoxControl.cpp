@@ -1306,7 +1306,9 @@ int listSharedFolders(int argc, char **argv)
                                                &cMappings);
             if (RT_SUCCESS(rc))
             {
-                RT_CLAMP(cMappings, 0, 64); /* Maximum mappings, see shflsvc.h */
+                /* Maximum mappings, see shflsvc.h */
+                if (cMappings > 64)
+                    cMappings = 64;
                 RTPrintf("Shared Folder Mappings (%u):\n\n", cMappings);
                 for (uint32_t i = 0; i < cMappings; i++)
                 {
