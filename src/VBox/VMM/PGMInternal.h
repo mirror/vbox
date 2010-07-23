@@ -2645,18 +2645,12 @@ typedef struct PGM
     /** Set if the CPU has less than 52-bit physical address width.
      * This is used  */
     bool                            fLessThan52PhysicalAddressBits;
-    /** Alignment padding. */
-    bool                            afAlignment0[1];
-
-    /*
-     * This will be redefined at least two more times before we're done, I'm sure.
-     * The current code is only to get on with the coding.
-     *   - 2004-06-10: initial version, bird.
-     *   - 2004-07-02: 1st time, bird.
-     *   - 2004-10-18: 2nd time, bird.
-     *   - 2005-07-xx: 3rd time, bird.
-     */
-
+    /** Set when nested paging is active.
+     * This is meant to save calls to HWACCMIsNestedPagingActive and let the
+     * compilers optimize the code better.  Whether we use nested paging or
+     * not is something we find out during VMM initialization and we won't
+     * change this later on. */
+    bool                            fNestedPaging;
     /** The host paging mode. (This is what SUPLib reports.) */
     SUPPAGINGMODE                   enmHostMode;
 
@@ -3644,11 +3638,7 @@ void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAP
 int             pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 int             pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 
-int             pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
-#ifndef IN_RC
-int             pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
-#endif
-int             pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
+int             pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PCX86PDPE pGstPdpe, PX86PDPAE *ppPD);
 
 int             pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd);
 int             pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt);
