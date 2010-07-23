@@ -3124,6 +3124,10 @@ typedef struct PGMCPU
     RTGCPHYS                        GCPhysA20Mask;
     /** A20 gate state - boolean! */
     bool                            fA20Enabled;
+    /** Mirror of the EFER.NXE bit. */
+    bool                            fNoExecuteEnabled;
+    /** Unused bits. */
+    bool                            afUnused[2];
 
     /** What needs syncing (PGM_SYNC_*).
      * This is used to queue operations for PGMSyncCR3, PGMInvalidatePage,
