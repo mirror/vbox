@@ -58,8 +58,8 @@ extern "C" {
 #define CODEC_B_SIDE(cmd)       (((cmd) & CODEC_VERB_B_SIDE) >> 13)
 #define CODEC_B_INDEX(cmd)      ((cmd) & CODEC_VERB_B_INDEX)
 
-//** @todo r=michaln: Please document why this is bit 36 (it's not the same as the link format)
-#define CODEC_RESPONSE_UNSOLICITED RT_BIT_64(36)
+/* RPM 5.3.1 */
+#define CODEC_RESPONSE_UNSOLICITED RT_BIT_64(34)
 
 #define STAC9220_NODE_COUNT 0x1C
 
@@ -425,60 +425,12 @@ static CODECVERB STAC9220VERB[] =
 /*    verb     | verb mask              | callback               */
 /*  -----------  --------------------   -----------------------  */
     {0x000F0000, CODEC_VERB_8BIT_CMD,  codecGetF00},
-    {0x0007FF00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000FE700, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070E70, CODEC_VERB_4BIT_CMD,  codecUnimplemented},
-    {0x000F0500, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070500, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F0800, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070800, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F1500, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00071500, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F1600, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00071600, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F1700, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00071700, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F1800, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00071800, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F1900, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00071900, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F1A00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00071A00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F2000, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00072000, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00072100, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00072200, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00072300, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000A0000, CODEC_VERB_16BIT_CMD, codecUnimplemented},
     {0x00020000, CODEC_VERB_16BIT_CMD, codecSetConverterFormat},
     {0x000B0000, CODEC_VERB_16BIT_CMD, codecGetAmplifier },
-    {0x00030000, CODEC_VERB_16BIT_CMD, codecUnimplemented},
-    {0x000F0600, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
     {0x00070600, CODEC_VERB_8BIT_CMD,  stac9220Set706    },
-    {0x000F0C00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070C00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F0300, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070300, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F0D00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070D00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070E00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
     {0x000F0700, CODEC_VERB_8BIT_CMD,  stac9220SetPinCtrl},
     {0x00070700, CODEC_VERB_8BIT_CMD,  stac9220GetPinCtrl},
-    {0x000F0200, CODEC_VERB_8BIT_CMD,  codecGetF02          },
-    {0x000F0900, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070900, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F1C00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00071C00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00071D00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00071E00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00071F00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F0100, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070100, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F0A00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070A00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x000F0F00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x00070F00, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
-    {0x0007E700, CODEC_VERB_8BIT_CMD,  codecUnimplemented},
+    {0x000F0200, CODEC_VERB_8BIT_CMD,  codecGetF02       },
 };
 
 static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR pfn)
@@ -501,6 +453,7 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
             return VINF_SUCCESS;
         }
     }
+    *pfn = codecUnimplemented;
     LogRel(("intelHD: callback for %x wasn't found\n", CODEC_VERBDATA(cmd)));
     return rc;
 }
