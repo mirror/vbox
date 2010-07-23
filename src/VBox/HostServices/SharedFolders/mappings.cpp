@@ -331,7 +331,7 @@ bool vbsfIsHostMappingCaseSensitive(SHFLROOT root)
 }
 
 /**
- * Note: If pMappings/*pcMappings is smaller than the actual amount of mappings
+ * Note: If pMappings / *pcMappings is smaller than the actual amount of mappings
  *       that *could* have been returned *pcMappings contains the required buffer size
  *       so that the caller can retry the operation if wanted.
  */
