@@ -520,7 +520,11 @@ class VirtualBoxManager:
 
     def openMachineSession(self, mach, permitSharing = True):
          session = self.mgr.getSessionObject(self.vbox)
-         mach.lockForSession(session, permitSharing)
+         if permitSharing:
+             type = self.constants.LockType_Shared
+         else:
+             type = self.constants.LockType_Write
+         mach.lockMachine(session, type)
          return session
 
     def closeMachineSession(self, session):

@@ -314,10 +314,6 @@ struct VirtualBox::Data
     // the following are data for the async event thread
     const RTTHREAD                      threadAsyncEvent;
     EventQueue * const                  pAsyncEventQ;
-
-#ifdef RT_OS_WINDOWS
-    ComEventsHelper                     mComEvHelper;
-#endif
     const ComObjPtr<EventSource>        pEventSource;
 };
 

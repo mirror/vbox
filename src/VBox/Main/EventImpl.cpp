@@ -811,9 +811,11 @@ HRESULT ListenerRecord::enqueue (IEvent* aEvent)
     // put an event the queue
     ::RTCritSectEnter(&mcsQLock);
 
-    // If there was no events reading from the listener for the long time, 
-    // and events keep coming we shall unregister it.
-    if ((mQueue.size() > 200) && ((RTTimeMilliTS() - mLastRead) > 60 * 1000))
+    // If there was no events reading from the listener for the long time,
+    // and events keep coming, or queue is oversized we shall unregister this listener.
+    uint64_t sinceRead = RTTimeMilliTS() - mLastRead;
+    uint32_t queueSize = mQueue.size();
+    if ( (queueSize > 200) || ((queueSize > 100) && (sinceRead > 60 * 1000)))
     {
         ::RTCritSectLeave(&mcsQLock);
         return E_ABORT;

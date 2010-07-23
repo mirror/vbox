@@ -490,7 +490,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
     try:
         vb = ctx['vb']
         session = ctx['mgr'].getSessionObject(vb)
-        mach.lockForSession(session, True)
+        mach.lockMachine(session, ctx['global'].constants.LockType_Shared)
     except Exception,e:
         printErr(ctx, "Session to '%s' not open: %s" %(mach.name,str(e)))
         if g_verbose:
