@@ -40,10 +40,11 @@ class UIVMPreviewWindow : public QIWithRetranslateUI<QWidget>
     enum UpdateInterval
     {
         UpdateDisabled,
-        Update1Sec,
-        Update2Sec,
-        Update5Sec,
-        Update10Sec,
+        Update500ms,
+        Update1000ms,
+        Update2000ms,
+        Update5000ms,
+        Update10000ms,
         UpdateEnd
     };
 

@@ -62,20 +62,22 @@ UIVMPreviewWindow::UIVMPreviewWindow(QWidget *pParent)
         m_pUpdateTimerMenu->addAction(pUpdateTime);
         m_actions[static_cast<UpdateInterval>(i)] = pUpdateTime;
     }
-    m_pUpdateTimerMenu->insertSeparator(m_actions[static_cast<UpdateInterval>(Update1Sec)]);
+    m_pUpdateTimerMenu->insertSeparator(m_actions[static_cast<UpdateInterval>(Update500ms)]);
     /* Default value */
-    UpdateInterval interval = Update1Sec;
+    UpdateInterval interval = Update1000ms;
     QString strInterval = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PreviewUpdate);
     if (strInterval == "disabled")
         interval = UpdateDisabled;
-    else if (strInterval == "1")
-        interval = Update1Sec;
-    else if (strInterval == "2")
-        interval = Update2Sec;
-    else if (strInterval == "5")
-        interval = Update5Sec;
-    else if (strInterval == "10")
-        interval = Update10Sec;
+    else if (strInterval == "500")
+        interval = Update500ms;
+    else if (strInterval == "1000")
+        interval = Update1000ms;
+    else if (strInterval == "2000")
+        interval = Update2000ms;
+    else if (strInterval == "5000")
+        interval = Update5000ms;
+    else if (strInterval == "10000")
+        interval = Update10000ms;
     /* Initialize with the new update interval */
     setUpdateInterval(interval, false);
 
@@ -110,10 +112,11 @@ QSize UIVMPreviewWindow::sizeHint() const
 void UIVMPreviewWindow::retranslateUi()
 {
     m_actions.value(UpdateDisabled)->setText(tr("Update Disabled"));
-    m_actions.value(Update1Sec)->setText(tr("Every 1 s"));
-    m_actions.value(Update2Sec)->setText(tr("Every 2 s"));
-    m_actions.value(Update5Sec)->setText(tr("Every 5 s"));
-    m_actions.value(Update10Sec)->setText(tr("Every 10 s"));
+    m_actions.value(Update500ms)->setText(tr("Every 0.5 s"));
+    m_actions.value(Update1000ms)->setText(tr("Every 1 s"));
+    m_actions.value(Update2000ms)->setText(tr("Every 2 s"));
+    m_actions.value(Update5000ms)->setText(tr("Every 5 s"));
+    m_actions.value(Update10000ms)->setText(tr("Every 10 s"));
 }
 
 void UIVMPreviewWindow::resizeEvent(QResizeEvent *pEvent)
@@ -311,34 +314,42 @@ void UIVMPreviewWindow::setUpdateInterval(UpdateInterval interval, bool fSave)
             m_actions[interval]->setChecked(true);
             break;
         }
-        case Update1Sec:
+        case Update500ms:
         {
             if (fSave)
-                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "1");
+                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "500");
+            m_pUpdateTimer->setInterval(500);
+            m_actions[interval]->setChecked(true);
+            break;
+        }
+        case Update1000ms:
+        {
+            if (fSave)
+                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "1000");
             m_pUpdateTimer->setInterval(1000);
             m_actions[interval]->setChecked(true);
             break;
         }
-        case Update2Sec:
+        case Update2000ms:
         {
             if (fSave)
-                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "2");
+                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "2000");
             m_pUpdateTimer->setInterval(2000);
             m_actions[interval]->setChecked(true);
             break;
         }
-        case Update5Sec:
+        case Update5000ms:
         {
             if (fSave)
-                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "5");
+                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "5000");
             m_pUpdateTimer->setInterval(5000);
             m_actions[interval]->setChecked(true);
             break;
         }
-        case Update10Sec:
+        case Update10000ms:
         {
             if (fSave)
-                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "10");
+                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "10000");
             m_pUpdateTimer->setInterval(10000);
             m_actions[interval]->setChecked(true);
             break;
