@@ -4385,15 +4385,13 @@
       </desc>
       <param name="session" type="ISession" dir="in">
         <desc>
-          Session object that will represent the opened remote session
-          after successful method invocation (this object must not
-          represent an already open session).
+          Client session object to which the VM process will be connected (this
+          must be in "Unlocked" state).
         </desc>
       </param>
       <param name="type" type="wstring" dir="in">
         <desc>
-          Type of the remote session (case sensitive). The following are
-          currently supported:
+          Front-end to use for the new VM process. The following are currently supported:
           <ul>
             <li><tt>"gui"</tt>: VirtualBox Qt GUI front-end</li>
             <li><tt>"vrdp"</tt>: VBoxHeadless (VRDP Server) front-end</li>
