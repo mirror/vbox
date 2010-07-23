@@ -2587,7 +2587,7 @@ MediumState_T Medium::getState() const
  * Internal method to return the medium's variant. Must have caller + locking!
  * @return
  */
-MediumState_T Medium::getVariant() const
+MediumVariant_T Medium::getVariant() const
 {
     return m->variant;
 }
