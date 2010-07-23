@@ -435,7 +435,7 @@ static CODECVERB STAC9220VERB[] =
 
 static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR pfn)
 {
-    int rc = VERR_NOT_FOUND;
+    int rc = VINF_SUCCESS;
     if (   CODEC_CAD(cmd) != 0
         || CODEC_VERBDATA(cmd) == 0)
     {
