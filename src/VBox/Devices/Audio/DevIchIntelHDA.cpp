@@ -80,8 +80,8 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define ICH6_HDA_REG_WAKEEN 6 /* 0x0C */
 #define WAKEEN(pState) (HDA_REG((pState), WAKEEN))
 
-#define ICH6_HDA_REG_STATES 7 /* range 0x0E */
-#define STATES(pState) (HDA_REG((pState), STATES))
+#define ICH6_HDA_REG_STATESTS 7 /* range 0x0E */
+#define STATESTS(pState) (HDA_REG((pState), STATESTS))
 #define ICH6_HDA_STATES_SCSF 0x7
 
 #define ICH6_HDA_REG_GSTS 8 /* range 0x10-0x11*/
@@ -376,6 +376,8 @@ typedef struct INTELHDLinkState
     uint32_t    cbRirbBuf;
     /* size in quad words of RIRB buf */
     uint8_t     cdqRirbBuf;
+    /* indicates if HDA in reset. */
+    bool        fInReset;
     CODECState  Codec;
 } INTELHDLinkState;
 
@@ -791,13 +793,21 @@ DECLCALLBACK(int)hdaRegWriteGCTL(INTELHDLinkState* pState, uint32_t offset, uint
     {
         /* exit reset state */
         GCTL(pState) |= HDA_REG_FIELD_FLAG_MASK(GCTL, RST);
+        pState->fInReset = false;
     }
     else
     {
         /* enter reset state*/
+        if (   HDA_REG_FLAG_VALUE(pState, CORBCTL, DMA) 
+            || HDA_REG_FLAG_VALUE(pState, RIRBCTL, DMA))
+        {
+            Log(("hda: HDA enters in reset with DMA(RIRB:%s, CORB:%s)\n",
+                HDA_REG_FLAG_VALUE(pState, CORBCTL, DMA) ? "on" : "off",
+                HDA_REG_FLAG_VALUE(pState, RIRBCTL, DMA) ? "on" : "off"));
+        }
         hdaReset(ICH6_HDASTATE_2_DEVINS(pState));
         GCTL(pState) &= ~HDA_REG_FIELD_FLAG_MASK(GCTL, RST);
-        //** @todo r=michaln: The device isn't supposed to respond to any writes except to this bit now.
+        pState->fInReset = true;
     }
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(GCTL, FSH))
     {
@@ -1230,6 +1240,10 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     uint32_t  u32Offset = GCPhysAddr - pThis->hda.addrMMReg;
     int index = hdaLookup(&pThis->hda, u32Offset);
+    if (pThis->hda.fInReset && index != ICH6_HDA_REG_GCTL)
+    {
+        Log(("hda: access to registers except GCTL is blocked while reset\n"));
+    }
     Assert(   index != -1 
            && u32Offset == s_ichIntelHDRegMap[index].offset 
            && cb <= 4);
@@ -1274,6 +1288,10 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     uint32_t  u32Offset = GCPhysAddr - pThis->hda.addrMMReg;
     int index = hdaLookup(&pThis->hda, u32Offset);
+    if (pThis->hda.fInReset && index != ICH6_HDA_REG_GCTL)
+    {
+        Log(("hda: access to registers except GCTL is blocked while reset\n"));
+    }
     Assert(   index != -1 
            && u32Offset == s_ichIntelHDRegMap[index].offset 
            && cb <= 4);
@@ -1395,6 +1413,8 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     SDFIFOS(&pThis->hda, 6) = 0xBF;
     SDFIFOS(&pThis->hda, 7) = 0xBF;
     
+    /* emulateion of codec "wake up" HDA spec (5.5.1 and 6.5)*/
+    STATESTS(&pThis->hda) = 0x1;
 
     Log(("hda: reset finished\n"));
 }
@@ -1514,8 +1534,8 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
      * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
      * hdaReset shouldn't affects these registers.
      */
-    WAKEEN(&pThis->hda) = 0x1;
-    STATES(&pThis->hda) = 0x1;
+    WAKEEN(&pThis->hda) = 0x0;
+    STATESTS(&pThis->hda) = 0x0;
 
     return VINF_SUCCESS;
 }
