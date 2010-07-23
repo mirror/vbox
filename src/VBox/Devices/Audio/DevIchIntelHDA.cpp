@@ -139,8 +139,11 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define CORBWP(pState) (HDA_REG(pState, CORBWP))
 
 #define ICH6_HDA_REG_CORBCTL  17 /* 0x4C */
-#define ICH6_HDA_COBCTL_RUN_SHIFT (1)
-#define ICH6_HDA_COBCTL_CMEIE_SHIFT (0)
+#define ICH6_HDA_CORBCTL_DMA_SHIFT (1)
+#define ICH6_HDA_CORBCTL_CMEIE_SHIFT (0)
+
+#define CORBCTL(pState) (HDA_REG(pState, CORBCTL))
+
 
 #define ICH6_HDA_REG_CORBSTS  18 /* 0x4D */
 #define CORBSTS(pState) (HDA_REG(pState, CORBSTS))
@@ -396,6 +399,7 @@ DECLCALLBACK(int)hdaRegReadINTSTS(INTELHDLinkState* pState, uint32_t offset, uin
 DECLCALLBACK(int)hdaRegWriteINTSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 DECLCALLBACK(int)hdaRegWriteCORBWP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 DECLCALLBACK(int)hdaRegWriteCORBRP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int)hdaRegWriteCORBCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteCORBSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteRIRBWP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 DECLCALLBACK(int)hdaRegWriteRIRBSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
@@ -460,7 +464,7 @@ const static struct stIchIntelHDRegMap
     { 0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase         , "CORBUBASE" , "CORB Upper Base Address" },
     { 0x00048, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteCORBWP       , "CORBWP"    , "CORB Write Pointer" },
     { 0x0004A, 0x00002, 0x000000FF, 0x000080FF, hdaRegReadU8           , hdaRegWriteCORBRP       , "CORBRP"    , "CORB Read Pointer" },
-    { 0x0004C, 0x00001, 0x00000003, 0x00000003, hdaRegReadU8           , hdaRegWriteU8           , "CORBCTL"   , "CORB Control" },
+    { 0x0004C, 0x00001, 0x00000003, 0x00000003, hdaRegReadU8           , hdaRegWriteCORBCTL      , "CORBCTL"   , "CORB Control" },
     { 0x0004D, 0x00001, 0x00000001, 0x00000001, hdaRegReadU8           , hdaRegWriteCORBSTS      , "CORBSTS"   , "CORB Status" },
     { 0x0004E, 0x00001, 0x000000F3, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimplemented, "CORBSIZE"  , "CORB Size" },
     { 0x00050, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteBase         , "RIRBLBASE" , "RIRB Lower Base Address" },
@@ -610,6 +614,7 @@ static int hdaCmdSync(INTELHDLinkState *pState, bool fLocal)
     int rc = VINF_SUCCESS;
     if (fLocal)
     {
+        Assert((HDA_REG_FLAG_VALUE(pState, CORBCTL, DMA)));
         rc = PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pState->u64CORBBase, pState->pu32CorbBuf, pState->cbCorbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
@@ -636,6 +641,7 @@ static int hdaCmdSync(INTELHDLinkState *pState, bool fLocal)
     }
     else
     {
+        Assert((HDA_REG_FLAG_VALUE(pState, RIRBCTL, DMA)));
         rc = PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), pState->u64RIRBBase, pState->pu64RirbBuf, pState->cbRirbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
@@ -840,6 +846,16 @@ DECLCALLBACK(int)hdaRegWriteCORBRP(INTELHDLinkState* pState, uint32_t offset, ui
     return VINF_SUCCESS;
 }
 
+DECLCALLBACK(int)hdaRegWriteCORBCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
+{
+    int rc = hdaRegWriteU8(pState, offset, index, u32Value);
+    AssertRC(rc);
+    if (   CORBWP(pState) != CORBRP(pState)
+        && HDA_REG_FLAG_VALUE(pState, CORBCTL, DMA) != 0)
+        return hdaCORBCmdProcess(pState);
+    return rc;
+}
+
 DECLCALLBACK(int)hdaRegWriteCORBSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
 {
     uint32_t v = CORBSTS(pState);
@@ -855,6 +871,8 @@ DECLCALLBACK(int)hdaRegWriteCORBWP(INTELHDLinkState* pState, uint32_t offset, ui
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
     if (CORBWP(pState) == CORBRP(pState))
+        return VINF_SUCCESS;
+    if (!HDA_REG_FLAG_VALUE(pState, CORBCTL, DMA))
         return VINF_SUCCESS;
     rc = hdaCORBCmdProcess(pState);
     return rc;
