@@ -38,6 +38,8 @@ UIVMPreviewWindow::UIVMPreviewWindow(QWidget *pParent)
   , m_pPreviewImg(0)
   , m_pGlossyImg(0)
 {
+    m_session.createInstance(CLSID_Session);
+
     setContentsMargins(0, 5, 0, 5);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     /* Connect the update timer */
@@ -79,6 +81,13 @@ UIVMPreviewWindow::UIVMPreviewWindow(QWidget *pParent)
 
     /* Retranslate the UI */
     retranslateUi();
+}
+
+UIVMPreviewWindow::~UIVMPreviewWindow()
+{
+    /* Close any open session */
+    if (m_session.GetState() == KSessionState_Locked)
+        m_session.Close();
 }
 
 void UIVMPreviewWindow::setMachine(const CMachine& machine)
@@ -239,44 +248,45 @@ void UIVMPreviewWindow::sltRecreatePreview()
 //                      || m_machineState == KMachineState_Saving /* Not sure if this is valid */
                      || m_machineState == KMachineState_Paused)
             {
-                CSession session;
-                session.createInstance(CLSID_Session);
-                if (!session.isNull())
+                if (m_session.GetState() == KSessionState_Locked)
                 {
                     CVirtualBox vbox = vboxGlobal().virtualBox();
-                    m_machine.LockMachine(session, KLockType_Shared);
                     if (vbox.isOk())
                     {
-                        CDisplay display = session.GetConsole().GetDisplay();
-                        /* Todo: correct aspect radio */
-//                        ULONG w, h, bpp;
-//                        display.GetScreenResolution(0, w, h, bpp);
-//                        QImage shot = QImage(w, h, QImage::Format_RGB32);
-//                        shot.fill(Qt::black);
-//                        display.TakeScreenShot(0, shot.bits(), shot.width(), shot.height());
-                        QVector<BYTE> screenData = display.TakeScreenShotToArray(0, m_vRect.width(), m_vRect.height());
-                        if (   display.isOk()
-                               && screenData.size() != 0)
+                        const CConsole& console = m_session.GetConsole();
+                        if (!console.isNull())
                         {
-                            /* Unfortunately we have to reorder the pixel
-                             * data, cause the VBox API returns RGBA data,
-                             * which is not a format QImage understand.
-                             * Todo: check for 32bit alignment, for both
-                             * the data and the scanlines. Maybe we need to
-                             * copy the data in any case. */
-                            uint32_t *d = (uint32_t*)screenData.data();
-                            for (int i = 0; i < screenData.size() / 4; ++i)
+                            CDisplay display = console.GetDisplay();
+                            /* Todo: correct aspect radio */
+//                            ULONG w, h, bpp;
+//                            display.GetScreenResolution(0, w, h, bpp);
+//                            QImage shot = QImage(w, h, QImage::Format_RGB32);
+//                            shot.fill(Qt::black);
+//                            display.TakeScreenShot(0, shot.bits(), shot.width(), shot.height());
+                            QVector<BYTE> screenData = display.TakeScreenShotToArray(0, m_vRect.width(), m_vRect.height());
+                            if (   display.isOk()
+                                && screenData.size() != 0)
                             {
-                                uint32_t e = d[i];
-                                d[i] = RT_MAKE_U32_FROM_U8(RT_BYTE3(e), RT_BYTE2(e), RT_BYTE1(e), RT_BYTE4(e));
+                                /* Unfortunately we have to reorder the pixel
+                                 * data, cause the VBox API returns RGBA data,
+                                 * which is not a format QImage understand.
+                                 * Todo: check for 32bit alignment, for both
+                                 * the data and the scanlines. Maybe we need to
+                                 * copy the data in any case. */
+                                uint32_t *d = (uint32_t*)screenData.data();
+                                for (int i = 0; i < screenData.size() / 4; ++i)
+                                {
+                                    uint32_t e = d[i];
+                                    d[i] = RT_MAKE_U32_FROM_U8(RT_BYTE3(e), RT_BYTE2(e), RT_BYTE1(e), RT_BYTE4(e));
+                                }
+
+                                QImage shot = QImage((uchar*)d, m_vRect.width(), m_vRect.height(), QImage::Format_RGB32);
+
+                                if (m_machineState == KMachineState_Paused)
+                                    dimImage(shot);
+                                painter.drawImage(m_vRect.x(), m_vRect.y(), shot);
+                                fDone = true;
                             }
-
-                            QImage shot = QImage((uchar*)d, m_vRect.width(), m_vRect.height(), QImage::Format_RGB32);
-
-                            if (m_machineState == KMachineState_Paused)
-                                dimImage(shot);
-                            painter.drawImage(m_vRect.x(), m_vRect.y(), shot);
-                            fDone = true;
                         }
                     }
                 }
@@ -339,9 +349,20 @@ void UIVMPreviewWindow::setUpdateInterval(UpdateInterval interval, bool fSave)
 
 void UIVMPreviewWindow::restart()
 {
-    /* Fetch the latest machine state */
+    /* Close any open session */
+    if (m_session.GetState() == KSessionState_Locked)
+        m_session.Close();
     if (!m_machine.isNull())
+    {
+        /* Fetch the latest machine state */
         m_machineState = m_machine.GetState();
+        /* Lock the session for the current machine */
+        if (   m_machineState == KMachineState_Running
+//            || m_machineState == KMachineState_Saving /* Not sure if this is valid */
+            || m_machineState == KMachineState_Paused)
+            m_machine.LockMachine(m_session, KLockType_Shared);
+    }
+
     /* Recreate the preview image */
     sltRecreatePreview();
     /* Start the timer */
