@@ -45,8 +45,8 @@ VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleInR3)
     if (RT_SUCCESS(rc))
     {
         *pcChunks = Info.cBalloonChunks;
-        Assert(Info.fHandleInR3 == FALSE || Info.fHandleInR3 == TRUE ||  RT_FAILURE(rc));
-        *pfHandleInR3 = Info.fHandleInR3 != FALSE;
+        Assert(Info.fHandleInR3 == false || Info.fHandleInR3 == true ||  RT_FAILURE(rc));
+        *pfHandleInR3 = Info.fHandleInR3 != false;
     }
     return rc;
 }
