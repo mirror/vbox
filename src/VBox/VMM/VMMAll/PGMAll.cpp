@@ -69,6 +69,11 @@ typedef struct PGMHVUSTATE
 *******************************************************************************/
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGMCPU pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
+#ifndef IN_RC
+static int      pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PCX86PML4E pGstPml4e, PCX86PDPE pGstPdpe, PX86PDPAE *ppPD);
+static int      pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
+#endif
+
 
 /*
  * Shadow - 32-bit mode
@@ -622,7 +627,8 @@ VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32
         return VINF_EM_RAW_GUEST_TRAP;
     }
 
-    if (!HWACCMIsNestedPagingActive(pVM))
+    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
+    if (!pVM->pgm.s.fNestedPaging)
     {
         /*
          * Next step is to verify if we protected this page for dirty bit tracking or for CSAM scanning
@@ -911,7 +917,7 @@ VMMDECL(int) PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpF
  * @param   pGstPdpe    Guest PDPT entry
  * @param   ppPD        Receives address of page directory
  */
-int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
+int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PCX86PDPE pGstPdpe, PX86PDPAE *ppPD)
 {
     const unsigned iPdPt    = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     PX86PDPT       pPdpt    = pgmShwGetPaePDPTPtr(&pVCpu->pgm.s);
@@ -929,13 +935,16 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE
     {
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
+        Assert(pGstPdpe);
+        X86PDPE     GstPdpe = *pGstPdpe;
 
 # if defined(IN_RC)
         /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
         PGMDynLockHCPage(pVM, (uint8_t *)pPdpe);
 # endif
 
-        if (HWACCMIsNestedPagingActive(pVM) || !CPUMIsGuestPagingEnabled(pVCpu))
+        Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
+        if (pVM->pgm.s.fNestedPaging || !CPUMIsGuestPagingEnabled(pVCpu))
         {
             /* AMD-V nested paging or real/protected mode without paging. */
             GCPdPt  = (RTGCPTR64)iPdPt << X86_PDPT_SHIFT;
@@ -943,24 +952,22 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE
         }
         else
         {
-            Assert(pGstPdpe);
-
             if (CPUMGetGuestCR4(pVCpu) & X86_CR4_PAE)
             {
-                if (!pGstPdpe->n.u1Present)
+                if (!GstPdpe.n.u1Present)
                 {
                     /* PD not present; guest must reload CR3 to change it.
                      * No need to monitor anything in this case.
                      */
                     Assert(!HWACCMIsEnabled(pVM));
 
-                    GCPdPt  = pGstPdpe->u & X86_PDPE_PG_MASK;
+                    GCPdPt  = GstPdpe.u & X86_PDPE_PG_MASK;
                     enmKind = PGMPOOLKIND_PAE_PD_PHYS;
-                    pGstPdpe->n.u1Present = 1;
+                    GstPdpe.n.u1Present = 1;
                 }
                 else
                 {
-                    GCPdPt  = pGstPdpe->u & X86_PDPE_PG_MASK;
+                    GCPdPt  = GstPdpe.u & X86_PDPE_PG_MASK;
                     enmKind = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
                 }
             }
@@ -977,7 +984,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE
 
         /* The PD was cached or created; hook it up now. */
         pPdpe->u |= pShwPage->Core.Key
-                 | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
+                 | (GstPdpe.u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
 # if defined(IN_RC)
         /*
@@ -1050,14 +1057,15 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGMCPU pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE
  * @param   pGstPdpe    Guest PDPT entry
  * @param   ppPD        Receives address of page directory
  */
-int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
+static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PCX86PML4E pGstPml4e, PCX86PDPE pGstPdpe, PX86PDPAE *ppPD)
 {
     PPGMCPU        pPGM          = &pVCpu->pgm.s;
     PVM            pVM           = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
     const unsigned iPml4         = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
-    bool           fNestedPagingOrNoGstPaging = HWACCMIsNestedPagingActive(pVM) || !CPUMIsGuestPagingEnabled(pVCpu);
+    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
+    bool           fNestedPagingOrNoGstPaging = pVM->pgm.s.fNestedPaging || !CPUMIsGuestPagingEnabled(pVCpu);
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
@@ -1200,7 +1208,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
  */
-int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
+static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
 {
     PPGMCPU        pPGM  = &pVCpu->pgm.s;
     PVM            pVM   = pVCpu->CTX_SUFF(pVM);
@@ -1211,7 +1219,8 @@ int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *p
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
-    Assert(HWACCMIsNestedPagingActive(pVM));
+    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
+    Assert(pVM->pgm.s.fNestedPaging);
     Assert(PGMIsLockOwner(pVM));
 
     pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
@@ -1828,7 +1837,8 @@ VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
     LogFlow(("PGMUpdateCR3: cr3=%RX64 OldCr3=%RX64\n", cr3, pVCpu->pgm.s.GCPhysCR3));
 
     /* We assume we're only called in nested paging mode. */
-    Assert(HWACCMIsNestedPagingActive(pVM) || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
+    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
+    Assert(pVM->pgm.s.fNestedPaging || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
     Assert(pVM->pgm.s.fMappingsDisabled);
     Assert(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3));
 

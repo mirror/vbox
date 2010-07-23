@@ -3123,7 +3123,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
         /* Large page case only. */
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
         {
-            Assert(HWACCMIsNestedPagingActive(pVM));
+            Assert(pVM->pgm.s.fNestedPaging);
 
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PDE4M_P | X86_PDE4M_PS;
             PEPTPD          pPD = (PEPTPD)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -3157,7 +3157,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
         /* AMD-V nested paging - @todo merge with EPT as we only check the parts that are identical. */
         case PGMPOOLKIND_PAE_PD_PHYS:
         {
-            Assert(HWACCMIsNestedPagingActive(pVM));
+            Assert(pVM->pgm.s.fNestedPaging);
 
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PDE4M_P | X86_PDE4M_PS;
             PX86PD          pPD = (PX86PD)PGMPOOL_PAGE_2_PTR(pVM, pPage);

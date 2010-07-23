@@ -135,9 +135,10 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
       && (   PGM_GST_TYPE == PGM_TYPE_REAL   \
           || PGM_GST_TYPE == PGM_TYPE_PROT))
 
-    PVM pVM   = pVCpu->pVMR3;
+    PVM pVM = pVCpu->pVMR3;
 
-    Assert(!HWACCMIsNestedPagingActive(pVM));
+    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
+    Assert(!pVM->pgm.s.fNestedPaging);
 
     pgmLock(pVM);
     /* Note: we only really need shadow paging in real and protected mode for VT-x and AMD-V (excluding nested paging/EPT modes),
