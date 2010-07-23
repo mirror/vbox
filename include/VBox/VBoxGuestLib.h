@@ -526,8 +526,8 @@ typedef VBGLR3SHAREDFOLDERMAPPING *PVBGLR3SHAREDFOLDERMAPPING;
 VBGLR3DECL(int)     VbglR3SharedFolderConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3SharedFolderDisconnect(uint32_t u32ClientId);
 VBGLR3DECL(int)     VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMountOnly,
-                                                  PVBGLR3SHAREDFOLDERMAPPING paMappings, uint32_t cbMappings,
-                                                  uint32_t *pcMappings);
+                                                  PVBGLR3SHAREDFOLDERMAPPING *ppaMappings, uint32_t *pcMappings);
+VBGLR3DECL(void)    VbglR3SharedFolderFreeMappings(PVBGLR3SHAREDFOLDERMAPPING paMappings);
 VBGLR3DECL(int)     VbglR3SharedFolderGetName(uint32_t  u32ClientId,uint32_t u32Root, char **ppszName);
 /** @}  */
 # endif /* VBOX_WITH_SHARED_FOLDERS defined */

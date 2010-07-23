@@ -30,7 +30,9 @@ typedef struct
     bool        fGuestCaseSensitive;
     bool        fWritable;
     bool        fAutoMount;
-} MAPPING, *PMAPPING;
+} MAPPING;
+/** Pointer to a MAPPING structure. */
+typedef MAPPING *PMAPPING;
 
 void vbsfMappingInit(void);
 
@@ -39,19 +41,19 @@ bool vbsfMappingQuery(uint32_t iMapping, PMAPPING *pMapping);
 int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWritable, uint32_t fAutoMount);
 int vbsfMappingsRemove(PSHFLSTRING pMapName);
 
-int vbsfMappingsQuery(SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t *pcMappings);
-int vbsfMappingsQueryName(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pString);
-int vbsfMappingsQueryWritable(SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWritable);
+int vbsfMappingsQuery(PSHFLCLIENTDATA pClient, PSHFLMAPPING pMappings, uint32_t *pcMappings);
+int vbsfMappingsQueryName(PSHFLCLIENTDATA pClient, SHFLROOT root, SHFLSTRING *pString);
+int vbsfMappingsQueryWritable(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fWritable);
 
-int vbsfMapFolder(SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 delimiter, bool fCaseSensitive, SHFLROOT *pRoot);
-int vbsfUnmapFolder(SHFLCLIENTDATA *pClient, SHFLROOT root);
+int vbsfMapFolder(PSHFLCLIENTDATA pClient, PSHFLSTRING pszMapName, RTUTF16 delimiter, bool fCaseSensitive, SHFLROOT *pRoot);
+int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root);
 
-PCRTUTF16 vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot);
-bool vbsfIsGuestMappingCaseSensitive (SHFLROOT root);
-bool vbsfIsHostMappingCaseSensitive (SHFLROOT root);
+PCRTUTF16 vbsfMappingsQueryHostRoot(SHFLROOT root, uint32_t *pcbRoot);
+bool vbsfIsGuestMappingCaseSensitive(SHFLROOT root);
+bool vbsfIsHostMappingCaseSensitive(SHFLROOT root);
 
-int vbsfMappingLoaded (const MAPPING *pLoadedMapping, SHFLROOT root);
-MAPPING *vbsfMappingGetByRoot(SHFLROOT root);
+int vbsfMappingLoaded(const PMAPPING pLoadedMapping, SHFLROOT root);
+PMAPPING vbsfMappingGetByRoot(SHFLROOT root);
 
 #endif /* !___MAPPINGS_H */
 
