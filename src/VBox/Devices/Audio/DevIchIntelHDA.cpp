@@ -1505,8 +1505,8 @@ static DECLCALLBACK(int) hdaDestruct (PPDMDEVINS pDevIns)
     AssertRC(rc);
     if (pThis->hda.pu32CorbBuf)
         RTMemFree(pThis->hda.pu32CorbBuf);
-    if (pThis->hda.pu32CorbBuf)
-        RTMemFree(pThis->hda.pu32CorbBuf);
+    if (pThis->hda.pu64RirbBuf)
+        RTMemFree(pThis->hda.pu64RirbBuf);
     return VINF_SUCCESS;
 }
 
