@@ -627,7 +627,7 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory /* = QString::null */
 
     mVMListView->setFocus();
 
-    session.Close();
+    session.UnlockMachine();
 }
 
 void VBoxSelectorWnd::vmDelete (const QString &aUuid /* = QString::null */)
@@ -671,7 +671,7 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /* = QString::null */)
                 vboxProblem().cannotSaveMachineSettings (machine);
             else
                 ok = true;
-            session.Close();
+            session.UnlockMachine();
         }
         else
             ok = true;
@@ -770,7 +770,7 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /* = QString::null */)
     if (progress.GetResultCode() != 0)
         vboxProblem().cannotOpenSession(vbox, item->machine(), progress);
 
-    session.Close();
+    session.UnlockMachine();
 }
 
 void VBoxSelectorWnd::vmDiscard (const QString &aUuid /* = QString::null */)
@@ -808,7 +808,7 @@ void VBoxSelectorWnd::vmDiscard (const QString &aUuid /* = QString::null */)
     if (!console.isOk())
         vboxProblem().cannotDiscardSavedState (console);
 
-    session.Close();
+    session.UnlockMachine();
 }
 
 void VBoxSelectorWnd::vmPause (bool aPause, const QString &aUuid /* = QString::null */)
@@ -840,7 +840,7 @@ void VBoxSelectorWnd::vmPause (bool aPause, const QString &aUuid /* = QString::n
             vboxProblem().cannotResumeMachine (console);
     }
 
-    session.Close();
+    session.UnlockMachine();
 }
 
 void VBoxSelectorWnd::vmRefresh (const QString &aUuid /* = QString::null */)

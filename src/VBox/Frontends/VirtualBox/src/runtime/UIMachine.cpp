@@ -417,7 +417,7 @@ UIMachine::~UIMachine()
     m_pSession = 0;
     delete m_pActionsPool;
     m_pActionsPool = 0;
-    m_session.Close();
+    m_session.UnlockMachine();
     m_session.detach();
     QApplication::quit();
 }

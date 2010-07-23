@@ -4258,9 +4258,9 @@
         In either case, you can get access to the <link to="IConsole" />
         object which controls VM execution.
 
-        Also in all of the above cases, one must always call <link to="ISession::close" />
-        to release the lock on the machine, or the machine's state will
-        eventually be set to "Aborted".
+        Also in all of the above cases, one must always call
+        <link to="ISession::unlockMachine" /> to release the lock on the machine, or
+        the machine's state will eventually be set to "Aborted".
 
         To change settings on a machine, the following sequence is typically
         performed:
@@ -4270,11 +4270,11 @@
 
           <li>Obtain a mutable IMachine object from <link to="ISession::machine" />.</li>
 
-          <li>Change the settings of the machine.</li>
+          <li>Change the settings of the machine by invoking IMachine methods.</li>
 
           <li>Call <link to="IMachine::saveSettings" />.</li>
 
-          <li>Close the session by calling <link to="ISession::close"/>.</li>
+          <li>Release the write lock by calling <link to="ISession::unlockMachine"/>.</li>
         </ol>
 
         <result name="E_UNEXPECTED">
@@ -4306,9 +4306,28 @@
 
     <method name="launchVMProcess">
       <desc>
-        Spawns a new process that will execute the virtual machine.
+        Spawns a new process that will execute the virtual machine and obtains a shared
+        lock on the machine for the calling session.
 
-        This operation can take some time (a new VM is started in a new process,
+        If launching the VM succeeds, the new VM process will create its own session
+        and write-lock the machine for it, preventing conflicting changes from other
+        processes. If the machine is already locked (because it is already running or
+        because another session has a write lock), launching the VM process will therefore
+        fail. Reversely, future attempts to obtain a write lock will also fail while the
+        machine is running.
+
+        The caller's session object remains separate from the session opened by the new
+        VM process. It receives its own <link to="IConsole" /> object which can be used
+        to control machine execution, but it cannot be used to change all VM settings
+        which would be available after a <link to="#lockMachine" /> call.
+
+        The caller must eventually release the session's shared lock by calling
+        <link to="ISession::unlockMachine" /> on the local session object once this call
+        has returned. However, the session's state (see <link to="ISession::state" />)
+        will not return to "Unlocked" until the remote session has also unlocked
+        the machine (i.e. the machine has stopped running).
+
+        Lauching a VM process can take some time (a new VM is started in a new process,
         for which memory and other resources need to be set up). Because of this,
         an <link to="IProgress" /> object is returned to allow the caller to wait
         for this asynchronous operation to be completed. Until then, the caller's
@@ -4319,24 +4338,15 @@
         is powered on. If launching the VM fails, error messages can be queried
         via the progress object, if available.
 
-        If launching the VM succeeds, the new VM process will create its own
-        session and lock the machine for it, preventing conflicting changes
-        from other processes. If the machine is already locked (because it
-        is already running or because another session is making changes),
-        launching the VM process will therefore fail. Reversely, future
-        locking attempts will also fail while the machine is running.
+        The progress object will have at least 2 sub-operations. The first
+        operation covers the period up to the new VM process calls powerUp.
+        The subsequent operations mirror the <link to="IConsole::powerUp"/>
+        progress object. Because <link to="IConsole::powerUp"/> may require
+        some extra sub-operations, the <link to="IProgress::operationCount"/>
+        may change at the completion of operation.
 
-        The caller's session object remains separate from the session opened
-        by the new VM process. It receives its own <link to="IConsole" />
-        object which can be used to control machine execution, but it cannot
-        be used to change all VM settings which would be available after
-        a <link to="#lockMachine" /> call.
-
-        As with all <link to="ISession" /> objects, it is recommended to call
-        <link to="ISession::close" /> on the local session object once this call
-        has returned. However, the session's state (see <link to="ISession::state" />)
-        will not return to "Unlocked" until the remote session has also unlocked
-        the machine.
+        For details on the teleportation progress operation, see
+        <link to="IConsole::powerUp"/>.
 
         The @a environment argument is a string containing definitions of
         environment variables in the following format:
@@ -4353,16 +4363,6 @@
         omitted, this variable will be removed from the resulting environment.
         If the environment string is @c null or empty, the server environment
         is inherited by the started process as is.
-
-        The progress object will have at least 2 sub-operations. The first
-        operation covers the period up to the new VM process calls powerUp.
-        The subsequent operations mirror the <link to="IConsole::powerUp"/>
-        progress object. Because <link to="IConsole::powerUp"/> may require
-        some extra sub-operations, the <link to="IProgress::operationCount"/>
-        may change at the completion of operation.
-
-        For details on the teleportation progress operation, see
-        <link to="IConsole::powerUp"/>.
 
         <result name="E_UNEXPECTED">
           Virtual machine not registered.
@@ -12770,42 +12770,45 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      wsmap="managed"
      >
     <desc>
-      The ISession interface represents a serialization primitive for virtual
-      machines. Any caller wishing to manipulate a virtual machine (represented
-      by an IMachine object) needs to create a session object first, which lives
-      in its own process space. Such session objects are then attached to the
-      <link to="IMachine" /> objects living in the VirtualBox server process to
-      coordinate possibly conflicting changes.
+      The ISession interface represents a client process and allows for locking
+      virtual machines (represented by IMachine objects) to prevent conflicting
+      changes to the machine.
+
+      Any caller wishing to manipulate a virtual machine needs to create a session
+      object first, which lives in its own process space. Such session objects are
+      then associated with <link to="IMachine" /> objects living in the VirtualBox
+      server process to coordinate such changes.
 
       There are two typical scenarios in which sessions are used:
 
       <ul>
-        <li>To alter machine settings, one needs to lock a machine for a given session
-          (client process) by calling <link to="IMachine::lockMachine"/>. While a
-          machine is thus locked, no any other process may lock the machine again.
+        <li>To alter machine settings or control a running virtual machine, one
+          needs to lock a machine for a given session (client process) by calling
+          <link to="IMachine::lockMachine"/>.
 
-          The same applies for any process which indends to actually run a virtual
-          machine in its own context, such as the VirtualBox GUI or VBoxHeadless
-          executables. They must also lock a machine for their own sessions before
-          being allowed to power up the virtual machine.
+          Whereas multiple sessions may control a running virtual machine, only
+          one process can obtain a write lock on the machine to prevent conflicting
+          changes. A write lock is also needed if a process wants to actually run a
+          virtual machine in its own context, such as the VirtualBox GUI or
+          VBoxHeadless front-ends. They must also lock a machine for their own
+          sessions before they are allowed to power up the virtual machine.
 
-          As a result, no machine can be altered while another process is already
-          using it, either because that process is modifying machine settings or
-          because the machine is running.
+          As a result, no machine settings can be altered while another process is
+          already using it, either because that process is modifying machine settings
+          or because the machine is running.
         </li>
         <li>
-          To initiate virtual machine execution using one of the existing VirtualBox
-          front-ends (e.g. the GUI or VBoxHeadless), one would instead call
-          <link to="IMachine::launchVMProcess"/>, which also requires a session
-          object as its first parameter. This session then identifies the caller
-          and lets the caller control the started machine (for example, pause machine
-          execution or power it down) as well as be notified about machine execution
-          state changes.
+          To start a VM using one of the existing VirtualBox front-ends (e.g. the
+          VirtualBox GUI or VBoxHeadless), one would use
+          <link to="IMachine::launchVMProcess"/>, which also takes a session object
+          as its first parameter. This session then identifies the caller and lets the
+          caller control the started machine (for example, pause machine execution or
+          power it down) as well as be notified about machine execution state changes.
         </li>
       </ul>
 
-      How sessions objects are used depends on whether you use the Main API
-      via COM or via the webservice:
+      How sessions objects are created in a client process depends on whether you use
+      the Main API via COM or via the webservice:
 
       <ul>
         <li>When using the COM API directly, an object of the Session class from the
@@ -12843,31 +12846,30 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Console object associated with this session.</desc>
     </attribute>
 
-    <method name="close">
+    <method name="unlockMachine">
       <desc>
-        Closes a session that was previously opened.
+        Unlocks a machine that was previously locked for the current session.
 
-        Calling this method is eventually required every time a machine has been
-        locked for a particular session using the <link to="IMachine::launchVMProcess" />
-        or <link to="IMachine::lockMachine" />) calls. Otherwise the state of
+        Calling this method is required every time a machine has been locked
+        for a particular session using the <link to="IMachine::launchVMProcess" />
+        or <link to="IMachine::lockMachine" /> calls. Otherwise the state of
         the machine will be set to <link to="MachineState_Aborted" /> on the
         server, and changes made to the machine settings will be lost.
 
-        Generally, it is recommended to close all open sessions explicitly
+        Generally, it is recommended to unlock all machines explicitly
         before terminating the application (regardless of the reason for
         the termination).
 
         <note>
           Do not expect the session state (<link to="ISession::state" />
-          to return to "Closed" immediately after you invoke
-          ISession::close(), particularly if you have started a remote
-          session to execute the VM in a new process. The session state will
-          automatically return to "Closed" once the VM is no longer executing,
-          which can of course take a very long time.
+          to return to "Unlocked" immediately after you invoke this method,
+          particularly if you have started a new VM process. The session
+          state will automatically return to "Unlocked" once the VM is no
+          longer executing, which can of course take a very long time.
         </note>
 
         <result name="E_UNEXPECTED">
-          Session is not open.
+          Session is not locked.
         </result>
 
       </desc>

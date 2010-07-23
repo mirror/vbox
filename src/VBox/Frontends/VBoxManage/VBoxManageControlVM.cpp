@@ -880,7 +880,7 @@ int handleControlVM(HandlerArg *a)
         }
     } while (0);
 
-    a->session->Close();
+    a->session->UnlockMachine();
 
     return SUCCEEDED(rc) ? 0 : 1;
 }

@@ -167,7 +167,7 @@ static int handleSetGuestProperty(HandlerArg *a)
         if (SUCCEEDED(rc))
             CHECK_ERROR(machine, SaveSettings());
 
-        a->session->Close();
+        a->session->UnlockMachine();
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }

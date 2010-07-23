@@ -89,7 +89,7 @@ UIVMPreviewWindow::~UIVMPreviewWindow()
 {
     /* Close any open session */
     if (m_session.GetState() == KSessionState_Locked)
-        m_session.Close();
+        m_session.UnlockMachine();
 }
 
 void UIVMPreviewWindow::setMachine(const CMachine& machine)
@@ -362,7 +362,7 @@ void UIVMPreviewWindow::restart()
 {
     /* Close any open session */
     if (m_session.GetState() == KSessionState_Locked)
-        m_session.Close();
+        m_session.UnlockMachine();
     if (!m_machine.isNull())
     {
         /* Fetch the latest machine state */

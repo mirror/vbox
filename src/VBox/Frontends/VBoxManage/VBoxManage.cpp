@@ -415,7 +415,7 @@ int main(int argc, char *argv[])
      * leaving the direct session not closed will turn the machine state to
      * Aborted which may have unwanted side effects like killing the saved
      * state file (if the machine was in the Saved state before). */
-    session->Close();
+    session->UnlockMachine();
 
     EventQueue::getMainEventQueue()->processEventQueue(0);
     // end "all-stuff" scope

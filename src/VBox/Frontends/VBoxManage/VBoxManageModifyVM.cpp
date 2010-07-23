@@ -2047,7 +2047,7 @@ int handleModifyVM(HandlerArg *a)
         CHECK_ERROR(machine, SaveSettings());
 
     /* it's important to always close sessions */
-    a->session->Close();
+    a->session->UnlockMachine();
 
     return SUCCEEDED(rc) ? 0 : 1;
 }

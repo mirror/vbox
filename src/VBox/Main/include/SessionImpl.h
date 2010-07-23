@@ -65,7 +65,7 @@ public:
 
     // public initializers/uninitializers only for internal purposes
     HRESULT init();
-    void uninit(bool aFinalRelease);
+    void uninit();
 
     // ISession properties
     STDMETHOD(COMGETTER(State))(SessionState_T *aState);
@@ -74,7 +74,7 @@ public:
     STDMETHOD(COMGETTER(Console))(IConsole **aConsole);
 
     // ISession methods
-    STDMETHOD(Close)();
+    STDMETHOD(UnlockMachine)();
 
     // IInternalSessionControl methods
     STDMETHOD(GetPID)(ULONG *aPid);
@@ -111,7 +111,7 @@ public:
 
 private:
 
-    HRESULT close(bool aFinalRelease, bool aFromServer);
+    HRESULT unlockMachine(bool aFinalRelease, bool aFromServer);
     HRESULT grabIPCSemaphore();
     void releaseIPCSemaphore();
 

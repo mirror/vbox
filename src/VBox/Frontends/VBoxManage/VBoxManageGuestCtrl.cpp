@@ -519,7 +519,7 @@ static int handleExecProgram(HandlerArg *a)
                         RTPrintf("Process execution aborted!\n");
                 }
             }
-            a->session->Close();
+            a->session->UnlockMachine();
         } while (0);
     }
     return SUCCEEDED(rc) ? 0 : 1;

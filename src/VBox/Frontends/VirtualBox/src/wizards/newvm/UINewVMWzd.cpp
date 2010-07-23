@@ -776,7 +776,7 @@ bool UINewVMWzdPage5::constructMachine()
                     vboxProblem().cannotSaveMachineSettings(m, this);
             }
 
-            session.Close();
+            session.UnlockMachine();
         }
         if (!success)
         {
