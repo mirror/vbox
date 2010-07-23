@@ -27,6 +27,7 @@
 #include <VBox/types.h>
 #include <VBox/vusb.h>
 #include <VBox/stam.h>
+#include <iprt/assert.h>
 
 RT_C_DECLS_BEGIN
 
@@ -352,6 +353,9 @@ typedef struct VUSBROOTHUB
 
     /** Chain of devices attached to this hub. */
     PVUSBDEV                pDevices;
+#if HC_ARCH_BITS == 32
+    uint32_t                Alignment0;
+#endif
     /** Availability Bitmap. */
     VUSBPORTBITMAP          Bitmap;
 
@@ -365,7 +369,7 @@ typedef struct VUSBROOTHUB
     uint32_t                fHcVersions;
 #ifdef VBOX_WITH_STATISTICS
 #if HC_ARCH_BITS == 32
-    uint32_t                Alignment0; /**< Counters must be 64-bit aligned. */
+    uint32_t                Alignment1; /**< Counters must be 64-bit aligned. */
 #endif
     VUSBROOTHUBTYPESTATS    Total;
     VUSBROOTHUBTYPESTATS    aTypes[VUSBXFERTYPE_MSG];
@@ -392,6 +396,12 @@ typedef struct VUSBROOTHUB
     STAMPROFILE             StatSubmitUrb;
 #endif
 } VUSBROOTHUB;
+AssertCompileMemberAlignment(VUSBROOTHUB, IRhConnector, 8);
+AssertCompileMemberAlignment(VUSBROOTHUB, Bitmap, 8);
+AssertCompileMemberAlignment(VUSBROOTHUB, CritSect, 8);
+#ifdef VBOX_WITH_STATISTICS
+AssertCompileMemberAlignment(VUSBROOTHUB, Total, 8);
+#endif
 
 /** Converts a pointer to VUSBROOTHUB::IRhConnector to a PVUSBROOTHUB. */
 #define VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface) (PVUSBROOTHUB)( (uintptr_t)(pInterface) - RT_OFFSETOF(VUSBROOTHUB, IRhConnector) )
