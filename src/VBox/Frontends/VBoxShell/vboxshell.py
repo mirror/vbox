@@ -1037,7 +1037,7 @@ def guestCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    if str(mach.sessionState) != str(ctx['const'].SessionState_Locked):
+    if mach.state != ctx['const'].MachineState_Running:
         cmdClosedVm(ctx, mach, lambda ctx, mach, a: guestExec (ctx, mach, None, ' '.join(args[2:])))
     else:
         cmdExistingVm(ctx, mach, 'guest', ' '.join(args[2:]))
