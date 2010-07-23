@@ -1262,7 +1262,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
 
     /* If a new session was opened, we must close it */
     if (!session.isNull())
-        session.Close();
+        session.UnlockMachine();
 
     return success;
 }

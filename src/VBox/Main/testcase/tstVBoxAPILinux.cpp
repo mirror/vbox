@@ -405,7 +405,7 @@ void createVM(IVirtualBox *virtualBox)
      * It is always important to close the open session when it becomes not
      * necessary any more.
      */
-    session->Close();
+    session->UnlockMachine();
 }
 
 // main

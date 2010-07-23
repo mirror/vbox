@@ -2697,7 +2697,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("The given session is busy"));
 
-    /* get the IInternalSessionControl interface */
+    // get the client's IInternalSessionControl interface
     ComPtr<IInternalSessionControl> pSessionControl = aSession;
     ComAssertMsgRet(!!pSessionControl, ("No IInternalSessionControl interface"),
                     E_INVALIDARG);
@@ -2726,78 +2726,78 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
     }
 
     // try again now
-    if (    mData->mSession.mState == SessionState_Locked
-         || mData->mSession.mState == SessionState_Unlocking
+    if (    (mData->mSession.mState == SessionState_Locked)         // machine is write-locked already (i.e. session machine exists)
+         && (lockType == LockType_Shared)                           // caller wants a shared link to the existing session that holds the write lock:
        )
     {
-        // If the machine is write-locked already (i.e. SessionMachine exists) and
-        // caller permits sharing, then try to do that now
-        if (    (mData->mSession.mState == SessionState_Locked)
-             && (lockType == LockType_Shared)
-           )
+        // OK, share the session... we are now dealing with three processes:
+        // 1) VBoxSVC (where this code runs);
+        // 2) process C: the caller's client process (who wants a shared session);
+        // 3) process W: the process which already holds the write lock on the machine (write-locking session)
+
+        // copy pointers to W (the write-locking session) before leaving lock (these must not be NULL)
+        ComPtr<IInternalSessionControl> pSessionW = mData->mSession.mDirectControl;
+        ComAssertRet(!pSessionW.isNull(), E_FAIL);
+        ComObjPtr<SessionMachine> pSessionMachine = mData->mSession.mMachine;
+        AssertReturn(!pSessionMachine.isNull(), E_FAIL);
+
+        /*
+         *  Leave the lock before calling the client process. It's safe here
+         *  since the only thing to do after we get the lock again is to add
+         *  the remote control to the list (which doesn't directly influence
+         *  anything).
+         */
+        alock.leave();
+
+        // get the console of the session holding the write lock (this is a remote call)
+        ComPtr<IConsole> pConsoleW;
+        LogFlowThisFunc(("Calling GetRemoteConsole()...\n"));
+        rc = pSessionW->GetRemoteConsole(pConsoleW.asOutParam());
+        LogFlowThisFunc(("GetRemoteConsole() returned %08X\n", rc));
+        if (FAILED(rc))
+            // the failure may occur w/o any error info (from RPC), so provide one
+            return setError(VBOX_E_VM_ERROR,
+                            tr("Failed to get a console object from the direct session (%Rrc)"), rc);
+
+        ComAssertRet(!pConsoleW.isNull(), E_FAIL);
+
+        // share the session machine and W's console with the caller's session
+        LogFlowThisFunc(("Calling AssignRemoteMachine()...\n"));
+        rc = pSessionControl->AssignRemoteMachine(pSessionMachine, pConsoleW);
+        LogFlowThisFunc(("AssignRemoteMachine() returned %08X\n", rc));
+
+        if (FAILED(rc))
+            // the failure may occur w/o any error info (from RPC), so provide one
+            return setError(VBOX_E_VM_ERROR,
+                            tr("Failed to assign the machine to the session (%Rrc)"), rc);
+        alock.enter();
+
+        // need to revalidate the state after entering the lock again
+        if (mData->mSession.mState != SessionState_Locked)
         {
-            ComAssertRet(!mData->mSession.mDirectControl.isNull(), E_FAIL);
-
-            // copy member variables before leaving lock
-            ComPtr<IInternalSessionControl> pDirectControl = mData->mSession.mDirectControl;
-            ComObjPtr<SessionMachine> pSessionMachine = mData->mSession.mMachine;
-            AssertReturn(!pSessionMachine.isNull(), E_FAIL);
-
-            /*
-             *  Leave the lock before calling the client process. It's safe here
-             *  since the only thing to do after we get the lock again is to add
-             *  the remote control to the list (which doesn't directly influence
-             *  anything).
-             */
-            alock.leave();
-
-            // get the console from the direct session (this is a remote call)
-            ComPtr<IConsole> pConsole;
-            LogFlowThisFunc(("Calling GetRemoteConsole()...\n"));
-            rc = pDirectControl->GetRemoteConsole(pConsole.asOutParam());
-            LogFlowThisFunc(("GetRemoteConsole() returned %08X\n", rc));
-            if (FAILED(rc))
-                /* The failure may occur w/o any error info (from RPC), so provide one */
-                return setError(VBOX_E_VM_ERROR,
-                                tr("Failed to get a console object from the direct session (%Rrc)"), rc);
-
-            ComAssertRet(!pConsole.isNull(), E_FAIL);
-
-            /* attach the remote session to the machine */
-            LogFlowThisFunc(("Calling AssignRemoteMachine()...\n"));
-            rc = pSessionControl->AssignRemoteMachine(pSessionMachine, pConsole);
-            LogFlowThisFunc(("AssignRemoteMachine() returned %08X\n", rc));
-
-            /* The failure may occur w/o any error info (from RPC), so provide one */
-            if (FAILED(rc))
-                return setError(VBOX_E_VM_ERROR,
-                                tr("Failed to assign the machine to the session (%Rrc)"),
-                                rc);
-            alock.enter();
-
-            /* need to revalidate the state after entering the lock again */
-            if (mData->mSession.mState != SessionState_Locked)
-            {
-                pSessionControl->Uninitialize();
-                return setError(VBOX_E_INVALID_SESSION_STATE,
-                                tr("The machine '%ls' was unlocked unexpectedly while attempting to share its session"),
-                                mUserData->mName.raw());
-            }
-
-            // add the caller's control to the list
-            mData->mSession.mRemoteControls.push_back(pSessionControl);
+            pSessionControl->Uninitialize();
+            return setError(VBOX_E_INVALID_SESSION_STATE,
+                            tr("The machine '%ls' was unlocked unexpectedly while attempting to share its session"),
+                               mUserData->mName.raw());
         }
-        else
-            // still unlocking, or caller has not permitted sharing:
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("The machine '%ls' is already locked for a session (or being unlocked)"),
-                            mUserData->mName.raw());
+
+        // add the caller's session to the list
+        mData->mSession.mRemoteControls.push_back(pSessionControl);
+    }
+    else if (    mData->mSession.mState == SessionState_Locked
+              || mData->mSession.mState == SessionState_Unlocking
+            )
+    {
+        // sharing not permitted, or machine still unlocking:
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("The machine '%ls' is already locked for a session (or being unlocked)"),
+                        mUserData->mName.raw());
     }
     else
     {
-        // no lock exists or sharing not permitted: then create the session machine
+        // machine is not locked: then write-lock the machine (create the session machine)
 
-        /* may not be busy */
+        // must not be busy
         AssertReturn(!Global::IsOnlineOrTransient(mData->mMachineState), E_FAIL);
 
         // get the caller's session PID
@@ -2806,11 +2806,13 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
         pSessionControl->GetPID((ULONG*)&pid);
         Assert(pid != NIL_RTPROCESS);
 
-        if (mData->mSession.mState == SessionState_Spawning)
+        bool fLaunchingVMProcess = (mData->mSession.mState == SessionState_Spawning);
+
+        if (fLaunchingVMProcess)
         {
-            /* This machine is awaiting for a spawning session to be opened, so
-             * reject any other open attempts from processes other than one
-             * started by #openRemoteSession(). */
+            // this machine is awaiting for a spawning session to be opened:
+            // then the calling process must be the one that got started by
+            // launchVMProcess()
 
             LogFlowThisFunc(("mSession.mPid=%d(0x%x)\n", mData->mSession.mPid, mData->mSession.mPid));
             LogFlowThisFunc(("session.pid=%d(0x%x)\n", pid, pid));
@@ -2866,7 +2868,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
                          tr("Failed to assign the machine to the session (%Rrc)"), rc);
 
             if (    SUCCEEDED(rc)
-                 && origState == SessionState_Spawning
+                 && fLaunchingVMProcess
                )
             {
                 /* complete the remote session initialization */
@@ -2910,8 +2912,8 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             mData->mSession.mState = origState;
         }
 
-        /* finalize spawning anyway (this is why we don't return on errors above) */
-        if (mData->mSession.mState == SessionState_Spawning)
+        // finalize spawning anyway (this is why we don't return on errors above)
+        if (fLaunchingVMProcess)
         {
             /* Note that the progress object is finalized later */
             /** @todo Consider checking mData->mSession.mProgress for cancellation

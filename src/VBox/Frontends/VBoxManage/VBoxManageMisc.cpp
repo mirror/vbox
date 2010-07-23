@@ -392,7 +392,7 @@ int handleStartVM(HandlerArg *a)
     }
 
     /* it's important to always close sessions */
-    a->session->Close();
+    a->session->UnlockMachine();
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -424,7 +424,7 @@ int handleDiscardState(HandlerArg *a)
                 CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
                 CHECK_ERROR_BREAK(console, ForgetSavedState(true));
             } while (0);
-            CHECK_ERROR_BREAK(a->session, Close());
+            CHECK_ERROR_BREAK(a->session, UnlockMachine());
         } while (0);
     }
 
@@ -458,7 +458,7 @@ int handleAdoptState(HandlerArg *a)
                 CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
                 CHECK_ERROR_BREAK(console, AdoptSavedState(Bstr(a->argv[1])));
             } while (0);
-            CHECK_ERROR_BREAK(a->session, Close());
+            CHECK_ERROR_BREAK(a->session, UnlockMachine());
         } while (0);
     }
 
@@ -734,7 +734,7 @@ int handleSharedFolder(HandlerArg *a)
             CHECK_ERROR(console, CreateSharedFolder(Bstr(name), Bstr(hostpath),
                                                     fWritable, fAutoMount));
             if (console)
-                a->session->Close();
+                a->session->UnlockMachine();
         }
         else
         {
@@ -750,7 +750,7 @@ int handleSharedFolder(HandlerArg *a)
             if (SUCCEEDED(rc))
                 CHECK_ERROR(machine, SaveSettings());
 
-            a->session->Close();
+            a->session->UnlockMachine();
         }
     }
     else if (!strcmp(a->argv[0], "remove"))
@@ -799,7 +799,7 @@ int handleSharedFolder(HandlerArg *a)
             CHECK_ERROR(console, RemoveSharedFolder(Bstr(name)));
 
             if (console)
-                a->session->Close();
+                a->session->UnlockMachine();
         }
         else
         {
@@ -813,7 +813,7 @@ int handleSharedFolder(HandlerArg *a)
 
             /* commit and close the session */
             CHECK_ERROR(machine, SaveSettings());
-            a->session->Close();
+            a->session->UnlockMachine();
         }
     }
     else
@@ -903,7 +903,7 @@ int handleVMStatistics(HandlerArg *a)
                     }
                 }
             }
-            a->session->Close();
+            a->session->UnlockMachine();
         }
     }
 

@@ -200,8 +200,8 @@ int main (int argc, char **argv)
             }
         }
 
-        RTPrintf ("Closing the session (may fail after power off)...\n");
-        CHECK_ERROR (session, Close());
+        RTPrintf("Closing the session (may fail after power off)...\n");
+        CHECK_ERROR(session, UnlockMachine());
     }
     while (0);
     RTPrintf ("\n");

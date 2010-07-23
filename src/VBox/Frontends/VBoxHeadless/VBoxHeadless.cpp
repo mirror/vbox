@@ -1160,7 +1160,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * unregister the callback we've registered before.
          */
         Log(("VBoxHeadless: Closing the session...\n"));
-        session->Close();
+        session->UnlockMachine();
     }
 
     /* Must be before com::Shutdown */

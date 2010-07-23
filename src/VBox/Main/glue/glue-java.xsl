@@ -2503,7 +2503,7 @@ public class VirtualBoxManager
     public void closeMachineSession(ISession s)
     {
           if (s != null)
-            s.close();
+            s.unlockMachine();
     }
 
     private static VirtualBoxManager mgr;
@@ -2568,7 +2568,7 @@ public class VirtualBoxManager
             type = "gui";
         IProgress p = m.launchVMProcess(session, type, "");
         progressBar(p, timeout);
-        session.close();
+        session.unlockMachine();
         return true;
     }
 
@@ -3019,7 +3019,7 @@ public class VirtualBoxManager
     public void closeMachineSession(ISession s)
     {
           if (s != null)
-            s.close();
+          s.unlockMachine();
     }
 
     private static VirtualBoxManager mgr;
@@ -3067,7 +3067,7 @@ public class VirtualBoxManager
             type = "gui";
         IProgress p = vbox.openRemoteSession(session, mid, type, "");
         progressBar(p, timeout);
-        session.close();
+        session.unlockMachine();
         return true;
     }
 
@@ -3465,7 +3465,7 @@ public class VirtualBoxManager
     public void closeMachineSession(ISession s)
     {
           if (s != null)
-            s.close();
+            s.unlockMachine();
     }
 
     private static VirtualBoxManager mgr;
@@ -3512,7 +3512,7 @@ public class VirtualBoxManager
             type = "gui";
         IProgress p = m.launchVMProcess(session, type, "");
         progressBar(p, timeout);
-        session.close();
+        session.unlockMachine();
         return true;
     }
 

@@ -635,7 +635,7 @@ int handleStorageAttach(HandlerArg *a)
 
 leave:
     /* it's important to always close sessions */
-    a->session->Close();
+    a->session->UnlockMachine();
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -764,7 +764,7 @@ int handleStorageController(HandlerArg *a)
     if (!pszCtl)
     {
         /* it's important to always close sessions */
-        a->session->Close();
+        a->session->UnlockMachine();
         errorSyntax(USAGE_STORAGECONTROLLER, "Storage controller name not specified\n");
         return 1;
     }
@@ -953,7 +953,7 @@ int handleStorageController(HandlerArg *a)
         CHECK_ERROR(machine, SaveSettings());
 
     /* it's important to always close sessions */
-    a->session->Close();
+    a->session->UnlockMachine();
 
     return SUCCEEDED(rc) ? 0 : 1;
 }

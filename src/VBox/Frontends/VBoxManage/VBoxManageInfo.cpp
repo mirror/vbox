@@ -2145,7 +2145,7 @@ int handleShowVMInfo(HandlerArg *a)
         rc = showVMInfo(a->virtualBox, machine, details, console);
 
         if (console)
-            a->session->Close();
+            a->session->UnlockMachine();
     }
 
     return SUCCEEDED(rc) ? 0 : 1;

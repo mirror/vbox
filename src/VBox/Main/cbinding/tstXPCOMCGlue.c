@@ -364,7 +364,7 @@ int main(int argc, char **argv)
     }
 
     listVMs(vbox, session);
-    session->vtbl->Close(session);
+    session->vtbl->UnlockMachine(session);
 
     printf("----------------------------------------------------\n");
 

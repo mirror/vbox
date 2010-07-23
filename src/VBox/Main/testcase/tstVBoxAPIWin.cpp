@@ -237,7 +237,7 @@ int testStartVM(IVirtualBox *virtualBox)
             rc = progress->WaitForCompletion (-1);
 
             /* Close the session. */
-            rc = session->Close();
+            rc = session->UnlockMachine();
 
         } while (0);
 

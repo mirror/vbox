@@ -2746,7 +2746,7 @@ leave:
     /* close the session */
     if (sessionOpened)
     {
-        rc = session->Close();
+        rc = session->UnlockMachine();
         AssertComRC(rc);
     }
 

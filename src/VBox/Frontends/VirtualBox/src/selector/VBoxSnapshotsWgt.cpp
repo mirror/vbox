@@ -543,7 +543,7 @@ void VBoxSnapshotsWgt::restoreSnapshot()
     else
         vboxProblem().cannotRestoreSnapshot (progress, snapshot.GetName());
 
-    session.Close();
+    session.UnlockMachine();
 }
 
 void VBoxSnapshotsWgt::deleteSnapshot()
@@ -589,7 +589,7 @@ void VBoxSnapshotsWgt::deleteSnapshot()
     else
         vboxProblem().cannotDeleteSnapshot (console,  snapshot.GetName());
 
-    session.Close();
+    session.UnlockMachine();
 }
 
 void VBoxSnapshotsWgt::showSnapshotDetails()
@@ -660,7 +660,7 @@ void VBoxSnapshotsWgt::takeSnapshot()
         else
             vboxProblem().cannotTakeSnapshot (console);
 
-        session.Close();
+        session.UnlockMachine();
     }
 }
 

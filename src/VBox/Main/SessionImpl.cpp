@@ -63,7 +63,7 @@ void Session::FinalRelease()
 {
     LogFlowThisFunc(("\n"));
 
-    uninit(true /* aFinalRelease */);
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -108,10 +108,9 @@ HRESULT Session::init()
  *
  *  @note Locks this object for writing.
  */
-void Session::uninit(bool aFinalRelease)
+void Session::uninit()
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aFinalRelease=%d\n", aFinalRelease));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -130,7 +129,7 @@ void Session::uninit(bool aFinalRelease)
         Assert(mState == SessionState_Locked ||
                mState == SessionState_Spawning);
 
-        HRESULT rc = close(aFinalRelease, false /* aFromServer */);
+        HRESULT rc = unlockMachine(true /* aFinalRelease */, false /* aFromServer */);
         AssertComRC(rc);
     }
 
@@ -232,7 +231,7 @@ STDMETHODIMP Session::COMGETTER(Console)(IConsole **aConsole)
 // ISession methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP Session::Close()
+STDMETHODIMP Session::UnlockMachine()
 {
     LogFlowThisFunc(("mState=%d, mType=%d\n", mState, mType));
 
@@ -244,7 +243,7 @@ STDMETHODIMP Session::Close()
 
     CHECK_OPEN();
 
-    return close(false /* aFinalRelease */, false /* aFromServer */);
+    return unlockMachine(false /* aFinalRelease */, false /* aFromServer */);
 }
 
 // IInternalSessionControl methods
@@ -490,7 +489,7 @@ STDMETHODIMP Session::Uninitialize()
                       mState == SessionState_Spawning, VBOX_E_INVALID_VM_STATE);
 
         /* close ourselves */
-        rc = close(false /* aFinalRelease */, true /* aFromServer */);
+        rc = unlockMachine(false /* aFinalRelease */, true /* aFromServer */);
     }
     else if (autoCaller.state() == InUninit)
     {
@@ -792,15 +791,15 @@ STDMETHODIMP Session::OnlineMergeMedium(IMediumAttachment *aMediumAttachment,
 ///////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Closes the current session.
+ *  Unlocks a machine associated with the current session.
  *
  *  @param aFinalRelease    called as a result of FinalRelease()
  *  @param aFromServer      called as a result of Uninitialize()
  *
- *  @note To be called only from #uninit(), #Close() or #Uninitialize().
+ *  @note To be called only from #uninit(), #UnlockMachine() or #Uninitialize().
  *  @note Locks this object for writing.
  */
-HRESULT Session::close(bool aFinalRelease, bool aFromServer)
+HRESULT Session::unlockMachine(bool aFinalRelease, bool aFromServer)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aFinalRelease=%d, isFromServer=%d\n",

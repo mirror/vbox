@@ -561,7 +561,7 @@ int handleUSBFilter (HandlerArg *a)
             CHECK_ERROR(cmd.mMachine, SaveSettings());
         }
         /* close the session */
-        a->session->Close();
+        a->session->UnlockMachine();
     }
 
     return SUCCEEDED (rc) ? 0 : 1;
