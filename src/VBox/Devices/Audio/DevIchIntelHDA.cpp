@@ -79,7 +79,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 
 #define ICH6_HDA_REG_STATES 7 /* range 0x0E */
 #define STATES(pState) (HDA_REG((pState), STATES))
-#define ICH6_HDA_STATES_SCSF 0x1
+#define ICH6_HDA_STATES_SCSF 0x7
 
 #define ICH6_HDA_REG_GSTS 8 /* range 0x10-0x11*/
 #define ICH6_HDA_GSTS_FSH_SHIFT (1)
@@ -1332,7 +1332,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     INPAY(&pThis->hda)  = 0x001D;   /* see 6.2.5 */
     pThis->hda.au32Regs[ICH6_HDA_REG_CORBSIZE] = 0x42; /* see 6.2.1 */
     pThis->hda.au32Regs[ICH6_HDA_REG_RIRBSIZE] = 0x42; /* see 6.2.1 */
-    STATES(&pThis->hda) = 0x5;
+    STATES(&pThis->hda) = 0x1;
     CORBRP(&pThis->hda) = 0x0;
     RIRBWP(&pThis->hda) = 0x0;
 
