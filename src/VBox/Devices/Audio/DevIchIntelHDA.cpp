@@ -79,7 +79,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 
 #define ICH6_HDA_REG_STATES 7 /* range 0x0E */
 #define STATES(pState) (HDA_REG((pState), STATES))
-#define ICH6_HDA_STATES_SCSF 0x5
+#define ICH6_HDA_STATES_SCSF 0x1
 
 #define ICH6_HDA_REG_GSTS 8 /* range 0x10-0x11*/
 #define ICH6_HDA_GSTS_FSH_SHIFT (1)
@@ -584,8 +584,6 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
     }
     if (INTCTL_GIE(pState))
     {
-        //** @todo r=michaln: This *must* be PCISetIrq instead 
-        
         Log(("hda: irq %s\n", fIrq ? "asserted" : "deasserted"));
         PDMDevHlpPCISetIrq(ICH6_HDASTATE_2_DEVINS(pState), 0 , fIrq);
     }
@@ -1344,7 +1342,6 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     pThis->hda.cdwCorbBuf = CORBSIZE(&pThis->hda);
     pThis->hda.cbCorbBuf = CORBSIZE(&pThis->hda) * sizeof(uint32_t);
 
-    //** @todo r=michaln: Where are the Corb/RirbBuf allocations freed?
     if (pThis->hda.pu32CorbBuf)
         memset(pThis->hda.pu32CorbBuf, 0, pThis->hda.cbCorbBuf);
     else
@@ -1498,6 +1495,22 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
 }
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) hdaDestruct (PPDMDEVINS pDevIns)
+{
+    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    
+    int rc = stac9220Destruct(&pThis->hda.Codec);
+    AssertRC(rc);
+    if (pThis->hda.pu32CorbBuf)
+        RTMemFree(pThis->hda.pu32CorbBuf);
+    if (pThis->hda.pu32CorbBuf)
+        RTMemFree(pThis->hda.pu32CorbBuf);
+    return VINF_SUCCESS;
+}
+
+/**
  * The device registration structure.
  */
 const PDMDEVREG g_DeviceICH6_HDA =
@@ -1523,7 +1536,7 @@ const PDMDEVREG g_DeviceICH6_HDA =
     /* pfnConstruct */
     hdaConstruct,
     /* pfnDestruct */
-    NULL,
+    hdaDestruct,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */

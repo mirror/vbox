@@ -31,7 +31,7 @@ typedef struct CODECVERB
     PFNCODECVERBPROCESSOR pfn;
 } CODECVERB;
 
-#define CODECNODE_F0_PARAM_LENGTH 0x13
+#define CODECNODE_F0_PARAM_LENGTH 0x14
 typedef struct CODECCOMMONNODE
 {
     uint8_t id; /* 7 - bit format */
