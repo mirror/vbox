@@ -471,7 +471,7 @@
            -->
     </const>
     <const name="Future"     value="99999">
-      <desc>Settings version greater than "1.10", written by a future VirtualBox version.</desc>
+      <desc>Settings version greater than "1.11", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
@@ -4008,7 +4008,7 @@
     <attribute name="sessionType" type="wstring" readonly="yes">
       <desc>
         Type of the session.  If <link to="#sessionState"/> is
-        SessionSpawning or SessionOpen, this attribute contains the
+        Spawning or Locked, this attribute contains the
         same value as passed to the
         <link to="IMachine::launchVMProcess"/> method in the
         @a type parameter. If the session was used with
@@ -12831,8 +12831,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="type" type="SessionType" readonly="yes">
       <desc>
         Type of this session. The value of this attribute is valid only
-        if the session is currently open (i.e. its <link to="#state" /> is
-        SessionState_SessionOpen), otherwise an error will be returned.
+        if the session currently has a machine locked (i.e. its
+        <link to="#state" /> is Locked), otherwise an error will be returned.
       </desc>
     </attribute>
 

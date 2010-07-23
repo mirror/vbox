@@ -8,37 +8,46 @@
  *
  * The code can read all VirtualBox settings files version 1.3 and higher. That version was
  * written by VirtualBox 2.0. It can write settings version 1.7 (used by VirtualBox 2.2 and
- * 3.0) and 1.9 (used by VirtualBox 3.1).
+ * 3.0) and 1.9 (used by VirtualBox 3.1) and newer ones obviously.
  *
- * Rules for introducing new settings: If an element or attribute is introduced that was not
- * present before VirtualBox 3.1, then settings version checks need to be introduced. The
- * settings version for VirtualBox 3.1 is 1.9; see the SettingsVersion enumeration in
- * src/VBox/Main/idl/VirtualBox.xidl for details about which version was used when.
+ * The settings versions enum is defined in src/VBox/Main/idl/VirtualBox.xidl. To introduce
+ * a new settings version (should be necessary at most once per VirtualBox major release,
+ * if at all), add a new SettingsVersion value to that enum and grep for the previously
+ * highest value to see which code in here needs adjusting.
  *
- * The settings versions checks are necessary because VirtualBox 3.1 no longer automatically
- * converts XML settings files but only if necessary, that is, if settings are present that
- * the old format does not support. If we write an element or attribute to a settings file
- * of an older version, then an old VirtualBox (before 3.1) will attempt to validate it
- * with XML schema, and that will certainly fail.
+ * Certainly ConfigFileBase::ConfigFileBase() will. Change VBOX_XML_VERSION below as well.
+ *
+ * Once a new settings version has been added, these are the rules for introducing a new
+ * setting: If an XML element or attribute or value is introduced that was not present in
+ * previous versions, then settings version checks need to be introduced. See the
+ * SettingsVersion enumeration in src/VBox/Main/idl/VirtualBox.xidl for details about which
+ * version was used when.
+ *
+ * The settings versions checks are necessary because since version 3.1, VirtualBox no longer
+ * automatically converts XML settings files but only if necessary, that is, if settings are
+ * present that the old format does not support. If we write an element or attribute to a
+ * settings file of an older version, then an old VirtualBox (before 3.1) will attempt to
+ * validate it with XML schema, and that will certainly fail.
  *
  * So, to introduce a new setting:
  *
  *   1) Make sure the constructor of corresponding settings structure has a proper default.
  *
  *   2) In the settings reader method, try to read the setting; if it's there, great, if not,
- *      the default value will have been set by the constructor.
+ *      the default value will have been set by the constructor. The rule is to be tolerant
+ *      here.
  *
- *   3) In the settings writer method, write the setting _only_ if the current settings
- *      version (stored in m->sv) is high enough. That is, for VirtualBox 3.3, write it
- *      only if (m->sv >= SettingsVersion_v1_11).
- *
- *   4) In MachineConfigFile::bumpSettingsVersionIfNeeded(), check if the new setting has
+ *   3) In MachineConfigFile::bumpSettingsVersionIfNeeded(), check if the new setting has
  *      a non-default value (i.e. that differs from the constructor). If so, bump the
- *      settings version to the current version so the settings writer (3) can write out
+ *      settings version to the current version so the settings writer (4) can write out
  *      the non-default value properly.
  *
  *      So far a corresponding method for MainConfigFile has not been necessary since there
  *      have been no incompatible changes yet.
+ *
+ *   4) In the settings writer method, write the setting _only_ if the current settings
+ *      version (stored in m->sv) is high enough. That is, for VirtualBox 3.3, write it
+ *      only if (m->sv >= SettingsVersion_v1_11).
  */
 
 /*
@@ -203,7 +212,8 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Constructor. Allocates the XML internals.
+ * Constructor. Allocates the XML internals, parses the XML file if
+ * pstrFilename is != NULL and reads the settings version from it.
  * @param strFilename
  */
 ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
@@ -570,7 +580,7 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
  * Before calling this, it is the responsibility of the caller to
  * set the "sv" member to the required settings version that is to
  * be written. For newly created files, the settings version will be
- * the latest (1.9); for files read in from disk earlier, it will be
+ * the latest (1.11); for files read in from disk earlier, it will be
  * the settings version indicated in the file. However, this method
  * will silently make sure that the settings version is always
  * at least 1.7 and change it if necessary, since there is no write
