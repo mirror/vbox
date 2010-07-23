@@ -77,6 +77,9 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define ICH6_HDA_GCTL_FSH_SHIFT (1)
 #define GCTL(pState) (HDA_REG((pState), GCTL))
 
+#define ICH6_HDA_REG_WAKEEN 6 /* 0x0C */
+#define WAKEEN(pState) (HDA_REG((pState), WAKEEN))
+
 #define ICH6_HDA_REG_STATES 7 /* range 0x0E */
 #define STATES(pState) (HDA_REG((pState), STATES))
 #define ICH6_HDA_STATES_SCSF 0x7
@@ -451,7 +454,7 @@ const static struct stIchIntelHDRegMap
     { 0x00004, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimplemented, "OUTPAY"    , "Output Payload Capabilities" },
     { 0x00006, 0x00002, 0x0000FFFF, 0x00000000, hdaRegReadU16          , hdaRegWriteUnimplemented, "INPAY"     , "Input Payload Capabilities" },
     { 0x00008, 0x00004, 0x00000103, 0x00000103, hdaRegReadGCTL         , hdaRegWriteGCTL         , "GCTL"      , "Global Control" },
-    { 0x0000c, 0x00002, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "WAKEEN"    , "Wake Enable" },
+    { 0x0000c, 0x00002, 0x00007FFF, 0x00007FFF, hdaRegReadU16          , hdaRegWriteU16          , "WAKEEN"    , "Wake Enable" },
     { 0x0000e, 0x00002, 0x00000007, 0x00000007, hdaRegReadU8           , hdaRegWriteSTATESTS     , "STATESTS"  , "State Change Status" },
     { 0x00010, 0x00002, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "GSTS"      , "Global Status" },
     { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, hdaRegReadU32          , hdaRegWriteU32          , "INTCTL"    , "Interrupt Control" },
@@ -1350,7 +1353,6 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     INPAY(&pThis->hda)  = 0x001D;   /* see 6.2.5 */
     pThis->hda.au32Regs[ICH6_HDA_REG_CORBSIZE] = 0x42; /* see 6.2.1 */
     pThis->hda.au32Regs[ICH6_HDA_REG_RIRBSIZE] = 0x42; /* see 6.2.1 */
-    STATES(&pThis->hda) = 0x1;
     CORBRP(&pThis->hda) = 0x0;
     RIRBWP(&pThis->hda) = 0x0;
 
@@ -1508,6 +1510,12 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
         AssertRCReturn(rc, rc);
     hdaReset (pDevIns);
     pThis->hda.Codec.pfnTransfer = hdaTransfer;
+    /* 
+     * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
+     * hdaReset shouldn't affects these registers.
+     */
+    WAKEEN(&pThis->hda) = 0x1;
+    STATES(&pThis->hda) = 0x1;
 
     return VINF_SUCCESS;
 }
