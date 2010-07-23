@@ -34,10 +34,10 @@ int VBoxSharedFoldersAutoMount(void)
         uint32_t cbMappings = cMappings * sizeof(VBGLR3SHAREDFOLDERMAPPING);
         VBGLR3SHAREDFOLDERMAPPING *paMappings = (PVBGLR3SHAREDFOLDERMAPPING)RTMemAlloc(cbMappings);
 
-        if (pMappings)
+        if (paMappings)
         {
             rc = VbglR3SharedFolderGetMappings(u32ClientId, true /* Only process auto-mounted folders */,
-                                               pMappings, cbMappings,
+                                               paMappings, cbMappings,
                                                &cMappings);
             if (RT_SUCCESS(rc))
             {
@@ -45,7 +45,7 @@ int VBoxSharedFoldersAutoMount(void)
                 for (uint32_t i = 0; i < cMappings; i++)
                 {
                     char *pszName = NULL;
-                    rc = VbglR3SharedFolderGetName(u32ClientId, pMappings[i].u32Root, &pszName);
+                    rc = VbglR3SharedFolderGetName(u32ClientId, paMappings[i].u32Root, &pszName);
                     if (   RT_SUCCESS(rc)
                         && *pszName)
                     {
@@ -84,12 +84,12 @@ int VBoxSharedFoldersAutoMount(void)
                     }
                     else
                         Log(("VBoxTray: Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
-                             pMappings[i].u32Root, rc));
+                             paMappings[i].u32Root, rc));
                 }
             }
             else
                 Log(("VBoxTray: Error while getting the shared folder mappings, rc = %Rrc\n", rc));
-            RTMemFree(pMappings);
+            RTMemFree(paMappings);
         }
         else
             rc = VERR_NO_MEMORY;
