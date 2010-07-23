@@ -63,6 +63,9 @@ extern "C" {
 
 #define STAC9220_NODE_COUNT 0x1C
 
+#define STAC9220_IS_AFG_CMD(cmd) (  \
+        CODEC_NID(cmd) == 0x1        \
+    )
 #define STAC9220_IS_PORT_CMD(cmd) (  \
            CODEC_NID(cmd) == 0xA    \
         || CODEC_NID(cmd) == 0xB    \
@@ -170,6 +173,28 @@ static int codecGetF02(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
     *pResp = *(uint32_t *)&pState->pNodes[CODEC_NID(cmd)].node.au8F02_param[cmd & CODEC_VERB_8BIT_DATA];
     return VINF_SUCCESS;
 }
+
+static int codecGetSubId(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == 0));
+    if (STAC9220_IS_AFG_CMD(cmd))
+    {
+        *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F20_param;
+    }
+    return VINF_SUCCESS;
+}
+
+#if 0
+static int codecGetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == 0));
+    if (STAC9220_IS_AFG_CMD(cmd))
+    {
+        *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F05_param;
+    }
+    return VINF_SUCCESS;
+}
+#endif
 static int stac9220Set706(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == 0));
@@ -236,7 +261,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xb] = RT_BIT(0);
             pNode->node.au32F00_param[0xd] = RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
             pNode->node.au32F00_param[0x12] = RT_BIT(31)|(0x2 << 16)|(0x7f << 8)|0x7f;
-            pNode->afg.u32F05_param = RT_MAKE_U32_FROM_U8(0x02, 0x02, 0x00, 0x0); /* Power State */
+            pNode->afg.u32F05_param = (0x2) << 4 | 0x2; /* PS-Act: 0x2, D2 */
+            pNode->afg.u32F20_param = 0x106b0800; /* Old Intel Mac */
             pNode->afg.u32F08_param = 0;
             break;
         case 2:
@@ -424,13 +450,17 @@ static CODECVERB STAC9220VERB[] =
 {
 /*    verb     | verb mask              | callback               */
 /*  -----------  --------------------   -----------------------  */
-    {0x000F0000, CODEC_VERB_8BIT_CMD,  codecGetF00},
+    {0x000F0000, CODEC_VERB_8BIT_CMD , codecGetF00},
     {0x00020000, CODEC_VERB_16BIT_CMD, codecSetConverterFormat},
     {0x000B0000, CODEC_VERB_16BIT_CMD, codecGetAmplifier },
-    {0x00070600, CODEC_VERB_8BIT_CMD,  stac9220Set706    },
-    {0x000F0700, CODEC_VERB_8BIT_CMD,  stac9220SetPinCtrl},
-    {0x00070700, CODEC_VERB_8BIT_CMD,  stac9220GetPinCtrl},
-    {0x000F0200, CODEC_VERB_8BIT_CMD,  codecGetF02       },
+    {0x00070600, CODEC_VERB_8BIT_CMD , stac9220Set706    },
+    {0x000F0700, CODEC_VERB_8BIT_CMD , stac9220SetPinCtrl},
+    {0x00070700, CODEC_VERB_8BIT_CMD , stac9220GetPinCtrl},
+    {0x000F0200, CODEC_VERB_8BIT_CMD , codecGetF02       },
+    {0x000F2000, CODEC_VERB_8BIT_CMD , codecGetSubId     },
+#if 0
+    {0x000F0500, CODEC_VERB_8BIT_CMD , codecGetPowerState},
+#endif
 };
 
 static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR pfn)
@@ -440,9 +470,8 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
         || CODEC_VERBDATA(cmd) == 0)
     {
         *pfn = CODEC_CAD(cmd) != 0 ? codecUnimplemented : codecBreak;
-        //** @todo r=michaln: Why "intelHD" and not e.g. "HDAcodec"?
         //** @todo r=michaln: There needs to be a counter to avoid log flooding (see e.g. DevRTC.cpp)
-        LogRel(("intelHD: cmd %x was ignored\n", cmd));
+        LogRel(("HDAcodec: cmd %x was ignored\n", cmd));
         return VINF_SUCCESS;
     }
     for (int i = 0; i < pState->cVerbs; ++i)
@@ -454,7 +483,7 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
         }
     }
     *pfn = codecUnimplemented;
-    LogRel(("intelHD: callback for %x wasn't found\n", CODEC_VERBDATA(cmd)));
+    LogRel(("HDAcodec: callback for %x wasn't found\n", CODEC_VERBDATA(cmd)));
     return rc;
 }
 #define CODEC_FMT_BASE_FRQ_SHIFT (14)
@@ -553,11 +582,11 @@ int stac9220Construct(CODECState *pState)
     codec_dac_to_aud(pState, STAC9220_DAC_MC, &as);
     pState->voice_mc = AUD_open_in(&pState->card, pState->voice_mc, "hda.mc", pState, mc_callback, &as);
     if (!pState->voice_pi)
-        LogRel (("intelHD: WARNING: Unable to open PCM IN!\n"));
+        LogRel (("HDAcodec: WARNING: Unable to open PCM IN!\n"));
     if (!pState->voice_mc)
-        LogRel (("intelHD: WARNING: Unable to open PCM MC!\n"));
+        LogRel (("HDAcodec: WARNING: Unable to open PCM MC!\n"));
     if (!pState->voice_po)
-        LogRel (("intelHD: WARNING: Unable to open PCM OUT!\n"));
+        LogRel (("HDAcodec: WARNING: Unable to open PCM OUT!\n"));
     int mute = 0;
     uint8_t lvol = 0x7f;
     uint8_t rvol = 0x7f;
