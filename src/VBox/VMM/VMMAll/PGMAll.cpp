@@ -2158,6 +2158,7 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
 VMM_INT_DECL(void) PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe)
 {
     Log(("PGMNotifyNxeChanged: fNxe=%RTbool\n", fNxe));
+    pVCpu->pgm.s.fNoExecuteEnabled = fNxe;
     if (fNxe)
     {
         /*pVCpu->pgm.s.fGst32BitMbzBigPdeMask - N/A */
