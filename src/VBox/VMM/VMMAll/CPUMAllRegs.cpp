@@ -602,7 +602,7 @@ VMMDECL(int) CPUMSetGuestCR3(PVMCPU pVCpu, uint64_t cr3)
 
 VMMDECL(int) CPUMSetGuestCR4(PVMCPU pVCpu, uint64_t cr4)
 {
-    if (    (cr4                 & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE))
+    if (    (cr4                     & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE))
         !=  (pVCpu->cpum.s.Guest.cr4 & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE)))
         pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GLOBAL_TLB_FLUSH;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CR4;
