@@ -627,7 +627,6 @@ VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32
         return VINF_EM_RAW_GUEST_TRAP;
     }
 
-    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
     if (!pVM->pgm.s.fNestedPaging)
     {
         /*
@@ -943,7 +942,6 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PCX86PDPE pGstPdpe, PX86PDPA
         PGMDynLockHCPage(pVM, (uint8_t *)pPdpe);
 # endif
 
-        Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
         if (pVM->pgm.s.fNestedPaging || !CPUMIsGuestPagingEnabled(pVCpu))
         {
             /* AMD-V nested paging or real/protected mode without paging. */
@@ -1064,7 +1062,6 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PCX86PML4E pGs
     PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
     const unsigned iPml4         = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
-    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
     bool           fNestedPagingOrNoGstPaging = pVM->pgm.s.fNestedPaging || !CPUMIsGuestPagingEnabled(pVCpu);
     PPGMPOOLPAGE   pShwPage;
     int            rc;
@@ -1219,7 +1216,6 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
-    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
     Assert(pVM->pgm.s.fNestedPaging);
     Assert(PGMIsLockOwner(pVM));
 
@@ -1837,7 +1833,6 @@ VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
     LogFlow(("PGMUpdateCR3: cr3=%RX64 OldCr3=%RX64\n", cr3, pVCpu->pgm.s.GCPhysCR3));
 
     /* We assume we're only called in nested paging mode. */
-    Assert(HWACCMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
     Assert(pVM->pgm.s.fNestedPaging || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
     Assert(pVM->pgm.s.fMappingsDisabled);
     Assert(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3));
