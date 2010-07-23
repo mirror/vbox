@@ -2711,6 +2711,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
 
     LogFlowThisFunc(("mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
+    SessionState_T oldState = mData->mSession.mState;
     /* Hack: in case the session is closing and there is a progress object
      * which allows waiting for the session to be closed, take the opportunity
      * and do a limited wait (max. 1 second). This helps a lot when the system
@@ -2976,8 +2977,9 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
         */
         mParent->updateClientWatcher();
 
-        /* fire an event */
-        mParent->onSessionStateChange(getId(), SessionState_Locked);
+        if (oldState != SessionState_Locked)
+            /* fire an event */
+            mParent->onSessionStateChange(getId(), SessionState_Locked);
     }
 
     return rc;
