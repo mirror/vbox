@@ -1389,12 +1389,13 @@ extern "C" int main(void)
   dpy = XOpenDisplay(NULL);
   if (dpy)
   {
-    if (glXQueryVersion(dpy, &major, &minor))
+    Bool glx_version = glXQueryVersion(dpy, &major, &minor);
+    XCloseDisplay(dpy);
+    if (glx_version)
     {
       printf("found version %u.%u, OK.\n", major, minor);
       return 0;
     }
-    XCloseDisplay(dpy);
   }
   printf("found (inactive), OK.\n");
   return 0;
