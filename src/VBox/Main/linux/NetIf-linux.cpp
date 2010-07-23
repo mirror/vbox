@@ -46,16 +46,16 @@ static int getDefaultIfaceName(char *pszName)
     char szGateway[129];
     char szMask[129];
     int  iTmp;
-    int  iFlags;
+    unsigned uFlags;
 
     if (fp)
     {
         while (fgets(szBuf, sizeof(szBuf)-1, fp))
         {
             int n = sscanf(szBuf, "%16s %128s %128s %X %d %d %d %128s %d %d %d\n",
-                           szIfName, szAddr, szGateway, &iFlags, &iTmp, &iTmp, &iTmp,
+                           szIfName, szAddr, szGateway, &uFlags, &iTmp, &iTmp, &iTmp,
                            szMask, &iTmp, &iTmp, &iTmp);
-            if (n < 10 || !(iFlags & RTF_UP))
+            if (n < 10 || !(uFlags & RTF_UP))
                 continue;
 
             if (strcmp(szAddr, "00000000") == 0 && strcmp(szMask, "00000000") == 0)
