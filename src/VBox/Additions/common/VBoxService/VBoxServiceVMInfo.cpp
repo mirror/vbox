@@ -224,12 +224,15 @@ static int vboxserviceVMInfoWriteUsers(void)
 # else
     rc = VERR_NOT_IMPLEMENTED;
 # endif
+
 #elif defined(RT_OS_FREEBSD)
     /** @todo FreeBSD: Port logged on user info retrival. */
     rc = VERR_NOT_IMPLEMENTED;
+
 #elif defined(RT_OS_OS2)
     /** @todo OS/2: Port logged on (LAN/local/whatever) user info retrival. */
     rc = VERR_NOT_IMPLEMENTED;
+
 #else
     /** @todo Add utmpx support? */
     rc = utmpname(UTMP_FILE);
@@ -247,58 +250,70 @@ static int vboxserviceVMInfoWriteUsers(void)
 
     setutent();
     utmp *ut_user;
-    uint32_t cUtmpEntries = 0;
     uint32_t cListSize = 32;
 
     /* Allocate a first array to hold 32 users max. */
-    char **aUsers = (char**)RTMemAllocZ(cListSize * sizeof(char*));
-    if (aUsers == NULL)
+    char **papszUsers = (char **)RTMemAllocZ(cListSize * sizeof(char *));
+    if (papszUsers == NULL)
         rc = VERR_NO_MEMORY;
 
     /* Process all entries in the utmp file. */
     while (   (ut_user = getutent())
            && RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(1, "bar: %s\n", ut_user->ut_user);
+        VBoxServiceVerbose(4, "VMInfo: Found logged in user \"%s\"\n", ut_user->ut_user);
 
-        if (cUtmpEntries > cListSize)
+        if (cUsersInList > cListSize)
         {
             cListSize += 32;
-            aUsers = (char**)RTMemRealloc(aUsers, cListSize * sizeof(char*));
-            AssertPtrBreakStmt(aUsers, rc = VERR_NO_MEMORY);
+            void *pvNew = RTMemRealloc(papszUsers, cListSize * sizeof(char*));
+            AssertPtrBreakStmt(pvNew, cListSize -= 32);
+            papszUsers = (char **)pvNew;
         }
 
         /* Make sure we don't add user names which are not
          * part of type USER_PROCESS. */
         if (ut_user->ut_type == USER_PROCESS)
         {
-            cUtmpEntries++;
-
             bool fFound = false;
-            for (uint32_t u = 0; u < cUsersInList && !fFound; u++)
-                fFound = (strcmp((const char*)aUsers[u], ut_user->ut_user) == 0) ? true : false;
+            for (uint32_t i = 0; i < cUsersInList && !fFound; i++)
+                fFound = strcmp(papszUsers[i], ut_user->ut_user) == 0;
 
             if (!fFound)
-                rc = RTStrAAppend(&aUsers[cUsersInList++], (const char*)ut_user->ut_user);
+            {
+                rc = RTStrDupEx(&papszUsers[cUsersInList], (const char *)ut_user->ut_user);
+                if (RT_FAILURE(rc))
+                    break;
+                cUsersInList++;
+            }
         }
     }
 
-    /* Build final user list. */
-    for (uint32_t u = 0; u < cUsersInList; u++)
+    /* Calc the string length. */
+    size_t cchUserList = 0;
+    for (uint32_t i = 0; i < cUsersInList; i++)
+        cchUserList += (i != 0) + strlen(papszUsers[i]);
+
+    /* Build the user list. */
+    rc = RTStrAllocEx(&pszUserList, cchUserList + 1);
+    if (RT_SUCCESS(rc))
     {
-        if (u > 0)
+        char *psz = pszUserList;
+        for (uint32_t i = 0; i < cUsersInList; i++)
         {
-            rc = RTStrAAppend(&pszUserList, ",");
-            AssertRCBreakStmt(rc, RTStrFree(pszUserList));
+            if (i != 0)
+                *psz++ = ',';
+            size_t cch = strlen(papszUsers[i]);
+            memcpy(psz, papszUsers[i], cch);
+            psz += cch;
         }
-        rc = RTStrAAppend(&pszUserList, (const char*)aUsers[u]);
-        AssertRCBreakStmt(rc, RTStrFree(pszUserList));
+        *psz = '\0';
     }
 
     /* Cleanup. */
-    for (uint32_t u = 0; u < cUsersInList; u++)
-        RTStrFree(aUsers[u]);
-    RTMemFree(aUsers);
+    for (uint32_t i = 0; i < cUsersInList; i++)
+        RTStrFree(papszUsers[i]);
+    RTMemFree(papszUsers);
 
     endutent(); /* Close utmp file. */
 #endif
