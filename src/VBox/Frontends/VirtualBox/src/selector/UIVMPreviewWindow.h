@@ -50,6 +50,7 @@ class UIVMPreviewWindow : public QIWithRetranslateUI<QWidget>
 public:
 
     UIVMPreviewWindow(QWidget *pParent);
+    ~UIVMPreviewWindow();
 
     void setMachine(const CMachine& machine);
     CMachine machine() const;
@@ -78,6 +79,7 @@ private:
     void repaintBGImages();
 
     /* Private member vars */
+    CSession m_session;
     CMachine m_machine;
     KMachineState m_machineState;
     QTimer *m_pUpdateTimer;
