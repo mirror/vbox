@@ -6680,7 +6680,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Codice&amp;nbspd&apos;uscita: </translation>
+        <translation>Codice&amp;nbsp;&apos;uscita: </translation>
     </message>
     <message>
         <source>Component: </source>
