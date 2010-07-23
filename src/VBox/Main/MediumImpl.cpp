@@ -46,7 +46,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-/** Describes how a machine refers to this image. */
+/** Describes how a machine refers to this medium. */
 struct BackRef
 {
     /** Equality predicate for stdc++. */
@@ -85,6 +85,7 @@ struct Medium::Data
     Data()
         : pVirtualBox(NULL),
           state(MediumState_NotCreated),
+          variant(MediumVariant_Standard),
           size(0),
           readers(0),
           preLockState(MediumState_NotCreated),
@@ -109,6 +110,7 @@ struct Medium::Data
     const Guid id;
     Utf8Str strDescription;
     MediumState_T state;
+    MediumVariant_T variant;
     Utf8Str strLocation;
     Utf8Str strLocationFull;
     uint64_t size;
@@ -791,7 +793,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
 /**
  * Initializes the medium object by opening the storage unit at the specified
- * location. The enOpenMode parameter defines whether the image will be opened
+ * location. The enOpenMode parameter defines whether the medium will be opened
  * read/write or read-only.
  *
  * Note that the UUID, format and the parent of this medium will be
@@ -801,10 +803,10 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  *
  * @param aVirtualBox   VirtualBox object.
  * @param aLocation     Storage unit location.
- * @param enOpenMode    Whether to open the image read/write or read-only.
+ * @param enOpenMode    Whether to open the medium read/write or read-only.
  * @param aDeviceType   Device type of medium.
- * @param aSetImageId   Whether to set the image UUID or not.
- * @param aImageId      New image UUID if @aSetId is true. Empty string means
+ * @param aSetImageId   Whether to set the medium UUID or not.
+ * @param aImageId      New medium UUID if @aSetId is true. Empty string means
  *                      create a new UUID, and a zero UUID is invalid.
  * @param aSetParentId  Whether to set the parent UUID or not.
  * @param aParentId     New parent UUID if @aSetParentId is true. Empty string
@@ -885,7 +887,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
 /**
  * Initializes the medium object by loading its data from the given settings
- * node. In this mode, the image will always be opened read/write.
+ * node. In this mode, the medium will always be opened read/write.
  *
  * @param aVirtualBox   VirtualBox object.
  * @param aParent       Parent medium disk or NULL for a root (base) medium.
@@ -916,7 +918,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
      * unconditionally unregister on failure */
     if (aParent)
     {
-        // differencing image: add to parent
+        // differencing medium: add to parent
         AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         m->pParent = aParent;
         aParent->m->llChildren.push_back(this);
@@ -953,9 +955,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         if (FAILED(rc)) return rc;
     }
 
-    /* optional, only for diffs, default is false;
-     * we can only auto-reset diff images, so they
-     * must not have a parent */
+    /* optional, only for diffs, default is false; we can only auto-reset
+     * diff media so they must have a parent */
     if (aParent != NULL)
         m->autoReset = data.fAutoReset;
     else
@@ -1095,7 +1096,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  *
  * Called either from FinalRelease() or by the parent when it gets destroyed.
  *
- * @note All children of this hard disk get uninitialized by calling their
+ * @note All children of this medium get uninitialized by calling their
  *       uninit() methods.
  *
  * @note Caller must hold the tree lock of the medium tree this medium is on.
@@ -1152,7 +1153,7 @@ void Medium::uninit()
  * Internal helper that removes "this" from the list of children of its
  * parent. Used in uninit() and other places when reparenting is necessary.
  *
- * The caller must hold the hard disk tree lock!
+ * The caller must hold the medium tree lock!
  */
 void Medium::deparent()
 {
@@ -1175,7 +1176,7 @@ void Medium::deparent()
  * Internal helper that removes "this" from the list of children of its
  * parent. Used in uninit() and other places when reparenting is necessary.
  *
- * The caller must hold the hard disk tree lock!
+ * The caller must hold the medium tree lock!
  */
 void Medium::setParent(const ComObjPtr<Medium> &pParent)
 {
@@ -1244,6 +1245,19 @@ STDMETHODIMP Medium::COMGETTER(State)(MediumState_T *aState)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     *aState = m->state;
+
+    return S_OK;
+}
+
+STDMETHODIMP Medium::COMGETTER(Variant)(MediumVariant_T *aVariant)
+{
+    CheckComArgOutPointerValid(aVariant);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aVariant = m->variant;
 
     return S_OK;
 }
@@ -1397,25 +1411,22 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
             return setStateError();
     }
 
-    /** @todo implement this case later */
-    CheckComArgExpr(aType, aType != MediumType_Shareable);
-
     if (m->type == aType)
     {
         /* Nothing to do */
         return S_OK;
     }
 
-    /* cannot change the type of a differencing hard disk */
+    /* cannot change the type of a differencing medium */
     if (m->pParent)
         return setError(E_FAIL,
-                        tr("Cannot change the type of hard disk '%s' because it is a differencing hard disk"),
+                        tr("Cannot change the type of medium '%s' because it is a differencing medium"),
                         m->strLocationFull.raw());
 
-    /* cannot change the type of a hard disk being in use by more than one VM */
+    /* cannot change the type of a medium being in use by more than one VM */
     if (m->backRefs.size() > 1)
         return setError(E_FAIL,
-                        tr("Cannot change the type of hard disk '%s' because it is attached to %d virtual machines"),
+                        tr("Cannot change the type of medium '%s' because it is attached to %d virtual machines"),
                         m->strLocationFull.raw(), m->backRefs.size());
 
     switch (aType)
@@ -1434,8 +1445,17 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
             /* cannot change to writethrough or shareable if there are children */
             if (getChildren().size() != 0)
                 return setError(E_FAIL,
-                                tr("Cannot change type for hard disk '%s' since it has %d child hard disk(s)"),
+                                tr("Cannot change type for medium '%s' since it has %d child media"),
                                 m->strLocationFull.raw(), getChildren().size());
+            if (aType == MediumType_Shareable)
+            {
+                MediumVariant_T variant = getVariant();
+                if (!(variant & MediumVariant_Fixed))
+                    return setError(E_FAIL,
+                                    tr("Cannot change type for medium '%s' to 'Shareable' since it is a dynamic medium storage unit"),
+                                    m->strLocationFull.raw());
+
+            }
             break;
         }
         default:
@@ -1530,8 +1550,8 @@ STDMETHODIMP Medium::COMGETTER(LogicalSize)(ULONG64 *aLogicalSize)
     }
 
     /* We assume that some backend may decide to return a meaningless value in
-     * response to VDGetSize() for differencing hard disks and therefore
-     * always ask the base hard disk ourselves. */
+     * response to VDGetSize() for differencing media and therefore always
+     * ask the base medium ourselves. */
 
     /* base() will do callers/locking */
 
@@ -1564,7 +1584,7 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
 
     if (m->pParent.isNull())
         return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Hard disk '%s' is not differencing"),
+                        tr("Medium '%s' is not differencing"),
                         m->strLocationFull.raw());
 
     if (m->autoReset != !!aAutoReset)
@@ -2077,12 +2097,12 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
         if (    !(aVariant & MediumVariant_Fixed)
             &&  !(m->formatObj->capabilities() & MediumFormatCapabilities_CreateDynamic))
             throw setError(VBOX_E_NOT_SUPPORTED,
-                           tr("Hard disk format '%s' does not support dynamic storage creation"),
+                           tr("Medium format '%s' does not support dynamic storage creation"),
                            m->strFormat.raw());
         if (    (aVariant & MediumVariant_Fixed)
             &&  !(m->formatObj->capabilities() & MediumFormatCapabilities_CreateDynamic))
             throw setError(VBOX_E_NOT_SUPPORTED,
-                           tr("Hard disk format '%s' does not support fixed storage creation"),
+                           tr("Medium format '%s' does not support fixed storage creation"),
                            m->strFormat.raw());
 
         if (m->state != MediumState_NotCreated)
@@ -2092,8 +2112,8 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
         rc = pProgress->init(m->pVirtualBox,
                              static_cast<IMedium*>(this),
                              (aVariant & MediumVariant_Fixed)
-                               ? BstrFmt(tr("Creating fixed hard disk storage unit '%s'"), m->strLocationFull.raw())
-                               : BstrFmt(tr("Creating dynamic hard disk storage unit '%s'"), m->strLocationFull.raw()),
+                               ? BstrFmt(tr("Creating fixed medium storage unit '%s'"), m->strLocationFull.raw())
+                               : BstrFmt(tr("Creating dynamic medium storage unit '%s'"), m->strLocationFull.raw()),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
             throw rc;
@@ -2164,7 +2184,11 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
 
     if (m->type == MediumType_Writethrough)
         return setError(E_FAIL,
-                        tr("Hard disk '%s' is Writethrough"),
+                        tr("Medium type of '%s' is Writethrough"),
+                        m->strLocationFull.raw());
+    else if (m->type == MediumType_Shareable)
+        return setError(E_FAIL,
+                        tr("Medium type of '%s' is Shareable"),
                         m->strLocationFull.raw());
 
     /* Apply the normal locking logic to the entire chain. */
@@ -2251,7 +2275,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
     {
         // locking: we need the tree lock first because we access parent pointers
         AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-        // and we need to write-lock the images involved
+        // and we need to write-lock the media involved
         AutoMultiWriteLock3 alock(this, pTarget, pParent COMMA_LOCKVAL_SRC_POS);
 
         if (    pTarget->m->state != MediumState_NotCreated
@@ -2305,7 +2329,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("Creating clone hard disk '%s'"), pTarget->m->strLocationFull.raw()),
+                             BstrFmt(tr("Creating clone medium '%s'"), pTarget->m->strLocationFull.raw()),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
@@ -2384,7 +2408,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("Compacting hard disk '%s'"), m->strLocationFull.raw()),
+                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.raw()),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
@@ -2448,7 +2472,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
 
         if (m->pParent.isNull())
             throw setError(VBOX_E_NOT_SUPPORTED,
-                           tr("Hard disk '%s' is not differencing"),
+                           tr("Medium type of '%s' is not differencing"),
                            m->strLocationFull.raw());
 
         rc = canClose();
@@ -2479,7 +2503,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast<IMedium*>(this),
-                             BstrFmt(tr("Resetting differencing hard disk '%s'"), m->strLocationFull.raw()),
+                             BstrFmt(tr("Resetting differencing medium '%s'"), m->strLocationFull.raw()),
                              FALSE /* aCancelable */);
         if (FAILED(rc))
             throw rc;
@@ -2551,12 +2575,21 @@ const Guid& Medium::getId() const
 }
 
 /**
- * Internal method to return the medium's GUID. Must have caller + locking!
+ * Internal method to return the medium's state. Must have caller + locking!
  * @return
  */
 MediumState_T Medium::getState() const
 {
     return m->state;
+}
+
+/**
+ * Internal method to return the medium's variant. Must have caller + locking!
+ * @return
+ */
+MediumState_T Medium::getVariant() const
+{
+    return m->variant;
 }
 
 /**
@@ -2606,7 +2639,7 @@ uint64_t Medium::getSize() const
 
 /**
  * Adds the given machine and optionally the snapshot to the list of the objects
- * this image is attached to.
+ * this medium is attached to.
  *
  * @param aMachineId    Machine ID.
  * @param aSnapshotId   Snapshot ID; when non-empty, adds a snapshot attachment.
@@ -2637,7 +2670,7 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
 
     if (m->numCreateDiffTasks > 0)
         return setError(E_FAIL,
-                        tr("Cannot attach hard disk '%s' {%RTuuid}: %u differencing child hard disk(s) are being created"),
+                        tr("Cannot attach medium '%s' {%RTuuid}: %u differencing child media are being created"),
                         m->strLocationFull.raw(),
                         m->id.raw(),
                         m->numCreateDiffTasks);
@@ -2698,7 +2731,7 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
 
 /**
  * Removes the given machine and optionally the snapshot from the list of the
- * objects this image is attached to.
+ * objects this medium is attached to.
  *
  * @param aMachineId    Machine ID.
  * @param aSnapshotId   Snapshot ID; when non-empty, removes the snapshot
@@ -2837,7 +2870,7 @@ HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
 
 /**
  * Checks if the given change of \a aOldPath to \a aNewPath affects the location
- * of this hard disk or any its child and updates the paths if necessary to
+ * of this medium or any its child and updates the paths if necessary to
  * reflect the new location.
  *
  * @param aOldPath  Old path (full).
@@ -2870,13 +2903,13 @@ void Medium::updatePaths(const char *aOldPath, const char *aNewPath)
 }
 
 /**
- * Returns the base hard disk of the hard disk chain this hard disk is part of.
+ * Returns the base medium of the media chain this medium is part of.
  *
- * The base hard disk is found by walking up the parent-child relationship axis.
- * If the hard disk doesn't have a parent (i.e. it's a base hard disk), it
+ * The base medium is found by walking up the parent-child relationship axis.
+ * If the medium doesn't have a parent (i.e. it's a base medium), it
  * returns itself in response to this method.
  *
- * @param aLevel    Where to store the number of ancestors of this hard disk
+ * @param aLevel    Where to store the number of ancestors of this medium
  *                  (zero for the base), may be @c NULL.
  *
  * @note Locks medium tree for reading.
@@ -2917,8 +2950,8 @@ ComObjPtr<Medium> Medium::getBase(uint32_t *aLevel /*= NULL*/)
 }
 
 /**
- * Returns @c true if this hard disk cannot be modified because it has
- * dependants (children) or is part of the snapshot. Related to the hard disk
+ * Returns @c true if this medium cannot be modified because it has
+ * dependants (children) or is part of the snapshot. Related to the medium
  * type and posterity, not to the current media state.
  *
  * @note Locks this object and medium tree for reading.
@@ -2960,8 +2993,8 @@ bool Medium::isReadOnly()
 }
 
 /**
- * Saves hard disk data by appending a new <HardDisk> child node to the given
- * parent node which can be either <HardDisks> or <HardDisk>.
+ * Saves medium data by appending a new child node to the given
+ * parent XML settings node.
  *
  * @param data      Settings struct to be updated.
  *
@@ -3005,7 +3038,7 @@ HRESULT Medium::saveSettings(settings::Medium &data)
         }
     }
 
-    /* only for base hard disks */
+    /* only for base media */
     if (m->pParent.isNull())
         data.hdType = m->type;
 
@@ -3024,7 +3057,7 @@ HRESULT Medium::saveSettings(settings::Medium &data)
 }
 
 /**
- * Compares the location of this hard disk to the given location.
+ * Compares the location of this medium to the given location.
  *
  * The comparison takes the location details into account. For example, if the
  * location is a file in the host's filesystem, a case insensitive comparison
@@ -3063,7 +3096,7 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
         int vrc = m->pVirtualBox->calculateFullPath(location, location);
         if (RT_FAILURE(vrc))
             return setError(E_FAIL,
-                            tr("Invalid hard disk storage file location '%s' (%Rrc)"),
+                            tr("Invalid medium storage file location '%s' (%Rrc)"),
                             location.raw(),
                             vrc);
 
@@ -3082,7 +3115,7 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
  *
  * @param fFailIfInaccessible If true, this fails with an error if a medium is inaccessible. If false,
  *          inaccessible media are silently skipped and not locked (i.e. their state remains "Inaccessible");
- *          this is necessary for a VM's removable images on VM startup for which we do not want to fail.
+ *          this is necessary for a VM's removable media VM startup for which we do not want to fail.
  * @param fMediumLockWrite  Whether to associate a write lock with this medium.
  * @param pToBeParent       Medium which will become the parent of this medium.
  * @param mediumLockList    Where to store the resulting list.
@@ -3119,7 +3152,7 @@ HRESULT Medium::createMediumLockList(bool fFailIfInaccessible,
 
         /* Accessibility check must be first, otherwise locking interferes
          * with getting the medium state. Lock lists are not created for
-         * fun, and thus getting the image status is no luxury. */
+         * fun, and thus getting the medium status is no luxury. */
         MediumState_T mediumState = pMedium->getState();
         if (mediumState == MediumState_Inaccessible)
         {
@@ -3128,7 +3161,7 @@ HRESULT Medium::createMediumLockList(bool fFailIfInaccessible,
 
             if (mediumState == MediumState_Inaccessible)
             {
-                // ignore inaccessible ISO images and silently return S_OK,
+                // ignore inaccessible ISO media and silently return S_OK,
                 // otherwise VM startup (esp. restore) may fail without good reason
                 if (!fFailIfInaccessible)
                     return S_OK;
@@ -3167,7 +3200,7 @@ HRESULT Medium::createMediumLockList(bool fFailIfInaccessible,
 }
 
 /**
- * Returns a preferred format for differencing hard disks.
+ * Returns a preferred format for differencing media.
  */
 Bstr Medium::preferredDiffFormat()
 {
@@ -3216,7 +3249,7 @@ Utf8Str Medium::getName()
 /**
  * Sets the value of m->strLocation and calculates the value of m->strLocationFull.
  *
- * Treats non-FS-path locations specially, and prepends the default hard disk
+ * Treats non-FS-path locations specially, and prepends the default medium
  * folder if the given location string does not contain any path information
  * at all.
  *
@@ -3390,7 +3423,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
 }
 
 /**
- * Queries information from the image file.
+ * Queries information from the medium.
  *
  * As a result of this call, the accessibility state and data members such as
  * size and description will be updated with the current information.
@@ -3491,8 +3524,8 @@ HRESULT Medium::queryInfo()
 
         try
         {
-            /** @todo This kind of opening of images is assuming that diff
-             * images can be opened as base images. Should be documented if
+            /** @todo This kind of opening of media is assuming that diff
+             * media can be opened as base media. Should be documented if
              * it must work for all medium format backends. */
             vrc = VDOpen(hdd,
                          format.c_str(),
@@ -3574,6 +3607,7 @@ HRESULT Medium::queryInfo()
             unsigned uImageFlags;
             vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
             ComAssertRCThrow(vrc, E_FAIL);
+            m->variant = (MediumVariant_T)uImageFlags;
 
             if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
             {
@@ -3584,11 +3618,11 @@ HRESULT Medium::queryInfo()
                 if (isImport)
                 {
                     /* the parent must be known to us. Note that we freely
-                     * call locking methods of mVirtualBox and parent from the
-                     * write lock (breaking the {parent,child} lock order)
-                     * because there may be no concurrent access to the just
-                     * opened hard disk on ther threads yet (and init() will
-                     * fail if this method reporst MediumState_Inaccessible) */
+                     * call locking methods of mVirtualBox and parent, as all
+                     * relevant locks must be already held. There may be no
+                     * concurrent access to the just opened medium on other
+                     * threads yet (and init() will fail if this method reports
+                     * MediumState_Inaccessible) */
 
                     Guid id = parentId;
                     ComObjPtr<Medium> pParent;
@@ -3598,7 +3632,7 @@ HRESULT Medium::queryInfo()
                     if (FAILED(rc))
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("Parent hard disk with UUID {%RTuuid} of the hard disk '%s' is not found in the media registry ('%s')"),
+                            tr("Parent medium with UUID {%RTuuid} of the medium '%s' is not found in the media registry ('%s')"),
                             &parentId, location.c_str(),
                             m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
@@ -3623,7 +3657,7 @@ HRESULT Medium::queryInfo()
                     if (m->pParent.isNull())
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("Hard disk '%s' is differencing but it is not associated with any parent hard disk in the media registry ('%s')"),
+                            tr("Medium type of '%s' is differencing but it is not associated with any parent medium in the media registry ('%s')"),
                             location.c_str(),
                             m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
@@ -3634,7 +3668,7 @@ HRESULT Medium::queryInfo()
                          && m->pParent->getId() != parentId)
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("Parent UUID {%RTuuid} of the hard disk '%s' does not match UUID {%RTuuid} of its parent hard disk stored in the media registry ('%s')"),
+                            tr("Parent UUID {%RTuuid} of the medium '%s' does not match UUID {%RTuuid} of its parent medium stored in the media registry ('%s')"),
                             &parentId, location.c_str(),
                             m->pParent->getId().raw(),
                             m->pVirtualBox->settingsFilePath().c_str());
@@ -3845,7 +3879,7 @@ HRESULT Medium::close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller)
 }
 
 /**
- * Deletes the hard disk storage unit.
+ * Deletes the medium storage unit.
  *
  * If @a aProgress is not NULL but the object it points to is @c null then a new
  * progress object will be created and assigned to @a *aProgress on success,
@@ -3894,16 +3928,16 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
         if (    !(m->formatObj->capabilities() & (   MediumFormatCapabilities_CreateDynamic
                                                    | MediumFormatCapabilities_CreateFixed)))
             throw setError(VBOX_E_NOT_SUPPORTED,
-                           tr("Hard disk format '%s' does not support storage deletion"),
+                           tr("Medium format '%s' does not support storage deletion"),
                            m->strFormat.raw());
 
         /* Note that we are fine with Inaccessible state too: a) for symmetry
          * with create calls and b) because it doesn't really harm to try, if
          * it is really inaccessible, the delete operation will fail anyway.
          * Accepting Inaccessible state is especially important because all
-         * registered hard disks are initially Inaccessible upon VBoxSVC
-         * startup until COMGETTER(RefreshState) is called. Accept Deleting
-         * state because some callers need to put the image in this state early
+         * registered media are initially Inaccessible upon VBoxSVC startup
+         * until COMGETTER(RefreshState) is called. Accept Deleting state
+         * because some callers need to put the medium in this state early
          * to prevent races. */
         switch (m->state)
         {
@@ -3931,7 +3965,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
             dumpBackRefs();
 #endif
             throw setError(VBOX_E_OBJECT_IN_USE,
-                           tr("Cannot delete storage: hard disk '%s' is still attached to the following %d virtual machine(s): %s"),
+                           tr("Cannot delete storage: medium '%s' is still attached to the following %d virtual machine(s): %s"),
                            m->strLocationFull.c_str(),
                            m->backRefs.size(),
                            strMachines.c_str());
@@ -3970,7 +4004,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
                            getLocationFull().raw());
         }
 
-        /* try to remove from the list of known hard disks before performing
+        /* try to remove from the list of known media before performing
          * actual deletion (we favor the consistency of the media registry
          * which would have been broken if unregisterWithVirtualBox() failed
          * after we successfully deleted the storage) */
@@ -3991,7 +4025,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
                 pProgress.createObject();
                 rc = pProgress->init(m->pVirtualBox,
                                      static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Deleting hard disk storage unit '%s'"), m->strLocationFull.raw()),
+                                     BstrFmt(tr("Deleting medium storage unit '%s'"), m->strLocationFull.raw()),
                                      FALSE /* aCancelable */);
                 if (FAILED(rc))
                     throw rc;
@@ -4108,8 +4142,8 @@ HRESULT Medium::unmarkLockedForDeletion()
 }
 
 /**
- * Creates a new differencing storage unit using the given target hard disk's
- * format and the location. Note that @c aTarget must be NotCreated.
+ * Creates a new differencing storage unit using the format of the given target
+ * medium and the location. Note that @c aTarget must be NotCreated.
  *
  * The @a aMediumLockList parameter contains the associated medium lock list,
  * which must be in locked state. If @a aWait is @c true then the caller is
@@ -4126,8 +4160,8 @@ HRESULT Medium::unmarkLockedForDeletion()
  * caller until the operation is completed. Note that @a aProgress cannot be
  * NULL when @a aWait is @c false (this method will assert in this case).
  *
- * @param aTarget           Target hard disk.
- * @param aVariant          Precise image variant to create.
+ * @param aTarget           Target medium.
+ * @param aVariant          Precise medium variant to create.
  * @param aMediumLockList   List of media which should be locked.
  * @param aProgress         Where to find/store a Progress object to track
  *                          operation completion.
@@ -4169,13 +4203,14 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
     {
         AutoMultiWriteLock2 alock(this, aTarget COMMA_LOCKVAL_SRC_POS);
 
-        ComAssertThrow(m->type != MediumType_Writethrough, E_FAIL);
+        ComAssertThrow(   m->type != MediumType_Writethrough
+                       && m->type != MediumType_Shareable, E_FAIL);
         ComAssertThrow(m->state == MediumState_LockedRead, E_FAIL);
 
         if (aTarget->m->state != MediumState_NotCreated)
             throw aTarget->setStateError();
 
-        /* Check that the hard disk is not attached to the current state of
+        /* Check that the medium is not attached to the current state of
          * any VM referring to it. */
         for (BackRefList::const_iterator it = m->backRefs.begin();
              it != m->backRefs.end();
@@ -4183,8 +4218,8 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
         {
             if (it->fInCurState)
             {
-                /* Note: when a VM snapshot is being taken, all normal hard
-                 * disks attached to the VM in the current state will be, as an
+                /* Note: when a VM snapshot is being taken, all normal media
+                 * attached to the VM in the current state will be, as an
                  * exception, also associated with the snapshot which is about
                  * to create (see SnapshotMachine::init()) before deassociating
                  * them from the current state (which takes place only on
@@ -4193,7 +4228,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
                  * used to filter out this legal situation. */
                 if (it->llSnapshotIds.size() == 0)
                     throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Hard disk '%s' is attached to a virtual machine with UUID {%RTuuid}. No differencing hard disks based on it may be created until it is detached"),
+                                   tr("Medium '%s' is attached to a virtual machine with UUID {%RTuuid}. No differencing media based on it may be created until it is detached"),
                                    m->strLocationFull.raw(), it->machineId.raw());
 
                 Assert(it->llSnapshotIds.size() == 1);
@@ -4211,7 +4246,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
                 pProgress.createObject();
                 rc = pProgress->init(m->pVirtualBox,
                                      static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Creating differencing hard disk storage unit '%s'"), aTarget->m->strLocationFull.raw()),
+                                     BstrFmt(tr("Creating differencing medium storage unit '%s'"), aTarget->m->strLocationFull.raw()),
                                      TRUE /* aCancelable */);
                 if (FAILED(rc))
                     throw rc;
@@ -4252,17 +4287,17 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
 }
 
 /**
- * Prepares this (source) hard disk, target hard disk and all intermediate hard
- * disks for the merge operation.
+ * Prepares this (source) medium, target medium and all intermediate media
+ * for the merge operation.
  *
  * This method is to be called prior to calling the #mergeTo() to perform
- * necessary consistency checks and place involved hard disks to appropriate
+ * necessary consistency checks and place involved media to appropriate
  * states. If #mergeTo() is not called or fails, the state modifications
  * performed by this method must be undone by #cancelMergeTo().
  *
  * See #mergeTo() for more information about merging.
  *
- * @param pTarget       Target hard disk.
+ * @param pTarget       Target medium.
  * @param aMachineId    Allowed machine attachment. NULL means do not check.
  * @param aSnapshotId   Allowed snapshot attachment. NULL or empty UUID means
  *                      do not check.
@@ -4276,7 +4311,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
  * @param aMediumLockList Medium locking information (out).
  *
  * @note Locks medium tree for reading. Locks this object, aTarget and all
- *       intermediate hard disks for writing.
+ *       intermediate media for writing.
  */
 HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                                const Guid *aMachineId,
@@ -4331,7 +4366,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
 
                 AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
                 throw setError(E_FAIL,
-                               tr("Hard disks '%s' and '%s' are unrelated"),
+                               tr("Media '%s' and '%s' are unrelated"),
                                m->strLocationFull.raw(), tgtLoc.raw());
             }
         }
@@ -4381,7 +4416,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                                m->strLocationFull.raw(), getChildren().size());
             }
             /* One backreference is only allowed if the machine ID is not empty
-             * and it matches the machine the image is attached to (including
+             * and it matches the machine the medium is attached to (including
              * the snapshot ID if not empty). */
             if (   m->backRefs.size() != 0
                 && (   !aMachineId
@@ -4545,10 +4580,10 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
 }
 
 /**
- * Merges this hard disk to the specified hard disk which must be either its
+ * Merges this medium to the specified medium which must be either its
  * direct ancestor or descendant.
  *
- * Given this hard disk is SOURCE and the specified hard disk is TARGET, we will
+ * Given this medium is SOURCE and the specified medium is TARGET, we will
  * get two varians of the merge operation:
  *
  *                forward merge
@@ -4562,16 +4597,16 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  *             TARGET <- Intermediate <- SOURCE <- [Extra]
  *             LockWr    Del             Del       LockWr
  *
- * Each diagram shows the involved hard disks on the hard disk chain where
- * SOURCE and TARGET belong. Under each hard disk there is a state value which
- * the hard disk must have at a time of the mergeTo() call.
+ * Each diagram shows the involved media on the media chain where
+ * SOURCE and TARGET belong. Under each medium there is a state value which
+ * the medium must have at a time of the mergeTo() call.
  *
- * The hard disks in the square braces may be absent (e.g. when the forward
- * operation takes place and SOURCE is the base hard disk, or when the backward
+ * The media in the square braces may be absent (e.g. when the forward
+ * operation takes place and SOURCE is the base medium, or when the backward
  * merge operation takes place and TARGET is the last child in the chain) but if
  * they present they are involved too as shown.
  *
- * Nor the source hard disk neither intermediate hard disks may be attached to
+ * Neither the source medium nor intermediate media may be attached to
  * any VM directly or in the snapshot, otherwise this method will assert.
  *
  * The #prepareMergeTo() method must be called prior to this method to place all
@@ -4579,22 +4614,22 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  *
  * If @a aWait is @c true then this method will perform the operation on the
  * calling thread and will not return to the caller until the operation is
- * completed. When this method succeeds, all intermediate hard disk objects in
- * the chain will be uninitialized, the state of the target hard disk (and all
- * involved extra hard disks) will be restored. @a aMediumLockList will not be
+ * completed. When this method succeeds, all intermediate medium objects in
+ * the chain will be uninitialized, the state of the target medium (and all
+ * involved extra media) will be restored. @a aMediumLockList will not be
  * deleted, whether the operation is successful or not. The caller has to do
- * this if appropriate. Note that this (source) hard disk is not uninitialized
+ * this if appropriate. Note that this (source) medium is not uninitialized
  * because of possible AutoCaller instances held by the caller of this method
  * on the current thread. It's therefore the responsibility of the caller to
  * call Medium::uninit() after releasing all callers.
  *
  * If @a aWait is @c false then this method will create a thread to perform the
  * operation asynchronously and will return immediately. If the operation
- * succeeds, the thread will uninitialize the source hard disk object and all
- * intermediate hard disk objects in the chain, reset the state of the target
- * hard disk (and all involved extra hard disks) and delete @a aMediumLockList.
+ * succeeds, the thread will uninitialize the source medium object and all
+ * intermediate medium objects in the chain, reset the state of the target
+ * medium (and all involved extra media) and delete @a aMediumLockList.
  * If the operation fails, the thread will only reset the states of all
- * involved hard disks and delete @a aMediumLockList.
+ * involved media and delete @a aMediumLockList.
  *
  * When this method fails (regardless of the @a aWait mode), it is a caller's
  * responsiblity to undo state changes and delete @a aMediumLockList using
@@ -4606,7 +4641,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  * progress object is created/used at all. Note that @a aProgress cannot be
  * NULL when @a aWait is @c false (this method will assert in this case).
  *
- * @param pTarget       Target hard disk.
+ * @param pTarget       Target medium.
  * @param fMergeForward Merge direction.
  * @param pParentForTarget New parent for target medium after merge.
  * @param aChildrenToReparent List of children of the source which will have
@@ -4621,7 +4656,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  *                This only works in "wait" mode; otherwise saveSettings gets called automatically by the thread that was created,
  *                and this parameter is ignored.
  *
- * @note Locks the tree lock for writing. Locks the hard disks from the chain
+ * @note Locks the tree lock for writing. Locks the media from the chain
  *       for writing.
  */
 HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
@@ -4669,7 +4704,7 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
                 pProgress.createObject();
                 rc = pProgress->init(m->pVirtualBox,
                                      static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Merging hard disk '%s' to '%s'"),
+                                     BstrFmt(tr("Merging medium '%s' to '%s'"),
                                              getName().raw(),
                                              tgtName.raw()),
                                      TRUE /* aCancelable */);
@@ -4715,7 +4750,7 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
  *                      to be reparented to the target after merge.
  * @param aMediumLockList Medium locking information.
  *
- * @note Locks the hard disks from the chain for writing.
+ * @note Locks the media from the chain for writing.
  */
 void Medium::cancelMergeTo(const MediaList &aChildrenToReparent,
                            MediumLockList *aMediumLockList)
@@ -4780,7 +4815,7 @@ HRESULT Medium::setFormat(CBSTR aFormat)
             = m->pVirtualBox->systemProperties()->mediumFormat(aFormat);
         if (m->formatObj.isNull())
             return setError(E_INVALIDARG,
-                            tr("Invalid hard disk storage format '%ls'"),
+                            tr("Invalid medium storage format '%ls'"),
                             aFormat);
 
         /* reference the format permanently to prevent its unexpected
@@ -4823,7 +4858,7 @@ HRESULT Medium::canClose()
 
     if (getChildren().size() != 0)
         return setError(E_FAIL,
-                        tr("Cannot close medium '%s' because it has %d child hard disk(s)"),
+                        tr("Cannot close medium '%s' because it has %d child media"),
                         m->strLocationFull.raw(), getChildren().size());
 
     return S_OK;
@@ -5079,7 +5114,7 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
                 const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
                 AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-                // open the image
+                // open the medium
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
@@ -5177,6 +5212,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
 
     /* these parameters we need after creation */
     uint64_t size = 0, logicalSize = 0;
+    MediumVariant_T variant = MediumVariant_Standard;
     bool fGenerateUuid = false;
 
     try
@@ -5231,11 +5267,15 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
                                task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
-                            tr("Could not create the hard disk storage unit '%s'%s"),
+                            tr("Could not create the medium storage unit '%s'%s"),
                             location.raw(), vdError(vrc).raw());
 
             size = VDGetFileSize(hdd, 0);
             logicalSize = VDGetSize(hdd, 0) / _1M;
+            unsigned uImageFlags;
+            vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
+            if (RT_SUCCESS(vrc))
+                variant = (MediumVariant_T)uImageFlags;
         }
         catch (HRESULT aRC) { rc = aRC; }
 
@@ -5269,6 +5309,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
 
         m->size = size;
         m->logicalSize = logicalSize;
+        m->variant = variant;
     }
     else
     {
@@ -5304,6 +5345,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
     const ComObjPtr<Medium> &pTarget = task.mTarget;
 
     uint64_t size = 0, logicalSize = 0;
+    MediumVariant_T variant = MediumVariant_Standard;
     bool fGenerateUuid = false;
 
     try
@@ -5342,7 +5384,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
         try
         {
-            /* Open all hard disk images in the target chain but the last. */
+            /* Open all media in the target chain but the last. */
             MediumLockList::Base::const_iterator targetListBegin =
                 task.mpMediumLockList->GetBegin();
             MediumLockList::Base::const_iterator targetListEnd =
@@ -5356,14 +5398,14 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
                 AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-                /* Skip over the target diff image */
+                /* Skip over the target diff medium */
                 if (pMedium->m->state == MediumState_Creating)
                     continue;
 
                 /* sanity check */
                 Assert(pMedium->m->state == MediumState_LockedRead);
 
-                /* Open all images in appropriate mode. */
+                /* Open all media in appropriate mode. */
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
@@ -5371,7 +5413,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
                              pMedium->m->vdDiskIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL,
-                                   tr("Could not open the hard disk storage unit '%s'%s"),
+                                   tr("Could not open the medium storage unit '%s'%s"),
                                    pMedium->m->strLocationFull.raw(),
                                    vdError(vrc).raw());
             }
@@ -5393,11 +5435,15 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
                                task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
-                                tr("Could not create the differencing hard disk storage unit '%s'%s"),
+                                tr("Could not create the differencing medium storage unit '%s'%s"),
                                 targetLocation.raw(), vdError(vrc).raw());
 
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
             logicalSize = VDGetSize(hdd, VD_LAST_IMAGE) / _1M;
+            unsigned uImageFlags;
+            vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
+            if (RT_SUCCESS(vrc))
+                variant = (MediumVariant_T)uImageFlags;
         }
         catch (HRESULT aRC) { rc = aRC; }
 
@@ -5417,7 +5463,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
         /** @todo r=klaus neither target nor base() are locked,
             * potential race! */
-        /* diffs for immutable hard disks are auto-reset by default */
+        /* diffs for immutable media are auto-reset by default */
         pTarget->m->autoReset = (getBase()->m->type == MediumType_Immutable);
 
         /* register with mVirtualBox as the last step and move to
@@ -5438,6 +5484,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
         pTarget->m->size = size;
         pTarget->m->logicalSize = logicalSize;
+        pTarget->m->variant = variant;
     }
     else
     {
@@ -5471,7 +5518,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
             *task.m_pfNeedsSaveSettings = fNeedsSaveSettings;
 
     /* Note that in sync mode, it's the caller's responsibility to
-     * unlock the hard disk */
+     * unlock the medium. */
 
     return rc;
 }
@@ -5508,7 +5555,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
 
             unsigned uTargetIdx = VD_LAST_IMAGE;
             unsigned uSourceIdx = VD_LAST_IMAGE;
-            /* Open all hard disks in the chain. */
+            /* Open all media in the chain. */
             MediumLockList::Base::iterator lockListBegin =
                 task.mpMediumLockList->GetBegin();
             MediumLockList::Base::iterator lockListEnd =
@@ -5531,8 +5578,8 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                 /*
                  * complex sanity (sane complexity)
                  *
-                 * The current image must be in the Deleting (image is merged)
-                 * or LockedRead (parent image) state if it is not the target.
+                 * The current medium must be in the Deleting (medium is merged)
+                 * or LockedRead (parent medium) state if it is not the target.
                  * If it is the target it must be in the LockedWrite state.
                  */
                 Assert(   (   pMedium != pTarget
@@ -5542,7 +5589,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                            && pMedium->m->state == MediumState_LockedWrite));
 
                 /*
-                 * Image must be the target, in the LockedRead state
+                 * Medium must be the target, in the LockedRead state
                  * or Deleting state where it is not allowed to be attached
                  * to a virtual machine.
                  */
@@ -5560,7 +5607,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                     || pMedium->m->state == MediumState_Deleting)
                     uOpenFlags = VD_OPEN_FLAGS_READONLY;
 
-                /* Open the image */
+                /* Open the medium */
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
@@ -5619,7 +5666,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
         catch (int aVRC)
         {
             throw setError(E_FAIL,
-                            tr("Could not merge the hard disk '%s' to '%s'%s"),
+                            tr("Could not merge the medium '%s' to '%s'%s"),
                             m->strLocationFull.raw(),
                             pTarget->m->strLocationFull.raw(),
                             vdError(aVRC).raw());
@@ -5633,7 +5680,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
 
     if (SUCCEEDED(rc))
     {
-        /* all hard disks but the target were successfully deleted by
+        /* all media but the target were successfully deleted by
          * VDMerge; reparent the last one and uninitialize deleted media. */
 
         AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -5641,7 +5688,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
         if (task.mfMergeForward)
         {
             /* first, unregister the target since it may become a base
-             * hard disk which needs re-registration */
+             * medium which needs re-registration */
             rc2 = m->pVirtualBox->unregisterHardDisk(pTarget, NULL /*&fNeedsSaveSettings*/);
             AssertComRC(rc2);
 
@@ -5687,7 +5734,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
             }
         }
 
-        /* unregister and uninitialize all hard disks removed by the merge */
+        /* unregister and uninitialize all media removed by the merge */
         MediumLockList::Base::iterator lockListBegin =
             task.mpMediumLockList->GetBegin();
         MediumLockList::Base::iterator lockListEnd =
@@ -5701,7 +5748,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
              * lock deletion below would invalidate the referenced object. */
             const ComObjPtr<Medium> pMedium = mediumLock.GetMedium();
 
-            /* The target and all images not merged (readonly) are skipped */
+            /* The target and all media not merged (readonly) are skipped */
             if (   pMedium == pTarget
                 || pMedium->m->state == MediumState_LockedRead)
             {
@@ -5713,13 +5760,13 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                                                               NULL /*pfNeedsSaveSettings*/);
             AssertComRC(rc2);
 
-            /* now, uninitialize the deleted hard disk (note that
+            /* now, uninitialize the deleted medium (note that
              * due to the Deleting state, uninit() will not touch
              * the parent-child relationship so we need to
              * uninitialize each disk individually) */
 
-            /* note that the operation initiator hard disk (which is
-             * normally also the source hard disk) is a special case
+            /* note that the operation initiator medium (which is
+             * normally also the source medium) is a special case
              * -- there is one more caller added by Task to it which
              * we must release. Also, if we are in sync mode, the
              * caller may still hold an AutoCaller instance for it
@@ -5759,7 +5806,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
     {
         /* Here we come if either VDMerge() failed (in which case we
          * assume that it tried to do everything to make a further
-         * retry possible -- e.g. not deleted intermediate hard disks
+         * retry possible -- e.g. not deleted intermediate media
          * and so on) or VirtualBox::saveSettings() failed (where we
          * should have the original tree but with intermediate storage
          * units deleted by VDMerge()). We have to only restore states
@@ -5796,6 +5843,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
     bool fCreatingTarget = false;
 
     uint64_t size = 0, logicalSize = 0;
+    MediumVariant_T variant = MediumVariant_Standard;
     bool fGenerateUuid = false;
 
     try
@@ -5824,7 +5872,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
 
         try
         {
-            /* Open all hard disk images in the source chain. */
+            /* Open all media in the source chain. */
             MediumLockList::Base::const_iterator sourceListBegin =
                 task.mpSourceMediumLockList->GetBegin();
             MediumLockList::Base::const_iterator sourceListEnd =
@@ -5840,7 +5888,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                 /* sanity check */
                 Assert(pMedium->m->state == MediumState_LockedRead);
 
-                /** Open all images in read-only mode. */
+                /** Open all media in read-only mode. */
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
@@ -5848,7 +5896,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                              pMedium->m->vdDiskIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL,
-                                    tr("Could not open the hard disk storage unit '%s'%s"),
+                                    tr("Could not open the medium storage unit '%s'%s"),
                                     pMedium->m->strLocationFull.raw(),
                                     vdError(vrc).raw());
             }
@@ -5875,7 +5923,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
 
             try
             {
-                /* Open all hard disk images in the target chain. */
+                /* Open all media in the target chain. */
                 MediumLockList::Base::const_iterator targetListBegin =
                     task.mpTargetMediumLockList->GetBegin();
                 MediumLockList::Base::const_iterator targetListEnd =
@@ -5898,7 +5946,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                     Assert(    pMedium->m->state == MediumState_LockedRead
                             || pMedium->m->state == MediumState_LockedWrite);
 
-                    /* Open all images in appropriate mode. */
+                    /* Open all media in appropriate mode. */
                     vrc = VDOpen(targetHdd,
                                  pMedium->m->strFormat.c_str(),
                                  pMedium->m->strLocationFull.c_str(),
@@ -5906,7 +5954,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                                  pMedium->m->vdDiskIfaces);
                     if (RT_FAILURE(vrc))
                         throw setError(E_FAIL,
-                                       tr("Could not open the hard disk storage unit '%s'%s"),
+                                       tr("Could not open the medium storage unit '%s'%s"),
                                        pMedium->m->strLocationFull.raw(),
                                        vdError(vrc).raw());
                 }
@@ -5926,11 +5974,15 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                              task.mVDOperationIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL,
-                                    tr("Could not create the clone hard disk '%s'%s"),
+                                    tr("Could not create the clone medium '%s'%s"),
                                     targetLocation.raw(), vdError(vrc).raw());
 
                 size = VDGetFileSize(targetHdd, VD_LAST_IMAGE);
                 logicalSize = VDGetSize(targetHdd, VD_LAST_IMAGE) / _1M;
+                unsigned uImageFlags;
+                vrc = VDGetImageFlags(targetHdd, 0, &uImageFlags);
+                if (RT_SUCCESS(vrc))
+                    variant = (MediumVariant_T)uImageFlags;
             }
             catch (HRESULT aRC) { rc = aRC; }
 
@@ -5942,7 +5994,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
     }
     catch (HRESULT aRC) { rc = aRC; }
 
-    /* Only do the parent changes for newly created images. */
+    /* Only do the parent changes for newly created media. */
     if (SUCCEEDED(rc) && fCreatingTarget)
     {
         /* we set mParent & children() */
@@ -5983,6 +6035,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
 
             pTarget->m->size = size;
             pTarget->m->logicalSize = logicalSize;
+            pTarget->m->variant = variant;
         }
         else
         {
@@ -6056,7 +6109,7 @@ HRESULT Medium::taskDeleteHandler(Medium::DeleteTask &task)
 
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
-                                tr("Could not delete the hard disk storage unit '%s'%s"),
+                                tr("Could not delete the medium storage unit '%s'%s"),
                                 location.raw(), vdError(vrc).raw());
 
         }
@@ -6093,6 +6146,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
     HRESULT rc = S_OK;
 
     uint64_t size = 0, logicalSize = 0;
+    MediumVariant_T variant = MediumVariant_Standard;
 
     try
     {
@@ -6124,7 +6178,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
 
         try
         {
-            /* Open all hard disk images in the target chain but the last. */
+            /* Open all media in the target chain but the last. */
             MediumLockList::Base::const_iterator targetListBegin =
                 task.mpMediumLockList->GetBegin();
             MediumLockList::Base::const_iterator targetListEnd =
@@ -6142,7 +6196,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
                 Assert(   pMedium == this
                        || pMedium->m->state == MediumState_LockedRead);
 
-                /* Open all images in appropriate mode. */
+                /* Open all media in appropriate mode. */
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
@@ -6150,11 +6204,11 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
                              pMedium->m->vdDiskIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL,
-                                   tr("Could not open the hard disk storage unit '%s'%s"),
+                                   tr("Could not open the medium storage unit '%s'%s"),
                                    pMedium->m->strLocationFull.raw(),
                                    vdError(vrc).raw());
 
-                /* Done when we hit the image which should be reset */
+                /* Done when we hit the media which should be reset */
                 if (pMedium == this)
                     break;
             }
@@ -6163,7 +6217,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
             vrc = VDClose(hdd, true /* fDelete */);
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
-                               tr("Could not delete the hard disk storage unit '%s'%s"),
+                               tr("Could not delete the medium storage unit '%s'%s"),
                                location.raw(), vdError(vrc).raw());
 
             /* next, create it again */
@@ -6174,13 +6228,13 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
                          m->vdDiskIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
-                                tr("Could not open the hard disk storage unit '%s'%s"),
+                                tr("Could not open the medium storage unit '%s'%s"),
                                 parentLocation.raw(), vdError(vrc).raw());
 
             vrc = VDCreateDiff(hdd,
                                format.c_str(),
                                location.c_str(),
-                               /// @todo use the same image variant as before
+                               /// @todo use the same medium variant as before
                                VD_IMAGE_FLAGS_NONE,
                                NULL,
                                id.raw(),
@@ -6190,11 +6244,15 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
                                task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
-                                tr("Could not create the differencing hard disk storage unit '%s'%s"),
+                                tr("Could not create the differencing medium storage unit '%s'%s"),
                                 location.raw(), vdError(vrc).raw());
 
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
             logicalSize = VDGetSize(hdd, VD_LAST_IMAGE) / _1M;
+            unsigned uImageFlags;
+            vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
+            if (RT_SUCCESS(vrc))
+                variant = (MediumVariant_T)uImageFlags;
         }
         catch (HRESULT aRC) { rc = aRC; }
 
@@ -6206,6 +6264,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
 
     m->size = size;
     m->logicalSize = logicalSize;
+    m->variant = variant;
 
     if (task.isAsync())
     {
@@ -6215,7 +6274,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
     }
 
     /* Note that in sync mode, it's the caller's responsibility to
-     * unlock the hard disk */
+     * unlock the medium. */
 
     return rc;
 }
@@ -6243,7 +6302,7 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
 
         try
         {
-            /* Open all hard disk images in the chain. */
+            /* Open all media in the chain. */
             MediumLockList::Base::const_iterator mediumListBegin =
                 task.mpMediumLockList->GetBegin();
             MediumLockList::Base::const_iterator mediumListEnd =
@@ -6265,7 +6324,7 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
                 else
                     Assert(pMedium->m->state == MediumState_LockedRead);
 
-                /** Open all images but last in read-only mode. */
+                /** Open all media but last in read-only mode. */
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
@@ -6273,7 +6332,7 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
                              pMedium->m->vdDiskIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL,
-                                   tr("Could not open the hard disk storage unit '%s'%s"),
+                                   tr("Could not open the medium storage unit '%s'%s"),
                                    pMedium->m->strLocationFull.raw(),
                                    vdError(vrc).raw());
             }
@@ -6290,15 +6349,15 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
             {
                 if (vrc == VERR_NOT_SUPPORTED)
                     throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Compacting is not yet supported for hard disk '%s'"),
+                                   tr("Compacting is not yet supported for medium '%s'"),
                                    location.raw());
                 else if (vrc == VERR_NOT_IMPLEMENTED)
                     throw setError(E_NOTIMPL,
-                                   tr("Compacting is not implemented, hard disk '%s'"),
+                                   tr("Compacting is not implemented, medium '%s'"),
                                    location.raw());
                 else
                     throw setError(E_FAIL,
-                                   tr("Could not compact hard disk '%s'%s"),
+                                   tr("Could not compact medium '%s'%s"),
                                    location.raw(),
                                    vdError(vrc).raw());
             }
@@ -6310,7 +6369,7 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
     catch (HRESULT aRC) { rc = aRC; }
 
     /* Everything is explicitly unlocked when the task exits,
-     * as the task destruction also destroys the image chain. */
+     * as the task destruction also destroys the media chain. */
 
     return rc;
 }

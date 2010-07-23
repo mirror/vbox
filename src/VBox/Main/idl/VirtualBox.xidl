@@ -8566,7 +8566,7 @@
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="1d578f43-5ef1-4415-b556-7592d3ccdc8f"
+    uuid="858ea9d3-9ade-4aa7-91b7-d8a40f8f9b16"
     wsmap="managed"
   >
     <desc>
@@ -8949,6 +8949,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <note>As of version 3.1, this no longer performs an accessibility check
           automatically; call <link to="#refreshState"/> for that.
         </note>
+      </desc>
+    </attribute>
+
+    <attribute name="variant" type="MediumVariant" readonly="yes">
+      <desc>
+        Returns the storage format variant information for this medium.
+        Before <link to="#refreshState"/> is called this method returns
+        an undefined value.
       </desc>
     </attribute>
 

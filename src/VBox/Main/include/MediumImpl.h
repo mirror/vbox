@@ -96,6 +96,7 @@ public:
     STDMETHOD(COMGETTER(Description))(BSTR *aDescription);
     STDMETHOD(COMSETTER(Description))(IN_BSTR aDescription);
     STDMETHOD(COMGETTER(State))(MediumState_T *aState);
+    STDMETHOD(COMGETTER(Variant))(MediumVariant_T *aVariant);
     STDMETHOD(COMGETTER(Location))(BSTR *aLocation);
     STDMETHOD(COMSETTER(Location))(IN_BSTR aLocation);
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
@@ -154,6 +155,7 @@ public:
     // a caller and a read lock before calling them!)
     const Guid& getId() const;
     MediumState_T getState() const;
+    MediumVariant_T getVariant() const;
     const Utf8Str& getLocation() const;
     const Utf8Str& getLocationFull() const;
     const Utf8Str& getFormat() const;

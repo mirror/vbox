@@ -11035,8 +11035,11 @@ HRESULT SessionMachine::lockMedia()
         // attached later.
         if (pMedium != NULL)
         {
-            bool fIsReadOnlyImage = (devType == DeviceType_DVD);
+            MediumType_T mediumType = pMedium->getType();
+            bool fIsReadOnlyImage =    devType == DeviceType_DVD
+                                    || mediumType == MediumType_Shareable;
             bool fIsVitalImage = (devType == DeviceType_HardDisk);
+
             mrc = pMedium->createMediumLockList(fIsVitalImage /* fFailIfInaccessible */,
                                                 !fIsReadOnlyImage /* fMediumLockWrite */,
                                                 NULL,
