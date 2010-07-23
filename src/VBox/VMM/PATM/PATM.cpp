@@ -551,7 +551,7 @@ int patmReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdat
     }
 
     if (    !pDisInfo->pInstrHC
-        ||  (   PAGE_ADDRESS(pDisInfo->pInstrGC) != PAGE_ADDRESS(pSrc + size - 1) 
+        ||  (   PAGE_ADDRESS(pDisInfo->pInstrGC) != PAGE_ADDRESS(pSrc + size - 1)
              && !PATMIsPatchGCAddr(pDisInfo->pVM, pSrc)))
     {
         Assert(!PATMIsPatchGCAddr(pDisInfo->pVM, pSrc));
@@ -631,7 +631,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
         {
         case FIXUP_ABSOLUTE:
             Log(("Absolute fixup at %RRv %RHv -> %RHv at %RRv\n", pRec->pSource, *(RTRCUINTPTR *)pRec->pRelocPos, *(RTRCINTPTR*)pRec->pRelocPos + delta, pRec->pRelocPos));
-            if (    !pRec->pSource 
+            if (    !pRec->pSource
                 ||  PATMIsPatchGCAddr(pVM, pRec->pSource))
             {
                 *(RTRCUINTPTR *)pRec->pRelocPos += delta;
@@ -652,7 +652,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
 
                 pRec->pDest = (RTRCPTR)((RTRCUINTPTR)pRec->pDest + delta);
 
-                if (    rc == VERR_PAGE_NOT_PRESENT 
+                if (    rc == VERR_PAGE_NOT_PRESENT
                     ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
                 {
                     RTRCPTR pPage = pPatch->patch.pPrivInstrGC & PAGE_BASE_GC_MASK;
@@ -694,7 +694,11 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
                 RTRCINTPTR displ   = (RTRCINTPTR)pTarget - (RTRCINTPTR)pRec->pSource;
                 RTRCINTPTR displOld= (RTRCINTPTR)pRec->pDest - (RTRCINTPTR)pRec->pSource;
 
+#if 0 /** @todo '*(int32_t*)pRec->pRelocPos' crashes on restore of an XP VM here. pRelocPos=0x8000dbe2180a (bird) */
                 Log(("Relative fixup (g2p) %08X -> %08X at %08X (source=%08x, target=%08x)\n", *(int32_t*)pRec->pRelocPos, displ, pRec->pRelocPos, pRec->pSource, pRec->pDest));
+#else
+                Log(("Relative fixup (g2p) ???????? -> %08X at %08X (source=%08x, target=%08x)\n", displ, pRec->pRelocPos, pRec->pSource, pRec->pDest));
+#endif
 
                 Assert(pRec->pSource - pPatch->patch.cbPatchJump == pPatch->patch.pPrivInstrGC);
 #ifdef PATM_RESOLVE_CONFLICTS_WITH_JUMP_PATCHES
@@ -728,7 +732,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
                 rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), temp, pPatch->patch.pPrivInstrGC, pPatch->patch.cbPatchJump);
                 Assert(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
-                if (    rc == VERR_PAGE_NOT_PRESENT 
+                if (    rc == VERR_PAGE_NOT_PRESENT
                     ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
                 {
                     RTRCPTR pPage = pPatch->patch.pPrivInstrGC & PAGE_BASE_GC_MASK;
@@ -3903,7 +3907,7 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
     PATMP2GLOOKUPREC cacheRec;
     RT_ZERO(cacheRec);
     cacheRec.pPatch = pPatch;
-   
+
     rc = patmGenJumpToPatch(pVM, pPatch, &cacherec, true);
     /* Free leftover lock if any. */
     if (cacheRec.Lock.pvMap)
@@ -3981,8 +3985,8 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     int rc;
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
-    if (    !pVM 
-        ||  pInstrGC == 0 
+    if (    !pVM
+        ||  pInstrGC == 0
         || (flags & ~(PATMFL_CODE32|PATMFL_IDTHANDLER|PATMFL_INTHANDLER|PATMFL_SYSENTER|PATMFL_TRAPHANDLER|PATMFL_DUPLICATE_FUNCTION|PATMFL_REPLACE_FUNCTION_CALL|PATMFL_GUEST_SPECIFIC|PATMFL_INT3_REPLACEMENT|PATMFL_TRAPHANDLER_WITH_ERRORCODE|PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT|PATMFL_MMIO_ACCESS|PATMFL_TRAMPOLINE|PATMFL_INSTR_HINT|PATMFL_JUMP_CONFLICT)))
     {
         AssertFailed();
@@ -4139,7 +4143,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
 
     pInstrHC = PATMGCVirtToHCVirt(pVM, &cacheRec, pInstrGC);
     AssertReturn(pInstrHC, VERR_PATCHING_REFUSED);
-    
+
     /* Allocate patch record. */
     rc = MMHyperAlloc(pVM, sizeof(PATMPATCHREC), 0, MM_TAG_PATM_PATCH, (void **)&pPatchRec);
     if (RT_FAILURE(rc))
@@ -6177,7 +6181,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
             {
                 /* The guest page *must* be present. */
                 rc = PGMGstGetPage(pVCpu, pCtx->esp, &fFlags, NULL);
-                if (    rc == VINF_SUCCESS 
+                if (    rc == VINF_SUCCESS
                     &&  (fFlags & X86_PTE_P))
                 {
                     STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatHandleTrap, a);
