@@ -1370,8 +1370,8 @@ static void vboxNetFltSolarisPromiscReqWrap(void *pvData)
             pPromiscStream->TimeoutId = 0;
             vboxNetFltSolarisPromiscReq(pPromiscStream->Stream.pReadQueue, pParams->fPromiscOn);
         }
+        RTMemFree(pParams);
     }
-    RTMemFree(pParams);
 }
 
 
