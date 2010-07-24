@@ -112,12 +112,7 @@ static int codecUnimplemented(struct CODECState *pState, uint32_t cmd, uint64_t 
 {
     Log(("codecUnimplemented: cmd(raw:%x: cad:%x, d:%c, nid:%x, verb:%x)\n", cmd,
         CODEC_CAD(cmd), CODEC_DIRECT(cmd) ? 'N' : 'Y', CODEC_NID(cmd), CODEC_VERBDATA(cmd)));
-    if (CODEC_CAD(cmd) != pState->id)
-        //** @todo r=michaln: Are we really supposed to respond to commands sent to nonexistent codecs??
-        //** @todo r=michaln: Where in the specs is this response format defined?
-        *pResp = ((uint64_t)CODEC_CAD(cmd) << 4)| 0xFF;
-    else
-        *pResp = 0;
+    *pResp = 0;
     return VINF_SUCCESS;
 }
 
@@ -128,7 +123,7 @@ static int codecBreak(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
     *pResp |= CODEC_RESPONSE_UNSOLICITED; 
     return rc;
 }
-
+/* B-- */
 static int codecGetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
@@ -151,6 +146,35 @@ static int codecGetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
     else {
         *pResp = 0;
         AssertMsgReturn(0, ("access to fields of %x need to be implemented\n", CODEC_NID(cmd)), VINF_SUCCESS);
+    }
+    return VINF_SUCCESS;
+}
+/* 3-- */
+static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    uint32_t *pu32Bparam = NULL;
+    PCODECNODE pNode = &pState->pNodes[CODEC_NID(cmd)];
+    *pResp = 0;
+    if (STAC9220_IS_DAC_CMD(cmd))
+        pu32Bparam = &AMPLIFIER_REGISTER(pNode->dac.B_params, 
+            CODEC_B_DIRECTION(cmd), 
+            CODEC_B_SIDE(cmd), 
+            CODEC_B_INDEX(cmd));
+    else if (STAC9220_IS_ADCVOL_CMD(cmd))
+        pu32Bparam = &AMPLIFIER_REGISTER(pNode->adcvol.B_params, 
+            CODEC_B_DIRECTION(cmd), 
+            CODEC_B_SIDE(cmd), 
+            CODEC_B_INDEX(cmd));
+    else if (STAC9220_IS_ADCMUX_CMD(cmd))
+        pu32Bparam = &AMPLIFIER_REGISTER(pNode->adcmux.B_params, 
+            CODEC_B_DIRECTION(cmd), 
+            CODEC_B_SIDE(cmd), 
+            CODEC_B_INDEX(cmd));
+    Assert(pu32Bparam);
+    if (pu32Bparam)
+    {
+        *pu32Bparam = (*pu32Bparam) & ~CODEC_VERB_8BIT_DATA;
+        *pu32Bparam = (*pu32Bparam) | (cmd & CODEC_VERB_8BIT_DATA);
     }
     return VINF_SUCCESS;
 }
@@ -188,6 +212,60 @@ static int codecGetF02(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
     *pResp = *(uint32_t *)&pState->pNodes[CODEC_NID(cmd)].node.au8F02_param[cmd & CODEC_VERB_8BIT_DATA];
+    return VINF_SUCCESS;
+}
+/* F03 */
+static int codecGetProcessingState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    *pResp = 0;
+    if (STAC9220_IS_ADC_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param;
+    return VINF_SUCCESS;
+}
+/* 703 */
+static int codecSetProcessingState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    if (STAC9220_IS_ADC_CMD(cmd))
+    {
+        pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param &= ~CODEC_VERB_8BIT_DATA; 
+        pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param |= cmd & CODEC_VERB_8BIT_DATA; 
+    }
+    *pResp = 0;
+    return VINF_SUCCESS;
+}
+/* F0D */
+static int codecGetDigitalConverter(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    *pResp = 0;
+    if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param;
+    return VINF_SUCCESS;
+}
+/* 70D */
+static int codecSetDigitalConverter1(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+    {
+        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param &= ~CODEC_VERB_8BIT_DATA; 
+        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param |= cmd & CODEC_VERB_8BIT_DATA; 
+    }
+    *pResp = 0;
+    return VINF_SUCCESS;
+}
+/* 70E */
+static int codecSetDigitalConverter2(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+    {
+        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param &= ~(CODEC_VERB_8BIT_DATA << 8); 
+        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param |= cmd & (CODEC_VERB_8BIT_DATA << 8); 
+    }
+    *pResp = 0;
     return VINF_SUCCESS;
 }
 
@@ -274,6 +352,7 @@ static int codecGetConverterFormat(struct CODECState *pState, uint32_t cmd, uint
         *pResp = 0;
     return VINF_SUCCESS;
 }
+
 static int codecSetConverterFormat(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
@@ -512,11 +591,17 @@ static CODECVERB STAC9220VERB[] =
     {0x000A0000, CODEC_VERB_16BIT_CMD, codecGetConverterFormat},
     {0x00020000, CODEC_VERB_16BIT_CMD, codecSetConverterFormat},
     {0x000B0000, CODEC_VERB_16BIT_CMD, codecGetAmplifier },
+    {0x00030000, CODEC_VERB_16BIT_CMD, codecSetAmplifier },
     {0x00070600, CODEC_VERB_8BIT_CMD , codecSetStreamId    },
     {0x000F0600, CODEC_VERB_8BIT_CMD , codecGetStreamId    },
     {0x000F0700, CODEC_VERB_8BIT_CMD , stac9220GetPinCtrl},
     {0x00070700, CODEC_VERB_8BIT_CMD , stac9220SetPinCtrl},
     {0x000F0200, CODEC_VERB_8BIT_CMD , codecGetF02       },
+    {0x000F0300, CODEC_VERB_8BIT_CMD , codecGetProcessingState },
+    {0x00070300, CODEC_VERB_8BIT_CMD , codecSetProcessingState },
+    {0x000F0D00, CODEC_VERB_8BIT_CMD , codecGetDigitalConverter },
+    {0x00070D00, CODEC_VERB_8BIT_CMD , codecSetDigitalConverter1 },
+    {0x00070E00, CODEC_VERB_8BIT_CMD , codecSetDigitalConverter2 },
     {0x000F2000, CODEC_VERB_8BIT_CMD , codecGetSubId     },
     {0x0007FF00, CODEC_VERB_8BIT_CMD , codecReset        },
 #if 0
@@ -527,12 +612,12 @@ static CODECVERB STAC9220VERB[] =
 static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR pfn)
 {
     int rc = VINF_SUCCESS;
-    if (   CODEC_CAD(cmd) != pState->id
-        || CODEC_VERBDATA(cmd) == 0
+    Assert(CODEC_CAD(cmd) == pState->id)
+    if (   CODEC_VERBDATA(cmd) == 0
         || CODEC_NID(cmd) >= STAC9220_NODE_COUNT
         || STAC9220_IS_RESERVED_CMD(cmd))
     {
-        *pfn = CODEC_CAD(cmd) != pState->id ? codecUnimplemented : codecBreak;
+        *pfn = CODEC_VERBDATA(cmd) != 0 ? codecUnimplemented : codecBreak;
         //** @todo r=michaln: There needs to be a counter to avoid log flooding (see e.g. DevRTC.cpp)
         LogRel(("HDAcodec: cmd %x was ignored\n", cmd));
         return VINF_SUCCESS;
