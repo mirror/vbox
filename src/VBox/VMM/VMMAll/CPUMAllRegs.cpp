@@ -525,7 +525,7 @@ VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
      * Check if we need to change hypervisor CR0 because
      * of math stuff.
      */
-    if (    (cr0                 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
+    if (    (cr0                     & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
         !=  (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)))
     {
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU))
@@ -560,7 +560,7 @@ VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
              * the guest flags.
              */
             uint32_t HyperCR0 = ASMGetCR0();
-            AssertMsg(     (HyperCR0             & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
+            AssertMsg(     (HyperCR0                 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
                       ==   (pVCpu->cpum.s.Guest.cr0  & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)),
                       ("%#x %#x\n", HyperCR0, pVCpu->cpum.s.Guest.cr0));
             HyperCR0 &= ~(X86_CR0_TS | X86_CR0_EM | X86_CR0_MP);
@@ -575,7 +575,7 @@ VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
      * Check for changes causing TLB flushes (for REM).
      * The caller is responsible for calling PGM when appropriate.
      */
-    if (    (cr0                 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
+    if (    (cr0                     & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
         !=  (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
         pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GLOBAL_TLB_FLUSH;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CR0;
