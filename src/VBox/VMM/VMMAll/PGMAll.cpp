@@ -70,8 +70,8 @@ typedef struct PGMHVUSTATE
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGMCPU pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
 #ifndef IN_RC
-static int      pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PCX86PML4E pGstPml4e, PCX86PDPE pGstPdpe, PX86PDPAE *ppPD);
-static int      pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
+static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
+static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
 #endif
 
 
@@ -913,10 +913,10 @@ VMMDECL(int) PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpF
  * @returns Pointer to the shadow PD.
  * @param   pVCpu       The VMCPU handle.
  * @param   GCPtr       The address.
- * @param   pGstPdpe    Guest PDPT entry
+ * @param   uGstPdpe    Guest PDPT entry.
  * @param   ppPD        Receives address of page directory
  */
-int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PCX86PDPE pGstPdpe, PX86PDPAE *ppPD)
+int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
 {
     const unsigned iPdPt    = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     PX86PDPT       pPdpt    = pgmShwGetPaePDPTPtr(&pVCpu->pgm.s);
@@ -934,8 +934,6 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PCX86PDPE pGstPdpe, PX86PDPA
     {
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
-        Assert(pGstPdpe);
-        X86PDPE     GstPdpe = *pGstPdpe;
 
 # if defined(IN_RC)
         /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
@@ -952,20 +950,20 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PCX86PDPE pGstPdpe, PX86PDPA
         {
             if (CPUMGetGuestCR4(pVCpu) & X86_CR4_PAE)
             {
-                if (!GstPdpe.n.u1Present)
+                if (!(uGstPdpe & X86_PDPE_P))
                 {
                     /* PD not present; guest must reload CR3 to change it.
                      * No need to monitor anything in this case.
                      */
                     Assert(!HWACCMIsEnabled(pVM));
 
-                    GCPdPt  = GstPdpe.u & X86_PDPE_PG_MASK;
+                    GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
                     enmKind = PGMPOOLKIND_PAE_PD_PHYS;
-                    GstPdpe.n.u1Present = 1;
+                    uGstPdpe |= X86_PDPE_P;
                 }
                 else
                 {
-                    GCPdPt  = GstPdpe.u & X86_PDPE_PG_MASK;
+                    GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
                     enmKind = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
                 }
             }
@@ -982,7 +980,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PCX86PDPE pGstPdpe, PX86PDPA
 
         /* The PD was cached or created; hook it up now. */
         pPdpe->u |= pShwPage->Core.Key
-                 | (GstPdpe.u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
+                 | (uGstPdpe & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
 # if defined(IN_RC)
         /*
@@ -1051,11 +1049,11 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGMCPU pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE
  * @returns VBox status.
  * @param   pVCpu       VMCPU handle.
  * @param   GCPtr       The address.
- * @param   pGstPml4e   Guest PML4 entry
- * @param   pGstPdpe    Guest PDPT entry
+ * @param   uGstPml4e   Guest PML4 entry
+ * @param   uGstPdpe    Guest PDPT entry
  * @param   ppPD        Receives address of page directory
  */
-static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PCX86PML4E pGstPml4e, PCX86PDPE pGstPdpe, PX86PDPAE *ppPD)
+static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
 {
     PPGMCPU        pPGM          = &pVCpu->pgm.s;
     PVM            pVM           = pVCpu->CTX_SUFF(pVM);
@@ -1085,9 +1083,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PCX86PML4E pGs
         }
         else
         {
-            Assert(pGstPml4e && pGstPdpe);
-
-            GCPml4  = pGstPml4e->u & X86_PML4E_PG_MASK;
+            GCPml4  = uGstPml4e & X86_PML4E_PG_MASK;
             enmKind = PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT;
         }
 
@@ -1104,7 +1100,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PCX86PML4E pGs
     }
     /* The PDPT was cached or created; hook it up now. */
     pPml4e->u |= pShwPage->Core.Key
-              | (pGstPml4e->u & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
+              | (uGstPml4e & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
 
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
@@ -1125,9 +1121,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PCX86PML4E pGs
         }
         else
         {
-            Assert(pGstPdpe);
-
-            GCPdPt  = pGstPdpe->u & X86_PDPE_PG_MASK;
+            GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
             enmKind = PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD;
         }
 
@@ -1144,7 +1138,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PCX86PML4E pGs
     }
     /* The PD was cached or created; hook it up now. */
     pPdpe->u |= pShwPage->Core.Key
-             | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
+             | (uGstPdpe & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;

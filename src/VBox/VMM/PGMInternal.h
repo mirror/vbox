@@ -2326,14 +2326,12 @@ typedef struct PGMPTWALKCORE
     bool            fBigPage;
     /** Set if it involves a gigantic page (1 GB). */
     bool            fGigantPage;
-#if 0
-    /** Set if write access was attempted and not possible. */
-    bool            fWriteError;
-    /** Set if execute access was attempted and not possible. */
-    bool            fExecuteError;
-#endif
-    /** Unused. */
-    bool            afUnused[3];
+    /** The effect X86_PTE_US flag for the address. */
+    bool            fEffectiveUS;
+    /** The effect X86_PTE_RW flag for the address. */
+    bool            fEffectiveRW;
+    /** The effect X86_PTE_NX flag for the address. */
+    bool            fEffectiveNX;
 } PGMPTWALKCORE;
 
 
@@ -3638,7 +3636,7 @@ void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAP
 int             pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 int             pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 
-int             pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PCX86PDPE pGstPdpe, PX86PDPAE *ppPD);
+int             pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
 
 int             pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd);
 int             pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt);
