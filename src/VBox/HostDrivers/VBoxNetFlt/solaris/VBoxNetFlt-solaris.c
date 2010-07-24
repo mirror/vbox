@@ -343,9 +343,16 @@ typedef struct vboxnetflt_promisc_stream_t
     PRTTIMER pIp6Timer;                   /* ipv6 stream poll timer for dynamic ipv6 stream attachment */
 #endif
     size_t cLoopback;                     /* loopback queue size list */
+    timeout_id_t TimeoutId;               /* timeout id of promisc. req */
     PVBOXNETFLTPACKETID pHead;            /* loopback packet identifier head */
     PVBOXNETFLTPACKETID pTail;            /* loopback packet identifier tail */
 } vboxnetflt_promisc_stream_t;
+
+typedef struct vboxnetflt_promisc_params_t
+{
+    PVBOXNETFLTINS pThis;                 /* the backend instance */
+    bool fPromiscOn;                      /* whether promiscuous req. on or off */
+} vboxnetflt_promisc_params_t;
 
 
 /*******************************************************************************
@@ -752,6 +759,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         pPromiscStream->pHead = NULL;
         pPromiscStream->pTail = NULL;
         pPromiscStream->cLoopback = 0;
+        pPromiscStream->TimeoutId = 0;
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
         pPromiscStream->pIp6Timer = NULL;
 #endif
@@ -1341,6 +1349,29 @@ static int vboxNetFltSolarisPromiscReq(queue_t *pQueue, bool fPromisc)
     qreply(pQueue, pPromiscSapMsg);
 
     return VINF_SUCCESS;
+}
+
+
+/*
+ * Callback wrapper for qtimeout to safely send promiscuous off request.
+ *
+ * @param   pvData      Pointer to a vboxnetflt_promisc_params_t structure, will be freed by us.
+ */
+static void vboxNetFltSolarisPromiscReqWrap(void *pvData)
+{
+    vboxnetflt_promisc_params_t *pParams = pvData;
+    if (RT_LIKELY(pParams))
+    {
+        PVBOXNETFLTINS pThis = pParams->pThis;
+        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
+        if (   pPromiscStream
+            && pPromiscStream->Stream.pReadQueue)
+        {
+            pPromiscStream->TimeoutId = 0;
+            vboxNetFltSolarisPromiscReq(pPromiscStream->Stream.pReadQueue, pParams->fPromiscOn);
+        }
+    }
+    RTMemFree(pParams);
 }
 
 
@@ -1990,6 +2021,16 @@ static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
 
     if (pThis->u.s.hIface)
     {
+        /*
+         * If there are any timeout scheduled, we need to make sure they are cancelled.
+         */
+        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
+        if (   pPromiscStream
+            && pPromiscStream->TimeoutId)
+        {
+            quntimeout(WR(pPromiscStream->Stream.pReadQueue), pPromiscStream->TimeoutId);
+        }
+
         ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
         pThis->u.s.hIface = NULL;
     }
@@ -3578,20 +3619,24 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     /*
      * Enable/disable promiscuous mode.
      */
-    vboxnetflt_promisc_stream_t *pStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_stream_t *);
-    if (pStream)
+    vboxnetflt_promisc_params_t *pData = RTMemAllocZ(sizeof(vboxnetflt_promisc_params_t));
+    if (RT_LIKELY(pData))
     {
-        if (pStream->Stream.pReadQueue)
+        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
+        if (   pPromiscStream
+            && pPromiscStream->Stream.pReadQueue)
         {
-            int rc = vboxNetFltSolarisPromiscReq(pStream->Stream.pReadQueue, fActive);
-            if (RT_FAILURE(rc))
-                LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive failed to request promiscuous mode! rc=%d\n", rc));
+            pData->pThis      = pThis;
+            pData->fPromiscOn = fActive;
+            if (pPromiscStream->TimeoutId != 0)
+                quntimeout(WR(pPromiscStream->Stream.pReadQueue), pPromiscStream->TimeoutId);
+            pPromiscStream->TimeoutId = qtimeout(WR(pPromiscStream->Stream.pReadQueue), vboxNetFltSolarisPromiscReqWrap, pData, 1 /* ticks */);
+            return;
         }
-        else
-            LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive queue not found!\n"));
+        RTMemFree(pData);
     }
     else
-        LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive stream not found!\n"));
+        LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive out of memory!\n"));
 }
 
 
