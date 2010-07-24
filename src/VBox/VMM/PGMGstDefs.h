@@ -126,7 +126,7 @@
 //# define GST_IS_PDPE_VALID(pVCpu, Pdpe)         (false)
 //# define GST_IS_BIG_PDPE_VALID(pVCpu, Pdpe)     (false)
 //# define GST_IS_PML4E_VALID(pVCpu, Pml4e)       (false)
-# define GST_IS_PSE_ACTIVE(pVCpu)               pgmGstIsPageSizeExtActive(pVCpu)
+# define GST_IS_PSE_ACTIVE(pVCpu)               pgmGst32BitIsPageSizeExtActive(pVCpu)
 # define GST_IS_NX_ACTIVE(pVCpu)                (false)
 # define BTH_IS_NP_ACTIVE(pVM)                  (false)
 
