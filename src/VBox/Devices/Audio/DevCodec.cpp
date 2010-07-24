@@ -515,7 +515,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 0x11:
             pNode->node.name = "DigIn_0";
             pNode->node.au32F00_param[9] = (4 << 20)|(3<<16)|RT_BIT(10)|RT_BIT(9)|RT_BIT(7)|RT_BIT(0);
-            pNode->node.au32F00_param[0xC] = RT_BIT(16)|RT_BIT(5)|RT_BIT(2);
+            pNode->node.au32F00_param[0xC] = /* RT_BIT(16)|*/ RT_BIT(5)|RT_BIT(2);
             pNode->digin.u32F05_param = (3 << 4)|0x3;
             pNode->digin.u32F07_param = 0;
             pNode->digin.u32F08_param = 0;
@@ -612,7 +612,7 @@ static CODECVERB STAC9220VERB[] =
 static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR pfn)
 {
     int rc = VINF_SUCCESS;
-    Assert(CODEC_CAD(cmd) == pState->id)
+    Assert(CODEC_CAD(cmd) == pState->id);
     if (   CODEC_VERBDATA(cmd) == 0
         || CODEC_NID(cmd) >= STAC9220_NODE_COUNT
         || STAC9220_IS_RESERVED_CMD(cmd))
