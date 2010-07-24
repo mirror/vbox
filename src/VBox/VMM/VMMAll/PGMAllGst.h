@@ -163,10 +163,28 @@ PGM_GST_DECL(int, Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
             if (RT_UNLIKELY(!GST_IS_BIG_PDE_VALID(pVCpu, Pde)))
                 return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 2);
 
-            pWalk->Core.GCPhys     = GST_GET_PDE_BIG_PG_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
-                                   | (GCPtr & GST_BIG_PAGE_OFFSET_MASK);
-            pWalk->Core.fBigPage   = true;
-            pWalk->Core.fSucceeded = true;
+            pWalk->Core.GCPhys       = GST_GET_PDE_BIG_PG_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
+                                     | (GCPtr & GST_BIG_PAGE_OFFSET_MASK);
+            uint8_t fEffectiveXX     = (uint8_t)pWalk->Pde.u
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+                                     & (uint8_t)pWalk->Pde.u
+                                     & (uint8_t)pWalk->Pml4e.u
+#  endif
+                                     ;
+            pWalk->Core.fEffectiveRW = !!(fEffectiveXX & X86_PTE_RW);
+            pWalk->Core.fEffectiveUS = !!(fEffectiveXX & X86_PTE_US);
+# if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
+            pWalk->Core.fEffectiveNX = (   pWalk->Pde.n.u1NoExecute
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+                                        || pWalk->Pde.n.u1NoExecute
+                                        || pWalk->Pml4e.n.u1NoExecute
+#  endif
+                                       ) && GST_IS_NX_ACTIVE(pVCpu);
+# else
+            pWalk->Core.fEffectiveNX = false;
+# endif
+            pWalk->Core.fBigPage     = true;
+            pWalk->Core.fSucceeded   = true;
             return VINF_SUCCESS;
         }
 
@@ -195,9 +213,29 @@ PGM_GST_DECL(int, Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
         /*
          * We're done.
          */
-        pWalk->Core.GCPhys     = (Pte.u & GST_PDE_PG_MASK)
-                               | (GCPtr & PAGE_OFFSET_MASK);
-        pWalk->Core.fSucceeded = true;
+        pWalk->Core.GCPhys       = (Pte.u & GST_PDE_PG_MASK)
+                                 | (GCPtr & PAGE_OFFSET_MASK);
+        uint8_t fEffectiveXX     = (uint8_t)pWalk->Pte.u
+                                 & (uint8_t)pWalk->Pde.u
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+                                 & (uint8_t)pWalk->Pde.u
+                                 & (uint8_t)pWalk->Pml4e.u
+#  endif
+                                 ;
+        pWalk->Core.fEffectiveRW = !!(fEffectiveXX & X86_PTE_RW);
+        pWalk->Core.fEffectiveUS = !!(fEffectiveXX & X86_PTE_US);
+# if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
+        pWalk->Core.fEffectiveNX = (   pWalk->Pte.n.u1NoExecute
+                                    || pWalk->Pde.n.u1NoExecute
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+                                    || pWalk->Pde.n.u1NoExecute
+                                    || pWalk->Pml4e.n.u1NoExecute
+#  endif
+                                   ) && GST_IS_NX_ACTIVE(pVCpu);
+# else
+        pWalk->Core.fEffectiveNX = false;
+# endif
+        pWalk->Core.fSucceeded   = true;
         return VINF_SUCCESS;
     }
 }
