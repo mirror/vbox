@@ -2005,8 +2005,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
 
 
 /**
- * Called whenever CR0 or CR4 in a way which may change
- * the paging mode.
+ * Called whenever CR0 or CR4 in a way which may affect the paging mode.
  *
  * @returns VBox status code, with the following informational code for
  *          VM scheduling.
@@ -2033,7 +2032,13 @@ VMMDECL(int) PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t ef
     else if (!(cr0 & X86_CR0_PG))
         enmGuestMode = PGMMODE_PROTECTED;
     else if (!(cr4 & X86_CR4_PAE))
+    {
+        bool const fPse = !!(cr4 & X86_CR4_PSE);
+        if (pVCpu->pgm.s.fGst32BitPageSizeExtension != fPse)
+            Log(("PGMChangeMode: CR4.PSE %d -> %d\n", pVCpu->pgm.s.fGst32BitPageSizeExtension, fPse));
+        pVCpu->pgm.s.fGst32BitPageSizeExtension = fPse;
         enmGuestMode = PGMMODE_32_BIT;
+    }
     else if (!(efer & MSR_K6_EFER_LME))
     {
         if (!(efer & MSR_K6_EFER_NXE))

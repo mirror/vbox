@@ -3118,7 +3118,7 @@ typedef struct PGMCPU
     RTGCPHYS                        GCPhysA20Mask;
     /** A20 gate state - boolean! */
     bool                            fA20Enabled;
-    /** Mirror of the EFER.NXE bit. */
+    /** Mirror of the EFER.NXE bit.  Managed by PGMNotifyNxeChanged. */
     bool                            fNoExecuteEnabled;
     /** Unused bits. */
     bool                            afUnused[2];

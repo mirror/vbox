@@ -557,30 +557,35 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS
 /**
  * Checks if the no-execute (NX) feature is active (EFER.NXE=1).
  *
- * This is inlined so that we can perform consistency checks in debug builds.
+ * Only used when the guest is in PAE or long mode.  This is inlined so that we
+ * can perform consistency checks in debug builds.
  *
  * @returns true if it is, false if it isn't.
  * @param   pVCpu       The current CPU.
  */
 DECL_FORCE_INLINE(bool) pgmGstIsNoExecuteActive(PVMCPU pVCpu)
 {
-    /** @todo shadow this variable */
-    return CPUMIsGuestNXEnabled(pVCpu);
+    Assert(pVCpu->pgm.s.fNoExecuteEnabled == CPUMIsGuestNXEnabled(pVCpu));
+    Assert(CPUMIsGuestInPAEMode(pVCpu) || CPUMIsGuestInLongMode(pVCpu));
+    return pVCpu->pgm.s.fNoExecuteEnabled;
 }
 
 
 /**
  * Checks if the page size extension (PSE) is currently enabled (CR4.PSE=1).
  *
- * This is inlined so that we can perform consistency checks in debug builds.
+ * Only used when the guest is in paged 32-bit mode.  This is inlined so that
+ * we can perform consistency checks in debug builds.
  *
  * @returns true if it is, false if it isn't.
  * @param   pVCpu       The current CPU.
  */
-DECL_FORCE_INLINE(bool) pgmGstIsPageSizeExtActive(PVMCPU pVCpu)
+DECL_FORCE_INLINE(bool) pgmGst32BitIsPageSizeExtActive(PVMCPU pVCpu)
 {
-    /** @todo ( (pVCpu)->pgm.s.fGst32BitPageSizeExtension ) */
-    return CPUMIsGuestPageSizeExtEnabled(pVCpu);
+    Assert(pVCpu->pgm.s.fGst32BitPageSizeExtension == CPUMIsGuestPageSizeExtEnabled(pVCpu));
+    Assert(!CPUMIsGuestInPAEMode(pVCpu));
+    Assert(!CPUMIsGuestInLongMode(pVCpu));
+    return pVCpu->pgm.s.fGst32BitPageSizeExtension;
 }
 
 

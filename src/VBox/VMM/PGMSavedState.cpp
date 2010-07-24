@@ -3051,7 +3051,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
                 rc = PGMR3ChangeMode(pVM, pVCpu, pVCpu->pgm.s.enmGuestMode);
                 AssertLogRelRCReturn(rc, rc);
 
-                /* Restore pVM->pgm.s.GCPhysCR3. */
+                /* Update pVM->pgm.s.GCPhysCR3. */
                 Assert(pVCpu->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
                 RTGCPHYS GCPhysCR3 = CPUMGetGuestCR3(pVCpu);
                 if (    pVCpu->pgm.s.enmGuestMode == PGMMODE_PAE
@@ -3062,6 +3062,10 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
                 else
                     GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAGE_MASK);
                 pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
+
+                /* Update the PSE, NX flags and validity masks. */
+                pVCpu->pgm.s.fGst32BitPageSizeExtension = CPUMIsGuestPageSizeExtEnabled(pVCpu);
+                PGMNotifyNxeChanged(pVCpu, CPUMIsGuestNXEnabled(pVCpu));
             }
 
             /*
