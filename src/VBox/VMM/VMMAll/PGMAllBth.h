@@ -145,9 +145,6 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPU pVCpu, PGSTPTWALK pGs
 PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-#ifdef PGM_WITH_GST_WALK
-    int rc;
-#endif
 
     *pfLockTaken = false;
 
@@ -159,8 +156,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
        || PGM_GST_TYPE == PGM_TYPE_PAE   || PGM_GST_TYPE == PGM_TYPE_AMD64) \
     && PGM_SHW_TYPE != PGM_TYPE_NESTED    \
     && (PGM_SHW_TYPE != PGM_TYPE_EPT || PGM_GST_TYPE == PGM_TYPE_PROT)
-
 #ifdef PGM_WITH_GST_WALK
+    int rc;
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     /*
