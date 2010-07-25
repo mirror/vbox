@@ -351,8 +351,8 @@ typedef struct INTELHDLinkState
     RTGCPHYS    addrMMReg;
     uint32_t     au32Regs[113];
     /* Current BD index  */
-    uint32_t    u32Cvi; 
-    uint64_t    u64CviAddr; 
+    uint32_t    u32Cvi;
+    uint64_t    u64CviAddr;
     /* Length of current BD entry */
     uint32_t    u32CviLen;
     uint32_t    u32CviPos;
@@ -576,7 +576,7 @@ const static struct stIchIntelHDRegMap
 static int hdaProcessInterrupt(INTELHDLinkState* pState)
 {
     bool fIrq = false;
-   /* @todo add state change */    
+   /* @todo add state change */
     if(   INTCTL_CIE(pState)
        && (   RIRBSTS_RINTFL(pState)
            ||  RIRBSTS_RIRBOIS(pState)))
@@ -584,7 +584,7 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
         INTSTS(pState) |= HDA_REG_FIELD_FLAG_MASK(INTSTS, CIS);
         fIrq = true;
     }
-    if (   INTCTL_SX(pState, 4) 
+    if (   INTCTL_SX(pState, 4)
         && SDSTS(pState, 4) && HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS))
     {
         INTSTS(pState) |= HDA_REG_FIELD_FLAG_MASK(INTSTS, S4);
@@ -676,7 +676,7 @@ static int hdaCORBCmdProcess(INTELHDLinkState *pState)
     uint8_t u8Counter = 0;
 
     PFNCODECVERBPROCESSOR pfn = (PFNCODECVERBPROCESSOR)NULL;
-    
+
     rc = hdaCmdSync(pState, true);
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
@@ -799,7 +799,7 @@ DECLCALLBACK(int)hdaRegWriteGCTL(INTELHDLinkState* pState, uint32_t offset, uint
     else
     {
         /* enter reset state*/
-        if (   HDA_REG_FLAG_VALUE(pState, CORBCTL, DMA) 
+        if (   HDA_REG_FLAG_VALUE(pState, CORBCTL, DMA)
             || HDA_REG_FLAG_VALUE(pState, RIRBCTL, DMA))
         {
             Log(("hda: HDA enters in reset with DMA(RIRB:%s, CORB:%s)\n",
@@ -975,7 +975,7 @@ DECLCALLBACK(int)hdaRegWriteSDSTS(INTELHDLinkState* pState, uint32_t offset, uin
             AssertRCReturn(rc, rc);
     }
 #endif
-    return VINF_SUCCESS; 
+    return VINF_SUCCESS;
 }
 DECLCALLBACK(int)hdaRegWriteSDLVI(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
 {
@@ -1083,7 +1083,7 @@ DECLCALLBACK(int)hdaRegWriteRIRBSTS(INTELHDLinkState* pState, uint32_t offset, u
     uint8_t nv = u32Value;
     uint8_t v = RIRBSTS(pState);
     RIRBSTS(pState) = (v ^ nv) & v;
-    
+
     return hdaProcessInterrupt(pState);
 }
 
@@ -1114,7 +1114,7 @@ static void dump_bd(INTELHDLinkState *pState)
 }
 static void fetch_bd(INTELHDLinkState *pState)
 {
-    dump_bd(pState); 
+    dump_bd(pState);
     pState->u32Cvi;
     uint8_t  bdle[16];
     PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), SDBDPL(pState, 4) + pState->u32Cvi*16, bdle, 16);
@@ -1208,7 +1208,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
                             PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1)  + 4*8, &u32Counter, 4);
                         }
                         if (pState->u32CviPos == pState->u32CviLen)
-                        { 
+                        {
                             pState->u32CviPos = 0;
                             pState->u32Cvi++;
                             if (pState->u32Cvi == SDLVI(pState, 4) + 1)
@@ -1232,7 +1232,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
  * Looks up and calls appropriate handler.
  *
  * @note: while implementation was detected so called "forgotten" or "hole" registers
- * which description is missed in RPM, datasheet or spec. 
+ * which description is missed in RPM, datasheet or spec.
  *
  * @returns VBox status code.
  *
@@ -1252,8 +1252,8 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     {
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
     }
-    Assert(   index != -1 
-           && u32Offset == s_ichIntelHDRegMap[index].offset 
+    Assert(   index != -1
+           && u32Offset == s_ichIntelHDRegMap[index].offset
            && cb <= 4);
     if (index != -1)
     {
@@ -1261,10 +1261,10 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
         uint32_t v = 0;
         switch(cb)
         {
-            case 1: mask = 0x000000ff; break; 
-            case 2: mask = 0x0000ffff; break; 
-            case 3: mask = 0x00ffffff; break; 
-            case 4: mask = 0xffffffff; break; 
+            case 1: mask = 0x000000ff; break;
+            case 2: mask = 0x0000ffff; break;
+            case 3: mask = 0x00ffffff; break;
+            case 4: mask = 0xffffffff; break;
         }
         Assert(u32Offset == s_ichIntelHDRegMap[index].offset);
         rc = s_ichIntelHDRegMap[index].pfnRead(&pThis->hda, u32Offset, index, &v);
@@ -1300,8 +1300,8 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     {
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
     }
-    Assert(   index != -1 
-           && u32Offset == s_ichIntelHDRegMap[index].offset 
+    Assert(   index != -1
+           && u32Offset == s_ichIntelHDRegMap[index].offset
            && cb <= 4);
     if (index != -1)
     {
@@ -1310,12 +1310,12 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
         uint32_t mask = 0;
         switch(cb)
         {
-            case 1: mask = 0xffffff00; break; 
-            case 2: mask = 0xffff0000; break; 
-            case 3: mask = 0xff000000; break; 
-            case 4: mask = 0x00000000; break; 
+            case 1: mask = 0xffffff00; break;
+            case 2: mask = 0xffff0000; break;
+            case 3: mask = 0xff000000; break;
+            case 4: mask = 0x00000000; break;
         }
-        *(uint32_t *)pv = (v & mask) | (*(uint32_t *)pv & ~mask); 
+        *(uint32_t *)pv = (v & mask) | (*(uint32_t *)pv & ~mask);
         rc = s_ichIntelHDRegMap[index].pfnWrite(&pThis->hda, u32Offset, index, *(uint32_t *)pv);
         Log(("hda: write %s:(%x) %x => %x\n", s_ichIntelHDRegMap[index].abbrev, *(uint32_t *)pv, v, pThis->hda.au32Regs[index]));
         return rc;
@@ -1400,7 +1400,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     else
         pThis->hda.pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->hda.cbRirbBuf);
 
-    /* Accoding to ICH6 datasheet, 0x40000 is default value for stream descriptor register 23:20 
+    /* Accoding to ICH6 datasheet, 0x40000 is default value for stream descriptor register 23:20
      * bits are reserved for stream number 18.2.33 */
     SDCTL(&pThis->hda, 0) = 0x40000;
     SDCTL(&pThis->hda, 1) = 0x40000;
@@ -1420,7 +1420,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     SDFIFOS(&pThis->hda, 5) = 0xBF;
     SDFIFOS(&pThis->hda, 6) = 0xBF;
     SDFIFOS(&pThis->hda, 7) = 0xBF;
-    
+
     /* emulateion of codec "wake up" HDA spec (5.5.1 and 6.5)*/
     STATESTS(&pThis->hda) = 0x1;
 
@@ -1482,7 +1482,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetHeaderType         (&pThis->dev, 0x00);   /* 0e ro - headtyp. */
     PCIDevSetBaseAddress        (&pThis->dev, 0,       /* 10 rw - MMIO */
                                  false /* fIoSpace */, false /* fPrefetchable */, true /* f64Bit */, 0x00000000);
-    /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for 
+    /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
        verb F20 should provide device/codec recognition. */
     PCIDevSetSubSystemVendorId  (&pThis->dev, 0x0000); /* 2c ro - intel.) */
     PCIDevSetSubSystemId        (&pThis->dev, 0x0000); /* 2e ro. */
@@ -1491,7 +1491,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetCapabilityList(&pThis->dev, 0x50); /* ICH6 datasheet 18.1.16 */
 
     //** @todo r=michaln: If there are really no PCIDevSetXx for these, the meaning
-    // of these values needs to be properly documented! 
+    // of these values needs to be properly documented!
     /* HDCTL off 0x40 bit 0 selects signaling mode (1-HDA, 0 - Ac97) 18.1.19 */
     pThis->dev.config[0x40] = 0x01;
 
@@ -1540,7 +1540,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     pThis->hda.Codec.id = 0;
     pThis->hda.Codec.pfnTransfer = hdaTransfer;
     pThis->hda.Codec.pfnReset = hdaCodecReset;
-    /* 
+    /*
      * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
      * hdaReset shouldn't affects these registers.
      */
@@ -1556,7 +1556,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
 static DECLCALLBACK(int) hdaDestruct (PPDMDEVINS pDevIns)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    
+
     int rc = stac9220Destruct(&pThis->hda.Codec);
     AssertRC(rc);
     if (pThis->hda.pu32CorbBuf)
