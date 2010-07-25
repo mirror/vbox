@@ -98,6 +98,8 @@ extern "C" {
        CODEC_NID((cmd)) == 0x10         \
     || CODEC_NID((cmd)) == 0x11)
 
+#define STAC9220_IS_CD_CMD(cmd) (CODEC_NID((cmd)) == 0x15)
+
 /* STAC9220 6.2 & 6.12 */
 #define STAC9220_IS_RESERVED_CMD(cmd) ( \
        CODEC_NID((cmd)) == 0x9          \
@@ -179,36 +181,43 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
     return VINF_SUCCESS;
 }
 
-static int codecGetF00(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+static int codecGetParameter(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
     *pResp = pState->pNodes[CODEC_NID(cmd)].node.au32F00_param[cmd & CODEC_VERB_8BIT_DATA];
     return VINF_SUCCESS;
 }
-static int stac9220GetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+static int codecGetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     if (STAC9220_IS_PORT_CMD(cmd))
-    {
         *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F07_param;
-    }
+    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F07_param;
+    else if (STAC9220_IS_CD_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
     else
         AssertMsgFailed(("Unsupported"));
     return VINF_SUCCESS;
 }
 
-static int stac9220SetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+static int codecSetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
-    if (STAC9220_IS_PORT_CMD(cmd))
-    {
-        pState->pNodes[CODEC_NID(cmd)].port.u32F07_param &= ~CODEC_VERB_8BIT_DATA;
-        pState->pNodes[CODEC_NID(cmd)].port.u32F07_param |= cmd & CODEC_VERB_8BIT_DATA;
-    }
-    else
-        AssertMsgFailed(("Unsupported"));
+    uint32_t *pu32Reg = NULL;
     *pResp = 0;
+    if (STAC9220_IS_PORT_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F07_param;
+    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F07_param;
+    else if (STAC9220_IS_CD_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
+    Assert((pu32Reg));
+    if (!pu32Reg)
+        return VINF_SUCCESS;
+    *pu32Reg = (*pu32Reg) & ~CODEC_VERB_8BIT_DATA;
+    *pu32Reg = (*pu32Reg) | (cmd & CODEC_VERB_8BIT_DATA);
     return VINF_SUCCESS;
 }
-static int codecGetF02(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+static int codecGetConnectionListEntry(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
     *pResp = *(uint32_t *)&pState->pNodes[CODEC_NID(cmd)].node.au8F02_param[cmd & CODEC_VERB_8BIT_DATA];
@@ -587,23 +596,23 @@ static CODECVERB STAC9220VERB[] =
 {
 /*    verb     | verb mask              | callback               */
 /*  -----------  --------------------   -----------------------  */
-    {0x000F0000, CODEC_VERB_8BIT_CMD , codecGetF00},
-    {0x000A0000, CODEC_VERB_16BIT_CMD, codecGetConverterFormat},
-    {0x00020000, CODEC_VERB_16BIT_CMD, codecSetConverterFormat},
-    {0x000B0000, CODEC_VERB_16BIT_CMD, codecGetAmplifier },
-    {0x00030000, CODEC_VERB_16BIT_CMD, codecSetAmplifier },
-    {0x00070600, CODEC_VERB_8BIT_CMD , codecSetStreamId    },
-    {0x000F0600, CODEC_VERB_8BIT_CMD , codecGetStreamId    },
-    {0x000F0700, CODEC_VERB_8BIT_CMD , stac9220GetPinCtrl},
-    {0x00070700, CODEC_VERB_8BIT_CMD , stac9220SetPinCtrl},
-    {0x000F0200, CODEC_VERB_8BIT_CMD , codecGetF02       },
-    {0x000F0300, CODEC_VERB_8BIT_CMD , codecGetProcessingState },
-    {0x00070300, CODEC_VERB_8BIT_CMD , codecSetProcessingState },
-    {0x000F0D00, CODEC_VERB_8BIT_CMD , codecGetDigitalConverter },
-    {0x00070D00, CODEC_VERB_8BIT_CMD , codecSetDigitalConverter1 },
-    {0x00070E00, CODEC_VERB_8BIT_CMD , codecSetDigitalConverter2 },
-    {0x000F2000, CODEC_VERB_8BIT_CMD , codecGetSubId     },
-    {0x0007FF00, CODEC_VERB_8BIT_CMD , codecReset        },
+    {0x000F0000, CODEC_VERB_8BIT_CMD , codecGetParameter           },
+    {0x000A0000, CODEC_VERB_16BIT_CMD, codecGetConverterFormat     },
+    {0x00020000, CODEC_VERB_16BIT_CMD, codecSetConverterFormat     },
+    {0x000B0000, CODEC_VERB_16BIT_CMD, codecGetAmplifier           },
+    {0x00030000, CODEC_VERB_16BIT_CMD, codecSetAmplifier           },
+    {0x00070600, CODEC_VERB_8BIT_CMD , codecSetStreamId            },
+    {0x000F0600, CODEC_VERB_8BIT_CMD , codecGetStreamId            },
+    {0x000F0700, CODEC_VERB_8BIT_CMD , codecGetPinCtrl             },
+    {0x00070700, CODEC_VERB_8BIT_CMD , codecSetPinCtrl             },
+    {0x000F0200, CODEC_VERB_8BIT_CMD , codecGetConnectionListEntry },
+    {0x000F0300, CODEC_VERB_8BIT_CMD , codecGetProcessingState     },
+    {0x00070300, CODEC_VERB_8BIT_CMD , codecSetProcessingState     },
+    {0x000F0D00, CODEC_VERB_8BIT_CMD , codecGetDigitalConverter    },
+    {0x00070D00, CODEC_VERB_8BIT_CMD , codecSetDigitalConverter1   },
+    {0x00070E00, CODEC_VERB_8BIT_CMD , codecSetDigitalConverter2   },
+    {0x000F2000, CODEC_VERB_8BIT_CMD , codecGetSubId               },
+    {0x0007FF00, CODEC_VERB_8BIT_CMD , codecReset                  },
 #if 0
     {0x000F0500, CODEC_VERB_8BIT_CMD , codecGetPowerState},
 #endif
