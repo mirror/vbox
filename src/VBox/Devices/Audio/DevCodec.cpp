@@ -122,7 +122,7 @@ static int codecBreak(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     int rc;
     rc = codecUnimplemented(pState, cmd, pResp);
-    *pResp |= CODEC_RESPONSE_UNSOLICITED; 
+    *pResp |= CODEC_RESPONSE_UNSOLICITED;
     return rc;
 }
 /* B-- */
@@ -131,19 +131,19 @@ static int codecGetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
     Assert((CODEC_CAD(cmd) == pState->id));
     PCODECNODE pNode = &pState->pNodes[CODEC_NID(cmd)];
     if (STAC9220_IS_DAC_CMD(cmd))
-        *pResp = AMPLIFIER_REGISTER(pNode->dac.B_params, 
-                            CODEC_B_DIRECTION(cmd), 
-                            CODEC_B_SIDE(cmd), 
+        *pResp = AMPLIFIER_REGISTER(pNode->dac.B_params,
+                            CODEC_B_DIRECTION(cmd),
+                            CODEC_B_SIDE(cmd),
                             CODEC_B_INDEX(cmd));
     else if (STAC9220_IS_ADCVOL_CMD(cmd))
-        *pResp = AMPLIFIER_REGISTER(pNode->adcvol.B_params, 
-                            CODEC_B_DIRECTION(cmd), 
-                            CODEC_B_SIDE(cmd), 
+        *pResp = AMPLIFIER_REGISTER(pNode->adcvol.B_params,
+                            CODEC_B_DIRECTION(cmd),
+                            CODEC_B_SIDE(cmd),
                             CODEC_B_INDEX(cmd));
     else if (STAC9220_IS_ADCMUX_CMD(cmd))
-        *pResp = AMPLIFIER_REGISTER(pNode->adcmux.B_params, 
-                            CODEC_B_DIRECTION(cmd), 
-                            CODEC_B_SIDE(cmd), 
+        *pResp = AMPLIFIER_REGISTER(pNode->adcmux.B_params,
+                            CODEC_B_DIRECTION(cmd),
+                            CODEC_B_SIDE(cmd),
                             CODEC_B_INDEX(cmd));
     else {
         *pResp = 0;
@@ -158,19 +158,19 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
     PCODECNODE pNode = &pState->pNodes[CODEC_NID(cmd)];
     *pResp = 0;
     if (STAC9220_IS_DAC_CMD(cmd))
-        pu32Bparam = &AMPLIFIER_REGISTER(pNode->dac.B_params, 
-            CODEC_B_DIRECTION(cmd), 
-            CODEC_B_SIDE(cmd), 
+        pu32Bparam = &AMPLIFIER_REGISTER(pNode->dac.B_params,
+            CODEC_B_DIRECTION(cmd),
+            CODEC_B_SIDE(cmd),
             CODEC_B_INDEX(cmd));
     else if (STAC9220_IS_ADCVOL_CMD(cmd))
-        pu32Bparam = &AMPLIFIER_REGISTER(pNode->adcvol.B_params, 
-            CODEC_B_DIRECTION(cmd), 
-            CODEC_B_SIDE(cmd), 
+        pu32Bparam = &AMPLIFIER_REGISTER(pNode->adcvol.B_params,
+            CODEC_B_DIRECTION(cmd),
+            CODEC_B_SIDE(cmd),
             CODEC_B_INDEX(cmd));
     else if (STAC9220_IS_ADCMUX_CMD(cmd))
-        pu32Bparam = &AMPLIFIER_REGISTER(pNode->adcmux.B_params, 
-            CODEC_B_DIRECTION(cmd), 
-            CODEC_B_SIDE(cmd), 
+        pu32Bparam = &AMPLIFIER_REGISTER(pNode->adcmux.B_params,
+            CODEC_B_DIRECTION(cmd),
+            CODEC_B_SIDE(cmd),
             CODEC_B_INDEX(cmd));
     Assert(pu32Bparam);
     if (pu32Bparam)
@@ -238,8 +238,8 @@ static int codecSetProcessingState(struct CODECState *pState, uint32_t cmd, uint
     Assert((CODEC_CAD(cmd) == pState->id));
     if (STAC9220_IS_ADC_CMD(cmd))
     {
-        pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param &= ~CODEC_VERB_8BIT_DATA; 
-        pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param |= cmd & CODEC_VERB_8BIT_DATA; 
+        pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param &= ~CODEC_VERB_8BIT_DATA;
+        pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param |= cmd & CODEC_VERB_8BIT_DATA;
     }
     *pResp = 0;
     return VINF_SUCCESS;
@@ -259,8 +259,8 @@ static int codecSetDigitalConverter1(struct CODECState *pState, uint32_t cmd, ui
     Assert((CODEC_CAD(cmd) == pState->id));
     if (STAC9220_IS_SPDIFOUT_CMD(cmd))
     {
-        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param &= ~CODEC_VERB_8BIT_DATA; 
-        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param |= cmd & CODEC_VERB_8BIT_DATA; 
+        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param &= ~CODEC_VERB_8BIT_DATA;
+        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param |= cmd & CODEC_VERB_8BIT_DATA;
     }
     *pResp = 0;
     return VINF_SUCCESS;
@@ -271,8 +271,8 @@ static int codecSetDigitalConverter2(struct CODECState *pState, uint32_t cmd, ui
     Assert((CODEC_CAD(cmd) == pState->id));
     if (STAC9220_IS_SPDIFOUT_CMD(cmd))
     {
-        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param &= ~(CODEC_VERB_8BIT_DATA << 8); 
-        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param |= cmd & (CODEC_VERB_8BIT_DATA << 8); 
+        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param &= ~(CODEC_VERB_8BIT_DATA << 8);
+        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param |= cmd & (CODEC_VERB_8BIT_DATA << 8);
     }
     *pResp = 0;
     return VINF_SUCCESS;
@@ -399,8 +399,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             break;
         case 1:
             pNode->afg.node.name = "AFG";
-            pNode->node.au32F00_param[4] = RT_MAKE_U32_FROM_U8(0x1a, 0x00, 0x02, 0x00); 
-            pNode->node.au32F00_param[5] = RT_MAKE_U32_FROM_U8(0x1, 0x01, 0x00, 0x0); 
+            pNode->node.au32F00_param[4] = RT_MAKE_U32_FROM_U8(0x1a, 0x00, 0x02, 0x00);
+            pNode->node.au32F00_param[5] = RT_MAKE_U32_FROM_U8(0x1, 0x01, 0x00, 0x0);
             pNode->node.au32F00_param[8] = RT_MAKE_U32_FROM_U8(0x0d, 0x0d, 0x01, 0x0); /* Capabilities */
             //pNode->node.au32F00_param[0xa] = RT_BIT(19)|RT_BIT(18)|RT_BIT(17)|RT_BIT(10)|RT_BIT(9)|RT_BIT(8)|RT_BIT(7)|RT_BIT(6)|RT_BIT(5);
             pNode->node.au32F00_param[0xa] = RT_BIT(17)|RT_BIT(5);
@@ -659,7 +659,7 @@ static int codecFrequencyCalculate(uint32_t dacFmt)
     uint32_t divFrq = CODEC_FMT_DIV_FRQ(dacFmt);
     uint32_t multFrq = CODEC_FMT_MUL_FRQ(dacFmt);
     switch (baseFrq)
-    {   
+    {
         case 0: baseFrq = 48000; break;
         case 0x1: baseFrq = 44100; break;
         default:
@@ -684,15 +684,15 @@ static int codecFrequencyCalculate(uint32_t dacFmt)
         case 0x6: divFrq = 7; break;
         case 0x7: divFrq = 8; break;
     }
-    return baseFrq * multFrq / divFrq; 
+    return baseFrq * multFrq / divFrq;
 }
 static int codec_dac_to_aud(CODECState *pState, int dacnum, audsettings_t *paud)
 {
     uint32_t dacfmt = pState->pNodes[dacnum].dac.u32A_param;
     paud->freq = 44100;//codecFrequencyCalculate(dacfmt);
-    paud->nchannels = 2;//CODEC_DAC_CHANELS(dacfmt); 
+    paud->nchannels = 2;//CODEC_DAC_CHANELS(dacfmt);
     paud->fmt = AUD_FMT_U16;
-    
+
     paud->endianness = 0;
     return VINF_SUCCESS;
 }
@@ -700,19 +700,19 @@ static int codec_dac_to_aud(CODECState *pState, int dacnum, audsettings_t *paud)
 static void pi_callback (void *opaque, int avail)
 {
     CODECState *pState = (CODECState *)opaque;
-    pState->pfnTransfer(pState, PI_INDEX, avail); 
+    pState->pfnTransfer(pState, PI_INDEX, avail);
 }
 
 static void po_callback (void *opaque, int avail)
 {
     CODECState *pState = (CODECState *)opaque;
-    pState->pfnTransfer(pState, PO_INDEX, avail); 
+    pState->pfnTransfer(pState, PO_INDEX, avail);
 }
 
 static void mc_callback (void *opaque, int avail)
 {
     CODECState *pState = (CODECState *)opaque;
-    pState->pfnTransfer(pState, MC_INDEX, avail); 
+    pState->pfnTransfer(pState, MC_INDEX, avail);
 }
 #define STAC9220_DAC_PI (0x2)
 #define STAC9220_DAC_MC (0x3)
@@ -731,7 +731,7 @@ int stac9220Construct(CODECState *pState)
     }
     AUD_register_card ("ICH0", &pState->card);
 
-    
+
     codec_dac_to_aud(pState, STAC9220_DAC_PI, &as);
     pState->voice_pi = AUD_open_in(&pState->card, pState->voice_pi, "hda.in", pState, pi_callback, &as);
     codec_dac_to_aud(pState, STAC9220_DAC_PO, &as);
