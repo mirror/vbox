@@ -5938,6 +5938,83 @@ static DECLCALLBACK(void) ahciUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
         ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN);
 }
 
+/* -=-=-=-=- DBGF -=-=-=-=- */
+
+/**
+ * LsiLogic status info callback.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pHlp        The output helpers.
+ * @param   pszArgs     The arguments.
+ */
+static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+
+    /*
+     * Show info.
+     */
+    pHlp->pfnPrintf(pHlp,
+                    "%s#%d: mmio=%RGp ports=%u GC=%RTbool R0=%RTbool\n",
+                    pDevIns->pReg->szName,
+                    pDevIns->iInstance,
+                    pThis->MMIOBase,
+                    pThis->cPortsImpl,
+                    pThis->fGCEnabled ? true : false,
+                    pThis->fR0Enabled ? true : false);
+
+    /*
+     * Show global registers.
+     */
+    pHlp->pfnPrintf(pHlp, "HbaCap=%#x\n", pThis->regHbaCap);
+    pHlp->pfnPrintf(pHlp, "HbaCtrl=%#x\n", pThis->regHbaCtrl);
+    pHlp->pfnPrintf(pHlp, "HbaIs=%#x\n", pThis->regHbaIs);
+    pHlp->pfnPrintf(pHlp, "HbaPi=%#x", pThis->regHbaPi);
+    pHlp->pfnPrintf(pHlp, "HbaVs=%#x\n", pThis->regHbaVs);
+    pHlp->pfnPrintf(pHlp, "HbaCccCtl=%#x\n", pThis->regHbaCccCtl);
+    pHlp->pfnPrintf(pHlp, "HbaCccPorts=%#x\n", pThis->regHbaCccPorts);
+    pHlp->pfnPrintf(pHlp, "PortsInterrupted=%#x\n", pThis->u32PortsInterrupted);
+
+    /*
+     * Per port data.
+     */
+    for (unsigned i = 0; i < pThis->cPortsImpl; i++)
+    {
+        PAHCIPort pThisPort = &pThis->ahciPort[i];
+
+        pHlp->pfnPrintf(pHlp, "Port %d: async=%RTbool device-attached=%RTbool\n",
+                        pThisPort->iLUN, pThisPort->fAsyncInterface, pThisPort->pDrvBase != NULL);
+        pHlp->pfnPrintf(pHlp, "PortClb=%#x\n", pThisPort->regCLB);
+        pHlp->pfnPrintf(pHlp, "PortClbU=%#x\n", pThisPort->regCLBU);
+        pHlp->pfnPrintf(pHlp, "PortFb=%#x\n", pThisPort->regFB);
+        pHlp->pfnPrintf(pHlp, "PortFbU=%#x\n", pThisPort->regFBU);
+        pHlp->pfnPrintf(pHlp, "PortIs=%#x\n", pThisPort->regIS);
+        pHlp->pfnPrintf(pHlp, "PortIe=%#x\n", pThisPort->regIE);
+        pHlp->pfnPrintf(pHlp, "PortCmd=%#x\n", pThisPort->regCMD);
+        pHlp->pfnPrintf(pHlp, "PortTfd=%#x\n", pThisPort->regTFD);
+        pHlp->pfnPrintf(pHlp, "PortSig=%#x\n", pThisPort->regSIG);
+        pHlp->pfnPrintf(pHlp, "PortSSts=%#x\n", pThisPort->regSSTS);
+        pHlp->pfnPrintf(pHlp, "PortSCtl=%#x\n", pThisPort->regSCTL);
+        pHlp->pfnPrintf(pHlp, "PortSErr=%#x\n", pThisPort->regSERR);
+        pHlp->pfnPrintf(pHlp, "PortSAct=%#x\n", pThisPort->regSACT);
+        pHlp->pfnPrintf(pHlp, "PortCi=%#x\n", pThisPort->regCI);
+        pHlp->pfnPrintf(pHlp, "PortPhysClb=%RGp\n", pThisPort->GCPhysAddrClb);
+        pHlp->pfnPrintf(pHlp, "PortPhysFb=%RGp\n", pThisPort->GCPhysAddrFb);
+        pHlp->pfnPrintf(pHlp, "PortActWritePos=%u\n", pThisPort->uActWritePos);
+        pHlp->pfnPrintf(pHlp, "PortActReadPos=%u\n", pThisPort->uActReadPos);
+        pHlp->pfnPrintf(pHlp, "PortActTasksActive=%u\n", pThisPort->uActTasksActive);
+        pHlp->pfnPrintf(pHlp, "PortPoweredOn=%RTbool\n", pThisPort->fPoweredOn);
+        pHlp->pfnPrintf(pHlp, "PortSpunUp=%RTbool\n", pThisPort->fSpunUp);
+        pHlp->pfnPrintf(pHlp, "PortFirstD2HFisSend=%RTbool\n", pThisPort->fFirstD2HFisSend);
+        pHlp->pfnPrintf(pHlp, "PortATAPI=%RTbool\n", pThisPort->fATAPI);
+        pHlp->pfnPrintf(pHlp, "PortTasksFinished=%#x\n", pThisPort->u32TasksFinished);
+        pHlp->pfnPrintf(pHlp, "PortQueuedTasksFinished=%#x\n", pThisPort->u32QueuedTasksFinished);
+        pHlp->pfnPrintf(pHlp, "PortNotificationSend=%RTbool\n", pThisPort->fNotificationSend);
+        pHlp->pfnPrintf(pHlp, "PortAsyncIoThreadIdle=%RTbool\n", pThisPort->fAsyncIOThreadIdle);
+        pHlp->pfnPrintf(pHlp, "\n");
+    }
+}
+
 /* -=-=-=-=- Helper -=-=-=-=- */
 
 /**
@@ -7243,6 +7320,13 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                 ahciR3LoadPrep, ahciR3LoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Register the info item.
+     */
+    char szTmp[128];
+    RTStrPrintf(szTmp, sizeof(szTmp), "%s%d", pDevIns->pReg->szName, pDevIns->iInstance);
+    PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "AHCI info", ahciR3Info);
 
     return ahciR3ResetCommon(pDevIns, true /*fConstructor*/);
 }
