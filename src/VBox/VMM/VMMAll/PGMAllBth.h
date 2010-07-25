@@ -73,7 +73,7 @@ RT_C_DECLS_END
 #endif
 
 /* enables the new code. */
-#define PGM_WITH_GST_WALK
+//#define PGM_WITH_GST_WALK
 
 #ifndef IN_RING3
 
@@ -244,10 +244,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE != PGM_TYPE_PAE
     /*
-     * Hide the instruction fetch trap indicator for now.
+     * Hide the instruction fetch trap indicator if NX isn't active.
      */
-    /** @todo NXE will change this and we must fix NXE in the switcher too! */
-    if (uErr & X86_TRAP_PF_ID)
+    /** @todo do this only when returning with a guest trap! */
+    if ((uErr & X86_TRAP_PF_ID) && !pVCpu->pgm.s.fNoExecuteEnabled)
     {
         uErr &= ~X86_TRAP_PF_ID;
         TRPMSetErrorCode(pVCpu, uErr);
