@@ -127,6 +127,256 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPU pVCpu, PGSTPTWALK pGs
 
 
 /**
+ * Deal with a guest page fault.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_EM_RAW_GUEST_TRAP
+ * @retval  VINF_EM_RAW_EMULATE_INSTR
+ *
+ * @param   pVCpu           The current CPU.
+ *
+ * @param   uErr            The error code.
+ *
+ * @param   pGstWalk        The guest page table walk result.
+ */
+static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
+# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+                                                                RTGCPTR pvFault, PPGMPAGE pPage, PGSTPTWALK pGstWalk)
+# else
+                                                                RTGCPTR pvFault, PPGMPAGE pPage)
+# endif
+{
+    STAM_PROFILE_START(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
+# if !PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+    GSTPDE const    PdeSrcDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A};
+#endif
+    PVM             pVM         = pVCpu->CTX_SUFF(pVM);
+    int             rc;
+
+    if (PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage))
+    {
+        /*
+         * Physical page access handler.
+         */
+# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+        const RTGCPHYS  GCPhysFault = pGstWalk->Core.GCPhys;
+# else
+        const RTGCPHYS  GCPhysFault = (RTGCPHYS)pvFault;
+# endif
+        PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhysFault);
+        if (pCur)
+        {
+#  ifdef PGM_SYNC_N_PAGES
+            /*
+             * If the region is write protected and we got a page not present fault, then sync
+             * the pages. If the fault was caused by a read, then restart the instruction.
+             * In case of write access continue to the GC write handler.
+             *
+             * ASSUMES that there is only one handler per page or that they have similar write properties.
+             */
+            if (    pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
+                && !(uErr & X86_TRAP_PF_P))
+            {
+#   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+                rc = PGM_BTH_NAME(SyncPage)(pVCpu, pGstWalk->Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
+#   else
+                rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, pvFault, PGM_SYNC_NR_PAGES, uErr);
+#   endif
+                if (    RT_FAILURE(rc)
+                    || !(uErr & X86_TRAP_PF_RW)
+                    || rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
+                {
+                    AssertRC(rc);
+                    STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersOutOfSync);
+                    STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
+                    STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2OutOfSyncHndPhys; });
+                    return rc;
+                }
+            }
+#  endif
+
+            AssertMsg(   pCur->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
+                      || (pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE && (uErr & X86_TRAP_PF_RW)),
+                      ("Unexpected trap for physical handler: %08X (phys=%08x) pPage=%R[pgmpage] uErr=%X, enum=%d\n",
+                       pvFault, GCPhysFault, pPage, uErr, pCur->enmType));
+
+# if defined(IN_RC) || defined(IN_RING0) /** @todo remove this */
+            if (pCur->CTX_SUFF(pfnHandler))
+            {
+                PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+#  ifdef IN_RING0
+                PFNPGMR0PHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
+#  else
+                PFNPGMRCPHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
+#  endif
+                bool  fLeaveLock = (pfnHandler != pPool->CTX_SUFF(pfnAccessHandler));
+                void *pvUser = pCur->CTX_SUFF(pvUser);
+
+                STAM_PROFILE_START(&pCur->Stat, h);
+                if (fLeaveLock)
+                    pgmUnlock(pVM); /* @todo: Not entirely safe. */
+
+                rc = pfnHandler(pVM, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
+                if (fLeaveLock)
+                    pgmLock(pVM);
+#  ifdef VBOX_WITH_STATISTICS
+                pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhysFault);
+                if (pCur)
+                    STAM_PROFILE_STOP(&pCur->Stat, h);
+#  else
+                pCur = NULL;    /* might be invalid by now. */
+#  endif
+
+            }
+            else
+# endif /* IN_RC || IN_RING0 */
+                rc = VINF_EM_RAW_EMULATE_INSTR;
+
+            STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersPhysical);
+            STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
+            STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2HndPhys; });
+            return rc;
+        }
+    }
+# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+    else
+    {
+#  ifdef PGM_SYNC_N_PAGES
+        /*
+         * If the region is write protected and we got a page not present fault, then sync
+         * the pages. If the fault was caused by a read, then restart the instruction.
+         * In case of write access continue to the GC write handler.
+         */
+        if (    PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < PGM_PAGE_HNDL_PHYS_STATE_ALL
+            && !(uErr & X86_TRAP_PF_P))
+        {
+            rc = PGM_BTH_NAME(SyncPage)(pVCpu, pGstWalk->Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
+            if (    RT_FAILURE(rc)
+                ||  rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE
+                ||  !(uErr & X86_TRAP_PF_RW))
+            {
+                AssertRC(rc);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersOutOfSync);
+                STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
+                STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2OutOfSyncHndVirt; });
+                return rc;
+            }
+        }
+#  endif
+        /*
+         * Ok, it's an virtual page access handler.
+         *
+         * Since it's faster to search by address, we'll do that first
+         * and then retry by GCPhys if that fails.
+         */
+        /** @todo r=bird: perhaps we should consider looking up by physical address directly now?
+         * r=svl: true, but lookup on virtual address should remain as a fallback as phys & virt trees might be
+         *        out of sync, because the page was changed without us noticing it (not-present -> present
+         *        without invlpg or mov cr3, xxx).
+         */
+        PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, pvFault);
+        if (pCur)
+        {
+            AssertMsg(!(pvFault - pCur->Core.Key < pCur->cb)
+                      || (     pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
+                           || !(uErr & X86_TRAP_PF_P)
+                           || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
+                      ("Unexpected trap for virtual handler: %RGv (phys=%RGp) pPage=%R[pgmpage] uErr=%X, enum=%d\n",
+                       pvFault, pGstWalk->Core.GCPhys, pPage, uErr, pCur->enmType));
+
+            if (    pvFault - pCur->Core.Key < pCur->cb
+                &&  (    uErr & X86_TRAP_PF_RW
+                     ||  pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
+            {
+#   ifdef IN_RC
+                STAM_PROFILE_START(&pCur->Stat, h);
+                pgmUnlock(pVM);
+                rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, pvFault - pCur->Core.Key);
+                pgmLock(pVM);
+                STAM_PROFILE_STOP(&pCur->Stat, h);
+#   else
+                rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
+#   endif
+                STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersVirtual);
+                STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
+                STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2HndVirt; });
+                return rc;
+            }
+            /* Unhandled part of a monitored page */
+        }
+        else
+        {
+           /* Check by physical address. */
+            unsigned iPage;
+            rc = pgmHandlerVirtualFindByPhysAddr(pVM, pGstWalk->Core.GCPhys, &pCur, &iPage);
+            Assert(RT_SUCCESS(rc) || !pCur);
+            if (    pCur
+                &&  (   uErr & X86_TRAP_PF_RW
+                     || pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
+            {
+                Assert((pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) == (pGstWalk->Core.GCPhys & X86_PTE_PAE_PG_MASK));
+#   ifdef IN_RC
+                RTGCPTR off = (iPage << PAGE_SHIFT) + (pvFault & PAGE_OFFSET_MASK) - (pCur->Core.Key & PAGE_OFFSET_MASK);
+                Assert(off < pCur->cb);
+                STAM_PROFILE_START(&pCur->Stat, h);
+                pgmUnlock(pVM);
+                rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, off);
+                pgmLock(pVM);
+                STAM_PROFILE_STOP(&pCur->Stat, h);
+#   else
+                rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
+#   endif
+                STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersVirtualByPhys);
+                STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
+                STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2HndVirt; });
+                return rc;
+            }
+        }
+    }
+#  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
+
+    /*
+     * There is a handled area of the page, but this fault doesn't belong to it.
+     * We must emulate the instruction.
+     *
+     * To avoid crashing (non-fatal) in the interpreter and go back to the recompiler
+     * we first check if this was a page-not-present fault for a page with only
+     * write access handlers. Restart the instruction if it wasn't a write access.
+     */
+    STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersUnhandled);
+
+    if (    !PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)
+        &&  !(uErr & X86_TRAP_PF_P))
+    {
+#  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+        rc = PGM_BTH_NAME(SyncPage)(pVCpu, pGstWalk->Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
+#  else
+        rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, pvFault, PGM_SYNC_NR_PAGES, uErr);
+#  endif
+        if (    RT_FAILURE(rc)
+            ||  rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE
+            ||  !(uErr & X86_TRAP_PF_RW))
+        {
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersOutOfSync);
+            STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
+            STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2OutOfSyncHndPhys; });
+            return rc;
+        }
+    }
+
+    /** @todo This particular case can cause quite a lot of overhead. E.g. early stage of kernel booting in Ubuntu 6.06
+     *        It's writing to an unhandled part of the LDT page several million times.
+     */
+    rc = PGMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault);
+    LogFlow(("PGM: PGMInterpretInstruction -> rc=%d pPage=%R[pgmpage]\n", rc, pPage));
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
+    STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2HndUnhandled; });
+    return rc;
+} /* if any kind of handler */
+
+
+/**
  * #PF Handler for raw-mode guest execution.
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
@@ -161,6 +411,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
     rc = PGM_GST_NAME(Walk)(pVCpu, pvFault, &GstWalk);
     if (RT_FAILURE_NP(rc))
         return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerGuestFault)(pVCpu, &GstWalk, uErr));
+
+    /* assert some GstWalk sanity. */
 #   if PGM_GST_TYPE == PGM_TYPE_AMD64
     AssertMsg(GstWalk.Pml4e.u == GstWalk.pPml4e->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pml4e.u, (uint64_t)GstWalk.pPml4e->u));
 #   endif
@@ -169,6 +421,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 #   endif
     AssertMsg(GstWalk.Pde.u == GstWalk.pPde->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u));
     AssertMsg(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pte.u, (uint64_t)GstWalk.pPte->u));
+    Assert(GstWalk.Core.fSucceeded);
 
     if (uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_US | X86_TRAP_PF_ID))
     {
@@ -181,7 +434,32 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
            )
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerGuestFault)(pVCpu, &GstWalk, uErr));
     }
+#  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
+#  ifdef PGM_WITH_MMIO_OPTIMIZATIONS
+    /*
+     * If it is a reserved bit fault we know that it is an MMIO or access
+     * handler related fault and can skip the dirty page stuff below.
+     */
+    if (uErr & X86_TRAP_PF_RSVD)
+    {
+        Assert(uErr & X86_TRAP_PF_P);
+        PPGMPAGE pPage;
+/** @todo Only all physical access handlers here, so optimize further. */
+#   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+        rc = pgmPhysGetPageEx(&pVM->pgm.s, GstWalk.Core.GCPhys, &pPage);
+        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
+                                                                                 &GstWalk));
+#   else
+        rc = pgmPhysGetPageEx(&pVM->pgm.s, (RTGCPHYS)pvFault, &pPage);
+        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage));
+#   endif
+    }
+#  endif /* PGM_WITH_MMIO_OPTIMIZATIONS */
+
+#  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     /*
      * Set the accessed and dirty flags.
      */
@@ -231,7 +509,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
     AssertMsg(GstWalk.Pde.u == GstWalk.pPde->u || GstWalk.pPte->u == GstWalk.pPde->u,
               ("%RX64 %RX64 pPte=%p pPde=%p Pte=%RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u, GstWalk.pPte, GstWalk.pPde, (uint64_t)GstWalk.pPte->u));
 #  else  /* !PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
-    GSTPDE const PdeSrcDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A};
+    GSTPDE const PdeSrcDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A}; /** @todo eliminate this */
 #  endif /* !PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
     /* Take the big lock now. */
@@ -247,19 +525,13 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPDDst = (pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK;   /* pPDDst index, not used with the pool. */
-
     PX86PDPAE       pPDDst;
 #   if PGM_GST_TYPE == PGM_TYPE_PAE
     rc = pgmShwSyncPaePDPtr(pVCpu, pvFault, GstWalk.Pdpe.u, &pPDDst);
 #   else
     rc = pgmShwSyncPaePDPtr(pVCpu, pvFault, X86_PDPE_P, &pPDDst);       /* RW, US and A are reserved in PAE mode. */
 #   endif
-    if (rc != VINF_SUCCESS)
-    {
-        AssertRC(rc);
-        return rc;
-    }
-    Assert(pPDDst);
+    AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_INTERNAL_ERROR_4);
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst = ((pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -270,34 +542,25 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 #   else
     rc = pgmShwSyncLongModePDPtr(pVCpu, pvFault, GstWalk.Pml4e.u, GstWalk.Pdpe.u, &pPDDst);
 #   endif
-    if (rc != VINF_SUCCESS)
-    {
-        AssertRC(rc);
-        return rc;
-    }
-    Assert(pPDDst);
+    AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_INTERNAL_ERROR_4);
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPDDst = ((pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PEPTPD          pPDDst;
-
     rc = pgmShwGetEPTPDPtr(pVCpu, pvFault, NULL, &pPDDst);
-    if (rc != VINF_SUCCESS)
-    {
-        AssertRC(rc);
-        return rc;
-    }
-    Assert(pPDDst);
+    AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_INTERNAL_ERROR_4);
 #  endif
+    Assert(pPDDst);
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-    /* Dirty page handling. */
+    /*
+     * Dirty page handling.
+     *
+     * If we successfully correct the write protection fault due to dirty bit
+     * tracking, then return immediately.
+     */
     if (uErr & X86_TRAP_PF_RW)  /* write fault? */
     {
-        /*
-         * If we successfully correct the write protection fault due to dirty bit
-         * tracking, then return immediately.
-         */
         STAM_PROFILE_START(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
         rc = PGM_BTH_NAME(CheckDirtyPageFault)(pVCpu, uErr, &pPDDst->a[iPDDst], GstWalk.pPde, pvFault);
         STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
@@ -333,8 +596,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
     Assert(GstWalk.Pde.n.u1Present);
 #  endif
     if (    !(uErr & X86_TRAP_PF_P) /* not set means page not present instead of page protection violation */
-        &&  !pPDDst->a[iPDDst].n.u1Present
-       )
+        &&  !pPDDst->a[iPDDst].n.u1Present)
     {
         STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2SyncPT; });
         STAM_PROFILE_START(&pVCpu->pgm.s.StatRZTrap0eTimeSyncPT, f);
@@ -436,7 +698,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
      * ASSUME that we can limit any special access handling to pages
      * in page tables which the guest believes to be present.
      */
-    STAM_PROFILE_START(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     RTGCPHYS GCPhys = GstWalk.Core.GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
 #  else
@@ -453,230 +714,20 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
          */
         LogFlow(("PGM #PF: pgmPhysGetPageEx(%RGp) failed with %Rrc\n", GCPhys, rc));
         STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersInvalid);
-        STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
     /*
-     * Any handlers?
+     * Any handlers for this page?
      */
     if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-    {
-        if (PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage))
-        {
-            /*
-             * Physical page access handler.
-             */
-            const RTGCPHYS  GCPhysFault = GCPhys | (pvFault & PAGE_OFFSET_MASK);
-            PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhysFault);
-            if (pCur)
-            {
-#  ifdef PGM_SYNC_N_PAGES
-                /*
-                 * If the region is write protected and we got a page not present fault, then sync
-                 * the pages. If the fault was caused by a read, then restart the instruction.
-                 * In case of write access continue to the GC write handler.
-                 *
-                 * ASSUMES that there is only one handler per page or that they have similar write properties.
-                 */
-                if (    pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
-                    && !(uErr & X86_TRAP_PF_P))
-                {
-#   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-                    rc = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
-#   else
-                    rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, pvFault, PGM_SYNC_NR_PAGES, uErr);
-#   endif
-                    if (    RT_FAILURE(rc)
-                        || !(uErr & X86_TRAP_PF_RW)
-                        || rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
-                    {
-                        AssertRC(rc);
-                        STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersOutOfSync);
-                        STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
-                        STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2OutOfSyncHndPhys; });
-                        return rc;
-                    }
-                }
-#  endif
-
-                AssertMsg(   pCur->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
-                          || (pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE && (uErr & X86_TRAP_PF_RW)),
-                          ("Unexpected trap for physical handler: %08X (phys=%08x) pPage=%R[pgmpage] uErr=%X, enum=%d\n", pvFault, GCPhys, pPage, uErr, pCur->enmType));
-
-# if defined(IN_RC) || defined(IN_RING0)
-                if (pCur->CTX_SUFF(pfnHandler))
-                {
-                    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-#  ifdef IN_RING0
-                    PFNPGMR0PHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
-#  else
-                    PFNPGMRCPHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
-#  endif
-                    bool  fLeaveLock = (pfnHandler != pPool->CTX_SUFF(pfnAccessHandler));
-                    void *pvUser = pCur->CTX_SUFF(pvUser);
-
-                    STAM_PROFILE_START(&pCur->Stat, h);
-                    if (fLeaveLock)
-                        pgmUnlock(pVM); /* @todo: Not entirely safe. */
-
-                    rc = pfnHandler(pVM, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
-                    if (fLeaveLock)
-                        pgmLock(pVM);
-#  ifdef VBOX_WITH_STATISTICS
-                    pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhysFault);
-                    if (pCur)
-                        STAM_PROFILE_STOP(&pCur->Stat, h);
-#  else
-                    pCur = NULL;    /* might be invalid by now. */
-#  endif
-
-                }
-                else
+# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage, &GstWalk));
+# else
+        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage));
 # endif
-                    rc = VINF_EM_RAW_EMULATE_INSTR;
 
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersPhysical);
-                STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
-                STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2HndPhys; });
-                return rc;
-            }
-        }
-#  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-        else
-        {
-#  ifdef PGM_SYNC_N_PAGES
-            /*
-             * If the region is write protected and we got a page not present fault, then sync
-             * the pages. If the fault was caused by a read, then restart the instruction.
-             * In case of write access continue to the GC write handler.
-             */
-            if (    PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < PGM_PAGE_HNDL_PHYS_STATE_ALL
-                && !(uErr & X86_TRAP_PF_P))
-            {
-                rc = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
-                if (    RT_FAILURE(rc)
-                    ||  rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE
-                    ||  !(uErr & X86_TRAP_PF_RW))
-                {
-                    AssertRC(rc);
-                    STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersOutOfSync);
-                    STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
-                    STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2OutOfSyncHndVirt; });
-                    return rc;
-                }
-            }
-#  endif
-            /*
-             * Ok, it's an virtual page access handler.
-             *
-             * Since it's faster to search by address, we'll do that first
-             * and then retry by GCPhys if that fails.
-             */
-            /** @todo r=bird: perhaps we should consider looking up by physical address directly now? */
-            /** @note r=svl: true, but lookup on virtual address should remain as a fallback as phys & virt trees might be out of sync, because the
-              *              page was changed without us noticing it (not-present -> present without invlpg or mov cr3, xxx)
-              */
-            PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, pvFault);
-            if (pCur)
-            {
-                AssertMsg(!(pvFault - pCur->Core.Key < pCur->cb)
-                          || (     pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
-                               || !(uErr & X86_TRAP_PF_P)
-                               || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
-                          ("Unexpected trap for virtual handler: %RGv (phys=%RGp) pPage=%R[pgmpage] uErr=%X, enum=%d\n", pvFault, GCPhys, pPage, uErr, pCur->enmType));
-
-                if (    pvFault - pCur->Core.Key < pCur->cb
-                    &&  (    uErr & X86_TRAP_PF_RW
-                         ||  pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
-                {
-#   ifdef IN_RC
-                    STAM_PROFILE_START(&pCur->Stat, h);
-                    pgmUnlock(pVM);
-                    rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, pvFault - pCur->Core.Key);
-                    pgmLock(pVM);
-                    STAM_PROFILE_STOP(&pCur->Stat, h);
-#   else
-                    rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
-#   endif
-                    STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersVirtual);
-                    STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
-                    STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2HndVirt; });
-                    return rc;
-                }
-                /* Unhandled part of a monitored page */
-            }
-            else
-            {
-               /* Check by physical address. */
-                unsigned iPage;
-                rc = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys + (pvFault & PAGE_OFFSET_MASK), &pCur, &iPage);
-                Assert(RT_SUCCESS(rc) || !pCur);
-                if (    pCur
-                    &&  (   uErr & X86_TRAP_PF_RW
-                         || pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
-                {
-                    Assert((pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) == GCPhys);
-#   ifdef IN_RC
-                    RTGCPTR off = (iPage << PAGE_SHIFT) + (pvFault & PAGE_OFFSET_MASK) - (pCur->Core.Key & PAGE_OFFSET_MASK);
-                    Assert(off < pCur->cb);
-                    STAM_PROFILE_START(&pCur->Stat, h);
-                    pgmUnlock(pVM);
-                    rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, off);
-                    pgmLock(pVM);
-                    STAM_PROFILE_STOP(&pCur->Stat, h);
-#   else
-                    rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
-#   endif
-                    STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersVirtualByPhys);
-                    STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
-                    STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2HndVirt; });
-                    return rc;
-                }
-            }
-        }
-#  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
-
-        /*
-         * There is a handled area of the page, but this fault doesn't belong to it.
-         * We must emulate the instruction.
-         *
-         * To avoid crashing (non-fatal) in the interpreter and go back to the recompiler
-         * we first check if this was a page-not-present fault for a page with only
-         * write access handlers. Restart the instruction if it wasn't a write access.
-         */
-        STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersUnhandled);
-
-        if (    !PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)
-            &&  !(uErr & X86_TRAP_PF_P))
-        {
-#  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-            rc = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
-#  else
-            rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, pvFault, PGM_SYNC_NR_PAGES, uErr);
-#  endif
-            if (    RT_FAILURE(rc)
-                ||  rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE
-                ||  !(uErr & X86_TRAP_PF_RW))
-            {
-                AssertRC(rc);
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersOutOfSync);
-                STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
-                STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2OutOfSyncHndPhys; });
-                return rc;
-            }
-        }
-
-        /** @todo This particular case can cause quite a lot of overhead. E.g. early stage of kernel booting in Ubuntu 6.06
-         *        It's writing to an unhandled part of the LDT page several million times.
-         */
-        rc = PGMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault);
-        LogFlow(("PGM: PGMInterpretInstruction -> rc=%d pPage=%R[pgmpage]\n", rc, pPage));
-        STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
-        STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2HndUnhandled; });
-        return rc;
-    } /* if any kind of handler */
-
+    STAM_PROFILE_START(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     if (uErr & X86_TRAP_PF_P)
@@ -711,7 +762,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
 #   endif
                 STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eHandlersVirtualUnmarked);
-                STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
+                STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
                 STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2HndVirt; });
                 return rc;
             }
@@ -719,15 +770,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
     }
 #  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
-
     /*
      * We are here only if page is present in Guest page tables and
      * trap is not handled by our handlers.
      *
      * Check it for page out-of-sync situation.
      */
-    STAM_PROFILE_START(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
     if (!(uErr & X86_TRAP_PF_P))
     {
         /*
@@ -746,7 +794,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             rc = PGMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault);
             LogFlow(("PGM: PGMInterpretInstruction balloon -> rc=%d pPage=%R[pgmpage]\n", rc, pPage));
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncBallloon));
-            STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeHandlers, b);
+            STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
             STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2HndUnhandled; });
             return rc;
         }
@@ -878,6 +926,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 {
                     AssertMsg(rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("%Rrc\n", rc));
                     STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
+/// @todo STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2MakeWritable; });
                     return rc;
                 }
                 if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
@@ -899,6 +948,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 else
                     STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eWPEmulToR3);
                 STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
+/// @todo STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2WPEmulation; });
                 return rc;
             }
 #   endif
