@@ -1781,23 +1781,23 @@ static void pgmR3InitStats(PVM pVM)
 
         /* RZ only: */
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0e,                      "/PGM/CPU%u/RZ/Trap0e",                     "Profiling of the PGMTrap0eHandler() body.");
-        PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTimeCheckPageFault,    "/PGM/CPU%u/RZ/Trap0e/Time/CheckPageFault", "Profiling of checking for dirty/access emulation faults.");
-        PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTimeSyncPT,            "/PGM/CPU%u/RZ/Trap0e/Time/SyncPT",         "Profiling of lazy page table syncing.");
-        PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTimeMapping,           "/PGM/CPU%u/RZ/Trap0e/Time/Mapping",        "Profiling of checking virtual mappings.");
-        PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTimeOutOfSync,         "/PGM/CPU%u/RZ/Trap0e/Time/OutOfSync",      "Profiling of out of sync page handling.");
-        PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTimeHandlers,          "/PGM/CPU%u/RZ/Trap0e/Time/Handlers",       "Profiling of checking handlers.");
+        PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2Ballooned,        "/PGM/CPU%u/RZ/Trap0e/Time2/Ballooned",         "Profiling of the Trap0eHandler body when the cause is read access to a ballooned page.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2CSAM,             "/PGM/CPU%u/RZ/Trap0e/Time2/CSAM",              "Profiling of the Trap0eHandler body when the cause is CSAM.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2DirtyAndAccessed, "/PGM/CPU%u/RZ/Trap0e/Time2/DirtyAndAccessedBits", "Profiling of the Trap0eHandler body when the cause is dirty and/or accessed bit emulation.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2GuestTrap,        "/PGM/CPU%u/RZ/Trap0e/Time2/GuestTrap",         "Profiling of the Trap0eHandler body when the cause is a guest trap.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2HndPhys,          "/PGM/CPU%u/RZ/Trap0e/Time2/HandlerPhysical",   "Profiling of the Trap0eHandler body when the cause is a physical handler.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2HndVirt,          "/PGM/CPU%u/RZ/Trap0e/Time2/HandlerVirtual",    "Profiling of the Trap0eHandler body when the cause is a virtual handler.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2HndUnhandled,     "/PGM/CPU%u/RZ/Trap0e/Time2/HandlerUnhandled",  "Profiling of the Trap0eHandler body when the cause is access outside the monitored areas of a monitored page.");
+        PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2InvalidPhys,      "/PGM/CPU%u/RZ/Trap0e/Time2/InvalidPhys",       "Profiling of the Trap0eHandler body when the cause is access to an invalid physical guest address.");
+        PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2MakeWritable,     "/PGM/CPU%u/RZ/Trap0e/Time2/MakeWritable",      "Profiling of the Trap0eHandler body when the cause is that a page needed to be made writeable.");
+        PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2Mapping,          "/PGM/CPU%u/RZ/Trap0e/Time2/Mapping",           "Profiling of the Trap0eHandler body when the cause is releated to the guest mappings.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2Misc,             "/PGM/CPU%u/RZ/Trap0e/Time2/Misc",              "Profiling of the Trap0eHandler body when the cause is not known.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2OutOfSync,        "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSync",         "Profiling of the Trap0eHandler body when the cause is an out-of-sync page.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2OutOfSyncHndPhys, "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncHndPhys",  "Profiling of the Trap0eHandler body when the cause is an out-of-sync physical handler page.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2OutOfSyncHndVirt, "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncHndVirt",  "Profiling of the Trap0eHandler body when the cause is an out-of-sync virtual handler page.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2OutOfSyncHndObs,  "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncObsHnd",   "Profiling of the Trap0eHandler body when the cause is an obsolete handler page.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2SyncPT,           "/PGM/CPU%u/RZ/Trap0e/Time2/SyncPT",            "Profiling of the Trap0eHandler body when the cause is lazy syncing of a PT.");
+        PGM_REG_PROFILE(&pPgmCpu->StatRZTrap0eTime2WPEmulation,      "/PGM/CPU%u/RZ/Trap0e/Time2/WPEmulation",       "Profiling of the Trap0eHandler body when the cause is CR0.WP emulation.");
         PGM_REG_COUNTER(&pPgmCpu->StatRZTrap0eConflicts,             "/PGM/CPU%u/RZ/Trap0e/Conflicts",               "The number of times #PF was caused by an undetected conflict.");
         PGM_REG_COUNTER(&pPgmCpu->StatRZTrap0eHandlersMapping,       "/PGM/CPU%u/RZ/Trap0e/Handlers/Mapping",        "Number of traps due to access handlers in mappings.");
         PGM_REG_COUNTER(&pPgmCpu->StatRZTrap0eHandlersOutOfSync,     "/PGM/CPU%u/RZ/Trap0e/Handlers/OutOfSync",      "Number of traps due to out-of-sync handled pages.");
