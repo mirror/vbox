@@ -1919,29 +1919,31 @@ DECLINLINE(PPGMMMIO2RANGE) pgmR3PhysMMIO2Find(PVM pVM, PPDMDEVINS pDevIns, uint3
 /**
  * Allocate and register an MMIO2 region.
  *
- * As mentioned elsewhere, MMIO2 is just RAM spelled differently. It's
- * RAM associated with a device. It is also non-shared memory with a
- * permanent ring-3 mapping and page backing (presently).
+ * As mentioned elsewhere, MMIO2 is just RAM spelled differently.  It's RAM
+ * associated with a device. It is also non-shared memory with a permanent
+ * ring-3 mapping and page backing (presently).
  *
- * A MMIO2 range may overlap with base memory if a lot of RAM
- * is configured for the VM, in which case we'll drop the base
- * memory pages. Presently we will make no attempt to preserve
- * anything that happens to be present in the base memory that
- * is replaced, this is of course incorrectly but it's too much
+ * A MMIO2 range may overlap with base memory if a lot of RAM is configured for
+ * the VM, in which case we'll drop the base memory pages.  Presently we will
+ * make no attempt to preserve anything that happens to be present in the base
+ * memory that is replaced, this is of course incorrectly but it's too much
  * effort.
  *
  * @returns VBox status code.
- * @retval  VINF_SUCCESS on success, *ppv pointing to the R3 mapping of the memory.
+ * @retval  VINF_SUCCESS on success, *ppv pointing to the R3 mapping of the
+ *          memory.
  * @retval  VERR_ALREADY_EXISTS if the region already exists.
  *
  * @param   pVM             Pointer to the shared VM structure.
  * @param   pDevIns         The device instance owning the region.
- * @param   iRegion         The region number. If the MMIO2 memory is a PCI I/O region
- *                          this number has to be the number of that region. Otherwise
- *                          it can be any number safe UINT8_MAX.
- * @param   cb              The size of the region. Must be page aligned.
+ * @param   iRegion         The region number.  If the MMIO2 memory is a PCI
+ *                          I/O region this number has to be the number of that
+ *                          region. Otherwise it can be any number safe
+ *                          UINT8_MAX.
+ * @param   cb              The size of the region.  Must be page aligned.
  * @param   fFlags          Reserved for future use, must be zero.
- * @param   ppv             Where to store the pointer to the ring-3 mapping of the memory.
+ * @param   ppv             Where to store the pointer to the ring-3 mapping of
+ *                          the memory.
  * @param   pszDesc         The description.
  */
 VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc)
