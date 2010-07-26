@@ -1275,14 +1275,14 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     AssertRCReturn(rc, rc);
 
     pVM->pgm.s.pStatsR3 = (PGMSTATS *)pv;
-    pVM->pgm.s.pStatsR0 = MMHyperCCToRC(pVM, pv);
+    pVM->pgm.s.pStatsR0 = MMHyperCCToR0(pVM, pv);
     pVM->pgm.s.pStatsRC = MMHyperCCToRC(pVM, pv);
     pv = (uint8_t *)pv + RT_ALIGN_Z(sizeof(PGMSTATS), 64);
 
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
         pVM->aCpus[iCpu].pgm.s.pStatsR3 = (PGMCPUSTATS *)pv;
-        pVM->aCpus[iCpu].pgm.s.pStatsR0 = MMHyperCCToRC(pVM, pv);
+        pVM->aCpus[iCpu].pgm.s.pStatsR0 = MMHyperCCToR0(pVM, pv);
         pVM->aCpus[iCpu].pgm.s.pStatsRC = MMHyperCCToRC(pVM, pv);
 
         pv = (uint8_t *)pv + RT_ALIGN_Z(sizeof(PGMCPUSTATS), 64);
