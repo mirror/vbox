@@ -1104,12 +1104,6 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     }
 
     /*
-     * Create the transmit lock.
-     */
-    rc = RTCritSectInit(&pThis->XmitLock);
-    AssertRCReturn(rc, rc);
-
-    /*
      * Do the setup.
      */
 # ifdef VBOX_WITH_CROSSBOW
@@ -1137,6 +1131,12 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
         return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_HANDLE, RT_SRC_POS,
                                    N_("The TAP file handle %RTfile is not valid"), pThis->FileDevice);
 #endif /* !RT_OS_SOLARIS */
+
+    /*
+     * Create the transmit lock.
+     */
+    rc = RTCritSectInit(&pThis->XmitLock);
+    AssertRCReturn(rc, rc);
 
     /*
      * Make sure the descriptor is non-blocking and valid.
