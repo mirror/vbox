@@ -13970,14 +13970,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="registerListener">
       <desc>
         Register an event listener.
+        <note>
+          For passive listeners, to avoid
+          memory leaks and misbehavior of VirtualBox service, event source logic checks
+          if event listener user performs checks for events with <link to="IEventSource::getEvent"/> frequently
+          enough, so that event queue not overloaded. If heavy overuse (more that 100
+          pending events with current implementation) of queue is detected, listener
+          is forcefully unregistered and further getEvent() will return VBOX_E_OBJECT_NOT_FOUND.
+        </note>
       </desc>
       <param name="listener" type="IEventListener" dir="in">
         <desc>Listener to register.</desc>
       </param>
       <param name="interesting" type="VBoxEventType" dir="in" safearray="yes">
         <desc>
-          Event types listener is interested in. One can use wildcards like Any -
-          <see>VBoxEventType::Any</see> to specify wildcards.
+          Event types listener is interested in. One can use wildcards like -
+          <link to="VBoxEventType::Any"/> to specify wildcards, matching more 
+          than one event.
         </desc>
       </param>
       <param name="active" type="boolean" dir="in">
@@ -14023,8 +14032,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="getEvent">
       <desc>
-        Get events from this peer's event queue (for passive mode). Consumer's implementation
-        must call <link to="IEventListener::handleEvent" /> once the event is available.
+        Get events from this peer's event queue (for passive mode).
+        <note>
+          Please make sure you checked registerListener() documentation.
+        </note>
+        <see><link to="IEventSource::registerListener"/></see>
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Listener is not registered, or autounregistered.
+        </result>
       </desc>
       <param name="listener" type="IEventListener" dir="in">
         <desc>Which listener get data for.</desc>
@@ -14085,6 +14100,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Abstract parent interface for VirtualBox events. Actual events will typically implement
       a more specific interface which derives from this (see below).
 
+      
       <b>Introduction to VirtualBox events</b>
 
       Starting with VirtualBox 3.3, support for generic events was introduced.
@@ -14172,7 +14188,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         If we can wait for this event being processed. If false, waitProcessed() returns immediately,
         and setProcessed() doesn't make sense. Non-waitable events are generally better performing,
         as no additional overhead associated with waitability imposed.
-        Waitable events are needed when some need to be able to wait for particular event processed,
+        Waitable events are needed when one need to be able to wait for particular event processed,
         for example for vetoable changes, or if event refers to some resource which need to be kept immutable
         until all consumers confirmed events.
       </desc>
