@@ -63,12 +63,6 @@
 #endif
 
 /**
- * Solve page is out of sync issues inside Guest Context (in PGMGC.cpp).
- * Comment it if it will break something.
- */
-#define PGM_OUT_OF_SYNC_IN_GC
-
-/**
  * Check and skip global PDEs for non-global flushes
  */
 #define PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
