@@ -2383,6 +2383,7 @@ public class Helper {
         }
     }
 
+    @SuppressWarnings( "unchecked")
     public static <T> T[] unwrap(Class<T> wrapperClass, List<T> thisPtrs) {
         if (thisPtrs==null)
             return null;
@@ -2391,6 +2392,7 @@ public class Helper {
         return (T[])thisPtrs.toArray((T[])Array.newInstance(wrapperClass, thisPtrs.size()));
     }
 
+    @SuppressWarnings( "unchecked" )
     public static <T> T queryInterface(Object obj, String uuid, Class<T> iface)
     {
         return (T)queryInterface(obj, uuid);
@@ -2408,6 +2410,7 @@ public class Helper {
          }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T1 extends IUnknown,T2> T2[] unwrap2(Class<T1> wrapperClass1, Class<T2> wrapperClass2, List<T1> thisPtrs) {
         if (thisPtrs==null || thisPtrs.size() == 0)  return null;
 
@@ -3206,6 +3209,7 @@ public class Helper {
         return ret;
     }
 
+    @SuppressWarnings("unchecked" )
     public static <T1 extends Enum <T1>, T2 extends Enum <T2>> List<T2> convertEnums(Class<T1> fromClass,
                                                                                      Class<T2> toClass,
                                                                                      List<T1>  values) {
@@ -3215,7 +3219,7 @@ public class Helper {
             java.lang.reflect.Method fromValue = toClass.getMethod("fromValue", String.class);
             List<T2> ret = new ArrayList<T2>(values.size());
             for (T1 v : values) {
-                // static method is called with null this
+                // static method is called with null this                
                 ret.add((T2)fromValue.invoke(null, v.name()));
             }
             return ret;

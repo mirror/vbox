@@ -4374,7 +4374,7 @@ ifeq ($(KBUILD_TARGET), win)
 else
   VBOX_SEP=:
 endif
-VBOX_JAVAC_OPTS = -source 1.5 -target 1.5
+VBOX_JAVAC_OPTS = -source 1.5 -target 1.5 -Xlint:unchecked
 
 #
 # Legacy.

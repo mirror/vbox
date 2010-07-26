@@ -56,13 +56,13 @@ import java.util.StringTokenizer;
  */
 public class INIParser {
 
-  private HashMap mSections;
+  private HashMap<String, Properties> mSections;
 
   /**
    * Creates a new <code>INIParser</code> instance from the INI file at the
    * given path. <code>aCharset</code> specifies the character encoding of
    * the file.
-   * 
+   *
    * @param aFilename path of INI file to parse
    * @param aCharset character encoding of file
    * @throws FileNotFoundException if <code>aFilename</code> does not exist.
@@ -76,7 +76,7 @@ public class INIParser {
   /**
    * Creates a new <code>INIParser</code> instance from the INI file at the
    * given path, which is assumed to be in the <code>UTF-8</code> charset.
-   * 
+   *
    * @param aFilename path of INI file to parse
    * @throws FileNotFoundException if <code>aFilename</code> does not exist.
    * @throws IOException if there is a problem reading the given file.
@@ -88,7 +88,7 @@ public class INIParser {
   /**
    * Creates a new <code>INIParser</code> instance from the given file.
    * <code>aCharset</code> specifies the character encoding of the file.
-   * 
+   *
    * @param aFile INI file to parse
    * @param aCharset character encoding of file
    * @throws FileNotFoundException if <code>aFile</code> does not exist.
@@ -102,7 +102,7 @@ public class INIParser {
   /**
    * Creates a new <code>INIParser</code> instance from the given file,
    * which is assumed to be in the <code>UTF-8</code> charset.
-   * 
+   *
    * @param aFile INI file to parse
    * @throws FileNotFoundException if <code>aFile</code> does not exist.
    * @throws IOException if there is a problem reading the given file.
@@ -113,7 +113,7 @@ public class INIParser {
 
   /**
    * Parses given INI file.
-   * 
+   *
    * @param aFile INI file to parse
    * @param aCharset character encoding of file
    * @throws FileNotFoundException if <code>aFile</code> does not exist.
@@ -125,7 +125,7 @@ public class INIParser {
     InputStreamReader inStream = new InputStreamReader(fileStream, aCharset);
     BufferedReader reader = new BufferedReader(inStream);
 
-    mSections = new HashMap();
+    mSections = new HashMap<String, Properties>();
     String currSection = null;
 
     String line;
@@ -165,7 +165,7 @@ public class INIParser {
         continue;
       }
 
-      Properties props = (Properties) mSections.get(currSection);
+      Properties props = mSections.get(currSection);
       if (props == null) {
         props = new Properties();
         mSections.put(currSection, props);
@@ -178,7 +178,7 @@ public class INIParser {
 
   /**
    * Returns an iterator over the section names available in the INI file.
-   * 
+   *
    * @return an iterator over the section names
    */
   public Iterator getSections() {
@@ -188,7 +188,7 @@ public class INIParser {
   /**
    * Returns an iterator over the keys available within a section.
    *
-   * @param aSection section name whose keys are to be returned 
+   * @param aSection section name whose keys are to be returned
    * @return an iterator over section keys, or <code>null</code> if no
    *          such section exists
    */
@@ -216,7 +216,7 @@ public class INIParser {
       }
     }
 
-    Properties props = (Properties) mSections.get(aSection);
+    Properties props = mSections.get(aSection);
     if (props == null) {
       return null;
     }
@@ -232,7 +232,7 @@ public class INIParser {
    * @return string value of particular section and key
    */
   public String getString(String aSection, String aKey) {
-    Properties props = (Properties) mSections.get(aSection);
+    Properties props = mSections.get(aSection);
     if (props == null) {
       return null;
     }
@@ -241,4 +241,3 @@ public class INIParser {
   }
 
 }
-

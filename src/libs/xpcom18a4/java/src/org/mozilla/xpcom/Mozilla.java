@@ -216,10 +216,10 @@ public class Mozilla implements IMozilla, IGRE, IXPCOM, IJavaXPCOMUtils,XPCOMErr
      */
     try {
       URL[] urls = new URL[1];
-      urls[0] = new File("/System/Library/Java/").toURL();
+      urls[0] = new File("/System/Library/Java/").toURI().toURL();
       ClassLoader loader = new URLClassLoader(urls);
-      Class bundleClass = Class.forName("com.apple.cocoa.foundation.NSBundle",
-                                        true, loader);
+      Class<?> bundleClass = Class.forName("com.apple.cocoa.foundation.NSBundle",
+                                           true, loader);
 
       // Get the bundle for this app.  If this is not executing from
       // a bundle, this will return null.
@@ -637,7 +637,7 @@ public class Mozilla implements IMozilla, IGRE, IXPCOM, IJavaXPCOMUtils,XPCOMErr
 
     URL[] urls = new URL[1];
     try {
-      urls[0] = jar.toURL();
+      urls[0] = jar.toURI().toURL();
     } catch (MalformedURLException e) {
       throw new XPCOMInitializationException(e);
     }
@@ -969,11 +969,11 @@ public class Mozilla implements IMozilla, IGRE, IXPCOM, IJavaXPCOMUtils,XPCOMErr
    *                <code>null</code> otherwise.
    */
   public static nsISupports queryInterface(nsISupports aObject, String aIID) {
-    ArrayList classes = new ArrayList();
+    ArrayList<Class> classes = new ArrayList<Class>();
     classes.add(aObject.getClass());
 
     while (!classes.isEmpty()) {
-      Class clazz = (Class) classes.remove(0);
+      Class clazz = classes.remove(0);
 
       // Skip over any class/interface in the "java.*" and "javax.*" domains.
       String className = clazz.getName();
