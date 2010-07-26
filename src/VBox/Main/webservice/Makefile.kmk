@@ -155,6 +155,8 @@ PATH_TARGET_WEBTEST           := $(VBOXWEB_OUT_DIR)/webtest
 
 VBOXWEB_IDL_SRC_ORIG          := $(VBOX_XIDL_FILE)
 VBOXWEB_IDL_SRC               := $(VBOXWEB_OUT_DIR)/VirtualBox.xidl
+VBOXWEB_WSDL                   = $(VBOX_PATH_SDK)/bindings/webservice/vboxweb.wsdl
+VBOXWEBSERVICE_WSDL            = $(VBOX_PATH_SDK)/bindings/webservice/vboxwebService.wsdl
 
 VBOXWEB_TYPEMAP               := $(VBOXWEB_OUT_DIR)/typemap.dat
 
@@ -285,9 +287,6 @@ endif
 
  vboxwebsrv_ORDERDEPS = $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
  endif # !VBOX_ONLY_SDK
-
-VBOXWEB_WSDL                   = $(VBOX_PATH_SDK)/bindings/webservice/vboxweb.wsdl
-VBOXWEBSERVICE_WSDL            = $(VBOX_PATH_SDK)/bindings/webservice/vboxwebService.wsdl
 
 ifdef VBOX_WITH_JWS
 INSTALLS += VBoxJWs-inst-jar

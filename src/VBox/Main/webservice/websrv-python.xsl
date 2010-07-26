@@ -464,6 +464,11 @@ class <xsl:value-of select="@name"/>:
 #
 from VirtualBox_services import *
 
+try:
+  from VirtualBox_client import *
+except:
+  pass
+
 class ManagedManager:
   def __init__(self):
      self.map = {}
@@ -854,7 +859,10 @@ class IWebsessionManager2(IWebsessionManager):
 
   def getPort(self):
       if self.port is None:
-          self.port = vboxServiceLocator().getvboxPortType(self.url)
+          try:
+             self.port = vboxServiceLocator().getvboxPortType(self.url)
+          except:
+             self.port = vboxServiceLocator().getvboxServicePort(self.url)
       return self.port
 
 </xsl:template>
