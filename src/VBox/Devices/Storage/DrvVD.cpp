@@ -1621,6 +1621,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     char *pszName = NULL;   /**< The path of the disk image file. */
     char *pszFormat = NULL; /**< The format backed to use for this image. */
     bool fReadOnly;         /**< True if the media is read-only. */
+    bool fMaybeReadOnly;    /**< True if the media may or may not be read-only. */
     bool fHonorZeroWrites;  /**< True if zero blocks should be written. */
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
@@ -1700,7 +1701,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
              * open flags. Some might be converted to per-image flags later. */
             fValid = CFGMR3AreValuesValid(pCurNode,
                                           "Format\0Path\0"
-                                          "ReadOnly\0TempReadOnly\0HonorZeroWrites\0"
+                                          "ReadOnly\0MaybeReadOnly\0TempReadOnly\0HonorZeroWrites\0"
                                           "HostIPStack\0UseNewIo\0"
                                           "SetupMerge\0MergeSource\0MergeTarget\0");
         }
@@ -1741,6 +1742,14 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"ReadOnly\" as boolean failed"));
+                break;
+            }
+
+            rc = CFGMR3QueryBoolDef(pCurNode, "MaybeReadOnly", &fMaybeReadOnly, false);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"MaybeReadOnly\" as boolean failed"));
                 break;
             }
 
@@ -2013,8 +2022,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             Log(("%s: %d - Opened '%s' in %s mode\n", __FUNCTION__,
                  iLevel, pszName,
                  VDIsReadOnly(pThis->pDisk) ? "read-only" : "read-write"));
-            if (   VDIsReadOnly(pThis->pDisk)
+            if (  VDIsReadOnly(pThis->pDisk)
                 && !fReadOnly
+                && !fMaybeReadOnly
                 && !pThis->fTempReadOnly
                 && iLevel == 0)
             {
