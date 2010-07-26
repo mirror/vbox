@@ -225,8 +225,9 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                         else
                         {
 #ifdef IN_RING3
-                            RTPrintf("testing: VALUE '%.*s' = %#llx (%llu) [%u]\n",
+                            RTPrintf("testing: VALUE '%.*s'%*s: %'9llu (%#llx) [%u]\n",
                                      sizeof(pThis->TestingData.Value.szName) - 1, pThis->TestingData.Value.szName,
+                                     off - 12 > 48 ? 0 : 48 - (off - 12), "",
                                      pThis->TestingData.Value.u64Value.u, pThis->TestingData.Value.u64Value.u,
                                      pThis->TestingData.Value.u32Unit);
 #else
