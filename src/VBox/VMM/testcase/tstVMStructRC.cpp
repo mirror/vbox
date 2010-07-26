@@ -522,10 +522,11 @@ int main()
     GEN_CHECK_OFF(PGMCPU, DisState);
     GEN_CHECK_OFF(PGMCPU, cGuestModeChanges);
 #ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(PGMCPU, pStatsR0);
     GEN_CHECK_OFF(PGMCPU, pStatTrap0eAttributionR0);
+    GEN_CHECK_OFF(PGMCPU, pStatsRC);
     GEN_CHECK_OFF(PGMCPU, pStatTrap0eAttributionRC);
-    GEN_CHECK_OFF(PGMCPU, StatSyncPtPD);
-    GEN_CHECK_OFF(PGMCPU, StatR3Prefetch);
+    GEN_CHECK_OFF(PGMCPU, pStatsR3);
 #endif
     GEN_CHECK_OFF(PGM, offVM);
     GEN_CHECK_OFF(PGM, offVCpuPGM);
@@ -611,6 +612,11 @@ int main()
     GEN_CHECK_OFF(PGM, cWriteLockedPages);
     GEN_CHECK_OFF(PGM, cReadLockedPages);
     GEN_CHECK_OFF(PGM, cRelocations);
+#ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(PGMCPU, pStatsR0);
+    GEN_CHECK_OFF(PGMCPU, pStatsRC);
+    GEN_CHECK_OFF(PGMCPU, pStatsR3);
+#endif
 
     GEN_CHECK_SIZE(PGMMAPPING);
     GEN_CHECK_OFF(PGMMAPPING, pNextR3);

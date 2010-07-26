@@ -1191,7 +1191,7 @@ bool pgmR3MapIsKnownConflictAddress(PPGMMAPPING pMapping, RTGCPTR GCPtr)
 int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTGCPTR GCPtrOldMapping)
 {
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cRelocations);
-    STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3ResolveConflict, a);
 
     /* Raw mode only which implies one VCPU. */
     Assert(pVM->cCpus == 1);
@@ -1244,12 +1244,12 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTG
         if (pMapping->pfnRelocate(pVM, GCPtrOldMapping, GCPtrNewMapping, PGMRELOCATECALL_SUGGEST, pMapping->pvUser))
         {
             pgmR3MapRelocate(pVM, pMapping, GCPtrOldMapping, GCPtrNewMapping);
-            STAM_PROFILE_STOP(&pVM->pgm.s.StatR3ResolveConflict, a);
+            STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3ResolveConflict, a);
             return VINF_SUCCESS;
         }
     }
 
-    STAM_PROFILE_STOP(&pVM->pgm.s.StatR3ResolveConflict, a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3ResolveConflict, a);
     AssertMsgFailed(("Failed to relocate page table mapping '%s' from %#x! (cPTs=%d)\n", pMapping->pszDesc, GCPtrOldMapping, cPTs));
     return VERR_PGM_NO_HYPERVISOR_ADDRESS;
 }
@@ -1332,12 +1332,12 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
             if (pMapping->pfnRelocate(pVM, GCPtrOldMapping, GCPtrNewMapping, PGMRELOCATECALL_SUGGEST, pMapping->pvUser))
             {
                 pgmR3MapRelocate(pVM, pMapping, GCPtrOldMapping, GCPtrNewMapping);
-                STAM_PROFILE_STOP(&pVM->pgm.s.StatR3ResolveConflict, a);
+                STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3ResolveConflict, a);
                 return VINF_SUCCESS;
             }
         }
     }
-    STAM_PROFILE_STOP(&pVM->pgm.s.StatR3ResolveConflict, a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3ResolveConflict, a);
     AssertMsgFailed(("Failed to relocate page table mapping '%s' from %#x! (cPTs=%d)\n", pMapping->pszDesc, GCPtrOldMapping, pMapping->cb >> X86_PD_PAE_SHIFT));
     return VERR_PGM_NO_HYPERVISOR_ADDRESS;
 }
