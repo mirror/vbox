@@ -529,7 +529,7 @@ class VirtualBoxManager:
 
     def closeMachineSession(self, session):
         if session is not None:
-            session.close()
+            session.unlockMachine()
 
     def deinitPerThread(self):
         self.platform.deinitPerThread()

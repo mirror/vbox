@@ -244,7 +244,7 @@ def startVm(ctx,mach,type):
             if g_verbose:
                 traceback.print_exc()
          # if session not opened, close doesn't make sense
-        session.close()
+        session.unlockMachine()
     else:
        reportError(ctx,progress)
 
@@ -498,13 +498,13 @@ def cmdExistingVm(ctx,mach,cmd,args):
         return
     if session.state != ctx['const'].SessionState_Locked:
         print "Session to '%s' in wrong state: %s" %(mach.name, session.state)
-        session.close()
+        session.unlockMachine()
         return
     # this could be an example how to handle local only (i.e. unavailable
     # in Webservices) functionality
     if ctx['remote'] and cmd == 'some_local_only_command':
         print 'Trying to use local only functionality, ignored'
-        session.close()
+        session.unlockMachine()
         return
     console=session.console
     ops={'pause':           lambda: console.pause(),
@@ -530,7 +530,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
         if g_verbose:
             traceback.print_exc()
 
-    session.close()
+    session.unlockMachine()
 
 
 def cmdClosedVm(ctx,mach,cmd,args=[],save=True):
@@ -1361,7 +1361,7 @@ def portForwardCmd(ctx, args):
     mach.setExtraData(config + "/GuestPort", str(guestPort))
 
     mach.saveSettings()
-    session.close()
+    session.unlockMachine()
 
     return 0
 
@@ -2540,7 +2540,7 @@ def natCmd(ctx, args):
     if rosession == 0:
         if rc == 0:
             mach.saveSettings()
-        session.close()
+        session.unlockMachine()
     elif report is not None:
         for r in report:
             msg ='{0} nic{1} {2}: {3}'.format(mach.name, nicnum, func, r)
@@ -2716,7 +2716,7 @@ def nicCmd(ctx, args):
             vm.saveSettings()
     if report is not None:
         print '%s nic %d %s: %s' % (vm.name, nicnum, args[3], report)
-    session.close()
+    session.unlockMachine()
     return 0
 
 
