@@ -3317,15 +3317,15 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
      */
     if (pVM->pgm.s.ChunkR3Map.AgeingCountdown-- == 0)
     {
-        STAM_PROFILE_START(&pVM->pgm.s.StatChunkAging, a);
+        STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkAging, a);
         PGMR3PhysChunkAgeing(pVM);
-        STAM_PROFILE_STOP(&pVM->pgm.s.StatChunkAging, a);
+        STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkAging, a);
     }
 
     /*
      * Enumerate the age tree starting with the left most node.
      */
-    STAM_PROFILE_START(&pVM->pgm.s.StatChunkFindCandidate, a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkFindCandidate, a);
     PGMR3PHYSCHUNKUNMAPCB Args;
     Args.pVM      = pVM;
     Args.pChunk   = NULL;
@@ -3334,11 +3334,11 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
     Assert(Args.pChunk);
     if (Args.pChunk)
     {
-        STAM_PROFILE_STOP(&pVM->pgm.s.StatChunkFindCandidate, a);
+        STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkFindCandidate, a);
         return Args.pChunk->Core.Key;
     }
 
-    STAM_PROFILE_STOP(&pVM->pgm.s.StatChunkFindCandidate, a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkFindCandidate, a);
     return INT32_MAX;
 }
 
@@ -3377,9 +3377,9 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
 
         if (Req.idChunkUnmap != INT32_MAX)
         {
-            STAM_PROFILE_START(&pVM->pgm.s.StatChunkUnmap, a);
+            STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkUnmap, a);
             rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
-            STAM_PROFILE_STOP(&pVM->pgm.s.StatChunkUnmap, a);
+            STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkUnmap, a);
             if (RT_SUCCESS(rc))
             {
                 /* remove the unmapped one. */
