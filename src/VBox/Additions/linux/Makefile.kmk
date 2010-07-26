@@ -65,6 +65,17 @@ VBOX_LNX_ADD_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
 # Targets
 #
 ifndef VBOX_OSE
+ # OSE only contains the source code for this
+ VBOX_SELINUX_CMPLD := $(PATH_SUB_CURRENT)/selinux-fedora/vbox_x11.pp
+ VBOX_LNX_ADD_ARCHIVE.x86 := $(PATH_OUT_BASE)/linux.x86/$(KBUILD_TYPE)/bin/additions/VBoxGuestAdditions-x86-r$(VBOX_SVN_REV).tar.bz2
+ VBOX_LNX_ADD_ARCHIVE.amd64 := $(PATH_OUT_BASE)/linux.amd64/$(KBUILD_TYPE)/bin/additions/VBoxGuestAdditions-amd64-r$(VBOX_SVN_REV).tar.bz2
+ifndef VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE
+  VBOX_LNX_ADD_ARCHIVES := $(PATH_BIN)/additions/VBoxGuestAdditions-$(KBUILD_TARGET_ARCH)-r$(VBOX_SVN_REV).tar.bz2
+else
+  VBOX_LNX_ADD_ARCHIVES := \
+  	$(VBOX_LNX_ADD_ARCHIVE.x86) \
+  	$(VBOX_LNX_ADD_ARCHIVE.amd64)
+endif
  BLDDIRS     += \
  	$(VBOX_LNX_ADD_INST_OUT_DIR) \
  	$(VBOX_LNX_ADD_INST_BIN_DIR) \
@@ -81,11 +92,9 @@ ifndef VBOX_OSE
  	$(VBOX_LNX_ADD_INST_STAGE_DIR)
  PACKING     += \
  	$(PATH_BIN)/additions/VBoxLinuxAdditions.run \
- 	$(VBOX_LNX_ADD_INST_STAGE_DIR)VBoxGuestAdditions.tar.bz2 \
+ 	$(VBOX_LNX_ADD_ARCHIVES) \
  	$(PATH_BIN)/additions/VBoxGuestAdditions-dbg.tar.bz2
  OTHER_CLEAN += $(PACKING)
- # OSE only contains the source code for this
- VBOX_SELINUX_CMPLD := $(PATH_SUB_CURRENT)/selinux-fedora/vbox_x11.pp
 endif
 
 
@@ -417,7 +426,7 @@ VBOX_LNX_ADD_ARCH_FILES = \
 #
 # .tar.bz2 for converting into .run
 #
-$(VBOX_LNX_ADD_INST_STAGE_DIR)VBoxGuestAdditions.tar.bz2: \
+$(VBOX_LNX_ADD_ARCHIVE.$(KBUILD_TARGET_ARCH)): \
 		$(VBOX_LNX_ADD_ARCH_FILES) \
 		$(VBOX_LNX_ADD_INST_DEP_ON_MAKEFILE) \
 		$(VBOX_VERSION_STAMP)
@@ -468,10 +477,16 @@ endif
 # any references should be made via variables assigned a know value via := .
 #
 $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
-		$(VBOX_LNX_ADD_INST_STAGE_DIR)VBoxGuestAdditions.tar.bz2 \
+		$(VBOX_LNX_ADD_ARCHIVES) \
 		$(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh \
 		$$(INSTARGET_LnxAdd-scripts) \
 		$(VBOX_VERSION_STAMP)
+	$(QUIET)($(foreach FILE,$(wildcard \
+	    $(VBOX_LNX_ADD_INST_STAGE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME)-*.tar.bz2), \
+	    rm $(FILE);))
+	$(QUIET)($(foreach FILE,$(VBOX_LNX_ADD_ARCHIVES), \
+	    cp $(FILE) \
+	    $(VBOX_LNX_ADD_INST_STAGE_DIR)$(subst -r$(VBOX_SVN_REV),,$(notdir $(FILE)));))
 	$(QUIET)$(VBOX_MAKESELF) --nocomp $(VBOX_LNX_ADD_INST_STAGE_DIR) $@ \
 		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux" \
 		/bin/sh ./install.sh "\$$0 1> /dev/null"
