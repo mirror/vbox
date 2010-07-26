@@ -517,7 +517,17 @@ void UIKeyboardHandler::sltMachineStateChanged()
             {
                 if (m_views[theListOfViewIds[i]]->hasFocus())
                 {
-                    captureKeyboard(theListOfViewIds[i]);
+                    /* Capture keyboard: */
+#ifdef Q_WS_WIN
+                    if (!uisession()->isAutoCaptureDisabled() && m_globalSettings.autoCapture() &&
+                        GetAncestor(m_views[theListOfViewIds[i]]->winId(), GA_ROOT) == GetForegroundWindow())
+#else /* Q_WS_WIN */
+                    if (!uisession()->isAutoCaptureDisabled() && m_globalSettings.autoCapture())
+#endif /* !Q_WS_WIN */
+                        captureKeyboard(theListOfViewIds[i]);
+                    /* Reset the single-time disable capture flag: */
+                    if (uisession()->isAutoCaptureDisabled())
+                        uisession()->setAutoCaptureDisabled(false);
                     break;
                 }
             }
