@@ -775,7 +775,7 @@ int main(int argc, char* argv[])
         // we have to process main event queue
         WEBDEBUG(("Pumping COM event queue\n"));
         int vrc = pQ->processEventQueue(RT_INDEFINITE_WAIT);
-        if (FAILED(vrc) && (vrc != VERR_TIMEOUT))
+        if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
             com::GluePrintRCMessage(vrc);
     }
 
