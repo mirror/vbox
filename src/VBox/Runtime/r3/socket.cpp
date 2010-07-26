@@ -813,7 +813,7 @@ RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
     {
         rtSocketErrorReset();
 #ifdef RT_OS_WINDOWS
-        int    cbNow = RT_MIN(cbToWrite, INT_MAX/2);
+        int    cbNow = RT_MIN((int)cbToWrite, INT_MAX/2);
 #else
         size_t cbNow = cbToWrite;
 #endif
