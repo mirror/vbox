@@ -32,6 +32,8 @@
 #include <iprt/tcp.h>
 #include <iprt/semaphore.h>
 #include <iprt/sg.h>
+#include <iprt/poll.h>
+#include <iprt/pipe.h>
 
 #ifdef VBOX_WITH_INIP
 /* All lwip header files are not C++ safe. So hack around this. */
@@ -288,8 +290,12 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pvTemplateUser;
 
+    LogFlowFunc(("pDrvIns=%#p pvTemplateUser=%#p pvUser=%#p rcReq\n",
+                 pDrvIns, pvTemplateUser, pvUser, rcReq));
+
     if (pStorageBackend->fSyncIoPending)
     {
+        Assert(!pvUser);
         pStorageBackend->rcReqLast      = rcReq;
         pStorageBackend->fSyncIoPending = false;
         RTSemEventSignal(pStorageBackend->EventSem);
@@ -297,6 +303,8 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
     else
     {
         int rc;
+
+        AssertPtr(pvUser);
 
         AssertPtr(pStorageBackend->pfnCompleted);
         rc = pStorageBackend->pfnCompleted(pvUser, rcReq);
@@ -439,6 +447,8 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushSync(void *pvUser, void *pStorage)
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
     PPDMASYNCCOMPLETIONTASK pTask;
 
+    LogFlowFunc(("pvUser=%#p pStorage=%#p\n", pvUser, pStorage));
+
     Assert(!pStorageBackend->fSyncIoPending);
     ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
 
@@ -449,6 +459,7 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushSync(void *pvUser, void *pStorage)
     if (rc == VINF_AIO_TASK_PENDING)
     {
         /* Wait */
+        LogFlowFunc(("Waiting for flush to complete\n"));
         rc = RTSemEventWait(pStorageBackend->EventSem, RT_INDEFINITE_WAIT);
         AssertRC(rc);
     }
@@ -591,13 +602,52 @@ typedef union INIPSOCKADDRUNION
     struct sockaddr_in  Ipv4;
 } INIPSOCKADDRUNION;
 
-static DECLCALLBACK(int) drvvdINIPFlush(RTSOCKET Sock);
+typedef struct INIPSOCKET
+{
+    int hSock;
+} INIPSOCKET, *PINIPSOCKET;
+
+static DECLCALLBACK(int) drvvdINIPFlush(VDSOCKET Sock);
+
+/** @copydoc VDINTERFACETCPNET::pfnSocketCreate */
+static DECLCALLBACK(int) drvvdINIPSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
+{
+    PINIPSOCKET pSocketInt = NULL;
+
+    /*
+     * The extended select method is not supported because it is impossible to wakeup
+     * the thread.
+     */
+    if (fFlags & VD_INTERFACETCPNET_CONNECT_EXTENDED_SELECT)
+        return VERR_NOT_SUPPORTED;
+
+    pSocketInt = (PINIPSOCKET)RTMemAllocZ(sizeof(INIPSOCKET));
+    if (pSocketInt)
+    {
+        pSocketInt->hSock = INT32_MAX;
+        *pSock = (VDSOCKET)pSocketInt;
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NO_MEMORY;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSocketCreate */
+static DECLCALLBACK(int) drvvdINIPSocketDestroy(VDSOCKET Sock)
+{
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
+
+    RTMemFree(pSocketInt);
+    return VINF_SUCCESS;
+}
 
 /** @copydoc VDINTERFACETCPNET::pfnClientConnect */
-static DECLCALLBACK(int) drvvdINIPClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock)
+static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort)
 {
     int rc = VINF_SUCCESS;
-    /* First check whether lwIP is set up in this VM instance. */
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
+
+    /* Check whether lwIP is set up in this VM instance. */
     if (!DevINIPConfigured())
     {
         LogRelFunc(("no IP stack\n"));
@@ -612,20 +662,20 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(const char *pszAddress, uint32_t
         return VERR_NET_HOST_UNREACHABLE;
     }
     /* Create socket and connect. */
-    int Sock = lwip_socket(PF_INET, SOCK_STREAM, 0);
-    if (Sock != -1)
+    int iSock = lwip_socket(PF_INET, SOCK_STREAM, 0);
+    if (iSock != -1)
     {
         struct sockaddr_in InAddr = {0};
         InAddr.sin_family = AF_INET;
         InAddr.sin_port = htons(uPort);
         InAddr.sin_addr = ip;
-        if (!lwip_connect(Sock, (struct sockaddr *)&InAddr, sizeof(InAddr)))
+        if (!lwip_connect(iSock, (struct sockaddr *)&InAddr, sizeof(InAddr)))
         {
-            *pSock = (RTSOCKET)Sock;
+            pSocketInt->hSock = iSock;
             return VINF_SUCCESS;
         }
         rc = VERR_NET_CONNECTION_REFUSED; /* @todo real solution needed */
-        lwip_close(Sock);
+        lwip_close(iSock);
     }
     else
         rc = VERR_NET_CONNECTION_REFUSED; /* @todo real solution needed */
@@ -633,15 +683,27 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(const char *pszAddress, uint32_t
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnClientClose */
-static DECLCALLBACK(int) drvvdINIPClientClose(RTSOCKET Sock)
+static DECLCALLBACK(int) drvvdINIPClientClose(VDSOCKET Sock)
 {
-    lwip_close((uintptr_t)Sock);
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
+
+    lwip_close(pSocketInt->hSock);
+    pSocketInt->hSock = INT32_MAX;
     return VINF_SUCCESS; /** @todo real solution needed */
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSelectOne */
-static DECLCALLBACK(int) drvvdINIPSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies)
+/** @copydoc VDINTERFACETCPNET::pfnIsClientConnected */
+static DECLCALLBACK(bool) drvvdINIPIsClientConnected(VDSOCKET Sock)
 {
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
+
+    return pSocketInt->hSock != INT32_MAX;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSelectOne */
+static DECLCALLBACK(int) drvvdINIPSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies)
+{
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
     fd_set fdsetR;
     FD_ZERO(&fdsetR);
     FD_SET((uintptr_t)Sock, &fdsetR);
@@ -649,13 +711,13 @@ static DECLCALLBACK(int) drvvdINIPSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies
 
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT)
-        rc = lwip_select((uintptr_t)Sock + 1, &fdsetR, NULL, &fdsetE, NULL);
+        rc = lwip_select(pSocketInt->hSock + 1, &fdsetR, NULL, &fdsetE, NULL);
     else
     {
         struct timeval timeout;
         timeout.tv_sec = cMillies / 1000;
         timeout.tv_usec = (cMillies % 1000) * 1000;
-        rc = lwip_select((uintptr_t)Sock + 1, &fdsetR, NULL, &fdsetE, &timeout);
+        rc = lwip_select(pSocketInt->hSock + 1, &fdsetR, NULL, &fdsetE, &timeout);
     }
     if (rc > 0)
         return VINF_SUCCESS;
@@ -665,8 +727,10 @@ static DECLCALLBACK(int) drvvdINIPSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnRead */
-static DECLCALLBACK(int) drvvdINIPRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+static DECLCALLBACK(int) drvvdINIPRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
 {
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
+
     /* Do params checking */
     if (!pvBuffer || !cbBuffer)
     {
@@ -685,7 +749,7 @@ static DECLCALLBACK(int) drvvdINIPRead(RTSOCKET Sock, void *pvBuffer, size_t cbB
         /** @todo this clipping here is just in case (the send function
          * needed it, so I added it here, too). Didn't investigate if this
          * really has issues. Better be safe than sorry. */
-        ssize_t cbBytesRead = lwip_recv((uintptr_t)Sock, (char *)pvBuffer + cbRead,
+        ssize_t cbBytesRead = lwip_recv(pSocketInt->hSock, (char *)pvBuffer + cbRead,
                                         RT_MIN(cbToRead, 32768), 0);
         if (cbBytesRead < 0)
             return VERR_NET_CONNECTION_REFUSED; /** @todo real solution */
@@ -711,15 +775,17 @@ static DECLCALLBACK(int) drvvdINIPRead(RTSOCKET Sock, void *pvBuffer, size_t cbB
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnWrite */
-static DECLCALLBACK(int) drvvdINIPWrite(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
+static DECLCALLBACK(int) drvvdINIPWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
 {
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
+
     do
     {
         /** @todo lwip send only supports up to 65535 bytes in a single
          * send (stupid limitation buried in the code), so make sure we
          * don't get any wraparounds. This should be moved to DevINIP
          * stack interface once that's implemented. */
-        ssize_t cbWritten = lwip_send((uintptr_t)Sock, (void *)pvBuffer,
+        ssize_t cbWritten = lwip_send(pSocketInt->hSock, (void *)pvBuffer,
                                       RT_MIN(cbBuffer, 32768), 0);
         if (cbWritten < 0)
             return VERR_NET_CONNECTION_REFUSED; /** @todo real solution needed */
@@ -733,7 +799,7 @@ static DECLCALLBACK(int) drvvdINIPWrite(RTSOCKET Sock, const void *pvBuffer, siz
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnSgWrite */
-static DECLCALLBACK(int) drvvdINIPSgWrite(RTSOCKET Sock, PCRTSGBUF pSgBuf)
+static DECLCALLBACK(int) drvvdINIPSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf)
 {
     int rc = VINF_SUCCESS;
 
@@ -753,33 +819,38 @@ static DECLCALLBACK(int) drvvdINIPSgWrite(RTSOCKET Sock, PCRTSGBUF pSgBuf)
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnFlush */
-static DECLCALLBACK(int) drvvdINIPFlush(RTSOCKET Sock)
+static DECLCALLBACK(int) drvvdINIPFlush(VDSOCKET Sock)
 {
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
+
     int fFlag = 1;
-    lwip_setsockopt((uintptr_t)Sock, IPPROTO_TCP, TCP_NODELAY,
+    lwip_setsockopt(pSocketInt->hSock, IPPROTO_TCP, TCP_NODELAY,
                     (const char *)&fFlag, sizeof(fFlag));
     fFlag = 0;
-    lwip_setsockopt((uintptr_t)Sock, IPPROTO_TCP, TCP_NODELAY,
+    lwip_setsockopt(pSocketInt->hSock, IPPROTO_TCP, TCP_NODELAY,
                     (const char *)&fFlag, sizeof(fFlag));
     return VINF_SUCCESS;
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnSetSendCoalescing */
-static DECLCALLBACK(int) drvvdINIPSetSendCoalescing(RTSOCKET Sock, bool fEnable)
+static DECLCALLBACK(int) drvvdINIPSetSendCoalescing(VDSOCKET Sock, bool fEnable)
 {
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
+
     int fFlag = fEnable ? 0 : 1;
-    lwip_setsockopt((uintptr_t)Sock, IPPROTO_TCP, TCP_NODELAY,
+    lwip_setsockopt(pSocketInt->hSock, IPPROTO_TCP, TCP_NODELAY,
                     (const char *)&fFlag, sizeof(fFlag));
     return VINF_SUCCESS;
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnGetLocalAddress */
-static DECLCALLBACK(int) drvvdINIPGetLocalAddress(RTSOCKET Sock, PRTNETADDR pAddr)
+static DECLCALLBACK(int) drvvdINIPGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr)
 {
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
     INIPSOCKADDRUNION u;
     socklen_t cbAddr = sizeof(u);
     RT_ZERO(u);
-    if (!lwip_getsockname((uintptr_t)Sock, &u.Addr, &cbAddr))
+    if (!lwip_getsockname(pSocketInt->hSock, &u.Addr, &cbAddr))
     {
         /*
          * Convert the address.
@@ -800,12 +871,13 @@ static DECLCALLBACK(int) drvvdINIPGetLocalAddress(RTSOCKET Sock, PRTNETADDR pAdd
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnGetPeerAddress */
-static DECLCALLBACK(int) drvvdINIPGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr)
+static DECLCALLBACK(int) drvvdINIPGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
 {
+    PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
     INIPSOCKADDRUNION u;
     socklen_t cbAddr = sizeof(u);
     RT_ZERO(u);
-    if (!lwip_getpeername((uintptr_t)Sock, &u.Addr, &cbAddr))
+    if (!lwip_getpeername(pSocketInt->hSock, &u.Addr, &cbAddr))
     {
         /*
          * Convert the address.
@@ -824,7 +896,324 @@ static DECLCALLBACK(int) drvvdINIPGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr
     }
     return VERR_NET_OPERATION_NOT_SUPPORTED;
 }
+
+/** @copydoc VDINTERFACETCPNET::pfnSelectOneEx */
+static DECLCALLBACK(int) drvvdINIPSelectOneEx(VDSOCKET Sock, uint32_t *pfEvents, RTMSINTERVAL cMillies)
+{
+    AssertMsgFailed(("Not supported!\n"));
+    return VERR_NOT_SUPPORTED;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnPoke */
+static DECLCALLBACK(int) drvvdINIPPoke(VDSOCKET Sock)
+{
+    AssertMsgFailed(("Not supported!\n"));
+    return VERR_NOT_SUPPORTED;
+}
+
 #endif /* VBOX_WITH_INIP */
+
+
+/*******************************************************************************
+*   VD TCP network stack interface implementation - Host TCP case              *
+*******************************************************************************/
+
+/**
+ * Socket data.
+ */
+typedef struct VDSOCKETINT
+{
+    /** IPRT socket handle. */
+    RTSOCKET      hSocket;
+    /** Pollset with the wakeup pipe and socket. */
+    RTPOLLSET     hPollSet;
+    /** Pipe endpoint - read (in the pollset). */
+    RTPIPE        hPipeR;
+    /** Pipe endpoint - write. */
+    RTPIPE        hPipeW;
+    /** Flag whether the thread was woken up. */
+    volatile bool fWokenUp;
+    /** Flag whether the thread is waiting in the select call. */
+    volatile bool fWaiting;
+} VDSOCKETINT, *PVDSOCKETINT;
+
+/** Pollset id of the socket. */
+#define VDSOCKET_POLL_ID_SOCKET 0
+/** Pollset id of the pipe. */
+#define VDSOCKET_POLL_ID_PIPE   1
+
+/** @copydoc VDINTERFACETCPNET::pfnSocketCreate */
+static DECLCALLBACK(int) drvvdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
+{
+    int rc = VINF_SUCCESS;
+    int rc2 = VINF_SUCCESS;
+    PVDSOCKETINT pSockInt = NULL;
+
+    pSockInt = (PVDSOCKETINT)RTMemAllocZ(sizeof(VDSOCKETINT));
+    if (!pSockInt)
+        return VERR_NO_MEMORY;
+
+    pSockInt->hSocket  = NIL_RTSOCKET;
+    pSockInt->hPollSet = NIL_RTPOLLSET;
+    pSockInt->hPipeR   = NIL_RTPIPE;
+    pSockInt->hPipeW   = NIL_RTPIPE;
+    pSockInt->fWokenUp = false;
+    pSockInt->fWaiting = false;
+
+    if (fFlags & VD_INTERFACETCPNET_CONNECT_EXTENDED_SELECT)
+    {
+        /* Init pipe and pollset. */
+        rc = RTPipeCreate(&pSockInt->hPipeR, &pSockInt->hPipeW, 0);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTPollSetCreate(&pSockInt->hPollSet);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTPollSetAddPipe(pSockInt->hPollSet, pSockInt->hPipeR,
+                                      RTPOLL_EVT_READ, VDSOCKET_POLL_ID_PIPE);
+                if (RT_SUCCESS(rc))
+                {
+                    *pSock = pSockInt;
+                    return VINF_SUCCESS;
+                }
+
+                RTPollSetRemove(pSockInt->hPollSet, VDSOCKET_POLL_ID_PIPE);
+                rc2 = RTPollSetDestroy(pSockInt->hPollSet);
+                AssertRC(rc2);
+            }
+
+            rc2 = RTPipeClose(pSockInt->hPipeR);
+            AssertRC(rc2);
+            rc2 = RTPipeClose(pSockInt->hPipeW);
+            AssertRC(rc2);
+        }
+    }
+
+    RTMemFree(pSockInt);
+
+    return rc;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSocketDestroy */
+static DECLCALLBACK(int) drvvdTcpSocketDestroy(VDSOCKET Sock)
+{
+    int rc = VINF_SUCCESS;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    /* Destroy the pipe and pollset if necessary. */
+    if (pSockInt->hPollSet != NIL_RTPOLLSET)
+    {
+        if (pSockInt->hSocket != NIL_RTSOCKET)
+        {
+            rc = RTPollSetRemove(pSockInt->hPollSet, VDSOCKET_POLL_ID_SOCKET);
+            AssertRC(rc);
+        }
+        rc = RTPollSetRemove(pSockInt->hPollSet, VDSOCKET_POLL_ID_PIPE);
+        AssertRC(rc);
+        rc = RTPollSetDestroy(pSockInt->hPollSet);
+        AssertRC(rc);
+        rc = RTPipeClose(pSockInt->hPipeR);
+        AssertRC(rc);
+        rc = RTPipeClose(pSockInt->hPipeW);
+        AssertRC(rc);
+    }
+
+    if (pSockInt->hSocket != NIL_RTSOCKET)
+        rc = RTTcpClientClose(pSockInt->hSocket);
+
+    RTMemFree(pSockInt);
+
+    return rc;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnClientConnect */
+static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort)
+{
+    int rc = VINF_SUCCESS;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    rc = RTTcpClientConnect(pszAddress, uPort, &pSockInt->hSocket);
+    if (RT_SUCCESS(rc))
+    {
+        /* Add to the pollset if required. */
+        if (pSockInt->hPollSet != NIL_RTPOLLSET)
+        {
+            rc = RTPollSetAddSocket(pSockInt->hPollSet, pSockInt->hSocket,
+                                    RTPOLL_EVT_READ | /*RTPOLL_EVT_WRITE |*/ RTPOLL_EVT_ERROR,
+                                    VDSOCKET_POLL_ID_SOCKET);
+
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+        }
+
+        rc = RTTcpClientClose(pSockInt->hSocket);
+    }
+
+    return rc;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnClientClose */
+static DECLCALLBACK(int) drvvdTcpClientClose(VDSOCKET Sock)
+{
+    int rc = VINF_SUCCESS;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    if (pSockInt->hPollSet != NIL_RTPOLLSET)
+    {
+        rc = RTPollSetRemove(pSockInt->hPollSet, VDSOCKET_POLL_ID_SOCKET);
+        AssertRC(rc);
+    }
+
+    rc = RTTcpClientClose(pSockInt->hSocket);
+    pSockInt->hSocket = NIL_RTSOCKET;
+
+    return rc;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnIsClientConnected */
+static DECLCALLBACK(bool) drvvdTcpIsClientConnected(VDSOCKET Sock)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return pSockInt->hSocket != NIL_RTSOCKET;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSelectOne */
+static DECLCALLBACK(int) drvvdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpSelectOne(pSockInt->hSocket, cMillies);
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnRead */
+static DECLCALLBACK(int) drvvdTcpRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpRead(pSockInt->hSocket, pvBuffer, cbBuffer, pcbRead);
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnWrite */
+static DECLCALLBACK(int) drvvdTcpWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpWrite(pSockInt->hSocket, pvBuffer, cbBuffer);
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSgWrite */
+static DECLCALLBACK(int) drvvdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpSgWrite(pSockInt->hSocket, pSgBuf);
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnFlush */
+static DECLCALLBACK(int) drvvdTcpFlush(VDSOCKET Sock)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpFlush(pSockInt->hSocket);
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSetSendCoalescing */
+static DECLCALLBACK(int) drvvdTcpSetSendCoalescing(VDSOCKET Sock, bool fEnable)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpSetSendCoalescing(pSockInt->hSocket, fEnable);
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnGetLocalAddress */
+static DECLCALLBACK(int) drvvdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpGetLocalAddress(pSockInt->hSocket, pAddr);
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnGetPeerAddress */
+static DECLCALLBACK(int) drvvdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpGetPeerAddress(pSockInt->hSocket, pAddr);
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSelectOneEx */
+static DECLCALLBACK(int) drvvdTcpSelectOneEx(VDSOCKET Sock, uint32_t *pfEvents, RTMSINTERVAL cMillies)
+{
+    int rc = VINF_SUCCESS;
+    uint32_t id = 0;
+    uint32_t fEvents = 0;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    *pfEvents = 0;
+
+    ASMAtomicXchgBool(&pSockInt->fWaiting, true);
+    if (ASMAtomicXchgBool(&pSockInt->fWokenUp, false))
+    {
+        ASMAtomicXchgBool(&pSockInt->fWaiting, false);
+        return VERR_INTERRUPTED;
+    }
+
+    rc = RTPoll(pSockInt->hPollSet, cMillies, &fEvents, &id);
+    Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
+
+    ASMAtomicXchgBool(&pSockInt->fWaiting, false);
+
+    if (RT_SUCCESS(rc))
+    {
+        if (id == VDSOCKET_POLL_ID_SOCKET)
+        {
+            fEvents &= RTPOLL_EVT_VALID_MASK;
+
+            if (fEvents & RTPOLL_EVT_READ)
+                *pfEvents |= VD_INTERFACETCPNET_EVT_READ;
+            if (fEvents & RTPOLL_EVT_WRITE)
+                *pfEvents |= VD_INTERFACETCPNET_EVT_WRITE;
+            if (fEvents & RTPOLL_EVT_ERROR)
+                *pfEvents |= VD_INTERFACETCPNET_EVT_ERROR;
+        }
+        else
+        {
+            size_t cbRead = 0;
+            uint8_t abBuf[10];
+            Assert(id == VDSOCKET_POLL_ID_PIPE);
+            Assert((fEvents & RTPOLL_EVT_VALID_MASK) == RTPOLL_EVT_READ);
+
+            /* We got interrupted, drain the pipe. */
+            rc = RTPipeRead(pSockInt->hPipeR, abBuf, sizeof(abBuf), &cbRead);
+            AssertRC(rc);
+
+            ASMAtomicXchgBool(&pSockInt->fWokenUp, false);
+
+            rc = VERR_INTERRUPTED;
+        }
+    }
+
+    return rc;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnPoke */
+static DECLCALLBACK(int) drvvdTcpPoke(VDSOCKET Sock)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbWritten = 0;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    ASMAtomicXchgBool(&pSockInt->fWokenUp, true);
+
+    if (ASMAtomicReadBool(&pSockInt->fWaiting))
+    {
+        rc = RTPipeWrite(pSockInt->hPipeW, "", 1, &cbWritten);
+        Assert(RT_SUCCESS(rc) || cbWritten == 0);
+    }
+
+    return VINF_SUCCESS;
+}
 
 
 /*******************************************************************************
@@ -1409,16 +1798,21 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         {
             pThis->VDITcpNetCallbacks.cbSize = sizeof(VDINTERFACETCPNET);
             pThis->VDITcpNetCallbacks.enmInterface = VDINTERFACETYPE_TCPNET;
-            pThis->VDITcpNetCallbacks.pfnClientConnect = RTTcpClientConnect;
-            pThis->VDITcpNetCallbacks.pfnClientClose = RTTcpClientClose;
-            pThis->VDITcpNetCallbacks.pfnSelectOne = RTTcpSelectOne;
-            pThis->VDITcpNetCallbacks.pfnRead = RTTcpRead;
-            pThis->VDITcpNetCallbacks.pfnWrite = RTTcpWrite;
-            pThis->VDITcpNetCallbacks.pfnSgWrite = RTTcpSgWrite;
-            pThis->VDITcpNetCallbacks.pfnFlush = RTTcpFlush;
-            pThis->VDITcpNetCallbacks.pfnSetSendCoalescing = RTTcpSetSendCoalescing;
-            pThis->VDITcpNetCallbacks.pfnGetLocalAddress = RTTcpGetLocalAddress;
-            pThis->VDITcpNetCallbacks.pfnGetPeerAddress = RTTcpGetPeerAddress;
+            pThis->VDITcpNetCallbacks.pfnSocketCreate = drvvdTcpSocketCreate;
+            pThis->VDITcpNetCallbacks.pfnSocketDestroy = drvvdTcpSocketDestroy;
+            pThis->VDITcpNetCallbacks.pfnClientConnect = drvvdTcpClientConnect;
+            pThis->VDITcpNetCallbacks.pfnIsClientConnected = drvvdTcpIsClientConnected;
+            pThis->VDITcpNetCallbacks.pfnClientClose = drvvdTcpClientClose;
+            pThis->VDITcpNetCallbacks.pfnSelectOne = drvvdTcpSelectOne;
+            pThis->VDITcpNetCallbacks.pfnRead = drvvdTcpRead;
+            pThis->VDITcpNetCallbacks.pfnWrite = drvvdTcpWrite;
+            pThis->VDITcpNetCallbacks.pfnSgWrite = drvvdTcpSgWrite;
+            pThis->VDITcpNetCallbacks.pfnFlush = drvvdTcpFlush;
+            pThis->VDITcpNetCallbacks.pfnSetSendCoalescing = drvvdTcpSetSendCoalescing;
+            pThis->VDITcpNetCallbacks.pfnGetLocalAddress = drvvdTcpGetLocalAddress;
+            pThis->VDITcpNetCallbacks.pfnGetPeerAddress = drvvdTcpGetPeerAddress;
+            pThis->VDITcpNetCallbacks.pfnSelectOneEx = drvvdTcpSelectOneEx;
+            pThis->VDITcpNetCallbacks.pfnPoke = drvvdTcpPoke;
         }
         else
         {
@@ -1428,8 +1822,11 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 #else /* VBOX_WITH_INIP */
             pThis->VDITcpNetCallbacks.cbSize = sizeof(VDINTERFACETCPNET);
             pThis->VDITcpNetCallbacks.enmInterface = VDINTERFACETYPE_TCPNET;
+            pThis->VDITcpNetCallbacks.pfnSocketCreate = drvvdINIPSocketCreate;
+            pThis->VDITcpNetCallbacks.pfnSocketDestroy = drvvdINIPSocketDestroy;
             pThis->VDITcpNetCallbacks.pfnClientConnect = drvvdINIPClientConnect;
             pThis->VDITcpNetCallbacks.pfnClientClose = drvvdINIPClientClose;
+            pThis->VDITcpNetCallbacks.pfnIsClientConnected = drvvdINIPIsClientConnected;
             pThis->VDITcpNetCallbacks.pfnSelectOne = drvvdINIPSelectOne;
             pThis->VDITcpNetCallbacks.pfnRead = drvvdINIPRead;
             pThis->VDITcpNetCallbacks.pfnWrite = drvvdINIPWrite;
@@ -1438,6 +1835,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             pThis->VDITcpNetCallbacks.pfnSetSendCoalescing = drvvdINIPSetSendCoalescing;
             pThis->VDITcpNetCallbacks.pfnGetLocalAddress = drvvdINIPGetLocalAddress;
             pThis->VDITcpNetCallbacks.pfnGetPeerAddress = drvvdINIPGetPeerAddress;
+            pThis->VDITcpNetCallbacks.pfnSelectOneEx = drvvdINIPSelectOneEx;
+            pThis->VDITcpNetCallbacks.pfnPoke = drvvdINIPPoke;
 #endif /* VBOX_WITH_INIP */
         }
         if (RT_SUCCESS(rc))

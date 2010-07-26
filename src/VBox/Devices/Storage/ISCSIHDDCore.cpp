@@ -265,6 +265,37 @@ typedef enum ISCSIPDUFLAGS
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+
+/**
+ * iSCSI login negotiation parameter
+ */
+typedef struct ISCSIPARAMETER
+{
+    /** Name of the parameter. */
+    const char *pszParamName;
+    /** Value of the parameter. */
+    const char *pszParamValue;
+    /** Length of the binary parameter. 0=zero-terminated string. */
+    size_t cbParamValue;
+} ISCSIPARAMETER;
+
+
+/**
+ * iSCSI Response PDU buffer (scatter).
+ */
+typedef struct ISCSIRES
+{
+    /** Length of PDU segment. */
+    size_t cbSeg;
+    /** Pointer to PDU segment. */
+    void *pvSeg;
+} ISCSIRES;
+/** Pointer to an iSCSI Response PDU buffer. */
+typedef ISCSIRES *PISCSIRES;
+/** Pointer to a const iSCSI Response PDU buffer. */
+typedef ISCSIRES const *PCISCSIRES;
+
+
 /**
  * iSCSI Request PDU buffer (gather).
  */
@@ -280,6 +311,120 @@ typedef ISCSIREQ *PISCSIREQ;
 /** Pointer to a const iSCSI Request PDU buffer. */
 typedef ISCSIREQ const *PCISCSIREQ;
 
+
+/**
+ * SCSI transfer directions.
+ */
+typedef enum SCSIXFER
+{
+    SCSIXFER_NONE = 0,
+    SCSIXFER_TO_TARGET,
+    SCSIXFER_FROM_TARGET,
+    SCSIXFER_TO_FROM_TARGET
+} SCSIXFER, *PSCSIXFER;
+
+
+/**
+ * SCSI request structure.
+ */
+typedef struct SCSIREQ
+{
+    /** Transfer direction. */
+    SCSIXFER        enmXfer;
+    /** Length of command block. */
+    size_t          cbCmd;
+    /** Length of Initiator2Target data buffer. */
+    size_t          cbI2TData;
+    /** Length of Target2Initiator data buffer. */
+    size_t          cbT2IData;
+    /** Length of sense buffer. */
+    size_t          cbSense;
+    /** Completion status of the command. */
+    uint8_t         status;
+    /** Pointer to command block. */
+    void           *pvCmd;
+    /** Pointer to Initiator2Target data buffer. */
+    const void     *pcvI2TData;
+    /** Pointer to Target2Initiator data buffer. */
+    void           *pvT2IData;
+    /** Pointer to sense buffer. */
+    void           *pvSense;
+} SCSIREQ, *PSCSIREQ;
+
+
+typedef enum ISCSICMDTYPE
+{
+    /** Process a SCSI request. */
+    ISCSICMDTYPE_REQ = 0,
+    /** Call a function in the I/O thread. */
+    ISCSICMDTYPE_EXEC,
+    /** Usual 32bit hack. */
+    ISCSICMDTYPE_32BIT_HACK = 0x7fffffff
+} ISCSICMDTYPE;
+
+
+/** The command completion function. */
+typedef DECLCALLBACK(void) FNISCSICMDCOMPLETED(void *pvUser);
+/** Pointer to a command completion function. */
+typedef FNISCSICMDCOMPLETED *PFNISCSICMDCOMPLETED;
+
+/** The command execution function. */
+typedef DECLCALLBACK(int) FNISCSIEXEC(void *pvUser);
+/** Pointer to a command execution function. */
+typedef FNISCSIEXEC *PFNISCSIEXEC;
+
+/**
+ * iSCSI command.
+ * Used to forward requests to the I/O thread
+ * if existing.
+ */
+typedef struct ISCSICMD
+{
+    /** Next one in the list. */
+    struct ISCSICMD *pNext;
+    /** Command to execute. */
+    ISCSICMDTYPE     enmCmdType;
+    /** Flag whether this is a synchronous request. */
+    bool             fSync;
+    /** Type dependent data - based on fSync. */
+    union
+    {
+        /** Synchronous request. */
+        struct
+        {
+            /** Event semaphore to signal if this is a synchronous request. */
+            RTSEMEVENT            EventSem;
+            /** Completion status code. */
+            int                   rcCmd;
+        } Sync;
+        /** Asynchronous request. */
+        struct
+        {
+            /** Completion callback. */
+            PFNISCSICMDCOMPLETED  pfnComplete;
+            /** Opaque user data. */
+            void                 *pvUser;
+        } Async;
+    } Type;
+    /** Command type dependent data. */
+    union
+    {
+        /** Process a SCSI request. */
+        struct
+        {
+            /** The SCSI request to process. */
+            PSCSIREQ              pScsiReq;
+        } ScsiReq;
+        /** Call a function in the I/O thread. */
+        struct
+        {
+            /** The method to execute. */
+            PFNISCSIEXEC          pfnExec;
+            /** User data. */
+            void                 *pvUser;
+        } Exec;
+    } CmdType;
+} ISCSICMD, *PISCSICMD;
 
 /**
  * Block driver instance data.
@@ -376,84 +521,25 @@ typedef struct ISCSIIMAGE
     /** Pointer to the target hostname. */
     uint32_t            uPort;
     /** Socket handle of the TCP connection. */
-    RTSOCKET            Socket;
+    VDSOCKET            Socket;
     /** Timeout for read operations on the TCP connection (in milliseconds). */
     uint32_t            uReadTimeout;
     /** Flag whether to automatically generate the initiator name. */
     bool                fAutomaticInitiatorName;
     /** Flag whether to use the host IP stack or DevINIP. */
     bool                fHostIP;
+
+    /** Head of request queue */
+    PISCSICMD           pScsiReqQueue;
+    /** Mutex protecting the request queue from concurrent access. */
+    RTSEMMUTEX          MutexReqQueue;
+    /** I/O thread. */
+    RTTHREAD            hThreadIo;
+    /** Flag whether the thread should be still running. */
+    volatile bool       fRunning;
+    /** Flag whether extended select is supported. */
+    bool                fExtendedSelectSupported;
 } ISCSIIMAGE, *PISCSIIMAGE;
-
-
-/**
- * SCSI transfer directions.
- */
-typedef enum SCSIXFER
-{
-    SCSIXFER_NONE = 0,
-    SCSIXFER_TO_TARGET,
-    SCSIXFER_FROM_TARGET,
-    SCSIXFER_TO_FROM_TARGET
-} SCSIXFER, *PSCSIXFER;
-
-
-/**
- * SCSI request structure.
- */
-typedef struct SCSIREQ
-{
-    /** Transfer direction. */
-    SCSIXFER enmXfer;
-    /** Length of command block. */
-    size_t cbCmd;
-    /** Length of Initiator2Target data buffer. */
-    size_t cbI2TData;
-    /** Length of Target2Initiator data buffer. */
-    size_t cbT2IData;
-    /** Length of sense buffer. */
-    size_t cbSense;
-    /** Completion status of the command. */
-    uint8_t status;
-    /** Pointer to command block. */
-    void *pvCmd;
-    /** Pointer to Initiator2Target data buffer. */
-    const void *pcvI2TData;
-    /** Pointer to Target2Initiator data buffer. */
-    void *pvT2IData;
-    /** Pointer to sense buffer. */
-    void *pvSense;
-} SCSIREQ, *PSCSIREQ;
-
-
-/**
- * iSCSI login negotiation parameter
- */
-typedef struct ISCSIPARAMETER
-{
-    /** Name of the parameter. */
-    const char *pszParamName;
-    /** Value of the parameter. */
-    const char *pszParamValue;
-    /** Length of the binary parameter. 0=zero-terminated string. */
-    size_t cbParamValue;
-} ISCSIPARAMETER;
-
-
-/**
- * iSCSI Response PDU buffer (scatter).
- */
-typedef struct ISCSIRES
-{
-    /** Length of PDU segment. */
-    size_t cbSeg;
-    /** Pointer to PDU segment. */
-    void *pvSeg;
-} ISCSIRES;
-/** Pointer to an iSCSI Response PDU buffer. */
-typedef ISCSIRES *PISCSIRES;
-/** Pointer to a const iSCSI Response PDU buffer. */
-typedef ISCSIRES const *PCISCSIRES;
 
 
 /*******************************************************************************
@@ -500,7 +586,7 @@ static const VDCONFIGINFO s_iscsiConfigInfo[] =
 /* iSCSI low-level functions (only to be used from the iSCSI high-level functions). */
 static uint32_t iscsiNewITT(PISCSIIMAGE pImage);
 static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq, uint32_t uFlags);
-static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes);
+static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes, bool fSelect);
 static int drvISCSIValidatePDU(PISCSIRES paRes, uint32_t cnRes);
 static int iscsiTextAddKeyValue(uint8_t *pbBuf, size_t cbBuf, size_t *pcbBufCurr, const char *pcszKey, const char *pcszValue, size_t cbValue);
 static int iscsiTextGetKeyValue(const uint8_t *pbBuf, size_t cbBuf, const char *pcszKey, const char **ppcszValue);
@@ -539,6 +625,11 @@ DECLINLINE(int) iscsiError(PISCSIIMAGE pImage, int rc, RT_SRC_POS_DECL,
     return rc;
 }
 
+DECLINLINE(bool) iscsiIsClientConnected(PISCSIIMAGE pImage)
+{
+    return    pImage->Socket != NIL_VDSOCKET
+           && pImage->pInterfaceNetCallbacks->pfnIsClientConnected(pImage->Socket);
+}
 
 static int iscsiTransportConnect(PISCSIIMAGE pImage)
 {
@@ -546,7 +637,7 @@ static int iscsiTransportConnect(PISCSIIMAGE pImage)
     if (!pImage->pszHostname)
         return VERR_NET_DEST_ADDRESS_REQUIRED;
 
-    rc = pImage->pInterfaceNetCallbacks->pfnClientConnect(pImage->pszHostname, pImage->uPort, &pImage->Socket);
+    rc = pImage->pInterfaceNetCallbacks->pfnClientConnect(pImage->Socket, pImage->pszHostname, pImage->uPort);
     if (RT_FAILURE(rc))
     {
         if (   rc == VERR_NET_CONNECTION_REFUSED
@@ -590,7 +681,7 @@ static int iscsiTransportConnect(PISCSIIMAGE pImage)
 }
 
 
-static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned int cnResponse)
+static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned int cnResponse, bool fSelect)
 {
     int rc = VINF_SUCCESS;
     unsigned int i = 0;
@@ -598,7 +689,7 @@ static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned
     char *pDst;
 
     LogFlowFunc(("cnResponse=%d (%s:%d)\n", cnResponse, pImage->pszHostname, pImage->uPort));
-    if (pImage->Socket == NIL_RTSOCKET)
+    if (!iscsiIsClientConnected(pImage))
     {
         /* Reconnecting makes no sense in this case, as there will be nothing
          * to receive. We would just run into a timeout. */
@@ -621,10 +712,13 @@ static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned
                 break;
             }
             Assert(cMilliesRemaining < 1000000);
-            rc = pImage->pInterfaceNetCallbacks->pfnSelectOne(pImage->Socket,
-                                                              cMilliesRemaining);
-            if (RT_FAILURE(rc))
-                break;
+            if (fSelect)
+            {
+                rc = pImage->pInterfaceNetCallbacks->pfnSelectOne(pImage->Socket,
+                                                                  cMilliesRemaining);
+                if (RT_FAILURE(rc))
+                    break;
+            }
             rc = pImage->pInterfaceNetCallbacks->pfnRead(pImage->Socket,
                                                          pDst, residual,
                                                          &cbActuallyRead);
@@ -634,7 +728,6 @@ static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned
             {
                 /* The other end has closed the connection. */
                 pImage->pInterfaceNetCallbacks->pfnClientClose(pImage->Socket);
-                pImage->Socket = NIL_RTSOCKET;
                 pImage->state = ISCSISTATE_FREE;
                 rc = VERR_NET_CONNECTION_RESET;
                 break;
@@ -685,6 +778,8 @@ static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned
                     residual = cbToRead;
                 cbSegActual = residual;
             }
+            LogFlowFunc(("cbToRead=%u residual=%u cbSegActual=%u cbActuallRead=%u\n",
+                         cbToRead, residual, cbSegActual, cbActuallyRead));
         } while (true);
     }
     else
@@ -722,7 +817,7 @@ static int iscsiTransportWrite(PISCSIIMAGE pImage, PISCSIREQ paRequest, unsigned
     unsigned int i;
 
     LogFlowFunc(("cnRequest=%d (%s:%d)\n", cnRequest, pImage->pszHostname, pImage->uPort));
-    if (pImage->Socket == NIL_RTSOCKET)
+    if (!iscsiIsClientConnected(pImage))
     {
         /* Attempt to reconnect if the connection was previously broken. */
         rc = iscsiTransportConnect(pImage);
@@ -790,10 +885,9 @@ static int iscsiTransportOpen(PISCSIIMAGE pImage)
     uint16_t uPort;
 
     /* Clean up previous connection data. */
-    if (pImage->Socket != NIL_RTSOCKET)
+    if (iscsiIsClientConnected(pImage))
     {
         pImage->pInterfaceNetCallbacks->pfnClientClose(pImage->Socket);
-        pImage->Socket = NIL_RTSOCKET;
     }
     if (pImage->pszHostname)
     {
@@ -869,7 +963,7 @@ static int iscsiTransportOpen(PISCSIIMAGE pImage)
 
     if (RT_SUCCESS(rc))
     {
-        if (pImage->Socket == NIL_RTSOCKET)
+        if (!iscsiIsClientConnected(pImage))
             rc = iscsiTransportConnect(pImage);
     }
     else
@@ -892,10 +986,9 @@ static int iscsiTransportClose(PISCSIIMAGE pImage)
     int rc;
 
     LogFlowFunc(("(%s:%d)\n", pImage->pszHostname, pImage->uPort));
-    if (pImage->Socket != NIL_RTSOCKET)
+    if (iscsiIsClientConnected(pImage))
     {
         rc = pImage->pInterfaceNetCallbacks->pfnClientClose(pImage->Socket);
-        pImage->Socket = NIL_RTSOCKET;
     }
     else
         rc = VINF_SUCCESS;
@@ -911,7 +1004,7 @@ static int iscsiTransportClose(PISCSIIMAGE pImage)
  * @returns VBox status.
  * @param   pImage      The iSCSI connection state to be used.
  */
-static int iscsiAttach(PISCSIIMAGE pImage)
+static int iscsiAttach(void *pvUser)
 {
     int rc;
     uint32_t itt;
@@ -931,6 +1024,7 @@ static int iscsiAttach(PISCSIIMAGE pImage)
     ISCSIRES aISCSIRes[2];
     uint32_t aResBHS[12];
     char *pszNext;
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pvUser;
 
     bool fParameterNeg = true;;
     pImage->cbRecvDataLength = ISCSI_DATA_LENGTH_MAX;
@@ -965,7 +1059,7 @@ static int iscsiAttach(PISCSIIMAGE pImage)
     iscsiTransportClose(pImage);
 
 restart:
-    if (pImage->Socket == NIL_RTSOCKET)
+    if (!iscsiIsClientConnected(pImage))
     {
         rc = iscsiTransportOpen(pImage);
         if (RT_FAILURE(rc))
@@ -1109,7 +1203,7 @@ restart:
             aISCSIRes[cnISCSIRes].cbSeg = sizeof(bBuf);
             cnISCSIRes++;
 
-            rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes);
+            rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes, true);
             if (RT_FAILURE(rc))
                 break;
             /** @todo collect partial login responses with Continue bit set. */
@@ -1350,13 +1444,15 @@ out:
  * @returns VBox status.
  * @param   pImage      The iSCSI connection state to be used.
  */
-static int iscsiDetach(PISCSIIMAGE pImage)
+static int iscsiDetach(void *pvUser)
 {
     int rc;
     uint32_t itt;
     uint32_t cnISCSIReq = 0;
     ISCSIREQ aISCSIReq[4];
     uint32_t aReqBHS[12];
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pvUser;
+
     LogFlowFunc(("entering\n"));
 
     RTSemMutexRequest(pImage->Mutex, RT_INDEFINITE_WAIT);
@@ -1398,7 +1494,7 @@ static int iscsiDetach(PISCSIIMAGE pImage)
 
             aISCSIRes.pvSeg = aResBHS;
             aISCSIRes.cbSeg = sizeof(aResBHS);
-            rc = iscsiRecvPDU(pImage, itt, &aISCSIRes, 1);
+            rc = iscsiRecvPDU(pImage, itt, &aISCSIRes, 1, true);
             if (RT_SUCCESS(rc))
             {
                 if (RT_N2H_U32(aResBHS[0]) != (ISCSI_FINAL_BIT | ISCSIOP_LOGOUT_RES))
@@ -1556,7 +1652,7 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
         aISCSIRes[cnISCSIRes].cbSeg = sizeof(aStatus);
         cnISCSIRes++;
 
-        rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes);
+        rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes, true);
         if (RT_FAILURE(rc))
             break;
 
@@ -1735,7 +1831,7 @@ static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq,
  * @param   paRes       Pointer to array of iSCSI response sections.
  * @param   cnRes       Number of valid iSCSI response sections in the array.
  */
-static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes)
+static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes, bool fSelect)
 {
     int rc = VINF_SUCCESS;
     ISCSIRES aResBuf;
@@ -1744,7 +1840,7 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
     {
         aResBuf.pvSeg = pImage->pvRecvPDUBuf;
         aResBuf.cbSeg = pImage->cbRecvPDUBuf;
-        rc = iscsiTransportRead(pImage, &aResBuf, 1);
+        rc = iscsiTransportRead(pImage, &aResBuf, 1, fSelect);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
@@ -1827,7 +1923,8 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
                 }
             }
             /* Finally check whether the received PDU matches what the caller wants. */
-            if (itt == pcvResSeg[4])
+            if (   itt == pcvResSeg[4]
+                && itt != ISCSI_TASK_TAG_RSVD)
             {
                 /* Copy received PDU (one segment) to caller-provided buffers. */
                 uint32_t j;
@@ -1887,6 +1984,9 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
                 cnISCSIReq++;
 
                 iscsiSendPDU(pImage, aISCSIReq, cnISCSIReq, ISCSIPDU_NO_REATTACH);
+                /* Break if the caller wanted to process the NOP-in only. */
+                if (itt == ISCSI_TASK_TAG_RSVD)
+                    break;
             }
         }
     }
@@ -2270,6 +2370,272 @@ static void chap_md5_compute_response(uint8_t *pbResponse, uint8_t id, const uin
 }
 
 /**
+ * Internal. - Wrapper around the extended select callback of the net interface.
+ */
+DECLINLINE(int) iscsiIoThreadWait(PISCSIIMAGE pImage, RTMSINTERVAL cMillies, uint32_t *pfEvents)
+{
+    return pImage->pInterfaceNetCallbacks->pfnSelectOneEx(pImage->Socket, pfEvents, cMillies);
+}
+
+/**
+ * Internal. - Pokes a thread waiting for I/O.
+ */
+DECLINLINE(int) iscsiIoThreadPoke(PISCSIIMAGE pImage)
+{
+    return pImage->pInterfaceNetCallbacks->pfnPoke(pImage->Socket);
+}
+
+/**
+ * Internal. - Get the next request from the queue.
+ */
+DECLINLINE(PISCSICMD) iscsiCmdGet(PISCSIIMAGE pImage)
+{
+    int rc;
+    PISCSICMD pIScsiCmd = NULL;
+
+    rc = RTSemMutexRequest(pImage->MutexReqQueue, RT_INDEFINITE_WAIT);
+    AssertRC(rc);
+
+    pIScsiCmd = pImage->pScsiReqQueue;
+    if (pIScsiCmd)
+    {
+        pImage->pScsiReqQueue = pIScsiCmd->pNext;
+        pIScsiCmd->pNext = NULL;
+    }
+
+    rc = RTSemMutexRelease(pImage->MutexReqQueue);
+    AssertRC(rc);
+
+    return pIScsiCmd;
+}
+
+
+/**
+ * Internal. - Adds the given command to the queue.
+ */
+DECLINLINE(int) iscsiCmdPut(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd)
+{
+    int rc = RTSemMutexRequest(pImage->MutexReqQueue, RT_INDEFINITE_WAIT);
+    AssertRC(rc);
+
+    pIScsiCmd->pNext = pImage->pScsiReqQueue;
+    pImage->pScsiReqQueue = pIScsiCmd;
+
+    rc = RTSemMutexRelease(pImage->MutexReqQueue);
+    AssertRC(rc);
+
+    iscsiIoThreadPoke(pImage);
+
+    /* Wait if the request is synchronous. */
+    if (pIScsiCmd->fSync)
+    {
+        rc = RTSemEventWait(pIScsiCmd->Type.Sync.EventSem, RT_INDEFINITE_WAIT);
+        AssertRC(rc);
+        rc = pIScsiCmd->Type.Sync.rcCmd;
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    return rc;
+}
+
+/**
+ * Internal. - Completes the request with the appropriate action.
+ *             Synchronous requests are completed with waking up the thread
+ *             and asynchronous ones by continuing the associated I/O context.
+ */
+static void iscsiCmdComplete(PISCSICMD pIScsiCmd, int rcCmd)
+{
+    if (pIScsiCmd->fSync)
+    {
+        int rc;
+
+        /* Store completion code */
+        pIScsiCmd->Type.Sync.rcCmd = rcCmd;
+
+        /*
+         * Wakeup the waiting thread. We are NOT allowed to touch the request
+         * beyond this call.
+         */
+        rc = RTSemEventSignal(pIScsiCmd->Type.Sync.EventSem);
+        AssertRC(rc);
+    }
+    else
+        AssertMsgFailed(("Not implemented yet\n"));
+}
+
+/**
+ * Internal. Main iSCSI I/O worker.
+ */
+static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
+{
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pvUser;
+
+    while (pImage->fRunning)
+    {
+        uint32_t fEvents = 0;
+        int rc;
+
+        /* Wait for work or for data from the target. */
+        rc = iscsiIoThreadWait(pImage, RT_INDEFINITE_WAIT, &fEvents);
+        if (rc == VERR_INTERRUPTED)
+        {
+            /* Check the queue. */
+            PISCSICMD pIScsiCmd = iscsiCmdGet(pImage);
+
+            while (pIScsiCmd)
+            {
+                switch (pIScsiCmd->enmCmdType)
+                {
+                    case ISCSICMDTYPE_REQ:
+                    {
+                        rc = iscsiCommand(pImage, pIScsiCmd->CmdType.ScsiReq.pScsiReq);
+                        break;
+                    }
+                    case ISCSICMDTYPE_EXEC:
+                    {
+                        rc = pIScsiCmd->CmdType.Exec.pfnExec(pIScsiCmd->CmdType.Exec.pvUser);
+                        break;
+                    }
+                    default:
+                        AssertMsgFailed(("Invalid command type %d\n", pIScsiCmd->enmCmdType));
+                }
+
+                iscsiCmdComplete(pIScsiCmd, rc);
+                pIScsiCmd = iscsiCmdGet(pImage);
+            }
+        }
+        else if (RT_SUCCESS(rc))
+        {
+            /*
+             * There is data on the socket.
+             *
+             * @todo: This will only handle NOP-IN requests. Check other requests.
+             */
+            if (fEvents & VD_INTERFACETCPNET_EVT_READ)
+            {
+                rc = iscsiRecvPDU(pImage, ISCSI_TASK_TAG_RSVD, NULL, 0, false);
+                if (RT_FAILURE(rc))
+                    LogRel(("iSCSI: Handling incoming request failed %Rrc\n", rc));
+            }
+            else
+                LogRel(("iSCSI: Received unexpected event %#x\n", fEvents));
+        }
+        else
+        {
+            LogRel(("iSCSI: Waiting for I/O failed rc=%Rrc\n", rc));
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Internal. - Enqueues a request in a synchronous fashion
+ * i.e. returns when the request completed.
+ */
+static int iscsiCommandSync(PISCSIIMAGE pImage, PSCSIREQ pScsiReq, bool fRetry, int rcSense)
+{
+    int rc;
+
+    if (pImage->fExtendedSelectSupported)
+    {
+        ISCSICMD IScsiCmd;
+
+        /* Init the command structure. */
+        IScsiCmd.pNext                    = NULL;
+        IScsiCmd.enmCmdType               = ISCSICMDTYPE_REQ;
+        IScsiCmd.fSync                    = true;
+        IScsiCmd.Type.Sync.rcCmd          = VINF_SUCCESS;
+        IScsiCmd.CmdType.ScsiReq.pScsiReq = pScsiReq;
+
+        /* Create event semaphore. */
+        rc = RTSemEventCreate(&IScsiCmd.Type.Sync.EventSem);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        if (fRetry)
+        {
+            for (unsigned i = 0; i < 10; i++)
+            {
+                rc = iscsiCmdPut(pImage, &IScsiCmd);
+                if (    (RT_SUCCESS(rc) && !pScsiReq->cbSense)
+                    ||  RT_FAILURE(rc))
+                    break;
+                rc = rcSense;
+            }
+        }
+        else
+        {
+            rc = iscsiCmdPut(pImage, &IScsiCmd);
+            if (RT_SUCCESS(rc) && pScsiReq->cbSense > 0)
+                rc = rcSense;
+        }
+
+        RTSemEventDestroy(IScsiCmd.Type.Sync.EventSem);
+    }
+    else
+    {
+        if (fRetry)
+        {
+            for (unsigned i = 0; i < 10; i++)
+            {
+                rc = iscsiCommand(pImage, pScsiReq);
+                if (    (RT_SUCCESS(rc) && !pScsiReq->cbSense)
+                    ||  RT_FAILURE(rc))
+                    break;
+                rc = rcSense;
+            }
+        }
+        else
+        {
+            rc = iscsiCommand(pImage, pScsiReq);
+            if (RT_SUCCESS(rc) && pScsiReq->cbSense > 0)
+                rc = rcSense;
+        }
+    }
+
+    return rc;
+}
+
+/**
+ * Internal. - Executes a given function in a synchronous fashion
+ *             on the I/O thread if available.
+ */
+static int iscsiExecSync(PISCSIIMAGE pImage, PFNISCSIEXEC pfnExec, void *pvUser)
+{
+    int rc;
+
+    if (pImage->fExtendedSelectSupported)
+    {
+        ISCSICMD IScsiCmd;
+
+        /* Init the command structure. */
+        IScsiCmd.pNext                = NULL;
+        IScsiCmd.enmCmdType           = ISCSICMDTYPE_EXEC;
+        IScsiCmd.fSync                = true;
+        IScsiCmd.Type.Sync.rcCmd      = VINF_SUCCESS;
+        IScsiCmd.CmdType.Exec.pfnExec = pfnExec;
+        IScsiCmd.CmdType.Exec.pvUser  = pvUser;
+
+        /* Create event semaphore. */
+        rc = RTSemEventCreate(&IScsiCmd.Type.Sync.EventSem);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        rc = iscsiCmdPut(pImage, &IScsiCmd);
+        RTSemEventDestroy(IScsiCmd.Type.Sync.EventSem);
+    }
+    else
+    {
+        /* No I/O thread, execute in the current thread. */
+        rc = pfnExec(pvUser);
+    }
+
+    return rc;
+}
+
+/**
  * Internal. Free all allocated space for representing an image, and optionally
  * delete the image from disk.
  */
@@ -2282,9 +2648,31 @@ static void iscsiFreeImage(PISCSIIMAGE pImage, bool fDelete)
     {
         /* Detaching only makes sense when the mutex is there. Otherwise the
          * failure happened long before we could attach to the target. */
-        iscsiDetach(pImage);
+        iscsiExecSync(pImage, iscsiDetach, pImage);
         RTSemMutexDestroy(pImage->Mutex);
         pImage->Mutex = NIL_RTSEMMUTEX;
+    }
+    if (pImage->hThreadIo != NIL_RTTHREAD)
+    {
+        int rc;
+
+        ASMAtomicXchgBool(&pImage->fRunning, false);
+        rc = iscsiIoThreadPoke(pImage);
+        AssertRC(rc);
+
+        /* Wait for the thread to terminate. */
+        rc = RTThreadWait(pImage->hThreadIo, RT_INDEFINITE_WAIT, NULL);
+        AssertRC(rc);
+    }
+    /* Destroy the socket. */
+    if (pImage->Socket != NIL_VDSOCKET)
+    {
+        pImage->pInterfaceNetCallbacks->pfnSocketDestroy(pImage->Socket);
+    }
+    if (pImage->MutexReqQueue != NIL_RTSEMMUTEX)
+    {
+        RTSemMutexDestroy(pImage->MutexReqQueue);
+        pImage->MutexReqQueue = NIL_RTSEMMUTEX;
     }
     if (pImage->pszTargetName)
     {
@@ -2390,7 +2778,12 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         goto out;
     }
     pImage->Mutex           = NIL_RTSEMMUTEX;
+    pImage->MutexReqQueue   = NIL_RTSEMMUTEX;
     rc = RTSemMutexCreate(&pImage->Mutex);
+    if (RT_FAILURE(rc))
+        goto out;
+
+    rc = RTSemMutexCreate(&pImage->MutexReqQueue);
     if (RT_FAILURE(rc))
         goto out;
 
@@ -2533,7 +2926,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
 
     pImage->pszHostname    = NULL;
     pImage->uPort          = 0;
-    pImage->Socket         = NIL_RTSOCKET;
+    pImage->Socket         = NIL_VDSOCKET;
     /* Query the iSCSI lower level configuration. */
     rc = VDCFGQueryU32Def(pImage->pInterfaceConfigCallbacks,
                           pImage->pInterfaceConfig->pvUser,
@@ -2564,12 +2957,51 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         goto out;
     }
 
+    /* Create the socket structure. */
+    rc = pImage->pInterfaceNetCallbacks->pfnSocketCreate(VD_INTERFACETCPNET_CONNECT_EXTENDED_SELECT,
+                                                         &pImage->Socket);
+    if (RT_SUCCESS(rc))
+    {
+        pImage->fExtendedSelectSupported = true;
+        pImage->fRunning = true;
+        rc = RTThreadCreate(&pImage->hThreadIo, iscsiIoThreadWorker, pImage, 0,
+                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "iSCSI-Io");
+        if (RT_FAILURE(rc))
+        {
+            LogFunc(("Creating iSCSI I/O thread failed rc=%Rrc\n", rc));
+            goto out;
+        }
+    }
+    else if (rc == VERR_NOT_SUPPORTED)
+    {
+        /* Async I/O is not supported without extended select. */
+        if ((uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO))
+        {
+            LogFunc(("Extended select is not supported by the interface but async I/O is requested -> %Rrc\n", rc));
+            goto out;
+        }
+        else
+        {
+            pImage->fExtendedSelectSupported = false;
+            rc = pImage->pInterfaceNetCallbacks->pfnSocketCreate(0, &pImage->Socket);
+            if (RT_FAILURE(rc))
+            {
+                LogFunc(("Creating socket failed -> %Rrc\n", rc));
+                goto out;
+            }
+        }
+    }
+    else
+    {
+        LogFunc(("Creating socket failed -> %Rrc\n", rc));
+        goto out;
+    }
+
     /*
      * Attach to the iSCSI target. This implicitly establishes the iSCSI
      * transport connection.
      */
-    rc = iscsiAttach(pImage);
-
+    rc = iscsiExecSync(pImage, iscsiAttach, pImage);
     if (RT_FAILURE(rc))
     {
         LogRel(("iSCSI: could not open target %s, rc=%Rrc\n", pImage->pszTargetName, rc));
@@ -2610,7 +3042,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
 
-    rc = iscsiCommand(pImage, &sr);
+    rc = iscsiCommandSync(pImage, &sr, false, VERR_INVALID_STATE);
     if (RT_FAILURE(rc))
     {
         LogRel(("iSCSI: Could not get LUN info for target %s, rc=%Rrc\n", pImage->pszTargetName, rc));
@@ -2638,14 +3070,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
 
-    for (unsigned i = 0; i < 10; i++)
-    {
-        rc = iscsiCommand(pImage, &sr);
-        if (    (RT_SUCCESS(rc) && !sr.cbSense)
-            ||  RT_FAILURE(rc))
-            break;
-        rc = VERR_INVALID_STATE;
-    }
+    rc = iscsiCommandSync(pImage, &sr, true /* fRetry */, VERR_INVALID_STATE);
     if (RT_SUCCESS(rc))
     {
         uint8_t devType = (sr.cbT2IData > 0) ? data8[0] & SCSI_DEVTYPE_MASK : 255;
@@ -2689,14 +3114,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
 
-    for (unsigned i = 0; i < 10; i++)
-    {
-        rc = iscsiCommand(pImage, &sr);
-        if (    (RT_SUCCESS(rc) && !sr.cbSense)
-            ||  RT_FAILURE(rc))
-            break;
-        rc = VERR_INVALID_STATE;
-    }
+    rc = iscsiCommandSync(pImage, &sr, true /* fRetry */, VERR_INVALID_STATE);
     if (RT_SUCCESS(rc))
     {
         if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY) && data4[2] & 0x80)
@@ -2704,7 +3122,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
             rc = VERR_VD_IMAGE_READ_ONLY;
             goto out;
         }
-   }
+    }
     else
     {
         LogRel(("iSCSI: Could not get MODE SENSE info for target %s, rc=%Rrc\n", pImage->pszTargetName, rc));
@@ -2732,7 +3150,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
 
-    rc = iscsiCommand(pImage, &sr);
+    rc = iscsiCommandSync(pImage, &sr, false /* fRetry */, VINF_SUCCESS);
     if (   RT_SUCCESS(rc)
         && sr.status == SCSI_STATUS_OK)
     {
@@ -2774,7 +3192,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         sr.cbSense = sizeof(sense);
         sr.pvSense = sense;
 
-        rc = iscsiCommand(pImage, &sr);
+        rc = iscsiCommandSync(pImage, &sr, false /* fRetry */, VINF_SUCCESS);
         if (RT_SUCCESS(rc))
         {
             pImage->cVolume = (data8[0] << 24) | (data8[1] << 16) | (data8[2] << 8) | data8[3];
@@ -2822,7 +3240,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     sr.pvT2IData = aCachingModePage;
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
-    rc = iscsiCommand(pImage, &sr);
+    rc = iscsiCommandSync(pImage, &sr, false /* fRetry */, VINF_SUCCESS);
     if (   RT_SUCCESS(rc)
         && (sr.status == SCSI_STATUS_OK)
         && (aCachingModePage[0] >= 15)
@@ -2862,7 +3280,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
             sr.cbSense = sizeof(sense);
             sr.pvSense = sense;
             sr.status  = 0;
-            rc = iscsiCommand(pImage, &sr);
+            rc = iscsiCommandSync(pImage, &sr, false /* fRetry */, VINF_SUCCESS);
             if (   RT_SUCCESS(rc)
                 && (sr.status == SCSI_STATUS_OK))
             {
@@ -2885,7 +3303,6 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         LogRel(("iSCSI: Sense:\n%.*Rhxd\n", sr.cbSense, sense));
         rc = VINF_SUCCESS;
     }
-
 
 out:
     if (RT_FAILURE(rc))
@@ -3073,14 +3490,7 @@ static int iscsiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
 
-    for (unsigned i = 0; i < 10; i++)
-    {
-        rc = iscsiCommand(pImage, &sr);
-        if (    (RT_SUCCESS(rc) && !sr.cbSense)
-            ||  RT_FAILURE(rc))
-            break;
-        rc = VERR_READ_ERROR;
-    }
+    rc = iscsiCommandSync(pImage, &sr, true, VERR_READ_ERROR);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("iscsiCommand(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
@@ -3154,14 +3564,7 @@ static int iscsiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
 
-    for (unsigned i = 0; i < 10; i++)
-    {
-        rc = iscsiCommand(pImage, &sr);
-        if (    (RT_SUCCESS(rc) && !sr.cbSense)
-            ||  RT_FAILURE(rc))
-            break;
-        rc = VERR_WRITE_ERROR;
-    }
+    rc = iscsiCommandSync(pImage, &sr, true, VERR_WRITE_ERROR);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("iscsiCommand(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
@@ -3210,7 +3613,7 @@ static int iscsiFlush(void *pBackendData)
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
 
-    rc = iscsiCommand(pImage, &sr);
+    rc = iscsiCommandSync(pImage, &sr, false, VINF_SUCCESS);
     if (RT_FAILURE(rc))
         AssertMsgFailed(("iscsiCommand(%s) -> %Rrc\n", pImage->pszTargetName, rc));
     LogFlowFunc(("returns %Rrc\n", rc));

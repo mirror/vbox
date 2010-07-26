@@ -168,6 +168,12 @@ struct Medium::Data
     PVDINTERFACE vdDiskIfaces;
 };
 
+typedef struct VDSOCKETINT
+{
+    /** Socket handle. */
+    RTSOCKET hSocket;
+} VDSOCKETINT, *PVDSOCKETINT;
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Globals
@@ -671,16 +677,21 @@ HRESULT Medium::FinalConstruct()
      * IP stack for now) */
     m->vdIfCallsTcpNet.cbSize = sizeof(VDINTERFACETCPNET);
     m->vdIfCallsTcpNet.enmInterface = VDINTERFACETYPE_TCPNET;
-    m->vdIfCallsTcpNet.pfnClientConnect = RTTcpClientConnect;
-    m->vdIfCallsTcpNet.pfnClientClose = RTTcpClientClose;
-    m->vdIfCallsTcpNet.pfnSelectOne = RTTcpSelectOne;
-    m->vdIfCallsTcpNet.pfnRead = RTTcpRead;
-    m->vdIfCallsTcpNet.pfnWrite = RTTcpWrite;
-    m->vdIfCallsTcpNet.pfnSgWrite = RTTcpSgWrite;
-    m->vdIfCallsTcpNet.pfnFlush = RTTcpFlush;
-    m->vdIfCallsTcpNet.pfnSetSendCoalescing = RTTcpSetSendCoalescing;
-    m->vdIfCallsTcpNet.pfnGetLocalAddress = RTTcpGetLocalAddress;
-    m->vdIfCallsTcpNet.pfnGetPeerAddress = RTTcpGetPeerAddress;
+    m->vdIfCallsTcpNet.pfnSocketCreate = vdTcpSocketCreate;
+    m->vdIfCallsTcpNet.pfnSocketDestroy = vdTcpSocketDestroy;
+    m->vdIfCallsTcpNet.pfnClientConnect = vdTcpClientConnect;
+    m->vdIfCallsTcpNet.pfnClientClose = vdTcpClientClose;
+    m->vdIfCallsTcpNet.pfnIsClientConnected = vdTcpIsClientConnected;
+    m->vdIfCallsTcpNet.pfnSelectOne = vdTcpSelectOne;
+    m->vdIfCallsTcpNet.pfnRead = vdTcpRead;
+    m->vdIfCallsTcpNet.pfnWrite = vdTcpWrite;
+    m->vdIfCallsTcpNet.pfnSgWrite = vdTcpSgWrite;
+    m->vdIfCallsTcpNet.pfnFlush = vdTcpFlush;
+    m->vdIfCallsTcpNet.pfnSetSendCoalescing = vdTcpSetSendCoalescing;
+    m->vdIfCallsTcpNet.pfnGetLocalAddress = vdTcpGetLocalAddress;
+    m->vdIfCallsTcpNet.pfnGetPeerAddress = vdTcpGetPeerAddress;
+    m->vdIfCallsTcpNet.pfnSelectOneEx = NULL;
+    m->vdIfCallsTcpNet.pfnPoke = NULL;
 
     /* Initialize the per-disk interface chain */
     int vrc;
@@ -5049,6 +5060,106 @@ DECLCALLBACK(int) Medium::vdConfigQuery(void *pvUser, const char *pszName,
 
     return VINF_SUCCESS;
 }
+
+DECLCALLBACK(int) Medium::vdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
+{
+    PVDSOCKETINT pSocketInt = NULL;
+
+    if ((fFlags & VD_INTERFACETCPNET_CONNECT_EXTENDED_SELECT) != 0)
+        return VERR_NOT_SUPPORTED;
+
+    pSocketInt = (PVDSOCKETINT)RTMemAllocZ(sizeof(VDSOCKETINT));
+    if (!pSocketInt)
+        return VERR_NO_MEMORY;
+
+    pSocketInt->hSocket = NIL_RTSOCKET;
+    *pSock = pSocketInt;
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) Medium::vdTcpSocketDestroy(VDSOCKET Sock)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+
+    if (pSocketInt->hSocket != NIL_RTSOCKET)
+        RTTcpClientClose(pSocketInt->hSocket);
+
+    RTMemFree(pSocketInt);
+
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) Medium::vdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpClientConnect(pszAddress, uPort, &pSocketInt->hSocket);
+}
+
+DECLCALLBACK(int) Medium::vdTcpClientClose(VDSOCKET Sock)
+{
+    int rc = VINF_SUCCESS;
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+
+    rc = RTTcpClientClose(pSocketInt->hSocket);
+    pSocketInt->hSocket = NIL_RTSOCKET;
+    return rc;
+}
+
+DECLCALLBACK(bool) Medium::vdTcpIsClientConnected(VDSOCKET Sock)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+    return pSocketInt->hSocket != NIL_RTSOCKET;
+}
+
+DECLCALLBACK(int) Medium::vdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+    return RTTcpSelectOne(pSocketInt->hSocket, cMillies);
+}
+
+DECLCALLBACK(int) Medium::vdTcpRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+    return RTTcpRead(pSocketInt->hSocket, pvBuffer, cbBuffer, pcbRead);
+}
+
+DECLCALLBACK(int) Medium::vdTcpWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+    return RTTcpWrite(pSocketInt->hSocket, pvBuffer, cbBuffer);
+}
+
+DECLCALLBACK(int) Medium::vdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+    return RTTcpSgWrite(pSocketInt->hSocket, pSgBuf);
+}
+
+DECLCALLBACK(int) Medium::vdTcpFlush(VDSOCKET Sock)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+    return RTTcpFlush(pSocketInt->hSocket);
+}
+
+DECLCALLBACK(int) Medium::vdTcpSetSendCoalescing(VDSOCKET Sock, bool fEnable)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+    return RTTcpSetSendCoalescing(pSocketInt->hSocket, fEnable);
+}
+
+DECLCALLBACK(int) Medium::vdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+    return RTTcpGetLocalAddress(pSocketInt->hSocket, pAddr);
+}
+
+DECLCALLBACK(int) Medium::vdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
+{
+    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
+    return RTTcpGetPeerAddress(pSocketInt->hSocket, pAddr);
+}
+
 
 /**
  * Starts a new thread driven by the appropriate Medium::Task::handler() method.
