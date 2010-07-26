@@ -302,7 +302,7 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
     PPGMCPU     pPGMCPU = (PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM); /* very pretty ;-) */
     PPGMMAPSET  pSet    = &pPGMCPU->AutoSet;
 
-    STAM_PROFILE_START(&pPGMCPU->StatR0DynMapHCPageInl, a);
+    STAM_PROFILE_START(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapHCPageInl, a);
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
     Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
 
@@ -312,15 +312,15 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
         &&  pSet->aEntries[iEntry].HCPhys == HCPhys)
     {
         *ppv = pSet->aEntries[iEntry].pvPage;
-        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapHCPageInlHits);
+        STAM_COUNTER_INC(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapHCPageInlHits);
     }
     else
     {
-        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapHCPageInlMisses);
+        STAM_COUNTER_INC(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapHCPageInlMisses);
         pgmR0DynMapHCPageCommon(pVM, pSet, HCPhys, ppv);
     }
 
-    STAM_PROFILE_STOP(&pPGMCPU->StatR0DynMapHCPageInl, a);
+    STAM_PROFILE_STOP(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapHCPageInl, a);
     return VINF_SUCCESS;
 }
 
@@ -339,7 +339,7 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
     PVM     pVM     = PGM2VM(pPGM);
     PPGMCPU pPGMCPU = (PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM); /* very pretty ;-) */
 
-    STAM_PROFILE_START(&pPGMCPU->StatR0DynMapGCPageInl, a);
+    STAM_PROFILE_START(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInl, a);
     AssertMsg(!(GCPhys & PAGE_OFFSET_MASK), ("%RGp\n", GCPhys));
 
     /*
@@ -351,12 +351,12 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
         /** @todo   || page state stuff */))
     {
         /* This case is not counted into StatR0DynMapGCPageInl. */
-        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlRamMisses);
+        STAM_COUNTER_INC(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInlRamMisses);
         return PGMDynMapGCPage(pVM, GCPhys, ppv);
     }
 
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[off >> PAGE_SHIFT]);
-    STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlRamHits);
+    STAM_COUNTER_INC(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInlRamHits);
 
     /*
      * pgmR0DynMapHCPageInlined with out stats.
@@ -371,15 +371,15 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
         &&  pSet->aEntries[iEntry].HCPhys == HCPhys)
     {
         *ppv = pSet->aEntries[iEntry].pvPage;
-        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlHits);
+        STAM_COUNTER_INC(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInlHits);
     }
     else
     {
-        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlMisses);
+        STAM_COUNTER_INC(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInlMisses);
         pgmR0DynMapHCPageCommon(pVM, pSet, HCPhys, ppv);
     }
 
-    STAM_PROFILE_STOP(&pPGMCPU->StatR0DynMapGCPageInl, a);
+    STAM_PROFILE_STOP(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInl, a);
     return VINF_SUCCESS;
 }
 
@@ -409,12 +409,12 @@ DECLINLINE(int) pgmR0DynMapGCPageOffInlined(PPGM pPGM, RTGCPHYS GCPhys, void **p
         /** @todo   || page state stuff */))
     {
         /* This case is not counted into StatR0DynMapGCPageInl. */
-        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlRamMisses);
+        STAM_COUNTER_INC(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInlRamMisses);
         return PGMDynMapGCPageOff(pVM, GCPhys, ppv);
     }
 
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[off >> PAGE_SHIFT]);
-    STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlRamHits);
+    STAM_COUNTER_INC(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInlRamHits);
 
     /*
      * pgmR0DynMapHCPageInlined with out stats.
@@ -429,16 +429,16 @@ DECLINLINE(int) pgmR0DynMapGCPageOffInlined(PPGM pPGM, RTGCPHYS GCPhys, void **p
         &&  pSet->aEntries[iEntry].HCPhys == HCPhys)
     {
         *ppv = (void *)((uintptr_t)pSet->aEntries[iEntry].pvPage | (PAGE_OFFSET_MASK & (uintptr_t)GCPhys));
-        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlHits);
+        STAM_COUNTER_INC(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInlHits);
     }
     else
     {
-        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlMisses);
+        STAM_COUNTER_INC(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInlMisses);
         pgmR0DynMapHCPageCommon(pVM, pSet, HCPhys, ppv);
         *ppv = (void *)((uintptr_t)*ppv | (PAGE_OFFSET_MASK & (uintptr_t)GCPhys));
     }
 
-    STAM_PROFILE_STOP(&pPGMCPU->StatR0DynMapGCPageInl, a);
+    STAM_PROFILE_STOP(&pPGMCPU->CTX_SUFF(pStats)->StatR0DynMapGCPageInl, a);
     return VINF_SUCCESS;
 }
 

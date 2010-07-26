@@ -1185,7 +1185,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
 #ifdef VBOX_WITH_STATISTICS
     PVMCPU pVCpu = VMMGetCpu(pVM);
 #endif
-    STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapPageSlow);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapPageSlow);
 
     /*
      * Check if any of the first 3 pages are unreferenced since the caller
@@ -1213,7 +1213,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
         {
             if (paPages[iFreePage].HCPhys == HCPhys)
             {
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapPageSlowLoopHits);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapPageSlowLoopHits);
                 return iFreePage;
             }
             if (!paPages[iFreePage].cRefs)
@@ -1224,7 +1224,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
             if (RT_UNLIKELY(iFreePage == iPage))
                 return UINT32_MAX;
         }
-        STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapPageSlowLoopMisses);
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapPageSlowLoopMisses);
 #ifdef VBOX_WITH_STATISTICS
         fLooped = true;
 #endif
@@ -1290,7 +1290,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_
     RTSPINLOCKTMP       Tmp     = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%RHp\n", HCPhys));
-    STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapPage);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapPage);
 
     /*
      * Find an entry, if possible a matching one. The HCPhys address is hashed
@@ -1304,14 +1304,14 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_
     uint32_t            iPage   = (HCPhys >> PAGE_SHIFT) % cPages;
     PPGMR0DYNMAPENTRY   paPages = pThis->paPages;
     if (RT_LIKELY(paPages[iPage].HCPhys == HCPhys))
-        STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapPageHits0);
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapPageHits0);
     else
     {
         uint32_t        iPage2 = (iPage + 1) % cPages;
         if (RT_LIKELY(paPages[iPage2].HCPhys == HCPhys))
         {
             iPage = iPage2;
-            STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapPageHits1);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapPageHits1);
         }
         else
         {
@@ -1319,7 +1319,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_
             if (paPages[iPage2].HCPhys == HCPhys)
             {
                 iPage = iPage2;
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapPageHits2);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapPageHits2);
             }
             else
             {
@@ -1368,7 +1368,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_
      */
     if (RT_UNLIKELY(fInvalidateIt))
     {
-        STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapPageInvlPg);
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapPageInvlPg);
         ASMInvalidatePage(pvPage);
     }
 
@@ -1592,7 +1592,7 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
     pSet->iSubset = UINT32_MAX;
     pSet->iCpu = -1;
 
-    STAM_COUNTER_INC(&pVCpu->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
     AssertMsg(cEntries < PGMMAPSET_MAX_FILL, ("%u\n", cEntries));
     if (cEntries > RT_ELEMENTS(pSet->aEntries) * 50 / 100)
         Log(("PGMDynMapReleaseAutoSet: cEntries=%d\n", pSet->cEntries));
@@ -1616,7 +1616,7 @@ VMMDECL(void) PGMDynMapFlushAutoSet(PVMCPU pVCpu)
      */
     uint32_t cEntries = pSet->cEntries;
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
-    STAM_COUNTER_INC(&pVCpu->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
     if (cEntries >= RT_ELEMENTS(pSet->aEntries) * 45 / 100)
     {
         pSet->cEntries = 0;
@@ -1670,7 +1670,7 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
                         RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
                         ASMInvalidatePage(pThis->paPages[iPage].pvPage);
-                        STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapMigrateInvlPg);
+                        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapMigrateInvlPg);
 
                         RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
                     }
@@ -1748,7 +1748,7 @@ VMMDECL(uint32_t) PGMDynMapPushAutoSubset(PVMCPU pVCpu)
     LogFlow(("PGMDynMapPushAutoSubset: pVCpu=%p iPrevSubset=%u\n", pVCpu, iPrevSubset));
 
     pSet->iSubset = pSet->cEntries;
-    STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapSubsets);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapSubsets);
     return iPrevSubset;
 }
 
@@ -1766,7 +1766,7 @@ VMMDECL(void) PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
     LogFlow(("PGMDynMapPopAutoSubset: pVCpu=%p iPrevSubset=%u iSubset=%u cEntries=%u\n", pVCpu, iPrevSubset, pSet->iSubset, cEntries));
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
     AssertReturnVoid(pSet->iSubset >= iPrevSubset || iPrevSubset == UINT32_MAX);
-    STAM_COUNTER_INC(&pVCpu->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
     if (    cEntries >= RT_ELEMENTS(pSet->aEntries) * 40 / 100
         &&  cEntries != pSet->iSubset)
     {
@@ -1914,23 +1914,23 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
                 &&  pSet->aEntries[i].cRefs < UINT16_MAX - 1)
             {
                 pSet->aEntries[i].cRefs++;
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapSetSearchHits);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapSetSearchHits);
                 break;
             }
         if (i < 0)
         {
-            STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapSetSearchMisses);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapSetSearchMisses);
             if (pSet->iSubset < pSet->cEntries)
             {
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapSetSearchFlushes);
-                STAM_COUNTER_INC(&pVCpu->pgm.s.aStatR0DynMapSetSize[(pSet->cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapSetSearchFlushes);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->aStatR0DynMapSetSize[(pSet->cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
                 AssertMsg(pSet->cEntries < PGMMAPSET_MAX_FILL, ("%u\n", pSet->cEntries));
                 pgmDynMapFlushSubset(pSet);
             }
 
             if (RT_UNLIKELY(pSet->cEntries >= RT_ELEMENTS(pSet->aEntries)))
             {
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapSetOptimize);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapSetOptimize);
                 pgmDynMapOptimizeAutoSet(pSet);
             }
 

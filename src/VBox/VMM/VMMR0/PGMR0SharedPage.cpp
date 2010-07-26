@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * PGM - Page Manager and Monitor, Ring-0.
+ * PGM - Page Manager and Monitor, Page Sharing, Ring-0.
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
