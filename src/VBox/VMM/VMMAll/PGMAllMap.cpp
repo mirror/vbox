@@ -731,7 +731,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
                 if (    pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */
                     &&  (pVM->fRawR0Enabled || pPD->a[iPDE + iPT].n.u1User))
                 {
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
+                    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 
 #ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %08RX32 for mapping %s (32 bits)\n"
@@ -763,7 +763,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
                 if (   Pde.n.u1Present
                     && (pVM->fRawR0Enabled || Pde.n.u1User))
                 {
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
+                    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 #ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping %s (PAE)\n"
                          "                        PDE=%016RX64.\n",
@@ -826,7 +826,7 @@ int pgmMapResolveConflicts(PVM pVM)
                     &&  (   pVM->fRawR0Enabled
                          || pPD->a[iPDE + iPT].n.u1User))
                 {
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
+                    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 
 #ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %08RX32 for mapping %s (32 bits)\n"
@@ -866,7 +866,7 @@ int pgmMapResolveConflicts(PVM pVM)
                 if (   Pde.n.u1Present
                     && (pVM->fRawR0Enabled || Pde.n.u1User))
                 {
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
+                    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 #ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping %s (PAE)\n"
                          "                        PDE=%016RX64.\n",

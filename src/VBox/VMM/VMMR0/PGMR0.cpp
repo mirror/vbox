@@ -223,34 +223,34 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
         if (!(uErr & X86_TRAP_PF_P))
         {
             if (uErr & X86_TRAP_PF_RW)
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eUSNotPresentWrite);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSNotPresentWrite);
             else
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eUSNotPresentRead);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSNotPresentRead);
         }
         else if (uErr & X86_TRAP_PF_RW)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eUSWrite);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSWrite);
         else if (uErr & X86_TRAP_PF_RSVD)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eUSReserved);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSReserved);
         else if (uErr & X86_TRAP_PF_ID)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eUSNXE);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSNXE);
         else
-            STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eUSRead);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSRead);
     }
     else
     {   /* Supervisor */
         if (!(uErr & X86_TRAP_PF_P))
         {
             if (uErr & X86_TRAP_PF_RW)
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eSVNotPresentWrite);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVNotPresentWrite);
             else
-                STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eSVNotPresentRead);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVNotPresentRead);
         }
         else if (uErr & X86_TRAP_PF_RW)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eSVWrite);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVWrite);
         else if (uErr & X86_TRAP_PF_ID)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eSNXE);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSNXE);
         else if (uErr & X86_TRAP_PF_RSVD)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eSVReserved);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVReserved);
     }
 #endif
 
@@ -303,8 +303,8 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
     }
 
     STAM_STATS({ if (!pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution))
-                    pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2Misc; });
-    STAM_PROFILE_STOP_EX(&pVCpu->pgm.s.StatRZTrap0e, pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
+                    pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2Misc; });
+    STAM_PROFILE_STOP_EX(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0e, pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
     return rc;
 }
 

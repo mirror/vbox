@@ -418,7 +418,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 {
                     Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-                    STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
+                    STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                     break;
                 }
@@ -449,7 +449,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                         if (uShw.pPD->a[iShw2].u & PGM_PDFLAGS_MAPPING)
                         {
                             Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-                            STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
+                            STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                             break;
@@ -496,7 +496,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 {
                     Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-                    STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
+                    STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                     break;
                 }
@@ -533,7 +533,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     {
                         Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
                         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-                        STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
+                        STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                         break;
                     }
@@ -573,7 +573,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     if (uShw.pPDPT->a[iShw].u & PGM_PLXFLAGS_MAPPING)
                     {
                         Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-                        STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
+                        STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected pdpt conflict at iShw=%#x!\n", iShw));
                         break;
@@ -604,7 +604,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                             if (uShw.pPDPT->a[iShw2].u & PGM_PLXFLAGS_MAPPING)
                             {
                                 Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-                                STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
+                                STAM_COUNTER_INC(&(pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestCR3WriteConflict));
                                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                                 LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                                 break;
@@ -3796,7 +3796,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
     {
         paPhysExts[iPhysExt].aidx[2] = iShwPT;
         paPhysExts[iPhysExt].apte[2] = iPte;
-        STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedMany);
+        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliasedMany);
         LogFlow(("pgmPoolTrackPhysExtInsert: %d:{,,%d pte %d}\n", iPhysExt, iShwPT, iPte));
         return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
     }
@@ -3812,13 +3812,13 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
             {
                 paPhysExts[iPhysExt].aidx[i] = iShwPT;
                 paPhysExts[iPhysExt].apte[i] = iPte;
-                STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedMany);
+                STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliasedMany);
                 LogFlow(("pgmPoolTrackPhysExtInsert: %d:{%d pte %d} i=%d cMax=%d\n", iPhysExt, iShwPT, iPte, i, cMax));
                 return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExtStart);
             }
         if (!--cMax)
         {
-            STAM_COUNTER_INC(&pVM->pgm.s.StatTrackOverflows);
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackOverflows);
             pgmPoolTrackPhysExtFreeList(pVM, iPhysExtStart);
             LogFlow(("pgmPoolTrackPhysExtInsert: overflow (1) iShwPT=%d\n", iShwPT));
             return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED);
@@ -3829,7 +3829,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
     PPGMPOOLPHYSEXT pNew = pgmPoolTrackPhysExtAlloc(pVM, &iPhysExt);
     if (!pNew)
     {
-        STAM_COUNTER_INC(&pVM->pgm.s.StatTrackNoExtentsLeft);
+        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackNoExtentsLeft);
         pgmPoolTrackPhysExtFreeList(pVM, iPhysExtStart);
         LogFlow(("pgmPoolTrackPhysExtInsert: pgmPoolTrackPhysExtAlloc failed iShwPT=%d\n", iShwPT));
         return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED);
@@ -3867,7 +3867,7 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, PPGMPAGE pPhysPage, uint16_t u16, ui
         if (pPhysExt)
         {
             LogFlow(("pgmPoolTrackPhysExtAddref: new extent: %d:{%d, %d}\n", iPhysExt, PGMPOOL_TD_GET_IDX(u16), iShwPT));
-            STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliased);
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliased);
             pPhysExt->aidx[0] = PGMPOOL_TD_GET_IDX(u16);
             pPhysExt->apte[0] = PGM_PAGE_GET_PTE_INDEX(pPhysPage);
             pPhysExt->aidx[1] = iShwPT;
@@ -3885,7 +3885,7 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, PPGMPAGE pPhysPage, uint16_t u16, ui
         u16 = pgmPoolTrackPhysExtInsert(pVM, PGMPOOL_TD_GET_IDX(u16), iShwPT, iPte);
     }
     else
-        STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedLots);
+        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliasedLots);
     pgmUnlock(pVM);
     return u16;
 }

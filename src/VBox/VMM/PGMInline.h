@@ -512,7 +512,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
     PPGMPAGEMAPTLBE pTlbe = &pPGM->CTXSUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
     if (pTlbe->GCPhys == (GCPhys & X86_PTE_PAE_PG_MASK))
     {
-        STAM_COUNTER_INC(&pPGM->CTX_MID_Z(Stat,PageMapTlbHits));
+        STAM_COUNTER_INC(&pPGM->CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageMapTlbHits));
         rc = VINF_SUCCESS;
     }
     else
@@ -542,7 +542,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS
     PPGMPAGEMAPTLBE pTlbe = &pPGM->CTXSUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
     if (pTlbe->GCPhys == (GCPhys & X86_PTE_PAE_PG_MASK))
     {
-        STAM_COUNTER_INC(&pPGM->CTX_MID_Z(Stat,PageMapTlbHits));
+        STAM_COUNTER_INC(&pPGM->CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageMapTlbHits));
         rc = VINF_SUCCESS;
     }
     else

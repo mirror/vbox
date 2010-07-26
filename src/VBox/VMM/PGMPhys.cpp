@@ -3483,9 +3483,9 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     Req.idChunkUnmap = NIL_GMM_CHUNKID;
 
     /* Must be callable from any thread, so can't use VMMR3CallR0. */
-    STAM_PROFILE_START(&pVM->pgm.s.StatChunkMap, a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkMap, a);
     rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
-    STAM_PROFILE_STOP(&pVM->pgm.s.StatChunkMap, a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkMap, a);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -3580,9 +3580,9 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
 {
     pgmLock(pVM);
 
-    STAM_PROFILE_START(&pVM->pgm.s.StatAllocLargePage, a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatAllocLargePage, a);
     int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE, 0, NULL);
-    STAM_PROFILE_STOP(&pVM->pgm.s.StatAllocLargePage, a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatAllocLargePage, a);
     if (RT_SUCCESS(rc))
     {
         Assert(pVM->pgm.s.cLargeHandyPages == 1);
@@ -3607,7 +3607,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
             /*
              * Clear the pages.
              */
-            STAM_PROFILE_START(&pVM->pgm.s.StatClearLargePage, b);
+            STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatClearLargePage, b);
             for (unsigned i = 0; i < _2M/PAGE_SIZE; i++)
             {
                 ASMMemZeroPage(pv);
@@ -3617,7 +3617,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
                 AssertRC(rc);
 
                 Assert(PGM_PAGE_IS_ZERO(pPage));
-                STAM_COUNTER_INC(&pVM->pgm.s.StatRZPageReplaceZero);
+                STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatRZPageReplaceZero);
                 pVM->pgm.s.cZeroPages--;
 
                 /*
@@ -3641,7 +3641,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
 
                 Log3(("PGMR3PhysAllocateLargePage: idPage=%#x HCPhys=%RGp\n", idPage, HCPhys));
             }
-            STAM_PROFILE_STOP(&pVM->pgm.s.StatClearLargePage, b);
+            STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatClearLargePage, b);
 
             /* Flush all TLBs. */
             PGM_INVL_ALL_VCPU_TLBS(pVM);
