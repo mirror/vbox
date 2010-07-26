@@ -76,6 +76,7 @@ class RTLockMtx
                              RTLockValidatorClassForSrcPos(RT_SRC_POS_ARGS, NULL),
                              uSubClass, NULL);
 #else
+            NOREF(uSubClass);
             RTCritSectInit(&mMtx);
             RT_SRC_POS_NOREF();
 #endif

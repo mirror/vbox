@@ -236,6 +236,7 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (int aType, QWidget *aParent)
 
 void VBoxVMSettingsSF::resizeEvent (QResizeEvent *aEvent)
 {
+    NOREF(aEvent);
     adjustList();
 }
 
