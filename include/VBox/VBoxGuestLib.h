@@ -525,6 +525,7 @@ typedef VBGLR3SHAREDFOLDERMAPPING *PVBGLR3SHAREDFOLDERMAPPING;
 
 VBGLR3DECL(int)     VbglR3SharedFolderConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3SharedFolderDisconnect(uint32_t u32ClientId);
+VBGLR3DECL(bool)    VbglR3SharedFolderExists(uint32_t u32ClientId, char *pszShareName);
 VBGLR3DECL(int)     VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMountOnly,
                                                   PVBGLR3SHAREDFOLDERMAPPING *ppaMappings, uint32_t *pcMappings);
 VBGLR3DECL(void)    VbglR3SharedFolderFreeMappings(PVBGLR3SHAREDFOLDERMAPPING paMappings);

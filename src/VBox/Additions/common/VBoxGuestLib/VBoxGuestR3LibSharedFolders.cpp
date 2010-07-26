@@ -86,6 +86,44 @@ VBGLR3DECL(int) VbglR3SharedFolderDisconnect(uint32_t u32ClientId)
 
 
 /**
+ * Checks whether a shared folder share exists or not.
+ *
+ * @returns True if shared folder exists, false if not.
+ * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
+ * @param   pszShareName    Shared folder name to check.
+ */
+VBGLR3DECL(bool) VbglR3SharedFolderExists(uint32_t u32ClientId, char *pszShareName)
+{
+    AssertPtr(pszShareName);
+
+    uint32_t cMappings;
+    VBGLR3SHAREDFOLDERMAPPING *paMappings;
+
+    /** @todo Use some caching here? */
+    bool fFound = false;
+    int rc = VbglR3SharedFolderGetMappings(u32ClientId, true /* Only process auto-mounted folders */,
+                                           &paMappings, &cMappings);
+    if (RT_SUCCESS(rc))
+    {
+        for (uint32_t i = 0; i < cMappings && !fFound; i++)
+        {
+            char *pszName = NULL;
+            rc = VbglR3SharedFolderGetName(u32ClientId, paMappings[i].u32Root, &pszName);
+            if (   RT_SUCCESS(rc)
+                && *pszName)
+            {
+                if (RTStrICmp(pszName, pszShareName) == 0)
+                    fFound = true;
+                RTStrFree(pszName);
+            }
+        }
+        RTMemFree(paMappings);
+    }
+    return fFound;
+}
+
+
+/**
  * Get the list of available shared folders.
  *
  * @returns VBox status code.
