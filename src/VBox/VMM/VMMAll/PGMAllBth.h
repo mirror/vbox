@@ -130,13 +130,12 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPU pVCpu, PGSTPTWALK pGs
  * Deal with a guest page fault.
  *
  * @returns Strict VBox status code.
- * @retval  VINF_EM_RAW_GUEST_TRAP
- * @retval  VINF_EM_RAW_EMULATE_INSTR
  *
  * @param   pVCpu           The current CPU.
- *
  * @param   uErr            The error code.
- *
+ * @param   pRegFrame       The register frame.
+ * @param   pvFault         The fault address.
+ * @param   pPage           The guest page at @a pvFault.
  * @param   pGstWalk        The guest page table walk result.
  */
 static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
