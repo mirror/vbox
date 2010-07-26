@@ -2386,7 +2386,7 @@ ResumeExecution:
     }
 
 #ifdef VBOX_HIGH_RES_TIMERS_HACK_IN_RING0
-    if (RT_UNLIKELY(cResume & 0xf) == 0)
+    if (RT_UNLIKELY((cResume & 0xf) == 0))
     {
         uint64_t u64CurTime = RTTimeMilliTS();
 
