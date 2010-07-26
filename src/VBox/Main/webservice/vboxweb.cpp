@@ -243,6 +243,14 @@ public:
         // make a copy of the soap struct for the new thread
         m_soap = soap_copy(soap);
 
+        /* The soap.max_keep_alive value can be set to the maximum keep-alive calls allowed,
+         * which is important to avoid a client from holding a thread indefinitely.
+         * http://www.cs.fsu.edu/~engelen/soapdoc2.html#sec:keepalive
+         */
+        soap_set_omode(m_soap, SOAP_IO_KEEPALIVE);
+        soap_set_imode(m_soap, SOAP_IO_KEEPALIVE);
+        m_soap->max_keep_alive = 100;
+
         if (!RT_SUCCESS(RTThreadCreate(&m_pThread,
                                        fntWrapper,
                                        this,             // pvUser
