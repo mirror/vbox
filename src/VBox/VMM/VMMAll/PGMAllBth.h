@@ -73,7 +73,7 @@ RT_C_DECLS_END
 #endif
 
 /* enables the new code. */
-//#define PGM_WITH_GST_WALK
+#define PGM_WITH_GST_WALK
 
 #ifndef IN_RING3
 
