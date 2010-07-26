@@ -1579,7 +1579,7 @@ static uint16_t e1kCSum16(const void *pvBuf, size_t cb)
 DECLINLINE(void) e1kPacketDump(E1KSTATE* pState, const uint8_t *cpPacket, size_t cb, const char *cszText)
 {
 #ifdef DEBUG
-    if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY)) == VINF_SUCCESS)
+    if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY) == VINF_SUCCESS))
     {
         E1kLog(("%s --- %s packet #%d: ---\n",
                 INSTANCE(pState), cszText, ++pState->u32PktNo));
@@ -1587,7 +1587,7 @@ DECLINLINE(void) e1kPacketDump(E1KSTATE* pState, const uint8_t *cpPacket, size_t
         e1kCsLeave(pState);
     }
 #else
-    if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY)) == VINF_SUCCESS)
+    if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY) == VINF_SUCCESS))
     {
         E1kLogRel(("E1000: %s packet #%d, seq=%x ack=%x\n", cszText, pState->u32PktNo++, ntohl(*(uint32_t*)(cpPacket+0x26)), ntohl(*(uint32_t*)(cpPacket+0x2A))));
         e1kCsLeave(pState);
