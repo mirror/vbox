@@ -2754,6 +2754,7 @@ public class Helper {
       }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> Object wrapVariant(Class<T> wrapperClass, Variant v)
     {
        if (v == null)
@@ -2783,6 +2784,7 @@ public class Helper {
        }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> List<T> wrap(Class<T> wrapperClass, SafeArray sa) {
         if (sa==null)  return null;
 
@@ -2910,11 +2912,13 @@ public class Helper {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T[] unwrap(Class<T> wrapperClass, List<T> thisPtrs) {
         if (thisPtrs==null) return null;
         return (T[])thisPtrs.toArray((T[])Array.newInstance(wrapperClass, thisPtrs.size()));
     }
 
+    @SuppressWarnings("unchecked")
     public static <T1 extends IUnknown,T2> T2[] unwrap2(Class<T1> wrapperClass1, Class<T2> wrapperClass2, List<T1> thisPtrs) {
         if (thisPtrs==null) return null;
 
@@ -2997,28 +3001,13 @@ public class VirtualBoxManager
         return new ISession(new ActiveXComponent("VirtualBox.Session"));
     }
 
-    public ISession openMachineSession(String mid) throws Exception
+    public ISession openMachineSession(IMachine m)
     {
         ISession s = getSessionObject();
-        try {
-          this.vbox.openExistingSession(s, mid);
-          return s;
-        } catch (Exception e) {
-          try {
-            this.vbox.openSession(s, mid);
-            return s;
-          } catch (Exception e1) {
-            closeMachineSession(s);
-            throw e1;
-          }
-        }
+        m.lockMachine(s, LockType.Shared);
+        return s;       
     }
-
-    public ISession openMachineSession(IMachine m) throws Exception
-    {
-          return openMachineSession(m.getId());
-    }
-
+   
     public void closeMachineSession(ISession s)
     {
           if (s != null)
@@ -3064,11 +3053,9 @@ public class VirtualBoxManager
         if (m == null)
             return false;
         ISession session = getSessionObject();
-
-        String mid = m.getId();
         if (type == null)
             type = "gui";
-        IProgress p = vbox.openRemoteSession(session, mid, type, "");
+        IProgress p = m.launchVMProcess(session, type, "");
         progressBar(p, timeout);
         session.unlockMachine();
         return true;
