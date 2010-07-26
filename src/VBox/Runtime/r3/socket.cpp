@@ -269,7 +269,7 @@ DECLINLINE(int) rtSocketSwitchBlockingMode(RTSOCKETINT *pThis, bool fBlocking)
             else
                 fFlags |= O_NONBLOCK;
 
-            if (fcntl(pThis->hNative, F_SETFL, fFlags & ~O_NONBLOCK) == -1)
+            if (fcntl(pThis->hNative, F_SETFL, fFlags) == -1)
                 rc = rtSocketError();
         }
         else
