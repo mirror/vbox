@@ -429,6 +429,9 @@ RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode)
 #ifdef EMEDIUMTYPE
         case EMEDIUMTYPE:       return VERR_MEDIA_NOT_RECOGNIZED;
 #endif
+#if defined(EWOULDBLOCK) && (EWOULDBLOCK != EAGAIN)
+        case EWOULDBLOCK        return VERR_TRY_AGAIN;
+#endif
 
         /* Non-linux */
 
