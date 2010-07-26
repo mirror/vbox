@@ -1035,3 +1035,37 @@ RTR3DECL(int) RTTcpSgWriteLV(RTSOCKET hSocket, size_t cSegs, va_list va)
     return RTSocketSgWriteLV(hSocket, cSegs, va);
 }
 
+
+RTR3DECL(int) RTTcpReadNB(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+{
+    return RTSocketReadNB(Sock, pvBuffer, cbBuffer, pcbRead);
+}
+
+
+RTR3DECL(int) RTTcpWriteNB(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten)
+{
+    return RTSocketWriteNB(Sock, pvBuffer, cbBuffer, pcbWritten);
+}
+
+
+RTR3DECL(int)  RTTcpSgWriteNB(RTSOCKET Sock, PCRTSGBUF pSgBuf, size_t *pcbWritten)
+{
+    return RTSocketSgWriteNB(Sock, pSgBuf, pcbWritten);
+}
+
+
+RTR3DECL(int) RTTcpSgWriteLNB(RTSOCKET hSocket, size_t cSegs, size_t *pcbWritten, ...)
+{
+    va_list va;
+    va_start(va, pcbWritten);
+    int rc = RTSocketSgWriteLVNB(hSocket, cSegs, pcbWritten, va);
+    va_end(va);
+    return rc;
+}
+
+
+RTR3DECL(int) RTTcpSgWriteLVNB(RTSOCKET hSocket, size_t cSegs, size_t *pcbWritten, va_list va)
+{
+    return RTSocketSgWriteLVNB(hSocket, cSegs, pcbWritten, va);
+}
+

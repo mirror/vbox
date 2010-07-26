@@ -128,6 +128,9 @@ typedef struct RTSOCKETINT
     RTSOCKETNATIVE      hNative;
     /** Indicates whether the handle has been closed or not. */
     bool volatile       fClosed;
+    /** Indicates whether the socket is operating in blocking or non-blocking mode
+     * currently. */
+    bool                fBlocking;
 #ifdef RT_OS_WINDOWS
     /** The event semaphore we've associated with the socket handle.
      * This is WSA_INVALID_EVENT if not done. */
@@ -239,6 +242,34 @@ DECLINLINE(void) rtSocketUnlock(RTSOCKETINT *pThis)
 
 
 /**
+ * Switches the socket to the desired blocking mode if neccessary.
+ *
+ * The socket must be locked.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The socket structure.
+ * @param   fBlocking           The desired mode of operation.
+ */
+DECLINLINE(int) rtSocketSwitchBlockingMode(RTSOCKETINT *pThis, bool fBlocking)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pThis->fBlocking != fBlocking)
+    {
+#ifdef RT_OS_WINDOWS
+        if (ioctlsocket(pThis->hNative, FIONBIO, !fBlocking))
+#else
+        if (fcntl(pThis->hNative, F_SETFL, O_NONBLOCK))
+#endif
+            rc = rtSocketError();
+        else
+            pThis->fBlocking = fBlocking;
+    }
+
+    return rc;
+}
+
+/**
  * Creates an IPRT socket handle for a native one.
  *
  * @returns IPRT status code.
@@ -254,6 +285,7 @@ int rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative)
     pThis->cUsers           = 0;
     pThis->hNative          = hNative;
     pThis->fClosed          = false;
+    pThis->fBlocking        = true;
 #ifdef RT_OS_WINDOWS
     pThis->hEvent           = WSA_INVALID_EVENT;
     pThis->hPollSet         = NIL_RTPOLLSET;
@@ -458,11 +490,15 @@ RTDECL(int) RTSocketRead(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size
     AssertPtr(pvBuffer);
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
+
+    int rc = rtSocketSwitchBlockingMode(pThis, true /* fBlocking */);
+    if (RT_FAILURE(rc))
+        return rc;
+
     /*
      * Read loop.
      * If pcbRead is NULL we have to fill the entire buffer!
      */
-    int     rc       = VINF_SUCCESS;
     size_t  cbRead   = 0;
     size_t  cbToRead = cbBuffer;
     for (;;)
@@ -521,10 +557,13 @@ RTDECL(int) RTSocketWrite(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffe
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
+    int rc = rtSocketSwitchBlockingMode(pThis, true /* fBlocking */);
+    if (RT_FAILURE(rc))
+        return rc;
+
     /*
      * Try write all at once.
      */
-    int     rc        = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     int     cbNow     = cbBuffer >= INT_MAX / 2 ? INT_MAX / 2 : (int)cbBuffer;
 #else
@@ -589,10 +628,14 @@ RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf)
     AssertReturn(pSgBuf->cSegs > 0, VERR_INVALID_PARAMETER);
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
+    int rc = rtSocketSwitchBlockingMode(pThis, true /* fBlocking */);
+    if (RT_FAILURE(rc))
+        return rc;
+
     /*
      * Construct message descriptor (translate pSgBuf) and send it.
      */
-    int rc = VERR_NO_TMP_MEMORY;
+    rc = VERR_NO_TMP_MEMORY;
 #ifdef RT_OS_WINDOWS
     AssertCompileSize(WSABUF, sizeof(RTSGSEG));
     AssertCompileMemberSize(WSABUF, buf, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
@@ -680,6 +723,236 @@ RTDECL(int) RTSocketSgWriteLV(RTSOCKET hSocket, size_t cSegs, va_list va)
     RTSGBUF SgBuf;
     RTSgBufInit(&SgBuf, paSegs, cSegs);
     return RTSocketSgWrite(hSocket, &SgBuf);
+}
+
+
+RTDECL(int) RTSocketReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+{
+    /*
+     * Validate input.
+     */
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(cbBuffer > 0, VERR_INVALID_PARAMETER);
+    AssertPtr(pvBuffer);
+    AssertPtrReturn(pcbRead, VERR_INVALID_PARAMETER);
+    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+
+    int rc = rtSocketSwitchBlockingMode(pThis, false /* fBlocking */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Read loop.
+     */
+    size_t  cbRead   = 0;
+    size_t  cbToRead = cbBuffer;
+    for (;;)
+    {
+        rtSocketErrorReset();
+#ifdef RT_OS_WINDOWS
+        int    cbNow = cbToRead >= INT_MAX/2 ? INT_MAX/2 : (int)cbToRead;
+#else
+        size_t cbNow = cbToRead;
+#endif
+        ssize_t cbBytesRead = recv(pThis->hNative, (char *)pvBuffer + cbRead, cbNow, MSG_NOSIGNAL);
+        if (cbBytesRead <= 0)
+        {
+            rc = rtSocketError();
+            Assert(RT_FAILURE_NP(rc) || cbBytesRead == 0);
+            if (RT_SUCCESS_NP(rc))
+            {
+                *pcbRead = 0;
+                rc = VINF_SUCCESS;
+            }
+            else
+                *pcbRead = cbRead;
+            break;
+        }
+
+        /* read more? */
+        cbRead += cbBytesRead;
+        if (cbRead == cbBuffer)
+        {
+            *pcbRead = cbRead;
+            break;
+        }
+
+        /* next */
+        cbToRead = cbBuffer - cbRead;
+    }
+
+    rtSocketUnlock(pThis);
+    return rc;
+}
+
+
+RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten)
+{
+    /*
+     * Validate input.
+     */
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pcbWritten, VERR_INVALID_PARAMETER);
+    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+
+    int rc = rtSocketSwitchBlockingMode(pThis, false /* fBlocking */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Write loop.
+     */
+    size_t  cbWrite   = 0;
+    size_t  cbToWrite = cbBuffer;
+    for (;;)
+    {
+        rtSocketErrorReset();
+#ifdef RT_OS_WINDOWS
+        int    cbNow = RT_MIN(cbToWrite, INT_MAX/2);
+#else
+        size_t cbNow = cbToWrite;
+#endif
+        ssize_t cbBytesWritten = send(pThis->hNative, (char *)pvBuffer + cbWrite, cbNow, MSG_NOSIGNAL);
+        if (cbBytesWritten < 0)
+        {
+            rc = rtSocketError();
+            *pcbWritten = cbWrite;
+            break;
+        }
+
+        /* write more? */
+        cbWrite += cbBytesWritten;
+        if (cbWrite == cbBuffer)
+        {
+            *pcbWritten = cbWrite;
+            break;
+        }
+
+        /* next */
+        cbToWrite = cbBuffer - cbWrite;
+    }
+
+    rtSocketUnlock(pThis);
+    return rc;
+}
+
+
+RTDECL(int) RTSocketSgWriteNB(RTSOCKET hSocket, PCRTSGBUF pSgBuf, size_t *pcbWritten)
+{
+    /*
+     * Validate input.
+     */
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pSgBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbWritten, VERR_INVALID_PARAMETER);
+    AssertReturn(pSgBuf->cSegs > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+
+    int rc = rtSocketSwitchBlockingMode(pThis, false /* fBlocking */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Construct message descriptor (translate pSgBuf) and send it.
+     */
+    rc = VERR_NO_TMP_MEMORY;
+#ifdef RT_OS_WINDOWS
+    AssertCompileSize(WSABUF, sizeof(RTSGSEG));
+    AssertCompileMemberSize(WSABUF, buf, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
+
+    LPWSABUF paMsg = (LPWSABUF)RTMemTmpAllocZ(pSgBuf->cSegs * sizeof(WSABUF));
+    if (paMsg)
+    {
+        for (unsigned i = 0; i < pSgBuf->cSegs; i++)
+        {
+            paMsg[i].buf = (char *)pSgBuf->paSegs[i].pvSeg;
+            paMsg[i].len = (u_long)pSgBuf->paSegs[i].cbSeg;
+        }
+
+        DWORD dwSent = 0;
+        int hrc = WSASend(pThis->hNative, paMsg, pSgBuf->cSegs, &dwSent,
+                          MSG_NOSIGNAL, NULL, NULL);
+        if (!hrc)
+            rc = VINF_SUCCESS;
+/** @todo check for incomplete writes */
+        else
+            rc = rtSocketError();
+
+        *pcbWritten = dwSent;
+
+        RTMemTmpFree(paMsg);
+    }
+
+#else  /* !RT_OS_WINDOWS */
+    AssertCompileSize(struct iovec, sizeof(RTSGSEG));
+    AssertCompileMemberSize(struct iovec, iov_base, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
+    AssertCompileMemberSize(struct iovec, iov_len,  RT_SIZEOFMEMB(RTSGSEG, cbSeg));
+
+    struct iovec *paMsg = (struct iovec *)RTMemTmpAllocZ(pSgBuf->cSegs * sizeof(struct iovec));
+    if (paMsg)
+    {
+        for (unsigned i = 0; i < pSgBuf->cSegs; i++)
+        {
+            paMsg[i].iov_base = pSgBuf->paSegs[i].pvSeg;
+            paMsg[i].iov_len  = pSgBuf->paSegs[i].cbSeg;
+        }
+
+        struct msghdr msgHdr;
+        RT_ZERO(msgHdr);
+        msgHdr.msg_iov    = paMsg;
+        msgHdr.msg_iovlen = pSgBuf->cSegs;
+        ssize_t cbWritten = sendmsg(pThis->hNative, &msgHdr, MSG_NOSIGNAL);
+        if (RT_LIKELY(cbWritten >= 0))
+            rc = VINF_SUCCESS;
+/** @todo check for incomplete writes */
+        else
+            rc = rtSocketError();
+
+        *pcbWritten = cbWritten;
+
+        RTMemTmpFree(paMsg);
+    }
+#endif /* !RT_OS_WINDOWS */
+
+    rtSocketUnlock(pThis);
+    return rc;
+}
+
+
+RTDECL(int) RTSocketSgWriteLNB(RTSOCKET hSocket, size_t cSegs, size_t *pcbWritten, ...)
+{
+    va_list va;
+    va_start(va, pcbWritten);
+    int rc = RTSocketSgWriteLVNB(hSocket, cSegs, pcbWritten, va);
+    va_end(va);
+    return rc;
+}
+
+
+RTDECL(int) RTSocketSgWriteLVNB(RTSOCKET hSocket, size_t cSegs, size_t *pcbWritten, va_list va)
+{
+    /*
+     * Set up a S/G segment array + buffer on the stack and pass it
+     * on to RTSocketSgWrite.
+     */
+    Assert(cSegs <= 16);
+    PRTSGSEG paSegs = (PRTSGSEG)alloca(cSegs * sizeof(RTSGSEG));
+    AssertReturn(paSegs, VERR_NO_TMP_MEMORY);
+    for (size_t i = 0; i < cSegs; i++)
+    {
+        paSegs[i].pvSeg = va_arg(va, void *);
+        paSegs[i].cbSeg = va_arg(va, size_t);
+    }
+
+    RTSGBUF SgBuf;
+    RTSgBufInit(&SgBuf, paSegs, cSegs);
+    return RTSocketSgWriteNB(hSocket, &SgBuf, pcbWritten);
 }
 
 
