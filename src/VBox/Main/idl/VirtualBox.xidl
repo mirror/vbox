@@ -13970,13 +13970,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="registerListener">
       <desc>
         Register an event listener.
+
         <note>
-          For passive listeners, to avoid
-          memory leaks and misbehavior of VirtualBox service, event source logic checks
-          if event listener user performs checks for events with <link to="IEventSource::getEvent"/> frequently
-          enough, so that event queue not overloaded. If heavy overuse (more that 100
-          pending events with current implementation) of queue is detected, listener
-          is forcefully unregistered and further getEvent() will return VBOX_E_OBJECT_NOT_FOUND.
+          To avoid system overload, the VirtualBox server process checks if passive event
+          listeners call <link to="IEventSource::getEvent"/> frequently enough. In the
+          current implementation, if more than 100 pending events are detected for a passive
+          event listener, it is forcefully unregistered by the system, and further
+          <link to="#getEvent" /> calls will return @c VBOX_E_OBJECT_NOT_FOUND.
         </note>
       </desc>
       <param name="listener" type="IEventListener" dir="in">
@@ -13985,7 +13985,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="interesting" type="VBoxEventType" dir="in" safearray="yes">
         <desc>
           Event types listener is interested in. One can use wildcards like -
-          <link to="VBoxEventType::Any"/> to specify wildcards, matching more 
+          <link to="VBoxEventType::Any"/> to specify wildcards, matching more
           than one event.
         </desc>
       </param>
@@ -13997,7 +13997,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           For each event coming in, it is added to queues for all interested registered passive
           listeners. It is then up to the external code to call the listener's
           <link to="IEventListener::handleEvent" /> method. When done with an event, the
-          external code must call eventComplete().
+          external code must call <link to="#eventProcessed" />.
         </desc>
       </param>
     </method>
@@ -14021,8 +14021,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="timeout" type="long" dir="in">
         <desc>
-          Timeout to wait until event processed in ms (if event is waitable),
-          0 - no wait, -1 - forever until delivered.
+          Maximum time to wait for event processing (if event is waitable), in ms;
+          0 = no wait, -1 = indefinite wait.
         </desc>
       </param>
       <param name="result" type="boolean" dir="return">
@@ -14032,20 +14032,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="getEvent">
       <desc>
-        Get events from this peer's event queue (for passive mode).
-        <note>
-          Please make sure you checked registerListener() documentation.
-        </note>
-        <see><link to="IEventSource::registerListener"/></see>
+        Get events from this peer's event queue (for passive mode). Calling this method
+        regularly is required for passive event listeners to avoid system overload;
+        see <link to="IEventSource::registerListener" /> for details.
+
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Listener is not registered, or autounregistered.
         </result>
       </desc>
       <param name="listener" type="IEventListener" dir="in">
-        <desc>Which listener get data for.</desc>
+        <desc>Which listener to get data for.</desc>
       </param>
       <param name="timeout" type="long" dir="in">
-        <desc>Timeout to wait until event available in ms, 0 - no wait, -1 - forever until available.</desc>
+        <desc>
+          Maximum time to wait for events, in ms;
+          0 = no wait, -1 = indefinite wait.
+        </desc>
       </param>
       <param name="event" type="IEvent" dir="return">
         <desc>Event retrieved, or null if none available.</desc>
@@ -14054,9 +14056,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="eventProcessed">
       <desc>
-        Must be called for waitable events when particular listener finished event processing.
-        When all listeners who this event was aimed to call eventProcessed() event source
-        can call event's setProcessed().
+        Must be called for waitable events after a particular listener finished its
+        event processing. When all listeners of a particular event have called this
+        method, the system will then call <link to="IEvent::setProcessed" />.
       </desc>
       <param name="listener" type="IEventListener" dir="in">
         <desc>Which listener processed event.</desc>
@@ -14100,48 +14102,46 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Abstract parent interface for VirtualBox events. Actual events will typically implement
       a more specific interface which derives from this (see below).
 
-      
       <b>Introduction to VirtualBox events</b>
 
-      Starting with VirtualBox 3.3, support for generic events was introduced.
-      It provides a uniform mechanism to register for and consume specific events.
-      Previously, several callback interfaces were used which means that clients
-      were called for each event in the interface. Also, this mechanism was not
-      compatible with scripting languages, local Java bindings and remote web
-      services as they do not support callbacks.
-
-      To overcome those issues, the notion of events and listeners was introduced.
-      Generally speaking, an event represents the information that something happened,
-      while a listener represents an entity that is interested in certain events.
-      In order for this to work with unidirectional protocols (i.e. web services),
-      the concept of passive and active listeners is used.
+      Generally speaking, an event (represented by this interface) signals that something
+      happened, while an event listener (see <link to="IEventListener" /> represents an
+      entity that is interested in certain events. In order for this to work with
+      unidirectional protocols (i.e. web services), the concepts of passive and active
+      listener are used.
 
       Event consumers can register themselves as listeners, providing an array of
-      events they are interested in. When an event triggers, the listener is
-      notified about the event. The exact mechanism of the notification
-      depends on the way the listener was registered - as an active or passive listener:
+      events they are interested in (see <link to="IEventSource::registerListener" />).
+      When an event triggers, the listener is notified about the event. The exact
+      mechanism of the notification depends on whether the listener was registered as
+      an active or passive listener:
 
       <ul>
-        <li>An active listener is very similar to a traditional callback - i.e. it is a
-        function invoked by the API implementation.
-        The main difference here is that there's an event object notion, not individual
-        callback parameters.</li>
+        <li>An active listener is very similar to a callback: it is a function invoked
+          by the API. As opposed to the callbacks that were used in the API before
+          VirtualBox 3.3 however, events are now objects with an interface hierarchy.
+        </li>
 
-        <li>Passive listeners are somewhat trickier: internally the
-        <link to="IEventSource" /> implementation maintains an event queue for each passive
-        listener, and newly arrived events are put in this queue. When the listener calls
-        <link to="IEventSource::getEvent"/>, all elements from its internal event queue are
-        returned. When the client completes processing of an event, the
-        <link to="IEventSource::eventProcessed" /> function must be called, acknowledging
-        that the events were processed. It supports implementing waitable events. On passive
-        listener unregistration, all events from its queue are auto-acknowledged.</li>
+        <li>Passive listeners are somewhat tricker to implement, but do not require
+          a client function to be callable, which is not an option with scripting
+          languages or web service clients. Internally the <link to="IEventSource" />
+          implementation maintains an event queue for each passive listener, and
+          newly arrived events are put in this queue. When the listener calls
+          <link to="IEventSource::getEvent"/>, all elements from its internal event
+          queue are returned. When the client completes processing of an event,
+          the <link to="IEventSource::eventProcessed" /> function must be called,
+          acknowledging that the events were processed. It supports implementing
+          waitable events. On passive listener unregistration, all events from its
+          queue are auto-acknowledged.
+        </li>
       </ul>
 
       Waitable events are useful in situations where the event generator wants to track
       delivery or a party wants to wait until all listeners have completed the event. A
-      typical example would be a vetoable event where a listeners might put a veto on
-      a certain action, and thus the event producer has to make sure that all listeners have
-      processed the event and not vetoed before taking the action.
+      typical example would be a vetoable event (see <link to="IVetoEvent" />) where a
+      listeners might veto a certain action, and thus the event producer has to make
+      sure that all listeners have processed the event and not vetoed before taking
+      the action.
 
       A given event may have both passive and active listeners at the same time.
 
@@ -14154,10 +14154,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       an object implementing the <link to="IEventListener" /> interface must be provided.
       For active listeners, such an object is typically created by the consumer, while for
       passive listeners <link to="IEventSource::createListener" /> should  be used. Please
-      note that a listener created with @c CreateListener() must not be used as an active listener.
+      note that a listener created with @c createListener() must not be used as an active listener.
 
-      Once created, the listener must be registered to listen for the desired events, providing
-      an array of <link to="VBoxEventType" /> enums. Those elements can either be the individual
+      Once created, the listener must be registered to listen for the desired events
+      (see <link to="IEventSource::registerListener" />), providing an array of
+      <link to="VBoxEventType" /> enums. Those elements can either be the individual
       event IDs or wildcards matching multiple event IDs.
 
       After registration, the callback's <link to="IEventListener::handleEvent" /> method is
@@ -14165,7 +14166,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <link to="IEventSource::getEvent" /> and <link to="IEventSource::eventProcessed" /> in
       an event processing loop.
 
-      This interface (IEvent) is an abstract parent interface for all such VirtualBox events
+      The IEvent interface is an abstract parent interface for all such VirtualBox events
       coming in. As a result, the standard use pattern inside <link to="IEventListener::handleEvent" />
       or the event processing loop is to check the <link to="#type" /> attribute of the event and
       then cast to the appropriate specific interface using @c QueryInterface().
@@ -14196,7 +14197,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="setProcessed">
       <desc>
-         Called to mark the moment when this event is considered processed.
+        Internal method called by the system when all listeners of a particular event have called
+        <link to="IEventSource::eventProcessed" />. This should not be called by client code.
       </desc>
     </method>
 
@@ -14206,7 +14208,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         described semantics, for non-waitable returns true immediately.
       </desc>
       <param name="timeout" type="long" dir="in">
-        <desc>Timeout to wait until event processed in ms, 0 - no wait, -1 - forever until processed.</desc>
+        <desc>
+          Maximum time to wait for event processeing, in ms;
+          0 = no wait, -1 = indefinite wait.
+        </desc>
       </param>
       <param name="result" type="boolean" dir="return">
         <desc>If this event was processed before timeout.</desc>
