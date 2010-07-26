@@ -259,11 +259,24 @@ DECLINLINE(int) rtSocketSwitchBlockingMode(RTSOCKETINT *pThis, bool fBlocking)
 #ifdef RT_OS_WINDOWS
         u_long uBlocking = fBlocking ? 0 : 1;
         if (ioctlsocket(pThis->hNative, FIONBIO, &uBlocking))
-#else
-        if (fcntl(pThis->hNative, F_SETFL, O_NONBLOCK))
-#endif
             rc = rtSocketError();
+#else
+        int fFlags = fcntl(pThis->hNative, F_GETFL, 0);
+        if (fFlags != -1)
+        {
+            if (fBlocking)
+                fFlags &= ~O_NONBLOCK;
+            else
+                fFlags |= O_NONBLOCK;
+
+            if (fcntl(pThis->hNative, F_SETFL, fFlags & ~O_NONBLOCK) == -1)
+                rc = rtSocketError();
+        }
         else
+            rc = rtSocketError();
+#endif
+
+        if (RT_SUCCESS(rc))
             pThis->fBlocking = fBlocking;
     }
 
