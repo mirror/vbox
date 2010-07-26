@@ -2922,10 +2922,14 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 hrc = pMedium->COMGETTER(Format)(bstr.asOutParam());                        H();
                 InsertConfigString(pCfg, "Format", bstr);
 
-                /* DVDs are always readonly */
+                /* DVDs are always readonly, floppies may be readonly */
                 if (enmType == DeviceType_DVD)
                 {
                     InsertConfigInteger(pCfg, "ReadOnly", 1);
+                }
+                else if (enmType == DeviceType_Floppy)
+                {
+                    InsertConfigInteger(pCfg, "MaybeReadOnly", 1);
                 }
 
                 /* Start without exclusive write access to the images. */

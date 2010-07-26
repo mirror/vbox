@@ -1279,6 +1279,16 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
         case FD_DIR_WRITE:
             /* WRITE commands */
 #ifdef VBOX
+            if (cur_drv->ro)
+            {
+                /* Handle readonly medium early, no need to do DMA, touch the
+                 * LED or attempt any writes. A real floppy doesn't attempt
+                 * to write to readonly media either. */
+                fdctrl_stop_transfer (fdctrl, 0x60, 0x00 | (cur_drv->ro << 1),
+                                      0x00);
+                goto transfer_error;
+            }
+
             {
                 uint32_t written;
                 int rc2 = PDMDevHlpDMAReadMemory(fdctrl->pDevIns, nchan,
@@ -1287,20 +1297,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
                                                  len, &written);
                 AssertMsgRC (rc2, ("DMAReadMemory -> %Rrc\n", rc2));
             }
-#else
-            DMA_read_memory (nchan, fdctrl->fifo + rel_pos,
-                             fdctrl->data_pos, len);
-#endif
-/*             cpu_physical_memory_read(addr + fdctrl->data_pos, */
-/*                                   fdctrl->fifo + rel_pos, len); */
-#ifndef VBOX
-            if (bdrv_write(cur_drv->bs, fd_sector(cur_drv),
-                           fdctrl->fifo, 1) < 0) {
-                FLOPPY_ERROR("writting sector %d\n", fd_sector(cur_drv));
-                fdctrl_stop_transfer(fdctrl, 0x60, 0x00, 0x00);
-                goto transfer_error;
-            }
-#else  /* VBOX */
+
             cur_drv->Led.Asserted.s.fWriting
                 = cur_drv->Led.Actual.s.fWriting = 1;
 
@@ -1314,9 +1311,21 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
             cur_drv->Led.Actual.s.fWriting = 0;
 
             if (RT_FAILURE (rc)) {
-                AssertMsgFailed (("Floppy: error writing sector %d. rc=%Rrc",
-                                  fd_sector (cur_drv), rc));
-                fdctrl_stop_transfer (fdctrl, 0x60, 0x00, 0x00);
+                AssertMsgFailed(("Floppy: error writing sector %d. rc=%Rrc",
+                                 fd_sector (cur_drv), rc));
+                fdctrl_stop_transfer (fdctrl, 0x60, 0x00 | (cur_drv->ro << 1),
+                                      0x00);
+                goto transfer_error;
+            }
+#else
+            DMA_read_memory (nchan, fdctrl->fifo + rel_pos,
+                             fdctrl->data_pos, len);
+/*             cpu_physical_memory_read(addr + fdctrl->data_pos, */
+/*                                   fdctrl->fifo + rel_pos, len); */
+            if (bdrv_write(cur_drv->bs, fd_sector(cur_drv),
+                           fdctrl->fifo, 1) < 0) {
+                FLOPPY_ERROR("writting sector %d\n", fd_sector(cur_drv));
+                fdctrl_stop_transfer(fdctrl, 0x60, 0x00, 0x00);
                 goto transfer_error;
             }
 #endif
