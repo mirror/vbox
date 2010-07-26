@@ -257,7 +257,7 @@ DECLINLINE(int) rtSocketSwitchBlockingMode(RTSOCKETINT *pThis, bool fBlocking)
     if (pThis->fBlocking != fBlocking)
     {
 #ifdef RT_OS_WINDOWS
-        if (ioctlsocket(pThis->hNative, FIONBIO, !fBlocking))
+        if (ioctlsocket(pThis->hNative, FIONBIO, fBlocking ? 0 : 1))
 #else
         if (fcntl(pThis->hNative, F_SETFL, O_NONBLOCK))
 #endif
