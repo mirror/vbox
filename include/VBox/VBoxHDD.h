@@ -1004,6 +1004,31 @@ DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
     return rc;
 }
 
+/** Forward declaration of a VD socket. */
+typedef struct VDSOCKETINT *VDSOCKET;
+/** Pointer to a VD socket. */
+typedef VDSOCKET *PVDSOCKET;
+/** Nil socket handle. */
+#define NIL_VDSOCKET ((VDSOCKET)0)
+
+/** Connect flag to indicate that the backend wants to use the extended
+ * socket I/O multiplexing call. This might not be supported on all configurations
+ * (internal networking and iSCSI)
+ * and the backend needs to take appropriate action.
+ */
+#define VD_INTERFACETCPNET_CONNECT_EXTENDED_SELECT RT_BIT_32(0)
+
+/** @name Select events
+ * @{ */
+/** Readable without blocking. */
+#define VD_INTERFACETCPNET_EVT_READ         RT_BIT_32(0)
+/** Writable without blocking. */
+#define VD_INTERFACETCPNET_EVT_WRITE        RT_BIT_32(1)
+/** Error condition, hangup, exception or similar. */
+#define VD_INTERFACETCPNET_EVT_ERROR        RT_BIT_32(2)
+/** Mask of the valid bits. */
+#define VD_INTERFACETCPNET_EVT_VALID_MASK   UINT32_C(0x00000007)
+/** @} */
 
 /**
  * TCP network stack interface
@@ -1023,14 +1048,32 @@ typedef struct VDINTERFACETCPNET
     VDINTERFACETYPE enmInterface;
 
     /**
+     * Creates a socket. The socket is not connected if this succeeds.
+     *
+     * @return  iprt status code.
+     * @retval  VERR_NOT_SUPPORTED if the combination of flags is not supported.
+     * @param   fFlags    Combination of the VD_INTERFACETCPNET_CONNECT_* #defines.
+     * @param   pSock     Where to store the handle.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSocketCreate, (uint32_t fFlags, PVDSOCKET pSock));
+
+    /**
+     * Destroys the socket.
+     *
+     * @return iprt status code.
+     * @param  Sock       Socket descriptor.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSocketDestroy, (VDSOCKET Sock));
+
+    /**
      * Connect as a client to a TCP port.
      *
      * @return  iprt status code.
+     * @param   Sock            Socket descriptor.
      * @param   pszAddress      The address to connect to.
      * @param   uPort           The port to connect to.
-     * @param   pSock           Where to store the handle to the established connection.
      */
-    DECLR3CALLBACKMEMBER(int, pfnClientConnect, (const char *pszAddress, uint32_t uPort, PRTSOCKET pSock));
+    DECLR3CALLBACKMEMBER(int, pfnClientConnect, (VDSOCKET Sock, const char *pszAddress, uint32_t uPort));
 
     /**
      * Close a TCP connection.
@@ -1038,7 +1081,16 @@ typedef struct VDINTERFACETCPNET
      * @return  iprt status code.
      * @param   Sock            Socket descriptor.
      */
-    DECLR3CALLBACKMEMBER(int, pfnClientClose, (RTSOCKET Sock));
+    DECLR3CALLBACKMEMBER(int, pfnClientClose, (VDSOCKET Sock));
+
+    /**
+     * Returns whether the socket is currently connected to the client.
+     *
+     * @returns true if the socket is connected.
+     *          false otherwise.
+     * @param   Sock        Socket descriptor.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsClientConnected, (VDSOCKET Sock));
 
     /**
      * Socket I/O multiplexing.
@@ -1049,7 +1101,7 @@ typedef struct VDINTERFACETCPNET
      * @param   cMillies    Number of milliseconds to wait for the socket.
      *                      Use RT_INDEFINITE_WAIT to wait for ever.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSelectOne, (RTSOCKET Sock, RTMSINTERVAL cMillies));
+    DECLR3CALLBACKMEMBER(int, pfnSelectOne, (VDSOCKET Sock, RTMSINTERVAL cMillies));
 
     /**
      * Receive data from a socket.
@@ -1062,7 +1114,7 @@ typedef struct VDINTERFACETCPNET
      *                      If NULL the entire buffer will be filled upon successful return.
      *                      If not NULL a partial read can be done successfully.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead));
+    DECLR3CALLBACKMEMBER(int, pfnRead, (VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead));
 
     /**
      * Send data to a socket.
@@ -1072,7 +1124,7 @@ typedef struct VDINTERFACETCPNET
      * @param   pvBuffer    Buffer to write data to socket.
      * @param   cbBuffer    How much to write.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer));
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer));
 
     /**
      * Send data from scatter/gather buffer to a socket.
@@ -1081,7 +1133,7 @@ typedef struct VDINTERFACETCPNET
      * @param   Sock        Socket descriptor.
      * @param   pSgBuf      Scatter/gather buffer to write data to socket.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSgWrite, (RTSOCKET Sock, PCRTSGBUF pSgBuf));
+    DECLR3CALLBACKMEMBER(int, pfnSgWrite, (VDSOCKET Sock, PCRTSGBUF pSgBuf));
 
     /**
      * Flush socket write buffers.
@@ -1089,7 +1141,7 @@ typedef struct VDINTERFACETCPNET
      * @return  iprt status code.
      * @param   Sock        Socket descriptor.
      */
-    DECLR3CALLBACKMEMBER(int, pfnFlush, (RTSOCKET Sock));
+    DECLR3CALLBACKMEMBER(int, pfnFlush, (VDSOCKET Sock));
 
     /**
      * Enables or disables delaying sends to coalesce packets.
@@ -1098,7 +1150,7 @@ typedef struct VDINTERFACETCPNET
      * @param   Sock        Socket descriptor.
      * @param   fEnable     When set to true enables coalescing.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetSendCoalescing, (RTSOCKET Sock, bool fEnable));
+    DECLR3CALLBACKMEMBER(int, pfnSetSendCoalescing, (VDSOCKET Sock, bool fEnable));
 
     /**
      * Gets the address of the local side.
@@ -1107,7 +1159,7 @@ typedef struct VDINTERFACETCPNET
      * @param   Sock        Socket descriptor.
      * @param   pAddr       Where to store the local address on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetLocalAddress, (RTSOCKET Sock, PRTNETADDR pAddr));
+    DECLR3CALLBACKMEMBER(int, pfnGetLocalAddress, (VDSOCKET Sock, PRTNETADDR pAddr));
 
     /**
      * Gets the address of the other party.
@@ -1116,7 +1168,28 @@ typedef struct VDINTERFACETCPNET
      * @param   Sock        Socket descriptor.
      * @param   pAddr       Where to store the peer address on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetPeerAddress, (RTSOCKET Sock, PRTNETADDR pAddr));
+    DECLR3CALLBACKMEMBER(int, pfnGetPeerAddress, (VDSOCKET Sock, PRTNETADDR pAddr));
+
+    /**
+     * Socket I/O multiplexing - extended version which can be woken up.
+     * Checks if the socket is ready for reading or writing.
+     *
+     * @return  iprt status code.
+     * @retval  VERR_INTERRUPTED if the thread was woken up by a pfnPoke call.
+     * @param   Sock        Socket descriptor.
+     * @param   pfEvents    Where to store the received events.
+     * @param   cMillies    Number of milliseconds to wait for the socket.
+     *                      Use RT_INDEFINITE_WAIT to wait for ever.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSelectOneEx, (VDSOCKET Sock, uint32_t *pfEvents, RTMSINTERVAL cMillies));
+
+    /**
+     * Wakes up the thread waiting in pfnSelectOneEx.
+     *
+     * @return iprt status code.
+     * @param  Sock        Socket descriptor.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPoke, (VDSOCKET Sock));
 
 } VDINTERFACETCPNET, *PVDINTERFACETCPNET;
 

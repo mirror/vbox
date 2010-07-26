@@ -20,6 +20,8 @@
 #ifndef ____H_MEDIUMIMPL
 #define ____H_MEDIUMIMPL
 
+#include <VBox/VBoxHDD.h>
+
 #include "VirtualBoxBase.h"
 #include "MediumLock.h"
 
@@ -253,6 +255,20 @@ private:
                                                size_t *pcbValue);
     static DECLCALLBACK(int) vdConfigQuery(void *pvUser, const char *pszName,
                                            char *pszValue, size_t cchValue);
+
+    static DECLCALLBACK(int) vdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock);
+    static DECLCALLBACK(int) vdTcpSocketDestroy(VDSOCKET Sock);
+    static DECLCALLBACK(int) vdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort);
+    static DECLCALLBACK(int) vdTcpClientClose(VDSOCKET Sock);
+    static DECLCALLBACK(bool) vdTcpIsClientConnected(VDSOCKET Sock);
+    static DECLCALLBACK(int) vdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies);
+    static DECLCALLBACK(int) vdTcpRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
+    static DECLCALLBACK(int) vdTcpWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer);
+    static DECLCALLBACK(int) vdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf);
+    static DECLCALLBACK(int) vdTcpFlush(VDSOCKET Sock);
+    static DECLCALLBACK(int) vdTcpSetSendCoalescing(VDSOCKET Sock, bool fEnable);
+    static DECLCALLBACK(int) vdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr);
+    static DECLCALLBACK(int) vdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr);
 
     class Task;
     class CreateBaseTask;
