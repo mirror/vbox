@@ -37,6 +37,7 @@
 #include <iprt/string.h>
 #include <iprt/ldr.h>
 #include <iprt/semaphore.h>
+#include <iprt/time.h>
 
 // workaround for compile problems on gcc 4.1
 #ifdef __GNUC__
@@ -131,6 +132,9 @@ ULONG64             g_cManagedObjects = 0;
 
 // this mutex protects g_mapThreads
 util::RWLockHandle  *g_pThreadsLockHandle;
+
+// this mutex synchronizes logging
+util::WriteLockHandle *g_pWebLogLockHandle;
 
 // Threads map, so we can quickly map an RTTHREAD struct to a logger prefix
 typedef std::map<RTTHREAD, com::Utf8Str> ThreadsMap;
@@ -472,13 +476,26 @@ void WebLog(const char *pszFormat, ...)
         pcszPrefix = it->second.c_str();
     thrLock.release();
 
+    // make a timestamp
+    RTTIMESPEC ts;
+    RTTimeLocalNow(&ts);
+    RTTIME t;
+    RTTimeExplode(&t, &ts);
+
+    com::Utf8StrFmt strPrefix("%04d-%02d-%02d %02d:%02d:%02d %s",
+                              t.i32Year, t.u8Month, t.u8MonthDay,
+                              t.u8Hour, t.u8Minute, t.u8Second,
+                              pcszPrefix);
+
+    // synchronize the actual output
+    util::AutoWriteLock logLock(g_pWebLogLockHandle COMMA_LOCKVAL_SRC_POS);
     // terminal
-    RTPrintf("%s %s", pcszPrefix, psz);
+    RTPrintf("%s %s", strPrefix.c_str(), psz);
 
     // log file
     if (g_pstrLog)
     {
-        RTStrmPrintf(g_pstrLog, "%s %s", pcszPrefix, psz);
+        RTStrmPrintf(g_pstrLog, "%s %s", strPrefix.c_str(), psz);
         RTStrmFlush(g_pstrLog);
     }
 
@@ -486,6 +503,7 @@ void WebLog(const char *pszFormat, ...)
     // logger instance
     RTLogLoggerEx(LOG_INSTANCE, RTLOGGRPFLAGS_DJ, LOG_GROUP, "%s %s", pcszPrefix, psz);
 #endif
+    logLock.release();
 
     RTStrFree(psz);
 }
@@ -717,6 +735,7 @@ int main(int argc, char* argv[])
     g_pAuthLibLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
     g_pSessionsLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
     g_pThreadsLockHandle = new util::RWLockHandle(util::LOCKCLASS_OBJECTSTATE);
+    g_pWebLogLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
 
     // SOAP queue pumper thread
     RTTHREAD  tQPumper;
