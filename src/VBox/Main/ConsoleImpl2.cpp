@@ -2577,7 +2577,13 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
         ComPtr<IMedium> pMedium;
         hrc = pMediumAtt->COMGETTER(Medium)(pMedium.asOutParam());                          H();
 
-        if (lType == DeviceType_HardDisk)
+        /*
+         * 1. Only check this for hard disk images.
+         * 2. Only check during VM creation and not later, especially not during
+         *    taking an online snapshot!
+         */
+        if (   lType == DeviceType_HardDisk
+            && aMachineState == MachineState_Starting)
         {
             /*
              * Some sanity checks.
