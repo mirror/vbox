@@ -23,7 +23,7 @@ RT_C_DECLS_BEGIN
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
-PGM_GST_DECL(int,  Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk);
+static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk);
 #endif
 PGM_GST_DECL(int,  GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
 PGM_GST_DECL(int,  ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
@@ -72,7 +72,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkReturnRsvdError)(PVMCPU pVCpu, PGSTPTWALK pWalk
  * @param   GCPtr       The guest virtual address to walk by.
  * @param   pWalk       Where to return the walk result. This is always set.
  */
-PGM_GST_DECL(int, Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
+static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
 {
     int rc;
 
@@ -284,48 +284,24 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
 
     if (pfFlags)
     {
-        /* The RW and US flags are determined via bitwise AND across all levels. */
-        uint64_t fUpperRwUs = (X86_PTE_RW | X86_PTE_US)
-#  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                            & Walk.Pml4e.u
-                            & Walk.Pdpe.u
-#  endif
-                            & Walk.Pde.u;
-        fUpperRwUs |= ~(uint64_t)(X86_PTE_RW | X86_PTE_US);
-
-        /* The RW and US flags are determined via bitwise AND across all levels. */
-# if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
-        uint32_t fUpperNx   = 0
-#  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                            | Walk.Pml4e.n.u1NoExecute
-                            | Walk.Pdpe.lm.u1NoExecute
-#  endif
-                            | Walk.Pde.n.u1NoExecute;
-# endif
-
         if (!Walk.Core.fBigPage)
-        {
-            *pfFlags = (Walk.Pte.u & ~GST_PTE_PG_MASK) & fUpperRwUs;
+            *pfFlags = (Walk.Pte.u & ~(GST_PTE_PG_MASK | X86_PTE_RW | X86_PTE_US))                      /* NX not needed */
+                     | (Walk.Core.fEffectiveRW ? X86_PTE_RW : 0)
+                     | (Walk.Core.fEffectiveUS ? X86_PTE_US : 0)
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
-            if (Walk.Pte.n.u1NoExecute || fUpperNx)
-            {
-                Assert(GST_IS_NX_ACTIVE(pVCpu)); /* should trigger RSVD error otherwise. */
-                *pfFlags |= X86_PTE_PAE_NX;
-            }
+                     | (Walk.Core.fEffectiveNX ? X86_PTE_PAE_NX : 0)
 # endif
-        }
+                     ;
         else
         {
-            *pfFlags = (  (Walk.Pde.u & ~(GST_PTE_PG_MASK | X86_PTE_PAT))
-                        | ((Walk.Pde.u & X86_PDE4M_PAT) >> X86_PDE4M_PAT_SHIFT))
-                     & fUpperRwUs;
+            *pfFlags = (Walk.Pde.u & ~(GST_PTE_PG_MASK | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_PS))   /* NX not needed */
+                     | ((Walk.Pde.u & X86_PDE4M_PAT) >> X86_PDE4M_PAT_SHIFT)
+                     | (Walk.Core.fEffectiveRW ? X86_PTE_RW : 0)
+                     | (Walk.Core.fEffectiveUS ? X86_PTE_US : 0)
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
-            if (fUpperNx)
-            {
-                Assert(GST_IS_NX_ACTIVE(pVCpu)); /* should trigger RSVD error otherwise. */
-                *pfFlags |= X86_PTE_PAE_NX;
-            }
+                     | (Walk.Core.fEffectiveNX ? X86_PTE_PAE_NX : 0)
 # endif
+                     ;
         }
     }
 
