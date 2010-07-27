@@ -786,6 +786,7 @@ additions-build-os2.x86:
 #	$(VBOX_KMK_TIME) ssh vbox@192.168.27.3 " cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
 #endif
 
+# ASSUMES the 64-bit edition are built first. This also serializes VM access.
 additions-build-linux.amd64:   $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
@@ -795,13 +796,13 @@ else
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.12 " echo $@ && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing"
 endif
 
-additions-build-linux.x86:   $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
+additions-build-linux.x86:   $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST) additions-build-linux.amd64
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing
 else
 	$(call MSG_L1,Building Linux/x86 additions)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.2 " echo $@ && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing"
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.2 " echo $@ && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE=1"
 endif
 
 
