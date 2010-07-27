@@ -1007,28 +1007,19 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 #   endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && VBOX_STRICT */
     }
 
-    /** @todo This point is only ever reached when something goes awry.  The
-     *        conclusion here is wrong, it is not a guest trap!  Will fix in
-     *        a bit... */
 
-#  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     /*
-     * Conclusion, this is a guest trap.
+     * If we get here it is because something failed above, i.e. most like guru
+     * meditiation time.
      */
-    LogFlow(("PGM: Unhandled #PF -> route trap to recompiler!\n"));
-    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eGuestPFUnh);
-    return VINF_EM_RAW_GUEST_TRAP;
-#  else
-    /* present, but not a monitored page; perhaps the guest is probing physical memory */
-    return VINF_EM_RAW_EMULATE_INSTR;
-#  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
+    LogRel(("%s: returns rc=%Rrc pvFault=%RGv uErr=%RX64 cs:rip=%04x:%08RX64\n",
+            __PRETTY_FUNCTION__, rc, pvFault, (uint64_t)uErr, pRegFrame->cs, pRegFrame->rip));
+    return rc;
 
-
-# else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
-
+# else  /* Nested paging, EPT except PGM_GST_TYPE = PROT   */
     AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_GST_TYPE, PGM_SHW_TYPE));
     return VERR_INTERNAL_ERROR;
-# endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
+# endif
 }
 #endif /* !IN_RING3 */
 
