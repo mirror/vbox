@@ -313,9 +313,9 @@ Py_nsISupports::PyObjectFromInterface(nsISupports *pis,
 	if (!bIsInternalCall) {
 #ifdef NS_DEBUG
 		nsISupports *queryResult = nsnull;
-        Py_BEGIN_ALLOW_THREADS;
+		Py_BEGIN_ALLOW_THREADS;
 		pis->QueryInterface(riid, (void **)&queryResult);
-        Py_END_ALLOW_THREADS;
+		Py_END_ALLOW_THREADS;
 		NS_ASSERTION(queryResult == pis, "QueryInterface needed");
 		NS_IF_RELEASE(queryResult);
 #endif
