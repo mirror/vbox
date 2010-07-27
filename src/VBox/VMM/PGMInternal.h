@@ -2620,6 +2620,7 @@ typedef struct PGMSTATS
     STAMCOUNTER StatR3DetectedConflicts;            /**< R3: Number of times PGMR3MapHasConflicts() detected a conflict. */
     STAMPROFILE StatR3ResolveConflict;              /**< R3: pgmR3SyncPTResolveConflict() profiling (includes the entire relocation). */
 
+    /* R3+RZ */
     STAMCOUNTER StatRZChunkR3MapTlbHits;            /**< RC/R0: Ring-3/0 chunk mapper TLB hits. */
     STAMCOUNTER StatRZChunkR3MapTlbMisses;          /**< RC/R0: Ring-3/0 chunk mapper TLB misses. */
     STAMCOUNTER StatRZPageMapTlbHits;               /**< RC/R0: Ring-3/0 page mapper TLB hits. */
@@ -2636,6 +2637,10 @@ typedef struct PGMSTATS
     STAMPROFILE StatR3SyncCR3HandlerVirtualUpdate;  /**< R3: Profiling of the virtual handler updates. */
     STAMCOUNTER StatR3PhysHandlerReset;             /**< R3: The number of times PGMHandlerPhysicalReset is called. */
     STAMCOUNTER StatRZPhysHandlerReset;             /**< RC/R0: The number of times PGMHandlerPhysicalReset is called. */
+    STAMCOUNTER StatR3PhysHandlerLookupHits;        /**< R3: Number of cache hits when looking up physical handlers. */
+    STAMCOUNTER StatR3PhysHandlerLookupMisses;      /**< R3: Number of cache misses when looking up physical handlers. */
+    STAMCOUNTER StatRZPhysHandlerLookupHits;        /**< RC/R0: Number of cache hits when lookup up physical handlers. */
+    STAMCOUNTER StatRZPhysHandlerLookupMisses;      /**< RC/R0: Number of cache misses when looking up physical handlers */
     STAMPROFILE StatRZVirtHandlerSearchByPhys;      /**< RC/R0: Profiling of pgmHandlerVirtualFindByPhysAddr. */
     STAMPROFILE StatR3VirtHandlerSearchByPhys;      /**< R3: Profiling of pgmHandlerVirtualFindByPhysAddr. */
     STAMCOUNTER StatRZPageReplaceShared;            /**< RC/R0: Times a shared page has been replaced by a private one. */
@@ -2715,9 +2720,9 @@ typedef struct PGMSTATS
 typedef struct PGM
 {
     /** Offset to the VM structure. */
-    RTINT                           offVM;
+    int32_t                         offVM;
     /** Offset of the PGMCPU structure relative to VMCPU. */
-    RTINT                           offVCpuPGM;
+    int32_t                         offVCpuPGM;
 
     /** @cfgm{RamPreAlloc, boolean, false}
      * Indicates whether the base RAM should all be allocated before starting
@@ -2739,72 +2744,11 @@ typedef struct PGM
     bool                            fNestedPaging;
     /** The host paging mode. (This is what SUPLib reports.) */
     SUPPAGINGMODE                   enmHostMode;
-
-    /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
-    RCPTRTYPE(PX86PTE)              paDynPageMap32BitPTEsGC;
-    /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
-    RCPTRTYPE(PX86PTEPAE)           paDynPageMapPaePTEsGC;
-
-    /** 4 MB page mask; 32 or 36 bits depending on PSE-36 (identical for all VCPUs) */
-    RTGCPHYS                        GCPhys4MBPSEMask;
-    /** Mask containing the invalid bits of a guest physical address.
-     * @remarks this does not stop at bit 52.  */
-    RTGCPHYS                        GCPhysInvAddrMask;
-
-    /** Pointer to the list of RAM ranges (Phys GC -> Phys HC conversion) - for R3.
-     * This is sorted by physical address and contains no overlapping ranges. */
-    R3PTRTYPE(PPGMRAMRANGE)         pRamRangesR3;
-    /** R0 pointer corresponding to PGM::pRamRangesR3. */
-    R0PTRTYPE(PPGMRAMRANGE)         pRamRangesR0;
-    /** RC pointer corresponding to PGM::pRamRangesR3. */
-    RCPTRTYPE(PPGMRAMRANGE)         pRamRangesRC;
-    /** Generation ID for the RAM ranges. This member is incremented everytime a RAM
-     * range is linked or unlinked. */
-    uint32_t volatile               idRamRangesGen;
-
-    /** Pointer to the list of ROM ranges - for R3.
-     * This is sorted by physical address and contains no overlapping ranges. */
-    R3PTRTYPE(PPGMROMRANGE)         pRomRangesR3;
-    /** R0 pointer corresponding to PGM::pRomRangesR3. */
-    R0PTRTYPE(PPGMROMRANGE)         pRomRangesR0;
-    /** RC pointer corresponding to PGM::pRomRangesR3. */
-    RCPTRTYPE(PPGMROMRANGE)         pRomRangesRC;
-#if HC_ARCH_BITS == 64
-    /** Alignment padding. */
-    RTRCPTR                         GCPtrPadding2;
-#endif
-
-    /** Pointer to the list of MMIO2 ranges - for R3.
-     * Registration order. */
-    R3PTRTYPE(PPGMMMIO2RANGE)       pMmio2RangesR3;
-
-    /** PGM offset based trees - R3 Ptr. */
-    R3PTRTYPE(PPGMTREES)            pTreesR3;
-    /** PGM offset based trees - R0 Ptr. */
-    R0PTRTYPE(PPGMTREES)            pTreesR0;
-    /** PGM offset based trees - RC Ptr. */
-    RCPTRTYPE(PPGMTREES)            pTreesRC;
-
-    /** Linked list of GC mappings - for RC.
-     * The list is sorted ascending on address.
-     */
-    RCPTRTYPE(PPGMMAPPING)          pMappingsRC;
-    /** Linked list of GC mappings - for HC.
-     * The list is sorted ascending on address.
-     */
-    R3PTRTYPE(PPGMMAPPING)          pMappingsR3;
-    /** Linked list of GC mappings - for R0.
-     * The list is sorted ascending on address.
-     */
-    R0PTRTYPE(PPGMMAPPING)          pMappingsR0;
-
-    /** Pointer to the 5 page CR3 content mapping.
-     * The first page is always the CR3 (in some form) while the 4 other pages
-     * are used of the PDs in PAE mode. */
-    RTGCPTR                         GCPtrCR3Mapping;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
-    uint32_t                        u32Alignment1;
-#endif
+    /** We're not in a state which permits writes to guest memory.
+     * (Only used in strict builds.) */
+    bool                            fNoMorePhysWrites;
+    /** Alignment padding that makes the next member start on a 8 byte boundrary. */
+    bool                            afAlignment1[3];
 
     /** Indicates that PGMR3FinalizeMappings has been called and that further
      * PGMR3MapIntermediate calls will be rejected. */
@@ -2820,11 +2764,87 @@ typedef struct PGM
     /** Size of fixed mapping.
      * This is valid if either fMappingsFixed or fMappingsFixedRestored is set. */
     uint32_t                        cbMappingFixed;
+    /** Generation ID for the RAM ranges. This member is incremented everytime
+     * a RAM range is linked or unlinked. */
+    uint32_t volatile               idRamRangesGen;
+
     /** Base address (GC) of fixed mapping.
      * This is valid if either fMappingsFixed or fMappingsFixedRestored is set. */
     RTGCPTR                         GCPtrMappingFixed;
     /** The address of the previous RAM range mapping. */
     RTGCPTR                         GCPtrPrevRamRangeMapping;
+
+    /** 4 MB page mask; 32 or 36 bits depending on PSE-36 (identical for all VCPUs) */
+    RTGCPHYS                        GCPhys4MBPSEMask;
+    /** Mask containing the invalid bits of a guest physical address.
+     * @remarks this does not stop at bit 52.  */
+    RTGCPHYS                        GCPhysInvAddrMask;
+
+
+    /** Pointer to the list of RAM ranges (Phys GC -> Phys HC conversion) - for R3.
+     * This is sorted by physical address and contains no overlapping ranges. */
+    R3PTRTYPE(PPGMRAMRANGE)         pRamRangesR3;
+    /** PGM offset based trees - R3 Ptr. */
+    R3PTRTYPE(PPGMTREES)            pTreesR3;
+    /** Caching the last physical handler we looked up in R3. */
+    R3PTRTYPE(PPGMPHYSHANDLER)      pLastPhysHandlerR3;
+    /** Shadow Page Pool - R3 Ptr. */
+    R3PTRTYPE(PPGMPOOL)             pPoolR3;
+    /** Linked list of GC mappings - for HC.
+     * The list is sorted ascending on address. */
+    R3PTRTYPE(PPGMMAPPING)          pMappingsR3;
+    /** Pointer to the list of ROM ranges - for R3.
+     * This is sorted by physical address and contains no overlapping ranges. */
+    R3PTRTYPE(PPGMROMRANGE)         pRomRangesR3;
+    /** Pointer to the list of MMIO2 ranges - for R3.
+     * Registration order. */
+    R3PTRTYPE(PPGMMMIO2RANGE)       pMmio2RangesR3;
+    /** Pointer to SHW+GST mode data (function pointers).
+     * The index into this table is made up from */
+    R3PTRTYPE(PPGMMODEDATA)         paModeData;
+    /*RTR3PTR                         R3PtrAlignment0;*/
+
+
+    /** R0 pointer corresponding to PGM::pRamRangesR3. */
+    R0PTRTYPE(PPGMRAMRANGE)         pRamRangesR0;
+    /** PGM offset based trees - R0 Ptr. */
+    R0PTRTYPE(PPGMTREES)            pTreesR0;
+    /** Caching the last physical handler we looked up in R0. */
+    R0PTRTYPE(PPGMPHYSHANDLER)      pLastPhysHandlerR0;
+    /** Shadow Page Pool - R0 Ptr. */
+    R0PTRTYPE(PPGMPOOL)             pPoolR0;
+    /** Linked list of GC mappings - for R0.
+     * The list is sorted ascending on address. */
+    R0PTRTYPE(PPGMMAPPING)          pMappingsR0;
+    /** R0 pointer corresponding to PGM::pRomRangesR3. */
+    R0PTRTYPE(PPGMROMRANGE)         pRomRangesR0;
+    /*RTR0PTR                         R0PtrAlignment0;*/
+
+
+    /** RC pointer corresponding to PGM::pRamRangesR3. */
+    RCPTRTYPE(PPGMRAMRANGE)         pRamRangesRC;
+    /** PGM offset based trees - RC Ptr. */
+    RCPTRTYPE(PPGMTREES)            pTreesRC;
+    /** Caching the last physical handler we looked up in RC. */
+    RCPTRTYPE(PPGMPHYSHANDLER)      pLastPhysHandlerRC;
+    /** Shadow Page Pool - RC Ptr. */
+    RCPTRTYPE(PPGMPOOL)             pPoolRC;
+    /** Linked list of GC mappings - for RC.
+     * The list is sorted ascending on address. */
+    RCPTRTYPE(PPGMMAPPING)          pMappingsRC;
+    /** RC pointer corresponding to PGM::pRomRangesR3. */
+    RCPTRTYPE(PPGMROMRANGE)         pRomRangesRC;
+    /*RTRCPTR                         RCPtrAlignment0;*/
+    /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
+    RCPTRTYPE(PX86PTE)              paDynPageMap32BitPTEsGC;
+    /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
+    RCPTRTYPE(PX86PTEPAE)           paDynPageMapPaePTEsGC;
+
+
+    /** Pointer to the 5 page CR3 content mapping.
+     * The first page is always the CR3 (in some form) while the 4 other pages
+     * are used of the PDs in PAE mode. */
+    RTGCPTR                         GCPtrCR3Mapping;
 
     /** @name Intermediate Context
      * @{ */
@@ -2876,23 +2896,6 @@ typedef struct PGM
      * and the page flag updating (some of it anyway).
      */
     PDMCRITSECT                     CritSect;
-
-    /** Pointer to SHW+GST mode data (function pointers).
-     * The index into this table is made up from */
-    R3PTRTYPE(PPGMMODEDATA)         paModeData;
-
-    /** Shadow Page Pool - R3 Ptr. */
-    R3PTRTYPE(PPGMPOOL)             pPoolR3;
-    /** Shadow Page Pool - R0 Ptr. */
-    R0PTRTYPE(PPGMPOOL)             pPoolR0;
-    /** Shadow Page Pool - RC Ptr. */
-    RCPTRTYPE(PPGMPOOL)             pPoolRC;
-
-    /** We're not in a state which permits writes to guest memory.
-     * (Only used in strict builds.) */
-    bool                            fNoMorePhysWrites;
-    /** Alignment padding that makes the next member start on a 8 byte boundrary. */
-    bool                            afAlignment3[HC_ARCH_BITS == 32 ? 7: 3];
 
     /**
      * Data associated with managing the ring-3 mappings of the allocation chunks.
@@ -3349,7 +3352,7 @@ typedef struct PGMCPU
     /** Set if the page size extension (PSE) is enabled. */
     bool                            fGst32BitPageSizeExtension;
     /** Alignment padding. */
-    bool                            afAlignment4[3];
+    bool                            afAlignment2[3];
     /** @} */
 
     /** @name PAE Guest Paging.

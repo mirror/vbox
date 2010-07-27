@@ -1757,7 +1757,7 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
     if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL)
     {
 #ifdef IN_RING3
-        pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+        pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
         AssertReleaseMsg(pPhys, ("GCPhys=%RGp cb=%#x\n", GCPhys, cb));
         Assert(GCPhys >= pPhys->Core.Key && GCPhys <= pPhys->Core.KeyLast);
         Assert((pPhys->Core.Key     & PAGE_OFFSET_MASK) == 0);
@@ -1775,7 +1775,7 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
         rc = pfnHandler(pVM, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, pvUser);
         pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
-        pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+        pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
         if (pPhys)
             STAM_PROFILE_STOP(&pPhys->Stat, h);
 # else
@@ -1986,7 +1986,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
     if (    !PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage)
         ||  PGM_PAGE_IS_MMIO(pPage) /* screw virtual handlers on MMIO pages */)
     {
-        PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+        PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
         if (pCur)
         {
             Assert(GCPhys >= pCur->Core.Key && GCPhys <= pCur->Core.KeyLast);
@@ -2020,7 +2020,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
                 rc = pfnHandler(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pvUser);
                 pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
-                pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+                pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
                 if (pCur)
                     STAM_PROFILE_STOP(&pCur->Stat, h);
 # else
@@ -2173,7 +2173,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
 
         if (fMorePhys && !pPhys)
         {
-            pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+            pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
             if (pPhys)
             {
                 offPhys = 0;
@@ -2232,7 +2232,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
             rc = pfnHandler(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pvUser);
             pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
-            pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+            pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
             if (pPhys)
                 STAM_PROFILE_STOP(&pPhys->Stat, h);
 # else
@@ -2301,7 +2301,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
             rc = pfnHandler(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pvUser);
             pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
-            pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+            pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
             if (pPhys)
                 STAM_PROFILE_STOP(&pPhys->Stat, h);
 # else

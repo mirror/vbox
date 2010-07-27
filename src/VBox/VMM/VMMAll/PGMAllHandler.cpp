@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -261,10 +261,14 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
                  pCur->Core.Key, pCur->Core.KeyLast, R3STRING(pCur->pszDesc)));
 
         /*
-         * Clear the page bits and notify the REM about this change.
+         * Clear the page bits, notify the REM about this change and clear
+         * the cache.
          */
         pgmHandlerPhysicalResetRamFlags(pVM, pCur);
         pgmHandlerPhysicalDeregisterNotifyREM(pVM, pCur);
+        pVM->pgm.s.pLastPhysHandlerR0 = 0;
+        pVM->pgm.s.pLastPhysHandlerR3 = 0;
+        pVM->pgm.s.pLastPhysHandlerRC = 0;
         MMHyperFree(pVM, pCur);
         pgmUnlock(pVM);
         return VINF_SUCCESS;
@@ -574,10 +578,13 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
         }
 
         /*
-         * Invalid new location, free it.
+         * Invalid new location, flush the cache and free it.
          * We've only gotta notify REM and free the memory.
          */
         pgmHandlerPhysicalDeregisterNotifyREM(pVM, pCur);
+        pVM->pgm.s.pLastPhysHandlerR0 = 0;
+        pVM->pgm.s.pLastPhysHandlerR3 = 0;
+        pVM->pgm.s.pLastPhysHandlerRC = 0;
         MMHyperFree(pVM, pCur);
     }
     else
@@ -745,6 +752,9 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
                         pCur1->cPages        = (pCur1->Core.KeyLast - (pCur1->Core.Key & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
                         LogFlow(("PGMHandlerPhysicalJoin: %RGp-%RGp %RGp-%RGp\n",
                                  pCur1->Core.Key, pCur1->Core.KeyLast, pCur2->Core.Key, pCur2->Core.KeyLast));
+                        pVM->pgm.s.pLastPhysHandlerR0 = 0;
+                        pVM->pgm.s.pLastPhysHandlerR3 = 0;
+                        pVM->pgm.s.pLastPhysHandlerRC = 0;
                         MMHyperFree(pVM, pCur2);
                         pgmUnlock(pVM);
                         return VINF_SUCCESS;
@@ -1174,7 +1184,7 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
      * Find the handler.
      */
     pgmLock(pVM);
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+    PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
     if (pCur)
     {
         Assert(GCPhys >= pCur->Core.Key && GCPhys <= pCur->Core.KeyLast);
@@ -1203,7 +1213,7 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
 bool pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys)
 {
     pgmLock(pVM);
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+    PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
     if (!pCur)
     {
         pgmUnlock(pVM);

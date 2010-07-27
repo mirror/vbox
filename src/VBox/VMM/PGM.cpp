@@ -1695,6 +1695,10 @@ static int pgmR3InitStats(PVM pVM)
 
     PGM_REG_COUNTER(&pStats->StatRZPhysHandlerReset,            "/PGM/RZ/PhysHandlerReset",           "The number of times PGMHandlerPhysicalReset is called.");
     PGM_REG_COUNTER(&pStats->StatR3PhysHandlerReset,            "/PGM/R3/PhysHandlerReset",           "The number of times PGMHandlerPhysicalReset is called.");
+    PGM_REG_COUNTER(&pStats->StatRZPhysHandlerLookupHits,       "/PGM/RZ/PhysHandlerLookupHits",      "The number of cache hits when looking up physical handlers.");
+    PGM_REG_COUNTER(&pStats->StatR3PhysHandlerLookupHits,       "/PGM/R3/PhysHandlerLookupHits",      "The number of cache hits when looking up physical handlers.");
+    PGM_REG_COUNTER(&pStats->StatRZPhysHandlerLookupMisses,     "/PGM/RZ/PhysHandlerLookupMisses",    "The number of cache misses when looking up physical handlers.");
+    PGM_REG_COUNTER(&pStats->StatR3PhysHandlerLookupMisses,     "/PGM/R3/PhysHandlerLookupMisses",    "The number of cache misses when looking up physical handlers.");
     PGM_REG_PROFILE(&pStats->StatRZVirtHandlerSearchByPhys,     "/PGM/RZ/VirtHandlerSearchByPhys",    "Profiling of pgmHandlerVirtualFindByPhysAddr.");
     PGM_REG_PROFILE(&pStats->StatR3VirtHandlerSearchByPhys,     "/PGM/R3/VirtHandlerSearchByPhys",    "Profiling of pgmHandlerVirtualFindByPhysAddr.");
 
@@ -2028,7 +2032,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     PPGMMAPPING pMapping = pgmGetMapping(pVM, pVM->pgm.s.pbDynPageMapBaseGC);
     AssertRelease(pMapping);
     const uintptr_t off = pVM->pgm.s.pbDynPageMapBaseGC - pMapping->GCPtr;
-    const unsigned iPT = off >> X86_PD_SHIFT;
+    const unsigned iPT =  off >> X86_PD_SHIFT;
     const unsigned iPG = (off >> X86_PT_SHIFT) & X86_PT_MASK;
     pVM->pgm.s.paDynPageMap32BitPTEsGC = pMapping->aPTs[iPT].pPTRC      + iPG * sizeof(pMapping->aPTs[0].pPTR3->a[0]);
     pVM->pgm.s.paDynPageMapPaePTEsGC   = pMapping->aPTs[iPT].paPaePTsRC + iPG * sizeof(pMapping->aPTs[0].paPaePTsR3->a[0]);
@@ -2218,6 +2222,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * Physical and virtual handlers.
      */
     RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,     true, pgmR3RelocatePhysHandler,      &offDelta);
+    pVM->pgm.s.pLastPhysHandlerRC = NIL_RTRCPTR;
     RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers,      true, pgmR3RelocateVirtHandler,      &offDelta);
     RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3RelocateHyperVirtHandler, &offDelta);
 
@@ -4586,7 +4591,7 @@ VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
      * Check the trees.
      */
     int cErrors = 0;
-    const static PGMCHECKINTARGS s_LeftToRight = { true, NULL, NULL, NULL, pVM };
+    const static PGMCHECKINTARGS s_LeftToRight = {  true, NULL, NULL, NULL, pVM };
     const static PGMCHECKINTARGS s_RightToLeft = { false, NULL, NULL, NULL, pVM };
     PGMCHECKINTARGS Args = s_LeftToRight;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       true,  pgmR3CheckIntegrityPhysHandlerNode, &Args);
