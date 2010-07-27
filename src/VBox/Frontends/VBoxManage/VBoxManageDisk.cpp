@@ -227,7 +227,9 @@ int handleCreateHardDisk(HandlerArg *a)
             case 't':   // --type
                 vrc = parseDiskType(ValueUnion.psz, &DiskType);
                 if (    RT_FAILURE(vrc)
-                    ||  (DiskType != MediumType_Normal && DiskType != MediumType_Writethrough))
+                    ||  (   DiskType != MediumType_Normal
+                         && DiskType != MediumType_Writethrough
+                         && DiskType != MediumType_Shareable))
                     return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
                 break;
 

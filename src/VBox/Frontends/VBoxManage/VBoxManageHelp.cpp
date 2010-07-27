@@ -480,7 +480,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            --size <megabytes>\n"
                  "                            [--format VDI|VMDK|VHD] (default: VDI)\n"
                  "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
-                 "                            [--type normal|writethrough|"
+                 "                            [--type normal|writethrough|\n"
                  "                                    shareable] (default: normal)\n"
                  "                            [--comment <comment>]\n"
                  "                            [--remember]\n"
