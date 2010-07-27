@@ -15,14 +15,15 @@
 #ifndef __VBoxDisplay_h__
 #define __VBoxDisplay_h__
 
+#include <iprt/types.h>
+#include <iprt/assert.h>
+
 #define VBOXESC_SETVISIBLEREGION            0xABCD9001
 #define VBOXESC_ISVRDPACTIVE                0xABCD9002
 #ifdef VBOXWDDM
 # define VBOXESC_REINITVIDEOMODES           0xABCD9003
 # define VBOXESC_GETVBOXVIDEOCMCMD          0xABCD9004
 # define VBOXESC_DBGPRINT                   0xABCD9005
-
-#include <iprt/assert.h>
 
 typedef struct
 {
