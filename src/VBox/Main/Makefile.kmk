@@ -895,6 +895,16 @@ $$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
 
 endif # VBOX_WITH_JMSCOM
 
+#
+# Install Java glue sample code.
+#
+INSTALLS += javagluesample
+javagluesample_INST = $(INST_SDK)bindings/glue/java
+javagluesample_MODE = a+rx,u+w
+javagluesample_SOURCES = \
+	$(VBOX_PATH_MAIN_SRC)/glue/tests/TestVBox.java=>TestVBox.java \
+	$(VBOX_PATH_MAIN_SRC)/glue/tests/Makefile.kmk=>Makefile.kmk
+
 updatenls::
 	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)
 	$(VBOX_LUPDATE) $(VBoxC_SOURCES) $(VBoxC_VBOX_HEADERS) -ts $(VBoxC_VBOX_TRANSLATIONS)
