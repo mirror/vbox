@@ -35,6 +35,7 @@ VBOX_APPROVED_GUI_LANGUAGES := \
 	ja    \
 	km_KH \
 	ko    \
+	lt    \
 	nl    \
 	pl    \
 	pt    \
@@ -48,4 +49,3 @@ VBOX_APPROVED_GUI_LANGUAGES := \
 	uk    \
 	zh_CN \
 	zh_TW
-
