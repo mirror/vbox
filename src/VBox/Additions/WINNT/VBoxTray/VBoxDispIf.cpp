@@ -18,6 +18,7 @@
 
 #include <iprt/log.h>
 #include <iprt/err.h>
+#include <iprt/assert.h>
 
 /* display driver interface abstraction for XPDM & WDDM
  * with WDDM we can not use ExtEscape to communicate with our driver
