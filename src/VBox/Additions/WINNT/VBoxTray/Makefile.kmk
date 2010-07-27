@@ -29,6 +29,7 @@ VBoxTray_DEFS    += MMSEAMLESS
 VBoxTray_INCS     = ../include
 VBoxTray_SOURCES  = \
 	VBoxTray.cpp \
+	VBoxDispIf.cpp \
 	VBoxSeamless.cpp \
 	VBoxClipboard.cpp \
 	VBoxDisplay.cpp \
