@@ -113,6 +113,7 @@ OBJS   = \
 	common/string/strformattype.o \
 	common/string/strprintf.o \
 	common/string/strtonum.o \
+	common/time/time.o \
 	generic/RTAssertShouldPanic-generic.o \
         generic/RTLogWriteStdErr-stub-generic.o \
         generic/RTLogWriteStdOut-stub-generic.o \
