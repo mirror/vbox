@@ -49,12 +49,12 @@ public class TestVBox
         }
     }
 
-    static void testEvents(VirtualBoxManager mgr, IEventSource es, boolean active)
+    static void testEvents(VirtualBoxManager mgr, IEventSource es)
     {
         // active mode for Java doesn't fully work yet, and using passive
         // is more portable (the only mode for MSCOM and WS) and thus generally
         // recommended
-        IEventListener listener = active ? mgr.createListener(new EventHandler()) : es.createListener();
+        IEventListener listener = es.createListener();
 
         es.registerListener(listener, Arrays.asList(VBoxEventType.Any), false);
 
@@ -62,18 +62,11 @@ public class TestVBox
             for (int i=0; i<100; i++)
             {
                 System.out.print(".");
-                if (active)
+                IEvent ev = es.getEvent(listener, 1000);
+                if (ev != null)
                 {
-                    mgr.waitForEvents(500);
-                }
-                else
-                {
-                    IEvent ev = es.getEvent(listener, 1000);
-                    if (ev != null)
-                    {
-                        processEvent(ev);
-                        es.eventProcessed(listener, ev);
-                    }
+                    processEvent(ev);
+                    es.eventProcessed(listener, ev);
                 }
             }
         } catch (Exception e) {
@@ -141,7 +134,7 @@ public class TestVBox
                 System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
                 testEnumeration(mgr, vbox);
                 testStart(mgr, vbox);
-                testEvents(mgr, vbox.getEventSource(), false);
+                testEvents(mgr, vbox.getEventSource());
 
                 System.out.println("done, press Enter...");
                 int ch = System.in.read();
