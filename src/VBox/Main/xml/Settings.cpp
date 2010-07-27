@@ -3610,6 +3610,8 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
             xml::ElementNode *pelmNAT;
             pelmNAT = elmParent.createChild("NAT");
 
+            if (nic.nat.strNetwork.length())
+                pelmNAT->setAttribute("network", nic.nat.strNetwork);
             if (nic.nat.strBindIP.length())
                 pelmNAT->setAttribute("hostip", nic.nat.strBindIP);
             if (nic.nat.u32Mtu)
