@@ -92,7 +92,7 @@ VBGLR3DECL(int) VbglR3SharedFolderDisconnect(uint32_t u32ClientId)
  * @param   u32ClientId     The client id returned by VbglR3InfoSvcConnect().
  * @param   pszShareName    Shared folder name to check.
  */
-VBGLR3DECL(bool) VbglR3SharedFolderExists(uint32_t u32ClientId, char *pszShareName)
+VBGLR3DECL(bool) VbglR3SharedFolderExists(uint32_t u32ClientId, const char *pszShareName)
 {
     AssertPtr(pszShareName);
 
