@@ -93,7 +93,7 @@ ifndef VBOX_OSE
  # Use VBOX_WITHOUT_LINUX_GUEST_PACKAGE to skip building the .run installer.
  # This will only take effect if you also use VBOX_WITHOUT_ADDITIONS_ISO.
  PACKING     += \
- 	$(ifndef VBOX_WITHOUT_LINUX_GUEST_PACKAGE $(PATH_BIN)/additions/VBoxLinuxAdditions.run) \
+ 	$(if-expr !defined(VBOX_WITHOUT_LINUX_GUEST_PACKAGE), $(PATH_BIN)/additions/VBoxLinuxAdditions.run,) \
  	$(VBOX_LNX_ADD_ARCHIVES) \
  	$(PATH_BIN)/additions/VBoxGuestAdditions-dbg.tar.bz2
  OTHER_CLEAN += \
