@@ -305,9 +305,10 @@ int handleCreateHardDisk(HandlerArg *a)
                 Bstr uuid;
                 CHECK_ERROR(hardDisk, COMGETTER(Id)(uuid.asOutParam()));
 
-                if (DiskType == MediumType_Writethrough)
+                if (   DiskType == MediumType_Writethrough
+                    || DiskType == MediumType_Shareable)
                 {
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(MediumType_Writethrough));
+                    CHECK_ERROR(hardDisk, COMSETTER(Type)(DiskType));
                 }
 
                 RTPrintf("Disk image created. UUID: %s\n", Utf8Str(uuid).raw());
