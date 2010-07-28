@@ -230,6 +230,12 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
 #define PDMACEP_FILE_FLAGS_READ_ONLY    RT_BIT_32(0)
 /** whether file content should be cached by the endpoint. */
 #define PDMACEP_FILE_FLAGS_CACHING      RT_BIT_32(1)
+/** Whether the file should not be write protected.
+ * The default is to protect the file against writes by other processes
+ * when opened in read/write mode to prevent data corruption by
+ * concurrent access which can occur if the local writeback cache is enabled.
+ */
+#define PDMACEP_FILE_FLAGS_DONT_LOCK    RT_BIT_32(2)
 /** @} */
 
 /**
