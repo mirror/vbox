@@ -11,7 +11,6 @@
 
 void pstrcpy(char *buf, int buf_size, const char *str);
 char *pstrcat(char *buf, int buf_size, const char *s);
-# define snprintf RTStrPrintf
 
 # ifdef _MSC_VER
 #  define PRId32 "d"
