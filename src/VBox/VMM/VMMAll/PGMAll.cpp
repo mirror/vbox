@@ -1000,7 +1000,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
 
         pgmPoolCacheUsed(pPool, pShwPage);
     }
-    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     return VINF_SUCCESS;
 }
 
@@ -1104,7 +1104,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
               | (uGstPml4e & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
 
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-    PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
 
     /* Allocate page directory if not present. */
@@ -1141,7 +1141,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
     pPdpe->u |= pShwPage->Core.Key
              | (uGstPdpe & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
-    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     return VINF_SUCCESS;
 }
 
@@ -1178,14 +1178,14 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
     const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-    PCX86PDPT       pPdpt = *ppPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    PCX86PDPT       pPdpt = *ppPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     if (!pPdpt->a[iPdPt].n.u1Present)
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
 
     pShwPage = pgmPoolGetPage(pPool, pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
-    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     return VINF_SUCCESS;
 }
 
@@ -1213,7 +1213,7 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
     Assert(pVM->pgm.s.fNestedPaging);
     Assert(PGMIsLockOwner(pVM));
 
-    pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+    pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
     Assert(pPml4);
 
     /* Allocate page directory pointer table if not present. */
@@ -1241,7 +1241,7 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
     pPml4e->n.u1Execute = 1;
 
     const unsigned iPdPt = (GCPtr >> EPT_PDPT_SHIFT) & EPT_PDPT_MASK;
-    PEPTPDPT  pPdpt = (PEPTPDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    PEPTPDPT  pPdpt = (PEPTPDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     PEPTPDPTE pPdpe = &pPdpt->a[iPdPt];
 
     if (ppPdpt)
@@ -1269,7 +1269,7 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
     pPdpe->n.u1Write    = 1;
     pPdpe->n.u1Execute  = 1;
 
-    *ppPD = (PEPTPD)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    *ppPD = (PEPTPD)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     return VINF_SUCCESS;
 }
 
@@ -2288,7 +2288,7 @@ DECLINLINE(int) pgmDynMapGCPageInternal(PVM pVM, RTGCPHYS GCPhys, void **ppv)
         {
             //Log(("PGMDynMapGCPage: GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            rc = pgmR0DynMapHCPageInlined(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage), ppv);
+            rc = pgmR0DynMapHCPageInlined(VMMGetCpu(pVM), PGM_PAGE_GET_HCPHYS(pPage), ppv);
 #else
             rc = PGMDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), ppv);
 #endif

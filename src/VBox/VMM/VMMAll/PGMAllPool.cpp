@@ -101,7 +101,7 @@ DECLINLINE(bool) pgmPoolIsBigPage(PGMPOOLKIND enmKind)
 #if defined(IN_RC)
 DECLINLINE(void *) PGMPOOL_PAGE_2_LOCKED_PTR(PVM pVM, PPGMPOOLPAGE pPage)
 {
-    void *pv = pgmPoolMapPageInlined(&pVM->pgm.s, pPage);
+    void *pv = pgmPoolMapPageInlined(pVM, pPage);
 
     /* Make sure the dynamic mapping will not be reused. */
     if (pv)
