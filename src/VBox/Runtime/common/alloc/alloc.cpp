@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,41 +35,25 @@
 #include <iprt/string.h>
 
 #undef RTMemDup
+#undef RTMemDupTag
 #undef RTMemDupEx
+#undef RTMemDupExTag
 
 
 
-/**
- * Duplicates a chunk of memory into a new heap block.
- *
- * @returns New heap block with the duplicate data.
- * @returns NULL if we're out of memory.
- * @param   pvSrc   The memory to duplicate.
- * @param   cb      The amount of memory to duplicate.
- */
-RTDECL(void *) RTMemDup(const void *pvSrc, size_t cb) RT_NO_THROW
+RTDECL(void *) RTMemDupTag(const void *pvSrc, size_t cb, const char *pszTag) RT_NO_THROW
 {
-    void *pvDst = RTMemAlloc(cb);
+    void *pvDst = RTMemAllocTag(cb, pszTag);
     if (pvDst)
         memcpy(pvDst, pvSrc, cb);
     return pvDst;
 }
-RT_EXPORT_SYMBOL(RTMemDup);
+RT_EXPORT_SYMBOL(RTMemDupTag);
 
 
-/**
- * Duplicates a chunk of memory into a new heap block with some
- * additional zeroed memory.
- *
- * @returns New heap block with the duplicate data.
- * @returns NULL if we're out of memory.
- * @param   pvSrc   The memory to duplicate.
- * @param   cbSrc   The amount of memory to duplicate.
- * @param   cbExtra The amount of extra memory to allocate and zero.
- */
-RTDECL(void *) RTMemDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW
+RTDECL(void *) RTMemDupExTag(const void *pvSrc, size_t cbSrc, size_t cbExtra, const char *pszTag) RT_NO_THROW
 {
-    void *pvDst = RTMemAlloc(cbSrc + cbExtra);
+    void *pvDst = RTMemAllocTag(cbSrc + cbExtra, pszTag);
     if (pvDst)
     {
         memcpy(pvDst, pvSrc, cbSrc);
@@ -77,5 +61,5 @@ RTDECL(void *) RTMemDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO
     }
     return pvDst;
 }
-RT_EXPORT_SYMBOL(RTMemDupEx);
+RT_EXPORT_SYMBOL(RTMemDupExTag);
 

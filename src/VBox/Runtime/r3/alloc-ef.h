@@ -165,6 +165,8 @@ typedef struct RTMEMBLOCK
     size_t          cbUnaligned;
     /** The aligned size of the block. */
     size_t          cbAligned;
+    /** The allocation tag (read-only string). */
+    const char     *pszTag;
     /** The return address of the allocator function. */
     void           *pvCaller;
     /** Line number of the alloc call. */
@@ -183,8 +185,9 @@ typedef struct RTMEMBLOCK
 ******************************************************************************/
 RT_C_DECLS_BEGIN
 RTDECL(void *)  rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnaligned, size_t cbAligned,
-                             void *pvCaller, RT_SRC_POS_DECL);
-RTDECL(void *)  rtR3MemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew, void *pvCaller, RT_SRC_POS_DECL);
+                             const char *pszTag, void *pvCaller, RT_SRC_POS_DECL);
+RTDECL(void *)  rtR3MemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew,
+                               const char *pszTag, void *pvCaller, RT_SRC_POS_DECL);
 RTDECL(void)    rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, RT_SRC_POS_DECL);
 RT_C_DECLS_END
 

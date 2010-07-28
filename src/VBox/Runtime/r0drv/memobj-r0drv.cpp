@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -404,17 +404,7 @@ RT_EXPORT_SYMBOL(RTR0MemObjFree);
 
 
 
-/**
- * Allocates page aligned virtual kernel memory.
- *
- * The memory is taken from a non paged (= fixed physical memory backing) pool.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
- */
-RTR0DECL(int) RTR0MemObjAllocPage(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable)
+RTR0DECL(int) RTR0MemObjAllocPageTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
@@ -427,20 +417,10 @@ RTR0DECL(int) RTR0MemObjAllocPage(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
     /* do the allocation. */
     return rtR0MemObjNativeAllocPage(pMemObj, cbAligned, fExecutable);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjAllocPage);
+RT_EXPORT_SYMBOL(RTR0MemObjAllocPageTag);
 
 
-/**
- * Allocates page aligned virtual kernel memory with physical backing below 4GB.
- *
- * The physical memory backing the allocation is fixed.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
- */
-RTR0DECL(int) RTR0MemObjAllocLow(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable)
+RTR0DECL(int) RTR0MemObjAllocLowTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
@@ -453,20 +433,10 @@ RTR0DECL(int) RTR0MemObjAllocLow(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutabl
     /* do the allocation. */
     return rtR0MemObjNativeAllocLow(pMemObj, cbAligned, fExecutable);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjAllocLow);
+RT_EXPORT_SYMBOL(RTR0MemObjAllocLowTag);
 
 
-/**
- * Allocates page aligned virtual kernel memory with contiguous physical backing below 4GB.
- *
- * The physical memory backing the allocation is fixed.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
- */
-RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable)
+RTR0DECL(int) RTR0MemObjAllocContTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
@@ -479,32 +449,11 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
     /* do the allocation. */
     return rtR0MemObjNativeAllocCont(pMemObj, cbAligned, fExecutable);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjAllocCont);
+RT_EXPORT_SYMBOL(RTR0MemObjAllocContTag);
 
 
-/**
- * Locks a range of user virtual memory.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   R3Ptr           User virtual address. This is rounded down to a page
- *                          boundrary.
- * @param   cb              Number of bytes to lock. This is rounded up to
- *                          nearest page boundrary.
- * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
- *                          and RTMEM_PROT_WRITE.
- * @param   R0Process       The process to lock pages in. NIL_RTR0PROCESS is an
- *                          alias for the current one.
- *
- * @remarks RTR0MemGetAddressR3() and RTR0MemGetAddress() will return therounded
- *          down address.
- *
- * @remarks Linux: This API requires that the memory begin locked is in a memory
- *          mapping that is not required in any forked off child process. This
- *          is not intented as permanent restriction, feel free to help out
- *          lifting it.
- */
-RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
+RTR0DECL(int) RTR0MemObjLockUserTag(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb,
+                                    uint32_t fAccess, RTR0PROCESS R0Process, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb + (R3Ptr & PAGE_OFFSET_MASK), PAGE_SIZE);
@@ -522,22 +471,10 @@ RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, 
     /* do the locking. */
     return rtR0MemObjNativeLockUser(pMemObj, R3PtrAligned, cbAligned, fAccess, R0Process);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjLockUser);
+RT_EXPORT_SYMBOL(RTR0MemObjLockUserTag);
 
 
-/**
- * Locks a range of kernel virtual memory.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   pv              Kernel virtual address. This is rounded down to a page boundrary.
- * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
- * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
- *                          and RTMEM_PROT_WRITE.
- *
- * @remark  RTR0MemGetAddress() will return the rounded down address.
- */
-RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, uint32_t fAccess)
+RTR0DECL(int) RTR0MemObjLockKernelTag(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, uint32_t fAccess, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb + ((uintptr_t)pv & PAGE_OFFSET_MASK), PAGE_SIZE);
@@ -554,19 +491,10 @@ RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, uin
     /* do the allocation. */
     return rtR0MemObjNativeLockKernel(pMemObj, pvAligned, cbAligned, fAccess);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjLockKernel);
+RT_EXPORT_SYMBOL(RTR0MemObjLockKernelTag);
 
 
-/**
- * Allocates contiguous page aligned physical memory without (necessarily) any kernel mapping.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   PhysHighest     The highest permittable address (inclusive).
- *                          Pass NIL_RTHCPHYS if any address is acceptable.
- */
-RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest)
+RTR0DECL(int) RTR0MemObjAllocPhysTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
@@ -580,21 +508,10 @@ RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysH
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest, PAGE_SIZE /* page aligned */);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjAllocPhys);
+RT_EXPORT_SYMBOL(RTR0MemObjAllocPhysTag);
 
 
-/**
- * Allocates contiguous physical memory without (necessarily) any kernel mapping.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   PhysHighest     The highest permittable address (inclusive).
- *                          Pass NIL_RTHCPHYS if any address is acceptable.
- * @param   uAlignment      The alignment of the physical memory to allocate.
- *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M, _4M and _1G.
- */
-RTR0DECL(int) RTR0MemObjAllocPhysEx(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
+RTR0DECL(int) RTR0MemObjAllocPhysExTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
@@ -621,19 +538,10 @@ RTR0DECL(int) RTR0MemObjAllocPhysEx(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Phy
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest, uAlignment);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjAllocPhysEx);
+RT_EXPORT_SYMBOL(RTR0MemObjAllocPhysExTag);
 
 
-/**
- * Allocates non-contiguous page aligned physical memory without (necessarily) any kernel mapping.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   PhysHighest     The highest permittable address (inclusive).
- *                          Pass NIL_RTHCPHYS if any address is acceptable.
- */
-RTR0DECL(int) RTR0MemObjAllocPhysNC(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest)
+RTR0DECL(int) RTR0MemObjAllocPhysNCTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
@@ -647,22 +555,10 @@ RTR0DECL(int) RTR0MemObjAllocPhysNC(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Phy
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhysNC(pMemObj, cbAligned, PhysHighest);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjAllocPhysNC);
+RT_EXPORT_SYMBOL(RTR0MemObjAllocPhysNCTag);
 
 
-/**
- * Creates a page aligned, contiguous, physical memory object.
- *
- * No physical memory is allocated, we trust you do know what you're doing.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   Phys            The physical address to start at. This is rounded down to the
- *                          nearest page boundrary.
- * @param   cb              The size of the object in bytes. This is rounded up to nearest page boundrary.
- * @param   uCachePolicy    One of the RTMEM_CACHE_XXX modes.
- */
-RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb, uint32_t uCachePolicy)
+RTR0DECL(int) RTR0MemObjEnterPhysTag(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb, uint32_t uCachePolicy, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb + (Phys & PAGE_OFFSET_MASK), PAGE_SIZE);
@@ -680,20 +576,10 @@ RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb,
     /* do the allocation. */
     return rtR0MemObjNativeEnterPhys(pMemObj, PhysAligned, cbAligned, uCachePolicy);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjEnterPhys);
+RT_EXPORT_SYMBOL(RTR0MemObjEnterPhysTag);
 
 
-/**
- * Reserves kernel virtual address space.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   pvFixed         Requested address. (void *)-1 means any address. This must match the alignment.
- * @param   cb              The number of bytes to reserve. This is rounded up to nearest page.
- * @param   uAlignment      The alignment of the reserved memory.
- *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
- */
-RTR0DECL(int) RTR0MemObjReserveKernel(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t cb, size_t uAlignment)
+RTR0DECL(int) RTR0MemObjReserveKernelTag(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t cb, size_t uAlignment, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
@@ -711,21 +597,11 @@ RTR0DECL(int) RTR0MemObjReserveKernel(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t
     /* do the reservation. */
     return rtR0MemObjNativeReserveKernel(pMemObj, pvFixed, cbAligned, uAlignment);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjReserveKernel);
+RT_EXPORT_SYMBOL(RTR0MemObjReserveKernelTag);
 
 
-/**
- * Reserves user virtual address space in the current process.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   R3PtrFixed      Requested address. (RTR3PTR)-1 means any address. This must match the alignment.
- * @param   cb              The number of bytes to reserve. This is rounded up to nearest PAGE_SIZE.
- * @param   uAlignment      The alignment of the reserved memory.
- *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
- * @param   R0Process       The process to reserve the memory in. NIL_RTR0PROCESS is an alias for the current one.
- */
-RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
+RTR0DECL(int) RTR0MemObjReserveUserTag(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, size_t cb,
+                                       size_t uAlignment, RTR0PROCESS R0Process, const char *pszTag)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
@@ -745,53 +621,19 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, siz
     /* do the reservation. */
     return rtR0MemObjNativeReserveUser(pMemObj, R3PtrFixed, cbAligned, uAlignment, R0Process);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjReserveUser);
+RT_EXPORT_SYMBOL(RTR0MemObjReserveUserTag);
 
 
-/**
- * Maps a memory object into kernel virtual address space.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
- * @param   MemObjToMap     The object to be map.
- * @param   pvFixed         Requested address. (void *)-1 means any address. This must match the alignment.
- * @param   uAlignment      The alignment of the reserved memory.
- *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
- * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
- */
-RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
+RTR0DECL(int) RTR0MemObjMapKernelTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed,
+                                     size_t uAlignment, unsigned fProt, const char *pszTag)
 {
-    return RTR0MemObjMapKernelEx(pMemObj, MemObjToMap, pvFixed, uAlignment, fProt, 0, 0);
+    return RTR0MemObjMapKernelExTag(pMemObj, MemObjToMap, pvFixed, uAlignment, fProt, 0, 0, pszTag);
 }
-RT_EXPORT_SYMBOL(RTR0MemObjMapKernel);
+RT_EXPORT_SYMBOL(RTR0MemObjMapKernelTag);
 
 
-/**
- * Maps a memory object into kernel virtual address space.
- *
- * The ability to map subsections of the object into kernel space is currently
- * not implemented on all platforms. All/Most of platforms supports mapping the
- * whole object into  kernel space.
- *
- * @returns IPRT status code.
- * @retval  VERR_NOT_SUPPORTED if it's not possible to map a subsection of a
- *          memory object on this platform. When you hit this, try implement it.
- *
- * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
- * @param   MemObjToMap     The object to be map.
- * @param   pvFixed         Requested address. (void *)-1 means any address. This must match the alignment.
- * @param   uAlignment      The alignment of the reserved memory.
- *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
- * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
- * @param   offSub          Where in the object to start mapping. If non-zero
- *                          the value must be page aligned and cbSub must be
- *                          non-zero as well.
- * @param   cbSub           The size of the part of the object to be mapped. If
- *                          zero the entire object is mapped. The value must be
- *                          page aligned.
- */
-RTR0DECL(int) RTR0MemObjMapKernelEx(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment,
-                                    unsigned fProt, size_t offSub, size_t cbSub)
+RTR0DECL(int) RTR0MemObjMapKernelExTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment,
+                                       unsigned fProt, size_t offSub, size_t cbSub, const char *pszTag)
 {
     PRTR0MEMOBJINTERNAL pMemToMap;
     PRTR0MEMOBJINTERNAL pNew;
@@ -845,22 +687,11 @@ RTR0DECL(int) RTR0MemObjMapKernelEx(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap,
 
     return rc;
 }
-RT_EXPORT_SYMBOL(RTR0MemObjMapKernelEx);
+RT_EXPORT_SYMBOL(RTR0MemObjMapKernelExTag);
 
 
-/**
- * Maps a memory object into user virtual address space in the current process.
- *
- * @returns IPRT status code.
- * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
- * @param   MemObjToMap     The object to be map.
- * @param   R3PtrFixed      Requested address. (RTR3PTR)-1 means any address. This must match the alignment.
- * @param   uAlignment      The alignment of the reserved memory.
- *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
- * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
- * @param   R0Process       The process to map the memory into. NIL_RTR0PROCESS is an alias for the current one.
- */
-RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
+RTR0DECL(int) RTR0MemObjMapUserTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed,
+                                   size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process, const char *pszTag)
 {
     /* sanity checks. */
     PRTR0MEMOBJINTERNAL pMemToMap;
@@ -906,7 +737,7 @@ RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR
 
     return rc;
 }
-RT_EXPORT_SYMBOL(RTR0MemObjMapUser);
+RT_EXPORT_SYMBOL(RTR0MemObjMapUserTag);
 
 
 RTR0DECL(int) RTR0MemObjProtect(RTR0MEMOBJ hMemObj, size_t offSub, size_t cbSub, uint32_t fProt)

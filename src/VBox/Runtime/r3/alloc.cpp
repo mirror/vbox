@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,73 +47,49 @@
 #include <stdlib.h>
 
 #undef RTMemTmpAlloc
+#undef RTMemTmpAllocTag
 #undef RTMemTmpAllocZ
+#undef RTMemTmpAllocZTag
 #undef RTMemTmpFree
 #undef RTMemAlloc
+#undef RTMemAllocTag
 #undef RTMemAllocZ
+#undef RTMemAllocZTag
 #undef RTMemAllocVar
+#undef RTMemAllocVarTag
 #undef RTMemAllocZVar
+#undef RTMemAllocZVarTag
 #undef RTMemRealloc
+#undef RTMemReallocTag
 #undef RTMemFree
 #undef RTMemDup
+#undef RTMemDupTag
 #undef RTMemDupEx
+#undef RTMemDupExTag
 
 
-/**
- * Allocates temporary memory.
- *
- * Temporary memory blocks are used for not too large memory blocks which
- * are believed not to stick around for too long. Using this API instead
- * of RTMemAlloc() not only gives the heap manager room for optimization
- * but makes the code easier to read.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocate.
- */
-RTDECL(void *)  RTMemTmpAlloc(size_t cb) RT_NO_THROW
+RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
-    return RTMemAlloc(cb);
+    return RTMemAllocTag(cb, pszTag);
 }
 
 
-/**
- * Allocates zero'ed temporary memory.
- *
- * Same as RTMemTmpAlloc() but the memory will be zero'ed.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocate.
- */
-RTDECL(void *)  RTMemTmpAllocZ(size_t cb) RT_NO_THROW
+RTDECL(void *)  RTMemTmpAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
-    return RTMemAllocZ(cb);
+    return RTMemAllocZTag(cb, pszTag);
 }
 
 
-/**
- * Free temporary memory.
- *
- * @param   pv      Pointer to memory block.
- */
-RTDECL(void)    RTMemTmpFree(void *pv) RT_NO_THROW
+RTDECL(void) RTMemTmpFree(void *pv) RT_NO_THROW
 {
     RTMemFree(pv);
 }
 
 
-/**
- * Allocates memory.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocate.
- */
-RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
+RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
 #ifdef RTALLOC_USE_EFENCE
-    void *pv = rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
+    void *pv = rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, cb, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 
 #else /* !RTALLOC_USE_EFENCE */
 
@@ -129,21 +105,10 @@ RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
 }
 
 
-/**
- * Allocates zero'ed memory.
- *
- * Instead of memset(pv, 0, sizeof()) use this when you want zero'ed
- * memory. This keeps the code smaller and the heap can skip the memset
- * in about 0.42% of the calls :-).
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocate.
- */
-RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
+RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
 #ifdef RTALLOC_USE_EFENCE
-    void *pv = rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
+    void *pv = rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, cb, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 
 #else /* !RTALLOC_USE_EFENCE */
 
@@ -160,14 +125,7 @@ RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
 }
 
 
-/**
- * Wrapper around RTMemAlloc for automatically aligning variable sized
- * allocations so that the various electric fence heaps works correctly.
- *
- * @returns See RTMemAlloc.
- * @param   cbUnaligned         The unaligned size.
- */
-RTDECL(void *) RTMemAllocVar(size_t cbUnaligned)
+RTDECL(void *) RTMemAllocVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
@@ -175,22 +133,15 @@ RTDECL(void *) RTMemAllocVar(size_t cbUnaligned)
     else
         cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
 #ifdef RTALLOC_USE_EFENCE
-    void *pv = rtR3MemAlloc("AllocVar", RTMEMTYPE_RTMEMALLOC, cbUnaligned, cbAligned, ASMReturnAddress(), NULL, 0, NULL);
+    void *pv = rtR3MemAlloc("AllocVar", RTMEMTYPE_RTMEMALLOC, cbUnaligned, cbAligned, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 #else
-    void *pv = RTMemAlloc(cbAligned);
+    void *pv = RTMemAllocTag(cbAligned, pszTag);
 #endif
     return pv;
 }
 
 
-/**
- * Wrapper around RTMemAllocZ for automatically aligning variable sized
- * allocations so that the various electric fence heaps works correctly.
- *
- * @returns See RTMemAllocZ.
- * @param   cbUnaligned         The unaligned size.
- */
-RTDECL(void *) RTMemAllocZVar(size_t cbUnaligned)
+RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
@@ -198,26 +149,18 @@ RTDECL(void *) RTMemAllocZVar(size_t cbUnaligned)
     else
         cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
 #ifdef RTALLOC_USE_EFENCE
-    void *pv = rtR3MemAlloc("AllocZVar", RTMEMTYPE_RTMEMALLOCZ, cbUnaligned, cbAligned, ASMReturnAddress(), NULL, 0, NULL);
+    void *pv = rtR3MemAlloc("AllocZVar", RTMEMTYPE_RTMEMALLOCZ, cbUnaligned, cbAligned, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 #else
-    void *pv = RTMemAllocZ(cbAligned);
+    void *pv = RTMemAllocZTag(cbAligned, pszTag);
 #endif
     return pv;
 }
 
 
-/**
- * Reallocates memory.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   pvOld   The memory block to reallocate.
- * @param   cbNew   The new block size (in bytes).
- */
-RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
+RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW
 {
 #ifdef RTALLOC_USE_EFENCE
-    void *pv = rtR3MemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, ASMReturnAddress(), NULL, 0, NULL);
+    void *pv = rtR3MemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 
 #else /* !RTALLOC_USE_EFENCE */
 
@@ -232,12 +175,7 @@ RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
 }
 
 
-/**
- * Free memory related to a virtual machine
- *
- * @param   pv      Pointer to memory block.
- */
-RTDECL(void)    RTMemFree(void *pv) RT_NO_THROW
+RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
 {
     if (pv)
 #ifdef RTALLOC_USE_EFENCE

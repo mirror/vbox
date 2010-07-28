@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,16 +42,18 @@
 typedef struct STRALLOCARG
 {
     /** Pointer to current buffer position. */
-    char   *psz;
+    char       *psz;
     /** Number of bytes left in the buffer - not including the trailing zero. */
-    size_t  cch;
+    size_t      cch;
     /** Pointer to the start of the buffer. */
-    char   *pszBuffer;
+    char       *pszBuffer;
     /** The number of bytes in the buffer. */
-    size_t  cchBuffer;
+    size_t      cchBuffer;
     /** Set if the buffer was allocated using RTMemRealloc(). If clear
      * pszBuffer points to the initial stack buffer. */
-    bool    fAllocated;
+    bool        fAllocated;
+    /** Allocation tag used for statistics and such. */
+    const char *pszTag;
 } STRALLOCARG;
 /** Pointer to a strallocoutput() argument structure. */
 typedef STRALLOCARG *PSTRALLOCARG;
@@ -99,7 +101,8 @@ static DECLCALLBACK(size_t) strallocoutput(void *pvArg, const char *pachChars, s
             cbAdded = RT_ALIGN_Z(cbChars, _4K);
         if (cbAdded <= _1G)
         {
-            char *pszBuffer = (char *)RTMemRealloc(pArg->fAllocated ? pArg->pszBuffer : NULL, cbAdded + pArg->cchBuffer);
+            char *pszBuffer = (char *)RTMemReallocTag(pArg->fAllocated ? pArg->pszBuffer : NULL,
+                                                      cbAdded + pArg->cchBuffer, pArg->pszTag);
             if (pszBuffer)
             {
                 size_t off = pArg->psz - pArg->pszBuffer;
@@ -134,7 +137,7 @@ static DECLCALLBACK(size_t) strallocoutput(void *pvArg, const char *pachChars, s
 }
 
 
-RTDECL(int) RTStrAPrintfV(char **ppszBuffer, const char *pszFormat, va_list args)
+RTDECL(int) RTStrAPrintfVTag(char **ppszBuffer, const char *pszFormat, va_list args, const char *pszTag)
 {
     char            szBuf[2048];
     STRALLOCARG     Arg;
@@ -143,6 +146,7 @@ RTDECL(int) RTStrAPrintfV(char **ppszBuffer, const char *pszFormat, va_list args
     Arg.pszBuffer   = szBuf;
     Arg.cch         = sizeof(szBuf) - 1;
     Arg.psz         = szBuf;
+    Arg.pszTag      = pszTag;
     szBuf[0] = '\0';
     int cbRet = (int)RTStrFormatV(strallocoutput, &Arg, NULL, NULL, pszFormat, args);
     if (Arg.psz)
@@ -151,7 +155,7 @@ RTDECL(int) RTStrAPrintfV(char **ppszBuffer, const char *pszFormat, va_list args
         {
             /* duplicate the string in szBuf */
             Assert(Arg.pszBuffer == szBuf);
-            char *psz = (char *)RTMemAlloc(cbRet + 1);
+            char *psz = (char *)RTMemAllocTag(cbRet + 1, pszTag);
             if (psz)
                 memcpy(psz, szBuf, cbRet + 1);
             *ppszBuffer = psz;
@@ -159,7 +163,7 @@ RTDECL(int) RTStrAPrintfV(char **ppszBuffer, const char *pszFormat, va_list args
         else
         {
             /* adjust the allocated buffer */
-            char *psz = (char *)RTMemRealloc(Arg.pszBuffer, cbRet + 1);
+            char *psz = (char *)RTMemReallocTag(Arg.pszBuffer, cbRet + 1, pszTag);
             *ppszBuffer = psz ? psz : Arg.pszBuffer;
         }
     }
@@ -176,39 +180,14 @@ RTDECL(int) RTStrAPrintfV(char **ppszBuffer, const char *pszFormat, va_list args
 
     return cbRet;
 }
-RT_EXPORT_SYMBOL(RTStrAPrintfV);
+RT_EXPORT_SYMBOL(RTStrAPrintfVTag);
 
 
-RTDECL(int) RTStrAPrintf(char **ppszBuffer, const char *pszFormat, ...)
-{
-    va_list args;
-    va_start(args, pszFormat);
-    int cbRet = RTStrAPrintfV(ppszBuffer, pszFormat, args);
-    va_end(args);
-    return cbRet;
-}
-RT_EXPORT_SYMBOL(RTStrAPrintf);
-
-
-RTDECL(char *) RTStrAPrintf2V(const char *pszFormat, va_list args)
+RTDECL(char *) RTStrAPrintf2VTag(const char *pszFormat, va_list args, const char *pszTag)
 {
     char *pszBuffer;
-    RTStrAPrintfV(&pszBuffer, pszFormat, args);
+    RTStrAPrintfVTag(&pszBuffer, pszFormat, args, pszTag);
     return pszBuffer;
 }
-RT_EXPORT_SYMBOL(RTStrAPrintf2V);
-
-
-RTDECL(char *) RTStrAPrintf2(const char *pszFormat, ...)
-{
-    va_list va;
-    char   *pszBuffer;
-
-    va_start(va, pszFormat);
-    RTStrAPrintfV(&pszBuffer, pszFormat, va);
-    va_end(va);
-
-    return pszBuffer;
-}
-RT_EXPORT_SYMBOL(RTStrAPrintf2);
+RT_EXPORT_SYMBOL(RTStrAPrintf2VTag);
 
