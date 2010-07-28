@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,15 +37,7 @@
 #include <iprt/err.h>
 
 
-/**
- * Allocates tmp buffer, translates pszString from UTF8 to current codepage.
- *
- * @returns iprt status code.
- * @param   ppszString      Receives pointer of allocated native CP string.
- *                          The returned pointer must be freed using RTStrFree().
- * @param   pszString       UTF-8 string to convert.
- */
-RTR3DECL(int)  RTStrUtf8ToCurrentCP(char **ppszString, const char *pszString)
+RTR3DECL(int)  RTStrUtf8ToCurrentCPTag(char **ppszString, const char *pszString, const char *pszTag)
 {
     Assert(ppszString);
     Assert(pszString);
@@ -55,7 +47,7 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCP(char **ppszString, const char *pszString)
      */
     if (!*pszString)
     {
-        *ppszString = (char *)RTMemTmpAllocZ(sizeof(char));
+        *ppszString = (char *)RTMemTmpAllocZTag(sizeof(char), pszTag);
         if (*ppszString)
             return VINF_SUCCESS;
         return VERR_NO_TMP_MEMORY;
@@ -80,7 +72,7 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCP(char **ppszString, const char *pszString)
         /*
          * Alloc space for result buffer.
          */
-        LPSTR lpString = (LPSTR)RTMemTmpAlloc(cbResult);
+        LPSTR lpString = (LPSTR)RTMemTmpAllocTag(cbResult, pszTag);
         if (lpString)
         {
             /*
@@ -114,15 +106,8 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCP(char **ppszString, const char *pszString)
     return rc;
 }
 
-/**
- * Allocates tmp buffer, translates pszString from current codepage to UTF-8.
- *
- * @returns iprt status code.
- * @param   ppszString      Receives pointer of allocated UTF-8 string.
- *                          The returned pointer must be freed using RTStrFree().
- * @param   pszString       Native string to convert.
- */
-RTR3DECL(int)  RTStrCurrentCPToUtf8(char **ppszString, const char *pszString)
+
+RTR3DECL(int)  RTStrCurrentCPToUtf8Tag(char **ppszString, const char *pszString, const char *pszTag)
 {
     Assert(ppszString);
     Assert(pszString);
@@ -134,7 +119,7 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8(char **ppszString, const char *pszString)
     if (cch <= 0)
     {
         /* zero length string passed. */
-        *ppszString = (char *)RTMemTmpAllocZ(sizeof(char));
+        *ppszString = (char *)RTMemTmpAllocZTag(sizeof(char), pszTag);
         if (*ppszString)
             return VINF_SUCCESS;
         return VERR_NO_TMP_MEMORY;

@@ -126,7 +126,7 @@ DECLINLINE(void) rtmemBlockUnlock(void)
  * Creates a block.
  */
 DECLINLINE(PRTMEMBLOCK) rtmemBlockCreate(RTMEMTYPE enmType, size_t cbUnaligned, size_t cbAligned,
-                                         void *pvCaller, RT_SRC_POS_DECL)
+                                         const char *pszTag, void *pvCaller, RT_SRC_POS_DECL)
 {
     PRTMEMBLOCK pBlock = (PRTMEMBLOCK)malloc(sizeof(*pBlock));
     if (pBlock)
@@ -134,6 +134,7 @@ DECLINLINE(PRTMEMBLOCK) rtmemBlockCreate(RTMEMTYPE enmType, size_t cbUnaligned, 
         pBlock->enmType     = enmType;
         pBlock->cbUnaligned = cbUnaligned;
         pBlock->cbAligned   = cbAligned;
+        pBlock->pszTag      = pszTag;
         pBlock->pvCaller    = pvCaller;
         pBlock->iLine       = iLine;
         pBlock->pszFile     = pszFile;
@@ -272,7 +273,7 @@ DECLINLINE(PRTMEMBLOCK) rtmemBlockDelayRemove(void)
  * Internal allocator.
  */
 RTDECL(void *) rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnaligned, size_t cbAligned,
-                            void *pvCaller, RT_SRC_POS_DECL)
+                            const char *pszTag, void *pvCaller, RT_SRC_POS_DECL)
 {
     /*
      * Sanity.
@@ -304,7 +305,7 @@ RTDECL(void *) rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnali
     /*
      * Allocate the trace block.
      */
-    PRTMEMBLOCK pBlock = rtmemBlockCreate(enmType, cbUnaligned, cbAligned, pvCaller, RT_SRC_POS_ARGS);
+    PRTMEMBLOCK pBlock = rtmemBlockCreate(enmType, cbUnaligned, cbAligned, pszTag, pvCaller, RT_SRC_POS_ARGS);
     if (!pBlock)
     {
         rtmemComplain(pszOp, "Failed to allocate trace block!\n");
@@ -502,13 +503,14 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *p
 /**
  * Internal realloc.
  */
-RTDECL(void *) rtR3MemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew, void *pvCaller, RT_SRC_POS_DECL)
+RTDECL(void *) rtR3MemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew,
+                              const char *pszTag, void *pvCaller, RT_SRC_POS_DECL)
 {
     /*
      * Allocate new and copy.
      */
     if (!pvOld)
-        return rtR3MemAlloc(pszOp, enmType, cbNew, cbNew, pvCaller, RT_SRC_POS_ARGS);
+        return rtR3MemAlloc(pszOp, enmType, cbNew, cbNew, pszTag, pvCaller, RT_SRC_POS_ARGS);
     if (!cbNew)
     {
         rtR3MemFree(pszOp, RTMEMTYPE_RTMEMREALLOC, pvOld, pvCaller, RT_SRC_POS_ARGS);
@@ -523,7 +525,7 @@ RTDECL(void *) rtR3MemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld,
     PRTMEMBLOCK pBlock = rtmemBlockGet(pvOld);
     if (pBlock)
     {
-        void *pvRet = rtR3MemAlloc(pszOp, enmType, cbNew, cbNew, pvCaller, RT_SRC_POS_ARGS);
+        void *pvRet = rtR3MemAlloc(pszOp, enmType, cbNew, cbNew, pszTag, pvCaller, RT_SRC_POS_ARGS);
         if (pvRet)
         {
             memcpy(pvRet, pvOld, RT_MIN(cbNew, pBlock->cbUnaligned));
@@ -546,15 +548,15 @@ RTDECL(void *) rtR3MemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld,
 
 
 
-RTDECL(void *)  RTMemEfTmpAlloc(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW
+RTDECL(void *)  RTMemEfTmpAlloc(size_t cb, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW
 {
-    return rtR3MemAlloc("TmpAlloc", RTMEMTYPE_RTMEMALLOC, cb, cb, ASMReturnAddress(), RT_SRC_POS_ARGS);
+    return rtR3MemAlloc("TmpAlloc", RTMEMTYPE_RTMEMALLOC, cb, cb, pszTag, ASMReturnAddress(), RT_SRC_POS_ARGS);
 }
 
 
-RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW
+RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW
 {
-    return rtR3MemAlloc("TmpAlloc", RTMEMTYPE_RTMEMALLOCZ, cb, cb, ASMReturnAddress(), RT_SRC_POS_ARGS);
+    return rtR3MemAlloc("TmpAlloc", RTMEMTYPE_RTMEMALLOCZ, cb, cb, pszTag, ASMReturnAddress(), RT_SRC_POS_ARGS);
 }
 
 
@@ -565,43 +567,43 @@ RTDECL(void)    RTMemEfTmpFree(void *pv, RT_SRC_POS_DECL) RT_NO_THROW
 }
 
 
-RTDECL(void *)  RTMemEfAlloc(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW
+RTDECL(void *)  RTMemEfAlloc(size_t cb, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW
 {
-    return rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, cb, ASMReturnAddress(), RT_SRC_POS_ARGS);
+    return rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, cb, pszTag, ASMReturnAddress(), RT_SRC_POS_ARGS);
 }
 
 
-RTDECL(void *)  RTMemEfAllocZ(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW
+RTDECL(void *)  RTMemEfAllocZ(size_t cb, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW
 {
-    return rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, cb, ASMReturnAddress(), RT_SRC_POS_ARGS);
+    return rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, cb, pszTag, ASMReturnAddress(), RT_SRC_POS_ARGS);
 }
 
 
-RTDECL(void *)  RTMemEfAllocVar(size_t cbUnaligned, RT_SRC_POS_DECL) RT_NO_THROW
+RTDECL(void *)  RTMemEfAllocVar(size_t cbUnaligned, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
         cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
     else
         cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
-    return rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cbUnaligned, cbAligned, ASMReturnAddress(), RT_SRC_POS_ARGS);
+    return rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cbUnaligned, cbAligned, pszTag, ASMReturnAddress(), RT_SRC_POS_ARGS);
 }
 
 
-RTDECL(void *)  RTMemEfAllocZVar(size_t cbUnaligned, RT_SRC_POS_DECL) RT_NO_THROW
+RTDECL(void *)  RTMemEfAllocZVar(size_t cbUnaligned, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
         cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
     else
         cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
-    return rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cbUnaligned, cbAligned, ASMReturnAddress(), RT_SRC_POS_ARGS);
+    return rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cbUnaligned, cbAligned, pszTag, ASMReturnAddress(), RT_SRC_POS_ARGS);
 }
 
 
-RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew, RT_SRC_POS_DECL) RT_NO_THROW
+RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW
 {
-    return rtR3MemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, ASMReturnAddress(), RT_SRC_POS_ARGS);
+    return rtR3MemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, pszTag, ASMReturnAddress(), RT_SRC_POS_ARGS);
 }
 
 
@@ -612,18 +614,18 @@ RTDECL(void)    RTMemEfFree(void *pv, RT_SRC_POS_DECL) RT_NO_THROW
 }
 
 
-RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb, RT_SRC_POS_DECL) RT_NO_THROW
+RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW
 {
-    void *pvDst = RTMemEfAlloc(cb, RT_SRC_POS_ARGS);
+    void *pvDst = RTMemEfAlloc(cb, pszTag, RT_SRC_POS_ARGS);
     if (pvDst)
         memcpy(pvDst, pvSrc, cb);
     return pvDst;
 }
 
 
-RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, RT_SRC_POS_DECL) RT_NO_THROW
+RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW
 {
-    void *pvDst = RTMemEfAlloc(cbSrc + cbExtra, RT_SRC_POS_ARGS);
+    void *pvDst = RTMemEfAlloc(cbSrc + cbExtra, pszTag, RT_SRC_POS_ARGS);
     if (pvDst)
     {
         memcpy(pvDst, pvSrc, cbSrc);
@@ -643,15 +645,15 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, RT_
 
 
 
-RTDECL(void *)  RTMemEfTmpAllocNP(size_t cb) RT_NO_THROW
+RTDECL(void *)  RTMemEfTmpAllocNP(size_t cb, const char *pszTag) RT_NO_THROW
 {
-    return rtR3MemAlloc("TmpAlloc", RTMEMTYPE_RTMEMALLOC, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
+    return rtR3MemAlloc("TmpAlloc", RTMEMTYPE_RTMEMALLOC, cb, cb, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
-RTDECL(void *)  RTMemEfTmpAllocZNP(size_t cb) RT_NO_THROW
+RTDECL(void *)  RTMemEfTmpAllocZNP(size_t cb, const char *pszTag) RT_NO_THROW
 {
-    return rtR3MemAlloc("TmpAllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
+    return rtR3MemAlloc("TmpAllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, cb, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
@@ -662,43 +664,43 @@ RTDECL(void)    RTMemEfTmpFreeNP(void *pv) RT_NO_THROW
 }
 
 
-RTDECL(void *)  RTMemEfAllocNP(size_t cb) RT_NO_THROW
+RTDECL(void *)  RTMemEfAllocNP(size_t cb, const char *pszTag) RT_NO_THROW
 {
-    return rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
+    return rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, cb, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
-RTDECL(void *)  RTMemEfAllocZNP(size_t cb) RT_NO_THROW
+RTDECL(void *)  RTMemEfAllocZNP(size_t cb, const char *pszTag) RT_NO_THROW
 {
-    return rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
+    return rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, cb, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
-RTDECL(void *)  RTMemEfAllocVarNP(size_t cbUnaligned) RT_NO_THROW
+RTDECL(void *)  RTMemEfAllocVarNP(size_t cbUnaligned, const char *pszTag) RT_NO_THROW
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
         cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
     else
         cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
-    return rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cbUnaligned, cbAligned, ASMReturnAddress(), NULL, 0, NULL);
+    return rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cbUnaligned, cbAligned, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
-RTDECL(void *)  RTMemEfAllocZVarNP(size_t cbUnaligned) RT_NO_THROW
+RTDECL(void *)  RTMemEfAllocZVarNP(size_t cbUnaligned, const char *pszTag) RT_NO_THROW
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
         cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
     else
         cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
-    return rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cbUnaligned, cbAligned, ASMReturnAddress(), NULL, 0, NULL);
+    return rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cbUnaligned, cbAligned, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
-RTDECL(void *)  RTMemEfReallocNP(void *pvOld, size_t cbNew) RT_NO_THROW
+RTDECL(void *)  RTMemEfReallocNP(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW
 {
-    return rtR3MemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, ASMReturnAddress(), NULL, 0, NULL);
+    return rtR3MemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, pszTag, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
@@ -709,18 +711,18 @@ RTDECL(void)    RTMemEfFreeNP(void *pv) RT_NO_THROW
 }
 
 
-RTDECL(void *) RTMemEfDupNP(const void *pvSrc, size_t cb) RT_NO_THROW
+RTDECL(void *) RTMemEfDupNP(const void *pvSrc, size_t cb, const char *pszTag) RT_NO_THROW
 {
-    void *pvDst = RTMemEfAlloc(cb, NULL, 0, NULL);
+    void *pvDst = RTMemEfAlloc(cb, pszTag, NULL, 0, NULL);
     if (pvDst)
         memcpy(pvDst, pvSrc, cb);
     return pvDst;
 }
 
 
-RTDECL(void *) RTMemEfDupExNP(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW
+RTDECL(void *) RTMemEfDupExNP(const void *pvSrc, size_t cbSrc, size_t cbExtra, const char *pszTag) RT_NO_THROW
 {
-    void *pvDst = RTMemEfAlloc(cbSrc + cbExtra, NULL, 0, NULL);
+    void *pvDst = RTMemEfAlloc(cbSrc + cbExtra, pszTag, NULL, 0, NULL);
     if (pvDst)
     {
         memcpy(pvDst, pvSrc, cbSrc);

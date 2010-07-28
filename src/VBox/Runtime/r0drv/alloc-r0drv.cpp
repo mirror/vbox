@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -80,47 +80,43 @@ static uint8_t const g_abFence[RTR0MEM_FENCE_EXTRA] =
 #endif
 
 
+#undef RTMemTmpAlloc
+#undef RTMemTmpAllocTag
+#undef RTMemTmpAllocZ
+#undef RTMemTmpAllocZTag
+#undef RTMemTmpFree
+#undef RTMemAlloc
+#undef RTMemAllocTag
+#undef RTMemAllocZ
+#undef RTMemAllocZTag
+#undef RTMemAllocVar
+#undef RTMemAllocVarTag
+#undef RTMemAllocZVar
+#undef RTMemAllocZVarTag
+#undef RTMemRealloc
+#undef RTMemReallocTag
+#undef RTMemFree
+#undef RTMemDup
+#undef RTMemDupTag
+#undef RTMemDupEx
+#undef RTMemDupExTag
 
-/**
- * Allocates temporary memory.
- *
- * Temporary memory blocks are used for not too large memory blocks which
- * are believed not to stick around for too long. Using this API instead
- * of RTMemAlloc() not only gives the heap manager room for optimization
- * but makes the code easier to read.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocated.
- */
-RTDECL(void *)  RTMemTmpAlloc(size_t cb) RT_NO_THROW
+
+
+RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
-    return RTMemAlloc(cb);
+    return RTMemAllocTag(cb, pszTag);
 }
-RT_EXPORT_SYMBOL(RTMemTmpAlloc);
+RT_EXPORT_SYMBOL(RTMemTmpAllocTag);
 
 
-/**
- * Allocates zero'ed temporary memory.
- *
- * Same as RTMemTmpAlloc() but the memory will be zero'ed.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocated.
- */
-RTDECL(void *)  RTMemTmpAllocZ(size_t cb) RT_NO_THROW
+RTDECL(void *)  RTMemTmpAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
-    return RTMemAllocZ(cb);
+    return RTMemAllocZTag(cb, pszTag);
 }
-RT_EXPORT_SYMBOL(RTMemTmpAllocZ);
+RT_EXPORT_SYMBOL(RTMemTmpAllocZTag);
 
 
-/**
- * Free temporary memory.
- *
- * @param   pv      Pointer to memory block.
- */
 RTDECL(void)    RTMemTmpFree(void *pv) RT_NO_THROW
 {
     return RTMemFree(pv);
@@ -128,14 +124,10 @@ RTDECL(void)    RTMemTmpFree(void *pv) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTMemTmpFree);
 
 
-/**
- * Allocates memory.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocated.
- */
-RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
+
+
+
+RTDECL(void *)  RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
     RT_ASSERT_INTS_ON();
@@ -151,21 +143,10 @@ RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
     }
     return NULL;
 }
-RT_EXPORT_SYMBOL(RTMemAlloc);
+RT_EXPORT_SYMBOL(RTMemAllocTag);
 
 
-/**
- * Allocates zero'ed memory.
- *
- * Instead of memset(pv, 0, sizeof()) use this when you want zero'ed
- * memory. This keeps the code smaller and the heap can skip the memset
- * in about 0.42% of calls :-).
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocated.
- */
-RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
+RTDECL(void *)  RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
     RT_ASSERT_INTS_ON();
@@ -183,61 +164,39 @@ RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
     }
     return NULL;
 }
-RT_EXPORT_SYMBOL(RTMemAllocZ);
+RT_EXPORT_SYMBOL(RTMemAllocZTag);
 
 
-/**
- * Wrapper around RTMemAlloc for automatically aligning variable sized
- * allocations so that the various electric fence heaps works correctly.
- *
- * @returns See RTMemAlloc.
- * @param   cbUnaligned         The unaligned size.
- */
-RTDECL(void *) RTMemAllocVar(size_t cbUnaligned)
+RTDECL(void *) RTMemAllocVarTag(size_t cbUnaligned, const char *pszTag)
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
         cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
     else
         cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
-    return RTMemAlloc(cbAligned);
+    return RTMemAllocTag(cbAligned, pszTag);
 }
-RT_EXPORT_SYMBOL(RTMemAllocVar);
+RT_EXPORT_SYMBOL(RTMemAllocVarTag);
 
 
-/**
- * Wrapper around RTMemAllocZ for automatically aligning variable sized
- * allocations so that the various electric fence heaps works correctly.
- *
- * @returns See RTMemAllocZ.
- * @param   cbUnaligned         The unaligned size.
- */
-RTDECL(void *) RTMemAllocZVar(size_t cbUnaligned)
+RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag)
 {
     size_t cbAligned;
     if (cbUnaligned >= 16)
         cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
     else
         cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
-    return RTMemAllocZ(cbAligned);
+    return RTMemAllocZTag(cbAligned, pszTag);
 }
-RT_EXPORT_SYMBOL(RTMemAllocZVar);
+RT_EXPORT_SYMBOL(RTMemAllocZVarTag);
 
 
-/**
- * Reallocates memory.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   pvOld   The memory block to reallocate.
- * @param   cbNew   The new block size (in bytes).
- */
-RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
+RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW
 {
     if (!cbNew)
         RTMemFree(pvOld);
     else if (!pvOld)
-        return RTMemAlloc(cbNew);
+        return RTMemAllocTag(cbNew, pszTag);
     else
     {
         PRTMEMHDR pHdrOld = (PRTMEMHDR)pvOld - 1;
@@ -274,14 +233,9 @@ RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
 
     return NULL;
 }
-RT_EXPORT_SYMBOL(RTMemRealloc);
+RT_EXPORT_SYMBOL(RTMemReallocTag);
 
 
-/**
- * Free memory related to an virtual machine
- *
- * @param   pv      Pointer to memory block.
- */
 RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
@@ -310,14 +264,11 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTMemFree);
 
 
-/**
- * Allocates memory which may contain code.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocate.
- */
-RTDECL(void *)    RTMemExecAlloc(size_t cb) RT_NO_THROW
+
+
+
+
+RTDECL(void *)    RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
 #ifdef RT_OS_SOLARIS /** @todo figure out why */
@@ -337,14 +288,9 @@ RTDECL(void *)    RTMemExecAlloc(size_t cb) RT_NO_THROW
     }
     return NULL;
 }
-RT_EXPORT_SYMBOL(RTMemExecAlloc);
+RT_EXPORT_SYMBOL(RTMemExecAllocTag);
 
 
-/**
- * Free executable/read/write memory allocated by RTMemExecAlloc().
- *
- * @param   pv      Pointer to memory block.
- */
 RTDECL(void)      RTMemExecFree(void *pv) RT_NO_THROW
 {
     PRTMEMHDR pHdr;

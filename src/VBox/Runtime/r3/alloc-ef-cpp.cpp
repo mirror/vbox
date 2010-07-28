@@ -57,7 +57,7 @@
 
 void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb) throw(std::bad_alloc)
 {
-    void *pv = rtR3MemAlloc("new", RTMEMTYPE_NEW, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
+    void *pv = rtR3MemAlloc("new", RTMEMTYPE_NEW, cb, cb, NULL, ASMReturnAddress(), NULL, 0, NULL);
     if (!pv)
         throw std::bad_alloc();
     return pv;
@@ -66,7 +66,7 @@ void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb) throw(std::bad_alloc)
 
 void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb, const std::nothrow_t &) throw()
 {
-    void *pv = rtR3MemAlloc("new nothrow", RTMEMTYPE_NEW, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
+    void *pv = rtR3MemAlloc("new nothrow", RTMEMTYPE_NEW, cb, cb, NULL, ASMReturnAddress(), NULL, 0, NULL);
     return pv;
 }
 
@@ -93,7 +93,7 @@ void RT_EF_CDECL operator delete(void * pv, const std::nothrow_t &) throw()
 
 void *RT_EF_CDECL operator new[](RT_EF_SIZE_T cb) throw(std::bad_alloc)
 {
-    void *pv = rtR3MemAlloc("new[]", RTMEMTYPE_NEW_ARRAY, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
+    void *pv = rtR3MemAlloc("new[]", RTMEMTYPE_NEW_ARRAY, cb, cb, NULL, ASMReturnAddress(), NULL, 0, NULL);
     if (!pv)
         throw std::bad_alloc();
     return pv;
@@ -102,7 +102,7 @@ void *RT_EF_CDECL operator new[](RT_EF_SIZE_T cb) throw(std::bad_alloc)
 
 void * RT_EF_CDECL operator new[](RT_EF_SIZE_T cb, const std::nothrow_t &) throw()
 {
-    void *pv = rtR3MemAlloc("new[] nothrow", RTMEMTYPE_NEW_ARRAY, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
+    void *pv = rtR3MemAlloc("new[] nothrow", RTMEMTYPE_NEW_ARRAY, cb, cb, NULL, ASMReturnAddress(), NULL, 0, NULL);
     return pv;
 }
 

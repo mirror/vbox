@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -671,7 +671,7 @@ static int rtUtf8RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, size_
 }
 
 
-RTDECL(int) RTStrToUtf16(const char *pszString, PRTUTF16 *ppwszString)
+RTDECL(int) RTStrToUtf16Tag(const char *pszString, PRTUTF16 *ppwszString, const char *pszTag)
 {
     /*
      * Validate input.
@@ -690,7 +690,7 @@ RTDECL(int) RTStrToUtf16(const char *pszString, PRTUTF16 *ppwszString)
         /*
          * Allocate buffer.
          */
-        PRTUTF16 pwsz = (PRTUTF16)RTMemAlloc((cwc + 1) * sizeof(RTUTF16));
+        PRTUTF16 pwsz = (PRTUTF16)RTMemAllocTag((cwc + 1) * sizeof(RTUTF16), pszTag);
         if (pwsz)
         {
             /*
@@ -709,10 +709,11 @@ RTDECL(int) RTStrToUtf16(const char *pszString, PRTUTF16 *ppwszString)
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTStrToUtf16);
+RT_EXPORT_SYMBOL(RTStrToUtf16Tag);
 
 
-RTDECL(int)  RTStrToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc)
+RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString,
+                               PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc, const char *pszTag)
 {
     /*
      * Validate input.
@@ -748,7 +749,7 @@ RTDECL(int)  RTStrToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *p
             *ppwsz = NULL;
             fShouldFree = true;
             cwc = RT_MAX(cwcResult + 1, cwc);
-            pwszResult = (PRTUTF16)RTMemAlloc(cwc * sizeof(RTUTF16));
+            pwszResult = (PRTUTF16)RTMemAllocTag(cwc * sizeof(RTUTF16), pszTag);
         }
         if (pwszResult)
         {
@@ -769,7 +770,7 @@ RTDECL(int)  RTStrToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *p
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTStrToUtf16Ex);
+RT_EXPORT_SYMBOL(RTStrToUtf16ExTag);
 
 
 RTDECL(size_t) RTStrCalcUtf16Len(const char *psz)

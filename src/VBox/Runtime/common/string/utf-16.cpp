@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,23 +47,23 @@ RTDECL(void)  RTUtf16Free(PRTUTF16 pwszString)
 RT_EXPORT_SYMBOL(RTUtf16Free);
 
 
-RTDECL(PRTUTF16) RTUtf16Dup(PCRTUTF16 pwszString)
+RTDECL(PRTUTF16) RTUtf16DupTag(PCRTUTF16 pwszString, const char *pszTag)
 {
     Assert(pwszString);
     size_t cb = (RTUtf16Len(pwszString) + 1) * sizeof(RTUTF16);
-    PRTUTF16 pwsz = (PRTUTF16)RTMemAlloc(cb);
+    PRTUTF16 pwsz = (PRTUTF16)RTMemAllocTag(cb, pszTag);
     if (pwsz)
         memcpy(pwsz, pwszString, cb);
     return pwsz;
 }
-RT_EXPORT_SYMBOL(RTUtf16Dup);
+RT_EXPORT_SYMBOL(RTUtf16DupTag);
 
 
-RTDECL(int) RTUtf16DupEx(PRTUTF16 *ppwszString, PCRTUTF16 pwszString, size_t cwcExtra)
+RTDECL(int) RTUtf16DupExTag(PRTUTF16 *ppwszString, PCRTUTF16 pwszString, size_t cwcExtra, const char *pszTag)
 {
     Assert(pwszString);
     size_t cb = (RTUtf16Len(pwszString) + 1) * sizeof(RTUTF16);
-    PRTUTF16 pwsz = (PRTUTF16)RTMemAlloc(cb + cwcExtra * sizeof(RTUTF16));
+    PRTUTF16 pwsz = (PRTUTF16)RTMemAllocTag(cb + cwcExtra * sizeof(RTUTF16), pszTag);
     if (pwsz)
     {
         memcpy(pwsz, pwszString, cb);
@@ -72,7 +72,7 @@ RTDECL(int) RTUtf16DupEx(PRTUTF16 *ppwszString, PCRTUTF16 pwszString, size_t cwc
     }
     return VERR_NO_MEMORY;
 }
-RT_EXPORT_SYMBOL(RTUtf16DupEx);
+RT_EXPORT_SYMBOL(RTUtf16DupExTag);
 
 
 RTDECL(size_t) RTUtf16Len(PCRTUTF16 pwszString)
@@ -424,7 +424,7 @@ static int rtUtf16RecodeAsUtf8(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t cch
 
 
 
-RTDECL(int)  RTUtf16ToUtf8(PCRTUTF16 pwszString, char **ppszString)
+RTDECL(int)  RTUtf16ToUtf8Tag(PCRTUTF16 pwszString, char **ppszString, const char *pszTag)
 {
     /*
      * Validate input.
@@ -443,7 +443,7 @@ RTDECL(int)  RTUtf16ToUtf8(PCRTUTF16 pwszString, char **ppszString)
         /*
          * Allocate buffer and recode it.
          */
-        char *pszResult = (char *)RTMemAlloc(cch + 1);
+        char *pszResult = (char *)RTMemAllocTag(cch + 1, pszTag);
         if (pszResult)
         {
             rc = rtUtf16RecodeAsUtf8(pwszString, RTSTR_MAX, pszResult, cch, &cch);
@@ -460,10 +460,10 @@ RTDECL(int)  RTUtf16ToUtf8(PCRTUTF16 pwszString, char **ppszString)
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTUtf16ToUtf8);
+RT_EXPORT_SYMBOL(RTUtf16ToUtf8Tag);
 
 
-RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch)
+RTDECL(int)  RTUtf16ToUtf8ExTag(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch, const char *pszTag)
 {
     /*
      * Validate input.
@@ -499,7 +499,7 @@ RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz
             *ppsz = NULL;
             fShouldFree = true;
             cch = RT_MAX(cch, cchResult + 1);
-            pszResult = (char *)RTStrAlloc(cch);
+            pszResult = (char *)RTStrAllocTag(cch, pszTag);
         }
         if (pszResult)
         {
@@ -518,7 +518,7 @@ RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTUtf16ToUtf8Ex);
+RT_EXPORT_SYMBOL(RTUtf16ToUtf8ExTag);
 
 
 RTDECL(size_t) RTUtf16CalcUtf8Len(PCRTUTF16 pwsz)
@@ -784,7 +784,7 @@ static int rtUtf16RecodeAsLatin1(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t c
 }
 
 
-RTDECL(int)  RTUtf16ToLatin1(PCRTUTF16 pwszString, char **ppszString)
+RTDECL(int)  RTUtf16ToLatin1Tag(PCRTUTF16 pwszString, char **ppszString, const char *pszTag)
 {
     /*
      * Validate input.
@@ -803,7 +803,7 @@ RTDECL(int)  RTUtf16ToLatin1(PCRTUTF16 pwszString, char **ppszString)
         /*
          * Allocate buffer and recode it.
          */
-        char *pszResult = (char *)RTMemAlloc(cch + 1);
+        char *pszResult = (char *)RTMemAllocTag(cch + 1, pszTag);
         if (pszResult)
         {
             rc = rtUtf16RecodeAsLatin1(pwszString, RTSTR_MAX, pszResult, cch);
@@ -820,10 +820,10 @@ RTDECL(int)  RTUtf16ToLatin1(PCRTUTF16 pwszString, char **ppszString)
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTUtf16ToLatin1);
+RT_EXPORT_SYMBOL(RTUtf16ToLatin1Tag);
 
 
-RTDECL(int)  RTUtf16ToLatin1Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch)
+RTDECL(int)  RTUtf16ToLatin1ExTag(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch, const char *pszTag)
 {
     /*
      * Validate input.
@@ -859,7 +859,7 @@ RTDECL(int)  RTUtf16ToLatin1Ex(PCRTUTF16 pwszString, size_t cwcString, char **pp
             *ppsz = NULL;
             fShouldFree = true;
             cch = RT_MAX(cch, cchResult + 1);
-            pszResult = (char *)RTMemAlloc(cch);
+            pszResult = (char *)RTMemAllocTag(cch, pszTag);
         }
         if (pszResult)
         {
@@ -878,7 +878,7 @@ RTDECL(int)  RTUtf16ToLatin1Ex(PCRTUTF16 pwszString, size_t cwcString, char **pp
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTUtf16ToLatin1Ex);
+RT_EXPORT_SYMBOL(RTUtf16ToLatin1ExTag);
 
 
 RTDECL(size_t) RTUtf16CalcLatin1Len(PCRTUTF16 pwsz)
@@ -963,7 +963,7 @@ static int rtLatin1RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, siz
 }
 
 
-RTDECL(int) RTLatin1ToUtf16(const char *pszString, PRTUTF16 *ppwszString)
+RTDECL(int) RTLatin1ToUtf16Tag(const char *pszString, PRTUTF16 *ppwszString, const char *pszTag)
 {
     /*
      * Validate input.
@@ -982,7 +982,7 @@ RTDECL(int) RTLatin1ToUtf16(const char *pszString, PRTUTF16 *ppwszString)
         /*
          * Allocate buffer.
          */
-        PRTUTF16 pwsz = (PRTUTF16)RTMemAlloc((cwc + 1) * sizeof(RTUTF16));
+        PRTUTF16 pwsz = (PRTUTF16)RTMemAllocTag((cwc + 1) * sizeof(RTUTF16), pszTag);
         if (pwsz)
         {
             /*
@@ -1001,10 +1001,11 @@ RTDECL(int) RTLatin1ToUtf16(const char *pszString, PRTUTF16 *ppwszString)
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTLatin1ToUtf16);
+RT_EXPORT_SYMBOL(RTLatin1ToUtf16Tag);
 
 
-RTDECL(int)  RTLatin1ToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc)
+RTDECL(int)  RTLatin1ToUtf16ExTag(const char *pszString, size_t cchString,
+                                  PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc, const char *pszTag)
 {
     /*
      * Validate input.
@@ -1040,7 +1041,7 @@ RTDECL(int)  RTLatin1ToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16
             *ppwsz = NULL;
             fShouldFree = true;
             cwc = RT_MAX(cwcResult + 1, cwc);
-            pwszResult = (PRTUTF16)RTMemAlloc(cwc * sizeof(RTUTF16));
+            pwszResult = (PRTUTF16)RTMemAllocTag(cwc * sizeof(RTUTF16), pszTag);
         }
         if (pwszResult)
         {
@@ -1061,7 +1062,7 @@ RTDECL(int)  RTLatin1ToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16
     }
     return rc;
 }
-RT_EXPORT_SYMBOL(RTLatin1ToUtf16Ex);
+RT_EXPORT_SYMBOL(RTLatin1ToUtf16ExTag);
 
 
 RTDECL(size_t) RTLatin1CalcUtf16Len(const char *psz)

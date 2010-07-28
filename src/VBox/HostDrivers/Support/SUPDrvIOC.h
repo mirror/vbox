@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -192,7 +192,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Nothing.
  */
-#define SUPDRV_IOC_VERSION                              0x00140001
+#define SUPDRV_IOC_VERSION                              0x00150000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE

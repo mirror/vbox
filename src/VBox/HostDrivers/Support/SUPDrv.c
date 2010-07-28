@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -180,23 +180,25 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
     { "SUPGetGIP",                              (void *)SUPGetGIP },
     { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPage },
-    { "RTMemAlloc",                             (void *)RTMemAlloc },
-    { "RTMemAllocZ",                            (void *)RTMemAllocZ },
+    { "RTMemAllocTag",                          (void *)RTMemAllocTag },
+    { "RTMemAllocZTag",                         (void *)RTMemAllocZTag },
+    { "RTMemAllocVarTag",                       (void *)RTMemAllocVarTag },
+    { "RTMemAllocZVarTag",                      (void *)RTMemAllocZVarTag },
     { "RTMemFree",                              (void *)RTMemFree },
-    /*{ "RTMemDup",                               (void *)RTMemDup },
-    { "RTMemDupEx",                             (void *)RTMemDupEx },*/
-    { "RTMemRealloc",                           (void *)RTMemRealloc },
-    { "RTR0MemObjAllocLow",                     (void *)RTR0MemObjAllocLow },
-    { "RTR0MemObjAllocPage",                    (void *)RTR0MemObjAllocPage },
-    { "RTR0MemObjAllocPhys",                    (void *)RTR0MemObjAllocPhys },
-    { "RTR0MemObjAllocPhysEx",                  (void *)RTR0MemObjAllocPhysEx },
-    { "RTR0MemObjAllocPhysNC",                  (void *)RTR0MemObjAllocPhysNC },
-    { "RTR0MemObjAllocCont",                    (void *)RTR0MemObjAllocCont },
-    { "RTR0MemObjEnterPhys",                    (void *)RTR0MemObjEnterPhys },
-    { "RTR0MemObjLockUser",                     (void *)RTR0MemObjLockUser },
-    { "RTR0MemObjMapKernel",                    (void *)RTR0MemObjMapKernel },
-    { "RTR0MemObjMapKernelEx",                  (void *)RTR0MemObjMapKernelEx },
-    { "RTR0MemObjMapUser",                      (void *)RTR0MemObjMapUser },
+    { "RTMemDupTag",                            (void *)RTMemDupTag },
+    { "RTMemDupExTag",                          (void *)RTMemDupExTag },
+    { "RTMemReallocTag",                        (void *)RTMemReallocTag },
+    { "RTR0MemObjAllocLowTag",                  (void *)RTR0MemObjAllocLowTag },
+    { "RTR0MemObjAllocPageTag",                 (void *)RTR0MemObjAllocPageTag },
+    { "RTR0MemObjAllocPhysTag",                 (void *)RTR0MemObjAllocPhysTag },
+    { "RTR0MemObjAllocPhysExTag",               (void *)RTR0MemObjAllocPhysExTag },
+    { "RTR0MemObjAllocPhysNCTag",               (void *)RTR0MemObjAllocPhysNCTag },
+    { "RTR0MemObjAllocContTag",                 (void *)RTR0MemObjAllocContTag },
+    { "RTR0MemObjEnterPhysTag",                 (void *)RTR0MemObjEnterPhysTag },
+    { "RTR0MemObjLockUserTag",                  (void *)RTR0MemObjLockUserTag },
+    { "RTR0MemObjMapKernelTag",                 (void *)RTR0MemObjMapKernelTag },
+    { "RTR0MemObjMapKernelExTag",               (void *)RTR0MemObjMapKernelExTag },
+    { "RTR0MemObjMapUserTag",                   (void *)RTR0MemObjMapUserTag },
     { "RTR0MemObjProtect",                      (void *)RTR0MemObjProtect },
     { "RTR0MemObjAddress",                      (void *)RTR0MemObjAddress },
     { "RTR0MemObjAddressR3",                    (void *)RTR0MemObjAddressR3 },
@@ -358,7 +360,7 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
     (PFNRT)RTUuidCompare,
     (PFNRT)RTUuidCompareStr,
     (PFNRT)RTUuidFromStr,
-    (PFNRT)RTStrDup,
+    (PFNRT)RTStrDupTag,
     (PFNRT)RTStrFree,
     /* VBoxNetAdp */
     (PFNRT)RTRandBytes,
@@ -1255,7 +1257,8 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: symb off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offSymbol, (long)pReq->u.In.cbImageWithTabs));
                     REQ_CHECK_EXPR_FMT(paSyms[i].offName < pReq->u.In.cbStrTab,
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: name off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithTabs));
-                    REQ_CHECK_EXPR_FMT(RTStrEnd(&pReq->u.In.abImage[pReq->u.In.offStrTab + paSyms[i].offName], pReq->u.In.cbStrTab - paSyms[i].offName),
+                    REQ_CHECK_EXPR_FMT(RTStrEnd((char const *)&pReq->u.In.abImage[pReq->u.In.offStrTab + paSyms[i].offName],
+                                                pReq->u.In.cbStrTab - paSyms[i].offName),
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: unterminated name! (%#lx / %#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithTabs));
                 }
             }

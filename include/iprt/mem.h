@@ -55,8 +55,22 @@ RT_C_DECLS_BEGIN
  */
 #define RTMEM_ALIGNMENT    8
 
+/** @def RTMEM_TAG
+ * The default allocation tag used by the RTMem allocation APIs.
+ *
+ * When not defined before the inclusion of iprt/mem.h or iprt/memobj.h, this
+ * will default to the pointer to the current file name.  The memory API will
+ * make of use of this as pointer to a volatile but read-only string.
+ */
+#ifndef RTMEM_TAG
+# define RTMEM_TAG   (__FILE__)
+#endif
+
+
+/** @name Allocate temporary memory.
+ * @{ */
 /**
- * Allocates temporary memory.
+ * Allocates temporary memory with default tag.
  *
  * Temporary memory blocks are used for not too large memory blocks which
  * are believed not to stick around for too long. Using this API instead
@@ -64,21 +78,48 @@ RT_C_DECLS_BEGIN
  * but makes the code easier to read.
  *
  * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
+ * @returns NULL on failure, assertion raised in strict builds.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemTmpAlloc(size_t cb) RT_NO_THROW;
+#define RTMemTmpAlloc(cb)               RTMemTmpAllocTag((cb), RTMEM_TAG)
 
 /**
- * Allocates zero'ed temporary memory.
+ * Allocates temporary memory with custom tag.
+ *
+ * Temporary memory blocks are used for not too large memory blocks which
+ * are believed not to stick around for too long. Using this API instead
+ * of RTMemAlloc() not only gives the heap manager room for optimization
+ * but makes the code easier to read.
+ *
+ * @returns Pointer to the allocated memory.
+ * @returns NULL on failure, assertion raised in strict builds.
+ * @param   cb      Size in bytes of the memory block to allocated.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
+
+/**
+ * Allocates zero'ed temporary memory with default tag.
  *
  * Same as RTMemTmpAlloc() but the memory will be zero'ed.
  *
  * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
+ * @returns NULL on failure, assertion raised in strict builds.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemTmpAllocZ(size_t cb) RT_NO_THROW;
+#define RTMemTmpAllocZ(cb)              RTMemTmpAllocZTag((cb), RTMEM_TAG)
+
+/**
+ * Allocates zero'ed temporary memory with custom tag.
+ *
+ * Same as RTMemTmpAlloc() but the memory will be zero'ed.
+ *
+ * @returns Pointer to the allocated memory.
+ * @returns NULL on failure, assertion raised in strict builds.
+ * @param   cb      Size in bytes of the memory block to allocated.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *)  RTMemTmpAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
  * Free temporary memory.
@@ -87,18 +128,31 @@ RTDECL(void *)  RTMemTmpAllocZ(size_t cb) RT_NO_THROW;
  */
 RTDECL(void)    RTMemTmpFree(void *pv) RT_NO_THROW;
 
+/** @}  */
+
 
 /**
- * Allocates memory.
+ * Allocates memory with default tag.
  *
  * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
+ * @returns NULL on failure, assertion raised in strict builds.
  * @param   cb      Size in bytes of the memory block to allocated.
+ * @param   pszTag  Allocation tag used for statistics and such.
  */
-RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW;
+#define RTMemAlloc(cb)                  RTMemAllocTag((cb), RTMEM_TAG)
 
 /**
- * Allocates zero'ed memory.
+ * Allocates memory with custom tag.
+ *
+ * @returns Pointer to the allocated memory.
+ * @returns NULL on failure, assertion raised in strict builds.
+ * @param   cb      Size in bytes of the memory block to allocated.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *)  RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
+
+/**
+ * Allocates zero'ed memory with default tag.
  *
  * Instead of memset(pv, 0, sizeof()) use this when you want zero'ed
  * memory. This keeps the code smaller and the heap can skip the memset
@@ -108,7 +162,21 @@ RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW;
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocated.
  */
-RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW;
+#define RTMemAllocZ(cb)                 RTMemAllocZTag((cb), RTMEM_TAG)
+
+/**
+ * Allocates zero'ed memory with custom tag.
+ *
+ * Instead of memset(pv, 0, sizeof()) use this when you want zero'ed
+ * memory. This keeps the code smaller and the heap can skip the memset
+ * in about 0.42% of calls :-).
+ *
+ * @returns Pointer to the allocated memory.
+ * @returns NULL on failure.
+ * @param   cb      Size in bytes of the memory block to allocated.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *)  RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
  * Wrapper around RTMemAlloc for automatically aligning variable sized
@@ -117,7 +185,17 @@ RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW;
  * @returns See RTMemAlloc.
  * @param   cbUnaligned         The unaligned size.
  */
-RTDECL(void *) RTMemAllocVar(size_t cbUnaligned);
+#define RTMemAllocVar(cbUnaligned)      RTMemAllocVarTag((cbUnaligned), RTMEM_TAG)
+
+/**
+ * Wrapper around RTMemAllocTag for automatically aligning variable sized
+ * allocations so that the various electric fence heaps works correctly.
+ *
+ * @returns See RTMemAlloc.
+ * @param   cbUnaligned         The unaligned size.
+ * @param   pszTag              Allocation tag used for statistics and such.
+ */
+RTDECL(void *) RTMemAllocVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW;
 
 /**
  * Wrapper around RTMemAllocZ for automatically aligning variable sized
@@ -126,21 +204,42 @@ RTDECL(void *) RTMemAllocVar(size_t cbUnaligned);
  * @returns See RTMemAllocZ.
  * @param   cbUnaligned         The unaligned size.
  */
-RTDECL(void *) RTMemAllocZVar(size_t cbUnaligned);
+#define RTMemAllocZVar(cbUnaligned)     RTMemAllocZVarTag((cbUnaligned), RTMEM_TAG)
 
 /**
- * Duplicates a chunk of memory into a new heap block.
+ * Wrapper around RTMemAllocZTag for automatically aligning variable sized
+ * allocations so that the various electric fence heaps works correctly.
+ *
+ * @returns See RTMemAllocZ.
+ * @param   cbUnaligned         The unaligned size.
+ * @param   pszTag              Allocation tag used for statistics and such.
+ */
+RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_THROW;
+
+/**
+ * Duplicates a chunk of memory into a new heap block (default tag).
  *
  * @returns New heap block with the duplicate data.
  * @returns NULL if we're out of memory.
  * @param   pvSrc   The memory to duplicate.
  * @param   cb      The amount of memory to duplicate.
  */
-RTDECL(void *) RTMemDup(const void *pvSrc, size_t cb) RT_NO_THROW;
+#define RTMemDup(pvSrc, cb)             RTMemDupTag((pvSrc), (cb), RTMEM_TAG)
 
 /**
- * Duplicates a chunk of memory into a new heap block with some
- * additional zeroed memory.
+ * Duplicates a chunk of memory into a new heap block (custom tag).
+ *
+ * @returns New heap block with the duplicate data.
+ * @returns NULL if we're out of memory.
+ * @param   pvSrc   The memory to duplicate.
+ * @param   cb      The amount of memory to duplicate.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *) RTMemDupTag(const void *pvSrc, size_t cb, const char *pszTag) RT_NO_THROW;
+
+/**
+ * Duplicates a chunk of memory into a new heap block with some additional
+ * zeroed memory (default tag).
  *
  * @returns New heap block with the duplicate data.
  * @returns NULL if we're out of memory.
@@ -148,17 +247,41 @@ RTDECL(void *) RTMemDup(const void *pvSrc, size_t cb) RT_NO_THROW;
  * @param   cbSrc   The amount of memory to duplicate.
  * @param   cbExtra The amount of extra memory to allocate and zero.
  */
-RTDECL(void *) RTMemDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW;
+#define RTMemDupEx(pvSrc, cbSrc, cbExtra)   RTMemDupExTag((pvSrc), (cbSrc), (cbExtra), RTMEM_TAG)
 
 /**
- * Reallocates memory.
+ * Duplicates a chunk of memory into a new heap block with some additional
+ * zeroed memory (default tag).
+ *
+ * @returns New heap block with the duplicate data.
+ * @returns NULL if we're out of memory.
+ * @param   pvSrc   The memory to duplicate.
+ * @param   cbSrc   The amount of memory to duplicate.
+ * @param   cbExtra The amount of extra memory to allocate and zero.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *) RTMemDupExTag(const void *pvSrc, size_t cbSrc, size_t cbExtra, const char *pszTag) RT_NO_THROW;
+
+/**
+ * Reallocates memory with default tag.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL on failure.
  * @param   pvOld   The memory block to reallocate.
  * @param   cbNew   The new block size (in bytes).
  */
-RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW;
+#define RTMemRealloc(pvOld, cbNew)          RTMemReallocTag((pvOld), (cbNew), RTMEM_TAG)
+
+/**
+ * Reallocates memory with custom tag.
+ *
+ * @returns Pointer to the allocated memory.
+ * @returns NULL on failure.
+ * @param   pvOld   The memory block to reallocate.
+ * @param   cbNew   The new block size (in bytes).
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW;
 
 /**
  * Frees memory.
@@ -167,14 +290,26 @@ RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW;
  */
 RTDECL(void)    RTMemFree(void *pv) RT_NO_THROW;
 
+
+
 /**
- * Allocates memory which may contain code.
+ * Allocates memory which may contain code (default tag).
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemExecAlloc(size_t cb) RT_NO_THROW;
+#define RTMemExecAlloc(cb)              RTMemExecAllocTag((cb), RTMEM_TAG)
+
+/**
+ * Allocates memory which may contain code (custom tag).
+ *
+ * @returns Pointer to the allocated memory.
+ * @returns NULL on failure.
+ * @param   cb      Size in bytes of the memory block to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *)  RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
  * Free executable/read/write memory allocated by RTMemExecAlloc().
@@ -203,22 +338,42 @@ RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb) RT_NO_THROW;
 #endif /* R0+AMD64+LINUX */
 
 /**
- * Allocate page aligned memory.
+ * Allocate page aligned memory with default tag.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL if we're out of memory.
  * @param   cb  Size of the memory block. Will be rounded up to page size.
  */
-RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW;
+#define RTMemPageAlloc(cb)              RTMemPageAllocTag((cb), RTMEM_TAG)
 
 /**
- * Allocate zero'ed page aligned memory.
+ * Allocate page aligned memory with custom tag.
+ *
+ * @returns Pointer to the allocated memory.
+ * @returns NULL if we're out of memory.
+ * @param   cb  Size of the memory block. Will be rounded up to page size.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
+
+/**
+ * Allocate zero'ed page aligned memory with default tag.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL if we're out of memory.
  * @param   cb  Size of the memory block. Will be rounded up to page size.
  */
-RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW;
+#define RTMemPageAllocZ(cb)             RTMemPageAllocZTag((cb), RTMEM_TAG)
+
+/**
+ * Allocate zero'ed page aligned memory with custom tag.
+ *
+ * @returns Pointer to the allocated memory.
+ * @returns NULL if we're out of memory.
+ * @param   cb  Size of the memory block. Will be rounded up to page size.
+ * @param   pszTag  Allocation tag used for statistics and such.
+ */
+RTDECL(void *) RTMemPageAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
  * Free a memory block allocated with RTMemPageAlloc() or RTMemPageAllocZ().
@@ -359,22 +514,24 @@ RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void);
  */
 
 /**
- * Same as RTMemTmpAlloc() except that it's fenced.
+ * Same as RTMemTmpAllocTag() except that it's fenced.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
  */
-RTDECL(void *)  RTMemEfTmpAlloc(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
+RTDECL(void *)  RTMemEfTmpAlloc(size_t cb, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
- * Same as RTMemTmpAllocZ() except that it's fenced.
+ * Same as RTMemTmpAllocZTag() except that it's fenced.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
  */
-RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
+RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Same as RTMemTmpFree() except that it's for fenced memory.
@@ -384,50 +541,55 @@ RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
 RTDECL(void)    RTMemEfTmpFree(void *pv, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
- * Same as RTMemAlloc() except that it's fenced.
+ * Same as RTMemAllocTag() except that it's fenced.
  *
  * @returns Pointer to the allocated memory. Free with RTMemEfFree().
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
  */
-RTDECL(void *)  RTMemEfAlloc(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAlloc(size_t cb, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
- * Same as RTMemAllocZ() except that it's fenced.
+ * Same as RTMemAllocZTag() except that it's fenced.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
  */
-RTDECL(void *)  RTMemEfAllocZ(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAllocZ(size_t cb, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
- * Same as RTMemAllocVar() except that it's fenced.
+ * Same as RTMemAllocVarTag() except that it's fenced.
  *
  * @returns Pointer to the allocated memory. Free with RTMemEfFree().
  * @returns NULL on failure.
  * @param   cbUnaligned Size in bytes of the memory block to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
  */
-RTDECL(void *)  RTMemEfAllocVar(size_t cbUnaligned, RT_SRC_POS_DECL) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAllocVar(size_t cbUnaligned, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
- * Same as RTMemAllocZVar() except that it's fenced.
+ * Same as RTMemAllocZVarTag() except that it's fenced.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL on failure.
  * @param   cbUnaligned Size in bytes of the memory block to allocate.
+ * @param   pszTag  Allocation tag used for statistics and such.
  */
-RTDECL(void *)  RTMemEfAllocZVar(size_t cbUnaligned, RT_SRC_POS_DECL) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAllocZVar(size_t cbUnaligned, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
- * Same as RTMemRealloc() except that it's fenced.
+ * Same as RTMemReallocTag() except that it's fenced.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL on failure.
  * @param   pvOld   The memory block to reallocate.
  * @param   cbNew   The new block size (in bytes).
+ * @param   pszTag  Allocation tag used for statistics and such.
  */
-RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew, RT_SRC_POS_DECL) RT_NO_THROW;
+RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Free memory allocated by any of the RTMemEf* allocators.
@@ -437,93 +599,95 @@ RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew, RT_SRC_POS_DECL) RT_NO
 RTDECL(void)    RTMemEfFree(void *pv, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
- * Same as RTMemDup() except that it's fenced.
+ * Same as RTMemDupTag() except that it's fenced.
  *
  * @returns New heap block with the duplicate data.
  * @returns NULL if we're out of memory.
  * @param   pvSrc   The memory to duplicate.
  * @param   cb      The amount of memory to duplicate.
+ * @param   pszTag  Allocation tag used for statistics and such.
  */
-RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
+RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
- * Same as RTMemEfDupEx except that it's fenced.
+ * Same as RTMemEfDupExTag except that it's fenced.
  *
  * @returns New heap block with the duplicate data.
  * @returns NULL if we're out of memory.
  * @param   pvSrc   The memory to duplicate.
  * @param   cbSrc   The amount of memory to duplicate.
  * @param   cbExtra The amount of extra memory to allocate and zero.
+ * @param   pszTag  Allocation tag used for statistics and such.
  */
-RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, RT_SRC_POS_DECL) RT_NO_THROW;
+RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, const char *pszTag, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /** @def RTMEM_WRAP_TO_EF_APIS
  * Define RTMEM_WRAP_TO_EF_APIS to wrap RTMem APIs to RTMemEf APIs.
  */
 #if defined(RTMEM_WRAP_TO_EF_APIS) && defined(IN_RING3) && !defined(RTMEM_NO_WRAP_TO_EF_APIS)
-# define RTMemTmpAlloc(cb)                  RTMemEfTmpAlloc((cb), RT_SRC_POS)
-# define RTMemTmpAllocZ(cb)                 RTMemEfTmpAllocZ((cb), RT_SRC_POS)
-# define RTMemTmpFree(pv)                   RTMemEfTmpFree((pv), RT_SRC_POS)
-# define RTMemAlloc(cb)                     RTMemEfAlloc((cb), RT_SRC_POS)
-# define RTMemAllocZ(cb)                    RTMemEfAllocZ((cb), RT_SRC_POS)
-# define RTMemAllocVar(cbUnaligned)         RTMemEfAllocVar((cbUnaligned), RT_SRC_POS)
-# define RTMemAllocZVar(cbUnaligned)        RTMemEfAllocZVar((cbUnaligned), RT_SRC_POS)
-# define RTMemRealloc(pvOld, cbNew)         RTMemEfRealloc((pvOld), (cbNew), RT_SRC_POS)
-# define RTMemFree(pv)                      RTMemEfFree((pv), RT_SRC_POS)
-# define RTMemDup(pvSrc, cb)                RTMemEfDup((pvSrc), (cb), RT_SRC_POS)
-# define RTMemDupEx(pvSrc, cbSrc, cbExtra)  RTMemEfDupEx((pvSrc), (cbSrc), (cbExtra), RT_SRC_POS)
+# define RTMemTmpAllocTag(cb, pszTag)                   RTMemEfTmpAlloc((cb), (pszTag), RT_SRC_POS)
+# define RTMemTmpAllocZTag(cb, pszTag)                  RTMemEfTmpAllocZ((cb), (pszTag), RT_SRC_POS)
+# define RTMemTmpFree(pv)                               RTMemEfTmpFree((pv), RT_SRC_POS)
+# define RTMemAllocTag(cb, pszTag)                      RTMemEfAlloc((cb), (pszTag), RT_SRC_POS)
+# define RTMemAllocZTag(cb, pszTag)                     RTMemEfAllocZ((cb), (pszTag), RT_SRC_POS)
+# define RTMemAllocVarTag(cbUnaligned, pszTag)          RTMemEfAllocVar((cbUnaligned), (pszTag), RT_SRC_POS)
+# define RTMemAllocZVarTag(cbUnaligned, pszTag)         RTMemEfAllocZVar((cbUnaligned), (pszTag), RT_SRC_POS)
+# define RTMemReallocTag(pvOld, cbNew, pszTag)          RTMemEfRealloc((pvOld), (cbNew), (pszTag), RT_SRC_POS)
+# define RTMemFree(pv)                                  RTMemEfFree((pv), RT_SRC_POS)
+# define RTMemDupTag(pvSrc, cb, pszTag)                 RTMemEfDup((pvSrc), (cb), (pszTag), RT_SRC_POS)
+# define RTMemDupExTag(pvSrc, cbSrc, cbExtra, pszTag)   RTMemEfDupEx((pvSrc), (cbSrc), (cbExtra), (pszTag), RT_SRC_POS)
 #endif
 #ifdef DOXYGEN_RUNNING
 # define RTMEM_WRAP_TO_EF_APIS
 #endif
 
 /**
- * Fenced drop-in replacement for RTMemTmpAlloc.
- * @copydoc RTMemTmpAlloc
+ * Fenced drop-in replacement for RTMemTmpAllocTag.
+ * @copydoc RTMemTmpAllocTag
  */
-RTDECL(void *)  RTMemEfTmpAllocNP(size_t cb) RT_NO_THROW;
+RTDECL(void *)  RTMemEfTmpAllocNP(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
- * Fenced drop-in replacement for RTMemTmpAllocZ.
- * @copydoc RTMemTmpAllocZ
+ * Fenced drop-in replacement for RTMemTmpAllocZTag.
+ * @copydoc RTMemTmpAllocZTag
  */
-RTDECL(void *)  RTMemEfTmpAllocZNP(size_t cb) RT_NO_THROW;
+RTDECL(void *)  RTMemEfTmpAllocZNP(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
- * Fenced drop-in replacement for RTMemTmpFree.
- * @copydoc RTMemTmpFree
+ * Fenced drop-in replacement for RTMemTmpFreeTag.
+ * @copydoc RTMemTmpFreeTag
  */
 RTDECL(void)    RTMemEfTmpFreeNP(void *pv) RT_NO_THROW;
 
 /**
- * Fenced drop-in replacement for RTMemAlloc.
- * @copydoc RTMemAlloc
+ * Fenced drop-in replacement for RTMemAllocTag.
+ * @copydoc RTMemAllocTag
  */
-RTDECL(void *)  RTMemEfAllocNP(size_t cb) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAllocNP(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
- * Fenced drop-in replacement for RTMemAllocZ.
- * @copydoc RTMemAllocZ
+ * Fenced drop-in replacement for RTMemAllocZTag.
+ * @copydoc RTMemAllocZTag
  */
-RTDECL(void *)  RTMemEfAllocZNP(size_t cb) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAllocZNP(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
- * Fenced drop-in replacement for RTMemAllocVar
- * @copydoc RTMemAllocVar
+ * Fenced drop-in replacement for RTMemAllocVarTag
+ * @copydoc RTMemAllocVarTag
  */
-RTDECL(void *)  RTMemEfAllocVarNP(size_t cbUnaligned) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAllocVarNP(size_t cbUnaligned, const char *pszTag) RT_NO_THROW;
 
 /**
- * Fenced drop-in replacement for RTMemAllocZVar.
- * @copydoc RTMemAllocZVar
+ * Fenced drop-in replacement for RTMemAllocZVarTag.
+ * @copydoc RTMemAllocZVarTag
  */
-RTDECL(void *)  RTMemEfAllocZVarNP(size_t cbUnaligned) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAllocZVarNP(size_t cbUnaligned, const char *pszTag) RT_NO_THROW;
 
 /**
- * Fenced drop-in replacement for RTMemRealloc.
- * @copydoc RTMemRealloc
+ * Fenced drop-in replacement for RTMemReallocTag.
+ * @copydoc RTMemReallocTag
  */
-RTDECL(void *)  RTMemEfReallocNP(void *pvOld, size_t cbNew) RT_NO_THROW;
+RTDECL(void *)  RTMemEfReallocNP(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW;
 
 /**
  * Fenced drop-in replacement for RTMemFree.
@@ -532,16 +696,16 @@ RTDECL(void *)  RTMemEfReallocNP(void *pvOld, size_t cbNew) RT_NO_THROW;
 RTDECL(void)    RTMemEfFreeNP(void *pv) RT_NO_THROW;
 
 /**
- * Fenced drop-in replacement for RTMemDupEx.
- * @copydoc RTMemDupEx
+ * Fenced drop-in replacement for RTMemDupExTag.
+ * @copydoc RTMemDupExTag
  */
-RTDECL(void *) RTMemEfDupNP(const void *pvSrc, size_t cb) RT_NO_THROW;
+RTDECL(void *) RTMemEfDupNP(const void *pvSrc, size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
- * Fenced drop-in replacement for RTMemDupEx.
- * @copydoc RTMemDupEx
+ * Fenced drop-in replacement for RTMemDupExTag.
+ * @copydoc RTMemDupExTag
  */
-RTDECL(void *) RTMemEfDupExNP(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW;
+RTDECL(void *) RTMemEfDupExNP(const void *pvSrc, size_t cbSrc, size_t cbExtra, const char *pszTag) RT_NO_THROW;
 
 /** @} */
 
@@ -654,9 +818,9 @@ inline T * RTMemAutoNil(void) RT_NO_THROW
 template <class T,
           void Destruct(T *) = RTMemAutoDestructor<T>,
 # ifdef RTMEM_WRAP_TO_EF_APIS
-          void *Allocator(void *, size_t) = RTMemEfReallocNP
+          void *Allocator(void *, size_t, const char *) = RTMemEfReallocNP
 # else
-          void *Allocator(void *, size_t) = RTMemRealloc
+          void *Allocator(void *, size_t, const char *) = RTMemReallocTag
 # endif
           >
 class RTMemAutoPtr
@@ -681,7 +845,7 @@ public:
      *                      the allocation. Defaults to false.
      */
     RTMemAutoPtr(size_t a_cElements, bool a_fZeroed = false)
-        : RTAutoRes<T *, Destruct, RTMemAutoNil<T> >((T *)Allocator(NULL, a_cElements * sizeof(T)))
+        : RTAutoRes<T *, Destruct, RTMemAutoNil<T> >((T *)Allocator(NULL, a_cElements * sizeof(T), RTMEM_TAG))
     {
         if (a_fZeroed && RT_LIKELY(this->get() != NULL))
             memset(this->get(), '\0', a_cElements * sizeof(T));
@@ -743,7 +907,7 @@ public:
     bool alloc(size_t a_cElements = 1, bool a_fZeroed = false)
     {
         this->reset(NULL);
-        T *pNewMem = (T *)Allocator(NULL, a_cElements * sizeof(T));
+        T *pNewMem = (T *)Allocator(NULL, a_cElements * sizeof(T), RTMEM_TAG);
         if (a_fZeroed && RT_LIKELY(pNewMem != NULL))
             memset(pNewMem, '\0', a_cElements * sizeof(T));
         this->reset(pNewMem);
@@ -770,7 +934,7 @@ public:
      */
     bool realloc(size_t a_cElements = 1)
     {
-        T *aNewValue = (T *)Allocator(this->get(), a_cElements * sizeof(T));
+        T *aNewValue = (T *)Allocator(this->get(), a_cElements * sizeof(T), RTMEM_TAG);
         if (RT_LIKELY(aNewValue != NULL))
             this->release();
         /* We want this both if aNewValue is non-NULL and if it is NULL. */
