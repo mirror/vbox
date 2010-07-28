@@ -78,15 +78,17 @@ DECLINLINE(int) vdiError(PVDIIMAGEDESC pImage, int rc, RT_SRC_POS_DECL,
 }
 
 
-static int vdiFileOpen(PVDIIMAGEDESC pImage, bool fReadonly, bool fCreate)
+static int vdiFileOpen(PVDIIMAGEDESC pImage, bool fReadonly, bool fShareable,
+                       bool fCreate)
 {
     int rc = VINF_SUCCESS;
 
-    AssertMsg(!(fReadonly && fCreate), ("Image can't be opened readonly whilebeing created\n"));
+    AssertMsg(!(fReadonly && fCreate), ("Image can't be opened readonly while being created\n"));
 
 #ifndef VBOX_WITH_NEW_IO_CODE
-    uint32_t fOpen = fReadonly ? RTFILE_O_READ      | RTFILE_O_DENY_NONE
-                               : RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE;
+    uint32_t fDeny = fReadonly | fShareable ? RTFILE_O_DENY_NONE : RTFILE_O_DENY_WRITE;
+    uint32_t fOpen = fReadonly ? RTFILE_O_READ : RTFILE_O_READWRITE;
+    fOpen |= fDeny;
 
     if (fCreate)
         fOpen |= RTFILE_O_CREATE;
@@ -513,8 +515,9 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
                           unsigned uImageFlags, const char *pszComment,
                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
                           PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
-                          PFNVDPROGRESS pfnProgress, void *pvUser,
-                          unsigned uPercentStart, unsigned uPercentSpan)
+                          unsigned uOpenFlags, PFNVDPROGRESS pfnProgress,
+                          void *pvUser, unsigned uPercentStart,
+                          unsigned uPercentSpan)
 {
     int rc;
     uint64_t cbTotal;
@@ -579,7 +582,9 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
     vdiSetupImageDesc(pImage);
 
     /* Create image file. */
-    rc = vdiFileOpen(pImage, false /* fReadonly */, true /* fCreate */);
+    rc = vdiFileOpen(pImage, false /* fReadonly */,
+                     !!(uOpenFlags & VD_OPEN_FLAGS_SHAREABLE),
+                     true /* fCreate */);
     if (RT_FAILURE(rc))
     {
         rc = vdiError(pImage, rc, RT_SRC_POS, N_("VDI: cannot create image '%s'"), pImage->pszFilename);
@@ -732,7 +737,10 @@ static int vdiOpenImage(PVDIIMAGEDESC pImage, unsigned uOpenFlags)
     /*
      * Open the image.
      */
-    rc = vdiFileOpen(pImage, !!(uOpenFlags & VD_OPEN_FLAGS_READONLY), false /* fCreate */);
+    rc = vdiFileOpen(pImage,
+                     !!(uOpenFlags & VD_OPEN_FLAGS_READONLY),
+                     !!(uOpenFlags & VD_OPEN_FLAGS_SHAREABLE),
+                     false /* fCreate */);
     if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
@@ -1158,7 +1166,7 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
     pImage->pVDIfsImage = pVDIfsImage;
 
     rc = vdiCreateImage(pImage, cbSize, uImageFlags, pszComment,
-                        pPCHSGeometry, pLCHSGeometry, pUuid,
+                        pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags,
                         pfnProgress, pvUser, uPercentStart, uPercentSpan);
     if (RT_SUCCESS(rc))
     {

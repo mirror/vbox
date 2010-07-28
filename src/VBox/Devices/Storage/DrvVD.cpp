@@ -160,6 +160,8 @@ typedef struct VBOXDISK
     PPDMIMEDIAASYNCPORT      pDrvMediaAsyncPort;
     /** Pointer to the list of data we need to keep per image. */
     PVBOXIMAGE               pImages;
+    /** Flag whether the media should allow concurrent open for writing. */
+    bool                fShareable;
     /** Flag whether a merge operation has been set up. */
     bool                fMergePending;
     /** Synchronization to prevent destruction before merge finishes. */
@@ -341,10 +343,15 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                                                         drvvdAsyncTaskCompleted, pStorageBackend, "AsyncTaskCompleted");
             if (RT_SUCCESS(rc))
             {
-                rc = PDMR3AsyncCompletionEpCreateForFile(&pStorageBackend->pEndpoint, pszLocation,
-                                                         uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY
-                                                         ? PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_CACHING
-                                                         : PDMACEP_FILE_FLAGS_CACHING,
+                uint32_t fFlags =    uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY
+                                   ? PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_CACHING
+                                   : 0;
+                if (pThis->fShareable)
+                    fFlags |= PDMACEP_FILE_FLAGS_DONT_LOCK;
+                else
+                    fFlags |= PDMACEP_FILE_FLAGS_CACHING;
+                rc = PDMR3AsyncCompletionEpCreateForFile(&pStorageBackend->pEndpoint,
+                                                         pszLocation, fFlags,
                                                          pStorageBackend->pTemplate);
                 if (RT_SUCCESS(rc))
                 {
@@ -1633,6 +1640,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->fTempReadOnly                = false;
     pThis->pDisk                        = NULL;
     pThis->fAsyncIOSupported            = false;
+    pThis->fShareable                   = false;
     pThis->fMergePending                = false;
     pThis->MergeCompleteMutex           = NIL_RTSEMFASTMUTEX;
     pThis->uMergeSource                 = VD_LAST_IMAGE;
@@ -1701,7 +1709,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
              * open flags. Some might be converted to per-image flags later. */
             fValid = CFGMR3AreValuesValid(pCurNode,
                                           "Format\0Path\0"
-                                          "ReadOnly\0MaybeReadOnly\0TempReadOnly\0HonorZeroWrites\0"
+                                          "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
                                           "HostIPStack\0UseNewIo\0"
                                           "SetupMerge\0MergeSource\0MergeTarget\0");
         }
@@ -1766,6 +1774,15 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                       N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"TempReadOnly\" are set"));
                 break;
             }
+
+            rc = CFGMR3QueryBoolDef(pCurNode, "Shareable", &pThis->fShareable, false);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"Shareable\" as boolean failed"));
+                break;
+            }
+
             rc = CFGMR3QueryBoolDef(pCurNode, "UseNewIo", &fUseNewIo, false);
             if (RT_FAILURE(rc))
             {
@@ -2007,6 +2024,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             uOpenFlags |= VD_OPEN_FLAGS_HONOR_ZEROES;
         if (pThis->fAsyncIOSupported)
             uOpenFlags |= VD_OPEN_FLAGS_ASYNC_IO;
+        if (pThis->fShareable)
+            uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
 
         /* Try to open backend in async I/O mode first. */
         rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);

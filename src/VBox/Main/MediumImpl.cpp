@@ -3481,7 +3481,7 @@ HRESULT Medium::queryInfo()
     /* are we dealing with a new medium constructed using the existing
      * location? */
     bool isImport = m->id.isEmpty();
-    unsigned flags = VD_OPEN_FLAGS_INFO;
+    unsigned uOpenFlags = VD_OPEN_FLAGS_INFO;
 
     /* Note that we don't use VD_OPEN_FLAGS_READONLY when opening new
      * media because that would prevent necessary modifications
@@ -3491,10 +3491,14 @@ HRESULT Medium::queryInfo()
     if (    (m->hddOpenMode == OpenReadOnly)
          || !isImport
        )
-        flags |= VD_OPEN_FLAGS_READONLY;
+        uOpenFlags |= VD_OPEN_FLAGS_READONLY;
+
+    /* Open shareable medium with the appropriate flags */
+    if (m->type == MediumType_Shareable)
+        uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
 
     /* Lock the medium, which makes the behavior much more consistent */
-    if (flags & VD_OPEN_FLAGS_READONLY)
+    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY || VD_OPEN_FLAGS_SHAREABLE))
         rc = LockRead(NULL);
     else
         rc = LockWrite(NULL);
@@ -3541,7 +3545,7 @@ HRESULT Medium::queryInfo()
             vrc = VDOpen(hdd,
                          format.c_str(),
                          location.c_str(),
-                         flags,
+                         uOpenFlags,
                          m->vdDiskIfaces);
             if (RT_FAILURE(vrc))
             {
@@ -3739,7 +3743,7 @@ HRESULT Medium::queryInfo()
     else
         m->preLockState = MediumState_Inaccessible;
 
-    if (flags & VD_OPEN_FLAGS_READONLY)
+    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY || VD_OPEN_FLAGS_SHAREABLE))
         rc = UnlockRead(NULL);
     else
         rc = UnlockWrite(NULL);
@@ -5712,11 +5716,13 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                 Assert(  pMedium != this
                        || pMedium->m->state == MediumState_Deleting);
 
-                unsigned uOpenFlags = 0;
+                unsigned uOpenFlags = VD_OPEN_FLAGS_NORMAL;
 
                 if (   pMedium->m->state == MediumState_LockedRead
                     || pMedium->m->state == MediumState_Deleting)
                     uOpenFlags = VD_OPEN_FLAGS_READONLY;
+                if (pMedium->m->type == MediumType_Shareable)
+                    uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
 
                 /* Open the medium */
                 vrc = VDOpen(hdd,
@@ -6057,11 +6063,17 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                     Assert(    pMedium->m->state == MediumState_LockedRead
                             || pMedium->m->state == MediumState_LockedWrite);
 
+                    unsigned uOpenFlags = VD_OPEN_FLAGS_NORMAL;
+                    if (pMedium->m->state != MediumState_LockedWrite)
+                        uOpenFlags = VD_OPEN_FLAGS_READONLY;
+                    if (pMedium->m->type == MediumType_Shareable)
+                        uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
+
                     /* Open all media in appropriate mode. */
                     vrc = VDOpen(targetHdd,
                                  pMedium->m->strFormat.c_str(),
                                  pMedium->m->strLocationFull.c_str(),
-                                 (pMedium->m->state == MediumState_LockedWrite) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                                 uOpenFlags,
                                  pMedium->m->vdDiskIfaces);
                     if (RT_FAILURE(vrc))
                         throw setError(E_FAIL,
@@ -6435,7 +6447,9 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
                 else
                     Assert(pMedium->m->state == MediumState_LockedRead);
 
-                /** Open all media but last in read-only mode. */
+                /* Open all media but last in read-only mode. Do not handle
+                 * shareable media, as compaction and sharing are mutually
+                 * exclusive. */
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),

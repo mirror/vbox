@@ -2812,9 +2812,11 @@ int Console::configMedium(PCFGMNODE pLunL0,
         PCFGMNODE pCfg = NULL;
 
         BOOL fHostDrive = FALSE;
+        MediumType_T mediumType  = MediumType_Normal;
         if (pMedium)
         {
             hrc = pMedium->COMGETTER(HostDrive)(&fHostDrive);                               H();
+            hrc = pMedium->COMGETTER(Type)(&mediumType);                                    H();
         }
 
         if (fHostDrive)
@@ -2944,6 +2946,14 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 else if (aMachineState == MachineState_TeleportingIn)
                 {
                     InsertConfigInteger(pCfg, "TempReadOnly", 1);
+                }
+
+                /* Flag for opening the medium for sharing between VMs. This
+                 * is done at the moment only for the first (and only) medium
+                 * in the chain, as shared media can have no diffs. */
+                if (mediumType == MediumType_Shareable)
+                {
+                    InsertConfigInteger(pCfg, "Shareable", 1);
                 }
 
                 if (!fUseHostIOCache)

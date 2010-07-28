@@ -168,11 +168,13 @@ typedef struct VBOXHDDRAW
 /** Open image for asynchronous access.
  *  Only available if VD_CAP_ASYNC_IO is set
  *  Check with VDIsAsynchonousIoSupported wether
- *  asynchronous I/O is really supported for this file.
- */
+ *  asynchronous I/O is really supported for this file.  */
 #define VD_OPEN_FLAGS_ASYNC_IO      RT_BIT(4)
+/** Allow sharing of the image for writable images. May be ignored if the
+ * format backend doesn't support this type of concurrent access. */
+#define VD_OPEN_FLAGS_SHAREABLE     RT_BIT(5)
 /** Mask of valid flags. */
-#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO)
+#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE)
 /** @}*/
 
 
