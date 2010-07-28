@@ -881,7 +881,7 @@ static int parallelsSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 
     /* Image must be opened and the new flags must be valid. Just readonly and
      * info flags are supported. */
-    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO)))
+    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_SHAREABLE)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;

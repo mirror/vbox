@@ -2668,6 +2668,7 @@ static int vmdkWriteDescriptorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
 
     RTMemFree(pszDescriptor);
     return rc;
+
 }
 
 /**
@@ -5661,6 +5662,7 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         goto out;
     }
 
+
     /* Clip read range to remain in this extent. */
     cbToRead = RT_MIN(cbToRead, VMDK_SECTOR2BYTE(pExtent->uSectorOffset + pExtent->cNominalSectors - uSectorExtentRel));
 
@@ -6144,7 +6146,7 @@ static int vmdkSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 
     /* Image must be opened and the new flags must be valid. Just readonly and
      * info flags are supported. */
-    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO)))
+    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
