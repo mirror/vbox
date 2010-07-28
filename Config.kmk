@@ -4343,6 +4343,7 @@ else
    VBOX_JAVA_HOME := $(firstword $(wildcard \
 	$(PATH_DEVTOOLS)/linux.x86/jdk1.6.0_21 \
 	/usr/lib/jvm/java-6-sun  \
+	/usr/lib/jvm/java-6-openjdk \
 	\
 	/usr/lib/jvm/sun-jdk-1.6 \
 	) /usr/lib/jvm/java-6-sun)
