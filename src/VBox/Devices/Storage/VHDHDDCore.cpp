@@ -284,6 +284,9 @@ static int vhdFileOpen(PVHDIMAGE pImage, bool fReadonly, bool fShareable,
     if (fCreate)
         uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE;
 
+    if (fShareable)
+        uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_DONT_LOCK;
+
     rc = pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
                                                 pImage->pszFilename,
                                                 uOpenFlags,
