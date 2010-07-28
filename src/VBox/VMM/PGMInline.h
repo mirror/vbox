@@ -993,11 +993,11 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86
  * Gets the shadow page directory, 32-bit.
  *
  * @returns Pointer to the shadow 32-bit PD.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  */
-DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGMCPU pPGM)
+DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PVMCPU pVCpu)
 {
-    return (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PD)PGMPOOL_PAGE_2_PTR(pVCpu->CTX_SUFF(pVM), pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 }
 
 
@@ -1005,14 +1005,14 @@ DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGMCPU pPGM)
  * Gets the shadow page directory entry for the specified address, 32-bit.
  *
  * @returns Shadow 32-bit PDE.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PDE) pgmShwGet32BitPDE(PPGMCPU pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PDE) pgmShwGet32BitPDE(PVMCPU pVCpu, RTGCPTR GCPtr)
 {
     const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
 
-    PX86PD pShwPde = pgmShwGet32BitPDPtr(pPGM);
+    PX86PD pShwPde = pgmShwGet32BitPDPtr(pVCpu);
     if (!pShwPde)
     {
         X86PDE ZeroPde = {0};
@@ -1027,14 +1027,14 @@ DECLINLINE(X86PDE) pgmShwGet32BitPDE(PPGMCPU pPGM, RTGCPTR GCPtr)
  * address, 32-bit.
  *
  * @returns Pointer to the shadow 32-bit PDE.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
+DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PVMCPU pVCpu, RTGCPTR GCPtr)
 {
     const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
 
-    PX86PD pPde = pgmShwGet32BitPDPtr(pPGM);
+    PX86PD pPde = pgmShwGet32BitPDPtr(pVCpu);
     AssertReturn(pPde, NULL);
     return &pPde->a[iPd];
 }
@@ -1044,11 +1044,11 @@ DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
  * Gets the shadow page pointer table, PAE.
  *
  * @returns Pointer to the shadow PAE PDPT.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  */
-DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGMCPU pPGM)
+DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PVMCPU pVCpu)
 {
-    return (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVCpu->CTX_SUFF(pVM), pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 }
 
 
@@ -1056,22 +1056,23 @@ DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGMCPU pPGM)
  * Gets the shadow page directory for the specified address, PAE.
  *
  * @returns Pointer to the shadow PD.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
+DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr)
 {
     const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-    PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pPGM);
+    PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pVCpu);
 
     if (!pPdpt->a[iPdpt].n.u1Present)
         return NULL;
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(PGMCPU2PGM(pPGM)->CTX_SUFF(pPool), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, NULL);
 
-    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pShwPde);
+    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPde);
 }
 
 
@@ -1079,10 +1080,10 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
  * Gets the shadow page directory for the specified address, PAE.
  *
  * @returns Pointer to the shadow PD.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, PX86PDPT pPdpt, RTGCPTR GCPtr)
+DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPU pVCpu, PX86PDPT pPdpt, RTGCPTR GCPtr)
 {
     const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
 
@@ -1090,10 +1091,11 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, PX86PDPT pPdpt, RTGCPTR GC
         return NULL;
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE    pShwPde = pgmPoolGetPage(PGMCPU2PGM(pPGM)->CTX_SUFF(pPool), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+    PVM             pVM     = pVCpu->CTX_SUFF(pVM);
+    PPGMPOOLPAGE    pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, NULL);
 
-    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pShwPde);
+    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPde);
 }
 
 
@@ -1101,14 +1103,14 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, PX86PDPT pPdpt, RTGCPTR GC
  * Gets the shadow page directory entry, PAE.
  *
  * @returns PDE.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PDEPAE) pgmShwGetPaePDE(PPGMCPU pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PDEPAE) pgmShwGetPaePDE(PVMCPU pVCpu, RTGCPTR GCPtr)
 {
-    const unsigned  iPd   = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+    const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
 
-    PX86PDPAE pShwPde = pgmShwGetPaePDPtr(pPGM, GCPtr);
+    PX86PDPAE pShwPde = pgmShwGetPaePDPtr(pVCpu, GCPtr);
     if (!pShwPde)
     {
         X86PDEPAE ZeroPde = {0};
@@ -1122,14 +1124,15 @@ DECLINLINE(X86PDEPAE) pgmShwGetPaePDE(PPGMCPU pPGM, RTGCPTR GCPtr)
  * Gets the pointer to the shadow page directory entry for an address, PAE.
  *
  * @returns Pointer to the PDE.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  * @param   GCPtr       The address.
+ * @remarks Only used by AssertCR3.
  */
-DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
+DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PVMCPU pVCpu, RTGCPTR GCPtr)
 {
-    const unsigned  iPd   = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+    const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
 
-    PX86PDPAE pPde = pgmShwGetPaePDPtr(pPGM, GCPtr);
+    PX86PDPAE pPde = pgmShwGetPaePDPtr(pVCpu, GCPtr);
     AssertReturn(pPde, NULL);
     return &pPde->a[iPd];
 }
@@ -1140,11 +1143,11 @@ DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
  * Gets the shadow page map level-4 pointer.
  *
  * @returns Pointer to the shadow PML4.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  */
-DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGMCPU pPGM)
+DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PVMCPU pVCpu)
 {
-    return (PX86PML4)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PML4)PGMPOOL_PAGE_2_PTR(pVCpu->CTX_SUFF(pVM), pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 }
 
 
@@ -1152,13 +1155,13 @@ DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGMCPU pPGM)
  * Gets the shadow page map level-4 entry for the specified address.
  *
  * @returns The entry.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PPGMCPU pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PVMCPU pVCpu, RTGCPTR GCPtr)
 {
     const unsigned  iPml4 = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PX86PML4        pShwPml4 = pgmShwGetLongModePML4Ptr(pPGM);
+    PX86PML4        pShwPml4 = pgmShwGetLongModePML4Ptr(pVCpu);
 
     if (!pShwPml4)
     {
@@ -1173,12 +1176,12 @@ DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PPGMCPU pPGM, RTGCPTR GCPtr)
  * Gets the pointer to the specified shadow page map level-4 entry.
  *
  * @returns The entry.
- * @param   pPGM        Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
  * @param   iPml4       The PML4 index.
  */
-DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PPGMCPU pPGM, unsigned int iPml4)
+DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PVMCPU pVCpu, unsigned int iPml4)
 {
-    PX86PML4 pShwPml4 = pgmShwGetLongModePML4Ptr(pPGM);
+    PX86PML4 pShwPml4 = pgmShwGetLongModePML4Ptr(pVCpu);
     if (!pShwPml4)
         return NULL;
     return &pShwPml4->a[iPml4];

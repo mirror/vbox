@@ -2173,44 +2173,6 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
 # define PGMPOOL_PAGE_2_PTR(pVM, pPage)  ((pPage)->pvPageR3)
 #endif
 
-/** @def PGMPOOL_PAGE_2_PTR_BY_PGM
- * Maps a pool page pool into the current context.
- *
- * @returns VBox status code.
- * @param   pPGM    Pointer to the PGM instance data.
- * @param   pPage   The pool page.
- *
- * @remark  In RC this uses PGMGCDynMapHCPage(), so it will consume of the
- *          small page window employeed by that function. Be careful.
- * @remark  There is no need to assert on the result.
- */
-#if defined(IN_RC)
-# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined(pPGM, (pPage))
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined(pPGM, (pPage))
-#else
-# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  PGMPOOL_PAGE_2_PTR(PGM2VM(pPGM), pPage)
-#endif
-
-/** @def PGMPOOL_PAGE_2_PTR_BY_PGMCPU
- * Maps a pool page pool into the current context.
- *
- * @returns VBox status code.
- * @param   pPGM    Pointer to the PGMCPU instance data.
- * @param   pPage   The pool page.
- *
- * @remark  In RC this uses PGMGCDynMapHCPage(), so it will consume of the
- *          small page window employeed by that function. Be careful.
- * @remark  There is no need to assert on the result.
- */
-#if defined(IN_RC)
-# define PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPage)  pgmPoolMapPageInlined(PGMCPU2PGM(pPGM), (pPage))
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPage)  pgmPoolMapPageInlined(PGMCPU2PGM(pPGM), (pPage))
-#else
-# define PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPage)  PGMPOOL_PAGE_2_PTR(PGMCPU2VM(pPGM), pPage)
-#endif
-
 
 /** @name Per guest page tracking data.
  * This is currently as a 16-bit word in the PGMPAGE structure, the idea though
