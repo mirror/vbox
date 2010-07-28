@@ -348,7 +348,7 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                                    : 0;
                 if (pThis->fShareable)
                 {
-                    Assert(fFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_DONT_LOCK);
+                    Assert(uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_DONT_LOCK);
 
                     fFlags |= PDMACEP_FILE_FLAGS_DONT_LOCK;
                 }
