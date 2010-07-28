@@ -537,7 +537,7 @@ static void pgmMapCheckShadowPDEs(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pShwPageCR
         {
             case PGMMODE_32_BIT:
             {
-                PCX86PD         pShw32BitPd = (PCX86PD)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu2, pShwPageCR3);
+                PCX86PD         pShw32BitPd = (PCX86PD)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPageCR3);
                 AssertFatal(pShw32BitPd);
 
                 AssertMsg(pShw32BitPd->a[iPDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT),
