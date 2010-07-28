@@ -230,7 +230,7 @@ static int codecGetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, u
     else if (STAC9220_IS_VOLKNOB_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
     else
-        AssertMsgFailed(("unsuported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
+        AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
     return VINF_SUCCESS;
 }
 
@@ -247,14 +247,14 @@ static int codecSetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, u
     else if (STAC9220_IS_VOLKNOB_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
     else
-        AssertMsgFailed(("unsuported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
+        AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
     Assert(pu32Reg);
     *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
     *pu32Reg |= cmd & CODEC_VERB_8BIT_DATA;
     return VINF_SUCCESS;
 }
 
-static int codecGetPinSence(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+static int codecGetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
     if (STAC9220_IS_PORT_CMD(cmd))
@@ -262,10 +262,10 @@ static int codecGetPinSence(struct CODECState *pState, uint32_t cmd, uint64_t *p
     else if (STAC9220_IS_DIGPIN_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F09_param;
     else
-        AssertMsgFailed(("unsuported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
+        AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
     return VINF_SUCCESS;
 }
-static int codecSetPinSence(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+static int codecSetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
     uint32_t *pu32Reg = NULL;
@@ -720,8 +720,8 @@ static CODECVERB STAC9220VERB[] =
     {0x00070700, CODEC_VERB_8BIT_CMD , codecSetPinCtrl             },
     {0x000F0800, CODEC_VERB_8BIT_CMD , codecGetUnsolicitedEnabled  },
     {0x00070800, CODEC_VERB_8BIT_CMD , codecSetUnsolicitedEnabled  },
-    {0x000F0900, CODEC_VERB_8BIT_CMD , codecGetPinSence            },
-    {0x00070900, CODEC_VERB_8BIT_CMD , codecSetPinSence            },
+    {0x000F0900, CODEC_VERB_8BIT_CMD , codecGetPinSense            },
+    {0x00070900, CODEC_VERB_8BIT_CMD , codecSetPinSense            },
     {0x000F0200, CODEC_VERB_8BIT_CMD , codecGetConnectionListEntry },
     {0x000F0300, CODEC_VERB_8BIT_CMD , codecGetProcessingState     },
     {0x00070300, CODEC_VERB_8BIT_CMD , codecSetProcessingState     },
@@ -845,6 +845,7 @@ int stac9220Construct(CODECState *pState)
     {
         stac9220ResetNode(pState, i, &pState->pNodes[i]);
     }
+    //** @todo r=michaln: Was this meant to be 'HDA' or something like that? (AC'97 was on ICH0)
     AUD_register_card ("ICH0", &pState->card);
 
 

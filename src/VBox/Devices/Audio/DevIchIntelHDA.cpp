@@ -676,7 +676,7 @@ static int hdaUnsolictedResponse(INTELHDLinkState *pState, uint64_t pu64Unsolict
     uint8_t rirbWp;
     if (!HDA_REG_FLAG_VALUE(pState, GCTL, UR))
     {
-        Log(("hda: unsolisited response %016lx is ignored\n"));
+        Log(("hda: unsolicited response %016lx is ignored\n"));
         return VINF_SUCCESS;
     }
 }
@@ -717,7 +717,7 @@ static int hdaCORBCmdProcess(INTELHDLinkState *pState)
         if (   (resp & CODEC_RESPONSE_UNSOLICITED)
             && !HDA_REG_FLAG_VALUE(pState, GCTL, UR))
         {
-            Log(("hda: unexpected unsolisited response.\n"));
+            Log(("hda: unexpected unsolicited response.\n"));
             pState->au32Regs[ICH6_HDA_REG_CORBRP] = corbRp;
             return rc;
         }
