@@ -882,6 +882,7 @@ static int vdiUpdateHeaderAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
             rc = vdiFileWriteMetaAsync(pImage, sizeof(VDIPREHEADER),
                                        &pImage->Header.u.v0, sizeof(pImage->Header.u.v0),
                                        pIoCtx);
+
             break;
         case 1:
             if (pImage->Header.u.v1plus.cbHeader < sizeof(pImage->Header.u.v1plus))
@@ -1666,7 +1667,7 @@ static int vdiSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 
     /* Image must be opened and the new flags must be valid. Just readonly and
      * info flags are supported. */
-    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO)))
+    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
