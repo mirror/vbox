@@ -75,7 +75,7 @@
 #define PGMR0DYNMAP_CALC_OVERLOAD(cPages)   ((cPages) / 2)
 
 #if 0
-/* Assertions causes panics if preemption is disabled, this can be used to work aroudn that. */
+/* Assertions causes panics if preemption is disabled, this can be used to work around that. */
 //#define RTSpinlockAcquire(a,b) do {} while (0)
 //#define RTSpinlockRelease(a,b) do {} while (0)
 #endif
