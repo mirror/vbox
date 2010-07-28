@@ -1578,7 +1578,7 @@ STDMETHODIMP Medium::COMGETTER(AutoReset)(BOOL *aAutoReset)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->pParent)
+    if (m->pParent.isNull())
         *aAutoReset = FALSE;
     else
         *aAutoReset = m->autoReset;
