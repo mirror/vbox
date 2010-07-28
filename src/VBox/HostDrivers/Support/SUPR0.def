@@ -64,28 +64,18 @@ EXPORTS
     SUPR0GetPagingMode
     SUPR0EnableVTx
     SUPGetGIP
-    RTMemAlloc
     RTMemAllocTag
-    RTMemAllocZ
     RTMemAllocZTag
     RTMemFree
-    RTMemRealloc
     RTMemReallocTag
-    RTR0MemObjAllocLow
     RTR0MemObjAllocLowTag
-    RTR0MemObjAllocPage
     RTR0MemObjAllocPageTag
-    RTR0MemObjAllocPhys
-    RTR0MemObjAllocPhysEx
+    RTR0MemObjAllocPhysTag
     RTR0MemObjAllocPhysExTag
-    RTR0MemObjAllocPhysNC
     RTR0MemObjAllocPhysNCTag
-    RTR0MemObjAllocCont
     RTR0MemObjAllocContTag
-    RTR0MemObjLockUser
     RTR0MemObjLockUserTag
-    RTR0MemObjMapKernel
-    RTR0MemObjMapUser
+    RTR0MemObjMapKernelTag
     RTR0MemObjMapUserTag
     RTR0MemObjAddress
     RTR0MemObjAddressR3
