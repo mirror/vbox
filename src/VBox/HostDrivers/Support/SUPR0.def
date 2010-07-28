@@ -65,6 +65,7 @@ EXPORTS
     SUPR0EnableVTx
     SUPGetGIP
     RTMemAlloc
+    RTMemAllocTag
     RTMemAllocZ
     RTMemFree
     RTMemRealloc
