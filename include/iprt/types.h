@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1186,6 +1186,19 @@ typedef RTCCINTREG const       *PCRTCCINTREG;
 
 /** @} */
 
+
+/** Pointer to a critical section. */
+typedef struct RTCRITSECT                          *PRTCRITSECT;
+/** Pointer to a const critical section. */
+typedef const struct RTCRITSECT                    *PCRTCRITSECT;
+
+
+/** Condition variable handle. */
+typedef R3PTRTYPE(struct RTCONDVARINTERNAL *)       RTCONDVAR;
+/** Pointer to a condition variable handle. */
+typedef RTCONDVAR                                  *PRTCONDVAR;
+/** Nil condition variable handle. */
+#define NIL_RTCONDVAR                               0
 
 /** File handle. */
 typedef RTUINT                                      RTFILE;
