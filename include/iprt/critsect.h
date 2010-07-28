@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -89,10 +89,6 @@ typedef struct RTCRITSECT
     RTHCPTR                             Alignment;
 } RTCRITSECT;
 AssertCompileSize(RTCRITSECT, HC_ARCH_BITS == 32 ? 32 : 48);
-/** Pointer to a critical section. */
-typedef RTCRITSECT *PRTCRITSECT;
-/** Pointer to a const critical section. */
-typedef const RTCRITSECT *PCRTCRITSECT;
 
 /** RTCRITSECT::u32Magic value. (Hiromi Uehara) */
 #define RTCRITSECT_MAGIC                UINT32_C(0x19790326)
