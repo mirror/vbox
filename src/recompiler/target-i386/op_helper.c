@@ -3898,7 +3898,7 @@ void helper_rdmsr(void)
 #ifdef VBOX_STRICT
     if (cpu_rdmsr(env, (uint32_t)ECX, &val) != 0)
         val = 0;
-    AssertMsg(val == RT_MAKE_U32(EAX, EDX), ("idMsr=%#x val=%#llx eax:edx=%#llx\n", (uint32_t)ECX, val, RT_MAKE_U32(EAX, EDX)));
+    AssertMsg(val == RT_MAKE_U64(EAX, EDX), ("idMsr=%#x val=%#llx eax:edx=%#llx\n", (uint32_t)ECX, val, RT_MAKE_U64(EAX, EDX)));
 #endif
 }
 #endif
