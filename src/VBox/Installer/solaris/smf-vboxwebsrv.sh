@@ -1,7 +1,7 @@
 #!/sbin/sh
 # $Id$
 
-# Copyright (C) 2008 Oracle Corporation
+# Copyright (C) 2008-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -45,6 +45,8 @@ case $VW_OPT in
         [ $? != 0 ] && VW_TIMEOUT=
         VW_CHECK_INTERVAL=`/usr/bin/svcprop -p config/checkinterval $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_CHECK_INTERVAL=
+        VW_KEEPALIVE=`/usr/bin/svcprop -p config/keepalive $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_KEEPALIVE=
 
         # Provide sensible defaults
         [ -z "$VW_USER" ] && VW_USER=root
@@ -52,7 +54,8 @@ case $VW_OPT in
         [ -z "$VW_PORT" -o "$VW_PORT" -eq 0 ] && VW_PORT=18083
         [ -z "$VW_TIMEOUT" ] && VW_TIMEOUT=20
         [ -z "$VW_CHECK_INTERVAL" ] && VW_CHECK_INTERVAL=5
-        exec su - "$VW_USER" -c "/opt/VirtualBox/vboxwebsrv --host \"$VW_HOST\" --port \"$VW_PORT\" --timeout \"$VW_TIMEOUT\" --check-interval \"$VW_CHECK_INTERVAL\""
+        [ -z "$VW_KEEPALIVE" ] && VW_KEEPALIVE=1000
+        exec su - "$VW_USER" -c "/opt/VirtualBox/vboxwebsrv --host \"$VW_HOST\" --port \"$VW_PORT\" --timeout \"$VW_TIMEOUT\" --check-interval \"$VW_CHECK_INTERVAL\" --keepalive \"$VW_KEEPALIVE\""
 
         VW_EXIT=$?
         if [ $VW_EXIT != 0 ]; then

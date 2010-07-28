@@ -100,6 +100,7 @@ const char              *g_pcszBindToHost = NULL;       // host; NULL = current 
 unsigned int            g_uBindToPort = 18083;          // port
 unsigned int            g_uBacklog = 100;               // backlog = max queue size for requests
 unsigned int            g_cMaxWorkerThreads = 100;      // max. no. of worker threads
+unsigned int            g_cMaxKeepAlive = 100;          // maximum number of soap requests in one connection
 
 bool                    g_fVerbose = false;             // be verbose
 PRTSTREAM               g_pstrLog = NULL;
@@ -157,6 +158,7 @@ static const RTGETOPTDEF g_aOptions[]
         { "--timeout",          't', RTGETOPT_REQ_UINT32 },
         { "--check-interval",   'i', RTGETOPT_REQ_UINT32 },
         { "--threads",          'T', RTGETOPT_REQ_UINT32 },
+        { "--keepalive",        'k', RTGETOPT_REQ_UINT32 },
         { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
         { "--logfile",          'F', RTGETOPT_REQ_STRING },
     };
@@ -253,7 +255,7 @@ public:
          */
         soap_set_omode(m_soap, SOAP_IO_KEEPALIVE);
         soap_set_imode(m_soap, SOAP_IO_KEEPALIVE);
-        m_soap->max_keep_alive = 100;
+        m_soap->max_keep_alive = g_cMaxKeepAlive;
 
         if (!RT_SUCCESS(RTThreadCreate(&m_pThread,
                                        fntWrapper,
@@ -661,6 +663,10 @@ int main(int argc, char* argv[])
 
             case 'T':
                 g_cMaxWorkerThreads = ValueUnion.u32;
+            break;
+
+            case 'k':
+                g_cMaxKeepAlive = ValueUnion.u32;
             break;
 
             case 'h':
