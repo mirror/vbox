@@ -500,7 +500,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                  * Normal page table.
                  */
                 PGSTPT pPT;
-                int rc = PGM_GCPHYS_2_PTR(pVM, Pde.u & GST_PDE_PG_MASK, &pPT);
+                int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, Pde.u & GST_PDE_PG_MASK, &pPT);
                 if (RT_SUCCESS(rc))
                 {
                     for (unsigned iPTE = (GCPtr >> GST_PT_SHIFT) & GST_PT_MASK;

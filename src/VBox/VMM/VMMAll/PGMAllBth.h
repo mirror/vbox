@@ -1826,7 +1826,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                  * 4KB Page - Map the guest page table.
                  */
                 PGSTPT pPTSrc;
-                int rc = PGM_GCPHYS_2_PTR(pVM, PdeSrc.u & GST_PDE_PG_MASK, &pPTSrc);
+                int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, PdeSrc.u & GST_PDE_PG_MASK, &pPTSrc);
                 if (RT_SUCCESS(rc))
                 {
 # ifdef PGM_SYNC_N_PAGES
@@ -2331,7 +2331,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
      * Map the guest page table.
      */
     PGSTPT pPTSrc;
-    int rc = PGM_GCPHYS_2_PTR(pVM, pPdeSrc->u & GST_PDE_PG_MASK, &pPTSrc);
+    int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, pPdeSrc->u & GST_PDE_PG_MASK, &pPTSrc);
     if (RT_FAILURE(rc))
     {
         AssertRC(rc);
@@ -3902,7 +3902,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                         * Page Table.
                         */
                         const GSTPT *pPTSrc;
-                        rc = PGM_GCPHYS_2_PTR(pVM, GCPhysGst & ~(RTGCPHYS)(PAGE_SIZE - 1), &pPTSrc);
+                        rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhysGst & ~(RTGCPHYS)(PAGE_SIZE - 1), &pPTSrc);
                         if (RT_FAILURE(rc))
                         {
                             AssertMsgFailed(("Cannot map/convert guest physical address %RGp in the PDE at %RGv! PdeSrc=%#RX64\n",

@@ -3082,7 +3082,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
         {
             /** @todo we should check reserved bits ... */
             void *pvSrc;
-            rc = PGM_GCPHYS_2_PTR(pVM, GCPhys, &pvSrc);
+            rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys, &pvSrc);
             switch (rc)
             {
                 case VINF_SUCCESS:
@@ -3124,7 +3124,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
             /** @todo we should check reserved bits ... */
             AssertMsgFailed(("cb=%d cb1=%d cb2=%d GCPtrSrc=%RGv\n", cb, cb1, cb2, GCPtrSrc));
             void *pvSrc1;
-            rc = PGM_GCPHYS_2_PTR(pVM, GCPhys1, &pvSrc1);
+            rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys1, &pvSrc1);
             switch (rc)
             {
                 case VINF_SUCCESS:
@@ -3138,7 +3138,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
             }
 
             void *pvSrc2;
-            rc = PGM_GCPHYS_2_PTR(pVM, GCPhys2, &pvSrc2);
+            rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys2, &pvSrc2);
             switch (rc)
             {
                 case VINF_SUCCESS:

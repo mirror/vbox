@@ -328,11 +328,12 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PVMCPU pVCpu, RTHCPHYS HCPhys, void **p
  * access to pages already in the set.
  *
  * @returns See PGMDynMapGCPage.
+ * @param   pVM         The VM handle.
  * @param   pVCpu       The current CPU.
  * @param   GCPhys      The guest physical address of the page.
  * @param   ppv         Where to store the mapping address.
  */
-DECLINLINE(int) pgmR0DynMapGCPageInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv)
+DECLINLINE(int) pgmR0DynMapGCPageV2Inlined(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInl, a);
     AssertMsg(!(GCPhys & PAGE_OFFSET_MASK), ("%RGp\n", GCPhys));
@@ -340,7 +341,6 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **p
     /*
      * Get the ram range.
      */
-    PVM             pVM  = pVCpu->CTX_SUFF(pVM);
     PPGMRAMRANGE    pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
     RTGCPHYS        off  = GCPhys - pRam->GCPhys;
     if (RT_UNLIKELY(off >= pRam->cb
@@ -377,6 +377,21 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **p
 
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInl, a);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Inlined version of the ring-0 version of PGMDynMapGCPage that optimizes
+ * access to pages already in the set.
+ *
+ * @returns See PGMDynMapGCPage.
+ * @param   pVCpu       The current CPU.
+ * @param   GCPhys      The guest physical address of the page.
+ * @param   ppv         Where to store the mapping address.
+ */
+DECLINLINE(int) pgmR0DynMapGCPageInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv)
+{
+    return pgmR0DynMapGCPageV2Inlined(pVCpu->CTX_SUFF(pVM), pVCpu, GCPhys, ppv);
 }
 
 
@@ -460,6 +475,31 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage)
         return pv;
     }
     AssertFatalMsgFailed(("pgmPoolMapPageInlined invalid page index %x\n", pPage->idx));
+}
+
+/**
+ * Maps the page into current context (RC and maybe R0).
+ *
+ * @returns pointer to the mapping.
+ * @param   pVM         Pointer to the PGM instance data.
+ * @param   pVCpu       The current CPU.
+ * @param   pPage       The page.
+ */
+DECLINLINE(void *) pgmPoolMapPageV2Inlined(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pPage)
+{
+    if (pPage->idx >= PGMPOOL_IDX_FIRST)
+    {
+        Assert(pPage->idx < pVM->pgm.s.CTX_SUFF(pPool)->cCurPages);
+        void *pv;
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        Assert(pVCpu == VMMGetCpu(pVM));
+        pgmR0DynMapHCPageInlined(pVCpu, pPage->Core.Key, &pv);
+# else
+        PGMDynMapHCPage(pVM, pPage->Core.Key, &pv);
+# endif
+        return pv;
+    }
+    AssertFatalMsgFailed(("pgmPoolMapPageV2Inlined invalid page index %x\n", pPage->idx));
 }
 
 /**

@@ -227,23 +227,49 @@
  * Maps a HC physical page pool address to a virtual address.
  *
  * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The current CPU.
+ * @param   HCPhys      The HC physical address to map to a virtual one.
+ * @param   ppv         Where to store the virtual address. No need to cast
+ *                      this.
+ *
+ * @remark  In RC this uses PGMDynMapHCPage(), so it will consume of the small
+ *          page window employeed by that function. Be careful.
+ * @remark  There is no need to assert on the result.
+ */
+#ifdef IN_RC
+# define PGM_HCPHYS_2_PTR(pVM, pVCpu, HCPhys, ppv) \
+     PGMDynMapHCPage(pVM, HCPhys, (void **)(ppv))
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGM_HCPHYS_2_PTR(pVM, pVCpu, HCPhys, ppv) \
+     pgmR0DynMapHCPageInlined(pVCpu, HCPhys, (void **)(ppv))
+#else
+# define PGM_HCPHYS_2_PTR(pVM, pVCpu, HCPhys, ppv) \
+     MMPagePhys2PageEx(pVM, HCPhys, (void **)(ppv))
+#endif
+
+/** @def PGM_GCPHYS_2_PTR_V2
+ * Maps a GC physical page address to a virtual address.
+ *
+ * @returns VBox status code.
  * @param   pVM     The VM handle.
- * @param   HCPhys  The HC physical address to map to a virtual one.
+ * @param   pVCpu   The current CPU.
+ * @param   GCPhys  The GC physical address to map to a virtual one.
  * @param   ppv     Where to store the virtual address. No need to cast this.
  *
- * @remark  In GC this uses PGMGCDynMapHCPage(), so it will consume of the
+ * @remark  In GC this uses PGMGCDynMapGCPage(), so it will consume of the
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
 #ifdef IN_RC
-# define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) \
-     PGMDynMapHCPage(pVM, HCPhys, (void **)(ppv))
+# define PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys, ppv) \
+     PGMDynMapGCPage(pVM, GCPhys, (void **)(ppv))
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) \
-     pgmR0DynMapHCPageInlined(VMMGetCpu(pVM), HCPhys, (void **)(ppv))
+# define PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys, ppv) \
+     pgmR0DynMapGCPageV2Inlined(pVM, pVCpu, GCPhys, (void **)(ppv))
 #else
-# define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) \
-     MMPagePhys2PageEx(pVM, HCPhys, (void **)(ppv))
+# define PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys, ppv) \
+     PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1 /* one page only */, (PRTR3PTR)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
 #endif
 
 /** @def PGM_GCPHYS_2_PTR
@@ -258,16 +284,7 @@
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#ifdef IN_RC
-# define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
-     PGMDynMapGCPage(pVM, GCPhys, (void **)(ppv))
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
-     pgmR0DynMapGCPageInlined(VMMGetCpu(pVM), GCPhys, (void **)(ppv))
-#else
-# define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
-     PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1 /* one page only */, (PRTR3PTR)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
-#endif
+#define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGM_GCPHYS_2_PTR_V2(pVM, VMMGetCpu(pVM), GCPhys, ppv)
 
 /** @def PGM_GCPHYS_2_PTR_BY_VMCPU
  * Maps a GC physical page address to a virtual address.
@@ -281,13 +298,7 @@
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-# define PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhys, ppv) \
-     pgmR0DynMapGCPageInlined(pVCpu, GCPhys, (void **)(ppv))
-#else
-# define PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhys, ppv) \
-     PGM_GCPHYS_2_PTR((pVCpu)->CTX_SUFF(pVM), GCPhys, ppv)
-#endif
+#define PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhys, ppv) PGM_GCPHYS_2_PTR_V2((pVCpu)->CTX_SUFF(pVM), pVCpu, GCPhys, ppv)
 
 /** @def PGM_GCPHYS_2_PTR_EX
  * Maps a unaligned GC physical page address to a virtual address.
@@ -2167,9 +2178,9 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
  * @remark  There is no need to assert on the result.
  */
 #if defined(IN_RC)
-# define PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pPage)   pgmPoolMapPageInlined((pVM), (pPage))
+# define PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pPage)   pgmPoolMapPageV2Inlined((pVM), (pVCpu), (pPage))
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pPage)   pgmPoolMapPageInlined((pVM), (pPage))
+# define PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pPage)   pgmPoolMapPageV2Inlined((pVM), (pVCpu), (pPage))
 #else
 # define PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pPage)   PGMPOOL_PAGE_2_PTR((pVM), (pPage))
 #endif
