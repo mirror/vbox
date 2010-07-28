@@ -68,7 +68,7 @@ typedef struct PGMHVUSTATE
 *   Internal Functions                                                         *
 *******************************************************************************/
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
-DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGMCPU pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
+DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
 #ifndef IN_RC
 static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
 static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
@@ -919,7 +919,7 @@ VMMDECL(int) PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpF
 int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
 {
     const unsigned iPdPt    = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-    PX86PDPT       pPdpt    = pgmShwGetPaePDPTPtr(&pVCpu->pgm.s);
+    PX86PDPT       pPdpt    = pgmShwGetPaePDPTPtr(pVCpu);
     PX86PDPE       pPdpe    = &pPdpt->a[iPdPt];
     PVM            pVM      = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL       pPool    = pVM->pgm.s.CTX_SUFF(pPool);
@@ -1009,16 +1009,17 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
  * Gets the pointer to the shadow page directory entry for an address, PAE.
  *
  * @returns Pointer to the PDE.
- * @param   pPGM        Pointer to the PGMCPU instance data.
+ * @param   pVCpu       The current CPU.
  * @param   GCPtr       The address.
  * @param   ppShwPde    Receives the address of the pgm pool page for the shadow page directory
  */
-DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGMCPU pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde)
+DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde)
 {
     const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-    PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pPGM);
+    PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pVCpu);
+    PVM             pVM   = pVCpu->CTX_SUFF(pVM);
 
-    Assert(PGMIsLockOwner(PGMCPU2VM(pPGM)));
+    Assert(PGMIsLockOwner(pVM));
 
     AssertReturn(pPdpt, VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT);    /* can't happen */
     if (!pPdpt->a[iPdPt].n.u1Present)
@@ -1029,7 +1030,7 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGMCPU pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE
     AssertMsg(pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK, ("GCPtr=%RGv\n", GCPtr));
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(PGMCPU2PGM(pPGM)->CTX_SUFF(pPool), pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, VERR_INTERNAL_ERROR);
 
     *ppShwPde = pShwPde;
@@ -1059,7 +1060,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
     PVM            pVM           = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
     const unsigned iPml4         = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
+    PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
     bool           fNestedPagingOrNoGstPaging = pVM->pgm.s.fNestedPaging || !CPUMIsGuestPagingEnabled(pVCpu);
     PPGMPOOLPAGE   pShwPage;
     int            rc;
@@ -1158,7 +1159,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
 {
     PPGMCPU         pPGM = &pVCpu->pgm.s;
     const unsigned  iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PCX86PML4E      pPml4e = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
+    PCX86PML4E      pPml4e = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
 
     Assert(PGMIsLockOwner(PGMCPU2VM(pPGM)));
 
@@ -1201,7 +1202,6 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
  */
 static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
 {
-    PPGMCPU        pPGM  = &pVCpu->pgm.s;
     PVM            pVM   = pVCpu->CTX_SUFF(pVM);
     const unsigned iPml4 = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
     PPGMPOOL       pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -1213,7 +1213,7 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
     Assert(pVM->pgm.s.fNestedPaging);
     Assert(PGMIsLockOwner(pVM));
 
-    pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
+    pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
     Assert(pPml4);
 
     /* Allocate page directory pointer table if not present. */

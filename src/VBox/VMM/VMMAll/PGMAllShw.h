@@ -150,7 +150,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     X86PDEPAE Pde;
 
     /* PML4 */
-    X86PML4E        Pml4e = pgmShwGetLongModePML4E(&pVCpu->pgm.s, GCPtr);
+    X86PML4E        Pml4e = pgmShwGetLongModePML4E(pVCpu, GCPtr);
     if (!Pml4e.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
@@ -179,7 +179,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     Pde.n.u1NoExecute |= Pml4e.n.u1NoExecute | Pdpe.lm.u1NoExecute;
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    X86PDEPAE       Pde = pgmShwGetPaePDE(&pVCpu->pgm.s, GCPtr);
+    X86PDEPAE       Pde = pgmShwGetPaePDE(pVCpu, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -196,7 +196,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     Pde = pPDDst->a[iPd];
 
 # else /* PGM_TYPE_32BIT */
-    X86PDE          Pde = pgmShwGet32BitPDE(&pVCpu->pgm.s, GCPtr);
+    X86PDE          Pde = pgmShwGet32BitPDE(pVCpu, GCPtr);
 # endif
     if (!Pde.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -316,7 +316,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
 # if PGM_SHW_TYPE == PGM_TYPE_AMD64
         X86PDEPAE       Pde;
         /* PML4 */
-        X86PML4E        Pml4e = pgmShwGetLongModePML4E(&pVCpu->pgm.s, GCPtr);
+        X86PML4E        Pml4e = pgmShwGetLongModePML4E(pVCpu, GCPtr);
         if (!Pml4e.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
@@ -339,7 +339,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
         Pde = pPd->a[iPd];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-        X86PDEPAE       Pde = pgmShwGetPaePDE(&pVCpu->pgm.s, GCPtr);
+        X86PDEPAE       Pde = pgmShwGetPaePDE(pVCpu, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
         const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -356,7 +356,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
         Pde = pPDDst->a[iPd];
 
 # else /* PGM_TYPE_32BIT */
-        X86PDE          Pde = pgmShwGet32BitPDE(&pVCpu->pgm.s, GCPtr);
+        X86PDE          Pde = pgmShwGet32BitPDE(pVCpu, GCPtr);
 # endif
         if (!Pde.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;

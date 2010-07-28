@@ -510,7 +510,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
      */
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDDst = pvFault >> SHW_PD_SHIFT;
-    PX86PD          pPDDst = pgmShwGet32BitPDPtr(&pVCpu->pgm.s);
+    PX86PD          pPDDst = pgmShwGet32BitPDPtr(pVCpu);
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPDDst = (pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK;   /* pPDDst index, not used with the pool. */
@@ -1067,7 +1067,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
      */
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDDst    = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
-    PX86PDE         pPdeDst   = pgmShwGet32BitPDEPtr(&pVCpu->pgm.s, GCPtrPage);
+    PX86PDE         pPdeDst   = pgmShwGet32BitPDEPtr(pVCpu, GCPtrPage);
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE    pShwPde = pVCpu->pgm.s.CTX_SUFF(pShwPageCR3);
@@ -1075,7 +1075,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPdpt     = (GCPtrPage >> X86_PDPT_SHIFT);
-    PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(&pVCpu->pgm.s);
+    PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(pVCpu);
 
     /* If the shadow PDPE isn't present, then skip the invalidate. */
     if (!pPdptDst->a[iPdpt].n.u1Present)
@@ -1090,11 +1090,11 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     PX86PDPAE       pPDDst;
 
     /* Fetch the pgm pool shadow descriptor. */
-    rc = pgmShwGetPaePoolPagePD(&pVCpu->pgm.s, GCPtrPage, &pShwPde);
+    rc = pgmShwGetPaePoolPagePD(pVCpu, GCPtrPage, &pShwPde);
     AssertRCSuccessReturn(rc, rc);
     Assert(pShwPde);
 
-    pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPde);
+    pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPde);
     PX86PDEPAE pPdeDst = &pPDDst->a[iPDDst];
 
 # else /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
@@ -1726,7 +1726,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
      */
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
-    PX86PDE         pPdeDst  = pgmShwGet32BitPDEPtr(&pVCpu->pgm.s, GCPtrPage);
+    PX86PDE         pPdeDst  = pgmShwGet32BitPDEPtr(pVCpu, GCPtrPage);
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE    pShwPde = pVCpu->pgm.s.CTX_SUFF(pShwPageCR3);
@@ -1738,11 +1738,11 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     PX86PDPAE       pPDDst;
 
     /* Fetch the pgm pool shadow descriptor. */
-    int rc2 = pgmShwGetPaePoolPagePD(&pVCpu->pgm.s, GCPtrPage, &pShwPde);
+    int rc2 = pgmShwGetPaePoolPagePD(pVCpu, GCPtrPage, &pShwPde);
     AssertRCSuccessReturn(rc2, rc2);
     Assert(pShwPde);
 
-    pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPde);
+    pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPde);
     PX86PDEPAE pPdeDst = &pPDDst->a[iPDDst];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
@@ -2056,10 +2056,10 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
      * Get the shadow PDE, find the shadow page table in the pool.
      */
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    X86PDE          PdeDst = pgmShwGet32BitPDE(&pVCpu->pgm.s, GCPtrPage);
+    X86PDE          PdeDst = pgmShwGet32BitPDE(pVCpu, GCPtrPage);
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    X86PDEPAE       PdeDst = pgmShwGetPaePDE(&pVCpu->pgm.s, GCPtrPage);
+    X86PDEPAE       PdeDst = pgmShwGetPaePDE(pVCpu, GCPtrPage);
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst   = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -2479,7 +2479,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     AssertMsg(iPDSrc == ((GCPtrPage >> GST_PD_SHIFT) & GST_PD_MASK), ("iPDSrc=%x GCPtrPage=%RGv\n", iPDSrc, GCPtrPage));
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;
-    PSHWPDE         pPdeDst  = pgmShwGet32BitPDEPtr(&pVCpu->pgm.s, GCPtrPage);
+    PSHWPDE         pPdeDst  = pgmShwGet32BitPDEPtr(pVCpu, GCPtrPage);
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE    pShwPde  = pVCpu->pgm.s.CTX_SUFF(pShwPageCR3);
@@ -2492,11 +2492,11 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     PSHWPDE         pPdeDst;
 
     /* Fetch the pgm pool shadow descriptor. */
-    rc = pgmShwGetPaePoolPagePD(&pVCpu->pgm.s, GCPtrPage, &pShwPde);
+    rc = pgmShwGetPaePoolPagePD(pVCpu, GCPtrPage, &pShwPde);
     AssertRCSuccessReturn(rc, rc);
     Assert(pShwPde);
 
-    pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPde);
+    pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPde);
     pPdeDst = &pPDDst->a[iPDDst];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
@@ -2933,7 +2933,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     int             rc = VINF_SUCCESS;
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
-    PSHWPDE         pPdeDst = pgmShwGet32BitPDEPtr(&pVCpu->pgm.s, GCPtrPage);
+    PSHWPDE         pPdeDst = pgmShwGet32BitPDEPtr(pVCpu, GCPtrPage);
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE    pShwPde = pVCpu->pgm.s.CTX_SUFF(pShwPageCR3);
@@ -2946,11 +2946,11 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     PSHWPDE         pPdeDst;
 
     /* Fetch the pgm pool shadow descriptor. */
-    rc = pgmShwGetPaePoolPagePD(&pVCpu->pgm.s, GCPtrPage, &pShwPde);
+    rc = pgmShwGetPaePoolPagePD(pVCpu, GCPtrPage, &pShwPde);
     AssertRCSuccessReturn(rc, rc);
     Assert(pShwPde);
 
-    pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(&pVM->pgm.s, pShwPde);
+    pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPde);
     pPdeDst = &pPDDst->a[iPDDst];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
@@ -3171,7 +3171,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmLock(pVM);
 
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
-        const X86PDE    PdeDst = pgmShwGet32BitPDE(&pVCpu->pgm.s, GCPtrPage);
+        const X86PDE    PdeDst = pgmShwGet32BitPDE(pVCpu, GCPtrPage);
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
         const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
         PX86PDPAE       pPDDst;
@@ -3333,7 +3333,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
      * First check if the shadow pd is present.
      */
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    PX86PDE         pPdeDst = pgmShwGet32BitPDEPtr(&pVCpu->pgm.s, GCPtrPage);
+    PX86PDE         pPdeDst = pgmShwGet32BitPDEPtr(pVCpu, GCPtrPage);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     PX86PDEPAE      pPdeDst;
@@ -3655,7 +3655,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
         RTGCPHYS        GCPhysPdptSrc;
 
         pPml4eSrc     = pgmGstGetLongModePML4EPtr(pVCpu, iPml4);
-        pPml4eDst     = pgmShwGetLongModePML4EPtr(&pVCpu->pgm.s, iPml4);
+        pPml4eDst     = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
 
         /* Fetch the pgm pool shadow descriptor if the shadow pml4e is present. */
         if (!pPml4eDst->n.u1Present)
@@ -3711,7 +3711,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 #  if PGM_GST_TYPE == PGM_TYPE_PAE
             X86PDPE         PdpeSrc;
             PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(pVCpu, GCPtr, &iPDSrc, &PdpeSrc);
-            PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(&pVCpu->pgm.s);
+            PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(pVCpu);
 #  else
             PX86PML4E       pPml4eSrcIgn;
             X86PDPE         PdpeSrc;
@@ -3779,7 +3779,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
             GSTPD const    *pPDSrc = pgmGstGet32bitPDPtr(pVCpu);
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
-            PCX86PD         pPDDst = pgmShwGet32BitPDPtr(&pVCpu->pgm.s);
+            PCX86PD         pPDDst = pgmShwGet32BitPDPtr(pVCpu);
 #  endif
 # endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
             /*
@@ -3793,7 +3793,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                 iPDDst++, GCPtr += cIncrement)
             {
 # if PGM_SHW_TYPE == PGM_TYPE_PAE
-                const SHWPDE PdeDst = *pgmShwGetPaePDEPtr(pPGM, GCPtr);
+                const SHWPDE PdeDst = *pgmShwGetPaePDEPtr(pVCpu, GCPtr);
 # else
                 const SHWPDE PdeDst = pPDDst->a[iPDDst];
 # endif
