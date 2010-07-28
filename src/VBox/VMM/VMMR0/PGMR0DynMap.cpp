@@ -1184,12 +1184,10 @@ static void pgmR0DynMapReleasePage(PPGMR0DYNMAP pThis, uint32_t iPage, uint32_t 
  * @param   pThis       The dynamic mapping cache instance.
  * @param   HCPhys      The address of the page to be mapped.
  * @param   iPage       The page index pgmR0DynMapPage hashed HCPhys to.
+ * @param   pVCpu       The current CPU, for statistics.
  */
-static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t iPage)
+static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t iPage, PVMCPU pVCpu)
 {
-#ifdef VBOX_WITH_STATISTICS
-    PVMCPU pVCpu = PGMR0DYNMAP_2_VMCPU(pThis);
-#endif
     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapPageSlow);
 
     /*
@@ -1284,13 +1282,11 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
  * @param   pThis       The dynamic mapping cache instance.
  * @param   HCPhys      The address of the page to be mapped.
  * @param   iRealCpu    The real cpu set index. (optimization)
+ * @param   pVCpu       The current CPU (for statistics).
  * @param   ppvPage     Where to the page address.
  */
-DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_t iRealCpu, void **ppvPage)
+DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_t iRealCpu, PVMCPU pVCpu, void **ppvPage)
 {
-#ifdef VBOX_WITH_STATISTICS
-    PVMCPU              pVCpu   = PGMR0DYNMAP_2_VMCPU(pThis);
-#endif
     RTSPINLOCKTMP       Tmp     = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%RHp\n", HCPhys));
@@ -1327,7 +1323,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_
             }
             else
             {
-                iPage = pgmR0DynMapPageSlow(pThis, HCPhys, iPage);
+                iPage = pgmR0DynMapPageSlow(pThis, HCPhys, iPage, pVCpu);
                 if (RT_UNLIKELY(iPage == UINT32_MAX))
                 {
                     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
@@ -1841,16 +1837,14 @@ static void pgmDynMapOptimizeAutoSet(PPGMMAPSET pSet)
 int pgmR0DynMapHCPageCommon(PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv)
 {
     LogFlow(("pgmR0DynMapHCPageCommon: pSet=%p HCPhys=%RHp ppv=%p\n", pSet, HCPhys, ppv));
-#ifdef VBOX_WITH_STATISTICS
-    PVMCPU pVCpu = PGMR0DYNMAP_2_VMCPU(pSet);
-#endif
     AssertMsg(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()), ("%d %d(%d) efl=%#x\n", pSet->iCpu, RTMpCpuIdToSetIndex(RTMpCpuId()), RTMpCpuId(), ASMGetFlags()));
+    PVMCPU pVCpu = PGMR0DYNMAP_2_VMCPU(pSet);
 
     /*
      * Map it.
      */
     void *pvPage;
-    uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, pSet->iCpu, &pvPage);
+    uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, pSet->iCpu, pVCpu, &pvPage);
     if (RT_UNLIKELY(iPage == UINT32_MAX))
     {
         RTAssertMsg2Weak("PGMDynMapHCPage: cLoad=%u/%u cPages=%u cGuardPages=%u\n",
