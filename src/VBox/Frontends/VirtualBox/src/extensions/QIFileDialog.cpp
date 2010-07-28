@@ -817,6 +817,11 @@ QStringList QIFileDialog::getOpenFileNames (const QString &aStartWith,
     QFileDialog::Options o;
     if (!aResolveSymlinks)
         o |= QFileDialog::DontResolveSymlinks;
+
+# if defined (Q_WS_X11)
+    if (vboxGlobal().isKWinManaged())
+      o |= QFileDialog::DontUseNativeDialog;
+# endif
     if (aSingleFile)
         return QStringList() << QFileDialog::getOpenFileName (aParent, aCaption, aStartWith,
                                                               aFilters, aSelectedFilter, o);
