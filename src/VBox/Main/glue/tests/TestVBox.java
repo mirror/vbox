@@ -95,9 +95,29 @@ public class TestVBox
         mgr.startVm(m, null, 7000);
     }
 
+    static void testMultiServer()
+    {
+        VirtualBoxManager mgr1 = VirtualBoxManager.createInstance(null);
+        VirtualBoxManager mgr2 = VirtualBoxManager.createInstance(null);
+
+        try {
+            mgr1.connect("http://i7:18083", "", "");
+            mgr2.connect("http://main:18083", "", "");
+
+            String mach1 =  mgr1.getVBox().getMachines().get(0).getName();
+            String mach2 =  mgr2.getVBox().getMachines().get(0).getName();
+
+            mgr1.startVm(mach1, null, 7000);
+            mgr2.startVm(mach2, null, 7000);
+        } finally {
+            mgr1.cleanup();
+            mgr2.cleanup();
+        }
+    }
+
     public static void main(String[] args)
     {
-        VirtualBoxManager mgr = VirtualBoxManager.getInstance(null);
+        VirtualBoxManager mgr = VirtualBoxManager.createInstance(null);
 
         boolean ws = false;
         String  url = null;

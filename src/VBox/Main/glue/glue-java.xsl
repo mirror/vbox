@@ -2509,12 +2509,12 @@ public class VirtualBoxManager
             s.unlockMachine();
     }
 
-    private static VirtualBoxManager mgr;
+    private static boolean hasInstance = false;
 
-    public static synchronized VirtualBoxManager getInstance(String home)
+    public static synchronized VirtualBoxManager createInstance(String home)
     {
-        if (mgr != null)
-            return mgr;
+        if (hasInstance)
+            throw new VBoxException(null, "only one instance at the time allowed");
 
         if (home == null)
             home = System.getProperty("vbox.home");
@@ -2530,8 +2530,9 @@ public class VirtualBoxManager
             return null;
         }
 
-        mgr = new VirtualBoxManager(mozilla, servMgr);
-        return mgr;
+        hasInstance = true;
+
+        return new VirtualBoxManager(mozilla, servMgr);
     }
 
     public IEventListener createListener(Object sink)
@@ -2544,6 +2545,7 @@ public class VirtualBoxManager
         // cleanup
         mozilla.shutdownXPCOM(servMgr);
         mozilla = null;
+        hasInstance = false;
     }
 
     public boolean progressBar(IProgress p, int wait)
@@ -3005,33 +3007,30 @@ public class VirtualBoxManager
     {
         ISession s = getSessionObject();
         m.lockMachine(s, LockType.Shared);
-        return s;       
+        return s;
     }
-   
+
     public void closeMachineSession(ISession s)
     {
           if (s != null)
           s.unlockMachine();
     }
 
-    private static VirtualBoxManager mgr;
+    private static boolean hasInstance = false;
 
-    public static synchronized VirtualBoxManager getInstance(String home)
+    public static synchronized VirtualBoxManager createInstance(String home)
     {
-        if (mgr != null)
-            return mgr;
+        if (hasInstance)
+          throw new VBoxException(null, "only one instance at the time allowed");
 
-        if (home == null)
-            home = System.getProperty("vbox.home");
-
-        mgr = new VirtualBoxManager();
-        return mgr;
+        hasInstance = true;
+        return new VirtualBoxManager();
     }
 
     public void cleanup()
     {
         deinitPerThread();
-        mgr = null;
+        hasInstance = false;
     }
 
     public boolean progressBar(IProgress p, int wait)
@@ -3206,7 +3205,7 @@ public class Helper {
             java.lang.reflect.Method fromValue = toClass.getMethod("fromValue", String.class);
             List<T2> ret = new ArrayList<T2>(values.size());
             for (T1 v : values) {
-                // static method is called with null this                
+                // static method is called with null this
                 ret.add((T2)fromValue.invoke(null, v.name()));
             }
             return ret;
@@ -3459,15 +3458,9 @@ public class VirtualBoxManager
             s.unlockMachine();
     }
 
-    private static VirtualBoxManager mgr;
-
-    public static synchronized VirtualBoxManager getInstance(String home)
+    public static synchronized VirtualBoxManager createInstance(String home)
     {
-        if (mgr != null)
-            return mgr;
-
-        mgr = new VirtualBoxManager();
-        return mgr;
+        return new VirtualBoxManager();
     }
 
     public IEventListener createListener(Object sink)
