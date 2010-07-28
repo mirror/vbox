@@ -75,6 +75,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define ICH6_HDA_REG_GCTL (5)
 #define ICH6_HDA_GCTL_RST_SHIFT (0)
 #define ICH6_HDA_GCTL_FSH_SHIFT (1)
+#define ICH6_HDA_GCTL_UR_SHIFT (8)
 #define GCTL(pState) (HDA_REG((pState), GCTL))
 
 #define ICH6_HDA_REG_WAKEEN 6 /* 0x0C */
@@ -378,6 +379,7 @@ typedef struct INTELHDLinkState
     /* indicates if HDA in reset. */
     bool        fInReset;
     CODECState  Codec;
+    uint8_t     u8Counter;
 } INTELHDLinkState;
 
 #define ICH6_HDASTATE_2_DEVINS(pINTELHD)   ((pINTELHD)->pDevIns)
@@ -659,7 +661,7 @@ static int hdaCmdSync(INTELHDLinkState *pState, bool fLocal)
                     prefix = "[W]";
                 else
                     prefix = "   ";
-                Log((" %s%016x", prefix, pState->pu64RirbBuf[i + j]));
+                Log((" %s%016lx", prefix, pState->pu64RirbBuf[i + j]));
             } while (++j < 8);
             Log(("\n"));
             i += 8;
@@ -667,13 +669,25 @@ static int hdaCmdSync(INTELHDLinkState *pState, bool fLocal)
     }
     return rc;
 }
+
+#if 0
+static int hdaUnsolictedResponse(INTELHDLinkState *pState, uint64_t pu64UnsolictedResponse)
+{
+    uint8_t rirbWp;
+    if (!HDA_REG_FLAG_VALUE(pState, GCTL, UR))
+    {
+        Log(("hda: unsolisited response %016lx is ignored\n"));
+        return VINF_SUCCESS;
+    }
+}
+#endif
+
 static int hdaCORBCmdProcess(INTELHDLinkState *pState)
 {
     int rc;
     uint8_t corbRp;
     uint8_t corbWp;
     uint8_t rirbWp;
-    uint8_t u8Counter = 0;
 
     PFNCODECVERBPROCESSOR pfn = (PFNCODECVERBPROCESSOR)NULL;
 
@@ -688,6 +702,7 @@ static int hdaCORBCmdProcess(INTELHDLinkState *pState)
     while (corbRp != corbWp)
     {
         uint32_t cmd;
+        uint64_t resp;
         corbRp++;
         cmd = pState->pu32CorbBuf[corbRp];
         rc = (pState)->Codec.pfnLookup(&pState->Codec, cmd, &pfn);
@@ -695,11 +710,20 @@ static int hdaCORBCmdProcess(INTELHDLinkState *pState)
             AssertRCReturn(rc, rc);
         Assert(pfn);
         (rirbWp)++;
-        rc = pfn(&pState->Codec, cmd, &pState->pu64RirbBuf[rirbWp]);
+        rc = pfn(&pState->Codec, cmd, &resp);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
-        u8Counter++;
-        if (u8Counter == RINTCNT_N(pState))
+        Log(("hda: verb:%08x->%016lx\n", cmd, resp));
+        if (   (resp & CODEC_RESPONSE_UNSOLICITED)
+            && !HDA_REG_FLAG_VALUE(pState, GCTL, UR))
+        {
+            Log(("hda: unexpected unsolisited response.\n"));
+            pState->au32Regs[ICH6_HDA_REG_CORBRP] = corbRp;
+            return rc;
+        }
+        pState->pu64RirbBuf[rirbWp] = resp;
+        pState->u8Counter++;
+        if (pState->u8Counter == RINTCNT_N(pState))
             break;
     }
     pState->au32Regs[ICH6_HDA_REG_CORBRP] = corbRp;
@@ -709,6 +733,7 @@ static int hdaCORBCmdProcess(INTELHDLinkState *pState)
     if (RIRBCTL_RIRB_RIC(pState))
     {
         RIRBSTS((pState)) |= HDA_REG_FIELD_FLAG_MASK(RIRBSTS,RINTFL);
+        pState->u8Counter = 0;
         rc = hdaProcessInterrupt(pState);
     }
     if (RT_FAILURE(rc))
@@ -1165,6 +1190,7 @@ DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
     INTSTS(pState) |= HDA_REG_FIELD_FLAG_MASK(INTSTS, CIS);
     return VINF_SUCCESS;
 }
+
 DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int avail)
 {
     bool fStop = false;
@@ -1500,10 +1526,12 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     pThis->dev.config[0x52] = 0x22;
     pThis->dev.config[0x53] = 0x00; /* PM - disabled,  */
 
+#if 0
     pThis->dev.config[0x60] = 0x05;
     pThis->dev.config[0x61] = 0x70; /* next */
     pThis->dev.config[0x62] = 0x00;
     pThis->dev.config[0x63] = 0x80;
+#endif
 
     /*
      * Register the PCI device.

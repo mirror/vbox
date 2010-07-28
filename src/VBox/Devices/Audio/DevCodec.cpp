@@ -58,8 +58,6 @@ extern "C" {
 #define CODEC_B_SIDE(cmd)       (((cmd) & CODEC_VERB_B_SIDE) >> 13)
 #define CODEC_B_INDEX(cmd)      ((cmd) & CODEC_VERB_B_INDEX)
 
-/* RPM 5.3.1 */
-#define CODEC_RESPONSE_UNSOLICITED RT_BIT_64(34)
 
 #define STAC9220_NODE_COUNT 0x1C
 
@@ -100,6 +98,8 @@ extern "C" {
 
 #define STAC9220_IS_CD_CMD(cmd) (CODEC_NID((cmd)) == 0x15)
 
+#define STAC9220_IS_VOLKNOB_CMD(cmd) (CODEC_NID((cmd)) == 0x15)
+
 /* STAC9220 6.2 & 6.12 */
 #define STAC9220_IS_RESERVED_CMD(cmd) ( \
        CODEC_NID((cmd)) == 0x9          \
@@ -122,7 +122,7 @@ static int codecBreak(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     int rc;
     rc = codecUnimplemented(pState, cmd, pResp);
-    *pResp |= CODEC_RESPONSE_UNSOLICITED;
+    *pResp |= CODEC_RESPONSE_UNSOLICITED; /* ??? */
     return rc;
 }
 /* B-- */
@@ -217,6 +217,70 @@ static int codecSetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
     *pu32Reg = (*pu32Reg) | (cmd & CODEC_VERB_8BIT_DATA);
     return VINF_SUCCESS;
 }
+
+static int codecGetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    *pResp = 0;
+    if (STAC9220_IS_PORT_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
+    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
+    else if (STAC9220_IS_AFG_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F08_param;
+    else if (STAC9220_IS_VOLKNOB_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
+    else
+        AssertMsgFailed(("unsuported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
+    return VINF_SUCCESS;
+}
+
+static int codecSetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    *pResp = 0;
+    uint32_t *pu32Reg = NULL;
+    if (STAC9220_IS_PORT_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
+    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
+    else if (STAC9220_IS_AFG_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].afg.u32F08_param;
+    else if (STAC9220_IS_VOLKNOB_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
+    else
+        AssertMsgFailed(("unsuported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
+    Assert(pu32Reg);
+    *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
+    *pu32Reg |= cmd & CODEC_VERB_8BIT_DATA;
+    return VINF_SUCCESS;
+}
+
+static int codecGetPinSence(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    *pResp = 0;
+    if (STAC9220_IS_PORT_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F09_param;
+    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F09_param;
+    else
+        AssertMsgFailed(("unsuported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
+    return VINF_SUCCESS;
+}
+static int codecSetPinSence(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    *pResp = 0;
+    uint32_t *pu32Reg = NULL;
+    if (STAC9220_IS_PORT_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
+    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
+    Assert(pu32Reg);
+    if(!pu32Reg)
+        return VINF_SUCCESS;
+    *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
+    *pu32Reg |= cmd & CODEC_VERB_8BIT_DATA;
+    return VINF_SUCCESS;
+}
+
 static int codecGetConnectionListEntry(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
@@ -307,17 +371,58 @@ static int codecReset(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
     return VINF_SUCCESS;
 }
 
-#if 0
 static int codecGetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
+    *pResp = 0;
     if (STAC9220_IS_AFG_CMD(cmd))
     {
         *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F05_param;
     }
+    else if (STAC9220_IS_DAC_CMD(cmd))
+    {
+        *pResp = pState->pNodes[CODEC_NID(cmd)].dac.u32F05_param;
+    }
+    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+    {
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F05_param;
+    }
+    else if (STAC9220_IS_ADC_CMD(cmd))
+    {
+        *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F05_param;
+    }
     return VINF_SUCCESS;
 }
-#endif
+
+static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    uint32_t *pu32Reg = NULL;
+    *pResp = 0;
+    if (STAC9220_IS_AFG_CMD(cmd))
+    {
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].afg.u32F05_param;
+    }
+    else if (STAC9220_IS_DAC_CMD(cmd))
+    {
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].dac.u32F05_param;
+    }
+    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+    {
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F05_param;
+    }
+    else if (STAC9220_IS_ADC_CMD(cmd))
+    {
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].adc.u32F05_param;
+    }
+    Assert((pu32Reg));
+    if (!pu32Reg)
+        return VINF_SUCCESS;
+    *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
+    *pu32Reg |= cmd & CODEC_VERB_8BIT_DATA;
+    return VINF_SUCCESS;
+}
+
 static int codecGetStreamId(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
@@ -386,6 +491,7 @@ static int codecSetConverterFormat(struct CODECState *pState, uint32_t cmd, uint
 static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode)
 {
     pNode->node.id = nodenum;
+    pNode->node.au32F00_param[0xF] = RT_BIT(3)|RT_BIT(0); /* Power statest Supported: D0-yes, D1, D2, D3-no*/
     switch (nodenum)
     {
         /* Root Node*/
@@ -400,16 +506,18 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 1:
             pNode->afg.node.name = "AFG";
             pNode->node.au32F00_param[4] = RT_MAKE_U32_FROM_U8(0x1a, 0x00, 0x02, 0x00);
-            pNode->node.au32F00_param[5] = RT_MAKE_U32_FROM_U8(0x1, 0x01, 0x00, 0x0);
+            pNode->node.au32F00_param[5] = RT_BIT(8)|RT_BIT(0);
             pNode->node.au32F00_param[8] = RT_MAKE_U32_FROM_U8(0x0d, 0x0d, 0x01, 0x0); /* Capabilities */
             //pNode->node.au32F00_param[0xa] = RT_BIT(19)|RT_BIT(18)|RT_BIT(17)|RT_BIT(10)|RT_BIT(9)|RT_BIT(8)|RT_BIT(7)|RT_BIT(6)|RT_BIT(5);
             pNode->node.au32F00_param[0xa] = RT_BIT(17)|RT_BIT(5);
+            pNode->node.au32F00_param[0xc] = (17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
             pNode->node.au32F00_param[0xb] = RT_BIT(0);
             pNode->node.au32F00_param[0xd] = RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
             pNode->node.au32F00_param[0x12] = RT_BIT(31)|(0x2 << 16)|(0x7f << 8)|0x7f;
-            pNode->afg.u32F05_param = (0x2) << 4 | 0x2; /* PS-Act: 0x2, D2 */
-            pNode->afg.u32F20_param = 0x83847626; /*STAC9271X */
-            pNode->afg.u32F08_param = 0;
+            pNode->node.au32F00_param[0x11] = 0;
+            pNode->afg.u32F05_param = 0x3 << 4; /* PS-Act: D3 -> D0 */
+            pNode->afg.u32F20_param = 0x83847882;
+            pNode->afg.u32F08_param = RT_BIT(7);
             break;
         case 2:
             pNode->dac.node.name = "DAC0";
@@ -432,6 +540,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->dac.node.au32F00_param[9] = (0xd << 16) | RT_BIT(11) |  RT_BIT(10) | RT_BIT(2) | RT_BIT(0);
             pNode->dac.node.au32F00_param[5] = (0x3 << 4) | 0x3;
             pNode->dac.u32F0c_param = 0;
+            pNode->dac.u32F05_param = 0x3 << 4; /* PS-Act: D3 -> D0 */
         break;
         case 6:
             pNode->adc.node.name = "ADC0";
@@ -444,7 +553,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->adc.u32A_param = RT_BIT(14)|(0x1 << 3)|0x2; /* 441000Hz/16bit/2ch */
             pNode->adc.node.au32F00_param[0xE] = RT_BIT(0);
             pNode->adc.u32F03_param = RT_BIT(0);
-            pNode->adc.u32F05_param = (0x3 << 4) | 0x3;
+            pNode->adc.u32F05_param = 0x3 << 4; /* PS-Act: D3 -> D0 */
             pNode->adc.u32F06_param = 0;
             pNode->adc.node.au32F00_param[9] = RT_BIT(20)| (0xd << 16) |  RT_BIT(10) | RT_BIT(8) | RT_BIT(6)| RT_BIT(0);
             break;
@@ -463,15 +572,18 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         break;
         case 0xA:
             pNode->node.name = "PortA";
-            pNode->node.au32F00_param[0xC] = 0x173f;
+            pNode->node.au32F00_param[0xC] = 0x173d;
             *(uint32_t *)pNode->node.au8F02_param = 0x2;
-            pNode->port.u32F07_param = 0;
+            pNode->port.u32F07_param = RT_BIT(6);
+            pNode->port.u32F08_param = RT_BIT(7);
+            pNode->port.u32F09_param = RT_BIT(31)|RT_BIT(30); /* 39.2 kOm */
             pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x20, 0x40, 0x21, 0x02);
             goto port_init;
         case 0xB:
             pNode->node.name = "PortB";
             pNode->node.au32F00_param[0xC] = 0x1737;
             *(uint32_t *)pNode->node.au8F02_param = 0x4;
+            pNode->port.u32F09_param = 0;
             pNode->port.u32F07_param = RT_BIT(5);
             pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x11, 0x60, 0x11, 0x01);
             goto port_init;
@@ -479,15 +591,16 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.name = "PortC";
             *(uint32_t *)pNode->node.au8F02_param = 0x3;
             pNode->node.au32F00_param[0xC] = 0x1737;
+            pNode->port.u32F09_param = 0;
             pNode->port.u32F07_param = RT_BIT(5);
             pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x10, 0x40, 0x11, 0x01);
             goto port_init;
         case 0xD:
             pNode->node.name = "PortD";
+            pNode->port.u32F09_param = 0;
             *(uint32_t *)pNode->node.au8F02_param = 0x2;
         port_init:
             pNode->port.u32F08_param = 0;
-            pNode->port.u32F09_param = 0x7fffffff;
             pNode->node.au32F00_param[9] = (4 << 20)|RT_BIT(8)|RT_BIT(7)|RT_BIT(0);
             pNode->node.au32F00_param[0xE] = 0x1;
         break;
@@ -509,7 +622,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F07_param = 0;
             pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x12, 0x60, 0x11, 0x01);
             pNode->node.au8F02_param[0] = 0x5;
-            pNode->port.u32F09_param = 0x7fffffff;
+            pNode->port.u32F09_param = 0;
         break;
         case 0x10:
             pNode->node.name = "DigOut_0";
@@ -525,7 +638,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.name = "DigIn_0";
             pNode->node.au32F00_param[9] = (4 << 20)|(3<<16)|RT_BIT(10)|RT_BIT(9)|RT_BIT(7)|RT_BIT(0);
             pNode->node.au32F00_param[0xC] = /* RT_BIT(16)|*/ RT_BIT(5)|RT_BIT(2);
-            pNode->digin.u32F05_param = (3 << 4)|0x3;
+            pNode->digin.u32F05_param = 0x3 << 4; /* PS-Act: D3 -> D0 */
             pNode->digin.u32F07_param = 0;
             pNode->digin.u32F08_param = 0;
             pNode->digin.u32F09_param = 0;
@@ -605,6 +718,10 @@ static CODECVERB STAC9220VERB[] =
     {0x000F0600, CODEC_VERB_8BIT_CMD , codecGetStreamId            },
     {0x000F0700, CODEC_VERB_8BIT_CMD , codecGetPinCtrl             },
     {0x00070700, CODEC_VERB_8BIT_CMD , codecSetPinCtrl             },
+    {0x000F0800, CODEC_VERB_8BIT_CMD , codecGetUnsolicitedEnabled  },
+    {0x00070800, CODEC_VERB_8BIT_CMD , codecSetUnsolicitedEnabled  },
+    {0x000F0900, CODEC_VERB_8BIT_CMD , codecGetPinSence            },
+    {0x00070900, CODEC_VERB_8BIT_CMD , codecSetPinSence            },
     {0x000F0200, CODEC_VERB_8BIT_CMD , codecGetConnectionListEntry },
     {0x000F0300, CODEC_VERB_8BIT_CMD , codecGetProcessingState     },
     {0x00070300, CODEC_VERB_8BIT_CMD , codecSetProcessingState     },
@@ -613,9 +730,8 @@ static CODECVERB STAC9220VERB[] =
     {0x00070E00, CODEC_VERB_8BIT_CMD , codecSetDigitalConverter2   },
     {0x000F2000, CODEC_VERB_8BIT_CMD , codecGetSubId               },
     {0x0007FF00, CODEC_VERB_8BIT_CMD , codecReset                  },
-#if 0
-    {0x000F0500, CODEC_VERB_8BIT_CMD , codecGetPowerState},
-#endif
+    {0x000F0500, CODEC_VERB_8BIT_CMD , codecGetPowerState          },
+    {0x00070500, CODEC_VERB_8BIT_CMD , codecSetPowerState          },
 };
 
 static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR pfn)
@@ -626,7 +742,7 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
         || CODEC_NID(cmd) >= STAC9220_NODE_COUNT
         || STAC9220_IS_RESERVED_CMD(cmd))
     {
-        *pfn = CODEC_VERBDATA(cmd) != 0 ? codecUnimplemented : codecBreak;
+        *pfn = codecUnimplemented;
         //** @todo r=michaln: There needs to be a counter to avoid log flooding (see e.g. DevRTC.cpp)
         LogRel(("HDAcodec: cmd %x was ignored\n", cmd));
         return VINF_SUCCESS;
