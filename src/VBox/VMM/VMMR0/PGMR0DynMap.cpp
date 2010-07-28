@@ -80,6 +80,12 @@
 //#define RTSpinlockRelease(a,b) do {} while (0)
 #endif
 
+/** Converts a PGMCPUM::AutoSet pointer into a PVMCPU. */
+#define PGMR0DYNMAP_2_VMCPU(pSet)           (RT_FROM_MEMBER(pSet, VMCPU, pgm.s.AutoSet))
+
+/** Converts a PGMCPUM::AutoSet pointer into a PVM. */
+#define PGMR0DYNMAP_2_VM(pSet)              (PGMR0DYNMAP_2_VMCPU(pSet)->CTX_SUFF(pVM))
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -1178,12 +1184,11 @@ static void pgmR0DynMapReleasePage(PPGMR0DYNMAP pThis, uint32_t iPage, uint32_t 
  * @param   pThis       The dynamic mapping cache instance.
  * @param   HCPhys      The address of the page to be mapped.
  * @param   iPage       The page index pgmR0DynMapPage hashed HCPhys to.
- * @param   pVM         The shared VM structure, for statistics only.
  */
-static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t iPage, PVM pVM)
+static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t iPage)
 {
 #ifdef VBOX_WITH_STATISTICS
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    PVMCPU pVCpu = PGMR0DYNMAP_2_VMCPU(pThis);
 #endif
     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapPageSlow);
 
@@ -1279,13 +1284,12 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
  * @param   pThis       The dynamic mapping cache instance.
  * @param   HCPhys      The address of the page to be mapped.
  * @param   iRealCpu    The real cpu set index. (optimization)
- * @param   pVM         The shared VM structure, for statistics only.
  * @param   ppvPage     Where to the page address.
  */
-DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_t iRealCpu, PVM pVM, void **ppvPage)
+DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_t iRealCpu, void **ppvPage)
 {
 #ifdef VBOX_WITH_STATISTICS
-    PVMCPU              pVCpu   = VMMGetCpu(pVM);
+    PVMCPU              pVCpu   = PGMR0DYNMAP_2_VMCPU(pThis);
 #endif
     RTSPINLOCKTMP       Tmp     = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
@@ -1323,7 +1327,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_
             }
             else
             {
-                iPage = pgmR0DynMapPageSlow(pThis, HCPhys, iPage, pVM);
+                iPage = pgmR0DynMapPageSlow(pThis, HCPhys, iPage);
                 if (RT_UNLIKELY(iPage == UINT32_MAX))
                 {
                     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
@@ -1828,19 +1832,17 @@ static void pgmDynMapOptimizeAutoSet(PPGMMAPSET pSet)
  * pgmR0DynMapGCPageInlined.
  *
  * @returns VINF_SUCCESS, bails out to ring-3 on failure.
- * @param   pVM         The shared VM structure (for statistics).
  * @param   pSet        The set.
  * @param   HCPhys      The physical address of the page.
  * @param   ppv         Where to store the address of the mapping on success.
  *
  * @remarks This is a very hot path.
  */
-int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv)
+int pgmR0DynMapHCPageCommon(PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv)
 {
-    LogFlow(("pgmR0DynMapHCPageCommon: pVM=%p pSet=%p HCPhys=%RHp ppv=%p\n",
-             pVM, pSet, HCPhys, ppv));
+    LogFlow(("pgmR0DynMapHCPageCommon: pSet=%p HCPhys=%RHp ppv=%p\n", pSet, HCPhys, ppv));
 #ifdef VBOX_WITH_STATISTICS
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    PVMCPU pVCpu = PGMR0DYNMAP_2_VMCPU(pSet);
 #endif
     AssertMsg(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()), ("%d %d(%d) efl=%#x\n", pSet->iCpu, RTMpCpuIdToSetIndex(RTMpCpuId()), RTMpCpuId(), ASMGetFlags()));
 
@@ -1848,13 +1850,13 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
      * Map it.
      */
     void *pvPage;
-    uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, pSet->iCpu, pVM, &pvPage);
+    uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, pSet->iCpu, &pvPage);
     if (RT_UNLIKELY(iPage == UINT32_MAX))
     {
         RTAssertMsg2Weak("PGMDynMapHCPage: cLoad=%u/%u cPages=%u cGuardPages=%u\n",
                          g_pPGMR0DynMap->cLoad, g_pPGMR0DynMap->cMaxLoad, g_pPGMR0DynMap->cPages, g_pPGMR0DynMap->cGuardPages);
         if (!g_fPGMR0DynMapTestRunning)
-            VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_VM_R0_ASSERTION, 0);
+            VMMRZCallRing3NoCpu(PGMR0DYNMAP_2_VM(pSet), VMMCALLRING3_VM_R0_ASSERTION, 0);
         *ppv = NULL;
         return VERR_PGM_DYNMAP_FAILED;
     }
@@ -1950,7 +1952,7 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
 
                 RTAssertMsg2Weak("PGMDynMapHCPage: set is full!\n");
                 if (!g_fPGMR0DynMapTestRunning)
-                    VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_VM_R0_ASSERTION, 0);
+                    VMMRZCallRing3NoCpu(PGMR0DYNMAP_2_VM(pSet), VMMCALLRING3_VM_R0_ASSERTION, 0);
                 *ppv = NULL;
                 return VERR_PGM_DYNMAP_FULL_SET;
             }
@@ -1986,7 +1988,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     /*
      * Call common code.
      */
-    int rc = pgmR0DynMapHCPageCommon(pVM, pSet, HCPhys, ppv);
+    int rc = pgmR0DynMapHCPageCommon(pSet, HCPhys, ppv);
 
     STAM_PROFILE_STOP(&pVCpu->pgm.s.StatR0DynMapHCPage, a);
     return rc;

@@ -1094,7 +1094,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     AssertRCSuccessReturn(rc, rc);
     Assert(pShwPde);
 
-    pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPde);
+    pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPde);
     PX86PDEPAE pPdeDst = &pPDDst->a[iPDDst];
 
 # else /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
@@ -1231,7 +1231,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             {
 # if 0 /* likely cause of a major performance regression; must be SyncPageWorkerTrackDeref then */
                 const unsigned iPTEDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-                PSHWPT pPT = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+                PSHWPT pPT = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
                 if (pPT->a[iPTEDst].n.u1Present)
                 {
                     /* This is very unlikely with caching/monitoring enabled. */
@@ -1742,7 +1742,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     AssertRCSuccessReturn(rc2, rc2);
     Assert(pShwPde);
 
-    pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPde);
+    pPDDst             = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPde);
     PX86PDEPAE pPdeDst = &pPDDst->a[iPDDst];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
@@ -1819,7 +1819,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
          */
         if (PdeSrc.n.u1Accessed)
         {
-            PSHWPT pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+            PSHWPT pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
             if (!fBigPage)
             {
                 /*
@@ -2106,7 +2106,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     GCPtrPage &= ~((RTGCPTR)0xfff);
 
     PPGMPOOLPAGE  pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
-    PSHWPT        pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    PSHWPT        pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
 
     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
     if (    cPages > 1
@@ -2311,7 +2311,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPdeDst->u & SHW_PDE_PG_MASK);
             if (pShwPage)
             {
-                PSHWPT      pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+                PSHWPT      pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
                 PSHWPTE     pPteDst  = &pPTDst->a[(GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK];
                 if (    pPteDst->n.u1Present
                     &&  pPteDst->n.u1Write)
@@ -2359,7 +2359,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
         PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPdeDst->u & SHW_PDE_PG_MASK);
         if (pShwPage)
         {
-            PSHWPT      pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+            PSHWPT      pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
             PSHWPTE     pPteDst  = &pPTDst->a[(GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK];
             if (pPteDst->n.u1Present)    /** @todo Optimize accessed bit emulation? */
             {
@@ -2496,7 +2496,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     AssertRCSuccessReturn(rc, rc);
     Assert(pShwPde);
 
-    pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPde);
+    pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPde);
     pPdeDst = &pPDDst->a[iPDDst];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
@@ -2611,7 +2611,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             rc = pgmPoolAllocEx(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, enmAccess, pShwPde->idx, iPDDst, &pShwPage);
         }
         if (rc == VINF_SUCCESS)
-            pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+            pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
         else if (rc == VINF_PGM_CACHED_PAGE)
         {
             /*
@@ -2950,7 +2950,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     AssertRCSuccessReturn(rc, rc);
     Assert(pShwPde);
 
-    pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPde);
+    pPDDst  = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPde);
     pPdeDst = &pPDDst->a[iPDDst];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
@@ -3080,7 +3080,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_CACHED_PAGE)
-        pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+        pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     else
         AssertMsgFailedReturn(("rc=%Rrc\n", rc), VERR_INTERNAL_ERROR);
 
@@ -3820,7 +3820,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                         cErrors++;
                         continue;
                     }
-                    const SHWPT *pPTDst = (const SHWPT *)PGMPOOL_PAGE_2_PTR(pVM, pPoolPage);
+                    const SHWPT *pPTDst = (const SHWPT *)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pPoolPage);
 
                     if (PdeDst.u & (X86_PDE4M_PWT | X86_PDE4M_PCD))
                     {

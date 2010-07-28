@@ -240,7 +240,7 @@
      PGMDynMapHCPage(pVM, HCPhys, (void **)(ppv))
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) \
-     pgmR0DynMapHCPageInlined(&(pVM)->pgm.s, HCPhys, (void **)(ppv))
+     pgmR0DynMapHCPageInlined(VMMGetCpu(pVM), HCPhys, (void **)(ppv))
 #else
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) \
      MMPagePhys2PageEx(pVM, HCPhys, (void **)(ppv))
@@ -263,7 +263,7 @@
      PGMDynMapGCPage(pVM, GCPhys, (void **)(ppv))
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
-     pgmR0DynMapGCPageInlined(&(pVM)->pgm.s, GCPhys, (void **)(ppv))
+     pgmR0DynMapGCPageInlined(VMMGetCpu(pVM), GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
      PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1 /* one page only */, (PRTR3PTR)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
@@ -283,30 +283,10 @@
  */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 # define PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhys, ppv) \
-     pgmR0DynMapGCPageInlined(&(pVCpu)->CTX_SUFF(pVM)->pgm.s, GCPhys, (void **)(ppv))
+     pgmR0DynMapGCPageInlined(pVCpu, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GCPhys, ppv) \
      PGM_GCPHYS_2_PTR((pVCpu)->CTX_SUFF(pVM), GCPhys, ppv)
-#endif
-
-/** @def PGM_GCPHYS_2_PTR_BY_PGMCPU
- * Maps a GC physical page address to a virtual address.
- *
- * @returns VBox status code.
- * @param   pPGM    Pointer to the PGM instance data.
- * @param   GCPhys  The GC physical address to map to a virtual one.
- * @param   ppv     Where to store the virtual address. No need to cast this.
- *
- * @remark  In GC this uses PGMGCDynMapGCPage(), so it will consume of the
- *          small page window employeed by that function. Be careful.
- * @remark  There is no need to assert on the result.
- */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-# define PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, GCPhys, ppv) \
-     pgmR0DynMapGCPageInlined(PGMCPU2PGM(pPGM), GCPhys, (void **)(ppv))
-#else
-# define PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, GCPhys, ppv) \
-     PGM_GCPHYS_2_PTR(PGMCPU2VM(pPGM), GCPhys, ppv)
 #endif
 
 /** @def PGM_GCPHYS_2_PTR_EX
@@ -2159,9 +2139,9 @@ AssertCompileMemberAlignment(PGMPOOL, aPages, 8);
  * @remark  There is no need to assert on the result.
  */
 #if defined(IN_RC)
-# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined(&(pVM)->pgm.s, (pPage))
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined((pVM), (pPage))
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined(&(pVM)->pgm.s, (pPage))
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined((pVM), (pPage))
 #elif defined(VBOX_STRICT)
 # define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageStrict(pPage)
 DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
@@ -2171,6 +2151,27 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
 }
 #else
 # define PGMPOOL_PAGE_2_PTR(pVM, pPage)  ((pPage)->pvPageR3)
+#endif
+
+
+/** @def PGMPOOL_PAGE_2_PTR_V2
+ * Maps a pool page pool into the current context, taking both VM and VMCPU.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The VM handle.
+ * @param   pVCpu   The current CPU.
+ * @param   pPage   The pool page.
+ *
+ * @remark  In RC this uses PGMGCDynMapHCPage(), so it will consume of the
+ *          small page window employeed by that function. Be careful.
+ * @remark  There is no need to assert on the result.
+ */
+#if defined(IN_RC)
+# define PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pPage)   pgmPoolMapPageInlined((pVM), (pPage))
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pPage)   pgmPoolMapPageInlined((pVM), (pPage))
+#else
+# define PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pPage)   PGMPOOL_PAGE_2_PTR((pVM), (pPage))
 #endif
 
 
@@ -3580,7 +3581,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 
 #endif /* IN_RING3 */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-int             pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv);
+int             pgmR0DynMapHCPageCommon(PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv);
 #endif
 int             pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage, bool fLockPage = false);
 

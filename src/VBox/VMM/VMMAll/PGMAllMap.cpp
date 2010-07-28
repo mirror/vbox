@@ -425,7 +425,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
         {
             case PGMMODE_32_BIT:
             {
-                PX86PD          pShw32BitPd = (PX86PD)PGMPOOL_PAGE_2_PTR(pVM, pShwPageCR3);
+                PX86PD          pShw32BitPd = (PX86PD)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPageCR3);
                 AssertFatal(pShw32BitPd);
 
                 Assert(!pShw32BitPd->a[iOldPDE].n.u1Present || (pShw32BitPd->a[iOldPDE].u & PGM_PDFLAGS_MAPPING));
@@ -438,7 +438,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
             {
                 const unsigned  iPdpt     = iOldPDE / 256;      /* iOldPDE * 2 / 512; iOldPDE is in 4 MB pages */
                 unsigned        iPaePde   = iOldPDE * 2 % 512;
-                PX86PDPT        pShwPdpt  = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPageCR3);
+                PX86PDPT        pShwPdpt  = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPageCR3);
                 PX86PDPAE       pShwPaePd = pgmShwGetPaePDPtr(pVCpu, pShwPdpt, (iPdpt << X86_PDPT_SHIFT));
 
                 /*
@@ -537,7 +537,7 @@ static void pgmMapCheckShadowPDEs(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pShwPageCR
         {
             case PGMMODE_32_BIT:
             {
-                PCX86PD         pShw32BitPd = (PCX86PD)PGMPOOL_PAGE_2_PTR(pVM, pShwPageCR3);
+                PCX86PD         pShw32BitPd = (PCX86PD)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu2, pShwPageCR3);
                 AssertFatal(pShw32BitPd);
 
                 AssertMsg(pShw32BitPd->a[iPDE].u == (PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT),
@@ -552,7 +552,7 @@ static void pgmMapCheckShadowPDEs(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pShwPageCR
             {
                 const unsigned  iPdpt     = iPDE / 256;         /* iPDE * 2 / 512; iPDE is in 4 MB pages */
                 unsigned        iPaePDE   = iPDE * 2 % 512;
-                PX86PDPT        pShwPdpt  = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPageCR3);
+                PX86PDPT        pShwPdpt  = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPageCR3);
                 PCX86PDPAE      pShwPaePd = pgmShwGetPaePDPtr(pVCpu, pShwPdpt, iPdpt << X86_PDPT_SHIFT);
                 AssertFatal(pShwPaePd);
 
