@@ -127,8 +127,9 @@ RTDECL(void) RTLogLoggerEx(PRTLOGGER, unsigned, unsigned, const char *pszFormat,
     va_end(args);
 }
 
-RTDECL(void *)  RTMemTmpAlloc(size_t cb)
+RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag)
 {
+    NOREF(pszTag);
     return xalloc(cb);
 }
 
