@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Memory Allocation, POSIX.
+ * IPRT - Memory Allocation, Darwin.
  */
 
 /*
@@ -151,3 +151,4 @@ RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect) RT_NO_THROW
         return rc;
     return RTErrConvertFromErrno(errno);
 }
+

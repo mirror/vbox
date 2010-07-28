@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Memory Allocation, POSIX.
+ * IPRT - Memory Allocation, Solaris.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -48,14 +48,7 @@
 #endif
 
 
-/**
- * Allocates memory which may contain code.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL on failure.
- * @param   cb      Size in bytes of the memory block to allocate.
- */
-RTDECL(void *) RTMemExecAlloc(size_t cb) RT_NO_THROW
+RTDECL(void *) RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
     /*
      * Allocate first.
@@ -88,11 +81,6 @@ RTDECL(void *) RTMemExecAlloc(size_t cb) RT_NO_THROW
 }
 
 
-/**
- * Free executable/read/write memory allocated by RTMemExecAlloc().
- *
- * @param   pv      Pointer to memory block.
- */
 RTDECL(void)    RTMemExecFree(void *pv) RT_NO_THROW
 {
     if (pv)
@@ -100,14 +88,7 @@ RTDECL(void)    RTMemExecFree(void *pv) RT_NO_THROW
 }
 
 
-/**
- * Allocate page aligned memory.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL if we're out of memory.
- * @param   cb  Size of the memory block. Will be rounded up to page size.
- */
-RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW
+RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
 #ifdef RT_USE_MMAP_PAGE
     size_t  cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
@@ -121,14 +102,7 @@ RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW
 }
 
 
-/**
- * Allocate zero'ed page aligned memory.
- *
- * @returns Pointer to the allocated memory.
- * @returns NULL if we're out of memory.
- * @param   cb  Size of the memory block. Will be rounded up to page size.
- */
-RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
+RTDECL(void *) RTMemPageAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
 #ifdef RT_USE_MMAP_PAGE
     size_t  cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
@@ -146,12 +120,6 @@ RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
 }
 
 
-/**
- * Free a memory block allocated with RTMemPageAlloc() or RTMemPageAllocZ().
- *
- * @param   pv      Pointer to the block as it was returned by the allocation function.
- *                  NULL will be ignored.
- */
 RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW
 {
     if (pv)
@@ -167,14 +135,6 @@ RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW
 }
 
 
-/**
- * Change the page level protection of a memory region.
- *
- * @returns iprt status code.
- * @param   pv          Start of the region. Will be rounded down to nearest page boundary.
- * @param   cb          Size of the region. Will be rounded up to the nearest page boundary.
- * @param   fProtect    The new protection, a combination of the RTMEM_PROT_* defines.
- */
 RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect) RT_NO_THROW
 {
     /*
