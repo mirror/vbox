@@ -627,6 +627,8 @@ static int vmdkFileOpen(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile,
         uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY;
     if ((fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE)
         uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE;
+    if ((fOpen & RTFILE_O_DENY_MASK) == RTFILE_O_DENY_NONE)
+        uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_DONT_LOCK;
 
     rc = pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
                                                 pszFilename,
@@ -2056,6 +2058,7 @@ static int vmdkDescSetLCHSGeometry(PVMDKIMAGE pImage,
         return rc;
     rc = vmdkDescDDBSetU32(pImage, &pImage->Descriptor,
                            VMDK_DDB_GEO_LCHS_HEADS,
+
                            pLCHSGeometry->cHeads);
     if (RT_FAILURE(rc))
         return rc;
@@ -2256,6 +2259,7 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
         }
         else
             return vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
+
         if (pImage->pExtents[i].enmType == VMDKETYPE_ZERO)
         {
             /* This one has no basename or offset. */
@@ -4065,6 +4069,7 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
     }
 
     if (RT_FAILURE(rc))
+
         goto out;
 
     if (RT_SUCCESS(rc) && pfnProgress)

@@ -466,9 +466,11 @@ typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser, int rcReq);
 typedef FNVDCOMPLETED *PFNVDCOMPLETED;
 
 /** Open the storage readonly. */
-#define VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY RT_BIT(0)
+#define VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY  RT_BIT(0)
 /** Create the storage backend if it doesn't exist. */
-#define VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE RT_BIT(1)
+#define VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE    RT_BIT(1)
+/** Don't write lock the opened file. */
+#define VD_INTERFACEASYNCIO_OPEN_FLAGS_DONT_LOCK RT_BIT(2)
 
 /**
  * Support interface for asynchronous I/O
