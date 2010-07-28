@@ -260,15 +260,17 @@ static const char *const s_apszVhdFileExtensions[] =
 static int vhdFlush(void *pBackendData);
 static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffset);
 
-static int vhdFileOpen(PVHDIMAGE pImage, bool fReadonly, bool fCreate)
+static int vhdFileOpen(PVHDIMAGE pImage, bool fReadonly, bool fShareable,
+                       bool fCreate)
 {
     int rc = VINF_SUCCESS;
 
     AssertMsg(!(fReadonly && fCreate), ("Image can't be opened readonly while being created\n"));
 
 #ifndef VBOX_WITH_NEW_IO_CODE
-    uint32_t fOpen = fReadonly ? RTFILE_O_READ      | RTFILE_O_DENY_NONE
-                               : RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE;
+    uint32_t fDeny = fReadonly | fShareable ? RTFILE_O_DENY_NONE : RTFILE_O_DENY_WRITE;
+    uint32_t fOpen = fReadonly ? RTFILE_O_READ : RTFILE_O_READWRITE;
+    fOpen |= fDeny;
 
     if (fCreate)
         fOpen |= RTFILE_O_CREATE;
@@ -728,7 +730,8 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
     /*
      * Open the image.
      */
-    int rc = vhdFileOpen(pImage, !!(uOpenFlags & VD_OPEN_FLAGS_READONLY), false);
+    int rc = vhdFileOpen(pImage, !!(uOpenFlags & VD_OPEN_FLAGS_READONLY),
+                         !!(uOpenFlags & VD_OPEN_FLAGS_SHAREABLE), false);
     if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
@@ -1096,7 +1099,8 @@ static int vhdSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
         goto out;
     vhdFileClose(pImage);
     pImage->uOpenFlags = uOpenFlags;
-    rc = vhdFileOpen(pImage, !!(uOpenFlags & VD_OPEN_FLAGS_READONLY), false);
+    rc = vhdFileOpen(pImage, !!(uOpenFlags & VD_OPEN_FLAGS_READONLY),
+                     !!(uOpenFlags & VD_OPEN_FLAGS_SHAREABLE), false);
 
 out:
     LogFlowFunc(("returned %Rrc\n", rc));
@@ -1955,7 +1959,9 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
-    rc = vhdFileOpen(pImage, false /* fReadonly */, true /* fCreate */);
+    rc = vhdFileOpen(pImage, false /* fReadonly */,
+                     !!(uOpenFlags & VD_OPEN_FLAGS_SHAREABLE),
+                     true /* fCreate */);
     if (RT_FAILURE(rc))
         return vhdError(pImage, rc, RT_SRC_POS, N_("VHD: cannot create image '%s'"), pImage->pszFilename);
 

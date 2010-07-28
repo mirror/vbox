@@ -3156,6 +3156,21 @@ static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents)
 }
 
 /**
+ * Internal: Translate the VBoxHDD open flags to RTFile open flags.
+ */
+static uint32_t vmdkFileOpenFlags(unsigned uOpenFlags)
+{
+    uint32_t fDeny =   uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE)
+                     ? RTFILE_O_DENY_NONE
+                     : RTFILE_O_DENY_WRITE;
+    uint32_t fOpen =   uOpenFlags & VD_OPEN_FLAGS_READONLY
+                     ? RTFILE_O_READ
+                     : RTFILE_O_READWRITE;
+    fOpen |= RTFILE_O_OPEN | fDeny;
+    return fOpen;
+}
+
+/**
  * Internal: Open an image, constructing all necessary data structures.
  */
 static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
@@ -3183,10 +3198,9 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
      * we only support raw access and the opened file is a description
      * file were no data is stored.
      */
+
     rc = vmdkFileOpen(pImage, &pFile, pImage->pszFilename,
-                      uOpenFlags & VD_OPEN_FLAGS_READONLY
-                       ? RTFILE_O_READ      | RTFILE_O_OPEN | RTFILE_O_DENY_NONE
-                       : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, false);
+                      vmdkFileOpenFlags(uOpenFlags), false);
     if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
@@ -3401,9 +3415,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
             {
                 case VMDKETYPE_HOSTED_SPARSE:
                     rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      uOpenFlags & VD_OPEN_FLAGS_READONLY
-                                        ? RTFILE_O_READ      | RTFILE_O_OPEN | RTFILE_O_DENY_NONE
-                                        : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, false);
+                                      vmdkFileOpenFlags(uOpenFlags), false);
                     if (RT_FAILURE(rc))
                     {
                         /* Do NOT signal an appropriate error here, as the VD
@@ -3428,9 +3440,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
                 case VMDKETYPE_VMFS:
                 case VMDKETYPE_FLAT:
                     rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      uOpenFlags & VD_OPEN_FLAGS_READONLY
-                                        ? RTFILE_O_READ      | RTFILE_O_OPEN | RTFILE_O_DENY_NONE
-                                        : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, true);
+                                      vmdkFileOpenFlags(uOpenFlags), true);
                     if (RT_FAILURE(rc))
                     {
                         /* Do NOT signal an appropriate error here, as the VD
@@ -3511,6 +3521,19 @@ out:
 }
 
 /**
+ * Internal: Translate the VBoxHDD open flags to RTFile open/create flags.
+ */
+static uint32_t vmdkFileCreateFlags(unsigned uOpenFlags)
+{
+    uint32_t fDeny =   uOpenFlags & VD_OPEN_FLAGS_SHAREABLE
+                     ? RTFILE_O_DENY_NONE
+                     : RTFILE_O_DENY_WRITE;
+    uint32_t fOpen = RTFILE_O_READWRITE | RTFILE_O_NOT_CONTENT_INDEXED;
+    fOpen |= RTFILE_O_CREATE | fDeny;
+    return fOpen;
+}
+
+/**
  * Internal: create VMDK images for raw disk/partition access.
  */
 static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
@@ -3529,8 +3552,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
         pExtent = &pImage->pExtents[0];
         /* Create raw disk descriptor file. */
         rc = vmdkFileOpen(pImage, &pImage->pFile, pImage->pszFilename,
-                          RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED,
-                          false);
+                          vmdkFileCreateFlags(pImage->uOpenFlags), false);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pImage->pszFilename);
 
@@ -3553,7 +3575,8 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
         /* Open flat image, the raw disk. */
         rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                          RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, false);
+                          vmdkFileOpenFlags(pImage->uOpenFlags & ~VD_OPEN_FLAGS_READONLY),
+                          false);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not open raw disk file '%s'"), pExtent->pszFullname);
     }
@@ -3589,8 +3612,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
         /* Create raw partition descriptor file. */
         rc = vmdkFileOpen(pImage, &pImage->pFile, pImage->pszFilename,
-                          RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED,
-                          false);
+                          vmdkFileCreateFlags(pImage->uOpenFlags), false);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pImage->pszFilename);
 
@@ -3664,7 +3686,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
                 /* Create partition table flat image. */
                 rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                  RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED,
+                                  vmdkFileCreateFlags(pImage->uOpenFlags),
                                   false);
                 if (RT_FAILURE(rc))
                     return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new partition data file '%s'"), pExtent->pszFullname);
@@ -3699,7 +3721,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
                     /* Open flat image, the raw partition. */
                     rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE,
+                                      vmdkFileOpenFlags(pImage->uOpenFlags & ~VD_OPEN_FLAGS_READONLY),
                                       false);
                     if (RT_FAILURE(rc))
                         return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not open raw partition file '%s'"), pExtent->pszFullname);
@@ -3772,8 +3794,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
     if (cExtents != 1 || (uImageFlags & VD_IMAGE_FLAGS_FIXED))
     {
         rc = vmdkFileOpen(pImage, &pImage->pFile, pImage->pszFilename,
-                          RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED,
-                          false);
+                          vmdkFileCreateFlags(pImage->uOpenFlags), false);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new sparse descriptor file '%s'"), pImage->pszFilename);
     }
@@ -3842,8 +3863,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
 
         /* Create file for extent. */
         rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                          RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_NOT_CONTENT_INDEXED,
-                          false);
+                          vmdkFileCreateFlags(pImage->uOpenFlags), false);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pExtent->pszFullname);
         if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
@@ -5520,7 +5540,8 @@ rollback:
         /* Restore the old descriptor. */
         PVMDKFILE pFile;
         rrc = vmdkFileOpen(pImage, &pFile, pszOldDescName,
-            RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, false);
+                           vmdkFileOpenFlags(VD_OPEN_FLAGS_NORMAL),
+                           false);
         AssertRC(rrc);
         if (fEmbeddedDesc)
         {
