@@ -156,7 +156,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
 
     /* PDPT */
     PX86PDPT        pPDPT;
-    int rc = PGM_HCPHYS_2_PTR(pVM, Pml4e.u & X86_PML4E_PG_MASK, &pPDPT);
+    int rc = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pml4e.u & X86_PML4E_PG_MASK, &pPDPT);
     if (RT_FAILURE(rc))
         return rc;
     const unsigned  iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
@@ -166,7 +166,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
 
     /* PD */
     PX86PDPAE       pPd;
-    rc = PGM_HCPHYS_2_PTR(pVM, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
+    rc = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
     if (RT_FAILURE(rc))
         return rc;
     const unsigned  iPd = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
@@ -230,7 +230,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     PSHWPT          pPT;
     if (!(Pde.u & PGM_PDFLAGS_MAPPING))
     {
-        int rc2 = PGM_HCPHYS_2_PTR(pVM, Pde.u & SHW_PDE_PG_MASK, &pPT);
+        int rc2 = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pde.u & SHW_PDE_PG_MASK, &pPT);
         if (RT_FAILURE(rc2))
             return rc2;
     }
@@ -322,7 +322,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
 
         /* PDPT */
         PX86PDPT        pPDPT;
-        rc = PGM_HCPHYS_2_PTR(pVM, Pml4e.u & X86_PML4E_PG_MASK, &pPDPT);
+        rc = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pml4e.u & X86_PML4E_PG_MASK, &pPDPT);
         if (RT_FAILURE(rc))
             return rc;
         const unsigned  iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
@@ -332,7 +332,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
 
         /* PD */
         PX86PDPAE       pPd;
-        rc = PGM_HCPHYS_2_PTR(pVM, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
+        rc = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
         if (RT_FAILURE(rc))
             return rc;
         const unsigned iPd = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
@@ -367,7 +367,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
          * Map the page table.
          */
         PSHWPT          pPT;
-        rc = PGM_HCPHYS_2_PTR(pVM, Pde.u & SHW_PDE_PG_MASK, &pPT);
+        rc = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pde.u & SHW_PDE_PG_MASK, &pPT);
         if (RT_FAILURE(rc))
             return rc;
 
