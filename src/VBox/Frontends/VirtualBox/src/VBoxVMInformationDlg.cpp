@@ -471,7 +471,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         QString addVersionStr;
         if (!addVersion.isEmpty() && !addRevision.isEmpty())
         {
-            QString addInfo = console.GetGuest().GetAdditionsVBoxVersion();
+            QString addInfo = console.GetGuest().GetAdditionsVersion();
             addVersionStr = (addInfo.isEmpty() ? "(" : "")
                           + addVersion
                           + " r"
