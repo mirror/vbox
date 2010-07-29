@@ -2432,13 +2432,25 @@ static int displayTakeScreenshot(PVM pVM, struct DRVMAINDISPLAY *pDrv, BYTE *add
     size_t cbData = 0;
     uint32_t cx = 0;
     uint32_t cy = 0;
+    int vrc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-    int vrc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)Display::displayTakeScreenshotEMT, 6,
+    int cRetries = 5;
+
+    while (cRetries-- > 0)
+    {
+        vrc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)Display::displayTakeScreenshotEMT, 6,
                               pDisplay, aScreenId, &pu8Data, &cbData, &cx, &cy);
+        if (vrc != VERR_TRY_AGAIN)
+        {
+            break;
+        }
+
+        RTThreadSleep(10);
+    }
 #else
     /* @todo pfnTakeScreenshot is probably callable from any thread, because it uses the VGA device lock. */
-    int vrc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pDrv->pUpPort->pfnTakeScreenshot, 5,
+    vrc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pDrv->pUpPort->pfnTakeScreenshot, 5,
                               pDrv->pUpPort, &pu8Data, &cbData, &cx, &cy);
 #endif /* !VBOX_WITH_OLD_VBVA_LOCK */
 
@@ -2524,6 +2536,9 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
     if (vrc == VERR_NOT_IMPLEMENTED)
         rc = setError(E_NOTIMPL,
                       tr("This feature is not implemented"));
+    else if (vrc == VERR_TRY_AGAIN)
+        rc = setError(E_UNEXPECTED,
+                      tr("This feature is not available at this time"));
     else if (RT_FAILURE(vrc))
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not take a screenshot (%Rrc)"), vrc);

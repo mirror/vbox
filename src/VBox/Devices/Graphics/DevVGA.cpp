@@ -1762,7 +1762,7 @@ static const uint8_t cursor_glyph[32 * 4] = {
 #ifndef VBOX
 static void vga_draw_text(VGAState *s, int full_update)
 #else
-static int vga_draw_text(VGAState *s, int full_update)
+static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
 #endif /* !VBOX */
 {
     int cx, cy, cheight, cw, ch, cattr, height, width, ch_attr;
@@ -1850,6 +1850,13 @@ static int vga_draw_text(VGAState *s, int full_update)
 
     if (width != (int)s->last_width || height != (int)s->last_height ||
         cw != s->last_cw || cheight != s->last_ch) {
+#ifdef VBOX
+        if (fFailOnResize)
+        {
+            /* The caller does not want to call the pfnResize. */
+            return VERR_TRY_AGAIN;
+        }
+#endif /* VBOX */
         s->last_scr_width = width * cw;
         s->last_scr_height = height * cheight;
 #ifndef VBOX
@@ -2174,7 +2181,7 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
 #ifndef VBOX
 static void vga_draw_graphic(VGAState *s, int full_update)
 #else
-static int vga_draw_graphic(VGAState *s, int full_update)
+static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
 #endif /* !VBOX */
 {
     int y1, y2, y, update, page_min, page_max, linesize, y_start, double_scan;
@@ -2261,6 +2268,11 @@ static int vga_draw_graphic(VGAState *s, int full_update)
         ||  s->get_bpp(s)  != (int)s->last_bpp
         ||  offsets_changed)
     {
+        if (fFailOnResize)
+        {
+            /* The caller does not want to call the pfnResize. */
+            return VERR_TRY_AGAIN;
+        }
         int rc = vga_resize_graphic(s, disp_width, height, v);
         if (rc != VINF_SUCCESS)  /* Return any rc, particularly VINF_VGA_RESIZE_IN_PROGRESS, to the caller. */
             return rc;
@@ -2467,7 +2479,7 @@ void vga_update_display(void)
 {
     VGAState *s = vga_state;
 #else /* VBOX */
-static int vga_update_display(PVGASTATE s, bool fUpdateAll)
+static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize)
 {
     int rc = VINF_SUCCESS;
 #endif /* VBOX */
@@ -2502,7 +2514,13 @@ static int vga_update_display(PVGASTATE s, bool fUpdateAll)
 
 #ifdef VBOX
         if (fUpdateAll) {
-            /* A full update is requested. Special processing for a "blank" mode is required. */
+            /* A full update is requested. Special processing for a "blank" mode is required, because
+             * the request must process all pending resolution changes.
+             *
+             * Appropriate vga_draw_graphic or vga_draw_text function, which checks the resolution change,
+             * must be called even if the screen has been blanked, but then the function should do no actual
+             * screen update. To do this, pfnUpdateRect is replaced with a nop.
+             */
             typedef DECLCALLBACK(void) FNUPDATERECT(PPDMIDISPLAYCONNECTOR pInterface, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
             typedef FNUPDATERECT *PFNUPDATERECT;
 
@@ -2523,15 +2541,12 @@ static int vga_update_display(PVGASTATE s, bool fUpdateAll)
             }
 
             /* Do a complete redraw, which will pick up a new screen resolution. */
-            if (fBlank) {
-                s->graphic_mode = GMODE_BLANK;
-                vga_draw_blank(s, 1);
-            } else if (s->gr[6] & 1) {
+            if (s->gr[6] & 1) {
                 s->graphic_mode = GMODE_GRAPH;
-                rc = vga_draw_graphic(s, 1);
+                rc = vga_draw_graphic(s, 1, false);
             } else {
                 s->graphic_mode = GMODE_TEXT;
-                rc = vga_draw_text(s, 1);
+                rc = vga_draw_text(s, 1, false);
             }
 
             if (fBlank) {
@@ -2560,13 +2575,13 @@ static int vga_update_display(PVGASTATE s, bool fUpdateAll)
 #ifdef VBOX
             rc =
 #endif /* VBOX */
-            vga_draw_text(s, full_update);
+            vga_draw_text(s, full_update, fFailOnResize);
             break;
         case GMODE_GRAPH:
 #ifdef VBOX
             rc =
 #endif /* VBOX */
-            vga_draw_graphic(s, full_update);
+            vga_draw_graphic(s, full_update, fFailOnResize);
             break;
         case GMODE_BLANK:
         default:
@@ -3479,7 +3494,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIRead(PPDMDEVINS pDevIns, void *pvUser, 
     else
     {
 #ifdef DEBUG_sunlover
-        AssertMsgFailed(("vgaR3IOPortHGSMIRead: Port=%#x cb=%d\n", Port, cb));
+        Log(("vgaR3IOPortHGSMIRead: Port=%#x cb=%d\n", Port, cb));
 #endif
         rc = VERR_IOM_IOPORT_UNUSED;
     }
@@ -4860,7 +4875,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
         pThis->fRemappedVGA = false;
     }
 
-    rc = vga_update_display(pThis, false);
+    rc = vga_update_display(pThis, false, false);
     if (rc != VINF_SUCCESS)
     {
         PDMCritSectLeave(&pThis->lock);
@@ -4888,7 +4903,7 @@ static int updateDisplayAll(PVGASTATE pThis)
 
     pThis->graphic_mode = -1; /* force full update */
 
-    return vga_update_display(pThis, true);
+    return vga_update_display(pThis, true, false);
 }
 
 
@@ -4977,9 +4992,9 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
     AssertRCReturn(rc, rc);
 
     /*
-     * Do a complete screen update first to resolve any pending resize issues.
+     * Get screenshot. This function will fail if a resize is required.
+     * So there is not need to do a 'updateDisplayAll' before taking screenshot.
      */
-    updateDisplayAll(pThis);
 
     /*
      * The display connector interface is temporarily replaced with the fake one.
@@ -5027,11 +5042,12 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
 
             /* Make the screenshot.
              *
-             * The second parameter is 'false' because the current display state, already updated by the
-             * pfnUpdateDisplayAll call above, is being rendered to an external buffer using a fake connector.
-             * That is if display is blanked, we expect a black screen in the external buffer.
+             * The second parameter is 'false' because the current display state is being rendered to an
+             * external buffer using a fake connector. That is if display is blanked, we expect a black
+             * screen in the external buffer.
+             * If there is a pending resize, the function will fail.
              */
-            rc = vga_update_display(pThis, false);
+            rc = vga_update_display(pThis, false, true);
 
             /* Restore. */
             pThis->pDrv = pConnectorSaved;
