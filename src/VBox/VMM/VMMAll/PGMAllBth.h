@@ -562,8 +562,19 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             LogBird(("Trap0eHandler: returns VINF_SUCCESS\n"));
             return VINF_SUCCESS;
         }
+#ifndef IN_RC
         AssertMsg(GstWalk.Pde.u == GstWalk.pPde->u || GstWalk.pPte->u == GstWalk.pPde->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u));
         AssertMsg(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pte.u, (uint64_t)GstWalk.pPte->u));
+#else
+        /* Ugly hack, proper fix is comming up later. */
+        if (   !(GstWalk.Pde.u == GstWalk.pPde->u || GstWalk.pPte->u == GstWalk.pPde->u)
+            || !(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u) )
+        {
+            rc = PGM_GST_NAME(Walk)(pVCpu, pvFault, &GstWalk);
+            if (RT_FAILURE_NP(rc))
+                return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerGuestFault)(pVCpu, &GstWalk, uErr));
+        }
+#endif
     }
 
 #   if 0 /* rarely useful; leave for debugging. */
