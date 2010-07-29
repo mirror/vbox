@@ -1360,12 +1360,19 @@ static int rtSocketPollClearEventAndMakeBlocking(RTSOCKETINT *pThis)
         {
             pThis->fSubscribedEvts = 0;
 
-            u_long fNonBlocking = 0;
-            int rc2 = ioctlsocket(pThis->hNative, FIONBIO, &fNonBlocking);
-            if (rc2 != 0)
+            /*
+             * Don't switch back to blocking mode if the socket is currently
+             * operated in non-blocking mode.
+             */
+            if (pThis->fBlocking)
             {
-                rc = rtSocketError();
-                AssertMsgFailed(("%Rrc; rc2=%d\n", rc, rc2));
+                u_long fNonBlocking = 0;
+                int rc2 = ioctlsocket(pThis->hNative, FIONBIO, &fNonBlocking);
+                if (rc2 != 0)
+                {
+                    rc = rtSocketError();
+                    AssertMsgFailed(("%Rrc; rc2=%d\n", rc, rc2));
+                }
             }
         }
         else
