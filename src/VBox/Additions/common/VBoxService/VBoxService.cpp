@@ -104,6 +104,9 @@ static struct
 #ifdef VBOX_WITH_PAGE_SHARING
     { &g_PageSharing, NIL_RTTHREAD, false, false, false, true },
 #endif
+#ifdef VBOX_WITH_SHARED_FOLDERS
+    { &g_AutoMount, NIL_RTTHREAD, false, false, false, true },
+#endif
 };
 
 
