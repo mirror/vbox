@@ -4125,15 +4125,23 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
                 if (!pMedium.isNull())
                     llMedia.push_back(pMedium);
 
-                detachDevice(pAttach,
-                             alock,
-                             NULL /* pfNeedsSaveSettings */);
+                HRESULT rc = detachDevice(pAttach,
+                                          alock,
+                                          NULL /* pfNeedsSaveSettings */);
+                if (FAILED(rc))
+                    break;
             };
         }
         else
             return setError(VBOX_E_INVALID_OBJECT_STATE,
                             tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
                             mUserData->mName.raw(), mMediaData->mAttachments.size());
+    }
+
+    if (FAILED(rc))
+    {
+        rollbackMedia();
+        return rc;
     }
 
     // commit all the media changes made above
@@ -4147,7 +4155,6 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
     if (fAutoCleanup)
     {
         // now go thru the list of attached media reported by prepareUnregister() and close them all
-        size_t u = 0;
         for (MediaList::const_iterator it = llMedia.begin();
              it != llMedia.end();
              ++it)
@@ -4158,13 +4165,19 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
             AutoCaller autoCaller2(pMedium);
             if (FAILED(autoCaller2.rc())) return autoCaller2.rc();
 
-            pMedium->close(NULL /*fNeedsSaveSettings*/,     // we'll call saveSettings() in any case below
-                           autoCaller2);
+            ErrorInfoKeeper eik;
+            HRESULT rc = pMedium->close(NULL /*fNeedsSaveSettings*/,     // we'll call saveSettings() in any case below
+                                        autoCaller2);
                 // this uninitializes the medium
 
-            // report the path to the caller
-            llFilesForCaller.push_back(bstrFile);
-            ++u;
+            if (rc == VBOX_E_OBJECT_IN_USE)
+                // can happen if the medium was still attached to another machine;
+                // do not report the file to the caller then, but don't report
+                // an error either
+                eik.setNull();
+            else if (SUCCEEDED(rc))
+                // report the path to the caller
+                llFilesForCaller.push_back(bstrFile);
         }
     }
 
