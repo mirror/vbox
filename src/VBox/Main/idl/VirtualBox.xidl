@@ -740,8 +740,8 @@
     </const>
     <const name="DeletingSnapshotPaused" value="17">
       <desc>
-        Like @c DeletingSnapshot, but the machine is being paused while the
-        merging of differencing media is ongoing.
+        Like @c DeletingSnapshotOnline, but the machine was paused when the
+        merging of differencing media was started.
       </desc>
     </const>
     <const name="RestoringSnapshot"     value="18">
@@ -6548,8 +6548,8 @@
 
 
         The virtual machine's <link to="IMachine::state">state</link> is
-        changed to "DeletingSnapshot" or "DeletingSnapshotOnline" while this
-        operation is in progress.
+        changed to "DeletingSnapshot", "DeletingSnapshotOnline" or
+        "DeletingSnapshotPaused" while this operation is in progress.
 
         <note>
           Merging medium contents can be very time and disk space
