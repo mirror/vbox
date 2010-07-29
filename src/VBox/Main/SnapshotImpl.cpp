@@ -2209,7 +2209,7 @@ typedef std::list<MediumDeleteRec> MediumDeleteRecList;
  * by SessionMachine::DeleteSnapshot, through which progress and results are
  * reported.
  *
- * SessionMachine::DeleteSnapshot() has set the machne state to
+ * SessionMachine::DeleteSnapshot() has set the machine state to
  * MachineState_DeletingSnapshot right after creating this task. Since we block
  * on the machine write lock at the beginning, once that has been acquired, we
  * can assume that the machine state is indeed that.
