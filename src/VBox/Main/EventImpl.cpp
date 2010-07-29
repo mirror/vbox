@@ -575,7 +575,7 @@ private:
     RTSEMEVENT                    mQEvent;
     RTCRITSECT                    mcsQLock;
     PassiveQueue                  mQueue;
-    int32_t                       mRefCnt;
+    int32_t volatile              mRefCnt;
     uint64_t                      mLastRead;
 
 public:
@@ -736,6 +736,12 @@ ListenerRecord::ListenerRecord(IEventListener*                  aListener,
         ::RTCritSectInit(&mcsQLock);
         ::RTSemEventCreate (&mQEvent);
         mLastRead = RTTimeMilliTS();
+    }
+    else
+    {
+        mQEvent =NIL_RTSEMEVENT;
+        RT_ZERO(mcsQLock);
+        mLastRead = 0;
     }
 }
 
