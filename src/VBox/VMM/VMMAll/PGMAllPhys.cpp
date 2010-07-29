@@ -229,7 +229,7 @@ VMMDECL(void) PGMPhysInvalidatePageMapTLB(PVM pVM)
         pVM->pgm.s.PhysTlbHC.aEntries[i].pMap = 0;
         pVM->pgm.s.PhysTlbHC.aEntries[i].pv = 0;
     }
-    /* @todo clear the RC TLB whenever we add it. */
+    /** @todo clear the RC TLB whenever we add it. */
     pgmUnlock(pVM);
 }
 
@@ -389,7 +389,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         if (rc == VINF_SUCCESS)
             return rc;
 
-        /* fall back to 4kb pages. */
+        /* fall back to 4KB pages. */
     }
 # endif
 
@@ -470,14 +470,13 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     /* Copy the shared page contents to the replacement page. */
     if (pvSharedPage)
     {
-        void *pvNewPage;
-
         /* Get the virtual address of the new page. */
+        void *pvNewPage;
         rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvNewPage);
         AssertRC(rc);
         if (rc == VINF_SUCCESS)
         {
-            /** todo write ASMMemCopy */
+            /** @todo todo write ASMMemCopyPage */
             memcpy(pvNewPage, pvSharedPage, PAGE_SIZE);
         }
     }
@@ -1020,10 +1019,9 @@ int pgmPhysPageMapReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const 
 int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
 {
     Assert(PGMIsLocked(PGM2VM(pPGM)));
-    STAM_COUNTER_INC(&pPGM->CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageMapTlbMisses));
 
     /*
-     * Find the ram range.
+     * Find the ram range and page and hand it over to the with-page function.
      * 99.8% of requests are expected to be in the first range.
      */
     PPGMRAMRANGE pRam = pPGM->CTX_SUFF(pRamRanges);
@@ -1034,42 +1032,15 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
         {
             pRam = pRam->CTX_SUFF(pNext);
             if (!pRam)
+            {
+                STAM_COUNTER_INC(&pPGM->CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageMapTlbMisses));
                 return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
+            }
             off = GCPhys - pRam->GCPhys;
         } while (off >= pRam->cb);
     }
 
-    /*
-     * Map the page.
-     * Make a special case for the zero page as it is kind of special.
-     */
-    PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
-    PPGMPAGEMAPTLBE pTlbe = &pPGM->CTXSUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
-    if (    !PGM_PAGE_IS_ZERO(pPage)
-        &&  !PGM_PAGE_IS_BALLOONED(pPage))
-    {
-        void *pv;
-        PPGMPAGEMAP pMap;
-        int rc = pgmPhysPageMapCommon(PGM2VM(pPGM), pPage, GCPhys, &pMap, &pv);
-        if (RT_FAILURE(rc))
-            return rc;
-        pTlbe->pMap = pMap;
-        pTlbe->pv = pv;
-        Assert(!((uintptr_t)pTlbe->pv & PAGE_OFFSET_MASK));
-    }
-    else
-    {
-        Assert(PGM_PAGE_GET_HCPHYS(pPage) == pPGM->HCPhysZeroPg);
-        pTlbe->pMap = NULL;
-        pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
-    }
-#ifdef PGM_WITH_PHYS_TLB
-    pTlbe->GCPhys = GCPhys & X86_PTE_PAE_PG_MASK;
-#else
-    pTlbe->GCPhys = NIL_RTGCPHYS;
-#endif
-    pTlbe->pPage  = pPage;
-    return VINF_SUCCESS;
+    return pgmPhysPageLoadIntoTlbWithPage(pPGM, &pRam->aPages[off >> PAGE_SHIFT], GCPhys);
 }
 
 
@@ -1114,7 +1085,11 @@ int pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         pTlbe->pv = pPGM->CTXALLSUFF(pvZeroPg);
     }
 #ifdef PGM_WITH_PHYS_TLB
-    pTlbe->GCPhys = GCPhys & X86_PTE_PAE_PG_MASK;
+    if (    PGM_PAGE_GET_TYPE(pPage) < PGMPAGETYPE_ROM_SHADOW
+        ||  PGM_PAGE_GET_TYPE(pPage) > PGMPAGETYPE_ROM)
+        pTlbe->GCPhys = GCPhys & X86_PTE_PAE_PG_MASK;
+    else
+        pTlbe->GCPhys = NIL_RTGCPHYS; /* ROM: Problematic because of the two pages. :-/ */
 #else
     pTlbe->GCPhys = NIL_RTGCPHYS;
 #endif
