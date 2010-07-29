@@ -159,10 +159,29 @@ int handleUnregisterVM(HandlerArg *a)
     if (machine)
     {
         SafeArray<BSTR> abstrFiles;
-        CHECK_ERROR(machine, Unregister(false /* fDetachMedia */,
+        CHECK_ERROR(machine, Unregister(fDelete /* fAutoCleanup */,
                                         ComSafeArrayAsOutParam(abstrFiles)));
-        if (SUCCEEDED(rc) && fDelete)
-            CHECK_ERROR(machine, Delete());
+        if (SUCCEEDED(rc))
+        {
+            for (size_t u = 0;
+                 u < abstrFiles.size();
+                 ++u)
+            {
+                Utf8Str strFile(abstrFiles[u]);
+                if (fDelete)
+                {
+                    RTPrintf("Deleting '%s'\n", strFile.c_str());
+                    RTFileDelete(strFile.c_str());
+                }
+                else
+                    RTPrintf("File '%s' is now obsolete and can be deleted\n", strFile.c_str());
+            }
+
+            if (fDelete)
+            {
+                CHECK_ERROR(machine, Delete());
+            }
+        }
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -422,7 +441,7 @@ int handleDiscardState(HandlerArg *a)
             {
                 ComPtr<IConsole> console;
                 CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-                CHECK_ERROR_BREAK(console, ForgetSavedState(true));
+                CHECK_ERROR_BREAK(console, ForgetSavedState());
             } while (0);
             CHECK_ERROR_BREAK(a->session, UnlockMachine());
         } while (0);

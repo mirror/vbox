@@ -2386,7 +2386,7 @@ STDMETHODIMP Console::AdoptSavedState(IN_BSTR aSavedStateFile)
     return mControl->AdoptSavedState(aSavedStateFile);
 }
 
-STDMETHODIMP Console::ForgetSavedState(BOOL aRemove)
+STDMETHODIMP Console::ForgetSavedState()
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2399,9 +2399,6 @@ STDMETHODIMP Console::ForgetSavedState(BOOL aRemove)
             Global::stringifyMachineState(mMachineState));
 
     HRESULT rc = S_OK;
-
-    rc = mControl->SetRemoveSavedState(aRemove);
-    if (FAILED(rc)) return rc;
 
     /*
      * Saved -> PoweredOff transition will be detected in the SessionMachine

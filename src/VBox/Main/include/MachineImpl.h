@@ -483,7 +483,7 @@ public:
     STDMETHOD(SetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL aVal);
     STDMETHOD(SaveSettings)();
     STDMETHOD(DiscardSettings)();
-    STDMETHOD(Unregister) (BOOL fCloseMedia, ComSafeArrayOut(BSTR, aFiles));
+    STDMETHOD(Unregister) (BOOL fAutoCleanup, ComSafeArrayOut(BSTR, aFiles));
     STDMETHOD(Delete)();
     STDMETHOD(Export)(IAppliance *aAppliance, IVirtualSystemDescription **aDescription);
     STDMETHOD(GetSnapshot)(IN_BSTR aId, ISnapshot **aSnapshot);
@@ -887,7 +887,6 @@ public:
     RWLockHandle *lockHandle() const;
 
     // IInternalMachineControl methods
-    STDMETHOD(SetRemoveSavedState)(BOOL aRemove);
     STDMETHOD(UpdateState)(MachineState_T machineState);
     STDMETHOD(GetIPCId)(BSTR *id);
     STDMETHOD(BeginPowerUp)(IProgress *aProgress);
@@ -1023,8 +1022,6 @@ private:
 
     HRESULT setMachineState(MachineState_T aMachineState);
     HRESULT updateMachineStateOnClient();
-
-    HRESULT mRemoveSavedState;
 
     SnapshotData mSnapshotData;
 

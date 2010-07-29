@@ -4061,7 +4061,7 @@ STDMETHODIMP Machine::DiscardSettings()
 }
 
 /** @note Locks objects! */
-STDMETHODIMP Machine::Unregister(BOOL fCloseMedia,
+STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
                                  ComSafeArrayOut(BSTR, aFiles))
 {
     AutoCaller autoCaller(this);
@@ -4075,11 +4075,23 @@ STDMETHODIMP Machine::Unregister(BOOL fCloseMedia,
                         tr("Cannot unregister the machine '%ls' while it is locked"),
                            mUserData->mName.raw());
 
-    // @todo optionally discard saved state
+    // this list collects the files that should be reported
+    // as to be deleted to the caller in aFiles
+    std::list<Bstr> llFilesForCaller;
+
+    // discard saved state
     if (mData->mMachineState == MachineState_Saved)
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot unregister the machine '%ls' because it is in the Saved state"),
-                           mUserData->mName.raw());
+    {
+        // add the saved state file to the list of files the caller should delete
+        Assert(!mSSData->mStateFilePath.isEmpty());
+        llFilesForCaller.push_back(Bstr(mSSData->mStateFilePath));
+
+        mSSData->mStateFilePath.setNull();
+
+        // unconditionally set the machine state to powered off, we now
+        // know no session has locked the machine
+        mData->mMachineState = MachineState_PoweredOff;
+    }
 
     // @todo optionally nuke snapshots
     size_t snapshotCount = 0;
@@ -4088,14 +4100,14 @@ STDMETHODIMP Machine::Unregister(BOOL fCloseMedia,
     if (snapshotCount)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
-                           mUserData->mName.raw(), snapshotCount);
+                        mUserData->mName.raw(), snapshotCount);
 
     if (    !mMediaData.isNull()      // can be NULL if machine is inaccessible
          && mMediaData->mAttachments.size()
        )
     {
         // we have media attachments:
-        if (fCloseMedia)
+        if (fAutoCleanup)
         {
             // caller wants automatic detachment: then do that and report all media to the array
 
@@ -4121,7 +4133,7 @@ STDMETHODIMP Machine::Unregister(BOOL fCloseMedia,
         else
             return setError(VBOX_E_INVALID_OBJECT_STATE,
                             tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
-                               mMediaData->mAttachments.size());
+                            mUserData->mName.raw(), mMediaData->mAttachments.size());
     }
 
     // commit all the media changes made above
@@ -4132,10 +4144,9 @@ STDMETHODIMP Machine::Unregister(BOOL fCloseMedia,
     // machine lock no longer needed
     alock.release();
 
-    if (fCloseMedia)
+    if (fAutoCleanup)
     {
         // now go thru the list of attached media reported by prepareUnregister() and close them all
-        SafeArray<BSTR> sfaFiles(llMedia.size());
         size_t u = 0;
         for (MediaList::const_iterator it = llMedia.begin();
              it != llMedia.end();
@@ -4152,14 +4163,22 @@ STDMETHODIMP Machine::Unregister(BOOL fCloseMedia,
                 // this uninitializes the medium
 
             // report the path to the caller
-            bstrFile.detachTo(&sfaFiles[u]);
+            llFilesForCaller.push_back(bstrFile);
             ++u;
         }
-        // report all paths to the caller
-        sfaFiles.detachTo(ComSafeArrayOutArg(aFiles));
     }
 
+    // report all paths to the caller
+    SafeArray<BSTR> sfaFiles(llFilesForCaller.size());
+    size_t i = 0;
+    for (std::list<Bstr>::iterator it = llFilesForCaller.begin();
+         it != llFilesForCaller.end();
+         ++it)
+        it->detachTo(&sfaFiles[i++]);
+    sfaFiles.detachTo(ComSafeArrayOutArg(aFiles));
+
     mParent->unregisterMachine(this);
+            // calls VirtualBox::saveSettings()
 
     return S_OK;
 }
@@ -9636,9 +9655,6 @@ HRESULT SessionMachine::init(Machine *aMachine)
         mNetworkAdapters[slot]->init(this, aMachine->mNetworkAdapters[slot]);
     }
 
-    /* default is to delete saved state on Saved -> PoweredOff transition */
-    mRemoveSavedState = true;
-
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -9930,21 +9946,6 @@ RWLockHandle *SessionMachine::lockHandle() const
 
 // IInternalMachineControl methods
 ////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  @note Locks this object for writing.
- */
-STDMETHODIMP SessionMachine::SetRemoveSavedState(BOOL aRemove)
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    mRemoveSavedState = aRemove;
-
-    return S_OK;
-}
 
 /**
  *  @note Locks the same as #setMachineState() does.
@@ -11235,11 +11236,8 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
 
     if (deleteSavedState)
     {
-        if (mRemoveSavedState)
-        {
-            Assert(!mSSData->mStateFilePath.isEmpty());
-            RTFileDelete(mSSData->mStateFilePath.c_str());
-        }
+        Assert(!mSSData->mStateFilePath.isEmpty());
+        RTFileDelete(mSSData->mStateFilePath.c_str());
         mSSData->mStateFilePath.setNull();
         stsFlags |= SaveSTS_StateFilePath;
     }
