@@ -18,6 +18,9 @@
 
 #include "vbsfmount.h"
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <ctype.h>
 #include <mntent.h>
 #include <stdio.h>
