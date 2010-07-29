@@ -1051,21 +1051,19 @@ static int rtUtf8RecodeAsLatin1(const char *psz, size_t cch, char *pszOut, size_
         {
             uint16_t uc = (puch[1] & 0x3f)
                     | ((uint16_t)(uch     & 0x1f) << 6);
-            *puchOut++ = uc < 0x100 ? uc : '?';
+            if (uc >= 0x100)
+            {
+                rc = VERR_NO_TRANSLATION;
+                break;
+            }
+            *puchOut++ = uc;
             puch += 2;
             cch -= 2;
         }
-        else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4))) == (RT_BIT(7) | RT_BIT(6) | RT_BIT(5)))
-        {
-            *puchOut++ = '?';
-            puch += 3;
-            cch -= 3;
-        }
         else
         {
-            *puchOut++ = '?';
-            puch += 4;
-            cch -= 4;
+            rc = VERR_NO_TRANSLATION;
+            break;
         }
     }
 
