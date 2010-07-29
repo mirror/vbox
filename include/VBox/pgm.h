@@ -413,7 +413,7 @@ VMMDECL(void) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages);
  * @returns 0 - disabled, 1 - enabled
  * @param   pVM         The VM to operate on.
  */
-#define PGMIsUsingLargePages(pVM) (pVM->fUseLargePages)
+#define PGMIsUsingLargePages(pVM)   ((pVM)->fUseLargePages)
 
 
 #ifdef IN_RC
