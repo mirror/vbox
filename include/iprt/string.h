@@ -817,6 +817,209 @@ RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString, PRTUTF16
 
 
 /**
+ * Calculates the length of the string in Latin-1 characters.
+ *
+ * This function will validate the string, and incorrectly encoded UTF-8
+ * strings will be rejected. The primary purpose of this function is to
+ * help allocate buffers for RTStrToLatin1Ex of the correct size. For most
+ * other purposes RTStrCalcLatin1LenEx() should be used.
+ *
+ * @returns Number of Latin-1 characters.
+ * @returns 0 if the string was incorrectly encoded.
+ * @param   psz         The string.
+ */
+#define RTStrCalcLatin1Len(psz) RTStrUniLen(psz)
+
+/**
+ * Calculates the length of the string in Latin-1 characters.
+ *
+ * This function will validate the string, and incorrectly encoded UTF-8
+ * strings will be rejected.
+ *
+ * @returns iprt status code.
+ * @param   psz         The string.
+ * @param   cch         The max string length. Use RTSTR_MAX to process the entire string.
+ * @param   pcch        Where to store the string length. Optional.
+ *                      This is undefined on failure.
+ */
+#define RTStrCalcLatin1LenEx(psz, cch, pcch) RTStrUniLenEx(psz, cch, pcch)
+
+/**
+ * Translate a UTF-8 string into a Latin-1 allocating the result buffer (default
+ * tag).
+ *
+ * @returns iprt status code.
+ * @param   pszString       UTF-8 string to convert.
+ * @param   ppszString      Receives pointer to the allocated Latin-1 string.
+ *                          The returned string must be freed using RTStrFree().
+ */
+#define RTStrToLatin1(pszString, ppszString)    RTStrToLatin1Tag((pszString), (ppszString), RTSTR_TAG)
+
+/**
+ * Translate a UTF-8 string into a Latin-1 allocating the result buffer (custom
+ * tag).
+ *
+ * @returns iprt status code.
+ * @param   pszString       UTF-8 string to convert.
+ * @param   ppszString      Receives pointer to the allocated Latin-1 string.
+ *                          The returned string must be freed using RTStrFree().
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTDECL(int) RTStrToLatin1Tag(const char *pszString, char **ppszString, const char *pszTag);
+
+/**
+ * Translates pszString from UTF-8 to Latin-1, allocating the result buffer if requested.
+ *
+ * @returns iprt status code.
+ * @param   pszString       UTF-8 string to convert.
+ * @param   cchString       The maximum size in chars (the type) to convert. The conversion stop
+ *                          when it reaches cchString or the string terminator ('\\0').
+ *                          Use RTSTR_MAX to translate the entire string.
+ * @param   ppsz            If cch is non-zero, this must either be pointing to pointer to
+ *                          a buffer of the specified size, or pointer to a NULL pointer.
+ *                          If *ppsz is NULL or cch is zero a buffer of at least cch items
+ *                          will be allocated to hold the translated string.
+ *                          If a buffer was requested it must be freed using RTStrFree().
+ * @param   cch             The buffer size in bytes. This includes the terminator.
+ * @param   pcch            Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
+ */
+#define RTStrToLatin1Ex(pszString, cchString, ppsz, cch, pcch) \
+    RTStrToLatin1ExTag((pszString), (cchString), (ppsz), (cch), (pcch), RTSTR_TAG)
+
+/**
+ * Translates pszString from UTF-8 to Latin1, allocating the result buffer if
+ * requested (custom tag).
+ *
+ * @returns iprt status code.
+ * @param   pszString       UTF-8 string to convert.
+ * @param   cchString       The maximum size in chars (the type) to convert. The conversion stop
+ *                          when it reaches cchString or the string terminator ('\\0').
+ *                          Use RTSTR_MAX to translate the entire string.
+ * @param   ppsz            If cch is non-zero, this must either be pointing to pointer to
+ *                          a buffer of the specified size, or pointer to a NULL pointer.
+ *                          If *ppsz is NULL or cch is zero a buffer of at least cch items
+ *                          will be allocated to hold the translated string.
+ *                          If a buffer was requested it must be freed using RTStrFree().
+ * @param   cch             The buffer size in bytes. This includes the terminator.
+ * @param   pcch            Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTDECL(int)  RTStrToLatin1ExTag(const char *pszString, size_t cchString, char **ppsz, size_t cch, size_t *pcch, const char *pszTag);
+
+
+/**
+ * Translate a Latin1 string into a UTF-8 allocating the result buffer (default
+ * tag).
+ *
+ * @returns iprt status code.
+ * @param   pszString       Latin1 string to convert.
+ * @param   ppszString      Receives pointer of allocated UTF-8 string on
+ *                          success, and is always set to NULL on failure.
+ *                          The returned pointer must be freed using RTStrFree().
+ */
+#define RTLatin1ToUtf8(pszString, ppszString)       RTLatin1ToUtf8Tag((pszString), (ppszString), RTSTR_TAG)
+
+/**
+ * Translate a Latin-1 string into a UTF-8 allocating the result buffer.
+ *
+ * @returns iprt status code.
+ * @param   pszString       Latin-1 string to convert.
+ * @param   ppszString      Receives pointer of allocated UTF-8 string on
+ *                          success, and is always set to NULL on failure.
+ *                          The returned pointer must be freed using RTStrFree().
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTDECL(int)  RTLatin1ToUtf8Tag(const char *pszString, char **ppszString, const char *pszTag);
+
+/**
+ * Translates Latin-1 to UTF-8 using buffer provided by the caller or a fittingly
+ * sized buffer allocated by the function (default tag).
+ *
+ * @returns iprt status code.
+ * @param   pszString       The Latin-1 string to convert.
+ * @param   cchString       The number of Latin-1 characters to translate from pszString.
+ *                          The translation will stop when reaching cchString or the terminator ('\\0').
+ *                          Use RTSTR_MAX to translate the entire string.
+ * @param   ppsz            If cch is non-zero, this must either be pointing to a pointer to
+ *                          a buffer of the specified size, or pointer to a NULL pointer.
+ *                          If *ppsz is NULL or cch is zero a buffer of at least cch chars
+ *                          will be allocated to hold the translated string.
+ *                          If a buffer was requested it must be freed using RTStrFree().
+ * @param   cch             The buffer size in chars (the type). This includes the terminator.
+ * @param   pcch            Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
+ */
+#define RTLatin1ToUtf8Ex(pszString, cchString, ppsz, cch, pcch) \
+    RTLatin1ToUtf8ExTag((pszString), (cchString), (ppsz), (cch), (pcch), RTSTR_TAG)
+
+/**
+ * Translates Latin1 to UTF-8 using buffer provided by the caller or a fittingly
+ * sized buffer allocated by the function (custom tag).
+ *
+ * @returns iprt status code.
+ * @param   pszString       The Latin1 string to convert.
+ * @param   cchString       The number of Latin1 characters to translate from pwszString.
+ *                          The translation will stop when reaching cchString or the terminator ('\\0').
+ *                          Use RTSTR_MAX to translate the entire string.
+ * @param   ppsz            If cch is non-zero, this must either be pointing to a pointer to
+ *                          a buffer of the specified size, or pointer to a NULL pointer.
+ *                          If *ppsz is NULL or cch is zero a buffer of at least cch chars
+ *                          will be allocated to hold the translated string.
+ *                          If a buffer was requested it must be freed using RTStrFree().
+ * @param   cch             The buffer size in chars (the type). This includes the terminator.
+ * @param   pcch            Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTDECL(int)  RTLatin1ToUtf8ExTag(const char *pszString, size_t cchString, char **ppsz, size_t cch, size_t *pcch, const char *pszTag);
+
+/**
+ * Calculates the length of the Latin-1 string in UTF-8 chars (bytes).
+ *
+ * The primary purpose of this function is to help allocate buffers for
+ * RTLatin1ToUtf8() of the correct size. For most other purposes
+ * RTLatin1ToUtf8Ex() should be used.
+ *
+ * @returns Number of char (bytes).
+ * @returns 0 if the string was incorrectly encoded.
+ * @param   psz        The Latin-1 string.
+ */
+RTDECL(size_t) RTLatin1CalcUtf8Len(const char *psz);
+
+/**
+ * Calculates the length of the Latin-1 string in UTF-8 chars (bytes).
+ *
+ * @returns iprt status code.
+ * @param   psz         The string.
+ * @param   cch         The max string length. Use RTSTR_MAX to process the entire string.
+ * @param   pcch        Where to store the string length (in bytes). Optional.
+ *                      This is undefined on failure.
+ */
+RTDECL(int) RTLatin1CalcUtf8LenEx(const char *psz, size_t cch, size_t *pcch);
+
+/**
  * Get the unicode code point at the given string position.
  *
  * @returns unicode code point.

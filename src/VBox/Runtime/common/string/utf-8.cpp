@@ -794,6 +794,390 @@ RT_EXPORT_SYMBOL(RTStrCalcUtf16LenEx);
 
 
 /**
+ * Calculates the length of the UTF-8 encoding of a Latin-1 string.
+ *
+ * @returns iprt status code.
+ * @param   psz         The Latin-1 string.
+ * @param   cchIn       The max length of the Latin-1 string to consider.
+ * @param   pcch        Where to store the length (excluding '\\0') of the UTF-8 string. (cch == cb, btw)
+ */
+static int rtLatin1CalcUtf8Length(const char *psz, size_t cchIn, size_t *pcch)
+{
+    size_t  cch = 0;
+    while (cchIn > 0)
+    {
+        char ch = *psz++; cchIn--;
+        if (!ch)
+            break;
+        if (!(ch & 0x80))
+            cch++;
+        else
+            cch += 2;
+    }
+
+
+    /* done */
+    *pcch = cch;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Recodes a Latin-1 string as UTF-8.
+ *
+ * @returns iprt status code.
+ * @param   psz         The Latin-1 string.
+ * @param   cchIn       The number of characters to process from psz. The recoding
+ *                      will stop when cch or '\\0' is reached.
+ * @param   psz         Where to store the UTF-8 string.
+ * @param   cch         The size of the UTF-8 buffer, excluding the terminator.
+ * @param   pcch        Where to store the number of octets actually encoded.
+ */
+static int rtLatin1RecodeAsUtf8(const char *pszIn, size_t cchIn, char *psz, size_t cch, size_t *pcch)
+{
+    unsigned char  *puch = (unsigned char *)psz;
+    int             rc = VINF_SUCCESS;
+    while (cchIn > 0)
+    {
+        char ch = *pszIn++; cchIn--;
+        if (!ch)
+            break;
+        if (!(ch & 0x80))
+        {
+            if (RT_UNLIKELY(cch < 1))
+            {
+                RTStrAssertMsgFailed(("Buffer overflow! 1\n"));
+                rc = VERR_BUFFER_OVERFLOW;
+                break;
+            }
+            cch--;
+            *puch++ = (unsigned char)ch;
+        }
+        else
+        {
+            if (RT_UNLIKELY(cch < 2))
+            {
+                RTStrAssertMsgFailed(("Buffer overflow! 2\n"));
+                rc = VERR_BUFFER_OVERFLOW;
+                break;
+            }
+            cch -= 2;
+            *puch++ = 0xc0 | (ch >> 6);
+            *puch++ = 0x80 | (ch & 0x3f);
+        }
+    }
+
+    /* done */
+    *puch = '\0';
+    *pcch = (char *)puch - psz;
+    return rc;
+}
+
+
+
+RTDECL(int)  RTLatin1ToUtf8Tag(const char *pszString, char **ppszString, const char *pszTag)
+{
+    /*
+     * Validate input.
+     */
+    Assert(VALID_PTR(ppszString));
+    Assert(VALID_PTR(pszString));
+    *ppszString = NULL;
+
+    /*
+     * Calculate the length of the UTF-8 encoding of the Latin-1 string.
+     */
+    size_t cch;
+    int rc = rtLatin1CalcUtf8Length(pszString, RTSTR_MAX, &cch);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Allocate buffer and recode it.
+         */
+        char *pszResult = (char *)RTMemAllocTag(cch + 1, pszTag);
+        if (pszResult)
+        {
+            rc = rtLatin1RecodeAsUtf8(pszString, RTSTR_MAX, pszResult, cch, &cch);
+            if (RT_SUCCESS(rc))
+            {
+                *ppszString = pszResult;
+                return rc;
+            }
+
+            RTMemFree(pszResult);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLatin1ToUtf8Tag);
+
+
+RTDECL(int)  RTLatin1ToUtf8ExTag(const char *pszString, size_t cchString, char **ppsz, size_t cch, size_t *pcch, const char *pszTag)
+{
+    /*
+     * Validate input.
+     */
+    Assert(VALID_PTR(pszString));
+    Assert(VALID_PTR(ppsz));
+    Assert(!pcch || VALID_PTR(pcch));
+
+    /*
+     * Calculate the length of the UTF-8 encoding of the Latin-1 string.
+     */
+    size_t cchResult;
+    int rc = rtLatin1CalcUtf8Length(pszString, cchString, &cchResult);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcch)
+            *pcch = cchResult;
+
+        /*
+         * Check buffer size / Allocate buffer and recode it.
+         */
+        bool fShouldFree;
+        char *pszResult;
+        if (cch > 0 && *ppsz)
+        {
+            fShouldFree = false;
+            if (RT_UNLIKELY(cch <= cchResult))
+                return VERR_BUFFER_OVERFLOW;
+            pszResult = *ppsz;
+        }
+        else
+        {
+            *ppsz = NULL;
+            fShouldFree = true;
+            cch = RT_MAX(cch, cchResult + 1);
+            pszResult = (char *)RTStrAllocTag(cch, pszTag);
+        }
+        if (pszResult)
+        {
+            rc = rtLatin1RecodeAsUtf8(pszString, cchString, pszResult, cch - 1, &cch);
+            if (RT_SUCCESS(rc))
+            {
+                *ppsz = pszResult;
+                return rc;
+            }
+
+            if (fShouldFree)
+                RTStrFree(pszResult);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLatin1ToUtf8ExTag);
+
+
+RTDECL(size_t) RTLatin1CalcUtf8Len(const char *psz)
+{
+    size_t cch;
+    int rc = rtLatin1CalcUtf8Length(psz, RTSTR_MAX, &cch);
+    return RT_SUCCESS(rc) ? cch : 0;
+}
+RT_EXPORT_SYMBOL(RTLatin1CalcUtf8Len);
+
+
+RTDECL(int) RTLatin1CalcUtf8LenEx(const char *psz, size_t cchIn, size_t *pcch)
+{
+    size_t cch;
+    int rc = rtLatin1CalcUtf8Length(psz, cchIn, &cch);
+    if (pcch)
+        *pcch = RT_SUCCESS(rc) ? cch : ~(size_t)0;
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLatin1CalcUtf8LenEx);
+
+
+/**
+ * Calculates the Latin-1 length of a string, validating the encoding while doing so.
+ *
+ * @returns IPRT status code.
+ * @param   psz     Pointer to the UTF-8 string.
+ * @param   cch     The max length of the string. (btw cch = cb)
+ *                  Use RTSTR_MAX if all of the string is to be examined.
+ * @param   pcwc    Where to store the length of the Latin-1 string in bytes.
+ */
+static int rtUtf8CalcLatin1Length(const char *psz, size_t cch, size_t *pcch)
+{
+    /* We re-encode to one byte per unicode code point. */
+    return RTStrUniLenEx(psz, cch, pcch);
+}
+
+
+/**
+ * Recodes a valid UTF-8 string as Latin-1.
+ *
+ * Since we know the input is valid, we do *not* perform encoding or length checks.
+ *
+ * @returns iprt status code.
+ * @param   psz     The UTF-8 string to recode. This is a valid encoding.
+ * @param   cch     The number of chars (the type char, so bytes if you like) to process of the UTF-8 string.
+ *                  The recoding will stop when cch or '\\0' is reached. Pass RTSTR_MAX to process up to '\\0'.
+ * @param   pszOut  Where to store the Latin-1 string.
+ * @param   cchOut  The number of characters the pszOut buffer can hold, excluding the terminator ('\\0').
+ */
+static int rtUtf8RecodeAsLatin1(const char *psz, size_t cch, char *pszOut, size_t cchOut)
+{
+    int                     rc      = VINF_SUCCESS;
+    const unsigned char    *puch    = (const unsigned char *)psz;
+    unsigned char          *puchOut = (unsigned char *)pszOut;
+    while (cch > 0)
+    {
+        /* read the next char and check for terminator. */
+        const unsigned char uch = *puch;
+        if (!uch)
+            break;
+
+        /* check for output overflow */
+        if (RT_UNLIKELY(cchOut < 1))
+        {
+            rc = VERR_BUFFER_OVERFLOW;
+            break;
+        }
+        cchOut--;
+
+        /* decode and recode the code point */
+        if (!(uch & RT_BIT(7)))
+        {
+            *puchOut++ = uch;
+            puch++;
+            cch--;
+        }
+        else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5))) == (RT_BIT(7) | RT_BIT(6)))
+        {
+            uint16_t uc = (puch[1] & 0x3f)
+                    | ((uint16_t)(uch     & 0x1f) << 6);
+            *puchOut++ = uc < 0x100 ? uc : '?';
+            puch += 2;
+            cch -= 2;
+        }
+        else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4))) == (RT_BIT(7) | RT_BIT(6) | RT_BIT(5)))
+        {
+            *puchOut++ = '?';
+            puch += 3;
+            cch -= 3;
+        }
+        else
+        {
+            *puchOut++ = '?';
+            puch += 4;
+            cch -= 4;
+        }
+    }
+
+    /* done */
+    *puchOut = '\0';
+    return rc;
+}
+
+
+RTDECL(int) RTStrToLatin1Tag(const char *pszString, char **ppszString, const char *pszTag)
+{
+    /*
+     * Validate input.
+     */
+    Assert(VALID_PTR(ppszString));
+    Assert(VALID_PTR(pszString));
+    *ppszString = NULL;
+
+    /*
+     * Validate the UTF-8 input and calculate the length of the Latin-1 string.
+     */
+    size_t cch;
+    int rc = rtUtf8CalcLatin1Length(pszString, RTSTR_MAX, &cch);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Allocate buffer.
+         */
+        char *psz = (char *)RTMemAllocTag(cch + 1, pszTag);
+        if (psz)
+        {
+            /*
+             * Encode the UTF-16 string.
+             */
+            rc = rtUtf8RecodeAsLatin1(pszString, RTSTR_MAX, psz, cch);
+            if (RT_SUCCESS(rc))
+            {
+                *ppszString = psz;
+                return rc;
+            }
+            RTMemFree(psz);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTStrToLatin1Tag);
+
+
+RTDECL(int)  RTStrToLatin1ExTag(const char *pszString, size_t cchString,
+                                char **ppsz, size_t cch, size_t *pcch, const char *pszTag)
+{
+    /*
+     * Validate input.
+     */
+    Assert(VALID_PTR(pszString));
+    Assert(VALID_PTR(ppsz));
+    Assert(!pcch || VALID_PTR(pcch));
+
+    /*
+     * Validate the UTF-8 input and calculate the length of the UTF-16 string.
+     */
+    size_t cchResult;
+    int rc = rtUtf8CalcLatin1Length(pszString, cchString, &cchResult);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcch)
+            *pcch = cchResult;
+
+        /*
+         * Check buffer size / Allocate buffer.
+         */
+        bool fShouldFree;
+        char *pszResult;
+        if (cch > 0 && *ppsz)
+        {
+            fShouldFree = false;
+            if (cch <= cchResult)
+                return VERR_BUFFER_OVERFLOW;
+            pszResult = *ppsz;
+        }
+        else
+        {
+            *ppsz = NULL;
+            fShouldFree = true;
+            cch = RT_MAX(cchResult + 1, cch);
+            pszResult = (char *)RTMemAllocTag(cch, pszTag);
+        }
+        if (pszResult)
+        {
+            /*
+             * Encode the Latin-1 string.
+             */
+            rc = rtUtf8RecodeAsLatin1(pszString, cchString, pszResult, cch - 1);
+            if (RT_SUCCESS(rc))
+            {
+                *ppsz = pszResult;
+                return rc;
+            }
+            if (fShouldFree)
+                RTMemFree(pszResult);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTStrToLatin1Tag);
+
+
+/**
  * Handle invalid encodings passed to RTStrGetCp() and RTStrGetCpEx().
  * @returns rc
  * @param   ppsz        The pointer to the string position point.
