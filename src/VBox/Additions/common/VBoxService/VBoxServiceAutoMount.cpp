@@ -80,27 +80,8 @@ static DECLCALLBACK(int) VBoxServiceAutoMountInit(void)
 
 static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char *pszMountPoint)
 {
-    unsigned long flags = MS_NODEV;
-    struct vbsf_mount_opts opts =
-    {
-        0,     /* uid */
-        0,     /* gid */
-        0,     /* ttl */
-       ~0,     /* dmode */
-       ~0,     /* fmode*/
-        0,     /* dmask */
-        0,     /* fmask */
-        0,     /* ronly */
-        0,     /* noexec */
-        0,     /* nodev */
-        0,     /* nosuid */
-        0,     /* remount */
-        "\0",  /* nls_name */
-        NULL,  /* convertcp */
-    };
-
 #ifdef RT_OS_SOLARIS
-    flags = 0; /* No flags used yet. */
+    int flags = 0; /* No flags used yet. */
     int r = mount(pszShareName,
                   pszMountPoint,
                   flags,
@@ -120,6 +101,25 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
                              pszShareName, pszMountPoint, strerror(errno));
     }
 #else /* !RT_OS_SOLARIS */
+    unsigned long flags = MS_NODEV;
+    struct vbsf_mount_opts opts =
+    {
+        0,     /* uid */
+        0,     /* gid */
+        0,     /* ttl */
+       ~0,     /* dmode */
+       ~0,     /* fmode*/
+        0,     /* dmask */
+        0,     /* fmask */
+        0,     /* ronly */
+        0,     /* noexec */
+        0,     /* nodev */
+        0,     /* nosuid */
+        0,     /* remount */
+        "\0",  /* nls_name */
+        NULL,  /* convertcp */
+    };
+
     const char *szOptions = { "rw" };
     struct vbsf_mount_info_new mntinf;
 
