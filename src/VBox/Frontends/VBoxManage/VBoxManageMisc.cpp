@@ -441,7 +441,7 @@ int handleDiscardState(HandlerArg *a)
             {
                 ComPtr<IConsole> console;
                 CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-                CHECK_ERROR_BREAK(console, ForgetSavedState());
+                CHECK_ERROR_BREAK(console, DiscardSavedState());
             } while (0);
             CHECK_ERROR_BREAK(a->session, UnlockMachine());
         } while (0);

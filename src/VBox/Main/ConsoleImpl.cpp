@@ -2386,7 +2386,7 @@ STDMETHODIMP Console::AdoptSavedState(IN_BSTR aSavedStateFile)
     return mControl->AdoptSavedState(aSavedStateFile);
 }
 
-STDMETHODIMP Console::ForgetSavedState()
+STDMETHODIMP Console::DiscardSavedState()
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
