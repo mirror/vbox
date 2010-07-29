@@ -79,11 +79,8 @@ public:
     STDMETHOD(COMGETTER(AdditionsActive)) (ULONG aLevel, BOOL *aAdditionsActive);
 #endif
     STDMETHOD(COMGETTER(AdditionsActive)) (BOOL *aAdditionsActive);
-#if 0
-    /** @todo Will replace AdditionsVersion to be more clear. */
-    STDMETHOD(COMGETTER(AdditionsAPIVersion)) (BSTR *aAdditionsVersion);
-#endif
-    STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
+    STDMETHOD(COMGETTER(AdditionsInterfaceVersion)) (BSTR *aVersion);
+    STDMETHOD(COMGETTER(AdditionsVBoxVersion)) (BSTR *aVersion);
     /** @todo Remove */
     STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
     STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
@@ -174,6 +171,7 @@ private:
         Bstr  mOSTypeId;
         BOOL  mAdditionsActive;
         Bstr  mAdditionsVersion;
+        Bstr  mInterfaceVersion;
         BOOL  mSupportsSeamless;
         BOOL  mSupportsGraphics;
     };

@@ -1944,7 +1944,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
             if (details == VMINFO_FULL)
             {
-                rc = guest->COMGETTER(AdditionsVersion)(guestString.asOutParam());
+                rc = guest->COMGETTER(AdditionsVBoxVersion)(guestString.asOutParam());
                 if (   SUCCEEDED(rc)
                     && !guestString.isEmpty())
                 {

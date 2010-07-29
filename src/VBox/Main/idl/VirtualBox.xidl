@@ -7731,7 +7731,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="d915dff1-ed38-495a-91f1-ab6c53932468"
+     uuid="a3f4b219-ae2a-464c-b488-36cd8ac06b79"
      wsmap="managed"
      >
     <desc>
@@ -7766,13 +7766,22 @@
       </desc>
     </attribute>
 
-    <attribute name="additionsVersion" type="wstring" readonly="yes">
+    <attribute name="additionsVBoxVersion" type="wstring" readonly="yes">
       <desc>
-        Version of the Guest Additions (3 decimal numbers separated
-        by dots) or empty when the Additions are not installed. The
-        Additions may also report a version but yet not be active as
-        the version might be refused by VirtualBox (incompatible) or
-        other failures occurred.
+        Version of the installed Guest Additions package (3 decimal numbers
+        separated by dots) or empty when the Additions are not installed. The
+        Additions may also report a version but yet not be active as the version
+        might be refused by VirtualBox (incompatible) or other failures
+        occurred.
+      </desc>
+    </attribute>
+
+    <attribute name="additionsInterfaceVersion" type="wstring" readonly="yes">
+      <desc>
+        Version of the Guest Additions interface (2 decimal numbers separated by
+        a dot) or empty when the Additions are not installed. The Additions may
+        also report a version but yet not be active as the version might be
+        refused by VirtualBox (incompatible) or other failures occurred.
       </desc>
     </attribute>
 
