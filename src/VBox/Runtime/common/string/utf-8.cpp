@@ -1003,121 +1003,18 @@ RT_EXPORT_SYMBOL(RTLatin1CalcUtf8LenEx);
  */
 static int rtUtf8CalcLatin1Length(const char *psz, size_t cch, size_t *pcch)
 {
-    const unsigned char *puch = (const unsigned char *)psz;
     size_t cchOut = 0;
-    while (cch > 0)
+    while (true)
     {
-        const unsigned char uch = *puch;
-        if (!uch)
+        RTUNICP Cp;
+        int rc = RTStrGetCpNEx(&psz, &cch, &Cp);
+        if (Cp == 0 || rc == VERR_END_OF_STRING)
             break;
-        if (!(uch & RT_BIT(7)))
-        {
-             /* one ASCII byte */
-            cchOut++;
-            puch++;
-            cch--;
-        }
-        else
-        {
-            /* figure sequence length and validate the first byte */
-            unsigned cb;
-            if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5))) == (RT_BIT(7) | RT_BIT(6)))
-                cb = 2;
-            else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4))) == (RT_BIT(7) | RT_BIT(6) | RT_BIT(5)))
-                cb = 3;
-            else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4) | RT_BIT(3))) == (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4)))
-                cb = 4;
-            else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4) | RT_BIT(3) | RT_BIT(2))) == (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4) | RT_BIT(3)))
-                cb = 5;
-            else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1))) == (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4) | RT_BIT(3) | RT_BIT(2)))
-                cb = 6;
-            else
-            {
-                RTStrAssertMsgFailed(("Invalid UTF-8 first byte: %.*Rhxs\n", RT_MIN(cch, 10), puch));
-                return VERR_INVALID_UTF8_ENCODING;
-            }
-
-            /* check length */
-            if (cb > cch)
-            {
-                RTStrAssertMsgFailed(("Invalid UTF-8 length: cb=%d cch=%d (%.*Rhxs)\n", cb, cch, RT_MIN(cch, 10), puch));
-                return VERR_INVALID_UTF8_ENCODING;
-            }
-
-            /* validate the rest */
-            switch (cb)
-            {
-                case 6:
-                    RTStrAssertMsgReturn((puch[5] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("6/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                case 5:
-                    RTStrAssertMsgReturn((puch[4] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("5/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                case 4:
-                    RTStrAssertMsgReturn((puch[3] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("4/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                case 3:
-                    RTStrAssertMsgReturn((puch[2] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("3/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                case 2:
-                    RTStrAssertMsgReturn((puch[1] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                   break;
-            }
-
-            /* validate the code point. */
-            RTUNICP uc;
-            switch (cb)
-            {
-                case 6:
-                    uc =            (puch[5] & 0x3f)
-                        | ((RTUNICP)(puch[4] & 0x3f) << 6)
-                        | ((RTUNICP)(puch[3] & 0x3f) << 12)
-                        | ((RTUNICP)(puch[2] & 0x3f) << 18)
-                        | ((RTUNICP)(puch[1] & 0x3f) << 24)
-                        | ((RTUNICP)(uch     & 0x01) << 30);
-                    RTStrAssertMsgReturn(uc >= 0x04000000 && uc <= 0x7fffffff,
-                                         ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    break;
-                case 5:
-                    uc =            (puch[4] & 0x3f)
-                        | ((RTUNICP)(puch[3] & 0x3f) << 6)
-                        | ((RTUNICP)(puch[2] & 0x3f) << 12)
-                        | ((RTUNICP)(puch[1] & 0x3f) << 18)
-                        | ((RTUNICP)(uch     & 0x03) << 24);
-                    RTStrAssertMsgReturn(uc >= 0x00200000 && uc <= 0x03ffffff,
-                                         ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    break;
-                case 4:
-                    uc =            (puch[3] & 0x3f)
-                        | ((RTUNICP)(puch[2] & 0x3f) << 6)
-                        | ((RTUNICP)(puch[1] & 0x3f) << 12)
-                        | ((RTUNICP)(uch     & 0x07) << 18);
-                    RTStrAssertMsgReturn(uc >= 0x00010000 && uc <= 0x001fffff,
-                                         ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    break;
-                case 3:
-                    uc =            (puch[2] & 0x3f)
-                        | ((RTUNICP)(puch[1] & 0x3f) << 6)
-                        | ((RTUNICP)(uch     & 0x0f) << 12);
-                    RTStrAssertMsgReturn(uc >= 0x00000800 && uc <= 0x0000fffd,
-                                         ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch),
-                                         uc == 0xffff || uc == 0xfffe ? VERR_CODE_POINT_ENDIAN_INDICATOR : VERR_INVALID_UTF8_ENCODING);
-                    RTStrAssertMsgReturn(uc < 0xd800 || uc > 0xdfff,
-                                         ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_CODE_POINT_SURROGATE);
-                    break;
-                case 2:
-                    uc =            (puch[1] & 0x3f)
-                        | ((RTUNICP)(uch     & 0x1f) << 6);
-                    RTStrAssertMsgReturn(uc >= 0x00000080 && uc <= 0x000007ff,
-                                         ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
-                    break;
-            }
-
-            /* does this code point have a Latin-1 translation? */
-            if (cb > 2 || uch > 0xC3)
-                return VERR_NO_TRANSLATION;
-
-            /* advance */
-            cch -= cb;
-            puch += cb;
-            cchOut++;
-        }
+        if (RT_FAILURE(rc))
+            return rc;
+        if (Cp >= 0x100)
+            return VERR_NO_TRANSLATION;
+        cchOut++;
     }
 
     /* done */
