@@ -2443,6 +2443,7 @@ VMMR3DECL(int) PGMR3Term(PVM pVM)
     /* Must free shared pages here. */
     pgmLock(pVM);
     pgmR3PhysRamTerm(pVM);
+    pgmR3PhysRomTerm(pVM);
     pgmUnlock(pVM);
 
     PGMDeregisterStringFormatTypes();

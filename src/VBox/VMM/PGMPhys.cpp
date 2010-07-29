@@ -878,7 +878,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
     pgmUnlock(pVM);
 
     /* Flush the recompiler's TLB as well. */
-    for (unsigned i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
         CPUMSetChangedFlags(&pVM->aCpus[i], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 
     AssertLogRelRC(rc);
@@ -2807,7 +2807,12 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                     pRomNew->cb = cb;
                     pRomNew->fFlags = fFlags;
                     pRomNew->idSavedState = UINT8_MAX;
+#ifdef VBOX_STRICT
+                    pRomNew->pvOriginal = fFlags & PGMPHYS_ROM_FLAGS_PERMANENT_BINARY
+                                        ? pvBinary : RTMemDup(pvBinary, cPages * PAGE_SIZE);
+#else
                     pRomNew->pvOriginal = fFlags & PGMPHYS_ROM_FLAGS_PERMANENT_BINARY ? pvBinary : NULL;
+#endif
                     pRomNew->pszDesc = pszDesc;
 
                     for (unsigned iPage = 0; iPage < cPages; iPage++)
@@ -2888,7 +2893,8 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                                  PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     PPGMROMRANGE    pRom     = (PPGMROMRANGE)pvUser;
     const uint32_t  iPage    = (GCPhys - pRom->GCPhys) >> PAGE_SHIFT;
@@ -2928,7 +2934,7 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
                 return VINF_SUCCESS;
 
             /*
-             * Write to the ram page.
+             * Write to the RAM page.
              */
             case PGMROMPROT_READ_ROM_WRITE_RAM:
             case PGMROMPROT_READ_RAM_WRITE_RAM: /* yes this will get here too, it's *way* simpler that way. */
@@ -3068,6 +3074,32 @@ int pgmR3PhysRomReset(PVM pVM)
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Called by PGMR3Term to free resources.
+ *
+ * ASSUMES that the caller owns the PGM lock.
+ *
+ * @param   pVM         The VM handle.
+ */
+void pgmR3PhysRomTerm(PVM pVM)
+{
+#ifdef RT_STRICT
+    /*
+     * Free the heap copy of the original bits.
+     */
+    for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
+    {
+        if (   pRom->pvOriginal
+            && !(pRom->fFlags & PGMPHYS_ROM_FLAGS_PERMANENT_BINARY))
+        {
+            RTMemFree((void *)pRom->pvOriginal);
+            pRom->pvOriginal = NULL;
+        }
+    }
+#endif
 }
 
 
