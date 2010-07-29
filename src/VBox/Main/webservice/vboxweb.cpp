@@ -252,9 +252,12 @@ public:
         /* The soap.max_keep_alive value can be set to the maximum keep-alive calls allowed,
          * which is important to avoid a client from holding a thread indefinitely.
          * http://www.cs.fsu.edu/~engelen/soapdoc2.html#sec:keepalive
+         *
+         * Strings with 8-bit content can hold ASCII (default) or UTF8. The latter is
+         * possible by enabling the SOAP_C_UTFSTRING flag.
          */
-        soap_set_omode(m_soap, SOAP_IO_KEEPALIVE);
-        soap_set_imode(m_soap, SOAP_IO_KEEPALIVE);
+        soap_set_omode(m_soap, SOAP_IO_KEEPALIVE|SOAP_C_UTFSTRING);
+        soap_set_imode(m_soap, SOAP_IO_KEEPALIVE|SOAP_C_UTFSTRING);
         m_soap->max_keep_alive = g_cMaxKeepAlive;
 
         if (!RT_SUCCESS(RTThreadCreate(&m_pThread,
