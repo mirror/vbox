@@ -92,9 +92,8 @@ extern "C" {
 
 #define STAC9220_IS_SPDIFOUT_CMD(cmd) (CODEC_NID((cmd)) == 0x8)
 
-#define STAC9220_IS_DIGPIN_CMD(cmd) (   \
-       CODEC_NID((cmd)) == 0x10         \
-    || CODEC_NID((cmd)) == 0x11)
+#define STAC9220_IS_DIGINPIN_CMD(cmd) (CODEC_NID((cmd)) == 0x11)
+#define STAC9220_IS_DIGOUTPIN_CMD(cmd) (CODEC_NID((cmd)) == 0x10)
 
 #define STAC9220_IS_CD_CMD(cmd) (CODEC_NID((cmd)) == 0x15)
 
@@ -187,11 +186,43 @@ static int codecGetParameter(struct CODECState *pState, uint32_t cmd, uint64_t *
     *pResp = pState->pNodes[CODEC_NID(cmd)].node.au32F00_param[cmd & CODEC_VERB_8BIT_DATA];
     return VINF_SUCCESS;
 }
+
+/* F01 */
+static int codecGetConSelectCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    if (STAC9220_IS_ADCMUX_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].adcmux.u32F01_param;
+    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F07_param;
+    return VINF_SUCCESS;
+}
+
+/* 701 */
+static int codecSetConSelectCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    uint32_t *pu32Reg = NULL;
+    *pResp = 0;
+    if (STAC9220_IS_ADCMUX_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].adcmux.u32F01_param;
+    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F01_param;
+    Assert((pu32Reg));
+    if (!pu32Reg)
+        return VINF_SUCCESS;
+    *pu32Reg = (*pu32Reg) & ~CODEC_VERB_8BIT_DATA;
+    *pu32Reg = (*pu32Reg) | (cmd & CODEC_VERB_8BIT_DATA);
+    return VINF_SUCCESS;
+}
+
+/* F07 */
 static int codecGetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     if (STAC9220_IS_PORT_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F07_param;
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F07_param;
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F07_param;
     else if (STAC9220_IS_CD_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
@@ -200,14 +231,17 @@ static int codecGetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
     return VINF_SUCCESS;
 }
 
+/* 707 */
 static int codecSetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     uint32_t *pu32Reg = NULL;
     *pResp = 0;
     if (STAC9220_IS_PORT_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F07_param;
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F07_param;
+    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F07_param;
     else if (STAC9220_IS_CD_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
     Assert((pu32Reg));
@@ -218,12 +252,13 @@ static int codecSetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
     return VINF_SUCCESS;
 }
 
+/* F08 */
 static int codecGetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
     if (STAC9220_IS_PORT_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
     else if (STAC9220_IS_AFG_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F08_param;
@@ -234,13 +269,14 @@ static int codecGetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, u
     return VINF_SUCCESS;
 }
 
+/* 708 */
 static int codecSetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
     uint32_t *pu32Reg = NULL;
     if (STAC9220_IS_PORT_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
     else if (STAC9220_IS_AFG_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].afg.u32F08_param;
@@ -254,24 +290,27 @@ static int codecSetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, u
     return VINF_SUCCESS;
 }
 
+/* F09 */
 static int codecGetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
     if (STAC9220_IS_PORT_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F09_param;
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F09_param;
     else
         AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
     return VINF_SUCCESS;
 }
+
+/* 709 */
 static int codecSetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
     uint32_t *pu32Reg = NULL;
     if (STAC9220_IS_PORT_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
     Assert(pu32Reg);
     if(!pu32Reg)
@@ -371,50 +410,36 @@ static int codecReset(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
     return VINF_SUCCESS;
 }
 
+/* F05 */
 static int codecGetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
     *pResp = 0;
     if (STAC9220_IS_AFG_CMD(cmd))
-    {
         *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F05_param;
-    }
     else if (STAC9220_IS_DAC_CMD(cmd))
-    {
         *pResp = pState->pNodes[CODEC_NID(cmd)].dac.u32F05_param;
-    }
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
-    {
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F05_param;
-    }
     else if (STAC9220_IS_ADC_CMD(cmd))
-    {
         *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F05_param;
-    }
     return VINF_SUCCESS;
 }
 
+/* 705 */
 static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
     uint32_t *pu32Reg = NULL;
     *pResp = 0;
     if (STAC9220_IS_AFG_CMD(cmd))
-    {
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].afg.u32F05_param;
-    }
     else if (STAC9220_IS_DAC_CMD(cmd))
-    {
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].dac.u32F05_param;
-    }
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
-    {
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F05_param;
-    }
     else if (STAC9220_IS_ADC_CMD(cmd))
-    {
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].adc.u32F05_param;
-    }
     Assert((pu32Reg));
     if (!pu32Reg)
         return VINF_SUCCESS;
@@ -489,6 +514,7 @@ static int codecSetConverterFormat(struct CODECState *pState, uint32_t cmd, uint
     return VINF_SUCCESS;
 }
 
+/* F0C */
 static int codecGetEAPD_BTLEnabled(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
@@ -496,12 +522,13 @@ static int codecGetEAPD_BTLEnabled(struct CODECState *pState, uint32_t cmd, uint
         *pResp = pState->pNodes[CODEC_NID(cmd)].adcvol.u32F0c_param;
     else if (STAC9220_IS_DAC_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].dac.u32F0c_param;
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F0c_param;
     *pResp = 0;
     return VINF_SUCCESS;
 }
 
+/* 70C */
 static int codecSetEAPD_BTLEnabled(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
@@ -511,7 +538,7 @@ static int codecSetEAPD_BTLEnabled(struct CODECState *pState, uint32_t cmd, uint
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].adcvol.u32F0c_param;
     else if (STAC9220_IS_DAC_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].dac.u32F0c_param;
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F0c_param;
     *pResp = 0;
     Assert((pu32Reg));
@@ -558,10 +585,12 @@ static int codecGetConfig (struct CODECState *pState, uint32_t cmd, uint64_t *pR
     *pResp = 0;
     if (STAC9220_IS_PORT_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F1c_param;
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
-        *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F1c_param;
+    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F1c_param;
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F1c_param;
     else if (STAC9220_IS_CD_CMD(cmd))
-        *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F1c_param;
+        *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
     return VINF_SUCCESS;
 }
 static int codecSetConfigX(struct CODECState *pState, uint32_t cmd, uint32_t mask)
@@ -570,8 +599,10 @@ static int codecSetConfigX(struct CODECState *pState, uint32_t cmd, uint32_t mas
     uint32_t *pu32Reg = NULL;
     if (STAC9220_IS_PORT_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F1c_param;
-    else if (STAC9220_IS_DIGPIN_CMD(cmd))
-        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F1c_param;
+    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F1c_param;
+    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F1c_param;
     else if (STAC9220_IS_CD_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
     Assert((pu32Reg));
@@ -833,12 +864,10 @@ static CODECVERB STAC9220VERB[] =
 /*    verb     | verb mask              | callback               */
 /*  -----------  --------------------   -----------------------  */
     {0x000F0000, CODEC_VERB_8BIT_CMD , codecGetParameter           },
-    {0x000A0000, CODEC_VERB_16BIT_CMD, codecGetConverterFormat     },
-    {0x00020000, CODEC_VERB_16BIT_CMD, codecSetConverterFormat     },
-    {0x000B0000, CODEC_VERB_16BIT_CMD, codecGetAmplifier           },
-    {0x00030000, CODEC_VERB_16BIT_CMD, codecSetAmplifier           },
-    {0x00070600, CODEC_VERB_8BIT_CMD , codecSetStreamId            },
+    {0x000F0100, CODEC_VERB_8BIT_CMD , codecGetConSelectCtrl       },
+    {0x00070100, CODEC_VERB_8BIT_CMD , codecSetConSelectCtrl       },
     {0x000F0600, CODEC_VERB_8BIT_CMD , codecGetStreamId            },
+    {0x00070600, CODEC_VERB_8BIT_CMD , codecSetStreamId            },
     {0x000F0700, CODEC_VERB_8BIT_CMD , codecGetPinCtrl             },
     {0x00070700, CODEC_VERB_8BIT_CMD , codecSetPinCtrl             },
     {0x000F0800, CODEC_VERB_8BIT_CMD , codecGetUnsolicitedEnabled  },
@@ -864,6 +893,10 @@ static CODECVERB STAC9220VERB[] =
     {0x00071D00, CODEC_VERB_8BIT_CMD , codecSetConfig1             },
     {0x00071E00, CODEC_VERB_8BIT_CMD , codecSetConfig2             },
     {0x00071F00, CODEC_VERB_8BIT_CMD , codecSetConfig3             },
+    {0x000A0000, CODEC_VERB_16BIT_CMD, codecGetConverterFormat     },
+    {0x00020000, CODEC_VERB_16BIT_CMD, codecSetConverterFormat     },
+    {0x000B0000, CODEC_VERB_16BIT_CMD, codecGetAmplifier           },
+    {0x00030000, CODEC_VERB_16BIT_CMD, codecSetAmplifier           },
 };
 
 static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR pfn)
