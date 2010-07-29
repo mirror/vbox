@@ -157,7 +157,6 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
     /* For debugging /Developer/Applications/Performance Tools/Quartz
      * Debug.app is a nice tool to see which parts of the screen are
      * updated.*/
-
     Assert(m_image);
 
     QWidget* viewport = m_pMachineView->viewport();
@@ -166,7 +165,7 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
     CGRect viewRect = ::darwinToCGRect(viewport->geometry());
     /* Get the context of this window from Qt */
     CGContextRef ctx = ::darwinToCGContextRef(viewport);
-    Assert(VALID_PTR (ctx));
+    Assert(VALID_PTR(ctx));
 
     /* Flip the context */
     CGContextTranslateCTM(ctx, 0, viewRect.size.height);
@@ -239,6 +238,69 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
         CGContextStrokeRect(ctx, viewRect);
 #endif
     }
+    else if (   m_pMachineLogic->visualStateType() == UIVisualStateType_Scale
+             && m_scaledSize.isValid())
+    {
+        /* Here we paint if we didn't care about any masks */
+
+        /* Create a subimage of the current view in the size
+         * of the bounding box of the current paint event */
+        QRect qir = aEvent->rect();
+        CGRect ir = ::darwinToCGRect(qir);
+        CGRect is = CGRectMake(qir.x() + m_pMachineView->contentsX(), qir.y() + m_pMachineView->contentsY(), qir.width(), qir.height());
+        ir = ::darwinFlipCGRect(ir, CGRectGetHeight(viewRect));
+        double iw = 1.0;
+        double ih = 1.0;
+        CGImageRef subImage = 0;
+        if (!m_pMachineView->pauseShot().isNull())
+        {
+            /* The pause image is already scaled. Maybe we should change that,
+             * to have a more uniform behavior and the different
+             * implementations use there own scaling algorithm. */
+            CGImageRef pauseImg = ::darwinToCGImageRef(&m_pMachineView->pauseShot());
+            subImage = CGImageCreateWithImageInRect(pauseImg, is);
+            CGImageRelease(pauseImg);
+        }
+        else
+        {
+            /* Scale all values needed for the image drawing. */
+            iw = (double)CGImageGetWidth(m_image) / m_scaledSize.width();
+            ih = (double)CGImageGetHeight(m_image) / m_scaledSize.height();
+            is.origin.x = (double)(is.origin.x * iw);
+            is.origin.y = (double)(is.origin.y * ih);
+            is.size.width = (double)(is.size.width * iw);
+            is.size.height = (double)(is.size.height * ih);
+            ir.origin.x = (double)(ir.origin.x * iw);
+            ir.origin.y = (double)(ir.origin.y * ih);
+            ir.size.width = (double)(ir.size.width * iw);
+            ir.size.height = (double)(ir.size.height * ih);
+            subImage = CGImageCreateWithImageInRect(m_image, is);
+        }
+        if (subImage)
+        {
+            /* For more performance we set a clipping path of the regions given
+             * by this paint event. */
+            QVector<QRect> a = aEvent->region().rects();
+            if (!a.isEmpty())
+            {
+                CGContextBeginPath(ctx);
+                /* Add all region rects to the current context as path components */
+                for (int i = 0; i < a.size(); ++i)
+                    CGContextAddRect(ctx, ::darwinFlipCGRect(::darwinToCGRect(a.at(i)), CGRectGetHeight(viewRect)));
+                /* Now convert the path to a clipping path. */
+                CGContextClip(ctx);
+            }
+
+            /* In any case clip the drawing to the view window */
+            CGContextClipToRect(ctx, viewRect);
+            /* Turn the high interpolation quality on. */
+            CGContextSetInterpolationQuality(ctx, kCGInterpolationHigh);
+            CGContextScaleCTM(ctx, 1.0 / iw, 1.0 / ih);
+            /* Draw the image. */
+            CGContextDrawImage(ctx, ir, subImage);
+            CGImageRelease(subImage);
+        }
+    }
     else
     {
         /* Here we paint if we didn't care about any masks */
@@ -246,8 +308,8 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
         /* Create a subimage of the current view in the size
          * of the bounding box of the current paint event */
         QRect ir = aEvent->rect();
-        QRect is = QRect (ir.x() + m_pMachineView->contentsX(), ir.y() + m_pMachineView->contentsY(), ir.width(), ir.height());
-        CGImageRef subImage;
+        QRect is = QRect(ir.x() + m_pMachineView->contentsX(), ir.y() + m_pMachineView->contentsY(), ir.width(), ir.height());
+        CGImageRef subImage = 0;
         if (!m_pMachineView->pauseShot().isNull())
         {
             CGImageRef pauseImg = ::darwinToCGImageRef(&m_pMachineView->pauseShot());
@@ -256,26 +318,28 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
         }
         else
             subImage = CGImageCreateWithImageInRect(m_image, ::darwinToCGRect(is));
-        Assert(VALID_PTR(subImage));
-        /* Ok, for more performance we set a clipping path of the
-         * regions given by this paint event. */
-        QVector<QRect> a = aEvent->region().rects();
-        if (!a.isEmpty())
+        if (subImage)
         {
-            CGContextBeginPath (ctx);
-            /* Add all region rects to the current context as path components */
-            for (int i = 0; i < a.size(); ++i)
-                CGContextAddRect(ctx, ::darwinFlipCGRect(::darwinToCGRect(a[i]), viewRect.size.height));
-            /* Now convert the path to a clipping path. */
-            CGContextClip(ctx);
+            /* Ok, for more performance we set a clipping path of the
+             * regions given by this paint event. */
+            QVector<QRect> a = aEvent->region().rects();
+            if (!a.isEmpty())
+            {
+                CGContextBeginPath (ctx);
+                /* Add all region rects to the current context as path components */
+                for (int i = 0; i < a.size(); ++i)
+                    CGContextAddRect(ctx, ::darwinFlipCGRect(::darwinToCGRect(a[i]), viewRect.size.height));
+                /* Now convert the path to a clipping path. */
+                CGContextClip(ctx);
+            }
+
+            /* In any case clip the drawing to the view window */
+            CGContextClipToRect(ctx, viewRect);
+
+            /* At this point draw the real vm image */
+            CGContextDrawImage(ctx, ::darwinFlipCGRect(::darwinToCGRect(ir), viewRect.size.height), subImage);
+            CGImageRelease(subImage);
         }
-
-        /* In any case clip the drawing to the view window */
-        CGContextClipToRect(ctx, viewRect);
-        /* At this point draw the real vm image */
-        CGContextDrawImage(ctx, ::darwinFlipCGRect(::darwinToCGRect (ir), viewRect.size.height), subImage);
-
-        CGImageRelease(subImage);
     }
 }
 

@@ -17,11 +17,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <QDesktopWidget>
-#include <QMainWindow>
-#include <QTimer>
-
 /* Local includes */
 #include "VBoxGlobal.h"
 #include "UISession.h"
@@ -30,6 +25,14 @@
 #include "UIMachineViewScale.h"
 #include "UIFrameBuffer.h"
 #include "UIFrameBufferQImage.h"
+#ifdef VBOX_GUI_USE_QUARTZ2D
+# include "UIFrameBufferQuartz2D.h"
+#endif /* VBOX_GUI_USE_QUARTZ2D */
+
+/* Global includes */
+#include <QDesktopWidget>
+#include <QMainWindow>
+#include <QTimer>
 
 UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow
                                        , ulong uScreenId
@@ -197,6 +200,11 @@ bool UIMachineViewScale::event(QEvent *pEvent)
                                 (pPaintEvent->width() + 10 /* 10 pixels right to cover x shift */ + 10 /* 10 pixels right to cover xRatio*10 */) * xRatio,
                                 (pPaintEvent->height() + 10 /* 10 pixels right to cover y shift */ + 10 /* 10 pixels right to cover yRatio*10 */) * yRatio);
 
+//            viewport()->repaint((int)(pPaintEvent->x()  /* 10 pixels left to cover xRatio*10 */ * xRatio),
+//                                (int)(pPaintEvent->y()  /* 10 pixels left to cover yRatio*10 */ * yRatio),
+//                                (int)(pPaintEvent->width()  /* 10 pixels right to cover x shift */  /* 10 pixels right to cover xRatio*10 */ * xRatio) + 2,
+//                                (int)(pPaintEvent->height()  /* 10 pixels right to cover y shift */  /* 10 pixels right to cover yRatio*10 */ * yRatio) + 2);
+            pEvent->accept();
             return true;
         }
 
@@ -254,6 +262,13 @@ void UIMachineViewScale::prepareFrameBuffer()
     /* Prepare frame-buffer depending on render-mode: */
     switch (vboxGlobal().vmRenderMode())
     {
+#ifdef VBOX_GUI_USE_QUARTZ2D
+        case VBoxDefs::Quartz2DMode:
+            /* Indicate that we are doing all drawing stuff ourself: */
+            viewport()->setAttribute(Qt::WA_PaintOnScreen);
+            m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
+            break;
+#endif /* VBOX_GUI_USE_QUARTZ2D */
         default:
 #ifdef VBOX_GUI_USE_QIMAGE
         case VBoxDefs::QImageMode:
