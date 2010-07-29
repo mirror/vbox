@@ -259,12 +259,16 @@ DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
                         VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Connecting share %u (%s) ...\n", i+1, pszShareName);
 
                         char *pszMountPoint = NULL;
+#ifdef RT_OS_SOLARIS
+                        if (   RTStrAPrintf(&pszMountPoint, "/mnt/sf_%s", pszShareName) > 0
+#else
                         if (   RTStrAPrintf(&pszMountPoint, "/media/sf_%s", pszShareName) > 0
+#endif
                             && pszMountPoint)
                         {
                             /* We always use "/media" as our root mounting directory. */
-                            /** @todo Detect the correct "media" directory, based on the current guest (?). */
-                            RTFMODE fMode = 0777;
+                            /** @todo Detect the correct "media/mnt" directory, based on the current guest (?). */
+                            RTFMODE fMode = 0700;
                             rc = RTDirCreateFullPath(pszMountPoint, fMode);
                             if (RT_SUCCESS(rc))
                             {
