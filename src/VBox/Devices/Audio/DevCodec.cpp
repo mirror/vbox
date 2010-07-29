@@ -154,6 +154,7 @@ static int codecGetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
 static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     uint32_t *pu32Bparam = NULL;
+    //** @todo r=michaln: Missing NID bounds checking!
     PCODECNODE pNode = &pState->pNodes[CODEC_NID(cmd)];
     *pResp = 0;
     if (STAC9220_IS_DAC_CMD(cmd))
@@ -183,6 +184,7 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
 static int codecGetParameter(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
+    //** @todo r=michaln: This is not bounds checked and may overflow the pNodes array!
     *pResp = pState->pNodes[CODEC_NID(cmd)].node.au32F00_param[cmd & CODEC_VERB_8BIT_DATA];
     return VINF_SUCCESS;
 }
@@ -194,7 +196,9 @@ static int codecGetConSelectCtrl(struct CODECState *pState, uint32_t cmd, uint64
     if (STAC9220_IS_ADCMUX_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].adcmux.u32F01_param;
     else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+        //** @todo r=michaln: Is that really u32F07, or should it be u32F01?
         *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F07_param;
+    //** @todo r=michaln: Else what? We must always fill out *pResp!
     return VINF_SUCCESS;
 }
 
@@ -227,6 +231,7 @@ static int codecGetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
     else if (STAC9220_IS_CD_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
     else
+        //** @todo r=michaln: pResp must still be filled out
         AssertMsgFailed(("Unsupported"));
     return VINF_SUCCESS;
 }
@@ -283,6 +288,7 @@ static int codecSetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, u
     else if (STAC9220_IS_VOLKNOB_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
     else
+        //** @todo r=michaln: This will crash in release builds! (pu32Reg will be NULL here)
         AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
     Assert(pu32Reg);
     *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
@@ -323,6 +329,7 @@ static int codecSetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *p
 static int codecGetConnectionListEntry(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
+    //** @todo r=michaln: Again, possible pNodes array overflow
     *pResp = *(uint32_t *)&pState->pNodes[CODEC_NID(cmd)].node.au8F02_param[cmd & CODEC_VERB_8BIT_DATA];
     return VINF_SUCCESS;
 }
@@ -388,6 +395,7 @@ static int codecGetSubId(struct CODECState *pState, uint32_t cmd, uint64_t *pRes
     {
         *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F20_param;
     }
+    //** @todo r=michaln: pResp must always be filled out
     return VINF_SUCCESS;
 }
 
@@ -457,6 +465,7 @@ static int codecGetStreamId(struct CODECState *pState, uint32_t cmd, uint64_t *p
         *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F06_param;
     else
         *pResp = 0; /* STAC9220 6.20 6.13-6.18: no response supposed for this verb. */
+    //** @todo r=michaln: Is this intentional? I don't think we should always return 0?
     *pResp = 0;
     return VINF_SUCCESS;
 }
@@ -524,6 +533,7 @@ static int codecGetEAPD_BTLEnabled(struct CODECState *pState, uint32_t cmd, uint
         *pResp = pState->pNodes[CODEC_NID(cmd)].dac.u32F0c_param;
     else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F0c_param;
+    //** @todo r=michaln: Do we really always want to return zero?
     *pResp = 0;
     return VINF_SUCCESS;
 }
