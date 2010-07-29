@@ -3191,18 +3191,10 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="26604a54-8628-491b-a0ea-e1392a16d13b"
+     uuid="e2da8b1a-2ad1-490e-b29e-c33a144791b6"
      internal="yes"
      wsmap="suppress"
      >
-    <method name="setRemoveSavedState">
-      <desc>
-        Updates the flag whether saved state is removed on a machine state
-        change from Saved to PoweredOff.
-      </desc>
-      <param name="aRemove" type="boolean" dir="in"/>
-    </method>
-
     <method name="updateState">
       <desc>
         Updates the VM state.
@@ -5189,18 +5181,31 @@
     <method name="unregister">
       <desc>
         Unregisters the machine, which must have been previously registered using
-        <link to="IVirtualBox::registerMachine"/>. After successful method invocation,
+        <link to="IVirtualBox::registerMachine"/>.
+
+        This method will succeed even if the machine currently has media attachments or
+        is in the <link to="MachineState::Saved">Saved</link> state. In those cases,
+        the caller receives the names of all files that have been made obsolete by the
+        call in the @a aFiles array parameter. This list will consist of the saved
+        state file and all storage files by media that were detached from the machine.
+
+        <note>
+          The @a fAutoCleanup parameter is temporary to avoid substantial changes to the
+          frontends in SVN trunk.It will go away before the 3.3 release and
+          always be true then. If fAutoCleanup is false, the API currently behaves like
+          the old VirtualBox::UnregisterMachine API. Cleaning up snapshots does not work
+          yet, so the method will still fail if the machine has snapshots.
+        </note>
+
+        The settings XML file of the machine object itself will not be included in that
+        list; call <link to="#delete" /> for that.
+
+        The call will fail if the machine is currently locked (see <link to="ISession" />).
+        It implicitly calls <link to="#saveSettings"/> to save all current machine settings
+        before unregistering it.
+
+        After successful method invocation,
         the <link to="IMachineRegisteredEvent"/> event is fired.
-
-        <note>
-          The specified machine must not be in the Saved state nor have an open
-          (or a spawning) direct session associated with it.
-        </note>
-
-        <note>
-          This method implicitly calls <link to="#saveSettings"/> to
-          save all current machine settings before unregistering it.
-        </note>
 
         <note>
           If the given machine is inaccessible (see <link to="#accessible"/>), it
@@ -5209,24 +5214,19 @@
           <b>any</b> method will return the "Object not ready" error.
         </note>
 
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          Could not find registered machine matching @a id.
-        </result>
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Machine is in Saved state.
-        </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Machine has snapshot or open session or medium attached.
+          Machine has snapshot or is locked.
         </result>
       </desc>
 
-      <param name="fCloseMedia" type="boolean" dir="in">
+      <param name="fAutoCleanup" type="boolean" dir="in">
         <desc>If true, the method will automatically detach all media from the
           machine and its snapshots, call <link to="IMedium::close" /> on each
           medium, and the paths of all media files involved will be reported to
           the caller in the @a aFiles array so the caller can then delete the
           image files.
-          If false, the method will fail if media attachments are present.</desc>
+          If false, the method will fail if media attachments are present.
+        </desc>
       </param>
       <param name="aFiles" type="wstring" safearray="yes" dir="return">
         <desc>
@@ -5932,7 +5932,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="9e467cff-98fc-4f5b-83aa-048d903694c9"
+     uuid="3a7bb20e-bbee-47f2-a5ee-b158555f2c79"
      wsmap="managed"
      >
     <desc>
@@ -6300,10 +6300,10 @@
 
     <method name="forgetSavedState">
       <desc>
-        Forgets the saved state of the virtual machine previously created
-        by <link to="#saveState"/>. Next time the machine is powered up, a
-        clean boot will occur. If @a remove is @c true the saved state file
-        is deleted.
+        Forgets the saved state of the virtual machine if it is currently
+        in the "Saved" state (previously created by <link to="#saveState"/>)
+        and deletes the file into which the machine state was saved.
+        Next time the machine is powered up, a clean boot will occur.
         <note>
           This operation is equivalent to resetting or powering off
           the machine without doing a proper shutdown in the guest OS.
@@ -6312,9 +6312,6 @@
           Virtual machine not in state Saved.
         </result>
       </desc>
-      <param name="removeFile" type="boolean" dir="in">
-        <desc>If @c true remove the saved state file.</desc>
-      </param>
     </method>
 
     <method name="getDeviceActivity">
