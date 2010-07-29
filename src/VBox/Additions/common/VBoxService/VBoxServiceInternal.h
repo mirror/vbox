@@ -249,6 +249,9 @@ extern VBOXSERVICE  g_VMStatistics;
 #ifdef VBOX_WITH_PAGE_SHARING
 extern VBOXSERVICE  g_PageSharing;
 #endif
+#ifdef VBOX_WITH_SHARED_FOLDERS
+extern VBOXSERVICE  g_AutoMount;
+#endif
 
 extern RTEXITCODE   VBoxServiceSyntax(const char *pszFormat, ...);
 extern RTEXITCODE   VBoxServiceError(const char *pszFormat, ...);

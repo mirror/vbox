@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,7 @@
 #define MAX_HOST_NAME  256
 #define MAX_NLS_NAME    32
 
-/* Linux constraints the size of data mount argument to PAGE_SIZE - 1 */
+/* Linux constraints the size of data mount argument to PAGE_SIZE - 1. */
 struct vbsf_mount_info_old
 {
     char name[MAX_HOST_NAME];
@@ -51,5 +51,27 @@ struct vbsf_mount_info_new
     int  dmask;                 /* umask applied to directories */
     int  fmask;                 /* umask applied to regular files */
 };
+
+struct vbsf_mount_opts
+{
+    int  uid;
+    int  gid;
+    int  ttl;
+    int  dmode;
+    int  fmode;
+    int  dmask;
+    int  fmask;
+    int  ronly;
+    int  noexec;
+    int  nodev;
+    int  nosuid;
+    int  remount;
+    char nls_name[MAX_NLS_NAME];
+    char *convertcp;
+};
+
+/** Completes the mount operation by adding the new mount point to mtab if required. */
+int vbsfmount_complete(const char *host_name, const char *mount_point,
+                       unsigned long flags, struct vbsf_mount_opts *opts);
 
 #endif /* vbsfmount.h */

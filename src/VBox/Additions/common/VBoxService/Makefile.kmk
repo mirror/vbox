@@ -49,17 +49,25 @@ endif
 if1of ($(KBUILD_TARGET), linux)
  VBoxService_DEFS        += VBOXSERVICE_CPUHOTPLUG
 endif
+ifdef VBOX_WITH_SHARED_FOLDERS
+ # darwin freebsd
+ if1of ($(KBUILD_TARGET), linux solaris)
+  VBoxService_DEFS        += VBOX_WITH_SHARED_FOLDERS
+ endif
+endif
 
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
 	VBoxServiceTimeSync.cpp \
 	VBoxServiceUtils.cpp \
 	VBoxServiceStats.cpp
+
 ifdef VBOX_WITH_GUEST_CONTROL
  VBoxService_SOURCES    += \
  	VBoxServiceControl.cpp \
  	VBoxServiceControlExec.cpp
 endif
+
 ifdef VBOX_WITH_MEMBALLOON
  VBoxService_SOURCES    += \
  	VBoxServiceBalloon.cpp
@@ -68,6 +76,7 @@ if1of ($(KBUILD_TARGET), win)
  VBoxService_SOURCES    += \
  	VBoxServicePageSharing.cpp
 endif
+
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_SOURCES.win  = \
  	VBoxServiceVMInfo-win.cpp
@@ -75,10 +84,21 @@ ifdef VBOX_WITH_GUEST_PROPS
  	VBoxServiceVMInfo.cpp \
  	VBoxServicePropCache.cpp
 endif
+
 if1of ($(KBUILD_TARGET), linux)
  VBoxService_SOURCES     += \
 	VBoxServiceCpuHotPlug.cpp
 endif
+
+ifdef VBOX_WITH_SHARED_FOLDERS
+ if1of ($(KBUILD_TARGET), linux solaris)
+  VBoxService_SOURCES          += \
+	VBoxServiceAutoMount.cpp
+  VBoxService_SOURCES.linux    += \
+	../../linux/sharedfolders/vbsfmount.c
+ endif
+endif
+
 VBoxService_SOURCES.win  += \
 	VBoxService-win.rc \
 	VBoxService-win.cpp

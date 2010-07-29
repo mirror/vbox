@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -52,24 +52,6 @@
         switch(0) { case 0: case (a): ; } \
     } while (0)
 
-struct opts
-{
-    int  uid;
-    int  gid;
-    int  ttl;
-    int  dmode;
-    int  fmode;
-    int  dmask;
-    int  fmask;
-    int  ronly;
-    int  noexec;
-    int  nodev;
-    int  nosuid;
-    int  remount;
-    char nls_name[MAX_NLS_NAME];
-    char *convertcp;
-};
-
 #define PANIC_ATTR __attribute ((noreturn, __format__ (__printf__, 1, 2)))
 
 static void PANIC_ATTR
@@ -112,7 +94,7 @@ safe_atoi(const char *s, size_t size, int base)
 }
 
 static void
-process_mount_opts(const char *s, struct opts *opts)
+process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
 {
     const char *next = s;
     size_t len;
@@ -322,71 +304,6 @@ process_mount_opts(const char *s, struct opts *opts)
 }
 
 static void
-complete(char *host_name, char *mount_point,
-          unsigned long flags, struct opts *opts)
-{
-    FILE *f, *m;
-    char *buf;
-    size_t size;
-    struct mntent e;
-
-    m = open_memstream(&buf, &size);
-    if (!m)
-        panic_err("could not update mount table (failed to create memstream)");
-
-    if (opts->uid)
-        fprintf(m, "uid=%d,", opts->uid);
-    if (opts->gid)
-        fprintf(m, "gid=%d,", opts->gid);
-    if (opts->ttl)
-        fprintf(m, "ttl=%d,", opts->ttl);
-    if (*opts->nls_name)
-        fprintf(m, "iocharset=%s,", opts->nls_name);
-    if (flags & MS_NOSUID)
-        fprintf(m, "%s,", MNTOPT_NOSUID);
-    if (flags & MS_RDONLY)
-        fprintf(m, "%s,", MNTOPT_RO);
-    else
-        fprintf(m, "%s,", MNTOPT_RW);
-
-    fclose(m);
-
-    if (size > 0)
-        buf[size - 1] = 0;
-    else
-        buf = "defaults";
-
-    f = setmntent(MOUNTED, "a+");
-    if (!f)
-        panic_err("could not open mount table for update");
-
-    e.mnt_fsname = host_name;
-    e.mnt_dir = mount_point;
-    e.mnt_type = "vboxsf";
-    e.mnt_opts = buf;
-    e.mnt_freq = 0;
-    e.mnt_passno = 0;
-
-    if (addmntent(f, &e))
-    {
-        if (size > 0)
-        {
-            memset(buf, 0, size);
-            free(buf);
-        }
-        panic_err("could not add an entry to the mount table");
-    }
-
-    endmntent(f);
-
-    if (size > 0)
-    {
-        memset(buf, 0, size);
-        free(buf);
-    }
-}
-
-static void
 convertcp(char *in_codeset, char *host_name, struct vbsf_mount_info_new *info)
 {
     char *i = host_name;
@@ -460,7 +377,7 @@ main (int argc, char **argv)
     char *host_name;
     char *mount_point;
     struct vbsf_mount_info_new mntinf;
-    struct opts opts =
+    struct vbsf_mount_opts opts =
     {
         0,     /* uid */
         0,     /* gid */
@@ -557,6 +474,11 @@ main (int argc, char **argv)
     mntinf.dmask = opts.dmask;
     mntinf.fmask = opts.fmask;
 
+    /*
+     * Note: When adding and/or modifying parameters of the vboxsf mounting
+     *       options you also would have to adjust VBoxServiceAutoMount.cpp
+     *       to keep this code here slick without having VbglR3.
+     */
     err = mount(NULL, mount_point, "vboxsf", flags, &mntinf);
     if (err == -1 && errno == EPROTO)
     {
@@ -592,7 +514,30 @@ main (int argc, char **argv)
         panic_err("%s: mounting failed with the error", argv[0]);
 
     if (!nomtab)
-        complete(host_name, mount_point, flags, &opts);
+    {
+        err = vbsfmount_complete(host_name, mount_point, flags, &opts);
+        switch (err)
+        {
+            case 0: /* Success. */
+                break;
+
+            case 1:
+                panic_err("%s: Could not update mount table (failed to create memstream).", argv[0]);
+                break;
+
+            case 2:
+                panic_err("%s: Could not open mount table for update.", argv[0]);
+                break;
+
+            case 3:
+                panic_err("%s: Could not add an entry to the mount table.", argv[0]);
+                break;
+
+            default:
+                panic_err("%s: Unknown error while completing mount operation: %d", argv[0], err);
+                break;
+        }
+    }
 
     exit(EXIT_SUCCESS);
 }
