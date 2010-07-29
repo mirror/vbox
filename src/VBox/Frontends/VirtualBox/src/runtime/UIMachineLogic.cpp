@@ -827,9 +827,9 @@ void UIMachineLogic::sltAdditionsStateChanged()
     /* Check the GA version only in case of additions are active: */
     if (!fIsAdditionsActive)
         return;
-    /* Check the Guest Additions version and warn the user about possible compatibility issues in case if the installed version is outdated. */
+    /* Check the Guest Additions interface version and warn the user about possible compatibility issues in case if the installed version is outdated. */
     CGuest guest = session().GetConsole().GetGuest();
-    QString strVersion = guest.GetAdditionsVersion();
+    QString strVersion = guest.GetAdditionsInterfaceVersion();
     uint uVersion = strVersion.toUInt();
     /** @todo r=bird: This isn't want we want! We want the VirtualBox version of the additions, all three numbers. See @bugref{4084}.*/
     QString strRealVersion = QString("%1.%2").arg(RT_HIWORD(uVersion)).arg(RT_LOWORD(uVersion));

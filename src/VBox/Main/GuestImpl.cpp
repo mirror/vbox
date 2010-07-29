@@ -175,16 +175,30 @@ STDMETHODIMP Guest::COMGETTER(AdditionsActive) (BOOL *aAdditionsActive)
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
+STDMETHODIMP Guest::COMGETTER(AdditionsInterfaceVersion) (BSTR *aVersion)
 {
-    CheckComArgOutPointerValid(aAdditionsVersion);
+    CheckComArgOutPointerValid(aVersion);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mAdditionsVersion.cloneTo(aAdditionsVersion);
+    mData.mInterfaceVersion.cloneTo(aVersion);
+
+    return S_OK;
+}
+
+STDMETHODIMP Guest::COMGETTER(AdditionsVBoxVersion) (BSTR *aVersion)
+{
+    CheckComArgOutPointerValid(aVersion);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mData.mAdditionsVersion.cloneTo(aVersion);
 
     return S_OK;
 }
@@ -1442,10 +1456,10 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
  * Sets the general Guest Additions information like
  * API version and OS type.
  *
- * @param aVersion
+ * @param aInterfaceVersion
  * @param aOsType
  */
-void Guest::setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType)
+void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -1456,13 +1470,13 @@ void Guest::setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType)
      * Set the Guest Additions API (interface) version.
      * Note that this is *not* the actual Guest Additions version and may differ!
      */
-    mData.mAdditionsVersion = aVersion;
+    mData.mInterfaceVersion = aInterfaceVersion;
     /*
      * Older Additions rely on the Additions API version whether they
      * are assumed to be active or not. Newer additions will disable
      * this immediately.
      */
-    mData.mAdditionsActive = !aVersion.isEmpty();
+    mData.mAdditionsActive = !aInterfaceVersion.isEmpty();
     /*
      * Older Additions didn't have this finer grained capability bit,
      * so enable it by default.  Newer Additions will disable it immediately
@@ -1486,7 +1500,7 @@ void Guest::setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType)
  * @param Status
  * @param ulFlags
  */
-void Guest::setAdditionsStatus (VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags)
+void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -1506,7 +1520,7 @@ void Guest::setAdditionsStatus (VBoxGuestStatusFacility Facility, VBoxGuestStatu
  * @param ulCaps
  * @param ulActive
  */
-void Guest::setSupportedFeatures (ULONG64 ulCaps, ULONG64 ulActive)
+void Guest::setSupportedFeatures(ULONG64 ulCaps, ULONG64 ulActive)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
