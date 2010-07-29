@@ -828,7 +828,7 @@ RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString, PRTUTF16
  * @returns 0 if the string was incorrectly encoded.
  * @param   psz         The string.
  */
-#define RTStrCalcLatin1Len(psz) RTStrUniLen(psz)
+RTDECL(size_t) RTStrCalcLatin1Len(const char *psz);
 
 /**
  * Calculates the length of the string in Latin-1 characters.
@@ -842,7 +842,7 @@ RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString, PRTUTF16
  * @param   pcch        Where to store the string length. Optional.
  *                      This is undefined on failure.
  */
-#define RTStrCalcLatin1LenEx(psz, cch, pcch) RTStrUniLenEx(psz, cch, pcch)
+RTDECL(int) RTStrCalcLatin1LenEx(const char *psz, size_t cch, size_t *pcwc);
 
 /**
  * Translate a UTF-8 string into a Latin-1 allocating the result buffer (default
