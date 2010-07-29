@@ -3588,7 +3588,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
                         tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
                         aDevice, aControllerPort, aControllerName);
 
-    rc = detachDevice(pAttach, alock, &fNeedsSaveSettings);
+    rc = detachDevice(pAttach, alock, NULL /* pSnapshot */, &fNeedsSaveSettings);
 
     if (fNeedsSaveSettings)
     {
@@ -4079,14 +4079,14 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
 
     // this list collects the files that should be reported
     // as to be deleted to the caller in aFiles
-    std::list<Bstr> llFilesForCaller;
+    std::list<Utf8Str> llFilesForCaller;
 
     // discard saved state
     if (mData->mMachineState == MachineState_Saved)
     {
         // add the saved state file to the list of files the caller should delete
         Assert(!mSSData->mStateFilePath.isEmpty());
-        llFilesForCaller.push_back(Bstr(mSSData->mStateFilePath));
+        llFilesForCaller.push_back(mSSData->mStateFilePath);
 
         mSSData->mStateFilePath.setNull();
 
@@ -4095,45 +4095,42 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
         mData->mMachineState = MachineState_PoweredOff;
     }
 
-    // @todo optionally nuke snapshots
     size_t snapshotCount = 0;
     if (mData->mFirstSnapshot)
         snapshotCount = mData->mFirstSnapshot->getAllChildrenCount() + 1;
     if (snapshotCount)
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
-                        mUserData->mName.raw(), snapshotCount);
+    {
+        if (fAutoCleanup)
+        {
+            // caller wants automatic detachment: then do that and report all media to the array
+
+            // Snapshot::beginDeletingSnapshot() needs the machine state to be this
+            MachineState_T oldState = mData->mMachineState;
+            mData->mMachineState = MachineState_DeletingSnapshot;
+
+            // make a copy of the first snapshot so the refcount does not drop to 0
+            // in beginDeletingSnapshot, which sets pFirstSnapshot to 0 (that hangs
+            // because of the AutoCaller voodoo)
+            ComObjPtr<Snapshot> pFirstSnapshot = mData->mFirstSnapshot;
+
+            // go!
+            pFirstSnapshot->uninitRecursively(alock, llMedia, llFilesForCaller);
+
+            mData->mMachineState = oldState;
+        }
+        else
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
+                            mUserData->mName.raw(), snapshotCount);
+    }
 
     if (    !mMediaData.isNull()      // can be NULL if machine is inaccessible
          && mMediaData->mAttachments.size()
        )
     {
-        // we have media attachments:
+        // we have media attachments: detach them all and add the Medium objects to our list
         if (fAutoCleanup)
-        {
-            // caller wants automatic detachment: then do that and report all media to the array
-
-            // make a temporary list because detachDevice invalidates iterators into
-            // mMediaData->mAttachments
-            MediaData::AttachmentList llAttachments2 = mMediaData->mAttachments;
-
-            for (MediaData::AttachmentList::iterator it = llAttachments2.begin();
-                 it != llAttachments2.end();
-                 ++it)
-            {
-                ComObjPtr<MediumAttachment> pAttach = *it;
-                ComObjPtr<Medium> pMedium = pAttach->getMedium();
-
-                if (!pMedium.isNull())
-                    llMedia.push_back(pMedium);
-
-                rc = detachDevice(pAttach,
-                                  alock,
-                                  NULL /* pfNeedsSaveSettings */);
-                if (FAILED(rc))
-                    break;
-            };
-        }
+            detachAllMedia(alock, NULL /* pSnapshot */, llMedia);
         else
             return setError(VBOX_E_INVALID_OBJECT_STATE,
                             tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
@@ -4162,7 +4159,7 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
              ++it)
         {
             ComObjPtr<Medium> pMedium = *it;
-            Bstr bstrFile = pMedium->getLocationFull();
+            Utf8Str strFile = pMedium->getLocationFull();
 
             AutoCaller autoCaller2(pMedium);
             if (FAILED(autoCaller2.rc())) return autoCaller2.rc();
@@ -4172,6 +4169,8 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
                                 autoCaller2);
                 // this uninitializes the medium
 
+            LogFlowThisFunc(("Medium::close() on %s yielded rc (%Rhra)\n", strFile.c_str(), rc));
+
             if (rc == VBOX_E_OBJECT_IN_USE)
                 // can happen if the medium was still attached to another machine;
                 // do not report the file to the caller then, but don't report
@@ -4179,17 +4178,17 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
                 eik.setNull();
             else if (SUCCEEDED(rc))
                 // report the path to the caller
-                llFilesForCaller.push_back(bstrFile);
+                llFilesForCaller.push_back(strFile);
         }
     }
 
     // report all paths to the caller
     SafeArray<BSTR> sfaFiles(llFilesForCaller.size());
     size_t i = 0;
-    for (std::list<Bstr>::iterator it = llFilesForCaller.begin();
+    for (std::list<Utf8Str>::iterator it = llFilesForCaller.begin();
          it != llFilesForCaller.end();
          ++it)
-        it->detachTo(&sfaFiles[i++]);
+        Bstr(*it).detachTo(&sfaFiles[i++]);
     sfaFiles.detachTo(ComSafeArrayOutArg(aFiles));
 
     mParent->unregisterMachine(this);
@@ -8709,12 +8708,14 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
  *
  * @param pAttach Medium attachment to detach.
  * @param writeLock Machine write lock which the caller must have locked once. This may be released temporarily in here.
+ * @param pSnapshot If NULL, then the detachment is for the current machine. Otherwise this is for a SnapshotMachine, and this must be its snapshot.
  * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  * @return
  */
 HRESULT Machine::detachDevice(MediumAttachment *pAttach,
                               AutoWriteLock &writeLock,
+                              Snapshot *pSnapshot,
                               bool *pfNeedsSaveSettings)
 {
     ComObjPtr<Medium> oldmedium = pAttach->getMedium();
@@ -8750,14 +8751,69 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
     setModified(IsModified_Storage);
     mMediaData.backup();
 
-    /* we cannot use erase (it) below because backup() above will create
-    * a copy of the list and make this copy active, but the iterator
-    * still refers to the original and is not valid for the copy */
+    // we cannot use erase (it) below because backup() above will create
+    // a copy of the list and make this copy active, but the iterator
+    // still refers to the original and is not valid for the copy
     mMediaData->mAttachments.remove(pAttach);
 
-    /* For non-hard disk media, detach straight away. */
-    if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
-        oldmedium->detachFrom(mData->mUuid);
+    if (!oldmedium.isNull())
+    {
+        // if this is from a snapshot, do not defer detachment to commitMedia()
+        if (pSnapshot)
+            oldmedium->detachFrom(mData->mUuid, pSnapshot->getId());
+        // else if non-hard disk media, do not defer detachment to commitMedia() either
+        else if (mediumType != DeviceType_HardDisk)
+            oldmedium->detachFrom(mData->mUuid);
+    }
+
+    return S_OK;
+}
+
+/**
+ * Goes thru all medium attachments of the list and calls detachDevice() on each
+ * of them and attaches all Medium objects found in the process to the given list.
+ *
+ * This gets called from Machine::Unregister, both for the actual Machine and
+ * the SnapshotMachine objects that might be found in the snapshots.
+ *
+ * Requires caller and locking.
+ *
+ * @param writeLock Machine lock from top-level caller; this gets passed to detachDevice.
+ * @param llMedia Caller's list to receive Medium objects which got detached so caller can close() them.
+ * @param pSnapshot Must be NULL when called for a "real" Machine or a snapshot object if called for a SnapshotMachine.
+ * @return
+ */
+HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
+                                Snapshot *pSnapshot,
+                                MediaList &llMedia)
+{
+    Assert(isWriteLockOnCurrentThread());
+
+    HRESULT rc;
+
+    // make a temporary list because detachDevice invalidates iterators into
+    // mMediaData->mAttachments
+    MediaData::AttachmentList llAttachments2 = mMediaData->mAttachments;
+
+    for (MediaData::AttachmentList::iterator it = llAttachments2.begin();
+         it != llAttachments2.end();
+         ++it)
+    {
+        ComObjPtr<MediumAttachment> pAttach = *it;
+        ComObjPtr<Medium> pMedium = pAttach->getMedium();
+
+        if (!pMedium.isNull())
+            llMedia.push_back(pMedium);
+
+        // real machine: then we need to use the proper method
+        rc = detachDevice(pAttach,
+                          writeLock,
+                          pSnapshot,
+                          NULL /* pfNeedsSaveSettings */);
+
+        if (FAILED(rc))
+            return rc;
+    }
 
     return S_OK;
 }

@@ -250,7 +250,7 @@ void Snapshot::beginSnapshotDelete()
         m->pMachine->mData->mCurrentSnapshot = parentSnapshot;
 
         /* we've changed the base of the current state so mark it as
-            * modified as it no longer guaranteed to be its copy */
+         * modified as it no longer guaranteed to be its copy */
         m->pMachine->mData->mCurrentStateModified = TRUE;
     }
 
@@ -808,6 +808,68 @@ HRESULT Snapshot::saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
     AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
 
     return saveSnapshotImpl(data, aAttrsOnly);
+}
+
+/**
+ * Part of the cleanup engine of Machine::Unregister().
+ *
+ * This recursively removes all medium attachments from the snapshot's machine
+ * and returns the snapshot's saved state file name, if any, and then calls
+ * uninit() on "this" itself.
+ *
+ * This recurses into children first, so the given MediaList receives child
+ * media first before their parents. If the caller wants to close all media,
+ * they should go thru the list from the beginning to the end because media
+ * cannot be closed if they have children.
+ *
+ * This calls uninit() on itself, so the snapshots tree becomes invalid after this.
+ * It does not alter the main machine's snapshot pointers (pFirstSnapshot, pCurrentSnapshot).
+ *
+ * Caller must hold the machine write lock (which protects the snapshots tree!)
+ *
+ * @param llFilenames
+ * @return
+ */
+HRESULT Snapshot::uninitRecursively(AutoWriteLock &writeLock,
+                                    MediaList &llMedia,
+                                    std::list<Utf8Str> &llFilenames)
+{
+    Assert(m->pMachine->isWriteLockOnCurrentThread());
+
+    HRESULT rc = S_OK;
+
+    // recurse into children first so that the child media appear on
+    // the list first; this way caller can close the media from the
+    // beginning to the end because parent media can't be closed if
+    // they have children
+
+    // make a copy of the children list since uninit() modifies it
+    SnapshotsList llChildrenCopy(m->llChildren);
+    for (SnapshotsList::iterator it = llChildrenCopy.begin();
+         it != llChildrenCopy.end();
+         ++it)
+    {
+        Snapshot *pChild = *it;
+        rc = pChild->uninitRecursively(writeLock, llMedia, llFilenames);
+        if (FAILED(rc))
+            return rc;
+    }
+
+    // now call detachAllMedia on the snapshot machine
+    rc = m->pMachine->detachAllMedia(writeLock,
+                                     this /* pSnapshot */,
+                                     llMedia);
+    if (FAILED(rc))
+        return rc;
+
+    // now report the saved state file
+    if (!m->pMachine->mSSData->mStateFilePath.isEmpty())
+        llFilenames.push_back(m->pMachine->mSSData->mStateFilePath);
+
+    this->beginSnapshotDelete();
+    this->uninit();
+
+    return S_OK;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
