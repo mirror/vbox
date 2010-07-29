@@ -1351,7 +1351,7 @@ int rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PHANDLE ph)
  * @returns IPRT status code.
  * @param   pThis               The socket handle.
  */
-static int rtSocketPollClearEventAndMakeBlocking(RTSOCKETINT *pThis)
+static int rtSocketPollClearEventAndRestoreBlocking(RTSOCKETINT *pThis)
 {
     int rc = VINF_SUCCESS;
     if (pThis->fSubscribedEvts)
@@ -1361,8 +1361,8 @@ static int rtSocketPollClearEventAndMakeBlocking(RTSOCKETINT *pThis)
             pThis->fSubscribedEvts = 0;
 
             /*
-             * Don't switch back to blocking mode if the socket is currently
-             * operated in non-blocking mode.
+             * Switch back to blocking mode if that was the state before the
+             * operation.
              */
             if (pThis->fBlocking)
             {
@@ -1525,7 +1525,7 @@ uint32_t rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvent
     {
         if (pThis->cUsers == 1)
         {
-            rtSocketPollClearEventAndMakeBlocking(pThis);
+            rtSocketPollClearEventAndRestoreBlocking(pThis);
             pThis->hPollSet = NIL_RTPOLLSET;
         }
         ASMAtomicDecU32(&pThis->cUsers);
@@ -1565,7 +1565,7 @@ uint32_t rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry)
     /* Make the socket blocking again and unlock the handle. */
     if (pThis->cUsers == 1)
     {
-        rtSocketPollClearEventAndMakeBlocking(pThis);
+        rtSocketPollClearEventAndRestoreBlocking(pThis);
         pThis->hPollSet = NIL_RTPOLLSET;
     }
     ASMAtomicDecU32(&pThis->cUsers);
