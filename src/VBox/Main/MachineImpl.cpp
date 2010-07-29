@@ -4075,6 +4075,8 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
                         tr("Cannot unregister the machine '%ls' while it is locked"),
                            mUserData->mName.raw());
 
+    HRESULT rc = S_OK;
+
     // this list collects the files that should be reported
     // as to be deleted to the caller in aFiles
     std::list<Bstr> llFilesForCaller;
@@ -4125,9 +4127,9 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
                 if (!pMedium.isNull())
                     llMedia.push_back(pMedium);
 
-                HRESULT rc = detachDevice(pAttach,
-                                          alock,
-                                          NULL /* pfNeedsSaveSettings */);
+                rc = detachDevice(pAttach,
+                                  alock,
+                                  NULL /* pfNeedsSaveSettings */);
                 if (FAILED(rc))
                     break;
             };
@@ -4166,8 +4168,8 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
             if (FAILED(autoCaller2.rc())) return autoCaller2.rc();
 
             ErrorInfoKeeper eik;
-            HRESULT rc = pMedium->close(NULL /*fNeedsSaveSettings*/,     // we'll call saveSettings() in any case below
-                                        autoCaller2);
+            rc = pMedium->close(NULL /*fNeedsSaveSettings*/,     // we'll call saveSettings() in any case below
+                                autoCaller2);
                 // this uninitializes the medium
 
             if (rc == VBOX_E_OBJECT_IN_USE)
