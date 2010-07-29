@@ -6547,8 +6547,9 @@
         </ul>
 
 
-        The virtual machine's <link to="IMachine::state">state</link> is changed to "DeletingSnapshot"
-        while this operation is in progress.
+        The virtual machine's <link to="IMachine::state">state</link> is
+        changed to "DeletingSnapshot" or "DeletingSnapshotOnline" while this
+        operation is in progress.
 
         <note>
           Merging medium contents can be very time and disk space
@@ -6558,7 +6559,10 @@
           quick.
         </note>
         <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine is running.
+          The running virtual machine prevents deleting this snapshot. This
+          happens only in very specific situations, usually snapshots can be
+          deleted without trouble while a VM is running. The error message
+          text explains the reason for the failure.
         </result>
       </desc>
       <param name="id" type="uuid" mod="string" dir="in">
@@ -8464,7 +8468,7 @@
     <const name="Shareable"         value="3">
       <desc>
         Allow using this medium concurrently by several machines.
-        <note>This is a stub value. Not usable until this note is removed.</note>
+        <note>Present since VirtualBox 3.2.0, and accepted since 3.2.8.</note>
       </desc>
     </const>
   </enum>
@@ -8506,7 +8510,7 @@
     </const>
     <const name="Diff" value="0x20000">
       <desc>
-        Fixed image. Only allowed for base images.
+        Differencing image. Only allowed for child images.
       </desc>
     </const>
   </enum>
@@ -8669,8 +8673,8 @@
 
       <h3>Medium types</h3>
 
-      There are three types of medium behavior (see <link to="MediumType" />):
-      "normal", "immutable" and "writethrough", represented by the
+      There are four types of medium behavior (see <link to="MediumType" />):
+      "normal", "immutable", "writethrough" and "shareable", represented by the
       <link to="#type"/> attribute. The type of the medium defines how the
       medium is attached to a virtual machine and what happens when a
       <link to="ISnapshot">snapshot</link> of the virtual machine with the
@@ -8695,7 +8699,7 @@
       child medium to its parent). It is also possible to walk down the tree
       using the <link to="#children"/> attribute.
 
-      Note that the type of all differencing media is "Normal"; all other
+      Note that the type of all differencing media is "normal"; all other
       values are meaningless for them. Base media may be of any type.
 
       <h3>Creating hard disks</h3>
@@ -8793,6 +8797,13 @@
         <li><b>Writethrough</b> hard disks are always attached <b>directly</b>,
             also as designed. This also means that writethrough hard disks cannot
             have other hard disks linked to them at all.</li>
+        <li><b>Shareable</b> hard disks are always attached <b>directly</b>,
+            also as designed. This also means that shareable hard disks cannot
+            have other hard disks linked to them at all. They behave almost
+            like writethrough hard disks, except that shareable hard disks can
+            be attached to several virtual machines which are running, allowing
+            concurrent accesses. You need special cluster software running in
+            the virtual machines to make use of such disks.</li>
       </ul>
 
       Note that the same hard disk, regardless of its type, may be attached to
