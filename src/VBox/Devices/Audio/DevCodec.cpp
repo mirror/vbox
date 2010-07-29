@@ -588,7 +588,7 @@ static int codecGetConfig (struct CODECState *pState, uint32_t cmd, uint64_t *pR
     else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F1c_param;
     else if (STAC9220_IS_DIGINPIN_CMD(cmd))
-        *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F1c_param;
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F1c_param;
     else if (STAC9220_IS_CD_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
     return VINF_SUCCESS;
@@ -797,7 +797,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->digin.u32F08_param = 0;
             pNode->digin.u32F09_param = 0;
             pNode->digin.u32F0c_param = 0;
-            pNode->digin.u32F1c_param = RT_MAKE_U32_FROM_U8(0x60, 0x10, 0xc5, 0x1);
+            pNode->digin.u32F1c_param = (0x1 << 24) | (0xc5 << 16) | (0x10 << 8) | 0x60;
         break;
         case 0x12:
             pNode->node.name = "ADCMux_0";
