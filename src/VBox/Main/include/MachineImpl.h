@@ -777,7 +777,11 @@ protected:
 
     HRESULT detachDevice(MediumAttachment *pAttach,
                          AutoWriteLock &writeLock,
+                         Snapshot *pSnapshot,
                          bool *pfNeedsSaveSettings);
+    HRESULT detachAllMedia(AutoWriteLock &writeLock,
+                           Snapshot *pSnapshot,
+                           MediaList &llMedia);
 
     void commitMedia(bool aOnline = false);
     void rollbackMedia();
