@@ -5932,7 +5932,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="3a7bb20e-bbee-47f2-a5ee-b158555f2c79"
+     uuid="03cb7897-ea17-4e6c-81ae-4bd90be2fde2"
      wsmap="managed"
      >
     <desc>
@@ -6298,15 +6298,17 @@
       </param>
     </method>
 
-    <method name="forgetSavedState">
+    <method name="discardSavedState">
       <desc>
-        Forgets the saved state of the virtual machine if it is currently
-        in the "Saved" state (previously created by <link to="#saveState"/>)
+        Forcibly resets the machine to "Powered Off" state if it is
+        currently in the "Saved" state (previously created by <link to="#saveState"/>)
         and deletes the file into which the machine state was saved.
         Next time the machine is powered up, a clean boot will occur.
         <note>
           This operation is equivalent to resetting or powering off
-          the machine without doing a proper shutdown in the guest OS.
+          the machine without doing a proper shutdown of the guest
+          operating system; as with resetting a running phyiscal
+          computer, it can can lead to data loss.
         </note>
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine not in state Saved.
@@ -6590,7 +6592,7 @@
         <note>
           If the machine state is <link to="MachineState_Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
-          deleted (as if <link to="IConsole::forgetSavedState"/> were
+          deleted (as if <link to="IConsole::discardSavedState"/> were
           called).
         </note>
 

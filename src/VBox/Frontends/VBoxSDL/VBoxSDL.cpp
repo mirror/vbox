@@ -1651,7 +1651,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         gMachine->COMGETTER(State)(&machineState);
         if (machineState == MachineState_Saved)
         {
-            CHECK_ERROR(gConsole, ForgetSavedState());
+            CHECK_ERROR(gConsole, DiscardSavedState());
         }
         /*
          * If there are snapshots, discard the current state,

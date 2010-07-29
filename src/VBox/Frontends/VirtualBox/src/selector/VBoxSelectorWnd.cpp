@@ -804,7 +804,7 @@ void VBoxSelectorWnd::vmDiscard (const QString &aUuid /* = QString::null */)
     }
 
     CConsole console = session.GetConsole();
-    console.ForgetSavedState();
+    console.DiscardSavedState();
     if (!console.isOk())
         vboxProblem().cannotDiscardSavedState (console);
 
