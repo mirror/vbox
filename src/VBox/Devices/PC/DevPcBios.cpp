@@ -1233,11 +1233,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 
     /*
-     * Call reset to set values and stuff.
-     */
-    pcbiosReset(pDevIns);
-
-    /*
      * Get the LAN boot ROM file name.
      */
     rc = CFGMR3QueryStringAlloc(pCfg, "LanBootRom", &pThis->pszLanBootFile);
@@ -1345,13 +1340,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
 
         rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, pu8LanBootBinary,
                                   PGMPHYS_ROM_FLAGS_SHADOWED, "Net Boot ROM");
-        if (RT_SUCCESS(rc))
-        {
-            rc = PDMDevHlpROMProtectShadow(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, PGMROMPROT_READ_RAM_WRITE_RAM);
-            AssertRCReturn(rc, rc);
-            rc = PDMDevHlpPhysWrite(pDevIns, VBOX_LANBOOT_SEG << 4, pu8LanBootBinary, cbLanBootBinary);
-            AssertRCReturn(rc, rc);
-        }
+        AssertRCReturn(rc, rc);
     }
 
     rc = CFGMR3QueryU8Def(pCfg, "DelayBoot", &pThis->uBootDelay, 0);
@@ -1361,7 +1350,12 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pThis->uBootDelay > 15)
         pThis->uBootDelay = 15;
 
-    return rc;
+    /*
+     * Call reset plant tables and shadow the PXE ROM.
+     */
+    pcbiosReset(pDevIns);
+
+    return VINF_SUCCESS;
 }
 
 
