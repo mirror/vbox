@@ -4069,16 +4069,16 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    MediaList llMedia;
     if (mData->mSession.mState != SessionState_Unlocked)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot unregister the machine '%ls' while it is locked"),
-                           mUserData->mName.raw());
+                        mUserData->mName.raw());
 
     HRESULT rc = S_OK;
 
     // this list collects the files that should be reported
-    // as to be deleted to the caller in aFiles
+    // as to be deleted to the caller in aFiles (this includes the
+    // media files in llMedia below)
     std::list<Utf8Str> llFilesForCaller;
 
     // discard saved state
@@ -4095,34 +4095,26 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
         mData->mMachineState = MachineState_PoweredOff;
     }
 
-    size_t snapshotCount = 0;
+    size_t cSnapshots = 0;
     if (mData->mFirstSnapshot)
-        snapshotCount = mData->mFirstSnapshot->getAllChildrenCount() + 1;
-    if (snapshotCount)
-    {
-        if (fAutoCleanup)
-        {
-            // caller wants automatic detachment: then do that and report all media to the array
+        cSnapshots = mData->mFirstSnapshot->getAllChildrenCount() + 1;
+    if (cSnapshots && !fAutoCleanup)
+        // fail now before we start detaching media
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
+                           mUserData->mName.raw(), cSnapshots);
 
-            // Snapshot::beginDeletingSnapshot() needs the machine state to be this
-            MachineState_T oldState = mData->mMachineState;
-            mData->mMachineState = MachineState_DeletingSnapshot;
-
-            // make a copy of the first snapshot so the refcount does not drop to 0
-            // in beginDeletingSnapshot, which sets pFirstSnapshot to 0 (that hangs
-            // because of the AutoCaller voodoo)
-            ComObjPtr<Snapshot> pFirstSnapshot = mData->mFirstSnapshot;
-
-            // go!
-            pFirstSnapshot->uninitRecursively(alock, llMedia, llFilesForCaller);
-
-            mData->mMachineState = oldState;
-        }
-        else
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
-                            mUserData->mName.raw(), snapshotCount);
-    }
+    // this list collects the medium objects from all medium attachments
+    // which got detached from the machine and its snapshots, in the following
+    // order:
+    // 1) media from machine attachments (these have the "leaf" attachments with snapshots
+    //    and must be closed first, or closing the parents will fail because they will
+    //    children);
+    // 2) media from the youngest snapshots followed those from the parent snapshots until
+    //    the root ("first") snapshot of the machine
+    // This order allows for closing the media on this list from the beginning to the end
+    // without getting "media in use" errors.
+    MediaList llMedia;
 
     if (    !mMediaData.isNull()      // can be NULL if machine is inaccessible
          && mMediaData->mAttachments.size()
@@ -4136,6 +4128,31 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
                             tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
                             mUserData->mName.raw(), mMediaData->mAttachments.size());
     }
+
+    if (cSnapshots)
+    {
+        // autoCleanup must be true here, or we would have failed above
+
+        // add the media from the medium attachments of the snapshots to llMedia
+        // as well, after the "main" machine media; Snapshot::uninitRecursively()
+        // calls Machine::detachAllMedia() for the snapshot machine, recursing
+        // into the children first
+
+        // Snapshot::beginDeletingSnapshot() asserts if the machine state is not this
+        MachineState_T oldState = mData->mMachineState;
+        mData->mMachineState = MachineState_DeletingSnapshot;
+
+        // make a copy of the first snapshot so the refcount does not drop to 0
+        // in beginDeletingSnapshot, which sets pFirstSnapshot to 0 (that hangs
+        // because of the AutoCaller voodoo)
+        ComObjPtr<Snapshot> pFirstSnapshot = mData->mFirstSnapshot;
+
+        // GO!
+        pFirstSnapshot->uninitRecursively(alock, llMedia, llFilesForCaller);
+
+        mData->mMachineState = oldState;
+    }
+
 
     if (FAILED(rc))
     {
@@ -8720,6 +8737,8 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
 {
     ComObjPtr<Medium> oldmedium = pAttach->getMedium();
     DeviceType_T mediumType = pAttach->getType();
+
+    LogFlowThisFunc(("Entering, medium of attachment is %s\n", oldmedium ? oldmedium->getLocationFull().c_str() : "NULL"));
 
     if (pAttach->isImplicit())
     {
