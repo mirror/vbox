@@ -762,7 +762,7 @@ bool UIMachineView::event(QEvent *pEvent)
         case VBoxDefs::RepaintEventType:
         {
             UIRepaintEvent *pPaintEvent = static_cast<UIRepaintEvent*>(pEvent);
-            viewport()->repaint(pPaintEvent->x() - contentsX(), pPaintEvent->y() - contentsY(),
+            viewport()->update(pPaintEvent->x() - contentsX(), pPaintEvent->y() - contentsY(),
                                 pPaintEvent->width(), pPaintEvent->height());
             return true;
         }
