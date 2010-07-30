@@ -172,7 +172,7 @@ KFLAGS  += -DVBOX_WITH_64_BITS_GUESTS
 ifeq ($(BUILD_TYPE),debug)
  KFLAGS  += -DDEBUG -DDEBUG_$(USER) -g
  # IPRT_DEBUG_SEMS indicates thread wrt sems state via the comm field.
- KFLAGS  += -DIPRT_DEBUG_SEMS
+ #KFLAGS  += -DIPRT_DEBUG_SEMS
 endif
 
 # By default we use remap_pfn_range() kernel API to make kernel pages
