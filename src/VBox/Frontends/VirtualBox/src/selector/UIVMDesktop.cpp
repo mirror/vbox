@@ -1251,7 +1251,7 @@ void UIDescriptionPagePrivate::updateState()
 
     if (m_pVMItem)
     {
-        bool saved = m_pVMItem->state() == KMachineState_Saved;
+        bool saved = m_pVMItem->machineState() == KMachineState_Saved;
         bool busy = m_pVMItem->sessionState() != KSessionState_Unlocked;
         m_pEditBtn->setEnabled(!saved && !busy);
     }

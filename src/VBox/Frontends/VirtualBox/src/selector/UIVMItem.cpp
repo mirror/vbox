@@ -148,9 +148,15 @@ UIVMItem::~UIVMItem()
 // public members
 ////////////////////////////////////////////////////////////////////////////////
 
+QString UIVMItem::machineStateName() const
+{
+    return m_fAccessible ? vboxGlobal().toString(m_machineState) :
+           QApplication::translate("UIVMListView", "Inaccessible");
+}
+
 QString UIVMItem::sessionStateName() const
 {
-    return m_fAccessible ? vboxGlobal().toString(m_state) :
+    return m_fAccessible ? vboxGlobal().toString(m_sessionState) :
            QApplication::translate("UIVMListView", "Inaccessible");
 }
 
@@ -173,7 +179,7 @@ QString UIVMItem::toolTipText() const
             "<nobr>Session %4</nobr>",
             "VM tooltip (name, last state change, session state)")
             .arg(toolTip)
-            .arg(vboxGlobal().toString(m_state))
+            .arg(vboxGlobal().toString(m_machineState))
             .arg(dateTime)
             .arg(vboxGlobal().toString(m_sessionState));
     }
@@ -207,16 +213,16 @@ bool UIVMItem::recache()
         needsResort = name != m_strName;
         m_strName = name;
 
-        m_state = m_machine.GetState();
+        m_machineState = m_machine.GetState();
         m_lastStateChange.setTime_t(m_machine.GetLastStateChange() / 1000);
         m_sessionState = m_machine.GetSessionState();
         m_strOSTypeId = m_machine.GetOSTypeId();
         m_cSnaphot = m_machine.GetSnapshotCount();
 
-        if (   m_state == KMachineState_PoweredOff
-            || m_state == KMachineState_Saved
-            || m_state == KMachineState_Teleported
-            || m_state == KMachineState_Aborted
+        if (   m_machineState == KMachineState_PoweredOff
+            || m_machineState == KMachineState_Saved
+            || m_machineState == KMachineState_Teleported
+            || m_machineState == KMachineState_Aborted
            )
         {
             m_pid = (ULONG) ~0;
@@ -245,7 +251,7 @@ bool UIVMItem::recache()
                        fi.completeBaseName() : fi.fileName();
         needsResort = name != m_strName;
         m_strName = name;
-        m_state = KMachineState_Null;
+        m_machineState = KMachineState_Null;
         m_sessionState = KSessionState_Null;
         m_lastStateChange = QDateTime::currentDateTime();
         m_strOSTypeId = QString::null;

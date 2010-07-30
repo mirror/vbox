@@ -39,8 +39,10 @@ public:
     QString osTypeId() const { return m_strOSTypeId; }
     QString id() const { return m_strId; }
 
+    QString machineStateName() const;
+    QIcon machineStateIcon() const { return m_fAccessible ? vboxGlobal().toIcon(m_machineState) : QPixmap(":/state_aborted_16px.png"); }
+
     QString sessionStateName() const;
-    QIcon sessionStateIcon() const { return m_fAccessible ? vboxGlobal().toIcon(m_state) : QPixmap(":/state_aborted_16px.png"); }
 
     QString snapshotName() const { return m_strSnapshotName; }
     ULONG snapshotCount() const { return m_cSnaphot; }
@@ -49,7 +51,7 @@ public:
 
     bool accessible() const { return m_fAccessible; }
     const CVirtualBoxErrorInfo &accessError() const { return m_accessError; }
-    KMachineState state() const { return m_state; }
+    KMachineState machineState() const { return m_machineState; }
     KSessionState sessionState() const { return m_sessionState; }
 
     bool recache();
@@ -71,8 +73,8 @@ private:
 
     QString m_strName;
     QString m_strSnapshotName;
-    KMachineState m_state;
     QDateTime m_lastStateChange;
+    KMachineState m_machineState;
     KSessionState m_sessionState;
     QString m_strOSTypeId;
     ULONG m_cSnaphot;
