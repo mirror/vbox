@@ -723,11 +723,11 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /* = QString::null */)
         return;
     }
 
-    AssertMsg (   item->state() == KMachineState_PoweredOff
-               || item->state() == KMachineState_Saved
-               || item->state() == KMachineState_Teleported
-               || item->state() == KMachineState_Aborted
-               , ("Machine must be PoweredOff/Saved/Aborted (%d)", item->state()));
+    AssertMsg (   item->machineState() == KMachineState_PoweredOff
+               || item->machineState() == KMachineState_Saved
+               || item->machineState() == KMachineState_Teleported
+               || item->machineState() == KMachineState_Aborted
+               , ("Machine must be PoweredOff/Saved/Aborted (%d)", item->machineState()));
 
     QString id = item->id();
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -1189,7 +1189,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
     {
         CMachine m = item->machine();
 
-        KMachineState state = item->state();
+        KMachineState state = item->machineState();
         bool running = item->sessionState() != KSessionState_Unlocked;
         bool modifyEnabled = !running && state != KMachineState_Saved;
 

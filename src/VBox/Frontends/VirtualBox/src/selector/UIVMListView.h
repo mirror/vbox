@@ -34,9 +34,10 @@ class UIVMItemModel: public QAbstractListModel
 public:
     enum { SnapShotDisplayRole = Qt::UserRole,
            SnapShotFontRole,
+           MachineStateDisplayRole,
+           MachineStateDecorationRole,
+           MachineStateFontRole,
            SessionStateDisplayRole,
-           SessionStateDecorationRole,
-           SessionStateFontRole,
            OSTypeIdRole,
            UIVMItemPtrRole };
 

@@ -186,7 +186,7 @@ QVariant UIVMItemModel::data(const QModelIndex &aIndex, int aRole) const
             v = QString("%1 (%2)\n%3")
                          .arg(item->name())
                          .arg(item->snapshotName())
-                         .arg(item->sessionStateName());
+                         .arg(item->machineStateName());
             break;
         }
         case SnapShotDisplayRole:
@@ -200,23 +200,28 @@ QVariant UIVMItemModel::data(const QModelIndex &aIndex, int aRole) const
             v = f;
             break;
         }
-        case SessionStateDisplayRole:
+        case MachineStateDisplayRole:
         {
-            v = m_VMItemList.at(aIndex.row())->sessionStateName();
+            v = m_VMItemList.at(aIndex.row())->machineStateName();
             break;
         }
-        case SessionStateDecorationRole:
+        case MachineStateDecorationRole:
         {
-            v = m_VMItemList.at(aIndex.row())->sessionStateIcon();
+            v = m_VMItemList.at(aIndex.row())->machineStateIcon();
             break;
         }
-        case SessionStateFontRole:
+        case MachineStateFontRole:
         {
             QFont f = qApp->font();
             f.setPointSize(f.pointSize());
             if (m_VMItemList.at(aIndex.row())->sessionState() != KSessionState_Unlocked)
                 f.setItalic(true);
             v = f;
+            break;
+        }
+        case SessionStateDisplayRole:
+        {
+            v = m_VMItemList.at(aIndex.row())->sessionStateName();
             break;
         }
         case OSTypeIdRole:
@@ -393,8 +398,8 @@ QSize UIVMItemPainter::sizeHint(const QStyleOptionViewItem &aOption,
     QRect osTypeRT = rect(aOption, aIndex, Qt::DecorationRole);
     QRect vmNameRT = rect(aOption, aIndex, Qt::DisplayRole);
     QRect shotRT = rect(aOption, aIndex, UIVMItemModel::SnapShotDisplayRole);
-    QRect stateIconRT = rect(aOption, aIndex, UIVMItemModel::SessionStateDecorationRole);
-    QRect stateRT = rect(aOption, aIndex, UIVMItemModel::SessionStateDisplayRole);
+    QRect stateIconRT = rect(aOption, aIndex, UIVMItemModel::MachineStateDecorationRole);
+    QRect stateRT = rect(aOption, aIndex, UIVMItemModel::MachineStateDisplayRole);
     /* Calculate the position for every item */
     calcLayout(aIndex, &osTypeRT, &vmNameRT, &shotRT, &stateIconRT, &stateRT);
     /* Calc the bounding rect */
@@ -408,10 +413,11 @@ void UIVMItemPainter::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
 {
     /* Generate the key used in the pixmap cache. Needs to be composed with all
      * values which might be changed. */
-    QString key = QString("vbox:%1:%2:%3:%4:%5:%6")
+    QString key = QString("vbox:%1:%2:%3:%4:%5:%6:%7")
         .arg(index.data(Qt::DisplayRole).toString())
         .arg(index.data(UIVMItemModel::OSTypeIdRole).toString())
         .arg(index.data(UIVMItemModel::SnapShotDisplayRole).toString())
+        .arg(index.data(UIVMItemModel::MachineStateDisplayRole).toString())
         .arg(index.data(UIVMItemModel::SessionStateDisplayRole).toString())
         .arg(option.state)
         .arg(option.rect.width());
@@ -467,16 +473,16 @@ void UIVMItemPainter::paintContent(QPainter *pPainter, const QStyleOptionViewIte
     const QString shot = index.data(UIVMItemModel::SnapShotDisplayRole).toString();
     const QFont shotFont = index.data(UIVMItemModel::SnapShotFontRole).value<QFont>();
 
-    const QString state = index.data(UIVMItemModel::SessionStateDisplayRole).toString();
-    const QFont stateFont = index.data(UIVMItemModel::SessionStateFontRole).value<QFont>();
-    const QPixmap stateIcon = index.data(UIVMItemModel::SessionStateDecorationRole).value<QIcon>().pixmap(QSize(16, 16), iconMode(option.state), iconState(option.state));
+    const QString state = index.data(UIVMItemModel::MachineStateDisplayRole).toString();
+    const QFont stateFont = index.data(UIVMItemModel::MachineStateFontRole).value<QFont>();
+    const QPixmap stateIcon = index.data(UIVMItemModel::MachineStateDecorationRole).value<QIcon>().pixmap(QSize(16, 16), iconMode(option.state), iconState(option.state));
 
     /* Get the sizes for all items */
     QRect osTypeRT = rect(option, index, Qt::DecorationRole);
     QRect vmNameRT = rect(option, index, Qt::DisplayRole);
     QRect shotRT = rect(option, index, UIVMItemModel::SnapShotDisplayRole);
-    QRect stateIconRT = rect(option, index, UIVMItemModel::SessionStateDecorationRole);
-    QRect stateRT = rect(option, index, UIVMItemModel::SessionStateDisplayRole);
+    QRect stateIconRT = rect(option, index, UIVMItemModel::MachineStateDecorationRole);
+    QRect stateRT = rect(option, index, UIVMItemModel::MachineStateDisplayRole);
 
     /* Calculate the positions for all items */
     calcLayout(index, &osTypeRT, &vmNameRT, &shotRT, &stateIconRT, &stateRT);
@@ -594,16 +600,16 @@ QRect UIVMItemPainter::rect(const QStyleOptionViewItem &aOption,
                     return QRect();
                 break;
             }
-        case UIVMItemModel::SessionStateDisplayRole:
+        case UIVMItemModel::MachineStateDisplayRole:
             {
-                QString text = aIndex.data(UIVMItemModel::SessionStateDisplayRole).toString();
-                QFontMetrics fm(fontMetric(aIndex, UIVMItemModel::SessionStateFontRole));
+                QString text = aIndex.data(UIVMItemModel::MachineStateDisplayRole).toString();
+                QFontMetrics fm(fontMetric(aIndex, UIVMItemModel::MachineStateFontRole));
                 return QRect(QPoint(0, 0), fm.size(0, text));
                 break;
             }
-        case UIVMItemModel::SessionStateDecorationRole:
+        case UIVMItemModel::MachineStateDecorationRole:
             {
-                QIcon icon = aIndex.data(UIVMItemModel::SessionStateDecorationRole).value<QIcon>();
+                QIcon icon = aIndex.data(UIVMItemModel::MachineStateDecorationRole).value<QIcon>();
                 return QRect(QPoint(0, 0), icon.actualSize(QSize(16, 16), iconMode(aOption.state), iconState(aOption.state)));
                 break;
             }
@@ -616,7 +622,7 @@ void UIVMItemPainter::calcLayout(const QModelIndex &aIndex,
                                  QRect *aStateIcon, QRect *aState) const
 {
     const int nameSpaceWidth = fontMetric(aIndex, Qt::FontRole).width(' ');
-    const int stateSpaceWidth = fontMetric(aIndex, UIVMItemModel::SessionStateFontRole).width(' ');
+    const int stateSpaceWidth = fontMetric(aIndex, UIVMItemModel::MachineStateFontRole).width(' ');
     /* Really basic layout managment.
      * First layout as usual */
     aOSType->moveTo(m_Margin, m_Margin);
