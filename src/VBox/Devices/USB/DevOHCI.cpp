@@ -1599,8 +1599,7 @@ static PVUSBURB ohciTdInFlightUrb(POHCI pOhci, uint32_t GCPhysTD)
     i = ohci_in_flight_find(pOhci, GCPhysTD);
     if ( i >= 0 )
         return pOhci->aInFlight[i].pUrb;
-    else
-        return NULL;
+    return NULL;
 }
 
 /**
