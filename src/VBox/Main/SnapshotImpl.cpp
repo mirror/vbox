@@ -965,7 +965,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
         Medium *pMedium = pAtt->getMedium();
         if (pMedium) // can be NULL for non-harddisk
         {
-            rc = pMedium->attachTo(mData->mUuid, mSnapshotId);
+            rc = pMedium->addBackReference(mData->mUuid, mSnapshotId);
             AssertComRC(rc);
         }
     }
@@ -1943,7 +1943,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             // Normally we "detach" the medium by removing the attachment object
             // from the current machine data; saveSettings() below would then
             // compare the current machine data with the one in the backup
-            // and actually call Medium::detachFrom(). But that works only half
+            // and actually call Medium::removeBackReference(). But that works only half
             // the time in our case so instead we force a detachment here:
             // remove from machine data
             mMediaData->mAttachments.remove(pAttach);
@@ -1951,7 +1951,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             // it again and assert
             mMediaData.backedUpData()->mAttachments.remove(pAttach);
             // then clean up backrefs
-            pMedium->detachFrom(mData->mUuid);
+            pMedium->removeBackReference(mData->mUuid);
 
             llDiffsToDelete.push_back(pMedium);
         }
@@ -2451,7 +2451,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 // Note that the medium attachment object stays associated
                 // with the snapshot until the merge was successful.
                 HRESULT rc2 = S_OK;
-                rc2 = pSource->detachFrom(replaceMachineId, replaceSnapshotId);
+                rc2 = pSource->removeBackReference(replaceMachineId, replaceSnapshotId);
                 AssertComRC(rc2);
 
                 toDelete.push_back(MediumDeleteRec(pHD, pSource, pTarget,
@@ -2646,7 +2646,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             {
                 pAtt = findAttachment(pSnapMachine->mMediaData->mAttachments,
                                       it->mpTarget);
-                it->mpTarget->detachFrom(machineId, snapshotId);
+                it->mpTarget->removeBackReference(machineId, snapshotId);
             }
             else
                 pAtt = findAttachment(pSnapMachine->mMediaData->mAttachments,
@@ -2672,7 +2672,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 {
                     AutoWriteLock attLock(pAtt COMMA_LOCKVAL_SRC_POS);
                     pAtt->updateMedium(it->mpTarget, false /* aImplicit */);
-                    it->mpTarget->attachTo(pMachine->mData->mUuid, childSnapshotId);
+                    it->mpTarget->addBackReference(pMachine->mData->mUuid, childSnapshotId);
                 }
             }
 
@@ -3101,7 +3101,7 @@ void SessionMachine::cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
     if (!aMachineId.isEmpty())
     {
         // reattach the source media to the snapshot
-        HRESULT rc = aSource->attachTo(aMachineId, aSnapshotId);
+        HRESULT rc = aSource->addBackReference(aMachineId, aSnapshotId);
         AssertComRC(rc);
     }
 }
