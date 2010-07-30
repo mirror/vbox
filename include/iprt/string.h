@@ -28,7 +28,9 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/assert.h>
 #include <iprt/stdarg.h>
+#include <iprt/uni.h> /* for RTUNICP_INVALID */
 #include <iprt/err.h> /* for VINF_SUCCESS */
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
 # include <linux/string.h>
@@ -1156,6 +1158,26 @@ DECLINLINE(int) RTStrGetCpNEx(const char **ppsz, size_t *pcch, PRTUNICP pCp)
 }
 
 /**
+ * Get the UTF-8 size in characters of a given Unicode code point.  The code
+ * point is expected to be a valid Unicode one, but not necessarily in the
+ * range supported by UTF-8.
+ *
+ * @returns the size in characters, or zero if there is no UTF-8 encoding
+ */
+DECLINLINE(size_t) RTStrCpSize(RTUNICP CodePoint)
+{
+    if (CodePoint < 0x80)
+        return 1;
+    if (CodePoint < 0x800)
+        return 2;
+    if (CodePoint < 0x10000)
+        return 3;
+    if (CodePoint < 0x11000)
+        return 4;
+    return 0;
+}
+
+/**
  * Put the unicode code point at the given string position
  * and return the pointer to the char following it.
  *
@@ -1206,6 +1228,130 @@ DECLINLINE(char *) RTStrNextCp(const char *psz)
  * @param   psz         Pointer to the current code point.
  */
 RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
+
+/**
+ * Get the unicode code point at the given string position.
+ *
+ * @returns unicode code point.
+ * @returns RTUNICP_INVALID if the encoding is invalid.
+ * @param   psz         The string.
+ */
+DECLINLINE(RTUNICP) RTLatin1GetCp(const char *psz)
+{
+    return *(const unsigned char *)psz;
+}
+
+/**
+ * Get the unicode code point at the given string position.
+ *
+ * @returns iprt status code.
+ * @param   ppsz        Pointer to the string pointer. This will be updated to
+ *                      point to the char following the current code point.
+ *                      This is advanced one character forward on failure.
+ * @param   pCp         Where to store the code point.
+ *                      RTUNICP_INVALID is stored here on failure.
+ *
+ * @remark  We optimize this operation by using an inline function for
+ *          the most frequent and simplest sequence, the rest is
+ *          handled by RTStrGetCpExInternal().
+ */
+DECLINLINE(int) RTLatin1GetCpEx(const char **ppsz, PRTUNICP pCp)
+{
+    const unsigned char uch = **(const unsigned char **)ppsz;
+    (*ppsz)++;
+    *pCp = uch;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Get the unicode code point at the given string position for a string of a
+ * given maximum length.
+ *
+ * @returns iprt status code.
+ * @retval  VERR_END_OF_STRING if *pcch is 0. *pCp is set to RTUNICP_INVALID.
+ *
+ * @param   ppsz        Pointer to the string pointer. This will be updated to
+ *                      point to the char following the current code point.
+ * @param   pcch        Pointer to the maximum string length.  This will be
+ *                      decremented by the size of the code point found.
+ * @param   pCp         Where to store the code point.
+ *                      RTUNICP_INVALID is stored here on failure.
+ */
+DECLINLINE(int) RTLatin1GetCpNEx(const char **ppsz, size_t *pcch, PRTUNICP pCp)
+{
+    if (RT_LIKELY(*pcch != 0))
+    {
+        const unsigned char uch = **(const unsigned char **)ppsz;
+        (*ppsz)++;
+        (*pcch)--;
+        *pCp = uch;
+        return VINF_SUCCESS;
+    }
+    *pCp = RTUNICP_INVALID;
+    return VERR_END_OF_STRING;
+}
+
+/**
+ * Get the Latin-1 size in characters of a given Unicode code point.  The code
+ * point is expected to be a valid Unicode one, but not necessarily in the
+ * range supported by Latin-1.
+ *
+ * @returns the size in characters, or zero if there is no Latin-1 encoding
+ */
+DECLINLINE(size_t) RTLatin1CpSize(RTUNICP CodePoint)
+{
+    if (CodePoint < 0x100)
+        return 1;
+    return 0;
+}
+
+/**
+ * Put the unicode code point at the given string position
+ * and return the pointer to the char following it.
+ *
+ * This function will not consider anything at or following the
+ * buffer area pointed to by psz. It is therefore not suitable for
+ * inserting code points into a string, only appending/overwriting.
+ *
+ * @returns pointer to the char following the written code point.
+ * @param   psz         The string.
+ * @param   CodePoint   The code point to write.
+ *                      This should not be RTUNICP_INVALID or any other
+ *                      character out of the Latin-1 range.
+ */
+DECLINLINE(char *) RTLatin1PutCp(char *psz, RTUNICP CodePoint)
+{
+    AssertReturn(CodePoint < 0x100, NULL);
+    *psz++ = (unsigned char)CodePoint;
+    return psz;
+}
+
+/**
+ * Skips ahead, past the current code point.
+ *
+ * @returns Pointer to the char after the current code point.
+ * @param   psz     Pointer to the current code point.
+ * @remark  This will not move the next valid code point, only past the current one.
+ */
+DECLINLINE(char *) RTLatin1NextCp(const char *psz)
+{
+    psz++;
+    return (char *)psz;
+}
+
+/**
+ * Skips back to the previous code point.
+ *
+ * @returns Pointer to the char before the current code point.
+ * @returns pszStart on failure.
+ * @param   pszStart    Pointer to the start of the string.
+ * @param   psz         Pointer to the current code point.
+ */
+DECLINLINE(char *) RTLatin1PrevCp(const char *psz)
+{
+    psz--;
+    return (char *)psz;
+}
 
 
 
