@@ -9006,8 +9006,8 @@ void Machine::rollbackMedia()
 
     /* enumerate new attachments */
     for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
-            it != mMediaData->mAttachments.end();
-            ++it)
+         it != mMediaData->mAttachments.end();
+         ++it)
     {
         MediumAttachment *pAttach = *it;
         /* Fix up the backrefs for DVD/floppy media. */
