@@ -1236,9 +1236,11 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
     pState->mhSocket = Sock;
 
     /*
-     * Say hello.
+     * Disable Nagle and say hello.
      */
-    int vrc = RTTcpWrite(Sock, g_szWelcome, sizeof(g_szWelcome) - 1);
+    int vrc = RTTcpSetSendCoalescing(pState->mhSocket, false /*fEnable*/);
+    AssertRC(vrc);
+    vrc = RTTcpWrite(Sock, g_szWelcome, sizeof(g_szWelcome) - 1);
     if (RT_FAILURE(vrc))
     {
         LogRel(("Teleporter: Failed to write welcome message: %Rrc\n", vrc));
