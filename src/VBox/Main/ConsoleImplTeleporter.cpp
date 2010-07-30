@@ -634,7 +634,7 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
         return setError(E_FAIL, tr("canceled"));
 
     /*
-     * Try connect to the destination machine, disable Nagel.
+     * Try connect to the destination machine, disable Nagle.
      * (Note. The caller cleans up mhSocket, so we can return without worries.)
      */
     int vrc = RTTcpClientConnect(pState->mstrHostname.c_str(), pState->muPort, &pState->mhSocket);
