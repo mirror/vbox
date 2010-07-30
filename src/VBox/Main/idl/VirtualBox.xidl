@@ -7771,11 +7771,9 @@
 
     <attribute name="additionsVersion" type="wstring" readonly="yes">
       <desc>
-        Version of the Guest Additions (3 decimal numbers separated
-        by dots) or empty when the Additions are not installed. The
-        Additions may also report a version but yet not be active as
-        the version might be refused by VirtualBox (incompatible) or
-        other failures occurred.
+        Version of the Guest Additions including the revision (3 decimal numbers
+        separated by dots + revision number) installed on the guest or empty
+        when the Additions are not installed.
       </desc>
     </attribute>
 

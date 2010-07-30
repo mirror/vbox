@@ -824,28 +824,9 @@ void UIMachineLogic::sltAdditionsStateChanged()
     /* Check if we should enter some extended mode: */
     sltCheckRequestedModes();
 
-    /* Check the GA version only in case of additions are active: */
-    if (!fIsAdditionsActive)
-        return;
-    /* Check the Guest Additions version and warn the user about possible compatibility issues in case if the installed version is outdated. */
-    CGuest guest = session().GetConsole().GetGuest();
-    QString strVersion = guest.GetAdditionsVersion();
-    uint uVersion = strVersion.toUInt();
-    /** @todo r=bird: This isn't want we want! We want the VirtualBox version of the additions, all three numbers. See @bugref{4084}.*/
-    QString strRealVersion = QString("%1.%2").arg(RT_HIWORD(uVersion)).arg(RT_LOWORD(uVersion));
-    QString strExpectedVersion = QString("%1.%2").arg(VMMDEV_VERSION_MAJOR).arg(VMMDEV_VERSION_MINOR);
-    if (RT_HIWORD(uVersion) < VMMDEV_VERSION_MAJOR)
-    {
-        vboxProblem().warnAboutTooOldAdditions(0, strRealVersion, strExpectedVersion);
-    }
-    else if (RT_HIWORD(uVersion) == VMMDEV_VERSION_MAJOR && RT_LOWORD(uVersion) <  VMMDEV_VERSION_MINOR)
-    {
-        vboxProblem().warnAboutOldAdditions(0, strRealVersion, strExpectedVersion);
-    }
-    else if (uVersion > VMMDEV_VERSION)
-    {
-        vboxProblem().warnAboutNewAdditions(0, strRealVersion, strExpectedVersion);
-    }
+    /* A check whether the installed Guest Additions on the guest are up-to-date is now
+     * performed by the Guest Additions itself (via VBoxTray/VBoxClient), so no need to
+     * do something here anymore. */
 }
 
 void UIMachineLogic::sltMouseCapabilityChanged()

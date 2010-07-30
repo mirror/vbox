@@ -203,7 +203,7 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
     dprintf(("hlpVBoxReportGuestInfo: VbglGRAlloc rc = %d\n", rc));
     if (RT_SUCCESS(rc))
     {
-        pReq->guestInfo.additionsVersion = VMMDEV_VERSION;
+        pReq->guestInfo.interfaceVersion = VMMDEV_VERSION;
 
         /* we've already determined the Windows product before */
         switch (winVersion)

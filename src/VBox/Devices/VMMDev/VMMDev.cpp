@@ -58,23 +58,23 @@
 #define PCIDEV_2_VMMDEVSTATE(pPciDev)              ( (VMMDevState *)(pPciDev) )
 #define VMMDEVSTATE_2_DEVINS(pVMMDevState)         ( (pVMMDevState)->pDevIns )
 
-#define VBOX_GUEST_ADDITIONS_VERSION_1_03(s) \
-    (   RT_HIWORD((s)->guestInfo.additionsVersion) == 1 \
-     && RT_LOWORD((s)->guestInfo.additionsVersion) == 3 )
+#define VBOX_GUEST_INTERFACE_VERSION_1_03(s) \
+    (   RT_HIWORD((s)->guestInfo.interfaceVersion) == 1 \
+     && RT_LOWORD((s)->guestInfo.interfaceVersion) == 3 )
 
-#define VBOX_GUEST_ADDITIONS_VERSION_OK(additionsVersion) \
+#define VBOX_GUEST_INTERFACE_VERSION_OK(additionsVersion) \
       (   RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
        && RT_LOWORD(additionsVersion) <= RT_LOWORD(VMMDEV_VERSION) )
 
-#define VBOX_GUEST_ADDITIONS_VERSION_OLD(additionsVersion) \
+#define VBOX_GUEST_INTERFACE_VERSION_OLD(additionsVersion) \
       (   (RT_HIWORD(additionsVersion) < RT_HIWORD(VMMDEV_VERSION) \
        || (   RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
            && RT_LOWORD(additionsVersion) <= RT_LOWORD(VMMDEV_VERSION) ) )
 
-#define VBOX_GUEST_ADDITIONS_VERSION_TOO_OLD(additionsVersion) \
+#define VBOX_GUEST_INTERFACE_VERSION_TOO_OLD(additionsVersion) \
       ( RT_HIWORD(additionsVersion) < RT_HIWORD(VMMDEV_VERSION) )
 
-#define VBOX_GUEST_ADDITIONS_VERSION_NEW(additionsVersion) \
+#define VBOX_GUEST_INTERFACE_VERSION_NEW(additionsVersion) \
       (   RT_HIWORD(additionsVersion) > RT_HIWORD(VMMDEV_VERSION) \
        || (   RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
            && RT_LOWORD(additionsVersion) >  RT_LOWORD(VMMDEV_VERSION) ) )
@@ -184,7 +184,7 @@ static void vmmdevNotifyGuest_EMT (VMMDevState *pVMMDevState, uint32_t u32EventM
 {
     Log3(("VMMDevNotifyGuest_EMT: u32EventMask = 0x%08X.\n", u32EventMask));
 
-    if (VBOX_GUEST_ADDITIONS_VERSION_1_03 (pVMMDevState))
+    if (VBOX_GUEST_INTERFACE_VERSION_1_03 (pVMMDevState))
     {
         Log3(("VMMDevNotifyGuest_EMT: Old additions detected.\n"));
 
@@ -486,10 +486,10 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pThis->guestInfo = *guestInfo;
 
                     /* Check additions version */
-                    pThis->fu32AdditionsOk = VBOX_GUEST_ADDITIONS_VERSION_OK(pThis->guestInfo.additionsVersion);
+                    pThis->fu32AdditionsOk = VBOX_GUEST_INTERFACE_VERSION_OK(pThis->guestInfo.interfaceVersion);
 
                     LogRel(("Guest Additions information report: Interface = 0x%08X osType = 0x%08X\n",
-                            pThis->guestInfo.additionsVersion,
+                            pThis->guestInfo.interfaceVersion,
                             pThis->guestInfo.osType));
                     pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
                 }
@@ -515,10 +515,12 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                VBoxGuestInfo2 *guestInfo2 = &((VMMDevReportGuestInfo2*)pRequestHeader)->guestInfo;
+                VBoxGuestInfo2 *pGuestInfo2 = &((VMMDevReportGuestInfo2*)pRequestHeader)->guestInfo;
+                AssertPtr(pGuestInfo2);
                 LogRel(("Guest Additions information report: Version %d.%d.%d r%d '%.*s'\n",
-                        guestInfo2->additionsMajor, guestInfo2->additionsMinor, guestInfo2->additionsBuild,
-                        guestInfo2->additionsRevision, sizeof(guestInfo2->szName), guestInfo2->szName));
+                        pGuestInfo2->additionsMajor, pGuestInfo2->additionsMinor, pGuestInfo2->additionsBuild,
+                        pGuestInfo2->additionsRevision, sizeof(pGuestInfo2->szName), pGuestInfo2->szName));
+                pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, pGuestInfo2);
                 pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
@@ -1122,7 +1124,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                if (VBOX_GUEST_ADDITIONS_VERSION_1_03 (pThis))
+                if (VBOX_GUEST_INTERFACE_VERSION_1_03 (pThis))
                 {
                     vmmdevSetIRQ_Legacy_EMT (pThis);
                 }
@@ -2602,7 +2604,7 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     if (pThis->fu32AdditionsOk)
     {
         LogRel(("Guest Additions information report: additionsVersion = 0x%08X, osType = 0x%08X\n",
-                pThis->guestInfo.additionsVersion,
+                pThis->guestInfo.interfaceVersion,
                 pThis->guestInfo.osType));
         if (pThis->pDrv)
             pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
@@ -2691,11 +2693,11 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 
     /* Reset means that additions will report again. */
     const bool fVersionChanged = pThis->fu32AdditionsOk
-                              || pThis->guestInfo.additionsVersion
+                              || pThis->guestInfo.interfaceVersion
                               || pThis->guestInfo.osType != VBOXOSTYPE_Unknown;
     if (fVersionChanged)
         Log(("vmmdevReset: fu32AdditionsOk=%d additionsVersion=%x osType=%#x\n",
-             pThis->fu32AdditionsOk, pThis->guestInfo.additionsVersion, pThis->guestInfo.osType));
+             pThis->fu32AdditionsOk, pThis->guestInfo.interfaceVersion, pThis->guestInfo.osType));
     pThis->fu32AdditionsOk = false;
     memset (&pThis->guestInfo, 0, sizeof (pThis->guestInfo));
 
