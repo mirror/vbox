@@ -838,6 +838,13 @@ HRESULT Snapshot::uninitRecursively(AutoWriteLock &writeLock,
 
     HRESULT rc = S_OK;
 
+    // make a copy of the Guid for logging before we uninit ourselfs
+#ifdef LOG_ENABLED
+    Guid uuid = getId();
+    Utf8Str name = getName();
+    LogFlowThisFunc(("Entering for snapshot '%s' {%RTuuid}\n", name.c_str(), uuid.raw()));
+#endif
+
     // recurse into children first so that the child media appear on
     // the list first; this way caller can close the media from the
     // beginning to the end because parent media can't be closed if
@@ -868,6 +875,10 @@ HRESULT Snapshot::uninitRecursively(AutoWriteLock &writeLock,
 
     this->beginSnapshotDelete();
     this->uninit();
+
+#ifdef LOG_ENABLED
+    LogFlowThisFunc(("Leaving for snapshot '%s' {%RTuuid}\n", name.c_str(), uuid.raw()));
+#endif
 
     return S_OK;
 }
