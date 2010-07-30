@@ -23,7 +23,9 @@
 #include <ctype.h>
 #include <fcntl.h>
 
+#include "runtime.h"
 #include "vrdpusb.h"
+#include "USBProxyDevice.h"
 
 #define RDPUSB_REQ_OPEN              (0)
 #define RDPUSB_REQ_CLOSE             (1)
@@ -62,6 +64,61 @@ typedef struct _DevListEntry
 	uint16_t idPort;               /* Physical USB port the device is connected to. */
 } DevListEntry;
 #pragma pack ()
+
+static inline int op_usbproxy_back_open(PUSBPROXYDEV p, const char *pszAddress)
+{
+     return g_USBProxyDeviceHost.pfnOpen (p, pszAddress, NULL);
+}
+
+static inline void op_usbproxy_back_close(PUSBPROXYDEV pDev)
+{
+     return g_USBProxyDeviceHost.pfnClose (pDev);
+}
+
+static inline int op_usbproxy_back_reset(PUSBPROXYDEV pDev)
+{
+    return g_USBProxyDeviceHost.pfnReset (pDev, false);
+}
+
+static inline int op_usbproxy_back_set_config(PUSBPROXYDEV pDev, int cfg)
+{
+    return g_USBProxyDeviceHost.pfnSetConfig (pDev, cfg);
+}
+
+static inline int op_usbproxy_back_claim_interface(PUSBPROXYDEV pDev, int ifnum)
+{
+    return g_USBProxyDeviceHost.pfnClaimInterface (pDev, ifnum);
+}
+
+static inline int op_usbproxy_back_release_interface(PUSBPROXYDEV pDev, int ifnum)
+{
+    return g_USBProxyDeviceHost.pfnReleaseInterface (pDev, ifnum);
+}
+
+static inline int op_usbproxy_back_interface_setting(PUSBPROXYDEV pDev, int ifnum, int setting)
+{
+    return g_USBProxyDeviceHost.pfnSetInterface (pDev, ifnum, setting);
+}
+
+static inline int op_usbproxy_back_queue_urb(PVUSBURB pUrb)
+{
+    return g_USBProxyDeviceHost.pfnUrbQueue(pUrb);
+}
+
+static inline PVUSBURB op_usbproxy_back_reap_urb(PUSBPROXYDEV pDev, unsigned cMillies)
+{
+    return g_USBProxyDeviceHost.pfnUrbReap (pDev, cMillies);
+}
+
+static inline bool op_usbproxy_back_clear_halted_ep(PUSBPROXYDEV pDev, unsigned EndPoint)
+{
+    return g_USBProxyDeviceHost.pfnClearHaltedEndpoint (pDev, EndPoint);
+}
+
+static inline void op_usbproxy_back_cancel_urb(PVUSBURB pUrb)
+{
+    return g_USBProxyDeviceHost.pfnUrbCancel (pUrb);
+}
 
 static uint16 getBcd (const char *str, const char *prefix)
 {
@@ -404,7 +461,7 @@ rdpusb_send_access_denied (uint8_t code, uint32_t devid)
 static inline int
 vrdp_usb_status (int rc, VUSBDEV *pdev)
 {
-	if (!rc || pdev->request_detach)
+	if (!rc || usbProxyFromVusbDev(pdev)->fDetached)
 	{
 		return VRDP_USB_STATUS_DEVICE_REMOVED;
 	}
@@ -412,16 +469,16 @@ vrdp_usb_status (int rc, VUSBDEV *pdev)
 	return VRDP_USB_STATUS_SUCCESS;
 }
 
-static struct usb_proxy *g_proxies = NULL;
+static PUSBPROXYDEV g_proxies = NULL;
 
-static struct usb_proxy *
+static PUSBPROXYDEV 
 devid2proxy (uint32_t devid)
 {
-	struct usb_proxy *proxy = g_proxies;
+	PUSBPROXYDEV proxy = g_proxies;
 
 	while (proxy && proxy->devid != devid)
 	{
-		proxy = proxy->next;
+		proxy = proxy->pNext;
 	}
 
 	return proxy;
@@ -434,7 +491,7 @@ rdpusb_reap_urbs (void)
 
 	PVUSBURB pUrb = NULL;
 
-	struct usb_proxy *proxy = g_proxies;
+	PUSBPROXYDEV proxy = g_proxies;
 
 	while (proxy)
 	{
@@ -466,21 +523,21 @@ rdpusb_reap_urbs (void)
 			s_mark_end(s);
 			rdpusb_send(s);
 
-			if (pUrb->prev || pUrb->next || pUrb == proxy->urbs)
+			if (pUrb->pPrev || pUrb->pNext || pUrb == proxy->pUrbs)
 			{
 				/* Remove the URB from list. */
-				if (pUrb->prev)
+				if (pUrb->pPrev)
 				{
-					pUrb->prev->next = pUrb->next;
+					pUrb->pPrev->pNext = pUrb->pNext;
 				}
 				else
 				{
-					proxy->urbs = pUrb->next;
+					proxy->pUrbs = pUrb->pNext;
 				}
 
-				if (pUrb->next)
+				if (pUrb->pNext)
 				{
-					pUrb->next->prev = pUrb->prev;
+					pUrb->pNext->pPrev = pUrb->pPrev;
 				}
 			}
 
@@ -493,7 +550,7 @@ rdpusb_reap_urbs (void)
 #endif
 		}
 
-		proxy = proxy->next;
+		proxy = proxy->pNext;
 	}
 
 	return;
@@ -508,7 +565,7 @@ rdpusb_process(STREAM s)
 	uint8 code;
 	uint32 devid;
 
-	struct usb_proxy *proxy = NULL;
+	PUSBPROXYDEV proxy = NULL;
 
 #ifdef RDPUSB_DEBUG
 	Log(("RDPUSB recv:\n"));
@@ -534,9 +591,9 @@ rdpusb_process(STREAM s)
 
 	        	in_uint32_le(s, devid);
 
-			proxy = (struct usb_proxy *)xmalloc (sizeof (struct usb_proxy));
+			proxy = (PUSBPROXYDEV )xmalloc (sizeof (USBPROXYDEV));
 
-			memset (proxy, 0, sizeof (struct usb_proxy));
+			memset (proxy, 0, sizeof (USBPROXYDEV));
 
 			proxy->Dev.pszName = "Remote device";
 			proxy->devid = devid;
@@ -555,10 +612,10 @@ rdpusb_process(STREAM s)
 			{
 				if (g_proxies)
 				{
-					g_proxies->prev = proxy;
+					g_proxies->pPrev = proxy;
 				}
 
-				proxy->next = g_proxies;
+				proxy->pNext = g_proxies;
 				g_proxies = proxy;
 			}
 		} break;
@@ -572,18 +629,18 @@ rdpusb_process(STREAM s)
 			{
 				op_usbproxy_back_close(proxy);
 
-				if (proxy->prev)
+				if (proxy->pPrev)
 				{
-					proxy->prev->next = proxy->next;
+					proxy->pPrev->pNext = proxy->pNext;
 				}
 				else
 				{
-					g_proxies = proxy->next;
+					g_proxies = proxy->pNext;
 				}
 
-				if (proxy->next)
+				if (proxy->pNext)
 				{
-					proxy->next->prev = proxy->prev;
+					proxy->pNext->pPrev = proxy->pPrev;
 				}
 
 				xfree (proxy);
@@ -759,13 +816,13 @@ rdpusb_process(STREAM s)
 
 			if (rc)
 			{
-				if (proxy->urbs)
+				if (proxy->pUrbs)
 				{
-					proxy->urbs->prev = pUrb;
+					proxy->pUrbs->pPrev = pUrb;
 				}
 
-				pUrb->next = proxy->urbs;
-				proxy->urbs = pUrb;
+				pUrb->pNext = proxy->pUrbs;
+				proxy->pUrbs = pUrb;
 			}
 			else
 			{
@@ -817,11 +874,11 @@ rdpusb_process(STREAM s)
 
 	        	in_uint32_le(s, handle);
 
-			pUrb = proxy->urbs;
+			pUrb = proxy->pUrbs;
 
 			while (pUrb && pUrb->handle != handle)
 			{
-				pUrb = pUrb->next;
+				pUrb = pUrb->pNext;
 			}
 
 			if (pUrb)
@@ -831,21 +888,21 @@ rdpusb_process(STREAM s)
 				/* No reply required. */
 
 				/* Remove URB from list. */
-				if (pUrb->prev)
+				if (pUrb->pPrev)
 				{
-					pUrb->prev->next = pUrb->next;
+					pUrb->pPrev->pNext = pUrb->pNext;
 				}
 				else
 				{
-					proxy->urbs = pUrb->next;
+					proxy->pUrbs = pUrb->pNext;
 				}
 
-				if (pUrb->next)
+				if (pUrb->pNext)
 				{
-					pUrb->next->prev = pUrb->prev;
+					pUrb->pNext->pPrev = pUrb->pPrev;
 				}
 
-				pUrb->next = pUrb->prev = NULL;
+				pUrb->pNext = pUrb->pPrev = NULL;
 
 				Log(("Cancelled URB %p\n", pUrb));
 
@@ -895,13 +952,13 @@ rdpusb_process(STREAM s)
 void
 rdpusb_add_fds(int *n, fd_set * rfds, fd_set * wfds)
 {
-	struct usb_proxy *proxy = g_proxies;
+	PUSBPROXYDEV proxy = g_proxies;
 
 //	Log(("RDPUSB: rdpusb_add_fds: begin *n = %d\n", *n));
 
 	while (proxy)
 	{
-		int fd = dev2fd(proxy);
+		int fd = USBProxyDeviceLinuxGetFD(proxy);
 
 		if (fd != -1)
 		{
@@ -912,7 +969,7 @@ rdpusb_add_fds(int *n, fd_set * rfds, fd_set * wfds)
 			*n = MAX(*n, fd);
 		}
 
-		proxy = proxy->next;
+		proxy = proxy->pNext;
 	}
 
 //	Log(("RDPUSB: rdpusb_add_fds: end *n = %d\n", *n));
@@ -923,12 +980,28 @@ rdpusb_add_fds(int *n, fd_set * rfds, fd_set * wfds)
 void
 rdpusb_check_fds(fd_set * rfds, fd_set * wfds)
 {
-	(void)rfds;
-	(void)wfds;
+	PUSBPROXYDEV proxy = g_proxies;
+	unsigned found = 0;
+
+	while (proxy)
+	{
+		int fd = USBProxyDeviceLinuxGetFD(proxy);
+
+		if (fd != -1)
+		{
+			if (FD_ISSET(fd, rfds))
+                found = 1;
+			if (FD_ISSET(fd, wfds))
+                found = 1;
+		}
+
+		proxy = proxy->pNext;
+	}
 
 //	Log(("RDPUSB: rdpusb_check_fds: begin\n"));
 
-	rdpusb_reap_urbs ();
+	if (found)
+        rdpusb_reap_urbs ();
 
 //	Log(("RDPUSB: rdpusb_check_fds: end\n"));
 
@@ -947,18 +1020,18 @@ rdpusb_init(void)
 void
 rdpusb_close (void)
 {
-	struct usb_proxy *proxy = g_proxies;
+	PUSBPROXYDEV proxy = g_proxies;
 
 	while (proxy)
 	{
-		struct usb_proxy *next = proxy->next;
+		PUSBPROXYDEV pNext = proxy->pNext;
 
 		Log(("RDPUSB: closing proxy %p\n", proxy));
 
 		op_usbproxy_back_close(proxy);
 		xfree (proxy);
 
-		proxy = next;
+		proxy = pNext;
 	}
 
 	return;
