@@ -3529,7 +3529,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     if (associate && !medium.isNull())
     {
         /* as the last step, associate the medium to the VM */
-        rc = medium->attachTo(mData->mUuid);
+        rc = medium->addBackReference(mData->mUuid);
         /* here we can fail because of Deleting, or being in process of
          * creating a Diff */
         if (FAILED(rc)) return rc;
@@ -3763,9 +3763,9 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
         /* For non-hard disk media, detach straight away. */
         if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
-            oldmedium->detachFrom(mData->mUuid);
+            oldmedium->removeBackReference(mData->mUuid);
         if (!medium.isNull())
-            medium->attachTo(mData->mUuid);
+            medium->addBackReference(mData->mUuid);
         pAttach->updateMedium(medium, false /* aImplicit */);
         setModified(IsModified_Storage);
     }
@@ -3778,7 +3778,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     if (FAILED(rc))
     {
         if (!medium.isNull())
-            medium->detachFrom(mData->mUuid);
+            medium->removeBackReference(mData->mUuid);
         pAttach = findAttachment(mMediaData->mAttachments,
                                  aControllerName,
                                  aControllerPort,
@@ -3789,7 +3789,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
         /* For non-hard disk media, re-attach straight away. */
         if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
-            oldmedium->attachTo(mData->mUuid);
+            oldmedium->addBackReference(mData->mUuid);
         pAttach->updateMedium(oldmedium, false /* aImplicit */);
     }
 
@@ -6477,7 +6477,7 @@ void Machine::uninitDataAndChildObjects()
             ComObjPtr<Medium> hd = (*it)->getMedium();
             if (hd.isNull())
                 continue;
-            HRESULT rc = hd->detachFrom(mData->mUuid, getSnapshotId());
+            HRESULT rc = hd->removeBackReference(mData->mUuid, getSnapshotId());
             AssertComRC(rc);
         }
     }
@@ -7293,9 +7293,9 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         if (!medium.isNull())
         {
             if (isSnapshotMachine())
-                rc = medium->attachTo(mData->mUuid, *aSnapshotId);
+                rc = medium->addBackReference(mData->mUuid, *aSnapshotId);
             else
-                rc = medium->attachTo(mData->mUuid);
+                rc = medium->addBackReference(mData->mUuid);
         }
 
         if (FAILED(rc))
@@ -8473,7 +8473,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
             rc = lockedMediaMap->Lock();
             AssertComRCThrowRC(rc);
 
-            rc = diff->attachTo(mData->mUuid);
+            rc = diff->addBackReference(mData->mUuid);
             AssertComRCThrowRC(rc);
 
             /* add a new attachment */
@@ -8555,7 +8555,7 @@ HRESULT Machine::deleteImplicitDiffs(bool *pfNeedsSaveSettings)
         {
             /* deassociate and mark for deletion */
             LogFlowThisFunc(("Detaching '%s', pending deletion\n", (*it)->getLogName()));
-            rc = hd->detachFrom(mData->mUuid);
+            rc = hd->removeBackReference(mData->mUuid);
             AssertComRC(rc);
             implicitAtts.push_back(*it);
             continue;
@@ -8566,7 +8566,7 @@ HRESULT Machine::deleteImplicitDiffs(bool *pfNeedsSaveSettings)
         {
             /* no: de-associate */
             LogFlowThisFunc(("Detaching '%s', no deletion\n", (*it)->getLogName()));
-            rc = hd->detachFrom(mData->mUuid);
+            rc = hd->removeBackReference(mData->mUuid);
             AssertComRC(rc);
             continue;
         }
@@ -8760,10 +8760,10 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
     {
         // if this is from a snapshot, do not defer detachment to commitMedia()
         if (pSnapshot)
-            oldmedium->detachFrom(mData->mUuid, pSnapshot->getId());
+            oldmedium->removeBackReference(mData->mUuid, pSnapshot->getId());
         // else if non-hard disk media, do not defer detachment to commitMedia() either
         else if (mediumType != DeviceType_HardDisk)
-            oldmedium->detachFrom(mData->mUuid);
+            oldmedium->removeBackReference(mData->mUuid);
     }
 
     return S_OK;
@@ -8940,7 +8940,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
             LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->getName().raw()));
 
             /* now de-associate from the current machine state */
-            rc = pMedium->detachFrom(mData->mUuid);
+            rc = pMedium->removeBackReference(mData->mUuid);
             AssertComRC(rc);
 
             if (aOnline)
@@ -9016,7 +9016,7 @@ void Machine::rollbackMedia()
             Medium* pMedium = pAttach->getMedium();
             if (pMedium)
             {
-                rc = pMedium->detachFrom(mData->mUuid);
+                rc = pMedium->removeBackReference(mData->mUuid);
                 AssertComRC(rc);
             }
         }
@@ -9030,7 +9030,7 @@ void Machine::rollbackMedia()
             Medium* pMedium = pAttach->getMedium();
             if (pMedium)
             {
-                rc = pMedium->attachTo(mData->mUuid);
+                rc = pMedium->addBackReference(mData->mUuid);
                 AssertComRC(rc);
             }
         }

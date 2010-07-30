@@ -166,10 +166,10 @@ public:
     MediumType_T getType() const;
     Utf8Str getName();
 
-    HRESULT attachTo(const Guid &aMachineId,
-                     const Guid &aSnapshotId = Guid::Empty);
-    HRESULT detachFrom(const Guid &aMachineId,
-                       const Guid &aSnapshotId = Guid::Empty);
+    HRESULT addBackReference(const Guid &aMachineId,
+                             const Guid &aSnapshotId = Guid::Empty);
+    HRESULT removeBackReference(const Guid &aMachineId,
+                                const Guid &aSnapshotId = Guid::Empty);
 
     const Guid* getFirstMachineBackrefId() const;
     const Guid* getFirstMachineBackrefSnapshotId() const;
