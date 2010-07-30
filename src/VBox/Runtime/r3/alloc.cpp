@@ -28,7 +28,7 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#ifdef RTMEM_WRAP_TO_EF_APIS
+#if defined(RTMEM_WRAP_TO_EF_APIS) && !defined(RTMEM_NO_WRAP_TO_EF_APIS)
 # undef RTMEM_WRAP_TO_EF_APIS
 # define RTALLOC_USE_EFENCE 1
 #endif

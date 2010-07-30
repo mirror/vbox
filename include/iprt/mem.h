@@ -817,7 +817,7 @@ inline T * RTMemAutoNil(void) RT_NO_THROW
  */
 template <class T,
           void Destruct(T *) = RTMemAutoDestructor<T>,
-# ifdef RTMEM_WRAP_TO_EF_APIS
+# if defined(RTMEM_WRAP_TO_EF_APIS) && !defined(RTMEM_NO_WRAP_TO_EF_APIS)
           void *Allocator(void *, size_t, const char *) = RTMemEfReallocNP
 # else
           void *Allocator(void *, size_t, const char *) = RTMemReallocTag
