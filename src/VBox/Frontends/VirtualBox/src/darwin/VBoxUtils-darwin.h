@@ -83,7 +83,7 @@ bool darwinIsApplicationCommand(ConstNativeNSEventRef pEvent);
 RT_C_DECLS_END
 
 DECLINLINE(CGRect) darwinToCGRect(const QRect& aRect) { return CGRectMake(aRect.x(), aRect.y(), aRect.width(), aRect.height()); }
-DECLINLINE(CGRect) darwinFlipCGRect(CGRect aRect, int aTargetHeight) { aRect.origin.y = aTargetHeight - aRect.origin.y - aRect.size.height; return aRect; }
+DECLINLINE(CGRect) darwinFlipCGRect(CGRect aRect, double aTargetHeight) { aRect.origin.y = aTargetHeight - aRect.origin.y - aRect.size.height; return aRect; }
 DECLINLINE(CGRect) darwinFlipCGRect(CGRect aRect, const CGRect &aTarget) { return darwinFlipCGRect(aRect, aTarget.size.height); }
 DECLINLINE(CGRect) darwinCenterRectTo(CGRect aRect, const CGRect& aToRect)
 {
