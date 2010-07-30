@@ -12,6 +12,7 @@
 ifeq ($(KBUILD_HOST),darwin)
  VBOX_BIN=/Applications/VirtualBox.app/Contents/MacOS
  VBOX_SDK=$(VBOX_BIN)/sdk
+ JAVA15=/System/Library/Frameworks/JavaVM.framework/Versions/1.5/Commands/java
 # JAVA_ARGS += -d32
 endif
 
@@ -48,6 +49,12 @@ testvb:
 	javac -cp $(VBOX_JAR) TestVBox.java
 	java $(JAVA_ARGS) -cp $(CLASSPATH)  TestVBox
 
+JAXLIBS=../../webservice/jaxlibs/
+# -noverify could be needed due http://bugs.sun.com/bugdatabase/view_bug.do;jsessionid=eb3fcd8f72ab4713f96e378a7575?bug_id=6614974
+testws15:
+	javac -target 1.5 -source 1.5 -cp $(VBOX_JAR) TestVBox.java
+	$(JAVA15) $(JAVA_ARGS) -cp $(VBOX_JAR_WS)$(SEP)$(CLASSPATH)$(SEP)$(JAXLIBS)/jaxws-api.jar$(SEP)$(JAXLIBS)/jaxws-rt.jar \
+            TestVBox -w -url http://localhost:18083
 
 testws:
 	javac -cp $(VBOX_JAR_WS) TestVBox.java
