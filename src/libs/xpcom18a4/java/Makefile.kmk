@@ -18,8 +18,6 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifndef VBOX_ONLY_SDK
-
 #
 # Globals
 #
@@ -30,8 +28,9 @@ VBOX_JXPCOM_JDEST  := $(VBOX_JXPCOM_TARGET)/jdest
 
 VBOX_GLUE_XSLT_DIR := $(PATH_ROOT)/src/VBox/Main/glue
 
+ifndef VBOX_ONLY_SDK
 #
-# VBoxJXpcom - missing description.
+# VBoxJXpcom - Java<->XPCOM native library
 #
 DLLS += VBoxJXpcom
 
@@ -70,6 +69,11 @@ VBOX_JXPCOM_GENH = \
 	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_XPCOMJavaProxy.h \
 	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_JavaXPCOMMethods.h \
 	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_ProfileLock.h
+
+
+else # VBOX_ONLY_SDK
+# Nothing yet
+endif # VBOX_ONLY_SDK
 
 #
 # Install JAR files
@@ -210,9 +214,5 @@ $$(VBOX_JXPCOM_JAR): $(VBOX_JXPCOM_JAR_SRC) $(VBOX_JXPCOM_GEN)/jxpcomgen.list $(
 		-d $(VBOX_JXPCOM_JDEST) -classpath $(VBOX_JXPCOM_JDEST)
 	$(call MSG_LINK,$(notdir $@),$@)
 	$(VBOX_JAR) cf $@ -C $(VBOX_JXPCOM_JDEST) .
-
-else # VBOX_ONLY_SDK
-# Nothing yet
-endif # VBOX_ONLY_SDK
 
 include $(KBUILD_PATH)/subfooter.kmk
