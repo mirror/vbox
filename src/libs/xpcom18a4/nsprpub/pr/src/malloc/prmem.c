@@ -40,6 +40,9 @@
 */
 
 #include "primpl.h"
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+# include <iprt/mem.h>
+#endif
 
 #ifdef _PR_ZONE_ALLOCATOR
 
@@ -53,7 +56,7 @@
 ** in cyclic dependency of initialization.
 */
 
-#include <string.h>	
+#include <string.h>
 
 union memBlkHdrUn;
 
@@ -91,12 +94,12 @@ static void pr_ZoneFree(void *ptr);
 
 void
 _PR_DestroyZones(void)
-{   
+{
     int i, j;
 
     if (!use_zone_allocator)
         return;
-    
+
     for (j = 0; j < THREAD_POOLS; j++) {
         for (i = 0; i < MEM_ZONES; i++) {
             MemoryZone *mz = &zones[i][j];
@@ -108,9 +111,9 @@ _PR_DestroyZones(void)
                 mz->elements--;
             }
         }
-    } 
+    }
     use_zone_allocator = PR_FALSE;
-} 
+}
 
 /*
 ** pr_FindSymbolInProg
@@ -183,14 +186,14 @@ _PR_InitZones(void)
     if (!use_zone_allocator)
         return;
 
-    for (j = 0; j < THREAD_POOLS; j++) { 
+    for (j = 0; j < THREAD_POOLS; j++) {
         for (i = 0; i < MEM_ZONES; i++) {
             MemoryZone *mz = &zones[i][j];
             int rv = pthread_mutex_init(&mz->lock, NULL);
             PR_ASSERT(0 == rv);
             if (rv != 0) {
                 goto loser;
-            } 
+            }
             mz->blockSize = 16 << ( 2 * i);
         }
     }
@@ -364,7 +367,7 @@ pr_ZoneRealloc(void *oldptr, PRUint32 bytes)
         PR_ASSERT(mt->s.magic == ZONE_MAGIC);
         PR_ASSERT(mt->s.zone  == mb->s.zone);
         PR_ASSERT(mt->s.blockSize == blockSize);
-	
+
         if (bytes <= blockSize) {
             /* The block is already big enough. */
             mt->s.requestedSize = mb->s.requestedSize = bytes;
@@ -372,7 +375,7 @@ pr_ZoneRealloc(void *oldptr, PRUint32 bytes)
         }
         ours = 1;
     }
-    
+
     rv = pr_ZoneMalloc(bytes);
     if (rv) {
         if (oldptr && mb->s.requestedSize)
@@ -437,7 +440,11 @@ PR_IMPLEMENT(void *) PR_Malloc(PRUint32 size)
 {
     if (!_pr_initialized) _PR_ImplicitInitialization();
 
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    return use_zone_allocator ? pr_ZoneMalloc(size) : RTMemAlloc(size);
+#else
     return use_zone_allocator ? pr_ZoneMalloc(size) : malloc(size);
+#endif
 }
 
 PR_IMPLEMENT(void *) PR_Calloc(PRUint32 nelem, PRUint32 elsize)
@@ -445,14 +452,22 @@ PR_IMPLEMENT(void *) PR_Calloc(PRUint32 nelem, PRUint32 elsize)
     if (!_pr_initialized) _PR_ImplicitInitialization();
 
     return use_zone_allocator ?
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+        pr_ZoneCalloc(nelem, elsize) : RTMemAllocZ(nelem * (size_t)elsize);
+#else
         pr_ZoneCalloc(nelem, elsize) : calloc(nelem, elsize);
+#endif
 }
 
 PR_IMPLEMENT(void *) PR_Realloc(void *ptr, PRUint32 size)
 {
     if (!_pr_initialized) _PR_ImplicitInitialization();
 
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    return use_zone_allocator ? pr_ZoneRealloc(ptr, size) : RTMemRealloc(ptr, size);
+#else
     return use_zone_allocator ? pr_ZoneRealloc(ptr, size) : realloc(ptr, size);
+#endif
 }
 
 PR_IMPLEMENT(void) PR_Free(void *ptr)
@@ -460,7 +475,11 @@ PR_IMPLEMENT(void) PR_Free(void *ptr)
     if (use_zone_allocator)
         pr_ZoneFree(ptr);
     else
+#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+        RTMemFree(ptr);
+#else
         free(ptr);
+#endif
 }
 
 #else /* !defined(_PR_ZONE_ALLOCATOR) */
@@ -478,7 +497,11 @@ PR_IMPLEMENT(void *) PR_Malloc(PRUint32 size)
 #if defined (WIN16)
     return PR_MD_malloc( (size_t) size);
 #else
+# ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    return RTMemAlloc(size);
+# else
     return malloc(size);
+# endif
 #endif
 }
 
@@ -486,9 +509,13 @@ PR_IMPLEMENT(void *) PR_Calloc(PRUint32 nelem, PRUint32 elsize)
 {
 #if defined (WIN16)
     return PR_MD_calloc( (size_t)nelem, (size_t)elsize );
-    
+
 #else
+# ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    return RTMemAllocZ(nelem * (size_t)elsize);
+# else
     return calloc(nelem, elsize);
+# endif
 #endif
 }
 
@@ -497,7 +524,11 @@ PR_IMPLEMENT(void *) PR_Realloc(void *ptr, PRUint32 size)
 #if defined (WIN16)
     return PR_MD_realloc( ptr, (size_t) size);
 #else
+# ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    return RTMemRealloc(ptr, size);
+# else
     return realloc(ptr, size);
+# endif
 #endif
 }
 
@@ -506,7 +537,11 @@ PR_IMPLEMENT(void) PR_Free(void *ptr)
 #if defined (WIN16)
     PR_MD_free( ptr );
 #else
+# ifdef VBOX_USE_MORE_IPRT_IN_NSPR
+    RTMemFree(ptr);
+# else
     free(ptr);
+# endif
 #endif
 }
 
