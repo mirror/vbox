@@ -40,6 +40,7 @@
 #include <VBox/com/string.h>
 #include "VBox/com/ErrorInfo.h"
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -287,8 +288,6 @@ HRESULT
 Console::teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const char *pszCommand, bool fWaitForAck /*= true*/)
 {
     int vrc = RTTcpSgWriteL(pState->mhSocket, 2, pszCommand, strlen(pszCommand), "\n", sizeof("\n") - 1);
-    if (RT_SUCCESS(vrc))
-        vrc = RTTcpFlush(pState->mhSocket);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("Failed writing command '%s': %Rrc"), pszCommand, vrc);
     if (!fWaitForAck)
@@ -528,8 +527,6 @@ static DECLCALLBACK(int) teleporterTcpOpClose(void *pvUser, bool fCanceled)
         EofHdr.u32Magic = TELEPORTERTCPHDR_MAGIC;
         EofHdr.cb       = fCanceled ? UINT32_MAX : 0;
         int rc = RTTcpWrite(pState->mhSocket, &EofHdr, sizeof(EofHdr));
-        if (RT_SUCCESS(rc))
-            rc = RTTcpFlush(pState->mhSocket);
         if (RT_FAILURE(rc))
         {
             LogRel(("Teleporter/TCP: EOF Header write error: %Rrc\n", rc));
@@ -539,7 +536,6 @@ static DECLCALLBACK(int) teleporterTcpOpClose(void *pvUser, bool fCanceled)
     else
     {
         ASMAtomicWriteBool(&pState->mfStopReading, true);
-        RTTcpFlush(pState->mhSocket);
     }
 
     return VINF_SUCCESS;
@@ -638,13 +634,15 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
         return setError(E_FAIL, tr("canceled"));
 
     /*
-     * Try connect to the destination machine.
+     * Try connect to the destination machine, disable Nagel.
      * (Note. The caller cleans up mhSocket, so we can return without worries.)
      */
     int vrc = RTTcpClientConnect(pState->mstrHostname.c_str(), pState->muPort, &pState->mhSocket);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("Failed to connect to port %u on '%s': %Rrc"),
                         pState->muPort, pState->mstrHostname.c_str(), vrc);
+    vrc = RTTcpSetSendCoalescing(pState->mhSocket, false /*fEnable*/);
+    AssertRC(vrc);
 
     /* Read and check the welcome message. */
     char szLine[RT_MAX(128, sizeof(g_szWelcome))];
@@ -1196,7 +1194,6 @@ static int teleporterTcpWriteACK(TeleporterStateTrg *pState, bool fAutomaticUnlo
         if (fAutomaticUnlock)
             teleporterTrgUnlockMedia(pState);
     }
-    RTTcpFlush(pState->mhSocket);
     return rc;
 }
 
@@ -1223,7 +1220,6 @@ static int teleporterTcpWriteNACK(TeleporterStateTrg *pState, int32_t rc2, const
     int rc = RTTcpWrite(pState->mhSocket, szMsg, cch);
     if (RT_FAILURE(rc))
         LogRel(("Teleporter: RTTcpWrite(,%s,%zu) -> %Rrc\n", szMsg, cch, rc));
-    RTTcpFlush(pState->mhSocket);
     return rc;
 }
 
