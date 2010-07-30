@@ -457,9 +457,13 @@ endef
 	$(VBOXWEB_WS_PHP) \
 	$(VBOXWEB_PYTHONWSSAMPLE)\
 	$(VBOXWEB_JAXWSSAMPLE) \
-	$(VBOXWEB_METRICSAMPLE) \
+	$(VBOXWEB_METRICSAMPLE)
+
+ifdef VBOX_WITH_OLD_JWS
+  VBOXWEB_OTHERS               += \
         $(VBOXWEB_JAVA15_JAR) \
 	$(VBOXWEB_JAVA16_JAR)
+endif
 
  #
  # Install sample code.

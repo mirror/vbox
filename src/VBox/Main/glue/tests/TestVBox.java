@@ -20,19 +20,19 @@ public class TestVBox
     static void processEvent(IEvent ev)
     {
         System.out.println("got event: " + ev);
-
         VBoxEventType type = ev.getType();
         System.out.println("type = "+type);
-
         switch (type)
         {
             case OnMachineStateChanged:
+            {
                 IMachineStateChangedEvent mcse = IMachineStateChangedEvent.queryInterface(ev);
                 if (mcse == null)
                     System.out.println("Cannot query an interface");
                 else
                     System.out.println("mid="+mcse.getMachineId());
                 break;
+            }
         }
     }
 
