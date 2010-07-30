@@ -245,10 +245,9 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
 
         /* Create a subimage of the current view in the size
          * of the bounding box of the current paint event */
-        QRect qir = aEvent->rect();
-        CGRect ir = ::darwinToCGRect(qir);
-        CGRect is = CGRectMake(qir.x() + m_pMachineView->contentsX(), qir.y() + m_pMachineView->contentsY(), qir.width(), qir.height());
-        ir = ::darwinFlipCGRect(ir, CGRectGetHeight(viewRect));
+        CGRect ir = ::darwinToCGRect(aEvent->rect());
+        CGRect is = CGRectMake(CGRectGetMinX(ir) + m_pMachineView->contentsX(), CGRectGetMinY(ir) + m_pMachineView->contentsY(), CGRectGetWidth(ir), CGRectGetHeight(ir));
+
         double iw = 1.0;
         double ih = 1.0;
         CGImageRef subImage = 0;
@@ -266,14 +265,25 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
             /* Scale all values needed for the image drawing. */
             iw = (double)CGImageGetWidth(m_image) / m_scaledSize.width();
             ih = (double)CGImageGetHeight(m_image) / m_scaledSize.height();
-            is.origin.x = (double)(is.origin.x * iw);
-            is.origin.y = (double)(is.origin.y * ih);
-            is.size.width = (double)(is.size.width * iw);
-            is.size.height = (double)(is.size.height * ih);
-            ir.origin.x = (double)(ir.origin.x * iw);
-            ir.origin.y = (double)(ir.origin.y * ih);
-            ir.size.width = (double)(ir.size.width * iw);
-            ir.size.height = (double)(ir.size.height * ih);
+            /* We make sure the image is always bigger than requested to
+             * compensate rounding errors. */
+            /* Round down */
+            is.origin.x = (int)(is.origin.x * iw);
+            is.origin.y = (int)(is.origin.y * ih);
+            /* Round up */
+            is.size.width = (int)(is.size.width * iw) + 2;
+            is.size.height = (int)(is.size.height * ih) + 2;
+            /* Make sure the size is within the image boundaries */
+            is = CGRectIntersection(is, CGRectMake(0, 0, CGImageGetWidth(m_image), CGImageGetHeight(m_image)));
+            /* Cause we probably changed the rectangle to update in the origin
+             * coordinate system, we have to recalculate the update rectangle
+             * for the screen coordinates as well. Please note that this has to
+             * be in double precision. */
+            ir.origin.x = is.origin.x / iw;
+            ir.origin.y = is.origin.y / ih;
+            ir.size.width = is.size.width / iw;
+            ir.size.height = is.size.height / ih;
+            /* Create the sub image */
             subImage = CGImageCreateWithImageInRect(m_image, is);
         }
         if (subImage)
@@ -290,14 +300,13 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
                 /* Now convert the path to a clipping path. */
                 CGContextClip(ctx);
             }
-
             /* In any case clip the drawing to the view window */
             CGContextClipToRect(ctx, viewRect);
             /* Turn the high interpolation quality on. */
             CGContextSetInterpolationQuality(ctx, kCGInterpolationHigh);
-            CGContextScaleCTM(ctx, 1.0 / iw, 1.0 / ih);
             /* Draw the image. */
-            CGContextDrawImage(ctx, ir, subImage);
+
+            CGContextDrawImage(ctx, ::darwinFlipCGRect(ir, CGRectGetHeight(viewRect)), subImage);
             CGImageRelease(subImage);
         }
     }
