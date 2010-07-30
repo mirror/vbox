@@ -269,7 +269,7 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_ReportGuestInfo);
     if (RT_SUCCESS(rc))
     {
-        pReq->guestInfo.additionsVersion = VMMDEV_VERSION;
+        pReq->guestInfo.interfaceVersion = VMMDEV_VERSION;
         pReq->guestInfo.osType = enmOSType;
         rc = VbglGRPerform(&pReq->header);
         if (RT_FAILURE(rc))

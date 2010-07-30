@@ -466,19 +466,8 @@ void VBoxVMInformationDlg::refreshStatistics()
         QString nested = console.GetDebugger().GetHWVirtExNestedPagingEnabled() ?
             VBoxGlobal::tr ("Enabled", "details report (Nested Paging)") :
             VBoxGlobal::tr ("Disabled", "details report (Nested Paging)");
-        QString addVersion = m.GetGuestPropertyValue("/VirtualBox/GuestAdd/Version");
-        QString addRevision = m.GetGuestPropertyValue("/VirtualBox/GuestAdd/Revision");
-        QString addVersionStr;
-        if (!addVersion.isEmpty() && !addRevision.isEmpty())
-        {
-            QString addInfo = console.GetGuest().GetAdditionsVersion();
-            addVersionStr = (addInfo.isEmpty() ? "(" : "")
-                          + addVersion
-                          + " r"
-                          + m.GetGuestPropertyValue("/VirtualBox/GuestAdd/Revision")
-                          + (addInfo.isEmpty() ? ")" : "");
-        }
-        else
+        QString addVersionStr = console.GetGuest().GetAdditionsVersion();
+        if (addVersionStr.isEmpty())
             addVersionStr = tr ("Not Detected", "guest additions");
         QString osType = console.GetGuest().GetOSTypeId();
         if (osType.isEmpty())

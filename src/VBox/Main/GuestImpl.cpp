@@ -1440,12 +1440,12 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
 
 /**
  * Sets the general Guest Additions information like
- * API version and OS type.
+ * API (interface) version and OS type.
  *
- * @param aVersion
+ * @param aInterfaceVersion
  * @param aOsType
  */
-void Guest::setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType)
+void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -1453,16 +1453,16 @@ void Guest::setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /*
-     * Set the Guest Additions API (interface) version.
-     * Note that this is *not* the actual Guest Additions version and may differ!
+     * Note: The Guest Additions API (interface) version is deprecated
+     * and will not be used anymore!
      */
-    mData.mAdditionsVersion = aVersion;
+
     /*
      * Older Additions rely on the Additions API version whether they
      * are assumed to be active or not. Newer additions will disable
      * this immediately.
      */
-    mData.mAdditionsActive = !aVersion.isEmpty();
+    mData.mAdditionsActive = !aInterfaceVersion.isEmpty();
     /*
      * Older Additions didn't have this finer grained capability bit,
      * so enable it by default.  Newer Additions will disable it immediately
@@ -1480,13 +1480,29 @@ void Guest::setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType)
 }
 
 /**
+ * Sets the Guest Additions version information details.
+ *
+ * @param aAdditionsVersion
+ * @param aVersionName
+ */
+void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mData.mAdditionsVersion = aAdditionsVersion;
+}
+
+/**
  * Sets the status of a certain Guest Additions facility.
  *
  * @param Facility
  * @param Status
  * @param ulFlags
  */
-void Guest::setAdditionsStatus (VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags)
+void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -1506,7 +1522,7 @@ void Guest::setAdditionsStatus (VBoxGuestStatusFacility Facility, VBoxGuestStatu
  * @param ulCaps
  * @param ulActive
  */
-void Guest::setSupportedFeatures (ULONG64 ulCaps, ULONG64 ulActive)
+void Guest::setSupportedFeatures(ULONG64 ulCaps, ULONG64 ulActive)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());

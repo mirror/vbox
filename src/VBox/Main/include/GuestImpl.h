@@ -79,12 +79,8 @@ public:
     STDMETHOD(COMGETTER(AdditionsActive)) (ULONG aLevel, BOOL *aAdditionsActive);
 #endif
     STDMETHOD(COMGETTER(AdditionsActive)) (BOOL *aAdditionsActive);
-#if 0
-    /** @todo Will replace AdditionsVersion to be more clear. */
-    STDMETHOD(COMGETTER(AdditionsAPIVersion)) (BSTR *aAdditionsVersion);
-#endif
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
-    /** @todo Remove */
+    /** @todo Remove later by replacing it by AdditionsFeatureAvailable(). */
     STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
     STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
 #if 0
@@ -112,7 +108,8 @@ public:
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
 
     // Public methods that are not in IDL (only called internally).
-    void setAdditionsInfo(Bstr aVersion, VBOXOSTYPE aOsType);
+    void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
+    void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName);
     void setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags);
     void setSupportedFeatures(ULONG64 ulCaps, ULONG64 ulActive);
     HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);

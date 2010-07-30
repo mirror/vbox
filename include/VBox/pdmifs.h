@@ -2111,6 +2111,16 @@ typedef struct PDMIVMMDEVCONNECTOR
     DECLR3CALLBACKMEMBER(void, pfnUpdateGuestInfo,(PPDMIVMMDEVCONNECTOR pInterface, const struct VBoxGuestInfo *pGuestInfo));
 
     /**
+     * Reports the detailed Guest Additions version.
+     * Called whenever the Additions issue a guest version report request or the VM is reset.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   guestInfo           Pointer to Guest Additions information structure.
+	 * @thread  The emulation thread.
+ 	 */
+    DECLR3CALLBACKMEMBER(void, pfnUpdateGuestInfo2,(PPDMIVMMDEVCONNECTOR pInterface, const struct VBoxGuestInfo2 *pGuestInfo));
+
+    /**
      * Update the guest additions capabilities.
      * This is called when the guest additions capabilities change. The new capabilities
      * are given and the connector should update its internal state.

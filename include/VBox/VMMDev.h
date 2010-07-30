@@ -588,8 +588,9 @@ AssertCompileSize(VMMDevCtlGuestFilterMask, 24+8);
  */
 typedef struct VBoxGuestInfo
 {
-    /** The VMMDev interface version expected by additions. */
-    uint32_t additionsVersion;
+    /** The VMMDev interface version expected by additions.
+      * *Deprecated*, do not use anymore! Will be removed. */
+    uint32_t interfaceVersion;
     /** Guest OS type. */
     VBOXOSTYPE osType;
 } VBoxGuestInfo;
@@ -627,10 +628,10 @@ typedef struct VBoxGuestInfo2
     uint32_t additionsRevision;
     /** Feature mask, currently unused. */
     uint32_t additionsFeatures;
-    /** some additional information, for example 'Beta 1' or something like that */
+    /** Some additional information, for example 'Beta 1' or something like that. */
     char     szName[128];
 } VBoxGuestInfo2;
-
+AssertCompileSize(VBoxGuestInfo2, 144);
 
 /**
  * Guest information report, version 2.

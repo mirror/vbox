@@ -4670,6 +4670,11 @@ void Console::onAdditionsStateChange()
 
 /**
  * @note Locks this object for reading.
+ *       This notification only is for reporting an incompatible
+ *       Guest Additions interface, *not* the Guest Additions version!
+ *
+ *       The user will be notified inside the guest if new Guest
+ *       Additions are available (via VBoxTray/VBoxClient).
  */
 void Console::onAdditionsOutdated()
 {
@@ -4677,12 +4682,6 @@ void Console::onAdditionsOutdated()
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /** @todo Use the On-Screen Display feature to report the fact.
-     * The user should be told to install additions that are
-     * provided with the current VBox build:
-     * VBOX_VERSION_MAJOR.VBOX_VERSION_MINOR.VBOX_VERSION_BUILD
-     */
 }
 
 /**
