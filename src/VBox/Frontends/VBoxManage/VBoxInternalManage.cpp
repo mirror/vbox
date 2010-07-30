@@ -579,7 +579,7 @@ static int CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     /* we need exactly one parameter: the image file */
     if (argc != 1)
     {
-        return errorSyntax(USAGE_SETHDUUID, "Not enough parameters");
+        return errorSyntax(USAGE_DUMPHDINFO, "Not enough parameters");
     }
 
     /* just try it */
