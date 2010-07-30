@@ -181,41 +181,45 @@ void DisplayHelp()
         {
             case 'h':
                 pcszDescr = "Print this help message and exit.";
-            break;
+                break;
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
             case 'b':
                 pcszDescr = "Run in background (daemon mode).";
-            break;
+                break;
 #endif
 
             case 'H':
                 pcszDescr = "The host to bind to (localhost).";
-            break;
+                break;
 
             case 'p':
                 pcszDescr = "The port to bind to (18083).";
-            break;
+                break;
 
             case 't':
                 pcszDescr = "Session timeout in seconds; 0 = disable timeouts (" DEFAULT_TIMEOUT_SECS_STRING ").";
-            break;
+                break;
 
             case 'T':
                 pcszDescr = "Maximum number of worker threads to run in parallel (100).";
-            break;
+                break;
+                
+            case 'k':
+                pcszDescr = "Maximum number of requests before a socket will be closed (100).";
+                break;
 
             case 'i':
                 pcszDescr = "Frequency of timeout checks in seconds (5).";
-            break;
+                break;
 
             case 'v':
                 pcszDescr = "Be verbose.";
-            break;
+                break;
 
             case 'F':
                 pcszDescr = "Name of file to write log to (no file).";
-            break;
+                break;
         }
 
         RTStrmPrintf(g_pStdErr, "%-23s%s\n", str.c_str(), pcszDescr);
@@ -636,19 +640,19 @@ int main(int argc, char* argv[])
         {
             case 'H':
                 g_pcszBindToHost = ValueUnion.psz;
-            break;
+                break;
 
             case 'p':
                 g_uBindToPort = ValueUnion.u32;
-            break;
+                break;
 
             case 't':
                 g_iWatchdogTimeoutSecs = ValueUnion.u32;
-            break;
+                break;
 
             case 'i':
                 g_iWatchdogCheckInterval = ValueUnion.u32;
-            break;
+                break;
 
             case 'F':
             {
@@ -661,37 +665,37 @@ int main(int argc, char* argv[])
 
                 WebLog("Sun VirtualBox Webservice Version %s\n"
                        "Opened log file \"%s\"\n", VBOX_VERSION_STRING, ValueUnion.psz);
+                break;
             }
-            break;
 
             case 'T':
                 g_cMaxWorkerThreads = ValueUnion.u32;
-            break;
+                break;
 
             case 'k':
                 g_cMaxKeepAlive = ValueUnion.u32;
-            break;
+                break;
 
             case 'h':
                 DisplayHelp();
-            return 0;
+                return 0;
 
             case 'v':
                 g_fVerbose = true;
-            break;
+                break;
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
             case 'b':
                 g_fDaemonize = true;
-            break;
+                break;
 #endif
             case 'V':
                 RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
-            return 0;
+                return 0;
 
             default:
                 rc = RTGetOptPrintError(c, &ValueUnion);
-            return rc;
+                return rc;
         }
     }
 
@@ -1534,7 +1538,8 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
     HRESULT rc = SOAP_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
-    do {
+    do
+    {
         // findRefFromId require the lock
         util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
@@ -1568,7 +1573,8 @@ int __vbox__IManagedObjectRef_USCORErelease(
     HRESULT rc = SOAP_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
-    do {
+    do
+    {
         // findRefFromId and the delete call below require the lock
         util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
@@ -1580,11 +1586,11 @@ int __vbox__IManagedObjectRef_USCORErelease(
         }
 
         WEBDEBUG(("   found reference; deleting!\n"));
+        // this removes the object from all stacks; since
+        // there's a ComPtr<> hidden inside the reference,
+        // this should also invoke Release() on the COM
+        // object
         delete pRef;
-            // this removes the object from all stacks; since
-            // there's a ComPtr<> hidden inside the reference,
-            // this should also invoke Release() on the COM
-            // object
     } while (0);
 
     WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
@@ -1638,7 +1644,8 @@ int __vbox__IWebsessionManager_USCORElogon(
     HRESULT rc = SOAP_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
-    do {
+    do 
+    {
         // WebServiceSession constructor tinkers with global MOR map and requires a write lock
         util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
@@ -1683,7 +1690,8 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
     HRESULT rc = SOAP_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
-    do {
+    do
+    {
         // findSessionFromRef needs lock
         util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
@@ -1715,7 +1723,8 @@ int __vbox__IWebsessionManager_USCORElogoff(
     HRESULT rc = SOAP_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
-    do {
+    do
+    {
         // findSessionFromRef and the session destructor require the lock
         util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 

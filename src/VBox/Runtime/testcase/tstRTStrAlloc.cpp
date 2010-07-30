@@ -42,7 +42,7 @@ static void tst1(void)
 {
     RTTestISub("Basics");
     char *psz;
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /* RTStrAlloc */
     RTTESTI_CHECK(psz = RTStrAlloc(0));
