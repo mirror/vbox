@@ -39,18 +39,29 @@
 #include <string.h>
 #include "prlog.h"
 #include "ipcMessage.h"
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+# include <iprt/mem.h>
+#endif
 
 ipcMessage::~ipcMessage()
 {
     if (mMsgHdr)
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+        RTMemFree(mMsgHdr);
+#else
         free(mMsgHdr);
+#endif
 }
 
 void
 ipcMessage::Reset()
 {
     if (mMsgHdr) {
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+        RTMemFree(mMsgHdr);
+#else
         free(mMsgHdr);
+#endif
         mMsgHdr = NULL;
     }
 
@@ -67,8 +78,12 @@ ipcMessage::Clone() const
 
     // copy buf if non-null
     if (mMsgHdr) {
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+        clone->mMsgHdr = (ipcMessageHeader *) RTMemDup(mMsgHdr, mMsgHdr->mLen);
+#else
         clone->mMsgHdr = (ipcMessageHeader *) malloc(mMsgHdr->mLen);
         memcpy(clone->mMsgHdr, mMsgHdr, mMsgHdr->mLen);
+#endif
     }
     else
         clone->mMsgHdr = NULL;
@@ -83,12 +98,20 @@ PRStatus
 ipcMessage::Init(const nsID &target, const char *data, PRUint32 dataLen)
 {
     if (mMsgHdr)
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+        RTMemFree(mMsgHdr);
+#else
         free(mMsgHdr);
+#endif
     mMsgComplete = PR_FALSE;
 
     // allocate message data
     PRUint32 msgLen = IPC_MSG_HEADER_SIZE + dataLen;
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+    mMsgHdr = (ipcMessageHeader *) RTMemAlloc(msgLen);
+#else
     mMsgHdr = (ipcMessageHeader *) malloc(msgLen);
+#endif
     if (!mMsgHdr) {
         mMsgHdr = NULL;
         return PR_FAILURE;
@@ -122,7 +145,7 @@ ipcMessage::SetData(PRUint32 offset, const char *data, PRUint32 dataLen)
 PRBool
 ipcMessage::Equals(const nsID &target, const char *data, PRUint32 dataLen) const
 {
-    return mMsgComplete && 
+    return mMsgComplete &&
            mMsgHdr->mTarget.Equals(target) &&
            DataLen() == dataLen &&
            memcmp(Data(), data, dataLen) == 0;
@@ -198,10 +221,14 @@ ipcMessage::ReadFrom(const char *buf,
                 buf += count;
                 bufLen -= count;
                 *bytesRead = count;
-                
+
                 if (MsgLen() > IPC_MSG_GUESSED_SIZE) {
                     // realloc message buffer to the correct size
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+                    mMsgHdr = (ipcMessageHeader *) RTMemRealloc(mMsgHdr, MsgLen());
+#else
                     mMsgHdr = (ipcMessageHeader *) realloc(mMsgHdr, MsgLen());
+#endif
                 }
             }
         }
@@ -211,7 +238,11 @@ ipcMessage::ReadFrom(const char *buf,
             // not enough data available in buffer to determine allocation size
             // allocate a partial buffer
             PRUint32 msgLen = IPC_MSG_GUESSED_SIZE;
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+            mMsgHdr = (ipcMessageHeader *) RTMemAlloc(msgLen);
+#else
             mMsgHdr = (ipcMessageHeader *) malloc(msgLen);
+#endif
             if (!mMsgHdr)
                 return PR_FAILURE;
             memcpy(mMsgHdr, buf, bufLen);
@@ -222,7 +253,11 @@ ipcMessage::ReadFrom(const char *buf,
         }
         else {
             PRUint32 msgLen = *(PRUint32 *) buf;
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+            mMsgHdr = (ipcMessageHeader *) RTMemAlloc(msgLen);
+#else
             mMsgHdr = (ipcMessageHeader *) malloc(msgLen);
+#endif
             if (!mMsgHdr)
                 return PR_FAILURE;
             mMsgHdr->mLen = msgLen;

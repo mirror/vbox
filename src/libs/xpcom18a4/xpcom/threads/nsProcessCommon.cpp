@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 /*****************************************************************************
- * 
+ *
  * nsProcess is used to execute new processes and specify if you want to
  * wait (blocking) or continue (non-blocking).
  *
@@ -88,7 +88,7 @@ nsProcess::Init(nsIFile* executable)
     //Store the nsIFile in mExecutable
     mExecutable = executable;
     //Get the path because it is needed by the NSPR process creation
-#ifdef XP_WIN 
+#ifdef XP_WIN
     rv = mExecutable->GetNativeTarget(mTargetPath);
     if (NS_FAILED(rv) || mTargetPath.IsEmpty() )
 #endif
@@ -132,7 +132,7 @@ static int assembleCmdLine(char *const *argv, char **cmdLine)
     for (arg = argv; *arg; arg++) {
         /* Add a space to separates the arguments */
         if (arg != argv) {
-            *p++ = ' '; 
+            *p++ = ' ';
         }
         q = *arg;
         numBackslashes = 0;
@@ -195,7 +195,7 @@ static int assembleCmdLine(char *const *argv, char **cmdLine)
         if (argNeedQuotes) {
             *p++ = '"';
         }
-    } 
+    }
 
     *p = '\0';
     return 0;
@@ -203,7 +203,7 @@ static int assembleCmdLine(char *const *argv, char **cmdLine)
 #endif
 
 // XXXldb |args| has the wrong const-ness
-NS_IMETHODIMP  
+NS_IMETHODIMP
 nsProcess::Run(PRBool blocking, const char **args, PRUint32 count, PRUint32 *pid)
 {
     nsresult rv = NS_OK;
@@ -212,7 +212,11 @@ nsProcess::Run(PRBool blocking, const char **args, PRUint32 count, PRUint32 *pid
     // count since we need to null terminate the list for the argv to
     // pass into PR_CreateProcess
     char **my_argv = NULL;
+#ifdef VBOX
+    my_argv = (char **)nsMemory::Alloc(sizeof(char *) * (count + 2) );
+#else
     my_argv = (char **)malloc(sizeof(char *) * (count + 2) );
+#endif
     if (!my_argv) {
         return NS_ERROR_OUT_OF_MEMORY;
     }
@@ -235,7 +239,7 @@ nsProcess::Run(PRBool blocking, const char **args, PRUint32 count, PRUint32 *pid
 
     if (assembleCmdLine(my_argv, &cmdLine) == -1) {
         nsMemory::Free(my_argv);
-        return NS_ERROR_FILE_EXECUTION_FAILED;    
+        return NS_ERROR_FILE_EXECUTION_FAILED;
     }
 
     ZeroMemory(&startupInfo, sizeof(startupInfo));
@@ -257,9 +261,9 @@ nsProcess::Run(PRBool blocking, const char **args, PRUint32 count, PRUint32 *pid
                           );
     PR_FREEIF( cmdLine );
     if (blocking) {
- 
+
         // if success, wait for process termination. the early returns and such
-        // are a bit ugly but preserving the logic of the nspr code I copied to 
+        // are a bit ugly but preserving the logic of the nspr code I copied to
         // minimize our risk abit.
 
         if ( retVal == TRUE ) {
@@ -281,12 +285,12 @@ nsProcess::Run(PRBool blocking, const char **args, PRUint32 count, PRUint32 *pid
         }
         else
             rv = PR_FAILURE;
-    } 
+    }
     else {
 
         // map return value into success code
 
-        if ( retVal == TRUE ) 
+        if ( retVal == TRUE )
             rv = PR_SUCCESS;
         else
             rv = PR_FAILURE;
@@ -346,7 +350,7 @@ nsProcess::Kill()
     nsresult rv = NS_OK;
     if (mProcess)
         rv = PR_KillProcess(mProcess);
-    
+
     return rv;
 }
 
@@ -354,6 +358,6 @@ NS_IMETHODIMP
 nsProcess::GetExitValue(PRInt32 *aExitValue)
 {
     *aExitValue = mExitValue;
-    
+
     return NS_OK;
 }

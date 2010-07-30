@@ -48,6 +48,9 @@
 #include "nsAutoLock.h"
 #include "prprf.h"
 #include "nsITimer.h"
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+# include <iprt/mem.h>
+#endif
 
 #define NS_SEC_TO_MS(s) ((s) * 1000)
 
@@ -102,11 +105,15 @@ nsRecyclingAllocator::Init(PRUint32 nbucket, PRUint32 recycleAfter, const char *
     // Free all memory held, if any
     while(mFreeList)
     {
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+        RTMemFree(mFreeList->block);
+#else
         free(mFreeList->block);
+#endif
         mFreeList = mFreeList->next;
     }
     mFreeList = nsnull;
-    
+
     if (mBlocks)
         delete [] mBlocks;
 
@@ -142,11 +149,15 @@ nsRecyclingAllocator::~nsRecyclingAllocator()
     // Free all memory held, if any
     while(mFreeList)
     {
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+        RTMemFree(mFreeList->block);
+#else
         free(mFreeList->block);
+#endif
         mFreeList = mFreeList->next;
     }
     mFreeList = nsnull;
-    
+
     if (mBlocks)
         delete [] mBlocks;
 
@@ -164,7 +175,7 @@ nsRecyclingAllocator::Malloc(PRSize bytes, PRBool zeroit)
     // Mark that we are using. This will prevent any
     // timer based release of unused memory.
     Touch();
-  
+
     Block* freeBlock = FindFreeBlock(bytes);
     if (freeBlock)
     {
@@ -174,18 +185,22 @@ nsRecyclingAllocator::Malloc(PRSize bytes, PRBool zeroit)
             memset(data, 0, bytes);
         return data;
     }
-     
+
     // We need to do an allocation
     // Add 4 bytes to what we allocate to hold the bucket index
     PRSize allocBytes = bytes + NS_ALLOCATOR_OVERHEAD_BYTES;
-  
+
     // We dont have that memory already. Allocate.
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+    Block *ptr = (Block *) (zeroit ? RTMemAllocZ(allocBytes) : RTMemAlloc(allocBytes));
+#else
     Block *ptr = (Block *) (zeroit ? calloc(1, allocBytes) : malloc(allocBytes));
-    
+#endif
+
     // Deal with no memory situation
     if (!ptr)
         return ptr;
-  
+
     // This is the first allocation we are holding.
     // Setup timer for releasing memory
     // If this fails, then we wont have a timer to release unused
@@ -193,20 +208,20 @@ nsRecyclingAllocator::Malloc(PRSize bytes, PRBool zeroit)
     // will try again to set the timer.
     if (mRecycleAfter && !mRecycleTimer)
     {
-        // known only to stuff in xpcom.  
+        // known only to stuff in xpcom.
         extern nsresult NS_NewTimer(nsITimer* *aResult, nsTimerCallbackFunc aCallback, void *aClosure,
                                     PRUint32 aDelay, PRUint32 aType);
 
-        (void) NS_NewTimer(&mRecycleTimer, nsRecycleTimerCallback, this, 
+        (void) NS_NewTimer(&mRecycleTimer, nsRecycleTimerCallback, this,
                            NS_SEC_TO_MS(mRecycleAfter),
                            nsITimer::TYPE_REPEATING_SLACK);
         NS_ASSERTION(mRecycleTimer, "nsRecyclingAllocator: Creating timer failed.\n");
     }
- 
+
 #ifdef DEBUG
     mNAllocated++;
 #endif
-  
+
     // Store size and return data portion
     ptr->bytes = bytes;
     return DATA(ptr);
@@ -234,7 +249,11 @@ nsRecyclingAllocator::Free(void *ptr)
         NS_WARNING(buf);
         mNAllocated--;
 #endif
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+        RTMemFree(block);
+#else
         free(block);
+#endif
     }
 }
 
@@ -256,7 +275,11 @@ nsRecyclingAllocator::FreeUnusedBuckets()
     while (node)
     {
         // Free the allocated block
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+        RTMemFree(node->block);
+#else
         free(node->block);
+#endif
 
 #ifdef DEBUG_dp
         printf("%d ", node->bytes);
@@ -274,7 +297,7 @@ nsRecyclingAllocator::FreeUnusedBuckets()
     mBlocks[mMaxBlocks-1].next = nsnull;
     mFreeList = nsnull;
 
-#ifdef DEBUG        
+#ifdef DEBUG
     mNAllocated = 0;
 #endif
 #ifdef DEBUG_dp

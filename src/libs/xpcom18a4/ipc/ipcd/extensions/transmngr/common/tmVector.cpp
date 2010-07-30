@@ -37,6 +37,9 @@
 
 #include <stdlib.h>
 #include "tmVector.h"
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+# include <iprt/mem.h>
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 // Constructor(s) & Destructor
@@ -45,7 +48,11 @@
 //   the collection - how would we reclaim, don't know how they were allocated
 tmVector::~tmVector() {
   if (mElements)
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+    RTMemFree((void*)mElements);
+#else
     free((void*)mElements);
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -54,7 +61,11 @@ tmVector::~tmVector() {
 nsresult
 tmVector::Init() {
 
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+  mElements = (void**) RTMemAllocZ (mCapacity * sizeof(void*));
+#else
   mElements = (void**) calloc (mCapacity, sizeof(void*));
+#endif
   if (!mElements)
     return NS_ERROR_OUT_OF_MEMORY;
   return NS_OK;
@@ -116,7 +127,7 @@ tmVector::RemoveAt(PRUint32 aIndex) {
 //void*
 //tmVector::operator[](int index) {
 //  if (index < mNext && index >= 0)
-//    return mElements[index]; 
+//    return mElements[index];
 //  return nsnull;
 //}
 
@@ -136,7 +147,11 @@ nsresult
 tmVector::Grow() {
 
   PRUint32 newcap = mCapacity + GROWTH_INC;
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+  mElements = (void**) RTMemRealloc(mElements, (newcap * sizeof(void*)));
+#else
   mElements = (void**) realloc(mElements, (newcap * sizeof(void*)));
+#endif
   if (mElements) {
     mCapacity = newcap;
     return NS_OK;
@@ -151,7 +166,11 @@ tmVector::Shrink() {
 
   PRUint32 newcap = mCapacity - GROWTH_INC;
   if (mNext < newcap) {
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+    mElements = (void**) RTMemRealloc(mElements, newcap * sizeof(void*));
+#else
     mElements = (void**) realloc(mElements, newcap * sizeof(void*));
+#endif
     if (!mElements)
       return NS_ERROR_OUT_OF_MEMORY;
     mCapacity = newcap;
