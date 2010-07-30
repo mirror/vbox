@@ -572,6 +572,33 @@ static DECLCALLBACK(void) vusbRhReapAsyncUrbs(PVUSBIROOTHUBCONNECTOR pInterface,
 }
 
 
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnCancelUrbsEp */
+static DECLCALLBACK(int) vusbRhCancelUrbsEp(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUrb)
+{
+    PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    AssertReturn(pRh, VERR_INVALID_PARAMETER);
+    AssertReturn(pUrb, VERR_INVALID_PARAMETER);
+
+    //@todo: This method of URB canceling may not work on non-Linux hosts.
+    /*
+     * Cancel and reap the URB(s) on an endpoint.
+     */
+    LogFlow(("vusbRhCancelUrbsEp: pRh=%p pUrb=%p\n", pRh));
+    vusbUrbCancel(pUrb);
+
+    PVUSBURB pRipe;
+    if (pUrb->enmState == VUSBURBSTATE_REAPED)
+        pRipe = pUrb;
+    else
+        pRipe = pUrb->pUsbIns->pReg->pfnUrbReap(pUrb->pUsbIns, 0);
+    if (pRipe)
+    {
+        pRipe->enmStatus = VUSBSTATUS_CRC;
+        vusbUrbRipe(pRipe);
+    }
+    return VINF_SUCCESS;
+}
+
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnCancelAllUrbs */
 static DECLCALLBACK(void) vusbRhCancelAllUrbs(PVUSBIROOTHUBCONNECTOR pInterface)
 {
@@ -905,6 +932,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->IRhConnector.pfnNewUrb       = vusbRhConnNewUrb;
     pThis->IRhConnector.pfnSubmitUrb    = vusbRhSubmitUrb;
     pThis->IRhConnector.pfnReapAsyncUrbs= vusbRhReapAsyncUrbs;
+    pThis->IRhConnector.pfnCancelUrbsEp = vusbRhCancelUrbsEp;
     pThis->IRhConnector.pfnCancelAllUrbs= vusbRhCancelAllUrbs;
     pThis->IRhConnector.pfnAttachDevice = vusbRhAttachDevice;
     pThis->IRhConnector.pfnDetachDevice = vusbRhDetachDevice;

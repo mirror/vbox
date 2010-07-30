@@ -354,7 +354,7 @@ typedef struct VUSBROOTHUB
     /** Chain of devices attached to this hub. */
     PVUSBDEV                pDevices;
 #if HC_ARCH_BITS == 32
-    uint32_t                Alignment0;
+//    uint32_t                Alignment0;
 #endif
     /** Availability Bitmap. */
     VUSBPORTBITMAP          Bitmap;
