@@ -854,7 +854,6 @@ static int cpumR3CpuIdInit(PVM pVM)
             /* Legacy method to determine the number of cores. */
             pCPUM->aGuestCpuIdExt[1].ecx |= X86_CPUID_AMD_FEATURE_ECX_CMPL;
             pCPUM->aGuestCpuIdExt[8].ecx |= (pVM->cCpus - 1); /* NC: Number of CPU cores - 1; 8 bits */
-
         }
 #endif
     }
@@ -939,8 +938,9 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Log the cpuid and we're good.
      */
     RTCPUSET OnlineSet;
-    LogRel(("Logical host processors: %d, processor active mask: %016RX64\n",
-            (int)RTMpGetCount(), RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) ));
+    LogRel(("Logical host processors: %u present, %u max, %u online, online mask: %016RX64\n",
+            (unsigned)RTMpGetPresentCount(), (unsigned)RTMpGetCount(), (unsigned)RTMpGetOnlineCount(),
+            RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) ));
     LogRel(("************************* CPUID dump ************************\n"));
     DBGFR3Info(pVM, "cpuid", "verbose", DBGFR3InfoLogRelHlp());
     LogRel(("\n"));
