@@ -1584,6 +1584,24 @@ static bool ohciIsTdInFlight(POHCI pOhci, uint32_t GCPhysTD)
     return ohci_in_flight_find(pOhci, GCPhysTD) >= 0;
 }
 
+/**
+ * Returns a URB associated with an in-flight TD, if any.
+ *
+ * @returns pointer to URB if TD is in flight.
+ * @returns NULL if not in flight.
+ * @param   pOhci       OHCI instance data.
+ * @param   GCPhysTD    Physical address of the TD.
+ */
+static PVUSBURB ohciTdInFlightUrb(POHCI pOhci, uint32_t GCPhysTD)
+{
+    int i;
+
+    i = ohci_in_flight_find(pOhci, GCPhysTD);
+    if ( i >= 0 )
+        return pOhci->aInFlight[i].pUrb;
+    else
+        return NULL;
+}
 
 /**
  * Removes a in-flight TD.
@@ -3179,6 +3197,20 @@ static void ohciServiceBulkList(POHCI pOhci)
                 } while (ohciIsEdReady(&Ed));
             }
 #endif
+        }
+        else
+        {
+            if (Ed.hwinfo & ED_HWINFO_SKIP)
+            {
+                LogFlow(("ohciServiceBulkList: Ed=%#010RX32 Ed.TailP=%#010RX32 SKIP\n", EdAddr, Ed.TailP));
+                /* If the ED is in 'skip' state, no transactions on it are allowed and we must
+                 * cancel outstanding URBs, if any.
+                 */
+                uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
+                PVUSBURB pUrb = ohciTdInFlightUrb(pOhci, TdAddr);
+                if (pUrb)
+                    pOhci->RootHub.pIRhConn->pfnCancelUrbsEp(pOhci->RootHub.pIRhConn, pUrb);
+            }
         }
 
         /* next end point */
