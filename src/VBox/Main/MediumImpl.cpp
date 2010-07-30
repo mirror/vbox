@@ -3539,7 +3539,7 @@ HRESULT Medium::queryInfo()
         try
         {
             /** @todo This kind of opening of media is assuming that diff
-             * media can be opened as base media. Should be documented if
+             * media can be opened as base media. Should be documented that
              * it must work for all medium format backends. */
             vrc = VDOpen(hdd,
                          format.c_str(),
@@ -3617,12 +3617,13 @@ HRESULT Medium::queryInfo()
                 }
             }
 
-            /* check the type */
+            /* get the medium variant */
             unsigned uImageFlags;
             vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
             ComAssertRCThrow(vrc, E_FAIL);
             m->variant = (MediumVariant_T)uImageFlags;
 
+            /* check/get the parent uuid and update corresponding state */
             if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
             {
                 RTUUID parentId;
@@ -3641,8 +3642,8 @@ HRESULT Medium::queryInfo()
                     Guid id = parentId;
                     ComObjPtr<Medium> pParent;
                     rc = m->pVirtualBox->findHardDisk(&id, NULL,
-                                                   false /* aSetError */,
-                                                   &pParent);
+                                                      false /* aSetError */,
+                                                      &pParent);
                     if (FAILED(rc))
                     {
                         lastAccessError = Utf8StrFmt(
@@ -4598,7 +4599,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  * direct ancestor or descendant.
  *
  * Given this medium is SOURCE and the specified medium is TARGET, we will
- * get two varians of the merge operation:
+ * get two variants of the merge operation:
  *
  *                forward merge
  *                ------------------------->
