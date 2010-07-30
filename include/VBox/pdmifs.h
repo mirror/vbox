@@ -2072,6 +2072,8 @@ typedef struct PDMIHPETLEGACYNOTIFY
 
 /** Forward declaration of the guest information structure. */
 struct VBoxGuestInfo;
+/** Forward declaration of the guest information-2 structure. */
+struct VBoxGuestInfo2;
 /** Forward declaration of the guest statistics structure */
 struct VBoxGuestStatistics;
 /** Forward declaration of the guest status structure */
