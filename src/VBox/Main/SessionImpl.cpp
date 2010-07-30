@@ -895,7 +895,9 @@ HRESULT Session::unlockMachine(bool aFinalRelease, bool aFromServer)
         if (mType != SessionType_WriteLock && (rc == E_UNEXPECTED || rc == E_ACCESSDENIED))
             rc = S_OK;
 
+#ifndef DEBUG_bird /* I don't want clients crashing on me just because VBoxSVC went belly up. */
         AssertComRC(rc);
+#endif
     }
 
     mControl.setNull();
