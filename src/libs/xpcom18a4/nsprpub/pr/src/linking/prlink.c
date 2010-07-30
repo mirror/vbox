@@ -112,6 +112,12 @@
 #endif /* XP_UNIX */
 
 #endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
+#ifdef VBOX_USE_IPRT_IN_NSPR
+# include <iprt/mem.h>
+# include <iprt/string.h>
+# undef  strdup
+# define strdup(str) RTStrDup(str)
+#endif
 
 #define _PR_DEFAULT_LD_FLAGS PR_LD_LAZY
 
@@ -417,7 +423,11 @@ void _PR_ShutdownLinker(void)
     pr_linker_lock = NULL;
 
     if (_pr_currentLibPath) {
+#ifdef VBOX_USE_IPRT_IN_NSPR
+        RTStrFree(_pr_currentLibPath);
+#else
         free(_pr_currentLibPath);
+#endif
         _pr_currentLibPath = NULL;
     }
 
@@ -436,7 +446,11 @@ PR_IMPLEMENT(PRStatus) PR_SetLibraryPath(const char *path)
     if (!_pr_initialized) _PR_ImplicitInitialization();
     PR_EnterMonitor(pr_linker_lock);
     if (_pr_currentLibPath) {
+#ifdef VBOX_USE_IPRT_IN_NSPR
+        RTStrFree(_pr_currentLibPath);
+#else
         free(_pr_currentLibPath);
+#endif
     }
     if (path) {
         _pr_currentLibPath = strdup(path);
@@ -487,7 +501,11 @@ PR_GetLibraryPath(void)
         ev = "";
 
     len = strlen(ev) + 1;        /* +1 for the null */
+# ifdef VBOX_USE_IPRT_IN_NSPR
+    p = (char*) RTStrAlloc(len);
+# else
     p = (char*) malloc(len);
+# endif
     if (p) {
         strcpy(p, ev);
     }
@@ -518,7 +536,11 @@ PR_GetLibraryPath(void)
 #endif
     len = strlen(ev) + 1;        /* +1 for the null */
 
+# ifdef VBOX_USE_IPRT_IN_NSPR
+    p = (char*) RTStrAlloc(len);
+# else
     p = (char*) malloc(len);
+# endif
     if (p) {
         strcpy(p, ev);
     }   /* if (p)  */
@@ -529,7 +551,7 @@ PR_GetLibraryPath(void)
 #else
     /* AFAIK there isn't a library path with the HP SHL interface --Rob */
     ev = strdup("");
-#endif
+# endif
 #endif
 
     /*
@@ -539,7 +561,11 @@ PR_GetLibraryPath(void)
 
   exit:
     if (_pr_currentLibPath) {
+#ifdef VBOX_USE_IPRT_IN_NSPR
+        copy = RTMemDup(_pr_currentLibPath, strlen(_pr_currentLibPath) + 1);
+#else
         copy = strdup(_pr_currentLibPath);
+#endif
     }
     PR_ExitMonitor(pr_linker_lock);
     if (!copy) {
@@ -1474,7 +1500,11 @@ PR_UnloadLibrary(PRLibrary *lib)
 
   freeLib:
     PR_LOG(_pr_linker_lm, PR_LOG_MIN, ("Unloaded library %s", lib->name));
+#ifdef VBOX_USE_IPRT_IN_NSPR
+    RTStrFree(lib->name);
+#else
     free(lib->name);
+#endif
     lib->name = NULL;
     PR_DELETE(lib);
     if (result != 0) {

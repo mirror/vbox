@@ -38,6 +38,9 @@
 #include "plstr.h"
 #include "prmem.h"
 #include <string.h>
+#ifdef VBOX_USE_IPRT_IN_NSPR
+#include <iprt/mem.h>
+#endif
 
 PR_IMPLEMENT(char *)
 PL_strdup(const char *s)
@@ -50,7 +53,11 @@ PL_strdup(const char *s)
 
     n = strlen(s) + 1;
 
+#ifdef VBOX_USE_IPRT_IN_NSPR
+    rv = (char *)RTMemAlloc(n);
+#else
     rv = (char *)malloc(n);
+#endif
     if( (char *)0 == rv ) return rv;
 
     (void)memcpy(rv, s, n);
@@ -61,7 +68,11 @@ PL_strdup(const char *s)
 PR_IMPLEMENT(void)
 PL_strfree(char *s)
 {
+#ifdef VBOX_USE_IPRT_IN_NSPR
+    RTMemFree(s);
+#else
     free(s);
+#endif
 }
 
 PR_IMPLEMENT(char *)
@@ -75,7 +86,11 @@ PL_strndup(const char *s, PRUint32 max)
 
     l = PL_strnlen(s, max);
 
+#ifdef VBOX_USE_IPRT_IN_NSPR
+    rv = (char *)RTMemAlloc(l+1);
+#else
     rv = (char *)malloc(l+1);
+#endif
     if( (char *)0 == rv ) return rv;
 
     (void)memcpy(rv, s, l);

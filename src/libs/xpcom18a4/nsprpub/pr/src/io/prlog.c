@@ -50,8 +50,11 @@
  */
 
 #if defined(VBOX) && defined(DEBUG)
-#include <iprt/initterm.h> /* for RTR3Init */
-#include <iprt/log.h>
+# include <iprt/initterm.h> /* for RTR3Init */
+# include <iprt/log.h>
+#endif
+#ifdef VBOX_USE_IPRT_IN_NSPR
+# include <iprt/string.h>
 #endif
 
 #include "primpl.h"
@@ -336,7 +339,11 @@ void _PR_LogCleanup(void)
 
     while (lm != NULL) {
         PRLogModuleInfo *next = lm->next;
+#ifdef VBOX_USE_IPRT_IN_NSPR
+        RTStrFree((/*const*/ char *)lm->name);
+#else
         free((/*const*/ char *)lm->name);
+#endif
         PR_Free(lm);
         lm = next;
     }
@@ -394,7 +401,11 @@ PR_IMPLEMENT(PRLogModuleInfo*) PR_NewLogModule(const char *name)
 
     lm = PR_NEWZAP(PRLogModuleInfo);
     if (lm) {
+#ifdef VBOX_USE_IPRT_IN_NSPR
+        lm->name = RTStrDup(name);
+#else
         lm->name = strdup(name);
+#endif
         lm->level = PR_LOG_NONE;
         lm->next = logModules;
         logModules = lm;

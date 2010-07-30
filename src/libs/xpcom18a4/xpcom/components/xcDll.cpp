@@ -73,10 +73,13 @@
 #endif
 
 #include "nsNativeComponentLoader.h"
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+# include "nsMemory.h"
+#endif
 
 nsDll::nsDll(nsIFile *dllSpec, nsNativeComponentLoader *loader)
     : m_dllSpec(do_QueryInterface(dllSpec)),
-      m_instance(NULL), 
+      m_instance(NULL),
       m_moduleObject(NULL),
       m_loader(loader),
       m_markForUnload(PR_FALSE)
@@ -101,7 +104,7 @@ void
 nsDll::GetDisplayPath(nsACString& aLeafName)
 {
     m_dllSpec->GetNativeLeafName(aLeafName);
-    
+
     if (aLeafName.IsEmpty())
         aLeafName.AssignLiteral("unknown!");
 }
@@ -119,7 +122,7 @@ nsDll::HasChanged()
     if (NS_FAILED(rv))
         return PR_TRUE;
     PRBool changed = PR_TRUE;
-    manager->HasFileChanged(m_dllSpec, nsnull, currentDate, &changed); 
+    manager->HasFileChanged(m_dllSpec, nsnull, currentDate, &changed);
     return changed;
 }
 
@@ -136,15 +139,15 @@ PRBool nsDll::Load(void)
 #ifdef NS_BUILD_REFCNT_LOGGING
         nsTraceRefcntImpl::SetActivityIsLegal(PR_FALSE);
 #endif
-        
+
     // Load any library dependencies
     //   The Component Loader Manager may hold onto some extra data
-    //   set by either the native component loader or the native 
+    //   set by either the native component loader or the native
     //   component.  We assume that this data is a space delimited
     //   listing of dependent libraries which are required to be
     //   loaded prior to us loading the given component.  Once, the
-    //   component is loaded into memory, we can release our hold 
-    //   on the dependent libraries with the assumption that the 
+    //   component is loaded into memory, we can release our hold
+    //   on the dependent libraries with the assumption that the
     //   component library holds a reference via the OS so loader.
 
 #if defined(XP_UNIX)
@@ -154,22 +157,22 @@ PRBool nsDll::Load(void)
 
     nsXPIDLCString extraData;
     manager->GetOptionalData(m_dllSpec, nsnull, getter_Copies(extraData));
-    
+
 #ifdef UNLOAD_DEPENDENT_LIBS
     nsVoidArray dependentLibArray;
 #endif
 
     // if there was any extra data, treat it as a listing of dependent libs
-    if (extraData != nsnull) 
+    if (extraData != nsnull)
     {
         // all dependent libraries are suppose to be in the "gre" directory.
-        // note that the gre directory is the same as the "bin" directory, 
+        // note that the gre directory is the same as the "bin" directory,
         // when there isn't a real "gre" found.
 
         nsXPIDLCString path;
         nsCOMPtr<nsIFile> file;
         NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(file));
-        
+
         if (!file)
             return NS_ERROR_FAILURE;
 
@@ -177,7 +180,11 @@ PRBool nsDll::Load(void)
         // stupid right now, so that later we can just set the leaf name.
         file->AppendNative(NS_LITERAL_CSTRING("dummy"));
 
-        char *buffer = strdup(extraData); 
+# ifdef VBOX_USE_IPRT_IN_XPCOM
+        char *buffer = (char *)nsMemory::Clone(extraData, strlen(extraData) + 1);
+# else
+        char *buffer = strdup(extraData);
+# endif
         if (!buffer)
             return NS_ERROR_OUT_OF_MEMORY;
 
@@ -199,15 +206,15 @@ PRBool nsDll::Load(void)
             if (!path)
                 return NS_ERROR_FAILURE;
 
-            // Load this dependent library with the global flag and stash 
+            // Load this dependent library with the global flag and stash
             // the result for later so that we can unload it.
             PRLibSpec libSpec;
             libSpec.type = PR_LibSpec_Pathname;
 
-            // if the depend library path starts with a / we are 
+            // if the depend library path starts with a / we are
             // going to assume that it is a full path and should
-            // be loaded without prepending the gre diretory 
-            // location.  We could have short circuited the 
+            // be loaded without prepending the gre diretory
+            // location.  We could have short circuited the
             // SetNativeLeafName above, but this is clearer and
             // the common case is a relative path.
 
@@ -215,31 +222,35 @@ PRBool nsDll::Load(void)
                 libSpec.value.pathname = token;
             else
                 libSpec.value.pathname = path;
-            
+
             PRLibrary* lib = PR_LoadLibraryWithFlags(libSpec, PR_LD_LAZY|PR_LD_GLOBAL);
             // if we couldn't load the dependent library.  We did the best we
             // can.  Now just let us fail later if this really was a required
             // dependency.
 #ifdef UNLOAD_DEPENDENT_LIBS
-            if (lib) 
+            if (lib)
                 dependentLibArray.AppendElement((void*)lib);
 #endif
-                
+
             token = nsCRT::strtok(newStr, " ", &newStr);
         }
+# ifdef VBOX_USE_IPRT_IN_XPCOM
+        nsMemory::Free(buffer);
+# else
         free(buffer);
+# endif
     }
 #endif
 
     // load the component
     nsCOMPtr<nsILocalFile> lf(do_QueryInterface(m_dllSpec));
-    NS_ASSERTION(lf, "nsIFile here must implement a nsILocalFile"); 
+    NS_ASSERTION(lf, "nsIFile here must implement a nsILocalFile");
     lf->Load(&m_instance);
 
 #if defined(XP_UNIX)
-    // Unload any of library dependencies we loaded earlier. The assumption  
+    // Unload any of library dependencies we loaded earlier. The assumption
     // here is that the component will have a "internal" reference count to
-    // the dependency library we just loaded.  
+    // the dependency library we just loaded.
     // XXX should we unload later - or even at all?
 
 #ifdef UNLOAD_DEPENDENT_LIBS
@@ -305,7 +316,7 @@ void * nsDll::FindSymbol(const char *symbol)
 {
 	if (symbol == NULL)
 		return (NULL);
-	
+
 	// If not already loaded, load it now.
 	if (Load() != PR_TRUE)
 		return (NULL);

@@ -50,6 +50,9 @@
 #include "nsDependentString.h"
 #include "nsMemory.h"
 #include "pratom.h"
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+# include <iprt/mem.h>
+#endif
 
 // ---------------------------------------------------------------------------
 
@@ -75,6 +78,7 @@ class nsStringStats
           if (!mAllocCount && !mAdoptCount)
             return;
 
+#ifndef VBOX
           printf("nsStringStats\n");
           printf(" => mAllocCount:     % 10d\n", mAllocCount);
           printf(" => mReallocCount:   % 10d\n", mReallocCount);
@@ -90,6 +94,7 @@ class nsStringStats
             printf("  --  LEAKED %d !!!\n", mAdoptCount - mAdoptFreeCount);
           else
             printf("\n");
+#endif
         }
 
       PRInt32 mAllocCount;
@@ -136,7 +141,11 @@ class nsStringHeader
           if (PR_AtomicDecrement(&mRefCount) == 0)
             {
               STRING_STAT_INCREMENT(Free);
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+              RTMemFree(this); // we were allocated with |malloc|
+#else
               free(this); // we were allocated with |malloc|
+#endif
             }
         }
 
@@ -146,11 +155,15 @@ class nsStringHeader
       static nsStringHeader* Alloc(size_t size)
         {
           STRING_STAT_INCREMENT(Alloc);
- 
+
           NS_ASSERTION(size != 0, "zero capacity allocation not allowed");
 
           nsStringHeader *hdr =
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+              (nsStringHeader *) RTMemAlloc(sizeof(nsStringHeader) + size);
+#else
               (nsStringHeader *) malloc(sizeof(nsStringHeader) + size);
+#endif
           if (hdr)
             {
               hdr->mRefCount = 1;
@@ -168,7 +181,11 @@ class nsStringHeader
           // no point in trying to save ourselves if we hit this assertion
           NS_ASSERTION(!hdr->IsReadonly(), "|Realloc| attempted on readonly string");
 
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+          hdr = (nsStringHeader*) RTMemRealloc(hdr, sizeof(nsStringHeader) + size);
+#else
           hdr = (nsStringHeader*) realloc(hdr, sizeof(nsStringHeader) + size);
+#endif
           if (hdr)
             hdr->mStorageSize = size;
 

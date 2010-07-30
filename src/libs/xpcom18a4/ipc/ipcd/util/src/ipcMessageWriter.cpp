@@ -39,27 +39,34 @@
 #include "ipcMessageWriter.h"
 #include "prmem.h"
 #include <string.h>
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+# include <iprt/mem.h>
+#endif
 
 //*****************************************************************************
 // ipcMessageWriter
-//*****************************************************************************   
+//*****************************************************************************
 
 ipcMessageWriter::~ipcMessageWriter()
 {
   if (mBuf)
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+    RTMemFree(mBuf);
+#else
     free(mBuf);
+#endif
 }
-  
+
 void ipcMessageWriter::PutInt8(PRUint8 val)
 {
-  if (EnsureCapacity(sizeof(PRUint8))) 
+  if (EnsureCapacity(sizeof(PRUint8)))
     *mBufPtr++ = val;
 }
 
 // PutInt16 and PutInt32 go to pains to avoid unaligned memory accesses that
 // are larger than a byte. On some platforms, that causes a performance penalty.
 // On other platforms, Tru64 for instance, it's an error.
-  
+
 void ipcMessageWriter::PutInt16(PRUint16 val)
 {
   if (EnsureCapacity(sizeof(PRUint16))) {
@@ -69,7 +76,7 @@ void ipcMessageWriter::PutInt16(PRUint16 val)
     *mBufPtr++ = temp[1];
   }
 }
-  
+
 void ipcMessageWriter::PutInt32(PRUint32 val)
 {
   if (EnsureCapacity(sizeof(PRUint32))) {
@@ -78,10 +85,10 @@ void ipcMessageWriter::PutInt32(PRUint32 val)
     *mBufPtr++ = temp[0];
     *mBufPtr++ = temp[1];
     *mBufPtr++ = temp[2];
-    *mBufPtr++ = temp[3];    
+    *mBufPtr++ = temp[3];
   }
 }
-  
+
 PRUint32 ipcMessageWriter::PutBytes(const void* src, PRUint32 n)
 {
   if (EnsureCapacity(n)) {
@@ -91,7 +98,7 @@ PRUint32 ipcMessageWriter::PutBytes(const void* src, PRUint32 n)
   }
   return 0;
 }
-    
+
 PRBool ipcMessageWriter::GrowCapacity(PRInt32 sizeNeeded)
 {
   if (sizeNeeded < 0)
@@ -106,9 +113,13 @@ PRBool ipcMessageWriter::GrowCapacity(PRInt32 sizeNeeded)
     if (newCapacity > mCapacity) // if we broke out because of rollover
       return PR_FALSE;
   }
-    
+
   PRInt32 curPos = mBufPtr - mBuf;
+#ifdef VBOX_USE_IPRT_IN_XPCOM
+  mBuf = (PRUint8*)RTMemRealloc(mBuf, mCapacity);
+#else
   mBuf = (PRUint8*)realloc(mBuf, mCapacity);
+#endif
   if (!mBuf) {
     mError = PR_TRUE;
     return PR_FALSE;
