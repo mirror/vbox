@@ -29,7 +29,8 @@
 *******************************************************************************/
 #include "alloc-ef.h"
 
-#if defined(RTALLOC_EFENCE_CPP) || defined(RTMEM_WRAP_TO_EF_APIS) /* rest of the file */
+#if defined(RTALLOC_EFENCE_CPP) \
+ || (defined(RTMEM_WRAP_TO_EF_APIS) && !defined(RTMEM_NO_WRAP_TO_EF_APIS)) /* rest of the file */
 
 #include <iprt/asm.h>
 #include <new>

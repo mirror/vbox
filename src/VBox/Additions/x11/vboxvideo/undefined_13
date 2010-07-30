@@ -183,3 +183,8 @@ flock
 sigdelset
 sigfillset
 pthread_sigmask
+mprotect
+mmap64
+memalign
+posix_memalign
+munmap
