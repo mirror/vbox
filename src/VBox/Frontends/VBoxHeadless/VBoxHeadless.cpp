@@ -1075,6 +1075,23 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         CHECK_ERROR_BREAK(console, PowerUp(progress.asOutParam()));
 
         /* wait for result because there can be errors */
+        /** @todo The error handling here is kind of peculiar, anyone care
+         *        to comment why this works just fine? */
+        for (;;)
+        {
+            rc = progress->WaitForCompletion(500);
+            if (FAILED(rc))
+                break;
+
+            /* Processing events is vital for teleportation targets. */
+            gEventQ->processEventQueue(0);
+
+            BOOL fCompleted;
+            rc = progress->COMGETTER(Completed)(&fCompleted);
+            if (FAILED(rc) || fCompleted)
+                break;
+        }
+
         if (SUCCEEDED(progress->WaitForCompletion(-1)))
         {
             LONG progressRc;
