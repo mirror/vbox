@@ -8169,6 +8169,14 @@
           Waits until the task is done (including all sub-operations)
           with a given timeout in milliseconds; specify -1 for an indefinite wait.
 
+	  Note that the VirtualBox/XPCOM/COM/native event queues of the calling
+	  thread are not processed while waiting.  Neglecting event queues may
+	  have dire consequences (degrade performance, resource hogs,
+	  deadlocks, etc.), this is specially so for the main thread on
+	  platforms using XPCOM.  Callers are adviced wait for short periods
+	  and service their event queues between calls, or to create a worker
+	  thread to do the waiting.
+
         <result name="VBOX_E_IPRT_ERROR">
           Failed to wait for task completion.
         </result>
@@ -8185,6 +8193,8 @@
       <desc>
           Waits until the given operation is done with a given timeout in
           milliseconds; specify -1 for an indefinite wait.
+
+	  See <link to="#waitForCompletion"> for event queue considerations.
 
         <result name="VBOX_E_IPRT_ERROR">
           Failed to wait for operation completion.
