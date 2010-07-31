@@ -1074,24 +1074,26 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         ComPtr <IProgress> progress;
         CHECK_ERROR_BREAK(console, PowerUp(progress.asOutParam()));
 
-        /* wait for result because there can be errors */
-        /** @todo The error handling here is kind of peculiar, anyone care
-         *        to comment why this works just fine? */
+        /*
+         * Wait for the result because there can be errors.
+         *
+         * It's vital to process events while waiting (teleportation deadlocks),
+         * so we'll poll for the completion instead of waiting on it.
+         */
         for (;;)
         {
-            rc = progress->WaitForCompletion(500);
-            if (FAILED(rc))
-                break;
-
-            /* Processing events is vital for teleportation targets. */
-            gEventQ->processEventQueue(0);
-
             BOOL fCompleted;
             rc = progress->COMGETTER(Completed)(&fCompleted);
             if (FAILED(rc) || fCompleted)
                 break;
+
+            /* Process pending events, then wait for new ones. */
+            gEventQ->processEventQueue(0);
+            gEventQ->processEventQueue(500);
         }
 
+        /** @todo The error handling here is kind of peculiar, anyone care
+         *        to comment why this works just fine? (this is old the code) */
         if (SUCCEEDED(progress->WaitForCompletion(-1)))
         {
             LONG progressRc;
