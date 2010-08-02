@@ -211,8 +211,8 @@ static int codecGetParameter(struct CODECState *pState, uint32_t cmd, uint64_t *
         Log(("HDAcodec: invalide node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
-    Assert(((cmd & CODEC_VERB_8BIT_DATA) < 16));
-    if ((cmd & CODEC_VERB_8BIT_DATA) >= 16)
+    Assert(((cmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F0_PARAM_LENGTH));
+    if ((cmd & CODEC_VERB_8BIT_DATA) >= CODECNODE_F0_PARAM_LENGTH)
     {
         Log(("HDAcodec: invalide F00 parameter %d\n", (cmd & CODEC_VERB_8BIT_DATA)));
         return VINF_SUCCESS;
