@@ -156,7 +156,6 @@ enum
     MODIFYVM_HPET,
     MODIFYVM_IOCACHE,
     MODIFYVM_IOCACHESIZE,
-    MODIFYVM_IOBANDWIDTHMAX
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -266,7 +265,6 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--hpet",                     MODIFYVM_HPET,                      RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocache",                  MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocachesize",              MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32 },
-    { "--iobandwidthmax",           MODIFYVM_IOBANDWIDTHMAX,            RTGETOPT_REQ_UINT32 },
 };
 
 int handleModifyVM(HandlerArg *a)
@@ -2024,12 +2022,6 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_IOCACHESIZE:
             {
                 CHECK_ERROR(machine, COMSETTER(IoCacheSize)(ValueUnion.u32));
-                break;
-            }
-
-            case MODIFYVM_IOBANDWIDTHMAX:
-            {
-                CHECK_ERROR(machine, COMSETTER(IoBandwidthMax)(ValueUnion.u32));
                 break;
             }
 
