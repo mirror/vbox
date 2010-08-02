@@ -859,7 +859,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     if (m_pauseShot.isNull())
     {
         /* Delegate the paint function to the VBoxFrameBuffer interface: */
-        if (m_pFrameBuffer && uisession()->isRunning())
+        if (m_pFrameBuffer && !uisession()->isTurnedOff())
             m_pFrameBuffer->paintEvent(pPaintEvent);
 #ifdef Q_WS_MAC
         /* Update the dock icon if we are in the running state */
