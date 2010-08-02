@@ -4253,7 +4253,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         && (    hardwareMachine.ulCpuPriority != 100
            )
        )
-        m->sv = SettingsVersion_v1_10;
+        m->sv = SettingsVersion_v1_11;
 }
 
 /**
