@@ -107,8 +107,8 @@ public:
     HRESULT loadSettings(const settings::Host &data);
     HRESULT saveSettings(settings::Host &data);
 
-    HRESULT getDVDDrives(MediaList &ll);
-    HRESULT getFloppyDrives(MediaList &ll);
+    HRESULT getDrives(DeviceType_T mediumType, bool fRefresh, MediaList *&pll);
+    HRESULT findHostDrive(DeviceType_T mediumType, const Guid &uuid, bool fRefresh, ComObjPtr<Medium> &pMedium);
 
 #ifdef VBOX_WITH_USB
     typedef std::list< ComObjPtr<HostUSBDeviceFilter> > USBDeviceFilterList;
@@ -126,6 +126,9 @@ public:
 #endif /* !VBOX_WITH_USB */
 
 private:
+
+    HRESULT buildDVDDrivesList(MediaList &list);
+    HRESULT buildFloppyDrivesList(MediaList &list);
 
 #if defined(RT_OS_SOLARIS) && defined(VBOX_USE_LIBHAL)
     bool getDVDInfoFromHal(std::list< ComObjPtr<Medium> > &list);

@@ -154,9 +154,12 @@ extern bool is3DAccelerationSupported();
 struct Host::Data
 {
     Data()
+        :
 #ifdef VBOX_WITH_USB
-        : usbListsLock(LOCKCLASS_USBLIST)
+          usbListsLock(LOCKCLASS_USBLIST),
 #endif
+          fDVDDrivesListBuilt(false),
+          fFloppyDrivesListBuilt(false)
     {};
 
     VirtualBox              *pParent;
@@ -170,6 +173,12 @@ struct Host::Data
     /** Pointer to the USBProxyService object. */
     USBProxyService         *pUSBProxyService;
 #endif /* VBOX_WITH_USB */
+
+    // list of host drives; lazily created by getDVDDrives() and getFloppyDrives()
+    MediaList               llDVDDrives,
+                            llFloppyDrives;
+    bool                    fDVDDrivesListBuilt,
+                            fFloppyDrivesListBuilt;
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     /** Object with information about host drives */
@@ -408,11 +417,11 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    MediaList list;
-    HRESULT rc = getDVDDrives(list);
+    MediaList *pList;
+    HRESULT rc = getDrives(DeviceType_DVD, true /* fRefresh */, pList);
     if (SUCCEEDED(rc))
     {
-        SafeIfaceArray<IMedium> array(list);
+        SafeIfaceArray<IMedium> array(*pList);
         array.detachTo(ComSafeArrayOutArg(aDrives));
     }
 
@@ -434,11 +443,11 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives)(ComSafeArrayOut(IMedium *, aDrives))
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    MediaList list;
-    HRESULT rc = getFloppyDrives(list);
+    MediaList *pList;
+    HRESULT rc = getDrives(DeviceType_Floppy, true /* fRefresh */, pList);
     if (SUCCEEDED(rc))
     {
-        SafeIfaceArray<IMedium> collection(list);
+        SafeIfaceArray<IMedium> collection(*pList);
         collection.detachTo(ComSafeArrayOutArg(aDrives));
     }
 
@@ -1509,7 +1518,176 @@ HRESULT Host::saveSettings(settings::Host &data)
     return S_OK;
 }
 
-HRESULT Host::getDVDDrives(MediaList &list)
+/**
+ * Sets the given pointer to point to the static list of DVD or floppy
+ * drives in the Host instance data, depending on the @a mediumType
+ * parameter.
+ *
+ * This builds the list on the first call; it adds or removes host drives
+ * that may have changed if fRefresh == true.
+ *
+ * The caller must hold the Host write lock before calling this.
+ * To protect the list to which the caller's pointer points, the caller
+ * must also hold the Host lock.
+ *
+ * @param mediumType Must be DeviceType_Floppy or DeviceType_DVD.
+ * @param fRefresh Whether to refresh the host drives list even if this is not the first call.
+ * @param pll Caller's pointer which gets set to the static list of host drives.
+ * @return
+ */
+HRESULT Host::getDrives(DeviceType_T mediumType,
+                        bool fRefresh,
+                        MediaList *&pll)
+{
+    HRESULT rc = S_OK;
+    Assert(isWriteLockOnCurrentThread());
+
+    MediaList llNew;
+    MediaList *pllCached;
+    bool *pfListBuilt = NULL;
+
+    switch (mediumType)
+    {
+        case DeviceType_DVD:
+            if (!m->fDVDDrivesListBuilt || fRefresh)
+            {
+                rc = buildDVDDrivesList(llNew);
+                if (FAILED(rc))
+                    return rc;
+                pfListBuilt = &m->fDVDDrivesListBuilt;
+            }
+            pllCached = &m->llDVDDrives;
+        break;
+
+        case DeviceType_Floppy:
+            if (!m->fFloppyDrivesListBuilt || fRefresh)
+            {
+                rc = buildFloppyDrivesList(llNew);
+                if (FAILED(rc))
+                    return rc;
+                pfListBuilt = &m->fFloppyDrivesListBuilt;
+            }
+            pllCached = &m->llFloppyDrives;
+        break;
+
+        default:
+            return E_INVALIDARG;
+    }
+
+    if (pfListBuilt)
+    {
+        // a list was built in llNew above:
+        if (!*pfListBuilt)
+        {
+            // this was the first call (instance bool is still false): then just copy the whole list and return
+            *pllCached = llNew;
+            // and mark the instance data as "built"
+            *pfListBuilt = true;
+        }
+        else
+        {
+            // list was built, and this was a subsequent call: then compare the old and the new lists
+
+            // remove drives from the cached list which are no longer present
+            for (MediaList::iterator itCached = pllCached->begin();
+                 itCached != pllCached->end();
+                 ++itCached)
+            {
+                Medium *pCached = *itCached;
+                const Utf8Str strLocationCached = pCached->getLocation();
+                bool fFound = false;
+                for (MediaList::iterator itNew = llNew.begin();
+                     itNew != llNew.end();
+                     ++itNew)
+                {
+                    Medium *pNew = *itNew;
+                    const Utf8Str strLocationNew = pNew->getLocation();
+                    if (strLocationNew == strLocationCached)
+                    {
+                        fFound = true;
+                        break;
+                    }
+                }
+                if (!fFound)
+                    itCached = pllCached->erase(itCached);
+            }
+
+            // add drives to the cached list that are not on there yet
+            for (MediaList::iterator itNew = llNew.begin();
+                 itNew != llNew.end();
+                 ++itNew)
+            {
+                Medium *pNew = *itNew;
+                const Utf8Str strLocationNew = pNew->getLocation();
+                bool fFound = false;
+                for (MediaList::iterator itCached = pllCached->begin();
+                     itCached != pllCached->end();
+                     ++itCached)
+                {
+                    Medium *pCached = *itCached;
+                    const Utf8Str strLocationCached = pCached->getLocation();
+                    if (strLocationNew == strLocationCached)
+                    {
+                        fFound = true;
+                        break;
+                    }
+                }
+
+                if (!fFound)
+                    pllCached->push_back(pNew);
+            }
+        }
+    }
+
+    // return cached list to caller
+    pll = pllCached;
+
+    return rc;
+}
+
+/**
+ * Goes through the list of host drives that would be returned by getDrives()
+ * and looks for a host drive with the given UUID. If found, it sets pMedium
+ * to that drive; otherwise returns VBOX_E_OBJECT_NOT_FOUND.
+ * @param mediumType Must be DeviceType_DVD or DeviceType_Floppy.
+ * @param uuid Medium UUID of host drive to look for.
+ * @param fRefresh Whether to refresh the host drives list (see getDrives())
+ * @param pMedium Medium object, if found…
+ * @return VBOX_E_OBJECT_NOT_FOUND if not found, or S_OK if found, or errors from getDrives().
+ */
+HRESULT Host::findHostDrive(DeviceType_T mediumType,
+                            const Guid &uuid,
+                            bool fRefresh,
+                            ComObjPtr<Medium> &pMedium)
+{
+    MediaList *pllMedia;
+
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = getDrives(mediumType, fRefresh, pllMedia);
+    if (SUCCEEDED(rc))
+    {
+        for (MediaList::iterator it = pllMedia->begin();
+             it != pllMedia->end();
+             ++it)
+        {
+            Medium *pThis = *it;
+            if (pThis->getId() == uuid)
+            {
+                pMedium = pThis;
+                return S_OK;
+            }
+        }
+    }
+
+    return VBOX_E_OBJECT_NOT_FOUND;
+}
+
+/**
+ * Called from getDrives() to build the DVD drives list.
+ * @param pll
+ * @return
+ */
+HRESULT Host::buildDVDDrivesList(MediaList &list)
 {
     HRESULT rc = S_OK;
 
@@ -1622,12 +1800,11 @@ HRESULT Host::getDVDDrives(MediaList &list)
 }
 
 /**
- * Internal implementation for COMGETTER(FloppyDrives) which can be called
- * from elsewhere. Caller must hold the Host object write lock!
+ * Called from getDrives() to build the floppy drives list.
  * @param list
  * @return
  */
-HRESULT Host::getFloppyDrives(MediaList &list)
+HRESULT Host::buildFloppyDrivesList(MediaList &list)
 {
     HRESULT rc = S_OK;
 

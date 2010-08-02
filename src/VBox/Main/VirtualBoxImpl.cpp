@@ -2769,14 +2769,6 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
  *
  * @note Locks the media tree for reading.
  */
-/**
- *
- * @param aId
- * @param aLocation
- * @param aSetError
- * @param aImage
- * @return
- */
 HRESULT VirtualBox::findDVDOrFloppyImage(DeviceType_T mediumType,
                                          const Guid *aId,
                                          const Utf8Str &aLocation,
@@ -2863,6 +2855,50 @@ HRESULT VirtualBox::findDVDOrFloppyImage(DeviceType_T mediumType,
                      aLocation.c_str(),
                      m->strSettingsFilePath.raw());
     }
+
+    return rc;
+}
+
+/**
+ * Searches for an IMedium object that represents the given UUID.
+ *
+ * If the UUID is empty (indicating an empty drive), this sets pMedium
+ * to NULL and returns S_OK.
+ *
+ * If the UUID refers to a host drive of the given device type, this
+ * sets pMedium to the object from the list in IHost and returns S_OK.
+ *
+ * If the UUID is an image file, this sets pMedium to the object that
+ * findDVDOrFloppyImage() returned.
+ *
+ * If none of the above apply, this returns VBOX_E_OBJECT_NOT_FOUND.
+ *
+ * @param mediumType Must be DeviceType_DVD or DeviceType_Floppy.
+ * @param uuid UUID to search for; must refer to a host drive or an image file or be null.
+ * @param fRefresh Whether to refresh the list of host drives in IHost (see Host::getDrives())
+ * @param pMedium out: IMedium object found.
+ * @return
+ */
+HRESULT VirtualBox::findRemoveableMedium(DeviceType_T mediumType,
+                                         const Guid &uuid,
+                                         bool fRefresh,
+                                         ComObjPtr<Medium> &pMedium)
+{
+    if (uuid.isEmpty())
+    {
+        // that's easy
+        pMedium.setNull();
+        return S_OK;
+    }
+
+    // first search for host drive with that UUID
+    HRESULT rc = m->pHost->findHostDrive(mediumType,
+                                         uuid,
+                                         fRefresh,
+                                         pMedium);
+    if (rc == VBOX_E_OBJECT_NOT_FOUND)
+                // then search for an image with that UUID
+        rc = findDVDOrFloppyImage(mediumType, &uuid, Utf8Str::Empty, true /* aSetError */, &pMedium);
 
     return rc;
 }
