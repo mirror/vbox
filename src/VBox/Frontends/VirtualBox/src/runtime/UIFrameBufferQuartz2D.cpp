@@ -183,11 +183,11 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
         if (!m_pMachineView->pauseShot().isNull())
         {
             CGImageRef pauseImg = ::darwinToCGImageRef(&m_pMachineView->pauseShot());
-            subImage = CGImageCreateWithImageInRect(pauseImg, CGRectMake (m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+            subImage = CGImageCreateWithImageInRect(pauseImg, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
             CGImageRelease(pauseImg);
         }
         else
-            subImage = CGImageCreateWithImageInRect(m_image, CGRectMake (m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+            subImage = CGImageCreateWithImageInRect(m_image, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
         Assert(VALID_PTR(subImage));
         /* Clear the background (Make the rect fully transparent) */
         CGContextClearRect(ctx, viewRect);
@@ -246,7 +246,7 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
         /* Create a subimage of the current view in the size
          * of the bounding box of the current paint event */
         CGRect ir = ::darwinToCGRect(aEvent->rect());
-        CGRect is = CGRectMake(CGRectGetMinX(ir) + m_pMachineView->contentsX(), CGRectGetMinY(ir) + m_pMachineView->contentsY(), CGRectGetWidth(ir), CGRectGetHeight(ir));
+        CGRect is = CGRectMake(CGRectGetMinX(ir), CGRectGetMinY(ir), CGRectGetWidth(ir), CGRectGetHeight(ir));
 
         double iw = 1.0;
         double ih = 1.0;
@@ -274,17 +274,20 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
             is.size.width = (int)(is.size.width * iw) + 2;
             is.size.height = (int)(is.size.height * ih) + 2;
             /* Make sure the size is within the image boundaries */
-            is = CGRectIntersection(is, CGRectMake(0, 0, CGImageGetWidth(m_image), CGImageGetHeight(m_image)));
+            CGRect is1 = CGRectIntersection(is, CGRectMake(0, 0, CGImageGetWidth(m_image), CGImageGetHeight(m_image)));
             /* Cause we probably changed the rectangle to update in the origin
              * coordinate system, we have to recalculate the update rectangle
              * for the screen coordinates as well. Please note that this has to
              * be in double precision. */
-            ir.origin.x = is.origin.x / iw;
-            ir.origin.y = is.origin.y / ih;
-            ir.size.width = is.size.width / iw;
-            ir.size.height = is.size.height / ih;
-            /* Create the sub image */
-            subImage = CGImageCreateWithImageInRect(m_image, is);
+            ir.origin.x = is1.origin.x / iw;
+            ir.origin.y = is1.origin.y / ih;
+            ir.size.width = is1.size.width / iw;
+            ir.size.height = is1.size.height / ih;
+            /* Create the sub image. Note: The copy step is necessary otherwise
+             * strange things happens especially on Snow Leopard. No idea why. */
+            CGImageRef tmpImage = CGImageCreateWithImageInRect(m_image, is1);
+            subImage = CGImageCreateCopy(tmpImage);
+            CGImageRelease(tmpImage);
         }
         if (subImage)
         {
@@ -305,7 +308,6 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
             /* Turn the high interpolation quality on. */
             CGContextSetInterpolationQuality(ctx, kCGInterpolationHigh);
             /* Draw the image. */
-
             CGContextDrawImage(ctx, ::darwinFlipCGRect(ir, CGRectGetHeight(viewRect)), subImage);
             CGImageRelease(subImage);
         }
