@@ -180,19 +180,17 @@ static int displayMakeThumbnail(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
     {
         uint8_t *dst = pu8Thumbnail;
         uint8_t *src = pu8Data;
-        int dstX = 0;
-        int dstY = 0;
-        int srcX = 0;
-        int srcY = 0;
         int dstW = cxThumbnail;
         int dstH = cyThumbnail;
         int srcW = cx;
         int srcH = cy;
-        gdImageCopyResampled (dst,
-                              src,
-                              dstX, dstY,
-                              srcX, srcY,
-                              dstW, dstH, srcW, srcH);
+        int iDeltaLine = cx * 4;
+
+        BitmapScale32 (dst,
+                       dstW, dstH,
+                       src,
+                       iDeltaLine,
+                       srcW, srcH);
 
         *ppu8Thumbnail = pu8Thumbnail;
         *pcbThumbnail = cbThumbnail;
@@ -290,19 +288,17 @@ static int displayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
         {
             uint8_t *dst = pu8Bitmap;
             uint8_t *src = pu8Data;
-            int dstX = 0;
-            int dstY = 0;
-            int srcX = 0;
-            int srcY = 0;
             int dstW = cxBitmap;
             int dstH = cyBitmap;
             int srcW = cx;
             int srcH = cy;
-            gdImageCopyResampled (dst,
-                                  src,
-                                  dstX, dstY,
-                                  srcX, srcY,
-                                  dstW, dstH, srcW, srcH);
+            int iDeltaLine = cx * 4;
+
+            BitmapScale32 (dst,
+                           dstW, dstH,
+                           src,
+                           iDeltaLine,
+                           srcW, srcH);
         }
         else
         {
@@ -2468,19 +2464,17 @@ static int displayTakeScreenshot(PVM pVM, struct DRVMAINDISPLAY *pDrv, BYTE *add
 
             uint8_t *dst = address;
             uint8_t *src = pu8Data;
-            int dstX = 0;
-            int dstY = 0;
-            int srcX = 0;
-            int srcY = 0;
             int dstW = width;
             int dstH = height;
             int srcW = cx;
             int srcH = cy;
-            gdImageCopyResampled (dst,
-                                  src,
-                                  dstX, dstY,
-                                  srcX, srcY,
-                                  dstW, dstH, srcW, srcH);
+            int iDeltaLine = cx * 4;
+
+            BitmapScale32 (dst,
+                           dstW, dstH,
+                           src,
+                           iDeltaLine,
+                           srcW, srcH);
         }
 
         /* This can be called from any thread. */

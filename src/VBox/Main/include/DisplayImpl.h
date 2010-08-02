@@ -272,5 +272,11 @@ void gdImageCopyResampled (uint8_t *dst, uint8_t *src,
                            int dstW, int dstH, int srcW, int srcH);
 
 
+void BitmapScale32 (uint8_t *dst,
+                        int dstW, int dstH,
+                        const uint8_t *src,
+                        int iDeltaLine,
+                        int srcW, int srcH);
+
 #endif // ____H_DISPLAYIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
