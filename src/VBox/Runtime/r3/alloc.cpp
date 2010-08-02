@@ -165,7 +165,7 @@ RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) R
 #else /* !RTALLOC_USE_EFENCE */
 
     void *pv = realloc(pvOld, cbNew);
-    AssertMsg(pv && cbNew, ("realloc(%p, %#zx) failed!!!\n", pvOld, cbNew));
+    AssertMsg(pv || !cbNew, ("realloc(%p, %#zx) failed!!!\n", pvOld, cbNew));
     AssertMsg(   cbNew < RTMEM_ALIGNMENT
               || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1))
               || ( (cbNew & RTMEM_ALIGNMENT) + ((uintptr_t)pv & RTMEM_ALIGNMENT)) == RTMEM_ALIGNMENT
