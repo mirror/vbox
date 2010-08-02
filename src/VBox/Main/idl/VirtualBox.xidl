@@ -8529,15 +8529,18 @@
     wsmap="struct"
   >
     <desc>
-      The IMediumAttachment interface represents the attachment
-      of a storage medium to a virtual machine. Each machine contains
-      an array of its medium attachments in <link to="IMachine::mediumAttachments"/>.
+      The IMediumAttachment interface links storage media to virtual machines.
+      For each medium (<link to="IMedium"/>) which has been attached to a
+      storage controller (<link to="IStorageController"/>) of a machine
+      (<link to="IMachine"/>) via the <link to="IMachine::attachDevice" />
+      method, one instance of IMediumAttachment is added to the machine's
+      <link to="IMachine::mediumAttachments"/> array attribute.
 
-      Each medium attachment specifies a storage controller as well as a port
-      and device number. Fixed media (hard disks) will always also specify
-      an instance of IMedium in <link to="#medium" />, referring to the hard disk
-      medium. For removeable media, the IMedia instance is optional; it can be
-      @c null if no media is mounted (see <link to="IMachine::mountMedium" />).
+      Each medium attachment specifies the storage controller as well as a
+      port and device number and the IMedium instance representing a virtual
+      hard disk or floppy or DVD image. As a special exception, for removeable
+      media, the IMedium instance can be @c null to represent an empty drive
+      with no media inserted (see <link to="IMachine::mountMedium" />).
     </desc>
 
     <attribute name="medium" type="IMedium" readonly="yes">
