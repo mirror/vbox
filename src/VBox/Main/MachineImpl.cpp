@@ -8156,7 +8156,8 @@ HRESULT Machine::saveStateSettings(int aFlags)
  * Creates differencing hard disks for all normal hard disks attached to this
  * machine and a new set of attachments to refer to created disks.
  *
- * Used when taking a snapshot or when deleting the current state.
+ * Used when taking a snapshot or when deleting the current state. Gets called
+ * from SessionMachine::BeginTakingSnapshot() and SessionMachine::restoreSnapshotHandler().
  *
  * This method assumes that mMediaData contains the original hard disk attachments
  * it needs to create diffs for. On success, these attachments will be replaced
@@ -8172,7 +8173,6 @@ HRESULT Machine::saveStateSettings(int aFlags)
  * case it is responsibility of the caller to lock the newly created diffs for
  * writing if this method succeeds.
  *
- * @param aFolder           Folder where to create diff hard disks.
  * @param aProgress         Progress object to run (must contain at least as
  *                          many operations left as the number of hard disks
  *                          attached).
@@ -8185,15 +8185,12 @@ HRESULT Machine::saveStateSettings(int aFlags)
  *
  * @note Locks this object for writing.
  */
-HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
-                                     IProgress *aProgress,
+HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                      ULONG aWeight,
                                      bool aOnline,
                                      bool *pfNeedsSaveSettings)
 {
-    AssertReturn(!aFolder.isEmpty(), E_FAIL);
-
-    LogFlowThisFunc(("aFolder='%ls', aOnline=%d\n", aFolder.raw(), aOnline));
+    LogFlowThisFunc(("aOnline=%d\n", aOnline));
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
