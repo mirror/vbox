@@ -106,9 +106,6 @@ void UIMachineViewScale::sltMachineStateChanged()
 void UIMachineViewScale::sltPerformGuestScale()
 {
     /* Check if scale is requested: */
-    if (!m_fShouldWeDoScale)
-        return;
-
     /* Set new frame-buffer scale-factor: */
     frameBuffer()->setScaledSize(viewport()->size());
 
@@ -184,6 +181,7 @@ bool UIMachineViewScale::event(QEvent *pEvent)
             /* Emit a signal about guest was resized: */
             emit resizeHintDone();
 
+            pEvent->accept();
             return true;
         }
 
@@ -195,15 +193,13 @@ bool UIMachineViewScale::event(QEvent *pEvent)
             double yRatio = (double)scaledSize.height() / frameBuffer()->height();
             AssertMsg(contentsX() == 0, ("Thats can't be, else notify Dsen!\n"));
             AssertMsg(contentsY() == 0, ("Thats can't be, else notify Dsen!\n"));
-            viewport()->repaint((pPaintEvent->x() - 10 /* 10 pixels left to cover xRatio*10 */) * xRatio,
-                                (pPaintEvent->y() - 10 /* 10 pixels left to cover yRatio*10 */) * yRatio,
-                                (pPaintEvent->width() + 10 /* 10 pixels right to cover x shift */ + 10 /* 10 pixels right to cover xRatio*10 */) * xRatio,
-                                (pPaintEvent->height() + 10 /* 10 pixels right to cover y shift */ + 10 /* 10 pixels right to cover yRatio*10 */) * yRatio);
-
-//            viewport()->repaint((int)(pPaintEvent->x()  /* 10 pixels left to cover xRatio*10 */ * xRatio),
-//                                (int)(pPaintEvent->y()  /* 10 pixels left to cover yRatio*10 */ * yRatio),
-//                                (int)(pPaintEvent->width()  /* 10 pixels right to cover x shift */  /* 10 pixels right to cover xRatio*10 */ * xRatio) + 2,
-//                                (int)(pPaintEvent->height()  /* 10 pixels right to cover y shift */  /* 10 pixels right to cover yRatio*10 */ * yRatio) + 2);
+            /* Make sure we update always a bigger rectangle than requested to
+             * catch all rounding errors. (use 1 time the ratio factor and
+             * round down on top/left, but round up for the width/height) */
+            viewport()->repaint((int)(pPaintEvent->x() * xRatio) - ((int)xRatio),
+                                (int)(pPaintEvent->y() * yRatio) - ((int)yRatio),
+                                (int)(pPaintEvent->width() * xRatio) + ((int)xRatio + 1) * 2,
+                                (int)(pPaintEvent->height() * yRatio) + ((int)yRatio + 1) * 2);
             pEvent->accept();
             return true;
         }
@@ -226,10 +222,8 @@ bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
-                /* Set the "guest needs to resize" hint.
-                 * This hint is acted upon when (and only when) the autoresize property is "true": */
-                m_fShouldWeDoScale = true;
-                QTimer::singleShot(300, this, SLOT(sltPerformGuestScale()));
+                /* Perform the actually resize */
+                sltPerformGuestScale();
                 break;
             }
 #if defined (Q_WS_WIN32)
