@@ -163,6 +163,7 @@ public:
     const Utf8Str& getFormat() const;
     const ComObjPtr<MediumFormat> & getMediumFormat() const;
     uint64_t getSize() const;
+    DeviceType_T getDeviceType() const;
     MediumType_T getType() const;
     Utf8Str getName();
 

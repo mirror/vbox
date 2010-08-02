@@ -2824,7 +2824,7 @@ HRESULT VirtualBox::findDVDOrFloppyImage(DeviceType_T mediumType,
                                        strLocationFull.c_str()) == 0);
         if (found)
         {
-            if (pMedium->getType() != mediumType)
+            if (pMedium->getDeviceType() != mediumType)
             {
                 if (mediumType == DeviceType_DVD)
                     return setError(E_INVALIDARG,
