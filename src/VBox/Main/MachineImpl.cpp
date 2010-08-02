@@ -3152,23 +3152,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     rc = getStorageControllerByName(aControllerName, ctl, true /* aSetError */);
     if (FAILED(rc)) return rc;
 
-    /* check that the port and device are not out of range. */
-    ULONG portCount;
-    ULONG devicesPerPort;
-    rc = ctl->COMGETTER(PortCount)(&portCount);
+    // check that the port and device are not out of range
+    rc = ctl->checkPortAndDeviceValid(aControllerPort, aDevice);
     if (FAILED(rc)) return rc;
-    rc = ctl->COMGETTER(MaxDevicesPerPortCount)(&devicesPerPort);
-    if (FAILED(rc)) return rc;
-
-    if (   (aControllerPort < 0)
-        || (aControllerPort >= (LONG)portCount)
-        || (aDevice < 0)
-        || (aDevice >= (LONG)devicesPerPort)
-       )
-        return setError(E_INVALIDARG,
-                        tr("The port and/or count parameter are out of range [%lu:%lu]"),
-                        portCount,
-                        devicesPerPort);
 
     /* check if the device slot is already busy */
     MediumAttachment *pAttachTemp;
@@ -3229,9 +3215,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         tr("Medium '%s' is already attached to this virtual machine"),
                         medium->getLocationFull().raw());
 
-    bool indirect = false;
+    bool fImplicit = false;
     if (!medium.isNull())
-        indirect = medium->isReadOnly();
+        fImplicit = medium->isReadOnly();
     bool associate = true;
 
     do
@@ -3245,7 +3231,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
              * be restored */
             if ((pAttachTemp = findAttachment(oldAtts, medium)))
             {
-                AssertReturn(!indirect, E_FAIL);
+                AssertReturn(!fImplicit, E_FAIL);
 
                 /* see if it's the same bus/channel/device */
                 if (pAttachTemp->matches(aControllerName, aControllerPort, aDevice))
@@ -3264,7 +3250,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         }
 
         /* go further only if the attachment is to be indirect */
-        if (!indirect)
+        if (!fImplicit)
             break;
 
         /* perform the so called smart attachment logic for indirect
@@ -3332,7 +3318,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                     if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
                     mediumLock.attach(medium);
                     /* not implicit, doesn't require association with this VM */
-                    indirect = false;
+                    fImplicit = false;
                     associate = false;
                     /* go right to the MediumAttachment creation */
                     break;
@@ -3476,7 +3462,14 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     ComObjPtr<MediumAttachment> attachment;
     attachment.createObject();
-    rc = attachment->init(this, medium, aControllerName, aControllerPort, aDevice, aType, indirect, 0 /* No bandwidth limit */);
+    rc = attachment->init(this,
+                          medium,
+                          aControllerName,
+                          aControllerPort,
+                          aDevice,
+                          aType,
+                          fImplicit,
+                          0 /* No bandwidth limit */);
     if (FAILED(rc)) return rc;
 
     if (associate && !medium.isNull())

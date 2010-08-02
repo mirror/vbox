@@ -820,7 +820,7 @@ protected:
 
     Machine* const          mPeer;
 
-    VirtualBox* const       mParent;
+    VirtualBox * const      mParent;
 
     Shareable<Data>         mData;
     Shareable<SSData>       mSSData;

@@ -84,6 +84,9 @@ public:
     StorageBus_T getStorageBus() const;
     ULONG getInstance() const;
 
+    HRESULT checkPortAndDeviceValid(LONG aControllerPort,
+                                    LONG aDevice);
+
     void rollback();
     void commit();
 
