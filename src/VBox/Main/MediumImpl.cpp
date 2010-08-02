@@ -3234,6 +3234,15 @@ Bstr Medium::preferredDiffFormat()
 }
 
 /**
+ * Returns the medium device type. Must have caller + locking!
+ * @return
+ */
+DeviceType_T Medium::getDeviceType() const
+{
+    return m->devType;
+}
+
+/**
  * Returns the medium type. Must have caller + locking!
  * @return
  */
