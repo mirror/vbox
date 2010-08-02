@@ -612,6 +612,26 @@ static int hdaLookup(INTELHDLinkState* pState, uint32_t u32Offset)
             return index;
         }
     }
+    /* Aliases HDA spec 3.3.45 */
+    switch(u32Offset)
+    {
+        case 0x2084:
+            return HDA_REG_IND_NAME(SD0LPIB);
+        case 0x20A4:
+            return HDA_REG_IND_NAME(SD1LPIB);
+        case 0x20C4:
+            return HDA_REG_IND_NAME(SD2LPIB);
+        case 0x20E4:
+            return HDA_REG_IND_NAME(SD3LPIB);
+        case 0x2104:
+            return HDA_REG_IND_NAME(SD4LPIB);
+        case 0x2124:
+            return HDA_REG_IND_NAME(SD5LPIB);
+        case 0x2144:
+            return HDA_REG_IND_NAME(SD6LPIB);
+        case 0x2164:
+            return HDA_REG_IND_NAME(SD7LPIB);
+    }
     return -1;
 }
 
@@ -1327,13 +1347,12 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
     }
     Assert(   index != -1
-           && u32Offset == s_ichIntelHDRegMap[index].offset
            && cb <= 4);
     if (index != -1)
     {
-        Assert(u32Offset == s_ichIntelHDRegMap[index].offset);
         uint32_t v = pThis->hda.au32Regs[index];
         uint32_t mask = 0;
+        uint32_t shift = (u32Offset - s_ichIntelHDRegMap[index].offset) % sizeof(uint32_t) * 8;
         switch(cb)
         {
             case 1: mask = 0xffffff00; break;
@@ -1341,7 +1360,8 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
             case 3: mask = 0xff000000; break;
             case 4: mask = 0x00000000; break;
         }
-        *(uint32_t *)pv = (v & mask) | (*(uint32_t *)pv & ~mask);
+        mask <<= shift;
+        *(uint32_t *)pv = ((v & mask) | (*(uint32_t *)pv & ~mask)) >> shift;
         rc = s_ichIntelHDRegMap[index].pfnWrite(&pThis->hda, u32Offset, index, *(uint32_t *)pv);
         Log(("hda: write %s:(%x) %x => %x\n", s_ichIntelHDRegMap[index].abbrev, *(uint32_t *)pv, v, pThis->hda.au32Regs[index]));
         return rc;
