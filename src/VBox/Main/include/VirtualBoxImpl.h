@@ -215,11 +215,6 @@ public:
     void getOpenedMachines(SessionMachinesList &aMachines,
                            InternalControlList *aControls = NULL);
 
-    bool isMachineIdValid(const Guid &aId)
-    {
-        return SUCCEEDED(findMachine(aId, true /* fPermitInaccessible */, false /* aSetError */, NULL));
-    }
-
     HRESULT findMachine (const Guid &aId,
                          bool fPermitInaccessible,
                          bool aSetError,
