@@ -638,6 +638,10 @@ public:
     static quint64 required2DOffscreenVideoMemory();
 #endif
 
+#ifdef Q_WS_MAC
+    bool isSheetWindowsAllowed(QWidget *pParent) const;
+#endif /* Q_WS_MAC */
+
 signals:
 
     /**
