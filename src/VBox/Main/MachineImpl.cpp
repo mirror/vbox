@@ -3215,7 +3215,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 if (medium.isNull())
                 {
                     /* find a DVD image by UUID */
-                    rc = mParent->findDVDImage(&uuid, NULL, true /* aSetError */, &medium);
+                    rc = mParent->findDVDOrFloppyImage(DeviceType_DVD, &uuid, Utf8Str::Empty, true /* aSetError */, &medium);
                     if (FAILED(rc)) return rc;
                 }
             }
@@ -3248,7 +3248,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 if (medium.isNull())
                 {
                     /* find a floppy image by UUID */
-                    rc = mParent->findFloppyImage(&uuid, NULL, true /* aSetError */, &medium);
+                    rc = mParent->findDVDOrFloppyImage(DeviceType_Floppy, &uuid, Utf8Str::Empty, true /* aSetError */, &medium);
                     if (FAILED(rc)) return rc;
                 }
             }
@@ -3692,41 +3692,18 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     switch (mediumType)
     {
         case DeviceType_DVD:
-            if (!uuid.isEmpty())
-            {
-                /* find a DVD by host device UUID */
-                MediaList llHostDVDDrives;
-                rc = mParent->host()->getDVDDrives(llHostDVDDrives);
-                if (SUCCEEDED(rc))
-                {
-                    for (MediaList::iterator it = llHostDVDDrives.begin();
-                         it != llHostDVDDrives.end();
-                         ++it)
-                    {
-                        ComObjPtr<Medium> &p = *it;
-                        if (uuid == p->getId())
-                        {
-                            medium = p;
-                            break;
-                        }
-                    }
-                }
-                /* find a DVD by UUID */
-                if (medium.isNull())
-                    rc = mParent->findDVDImage(&uuid, NULL, true /* aDoSetError */, &medium);
-            }
-            if (FAILED(rc)) return rc;
-            break;
         case DeviceType_Floppy:
             if (!uuid.isEmpty())
             {
-                /* find a Floppy by host device UUID */
-                MediaList llHostFloppyDrives;
-                rc = mParent->host()->getFloppyDrives(llHostFloppyDrives);
+                // check if the UUID refers to a host DVD or floppy drive
+                MediaList llHostDrives;
+                rc = (mediumType == DeviceType_DVD)
+                        ? mParent->host()->getDVDDrives(llHostDrives)
+                        : mParent->host()->getFloppyDrives(llHostDrives);
                 if (SUCCEEDED(rc))
                 {
-                    for (MediaList::iterator it = llHostFloppyDrives.begin();
-                         it != llHostFloppyDrives.end();
+                    for (MediaList::iterator it = llHostDrives.begin();
+                         it != llHostDrives.end();
                          ++it)
                     {
                         ComObjPtr<Medium> &p = *it;
@@ -3737,12 +3714,14 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                         }
                     }
                 }
-                /* find a Floppy by UUID */
+
                 if (medium.isNull())
-                    rc = mParent->findFloppyImage(&uuid, NULL, true /* aDoSetError */, &medium);
+                    // UUID was not a host drive:
+                    rc = mParent->findDVDOrFloppyImage(mediumType, &uuid, Utf8Str::Empty, true /* aDoSetError */, &medium);
             }
             if (FAILED(rc)) return rc;
-            break;
+        break;
+
         default:
             return setError(VBOX_E_INVALID_OBJECT_STATE,
                             tr("Cannot change medium attached to device slot %d on port %d of controller '%ls'"),
@@ -7167,7 +7146,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             case DeviceType_Floppy:
                 /* find a floppy by UUID */
                 if (!dev.uuid.isEmpty())
-                    rc = mParent->findFloppyImage(&dev.uuid, NULL, true /* aDoSetError */, &medium);
+                    rc = mParent->findDVDOrFloppyImage(DeviceType_Floppy, &dev.uuid, Utf8Str::Empty, true /* aDoSetError */, &medium);
                 /* find a floppy by host device name */
                 else if (!dev.strHostDriveSrc.isEmpty())
                 {
@@ -7193,7 +7172,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             case DeviceType_DVD:
                 /* find a DVD by UUID */
                 if (!dev.uuid.isEmpty())
-                    rc = mParent->findDVDImage(&dev.uuid, NULL, true /* aDoSetError */, &medium);
+                    rc = mParent->findDVDOrFloppyImage(DeviceType_DVD, &dev.uuid, Utf8Str::Empty, true /* aDoSetError */, &medium);
                 /* find a DVD by host device name */
                 else if (!dev.strHostDriveSrc.isEmpty())
                 {

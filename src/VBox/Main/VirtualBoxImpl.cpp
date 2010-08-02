@@ -1550,7 +1550,7 @@ STDMETHODIMP VirtualBox::GetDVDImage(IN_BSTR aId, IMedium **aDVDImage)
 
     Guid id(aId);
     ComObjPtr<Medium> image;
-    HRESULT rc = findDVDImage(&id, NULL, true /* setError */, &image);
+    HRESULT rc = findDVDOrFloppyImage(DeviceType_DVD, &id, Utf8Str::Empty, true /* setError */, &image);
 
     /* the below will set *aDVDImage to NULL if image is null */
     image.queryInterfaceTo(aDVDImage);
@@ -1568,7 +1568,7 @@ STDMETHODIMP VirtualBox::FindDVDImage(IN_BSTR aLocation, IMedium **aDVDImage)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Medium> image;
-    HRESULT rc = findDVDImage(NULL, aLocation, true /* setError */, &image);
+    HRESULT rc = findDVDOrFloppyImage(DeviceType_DVD, NULL, aLocation, true /* setError */, &image);
 
     /* the below will set *aDVDImage to NULL if dvd is null */
     image.queryInterfaceTo(aDVDImage);
@@ -1627,7 +1627,7 @@ STDMETHODIMP VirtualBox::GetFloppyImage(IN_BSTR aId, IMedium **aFloppyImage)
 
     Guid id(aId);
     ComObjPtr<Medium> image;
-    HRESULT rc = findFloppyImage(&id, NULL, true /* setError */, &image);
+    HRESULT rc = findDVDOrFloppyImage(DeviceType_Floppy, &id, Utf8Str::Empty, true /* setError */, &image);
 
     /* the below will set *aFloppyImage to NULL if image is null */
     image.queryInterfaceTo(aFloppyImage);
@@ -1646,7 +1646,7 @@ STDMETHODIMP VirtualBox::FindFloppyImage(IN_BSTR aLocation,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Medium> image;
-    HRESULT rc = findFloppyImage(NULL, aLocation, true /* setError */, &image);
+    HRESULT rc = findDVDOrFloppyImage(DeviceType_Floppy, NULL, aLocation, true /* setError */, &image);
 
     /* the below will set *aFloppyImage to NULL if img is null */
     image.queryInterfaceTo(aFloppyImage);
@@ -2754,58 +2754,96 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
 
 /**
  * Searches for a Medium object with the given ID or location in the list of
- * registered DVD images. If both ID and file path are specified, the first
- * object that matches either of them (not necessarily both) is returned.
+ * registered DVD or floppy images, depending on the @a mediumType argument.
+ * If both ID and file path are specified, the first object that matches either
+ * of them (not necessarily both) is returned.
  *
- * @param aId       ID of the DVD image (unused when NULL).
+ * @param mediumType Must be either DeviceType_DVD or DeviceType_Floppy.
+ * @param aId       ID of the image file (unused when NULL).
  * @param aLocation Full path to the image file (unused when NULL).
  * @param aSetError If @c true, the appropriate error info is set in case when
  *                  the image is not found.
  * @param aImage    Where to store the found image object (can be NULL).
  *
- * @return S_OK when found or E_INVALIDARG when not found.
+ * @return S_OK when found or E_INVALIDARG or VBOX_E_OBJECT_NOT_FOUND when not found.
  *
  * @note Locks the media tree for reading.
  */
-HRESULT VirtualBox::findDVDImage(const Guid *aId,
-                                 CBSTR aLocation,
-                                 bool aSetError,
-                                 ComObjPtr<Medium> *aImage /* = NULL */)
+/**
+ *
+ * @param aId
+ * @param aLocation
+ * @param aSetError
+ * @param aImage
+ * @return
+ */
+HRESULT VirtualBox::findDVDOrFloppyImage(DeviceType_T mediumType,
+                                         const Guid *aId,
+                                         const Utf8Str &aLocation,
+                                         bool aSetError,
+                                         ComObjPtr<Medium> *aImage /* = NULL */)
 {
-    AssertReturn(aId || aLocation, E_INVALIDARG);
+    AssertReturn(aId || !aLocation.isEmpty(), E_INVALIDARG);
 
     Utf8Str location;
-
-    if (aLocation != NULL)
+    if (!aLocation.isEmpty())
     {
-        int vrc = calculateFullPath(Utf8Str(aLocation), location);
+        int vrc = calculateFullPath(aLocation, location);
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_FILE_ERROR,
                             tr("Invalid image file location '%ls' (%Rrc)"),
-                            aLocation,
+                            aLocation.c_str(),
                             vrc);
     }
 
-    AutoReadLock alock(m->allDVDImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+    MediaOList *pMediaList;
+
+    switch (mediumType)
+    {
+        case DeviceType_DVD:
+            pMediaList = &m->allDVDImages;
+        break;
+
+        case DeviceType_Floppy:
+            pMediaList = &m->allFloppyImages;
+        break;
+
+        default:
+            return E_INVALIDARG;
+    }
+
+    AutoReadLock alock(pMediaList->getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     bool found = false;
 
-    for (MediaList::const_iterator it = m->allDVDImages.begin();
-         it != m->allDVDImages.end();
-         ++ it)
+    for (MediaList::const_iterator it = pMediaList->begin();
+         it != pMediaList->end();
+         ++it)
     {
-        /* no AutoCaller, registered image life time is bound to this */
-        AutoReadLock imageLock(*it COMMA_LOCKVAL_SRC_POS);
+        // no AutoCaller, registered image life time is bound to this
+        Medium *pMedium = *it;
+        AutoReadLock imageLock(pMedium COMMA_LOCKVAL_SRC_POS);
+        const Utf8Str &strLocationFull = pMedium->getLocationFull();
 
-        found = (aId && (*it)->getId() == *aId) ||
-                (aLocation != NULL &&
-                 RTPathCompare(location.c_str(),
-                               (*it)->getLocationFull().c_str()
-                              ) == 0);
+        found =     (    aId
+                      && pMedium->getId() == *aId)
+                 || (    !aLocation.isEmpty()
+                      && RTPathCompare(location.c_str(),
+                                       strLocationFull.c_str()) == 0);
         if (found)
         {
+            if (pMedium->getType() != mediumType)
+            {
+                if (mediumType == DeviceType_DVD)
+                    return setError(E_INVALIDARG,
+                                    "Cannot mount DVD medium '%s' as floppy", strLocationFull.c_str());
+                else
+                    return setError(E_INVALIDARG,
+                                    "Cannot mount floppy medium '%s' as DVD", strLocationFull.c_str());
+            }
+
             if (aImage)
-                *aImage = *it;
+                *aImage = pMedium;
             break;
         }
     }
@@ -2816,90 +2854,13 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId,
     {
         if (aId)
             setError(rc,
-                     tr("Could not find a CD/DVD image with UUID {%RTuuid} in the media registry ('%s')"),
+                     tr("Could not find an image file with UUID {%RTuuid} in the media registry ('%s')"),
                      aId->raw(),
                      m->strSettingsFilePath.raw());
         else
             setError(rc,
-                     tr("Could not find a CD/DVD image with location '%ls' in the media registry ('%s')"),
-                     aLocation,
-                     m->strSettingsFilePath.raw());
-    }
-
-    return rc;
-}
-
-/**
- * Searches for a Medium object with the given ID or location in the
- * collection of registered DVD images. If both ID and file path are specified,
- * the first object that matches either of them (not necessarily both) is
- * returned.
- *
- * @param aId       ID of the DVD image (unused when NULL).
- * @param aLocation Full path to the image file (unused when NULL).
- * @param aSetError If @c true, the appropriate error info is set in case when
- *                  the image is not found.
- * @param aImage    Where to store the found image object (can be NULL).
- *
- * @return S_OK when found or E_INVALIDARG when not found.
- *
- * @note Locks the media tree for reading.
- */
-HRESULT VirtualBox::findFloppyImage(const Guid *aId,
-                                    CBSTR aLocation,
-                                    bool aSetError,
-                                    ComObjPtr<Medium> *aImage /* = NULL */)
-{
-    AssertReturn(aId || aLocation, E_INVALIDARG);
-
-    Utf8Str location;
-
-    if (aLocation != NULL)
-    {
-        int vrc = calculateFullPath(Utf8Str(aLocation), location);
-        if (RT_FAILURE(vrc))
-            return setError(VBOX_E_FILE_ERROR,
-                            tr("Invalid image file location '%ls' (%Rrc)"),
-                            aLocation, vrc);
-    }
-
-    AutoReadLock alock(m->allFloppyImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-    bool found = false;
-
-    for (MediaList::const_iterator it = m->allFloppyImages.begin();
-         it != m->allFloppyImages.end();
-         ++ it)
-    {
-        /* no AutoCaller, registered image life time is bound to this */
-        AutoReadLock imageLock(*it COMMA_LOCKVAL_SRC_POS);
-
-        found = (aId && (*it)->getId() == *aId) ||
-                (aLocation != NULL &&
-                 RTPathCompare(location.c_str(),
-                               (*it)->getLocationFull().c_str()
-                              ) == 0);
-        if (found)
-        {
-            if (aImage)
-                *aImage = *it;
-            break;
-        }
-    }
-
-    HRESULT rc = found ? S_OK : VBOX_E_OBJECT_NOT_FOUND;
-
-    if (aSetError && !found)
-    {
-        if (aId)
-            setError(rc,
-                     tr("Could not find a floppy image with UUID {%RTuuid} in the media registry ('%s')"),
-                     aId->raw(),
-                     m->strSettingsFilePath.raw());
-        else
-            setError(rc,
-                     tr("Could not find a floppy image with location '%ls' in the media registry ('%s')"),
-                     aLocation,
+                     tr("Could not find an image file with location '%ls' in the media registry ('%s')"),
+                     aLocation.c_str(),
                      m->strSettingsFilePath.raw());
     }
 
@@ -3089,7 +3050,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
 
     {
         ComObjPtr<Medium> image;
-        rc = findDVDImage(&aId, bstrLocation, false /* aSetError */, &image);
+        rc = findDVDOrFloppyImage(DeviceType_DVD, &aId, bstrLocation, false /* aSetError */, &image);
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
@@ -3103,7 +3064,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
 
     {
         ComObjPtr<Medium> image;
-        rc = findFloppyImage(&aId, bstrLocation, false /* aSetError */, &image);
+        rc = findDVDOrFloppyImage(DeviceType_Floppy, &aId, bstrLocation, false /* aSetError */, &image);
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */

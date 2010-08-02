@@ -320,9 +320,9 @@ public:
     }
 
     /**
-     *  Static immutable null object. May be used for comparison purposes.
+     *  Static immutable empty-string object. May be used for comparison purposes.
      */
-    static const Bstr Null;
+    static const Bstr Empty;
 
 protected:
 
@@ -545,9 +545,9 @@ public:
     }
 
     /**
-     *  Static immutable null object. May be used for comparison purposes.
+     *  Static immutable empty-string object. May be used for comparison purposes.
      */
-    static const Utf8Str Null;
+    static const Utf8Str Empty;
 
 protected:
 
