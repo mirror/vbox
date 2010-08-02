@@ -37,7 +37,7 @@
 #endif
 #include <unistd.h>
 
-#ifdef RT_OS_LINUX
+#ifndef RT_OS_SOLARIS
  RT_C_DECLS_BEGIN
     #include "../../linux/sharedfolders/vbsfmount.h"
  RT_C_DECLS_END
