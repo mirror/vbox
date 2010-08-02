@@ -647,6 +647,38 @@ RTR3DECL(int) RTPathSetOwnerEx(const char *pszPath, uint32_t uid, uint32_t gid, 
 }
 
 
+RTR3DECL(int) RTPathSetMode(const char *pszPath, RTFMODE fMode)
+{
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
+
+    int rc;
+    fMode = rtFsModeNormalize(fMode, pszPath, 0);
+    if (rtFsModeIsValidPermissions(fMode))
+    {
+        char const *pszNativePath;
+        rc = rtPathToNative(&pszNativePath, pszPath, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            char szRealPath[RTPATH_MAX];
+            rc = RTPathReal(pszPath, szRealPath, sizeof(szRealPath));
+            if (RT_SUCCESS(rc))
+            {
+                if (chmod(szRealPath, fMode & RTFS_UNIX_MASK) < 0)
+                    rc = RTErrConvertFromErrno(errno);
+            }
+            rtPathFreeNative(pszNativePath, pszPath);
+        }
+    }
+    else
+    {
+        AssertMsgFailed(("Invalid file mode! %RTfmode\n", fMode));
+        rc = VERR_INVALID_FMODE;
+    }
+    return rc;
+}
+
+
 /**
  * Checks if two files are the one and same file.
  */
