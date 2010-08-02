@@ -632,7 +632,7 @@ static void intnetR0BusyWait(PINTNETNETWORK pNetwork, uint32_t volatile *pcBusy)
         AssertMsg((cCurBusy & INTNET_BUSY_WAKEUP_MASK), ("%#x\n", cCurBusy));
         AssertMsg((cCurBusy & ~INTNET_BUSY_WAKEUP_MASK) < INTNET_MAX_IFS * 3, ("%#x\n", cCurBusy));
     } while (   cCurBusy != INTNET_BUSY_WAKEUP_MASK
-             || ASMAtomicCmpXchgU32(pcBusy, 0, INTNET_BUSY_WAKEUP_MASK));
+             || !ASMAtomicCmpXchgU32(pcBusy, 0, INTNET_BUSY_WAKEUP_MASK));
 }
 
 
