@@ -4226,34 +4226,28 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             }
         }
     }
-    // VirtualBox 3.2: Check for non default I/O settings and bump the settings version.
-    if (m->sv < SettingsVersion_v1_11)
+    if (m->sv < SettingsVersion_v1_10)
     {
+        // VirtualBox 3.2: Check for non default I/O settings and bump the settings version.
         if (   hardwareMachine.ioSettings.fIoCacheEnabled != true
             || hardwareMachine.ioSettings.ulIoCacheSize != 5)
             m->sv = SettingsVersion_v1_10;
+
+        // VirtualBox 3.2 adds support for VRDP video channel
+        if (hardwareMachine.vrdpSettings.fVideoChannel)
+            m->sv = SettingsVersion_v1_10;
     }
 
-    // VirtualBox 3.2 adds support for VRDP video channel
-    if (    m->sv < SettingsVersion_v1_11
-        && (    hardwareMachine.vrdpSettings.fVideoChannel
-           )
-       )
-        m->sv = SettingsVersion_v1_10;
+    if (m->sv < SettingsVersion_v1_11)
+    {
+        // VirtualBox 3.3 adds support for HD audio
+        if (hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA)
+            m->sv = SettingsVersion_v1_11;
 
-    // VirtualBox 3.3 adds support for HD audio
-    if (    m->sv < SettingsVersion_v1_11
-        && (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
-            )
-       )
-        m->sv = SettingsVersion_v1_11;
-
-    // VirtualBox 3.3 adds support for CPU priority
-    if (    m->sv < SettingsVersion_v1_11
-        && (    hardwareMachine.ulCpuPriority != 100
-           )
-       )
-        m->sv = SettingsVersion_v1_11;
+        // VirtualBox 3.3 adds support for CPU priority
+        if (hardwareMachine.ulCpuPriority != 100)
+            m->sv = SettingsVersion_v1_11;
+    }
 }
 
 /**
