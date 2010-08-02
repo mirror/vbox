@@ -4139,6 +4139,7 @@ bool VBoxGlobal::isSheetWindowsAllowed(QWidget *pParent) const
     if (!(   qobject_cast<UIMachineWindowFullscreen*>(pParent)
           || qobject_cast<UIMachineWindowSeamless*>(pParent)))
         return true;
+    return false;
 }
 #endif /* Q_WS_MAC */
 
