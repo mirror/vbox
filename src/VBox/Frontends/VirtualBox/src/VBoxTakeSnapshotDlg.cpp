@@ -40,9 +40,9 @@ VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machi
 #ifdef Q_WS_MAC
     /* No sheets in another mode than normal for now. Firstly it looks ugly and
      * secondly in some cases it is broken. */
-    if (   qobject_cast<UIMachineWindowNormal*>(pParent)
+    if (   vboxGlobal().isSheetWindowsAllowed(pParent)
         || qobject_cast<VBoxSnapshotsWgt*>(pParent))
-        setWindowFlags (Qt::Sheet);
+        setWindowFlags(Qt::Sheet);
 #endif /* Q_WS_MAC */
 
     /* Apply UI decorations */

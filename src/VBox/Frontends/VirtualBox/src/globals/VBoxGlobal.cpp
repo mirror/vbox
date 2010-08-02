@@ -40,6 +40,11 @@
 # include "VBoxFBOverlay.h"
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
+#ifdef Q_WS_MAC
+# include "UIMachineWindowFullscreen.h"
+# include "UIMachineWindowSeamless.h"
+#endif /* Q_WS_MAC */
+
 /* Qt includes */
 #include <QProgressDialog>
 #include <QLibraryInfo>
@@ -4127,6 +4132,15 @@ quint64 VBoxGlobal::required2DOffscreenVideoMemory()
 }
 
 #endif
+
+#ifdef Q_WS_MAC
+bool VBoxGlobal::isSheetWindowsAllowed(QWidget *pParent) const
+{
+    if (!(   qobject_cast<UIMachineWindowFullscreen*>(pParent)
+          || qobject_cast<UIMachineWindowSeamless*>(pParent)))
+        return true;
+}
+#endif /* Q_WS_MAC */
 
 // Public slots
 ////////////////////////////////////////////////////////////////////////////////

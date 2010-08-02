@@ -65,9 +65,8 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
 #ifdef Q_WS_MAC
     /* No sheets in another mode than normal for now. Firstly it looks ugly and
      * secondly in some cases it is broken. */
-    if (!(   qobject_cast<UIMachineWindowFullscreen*>(aParent)
-          || qobject_cast<UIMachineWindowSeamless*>(aParent)))
-        setWindowFlags (Qt::Sheet);
+    if (vboxGlobal().isSheetWindowsAllowed(aParent))
+        setWindowFlags(Qt::Sheet);
 #endif /* Q_WS_MAC */
 
     setWindowTitle (aCaption);
