@@ -628,6 +628,10 @@ static int codecGetStreamId(struct CODECState *pState, uint32_t cmd, uint64_t *p
         *pResp = pState->pNodes[CODEC_NID(cmd)].dac.u32F06_param;
     else if (STAC9220_IS_ADC_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F06_param;
+    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
+    else if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
     return VINF_SUCCESS;
 }
 static int codecSetStreamId(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
@@ -648,6 +652,8 @@ static int codecSetStreamId(struct CODECState *pState, uint32_t cmd, uint64_t *p
         pu32addr = &pState->pNodes[CODEC_NID(cmd)].adc.u32F06_param;
     else if (STAC9220_IS_SPDIFOUT_CMD(cmd))
         pu32addr = &pState->pNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
+    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
+        pu32addr = &pState->pNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
     Assert((pu32addr));
     if (pu32addr)
     {
