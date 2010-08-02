@@ -122,7 +122,7 @@ void *VBoxNetUDPMatch(PINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint3
      * are set correctly (they are usually set to 0).
      */
     if (pGso)
-        PDMNetGsoPrepForDirectUse(pGso, (void *)pvFrame, cbFrame, RTNETCSUMTYPE_NONE);
+        PDMNetGsoPrepForDirectUse(pGso, (void *)pvFrame, cbFrame, PDMNETCSUMTYPE_NONE);
 
     /*
      * IP validation and matching.
