@@ -743,6 +743,8 @@ struct AttachedDevice
     int32_t             lPort;
     int32_t             lDevice;
 
+    uint32_t            ulBandwidthLimit;
+
     // if an image file is attached to the device (ISO, RAW, or hard disk image such as VDI),
     // this is its UUID; it depends on deviceType which media registry this then needs to
     // be looked up in. If no image file (only permitted for DVDs and floppies), then the UUID is NULL
