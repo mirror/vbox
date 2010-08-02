@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -430,7 +430,7 @@ RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode)
         case EMEDIUMTYPE:       return VERR_MEDIA_NOT_RECOGNIZED;
 #endif
 #if defined(EWOULDBLOCK) && (EWOULDBLOCK != EAGAIN)
-        case EWOULDBLOCK        return VERR_TRY_AGAIN;
+        case EWOULDBLOCK:       return VERR_TRY_AGAIN;
 #endif
 
         /* Non-linux */
