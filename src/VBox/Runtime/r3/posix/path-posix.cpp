@@ -578,7 +578,71 @@ RTR3DECL(int) RTPathSetTimesEx(const char *pszPath, PCRTTIMESPEC pAccessTime, PC
 
     LogFlow(("RTPathSetTimes(%p:{%s}, %p:{%RDtimespec}, %p:{%RDtimespec}, %p:{%RDtimespec}, %p:{%RDtimespec}): return %Rrc\n",
              pszPath, pszPath, pAccessTime, pAccessTime, pModificationTime, pModificationTime,
-             pChangeTime, pChangeTime, pBirthTime, pBirthTime));
+             pChangeTime, pChangeTime, pBirthTime, pBirthTime, rc));
+    return rc;
+}
+
+
+RTR3DECL(int) RTPathSetOwner(const char *pszPath, uint32_t uid, uint32_t gid)
+{
+    return RTPathSetOwnerEx(pszPath, uid, gid, RTPATH_F_ON_LINK);
+}
+
+
+RTR3DECL(int) RTPathSetOwnerEx(const char *pszPath, uint32_t uid, uint32_t gid, uint32_t fFlags)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
+    uid_t uidNative = uid != UINT32_MAX ? (uid_t)uid : -1;
+    AssertReturn(uid == uidNative, VERR_INVALID_PARAMETER);
+    gid_t gidNative = gid != UINT32_MAX ? (gid_t)gid : -1;
+    AssertReturn(gid == gidNative, VERR_INVALID_PARAMETER);
+
+    /*
+     * Convert the path.
+     */
+    char const *pszNativePath;
+    int rc = rtPathToNative(&pszNativePath, pszPath, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        if (fFlags & RTPATH_F_FOLLOW_LINK)
+        {
+            if (chown(pszNativePath, uidNative, gidNative))
+                rc = RTErrConvertFromErrno(errno);
+        }
+#if 1
+        else
+        {
+            if (lchown(pszNativePath, uidNative, gidNative))
+                rc = RTErrConvertFromErrno(errno);
+        }
+#else
+        else
+        {
+            RTFSOBJINFO ObjInfo;
+            rc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_UNIX, fFlags);
+            if (RT_SUCCESS(rc) && RTFS_IS_SYMLINK(ObjInfo.Attr.fMode))
+                rc = VERR_NS_SYMLINK_CHANGE_OWNER;
+            else if (RT_SUCCESS(rc))
+            {
+                if (lchown(pszNativePath, uidNative, gidNative))
+                    rc = RTErrConvertFromErrno(errno);
+            }
+        }
+#endif
+        if (RT_FAILURE(rc))
+            Log(("RTPathSetOwnerEx('%s',%d,%d): failed with %Rrc and errno=%d\n",
+                 pszPath, uid, gid, rc, errno));
+
+        rtPathFreeNative(pszNativePath, pszPath);
+    }
+
+    LogFlow(("RTPathSetOwnerEx(%p:{%s}, uid, gid): return %Rrc\n",
+             pszPath, pszPath, uid, gid, rc));
     return rc;
 }
 
