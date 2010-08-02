@@ -421,8 +421,8 @@ struct NetworkAdapter
           fTraceEnabled(false),
           mode(NetworkAttachmentType_Null),
           ulBootPriority(0),
-          ulBandwidthLimit(0),
-          fHasDisabledNAT(false)
+          fHasDisabledNAT(false),
+          ulBandwidthLimit(0)
     {}
 
     bool operator==(const NetworkAdapter &n) const;
