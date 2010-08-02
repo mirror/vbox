@@ -4849,7 +4849,7 @@ HRESULT Medium::setFormat(CBSTR aFormat)
              it != m->formatObj->properties().end();
              ++it)
         {
-            m->properties.insert(std::make_pair(it->name, Bstr::Null));
+            m->properties.insert(std::make_pair(it->name, Bstr::Empty));
         }
     }
 

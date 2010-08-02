@@ -83,11 +83,11 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
 
     unconst(mParent) = aParent;
 
-    setDefaultMachineFolder(Utf8Str::Null);
-    setDefaultHardDiskFolder(Utf8Str::Null);
-    setDefaultHardDiskFormat(Utf8Str::Null);
+    setDefaultMachineFolder(Utf8Str::Empty);
+    setDefaultHardDiskFolder(Utf8Str::Empty);
+    setDefaultHardDiskFormat(Utf8Str::Empty);
 
-    setRemoteDisplayAuthLibrary(Utf8Str::Null);
+    setRemoteDisplayAuthLibrary(Utf8Str::Empty);
 
     m->ulLogHistoryCount = 3;
 

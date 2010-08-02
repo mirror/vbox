@@ -33,10 +33,10 @@ const OLECHAR g_achEmptyBstr[3] = { 0, 0, 0 };
 const BSTR g_bstrEmpty = (BSTR)(&g_achEmptyBstr[2]);
 
 /* static */
-const Bstr Bstr::Null; /* default ctor is OK */
+const Bstr Bstr::Empty; /* default ctor is OK */
 
 /* static */
-const Utf8Str Utf8Str::Null; /* default ctor is OK */
+const Utf8Str Utf8Str::Empty; /* default ctor is OK */
 
 #if defined (VBOX_WITH_XPCOM)
 void Utf8Str::cloneTo(char **pstr) const
