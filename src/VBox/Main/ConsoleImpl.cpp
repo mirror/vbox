@@ -5187,6 +5187,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
     /* Tell VBoxSVC and Machine about the progress object so they can combine
        proxy it to any openRemoteSession caller. */
+    LogFlowThisFunc(("Calling BeginPowerUp...\n"));
     rc = mControl->BeginPowerUp(powerupProgress);
     if (FAILED(rc))
     {
@@ -5194,6 +5195,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         return rc;
     }
 
+    LogFlowThisFunc(("Checking if canceled...\n"));
     BOOL fCanceled;
     rc = powerupProgress->COMGETTER(Canceled)(&fCanceled);
     if (FAILED(rc))
@@ -5203,6 +5205,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         LogFlowThisFunc(("Canceled in BeginPowerUp\n"));
         return setError(E_FAIL, tr("Powerup was canceled"));
     }
+    LogFlowThisFunc(("Not canceled yet.\n"));
 
     /* setup task object and thread to carry out the operation
      * asynchronously */
