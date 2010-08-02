@@ -93,6 +93,17 @@ typedef struct SPDIFOUTNODE
     AMPLIFIER   B_params;
 } SPDIFOUTNODE, *PSPDIFOUTNODE;
 
+typedef struct SPDIFINNODE
+{
+    CODECCOMMONNODE node;
+    uint32_t    u32F06_param;
+    uint32_t    u32F09_param;
+    uint32_t    u32F0d_param;
+
+    uint32_t    u32A_param;
+    AMPLIFIER   B_params;
+} SPDIFINNODE, *PSPDIFINNODE;
+
 typedef struct AFGCODECNODE
 {
     CODECCOMMONNODE node;
@@ -179,6 +190,7 @@ typedef union CODECNODE
     DACNODE         dac;
     ADCNODE         adc;
     SPDIFOUTNODE    spdifout;
+    SPDIFINNODE     spdifin;
     PORTNODE        port;
     DIGOUTNODE      digout;
     DIGINNODE       digin;
