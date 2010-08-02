@@ -728,6 +728,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_TOO_MANY_SYMLINKS              (-156)
 /** The OS does not support setting the time stamps on a symbolic link. */
 #define VERR_NS_SYMLINK_SET_TIME            (-157)
+/** The OS does not support changing the owner of a symbolic link. */
+#define VERR_NS_SYMLINK_CHANGE_OWNER        (-158)
 /** @} */
 
 
