@@ -38,7 +38,8 @@ struct BackupableMediumAttachmentData
           lDevice(0),
           type(DeviceType_Null),
           fPassthrough(false),
-          fImplicit(false)
+          fImplicit(false),
+          mBandwidthLimit(0)
     { }
 
     ComObjPtr<Medium>   pMedium;
@@ -91,12 +92,13 @@ void MediumAttachment::FinalRelease()
 /**
  * Initializes the medium attachment object.
  *
- * @param aParent     Machine object.
- * @param aMedium     Medium object.
- * @param aController Controller the hard disk is attached to.
- * @param aPort       Port number.
- * @param aDevice     Device number on the port.
- * @param aPassthrough Wether accesses are directly passed to the host drive.
+ * @param aParent           Machine object.
+ * @param aMedium           Medium object.
+ * @param aController       Controller the hard disk is attached to.
+ * @param aPort             Port number.
+ * @param aDevice           Device number on the port.
+ * @param aPassthrough      Whether accesses are directly passed to the host drive.
+ * @param aBandwidthLimit   Bandwidth limit in Mbps
  */
 HRESULT MediumAttachment::init(Machine *aParent,
                                Medium *aMedium,
@@ -104,7 +106,8 @@ HRESULT MediumAttachment::init(Machine *aParent,
                                LONG aPort,
                                LONG aDevice,
                                DeviceType_T aType,
-                               bool aPassthrough)
+                               bool aPassthrough,
+                               ULONG aBandwidthLimit)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aPassthrough=%d\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aPassthrough));
@@ -132,8 +135,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
      * associated with them. Implicit diff image creation happens later. */
     m->bd->fImplicit = false;
 
-    /* Default is no limit. */
-    m->bd->mBandwidthLimit = 0;
+    m->bd->mBandwidthLimit = aBandwidthLimit;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();

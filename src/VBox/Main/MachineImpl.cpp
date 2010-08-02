@@ -3476,7 +3476,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     ComObjPtr<MediumAttachment> attachment;
     attachment.createObject();
-    rc = attachment->init(this, medium, aControllerName, aControllerPort, aDevice, aType, indirect);
+    rc = attachment->init(this, medium, aControllerName, aControllerPort, aDevice, aType, indirect, 0 /* No bandwidth limit */);
     if (FAILED(rc)) return rc;
 
     if (associate && !medium.isNull())
@@ -7164,7 +7164,8 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                dev.lPort,
                                dev.lDevice,
                                dev.deviceType,
-                               dev.fPassThrough);
+                               dev.fPassThrough,
+                               dev.ulBandwidthLimit);
         if (FAILED(rc)) break;
 
         /* associate the medium with this machine and snapshot */
@@ -8363,7 +8364,8 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                                   pAtt->getPort(),
                                   pAtt->getDevice(),
                                   DeviceType_HardDisk,
-                                  true /* aImplicit */);
+                                  true /* aImplicit */,
+                                  0 /* No bandwidth limit */);
             if (FAILED(rc)) throw rc;
 
             rc = lockedMediaMap->ReplaceKey(pAtt, attachment);

@@ -47,7 +47,8 @@ public:
                  LONG aPort,
                  LONG aDevice,
                  DeviceType_T aType,
-                 bool fPassthrough);
+                 bool fPassthrough,
+                 ULONG aBandwidthLimit);
     void uninit();
 
     HRESULT FinalConstruct();
