@@ -3206,71 +3206,10 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             if (FAILED(rc)) return rc;
             break;
 
-        case DeviceType_DVD: // @todo r=dj eliminate this, replace with findDVDImage
-            if (!uuid.isEmpty())
-            {
-                /* first search for host drive */
-                SafeIfaceArray<IMedium> drivevec;
-                rc = mParent->host()->COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(drivevec));
-                if (SUCCEEDED(rc))
-                {
-                    for (size_t i = 0; i < drivevec.size(); ++i)
-                    {
-                        /// @todo eliminate this conversion
-                        ComObjPtr<Medium> med = (Medium *)drivevec[i];
-                        if (med->getId() == uuid)
-                        {
-                            medium = med;
-                            break;
-                        }
-                    }
-                }
-
-                if (medium.isNull())
-                {
-                    /* find a DVD image by UUID */
-                    rc = mParent->findDVDOrFloppyImage(DeviceType_DVD, &uuid, Utf8Str::Empty, true /* aSetError */, &medium);
-                    if (FAILED(rc)) return rc;
-                }
-            }
-            else
-            {
-                /* null UUID means null medium, which needs no code */
-            }
-            break;
-
-        case DeviceType_Floppy: // @todo r=dj eliminate this, replace with findFloppyImage
-            if (!uuid.isEmpty())
-            {
-                /* first search for host drive */
-                SafeIfaceArray<IMedium> drivevec;
-                rc = mParent->host()->COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(drivevec));
-                if (SUCCEEDED(rc))
-                {
-                    for (size_t i = 0; i < drivevec.size(); ++i)
-                    {
-                        /// @todo eliminate this conversion
-                        ComObjPtr<Medium> med = (Medium *)drivevec[i];
-                        if (med->getId() == uuid)
-                        {
-                            medium = med;
-                            break;
-                        }
-                    }
-                }
-
-                if (medium.isNull())
-                {
-                    /* find a floppy image by UUID */
-                    rc = mParent->findDVDOrFloppyImage(DeviceType_Floppy, &uuid, Utf8Str::Empty, true /* aSetError */, &medium);
-                    if (FAILED(rc)) return rc;
-                }
-            }
-            else
-            {
-                /* null UUID means null medium, which needs no code */
-            }
-            break;
+        case DeviceType_DVD:
+        case DeviceType_Floppy:
+            rc = mParent->findRemoveableMedium(aType, uuid, true /* fRefresh */, medium);
+        break;
 
         default:
             return setError(E_INVALIDARG,
@@ -3707,32 +3646,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     {
         case DeviceType_DVD:
         case DeviceType_Floppy:
-            if (!uuid.isEmpty())
-            {
-                // check if the UUID refers to a host DVD or floppy drive
-                MediaList llHostDrives;
-                rc = (mediumType == DeviceType_DVD)
-                        ? mParent->host()->getDVDDrives(llHostDrives)
-                        : mParent->host()->getFloppyDrives(llHostDrives);
-                if (SUCCEEDED(rc))
-                {
-                    for (MediaList::iterator it = llHostDrives.begin();
-                         it != llHostDrives.end();
-                         ++it)
-                    {
-                        ComObjPtr<Medium> &p = *it;
-                        if (uuid == p->getId())
-                        {
-                            medium = p;
-                            break;
-                        }
-                    }
-                }
-
-                if (medium.isNull())
-                    // UUID was not a host drive:
-                    rc = mParent->findDVDOrFloppyImage(mediumType, &uuid, Utf8Str::Empty, true /* aDoSetError */, &medium);
-            }
+            rc = mParent->findRemoveableMedium(mediumType, uuid, true /* fRefresh */, medium);
             if (FAILED(rc)) return rc;
         break;
 
@@ -7158,57 +7072,11 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         switch (dev.deviceType)
         {
             case DeviceType_Floppy:
-                /* find a floppy by UUID */
-                if (!dev.uuid.isEmpty())
-                    rc = mParent->findDVDOrFloppyImage(DeviceType_Floppy, &dev.uuid, Utf8Str::Empty, true /* aDoSetError */, &medium);
-                /* find a floppy by host device name */
-                else if (!dev.strHostDriveSrc.isEmpty())
-                {
-                    SafeIfaceArray<IMedium> drivevec;
-                    rc = mParent->host()->COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(drivevec));
-                    if (SUCCEEDED(rc))
-                    {
-                        for (size_t i = 0; i < drivevec.size(); ++i)
-                        {
-                            /// @todo eliminate this conversion
-                            ComObjPtr<Medium> med = (Medium *)drivevec[i];
-                            if (    dev.strHostDriveSrc == med->getName()
-                                ||  dev.strHostDriveSrc == med->getLocation())
-                            {
-                                medium = med;
-                                break;
-                            }
-                        }
-                    }
-                }
-                break;
-
             case DeviceType_DVD:
-                /* find a DVD by UUID */
-                if (!dev.uuid.isEmpty())
-                    rc = mParent->findDVDOrFloppyImage(DeviceType_DVD, &dev.uuid, Utf8Str::Empty, true /* aDoSetError */, &medium);
-                /* find a DVD by host device name */
-                else if (!dev.strHostDriveSrc.isEmpty())
-                {
-                    SafeIfaceArray<IMedium> drivevec;
-                    rc = mParent->host()->COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(drivevec));
-                    if (SUCCEEDED(rc))
-                    {
-                        for (size_t i = 0; i < drivevec.size(); ++i)
-                        {
-                            Bstr hostDriveSrc(dev.strHostDriveSrc);
-                            /// @todo eliminate this conversion
-                            ComObjPtr<Medium> med = (Medium *)drivevec[i];
-                            if (    hostDriveSrc == med->getName()
-                                ||  hostDriveSrc == med->getLocation())
-                            {
-                                medium = med;
-                                break;
-                            }
-                        }
-                    }
-                }
-                break;
+                rc = mParent->findRemoveableMedium(dev.deviceType, dev.uuid, false /* fRefresh */, medium);
+                if (FAILED(rc))
+                    return rc;
+            break;
 
             case DeviceType_HardDisk:
             {

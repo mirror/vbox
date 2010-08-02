@@ -227,6 +227,10 @@ public:
                                  const Utf8Str &aLocation,
                                  bool aSetError,
                                  ComObjPtr<Medium> *aImage = NULL);
+    HRESULT findRemoveableMedium(DeviceType_T mediumType,
+                                 const Guid &uuid,
+                                 bool fRefresh,
+                                 ComObjPtr<Medium> &pMedium);
 
     HRESULT findGuestOSType(const Bstr &bstrOSType,
                             GuestOSType*& pGuestOSType);
