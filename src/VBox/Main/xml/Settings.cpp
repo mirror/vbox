@@ -1577,6 +1577,7 @@ bool AttachedDevice::operator==(const AttachedDevice &a) const
                   && (lDevice                   == a.lDevice)
                   && (uuid                      == a.uuid)
                   && (strHostDriveSrc           == a.strHostDriveSrc)
+                  && (ulBandwidthLimit          == a.ulBandwidthLimit)
                 )
            );
 }
@@ -2753,6 +2754,7 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
                 if (!pelmAttached->getAttributeValue("device", att.lDevice))
                     throw ConfigFileError(this, pelmImage, N_("Required AttachedDevice/@device attribute is missing"));
 
+                pelmAttached->getAttributeValue("bandwidthLimit", att.ulBandwidthLimit);
                 sctl.llAttachedDevices.push_back(att);
             }
         }
@@ -3813,6 +3815,9 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
             pelmDevice->setAttribute("port", att.lPort);
             pelmDevice->setAttribute("device", att.lDevice);
 
+            if (att.ulBandwidthLimit)
+                pelmDevice->setAttribute("bandwidthLimit", att.ulBandwidthLimit);
+
             // attached image, if any
             if (    !att.uuid.isEmpty()
                  && (    att.deviceType == DeviceType_HardDisk
@@ -4150,6 +4155,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 if (!sctl.fUseHostIOCache)
                 {
                     m->sv = SettingsVersion_v1_10;
+                    break; /* abort the loop -- we will not raise the version further */
+                }
+
+                /* Bandwidth limitations are new in VirtualBox 3.3 (1.11) */
+                if (att.ulBandwidthLimit != 0)
+                {
+                    m->sv = SettingsVersion_v1_11;
                     break; /* abort the loop -- we will not raise the version further */
                 }
             }
