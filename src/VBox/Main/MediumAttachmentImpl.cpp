@@ -51,8 +51,9 @@ struct BackupableMediumAttachmentData
     const LONG          lPort;
     const LONG          lDevice;
     const DeviceType_T  type;
-    bool                fPassthrough : 1;
-    bool                fImplicit : 1;
+    bool                fPassthrough;
+    bool                fImplicit;
+    ULONG               mBandwidthLimit;
 };
 
 struct MediumAttachment::Data
@@ -130,6 +131,9 @@ HRESULT MediumAttachment::init(Machine *aParent,
     /* Newly created attachments never have an implicitly created medium
      * associated with them. Implicit diff image creation happens later. */
     m->bd->fImplicit = false;
+
+    /* Default is no limit. */
+    m->bd->mBandwidthLimit = 0;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -268,6 +272,38 @@ STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
     *aPassthrough = m->bd->fPassthrough;
 
     LogFlowThisFuncLeave();
+    return S_OK;
+}
+
+STDMETHODIMP MediumAttachment::COMGETTER(BandwidthLimit) (ULONG *aLimit)
+{
+    CheckComArgOutPointerValid(aLimit);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aLimit = m->bd->mBandwidthLimit;
+    return S_OK;
+}
+
+STDMETHODIMP MediumAttachment::COMSETTER(BandwidthLimit) (ULONG aLimit)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* the machine doesn't need to be mutable */
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aLimit != m->bd->mBandwidthLimit)
+    {
+        m->bd.backup();
+        m->bd->mBandwidthLimit = aLimit;
+
+        /* todo: not all storage attachments will support this. */
+    }
     return S_OK;
 }
 

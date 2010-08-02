@@ -1488,6 +1488,7 @@ Hardware::Hardware()
           cCPUs(1),
           fCpuHotPlug(false),
           fHpetEnabled(false),
+          ulCpuPriority(100),
           ulMemorySizeMB((uint32_t)-1),
           ulVRAMSizeMB(8),
           cMonitors(1),
@@ -1532,6 +1533,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fPAE                      == h.fPAE)
                   && (cCPUs                     == h.cCPUs)
                   && (fCpuHotPlug               == h.fCpuHotPlug)
+                  && (ulCpuPriority             == h.ulCpuPriority)
                   && (fHpetEnabled              == h.fHpetEnabled)
                   && (llCpus                    == h.llCpus)
                   && (llCpuIdLeafs              == h.llCpuIdLeafs)
@@ -1641,7 +1643,6 @@ IoSettings::IoSettings()
 {
     fIoCacheEnabled  = true;
     ulIoCacheSize    = 5;
-    ulIoBandwidthMax = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1838,6 +1839,7 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
         pelmAdapter->getAttributeValue("trace", nic.fTraceEnabled);
         pelmAdapter->getAttributeValue("tracefile", nic.strTraceFile);
         pelmAdapter->getAttributeValue("bootPriority", nic.ulBootPriority);
+        pelmAdapter->getAttributeValue("bandwidthLimit", nic.ulBandwidthLimit);
 
         xml::ElementNodesList llNetworkModes;
         pelmAdapter->getChildElements(llNetworkModes);
@@ -2192,6 +2194,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             }
 
             pelmHwChild->getAttributeValue("hotplug", hw.fCpuHotPlug);
+            pelmHwChild->getAttributeValue("priority", hw.ulCpuPriority);
 
             const xml::ElementNode *pelmCPUChild;
             if (hw.fCpuHotPlug)
@@ -2539,10 +2542,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             {
                 pelmIoChild->getAttributeValue("enabled", hw.ioSettings.fIoCacheEnabled);
                 pelmIoChild->getAttributeValue("size", hw.ioSettings.ulIoCacheSize);
-            }
-            if ((pelmIoChild = pelmHwChild->findChildElement("IoBandwidth")))
-            {
-                pelmIoChild->getAttributeValue("max", hw.ioSettings.ulIoBandwidthMax);
             }
         }
     }
@@ -3106,6 +3105,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     if (hw.fSyntheticCpu)
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     pelmCPU->setAttribute("count", hw.cCPUs);
+    if (hw.ulCpuPriority != 100)
+        pelmCPU->setAttribute("priority", hw.ulCpuPriority);
 
     if (hw.fLargePages)
         pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
@@ -3385,6 +3386,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             pelmAdapter->setAttribute("trace", nic.fTraceEnabled);
             pelmAdapter->setAttribute("tracefile", nic.strTraceFile);
         }
+        if (nic.ulBandwidthLimit)
+            pelmAdapter->setAttribute("bandwidthLimit", nic.ulBandwidthLimit);
 
         const char *pcszType;
         switch (nic.type)
@@ -3571,7 +3574,6 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmIoCache->setAttribute("enabled", hw.ioSettings.fIoCacheEnabled);
         pelmIoCache->setAttribute("size", hw.ioSettings.ulIoCacheSize);
         pelmIoBandwidth = pelmIo->createChild("IoBandwidth");
-        pelmIoBandwidth->setAttribute("max", hw.ioSettings.ulIoBandwidthMax);
     }
 
     xml::ElementNode *pelmGuest = pelmHardware->createChild("Guest");
@@ -4187,6 +4189,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         for (netit = hardwareMachine.llNetworkAdapters.begin();
              netit != hardwareMachine.llNetworkAdapters.end(); ++netit)
         {
+            if (netit->ulBandwidthLimit)
+            {
+                /* New in VirtualBox 3.3 */
+                m->sv = SettingsVersion_v1_11;
+                break;
+            }
+
             if (    netit->fEnabled
                  && netit->mode == NetworkAttachmentType_NAT
                  && (   netit->nat.u32Mtu != 0
@@ -4218,16 +4227,15 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         }
     }
     // VirtualBox 3.2: Check for non default I/O settings and bump the settings version.
-    if (m->sv < SettingsVersion_v1_10)
+    if (m->sv < SettingsVersion_v1_11)
     {
         if (   hardwareMachine.ioSettings.fIoCacheEnabled != true
-            || hardwareMachine.ioSettings.ulIoCacheSize != 5
-            || hardwareMachine.ioSettings.ulIoBandwidthMax != 0)
+            || hardwareMachine.ioSettings.ulIoCacheSize != 5)
             m->sv = SettingsVersion_v1_10;
     }
 
     // VirtualBox 3.2 adds support for VRDP video channel
-    if (    m->sv < SettingsVersion_v1_10
+    if (    m->sv < SettingsVersion_v1_11
         && (    hardwareMachine.vrdpSettings.fVideoChannel
            )
        )
@@ -4239,6 +4247,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             )
        )
         m->sv = SettingsVersion_v1_11;
+
+    // VirtualBox 3.3 adds support for CPU priority
+    if (    m->sv < SettingsVersion_v1_11
+        && (    hardwareMachine.ulCpuPriority != 100
+           )
+       )
+        m->sv = SettingsVersion_v1_10;
 }
 
 /**

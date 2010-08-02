@@ -270,6 +270,7 @@ public:
         BOOL                 mSyntheticCpu;
         ULONG                mCPUCount;
         BOOL                 mCPUHotPlugEnabled;
+        ULONG                mCpuPriority;
         BOOL                 mAccelerate3DEnabled;
         BOOL                 mHpetEnabled;
 
@@ -295,7 +296,6 @@ public:
 
         BOOL                 mIoCacheEnabled;
         ULONG                mIoCacheSize;
-        ULONG                mIoBandwidthMax;
     };
 
     /**
@@ -391,6 +391,8 @@ public:
     STDMETHOD(COMSETTER(CPUCount))(ULONG cpuCount);
     STDMETHOD(COMGETTER(CPUHotPlugEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(CPUHotPlugEnabled))(BOOL enabled);
+    STDMETHOD(COMGETTER(CPUPriority))(ULONG *aPriority);
+    STDMETHOD(COMSETTER(CPUPriority))(ULONG aPriority);
     STDMETHOD(COMGETTER(HpetEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(HpetEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(MemoryBalloonSize))(ULONG *memoryBalloonSize);
@@ -450,8 +452,6 @@ public:
     STDMETHOD(COMSETTER(IoCacheEnabled)) (BOOL  aEnabled);
     STDMETHOD(COMGETTER(IoCacheSize)) (ULONG *aIoCacheSize);
     STDMETHOD(COMSETTER(IoCacheSize)) (ULONG  aIoCacheSize);
-    STDMETHOD(COMGETTER(IoBandwidthMax)) (ULONG *aIoBandwidthMax);
-    STDMETHOD(COMSETTER(IoBandwidthMax)) (ULONG  aIoBandwidthMax);
 
     // IMachine methods
     STDMETHOD(LockMachine)(ISession *aSession, LockType_T lockType);

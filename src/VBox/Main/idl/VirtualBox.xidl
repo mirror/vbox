@@ -3637,7 +3637,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="de8f0b23-f285-4779-acf4-08eddda7ec75"
+     uuid="e2d8679e-b144-41d9-9dfa-bbe2fd0ab2d1"
      wsmap="managed"
      >
     <desc>
@@ -3834,7 +3834,15 @@
         hotplugging for this machine.</desc>
     </attribute>
 
-    <attribute name="memorySize" type="unsigned long">
+    <attribute name="CPUPriority" type="unsigned long">
+       <desc>
+         Priority of the virtual CPUs. Means to limit the number of CPU cycles
+         a guest can use. The unit is percentage of host CPU cycles per second.
+         The valid range is 1 - 100. 100 (the default) implies no limit. 
+       </desc>
+    </attribute>
+
+      <attribute name="memorySize" type="unsigned long">
       <desc>System memory size in megabytes.</desc>
     </attribute>
 
@@ -4187,13 +4195,6 @@
     <attribute name="ioCacheSize" type="unsigned long">
       <desc>
         Maximum size of the I/O cache in MB.
-      </desc>
-    </attribute>
-
-    <attribute name="ioBandwidthMax" type="unsigned long">
-      <desc>
-        The maximum number of MB the VM is allowed to transfer per second.
-        0 means unlimited bandwidth.
       </desc>
     </attribute>
 
@@ -8528,7 +8529,7 @@
 
   <interface
     name="IMediumAttachment" extends="$unknown"
-    uuid="e58eb3eb-8627-428b-bdf8-34487c848de5"
+    uuid="c29452cc-ca72-404b-9261-cfc514f1e412"
     wsmap="struct"
   >
     <desc>
@@ -8579,6 +8580,13 @@
 
     <attribute name="passthrough" type="boolean" readonly="yes">
       <desc>Pass I/O requests through to a device on the host.</desc>
+    </attribute>
+
+    <attribute name="bandwidthLimit" type="unsigned long">
+      <desc>
+         Maximum throughput allowed for this medium attachment, in units of 1 mbps.
+         A zero value means uncapped/unlimited.
+      </desc>
     </attribute>
 
   </interface>
@@ -11076,7 +11084,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="INetworkAdapter" extends="$unknown"
-     uuid="5bdb9df8-a5e1-4322-a139-b7a4a734c790"
+     uuid="9bf58a46-c3f7-4f31-80fa-dde9a5dc0b7b"
      wsmap="managed"
      >
     <desc>
@@ -11191,7 +11199,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <method name="attachToNAT">
+    <attribute name="bandwidthLimit" type="unsigned long">
+      <desc>
+        Maximum throughput allowed for this network adapter, in units of 1 mbps.
+        A zero value means uncapped/unlimited.
+      </desc>
+    </attribute>
+
+      <method name="attachToNAT">
       <desc>
         Attach the network adapter to the Network Address Translation (NAT) interface.
       </desc>

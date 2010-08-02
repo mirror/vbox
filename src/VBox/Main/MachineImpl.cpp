@@ -212,7 +212,9 @@ Machine::HWData::HWData()
 
     mIoCacheEnabled = true;
     mIoCacheSize    = 5; /* 5MB */
-    mIoBandwidthMax = 0; /* Unlimited */
+
+    /* Maximum CPU priority by default. */
+    mCpuPriority = 100;
 }
 
 Machine::HWData::~HWData()
@@ -1278,6 +1280,48 @@ STDMETHODIMP Machine::COMSETTER(CPUCount)(ULONG CPUCount)
 
     return S_OK;
 }
+
+STDMETHODIMP Machine::COMGETTER(CPUPriority)(ULONG *aPriority)
+{
+    if (!aPriority)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aPriority = mHWData->mCpuPriority;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(CPUPriority)(ULONG aPriority)
+{
+    /* check priority limits */
+    if (    aPriority < 1
+         || aPriority > 100
+       )
+        return setError(E_INVALIDARG,
+                        tr("Invalid CPU priority: %lu (must be in range [%lu, %lu])"),
+                        aPriority, 1, 100);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Todo: must always allow changes. */
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mCpuPriority = aPriority;
+
+    return S_OK;
+}
+
 
 STDMETHODIMP Machine::COMGETTER(CPUHotPlugEnabled)(BOOL *enabled)
 {
@@ -2646,36 +2690,6 @@ STDMETHODIMP Machine::COMSETTER(IoCacheSize)(ULONG  aIoCacheSize)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(IoBandwidthMax)(ULONG *aIoBandwidthMax)
-{
-    CheckComArgOutPointerValid(aIoBandwidthMax);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aIoBandwidthMax = mHWData->mIoBandwidthMax;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMSETTER(IoBandwidthMax)(ULONG  aIoBandwidthMax)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
-    setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mIoBandwidthMax = aIoBandwidthMax;
-
-    return S_OK;
-}
 
 /**
  *  @note Locks objects!
@@ -6852,8 +6866,9 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mPAEEnabled                  = data.fPAE;
         mHWData->mSyntheticCpu                = data.fSyntheticCpu;
 
-        mHWData->mCPUCount          = data.cCPUs;
-        mHWData->mCPUHotPlugEnabled = data.fCpuHotPlug;
+        mHWData->mCPUCount                    = data.cCPUs;
+        mHWData->mCPUHotPlugEnabled           = data.fCpuHotPlug;
+        mHWData->mCpuPriority                 = data.ulCpuPriority;
 
         // cpu
         if (mHWData->mCPUHotPlugEnabled)
@@ -7008,7 +7023,6 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         // IO settings
         mHWData->mIoCacheEnabled = data.ioSettings.fIoCacheEnabled;
         mHWData->mIoCacheSize = data.ioSettings.ulIoCacheSize;
-        mHWData->mIoBandwidthMax = data.ioSettings.ulIoBandwidthMax;
 
 #ifdef VBOX_WITH_GUEST_PROPS
         /* Guest properties (optional) */
@@ -7944,8 +7958,9 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
                 data.llCpuIdLeafs.push_back(mHWData->mCpuIdExtLeafs[idx]);
         }
 
-        data.cCPUs       = mHWData->mCPUCount;
-        data.fCpuHotPlug = !!mHWData->mCPUHotPlugEnabled;
+        data.cCPUs         = mHWData->mCPUCount;
+        data.fCpuHotPlug   = !!mHWData->mCPUHotPlugEnabled;
+        data.ulCpuPriority = mHWData->mCpuPriority;
 
         data.llCpus.clear();
         if (data.fCpuHotPlug)
@@ -8073,7 +8088,6 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         // IO settings
         data.ioSettings.fIoCacheEnabled = !!mHWData->mIoCacheEnabled;
         data.ioSettings.ulIoCacheSize = mHWData->mIoCacheSize;
-        data.ioSettings.ulIoBandwidthMax = mHWData->mIoBandwidthMax;
 
         // guest properties
         data.llGuestProperties.clear();
