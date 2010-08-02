@@ -3215,14 +3215,15 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         tr("Medium '%s' is already attached to this virtual machine"),
                         medium->getLocationFull().raw());
 
-    bool fImplicit = false;
+    bool fIndirect = false;
     if (!medium.isNull())
-        fImplicit = medium->isReadOnly();
+        fIndirect = medium->isReadOnly();
     bool associate = true;
 
     do
     {
-        if (aType == DeviceType_HardDisk && mMediaData.isBackedUp())
+        if (    aType == DeviceType_HardDisk
+             && mMediaData.isBackedUp())
         {
             const MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
 
@@ -3231,7 +3232,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
              * be restored */
             if ((pAttachTemp = findAttachment(oldAtts, medium)))
             {
-                AssertReturn(!fImplicit, E_FAIL);
+                AssertReturn(!fIndirect, E_FAIL);
 
                 /* see if it's the same bus/channel/device */
                 if (pAttachTemp->matches(aControllerName, aControllerPort, aDevice))
@@ -3250,7 +3251,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         }
 
         /* go further only if the attachment is to be indirect */
-        if (!fImplicit)
+        if (!fIndirect)
             break;
 
         /* perform the so called smart attachment logic for indirect
@@ -3318,7 +3319,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                     if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
                     mediumLock.attach(medium);
                     /* not implicit, doesn't require association with this VM */
-                    fImplicit = false;
+                    fIndirect = false;
                     associate = false;
                     /* go right to the MediumAttachment creation */
                     break;
@@ -3341,7 +3342,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
                 const MediaData::AttachmentList &snapAtts = snap->getSnapshotMachine()->mMediaData->mAttachments;
 
-                MediaData::AttachmentList::const_iterator foundIt = snapAtts.end();
+                MediumAttachment *pAttachFound = NULL;
                 uint32_t foundLevel = 0;
 
                 for (MediaData::AttachmentList::const_iterator it = snapAtts.begin();
@@ -3362,27 +3363,27 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                          * otherwise the attachment that has the youngest
                          * descendant of medium will be used
                          */
-                        if (    (*it)->getDevice() == aDevice
-                             && (*it)->getPort() == aControllerPort
-                             && (*it)->getControllerName() == aControllerName
+                        if (    pAttach->getDevice() == aDevice
+                             && pAttach->getPort() == aControllerPort
+                             && pAttach->getControllerName() == aControllerName
                            )
                         {
-                            foundIt = it;
+                            pAttachFound = pAttach;
                             break;
                         }
-                        else if (    foundIt == snapAtts.end()
+                        else if (    !pAttachFound
                                   || level > foundLevel /* prefer younger */
                                 )
                         {
-                            foundIt = it;
+                            pAttachFound = pAttach;
                             foundLevel = level;
                         }
                     }
                 }
 
-                if (foundIt != snapAtts.end())
+                if (pAttachFound)
                 {
-                    base = (*foundIt)->getMedium();
+                    base = pAttachFound->getMedium();
                     break;
                 }
 
@@ -3468,7 +3469,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                           aControllerPort,
                           aDevice,
                           aType,
-                          fImplicit,
+                          fIndirect,
                           0 /* No bandwidth limit */);
     if (FAILED(rc)) return rc;
 
