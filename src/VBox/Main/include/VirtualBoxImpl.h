@@ -236,7 +236,7 @@ public:
                             GuestOSType*& pGuestOSType);
 
     const ComObjPtr<Host>& host() const;
-    const ComObjPtr<SystemProperties>& systemProperties() const;
+    SystemProperties* getSystemProperties() const;
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     const ComObjPtr<PerformanceCollector>& performanceCollector() const;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */

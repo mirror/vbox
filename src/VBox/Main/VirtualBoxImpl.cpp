@@ -2938,7 +2938,7 @@ const ComObjPtr<Host>& VirtualBox::host() const
     return m->pHost;
 }
 
-const ComObjPtr<SystemProperties>& VirtualBox::systemProperties() const
+SystemProperties* VirtualBox::getSystemProperties() const
 {
     return m->pSystemProperties;
 }

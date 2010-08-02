@@ -3235,7 +3235,7 @@ Bstr Medium::preferredDiffFormat()
     if (!(m->formatObj->capabilities() & MediumFormatCapabilities_Differencing))
     {
         /* use the default format if not */
-        AutoReadLock propsLock(m->pVirtualBox->systemProperties() COMMA_LOCKVAL_SRC_POS);
+        AutoReadLock propsLock(m->pVirtualBox->getSystemProperties() COMMA_LOCKVAL_SRC_POS);
         strFormat = m->pVirtualBox->getDefaultHardDiskFormat();
     }
 
@@ -4842,10 +4842,10 @@ HRESULT Medium::setFormat(CBSTR aFormat)
 {
     /* get the format object first */
     {
-        AutoReadLock propsLock(m->pVirtualBox->systemProperties() COMMA_LOCKVAL_SRC_POS);
+        SystemProperties *pSysProps = m->pVirtualBox->getSystemProperties();
+        AutoReadLock propsLock(pSysProps COMMA_LOCKVAL_SRC_POS);
 
-        unconst(m->formatObj)
-            = m->pVirtualBox->systemProperties()->mediumFormat(aFormat);
+        unconst(m->formatObj) = pSysProps->mediumFormat(aFormat);
         if (m->formatObj.isNull())
             return setError(E_INVALIDARG,
                             tr("Invalid medium storage format '%ls'"),

@@ -20,6 +20,7 @@
 #include "StorageControllerImpl.h"
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
+#include "SystemPropertiesImpl.h"
 
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
@@ -78,8 +79,13 @@ struct BackupableStorageControllerData
 struct StorageController::Data
 {
     Data()
-        : pParent(NULL)
+        : pVirtualBox(NULL),
+          pSystemProperties(NULL),
+          pParent(NULL)
     { }
+
+    VirtualBox * const                  pVirtualBox;
+    SystemProperties * const            pSystemProperties;
 
     Machine * const                     pParent;
     const ComObjPtr<StorageController>  pPeer;
@@ -130,6 +136,9 @@ HRESULT StorageController::init(Machine *aParent,
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     m = new Data();
+
+    unconst(m->pVirtualBox) = aParent->getVirtualBox();
+    unconst(m->pSystemProperties) = m->pVirtualBox->getSystemProperties();
 
     unconst(m->pParent) = aParent;
     /* m->pPeer is left null */
@@ -411,18 +420,8 @@ STDMETHODIMP StorageController::COMGETTER(MaxDevicesPerPortCount) (ULONG *aMaxDe
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = m->pSystemProperties->GetMaxDevicesPerPortForStorageBus(m->bd->mStorageBus, aMaxDevices);
 
-    ComPtr<IVirtualBox> VBox;
-    HRESULT rc = m->pParent->COMGETTER(Parent)(VBox.asOutParam());
-    if (FAILED(rc))
-        return rc;
-
-    ComPtr<ISystemProperties> sysProps;
-    rc = VBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
-    if (FAILED(rc))
-        return rc;
-
-    rc = sysProps->GetMaxDevicesPerPortForStorageBus(m->bd->mStorageBus, aMaxDevices);
     return rc;
 }
 
@@ -748,6 +747,36 @@ StorageBus_T StorageController::getStorageBus() const
 ULONG StorageController::getInstance() const
 {
     return m->bd->mInstance;
+}
+
+/**
+ * Returns S_OK if the given port and device numbers are within the range supported
+ * by this controller. If not, it sets an error and returns E_INVALIDARG.
+ * @param ulPort
+ * @param ulDevice
+ * @return
+ */
+HRESULT StorageController::checkPortAndDeviceValid(LONG aControllerPort,
+                                                   LONG aDevice)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    ULONG portCount = m->bd->mPortCount;
+    ULONG devicesPerPort;
+    HRESULT rc = m->pSystemProperties->GetMaxDevicesPerPortForStorageBus(m->bd->mStorageBus, &devicesPerPort);
+    if (FAILED(rc)) return rc;
+
+    if (   (aControllerPort < 0)
+        || (aControllerPort >= (LONG)portCount)
+        || (aDevice < 0)
+        || (aDevice >= (LONG)devicesPerPort)
+       )
+        return setError(E_INVALIDARG,
+                        tr("The port and/or count parameter are out of range [%lu:%lu]"),
+                        portCount,
+                        devicesPerPort);
+
+    return S_OK;
 }
 
 /** @note Locks objects for writing! */
