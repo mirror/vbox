@@ -187,3 +187,20 @@ RTDECL(int) RTPathTemp(char *pszPath, size_t cchPath)
     return VINF_SUCCESS;
 }
 
+
+RTR3DECL(int) RTPathGetMode(const char *pszPath, PRTFMODE pfMode)
+{
+    AssertPtrReturn(pfMode, VERR_INVALID_POINTER);
+
+    char szPathReal[RTPATH_MAX];
+    int rc = RTPathReal(pszPath, szPathReal, sizeof(szPathReal));
+    if (RT_SUCCESS(rc))
+    {
+        RTFSOBJINFO objInfo;
+        rc = RTPathQueryInfo(szPathReal, &objInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+            *pfMode = objInfo.Attr.fMode;
+    }
+
+    return rc;
+}
