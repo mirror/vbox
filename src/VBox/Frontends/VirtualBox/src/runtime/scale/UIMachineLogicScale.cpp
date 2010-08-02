@@ -49,6 +49,9 @@ UIMachineLogicScale::~UIMachineLogicScale()
 
     /* Cleanup handlers: */
     cleanupHandlers();
+
+    /* Cleanup actions groups: */
+    cleanupActionGroups();
 }
 
 void UIMachineLogicScale::initialize()
