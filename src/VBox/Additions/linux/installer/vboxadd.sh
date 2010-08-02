@@ -397,6 +397,11 @@ setup()
     # And for the others, we choose a UID ourselves
     useradd -d /var/run/vboxadd -g 1 -u 501 -o -s /bin/false vboxadd >/dev/null 2>&1
 
+    # Add a group "vboxsf" for Shared Folders access
+    # All users which want to access the auto-mounted Shared Folders have to
+    # be added to this group.
+    groupadd -f vboxsf >/dev/null 2>&1
+
     # Create udev description file
     if [ -d /etc/udev/rules.d ]; then
         echo "Creating udev rule for the Guest Additions kernel module." >> $LOG

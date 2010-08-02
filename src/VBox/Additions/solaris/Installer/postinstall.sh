@@ -328,6 +328,11 @@ if test -f "$vboxadditions32_path/$vboxfsmod"; then
     rm -f $vboxadditions32_path/$vboxfsunused
 fi
 
+# Add a group "vboxsf" for Shared Folders access
+# All users which want to access the auto-mounted Shared Folders have to
+# be added to this group.
+groupadd vboxsf >/dev/null 2>&1
+
 # install openGL extensions for X.Org
 if test ! -z "$xorgbin"; then
     # 32-bit crogl opengl library replacement
