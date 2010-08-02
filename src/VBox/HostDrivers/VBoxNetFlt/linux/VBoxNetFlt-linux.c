@@ -1119,7 +1119,7 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
             pPkt->csum = RT_OFFSETOF(RTNETUDP, uh_sum);
 # endif
         if (!fDstWire)
-            PDMNetGsoPrepForDirectUse(&pSG->GsoCtx, pPkt->data, pSG->cbTotal, RTNETCSUMTYPE_PSEUDO);
+            PDMNetGsoPrepForDirectUse(&pSG->GsoCtx, pPkt->data, pSG->cbTotal, PDMNETCSUMTYPE_PSEUDO);
     }
 #endif /* VBOXNETFLT_WITH_GSO_XMIT_WIRE || VBOXNETFLT_WITH_GSO_XMIT_HOST */
 
@@ -1452,7 +1452,7 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
         return false;
 #endif /* !VBOXNETFLT_WITH_GRO */
     }
-    else 
+    else
     {
         /*
          * skb_gso_segment does the following. Do we need to do it as well?
