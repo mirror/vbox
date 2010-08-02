@@ -8080,11 +8080,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
         dev.lDevice = pAttach->getDevice();
         if (pMedium)
         {
-            BOOL fHostDrive = FALSE;
-            rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
-            if (FAILED(rc))
-                return rc;
-            if (fHostDrive)
+            if (pMedium->isHostDrive())
                 dev.strHostDriveSrc = pMedium->getLocation();
             else
                 dev.uuid = pMedium->getId();
