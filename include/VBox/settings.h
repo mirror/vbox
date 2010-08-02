@@ -421,6 +421,7 @@ struct NetworkAdapter
           fTraceEnabled(false),
           mode(NetworkAttachmentType_Null),
           ulBootPriority(0),
+          ulBandwidthLimit(0),
           fHasDisabledNAT(false)
     {}
 
@@ -443,6 +444,7 @@ struct NetworkAdapter
                                                 // otherwise: network name (required)
     uint32_t                ulBootPriority;
     bool                    fHasDisabledNAT;
+    uint32_t                ulBandwidthLimit;
 };
 typedef std::list<NetworkAdapter> NetworkAdaptersList;
 
@@ -637,13 +639,11 @@ struct IoSettings
     bool operator==(const IoSettings &i) const
     {
         return (   (fIoCacheEnabled  == i.fIoCacheEnabled)
-                && (ulIoCacheSize    == i.ulIoCacheSize)
-                && (ulIoBandwidthMax == i.ulIoBandwidthMax));
+                && (ulIoCacheSize    == i.ulIoCacheSize));
     }
 
     bool            fIoCacheEnabled;
     uint32_t        ulIoCacheSize;
-    uint32_t        ulIoBandwidthMax;
 };
 
 /**
@@ -674,6 +674,7 @@ struct Hardware
     bool                fCpuHotPlug;            // requires settings version 1.10 (VirtualBox 3.2)
     CpuList             llCpus;                 // requires settings version 1.10 (VirtualBox 3.2)
     bool                fHpetEnabled;           // requires settings version 1.10 (VirtualBox 3.2)
+    uint32_t            ulCpuPriority;          // requires settings version 1.11 (VirtualBox 3.3)
 
     CpuIdLeafsList      llCpuIdLeafs;
 
