@@ -1279,11 +1279,11 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
     }
     Assert(   index != -1
-           && u32Offset == s_ichIntelHDRegMap[index].offset
            && cb <= 4);
     if (index != -1)
     {
         uint32_t mask = 0;
+        uint32_t shift = (u32Offset - s_ichIntelHDRegMap[index].offset) % sizeof(uint32_t) * 8;
         uint32_t v = 0;
         switch(cb)
         {
@@ -1292,9 +1292,9 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
             case 3: mask = 0x00ffffff; break;
             case 4: mask = 0xffffffff; break;
         }
-        Assert(u32Offset == s_ichIntelHDRegMap[index].offset);
+        mask <<= shift;
         rc = s_ichIntelHDRegMap[index].pfnRead(&pThis->hda, u32Offset, index, &v);
-        *(uint32_t *)pv = v & mask;
+        *(uint32_t *)pv = (v & mask) >> shift;
         Log(("hda: read %s[%x/%x]\n", s_ichIntelHDRegMap[index].abbrev, v, *(uint32_t *)pv));
         return rc;
     }
@@ -1503,7 +1503,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetStatus             (&pThis->dev, 0x0010); /* 06 rwc?,ro? - pcists. */
     PCIDevSetRevisionId         (&pThis->dev, 0x01);   /* 08 ro - rid. */
     PCIDevSetClassProg          (&pThis->dev, 0x00);   /* 09 ro - pi. */
-    PCIDevSetClassSub           (&pThis->dev, 0x02);   /* 0a ro - scc; 02 == HDA. */
+    PCIDevSetClassSub           (&pThis->dev, 0x03);   /* 0a ro - scc; 03 == HDA. */
     PCIDevSetClassBase          (&pThis->dev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */
     PCIDevSetHeaderType         (&pThis->dev, 0x00);   /* 0e ro - headtyp. */
     PCIDevSetBaseAddress        (&pThis->dev, 0,       /* 10 rw - MMIO */
