@@ -217,7 +217,7 @@ public:
 
     bool isMachineIdValid(const Guid &aId)
     {
-        return SUCCEEDED(findMachine(aId, false /* aSetError */, NULL));
+        return SUCCEEDED(findMachine(aId, true /* fPermitInaccessible */, false /* aSetError */, NULL));
     }
 
     HRESULT findMachine (const Guid &aId,
