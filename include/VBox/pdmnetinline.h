@@ -195,10 +195,9 @@ DECLINLINE(void) pdmNetGsoUpdateUdpHdr(uint32_t u32PseudoSum, uint8_t *pbSegHdrs
         case PDMNETCSUMTYPE_COMPLETE:
             pUdpHdr->uh_sum = RTNetUDPChecksum(u32PseudoSum, pUdpHdr);
             break;
-        /** @todo: Implement:
         case PDMNETCSUMTYPE_PSEUDO:
-            pUdpHdr->uh_sum = ???;
-            break; */
+            pUdpHdr->uh_sum = ~RTNetIPv4FinalizeChecksum(u32PseudoSum);
+            break;
         default:
             AssertFailed();
             break;
