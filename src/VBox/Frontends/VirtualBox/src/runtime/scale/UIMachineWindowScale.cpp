@@ -164,8 +164,12 @@ void UIMachineWindowScale::closeEvent(QCloseEvent *pEvent)
 
 void UIMachineWindowScale::prepareMenu()
 {
+    UIMainMenuType fMenus = UIMainMenuType(UIMainMenuType_All ^ UIMainMenuType_View);
+#ifdef Q_WS_MAC
+    setMenuBar(uisession()->newMenuBar(fMenus));
+#endif /* Q_WS_MAC */
     /* No view menu in normal mode: */
-    m_pMainMenu = uisession()->newMenu(UIMainMenuType(UIMainMenuType_All ^ UIMainMenuType_View));
+    m_pMainMenu = uisession()->newMenu(fMenus);
 }
 
 void UIMachineWindowScale::prepareMachineViewContainer()
