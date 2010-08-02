@@ -74,7 +74,7 @@ private:
     /* Cleanup helpers: */
     void saveWindowSettings();
     void cleanupMachineView();
-    //void cleanupMiniToolBar() {}
+    void cleanupMiniToolBar();
     void cleanupMenu();
 
     /* Update routines: */

@@ -76,8 +76,8 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
     /* Prepare handlers: */
     prepareHandlers();
 
-    /* Prepare mini tool-bar: */
 #ifndef Q_WS_MAC
+    /* Prepare mini tool-bar: */
     prepareMiniToolBar();
 #endif /* Q_WS_MAC */
 
@@ -100,6 +100,11 @@ UIMachineWindowSeamless::~UIMachineWindowSeamless()
 {
     /* Save window settings: */
     saveWindowSettings();
+
+#ifndef Q_WS_MAC
+    /* Cleanup mini tool-bar: */
+    cleanupMiniToolBar();
+#endif /* Q_WS_MAC */
 
     /* Prepare handlers: */
     cleanupHandlers();
@@ -317,6 +322,17 @@ void UIMachineWindowSeamless::cleanupMachineView()
     UIMachineView::destroy(m_pMachineView);
     m_pMachineView = 0;
 }
+
+#ifndef Q_WS_MAC
+void UIMachineWindowSeamless::cleanupMiniToolBar()
+{
+    if (m_pMiniToolBar)
+    {
+        delete m_pMiniToolBar;
+        m_pMiniToolBar = 0;
+    }
+}
+#endif /* Q_WS_MAC */
 
 void UIMachineWindowSeamless::cleanupMenu()
 {

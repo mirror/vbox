@@ -88,7 +88,7 @@ private:
     void saveWindowSettings();
     void cleanupMachineView();
 #ifndef Q_WS_MAC
-    //void cleanupMiniToolBar() {}
+    void cleanupMiniToolBar();
 #endif /* Q_WS_MAC */
     void cleanupMenu();
     //void cleanupSeamless() {}

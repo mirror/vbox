@@ -98,6 +98,9 @@ UIMachineWindowFullscreen::~UIMachineWindowFullscreen()
     /* Save window settings: */
     saveWindowSettings();
 
+    /* Cleanup mini tool-bar: */
+    cleanupMiniToolBar();
+
     /* Prepare handlers: */
     cleanupHandlers();
 
@@ -256,6 +259,15 @@ void UIMachineWindowFullscreen::cleanupMachineView()
 
     UIMachineView::destroy(m_pMachineView);
     m_pMachineView = 0;
+}
+
+void UIMachineWindowFullscreen::cleanupMiniToolBar()
+{
+    if (m_pMiniToolBar)
+    {
+        delete m_pMiniToolBar;
+        m_pMiniToolBar = 0;
+    }
 }
 
 void UIMachineWindowFullscreen::cleanupMenu()
