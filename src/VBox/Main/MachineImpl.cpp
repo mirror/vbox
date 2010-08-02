@@ -10075,6 +10075,7 @@ STDMETHODIMP SessionMachine::GetIPCId(BSTR *aId)
  */
 STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
 {
+    LogFlowThisFunc(("aProgress=%p\n", aProgress));
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
@@ -10086,6 +10087,7 @@ STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
     if (!mData->mSession.mProgress.isNull())
         mData->mSession.mProgress->setOtherProgressObject(aProgress);
 
+    LogFlowThisFunc(("returns S_OK.\n"));
     return S_OK;
 }
 
