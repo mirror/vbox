@@ -291,8 +291,8 @@ public:
 
     ToggleScaleModeAction(QObject *pParent)
         : UIToggleAction(pParent,
-                         ":/scaled_on_16px.png", ":/scaled_16px.png",
-                         ":/scaled_on_disabled_16px.png", ":/scaled_disabled_16px.png")
+                         ":/scale_on_16px.png", ":/scale_16px.png",
+                         ":/scale_on_disabled_16px.png", ":/scale_disabled_16px.png")
     {
         retranslateUi();
     }
