@@ -1014,7 +1014,7 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
 
         VBoxEventType_T evType;
         hrc = aEvent->COMGETTER(Type)(&evType);
-        AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
+        AssertComRCReturn(hrc, hrc);
 
         EventMapList& listeners = m->mEvMap[(int)evType-FirstEvent];
 
