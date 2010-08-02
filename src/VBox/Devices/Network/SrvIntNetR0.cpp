@@ -3737,8 +3737,9 @@ INTNETR0DECL(int) IntNetR0IfSetMacAddressReq(PSUPDRVSESSION pSession, PINTNETIFS
  * Worker for intnetR0IfSetActive and intnetR0IfDestruct.
  *
  * This function will update the active interface count on the network and
- * activate or deactivate the trunk connection if necessary.  Note that in
- * order to do this it is necessary to abandond the network semaphore.
+ * activate or deactivate the trunk connection if necessary.
+ *
+ * The call must own the giant lock (we cannot take it here).
  *
  * @returns VBox status code.
  * @param   pNetwork        The network.
@@ -3756,10 +3757,6 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
      * big lock protects the calling of pfnSetState.  Grab both lock at once
      * to save us the extra hazzle.
      */
-    PINTNET         pIntNet = pNetwork->pIntNet;
-    int rc = RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
-    AssertRCReturn(rc, rc);
-
     PINTNETTRUNKIF  pTrunk  = NULL;
     RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
@@ -3805,6 +3802,7 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
 
     /*
      * Tell the trunk if necessary.
+     * The wait for !busy is for the Solaris streams trunk driver (mostly).
      */
     if (pTrunk && pTrunk->pIfPort)
     {
@@ -3813,8 +3811,6 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
 
         pTrunk->pIfPort->pfnSetState(pTrunk->pIfPort, fActive ? INTNETTRUNKIFSTATE_ACTIVE : INTNETTRUNKIFSTATE_INACTIVE);
     }
-
-    RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
 
     return VINF_SUCCESS;
 }
@@ -3850,20 +3846,32 @@ INTNETR0DECL(int) IntNetR0IfSetActive(INTNETIFHANDLE hIf, PSUPDRVSESSION pSessio
      * Hand it to the network since it might involve the trunk and things are
      * tricky there wrt to locking order.
      *
-     * Note! We mark the interface busy so the network cannot be removed while
-     *       we're working on it - paranoia strikes again.
+     * 1. We take the giant lock here.  This makes sure nobody is re-enabling
+     *    the network while we're pausing it and vice versa.  This also enables
+     *    us to wait for the network to become idle before telling the trunk.
+     *    (Important on Solaris.)
+     *
+     * 2. For paranoid reasons, we grab a busy reference to the calling
+     *    interface.  This is totally unnecessary but should hurt (when done
+     *    after grabbing the giant lock).
      */
-    intnetR0BusyIncIf(pIf);
+    int rc = RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
+    {
+        intnetR0BusyIncIf(pIf);
 
-    int rc;
-    PINTNETNETWORK pNetwork = pIf->pNetwork;
-    if (pNetwork)
-        rc = intnetR0NetworkSetIfActive(pNetwork, pIf, fActive);
-    else
-        rc = VERR_WRONG_ORDER;
+        PINTNETNETWORK pNetwork = pIf->pNetwork;
+        if (pNetwork)
+            rc = intnetR0NetworkSetIfActive(pNetwork, pIf, fActive);
+        else
+            rc = VERR_WRONG_ORDER;
 
-    intnetR0BusyDecIf(pIf);
+        intnetR0BusyDecIf(pIf);
+        RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
+    }
+
     intnetR0IfRelease(pIf, pSession);
+    LogFlow(("IntNetR0IfSetActive: returns %Rrc\n", rc));
     return rc;
 }
 
