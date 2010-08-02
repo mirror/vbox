@@ -4474,20 +4474,22 @@
         at the indicated port and device.
 
         This method is intended for managing storage devices in general (it works
-        for both fixed and removable media). For storage devices supporting removable
-        media (such as DVDs and floppies), you can also use <link to="IMachine::mountMedium"/>
-        for changing the media while the machine is running.
-
+        for both fixed and removable media) while a machine is powered off.
         In a VM's default configuration of virtual machines, the secondary
         master of the IDE controller is used for a CD/DVD drive.
 
         For fixed media such as hard disks, the given medium identifier cannot
-        be a zero UUID. It may be a zero UUID for removable media such as DVDs
-        and floppies.
+        be a zero UUID.
+
+        For storage devices supporting removable media (such as DVDs and floppies),
+        you can also use <link to="IMachine::mountMedium"/> for changing the media
+        while the machine is running. For those devices, you can also specify
+        a zero UUID to indicate an empty drive or the UUID of a host drive;
+        see <link to="IMediumAttachment" /> for details.
 
         After calling this returns successfully, a new instance of
         <link to="IMediumAttachment"/> will appear in the machine's list of medium
-        attachments (<link to="IMachine::mediumAttachments"/>).
+        attachments (see <link to="IMachine::mediumAttachments"/>).
 
         The specified device slot must not have a device attached to it,
         or this method will fail.
@@ -4513,13 +4515,13 @@
           SATA device, SATA port, IDE port or IDE slot out of range.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Attempt to attach medium to an unregistered virtual machine.
+          Machine must be registered before media can be attached.
         </result>
         <result name="VBOX_E_INVALID_VM_STATE">
           Invalid machine state.
         </result>
         <result name="VBOX_E_OBJECT_IN_USE">
-          Hard disk already attached to this or another virtual machine.
+          A medium is already attached to this or another virtual machine.
         </result>
 
       </desc>
@@ -4542,8 +4544,9 @@
         <desc>Device type of the attached device.</desc>
       </param>
       <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the medium to mount. Zero UUID means do not mount any
-        medium.</desc>
+        <desc>UUID of the medium to mount. Can be a zero UUID or the UUID of
+          a host drive for removeable media; see <link to="IMediumAttachment" />
+          for details.</desc>
       </param>
     </method>
 
@@ -8538,9 +8541,13 @@
 
       Each medium attachment specifies the storage controller as well as a
       port and device number and the IMedium instance representing a virtual
-      hard disk or floppy or DVD image. As a special exception, for removeable
-      media, the IMedium instance can be @c null to represent an empty drive
-      with no media inserted (see <link to="IMachine::mountMedium" />).
+      hard disk or floppy or DVD image.
+
+      For removeable media (DVDs or floppies), there are two additional
+      options. For one, the IMedium instance can be @c null to represent
+      an empty drive with no media inserted (see <link to="IMachine::mountMedium" />);
+      secondly, the medium can be one of the pseudo-media for host drives
+      listed in <link to="IHost::DVDDrives"/> or <link to="IHost::floppyDrives"/>.
     </desc>
 
     <attribute name="medium" type="IMedium" readonly="yes">
