@@ -60,6 +60,8 @@ public:
     STDMETHOD(COMGETTER(Device))(LONG *aDevice);
     STDMETHOD(COMGETTER(Type))(DeviceType_T *aType);
     STDMETHOD(COMGETTER(Passthrough))(BOOL *aPassthrough);
+    STDMETHOD(COMGETTER(BandwidthLimit))(ULONG *aLimit);
+    STDMETHOD(COMSETTER(BandwidthLimit))(ULONG aLimit);
 
     // public internal methods
     void rollback();

@@ -84,6 +84,9 @@ HRESULT NetworkAdapter::init(Machine *aParent, ULONG aSlot)
     /* initialize data */
     mData->mSlot = aSlot;
 
+    /* Default limit is not capped/unlimited. */
+    mData->mBandwidthLimit = 0;
+
     /* default to Am79C973 */
     mData->mAdapterType = NetworkAdapterType_Am79C973;
 
@@ -748,6 +751,47 @@ STDMETHODIMP NetworkAdapter::COMSETTER(LineSpeed) (ULONG aSpeed)
     return S_OK;
 }
 
+STDMETHODIMP NetworkAdapter::COMGETTER(BandwidthLimit) (ULONG *aLimit)
+{
+    CheckComArgOutPointerValid(aLimit);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aLimit = mData->mBandwidthLimit;
+    return S_OK;
+}
+
+STDMETHODIMP NetworkAdapter::COMSETTER(BandwidthLimit) (ULONG aLimit)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* the machine doesn't need to be mutable */
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aLimit != mData->mBandwidthLimit)
+    {
+        mData.backup();
+        mData->mBandwidthLimit = aLimit;
+
+        m_fModified = true;
+        // leave the lock before informing callbacks
+        alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        /* No change in CFGM logic => changeAdapter=FALSE. */
+        mParent->onNetworkAdapterChange(this, FALSE);
+    }
+    return S_OK;
+}
+
 STDMETHODIMP NetworkAdapter::COMGETTER(TraceEnabled) (BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
@@ -1217,6 +1261,8 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     mData->mTraceFile = data.strTraceFile;
     /* boot priority (defaults to 0, i.e. lowest) */
     mData->mBootPriority = data.ulBootPriority;
+    /* Bandwidth limit in Mbps. */
+    mData->mBandwidthLimit = data.ulBandwidthLimit;
 
     switch (data.mode)
     {
@@ -1299,6 +1345,8 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
     data.strTraceFile = mData->mTraceFile;
 
     data.ulBootPriority = mData->mBootPriority;
+
+    data.ulBandwidthLimit = mData->mBandwidthLimit;
 
     data.type = mData->mAdapterType;
 

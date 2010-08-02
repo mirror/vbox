@@ -768,14 +768,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         hrc = pMachine->COMGETTER(IoCacheSize)(&ioCacheSize);                               H();
         InsertConfigInteger(pPDMAcFile, "CacheSize", ioCacheSize * _1M);
 
-        /* Maximum I/O bandwidth */
-        ULONG ioBandwidthMax = 0;
-        hrc = pMachine->COMGETTER(IoBandwidthMax)(&ioBandwidthMax);                         H();
-        if (ioBandwidthMax != 0)
-        {
-            InsertConfigInteger(pPDMAcFile, "VMTransferPerSecMax", ioBandwidthMax * _1M);
-        }
-
         /*
          * Devices
          */

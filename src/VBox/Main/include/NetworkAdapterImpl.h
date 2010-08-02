@@ -68,6 +68,7 @@ public:
 #endif
         Bstr mNATNetwork;
         ULONG mBootPriority;
+        ULONG mBandwidthLimit;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(NetworkAdapter, INetworkAdapter)
@@ -121,6 +122,8 @@ public:
     STDMETHOD(COMGETTER(NatDriver)) (INATEngine **aNatDriver);
     STDMETHOD(COMGETTER(BootPriority)) (ULONG *aBootPriority);
     STDMETHOD(COMSETTER(BootPriority)) (ULONG aBootPriority);
+    STDMETHOD(COMGETTER(BandwidthLimit)) (ULONG *aLimit);
+    STDMETHOD(COMSETTER(BandwidthLimit)) (ULONG aLimit);
 
     // INetworkAdapter methods
     STDMETHOD(AttachToNAT)();
