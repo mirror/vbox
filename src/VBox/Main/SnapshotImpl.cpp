@@ -1431,8 +1431,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
             setMachineState(MachineState_Saving); /** @todo Confusing! Saving is used for both online and offline snapshots. */
 
         /* create new differencing hard disks and attach them to this machine */
-        rc = createImplicitDiffs(mUserData->mSnapshotFolderFull,
-                                 aConsoleProgress,
+        rc = createImplicitDiffs(aConsoleProgress,
                                  1,            // operation weight; must be the same as in Console::TakeSnapshot()
                                  !!fTakingSnapshotOnline,
                                  &fNeedsSaveSettings);
@@ -1830,8 +1829,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             snapshotLock.release();
             alock.leave();
 
-            rc = createImplicitDiffs(mUserData->mSnapshotFolderFull,
-                                     aTask.pProgress,
+            rc = createImplicitDiffs(aTask.pProgress,
                                      1,
                                      false /* aOnline */,
                                      &fNeedsGlobalSaveSettings);

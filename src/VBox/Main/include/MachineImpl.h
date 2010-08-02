@@ -759,8 +759,7 @@ protected:
                                settings::StorageController &data);
     HRESULT saveStateSettings(int aFlags);
 
-    HRESULT createImplicitDiffs(const Bstr &aFolder,
-                                IProgress *aProgress,
+    HRESULT createImplicitDiffs(IProgress *aProgress,
                                 ULONG aWeight,
                                 bool aOnline,
                                 bool *pfNeedsSaveSettings);
