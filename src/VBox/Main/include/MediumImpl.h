@@ -158,6 +158,7 @@ public:
     const Guid& getId() const;
     MediumState_T getState() const;
     MediumVariant_T getVariant() const;
+    bool isHostDrive() const;
     const Utf8Str& getLocation() const;
     const Utf8Str& getLocationFull() const;
     const Utf8Str& getFormat() const;

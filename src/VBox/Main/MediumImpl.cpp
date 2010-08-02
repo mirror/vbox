@@ -2603,6 +2603,15 @@ MediumVariant_T Medium::getVariant() const
 }
 
 /**
+ * Internal method which returns true if this medium represents a host drive.
+ * @return
+ */
+bool Medium::isHostDrive() const
+{
+    return m->hostDrive;
+}
+
+/**
  * Internal method to return the medium's location. Must have caller + locking!
  * @return
  */
