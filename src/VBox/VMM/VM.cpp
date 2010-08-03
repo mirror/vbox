@@ -4103,3 +4103,18 @@ VMMR3DECL(int) VMR3HotPlugCpu(PVM pVM, VMCPUID idCpu)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Changes the VCPU priority.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM to operate on.
+ * @param   ulCpuPriority   New CPU priority
+ */
+VMMR3DECL(int) VMR3SetCpuPriority(PVM pVM, unsigned ulCpuPriority)
+{
+    AssertReturn(ulCpuPriority > 0 && ulCpuPriority <= 100, VERR_INVALID_PARAMETER);
+    /* Note: not called from EMT. */
+    pVM->uCpuPriority = ulCpuPriority;
+    return VINF_SUCCESS;
+}
