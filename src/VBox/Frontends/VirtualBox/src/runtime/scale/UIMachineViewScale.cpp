@@ -46,7 +46,7 @@ UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow
                     , bAccelerate2DVideo
 #endif
                     )
-    , m_fShouldWeDoScale(false)
+    , m_pPauseImage(0)
 {
     /* Load machine view settings: */
     loadMachineViewSettings();
@@ -82,24 +82,54 @@ UIMachineViewScale::~UIMachineViewScale()
     cleanupFrameBuffer();
 }
 
-void UIMachineViewScale::sltMachineStateChanged()
+void UIMachineViewScale::takePauseShotLive()
 {
-    /* Base-class processing: */
-    UIMachineView::sltMachineStateChanged();
+    /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
+    QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+    /* If TakeScreenShot fails or returns no image, just show a black image. */
+    shot.fill(0);
+    CDisplay dsp = session().GetConsole().GetDisplay();
+    dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height());
+    m_pPauseImage = new QImage(shot);
+    scalePauseShot();
+}
 
-    /* Get machine state: */
-    KMachineState state = uisession()->machineState();
-    switch (state)
+void UIMachineViewScale::takePauseShotSnapshot()
+{
+    CMachine machine = session().GetMachine();
+    ULONG width = 0, height = 0;
+    QVector<BYTE> screenData = machine.ReadSavedScreenshotPNGToArray(0, width, height);
+    if (screenData.size() != 0)
     {
-        case KMachineState_Paused:
-        case KMachineState_TeleportingPausedVM:
+        QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(guestSizeHint());
+        m_pPauseImage = new QImage(shot);
+        scalePauseShot();
+    }
+}
+
+void UIMachineViewScale::resetPauseShot()
+{
+    /* Call the base class */
+    UIMachineView::resetPauseShot();
+
+    if (m_pPauseImage)
+    {
+        delete m_pPauseImage;
+        m_pPauseImage = 0;
+    }
+}
+
+void UIMachineViewScale::scalePauseShot()
+{
+    if (m_pPauseImage)
+    {
+        QSize scaledSize = frameBuffer()->scaledSize();
+        if (scaledSize.isValid())
         {
-            /* Scale stored pause-shot, it will be repainted on the next event-processing step: */
-            m_pauseShot = m_pauseShot.scaled(frameBuffer()->scaledSize(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-            break;
+            QImage bla1 = m_pPauseImage->scaled(frameBuffer()->scaledSize(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            dimImage(bla1);
+            m_pauseShot = QPixmap::fromImage(bla1);
         }
-        default:
-            break;
     }
 }
 
@@ -109,14 +139,14 @@ void UIMachineViewScale::sltPerformGuestScale()
     /* Set new frame-buffer scale-factor: */
     frameBuffer()->setScaledSize(viewport()->size());
 
+    /* Scale the pause image if necessary */
+    scalePauseShot();
+
     /* Update viewport: */
     viewport()->repaint();
 
     /* Update machine-view sliders: */
     updateSliders();
-
-    /* Set request reflector to 'false' after scaling is done: */
-    m_fShouldWeDoScale = false;
 }
 
 void UIMachineViewScale::sltDesktopResized()
@@ -284,6 +314,32 @@ void UIMachineViewScale::prepareFrameBuffer()
         m_pFrameBuffer->AddRef();
         display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
     }
+
+#ifdef VBOX_TEST_IMAGE_ON_RESTORE
+    QSize size;
+#ifdef Q_WS_X11
+    /* Processing pseudo resize-event to synchronize frame-buffer with stored
+     * framebuffer size. On X11 this will be additional done when the machine
+     * state was 'saved'. */
+    if (session().GetMachine().GetState() == KMachineState_Saved)
+        QSize size = guestSizeHint();
+#endif /* Q_WS_X11 */
+    /* If there is a preview image saved, we will resize the framebuffer to the
+     * size of that image. */
+    ULONG buffer = 0, width = 0, height = 0;
+    CMachine machine = session().GetMachine();
+    machine.QuerySavedScreenshotPNGSize(0, buffer, width, height);
+    if (buffer > 0)
+        size = guestSizeHint();
+    /* If we have a valid size, resize the framebuffer. */
+    if (   size.width() > 0
+        && size.height() > 0)
+    {
+        UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, size.width(), size.height());
+        frameBuffer()->resizeEvent(&event);
+        QTimer::singleShot(0, this, SLOT(sltPerformGuestScale()));
+    }
+#endif
 }
 
 void UIMachineViewScale::prepareConnections()

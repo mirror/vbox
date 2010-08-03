@@ -38,10 +38,12 @@ protected:
     /* Scale machine-view destructor: */
     virtual ~UIMachineViewScale();
 
-private slots:
+    virtual void takePauseShotLive();
+    virtual void takePauseShotSnapshot();
+    virtual void resetPauseShot();
+    void scalePauseShot();
 
-    /* Console callback handlers: */
-    void sltMachineStateChanged();
+private slots:
 
     /* Slot to perform guest resize: */
     void sltPerformGuestScale();
@@ -74,7 +76,7 @@ private:
     void updateSliders();
 
     /* Private members: */
-    bool m_fShouldWeDoScale : 1;
+    QImage *m_pPauseImage;
 
     /* Friend classes: */
     friend class UIMachineView;

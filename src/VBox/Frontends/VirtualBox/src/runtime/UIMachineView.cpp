@@ -149,27 +149,31 @@ void UIMachineView::sltMachineStateChanged()
         case KMachineState_Paused:
         case KMachineState_TeleportingPausedVM:
         {
-            if (vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
-                (state != KMachineState_TeleportingPausedVM || m_previousState != KMachineState_Teleporting))
+            if (   vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode
+                && m_pFrameBuffer
+                &&
+                (   state           != KMachineState_TeleportingPausedVM
+                 || m_previousState != KMachineState_Teleporting))
             {
-                /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
-                QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
-                /* If TakeScreenShot fails or returns no image, just show a black image. */
-                shot.fill(0);
-                CDisplay dsp = session().GetConsole().GetDisplay();
-                dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height());
-                /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
-                 * after the machine execution was resumed. It's not fatal: */
-                if (dsp.isOk())
-                {
-                    dimImage(shot);
-                }
-                m_pauseShot = QPixmap::fromImage(shot);
+                takePauseShotLive();
                 /* Fully repaint to pick up m_pauseShot: */
                 viewport()->update();
             }
             break;
         }
+#ifdef VBOX_TEST_IMAGE_ON_RESTORE
+        case KMachineState_Restoring:
+        {
+            /* Only works with the primary screen currently. */
+            if (screenId() == 0)
+            {
+                takePauseShotSnapshot();
+                /* Fully repaint to pick up m_pauseShot: */
+                viewport()->update();
+            }
+            break;
+        }
+#endif
         case KMachineState_Running:
         {
             if (   m_previousState == KMachineState_Paused
@@ -179,7 +183,7 @@ void UIMachineView::sltMachineStateChanged()
                 if (vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode && m_pFrameBuffer)
                 {
                     /* Reset the pixmap to free memory: */
-                    m_pauseShot = QPixmap();
+                    resetPauseShot();
                     /* Ask for full guest display update (it will also update
                      * the viewport through IFramebuffer::NotifyUpdate): */
                     CDisplay dsp = session().GetConsole().GetDisplay();
@@ -191,6 +195,7 @@ void UIMachineView::sltMachineStateChanged()
         default:
             break;
     }
+
     m_previousState = state;
 }
 
@@ -378,6 +383,30 @@ void UIMachineView::prepareFrameBuffer()
         display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
     }
 
+#ifdef VBOX_TEST_IMAGE_ON_RESTORE
+    QSize size;
+#ifdef Q_WS_X11
+    /* Processing pseudo resize-event to synchronize frame-buffer with stored
+     * framebuffer size. On X11 this will be additional done when the machine
+     * state was 'saved'. */
+    if (session().GetMachine().GetState() == KMachineState_Saved)
+        QSize size = guestSizeHint();
+#endif /* Q_WS_X11 */
+    /* If there is a preview image saved, we will resize the framebuffer to the
+     * size of that image. */
+    ULONG buffer = 0, width = 0, height = 0;
+    CMachine machine = session().GetMachine();
+    machine.QuerySavedScreenshotPNGSize(0, buffer, width, height);
+    if (buffer > 0)
+        size = guestSizeHint();
+    /* If we have a valid size, resize the framebuffer. */
+    if (   size.width() > 0
+        && size.height() > 0)
+    {
+        UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, size.width(), size.height());
+        frameBuffer()->resizeEvent(&event);
+    }
+#else
 #ifdef Q_WS_X11
     /* Processing pseudo resize-event to synchronize frame-buffer
      * with stored framebuffer size in case of machine state was 'saved': */
@@ -388,6 +417,7 @@ void UIMachineView::prepareFrameBuffer()
         frameBuffer()->resizeEvent(&event);
     }
 #endif /* Q_WS_X11 */
+#endif
 }
 
 void UIMachineView::prepareCommon()
@@ -629,6 +659,34 @@ void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
                      QString("%1%2").arg(VBoxDefs::GUI_LastGuestSizeHint).arg(m_uScreenId);
     QString strValue = QString("%1,%2").arg(sizeHint.width()).arg(sizeHint.height());
     machine.SetExtraData(strKey, strValue);
+}
+
+void UIMachineView::takePauseShotLive()
+{
+    /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
+    QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+    /* If TakeScreenShot fails or returns no image, just show a black image. */
+    shot.fill(0);
+    CDisplay dsp = session().GetConsole().GetDisplay();
+    dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height());
+    /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
+     * after the machine execution was resumed. It's not fatal: */
+    if (dsp.isOk())
+        dimImage(shot);
+    m_pauseShot = QPixmap::fromImage(shot);
+}
+
+void UIMachineView::takePauseShotSnapshot()
+{
+    CMachine machine = session().GetMachine();
+    ULONG width = 0, height = 0;
+    QVector<BYTE> screenData = machine.ReadSavedScreenshotPNGToArray(0, width, height);
+    if (screenData.size() != 0)
+    {
+        QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(guestSizeHint());
+        dimImage(shot);
+        m_pauseShot = QPixmap::fromImage(shot);
+    }
 }
 
 void UIMachineView::updateSliders()
@@ -884,7 +942,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         bool paintOnScreen = viewport()->testAttribute(Qt::WA_PaintOnScreen);
         viewport()->setAttribute(Qt::WA_PaintOnScreen, false);
         QPainter pnt(viewport());
-        pnt.drawPixmap(r.x(), r.y(), m_pauseShot, r.x() + contentsX(), r.y() + contentsY(), r.width(), r.height());
+        pnt.drawPixmap(r, m_pauseShot, QRect(r.x() + contentsX(), r.y() + contentsY(), r.width(), r.height()));
         /* Restore the attribute to its previous state: */
         viewport()->setAttribute(Qt::WA_PaintOnScreen, paintOnScreen);
 #ifdef Q_WS_MAC
@@ -952,4 +1010,3 @@ bool UIMachineView::x11Event(XEvent *pEvent)
 }
 
 #endif
-
