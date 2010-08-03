@@ -5209,12 +5209,11 @@
         This method does not delete any files. It only changes the machine configuration and
         the list of registered machines in the VirtualBox object. To delete the files which
         belonged to the machine, including the XML file of the machine itself, call
-        <link to="#delete"/>, optionally with the array of IMedium objects that have been
-        returned from this method.
+        <link to="#delete"/>, optionally with the array of IMedium objects which was returned
+        from this method.
 
-        Depending on the @a cleanupMode argument, the thoroughness with with this
-        method cleans up the machine configuration before unregistering the machine
-        will vary.
+        How thoroughly this method cleans up the machine configuration before unregistering
+        the machine depends on the @a cleanupMode argument.
 
         <ul>
           <li>With "UnregisterOnly", the machine will only be unregistered, but no additional
@@ -5225,8 +5224,8 @@
             which it replaces.</li>
           <li>With "DetachAllReturnNone", the call will succeed even if the machine is in "Saved"
             state or if it has snapshots or media attached. All media attached to the current machine
-            state or in snapshots will be detached. No medium objects will be closed or returned; all
-            of the machine's media will remain opened.</li>
+            state or in snapshots will be detached. No medium objects will be returned; all of the
+            machine's media will remain open.</li>
           <li>With "DetachAllReturnHardDisksOnly", the call will behave like with "DetachAllReturnNone",
             except that all the hard disk medium objects which were detached from the machine will
             be returned as an array. This allows for quickly passing them to the <link to="#delete" />
@@ -5234,8 +5233,19 @@
           <li>With "Full", the call will behave like with "DetachAllReturnHardDisksOnly", except
             that all media will be returned in the array, including removeable media like DVDs and
             floppies. This might be useful if the user wants to inspect in detail which media were
-            attached to the machine.</li>
+            attached to the machine. Be careful when passing the media array to <link to="#delete" />
+            in that case because users will typically want to preserve ISO and RAW image files.</li>
         </ul>
+
+        This API does not verify whether the media files returned in the array are still
+        attached to other machines (i.e. shared between several machines). If such a shared
+        image is passed to <link to="#delete" /> however, closing the image will fail there
+        and the image will be silently skipped.
+
+        A typical implementation will use "DetachAllReturnHardDisksOnly" and then pass the
+        resulting IMedia array to <link to="#delete"/>. This way, the machine is completely
+        deleted with all its saved states and hard disk images, but images for removeable
+        drives (such as ISO and RAW files) will remain on disk.
 
         The call will fail if the machine is currently locked (see <link to="ISession" />).
         It implicitly calls <link to="#saveSettings"/> to save all current machine settings
@@ -5267,9 +5277,9 @@
     <method name="delete">
       <desc>
         Deletes the files associated with this machine from disk. If medium objects are passed
-        in with the @a aMedia argument, they are closed and their storage files are deleted as well.
-        For convenience, this array of media files can be the same as the one returned from
-        a previous <a link="#unregister" /> call.
+        in with the @a aMedia argument, they are closed and, if closing was succesful, their
+        storage files are deleted as well. For convenience, this array of media files can be
+        the same as the one returned from a previous <link to="#unregister" /> call.
 
         This method must only be called on machines which are either write-locked (i.e. on instances
         returned by <link to="ISession::machine"/>) or on unregistered machines (i.e. not yet
@@ -5283,9 +5293,10 @@
             the machine had in use; possibly one if the machine was in "Saved" state and one
             for each online snapshot that the machine had.</li>
           <li>On each medium object passed in the @a aMedia array, this will call
-            <link to="IMedium::close" /> and then attempt to delete the medium's storage
-            on disk. The close() call will fail if the medium is still in use, e.g. because
-            it is still attached to a second machine.</li>
+            <link to="IMedium::close" />. If that succeeds, this will attempt to delete the
+            medium's storage on disk. Since the close() call will fail if the medium is still
+            in use, e.g. because it is still attached to a second machine; in that case the
+            storage will not be deleted.</li>
           <li>Finally, the machine's own XML file will be deleted.</li>
         </ul>
 
