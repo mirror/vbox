@@ -2034,24 +2034,27 @@ static int solarisWalkDeviceNodeForDVD(di_node_t Node, void *pvArg)
                             di_devlink_walk(DevLink, NULL, pszMinorPath, DI_PRIMARY_LINK, &pszDevLinkPath, solarisWalkDevLink);
                             di_devfs_path_free(pszMinorPath);
 
-                            char *pszSlice = solarisGetSliceFromPath(pszDevLinkPath);
-                            if (   pszSlice && !strcmp(pszSlice, "s2")
-                                && !strncmp(pszDevLinkPath, "/dev/rdsk", sizeof("/dev/rdsk") - 1))   /* We want only raw disks */
+                            if (pszDevLinkPath)
                             {
-                                /*
-                                 * We've got a fully qualified DVD drive. Add it to the list.
-                                 */
-                                PSOLARISDVD pDrive = (PSOLARISDVD)RTMemAllocZ(sizeof(SOLARISDVD));
-                                if (RT_LIKELY(pDrive))
+                                char *pszSlice = solarisGetSliceFromPath(pszDevLinkPath);
+                                if (   pszSlice && !strcmp(pszSlice, "s2")
+                                    && !strncmp(pszDevLinkPath, "/dev/rdsk", sizeof("/dev/rdsk") - 1))   /* We want only raw disks */
                                 {
-                                    RTStrPrintf(pDrive->szDescription, sizeof(pDrive->szDescription), "%s %s", pszVendor, pszProduct);
-                                    RTStrCopy(pDrive->szRawDiskPath, sizeof(pDrive->szRawDiskPath), pszDevLinkPath);
-                                    if (*ppDrives)
-                                        pDrive->pNext = *ppDrives;
-                                    *ppDrives = pDrive;
+                                    /*
+                                     * We've got a fully qualified DVD drive. Add it to the list.
+                                     */
+                                    PSOLARISDVD pDrive = (PSOLARISDVD)RTMemAllocZ(sizeof(SOLARISDVD));
+                                    if (RT_LIKELY(pDrive))
+                                    {
+                                        RTStrPrintf(pDrive->szDescription, sizeof(pDrive->szDescription), "%s %s", pszVendor, pszProduct);
+                                        RTStrCopy(pDrive->szRawDiskPath, sizeof(pDrive->szRawDiskPath), pszDevLinkPath);
+                                        if (*ppDrives)
+                                            pDrive->pNext = *ppDrives;
+                                        *ppDrives = pDrive;
+                                    }
                                 }
+                                free(pszDevLinkPath);
                             }
-                            free(pszDevLinkPath);
                         }
                     }
                 }
