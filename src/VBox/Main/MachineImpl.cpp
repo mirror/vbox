@@ -3973,8 +3973,8 @@ STDMETHODIMP Machine::DiscardSettings()
 }
 
 /** @note Locks objects! */
-STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
-                                 ComSafeArrayOut(BSTR, aFiles))
+STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
+                                 ComSafeArrayOut(IMedium*, aMedia))
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3988,17 +3988,12 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
 
     HRESULT rc = S_OK;
 
-    // this list collects the files that should be reported
-    // as to be deleted to the caller in aFiles (this includes the
-    // media files in llMedia below)
-    std::list<Utf8Str> llFilesForCaller;
-
     // discard saved state
     if (mData->mMachineState == MachineState_Saved)
     {
         // add the saved state file to the list of files the caller should delete
         Assert(!mSSData->mStateFilePath.isEmpty());
-        llFilesForCaller.push_back(mSSData->mStateFilePath);
+        mData->llFilesToDelete.push_back(mSSData->mStateFilePath);
 
         mSSData->mStateFilePath.setNull();
 
@@ -4010,7 +4005,7 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
     size_t cSnapshots = 0;
     if (mData->mFirstSnapshot)
         cSnapshots = mData->mFirstSnapshot->getAllChildrenCount() + 1;
-    if (cSnapshots && !fAutoCleanup)
+    if (cSnapshots && cleanupMode == CleanupMode_UnregisterOnly)
         // fail now before we start detaching media
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
@@ -4033,8 +4028,8 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
        )
     {
         // we have media attachments: detach them all and add the Medium objects to our list
-        if (fAutoCleanup)
-            detachAllMedia(alock, NULL /* pSnapshot */, llMedia);
+        if (cleanupMode != CleanupMode_UnregisterOnly)
+            detachAllMedia(alock, NULL /* pSnapshot */, cleanupMode, llMedia);
         else
             return setError(VBOX_E_INVALID_OBJECT_STATE,
                             tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
@@ -4060,11 +4055,10 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
         ComObjPtr<Snapshot> pFirstSnapshot = mData->mFirstSnapshot;
 
         // GO!
-        pFirstSnapshot->uninitRecursively(alock, llMedia, llFilesForCaller);
+        pFirstSnapshot->uninitRecursively(alock, cleanupMode, llMedia, mData->llFilesToDelete);
 
         mData->mMachineState = oldState;
     }
-
 
     if (FAILED(rc))
     {
@@ -4080,45 +4074,9 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
     // machine lock no longer needed
     alock.release();
 
-    if (fAutoCleanup)
-    {
-        // now go thru the list of attached media reported by prepareUnregister() and close them all
-        for (MediaList::const_iterator it = llMedia.begin();
-             it != llMedia.end();
-             ++it)
-        {
-            ComObjPtr<Medium> pMedium = *it;
-            Utf8Str strFile = pMedium->getLocationFull();
-
-            AutoCaller autoCaller2(pMedium);
-            if (FAILED(autoCaller2.rc())) return autoCaller2.rc();
-
-            ErrorInfoKeeper eik;
-            rc = pMedium->close(NULL /*fNeedsSaveSettings*/,     // we'll call saveSettings() in any case below
-                                autoCaller2);
-                // this uninitializes the medium
-
-            LogFlowThisFunc(("Medium::close() on %s yielded rc (%Rhra)\n", strFile.c_str(), rc));
-
-            if (rc == VBOX_E_OBJECT_IN_USE)
-                // can happen if the medium was still attached to another machine;
-                // do not report the file to the caller then, but don't report
-                // an error either
-                eik.setNull();
-            else if (SUCCEEDED(rc))
-                // report the path to the caller
-                llFilesForCaller.push_back(strFile);
-        }
-    }
-
-    // report all paths to the caller
-    SafeArray<BSTR> sfaFiles(llFilesForCaller.size());
-    size_t i = 0;
-    for (std::list<Utf8Str>::iterator it = llFilesForCaller.begin();
-         it != llFilesForCaller.end();
-         ++it)
-        Bstr(*it).detachTo(&sfaFiles[i++]);
-    sfaFiles.detachTo(ComSafeArrayOutArg(aFiles));
+    // return media to caller
+    SafeIfaceArray<IMedium> sfaMedia(llMedia);
+    sfaMedia.detachTo(ComSafeArrayOutArg(aMedia));
 
     mParent->unregisterMachine(this);
             // calls VirtualBox::saveSettings()
@@ -4126,12 +4084,23 @@ STDMETHODIMP Machine::Unregister(BOOL fAutoCleanup,
     return S_OK;
 }
 
-STDMETHODIMP Machine::Delete()
+struct Machine::DeleteTask
 {
+    ComObjPtr<Machine>          pMachine;
+    std::list<Utf8Str>          llFilesToDelete;
+    ComObjPtr<Progress>         pProgress;
+};
+
+STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProgress)
+{
+    LogFlowFuncEnter();
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    bool fNeedsGlobalSaveSettings = false;
 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
@@ -4140,22 +4109,137 @@ STDMETHODIMP Machine::Delete()
         return setError(VBOX_E_INVALID_VM_STATE,
                         tr("Cannot delete settings of a registered machine"));
 
+    DeleteTask *pTask = new DeleteTask;
+    pTask->pMachine = this;
+    com::SafeIfaceArray<IMedium> sfaMedia(ComSafeArrayInArg(aMedia));
+
+    // collect files to delete
+    pTask->llFilesToDelete = mData->llFilesToDelete;            // saved states pushed here by Unregister()
+    for (size_t i = 0; i < sfaMedia.size(); ++i)
+    {
+        IMedium *pIMedium(sfaMedia[i]);
+        Medium *pMedium = static_cast<Medium*>(pIMedium);
+        AutoCaller mediumAutoCaller(pMedium);
+        if (FAILED(mediumAutoCaller.rc())) return mediumAutoCaller.rc();
+
+        Utf8Str bstrLocation = pMedium->getLocationFull();
+        // close the medium now; if that succeeds, then that means the medium is no longer
+        // in use and we can add it to the list of files to delete
+        rc = pMedium->close(&fNeedsGlobalSaveSettings, mediumAutoCaller);
+        if (SUCCEEDED(rc))
+            pTask->llFilesToDelete.push_back(bstrLocation);
+    }
+    if (mData->pMachineConfigFile->fileExists())
+        pTask->llFilesToDelete.push_back(mData->m_strConfigFileFull);
+
+    pTask->pProgress.createObject();
+    pTask->pProgress->init(getVirtualBox(),
+                           this /* aInitiator */,
+                           Bstr(tr("Deleting files")),
+                           true /* fCancellable */,
+                           pTask->llFilesToDelete.size() + 1,   // cOperations
+                           BstrFmt(tr("Deleting '%s'"), pTask->llFilesToDelete.front().c_str()));
+
+    int vrc = RTThreadCreate(NULL,
+                             Machine::deleteThread,
+                             (void*)pTask,
+                             0,
+                             RTTHREADTYPE_MAIN_WORKER,
+                             0,
+                             "MachineDelete");
+
+    alock.release();
+
+    if (fNeedsGlobalSaveSettings)
+    {
+        AutoWriteLock vboxlock(mParent COMMA_LOCKVAL_SRC_POS);
+        mParent->saveSettings();
+    }
+
+    if (RT_FAILURE(vrc))
+    {
+        delete pTask;
+        return setError(E_FAIL, "Could not create MachineDelete thread (%Rrc)", vrc);
+    }
+
+    pTask->pProgress.queryInterfaceTo(aProgress);
+
+    LogFlowFuncLeave();
+
+    return S_OK;
+}
+
+/**
+ * Static task wrapper passed to RTThreadCreate() in Machine::Delete() which then
+ * calls Machine::deleteTaskWorker() on the actual machine object.
+ * @param Thread
+ * @param pvUser
+ * @return
+ */
+/*static*/
+DECLCALLBACK(int) Machine::deleteThread(RTTHREAD Thread, void *pvUser)
+{
+    LogFlowFuncEnter();
+
+    DeleteTask *pTask = (DeleteTask*)pvUser;
+    Assert(pTask);
+    Assert(pTask->pMachine);
+    Assert(pTask->pProgress);
+
+    HRESULT rc = pTask->pMachine->deleteTaskWorker(*pTask);
+    pTask->pProgress->notifyComplete(rc);
+
+    delete pTask;
+
+    LogFlowFuncLeave();
+
+    NOREF(Thread);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Task thread implementation for Machine::Delete(), called from Machine::deleteThread().
+ * @param task
+ * @return
+ */
+HRESULT Machine::deleteTaskWorker(DeleteTask &task)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     ULONG uLogHistoryCount = 3;
     ComPtr<ISystemProperties> systemProperties;
     mParent->COMGETTER(SystemProperties)(systemProperties.asOutParam());
     if (!systemProperties.isNull())
         systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
 
+    // delete the files pushed on the task list by Machine::Delete()
+    // (this includes saved states of the machine and snapshots and
+    // medium storage files from the IMedium list passed in, and the
+    // machine XML file)
+    std::list<Utf8Str>::const_iterator it = task.llFilesToDelete.begin();
+    while (it != task.llFilesToDelete.end())
+    {
+        const Utf8Str &strFile = *it;
+        LogFunc(("Deleting file %s\n", strFile.c_str()));
+        RTFileDelete(strFile.c_str());
+
+        ++it;
+        if (it == task.llFilesToDelete.end())
+        {
+            task.pProgress->SetNextOperation(Bstr(tr("Cleaning up machine directory")), 1);
+            break;
+        }
+
+        task.pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), it->c_str()), 1);
+    }
+
     /* delete the settings only when the file actually exists */
     if (mData->pMachineConfigFile->fileExists())
     {
-        int vrc = RTFileDelete(mData->m_strConfigFileFull.c_str());
-        if (RT_FAILURE(vrc))
-            return setError(VBOX_E_IPRT_ERROR,
-                            tr("Could not delete the settings file '%s' (%Rrc)"),
-                            mData->m_strConfigFileFull.raw(),
-                            vrc);
-
         /* Delete any backup or uncommitted XML files. Ignore failures.
            See the fSafe parameter of xml::XmlFileWriter::write for details. */
         /** @todo Find a way to avoid referring directly to iprt/xml.h here. */
@@ -8651,7 +8735,8 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
 
 /**
  * Goes thru all medium attachments of the list and calls detachDevice() on each
- * of them and attaches all Medium objects found in the process to the given list.
+ * of them and attaches all Medium objects found in the process to the given list,
+ * depending on cleanupMode.
  *
  * This gets called from Machine::Unregister, both for the actual Machine and
  * the SnapshotMachine objects that might be found in the snapshots.
@@ -8659,12 +8744,15 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
  * Requires caller and locking.
  *
  * @param writeLock Machine lock from top-level caller; this gets passed to detachDevice.
- * @param llMedia Caller's list to receive Medium objects which got detached so caller can close() them.
  * @param pSnapshot Must be NULL when called for a "real" Machine or a snapshot object if called for a SnapshotMachine.
+ * @param cleanupMode If DetachAllReturnHardDisksOnly, only hard disk media get added to llMedia; if Full, then all media get added;
+ *          otherwise no media get added.
+ * @param llMedia Caller's list to receive Medium objects which got detached so caller can close() them, depending on cleanupMode.
  * @return
  */
 HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
                                 Snapshot *pSnapshot,
+                                CleanupMode_T cleanupMode,
                                 MediaList &llMedia)
 {
     Assert(isWriteLockOnCurrentThread());
@@ -8683,7 +8771,14 @@ HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
         ComObjPtr<Medium> pMedium = pAttach->getMedium();
 
         if (!pMedium.isNull())
-            llMedia.push_back(pMedium);
+        {
+            DeviceType_T devType = pMedium->getDeviceType();
+            if (    (    cleanupMode == CleanupMode_DetachAllReturnHardDisksOnly
+                      && devType == DeviceType_HardDisk)
+                 || (cleanupMode == CleanupMode_Full)
+               )
+                llMedia.push_back(pMedium);
+        }
 
         // real machine: then we need to use the proper method
         rc = detachDevice(pAttach,

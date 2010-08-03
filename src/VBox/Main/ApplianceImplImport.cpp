@@ -1222,42 +1222,8 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
     if (FAILED(rc))
     {
         // with _whatever_ error we've had, do a complete roll-back of
-        // machines and disks we've created; unfortunately this is
-        // not so trivially done...
+        // machines and disks we've created
 
-        HRESULT rc2;
-        // detach all hard disks from all machines we created
-        for (list<MyHardDiskAttachment>::iterator itM = stack.llHardDiskAttachments.begin();
-             itM != stack.llHardDiskAttachments.end();
-             ++itM)
-        {
-            const MyHardDiskAttachment &mhda = *itM;
-            rc2 = mhda.pMachine->LockMachine(stack.pSession, LockType_Write);
-            if (SUCCEEDED(rc2))
-            {
-                ComPtr<IMachine> sMachine;
-                rc2 = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
-                if (SUCCEEDED(rc2))
-                {
-                    rc2 = sMachine->DetachDevice(Bstr(mhda.controllerType), mhda.lControllerPort, mhda.lDevice);
-                    rc2 = sMachine->SaveSettings();
-                }
-                stack.pSession->UnlockMachine();
-            }
-        }
-
-        // now clean up all hard disks we created
-        for (list< ComPtr<IMedium> >::iterator itHD = stack.llHardDisksCreated.begin();
-             itHD != stack.llHardDisksCreated.end();
-             ++itHD)
-        {
-            ComPtr<IMedium> pDisk = *itHD;
-            ComPtr<IProgress> pProgress2;
-            rc2 = pDisk->DeleteStorage(pProgress2.asOutParam());
-            rc2 = pProgress2->WaitForCompletion(-1);
-        }
-
-        // finally, deregister and remove all machines
         for (list<Guid>::iterator itID = m->llGuidsMachinesCreated.begin();
              itID != m->llGuidsMachinesCreated.end();
              ++itID)
@@ -1265,12 +1231,14 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
             Guid guid = *itID;
             Bstr bstrGuid = guid.toUtf16();
             ComPtr<IMachine> failedMachine;
-            SafeArray<BSTR> abstrPaths;
-            rc2 = mVirtualBox->GetMachine(bstrGuid, failedMachine.asOutParam());
+            HRESULT rc2 = mVirtualBox->GetMachine(bstrGuid, failedMachine.asOutParam());
             if (SUCCEEDED(rc2))
             {
-                rc2 = failedMachine->Unregister(false, ComSafeArrayAsOutParam(abstrPaths));
-                rc2 = failedMachine->Delete();
+                SafeIfaceArray<IMedium> aMedia;
+                rc2 = failedMachine->Unregister(CleanupMode_DetachAllReturnHardDisksOnly, ComSafeArrayAsOutParam(aMedia));
+                ComPtr<IProgress> pProgress2;
+                rc2 = failedMachine->Delete(ComSafeArrayAsInParam(aMedia), pProgress2.asOutParam());
+                pProgress2->WaitForCompletion(-1);
             }
         }
     }

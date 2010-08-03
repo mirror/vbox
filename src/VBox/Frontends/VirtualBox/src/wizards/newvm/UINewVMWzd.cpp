@@ -781,9 +781,12 @@ bool UINewVMWzdPage5::constructMachine()
         if (!success)
         {
             /* Unregister on failure */
-            QVector<QString> files = m_Machine.Unregister(false /*fDetachMedia*/);
+            QVector<CMedium> aMedia = m_Machine.Unregister(KCleanupMode_UnregisterOnly);   //  @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
             if (vbox.isOk())
-                m_Machine.Delete();
+            {
+                CProgress progress = m_Machine.Delete(aMedia);
+                progress.WaitForCompletion(-1);         // @todo do this nicely with a progress dialog, this can delete lots of files
+            }
             return false;
         }
     }

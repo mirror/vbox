@@ -180,6 +180,9 @@ public:
 
         ComObjPtr<Snapshot> mFirstSnapshot;
         ComObjPtr<Snapshot> mCurrentSnapshot;
+
+        // list of files to delete in Delete(); this list is filled by Unregister()
+        std::list<Utf8Str>  llFilesToDelete;
     };
 
     /**
@@ -483,8 +486,8 @@ public:
     STDMETHOD(SetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL aVal);
     STDMETHOD(SaveSettings)();
     STDMETHOD(DiscardSettings)();
-    STDMETHOD(Unregister) (BOOL fAutoCleanup, ComSafeArrayOut(BSTR, aFiles));
-    STDMETHOD(Delete)();
+    STDMETHOD(Unregister)(CleanupMode_T cleanupMode, ComSafeArrayOut(IMedium*, aMedia));
+    STDMETHOD(Delete)(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProgress);
     STDMETHOD(Export)(IAppliance *aAppliance, IVirtualSystemDescription **aDescription);
     STDMETHOD(GetSnapshot)(IN_BSTR aId, ISnapshot **aSnapshot);
     STDMETHOD(FindSnapshot)(IN_BSTR aName, ISnapshot **aSnapshot);
@@ -781,6 +784,7 @@ protected:
                          bool *pfNeedsSaveSettings);
     HRESULT detachAllMedia(AutoWriteLock &writeLock,
                            Snapshot *pSnapshot,
+                           CleanupMode_T cleanupMode,
                            MediaList &llMedia);
 
     void commitMedia(bool aOnline = false);
@@ -791,6 +795,10 @@ protected:
     void rollback(bool aNotify);
     void commit();
     void copyFrom(Machine *aThat);
+
+    struct DeleteTask;
+    static DECLCALLBACK(int) deleteThread(RTTHREAD Thread, void *pvUser);
+    HRESULT deleteTaskWorker(DeleteTask &task);
 
 #ifdef VBOX_WITH_GUEST_PROPS
     HRESULT getGuestPropertyFromService(IN_BSTR aName, BSTR *aValue,

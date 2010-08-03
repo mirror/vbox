@@ -2783,7 +2783,7 @@
         </desc>
       </param>
       <param name="aProgress" type="IProgress" dir="return">
-        <desc></desc>
+        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 
@@ -2823,7 +2823,7 @@
       </desc>
 
       <param name="aProgress" type="IProgress" dir="return">
-        <desc></desc>
+        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 
@@ -3221,7 +3221,7 @@
         object will call <link to="IInternalMachineControl::endPowerUp"/>
         to signal the completion of the progress object.
       </desc>
-      <param name="progress" type="IProgress" dir="in"/>
+      <param name="aProgress" type="IProgress" dir="in" />
     </method>
 
     <method name="endPowerUp">
@@ -3635,9 +3635,27 @@
 
   </interface>
 
+  <enum name="CleanupMode"
+        uuid="67897c50-7cca-47a9-83f6-ce8fd8eb5441">
+    <desc>Cleanup mode, used with <link to="IMachine::unregister" />.
+    </desc>
+    <const name="UnregisterOnly"                  value="1">
+      <desc>Unregister only the machine, but neither delete snapshots nor detach media.</desc>
+    </const>
+    <const name="DetachAllReturnNone"             value="2">
+      <desc>Delete all snapshots and detach all media but return none; this will keep all media registered.</desc>
+    </const>
+    <const name="DetachAllReturnHardDisksOnly"    value="3">
+      <desc>Delete all snapshots, detach all media and return hard disks for closing, but not removeable media.</desc>
+    </const>
+    <const name="Full"                            value="4">
+      <desc>Delete all snapshots, detach all media and return all media for closing.</desc>
+    </const>
+  </enum>
+
   <interface
      name="IMachine" extends="$unknown"
-     uuid="e2d8679e-b144-41d9-9dfa-bbe2fd0ab2d1"
+     uuid="082c38ff-d9b3-4b12-b540-01516a931f17"
      wsmap="managed"
      >
     <desc>
@@ -3838,7 +3856,7 @@
        <desc>
          Priority of the virtual CPUs. Means to limit the number of CPU cycles
          a guest can use. The unit is percentage of host CPU cycles per second.
-         The valid range is 1 - 100. 100 (the default) implies no limit. 
+         The valid range is 1 - 100. 100 (the default) implies no limit.
        </desc>
     </attribute>
 
@@ -5185,31 +5203,46 @@
     <method name="unregister">
       <desc>
         Unregisters the machine, which must have been previously registered using
-        <link to="IVirtualBox::registerMachine"/>.
+        <link to="IVirtualBox::registerMachine"/>, and optionally do additional
+        cleanup before the machine is unregistered.
 
-        This method will succeed even if the machine currently has media attachments or
-        is in the <link to="MachineState::Saved">Saved</link> state. In those cases,
-        the caller receives the names of all files that have been made obsolete by the
-        call in the @a aFiles array parameter. This list will consist of the saved
-        state file and all storage files by media that were detached from the machine.
+        This method does not delete any files. It only changes the machine configuration and
+        the list of registered machines in the VirtualBox object. To delete the files which
+        belonged to the machine, including the XML file of the machine itself, call
+        <link to="#delete"/>, optionally with the array of IMedium objects that have been
+        returned from this method.
 
-        <note>
-          The @a fAutoCleanup parameter is temporary to avoid substantial changes to the
-          frontends in SVN trunk.It will go away before the 3.3 release and
-          always be true then. If fAutoCleanup is false, the API currently behaves like
-          the old VirtualBox::UnregisterMachine API. Cleaning up snapshots does not work
-          yet, so the method will still fail if the machine has snapshots.
-        </note>
+        Depending on the @a cleanupMode argument, the thoroughness with with this
+        method cleans up the machine configuration before unregistering the machine
+        will vary.
 
-        The settings XML file of the machine object itself will not be included in that
-        list; call <link to="#delete" /> for that.
+        <ul>
+          <li>With "UnregisterOnly", the machine will only be unregistered, but no additional
+            cleanup will be performed. The call will fail if the machine is in "Saved" state
+            or has any snapshots or any media attached (see <link to="IMediumAttachment" />.
+            It is the responsibility of the caller to delete all such configuration in this mode.
+            In this mode, the API behaves like the former @c IVirtualBox::unregisterMachine() API
+            which it replaces.</li>
+          <li>With "DetachAllReturnNone", the call will succeed even if the machine is in "Saved"
+            state or if it has snapshots or media attached. All media attached to the current machine
+            state or in snapshots will be detached. No medium objects will be closed or returned; all
+            of the machine's media will remain opened.</li>
+          <li>With "DetachAllReturnHardDisksOnly", the call will behave like with "DetachAllReturnNone",
+            except that all the hard disk medium objects which were detached from the machine will
+            be returned as an array. This allows for quickly passing them to the <link to="#delete" />
+            API for closing and deletion.</li>
+          <li>With "Full", the call will behave like with "DetachAllReturnHardDisksOnly", except
+            that all media will be returned in the array, including removeable media like DVDs and
+            floppies. This might be useful if the user wants to inspect in detail which media were
+            attached to the machine.</li>
+        </ul>
 
         The call will fail if the machine is currently locked (see <link to="ISession" />).
         It implicitly calls <link to="#saveSettings"/> to save all current machine settings
         before unregistering it.
 
-        After successful method invocation,
-        the <link to="IMachineRegisteredEvent"/> event is fired.
+        After successful method invocation, the <link to="IMachineRegisteredEvent"/> event
+        is fired.
 
         <note>
           If the given machine is inaccessible (see <link to="#accessible"/>), it
@@ -5219,70 +5252,79 @@
         </note>
 
         <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Machine has snapshot or is locked.
+          Machine is currently locked for a session.
         </result>
       </desc>
 
-      <param name="fAutoCleanup" type="boolean" dir="in">
-        <desc>If true, the method will automatically detach all media from the
-          machine and its snapshots, call <link to="IMedium::close" /> on each
-          medium, and the paths of all media files involved will be reported to
-          the caller in the @a aFiles array so the caller can then delete the
-          image files.
-          If false, the method will fail if media attachments are present.
-        </desc>
+      <param name="cleanupMode" type="CleanupMode" dir="in">
+        <desc>How to clean up after the machine has been unregistered.</desc>
       </param>
-      <param name="aFiles" type="wstring" safearray="yes" dir="return">
-        <desc>
-          List of all files detached from medium attachments of the machine, if
-          @a fCloseMedia is true.
-        </desc>
+      <param name="aMedia" type="IMedium" safearray="yes" dir="return">
+        <desc>List of media detached from the machine, depending on the @a cleanupMode parameter.</desc>
       </param>
     </method>
 
     <method name="delete">
       <desc>
-        Deletes the settings (machine XML) file of this machine from disk. The machine
-        must not be registered in order for this operation to succeed.
+        Deletes the files associated with this machine from disk. If medium objects are passed
+        in with the @a aMedia argument, they are closed and their storage files are deleted as well.
+        For convenience, this array of media files can be the same as the one returned from
+        a previous <a link="#unregister" /> call.
+
+        This method must only be called on machines which are either write-locked (i.e. on instances
+        returned by <link to="ISession::machine"/>) or on unregistered machines (i.e. not yet
+        registered machines created by <link to="IVirtualBox::createMachine"/> or opened by
+        <link to="IVirtualBox::openMachine"/>, or after having called <link to="#unregister"/>).
+
+        The following files will be deleted by this method:
+        <ul>
+          <li>If <link to="#unregister" /> had been previously called with a @a cleanupMode
+            argument other than "UnregisterOnly", this will delete all saved state files that
+            the machine had in use; possibly one if the machine was in "Saved" state and one
+            for each online snapshot that the machine had.</li>
+          <li>On each medium object passed in the @a aMedia array, this will call
+            <link to="IMedium::close" /> and then attempt to delete the medium's storage
+            on disk. The close() call will fail if the medium is still in use, e.g. because
+            it is still attached to a second machine.</li>
+          <li>Finally, the machine's own XML file will be deleted.</li>
+        </ul>
+
+        Since deleting large disk image files can be a time-consuming I/O operation, this
+        method operates asynchronously and returns an IProgress object to allow the caller
+        to monitor the progress. There will be one sub-operation for each file that is
+        being deleted (saved state or medium storage file).
+
         <note>
           <link to="#settingsModified"/> will return @c true after this
           method successfully returns.
         </note>
-        <note>
-          Calling this method is only valid on instances returned
-          by <link to="ISession::machine"/> and on new machines
-          created by <link to="IVirtualBox::createMachine"/> or
-          opened by <link to="IVirtualBox::openMachine"/> but not
-          yet registered, or on unregistered machines after calling
-          <link to="IMachine::unregister"/>.
-        </note>
-        <note>
-          The deleted machine settings file can be restored (saved again)
-          by calling <link to="#saveSettings"/>.
-        </note>
 
         <result name="VBOX_E_INVALID_VM_STATE">
-          Cannot delete settings of a registered machine or
-          machine not mutable.
+          Machine is registered but not write-locked.
         </result>
         <result name="VBOX_E_IPRT_ERROR">
           Could not delete the settings file.
         </result>
-
       </desc>
+      <param name="aMedia" type="IMedium" safearray="yes" dir="in">
+        <desc>List of media to be closed and whose storage files will be deleted.</desc>
+      </param>
+      <param name="aProgress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
     </method>
 
     <method name="export">
-        <desc>Exports the machine to an OVF appliance. See <link to="IAppliance" /> for the
-              steps required to export VirtualBox machines to OVF.
-        </desc>
+      <desc>Exports the machine to an OVF appliance. See <link to="IAppliance" /> for the
+            steps required to export VirtualBox machines to OVF.
+      </desc>
 
-        <param name="aAppliance" type="IAppliance" dir="in">
-            <desc>Appliance to export this machine to.</desc>
-        </param>
-        <param name="aDescription" type="IVirtualSystemDescription" dir="return">
-            <desc>VirtualSystemDescription object which is created for this machine.</desc>
-        </param>
+      <param name="aAppliance" type="IAppliance" dir="in">
+        <desc>Appliance to export this machine to.</desc>
+      </param>
+      <param name="aDescription" type="IVirtualSystemDescription" dir="return">
+        <desc>VirtualSystemDescription object which is created for this machine.</desc>
+      </param>
     </method >
 
     <method name="getSnapshot">

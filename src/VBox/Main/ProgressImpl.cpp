@@ -1083,6 +1083,8 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode)
 
     AssertReturn(mCompleted == FALSE, E_FAIL);
 
+    LogFunc(("aResultCode=%d\n", aResultCode));
+
     if (mCanceled && SUCCEEDED(aResultCode))
         aResultCode = E_FAIL;
 
@@ -1104,7 +1106,7 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode)
 
     /* wake up all waiting threads */
     if (mWaitersCount > 0)
-        RTSemEventMultiSignal (mCompletedSem);
+        RTSemEventMultiSignal(mCompletedSem);
 
     return rc;
 }
