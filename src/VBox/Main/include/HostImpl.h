@@ -136,6 +136,7 @@ private:
 #endif
 
 #if defined(RT_OS_SOLARIS)
+    void getDVDInfoFromDevTree(std::list< ComObjPtr<Medium> > &list);
     void parseMountTable(char *mountTable, std::list< ComObjPtr<Medium> > &list);
     bool validateDevice(const char *deviceNode, bool isCDROM);
 #endif

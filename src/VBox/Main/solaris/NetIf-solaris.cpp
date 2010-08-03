@@ -40,9 +40,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
-#ifdef VBOX_SOLARIS_NSL_RESOLVED
-# include <libdevinfo.h>
-#endif
+#include <libdevinfo.h>
 #include <net/if.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
@@ -271,7 +269,6 @@ static bool vboxSolarisSameNIC(const ComObjPtr<HostNetworkInterface> Iface1, con
     return (Iface1Str == Iface2Str);
 }
 
-# ifdef VBOX_SOLARIS_NSL_RESOLVED
 static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *pvHostNetworkInterfaceList)
 {
     NOREF(Minor);
@@ -291,12 +288,9 @@ static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *p
     vboxSolarisAddHostIface(di_driver_name(Node), di_instance(Node), pvHostNetworkInterfaceList);
     return DI_WALK_CONTINUE;
 }
-# endif /* VBOX_SOLARIS_NSL_RESOLVED */
 
 int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
-
-#  ifdef VBOX_SOLARIS_NSL_RESOLVED
 
     /*
      * Use libdevinfo for determining all physical interfaces.
@@ -314,8 +308,6 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
      */
     if (VBoxSolarisLibDlpiFound())
         g_pfnLibDlpiWalk(vboxSolarisAddLinkHostIface, &list, 0);
-
-#  endif    /* VBOX_SOLARIS_NSL_RESOLVED */
 
     /*
      * This gets only the list of all plumbed logical interfaces.

@@ -64,9 +64,8 @@
 # include <errno.h>
 # include <limits.h>
 # include <stdio.h>
-# ifdef VBOX_SOLARIS_NSL_RESOLVED
-#  include <libdevinfo.h>
-# endif
+# include <libdevinfo.h>
+# include <sys/scsi/generic/inquiry.h>
 # include <net/if.h>
 # include <sys/socket.h>
 # include <sys/sockio.h>
@@ -84,6 +83,19 @@
 extern "C" char *getfullrawname(char *);
 # endif
 # include "solaris/DynLoadLibSolaris.h"
+
+/**
+ * Solaris DVD drive list as returned by getDVDInfoFromDevTree().
+ */
+typedef struct SOLARISDVD
+{
+    struct SOLARISDVD *pNext;
+    char szDescription[512];
+    char szRawDiskPath[PATH_MAX];
+} SOLARISDVD;
+/** Pointer to a Solaris DVD descriptor. */
+typedef SOLARISDVD *PSOLARISDVD;
+
 #endif /* RT_OS_SOLARIS */
 
 #ifdef RT_OS_WINDOWS
@@ -1723,43 +1735,8 @@ HRESULT Host::buildDVDDrivesList(MediaList &list)
 # ifdef VBOX_USE_LIBHAL
         if (!getDVDInfoFromHal(list))
 # endif
-        // Not all Solaris versions ship with libhal.
-        // So use a fallback approach similar to Linux.
         {
-            if (RTEnvExistEx(RTENV_DEFAULT, "VBOX_CDROM"))
-            {
-                char *cdromEnv = RTEnvDupEx(RTENV_DEFAULT, "VBOX_CDROM");
-                char *saveStr = NULL;
-                char *cdromDrive = NULL;
-                if (cdromEnv)
-                    cdromDrive = strtok_r(cdromEnv, ":", &saveStr);
-                while (cdromDrive)
-                {
-                    if (validateDevice(cdromDrive, true))
-                    {
-                        ComObjPtr<Medium> hostDVDDriveObj;
-                        hostDVDDriveObj.createObject();
-                        hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(cdromDrive));
-                        list.push_back(hostDVDDriveObj);
-                    }
-                    cdromDrive = strtok_r(NULL, ":", &saveStr);
-                }
-                RTStrFree(cdromEnv);
-            }
-            else
-            {
-                // this might work on Solaris version older than Nevada.
-                if (validateDevice("/cdrom/cdrom0", true))
-                {
-                    ComObjPtr<Medium> hostDVDDriveObj;
-                    hostDVDDriveObj.createObject();
-                    hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr("cdrom/cdrom0"));
-                    list.push_back(hostDVDDriveObj);
-                }
-
-                // check the mounted drives
-                parseMountTable(MNTTAB, list);
-            }
+            getDVDInfoFromDevTree(list);
         }
 
 #elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
@@ -1977,6 +1954,140 @@ void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters)
 ////////////////////////////////////////////////////////////////////////////////
 
 #if defined(RT_OS_SOLARIS) && defined(VBOX_USE_LIBHAL)
+
+/**
+ * Helper function to get the slice number from a device path
+ *
+ * @param   pszDevLinkPath      Pointer to a device path (/dev/(r)dsk/c7d1t0d0s3 etc.)
+ * @returns Pointer to the slice portion of the given path.
+ */
+static char *solarisGetSliceFromPath(const char *pszDevLinkPath)
+{
+    char *pszFound = NULL;
+    char *pszSlice = strrchr(pszDevLinkPath, 's');
+    char *pszDisk  = strrchr(pszDevLinkPath, 'd');
+    if (pszSlice && pszSlice > pszDisk)
+        pszFound = pszSlice;
+    else
+        pszFound = pszDisk;
+
+    if (pszFound && RT_C_IS_DIGIT(pszFound[1]))
+        return pszFound;
+
+    return NULL;
+}
+
+/**
+ * Walk device links and returns an allocated path for the first one in the snapshot.
+ *
+ * @param   DevLink     Handle to the device link being walked.
+ * @param   pvArg       Opaque data containing the pointer to the path.
+ * @returns Pointer to an allocated device path string.
+ */
+static int solarisWalkDevLink(di_devlink_t DevLink, void *pvArg)
+{
+    char **ppszPath = (char **)pvArg;
+    *ppszPath = strdup(di_devlink_path(DevLink));
+    return DI_WALK_TERMINATE;
+}
+
+/**
+ * Walk all devices in the system and enumerate CD/DVD drives.
+ * @param   Node        Handle to the current node.
+ * @param   pvArg       Opaque data (holds list pointer).
+ * @returns Solaris specific code whether to continue walking or not.
+ */
+static int solarisWalkDeviceNodeForDVD(di_node_t Node, void *pvArg)
+{
+    PSOLARISDVD *ppDrives = (PSOLARISDVD *)pvArg;
+
+    char *pszClass = NULL;
+    if (   di_prop_lookup_strings(DDI_DEV_T_ANY, Node, "class", &pszClass) > 0
+        && !strcmp(pszClass, "scsi"))                                                   /* SCSI */
+    {
+        int *pInt = NULL;
+        if (di_prop_lookup_ints(DDI_DEV_T_ANY, Node, "inquiry-device-type", &pInt) > 0
+            && (   *pInt == DTYPE_RODIRECT                                              /* CDROM */
+                || *pInt == DTYPE_OPTICAL))                                             /* Optical Drive */
+        {
+            char *pszProduct = NULL;
+            if (di_prop_lookup_strings(DDI_DEV_T_ANY, Node, "inquiry-product-id", &pszProduct) > 0)
+            {
+                char *pszVendor = NULL;
+                if (di_prop_lookup_strings(DDI_DEV_T_ANY, Node, "inquiry-vendor-id", &pszVendor) > 0)
+                {
+                    /*
+                     * Found a DVD drive, we need to scan the minor nodes to find the correct
+                     * slice that represents the whole drive. "s2" is always the whole drive for CD/DVDs.
+                     */
+                    di_minor_t Minor = DI_MINOR_NIL;
+                    di_devlink_handle_t DevLink = di_devlink_init(NULL /* name */, 0 /* flags */);
+                    if (DevLink)
+                    {
+                        while ((Minor = di_minor_next(Node, Minor)) != DI_MINOR_NIL)
+                        {
+                            char *pszMinorPath = di_devfs_minor_path(Minor);
+                            if (!pszMinorPath)
+                                continue;
+
+                            char *pszDevLinkPath = NULL;
+                            di_devlink_walk(DevLink, NULL, pszMinorPath, DI_PRIMARY_LINK, &pszDevLinkPath, solarisWalkDevLink);
+                            di_devfs_path_free(pszMinorPath);
+
+                            char *pszSlice = solarisGetSliceFromPath(pszDevLinkPath);
+                            if (   pszSlice && !strcmp(pszSlice, "s2")
+                                && !strncmp(pszDevLinkPath, "/dev/rdsk", sizeof("/dev/rdsk") - 1))   /* We want only raw disks */
+                            {
+                                /*
+                                 * We've got a fully qualified DVD drive. Add it to the list.
+                                 */
+                                PSOLARISDVD pDrive = (PSOLARISDVD)RTMemAllocZ(sizeof(SOLARISDVD));
+                                if (RT_LIKELY(pDrive))
+                                {
+                                    RTStrPrintf(pDrive->szDescription, sizeof(pDrive->szDescription), "%s %s", pszVendor, pszProduct);
+                                    RTStrCopy(pDrive->szRawDiskPath, sizeof(pDrive->szRawDiskPath), pszDevLinkPath);
+                                    if (!*ppDrives)
+                                        *ppDrives = pDrive;
+                                    else
+                                        (*ppDrives)->pNext = pDrive;
+                                }
+                            }
+                            free(pszDevLinkPath);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return DI_WALK_CONTINUE;
+}
+
+/**
+ * Solaris specific function to enumerate CD/DVD drives via the device tree.
+ * Works on Solaris 10 as well as OpenSolaris without depending on libhal.
+ */
+void Host::getDVDInfoFromDevTree(std::list<ComObjPtr<Medium> > &list)
+{
+    PSOLARISDVD pDrives = NULL;
+    di_node_t RootNode = di_init("/", DINFOCPYALL);
+    if (RootNode != DI_NODE_NIL)
+        di_walk_node(RootNode, DI_WALK_CLDFIRST, &pDrives, solarisWalkDeviceNodeForDVD);
+
+    di_fini(RootNode);
+
+    while (pDrives)
+    {
+        ComObjPtr<Medium> hostDVDDriveObj;
+        hostDVDDriveObj.createObject();
+        hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(pDrives->szRawDiskPath), Bstr(pDrives->szDescription));
+        list.push_back(hostDVDDriveObj);
+
+        void *pvDrive = pDrives;
+        pDrives = pDrives->pNext;
+        RTMemFree(pvDrive);
+    }
+}
+
 /* Solaris hosts, loading libhal at runtime */
 
 /**
