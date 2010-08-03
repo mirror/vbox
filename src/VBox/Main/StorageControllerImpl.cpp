@@ -78,11 +78,14 @@ struct BackupableStorageControllerData
 
 struct StorageController::Data
 {
-    Data()
+    Data(Machine * const aMachine)
         : pVirtualBox(NULL),
           pSystemProperties(NULL),
-          pParent(NULL)
-    { }
+          pParent(aMachine)
+    {
+        unconst(pVirtualBox) = aMachine->getVirtualBox();
+        unconst(pSystemProperties) = pVirtualBox->getSystemProperties();
+    }
 
     VirtualBox * const                  pVirtualBox;
     SystemProperties * const            pSystemProperties;
@@ -135,12 +138,8 @@ HRESULT StorageController::init(Machine *aParent,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data();
+    m = new Data(aParent);
 
-    unconst(m->pVirtualBox) = aParent->getVirtualBox();
-    unconst(m->pSystemProperties) = m->pVirtualBox->getSystemProperties();
-
-    unconst(m->pParent) = aParent;
     /* m->pPeer is left null */
 
     /* register with parent early, since uninit() will unconditionally
@@ -218,16 +217,14 @@ HRESULT StorageController::init(Machine *aParent,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data();
-
-    unconst(m->pParent) = aParent;
+    m = new Data(aParent);
 
     /* register with parent early, since uninit() will unconditionally
      * unregister on failure */
     m->pParent->addDependentChild(this);
 
     /* sanity */
-    AutoCaller thatCaller (aThat);
+    AutoCaller thatCaller(aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
     if (aReshare)
@@ -266,9 +263,7 @@ HRESULT StorageController::initCopy(Machine *aParent, StorageController *aThat)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data();
-
-    unconst(m->pParent) = aParent;
+    m = new Data(aParent);
     /* m->pPeer is left null */
 
     m->pParent->addDependentChild(this);
