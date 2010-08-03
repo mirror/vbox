@@ -981,34 +981,8 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
 DECLCALLBACK(int)hdaRegWriteSDSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
 {
     uint32_t v = HDA_REG_IND(pState, index);
-    //int rc = hdaRegWriteU8(pState, offset, index, u32Value);
-    switch (offset)
-    {
-        case 0x83:
-            SDSTS(pState, 0) ^= u32Value;
-            break;
-        case 0xA3:
-            SDSTS(pState, 1) ^= u32Value;
-            break;
-        case 0xC3:
-            SDSTS(pState, 2) ^= u32Value;
-            break;
-        case 0xE3:
-            SDSTS(pState, 3) ^= u32Value;
-            break;
-        case 0x103:
-            SDSTS(pState, 4) ^= u32Value;
-            break;
-        case 0x123:
-            SDSTS(pState, 5) ^= u32Value;
-            break;
-        case 0x143:
-            SDSTS(pState, 6) ^= u32Value;
-            break;
-        case 0x163:
-            SDSTS(pState, 7) ^= u32Value;
-            break;
-    }
+    v ^= (u32Value & v);
+    HDA_REG_IND(pState, index) = v;
     hdaProcessInterrupt(pState);
 #if 0
     if (   v != u32Value
