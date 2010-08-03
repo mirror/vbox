@@ -445,6 +445,7 @@ static int codecGetProcessingState(struct CODECState *pState, uint32_t cmd, uint
         *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param;
     return VINF_SUCCESS;
 }
+
 /* 703 */
 static int codecSetProcessingState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
@@ -463,6 +464,7 @@ static int codecSetProcessingState(struct CODECState *pState, uint32_t cmd, uint
     }
     return VINF_SUCCESS;
 }
+
 /* F0D */
 static int codecGetDigitalConverter(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
@@ -480,6 +482,7 @@ static int codecGetDigitalConverter(struct CODECState *pState, uint32_t cmd, uin
         *pResp = pState->pNodes[CODEC_NID(cmd)].spdifin.u32F0d_param;
     return VINF_SUCCESS;
 }
+
 /* 70D */
 static int codecSetDigitalConverter1(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
