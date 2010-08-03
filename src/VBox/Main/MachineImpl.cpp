@@ -4134,7 +4134,7 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
 
     pTask->pProgress.createObject();
     pTask->pProgress->init(getVirtualBox(),
-                           this /* aInitiator */,
+                           static_cast<IMachine*>(this) /* aInitiator */,
                            Bstr(tr("Deleting files")),
                            true /* fCancellable */,
                            pTask->llFilesToDelete.size() + 1,   // cOperations
