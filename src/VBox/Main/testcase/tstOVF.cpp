@@ -348,21 +348,16 @@ int main(int argc, char *argv[])
             if (FAILED(rc)) throw MyError(rc, "VirtualBox::FindMachine() failed\n");
 
             RTPrintf("  Deleting machine %ls...\n", bstrUUID.raw());
-            SafeArray<BSTR> sfaFiles;
-            rc = pMachine->Unregister(true /* fDetachMedia */,
-                                      ComSafeArrayAsOutParam(sfaFiles));
+            SafeIfaceArray<IMedium> sfaMedia;
+            rc = pMachine->Unregister(CleanupMode_DetachAllReturnHardDisksOnly,
+                                      ComSafeArrayAsOutParam(sfaMedia));
             if (FAILED(rc)) throw MyError(rc, "Machine::Unregister() failed\n");
 
-            for (size_t u = 0;
-                 u < sfaFiles.size();
-                 ++u)
-            {
-                RTPrintf("    UnregisterMachine reported disk image %ls\n", sfaFiles[u]);
-                llFiles2Delete.push_back(sfaFiles[u]);
-            }
-
-            rc = pMachine->Delete();
+            ComPtr<IProgress> pProgress;
+            rc = pMachine->Delete(ComSafeArrayAsInParam(sfaMedia), pProgress.asOutParam());
             if (FAILED(rc)) throw MyError(rc, "Machine::DeleteSettings() failed\n");
+            rc = pProgress->WaitForCompletion(-1);
+            if (FAILED(rc)) throw MyError(rc, "Progress::WaitForCompletion() failed\n");
         }
     }
     catch (MyError &e)

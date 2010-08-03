@@ -3866,8 +3866,10 @@ HRESULT Medium::close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller)
 {
     // we're accessing parent/child and backrefs, so lock the tree first, then ourselves
     AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
-                                   this->lockHandle()
-                                           COMMA_LOCKVAL_SRC_POS);
+                                  this->lockHandle()
+                                  COMMA_LOCKVAL_SRC_POS);
+
+    LogFlowFunc(("ENTER for %s\n", getLocationFull().c_str()));
 
     bool wasCreated = true;
 
@@ -3885,7 +3887,7 @@ HRESULT Medium::close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller)
 
     if (m->backRefs.size() != 0)
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Medium '%s' is attached to %d virtual machines"),
+                        tr("Medium '%s' cannot be closed because it is still attached to %d virtual machines"),
                            m->strLocationFull.raw(), m->backRefs.size());
 
     // perform extra media-dependent close checks
@@ -3907,6 +3909,8 @@ HRESULT Medium::close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller)
     // Keep the locks held until after uninit, as otherwise the consistency
     // of the medium tree cannot be guaranteed.
     uninit();
+
+    LogFlowFuncLeave();
 
     return rc;
 }

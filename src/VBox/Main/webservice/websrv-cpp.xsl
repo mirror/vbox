@@ -568,6 +568,15 @@ const char *g_pcszIUnknown = "IUnknown";
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:value-of select="concat('    IUnknown *tmpObject2(tmpObject); tmpObject2->AddRef(); comcall_', $name, '[i] = tmpObject;')" />
         </xsl:when>
+        <xsl:when test="//interface[@name=$type]">
+          <xsl:value-of select="concat('    ComPtr&lt;', $type, '&gt; tmpObject;')" />
+          <xsl:call-template name="emitNewlineIndent8" />
+          <xsl:value-of select="concat('    if ((rc = findComPtrFromId(soap, ', $structprefix, $name, '[i], tmpObject, true)))')" />
+          <xsl:call-template name="emitNewlineIndent8" />
+          <xsl:text>        break;</xsl:text>
+          <xsl:call-template name="emitNewlineIndent8" />
+          <xsl:value-of select="concat('    ', $type, ' *tmpObject2(tmpObject); tmpObject2->AddRef(); comcall_', $name, '[i] = tmpObject;')" />
+        </xsl:when>
         <xsl:when test="$type='wstring'">
           <xsl:value-of select="concat('    com::Bstr tmpObject(', $structprefix, $name, '[i].c_str());')" />
           <xsl:call-template name="emitNewlineIndent8" />

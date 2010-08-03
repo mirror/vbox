@@ -679,11 +679,13 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /* = QString::null */)
         if (ok)
         {
             CMachine machine = item->machine();
-            QVector<QString> files = machine.Unregister(false /*fDetachMedia*/);
+            QVector<CMedium> aMedia = machine.Unregister(KCleanupMode_UnregisterOnly);          //  @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
             if (machine.isOk() && item->accessible())
             {
                 /* delete machine settings */
-                machine.Delete();
+                CProgress progress = machine.Delete(aMedia);
+                progress.WaitForCompletion(-1);         // @todo do this nicely with a progress dialog, this can delete many files!
+
                 /* remove the item shortly: cmachine it refers to is no longer valid! */
                 int row = mVMModel->rowById (item->id());
                 mVMModel->removeItem (item);

@@ -124,6 +124,7 @@ public:
     HRESULT saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly);
 
     HRESULT uninitRecursively(AutoWriteLock &writeLock,
+                              CleanupMode_T cleanupMode,
                               MediaList &llMedia,
                               std::list<Utf8Str> &llFilenames);
 
