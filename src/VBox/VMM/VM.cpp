@@ -560,6 +560,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
         AssertRelease(pVM->pVMR0 == CreateVMReq.pVMR0);
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
         AssertRelease(pVM->cCpus == cCpus);
+        AssertRelease(pVM->uCpuPriority == 100);
         AssertRelease(pVM->offVMCPU == RT_UOFFSETOF(VM, aCpus));
 
         Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCpus=%RU32\n",
@@ -588,7 +589,8 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
         rc = CFGMR3Init(pVM, pfnCFGMConstructor, pvUserCFGM);
         if (RT_SUCCESS(rc))
         {
-            rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "HwVirtExtForced", &pVM->fHwVirtExtForced, false);
+            PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
+            rc = CFGMR3QueryBoolDef(pRoot, "HwVirtExtForced", &pVM->fHwVirtExtForced, false);
             if (RT_SUCCESS(rc) && pVM->fHwVirtExtForced)
                 pVM->fHWACCMEnabled = true;
 
@@ -598,10 +600,10 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
             const char *psz = RTEnvGet("VBOX_SUPLIB_FAKE");
             if (psz && !strcmp(psz, "fake"))
             {
-                CFGMR3RemoveValue(CFGMR3GetRoot(pVM), "RawR3Enabled");
-                CFGMR3InsertInteger(CFGMR3GetRoot(pVM), "RawR3Enabled", 0);
-                CFGMR3RemoveValue(CFGMR3GetRoot(pVM), "RawR0Enabled");
-                CFGMR3InsertInteger(CFGMR3GetRoot(pVM), "RawR0Enabled", 0);
+                CFGMR3RemoveValue(pRoot, "RawR3Enabled");
+                CFGMR3InsertInteger(pRoot, "RawR3Enabled", 0);
+                CFGMR3RemoveValue(pRoot, "RawR0Enabled");
+                CFGMR3InsertInteger(pRoot, "RawR0Enabled", 0);
             }
 
             /*
@@ -610,7 +612,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
             if (RT_SUCCESS(rc))
             {
                 uint32_t cCPUsCfg;
-                rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "NumCPUs", &cCPUsCfg, 1);
+                rc = CFGMR3QueryU32Def(pRoot, "NumCPUs", &cCPUsCfg, 1);
                 AssertLogRelMsgRC(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Rrc\n", rc));
                 if (RT_SUCCESS(rc) && cCPUsCfg != cCpus)
                 {
@@ -621,6 +623,9 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
             }
             if (RT_SUCCESS(rc))
             {
+                rc = CFGMR3QueryU32Def(pRoot, "CpuPriority", &pVM->uCpuPriority, 100);
+                AssertLogRelMsgRC(rc, ("Configuration error: Querying \"CpuPriority\" as integer failed, rc=%Rrc\n", rc));
+
                 /*
                  * Init the ring-3 components and ring-3 per cpu data, finishing it off
                  * by a relocation round (intermediate context finalization will do this).

@@ -704,6 +704,8 @@ typedef struct VM
     uint32_t                    hSelf;
     /** Number of virtual CPUs. */
     uint32_t                    cCpus;
+    /** CPU priority (1-100) */
+    uint32_t                    uCpuPriority;
 
     /** Size of the VM structure including the VMCPU array. */
     uint32_t                    cbSelf;
@@ -712,7 +714,7 @@ typedef struct VM
     uint32_t                    offVMCPU;
 
     /** Reserved; alignment. */
-    uint32_t                    u32Reserved[6];
+    uint32_t                    u32Reserved[5];
 
     /** @name Public VMM Switcher APIs
      * @{ */

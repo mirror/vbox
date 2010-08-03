@@ -52,9 +52,10 @@ struc VM
     .pVMRC                  RTRCPTR_RES 1
     .hSelf                  resd 1
     .cCpus                  resd 1
+    .uCpuPriority           resd 1
     .cbSelf                 resd 1
     .offVMCPU               resd 1
-    .u32Reserved            resd 6
+    .u32Reserved            resd 5
 
     .pfnVMMGCGuestToHostAsmGuestCtx RTRCPTR_RES 1
     .pfnVMMGCGuestToHostAsmHyperCtx RTRCPTR_RES 1
