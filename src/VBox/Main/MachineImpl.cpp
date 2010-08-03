@@ -4148,6 +4148,8 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
                              0,
                              "MachineDelete");
 
+    pTask->pProgress.queryInterfaceTo(aProgress);
+
     alock.release();
 
     if (fNeedsGlobalSaveSettings)
@@ -4161,8 +4163,6 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
         delete pTask;
         return setError(E_FAIL, "Could not create MachineDelete thread (%Rrc)", vrc);
     }
-
-    pTask->pProgress.queryInterfaceTo(aProgress);
 
     LogFlowFuncLeave();
 
