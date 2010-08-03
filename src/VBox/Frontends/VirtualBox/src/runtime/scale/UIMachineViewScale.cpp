@@ -126,9 +126,9 @@ void UIMachineViewScale::scalePauseShot()
         QSize scaledSize = frameBuffer()->scaledSize();
         if (scaledSize.isValid())
         {
-            QImage bla1 = m_pPauseImage->scaled(frameBuffer()->scaledSize(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-            dimImage(bla1);
-            m_pauseShot = QPixmap::fromImage(bla1);
+            QImage tmpImg = m_pPauseImage->scaled(frameBuffer()->scaledSize(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            dimImage(tmpImg);
+            m_pauseShot = QPixmap::fromImage(tmpImg);
         }
     }
 }
