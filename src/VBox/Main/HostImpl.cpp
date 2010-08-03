@@ -158,6 +158,7 @@ struct Host::Data
 #ifdef VBOX_WITH_USB
           usbListsLock(LOCKCLASS_USBLIST),
 #endif
+          drivesLock(LOCKCLASS_LISTOFMEDIA),
           fDVDDrivesListBuilt(false),
           fFloppyDrivesListBuilt(false)
     {};
@@ -175,6 +176,7 @@ struct Host::Data
 #endif /* VBOX_WITH_USB */
 
     // list of host drives; lazily created by getDVDDrives() and getFloppyDrives()
+    WriteLockHandle         drivesLock;                 // protects the below two lists and the bools
     MediaList               llDVDDrives,
                             llFloppyDrives;
     bool                    fDVDDrivesListBuilt,
@@ -415,7 +417,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
     HRESULT rc = getDrives(DeviceType_DVD, true /* fRefresh */, pList);
@@ -441,7 +443,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives)(ComSafeArrayOut(IMedium *, aDrives))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
     HRESULT rc = getDrives(DeviceType_Floppy, true /* fRefresh */, pList);
@@ -1526,9 +1528,9 @@ HRESULT Host::saveSettings(settings::Host &data)
  * This builds the list on the first call; it adds or removes host drives
  * that may have changed if fRefresh == true.
  *
- * The caller must hold the Host write lock before calling this.
+ * The caller must hold the m->drivesLock write lock before calling this.
  * To protect the list to which the caller's pointer points, the caller
- * must also hold the Host lock.
+ * must also hold that lock.
  *
  * @param mediumType Must be DeviceType_Floppy or DeviceType_DVD.
  * @param fRefresh Whether to refresh the host drives list even if this is not the first call.
@@ -1540,7 +1542,7 @@ HRESULT Host::getDrives(DeviceType_T mediumType,
                         MediaList *&pll)
 {
     HRESULT rc = S_OK;
-    Assert(isWriteLockOnCurrentThread());
+    Assert(m->drivesLock.isWriteLockOnCurrentThread());
 
     MediaList llNew;
     MediaList *pllCached;
@@ -1649,6 +1651,7 @@ HRESULT Host::getDrives(DeviceType_T mediumType,
  * Goes through the list of host drives that would be returned by getDrives()
  * and looks for a host drive with the given UUID. If found, it sets pMedium
  * to that drive; otherwise returns VBOX_E_OBJECT_NOT_FOUND.
+ *
  * @param mediumType Must be DeviceType_DVD or DeviceType_Floppy.
  * @param uuid Medium UUID of host drive to look for.
  * @param fRefresh Whether to refresh the host drives list (see getDrives())
@@ -1662,7 +1665,7 @@ HRESULT Host::findHostDrive(DeviceType_T mediumType,
 {
     MediaList *pllMedia;
 
-    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wlock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = getDrives(mediumType, fRefresh, pllMedia);
     if (SUCCEEDED(rc))
     {
@@ -1691,7 +1694,7 @@ HRESULT Host::buildDVDDrivesList(MediaList &list)
 {
     HRESULT rc = S_OK;
 
-    Assert(isWriteLockOnCurrentThread());
+    Assert(m->drivesLock.isWriteLockOnCurrentThread());
 
     try
     {
@@ -1808,7 +1811,7 @@ HRESULT Host::buildFloppyDrivesList(MediaList &list)
 {
     HRESULT rc = S_OK;
 
-    Assert(isWriteLockOnCurrentThread());
+    Assert(m->drivesLock.isWriteLockOnCurrentThread());
 
     try
     {
