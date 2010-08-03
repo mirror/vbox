@@ -410,7 +410,8 @@ static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t addres
             case 0x2c: case 0x2d:                                                                   /* subsystem ID */
             case 0x2e: case 0x2f:                                                                   /* vendor ID */
             case 0x30: case 0x31: case 0x32: case 0x33:                                             /* rom */
-            case 0x3d:
+            case 0x34:                                                                              /* Capabilities pointer. */
+            case 0x3d:                                                                              /* Interrupt pin. */
                 can_write = 0;
                 break;
             default:
@@ -441,14 +442,20 @@ static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t addres
             break;
         }
 #ifdef VBOX
-        if (addr == 0x06)
+        if (addr == 0x05)       /* Command register, bits 8-15. */
+        {
+            /* don't change reserved bits (11-15) */
+            val &= UINT32_C(~0xf8);
+            d->config[addr] = val;
+        }
+        else if (addr == 0x06)  /* Status register, bits 0-7. */
         {
             /* don't change read-only bits => actually all lower bits are read-only */
             val &= UINT32_C(~0xff);
             /* status register, low part: clear bits by writing a '1' to the corresponding bit */
             d->config[addr] &= ~val;
         }
-        else if (addr == 0x07)
+        else if (addr == 0x07)  /* Status register, bits 8-15. */
         {
             /* don't change read-only bits */
             val &= UINT32_C(~0x06);
