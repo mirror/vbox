@@ -533,6 +533,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                        H();
 
+    ULONG ulCpuPriority = 100;
+    hrc = pMachine->COMGETTER(CPUPriority)(&ulCpuPriority);                             H();
+
     Bstr osTypeId;
     hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                         H();
 
@@ -566,6 +569,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigInteger(pRoot, "RamSize",              cbRam);
         InsertConfigInteger(pRoot, "RamHoleSize",          cbRamHole);
         InsertConfigInteger(pRoot, "NumCPUs",              cCpus);
+        InsertConfigInteger(pRoot, "CpuPriority",          ulCpuPriority);
         InsertConfigInteger(pRoot, "TimerMillies",         10);
 #ifdef VBOX_WITH_RAW_MODE
         InsertConfigInteger(pRoot, "RawR3Enabled",         1);     /* boolean */

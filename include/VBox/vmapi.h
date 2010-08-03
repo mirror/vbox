@@ -405,7 +405,7 @@ VMMR3DECL(RTNATIVETHREAD)   VMR3GetVMCPUNativeThreadU(PUVM pUVM);
 VMMR3DECL(int)              VMR3GetCpuCoreAndPackageIdFromCpuId(PVM pVM, VMCPUID idCpu, uint32_t *pidCpuCore, uint32_t *pidCpuPackage);
 VMMR3DECL(int)              VMR3HotUnplugCpu(PVM pVM, VMCPUID idCpu);
 VMMR3DECL(int)              VMR3HotPlugCpu(PVM pVM, VMCPUID idCpu);
-
+VMMR3DECL(int)              VMR3SetCpuPriority(PVM pVM, unsigned ulCpuPriority);
 /** @} */
 #endif /* IN_RING3 */
 
