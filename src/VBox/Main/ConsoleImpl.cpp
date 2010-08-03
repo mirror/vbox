@@ -268,6 +268,7 @@ public:
         kOnStorageControllerChanged,
         kOnMediumChanged,
         kOnCPUChanged,
+        kOnCPUPriorityChanged,
         kOnVRDPServerChanged,
         kOnRemoteDisplayInfoChanged,
         kOnUSBControllerChanged,
@@ -3808,6 +3809,49 @@ HRESULT Console::onCPUChange(ULONG aCPU, BOOL aRemove)
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
         CONSOLE_DO_CALLBACKS2(OnCPUChanged, aCPU, aRemove);
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
+    return rc;
+}
+
+/**
+ * Called by IInternalSessionControl::OnCPUPriorityChange().
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::onCPUPriorityChange(ULONG aCpuPriority)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    /* don't trigger the CPU priority change if the VM isn't running */
+    if (mpVM)
+    {
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller(this);
+        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+
+        if (   mMachineState == MachineState_Running
+            || mMachineState == MachineState_Teleporting
+            || mMachineState == MachineState_LiveSnapshotting
+            )
+        {
+            /* No need to call in the EMT thread. */
+            rc = VMR3SetCpuPriority(mpVM, aCpuPriority);
+        }
+        else
+            rc = setInvalidMachineStateError();
+    }
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(rc))
+        CONSOLE_DO_CALLBACKS1(OnCPUPriorityChanged, aCpuPriority);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;

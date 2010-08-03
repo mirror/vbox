@@ -1298,6 +1298,8 @@ STDMETHODIMP Machine::COMGETTER(CPUPriority)(ULONG *aPriority)
 
 STDMETHODIMP Machine::COMSETTER(CPUPriority)(ULONG aPriority)
 {
+    HRESULT rc = S_OK;
+
     /* check priority limits */
     if (    aPriority < 1
          || aPriority > 100
@@ -1311,13 +1313,18 @@ STDMETHODIMP Machine::COMSETTER(CPUPriority)(ULONG aPriority)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Todo: must always allow changes. */
-    HRESULT rc = checkStateDependency(MutableStateDep);
+    alock.release();
+    rc = onCPUPriorityChange(aPriority);
+    alock.acquire();
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mCpuPriority = aPriority;
+
+    /* Save settings if online - todo why is this required?? */
+    if (Global::IsOnline(mData->mMachineState))
+        saveSettings(NULL);
 
     return S_OK;
 }
@@ -10712,6 +10719,26 @@ HRESULT SessionMachine::onCPUChange(ULONG aCPU, BOOL aRemove)
         return S_OK;
 
     return directControl->OnCPUChange(aCPU, aRemove);
+}
+
+HRESULT SessionMachine::onCPUPriorityChange(ULONG aCpuPriority)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnCPUPriorityChange(aCpuPriority);
 }
 
 /**
