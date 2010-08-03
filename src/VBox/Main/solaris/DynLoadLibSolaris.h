@@ -18,7 +18,7 @@
 #ifndef ____H_DYN_LOAD_LIB_SOLARIS
 #define ____H_DYN_LOAD_LIB_SOLARIS
 
-#define LIB_DLPI "libdlpi.so"
+#define LIB_DLPI "libdlpi.so.1"
 #ifdef RT_OS_SOLARIS_10
 #include <sys/dlpi.h>
 #else
