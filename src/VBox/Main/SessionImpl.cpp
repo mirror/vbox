@@ -595,6 +595,20 @@ STDMETHODIMP Session::OnCPUChange(ULONG aCPU, BOOL aRemove)
     return mConsole->onCPUChange(aCPU, aRemove);
 }
 
+STDMETHODIMP Session::OnCPUPriorityChange(ULONG aCpuPriority)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->onCPUPriorityChange(aCpuPriority);
+}
+
 STDMETHODIMP Session::OnVRDPServerChange(BOOL aRestart)
 {
     LogFlowThisFunc(("\n"));

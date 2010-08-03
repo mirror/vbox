@@ -12394,7 +12394,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="ab161f72-e4b3-44e6-a919-2256474bda66"
+     uuid="ef059f1d-2273-4f81-9342-c152a0d2cd40"
      internal="yes"
      wsmap="suppress"
      >
@@ -12571,6 +12571,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="add" type="boolean" dir="in">
         <desc>Flag whether the CPU was added or removed</desc>
+      </param>
+    </method>
+
+    <method name="onCPUPriorityChange">
+      <desc>
+         Notification when the CPU priority changes.
+      </desc>
+      <param name="priority" type="unsigned long" dir="in">
+         <desc>The new CPU priority value. (1-100)</desc>
       </param>
     </method>
 
@@ -13775,7 +13784,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
      name="VBoxEventType"
-     uuid="7d695029-32b8-4855-86d3-75de9082923b">
+     uuid="2c76667e-6981-4122-a71a-cdfd6a6eb575">
 
     <desc>
       Type of an event.
@@ -13979,8 +13988,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <see>IEventSourceChangedEvent</see>
       </desc>
     </const>
+    <const name="OnCPUPriorityChanged" value="63">
+      <desc>
+        <see>ICPUPriorityChangedEvent</see>
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="63">
+    <const name="Last" value="64">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -14672,6 +14686,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
+    name="ICPUPriorityChangedEvent" extends="IEvent"
+    uuid="657fe2fe-a75a-4cb6-8cf9-072aa41e7d75"
+    wsmap="managed" autogen="VBoxEvent" id="OnCPUPriorityChanged"
+    >
+   <desc>
+      Notification when the CPU priority changes.
+   </desc>
+     <attribute name="priority" type="unsigned long" readonly="yes">
+       <desc>
+         The new CPU priority value. (1-100)
+       </desc>
+     </attribute>
+  </interface>
+
+   <interface
      name="IVRDPServerChangedEvent" extends="IEvent"
      uuid="726038B6-6279-4A7A-8037-D041693D1915"
      wsmap="managed" autogen="VBoxEvent" id="OnVRDPServerChanged"

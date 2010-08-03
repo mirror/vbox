@@ -89,6 +89,7 @@ public:
     STDMETHOD(OnStorageControllerChange)();
     STDMETHOD(OnMediumChange)(IMediumAttachment *aMediumAttachment, BOOL aForce);
     STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove);
+    STDMETHOD(OnCPUPriorityChange)(ULONG aCpuPriority);
     STDMETHOD(OnVRDPServerChange)(BOOL aRestart);
     STDMETHOD(OnUSBControllerChange)();
     STDMETHOD(OnSharedFolderChange)(BOOL aGlobal);
