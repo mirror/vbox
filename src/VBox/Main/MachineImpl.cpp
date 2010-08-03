@@ -4089,6 +4089,7 @@ struct Machine::DeleteTask
     ComObjPtr<Machine>          pMachine;
     std::list<Utf8Str>          llFilesToDelete;
     ComObjPtr<Progress>         pProgress;
+    bool                        fNeedsGlobalSaveSettings;
 };
 
 STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProgress)
@@ -4099,8 +4100,6 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    bool fNeedsGlobalSaveSettings = false;
 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
@@ -4115,6 +4114,8 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
 
     // collect files to delete
     pTask->llFilesToDelete = mData->llFilesToDelete;            // saved states pushed here by Unregister()
+
+    pTask->fNeedsGlobalSaveSettings = false;
     for (size_t i = 0; i < sfaMedia.size(); ++i)
     {
         IMedium *pIMedium(sfaMedia[i]);
@@ -4125,7 +4126,8 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
         Utf8Str bstrLocation = pMedium->getLocationFull();
         // close the medium now; if that succeeds, then that means the medium is no longer
         // in use and we can add it to the list of files to delete
-        rc = pMedium->close(&fNeedsGlobalSaveSettings, mediumAutoCaller);
+        rc = pMedium->close(&pTask->fNeedsGlobalSaveSettings,
+                            mediumAutoCaller);
         if (SUCCEEDED(rc))
             pTask->llFilesToDelete.push_back(bstrLocation);
     }
@@ -4149,14 +4151,6 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
                              "MachineDelete");
 
     pTask->pProgress.queryInterfaceTo(aProgress);
-
-    alock.release();
-
-    if (fNeedsGlobalSaveSettings)
-    {
-        AutoWriteLock vboxlock(mParent COMMA_LOCKVAL_SRC_POS);
-        mParent->saveSettings();
-    }
 
     if (RT_FAILURE(vrc))
     {
@@ -4295,6 +4289,14 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
             if (isInOwnDir(&settingsDir))
                 RTDirRemove(settingsDir.c_str());
         }
+    }
+
+    alock.release();
+
+    if (task.fNeedsGlobalSaveSettings)
+    {
+        AutoWriteLock vboxlock(mParent COMMA_LOCKVAL_SRC_POS);
+        mParent->saveSettings();
     }
 
     return S_OK;
