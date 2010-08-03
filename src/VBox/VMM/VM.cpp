@@ -4114,6 +4114,8 @@ VMMR3DECL(int) VMR3HotPlugCpu(PVM pVM, VMCPUID idCpu)
 VMMR3DECL(int) VMR3SetCpuPriority(PVM pVM, unsigned ulCpuPriority)
 {
     AssertReturn(ulCpuPriority > 0 && ulCpuPriority <= 100, VERR_INVALID_PARAMETER);
+
+    Log(("VMR3SetCpuPriority: new priority = %d\n", ulCpuPriority));
     /* Note: not called from EMT. */
     pVM->uCpuPriority = ulCpuPriority;
     return VINF_SUCCESS;
