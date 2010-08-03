@@ -129,6 +129,9 @@ protected:
     void storeGuestSizeHint(const QSize &sizeHint);
 
     /* Protected helpers: */
+    virtual void takePauseShotLive();
+    virtual void takePauseShotSnapshot();
+    virtual void resetPauseShot() { m_pauseShot = QPixmap(); }
     virtual QRect workingArea() = 0;
     virtual void calculateDesktopGeometry() = 0;
     virtual void maybeRestrictMinimumSize() = 0;
