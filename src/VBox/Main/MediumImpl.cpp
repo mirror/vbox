@@ -2857,10 +2857,10 @@ void Medium::dumpBackRefs()
  *
  * @note Locks this object for writing.
  */
-HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
+HRESULT Medium::updatePath(const Utf8Str &strOldPath, const Utf8Str &strNewPath)
 {
-    AssertReturn(aOldPath, E_FAIL);
-    AssertReturn(aNewPath, E_FAIL);
+    AssertReturn(!strOldPath.isEmpty(), E_FAIL);
+    AssertReturn(!strNewPath.isEmpty(), E_FAIL);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2871,11 +2871,10 @@ HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
 
     const char *pcszMediumPath = m->strLocationFull.c_str();
 
-    if (RTPathStartsWith(pcszMediumPath, aOldPath))
+    if (RTPathStartsWith(pcszMediumPath, strOldPath.c_str()))
     {
-        Utf8Str newPath = Utf8StrFmt("%s%s",
-                                     aNewPath,
-                                     pcszMediumPath + strlen(aOldPath));
+        Utf8Str newPath(strNewPath);
+        newPath.append(pcszMediumPath + strOldPath.length());
         unconst(m->strLocationFull) = newPath;
 
         Utf8Str path;
@@ -2886,40 +2885,6 @@ HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
     }
 
     return S_OK;
-}
-
-/**
- * Checks if the given change of \a aOldPath to \a aNewPath affects the location
- * of this medium or any its child and updates the paths if necessary to
- * reflect the new location.
- *
- * @param aOldPath  Old path (full).
- * @param aNewPath  New path (full).
- *
- * @note Locks the medium tree for reading, this object and all children for writing.
- */
-void Medium::updatePaths(const char *aOldPath, const char *aNewPath)
-{
-    AssertReturnVoid(aOldPath);
-    AssertReturnVoid(aNewPath);
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
-
-    /* we access children() */
-    AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    updatePath(aOldPath, aNewPath);
-
-    /* update paths of all children */
-    for (MediaList::const_iterator it = getChildren().begin();
-         it != getChildren().end();
-         ++it)
-    {
-        (*it)->updatePaths(aOldPath, aNewPath);
-    }
 }
 
 /**

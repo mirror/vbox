@@ -3225,9 +3225,8 @@ HRESULT VirtualBox::saveSettings()
                      ++it2)
                 {
                     const Data::PendingMachineRename &pmr = *it2;
-                    const char *pcszOld = pmr.strConfigDirOld.c_str();
-                    const char *pcszNew = pmr.strConfigDirNew.c_str();
-                    pMedium->updatePath(pcszOld, pcszNew);
+                    pMedium->updatePath(pmr.strConfigDirOld,
+                                        pmr.strConfigDirNew);
                 }
             }
             // done, don't do it again until we have more machine renames
