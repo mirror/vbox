@@ -50,7 +50,7 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-/** Debug info interpreter regisration record. */
+/** Debug info interpreter registration record. */
 typedef struct RTDBGMODREGDBG
 {
     /** Pointer to the next record. */
@@ -62,7 +62,7 @@ typedef struct RTDBGMODREGDBG
 } RTDBGMODREGDBG;
 typedef RTDBGMODREGDBG *PRTDBGMODREGDBG;
 
-/** Image interpreter regisration record. */
+/** Image interpreter registration record. */
 typedef struct RTDBGMODREGIMG
 {
     /** Pointer to the next record. */
@@ -314,6 +314,7 @@ RT_EXPORT_SYMBOL(RTDbgModCreateDeferred);
 
 RTDECL(int)         RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t fFlags)
 {
+
     return VERR_NOT_IMPLEMENTED;
 }
 RT_EXPORT_SYMBOL(RTDbgModCreateFromImage);
