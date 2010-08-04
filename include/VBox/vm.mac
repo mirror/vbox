@@ -119,6 +119,7 @@ struc VMCPU
     .idCpu                  resd 1
 
     .hNativeThread          RTR0PTR_RES 1
+    .hNativeThreadR0        RTR0PTR_RES 1
     .idHostCpu              resd 1
 
     alignb 64

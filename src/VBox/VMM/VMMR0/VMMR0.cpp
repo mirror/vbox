@@ -964,6 +964,9 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
+            if (pVCpu->hNativeThreadR0 == NIL_RTNATIVETHREAD)
+                pVCpu->hNativeThreadR0 = RTThreadNativeSelf();
+
             /* Make sure that log flushes can jump back to ring-3; annoying to get an incomplete log (this is risky though as the code doesn't take this into account). */
             int rc = GMMR0CheckSharedModulesStart(pVM);
             if (rc == VINF_SUCCESS)
