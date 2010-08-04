@@ -1932,31 +1932,35 @@ void VirtualBox::dumpAllBackRefs()
  *  of callbacks and inform them about some change caused by some object's
  *  method call.
  *
- *  @param event    event to post
- *                  (must be allocated using |new|, will be deleted automatically
- *                  by the event thread after processing)
+ *  @param event    event to post; must have been allocated using |new|, will
+ *                  be deleted automatically by the event thread after processing
  *
  *  @note Doesn't lock any object.
  */
 HRESULT VirtualBox::postEvent(Event *event)
 {
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertReturn(event, E_FAIL);
 
-    if (autoCaller.state() != Ready)
+    HRESULT rc;
+    AutoCaller autoCaller(this);
+    if (SUCCEEDED((rc = autoCaller.rc())))
     {
-        LogWarningFunc(("VirtualBox has been uninitialized (state=%d), the event is discarded!\n",
-                        autoCaller.state()));
-        return S_OK;
+        if (autoCaller.state() != Ready)
+            LogWarningFunc(("VirtualBox has been uninitialized (state=%d), the event is discarded!\n",
+                            autoCaller.state()));
+            // return S_OK
+        else if (    (m->pAsyncEventQ)
+                  && (m->pAsyncEventQ->postEvent(event))
+                )
+            return S_OK;
+        else
+            rc = E_FAIL;
     }
 
-    AssertReturn(event, E_FAIL);
-    AssertReturn(m->pAsyncEventQ, E_FAIL);
-
-    if (m->pAsyncEventQ->postEvent(event))
-        return S_OK;
-
-    return E_FAIL;
+    // in any event of failure, we must clean up here, or we'll leak;
+    // the caller has allocated the object using new()
+    delete event;
+    return rc;
 }
 
 /**
