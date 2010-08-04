@@ -60,6 +60,21 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
     if (pVM->cCpus == 1)
         return 0;
 
+    /* Search first by host cpu id (most common case)
+     * and then by native thread id (page fusion case).
+     */
+    /* RTMpCpuId had better be cheap. */ 
+    RTCPUID idHostCpu = RTMpCpuId(); 
+
+    /** @todo optimize for large number of VCPUs when that becomes more common. */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+        if (pVCpu->idHostCpu == idHostCpu)
+            return pVCpu->idCpu;
+    }
+
     /* RTThreadGetNativeSelf had better be cheap. */
     RTNATIVETHREAD hThread = RTThreadNativeSelf();
 
@@ -68,7 +83,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-        if (pVCpu->hNativeThreadR0 == hThread)
+        if (pVCpu->hNativeThread == hThread)
             return pVCpu->idCpu;
     }
     return NIL_VMCPUID;
@@ -99,6 +114,22 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
     if (pVM->cCpus == 1)
         return &pVM->aCpus[0];
 
+    /* Search first by host cpu id (most common case)
+     * and then by native thread id (page fusion case).
+     */
+
+    /* RTMpCpuId had better be cheap. */ 
+    RTCPUID idHostCpu = RTMpCpuId(); 
+
+    /** @todo optimize for large number of VCPUs when that becomes more common. */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+        if (pVCpu->idHostCpu == idHostCpu)
+            return pVCpu;
+    }
+
     /* RTThreadGetNativeSelf had better be cheap. */
     RTNATIVETHREAD hThread = RTThreadNativeSelf();
 
@@ -107,7 +138,7 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-        if (pVCpu->hNativeThreadR0 == hThread)
+        if (pVCpu->hNativeThread == hThread)
             return pVCpu;
     }
     return NULL;
