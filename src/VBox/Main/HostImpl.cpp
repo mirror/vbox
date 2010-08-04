@@ -65,6 +65,7 @@
 # include <limits.h>
 # include <stdio.h>
 # include <libdevinfo.h>
+# include <sys/mkdev.h>
 # include <sys/scsi/generic/inquiry.h>
 # include <net/if.h>
 # include <sys/socket.h>
@@ -2020,12 +2021,21 @@ static int solarisWalkDeviceNodeForDVD(di_node_t Node, void *pvArg)
                      * Found a DVD drive, we need to scan the minor nodes to find the correct
                      * slice that represents the whole drive. "s2" is always the whole drive for CD/DVDs.
                      */
+                    int Major = di_driver_major(Node);
                     di_minor_t Minor = DI_MINOR_NIL;
                     di_devlink_handle_t DevLink = di_devlink_init(NULL /* name */, 0 /* flags */);
                     if (DevLink)
                     {
                         while ((Minor = di_minor_next(Node, Minor)) != DI_MINOR_NIL)
                         {
+                            dev_t Dev = di_minor_devt(Minor);
+                            if (   Major != (int)major(Dev)
+                                || di_minor_spectype(Minor) == S_IFCHR
+                                || di_minor_type(Minor) != DDM_MINOR)
+                            {
+                                continue;
+                            }
+
                             char *pszMinorPath = di_devfs_minor_path(Minor);
                             if (!pszMinorPath)
                                 continue;
@@ -2056,6 +2066,7 @@ static int solarisWalkDeviceNodeForDVD(di_node_t Node, void *pvArg)
                                 free(pszDevLinkPath);
                             }
                         }
+                        di_devlink_fini(&DevLink);
                     }
                 }
             }
