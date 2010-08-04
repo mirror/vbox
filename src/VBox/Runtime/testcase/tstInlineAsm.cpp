@@ -29,7 +29,17 @@
 *******************************************************************************/
 #include <iprt/asm.h>
 #include <iprt/asm-math.h>
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+
+/* See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44018. Only gcc version 4.4
+ * is affected. No harm for the VBox code: If the cpuid code compiles, it works
+ * fine. */
+#if defined(__GNUC__) && defined(RT_ARCH_X86) && defined(__PIC__)
+# if __GNUC__ == 4 && __GNUC_MINOR__ == 4
+#  define GCC44_32BIT_PIC
+# endif
+#endif
+
+#if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 # include <iprt/asm-amd64-x86.h>
 #else
 # include <iprt/time.h>
@@ -68,7 +78,7 @@
     } while (0)
 
 
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 
 const char *getCacheAss(unsigned u)
 {
@@ -165,6 +175,8 @@ void tstASMCpuId(void)
              "Function  eax      ebx      ecx      edx\n");
     for (unsigned iStd = 0; iStd <= cFunctions + 3; iStd++)
     {
+        if (iStd == 4)
+            continue; /* Leaf 04 output depends on the initial value of ECX */
         ASMCpuId(iStd, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
         RTPrintf("%08x  %08x %08x %08x %08x%s\n",
                  iStd, s.uEAX, s.uEBX, s.uECX, s.uEDX, iStd <= cFunctions ? "" : "*");
@@ -1225,7 +1237,7 @@ void tstASMBench(void)
 
     RTPrintf("tstInlineASM: Benchmarking:\n");
 
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 # define BENCH(op, str) \
     do { \
         RTThreadYield(); \
@@ -1320,7 +1332,7 @@ int main(int argc, char *argv[])
     /*
      * Execute the tests.
      */
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     tstASMCpuId();
 #endif
     tstASMAtomicXchgU8();

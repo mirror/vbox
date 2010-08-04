@@ -123,12 +123,8 @@ PROGRAMS.linux += \
 	tstRTProcWait \
 	tstRTProcIsRunningByName \
 	tstRTBitOperationsPIC3 \
+	tstInlineAsmPIC \
 	tstInlineAsmPIC3
-if1of ($(USERNAME), umoeller)
-else
-PROGRAMS.linux += \
-	tstInlineAsmPIC
-endif
 PROGRAMS.l4 += \
 	tstIoCtl
 PROGRAMS.darwin += \
