@@ -53,10 +53,9 @@ class Event
 public:
 
     Event() {}
+    virtual ~Event() {};
 
 protected:
-
-    virtual ~Event() {};
 
     /**
      *  Event handler. Called in the context of the event queue's thread.
