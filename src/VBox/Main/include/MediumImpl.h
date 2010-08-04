@@ -187,8 +187,7 @@ public:
     void dumpBackRefs();
 #endif
 
-    HRESULT updatePath(const char *aOldPath, const char *aNewPath);
-    void updatePaths(const char *aOldPath, const char *aNewPath);
+    HRESULT updatePath(const Utf8Str &strOldPath, const Utf8Str &strNewPath);
 
     ComObjPtr<Medium> getBase(uint32_t *aLevel = NULL);
 
