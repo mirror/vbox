@@ -258,3 +258,29 @@ VBGLR3DECL(int) VbglR3SharedFolderGetName(uint32_t u32ClientId, uint32_t u32Root
     return rc;
 }
 
+/**
+ * Retrieves the prefix for a shared folder mount point.  If no prefix
+ * is set in the guest properties "sf_" is returned.
+ *
+ * @returns VBox status code.
+ * @param   ppszPrefix      Where to return the prefix string.  This shall be
+ *                          freed by calling RTStrFree.
+ */
+VBGLR3DECL(int) VbglR3SharedFolderGetMountPrefix(char **ppszPrefix)
+{
+    AssertPtrReturn(ppszPrefix, VERR_INVALID_POINTER);
+
+    uint32_t u32ClientIdGuestProp;
+    int rc = VbglR3GuestPropConnect(&u32ClientIdGuestProp);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VbglR3GuestPropReadValueAlloc(u32ClientIdGuestProp, "/VirtualBox/GuestAdd/SharedFolders/MountPrefix", ppszPrefix);
+        if (rc == VERR_NOT_FOUND) /* No prefix set? Then set the default. */
+        {
+            if (RTStrAPrintf(ppszPrefix, "sf_"))
+                rc = VINF_SUCCESS;
+        }
+        VbglR3GuestPropDisconnect(u32ClientIdGuestProp);
+    }
+    return rc;
+}

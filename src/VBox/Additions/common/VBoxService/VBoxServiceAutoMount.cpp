@@ -257,73 +257,82 @@ DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
                                            &paMappings, &cMappings);
         if (RT_SUCCESS(rc))
         {
+            char *pszSharePrefix;
+            rc = VbglR3SharedFolderGetMountPrefix(&pszSharePrefix);
+            if (RT_SUCCESS(rc))
+            {
+                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder mount prefix set to \"%s\"\n", pszSharePrefix);
 #if 0
-            /* Check for a fixed/virtual auto-mount share. */
-            if (VbglR3SharedFolderExists(u32ClientId, "vbsfAutoMount"))
-            {
-                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Host supports auto-mount root\n");
-            }
-            else
-            {
-#endif
-                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Got %u shared folder mappings\n", cMappings);
-                for (uint32_t i = 0; i < cMappings && RT_SUCCESS(rc); i++)
+                /* Check for a fixed/virtual auto-mount share. */
+                if (VbglR3SharedFolderExists(u32ClientId, "vbsfAutoMount"))
                 {
-                    char *pszShareName = NULL;
-                    rc = VbglR3SharedFolderGetName(u32ClientId, paMappings[i].u32Root, &pszShareName);
-                    if (   RT_SUCCESS(rc)
-                        && *pszShareName)
-                    {
-                        VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Connecting share %u (%s) ...\n", i+1, pszShareName);
-
-                        char *pszMountPoint = NULL;
-#ifdef RT_OS_SOLARIS
-                        if (   RTStrAPrintf(&pszMountPoint, "/mnt/sf_%s", pszShareName) > 0
-#else
-                        if (   RTStrAPrintf(&pszMountPoint, "/media/sf_%s", pszShareName) > 0
+                    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Host supports auto-mount root\n");
+                }
+                else
+                {
 #endif
-                            && pszMountPoint)
+                    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Got %u shared folder mappings\n", cMappings);
+                    for (uint32_t i = 0; i < cMappings && RT_SUCCESS(rc); i++)
+                    {
+                        char *pszShareName = NULL;
+                        rc = VbglR3SharedFolderGetName(u32ClientId, paMappings[i].u32Root, &pszShareName);
+                        if (   RT_SUCCESS(rc)
+                            && *pszShareName)
                         {
-                            struct group *grp_vboxsf = getgrnam("vboxsf");
-                            if (grp_vboxsf)
-                            {
-                                struct vbsf_mount_opts mount_opts =
-                                {
-                                    0,                     /* uid */
-                                    grp_vboxsf->gr_gid,    /* gid */
-                                    0,                     /* ttl */
-                                    0770,                  /* dmode, owner and group "vboxsf" have full access */
-                                    0770,                  /* fmode, owner and group "vboxsf" have full access */
-                                    0,                     /* dmask */
-                                    0,                     /* fmask */
-                                    0,                     /* ronly */
-                                    0,                     /* noexec */
-                                    0,                     /* nodev */
-                                    0,                     /* nosuid */
-                                    0,                     /* remount */
-                                    "\0",                  /* nls_name */
-                                    NULL,                  /* convertcp */
-                                };
+                            VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Connecting share %u (%s) ...\n", i+1, pszShareName);
 
-                                /* We always use "/media" as our root mounting directory. */
-                                /** @todo Detect the correct "media/mnt" directory, based on the current guest (?). */
-                                rc = VBoxServiceAutoMountSharedFolder(pszShareName, pszMountPoint, &mount_opts);
+                            char *pszMountPoint = NULL;
+    #ifdef RT_OS_SOLARIS
+                            if (   RTStrAPrintf(&pszMountPoint, "/mnt/%s%s", pszSharePrefix, pszShareName) > 0
+    #else
+                            if (   RTStrAPrintf(&pszMountPoint, "/media/%s%s", pszSharePrefix, pszShareName) > 0
+    #endif
+                                && pszMountPoint)
+                            {
+                                struct group *grp_vboxsf = getgrnam("vboxsf");
+                                if (grp_vboxsf)
+                                {
+                                    struct vbsf_mount_opts mount_opts =
+                                    {
+                                        0,                     /* uid */
+                                        grp_vboxsf->gr_gid,    /* gid */
+                                        0,                     /* ttl */
+                                        0770,                  /* dmode, owner and group "vboxsf" have full access */
+                                        0770,                  /* fmode, owner and group "vboxsf" have full access */
+                                        0,                     /* dmask */
+                                        0,                     /* fmask */
+                                        0,                     /* ronly */
+                                        0,                     /* noexec */
+                                        0,                     /* nodev */
+                                        0,                     /* nosuid */
+                                        0,                     /* remount */
+                                        "\0",                  /* nls_name */
+                                        NULL,                  /* convertcp */
+                                    };
+
+                                    /* We always use "/media" as our root mounting directory. */
+                                    /** @todo Detect the correct "media/mnt" directory, based on the current guest (?). */
+                                    rc = VBoxServiceAutoMountSharedFolder(pszShareName, pszMountPoint, &mount_opts);
+                                }
+                                else
+                                    VBoxServiceError("VBoxServiceAutoMountWorker: Group \"vboxsf\" does not exist\n");
+                                RTStrFree(pszMountPoint);
                             }
                             else
-                                VBoxServiceError("VBoxServiceAutoMountWorker: Group \"vboxsf\" does not exist\n");
-                            RTStrFree(pszMountPoint);
+                                rc = VERR_NO_MEMORY;
+                            RTStrFree(pszShareName);
                         }
                         else
-                            rc = VERR_NO_MEMORY;
-                        RTStrFree(pszShareName);
-                    }
-                    else
-                        VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
-                                         paMappings[i].u32Root, rc);
+                            VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
+                                             paMappings[i].u32Root, rc);
+                    } /* for cMappings. */
+    #if 0
                 }
-#if 0
-            }
-#endif
+    #endif
+                RTStrFree(pszSharePrefix);
+            } /* Mount prefix. */
+            else
+                VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder mount prefix, rc = %Rrc\n", rc);
             RTMemFree(paMappings);
         }
         else
