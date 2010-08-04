@@ -964,34 +964,33 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-# ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-            RTThreadPreemptDisable(&PreemptState);
-# elif !defined(RT_OS_WINDOWS)
-            RTCCUINTREG uFlags = ASMIntDisableFlags();
-# endif
-            /* Select a valid VCPU context. */
-            ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
-
-# ifdef DEBUG_sandervl
-            /* Make sure that log flushes can jump back to ring-3; annoying to get an incomplete log (this is risky though as the code doesn't take this into account). */
+            /* Make sure that log flushes can jump back to ring-3; annoying to get an incomplete log (this is risky though as the code doesn't take this into account). 
+             * Also grab the fast mutex before disabling preemption.
+             */
             int rc = GMMR0CheckSharedModulesStart(pVM);
             if (rc == VINF_SUCCESS)
             {
+# ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+                RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+                RTThreadPreemptDisable(&PreemptState);
+# elif !defined(RT_OS_WINDOWS)
+                RTCCUINTREG uFlags = ASMIntDisableFlags();
+# endif
+                /* Select a valid VCPU context. */
+                ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
+
                 rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, GMMR0CheckSharedModules, pVM, pVCpu); /* this may resume code. */
-                GMMR0CheckSharedModulesEnd(pVM);
-            }
-# else
-            int rc = GMMR0CheckSharedModules(pVM, pVCpu);
+
+                /* Clear the VCPU context. */
+                ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+# ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+                RTThreadPreemptRestore(&PreemptState);
+# elif !defined(RT_OS_WINDOWS)
+                ASMSetFlags(uFlags);
 # endif
 
-            /* Clear the VCPU context. */
-            ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-# ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-            RTThreadPreemptRestore(&PreemptState);
-# elif !defined(RT_OS_WINDOWS)
-            ASMSetFlags(uFlags);
-# endif
+                GMMR0CheckSharedModulesEnd(pVM);
+            }
             return rc;
         }
 #endif
