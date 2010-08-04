@@ -167,8 +167,8 @@ EventQueue::~EventQueue()
  *           make sure to call this method on the same thread that did the
  *           XPCOM initialization or we'll end up using the wrong main queue.
  */
-/* static */ int
-EventQueue::init()
+/* static */
+int EventQueue::init()
 {
     Assert(mMainQueue == NULL);
     Assert(RTThreadIsMain(RTThreadSelf()));
@@ -195,8 +195,8 @@ EventQueue::init()
  *  Uninitialize the global resources (i.e. the main event queue instance).
  *  @returns VINF_SUCCESS
  */
-/* static */ int
-EventQueue::uninit()
+/* static */
+int EventQueue::uninit()
 {
     Assert(mMainQueue);
     delete mMainQueue;
@@ -209,8 +209,8 @@ EventQueue::uninit()
  *
  *  Depends on init() being called first.
  */
-/* static */ EventQueue *
-EventQueue::getMainEventQueue()
+/* static */
+EventQueue* EventQueue::getMainEventQueue()
 {
     return mMainQueue;
 }
@@ -258,8 +258,8 @@ waitForEventsOnDarwin(unsigned cMsTimeout)
  *  @param  pQueue          The queue to wait on.
  *  @param  cMsTimeout      How long to wait, or RT_INDEFINITE_WAIT.
  */
-static int
-waitForEventsOnUnix(nsIEventQueue *pQueue, unsigned cMsTimeout)
+static
+int waitForEventsOnUnix(nsIEventQueue *pQueue, unsigned cMsTimeout)
 {
     int     fd = pQueue->GetEventQueueSelectFD();
     fd_set  fdsetR;
@@ -323,8 +323,8 @@ processPendingEvents(void)
  * @param pQueue The queue to process events on.
  * @returns VINF_SUCCESS or VERR_TIMEOUT.
  */
-static int
-processPendingEvents(nsIEventQueue *pQueue)
+static
+int processPendingEvents(nsIEventQueue *pQueue)
 {
     /* Check for timeout condition so the caller can be a bit more lazy. */
     PRBool fHasEvents = PR_FALSE;
@@ -443,7 +443,7 @@ int EventQueue::interruptEventQueueProcessing()
  *  @param  event   the event to post, must be allocated using |new|
  *  @return         TRUE if successful and false otherwise
  */
-BOOL EventQueue::postEvent (Event *event)
+BOOL EventQueue::postEvent(Event *event)
 {
 #if defined (RT_OS_WINDOWS)
 
@@ -478,7 +478,7 @@ BOOL EventQueue::postEvent (Event *event)
  *  @param event    next event removed from the queue
  *  @return         TRUE if successful and false otherwise
  */
-BOOL EventQueue::waitForEvent (Event **event)
+BOOL EventQueue::waitForEvent(Event **event)
 {
     Assert(event);
     if (!event)
@@ -538,7 +538,7 @@ BOOL EventQueue::waitForEvent (Event **event)
  *  This method must be called on the same thread where this event queue
  *  is created.
  */
-BOOL EventQueue::handleEvent (Event *event)
+BOOL EventQueue::handleEvent(Event *event)
 {
     Assert(event);
     if (!event)
@@ -557,7 +557,7 @@ BOOL EventQueue::handleEvent (Event *event)
  *  This will return -1 on platforms and queue variants not supporting such
  *  functionality.
  */
-int  EventQueue::getSelectFD()
+int EventQueue::getSelectFD()
 {
 #ifdef VBOX_WITH_XPCOM
     return mEventQ->GetEventQueueSelectFD();
