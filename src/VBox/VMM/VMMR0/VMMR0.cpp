@@ -964,6 +964,12 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
+# ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&PreemptState);
+# elif !defined(RT_OS_WINDOWS)
+            RTCCUINTREG uFlags = ASMIntDisableFlags();
+# endif
             /* Select a valid VCPU context. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
 
@@ -981,6 +987,11 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 
             /* Clear the VCPU context. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+# ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+            RTThreadPreemptRestore(&PreemptState);
+# elif !defined(RT_OS_WINDOWS)
+            ASMSetFlags(uFlags);
+# endif
             return rc;
         }
 #endif
