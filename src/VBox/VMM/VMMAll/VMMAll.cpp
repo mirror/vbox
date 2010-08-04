@@ -83,7 +83,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-        if (pVCpu->hNativeThread == hThread)
+        if (pVCpu->hNativeThreadR0 == hThread)
             return pVCpu->idCpu;
     }
     return NIL_VMCPUID;
@@ -138,7 +138,7 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-        if (pVCpu->hNativeThread == hThread)
+        if (pVCpu->hNativeThreadR0 == hThread)
             return pVCpu;
     }
     return NULL;
