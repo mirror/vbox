@@ -975,6 +975,8 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 RTThreadPreemptDisable(&PreemptState);
 # elif !defined(RT_OS_WINDOWS)
                 RTCCUINTREG uFlags = ASMIntDisableFlags();
+# else 
+                AssertCompileFailed();
 # endif
                 /* Select a valid VCPU context. */
                 ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
@@ -987,6 +989,8 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 RTThreadPreemptRestore(&PreemptState);
 # elif !defined(RT_OS_WINDOWS)
                 ASMSetFlags(uFlags);
+# else 
+                AssertCompileFailed();
 # endif
 
                 GMMR0CheckSharedModulesEnd(pVM);
