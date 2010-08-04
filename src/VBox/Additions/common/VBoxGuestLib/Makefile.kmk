@@ -60,8 +60,11 @@ VBoxGuestR0Lib_SOURCES      = \
 	Init.cpp \
 	VMMDev.cpp \
 	HGCM.cpp \
+	VBoxGuestR0LibMisc.c \
 	VBoxGuestR0LibSharedFolders.c \
 	VbglR0CanUsePhysPageList.cpp
+
+VBoxGuestR0LibMisc.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
 
 #
@@ -78,7 +81,8 @@ VBoxGuestR0LibBase_SOURCES  = \
 	Init.cpp \
 	VMMDev.cpp \
 	HGCMInternal.cpp \
-	VbglR0CanUsePhysPageList.cpp
+	VbglR0CanUsePhysPageList.cpp \
+	VBoxGuestR0LibMisc.c
 
 #
 # VBoxGuestR3Lib

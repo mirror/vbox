@@ -773,7 +773,7 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
 }
 #endif
 
-void VBoxInitMemBalloon(PVBOXGUESTDEVEXT pDevExt)
+int VBoxInitMemBalloon(PVBOXGUESTDEVEXT pDevExt)
 {
 #ifdef VBOX_WITH_MANAGEMENT
     ULONG dummy;
@@ -782,7 +782,9 @@ void VBoxInitMemBalloon(PVBOXGUESTDEVEXT pDevExt)
     pDevExt->MemBalloon.cMaxBalloonChunks = 0;
     pDevExt->MemBalloon.paMdlMemBalloon = NULL;
 
-    VBoxGuestQueryMemoryBalloon(pDevExt, &dummy);
+    return VBoxGuestQueryMemoryBalloon(pDevExt, &dummy);
+#else
+    return VINF_SUCCESS;
 #endif
 }
 

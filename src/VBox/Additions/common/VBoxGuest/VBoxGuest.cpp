@@ -254,72 +254,6 @@ static int vboxGuestSetFilterMask(PVBOXGUESTDEVEXT pDevExt, uint32_t fMask)
 
 
 /**
- * Report guest information to the VMMDev.
- *
- * @returns VBox status code.
- * @param   pDevExt     The device extension.
- * @param   enmOSType   The OS type to report.
- */
-static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType)
-{
-    /*
-     * Report general info + capabilities to host.
-     */
-    VMMDevReportGuestInfo *pReq;
-    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_ReportGuestInfo);
-    if (RT_SUCCESS(rc))
-    {
-        pReq->guestInfo.interfaceVersion = VMMDEV_VERSION;
-        pReq->guestInfo.osType = enmOSType;
-        rc = VbglGRPerform(&pReq->header);
-        if (RT_FAILURE(rc))
-            LogRel(("vboxGuestInitReportGuestInfo: 1st part failed with rc=%Rrc\n", rc));
-        VbglGRFree(&pReq->header);
-    }
-    VMMDevReportGuestInfo2 *pReq2;
-    if (RT_SUCCESS(rc))
-        rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq2, sizeof(*pReq2), VMMDevReq_ReportGuestInfo2);
-    if (RT_SUCCESS(rc))
-    {
-        pReq2->guestInfo.additionsMajor = VBOX_VERSION_MAJOR;
-        pReq2->guestInfo.additionsMinor = VBOX_VERSION_MINOR;
-        pReq2->guestInfo.additionsBuild = VBOX_VERSION_BUILD;
-        pReq2->guestInfo.additionsRevision = VBOX_SVN_REV;
-        pReq2->guestInfo.additionsFeatures = 0;
-        RTStrCopy(pReq2->guestInfo.szName, sizeof(pReq2->guestInfo.szName), VBOX_VERSION_STRING);
-        rc = VbglGRPerform(&pReq2->header);
-        if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
-            rc = VINF_SUCCESS;
-        if (RT_FAILURE(rc))
-            LogRel(("vboxGuestInitReportGuestInfo: 2nd part failed with rc=%Rrc\n", rc));
-        VbglGRFree(&pReq2->header);
-    }
-
-    /*
-     * Report guest status to host.  Because the host set the "Guest Additions active" flag as soon
-     * as he received the VMMDevReportGuestInfo above to make sure all is compatible with older Guest
-     * Additions we now have to disable that flag again here (too early, VBoxService and friends need
-     * to start up first).
-     */
-    VMMDevReportGuestStatus *pReq3;
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq3, sizeof(*pReq3), VMMDevReq_ReportGuestStatus);
-    if (RT_SUCCESS(rc))
-    {
-        pReq3->guestStatus.facility = VBoxGuestStatusFacility_VBoxGuestDriver;
-        pReq3->guestStatus.status = VBoxGuestStatusCurrent_Active; /** @todo Are we actually *really* active at this point? */
-        pReq3->guestStatus.flags = 0;
-        rc = VbglGRPerform(&pReq3->header);
-        if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
-            rc = VINF_SUCCESS;
-        if (RT_FAILURE(rc))
-            LogRel(("vboxGuestInitReportGuestInfo: reporting status failed with rc=%Rrc\n", rc));
-        VbglGRFree(&pReq3->header);
-    }
-    return rc;
-}
-
-
-/**
  * Inflate the balloon by one chunk represented by an R0 memory object.
  *
  * The caller owns the balloon mutex.
@@ -798,32 +732,30 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
             pDevExt->PhysIrqAckEvents = VbglPhysHeapGetPhysAddr(pDevExt->pIrqAckEvents);
             Assert(pDevExt->PhysIrqAckEvents != 0);
 
-            rc = vboxGuestInitReportGuestInfo(pDevExt, enmOSType);
+            rc = vboxGuestSetFilterMask(pDevExt, fFixedEvents);
             if (RT_SUCCESS(rc))
             {
-                rc = vboxGuestSetFilterMask(pDevExt, fFixedEvents);
+                /*
+                 * Disable guest graphics capability by default. The guest specific
+                 * graphics driver will re-enable this when it is necessary.
+                 */
+                rc = VBoxGuestSetGuestCapabilities(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
                 if (RT_SUCCESS(rc))
                 {
-                    /*
-                     * Disable guest graphics capability by default. The guest specific
-                     * graphics driver will re-enable this when it is necessary.
-                     */
-                    rc = VBoxGuestSetGuestCapabilities(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
-                    if (RT_SUCCESS(rc))
-                    {
-                        vboxGuestInitFixateGuestMappings(pDevExt);
-                        Log(("VBoxGuestInitDevExt: returns success\n"));
-                        return VINF_SUCCESS;
-                    }
+                    vboxGuestInitFixateGuestMappings(pDevExt);
 
-                    LogRel(("VBoxGuestInitDevExt: VBoxGuestSetGuestCapabilities failed, rc=%Rrc\n", rc));
+                    rc = VbglR0MiscReportGuestInfo(enmOSType);
+                    if (RT_FAILURE(rc))
+                        LogRel(("VBoxGuestInitDevExt: VbglR0MiscReportGuestInfo failed, rc=%Rrc\n", rc));
+
+                    Log(("VBoxGuestInitDevExt: returns success\n"));
+                    return VINF_SUCCESS;
                 }
-                else
-                    LogRel(("VBoxGuestInitDevExt: vboxGuestSetFilterMask failed, rc=%Rrc\n", rc));
+
+                LogRel(("VBoxGuestInitDevExt: VBoxGuestSetGuestCapabilities failed, rc=%Rrc\n", rc));
             }
             else
-                LogRel(("VBoxGuestInitDevExt: vboxGuestInitReportGuestInfo failed, rc=%Rrc\n", rc));
-
+                LogRel(("VBoxGuestInitDevExt: vboxGuestSetFilterMask failed, rc=%Rrc\n", rc));
             VbglGRFree((VMMDevRequestHeader *)pDevExt->pIrqAckEvents);
         }
         else

@@ -53,6 +53,7 @@ static void                freeDeviceResources(PDRIVER_OBJECT pDrvObj, PDEVICE_O
 NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath)
 {
     ULONG busNumber, slotNumber;
+    int vrc = VINF_SUCCESS;
     NTSTATUS rc = STATUS_SUCCESS;
 
     dprintf(("VBoxGuest::ntCreateDevice: entered, pDrvObj=%x, pDevObj=%x, pRegPath=%x\n",
@@ -270,21 +271,28 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
         pDevExt->HGCMWaitTimeout.QuadPart *= -10000;     /* relative in 100ns units */
     }
 
-    rc = hlpVBoxReportGuestInfo (pDevExt);
-    if (!NT_SUCCESS(rc))
+    /** @todo Cleanup on failure. */
+
+    /** @todo Don't mix up IPRT rc and NTSTATUS rc above! */
+
+    vrc = VBoxInitMemBalloon(pDevExt);
+    if (RT_SUCCESS(vrc))
     {
-        dprintf(("VBoxGuest::AddDevice: could not report information to host, rc = %d, exiting!\n", rc));
+        vrc = VbglR0MiscReportGuestInfo(hlpVBoxWinVersionToOSType(winVersion));
+        if (RT_FAILURE(vrc))
+            dprintf(("VBoxGuest::ntCreateDevice: could not report information to host, rc = %d, exiting!\n", rc));
+    }
+
+    if (   NT_ERROR(rc)
+        || RT_FAILURE(vrc))
+    {
         freeDeviceResources(pDrvObj, pDevObj);
         return STATUS_UNSUCCESSFUL;
     }
 
-    /** @todo cleanup on failure */
-
-    VBoxInitMemBalloon(pDevExt);
-
     // ready to rumble!
     pDevExt->devState = WORKING;
-    dprintf(("returning from createDevice with rc = 0x%x\n", rc));
+    dprintf(("returning from ntCreateDevice with rc = 0x%x\n, vrc = %Rrc", rc, vrc));
     return rc;
 }
 
