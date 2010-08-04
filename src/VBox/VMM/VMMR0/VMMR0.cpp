@@ -964,35 +964,13 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-            /* Make sure that log flushes can jump back to ring-3; annoying to get an incomplete log (this is risky though as the code doesn't take this into account). 
-             * Also grab the fast mutex before disabling preemption.
-             */
+            /* Make sure that log flushes can jump back to ring-3; annoying to get an incomplete log (this is risky though as the code doesn't take this into account). */
             int rc = GMMR0CheckSharedModulesStart(pVM);
             if (rc == VINF_SUCCESS)
             {
-# ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-                RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-                RTThreadPreemptDisable(&PreemptState);
-# elif !defined(RT_OS_WINDOWS)
-                RTCCUINTREG uFlags = ASMIntDisableFlags();
-# else 
-                AssertCompileFailed();
-# endif
-                /* Select a valid VCPU context. */
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
-
                 rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, GMMR0CheckSharedModules, pVM, pVCpu); /* this may resume code. */
-
-                /* Clear the VCPU context. */
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-# ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-                RTThreadPreemptRestore(&PreemptState);
-# elif !defined(RT_OS_WINDOWS)
-                ASMSetFlags(uFlags);
-# else 
-                AssertCompileFailed();
-# endif
-
+                Assert(     rc == VINF_SUCCESS
+                       ||   (rc == VINF_VMM_CALL_HOST && pVCpu->vmm.s.enmCallRing3Operation == VMMCALLRING3_VMM_LOGGER_FLUSH));
                 GMMR0CheckSharedModulesEnd(pVM);
             }
             return rc;
