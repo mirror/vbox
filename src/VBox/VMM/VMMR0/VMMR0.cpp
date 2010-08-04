@@ -969,6 +969,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 pVCpu->hNativeThreadR0 = RTThreadNativeSelf(); 
 
             /* Make sure that log flushes can jump back to ring-3; annoying to get an incomplete log (this is risky though as the code doesn't take this into account). */
+# ifdef DEBUG_sandervl
             int rc = GMMR0CheckSharedModulesStart(pVM);
             if (rc == VINF_SUCCESS)
             {
@@ -977,6 +978,9 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                        ||   (rc == VINF_VMM_CALL_HOST && pVCpu->vmm.s.enmCallRing3Operation == VMMCALLRING3_VMM_LOGGER_FLUSH));
                 GMMR0CheckSharedModulesEnd(pVM);
             }
+# else
+            rc = GMMR0CheckSharedModules(pVM, pVCpu);
+# endif
             return rc;
         }
 #endif
