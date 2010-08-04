@@ -25,7 +25,7 @@
 #include <VBox/vm.h>
 #include <VBox/vmm.h>
 #include <VBox/param.h>
-#include <iprt/mp.h>
+#include <iprt/thread.h>
 
 
 /**
