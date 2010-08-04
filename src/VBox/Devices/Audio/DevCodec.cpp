@@ -927,6 +927,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->dac.node.name = "DAC3";
         dac_init:
             memset(pNode->dac.B_params, 0, AMPLIFIER_SIZE);
+            //** @todo r=michaln: 0x2 in the low bits means 3 channels, not 2??
             pNode->dac.u32A_param = RT_BIT(14)|(0x1 << 4)|0x2; /* 441000Hz/16bit/2ch */
 
             AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) = 0x7F | RT_BIT(7);
@@ -945,6 +946,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->adc.node.name = "ADC1";
             pNode->node.au8F02_param[0] = 0x18;
         adc_init:
+            //** @todo r=michaln: Shouldn't that be (0x1 << 4)? Same problem with no. of channels.
             pNode->adc.u32A_param = RT_BIT(14)|(0x1 << 3)|0x2; /* 441000Hz/16bit/2ch */
             pNode->adc.node.au32F00_param[0xE] = RT_BIT(0);
             pNode->adc.u32F03_param = RT_BIT(0);
