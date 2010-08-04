@@ -980,7 +980,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 GMMR0CheckSharedModulesEnd(pVM);
             }
 # else
-            rc = GMMR0CheckSharedModules(pVM, pVCpu);
+            int rc = GMMR0CheckSharedModules(pVM, pVCpu);
 # endif
             return rc;
         }
