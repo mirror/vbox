@@ -729,8 +729,10 @@ void Medium::FinalRelease()
 }
 
 /**
- * Initializes the hard disk object without creating or opening an associated
+ * Initializes an empty hard disk object without creating or opening an associated
  * storage unit.
+ *
+ * This gets called by VirtualBox::CreateHardDisk().
  *
  * For hard disks that don't have the VD_CAP_CREATE_FIXED or
  * VD_CAP_CREATE_DYNAMIC capability (and therefore cannot be created or deleted
@@ -743,12 +745,12 @@ void Medium::FinalRelease()
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
-                     CBSTR aFormat,
-                     CBSTR aLocation,
+                     const Utf8Str &aFormat,
+                     const Utf8Str &aLocation,
                      bool *pfNeedsSaveSettings)
 {
     AssertReturn(aVirtualBox != NULL, E_FAIL);
-    AssertReturn(aFormat != NULL && *aFormat != '\0', E_FAIL);
+    AssertReturn(!aFormat.isEmpty(), E_FAIL);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -770,7 +772,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     rc = setFormat(aFormat);
     if (FAILED(rc)) return rc;
 
-    if (m->formatObj->capabilities() & MediumFormatCapabilities_File)
+    if (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
     {
         rc = setLocation(aLocation);
         if (FAILED(rc)) return rc;
@@ -781,8 +783,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         if (FAILED(rc)) return rc;
     }
 
-    if (!(m->formatObj->capabilities() & (   MediumFormatCapabilities_CreateFixed
-                                           | MediumFormatCapabilities_CreateDynamic))
+    if (!(m->formatObj->getCapabilities() & (   MediumFormatCapabilities_CreateFixed
+                                              | MediumFormatCapabilities_CreateDynamic))
        )
     {
         /* storage for hard disks of this format can neither be explicitly
@@ -807,6 +809,10 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * location. The enOpenMode parameter defines whether the medium will be opened
  * read/write or read-only.
  *
+ * This gets called by VirtualBox::OpenHardDisk(), OpenDVDImage and OpenFloppyImage();
+ * this also gets called by Machine::AttachDevice() and createImplicitDiffs()
+ * when new diff images are created.
+ *
  * Note that the UUID, format and the parent of this medium will be
  * determined when reading the medium storage unit, unless new values are
  * specified by the parameters. If the detected or set parent is
@@ -824,7 +830,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  *                      means create a new UUID, and a zero UUID is valid.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
-                     CBSTR aLocation,
+                     const Utf8Str &aLocation,
                      HDDOpenMode enOpenMode,
                      DeviceType_T aDeviceType,
                      BOOL aSetImageId,
@@ -833,7 +839,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                      const Guid &aParentId)
 {
     AssertReturn(aVirtualBox, E_INVALIDARG);
-    AssertReturn(aLocation, E_INVALIDARG);
+    AssertReturn(!aLocation.isEmpty(), E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -953,16 +959,16 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     if (aDeviceType == DeviceType_HardDisk)
     {
         AssertReturn(!data.strFormat.isEmpty(), E_FAIL);
-        rc = setFormat(Bstr(data.strFormat));
+        rc = setFormat(data.strFormat);
         if (FAILED(rc)) return rc;
     }
     else
     {
         /// @todo handle host drive settings here as well?
         if (!data.strFormat.isEmpty())
-            rc = setFormat(Bstr(data.strFormat));
+            rc = setFormat(data.strFormat);
         else
-            rc = setFormat(Bstr("RAW"));
+            rc = setFormat("RAW");
         if (FAILED(rc)) return rc;
     }
 
@@ -1044,10 +1050,6 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * Initializes the medium object by providing the host drive information.
  * Not used for anything but the host floppy/host DVD case.
  *
- * @todo optimize all callers to avoid reconstructing objects with the same
- * information over and over again - in the typical case each VM referring to
- * a particular host drive has its own instance.
- *
  * @param aVirtualBox   VirtualBox object.
  * @param aDeviceType   Device type of the medium.
  * @param aLocation     Location of the host drive.
@@ -1057,11 +1059,11 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      DeviceType_T aDeviceType,
-                     CBSTR aLocation,
-                     CBSTR aDescription)
+                     const Utf8Str &aLocation,
+                     const Utf8Str &aDescription /* = Utf8Str::Empty */)
 {
     ComAssertRet(aDeviceType == DeviceType_DVD || aDeviceType == DeviceType_Floppy, E_INVALIDARG);
-    ComAssertRet(aLocation, E_INVALIDARG);
+    ComAssertRet(!aLocation.isEmpty(), E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -1078,19 +1080,18 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     else
         memcpy(&uuid.au8[0], "FD", 2);
     /* use device name, adjusted to the end of uuid, shortened if necessary */
-    Utf8Str loc(aLocation);
-    size_t cbLocation = strlen(loc.raw());
-    if (cbLocation > 12)
-        memcpy(&uuid.au8[4], loc.raw() + (cbLocation - 12), 12);
+    size_t lenLocation = aLocation.length();
+    if (lenLocation > 12)
+        memcpy(&uuid.au8[4], aLocation.raw() + (lenLocation - 12), 12);
     else
-        memcpy(&uuid.au8[4 + 12 - cbLocation], loc.raw(), cbLocation);
+        memcpy(&uuid.au8[4 + 12 - lenLocation], aLocation.raw(), lenLocation);
     unconst(m->id) = uuid;
 
     m->type = MediumType_Writethrough;
     m->devType = aDeviceType;
     m->state = MediumState_Created;
     m->hostDrive = true;
-    HRESULT rc = setFormat(Bstr("RAW"));
+    HRESULT rc = setFormat("RAW");
     if (FAILED(rc)) return rc;
     rc = setLocation(aLocation);
     if (FAILED(rc)) return rc;
@@ -2105,12 +2106,12 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
 
         aVariant = (MediumVariant_T)((unsigned)aVariant & (unsigned)~MediumVariant_Diff);
         if (    !(aVariant & MediumVariant_Fixed)
-            &&  !(m->formatObj->capabilities() & MediumFormatCapabilities_CreateDynamic))
+            &&  !(m->formatObj->getCapabilities() & MediumFormatCapabilities_CreateDynamic))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support dynamic storage creation"),
                            m->strFormat.raw());
         if (    (aVariant & MediumVariant_Fixed)
-            &&  !(m->formatObj->capabilities() & MediumFormatCapabilities_CreateDynamic))
+            &&  !(m->formatObj->getCapabilities() & MediumFormatCapabilities_CreateDynamic))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support fixed storage creation"),
                            m->strFormat.raw());
@@ -2553,7 +2554,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Medium internal methods
+// Medium public internal methods
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2642,7 +2643,7 @@ const Utf8Str& Medium::getFormat() const
  * Internal method to return the medium's format object. Must have caller + locking!
  * @return
  */
-const ComObjPtr<MediumFormat> & Medium::getMediumFormat() const
+const ComObjPtr<MediumFormat>& Medium::getMediumFormat() const
 {
     return m->formatObj;
 }
@@ -3098,7 +3099,7 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
 
     /// @todo NEWMEDIA delegate the comparison to the backend?
 
-    if (m->formatObj->capabilities() & MediumFormatCapabilities_File)
+    if (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
     {
         Utf8Str location(aLocation);
 
@@ -3221,25 +3222,18 @@ HRESULT Medium::createMediumLockList(bool fFailIfInaccessible,
 /**
  * Returns a preferred format for differencing media.
  */
-Bstr Medium::preferredDiffFormat()
+Utf8Str Medium::getPreferredDiffFormat()
 {
-    Utf8Str strFormat;
-
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), strFormat);
-
-    /* m->strFormat is const, no need to lock */
-    strFormat = m->strFormat;
+    AssertComRCReturn(autoCaller.rc(), Utf8Str::Empty);
 
     /* check that our own format supports diffs */
-    if (!(m->formatObj->capabilities() & MediumFormatCapabilities_Differencing))
-    {
+    if (!(m->formatObj->getCapabilities() & MediumFormatCapabilities_Differencing))
         /* use the default format if not */
-        AutoReadLock propsLock(m->pVirtualBox->getSystemProperties() COMMA_LOCKVAL_SRC_POS);
-        strFormat = m->pVirtualBox->getDefaultHardDiskFormat();
-    }
+        return m->pVirtualBox->getDefaultHardDiskFormat();
 
-    return strFormat;
+    /* m->strFormat is const, no need to lock */
+    return m->strFormat;
 }
 
 /**
@@ -3259,9 +3253,6 @@ MediumType_T Medium::getType() const
 {
     return m->type;
 }
-
-// private methods
-////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Returns a short version of the location attribute.
@@ -3295,7 +3286,8 @@ Utf8Str Medium::getName()
  *
  * @note Must be called from under this object's write lock.
  */
-HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
+HRESULT Medium::setLocation(const Utf8Str &aLocation,
+                            const Utf8Str &aFormat /* = Utf8Str::Empty */)
 {
     AssertReturn(!aLocation.isEmpty(), E_FAIL);
 
@@ -3317,7 +3309,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
     bool isImport = m->strFormat.isEmpty();
 
     if (   isImport
-        || (   (m->formatObj->capabilities() & MediumFormatCapabilities_File)
+        || (   (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
             && !m->hostDrive))
     {
         Guid id;
@@ -3327,7 +3319,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
         if (m->state == MediumState_NotCreated)
         {
             /* must be a file (formatObj must be already known) */
-            Assert(m->formatObj->capabilities() & MediumFormatCapabilities_File);
+            Assert(m->formatObj->getCapabilities() & MediumFormatCapabilities_File);
 
             if (RTPathFilename(location.c_str()) == NULL)
             {
@@ -3335,19 +3327,19 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
                  * slash), generate a new UUID + file name if the state allows
                  * this */
 
-                ComAssertMsgRet(!m->formatObj->fileExtensions().empty(),
+                ComAssertMsgRet(!m->formatObj->getFileExtensions().empty(),
                                 ("Must be at least one extension if it is MediumFormatCapabilities_File\n"),
                                 E_FAIL);
 
-                Bstr ext = m->formatObj->fileExtensions().front();
-                ComAssertMsgRet(!ext.isEmpty(),
+                Utf8Str strExt = m->formatObj->getFileExtensions().front();
+                ComAssertMsgRet(!strExt.isEmpty(),
                                 ("Default extension must not be empty\n"),
                                 E_FAIL);
 
                 id.create();
 
-                location = Utf8StrFmt("%s{%RTuuid}.%ls",
-                                      location.raw(), id.raw(), ext.raw());
+                location = Utf8StrFmt("%s{%RTuuid}.%s",
+                                      location.raw(), id.raw(), strExt.c_str());
             }
         }
 
@@ -3401,7 +3393,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
                                     locationFull.raw(), vrc);
                 else
                 {
-                    HRESULT rc = setFormat(Bstr(aFormat));
+                    HRESULT rc = setFormat(aFormat);
                     /* setFormat() must not fail since we've just used the backend so
                      * the format object must be there */
                     AssertComRCReturnRC(rc);
@@ -3411,7 +3403,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
             {
                 ComAssertRet(backendName != NULL && *backendName != '\0', E_FAIL);
 
-                HRESULT rc = setFormat(Bstr(backendName));
+                HRESULT rc = setFormat(backendName);
                 RTStrFree(backendName);
 
                 /* setFormat() must not fail since we've just used the backend so
@@ -3421,7 +3413,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
         }
 
         /* is it still a file? */
-        if (m->formatObj->capabilities() & MediumFormatCapabilities_File)
+        if (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
         {
             m->strLocation = location;
             m->strLocationFull = locationFull;
@@ -3571,7 +3563,7 @@ HRESULT Medium::queryInfo()
                 throw S_OK;
             }
 
-            if (formatObj->capabilities() & MediumFormatCapabilities_Uuid)
+            if (formatObj->getCapabilities() & MediumFormatCapabilities_Uuid)
             {
                 /* Modify the UUIDs if necessary. The associated fields are
                  * not modified by other code, so no need to copy. */
@@ -3611,11 +3603,11 @@ HRESULT Medium::queryInfo()
                     if (mediumId != uuid)
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("UUID {%RTuuid} of the medium '%s' does not match the value {%RTuuid} stored in the media registry ('%s')"),
-                            &uuid,
-                            location.c_str(),
-                            mediumId.raw(),
-                            m->pVirtualBox->settingsFilePath().c_str());
+                                tr("UUID {%RTuuid} of the medium '%s' does not match the value {%RTuuid} stored in the media registry ('%s')"),
+                                &uuid,
+                                location.c_str(),
+                                mediumId.raw(),
+                                m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
                 }
@@ -3659,15 +3651,13 @@ HRESULT Medium::queryInfo()
 
                     Guid id = parentId;
                     ComObjPtr<Medium> pParent;
-                    rc = m->pVirtualBox->findHardDisk(&id, NULL,
-                                                      false /* aSetError */,
-                                                      &pParent);
+                    rc = m->pVirtualBox->findHardDisk(&id, NULL, false /* aSetError */, &pParent);
                     if (FAILED(rc))
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("Parent medium with UUID {%RTuuid} of the medium '%s' is not found in the media registry ('%s')"),
-                            &parentId, location.c_str(),
-                            m->pVirtualBox->settingsFilePath().c_str());
+                                tr("Parent medium with UUID {%RTuuid} of the medium '%s' is not found in the media registry ('%s')"),
+                                &parentId, location.c_str(),
+                                m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
 
@@ -3690,9 +3680,9 @@ HRESULT Medium::queryInfo()
                     if (m->pParent.isNull())
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("Medium type of '%s' is differencing but it is not associated with any parent medium in the media registry ('%s')"),
-                            location.c_str(),
-                            m->pVirtualBox->settingsFilePath().c_str());
+                                tr("Medium type of '%s' is differencing but it is not associated with any parent medium in the media registry ('%s')"),
+                                location.c_str(),
+                                m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
 
@@ -3701,10 +3691,10 @@ HRESULT Medium::queryInfo()
                          && m->pParent->getId() != parentId)
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("Parent UUID {%RTuuid} of the medium '%s' does not match UUID {%RTuuid} of its parent medium stored in the media registry ('%s')"),
-                            &parentId, location.c_str(),
-                            m->pParent->getId().raw(),
-                            m->pVirtualBox->settingsFilePath().c_str());
+                                tr("Parent UUID {%RTuuid} of the medium '%s' does not match UUID {%RTuuid} of its parent medium stored in the media registry ('%s')"),
+                                &parentId, location.c_str(),
+                                m->pParent->getId().raw(),
+                                m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
                     }
 
@@ -3747,8 +3737,8 @@ HRESULT Medium::queryInfo()
     {
         m->strLastAccessError = lastAccessError;
         LogWarningFunc(("'%s' is not accessible (error='%s', rc=%Rhrc, vrc=%Rrc)\n",
-                         location.c_str(), m->strLastAccessError.c_str(),
-                         rc, vrc));
+                        location.c_str(), m->strLastAccessError.c_str(),
+                        rc, vrc));
     }
 
     /* inform other callers if there are any */
@@ -3962,8 +3952,8 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
                                       COMMA_LOCKVAL_SRC_POS);
         LogFlowThisFunc(("aWait=%RTbool locationFull=%s\n", aWait, getLocationFull().c_str() ));
 
-        if (    !(m->formatObj->capabilities() & (   MediumFormatCapabilities_CreateDynamic
-                                                   | MediumFormatCapabilities_CreateFixed)))
+        if (    !(m->formatObj->getCapabilities() & (   MediumFormatCapabilities_CreateDynamic
+                                                      | MediumFormatCapabilities_CreateFixed)))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support storage deletion"),
                            m->strFormat.raw());
@@ -4833,52 +4823,11 @@ void Medium::cancelMergeTo(const MediaList &aChildrenToReparent,
     }
 }
 
-/**
- * Checks that the format ID is valid and sets it on success.
- *
- * Note that this method will caller-reference the format object on success!
- * This reference must be released somewhere to let the MediumFormat object be
- * uninitialized.
- *
- * @note Must be called from under this object's write lock.
- */
-HRESULT Medium::setFormat(CBSTR aFormat)
-{
-    /* get the format object first */
-    {
-        SystemProperties *pSysProps = m->pVirtualBox->getSystemProperties();
-        AutoReadLock propsLock(pSysProps COMMA_LOCKVAL_SRC_POS);
-
-        unconst(m->formatObj) = pSysProps->mediumFormat(aFormat);
-        if (m->formatObj.isNull())
-            return setError(E_INVALIDARG,
-                            tr("Invalid medium storage format '%ls'"),
-                            aFormat);
-
-        /* reference the format permanently to prevent its unexpected
-         * uninitialization */
-        HRESULT rc = m->formatObj->addCaller();
-        AssertComRCReturnRC(rc);
-
-        /* get properties (preinsert them as keys in the map). Note that the
-         * map doesn't grow over the object life time since the set of
-         * properties is meant to be constant. */
-
-        Assert(m->properties.empty());
-
-        for (MediumFormat::PropertyList::const_iterator it =
-                m->formatObj->properties().begin();
-             it != m->formatObj->properties().end();
-             ++it)
-        {
-            m->properties.insert(std::make_pair(it->name, Bstr::Empty));
-        }
-    }
-
-    unconst(m->strFormat) = aFormat;
-
-    return S_OK;
-}
+////////////////////////////////////////////////////////////////////////////////
+//
+// Private methods
+//
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Performs extra checks if the medium can be closed and returns S_OK in
@@ -4955,6 +4904,52 @@ HRESULT Medium::unregisterWithVirtualBox(bool *pfNeedsSaveSettings)
     }
 
     return rc;
+}
+
+/**
+ * Checks that the format ID is valid and sets it on success.
+ *
+ * Note that this method will caller-reference the format object on success!
+ * This reference must be released somewhere to let the MediumFormat object be
+ * uninitialized.
+ *
+ * @note Must be called from under this object's write lock.
+ */
+HRESULT Medium::setFormat(const Utf8Str &aFormat)
+{
+    /* get the format object first */
+    {
+        SystemProperties *pSysProps = m->pVirtualBox->getSystemProperties();
+        AutoReadLock propsLock(pSysProps COMMA_LOCKVAL_SRC_POS);
+
+        unconst(m->formatObj) = pSysProps->mediumFormat(aFormat);
+        if (m->formatObj.isNull())
+            return setError(E_INVALIDARG,
+                            tr("Invalid medium storage format '%s'"),
+                            aFormat.c_str());
+
+        /* reference the format permanently to prevent its unexpected
+         * uninitialization */
+        HRESULT rc = m->formatObj->addCaller();
+        AssertComRCReturnRC(rc);
+
+        /* get properties (preinsert them as keys in the map). Note that the
+         * map doesn't grow over the object life time since the set of
+         * properties is meant to be constant. */
+
+        Assert(m->properties.empty());
+
+        for (MediumFormat::PropertyList::const_iterator it = m->formatObj->getProperties().begin();
+             it != m->formatObj->getProperties().end();
+             ++it)
+        {
+            m->properties.insert(std::make_pair(it->strName, Utf8Str::Empty));
+        }
+    }
+
+    unconst(m->strFormat) = aFormat;
+
+    return S_OK;
 }
 
 /**
@@ -5369,7 +5364,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
 
         Utf8Str format(m->strFormat);
         Utf8Str location(m->strLocationFull);
-        uint64_t capabilities = m->formatObj->capabilities();
+        uint64_t capabilities = m->formatObj->getCapabilities();
         ComAssertThrow(capabilities & (  VD_CAP_CREATE_FIXED
                                        | VD_CAP_CREATE_DYNAMIC), E_FAIL);
         Assert(m->state == MediumState_Creating);
@@ -5505,7 +5500,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
         Utf8Str targetFormat(pTarget->m->strFormat);
         Utf8Str targetLocation(pTarget->m->strLocationFull);
-        uint64_t capabilities = m->formatObj->capabilities();
+        uint64_t capabilities = m->formatObj->getCapabilities();
         ComAssertThrow(capabilities & VD_CAP_CREATE_DYNAMIC, E_FAIL);
 
         Assert(pTarget->m->state == MediumState_Creating);

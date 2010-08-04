@@ -1375,7 +1375,7 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
 
     /* we don't access non-const data members so no need to lock */
 
-    Bstr format = aFormat;
+    Utf8Str format(aFormat);
     if (format.isEmpty())
         format = getDefaultHardDiskFormat();
 
@@ -1385,7 +1385,10 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
 
     ComObjPtr<Medium> hardDisk;
     hardDisk.createObject();
-    rc = hardDisk->init(this, format.raw(), aLocation, &fNeedsSaveSettings);
+    rc = hardDisk->init(this,
+                        format,
+                        aLocation,
+                        &fNeedsSaveSettings);
 
     if (SUCCEEDED(rc))
         hardDisk.queryInterfaceTo(aHardDisk);
@@ -1501,7 +1504,8 @@ STDMETHODIMP VirtualBox::FindHardDisk(IN_BSTR aLocation,
 }
 
 /** @note Doesn't lock anything. */
-STDMETHODIMP VirtualBox::OpenDVDImage(IN_BSTR aLocation, IN_BSTR aId,
+STDMETHODIMP VirtualBox::OpenDVDImage(IN_BSTR aLocation,
+                                      IN_BSTR aId,
                                       IMedium **aDVDImage)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
@@ -1519,7 +1523,14 @@ STDMETHODIMP VirtualBox::OpenDVDImage(IN_BSTR aLocation, IN_BSTR aId,
 
     ComObjPtr<Medium> image;
     image.createObject();
-    rc = image->init(this, aLocation, Medium::OpenReadOnly, DeviceType_DVD, true, id, false, Guid());
+    rc = image->init(this,
+                     aLocation,
+                     Medium::OpenReadOnly,
+                     DeviceType_DVD,
+                     true /* aSetImageId */,
+                     id,
+                     false /* aSetParentId */,
+                     Guid());
     if (SUCCEEDED(rc))
     {
         AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -1577,7 +1588,8 @@ STDMETHODIMP VirtualBox::FindDVDImage(IN_BSTR aLocation, IMedium **aDVDImage)
 }
 
 /** @note Doesn't lock anything. */
-STDMETHODIMP VirtualBox::OpenFloppyImage(IN_BSTR aLocation, IN_BSTR aId,
+STDMETHODIMP VirtualBox::OpenFloppyImage(IN_BSTR aLocation,
+                                         IN_BSTR aId,
                                          IMedium **aFloppyImage)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
@@ -1595,7 +1607,14 @@ STDMETHODIMP VirtualBox::OpenFloppyImage(IN_BSTR aLocation, IN_BSTR aId,
 
     ComObjPtr<Medium> image;
     image.createObject();
-    rc = image->init(this, aLocation, Medium::OpenReadWrite, DeviceType_Floppy, true, id, false, Guid());
+    rc = image->init(this,
+                     aLocation,
+                     Medium::OpenReadWrite,
+                     DeviceType_Floppy,
+                     true /* aSetImageId */,
+                     id,
+                     false /* aSetParentId */,
+                     Guid());
     if (SUCCEEDED(rc))
     {
         AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -2955,7 +2974,7 @@ const ComObjPtr<PerformanceCollector>& VirtualBox::performanceCollector() const
  * with proper locking.
  * @return
  */
-const Utf8Str& VirtualBox::getDefaultMachineFolder() const
+Utf8Str VirtualBox::getDefaultMachineFolder() const
 {
     AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
     return m->pSystemProperties->m->strDefaultMachineFolder;
@@ -2966,7 +2985,7 @@ const Utf8Str& VirtualBox::getDefaultMachineFolder() const
  * with proper locking.
  * @return
  */
-const Utf8Str& VirtualBox::getDefaultHardDiskFolder() const
+Utf8Str VirtualBox::getDefaultHardDiskFolder() const
 {
     AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
     return m->pSystemProperties->m->strDefaultHardDiskFolder;
@@ -2977,7 +2996,7 @@ const Utf8Str& VirtualBox::getDefaultHardDiskFolder() const
  * with proper locking.
  * @return
  */
-const Utf8Str& VirtualBox::getDefaultHardDiskFormat() const
+Utf8Str VirtualBox::getDefaultHardDiskFormat() const
 {
     AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
     return m->pSystemProperties->m->strDefaultHardDiskFormat;

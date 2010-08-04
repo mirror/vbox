@@ -45,25 +45,25 @@ public:
 
     struct Property
     {
-        Bstr name;
-        Bstr description;
-        DataType_T type;
-        ULONG flags;
-        Bstr defaultValue;
+        Utf8Str     strName;
+        Utf8Str     strDescription;
+        DataType_T  type;
+        ULONG       flags;
+        Utf8Str     strDefaultValue;
     };
 
-    typedef std::list <Bstr> BstrList;
-    typedef std::list <Property> PropertyList;
+    typedef std::list<Utf8Str>  StrList;
+    typedef std::list<Property> PropertyList;
 
     struct Data
     {
         Data() : capabilities (0) {}
 
-        const Bstr id;
-        const Bstr name;
-        const BstrList fileExtensions;
-        const uint64_t capabilities;
-        const PropertyList properties;
+        const Utf8Str       strId;
+        const Utf8Str       strName;
+        const StrList       llFileExtensions;
+        const uint64_t      capabilities;
+        const PropertyList  llProperties;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(MediumFormat, IMediumFormat)
@@ -106,13 +106,13 @@ public:
     // (ensure there is a caller and a read lock before calling them!)
 
     /** Const, no need to lock */
-    const Bstr &id() const { return m.id; }
+    const Utf8Str& getId() const { return m.strId; }
     /** Const, no need to lock */
-    const BstrList &fileExtensions() const { return m.fileExtensions; }
+    const StrList& getFileExtensions() const { return m.llFileExtensions; }
     /** Const, no need to lock */
-    uint64_t capabilities() const { return m.capabilities; }
+    uint64_t getCapabilities() const { return m.capabilities; }
     /** Const, no need to lock */
-    const PropertyList &properties() const { return m.properties; }
+    const PropertyList& getProperties() const { return m.llProperties; }
 
 private:
 

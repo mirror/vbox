@@ -106,7 +106,7 @@ public:
     HRESULT loadSettings(const settings::SystemProperties &data);
     HRESULT saveSettings(settings::SystemProperties &data);
 
-    ComObjPtr<MediumFormat> mediumFormat(CBSTR aFormat);
+    ComObjPtr<MediumFormat> mediumFormat(const Utf8Str &aFormat);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)

@@ -1745,8 +1745,8 @@ HRESULT Host::buildDVDDrivesList(MediaList &list)
                 SUCCEEDED(rc) && it != m->hostDrives.DVDEnd(); ++it)
             {
                 ComObjPtr<Medium> hostDVDDriveObj;
-                Bstr location(it->mDevice);
-                Bstr description(it->mDescription);
+                Utf8Str location(it->mDevice);
+                Utf8Str description(it->mDescription);
                 if (SUCCEEDED(rc))
                     rc = hostDVDDriveObj.createObject();
                 if (SUCCEEDED(rc))
@@ -1818,8 +1818,8 @@ HRESULT Host::buildFloppyDrivesList(MediaList &list)
                 SUCCEEDED(rc) && it != m->hostDrives.FloppyEnd(); ++it)
             {
                 ComObjPtr<Medium> hostFloppyDriveObj;
-                Bstr location(it->mDevice);
-                Bstr description(it->mDescription);
+                Utf8Str location(it->mDevice);
+                Utf8Str description(it->mDescription);
                 if (SUCCEEDED(rc))
                     rc = hostFloppyDriveObj.createObject();
                 if (SUCCEEDED(rc))
