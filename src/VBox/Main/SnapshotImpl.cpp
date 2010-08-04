@@ -2623,7 +2623,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                         throw rc;
                     // Diff medium not backed by a file - cannot get status so
                     // be pessimistic.
-                    if (!(sourceFormat->capabilities() & MediumFormatCapabilities_File))
+                    if (!(sourceFormat->getCapabilities() & MediumFormatCapabilities_File))
                         throw rc;
                     const Utf8Str &loc = it->mpSource->getLocationFull();
                     // Source medium is still there, so merge failed early.

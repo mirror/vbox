@@ -59,11 +59,11 @@ HRESULT MediumFormat::init (const VDBACKENDINFO *aVDInfo)
     AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     /* The ID of the backend */
-    unconst(m.id) = aVDInfo->pszBackend;
+    unconst(m.strId) = aVDInfo->pszBackend;
     /* The Name of the backend */
     /* Use id for now as long as VDBACKENDINFO hasn't any extra
      * name/description field. */
-    unconst(m.name) = aVDInfo->pszBackend;
+    unconst(m.strName) = aVDInfo->pszBackend;
     /* The capabilities of the backend */
     unconst(m.capabilities) = aVDInfo->uBackendCaps;
     /* Save the supported file extensions in a list */
@@ -72,8 +72,8 @@ HRESULT MediumFormat::init (const VDBACKENDINFO *aVDInfo)
         const char *const *papsz = aVDInfo->papszFileExtensions;
         while (*papsz != NULL)
         {
-            unconst (m.fileExtensions).push_back (*papsz);
-            ++ papsz;
+            unconst(m.llFileExtensions).push_back(*papsz);
+            ++papsz;
         }
     }
     /* Save a list of configure properties */
@@ -130,13 +130,13 @@ HRESULT MediumFormat::init (const VDBACKENDINFO *aVDInfo)
             ComAssertRet(pa->uKeyFlags == ((ULONG) pa->uKeyFlags), E_FAIL);
 
             /* Create one property structure */
-            const Property prop = { Utf8Str (pa->pszKey),
-                                    Utf8Str (""),
+            const Property prop = { Utf8Str(pa->pszKey),
+                                    Utf8Str(""),
                                     dt,
                                     flags,
                                     defaultValue };
-            unconst (m.properties).push_back (prop);
-            ++ pa;
+            unconst(m.llProperties).push_back(prop);
+            ++pa;
         }
     }
 
@@ -159,11 +159,11 @@ void MediumFormat::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst (m.properties).clear();
-    unconst (m.fileExtensions).clear();
-    unconst (m.capabilities) = 0;
-    unconst (m.name).setNull();
-    unconst (m.id).setNull();
+    unconst(m.llProperties).clear();
+    unconst(m.llFileExtensions).clear();
+    unconst(m.capabilities) = 0;
+    unconst(m.strName).setNull();
+    unconst(m.strId).setNull();
 }
 
 // IMediumFormat properties
@@ -177,7 +177,7 @@ STDMETHODIMP MediumFormat::COMGETTER(Id)(BSTR *aId)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
-    m.id.cloneTo (aId);
+    m.strId.cloneTo(aId);
 
     return S_OK;
 }
@@ -190,7 +190,7 @@ STDMETHODIMP MediumFormat::COMGETTER(Name)(BSTR *aName)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
-    m.name.cloneTo (aName);
+    m.strName.cloneTo(aName);
 
     return S_OK;
 }
@@ -204,10 +204,10 @@ STDMETHODIMP MediumFormat::COMGETTER(FileExtensions)(ComSafeArrayOut(BSTR, aFile
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
-    com::SafeArray<BSTR> fileExtentions(m.fileExtensions.size());
+    com::SafeArray<BSTR> fileExtentions(m.llFileExtensions.size());
     int i = 0;
-    for (BstrList::const_iterator it = m.fileExtensions.begin();
-         it != m.fileExtensions.end();
+    for (StrList::const_iterator it = m.llFileExtensions.begin();
+         it != m.llFileExtensions.end();
          ++it, ++i)
         (*it).cloneTo(&fileExtentions[i]);
     fileExtentions.detachTo(ComSafeArrayOutArg(aFileExtensions));
@@ -235,11 +235,11 @@ STDMETHODIMP MediumFormat::COMGETTER(Capabilities)(ULONG *aCaps)
     return S_OK;
 }
 
-STDMETHODIMP MediumFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
-                                                ComSafeArrayOut (BSTR, aDescriptions),
-                                                ComSafeArrayOut (DataType_T, aTypes),
-                                                ComSafeArrayOut (ULONG, aFlags),
-                                                ComSafeArrayOut (BSTR, aDefaults))
+STDMETHODIMP MediumFormat::DescribeProperties(ComSafeArrayOut(BSTR, aNames),
+                                              ComSafeArrayOut(BSTR, aDescriptions),
+                                              ComSafeArrayOut(DataType_T, aTypes),
+                                              ComSafeArrayOut(ULONG, aFlags),
+                                              ComSafeArrayOut(BSTR, aDefaults))
 {
     CheckComArgSafeArrayNotNull(aNames);
     CheckComArgSafeArrayNotNull(aDescriptions);
@@ -251,23 +251,24 @@ STDMETHODIMP MediumFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
-    com::SafeArray<BSTR>        propertyNames(m.properties.size());
-    com::SafeArray<BSTR>        propertyDescriptions (m.properties.size());
-    com::SafeArray<DataType_T>  propertyTypes(m.properties.size());
-    com::SafeArray<ULONG>       propertyFlags(m.properties.size());
-    com::SafeArray<BSTR>        propertyDefaults(m.properties.size());
+    size_t c = m.llProperties.size();
+    com::SafeArray<BSTR>        propertyNames(c);
+    com::SafeArray<BSTR>        propertyDescriptions(c);
+    com::SafeArray<DataType_T>  propertyTypes(c);
+    com::SafeArray<ULONG>       propertyFlags(c);
+    com::SafeArray<BSTR>        propertyDefaults(c);
 
     int i = 0;
-    for (PropertyList::const_iterator it = m.properties.begin();
-         it != m.properties.end();
+    for (PropertyList::const_iterator it = m.llProperties.begin();
+         it != m.llProperties.end();
          ++it, ++i)
     {
         const Property &prop = (*it);
-        prop.name.cloneTo(&propertyNames[i]);
-        prop.description.cloneTo(&propertyDescriptions[i]);
+        prop.strName.cloneTo(&propertyNames[i]);
+        prop.strDescription.cloneTo(&propertyDescriptions[i]);
         propertyTypes[i] = prop.type;
         propertyFlags[i] = prop.flags;
-        prop.defaultValue.cloneTo(&propertyDefaults[i]);
+        prop.strDefaultValue.cloneTo(&propertyDefaults[i]);
     }
 
     propertyNames.detachTo(ComSafeArrayOutArg(aNames));
