@@ -927,13 +927,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->dac.node.name = "DAC3";
         dac_init:
             memset(pNode->dac.B_params, 0, AMPLIFIER_SIZE);
-            //** @todo r=michaln: 0x2 in the low bits means 3 channels, not 2??
-            pNode->dac.u32A_param = RT_BIT(14)|(0x1 << 4)|0x2; /* 441000Hz/16bit/2ch */
+            pNode->dac.u32A_param = RT_BIT(14)|(0x1 << 4)|0x1; /* 441000Hz/16bit/2ch */
 
             AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) = 0x7F | RT_BIT(7);
             AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) = 0x7F | RT_BIT(7);
 
-            pNode->dac.node.au32F00_param[9] = (0xd << 16) | RT_BIT(11) |  RT_BIT(10) | RT_BIT(2) | RT_BIT(0);
+            pNode->dac.node.au32F00_param[9] = (0xf << 16) | RT_BIT(11) |  RT_BIT(10) | RT_BIT(2) | RT_BIT(0);
             pNode->dac.node.au32F00_param[5] = (0x3 << 4) | 0x3;
             pNode->dac.u32F0c_param = 0;
             pNode->dac.u32F05_param = 0x3 << 4 | 0x3; /* PS-Act: D3, Set: D3  */
@@ -946,8 +945,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->adc.node.name = "ADC1";
             pNode->node.au8F02_param[0] = 0x18;
         adc_init:
-            //** @todo r=michaln: Shouldn't that be (0x1 << 4)? Same problem with no. of channels.
-            pNode->adc.u32A_param = RT_BIT(14)|(0x1 << 3)|0x2; /* 441000Hz/16bit/2ch */
+            pNode->adc.u32A_param = RT_BIT(14)|(0x1 << 3)|0x1; /* 441000Hz/16bit/2ch */
             pNode->adc.node.au32F00_param[0xE] = RT_BIT(0);
             pNode->adc.u32F03_param = RT_BIT(0);
             pNode->adc.u32F05_param = 0x3 << 4 | 0x3; /* PS-Act: D3 Set: D3 */
@@ -979,7 +977,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             *(uint32_t *)pNode->node.au8F02_param = 0x2;
             pNode->port.u32F07_param = RT_BIT(6);
             pNode->port.u32F08_param = 0;
-            pNode->port.u32F09_param = RT_BIT(31)|RT_BIT(30); /* 39.2 kOm */
+            pNode->port.u32F09_param = RT_BIT(31)|0x9920; /* 39.2 kOm */
             pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x20, 0x40, 0x21, 0x02);
             goto port_init;
         case 0xB:
@@ -1175,54 +1173,11 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
     LogRel(("HDAcodec: callback for %x wasn't found\n", CODEC_VERBDATA(cmd)));
     return rc;
 }
-#define CODEC_FMT_BASE_FRQ_SHIFT (14)
-#define CODEC_FMT_BASE_FRQ_MASK (RT_BIT(CODEC_FMT_BASE_FRQ_SHIFT))
-#define CODEC_FMT_DIV_FRQ_SHIFT 8
-#define CODEC_FMT_DIV_FRQ_MASK ((0x7) << CODEC_FMT_DIV_FRQ_SHIFT)
-#define CODEC_FMT_MUL_FRQ_SHIFT 11
-#define CODEC_FMT_MUL_FRQ_MASK ((0x7) << CODEC_FMT_MUL_FRQ_SHIFT)
-#define CODEC_FMT_BASE_FRQ(fmt) ((fmt & CODEC_FMT_BASE_FRQ_MASK) >> CODEC_FMT_BASE_FRQ_SHIFT)
-#define CODEC_FMT_DIV_FRQ(fmt) ((fmt & CODEC_FMT_DIV_FRQ_MASK) >> CODEC_FMT_DIV_FRQ_SHIFT)
-#define CODEC_FMT_MUL_FRQ(fmt) ((fmt & CODEC_FMT_MUL_FRQ_MASK) >> CODEC_FMT_MUL_FRQ_SHIFT)
-#define CODEC_DAC_CHANELS(reg) (1 << ((reg) & 0x3))
-static int codecFrequencyCalculate(uint32_t dacFmt)
-{
-    uint32_t baseFrq = CODEC_FMT_BASE_FRQ(dacFmt);
-    uint32_t divFrq = CODEC_FMT_DIV_FRQ(dacFmt);
-    uint32_t multFrq = CODEC_FMT_MUL_FRQ(dacFmt);
-    switch (baseFrq)
-    {
-        case 0: baseFrq = 48000; break;
-        case 0x1: baseFrq = 44100; break;
-        default:
-            AssertMsgFailed(("Unsupported Freq."));
-    }
-    switch(multFrq)
-    {
-        case 0: multFrq = 1; break;
-        case 0x1: multFrq = 2; break;
-        case 0x3: multFrq = 4; break;
-        default:
-            AssertMsgFailed(("Unsupported Freq. multiplier"));
-    }
-    switch(divFrq)
-    {
-        case 0: divFrq = 1; break;
-        case 0x1: divFrq = 2; break;
-        case 0x2: divFrq = 3; break;
-        case 0x3: divFrq = 4; break;
-        case 0x4: divFrq = 5; break;
-        case 0x5: divFrq = 6; break;
-        case 0x6: divFrq = 7; break;
-        case 0x7: divFrq = 8; break;
-    }
-    return baseFrq * multFrq / divFrq;
-}
+
 static int codec_dac_to_aud(CODECState *pState, int dacnum, audsettings_t *paud)
 {
-    uint32_t dacfmt = pState->pNodes[dacnum].dac.u32A_param;
-    paud->freq = 44100;//codecFrequencyCalculate(dacfmt);
-    paud->nchannels = 2;//CODEC_DAC_CHANELS(dacfmt);
+    paud->freq = 44100;
+    paud->nchannels = 2;
     paud->fmt = AUD_FMT_U16;
 
     paud->endianness = 0;
