@@ -2030,7 +2030,7 @@ static int solarisWalkDeviceNodeForDVD(di_node_t Node, void *pvArg)
                         {
                             dev_t Dev = di_minor_devt(Minor);
                             if (   Major != (int)major(Dev)
-                                || di_minor_spectype(Minor) == S_IFCHR
+                                || di_minor_spectype(Minor) == S_IFBLK
                                 || di_minor_type(Minor) != DDM_MINOR)
                             {
                                 continue;
