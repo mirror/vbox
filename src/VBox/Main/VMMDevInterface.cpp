@@ -228,7 +228,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
          */
         guest->setAdditionsInfo(Bstr(), guestInfo->osType); /* Clear interface version + OS type. */
         guest->setAdditionsInfo2(Bstr(), Bstr()); /* Clear Guest Additions version. */
-        guest->setAdditionsStatus(VBoxGuestStatusFacility_Unknown,
+        guest->setAdditionsStatus(VBoxGuestStatusFacility_All,
                                   VBoxGuestStatusCurrent_Disabled,
                                   0); /* Flags; not used. */
         pDrv->pVMMDev->getParent()->onAdditionsStateChange();
@@ -268,19 +268,10 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, const
         guest->setAdditionsInfo2(Bstr(version), Bstr(guestInfo->szName));
 
         /*
-         * Tell the console interface about the event
-         * so that it can notify its consumers.
+         * No need to tell the console interface about the update;
+         * vmmdevUpdateGuestInfo takes care of that when called as the
+         * last event in the chain.
          */
-        pDrv->pVMMDev->getParent()->onAdditionsStateChange();
-    }
-    else
-    {
-        /*
-         * The guest additions was disabled because of a reset
-         * or driver unload.
-         */
-        guest->setAdditionsInfo2(Bstr(), Bstr());
-        pDrv->pVMMDev->getParent()->onAdditionsStateChange();
     }
 }
 
@@ -313,7 +304,6 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
      * so that it can notify its consumers.
      */
     pDrv->pVMMDev->getParent()->onAdditionsStateChange();
-
 }
 
 /**
@@ -339,7 +329,6 @@ DECLCALLBACK(void) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface
         pMouse->onVMMDevNeedsHostChange(!!(newCapabilities & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR));
     }
 }
-
 
 /**
  * Update the pointer shape or visibility.

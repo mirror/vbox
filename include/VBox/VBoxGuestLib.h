@@ -378,7 +378,9 @@ DECLVBGL(RTCCPHYS) VbglPhysHeapGetPhysAddr (void *p);
 DECLVBGL(void) VbglPhysHeapFree (void *p);
 
 DECLVBGL(int) VbglQueryVMMDevMemory (VMMDevMemory **ppVMMDevMemory);
-DECLR0VBGL(bool)    VbglR0CanUsePhysPageList(void);
+DECLR0VBGL(bool) VbglR0CanUsePhysPageList(void);
+
+DECLR0VBGL(int) VbglR0MiscReportGuestInfo(VBOXOSTYPE enmOSType);
 
 #endif /* IN_RING0 && !IN_RING0_AGNOSTIC */
 /** @} */

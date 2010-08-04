@@ -110,7 +110,7 @@ static NTSTATUS sendIrpSynchronously(PDEVICE_OBJECT pDevObj, PIRP pIrp, BOOLEAN 
  */
 NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    PVBOXGUESTDEVEXT    pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
+    PVBOXGUESTDEVEXT   pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
     PIO_STACK_LOCATION pStack  = IoGetCurrentIrpStackLocation(pIrp);
     NTSTATUS rc = STATUS_SUCCESS;
 
@@ -207,15 +207,6 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                     if (NT_SUCCESS(rc))
                     {
-                        rc = hlpVBoxReportGuestInfo (pDevExt);
-                        if (!NT_SUCCESS(rc))
-                        {
-                            dprintf(("VBoxGuest::START_DEVICE: could not report information to host, rc = %d\n", rc));
-                        }
-                    }
-
-                    if (NT_SUCCESS(rc))
-                    {
                         // register DPC and ISR
                         dprintf(("VBoxGuest::VBoxGuestPnp: initializing DPC...\n"));
                         IoInitializeDpcRequest(pDevExt->deviceObject, VBoxGuestDpcHandler);
@@ -249,7 +240,13 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 pDevExt->HGCMWaitTimeout.QuadPart  = 250;
                 pDevExt->HGCMWaitTimeout.QuadPart *= -10000;     /* relative in 100ns units */
 
-                VBoxInitMemBalloon(pDevExt);
+                int vrc = VBoxInitMemBalloon(pDevExt);
+                if (RT_SUCCESS(vrc))
+                {
+                    vrc = VbglR0MiscReportGuestInfo(hlpVBoxWinVersionToOSType(winVersion));
+                    if (RT_FAILURE(vrc))
+                        dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not report information to host, rc = %d\n", rc));
+                }
 
                 // ready to rumble!
                 dprintf(("VBoxGuest::VBoxGuestPnp: device is ready!\n"));

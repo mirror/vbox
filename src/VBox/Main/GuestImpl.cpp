@@ -1440,7 +1440,8 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
 
 /**
  * Sets the general Guest Additions information like
- * API (interface) version and OS type.
+ * API (interface) version and OS type.  Gets called by
+ * vmmdevUpdateGuestInfo.
  *
  * @param aInterfaceVersion
  * @param aOsType
@@ -1459,10 +1460,19 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
 
     /*
      * Older Additions rely on the Additions API version whether they
-     * are assumed to be active or not. Newer additions will disable
-     * this immediately.
+     * are assumed to be active or not.  Since newer Additions do report
+     * the Additions version *before* calling this function (by calling
+     * VMMDevReportGuestInfo2, VMMDevReportGuestStatus, VMMDevReportGuestInfo,
+     * in that order) we can tell apart old and new Additions here. Old
+     * Additions never would set VMMDevReportGuestInfo2 (which set mData.mAdditionsVersion)
+     * so they just rely on the aInterfaceVersion string (which gets set by
+     * VMMDevReportGuestInfo).
+     *
+     * So only mark the Additions as being active when we don't have the Additions
+     * version set.
      */
-    mData.mAdditionsActive = !aInterfaceVersion.isEmpty();
+    if (mData.mAdditionsVersion.isEmpty())
+        mData.mAdditionsActive = !aInterfaceVersion.isEmpty();
     /*
      * Older Additions didn't have this finer grained capability bit,
      * so enable it by default.  Newer Additions will disable it immediately
@@ -1481,6 +1491,7 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
 
 /**
  * Sets the Guest Additions version information details.
+ * Gets called by vmmdevUpdateGuestInfo2.
  *
  * @param aAdditionsVersion
  * @param aVersionName
@@ -1500,6 +1511,7 @@ void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName)
 
 /**
  * Sets the status of a certain Guest Additions facility.
+ * Gets called by vmmdevUpdateGuestStatus.
  *
  * @param Facility
  * @param Status

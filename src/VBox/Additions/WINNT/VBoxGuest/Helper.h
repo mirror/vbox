@@ -2,7 +2,7 @@
  *
  * VBoxGuest -- VirtualBox Win32 guest support driver
  *
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,12 +43,12 @@ NTSTATUS hlpVBoxMapVMMDevMemory (PVBOXGUESTDEVEXT pDevExt);
 void hlpVBoxUnmapVMMDevMemory (PVBOXGUESTDEVEXT pDevExt);
 
 /**
- * Helper to report the guest information to host.
+ * Helper for mapping the Windows version to the OS type understood by the host.
  *
- * @param pDevExt   VMMDev device extension
- * @return NT status code
+ * @return The OS type.
+ * @param winVer   Windows version to translate.
  */
-NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt);
+VBOXOSTYPE hlpVBoxWinVersionToOSType (winVersion_t winVer);
 
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
 /**

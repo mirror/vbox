@@ -261,7 +261,7 @@ VOID     VBoxGuestDpcHandler(PKDPC dpc, PDEVICE_OBJECT pDevObj,
 BOOLEAN  VBoxGuestIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);
 NTSTATUS createThreads(PVBOXGUESTDEVEXT pDevExt);
 VOID     unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt);
-void     VBoxInitMemBalloon(PVBOXGUESTDEVEXT pDevExt);
+int      VBoxInitMemBalloon(PVBOXGUESTDEVEXT pDevExt);
 void     VBoxCleanupMemBalloon(PVBOXGUESTDEVEXT pDevExt);
 }
 

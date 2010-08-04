@@ -190,106 +190,33 @@ void hlpVBoxUnmapVMMDevMemory (PVBOXGUESTDEVEXT pDevExt)
     pDevExt->memoryLength = 0;
 }
 
-/** @todo Maybe we should drop this routine entirely later because we detecting
- *        the running OS via VBoxService in ring 3 using guest properties since a while.
- *
- *  @todo Consider of using vboxGuestInitReportGuestInfo in the ..\common\Helper.cpp
- *        module to have a common base and less redundant code.
- */
-NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
+VBOXOSTYPE hlpVBoxWinVersionToOSType (winVersion_t winVer)
 {
-    VMMDevReportGuestInfo *pReq = NULL;
-    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&pReq, sizeof (VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
-    dprintf(("hlpVBoxReportGuestInfo: VbglGRAlloc rc = %d\n", rc));
-    if (RT_SUCCESS(rc))
+    switch (winVer)
     {
-        pReq->guestInfo.interfaceVersion = VMMDEV_VERSION;
+        case WINNT4:
+            return VBOXOSTYPE_WinNT4;
 
-        /* we've already determined the Windows product before */
-        switch (winVersion)
-        {
-            case WINNT4:
-                pReq->guestInfo.osType = VBOXOSTYPE_WinNT4;
-                break;
-            case WIN2K:
-                pReq->guestInfo.osType = VBOXOSTYPE_Win2k;
-                break;
-            case WINXP:
-                pReq->guestInfo.osType = VBOXOSTYPE_WinXP;
-                break;
-            case WIN2K3:
-                pReq->guestInfo.osType = VBOXOSTYPE_Win2k3;
-                break;
-            case WINVISTA:
-                pReq->guestInfo.osType = VBOXOSTYPE_WinVista;
-                break;
-            case WIN7:
-                pReq->guestInfo.osType = VBOXOSTYPE_Win7;
-                break;
-            default:
-                /* we don't know, therefore NT family */
-                pReq->guestInfo.osType = VBOXOSTYPE_WinNT;
-                break;
-        }
+        case WIN2K:
+            return VBOXOSTYPE_Win2k;
 
-        /** @todo registry lookup for additional information */
+        case WINXP:
+            return VBOXOSTYPE_WinXP;
 
-        rc = VbglGRPerform (&pReq->header);
-        if (RT_FAILURE(rc))
-        {
-            dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: Error reporting guest info to VMMDev. "
-                     "rc = %Rrc\n", rc));
-        }
+        case WIN2K3:
+            return VBOXOSTYPE_Win2k3;
 
-        VbglGRFree (&pReq->header);
+        case WINVISTA:
+            return VBOXOSTYPE_WinVista;
+
+        case WIN7:
+            return VBOXOSTYPE_Win7;
+
+        default:
+            break;
     }
 
-    VMMDevReportGuestInfo2 *pReq2 = NULL;
-    if (RT_SUCCESS(rc))
-        rc = VbglGRAlloc ((VMMDevRequestHeader **)&pReq2, sizeof (VMMDevReportGuestInfo2), VMMDevReq_ReportGuestInfo2);
-    dprintf(("hlpVBoxReportGuestInfo2: VbglGRAlloc rc = %d\n", rc));
-
-    if (RT_SUCCESS(rc))
-    {
-        pReq2->guestInfo.additionsMajor = VBOX_VERSION_MAJOR;
-        pReq2->guestInfo.additionsMinor = VBOX_VERSION_MINOR;
-        pReq2->guestInfo.additionsBuild = VBOX_VERSION_BUILD;
-        pReq2->guestInfo.additionsRevision = VBOX_SVN_REV;
-        pReq2->guestInfo.additionsFeatures = 0;
-        RTStrCopy(pReq2->guestInfo.szName, sizeof(pReq2->guestInfo.szName), VBOX_VERSION_STRING);
-
-        rc = VbglGRPerform (&pReq2->header);
-        if (RT_FAILURE(rc))
-        {
-            dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: Error reporting guest info to VMMDev. "
-                     "rc = %Rrc\n", rc));
-        }
-        if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
-            rc = VINF_SUCCESS;
-        VbglGRFree (&pReq2->header);
-    }
-
-    /*
-     * Report guest status to host.  Because the host set the "Guest Additions active" flag as soon
-     * as he received the VMMDevReportGuestInfo above to make sure all is compatible with older Guest
-     * Additions we now have to disable that flag again here (too early, VBoxService and friends need
-     * to start up first).
-     */
-    VMMDevReportGuestStatus *pReq3;
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq3, sizeof(*pReq3), VMMDevReq_ReportGuestStatus);
-    if (RT_SUCCESS(rc))
-    {
-        pReq3->guestStatus.facility = VBoxGuestStatusFacility_VBoxGuestDriver;
-        pReq3->guestStatus.status = VBoxGuestStatusCurrent_Active; /** @todo Are we actually *really* active at this point? */
-        pReq3->guestStatus.flags = 0;
-        rc = VbglGRPerform(&pReq3->header);
-        if (RT_FAILURE(rc))
-            dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: Reporting guest status failed with rc=%Rrc\n", rc));
-        if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
-            rc = VINF_SUCCESS;
-        VbglGRFree(&pReq3->header);
-    }
-
-    return RT_FAILURE(rc) ? STATUS_UNSUCCESSFUL : STATUS_SUCCESS;
+    /* We don't know, therefore NT family. */
+    return VBOXOSTYPE_WinNT;
 }
 
