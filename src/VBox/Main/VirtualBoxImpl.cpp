@@ -3184,12 +3184,10 @@ HRESULT VirtualBox::saveSettings()
 
     try
     {
-        // lock the lists while we're here
-        AutoReadLock machinesLock(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-
         // machines
         settings::MachinesRegistry machinesTemp;
         {
+            AutoReadLock machinesLock(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
             for (MachinesOList::iterator it = m->allMachines.begin();
                  it != m->allMachines.end();
                  ++it)
@@ -3273,6 +3271,8 @@ HRESULT VirtualBox::saveSettings()
             floppiesTemp.push_back(med);
         }
 
+        mediaLock.release();
+
         settings::DHCPServersList dhcpServersTemp;
         {
             AutoReadLock dhcpLock(m->allDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -3296,13 +3296,9 @@ HRESULT VirtualBox::saveSettings()
 
         // leave extra data alone, it's still in the config file
 
-        /* host data (USB filters), will take host lock. */
-        {
-            mediaLock.release();
-            machinesLock.release();
-            rc = m->pHost->saveSettings(m->pMainConfigFile->host);
-            if (FAILED(rc)) throw rc;
-        }
+        // host data (USB filters)
+        rc = m->pHost->saveSettings(m->pMainConfigFile->host);
+        if (FAILED(rc)) throw rc;
 
         rc = m->pSystemProperties->saveSettings(m->pMainConfigFile->systemProperties);
         if (FAILED(rc)) throw rc;
