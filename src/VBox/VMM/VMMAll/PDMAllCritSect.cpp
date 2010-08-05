@@ -36,6 +36,9 @@
 # include <iprt/lockvalidator.h>
 # include <iprt/semaphore.h>
 #endif
+#if defined(IN_RING3) || defined(IN_RING0)
+# include <iprt/thread.h>
+#endif
 
 
 /*******************************************************************************
