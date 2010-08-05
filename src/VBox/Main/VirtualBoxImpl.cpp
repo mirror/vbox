@@ -3296,9 +3296,13 @@ HRESULT VirtualBox::saveSettings()
 
         // leave extra data alone, it's still in the config file
 
-        /* host data (USB filters) */
-        rc = m->pHost->saveSettings(m->pMainConfigFile->host);
-        if (FAILED(rc)) throw rc;
+        /* host data (USB filters), will take host lock. */
+        {
+            mediaLock.release();
+            machinesLock.release();
+            rc = m->pHost->saveSettings(m->pMainConfigFile->host);
+            if (FAILED(rc)) throw rc;
+        }
 
         rc = m->pSystemProperties->saveSettings(m->pMainConfigFile->systemProperties);
         if (FAILED(rc)) throw rc;
