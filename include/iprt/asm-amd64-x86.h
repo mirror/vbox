@@ -916,7 +916,7 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
                           "cpuid\n\t"
                           "xchgl %%ebx,%1\n\t"
                           : "=a" (uSpill),
-                            "=r" (xBX)
+                            "=rm" (xBX)
                           : "0" (1)
                           : "ecx", "edx");
 #  else
