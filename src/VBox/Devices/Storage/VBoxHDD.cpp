@@ -1489,7 +1489,6 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
     size_t cbFill = 0;
     size_t cbWriteCopy = 0;
     size_t cbReadImage = 0;
-    int rc;
 
     LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
 
