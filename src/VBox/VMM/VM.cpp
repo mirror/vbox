@@ -578,9 +578,6 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
             pVM->aCpus[i].hNativeThread     = pUVM->aCpus[i].vm.s.NativeThreadEMT;
             Assert(pVM->aCpus[i].hNativeThread != NIL_RTNATIVETHREAD);
 
-            /* Initialized on the fly by page fusion. */
-            pVM->aCpus[i].hNativeThreadR0   = NIL_RTNATIVETHREAD;
-
             pUVM->aCpus[i].pVCpu            = &pVM->aCpus[i];
             pUVM->aCpus[i].pVM              = pVM;
         }
