@@ -28,6 +28,7 @@ DIR_CONF="${BASEDIR}/platform/i86pc/kernel/drv"
 DIR_MOD_32="${BASEDIR}/platform/i86pc/kernel/drv"
 DIR_MOD_64=$DIR_MOD_32/amd64
 
+# Default paths, these will be overridden by 'which' if they don't exist
 BIN_ADDDRV=/usr/sbin/add_drv
 BIN_REMDRV=/usr/sbin/rem_drv
 BIN_MODLOAD=/usr/sbin/modload
