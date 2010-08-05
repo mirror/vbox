@@ -637,64 +637,27 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /* = QString::null */)
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
-    if (vboxProblem().confirmMachineDeletion (item->machine()))
+    int rc = vboxProblem().confirmMachineDeletion(item->machine());
+    if (rc != QIMessageBox::Cancel)
     {
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        QString id = item->id();
-        bool ok = false;
-        if (item->accessible())
+        CMachine machine = item->machine();
+        QVector<CMedium> aMedia = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);          //  @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
+        if (machine.isOk() && item->accessible())
         {
-            /* Open a direct session to modify VM settings */
-            CSession session = vboxGlobal().openSession (id);
-            if (session.isNull())
-                return;
-            CMachine machine = session.GetMachine();
-            /* Detach all attached Hard Disks */
-            CMediumAttachmentVector vec = machine.GetMediumAttachments();
-            for (int i = 0; i < vec.size(); ++ i)
+            /* If not Yes, we don't want touch the harddisks */
+            if (rc == QIMessageBox::No)
+                aMedia.clear();
+            /* delete machine settings */
+            CProgress progress = machine.Delete(aMedia);
+            if (machine.isOk())
             {
-                CMediumAttachment hda = vec [i];
-                const QString ctlName = hda.GetController();
-
-                machine.DetachDevice(ctlName, hda.GetPort(), hda.GetDevice());
-                if (!machine.isOk())
-                {
-                    CStorageController ctl = machine.GetStorageControllerByName(ctlName);
-                    vboxProblem().cannotDetachDevice (this, machine, VBoxDefs::MediumType_HardDisk,
-                        vboxGlobal().getMedium (CMedium (hda.GetMedium())).location(),
-                        ctl.GetBus(), hda.GetPort(), hda.GetDevice());
-                }
+                vboxProblem().showModalProgressDialog(progress, item->name(), 0, 0);
+                if (progress.GetResultCode() != 0)
+                    vboxProblem().cannotDeleteMachine(machine);
             }
-            /* Commit changes */
-            machine.SaveSettings();
-            if (!machine.isOk())
-                vboxProblem().cannotSaveMachineSettings (machine);
-            else
-                ok = true;
-            session.UnlockMachine();
         }
-        else
-            ok = true;
-
-        if (ok)
-        {
-            CMachine machine = item->machine();
-            QVector<CMedium> aMedia = machine.Unregister(KCleanupMode_UnregisterOnly);          //  @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
-            if (machine.isOk() && item->accessible())
-            {
-                /* delete machine settings */
-                CProgress progress = machine.Delete(aMedia);
-                progress.WaitForCompletion(-1);         // @todo do this nicely with a progress dialog, this can delete many files!
-
-                /* remove the item shortly: cmachine it refers to is no longer valid! */
-                int row = mVMModel->rowById (item->id());
-                mVMModel->removeItem (item);
-                delete item;
-                mVMListView->ensureSomeRowSelected (row);
-            }
-            if (!machine.isOk())
-                vboxProblem().cannotDeleteMachine(machine);
-        }
+        if (!machine.isOk())
+            vboxProblem().cannotDeleteMachine(machine);
     }
 }
 
@@ -1204,7 +1167,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
 
         /* enable/disable modify actions */
         mVmConfigAction->setEnabled (modifyEnabled);
-        mVmDeleteAction->setEnabled (modifyEnabled);
+        mVmDeleteAction->setEnabled (!running);
         mVmDiscardAction->setEnabled (state == KMachineState_Saved && !running);
         mVmPauseAction->setEnabled (   state == KMachineState_Running
                                     || state == KMachineState_Teleporting
@@ -1626,7 +1589,7 @@ void VBoxTrayIcon::showSubMenu ()
         mVmConfigAction->setEnabled (modifyEnabled);
 
         /* Delete */
-        mVmDeleteAction->setEnabled (modifyEnabled);
+        mVmDeleteAction->setEnabled (!running);
 
         /* Discard */
         mVmDiscardAction->setEnabled (s == KMachineState_Saved && !running);

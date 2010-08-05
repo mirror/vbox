@@ -235,7 +235,7 @@ public:
     int cannotEnterFullscreenMode();
     int cannotEnterSeamlessMode();
 
-    bool confirmMachineDeletion (const CMachine &machine);
+    int confirmMachineDeletion(const CMachine &machine);
     bool confirmDiscardSavedState (const CMachine &machine);
 
     bool confirmReleaseMedium (QWidget *aParent, const VBoxMedium &aMedium,
