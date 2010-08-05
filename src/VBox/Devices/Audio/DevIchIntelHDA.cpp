@@ -1172,8 +1172,7 @@ static uint32_t write_audio(INTELHDLinkState *pState, int avail, bool *fStop)
         }
         temp    -= copied;
         written += copied;
-        //** @todo r=michaln: Should that be '+= written' or '+= copied?'
-        pState->u32CviPos += written;
+        pState->u32CviPos += copied;
     }
     return written;
 }
@@ -1199,8 +1198,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
             if (   !(SDCTL(pState, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))
                 || avail == 0)
                 return;
-            //** @todo r=michaln: Why is that 'adc' and not 'dac'? Why is the mask 0x5 and not 0xf?
-            SDCTL(pState, 4) |= ((pState->Codec.pNodes[2].adc.u32F06_param & (0x5 << 4)) >> 4) << 20;
+            SDCTL(pState, 4) |= ((pState->Codec.pNodes[2].dac.u32F06_param & (0xf << 4)) >> 4) << 20;
             fetch_bd(pState);
             while(   avail
                   && !fStop)
@@ -1236,7 +1234,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
                             if (pState->u32Cvi == SDLVI(pState, 4) + 1)
                                 pState->u32Cvi = 0;
                         }
-                     }
+                    }
                 }
                 fetch_bd(pState);
             }
