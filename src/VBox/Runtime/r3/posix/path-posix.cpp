@@ -660,13 +660,8 @@ RTR3DECL(int) RTPathSetMode(const char *pszPath, RTFMODE fMode)
         rc = rtPathToNative(&pszNativePath, pszPath, NULL);
         if (RT_SUCCESS(rc))
         {
-            char szRealPath[RTPATH_MAX];
-            rc = RTPathReal(pszPath, szRealPath, sizeof(szRealPath));
-            if (RT_SUCCESS(rc))
-            {
-                if (chmod(szRealPath, fMode & RTFS_UNIX_MASK) < 0)
-                    rc = RTErrConvertFromErrno(errno);
-            }
+            if (chmod(pszNativePath, fMode & RTFS_UNIX_MASK) != 0)
+                rc = RTErrConvertFromErrno(errno);
             rtPathFreeNative(pszNativePath, pszPath);
         }
     }
