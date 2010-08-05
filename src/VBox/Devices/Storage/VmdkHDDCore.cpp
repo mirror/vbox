@@ -4826,7 +4826,7 @@ static int vmdkAllocGrainAsyncGTUpdate(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     int rc = VINF_SUCCESS;
     uint32_t aGTDataTmp[VMDK_GT_CACHELINE_SIZE];
     uint32_t uGTHash, uGTBlockIndex;
-    uint64_t uGDIndex, uGTSector, uRGTSector, uGTBlock;
+    uint64_t uGTSector, uRGTSector, uGTBlock;
     uint64_t uSector = pGrainAlloc->uSector;
     PVMDKGTCACHEENTRY pGTCacheEntry;
 
@@ -4951,9 +4951,8 @@ static int vmdkAllocGrainAsync(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
                                PVDIOCTX pIoCtx, uint64_t uSector,
                                uint64_t cbWrite)
 {
-    uint64_t uGDIndex, uGTSector, uRGTSector, uGTBlock;
+    uint64_t uGDIndex, uGTSector, uRGTSector;
     uint64_t cbExtentSize;
-    uint32_t aGTDataTmp[VMDK_GT_CACHELINE_SIZE];
     PVMDKGRAINALLOCASYNC pGrainAlloc = NULL;
     PVMDKIMAGE pImage = pExtent->pImage;
     int rc;
