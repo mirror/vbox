@@ -29,7 +29,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/assert.h>
-#include <iprt/mem.h>
+#ifndef VBOX_VBGLR3_XFREE86
+# include <iprt/mem.h>
+#endif
 #include <iprt/string.h>
 #include <VBox/log.h>
 #include <VBox/HostServices/GuestPropertySvc.h>  /* For Save and RetrieveVideoMode */
@@ -42,6 +44,9 @@
 extern "C" void* xf86memcpy(void*,const void*,xf86size_t);
 # undef memcpy
 # define memcpy xf86memcpy
+extern "C" void* xf86memset(const void*,int,xf86size_t);
+# undef memset
+# define memset xf86memset
 #endif /* VBOX_VBGLR3_XFREE86 */
 
 #define VIDEO_PROP_PREFIX "/VirtualBox/GuestAdd/Vbgl/Video/"

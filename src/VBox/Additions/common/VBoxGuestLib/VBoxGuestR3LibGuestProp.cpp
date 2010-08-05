@@ -29,9 +29,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
-#include <iprt/mem.h>
+#ifndef VBOX_VBGLR3_XFREE86
+# include <iprt/mem.h>
+#endif
 #include <iprt/assert.h>
-#include <iprt/cpp/autores.h>
 #include <iprt/stdarg.h>
 #include <VBox/log.h>
 #include <VBox/HostServices/GuestPropertySvc.h>
