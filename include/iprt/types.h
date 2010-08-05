@@ -1574,11 +1574,17 @@ typedef struct RTZIPDECOMP *PRTZIPDECOMP;
 /**
  * Unicode Code Point.
  */
-typedef uint32_t        RTUNICP;
+typedef uint32_t            RTUNICP;
 /** Pointer to an Unicode Code Point. */
-typedef RTUNICP        *PRTUNICP;
+typedef RTUNICP            *PRTUNICP;
 /** Pointer to an Unicode Code Point. */
-typedef const RTUNICP  *PCRTUNICP;
+typedef const RTUNICP      *PCRTUNICP;
+/** Max value a RTUNICP type can hold. */
+#define RTUNICP_MAX         ( ~(RTUNICP)0 )
+/** Invalid code point.
+ * This is returned when encountered invalid encodings or invalid
+ * unicode code points. */
+#define RTUNICP_INVALID     ( UINT32_C(0xfffffffe) )
 
 
 /**
