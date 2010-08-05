@@ -274,6 +274,7 @@ ifdef VBOX_WITH_TESTCASES
      TESTING  += $(PATH_vboxvideo_drv)/tstvboxvideo68.run
      OTHERS += $(PATH_vboxvideo_drv)/tstvboxvideo68.run
 $$(PATH_vboxvideo_drv)/tstvboxvideo68.run: $$(INSTARGET_vboxvideo_drv)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv) $(OUR_PATH_VBOXVIDEO)/undefined_68 --static
 	$(QUIET)$(APPEND) -t "$@" "done"
@@ -282,6 +283,7 @@ $$(PATH_vboxvideo_drv)/tstvboxvideo68.run: $$(INSTARGET_vboxvideo_drv)
      TESTING  += $(PATH_vboxvideo_drv_70)/tstvboxvideo70.run
      OTHERS += $(PATH_vboxvideo_drv_70)/tstvboxvideo70.run
 $$(PATH_vboxvideo_drv_70)/tstvboxvideo70.run: $$(INSTARGET_vboxvideo_drv_70)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_70) $(OUR_PATH_VBOXVIDEO)/undefined_70
 	$(QUIET)$(APPEND) -t "$@" "done"
@@ -289,6 +291,7 @@ $$(PATH_vboxvideo_drv_70)/tstvboxvideo70.run: $$(INSTARGET_vboxvideo_drv_70)
      TESTING  += $(PATH_vboxvideo_drv_71)/tstvboxvideo71.run
      OTHERS += $(PATH_vboxvideo_drv_71)/tstvboxvideo71.run
 $$(PATH_vboxvideo_drv_71)/tstvboxvideo71.run: $$(INSTARGET_vboxvideo_drv_71)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_71) $(OUR_PATH_VBOXVIDEO)/undefined_70
 	$(QUIET)$(APPEND) -t "$@" "done"
@@ -296,6 +299,7 @@ $$(PATH_vboxvideo_drv_71)/tstvboxvideo71.run: $$(INSTARGET_vboxvideo_drv_71)
      TESTING  += $(PATH_vboxvideo_drv_13)/tstvboxvideo13.run
      OTHERS += $(PATH_vboxvideo_drv_13)/tstvboxvideo13.run
 $$(PATH_vboxvideo_drv_13)/tstvboxvideo13.run: $$(INSTARGET_vboxvideo_drv_13)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_13) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
@@ -303,6 +307,7 @@ $$(PATH_vboxvideo_drv_13)/tstvboxvideo13.run: $$(INSTARGET_vboxvideo_drv_13)
      TESTING  += $(PATH_vboxvideo_drv_14)/tstvboxvideo14.run
      OTHERS += $(PATH_vboxvideo_drv_14)/tstvboxvideo14.run
 $$(PATH_vboxvideo_drv_14)/tstvboxvideo14.run: $$(INSTARGET_vboxvideo_drv_14)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_14) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
@@ -310,6 +315,7 @@ $$(PATH_vboxvideo_drv_14)/tstvboxvideo14.run: $$(INSTARGET_vboxvideo_drv_14)
      TESTING  += $(PATH_vboxvideo_drv_15)/tstvboxvideo15.run
      OTHERS += $(PATH_vboxvideo_drv_15)/tstvboxvideo15.run
 $$(PATH_vboxvideo_drv_15)/tstvboxvideo15.run: $$(INSTARGET_vboxvideo_drv_15)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_15) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
@@ -317,6 +323,7 @@ $$(PATH_vboxvideo_drv_15)/tstvboxvideo15.run: $$(INSTARGET_vboxvideo_drv_15)
      TESTING  += $(PATH_vboxvideo_drv_16)/tstvboxvideo16.run
      OTHERS += $(PATH_vboxvideo_drv_16)/tstvboxvideo16.run
 $$(PATH_vboxvideo_drv_16)/tstvboxvideo16.run: $$(INSTARGET_vboxvideo_drv_16)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_16) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
@@ -324,6 +331,7 @@ $$(PATH_vboxvideo_drv_16)/tstvboxvideo16.run: $$(INSTARGET_vboxvideo_drv_16)
      TESTING  += $(PATH_vboxvideo_drv_17)/tstvboxvideo17.run
      OTHERS += $(PATH_vboxvideo_drv_17)/tstvboxvideo17.run
 $$(PATH_vboxvideo_drv_17)/tstvboxvideo17.run: $$(INSTARGET_vboxvideo_drv_17)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_17) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
@@ -331,6 +339,7 @@ $$(PATH_vboxvideo_drv_17)/tstvboxvideo17.run: $$(INSTARGET_vboxvideo_drv_17)
      TESTING  += $(PATH_vboxvideo_drv_18)/tstvboxvideo18.run
      OTHERS += $(PATH_vboxvideo_drv_18)/tstvboxvideo18.run
 $$(PATH_vboxvideo_drv_18)/tstvboxvideo18.run: $$(INSTARGET_vboxvideo_drv_18)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_18) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
