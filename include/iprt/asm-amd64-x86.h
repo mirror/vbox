@@ -469,25 +469,25 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
     RTCCUINTREG uRAX, uRBX, uRCX, uRDX;
-    __asm__ ("cpuid\n\t"
-             : "=a" (uRAX),
-               "=b" (uRBX),
-               "=c" (uRCX),
-               "=d" (uRDX)
+    __asm__ __volatile__ ("cpuid\n\t"
+                          : "=a" (uRAX),
+                            "=b" (uRBX),
+                            "=c" (uRCX),
+                            "=d" (uRDX)
              : "0" (uOperator));
     *(uint32_t *)pvEAX = (uint32_t)uRAX;
     *(uint32_t *)pvEBX = (uint32_t)uRBX;
     *(uint32_t *)pvECX = (uint32_t)uRCX;
     *(uint32_t *)pvEDX = (uint32_t)uRDX;
 #  else
-    __asm__ ("xchgl %%ebx, %1\n\t"
-             "cpuid\n\t"
-             "xchgl %%ebx, %1\n\t"
-             : "=a" (*(uint32_t *)pvEAX),
-               "=r" (*(uint32_t *)pvEBX),
-               "=c" (*(uint32_t *)pvECX),
-               "=d" (*(uint32_t *)pvEDX)
-             : "0" (uOperator));
+    __asm__ __volatile__ ("xchgl %%ebx, %1\n\t"
+                          "cpuid\n\t"
+                          "xchgl %%ebx, %1\n\t"
+                         : "=a" (*(uint32_t *)pvEAX),
+                           "=r" (*(uint32_t *)pvEBX),
+                           "=c" (*(uint32_t *)pvECX),
+                           "=d" (*(uint32_t *)pvEDX)
+                         : "0" (uOperator));
 #  endif
 
 # elif RT_INLINE_ASM_USES_INTRIN
@@ -905,27 +905,27 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
     RTCCUINTREG uSpill;
-    __asm__ ("cpuid"
-             : "=a" (uSpill),
-               "=b" (xBX)
-             : "0" (1)
-             : "rcx", "rdx");
+    __asm__ __volatile__ ("cpuid"
+                          : "=a" (uSpill),
+                            "=b" (xBX)
+                          : "0" (1)
+                          : "rcx", "rdx");
 #  elif (defined(PIC) || defined(__PIC__)) && defined(__i386__)
     RTCCUINTREG uSpill;
-    __asm__ ("mov   %%ebx,%1\n\t"
-             "cpuid\n\t"
-             "xchgl %%ebx,%1\n\t"
-             : "=a" (uSpill),
-               "=r" (xBX)
-             : "0" (1)
-             : "ecx", "edx");
+    __asm__ __volatile__ ("mov   %%ebx,%1\n\t"
+                          "cpuid\n\t"
+                          "xchgl %%ebx,%1\n\t"
+                          : "=a" (uSpill),
+                            "=r" (xBX)
+                          : "0" (1)
+                          : "ecx", "edx");
 #  else
     RTCCUINTREG uSpill;
-    __asm__ ("cpuid"
-             : "=a" (uSpill),
-               "=b" (xBX)
-             : "0" (1)
-             : "ecx", "edx");
+    __asm__ __volatile__ ("cpuid"
+                          : "=a" (uSpill),
+                            "=b" (xBX)
+                          : "0" (1)
+                          : "ecx", "edx");
 #  endif
 
 # elif RT_INLINE_ASM_USES_INTRIN
