@@ -979,7 +979,9 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdDefRCPtr(PVM pVM);
 
 /**
  * Calls a guest trap/interrupt handler directly
+ *
  * Assumes a trap stack frame has already been setup on the guest's stack!
+ * This function does not return!
  *
  * @param   pRegFrame   Original trap/interrupt context
  * @param   selCS       Code selector of handler
@@ -987,11 +989,18 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdDefRCPtr(PVM pVM);
  * @param   eflags      Callee's EFLAGS
  * @param   selSS       Stack selector for handler
  * @param   pEsp        Stack address for handler
+ */
+DECLASM(void)           CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTRCPTR pHandler,
+                                                   uint32_t eflags, uint32_t selSS, RTRCPTR pEsp);
+
+/**
+ * Call guest V86 code directly.
  *
  * This function does not return!
+ *
+ * @param   pRegFrame   Original trap/interrupt context
  */
-DECLASM(void)           CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTRCPTR pHandler, uint32_t eflags, uint32_t selSS, RTRCPTR pEsp);
-VMMRCDECL(void)         CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
+DECLASM(void)           CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
 
 /** @} */
 #endif /* IN_RC */
