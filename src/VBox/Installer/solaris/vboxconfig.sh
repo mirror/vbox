@@ -38,6 +38,7 @@ BIN_BOOTADM=/sbin/bootadm
 BIN_SVCADM=/usr/sbin/svcadm
 BIN_SVCCFG=/usr/sbin/svccfg
 BIN_IFCONFIG=/sbin/ifconfig
+BIN_SVCS=/usr/bin/svcs
 BIN_ID=/usr/bin/id
 
 # "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
@@ -96,20 +97,19 @@ errorprint()
 }
 
 
-# check_bin_path()
+# print_bin_path()
 # !! failure is always fatal
-check_bin_path()
+find_bin_path()
 {
-    if test -z "$1"; then
-        errorprint "missing argument to check_bin_path()"
+    binfilename=`basename $1`
+    binfilepath=`which $binfilename 2> /dev/null`
+    if test -x "$binfilepath"; then
+        echo "$binfilepath"
+        return 0
+    else
+        errorprint "$1, $2 missing or is not an executable"
         exit 1
     fi
-
-    if test ! -x "$1"; then
-        errorprint "$1 missing or is not an executable"
-        exit 1
-    fi
-    return 0
 }
 
 # find_bins()
@@ -117,22 +117,53 @@ check_bin_path()
 find_bins()
 {
     # Search only for binaries that might be in different locations
-    BIN_IFCONFIG=`which ifconfig 2> /dev/null`
-    BIN_SVCS=`which svcs 2> /dev/null`
-    BIN_ID=`which id 2> /dev/null`
+    if test ! -x "$BIN_ID"; then
+        BIN_ID=`find_bin_path "$BIN_ID"`
+    fi
 
-    check_bin_path "$BIN_ID"
-    check_bin_path "$BIN_ADDDRV"
-    check_bin_path "$BIN_REMDRV"
-    check_bin_path "$BIN_MODLOAD"
-    check_bin_path "$BIN_MODUNLOAD"
-    check_bin_path "$BIN_MODINFO"
-    check_bin_path "$BIN_DEVFSADM"
-    check_bin_path "$BIN_BOOTADM"
-    check_bin_path "$BIN_SVCADM"
-    check_bin_path "$BIN_SVCCFG"
-    check_bin_path "$BIN_SVCS"
-    check_bin_path "$BIN_IFCONFIG"
+    if test ! -x "$BIN_ADDDRV"; then
+        BIN_ADDDRV=`find_bin_path "$BIN_ADDDRV"`
+    fi
+
+    if test ! -x "$BIN_REMDRV"; then
+        BIN_REMDRV=`find_bin_path "$BIN_REMDRV"`
+    fi
+
+    if test ! -x "$BIN_MODLOAD"; then
+        BIN_MODLOAD=`check_bin_path "$BIN_MODLOAD"`
+    fi
+
+    if test ! -x "$BIN_MODUNLOAD"; then
+        BIN_MODUNLOAD=`find_bin_path "$BIN_MODUNLOAD"`
+    fi
+
+    if test ! -x "$BIN_MODINFO"; then
+        BIN_MODINFO=`find_bin_path "$BIN_MODINFO"`
+    fi
+
+    if test ! -x "$BIN_DEVFSADM"; then
+        BIN_DEVFSADM=`find_bin_path "$BIN_DEVFSADM"`
+    fi
+
+    if test ! -x "$BIN_BOOTADM"; then
+        BIN_BOOTADM=`find_bin_path "$BIN_BOOTADM"`
+    fi
+
+    if test ! -x "$BIN_BOOTADM"; then
+        BIN_SVCADM=`find_bin_path "$BIN_BOOTADM"`
+    fi
+
+    if test ! -x "$BIN_SVCCFG"; then
+        BIN_SVCCFG=`find_bin_path "$BIN_SVCCFG"`
+    fi
+
+    if test ! -x "$BIN_SVCS"; then
+        BIN_SVCS=`find_bin_path "$BIN_SVCS"`
+    fi
+
+    if test ! -x "$BIN_IFCONFIG"; then
+        BIN_IFCONFIG=`find_bin_path "$BIN_IFCONFIG"`
+    fi
 }
 
 # check_root()
@@ -785,13 +816,13 @@ preremove()
 
 
 # And it begins...
+find_bins
 check_root
 check_isa
 check_zone
-find_bins
 get_sysinfo
 
-if test "x${BASEDIR}" != "x/"; then
+if test "x${BASEDIR:=/}" != "x/"; then
     BASEDIR_OPT="-b ${BASEDIR}"
     REMOTEINST=1
 fi
