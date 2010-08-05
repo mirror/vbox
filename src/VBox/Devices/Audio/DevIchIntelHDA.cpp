@@ -1134,7 +1134,6 @@ static void dump_bd(INTELHDLinkState *pState)
 static void fetch_bd(INTELHDLinkState *pState)
 {
     dump_bd(pState);
-    pState->u32Cvi;
     uint8_t  bdle[16];
     PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), SDBDPL(pState, 4) + pState->u32Cvi*16, bdle, 16);
     pState->u64CviAddr = *(uint64_t *)bdle;
@@ -1205,17 +1204,19 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
             {
                 PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1) + 4*8, &u32Counter, 4);
                 written = write_audio(pState, avail, &fStop);
-                if (fStop)
+                if (   fStop 
+                    && pState->u32CviLen != pState->u32CviPos)
                     break;
                 SDLPIB(pState, 4) += written; /* bytes ? */
                 avail -= written;
                 u32Counter += written;
                 PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1) + 4*8, &u32Counter, 4);
-                if (pState->u32CviPos == pState->u32CviLen
+                if (   pState->u32CviPos == pState->u32CviLen
                     || SDLPIB(pState, 4) == SDLCBL(pState, 4))
                 {
                     if (   SDCTL(pState, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, ICE)
-                        && (   pState->u32CviPos == pState->u32CviLen
+                        && (   (   pState->u32CviPos == pState->u32CviLen
+                                && pState->fCviIoc)
                             || SDLPIB(pState, 4) == SDLCBL(pState, 4)))
                     {
                         SDSTS(pState,4) |= HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS);
@@ -1227,14 +1228,15 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
                             u32Counter = 0;
                             PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1)  + 4*8, &u32Counter, 4);
                         }
-                        if (pState->u32CviPos == pState->u32CviLen)
-                        {
-                            pState->u32CviPos = 0;
-                            pState->u32Cvi++;
-                            if (pState->u32Cvi == SDLVI(pState, 4) + 1)
-                                pState->u32Cvi = 0;
-                        }
                     }
+                    if (pState->u32CviPos == pState->u32CviLen)
+                    {
+                        pState->u32CviPos = 0;
+                        pState->u32Cvi++;
+                        if (pState->u32Cvi == SDLVI(pState, 4) + 1)
+                            pState->u32Cvi = 0;
+                    }
+                    fStop = false;
                 }
                 fetch_bd(pState);
             }
