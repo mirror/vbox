@@ -3023,7 +3023,8 @@ int pgmR3PhysRomReset(PVM pVM)
                         &&  !PGM_PAGE_IS_BALLOONED(&pRom->aPages[iPage].Shadow))
                     {
                         Assert(PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) == PGM_PAGE_STATE_ALLOCATED);
-                        rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, &pRom->aPages[iPage].Shadow, pRom->GCPhys + (iPage << PAGE_SHIFT));
+                        rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, &pRom->aPages[iPage].Shadow,
+                                             pRom->GCPhys + (iPage << PAGE_SHIFT));
                         AssertLogRelRCReturn(rc, rc);
                     }
 
@@ -3039,7 +3040,8 @@ int pgmR3PhysRomReset(PVM pVM)
                 /* clear all the shadow pages. */
                 for (uint32_t iPage = 0; iPage < cPages; iPage++)
                 {
-                    Assert(!PGM_PAGE_IS_ZERO(&pRom->aPages[iPage].Shadow) && !PGM_PAGE_IS_BALLOONED(&pRom->aPages[iPage].Shadow));
+                    Assert(!PGM_PAGE_IS_ZERO(&pRom->aPages[iPage].Shadow));
+                    Assert(!PGM_PAGE_IS_BALLOONED(&pRom->aPages[iPage].Shadow));
                     void *pvDstPage;
                     const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
                     rc = pgmPhysPageMakeWritableAndMap(pVM, &pRom->aPages[iPage].Shadow, GCPhys, &pvDstPage);
