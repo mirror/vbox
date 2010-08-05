@@ -102,35 +102,41 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
 }
 
 
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(IN_RING0)
 /**
- * Deals with the contended case in ring-3.
+ * Deals with the contended case in ring-3 and ring-0.
  *
  * @returns VINF_SUCCESS or VERR_SEM_DESTROYED.
  * @param   pCritSect           The critsect.
  * @param   hNativeSelf         The native thread handle.
  */
-static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
+static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Start waiting.
      */
     if (ASMAtomicIncS32(&pCritSect->s.Core.cLockers) == 0)
         return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
+# ifdef IN_RING3
     STAM_COUNTER_INC(&pCritSect->s.StatContentionR3);
+# else
+    STAM_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
+# endif
 
     /*
      * The wait loop.
      */
     PSUPDRVSESSION  pSession    = pCritSect->s.CTX_SUFF(pVM)->pSession;
     SUPSEMEVENT     hEvent      = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
-# ifdef PDMCRITSECT_STRICT
+# ifdef IN_RING3
+#  ifdef PDMCRITSECT_STRICT
     RTTHREAD        hThreadSelf = RTThreadSelfAutoAdopt();
     int rc2 = RTLockValidatorRecExclCheckOrder(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos, RT_INDEFINITE_WAIT);
     if (RT_FAILURE(rc2))
         return rc2;
-# else
+#  else
     RTTHREAD        hThreadSelf = RTThreadSelf();
+#  endif
 # endif
     for (;;)
     {
@@ -140,11 +146,13 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
                                                       RT_INDEFINITE_WAIT, RTTHREADSTATE_CRITSECT, true);
         if (RT_FAILURE(rc9))
             return rc9;
-# else
+# elif defined(IN_RING3)
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT, true);
 # endif
         int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_INDEFINITE_WAIT);
+# ifdef IN_RING3
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
+# endif
 
         if (RT_UNLIKELY(pCritSect->s.Core.u32Magic != RTCRITSECT_MAGIC))
             return VERR_SEM_DESTROYED;
@@ -154,7 +162,7 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
     }
     /* won't get here */
 }
-#endif /* IN_RING3 */
+#endif /* IN_RING3 || IN_RING0 */
 
 
 /**
@@ -220,15 +228,65 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
     /*
      * Take the slow path.
      */
-    return pdmR3CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
-#else
+    return pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
+
+#elif defined(IN_RING0)
+    /** @todo If preemption is disabled it means we're in VT-x/AMD-V context
+     *        and would be better off switching out of that while waiting for
+     *        the lock.  Several of the locks jumps back to ring-3 just to
+     *        get the lock, the ring-3 code will then call the kernel to do
+     *        the lock wait and when the call return it will call ring-0
+     *        again and resume via in setjmp style.  Not very efficient. */
+# if 0
+    if (ASMIntAreEnabled()) /** @todo this can be handled as well by changing
+                             * callers not prepared for longjmp/blocking to
+                             * use PDMCritSectTryEnter. */
+    {
+        /*
+         * Leave HWACCM context while waiting if necessary.
+         */
+        int rc;
+        if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+        {
+            STAM_REL_COUNTER_ADD(&pCritSect->s.StatContentionRZLock,    1000000);
+            rc = pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
+        }
+        else
+        {
+            STAM_REL_COUNTER_ADD(&pCritSect->s.StatContentionRZLock, 1000000000);
+            PVM     pVM   = pCritSect->s.CTX_SUFF(pVM);
+            PVMCPU  pVCpu = VMMGetCpu(pVM);
+            HWACCMR0Leave(pVM, pVCpu);
+            RTThreadPreemptRestore(NIL_RTTHREAD, ????);
+
+            rc = pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
+
+            RTThreadPreemptDisable(NIL_RTTHREAD, ????);
+            HWACCMR0Enter(pVM, pVCpu);
+        }
+        return rc;
+    }
+# else
+    /*
+     * We preemption hasn't been disabled, we can block here in ring-0.
+     */
+    if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
+        && ASMIntAreEnabled())
+        return pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
+# endif
+
+    STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
+    LogFlow(("PDMCritSectEnter: locked => R3 (%Rrc)\n", rcBusy));
+    return rcBusy;
+
+#else  /* IN_RC */
     /*
      * Return busy.
      */
     STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
     LogFlow(("PDMCritSectEnter: locked => R3 (%Rrc)\n", rcBusy));
     return rcBusy;
-#endif
+#endif /* IN_RC */
 }
 
 
