@@ -36,6 +36,14 @@
 
 #include "VBGLR3Internal.h"
 
+#ifdef VBOX_VBGLR3_XFREE86
+/* Rather than try to resolve all the header file conflicts, I will just
+   prototype what we need here. */
+extern "C" void* xf86memcpy(void*,const void*,xf86size_t);
+# undef memcpy
+# define memcpy xf86memcpy
+#endif /* VBOX_VBGLR3_XFREE86 */
+
 #define VIDEO_PROP_PREFIX "/VirtualBox/GuestAdd/Vbgl/Video/"
 
 /**
