@@ -1438,11 +1438,11 @@ typedef FNRTSTROUTPUT *PFNRTSTROUTPUT;
  * Gets the bit flag for the specified type.
  */
 #define RTSTR_GET_BIT_FLAG(type) \
-    ( sizeof(type) == 32 ? RTSTR_F_32BIT \
-    : sizeof(type) == 64 ? RTSTR_F_64BIT \
-    : sizeof(type) == 16 ? RTSTR_F_16BIT \
-    : sizeof(type) == 8  ? RTSTR_F_8BIT \
-    : sizeof(type) == 128? RTSTR_F_128BIT \
+    ( sizeof(type) * 8 == 32  ? RTSTR_F_32BIT \
+    : sizeof(type) * 8 == 64  ? RTSTR_F_64BIT \
+    : sizeof(type) * 8 == 16  ? RTSTR_F_16BIT \
+    : sizeof(type) * 8 == 8   ? RTSTR_F_8BIT \
+    : sizeof(type) * 8 == 128 ? RTSTR_F_128BIT \
     : 0)
 
 
