@@ -97,7 +97,7 @@ errorprint()
 }
 
 
-# print_bin_path()
+# find_bin_path()
 # !! failure is always fatal
 find_bin_path()
 {
