@@ -47,6 +47,9 @@ extern "C" char* xf86strcpy(char*,const char*);
 extern "C" void* xf86memchr(const void*,int,xf86size_t);
 # undef memchr
 # define memchr xf86memchr
+extern "C" void* xf86memset(const void*,int,xf86size_t);
+# undef memset
+# define memset xf86memset
 
 # undef RTSTrEnd
 # define RTStrEnd xf86RTStrEnd
