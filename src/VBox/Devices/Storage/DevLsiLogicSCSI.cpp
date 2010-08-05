@@ -3836,7 +3836,7 @@ static DECLCALLBACK(void) lsilogicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
      * Parse args.
      */
     if (pszArgs)
-        fVerbose = strstr(pszArgs, "verbose");
+        fVerbose = strstr(pszArgs, "verbose") != NULL;
 
     /*
      * Show info.
