@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -90,6 +90,8 @@ VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
             rc = PGMRegisterStringFormatTypes();
             AssertRCReturn(rc, rc);
 
+            rc = PGMRCDynMapInit(pVM);
+            AssertRCReturn(rc, rc);
             return VINF_SUCCESS;
         }
 

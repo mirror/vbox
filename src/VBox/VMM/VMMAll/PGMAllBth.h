@@ -382,10 +382,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
     *pfLockTaken = false;
 
-# if defined(IN_RC) && defined(VBOX_STRICT)
-    PGMDynCheckLocks(pVM);
-# endif
-
 # if  (   PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT \
        || PGM_GST_TYPE == PGM_TYPE_PAE   || PGM_GST_TYPE == PGM_TYPE_AMD64) \
     && PGM_SHW_TYPE != PGM_TYPE_NESTED \
@@ -432,6 +428,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
      */
     if (uErr & X86_TRAP_PF_RSVD)
     {
+/** @todo This is not complete code. take locks */
         Assert(uErr & X86_TRAP_PF_P);
         PPGMPAGE pPage;
 /** @todo Only all physical access handlers here, so optimize further. */
@@ -562,19 +559,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             LogBird(("Trap0eHandler: returns VINF_SUCCESS\n"));
             return VINF_SUCCESS;
         }
-#ifndef IN_RC
         AssertMsg(GstWalk.Pde.u == GstWalk.pPde->u || GstWalk.pPte->u == GstWalk.pPde->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u));
         AssertMsg(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pte.u, (uint64_t)GstWalk.pPte->u));
-#else
-        /* Ugly hack, proper fix is comming up later. */
-        if (   !(GstWalk.Pde.u == GstWalk.pPde->u || GstWalk.pPte->u == GstWalk.pPde->u)
-            || !(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u) )
-        {
-            rc = PGM_GST_NAME(Walk)(pVCpu, pvFault, &GstWalk);
-            if (RT_FAILURE_NP(rc))
-                return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerGuestFault)(pVCpu, &GstWalk, uErr));
-        }
-#endif
     }
 
 #   if 0 /* rarely useful; leave for debugging. */
@@ -1147,11 +1133,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         return VINF_SUCCESS;
     }
 
-# if defined(IN_RC)
-    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-    PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
-
     /*
      * Get the guest PD entry and calc big page.
      */
@@ -1294,10 +1275,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
                 {
                     LogFlow(("Skipping flush for big page containing %RGv (PD=%X .u=%RX64)-> nothing has changed!\n", GCPtrPage, iPDSrc, PdeSrc.u));
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePage4MBPagesSkip));
-# if defined(IN_RC)
-                    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-                    PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
+                    PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
                     return VINF_SUCCESS;
                 }
             }
@@ -1334,10 +1312,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePagePDMappings));
         }
     }
-# if defined(IN_RC)
-    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-    PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
+    PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
     return rc;
 
 #else /* guest real and protected mode */
@@ -1786,11 +1761,6 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     Assert(pShwPde);
 # endif
 
-# if defined(IN_RC)
-    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-    PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
-
     /*
      * Check that the page is present and that the shadow PDE isn't out of sync.
      */
@@ -2020,10 +1990,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                     /** @todo must wipe the shadow page table in this case. */
                 }
             }
-# if defined(IN_RC)
-            /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
+            PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
             return VINF_SUCCESS;
         }
 
@@ -2049,10 +2016,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     pgmPoolFreeByPage(pPool, pShwPage, pShwPde->idx, iPDDst);
     ASMAtomicWriteSize(pPdeDst, 0);
 
-# if defined(IN_RC)
-    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-    PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
+    PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
     PGM_INVL_VCPU_TLBS(pVCpu);
     return VINF_PGM_SYNCPAGE_MODIFIED_PDE;
 
@@ -2563,11 +2527,6 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 # endif /* !PGM_WITHOUT_MAPPINGS */
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
-# if defined(IN_RC)
-    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-    PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
-
     /*
      * Sync page directory entry.
      */
@@ -2645,17 +2604,13 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                 }
             }
             ASMAtomicWriteSize(pPdeDst, PdeDst.u);
-# if defined(IN_RC)
-            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
+            PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
             return VINF_SUCCESS;
         }
         else if (rc == VERR_PGM_POOL_FLUSHED)
         {
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-# if defined(IN_RC)
-            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
+            PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
             return VINF_PGM_SYNC_CR3;
         }
         else
@@ -2686,9 +2641,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                 PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | X86_PDE_AVL_MASK))
                          | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
                 ASMAtomicWriteSize(pPdeDst, PdeDst.u);
-# if defined(IN_RC)
-                PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
+                PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
 
                 /*
                  * Directory/page user or supervisor privilege: (same goes for read/write)
@@ -2767,7 +2720,8 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPT4M));
 
             /**
-             * @todo It might be more efficient to sync only a part of the 4MB page (similar to what we do for 4kb PDs).
+             * @todo It might be more efficient to sync only a part of the 4MB
+             *       page (similar to what we do for 4KB PDs).
              */
 
             /*
@@ -2794,9 +2748,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                 PdeDst.b.u1Write = 0;
             }
             ASMAtomicWriteSize(pPdeDst, PdeDst.u);
-# if defined(IN_RC)
-            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
+            PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
 
             /*
              * Fill the shadow page table.
@@ -3390,20 +3342,12 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
     pPdeDst = &pPDDst->a[iPDDst];
 # endif
 
-# if defined(IN_RC)
-    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-    PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
-
     if (!pPdeDst->n.u1Present)
     {
         rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
         if (rc != VINF_SUCCESS)
         {
-# if defined(IN_RC)
-            /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
+            PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
             pgmUnlock(pVM);
             AssertRC(rc);
             return rc;
@@ -3448,10 +3392,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
             rc = VINF_EM_RAW_GUEST_TRAP;
         }
     }
-# if defined(IN_RC)
-    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-    PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
+    PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
     pgmUnlock(pVM);
     return rc;
 
@@ -4358,7 +4299,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     PPGMPAGE    pPageCR3 = pgmPhysGetPage(&pVM->pgm.s, GCPhysCR3);
     AssertReturn(pPageCR3, VERR_INTERNAL_ERROR_2);
     HCPhysGuestCR3 = PGM_PAGE_GET_HCPHYS(pPageCR3);
-    /** @todo this needs some reworking wrt. locking.  */
+    /** @todo this needs some reworking wrt. locking?  */
 # if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     HCPtrGuestCR3 = NIL_RTHCPTR;
     int rc = VINF_SUCCESS;

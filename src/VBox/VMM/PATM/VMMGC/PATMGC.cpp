@@ -291,6 +291,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
                     /* We are no longer executing PATM code; set PIF again. */
                     pVM->patm.s.CTXSUFF(pGCState)->fPIF = 1;
+                    PGMRZDynMapReleaseAutoSet(VMMGetCpu0(pVM));
                     CPUMGCCallV86Code(pRegFrame);
                     /* does not return */
                 }

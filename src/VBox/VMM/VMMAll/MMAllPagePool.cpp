@@ -38,7 +38,7 @@
 #endif
 
 
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+#if !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) && !defined(IN_RC)
 
 /**
  * Converts a pool physical address to a linear address.

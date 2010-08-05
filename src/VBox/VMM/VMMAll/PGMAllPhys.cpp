@@ -737,17 +737,11 @@ int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv
     const uint32_t idChunk = idPage >> GMM_CHUNKID_SHIFT;
     AssertReturn(idChunk != NIL_GMM_CHUNKID, VERR_INVALID_PARAMETER);
 
-#ifdef IN_RC
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     /*
      * Map it by HCPhys.
      */
-    return PGMDynMapHCPage(pVM, HCPhys, ppv);
-
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-    /*
-     * Map it by HCPhys.
-     */
-    return pgmR0DynMapHCPageInlined(VMMGetCpu(pVM), HCPhys, ppv);
+    return pgmRZDynMapHCPageInlined(VMMGetCpu(pVM), HCPhys, ppv  RTLOG_COMMA_SRC_POS);
 
 #else
     /*
@@ -823,11 +817,7 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
     *ppMap = NULL;
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
     Assert(HCPhys != pVM->pgm.s.HCPhysZeroPg);
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    pgmR0DynMapHCPageInlined(VMMGetCpu(pVM), HCPhys, ppv);
-# else
-    PGMDynMapHCPage(pVM, HCPhys, ppv);
-# endif
+    pgmRZDynMapHCPageInlined(VMMGetCpu(pVM), HCPhys, ppv RTLOG_COMMA_SRC_POS);
     return VINF_SUCCESS;
 
 #else /* IN_RING3 || IN_RING0 */
@@ -1137,7 +1127,7 @@ int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *
      * Get the mapping address.
      */
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-    *ppv = pgmDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK));
+    *ppv = pgmRZDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK) RTLOG_COMMA_SRC_POS);
 #else
     PPGMPAGEMAPTLBE pTlbe;
     rc = pgmPhysPageQueryTlbeWithPage(&pVM->pgm.s, pPage, GCPhys, &pTlbe);
@@ -1175,7 +1165,7 @@ int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
      * Get the mapping address.
      */
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-    *ppv = pgmDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK)); /** @todo add a read only flag? */
+    *ppv = pgmRZDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK) RTLOG_COMMA_SRC_POS); /** @todo add a read only flag? */
 #else
     PPGMPAGEMAPTLBE pTlbe;
     int rc = pgmPhysPageQueryTlbeWithPage(&pVM->pgm.s, pPage, GCPhys, &pTlbe);
@@ -1233,7 +1223,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
             rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
         if (RT_SUCCESS(rc))
         {
-            *ppv = pgmDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK)); /** @todo add a read only flag? */
+            *ppv = pgmRZDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK) RTLOG_COMMA_SRC_POS); /** @todo add a read only flag? */
 # if 0
             pLock->pvMap = 0;
             pLock->pvPage = pPage;
@@ -1344,7 +1334,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
         else
         {
-            *ppv = pgmDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK)); /** @todo add a read only flag? */
+            *ppv = pgmRZDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK) RTLOG_COMMA_SRC_POS); /** @todo add a read only flag? */
 # if 0
             pLock->pvMap = 0;
             pLock->pvPage = pPage;
@@ -1492,7 +1482,7 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
     Assert(pLock->u32Dummy == UINT32_MAX);
     pLock->u32Dummy = 0;
 
-#else   /* IN_RING3 */
+#else
     PPGMPAGEMAP pMap       = (PPGMPAGEMAP)pLock->pvMap;
     PPGMPAGE    pPage      = (PPGMPAGE)(pLock->uPageAndType & ~PGMPAGEMAPLOCK_TYPE_MASK);
     bool        fWriteLock = (pLock->uPageAndType & PGMPAGEMAPLOCK_TYPE_MASK) == PGMPAGEMAPLOCK_TYPE_WRITE;

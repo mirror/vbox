@@ -361,6 +361,7 @@ ifdef VBOX_WITH_RAW_MODE
  	VMMGC/VMMGCA.asm \
  	VMMGC/HWACCMGCA.asm \
  	VMMRZ/DBGFRZ.cpp \
+ 	VMMRZ/PGMRZDynMap.cpp \
  	VMMRZ/VMMRZ.cpp \
  	VMMAll/CPUMAllRegs.cpp \
  	VMMAll/CPUMAllA.asm \
@@ -493,7 +494,7 @@ VMMR0_SOURCES.amd64 = \
 VMMR0_SOURCES.x86 = \
 	VMMR0/VMMR0JmpA-x86.asm
 VMMR0_SOURCES.darwin.x86 = \
-	VMMR0/PGMR0DynMap.cpp
+	VMMRZ/PGMRZDynMap.cpp
 
 # disable annoying warnings about array subscript above array bounds in aPages[]
 PGMPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))

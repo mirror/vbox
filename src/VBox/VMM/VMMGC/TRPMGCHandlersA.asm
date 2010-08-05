@@ -3,7 +3,7 @@
 ; TRPM - Guest Context Trap Handlers
 ;
 
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2010 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -33,24 +33,27 @@
 extern IMPNAME(g_CPUM)                  ; These IMPNAME(g_*) symbols resolve to the import table
 extern IMPNAME(g_TRPM)                  ; where there is a pointer to the real symbol. PE imports
 extern IMPNAME(g_TRPMCPU)               ; are a bit confusing at first... :-)
-extern IMPNAME(g_VM)                    
+extern IMPNAME(g_VM)
 extern NAME(CPUMGCRestoreInt)
 extern NAME(cpumHandleLazyFPUAsm)
 extern NAME(CPUMHyperSetCtxCore)
 extern NAME(trpmGCTrapInGeneric)
-extern NAME(TRPMGCHyperTrap0bHandler)
-extern NAME(TRPMGCHyperTrap0dHandler)
-extern NAME(TRPMGCHyperTrap0eHandler)
 extern NAME(TRPMGCTrap01Handler)
+extern NAME(TRPMGCHyperTrap01Handler)
 %ifdef VBOX_WITH_NMI
 extern NAME(TRPMGCTrap02Handler)
+extern NAME(TRPMGCHyperTrap02Handler)
 %endif
 extern NAME(TRPMGCTrap03Handler)
+extern NAME(TRPMGCHyperTrap03Handler)
 extern NAME(TRPMGCTrap06Handler)
-extern NAME(TRPMGCTrap0bHandler)
-extern NAME(TRPMGCTrap0dHandler)
-extern NAME(TRPMGCTrap0eHandler)
 extern NAME(TRPMGCTrap07Handler)
+extern NAME(TRPMGCTrap0bHandler)
+extern NAME(TRPMGCHyperTrap0bHandler)
+extern NAME(TRPMGCTrap0dHandler)
+extern NAME(TRPMGCHyperTrap0dHandler)
+extern NAME(TRPMGCTrap0eHandler)
+extern NAME(TRPMGCHyperTrap0eHandler)
 
 ;; IMPORTANT all COM_ functions trashes esi, some edi and the LOOP_SHORT_WHILE kills ecx.
 ;%define DEBUG_STUFF 1
@@ -70,13 +73,13 @@ g_apfnStaticTrapHandlersHyper:
                                         ;    -   c -     -   - r
                                         ; =============================================================
     dd 0                                ;  0 - #DE - F   - N - Divide error
-    dd NAME(TRPMGCTrap01Handler)        ;  1 - #DB - F/T - N - Single step, INT 1 instruction
+    dd NAME(TRPMGCHyperTrap01Handler)   ;  1 - #DB - F/T - N - Single step, INT 1 instruction
 %ifdef VBOX_WITH_NMI
-    dd NAME(TRPMGCTrap02Handler)        ;  2 -     - I   - N - Non-Maskable Interrupt (NMI)
+    dd NAME(TRPMGCHyperTrap02Handler)   ;  2 -     - I   - N - Non-Maskable Interrupt (NMI)
 %else
     dd 0                                ;  2 -     - I   - N - Non-Maskable Interrupt (NMI)
 %endif
-    dd NAME(TRPMGCTrap03Handler)        ;  3 - #BP - T   - N - Breakpoint, INT 3 instruction.
+    dd NAME(TRPMGCHyperTrap03Handler)   ;  3 - #BP - T   - N - Breakpoint, INT 3 instruction.
     dd 0                                ;  4 - #OF - T   - N - Overflow, INTO instruction.
     dd 0                                ;  5 - #BR - F   - N - BOUND Range Exceeded, BOUND instruction.
     dd 0                                ;  6 - #UD - F   - N - Undefined(/Invalid) Opcode.
@@ -270,7 +273,7 @@ GenericTrapErrCode:
     mov     eax, [esp + 10h + ESPOFF]           ; eflags
     mov     [esp + CPUMCTXCORE.eflags], eax
 
-%if GC_ARCH_BITS == 64    
+%if GC_ARCH_BITS == 64
     ; zero out the high dwords
     mov     dword [esp + CPUMCTXCORE.eax + 4], 0
     mov     dword [esp + CPUMCTXCORE.ecx + 4], 0
@@ -774,7 +777,7 @@ ti_GenericInterrupt:
     mov     eax, dword [esp + 14h + ESPOFF]     ; ss
     mov     [esp + CPUMCTXCORE.ss], eax
 
-%if GC_ARCH_BITS == 64    
+%if GC_ARCH_BITS == 64
     ; zero out the high dwords
     mov     dword [esp + CPUMCTXCORE.eax + 4], 0
     mov     dword [esp + CPUMCTXCORE.ecx + 4], 0

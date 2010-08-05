@@ -480,9 +480,11 @@
  *
  * In order to be able to map in and out memory and to be able to support
  * guest with more RAM than we've got virtual address space, we'll employing
- * a mapping cache. There is already a tiny one for GC (see PGMGCDynMapGCPageEx)
- * and we'll create a similar one for ring-0 unless we decide to setup a dedicate
- * memory context for the HWACCM execution.
+ * a mapping cache.  Normally ring-0 and ring-3 can share the same cache,
+ * however on 32-bit darwin the ring-0 code is running in a different memory
+ * context and therefore needs a separate cache.  In raw-mode context we also
+ * need a separate cache.  The 32-bit darwin mapping cache and the one for
+ * raw-mode context share a lot of code, see PGMRZDYNMAP.
  *
  *
  * @subsection subsec_pgmPhys_MappingCaches_R3  Ring-3
@@ -1719,8 +1721,6 @@ static int pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER_BYTES(&pStats->StatRZPhysSimpleWriteBytes,  "/PGM/RZ/Phys/Simple/Write/Bytes",    "The number of bytes written by PGMPhysSimpleWriteGCPtr.");
 
     /* GC only: */
-    PGM_REG_COUNTER(&pStats->StatRCDynMapCacheHits,             "/PGM/RC/DynMapCache/Hits" ,          "Number of dynamic page mapping cache hits.");
-    PGM_REG_COUNTER(&pStats->StatRCDynMapCacheMisses,           "/PGM/RC/DynMapCache/Misses" ,        "Number of dynamic page mapping cache misses.");
     PGM_REG_COUNTER(&pStats->StatRCInvlPgConflict,              "/PGM/RC/InvlPgConflict",             "Number of times PGMInvalidatePage() detected a mapping conflict.");
     PGM_REG_COUNTER(&pStats->StatRCInvlPgSyncMonCR3,            "/PGM/RC/InvlPgSyncMonitorCR3",       "Number of times PGMInvalidatePage() ran into PGM_SYNC_MONITOR_CR3.");
 
@@ -1777,42 +1777,6 @@ static int pgmR3InitStats(PVM pVM)
                             "The number of SyncPage per PD n.", "/PGM/CPU%u/PDSyncPage/%04X", i, j);
 # endif
         /* R0 only: */
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapMigrateInvlPg,         "/PGM/CPU%u/R0/DynMapMigrateInvlPg",        "invlpg count in PGMDynMapMigrateAutoSet.");
-        PGM_REG_PROFILE(&pCpuStats->StatR0DynMapGCPageInl,             "/PGM/CPU%u/R0/DynMapPageGCPageInl",        "Calls to pgmR0DynMapGCPageInlined.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapGCPageInlHits,         "/PGM/CPU%u/R0/DynMapPageGCPageInl/Hits",   "Hash table lookup hits.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapGCPageInlMisses,       "/PGM/CPU%u/R0/DynMapPageGCPageInl/Misses", "Misses that falls back to code common with PGMDynMapHCPage.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapGCPageInlRamHits,      "/PGM/CPU%u/R0/DynMapPageGCPageInl/RamHits",   "1st ram range hits.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapGCPageInlRamMisses,    "/PGM/CPU%u/R0/DynMapPageGCPageInl/RamMisses", "1st ram range misses, takes slow path.");
-        PGM_REG_PROFILE(&pCpuStats->StatR0DynMapHCPageInl,             "/PGM/CPU%u/R0/DynMapPageHCPageInl",        "Calls to pgmR0DynMapHCPageInlined.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapHCPageInlHits,         "/PGM/CPU%u/R0/DynMapPageHCPageInl/Hits",   "Hash table lookup hits.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapHCPageInlMisses,       "/PGM/CPU%u/R0/DynMapPageHCPageInl/Misses", "Misses that falls back to code common with PGMDynMapHCPage.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapPage,                  "/PGM/CPU%u/R0/DynMapPage",                 "Calls to pgmR0DynMapPage");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapSetOptimize,           "/PGM/CPU%u/R0/DynMapPage/SetOptimize",     "Calls to pgmDynMapOptimizeAutoSet.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapSetSearchFlushes,      "/PGM/CPU%u/R0/DynMapPage/SetSearchFlushes","Set search restorting to subset flushes.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapSetSearchHits,         "/PGM/CPU%u/R0/DynMapPage/SetSearchHits",   "Set search hits.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapSetSearchMisses,       "/PGM/CPU%u/R0/DynMapPage/SetSearchMisses", "Set search misses.");
-        PGM_REG_PROFILE(&pCpuStats->StatR0DynMapHCPage,                "/PGM/CPU%u/R0/DynMapPage/HCPage",          "Calls to PGMDynMapHCPage (ring-0).");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapPageHits0,             "/PGM/CPU%u/R0/DynMapPage/Hits0",           "Hits at iPage+0");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapPageHits1,             "/PGM/CPU%u/R0/DynMapPage/Hits1",           "Hits at iPage+1");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapPageHits2,             "/PGM/CPU%u/R0/DynMapPage/Hits2",           "Hits at iPage+2");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapPageInvlPg,            "/PGM/CPU%u/R0/DynMapPage/InvlPg",          "invlpg count in pgmR0DynMapPageSlow.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapPageSlow,              "/PGM/CPU%u/R0/DynMapPage/Slow",            "Calls to pgmR0DynMapPageSlow - subtract this from pgmR0DynMapPage to get 1st level hits.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapPageSlowLoopHits,      "/PGM/CPU%u/R0/DynMapPage/SlowLoopHits" ,   "Hits in the loop path.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapPageSlowLoopMisses,    "/PGM/CPU%u/R0/DynMapPage/SlowLoopMisses",  "Misses in the loop path. NonLoopMisses = Slow - SlowLoopHit - SlowLoopMisses");
-        //PGM_REG_COUNTER(&pCpuStats->StatR0DynMapPageSlowLostHits,      "/PGM/CPU%u/R0/DynMapPage/SlowLostHits",    "Lost hits.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapSubsets,               "/PGM/CPU%u/R0/Subsets",                    "Times PGMDynMapPushAutoSubset was called.");
-        PGM_REG_COUNTER(&pCpuStats->StatR0DynMapPopFlushes,            "/PGM/CPU%u/R0/SubsetPopFlushes",           "Times PGMDynMapPopAutoSubset flushes the subset.");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[0],           "/PGM/CPU%u/R0/SetSize000..09",              "00-09% filled");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[1],           "/PGM/CPU%u/R0/SetSize010..19",              "10-19% filled");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[2],           "/PGM/CPU%u/R0/SetSize020..29",              "20-29% filled");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[3],           "/PGM/CPU%u/R0/SetSize030..39",              "30-39% filled");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[4],           "/PGM/CPU%u/R0/SetSize040..49",              "40-49% filled");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[5],           "/PGM/CPU%u/R0/SetSize050..59",              "50-59% filled");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[6],           "/PGM/CPU%u/R0/SetSize060..69",              "60-69% filled");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[7],           "/PGM/CPU%u/R0/SetSize070..79",              "70-79% filled");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[8],           "/PGM/CPU%u/R0/SetSize080..89",              "80-89% filled");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[9],           "/PGM/CPU%u/R0/SetSize090..99",              "90-99% filled");
-        PGM_REG_COUNTER(&pCpuStats->aStatR0DynMapSetSize[10],          "/PGM/CPU%u/R0/SetSize100",                 "100% filled");
 
         /* RZ only: */
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0e,                      "/PGM/CPU%u/RZ/Trap0e",                     "Profiling of the PGMTrap0eHandler() body.");
@@ -1867,6 +1831,43 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatRZGuestCR3WriteConflict,       "/PGM/CPU%u/RZ/CR3WriteConflict",               "The number of times the Guest CR3 monitoring detected a conflict.");
         PGM_REG_COUNTER(&pCpuStats->StatRZGuestROMWriteHandled,        "/PGM/CPU%u/RZ/ROMWriteHandled",                "The number of times the Guest ROM change was successfully handled.");
         PGM_REG_COUNTER(&pCpuStats->StatRZGuestROMWriteUnhandled,      "/PGM/CPU%u/RZ/ROMWriteUnhandled",              "The number of times the Guest ROM change was passed back to the recompiler.");
+
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapMigrateInvlPg,         "/PGM/CPU%u/RZ/DynMap/MigrateInvlPg",            "invlpg count in PGMR0DynMapMigrateAutoSet.");
+        PGM_REG_PROFILE(&pCpuStats->StatRZDynMapGCPageInl,             "/PGM/CPU%u/RZ/DynMap/PageGCPageInl",            "Calls to pgmR0DynMapGCPageInlined.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapGCPageInlHits,         "/PGM/CPU%u/RZ/DynMap/PageGCPageInl/Hits",       "Hash table lookup hits.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapGCPageInlMisses,       "/PGM/CPU%u/RZ/DynMap/PageGCPageInl/Misses",     "Misses that falls back to the code common.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapGCPageInlRamHits,      "/PGM/CPU%u/RZ/DynMap/PageGCPageInl/RamHits",    "1st ram range hits.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapGCPageInlRamMisses,    "/PGM/CPU%u/RZ/DynMap/PageGCPageInl/RamMisses",  "1st ram range misses, takes slow path.");
+        PGM_REG_PROFILE(&pCpuStats->StatRZDynMapHCPageInl,             "/PGM/CPU%u/RZ/DynMap/PageHCPageInl",            "Calls to pgmRZDynMapHCPageInlined.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapHCPageInlHits,         "/PGM/CPU%u/RZ/DynMap/PageHCPageInl/Hits",       "Hash table lookup hits.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapHCPageInlMisses,       "/PGM/CPU%u/RZ/DynMap/PageHCPageInl/Misses",     "Misses that falls back to the code common.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPage,                  "/PGM/CPU%u/RZ/DynMap/Page",                     "Calls to pgmR0DynMapPage");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapSetOptimize,           "/PGM/CPU%u/RZ/DynMap/Page/SetOptimize",         "Calls to pgmRZDynMapOptimizeAutoSet.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapSetSearchFlushes,      "/PGM/CPU%u/RZ/DynMap/Page/SetSearchFlushes",    "Set search restorting to subset flushes.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapSetSearchHits,         "/PGM/CPU%u/RZ/DynMap/Page/SetSearchHits",       "Set search hits.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapSetSearchMisses,       "/PGM/CPU%u/RZ/DynMap/Page/SetSearchMisses",     "Set search misses.");
+        PGM_REG_PROFILE(&pCpuStats->StatRZDynMapHCPage,                "/PGM/CPU%u/RZ/DynMap/Page/HCPage",              "Calls to pgmRZDynMapHCPageCommon (ring-0).");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPageHits0,             "/PGM/CPU%u/RZ/DynMap/Page/Hits0",               "Hits at iPage+0");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPageHits1,             "/PGM/CPU%u/RZ/DynMap/Page/Hits1",               "Hits at iPage+1");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPageHits2,             "/PGM/CPU%u/RZ/DynMap/Page/Hits2",               "Hits at iPage+2");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPageInvlPg,            "/PGM/CPU%u/RZ/DynMap/Page/InvlPg",              "invlpg count in pgmR0DynMapPageSlow.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPageSlow,              "/PGM/CPU%u/RZ/DynMap/Page/Slow",                "Calls to pgmR0DynMapPageSlow - subtract this from pgmR0DynMapPage to get 1st level hits.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPageSlowLoopHits,      "/PGM/CPU%u/RZ/DynMap/Page/SlowLoopHits" ,       "Hits in the loop path.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPageSlowLoopMisses,    "/PGM/CPU%u/RZ/DynMap/Page/SlowLoopMisses",      "Misses in the loop path. NonLoopMisses = Slow - SlowLoopHit - SlowLoopMisses");
+        //PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPageSlowLostHits,      "/PGM/CPU%u/R0/DynMap/Page/SlowLostHits",        "Lost hits.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapSubsets,               "/PGM/CPU%u/RZ/DynMap/Subsets",                  "Times PGMRZDynMapPushAutoSubset was called.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPopFlushes,            "/PGM/CPU%u/RZ/DynMap/SubsetPopFlushes",         "Times PGMRZDynMapPopAutoSubset flushes the subset.");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[0],      "/PGM/CPU%u/RZ/DynMap/SetFilledPct000..09",      "00-09% filled (RC: min(set-size, dynmap-size))");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[1],      "/PGM/CPU%u/RZ/DynMap/SetFilledPct010..19",      "10-19% filled (RC: min(set-size, dynmap-size))");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[2],      "/PGM/CPU%u/RZ/DynMap/SetFilledPct020..29",      "20-29% filled (RC: min(set-size, dynmap-size))");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[3],      "/PGM/CPU%u/RZ/DynMap/SetFilledPct030..39",      "30-39% filled (RC: min(set-size, dynmap-size))");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[4],      "/PGM/CPU%u/RZ/DynMap/SetFilledPct040..49",      "40-49% filled (RC: min(set-size, dynmap-size))");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[5],      "/PGM/CPU%u/RZ/DynMap/SetFilledPct050..59",      "50-59% filled (RC: min(set-size, dynmap-size))");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[6],      "/PGM/CPU%u/RZ/DynMap/SetFilledPct060..69",      "60-69% filled (RC: min(set-size, dynmap-size))");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[7],      "/PGM/CPU%u/RZ/DynMap/SetFilledPct070..79",      "70-79% filled (RC: min(set-size, dynmap-size))");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[8],      "/PGM/CPU%u/RZ/DynMap/SetFilledPct080..89",      "80-89% filled (RC: min(set-size, dynmap-size))");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[9],      "/PGM/CPU%u/RZ/DynMap/SetFilledPct090..99",      "90-99% filled (RC: min(set-size, dynmap-size))");
+        PGM_REG_COUNTER(&pCpuStats->aStatRZDynMapSetFilledPct[10],     "/PGM/CPU%u/RZ/DynMap/SetFilledPct100",          "100% filled (RC: min(set-size, dynmap-size))");
 
         /* HC only: */
 
@@ -2036,14 +2037,11 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     pVM->pgm.s.paDynPageMap32BitPTEsGC = pMapping->aPTs[iPT].pPTRC      + iPG * sizeof(pMapping->aPTs[0].pPTR3->a[0]);
     pVM->pgm.s.paDynPageMapPaePTEsGC   = pMapping->aPTs[iPT].paPaePTsRC + iPG * sizeof(pMapping->aPTs[0].paPaePTsR3->a[0]);
 
-    /* init cache */
+    /* init cache area */
     RTHCPHYS HCPhysDummy = MMR3PageDummyHCPhys(pVM);
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache); i++)
-        pVM->pgm.s.aHCPhysDynPageMapCache[i] = HCPhysDummy;
-
-    for (unsigned i = 0; i < MM_HYPER_DYNAMIC_SIZE; i += PAGE_SIZE)
+    for (uint32_t offDynMap = 0; offDynMap < MM_HYPER_DYNAMIC_SIZE; offDynMap += PAGE_SIZE)
     {
-        rc = PGMMap(pVM, pVM->pgm.s.pbDynPageMapBaseGC + i, HCPhysDummy, PAGE_SIZE, 0);
+        rc = PGMMap(pVM, pVM->pgm.s.pbDynPageMapBaseGC + offDynMap, HCPhysDummy, PAGE_SIZE, 0);
         AssertRCReturn(rc, rc);
     }
 
@@ -2204,8 +2202,23 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * Dynamic page mapping area.
      */
     pVM->pgm.s.paDynPageMap32BitPTEsGC += offDelta;
-    pVM->pgm.s.paDynPageMapPaePTEsGC += offDelta;
-    pVM->pgm.s.pbDynPageMapBaseGC += offDelta;
+    pVM->pgm.s.paDynPageMapPaePTEsGC   += offDelta;
+    pVM->pgm.s.pbDynPageMapBaseGC      += offDelta;
+
+    if (pVM->pgm.s.pRCDynMap)
+    {
+        pVM->pgm.s.pRCDynMap += offDelta;
+        PPGMRCDYNMAP pDynMap = (PPGMRCDYNMAP)MMHyperRCToCC(pVM, pVM->pgm.s.pRCDynMap);
+
+        pDynMap->paPages     += offDelta;
+        PPGMRCDYNMAPENTRY paPages = (PPGMRCDYNMAPENTRY)MMHyperRCToCC(pVM, pDynMap->paPages);
+
+        for (uint32_t iPage = 0; iPage < pDynMap->cPages; iPage++)
+        {
+            paPages[iPage].pvPage  += offDelta;
+            paPages[iPage].uPte.pv += offDelta;
+        }
+    }
 
     /*
      * The Zero page.
