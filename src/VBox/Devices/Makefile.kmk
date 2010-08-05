@@ -1110,6 +1110,30 @@ ifdef VBOX_WITH_USB
 	USB/USBProxyDevice.cpp \
 	USB/linux/USBProxyDevice-linux.cpp
 
+# USBProxyDevice-linux.cpp and USBProxyDevice-linux.c should be kept in sync.
+# Hence this bit of ugliness that checks that they are identical, apart from
+# the first line of the files (svn attributes).
+# If you are updating the code, build with VBOX_WITH_TESTCASES= as long as you
+# haven't synced.
+ifdef VBOX_WITH_TESTCASES
+ ifndef VBOX_ONLY_SDK
+
+VBOX_PRX_DEV_LNX = $(PATH_ROOT)/src/VBox/Devices/USB/linux/USBProxyDevice-linux.cpp
+VRDP_PRX_DEV_LNX = $(PATH_ROOT)/src/VBox/RDP/client/vrdp/USBProxyDevice-linux.c
+VBOX_PRX_DEV_LNX_LINE1 = $(shell $(SED) -n '1 p' $(VBOX_PRX_DEV_LNX))
+VRDP_PRX_DEV_LNX_LINE1 = $(shell $(SED) -n '1 p' $(VRDP_PRX_DEV_LNX))
+
+  TESTING  += $(PATH_Drivers)/tstSameUSBProxyDevLinux.run
+  OTHERS   += $(PATH_Drivers)/tstSameUSBProxyDevLinux.run
+$$(PATH_Drivers)/tstSameUSBProxyDevLinux.run: \
+    $(VBOX_PRX_DEV_LNX) $(VRDP_PRX_DEV_LNX)
+	$(QUIET)$(CMP) $(VBOX_PRX_DEV_LNX) $(VRDP_PRX_DEV_LNX) \
+	    $(length $(VBOX_PRX_DEV_LNX_LINE1)) \
+	    $(length $(VRDP_PRX_DEV_LNX_LINE1))
+	$(QUIET)$(APPEND) -t "$@" "done"
+ endif
+endif
+
  Drivers_DEFS.l4      += VUSB_HAVE_USBPROXY_DEVICE
  Drivers_SOURCES.l4   += \
 	USB/USBProxyDevice.cpp \
