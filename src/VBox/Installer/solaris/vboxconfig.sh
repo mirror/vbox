@@ -107,7 +107,7 @@ find_bin_path()
         echo "$binfilepath"
         return 0
     else
-        errorprint "$1, $2 missing or is not an executable"
+        errorprint "$1 missing or is not an executable"
         exit 1
     fi
 }
