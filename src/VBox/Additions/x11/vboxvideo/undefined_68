@@ -1,5 +1,6 @@
 DGAInit
 ErrorF
+FatalError
 LoaderRefSymLists
 PixmapWidthPaddingInfo
 SetTimeSinceLastInputEvent

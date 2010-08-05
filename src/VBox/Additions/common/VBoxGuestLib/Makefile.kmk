@@ -151,6 +151,8 @@ VBoxGuestR3LibXFree86_DEFS     = \
 	VBOX_VBGLR3_XFREE86 \
 	RTMEM_NO_WRAP_TO_EF_APIS \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
+VBoxGuestR3LibXFree86_CXXFLAGS.linux = \
+    $(VBOX_GCC_fno-stack-protector) -ffreestanding
 VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibGR.cpp \
