@@ -385,25 +385,12 @@ VMMDECL(unsigned)   PGMAssertCR3(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t c
 #endif /* VBOX_STRICT */
 
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-VMMDECL(int)        PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
-VMMDECL(int)        PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv);
-# ifdef IN_RC
-VMMDECL(int)        PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
-VMMDECL(void)       PGMDynLockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage);
-VMMDECL(void)       PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage);
-#  ifdef VBOX_STRICT
-VMMDECL(void)       PGMDynCheckLocks(PVM pVM);
-#  endif
-# endif
-VMMDECL(void)       PGMDynMapStartAutoSet(PVMCPU pVCpu);
-VMMDECL(bool)       PGMDynMapStartOrMigrateAutoSet(PVMCPU pVCpu);
-VMMDECL(void)       PGMDynMapReleaseAutoSet(PVMCPU pVCpu);
-VMMDECL(void)       PGMDynMapFlushAutoSet(PVMCPU pVCpu);
-VMMDECL(void)       PGMDynMapMigrateAutoSet(PVMCPU pVCpu);
-VMMDECL(uint32_t)   PGMDynMapPushAutoSubset(PVMCPU pVCpu);
-VMMDECL(void)       PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
+VMMDECL(void)       PGMRZDynMapStartAutoSet(PVMCPU pVCpu);
+VMMDECL(void)       PGMRZDynMapReleaseAutoSet(PVMCPU pVCpu);
+VMMDECL(void)       PGMRZDynMapFlushAutoSet(PVMCPU pVCpu);
+VMMDECL(uint32_t)   PGMRZDynMapPushAutoSubset(PVMCPU pVCpu);
+VMMDECL(void)       PGMRZDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
 #endif
-
 
 VMMDECL(void) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages);
 
@@ -421,6 +408,7 @@ VMMDECL(void) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages);
  * @ingroup grp_pgm
  * @{
  */
+VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
 /** @} */
 #endif /* IN_RC */
 
@@ -440,6 +428,8 @@ VMMR0DECL(void)     PGMR0DynMapTerm(void);
 VMMR0DECL(int)      PGMR0DynMapInitVM(PVM pVM);
 VMMR0DECL(void)     PGMR0DynMapTermVM(PVM pVM);
 VMMR0DECL(int)      PGMR0DynMapAssertIntegrity(void);
+VMMR0DECL(bool)     PGMR0DynMapStartOrMigrateAutoSet(PVMCPU pVCpu);
+VMMR0DECL(void)     PGMR0DynMapMigrateAutoSet(PVMCPU pVCpu);
 # endif
 /** @} */
 #endif /* IN_RING0 */

@@ -285,57 +285,59 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
 
 /**
- * Inlined version of the ring-0 version of PGMDynMapHCPage that
- * optimizes access to pages already in the set.
+ * Inlined version of the ring-0 version of the host page mapping code
+ * that optimizes access to pages already in the set.
  *
  * @returns VINF_SUCCESS. Will bail out to ring-3 on failure.
  * @param   pVCpu       The current CPU.
  * @param   HCPhys      The physical address of the page.
  * @param   ppv         Where to store the mapping address.
  */
-DECLINLINE(int) pgmR0DynMapHCPageInlined(PVMCPU pVCpu, RTHCPHYS HCPhys, void **ppv)
+DECLINLINE(int) pgmRZDynMapHCPageInlined(PVMCPU pVCpu, RTHCPHYS HCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL)
 {
     PPGMMAPSET  pSet    = &pVCpu->pgm.s.AutoSet;
 
-    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapHCPageInl, a);
+    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapHCPageInl, a);
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
     Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
 
     unsigned    iHash   = PGMMAPSET_HASH(HCPhys);
     unsigned    iEntry  = pSet->aiHashTable[iHash];
     if (    iEntry < pSet->cEntries
-        &&  pSet->aEntries[iEntry].HCPhys == HCPhys)
+        &&  pSet->aEntries[iEntry].HCPhys == HCPhys
+        &&  pSet->aEntries[iEntry].cInlinedRefs < UINT16_MAX - 1)
     {
+        pSet->aEntries[iEntry].cInlinedRefs++;
         *ppv = pSet->aEntries[iEntry].pvPage;
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapHCPageInlHits);
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapHCPageInlHits);
     }
     else
     {
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapHCPageInlMisses);
-        pgmR0DynMapHCPageCommon(pSet, HCPhys, ppv);
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapHCPageInlMisses);
+        pgmRZDynMapHCPageCommon(pSet, HCPhys, ppv RTLOG_COMMA_SRC_POS_ARGS);
     }
 
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapHCPageInl, a);
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapHCPageInl, a);
     return VINF_SUCCESS;
 }
 
 
 /**
- * Inlined version of the ring-0 version of PGMDynMapGCPage that optimizes
- * access to pages already in the set.
+ * Inlined version of the guest page mapping code that optimizes access to pages
+ * already in the set.
  *
- * @returns See PGMDynMapGCPage.
+ * @returns VBox status code, see pgmRZDynMapGCPageCommon for details.
  * @param   pVM         The VM handle.
  * @param   pVCpu       The current CPU.
  * @param   GCPhys      The guest physical address of the page.
  * @param   ppv         Where to store the mapping address.
  */
-DECLINLINE(int) pgmR0DynMapGCPageV2Inlined(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv)
+DECLINLINE(int) pgmRZDynMapGCPageV2Inlined(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL)
 {
-    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInl, a);
+    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInl, a);
     AssertMsg(!(GCPhys & PAGE_OFFSET_MASK), ("%RGp\n", GCPhys));
 
     /*
@@ -346,16 +348,16 @@ DECLINLINE(int) pgmR0DynMapGCPageV2Inlined(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhy
     if (RT_UNLIKELY(off >= pRam->cb
         /** @todo   || page state stuff */))
     {
-        /* This case is not counted into StatR0DynMapGCPageInl. */
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInlRamMisses);
-        return PGMDynMapGCPage(pVM, GCPhys, ppv);
+        /* This case is not counted into StatRZDynMapGCPageInl. */
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInlRamMisses);
+        return pgmRZDynMapGCPageCommon(pVM, pVCpu, GCPhys, ppv RTLOG_COMMA_SRC_POS_ARGS);
     }
 
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[off >> PAGE_SHIFT]);
-    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInlRamHits);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInlRamHits);
 
     /*
-     * pgmR0DynMapHCPageInlined with out stats.
+     * pgmRZDynMapHCPageInlined with out stats.
      */
     PPGMMAPSET pSet = &pVCpu->pgm.s.AutoSet;
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
@@ -364,49 +366,52 @@ DECLINLINE(int) pgmR0DynMapGCPageV2Inlined(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhy
     unsigned    iHash   = PGMMAPSET_HASH(HCPhys);
     unsigned    iEntry  = pSet->aiHashTable[iHash];
     if (    iEntry < pSet->cEntries
-        &&  pSet->aEntries[iEntry].HCPhys == HCPhys)
+        &&  pSet->aEntries[iEntry].HCPhys == HCPhys
+        &&  pSet->aEntries[iEntry].cInlinedRefs < UINT16_MAX - 1)
     {
+        pSet->aEntries[iEntry].cInlinedRefs++;
         *ppv = pSet->aEntries[iEntry].pvPage;
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInlHits);
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInlHits);
     }
     else
     {
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInlMisses);
-        pgmR0DynMapHCPageCommon(pSet, HCPhys, ppv);
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInlMisses);
+        pgmRZDynMapHCPageCommon(pSet, HCPhys, ppv RTLOG_COMMA_SRC_POS_ARGS);
     }
 
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInl, a);
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInl, a);
     return VINF_SUCCESS;
 }
 
 
 /**
- * Inlined version of the ring-0 version of PGMDynMapGCPage that optimizes
+ * Inlined version of the ring-0 version of guest page mapping that optimizes
  * access to pages already in the set.
  *
- * @returns See PGMDynMapGCPage.
+ * @returns VBox status code, see pgmRZDynMapGCPageCommon for details.
  * @param   pVCpu       The current CPU.
  * @param   GCPhys      The guest physical address of the page.
  * @param   ppv         Where to store the mapping address.
  */
-DECLINLINE(int) pgmR0DynMapGCPageInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv)
+DECLINLINE(int) pgmRZDynMapGCPageInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL)
 {
-    return pgmR0DynMapGCPageV2Inlined(pVCpu->CTX_SUFF(pVM), pVCpu, GCPhys, ppv);
+    return pgmRZDynMapGCPageV2Inlined(pVCpu->CTX_SUFF(pVM), pVCpu, GCPhys, ppv RTLOG_COMMA_SRC_POS_ARGS);
 }
 
 
 /**
- * Inlined version of the ring-0 version of PGMDynMapGCPageOff that optimizes
- * access to pages already in the set.
+ * Inlined version of the ring-0 version of the guest byte mapping code
+ * that optimizes access to pages already in the set.
  *
- * @returns See PGMDynMapGCPage.
+ * @returns VBox status code, see pgmRZDynMapGCPageCommon for details.
  * @param   pVCpu       The current CPU.
  * @param   HCPhys      The physical address of the page.
- * @param   ppv         Where to store the mapping address.
+ * @param   ppv         Where to store the mapping address. The offset is
+ *                      preserved.
  */
-DECLINLINE(int) pgmR0DynMapGCPageOffInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv)
+DECLINLINE(int) pgmRZDynMapGCPageOffInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL)
 {
-    STAM_PROFILE_START(&pVCpu->pgm.s.StatR0DynMapGCPageInl, a);
+    STAM_PROFILE_START(&pVCpu->pgm.s.StatRZDynMapGCPageInl, a);
 
     /*
      * Get the ram range.
@@ -417,16 +422,16 @@ DECLINLINE(int) pgmR0DynMapGCPageOffInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void 
     if (RT_UNLIKELY(off >= pRam->cb
         /** @todo   || page state stuff */))
     {
-        /* This case is not counted into StatR0DynMapGCPageInl. */
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInlRamMisses);
-        return PGMDynMapGCPageOff(pVM, GCPhys, ppv);
+        /* This case is not counted into StatRZDynMapGCPageInl. */
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInlRamMisses);
+        return pgmRZDynMapGCPageCommon(pVM, pVCpu, GCPhys, ppv RTLOG_COMMA_SRC_POS_ARGS);
     }
 
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[off >> PAGE_SHIFT]);
-    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInlRamHits);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInlRamHits);
 
     /*
-     * pgmR0DynMapHCPageInlined with out stats.
+     * pgmRZDynMapHCPageInlined with out stats.
      */
     PPGMMAPSET pSet = &pVCpu->pgm.s.AutoSet;
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
@@ -435,19 +440,21 @@ DECLINLINE(int) pgmR0DynMapGCPageOffInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void 
     unsigned    iHash   = PGMMAPSET_HASH(HCPhys);
     unsigned    iEntry  = pSet->aiHashTable[iHash];
     if (    iEntry < pSet->cEntries
-        &&  pSet->aEntries[iEntry].HCPhys == HCPhys)
+        &&  pSet->aEntries[iEntry].HCPhys == HCPhys
+        &&  pSet->aEntries[iEntry].cInlinedRefs < UINT16_MAX - 1)
     {
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInlHits);
+        pSet->aEntries[iEntry].cInlinedRefs++;
         *ppv = (void *)((uintptr_t)pSet->aEntries[iEntry].pvPage | (PAGE_OFFSET_MASK & (uintptr_t)GCPhys));
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInlHits);
     }
     else
     {
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInlMisses);
-        pgmR0DynMapHCPageCommon(pSet, HCPhys, ppv);
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInlMisses);
+        pgmRZDynMapHCPageCommon(pSet, HCPhys, ppv RTLOG_COMMA_SRC_POS_ARGS);
         *ppv = (void *)((uintptr_t)*ppv | (PAGE_OFFSET_MASK & (uintptr_t)GCPhys));
     }
 
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0DynMapGCPageInl, a);
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapGCPageInl, a);
     return VINF_SUCCESS;
 }
 
@@ -461,17 +468,13 @@ DECLINLINE(int) pgmR0DynMapGCPageOffInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void 
  * @param   pVM         Pointer to the PGM instance data.
  * @param   pPage       The page.
  */
-DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage)
+DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage RTLOG_COMMA_SRC_POS_DECL)
 {
     if (pPage->idx >= PGMPOOL_IDX_FIRST)
     {
         Assert(pPage->idx < pVM->pgm.s.CTX_SUFF(pPool)->cCurPages);
         void *pv;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        pgmR0DynMapHCPageInlined(VMMGetCpu(pVM), pPage->Core.Key, &pv);
-# else
-        PGMDynMapHCPage(pVM, pPage->Core.Key, &pv);
-# endif
+        pgmRZDynMapHCPageInlined(VMMGetCpu(pVM), pPage->Core.Key, &pv RTLOG_COMMA_SRC_POS_ARGS);
         return pv;
     }
     AssertFatalMsgFailed(("pgmPoolMapPageInlined invalid page index %x\n", pPage->idx));
@@ -485,18 +488,14 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage)
  * @param   pVCpu       The current CPU.
  * @param   pPage       The page.
  */
-DECLINLINE(void *) pgmPoolMapPageV2Inlined(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pPage)
+DECLINLINE(void *) pgmPoolMapPageV2Inlined(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pPage RTLOG_COMMA_SRC_POS_DECL)
 {
     if (pPage->idx >= PGMPOOL_IDX_FIRST)
     {
         Assert(pPage->idx < pVM->pgm.s.CTX_SUFF(pPool)->cCurPages);
         void *pv;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         Assert(pVCpu == VMMGetCpu(pVM));
-        pgmR0DynMapHCPageInlined(pVCpu, pPage->Core.Key, &pv);
-# else
-        PGMDynMapHCPage(pVM, pPage->Core.Key, &pv);
-# endif
+        pgmRZDynMapHCPageInlined(pVCpu, pPage->Core.Key, &pv RTLOG_COMMA_SRC_POS_ARGS);
         return pv;
     }
     AssertFatalMsgFailed(("pgmPoolMapPageV2Inlined invalid page index %x\n", pPage->idx));
@@ -513,14 +512,10 @@ DECLINLINE(void *) pgmPoolMapPageV2Inlined(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE p
  * @param   pVM         The VM handle.
  * @param   HCPhys      HC Physical address of the page.
  */
-DECLINLINE(void *) pgmDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys)
+DECLINLINE(void *) pgmRZDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys RTLOG_COMMA_SRC_POS_DECL)
 {
     void *pv;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    pgmR0DynMapHCPageInlined(VMMGetCpu(pVM), HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, &pv);
-# else
-    PGMDynMapHCPage(pVM, HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, &pv);
-# endif
+    pgmRZDynMapHCPageInlined(VMMGetCpu(pVM), HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, &pv RTLOG_COMMA_SRC_POS_ARGS);
     pv = (void *)((uintptr_t)pv | ((uintptr_t)HCPhys & PAGE_OFFSET_MASK));
     return pv;
 }
@@ -650,7 +645,7 @@ DECLINLINE(RTGCPHYS) pgmGstGet4MBPhysPage(PPGM pPGM, X86PDE Pde)
 DECLINLINE(int) pgmGstGet32bitPDPtrEx(PVMCPU pVCpu, PX86PD *ppPd)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    int rc = pgmR0DynMapGCPageInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)ppPd);
+    int rc = pgmRZDynMapGCPageInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)ppPd RTLOG_COMMA_SRC_POS);
     if (RT_FAILURE(rc))
     {
         *ppPd = NULL;
@@ -675,7 +670,7 @@ DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD pGuestPD = NULL;
-    int rc = pgmR0DynMapGCPageInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)&pGuestPD);
+    int rc = pgmRZDynMapGCPageInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)&pGuestPD RTLOG_COMMA_SRC_POS);
     if (RT_FAILURE(rc))
     {
         AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
@@ -704,7 +699,7 @@ DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PVMCPU pVCpu)
 DECLINLINE(int) pgmGstGetPaePDPTPtrEx(PVMCPU pVCpu, PX86PDPT *ppPdpt)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    int rc = pgmR0DynMapGCPageOffInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)ppPdpt);
+    int rc = pgmRZDynMapGCPageOffInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)ppPdpt RTLOG_COMMA_SRC_POS);
     if (RT_FAILURE(rc))
     {
         *ppPdpt = NULL;
@@ -748,7 +743,7 @@ DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PVMCPU pVCpu, RTGCPTR GCPtr)
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pGuestPDPT = NULL;
-    int rc = pgmR0DynMapGCPageOffInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)&pGuestPDPT);
+    int rc = pgmRZDynMapGCPageOffInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)&pGuestPDPT RTLOG_COMMA_SRC_POS);
     AssertRCReturn(rc, NULL);
 #else
     PX86PDPT pGuestPDPT = pVCpu->pgm.s.CTX_SUFF(pGstPaePdpt);
@@ -784,9 +779,10 @@ DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PVMCPU pVCpu, RTGCPTR GCPtr)
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
             PX86PDPAE   pGuestPD = NULL;
-            int rc = pgmR0DynMapGCPageInlined(pVCpu,
+            int rc = pgmRZDynMapGCPageInlined(pVCpu,
                                               pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK,
-                                              (void **)&pGuestPD);
+                                              (void **)&pGuestPD
+                                              RTLOG_COMMA_SRC_POS);
             if (RT_SUCCESS(rc))
                 return pGuestPD->a[iPD];
             AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
@@ -836,9 +832,10 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, unsigned *p
     /* The PDE. */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPAE   pGuestPD = NULL;
-    int rc = pgmR0DynMapGCPageInlined(pVCpu,
+    int rc = pgmRZDynMapGCPageInlined(pVCpu,
                                       pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK,
-                                      (void **)&pGuestPD);
+                                      (void **)&pGuestPD
+                                      RTLOG_COMMA_SRC_POS);
     if (RT_FAILURE(rc))
     {
         AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
@@ -867,7 +864,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, unsigned *p
 DECLINLINE(int) pgmGstGetLongModePML4PtrEx(PVMCPU pVCpu, PX86PML4 *ppPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    int rc = pgmR0DynMapGCPageInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)ppPml4);
+    int rc = pgmRZDynMapGCPageInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)ppPml4 RTLOG_COMMA_SRC_POS);
     if (RT_FAILURE(rc))
     {
         *ppPml4 = NULL;
@@ -909,7 +906,7 @@ DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PVMCPU pVCpu, unsigned int iPml4
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
-    int rc = pgmR0DynMapGCPageInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)&pGuestPml4);
+    int rc = pgmRZDynMapGCPageInlined(pVCpu, pVCpu->pgm.s.GCPhysCR3, (void **)&pGuestPml4 RTLOG_COMMA_SRC_POS);
     AssertRCReturn(rc, NULL);
 #else
     PX86PML4 pGuestPml4 = pVCpu->pgm.s.CTX_SUFF(pGstAmd64Pml4);

@@ -246,9 +246,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
             {
                 PX86PD pShw32BitPd = pgmShwGet32BitPDPtr(pVCpu);
                 AssertFatal(pShw32BitPd);
-#ifdef IN_RC    /* Lock mapping to prevent it from being reused during pgmPoolFree. */
-                PGMDynLockHCPage(pVM, (uint8_t *)pShw32BitPd);
-#endif
+
                 /* Free any previous user, unless it's us. */
                 Assert(   (pShw32BitPd->a[iNewPDE].u & (X86_PDE_P | PGM_PDFLAGS_MAPPING)) != (X86_PDE_P | PGM_PDFLAGS_MAPPING)
                        || (pShw32BitPd->a[iNewPDE].u & X86_PDE_PG_MASK) == pMap->aPTs[i].HCPhysPT);
@@ -259,10 +257,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 /* Default mapping page directory flags are read/write and supervisor; individual page attributes determine the final flags. */
                 pShw32BitPd->a[iNewPDE].u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US
                                           | (uint32_t)pMap->aPTs[i].HCPhysPT;
-#ifdef IN_RC
-                /* Unlock dynamic mappings again. */
-                PGMDynUnlockHCPage(pVM, (uint8_t *)pShw32BitPd);
-#endif
+                PGM_DYNMAP_UNUSED_HINT_VM(pVM, pShw32BitPd);
                 break;
             }
 
@@ -273,9 +268,6 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 unsigned        iPaePde   = iNewPDE * 2 % 512;
                 PX86PDPT        pShwPdpt  = pgmShwGetPaePDPTPtr(pVCpu);
                 Assert(pShwPdpt);
-#ifdef IN_RC    /* Lock mapping to prevent it from being reused during pgmShwSyncPaePDPtr. */
-                PGMDynLockHCPage(pVM, (uint8_t *)pShwPdpt);
-#endif
 
                 /*
                  * Get the shadow PD.
@@ -301,9 +293,6 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                     AssertFatalRC(rc);
                 }
                 Assert(pShwPaePd);
-#ifdef IN_RC    /* Lock mapping to prevent it from being reused during pgmPoolFree. */
-                PGMDynLockHCPage(pVM, (uint8_t *)pShwPaePd);
-#endif
 
                 /*
                  * Mark the page as locked; disallow flushing.
@@ -356,11 +345,8 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                  */
                 pShwPdpt->a[iPdPt].u |= PGM_PLXFLAGS_MAPPING;
 
-#ifdef IN_RC
-                /* Unlock dynamic mappings again. */
-                PGMDynUnlockHCPage(pVM, (uint8_t *)pShwPaePd);
-                PGMDynUnlockHCPage(pVM, (uint8_t *)pShwPdpt);
-#endif
+                PGM_DYNMAP_UNUSED_HINT_VM(pVM, pShwPaePd);
+                PGM_DYNMAP_UNUSED_HINT_VM(pVM, pShwPdpt);
                 break;
             }
 
@@ -405,13 +391,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
     PX86PDPT pCurrentShwPdpt = NULL;
     if (    PGMGetGuestMode(pVCpu) >= PGMMODE_PAE
         &&  pShwPageCR3 != pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
-    {
         pCurrentShwPdpt = pgmShwGetPaePDPTPtr(pVCpu);
-#ifdef IN_RC    /* Lock mapping to prevent it from being reused (currently not possible). */
-        if (pCurrentShwPdpt)
-            PGMDynLockHCPage(pVM, (uint8_t *)pCurrentShwPdpt);
-#endif
-    }
 
     unsigned i = pMap->cPTs;
     PGMMODE  enmShadowMode = PGMGetShadowMode(pVCpu);
@@ -502,11 +482,8 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                 break;
         }
     }
-#ifdef IN_RC
-    /* Unlock dynamic mappings again. */
-    if (pCurrentShwPdpt)
-        PGMDynUnlockHCPage(pVM, (uint8_t *)pCurrentShwPdpt);
-#endif
+
+    PGM_DYNMAP_UNUSED_HINT_VM(pVM, pCurrentShwPdpt);
 }
 #endif /* !IN_RING0 */
 

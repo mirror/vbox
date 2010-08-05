@@ -45,6 +45,7 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -129,6 +130,8 @@ RT_C_DECLS_END
  * @param   pVCpu       The virtual CPU handle.
  * @param   rc          The VBox status code to return.
  * @param   pRegFrame   Pointer to the register frame for the trap.
+ *
+ * @remarks This must not be used for hypervisor traps, only guest traps.
  */
 static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
 {
@@ -230,11 +233,15 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
          * Try sync CR3?
          */
         else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+        {
 #if 1
+            PGMRZDynMapReleaseAutoSet(pVCpu);
+            PGMRZDynMapStartAutoSet(pVCpu);
             rc = PGMSyncCR3(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu), VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
 #else
             rc = VINF_PGM_SYNC_CR3;
 #endif
+        }
         /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
         else if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
                  || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
@@ -245,6 +252,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
               ||   (   pRegFrame->eflags.Bits.u1IF
                     && ( pRegFrame->eflags.Bits.u2IOPL < (unsigned)(pRegFrame->ss & X86_SEL_RPL) || pRegFrame->eflags.Bits.u1VM))
               , ("rc=%Rrc\neflags=%RX32 ss=%RTsel IOPL=%d\n", rc, pRegFrame->eflags.u32, pRegFrame->ss, pRegFrame->eflags.Bits.u2IOPL));
+    PGMRZDynMapReleaseAutoSet(pVCpu);
     return rc;
 }
 
@@ -269,27 +277,69 @@ DECLASM(int) TRPMGCTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     LogFlow(("TRPMGC01: cs:eip=%04x:%08x uDr6=%RTreg\n", pRegFrame->cs, pRegFrame->eip, uDr6));
 
     /*
-     * We currently don't make sure of the X86_DR7_GD bit, but
+     * We currently don't make use of the X86_DR7_GD bit, but
      * there might come a time when we do.
      */
-    if ((uDr6 & X86_DR6_BD) == X86_DR6_BD)
-    {
-        AssertReleaseMsgFailed(("X86_DR6_BD isn't used, but it's set! dr7=%RTreg(%RTreg) dr6=%RTreg\n",
-                                ASMGetDR7(), CPUMGetHyperDR7(pVCpu), uDr6));
-        return VERR_NOT_IMPLEMENTED;
-    }
-
+    AssertReleaseMsgReturn((uDr6 & X86_DR6_BD) != X86_DR6_BD,
+                           ("X86_DR6_BD isn't used, but it's set! dr7=%RTreg(%RTreg) dr6=%RTreg\n",
+                            ASMGetDR7(), CPUMGetHyperDR7(pVCpu), uDr6),
+                           VERR_NOT_IMPLEMENTED);
     AssertReleaseMsg(!(uDr6 & X86_DR6_BT), ("X86_DR6_BT is impossible!\n"));
 
     /*
      * Now leave the rest to the DBGF.
      */
+    PGMRZDynMapStartAutoSet(pVCpu);
     int rc = DBGFRZTrap01Handler(pVM, pVCpu, pRegFrame, uDr6);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
         CPUMSetGuestDR6(pVCpu, uDr6);
 
     rc = trpmGCExitTrap(pVM, pVCpu, rc, pRegFrame);
     Log6(("TRPMGC01: %Rrc (%04x:%08x %RTreg)\n", rc, pRegFrame->cs, pRegFrame->eip, uDr6));
+    return rc;
+}
+
+
+/**
+ * \#DB (Debug event) handler for the hypervisor code.
+ *
+ * This is mostly the same as TRPMGCTrap01Handler, but we skip the PGM auto
+ * mapping set as well as the default trap exit path since they are both really
+ * bad ideas in this context.
+ *
+ * @returns VBox status code.
+ *          VINF_SUCCESS means we completely handled this trap,
+ *          other codes are passed execution to host context.
+ *
+ * @param   pTrpmCpu    Pointer to TRPMCPU data (within VM).
+ * @param   pRegFrame   Pointer to the register frame for the trap.
+ * @internal
+ */
+DECLASM(int) TRPMGCHyperTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
+{
+    RTGCUINTREG uDr6  = ASMGetAndClearDR6();
+    PVM         pVM   = TRPMCPU_2_VM(pTrpmCpu);
+    PVMCPU      pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
+
+    LogFlow(("TRPMGCHyper01: cs:eip=%04x:%08x uDr6=%RTreg\n", pRegFrame->cs, pRegFrame->eip, uDr6));
+
+    /*
+     * We currently don't make use of the X86_DR7_GD bit, but
+     * there might come a time when we do.
+     */
+    AssertReleaseMsgReturn((uDr6 & X86_DR6_BD) != X86_DR6_BD,
+                           ("X86_DR6_BD isn't used, but it's set! dr7=%RTreg(%RTreg) dr6=%RTreg\n",
+                            ASMGetDR7(), CPUMGetHyperDR7(pVCpu), uDr6),
+                           VERR_NOT_IMPLEMENTED);
+    AssertReleaseMsg(!(uDr6 & X86_DR6_BT), ("X86_DR6_BT is impossible!\n"));
+
+    /*
+     * Now leave the rest to the DBGF.
+     */
+    int rc = DBGFRZTrap01Handler(pVM, pVCpu, pRegFrame, uDr6);
+    AssertStmt(rc != VINF_EM_RAW_GUEST_TRAP, rc = VERR_INTERNAL_ERROR_3);
+
+    Log6(("TRPMGCHyper01: %Rrc (%04x:%08x %RTreg)\n", rc, pRegFrame->cs, pRegFrame->eip, uDr6));
     return rc;
 }
 
@@ -315,6 +365,29 @@ DECLASM(int) TRPMGCTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 
 
 /**
+ * NMI handler, for when we are using NMIs to debug things.
+ *
+ * This is the handler we're most likely to hit when the NMI fires (it is
+ * unlikely that we'll be stuck in guest code).
+ *
+ * @returns VBox status code.
+ *          VINF_SUCCESS means we completely handled this trap,
+ *          other codes are passed execution to host context.
+ *
+ * @param   pTrpmCpu    Pointer to TRPMCPU data (within VM).
+ * @param   pRegFrame   Pointer to the register frame for the trap.
+ * @internal
+ * @remark  This is not hooked up unless you're building with VBOX_WITH_NMI defined.
+ */
+DECLASM(int) TRPMGCHyperTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
+{
+    LogFlow(("TRPMGCHyperTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs, pRegFrame->eip));
+    RTLogComPrintf("TRPMGCHyperTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs, pRegFrame->eip);
+    return VERR_TRPM_DONT_PANIC;
+}
+
+
+/**
  * \#BP (Breakpoint) handler.
  *
  * @returns VBox status code.
@@ -331,9 +404,10 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVM     pVM   = TRPMCPU_2_VM(pTrpmCpu);
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     int     rc;
+    PGMRZDynMapStartAutoSet(pVCpu);
 
     /*
-     * Both PATM are using INT3s, let them have a go first.
+     * PATM is using INT3s, let them have a go first.
      */
     if (    (pRegFrame->ss & X86_SEL_RPL) == 1
         &&  !pRegFrame->eflags.Bits.u1VM)
@@ -356,6 +430,37 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 
 
 /**
+ * \#BP (Breakpoint) handler.
+ *
+ * This is similar to TRPMGCTrap03Handler but we bits which are potentially
+ * harmful to us (common trap exit and the auto mapping set).
+ *
+ * @returns VBox status code.
+ *          VINF_SUCCESS means we completely handled this trap,
+ *          other codes are passed execution to host context.
+ *
+ * @param   pTrpmCpu    Pointer to TRPMCPU data (within VM).
+ * @param   pRegFrame   Pointer to the register frame for the trap.
+ * @internal
+ */
+DECLASM(int) TRPMGCHyperTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
+{
+    LogFlow(("TRPMGCHyper03: %04x:%08x\n", pRegFrame->cs, pRegFrame->eip));
+    PVM     pVM   = TRPMCPU_2_VM(pTrpmCpu);
+    PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
+
+    /*
+     * Hand it over to DBGF.
+     */
+    int rc = DBGFRZTrap03Handler(pVM, pVCpu, pRegFrame);
+    AssertStmt(rc != VINF_EM_RAW_GUEST_TRAP, rc = VERR_INTERNAL_ERROR_3);
+
+    Log6(("TRPMGCHyper03: %Rrc (%04x:%08x)\n", rc, pRegFrame->cs, pRegFrame->eip));
+    return rc;
+}
+
+
+/**
  * Trap handler for illegal opcode fault (\#UD).
  *
  * @returns VBox status code.
@@ -372,6 +477,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVM     pVM   = TRPMCPU_2_VM(pTrpmCpu);
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     int     rc;
+    PGMRZDynMapStartAutoSet(pVCpu);
 
     if (CPUMGetGuestCPL(pVCpu, pRegFrame) == 0)
     {
@@ -401,10 +507,12 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 
         /*
          * UD2 in a patch?
+         * Note! PATMGCHandleIllegalInstrTrap doesn't always return.
          */
         if (    Cpu.pCurInstr->opcode == OP_ILLUD2
             &&  PATMIsPatchGCAddr(pVM, pRegFrame->eip))
         {
+            LogFlow(("TRPMGCTrap06Handler: -> PATMGCHandleIllegalInstrTrap\n"));
             rc = PATMGCHandleIllegalInstrTrap(pVM, pRegFrame);
             /** @todo  These tests are completely unnecessary, should just follow the
              *         flow and return at the end of the function. */
@@ -438,6 +546,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
          */
         else if (Cpu.pCurInstr->opcode == OP_MONITOR)
         {
+            LogFlow(("TRPMGCTrap06Handler: -> EMInterpretInstructionCPU\n"));
             uint32_t cbIgnored;
             rc = EMInterpretInstructionCPU(pVM, pVCpu, &Cpu, pRegFrame, PC, &cbIgnored);
             if (RT_SUCCESS(rc))
@@ -445,10 +554,14 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         }
         /* Never generate a raw trap here; it might be an instruction, that requires emulation. */
         else
+        {
+            LogFlow(("TRPMGCTrap06Handler: -> VINF_EM_RAW_EMULATE_INSTR\n"));
             rc = VINF_EM_RAW_EMULATE_INSTR;
+        }
     }
     else
     {
+        LogFlow(("TRPMGCTrap06Handler: -> TRPMForwardTrap\n"));
         rc = TRPMForwardTrap(pVCpu, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP, 0x6);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
     }
@@ -477,6 +590,7 @@ DECLASM(int) TRPMGCTrap07Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     LogFlow(("TRPMGC07: %04x:%08x\n", pRegFrame->cs, pRegFrame->eip));
     PVM     pVM   = TRPMCPU_2_VM(pTrpmCpu);
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
+    PGMRZDynMapStartAutoSet(pVCpu);
 
     int rc = CPUMHandleLazyFPU(pVCpu);
     rc = trpmGCExitTrap(pVM, pVCpu, rc, pRegFrame);
@@ -499,7 +613,9 @@ DECLASM(int) TRPMGCTrap07Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGC0b: %04x:%08x\n", pRegFrame->cs, pRegFrame->eip));
-    PVM pVM = TRPMCPU_2_VM(pTrpmCpu);
+    PVM     pVM   = TRPMCPU_2_VM(pTrpmCpu);
+    PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
+    PGMRZDynMapStartAutoSet(pVCpu);
 
     /*
      * Try to detect instruction by opcode which caused trap.
@@ -573,6 +689,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
              */
             pTrpmCpu->uActiveVector = ~0;
             Log6(("TRPMGC0b: %Rrc (%04x:%08x) (CG)\n", VINF_EM_RAW_RING_SWITCH, pRegFrame->cs, pRegFrame->eip));
+            PGMRZDynMapReleaseAutoSet(pVCpu);
             return VINF_EM_RAW_RING_SWITCH;
         }
     }
@@ -581,6 +698,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
      * Pass trap 0b as is to the recompiler in all other cases.
      */
     Log6(("TRPMGC0b: %Rrc (%04x:%08x)\n", VINF_EM_RAW_GUEST_TRAP, pRegFrame->cs, pRegFrame->eip));
+    PGMRZDynMapReleaseAutoSet(pVCpu);
     return VINF_EM_RAW_GUEST_TRAP;
 }
 
@@ -932,6 +1050,7 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 
     LogFlow(("TRPMGC0d: %04x:%08x err=%x\n", pRegFrame->cs, pRegFrame->eip, (uint32_t)pVCpu->trpm.s.uActiveErrorCode));
 
+    PGMRZDynMapStartAutoSet(pVCpu);
     int rc = trpmGCTrap0dHandler(pVM, pTrpmCpu, pRegFrame);
     switch (rc)
     {
@@ -993,6 +1112,7 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     /*
      * This is all PGM stuff.
      */
+    PGMRZDynMapStartAutoSet(pVCpu);
     int rc = PGMTrap0eHandler(pVCpu, pVCpu->trpm.s.uActiveErrorCode, pRegFrame, (RTGCPTR)pVCpu->trpm.s.uActiveCR2);
     switch (rc)
     {
@@ -1008,7 +1128,10 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 
         case VINF_EM_RAW_GUEST_TRAP:
             if (PATMIsPatchGCAddr(pVM, pRegFrame->eip))
+            {
+                PGMRZDynMapReleaseAutoSet(pVCpu);
                 return VINF_PATM_PATCH_TRAP_PF;
+            }
 
             rc = TRPMForwardTrap(pVCpu, pRegFrame, 0xE, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP, 0xe);
             Assert(rc == VINF_EM_RAW_GUEST_TRAP);

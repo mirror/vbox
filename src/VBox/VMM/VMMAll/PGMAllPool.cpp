@@ -87,53 +87,6 @@ DECLINLINE(bool) pgmPoolIsBigPage(PGMPOOLKIND enmKind)
     }
 }
 
-/** @def PGMPOOL_PAGE_2_LOCKED_PTR
- * Maps a pool page pool into the current context and lock it (RC only).
- *
- * @returns VBox status code.
- * @param   pVM     The VM handle.
- * @param   pPage   The pool page.
- *
- * @remark  In RC this uses PGMGCDynMapHCPage(), so it will consume of the
- *          small page window employeed by that function. Be careful.
- * @remark  There is no need to assert on the result.
- */
-#if defined(IN_RC)
-DECLINLINE(void *) PGMPOOL_PAGE_2_LOCKED_PTR(PVM pVM, PPGMPOOLPAGE pPage)
-{
-    void *pv = pgmPoolMapPageInlined(pVM, pPage);
-
-    /* Make sure the dynamic mapping will not be reused. */
-    if (pv)
-        PGMDynLockHCPage(pVM, (uint8_t *)pv);
-
-    return pv;
-}
-#else
-# define PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage)  PGMPOOL_PAGE_2_PTR(pVM, pPage)
-#endif
-
-/** @def PGMPOOL_UNLOCK_PTR
- * Unlock a previously locked dynamic caching (RC only).
- *
- * @returns VBox status code.
- * @param   pVM     The VM handle.
- * @param   pPage   The pool page.
- *
- * @remark  In RC this uses PGMGCDynMapHCPage(), so it will consume of the
- *          small page window employeed by that function. Be careful.
- * @remark  There is no need to assert on the result.
- */
-#if defined(IN_RC)
-DECLINLINE(void) PGMPOOL_UNLOCK_PTR(PVM pVM, void *pvPage)
-{
-    if (pvPage)
-        PGMDynUnlockHCPage(pVM, (uint8_t *)pvPage);
-}
-#else
-# define PGMPOOL_UNLOCK_PTR(pVM, pPage)  do {} while (0)
-#endif
-
 
 /**
  * Flushes a chain of pages sharing the same access monitor.
@@ -246,7 +199,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
             case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
             {
                 STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPT));
-                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PTE);
                 LogFlow(("PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT iShw=%x\n", iShw));
                 if (uShw.pPT->a[iShw].n.u1Present)
@@ -269,7 +222,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
             case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
             {
                 STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPT));
-                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 if (!((off ^ pPage->GCPhys) & (PAGE_SIZE / 2)))
                 {
                     const unsigned iShw = (off / sizeof(X86PTE)) & (X86_PG_PAE_ENTRIES - 1);
@@ -299,7 +252,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 unsigned iGst     = off / sizeof(X86PDE);
                 unsigned iShwPdpt = iGst / 256;
                 unsigned iShw     = (iGst % 256) * 2;
-                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
 
                 LogFlow(("pgmPoolMonitorChainChanging PAE for 32 bits: iGst=%x iShw=%x idx = %d page idx=%d\n", iGst, iShw, iShwPdpt, pPage->enmKind - PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD));
                 STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPD));
@@ -362,7 +315,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 
             case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
             {
-                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PTEPAE);
                 STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPT));
                 if (uShw.pPTPae->a[iShw].n.u1Present)
@@ -408,7 +361,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 
             case PGMPOOLKIND_32BIT_PD:
             {
-                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PTE);         // ASSUMING 32-bit guest paging!
 
                 LogFlow(("pgmPoolMonitorChainChanging: PGMPOOLKIND_32BIT_PD %x\n", iShw));
@@ -488,7 +441,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 
             case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
             {
-                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PDEPAE);
                 STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPD));
 #ifndef IN_RING0
@@ -565,7 +518,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 /* PDPT roots are not page aligned; 32 byte only! */
                 const unsigned offPdpt = GCPhysFault - pPage->GCPhys;
 
-                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = offPdpt / sizeof(X86PDPE);
                 if (iShw < X86_PG_PAE_PDPE_ENTRIES)          /* don't use RT_ELEMENTS(uShw.pPDPT->a), because that's for long mode only */
                 {
@@ -632,7 +585,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
             case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
             {
                 STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FaultPD));
-                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PDEPAE);
                 Assert(!(uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING));
                 if (uShw.pPDPae->a[iShw].n.u1Present)
@@ -672,7 +625,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                  * Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PDPE);
                 if (uShw.pPDPT->a[iShw].n.u1Present)
                 {
@@ -702,7 +655,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                  * Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-                uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PDPE);
                 if (uShw.pPML4->a[iShw].n.u1Present)
                 {
@@ -729,7 +682,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
             default:
                 AssertFatalMsgFailed(("enmKind=%d\n", pPage->enmKind));
         }
-        PGMPOOL_UNLOCK_PTR(pVM, uShw.pv);
+        PGM_DYNMAP_UNUSED_HINT_VM(pVM, uShw.pv);
 
         /* next */
         if (pPage->iMonitoredNext == NIL_PGMPOOL_IDX)
@@ -959,10 +912,10 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
     RTGCUINTPTR pu32 = (RTGCUINTPTR)pvFault;
     while (pRegFrame->rcx)
     {
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
+        uint32_t iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, uIncrement);
-        PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+        PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #else
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, uIncrement);
 #endif
@@ -1011,10 +964,10 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
     /*
      * Clear all the pages. ASSUMES that pvFault is readable.
      */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    uint32_t    iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
+    uint32_t    iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
     pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, DISGetParamSize(pDis, &pDis->param1));
-    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+    PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #else
     pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, DISGetParamSize(pDis, &pDis->param1));
 #endif
@@ -1112,7 +1065,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 #if 0 /* test code defined(VBOX_STRICT) && defined(PGMPOOL_WITH_OPTIMIZED_DIRTY_PT) */
     if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
     {
-        void *pvShw = PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pPage);
+        void *pvShw = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
         void *pvGst;
         int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
         pgmPoolTrackCheckPTPaePae(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PTPAE)pvGst);
@@ -1420,7 +1373,7 @@ static void pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PT
 
                     if (pTempPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
                     {
-                        PX86PTPAE pShwPT2 = (PX86PTPAE)PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pTempPage);
+                        PX86PTPAE pShwPT2 = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pTempPage);
 
                         for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
                         {
@@ -1538,8 +1491,9 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     Assert(rc == VINF_SUCCESS);
     pPage->fDirty = false;
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(VMMGetCpu(pVM));
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
+    PVMCPU   pVCpu = VMMGetCpu(pVM);
+    uint32_t iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
 #endif
 
 #ifdef VBOX_STRICT
@@ -1556,7 +1510,7 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
 
     /* Flush those PTEs that have changed. */
     STAM_PROFILE_START(&pPool->StatTrackDeref,a);
-    void *pvShw = PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pPage);
+    void *pvShw = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
     void *pvGst;
     bool  fFlush;
     rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
@@ -1588,8 +1542,8 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     else
         Log(("Removed dirty page %RGp cMods=%d cChanges=%d\n", pPage->GCPhys, pPage->cModifications, cChanges));
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PGMDynMapPopAutoSubset(VMMGetCpu(pVM), iPrevSubset);
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_R0) || defined(IN_RC)
+    PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #endif
 }
 
@@ -1626,7 +1580,7 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /* Make a copy of the guest page table as we require valid GCPhys addresses when removing
      * references to physical pages. (the HCPhys linear lookup is *extremely* expensive!)
      */
-    void *pvShw = PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pPage);
+    void *pvShw = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
     void *pvGst;
     int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
     memcpy(&pPool->aDirtyPages[idxFree][0], pvGst, PAGE_SIZE);
@@ -3351,10 +3305,10 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
             rc = VINF_PGM_GCPHYS_ALIASED;
         else
         {
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
             /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow and
                pgmPoolTrackFlushGCPhysPTs will/may kill the pool otherwise. */
-            uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+            uint32_t iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
 # endif
 
             if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
@@ -3369,8 +3323,8 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
                 rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPhysPage);
             *pfFlushTLBs = true;
 
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_R0) || defined(IN_RC)
+            PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
 # endif
         }
     }
@@ -3662,6 +3616,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         default:
             AssertFatalMsgFailed(("enmKind=%d iUser=%#x iUserTable=%#x\n", pUserPage->enmKind, pUser->iUser, pUser->iUserTable));
     }
+    PGM_DYNMAP_UNUSED_HINT_VM(pPool->CTX_SUFF(pVM), u.pau64);
 }
 
 
@@ -4434,7 +4389,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Map the shadow page and take action according to the page kind.
      */
-    void *pvShw = PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pPage);
+    void *pvShw = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
     switch (pPage->enmKind)
     {
         case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
@@ -4538,7 +4493,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     ASMMemZeroPage(pvShw);
     STAM_PROFILE_STOP(&pPool->StatZeroPage, z);
     pPage->fZeroed = true;
-    PGMPOOL_UNLOCK_PTR(pPool->CTX_SUFF(pVM), pvShw);
+    PGM_DYNMAP_UNUSED_HINT_VM(pPool->CTX_SUFF(pVM), pvShw);
     Assert(!pPage->cPresent);
 }
 
@@ -4595,10 +4550,10 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
         return VINF_SUCCESS;
     }
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
     /* Start a subset so we won't run out of mapping space. */
     PVMCPU pVCpu = VMMGetCpu(pVM);
-    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+    uint32_t iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
 #endif
 
     /*
@@ -4628,9 +4583,9 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
      */
     pgmPoolCacheFlushPage(pPool, pPage);
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_R0) || defined(IN_RC)
     /* Heavy stuff done. */
-    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+    PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #endif
 
     /*
