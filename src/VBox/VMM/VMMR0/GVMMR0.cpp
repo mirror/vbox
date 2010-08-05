@@ -587,7 +587,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                         pGVM->u32Magic  = GVM_MAGIC;
                         pGVM->hSelf     = iHandle;
                         pGVM->pVM       = NULL;
-                        pGVM->cCpus     = cCpus;                        
+                        pGVM->cCpus     = cCpus;
 
                         gvmmR0InitPerVMData(pGVM);
                         GMMR0InitPerVMData(pGVM);
@@ -639,9 +639,10 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                     /* Initialize all the VM pointers. */
                                     for (uint32_t i = 0; i < cCpus; i++)
                                     {
-                                        pVM->aCpus[i].pVMR0     = pVM;
-                                        pVM->aCpus[i].pVMR3     = pVM->pVMR3;
-                                        pVM->aCpus[i].idHostCpu = NIL_RTCPUID;
+                                        pVM->aCpus[i].pVMR0           = pVM;
+                                        pVM->aCpus[i].pVMR3           = pVM->pVMR3;
+                                        pVM->aCpus[i].idHostCpu       = NIL_RTCPUID;
+                                        pVM->aCpus[i].hNativeThreadR0 = NIL_RTNATIVETHREAD;
                                     }
 
                                     rc = RTR0MemObjMapUser(&pGVM->gvmm.s.VMPagesMapObj, pGVM->gvmm.s.VMPagesMemObj, (RTR3PTR)-1, 0,
@@ -655,12 +656,13 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         rc = gvmmR0UsedLock(pGVMM);
                                         AssertRC(rc);
 
-                                        pHandle->pVM        = pVM;
-                                        pHandle->pGVM       = pGVM;
-                                        pHandle->hEMT0      = hEMT0;
-                                        pHandle->ProcId     = ProcId;
-                                        pGVM->pVM           = pVM;
-                                        pGVM->aCpus[0].hEMT = hEMT0;
+                                        pHandle->pVM                  = pVM;
+                                        pHandle->pGVM                 = pGVM;
+                                        pHandle->hEMT0                = hEMT0;
+                                        pHandle->ProcId               = ProcId;
+                                        pGVM->pVM                     = pVM;
+                                        pGVM->aCpus[0].hEMT           = hEMT0;
+                                        pVM->aCpus[0].hNativeThreadR0 = hEMT0;
                                         pGVMM->cEMTs += cCpus;
 
                                         gvmmR0UsedUnlock(pGVMM);
@@ -1103,10 +1105,13 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PVM pVM, VMCPUID idCpu)
     if (RT_FAILURE(rc))
         return rc;
 
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
     AssertReturn(pGVM->aCpus[idCpu].hEMT == NIL_RTNATIVETHREAD, VERR_ACCESS_DENIED);
+    Assert(pGVM->cCpus == pVM->cCpus);
+    Assert(pVM->aCpus[idCpu].hNativeThreadR0 == NIL_RTNATIVETHREAD);
 
-    pGVM->aCpus[idCpu].hEMT = RTThreadNativeSelf();
+    pVM->aCpus[idCpu].hNativeThreadR0 = pGVM->aCpus[idCpu].hEMT = RTThreadNativeSelf();
+
     return VINF_SUCCESS;
 }
 
