@@ -1291,6 +1291,45 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 /**
+ * Loads a minimal guest state
+ *
+ * NOTE: Don't do anything here that can cause a jump back to ring 3!!!!!
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
+ * @param   pCtx        Guest context
+ */
+VMMR0DECL(void) VMXR0LoadMinimalGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    int rc;
+    X86EFLAGS   eflags;
+
+    Assert(!(pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_ALL_GUEST));
+
+    /* EIP, ESP and EFLAGS */
+    rc  = VMXWriteVMCS64(VMX_VMCS64_GUEST_RIP, pCtx->rip);
+    rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_RSP, pCtx->rsp);
+    AssertRC(rc);
+
+    /* Bits 22-31, 15, 5 & 3 must be zero. Bit 1 must be 1. */
+    eflags      = pCtx->eflags;
+    eflags.u32 &= VMX_EFLAGS_RESERVED_0;
+    eflags.u32 |= VMX_EFLAGS_RESERVED_1;
+
+    /* Real mode emulation using v86 mode. */
+    if (    CPUMIsGuestInRealModeEx(pCtx)
+        &&  pVM->hwaccm.s.vmx.pRealModeTSS)
+    {
+        pVCpu->hwaccm.s.vmx.RealMode.eflags = eflags;
+
+        eflags.Bits.u1VM   = 1;
+        eflags.Bits.u2IOPL = 0; /* must always be 0 or else certain instructions won't cause faults. */
+    }
+    rc   = VMXWriteVMCS(VMX_VMCS_GUEST_RFLAGS,           eflags.u32);
+    AssertRC(rc);
+}
+
+/**
  * Loads the guest state
  *
  * NOTE: Don't do anything here that can cause a jump back to ring 3!!!!!
@@ -1304,7 +1343,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     int         rc = VINF_SUCCESS;
     RTGCUINTPTR val;
-    X86EFLAGS   eflags;
 
     /* VMX_VMCS_CTRL_ENTRY_CONTROLS
      * Set required bits to one and zero according to the MSR capabilities.
@@ -1772,60 +1810,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRC(rc);
     }
 
-    /* EIP, ESP and EFLAGS */
-    rc  = VMXWriteVMCS64(VMX_VMCS64_GUEST_RIP, pCtx->rip);
-    rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_RSP, pCtx->rsp);
-    AssertRC(rc);
-
-    /* Bits 22-31, 15, 5 & 3 must be zero. Bit 1 must be 1. */
-    eflags      = pCtx->eflags;
-    eflags.u32 &= VMX_EFLAGS_RESERVED_0;
-    eflags.u32 |= VMX_EFLAGS_RESERVED_1;
-
-    /* Real mode emulation using v86 mode. */
-    if (    CPUMIsGuestInRealModeEx(pCtx)
-        &&  pVM->hwaccm.s.vmx.pRealModeTSS)
-    {
-        pVCpu->hwaccm.s.vmx.RealMode.eflags = eflags;
-
-        eflags.Bits.u1VM   = 1;
-        eflags.Bits.u2IOPL = 0; /* must always be 0 or else certain instructions won't cause faults. */
-    }
-    rc   = VMXWriteVMCS(VMX_VMCS_GUEST_RFLAGS,           eflags.u32);
-    AssertRC(rc);
-
-    if (TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hwaccm.s.vmx.u64TSCOffset))
-    {
-        uint64_t u64CurTSC = ASMReadTSC();
-        if (u64CurTSC + pVCpu->hwaccm.s.vmx.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
-        {
-            /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET */
-            rc = VMXWriteVMCS64(VMX_VMCS_CTRL_TSC_OFFSET_FULL, pVCpu->hwaccm.s.vmx.u64TSCOffset);
-            AssertRC(rc);
-
-            pVCpu->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
-            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
-            AssertRC(rc);
-            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCOffset);
-        }
-        else
-        {
-            /* Fall back to rdtsc emulation as we would otherwise pass decreasing tsc values to the guest. */
-            LogFlow(("TSC %RX64 offset %RX64 time=%RX64 last=%RX64 (diff=%RX64, virt_tsc=%RX64)\n", u64CurTSC, pVCpu->hwaccm.s.vmx.u64TSCOffset, u64CurTSC + pVCpu->hwaccm.s.vmx.u64TSCOffset, TMCpuTickGetLastSeen(pVCpu), TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pVCpu->hwaccm.s.vmx.u64TSCOffset, TMCpuTickGet(pVCpu)));
-            pVCpu->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
-            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
-            AssertRC(rc);
-            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCInterceptOverFlow);
-        }
-    }
-    else
-    {
-        pVCpu->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
-        rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
-        AssertRC(rc);
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCIntercept);
-    }
-
     /* 64 bits guest mode? */
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
@@ -1901,9 +1885,43 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     AssertRC(rc);
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
-    /* Done. */
+    if (TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hwaccm.s.vmx.u64TSCOffset))
+    {
+        uint64_t u64CurTSC = ASMReadTSC();
+        if (u64CurTSC + pVCpu->hwaccm.s.vmx.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
+        {
+            /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET */
+            rc = VMXWriteVMCS64(VMX_VMCS_CTRL_TSC_OFFSET_FULL, pVCpu->hwaccm.s.vmx.u64TSCOffset);
+            AssertRC(rc);
+
+            pVCpu->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCOffset);
+        }
+        else
+        {
+            /* Fall back to rdtsc emulation as we would otherwise pass decreasing tsc values to the guest. */
+            LogFlow(("TSC %RX64 offset %RX64 time=%RX64 last=%RX64 (diff=%RX64, virt_tsc=%RX64)\n", u64CurTSC, pVCpu->hwaccm.s.vmx.u64TSCOffset, u64CurTSC + pVCpu->hwaccm.s.vmx.u64TSCOffset, TMCpuTickGetLastSeen(pVCpu), TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pVCpu->hwaccm.s.vmx.u64TSCOffset, TMCpuTickGet(pVCpu)));
+            pVCpu->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCInterceptOverFlow);
+        }
+    }
+    else
+    {
+        pVCpu->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
+        rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
+        AssertRC(rc);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCIntercept);
+    }
+
+    /* Done with the major changes */
     pVCpu->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
 
+    /* Minimal guest state update (esp, eip, eflags mostly) */
+    VMXR0LoadMinimalGuestState(pVM, pVCpu, pCtx);
     return rc;
 }
 
@@ -2560,18 +2578,31 @@ ResumeExecution:
     VMMR0LogFlushDisable(pVCpu);
 #endif
     /* Save the host state first. */
-    rc  = VMXR0SaveHostState(pVM, pVCpu);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_HOST_CONTEXT)
     {
-        VMMR0LogFlushEnable(pVCpu);
-        goto end;
+        rc  = VMXR0SaveHostState(pVM, pVCpu);
+        if (RT_UNLIKELY(rc != VINF_SUCCESS))
+        {
+            VMMR0LogFlushEnable(pVCpu);
+            goto end;
+        }
     }
+
     /* Load the guest state */
-    rc = VMXR0LoadGuestState(pVM, pVCpu, pCtx);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+#if 0
+    if (!pVCpu->hwaccm.s.fContextUseFlags)
     {
-        VMMR0LogFlushEnable(pVCpu);
-        goto end;
+        VMXR0LoadMinimalGuestState(pVM, pVCpu, pCtx);
+    }
+    else
+#endif
+    {
+        rc = VMXR0LoadGuestState(pVM, pVCpu, pCtx);
+        if (RT_UNLIKELY(rc != VINF_SUCCESS))
+        {
+            VMMR0LogFlushEnable(pVCpu);
+            goto end;
+        }
     }
 
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
@@ -3858,7 +3889,6 @@ ResumeExecution:
                         }
                     }
                 }
-
                 STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
                 goto ResumeExecution;
             }
