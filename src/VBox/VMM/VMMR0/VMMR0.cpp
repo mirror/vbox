@@ -963,10 +963,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 return VERR_INVALID_PARAMETER;
 
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
-            /* Initialize the r0 native thread handle on the fly. */
-            if (pVCpu->hNativeThreadR0 == NIL_RTNATIVETHREAD) 
-                pVCpu->hNativeThreadR0 = RTThreadNativeSelf(); 
+            Assert(pVCpu->hNativeThreadR0 == RTThreadNativeSelf());
 
 # ifdef DEBUG_sandervl
             /* Make sure that log flushes can jump back to ring-3; annoying to get an incomplete log (this is risky though as the code doesn't take this into account). */
