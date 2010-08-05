@@ -193,7 +193,7 @@ RTR3DECL(int) RTPathGetMode(const char *pszPath, PRTFMODE pfMode)
     AssertPtrReturn(pfMode, VERR_INVALID_POINTER);
 
     RTFSOBJINFO ObjInfo;
-    rc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+    int rc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
     if (RT_SUCCESS(rc))
         *pfMode = ObjInfo.Attr.fMode;
 
