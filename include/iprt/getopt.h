@@ -37,7 +37,8 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** @name RTGETOPTDEF::fFlags
+/** @name Values for RTGETOPTDEF::fFlags and the fFlags parameter of
+ *        RTGetOptFetchValue.
  *
  * @remarks When neither of the RTGETOPT_FLAG_HEX, RTGETOPT_FLAG_OCT and RTGETOPT_FLAG_DEC
  *          flags are specified with a integer value format, RTGetOpt will default to
@@ -261,7 +262,9 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
  * @code
 int main(int argc, char **argv)
 {
-     RTR3Init();
+     int rc = RTR3Init();
+     if (RT_FAILURE(rc))
+         return RTMsgInitFailure(rc);
 
      static const RTGETOPTDEF s_aOptions[] =
      {
@@ -300,7 +303,7 @@ int main(int argc, char **argv)
          }
      }
 
-     return 0;
+     return RTEXITCODE_SUCCESS;
 }
    @endcode
  *
@@ -346,7 +349,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion);
  *                      points to erroneous parameter; otherwise, for options
  *                      that require an argument, this contains the value of
  *                      that argument, depending on the type that is required.
- * @param   fFlags      The flags.
+ * @param   fFlags      What to get, that is RTGETOPT_REQ_XXX.
  */
 RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion, uint32_t fFlags);
 
