@@ -150,7 +150,7 @@ find_bins()
     fi
 
     if test ! -x "$BIN_BOOTADM"; then
-        BIN_SVCADM=`find_bin_path "$BIN_BOOTADM"`
+        BIN_BOOTADM=`find_bin_path "$BIN_BOOTADM"`
     fi
 
     if test ! -x "$BIN_SVCCFG"; then
