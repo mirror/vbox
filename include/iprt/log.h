@@ -819,6 +819,39 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 #define LogIsFlowEnabled()  LogIsItEnabled(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP)
 
 
+/** @name Passing Function Call Position When Logging.
+ *
+ * This is a little bit ugly as we have to omit the comma before the
+ * position parameters so that we don't inccur any overhead in non-logging
+ * builds (!defined(LOG_ENABLED).
+ *
+ * @{  */
+/** Source position for passing to a function call. */
+#ifdef LOG_ENABLED
+# define RTLOG_COMMA_SRC_POS        , __FILE__, __LINE__, __PRETTY_FUNCTION__
+#else
+# define RTLOG_COMMA_SRC_POS        RT_NOTHING
+#endif
+/** Source position declaration. */
+#ifdef LOG_ENABLED
+# define RTLOG_COMMA_SRC_POS_DECL   , const char *pszFile, unsigned iLine, const char *pszFunction
+#else
+# define RTLOG_COMMA_SRC_POS_DECL   RT_NOTHING
+#endif
+/** Source position arguments. */
+#ifdef LOG_ENABLED
+# define RTLOG_COMMA_SRC_POS_ARGS   , pszFile, iLine, pszFunction
+#else
+# define RTLOG_COMMA_SRC_POS_ARGS   RT_NOTHING
+#endif
+/** Applies NOREF() to the source position arguments. */
+#ifdef LOG_ENABLED
+# define RTLOG_SRC_POS_NOREF()      do { NOREF(pszFile); NOREF(iLine); NOREF(pszFunction); } while (0)
+#else
+# define RTLOG_SRC_POS_NOREF()      do { } while (0)
+#endif
+/** @}  */
+
 
 
 /** @name Release Logging
