@@ -261,6 +261,8 @@ typedef enum LOGGROUP
     LOG_GROUP_PDM_QUEUE,
     /** PGM group. */
     LOG_GROUP_PGM,
+    /** PGM dynamic mapping group. */
+    LOG_GROUP_PGM_DYNMAP,
     /** PGM physical group. */
     LOG_GROUP_PGM_PHYS,
     /** PGM physical access group. */
@@ -459,6 +461,7 @@ typedef enum LOGGROUP
     "PDM_LDR",      \
     "PDM_QUEUE",    \
     "PGM",          \
+    "PGM_DYNMAP",   \
     "PGM_PHYS",     \
     "PGM_PHYS_ACCESS",\
     "PGM_POOL",     \
