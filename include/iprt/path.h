@@ -653,8 +653,8 @@ RTR3DECL(int) RTPathSetMode(const char *pszPath, RTFMODE fMode);
  * @param   pszPath     Path to the file system object.
  * @param   pfMode      Where to store the file mode, see @ref grp_rt_fs for details.
  *
- * @remark  This is wrapper around RTPathReal() + RTPathQueryInfo()
- *          and exists to complement RTPathSetMode().
+ * @remark  This is wrapper around RTPathQueryInfoEx(RTPATH_F_FOLLOW_LINK) and
+ *          exists to complement RTPathSetMode().
  */
 RTR3DECL(int) RTPathGetMode(const char *pszPath, PRTFMODE pfMode);
 
