@@ -63,6 +63,7 @@ int rtUtf8Length(const char *psz, size_t cch, size_t *pcuc, size_t *pcchActual)
         if (uch & RT_BIT(7))
         {
             /* figure sequence length and validate the first byte */
+/** @todo RT_USE_RTC_3629 */
             unsigned cb;
             if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5))) == (RT_BIT(7) | RT_BIT(6)))
                 cb = 2;
@@ -804,7 +805,7 @@ RT_EXPORT_SYMBOL(RTStrCalcUtf16LenEx);
 static int rtLatin1CalcUtf8Length(const char *psz, size_t cchIn, size_t *pcch)
 {
     size_t  cch = 0;
-    while (true)
+    for (;;)
     {
         RTUNICP Cp;
         size_t cchCp;
@@ -813,10 +814,7 @@ static int rtLatin1CalcUtf8Length(const char *psz, size_t cchIn, size_t *pcch)
             break;
         if (RT_FAILURE(rc))
             return rc;
-        cchCp = RTStrCpSize(Cp);
-        if (cchCp == 0)
-            return VERR_NO_TRANSLATION;
-        cch += cchCp;
+        cch += RTStrCpSize(Cp); /* cannot fail */
     }
 
     /* done */
@@ -837,9 +835,8 @@ static int rtLatin1CalcUtf8Length(const char *psz, size_t cchIn, size_t *pcch)
  */
 static int rtLatin1RecodeAsUtf8(const char *pszIn, size_t cchIn, char *psz, size_t cch)
 {
-    int   rc  = VINF_SUCCESS;
-
-    while (true)
+    int     rc = VINF_SUCCESS;
+    for (;;)
     {
         RTUNICP Cp;
         size_t cchCp;
@@ -853,8 +850,8 @@ static int rtLatin1RecodeAsUtf8(const char *pszIn, size_t cchIn, char *psz, size
             rc = VERR_BUFFER_OVERFLOW;
             break;
         }
-        psz = RTStrPutCp(psz, Cp);
         cch -= cchCp;
+        psz = RTStrPutCp(psz, Cp);
     }
 
     /* done */
@@ -984,7 +981,8 @@ RT_EXPORT_SYMBOL(RTLatin1CalcUtf8LenEx);
 
 
 /**
- * Calculates the Latin-1 length of a string, validating the encoding while doing so.
+ * Calculates the Latin-1 length of a string, validating the encoding while
+ * doing so.
  *
  * @returns IPRT status code.
  * @param   psz     Pointer to the UTF-8 string.
@@ -995,7 +993,7 @@ RT_EXPORT_SYMBOL(RTLatin1CalcUtf8LenEx);
 static int rtUtf8CalcLatin1Length(const char *psz, size_t cchIn, size_t *pcch)
 {
     size_t  cch = 0;
-    while (true)
+    for (;;)
     {
         RTUNICP Cp;
         size_t cchCp;
@@ -1032,7 +1030,7 @@ static int rtUtf8RecodeAsLatin1(const char *pszIn, size_t cchIn, char *psz, size
 {
     int   rc  = VINF_SUCCESS;
 
-    while (true)
+    for (;;)
     {
         RTUNICP Cp;
         size_t cchCp;
@@ -1046,8 +1044,8 @@ static int rtUtf8RecodeAsLatin1(const char *pszIn, size_t cchIn, char *psz, size
             rc = VERR_BUFFER_OVERFLOW;
             break;
         }
-        psz = RTLatin1PutCp(psz, Cp);
         cch -= cchCp;
+        psz = RTLatin1PutCp(psz, Cp);
     }
 
     /* done */
@@ -1223,6 +1221,7 @@ RTDECL(int) RTStrGetCpExInternal(const char **ppsz, PRTUNICP pCp)
     else if (uch & RT_BIT(6))
     {
         /* figure the length and validate the first octet. */
+/** @todo RT_USE_RTC_3629 */
         unsigned cb;
         if (!(uch & RT_BIT(5)))
             cb = 2;
@@ -1374,6 +1373,7 @@ RTDECL(int) RTStrGetCpNExInternal(const char **ppsz, size_t *pcch, PRTUNICP pCp)
     else if (uch & RT_BIT(6))
     {
         /* figure the length and validate the first octet. */
+/** @todo RT_USE_RTC_3629 */
         unsigned cb;
         if (!(uch & RT_BIT(5)))
             cb = 2;
@@ -1499,6 +1499,7 @@ RTDECL(char *) RTStrPutCpInternal(char *psz, RTUNICP uc)
     }
     else if (uc < 0x00010000)
     {
+/** @todo RT_USE_RTC_3629 */
         if (   uc < 0x0000d8000
              || (   uc > 0x0000dfff
                  && uc < 0x0000fffe))
@@ -1513,6 +1514,7 @@ RTDECL(char *) RTStrPutCpInternal(char *psz, RTUNICP uc)
             *puch++ = 0x7f;
         }
     }
+/** @todo RT_USE_RTC_3629 */
     else if (uc < 0x00200000)
     {
         *puch++ = 0xf0 | (uc >> 18);

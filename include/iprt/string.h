@@ -30,7 +30,6 @@
 #include <iprt/types.h>
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
-#include <iprt/uni.h> /* for RTUNICP_INVALID */
 #include <iprt/err.h> /* for VINF_SUCCESS */
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
 # include <linux/string.h>
@@ -67,6 +66,16 @@ char *strpbrk(const char *pszStr, const char *pszChars);
 RT_C_DECLS_END
 #endif
 
+
+/** @def RT_USE_RTC_3629
+ * When defined the UTF-8 range will stop at  0x10ffff.  If not defined, the
+ * range stops at 0x7fffffff.
+ * @remarks Must be defined both when building and using the IPRT.  */
+#ifdef DOXYGEN_RUNNING
+# define RT_USE_RTC_3629
+#endif
+
+
 /**
  * Byte zero the specified object.
  *
@@ -99,6 +108,7 @@ RT_C_DECLS_END
  * @ingroup grp_rt_cdefs
  */
 #define RT_BZERO(pv, cb)    do { memset((pv), 0, cb); } while (0)
+
 
 
 /** @defgroup grp_rt_str    RTStr - String Manipulation
@@ -822,9 +832,10 @@ RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString, PRTUTF16
  * Calculates the length of the string in Latin-1 characters.
  *
  * This function will validate the string, and incorrectly encoded UTF-8
- * strings will be rejected. The primary purpose of this function is to
- * help allocate buffers for RTStrToLatin1Ex of the correct size. For most
- * other purposes RTStrCalcLatin1LenEx() should be used.
+ * strings as well as string with codepoints outside the latin-1 range will be
+ * rejected.  The primary purpose of this function is to help allocate buffers
+ * for RTStrToLatin1Ex of the correct size.  For most other purposes
+ * RTStrCalcLatin1LenEx() should be used.
  *
  * @returns Number of Latin-1 characters.
  * @returns 0 if the string was incorrectly encoded.
@@ -836,11 +847,13 @@ RTDECL(size_t) RTStrCalcLatin1Len(const char *psz);
  * Calculates the length of the string in Latin-1 characters.
  *
  * This function will validate the string, and incorrectly encoded UTF-8
- * strings will be rejected.
+ * strings as well as string with codepoints outside the latin-1 range will be
+ * rejected.
  *
  * @returns iprt status code.
  * @param   psz         The string.
- * @param   cch         The max string length. Use RTSTR_MAX to process the entire string.
+ * @param   cch         The max string length. Use RTSTR_MAX to process the
+ *                      entire string.
  * @param   pcch        Where to store the string length. Optional.
  *                      This is undefined on failure.
  */
@@ -874,15 +887,19 @@ RTDECL(int) RTStrToLatin1Tag(const char *pszString, char **ppszString, const cha
  *
  * @returns iprt status code.
  * @param   pszString       UTF-8 string to convert.
- * @param   cchString       The maximum size in chars (the type) to convert. The conversion stop
- *                          when it reaches cchString or the string terminator ('\\0').
- *                          Use RTSTR_MAX to translate the entire string.
- * @param   ppsz            If cch is non-zero, this must either be pointing to pointer to
- *                          a buffer of the specified size, or pointer to a NULL pointer.
- *                          If *ppsz is NULL or cch is zero a buffer of at least cch items
- *                          will be allocated to hold the translated string.
- *                          If a buffer was requested it must be freed using RTStrFree().
- * @param   cch             The buffer size in bytes. This includes the terminator.
+ * @param   cchString       The maximum size in chars (the type) to convert.
+ *                          The conversion stop when it reaches cchString or
+ *                          the string terminator ('\\0'). Use RTSTR_MAX to
+ *                          translate the entire string.
+ * @param   ppsz            If cch is non-zero, this must either be pointing to
+ *                          pointer to a buffer of the specified size, or
+ *                          pointer to a NULL pointer.  If *ppsz is NULL or cch
+ *                          is zero a buffer of at least cch items will be
+ *                          allocated to hold the translated string. If a
+ *                          buffer was requested it must be freed using
+ *                          RTStrFree().
+ * @param   cch             The buffer size in bytes. This includes the
+ *                          terminator.
  * @param   pcch            Where to store the length of the translated string,
  *                          excluding the terminator. (Optional)
  *
@@ -900,15 +917,19 @@ RTDECL(int) RTStrToLatin1Tag(const char *pszString, char **ppszString, const cha
  *
  * @returns iprt status code.
  * @param   pszString       UTF-8 string to convert.
- * @param   cchString       The maximum size in chars (the type) to convert. The conversion stop
- *                          when it reaches cchString or the string terminator ('\\0').
- *                          Use RTSTR_MAX to translate the entire string.
- * @param   ppsz            If cch is non-zero, this must either be pointing to pointer to
- *                          a buffer of the specified size, or pointer to a NULL pointer.
- *                          If *ppsz is NULL or cch is zero a buffer of at least cch items
- *                          will be allocated to hold the translated string.
- *                          If a buffer was requested it must be freed using RTStrFree().
- * @param   cch             The buffer size in bytes. This includes the terminator.
+ * @param   cchString       The maximum size in chars (the type) to convert.
+ *                          The conversion stop when it reaches cchString or
+ *                          the string terminator ('\\0'). Use RTSTR_MAX to
+ *                          translate the entire string.
+ * @param   ppsz            If cch is non-zero, this must either be pointing to
+ *                          pointer to a buffer of the specified size, or
+ *                          pointer to a NULL pointer.  If *ppsz is NULL or cch
+ *                          is zero a buffer of at least cch items will be
+ *                          allocated to hold the translated string. If a
+ *                          buffer was requested it must be freed using
+ *                          RTStrFree().
+ * @param   cch             The buffer size in bytes.  This includes the
+ *                          terminator.
  * @param   pcch            Where to store the length of the translated string,
  *                          excluding the terminator. (Optional)
  *
@@ -951,14 +972,17 @@ RTDECL(int)  RTLatin1ToUtf8Tag(const char *pszString, char **ppszString, const c
  *
  * @returns iprt status code.
  * @param   pszString       The Latin-1 string to convert.
- * @param   cchString       The number of Latin-1 characters to translate from pszString.
- *                          The translation will stop when reaching cchString or the terminator ('\\0').
- *                          Use RTSTR_MAX to translate the entire string.
- * @param   ppsz            If cch is non-zero, this must either be pointing to a pointer to
- *                          a buffer of the specified size, or pointer to a NULL pointer.
- *                          If *ppsz is NULL or cch is zero a buffer of at least cch chars
- *                          will be allocated to hold the translated string.
- *                          If a buffer was requested it must be freed using RTStrFree().
+ * @param   cchString       The number of Latin-1 characters to translate from
+ *                          pszString. The translation will stop when reaching
+ *                          cchString or the terminator ('\\0').  Use RTSTR_MAX
+ *                          to translate the entire string.
+ * @param   ppsz            If cch is non-zero, this must either be pointing to
+ *                          a pointer to a buffer of the specified size, or
+ *                          pointer to a NULL pointer.  If *ppsz is NULL or cch
+ *                          is zero a buffer of at least cch chars will be
+ *                          allocated to hold the translated string. If a
+ *                          buffer was requested it must be freed using
+ *                          RTStrFree().
  * @param   cch             The buffer size in chars (the type). This includes the terminator.
  * @param   pcch            Where to store the length of the translated string,
  *                          excluding the terminator. (Optional)
@@ -977,15 +1001,19 @@ RTDECL(int)  RTLatin1ToUtf8Tag(const char *pszString, char **ppszString, const c
  *
  * @returns iprt status code.
  * @param   pszString       The Latin1 string to convert.
- * @param   cchString       The number of Latin1 characters to translate from pwszString.
- *                          The translation will stop when reaching cchString or the terminator ('\\0').
- *                          Use RTSTR_MAX to translate the entire string.
- * @param   ppsz            If cch is non-zero, this must either be pointing to a pointer to
- *                          a buffer of the specified size, or pointer to a NULL pointer.
- *                          If *ppsz is NULL or cch is zero a buffer of at least cch chars
- *                          will be allocated to hold the translated string.
- *                          If a buffer was requested it must be freed using RTStrFree().
- * @param   cch             The buffer size in chars (the type). This includes the terminator.
+ * @param   cchString       The number of Latin1 characters to translate from
+ *                          pwszString.  The translation will stop when
+ *                          reaching cchString or the terminator ('\\0').  Use
+ *                          RTSTR_MAX to translate the entire string.
+ * @param   ppsz            If cch is non-zero, this must either be pointing to
+ *                          a pointer to a buffer of the specified size, or
+ *                          pointer to a NULL pointer.  If *ppsz is NULL or cch
+ *                          is zero a buffer of at least cch chars will be
+ *                          allocated to hold the translated string.  If a
+ *                          buffer was requested it must be freed using
+ *                          RTStrFree().
+ * @param   cch             The buffer size in chars (the type).  This includes
+ *                          the terminator.
  * @param   pcch            Where to store the length of the translated string,
  *                          excluding the terminator. (Optional)
  *
@@ -1004,7 +1032,7 @@ RTDECL(int)  RTLatin1ToUtf8ExTag(const char *pszString, size_t cchString, char *
  * RTLatin1ToUtf8() of the correct size. For most other purposes
  * RTLatin1ToUtf8Ex() should be used.
  *
- * @returns Number of char (bytes).
+ * @returns Number of chars (bytes).
  * @returns 0 if the string was incorrectly encoded.
  * @param   psz        The Latin-1 string.
  */
@@ -1016,7 +1044,7 @@ RTDECL(size_t) RTLatin1CalcUtf8Len(const char *psz);
  * @returns iprt status code.
  * @param   psz         The string.
  * @param   cch         The max string length. Use RTSTR_MAX to process the entire string.
- * @param   pcch        Where to store the string length (in bytes). Optional.
+ * @param   pcch        Where to store the string length (in bytes).  Optional.
  *                      This is undefined on failure.
  */
 RTDECL(int) RTLatin1CalcUtf8LenEx(const char *psz, size_t cch, size_t *pcch);
@@ -1158,22 +1186,34 @@ DECLINLINE(int) RTStrGetCpNEx(const char **ppsz, size_t *pcch, PRTUNICP pCp)
 }
 
 /**
- * Get the UTF-8 size in characters of a given Unicode code point.  The code
- * point is expected to be a valid Unicode one, but not necessarily in the
- * range supported by UTF-8.
+ * Get the UTF-8 size in characters of a given Unicode code point.
  *
- * @returns the size in characters, or zero if there is no UTF-8 encoding
+ * The code point is expected to be a valid Unicode one, but not necessarily in
+ * the range supported by UTF-8.
+ *
+ * @returns The number of chars (bytes) required to encode the code point, or
+ *          zero if there is no UTF-8 encoding.
+ * @param   CodePoint       The unicode code point.
  */
 DECLINLINE(size_t) RTStrCpSize(RTUNICP CodePoint)
 {
-    if (CodePoint < 0x80)
+    if (CodePoint < 0x00000080)
         return 1;
-    if (CodePoint < 0x800)
+    if (CodePoint < 0x00000800)
         return 2;
-    if (CodePoint < 0x10000)
+    if (CodePoint < 0x00010000)
         return 3;
-    if (CodePoint < 0x11000)
+#ifdef RT_USE_RTC_3629
+    if (CodePoint < 0x00011000)
         return 4;
+#else
+    if (CodePoint < 0x00200000)
+        return 4;
+    if (CodePoint < 0x04000000)
+        return 5;
+    if (CodePoint < 0x7fffffff)
+        return 6;
+#endif
     return 0;
 }
 
@@ -1292,9 +1332,10 @@ DECLINLINE(int) RTLatin1GetCpNEx(const char **ppsz, size_t *pcch, PRTUNICP pCp)
 }
 
 /**
- * Get the Latin-1 size in characters of a given Unicode code point.  The code
- * point is expected to be a valid Unicode one, but not necessarily in the
- * range supported by Latin-1.
+ * Get the Latin-1 size in characters of a given Unicode code point.
+ *
+ * The code point is expected to be a valid Unicode one, but not necessarily in
+ * the range supported by Latin-1.
  *
  * @returns the size in characters, or zero if there is no Latin-1 encoding
  */
