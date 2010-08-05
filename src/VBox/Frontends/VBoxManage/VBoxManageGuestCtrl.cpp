@@ -338,11 +338,11 @@ static int handleExecProgram(HandlerArg *a)
                 if (fTimeout)
                 {
                     /* Calculate timeout value left after process has been started.  */
-                    uint64_t u64Diff = RTTimeMilliTS() - u64StartMS;
-                    /** @todo Check for uint64_t vs. uint32_t here! */
-                    if (u32TimeoutMS > u64Diff) /* Is timeout still bigger than current difference? */
+                    uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
+                    /* Is timeout still bigger than current difference? */
+                    if (u32TimeoutMS > u64Elapsed)
                     {
-                        u32TimeoutMS = u32TimeoutMS - u64Diff;
+                        u32TimeoutMS -= (uint32_t)u64Elapsed;
                         if (fVerbose)
                             RTPrintf("Waiting for process to exit (%ums left) ...\n", u32TimeoutMS);
                     }
