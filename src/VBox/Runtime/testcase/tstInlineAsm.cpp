@@ -1314,7 +1314,8 @@ void tstASMBench(void)
     BENCH(ASMAtomicDecS32(&s_i32),              "ASMAtomicDecS32:");
     BENCH(ASMAtomicAddU32(&s_u32, 5),           "ASMAtomicAddU32:");
     BENCH(ASMAtomicAddS32(&s_i32, 5),           "ASMAtomicAddS32:");
-#if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+    /* The Darwin gcc does not like this ... */
+#if !defined(RT_OS_DARWIN) && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     BENCH(s_u8 = ASMGetApicId(),                "ASMGetApicId:");
 #endif
 
