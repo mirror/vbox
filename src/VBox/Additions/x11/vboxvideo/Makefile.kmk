@@ -37,9 +37,6 @@ if1of ($(KBUILD_TARGET), linux)
  	XFree86LOADER XFree86Server XF86VIDMODE XvMCExtension SMART_SCHEDULE \
  	BUILDDEBUG X_BYTE_ORDER=X_LITTLE_ENDIAN DNDEBUG FUNCPROTO=15 NARROWPROTO \
  	IN_MODULE XFree86Module
- vboxvideo_drv_CFLAGS.linux := \
- 	-Wno-conversion -Wno-unused-parameter $(VBOX_GCC_Wno-variadic-macros) \
- 	$(VBOX_GCC_fno-stack-protector) -ffreestanding
  vboxvideo_drv_INCS = \
 	$(VBOX_PATH_X11_XFREE_4_3)/include \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/X11 \
