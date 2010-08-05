@@ -473,7 +473,7 @@ MouseCommonOptions(InputInfoPtr pInfo)
 	int lock;             /* lock button */
 	int target;           /* target button */
 	int lockM,targetM;    /* bitmasks for drag lock, target */
-	int i, j;             /* indexes */
+	int k, j;             /* indexes */
 	char *s1;             /* parse input string */
 	DragLockPtr pLock;
 
@@ -537,7 +537,7 @@ MouseCommonOptions(InputInfoPtr pInfo)
 	 */
 
 	/* for each nibble */
-	for (i = 0; i < NIB_COUNT; i++) {
+	for (k = 0; k < NIB_COUNT; k++) {
 	    /* for each possible set of bits for that nibble */
 	    for (j = 0; j < NIB_SIZE; j++) {
 		int ff, fM, otherbits;
@@ -553,17 +553,17 @@ MouseCommonOptions(InputInfoPtr pInfo)
 		    /*
 		     * if otherbits =0 then only 1 bit set
 		     * so j=fM
-		     * nib_table[i][fM] already calculated if fM has
+		     * nib_table[k][fM] already calculated if fM has
 		     * only 1 bit set.
-		     * nib_table[i][j] has already been filled in
+		     * nib_table[k][j] has already been filled in
 		     * by previous loop. otherwise
-		     * otherbits < j so nibtable[i][otherbits]
+		     * otherbits < j so nibtable[k][otherbits]
 		     * has already been calculated.
 		     */
 		    if (otherbits)
-			pLock->nib_table[i][j] =
-				     pLock->nib_table[i][fM] |
-				     pLock->nib_table[i][otherbits];
+			pLock->nib_table[k][j] =
+				     pLock->nib_table[k][fM] |
+				     pLock->nib_table[k][otherbits];
 
 		}
 	    }
@@ -3653,21 +3653,21 @@ autoProbeMouse(InputInfoPtr pInfo, Bool inSync, Bool lostSync)
 	}
 	case AUTOPROBE_SWITCH_PROTOCOL:
 	{
-	    MouseProtocolID proto;
+	    MouseProtocolID prot;
 	    void *defaults;
 	    AP_DBG(("State SWITCH_PROTOCOL\n"));
-	    proto = mPriv->protoList[mPriv->protocolID++];
-	    if (proto == PROT_UNKNOWN)
+	    prot = mPriv->protoList[mPriv->protocolID++];
+	    if (prot == PROT_UNKNOWN)
 		mPriv->autoState = AUTOPROBE_SWITCHSERIAL;
-	    else if (!(defaults = GetProtocol(proto)->defaults)
+	    else if (!(defaults = GetProtocol(prot)->defaults)
 		       || (mPriv->serialDefaultsNum == -1
 			   && (defaults == msDefaults))
 		       || (mPriv->serialDefaultsNum != -1
 			   && serialDefaultsList[mPriv->serialDefaultsNum]
 			   == defaults)) {
 		AP_DBG(("Changing Protocol to %s\n",
-			ProtocolIDToName(proto)));
-		SetMouseProto(pMse,proto);
+			ProtocolIDToName(prot)));
+		SetMouseProto(pMse,prot);
 		FlushButtons(pMse);
 		RESET_VALIDATION;
 		mPriv->autoState = AUTOPROBE_VALIDATE2;

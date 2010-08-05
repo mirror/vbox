@@ -44,8 +44,6 @@
 #ifdef XINPUT
 #include "XI.h"
 #include "XIproto.h"
-#include "extnsionst.h"
-#include "extinit.h"
 #else
 #include "inputstr.h"
 #endif
