@@ -47,6 +47,7 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
   VBoxGuest_SOURCES     += \
   	VBoxGuest.cpp \
   	VBoxHelper.cpp
+  VBoxHelper.cpp_DEFS    = VBOX_SVN_REV=$(VBOX_SVN_REV)
   VBoxGuest_LIBS         = \
   	$(VBOX_LIB_VBGL_R0BASE) \
   	$(VBOX_LIB_IPRT_GUEST_R0)
