@@ -468,34 +468,6 @@ void VBoxVMInformationDlg::refreshStatistics()
             VBoxGlobal::tr ("Disabled", "details report (Nested Paging)");
         QString addVersionStr = console.GetGuest().GetAdditionsVersion();
         if (addVersionStr.isEmpty())
-        {
-            /*
-             * If we got back an empty string from GetAdditionsVersion() we either
-             * really don't have the Guest Additions version yet or the guest is running
-             * older Guest Additions (< 3.2.0) which don't provide VMMDevReq_ReportGuestInfo2,
-             * so get the version + revision from the (hopefully) provided guest properties
-             * instead.
-             */
-            QString addVersion = m.GetGuestPropertyValue("/VirtualBox/GuestAdd/Version");
-            QString addRevision = m.GetGuestPropertyValue("/VirtualBox/GuestAdd/Revision");
-            if (!addVersion.isEmpty() && !addRevision.isEmpty())
-            {
-                /* Some Guest Additions versions had interchanged version + revision values,
-                 * so check if the version value at least has a dot to identify it and change
-                 * both values to reflect the right content. */
-                if (!addVersion.contains("."))
-                {
-                    QString addTemp = addVersion;
-                    addVersion = addRevision;
-                    addRevision = addTemp;
-                }
-
-                addVersionStr = addVersion
-                              + "r"
-                              + addRevision;
-            }
-        }
-        if (addVersionStr.isEmpty())
             addVersionStr = tr ("Not Detected", "guest additions");
         QString osType = console.GetGuest().GetOSTypeId();
         if (osType.isEmpty())
