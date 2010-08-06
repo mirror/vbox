@@ -219,7 +219,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
                     addRevision = addTemp;
                 }
 
-                Bstr additionsVersion = BstrFmt("%lsr%ls",
+                Bstr additionsVersion = BstrFmt("%ls r%ls",
                                                 addVersion.raw(), addRevision.raw());
                 additionsVersion.cloneTo(aAdditionsVersion);
             }
@@ -1560,7 +1560,7 @@ void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aR
          * aVersionName could be "x.y.z_BETA1_FOOBAR", so append revision manually to
          * become "x.y.z_BETA1_FOOBARr12345".
          */
-        mData.mAdditionsVersion = BstrFmt("%lsr%ls", aVersionName.raw(), aRevision.raw());
+        mData.mAdditionsVersion = BstrFmt("%ls r%ls", aVersionName.raw(), aRevision.raw());
     else /* aAdditionsVersion is in x.y.zr12345 format. */
         mData.mAdditionsVersion = aAdditionsVersion;
 }
