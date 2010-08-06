@@ -2,7 +2,7 @@
  *
  * VBoxGuest -- VirtualBox Win32 guest support driver
  *
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,7 @@
 #include "Helper.h"
 
 #include <VBox/VBoxGuestLib.h>
+#include "../../common/VBoxGuest/VBoxHelper.h"
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -275,23 +276,38 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
 
     /** @todo Don't mix up IPRT rc and NTSTATUS rc above! */
 
-    vrc = VBoxInitMemBalloon(pDevExt);
-    if (RT_SUCCESS(vrc))
+    if (NT_SUCCESS(rc))
     {
-        vrc = VbglR0MiscReportGuestInfo(hlpVBoxWinVersionToOSType(winVersion));
+        vrc = VBoxReportGuestInfo(hlpVBoxWinVersionToOSType(winVersion));
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = VBoxInitMemBalloon(pDevExt);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = VBoxReportGuestDriverStatus(true /* Driver is active */);
+                if (RT_FAILURE(vrc))
+                    dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not report guest driver status, vrc = %d\n", vrc));
+            }
+            else
+                dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not init mem balloon, vrc = %d\n", vrc));
+        }
+        else
+            dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not report guest information to host, vrc = %d\n", vrc));
+
         if (RT_FAILURE(vrc))
-            dprintf(("VBoxGuest::ntCreateDevice: could not report information to host, rc = %d, exiting!\n", rc));
+            rc = STATUS_UNSUCCESSFUL;
     }
 
-    if (   NT_ERROR(rc)
-        || RT_FAILURE(vrc))
+    if (NT_SUCCESS(rc))
+    {
+        // ready to rumble!
+        pDevExt->devState = WORKING;
+    }
+    else
     {
         freeDeviceResources(pDrvObj, pDevObj);
-        return STATUS_UNSUCCESSFUL;
     }
 
-    // ready to rumble!
-    pDevExt->devState = WORKING;
     dprintf(("returning from ntCreateDevice with rc = 0x%x\n, vrc = %Rrc", rc, vrc));
     return rc;
 }

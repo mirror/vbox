@@ -24,6 +24,7 @@
 #include <VBox/err.h>
 
 #include <VBox/VBoxGuestLib.h>
+#include "../../common/VBoxGuest/VBoxHelper.h"
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -229,6 +230,31 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                     }
                 }
             }
+
+            /** @todo Don't mix up IPRT rc and NTSTATUS rc above! */
+
+            if (NT_SUCCESS(rc))
+            {
+                int vrc = VBoxReportGuestInfo(hlpVBoxWinVersionToOSType(winVersion));
+                if (RT_SUCCESS(vrc))
+                {
+                    vrc = VBoxInitMemBalloon(pDevExt);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        vrc = VBoxReportGuestDriverStatus(true /* Driver is active */);
+                        if (RT_FAILURE(vrc))
+                            dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not report guest driver status, vrc = %d\n", vrc));
+                    }
+                    else
+                        dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not init mem balloon, vrc = %d\n", vrc));
+                }
+                else
+                    dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not report guest information to host, vrc = %d\n", vrc));
+
+                if (RT_FAILURE(vrc))
+                    rc = STATUS_UNSUCCESSFUL;
+            }
+
             if (NT_SUCCESS(rc))
             {
                 createThreads(pDevExt);
@@ -240,18 +266,11 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 pDevExt->HGCMWaitTimeout.QuadPart  = 250;
                 pDevExt->HGCMWaitTimeout.QuadPart *= -10000;     /* relative in 100ns units */
 
-                int vrc = VBoxInitMemBalloon(pDevExt);
-                if (RT_SUCCESS(vrc))
-                {
-                    vrc = VbglR0MiscReportGuestInfo(hlpVBoxWinVersionToOSType(winVersion));
-                    if (RT_FAILURE(vrc))
-                        dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not report information to host, rc = %d\n", rc));
-                }
-
                 // ready to rumble!
                 dprintf(("VBoxGuest::VBoxGuestPnp: device is ready!\n"));
                 pDevExt->devState = WORKING;
-            } else
+            }
+            else
             {
                 dprintf(("VBoxGuest::VBoxGuestPnp: error: rc = 0x%x\n", rc));
 

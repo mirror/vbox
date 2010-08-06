@@ -35,6 +35,7 @@
 #ifdef VBOX_WITH_HGCM
 # include <iprt/thread.h>
 #endif
+#include "VBoxHelper.h"
 #include "version-generated.h"
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 # include "revision-generated.h"
@@ -732,30 +733,36 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
             pDevExt->PhysIrqAckEvents = VbglPhysHeapGetPhysAddr(pDevExt->pIrqAckEvents);
             Assert(pDevExt->PhysIrqAckEvents != 0);
 
-            rc = vboxGuestSetFilterMask(pDevExt, fFixedEvents);
+            rc = VBoxReportGuestInfo(enmOSType);
             if (RT_SUCCESS(rc))
             {
-                /*
-                 * Disable guest graphics capability by default. The guest specific
-                 * graphics driver will re-enable this when it is necessary.
-                 */
-                rc = VBoxGuestSetGuestCapabilities(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+                rc = vboxGuestSetFilterMask(pDevExt, fFixedEvents);
                 if (RT_SUCCESS(rc))
                 {
-                    vboxGuestInitFixateGuestMappings(pDevExt);
+                    /*
+                     * Disable guest graphics capability by default. The guest specific
+                     * graphics driver will re-enable this when it is necessary.
+                     */
+                    rc = VBoxGuestSetGuestCapabilities(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+                    if (RT_SUCCESS(rc))
+                    {
+                        vboxGuestInitFixateGuestMappings(pDevExt);
 
-                    rc = VbglR0MiscReportGuestInfo(enmOSType);
-                    if (RT_FAILURE(rc))
-                        LogRel(("VBoxGuestInitDevExt: VbglR0MiscReportGuestInfo failed, rc=%Rrc\n", rc));
+                        rc = VBoxReportGuestDriverStatus(true /* Driver is active */);
+                        if (RT_FAILURE(rc))
+                            LogRel(("VBoxGuestInitDevExt: VBoxReportGuestDriverStatus failed, rc=%Rrc\n", rc));
 
-                    Log(("VBoxGuestInitDevExt: returns success\n"));
-                    return VINF_SUCCESS;
+                        Log(("VBoxGuestInitDevExt: returns success\n"));
+                        return VINF_SUCCESS;
+                    }
+
+                    LogRel(("VBoxGuestInitDevExt: VBoxGuestSetGuestCapabilities failed, rc=%Rrc\n", rc));
                 }
-
-                LogRel(("VBoxGuestInitDevExt: VBoxGuestSetGuestCapabilities failed, rc=%Rrc\n", rc));
+                else
+                    LogRel(("VBoxGuestInitDevExt: vboxGuestSetFilterMask failed, rc=%Rrc\n", rc));
             }
             else
-                LogRel(("VBoxGuestInitDevExt: vboxGuestSetFilterMask failed, rc=%Rrc\n", rc));
+                LogRel(("VBoxGuestInitDevExt: VBoxReportGuestInfo failed, rc=%Rrc\n", rc));
             VbglGRFree((VMMDevRequestHeader *)pDevExt->pIrqAckEvents);
         }
         else
