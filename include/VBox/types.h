@@ -824,18 +824,16 @@ typedef enum PGMROMPROT
 
 /**
  * Page mapping lock.
- *
  */
 typedef struct PGMPAGEMAPLOCK
 {
-    /** @todo see PGMPhysIsPageMappingLockValid for possibly incorrect assumptions */
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-    /** Just a dummy for the time being. */
-    uint32_t    u32Dummy;
-    uint32_t    u32Dummy1;
-# if HC_ARCH_BITS == 64
-    uint32_t    u32Align[2];
-# endif
+    /** The locked page. */
+    void       *pvPage;
+    /** Pointer to the CPU that made the mapping.
+     * In ring-0 and raw-mode context we don't intend to ever allow long term
+     * locking and this is a way of making sure we're still on the same CPU. */
+    PVMCPU      pVCpu;
 #else
     /** Pointer to the PGMPAGE and lock type.
      * bit-0 abuse: set=write, clear=read. */
