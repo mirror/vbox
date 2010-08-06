@@ -118,6 +118,7 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPU pVCpu, PGSTPTWALK pGs
         uNewErr |= X86_TRAP_PF_P;
     TRPMSetErrorCode(pVCpu, uNewErr);
 
+    LogFlow(("Guest trap; cr2=%RGv uErr=%RGv lvl=%d\n", pGstWalk->Core.GCPtr, uErr, pGstWalk->Core.uLevel));
     STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2GuestTrap; });
     return VINF_EM_RAW_GUEST_TRAP;
 }
@@ -1425,6 +1426,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint32_t
      *  Update: \#PF should deal with this before or after calling the handlers. It has all the info to do the job efficiently. */
     if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
     {
+        LogFlow(("SyncHandlerPte: monitored page (%R[pgmpage]) -> mark read-only\n", pPage));
 #if PGM_SHW_TYPE == PGM_TYPE_EPT
         pPteDst->u             = PGM_PAGE_GET_HCPHYS(pPage);
         pPteDst->n.u1Present   = 1;
@@ -1556,8 +1558,8 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
             SHWPTE PteDst;
             if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                 PGM_BTH_NAME(SyncHandlerPte)(pVM, pPage,
-                                             PteSrc.u & ~(  X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT
-                                                          | X86_PTE_PCD | X86_PTE_PWT | X86_PTE_RW),
+                                             PteSrc.u & ~(  X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK
+                                                          | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT),
                                              &PteDst);
             else
             {
