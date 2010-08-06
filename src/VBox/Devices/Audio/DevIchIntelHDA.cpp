@@ -380,6 +380,7 @@ typedef struct INTELHDLinkState
     bool        fInReset;
     CODECState  Codec;
     uint8_t     u8Counter;
+    uint8_t     u8StreamsInReset;
 } INTELHDLinkState;
 
 #define ICH6_HDASTATE_2_DEVINS(pINTELHD)   ((pINTELHD)->pDevIns)
@@ -427,6 +428,7 @@ DECLCALLBACK(int)hdaRegWriteU16(INTELHDLinkState* pState, uint32_t offset, uint3
 DECLCALLBACK(int)hdaRegReadU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 DECLCALLBACK(int)hdaRegWriteU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 static int hdaLookup(INTELHDLinkState* pState, uint32_t u32Offset);
+static void fetch_bd(INTELHDLinkState *pState);
 
 /* see 302349 p 6.2*/
 const static struct stIchIntelHDRegMap
@@ -461,7 +463,7 @@ const static struct stIchIntelHDRegMap
     { 0x0000e, 0x00002, 0x00000007, 0x00000007, hdaRegReadU8           , hdaRegWriteSTATESTS     , "STATESTS"  , "State Change Status" },
     { 0x00010, 0x00002, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "GSTS"      , "Global Status" },
     { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, hdaRegReadU32          , hdaRegWriteU32          , "INTCTL"    , "Interrupt Control" },
-    { 0x00024, 0x00004, 0xC00000FF, 0x400000FF, hdaRegReadINTSTS       , hdaRegWriteINTSTS       , "INTSTS"    , "Interrupt Status" },
+    { 0x00024, 0x00004, 0xC00000FF, 0x00000000, hdaRegReadINTSTS       , hdaRegWriteUnimplemented, "INTSTS"    , "Interrupt Status" },
     //** @todo r=michaln: Are guests really not reading the WALCLK register at all?
     { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadUnimplemented, hdaRegWriteUnimplemented, "WALCLK"    , "Wall Clock Counter" },
     //** @todo r=michaln: Doesn't the SSYNC register need to actually stop the stream(s)?
@@ -581,15 +583,14 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
    /* @todo add state change */
     if(   INTCTL_CIE(pState)
        && (   RIRBSTS_RINTFL(pState)
-           ||  RIRBSTS_RIRBOIS(pState)))
+           || RIRBSTS_RIRBOIS(pState))
+           || STATESTS(pState))
     {
-        INTSTS(pState) |= HDA_REG_FIELD_FLAG_MASK(INTSTS, CIS);
         fIrq = true;
     }
     if (   INTCTL_SX(pState, 4)
         && SDSTS(pState, 4) && HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS))
     {
-        INTSTS(pState) |= HDA_REG_FIELD_FLAG_MASK(INTSTS, S4);
         fIrq = true;
     }
     if (INTCTL_GIE(pState))
@@ -874,18 +875,28 @@ DECLCALLBACK(int)hdaRegWriteSTATESTS(INTELHDLinkState* pState, uint32_t offset, 
 
 DECLCALLBACK(int)hdaRegReadINTSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    uint32_t v = INTSTS(pState);
-    v &= ~HDA_REG_FIELD_FLAG_MASK(INTSTS, GIS);
-    v |= (v ? HDA_REG_FIELD_FLAG_MASK(INTSTS, GIS) : 0);
+    uint32_t v = 0;
+    if (   RIRBSTS_RIRBOIS(pState)
+        || RIRBSTS_RINTFL(pState)
+        || HDA_REG_FLAG_VALUE(pState, CORBSTS, CMEI)
+        || STATESTS(pState)) 
+        v |= RT_BIT(30);
+#define HDA_IS_STREAM_EVENT(pState, stream)             \
+       (   (SDSTS((pState),stream) & HDA_REG_FIELD_FLAG_MASK(SDSTS, DE))  \
+        || (SDSTS((pState),stream) & HDA_REG_FIELD_FLAG_MASK(SDSTS, FE))  \
+        || (SDSTS((pState),stream) & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS)))
+#define MARK_STREAM(pState, stream, v) do {(v) |= HDA_IS_STREAM_EVENT((pState),stream) ? RT_BIT((stream)) : 0;}while(0) 
+    MARK_STREAM(pState, 0, v);
+    MARK_STREAM(pState, 1, v);
+    MARK_STREAM(pState, 2, v);
+    MARK_STREAM(pState, 3, v);
+    MARK_STREAM(pState, 4, v);
+    MARK_STREAM(pState, 5, v);
+    MARK_STREAM(pState, 6, v);
+    MARK_STREAM(pState, 7, v);
+    v |= v ? RT_BIT(31) : 0;
     *pu32Value = v;
     return VINF_SUCCESS;
-}
-
-DECLCALLBACK(int)hdaRegWriteINTSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
-{
-    uint32_t v = INTSTS(pState);
-    INTSTS(pState) = (v ^ u32Value) & v;
-    return hdaProcessInterrupt(pState);
 }
 
 DECLCALLBACK(int)hdaRegReadGCAP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
@@ -941,12 +952,22 @@ DECLCALLBACK(int)hdaRegReadSDCTL(INTELHDLinkState* pState, uint32_t offset, uint
 {
     return hdaRegReadU24(pState, offset, index, pu32Value);
 }
-
+#define HDA_STREAM_BITMASK(offset) (1 << (((offset) - 0x80) >> 5))
+#define HDA_IS_STREAM_IN_RESET(pState, offset) ((pState)->u8StreamsInReset & HDA_STREAM_BITMASK((offset)))
 DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
 {
-    if((u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST)))
+    if(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST))
     {
+        LogRel(("hda: guest has iniated hw stream reset\n"));
+        pState->u8StreamsInReset |= HDA_STREAM_BITMASK(offset);
         hdaStreamReset(pState, offset);
+        HDA_REG_IND(pState, index) &= ~HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST);
+    }
+    else if (HDA_IS_STREAM_IN_RESET(pState, offset))
+    {
+        LogRel(("hda: guest has iniated exit of stream reset\n"));
+        pState->u8StreamsInReset &= ~HDA_STREAM_BITMASK(offset);
+        HDA_REG_IND(pState, index) &= ~HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST);
     }
     /* @todo: use right offsets for right streams */
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))
@@ -956,6 +977,7 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
         AUD_set_active_in(pState->Codec.voice_mc, 1);
         if (offset == 0x100)
         {
+            fetch_bd(pState);
             AUD_set_active_out(pState->Codec.voice_po, 1);
             //SDSTS(pState, 4) |= (1<<5);
         }
@@ -970,7 +992,7 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
             SDSTS(pState, 4) &= ~(1<<5);
             AUD_set_active_out(pState->Codec.voice_po, 0);
         }
-        SSYNC(pState) &= ~(1<< (offset - 0x80));
+        //SSYNC(pState) &= ~(1<< (offset - 0x80));
     }
     int rc = hdaRegWriteU24(pState, offset, index, u32Value);
     if (RT_FAILURE(rc))
@@ -1180,7 +1202,6 @@ DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
 {
     INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pHDAState;
     STATESTS(pState) |= 1 << (pCodecState->id);
-    INTSTS(pState) |= HDA_REG_FIELD_FLAG_MASK(INTSTS, CIS);
     return VINF_SUCCESS;
 }
 
@@ -1198,7 +1219,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
                 || avail == 0)
                 return;
             SDCTL(pState, 4) |= ((pState->Codec.pNodes[2].dac.u32F06_param & (0xf << 4)) >> 4) << 20;
-            fetch_bd(pState);
+            //fetch_bd(pState);
             while(   avail
                   && !fStop)
             {
@@ -1216,11 +1237,10 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
                 {
                     if (   SDCTL(pState, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, ICE)
                         && (   (   pState->u32CviPos == pState->u32CviLen
-                                && pState->fCviIoc)
+                                && pState->fCviIoc )
                             || SDLPIB(pState, 4) == SDLCBL(pState, 4)))
                     {
                         SDSTS(pState,4) |= HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS);
-                        INTSTS(pState) |= HDA_REG_FIELD_FLAG_MASK(INTSTS, S4);
                         hdaProcessInterrupt(pState);
                         if (SDLPIB(pState, 4) == SDLCBL(pState, 4))
                         {
@@ -1237,8 +1257,8 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
                             pState->u32Cvi = 0;
                     }
                     fStop = false;
+                    fetch_bd(pState);
                 }
-                fetch_bd(pState);
             }
         }
         break;
