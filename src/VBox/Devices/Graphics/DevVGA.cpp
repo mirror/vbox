@@ -1814,7 +1814,7 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
 #ifndef VBOX
     s1 = s->vram_ptr + (s->start_addr * 4);
 #else /* VBOX */
-    s1 = s->CTX_SUFF(vram_ptr) + (s->start_addr * 8);
+    s1 = s->CTX_SUFF(vram_ptr) + (s->start_addr * 8); /** @todo r=bird: Add comment why we do *8 instead of *4, it's not so obvious... */
 #endif /* VBOX */
 
     /* total width & height */
@@ -4628,40 +4628,64 @@ PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
  */
 static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    uint8_t     *src;
-    unsigned    row, col;
-    unsigned    num_rows = 25, num_cols = 80;
-
-    /* Pure paranoia... */
-    Assert(num_rows * num_cols * 8 <= pThis->vram_size);
-
-    src = pThis->vram_ptrR3;
-    if (src)
+    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    if (!(pThis->gr[6] & 1))
     {
-        for (col = 0; col < num_cols; ++col)
-            pHlp->pfnPrintf(pHlp, "-");
-        pHlp->pfnPrintf(pHlp, "\n");
-        for (row = 0; row < num_rows; ++row)
+        uint8_t *pbSrc = pThis->vram_ptrR3;
+        if (pbSrc)
         {
-            for (col = 0; col < num_cols; ++col)
+            /*
+             * Figure out the display size and where the text is.
+             *
+             * Note! We're cutting quite a few corners here and this code could
+             *       do with some brushing up.  Dumping from the start of the
+             *       frame buffer is done intentionally so that we're more
+             *       likely to obtain the full scrollback of a linux panic.
+             */
+            uint32_t cbLine;
+            uint32_t offStart;
+            uint32_t uLineCompareIgn;
+            vga_get_offsets(pThis, &cbLine, &offStart, &uLineCompareIgn);
+
+            uint32_t cRows = offStart / cbLine + 25;
+            uint32_t cCols = cbLine / 8;
+            if (cRows * cCols * 8 <= pThis->vram_size)
             {
-                if (RT_C_IS_PRINT(*src))
-                    pHlp->pfnPrintf(pHlp, "%c", *src);
-                else
-                    pHlp->pfnPrintf(pHlp, ".");
-                src += 8;   /* chars are spaced 8 bytes apart */
+                /*
+                 * Do the dumping.
+                 */
+                uint32_t row, col;
+                for (col = 0; col < cCols; ++col)
+                    pHlp->pfnPrintf(pHlp, "-");
+                pHlp->pfnPrintf(pHlp, "\n");
+                for (row = 0; row < cRows; ++row)
+                {
+                    if (offStart != 0 && pbSrc == pThis->vram_ptrR3 + offStart)
+                        for (col = 0; col < cCols; ++col)
+                            pHlp->pfnPrintf(pHlp, "-");
+                    for (col = 0; col < cCols; ++col)
+                    {
+                        if (RT_C_IS_PRINT(*pbSrc))
+                            pHlp->pfnPrintf(pHlp, "%c", *pbSrc);
+                        else
+                            pHlp->pfnPrintf(pHlp, ".");
+                        pbSrc += 8;   /* chars are spaced 8 bytes apart */
+                    }
+                    pbSrc += cbLine & 7;
+                    pHlp->pfnPrintf(pHlp, "\n");
+                }
+                for (col = 0; col < cCols; ++col)
+                    pHlp->pfnPrintf(pHlp, "-");
+                pHlp->pfnPrintf(pHlp, "\n");
             }
-            pHlp->pfnPrintf(pHlp, "\n");
+            else
+                pHlp->pfnPrintf(pHlp, "Outside VRAM! (%ux%u)\n", cRows, cCols);
         }
-        for (col = 0; col < num_cols; ++col)
-            pHlp->pfnPrintf(pHlp, "-");
-        pHlp->pfnPrintf(pHlp, "\n");
+        else
+            pHlp->pfnPrintf(pHlp, "VGA memory not available!\n");
     }
     else
-    {
-        pHlp->pfnPrintf(pHlp, "VGA memory not available!\n");
-    }
+        pHlp->pfnPrintf(pHlp, "Not in text mode!\n");
 }
 
 /**
