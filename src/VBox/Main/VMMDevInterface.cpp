@@ -227,7 +227,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
          * or driver unload.
          */
         guest->setAdditionsInfo(Bstr(), guestInfo->osType); /* Clear interface version + OS type. */
-        guest->setAdditionsInfo2(Bstr(), Bstr()); /* Clear Guest Additions version. */
+        guest->setAdditionsInfo2(Bstr(), Bstr(), Bstr()); /* Clear Guest Additions version. */
         guest->setAdditionsStatus(VBoxGuestStatusFacility_All,
                                   VBoxGuestStatusCurrent_Disabled,
                                   0); /* Flags; not used. */
@@ -265,7 +265,9 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, const
                                                               guestInfo->additionsMinor,
                                                               guestInfo->additionsBuild,
                                                               guestInfo->additionsRevision);
-        guest->setAdditionsInfo2(Bstr(version), Bstr(guestInfo->szName));
+        char revision[16];
+        RTStrPrintf(revision, sizeof(revision), "%ld", guestInfo->additionsRevision);
+        guest->setAdditionsInfo2(Bstr(version), Bstr(guestInfo->szName), Bstr(revision));
 
         /*
          * No need to tell the console interface about the update;

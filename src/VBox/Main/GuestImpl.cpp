@@ -184,9 +184,58 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mAdditionsVersion.cloneTo(aAdditionsVersion);
+    HRESULT hr = S_OK;
+    if (   mData.mAdditionsVersion.isEmpty()
+        && mData.mAdditionsActive) /* Only try alternative way if GA are active! */
+    {
+        /*
+         * If we got back an empty string from GetAdditionsVersion() we either
+         * really don't have the Guest Additions version yet or the guest is running
+         * older Guest Additions (< 3.2.0) which don't provide VMMDevReq_ReportGuestInfo2,
+         * so get the version + revision from the (hopefully) provided guest properties
+         * instead.
+         */
+        Bstr addVersion;
+        ULONG64 u64Timestamp;
+        Bstr flags;
+        hr = mParent->machine()->GetGuestProperty(Bstr("/VirtualBox/GuestAdd/Version"),
+                                                  addVersion.asOutParam(), &u64Timestamp, flags.asOutParam());
+        if (hr == S_OK)
+        {
+            Bstr addRevision;
+            hr = mParent->machine()->GetGuestProperty(Bstr("/VirtualBox/GuestAdd/Revision"),
+                                                      addRevision.asOutParam(), &u64Timestamp, flags.asOutParam());
+            if (   hr == S_OK
+                && !addVersion.isEmpty()
+                && !addVersion.isEmpty())
+            {
+                /* Some Guest Additions versions had interchanged version + revision values,
+                 * so check if the version value at least has a dot to identify it and change
+                 * both values to reflect the right content. */
+                if (!Utf8Str(addVersion).contains("."))
+                {
+                    Bstr addTemp = addVersion;
+                    addVersion = addRevision;
+                    addRevision = addTemp;
+                }
 
-    return S_OK;
+                Bstr additionsVersion = BstrFmt("%lsr%ls",
+                                                addVersion.raw(), addRevision.raw());
+                additionsVersion.cloneTo(aAdditionsVersion);
+            }
+        }
+        else
+        {
+            /* If getting the version + revision above fails or they simply aren't there
+             * because of *really* old Guest Additions we only can report the interface
+             * version to at least have something. */
+            mData.mInterfaceVersion.cloneTo(aAdditionsVersion);
+        }
+    }
+    else
+        mData.mAdditionsVersion.cloneTo(aAdditionsVersion);
+
+    return hr;
 }
 
 STDMETHODIMP Guest::COMGETTER(SupportsSeamless) (BOOL *aSupportsSeamless)
@@ -1455,8 +1504,11 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
 
     /*
      * Note: The Guest Additions API (interface) version is deprecated
-     * and will not be used anymore!
+     * and will not be used anymore!  We might need it to at least report
+     * something as version number if *really* ancient Guest Additions are
+     * installed (without the guest version + revision properties having set).
      */
+    mData.mInterfaceVersion = aInterfaceVersion;
 
     /*
      * Older Additions rely on the Additions API version whether they
@@ -1475,8 +1527,8 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
         mData.mAdditionsActive = !aInterfaceVersion.isEmpty();
     /*
      * Older Additions didn't have this finer grained capability bit,
-     * so enable it by default.  Newer Additions will disable it immediately
-     * if relevant.
+     * so enable it by default.  Newer Additions will not enable this here
+     * and use the setSupportedFeatures function instead.
      */
     mData.mSupportsGraphics = mData.mAdditionsActive;
 
@@ -1496,7 +1548,7 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
  * @param aAdditionsVersion
  * @param aVersionName
  */
-void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName)
+void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -1504,8 +1556,12 @@ void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!aVersionName.isEmpty())
-        mData.mAdditionsVersion = BstrFmt("%ls %ls", aAdditionsVersion.raw(), aVersionName.raw());
-    else
+        /*
+         * aVersionName could be "x.y.z_BETA1_FOOBAR", so append revision manually to
+         * become "x.y.z_BETA1_FOOBARr12345".
+         */
+        mData.mAdditionsVersion = BstrFmt("%lsr%ls", aVersionName.raw(), aRevision.raw());
+    else /* aAdditionsVersion is in x.y.zr12345 format. */
         mData.mAdditionsVersion = aAdditionsVersion;
 }
 

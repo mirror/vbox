@@ -109,7 +109,7 @@ public:
 
     // Public methods that are not in IDL (only called internally).
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
-    void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName);
+    void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
     void setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags);
     void setSupportedFeatures(ULONG64 ulCaps, ULONG64 ulActive);
     HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
@@ -171,6 +171,7 @@ private:
         Bstr  mOSTypeId;
         BOOL  mAdditionsActive;
         Bstr  mAdditionsVersion;
+        Bstr  mInterfaceVersion;
         BOOL  mSupportsSeamless;
         BOOL  mSupportsGraphics;
     };
