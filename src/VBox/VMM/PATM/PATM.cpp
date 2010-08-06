@@ -137,7 +137,7 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
      * Note2: This doesn't really belong here, but we need access to it for relocation purposes
      *
      */
-    Assert(sizeof(PATMGCSTATE) < PAGE_SIZE);    /** @note hardcoded dependencies on this exist. */
+    Assert(sizeof(PATMGCSTATE) < PAGE_SIZE);    /* Note: hardcoded dependencies on this exist. */
     pVM->patm.s.pGCStateHC  = (PPATMGCSTATE)((uint8_t *)pVM->patm.s.pGCStackHC + PATM_STACK_TOTAL_SIZE);
     pVM->patm.s.pGCStateGC  = MMHyperR3ToRC(pVM, pVM->patm.s.pGCStateHC);
 
@@ -1576,7 +1576,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     if (RT_FAILURE(rc))
         return rc;
 
-    /** @note Never do a direct return unless a failure is encountered! */
+    /* Note: Never do a direct return unless a failure is encountered! */
 
     /* Clear recompilation of next instruction flag; we are doing that right here. */
     if (pPatch->flags & PATMFL_RECOMPILE_NEXT)
@@ -1887,7 +1887,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         goto gen_illegal_instr;
 
     case OP_MOV_DR:
-        /** @note: currently we let DRx writes cause a trap d; our trap handler will decide to interpret it or not. */
+        /* Note: currently we let DRx writes cause a trap d; our trap handler will decide to interpret it or not. */
         if (pCpu->pCurInstr->param2 == OP_PARM_Dd)
         {
             rc = patmPatchGenMovDebug(pVM, pPatch, pCpu);
@@ -1898,7 +1898,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         goto duplicate_instr;
 
     case OP_MOV_CR:
-        /** @note: currently we let CRx writes cause a trap d; our trap handler will decide to interpret it or not. */
+        /* Note: currently we let CRx writes cause a trap d; our trap handler will decide to interpret it or not. */
         if (pCpu->pCurInstr->param2 == OP_PARM_Cd)
         {
             rc = patmPatchGenMovControl(pVM, pPatch, pCpu);
@@ -2344,7 +2344,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                     break;
                 }
 
-                /** @note after a cli we must continue to a proper exit point */
+                /* Note: after a cli we must continue to a proper exit point */
                 if (cpunext.pCurInstr->opcode != OP_CLI)
                 {
                     rc = pfnPATMR3Recompile(pVM, &cpunext, pInstrGC, pNextInstrGC, pCacheRec);
@@ -2667,7 +2667,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
     case OP_CLI:
     case OP_PUSHF:
         /* We can 'call' a cli or pushf patch. It will either return to the original guest code when IF is set again, or fault. */
-        /** @note special precautions are taken when disabling and enabling such patches. */
+        /* Note: special precautions are taken when disabling and enabling such patches. */
         pPatch->flags |= PATMFL_CALLABLE_AS_FUNCTION;
         break;
 
@@ -2716,7 +2716,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
     }
 
     /***************************************************************************************************************************/
-    /** @note We can't insert *any* code before a sysenter handler; some linux guests have an invalid stack at this point!!!!! */
+    /* Note: We can't insert *any* code before a sysenter handler; some linux guests have an invalid stack at this point!!!!!  */
     /***************************************************************************************************************************/
 #ifdef VBOX_WITH_STATISTICS
     if (!(pPatch->flags & PATMFL_SYSENTER))
@@ -3151,7 +3151,7 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
 
     cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
 
-    /** @note Set the PATM interrupt flag here; it was cleared before the patched call. (!!!) */
+    /* Note: Set the PATM interrupt flag here; it was cleared before the patched call. (!!!) */
     rc = patmPatchGenSetPIF(pVM, pPatch, pInstrGC);
     if (RT_FAILURE(rc))
         goto failure;
@@ -3302,7 +3302,7 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
     pPatch->pPatchBlockOffset = pVM->patm.s.offPatchMem;
     pPatch->uCurPatchOffset   = 0;
 
-    /** @note Set the PATM interrupt flag here; it was cleared before the patched call. (!!!) */
+    /* Note: Set the PATM interrupt flag here; it was cleared before the patched call. (!!!) */
     rc = patmPatchGenSetPIF(pVM, pPatch, pInstrGC);
     if (RT_FAILURE(rc))
         goto failure;
@@ -3774,7 +3774,7 @@ VMMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t
     uint8_t ASMInt3 = 0xCC;
     int rc;
 
-    /** @note Do not use patch memory here! It might called during patch installation too. */
+    /* Note: Do not use patch memory here! It might called during patch installation too. */
 
 #ifdef LOG_ENABLED
     DISCPUSTATE   cpu;
@@ -4028,14 +4028,14 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         }
     }
 
-    /** @note the OpenBSD specific check will break if we allow additional patches to be installed (int 3)) */
+    /* Note: the OpenBSD specific check will break if we allow additional patches to be installed (int 3)) */
     if (!(flags & PATMFL_GUEST_SPECIFIC))
     {
         /* New code. Make sure CSAM has a go at it first. */
         CSAMR3CheckCode(pVM, pInstrGC);
     }
 
-    /** @note obsolete */
+    /* Note: obsolete */
     if (    PATMIsPatchGCAddr(pVM, pInstrGC)
         && (flags & PATMFL_MMIO_ACCESS))
     {
@@ -4772,7 +4772,7 @@ loop_start:
                             Log(("PATMR3PatchWrite: overwriting jump to patch code -> remove patch.\n"));
                             int rc = PATMR3RemovePatch(pVM, pPatch->pPrivInstrGC);
                             if (rc == VINF_SUCCESS)
-                                /** @note jump back to the start as the pPatchPage has been deleted or changed */
+                                /* Note: jump back to the start as the pPatchPage has been deleted or changed */
                                 goto loop_start;
 
                             continue;
@@ -4814,7 +4814,7 @@ loop_start:
 
                                     PATMR3MarkDirtyPatch(pVM, pPatch);
 
-                                    /** @note jump back to the start as the pPatchPage has been deleted or changed */
+                                    /* Note: jump back to the start as the pPatchPage has been deleted or changed */
                                     goto loop_start;
                                 }
                                 else
@@ -4853,7 +4853,7 @@ invalid_write_loop_start:
 
                         if (pPatch->cInvalidWrites > PATM_MAX_INVALID_WRITES)
                         {
-                            /** @note possibly dangerous assumption that all future writes will be harmless. */
+                            /* Note: possibly dangerous assumption that all future writes will be harmless. */
                             if (pPatch->flags & PATMFL_IDTHANDLER)
                             {
                                 LogRel(("PATM: Stop monitoring IDT handler pages at %RRv - invalid write %RRv-%RRv (this is not a fatal error)\n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
@@ -4867,7 +4867,7 @@ invalid_write_loop_start:
                                 LogRel(("PATM: Disable block at %RRv - invalid write %RRv-%RRv \n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
                                 PATMR3MarkDirtyPatch(pVM, pPatch);
                             }
-                            /** @note jump back to the start as the pPatchPage has been deleted or changed */
+                            /* Note: jump back to the start as the pPatchPage has been deleted or changed */
                             goto invalid_write_loop_start;
                         }
                     } /* for */
@@ -5001,7 +5001,7 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
             return VINF_SUCCESS;
 
         /* Clear the IDT entries for the patch we're disabling. */
-        /** @note very important as we clear IF in the patch itself */
+        /* Note: very important as we clear IF in the patch itself */
         /** @todo this needs to be changed */
         if (pPatch->flags & PATMFL_IDTHANDLER)
         {
@@ -5362,8 +5362,8 @@ int PATMRemovePatch(PVM pVM, PPATMPATCHREC pPatchRec, bool fForceRemove)
     }
     Log(("PATMRemovePatch %RRv\n", pPatch->pPrivInstrGC));
 
-    /** @note NEVER EVER REUSE PATCH MEMORY */
-    /** @note PATMR3DisablePatch puts a breakpoint (0xCC) at the entry of this patch */
+    /* Note: NEVER EVER REUSE PATCH MEMORY */
+    /* Note: PATMR3DisablePatch puts a breakpoint (0xCC) at the entry of this patch */
 
     if (pPatchRec->patch.pPatchBlockOffset)
     {
@@ -5402,7 +5402,7 @@ int PATMRemovePatch(PVM pVM, PPATMPATCHREC pPatchRec, bool fForceRemove)
     }
 #endif
 
-    /** @note no need to free Guest2PatchAddrTree as those records share memory with Patch2GuestAddrTree records. */
+    /* Note: no need to free Guest2PatchAddrTree as those records share memory with Patch2GuestAddrTree records. */
     patmEmptyTreeU32(pVM, &pPatch->Patch2GuestAddrTree);
     pPatch->nrPatch2GuestRecs = 0;
     Assert(pPatch->Patch2GuestAddrTree == 0);
@@ -5414,7 +5414,7 @@ int PATMRemovePatch(PVM pVM, PPATMPATCHREC pPatchRec, bool fForceRemove)
     if (pPatchRec->patch.pTempInfo)
         MMR3HeapFree(pPatchRec->patch.pTempInfo);
 
-    /** @note might fail, because it has already been removed (e.g. during reset). */
+    /* Note: might fail, because it has already been removed (e.g. during reset). */
     RTAvloU32Remove(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pPatchRec->Core.Key);
 
     /* Free the patch record */
@@ -5656,8 +5656,8 @@ VMMR3DECL(int) PATMR3MarkDirtyPatch(PVM pVM, PPATCHINFO pPatch)
     if (rc == VWRN_PATCH_REMOVED)
         return VINF_SUCCESS;
 
-    /** @note we don't restore patch pages for patches that are not enabled! */
-    /** @note be careful when changing this behaviour!! */
+    /* Note: we don't restore patch pages for patches that are not enabled! */
+    /* Note: be careful when changing this behaviour!! */
 
     /* The patch pages are no longer marked for self-modifying code detection */
     if (pPatch->flags & PATMFL_CODE_MONITORED)
@@ -5851,12 +5851,12 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
     RTRCPTR      pCurInstrGC, pCurPatchInstrGC;
     uint32_t     cbDirty;
     PRECPATCHTOGUEST pRec;
+    RTRCPTR const pOrgInstrGC = pPatchToGuestRec->pOrgInstrGC;
     PVMCPU       pVCpu = VMMGetCpu0(pVM);
-
-    Log(("patmR3HandleDirtyInstr: dirty instruction at %RRv (%RRv)\n", pEip, pPatchToGuestRec->pOrgInstrGC));
+    Log(("patmR3HandleDirtyInstr: dirty instruction at %RRv (%RRv)\n", pEip, pOrgInstrGC));
 
     pRec             = pPatchToGuestRec;
-    pCurInstrGC      = pPatchToGuestRec->pOrgInstrGC;
+    pCurInstrGC      = pOrgInstrGC;
     pCurPatchInstrGC = pEip;
     cbDirty          = 0;
     pPatchInstrHC    = patmPatchGCPtr2PatchHCPtr(pVM, pCurPatchInstrGC);
@@ -5866,7 +5866,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
     {
         if (pRec->fJumpTarget)
         {
-            LogRel(("PATM: patmR3HandleDirtyInstr: dirty instruction at %RRv (%RRv) ignored, because instruction in function was reused as target of jump\n", pEip, pPatchToGuestRec->pOrgInstrGC));
+            LogRel(("PATM: patmR3HandleDirtyInstr: dirty instruction at %RRv (%RRv) ignored, because instruction in function was reused as target of jump\n", pEip, pOrgInstrGC));
             pRec->fDirty = false;
             return VERR_PATCHING_REFUSED;
         }
@@ -5897,8 +5897,9 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
         /* Mark as clean; if we fail we'll let it always fault. */
         pRec->fDirty      = false;
 
-        /** Remove old lookup record. */
+        /* Remove old lookup record. */
         patmr3RemoveP2GLookupRecord(pVM, &pPatch->patch, pCurPatchInstrGC);
+        pCurPatchInstrGC = NULL;
 
         pCurPatchInstrGC += CpuOld.opsize;
         cbDirty          += CpuOld.opsize;
@@ -5935,8 +5936,8 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
             {
                 RTRCPTR pTargetGC = PATMResolveBranch(&CpuNew, pCurInstrGC);
 
-                if (    pTargetGC >= pPatchToGuestRec->pOrgInstrGC
-                    &&  pTargetGC <= pPatchToGuestRec->pOrgInstrGC + cbDirty
+                if (    pTargetGC >= pOrgInstrGC
+                    &&  pTargetGC <= pOrgInstrGC + cbDirty
                    )
                 {
                     /* A relative jump to an instruction inside or to the end of the dirty block is acceptable. */
@@ -6086,7 +6087,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
     STAM_PROFILE_ADV_START(&pVM->patm.s.StatHandleTrap, a);
 
     /* Find the patch record. */
-    /** @note there might not be a patch to guest translation record (global function) */
+    /* Note: there might not be a patch to guest translation record (global function) */
     offset = pEip - pVM->patm.s.pPatchMemGC;
     pvPatchCoreOffset = RTAvloU32GetBestFit(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, offset, false);
     if (pvPatchCoreOffset)
