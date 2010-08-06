@@ -487,7 +487,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
         bool const  fBigPage = Pde.b.u1Size;
 # else
-        bool const  fBigPage = Pde.b.u1Size && !(pState->cr4 & X86_CR4_PSE);
+        bool const  fBigPage = Pde.b.u1Size && (pState->cr4 & X86_CR4_PSE);
 # endif
         if (    Pde.n.u1Present
             &&  (  !fBigPage
@@ -582,6 +582,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
         else
         {
             /* not-present / invalid. */
+            Log(("VirtHandler: Not present / invalid Pde=%RX64\n", (uint64_t)Pde.u));
             for (unsigned cPages = (GST_PT_MASK + 1) - ((GCPtr >> GST_PT_SHIFT) & GST_PT_MASK);
                  cPages && iPage < pCur->cPages;
                  iPage++, GCPtr += PAGE_SIZE)
