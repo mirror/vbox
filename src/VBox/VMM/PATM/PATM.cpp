@@ -5899,7 +5899,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 
         /* Remove old lookup record. */
         patmr3RemoveP2GLookupRecord(pVM, &pPatch->patch, pCurPatchInstrGC);
-        pCurPatchInstrGC = NULL;
+        pPatchToGuestRec = NULL;
 
         pCurPatchInstrGC += CpuOld.opsize;
         cbDirty          += CpuOld.opsize;
