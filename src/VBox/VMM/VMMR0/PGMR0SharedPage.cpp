@@ -52,7 +52,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
 
     Log(("PGMR0SharedModuleCheck: check %s %s base=%RGv size=%x\n", pModule->szName, pModule->szVersion, pModule->Core.Key, pModule->cbModule));
 
-    pgmLock(pVM); /* This cannot fail as we grab the lock in pgmR3SharedModuleRegRendezvous before calling into ring-0. */
+    Assert(PGMIsLockOwner(pVM));    /* This cannot fail as we grab the lock in pgmR3SharedModuleRegRendezvous before calling into ring-0. */
 
     /* Check every region of the shared module. */
     for (unsigned idxRegion = 0; idxRegion < cRegions; idxRegion++)
@@ -137,7 +137,6 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
         }
     }
 
-    pgmUnlock(pVM);
     if (fFlushTLBs)
         PGM_INVL_ALL_VCPU_TLBS(pVM);
 
