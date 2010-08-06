@@ -583,8 +583,8 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
    /* @todo add state change */
     if(   INTCTL_CIE(pState)
        && (   RIRBSTS_RINTFL(pState)
-           || RIRBSTS_RIRBOIS(pState))
-           || STATESTS(pState))
+           || RIRBSTS_RIRBOIS(pState)
+           || STATESTS(pState)))
     {
         fIrq = true;
     }
