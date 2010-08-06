@@ -1504,7 +1504,7 @@ void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!aVersionName.isEmpty())
-        mData.mAdditionsVersion = aAdditionsVersion + " " + aVersionName;
+        mData.mAdditionsVersion = BstrFmt("%ls %ls", aAdditionsVersion.raw(), aVersionName.raw());
     else
         mData.mAdditionsVersion = aAdditionsVersion;
 }
