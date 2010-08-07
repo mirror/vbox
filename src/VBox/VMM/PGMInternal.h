@@ -318,6 +318,8 @@
  * Hints to the dynamic mapping code in RC and R0/darwin that the specified page
  * is no longer used.
  *
+ * For best effect only apply this to the page that was mapped most recently.
+ *
  * @param   pVCpu   The current CPU.
  * @param   pPage   The pool page.
  */
@@ -334,6 +336,8 @@
 /** @def PGM_DYNMAP_UNUSED_HINT_VM
  * Hints to the dynamic mapping code in RC and R0/darwin that the specified page
  * is no longer used.
+ *
+ * For best effect only apply this to the page that was mapped most recently.
  *
  * @param   pVM     The VM handle.
  * @param   pPage   The pool page.
