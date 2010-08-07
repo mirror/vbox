@@ -147,6 +147,14 @@
     } while (0)
 
 
+/** @def PGMRZDYNMAP_STRICT_RELEASE
+ * Define this to force pages to be released and make non-present ASAP after
+ * use.  This should not normally be enabled as it is a bit expensive. */
+#if 0 || defined(DOXYGEN_RUNNING)
+# define PGMRZDYNMAP_STRICT_RELEASE
+#endif
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -1311,7 +1319,14 @@ DECLINLINE(void) pgmRZDynMapReleasePageLocked(PPGMRZDYNMAP pThis, uint32_t iPage
     cRefs = ASMAtomicSubS32(&pThis->paPages[iPage].cRefs, cRefs) - cRefs;
     AssertMsg(cRefs >= 0, ("%d\n", cRefs));
     if (!cRefs)
+    {
         pThis->cLoad--;
+#ifdef PGMRZDYNMAP_STRICT_RELEASE
+        pThis->paPages[iPage].HCPhys = NIL_RTHCPHYS;
+        ASMAtomicBitClear(pThis->paPages[iPage].uPte.pv, X86_PTE_BIT_P);
+        ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+#endif
+    }
 }
 
 
@@ -1614,7 +1629,7 @@ static int pgmRZDynMapAssertIntegrity(PPGMRZDYNMAP pThis)
                 if (paPages[iPage].cRefs)
                     cLoad++;
             }
-#ifdef IN_RING0
+#if defined(IN_RING0) && !defined(PGMRZDYNMAP_STRICT_RELEASE)
             else
                 CHECK_RET(paPages[iPage].uPte.pLegacy->u == paSavedPTEs[iPage],
                           ("#%u: %#x %#x", iPage, paPages[iPage].uPte.pLegacy->u, paSavedPTEs[iPage]));
@@ -2141,6 +2156,8 @@ void pgmRZDynMapUnusedHint(PVMCPU pVCpu, void *pvHint)
     /*
      * Find the entry in the usual unrolled fashion.
      */
+    /** @todo add a hint to the set which entry was used last since it's not
+     *        always the last entry? */
 #define IS_MATCHING_ENTRY(pSet, iEntry, pvHint) \
         (   (pSet)->aEntries[(iEntry)].pvPage == (pvHint) \
          &&   (uint32_t)(pSet)->aEntries[(iEntry)].cRefs + (pSet)->aEntries[(iEntry)].cInlinedRefs \
@@ -2214,6 +2231,14 @@ void pgmRZDynMapUnusedHint(PVMCPU pVCpu, void *pvHint)
     }
     else
         Log(("pgmRZDynMapUnusedHint: pvHint=%p ignored because of overflow! %s(%d) %s\n", pvHint, pszFile, iLine, pszFunction));
+
+#ifdef PGMRZDYNMAP_STRICT_RELEASE
+    /*
+     * Optimize the set to trigger the unmapping and invalidation of the page.
+     */
+    if (cUnrefs + 1 == cTotalRefs)
+        pgmDynMapOptimizeAutoSet(pSet);
+#endif
 }
 
 
