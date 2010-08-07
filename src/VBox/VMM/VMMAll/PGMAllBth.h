@@ -1276,7 +1276,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
                 {
                     LogFlow(("Skipping flush for big page containing %RGv (PD=%X .u=%RX64)-> nothing has changed!\n", GCPtrPage, iPDSrc, PdeSrc.u));
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePage4MBPagesSkip));
-                    PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
                     return VINF_SUCCESS;
                 }
             }
@@ -1313,7 +1312,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePagePDMappings));
         }
     }
-    PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
     return rc;
 
 #else /* guest real and protected mode */
