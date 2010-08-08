@@ -1140,6 +1140,38 @@ typedef struct VDINTERFACETCPNET
     DECLR3CALLBACKMEMBER(int, pfnSgWrite, (VDSOCKET Sock, PCRTSGBUF pSgBuf));
 
     /**
+     * Receive data from a socket - not blocking.
+     *
+     * @return  iprt status code.
+     * @param   Sock        Socket descriptor.
+     * @param   pvBuffer    Where to put the data we read.
+     * @param   cbBuffer    Read buffer size.
+     * @param   pcbRead     Number of bytes read.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadNB, (VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead));
+
+    /**
+     * Send data to a socket - not blocking.
+     *
+     * @return  iprt status code.
+     * @param   Sock        Socket descriptor.
+     * @param   pvBuffer    Buffer to write data to socket.
+     * @param   cbBuffer    How much to write.
+     * @param   pcbWritten  Number of bytes written.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWriteNB, (VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten));
+
+    /**
+     * Send data from scatter/gather buffer to a socket - not blocking.
+     *
+     * @return  iprt status code.
+     * @param   Sock        Socket descriptor.
+     * @param   pSgBuf      Scatter/gather buffer to write data to socket.
+     * @param   pcbWritten  Number of bytes written.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSgWriteNB, (VDSOCKET Sock, PRTSGBUF pSgBuf, size_t *pcbWritten));
+
+    /**
      * Flush socket write buffers.
      *
      * @return  iprt status code.
@@ -1181,11 +1213,13 @@ typedef struct VDINTERFACETCPNET
      * @return  iprt status code.
      * @retval  VERR_INTERRUPTED if the thread was woken up by a pfnPoke call.
      * @param   Sock        Socket descriptor.
+     * @param   fEvents     Mask of events to wait for.
      * @param   pfEvents    Where to store the received events.
      * @param   cMillies    Number of milliseconds to wait for the socket.
      *                      Use RT_INDEFINITE_WAIT to wait for ever.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSelectOneEx, (VDSOCKET Sock, uint32_t *pfEvents, RTMSINTERVAL cMillies));
+    DECLR3CALLBACKMEMBER(int, pfnSelectOneEx, (VDSOCKET Sock, uint32_t fEvents,
+                                               uint32_t *pfEvents, RTMSINTERVAL cMillies));
 
     /**
      * Wakes up the thread waiting in pfnSelectOneEx.

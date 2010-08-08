@@ -475,6 +475,10 @@ typedef struct ISCSIIMAGE
     PVDINTERFACE        pInterfaceConfig;
     /** Config interface callback table. */
     PVDINTERFACECONFIG  pInterfaceConfigCallbacks;
+    /** I/O interface. */
+    PVDINTERFACE        pInterfaceIo;
+    /** I/O interface callback table. */
+    PVDINTERFACEIO      pInterfaceIoCallbacks;
     /** Image open flags. */
     unsigned            uOpenFlags;
     /** Number of re-login retries when a connection fails. */
@@ -539,6 +543,10 @@ typedef struct ISCSIIMAGE
     volatile bool       fRunning;
     /** Flag whether extended select is supported. */
     bool                fExtendedSelectSupported;
+    /** Padding used for aligning the PDUs. */
+    uint8_t             aPadding[4];
+    /** Socket events to poll for. */
+    uint32_t            fPollEvents;
 } ISCSIIMAGE, *PISCSIIMAGE;
 
 
@@ -587,7 +595,7 @@ static const VDCONFIGINFO s_iscsiConfigInfo[] =
 static uint32_t iscsiNewITT(PISCSIIMAGE pImage);
 static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq, uint32_t uFlags);
 static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes, bool fSelect);
-static int drvISCSIValidatePDU(PISCSIRES paRes, uint32_t cnRes);
+static int iscsiValidatePDU(PISCSIRES paRes, uint32_t cnRes);
 static int iscsiTextAddKeyValue(uint8_t *pbBuf, size_t cbBuf, size_t *pcbBufCurr, const char *pcszKey, const char *pcszValue, size_t cbValue);
 static int iscsiTextGetKeyValue(const uint8_t *pbBuf, size_t cbBuf, const char *pcszKey, const char **ppcszValue);
 static int iscsiStrToBinary(const char *pcszValue, uint8_t *pbValue, size_t *pcbValue);
@@ -1880,7 +1888,7 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
 
             /* Check whether the received PDU is valid, and update the internal state of
              * the iSCSI connection/session. */
-            rc = drvISCSIValidatePDU(&aResBuf, 1);
+            rc = iscsiValidatePDU(&aResBuf, 1);
             if (RT_FAILURE(rc))
                 continue;
             cmd = (ISCSIOPCODE)(RT_N2H_U32(pcvResSeg[0]) & ISCSIOP_MASK);
@@ -2001,7 +2009,7 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
  * @param   paRes       Pointer to array of iSCSI response sections.
  * @param   cnRes       Number of valid iSCSI response sections in the array.
  */
-static int drvISCSIValidatePDU(PISCSIRES paRes, uint32_t cnRes)
+static int iscsiValidatePDU(PISCSIRES paRes, uint32_t cnRes)
 {
     const uint32_t *pcrgResBHS;
     uint32_t hw0;
@@ -2372,9 +2380,9 @@ static void chap_md5_compute_response(uint8_t *pbResponse, uint8_t id, const uin
 /**
  * Internal. - Wrapper around the extended select callback of the net interface.
  */
-DECLINLINE(int) iscsiIoThreadWait(PISCSIIMAGE pImage, RTMSINTERVAL cMillies, uint32_t *pfEvents)
+DECLINLINE(int) iscsiIoThreadWait(PISCSIIMAGE pImage, RTMSINTERVAL cMillies, uint32_t fEvents, uint32_t *pfEvents)
 {
-    return pImage->pInterfaceNetCallbacks->pfnSelectOneEx(pImage->Socket, pfEvents, cMillies);
+    return pImage->pInterfaceNetCallbacks->pfnSelectOneEx(pImage->Socket, fEvents, pfEvents, cMillies);
 }
 
 /**
@@ -2471,13 +2479,16 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
     PISCSIIMAGE pImage = (PISCSIIMAGE)pvUser;
 
+    /* Initialise the initial event mask. */
+    pImage->fPollEvents = VD_INTERFACETCPNET_EVT_READ | VD_INTERFACETCPNET_EVT_ERROR;
+
     while (pImage->fRunning)
     {
         uint32_t fEvents = 0;
         int rc;
 
         /* Wait for work or for data from the target. */
-        rc = iscsiIoThreadWait(pImage, RT_INDEFINITE_WAIT, &fEvents);
+        rc = iscsiIoThreadWait(pImage, RT_INDEFINITE_WAIT, pImage->fPollEvents, &fEvents);
         if (rc == VERR_INTERRUPTED)
         {
             /* Check the queue. */
@@ -2763,6 +2774,17 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     {
         rc = iscsiError(pImage, VERR_VD_ISCSI_UNKNOWN_INTERFACE,
                         RT_SRC_POS, N_("iSCSI: configuration interface missing"));
+        goto out;
+    }
+
+    /* Get I/O interface. */
+    pImage->pInterfaceIo = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
+    if (pImage->pInterfaceIo)
+        pImage->pInterfaceIoCallbacks = VDGetInterfaceIO(pImage->pInterfaceIo);
+    else
+    {
+        rc = iscsiError(pImage, VERR_VD_ISCSI_UNKNOWN_INTERFACE,
+                        RT_SRC_POS, N_("iSCSI: I/O interface missing"));
         goto out;
     }
 
@@ -4198,6 +4220,55 @@ static int iscsiComposeName(PVDINTERFACE pConfig, char **pszName)
     return rc;
 }
 
+static bool iscsiIsAsyncIOSupported(void *pvBackendData)
+{
+    return false;
+}
+
+static int iscsiAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
+                          PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
+{
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pvBackendData;
+    int rc = VERR_NOT_SUPPORTED;
+
+    LogFlowFunc(("pBackendData=%p uOffset=%#llx pIoCtx=%#p cbRead=%u pcbActuallyRead=%p\n",
+    		     pvBackendData, uOffset, pIoCtx, cbRead, pcbActuallyRead));
+
+    if (uOffset + cbRead > pImage->cbSize)
+        return VERR_INVALID_PARAMETER;
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+static int iscsiAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+                           PVDIOCTX pIoCtx,
+                           size_t *pcbWriteProcess, size_t *pcbPreRead,
+                           size_t *pcbPostRead, unsigned fWrite)
+{
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pvBackendData;
+    int rc = VERR_NOT_SUPPORTED;
+
+    LogFlowFunc(("pBackendData=%p uOffset=%llu pIoCtx=%#p cbWrite=%u pcbWriteProcess=%p pcbPreRead=%p pcbPostRead=%p fWrite=%u\n",
+                 pvBackendData, uOffset, pIoCtx, cbWrite, pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite));
+
+    AssertPtr(pImage);
+    Assert(uOffset % 512 == 0);
+    Assert(cbWrite % 512 == 0);
+
+    if (uOffset + cbWrite > pImage->cbSize)
+        return VERR_INVALID_PARAMETER;
+
+    return rc;
+}
+
+static int iscsiAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
+{
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pvBackendData;
+
+    return VERR_NOT_SUPPORTED;
+}
+
 
 VBOXHDDBACKEND g_ISCSIBackend =
 {
@@ -4282,13 +4353,13 @@ VBOXHDDBACKEND g_ISCSIBackend =
     /* pfnSetParentFilename */
     iscsiSetParentFilename,
     /* pfnIsAsyncIOSupported */
-    NULL,
+    iscsiIsAsyncIOSupported,
     /* pfnAsyncRead */
-    NULL,
+    iscsiAsyncRead,
     /* pfnAsyncWrite */
-    NULL,
+    iscsiAsyncWrite,
     /* pfnAsyncFlush */
-    NULL,
+    iscsiAsyncFlush,
     /* pfnComposeLocation */
     iscsiComposeLocation,
     /* pfnComposeName */
