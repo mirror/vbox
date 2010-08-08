@@ -619,7 +619,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         else
         {
             /* addr-- variant. */
-            rc = pRange->CTX_SUFF(pfnFillCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), (Phys - (cTransfers - 1)) << SIZE_2_SHIFT(cb), u32Data, cb, cTransfers);
+            rc = pRange->CTX_SUFF(pfnFillCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), Phys - ((cTransfers - 1) << SIZE_2_SHIFT(cb)), u32Data, cb, cTransfers);
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
