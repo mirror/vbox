@@ -203,6 +203,55 @@ RTDECL(size_t) RTSgBufAdvance(PRTSGBUF pSgBuf, size_t cbAdvance);
  */
 RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *pcSeg, size_t cbData);
 
+/**
+ * Maps the given S/G buffer to a segment array of another type
+ * (for example to iovec on Posix or WSABUF on Windows).
+ *
+ * @param   paMapped    Where to store the pointer to the start of the native array or NULL.
+ *                      The memory needs to be freed with RTMemTmpFree().
+ * @param   pSgBuf      The S/G buffer to map.
+ * @param   Struct      Struct used as the destination.
+ * @param   pvBuf       Name of the field holding the pointer to a buffer.
+ * @param   TypeBufPtr  Type of the buffer pointer.
+ * @param   cbBuf       Name of the field holding the size of the buffer.
+ * @param   TypeBufSize Type of the field for the buffer size.
+ * @param   cSegsMapped Where to store the number of segments the native array has.
+ *
+ * @note This operation maps the whole S/G buffer starting at the current internal position.
+ *       The internal buffer position is unchanged by this operation.
+ *
+ * @remark Usage is a bit ugly but saves a few lines of duplicated code somewhere else and makes it possible to
+ *         keep the S/G buffer members private without going through RTSgBufSegArrayCreate() first.
+ */
+#define RTSgBufMapToNative(paMapped, pSgBuf, Struct, pvBuf, TypeBufPtr, cbBuf, TypeBufSize, cSegsMapped) \
+    do                                                                                        \
+    {                                                                                         \
+        AssertCompileMemberSize(Struct, pvBuf, RT_SIZEOFMEMB(RTSGSEG, pvSeg));                \
+        AssertCompileMemberSize(Struct, cbBuf,  RT_SIZEOFMEMB(RTSGSEG, cbSeg));               \
+        cSegsMapped = pSgBuf->cSegs - pSgBuf->idxSeg;                                         \
+                                                                                              \
+        paMapped = NULL;                                                                      \
+                                                                                              \
+        /* We need room for at least one segment. */                                          \
+        if (pSgBuf->cSegs == pSgBuf->idxSeg)                                                  \
+            cSegsMapped++;                                                                    \
+                                                                                              \
+        paMapped = (Struct *)RTMemTmpAllocZ(cSegsMapped * sizeof(Struct));                    \
+        if (paMapped)                                                                         \
+        {                                                                                     \
+            /* The first buffer is special because we could be in the middle of a segment. */ \
+            paMapped[0].pvBuf = (TypeBufPtr)pSgBuf->pvSegCur;                                 \
+            paMapped[0].cbBuf = (TypeBufSize)pSgBuf->cbSegLeft;                               \
+                                                                                              \
+            for (unsigned i = 1; i < cSegsMapped; i++)                                        \
+            {                                                                                 \
+                paMsg[i].pvBuf = (TypeBufPtr)pSgBuf->paSegs[pSgBuf->idxSeg + i].pvSeg;        \
+                paMsg[i].cbBuf = (TypeBufSize)pSgBuf->paSegs[pSgBuf->idxSeg + i].cbSeg;       \
+            }                                                                                 \
+        }                                                                                     \
+    }                                                                                         \
+    while (0)
+
 RT_C_DECLS_END
 
 /** @} */
