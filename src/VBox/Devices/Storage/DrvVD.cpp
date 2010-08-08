@@ -909,7 +909,7 @@ static DECLCALLBACK(int) drvvdINIPGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnSelectOneEx */
-static DECLCALLBACK(int) drvvdINIPSelectOneEx(VDSOCKET Sock, uint32_t *pfEvents, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) drvvdINIPSelectOneEx(VDSOCKET Sock, uint32_t fEvents, uint32_t *pfEvents, RTMSINTERVAL cMillies)
 {
     AssertMsgFailed(("Not supported!\n"));
     return VERR_NOT_SUPPORTED;
@@ -946,6 +946,8 @@ typedef struct VDSOCKETINT
     volatile bool fWokenUp;
     /** Flag whether the thread is waiting in the select call. */
     volatile bool fWaiting;
+    /** Old event mask. */
+    uint32_t      fEventsOld;
 } VDSOCKETINT, *PVDSOCKETINT;
 
 /** Pollset id of the socket. */
@@ -1049,9 +1051,10 @@ static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET Sock, const char *pszAdd
         /* Add to the pollset if required. */
         if (pSockInt->hPollSet != NIL_RTPOLLSET)
         {
+            pSockInt->fEventsOld = RTPOLL_EVT_READ | RTPOLL_EVT_WRITE | RTPOLL_EVT_ERROR;
+
             rc = RTPollSetAddSocket(pSockInt->hPollSet, pSockInt->hSocket,
-                                    RTPOLL_EVT_READ | /*RTPOLL_EVT_WRITE |*/ RTPOLL_EVT_ERROR,
-                                    VDSOCKET_POLL_ID_SOCKET);
+                                    pSockInt->fEventsOld, VDSOCKET_POLL_ID_SOCKET);
 
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
@@ -1121,6 +1124,30 @@ static DECLCALLBACK(int) drvvdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf)
     return RTTcpSgWrite(pSockInt->hSocket, pSgBuf);
 }
 
+/** @copydoc VDINTERFACETCPNET::pfnReadNB */
+static DECLCALLBACK(int) drvvdTcpReadNB(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpReadNB(pSockInt->hSocket, pvBuffer, cbBuffer, pcbRead);
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnWriteNB */
+static DECLCALLBACK(int) drvvdTcpWriteNB(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpWriteNB(pSockInt->hSocket, pvBuffer, cbBuffer, pcbWritten);
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSgWriteNB */
+static DECLCALLBACK(int) drvvdTcpSgWriteNB(VDSOCKET Sock, PRTSGBUF pSgBuf, size_t *pcbWritten)
+{
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    return RTTcpSgWriteNB(pSockInt->hSocket, pSgBuf, pcbWritten);
+}
+
 /** @copydoc VDINTERFACETCPNET::pfnFlush */
 static DECLCALLBACK(int) drvvdTcpFlush(VDSOCKET Sock)
 {
@@ -1154,14 +1181,33 @@ static DECLCALLBACK(int) drvvdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnSelectOneEx */
-static DECLCALLBACK(int) drvvdTcpSelectOneEx(VDSOCKET Sock, uint32_t *pfEvents, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) drvvdTcpSelectOneEx(VDSOCKET Sock, uint32_t fEvents, 
+                                             uint32_t *pfEvents, RTMSINTERVAL cMillies)
 {
     int rc = VINF_SUCCESS;
     uint32_t id = 0;
-    uint32_t fEvents = 0;
+    uint32_t fEventsRecv = 0;
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
 
     *pfEvents = 0;
+
+    if (pSockInt->fEventsOld != fEvents)
+    {
+        uint32_t fPollEvents = 0;
+
+        if (fEvents & VD_INTERFACETCPNET_EVT_READ)
+            fPollEvents |= RTPOLL_EVT_READ;
+        if (fEvents & VD_INTERFACETCPNET_EVT_WRITE)
+            fPollEvents |= RTPOLL_EVT_WRITE;
+        if (fEvents & VD_INTERFACETCPNET_EVT_ERROR)
+            fPollEvents |= RTPOLL_EVT_ERROR;
+
+        rc = RTPollSetEventsChange(pSockInt->hPollSet, VDSOCKET_POLL_ID_SOCKET, fPollEvents);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pSockInt->fEventsOld = fEvents;
+    }
 
     ASMAtomicXchgBool(&pSockInt->fWaiting, true);
     if (ASMAtomicXchgBool(&pSockInt->fWokenUp, false))
@@ -1170,7 +1216,7 @@ static DECLCALLBACK(int) drvvdTcpSelectOneEx(VDSOCKET Sock, uint32_t *pfEvents, 
         return VERR_INTERRUPTED;
     }
 
-    rc = RTPoll(pSockInt->hPollSet, cMillies, &fEvents, &id);
+    rc = RTPoll(pSockInt->hPollSet, cMillies, &fEventsRecv, &id);
     Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
 
     ASMAtomicXchgBool(&pSockInt->fWaiting, false);
@@ -1179,13 +1225,13 @@ static DECLCALLBACK(int) drvvdTcpSelectOneEx(VDSOCKET Sock, uint32_t *pfEvents, 
     {
         if (id == VDSOCKET_POLL_ID_SOCKET)
         {
-            fEvents &= RTPOLL_EVT_VALID_MASK;
+            fEventsRecv &= RTPOLL_EVT_VALID_MASK;
 
-            if (fEvents & RTPOLL_EVT_READ)
+            if (fEventsRecv & RTPOLL_EVT_READ)
                 *pfEvents |= VD_INTERFACETCPNET_EVT_READ;
-            if (fEvents & RTPOLL_EVT_WRITE)
+            if (fEventsRecv & RTPOLL_EVT_WRITE)
                 *pfEvents |= VD_INTERFACETCPNET_EVT_WRITE;
-            if (fEvents & RTPOLL_EVT_ERROR)
+            if (fEventsRecv & RTPOLL_EVT_ERROR)
                 *pfEvents |= VD_INTERFACETCPNET_EVT_ERROR;
         }
         else
@@ -1837,6 +1883,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             pThis->VDITcpNetCallbacks.pfnRead = drvvdTcpRead;
             pThis->VDITcpNetCallbacks.pfnWrite = drvvdTcpWrite;
             pThis->VDITcpNetCallbacks.pfnSgWrite = drvvdTcpSgWrite;
+            pThis->VDITcpNetCallbacks.pfnReadNB = drvvdTcpReadNB;
+            pThis->VDITcpNetCallbacks.pfnWriteNB = drvvdTcpWriteNB;
+            pThis->VDITcpNetCallbacks.pfnSgWriteNB = drvvdTcpSgWriteNB;
             pThis->VDITcpNetCallbacks.pfnFlush = drvvdTcpFlush;
             pThis->VDITcpNetCallbacks.pfnSetSendCoalescing = drvvdTcpSetSendCoalescing;
             pThis->VDITcpNetCallbacks.pfnGetLocalAddress = drvvdTcpGetLocalAddress;
