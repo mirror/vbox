@@ -1191,7 +1191,8 @@ static DECLCALLBACK(int) drvvdTcpSelectOneEx(VDSOCKET Sock, uint32_t fEvents,
 
     *pfEvents = 0;
 
-    if (pSockInt->fEventsOld != fEvents)
+    if (   pSockInt->fEventsOld != fEvents
+        && pSockInt->hSocket != NIL_RTSOCKET)
     {
         uint32_t fPollEvents = 0;
 
@@ -1239,7 +1240,7 @@ static DECLCALLBACK(int) drvvdTcpSelectOneEx(VDSOCKET Sock, uint32_t fEvents,
             size_t cbRead = 0;
             uint8_t abBuf[10];
             Assert(id == VDSOCKET_POLL_ID_PIPE);
-            Assert((fEvents & RTPOLL_EVT_VALID_MASK) == RTPOLL_EVT_READ);
+            Assert((fEventsRecv & RTPOLL_EVT_VALID_MASK) == RTPOLL_EVT_READ);
 
             /* We got interrupted, drain the pipe. */
             rc = RTPipeRead(pSockInt->hPipeR, abBuf, sizeof(abBuf), &cbRead);
