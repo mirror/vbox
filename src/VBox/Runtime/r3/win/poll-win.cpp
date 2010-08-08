@@ -571,7 +571,7 @@ RTDECL(int) RTPollSetEventsChange(RTPOLLSET hPollSet, uint32_t id, uint32_t fEve
     int         rc = VERR_POLL_HANDLE_ID_NOT_FOUND;
     uint32_t    i  = pThis->cHandles;
     while (i-- > 0)
-        if (pThis->paHandles[i].id == id)
+        if (pThis->aHandles[i].id == id)
         {
             pThis->aHandles[i].fEvents = fEvents;
             rc = VINF_SUCCESS;
