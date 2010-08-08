@@ -33,7 +33,7 @@
 #ifndef EDOOFUS
 # ifdef EBADMACHO
 #  define EDOOFUS EBADMACHO
-# elif
+# elif defined(EPROTO)
 #  define EDOOFUS EPROTO                /* What a boring lot. */
 //# elif defined(EXYZ)
 //#  define EDOOFUS EXYZ
@@ -530,7 +530,7 @@ static int vboxfuseFlatImageCreate(const char *pszPath, const char *pszImage, PV
     rc = VDCreate(NULL /* pVDIIfsDisk */, &pDisk);
     if (RT_SUCCESS(rc))
     {
-        rc = VDOpen(pDisk, pszFormat, pszImage, VD_OPEN_FLAGS_READONLY, NULL /* pVDIfsImage */);
+        rc = VDOpen(pDisk, pszFormat, pszImage, 0, NULL /* pVDIfsImage */);
         if (RT_FAILURE(rc))
         {
             LogRel(("VDCreate(,%s,%s,,,) failed, rc=%Rrc\n", pszFormat, pszImage, rc));
@@ -1270,6 +1270,134 @@ static int vboxfuseOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
 }
 
 
+/** @copydoc fuse_operations::write */
+static int vboxfuseOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
+                           off_t offFile, struct fuse_file_info *pInfo)
+{
+    /* paranoia */
+    AssertReturn((int)cbBuf >= 0, -EINVAL);
+    AssertReturn((unsigned)cbBuf == cbBuf, -EINVAL);
+    AssertReturn(offFile >= 0, -EINVAL);
+    AssertReturn((off_t)(offFile + cbBuf) >= offFile, -EINVAL);
+
+    PVBOXFUSENODE pNode = (PVBOXFUSENODE)(uintptr_t)pInfo->fh;
+    AssertPtr(pNode);
+    switch (pNode->enmType)
+    {
+        case VBOXFUSETYPE_DIRECTORY:
+            return -ENOTSUP;
+
+        case VBOXFUSETYPE_FLAT_IMAGE:
+        {
+            PVBOXFUSEFLATIMAGE pFlatImage = (PVBOXFUSEFLATIMAGE)(uintptr_t)pInfo->fh;
+            LogFlow(("vboxfuseOp_write: offFile=%#llx cbBuf=%#zx pszPath=\"%s\"\n", (uint64_t)offFile, cbBuf, pszPath));
+            vboxfuseNodeLock(&pFlatImage->Node);
+
+            int rc;
+            if ((off_t)(offFile + cbBuf) < offFile)
+                rc = -EINVAL;
+            else if (offFile >= pFlatImage->Node.cbPrimary)
+                rc = 0;
+            else if (!cbBuf)
+                rc = 0;
+            else
+            {
+                /* Adjust for EOF. */
+                if ((off_t)(offFile + cbBuf) >= pFlatImage->Node.cbPrimary)
+                    cbBuf = pFlatImage->Node.cbPrimary - offFile;
+
+                /*
+                 * Aligned write?
+                 */
+                int rc2;
+                if (    !(offFile & VBOXFUSE_MIN_SIZE_MASK_OFF)
+                    &&  !(cbBuf   & VBOXFUSE_MIN_SIZE_MASK_OFF))
+                    rc2 = VDWrite(pFlatImage->pDisk, offFile, pbBuf, cbBuf);
+                else
+                {
+                    /*
+                     * Unaligned write - lots of extra work.
+                     */
+                    uint8_t abBlock[VBOXFUSE_MIN_SIZE];
+                    if (((offFile + cbBuf) & VBOXFUSE_MIN_SIZE_MASK_BLK) == (offFile & VBOXFUSE_MIN_SIZE_MASK_BLK))
+                    {
+                        /* a single partial block. */
+                        rc2 = VDRead(pFlatImage->pDisk, offFile & VBOXFUSE_MIN_SIZE_MASK_BLK, abBlock, VBOXFUSE_MIN_SIZE);
+                        if (RT_SUCCESS(rc2))
+                        {
+                            memcpy(&abBlock[offFile & VBOXFUSE_MIN_SIZE_MASK_OFF], pbBuf, cbBuf);
+                            /* Update the block */
+                            rc2 = VDWrite(pFlatImage->pDisk, offFile & VBOXFUSE_MIN_SIZE_MASK_BLK, abBlock, VBOXFUSE_MIN_SIZE);
+                        }
+                    }
+                    else
+                    {
+                        /* read unaligned head. */
+                        rc2 = VINF_SUCCESS;
+                        if (offFile & VBOXFUSE_MIN_SIZE_MASK_OFF)
+                        {
+                            rc2 = VDRead(pFlatImage->pDisk, offFile & VBOXFUSE_MIN_SIZE_MASK_BLK, abBlock, VBOXFUSE_MIN_SIZE);
+                            if (RT_SUCCESS(rc2))
+                            {
+                                size_t cbCopy = VBOXFUSE_MIN_SIZE - (offFile & VBOXFUSE_MIN_SIZE_MASK_OFF);
+                                memcpy(&abBlock[offFile & VBOXFUSE_MIN_SIZE_MASK_OFF], pbBuf, cbCopy);
+                                pbBuf   += cbCopy;
+                                offFile += cbCopy;
+                                cbBuf   -= cbCopy;
+                                rc2 = VDWrite(pFlatImage->pDisk, offFile & VBOXFUSE_MIN_SIZE_MASK_BLK, abBlock, VBOXFUSE_MIN_SIZE);
+                            }
+                        }
+
+                        /* write the middle. */
+                        Assert(!(offFile & VBOXFUSE_MIN_SIZE_MASK_OFF));
+                        if (cbBuf >= VBOXFUSE_MIN_SIZE && RT_SUCCESS(rc2))
+                        {
+                            size_t cbWrite = cbBuf & VBOXFUSE_MIN_SIZE_MASK_BLK;
+                            rc2 = VDWrite(pFlatImage->pDisk, offFile, pbBuf, cbWrite);
+                            if (RT_SUCCESS(rc2))
+                            {
+                                pbBuf   += cbWrite;
+                                offFile += cbWrite;
+                                cbBuf   -= cbWrite;
+                            }
+                        }
+
+                        /* unaligned tail write. */
+                        Assert(cbBuf < VBOXFUSE_MIN_SIZE);
+                        Assert(!(offFile & VBOXFUSE_MIN_SIZE_MASK_OFF));
+                        if (cbBuf && RT_SUCCESS(rc2))
+                        {
+                            rc2 = VDRead(pFlatImage->pDisk, offFile, abBlock, VBOXFUSE_MIN_SIZE);
+                            if (RT_SUCCESS(rc2))
+                            {
+                                memcpy(&abBlock[0], pbBuf, cbBuf);
+                                rc2 = VDWrite(pFlatImage->pDisk, offFile, abBlock, VBOXFUSE_MIN_SIZE);
+                            }
+                        }
+                    }
+                }
+
+                /* convert the return code */
+                if (RT_SUCCESS(rc2))
+                    rc = cbBuf;
+                else
+                    rc = -RTErrConvertToErrno(rc2);
+            }
+
+            vboxfuseNodeUnlock(&pFlatImage->Node);
+            return rc;
+        }
+
+        case VBOXFUSETYPE_CONTROL_PIPE:
+            return -ENOTSUP;
+
+        default:
+            AssertMsgFailed(("%s\n", pszPath));
+            return -EDOOFUS;
+    }
+}
+
+
 /**
  * The FUSE operations.
  *
@@ -1322,6 +1450,7 @@ int main(int argc, char **argv)
     g_vboxfuseOps.symlink    = vboxfuseOp_symlink;
     g_vboxfuseOps.open       = vboxfuseOp_open;
     g_vboxfuseOps.read       = vboxfuseOp_read;
+    g_vboxfuseOps.write      = vboxfuseOp_write;
     g_vboxfuseOps.release    = vboxfuseOp_release;
 
     /*
