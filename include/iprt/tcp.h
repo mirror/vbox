@@ -370,7 +370,7 @@ RTR3DECL(int)  RTTcpWriteNB(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer
  * @param   pSgBuf      Scatter/gather buffer to write data to socket.
  * @param   pcbWritten  Number of bytes written.
  */
-RTR3DECL(int)  RTTcpSgWriteNB(RTSOCKET Sock, PCRTSGBUF pSgBuf, size_t cbWritten);
+RTR3DECL(int)  RTTcpSgWriteNB(RTSOCKET Sock, PCRTSGBUF pSgBuf, size_t *pcbWritten);
 
 
 /**
