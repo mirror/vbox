@@ -227,7 +227,7 @@ RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *
     do                                                                                        \
     {                                                                                         \
         AssertCompileMemberSize(Struct, pvBuf, RT_SIZEOFMEMB(RTSGSEG, pvSeg));                \
-        AssertCompile(RT_SIZEOFMEMB(Struct, cbBuf) >=  RT_SIZEOFMEMB(RTSGSEG, cbSeg));        \
+        /*AssertCompile(RT_SIZEOFMEMB(Struct, cbBuf) >=  RT_SIZEOFMEMB(RTSGSEG, cbSeg));*/    \
         cSegsMapped = pSgBuf->cSegs - pSgBuf->idxSeg;                                         \
                                                                                               \
         paMapped = NULL;                                                                      \
