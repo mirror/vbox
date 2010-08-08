@@ -872,29 +872,19 @@ RTDECL(int) RTSocketSgWriteNB(RTSOCKET hSocket, PCRTSGBUF pSgBuf, size_t *pcbWri
     if (RT_FAILURE(rc))
         return rc;
 
-    /*
-     * Construct message descriptor (translate pSgBuf) and send it.
-     */
+    unsigned cSegsToSend = 0;
     rc = VERR_NO_TMP_MEMORY;
 #ifdef RT_OS_WINDOWS
-    AssertCompileSize(WSABUF, sizeof(RTSGSEG));
-    AssertCompileMemberSize(WSABUF, buf, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
+    LPWSABUF paMsg = NULL;
 
-    LPWSABUF paMsg = (LPWSABUF)RTMemTmpAllocZ(pSgBuf->cSegs * sizeof(WSABUF));
+    RTSgBufMapToNative(paMsg, pSgBuf, WSABUF, buf, char *, len, u_long, cSegsToSend);
     if (paMsg)
     {
-        for (unsigned i = 0; i < pSgBuf->cSegs; i++)
-        {
-            paMsg[i].buf = (char *)pSgBuf->paSegs[i].pvSeg;
-            paMsg[i].len = (u_long)pSgBuf->paSegs[i].cbSeg;
-        }
-
         DWORD dwSent = 0;
-        int hrc = WSASend(pThis->hNative, paMsg, pSgBuf->cSegs, &dwSent,
+        int hrc = WSASend(pThis->hNative, paMsg, cSegsToSend, &dwSent,
                           MSG_NOSIGNAL, NULL, NULL);
         if (!hrc)
             rc = VINF_SUCCESS;
-/** @todo check for incomplete writes */
         else
             rc = rtSocketError();
 
@@ -904,31 +894,23 @@ RTDECL(int) RTSocketSgWriteNB(RTSOCKET hSocket, PCRTSGBUF pSgBuf, size_t *pcbWri
     }
 
 #else  /* !RT_OS_WINDOWS */
-    AssertCompileSize(struct iovec, sizeof(RTSGSEG));
-    AssertCompileMemberSize(struct iovec, iov_base, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
-    AssertCompileMemberSize(struct iovec, iov_len,  RT_SIZEOFMEMB(RTSGSEG, cbSeg));
+    struct iovec *paMsg = NULL;
 
-    struct iovec *paMsg = (struct iovec *)RTMemTmpAllocZ(pSgBuf->cSegs * sizeof(struct iovec));
+    RTSgBufMapToNative(paMsg, pSgBuf, struct iovec, iov_base, void *, iov_len, size_t, cSegsToSend);
     if (paMsg)
     {
-        for (unsigned i = 0; i < pSgBuf->cSegs; i++)
-        {
-            paMsg[i].iov_base = pSgBuf->paSegs[i].pvSeg;
-            paMsg[i].iov_len  = pSgBuf->paSegs[i].cbSeg;
-        }
-
         struct msghdr msgHdr;
         RT_ZERO(msgHdr);
         msgHdr.msg_iov    = paMsg;
-        msgHdr.msg_iovlen = pSgBuf->cSegs;
+        msgHdr.msg_iovlen = cSegsToSend;
         ssize_t cbWritten = sendmsg(pThis->hNative, &msgHdr, MSG_NOSIGNAL);
         if (RT_LIKELY(cbWritten >= 0))
+        {
             rc = VINF_SUCCESS;
-/** @todo check for incomplete writes */
+            *pcbWritten = cbWritten;
+        }
         else
             rc = rtSocketError();
-
-        *pcbWritten = cbWritten;
 
         RTMemTmpFree(paMsg);
     }
