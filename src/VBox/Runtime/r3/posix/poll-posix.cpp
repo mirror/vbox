@@ -479,3 +479,41 @@ RTDECL(uint32_t) RTPollSetGetCount(RTPOLLSET hPollSet)
     return cHandles;
 }
 
+
+RTDECL(int) RTPollSetEventsChange(RTPOLLSET hPollSet, uint32_t id, uint32_t fEvents)
+{
+    /*
+     * Validate the input.
+     */
+    RTPOLLSETINTERNAL *pThis = hPollSet;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTPOLLSET_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(id != UINT32_MAX, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fEvents & ~RTPOLL_EVT_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(fEvents, VERR_INVALID_PARAMETER);
+
+    /*
+     * Set the busy flag and do the job.
+     */
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
+
+    int         rc = VERR_POLL_HANDLE_ID_NOT_FOUND;
+    uint32_t    i  = pThis->cHandles;
+    while (i-- > 0)
+        if (pThis->paHandles[i].id == id)
+        {
+            pThis->paPollFds[i].events  = 0;
+            if (fEvents & RTPOLL_EVT_READ)
+                pThis->paPollFds[i].events |= POLLIN;
+            if (fEvents & RTPOLL_EVT_WRITE)
+                pThis->paPollFds[i].events |= POLLOUT;
+            if (fEvents & RTPOLL_EVT_ERROR)
+                pThis->paPollFds[i].events |= POLLERR;
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+    ASMAtomicWriteBool(&pThis->fBusy, false);
+    return rc;
+}
+

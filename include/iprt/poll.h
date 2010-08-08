@@ -55,7 +55,7 @@ RT_C_DECLS_BEGIN
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS if an event occured on a handle.  Note that these
  * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
- * @retval  VERR_WRONG_ORDER if another thread is already accessing the set. The
+ * @retval  VERR_CONCURRENT_ACCESS if another thread is already accessing the set. The
  *          user is responsible for ensuring single threaded access.
  * @retval  VERR_TIMEOUT if @a cMillies ellapsed without any events.
  * @retval  VERR_DEADLOCK if @a cMillies is set to RT_INDEFINITE_WAIT and there
@@ -81,7 +81,7 @@ RTDECL(int) RTPoll(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS if an event occured on a handle.  Note that these
  * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
- * @retval  VERR_WRONG_ORDER if another thread is already accessing the set. The
+ * @retval  VERR_CONCURRENT_ACCESS if another thread is already accessing the set. The
  *          user is responsible for ensuring single threaded access.
  * @retval  VERR_TIMEOUT if @a cMillies ellapsed without any events.
  * @retval  VERR_DEADLOCK if @a cMillies is set to RT_INDEFINITE_WAIT and there
@@ -120,7 +120,7 @@ RTDECL(int)  RTPollSetDestroy(RTPOLLSET hPollSet);
  * Adds a generic handle to the poll set.
  *
  * @returns IPRT status code
- * @retval  VERR_WRONG_ORDER if another thread is already accessing the set. The
+ * @retval  VERR_CONCURRENT_ACCESS if another thread is already accessing the set. The
  *          user is responsible for ensuring single threaded access.
  * @retval  VERR_POLL_HANDLE_NOT_POLLABLE if the specified handle is not
  *          pollable.
@@ -140,7 +140,7 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
  *
  * @returns IPRT status code
  * @retval  VERR_INVALID_HANDLE if @a hPollSet not valid.
- * @retval  VERR_WRONG_ORDER if another thread is already accessing the set. The
+ * @retval  VERR_CONCURRENT_ACCESS if another thread is already accessing the set. The
  *          user is responsible for ensuring single threaded access.
  * @retval  VERR_POLL_HANDLE_ID_NOT_FOUND if @a id doesn't resolve to a valid
  *          handle.
@@ -158,7 +158,7 @@ RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id);
  * @returns IPRT status code
  * @retval  VINF_SUCCESS if the handle was found.  @a *pHandle is set.
  * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
- * @retval  VERR_WRONG_ORDER if another thread is already accessing the set. The
+ * @retval  VERR_CONCURRENT_ACCESS if another thread is already accessing the set. The
  *          user is responsible for ensuring single threaded access.
  * @retval  VERR_POLL_HANDLE_ID_NOT_FOUND if there is no handle with that ID.
  *
@@ -177,6 +177,22 @@ RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHan
  * @param   hPollSet            The poll set.
  */
 RTDECL(uint32_t) RTPollSetGetCount(RTPOLLSET hPollSet);
+
+/**
+ * Modifies the events to poll for for the given id.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_HANDLE if @a hPollSet not valid.
+ * @retval  VERR_CONCURRENT_ACCESS if another thread is already accessing the set. The
+ *          user is responsible for ensuring single threaded access.
+ * @retval  VERR_POLL_HANDLE_ID_NOT_FOUND if @a id doesn't resolve to a valid
+ *          handle.
+ *
+ * @param   hPollSet            The poll set to modify.
+ * @param   id                  The handle ID to change the events for.
+ * @param   fEvents             Which events to poll for.
+ */
+RTDECL(int) RTPollSetEventsChange(RTPOLLSET hPollSet, uint32_t id, uint32_t fEvents);
 
 /**
  * Adds a pipe handle to the set.
