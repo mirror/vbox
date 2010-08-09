@@ -1154,6 +1154,16 @@ VMMDECL(uint64_t) CPUMGetGuestCR4(PVMCPU pVCpu)
 }
 
 
+VMMDECL(uint64_t) CPUMGetGuestCR8(PVMCPU pVCpu)
+{
+    uint64_t u64;
+    int rc = CPUMGetGuestCRx(pVCpu, USE_REG_CR8, &u64);
+    if (RT_FAILURE(rc))
+        u64 = 0;
+    return u64;
+}
+
+
 VMMDECL(void) CPUMGetGuestGDTR(PVMCPU pVCpu, PVBOXGDTR pGDTR)
 {
     *pGDTR = pVCpu->cpum.s.Guest.gdtr;
@@ -1226,7 +1236,6 @@ VMMDECL(uint32_t) CPUMGetGuestEFlags(PVMCPU pVCpu)
 }
 
 
-///@todo: crx should be an array
 VMMDECL(int) CPUMGetGuestCRx(PVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
 {
     switch (iReg)
@@ -1234,15 +1243,33 @@ VMMDECL(int) CPUMGetGuestCRx(PVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
         case USE_REG_CR0:
             *pValue = pVCpu->cpum.s.Guest.cr0;
             break;
+
         case USE_REG_CR2:
             *pValue = pVCpu->cpum.s.Guest.cr2;
             break;
+
         case USE_REG_CR3:
             *pValue = pVCpu->cpum.s.Guest.cr3;
             break;
+
         case USE_REG_CR4:
             *pValue = pVCpu->cpum.s.Guest.cr4;
             break;
+
+        case USE_REG_CR8:
+        {
+            uint8_t u8Tpr;
+            int rc = PDMApicGetTPR(pVCpu, &u8Tpr, NULL /*pfPending*/);
+            if (RT_FAILURE(rc))
+            {
+                AssertMsg(rc == VERR_PDM_NO_APIC_INSTANCE, ("%Rrc\n", rc));
+                *pValue = 0;
+                return rc;
+            }
+            *pValue = u8Tpr >> 4; /* bits 7-4 contain the task priority that go in cr8, bits 3-0*/
+            break;
+        }
+
         default:
             return VERR_INVALID_PARAMETER;
     }

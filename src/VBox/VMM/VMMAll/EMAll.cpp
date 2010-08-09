@@ -1876,28 +1876,16 @@ static int emInterpretCpuId(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  */
 VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
 {
-    int      rc;
     uint64_t val64;
-
-    if (SrcRegCrx == USE_REG_CR8)
-    {
-        val64 = 0;
-        rc = PDMApicGetTPR(pVCpu, (uint8_t *)&val64, NULL);
-        AssertMsgRCReturn(rc, ("PDMApicGetTPR failed\n"), VERR_EM_INTERPRETER);
-        val64 >>= 4;     /* bits 7-4 contain the task priority that go in cr8, bits 3-0*/
-    }
-    else
-    {
-        rc = CPUMGetGuestCRx(pVCpu, SrcRegCrx, &val64);
-        AssertMsgRCReturn(rc, ("CPUMGetGuestCRx %d failed\n", SrcRegCrx), VERR_EM_INTERPRETER);
-    }
+    int rc = CPUMGetGuestCRx(pVCpu, SrcRegCrx, &val64);
+    AssertMsgRCReturn(rc, ("CPUMGetGuestCRx %d failed\n", SrcRegCrx), VERR_EM_INTERPRETER);
 
     if (CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
         rc = DISWriteReg64(pRegFrame, DestRegGen, val64);
     else
         rc = DISWriteReg32(pRegFrame, DestRegGen, val64);
 
-    if(RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         LogFlow(("MOV_CR: gen32=%d CR=%d val=%RX64\n", DestRegGen, SrcRegCrx, val64));
         return VINF_SUCCESS;
