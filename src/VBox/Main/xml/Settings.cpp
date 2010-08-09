@@ -4141,33 +4141,103 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  * This adjusts the settings version in m->sv if incompatible settings require
  * a settings bump, whereas otherwise we try to preserve the settings version
  * to avoid breaking compatibility with older versions.
+ *
+ * We do the checks in here in reverse order: newest first, oldest last, so
+ * that we avoid unnecessary checks since some of these are expensive.
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
-    // The hardware versions other than "1" requires settings version 1.4 (2.1+).
-    if (    m->sv < SettingsVersion_v1_4
-         && hardwareMachine.strVersion != "1"
-       )
-        m->sv = SettingsVersion_v1_4;
+    if (m->sv < SettingsVersion_v1_11)
+    {
+        // VirtualBox 3.3 adds support for HD audio
+        if (hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA)
+            m->sv = SettingsVersion_v1_11;
 
-    // "accelerate 2d video" requires settings version 1.8
-    if (    (m->sv < SettingsVersion_v1_8)
-         && (hardwareMachine.fAccelerate2DVideo)
-       )
-        m->sv = SettingsVersion_v1_8;
+        // VirtualBox 3.3 adds support for CPU priority
+        if (hardwareMachine.ulCpuPriority != 100)
+            m->sv = SettingsVersion_v1_11;
 
-    // all the following require settings version 1.9
-    if (    (m->sv < SettingsVersion_v1_9)
-         && (    (hardwareMachine.firmwareType >= FirmwareType_EFI)
-              || (hardwareMachine.fHardwareVirtExclusive != HWVIRTEXCLUSIVEDEFAULT)
-              || fTeleporterEnabled
-              || uTeleporterPort
-              || !strTeleporterAddress.isEmpty()
-              || !strTeleporterPassword.isEmpty()
-              || !hardwareMachine.uuid.isEmpty()
+        // .. and we now have per-machine media registries
+        if (    mediaRegistry.llHardDisks.size()
+             || mediaRegistry.llDvdImages.size()
+             || mediaRegistry.llFloppyImages.size()
+           )
+            m->sv = SettingsVersion_v1_11;
+    }
+
+    // VirtualBox 3.2 adds NAT and boot priority to the NIC config in Main
+    if (m->sv < SettingsVersion_v1_10)
+    {
+        NetworkAdaptersList::const_iterator netit;
+        for (netit = hardwareMachine.llNetworkAdapters.begin();
+             netit != hardwareMachine.llNetworkAdapters.end();
+             ++netit)
+        {
+            if (netit->ulBandwidthLimit)
+            {
+                /* New in VirtualBox 3.3 */
+                m->sv = SettingsVersion_v1_11;
+                break;
+            }
+
+            if (    netit->fEnabled
+                 && netit->mode == NetworkAttachmentType_NAT
+                 && (   netit->nat.u32Mtu != 0
+                     || netit->nat.u32SockRcv != 0
+                     || netit->nat.u32SockSnd != 0
+                     || netit->nat.u32TcpRcv != 0
+                     || netit->nat.u32TcpSnd != 0
+                     || !netit->nat.fDnsPassDomain
+                     || netit->nat.fDnsProxy
+                     || netit->nat.fDnsUseHostResolver
+                     || netit->nat.fAliasLog
+                     || netit->nat.fAliasProxyOnly
+                     || netit->nat.fAliasUseSamePorts
+                     || netit->nat.strTftpPrefix.length()
+                     || netit->nat.strTftpBootFile.length()
+                     || netit->nat.strTftpNextServer.length()
+                     || netit->nat.llRules.size())
+                )
+            {
+                m->sv = SettingsVersion_v1_10;
+                break;
+            }
+            if (    netit->fEnabled
+                 && netit->ulBootPriority != 0)
+            {
+                m->sv = SettingsVersion_v1_10;
+                break;
+            }
+        }
+    }
+    if (m->sv < SettingsVersion_v1_10)
+    {
+        // VirtualBox 3.2: Check for non default I/O settings and bump the settings version.
+        if (   hardwareMachine.ioSettings.fIoCacheEnabled != true
+            || hardwareMachine.ioSettings.ulIoCacheSize != 5)
+            m->sv = SettingsVersion_v1_10;
+
+        // VirtualBox 3.2 adds support for VRDP video channel
+        if (hardwareMachine.vrdpSettings.fVideoChannel)
+            m->sv = SettingsVersion_v1_10;
+    }
+
+    // VirtualBox 3.2 adds support for page fusion
+    if (    m->sv < SettingsVersion_v1_10
+        &&  hardwareMachine.fPageFusionEnabled
+       )
+        m->sv = SettingsVersion_v1_10;
+
+    // VirtualBox 3.2 adds support for CPU hotplug, RTC timezone control, HID type and HPET
+    if (    m->sv < SettingsVersion_v1_10
+         && (    fRTCUseUTC
+              || hardwareMachine.fCpuHotPlug
+              || hardwareMachine.pointingHidType != PointingHidType_PS2Mouse
+              || hardwareMachine.keyboardHidType != KeyboardHidType_PS2Keyboard
+              || hardwareMachine.fHpetEnabled
             )
-        )
-        m->sv = SettingsVersion_v1_9;
+       )
+        m->sv = SettingsVersion_v1_10;
 
     // settings version 1.9 is also required if there is not exactly one DVD
     // or more than one floppy drive present or the DVD is not at the secondary
@@ -4239,97 +4309,33 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             m->sv = SettingsVersion_v1_9;
     }
 
-    // VirtualBox 3.2 adds support for CPU hotplug, RTC timezone control, HID type and HPET
-    if (    m->sv < SettingsVersion_v1_10
-         && (    fRTCUseUTC
-              || hardwareMachine.fCpuHotPlug
-              || hardwareMachine.pointingHidType != PointingHidType_PS2Mouse
-              || hardwareMachine.keyboardHidType != KeyboardHidType_PS2Keyboard
-              || hardwareMachine.fHpetEnabled
+    // all the following require settings version 1.9
+    if (    (m->sv < SettingsVersion_v1_9)
+         && (    (hardwareMachine.firmwareType >= FirmwareType_EFI)
+              || (hardwareMachine.fHardwareVirtExclusive != HWVIRTEXCLUSIVEDEFAULT)
+              || fTeleporterEnabled
+              || uTeleporterPort
+              || !strTeleporterAddress.isEmpty()
+              || !strTeleporterPassword.isEmpty()
+              || !hardwareMachine.uuid.isEmpty()
             )
+        )
+        m->sv = SettingsVersion_v1_9;
+
+    // "accelerate 2d video" requires settings version 1.8
+    if (    (m->sv < SettingsVersion_v1_8)
+         && (hardwareMachine.fAccelerate2DVideo)
        )
-        m->sv = SettingsVersion_v1_10;
+        m->sv = SettingsVersion_v1_8;
 
-    // VirtualBox 3.2 adds support for page fusion
-    if (    m->sv < SettingsVersion_v1_10
-        &&  hardwareMachine.fPageFusionEnabled
+    // The hardware versions other than "1" requires settings version 1.4 (2.1+).
+    if (    m->sv < SettingsVersion_v1_4
+         && hardwareMachine.strVersion != "1"
        )
-        m->sv = SettingsVersion_v1_10;
+        m->sv = SettingsVersion_v1_4;
 
-    // VirtualBox 3.2 adds NAT and boot priority to the NIC config in Main
-    if (m->sv < SettingsVersion_v1_10)
-    {
-        NetworkAdaptersList::const_iterator netit;
-        for (netit = hardwareMachine.llNetworkAdapters.begin();
-             netit != hardwareMachine.llNetworkAdapters.end();
-             ++netit)
-        {
-            if (netit->ulBandwidthLimit)
-            {
-                /* New in VirtualBox 3.3 */
-                m->sv = SettingsVersion_v1_11;
-                break;
-            }
 
-            if (    netit->fEnabled
-                 && netit->mode == NetworkAttachmentType_NAT
-                 && (   netit->nat.u32Mtu != 0
-                     || netit->nat.u32SockRcv != 0
-                     || netit->nat.u32SockSnd != 0
-                     || netit->nat.u32TcpRcv != 0
-                     || netit->nat.u32TcpSnd != 0
-                     || !netit->nat.fDnsPassDomain
-                     || netit->nat.fDnsProxy
-                     || netit->nat.fDnsUseHostResolver
-                     || netit->nat.fAliasLog
-                     || netit->nat.fAliasProxyOnly
-                     || netit->nat.fAliasUseSamePorts
-                     || netit->nat.strTftpPrefix.length()
-                     || netit->nat.strTftpBootFile.length()
-                     || netit->nat.strTftpNextServer.length()
-                     || netit->nat.llRules.size())
-                )
-            {
-                m->sv = SettingsVersion_v1_10;
-                break;
-            }
-            if (    netit->fEnabled
-                 && netit->ulBootPriority != 0)
-            {
-                m->sv = SettingsVersion_v1_10;
-                break;
-            }
-        }
-    }
-    if (m->sv < SettingsVersion_v1_10)
-    {
-        // VirtualBox 3.2: Check for non default I/O settings and bump the settings version.
-        if (   hardwareMachine.ioSettings.fIoCacheEnabled != true
-            || hardwareMachine.ioSettings.ulIoCacheSize != 5)
-            m->sv = SettingsVersion_v1_10;
 
-        // VirtualBox 3.2 adds support for VRDP video channel
-        if (hardwareMachine.vrdpSettings.fVideoChannel)
-            m->sv = SettingsVersion_v1_10;
-    }
-
-    if (m->sv < SettingsVersion_v1_11)
-    {
-        // VirtualBox 3.3 adds support for HD audio
-        if (hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA)
-            m->sv = SettingsVersion_v1_11;
-
-        // VirtualBox 3.3 adds support for CPU priority
-        if (hardwareMachine.ulCpuPriority != 100)
-            m->sv = SettingsVersion_v1_11;
-
-        // .. and we now have per-machine media registries
-        if (    mediaRegistry.llHardDisks.size()
-             || mediaRegistry.llDvdImages.size()
-             || mediaRegistry.llFloppyImages.size()
-           )
-            m->sv = SettingsVersion_v1_11;
-    }
 }
 
 /**
