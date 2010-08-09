@@ -62,64 +62,6 @@ class ConfigFileError;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Helper classes
-//
-////////////////////////////////////////////////////////////////////////////////
-
-// ExtraDataItem (used by both VirtualBox.xml and machines XML)
-typedef std::map<com::Utf8Str, com::Utf8Str> ExtraDataItemsMap;
-struct USBDeviceFilter;
-typedef std::list<USBDeviceFilter> USBDeviceFiltersList;
-
-/**
- * Common base class for both MainConfigFile and MachineConfigFile
- * which contains some common logic for both.
- */
-class ConfigFileBase
-{
-public:
-    bool fileExists();
-
-    void copyBaseFrom(const ConfigFileBase &b);
-
-protected:
-    ConfigFileBase(const com::Utf8Str *pstrFilename);
-    ~ConfigFileBase();
-
-    void parseUUID(com::Guid &guid,
-                   const com::Utf8Str &strUUID) const;
-    void parseTimestamp(RTTIMESPEC &timestamp,
-                        const com::Utf8Str &str) const;
-
-    com::Utf8Str makeString(const RTTIMESPEC &tm);
-
-    void readExtraData(const xml::ElementNode &elmExtraData,
-                       ExtraDataItemsMap &map);
-    void readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilters,
-                              USBDeviceFiltersList &ll);
-
-    void setVersionAttribute(xml::ElementNode &elm);
-    void createStubDocument();
-
-    void writeExtraData(xml::ElementNode &elmParent, const ExtraDataItemsMap &me);
-    void writeUSBDeviceFilters(xml::ElementNode &elmParent,
-                               const USBDeviceFiltersList &ll,
-                               bool fHostMode);
-
-    void clearDocument();
-
-    struct Data;
-    Data *m;
-
-private:
-    // prohibit copying (Data contains pointers to XML which cannot be copied)
-    ConfigFileBase(const ConfigFileBase&);
-
-    friend class ConfigFileError;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-//
 // Structures shared between Machine XML and VirtualBox.xml
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,6 +98,106 @@ struct USBDeviceFilter
     uint32_t                ulMaskedInterfaces;     // irrelevant for host USB objects
 };
 
+typedef std::map<com::Utf8Str, com::Utf8Str> PropertiesMap;
+
+// ExtraDataItem (used by both VirtualBox.xml and machines XML)
+typedef std::map<com::Utf8Str, com::Utf8Str> ExtraDataItemsMap;
+struct USBDeviceFilter;
+typedef std::list<USBDeviceFilter> USBDeviceFiltersList;
+
+struct Medium;
+typedef std::list<Medium> MediaList;
+
+/**
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
+ */
+struct Medium
+{
+    com::Guid       uuid;
+    com::Utf8Str    strLocation;
+    com::Utf8Str    strDescription;
+
+    // the following are for hard disks only:
+    com::Utf8Str    strFormat;
+    bool            fAutoReset;         // optional, only for diffs, default is false
+    PropertiesMap   properties;
+    MediumType_T    hdType;
+
+    MediaList       llChildren;         // only used with hard disks
+
+    bool operator==(const Medium &m) const;
+};
+
+/**
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
+ */
+struct MediaRegistry
+{
+    MediaList               llHardDisks,
+                            llDvdImages,
+                            llFloppyImages;
+
+    bool operator==(const MediaRegistry &m) const;
+};
+
+/**
+ * Common base class for both MainConfigFile and MachineConfigFile
+ * which contains some common logic for both.
+ */
+class ConfigFileBase
+{
+public:
+    bool fileExists();
+
+    void copyBaseFrom(const ConfigFileBase &b);
+
+protected:
+    ConfigFileBase(const com::Utf8Str *pstrFilename);
+    ~ConfigFileBase();
+
+    void parseUUID(com::Guid &guid,
+                   const com::Utf8Str &strUUID) const;
+    void parseTimestamp(RTTIMESPEC &timestamp,
+                        const com::Utf8Str &str) const;
+
+    com::Utf8Str makeString(const RTTIMESPEC &tm);
+
+    void readExtraData(const xml::ElementNode &elmExtraData,
+                       ExtraDataItemsMap &map);
+    void readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilters,
+                              USBDeviceFiltersList &ll);
+    typedef enum {Error, HardDisk, DVDImage, FloppyImage} MediaType;
+    void readMedium(MediaType t, const xml::ElementNode &elmMedium, MediaList &llMedia);
+    void readMediaRegistry(const xml::ElementNode &elmMediaRegistry, MediaRegistry &mr);
+
+    void setVersionAttribute(xml::ElementNode &elm);
+    void createStubDocument();
+
+    void buildExtraData(xml::ElementNode &elmParent, const ExtraDataItemsMap &me);
+    void buildUSBDeviceFilters(xml::ElementNode &elmParent,
+                               const USBDeviceFiltersList &ll,
+                               bool fHostMode);
+    void buildHardDisk(xml::ElementNode &elmMedium,
+                       const Medium &m,
+                       uint32_t level);
+    void buildMediaRegistry(xml::ElementNode &elmParent,
+                            const MediaRegistry &mr);
+    void clearDocument();
+
+    struct Data;
+    Data *m;
+
+private:
+    // prohibit copying (Data contains pointers to XML which cannot be copied)
+    ConfigFileBase(const ConfigFileBase&);
+
+    friend class ConfigFileError;
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // VirtualBox.xml structures
@@ -181,26 +223,6 @@ struct SystemProperties
     uint32_t                ulLogHistoryCount;
 };
 
-typedef std::map<com::Utf8Str, com::Utf8Str> PropertiesMap;
-
-struct Medium;
-typedef std::list<Medium> MediaList;
-
-struct Medium
-{
-    com::Guid       uuid;
-    com::Utf8Str    strLocation;
-    com::Utf8Str    strDescription;
-
-    // the following are for hard disks only:
-    com::Utf8Str    strFormat;
-    bool            fAutoReset;         // optional, only for diffs, default is false
-    PropertiesMap   properties;
-    MediumType_T    hdType;
-
-    MediaList       llChildren;         // only used with hard disks
-};
-
 struct MachineRegistryEntry
 {
     com::Guid       uuid;
@@ -224,22 +246,14 @@ class MainConfigFile : public ConfigFileBase
 public:
     MainConfigFile(const com::Utf8Str *pstrFilename);
 
-    typedef enum {Error, HardDisk, DVDImage, FloppyImage} MediaType;
-    void readMedium(MediaType t, const xml::ElementNode &elmMedium, MediaList &llMedia);
-    void readMediaRegistry(const xml::ElementNode &elmMediaRegistry);
     void readMachineRegistry(const xml::ElementNode &elmMachineRegistry);
     void readDHCPServers(const xml::ElementNode &elmDHCPServers);
 
-    void writeHardDisk(xml::ElementNode &elmMedium,
-                       const Medium &m,
-                       uint32_t level);
     void write(const com::Utf8Str strFilename);
 
     Host                    host;
     SystemProperties        systemProperties;
-    MediaList               llHardDisks,
-                            llDvdImages,
-                            llFloppyImages;
+    MediaRegistry           mediaRegistry;
     MachinesRegistry        llMachines;
     DHCPServersList         llDhcpServers;
     ExtraDataItemsMap       mapExtraDataItems;
@@ -864,6 +878,7 @@ public:
 
     Hardware                hardwareMachine;
     Storage                 storageMachine;
+    MediaRegistry           mediaRegistry;
 
     ExtraDataItemsMap       mapExtraDataItems;
 
@@ -881,7 +896,8 @@ public:
     {
         BuildMachineXML_IncludeSnapshots = 0x01,
         BuildMachineXML_WriteVboxVersionAttribute = 0x02,
-        BuildMachineXML_SkipRemovableMedia = 0x02
+        BuildMachineXML_SkipRemovableMedia = 0x04,
+        BuildMachineXML_MediaRegistry = 0x08
     };
     void buildMachineXML(xml::ElementNode &elmMachine,
                          uint32_t fl,
