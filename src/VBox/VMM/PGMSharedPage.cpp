@@ -406,7 +406,7 @@ DECLCALLBACK(int)  pgmR3CmdShowSharedModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
         }
         i++;
     }
-    while (i < cSharedModules);
+    while (i < RT_ELEMENTS(pSharedModules));
     pgmUnlock(pVM);
 
     return VINF_SUCCESS;
