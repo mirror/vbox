@@ -462,7 +462,7 @@ void UIVMItemPainter::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
     pPainter->drawPixmap(option.rect, pixmap);
 }
 
-void UIVMItemPainter::paintContent(QPainter *pPainter, const QStyleOptionViewItem &option,
+QRect UIVMItemPainter::paintContent(QPainter *pPainter, const QStyleOptionViewItem &option,
                                    const QModelIndex &index) const
 {
     /* Name and decoration */
@@ -511,9 +511,10 @@ void UIVMItemPainter::paintContent(QPainter *pPainter, const QStyleOptionViewIte
     /* textual state */
     pPainter->setFont(stateFont);
     pPainter->drawText(stateRT, state);
+    QRect boundingRect = osTypeRT | vmNameRT | shotRT | stateIconRT | stateRT;
     /* For debugging */
-//    QRect boundingRect = osTypeRT | vmNameRT | shotRT | stateIconRT | stateRT;
 //    pPainter->drawRect(boundingRect);
+    return boundingRect;
 }
 
 void UIVMItemPainter::blendContent(QPainter *pPainter, const QStyleOptionViewItem &option,
@@ -543,7 +544,7 @@ void UIVMItemPainter::blendContent(QPainter *pPainter, const QStyleOptionViewIte
     drawBackground(&basePainter, option, index);
     basePainter.restore();
     /* Now paint the content. */
-    paintContent(&basePainter, option, index);
+    QRect usedRect = paintContent(&basePainter, option, index);
     /* Finished with the OS dependent part. */
     basePainter.end();
     /* Time for the OS independent part (That is, use the QRasterEngine) */
@@ -555,15 +556,17 @@ void UIVMItemPainter::blendContent(QPainter *pPainter, const QStyleOptionViewIte
     /* Fully copy the source to the destination */
     rasterPainter.setCompositionMode(QPainter::CompositionMode_Source);
     rasterPainter.drawPixmap(0, 0, basePixmap);
-    /* Now use the alpha value of the source to blend the destination in. */
-    rasterPainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-
-    const int blendWidth = qMin(70, r.width());
-    QLinearGradient lg(r.width()-blendWidth, 0, r.width(), 0);
-    lg.setColorAt(0, QColor(Qt::white));
-    lg.setColorAt(0.95, QColor(Qt::transparent));
-    lg.setColorAt(1, QColor(Qt::transparent));
-    rasterPainter.fillRect(r.width()-blendWidth, 0, blendWidth, r.height(), lg);
+    if (usedRect.x() + usedRect.width() > option.rect.width())
+    {
+        /* Now use the alpha value of the source to blend the destination in. */
+        rasterPainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+        const int blendWidth = qMin(30, r.width());
+        QLinearGradient lg(r.width()-blendWidth, 0, r.width(), 0);
+        lg.setColorAt(0, QColor(Qt::white));
+        lg.setColorAt(0.95, QColor(Qt::transparent));
+        lg.setColorAt(1, QColor(Qt::transparent));
+        rasterPainter.fillRect(r.width()-blendWidth, 0, blendWidth, r.height(), lg);
+    }
     /* Finished with the OS independent part. */
     rasterPainter.end();
 
