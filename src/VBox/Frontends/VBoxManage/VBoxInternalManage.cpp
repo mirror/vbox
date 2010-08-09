@@ -153,10 +153,15 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                "\n"
              : "",
              (u64Cmd & USAGE_SETHDUUID)
-             ? "  sethduuid <filepath>\n"
+             ? "  sethduuid <filepath> [<uuid>]\n"
                "       Assigns a new UUID to the given image file. This way, multiple copies\n"
                "       of a container can be registered.\n"
                "\n"
+             : "",
+             (u64Cmd & USAGE_SETHDPARENTUUID)
+             ? "  sethdparentuuid <filepath> <uuid>\n"
+             "       Assigns a new parent UUID to the given image file.\n"
+             "\n"
              : "",
              (u64Cmd & USAGE_DUMPHDINFO)
              ?  "  dumphdinfo <filepath>\n"
@@ -514,19 +519,42 @@ static int handleVDMessage(void *pvUser, const char *pszFormat, ...)
 
 static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
-    /* we need exactly one parameter: the image file */
-    if (argc != 1)
-    {
-        return errorSyntax(USAGE_SETHDUUID, "Not enough parameters");
-    }
-
-    /* generate a new UUID */
     Guid uuid;
-    uuid.create();
+    RTUUID rtuuid;
+    enum eUuidType {
+        HDUUID,
+        HDPARENTUUID
+    } uuidType;
+    
+    if (!strcmp(argv[0], "sethduuid"))
+    {
+        uuidType = HDUUID;
+        if (argc != 3 && argc != 2)
+            return errorSyntax(USAGE_SETHDUUID, "Not enough parameters");
+        /* if specified, take UUID, otherwise generate a new one */
+        if (argc == 3)
+        {
+            if (RT_FAILURE(RTUuidFromStr(&rtuuid, argv[2])))
+                return errorSyntax(USAGE_SETHDUUID, "Invalid UUID parameter");
+            uuid = argv[2];
+        } else
+            uuid.create();
+    }
+    else if (!strcmp(argv[0], "sethdparentuuid"))
+    {
+        uuidType = HDPARENTUUID;
+        if (argc != 3)
+            return errorSyntax(USAGE_SETHDPARENTUUID, "Not enough parameters");
+        if (RT_FAILURE(RTUuidFromStr(&rtuuid, argv[2])))
+            return errorSyntax(USAGE_SETHDPARENTUUID, "Invalid UUID parameter");
+        uuid = argv[2];
+    }
+    else
+        return errorSyntax(USAGE_SETHDUUID, "Invalid invocation");
 
     /* just try it */
     char *pszFormat = NULL;
-    int rc = VDGetFormat(NULL, argv[0], &pszFormat);
+    int rc = VDGetFormat(NULL, argv[1], &pszFormat);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Format autodetect failed: %Rrc\n", rc);
@@ -555,14 +583,17 @@ static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, 
     }
 
     /* Open the image */
-    rc = VDOpen(pDisk, pszFormat, argv[0], VD_OPEN_FLAGS_NORMAL, NULL);
+    rc = VDOpen(pDisk, pszFormat, argv[1], VD_OPEN_FLAGS_NORMAL, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Error while opening the image: %Rrc\n", rc);
         return 1;
     }
 
-    rc = VDSetUuid(pDisk, VD_LAST_IMAGE, uuid.raw());
+    if (uuidType == HDUUID)
+      rc = VDSetUuid(pDisk, VD_LAST_IMAGE, uuid.raw());
+    else
+      rc = VDSetParentUuid(pDisk, VD_LAST_IMAGE, uuid.raw());
     if (RT_FAILURE(rc))
         RTPrintf("Error while setting a new UUID: %Rrc\n", rc);
     else
@@ -1982,8 +2013,8 @@ int handleInternalCommands(HandlerArg *a)
         return CmdLoadSyms(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     //if (!strcmp(pszCmd, "unloadsyms"))
     //    return CmdUnloadSyms(argc - 1 , &a->argv[1]);
-    if (!strcmp(pszCmd, "sethduuid") || !strcmp(pszCmd, "setvdiuuid"))
-        return CmdSetHDUUID(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
+    if (!strcmp(pszCmd, "sethduuid") || !strcmp(pszCmd, "sethdparentuuid"))
+        return CmdSetHDUUID(a->argc, &a->argv[0], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "dumphdinfo"))
         return CmdDumpHDInfo(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "listpartitions"))
