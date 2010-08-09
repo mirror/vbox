@@ -29,6 +29,9 @@
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/version.h>
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+# include "revision-generated.h"
+#endif
 
 
 int VBoxReportGuestInfo(VBOXOSTYPE enmOSType)

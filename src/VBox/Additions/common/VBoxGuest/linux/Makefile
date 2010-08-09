@@ -63,6 +63,7 @@ override MODULE = vboxguest
 OBJS   = \
 	VBoxGuest-linux.o \
 	VBoxGuest.o \
+	VBoxHelper.o \
 	GenericRequest.o \
 	HGCMInternal.o \
 	Init.o \
