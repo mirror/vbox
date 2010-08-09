@@ -849,9 +849,10 @@ void VBoxSelectorWnd::refreshVMList()
 #endif
 }
 
-void VBoxSelectorWnd::refreshVMItem (const QString &aID, bool aDetails,
-                                                       bool aSnapshots,
-                                                       bool aDescription)
+void VBoxSelectorWnd::refreshVMItem(const QString &aID,
+                                    bool aDetails,
+                                    bool aSnapshots,
+                                    bool aDescription)
 {
     UIVMItem *item = mVMModel->itemById (aID);
     if (item)
@@ -1158,22 +1159,23 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         bool running = item->sessionState() != KSessionState_Unlocked;
         bool modifyEnabled = !running && state != KMachineState_Saved;
 
-        if (aRefreshDetails)
+        if (   aRefreshDetails
+            || aRefreshDescription)
             m_pVMDesktop->updateDetails(item, m);
         if (aRefreshSnapshots)
             m_pVMDesktop->updateSnapshots(item, m);
-        if (aRefreshDescription)
-            m_pVMDesktop->updateDescription(item, m);
+//        if (aRefreshDescription)
+//            m_pVMDesktop->updateDescription(item, m);
 
         /* enable/disable modify actions */
-        mVmConfigAction->setEnabled (modifyEnabled);
-        mVmDeleteAction->setEnabled (!running);
-        mVmDiscardAction->setEnabled (state == KMachineState_Saved && !running);
-        mVmPauseAction->setEnabled (   state == KMachineState_Running
-                                    || state == KMachineState_Teleporting
-                                    || state == KMachineState_LiveSnapshotting
-                                    || state == KMachineState_Paused
-                                    || state == KMachineState_TeleportingPausedVM /** @todo Live Migration: does this make sense? */
+        mVmConfigAction->setEnabled(modifyEnabled);
+        mVmDeleteAction->setEnabled(!running);
+        mVmDiscardAction->setEnabled(state == KMachineState_Saved && !running);
+        mVmPauseAction->setEnabled(   state == KMachineState_Running
+                                   || state == KMachineState_Teleporting
+                                   || state == KMachineState_LiveSnapshotting
+                                   || state == KMachineState_Paused
+                                   || state == KMachineState_TeleportingPausedVM /** @todo Live Migration: does this make sense? */
                                    );
 
         /* change the Start button text accordingly */
@@ -1279,7 +1281,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
 
         /* empty and disable other tabs */
         m_pVMDesktop->updateSnapshots(0, CMachine());
-        m_pVMDesktop->updateDescription(0, CMachine());
+//        m_pVMDesktop->updateDescription(0, CMachine());
 
         /* disable modify actions */
         mVmConfigAction->setEnabled (false);
@@ -1369,7 +1371,7 @@ void VBoxSelectorWnd::machineStateChanged(QString strId, KMachineState /* state 
                    false /* aDescription */);
 
     /* simulate a state change signal */
-    m_pVMDesktop->updateDescriptionState();
+//    m_pVMDesktop->updateDescriptionState();
 }
 
 void VBoxSelectorWnd::machineDataChanged(QString strId)
@@ -1423,7 +1425,7 @@ void VBoxSelectorWnd::sessionStateChanged(QString strId, KSessionState /* state 
                    false /* aDescription */);
 
     /* simulate a state change signal */
-    m_pVMDesktop->updateDescriptionState();
+//    m_pVMDesktop->updateDescriptionState();
 }
 
 void VBoxSelectorWnd::snapshotChanged(QString strId, QString /* strSnapshotId */)
