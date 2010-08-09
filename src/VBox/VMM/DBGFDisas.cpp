@@ -362,7 +362,8 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     bool            fRealModeAddress = false;
 
     if (    pHiddenSel
-        &&  CPUMAreHiddenSelRegsValid(pVCpu))
+        &&  (   (fFlags & DBGF_DISAS_FLAGS_HID_SEL_REGS_VALID)
+             || CPUMAreHiddenSelRegsValid(pVCpu)))
     {
         SelInfo.Sel                     = Sel;
         SelInfo.SelGate                 = 0;
@@ -402,7 +403,8 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
         SelInfo.u.Raw.Gen.u16LimitLow   = 0xffff;
         SelInfo.u.Raw.Gen.u4LimitHigh   = 0xf;
 
-        if (CPUMAreHiddenSelRegsValid(pVCpu))
+        if (   (fFlags & DBGF_DISAS_FLAGS_HID_SEL_REGS_VALID)
+            || CPUMAreHiddenSelRegsValid(pVCpu))
         {   /* Assume the current CS defines the execution mode. */
             pCtxCore   = CPUMGetGuestCtxCore(pVCpu);
             pHiddenSel = (CPUMSELREGHID *)&pCtxCore->csHid;
