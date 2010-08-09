@@ -3511,7 +3511,7 @@ static uint32_t remR3MMIOReadU8(void *pvVM, target_phys_addr_t GCPhys)
     uint32_t u32 = 0;
     int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 1);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
-    Log2(("remR3MMIOReadU8: GCPhys=%RGp -> %02x\n", GCPhys, u32));
+    Log2(("remR3MMIOReadU8: GCPhys=%RGp -> %02x\n", (RTGCPHYS)GCPhys, u32));
     return u32;
 }
 
@@ -3521,7 +3521,7 @@ static uint32_t remR3MMIOReadU16(void *pvVM, target_phys_addr_t GCPhys)
     uint32_t u32 = 0;
     int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 2);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
-    Log2(("remR3MMIOReadU16: GCPhys=%RGp -> %04x\n", GCPhys, u32));
+    Log2(("remR3MMIOReadU16: GCPhys=%RGp -> %04x\n", (RTGCPHYS)GCPhys, u32));
     return u32;
 }
 
@@ -3531,7 +3531,7 @@ static uint32_t remR3MMIOReadU32(void *pvVM, target_phys_addr_t GCPhys)
     uint32_t u32 = 0;
     int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 4);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
-    Log2(("remR3MMIOReadU32: GCPhys=%RGp -> %08x\n", GCPhys, u32));
+    Log2(("remR3MMIOReadU32: GCPhys=%RGp -> %08x\n", (RTGCPHYS)GCPhys, u32));
     return u32;
 }
 
@@ -3539,7 +3539,7 @@ static uint32_t remR3MMIOReadU32(void *pvVM, target_phys_addr_t GCPhys)
 static void     remR3MMIOWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     int rc;
-    Log2(("remR3MMIOWriteU8: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3MMIOWriteU8: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
     rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 1);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
@@ -3548,7 +3548,7 @@ static void     remR3MMIOWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t
 static void     remR3MMIOWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     int rc;
-    Log2(("remR3MMIOWriteU16: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3MMIOWriteU16: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
     rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 2);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
@@ -3557,7 +3557,7 @@ static void     remR3MMIOWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_
 static void     remR3MMIOWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     int rc;
-    Log2(("remR3MMIOWriteU32: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3MMIOWriteU32: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
     rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 4);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
@@ -3571,7 +3571,7 @@ static void     remR3MMIOWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_
 static uint32_t remR3HandlerReadU8(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint8_t u8;
-    Log2(("remR3HandlerReadU8: GCPhys=%RGp\n", GCPhys));
+    Log2(("remR3HandlerReadU8: GCPhys=%RGp\n", (RTGCPHYS)GCPhys));
     PGMPhysRead((PVM)pvVM, GCPhys, &u8, sizeof(u8));
     return u8;
 }
@@ -3579,7 +3579,7 @@ static uint32_t remR3HandlerReadU8(void *pvVM, target_phys_addr_t GCPhys)
 static uint32_t remR3HandlerReadU16(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint16_t u16;
-    Log2(("remR3HandlerReadU16: GCPhys=%RGp\n", GCPhys));
+    Log2(("remR3HandlerReadU16: GCPhys=%RGp\n", (RTGCPHYS)GCPhys));
     PGMPhysRead((PVM)pvVM, GCPhys, &u16, sizeof(u16));
     return u16;
 }
@@ -3587,26 +3587,26 @@ static uint32_t remR3HandlerReadU16(void *pvVM, target_phys_addr_t GCPhys)
 static uint32_t remR3HandlerReadU32(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint32_t u32;
-    Log2(("remR3HandlerReadU32: GCPhys=%RGp\n", GCPhys));
+    Log2(("remR3HandlerReadU32: GCPhys=%RGp\n", (RTGCPHYS)GCPhys));
     PGMPhysRead((PVM)pvVM, GCPhys, &u32, sizeof(u32));
     return u32;
 }
 
 static void     remR3HandlerWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
-    Log2(("remR3HandlerWriteU8: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3HandlerWriteU8: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
     PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint8_t));
 }
 
 static void     remR3HandlerWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
-    Log2(("remR3HandlerWriteU16: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3HandlerWriteU16: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
     PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint16_t));
 }
 
 static void     remR3HandlerWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
-    Log2(("remR3HandlerWriteU32: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3HandlerWriteU32: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
     PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint32_t));
 }
 
@@ -3721,7 +3721,27 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
      * Disassemble to log.
      */
     if (fLog)
-        rc = DBGFR3DisasInstrCurrentLogInternal(env->pVCpu, pszPrefix);
+    {
+        PVMCPU  pVCpu = VMMGetCpu(pVM);
+        char    szBuf[256];
+        szBuf[0] = '\0';
+        int rc = DBGFR3DisasInstrEx(pVCpu->pVMR3,
+                                    pVCpu->idCpu,
+                                    0, /* Sel */
+                                    0, /* GCPtr */
+                                    DBGF_DISAS_FLAGS_CURRENT_GUEST
+                                    | DBGF_DISAS_FLAGS_DEFAULT_MODE
+                                    | DBGF_DISAS_FLAGS_HID_SEL_REGS_VALID,
+                                    szBuf,
+                                    sizeof(szBuf),
+                                    NULL);
+        if (RT_FAILURE(rc))
+            RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrEx failed with rc=%Rrc\n", rc);
+        if (pszPrefix && *pszPrefix)
+            RTLogPrintf("%s-CPU%d: %s\n", pszPrefix, pVCpu->idCpu, szBuf);
+        else
+            RTLogPrintf("CPU%d: %s\n", pVCpu->idCpu, szBuf);
+    }
 
     return RT_SUCCESS(rc);
 }
@@ -4139,7 +4159,7 @@ int cpu_get_pic_interrupt(CPUState *env)
      * In that case we can't call PDMGetInterrupt anymore, because it has already cleared the interrupt
      * with the (a)pic.
      */
-    /** @note We assume we will go directly to the recompiler to handle the pending interrupt! */
+    /* Note! We assume we will go directly to the recompiler to handle the pending interrupt! */
     /** @todo r=bird: In the long run we should just do the interrupt handling in EM/CPUM/TRPM/somewhere and
      * if we cannot execute the interrupt handler in raw-mode just reschedule to REM. Once that is done we
      * remove this kludge. */
@@ -4153,7 +4173,8 @@ int cpu_get_pic_interrupt(CPUState *env)
     else
         rc = PDMGetInterrupt(env->pVCpu, &u8Interrupt);
 
-    LogFlow(("cpu_get_pic_interrupt: u8Interrupt=%d rc=%Rrc\n", u8Interrupt, rc));
+    LogFlow(("cpu_get_pic_interrupt: u8Interrupt=%d rc=%Rrc pc=%04x:%08llx ~flags=%08llx\n",
+             u8Interrupt, rc, env->segs[R_CS].selector, (uint64_t)env->eip, (uint64_t)env->eflags));
     if (RT_SUCCESS(rc))
     {
         if (VMCPU_FF_ISPENDING(env->pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))

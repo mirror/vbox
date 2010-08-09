@@ -327,7 +327,7 @@ int cpu_exec(CPUState *env1)
                        trigger new exceptions, but we do not handle
                        double or triple faults yet. */
                     RAWEx_ProfileStart(env, STATS_IRQ_HANDLING);
-                    Log(("do_interrupt %d %d %RGv\n", env->exception_index, env->exception_is_int, env->exception_next_eip));
+                    Log(("do_interrupt %d %d %RGv\n", env->exception_index, env->exception_is_int, (RTGCPTR)env->exception_next_eip));
                     do_interrupt(env->exception_index,
                                  env->exception_is_int,
                                  env->error_code,
@@ -361,7 +361,7 @@ int cpu_exec(CPUState *env1)
                             ASMAtomicOrS32((int32_t volatile *)&env->interrupt_request, CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT);
                             env->exception_index = EXCP_SINGLE_INSTR;
                             if (emulate_single_instr(env) == -1)
-                                AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%RGv!!\n", env->eip));
+                                AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%RGv!!\n", (RTGCPTR)env->eip));
 
                             /* When we receive an external interrupt during execution of this single
                                instruction, then we should stay here. We will leave when we're ready
