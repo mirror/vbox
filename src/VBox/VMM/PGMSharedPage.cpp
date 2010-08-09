@@ -92,7 +92,7 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, VBOXOSFAMILY enmGuestOS, char 
         {
             for (unsigned i = 0; i < RT_ELEMENTS(pSharedModules); i++)
             {
-                if (pSharedModules[cSharedModules] == NULL)
+                if (pSharedModules[i] == NULL)
                 {
                     ppSharedModule = &pSharedModules[i];
                     break;
