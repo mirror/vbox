@@ -124,10 +124,20 @@ extern "C" {
 static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode);
 static int codecToAudVolume(struct CODECState *pState);
 
-static inline void codecSetRegister(uint32_t *pu32Reg, uint32_t u32Cmd)
+static inline void codecSetRegister(uint32_t *pu32Reg, uint32_t u32Cmd, uint8_t u8Offset, uint32_t mask)
 {
-        *pu32Reg = (*pu32Reg) & ~CODEC_VERB_8BIT_DATA;
-        *pu32Reg = (*pu32Reg) | (u32Cmd & CODEC_VERB_8BIT_DATA);
+        Assert((pu32Reg && u8Offset < 32));
+        *pu32Reg &= ~(mask << u8Offset);
+        *pu32Reg |= (u32Cmd & mask) << u8Offset;
+}
+static inline void codecSetRegisterU8(uint32_t *pu32Reg, uint32_t u32Cmd, uint8_t u8Offset)
+{
+    codecSetRegister(pu32Reg, u32Cmd, u8Offset, CODEC_VERB_8BIT_DATA);
+}
+
+static inline void codecSetRegisterU16(uint32_t *pu32Reg, uint32_t u32Cmd, uint8_t u8Offset)
+{
+    codecSetRegister(pu32Reg, u32Cmd, u8Offset, CODEC_VERB_16BIT_DATA);
 }
 
 
@@ -203,11 +213,6 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    fIsOut = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd); 
-    fIsIn = CODEC_SET_AMP_IS_IN_DIRECTION(cmd); 
-    fIsRight = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd); 
-    fIsLeft = CODEC_SET_AMP_IS_LEFT_SIDE(cmd); 
-    u8Index = CODEC_SET_AMP_INDEX(cmd);
     PCODECNODE pNode = &pState->pNodes[CODEC_NID(cmd)];
     if (STAC9220_IS_DAC_CMD(cmd))
         pAmplifier = &pNode->dac.B_params;
@@ -217,25 +222,30 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
         pAmplifier = &pNode->adcmux.B_params;
     else if (STAC9220_IS_PCBEEP_CMD(cmd))
         pAmplifier = &pNode->pcbeep.B_params;
-    if (   (!fIsLeft && !fIsRight)
-        || (!fIsOut && !fIsIn))
-        return VINF_SUCCESS;
     Assert(pAmplifier);
     if (pAmplifier)
     {
+        fIsOut = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd); 
+        fIsIn = CODEC_SET_AMP_IS_IN_DIRECTION(cmd); 
+        fIsRight = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd); 
+        fIsLeft = CODEC_SET_AMP_IS_LEFT_SIDE(cmd); 
+        u8Index = CODEC_SET_AMP_INDEX(cmd);
+        if (   (!fIsLeft && !fIsRight)
+            || (!fIsOut && !fIsIn))
+            return VINF_SUCCESS;
         if (fIsIn)
         {
             if (fIsLeft)
-                codecSetRegister(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_LEFT, u8Index), cmd);
+                codecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_LEFT, u8Index), cmd, 0);
             if (fIsRight)
-                codecSetRegister(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), cmd);
+                codecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), cmd, 0);
         } 
         if (fIsOut)
         {
             if (fIsLeft)
-                codecSetRegister(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_LEFT, u8Index), cmd);
+                codecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_LEFT, u8Index), cmd, 0);
             if (fIsRight)
-                codecSetRegister(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd);
+                codecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd, 0);
         }
         if (CODEC_NID(cmd) == 2)
             codecToAudVolume(pState);
@@ -296,10 +306,8 @@ static int codecSetConSelectCtrl(struct CODECState *pState, uint32_t cmd, uint64
     else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F01_param;
     Assert((pu32Reg));
-    if (!pu32Reg)
-        return VINF_SUCCESS;
-    *pu32Reg = (*pu32Reg) & ~CODEC_VERB_8BIT_DATA;
-    *pu32Reg = (*pu32Reg) | (cmd & CODEC_VERB_8BIT_DATA);
+    if (pu32Reg)
+        codecSetRegisterU8(pu32Reg, cmd, 0);
     return VINF_SUCCESS;
 }
 
@@ -348,10 +356,8 @@ static int codecSetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
     else if (STAC9220_IS_CD_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
     Assert((pu32Reg));
-    if (!pu32Reg)
-        return VINF_SUCCESS;
-    *pu32Reg = (*pu32Reg) & ~CODEC_VERB_8BIT_DATA;
-    *pu32Reg = (*pu32Reg) | (cmd & CODEC_VERB_8BIT_DATA);
+    if (pu32Reg)
+        codecSetRegisterU8(pu32Reg, cmd, 0);
     return VINF_SUCCESS;
 }
 
@@ -402,10 +408,8 @@ static int codecSetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, u
     else
         AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
     Assert(pu32Reg);
-    if(!pu32Reg)
-        return VINF_SUCCESS;
-    *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
-    *pu32Reg |= cmd & CODEC_VERB_8BIT_DATA;
+    if(pu32Reg)
+        codecSetRegisterU8(pu32Reg, cmd, 0);
     return VINF_SUCCESS;
 }
 
@@ -446,10 +450,8 @@ static int codecSetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *p
     else if (STAC9220_IS_DIGINPIN_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
     Assert(pu32Reg);
-    if(!pu32Reg)
-        return VINF_SUCCESS;
-    *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
-    *pu32Reg |= cmd & CODEC_VERB_8BIT_DATA;
+    if(pu32Reg)
+        codecSetRegisterU8(pu32Reg, cmd, 0);
     return VINF_SUCCESS;
 }
 
@@ -499,8 +501,7 @@ static int codecSetProcessingState(struct CODECState *pState, uint32_t cmd, uint
     *pResp = 0;
     if (STAC9220_IS_ADC_CMD(cmd))
     {
-        pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param &= ~CODEC_VERB_8BIT_DATA;
-        pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param |= cmd & CODEC_VERB_8BIT_DATA;
+        codecSetRegisterU8(&pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param, cmd, 0);
     }
     return VINF_SUCCESS;
 }
@@ -523,51 +524,33 @@ static int codecGetDigitalConverter(struct CODECState *pState, uint32_t cmd, uin
     return VINF_SUCCESS;
 }
 
+static int codecSetDigitalConverter(struct CODECState *pState, uint32_t cmd, uint8_t u8Offset, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
+    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    {
+        Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
+        return VINF_SUCCESS;
+    }
+    *pResp = 0;
+    if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+        codecSetRegisterU8(&pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param, cmd, u8Offset);
+    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
+        codecSetRegisterU8(&pState->pNodes[CODEC_NID(cmd)].spdifin.u32F0d_param, cmd, u8Offset);
+    return VINF_SUCCESS;
+}
+
 /* 70D */
 static int codecSetDigitalConverter1(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
-    Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
-    {
-        Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
-        return VINF_SUCCESS;
-    }
-    *pResp = 0;
-    if (STAC9220_IS_SPDIFOUT_CMD(cmd))
-    {
-        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param &= ~CODEC_VERB_8BIT_DATA;
-        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param |= cmd & CODEC_VERB_8BIT_DATA;
-    }
-    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
-    {
-        pState->pNodes[CODEC_NID(cmd)].spdifin.u32F0d_param &= ~CODEC_VERB_8BIT_DATA;
-        pState->pNodes[CODEC_NID(cmd)].spdifin.u32F0d_param |= cmd & CODEC_VERB_8BIT_DATA;
-    }
-    return VINF_SUCCESS;
+    return codecSetDigitalConverter(pState, cmd, 0, pResp);
 }
+
 /* 70E */
 static int codecSetDigitalConverter2(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
-    Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
-    {
-        Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
-        return VINF_SUCCESS;
-    }
-    *pResp = 0;
-    if (STAC9220_IS_SPDIFOUT_CMD(cmd))
-    {
-        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param &= ~(CODEC_VERB_8BIT_DATA << 8);
-        pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param |= cmd & (CODEC_VERB_8BIT_DATA << 8);
-    }
-    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
-    {
-        pState->pNodes[CODEC_NID(cmd)].spdifin.u32F0d_param &= ~(CODEC_VERB_8BIT_DATA << 8);
-        pState->pNodes[CODEC_NID(cmd)].spdifin.u32F0d_param |= cmd & (CODEC_VERB_8BIT_DATA << 8);
-    }
-    return VINF_SUCCESS;
+    return codecSetDigitalConverter(pState, cmd, 8, pResp);
 }
 
 static int codecGetSubId(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
@@ -699,10 +682,7 @@ static int codecSetStreamId(struct CODECState *pState, uint32_t cmd, uint64_t *p
         pu32addr = &pState->pNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
     Assert((pu32addr));
     if (pu32addr)
-    {
-        *pu32addr &= ~CODEC_VERB_8BIT_DATA;
-        *pu32addr |= cmd & CODEC_VERB_8BIT_DATA;
-    }
+        codecSetRegisterU8(pu32addr, cmd, 0);
     return VINF_SUCCESS;
 }
 static int codecGetConverterFormat(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
@@ -737,25 +717,13 @@ static int codecSetConverterFormat(struct CODECState *pState, uint32_t cmd, uint
     }
     *pResp = 0;
     if (STAC9220_IS_DAC_CMD(cmd))
-    {
-        pState->pNodes[CODEC_NID(cmd)].dac.u32A_param &= ~CODEC_VERB_16BIT_DATA;
-        pState->pNodes[CODEC_NID(cmd)].dac.u32A_param |= cmd & CODEC_VERB_16BIT_DATA;
-    }
+        codecSetRegisterU16(&pState->pNodes[CODEC_NID(cmd)].dac.u32A_param, cmd, 0);
     else if (STAC9220_IS_ADC_CMD(cmd))
-    {
-        pState->pNodes[CODEC_NID(cmd)].adc.u32A_param &= ~CODEC_VERB_16BIT_DATA;
-        pState->pNodes[CODEC_NID(cmd)].adc.u32A_param |= cmd & CODEC_VERB_16BIT_DATA;
-    }
+        codecSetRegisterU16(&pState->pNodes[CODEC_NID(cmd)].adc.u32A_param, cmd, 0);
     else if (STAC9220_IS_SPDIFOUT_CMD(cmd))
-    {
-        pState->pNodes[CODEC_NID(cmd)].spdifout.u32A_param &= ~CODEC_VERB_16BIT_DATA;
-        pState->pNodes[CODEC_NID(cmd)].spdifout.u32A_param |= cmd & CODEC_VERB_16BIT_DATA;
-    }
+        codecSetRegisterU16(&pState->pNodes[CODEC_NID(cmd)].spdifout.u32A_param, cmd, 0);
     else if (STAC9220_IS_SPDIFIN_CMD(cmd))
-    {
-        pState->pNodes[CODEC_NID(cmd)].spdifin.u32A_param &= ~CODEC_VERB_16BIT_DATA;
-        pState->pNodes[CODEC_NID(cmd)].spdifin.u32A_param |= cmd & CODEC_VERB_16BIT_DATA;
-    }
+        codecSetRegisterU16(&pState->pNodes[CODEC_NID(cmd)].spdifin.u32A_param, cmd, 0);
     return VINF_SUCCESS;
 }
 
@@ -800,10 +768,7 @@ static int codecSetEAPD_BTLEnabled(struct CODECState *pState, uint32_t cmd, uint
     *pResp = 0;
     Assert((pu32Reg));
     if (pu32Reg)
-    {
-        *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
-        *pu32Reg |= cmd & CODEC_VERB_8BIT_DATA;
-    }
+        codecSetRegisterU8(pu32Reg, cmd, 0);
     return VINF_SUCCESS;
 }
 
@@ -839,10 +804,7 @@ static int codecSetVolumeKnobCtrl(struct CODECState *pState, uint32_t cmd, uint6
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
     Assert((pu32Reg));
     if (pu32Reg)
-    {
-        *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
-        *pu32Reg |= cmd & CODEC_VERB_8BIT_DATA;
-    }
+        codecSetRegisterU8(pu32Reg, cmd, 0);
     return VINF_SUCCESS;
 }
 
@@ -867,7 +829,7 @@ static int codecGetConfig (struct CODECState *pState, uint32_t cmd, uint64_t *pR
         *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
     return VINF_SUCCESS;
 }
-static int codecSetConfigX(struct CODECState *pState, uint32_t cmd, uint32_t mask)
+static int codecSetConfigX(struct CODECState *pState, uint32_t cmd, uint8_t u8Offset)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
     Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
@@ -887,39 +849,32 @@ static int codecSetConfigX(struct CODECState *pState, uint32_t cmd, uint32_t mas
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
     Assert((pu32Reg));
     if (pu32Reg)
-    {
-        *pu32Reg &= ~mask;
-        *pu32Reg |= cmd & mask;
-    }
+        codecSetRegisterU8(pu32Reg, cmd, u8Offset);
     return VINF_SUCCESS;
 }
 /* 71C */
 static int codecSetConfig0 (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
-    uint32_t mask = CODEC_VERB_8BIT_DATA;
     *pResp = 0;
-    return codecSetConfigX(pState, cmd, mask);
+    return codecSetConfigX(pState, cmd, 0);
 }
 /* 71D */
 static int codecSetConfig1 (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
-    uint32_t mask = CODEC_VERB_8BIT_DATA << 8;
     *pResp = 0;
-    return codecSetConfigX(pState, cmd, mask);
+    return codecSetConfigX(pState, cmd, 8);
 }
 /* 71E */
 static int codecSetConfig2 (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
-    uint32_t mask = CODEC_VERB_8BIT_DATA << 16;
     *pResp = 0;
-    return codecSetConfigX(pState, cmd, mask);
+    return codecSetConfigX(pState, cmd, 16);
 }
 /* 71E */
 static int codecSetConfig3 (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
-    uint32_t mask = CODEC_VERB_8BIT_DATA << 24;
     *pResp = 0;
-    return codecSetConfigX(pState, cmd, mask);
+    return codecSetConfigX(pState, cmd, 24);
 }
 
 static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode)
