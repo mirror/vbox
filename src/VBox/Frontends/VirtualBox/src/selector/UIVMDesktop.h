@@ -47,8 +47,8 @@ public:
     void updateDetailsErrorText(const QString &strText);
 
     void updateSnapshots(UIVMItem *pVMItem, const CMachine& machine);
-    void updateDescription(UIVMItem *pVMItem, const CMachine& machine);
-    void updateDescriptionState();
+//    void updateDescription(UIVMItem *pVMItem, const CMachine& machine);
+//    void updateDescriptionState();
 
 signals:
 
@@ -64,7 +64,7 @@ private:
     UITexturedSegmentedButton *m_pHeaderBtn;
     UIDetailsPagePrivate *m_pDetails;
     VBoxSnapshotsWgt *m_pSnapshotsPage;
-    UIDescriptionPagePrivate *m_pDescription;
+//    UIDescriptionPagePrivate *m_pDescription;
 };
 
 #endif /* !__UIVMDesktop_h__ */

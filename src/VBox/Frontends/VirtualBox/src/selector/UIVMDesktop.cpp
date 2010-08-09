@@ -63,6 +63,8 @@ static const QString sSectionItemTpl2 =
 //        "<tr><td width=40%><nobr>%1:</nobr></td><td/><td>%2</td></tr>";
 static const QString sSectionItemTpl3 =
 "<tr><td width=40%><nobr>%1</nobr></td><td/><td/></tr>";
+static const QString sSectionItemTpl4 =
+"<tr><td>%1</td><td/><td/></tr>";
 
 #ifdef Q_WS_MAC
 static const int gsLeftMargin = 5;
@@ -98,6 +100,7 @@ class UIDetailsPagePrivate : public QIWithRetranslateUI<QStackedWidget>
 #endif /* VBOX_WITH_PARALLEL_PORTS */
         USBSec,
         SharedFoldersSec,
+        DescriptionSec,
         EndSec
     };
 
@@ -146,6 +149,7 @@ private slots:
 #endif /* VBOX_WITH_PARALLEL_PORTS */
     void sltUpdateUSB();
     void sltUpdateSharedFolders();
+    void sltUpdateDescription();
 
     void sltContextMenuRequested(const QPoint &pos);
 
@@ -209,6 +213,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
 #endif /* VBOX_WITH_PARALLEL_PORTS */
     m_EDStrs[USBSec]           = "usb";
     m_EDStrs[SharedFoldersSec] = "sharedFolders";
+    m_EDStrs[DescriptionSec]   = "description";
 
     QScrollArea *pSArea = new QScrollArea(this);
     pSArea->setFrameStyle(QFrame::NoFrame);
@@ -380,6 +385,18 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
         pMainLayout->addWidget(m_secBoxes.value(SharedFoldersSec));
     }
 
+    /* Description */
+    {
+        QILabel *pLabel= new QILabel(this);
+        connect(pLabel, SIGNAL(shown()),
+                this, SLOT(sltUpdateDescription()));
+        m_secBoxes.value(DescriptionSec)->setTitleIcon(UIIconPool::iconSet(":/description_16px.png"));
+        m_secBoxes.value(DescriptionSec)->setTitleLink("#general%%mTeDescription");
+        m_secBoxes.value(DescriptionSec)->setContentWidget(pLabel);
+        m_secBoxes.value(DescriptionSec)->hide();
+        pMainLayout->addWidget(m_secBoxes.value(DescriptionSec));
+    }
+
     pMainLayout->addStretch(1);
 
     pSArea->setWidget(m_pDetails);
@@ -398,7 +415,8 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
                                                                          << m_EDStrs.value(AudioSec)
                                                                          << m_EDStrs.value(NetworkSec)
                                                                          << m_EDStrs.value(USBSec)
-                                                                         << m_EDStrs.value(SharedFoldersSec));
+                                                                         << m_EDStrs.value(SharedFoldersSec)
+                                                                         << m_EDStrs.value(DescriptionSec));
     for (int i = 0; i < boxes.size(); ++i)
     {
         QString strED = boxes.value(i);
@@ -908,6 +926,31 @@ void UIDetailsPagePrivate::sltUpdateSharedFolders()
     }
 }
 
+void UIDetailsPagePrivate::sltUpdateDescription()
+{
+    m_secBoxes.value(DescriptionSec)->setTitleLinkEnabled(m_fChangeable);
+    QILabel *pLabel = qobject_cast<QILabel*>(m_secBoxes.value(DescriptionSec)->contentWidget());
+    if (pLabel->isVisible())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+            const QString &strDesc = m_machine.GetDescription();
+            if (!strDesc.isEmpty())
+                item = QString(sSectionItemTpl4)
+                    .arg(strDesc);
+            else
+                item = QString(sSectionItemTpl1)
+                    .arg(tr("None", "details report (description)"));
+
+            QString table = sTableTpl.arg(item);
+            pLabel->setText(table);
+
+        }else
+            pLabel->setText("");
+    }
+}
+
 void UIDetailsPagePrivate::sltContextMenuRequested(const QPoint &pos)
 {
     QList<QAction*> actions = m_actions.values();
@@ -949,6 +992,7 @@ void UIDetailsPagePrivate::setMachine(const CMachine& machine)
 #endif /* VBOX_WITH_PARALLEL_PORTS */
     sltUpdateUSB();
     sltUpdateSharedFolders();
+    sltUpdateDescription();
 
     setCurrentIndex(0);
 }
@@ -1101,6 +1145,12 @@ void UIDetailsPagePrivate::retranslateUi()
     {
         m_secBoxes.value(SharedFoldersSec)->setTitle(tr("Shared Folders", "details report"));
         m_actions.value(SharedFoldersSec)->setText(m_secBoxes.value(SharedFoldersSec)->title());
+    }
+
+    /* Description */
+    {
+        m_secBoxes.value(DescriptionSec)->setTitle(tr("Description", "details report"));
+        m_actions.value(DescriptionSec)->setText(m_secBoxes.value(DescriptionSec)->title());
     }
 }
 
@@ -1271,18 +1321,18 @@ enum
 {
     Dtls = 0,
     Snap,
-    Desc
+//    Desc
 };
 
 UIVMDesktop::UIVMDesktop(VBoxToolBar *pToolBar, QAction *pRefreshAction, QWidget *pParent /* = 0 */)
   : QIWithRetranslateUI<QWidget>(pParent)
 {
-    m_pHeaderBtn = new UITexturedSegmentedButton(3);
+    m_pHeaderBtn = new UITexturedSegmentedButton(2);
     m_pHeaderBtn->setIcon(Dtls, UIIconPool::iconSet(":/settings_16px.png"));
     m_pHeaderBtn->setIcon(Snap, UIIconPool::iconSet(":/take_snapshot_16px.png",
                                                     ":/take_snapshot_dis_16px.png"));
-    m_pHeaderBtn->setIcon(Desc, UIIconPool::iconSet(":/description_16px.png",
-                                                    ":/description_disabled_16px.png"));
+//    m_pHeaderBtn->setIcon(Desc, UIIconPool::iconSet(":/description_16px.png",
+//                                                    ":/description_disabled_16px.png"));
     m_pHeaderBtn->animateClick(0);
 
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -1322,11 +1372,11 @@ UIVMDesktop::UIVMDesktop(VBoxToolBar *pToolBar, QAction *pRefreshAction, QWidget
     m_pSnapshotsPage = new VBoxSnapshotsWgt(this);
     m_pSnapshotsPage->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
     pStack->addWidget(m_pSnapshotsPage);
-    m_pDescription = new UIDescriptionPagePrivate(this);
-    connect(m_pDescription, SIGNAL(linkClicked(const QString&)),
-            this, SIGNAL(linkClicked(const QString&)));
-    m_pDescription->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
-    pStack->addWidget(m_pDescription);
+//    m_pDescription = new UIDescriptionPagePrivate(this);
+//    connect(m_pDescription, SIGNAL(linkClicked(const QString&)),
+//            this, SIGNAL(linkClicked(const QString&)));
+//    m_pDescription->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
+//    pStack->addWidget(m_pDescription);
 
     /* Connect the header buttons with the stack layout. */
     connect(m_pHeaderBtn, SIGNAL(clicked(int)),
@@ -1381,32 +1431,32 @@ void UIVMDesktop::updateSnapshots(UIVMItem *pVMItem, const CMachine& machine)
     }
 }
 
-void UIVMDesktop::updateDescription(UIVMItem *pVMItem, const CMachine& machine)
-{
-    /* Update the description header name */
-    QString name = tr("D&escription");
-    if (pVMItem)
-    {
-         if(!machine.GetDescription().isEmpty())
-             name += " *";
-    }
-    m_pHeaderBtn->setTitle(Desc, name);
-    /* refresh the description widget */
-    if (!machine.isNull())
-    {
-        m_pHeaderBtn->setEnabled(Desc, true);
-        m_pDescription->setMachineItem(pVMItem);
-    } else
-    {
-        m_pHeaderBtn->animateClick(Dtls);
-        m_pHeaderBtn->setEnabled(Desc, false);
-    }
-}
-
-void UIVMDesktop::updateDescriptionState()
-{
-    m_pDescription->updateState();
-}
+//void UIVMDesktop::updateDescription(UIVMItem *pVMItem, const CMachine& machine)
+//{
+//    /* Update the description header name */
+//    QString name = tr("D&escription");
+//    if (pVMItem)
+//    {
+//         if(!machine.GetDescription().isEmpty())
+//             name += " *";
+//    }
+//    m_pHeaderBtn->setTitle(Desc, name);
+//    /* refresh the description widget */
+//    if (!machine.isNull())
+//    {
+//        m_pHeaderBtn->setEnabled(Desc, true);
+//        m_pDescription->setMachineItem(pVMItem);
+//    } else
+//    {
+//        m_pHeaderBtn->animateClick(Dtls);
+//        m_pHeaderBtn->setEnabled(Desc, false);
+//    }
+//}
+//
+//void UIVMDesktop::updateDescriptionState()
+//{
+//    m_pDescription->updateState();
+//}
 
 #include "UIVMDesktop.moc"
 
