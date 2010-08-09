@@ -207,6 +207,31 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+// MediaRegistry
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool Medium::operator==(const Medium &m) const
+{
+    return    (uuid == m.uuid)
+           && (strLocation == m.strLocation)
+           && (strDescription == m.strDescription)
+           && (strFormat == m.strFormat)
+           && (fAutoReset == m.fAutoReset)
+           && (properties == m.properties)
+           && (hdType == m.hdType)
+           && (llChildren== m.llChildren);         // this is deep and recurses
+}
+
+bool MediaRegistry::operator==(const MediaRegistry &m) const
+{
+    return    llHardDisks == m.llHardDisks
+           && llDvdImages == m.llDvdImages
+           && llFloppyImages == m.llFloppyImages;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
 // ConfigFileBase
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -525,285 +550,6 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
 }
 
 /**
- * Adds a "version" attribute to the given XML element with the
- * VirtualBox settings version (e.g. "1.10-linux"). Used by
- * the XML format for the root element and by the OVF export
- * for the vbox:Machine element.
- * @param elm
- */
-void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
-{
-    const char *pcszVersion = NULL;
-    switch (m->sv)
-    {
-        case SettingsVersion_v1_8:
-            pcszVersion = "1.8";
-            break;
-
-        case SettingsVersion_v1_9:
-            pcszVersion = "1.9";
-            break;
-
-        case SettingsVersion_v1_10:
-            pcszVersion = "1.10";
-            break;
-
-        case SettingsVersion_v1_11:
-            pcszVersion = "1.11";
-            break;
-
-        case SettingsVersion_Future:
-            // can be set if this code runs on XML files that were created by a future version of VBox;
-            // in that case, downgrade to current version when writing since we can't write future versions...
-            pcszVersion = "1.11";
-            m->sv = SettingsVersion_v1_10;
-        break;
-
-        default:
-            // silently upgrade if this is less than 1.7 because that's the oldest we can write
-            pcszVersion = "1.7";
-            m->sv = SettingsVersion_v1_7;
-        break;
-    }
-
-    elm.setAttribute("version", Utf8StrFmt("%s-%s",
-                                           pcszVersion,
-                                           VBOX_XML_PLATFORM));       // e.g. "linux"
-}
-
-/**
- * Creates a new stub xml::Document in the m->pDoc member with the
- * root "VirtualBox" element set up. This is used by both
- * MainConfigFile and MachineConfigFile at the beginning of writing
- * out their XML.
- *
- * Before calling this, it is the responsibility of the caller to
- * set the "sv" member to the required settings version that is to
- * be written. For newly created files, the settings version will be
- * the latest (1.11); for files read in from disk earlier, it will be
- * the settings version indicated in the file. However, this method
- * will silently make sure that the settings version is always
- * at least 1.7 and change it if necessary, since there is no write
- * support for earlier settings versions.
- */
-void ConfigFileBase::createStubDocument()
-{
-    Assert(m->pDoc == NULL);
-    m->pDoc = new xml::Document;
-
-    m->pelmRoot = m->pDoc->createRootElement("VirtualBox");
-    m->pelmRoot->setAttribute("xmlns", VBOX_XML_NAMESPACE);
-
-    // add settings version attribute to root element
-    setVersionAttribute(*m->pelmRoot);
-
-    // since this gets called before the XML document is actually written out,
-    // this is where we must check whether we're upgrading the settings version
-    // and need to make a backup, so the user can go back to an earlier
-    // VirtualBox version and recover his old settings files.
-    if (    (m->svRead != SettingsVersion_Null)     // old file exists?
-         && (m->svRead < m->sv)                     // we're upgrading?
-       )
-    {
-        // compose new filename: strip off trailing ".xml"
-        Utf8Str strFilenameNew = m->strFilename.substr(0, m->strFilename.length() - 4);
-        // and append something likd "-1.3-linux.xml"
-        strFilenameNew.append("-");
-        strFilenameNew.append(m->strSettingsVersionFull);       // e.g. "1.3-linux"
-        strFilenameNew.append(".xml");
-
-        RTFileMove(m->strFilename.c_str(),
-                   strFilenameNew.c_str(),
-                   0);      // no RTFILEMOVE_FLAGS_REPLACE
-
-        // do this only once
-        m->svRead = SettingsVersion_Null;
-    }
-}
-
-/**
- * Creates an <ExtraData> node under the given parent element with
- * <ExtraDataItem> childern according to the contents of the given
- * map.
- * This is in ConfigFileBase because it's used in both MainConfigFile
- * MachineConfigFile, which both can have extradata.
- *
- * @param elmParent
- * @param me
- */
-void ConfigFileBase::writeExtraData(xml::ElementNode &elmParent,
-                                    const ExtraDataItemsMap &me)
-{
-    if (me.size())
-    {
-        xml::ElementNode *pelmExtraData = elmParent.createChild("ExtraData");
-        for (ExtraDataItemsMap::const_iterator it = me.begin();
-             it != me.end();
-             ++it)
-        {
-            const Utf8Str &strName = it->first;
-            const Utf8Str &strValue = it->second;
-            xml::ElementNode *pelmThis = pelmExtraData->createChild("ExtraDataItem");
-            pelmThis->setAttribute("name", strName);
-            pelmThis->setAttribute("value", strValue);
-        }
-    }
-}
-
-/**
- * Creates <DeviceFilter> nodes under the given parent element according to
- * the contents of the given USBDeviceFiltersList. This is in ConfigFileBase
- * because it's used in both MainConfigFile (for host filters) and
- * MachineConfigFile (for machine filters).
- *
- * If fHostMode is true, this means that we're supposed to write filters
- * for the IHost interface (respect "action", omit "strRemote" and
- * "ulMaskedInterfaces" in struct USBDeviceFilter).
- *
- * @param elmParent
- * @param ll
- * @param fHostMode
- */
-void ConfigFileBase::writeUSBDeviceFilters(xml::ElementNode &elmParent,
-                                           const USBDeviceFiltersList &ll,
-                                           bool fHostMode)
-{
-    for (USBDeviceFiltersList::const_iterator it = ll.begin();
-         it != ll.end();
-         ++it)
-    {
-        const USBDeviceFilter &flt = *it;
-        xml::ElementNode *pelmFilter = elmParent.createChild("DeviceFilter");
-        pelmFilter->setAttribute("name", flt.strName);
-        pelmFilter->setAttribute("active", flt.fActive);
-        if (flt.strVendorId.length())
-            pelmFilter->setAttribute("vendorId", flt.strVendorId);
-        if (flt.strProductId.length())
-            pelmFilter->setAttribute("productId", flt.strProductId);
-        if (flt.strRevision.length())
-            pelmFilter->setAttribute("revision", flt.strRevision);
-        if (flt.strManufacturer.length())
-            pelmFilter->setAttribute("manufacturer", flt.strManufacturer);
-        if (flt.strProduct.length())
-            pelmFilter->setAttribute("product", flt.strProduct);
-        if (flt.strSerialNumber.length())
-            pelmFilter->setAttribute("serialNumber", flt.strSerialNumber);
-        if (flt.strPort.length())
-            pelmFilter->setAttribute("port", flt.strPort);
-
-        if (fHostMode)
-        {
-            const char *pcsz =
-                (flt.action == USBDeviceFilterAction_Ignore) ? "Ignore"
-                : /*(flt.action == USBDeviceFilterAction_Hold) ?*/ "Hold";
-            pelmFilter->setAttribute("action", pcsz);
-        }
-        else
-        {
-            if (flt.strRemote.length())
-                pelmFilter->setAttribute("remote", flt.strRemote);
-            if (flt.ulMaskedInterfaces)
-                pelmFilter->setAttribute("maskedInterfaces", flt.ulMaskedInterfaces);
-        }
-    }
-}
-
-/**
- * Cleans up memory allocated by the internal XML parser. To be called by
- * descendant classes when they're done analyzing the DOM tree to discard it.
- */
-void ConfigFileBase::clearDocument()
-{
-    m->cleanup();
-}
-
-/**
- * Returns true only if the underlying config file exists on disk;
- * either because the file has been loaded from disk, or it's been written
- * to disk, or both.
- * @return
- */
-bool ConfigFileBase::fileExists()
-{
-    return m->fFileExists;
-}
-
-/**
- * Copies the base variables from another instance. Used by Machine::saveSettings
- * so that the settings version does not get lost when a copy of the Machine settings
- * file is made to see if settings have actually changed.
- * @param b
- */
-void ConfigFileBase::copyBaseFrom(const ConfigFileBase &b)
-{
-    m->copyFrom(*b.m);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Structures shared between Machine XML and VirtualBox.xml
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Comparison operator. This gets called from MachineConfigFile::operator==,
- * which in turn gets called from Machine::saveSettings to figure out whether
- * machine settings have really changed and thus need to be written out to disk.
- */
-bool USBDeviceFilter::operator==(const USBDeviceFilter &u) const
-{
-    return (    (this == &u)
-             || (    (strName           == u.strName)
-                  && (fActive           == u.fActive)
-                  && (strVendorId       == u.strVendorId)
-                  && (strProductId      == u.strProductId)
-                  && (strRevision       == u.strRevision)
-                  && (strManufacturer   == u.strManufacturer)
-                  && (strProduct        == u.strProduct)
-                  && (strSerialNumber   == u.strSerialNumber)
-                  && (strPort           == u.strPort)
-                  && (action            == u.action)
-                  && (strRemote         == u.strRemote)
-                  && (ulMaskedInterfaces == u.ulMaskedInterfaces)
-                )
-           );
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// MainConfigFile
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Reads one <MachineEntry> from the main VirtualBox.xml file.
- * @param elmMachineRegistry
- */
-void MainConfigFile::readMachineRegistry(const xml::ElementNode &elmMachineRegistry)
-{
-    // <MachineEntry uuid="{ xxx }" src="   xxx "/>
-    xml::NodesLoop nl1(elmMachineRegistry);
-    const xml::ElementNode *pelmChild1;
-    while ((pelmChild1 = nl1.forAllNodes()))
-    {
-        if (pelmChild1->nameEquals("MachineEntry"))
-        {
-            MachineRegistryEntry mre;
-            Utf8Str strUUID;
-            if (    ((pelmChild1->getAttributeValue("uuid", strUUID)))
-                 && ((pelmChild1->getAttributeValue("src", mre.strSettingsFile)))
-               )
-            {
-                parseUUID(mre.uuid, strUUID);
-                llMachines.push_back(mre);
-            }
-            else
-                throw ConfigFileError(this, pelmChild1, N_("Required MachineEntry/@uuid or @src attribute is missing"));
-        }
-    }
-}
-
-/**
  * Reads a media registry entry from the main VirtualBox.xml file.
  *
  * Whereas the current media registry code is fairly straightforward, it was quite a mess
@@ -815,7 +561,7 @@ void MainConfigFile::readMachineRegistry(const xml::ElementNode &elmMachineRegis
  * @param elmMedium
  * @param llMedia
  */
-void MainConfigFile::readMedium(MediaType t,
+void ConfigFileBase::readMedium(MediaType t,
                                 const xml::ElementNode &elmMedium,  // HardDisk node if root; if recursing,
                                                                     // child HardDisk node or DiffHardDisk node for pre-1.4
                                 MediaList &llMedia)     // list to append medium to (root disk or child list)
@@ -985,11 +731,18 @@ void MainConfigFile::readMedium(MediaType t,
 }
 
 /**
- * Reads in the entire <MediaRegistry> chunk. For pre-1.4 files, this gets called
- * with the <DiskRegistry> chunk instead.
+ * Reads in the entire <MediaRegistry> chunk and stores its media in the lists
+ * of the given MediaRegistry structure.
+ *
+ * This is used in both MainConfigFile and MachineConfigFile since starting with
+ * VirtualBox 3.3, we can have media registries in both.
+ *
+ * For pre-1.4 files, this gets called with the <DiskRegistry> chunk instead.
+ *
  * @param elmMediaRegistry
  */
-void MainConfigFile::readMediaRegistry(const xml::ElementNode &elmMediaRegistry)
+void ConfigFileBase::readMediaRegistry(const xml::ElementNode &elmMediaRegistry,
+                                       MediaRegistry &mr)
 {
     xml::NodesLoop nl1(elmMediaRegistry);
     const xml::ElementNode *pelmChild1;
@@ -1014,19 +767,403 @@ void MainConfigFile::readMediaRegistry(const xml::ElementNode &elmMediaRegistry)
                )
                 readMedium(t,
                            *pelmMedium,
-                           llHardDisks);      // list to append hard disk data to: the root list
+                           mr.llHardDisks);      // list to append hard disk data to: the root list
             else if (    t == DVDImage
                       && (pelmMedium->nameEquals("Image"))
                     )
                 readMedium(t,
                            *pelmMedium,
-                           llDvdImages);      // list to append dvd images to: the root list
+                           mr.llDvdImages);      // list to append dvd images to: the root list
             else if (    t == FloppyImage
                       && (pelmMedium->nameEquals("Image"))
                     )
                 readMedium(t,
                            *pelmMedium,
-                           llFloppyImages);      // list to append floppy images to: the root list
+                           mr.llFloppyImages);      // list to append floppy images to: the root list
+        }
+    }
+}
+
+/**
+ * Adds a "version" attribute to the given XML element with the
+ * VirtualBox settings version (e.g. "1.10-linux"). Used by
+ * the XML format for the root element and by the OVF export
+ * for the vbox:Machine element.
+ * @param elm
+ */
+void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
+{
+    const char *pcszVersion = NULL;
+    switch (m->sv)
+    {
+        case SettingsVersion_v1_8:
+            pcszVersion = "1.8";
+            break;
+
+        case SettingsVersion_v1_9:
+            pcszVersion = "1.9";
+            break;
+
+        case SettingsVersion_v1_10:
+            pcszVersion = "1.10";
+            break;
+
+        case SettingsVersion_v1_11:
+            pcszVersion = "1.11";
+            break;
+
+        case SettingsVersion_Future:
+            // can be set if this code runs on XML files that were created by a future version of VBox;
+            // in that case, downgrade to current version when writing since we can't write future versions...
+            pcszVersion = "1.11";
+            m->sv = SettingsVersion_v1_10;
+        break;
+
+        default:
+            // silently upgrade if this is less than 1.7 because that's the oldest we can write
+            pcszVersion = "1.7";
+            m->sv = SettingsVersion_v1_7;
+        break;
+    }
+
+    elm.setAttribute("version", Utf8StrFmt("%s-%s",
+                                           pcszVersion,
+                                           VBOX_XML_PLATFORM));       // e.g. "linux"
+}
+
+/**
+ * Creates a new stub xml::Document in the m->pDoc member with the
+ * root "VirtualBox" element set up. This is used by both
+ * MainConfigFile and MachineConfigFile at the beginning of writing
+ * out their XML.
+ *
+ * Before calling this, it is the responsibility of the caller to
+ * set the "sv" member to the required settings version that is to
+ * be written. For newly created files, the settings version will be
+ * the latest (1.11); for files read in from disk earlier, it will be
+ * the settings version indicated in the file. However, this method
+ * will silently make sure that the settings version is always
+ * at least 1.7 and change it if necessary, since there is no write
+ * support for earlier settings versions.
+ */
+void ConfigFileBase::createStubDocument()
+{
+    Assert(m->pDoc == NULL);
+    m->pDoc = new xml::Document;
+
+    m->pelmRoot = m->pDoc->createRootElement("VirtualBox");
+    m->pelmRoot->setAttribute("xmlns", VBOX_XML_NAMESPACE);
+
+    // add settings version attribute to root element
+    setVersionAttribute(*m->pelmRoot);
+
+    // since this gets called before the XML document is actually written out,
+    // this is where we must check whether we're upgrading the settings version
+    // and need to make a backup, so the user can go back to an earlier
+    // VirtualBox version and recover his old settings files.
+    if (    (m->svRead != SettingsVersion_Null)     // old file exists?
+         && (m->svRead < m->sv)                     // we're upgrading?
+       )
+    {
+        // compose new filename: strip off trailing ".xml"
+        Utf8Str strFilenameNew = m->strFilename.substr(0, m->strFilename.length() - 4);
+        // and append something likd "-1.3-linux.xml"
+        strFilenameNew.append("-");
+        strFilenameNew.append(m->strSettingsVersionFull);       // e.g. "1.3-linux"
+        strFilenameNew.append(".xml");
+
+        RTFileMove(m->strFilename.c_str(),
+                   strFilenameNew.c_str(),
+                   0);      // no RTFILEMOVE_FLAGS_REPLACE
+
+        // do this only once
+        m->svRead = SettingsVersion_Null;
+    }
+}
+
+/**
+ * Creates an <ExtraData> node under the given parent element with
+ * <ExtraDataItem> childern according to the contents of the given
+ * map.
+ *
+ * This is in ConfigFileBase because it's used in both MainConfigFile
+ * and MachineConfigFile, which both can have extradata.
+ *
+ * @param elmParent
+ * @param me
+ */
+void ConfigFileBase::buildExtraData(xml::ElementNode &elmParent,
+                                    const ExtraDataItemsMap &me)
+{
+    if (me.size())
+    {
+        xml::ElementNode *pelmExtraData = elmParent.createChild("ExtraData");
+        for (ExtraDataItemsMap::const_iterator it = me.begin();
+             it != me.end();
+             ++it)
+        {
+            const Utf8Str &strName = it->first;
+            const Utf8Str &strValue = it->second;
+            xml::ElementNode *pelmThis = pelmExtraData->createChild("ExtraDataItem");
+            pelmThis->setAttribute("name", strName);
+            pelmThis->setAttribute("value", strValue);
+        }
+    }
+}
+
+/**
+ * Creates <DeviceFilter> nodes under the given parent element according to
+ * the contents of the given USBDeviceFiltersList. This is in ConfigFileBase
+ * because it's used in both MainConfigFile (for host filters) and
+ * MachineConfigFile (for machine filters).
+ *
+ * If fHostMode is true, this means that we're supposed to write filters
+ * for the IHost interface (respect "action", omit "strRemote" and
+ * "ulMaskedInterfaces" in struct USBDeviceFilter).
+ *
+ * @param elmParent
+ * @param ll
+ * @param fHostMode
+ */
+void ConfigFileBase::buildUSBDeviceFilters(xml::ElementNode &elmParent,
+                                           const USBDeviceFiltersList &ll,
+                                           bool fHostMode)
+{
+    for (USBDeviceFiltersList::const_iterator it = ll.begin();
+         it != ll.end();
+         ++it)
+    {
+        const USBDeviceFilter &flt = *it;
+        xml::ElementNode *pelmFilter = elmParent.createChild("DeviceFilter");
+        pelmFilter->setAttribute("name", flt.strName);
+        pelmFilter->setAttribute("active", flt.fActive);
+        if (flt.strVendorId.length())
+            pelmFilter->setAttribute("vendorId", flt.strVendorId);
+        if (flt.strProductId.length())
+            pelmFilter->setAttribute("productId", flt.strProductId);
+        if (flt.strRevision.length())
+            pelmFilter->setAttribute("revision", flt.strRevision);
+        if (flt.strManufacturer.length())
+            pelmFilter->setAttribute("manufacturer", flt.strManufacturer);
+        if (flt.strProduct.length())
+            pelmFilter->setAttribute("product", flt.strProduct);
+        if (flt.strSerialNumber.length())
+            pelmFilter->setAttribute("serialNumber", flt.strSerialNumber);
+        if (flt.strPort.length())
+            pelmFilter->setAttribute("port", flt.strPort);
+
+        if (fHostMode)
+        {
+            const char *pcsz =
+                (flt.action == USBDeviceFilterAction_Ignore) ? "Ignore"
+                : /*(flt.action == USBDeviceFilterAction_Hold) ?*/ "Hold";
+            pelmFilter->setAttribute("action", pcsz);
+        }
+        else
+        {
+            if (flt.strRemote.length())
+                pelmFilter->setAttribute("remote", flt.strRemote);
+            if (flt.ulMaskedInterfaces)
+                pelmFilter->setAttribute("maskedInterfaces", flt.ulMaskedInterfaces);
+        }
+    }
+}
+
+/**
+ * Creates a single <HardDisk> element for the given Medium structure
+ * and recurses to write the child hard disks underneath. Called from
+ * MainConfigFile::write().
+ *
+ * @param elmMedium
+ * @param m
+ * @param level
+ */
+void ConfigFileBase::buildHardDisk(xml::ElementNode &elmMedium,
+                                   const Medium &mdm,
+                                   uint32_t level)          // 0 for "root" call, incremented with each recursion
+{
+    xml::ElementNode *pelmHardDisk = elmMedium.createChild("HardDisk");
+    pelmHardDisk->setAttribute("uuid", mdm.uuid.toStringCurly());
+    pelmHardDisk->setAttribute("location", mdm.strLocation);
+    pelmHardDisk->setAttribute("format", mdm.strFormat);
+    if (mdm.fAutoReset)
+        pelmHardDisk->setAttribute("autoReset", mdm.fAutoReset);
+    if (mdm.strDescription.length())
+        pelmHardDisk->setAttribute("Description", mdm.strDescription);
+
+    for (PropertiesMap::const_iterator it = mdm.properties.begin();
+         it != mdm.properties.end();
+         ++it)
+    {
+        xml::ElementNode *pelmProp = pelmHardDisk->createChild("Property");
+        pelmProp->setAttribute("name", it->first);
+        pelmProp->setAttribute("value", it->second);
+    }
+
+    // only for base hard disks, save the type
+    if (level == 0)
+    {
+        const char *pcszType =
+            mdm.hdType == MediumType_Normal ? "Normal" :
+            mdm.hdType == MediumType_Immutable ? "Immutable" :
+            mdm.hdType == MediumType_Writethrough ? "Writethrough" :
+            mdm.hdType == MediumType_Shareable ? "Shareable" : "INVALID";
+        pelmHardDisk->setAttribute("type", pcszType);
+    }
+
+    for (MediaList::const_iterator it = mdm.llChildren.begin();
+         it != mdm.llChildren.end();
+         ++it)
+    {
+        // recurse for children
+        buildHardDisk(*pelmHardDisk, // parent
+                      *it,           // settings::Medium
+                      ++level);      // recursion level
+    }
+}
+
+/**
+ * Creates a <MediaRegistry> node under the given parent and writes out all
+ * hard disks and DVD and floppy images from the lists in the given MediaRegistry
+ * structure under it.
+ *
+ * This is used in both MainConfigFile and MachineConfigFile since starting with
+ * VirtualBox 3.3, we can have media registries in both.
+ *
+ * @param elmParent
+ * @param mr
+ */
+void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
+                                        const MediaRegistry &mr)
+{
+    xml::ElementNode *pelmMediaRegistry = elmParent.createChild("MediaRegistry");
+
+    xml::ElementNode *pelmHardDisks = pelmMediaRegistry->createChild("HardDisks");
+    for (MediaList::const_iterator it = mr.llHardDisks.begin();
+         it != mr.llHardDisks.end();
+         ++it)
+    {
+        buildHardDisk(*pelmHardDisks, *it, 0);
+    }
+
+    xml::ElementNode *pelmDVDImages = pelmMediaRegistry->createChild("DVDImages");
+    for (MediaList::const_iterator it = mr.llDvdImages.begin();
+         it != mr.llDvdImages.end();
+         ++it)
+    {
+        const Medium &mdm = *it;
+        xml::ElementNode *pelmMedium = pelmDVDImages->createChild("Image");
+        pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
+        pelmMedium->setAttribute("location", mdm.strLocation);
+        if (mdm.strDescription.length())
+            pelmMedium->setAttribute("Description", mdm.strDescription);
+    }
+
+    xml::ElementNode *pelmFloppyImages = pelmMediaRegistry->createChild("FloppyImages");
+    for (MediaList::const_iterator it = mr.llFloppyImages.begin();
+         it != mr.llFloppyImages.end();
+         ++it)
+    {
+        const Medium &mdm = *it;
+        xml::ElementNode *pelmMedium = pelmFloppyImages->createChild("Image");
+        pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
+        pelmMedium->setAttribute("location", mdm.strLocation);
+        if (mdm.strDescription.length())
+            pelmMedium->setAttribute("Description", mdm.strDescription);
+    }
+}
+
+/**
+ * Cleans up memory allocated by the internal XML parser. To be called by
+ * descendant classes when they're done analyzing the DOM tree to discard it.
+ */
+void ConfigFileBase::clearDocument()
+{
+    m->cleanup();
+}
+
+/**
+ * Returns true only if the underlying config file exists on disk;
+ * either because the file has been loaded from disk, or it's been written
+ * to disk, or both.
+ * @return
+ */
+bool ConfigFileBase::fileExists()
+{
+    return m->fFileExists;
+}
+
+/**
+ * Copies the base variables from another instance. Used by Machine::saveSettings
+ * so that the settings version does not get lost when a copy of the Machine settings
+ * file is made to see if settings have actually changed.
+ * @param b
+ */
+void ConfigFileBase::copyBaseFrom(const ConfigFileBase &b)
+{
+    m->copyFrom(*b.m);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Structures shared between Machine XML and VirtualBox.xml
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool USBDeviceFilter::operator==(const USBDeviceFilter &u) const
+{
+    return (    (this == &u)
+             || (    (strName           == u.strName)
+                  && (fActive           == u.fActive)
+                  && (strVendorId       == u.strVendorId)
+                  && (strProductId      == u.strProductId)
+                  && (strRevision       == u.strRevision)
+                  && (strManufacturer   == u.strManufacturer)
+                  && (strProduct        == u.strProduct)
+                  && (strSerialNumber   == u.strSerialNumber)
+                  && (strPort           == u.strPort)
+                  && (action            == u.action)
+                  && (strRemote         == u.strRemote)
+                  && (ulMaskedInterfaces == u.ulMaskedInterfaces)
+                )
+           );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MainConfigFile
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Reads one <MachineEntry> from the main VirtualBox.xml file.
+ * @param elmMachineRegistry
+ */
+void MainConfigFile::readMachineRegistry(const xml::ElementNode &elmMachineRegistry)
+{
+    // <MachineEntry uuid="{ xxx }" src="   xxx "/>
+    xml::NodesLoop nl1(elmMachineRegistry);
+    const xml::ElementNode *pelmChild1;
+    while ((pelmChild1 = nl1.forAllNodes()))
+    {
+        if (pelmChild1->nameEquals("MachineEntry"))
+        {
+            MachineRegistryEntry mre;
+            Utf8Str strUUID;
+            if (    ((pelmChild1->getAttributeValue("uuid", strUUID)))
+                 && ((pelmChild1->getAttributeValue("src", mre.strSettingsFile)))
+               )
+            {
+                parseUUID(mre.uuid, strUUID);
+                llMachines.push_back(mre);
+            }
+            else
+                throw ConfigFileError(this, pelmChild1, N_("Required MachineEntry/@uuid or @src attribute is missing"));
         }
     }
 }
@@ -1108,7 +1245,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                                    && (pelmGlobalChild->nameEquals("DiskRegistry"))
                                  )
                             )
-                        readMediaRegistry(*pelmGlobalChild);
+                        readMediaRegistry(*pelmGlobalChild, mediaRegistry);
                     else if (pelmGlobalChild->nameEquals("NetserviceRegistry"))
                     {
                         xml::NodesLoop nlLevel4(*pelmGlobalChild);
@@ -1154,59 +1291,6 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
 }
 
 /**
- * Creates a single <HardDisk> element for the given Medium structure
- * and recurses to write the child hard disks underneath. Called from
- * MainConfigFile::write().
- *
- * @param elmMedium
- * @param m
- * @param level
- */
-void MainConfigFile::writeHardDisk(xml::ElementNode &elmMedium,
-                                   const Medium &mdm,
-                                   uint32_t level)          // 0 for "root" call, incremented with each recursion
-{
-    xml::ElementNode *pelmHardDisk = elmMedium.createChild("HardDisk");
-    pelmHardDisk->setAttribute("uuid", mdm.uuid.toStringCurly());
-    pelmHardDisk->setAttribute("location", mdm.strLocation);
-    pelmHardDisk->setAttribute("format", mdm.strFormat);
-    if (mdm.fAutoReset)
-        pelmHardDisk->setAttribute("autoReset", mdm.fAutoReset);
-    if (mdm.strDescription.length())
-        pelmHardDisk->setAttribute("Description", mdm.strDescription);
-
-    for (PropertiesMap::const_iterator it = mdm.properties.begin();
-         it != mdm.properties.end();
-         ++it)
-    {
-        xml::ElementNode *pelmProp = pelmHardDisk->createChild("Property");
-        pelmProp->setAttribute("name", it->first);
-        pelmProp->setAttribute("value", it->second);
-    }
-
-    // only for base hard disks, save the type
-    if (level == 0)
-    {
-        const char *pcszType =
-            mdm.hdType == MediumType_Normal ? "Normal" :
-            mdm.hdType == MediumType_Immutable ? "Immutable" :
-            mdm.hdType == MediumType_Writethrough ? "Writethrough" :
-            mdm.hdType == MediumType_Shareable ? "Shareable" : "INVALID";
-        pelmHardDisk->setAttribute("type", pcszType);
-    }
-
-    for (MediaList::const_iterator it = mdm.llChildren.begin();
-         it != mdm.llChildren.end();
-         ++it)
-    {
-        // recurse for children
-        writeHardDisk(*pelmHardDisk, // parent
-                      *it,           // settings::Medium
-                      ++level);      // recursion level
-    }
-}
-
-/**
  * Called from the IVirtualBox interface to write out VirtualBox.xml. This
  * builds an XML DOM tree and writes it out to disk.
  */
@@ -1217,7 +1301,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
 
     xml::ElementNode *pelmGlobal = m->pelmRoot->createChild("Global");
 
-    writeExtraData(*pelmGlobal, mapExtraDataItems);
+    buildExtraData(*pelmGlobal, mapExtraDataItems);
 
     xml::ElementNode *pelmMachineRegistry = pelmGlobal->createChild("MachineRegistry");
     for (MachinesRegistry::const_iterator it = llMachines.begin();
@@ -1231,41 +1315,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmMachineEntry->setAttribute("src", mre.strSettingsFile);
     }
 
-    xml::ElementNode *pelmMediaRegistry = pelmGlobal->createChild("MediaRegistry");
-
-    xml::ElementNode *pelmHardDisks = pelmMediaRegistry->createChild("HardDisks");
-    for (MediaList::const_iterator it = llHardDisks.begin();
-         it != llHardDisks.end();
-         ++it)
-    {
-        writeHardDisk(*pelmHardDisks, *it, 0);
-    }
-
-    xml::ElementNode *pelmDVDImages = pelmMediaRegistry->createChild("DVDImages");
-    for (MediaList::const_iterator it = llDvdImages.begin();
-         it != llDvdImages.end();
-         ++it)
-    {
-        const Medium &mdm = *it;
-        xml::ElementNode *pelmMedium = pelmDVDImages->createChild("Image");
-        pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
-        pelmMedium->setAttribute("location", mdm.strLocation);
-        if (mdm.strDescription.length())
-            pelmMedium->setAttribute("Description", mdm.strDescription);
-    }
-
-    xml::ElementNode *pelmFloppyImages = pelmMediaRegistry->createChild("FloppyImages");
-    for (MediaList::const_iterator it = llFloppyImages.begin();
-         it != llFloppyImages.end();
-         ++it)
-    {
-        const Medium &mdm = *it;
-        xml::ElementNode *pelmMedium = pelmFloppyImages->createChild("Image");
-        pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
-        pelmMedium->setAttribute("location", mdm.strLocation);
-        if (mdm.strDescription.length())
-            pelmMedium->setAttribute("Description", mdm.strDescription);
-    }
+    buildMediaRegistry(*pelmGlobal, mediaRegistry);
 
     xml::ElementNode *pelmNetserviceRegistry = pelmGlobal->createChild("NetserviceRegistry");
     xml::ElementNode *pelmDHCPServers = pelmNetserviceRegistry->createChild("DHCPServers");
@@ -1296,7 +1346,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmSysProps->setAttribute("webServiceAuthLibrary", systemProperties.strWebServiceAuthLibrary);
     pelmSysProps->setAttribute("LogHistoryCount", systemProperties.ulLogHistoryCount);
 
-    writeUSBDeviceFilters(*pelmGlobal->createChild("USBDeviceFilters"),
+    buildUSBDeviceFilters(*pelmGlobal->createChild("USBDeviceFilters"),
                           host.llUSBDeviceFilters,
                           true);               // fHostMode
 
@@ -1744,6 +1794,7 @@ bool MachineConfigFile::operator==(const MachineConfigFile &c) const
                  && (fAborted                   == c.fAborted)
                  && (hardwareMachine            == c.hardwareMachine)       // this one's deep
                  && (storageMachine             == c.storageMachine)        // this one's deep
+                 && (mediaRegistry              == c.mediaRegistry)         // this one's deep
                  && (mapExtraDataItems          == c.mapExtraDataItems)     // this one's deep
                  && (llFirstSnapshot            == c.llFirstSnapshot)       // this one's deep
                )
@@ -3362,7 +3413,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     pelmUSB->setAttribute("enabled", hw.usbController.fEnabled);
     pelmUSB->setAttribute("enabledEhci", hw.usbController.fEnabledEHCI);
 
-    writeUSBDeviceFilters(*pelmUSB,
+    buildUSBDeviceFilters(*pelmUSB,
                           hw.usbController.llDeviceFilters,
                           false);               // fHostMode
 
@@ -3897,9 +3948,15 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
  *
  * In fl, the following flag bits are recognized:
  *
+ *  --  BuildMachineXML_MediaRegistry: If set, the machine's media registry will
+ *      be written, if present. This is not set when called from OVF because OVF
+ *      has its own variant of a media registry. This flag is ignored unless the
+ *      settings version is at least v1.11 (VirtualBox 3.3).
+ *
  *  --  BuildMachineXML_IncludeSnapshots: If set, descend into the snapshots tree
  *      of the machine and write out <Snapshot> and possibly more snapshots under
- *      that, if snapshots are present. Otherwise all snapshots are suppressed.
+ *      that, if snapshots are present. Otherwise all snapshots are suppressed
+ *      (when called from OVF).
  *
  *  --  BuildMachineXML_WriteVboxVersionAttribute: If set, add a settingsVersion
  *      attribute to the machine tag with the vbox settings version. This is for
@@ -3908,7 +3965,7 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
  *
  *  --  BuildMachineXML_SkipRemovableMedia: If set, removable media attachments
  *      (DVDs, floppies) are silently skipped. This is for the OVF export case
- *      until we support copying ISO and RAW media as well.  This flas is ignored
+ *      until we support copying ISO and RAW media as well.  This flag is ignored
  *      unless the settings version is at least v1.9, which is always the case
  *      when this gets called for OVF export.
  *
@@ -3959,7 +4016,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         pelmTeleporter->setAttribute("password", strTeleporterPassword);
     }
 
-    writeExtraData(elmMachine, mapExtraDataItems);
+    buildExtraData(elmMachine, mapExtraDataItems);
 
     if (    (fl & BuildMachineXML_IncludeSnapshots)
          && llFirstSnapshot.size())
@@ -3970,6 +4027,11 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
                                storageMachine,
                                !!(fl & BuildMachineXML_SkipRemovableMedia),
                                pllElementsWithUuidAttributes);
+
+    if (    (fl & BuildMachineXML_MediaRegistry)
+         && (m->sv >= SettingsVersion_v1_11)
+       )
+        buildMediaRegistry(elmMachine, mediaRegistry);
 }
 
 /**
@@ -4194,12 +4256,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
        )
         m->sv = SettingsVersion_v1_10;
 
-    // VirtualBox 3.2 adds NAT and boot priority to the NIC config in Main.
+    // VirtualBox 3.2 adds NAT and boot priority to the NIC config in Main
     if (m->sv < SettingsVersion_v1_10)
     {
         NetworkAdaptersList::const_iterator netit;
         for (netit = hardwareMachine.llNetworkAdapters.begin();
-             netit != hardwareMachine.llNetworkAdapters.end(); ++netit)
+             netit != hardwareMachine.llNetworkAdapters.end();
+             ++netit)
         {
             if (netit->ulBandwidthLimit)
             {
@@ -4259,6 +4322,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         // VirtualBox 3.3 adds support for CPU priority
         if (hardwareMachine.ulCpuPriority != 100)
             m->sv = SettingsVersion_v1_11;
+
+        // .. and we now have per-machine media registries
+        if (    mediaRegistry.llHardDisks.size()
+             || mediaRegistry.llDvdImages.size()
+             || mediaRegistry.llFloppyImages.size()
+           )
+            m->sv = SettingsVersion_v1_11;
     }
 }
 
@@ -4281,7 +4351,8 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
 
         xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");
         buildMachineXML(*pelmMachine,
-                        MachineConfigFile::BuildMachineXML_IncludeSnapshots,
+                          MachineConfigFile::BuildMachineXML_IncludeSnapshots
+                        | MachineConfigFile::BuildMachineXML_MediaRegistry,
                             // but not BuildMachineXML_WriteVboxVersionAttribute
                         NULL); /* pllElementsWithUuidAttributes */
 

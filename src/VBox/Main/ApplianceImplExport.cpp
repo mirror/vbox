@@ -1300,7 +1300,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
         pConfig->buildMachineXML(*pelmVBoxMachine,
                                    settings::MachineConfigFile::BuildMachineXML_WriteVboxVersionAttribute
                                  | settings::MachineConfigFile::BuildMachineXML_SkipRemovableMedia,
-                                        // but not BuildMachineXML_IncludeSnapshots
+                                        // but not BuildMachineXML_IncludeSnapshots nor BuildMachineXML_MediaRegistry
                                  pllElementsWithUuidAttributes);
         delete pConfig;
     }
