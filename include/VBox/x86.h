@@ -2518,8 +2518,72 @@ typedef PCX86DESC   PCX86DESCHC;
 
 /** @} */
 
-/** @name Task segment.
+
+/** @name Task Segments.
  * @{
+ */
+
+/**
+ * 16-bit Task Segment (TSS).
+ */
+#pragma pack(1)
+typedef struct X86TSS16
+{
+    /** Back link to previous task. (static) */
+    RTSEL       selPrev;
+    /** Ring-0 stack pointer. (static) */
+    uint16_t    sp0;
+    /** Ring-0 stack segment. (static) */
+    RTSEL       ss0;
+    /** Ring-1 stack pointer. (static) */
+    uint16_t    sp1;
+    /** Ring-1 stack segment. (static) */
+    RTSEL       ss1;
+    /** Ring-2 stack pointer. (static) */
+    uint16_t    sp2;
+    /** Ring-2 stack segment. (static) */
+    RTSEL       ss2;
+    /** IP before task switch. */
+    uint16_t    ip;
+    /** FLAGS before task switch. */
+    uint16_t    flags;
+    /** AX before task switch. */
+    uint16_t    ax;
+    /** CX before task switch. */
+    uint16_t    cx;
+    /** DX before task switch. */
+    uint16_t    dx;
+    /** BX before task switch. */
+    uint16_t    bx;
+    /** SP before task switch. */
+    uint16_t    sp;
+    /** BP before task switch. */
+    uint16_t    bp;
+    /** SI before task switch. */
+    uint16_t    si;
+    /** DI before task switch. */
+    uint16_t    di;
+    /** ES before task switch. */
+    RTSEL       es;
+    /** CS before task switch. */
+    RTSEL       cs;
+    /** SS before task switch. */
+    RTSEL       ss;
+    /** DS before task switch. */
+    RTSEL       ds;
+    /** LDTR before task switch. */
+    RTSEL       selLdt;
+} X86TSS16;
+AssertCompileSize(X86TSS16, 44);
+#pragma pack()
+/** Pointer to a 16-bit task segment. */
+typedef X86TSS16 *PX86TSS16;
+/** Pointer to a const 16-bit task segment. */
+typedef const X86TSS16 *PCX86TSS16;
+
+
+/**
+ * 32-bit Task Segment (TSS).
  */
 #pragma pack(1)
 typedef struct X86TSS32
@@ -2598,11 +2662,10 @@ typedef struct X86TSS32
 typedef X86TSS32 *PX86TSS32;
 /** Pointer to const task segment. */
 typedef const X86TSS32 *PCX86TSS32;
-/** @} */
 
 
-/** @name 64 bits Task segment.
- * @{
+/**
+ * 64-bit Task segment.
  */
 #pragma pack(1)
 typedef struct X86TSS64
@@ -2634,9 +2697,9 @@ typedef struct X86TSS64
     uint8_t     IntRedirBitmap[32];
 } X86TSS64;
 #pragma pack()
-/** Pointer to task segment. */
+/** Pointer to a 64-bit task segment. */
 typedef X86TSS64 *PX86TSS64;
-/** Pointer to const task segment. */
+/** Pointer to a const 64-bit task segment. */
 typedef const X86TSS64 *PCX86TSS64;
 AssertCompileSize(X86TSS64, 136);
 
