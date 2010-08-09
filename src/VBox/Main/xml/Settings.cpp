@@ -4159,6 +4159,80 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             m->sv = SettingsVersion_v1_11;
     }
 
+    // settings version 1.9 is required if there is not exactly one DVD
+    // or more than one floppy drive present or the DVD is not at the secondary
+    // master; this check is a bit more complicated
+    //
+    // settings version 1.10 is required if the host cache should be disabled
+    //
+    // settings version 1.11 is required for bandwidth limits
+    if (m->sv < SettingsVersion_v1_11)
+    {
+        // count attached DVDs and floppies (only if < v1.9)
+        size_t cDVDs = 0;
+        size_t cFloppies = 0;
+
+        // need to run thru all the storage controllers and attached devices to figure this out
+        for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
+             it != storageMachine.llStorageControllers.end();
+             ++it)
+        {
+            const StorageController &sctl = *it;
+            for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
+                 it2 != sctl.llAttachedDevices.end();
+                 ++it2)
+            {
+                const AttachedDevice &att = *it2;
+
+                // Bandwidth limitations are new in VirtualBox 3.3 (1.11)
+                if (    (m->sv < SettingsVersion_v1_11)
+                     && (att.ulBandwidthLimit != 0)
+                   )
+                {
+                    m->sv = SettingsVersion_v1_11;
+                    break; /* abort the loop -- we will not raise the version further */
+                }
+
+                // disabling the host IO cache requires settings version 1.10
+                if (    (m->sv < SettingsVersion_v1_10)
+                     && (!sctl.fUseHostIOCache)
+                   )
+                    m->sv = SettingsVersion_v1_10;
+
+                // we can only write the StorageController/@Instance attribute with v1.9
+                if (    (m->sv < SettingsVersion_v1_9)
+                     && (sctl.ulInstance != 0)
+                   )
+                    m->sv = SettingsVersion_v1_9;
+
+                if (m->sv < SettingsVersion_v1_9)
+                {
+                    if (att.deviceType == DeviceType_DVD)
+                    {
+                         if (    (sctl.storageBus != StorageBus_IDE) // DVD at bus other than DVD?
+                              || (att.lPort != 1)                    // DVDs not at secondary master?
+                              || (att.lDevice != 0)
+                            )
+                            m->sv = SettingsVersion_v1_9;
+
+                        ++cDVDs;
+                    }
+                    else if (att.deviceType == DeviceType_Floppy)
+                        ++cFloppies;
+                }
+            }
+        }
+
+        // VirtualBox before 3.1 had zero or one floppy and exactly one DVD,
+        // so any deviation from that will require settings version 1.9
+        if (    (m->sv < SettingsVersion_v1_9)
+             && (    (cDVDs != 1)
+                  || (cFloppies > 1)
+                )
+           )
+            m->sv = SettingsVersion_v1_9;
+    }
+
     // VirtualBox 3.2 adds NAT and boot priority to the NIC config in Main
     if (m->sv < SettingsVersion_v1_10)
     {
@@ -4241,80 +4315,6 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             )
         )
         m->sv = SettingsVersion_v1_9;
-
-    // settings version 1.9 is required if there is not exactly one DVD
-    // or more than one floppy drive present or the DVD is not at the secondary
-    // master; this check is a bit more complicated
-    //
-    // settings version 1.10 is required if the host cache should be disabled
-    //
-    // settings version 1.11 is required for bandwidth limits
-    if (m->sv < SettingsVersion_v1_11)
-    {
-        // count attached DVDs and floppies (only if < v1.9)
-        size_t cDVDs = 0;
-        size_t cFloppies = 0;
-
-        // need to run thru all the storage controllers and attached devices to figure this out
-        for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
-             it != storageMachine.llStorageControllers.end();
-             ++it)
-        {
-            const StorageController &sctl = *it;
-            for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
-                 it2 != sctl.llAttachedDevices.end();
-                 ++it2)
-            {
-                const AttachedDevice &att = *it2;
-
-                // Bandwidth limitations are new in VirtualBox 3.3 (1.11)
-                if (    (m->sv < SettingsVersion_v1_11)
-                     && (att.ulBandwidthLimit != 0)
-                   )
-                {
-                    m->sv = SettingsVersion_v1_11;
-                    break; /* abort the loop -- we will not raise the version further */
-                }
-
-                // disabling the host IO cache requires settings version 1.10
-                if (    (m->sv < SettingsVersion_v1_10)
-                     && (!sctl.fUseHostIOCache)
-                   )
-                    m->sv = SettingsVersion_v1_10;
-
-                // we can only write the StorageController/@Instance attribute with v1.9
-                if (    (m->sv < SettingsVersion_v1_9)
-                     && (sctl.ulInstance != 0)
-                   )
-                    m->sv = SettingsVersion_v1_9;
-
-                if (m->sv < SettingsVersion_v1_9)
-                {
-                    if (att.deviceType == DeviceType_DVD)
-                    {
-                         if (    (sctl.storageBus != StorageBus_IDE) // DVD at bus other than DVD?
-                              || (att.lPort != 1)                    // DVDs not at secondary master?
-                              || (att.lDevice != 0)
-                            )
-                            m->sv = SettingsVersion_v1_9;
-
-                        ++cDVDs;
-                    }
-                    else if (att.deviceType == DeviceType_Floppy)
-                        ++cFloppies;
-                }
-            }
-        }
-
-        // VirtualBox before 3.1 had zero or one floppy and exactly one DVD,
-        // so any deviation from that will require settings version 1.9
-        if (    (m->sv < SettingsVersion_v1_9)
-             && (    (cDVDs != 1)
-                  || (cFloppies > 1)
-                )
-           )
-            m->sv = SettingsVersion_v1_9;
-    }
 
     // "accelerate 2d video" requires settings version 1.8
     if (    (m->sv < SettingsVersion_v1_8)
