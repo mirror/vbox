@@ -50,13 +50,27 @@ extern "C" {
 #define CODEC_VERB_CMD8(cmd) (CODEC_VERB_CMD((cmd), CODEC_VERB_8BIT_CMD, 8))
 #define CODEC_VERB_CMD16(cmd) (CODEC_VERB_CMD((cmd), CODEC_VERB_16BIT_CMD, 16))
 
-#define CODEC_VERB_B_DIRECTION  RT_BIT(15)
-#define CODEC_VERB_B_SIDE       RT_BIT(13)
-#define CODEC_VERB_B_INDEX      0x7
+#define CODEC_VERB_GET_AMP_DIRECTION  RT_BIT(15)
+#define CODEC_VERB_GET_AMP_SIDE       RT_BIT(13)
+#define CODEC_VERB_GET_AMP_INDEX      0x7
 
-#define CODEC_B_DIRECTION(cmd)  (((cmd) & CODEC_VERB_B_DIRECTION) >> 15)
-#define CODEC_B_SIDE(cmd)       (((cmd) & CODEC_VERB_B_SIDE) >> 13)
-#define CODEC_B_INDEX(cmd)      ((cmd) & CODEC_VERB_B_INDEX)
+/* HDA spec 7.3.3.7 NoteA */
+#define CODEC_GET_AMP_DIRECTION(cmd)  (((cmd) & CODEC_VERB_GET_AMP_DIRECTION) >> 15)
+#define CODEC_GET_AMP_SIDE(cmd)       (((cmd) & CODEC_VERB_GET_AMP_SIDE) >> 13)
+#define CODEC_GET_AMP_INDEX(cmd)      (CODEC_GET_AMP_DIRECTION(cmd) ? 0 : ((cmd) & CODEC_VERB_GET_AMP_INDEX))
+
+/* HDA spec 7.3.3.7 NoteC */
+#define CODEC_VERB_SET_AMP_OUT_DIRECTION  RT_BIT(15)
+#define CODEC_VERB_SET_AMP_IN_DIRECTION   RT_BIT(14)
+#define CODEC_VERB_SET_AMP_LEFT_SIDE      RT_BIT(13)
+#define CODEC_VERB_SET_AMP_RIGHT_SIDE     RT_BIT(12)
+#define CODEC_VERB_SET_AMP_INDEX          (0x7 << 8)
+
+#define CODEC_SET_AMP_IS_OUT_DIRECTION(cmd)  (((cmd) & CODEC_VERB_SET_AMP_OUT_DIRECTION) != 0)
+#define CODEC_SET_AMP_IS_IN_DIRECTION(cmd)   (((cmd) & CODEC_VERB_SET_AMP_IN_DIRECTION) != 0)
+#define CODEC_SET_AMP_IS_LEFT_SIDE(cmd)      (((cmd) & CODEC_VERB_SET_AMP_LEFT_SIDE) != 0)
+#define CODEC_SET_AMP_IS_RIGHT_SIDE(cmd)     (((cmd) & CODEC_VERB_SET_AMP_RIGHT_SIDE) != 0)
+#define CODEC_SET_AMP_INDEX(cmd)             (((cmd) & CODEC_VERB_SET_AMP_INDEX) >> 7)
 
 
 #define STAC9220_NODE_COUNT 0x1C
@@ -108,6 +122,13 @@ extern "C" {
     || CODEC_NID((cmd)) == 0x1B)
 
 static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode);
+static int codecToAudVolume(struct CODECState *pState);
+
+static inline void codecSetRegister(uint32_t *pu32Reg, uint32_t u32Cmd)
+{
+        *pu32Reg = (*pu32Reg) & ~CODEC_VERB_8BIT_DATA;
+        *pu32Reg = (*pu32Reg) | (u32Cmd & CODEC_VERB_8BIT_DATA);
+}
 
 
 static int codecUnimplemented(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
@@ -136,27 +157,31 @@ static int codecGetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
         return VINF_SUCCESS;
     }
     *pResp = 0;
+    /* HDA spec 7.3.3.7 Note A */
+    /* @todo: if index out of range response should be 0 */
+    uint8_t u8Index = CODEC_GET_AMP_DIRECTION(cmd) == AMPLIFIER_OUT? 0 : CODEC_GET_AMP_INDEX(cmd);
+
     PCODECNODE pNode = &pState->pNodes[CODEC_NID(cmd)];
     if (STAC9220_IS_DAC_CMD(cmd))
         *pResp = AMPLIFIER_REGISTER(pNode->dac.B_params,
-                            CODEC_B_DIRECTION(cmd),
-                            CODEC_B_SIDE(cmd),
-                            CODEC_B_INDEX(cmd));
+                            CODEC_GET_AMP_DIRECTION(cmd),
+                            CODEC_GET_AMP_SIDE(cmd),
+                            u8Index);
     else if (STAC9220_IS_ADCVOL_CMD(cmd))
         *pResp = AMPLIFIER_REGISTER(pNode->adcvol.B_params,
-                            CODEC_B_DIRECTION(cmd),
-                            CODEC_B_SIDE(cmd),
-                            CODEC_B_INDEX(cmd));
+                            CODEC_GET_AMP_DIRECTION(cmd),
+                            CODEC_GET_AMP_SIDE(cmd),
+                            u8Index);
     else if (STAC9220_IS_ADCMUX_CMD(cmd))
         *pResp = AMPLIFIER_REGISTER(pNode->adcmux.B_params,
-                            CODEC_B_DIRECTION(cmd),
-                            CODEC_B_SIDE(cmd),
-                            CODEC_B_INDEX(cmd));
+                            CODEC_GET_AMP_DIRECTION(cmd),
+                            CODEC_GET_AMP_SIDE(cmd),
+                            u8Index);
     else if (STAC9220_IS_PCBEEP_CMD(cmd))
         *pResp = AMPLIFIER_REGISTER(pNode->pcbeep.B_params,
-                            CODEC_B_DIRECTION(cmd),
-                            CODEC_B_SIDE(cmd),
-                            CODEC_B_INDEX(cmd));
+                            CODEC_GET_AMP_DIRECTION(cmd),
+                            CODEC_GET_AMP_SIDE(cmd),
+                            u8Index);
     else{
         AssertMsgReturn(0, ("access to fields of %x need to be implemented\n", CODEC_NID(cmd)), VINF_SUCCESS);
     }
@@ -165,7 +190,12 @@ static int codecGetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
 /* 3-- */
 static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
-    uint32_t *pu32Bparam = NULL;
+    AMPLIFIER *pAmplifier = NULL;
+    bool fIsLeft = false; 
+    bool fIsRight = false; 
+    bool fIsOut = false;
+    bool fIsIn = false;
+    uint8_t u8Index = 0;
     Assert((CODEC_CAD(cmd) == pState->id));
     if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
     {
@@ -173,32 +203,42 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
         return VINF_SUCCESS;
     }
     *pResp = 0;
+    fIsOut = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd); 
+    fIsIn = CODEC_SET_AMP_IS_IN_DIRECTION(cmd); 
+    fIsRight = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd); 
+    fIsLeft = CODEC_SET_AMP_IS_LEFT_SIDE(cmd); 
+    u8Index = CODEC_SET_AMP_INDEX(cmd);
     PCODECNODE pNode = &pState->pNodes[CODEC_NID(cmd)];
     if (STAC9220_IS_DAC_CMD(cmd))
-        pu32Bparam = &AMPLIFIER_REGISTER(pNode->dac.B_params,
-            CODEC_B_DIRECTION(cmd),
-            CODEC_B_SIDE(cmd),
-            CODEC_B_INDEX(cmd));
+        pAmplifier = &pNode->dac.B_params;
     else if (STAC9220_IS_ADCVOL_CMD(cmd))
-        pu32Bparam = &AMPLIFIER_REGISTER(pNode->adcvol.B_params,
-            CODEC_B_DIRECTION(cmd),
-            CODEC_B_SIDE(cmd),
-            CODEC_B_INDEX(cmd));
+        pAmplifier = &pNode->adcvol.B_params;
     else if (STAC9220_IS_ADCMUX_CMD(cmd))
-        pu32Bparam = &AMPLIFIER_REGISTER(pNode->adcmux.B_params,
-            CODEC_B_DIRECTION(cmd),
-            CODEC_B_SIDE(cmd),
-            CODEC_B_INDEX(cmd));
+        pAmplifier = &pNode->adcmux.B_params;
     else if (STAC9220_IS_PCBEEP_CMD(cmd))
-        pu32Bparam = &AMPLIFIER_REGISTER(pNode->pcbeep.B_params,
-            CODEC_B_DIRECTION(cmd),
-            CODEC_B_SIDE(cmd),
-            CODEC_B_INDEX(cmd));
-    Assert(pu32Bparam);
-    if (pu32Bparam)
+        pAmplifier = &pNode->pcbeep.B_params;
+    if (   (!fIsLeft && !fIsRight)
+        || (!fIsOut && !fIsIn))
+        return VINF_SUCCESS;
+    Assert(pAmplifier);
+    if (pAmplifier)
     {
-        *pu32Bparam = (*pu32Bparam) & ~CODEC_VERB_8BIT_DATA;
-        *pu32Bparam = (*pu32Bparam) | (cmd & CODEC_VERB_8BIT_DATA);
+        if (fIsIn)
+        {
+            if (fIsLeft)
+                codecSetRegister(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_LEFT, u8Index), cmd);
+            if (fIsRight)
+                codecSetRegister(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), cmd);
+        } 
+        if (fIsOut)
+        {
+            if (fIsLeft)
+                codecSetRegister(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_LEFT, u8Index), cmd);
+            if (fIsRight)
+                codecSetRegister(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd);
+        }
+        if (CODEC_NID(cmd) == 2)
+            codecToAudVolume(pState);
     }
     return VINF_SUCCESS;
 }
@@ -1108,6 +1148,19 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
     return VINF_SUCCESS;
 }
 
+static int codecToAudVolume(struct CODECState *pState)
+{
+    PCODECNODE pNode = &pState->pNodes[2];
+    int mute = AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) & RT_BIT(7);
+    mute |= AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) & RT_BIT(7);
+    mute >>=7;
+    mute &= 0x1;
+    uint8_t lVol = AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) & 0x7f;
+    uint8_t rVol = AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) & 0x7f;
+    AUD_set_volume(AUD_MIXER_VOLUME, &mute, &lVol, &rVol);
+    return VINF_SUCCESS;
+}
+
 static CODECVERB STAC9220VERB[] =
 {
 /*    verb     | verb mask              | callback               */
@@ -1232,10 +1285,7 @@ int stac9220Construct(CODECState *pState)
         LogRel (("HDAcodec: WARNING: Unable to open PCM MC!\n"));
     if (!pState->voice_po)
         LogRel (("HDAcodec: WARNING: Unable to open PCM OUT!\n"));
-    int mute = 0;
-    uint8_t lvol = 0x7f;
-    uint8_t rvol = 0x7f;
-    AUD_set_volume_out(pState->voice_po, mute, lvol, rvol);
+    codecToAudVolume(pState);
     return VINF_SUCCESS;
 }
 int stac9220Destruct(CODECState *pCodecState)
