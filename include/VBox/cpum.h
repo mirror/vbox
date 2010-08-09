@@ -644,6 +644,7 @@ VMMDECL(uint64_t)   CPUMGetGuestCR0(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestCR2(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestCR3(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestCR4(PVMCPU pVCpu);
+VMMDECL(uint64_t)   CPUMGetGuestCR8(PVMCPU pVCpu);
 VMMDECL(int)        CPUMGetGuestCRx(PVMCPU pVCpu, unsigned iReg, uint64_t *pValue);
 VMMDECL(uint32_t)   CPUMGetGuestEFlags(PVMCPU pVCpu);
 VMMDECL(uint32_t)   CPUMGetGuestEIP(PVMCPU pVCpu);
