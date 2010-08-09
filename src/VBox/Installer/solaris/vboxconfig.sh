@@ -97,6 +97,29 @@ errorprint()
     echo 1>&2 "## $1"
 }
 
+helpprint()
+{
+    echo 1>&2 "$1"
+}
+
+printusage()
+{
+    helpprint "VirtualBox Configuration Script"
+    helpprint "usage: $0 operation [options]"
+    helpprint
+    helpprint "operation must be one of the following:"
+    helpprint "  --postinstall           Perform full post installation procedure"
+    helpprint "  --preremove             Perform full pre remove procedure"
+    helpprint "  --installdrivers        Only install the drivers"
+    helpprint "  --removedrivers         Only remove the drivers"
+    helpprint "  --setupdrivers          Update existing drivers, forces driver reloading"
+    helpprint
+    helpprint "[options] are one or more of the following:"
+    helpprint "  --silent                Silent mode"
+    helpprint "  --fatal                 Make failures fatal, don't continue"
+    helpprint "  --ips                   An IPS package installation"
+    helpprint "  --altkerndir            Use /usr/kernel/drv as the driver directory"
+}
 
 # find_bin_path()
 # !! failure is always fatal
@@ -853,6 +876,10 @@ do
             # Use alternate kernel driver config folder (dev only)
             DIR_CONF="/usr/kernel/drv"
             ;;
+        --help)
+            printusage
+            exit 1
+            ;;
         *)
             break
             ;;
@@ -880,7 +907,7 @@ case "$drvop" in
     install_drivers
     ;;
 *)
-    errorprint "Invalid operation $drvop"
+    printusage
     exit 1
 esac
 
