@@ -3797,7 +3797,7 @@ STDMETHODIMP Machine::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
 
     com::SafeArray<BSTR> saKeys(mData->pMachineConfigFile->mapExtraDataItems.size());
     int i = 0;
-    for (settings::ExtraDataItemsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.begin();
+    for (settings::StringsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.begin();
          it != mData->pMachineConfigFile->mapExtraDataItems.end();
          ++it, ++i)
     {
@@ -3826,7 +3826,7 @@ STDMETHODIMP Machine::GetExtraData(IN_BSTR aKey,
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    settings::ExtraDataItemsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.find(Utf8Str(aKey));
+    settings::StringsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.find(Utf8Str(aKey));
     if (it != mData->pMachineConfigFile->mapExtraDataItems.end())
         // found:
         bstrResult = it->second; // source is a Utf8Str
@@ -3861,7 +3861,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
     // look up the old value first; if nothing's changed then we need not do anything
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS); // hold read lock only while looking up
-        settings::ExtraDataItemsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.find(strKey);
+        settings::StringsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.find(strKey);
         if (it != mData->pMachineConfigFile->mapExtraDataItems.end())
             strOldValue = it->second;
     }

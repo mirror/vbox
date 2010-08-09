@@ -98,10 +98,9 @@ struct USBDeviceFilter
     uint32_t                ulMaskedInterfaces;     // irrelevant for host USB objects
 };
 
-typedef std::map<com::Utf8Str, com::Utf8Str> PropertiesMap;
+typedef std::map<com::Utf8Str, com::Utf8Str> StringsMap;
 
 // ExtraDataItem (used by both VirtualBox.xml and machines XML)
-typedef std::map<com::Utf8Str, com::Utf8Str> ExtraDataItemsMap;
 struct USBDeviceFilter;
 typedef std::list<USBDeviceFilter> USBDeviceFiltersList;
 
@@ -122,7 +121,7 @@ struct Medium
     // the following are for hard disks only:
     com::Utf8Str    strFormat;
     bool            fAutoReset;         // optional, only for diffs, default is false
-    PropertiesMap   properties;
+    StringsMap      properties;
     MediumType_T    hdType;
 
     MediaList       llChildren;         // only used with hard disks
@@ -167,7 +166,7 @@ protected:
     com::Utf8Str makeString(const RTTIMESPEC &tm);
 
     void readExtraData(const xml::ElementNode &elmExtraData,
-                       ExtraDataItemsMap &map);
+                       StringsMap &map);
     void readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilters,
                               USBDeviceFiltersList &ll);
     typedef enum {Error, HardDisk, DVDImage, FloppyImage} MediaType;
@@ -177,7 +176,7 @@ protected:
     void setVersionAttribute(xml::ElementNode &elm);
     void createStubDocument();
 
-    void buildExtraData(xml::ElementNode &elmParent, const ExtraDataItemsMap &me);
+    void buildExtraData(xml::ElementNode &elmParent, const StringsMap &me);
     void buildUSBDeviceFilters(xml::ElementNode &elmParent,
                                const USBDeviceFiltersList &ll,
                                bool fHostMode);
@@ -256,7 +255,7 @@ public:
     MediaRegistry           mediaRegistry;
     MachinesRegistry        llMachines;
     DHCPServersList         llDhcpServers;
-    ExtraDataItemsMap       mapExtraDataItems;
+    StringsMap              mapExtraDataItems;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -880,7 +879,7 @@ public:
     Storage                 storageMachine;
     MediaRegistry           mediaRegistry;
 
-    ExtraDataItemsMap       mapExtraDataItems;
+    StringsMap              mapExtraDataItems;
 
     SnapshotsList           llFirstSnapshot;            // first snapshot or empty list if there's none
 

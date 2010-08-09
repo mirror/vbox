@@ -1772,7 +1772,7 @@ STDMETHODIMP VirtualBox::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
 
     com::SafeArray<BSTR> saKeys(m->pMainConfigFile->mapExtraDataItems.size());
     int i = 0;
-    for (ExtraDataItemsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.begin();
+    for (StringsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.begin();
          it != m->pMainConfigFile->mapExtraDataItems.end();
          ++it, ++i)
     {
@@ -1800,7 +1800,7 @@ STDMETHODIMP VirtualBox::GetExtraData(IN_BSTR aKey,
     Utf8Str strKey(aKey);
     Bstr bstrResult;
 
-    settings::ExtraDataItemsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.find(strKey);
+    settings::StringsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.find(strKey);
     if (it != m->pMainConfigFile->mapExtraDataItems.end())
         // found:
         bstrResult = it->second; // source is a Utf8Str
@@ -1836,7 +1836,7 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
     // look up the old value first; if nothing's changed then we need not do anything
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS); // hold read lock only while looking up
-        settings::ExtraDataItemsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.find(strKey);
+        settings::StringsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.find(strKey);
         if (it != m->pMainConfigFile->mapExtraDataItems.end())
             strOldValue = it->second;
     }

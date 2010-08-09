@@ -149,7 +149,7 @@ struct Medium::Data
 
     bool hostDrive : 1;
 
-    settings::PropertiesMap mapProperties;
+    settings::StringsMap mapProperties;
 
     bool implicit : 1;
 
@@ -985,7 +985,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
      * they will still be read and accessible (for possible backward
      * compatibility; we can also clean them up from the XML upon next
      * XML format version change if we wish) */
-    for (settings::PropertiesMap::const_iterator it = data.properties.begin();
+    for (settings::StringsMap::const_iterator it = data.properties.begin();
          it != data.properties.end();
          ++it)
     {
@@ -1961,7 +1961,7 @@ STDMETHODIMP Medium::GetProperty(IN_BSTR aName, BSTR *aValue)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    settings::PropertiesMap::const_iterator it = m->mapProperties.find(Utf8Str(aName));
+    settings::StringsMap::const_iterator it = m->mapProperties.find(Utf8Str(aName));
     if (it == m->mapProperties.end())
         return setError(VBOX_E_OBJECT_NOT_FOUND,
                         tr("Property '%ls' does not exist"), aName);
@@ -1989,7 +1989,7 @@ STDMETHODIMP Medium::SetProperty(IN_BSTR aName, IN_BSTR aValue)
             return setStateError();
     }
 
-    settings::PropertiesMap::iterator it = m->mapProperties.find(Utf8Str(aName));
+    settings::StringsMap::iterator it = m->mapProperties.find(Utf8Str(aName));
     if (it == m->mapProperties.end())
         return setError(VBOX_E_OBJECT_NOT_FOUND,
                         tr("Property '%ls' does not exist"),
@@ -2024,7 +2024,7 @@ STDMETHODIMP Medium::GetProperties(IN_BSTR aNames,
     com::SafeArray<BSTR> values(m->mapProperties.size());
     size_t i = 0;
 
-    for (settings::PropertiesMap::const_iterator it = m->mapProperties.begin();
+    for (settings::StringsMap::const_iterator it = m->mapProperties.begin();
          it != m->mapProperties.end();
          ++it)
     {
@@ -2068,7 +2068,7 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
          i < names.size();
          ++i)
     {
-        settings::PropertiesMap::iterator it = m->mapProperties.find(Utf8Str(names[i]));
+        settings::StringsMap::iterator it = m->mapProperties.find(Utf8Str(names[i]));
         AssertReturn(it != m->mapProperties.end(), E_FAIL);
 
         it->second = Utf8Str(values[i]);
@@ -3019,7 +3019,7 @@ HRESULT Medium::saveSettings(settings::Medium &data)
 
     /* optional properties */
     data.properties.clear();
-    for (settings::PropertiesMap::const_iterator it = m->mapProperties.begin();
+    for (settings::StringsMap::const_iterator it = m->mapProperties.begin();
          it != m->mapProperties.end();
          ++it)
     {
@@ -5016,7 +5016,7 @@ DECLCALLBACK(int) Medium::vdConfigQuerySize(void *pvUser,
     Medium *that = static_cast<Medium*>(pvUser);
     AssertReturn(that != NULL, VERR_GENERAL_FAILURE);
 
-    settings::PropertiesMap::const_iterator it = that->m->mapProperties.find(Utf8Str(pszName));
+    settings::StringsMap::const_iterator it = that->m->mapProperties.find(Utf8Str(pszName));
     if (it == that->m->mapProperties.end())
         return VERR_CFGM_VALUE_NOT_FOUND;
 
@@ -5040,7 +5040,7 @@ DECLCALLBACK(int) Medium::vdConfigQuery(void *pvUser,
     Medium *that = static_cast<Medium*>(pvUser);
     AssertReturn(that != NULL, VERR_GENERAL_FAILURE);
 
-    settings::PropertiesMap::const_iterator it = that->m->mapProperties.find(Utf8Str(pszName));
+    settings::StringsMap::const_iterator it = that->m->mapProperties.find(Utf8Str(pszName));
     if (it == that->m->mapProperties.end())
         return VERR_CFGM_VALUE_NOT_FOUND;
 
