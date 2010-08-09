@@ -119,7 +119,7 @@ public:
                const QModelIndex &aIndex) const;
 
 private:
-    void paintContent(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    QRect paintContent(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
     void blendContent(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
     inline QFontMetrics fontMetric(const QModelIndex &aIndex, int aRole) const { return QFontMetrics(aIndex.data(aRole).value<QFont>()); }
     inline QIcon::Mode iconMode(QStyle::State aState) const
