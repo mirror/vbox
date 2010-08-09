@@ -972,7 +972,11 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
             }
         }
 
-        if (rc == VERR_VD_BLOCK_FREE)
+        if (RT_SUCCESS(rc))
+        {
+            ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbThisRead);
+        }
+        else if (rc == VERR_VD_BLOCK_FREE)
         {
             /* No image in the chain contains the data for the block. */
             vdIoCtxSet(pIoCtx, '\0', cbThisRead);
