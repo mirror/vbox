@@ -291,6 +291,19 @@ typedef const DBGCVAR *PCDBGCVAR;
         } while (0)
 
 
+/**
+ * Macro for setting the range of a DBGC variable.
+ * @param   pVar            The variable.
+ * @param   _enmRangeType   The range type.
+ * @param   Value           The range length value.
+ */
+#define DBGCVAR_SET_RANGE(pVar, _enmRangeType, Value) \
+        do { \
+            (pVar)->enmRangeType = (_enmRangeType); \
+            (pVar)->u64Range = (Value); \
+        } while (0)
+
+
 /** Pointer to command descriptor. */
 typedef struct DBGCCMD *PDBGCCMD;
 /** Pointer to const command descriptor. */
