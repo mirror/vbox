@@ -3185,7 +3185,7 @@ HRESULT VirtualBox::saveSettings()
     try
     {
         // machines
-        settings::MachinesRegistry machinesTemp;
+        m->pMainConfigFile->llMachines.clear();
         {
             AutoReadLock machinesLock(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
             for (MachinesOList::iterator it = m->allMachines.begin();
@@ -3196,7 +3196,7 @@ HRESULT VirtualBox::saveSettings()
                 // save actual machine registry entry
                 settings::MachineRegistryEntry mre;
                 rc = pMachine->saveRegistryEntry(mre);
-                machinesTemp.push_back(mre);
+                m->pMainConfigFile->llMachines.push_back(mre);
             }
         }
 
@@ -3236,7 +3236,7 @@ HRESULT VirtualBox::saveSettings()
         }
 
         // hard disks
-        settings::MediaList hardDisksTemp;
+        m->pMainConfigFile->mediaRegistry.llHardDisks.clear();
         for (MediaList::const_iterator it = m->allHardDisks.begin();
              it != m->allHardDisks.end();
              ++it)
@@ -3244,11 +3244,11 @@ HRESULT VirtualBox::saveSettings()
             settings::Medium med;
             rc = (*it)->saveSettings(med);     // this recurses into its children
             if (FAILED(rc)) throw rc;
-            hardDisksTemp.push_back(med);
+            m->pMainConfigFile->mediaRegistry.llHardDisks.push_back(med);
         }
 
         /* CD/DVD images */
-        settings::MediaList dvdsTemp;
+        m->pMainConfigFile->mediaRegistry.llDvdImages.clear();
         for (MediaList::const_iterator it = m->allDVDImages.begin();
              it != m->allDVDImages.end();
              ++it)
@@ -3256,11 +3256,11 @@ HRESULT VirtualBox::saveSettings()
             settings::Medium med;
             rc = (*it)->saveSettings(med);
             if (FAILED(rc)) throw rc;
-            dvdsTemp.push_back(med);
+            m->pMainConfigFile->mediaRegistry.llDvdImages.push_back(med);
         }
 
         /* floppy images */
-        settings::MediaList floppiesTemp;
+        m->pMainConfigFile->mediaRegistry.llFloppyImages.clear();
         for (MediaList::const_iterator it = m->allFloppyImages.begin();
              it != m->allFloppyImages.end();
              ++it)
@@ -3268,12 +3268,12 @@ HRESULT VirtualBox::saveSettings()
             settings::Medium med;
             rc = (*it)->saveSettings(med);
             if (FAILED(rc)) throw rc;
-            floppiesTemp.push_back(med);
+            m->pMainConfigFile->mediaRegistry.llFloppyImages.push_back(med);
         }
 
         mediaLock.release();
 
-        settings::DHCPServersList dhcpServersTemp;
+        m->pMainConfigFile->llDhcpServers.clear();
         {
             AutoReadLock dhcpLock(m->allDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
             for (DHCPServersOList::const_iterator it = m->allDHCPServers.begin();
@@ -3283,16 +3283,9 @@ HRESULT VirtualBox::saveSettings()
                 settings::DHCPServer d;
                 rc = (*it)->saveSettings(d);
                 if (FAILED(rc)) throw rc;
-                dhcpServersTemp.push_back(d);
+                m->pMainConfigFile->llDhcpServers.push_back(d);
             }
         }
-
-        /* now copy the temp data to the config file under the VirtualBox lock */
-        m->pMainConfigFile->llMachines = machinesTemp;
-        m->pMainConfigFile->mediaRegistry.llHardDisks = hardDisksTemp;
-        m->pMainConfigFile->mediaRegistry.llDvdImages = dvdsTemp;
-        m->pMainConfigFile->mediaRegistry.llFloppyImages = floppiesTemp;
-        m->pMainConfigFile->llDhcpServers = dhcpServersTemp;
 
         // leave extra data alone, it's still in the config file
 
