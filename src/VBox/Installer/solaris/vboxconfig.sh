@@ -112,7 +112,7 @@ printusage()
     helpprint "  --preremove             Perform full pre remove procedure"
     helpprint "  --installdrivers        Only install the drivers"
     helpprint "  --removedrivers         Only remove the drivers"
-    helpprint "  --setupdrivers          Update existing drivers, forces driver reloading"
+    helpprint "  --setupdrivers          Set up drivers, reloads any existing drivers"
     helpprint
     helpprint "[options] are one or more of the following:"
     helpprint "  --silent                Silent mode"
