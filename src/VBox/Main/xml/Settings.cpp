@@ -4247,12 +4247,15 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     // master; this check is a bit more complicated
     //
     // settings version 1.10 is required if the host cache should be disabled
-    if (m->sv < SettingsVersion_v1_10)
+    //
+    // settings version 1.11 is required for bandwidth limits
+    if (m->sv < SettingsVersion_v1_11)
     {
+        // count attached DVDs and floppies (only if < v1.9)
         size_t cDVDs = 0;
         size_t cFloppies = 0;
 
-        // need to run thru all the storage controllers to figure this out
+        // need to run thru all the storage controllers and attached devices to figure this out
         for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
              it != storageMachine.llStorageControllers.end();
              ++it)
@@ -4262,42 +4265,43 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                  it2 != sctl.llAttachedDevices.end();
                  ++it2)
             {
-                // we can only write the StorageController/@Instance attribute with v1.9
-                if (sctl.ulInstance != 0)
-                {
-                    if (m->sv < SettingsVersion_v1_9)
-                        m->sv = SettingsVersion_v1_9;
-                }
-
                 const AttachedDevice &att = *it2;
-                if (att.deviceType == DeviceType_DVD)
-                {
-                    if (    (sctl.storageBus != StorageBus_IDE) // DVD at bus other than DVD?
-                         || (att.lPort != 1)                    // DVDs not at secondary master?
-                         || (att.lDevice != 0)
-                       )
-                    {
-                        if (m->sv < SettingsVersion_v1_9)
-                            m->sv = SettingsVersion_v1_9;
-                    }
 
-                    ++cDVDs;
-                }
-                else if (att.deviceType == DeviceType_Floppy)
-                    ++cFloppies;
-
-                // Disabling the host IO cache requires settings version 1.10
-                if (!sctl.fUseHostIOCache)
-                {
-                    m->sv = SettingsVersion_v1_10;
-                    break; /* abort the loop -- we will not raise the version further */
-                }
-
-                /* Bandwidth limitations are new in VirtualBox 3.3 (1.11) */
-                if (att.ulBandwidthLimit != 0)
+                // Bandwidth limitations are new in VirtualBox 3.3 (1.11)
+                if (    (m->sv < SettingsVersion_v1_11)
+                     && (att.ulBandwidthLimit != 0)
+                   )
                 {
                     m->sv = SettingsVersion_v1_11;
                     break; /* abort the loop -- we will not raise the version further */
+                }
+
+                // disabling the host IO cache requires settings version 1.10
+                if (    (m->sv < SettingsVersion_v1_10)
+                     && (!sctl.fUseHostIOCache)
+                   )
+                    m->sv = SettingsVersion_v1_10;
+
+                // we can only write the StorageController/@Instance attribute with v1.9
+                if (    (m->sv < SettingsVersion_v1_9)
+                     && (sctl.ulInstance != 0)
+                   )
+                    m->sv = SettingsVersion_v1_9;
+
+                if (m->sv < SettingsVersion_v1_9)
+                {
+                    if (att.deviceType == DeviceType_DVD)
+                    {
+                         if (    (sctl.storageBus != StorageBus_IDE) // DVD at bus other than DVD?
+                              || (att.lPort != 1)                    // DVDs not at secondary master?
+                              || (att.lDevice != 0)
+                            )
+                            m->sv = SettingsVersion_v1_9;
+
+                        ++cDVDs;
+                    }
+                    else if (att.deviceType == DeviceType_Floppy)
+                        ++cFloppies;
                 }
             }
         }
