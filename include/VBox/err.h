@@ -266,6 +266,16 @@
 #define VERR_DBGF_OS_NOT_DETCTED            (-1209)
 /** The OS was not detected. */
 #define VINF_DBGF_OS_NOT_DETCTED            1209
+/** Invalid register number. */
+#define VERR_DBGF_INVALID_REGISTER          (-1210)
+/** The value was truncated to fit.
+ * For queries this means that the register is wider than the queried value.
+ * For setters this means that the value is wider than the register. */
+#define VINF_DBGF_TRUNCATED_REGISTER        1211
+/** The value was zero extended to fit.
+ * For queries this means that the register is narrower than the queried value.
+ * For setters this means that the value is narrower than the register. */
+#define VINF_DBGF_ZERO_EXTENDED_REGISTER    1212
 /** @} */
 
 
