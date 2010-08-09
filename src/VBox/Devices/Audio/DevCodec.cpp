@@ -1186,7 +1186,7 @@ static int codec_dac_to_aud(CODECState *pState, int dacnum, audsettings_t *paud)
 {
     paud->freq = 44100;
     paud->nchannels = 2;
-    paud->fmt = AUD_FMT_U16;
+    paud->fmt = AUD_FMT_S16;
 
     paud->endianness = 0;
     return VINF_SUCCESS;
