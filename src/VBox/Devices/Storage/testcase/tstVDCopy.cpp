@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -173,16 +173,16 @@ int main(int argc, char *argv[])
     rc = VDShutdown();
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstVD-2: unloading backends failed! rc=%Rrc\n", rc);
+        RTPrintf("tstVDCopy: unloading backends failed! rc=%Rrc\n", rc);
         g_cErrors++;
     }
     /*
      * Summary
      */
     if (!g_cErrors)
-        RTPrintf("tstVD-2: SUCCESS\n");
+        RTPrintf("tstVDCopy: SUCCESS\n");
     else
-        RTPrintf("tstVD-2: FAILURE - %d errors\n", g_cErrors);
+        RTPrintf("tstVDCopy: FAILURE - %d errors\n", g_cErrors);
 
     return !!g_cErrors;
 }
