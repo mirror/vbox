@@ -4229,6 +4229,19 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             m->sv = SettingsVersion_v1_10;
     }
 
+    // all the following require settings version 1.9
+    if (    (m->sv < SettingsVersion_v1_9)
+         && (    (hardwareMachine.firmwareType >= FirmwareType_EFI)
+              || (hardwareMachine.fHardwareVirtExclusive != HWVIRTEXCLUSIVEDEFAULT)
+              || fTeleporterEnabled
+              || uTeleporterPort
+              || !strTeleporterAddress.isEmpty()
+              || !strTeleporterPassword.isEmpty()
+              || !hardwareMachine.uuid.isEmpty()
+            )
+        )
+        m->sv = SettingsVersion_v1_9;
+
     // settings version 1.9 is required if there is not exactly one DVD
     // or more than one floppy drive present or the DVD is not at the secondary
     // master; this check is a bit more complicated
@@ -4298,19 +4311,6 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
            )
             m->sv = SettingsVersion_v1_9;
     }
-
-    // all the following require settings version 1.9
-    if (    (m->sv < SettingsVersion_v1_9)
-         && (    (hardwareMachine.firmwareType >= FirmwareType_EFI)
-              || (hardwareMachine.fHardwareVirtExclusive != HWVIRTEXCLUSIVEDEFAULT)
-              || fTeleporterEnabled
-              || uTeleporterPort
-              || !strTeleporterAddress.isEmpty()
-              || !strTeleporterPassword.isEmpty()
-              || !hardwareMachine.uuid.isEmpty()
-            )
-        )
-        m->sv = SettingsVersion_v1_9;
 
     // "accelerate 2d video" requires settings version 1.8
     if (    (m->sv < SettingsVersion_v1_8)
