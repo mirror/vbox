@@ -580,7 +580,6 @@ const static struct stIchIntelHDRegMap
 static int hdaProcessInterrupt(INTELHDLinkState* pState)
 {
     bool fIrq = false;
-   /* @todo add state change */
     if(   INTCTL_CIE(pState)
        && (   RIRBSTS_RINTFL(pState)
            || RIRBSTS_RIRBOIS(pState)
