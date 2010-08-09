@@ -4149,16 +4149,10 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_11)
     {
-        // VirtualBox 3.3 adds support for HD audio
-        if (hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA)
-            m->sv = SettingsVersion_v1_11;
-
-        // VirtualBox 3.3 adds support for CPU priority
-        if (hardwareMachine.ulCpuPriority != 100)
-            m->sv = SettingsVersion_v1_11;
-
-        // .. and we now have per-machine media registries
-        if (    mediaRegistry.llHardDisks.size()
+        // VirtualBox 3.3 adds HD audio, CPU priorities and per-machine media registries
+        if (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
+             || hardwareMachine.ulCpuPriority != 100
+             || mediaRegistry.llHardDisks.size()
              || mediaRegistry.llDvdImages.size()
              || mediaRegistry.llFloppyImages.size()
            )
@@ -4173,40 +4167,45 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              netit != hardwareMachine.llNetworkAdapters.end();
              ++netit)
         {
-            if (netit->ulBandwidthLimit)
+            if (    (m->sv < SettingsVersion_v1_11)
+                 && (netit->ulBandwidthLimit)
+               )
             {
                 /* New in VirtualBox 3.3 */
                 m->sv = SettingsVersion_v1_11;
                 break;
             }
-
-            if (    netit->fEnabled
-                 && netit->mode == NetworkAttachmentType_NAT
-                 && (   netit->nat.u32Mtu != 0
-                     || netit->nat.u32SockRcv != 0
-                     || netit->nat.u32SockSnd != 0
-                     || netit->nat.u32TcpRcv != 0
-                     || netit->nat.u32TcpSnd != 0
-                     || !netit->nat.fDnsPassDomain
-                     || netit->nat.fDnsProxy
-                     || netit->nat.fDnsUseHostResolver
-                     || netit->nat.fAliasLog
-                     || netit->nat.fAliasProxyOnly
-                     || netit->nat.fAliasUseSamePorts
-                     || netit->nat.strTftpPrefix.length()
-                     || netit->nat.strTftpBootFile.length()
-                     || netit->nat.strTftpNextServer.length()
-                     || netit->nat.llRules.size())
-                )
+            else if (    (m->sv < SettingsVersion_v1_10)
+                      && (netit->fEnabled)
+                      && (netit->mode == NetworkAttachmentType_NAT)
+                      && (   netit->nat.u32Mtu != 0
+                          || netit->nat.u32SockRcv != 0
+                          || netit->nat.u32SockSnd != 0
+                          || netit->nat.u32TcpRcv != 0
+                          || netit->nat.u32TcpSnd != 0
+                          || !netit->nat.fDnsPassDomain
+                          || netit->nat.fDnsProxy
+                          || netit->nat.fDnsUseHostResolver
+                          || netit->nat.fAliasLog
+                          || netit->nat.fAliasProxyOnly
+                          || netit->nat.fAliasUseSamePorts
+                          || netit->nat.strTftpPrefix.length()
+                          || netit->nat.strTftpBootFile.length()
+                          || netit->nat.strTftpNextServer.length()
+                          || netit->nat.llRules.size()
+                         )
+                     )
             {
                 m->sv = SettingsVersion_v1_10;
-                break;
+                // no break because we still might need v1.11 above
             }
-            if (    netit->fEnabled
-                 && netit->ulBootPriority != 0)
+            else if (    (m->sv < SettingsVersion_v1_10)
+                      && (netit->fEnabled)
+                      && (netit->ulBootPriority != 0)
+                    )
             {
                 m->sv = SettingsVersion_v1_10;
-                break;
+                // no break because we still might need v1.11 above
             }
         }
     }
@@ -4218,7 +4217,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             m->sv = SettingsVersion_v1_10;
 
         // VirtualBox 3.2 adds support for VRDP video channel
-        if (hardwareMachine.vrdpSettings.fVideoChannel)
+        else if (hardwareMachine.vrdpSettings.fVideoChannel)
             m->sv = SettingsVersion_v1_10;
     }
 
@@ -4333,9 +4332,6 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
          && hardwareMachine.strVersion != "1"
        )
         m->sv = SettingsVersion_v1_4;
-
-
-
 }
 
 /**
