@@ -4209,36 +4209,27 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             }
         }
     }
+
     if (m->sv < SettingsVersion_v1_10)
     {
         // VirtualBox 3.2: Check for non default I/O settings and bump the settings version.
-        if (   hardwareMachine.ioSettings.fIoCacheEnabled != true
-            || hardwareMachine.ioSettings.ulIoCacheSize != 5)
-            m->sv = SettingsVersion_v1_10;
-
-        // VirtualBox 3.2 adds support for VRDP video channel
-        else if (hardwareMachine.vrdpSettings.fVideoChannel)
+        if (   (hardwareMachine.ioSettings.fIoCacheEnabled != true)
+            || (hardwareMachine.ioSettings.ulIoCacheSize != 5)
+                // and VRDP video channel
+            || (hardwareMachine.vrdpSettings.fVideoChannel)
+                // and page fusion
+            || (hardwareMachine.fPageFusionEnabled)
+                // and CPU hotplug, RTC timezone control, HID type and HPET
+            || fRTCUseUTC
+            || hardwareMachine.fCpuHotPlug
+            || hardwareMachine.pointingHidType != PointingHidType_PS2Mouse
+            || hardwareMachine.keyboardHidType != KeyboardHidType_PS2Keyboard
+            || hardwareMachine.fHpetEnabled
+           )
             m->sv = SettingsVersion_v1_10;
     }
 
-    // VirtualBox 3.2 adds support for page fusion
-    if (    m->sv < SettingsVersion_v1_10
-        &&  hardwareMachine.fPageFusionEnabled
-       )
-        m->sv = SettingsVersion_v1_10;
-
-    // VirtualBox 3.2 adds support for CPU hotplug, RTC timezone control, HID type and HPET
-    if (    m->sv < SettingsVersion_v1_10
-         && (    fRTCUseUTC
-              || hardwareMachine.fCpuHotPlug
-              || hardwareMachine.pointingHidType != PointingHidType_PS2Mouse
-              || hardwareMachine.keyboardHidType != KeyboardHidType_PS2Keyboard
-              || hardwareMachine.fHpetEnabled
-            )
-       )
-        m->sv = SettingsVersion_v1_10;
-
-    // settings version 1.9 is also required if there is not exactly one DVD
+    // settings version 1.9 is required if there is not exactly one DVD
     // or more than one floppy drive present or the DVD is not at the secondary
     // master; this check is a bit more complicated
     //
