@@ -480,12 +480,13 @@ HRESULT Machine::init(VirtualBox *aParent,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    Utf8Str strConfigFile(aParent->getDefaultMachineFolder());
-    strConfigFile.append(Utf8StrFmt("%c%s%c%s.xml",
-                                    RTPATH_DELIMITER,
-                                    strName.c_str(),
-                                    RTPATH_DELIMITER,
-                                    strName.c_str()));
+    Utf8Str strConfigFile;
+    aParent->getDefaultMachineFolder(strConfigFile);
+    strConfigFile.append(RTPATH_DELIMITER);
+    strConfigFile.append(strName);
+    strConfigFile.append(RTPATH_DELIMITER);
+    strConfigFile.append(strName);
+    strConfigFile.append(".xml");
 
     HRESULT rc = initImpl(aParent, strConfigFile);
     if (FAILED(rc)) return rc;

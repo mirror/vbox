@@ -1138,7 +1138,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
     Utf8Str strSettingsFile = aBaseFolder;
     if (strSettingsFile.isEmpty())
         /* we use the non-full folder value below to keep the path relative */
-        strSettingsFile = getDefaultMachineFolder();
+        getDefaultMachineFolder(strSettingsFile);
 
     strSettingsFile = Utf8StrFmt("%s%c%ls%c%ls.xml",
                                  strSettingsFile.raw(),
@@ -1377,7 +1377,7 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
 
     Utf8Str format(aFormat);
     if (format.isEmpty())
-        format = getDefaultHardDiskFormat();
+        getDefaultHardDiskFormat(format);
 
     HRESULT rc = E_FAIL;
 
@@ -2744,7 +2744,7 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
         {
             const ComObjPtr<Medium> &hd = (*it).second;
 
-            HRESULT rc = hd->compareLocationTo(location.c_str(), result);
+            HRESULT rc = hd->compareLocationTo(location, result);
             if (FAILED(rc)) return rc;
 
             if (result == 0)
@@ -2978,10 +2978,10 @@ const ComObjPtr<PerformanceCollector>& VirtualBox::performanceCollector() const
  * with proper locking.
  * @return
  */
-Utf8Str VirtualBox::getDefaultMachineFolder() const
+void VirtualBox::getDefaultMachineFolder(Utf8Str &str) const
 {
     AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
-    return m->pSystemProperties->m->strDefaultMachineFolder;
+    str = m->pSystemProperties->m->strDefaultMachineFolder;
 }
 
 /**
@@ -2989,10 +2989,10 @@ Utf8Str VirtualBox::getDefaultMachineFolder() const
  * with proper locking.
  * @return
  */
-Utf8Str VirtualBox::getDefaultHardDiskFolder() const
+void VirtualBox::getDefaultHardDiskFolder(Utf8Str &str) const
 {
     AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
-    return m->pSystemProperties->m->strDefaultHardDiskFolder;
+    str = m->pSystemProperties->m->strDefaultHardDiskFolder;
 }
 
 /**
@@ -3000,10 +3000,10 @@ Utf8Str VirtualBox::getDefaultHardDiskFolder() const
  * with proper locking.
  * @return
  */
-Utf8Str VirtualBox::getDefaultHardDiskFormat() const
+void VirtualBox::getDefaultHardDiskFormat(Utf8Str &str) const
 {
     AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
-    return m->pSystemProperties->m->strDefaultHardDiskFormat;
+    str = m->pSystemProperties->m->strDefaultHardDiskFormat;
 }
 
 const Utf8Str& VirtualBox::homeDir() const

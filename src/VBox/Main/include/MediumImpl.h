@@ -197,7 +197,7 @@ public:
 
     HRESULT saveSettings(settings::Medium &data);
 
-    HRESULT compareLocationTo(const char *aLocation, int &aResult);
+    HRESULT compareLocationTo(const Utf8Str &strLocation, int &aResult);
 
     HRESULT createMediumLockList(bool fFailIfInaccessible,
                                  bool fMediumLockWrite,

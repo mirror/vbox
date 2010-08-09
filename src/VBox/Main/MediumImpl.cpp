@@ -3062,7 +3062,7 @@ HRESULT Medium::saveSettings(settings::Medium &data)
  *                      are equal, 1 if this object's location is greater than
  *                      the specified location, and -1 otherwise.
  */
-HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
+HRESULT Medium::compareLocationTo(const Utf8Str &strLocation, int &aResult)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -3075,17 +3075,18 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
 
     if (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
     {
-        Utf8Str location(aLocation);
+        Utf8Str location;
 
         /* For locations represented by files, append the default path if
          * only the name is given, and then get the full path. */
-        if (!RTPathHavePath(aLocation))
+        if (!RTPathHavePath(strLocation.c_str()))
         {
-            location = Utf8StrFmt("%s%c%s",
-                                  m->pVirtualBox->getDefaultHardDiskFolder().raw(),
-                                  RTPATH_DELIMITER,
-                                  aLocation);
+            m->pVirtualBox->getDefaultHardDiskFolder(location);
+            location.append(RTPATH_DELIMITER);
+            location.append(strLocation);
         }
+        else
+            location = strLocation;
 
         int vrc = m->pVirtualBox->calculateFullPath(location, location);
         if (RT_FAILURE(vrc))
@@ -3097,7 +3098,7 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
         aResult = RTPathCompare(locationFull.c_str(), location.c_str());
     }
     else
-        aResult = locationFull.compare(aLocation);
+        aResult = locationFull.compare(strLocation);
 
     return S_OK;
 }
@@ -3203,8 +3204,12 @@ Utf8Str Medium::getPreferredDiffFormat()
 
     /* check that our own format supports diffs */
     if (!(m->formatObj->getCapabilities() & MediumFormatCapabilities_Differencing))
+    {
         /* use the default format if not */
-        return m->pVirtualBox->getDefaultHardDiskFormat();
+        Utf8Str tmp;
+        m->pVirtualBox->getDefaultHardDiskFormat(tmp);
+        return tmp;
+    }
 
     /* m->strFormat is const, no need to lock */
     return m->strFormat;
@@ -3319,10 +3324,13 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
 
         /* append the default folder if no path is given */
         if (!RTPathHavePath(location.c_str()))
-            location = Utf8StrFmt("%s%c%s",
-                                  m->pVirtualBox->getDefaultHardDiskFolder().raw(),
-                                  RTPATH_DELIMITER,
-                                  location.raw());
+        {
+            Utf8Str tmp;
+            m->pVirtualBox->getDefaultHardDiskFolder(tmp);
+            tmp.append(RTPATH_DELIMITER);
+            tmp.append(location);
+            location = tmp;
+        }
 
         /* get the full file name */
         Utf8Str locationFull;
