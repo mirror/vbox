@@ -637,10 +637,10 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /* = QString::null */)
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
-    int rc = vboxProblem().confirmMachineDeletion(item->machine());
+    CMachine machine = item->machine();
+    int rc = vboxProblem().confirmMachineDeletion(machine);
     if (rc != QIMessageBox::Cancel)
     {
-        CMachine machine = item->machine();
         QVector<CMedium> aMedia = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);          //  @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
         if (machine.isOk() && item->accessible())
         {

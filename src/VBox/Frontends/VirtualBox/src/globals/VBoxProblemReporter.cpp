@@ -1058,21 +1058,53 @@ int VBoxProblemReporter::confirmMachineDeletion(const CMachine &machine)
 
     if (machine.GetAccessible())
     {
-        return message(&vboxGlobal().selectorWnd(), Question,
-        tr("<p>Are you sure you want to permanently delete the virtual "
-           "machine <b>%1</b>?</p>"
-           "<p>This operation <i>cannot</i> be undone.</p>"
-           "<p>If you select <b>Delete All</b> everything gets removed. This "
-           "includes the machine itself, but also all virtual disks attached "
-           "to it. If you want preserve the virtual disks for later use, "
-           "select <b>Keep Harddisks</b>.</p>")
-        .arg(machine.GetName()),
-        0, /* aAutoConfirmId */
-        QIMessageBox::No,
-        QIMessageBox::Yes,
-        QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
-        tr("Keep Harddisks", "machine"),
-        tr("Delete All", "machine"));
+        int cDisks = 0;
+        const QVector<CMediumAttachment> &mediums = machine.GetMediumAttachments();
+        for (int i=0; i < mediums.size(); ++i)
+            if (mediums.at(i).GetType() == KDeviceType_HardDisk)
+                ++cDisks;
+        const QString strDeleteBtn = tr("Delete", "machine");
+        const QString strDeleteAllBtn = tr("Delete All", "machine");
+        const QString strKeepHarddisksBtn = tr("Keep Harddisks", "machine");
+        const QString strText  = tr("<p>Are you sure you want to permanently delete the virtual "
+                                    "machine <b>%1</b>?</p>"
+                                    "<p>This operation <i>cannot</i> be undone.</p>")
+                                   .arg(machine.GetName());
+        const QString strText1 = tr("<p>If you select <b>%1</b> everything gets removed. This "
+                                    "includes the machine itself, but also the virtual disks attached "
+                                    "to it. If you want preserve the virtual disks for later use, "
+                                    "select <b>%2</b>.</p>")
+                                   .arg(strDeleteAllBtn)
+                                   .arg(strKeepHarddisksBtn);
+        if (cDisks == 0)
+            return message(&vboxGlobal().selectorWnd(), Question,
+                           strText,
+                           0, /* aAutoConfirmId */
+                           QIMessageBox::Yes,
+                           QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
+                           0,
+                           strDeleteBtn);
+        else if (cDisks == 1)
+            return message(&vboxGlobal().selectorWnd(), Question,
+                           strText + strText1,
+                           0, /* aAutoConfirmId */
+                           QIMessageBox::No,
+                           QIMessageBox::Yes,
+                           QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
+                           strKeepHarddisksBtn,
+                           strDeleteAllBtn);
+        else
+            return message(&vboxGlobal().selectorWnd(), Question,
+                           strText +
+                           tr("<p>You have more than one virtual disk attached. Please make sure "
+                              "you didn't need any of them before deletion.</p>") +
+                           strText1,
+                           0, /* aAutoConfirmId */
+                           QIMessageBox::No,
+                           QIMessageBox::Yes,
+                           QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
+                           strKeepHarddisksBtn,
+                           strDeleteAllBtn);
     }
     else
     {
