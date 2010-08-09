@@ -162,6 +162,8 @@ public:
     const ComObjPtr<Medium>& getParent() const;
     const MediaList& getChildren() const;
 
+    const Guid& getRegistryMachineId() const;
+
     const Guid& getId() const;
     MediumState_T getState() const;
     MediumVariant_T getVariant() const;

@@ -102,10 +102,16 @@ struct Medium::Data
           implicit(false),
           numCreateDiffTasks(0),
           vdDiskIfaces(NULL)
-    {}
+    { }
 
     /** weak VirtualBox parent */
     VirtualBox * const pVirtualBox;
+
+    // pParent and llChildren are protected by VirtualBox::getMediaTreeLockHandle()
+    ComObjPtr<Medium> pParent;
+    MediaList llChildren;           // to add a child, just call push_back; to remove a child, call child->deparent() which does a lookup
+
+    Guid uuidRegistryMachine;       // machine in whose registry this medium is listed or NULL; see getRegistryMachine()
 
     const Guid id;
     Utf8Str strDescription;
@@ -115,10 +121,6 @@ struct Medium::Data
     Utf8Str strLocationFull;
     uint64_t size;
     Utf8Str strLastAccessError;
-
-    // pParent and llChildren are protected by VirtualBox::getMediaTreeLockHandle()
-    ComObjPtr<Medium> pParent;
-    MediaList llChildren;           // to add a child, just call push_back; to remove a child, call child->deparent() which does a lookup
 
     BackRefList backRefs;
 
@@ -147,7 +149,7 @@ struct Medium::Data
 
     bool hostDrive : 1;
 
-    typedef std::map <Bstr, Bstr> PropertyMap;
+    typedef std::map<Bstr, Bstr> PropertyMap;
     PropertyMap properties;
 
     bool implicit : 1;
@@ -985,7 +987,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
      * compatibility; we can also clean them up from the XML upon next
      * XML format version change if we wish) */
     for (settings::PropertiesMap::const_iterator it = data.properties.begin();
-         it != data.properties.end(); ++it)
+         it != data.properties.end();
+         ++it)
     {
         const Utf8Str &name = it->first;
         const Utf8Str &value = it->second;
@@ -2574,6 +2577,19 @@ const ComObjPtr<Medium>& Medium::getParent() const
 const MediaList& Medium::getChildren() const
 {
     return m->llChildren;
+}
+
+/**
+ * Internal method to return the medium's registry machine (i.e. the machine in whose
+ * machine XML this medium is listed), or NULL if the medium is registered globally.
+ *
+ * Must have caller + locking!
+ *
+ * @return
+ */
+const Guid& Medium::getRegistryMachineId() const
+{
+    return m->uuidRegistryMachine;
 }
 
 /**
