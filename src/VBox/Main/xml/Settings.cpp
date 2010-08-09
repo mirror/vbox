@@ -476,7 +476,7 @@ com::Utf8Str ConfigFileBase::makeString(const RTTIMESPEC &stamp)
  * @param map
  */
 void ConfigFileBase::readExtraData(const xml::ElementNode &elmExtraData,
-                                   ExtraDataItemsMap &map)
+                                   StringsMap &map)
 {
     xml::NodesLoop nlLevel4(elmExtraData);
     const xml::ElementNode *pelmExtraDataItem;
@@ -893,12 +893,12 @@ void ConfigFileBase::createStubDocument()
  * @param me
  */
 void ConfigFileBase::buildExtraData(xml::ElementNode &elmParent,
-                                    const ExtraDataItemsMap &me)
+                                    const StringsMap &me)
 {
     if (me.size())
     {
         xml::ElementNode *pelmExtraData = elmParent.createChild("ExtraData");
-        for (ExtraDataItemsMap::const_iterator it = me.begin();
+        for (StringsMap::const_iterator it = me.begin();
              it != me.end();
              ++it)
         {
@@ -991,7 +991,7 @@ void ConfigFileBase::buildHardDisk(xml::ElementNode &elmMedium,
     if (mdm.strDescription.length())
         pelmHardDisk->setAttribute("Description", mdm.strDescription);
 
-    for (PropertiesMap::const_iterator it = mdm.properties.begin();
+    for (StringsMap::const_iterator it = mdm.properties.begin();
          it != mdm.properties.end();
          ++it)
     {
