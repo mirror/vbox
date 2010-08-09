@@ -4233,6 +4233,25 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             m->sv = SettingsVersion_v1_9;
     }
 
+    // VirtualBox 3.2: Check for non default I/O settings
+    if (m->sv < SettingsVersion_v1_10)
+    {
+        if (   (hardwareMachine.ioSettings.fIoCacheEnabled != true)
+            || (hardwareMachine.ioSettings.ulIoCacheSize != 5)
+                // and VRDP video channel
+            || (hardwareMachine.vrdpSettings.fVideoChannel)
+                // and page fusion
+            || (hardwareMachine.fPageFusionEnabled)
+                // and CPU hotplug, RTC timezone control, HID type and HPET
+            || fRTCUseUTC
+            || hardwareMachine.fCpuHotPlug
+            || hardwareMachine.pointingHidType != PointingHidType_PS2Mouse
+            || hardwareMachine.keyboardHidType != KeyboardHidType_PS2Keyboard
+            || hardwareMachine.fHpetEnabled
+           )
+            m->sv = SettingsVersion_v1_10;
+    }
+
     // VirtualBox 3.2 adds NAT and boot priority to the NIC config in Main
     if (m->sv < SettingsVersion_v1_10)
     {
@@ -4282,25 +4301,6 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 // no break because we still might need v1.11 above
             }
         }
-    }
-
-    if (m->sv < SettingsVersion_v1_10)
-    {
-        // VirtualBox 3.2: Check for non default I/O settings and bump the settings version.
-        if (   (hardwareMachine.ioSettings.fIoCacheEnabled != true)
-            || (hardwareMachine.ioSettings.ulIoCacheSize != 5)
-                // and VRDP video channel
-            || (hardwareMachine.vrdpSettings.fVideoChannel)
-                // and page fusion
-            || (hardwareMachine.fPageFusionEnabled)
-                // and CPU hotplug, RTC timezone control, HID type and HPET
-            || fRTCUseUTC
-            || hardwareMachine.fCpuHotPlug
-            || hardwareMachine.pointingHidType != PointingHidType_PS2Mouse
-            || hardwareMachine.keyboardHidType != KeyboardHidType_PS2Keyboard
-            || hardwareMachine.fHpetEnabled
-           )
-            m->sv = SettingsVersion_v1_10;
     }
 
     // all the following require settings version 1.9
