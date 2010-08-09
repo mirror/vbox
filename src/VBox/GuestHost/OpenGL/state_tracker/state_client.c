@@ -1850,6 +1850,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                                                              to->array.v.stride, to->array.v.p);
                 FILLDIRTY(cb->v);
                 FILLDIRTY(cb->clientPointer);
+                FILLDIRTY(cb->dirty);
             }
             CLEARDIRTY2(cb->v, bitID);
         }
@@ -1862,6 +1863,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                                                              to->array.n.stride, to->array.n.p);
                 FILLDIRTY(cb->n);
                 FILLDIRTY(cb->clientPointer);
+                FILLDIRTY(cb->dirty);
             }
             CLEARDIRTY2(cb->n, bitID);
         }
@@ -1875,6 +1877,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                                                             to->array.c.stride, to->array.c.p);
                 FILLDIRTY(cb->c);
                 FILLDIRTY(cb->clientPointer);
+                FILLDIRTY(cb->dirty);
             }
             CLEARDIRTY2(cb->c, bitID);
         }
@@ -1886,6 +1889,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 diff_api.IndexPointer(to->array.i.type,
                                                             to->array.i.stride, to->array.i.p);
                 FILLDIRTY(cb->i);
+                FILLDIRTY(cb->dirty);
                 FILLDIRTY(cb->clientPointer);
             }
             CLEARDIRTY2(cb->i, bitID);
@@ -1902,6 +1906,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                                                                 to->array.t[i].stride, to->array.t[i].p);
                     FILLDIRTY(cb->t[i]);
                     FILLDIRTY(cb->clientPointer);
+                    FILLDIRTY(cb->dirty);
                 }
                 CLEARDIRTY2(cb->t[i], bitID);
             }
@@ -1913,6 +1918,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 diff_api.EdgeFlagPointer(to->array.e.stride, to->array.e.p);
                 FILLDIRTY(cb->e);
                 FILLDIRTY(cb->clientPointer);
+                FILLDIRTY(cb->dirty);
             }
             CLEARDIRTY2(cb->e, bitID);
         }
@@ -1926,6 +1932,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                                                                                     to->array.s.stride, to->array.s.p);
                 FILLDIRTY(cb->s);
                 FILLDIRTY(cb->clientPointer);
+                FILLDIRTY(cb->dirty);
             }
             CLEARDIRTY2(cb->s, bitID);
         }
@@ -1938,6 +1945,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                                                                         to->array.f.stride, to->array.f.p);
                 FILLDIRTY(cb->f);
                 FILLDIRTY(cb->clientPointer);
+                FILLDIRTY(cb->dirty);
             }
             CLEARDIRTY2(cb->f, bitID);
         }
@@ -1957,6 +1965,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                                                                                     to->array.a[i].p);
                     FILLDIRTY(cb->a[i]);
                     FILLDIRTY(cb->clientPointer);
+                    FILLDIRTY(cb->dirty);
                 }
                 CLEARDIRTY2(cb->a[i], bitID);
             }
@@ -1972,37 +1981,45 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
         if (from->array.v.enabled != to->array.v.enabled) {
             able[to->array.v.enabled](GL_VERTEX_ARRAY);
             FILLDIRTY(cb->enableClientState);
+            FILLDIRTY(cb->dirty);
         }
         if (from->array.n.enabled != to->array.n.enabled) {
             able[to->array.n.enabled](GL_NORMAL_ARRAY);
             FILLDIRTY(cb->enableClientState);
+            FILLDIRTY(cb->dirty);
         }
         if (from->array.c.enabled != to->array.c.enabled) {
             able[to->array.c.enabled](GL_COLOR_ARRAY);
             FILLDIRTY(cb->enableClientState);
+            FILLDIRTY(cb->dirty);
         }
         if (from->array.i.enabled != to->array.i.enabled) {
             able[to->array.i.enabled](GL_INDEX_ARRAY);
             FILLDIRTY(cb->enableClientState);
+            FILLDIRTY(cb->dirty);
         }
         for (i = 0; (unsigned int)i < toCtx->limits.maxTextureUnits; i++) {
             if (from->array.t[i].enabled != to->array.t[i].enabled) {
                 diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
                 able[to->array.t[i].enabled](GL_TEXTURE_COORD_ARRAY);
                 FILLDIRTY(cb->enableClientState);
+                FILLDIRTY(cb->dirty);
             }
         }
         if (from->array.e.enabled != to->array.e.enabled) {
             able[to->array.e.enabled](GL_EDGE_FLAG_ARRAY);
             FILLDIRTY(cb->enableClientState);
+            FILLDIRTY(cb->dirty);
         }
         if (from->array.s.enabled != to->array.s.enabled) {
             able[to->array.s.enabled](GL_SECONDARY_COLOR_ARRAY_EXT);
             FILLDIRTY(cb->enableClientState);
+            FILLDIRTY(cb->dirty);
         }
         if (from->array.f.enabled != to->array.f.enabled) {
             able[to->array.f.enabled](GL_FOG_COORDINATE_ARRAY_EXT);
             FILLDIRTY(cb->enableClientState);
+            FILLDIRTY(cb->dirty);
         }
         for (i = 0; (unsigned int)i < toCtx->limits.maxVertexProgramAttribs; i++) {
             if (from->array.a[i].enabled != to->array.a[i].enabled) {
@@ -2011,10 +2028,13 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 else 
                     diff_api.DisableVertexAttribArrayARB(i);
                 FILLDIRTY(cb->enableClientState);
+                FILLDIRTY(cb->dirty);
             }
         }
         CLEARDIRTY2(cb->enableClientState, bitID);
     }
+
+    CLEARDIRTY2(cb->dirty, bitID);
 }
 
 CRClientPointer* crStateGetClientPointerByIndex(int index, CRVertexArrays *array)
