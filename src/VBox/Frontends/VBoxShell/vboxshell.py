@@ -800,7 +800,6 @@ def infoCmd(ctx,args):
     print colCat(ctx,"  I/O subsystem info:")
     print "   Cache enabled [ioCacheEnabled]: %s" %(asState(mach.ioCacheEnabled))
     print "   Cache size [ioCacheSize]: %dM" %(mach.ioCacheSize)
-    print "   Bandwidth limit [ioBandwidthMax]: %dM/s" %(mach.ioBandwidthMax)
 
     controllers = ctx['global'].getArray(mach, 'storageControllers')
     if controllers:
