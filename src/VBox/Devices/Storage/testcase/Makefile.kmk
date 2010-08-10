@@ -48,7 +48,10 @@ endif
 # Basic testcases for the VD code.
 #
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable tstVDSetUuid VBoxFixHdd
+ PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable tstVDSetUuid
+ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris)
+  PROGRAMS += VBoxFixHdd
+ endif
  ifeq ($(KBUILD_TARGET),l4)
   tstVD_TEMPLATE = VBOXLNXHOSTR3EXE
   tstVD-2_TEMPLATE = VBOXLNXHOSTR3EXE
