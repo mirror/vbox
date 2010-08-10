@@ -223,6 +223,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
                                                 addVersion.raw(), addRevision.raw());
                 additionsVersion.cloneTo(aAdditionsVersion);
             }
+            /** @todo r=bird: else: Should not return failure! */
         }
         else
         {
@@ -230,6 +231,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
              * because of *really* old Guest Additions we only can report the interface
              * version to at least have something. */
             mData.mInterfaceVersion.cloneTo(aAdditionsVersion);
+            /** @todo r=bird: hr is still indicating failure! */
         }
     }
     else
