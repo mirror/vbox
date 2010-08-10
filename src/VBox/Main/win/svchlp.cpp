@@ -184,7 +184,7 @@ int SVCHlpClient::write (const Utf8Str &aVal)
     if (RT_SUCCESS(vrc))
     {
         /* write string data */
-        vrc = write (aVal.raw(), len);
+        vrc = write (aVal.c_str(), len);
     }
 
     return vrc;
