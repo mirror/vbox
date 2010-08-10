@@ -21,6 +21,7 @@
 *******************************************************************************/
 #define LOG_GROUP   LOG_GROUP_DEFAULT
 #include "VBoxGuestInternal.h"
+#include "VBoxGuest2.h"
 #include <VBox/VMMDev.h> /* for VMMDEV_RAM_SIZE */
 #include <VBox/log.h>
 #include <iprt/mem.h>
@@ -35,7 +36,6 @@
 #ifdef VBOX_WITH_HGCM
 # include <iprt/thread.h>
 #endif
-#include "VBoxHelper.h"
 #include "version-generated.h"
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 # include "revision-generated.h"
@@ -733,7 +733,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
             pDevExt->PhysIrqAckEvents = VbglPhysHeapGetPhysAddr(pDevExt->pIrqAckEvents);
             Assert(pDevExt->PhysIrqAckEvents != 0);
 
-            rc = VBoxReportGuestInfo(enmOSType);
+            rc = VBoxGuestReportGuestInfo(enmOSType);
             if (RT_SUCCESS(rc))
             {
                 rc = vboxGuestSetFilterMask(pDevExt, fFixedEvents);
@@ -748,7 +748,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                     {
                         vboxGuestInitFixateGuestMappings(pDevExt);
 
-                        rc = VBoxReportGuestDriverStatus(true /* Driver is active */);
+                        rc = VBoxGuestReportDriverStatus(true /* Driver is active */);
                         if (RT_FAILURE(rc))
                             LogRel(("VBoxGuestInitDevExt: VBoxReportGuestDriverStatus failed, rc=%Rrc\n", rc));
 
