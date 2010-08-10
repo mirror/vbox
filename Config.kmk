@@ -3979,6 +3979,14 @@ TEMPLATE_VBOXGUESTR3XF86MOD_DEFS  = $(TEMPLATE_VBOXGUESTR3DLL_DEFS) LOG_TO_BACKD
 
 
 #
+# Template for XFree86 guest libraries.
+#
+TEMPLATE_VBOXGUESTR3XF86LIB         = VBox XFree86 Guest Library
+TEMPLATE_VBOXGUESTR3XF86LIB_EXTENDS = VBOXGUESTR3XF86MOD
+TEMPLATE_VBOXGUESTR3XF86LIB_INST    = $(INST_ADDITIONS_LIB)
+
+
+#
 # Template for X.org guest modules (shared libs).
 # This mostly about zapping unnecessary LIBS from VBOXGUESTR3DLL and adding some flags.
 #
