@@ -26,6 +26,7 @@ CFLAGS += -DRT_OS_FREEBSD -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DRT_WITH_VBO
 
 SRCS = \
 	VBoxGuest.c \
+	VBoxGuest2.c \
 	VBoxGuest-freebsd.c \
 	GenericRequest.c \
 	HGCMInternal.c \
