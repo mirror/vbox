@@ -426,9 +426,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
     /* Because VMMDevReq_ReportGuestInfo is sent last in the first information chain
      * from the guest also check for VMMDevReq_ReportGuestInfo2. */
-    if (    requestHeader.requestType != VMMDevReq_ReportGuestInfo2
-        && (   requestHeader.requestType != VMMDevReq_ReportGuestInfo
-            && !pThis->fu32AdditionsOk))
+    if (   !pThis->fu32AdditionsOk
+        && requestHeader.requestType != VMMDevReq_ReportGuestInfo2
+        && requestHeader.requestType != VMMDevReq_ReportGuestInfo)
     {
         Log(("VMMDev: guest has not yet reported to us. Refusing operation.\n"));
         requestHeader.rc = VERR_NOT_SUPPORTED;
