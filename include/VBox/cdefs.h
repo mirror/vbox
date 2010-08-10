@@ -393,7 +393,11 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VBOXDDU
-# define VBOXDDU_DECL(type) DECLEXPORT(type) VBOXCALL
+# ifdef IN_VBOXDDU_STATIC
+#  define VBOXDDU_DECL(type) type
+# else
+#  define VBOXDDU_DECL(type) DECLEXPORT(type) VBOXCALL
+# endif
 #else
 # define VBOXDDU_DECL(type) DECLIMPORT(type) VBOXCALL
 #endif

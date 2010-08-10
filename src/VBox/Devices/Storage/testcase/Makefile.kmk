@@ -49,7 +49,7 @@ endif
 #
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable tstVDSetUuid
- if1of ($(KBUILD_TARGET), darwin freebsd linux solaris)
+ if1of ($(KBUILD_TARGET), darwin freebsd linux win solaris)
   PROGRAMS += VBoxFixHdd
  endif
  ifeq ($(KBUILD_TARGET),l4)
@@ -82,6 +82,8 @@ ifdef VBOX_WITH_TESTCASES
   VBoxFixHdd_LIBS += crypt
  else ifeq ($(KBUILD_TARGET),darwin)
   VBoxFixHdd_LIBS += iconv
+ else ifeq ($(KBUILD_TARGET),win)
+  VBoxFixHdd_SDKS.win = VBOX_NTDLL VBOX_ZLIB WINPSDK $(VBOX_WINDDK)
  endif
  tstVD_SOURCES  = tstVD.cpp
  tstVD-2_SOURCES  = tstVD-2.cpp
@@ -101,7 +103,7 @@ ifdef VBOX_WITH_TESTCASES
  ifdef VBOX_WITH_NEW_IO_CODE
  VBoxFixHdd_DEFS += VBOX_WITH_NEW_IO_CODE
  endif
- VBoxFixHdd_DEFS += VBOX_HDD_NO_DYNAMIC_BACKENDS
+ VBoxFixHdd_DEFS += VBOX_HDD_NO_DYNAMIC_BACKENDS IN_VBOXDDU IN_VBOXDDU_STATIC IN_RT_R3
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
