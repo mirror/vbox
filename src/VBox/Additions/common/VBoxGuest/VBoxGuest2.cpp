@@ -52,7 +52,7 @@ int VBoxGuestReportGuestInfo(VBOXOSTYPE enmOSType)
      */
     VMMDevReportGuestInfo2 *pReq = NULL;
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof (VMMDevReportGuestInfo2), VMMDevReq_ReportGuestInfo2);
-    Log(("VBoxReportGuestInfo: VbglGRAlloc VMMDevReportGuestInfo2 completed with rc=%Rrc\n", rc));
+    Log(("VBoxGuestReportGuestInfo: VbglGRAlloc VMMDevReportGuestInfo2 completed with rc=%Rrc\n", rc));
     if (RT_SUCCESS(rc))
     {
         pReq->guestInfo.additionsMajor = VBOX_VERSION_MAJOR;
@@ -63,7 +63,7 @@ int VBoxGuestReportGuestInfo(VBOXOSTYPE enmOSType)
         RTStrCopy(pReq->guestInfo.szName, sizeof(pReq->guestInfo.szName), VBOX_VERSION_STRING);
 
         rc = VbglGRPerform(&pReq->header);
-        Log(("VBoxReportGuestInfo: VbglGRPerform VMMDevReportGuestInfo2 completed with rc=%Rrc\n", rc));
+        Log(("VBoxGuestReportGuestInfo: VbglGRPerform VMMDevReportGuestInfo2 completed with rc=%Rrc\n", rc));
         if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
             rc = VINF_SUCCESS;
         VbglGRFree(&pReq->header);
@@ -77,14 +77,14 @@ int VBoxGuestReportGuestInfo(VBOXOSTYPE enmOSType)
     {
         VMMDevReportGuestInfo *pReq3 = NULL;
         rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq3, sizeof (VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
-        Log(("VBoxReportGuestInfo: VbglGRAlloc VMMDevReportGuestInfo completed with rc=%Rrc\n", rc));
+        Log(("VBoxGuestReportGuestInfo: VbglGRAlloc VMMDevReportGuestInfo completed with rc=%Rrc\n", rc));
         if (RT_SUCCESS(rc))
         {
             pReq3->guestInfo.interfaceVersion = VMMDEV_VERSION;
             pReq3->guestInfo.osType = enmOSType;
 
             rc = VbglGRPerform(&pReq3->header);
-            Log(("VBoxReportGuestInfo: VbglGRPerform VMMDevReportGuestInfo completed with rc=%Rrc\n", rc));
+            Log(("VBoxGuestReportGuestInfo: VbglGRPerform VMMDevReportGuestInfo completed with rc=%Rrc\n", rc));
             VbglGRFree(&pReq3->header);
         }
     }
@@ -106,7 +106,7 @@ int VBoxGuestReportDriverStatus(bool fActive)
      */
     VMMDevReportGuestStatus *pReq2 = NULL;
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq2, sizeof(*pReq2), VMMDevReq_ReportGuestStatus);
-    Log(("VBoxReportGuestDriverStatus: VbglGRAlloc VMMDevReportGuestStatus completed with rc=%Rrc\n", rc));
+    Log(("VBoxGuestReportDriverStatus: VbglGRAlloc VMMDevReportGuestStatus completed with rc=%Rrc\n", rc));
     if (RT_SUCCESS(rc))
     {
         pReq2->guestStatus.facility = VBoxGuestStatusFacility_VBoxGuestDriver;
@@ -115,7 +115,7 @@ int VBoxGuestReportDriverStatus(bool fActive)
                                   : VBoxGuestStatusCurrent_Inactive;
         pReq2->guestStatus.flags = 0;
         rc = VbglGRPerform(&pReq2->header);
-        Log(("VBoxReportGuestDriverStatus: VbglGRPerform VMMDevReportGuestStatus completed with fActive=%d, rc=%Rrc\n",
+        Log(("VBoxGuestReportDriverStatus: VbglGRPerform VMMDevReportGuestStatus completed with fActive=%d, rc=%Rrc\n",
              rc, fActive ? 1 : 0));
         if (rc == VERR_NOT_IMPLEMENTED) /* Compatibility with older hosts. */
             rc = VINF_SUCCESS;
