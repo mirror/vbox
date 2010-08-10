@@ -41,9 +41,8 @@ VBoxGuest_SOURCES       = \
 	VBoxGuestPnP.cpp \
 	Helper.cpp \
 	HelperBugCheck.cpp \
+	../../common/VBoxGuest/VBoxGuest2.cpp \
 	VBoxGuest.rc
-VBoxGuest_SOURCES      += \
-	../../common/VBoxGuest/VBoxHelper.cpp
 VBoxGuest_LIBS          = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
@@ -71,9 +70,8 @@ VBoxGuestNT_SOURCES   = \
 	Helper.cpp \
 	HelperBugCheck.cpp \
 	NTLegacy.cpp \
+	../../common/VBoxGuest/VBoxGuest2.cpp \
 	VBoxGuest.rc
-VBoxGuestNT_SOURCES  += \
-	../../common/VBoxGuest/VBoxHelper.cpp
 
 VBoxGuestNT_LIBS      = \
 	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib \
