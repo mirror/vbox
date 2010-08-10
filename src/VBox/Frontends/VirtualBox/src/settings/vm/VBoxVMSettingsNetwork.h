@@ -62,7 +62,7 @@ private slots:
     void updateAlternativeName();
     void toggleAdvanced();
     void generateMac();
-    void sltOpenPortsForwadringDlg();
+    void sltOpenPortForwardingDlg();
 
 private:
 
