@@ -6620,9 +6620,9 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
             /* If we are using a static TAP device then try to open it. */
             Utf8Str str(tapDeviceName);
             if (str.length() <= sizeof(IfReq.ifr_name))
-                strcpy(IfReq.ifr_name, str.raw());
+                strcpy(IfReq.ifr_name, str.c_str());
             else
-                memcpy(IfReq.ifr_name, str.raw(), sizeof(IfReq.ifr_name) - 1); /** @todo bitch about names which are too long... */
+                memcpy(IfReq.ifr_name, str.c_str(), sizeof(IfReq.ifr_name) - 1); /** @todo bitch about names which are too long... */
             IfReq.ifr_flags = IFF_TAP | IFF_NO_PI;
             rcVBox = ioctl(maTapFD[slot], TUNSETIFF, &IfReq);
             if (rcVBox != 0)
