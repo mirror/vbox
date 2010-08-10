@@ -165,7 +165,7 @@ public:
     PortEditor(QWidget *pParent = 0) : QSpinBox(pParent)
     {
         setFrame(false);
-        setRange(0, pow(2, 8 * sizeof(ushort)) - 1);
+        setRange(0, (1 << (8 * sizeof(ushort))) - 1);
     }
 
 private:
