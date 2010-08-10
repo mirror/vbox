@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxHelper - Miscellaneous functions.
+ * VBoxGuest - Guest Additions Driver, bits shared with the windows code.
  */
 
 /*
@@ -24,6 +24,9 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/string.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -34,7 +37,13 @@
 #endif
 
 
-int VBoxReportGuestInfo(VBOXOSTYPE enmOSType)
+/**
+ * Report the guest information to the host.
+ *
+ * @returns IPRT status code.
+ * @param   enmOSType       The OS type to report.
+ */
+int VBoxGuestReportGuestInfo(VBOXOSTYPE enmOSType)
 {
     /*
      * Important: VMMDev *awaits* a VMMDevReportGuestInfo or VMMDevReportGuestInfo2 message
@@ -83,7 +92,14 @@ int VBoxReportGuestInfo(VBOXOSTYPE enmOSType)
     return rc;
 }
 
-int VBoxReportGuestDriverStatus(bool fActive)
+
+/**
+ * Report the guest driver status to the host.
+ *
+ * @returns IPRT status code.
+ * @param   fActive         Flag whether the driver is now active or not.
+ */
+int VBoxGuestReportDriverStatus(bool fActive)
 {
     /*
      * Report guest status of the VBox driver to the host.

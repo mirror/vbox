@@ -1,7 +1,8 @@
 /** @file
- *
  * VBoxGuest -- VirtualBox Win32 guest support driver PnP code
- *
+ */
+
+/*
  * Copyright (C) 2006-2007 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -24,7 +25,7 @@
 #include <VBox/err.h>
 
 #include <VBox/VBoxGuestLib.h>
-#include "../../common/VBoxGuest/VBoxHelper.h"
+#include "../../common/VBoxGuest/VBoxGuest2.h"
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -235,13 +236,13 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             if (NT_SUCCESS(rc))
             {
-                int vrc = VBoxReportGuestInfo(hlpVBoxWinVersionToOSType(winVersion));
+                int vrc = VBoxGuestReportGuestInfo(hlpVBoxWinVersionToOSType(winVersion));
                 if (RT_SUCCESS(vrc))
                 {
                     vrc = VBoxInitMemBalloon(pDevExt);
                     if (RT_SUCCESS(vrc))
                     {
-                        vrc = VBoxReportGuestDriverStatus(true /* Driver is active */);
+                        vrc = VBoxGuestReportDriverStatus(true /* Driver is active */);
                         if (RT_FAILURE(vrc))
                             dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not report guest driver status, vrc = %d\n", vrc));
                     }

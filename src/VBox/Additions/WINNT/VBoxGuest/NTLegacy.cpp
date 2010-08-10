@@ -1,7 +1,8 @@
 /** @file
- *
  * VBoxGuest -- VirtualBox Win32 guest support driver
- *
+ */
+
+/*
  * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -23,7 +24,7 @@
 #include "Helper.h"
 
 #include <VBox/VBoxGuestLib.h>
-#include "../../common/VBoxGuest/VBoxHelper.h"
+#include "../../common/VBoxGuest/VBoxGuest2.h"
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -278,13 +279,13 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
 
     if (NT_SUCCESS(rc))
     {
-        vrc = VBoxReportGuestInfo(hlpVBoxWinVersionToOSType(winVersion));
+        vrc = VBoxGuestReportGuestInfo(hlpVBoxWinVersionToOSType(winVersion));
         if (RT_SUCCESS(vrc))
         {
             vrc = VBoxInitMemBalloon(pDevExt);
             if (RT_SUCCESS(vrc))
             {
-                vrc = VBoxReportGuestDriverStatus(true /* Driver is active */);
+                vrc = VBoxGuestReportGuestDriverStatus(true /* Driver is active */);
                 if (RT_FAILURE(vrc))
                     dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not report guest driver status, vrc = %d\n", vrc));
             }

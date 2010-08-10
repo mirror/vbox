@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2007 Oracle Corporation
+# Copyright (C) 2007-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -21,7 +21,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linux,) os2 solaris)
  #
- # VBoxGuest - The Guest Additions Driver (mixed case).
+ # VBoxGuest - The Guest Additions Driver.
  #
  SYSMODS += VBoxGuest
  VBoxGuest_TEMPLATE      = VBOXGUESTR0
@@ -46,8 +46,8 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
   endif
   VBoxGuest_SOURCES     += \
   	VBoxGuest.cpp \
-  	VBoxHelper.cpp
-  VBoxHelper.cpp_DEFS    = VBOX_SVN_REV=$(VBOX_SVN_REV)
+  	VBoxGuest2.cpp
+  VBoxGuest2.cpp_DEFS    = VBOX_SVN_REV=$(VBOX_SVN_REV)
   VBoxGuest_LIBS         = \
   	$(VBOX_LIB_VBGL_R0BASE) \
   	$(VBOX_LIB_IPRT_GUEST_R0)
