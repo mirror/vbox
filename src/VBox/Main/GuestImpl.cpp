@@ -465,9 +465,9 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
                 u32Flags = VMMDEV_SETCREDENTIALS_NOLOCALLOGON;
 
             pVMMDevPort->pfnSetCredentials(pVMMDevPort,
-                                           Utf8Str(aUserName).raw(),
-                                           Utf8Str(aPassword).raw(),
-                                           Utf8Str(aDomain).raw(),
+                                           Utf8Str(aUserName).c_str(),
+                                           Utf8Str(aPassword).c_str(),
+                                           Utf8Str(aDomain).c_str(),
                                            u32Flags);
             return S_OK;
         }
@@ -1019,14 +1019,14 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
                     for (unsigned i = 0; i < env.size(); i++)
                     {
-                        vrc = prepareExecuteEnv(Utf8Str(env[i]).raw(), &pvEnv, &cbEnv, &uNumEnv);
+                        vrc = prepareExecuteEnv(Utf8Str(env[i]).c_str(), &pvEnv, &cbEnv, &uNumEnv);
                         if (RT_FAILURE(vrc))
                             break;
                     }
                 }
 
                 LogRel(("Executing guest process \"%s\" as user \"%s\" ...\n",
-                        Utf8Command.raw(), Utf8UserName.raw()));
+                        Utf8Command.c_str(), Utf8UserName.c_str()));
 
                 if (RT_SUCCESS(vrc))
                 {
@@ -1040,15 +1040,15 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     VBOXHGCMSVCPARM paParms[15];
                     int i = 0;
                     paParms[i++].setUInt32(uContextID);
-                    paParms[i++].setPointer((void*)Utf8Command.raw(), (uint32_t)strlen(Utf8Command.raw()) + 1);
+                    paParms[i++].setPointer((void*)Utf8Command.c_str(), (uint32_t)Utf8Command.length() + 1);
                     paParms[i++].setUInt32(aFlags);
                     paParms[i++].setUInt32(uNumArgs);
                     paParms[i++].setPointer((void*)pszArgs, cbArgs);
                     paParms[i++].setUInt32(uNumEnv);
                     paParms[i++].setUInt32(cbEnv);
                     paParms[i++].setPointer((void*)pvEnv, cbEnv);
-                    paParms[i++].setPointer((void*)Utf8UserName.raw(), (uint32_t)strlen(Utf8UserName.raw()) + 1);
-                    paParms[i++].setPointer((void*)Utf8Password.raw(), (uint32_t)strlen(Utf8Password.raw()) + 1);
+                    paParms[i++].setPointer((void*)Utf8UserName.c_str(), (uint32_t)Utf8UserName.length() + 1);
+                    paParms[i++].setPointer((void*)Utf8Password.c_str(), (uint32_t)Utf8Password.length() + 1);
                     paParms[i++].setUInt32(aTimeoutMS);
 
                     VMMDev *vmmDev;
@@ -1158,40 +1158,26 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     if (RT_FAILURE(vrc))
                     {
                         if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
-                        {
                             rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The file '%s' was not found on guest"), Utf8Command.raw());
-                        }
+                                          tr("The file '%s' was not found on guest"), Utf8Command.c_str());
                         else if (vrc == VERR_PATH_NOT_FOUND)
-                        {
                             rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The path to file '%s' was not found on guest"), Utf8Command.raw());
-                        }
+                                          tr("The path to file '%s' was not found on guest"), Utf8Command.c_str());
                         else if (vrc == VERR_BAD_EXE_FORMAT)
-                        {
                             rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The file '%s' is not an executable format on guest"), Utf8Command.raw());
-                        }
+                                          tr("The file '%s' is not an executable format on guest"), Utf8Command.c_str());
                         else if (vrc == VERR_AUTHENTICATION_FAILURE)
-                        {
                             rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The specified user '%s' was not able to logon on guest"), Utf8UserName.raw());
-                        }
+                                          tr("The specified user '%s' was not able to logon on guest"), Utf8UserName.c_str());
                         else if (vrc == VERR_TIMEOUT)
-                        {
                             rc = setError(VBOX_E_IPRT_ERROR,
                                           tr("The guest did not respond within time (%ums)"), aTimeoutMS);
-                        }
                         else if (vrc == VERR_CANCELLED)
-                        {
                             rc = setError(VBOX_E_IPRT_ERROR,
                                           tr("The execution operation was canceled"));
-                        }
                         else if (vrc == VERR_PERMISSION_DENIED)
-                        {
                             rc = setError(VBOX_E_IPRT_ERROR,
                                           tr("Invalid user/password credentials"));
-                        }
                         else
                         {
                             if (pData && pData->u32Status == PROC_STS_ERROR)
@@ -1214,25 +1200,17 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
             else /* HGCM related error codes .*/
             {
                 if (vrc == VERR_INVALID_VM_HANDLE)
-                {
                     rc = setError(VBOX_E_VM_ERROR,
                                   tr("VMM device is not available (is the VM running?)"));
-                }
                 else if (vrc == VERR_TIMEOUT)
-                {
                     rc = setError(VBOX_E_VM_ERROR,
                                   tr("The guest execution service is not ready"));
-                }
                 else if (vrc == VERR_HGCM_SERVICE_NOT_FOUND)
-                {
                     rc = setError(VBOX_E_VM_ERROR,
                                   tr("The guest execution service is not available"));
-                }
                 else /* HGCM call went wrong. */
-                {
                     rc = setError(E_UNEXPECTED,
                                   tr("The HGCM call failed with error %Rrc"), vrc);
-                }
             }
 
             for (unsigned i = 0; i < uNumArgs; i++)
@@ -1242,7 +1220,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
         if (RT_FAILURE(vrc))
             LogRel(("Executing guest process \"%s\" as user \"%s\" failed with %Rrc\n",
-                    Utf8Command.raw(), Utf8UserName.raw(), vrc));
+                    Utf8Command.c_str(), Utf8UserName.c_str(), vrc));
     }
     catch (std::bad_alloc &)
     {

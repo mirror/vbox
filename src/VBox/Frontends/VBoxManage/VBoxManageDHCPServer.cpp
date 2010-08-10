@@ -307,7 +307,7 @@ int handleDHCPServer(HandlerArg *a)
         }
         else
         {
-            result = errorSyntax(USAGE_DHCPSERVER, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
+            result = errorSyntax(USAGE_DHCPSERVER, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
             break;
         }
     }

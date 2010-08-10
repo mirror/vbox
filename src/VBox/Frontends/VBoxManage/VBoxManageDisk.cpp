@@ -311,7 +311,7 @@ int handleCreateHardDisk(HandlerArg *a)
                     CHECK_ERROR(hardDisk, COMSETTER(Type)(DiskType));
                 }
 
-                RTPrintf("Disk image created. UUID: %s\n", Utf8Str(uuid).raw());
+                RTPrintf("Disk image created. UUID: %s\n", Utf8Str(uuid).c_str());
             }
         }
         if (doClose)
@@ -627,7 +627,7 @@ int handleCloneHardDisk(HandlerArg *a)
             int irc = RTPathAbs(Utf8Str(src).c_str(), szFilenameAbs, sizeof(szFilenameAbs));
             if (RT_FAILURE(irc))
             {
-                RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Utf8Str(src).raw());
+                RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Utf8Str(src).c_str());
                 return 1;
             }
             CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(szFilenameAbs), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), srcDisk.asOutParam()));
@@ -661,7 +661,7 @@ int handleCloneHardDisk(HandlerArg *a)
                     int irc = RTPathAbs(Utf8Str(dst).c_str(), szFilenameAbs, sizeof(szFilenameAbs));
                     if (RT_FAILURE(irc))
                     {
-                        RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Utf8Str(dst).raw());
+                        RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Utf8Str(dst).c_str());
                         return 1;
                     }
                     CHECK_ERROR_BREAK(a->virtualBox, OpenHardDisk(Bstr(szFilenameAbs), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), dstDisk.asOutParam()));
@@ -707,7 +707,7 @@ int handleCloneHardDisk(HandlerArg *a)
         CHECK_ERROR_BREAK(dstDisk, COMGETTER(Id)(uuid.asOutParam()));
 
         RTPrintf("Clone hard disk created in format '%ls'. UUID: %s\n",
-                 format.raw(), Utf8Str(uuid).raw());
+                 format.raw(), Utf8Str(uuid).c_str());
     }
     while (0);
 
@@ -1092,7 +1092,7 @@ int handleAddiSCSIDisk(HandlerArg *a)
 
         Bstr guid;
         CHECK_ERROR(hardDisk, COMGETTER(Id)(guid.asOutParam()));
-        RTPrintf("iSCSI disk created. UUID: %s\n", Utf8Str(guid).raw());
+        RTPrintf("iSCSI disk created. UUID: %s\n", Utf8Str(guid).c_str());
     }
     while (0);
 
@@ -1185,7 +1185,7 @@ int handleShowHardDiskInfo(HandlerArg *a)
             break;
 
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-        RTPrintf("UUID:                 %s\n", Utf8Str(uuid).raw());
+        RTPrintf("UUID:                 %s\n", Utf8Str(uuid).c_str());
 
         /* check for accessibility */
         /// @todo NEWMEDIA check accessibility of all parents

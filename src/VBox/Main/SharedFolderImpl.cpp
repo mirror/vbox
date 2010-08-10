@@ -217,12 +217,12 @@ HRESULT SharedFolder::protectedInit(VirtualBoxBase *aParent,
     if (RT_FAILURE(vrc))
         return setError(E_INVALIDARG,
                         tr("Invalid shared folder path: '%s' (%Rrc)"),
-                        hostPath.raw(), vrc);
+                        hostPath.c_str(), vrc);
 
     if (RTPathCompare(hostPath.c_str(), hostPathFull) != 0)
         return setError(E_INVALIDARG,
                         tr("Shared folder path '%s' is not absolute"),
-                        hostPath.raw());
+                        hostPath.c_str());
 
     unconst(mParent) = aParent;
 
@@ -308,7 +308,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m.lastAccessError = BstrFmt (
-        tr ("'%s' is not accessible (%Rrc)"), hostPath.raw(), vrc);
+        tr ("'%s' is not accessible (%Rrc)"), hostPath.c_str(), vrc);
 
     LogWarningThisFunc(("m.lastAccessError=\"%ls\"\n", m.lastAccessError.raw()));
 

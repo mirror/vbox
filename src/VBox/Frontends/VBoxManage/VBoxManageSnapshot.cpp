@@ -455,7 +455,7 @@ int handleSnapshot(HandlerArg *a)
                 }
                 else
                 {
-                    errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
+                    errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
                     rc = E_FAIL;
                     break;
                 }
@@ -488,12 +488,10 @@ int handleSnapshot(HandlerArg *a)
             showVMInfo(a->virtualBox, pMachine2, VMINFO_NONE, console);
         }
         else if (!strcmp(a->argv[1], "dump"))          // undocumented parameter to debug snapshot info
-        {
             DumpSnapshot(pMachine);
-        }
         else
         {
-            errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());
+            errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[1]).c_str());
             rc = E_FAIL;
         }
     } while (0);

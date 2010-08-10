@@ -497,7 +497,7 @@ STDMETHODIMP Appliance::Interpret()
                             strFilename = Utf8StrFmt("%s.vmdk", nameVBox.c_str());
                         /* Construct a unique target path */
                         Utf8StrFmt strPath("%s%c%s",
-                                           strDefaultHardDiskFolder.raw(),
+                                           strDefaultHardDiskFolder.c_str(),
                                            RTPATH_DELIMITER,
                                            strFilename.c_str());
                         searchUniqueDiskImageFilePath(strPath);
@@ -1971,7 +1971,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
      *
      */
 
-    config.strDescription = stack.strDescription;
+    config.machineUserData.strDescription = stack.strDescription;
 
     config.hardwareMachine.cCPUs = stack.cCPUs;
     config.hardwareMachine.ulMemorySizeMB = stack.ulMemorySizeMB;
@@ -2086,7 +2086,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
             if (!fFound)
                 DebugBreakThrow(setError(E_FAIL,
                                          tr("<vbox:Machine> element in OVF contains a medium attachment for the disk image %s but the OVF describes no such image"),
-                                         strUuid.raw()));
+                                         strUuid.c_str()));
         } // for (settings::AttachedDevicesList::const_iterator dit = sc.llAttachedDevices.begin();
     } // for (settings::StorageControllersList::const_iterator sit = config.storageMachine.llStorageControllers.begin();
 

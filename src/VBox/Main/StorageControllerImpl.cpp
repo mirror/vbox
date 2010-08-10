@@ -126,7 +126,7 @@ HRESULT StorageController::init(Machine *aParent,
                                 ULONG aInstance)
 {
     LogFlowThisFunc(("aParent=%p aName=\"%s\" aInstance=%u\n",
-                     aParent, aName.raw(), aInstance));
+                     aParent, aName.c_str(), aInstance));
 
     ComAssertRet(aParent && !aName.isEmpty(), E_INVALIDARG);
     if (   (aStorageBus <= StorageBus_Null)

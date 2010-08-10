@@ -223,7 +223,7 @@ NATEngine::SetNetworkSettings(ULONG aMtu, ULONG aSockSnd, ULONG aSockRcv, ULONG 
 }
 
 STDMETHODIMP
-NATEngine::COMGETTER(Redirects) (ComSafeArrayOut (BSTR , aNatRules))
+NATEngine::COMGETTER(Redirects)(ComSafeArrayOut(BSTR , aNatRules))
 {
     CheckComArgOutSafeArrayPointerValid(aNatRules);
 
@@ -240,9 +240,14 @@ NATEngine::COMGETTER(Redirects) (ComSafeArrayOut (BSTR , aNatRules))
          it != mNATRules.end(); ++it, ++i)
     {
         settings::NATRule r = it->second;
-        Utf8Str utf = Utf8StrFmt("%s,%d,%s,%d,%s,%d", r.strName.raw(), r.u32Proto,
-                        r.strHostIP.raw(), r.u16HostPort, r.strGuestIP.raw(), r.u16GuestPort);
-        utf.cloneTo(&sf[i]);
+        BstrFmt bstr("%s,%d,%s,%d,%s,%d",
+                     r.strName.c_str(),
+                     r.u32Proto,
+                     r.strHostIP.c_str(),
+                     r.u16HostPort,
+                     r.strGuestIP.c_str(),
+                     r.u16GuestPort);
+        bstr.detachTo(&sf[i]);
     }
     sf.detachTo(ComSafeArrayOutArg(aNatRules));
     return S_OK;
@@ -275,7 +280,7 @@ NATEngine::AddRedirect(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USH
         }
         name = Utf8StrFmt("%s_%d_%d", proto, aHostPort, aGuestPort);
     }
-    r.strName = name.raw();
+    r.strName = name.c_str();
     r.u32Proto = aProto;
     r.strHostIP = aBindIp;
     r.u16HostPort = aHostPort;
@@ -404,7 +409,7 @@ NATEngine::COMGETTER(Network)(BSTR *aNetwork)
     if (!mData->mNetwork.isEmpty())
     {
         mData->mNetwork.cloneTo(aNetwork);
-        Log(("Getter (this:%p) Network: %s\n", this, mData->mNetwork.raw()));
+        Log(("Getter (this:%p) Network: %s\n", this, mData->mNetwork.c_str()));
     }
     return S_OK;
 }
@@ -462,7 +467,7 @@ NATEngine::COMGETTER(TftpPrefix)(BSTR *aTftpPrefix)
     if (!mData->mTftpPrefix.isEmpty())
     {
         mData->mTftpPrefix.cloneTo(aTftpPrefix);
-        Log(("Getter (this:%p) TftpPrefix: %s\n", this, mData->mTftpPrefix.raw()));
+        Log(("Getter (this:%p) TftpPrefix: %s\n", this, mData->mTftpPrefix.c_str()));
     }
     return S_OK;
 }
@@ -493,7 +498,7 @@ NATEngine::COMGETTER(TftpBootFile)(BSTR *aTftpBootFile)
     if (!mData->mTftpBootFile.isEmpty())
     {
         mData->mTftpBootFile.cloneTo(aTftpBootFile);
-        Log(("Getter (this:%p) BootFile: %s\n", this, mData->mTftpBootFile.raw()));
+        Log(("Getter (this:%p) BootFile: %s\n", this, mData->mTftpBootFile.c_str()));
     }
     return S_OK;
 }
@@ -524,7 +529,7 @@ NATEngine::COMGETTER(TftpNextServer)(BSTR *aTftpNextServer)
     if (!mData->mTftpNextServer.isEmpty())
     {
         mData->mTftpNextServer.cloneTo(aTftpNextServer);
-        Log(("Getter (this:%p) NextServer: %s\n", this, mData->mTftpNextServer.raw()));
+        Log(("Getter (this:%p) NextServer: %s\n", this, mData->mTftpNextServer.c_str()));
     }
     return S_OK;
 }

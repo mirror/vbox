@@ -133,27 +133,6 @@ Machine::Data::~Data()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Machine::UserData structure
-/////////////////////////////////////////////////////////////////////////////
-
-Machine::UserData::UserData()
-{
-    /* default values for a newly created machine */
-
-    mNameSync = TRUE;
-    mTeleporterEnabled = FALSE;
-    mTeleporterPort = 0;
-    mRTCUseUTC = FALSE;
-
-    /* mName, mOSTypeId, mSnapshotFolder, mSnapshotFolderFull are initialized in
-     * Machine::init() */
-}
-
-Machine::UserData::~UserData()
-{
-}
-
-/////////////////////////////////////////////////////////////////////////////
 // Machine::HWData structure
 /////////////////////////////////////////////////////////////////////////////
 
@@ -289,7 +268,7 @@ HRESULT Machine::init(VirtualBox *aParent,
                       BOOL aNameSync /* = TRUE */)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("(Init_New) aConfigFile='%s'\n", strConfigFile.raw()));
+    LogFlowThisFunc(("(Init_New) aConfigFile='%s'\n", strConfigFile.c_str()));
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -316,8 +295,8 @@ HRESULT Machine::init(VirtualBox *aParent,
 
         unconst(mData->mUuid) = aId;
 
-        mUserData->mName = strName;
-        mUserData->mNameSync = aNameSync;
+        mUserData->s.strName = strName;
+        mUserData->s.fNameSync = aNameSync;
 
         /* initialize the default snapshots folder
          * (note: depends on the name value set above!) */
@@ -327,7 +306,7 @@ HRESULT Machine::init(VirtualBox *aParent,
         if (aOsType)
         {
             /* Store OS type */
-            mUserData->mOSTypeId = aOsType->id();
+            mUserData->s.strOsType = aOsType->id();
 
             /* Apply BIOS defaults */
             mBIOSSettings->applyDefaults(aOsType);
@@ -354,8 +333,8 @@ HRESULT Machine::init(VirtualBox *aParent,
             autoInitSpan.setLimited();
     }
 
-    LogFlowThisFunc(("mName='%ls', mRegistered=%RTbool, mAccessible=%RTbool, rc=%08X\n",
-                     !!mUserData ? mUserData->mName.raw() : NULL,
+    LogFlowThisFunc(("mName='%s', mRegistered=%RTbool, mAccessible=%RTbool, rc=%08X\n",
+                     !!mUserData ? mUserData->s.strName.c_str() : "NULL",
                      mData->mRegistered,
                      mData->mAccessible,
                      rc));
@@ -387,7 +366,7 @@ HRESULT Machine::init(VirtualBox *aParent,
                       const Guid *aId)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("(Init_Registered) aConfigFile='%s\n", strConfigFile.raw()));
+    LogFlowThisFunc(("(Init_Registered) aConfigFile='%s\n", strConfigFile.c_str()));
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -449,9 +428,9 @@ HRESULT Machine::init(VirtualBox *aParent,
             autoInitSpan.setLimited();
     }
 
-    LogFlowThisFunc(("mName='%ls', mRegistered=%RTbool, mAccessible=%RTbool "
+    LogFlowThisFunc(("mName='%s', mRegistered=%RTbool, mAccessible=%RTbool "
                       "rc=%08X\n",
-                      !!mUserData ? mUserData->mName.raw() : NULL,
+                      !!mUserData ? mUserData->s.strName.c_str() : "NULL",
                       mData->mRegistered, mData->mAccessible, rc));
 
     LogFlowThisFuncLeave();
@@ -510,7 +489,7 @@ HRESULT Machine::init(VirtualBox *aParent,
         rc = loadMachineDataFromSettings(config);
 
         // override VM name as well, it may be different
-        mUserData->mName = strName;
+        mUserData->s.strName = strName;
 
         /* commit all changes made during the initialization */
         if (SUCCEEDED(rc))
@@ -526,9 +505,9 @@ HRESULT Machine::init(VirtualBox *aParent,
             autoInitSpan.setLimited();
     }
 
-    LogFlowThisFunc(("mName='%ls', mRegistered=%RTbool, mAccessible=%RTbool "
+    LogFlowThisFunc(("mName='%s', mRegistered=%RTbool, mAccessible=%RTbool "
                      "rc=%08X\n",
-                      !!mUserData ? mUserData->mName.raw() : NULL,
+                      !!mUserData ? mUserData->s.strName.c_str() : "NULL",
                       mData->mRegistered, mData->mAccessible, rc));
 
     LogFlowThisFuncLeave();
@@ -566,7 +545,7 @@ HRESULT Machine::initImpl(VirtualBox *aParent,
     if (RT_FAILURE(vrc1))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Invalid machine settings file name '%s' (%Rrc)"),
-                        strConfigFile.raw(),
+                        strConfigFile.c_str(),
                         vrc1);
 
     LogFlowThisFuncLeave();
@@ -596,7 +575,7 @@ HRESULT Machine::tryCreateMachineConfigFile(BOOL aOverride)
         if (!aOverride)
             rc = setError(VBOX_E_FILE_ERROR,
                           tr("Machine settings file '%s' already exists"),
-                          mData->m_strConfigFileFull.raw());
+                          mData->m_strConfigFileFull.c_str());
         else
         {
             /* try to delete the config file, as otherwise the creation
@@ -605,7 +584,7 @@ HRESULT Machine::tryCreateMachineConfigFile(BOOL aOverride)
             if (RT_FAILURE(vrc2))
                 rc = setError(VBOX_E_FILE_ERROR,
                               tr("Could not delete the existing settings file '%s' (%Rrc)"),
-                              mData->m_strConfigFileFull.raw(), vrc2);
+                              mData->m_strConfigFileFull.c_str(), vrc2);
         }
     }
     else if (    vrc != VERR_FILE_NOT_FOUND
@@ -613,7 +592,7 @@ HRESULT Machine::tryCreateMachineConfigFile(BOOL aOverride)
             )
         rc = setError(VBOX_E_FILE_ERROR,
                       tr("Invalid machine settings file name '%s' (%Rrc)"),
-                      mData->m_strConfigFileFull.raw(),
+                      mData->m_strConfigFileFull.c_str(),
                       vrc);
     return rc;
 }
@@ -656,9 +635,9 @@ HRESULT Machine::registeredInit()
                 throw setError(E_FAIL,
                                tr("Machine UUID {%RTuuid} in '%s' doesn't match its UUID {%s} in the registry file '%s'"),
                                mData->pMachineConfigFile->uuid.raw(),
-                               mData->m_strConfigFileFull.raw(),
-                               mData->mUuid.toString().raw(),
-                               mParent->settingsFilePath().raw());
+                               mData->m_strConfigFileFull.c_str(),
+                               mData->mUuid.toString().c_str(),
+                               mParent->settingsFilePath().c_str());
 
             rc = loadMachineDataFromSettings(*mData->pMachineConfigFile);
             if (FAILED(rc)) throw rc;
@@ -906,7 +885,7 @@ STDMETHODIMP Machine::COMGETTER(Name)(BSTR *aName)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mUserData->mName.cloneTo(aName);
+    mUserData->s.strName.cloneTo(aName);
 
     return S_OK;
 }
@@ -925,7 +904,7 @@ STDMETHODIMP Machine::COMSETTER(Name)(IN_BSTR aName)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->mName = aName;
+    mUserData->s.strName = aName;
 
     return S_OK;
 }
@@ -939,7 +918,7 @@ STDMETHODIMP Machine::COMGETTER(Description)(BSTR *aDescription)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mUserData->mDescription.cloneTo(aDescription);
+    mUserData->s.strDescription.cloneTo(aDescription);
 
     return S_OK;
 }
@@ -956,7 +935,7 @@ STDMETHODIMP Machine::COMSETTER(Description)(IN_BSTR aDescription)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->mDescription = aDescription;
+    mUserData->s.strDescription = aDescription;
 
     return S_OK;
 }
@@ -984,7 +963,7 @@ STDMETHODIMP Machine::COMGETTER(OSTypeId)(BSTR *aOSTypeId)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mUserData->mOSTypeId.cloneTo(aOSTypeId);
+    mUserData->s.strOsType.cloneTo(aOSTypeId);
 
     return S_OK;
 }
@@ -1014,7 +993,7 @@ STDMETHODIMP Machine::COMSETTER(OSTypeId)(IN_BSTR aOSTypeId)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->mOSTypeId = osTypeId;
+    mUserData->s.strOsType = osTypeId;
 
     return S_OK;
 }
@@ -2030,7 +2009,7 @@ STDMETHODIMP Machine::COMGETTER(SnapshotFolder)(BSTR *aSnapshotFolder)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mUserData->mSnapshotFolderFull.cloneTo(aSnapshotFolder);
+    mUserData->m_strSnapshotFolderFull.cloneTo(aSnapshotFolder);
 
     return S_OK;
 }
@@ -2057,24 +2036,21 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder)(IN_BSTR aSnapshotFolder)
         return setError(E_FAIL,
                         tr("The snapshot folder of a machine with snapshots cannot be changed (please delete all snapshots first)"));
 
-    Utf8Str snapshotFolder = aSnapshotFolder;
+    Utf8Str strSnapshotFolder0(aSnapshotFolder);       // keep original
+    Utf8Str strSnapshotFolder(strSnapshotFolder0);
 
-    if (snapshotFolder.isEmpty())
+    if (strSnapshotFolder.isEmpty())
     {
         if (isInOwnDir())
-        {
             /* the default snapshots folder is 'Snapshots' in the machine dir */
-            snapshotFolder = "Snapshots";
-        }
+            strSnapshotFolder = "Snapshots";
         else
-        {
             /* the default snapshots folder is {UUID}, for backwards
              * compatibility and to resolve conflicts */
-            snapshotFolder = Utf8StrFmt("{%RTuuid}", mData->mUuid.raw());
-        }
+            strSnapshotFolder = Utf8StrFmt("{%RTuuid}", mData->mUuid.raw());
     }
 
-    int vrc = calculateFullPath(snapshotFolder, snapshotFolder);
+    int vrc = calculateFullPath(strSnapshotFolder, strSnapshotFolder);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL,
                         tr("Invalid snapshot folder '%ls' (%Rrc)"),
@@ -2082,8 +2058,8 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder)(IN_BSTR aSnapshotFolder)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->mSnapshotFolder = aSnapshotFolder;
-    mUserData->mSnapshotFolderFull = snapshotFolder;
+    mUserData->s.strSnapshotFolder = strSnapshotFolder0;
+    mUserData->m_strSnapshotFolderFull = strSnapshotFolder;
 
     return S_OK;
 }
@@ -2463,7 +2439,7 @@ Machine::COMGETTER(TeleporterEnabled)(BOOL *aEnabled)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aEnabled = mUserData->mTeleporterEnabled;
+    *aEnabled = mUserData->s.fTeleporterEnabled;
 
     return S_OK;
 }
@@ -2492,7 +2468,7 @@ STDMETHODIMP Machine::COMSETTER(TeleporterEnabled)(BOOL aEnabled)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->mTeleporterEnabled = aEnabled;
+    mUserData->s.fTeleporterEnabled = !!aEnabled;
 
     return S_OK;
 }
@@ -2506,7 +2482,7 @@ STDMETHODIMP Machine::COMGETTER(TeleporterPort)(ULONG *aPort)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aPort = mUserData->mTeleporterPort;
+    *aPort = (ULONG)mUserData->s.uTeleporterPort;
 
     return S_OK;
 }
@@ -2526,7 +2502,7 @@ STDMETHODIMP Machine::COMSETTER(TeleporterPort)(ULONG aPort)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->mTeleporterPort = aPort;
+    mUserData->s.uTeleporterPort = (uint32_t)aPort;
 
     return S_OK;
 }
@@ -2540,7 +2516,7 @@ STDMETHODIMP Machine::COMGETTER(TeleporterAddress)(BSTR *aAddress)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mUserData->mTeleporterAddress.cloneTo(aAddress);
+    mUserData->s.strTeleporterAddress.cloneTo(aAddress);
 
     return S_OK;
 }
@@ -2557,7 +2533,7 @@ STDMETHODIMP Machine::COMSETTER(TeleporterAddress)(IN_BSTR aAddress)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->mTeleporterAddress = aAddress;
+    mUserData->s.strTeleporterAddress = aAddress;
 
     return S_OK;
 }
@@ -2571,7 +2547,7 @@ STDMETHODIMP Machine::COMGETTER(TeleporterPassword)(BSTR *aPassword)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mUserData->mTeleporterPassword.cloneTo(aPassword);
+    mUserData->s.strTeleporterPassword.cloneTo(aPassword);
 
     return S_OK;
 }
@@ -2588,7 +2564,7 @@ STDMETHODIMP Machine::COMSETTER(TeleporterPassword)(IN_BSTR aPassword)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->mTeleporterPassword = aPassword;
+    mUserData->s.strTeleporterPassword = aPassword;
 
     return S_OK;
 }
@@ -2602,7 +2578,7 @@ STDMETHODIMP Machine::COMGETTER(RTCUseUTC)(BOOL *aEnabled)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aEnabled = mUserData->mRTCUseUTC;
+    *aEnabled = mUserData->s.fRTCUseUTC;
 
     return S_OK;
 }
@@ -2631,7 +2607,7 @@ STDMETHODIMP Machine::COMSETTER(RTCUseUTC)(BOOL aEnabled)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->mRTCUseUTC = aEnabled;
+    mUserData->s.fRTCUseUTC = !!aEnabled;
 
     return S_OK;
 }
@@ -2728,8 +2704,8 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
 
     if (!mData->mRegistered)
         return setError(E_UNEXPECTED,
-                        tr("The machine '%ls' is not registered"),
-                        mUserData->mName.raw());
+                        tr("The machine '%s' is not registered"),
+                        mUserData->s.strName.c_str());
 
     LogFlowThisFunc(("mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
@@ -2799,8 +2775,8 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
         {
             pSessionControl->Uninitialize();
             return setError(VBOX_E_INVALID_SESSION_STATE,
-                            tr("The machine '%ls' was unlocked unexpectedly while attempting to share its session"),
-                               mUserData->mName.raw());
+                            tr("The machine '%s' was unlocked unexpectedly while attempting to share its session"),
+                               mUserData->s.strName.c_str());
         }
 
         // add the caller's session to the list
@@ -2812,8 +2788,8 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
     {
         // sharing not permitted, or machine still unlocking:
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("The machine '%ls' is already locked for a session (or being unlocked)"),
-                        mUserData->mName.raw());
+                        tr("The machine '%s' is already locked for a session (or being unlocked)"),
+                        mUserData->s.strName.c_str());
     }
     else
     {
@@ -2842,8 +2818,8 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             if (mData->mSession.mPid != pid)
                 return setError(E_ACCESSDENIED,
                                 tr("An unexpected process (PID=0x%08X) has tried to lock the "
-                                   "machine '%ls', while only the process started by launchVMProcess (PID=0x%08X) is allowed"),
-                                pid, mUserData->mName.raw(), mData->mSession.mPid);
+                                   "machine '%s', while only the process started by launchVMProcess (PID=0x%08X) is allowed"),
+                                pid, mUserData->s.strName.c_str(), mData->mSession.mPid);
         }
 
         // create the mutable SessionMachine from the current machine
@@ -3177,7 +3153,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             AutoReadLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
             return setError(VBOX_E_OBJECT_IN_USE,
                             tr("Medium '%s' is already attached to port %d, device %d of controller '%ls' of this virtual machine"),
-                            pMedium->getLocationFull().raw(),
+                            pMedium->getLocationFull().c_str(),
                             aControllerPort,
                             aDevice,
                             aControllerName);
@@ -3221,7 +3197,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
        )
         return setError(VBOX_E_OBJECT_IN_USE,
                         tr("Medium '%s' is already attached to this virtual machine"),
-                        medium->getLocationFull().raw());
+                        medium->getLocationFull().c_str());
 
     bool fIndirect = false;
     if (!medium.isNull())
@@ -3416,8 +3392,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         diff.createObject();
         rc = diff->init(mParent,
                         medium->getPreferredDiffFormat(),
-                        Utf8StrFmt("%ls"RTPATH_SLASH_STR,
-                                   mUserData->mSnapshotFolderFull.raw()).raw(),
+                        Utf8Str(mUserData->m_strSnapshotFolderFull).append(RTPATH_SLASH_STR),
                         &fNeedsSaveSettings);
         if (FAILED(rc)) return rc;
 
@@ -3984,8 +3959,8 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
 
     if (mData->mSession.mState != SessionState_Unlocked)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot unregister the machine '%ls' while it is locked"),
-                        mUserData->mName.raw());
+                        tr("Cannot unregister the machine '%s' while it is locked"),
+                        mUserData->s.strName.c_str());
 
     HRESULT rc = S_OK;
 
@@ -4009,8 +3984,8 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
     if (cSnapshots && cleanupMode == CleanupMode_UnregisterOnly)
         // fail now before we start detaching media
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot unregister the machine '%ls' because it has %d snapshots"),
-                           mUserData->mName.raw(), cSnapshots);
+                        tr("Cannot unregister the machine '%s' because it has %d snapshots"),
+                           mUserData->s.strName.c_str(), cSnapshots);
 
     // this list collects the medium objects from all medium attachments
     // which got detached from the machine and its snapshots, in the following
@@ -4033,8 +4008,8 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
             detachAllMedia(alock, NULL /* pSnapshot */, cleanupMode, llMedia);
         else
             return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot unregister the machine '%ls' because it has %d media attachments"),
-                            mUserData->mName.raw(), mMediaData->mAttachments.size());
+                            tr("Cannot unregister the machine '%s' because it has %d media attachments"),
+                            mUserData->s.strName.c_str(), mMediaData->mAttachments.size());
     }
 
     if (cSnapshots)
@@ -4256,18 +4231,18 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
              * Console::powerUpThread()). Also, delete the VBox.png[.N]
              * files that may have been created by the GUI. */
             Utf8Str log = Utf8StrFmt("%s%cVBox.log",
-                                     logFolder.raw(), RTPATH_DELIMITER);
+                                     logFolder.c_str(), RTPATH_DELIMITER);
             RTFileDelete(log.c_str());
             log = Utf8StrFmt("%s%cVBox.png",
-                             logFolder.raw(), RTPATH_DELIMITER);
+                             logFolder.c_str(), RTPATH_DELIMITER);
             RTFileDelete(log.c_str());
             for (int i = uLogHistoryCount; i > 0; i--)
             {
                 log = Utf8StrFmt("%s%cVBox.log.%d",
-                                 logFolder.raw(), RTPATH_DELIMITER, i);
+                                 logFolder.c_str(), RTPATH_DELIMITER, i);
                 RTFileDelete(log.c_str());
                 log = Utf8StrFmt("%s%cVBox.png.%d",
-                                 logFolder.raw(), RTPATH_DELIMITER, i);
+                                 logFolder.c_str(), RTPATH_DELIMITER, i);
                 RTFileDelete(log.c_str());
             }
 
@@ -4277,10 +4252,9 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
         /* delete the Snapshots folder, nothing important should be left
          * there (we don't check for errors because the user might have
          * some private files there that we don't want to delete) */
-        Utf8Str snapshotFolder(mUserData->mSnapshotFolderFull);
-        Assert(snapshotFolder.length());
-        if (RTDirExists(snapshotFolder.c_str()))
-            RTDirRemove(snapshotFolder.c_str());
+        Assert(mUserData->m_strSnapshotFolderFull.length());
+        if (RTDirExists(mUserData->m_strSnapshotFolderFull.c_str()))
+            RTDirRemove(mUserData->m_strSnapshotFolderFull.c_str());
 
         /* delete the directory that contains the settings file, but only
          * if it matches the VM name (i.e. a structure created by default in
@@ -4600,7 +4574,7 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
         Utf8Str utf8Flags(aFlags);
         uint32_t fFlags = NILFLAG;
         if (    (aFlags != NULL)
-             && RT_FAILURE(validateFlags(utf8Flags.raw(), &fFlags))
+             && RT_FAILURE(validateFlags(utf8Flags.c_str(), &fFlags))
            )
             return setError(E_INVALIDARG,
                             tr("Invalid flag values: '%ls'"),
@@ -4659,8 +4633,12 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
         }
         if (   SUCCEEDED(rc)
             && (   mHWData->mGuestPropertyNotificationPatterns.isEmpty()
-                || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.raw(), RTSTR_MAX,
-                                                utf8Name.raw(), RTSTR_MAX, NULL) )
+                || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.c_str(),
+                                                RTSTR_MAX,
+                                                utf8Name.c_str(),
+                                                RTSTR_MAX,
+                                                NULL)
+               )
            )
         {
             /** @todo r=bird: Why aren't we leaving the lock here?  The
@@ -4760,10 +4738,11 @@ HRESULT Machine::enumerateGuestPropertiesInService
          it != mHWData->mGuestProperties.end();
          ++it)
         if (   strPatterns.isEmpty()
-            || RTStrSimplePatternMultiMatch(strPatterns.raw(),
+            || RTStrSimplePatternMultiMatch(strPatterns.c_str(),
                                             RTSTR_MAX,
-                                            it->strName.raw(),
-                                            RTSTR_MAX, NULL)
+                                            it->strName.c_str(),
+                                            RTSTR_MAX,
+                                            NULL)
            )
             propList.push_back(*it);
 
@@ -5056,12 +5035,12 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
 /* @todo where is the right place for this? */
 #define sSSMDisplayScreenshotVer 0x00010001
 
-static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height)
+static int readSavedDisplayScreenshot(const Utf8Str &strStateFilePath, uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height)
 {
-    LogFlowFunc(("u32Type = %d [%s]\n", u32Type, pStateFilePath->raw()));
+    LogFlowFunc(("u32Type = %d [%s]\n", u32Type, strStateFilePath.c_str()));
 
     /* @todo cache read data */
-    if (pStateFilePath->isEmpty())
+    if (strStateFilePath.isEmpty())
     {
         /* No saved state data. */
         return VERR_NOT_SUPPORTED;
@@ -5073,7 +5052,7 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
     uint32_t u32Height = 0;
 
     PSSMHANDLE pSSM;
-    int vrc = SSMR3Open(pStateFilePath->raw(), 0 /*fFlags*/, &pSSM);
+    int vrc = SSMR3Open(strStateFilePath.c_str(), 0 /*fFlags*/, &pSSM);
     if (RT_SUCCESS(vrc))
     {
         uint32_t uVersion;
@@ -5196,7 +5175,7 @@ STDMETHODIMP Machine::QuerySavedThumbnailSize(ULONG aScreenId, ULONG *aSize, ULO
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    int vrc = readSavedDisplayScreenshot(mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
@@ -5233,7 +5212,7 @@ STDMETHODIMP Machine::ReadSavedThumbnailToArray(ULONG aScreenId, BOOL aBGR, ULON
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    int vrc = readSavedDisplayScreenshot(mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
@@ -5295,7 +5274,7 @@ STDMETHODIMP Machine::QuerySavedScreenshotPNGSize(ULONG aScreenId, ULONG *aSize,
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    int vrc = readSavedDisplayScreenshot(mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
@@ -5332,7 +5311,7 @@ STDMETHODIMP Machine::ReadSavedScreenshotPNGToArray(ULONG aScreenId, ULONG *aWid
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+    int vrc = readSavedDisplayScreenshot(mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
@@ -5497,7 +5476,7 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSaf
     com::SafeArray<BYTE> logData(cbData);
 
     RTFILE LogFile;
-    int vrc = RTFileOpen(&LogFile, log.raw(),
+    int vrc = RTFileOpen(&LogFile, log.c_str(),
                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(vrc))
     {
@@ -5507,13 +5486,13 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSaf
         else
             rc = setError(VBOX_E_IPRT_ERROR,
                           tr("Could not read log file '%s' (%Rrc)"),
-                          log.raw(), vrc);
+                          log.c_str(), vrc);
         RTFileClose(LogFile);
     }
     else
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not open log file '%s' (%Rrc)"),
-                      log.raw(), vrc);
+                      log.c_str(), vrc);
 
     if (FAILED(rc))
         logData.resize(0);
@@ -5629,17 +5608,17 @@ void Machine::getLogFolder(Utf8Str &aLogFolder)
 
     Utf8Str settingsDir;
     if (isInOwnDir(&settingsDir))
-    {
         /* Log folder is <Machines>/<VM_Name>/Logs */
-        aLogFolder = Utf8StrFmt("%s%cLogs", settingsDir.raw(), RTPATH_DELIMITER);
-    }
+        aLogFolder = settingsDir;
     else
     {
         /* Log folder is <Machines>/<VM_SnapshotFolder>/Logs */
-        Assert(!mUserData->mSnapshotFolderFull.isEmpty());
-        aLogFolder = Utf8StrFmt ("%ls%cLogs", mUserData->mSnapshotFolderFull.raw(),
-                                 RTPATH_DELIMITER);
+        Assert(!mUserData->m_strSnapshotFolderFull.isEmpty());
+        aLogFolder = mUserData->m_strSnapshotFolderFull;
     }
+
+    aLogFolder.append(RTPATH_DELIMITER);
+    aLogFolder.append("Logs");
 }
 
 /**
@@ -5653,10 +5632,10 @@ Utf8Str Machine::queryLogFilename(ULONG idx)
     Utf8Str log;
     if (idx == 0)
         log = Utf8StrFmt("%s%cVBox.log",
-                         logFolder.raw(), RTPATH_DELIMITER);
+                         logFolder.c_str(), RTPATH_DELIMITER);
     else
         log = Utf8StrFmt("%s%cVBox.log.%d",
-                         logFolder.raw(), RTPATH_DELIMITER, idx);
+                         logFolder.c_str(), RTPATH_DELIMITER, idx);
     return log;
 }
 
@@ -5681,8 +5660,8 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
 
     if (!mData->mRegistered)
         return setError(E_UNEXPECTED,
-                        tr("The machine '%ls' is not registered"),
-                        mUserData->mName.raw());
+                        tr("The machine '%s' is not registered"),
+                        mUserData->s.strName.c_str());
 
     LogFlowThisFunc(("mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
@@ -5690,8 +5669,8 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
          || mData->mSession.mState == SessionState_Spawning
          || mData->mSession.mState == SessionState_Unlocking)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("The machine '%ls' is already locked by a session (or being locked or unlocked)"),
-                        mUserData->mName.raw());
+                        tr("The machine '%s' is already locked by a session (or being locked or unlocked)"),
+                        mUserData->s.strName.c_str());
 
     /* may not be busy */
     AssertReturn(!Global::IsOnlineOrTransient(mData->mMachineState), E_FAIL);
@@ -5774,8 +5753,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
         strcpy(cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-        Utf8Str strName = mUserData->mName;
-        const char * args[] = {szPath, "--comment", strName.c_str(), "--startvm", idStr.c_str(), "--no-startvm-errormsgbox", 0 };
+        const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(), "--startvm", idStr.c_str(), "--no-startvm-errormsgbox", 0 };
         vrc = RTProcCreate(szPath, args, env, 0, &pid);
     }
 #else /* !VBOX_WITH_QTGUI */
@@ -5793,8 +5771,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
         strcpy(cmd, VBoxSDL_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-        Utf8Str strName = mUserData->mName;
-        const char * args[] = {szPath, "--comment", strName.c_str(), "--startvm", idStr.c_str(), 0 };
+        const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(), "--startvm", idStr.c_str(), 0 };
         vrc = RTProcCreate(szPath, args, env, 0, &pid);
     }
 #else /* !VBOX_WITH_VBOXSDL */
@@ -5818,8 +5795,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
 
         Utf8Str idStr = mData->mUuid.toString();
         /* Leave space for 2 args, as "headless" needs --vrdp off on non-OSE. */
-        Utf8Str strName = mUserData->mName;
-        const char * args[] = {szPath, "--comment", strName.c_str(), "--startvm", idStr.c_str(), 0, 0, 0 };
+        const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(), "--startvm", idStr.c_str(), 0, 0, 0 };
 #ifdef VBOX_WITH_VRDP
         if (strType == "headless")
         {
@@ -5851,8 +5827,8 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
-                        tr("Could not launch a process for the machine '%ls' (%Rrc)"),
-                        mUserData->mName.raw(), vrc);
+                        tr("Could not launch a process for the machine '%s' (%Rrc)"),
+                        mUserData->s.strName.c_str(), vrc);
 
     LogFlowThisFunc(("launched.pid=%d(0x%x)\n", pid, pid));
 
@@ -6049,20 +6025,20 @@ bool Machine::checkForSpawnFailure()
     {
         if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_NORMAL)
             rc = setError(E_FAIL,
-                          tr("The virtual machine '%ls' has terminated unexpectedly during startup with exit code %d"),
-                          getName().raw(), status.iStatus);
+                          tr("The virtual machine '%s' has terminated unexpectedly during startup with exit code %d"),
+                          getName().c_str(), status.iStatus);
         else if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_SIGNAL)
             rc = setError(E_FAIL,
-                          tr("The virtual machine '%ls' has terminated unexpectedly during startup because of signal %d"),
-                          getName().raw(), status.iStatus);
+                          tr("The virtual machine '%s' has terminated unexpectedly during startup because of signal %d"),
+                          getName().c_str(), status.iStatus);
         else if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_ABEND)
             rc = setError(E_FAIL,
-                          tr("The virtual machine '%ls' has terminated abnormally"),
-                          getName().raw(), status.iStatus);
+                          tr("The virtual machine '%s' has terminated abnormally"),
+                          getName().c_str(), status.iStatus);
         else
             rc = setError(E_FAIL,
-                          tr("The virtual machine '%ls' has terminated unexpectedly during startup (%Rrc)"),
-                          getName().raw(), rc);
+                          tr("The virtual machine '%s' has terminated unexpectedly during startup (%Rrc)"),
+                          getName().c_str(), rc);
     }
 
 #endif
@@ -6121,17 +6097,17 @@ HRESULT Machine::prepareRegister()
 
     if (!mData->mAccessible)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("The machine '%ls' with UUID {%s} is inaccessible and cannot be registered"),
-                        mUserData->mName.raw(),
-                        mData->mUuid.toString().raw());
+                        tr("The machine '%s' with UUID {%s} is inaccessible and cannot be registered"),
+                        mUserData->s.strName.c_str(),
+                        mData->mUuid.toString().c_str());
 
     AssertReturn(autoCaller.state() == Ready, E_FAIL);
 
     if (mData->mRegistered)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("The machine '%ls' with UUID {%s} is already registered"),
-                        mUserData->mName.raw(),
-                        mData->mUuid.toString().raw());
+                        tr("The machine '%s' with UUID {%s} is already registered"),
+                        mUserData->s.strName.c_str(),
+                        mData->mUuid.toString().c_str());
 
     HRESULT rc = S_OK;
 
@@ -6355,7 +6331,7 @@ HRESULT Machine::initDataAndChildObjects()
     mStorageControllers.allocate();
 
     /* initialize mOSTypeId */
-    mUserData->mOSTypeId = mParent->getUnknownOSType()->id();
+    mUserData->s.strOsType = mParent->getUnknownOSType()->id();
 
     /* create associated BIOS settings object */
     unconst(mBIOSSettings).createObject();
@@ -6664,19 +6640,12 @@ HRESULT Machine::findSharedFolder(CBSTR aName,
  */
 HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &config)
 {
-    /* name (required) */
-    mUserData->mName = config.strName;
+    // copy name, description, OS type, teleporter, UTC etc.
+    mUserData->s = config.machineUserData;
 
-    /* nameSync (optional, default is true) */
-    mUserData->mNameSync = config.fNameSync;
-
-    mUserData->mDescription = config.strDescription;
-
-    // guest OS type
-    mUserData->mOSTypeId = config.strOsType;
-    /* look up the object by Id to check it is valid */
+    // look up the object by Id to check it is valid
     ComPtr<IGuestOSType> guestOSType;
-    HRESULT rc = mParent->GetGuestOSType(mUserData->mOSTypeId,
+    HRESULT rc = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType),
                                          guestOSType.asOutParam());
     if (FAILED(rc)) return rc;
 
@@ -6690,28 +6659,19 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
         if (RT_FAILURE(vrc))
             return setError(E_FAIL,
                             tr("Invalid saved state file path '%s' (%Rrc)"),
-                            config.strStateFile.raw(),
+                            config.strStateFile.c_str(),
                             vrc);
         mSSData->mStateFilePath = stateFilePathFull;
     }
 
-    /* snapshotFolder (optional) */
-    rc = COMSETTER(SnapshotFolder)(Bstr(config.strSnapshotFolder));
+    // snapshot folder needs special processing so set it again
+    rc = COMSETTER(SnapshotFolder)(Bstr(config.machineUserData.strSnapshotFolder));
     if (FAILED(rc)) return rc;
 
     /* currentStateModified (optional, default is true) */
     mData->mCurrentStateModified = config.fCurrentStateModified;
 
     mData->mLastStateChange = config.timeLastStateChange;
-
-    /* teleportation */
-    mUserData->mTeleporterEnabled  = config.fTeleporterEnabled;
-    mUserData->mTeleporterPort     = config.uTeleporterPort;
-    mUserData->mTeleporterAddress  = config.strTeleporterAddress;
-    mUserData->mTeleporterPassword = config.strTeleporterPassword;
-
-    /* RTC */
-    mUserData->mRTCUseUTC = config.fRTCUseUTC;
 
     /*
      *  note: all mUserData members must be assigned prior this point because
@@ -6796,7 +6756,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
         if (RT_FAILURE(vrc))
             return setError(E_FAIL,
                             tr("Invalid saved state file path '%s' (%Rrc)"),
-                            strStateFile.raw(),
+                            strStateFile.c_str(),
                             vrc);
     }
 
@@ -7077,7 +7037,7 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
         if (SUCCEEDED(rc))
             return setError(VBOX_E_OBJECT_IN_USE,
                             tr("Storage controller named '%s' already exists"),
-                            ctlData.strName.raw());
+                            ctlData.strName.c_str());
 
         pCtl.createObject();
         rc = pCtl->init(this,
@@ -7137,6 +7097,8 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
          it != data.llAttachedDevices.end();
          ++it)
     {
+        const settings::AttachedDevice &ad = *it;
+
         for (settings::AttachedDevicesList::const_iterator it2 = it;
              it2 != data.llAttachedDevices.end();
              ++it2)
@@ -7144,12 +7106,17 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             if (it == it2)
                 continue;
 
-            if (   (*it).lPort == (*it2).lPort
-                && (*it).lDevice == (*it2).lDevice)
+            const settings::AttachedDevice &ad2 = *it2;
+
+            if (   ad.lPort == ad2.lPort
+                && ad.lDevice == ad2.lDevice)
             {
                 return setError(E_FAIL,
-                                tr("Duplicate attachments for storage controller '%s', port %d, device %d of the virtual machine '%ls'"),
-                                aStorageController->getName().raw(), (*it).lPort, (*it).lDevice, mUserData->mName.raw());
+                                tr("Duplicate attachments for storage controller '%s', port %d, device %d of the virtual machine '%s'"),
+                                aStorageController->getName().c_str(),
+                                ad.lPort,
+                                ad.lDevice,
+                                mUserData->s.strName.c_str());
             }
         }
     }
@@ -7197,51 +7164,51 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                     if (isSnapshotMachine())
                         return setError(E_FAIL,
                                         tr("Immutable hard disk '%s' with UUID {%RTuuid} cannot be directly attached to snapshot with UUID {%RTuuid} "
-                                           "of the virtual machine '%ls' ('%s')"),
-                                        medium->getLocationFull().raw(),
+                                           "of the virtual machine '%s' ('%s')"),
+                                        medium->getLocationFull().c_str(),
                                         dev.uuid.raw(),
                                         aSnapshotId->raw(),
-                                        mUserData->mName.raw(),
-                                        mData->m_strConfigFileFull.raw());
+                                        mUserData->s.strName.c_str(),
+                                        mData->m_strConfigFileFull.c_str());
 
                     return setError(E_FAIL,
-                                    tr("Immutable hard disk '%s' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%ls' ('%s')"),
-                                    medium->getLocationFull().raw(),
+                                    tr("Immutable hard disk '%s' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%s' ('%s')"),
+                                    medium->getLocationFull().c_str(),
                                     dev.uuid.raw(),
-                                    mUserData->mName.raw(),
-                                    mData->m_strConfigFileFull.raw());
+                                    mUserData->s.strName.c_str(),
+                                    mData->m_strConfigFileFull.c_str());
                 }
 
                 if (    !isSnapshotMachine()
                      && medium->getChildren().size() != 0
                    )
                     return setError(E_FAIL,
-                                    tr("Hard disk '%s' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%ls' ('%s') "
+                                    tr("Hard disk '%s' with UUID {%RTuuid} cannot be directly attached to the virtual machine '%s' ('%s') "
                                        "because it has %d differencing child hard disks"),
-                                    medium->getLocationFull().raw(),
+                                    medium->getLocationFull().c_str(),
                                     dev.uuid.raw(),
-                                    mUserData->mName.raw(),
-                                    mData->m_strConfigFileFull.raw(),
+                                    mUserData->s.strName.c_str(),
+                                    mData->m_strConfigFileFull.c_str(),
                                     medium->getChildren().size());
 
                 if (findAttachment(mMediaData->mAttachments,
                                    medium))
                     return setError(E_FAIL,
-                                    tr("Hard disk '%s' with UUID {%RTuuid} is already attached to the virtual machine '%ls' ('%s')"),
-                                    medium->getLocationFull().raw(),
+                                    tr("Hard disk '%s' with UUID {%RTuuid} is already attached to the virtual machine '%s' ('%s')"),
+                                    medium->getLocationFull().c_str(),
                                     dev.uuid.raw(),
-                                    mUserData->mName.raw(),
-                                    mData->m_strConfigFileFull.raw());
+                                    mUserData->s.strName.c_str(),
+                                    mData->m_strConfigFileFull.c_str());
 
                 break;
             }
 
             default:
                 return setError(E_FAIL,
-                                tr("Device with unknown type is attached to the virtual machine '%s' ('%s')"),
-                                medium->getLocationFull().raw(),
-                                mUserData->mName.raw(),
-                                mData->m_strConfigFileFull.raw());
+                                tr("Device '%s' with unknown type is attached to the virtual machine '%s' ('%s')"),
+                                medium->getLocationFull().c_str(),
+                                mUserData->s.strName.c_str(),
+                                mData->m_strConfigFileFull.c_str());
         }
 
         if (FAILED(rc))
@@ -7313,7 +7280,7 @@ HRESULT Machine::findSnapshot(const Guid &aId,
         if (aSetError)
             return setError(E_FAIL,
                             tr("Could not find a snapshot with UUID {%s}"),
-                            aId.toString().raw());
+                            aId.toString().c_str());
         return E_FAIL;
     }
 
@@ -7383,7 +7350,7 @@ HRESULT Machine::getStorageControllerByName(const Utf8Str &aName,
     if (aSetError)
         return setError(VBOX_E_OBJECT_NOT_FOUND,
                         tr("Could not find a storage controller named '%s'"),
-                        aName.raw());
+                        aName.c_str());
     return VBOX_E_OBJECT_NOT_FOUND;
 }
 
@@ -7436,9 +7403,9 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
     bool fSettingsFileIsNew = !mData->pMachineConfigFile->fileExists();
 
     /* attempt to rename the settings file if machine name is changed */
-    if (    mUserData->mNameSync
+    if (    mUserData->s.fNameSync
          && mUserData.isBackedUp()
-         && mUserData.backedUpData()->mName != mUserData->mName
+         && mUserData.backedUpData()->s.strName != mUserData->s.strName
        )
     {
         bool dirRenamed = false;
@@ -7451,8 +7418,8 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
         {
             int vrc = VINF_SUCCESS;
 
-            Utf8Str name = mUserData.backedUpData()->mName;
-            Utf8Str newName = mUserData->mName;
+            Utf8Str name = mUserData.backedUpData()->s.strName;
+            Utf8Str newName = mUserData->s.strName;
 
             configFile = mData->m_strConfigFileFull;
 
@@ -7463,21 +7430,21 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             if (!strcmp(RTPathFilename(configDir.c_str()), name.c_str()))
             {
                 newConfigDir.stripFilename();
-                newConfigDir = Utf8StrFmt("%s%c%s",
-                    newConfigDir.raw(), RTPATH_DELIMITER, newName.raw());
+                newConfigDir.append(RTPATH_DELIMITER);
+                newConfigDir.append(newName);
                 /* new dir and old dir cannot be equal here because of 'if'
                  * above and because name != newName */
                 Assert(configDir != newConfigDir);
                 if (!fSettingsFileIsNew)
                 {
                     /* perform real rename only if the machine is not new */
-                    vrc = RTPathRename(configDir.raw(), newConfigDir.raw(), 0);
+                    vrc = RTPathRename(configDir.c_str(), newConfigDir.c_str(), 0);
                     if (RT_FAILURE(vrc))
                     {
                         rc = setError(E_FAIL,
                                       tr("Could not rename the directory '%s' to '%s' to save the settings file (%Rrc)"),
-                                      configDir.raw(),
-                                      newConfigDir.raw(),
+                                      configDir.c_str(),
+                                      newConfigDir.c_str(),
                                       vrc);
                         break;
                     }
@@ -7486,26 +7453,26 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             }
 
             newConfigFile = Utf8StrFmt("%s%c%s.xml",
-                newConfigDir.raw(), RTPATH_DELIMITER, newName.raw());
+                newConfigDir.c_str(), RTPATH_DELIMITER, newName.c_str());
 
             /* then try to rename the settings file itself */
             if (newConfigFile != configFile)
             {
                 /* get the path to old settings file in renamed directory */
                 configFile = Utf8StrFmt("%s%c%s",
-                                        newConfigDir.raw(),
+                                        newConfigDir.c_str(),
                                         RTPATH_DELIMITER,
                                         RTPathFilename(configFile.c_str()));
                 if (!fSettingsFileIsNew)
                 {
                     /* perform real rename only if the machine is not new */
-                    vrc = RTFileRename(configFile.raw(), newConfigFile.raw(), 0);
+                    vrc = RTFileRename(configFile.c_str(), newConfigFile.c_str(), 0);
                     if (RT_FAILURE(vrc))
                     {
                         rc = setError(E_FAIL,
                                       tr("Could not rename the settings file '%s' to '%s' (%Rrc)"),
-                                      configFile.raw(),
-                                      newConfigFile.raw(),
+                                      configFile.c_str(),
+                                      newConfigFile.c_str(),
                                       vrc);
                         break;
                     }
@@ -7530,25 +7497,22 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             }
 
             /* update the snapshot folder */
-            Utf8Str path = mUserData->mSnapshotFolderFull;
-            if (RTPathStartsWith(path.c_str(), configDir.c_str()))
+            if (RTPathStartsWith(mUserData->m_strSnapshotFolderFull.c_str(),
+                                 configDir.c_str()))
             {
-                path = Utf8StrFmt("%s%s", newConfigDir.raw(),
-                                  path.raw() + configDir.length());
-                mUserData->mSnapshotFolderFull = path;
-                Utf8Str strTemp;
-                copyPathRelativeToMachine(path, strTemp);
-                mUserData->mSnapshotFolder = strTemp;
+                mUserData->m_strSnapshotFolderFull = Utf8StrFmt("%s%s",
+                                                                newConfigDir.c_str(),
+                                                                mUserData->m_strSnapshotFolderFull.c_str() + configDir.length());
+                copyPathRelativeToMachine(mUserData->m_strSnapshotFolderFull,
+                                          mUserData->s.strSnapshotFolder);
             }
 
             /* update the saved state file path */
-            path = mSSData->mStateFilePath;
+            Utf8Str path = mSSData->mStateFilePath;
             if (RTPathStartsWith(path.c_str(), configDir.c_str()))
-            {
-                path = Utf8StrFmt("%s%s", newConfigDir.raw(),
-                                  path.raw() + configDir.length());
-                mSSData->mStateFilePath = path;
-            }
+                mSSData->mStateFilePath = Utf8StrFmt("%s%s",
+                                                     newConfigDir.c_str(),
+                                                     path.c_str() + configDir.length());
 
             /* Update saved state file paths of all online snapshots.
              * Note that saveSettings() will recognize name change
@@ -7563,9 +7527,9 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
         {
             /* silently try to rename everything back */
             if (fileRenamed)
-                RTFileRename(newConfigFile.raw(), configFile.raw(), 0);
+                RTFileRename(newConfigFile.c_str(), configFile.c_str(), 0);
             if (dirRenamed)
-                RTPathRename(newConfigDir.raw(), configDir.raw(), 0);
+                RTPathRename(newConfigDir.c_str(), configDir.c_str(), 0);
         }
 
         if (FAILED(rc)) return rc;
@@ -7586,7 +7550,7 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             {
                 return setError(E_FAIL,
                                 tr("Could not create a directory '%s' to save the settings file (%Rrc)"),
-                                path.raw(),
+                                path.c_str(),
                                 vrc);
             }
         }
@@ -7599,7 +7563,7 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
         if (RT_FAILURE(vrc))
             return setError(E_FAIL,
                             tr("Could not create the settings file '%s' (%Rrc)"),
-                            path.raw(),
+                            path.c_str(),
                             vrc);
         RTFileClose(f);
     }
@@ -7774,10 +7738,9 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     config.mapExtraDataItems = mData->pMachineConfigFile->mapExtraDataItems;
 
     config.uuid = mData->mUuid;
-    config.strName = mUserData->mName;
-    config.fNameSync = !!mUserData->mNameSync;
-    config.strDescription = mUserData->mDescription;
-    config.strOsType = mUserData->mOSTypeId;
+
+    // copy name, description, OS type, teleport, UTC etc.
+    config.machineUserData = mUserData->s;
 
     if (    mData->mMachineState == MachineState_Saved
          || mData->mMachineState == MachineState_Restoring
@@ -7805,18 +7768,9 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     else
         config.uuidCurrentSnapshot.clear();
 
-    config.strSnapshotFolder = mUserData->mSnapshotFolder;
-    // config.fCurrentStateModified is special, see below
     config.timeLastStateChange = mData->mLastStateChange;
     config.fAborted = (mData->mMachineState == MachineState_Aborted);
     /// @todo Live Migration:        config.fTeleported = (mData->mMachineState == MachineState_Teleported);
-
-    config.fTeleporterEnabled    = !!mUserData->mTeleporterEnabled;
-    config.uTeleporterPort       = mUserData->mTeleporterPort;
-    config.strTeleporterAddress  = mUserData->mTeleporterAddress;
-    config.strTeleporterPassword = mUserData->mTeleporterPassword;
-
-    config.fRTCUseUTC = !!mUserData->mRTCUseUTC;
 
     HRESULT rc = saveHardware(config.hardwareMachine);
     if (FAILED(rc)) throw rc;
@@ -8366,6 +8320,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
             DeviceType_T devType = pAtt->getType();
             Medium* pMedium = pAtt->getMedium();
+            ComObjPtr<Medium> pBase = pMedium->getBase();
 
             if (   devType != DeviceType_HardDisk
                 || pMedium == NULL
@@ -8383,7 +8338,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                                     aWeight);        // weight
                     else
                         aProgress->SetNextOperation(BstrFmt(tr("Skipping medium '%s'"),
-                                                            pMedium->getBase()->getName().raw()),
+                                                            pBase->getName().c_str()),
                                                     aWeight);        // weight
                 }
 
@@ -8393,15 +8348,14 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
             /* need a diff */
             aProgress->SetNextOperation(BstrFmt(tr("Creating differencing hard disk for '%s'"),
-                                                pMedium->getBase()->getName().raw()),
+                                                pBase->getName().c_str()),
                                         aWeight);        // weight
 
             ComObjPtr<Medium> diff;
             diff.createObject();
             rc = diff->init(mParent,
                             pMedium->getPreferredDiffFormat(),
-                            Utf8StrFmt("%ls"RTPATH_SLASH_STR,
-                                       mUserData->mSnapshotFolderFull.raw()).raw(),
+                            Utf8Str(mUserData->m_strSnapshotFolderFull).append(RTPATH_SLASH_STR),
                             pfNeedsSaveSettings);
             if (FAILED(rc)) throw rc;
 
@@ -8841,8 +8795,8 @@ void Machine::commitMedia(bool aOnline /*= false*/)
         bool fImplicit = pAttach->isImplicit();
 
         LogFlowThisFunc(("Examining current medium '%s' (implicit: %d)\n",
-                            (pMedium) ? pMedium->getName().raw() : "NULL",
-                            fImplicit));
+                         (pMedium) ? pMedium->getName().c_str() : "NULL",
+                         fImplicit));
 
         /** @todo convert all this Machine-based voodoo to MediumAttachment
          * based commit logic. */
@@ -8892,7 +8846,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
                 MediumAttachment *pOldAttach = *oldIt;
                 if (pOldAttach->getMedium() == pMedium)
                 {
-                    LogFlowThisFunc(("--> medium '%s' was attached before, will not remove\n", pMedium->getName().raw()));
+                    LogFlowThisFunc(("--> medium '%s' was attached before, will not remove\n", pMedium->getName().c_str()));
 
                     /* yes: remove from old to avoid de-association */
                     oldAtts.erase(oldIt);
@@ -8915,7 +8869,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
          * instantly in MountMedium. */
         if (pAttach->getType() == DeviceType_HardDisk && pMedium)
         {
-            LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->getName().raw()));
+            LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->getName().c_str()));
 
             /* now de-associate from the current machine state */
             rc = pMedium->removeBackReference(mData->mUuid);
@@ -9038,18 +8992,18 @@ bool Machine::isInOwnDir(Utf8Str *aSettingsDir /* = NULL */) const
 {
     Utf8Str settingsDir = mData->m_strConfigFileFull;
     settingsDir.stripFilename();
-    char *dirName = RTPathFilename(settingsDir.c_str());
+    Utf8Str strDirName = RTPathFilename(settingsDir.c_str());
 
-    AssertReturn(dirName, false);
+    AssertReturn(!strDirName.isEmpty(), false);
 
     /* if we don't rename anything on name change, return false shorlty */
-    if (!mUserData->mNameSync)
+    if (!mUserData->s.fNameSync)
         return false;
 
     if (aSettingsDir)
         *aSettingsDir = settingsDir;
 
-    return Bstr(dirName) == mUserData->mName;
+    return strDirName == mUserData->s.strName;
 }
 
 /**
@@ -9546,7 +9500,7 @@ void SessionMachine::FinalRelease()
 HRESULT SessionMachine::init(Machine *aMachine)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("mName={%ls}\n", aMachine->mUserData->mName.raw()));
+    LogFlowThisFunc(("mName={%s}\n", aMachine->mUserData->s.strName.c_str()));
 
     AssertReturn(aMachine, E_INVALIDARG);
 
@@ -10342,8 +10296,8 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress *aProgress, BSTR *aState
     /* stateFilePath is null when the machine is not running */
     if (mData->mMachineState == MachineState_Paused)
     {
-        stateFilePath = Utf8StrFmt("%ls%c{%RTuuid}.sav",
-                                   mUserData->mSnapshotFolderFull.raw(),
+        stateFilePath = Utf8StrFmt("%s%c{%RTuuid}.sav",
+                                   mUserData->m_strSnapshotFolderFull.c_str(),
                                    RTPATH_DELIMITER, mData->mUuid.raw());
     }
 
@@ -10506,7 +10460,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
         if (aFlags)
         {
             Utf8Str utf8Flags(aFlags);
-            int vrc = validateFlags(utf8Flags.raw(), &fFlags);
+            int vrc = validateFlags(utf8Flags.c_str(), &fFlags);
             AssertRCReturn(vrc, E_INVALIDARG);
         }
 
@@ -10568,9 +10522,9 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
          * Send a callback notification if appropriate
          */
         if (    mHWData->mGuestPropertyNotificationPatterns.isEmpty()
-             || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.raw(),
+             || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.c_str(),
                                              RTSTR_MAX,
-                                             utf8Name.raw(),
+                                             utf8Name.c_str(),
                                              RTSTR_MAX, NULL)
            )
         {

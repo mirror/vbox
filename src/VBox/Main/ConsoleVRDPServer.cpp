@@ -616,19 +616,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
 
             if ((size_t)cbBuffer >= cbAddress)
             {
-                if (cbAddress > 0)
-                {
-                    if (address.raw())
-                    {
-                        memcpy(pvBuffer, address.raw(), cbAddress);
-                    }
-                    else
-                    {
-                        /* The value is an empty string. */
-                        *(uint8_t *)pvBuffer = 0;
-                    }
-                }
-
+                memcpy(pvBuffer, address.c_str(), cbAddress);
                 rc = VINF_SUCCESS;
             }
             else
@@ -687,19 +675,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
 
             if ((size_t)cbBuffer >= cbPortRange)
             {
-                if (cbPortRange > 0)
-                {
-                    if (portRange.raw())
-                    {
-                        memcpy(pvBuffer, portRange.raw(), cbPortRange);
-                    }
-                    else
-                    {
-                        /* The value is an empty string. */
-                        *(uint8_t *)pvBuffer = 0;
-                    }
-                }
-
+                memcpy(pvBuffer, portRange.c_str(), cbPortRange);
                 rc = VINF_SUCCESS;
             }
             else
@@ -1469,10 +1445,10 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
         LogRel(("VRDPAUTH: ConsoleVRDPServer::Authenticate: loading external authentication library '%ls'\n", authLibrary.raw()));
 
         int rc;
-        if (RTPathHavePath(filename.raw()))
-            rc = RTLdrLoad(filename.raw(), &mAuthLibrary);
+        if (RTPathHavePath(filename.c_str()))
+            rc = RTLdrLoad(filename.c_str(), &mAuthLibrary);
         else
-            rc = RTLdrLoadAppPriv(filename.raw(), &mAuthLibrary);
+            rc = RTLdrLoadAppPriv(filename.c_str(), &mAuthLibrary);
 
         if (RT_FAILURE(rc))
             LogRel(("VRDPAUTH: Failed to load external authentication library. Error code: %Rrc\n", rc));
@@ -1512,7 +1488,10 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
 
         if (RT_FAILURE(rc))
         {
-            mConsole->setAuthLibraryError(filename.raw(), rc);
+            mConsole->setError(E_FAIL,
+                               mConsole->tr("Could not load the external authentication library '%s' (%Rrc)"),
+                               filename.c_str(),
+                               rc);
 
             mpfnAuthEntry = NULL;
             mpfnAuthEntry2 = NULL;

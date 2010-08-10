@@ -60,10 +60,10 @@ void HostNetworkInterface::FinalRelease()
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid, HostNetworkInterfaceType_T ifType)
+HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Guid aGuid, HostNetworkInterfaceType_T ifType)
 {
     LogFlowThisFunc(("aInterfaceName={%ls}, aGuid={%s}\n",
-                      aInterfaceName.raw(), aGuid.toString().raw()));
+                      aInterfaceName.raw(), aGuid.toString().c_str()));
 
     ComAssertRet(aInterfaceName, E_INVALIDARG);
     ComAssertRet(!aGuid.isEmpty(), E_INVALIDARG);
@@ -75,7 +75,6 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid, HostNetwork
     unconst(mInterfaceName) = aInterfaceName;
     unconst(mGuid) = aGuid;
     mIfType = ifType;
-
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -439,13 +438,13 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
     }
 
     ULONG ip, mask;
-    ip = inet_addr(Utf8Str(aIPAddress).raw());
+    ip = inet_addr(Utf8Str(aIPAddress).c_str());
     if (ip != INADDR_NONE)
     {
         if (Bstr(aNetMask).isEmpty())
             mask = 0xFFFFFF;
         else
-            mask = inet_addr(Utf8Str(aNetMask).raw());
+            mask = inet_addr(Utf8Str(aNetMask).c_str());
         if (mask != INADDR_NONE)
         {
             if (m.realIPAddress == ip && m.realNetworkMask == mask)
@@ -566,8 +565,8 @@ HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
             tmpAddr = getDefaultIPv4Address(mInterfaceName);
         if (tmpMask.isEmpty())
             tmpMask = Bstr(VBOXNET_IPV4MASK_DEFAULT);
-        m.IPAddress = inet_addr(Utf8Str(tmpAddr).raw());
-        m.networkMask = inet_addr(Utf8Str(tmpMask).raw());
+        m.IPAddress = inet_addr(Utf8Str(tmpAddr).c_str());
+        m.networkMask = inet_addr(Utf8Str(tmpMask).c_str());
     }
 
     if (m.IPV6Address.isEmpty())

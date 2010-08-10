@@ -308,16 +308,6 @@ public:
     }
 
     /**
-     * Like c_str(), for compatibility with lots of VirtualBox Main code.
-     *
-     * @returns const pointer to C-style string.
-     */
-    inline const char *raw() const
-    {
-        return (m_psz) ? m_psz : "";
-    }
-
-    /**
      * Returns a non-const raw pointer that allows to modify the string directly.
      * As opposed to c_str() and raw(), this DOES return NULL for an empty string
      * because we cannot return a non-const pointer to a static "" global.

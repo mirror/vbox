@@ -228,7 +228,6 @@ public:
     static const PDMDRVREG DrvStatusReg;
 
     static HRESULT setErrorStatic(HRESULT aResultCode, const char *pcsz, ...);
-    HRESULT setAuthLibraryError(const char *filename, int rc);
     HRESULT setInvalidMachineStateError();
 
     static HRESULT handleUnexpectedExceptions(RT_SRC_POS_DECL);

@@ -105,11 +105,11 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         if (FAILED(rc)) throw rc;
 
         // get name
-        bstrName1 = mUserData->mName;
+        Utf8Str strVMName = mUserData->s.strName;
         // get description
-        bstrDescription = mUserData->mDescription;
+        Utf8Str strDescription = mUserData->s.strDescription;
         // get guest OS
-        bstrGuestOSType = mUserData->mOSTypeId;
+        Utf8Str strOsTypeVBox = mUserData->s.strOsType;
         // CPU count
         cCPUs = mHWData->mCPUCount;
         // memory size in MB
@@ -125,7 +125,6 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         // VRDPServer?
 
         /* Guest OS type */
-        Utf8Str strOsTypeVBox(bstrGuestOSType);
         ovf::CIMOSType_T cim = convertVBoxOSType2CIMOSType(strOsTypeVBox.c_str());
         pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
                            "",
@@ -133,14 +132,12 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                            strOsTypeVBox);
 
         /* VM name */
-        Utf8Str strVMName(bstrName1);
         pNewDesc->addEntry(VirtualSystemDescriptionType_Name,
                            "",
                            strVMName,
                            strVMName);
 
         // description
-        Utf8Str strDescription(bstrDescription);
         pNewDesc->addEntry(VirtualSystemDescriptionType_Description,
                            "",
                            strDescription,
@@ -1505,7 +1502,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             Bstr bstrSrcFormat = L"VMDK";
 
             // create a new hard disk interface for the destination disk image
-            Log(("Creating target disk \"%s\"\n", strTargetFilePath.raw()));
+            Log(("Creating target disk \"%s\"\n", strTargetFilePath.c_str()));
             rc = mVirtualBox->CreateHardDisk(bstrSrcFormat, Bstr(strTargetFilePath), pTargetDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 

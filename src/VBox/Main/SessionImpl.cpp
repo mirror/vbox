@@ -1027,7 +1027,7 @@ HRESULT Session::grabIPCSemaphore()
 
 # ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
     Utf8Str ipcKey = ipcId;
-    key_t key = RTStrToUInt32(ipcKey.raw());
+    key_t key = RTStrToUInt32(ipcKey.c_str());
     AssertMsgReturn (key != 0,
                     ("Key value of 0 is not valid for IPC semaphore"),
                     E_FAIL);

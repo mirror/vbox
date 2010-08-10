@@ -146,7 +146,7 @@ DECLINLINE(Bstr) getDefaultIPv4Address(Bstr bstrIfName)
 {
     /* Get the index from the name */
     int iInstance;
-    if (sscanf(Utf8Str(bstrIfName).raw(), "vboxnet%d", &iInstance) != 1)
+    if (sscanf(Utf8Str(bstrIfName).c_str(), "vboxnet%d", &iInstance) != 1)
         return Bstr("0.0.0.0");
 
     in_addr tmp;

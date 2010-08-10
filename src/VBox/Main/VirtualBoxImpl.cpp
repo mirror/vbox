@@ -386,9 +386,9 @@ HRESULT VirtualBox::init()
 
     /* compose the VirtualBox.xml file name */
     unconst(m->strSettingsFilePath) = Utf8StrFmt("%s%c%s",
-                                                m->strHomeDir.raw(),
-                                                RTPATH_DELIMITER,
-                                                VBOX_GLOBAL_SETTINGS_FILE);
+                                                 m->strHomeDir.c_str(),
+                                                 RTPATH_DELIMITER,
+                                                 VBOX_GLOBAL_SETTINGS_FILE);
     HRESULT rc = S_OK;
     bool fCreate = false;
     try
@@ -1072,7 +1072,7 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
                                RTPATH_DELIMITER,
                                firmwareDesc[i].fileName);
         rc = calculateFullPath(shortName, fullName); AssertRCReturn(rc, rc);
-        if (RTFileExists(fullName.raw()))
+        if (RTFileExists(fullName.c_str()))
         {
             *aResult = TRUE;
              if (aFile)
@@ -1086,7 +1086,7 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
                               pszVBoxPath,
                               RTPATH_DELIMITER,
                               firmwareDesc[i].fileName);
-        if (RTFileExists(fullName.raw()))
+        if (RTFileExists(fullName.c_str()))
         {
             *aResult = TRUE;
             if (aFile)
@@ -1141,7 +1141,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
         getDefaultMachineFolder(strSettingsFile);
 
     strSettingsFile = Utf8StrFmt("%s%c%ls%c%ls.xml",
-                                 strSettingsFile.raw(),
+                                 strSettingsFile.c_str(),
                                  RTPATH_DELIMITER,
                                  aName,
                                  RTPATH_DELIMITER,
@@ -1202,7 +1202,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine(IN_BSTR aName,
     Utf8Str settingsFile = aSettingsFile;
     /* append the default extension if none */
     if (!RTPathHaveExt(settingsFile.c_str()))
-        settingsFile = Utf8StrFmt("%s.xml", settingsFile.raw());
+        settingsFile = Utf8StrFmt("%s.xml", settingsFile.c_str());
 
     /* create a new object */
     ComObjPtr<Machine> machine;
@@ -1330,6 +1330,7 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aName, IMachine **aMachine)
 
     /* start with not found */
     ComObjPtr<Machine> pMachineFound;
+    Utf8Str strName(aName);
 
     AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     for (MachinesOList::iterator it = m->allMachines.begin();
@@ -1343,7 +1344,7 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aName, IMachine **aMachine)
             continue;
 
         AutoReadLock machLock(pMachine2 COMMA_LOCKVAL_SRC_POS);
-        if (pMachine2->getName() == aName)
+        if (pMachine2->getName() == strName)
         {
             pMachineFound = pMachine2;
             break;
@@ -2361,7 +2362,7 @@ BOOL VirtualBox::onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aVa
                                        Bstr &aError)
 {
     LogFlowThisFunc(("machine={%s} aKey={%ls} aValue={%ls}\n",
-                      aId.toString().raw(), aKey, aValue));
+                      aId.toString().c_str(), aKey, aValue));
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -2764,12 +2765,12 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
             setError(rc,
                      tr("Could not find a hard disk with UUID {%RTuuid} in the media registry ('%s')"),
                      aId->raw(),
-                     m->strSettingsFilePath.raw());
+                     m->strSettingsFilePath.c_str());
         else
             setError(rc,
                      tr("Could not find a hard disk with location '%ls' in the media registry ('%s')"),
                      aLocation,
-                     m->strSettingsFilePath.raw());
+                     m->strSettingsFilePath.c_str());
     }
 
     return rc;
@@ -2871,12 +2872,12 @@ HRESULT VirtualBox::findDVDOrFloppyImage(DeviceType_T mediumType,
             setError(rc,
                      tr("Could not find an image file with UUID {%RTuuid} in the media registry ('%s')"),
                      aId->raw(),
-                     m->strSettingsFilePath.raw());
+                     m->strSettingsFilePath.c_str());
         else
             setError(rc,
                      tr("Could not find an image file with location '%ls' in the media registry ('%s')"),
                      aLocation.c_str(),
-                     m->strSettingsFilePath.raw());
+                     m->strSettingsFilePath.c_str());
     }
 
     return rc;
@@ -3101,7 +3102,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock(hardDisk COMMA_LOCKVAL_SRC_POS);
             aConflict = Utf8StrFmt(tr("hard disk '%s' with UUID {%RTuuid}"),
-                                   hardDisk->getLocationFull().raw(),
+                                   hardDisk->getLocationFull().c_str(),
                                    hardDisk->getId().raw());
             return S_OK;
         }
@@ -3115,7 +3116,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock(image COMMA_LOCKVAL_SRC_POS);
             aConflict = Utf8StrFmt(tr("CD/DVD image '%s' with UUID {%RTuuid}"),
-                                   image->getLocationFull().raw(),
+                                   image->getLocationFull().c_str(),
                                    image->getId().raw());
             return S_OK;
         }
@@ -3129,7 +3130,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock(image COMMA_LOCKVAL_SRC_POS);
             aConflict = Utf8StrFmt(tr("floppy image '%s' with UUID {%RTuuid}"),
-                                   image->getLocationFull().raw(),
+                                   image->getLocationFull().c_str(),
                                    image->getId().raw());
             return S_OK;
         }
@@ -3351,9 +3352,9 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
             AssertComRC(machCaller.rc());
 
             return setError(E_INVALIDARG,
-                            tr("Registered machine with UUID {%RTuuid} ('%ls') already exists"),
+                            tr("Registered machine with UUID {%RTuuid} ('%s') already exists"),
                             aMachine->getId().raw(),
-                            pMachine->getSettingsFileFull().raw());
+                            pMachine->getSettingsFileFull().c_str());
         }
 
         ComAssertRet(rc == VBOX_E_OBJECT_NOT_FOUND, rc);
@@ -3419,10 +3420,10 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
     if (strConflict.length())
         return setError(E_INVALIDARG,
                         tr("Cannot register the hard disk '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
-                        strLocationFull.raw(),
+                        strLocationFull.c_str(),
                         id.raw(),
-                        strConflict.raw(),
-                        m->strSettingsFilePath.raw());
+                        strConflict.c_str(),
+                        m->strSettingsFilePath.c_str());
 
     // store base (root) hard disks in the list
     if (pParent.isNull())
@@ -3536,10 +3537,10 @@ HRESULT VirtualBox::registerImage(Medium *argImage,
     if (strConflict.length())
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot register the image '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
-                        strLocationFull.raw(),
+                        strLocationFull.c_str(),
                         id.raw(),
-                        strConflict.raw(),
-                        m->strSettingsFilePath.raw());
+                        strConflict.c_str(),
+                        m->strSettingsFilePath.c_str());
 
     // add to the collection
     all.getList().push_back(argImage);

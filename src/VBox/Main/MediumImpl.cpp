@@ -1011,7 +1011,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     m->devType = aDeviceType;
 
     LogFlowThisFunc(("m->strLocationFull='%s', m->strFormat=%s, m->id={%RTuuid}\n",
-                     m->strLocationFull.raw(), m->strFormat.raw(), m->id.raw()));
+                     m->strLocationFull.c_str(), m->strFormat.c_str(), m->id.raw()));
 
     /* Don't call queryInfo() for registered media to prevent the calling
      * thread (i.e. the VirtualBox server startup thread) from an unexpected
@@ -1084,9 +1084,9 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* use device name, adjusted to the end of uuid, shortened if necessary */
     size_t lenLocation = aLocation.length();
     if (lenLocation > 12)
-        memcpy(&uuid.au8[4], aLocation.raw() + (lenLocation - 12), 12);
+        memcpy(&uuid.au8[4], aLocation.c_str() + (lenLocation - 12), 12);
     else
-        memcpy(&uuid.au8[4 + 12 - lenLocation], aLocation.raw(), lenLocation);
+        memcpy(&uuid.au8[4 + 12 - lenLocation], aLocation.c_str(), lenLocation);
     unconst(m->id) = uuid;
 
     m->type = MediumType_Writethrough;
@@ -1435,13 +1435,13 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
     if (m->pParent)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot change the type of medium '%s' because it is a differencing medium"),
-                        m->strLocationFull.raw());
+                        m->strLocationFull.c_str());
 
     /* cannot change the type of a medium being in use by more than one VM */
     if (m->backRefs.size() > 1)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot change the type of medium '%s' because it is attached to %d virtual machines"),
-                        m->strLocationFull.raw(), m->backRefs.size());
+                        m->strLocationFull.c_str(), m->backRefs.size());
 
     switch (aType)
     {
@@ -1460,14 +1460,14 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
             if (getChildren().size() != 0)
                 return setError(VBOX_E_OBJECT_IN_USE,
                                 tr("Cannot change type for medium '%s' since it has %d child media"),
-                                m->strLocationFull.raw(), getChildren().size());
+                                m->strLocationFull.c_str(), getChildren().size());
             if (aType == MediumType_Shareable)
             {
                 MediumVariant_T variant = getVariant();
                 if (!(variant & MediumVariant_Fixed))
                     return setError(VBOX_E_INVALID_OBJECT_STATE,
                                     tr("Cannot change type for medium '%s' to 'Shareable' since it is a dynamic medium storage unit"),
-                                    m->strLocationFull.raw());
+                                    m->strLocationFull.c_str());
             }
             break;
         }
@@ -1598,7 +1598,7 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
     if (m->pParent.isNull())
         return setError(VBOX_E_NOT_SUPPORTED,
                         tr("Medium '%s' is not differencing"),
-                        m->strLocationFull.raw());
+                        m->strLocationFull.c_str());
 
     if (m->autoReset != !!aAutoReset)
     {
@@ -1829,7 +1829,7 @@ STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
             LogFlowThisFunc(("Failing - state=%d\n", m->state));
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr("Medium '%s' is not locked for reading"),
-                          m->strLocationFull.raw());
+                          m->strLocationFull.c_str());
             break;
         }
     }
@@ -1919,7 +1919,7 @@ STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
             LogFlowThisFunc(("Failing - state=%d locationFull=%s\n", m->state, getLocationFull().c_str()));
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr("Medium '%s' is not locked for writing"),
-                          m->strLocationFull.raw());
+                          m->strLocationFull.c_str());
             break;
         }
     }
@@ -2105,12 +2105,12 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
             &&  !(m->formatObj->getCapabilities() & MediumFormatCapabilities_CreateDynamic))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support dynamic storage creation"),
-                           m->strFormat.raw());
+                           m->strFormat.c_str());
         if (    (aVariant & MediumVariant_Fixed)
             &&  !(m->formatObj->getCapabilities() & MediumFormatCapabilities_CreateDynamic))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support fixed storage creation"),
-                           m->strFormat.raw());
+                           m->strFormat.c_str());
 
         if (m->state != MediumState_NotCreated)
             throw setStateError();
@@ -2119,8 +2119,8 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
         rc = pProgress->init(m->pVirtualBox,
                              static_cast<IMedium*>(this),
                              (aVariant & MediumVariant_Fixed)
-                               ? BstrFmt(tr("Creating fixed medium storage unit '%s'"), m->strLocationFull.raw())
-                               : BstrFmt(tr("Creating dynamic medium storage unit '%s'"), m->strLocationFull.raw()),
+                               ? BstrFmt(tr("Creating fixed medium storage unit '%s'"), m->strLocationFull.c_str())
+                               : BstrFmt(tr("Creating dynamic medium storage unit '%s'"), m->strLocationFull.c_str()),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
             throw rc;
@@ -2192,11 +2192,11 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
     if (m->type == MediumType_Writethrough)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Medium type of '%s' is Writethrough"),
-                        m->strLocationFull.raw());
+                        m->strLocationFull.c_str());
     else if (m->type == MediumType_Shareable)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Medium type of '%s' is Shareable"),
-                        m->strLocationFull.raw());
+                        m->strLocationFull.c_str());
 
     /* Apply the normal locking logic to the entire chain. */
     MediumLockList *pMediumLockList(new MediumLockList());
@@ -2321,7 +2321,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
             delete pTargetMediumLockList;
             throw setError(rc,
                            tr("Failed to lock source media '%s'"),
-                           getLocationFull().raw());
+                           getLocationFull().c_str());
         }
         rc = pTargetMediumLockList->Lock();
         if (FAILED(rc))
@@ -2330,13 +2330,13 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
             delete pTargetMediumLockList;
             throw setError(rc,
                            tr("Failed to lock target media '%s'"),
-                           pTarget->getLocationFull().raw());
+                           pTarget->getLocationFull().c_str());
         }
 
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("Creating clone medium '%s'"), pTarget->m->strLocationFull.raw()),
+                             BstrFmt(tr("Creating clone medium '%s'"), pTarget->m->strLocationFull.c_str()),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
@@ -2409,13 +2409,13 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
             delete pMediumLockList;
             throw setError(rc,
                            tr("Failed to lock media when compacting '%s'"),
-                           getLocationFull().raw());
+                           getLocationFull().c_str());
         }
 
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.raw()),
+                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.c_str()),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
@@ -2480,7 +2480,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
         if (m->pParent.isNull())
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium type of '%s' is not differencing"),
-                           m->strLocationFull.raw());
+                           m->strLocationFull.c_str());
 
         rc = canClose();
         if (FAILED(rc))
@@ -2504,13 +2504,13 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
             delete pMediumLockList;
             throw setError(rc,
                            tr("Failed to lock media when resetting '%s'"),
-                           getLocationFull().raw());
+                           getLocationFull().c_str());
         }
 
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast<IMedium*>(this),
-                             BstrFmt(tr("Resetting differencing medium '%s'"), m->strLocationFull.raw()),
+                             BstrFmt(tr("Resetting differencing medium '%s'"), m->strLocationFull.c_str()),
                              FALSE /* aCancelable */);
         if (FAILED(rc))
             throw rc;
@@ -2700,7 +2700,7 @@ HRESULT Medium::addBackReference(const Guid &aMachineId,
     if (m->numCreateDiffTasks > 0)
         return setError(VBOX_E_OBJECT_IN_USE,
                         tr("Cannot attach medium '%s' {%RTuuid}: %u differencing child media are being created"),
-                        m->strLocationFull.raw(),
+                        m->strLocationFull.c_str(),
                         m->id.raw(),
                         m->numCreateDiffTasks);
 
@@ -2743,7 +2743,7 @@ HRESULT Medium::addBackReference(const Guid &aMachineId,
 #endif
             return setError(VBOX_E_OBJECT_IN_USE,
                             tr("Cannot attach medium '%s' {%RTuuid} from snapshot '%RTuuid': medium is already in use by this snapshot!"),
-                            m->strLocationFull.raw(),
+                            m->strLocationFull.c_str(),
                             m->id.raw(),
                             aSnapshotId.raw(),
                             idOldSnapshot.raw());
@@ -2837,7 +2837,7 @@ void Medium::dumpBackRefs()
     AutoCaller autoCaller(this);
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("Dumping backrefs for medium '%s':\n", m->strLocationFull.raw()));
+    LogFlowThisFunc(("Dumping backrefs for medium '%s':\n", m->strLocationFull.c_str()));
 
     for (BackRefList::iterator it2 = m->backRefs.begin();
          it2 != m->backRefs.end();
@@ -2876,7 +2876,7 @@ HRESULT Medium::updatePath(const Utf8Str &strOldPath, const Utf8Str &strNewPath)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("locationFull.before='%s'\n", m->strLocationFull.raw()));
+    LogFlowThisFunc(("locationFull.before='%s'\n", m->strLocationFull.c_str()));
 
     const char *pcszMediumPath = m->strLocationFull.c_str();
 
@@ -2890,7 +2890,7 @@ HRESULT Medium::updatePath(const Utf8Str &strOldPath, const Utf8Str &strNewPath)
         m->pVirtualBox->copyPathRelativeToConfig(newPath, path);
         unconst(m->strLocation) = path;
 
-        LogFlowThisFunc(("locationFull.after='%s'\n", m->strLocationFull.raw()));
+        LogFlowThisFunc(("locationFull.after='%s'\n", m->strLocationFull.c_str()));
     }
 
     return S_OK;
@@ -3092,7 +3092,7 @@ HRESULT Medium::compareLocationTo(const Utf8Str &strLocation, int &aResult)
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_FILE_ERROR,
                             tr("Invalid medium storage file location '%s' (%Rrc)"),
-                            location.raw(),
+                            location.c_str(),
                             vrc);
 
         aResult = RTPathCompare(locationFull.c_str(), location.c_str());
@@ -3318,7 +3318,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
                 id.create();
 
                 location = Utf8StrFmt("%s{%RTuuid}.%s",
-                                      location.raw(), id.raw(), strExt.c_str());
+                                      location.c_str(), id.raw(), strExt.c_str());
             }
         }
 
@@ -3338,7 +3338,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_FILE_ERROR,
                             tr("Invalid medium storage file location '%s' (%Rrc)"),
-                            location.raw(), vrc);
+                            location.c_str(), vrc);
 
         /* detect the backend from the storage unit if importing */
         if (isImport)
@@ -3368,11 +3368,11 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
                 if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
                     return setError(VBOX_E_FILE_ERROR,
                                     tr("Could not find file for the medium '%s' (%Rrc)"),
-                                    locationFull.raw(), vrc);
+                                    locationFull.c_str(), vrc);
                 else if (aFormat.isEmpty())
                     return setError(VBOX_E_IPRT_ERROR,
                                     tr("Could not get the storage format of the medium '%s' (%Rrc)"),
-                                    locationFull.raw(), vrc);
+                                    locationFull.c_str(), vrc);
                 else
                 {
                     HRESULT rc = setFormat(aFormat);
@@ -3757,28 +3757,28 @@ HRESULT Medium::setStateError()
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr("Storage for the medium '%s' is not created"),
-                          m->strLocationFull.raw());
+                          m->strLocationFull.c_str());
             break;
         }
         case MediumState_Created:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr("Storage for the medium '%s' is already created"),
-                          m->strLocationFull.raw());
+                          m->strLocationFull.c_str());
             break;
         }
         case MediumState_LockedRead:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr("Medium '%s' is locked for reading by another task"),
-                          m->strLocationFull.raw());
+                          m->strLocationFull.c_str());
             break;
         }
         case MediumState_LockedWrite:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr("Medium '%s' is locked for writing by another task"),
-                          m->strLocationFull.raw());
+                          m->strLocationFull.c_str());
             break;
         }
         case MediumState_Inaccessible:
@@ -3787,25 +3787,25 @@ HRESULT Medium::setStateError()
             if (!m->strLastAccessError.isEmpty())
                 rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                               tr("Medium '%s' is not accessible. %s"),
-                              m->strLocationFull.raw(), m->strLastAccessError.c_str());
+                              m->strLocationFull.c_str(), m->strLastAccessError.c_str());
             else
                 rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                               tr("Medium '%s' is not accessible"),
-                              m->strLocationFull.raw());
+                              m->strLocationFull.c_str());
             break;
         }
         case MediumState_Creating:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr("Storage for the medium '%s' is being created"),
-                          m->strLocationFull.raw());
+                          m->strLocationFull.c_str());
             break;
         }
         case MediumState_Deleting:
         {
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                           tr("Storage for the medium '%s' is being deleted"),
-                          m->strLocationFull.raw());
+                          m->strLocationFull.c_str());
             break;
         }
         default:
@@ -3860,7 +3860,7 @@ HRESULT Medium::close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller)
     if (m->backRefs.size() != 0)
         return setError(VBOX_E_OBJECT_IN_USE,
                         tr("Medium '%s' cannot be closed because it is still attached to %d virtual machines"),
-                           m->strLocationFull.raw(), m->backRefs.size());
+                        m->strLocationFull.c_str(), m->backRefs.size());
 
     // perform extra media-dependent close checks
     HRESULT rc = canClose();
@@ -3938,7 +3938,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
                                                       | MediumFormatCapabilities_CreateFixed)))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support storage deletion"),
-                           m->strFormat.raw());
+                           m->strFormat.c_str());
 
         /* Note that we are fine with Inaccessible state too: a) for symmetry
          * with create calls and b) because it doesn't really harm to try, if
@@ -4010,7 +4010,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
             delete pMediumLockList;
             throw setError(rc,
                            tr("Failed to lock media when deleting '%s'"),
-                           getLocationFull().raw());
+                           getLocationFull().c_str());
         }
 
         /* try to remove from the list of known media before performing
@@ -4034,7 +4034,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
                 pProgress.createObject();
                 rc = pProgress->init(m->pVirtualBox,
                                      static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Deleting medium storage unit '%s'"), m->strLocationFull.raw()),
+                                     BstrFmt(tr("Deleting medium storage unit '%s'"), m->strLocationFull.c_str()),
                                      FALSE /* aCancelable */);
                 if (FAILED(rc))
                     throw rc;
@@ -4238,7 +4238,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
                 if (it->llSnapshotIds.size() == 0)
                     throw setError(VBOX_E_INVALID_OBJECT_STATE,
                                    tr("Medium '%s' is attached to a virtual machine with UUID {%RTuuid}. No differencing media based on it may be created until it is detached"),
-                                   m->strLocationFull.raw(), it->machineId.raw());
+                                   m->strLocationFull.c_str(), it->machineId.raw());
 
                 Assert(it->llSnapshotIds.size() == 1);
             }
@@ -4255,7 +4255,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
                 pProgress.createObject();
                 rc = pProgress->init(m->pVirtualBox,
                                      static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Creating differencing medium storage unit '%s'"), aTarget->m->strLocationFull.raw()),
+                                     BstrFmt(tr("Creating differencing medium storage unit '%s'"), aTarget->m->strLocationFull.c_str()),
                                      TRUE /* aCancelable */);
                 if (FAILED(rc))
                     throw rc;
@@ -4376,7 +4376,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                 AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
                 throw setError(VBOX_E_INVALID_OBJECT_STATE,
                                tr("Media '%s' and '%s' are unrelated"),
-                               m->strLocationFull.raw(), tgtLoc.raw());
+                               m->strLocationFull.c_str(), tgtLoc.c_str());
             }
         }
 
@@ -4422,7 +4422,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             {
                 throw setError(VBOX_E_INVALID_OBJECT_STATE,
                                tr("Medium '%s' involved in the merge operation has more than one child medium (%d)"),
-                               m->strLocationFull.raw(), getChildren().size());
+                               m->strLocationFull.c_str(), getChildren().size());
             }
             /* One backreference is only allowed if the machine ID is not empty
              * and it matches the machine the medium is attached to (including
@@ -4436,11 +4436,11 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                         && *getFirstMachineBackrefSnapshotId() != *aSnapshotId)))
                 throw setError(VBOX_E_OBJECT_IN_USE,
                                tr("Medium '%s' is attached to %d virtual machines"),
-                               m->strLocationFull.raw(), m->backRefs.size());
+                               m->strLocationFull.c_str(), m->backRefs.size());
             if (m->type == MediumType_Immutable)
                 throw setError(VBOX_E_INVALID_OBJECT_STATE,
                                tr("Medium '%s' is immutable"),
-                               m->strLocationFull.raw());
+                               m->strLocationFull.c_str());
         }
         else
         {
@@ -4449,13 +4449,13 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             {
                 throw setError(VBOX_E_OBJECT_IN_USE,
                                tr("Medium '%s' involved in the merge operation has more than one child medium (%d)"),
-                               pTarget->m->strLocationFull.raw(),
+                               pTarget->m->strLocationFull.c_str(),
                                pTarget->getChildren().size());
             }
             if (pTarget->m->type == MediumType_Immutable)
                 throw setError(VBOX_E_INVALID_OBJECT_STATE,
                                tr("Medium '%s' is immutable"),
-                               pTarget->m->strLocationFull.raw());
+                               pTarget->m->strLocationFull.c_str());
         }
         ComObjPtr<Medium> pLast(fMergeForward ? (Medium *)pTarget : this);
         ComObjPtr<Medium> pLastIntermediate = pLast->getParent();
@@ -4468,13 +4468,13 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             {
                 throw setError(VBOX_E_OBJECT_IN_USE,
                                tr("Medium '%s' involved in the merge operation has more than one child medium (%d)"),
-                               pLast->m->strLocationFull.raw(),
+                               pLast->m->strLocationFull.c_str(),
                                pLast->getChildren().size());
             }
             if (pLast->m->backRefs.size() != 0)
                 throw setError(VBOX_E_OBJECT_IN_USE,
                                tr("Medium '%s' is attached to %d virtual machines"),
-                               pLast->m->strLocationFull.raw(),
+                               pLast->m->strLocationFull.c_str(),
                                pLast->m->backRefs.size());
 
         }
@@ -4573,7 +4573,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                 AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
                 throw setError(rc,
                                tr("Failed to lock media when merging to '%s'"),
-                               pTarget->getLocationFull().raw());
+                               pTarget->getLocationFull().c_str());
             }
         }
     }
@@ -4714,8 +4714,8 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
                 rc = pProgress->init(m->pVirtualBox,
                                      static_cast<IMedium*>(this),
                                      BstrFmt(tr("Merging medium '%s' to '%s'"),
-                                             getName().raw(),
-                                             tgtName.raw()),
+                                             getName().c_str(),
+                                             tgtName.c_str()),
                                      TRUE /* aCancelable */);
                 if (FAILED(rc))
                     throw rc;
@@ -4827,7 +4827,7 @@ HRESULT Medium::canClose()
     if (getChildren().size() != 0)
         return setError(VBOX_E_OBJECT_IN_USE,
                         tr("Cannot close medium '%s' because it has %d child media"),
-                        m->strLocationFull.raw(), getChildren().size());
+                        m->strLocationFull.c_str(), getChildren().size());
 
     return S_OK;
 }
@@ -4963,7 +4963,7 @@ Utf8Str Medium::vdError(int aVRC)
     if (m->vdError.isEmpty())
         error = Utf8StrFmt(" (%Rrc)", aVRC);
     else
-        error = Utf8StrFmt(".\n%s", m->vdError.raw());
+        error = Utf8StrFmt(".\n%s", m->vdError.c_str());
 
     m->vdError.setNull();
 
@@ -4995,11 +4995,11 @@ DECLCALLBACK(void) Medium::vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
 
     if (that->m->vdError.isEmpty())
         that->m->vdError =
-            Utf8StrFmt("%s (%Rrc)", Utf8StrFmtVA(pszFormat, va).raw(), rc);
+            Utf8StrFmt("%s (%Rrc)", Utf8StrFmtVA(pszFormat, va).c_str(), rc);
     else
         that->m->vdError =
-            Utf8StrFmt("%s.\n%s (%Rrc)", that->m->vdError.raw(),
-                       Utf8StrFmtVA(pszFormat, va).raw(), rc);
+            Utf8StrFmt("%s.\n%s (%Rrc)", that->m->vdError.c_str(),
+                       Utf8StrFmtVA(pszFormat, va).c_str(), rc);
 }
 
 /* static */
@@ -5268,8 +5268,8 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
         {
             throw setError(E_FAIL,
                             tr("Could not update medium UUID references to parent '%s' (%s)"),
-                            m->strLocationFull.raw(),
-                            vdError(aVRC).raw());
+                            m->strLocationFull.c_str(),
+                            vdError(aVRC).c_str());
         }
 
         VDDestroy(hdd);
@@ -5383,7 +5383,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create the medium storage unit '%s'%s"),
-                               location.raw(), vdError(vrc).raw());
+                               location.c_str(), vdError(vrc).c_str());
 
             size = VDGetFileSize(hdd, 0);
             logicalSize = VDGetSize(hdd, 0) / _1M;
@@ -5529,8 +5529,8 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.raw(),
-                                   vdError(vrc).raw());
+                                   pMedium->m->strLocationFull.c_str(),
+                                   vdError(vrc).c_str());
             }
 
             /* ensure the target directory exists */
@@ -5551,7 +5551,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                 tr("Could not create the differencing medium storage unit '%s'%s"),
-                                targetLocation.raw(), vdError(vrc).raw());
+                                targetLocation.c_str(), vdError(vrc).c_str());
 
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
             logicalSize = VDGetSize(hdd, VD_LAST_IMAGE) / _1M;
@@ -5784,9 +5784,9 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
         {
             throw setError(VBOX_E_FILE_ERROR,
                             tr("Could not merge the medium '%s' to '%s'%s"),
-                            m->strLocationFull.raw(),
-                            pTarget->m->strLocationFull.raw(),
-                            vdError(aVRC).raw());
+                            m->strLocationFull.c_str(),
+                            pTarget->m->strLocationFull.c_str(),
+                            vdError(aVRC).c_str());
         }
 
         VDDestroy(hdd);
@@ -6014,8 +6014,8 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.raw(),
-                                   vdError(vrc).raw());
+                                   pMedium->m->strLocationFull.c_str(),
+                                   vdError(vrc).c_str());
             }
 
             Utf8Str targetFormat(pTarget->m->strFormat);
@@ -6078,8 +6078,8 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                     if (RT_FAILURE(vrc))
                         throw setError(VBOX_E_FILE_ERROR,
                                        tr("Could not open the medium storage unit '%s'%s"),
-                                       pMedium->m->strLocationFull.raw(),
-                                       vdError(vrc).raw());
+                                       pMedium->m->strLocationFull.c_str(),
+                                       vdError(vrc).c_str());
                 }
 
                 /** @todo r=klaus target isn't locked, race getting the state */
@@ -6087,7 +6087,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                              VD_LAST_IMAGE,
                              targetHdd,
                              targetFormat.c_str(),
-                             (fCreatingTarget) ? targetLocation.raw() : (char *)NULL,
+                             (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
                              false,
                              0,
                              task.mVariant,
@@ -6098,7 +6098,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not create the clone medium '%s'%s"),
-                                   targetLocation.raw(), vdError(vrc).raw());
+                                   targetLocation.c_str(), vdError(vrc).c_str());
 
                 size = VDGetFileSize(targetHdd, VD_LAST_IMAGE);
                 logicalSize = VDGetSize(targetHdd, VD_LAST_IMAGE) / _1M;
@@ -6233,7 +6233,7 @@ HRESULT Medium::taskDeleteHandler(Medium::DeleteTask &task)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not delete the medium storage unit '%s'%s"),
-                               location.raw(), vdError(vrc).raw());
+                               location.c_str(), vdError(vrc).c_str());
 
         }
         catch (HRESULT aRC) { rc = aRC; }
@@ -6328,8 +6328,8 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.raw(),
-                                   vdError(vrc).raw());
+                                   pMedium->m->strLocationFull.c_str(),
+                                   vdError(vrc).c_str());
 
                 /* Done when we hit the media which should be reset */
                 if (pMedium == this)
@@ -6341,7 +6341,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not delete the medium storage unit '%s'%s"),
-                               location.raw(), vdError(vrc).raw());
+                               location.c_str(), vdError(vrc).c_str());
 
             /* next, create it again */
             vrc = VDOpen(hdd,
@@ -6352,7 +6352,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not open the medium storage unit '%s'%s"),
-                               parentLocation.raw(), vdError(vrc).raw());
+                               parentLocation.c_str(), vdError(vrc).c_str());
 
             vrc = VDCreateDiff(hdd,
                                format.c_str(),
@@ -6368,7 +6368,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create the differencing medium storage unit '%s'%s"),
-                               location.raw(), vdError(vrc).raw());
+                               location.c_str(), vdError(vrc).c_str());
 
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
             logicalSize = VDGetSize(hdd, VD_LAST_IMAGE) / _1M;
@@ -6458,8 +6458,8 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.raw(),
-                                   vdError(vrc).raw());
+                                   pMedium->m->strLocationFull.c_str(),
+                                   vdError(vrc).c_str());
             }
 
             Assert(m->state == MediumState_LockedWrite);
@@ -6475,16 +6475,16 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
                 if (vrc == VERR_NOT_SUPPORTED)
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                    tr("Compacting is not yet supported for medium '%s'"),
-                                   location.raw());
+                                   location.c_str());
                 else if (vrc == VERR_NOT_IMPLEMENTED)
                     throw setError(E_NOTIMPL,
                                    tr("Compacting is not implemented, medium '%s'"),
-                                   location.raw());
+                                   location.c_str());
                 else
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not compact medium '%s'%s"),
-                                   location.raw(),
-                                   vdError(vrc).raw());
+                                   location.c_str(),
+                                   vdError(vrc).c_str());
             }
         }
         catch (HRESULT aRC) { rc = aRC; }

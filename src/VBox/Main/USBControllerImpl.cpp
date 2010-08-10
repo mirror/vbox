@@ -58,16 +58,18 @@ struct BackupableUSBData
 
 struct USBController::Data
 {
-    Data()
-        : pParent(NULL)
-    {};
+    Data(Machine *pMachine)
+        : pParent(pMachine),
+          pHost(pMachine->getVirtualBox()->host())
+    { }
 
     ~Data()
     {};
 
-    /** Parent object. */
     Machine * const                 pParent;
-    /** Peer object. */
+    Host * const                    pHost;
+
+    // peer machine's USB controller
     const ComObjPtr<USBController>  pPeer;
 
     Backupable<BackupableUSBData>   bd;
@@ -114,9 +116,8 @@ HRESULT USBController::init(Machine *aParent)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data();
+    m = new Data(aParent);
 
-    unconst(m->pParent) = aParent;
     /* mPeer is left null */
 
     m->bd.allocate();
@@ -152,9 +153,8 @@ HRESULT USBController::init(Machine *aParent, USBController *aPeer)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data();
+    m = new Data(aParent);
 
-    unconst(m->pParent) = aParent;
     unconst(m->pPeer) = aPeer;
 
     AutoWriteLock thatlock(aPeer COMMA_LOCKVAL_SRC_POS);
@@ -196,9 +196,8 @@ HRESULT USBController::initCopy(Machine *aParent, USBController *aPeer)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data();
+    m = new Data(aParent);
 
-    unconst(m->pParent) = aParent;
     /* mPeer is left null */
 
     AutoWriteLock thatlock(aPeer COMMA_LOCKVAL_SRC_POS);
@@ -536,7 +535,7 @@ STDMETHODIMP USBController::InsertDeviceFilter(ULONG aPosition,
     /* notify the proxy (only when it makes sense) */
     if (filter->getData().mActive && Global::IsOnline(adep.machineState()))
     {
-        USBProxyService *service = m->pParent->getVirtualBox()->host()->usbProxyService();
+        USBProxyService *service = m->pHost->usbProxyService();
         ComAssertRet(service, E_FAIL);
 
         ComAssertRet(filter->getId() == NULL, E_FAIL);
@@ -607,7 +606,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter(ULONG aPosition,
     /* notify the proxy (only when it makes sense) */
     if (filter->getData().mActive && Global::IsOnline(adep.machineState()))
     {
-        USBProxyService *service = m->pParent->getVirtualBox()->host()->usbProxyService();
+        USBProxyService *service = m->pHost->usbProxyService();
         ComAssertRet(service, E_FAIL);
 
         ComAssertRet(filter->getId() != NULL, E_FAIL);
@@ -755,7 +754,7 @@ void USBController::rollback()
 
     if (m->llDeviceFilters.isBackedUp())
     {
-        USBProxyService *service = m->pParent->getVirtualBox()->host()->usbProxyService();
+        USBProxyService *service = m->pHost->usbProxyService();
         Assert(service);
 
         /* uninitialize all new filters (absent in the backed up list) */
@@ -1006,9 +1005,10 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
 
     /* we don't modify our data fields -- no need to lock */
 
-    if (aFilter->mInList && m->pParent->isRegistered())
+    if (    aFilter->mInList
+         && m->pParent->isRegistered())
     {
-        USBProxyService *service = m->pParent->getVirtualBox()->host()->usbProxyService();
+        USBProxyService *service = m->pHost->usbProxyService();
         ComAssertRet(service, E_FAIL);
 
         if (aActiveChanged)
@@ -1200,7 +1200,7 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    USBProxyService *service = m->pParent->getVirtualBox()->host()->usbProxyService();
+    USBProxyService *service = m->pHost->usbProxyService();
     AssertReturn(service, E_FAIL);
 
     DeviceFilterList::const_iterator it = m->llDeviceFilters->begin();

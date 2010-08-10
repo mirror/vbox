@@ -213,20 +213,8 @@ public:
      */
     struct UserData
     {
-        UserData();
-        ~UserData();
-
-        Bstr    mName;
-        BOOL    mNameSync;
-        Bstr    mDescription;
-        Bstr    mOSTypeId;
-        Bstr    mSnapshotFolder;
-        Bstr    mSnapshotFolderFull;
-        BOOL    mTeleporterEnabled;
-        ULONG   mTeleporterPort;
-        Bstr    mTeleporterAddress;
-        Bstr    mTeleporterPassword;
-        BOOL    mRTCUseUTC;
+        settings::MachineUserData s;
+        Utf8Str m_strSnapshotFolderFull;
     };
 
     /**
@@ -591,7 +579,7 @@ public:
      * Intended to be used only after doing addCaller() manually and locking it
      * for reading.
      */
-    const Bstr& getName() const { return mUserData->mName; }
+    const Utf8Str& getName() const { return mUserData->s.strName; }
 
     enum
     {

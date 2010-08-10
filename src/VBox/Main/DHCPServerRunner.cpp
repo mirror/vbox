@@ -110,7 +110,7 @@ int DHCPServerRunner::start()
              * and thus check the mOptions string length here
              */
             if (mOptions[i].length())
-                args[index++] = mOptions[i].raw();  // value
+                args[index++] = mOptions[i].c_str();  // value
         }
     }
 

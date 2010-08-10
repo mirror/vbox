@@ -846,6 +846,41 @@ struct Snapshot
     SnapshotsList   llChildSnapshots;
 };
 
+struct MachineUserData
+{
+    MachineUserData()
+        : fNameSync(true),
+          fTeleporterEnabled(false),
+          uTeleporterPort(0),
+          fRTCUseUTC(false)
+    { }
+
+    bool operator==(const MachineUserData &c) const
+    {
+        return    (strName                    == c.strName)
+               && (fNameSync                  == c.fNameSync)
+               && (strDescription             == c.strDescription)
+               && (strOsType                  == c.strOsType)
+               && (strSnapshotFolder          == c.strSnapshotFolder)
+               && (fTeleporterEnabled         == c.fTeleporterEnabled)
+               && (uTeleporterPort            == c.uTeleporterPort)
+               && (strTeleporterAddress       == c.strTeleporterAddress)
+               && (strTeleporterPassword      == c.strTeleporterPassword)
+               && (fRTCUseUTC                 == c.fRTCUseUTC);
+    }
+
+    com::Utf8Str            strName;
+    bool                    fNameSync;
+    com::Utf8Str            strDescription;
+    com::Utf8Str            strOsType;
+    com::Utf8Str            strSnapshotFolder;
+    bool                    fTeleporterEnabled;
+    uint32_t                uTeleporterPort;
+    com::Utf8Str            strTeleporterAddress;
+    com::Utf8Str            strTeleporterPassword;
+    bool                    fRTCUseUTC;
+};
+
 /**
  * MachineConfigFile represents an XML machine configuration. All the machine settings
  * that go out to the XML (or are read from it) are in here.
@@ -858,22 +893,15 @@ class MachineConfigFile : public ConfigFileBase
 {
 public:
     com::Guid               uuid;
-    com::Utf8Str            strName;
-    bool                    fNameSync;
-    com::Utf8Str            strDescription;
-    com::Utf8Str            strOsType;
-    com::Utf8Str            strStateFile;
-    com::Guid               uuidCurrentSnapshot;
-    com::Utf8Str            strSnapshotFolder;
-    bool                    fTeleporterEnabled;
-    uint32_t                uTeleporterPort;
-    com::Utf8Str            strTeleporterAddress;
-    com::Utf8Str            strTeleporterPassword;
-    bool                    fRTCUseUTC;
 
+    MachineUserData         machineUserData;
+
+    com::Utf8Str            strStateFile;
     bool                    fCurrentStateModified;      // optional, default is true
     RTTIMESPEC              timeLastStateChange;        // optional, defaults to now
     bool                    fAborted;                   // optional, default is false
+
+    com::Guid               uuidCurrentSnapshot;
 
     Hardware                hardwareMachine;
     Storage                 storageMachine;
