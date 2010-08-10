@@ -1178,9 +1178,9 @@ if defined(VBOX_WITH_USB) && defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_
  VBOX_PRX_DEV_LNX = $(PATH_ROOT)/src/VBox/Devices/USB/linux/USBProxyDevice-linux.cpp
  VRDP_PRX_DEV_LNX = $(PATH_ROOT)/src/VBox/RDP/client/vrdp/USBProxyDevice-linux.c
 $$(PATH_Drivers)/tstSameUSBProxyDevLinux.run: $(VBOX_PRX_DEV_LNX) $(VRDP_PRX_DEV_LNX) | $$(PATH_Drivers)/
-	$(QUIET)$(CMP) $(VBOX_PRX_DEV_LNX) $(VRDP_PRX_DEV_LNX) \
-		$(length $(shell $(SED) -n '1 p' $(VBOX_PRX_DEV_LNX))) \
-		$(length $(shell $(SED) -n '1 p' $(VRDP_PRX_DEV_LNX)))
+	$(QUIET)$(call MSG_L1,Source correctness - ensuring that files are identical: $^)
+	$(QUIET)$(CMP) $^ \
+		$(foreach i,$^,$(length $(shell $(SED) -n '1,\?/* START */?p' $(i))))
 	$(QUIET)$(APPEND) -t "$@" "done"
 endif # USB + TESTCASES + !SDK
 
