@@ -19,6 +19,9 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += VBox-zlib
+if1of ($(KBUILD_TARGET),os2 win)
+ LIBRARIES += VBox-zlib-static
+endif
 VBox-zlib_TEMPLATE = VBOXR3
 VBox-zlib_DEFS = verbose=-1
 VBox-zlib_SOURCES = \
@@ -34,6 +37,10 @@ VBox-zlib_SOURCES = \
 	infback.c \
 	inftrees.c \
 	inffast.c
+
+VBox-zlib-static_TEMPLATE = VBOXR3STATIC
+VBox-zlib-static_DEFS = $(VBox-zlib_DEFS)
+VBox-zlib-static_SOURCES = $(VBox-zlib_SOURCES)
 
 include $(KBUILD_PATH)/subfooter.kmk
 

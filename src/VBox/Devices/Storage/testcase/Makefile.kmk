@@ -75,15 +75,22 @@ ifdef VBOX_WITH_TESTCASES
  tstVDShareable_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVDSetUuid_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  VBoxFixHdd_LIBS = \
-	$(VBOX_LIB_RUNTIME_STATIC) \
+	$(VBOX_LIB_RUNTIME_STATIC)
+ if1of ($(KBUILD_TARGET),os2 win)
+  VBoxFixHdd_LIBS += \
+	$(PATH_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBox-zlib-static$(VBOX_SUFF_LIB)
+ else
+  VBoxFixHdd_LIBS += \
 	$(PATH_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
 	$(SDK_VBOX_ZLIB_LIBS)
+ endif
  ifeq ($(KBUILD_TARGET),linux)
   VBoxFixHdd_LIBS += crypt
  else ifeq ($(KBUILD_TARGET),darwin)
   VBoxFixHdd_LIBS += iconv
  else ifeq ($(KBUILD_TARGET),win)
-  VBoxFixHdd_SDKS.win = VBOX_NTDLL VBOX_ZLIB WINPSDK $(VBOX_WINDDK)
+  VBoxFixHdd_SDKS.win = VBOX_NTDLL
  endif
  tstVD_SOURCES  = tstVD.cpp
  tstVD-2_SOURCES  = tstVD-2.cpp

@@ -20,6 +20,9 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += VBox-liblzf
+if1of ($(KBUILD_TARGET),os2 win)
+ LIBRARIES += VBox-liblzf-static
+endif
 VBox-liblzf_TEMPLATE = VBOXR3
 VBox-liblzf_BLD_TYPE = release # WARNING! Always optimizing this lib.
 VBox-liblzf_DEFS = ULTRA_FAST=1 HLOG=12
@@ -28,6 +31,13 @@ VBox-liblzf_DEFS.amd64 = STRICT_ALIGN=0
 VBox-liblzf_SOURCES = \
 	lzf_c.c \
 	lzf_d.c
+
+VBox-liblzf-static_TEMPLATE   = VBOXR3STATIC
+VBox-liblzf-static_BLD_TYPE   = $(VBox-liblzf_BLD_TYPE)
+VBox-liblzf-static_DEFS       = $(VBox-liblzf_DEFS)
+VBox-liblzf-static_DEFS.x86   = $(VBox-liblzf_DEFS.x86)
+VBox-liblzf-static_DEFS.amd64 = $(VBox-liblzf_DEFS.amd64)
+VBox-liblzf-static_SOURCES    = $(VBox-liblzf_SOURCES)
 
 include $(KBUILD_PATH)/subfooter.kmk
 
