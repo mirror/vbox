@@ -80,6 +80,8 @@ ifdef VBOX_WITH_TESTCASES
 	$(SDK_VBOX_ZLIB_LIBS)
  ifeq ($(KBUILD_TARGET),linux)
   VBoxFixHdd_LIBS += crypt
+ else ifeq ($(KBUILD_TARGET),darwin)
+  VBoxFixHdd_LIBS += iconv
  endif
  tstVD_SOURCES  = tstVD.cpp
  tstVD-2_SOURCES  = tstVD-2.cpp
