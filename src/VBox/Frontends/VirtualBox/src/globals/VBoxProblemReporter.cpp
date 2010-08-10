@@ -2346,6 +2346,13 @@ void VBoxProblemReporter::cannotExportAppliance (const CProgress &aProgress, CAp
              formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
+void VBoxProblemReporter::warnAboutIncorrectPort(QWidget *pParent) const
+{
+    message(pParent, Error,
+            tr("The current port forwarding rules are not valid. "
+               "None of the host or guest port values may be set to zero."));
+}
+
 void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal,
                                             const QString &errorID,
                                             const QString &errorMsg) const

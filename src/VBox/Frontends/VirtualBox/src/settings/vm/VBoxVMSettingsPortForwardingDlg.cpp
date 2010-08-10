@@ -25,16 +25,19 @@
 #include <QItemEditorFactory>
 #include <QComboBox>
 #include <QLineEdit>
+#include <QSpinBox>
 #include <QTimer>
 
 /* Local includes */
 #include "VBoxVMSettingsPortForwardingDlg.h"
 #include "VBoxGlobal.h"
+#include "VBoxProblemReporter.h"
 #include "VBoxToolBar.h"
 #include "QITableView.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
 #include <iprt/cidr.h>
+#include <math.h>
 
 /* IP validator: */
 class IPValidator : public QValidator
@@ -151,6 +154,33 @@ private:
     }
 };
 
+/* Port editor: */
+class PortEditor : public QSpinBox
+{
+    Q_OBJECT;
+    Q_PROPERTY(PortData port READ port WRITE setPort USER true);
+
+public:
+
+    PortEditor(QWidget *pParent = 0) : QSpinBox(pParent)
+    {
+        setFrame(false);
+        setRange(0, pow(2, 8 * sizeof(ushort)) - 1);
+    }
+
+private:
+
+    void setPort(PortData port)
+    {
+        setValue(port.value());
+    }
+
+    PortData port() const
+    {
+        return value();
+    }
+};
+
 /* Port forwarding data model: */
 class UIPortForwardingModel : public QAbstractTableModel
 {
@@ -246,9 +276,9 @@ public:
                     case UIPortForwardingDataType_Name: return m_dataList[index.row()].name;
                     case UIPortForwardingDataType_Protocol: return vboxGlobal().toString(m_dataList[index.row()].protocol);
                     case UIPortForwardingDataType_HostIp: return m_dataList[index.row()].hostIp;
-                    case UIPortForwardingDataType_HostPort: return m_dataList[index.row()].hostPort;
+                    case UIPortForwardingDataType_HostPort: return m_dataList[index.row()].hostPort.value();
                     case UIPortForwardingDataType_GuestIp: return m_dataList[index.row()].guestIp;
-                    case UIPortForwardingDataType_GuestPort: return m_dataList[index.row()].guestPort;
+                    case UIPortForwardingDataType_GuestPort: return m_dataList[index.row()].guestPort.value();
                     default: return QVariant();
                 }
             }
@@ -261,9 +291,9 @@ public:
                     case UIPortForwardingDataType_Name: return QVariant::fromValue(m_dataList[index.row()].name);
                     case UIPortForwardingDataType_Protocol: return QVariant::fromValue(m_dataList[index.row()].protocol);
                     case UIPortForwardingDataType_HostIp: return QVariant::fromValue(m_dataList[index.row()].hostIp);
-                    case UIPortForwardingDataType_HostPort: return m_dataList[index.row()].hostPort;
+                    case UIPortForwardingDataType_HostPort: return QVariant::fromValue(m_dataList[index.row()].hostPort);
                     case UIPortForwardingDataType_GuestIp: return QVariant::fromValue(m_dataList[index.row()].guestIp);
-                    case UIPortForwardingDataType_GuestPort: return m_dataList[index.row()].guestPort;
+                    case UIPortForwardingDataType_GuestPort: return QVariant::fromValue(m_dataList[index.row()].guestPort);
                     default: return QVariant();
                 }
             }
@@ -323,7 +353,7 @@ public:
                 emit dataChanged(index, index);
                 return true;
             case UIPortForwardingDataType_HostPort:
-                m_dataList[index.row()].hostPort = value.toUInt();
+                m_dataList[index.row()].hostPort = value.value<PortData>();
                 emit dataChanged(index, index);
                 return true;
             case UIPortForwardingDataType_GuestIp:
@@ -331,7 +361,7 @@ public:
                 emit dataChanged(index, index);
                 return true;
             case UIPortForwardingDataType_GuestPort:
-                m_dataList[index.row()].guestPort = value.toUInt();
+                m_dataList[index.row()].guestPort = value.value<PortData>();
                 emit dataChanged(index, index);
                 return true;
             default: return false;
@@ -475,6 +505,13 @@ VBoxVMSettingsPortForwardingDlg::VBoxVMSettingsPortForwardingDlg(QWidget *pParen
             /* Link ip type & editor: */
             pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIpEditorItemCreator);
 
+            /* Register port type: */
+            int iPortId = qRegisterMetaType<PortData>();
+            /* Register port editor: */
+            QStandardItemEditorCreator<PortEditor> *pPortEditorItemCreator = new QStandardItemEditorCreator<PortEditor>();
+            /* Link port type & editor: */
+            pNewItemEditorFactory->registerEditor((QVariant::Type)iPortId, pPortEditorItemCreator);
+
             /* Set newly created item editor factory for table delegate: */
             pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
         }
@@ -578,6 +615,22 @@ void VBoxVMSettingsPortForwardingDlg::sltAdjustTable()
             m_pTableView->horizontalHeader()->resizeSection(u, uFullWidth / UIPortForwardingModel::UIPortForwardingDataType_Max);
     }
     m_pTableView->horizontalHeader()->setStretchLastSection(true);
+}
+
+void VBoxVMSettingsPortForwardingDlg::accept()
+{
+    /* Validate table: */
+    for (int i = 0; i < m_pModel->rowCount(); ++i)
+    {
+        if (m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostPort), Qt::EditRole).value<PortData>().value() == 0 ||
+            m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_GuestPort), Qt::EditRole).value<PortData>().value() == 0)
+        {
+            vboxProblem().warnAboutIncorrectPort(this);
+            return;
+        }
+    }
+    /* Base class accept() slot: */
+    QIWithRetranslateUI<QIDialog>::accept();
 }
 
 /* UI Retranslation slot: */
