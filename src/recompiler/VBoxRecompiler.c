@@ -2038,7 +2038,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
     if (fHiddenSelRegsValid)
     {
         /* The hidden selector registers are valid in the CPU context. */
-        /** @note QEmu saves the 2nd dword of the descriptor; we should convert the attribute word back! */
+        /* Note! QEmu saves the 2nd dword of the descriptor; we should convert the attribute word back! */
 
         /* Set current CPL */
         cpu_x86_set_cpl(&pVM->rem.s.Env, uCpl);
