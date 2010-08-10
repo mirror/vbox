@@ -89,6 +89,7 @@
   <xsl:param name="safearray" />
   <xsl:param name="param" />
   <xsl:param name="dir" />
+  <xsl:param name="mod" />
 
   <xsl:choose>
     <xsl:when test="$safearray='yes'">
@@ -113,6 +114,9 @@
     </xsl:when>
     <xsl:otherwise>
       <xsl:choose>
+        <xsl:when test="$mod='ptr'">
+          <xsl:value-of select="'BYTE*'" />
+        </xsl:when>
         <xsl:when test="(($type='wstring') or ($type='uuid')) and $param">
           <xsl:value-of select="'BSTR'" />
         </xsl:when>
@@ -257,6 +261,7 @@
         <xsl:with-param name="safearray" select="@safearray" />
         <xsl:with-param name="param" select="$aName" />
         <xsl:with-param name="dir" select="'in'" />
+        <xsl:with-param name="mod" select="@mod" />
       </xsl:call-template>
     </xsl:variable>
     <xsl:variable name="aType">
@@ -265,6 +270,7 @@
         <xsl:with-param name="safearray" select="@safearray" />
         <xsl:with-param name="param" select="'_'" />
         <xsl:with-param name="dir" select="'in'" />
+        <xsl:with-param name="mod" select="@mod" />
       </xsl:call-template>
     </xsl:variable>
 
@@ -346,6 +352,7 @@
         <xsl:with-param name="type" select="@type" />
         <xsl:with-param name="safearray" select="@safearray" />
         <xsl:with-param name="dir" select="'in'" />
+        <xsl:with-param name="mod" select="@mod" />
       </xsl:call-template>
     </xsl:variable>
     <xsl:variable name="pName">
@@ -357,6 +364,7 @@
         <xsl:with-param name="safearray" select="@safearray" />
         <xsl:with-param name="param" select="$pName" />
         <xsl:with-param name="dir" select="'out'" />
+        <xsl:with-param name="mod" select="@mod" />
       </xsl:call-template>
     </xsl:variable>
 
@@ -366,6 +374,7 @@
         <xsl:with-param name="safearray" select="@safearray" />
         <xsl:with-param name="param" select="$pName" />
         <xsl:with-param name="dir" select="'in'" />
+        <xsl:with-param name="mod" select="@mod" />
       </xsl:call-template>
     </xsl:variable>
 
