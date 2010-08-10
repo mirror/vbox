@@ -472,6 +472,8 @@ else
 	$(libIDL_config_cflags)
  xpidl_LDFLAGS = \
 	$(libIDL_config_libs)
+ xpidl_LDFLAGS.linux = \
+	$(VBOX_LD_as_needed)
 endif
 
 #
