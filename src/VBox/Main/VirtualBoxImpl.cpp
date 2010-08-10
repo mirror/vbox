@@ -2161,7 +2161,7 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
             break;
         }
 
-        Utf8Str argsStr = Utf8StrFmt("/Helper %s", client.name().raw());
+        Utf8Str argsStr = Utf8StrFmt("/Helper %s", client.name().c_str());
 
         LogFlowFunc(("Starting '\"%s\" %s'...\n", exePath, argsStr.raw()));
 
