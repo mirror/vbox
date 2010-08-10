@@ -285,7 +285,7 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
             vrc = VBoxInitMemBalloon(pDevExt);
             if (RT_SUCCESS(vrc))
             {
-                vrc = VBoxGuestReportGuestDriverStatus(true /* Driver is active */);
+                vrc = VBoxGuestReportDriverStatus(true /* Driver is active */);
                 if (RT_FAILURE(vrc))
                     dprintf(("VBoxGuest::VBoxGuestPnp::IRP_MN_START_DEVICE: could not report guest driver status, vrc = %d\n", vrc));
             }
