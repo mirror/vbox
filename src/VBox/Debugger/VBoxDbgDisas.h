@@ -3,12 +3,6 @@
  * VBox Debugger GUI - Disassembly View.
  */
 
-/*
- * Copyright (C) 2008 Oracle Corporation
- *
- * Oracle Corporation confidential
- * All rights reserved
- */
 
 #ifndef ___Debugger_VBoxDbgDisas_h
 #define ___Debugger_VBoxDbgDisas_h
