@@ -50,21 +50,37 @@ public:
 };
 Q_DECLARE_METATYPE(IpData);
 
+/* Port data: */
+class PortData
+{
+public:
+
+    PortData() : m_uValue(0) {}
+    PortData(ushort uValue) : m_uValue(uValue) {}
+    PortData(const PortData &other) : m_uValue(other.value()) {}
+    ushort value() const { return m_uValue; }
+
+private:
+
+    ushort m_uValue;
+};
+Q_DECLARE_METATYPE(PortData);
+
 /* Port forwarding data: */
 struct UIPortForwardingData
 {
     UIPortForwardingData(const NameData &strName, KNATProtocol eProtocol,
-                         const IpData &strHostIp, uint uHostPort,
-                         const IpData &strGuestIp, uint uGuestPort)
+                         const IpData &strHostIp, PortData uHostPort,
+                         const IpData &strGuestIp, PortData uGuestPort)
         : name(strName), protocol(eProtocol)
         , hostIp(strHostIp), hostPort(uHostPort)
         , guestIp(strGuestIp), guestPort(uGuestPort) {}
     NameData name;
     KNATProtocol protocol;
     IpData hostIp;
-    uint hostPort;
+    PortData hostPort;
     IpData guestIp;
-    uint guestPort;
+    PortData guestPort;
 };
 
 /* Port forwarding data list: */
@@ -97,6 +113,9 @@ private slots:
     void sltCurrentChanged();
     void sltShowTableContexMenu(const QPoint &position);
     void sltAdjustTable();
+
+    /* Dialog slots: */
+    void accept();
 
 private:
 

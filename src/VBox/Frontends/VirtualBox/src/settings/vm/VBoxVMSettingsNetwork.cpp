@@ -188,8 +188,8 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
     {
         UIPortForwardingData redirectData = mPortForwardingRules[i];
         mAdapter.GetNatDriver().AddRedirect(redirectData.name, redirectData.protocol,
-                                            redirectData.hostIp, redirectData.hostPort,
-                                            redirectData.guestIp, redirectData.guestPort);
+                                            redirectData.hostIp, redirectData.hostPort.value(),
+                                            redirectData.guestIp, redirectData.guestPort.value());
     }
 }
 
