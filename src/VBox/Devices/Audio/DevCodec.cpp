@@ -578,11 +578,17 @@ static int codecReset(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
     {
         uint8_t i;
         Log(("HDAcodec: enters reset\n"));
-        for (i = 0; i < STAC9220_NODE_COUNT; ++i)
+        if (pState->fFirstResetDetected)
         {
-            stac9220ResetNode(pState, i, &pState->pNodes[i]);
-        }
-        pState->pfnReset(pState);
+            LogRel(("HDAcodec: \"Double\" reset detected\n"));
+            pState->fFirstResetDetected = false;
+            for (i = 0; i < STAC9220_NODE_COUNT; ++i)
+            {
+                stac9220ResetNode(pState, i, &pState->pNodes[i]);
+            }
+        }   
+        else
+            pState->fFirstResetDetected = true;
         Log(("HDAcodec: exits reset\n"));
     }
     *pResp = 0;
@@ -1173,6 +1179,10 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
     {
         if ((CODEC_VERBDATA(cmd) & pState->pVerbs[i].mask) == pState->pVerbs[i].verb)
         {
+            if(    pState->fFirstResetDetected
+                && CODEC_VERBDATA(cmd) != 0x7FF00
+                && CODEC_VERBDATA(cmd) != 0)
+                pState->fFirstResetDetected = false;
             *pfn = pState->pVerbs[i].pfn;
             return VINF_SUCCESS;
         }
@@ -1219,6 +1229,7 @@ int stac9220Construct(CODECState *pState)
     pState->cVerbs = sizeof(STAC9220VERB)/sizeof(CODECVERB);
     pState->pfnLookup = codecLookup;
     pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * STAC9220_NODE_COUNT);
+    pState->fFirstResetDetected = false;
     uint8_t i;
     for (i = 0; i < STAC9220_NODE_COUNT; ++i)
     {
