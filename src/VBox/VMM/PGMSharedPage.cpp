@@ -35,10 +35,13 @@
 
 #include "PGMInline.h"
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 #if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
-/* Keep a copy of all registered shared modules for the .pgmcheckduppages debugger command. */
-static PGMMREGISTERSHAREDMODULEREQ pSharedModules[512] = {0};
-static unsigned cSharedModules = 0;
+/** Keep a copy of all registered shared modules for the .pgmcheckduppages debugger command. */
+static PGMMREGISTERSHAREDMODULEREQ g_apSharedModules[512] = {0};
+static unsigned g_cSharedModules = 0;
 #endif
 
 /**
@@ -88,13 +91,13 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, VBOXOSFAMILY enmGuestOS, char 
     {
         PGMMREGISTERSHAREDMODULEREQ *ppSharedModule = NULL;
 
-        if (cSharedModules < RT_ELEMENTS(pSharedModules))
+        if (g_cSharedModules < RT_ELEMENTS(g_apSharedModules))
         {
-            for (unsigned i = 0; i < RT_ELEMENTS(pSharedModules); i++)
+            for (unsigned i = 0; i < RT_ELEMENTS(g_apSharedModules); i++)
             {
-                if (pSharedModules[i] == NULL)
+                if (g_apSharedModules[i] == NULL)
                 {
-                    ppSharedModule = &pSharedModules[i];
+                    ppSharedModule = &g_apSharedModules[i];
                     break;
                 }
             }
@@ -104,7 +107,7 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, VBOXOSFAMILY enmGuestOS, char 
             {
                 *ppSharedModule = (PGMMREGISTERSHAREDMODULEREQ)RTMemAllocZ(RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[cRegions]));
                 memcpy(*ppSharedModule, pReq, RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[cRegions]));
-                cSharedModules++;
+                g_cSharedModules++;
             }
         }
     }
@@ -154,15 +157,15 @@ VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *p
     RTMemFree(pReq);
 
 # if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
-    for (unsigned i = 0; i < cSharedModules; i++)
+    for (unsigned i = 0; i < g_cSharedModules; i++)
     {
-        if (    pSharedModules[i]
-            &&  !strcmp(pSharedModules[i]->szName, pszModuleName)
-            &&  !strcmp(pSharedModules[i]->szVersion, pszVersion))
+        if (    g_apSharedModules[i]
+            &&  !strcmp(g_apSharedModules[i]->szName, pszModuleName)
+            &&  !strcmp(g_apSharedModules[i]->szVersion, pszVersion))
         {
-            RTMemFree(pSharedModules[i]);
-            pSharedModules[i] = NULL;
-            cSharedModules--;
+            RTMemFree(g_apSharedModules[i]);
+            g_apSharedModules[i] = NULL;
+            g_cSharedModules--;
             break;
         }
     }
@@ -398,15 +401,15 @@ DECLCALLBACK(int)  pgmR3CmdShowSharedModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
     pgmLock(pVM);
     do
     {
-        if (pSharedModules[i])
+        if (g_apSharedModules[i])
         {
-            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Shared module %s (%s):\n", pSharedModules[i]->szName, pSharedModules[i]->szVersion);
-            for (unsigned j = 0; j < pSharedModules[i]->cRegions; j++)
-                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "--- Region %d: base %RGv size %x\n", j, pSharedModules[i]->aRegions[j].GCRegionAddr, pSharedModules[i]->aRegions[j].cbRegion);
+            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Shared module %s (%s):\n", g_apSharedModules[i]->szName, g_apSharedModules[i]->szVersion);
+            for (unsigned j = 0; j < g_apSharedModules[i]->cRegions; j++)
+                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "--- Region %d: base %RGv size %x\n", j, g_apSharedModules[i]->aRegions[j].GCRegionAddr, g_apSharedModules[i]->aRegions[j].cbRegion);
         }
         i++;
     }
-    while (i < RT_ELEMENTS(pSharedModules));
+    while (i < RT_ELEMENTS(g_apSharedModules));
     pgmUnlock(pVM);
 
     return VINF_SUCCESS;
