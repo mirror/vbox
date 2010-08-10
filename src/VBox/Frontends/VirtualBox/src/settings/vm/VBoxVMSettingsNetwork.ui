@@ -216,7 +216,17 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="0" colspan="4">
+      <item row="6" column="1">
+       <widget class="QPushButton" name="mPbPortForwarding">
+        <property name="whatsThis">
+         <string>Opens dialog to manage port forwarding rules.</string>
+        </property>
+        <property name="text">
+         <string>&amp;Port Forwarding</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0" colspan="4">
        <spacer name="verticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>

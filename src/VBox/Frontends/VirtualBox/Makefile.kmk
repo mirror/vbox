@@ -275,6 +275,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIStatusBar.h \
 	src/extensions/QITabWidget.h \
 	src/extensions/QIToolButton.h \
+	src/extensions/QITableView.h \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/QIWidgetValidator.h \
@@ -295,6 +296,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/vm/VBoxVMSettingsHD.h \
 	src/settings/vm/VBoxVMSettingsAudio.h \
 	src/settings/vm/VBoxVMSettingsNetwork.h \
+	src/settings/vm/VBoxVMSettingsPortForwardingDlg.h \
 	src/settings/vm/VBoxVMSettingsSerial.h \
 	src/settings/vm/VBoxVMSettingsParallel.h \
 	src/settings/vm/VBoxVMSettingsUSB.h \
@@ -369,6 +371,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIExtraDataEventHandler.cpp \
 	src/extensions/QISplitter.cpp \
 	src/selector/UIVMDesktop.cpp \
+	src/settings/vm/VBoxVMSettingsPortForwardingDlg.cpp \
 	src/runtime/UIActionsPool.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
@@ -428,6 +431,7 @@ VirtualBox_SOURCES = \
 	src/extensions/QISplitter.cpp \
 	src/extensions/QIStateIndicator.cpp \
 	src/extensions/QIStatusBar.cpp \
+	src/extensions/QITableView.cpp \
 	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \
@@ -447,6 +451,7 @@ VirtualBox_SOURCES = \
 	src/settings/vm/VBoxVMSettingsHD.cpp \
 	src/settings/vm/VBoxVMSettingsAudio.cpp \
 	src/settings/vm/VBoxVMSettingsNetwork.cpp \
+	src/settings/vm/VBoxVMSettingsPortForwardingDlg.cpp \
 	src/settings/vm/VBoxVMSettingsSerial.cpp \
 	src/settings/vm/VBoxVMSettingsParallel.cpp \
 	src/settings/vm/VBoxVMSettingsUSB.cpp \

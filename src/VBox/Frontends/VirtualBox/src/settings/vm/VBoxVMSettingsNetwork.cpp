@@ -56,6 +56,7 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
     /* Setup connections */
     connect (mAbsAdvanced, SIGNAL (clicked()), this, SLOT (toggleAdvanced()));
     connect (mTbMAC, SIGNAL (clicked()), this, SLOT (generateMac()));
+    connect (mPbPortForwarding, SIGNAL (clicked()), this, SLOT (sltOpenPortsForwadringDlg()));
 
 #ifdef Q_WS_MAC
     /* Prevent this widgets to go in the Small/Mini size state which is
@@ -119,6 +120,20 @@ void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
 
     mLeMAC->setText (mAdapter.GetMACAddress());
     mCbCableConnected->setChecked (mAdapter.GetCableConnected());
+
+    /* Load port forwarding rules: */
+    QVector<QString> redirects = mAdapter.GetNatDriver().GetRedirects();
+    for (int i = 0; i < redirects.size(); ++i)
+    {
+        QStringList redirectData = redirects[i].split(',');
+        AssertMsg(redirectData.size() == 6, ("Redirect rule should be composed of 6 parts!\n"));
+        mPortForwardingRules << UIPortForwardingData(redirectData[0],
+                                                     (KNATProtocol)redirectData[1].toUInt(),
+                                                     redirectData[2],
+                                                     redirectData[3].toUInt(),
+                                                     redirectData[4],
+                                                     redirectData[5].toUInt());
+    }
 }
 
 void VBoxVMSettingsNetwork::putBackToAdapter()
@@ -164,6 +179,18 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
 
     mAdapter.SetMACAddress (mLeMAC->text().isEmpty() ? QString::null : mLeMAC->text());
     mAdapter.SetCableConnected (mCbCableConnected->isChecked());
+
+    /* Save port forwarding rules: */
+    QVector<QString> redirects = mAdapter.GetNatDriver().GetRedirects();
+    for (int i = 0; i < redirects.size(); ++i)
+        mAdapter.GetNatDriver().RemoveRedirect(redirects[i].section(',', 0, 0));
+    for (int i = 0; i < mPortForwardingRules.size(); ++i)
+    {
+        UIPortForwardingData redirectData = mPortForwardingRules[i];
+        mAdapter.GetNatDriver().AddRedirect(redirectData.name, redirectData.protocol,
+                                            redirectData.hostIp, redirectData.hostPort,
+                                            redirectData.guestIp, redirectData.guestPort);
+    }
 }
 
 void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
@@ -235,7 +262,8 @@ QWidget* VBoxVMSettingsNetwork::setOrderAfter (QWidget *aAfter)
     setTabOrder (mCbAdapterType, mLeMAC);
     setTabOrder (mLeMAC, mTbMAC);
     setTabOrder (mTbMAC, mCbCableConnected);
-    return mCbCableConnected;
+    setTabOrder (mCbCableConnected, mPbPortForwarding);
+    return mPbPortForwarding;
 }
 
 QString VBoxVMSettingsNetwork::pageTitle() const
@@ -413,6 +441,9 @@ void VBoxVMSettingsNetwork::updateAttachmentAlternative()
     /* Remember selected item */
     updateAlternativeName();
 
+    /* Update Forwarding rules button availability: */
+    mPbPortForwarding->setEnabled(attachmentType() == KNetworkAttachmentType_NAT);
+
     /* Unblocking signals as content is changed already */
     mCbAdapterName->blockSignals (false);
 }
@@ -487,12 +518,20 @@ void VBoxVMSettingsNetwork::toggleAdvanced()
     mLeMAC->setVisible (mAbsAdvanced->isExpanded());
     mTbMAC->setVisible (mAbsAdvanced->isExpanded());
     mCbCableConnected->setVisible (mAbsAdvanced->isExpanded());
+    mPbPortForwarding->setVisible (mAbsAdvanced->isExpanded());
 }
 
 void VBoxVMSettingsNetwork::generateMac()
 {
     mAdapter.SetMACAddress (QString::null);
     mLeMAC->setText (mAdapter.GetMACAddress());
+}
+
+void VBoxVMSettingsNetwork::sltOpenPortsForwadringDlg()
+{
+    VBoxVMSettingsPortForwardingDlg dlg(this, mPortForwardingRules);
+    if (dlg.exec() == QDialog::Accepted)
+        mPortForwardingRules = dlg.rules();
 }
 
 void VBoxVMSettingsNetwork::populateComboboxes()

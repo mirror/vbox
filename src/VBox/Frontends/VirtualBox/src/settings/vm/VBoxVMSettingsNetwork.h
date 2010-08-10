@@ -23,6 +23,7 @@
 #include "COMDefs.h"
 #include "VBoxSettingsPage.h"
 #include "VBoxVMSettingsNetwork.gen.h"
+#include "VBoxVMSettingsPortForwardingDlg.h"
 
 /* VBox Forwardes */
 class VBoxVMSettingsNetworkPage;
@@ -61,6 +62,7 @@ private slots:
     void updateAlternativeName();
     void toggleAdvanced();
     void generateMac();
+    void sltOpenPortsForwadringDlg();
 
 private:
 
@@ -79,6 +81,7 @@ private:
 
     bool mPolished;
     bool mDisableStaticControls;
+    UIPortForwardingDataList mPortForwardingRules;
 };
 
 class VBoxVMSettingsNetworkPage : public VBoxSettingsPage
