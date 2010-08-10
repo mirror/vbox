@@ -485,10 +485,9 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
         X86PDEPAE   Pde = pgmGstGetLongModePDE(pVCpu, GCPtr);
 # endif
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-        bool const  fBigPage = Pde.b.u1Size;
-# else
-        /** @todo this is not correct for PAE and AMD64 modes! */
         bool const  fBigPage = Pde.b.u1Size && (pState->cr4 & X86_CR4_PSE);
+# else
+        bool const  fBigPage = Pde.b.u1Size;
 # endif
         if (    Pde.n.u1Present
             &&  (  !fBigPage
