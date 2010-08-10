@@ -6010,7 +6010,7 @@ bool Machine::checkForSpawnFailure()
      * error and finalize session spawning */
     rc = setError(E_FAIL,
                   tr("The virtual machine '%ls' has terminated unexpectedly during startup"),
-                  getName().raw());
+                  getName().c_str());
 #else
 
     /* PID not yet initialized, skip check. */
