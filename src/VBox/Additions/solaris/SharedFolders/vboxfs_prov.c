@@ -259,7 +259,10 @@ sfprov_create(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 	kmem_free(str, size);
 
 	if (RT_FAILURE(rc))
+	{
+		cmn_err(CE_NOTE, "sfprov_create: vboxCallCreate failed. path=%s rc=%d\n", path, rc);
 		return (EINVAL);
+	}
 	if (parms.Handle == SHFL_HANDLE_NIL) {
 		if (parms.Result == SHFL_FILE_EXISTS)
 			return (EEXIST);
