@@ -424,8 +424,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
     Log2(("VMMDev request issued: %d\n", requestHeader.requestType));
 
-    /* Because VMMDevReq_ReportGuestInfo is sent last in the first information chain
-     * from the guest also check for VMMDevReq_ReportGuestInfo2. */
+    /* Newer additions starts with VMMDevReq_ReportGuestInfo2, older additions
+       started with VMMDevReq_ReportGuestInfo. */
     if (   !pThis->fu32AdditionsOk
         && requestHeader.requestType != VMMDevReq_ReportGuestInfo2
         && requestHeader.requestType != VMMDevReq_ReportGuestInfo)
