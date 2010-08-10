@@ -204,7 +204,7 @@ void DisplayHelp()
             case 'T':
                 pcszDescr = "Maximum number of worker threads to run in parallel (100).";
                 break;
-                
+
             case 'k':
                 pcszDescr = "Maximum number of requests before a socket will be closed (100).";
                 break;
@@ -930,10 +930,7 @@ void RaiseSoapInvalidObjectFault(struct soap *soap,
 std::string ConvertComString(const com::Bstr &bstr)
 {
     com::Utf8Str ustr(bstr);
-    const char *pcsz;
-    if ((pcsz = ustr.raw()))
-        return pcsz;
-    return "";
+    return ustr.c_str();        // @todo r=dj since the length is known, we can probably use a better std::string allocator
 }
 
 /**
@@ -945,10 +942,7 @@ std::string ConvertComString(const com::Bstr &bstr)
 std::string ConvertComString(const com::Guid &uuid)
 {
     com::Utf8Str ustr(uuid.toString());
-    const char *pcsz;
-    if ((pcsz = ustr.raw()))
-        return pcsz;
-    return "";
+    return ustr.c_str();        // @todo r=dj since the length is known, we can probably use a better std::string allocator
 }
 
 /**
@@ -1162,7 +1156,7 @@ int WebServiceSession::authenticate(const char *pcszUsername,
             RTLDRMOD hlibAuth = 0;
             do
             {
-                rc = RTLdrLoad(filename.raw(), &hlibAuth);
+                rc = RTLdrLoad(filename.c_str(), &hlibAuth);
                 if (RT_FAILURE(rc))
                 {
                     WEBDEBUG(("%s() Failed to load external authentication library. Error code: %Rrc\n", __FUNCTION__, rc));
@@ -1644,7 +1638,7 @@ int __vbox__IWebsessionManager_USCORElogon(
     HRESULT rc = SOAP_OK;
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
-    do 
+    do
     {
         // WebServiceSession constructor tinkers with global MOR map and requires a write lock
         util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);

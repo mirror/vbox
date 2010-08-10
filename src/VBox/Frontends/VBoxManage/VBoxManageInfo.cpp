@@ -58,7 +58,7 @@ void showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
     {
         /* print with hierarchical numbering */
         RTPrintf("SnapshotName%lS=\"%lS\"\n", prefix.raw(), name.raw());
-        RTPrintf("SnapshotUUID%lS=\"%s\"\n", prefix.raw(), Utf8Str(uuid).raw());
+        RTPrintf("SnapshotUUID%lS=\"%s\"\n", prefix.raw(), Utf8Str(uuid).c_str());
     }
     else
     {
@@ -67,7 +67,7 @@ void showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
         RTPrintf("   %lSName: %lS (UUID: %s)%s\n",
                  prefix.raw(),
                  name.raw(),
-                 Utf8Str(uuid).raw(),
+                 Utf8Str(uuid).c_str(),
                  (fCurrent) ? " *" : "");
     }
 
@@ -150,7 +150,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     if (!accessible)
     {
         if (details == VMINFO_COMPACT)
-            RTPrintf("\"<inaccessible>\" {%s}\n", Utf8Str(uuid).raw());
+            RTPrintf("\"<inaccessible>\" {%s}\n", Utf8Str(uuid).c_str());
         else
         {
             if (details == VMINFO_MACHINEREADABLE)
@@ -158,9 +158,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             else
                 RTPrintf("Name:            <inaccessible!>\n");
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("UUID=\"%s\"\n", Utf8Str(uuid).raw());
+                RTPrintf("UUID=\"%s\"\n", Utf8Str(uuid).c_str());
             else
-                RTPrintf("UUID:            %s\n", Utf8Str(uuid).raw());
+                RTPrintf("UUID:            %s\n", Utf8Str(uuid).c_str());
             if (details != VMINFO_MACHINEREADABLE)
             {
                 Bstr settingsFilePath;
@@ -182,7 +182,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
     if (details == VMINFO_COMPACT)
     {
-        RTPrintf("\"%lS\" {%s}\n", machineName.raw(), Utf8Str(uuid).raw());
+        RTPrintf("\"%lS\" {%s}\n", machineName.raw(), Utf8Str(uuid).c_str());
         return S_OK;
     }
 
@@ -203,9 +203,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("Guest OS:        %lS\n", osName.raw());
 
     if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("UUID=\"%s\"\n", Utf8Str(uuid).raw());
+        RTPrintf("UUID=\"%s\"\n", Utf8Str(uuid).c_str());
     else
-        RTPrintf("UUID:            %s\n", Utf8Str(uuid).raw());
+        RTPrintf("UUID:            %s\n", Utf8Str(uuid).c_str());
 
     Bstr settingsFilePath;
     rc = machine->COMGETTER(SettingsFilePath)(settingsFilePath.asOutParam());
@@ -693,7 +693,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                         RTPrintf("\"%lS-%d-%d\"=\"%lS\"\n", storageCtlName.raw(),
                                  i, k, filePath.raw());
                         RTPrintf("\"%lS-ImageUUID-%d-%d\"=\"%s\"\n",
-                                 storageCtlName.raw(), i, k, Utf8Str(uuid).raw());
+                                 storageCtlName.raw(), i, k, Utf8Str(uuid).c_str());
                         if (fPassthrough)
                             RTPrintf("\"%lS-dvdpassthrough\"=\"%s\"\n", storageCtlName.raw(),
                                      fPassthrough ? "on" : "off");
@@ -702,7 +702,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     {
                         RTPrintf("%lS (%d, %d): %lS (UUID: %s)",
                                  storageCtlName.raw(), i, k, filePath.raw(),
-                                 Utf8Str(uuid).raw());
+                                 Utf8Str(uuid).c_str());
                         if (fPassthrough)
                             RTPrintf(" (passthrough enabled)");
                         RTPrintf("\n");
@@ -789,11 +789,11 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                 pos = str.find(",", ppos);                      \
                                 if (pos == Utf8Str::npos)                       \
                                 {                                               \
-                                    Log(( #res " extracting from %s is failed\n", str.raw())); \
+                                    Log(( #res " extracting from %s is failed\n", str.c_str())); \
                                     fSkip = true;                               \
                                 }                                               \
                                 res = str.substr(ppos, pos - ppos);             \
-                                Log2((#res " %s pos:%d, ppos:%d\n", res.raw(), pos, ppos)); \
+                                Log2((#res " %s pos:%d, ppos:%d\n", res.c_str(), pos, ppos)); \
                                 ppos = pos + 1;                                 \
                             } while (0)
                             ITERATE_TO_NEXT_TERM(strName, utf, pos, ppos);
@@ -823,17 +823,17 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                             if (details == VMINFO_MACHINEREADABLE)
                             {
                                 strNatForwardings = Utf8StrFmt("%sForwarding(%d)=\"%s,%s,%s,%s,%s,%s\"\n",
-                                    strNatForwardings.raw(), i, strName.raw(), strProto.raw(),
-                                    strHostIP.isEmpty() ? "": strHostIP.raw(), strHostPort.raw(),
-                                    strGuestIP.isEmpty() ? "": strGuestIP.raw(), strGuestPort.raw());
+                                    strNatForwardings.c_str(), i, strName.c_str(), strProto.c_str(),
+                                    strHostIP.c_str(), strHostPort.c_str(),
+                                    strGuestIP.c_str(), strGuestPort.c_str());
                             }
                             else
                             {
                                 strNatForwardings = Utf8StrFmt("%sNIC %d Rule(%d):   name = %s, protocol = %s,"
                                     " host ip = %s, host port = %s, guest ip = %s, guest port = %s\n",
-                                    strNatForwardings.raw(), currentNIC + 1, i, strName.raw(), strProto.raw(),
-                                    strHostIP.isEmpty() ? "": strHostIP.raw(), strHostPort.raw(),
-                                    strGuestIP.isEmpty() ? "": strGuestIP.raw(), strGuestPort.raw());
+                                    strNatForwardings.c_str(), currentNIC + 1, i, strName.c_str(), strProto.c_str(),
+                                    strHostIP.c_str(), strHostPort.c_str(),
+                                    strGuestIP.c_str(), strGuestPort.c_str());
                             }
                         }
                         ULONG mtu = 0;
@@ -881,7 +881,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                             strAttachment = "intnet";
                         }
                         else
-                            strAttachment = Utf8StrFmt("Internal Network '%s'", Utf8Str(strNetwork).raw());
+                            strAttachment = Utf8StrFmt("Internal Network '%s'", Utf8Str(strNetwork).c_str());
                         break;
                     }
 #if defined(VBOX_WITH_NETFLT)
@@ -973,21 +973,21 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 {
                     RTPrintf("macaddress%d=\"%lS\"\n", currentNIC + 1, strMACAddress.raw());
                     RTPrintf("cableconnected%d=\"%s\"\n", currentNIC + 1, fConnected ? "on" : "off");
-                    RTPrintf("nic%d=\"%s\"\n", currentNIC + 1, strAttachment.raw());
+                    RTPrintf("nic%d=\"%s\"\n", currentNIC + 1, strAttachment.c_str());
                 }
                 else
                     RTPrintf("NIC %d:           MAC: %lS, Attachment: %s, Cable connected: %s, Trace: %s (file: %lS), Type: %s, Reported speed: %d Mbps, Boot priority: %d\n",
-                             currentNIC + 1, strMACAddress.raw(), strAttachment.raw(),
+                             currentNIC + 1, strMACAddress.raw(), strAttachment.c_str(),
                              fConnected ? "on" : "off",
                              fTraceEnabled ? "on" : "off",
                              traceFile.isEmpty() ? Bstr("none").raw() : traceFile.raw(),
-                             strNICType.raw(),
+                             strNICType.c_str(),
                              ulLineSpeed / 1000,
                              (int)ulBootPriority);
                 if (strNatSettings.length())
-                    RTPrintf(strNatSettings.raw());
+                    RTPrintf(strNatSettings.c_str());
                 if (strNatForwardings.length())
-                    RTPrintf(strNatForwardings.raw());
+                    RTPrintf(strNatForwardings.c_str());
             }
         }
     }
@@ -1536,7 +1536,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                      "USBRemoteVendorId%zu=\"%#06x\"\n"
                                      "USBRemoteProductId%zu=\"%#06x\"\n"
                                      "USBRemoteRevision%zu=\"%#04x%02x\"\n",
-                                     index + 1, Utf8Str(id).raw(),
+                                     index + 1, Utf8Str(id).c_str(),
                                      index + 1, usVendorId,
                                      index + 1, usProductId,
                                      index + 1, bcdRevision >> 8, bcdRevision & 0xff);
@@ -1545,7 +1545,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                      "VendorId:           0x%04x (%04X)\n"
                                      "ProductId:          0x%04x (%04X)\n"
                                      "Revision:           %u.%u (%02u%02u)\n",
-                                     Utf8Str(id).raw(),
+                                     Utf8Str(id).c_str(),
                                      usVendorId, usVendorId, usProductId, usProductId,
                                      bcdRevision >> 8, bcdRevision & 0xff,
                                      bcdRevision >> 8, bcdRevision & 0xff);
@@ -1625,7 +1625,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                      "USBAttachedVendorId%zu=\"%#06x\"\n"
                                      "USBAttachedProductId%zu=\"%#06x\"\n"
                                      "USBAttachedRevision%zu=\"%#04x%02x\"\n",
-                                     index + 1, Utf8Str(id).raw(),
+                                     index + 1, Utf8Str(id).c_str(),
                                      index + 1, usVendorId,
                                      index + 1, usProductId,
                                      index + 1, bcdRevision >> 8, bcdRevision & 0xff);
@@ -1634,7 +1634,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                      "VendorId:           0x%04x (%04X)\n"
                                      "ProductId:          0x%04x (%04X)\n"
                                      "Revision:           %u.%u (%02u%02u)\n",
-                                     Utf8Str(id).raw(),
+                                     Utf8Str(id).c_str(),
                                      usVendorId, usVendorId, usProductId, usProductId,
                                      bcdRevision >> 8, bcdRevision & 0xff,
                                      bcdRevision >> 8, bcdRevision & 0xff);

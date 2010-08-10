@@ -196,7 +196,7 @@ static int handleEnumGuestProperty(HandlerArg *a)
      */
     Utf8Str Utf8Patterns(a->argc > 2 ? a->argv[2] : "");
     for (int i = 3; i < a->argc; ++i)
-        Utf8Patterns = Utf8StrFmt ("%s,%s", Utf8Patterns.raw(), a->argv[i]);
+        Utf8Patterns = Utf8StrFmt ("%s,%s", Utf8Patterns.c_str(), a->argv[i]);
 
     /*
      * Make the actual call to Main.
@@ -334,7 +334,7 @@ static int handleWaitGuestProperty(HandlerArg *a)
                     Bstr aNextName;
                     gpcev->COMGETTER(Name)(aNextName.asOutParam());
                     if (RTStrSimplePatternMultiMatch(pszPatterns, RTSTR_MAX,
-                                                     Utf8Str(aNextName).raw(), RTSTR_MAX, NULL))
+                                                     Utf8Str(aNextName).c_str(), RTSTR_MAX, NULL))
                     {
                         Bstr aNextValue, aNextFlags;
                         gpcev->COMGETTER(Value)(aNextValue.asOutParam());

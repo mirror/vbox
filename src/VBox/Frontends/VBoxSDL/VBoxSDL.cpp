@@ -1807,7 +1807,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * Now update the label
          */
         gpFramebuffer[0]->setSecureLabelColor(secureLabelColorFG, secureLabelColorBG);
-        gpFramebuffer[0]->setSecureLabelText(labelUtf8.raw());
+        gpFramebuffer[0]->setSecureLabelText(labelUtf8.c_str());
     }
 #endif
 
@@ -2633,7 +2633,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 /*
                  * Now update the label
                  */
-                gpFramebuffer[0]->setSecureLabelText(labelUtf8.raw());
+                gpFramebuffer[0]->setSecureLabelText(labelUtf8.c_str());
                 break;
             }
 #endif /* VBOX_SECURELABEL */
@@ -4027,7 +4027,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
     gMachine->COMGETTER(Name)(name.asOutParam());
 
     RTStrPrintf(szTitle, sizeof(szTitle), "%s - " VBOX_PRODUCT,
-                name ? Utf8Str(name).raw() : "<noname>");
+                name ? Utf8Str(name).c_str() : "<noname>");
 
     /* which mode are we in? */
     switch (mode)

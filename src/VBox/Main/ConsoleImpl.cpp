@@ -2308,7 +2308,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
                 {
                     rc = setError(VBOX_E_FILE_ERROR,
                         tr("Could not create a directory '%s' to save the state to (%Rrc)"),
-                        dir.raw(), vrc);
+                        dir.c_str(), vrc);
                     break;
                 }
             }
@@ -2979,11 +2979,6 @@ HRESULT Console::setErrorStatic(HRESULT aResultCode, const char *pcsz, ...)
                                   true /* aLogIt */);
     va_end(args);
     return rc;
-}
-
-HRESULT Console::setAuthLibraryError(const char *filename, int rc)
-{
-    return setError(E_FAIL, tr("Could not load the external authentication library '%s' (%Rrc)"), filename, rc);
 }
 
 HRESULT Console::setInvalidMachineStateError()
@@ -4943,9 +4938,9 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         RTDirCreateFullPath(logDir.c_str(), 0777);
 
     Utf8Str logFile = Utf8StrFmt("%s%cVBox.log",
-                                 logDir.raw(), RTPATH_DELIMITER);
+                                 logDir.c_str(), RTPATH_DELIMITER);
     Utf8Str pngFile = Utf8StrFmt("%s%cVBox.png",
-                                 logDir.raw(), RTPATH_DELIMITER);
+                                 logDir.c_str(), RTPATH_DELIMITER);
 
     /*
      * Age the old log files
@@ -4968,10 +4963,10 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
             for (unsigned int j = 0; j < RT_ELEMENTS(files); ++ j)
             {
                 if (i > 0)
-                    oldName = Utf8StrFmt("%s.%d", files[j]->raw(), i);
+                    oldName = Utf8StrFmt("%s.%d", files[j]->c_str(), i);
                 else
                     oldName = *files[j];
-                newName = Utf8StrFmt("%s.%d", files[j]->raw(), i + 1);
+                newName = Utf8StrFmt("%s.%d", files[j]->c_str(), i + 1);
                 /* If the old file doesn't exist, delete the new file (if it
                  * exists) to provide correct rotation even if the sequence is
                  * broken */
@@ -4991,7 +4986,7 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
     char szError[RTPATH_MAX + 128] = "";
     int vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
                             "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                            RTLOGDEST_FILE, szError, sizeof(szError), logFile.raw());
+                            RTLOGDEST_FILE, szError, sizeof(szError), logFile.c_str());
     if (RT_SUCCESS(vrc))
     {
         /* some introductory information */
@@ -6375,14 +6370,14 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     LogFlowThisFunc(("Proxying USB device '%s' {%RTuuid}...\n",
-                      Address.raw(), uuid.ptr()));
+                      Address.c_str(), uuid.ptr()));
 
     /* leave the lock before a VMR3* call (EMT will call us back)! */
     alock.leave();
 
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
     int vrc = VMR3ReqCallWait(mpVM, VMCPUID_ANY,
-                              (PFNRT) usbAttachCallback, 6, this, aHostDevice, uuid.ptr(), fRemote, Address.raw(), aMaskedIfs);
+                              (PFNRT)usbAttachCallback, 6, this, aHostDevice, uuid.ptr(), fRemote, Address.c_str(), aMaskedIfs);
 
     /* restore the lock */
     alock.enter();
@@ -6392,7 +6387,7 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     if (RT_FAILURE(vrc))
     {
         LogWarningThisFunc(("Failed to create proxy device for '%s' {%RTuuid} (%Rrc)\n",
-                             Address.raw(), uuid.ptr(), vrc));
+                             Address.c_str(), uuid.ptr(), vrc));
 
         switch (vrc)
         {
@@ -6921,7 +6916,7 @@ Console::setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFlags,
     Utf8Str message = Utf8StrFmtVA(pszFormat, va);
 
     LogRel(("Console: VM runtime error: fatal=%RTbool, errorID=%s message=\"%s\"\n",
-             fFatal, pszErrorId, message.raw()));
+             fFatal, pszErrorId, message.c_str()));
 
     that->onRuntimeError(BOOL(fFatal), Bstr(pszErrorId), Bstr(message));
 
@@ -7251,9 +7246,9 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
             console->mVRDPServer->COMGETTER(Ports)(bstr.asOutParam());
             Utf8Str ports = bstr;
             errMsg = Utf8StrFmt(tr("VRDP server can't bind to a port: %s"),
-                                ports.raw());
+                                ports.c_str());
             LogRel(("Warning: failed to launch VRDP server (%Rrc): '%s'\n",
-                    vrc, errMsg.raw()));
+                    vrc, errMsg.c_str()));
         }
         else if (RT_FAILURE(vrc))
         {
@@ -7270,7 +7265,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                                         vrc);
             }
             LogRel(("Failed to launch VRDP server (%Rrc), error message: '%s'\n",
-                     vrc, errMsg.raw()));
+                     vrc, errMsg.c_str()));
             throw setErrorStatic(E_FAIL, errMsg.c_str());
         }
 
@@ -7365,7 +7360,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 if (task->mSavedStateFile.length())
                 {
                     LogFlowFunc(("Restoring saved state from '%s'...\n",
-                                 task->mSavedStateFile.raw()));
+                                 task->mSavedStateFile.c_str()));
 
                     vrc = VMR3LoadFromFile(pVM,
                                            task->mSavedStateFile.c_str(),
@@ -7957,7 +7952,7 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
     Utf8Str errMsg;
     HRESULT rc = S_OK;
 
-    LogFlowFunc(("Saving the state to '%s'...\n", task->mSavedStateFile.raw()));
+    LogFlowFunc(("Saving the state to '%s'...\n", task->mSavedStateFile.c_str()));
 
     bool fSuspenededBySave;
     int vrc = VMR3Save(that->mpVM,
@@ -7969,7 +7964,7 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
     if (RT_FAILURE(vrc))
     {
         errMsg = Utf8StrFmt(Console::tr("Failed to save the machine state to '%s' (%Rrc)"),
-                            task->mSavedStateFile.raw(), vrc);
+                            task->mSavedStateFile.c_str(), vrc);
         rc = E_FAIL;
     }
     Assert(!fSuspenededBySave);

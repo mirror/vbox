@@ -342,7 +342,7 @@ public:
     do { \
         if (RT_UNLIKELY(!(expr))) \
             return setError(E_INVALIDARG, tr ("Argument %s %s"), \
-                            #arg, Utf8StrFmt msg .raw()); \
+                            #arg, Utf8StrFmt msg .c_str()); \
     } while (0)
 
 /**

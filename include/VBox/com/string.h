@@ -116,7 +116,7 @@ public:
 
     Bstr(const iprt::MiniString &that)
     {
-        copyFrom(that.raw());
+        copyFrom(that.c_str());
     }
 
     Bstr(const char *that)

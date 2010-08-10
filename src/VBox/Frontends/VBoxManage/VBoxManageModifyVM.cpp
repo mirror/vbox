@@ -338,7 +338,7 @@ int handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid guest OS type '%s'", Utf8Str(ValueUnion.psz).raw());
+                    errorArgument("Invalid guest OS type '%s'", Utf8Str(ValueUnion.psz).c_str());
                     rc = E_FAIL;
                 }
                 break;

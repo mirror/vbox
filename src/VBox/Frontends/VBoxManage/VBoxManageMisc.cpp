@@ -237,7 +237,7 @@ int handleCreateVM(HandlerArg *a)
             fRegister = true;
         }
         else
-            return errorSyntax(USAGE_CREATEVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
+            return errorSyntax(USAGE_CREATEVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
     }
     if (!name)
         return errorSyntax(USAGE_CREATEVM, "Parameter --name is required");
@@ -268,7 +268,7 @@ int handleCreateVM(HandlerArg *a)
                  "UUID: %s\n"
                  "Settings file: '%ls'\n",
                  name.raw(), fRegister ? " and registered" : "",
-                 Utf8Str(uuid).raw(), settingsFile.raw());
+                 Utf8Str(uuid).c_str(), settingsFile.raw());
     }
     while (0);
 
@@ -718,7 +718,7 @@ int handleSharedFolder(HandlerArg *a)
                 fAutoMount = true;
             }
             else
-                return errorSyntax(USAGE_SHAREDFOLDER_ADD, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
+                return errorSyntax(USAGE_SHAREDFOLDER_ADD, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
         }
 
         if (NULL != strstr(name, " "))
@@ -788,7 +788,7 @@ int handleSharedFolder(HandlerArg *a)
                 fTransient = true;
             }
             else
-                return errorSyntax(USAGE_SHAREDFOLDER_REMOVE, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
+                return errorSyntax(USAGE_SHAREDFOLDER_REMOVE, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
         }
 
         /* required arguments */
@@ -827,7 +827,7 @@ int handleSharedFolder(HandlerArg *a)
         }
     }
     else
-        return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", Utf8Str(a->argv[0]).raw());
+        return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
 
     return 0;
 }

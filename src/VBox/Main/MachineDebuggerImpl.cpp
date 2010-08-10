@@ -656,14 +656,14 @@ STDMETHODIMP MachineDebugger::COMGETTER(VM) (ULONG64 *aVm)
  * @returns COM status code.
  * @param   aPattern            The selection pattern. A bit similar to filename globbing.
  */
-STDMETHODIMP MachineDebugger::ResetStats (IN_BSTR aPattern)
+STDMETHODIMP MachineDebugger::ResetStats(IN_BSTR aPattern)
 {
     Console::SafeVMPtrQuiet pVM (mParent);
 
     if (!pVM.isOk())
         return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
 
-    STAMR3Reset (pVM, Utf8Str (aPattern).raw());
+    STAMR3Reset(pVM, Utf8Str(aPattern).c_str());
 
     return S_OK;
 }
@@ -681,7 +681,7 @@ STDMETHODIMP MachineDebugger::DumpStats (IN_BSTR aPattern)
     if (!pVM.isOk())
         return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
 
-    STAMR3Dump (pVM, Utf8Str (aPattern).raw());
+    STAMR3Dump(pVM, Utf8Str(aPattern).c_str());
 
     return S_OK;
 }
@@ -702,8 +702,8 @@ STDMETHODIMP MachineDebugger::GetStats (IN_BSTR aPattern, BOOL aWithDescriptions
         return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
 
     char *pszSnapshot;
-    int vrc = STAMR3Snapshot (pVM, Utf8Str (aPattern).raw(), &pszSnapshot, NULL,
-                              !!aWithDescriptions);
+    int vrc = STAMR3Snapshot(pVM, Utf8Str(aPattern).c_str(), &pszSnapshot, NULL,
+                             !!aWithDescriptions);
     if (RT_FAILURE(vrc))
         return vrc == VERR_NO_MEMORY ? E_OUTOFMEMORY : E_FAIL;
 

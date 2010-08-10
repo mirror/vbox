@@ -1717,10 +1717,6 @@ IoSettings::IoSettings()
  */
 MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
     : ConfigFileBase(pstrFilename),
-      fNameSync(true),
-      fTeleporterEnabled(false),
-      uTeleporterPort(0),
-      fRTCUseUTC(false),
       fCurrentStateModified(true),
       fAborted(false)
 {
@@ -1777,18 +1773,9 @@ bool MachineConfigFile::operator==(const MachineConfigFile &c) const
 {
     return (    (this == &c)
             || (    (uuid                       == c.uuid)
-                 && (strName                    == c.strName)
-                 && (fNameSync                  == c.fNameSync)
-                 && (strDescription             == c.strDescription)
-                 && (strOsType                  == c.strOsType)
+                 && (machineUserData            == c.machineUserData)
                  && (strStateFile               == c.strStateFile)
                  && (uuidCurrentSnapshot        == c.uuidCurrentSnapshot)
-                 && (strSnapshotFolder          == c.strSnapshotFolder)
-                 && (fTeleporterEnabled         == c.fTeleporterEnabled)
-                 && (uTeleporterPort            == c.uTeleporterPort)
-                 && (strTeleporterAddress       == c.strTeleporterAddress)
-                 && (strTeleporterPassword      == c.strTeleporterPassword)
-                 && (fRTCUseUTC                 == c.fRTCUseUTC)
                  // skip fCurrentStateModified!
                  && (RTTimeSpecIsEqual(&timeLastStateChange, &c.timeLastStateChange))
                  && (fAborted                   == c.fAborted)
@@ -2535,8 +2522,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         else if (pelmHwChild->nameEquals("RTC"))
         {
             Utf8Str strLocalOrUTC;
-            fRTCUseUTC =    pelmHwChild->getAttributeValue("localOrUTC", strLocalOrUTC)
-                         && strLocalOrUTC == "UTC";
+            machineUserData.fRTCUseUTC =    pelmHwChild->getAttributeValue("localOrUTC", strLocalOrUTC)
+                                         && strLocalOrUTC == "UTC";
         }
         else if (    (pelmHwChild->nameEquals("UART"))
                   || (pelmHwChild->nameEquals("Uart"))      // used before 1.3
@@ -3048,25 +3035,24 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
 {
     Utf8Str strUUID;
     if (    (elmMachine.getAttributeValue("uuid", strUUID))
-         && (elmMachine.getAttributeValue("name", strName))
+         && (elmMachine.getAttributeValue("name", machineUserData.strName))
        )
     {
         parseUUID(uuid, strUUID);
 
-        if (!elmMachine.getAttributeValue("nameSync", fNameSync))
-            fNameSync = true;
+        elmMachine.getAttributeValue("nameSync", machineUserData.fNameSync);
 
         Utf8Str str;
-        elmMachine.getAttributeValue("Description", strDescription);
+        elmMachine.getAttributeValue("Description", machineUserData.strDescription);
 
-        elmMachine.getAttributeValue("OSType", strOsType);
+        elmMachine.getAttributeValue("OSType", machineUserData.strOsType);
         if (m->sv < SettingsVersion_v1_5)
-            convertOldOSType_pre1_5(strOsType);
+            convertOldOSType_pre1_5(machineUserData.strOsType);
 
         elmMachine.getAttributeValue("stateFile", strStateFile);
         if (elmMachine.getAttributeValue("currentSnapshot", str))
             parseUUID(uuidCurrentSnapshot, str);
-        elmMachine.getAttributeValue("snapshotFolder", strSnapshotFolder);
+        elmMachine.getAttributeValue("snapshotFolder", machineUserData.strSnapshotFolder);
         if (!elmMachine.getAttributeValue("currentStateModified", fCurrentStateModified))
             fCurrentStateModified = true;
         if (elmMachine.getAttributeValue("lastStateChange", str))
@@ -3102,17 +3088,13 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
                 llFirstSnapshot.push_back(snap);
             }
             else if (pelmMachineChild->nameEquals("Description"))
-                strDescription = pelmMachineChild->getValue();
+                machineUserData.strDescription = pelmMachineChild->getValue();
             else if (pelmMachineChild->nameEquals("Teleporter"))
             {
-                if (!pelmMachineChild->getAttributeValue("enabled", fTeleporterEnabled))
-                    fTeleporterEnabled = false;
-                if (!pelmMachineChild->getAttributeValue("port", uTeleporterPort))
-                    uTeleporterPort = 0;
-                if (!pelmMachineChild->getAttributeValue("address", strTeleporterAddress))
-                    strTeleporterAddress = "";
-                if (!pelmMachineChild->getAttributeValue("password", strTeleporterPassword))
-                    strTeleporterPassword = "";
+                pelmMachineChild->getAttributeValue("enabled", machineUserData.fTeleporterEnabled);
+                pelmMachineChild->getAttributeValue("port", machineUserData.uTeleporterPort);
+                pelmMachineChild->getAttributeValue("address", machineUserData.strTeleporterAddress);
+                pelmMachineChild->getAttributeValue("password", machineUserData.strTeleporterPassword);
             }
         }
 
@@ -3573,7 +3555,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     if (m->sv >= SettingsVersion_v1_10)
     {
         xml::ElementNode *pelmRTC = pelmHardware->createChild("RTC");
-        pelmRTC->setAttribute("localOrUTC", fRTCUseUTC ? "UTC" : "local");
+        pelmRTC->setAttribute("localOrUTC", machineUserData.fRTCUseUTC ? "UTC" : "local");
     }
 
     const char *pcszDriver;
@@ -3781,8 +3763,7 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
             continue;
 
         xml::ElementNode *pelmController = pelmStorageControllers->createChild("StorageController");
-        com::Utf8Str name = sc.strName.raw();
-        //
+        com::Utf8Str name = sc.strName;
         if (m->sv < SettingsVersion_v1_8)
         {
             // pre-1.8 settings use shorter controller names, they are
@@ -3983,37 +3964,37 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         setVersionAttribute(elmMachine);
 
     elmMachine.setAttribute("uuid", uuid.toStringCurly());
-    elmMachine.setAttribute("name", strName);
-    if (!fNameSync)
-        elmMachine.setAttribute("nameSync", fNameSync);
-    if (strDescription.length())
-        elmMachine.createChild("Description")->addContent(strDescription);
-    elmMachine.setAttribute("OSType", strOsType);
+    elmMachine.setAttribute("name", machineUserData.strName);
+    if (!machineUserData.fNameSync)
+        elmMachine.setAttribute("nameSync", machineUserData.fNameSync);
+    if (machineUserData.strDescription.length())
+        elmMachine.createChild("Description")->addContent(machineUserData.strDescription);
+    elmMachine.setAttribute("OSType", machineUserData.strOsType);
     if (strStateFile.length())
         elmMachine.setAttribute("stateFile", strStateFile);
     if (    (fl & BuildMachineXML_IncludeSnapshots)
          && !uuidCurrentSnapshot.isEmpty())
         elmMachine.setAttribute("currentSnapshot", uuidCurrentSnapshot.toStringCurly());
-    if (strSnapshotFolder.length())
-        elmMachine.setAttribute("snapshotFolder", strSnapshotFolder);
+    if (machineUserData.strSnapshotFolder.length())
+        elmMachine.setAttribute("snapshotFolder", machineUserData.strSnapshotFolder);
     if (!fCurrentStateModified)
         elmMachine.setAttribute("currentStateModified", fCurrentStateModified);
     elmMachine.setAttribute("lastStateChange", makeString(timeLastStateChange));
     if (fAborted)
         elmMachine.setAttribute("aborted", fAborted);
     if (    m->sv >= SettingsVersion_v1_9
-        &&  (   fTeleporterEnabled
-            ||  uTeleporterPort
-            ||  !strTeleporterAddress.isEmpty()
-            ||  !strTeleporterPassword.isEmpty()
+        &&  (   machineUserData.fTeleporterEnabled
+            ||  machineUserData.uTeleporterPort
+            ||  !machineUserData.strTeleporterAddress.isEmpty()
+            ||  !machineUserData.strTeleporterPassword.isEmpty()
             )
        )
     {
         xml::ElementNode *pelmTeleporter = elmMachine.createChild("Teleporter");
-        pelmTeleporter->setAttribute("enabled", fTeleporterEnabled);
-        pelmTeleporter->setAttribute("port", uTeleporterPort);
-        pelmTeleporter->setAttribute("address", strTeleporterAddress);
-        pelmTeleporter->setAttribute("password", strTeleporterPassword);
+        pelmTeleporter->setAttribute("enabled", machineUserData.fTeleporterEnabled);
+        pelmTeleporter->setAttribute("port", machineUserData.uTeleporterPort);
+        pelmTeleporter->setAttribute("address", machineUserData.strTeleporterAddress);
+        pelmTeleporter->setAttribute("password", machineUserData.strTeleporterPassword);
     }
 
     buildExtraData(elmMachine, mapExtraDataItems);
@@ -4243,7 +4224,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 // and page fusion
             || (hardwareMachine.fPageFusionEnabled)
                 // and CPU hotplug, RTC timezone control, HID type and HPET
-            || fRTCUseUTC
+            || machineUserData.fRTCUseUTC
             || hardwareMachine.fCpuHotPlug
             || hardwareMachine.pointingHidType != PointingHidType_PS2Mouse
             || hardwareMachine.keyboardHidType != KeyboardHidType_PS2Keyboard
@@ -4307,10 +4288,10 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (    (m->sv < SettingsVersion_v1_9)
          && (    (hardwareMachine.firmwareType >= FirmwareType_EFI)
               || (hardwareMachine.fHardwareVirtExclusive != HWVIRTEXCLUSIVEDEFAULT)
-              || fTeleporterEnabled
-              || uTeleporterPort
-              || !strTeleporterAddress.isEmpty()
-              || !strTeleporterPassword.isEmpty()
+              || machineUserData.fTeleporterEnabled
+              || machineUserData.uTeleporterPort
+              || !machineUserData.strTeleporterAddress.isEmpty()
+              || !machineUserData.strTeleporterPassword.isEmpty()
               || !hardwareMachine.uuid.isEmpty()
             )
         )

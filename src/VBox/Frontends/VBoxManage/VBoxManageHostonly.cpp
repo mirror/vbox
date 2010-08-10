@@ -318,7 +318,7 @@ int handleHostonlyIf(HandlerArg *a)
 #endif
         else
         {
-            result = errorSyntax(USAGE_HOSTONLYIFS, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
+            result = errorSyntax(USAGE_HOSTONLYIFS, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
             break;
         }
     }

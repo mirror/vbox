@@ -1589,7 +1589,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             hrc = networkAdapter->COMGETTER(MACAddress)(macAddr.asOutParam());              H();
             Assert(macAddr);
             Utf8Str macAddrUtf8 = macAddr;
-            char *macStr = (char*)macAddrUtf8.raw();
+            char *macStr = (char*)macAddrUtf8.c_str();
             Assert(strlen(macStr) == 12);
             RTMAC Mac;
             memset(&Mac, 0, sizeof(Mac));
@@ -2348,7 +2348,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             if (!strKey.startsWith("VBoxInternal/"))
                 continue;
 
-            const char *pszExtraDataKey = strKey.raw() + sizeof("VBoxInternal/") - 1;
+            const char *pszExtraDataKey = strKey.c_str() + sizeof("VBoxInternal/") - 1;
 
             // get the value
             Bstr bstrExtraDataValue;
@@ -2358,7 +2358,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             else
                 hrc = pMachine->GetExtraData(Bstr(strKey), bstrExtraDataValue.asOutParam());
             if (FAILED(hrc))
-                LogRel(("Warning: Cannot get extra data key %s, rc = %Rrc\n", strKey.raw(), hrc));
+                LogRel(("Warning: Cannot get extra data key %s, rc = %Rrc\n", strKey.c_str(), hrc));
 
             /*
              * The key will be in the format "Node1/Node2/Value" or simply "Value".
@@ -3299,11 +3299,11 @@ int Console::configNetwork(const char *pszDevice,
         pos = str.find(",", ppos); \
         if (pos == Utf8Str::npos) \
         { \
-            Log(( #res " extracting from %s is failed\n", str.raw())); \
+            Log(( #res " extracting from %s is failed\n", str.c_str())); \
             continue; \
         } \
         res = str.substr(ppos, pos - ppos); \
-        Log2((#res " %s pos:%d, ppos:%d\n", res.raw(), pos, ppos)); \
+        Log2((#res " %s pos:%d, ppos:%d\n", res.c_str(), pos, ppos)); \
         ppos = pos + 1; \
     } while (0)
                 ITERATE_TO_NEXT_TERM(strName, utf, pos, ppos);
@@ -3331,7 +3331,7 @@ int Console::configNetwork(const char *pszDevice,
                     if (!fValid)
                         continue;
 
-                    InsertConfigNode(pCfg, strName.raw(), &pPF);
+                    InsertConfigNode(pCfg, strName.c_str(), &pPF);
                     InsertConfigString(pPF, "Protocol", strProto);
 
                     if (!strHostIP.isEmpty())
@@ -3340,11 +3340,11 @@ int Console::configNetwork(const char *pszDevice,
                     if (!strGuestIP.isEmpty())
                         InsertConfigString(pPF, "GuestIP", strGuestIP);
 
-                    port = RTStrToUInt16(strHostPort.raw());
+                    port = RTStrToUInt16(strHostPort.c_str());
                     if (port)
                         InsertConfigInteger(pPF, "HostPort", port);
 
-                    port = RTStrToUInt16(strGuestPort.raw());
+                    port = RTStrToUInt16(strGuestPort.c_str());
                     if (port)
                         InsertConfigInteger(pPF, "GuestPort", port);
                 }
@@ -3411,7 +3411,7 @@ int Console::configNetwork(const char *pszDevice,
                 }
 
                 Utf8Str HifNameUtf8(HifName);
-                const char *pszHifName = HifNameUtf8.raw();
+                const char *pszHifName = HifNameUtf8.c_str();
 
 # if defined(RT_OS_DARWIN)
                 /* The name is on the form 'ifX: long name', chop it off at the colon. */
@@ -3822,7 +3822,7 @@ int Console::configNetwork(const char *pszDevice,
                 }
 
                 Utf8Str HifNameUtf8(HifName);
-                const char *pszHifName = HifNameUtf8.raw();
+                const char *pszHifName = HifNameUtf8.c_str();
                 ComPtr<IHostNetworkInterface> hostInterface;
                 rc = host->FindHostNetworkInterfaceByName(HifName, hostInterface.asOutParam());
                 if (!SUCCEEDED(rc))
