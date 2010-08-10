@@ -1017,7 +1017,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         }
         else
         {
-            RTPrintf("File '%s' is no fixed/removable medium device\n", rawdisk.raw());
+            RTPrintf("File '%s' is no fixed/removable medium device\n", rawdisk.c_str());
             vrc = VERR_INVALID_PARAMETER;
             goto out;
         }
@@ -1035,7 +1035,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     else
     {
         vrc = RTErrConvertFromWin32(GetLastError());
-        RTPrintf("Error getting the geometry of the raw disk '%s': %Rrc\n", rawdisk.raw(), vrc);
+        RTPrintf("Error getting the geometry of the raw disk '%s': %Rrc\n", rawdisk.c_str(), vrc);
         goto out;
     }
 #elif defined(RT_OS_LINUX)
@@ -1086,7 +1086,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                 cbSize = cBlocks * cbBlock;
             else
             {
-                RTPrintf("Cannot get the block size for file '%s': %Rrc", rawdisk.raw(), vrc);
+                RTPrintf("Cannot get the block size for file '%s': %Rrc", rawdisk.c_str(), vrc);
                 vrc = RTErrConvertFromErrno(errno);
                 goto out;
             }
@@ -1094,13 +1094,13 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         else
         {
             vrc = RTErrConvertFromErrno(errno);
-            RTPrintf("Cannot get the block count for file '%s': %Rrc", rawdisk.raw(), vrc);
+            RTPrintf("Cannot get the block count for file '%s': %Rrc", rawdisk.c_str(), vrc);
             goto out;
         }
     }
     else
     {
-        RTPrintf("File '%s' is no block device\n", rawdisk.raw());
+        RTPrintf("File '%s' is no block device\n", rawdisk.c_str());
         vrc = VERR_INVALID_PARAMETER;
         goto out;
     }
@@ -1115,13 +1115,13 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         else
         {
             vrc = RTErrConvertFromErrno(errno);
-            RTPrintf("Error getting the size of the raw disk '%s': %Rrc\n", rawdisk.raw(), vrc);
+            RTPrintf("Error getting the size of the raw disk '%s': %Rrc\n", rawdisk.c_str(), vrc);
             goto out;
         }
     }
     else
     {
-        RTPrintf("File '%s' is no block or char device\n", rawdisk.raw());
+        RTPrintf("File '%s' is no block or char device\n", rawdisk.c_str());
         vrc = VERR_INVALID_PARAMETER;
         goto out;
     }
@@ -1137,13 +1137,13 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         else
         {
             vrc = RTErrConvertFromErrno(errno);
-            RTPrintf("Cannot get the block count for file '%s': %Rrc", rawdisk.raw(), vrc);
+            RTPrintf("Cannot get the block count for file '%s': %Rrc", rawdisk.c_str(), vrc);
             goto out;
         }
     }
     else
     {
-        RTPrintf("File '%s' is no character device\n", rawdisk.raw());
+        RTPrintf("File '%s' is no character device\n", rawdisk.c_str());
         vrc = VERR_INVALID_PARAMETER;
         goto out;
     }
@@ -1153,7 +1153,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     vrc = RTFileGetSize(RawFile, &cbSize);
     if (RT_FAILURE(vrc))
     {
-        RTPrintf("Error getting the size of the raw disk '%s': %Rrc\n", rawdisk.raw(), vrc);
+        RTPrintf("Error getting the size of the raw disk '%s': %Rrc\n", rawdisk.c_str(), vrc);
         goto out;
     }
 #endif
@@ -1332,7 +1332,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
 #elif defined(RT_OS_DARWIN)
                     /* Refer to the correct partition and use offset 0. */
                     char *psz;
-                    vrc = RTStrAPrintf(&psz, "%ss%u", rawdisk.raw(),
+                    vrc = RTStrAPrintf(&psz, "%ss%u", rawdisk.c_str(),
                                        partitions.aPartitions[i].uIndex);
                     if (RT_FAILURE(vrc))
                     {
