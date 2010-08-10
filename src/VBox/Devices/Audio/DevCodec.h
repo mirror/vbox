@@ -222,8 +222,8 @@ typedef struct CODECState
     SWVoiceOut              *voice_po;
     /** Mic in */
     SWVoiceIn               *voice_mc;
-    void *pHDAState;
-    bool fFirstResetDetected;
+    void                    *pHDAState;
+    bool                    fInReset;
     DECLR3CALLBACKMEMBER(int, pfnProcess, (struct CODECState *));
     DECLR3CALLBACKMEMBER(int, pfnLookup, (struct CODECState *pState, uint32_t verb, PPFNCODECVERBPROCESSOR));
     DECLR3CALLBACKMEMBER(int, pfnReset, (struct CODECState *pState));

@@ -578,17 +578,11 @@ static int codecReset(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
     {
         uint8_t i;
         Log(("HDAcodec: enters reset\n"));
-        if (pState->fFirstResetDetected)
+        for (i = 0; i < STAC9220_NODE_COUNT; ++i)
         {
-            LogRel(("HDAcodec: \"Double\" reset detected\n"));
-            pState->fFirstResetDetected = false;
-            for (i = 0; i < STAC9220_NODE_COUNT; ++i)
-            {
-                stac9220ResetNode(pState, i, &pState->pNodes[i]);
-            }
-        }   
-        else
-            pState->fFirstResetDetected = true;
+            stac9220ResetNode(pState, i, &pState->pNodes[i]);
+        }
+        pState->fInReset = false;
         Log(("HDAcodec: exits reset\n"));
     }
     *pResp = 0;
@@ -979,7 +973,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F07_param = RT_BIT(6);
             pNode->port.u32F08_param = 0;
             pNode->port.u32F09_param = RT_BIT(31)|0x9920; /* 39.2 kOm */
-            pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x20, 0x40, 0x21, 0x02);
+            if (!pState->fInReset)
+                pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x20, 0x40, 0x21, 0x02);
             goto port_init;
         case 0xB:
             pNode->node.name = "PortB";
@@ -987,7 +982,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             *(uint32_t *)pNode->node.au8F02_param = 0x4;
             pNode->port.u32F09_param = 0;
             pNode->port.u32F07_param = RT_BIT(5);
-            pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x11, 0x60, 0x11, 0x01);
+            if (!pState->fInReset)
+                pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x11, 0x60, 0x11, 0x01);
             goto port_init;
         case 0xC:
             pNode->node.name = "PortC";
@@ -995,7 +991,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xC] = 0x1737;
             pNode->port.u32F09_param = 0;
             pNode->port.u32F07_param = RT_BIT(5);
-            pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x10, 0x40, 0x11, 0x01);
+            if (!pState->fInReset)
+                pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x10, 0x40, 0x11, 0x01);
             goto port_init;
         case 0xD:
             pNode->node.name = "PortD";
@@ -1014,7 +1011,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xC] = RT_BIT(5)|RT_BIT(2);
             pNode->port.u32F07_param = RT_BIT(5);
             pNode->port.u32F09_param = 0;
-            pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x51, 0x30, 0x81, 0x01);
+            if (!pState->fInReset)
+                pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x51, 0x30, 0x81, 0x01);
             break;
         case 0xF:
             pNode->node.name = "PortF";
@@ -1023,7 +1021,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xE] = 0x1;
             pNode->port.u32F08_param = 0;
             pNode->port.u32F07_param = 0;
-            pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x12, 0x60, 0x11, 0x01);
+            if (!pState->fInReset)
+                pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x12, 0x60, 0x11, 0x01);
             pNode->node.au8F02_param[0] = 0x5;
             pNode->port.u32F09_param = 0;
         break;
@@ -1036,7 +1035,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             /* STAC9220 spec defines default connection list containing reserved nodes, that confuses some drivers. */
             *(uint32_t *)pNode->node.au8F02_param = RT_MAKE_U32_FROM_U8(0x08, 0x17, 0x0, 0);
             pNode->digout.u32F07_param = 0;
-            pNode->digout.u32F1c_param = RT_MAKE_U32_FROM_U8(0x30, 0x10, 0x45, 0x01);
+            if (!pState->fInReset)
+                pNode->digout.u32F1c_param = RT_MAKE_U32_FROM_U8(0x30, 0x10, 0x45, 0x01);
         break;
         case 0x11:
             pNode->node.name = "DigIn_0";
@@ -1047,7 +1047,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->digin.u32F08_param = 0;
             pNode->digin.u32F09_param = 0;
             pNode->digin.u32F0c_param = 0;
-            pNode->digin.u32F1c_param = (0x1 << 24) | (0xc5 << 16) | (0x10 << 8) | 0x60;
+            if (!pState->fInReset)
+                pNode->digin.u32F1c_param = (0x1 << 24) | (0xc5 << 16) | (0x10 << 8) | 0x60;
         break;
         case 0x12:
             pNode->node.name = "ADCMux_0";
@@ -1077,7 +1078,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0x9] = (4 << 20)|RT_BIT(0);
             pNode->node.au32F00_param[0xc] = RT_BIT(5);
             pNode->cdnode.u32F07_param = 0;
-            pNode->cdnode.u32F1c_param = RT_MAKE_U32_FROM_U8(0x52, 0x0, 0x33, 0x90);
+            if (!pState->fInReset)
+                pNode->cdnode.u32F1c_param = RT_MAKE_U32_FROM_U8(0x52, 0x0, 0x33, 0x90);
         break;
         case 0x16:
             pNode->node.name = "VolumeKnob";
@@ -1179,10 +1181,6 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
     {
         if ((CODEC_VERBDATA(cmd) & pState->pVerbs[i].mask) == pState->pVerbs[i].verb)
         {
-            if(    pState->fFirstResetDetected
-                && CODEC_VERBDATA(cmd) != 0x7FF00
-                && CODEC_VERBDATA(cmd) != 0)
-                pState->fFirstResetDetected = false;
             *pfn = pState->pVerbs[i].pfn;
             return VINF_SUCCESS;
         }
@@ -1229,7 +1227,7 @@ int stac9220Construct(CODECState *pState)
     pState->cVerbs = sizeof(STAC9220VERB)/sizeof(CODECVERB);
     pState->pfnLookup = codecLookup;
     pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * STAC9220_NODE_COUNT);
-    pState->fFirstResetDetected = false;
+    pState->fInReset = false;
     uint8_t i;
     for (i = 0; i < STAC9220_NODE_COUNT; ++i)
     {

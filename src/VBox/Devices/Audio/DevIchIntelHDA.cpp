@@ -1200,7 +1200,6 @@ static uint32_t write_audio(INTELHDLinkState *pState, int avail, bool *fStop)
 DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
 {
     INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pHDAState;
-    pCodecState->fFirstResetDetected = true;
     return VINF_SUCCESS;
 }
 
