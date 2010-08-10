@@ -144,6 +144,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             CPET,  32,
             CPEV,  32,
             NICA,  32,
+            HDAA,  32,
             Offset (0x80),
             ININ, 32,
             Offset (0x200),
@@ -786,6 +787,25 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                  Method (_STA, 0, NotSerialized)
                  {
                     if (LEqual (NICA, Zero)) {
+                        Return (0x00)
+                    }
+                    else {
+                        Return (0x0F)
+                    }
+                 }
+            }
+
+            // HDA Audio card
+            Device (HDEF)
+            {
+                Method(_ADR, 0, NotSerialized)
+                {
+                     Return (HDAA)
+                }
+
+                Method (_STA, 0, NotSerialized)
+                {
+                 if (LEqual (HDAA, Zero)) {
                         Return (0x00)
                     }
                     else {
