@@ -468,6 +468,21 @@ public:
         return KNetworkAttachmentType (it.key());
     }
 
+    QString toString (KNATProtocol t) const
+    {
+        AssertMsg (!mNATProtocolTypes.value (t).isNull(), ("No text for %d", t));
+        return mNATProtocolTypes.value (t);
+    }
+
+    KNATProtocol toNATProtocolType (const QString &s) const
+    {
+        QULongStringHash::const_iterator it =
+            qFind (mNATProtocolTypes.begin(), mNATProtocolTypes.end(), s);
+        AssertMsg (it != mNATProtocolTypes.end(), ("No value for {%s}",
+                                                   s.toLatin1().constData()));
+        return KNATProtocol (it.key());
+    }
+
     QString toString (KUSBDeviceState aState) const
     {
         AssertMsg (!mUSBDeviceStates.value (aState).isNull(), ("No text for %d", aState));
@@ -783,6 +798,7 @@ private:
     QULongStringHash mAudioControllerTypes;
     QULongStringHash mNetworkAdapterTypes;
     QULongStringHash mNetworkAttachmentTypes;
+    QULongStringHash mNATProtocolTypes;
     QULongStringHash mClipboardTypes;
     QULongStringHash mStorageControllerTypes;
     QULongStringHash mUSBDeviceStates;

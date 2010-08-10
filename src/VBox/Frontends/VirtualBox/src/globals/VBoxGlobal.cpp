@@ -2783,6 +2783,11 @@ void VBoxGlobal::retranslateUi()
         tr ("VDE Adapter", "NetworkAttachmentType");
 #endif
 
+    mNATProtocolTypes [KNATProtocol_UDP] =
+        tr ("UDP", "NATProtocolType");
+    mNATProtocolTypes [KNATProtocol_TCP] =
+        tr ("TCP", "NATProtocolType");
+
     mClipboardTypes [KClipboardMode_Disabled] =
         tr ("Disabled", "ClipboardType");
     mClipboardTypes [KClipboardMode_HostToGuest] =
