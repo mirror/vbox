@@ -198,8 +198,8 @@ HRESULT SharedFolder::protectedInit(VirtualBoxBase *aParent,
      * accept both the slashified paths and not. */
 #if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
     if (hostPathLen > 2 &&
-        RTPATH_IS_SEP (hostPath.raw()[hostPathLen - 1]) &&
-        RTPATH_IS_VOLSEP (hostPath.raw()[hostPathLen - 2]))
+        RTPATH_IS_SEP (hostPath.c_str()[hostPathLen - 1]) &&
+        RTPATH_IS_VOLSEP (hostPath.c_str()[hostPathLen - 2]))
         ;
 #else
     if (hostPathLen == 1 && RTPATH_IS_SEP(hostPath[0]))
