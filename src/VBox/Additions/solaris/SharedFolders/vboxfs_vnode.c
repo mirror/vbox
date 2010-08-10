@@ -1271,12 +1271,15 @@ sffs_create(
 			    " rc=%d", node->sf_path, vap->va_mode, error);
 	}
 
-	if (node->sf_parent)
+	if (node && node->sf_parent)
 		sfnode_clear_dir_list(node->sf_parent);
 
 	mutex_exit(&sffs_lock);
 	if (node == NULL)
+	{
+		cmn_err(CE_NOTE, "sffs_create: sfnode_lookup() failed.\n");
 		return (EINVAL);
+	}
 	*vpp = sfnode_get_vnode(node);
 	return (0);
 }
