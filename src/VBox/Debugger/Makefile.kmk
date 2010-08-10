@@ -1,0 +1,137 @@
+# $Id$
+## @file
+# Makefile for the VBox debugger.
+#
+
+#
+# Copyright (C) 2006-2007 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+#
+# The targets.
+#
+ifdef VBOX_WITH_DEBUGGER
+ LIBRARIES += Debugger
+ ifdef VBOX_WITH_TESTCASES
+  PROGRAMS += tstDBGCParser
+ endif
+endif # VBOX_WITH_DEBUGGER
+ifndef VBOX_OSE
+ INSTALLS.win.x86 += dbghelp
+endif
+
+
+#
+# Debugger library - linked into VBoxVMM.
+#
+Debugger_TEMPLATE  = VBOXR3
+Debugger_DEFS      = IN_VMM_R3 IN_DBG_R3 IN_DIS
+ifneq ($(KBUILD_TYPE),release)
+ Debugger_DEFS    += VBOX_WITH_DEBUGGER_TCP_BY_DEFAULT
+endif
+Debugger_SOURCES   = \
+	DBGConsole.cpp \
+	DBGCBuiltInSymbols.cpp \
+	DBGCCmdHlp.cpp \
+	DBGCCmdWorkers.cpp \
+	DBGCCommands.cpp \
+	DBGCEmulateCodeView.cpp \
+	DBGCOps.cpp \
+	DBGCTcp.cpp
+
+#
+# The diggers plug-in.
+#
+DLLS += DBGCPlugInDiggers
+DBGCPlugInDiggers_TEMPLATE = VBOXR3
+DBGCPlugInDiggers_SOURCES = \
+	DBGPlugInDiggers.cpp \
+	DBGPlugInLinux.cpp \
+	DBGPlugInSolaris.cpp \
+	DBGPlugInWinNt.cpp \
+	DBGPlugInCommonELF.cpp
+DBGCPlugInDiggers_LIBS = \
+	$(LIB_VMM) \
+	$(LIB_REM) \
+	$(LIB_RUNTIME)
+
+
+#
+# The DBGC parser testcase.
+# This stubs all the VBoxVMM APIs.
+#
+tstDBGCParser_TEMPLATE = VBOXR3TSTEXE
+tstDBGCParser_DEFS = IN_VMM_R3
+tstDBGCParser_SOURCES = \
+	testcase/tstDBGCParser.cpp \
+	testcase/tstDBGCStubs.cpp
+tstDBGCParser_LIBS = \
+	$(TARGET_Debugger) \
+	$(LIB_RUNTIME)
+
+
+if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
+#
+# Debugger GUI component (Qt4).
+#
+USES += qt4
+DLLS += VBoxDbg
+VBoxDbg_TEMPLATE = VBOXQT4GUI
+VBoxDbg_DEFS = IN_DBG_R3 VBOXDBG_USE_QT4
+VBoxDbg_INCS = .
+VBoxDbg_QT_MODULES = Core Gui
+VBoxDbg_QT_MOCHDRS = \
+	VBoxDbgGui.h \
+	VBoxDbgConsole.h \
+	VBoxDbgStatsQt4.h
+VBoxDbg_SOURCES = \
+	VBoxDbg.cpp \
+	VBoxDbgGui.cpp \
+	VBoxDbgBase.cpp \
+	VBoxDbgConsole.cpp \
+	VBoxDbgStatsQt4.cpp
+VBoxDbg_LIBS = \
+	$(LIB_VMM)
+VBoxDbg_LDFLAGS.darwin = \
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDbg.dylib
+
+ ifdef VBOX_WITH_TESTCASES
+#
+# The VBoxDbg testcase (Qt4).
+#
+PROGRAMS += tstVBoxDbg
+tstVBoxDbg_TEMPLATE     = VBOXQT4GUIEXE
+tstVBoxDbg_USES         = qt4
+tstVBoxDbg_QTTOOL       = QT4
+tstVBoxDbg_QT_MODULES   = Core Gui
+tstVBoxDbg_SOURCES      = testcase/tstVBoxDbg.cpp
+tstVBoxDbg_LIBS         = \
+	$(LIB_VMM) \
+	$(LIB_RUNTIME)
+  ifeq ($(KBUILD_TARGET),win)
+tstVBoxDbg_LIBS        += \
+	$(PATH_LIB)/VBoxDbg.lib
+  else
+tstVBoxDbg_LIBS        += \
+	$(PATH_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
+  endif
+ endif # TESTCASES
+endif # Qt4
+
+
+#
+# Install the dbghelp.dll binary.
+#
+dbghelp_INST = bin/
+dbghelp_SOURCES.x86 = win32/dbghelp.dll
+dbghelp_SOURCES.amd64 = win64/dbghelp.dll
+
+
+include $(KBUILD_PATH)/subfooter.kmk
+
