@@ -334,7 +334,11 @@ bool vbox_load_sw_dri()
 void __attribute__ ((constructor)) vbox_install_into_mesa(void)
 {
     {
+#ifdef _X_ATTRIBUTE_PRINTF
+        void (*pxf86Msg)(MessageType type, const char *format, ...) _X_ATTRIBUTE_PRINTF(2,3);
+#else
         void (*pxf86Msg)(MessageType type, const char *format, ...) _printf_attribute(2,3);
+#endif
 
         pxf86Msg = dlsym(RTLD_DEFAULT, "xf86Msg");
         if (pxf86Msg)
