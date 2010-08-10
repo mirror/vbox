@@ -17,7 +17,9 @@
 
 #include <iprt/assert.h>
 
+#ifndef RT_OS_WINDOWS
 RTDECL(bool) RTAssertShouldPanic(void)
 {
     return true;
 }
+#endif
