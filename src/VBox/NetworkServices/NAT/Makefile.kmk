@@ -36,7 +36,8 @@ $(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_ALIAS_SOURCES)),$(eval $
 VBoxNetNAT_SOURCES += ../NetLib/VBoxNetBaseService.cpp
 
 VBoxNetNAT_LIBS = \
-	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) $(LIB_RUNTIME)
+	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
+	$(LIB_RUNTIME)
 VBoxNetNAT_LDFLAGS.win = /SUBSYSTEM:windows
 
 include $(KBUILD_PATH)/subfooter.kmk
