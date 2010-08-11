@@ -47,7 +47,7 @@
 #define true 1
 
 #define OPSTATIC
-#define RDPUSB_DEBUG
+// #define RDPUSB_DEBUG
 #ifdef RDPUSB_DEBUG
 #define DoLog(a) do { \
         printf("Time %llu: ", (long long unsigned) RTTimeMilliTS()); \
