@@ -183,7 +183,8 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
             err = register_netdev(pNetDev);
             if (!err)
             {
-                strncpy(pThis->szName, pNetDev->name, VBOXNETADP_MAX_NAME_LEN);
+                strncpy(pThis->szName, pNetDev->name, sizeof(pThis->szName));
+                pThis->szName[sizeof(pThis->szName) - 1] = '\0';
                 pThis->u.s.pNetDev = pNetDev;
                 Log2(("vboxNetAdpOsCreate: pThis=%p pThis->szName = %p\n", pThis, pThis->szName));
                 return VINF_SUCCESS;
@@ -382,7 +383,7 @@ static int __init VBoxNetAdpLinuxInit(void)
 static void __exit VBoxNetAdpLinuxUnload(void)
 {
     int rc;
-    Log(("VBoxNetFltLinuxUnload\n"));
+    Log(("VBoxNetAdpLinuxUnload\n"));
 
     /*
      * Undo the work done during start (in reverse order).
@@ -398,6 +399,6 @@ static void __exit VBoxNetAdpLinuxUnload(void)
 
     RTR0Term();
 
-    Log(("VBoxNetFltLinuxUnload - done\n"));
+    Log(("VBoxNetAdpLinuxUnload - done\n"));
 }
 
