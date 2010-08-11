@@ -128,8 +128,6 @@ OTHERS += $(PATH_BIN)/rdesktop-vrdp.tar.gz
 OTHER_CLEAN += $(OTHERS)
 
 
-include $(KBUILD_PATH)/subfooter.kmk
-
 INSTALLS += rdesktop-bin
 rdesktop-bin_INST    = obj/$(VBOX_RDESKTOP_SRC_SUBDIR)
 rdesktop-bin_MODE    = a+rx,u+w
@@ -177,8 +175,13 @@ rdesktop-nonbin_SOURCES = \
         $(foreach j,$(wildcard $(VBOX_PATH_RDESKTOP_SRC)/$i), \
             client/$(dir $i)$(notdir $j)=>$(dir $i)$(notdir $j)))
 
+
 $(PATH_BIN)/rdesktop-vrdp.tar.gz: \
-		rdesktop-bin \
-		rdesktop-nonbin
+		$$(rdesktop-bin_1_TARGET) \
+		$$(rdesktop-nonbin_1_TARGET)
 	$(call MSG_TOOL,tar/gzip,,$@)
 	$(QUIET)cd $(PATH_TARGET) && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR) | gzip - > $@
+
+
+include $(KBUILD_PATH)/subfooter.kmk
+
