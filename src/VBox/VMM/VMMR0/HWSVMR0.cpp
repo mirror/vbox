@@ -960,6 +960,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hwaccm.s.StatExit2);
 
     VBOXSTRICTRC rc = VINF_SUCCESS;
+    int         rc2;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
     SVM_VMCB   *pVMCB;
     bool        fSyncTPR = false;
@@ -1035,10 +1036,10 @@ ResumeExecution:
         if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
             rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
-            AssertRC(rc);
+            AssertRC(VBOXSTRICTRC_VAL(rc));
             if (rc != VINF_SUCCESS)
             {
-                Log(("Pending pool sync is forcing us back to ring 3; rc=%d\n", rc));
+                Log(("Pending pool sync is forcing us back to ring 3; rc=%d\n", VBOXSTRICTRC_VAL(rc)));
                 goto end;
             }
         }
@@ -1110,7 +1111,7 @@ ResumeExecution:
         bool fPending;
 
         /* TPR caching in CR8 */
-        int rc2 = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
+        rc2 = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
         AssertRC(rc2);
 
         if (pVM->hwaccm.s.fTPRPatchingActive)
@@ -1562,16 +1563,16 @@ ResumeExecution:
             if ((pCtx->msrLSTAR & 0xff) != u8LastTPR)
             {
                 /* Our patch code uses LSTAR for TPR caching. */
-                rc = PDMApicSetTPR(pVCpu, pCtx->msrLSTAR & 0xff);
-                AssertRC(rc);
+                rc2 = PDMApicSetTPR(pVCpu, pCtx->msrLSTAR & 0xff);
+                AssertRC(rc2);
             }
         }
         else
         {
             if ((u8LastTPR >> 4) != pVMCB->ctrl.IntCtrl.n.u8VTPR)
             {
-                rc = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR << 4);   /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
-                AssertRC(rc);
+                rc2 = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR << 4);   /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
+                AssertRC(rc2);
             }
         }
     }
@@ -1619,7 +1620,7 @@ ResumeExecution:
                 goto ResumeExecution;
             }
             /* Return to ring 3 to deal with the debug exit code. */
-            Log(("Debugger hardware BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs, pCtx->rip, rc));
+            Log(("Debugger hardware BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs, pCtx->rip, VBOXSTRICTRC_VAL(rc)));
             break;
         }
 
@@ -1718,7 +1719,7 @@ ResumeExecution:
 
             /* Forward it to our trap handler first, in case our shadow pages are out of sync. */
             rc = PGMTrap0eHandler(pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
-            Log2(("PGMTrap0eHandler %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
+            Log2(("PGMTrap0eHandler %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, VBOXSTRICTRC_VAL(rc)));
             if (rc == VINF_SUCCESS)
             {   /* We've successfully synced our shadow pages, so let's just continue execution. */
                 Log2(("Shadow page fault at %RGv cr2=%RGv error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
@@ -1754,7 +1755,7 @@ ResumeExecution:
             }
 #ifdef VBOX_STRICT
             if (rc != VINF_EM_RAW_EMULATE_INSTR && rc != VINF_EM_RAW_EMULATE_IO_BLOCK)
-                LogFlow(("PGMTrap0eHandler failed with %d\n", rc));
+                LogFlow(("PGMTrap0eHandler failed with %d\n", VBOXSTRICTRC_VAL(rc)));
 #endif
             /* Need to go back to the recompiler to emulate the instruction. */
             TRPMResetTrap(pVCpu);
@@ -1900,7 +1901,7 @@ ResumeExecution:
         TRPMSetFaultAddress(pVCpu, GCPhysFault);
 
         rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmShwPagingMode, errCode, CPUMCTX2CORE(pCtx), GCPhysFault);
-        Log2(("PGMR0Trap0eHandlerNestedPaging %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
+        Log2(("PGMR0Trap0eHandlerNestedPaging %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, VBOXSTRICTRC_VAL(rc)));
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
             Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, GCPhysFault, errCode));
@@ -1912,7 +1913,7 @@ ResumeExecution:
 
 #ifdef VBOX_STRICT
         if (rc != VINF_EM_RAW_EMULATE_INSTR)
-            LogFlow(("PGMTrap0eHandlerNestedPaging failed with %d\n", rc));
+            LogFlow(("PGMTrap0eHandlerNestedPaging failed with %d\n", VBOXSTRICTRC_VAL(rc)));
 #endif
         /* Need to go back to the recompiler to emulate the instruction. */
         TRPMResetTrap(pVCpu);
@@ -1954,7 +1955,7 @@ ResumeExecution:
             pCtx->rip += 2;             /* Note! hardcoded opcode size! */
             goto ResumeExecution;
         }
-        AssertMsgFailed(("EMU: cpuid failed with %Rrc\n", rc));
+        AssertMsgFailed(("EMU: cpuid failed with %Rrc\n", VBOXSTRICTRC_VAL(rc)));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
@@ -2000,7 +2001,7 @@ ResumeExecution:
             pCtx->rip += 3;             /* Note! hardcoded opcode size! */
             goto ResumeExecution;
         }
-        AssertMsgFailed(("EMU: rdtscp failed with %Rrc\n", rc));
+        AssertMsgFailed(("EMU: rdtscp failed with %Rrc\n", VBOXSTRICTRC_VAL(rc)));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
@@ -2104,8 +2105,8 @@ ResumeExecution:
             pVMCB->ctrl.u16InterceptWrDRx = 0;
 
             /* Save the host and load the guest debug state. */
-            rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, false /* exclude DR6 */);
-            AssertRC(rc);
+            rc2 = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, false /* exclude DR6 */);
+            AssertRC(rc2);
             goto ResumeExecution;
         }
 
@@ -2141,8 +2142,8 @@ ResumeExecution:
             pVMCB->ctrl.u16InterceptWrDRx = 0;
 
             /* Save the host and load the guest debug state. */
-            rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, false /* exclude DR6 */);
-            AssertRC(rc);
+            rc2 = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, false /* exclude DR6 */);
+            AssertRC(rc2);
             goto ResumeExecution;
         }
 
@@ -2310,7 +2311,7 @@ ResumeExecution:
                 }
                 goto ResumeExecution;
             }
-            Log2(("EM status from IO at %RGv %x size %d: %Rrc\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize, rc));
+            Log2(("EM status from IO at %RGv %x size %d: %Rrc\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize, VBOXSTRICTRC_VAL(rc)));
             break;
         }
 
@@ -2320,7 +2321,7 @@ ResumeExecution:
         else if (rc == VINF_IOM_HC_IOPORT_WRITE)
             Assert(IoExitInfo.n.u1Type == 0);
         else
-            AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", rc));
+            AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", VBOXSTRICTRC_VAL(rc)));
 #endif
         Log2(("Failed IO at %RGv %x size %d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
         break;
@@ -2353,7 +2354,7 @@ ResumeExecution:
                )
                 goto ResumeExecution;
         }
-        AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_EM_HALT, ("EMU: mwait failed with %Rrc\n", rc));
+        AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_EM_HALT, ("EMU: mwait failed with %Rrc\n", VBOXSTRICTRC_VAL(rc)));
         break;
 
     case SVM_EXIT_MONITOR:
@@ -2368,7 +2369,7 @@ ResumeExecution:
             pCtx->rip += 3;     /* Note: hardcoded opcode size assumption! */
             goto ResumeExecution;
         }
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: monitor failed with %Rrc\n", rc));
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: monitor failed with %Rrc\n", VBOXSTRICTRC_VAL(rc)));
         break;
     }
 
@@ -2418,8 +2419,8 @@ ResumeExecution:
                 Log(("SVM: Faulting MSR_K8_LSTAR write with new TPR value %x\n", pCtx->eax & 0xff));
 
                 /* Our patch code uses LSTAR for TPR caching. */
-                rc = PDMApicSetTPR(pVCpu, pCtx->eax & 0xff);
-                AssertRC(rc);
+                rc2 = PDMApicSetTPR(pVCpu, pCtx->eax & 0xff);
+                AssertRC(rc2);
             }
 
             /* Skip the instruction and continue. */
@@ -2440,7 +2441,7 @@ ResumeExecution:
             /* Only resume if successful. */
             goto ResumeExecution;
         }
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: %s failed with %Rrc\n", (pVMCB->ctrl.u64ExitInfo1 == 0) ? "rdmsr" : "wrmsr", rc));
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: %s failed with %Rrc\n", (pVMCB->ctrl.u64ExitInfo1 == 0) ? "rdmsr" : "wrmsr", VBOXSTRICTRC_VAL(rc)));
         break;
     }
 
@@ -2462,8 +2463,8 @@ ResumeExecution:
             case SVM_EVENT_NMI:
                 Log(("SVM_EXIT_TASK_SWITCH: reassert trap %d\n", Event.n.u8Vector));
                 Assert(!Event.n.u1ErrorCodeValid);
-                rc = TRPMAssertTrap(pVCpu, Event.n.u8Vector, TRPM_HARDWARE_INT);
-                AssertRC(rc);
+                rc2 = TRPMAssertTrap(pVCpu, Event.n.u8Vector, TRPM_HARDWARE_INT);
+                AssertRC(rc2);
                 break;
 
             default:
@@ -2535,7 +2536,7 @@ end:
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2, x);
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
-    return rc;
+    return VBOXSTRICTRC_TODO(rc);
 }
 
 /**
