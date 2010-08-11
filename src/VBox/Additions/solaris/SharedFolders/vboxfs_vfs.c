@@ -340,13 +340,13 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 		return (error);
 	}
 
-        /*
-         * find an available minor device number for this mount
-         */
-        mutex_enter(&sffs_minor_lock);
-        do {
-                sffs_minor = (sffs_minor + 1) & L_MAXMIN32;
-                dev = makedevice(sffs_major, sffs_minor);
+	/*
+	 * find an available minor device number for this mount
+	 */
+	mutex_enter(&sffs_minor_lock);
+	do {
+		sffs_minor = (sffs_minor + 1) & L_MAXMIN32;
+		dev = makedevice(sffs_major, sffs_minor);
 	} while (vfs_devismounted(dev));
 	mutex_exit(&sffs_minor_lock);
 
