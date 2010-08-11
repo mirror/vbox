@@ -132,12 +132,11 @@ INSTALLS += rdesktop-bin
 rdesktop-bin_INST    = obj/$(VBOX_RDESKTOP_SRC_SUBDIR)
 rdesktop-bin_MODE    = a+rx,u+w
 rdesktop-bin_SOURCES = \
-    $(foreach i,configure \
-                config.sub \
-                config.guess \
-                bootstrap \
-                install-sh, \
-            client/$i=>$i)
+    configure \
+    config.sub \
+    config.guess \
+    bootstrap \
+    install-sh
 
 INSTALLS += rdesktop-nonbin
 rdesktop-nonbin_INST    = obj/$(VBOX_RDESKTOP_SRC_SUBDIR)
@@ -167,13 +166,13 @@ rdesktop-nonbin_SOURCES = \
                 vrdp/rdpusb.c \
                 vrdp/runtime.h \
                 vrdp/vrdpusb.h, \
-            client/$i=>$i) \
+            $i=>$i) \
     $(PATH_ROOT)/include/VBox/vusb.h=>vrdp/vusb.h \
     $(VBOX_PATH_DEVICES_USB)/linux/USBProxyDevice-linux.cpp=>vrdp/USBProxyDevice-linux.c \
     $(VBOX_PATH_DEVICES_USB)/USBProxyDevice.h=>vrdp/USBProxyDevice.h \
     $(foreach i,*.c *.h keymaps/?? keymaps/??-??, \
         $(foreach j,$(wildcard $(VBOX_PATH_RDESKTOP_SRC)/$i), \
-            client/$(dir $i)$(notdir $j)=>$(dir $i)$(notdir $j)))
+            $(dir $i)$(notdir $j)=>$(dir $i)$(notdir $j)))
 
 
 $(PATH_BIN)/rdesktop-vrdp.tar.gz: \
