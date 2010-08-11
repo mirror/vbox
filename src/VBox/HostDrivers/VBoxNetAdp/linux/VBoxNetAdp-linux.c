@@ -176,15 +176,23 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
     {
         int err;
 
-        memcpy(pNetDev->dev_addr, pMACAddress, ETH_ALEN);
-        Log2(("vboxNetAdpOsCreate: pNetDev->dev_addr = %.6Rhxd\n", pNetDev->dev_addr));
-        err = register_netdev(pNetDev);
-        if (!err)
+        if (pNetDev->dev_addr)
         {
-            strncpy(pThis->szName, pNetDev->name, VBOXNETADP_MAX_NAME_LEN);
-            pThis->u.s.pNetDev = pNetDev;
-            Log2(("vboxNetAdpOsCreate: pThis=%p pThis->szName = %p\n", pThis, pThis->szName));
-            return VINF_SUCCESS;
+            memcpy(pNetDev->dev_addr, pMACAddress, ETH_ALEN);
+            Log2(("vboxNetAdpOsCreate: pNetDev->dev_addr = %.6Rhxd\n", pNetDev->dev_addr));
+            err = register_netdev(pNetDev);
+            if (!err)
+            {
+                strncpy(pThis->szName, pNetDev->name, VBOXNETADP_MAX_NAME_LEN);
+                pThis->u.s.pNetDev = pNetDev;
+                Log2(("vboxNetAdpOsCreate: pThis=%p pThis->szName = %p\n", pThis, pThis->szName));
+                return VINF_SUCCESS;
+            }
+        }
+        else
+        {
+            LogRel(("VBoxNetAdp: failed to set MAC address (dev->dev_addr == NULL)\n"));
+            err = EFAULT;
         }
         free_netdev(pNetDev);
         rc = RTErrConvertFromErrno(err);
@@ -360,7 +368,7 @@ static int __init VBoxNetAdpLinuxInit(void)
             LogRel(("VBoxNetAdp: failed to register vboxnet0 device (rc=%d)\n", rc));
     }
     else
-        LogRel(("VBoxNetFlt: failed to initialize IPRT (rc=%d)\n", rc));
+        LogRel(("VBoxNetAdp: failed to initialize IPRT (rc=%d)\n", rc));
 
     return -RTErrConvertToErrno(rc);
 }
