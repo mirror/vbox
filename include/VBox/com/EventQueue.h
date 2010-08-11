@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,11 +27,11 @@
 #ifndef ___VBox_com_EventQueue_h
 #define ___VBox_com_EventQueue_h
 
-#if !defined (VBOX_WITH_XPCOM)
+#ifndef VBOX_WITH_XPCOM
 # include <Windows.h>
-#else
+#else // VBOX_WITH_XPCOM
 # include <nsEventQueueUtils.h>
-#endif
+#endif // VBOX_WITH_XPCOM
 
 #include <VBox/com/defs.h>
 #include <VBox/com/assert.h>
@@ -42,8 +42,8 @@ namespace com
 class EventQueue;
 
 /**
- *  Base class for all events. Intended to be subclassed to introduce new events
- *  and handlers for them.
+ *  Base class for all events. Intended to be subclassed to introduce new
+ *  events and handlers for them.
  *
  *  Subclasses usually reimplement virtual #handler() (that does nothing by
  *  default) and add new data members describing the event.
@@ -73,11 +73,15 @@ protected:
  *
  *  When using XPCOM, this will map onto the default XPCOM queue for the thread.
  *  So, if a queue is created on the main thread, it automatically processes
- *  XPCOM/IPC events while waiting for its own (Event) events.
+ *  XPCOM/IPC events while waiting.
  *
  *  When using Windows, Darwin and OS/2, this will map onto the native thread
  *  queue/runloop.  So, windows messages and what not will be processed while
  *  waiting for events.
+ *
+ *  @note It is intentional that there is no way to retrieve arbitrary
+ *  events and controlling their processing. There is no use case which
+ *  warrants introducing the complexity of platform independent events.
  */
 class EventQueue
 {
@@ -86,9 +90,7 @@ public:
     EventQueue();
     ~EventQueue();
 
-    BOOL postEvent (Event *event);
-    BOOL waitForEvent (Event **event);
-    BOOL handleEvent (Event *event);
+    BOOL postEvent(Event *event);
     int processEventQueue(uint32_t cMsTimeout);
     int interruptEventQueueProcessing();
     int getSelectFD();
@@ -106,45 +108,29 @@ public:
 private:
     static EventQueue *mMainQueue;
 
-#if !defined (VBOX_WITH_XPCOM)
+#ifndef VBOX_WITH_XPCOM
 
     /** The thread which the queue belongs to. */
     DWORD mThreadId;
     /** Duplicated thread handle for MsgWaitForMultipleObjects. */
     HANDLE mhThread;
 
-#else
+#else // VBOX_WITH_XPCOM
 
     /** Whether it was created (and thus needs destroying) or if a queue already
      *  associated with the thread was used. */
     BOOL mEQCreated;
 
+    /** Whether event processing should be interrupted. */
+    BOOL mInterrupted;
+
     nsCOMPtr <nsIEventQueue> mEventQ;
     nsCOMPtr <nsIEventQueueService> mEventQService;
 
-    Event *mLastEvent;
-    BOOL mGotEvent;
+    static void *PR_CALLBACK plEventHandler(PLEvent *self);
+    static void PR_CALLBACK plEventDestructor(PLEvent *self);
 
-    struct MyPLEvent : public PLEvent
-    {
-        MyPLEvent (Event *e) : event (e) {}
-        Event *event;
-    };
-
-    static void * PR_CALLBACK plEventHandler (PLEvent* self)
-    {
-        // nsIEventQueue doesn't expose PL_GetEventOwner(), so use an internal
-        // field of PLEvent directly (hackish, but doesn' require an extra lib)
-        EventQueue *owner = (EventQueue *) self->owner;
-        Assert (owner);
-        owner->mLastEvent = ((MyPLEvent *) self)->event;
-        owner->mGotEvent = TRUE;
-        return 0;
-    }
-
-    static void PR_CALLBACK plEventDestructor (PLEvent* self) { delete self; }
-
-#endif
+#endif // VBOX_WITH_XPCOM
 };
 
 } /* namespace com */

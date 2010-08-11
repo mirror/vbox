@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,31 +41,64 @@ namespace com
 // EventQueue class
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined (RT_OS_WINDOWS)
+#ifndef VBOX_WITH_XPCOM
 
 #define CHECK_THREAD_RET(ret) \
     do { \
-        AssertMsg (GetCurrentThreadId() == mThreadId, ("Must be on event queue thread!")); \
+        AssertMsg(GetCurrentThreadId() == mThreadId, ("Must be on event queue thread!")); \
         if (GetCurrentThreadId() != mThreadId) \
             return ret; \
     } while (0)
 
-#else // !defined (RT_OS_WINDOWS)
+#else // VBOX_WITH_XPCOM
 
 #define CHECK_THREAD_RET(ret) \
     do { \
         if (!mEventQ) \
             return ret; \
         BOOL isOnCurrentThread = FALSE; \
-        mEventQ->IsOnCurrentThread (&isOnCurrentThread); \
-        AssertMsg (isOnCurrentThread, ("Must be on event queue thread!")); \
+        mEventQ->IsOnCurrentThread(&isOnCurrentThread); \
+        AssertMsg(isOnCurrentThread, ("Must be on event queue thread!")); \
         if (!isOnCurrentThread) \
             return ret; \
     } while (0)
 
-#endif // !defined (RT_OS_WINDOWS)
+#endif // VBOX_WITH_XPCOM
 
 EventQueue *EventQueue::mMainQueue = NULL;
+
+#ifdef VBOX_WITH_XPCOM
+struct MyPLEvent : public PLEvent
+{
+    MyPLEvent(Event *e) : event(e) {}
+    Event *event;
+};
+
+/* static */
+void *PR_CALLBACK com::EventQueue::plEventHandler(PLEvent *self)
+{
+    Event *ev = ((MyPLEvent *)self)->event;
+    if (ev)
+        ev->handler();
+    else
+    {
+        EventQueue *eq = (EventQueue *)self->owner;
+        Assert(eq);
+        eq->mInterrupted = true;
+    }
+    return NULL;
+}
+
+/* static */
+void PR_CALLBACK com::EventQueue::plEventDestructor(PLEvent *self)
+{
+    Event *ev = ((MyPLEvent *)self)->event;
+    if (ev)
+        delete ev;
+    delete self;
+}
+
+#endif // VBOX_WITH_XPCOM
 
 /**
  *  Constructs an event queue for the current thread.
@@ -76,28 +109,26 @@ EventQueue *EventQueue::mMainQueue = NULL;
  */
 EventQueue::EventQueue()
 {
-#if defined (RT_OS_WINDOWS)
+#ifndef VBOX_WITH_XPCOM
 
     mThreadId = GetCurrentThreadId();
     // force the system to create the message queue for the current thread
     MSG msg;
-    PeekMessage (&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
+    PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
 
-    if (!DuplicateHandle (GetCurrentProcess(),
-                          GetCurrentThread(),
-                          GetCurrentProcess(),
-                          &mhThread,
-                          0 /*dwDesiredAccess*/,
-                          FALSE /*bInheritHandle*/,
-                          DUPLICATE_SAME_ACCESS))
+    if (!DuplicateHandle(GetCurrentProcess(),
+                         GetCurrentThread(),
+                         GetCurrentProcess(),
+                         &mhThread,
+                         0 /*dwDesiredAccess*/,
+                         FALSE /*bInheritHandle*/,
+                         DUPLICATE_SAME_ACCESS))
       mhThread = INVALID_HANDLE_VALUE;
 
-#else
+#else // VBOX_WITH_XPCOM
 
     mEQCreated = FALSE;
-
-    mLastEvent = NULL;
-    mGotEvent = FALSE;
+    mInterrupted = FALSE;
 
     // Here we reference the global nsIEventQueueService instance and hold it
     // until we're destroyed. This is necessary to keep NS_ShutdownXPCOM() away
@@ -111,37 +142,37 @@ EventQueue::EventQueue()
     // a VirtualBox::uninit() call from where it is already not possible to post
     // NULL to the event thread (because it stopped accepting events).
 
-    nsresult rc = NS_GetEventQueueService (getter_AddRefs (mEventQService));
+    nsresult rc = NS_GetEventQueueService(getter_AddRefs(mEventQService));
 
     if (NS_SUCCEEDED(rc))
     {
-        rc = mEventQService->GetThreadEventQueue (NS_CURRENT_THREAD,
-                                                  getter_AddRefs (mEventQ));
+        rc = mEventQService->GetThreadEventQueue(NS_CURRENT_THREAD,
+                                                 getter_AddRefs(mEventQ));
         if (rc == NS_ERROR_NOT_AVAILABLE)
         {
-            rc = mEventQService->CreateMonitoredThreadEventQueue();
+            rc = mEventQService->CreateThreadEventQueue();
             if (NS_SUCCEEDED(rc))
             {
                 mEQCreated = TRUE;
-                rc = mEventQService->GetThreadEventQueue (NS_CURRENT_THREAD,
-                                                          getter_AddRefs (mEventQ));
+                rc = mEventQService->GetThreadEventQueue(NS_CURRENT_THREAD,
+                                                         getter_AddRefs(mEventQ));
             }
         }
     }
-    AssertComRC (rc);
+    AssertComRC(rc);
 
-#endif
+#endif // VBOX_WITH_XPCOM
 }
 
 EventQueue::~EventQueue()
 {
-#if defined (RT_OS_WINDOWS)
+#ifndef VBOX_WITH_XPCOM
     if (mhThread != INVALID_HANDLE_VALUE)
     {
-        CloseHandle (mhThread);
+        CloseHandle(mhThread);
         mhThread = INVALID_HANDLE_VALUE;
     }
-#else
+#else // VBOX_WITH_XPCOM
     // process all pending events before destruction
     if (mEventQ)
     {
@@ -154,7 +185,7 @@ EventQueue::~EventQueue()
         mEventQ = nsnull;
         mEventQService = nsnull;
     }
-#endif
+#endif // VBOX_WITH_XPCOM
 }
 
 /**
@@ -174,7 +205,7 @@ int EventQueue::init()
     Assert(RTThreadIsMain(RTThreadSelf()));
     mMainQueue = new EventQueue();
 
-#if defined (VBOX_WITH_XPCOM)
+#ifdef VBOX_WITH_XPCOM
     /* Check that it actually is the main event queue, i.e. that
        we're called on the right thread. */
     nsCOMPtr<nsIEventQueue> q;
@@ -186,7 +217,7 @@ int EventQueue::init()
     PRBool fIsNative = PR_FALSE;
     rv = mMainQueue->mEventQ->IsQueueNative(&fIsNative);
     Assert(NS_SUCCEEDED(rv) && fIsNative);
-#endif
+#endif // VBOX_WITH_XPCOM
 
     return VINF_SUCCESS;
 }
@@ -199,6 +230,9 @@ int EventQueue::init()
 int EventQueue::uninit()
 {
     Assert(mMainQueue);
+    /* Must process all events to make sure that no NULL event is left
+     * after this point. It would need to modify the state of mMainQueue. */
+    mMainQueue->processEventQueue(0);
     delete mMainQueue;
     mMainQueue = NULL;
     return VINF_SUCCESS;
@@ -215,7 +249,8 @@ EventQueue* EventQueue::getMainEventQueue()
     return mMainQueue;
 }
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WITH_XPCOM
+# ifdef RT_OS_DARWIN
 /**
  *  Wait for events and process them (Darwin).
  *
@@ -248,10 +283,10 @@ waitForEventsOnDarwin(unsigned cMsTimeout)
     AssertMsg(orc == kCFRunLoopRunTimedOut, ("Unexpected status code from CFRunLoopRunInMode: %#x", orc));
     return VERR_TIMEOUT;
 }
-#elif !defined(RT_OS_WINDOWS)
+# else // !RT_OS_DARWIN
 
 /**
- *  Wait for events (Unix).
+ *  Wait for events (generic XPCOM).
  *
  *  @returns VINF_SUCCESS or VERR_TIMEOUT.
  *
@@ -259,7 +294,7 @@ waitForEventsOnDarwin(unsigned cMsTimeout)
  *  @param  cMsTimeout      How long to wait, or RT_INDEFINITE_WAIT.
  */
 static
-int waitForEventsOnUnix(nsIEventQueue *pQueue, unsigned cMsTimeout)
+int waitForEventsOnXPCOM(nsIEventQueue *pQueue, unsigned cMsTimeout)
 {
     int     fd = pQueue->GetEventQueueSelectFD();
     fd_set  fdsetR;
@@ -294,9 +329,10 @@ int waitForEventsOnUnix(nsIEventQueue *pQueue, unsigned cMsTimeout)
     return rc;
 }
 
-#endif
+# endif // !RT_OS_DARWIN
+#endif // VBOX_WITH_XPCOM
 
-#ifdef RT_OS_WINDOWS
+#ifndef VBOX_WITH_XPCOM
 /**
  *  Process pending events (Windows).
  *  @returns VINF_SUCCESS, VERR_TIMEOUT or VERR_INTERRUPTED.
@@ -317,7 +353,7 @@ processPendingEvents(void)
     }
     return rc;
 }
-#else  /* !RT_OS_WINDOWS */
+#else // VBOX_WITH_XPCOM
 /**
  * Process pending XPCOM events.
  * @param pQueue The queue to process events on.
@@ -334,11 +370,10 @@ int processPendingEvents(nsIEventQueue *pQueue)
     if (!fHasEvents)
         return VERR_TIMEOUT;
 
-    /** @todo: rethink interruption events, current NULL event approach is bad */
     pQueue->ProcessPendingEvents();
     return VINF_SUCCESS;
 }
-#endif /* !RT_OS_WINDOWS */
+#endif // VBOX_WITH_XPCOM
 
 
 /**
@@ -361,12 +396,12 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
     int rc;
     CHECK_THREAD_RET(VERR_INVALID_CONTEXT);
 
-#if defined (VBOX_WITH_XPCOM)
+#ifdef VBOX_WITH_XPCOM
     /*
      * Process pending events, if none are available and we're not in a
      * poll call, wait for some to appear.  (We have to be a little bit
-     * careful after waiting for the events since darwin will process
-     * them as part of the wait, while the unix case will not.)
+     * careful after waiting for the events since Darwin will process
+     * them as part of the wait, while the XPCOM case will not.)
      *
      * Note! Unfortunately, WaitForEvent isn't interruptible with Ctrl-C,
      *       while select() is.  So we cannot use it for indefinite waits.
@@ -376,32 +411,35 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
         &&  cMsTimeout > 0)
     {
 # ifdef RT_OS_DARWIN
-        /** @todo check how Ctrl-C works on darwin. */
+        /** @todo check how Ctrl-C works on Darwin. */
         rc = waitForEventsOnDarwin(cMsTimeout);
         if (rc == VERR_TIMEOUT)
             rc = processPendingEvents(mEventQ);
-# else
-        rc = waitForEventsOnUnix(mEventQ, cMsTimeout);
+# else // !RT_OS_DARWIN
+        rc = waitForEventsOnXPCOM(mEventQ, cMsTimeout);
         if (    RT_SUCCESS(rc)
             ||  rc == VERR_TIMEOUT)
             rc = processPendingEvents(mEventQ);
-# endif
+# endif // !RT_OS_DARWIN
+    }
+    if (RT_SUCCESS(rc) && mInterrupted)
+    {
+        mInterrupted = false;
+        rc = VERR_INTERRUPTED;
     }
 
-#else  /* !VBOX_WITH_XPCOM */
+#else // !VBOX_WITH_XPCOM
     if (cMsTimeout == RT_INDEFINITE_WAIT)
     {
-        Event *aEvent = NULL;
-
-        BOOL fHasEvent = waitForEvent(&aEvent);
-        if (fHasEvent)
+        BOOL bRet;
+        MSG Msg;
+        int rc = VINF_SUCCESS;
+        while ((bRet = GetMessage(&Msg, NULL /*hWnd*/, WM_USER, WM_USER)))
         {
-            handleEvent(aEvent);
-            rc = processPendingEvents();
-            if (rc == VERR_TIMEOUT)
-                rc = VINF_SUCCESS;
+            if (bRet != -1)
+                DispatchMessage(&Msg);
         }
-        else
+        if (bRet == 0)
             rc = VERR_INTERRUPTED;
     }
     else
@@ -421,7 +459,7 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
             rc = processPendingEvents();
         }
     }
-#endif /* !VBOX_WITH_XPCOM */
+#endif // !VBOX_WITH_XPCOM
     return rc;
 }
 
@@ -432,7 +470,9 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
  */
 int EventQueue::interruptEventQueueProcessing()
 {
-    /** @todo: rethink me! */
+    /* Send a NULL event. This gets us out of the event loop on XPCOM, and
+     * doesn't hurt on Windows. It is the responsibility of the caller to
+     * take care of not running the loop again in a way which will hang. */
     postEvent(NULL);
     return VINF_SUCCESS;
 }
@@ -445,112 +485,24 @@ int EventQueue::interruptEventQueueProcessing()
  */
 BOOL EventQueue::postEvent(Event *event)
 {
-#if defined (RT_OS_WINDOWS)
+#ifndef VBOX_WITH_XPCOM
 
-    return PostThreadMessage (mThreadId, WM_USER, (WPARAM) event, NULL);
+    return PostThreadMessage(mThreadId, WM_USER, (WPARAM)event, NULL);
 
-#else
+#else // VBOX_WITH_XPCOM
 
     if (!mEventQ)
         return FALSE;
 
-    MyPLEvent *ev = new MyPLEvent (event);
-    mEventQ->InitEvent (ev, this, plEventHandler, plEventDestructor);
-    HRESULT rc = mEventQ->PostEvent (ev);
+    MyPLEvent *ev = new MyPLEvent(event);
+    mEventQ->InitEvent(ev, this, com::EventQueue::plEventHandler,
+                       com::EventQueue::plEventDestructor);
+    HRESULT rc = mEventQ->PostEvent(ev);
     return NS_SUCCEEDED(rc);
 
-#endif
+#endif // VBOX_WITH_XPCOM
 }
 
-/**
- *  Waits for a single event.
- *  This method must be called on the same thread where this event queue
- *  is created.
- *
- *  After this method returns TRUE and non-NULL event, the caller should call
- *  #handleEvent() in order to process the returned event (otherwise the event
- *  is just removed from the queue, but not processed).
- *
- *  There is a special case when the returned event is NULL (and the method
- *  returns TRUE), meaning that this event queue must finish its execution
- *  (i.e., quit the event loop),
- *
- *  @param event    next event removed from the queue
- *  @return         TRUE if successful and false otherwise
- */
-BOOL EventQueue::waitForEvent(Event **event)
-{
-    Assert(event);
-    if (!event)
-        return FALSE;
-
-    *event = NULL;
-
-    CHECK_THREAD_RET (FALSE);
-
-#if defined (RT_OS_WINDOWS)
-
-    MSG msg;
-    BOOL rc = GetMessage (&msg, NULL, WM_USER, WM_USER);
-    // check for error
-    if (rc == -1)
-        return FALSE;
-    // check for WM_QUIT
-    if (!rc)
-        return TRUE;
-
-    // retrieve our event
-    *event = (Event *) msg.wParam;
-
-#else
-
-    PLEvent *ev = NULL;
-    HRESULT rc;
-
-    mGotEvent = FALSE;
-
-    do
-    {
-        rc = mEventQ->WaitForEvent (&ev);
-        // check for error
-        if (FAILED(rc))
-            return FALSE;
-        // check for EINTR signal
-        if (!ev)
-            return TRUE;
-
-        // run PLEvent handler. This will just set mLastEvent if it is an
-        // MyPLEvent instance, and then delete ev.
-        mEventQ->HandleEvent (ev);
-    }
-    while (!mGotEvent);
-
-    // retrieve our event
-    *event = mLastEvent;
-
-#endif
-
-    return TRUE;
-}
-
-/**
- *  Handles the given event and |delete|s it.
- *  This method must be called on the same thread where this event queue
- *  is created.
- */
-BOOL EventQueue::handleEvent(Event *event)
-{
-    Assert(event);
-    if (!event)
-        return FALSE;
-
-    CHECK_THREAD_RET (FALSE);
-
-    event->handler();
-    delete event;
-
-    return TRUE;
-}
 
 /**
  *  Get select()'able selector for this event queue.
@@ -565,5 +517,6 @@ int EventQueue::getSelectFD()
     return -1;
 #endif
 }
+
 }
 /* namespace com */

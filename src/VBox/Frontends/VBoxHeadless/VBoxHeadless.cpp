@@ -82,32 +82,15 @@ static ISession *gSession = NULL;
 static IConsole *gConsole = NULL;
 static EventQueue *gEventQ = NULL;
 
+/* flag whether frontend should terminate */
+static volatile bool g_fTerminateFE = false;
+
 #ifdef VBOX_WITH_VNC
 static VNCFB *g_pFramebufferVNC;
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  State change event.
- */
-class StateChangeEvent : public Event
-{
-public:
-    StateChangeEvent(MachineState_T state) : mState(state) {}
-protected:
-    void *handler()
-    {
-        LogFlow(("VBoxHeadless: StateChangeEvent: %d\n", mState));
-        /* post the termination event if the machine has been PoweredDown/Saved/Aborted */
-        if (mState < MachineState_Running)
-            gEventQ->postEvent(NULL);
-        return 0;
-    }
-private:
-    MachineState_T mState;
-};
 
 /**
  *  Handler for global events.
@@ -318,7 +301,14 @@ public:
                 MachineState_T machineState;
                 scev->COMGETTER(State)(&machineState);
 
-                gEventQ->postEvent(new StateChangeEvent(machineState));
+                /* Terminate any event wait operation if the machine has been
+                 * PoweredDown/Saved/Aborted. */
+                if (machineState < MachineState_Running)
+                {
+                    g_fTerminateFE = true;
+                    gEventQ->interruptEventQueueProcessing();
+                }
+
                 break;
             }
             case VBoxEventType_OnRemoteDisplayInfoChanged:
@@ -1087,19 +1077,22 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (FAILED(rc) || fCompleted)
                 break;
 
-            /* Process pending events, then wait for new ones. */
+            /* Process pending events, then wait for new ones. Note, this
+             * processes NULL events signalling event loop termination. */
             gEventQ->processEventQueue(0);
-            gEventQ->processEventQueue(500);
+            if (!g_fTerminateFE)
+                gEventQ->processEventQueue(500);
         }
 
-        /** @todo The error handling here is kind of peculiar, anyone care
-         *        to comment why this works just fine? (this is old the code) */
         if (SUCCEEDED(progress->WaitForCompletion(-1)))
         {
+            /* Figure out if the operation completed with a failed status
+             * and print the error message. Terminate immediately, and let
+             * the cleanup code take care of potentially pending events. */
             LONG progressRc;
             progress->COMGETTER(ResultCode)(&progressRc);
             rc = progressRc;
-            if (FAILED(progressRc))
+            if (FAILED(rc))
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
@@ -1110,6 +1103,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 {
                     RTPrintf("Error: failed to start machine. No error message available!\n");
                 }
+                break;
             }
         }
 
@@ -1131,10 +1125,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         Log(("VBoxHeadless: Waiting for PowerDown...\n"));
 
-        Event *e;
-
-        while (gEventQ->waitForEvent(&e) && e)
-          gEventQ->handleEvent(e);
+        while (   !g_fTerminateFE
+               && RT_SUCCESS(gEventQ->processEventQueue(RT_INDEFINITE_WAIT)))
+            /* nothing */ ;
 
         Log(("VBoxHeadless: event loop has terminated...\n"));
 
