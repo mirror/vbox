@@ -179,7 +179,7 @@ class VBoxEventDesc
 {
 public:
  VBoxEventDesc()
- : mEvent(0)
+ : mEvent(0), mEventSource(0)
  {}
  ~VBoxEventDesc()
  {}
@@ -190,6 +190,14 @@ public:
   * generated VBoxEvents.cpp.
   */
  HRESULT init(IEventSource* aSource, VBoxEventType_T aType, ...);
+
+ /**
+  * Function similar to the above, but assumes that init() for this type already called once,
+  * so no need to allocate memory, and only reinit fields. Assumes event is subtype of
+  * IReusableEvent, asserts otherwise.
+  */
+ HRESULT reinit(VBoxEventType_T aType, ...);
+
 
  void getEvent(IEvent ** aEvent)
  {

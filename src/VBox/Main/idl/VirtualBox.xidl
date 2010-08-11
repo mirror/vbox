@@ -13670,26 +13670,34 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <const name="Any" value="1">
       <desc>
-        Wildcard for all events. Events of this type are never delivered, and only used in
+        Wildcard for all events.
+        Events of this type are never delivered, and only used in
         registerListener() call to simplify registration.
       </desc>
     </const>
 
-    <const name="MachineEvent" value="2">
+    <const name="Vetoable" value="2">
+      <desc>
+        Wildcard for all vetoable events. Events of this type are never delivered, and only
+        used in registerListener() call to simplify registration.
+      </desc>
+    </const>
+
+    <const name="MachineEvent" value="3">
       <desc>
         Wildcard for all machine events. Events of this type are never delivered, and only used in
         registerListener() call to simplify registration.
       </desc>
     </const>
 
-    <const name="SnapshotEvent" value="3">
+    <const name="SnapshotEvent" value="4">
       <desc>
         Wildcard for all snapshot events. Events of this type are never delivered, and only used in
         registerListener() call to simplify registration.
       </desc>
     </const>
 
-    <const name="InputEvent" value="4">
+    <const name="InputEvent" value="5">
       <desc>
         Wildcard for all input device (keyboard, mouse) events.
         Events of this type are never delivered, and only used in

@@ -240,6 +240,8 @@
   <xsl:choose>
     <xsl:when test="$extends='IEvent'">
     </xsl:when>
+    <xsl:when test="$extends='IReusableEvent'">
+    </xsl:when>
     <xsl:when test="//interface[@name=$extends]">
       <xsl:call-template name="genAttrInitCode">
         <xsl:with-param name="name" select="$extends" />
@@ -427,6 +429,12 @@
     <xsl:when test="$extends='IEvent'">
       <xsl:value-of select="   '    // skipping IEvent attributes &#10;'" />
     </xsl:when>
+    <xsl:when test="$extends='IReusableEvent'">
+      <xsl:value-of select="   '    // skipping IReusableEvent attributes &#10;'" />
+    </xsl:when>
+     <xsl:when test="$extends='IVetoEvent'">
+      <xsl:value-of select="   '    // skipping IVetoEvent attributes &#10;'" />
+    </xsl:when>
     <xsl:when test="//interface[@name=$extends]">
       <xsl:call-template name="genAttrCode">
         <xsl:with-param name="name" select="$extends" />
@@ -445,6 +453,7 @@
 <xsl:template name="genEventImpl">
   <xsl:param name="implName" />
   <xsl:param name="isVeto" />
+  <xsl:param name="isReusable" />
 
   <xsl:value-of select="concat('class ATL_NO_VTABLE ',$implName,
                         '&#10;    : public VirtualBoxBase,&#10;      VBOX_SCRIPTABLE_IMPL(',
@@ -518,6 +527,29 @@ private:
     ComObjPtr<VBoxVetoEvent>      mEvent;
 ]]></xsl:text>
     </xsl:when>
+    <xsl:when test="$isReusable='yes'">
+      <xsl:text>
+<![CDATA[
+    HRESULT init(IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable = FALSE)
+    {
+        mGeneration = 1;
+        return mEvent->init(aSource, aType, aWaitable);
+    }
+    STDMETHOD(COMGETTER(Generation)) (ULONG *aGeneration)
+    {
+      *aGeneration = mGeneration;
+      return S_OK;
+    }
+    STDMETHOD(Reuse) ()
+    {
+       ASMAtomicIncU32(&mGeneration);
+       return S_OK;
+    }
+private:
+    volatile ULONG              mGeneration;
+    ComObjPtr<VBoxEvent>        mEvent;
+]]></xsl:text>
+    </xsl:when>
     <xsl:otherwise>
 <xsl:text><![CDATA[
     HRESULT init(IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable)
@@ -547,6 +579,7 @@ private:
 
 <xsl:template name="genSwitchCase">
   <xsl:param name="implName" />
+  <xsl:param name="reinit" />
   <xsl:variable name="waitable">
     <xsl:choose>
       <xsl:when test="@waitable='yes'">
@@ -559,14 +592,26 @@ private:
   </xsl:variable>
   <xsl:value-of select="concat('         case VBoxEventType_', @id, ':&#10;')"/>
   <xsl:value-of select="       '         {&#10;'"/>
-  <xsl:value-of select="concat('              ComObjPtr&lt;', $implName, '&gt; obj;&#10;')"/>
-  <xsl:value-of select="       '              obj.createObject();&#10;'"/>
-  <xsl:value-of select="concat('              obj->init(aSource, aType, ', $waitable, ');&#10;')"/>
+  <xsl:choose>
+    <xsl:when test="$reinit='yes'">
+      <xsl:value-of select="concat('              ComPtr&lt;', $implName, '&gt; obj;&#10;')"/>
+      <xsl:value-of select="       '              obj = mEvent;&#10;'"/>
+      <xsl:value-of select="       '              Assert(obj);&#10;'"/>
+      <xsl:value-of select="       '              obj->Reuse();&#10;'"/>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="concat('              ComObjPtr&lt;', $implName, '&gt; obj;&#10;')"/>
+      <xsl:value-of select="       '              obj.createObject();&#10;'"/>
+      <xsl:value-of select="concat('              obj->init(aSource, aType, ', $waitable, ');&#10;')"/>
+    </xsl:otherwise>
+  </xsl:choose>
   <xsl:call-template name="genAttrInitCode">
     <xsl:with-param name="name" select="@name" />
     <xsl:with-param name="obj" select="'obj'" />
   </xsl:call-template>
-  <xsl:value-of select="       '              obj.queryInterfaceTo(mEvent.asOutParam());&#10;'"/>
+  <xsl:if test="not($reinit='yes')">
+    <xsl:value-of select="       '              obj.queryInterfaceTo(mEvent.asOutParam());&#10;'"/>
+  </xsl:if>
   <xsl:value-of select="       '              break;&#10;'"/>
   <xsl:value-of select="       '         }&#10;'"/>
 </xsl:template>
@@ -589,12 +634,43 @@ HRESULT VBoxEventDesc::init(IEventSource* aSource, VBoxEventType_T aType, ...)
     </xsl:variable>
     <xsl:call-template name="genSwitchCase">
       <xsl:with-param name="implName" select="$implName" />
+      <xsl:with-param name="reinit" select="'no'" />
     </xsl:call-template>
   </xsl:for-each>
 
   <xsl:text><![CDATA[
          default:
-            if (1) AssertFailed();
+            AssertFailed();
+    }
+    va_end(args);
+
+    return S_OK;
+}
+]]></xsl:text>
+
+ <xsl:text><![CDATA[
+HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
+{
+    va_list args;
+
+    va_start(args, aType);
+    switch (aType)
+    {
+]]></xsl:text>
+
+  <xsl:for-each select="//interface[@autogen=$G_kind and @extends='IReusableEvent']">
+    <xsl:variable name="implName">
+      <xsl:value-of select="substring(@name, 2)" />
+    </xsl:variable>
+    <xsl:call-template name="genSwitchCase">
+      <xsl:with-param name="implName" select="$implName" />
+      <xsl:with-param name="reinit" select="'yes'" />
+    </xsl:call-template>
+  </xsl:for-each>
+
+  <xsl:text><![CDATA[
+         default:
+            AssertFailed();
     }
     va_end(args);
 
@@ -612,6 +688,7 @@ HRESULT VBoxEventDesc::init(IEventSource* aSource, VBoxEventType_T aType, ...)
 
 <xsl:text><![CDATA[
   #include <VBox/com/array.h>
+  #include <iprt/asm.h>
   #include "EventImpl.h"
 ]]></xsl:text>
 
@@ -630,9 +707,15 @@ HRESULT VBoxEventDesc::init(IEventSource* aSource, VBoxEventType_T aType, ...)
             <xsl:value-of select="'yes'" />
           </xsl:if>
         </xsl:variable>
+        <xsl:variable name="isReusable">
+          <xsl:if test="@extends='IReusableEvent'">
+            <xsl:value-of select="'yes'" />
+          </xsl:if>
+        </xsl:variable>
         <xsl:call-template name="genEventImpl">
           <xsl:with-param name="implName" select="$implName" />
           <xsl:with-param name="isVeto" select="$isVeto" />
+          <xsl:with-param name="isReusable" select="$isReusable" />
         </xsl:call-template>
       </xsl:when>
     </xsl:choose>
