@@ -1497,44 +1497,36 @@ void VBoxMediaManagerDlg::performTablesAdjustment()
     }
 }
 
-void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation, VBoxDefs::MediumType aType)
+void VBoxMediaManagerDlg::addMediumToList(const QString &aLocation, VBoxDefs::MediumType aType)
 {
     AssertReturnVoid (!aLocation.isEmpty());
 
-    QString uuid;
     VBoxMedium medium;
+    KDeviceType devType;
 
     switch (aType)
     {
         case VBoxDefs::MediumType_HardDisk:
-        {
-            CMedium hd = mVBox.OpenHardDisk (aLocation, KAccessMode_ReadWrite, false, "", false, "");
-            if (mVBox.isOk())
-                medium = VBoxMedium (CMedium (hd), VBoxDefs::MediumType_HardDisk, KMediumState_Created);
-            break;
-        }
+            devType = KDeviceType_HardDisk;
+        break;
         case VBoxDefs::MediumType_DVD:
-        {
-            CMedium image = mVBox.OpenDVDImage (aLocation, uuid);
-            if (mVBox.isOk())
-                medium = VBoxMedium (CMedium (image), VBoxDefs::MediumType_DVD, KMediumState_Created);
-            break;
-        }
+            devType = KDeviceType_DVD;
+        break;
         case VBoxDefs::MediumType_Floppy:
-        {
-            CMedium image = mVBox.OpenFloppyImage (aLocation, uuid);
-            if (mVBox.isOk())
-                medium = VBoxMedium (CMedium (image), VBoxDefs::MediumType_Floppy, KMediumState_Created);
-            break;
-        }
+            devType = KDeviceType_Floppy;
+        break;
         default:
             AssertMsgFailedReturnVoid (("Invalid aType %d\n", aType));
     }
 
+    CMedium med = mVBox.OpenMedium(aLocation, devType, KAccessMode_ReadWrite);
+    if (mVBox.isOk())
+        medium = VBoxMedium(CMedium(med), aType, KMediumState_Created);
+
     if (!mVBox.isOk())
-        vboxProblem().cannotOpenMedium (this, mVBox, aType, aLocation);
+        vboxProblem().cannotOpenMedium(this, mVBox, aType, aLocation);
     else
-        vboxGlobal().addMedium (medium);
+        vboxGlobal().addMedium(medium);
 }
 
 MediaItem* VBoxMediaManagerDlg::createHardDiskItem (QTreeWidget *aTree, const VBoxMedium &aMedium) const

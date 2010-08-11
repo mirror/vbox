@@ -96,8 +96,6 @@ struct Medium::Data
           logicalSize(0),
           hddOpenMode(OpenReadWrite),
           autoReset(false),
-          setImageId(false),
-          setParentId(false),
           hostDrive(false),
           implicit(false),
           numCreateDiffTasks(0),
@@ -142,10 +140,8 @@ struct Medium::Data
     bool autoReset : 1;
 
     /** the following members are invalid after changing UUID on open */
-    bool setImageId : 1;
-    bool setParentId : 1;
-    const Guid imageId;
-    const Guid parentId;
+    const Guid uuidImage;
+    const Guid uuidParentImage;
 
     bool hostDrive : 1;
 
@@ -823,21 +819,11 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * @param aLocation     Storage unit location.
  * @param enOpenMode    Whether to open the medium read/write or read-only.
  * @param aDeviceType   Device type of medium.
- * @param aSetImageId   Whether to set the medium UUID or not.
- * @param aImageId      New medium UUID if @aSetId is true. Empty string means
- *                      create a new UUID, and a zero UUID is invalid.
- * @param aSetParentId  Whether to set the parent UUID or not.
- * @param aParentId     New parent UUID if @aSetParentId is true. Empty string
- *                      means create a new UUID, and a zero UUID is valid.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      const Utf8Str &aLocation,
                      HDDOpenMode enOpenMode,
-                     DeviceType_T aDeviceType,
-                     BOOL aSetImageId,
-                     const Guid &aImageId,
-                     BOOL aSetParentId,
-                     const Guid &aParentId)
+                     DeviceType_T aDeviceType)
 {
     AssertReturn(aVirtualBox, E_INVALIDARG);
     AssertReturn(!aLocation.isEmpty(), E_INVALIDARG);
@@ -869,14 +855,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         rc = setLocation(aLocation, "RAW");
     if (FAILED(rc)) return rc;
 
-    /* save the new uuid values, will be used by queryInfo() */
-    m->setImageId = !!aSetImageId;
-    unconst(m->imageId) = aImageId;
-    m->setParentId = !!aSetParentId;
-    unconst(m->parentId) = aParentId;
-
     /* get all the information about the medium from the storage unit */
-    rc = queryInfo();
+    rc = queryInfo(false /* fSetImageId */, false /* fSetParentId */);
 
     if (SUCCEEDED(rc))
     {
@@ -1654,6 +1634,35 @@ STDMETHODIMP Medium::COMGETTER(MachineIds)(ComSafeArrayOut(BSTR,aMachineIds))
     return S_OK;
 }
 
+STDMETHODIMP Medium::SetIDs(BOOL aSetImageId,
+                            IN_BSTR aImageId,
+                            BOOL aSetParentId,
+                            IN_BSTR aParentId)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Guid imageId, parentId;
+    if (aSetImageId)
+    {
+        imageId = Guid(aImageId);
+        if (imageId.isEmpty())
+            return setError(E_INVALIDARG, tr("Argument %s is empty"), "aImageId");
+    }
+    if (aSetParentId)
+        parentId = Guid(aParentId);
+
+    unconst(m->uuidImage) = imageId;
+    unconst(m->uuidParentImage) = parentId;
+
+    HRESULT rc = queryInfo(!!aSetImageId /* fSetImageId */,
+                           !!aSetParentId /* fSetParentId */);
+
+    return rc;
+}
+
 STDMETHODIMP Medium::RefreshState(MediumState_T *aState)
 {
     CheckComArgOutPointerValid(aState);
@@ -1672,7 +1681,7 @@ STDMETHODIMP Medium::RefreshState(MediumState_T *aState)
         case MediumState_Inaccessible:
         case MediumState_LockedRead:
         {
-            rc = queryInfo();
+            rc = queryInfo(false /* fSetImageId */, false /* fSetParentId */);
             break;
         }
         default:
@@ -3436,8 +3445,12 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
  * @note Locks medium tree for reading and writing (for new diff media checked
  *       for the first time). Locks mParent for reading. Locks this object for
  *       writing.
+ *
+ * @param fSetImageId Whether to reset the UUID contained in the image file to the UUID in the medium instance data (see SetIDs())
+ * @param fSetParentId Whether to reset the parent UUID contained in the image file to the parent UUID in the medium instance data (see SetIDs())
+ * @return
  */
-HRESULT Medium::queryInfo()
+HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -3549,21 +3562,19 @@ HRESULT Medium::queryInfo()
             {
                 /* Modify the UUIDs if necessary. The associated fields are
                  * not modified by other code, so no need to copy. */
-                if (m->setImageId)
+                if (fSetImageId)
                 {
-                    vrc = VDSetUuid(hdd, 0, m->imageId);
+                    vrc = VDSetUuid(hdd, 0, m->uuidImage);
                     ComAssertRCThrow(vrc, E_FAIL);
                 }
-                if (m->setParentId)
+                if (fSetParentId)
                 {
-                    vrc = VDSetParentUuid(hdd, 0, m->parentId);
+                    vrc = VDSetParentUuid(hdd, 0, m->uuidParentImage);
                     ComAssertRCThrow(vrc, E_FAIL);
                 }
                 /* zap the information, these are no long-term members */
-                m->setImageId = false;
-                unconst(m->imageId).clear();
-                m->setParentId = false;
-                unconst(m->parentId).clear();
+                unconst(m->uuidImage).clear();
+                unconst(m->uuidParentImage).clear();
 
                 /* check the UUID */
                 RTUUID uuid;
@@ -3602,8 +3613,8 @@ HRESULT Medium::queryInfo()
                 /* generate an UUID for an imported UUID-less medium */
                 if (isImport)
                 {
-                    if (m->setImageId)
-                        mediumId = m->imageId;
+                    if (fSetImageId)
+                        mediumId = m->uuidImage;
                     else
                         mediumId.create();
                 }

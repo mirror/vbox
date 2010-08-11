@@ -355,14 +355,12 @@ void createVM(IVirtualBox *virtualBox)
      * as the boot device.
      */
     nsCOMPtr<IMedium> dvdImage;
-
-    rc = virtualBox->OpenDVDImage(NS_LITERAL_STRING("/home/vbox/isos/winnt4ger.iso").get(),
-                                  nsnull, /* NULL UUID, i.e. a new one will be created */
-                                  getter_AddRefs(dvdImage));
+    rc = virtualBox->OpenMedium(NS_LITERAL_STRING("/home/vbox/isos/winnt4ger.iso").get(),
+                                DeviceType_DVD,
+                                AccessMode_ReadOnly,
+                                getter_AddRefs(dvdImage));
     if (NS_FAILED(rc))
-    {
         printf("Error: could not open CD image! rc=%08X\n", rc);
-    }
     else
     {
         /*

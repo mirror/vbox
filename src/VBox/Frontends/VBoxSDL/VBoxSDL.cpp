@@ -1417,7 +1417,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             /* we've not found the image */
             RTPrintf("Adding hard disk '%S'...\n", hdaFile);
-            virtualBox->OpenHardDisk(hdaFileBstr, AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam());
+            virtualBox->OpenMedium(hdaFileBstr, DeviceType_HardDisk, AccessMode_ReadWrite, hardDisk.asOutParam());
         }
         /* do we have the right image now? */
         if (hardDisk)
@@ -1501,8 +1501,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 {
                     /* try to add to the list */
                     RTPrintf("Adding floppy image '%S'...\n", fdaFile);
-                    CHECK_ERROR_BREAK(virtualBox, OpenFloppyImage(medium, Bstr(),
-                                                                  floppyMedium.asOutParam()));
+                    CHECK_ERROR_BREAK(virtualBox,
+                                      OpenMedium(medium, DeviceType_Floppy, AccessMode_ReadWrite, floppyMedium.asOutParam()));
                 }
             }
         }
@@ -1586,8 +1586,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 {
                     /* try to add to the list */
                     RTPrintf("Adding ISO image '%S'...\n", cdromFile);
-                    CHECK_ERROR_BREAK(virtualBox, OpenDVDImage(medium, Bstr(),
-                                                               dvdMedium.asOutParam()));
+                    CHECK_ERROR_BREAK(virtualBox, OpenMedium(medium, DeviceType_DVD, AccessMode_ReadWrite, dvdMedium.asOutParam()));
                 }
             }
         }

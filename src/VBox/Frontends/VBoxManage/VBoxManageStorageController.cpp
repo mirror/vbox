@@ -454,8 +454,11 @@ int handleStorageAttach(HandlerArg *a)
                     {
                         /* not registered, do that on the fly */
                         Bstr emptyUUID;
-                        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(pszMedium),
-                                     emptyUUID, dvdMedium.asOutParam()));
+                        CHECK_ERROR(a->virtualBox,
+                                    OpenMedium(Bstr(pszMedium),
+                                               DeviceType_DVD,
+                                               AccessMode_ReadWrite,
+                                               dvdMedium.asOutParam()));
                     }
                     if (!dvdMedium)
                     {
@@ -489,9 +492,10 @@ int handleStorageAttach(HandlerArg *a)
             {
                 /* open the new hard disk object */
                 CHECK_ERROR(a->virtualBox,
-                             OpenHardDisk(Bstr(pszMedium),
-                                          AccessMode_ReadWrite, false, Bstr(""),
-                                          false, Bstr(""), hardDisk.asOutParam()));
+                            OpenMedium(Bstr(pszMedium),
+                                       DeviceType_HardDisk,
+                                       AccessMode_ReadWrite,
+                                       hardDisk.asOutParam()));
             }
 
             if (hardDisk)
@@ -539,9 +543,10 @@ int handleStorageAttach(HandlerArg *a)
                     /* not registered, do that on the fly */
                     Bstr emptyUUID;
                     CHECK_ERROR(a->virtualBox,
-                                 OpenFloppyImage(Bstr(pszMedium),
-                                                 emptyUUID,
-                                                 floppyMedium.asOutParam()));
+                                 OpenMedium(Bstr(pszMedium),
+                                            DeviceType_Floppy,
+                                            AccessMode_ReadWrite,
+                                            floppyMedium.asOutParam()));
                 }
 
                 if (!floppyMedium)
