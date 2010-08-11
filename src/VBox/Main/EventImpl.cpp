@@ -683,6 +683,9 @@ static BOOL implies(VBoxEventType_T who, VBoxEventType_T what)
     {
         case VBoxEventType_Any:
             return TRUE;
+        case VBoxEventType_Vetoable:
+            return     (what == VBoxEventType_OnExtraDataCanChange)
+                    || (what == VBoxEventType_OnCanShowWindow);
         case VBoxEventType_MachineEvent:
             return     (what == VBoxEventType_OnMachineStateChanged)
                     || (what == VBoxEventType_OnMachineDataChanged)
