@@ -47,10 +47,10 @@
 #define true 1
 
 #define OPSTATIC
-// #define RDPUSB_DEBUG
+#define RDPUSB_DEBUG
 #ifdef RDPUSB_DEBUG
 #define DoLog(a) do { \
-        printf("Time %llu: ", RTTimeMilliTS()); \
+        printf("Time %llu: ", (long long unsigned) RTTimeMilliTS()); \
         printf a; \
 } while(0)
 
@@ -88,10 +88,23 @@
 
 #define VINF_SUCCESS 0
 #define VERR_NO_MEMORY        (-8)
+#define VERR_INVALID_POINTER  (-6)
 #define VERR_UNRESOLVED_ERROR (-35)
 #define VERR_NOT_SUPPORTED    (-37)
 #define VERR_ACCESS_DENIED    (-38)
 #define VERR_VUSB_USBFS_PERMISSION (-2005)
+
+static inline const char *RTErrGetShort(int iErr)
+{
+    return   iErr == VINF_SUCCESS               ? "VINF_SUCCESS"
+           : iErr == VERR_NO_MEMORY             ? "VERR_NO_MEMORY"
+           : iErr == VERR_INVALID_POINTER       ? "VERR_INVALID_POINTER"
+           : iErr == VERR_UNRESOLVED_ERROR      ? "VERR_UNRESOLVED_ERROR"
+           : iErr == VERR_NOT_SUPPORTED         ? "VERR_NOT_SUPPORTED"
+           : iErr == VERR_ACCESS_DENIED         ? "VERR_ACCESS_DENIED"
+           : iErr == VERR_VUSB_USBFS_PERMISSION ? "VERR_VUSB_USBFS_PERMISSION"
+           : "Unknown error";
+}
 
 static inline int RTErrConvertFromErrno(int iErrno)
 {
@@ -134,6 +147,8 @@ static inline int RTErrConvertFromErrno(int iErrno)
 #define RT_FAILURE(_rc) (!RT_SUCCESS(_rc))
 
 #define NOREF(_a) ((void)_a)
+
+#define VALID_PTR(ptr) ((ptr) != NULL)
 
 #define RT_C_DECLS_BEGIN
 #define RT_C_DECLS_END

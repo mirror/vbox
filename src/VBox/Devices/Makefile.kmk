@@ -1165,29 +1165,6 @@ ServicesR0_SOURCES   = \
 
 
 #
-# USBProxyDevice-linux.cpp and USBProxyDevice-linux.c should be kept in sync.
-#
-# Hence this bit of ugliness that checks that they are identical, apart from
-# the first line of the files (svn keywords).
-# If you are updating the code, build with VBOX_WITH_TESTCASES= as long as you
-# haven't synced.
-#
-ifeq (0,1)
-if defined(VBOX_WITH_USB) && defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_SDK)
- TESTING += $(PATH_Drivers)/tstSameUSBProxyDevLinux.run
- OTHERS  += $(PATH_Drivers)/tstSameUSBProxyDevLinux.run
- VBOX_PRX_DEV_LNX = $(PATH_ROOT)/src/VBox/Devices/USB/linux/USBProxyDevice-linux.cpp
- VRDP_PRX_DEV_LNX = $(PATH_ROOT)/src/VBox/RDP/client/vrdp/USBProxyDevice-linux.c
-$$(PATH_Drivers)/tstSameUSBProxyDevLinux.run: $(VBOX_PRX_DEV_LNX) $(VRDP_PRX_DEV_LNX) | $$(PATH_Drivers)/
-	$(QUIET)$(call MSG_L1,Source correctness - ensuring that files are identical: $^)
-	$(QUIET)$(CMP) $^ \
-		$(foreach i,$^,$(length $(shell $(SED) -n '1,\?/\* START \*/?p' $(i))))
-	$(QUIET)$(APPEND) -t "$@" "done"
-endif # USB + TESTCASES + !SDK
-endif
-
-
-#
 # Internal Networking - Ring-3 Testcase for the Ring-0 code (a bit hackish).
 #
 ifdef VBOX_WITH_TESTCASES
