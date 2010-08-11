@@ -14057,7 +14057,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <b>Introduction to VirtualBox events</b>
 
       Generally speaking, an event (represented by this interface) signals that something
-      happened, while an event listener (see <link to="IEventListener" /> represents an
+      happened, while an event listener (see <link to="IEventListener" />) represents an
       entity that is interested in certain events. In order for this to work with
       unidirectional protocols (i.e. web services), the concepts of passive and active
       listener are used.
@@ -14079,10 +14079,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           languages or web service clients. Internally the <link to="IEventSource" />
           implementation maintains an event queue for each passive listener, and
           newly arrived events are put in this queue. When the listener calls
-          <link to="IEventSource::getEvent"/>, all elements from its internal event
-          queue are returned. When the client completes processing of an event,
+          <link to="IEventSource::getEvent"/>, first element from its internal event
+          queue is returned. When the client completes processing of an event,
           the <link to="IEventSource::eventProcessed" /> function must be called,
-          acknowledging that the events were processed. It supports implementing
+          acknowledging that the event was processed. It supports implementing
           waitable events. On passive listener unregistration, all events from its
           queue are auto-acknowledged.
         </li>
