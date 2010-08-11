@@ -270,8 +270,7 @@ sfprov_create(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 	{
 		if (rc != VERR_ACCESS_DENIED && rc != VERR_WRITE_PROTECT)
 			cmn_err(CE_WARN, "sfprov_create: vboxCallCreate failed! path=%s rc=%d\n", path, rc);
-		rc = sfprov_vbox2errno(rc);
-		return (rc);
+		return (sfprov_vbox2errno(rc));
 	}
 	if (parms.Handle == SHFL_HANDLE_NIL) {
 		if (parms.Result == SHFL_FILE_EXISTS)
@@ -306,7 +305,7 @@ sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 	rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
 	if (RT_FAILURE(rc) && rc != VERR_ACCESS_DENIED) {
 		kmem_free(str, size);
-		return sfprov_vbox2errno(rc);
+		return (sfprov_vbox2errno(rc));
 	}
 	if (parms.Handle == SHFL_HANDLE_NIL) {
 		if (parms.Result == SHFL_PATH_NOT_FOUND ||
@@ -319,7 +318,7 @@ sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 		rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
 		if (RT_FAILURE(rc)) {
 			kmem_free(str, size);
-			return sfprov_vbox2errno(rc);
+			return (sfprov_vbox2errno(rc));
 		}
 		if (parms.Handle == SHFL_HANDLE_NIL) {
 			kmem_free(str, size);
