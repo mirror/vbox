@@ -1749,15 +1749,32 @@ typedef struct VDINTERFACEIO
                                                int ch, size_t cbSet));
 
     /**
+     * Creates a segment array from the I/O context data buffer.
+     *
+     * @returns Number of bytes the array describes.
+     * @param  pvUser          The opaque user data passed on container creation.
+     * @param  pIoCtx          I/O context to copy the data from.
+     * @param  paSeg           The uninitialized segment array.
+     *                         If NULL pcSeg will contain the number of segments needed
+     *                         to describe the requested amount of data.
+     * @param  pcSeg           The number of segments the given array has.
+     *                         This will hold the actual number of entries needed upon return.
+     * @param  cbData          Number of bytes the new array should describe.
+     */
+    DECLR3CALLBACKMEMBER(size_t, pfnIoCtxSegArrayCreate, (void *pvUser, PVDIOCTX pIoCtx,
+                                                          PRTSGSEG paSeg, unsigned *pcSeg,
+                                                          size_t cbData));
+    /**
      * Marks the given number of bytes as completed and continues the I/O context.
      *
      * @returns nothing.
      * @param   pvUser         The opaque user data passed on container creation.
      * @param   pIoCtx         The I/O context.
+     * @param   rcReq          Status code the request completed with.
      * @param   cbCompleted    Number of bytes completed.
      */
     DECLR3CALLBACKMEMBER(void, pfnIoCtxCompleted, (void *pvUser, PVDIOCTX pIoCtx,
-                                                   size_t cbCompleted));
+                                                   int rcReq, size_t cbCompleted));
 } VDINTERFACEIO, *PVDINTERFACEIO;
 
 /**
