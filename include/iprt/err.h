@@ -468,8 +468,12 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_ACCESS_DENIED                  (-38)
 /** Call interrupted. */
 #define VERR_INTERRUPTED                    (-39)
+/** Call interrupted. */
+#define VINF_INTERRUPTED                    39
 /** Timeout. */
 #define VERR_TIMEOUT                        (-40)
+/** Timeout. */
+#define VINF_TIMEOUT                        40
 /** Buffer too small to save result. */
 #define VERR_BUFFER_OVERFLOW                (-41)
 /** Buffer too small to save result. */
