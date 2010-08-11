@@ -759,11 +759,21 @@ RTDECL(int) RTSocketReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, si
 
     rtSocketErrorReset();
 #ifdef RT_OS_WINDOWS
-    int    cbNow = cbBuffer >= INT_MAX/2 ? INT_MAX/2 : (int)cbBuffer;
+    int cbNow = cbBuffer >= INT_MAX/2 ? INT_MAX/2 : (int)cbBuffer;
+
+    int cbRead = recv(pThis->hNative, pvBuffer, cbNow, MSG_NOSIGNAL);
+    if (cbRead >= 0)
+    {
+        *pcbRead = cbRead;
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = rtSocketError();
+
+    if (rc == VERR_TRY_AGAIN)
+        rc = VINF_TRY_AGAIN;
 #else
-    size_t cbNow = cbBuffer;
-#endif
-    ssize_t cbRead = recv(pThis->hNative, pvBuffer, cbNow, MSG_NOSIGNAL);
+    ssize_t cbRead = recv(pThis->hNative, pvBuffer, cbBuffer, MSG_NOSIGNAL);
     if (cbRead >= 0)
         *pcbRead = cbRead;
     else if (errno == EAGAIN)
@@ -772,7 +782,8 @@ RTDECL(int) RTSocketReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, si
         rc = VINF_TRY_AGAIN;
     }
     else
-        rc = RTErrConvertFromErrno(errno);
+        rc = rtSocketError();
+#endif
 
     rtSocketUnlock(pThis);
     return rc;
@@ -796,11 +807,22 @@ RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
 
     rtSocketErrorReset();
 #ifdef RT_OS_WINDOWS
-    int    cbNow = RT_MIN((int)cbBuffer, INT_MAX/2);
+    int cbNow = RT_MIN((int)cbBuffer, INT_MAX/2);
+
+    int cbWritten = send(pThis->hNative, pvBuffer, cbNow, MSG_NOSIGNAL);
+
+    if (cbWritten >= 0)
+    {
+        *pcbWritten = cbWritten;
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = rtSocketError();
+
+    if (rc == VERR_TRY_AGAIN)
+        rc = VINF_TRY_AGAIN;
 #else
-    size_t cbNow = cbBuffer;
-#endif
-    ssize_t cbWritten = send(pThis->hNative, pvBuffer, cbNow, MSG_NOSIGNAL);
+    ssize_t cbWritten = send(pThis->hNative, pvBuffer, cbBuffer, MSG_NOSIGNAL);
     if (cbWritten >= 0)
         *pcbWritten = cbWritten;
     else if (errno == EAGAIN)
@@ -809,7 +831,8 @@ RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
         rc = VINF_TRY_AGAIN;
     }
     else
-        rc = RTErrConvertFromErrno(errno);
+        rc = rtSocketError();
+#endif
 
     rtSocketUnlock(pThis);
     return rc;
