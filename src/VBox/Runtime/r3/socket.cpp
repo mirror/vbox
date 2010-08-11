@@ -757,45 +757,22 @@ RTDECL(int) RTSocketReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, si
     if (RT_FAILURE(rc))
         return rc;
 
-    /*
-     * Read loop.
-     */
-    size_t  cbRead   = 0;
-    size_t  cbToRead = cbBuffer;
-    for (;;)
-    {
-        rtSocketErrorReset();
+    rtSocketErrorReset();
 #ifdef RT_OS_WINDOWS
-        int    cbNow = cbToRead >= INT_MAX/2 ? INT_MAX/2 : (int)cbToRead;
+    int    cbNow = cbBuffer >= INT_MAX/2 ? INT_MAX/2 : (int)cbBuffer;
 #else
-        size_t cbNow = cbToRead;
+    size_t cbNow = cbBuffer;
 #endif
-        ssize_t cbBytesRead = recv(pThis->hNative, (char *)pvBuffer + cbRead, cbNow, MSG_NOSIGNAL);
-        if (cbBytesRead <= 0)
-        {
-            rc = rtSocketError();
-            Assert(RT_FAILURE_NP(rc) || cbBytesRead == 0);
-            if (RT_SUCCESS_NP(rc))
-            {
-                *pcbRead = 0;
-                rc = VINF_SUCCESS;
-            }
-            else
-                *pcbRead = cbRead;
-            break;
-        }
-
-        /* read more? */
-        cbRead += cbBytesRead;
-        if (cbRead == cbBuffer)
-        {
-            *pcbRead = cbRead;
-            break;
-        }
-
-        /* next */
-        cbToRead = cbBuffer - cbRead;
+    ssize_t cbRead = recv(pThis->hNative, pvBuffer, cbNow, MSG_NOSIGNAL);
+    if (cbRead >= 0)
+        *pcbRead = cbRead;
+    else if (errno == EAGAIN)
+    {
+        *pcbRead = 0;
+        rc = VINF_TRY_AGAIN;
     }
+    else
+        rc = RTErrConvertFromErrno(errno);
 
     rtSocketUnlock(pThis);
     return rc;
@@ -817,38 +794,22 @@ RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
     if (RT_FAILURE(rc))
         return rc;
 
-    /*
-     * Write loop.
-     */
-    size_t  cbWrite   = 0;
-    size_t  cbToWrite = cbBuffer;
-    for (;;)
-    {
-        rtSocketErrorReset();
+    rtSocketErrorReset();
 #ifdef RT_OS_WINDOWS
-        int    cbNow = RT_MIN((int)cbToWrite, INT_MAX/2);
+    int    cbNow = RT_MIN((int)cbBuffer, INT_MAX/2);
 #else
-        size_t cbNow = cbToWrite;
+    size_t cbNow = cbBuffer;
 #endif
-        ssize_t cbBytesWritten = send(pThis->hNative, (char *)pvBuffer + cbWrite, cbNow, MSG_NOSIGNAL);
-        if (cbBytesWritten < 0)
-        {
-            rc = rtSocketError();
-            *pcbWritten = cbWrite;
-            break;
-        }
-
-        /* write more? */
-        cbWrite += cbBytesWritten;
-        if (cbWrite == cbBuffer)
-        {
-            *pcbWritten = cbWrite;
-            break;
-        }
-
-        /* next */
-        cbToWrite = cbBuffer - cbWrite;
+    ssize_t cbWritten = send(pThis->hNative, pvBuffer, cbNow, MSG_NOSIGNAL);
+    if (cbWritten >= 0)
+        *pcbWritten = cbWritten;
+    else if (errno == EAGAIN)
+    {
+        *pcbWritten = 0;
+        rc = VINF_TRY_AGAIN;
     }
+    else
+        rc = RTErrConvertFromErrno(errno);
 
     rtSocketUnlock(pThis);
     return rc;
