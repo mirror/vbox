@@ -743,7 +743,8 @@ struct AttachedDevice
         : deviceType(DeviceType_Null),
           fPassThrough(false),
           lPort(0),
-          lDevice(0)
+          lDevice(0),
+          ulBandwidthLimit(0)
     {}
 
     bool operator==(const AttachedDevice &a) const;
