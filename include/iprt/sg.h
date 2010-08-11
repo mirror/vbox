@@ -194,12 +194,14 @@ RTDECL(size_t) RTSgBufAdvance(PRTSGBUF pSgBuf, size_t cbAdvance);
  *
  * @returns Number of bytes the array describes.
  * @param   pSgBuf      The S/G buffer.
- * @param   paSeg       The unitialized segment array.
+ * @param   paSeg       The uninitialized segment array.
+ *                      If NULL pcSeg will contain the number of segments needed
+ *                      to describe the requested amount of data.
  * @param   pcSeg       The number of segments the given array has.
  *                      This will hold the actual number of entries needed upon return.
  * @param   cbData      Number of bytes the new array should describe.
  *
- * @note This operation advances the internal buffer pointer of the S/G buffer.
+ * @note This operation advances the internal buffer pointer of the S/G buffer if paSeg is not NULL.
  */
 RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *pcSeg, size_t cbData);
 

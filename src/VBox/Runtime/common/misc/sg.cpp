@@ -341,33 +341,55 @@ RTDECL(size_t) RTSgBufAdvance(PRTSGBUF pSgBuf, size_t cbAdvance)
 RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *pcSeg, size_t cbData)
 {
     AssertPtrReturn(pSgBuf, 0);
-    AssertPtrReturn(paSeg, 0);
     AssertPtrReturn(pcSeg, 0);
 
-    size_t   cb = 0;
     unsigned cSeg = 0;
+    size_t   cb = 0;
 
-    while (   cbData
-           && cSeg < *pcSeg)
+    if (!paSeg)
     {
-        size_t  cbThisSeg = cbData;
-        void   *pvSeg     = NULL;
-
-        pvSeg = sgBufGet(pSgBuf, &cbThisSeg);
-
-        if (!cbThisSeg)
+        if (pSgBuf->cbSegLeft > 0)
         {
-            Assert(!pvSeg);
-            break;
+            size_t idx = pSgBuf->idxSeg;
+            cSeg = 1;
+
+            cb     += RT_MIN(pSgBuf->cbSegLeft, cbData);
+            cbData -= RT_MIN(pSgBuf->cbSegLeft, cbData);
+
+            while (   cbData
+                   && idx < pSgBuf->cSegs - 1)
+            {
+                idx++;
+                cSeg++;
+                cb     += RT_MIN(pSgBuf->paSegs[idx].cbSeg, cbData);
+                cbData -= RT_MIN(pSgBuf->paSegs[idx].cbSeg, cbData);
+            }
         }
+    }
+    else
+    {
+        while (   cbData
+               && cSeg < *pcSeg)
+        {
+            size_t  cbThisSeg = cbData;
+            void   *pvSeg     = NULL;
 
-        AssertMsg(cbThisSeg <= cbData, ("Impossible!\n"));
+            pvSeg = sgBufGet(pSgBuf, &cbThisSeg);
 
-        paSeg[cSeg].cbSeg = cbThisSeg;
-        paSeg[cSeg].pvSeg = pvSeg;
-        cSeg++;
-        cbData -= cbThisSeg;
-        cb     += cbThisSeg;
+            if (!cbThisSeg)
+            {
+                Assert(!pvSeg);
+                break;
+            }
+
+            AssertMsg(cbThisSeg <= cbData, ("Impossible!\n"));
+
+            paSeg[cSeg].cbSeg = cbThisSeg;
+            paSeg[cSeg].pvSeg = pvSeg;
+            cSeg++;
+            cbData -= cbThisSeg;
+            cb     += cbThisSeg;
+        }
     }
 
     *pcSeg = cSeg;
