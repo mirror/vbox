@@ -195,17 +195,17 @@ VMMR0DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM                 VM Handle.
  * @param   pVCpu               VMCPU Handle.
- * @param   enmShwPagingMode    Paging mode for the nested page tables
+ * @param   enmShwPagingMode    Paging mode for the nested page tables.
  * @param   uErr                The trap error code.
  * @param   pRegFrame           Trap register frame.
- * @param   pvFault             The fault address.
+ * @param   GCPhysFault         The fault address.
  */
 VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
-                                              PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault)
+                                              PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault)
 {
     int rc;
 
-    LogFlow(("PGMTrap0eHandler: uErr=%RGx pvFault=%RGp eip=%RGv\n", uErr, pvFault, (RTGCPTR)pRegFrame->rip));
+    LogFlow(("PGMTrap0eHandler: uErr=%RGx GCPhysFault=%RGp eip=%RGv\n", uErr, GCPhysFault, (RTGCPTR)pRegFrame->rip));
     STAM_PROFILE_START(&pVCpu->pgm.s.StatRZTrap0e, a);
     STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
 
@@ -264,18 +264,18 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
     switch(enmShwPagingMode)
     {
         case PGMMODE_32_BIT:
-            rc = PGM_BTH_NAME_32BIT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+            rc = PGM_BTH_NAME_32BIT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, GCPhysFault, &fLockTaken);
             break;
         case PGMMODE_PAE:
         case PGMMODE_PAE_NX:
-            rc = PGM_BTH_NAME_PAE_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+            rc = PGM_BTH_NAME_PAE_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, GCPhysFault, &fLockTaken);
             break;
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
-            rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+            rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, GCPhysFault, &fLockTaken);
             break;
         case PGMMODE_EPT:
-            rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+            rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, GCPhysFault, &fLockTaken);
             break;
         default:
             AssertFailed();
@@ -296,7 +296,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
              || rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT   /* seen with SMP */
              || rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)     /* precaution */
     {
-        Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT (%d) for page fault at %RGp error code %x (rip=%RGv)\n", rc, pvFault, uErr, pRegFrame->rip));
+        Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT (%d) for page fault at %RGp error code %x (rip=%RGv)\n", rc, GCPhysFault, uErr, pRegFrame->rip));
         /* Some kind of inconsistency in the SMP case; it's safe to just execute the instruction again; not sure about
            single VCPU VMs though. */
         rc = VINF_SUCCESS;
@@ -307,4 +307,73 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
     STAM_PROFILE_STOP_EX(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0e, pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
     return rc;
 }
+
+
+/**
+ * #PF Handler for deliberate nested paging misconfiguration (/reserved bit)
+ * employed for MMIO pages.
+ *
+ * @returns VBox status code (appropriate for trap handling and GC return).
+ * @param   pVM                 The VM Handle.
+ * @param   pVCpu               The current CPU.
+ * @param   enmShwPagingMode    Paging mode for the nested page tables.
+ * @param   pRegFrame           Trap register frame.
+ * @param   GCPhysFault         The fault address.
+ */
+VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode,
+                                                      PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault)
+{
+#ifdef PGM_WITH_MMIO_OPTIMIZATIONS
+    STAM_PROFILE_START(&pVCpu->CTX_SUFF(pStats)->StatR0NpMiscfg, a);
+    VBOXSTRICTRC rc;
+
+    /*
+     * Try lookup the all access physical handler for the address.
+     */
+    pgmLock(pVM);
+    PPGMPHYSHANDLER pHandler = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
+    if (RT_LIKELY(pHandler))
+    {
+        if (pHandler->CTX_SUFF(pfnHandler))
+        {
+            CTX_MID(PFNPGM,PHYSHANDLER) pfnHandler = pHandler->CTX_SUFF(pfnHandler);
+            void                       *pvUser     = pHandler->CTX_SUFF(pvUser);
+            STAM_PROFILE_START(&pHandler->Stat, h);
+            pgmUnlock(pVM);
+
+            rc = pfnHandler(pVM, RTGCPTR_MAX /*uErr*/, pRegFrame, GCPhysFault, GCPhysFault, pvUser);
+
+#ifdef VBOX_WITH_STATISTICS
+            pgmLock(pVM);
+            pHandler = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
+            if (pHandler)
+                STAM_PROFILE_STOP(&pHandler->Stat, h);
+            pgmUnlock(pVM);
+#endif
+        }
+        else
+        {
+            pgmUnlock(pVM);
+            rc = VINF_EM_RAW_EMULATE_INSTR;
+        }
+    }
+    else
+    {
+        /*
+         * Must be out of sync, so do a SyncPage and restart the instruction.
+         */
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfgSyncPage);
+        rc = pgmShwSyncNestedPageLocked(pVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
+        pgmUnlock(pVM);
+    }
+
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfg, a);
+    return rc;
+
+#else
+    AssertLogRelFailed();
+    return VERR_INTERNAL_ERROR_4;
+#endif
+}
+
 

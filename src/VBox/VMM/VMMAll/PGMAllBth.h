@@ -145,7 +145,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
 # endif
 {
 # if !PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-    GSTPDE const    PdeSrcDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A};
+    GSTPDE const    PdeSrcDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A };
 #endif
     PVM             pVM         = pVCpu->CTX_SUFF(pVM);
     int             rc;
