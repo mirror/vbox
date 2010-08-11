@@ -887,6 +887,7 @@ public:
     RWLockHandle *lockHandle() const;
 
     // IInternalMachineControl methods
+    STDMETHOD(SetRemoveSavedStateFile)(BOOL aRemove);
     STDMETHOD(UpdateState)(MachineState_T machineState);
     STDMETHOD(GetIPCId)(BSTR *id);
     STDMETHOD(BeginPowerUp)(IProgress *aProgress);
@@ -1023,6 +1024,8 @@ private:
 
     HRESULT setMachineState(MachineState_T aMachineState);
     HRESULT updateMachineStateOnClient();
+
+    HRESULT mRemoveSavedState;
 
     SnapshotData mSnapshotData;
 

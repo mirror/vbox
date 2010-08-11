@@ -9658,6 +9658,9 @@ HRESULT SessionMachine::init(Machine *aMachine)
         mNetworkAdapters[slot]->init(this, aMachine->mNetworkAdapters[slot]);
     }
 
+    /* default is to delete saved state on Saved -> PoweredOff transition */
+    mRemoveSavedState = true;
+
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -9949,6 +9952,21 @@ RWLockHandle *SessionMachine::lockHandle() const
 
 // IInternalMachineControl methods
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  @note Locks this object for writing.
+ */
+STDMETHODIMP SessionMachine::SetRemoveSavedStateFile(BOOL aRemove)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mRemoveSavedState = aRemove;
+
+    return S_OK;
+}
 
 /**
  *  @note Locks the same as #setMachineState() does.
@@ -11261,8 +11279,11 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
 
     if (deleteSavedState)
     {
-        Assert(!mSSData->mStateFilePath.isEmpty());
-        RTFileDelete(mSSData->mStateFilePath.c_str());
+        if (mRemoveSavedState)
+        {
+            Assert(!mSSData->mStateFilePath.isEmpty());
+            RTFileDelete(mSSData->mStateFilePath.c_str());
+        }
         mSSData->mStateFilePath.setNull();
         stsFlags |= SaveSTS_StateFilePath;
     }

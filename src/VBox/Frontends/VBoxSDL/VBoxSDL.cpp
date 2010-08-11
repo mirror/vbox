@@ -1650,7 +1650,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         gMachine->COMGETTER(State)(&machineState);
         if (machineState == MachineState_Saved)
         {
-            CHECK_ERROR(gConsole, DiscardSavedState());
+            CHECK_ERROR(gConsole, DiscardSavedState(true /* fDeleteFile */));
         }
         /*
          * If there are snapshots, discard the current state,

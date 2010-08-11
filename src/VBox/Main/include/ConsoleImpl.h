@@ -137,7 +137,7 @@ public:
     STDMETHOD(GetGuestEnteredACPIMode)(BOOL *aEntered);
     STDMETHOD(SaveState)(IProgress **aProgress);
     STDMETHOD(AdoptSavedState)(IN_BSTR aSavedStateFile);
-    STDMETHOD(DiscardSavedState)();
+    STDMETHOD(DiscardSavedState)(BOOL aRemoveFile);
     STDMETHOD(GetDeviceActivity)(DeviceType_T aDeviceType,
                                 DeviceActivity_T *aDeviceActivity);
     STDMETHOD(AttachUSBDevice)(IN_BSTR aId);

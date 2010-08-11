@@ -769,7 +769,7 @@ void VBoxSelectorWnd::vmDiscard (const QString &aUuid /* = QString::null */)
     }
 
     CConsole console = session.GetConsole();
-    console.DiscardSavedState();
+    console.DiscardSavedState(true /* fDeleteFile */);
     if (!console.isOk())
         vboxProblem().cannotDiscardSavedState (console);
 
