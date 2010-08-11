@@ -710,11 +710,11 @@ void VirtualBox::uninit()
     if (m->threadAsyncEvent != NIL_RTTHREAD)
     {
         /* signal to exit the event loop */
-        if (m->pAsyncEventQ->postEvent(NULL))
+        if (RT_SUCCESS(m->pAsyncEventQ->interruptEventQueueProcessing()))
         {
             /*
-             *  Wait for thread termination (only if we've successfully posted
-             *  a NULL event!)
+             *  Wait for thread termination (only after we've successfully
+             *  interrupted the event queue processing!)
              */
             int vrc = RTThreadWait(m->threadAsyncEvent, 60000, NULL);
             if (RT_FAILURE(vrc))
@@ -723,7 +723,7 @@ void VirtualBox::uninit()
         }
         else
         {
-            AssertMsgFailed(("postEvent(NULL) failed\n"));
+            AssertMsgFailed(("interruptEventQueueProcessing() failed\n"));
             RTThreadWait(m->threadAsyncEvent, 0, NULL);
         }
 
@@ -4075,13 +4075,8 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
     // signal that we're ready
     RTThreadUserSignal(thread);
 
-    BOOL ok = TRUE;
-    Event *event = NULL;
-
-    while ((ok = eventQ->waitForEvent(&event)) && event)
-        eventQ->handleEvent(event);
-
-    AssertReturn(ok, VERR_GENERAL_FAILURE);
+    while (RT_SUCCESS(eventQ->processEventQueue(RT_INDEFINITE_WAIT)))
+        /* nothing */ ;
 
     delete eventQ;
 
