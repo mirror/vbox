@@ -145,7 +145,6 @@ int main()
         }
     }
     VBoxMainHotplugWaiter waiter;
-    RTPrintf ("Waiting for hotplug events.  Note that DBus often seems to deliver duplicate events in close succession.\n");
     RTPrintf ("Waiting for a hotplug event for five seconds...\n");
     doHotplugEvent(&waiter, 5000);
     RTPrintf ("Waiting for a hotplug event, Ctrl-C to abort...\n");
