@@ -904,7 +904,9 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
         && !pIoCtx->cMetaTransfersPending
         && !pIoCtx->cDataTransfersPending)
         rc = VINF_VD_ASYNC_IO_FINISHED;
-    else if (RT_SUCCESS(rc) || rc == VERR_VD_NOT_ENOUGH_METADATA)
+    else if (   RT_SUCCESS(rc)
+             || rc == VERR_VD_NOT_ENOUGH_METADATA
+             || rc == VERR_VD_IOCTX_HALT)
         rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
     else if (RT_FAILURE(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
     {
@@ -982,6 +984,12 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
         }
         else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
             rc = VINF_SUCCESS;
+        else if (rc == VERR_VD_IOCTX_HALT)
+        {
+            uOffset  += cbThisRead;
+            cbToRead -= cbThisRead;
+            pIoCtx->fBlocked = true;
+        }
 
         if (RT_FAILURE(rc))
             break;
@@ -990,7 +998,8 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
         uOffset  += cbThisRead;
     } while (cbToRead != 0 && RT_SUCCESS(rc));
 
-    if (rc == VERR_VD_NOT_ENOUGH_METADATA)
+    if (   rc == VERR_VD_NOT_ENOUGH_METADATA
+        || rc == VERR_VD_IOCTX_HALT)
     {
         /* Save the current state. */
         pIoCtx->uOffset    = uOffset;
@@ -1450,6 +1459,11 @@ static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
     Assert(cbPostRead == 0);
     if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         rc = VINF_SUCCESS;
+    else if (rc == VERR_VD_IOCTX_HALT)
+    {
+        pIoCtx->fBlocked = true;
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -1650,14 +1664,23 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
             }
         }
 
-        if (rc == VERR_VD_NOT_ENOUGH_METADATA)
+        if (rc == VERR_VD_IOCTX_HALT)
+        {
+            cbWrite -= cbThisWrite;
+            uOffset += cbThisWrite;
+            pIoCtx->fBlocked = true;
+            break;
+        }
+        else if (rc == VERR_VD_NOT_ENOUGH_METADATA)
             break;
 
         cbWrite -= cbThisWrite;
         uOffset += cbThisWrite;
     } while (cbWrite != 0 && (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS));
 
-    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS || rc == VERR_VD_NOT_ENOUGH_METADATA)
+    if (   rc == VERR_VD_ASYNC_IO_IN_PROGRESS
+        || rc == VERR_VD_NOT_ENOUGH_METADATA
+        || rc == VERR_VD_IOCTX_HALT)
     {
         /*
          * Tell the caller that we don't need to go back here because all
@@ -2800,6 +2823,37 @@ static size_t vdIOIoCtxSet(void *pvUser, PVDIOCTX pIoCtx,
     return cbSet;
 }
 
+static size_t vdIOIoCtxSegArrayCreate(void *pvUser, PVDIOCTX pIoCtx,
+                                     PRTSGSEG paSeg, unsigned *pcSeg,
+                                     size_t cbData)
+{
+    PVDIMAGE pImage = (PVDIMAGE)pvUser;
+    PVBOXHDD pDisk  = pImage->pDisk;
+    size_t cbCreated = 0;
+
+    VD_THREAD_IS_CRITSECT_OWNER(pDisk);
+
+    cbCreated = RTSgBufSegArrayCreate(&pIoCtx->SgBuf, paSeg, pcSeg, cbData);
+    Assert(!paSeg || cbData == cbCreated);
+
+    return cbCreated;
+}
+
+static void vdIOIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, int rcReq,
+                               size_t cbCompleted)
+{
+    /* Continue */
+    pIoCtx->fBlocked = false;
+    ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbCompleted);
+
+    /* Clear the pointer to next transfer function in case we have nothing to transfer anymore.
+     * @todo: Find a better way to prevent vdIoCtxContinue from calling the read/write helper again. */
+    if (!pIoCtx->cbTransferLeft)
+        pIoCtx->pfnIoCtxTransfer = NULL;
+
+    vdIoCtxContinue(pIoCtx, rcReq);
+}
+
 /**
  * VD I/O interface callback for opening a file (limited version for VDGetFormat).
  */
@@ -3123,24 +3177,26 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, PVBOXHDD *ppDisk)
             }
 
             /* Create the I/O callback table. */
-            pDisk->VDIIOCallbacks.cbSize             = sizeof(VDINTERFACEIO);
-            pDisk->VDIIOCallbacks.enmInterface       = VDINTERFACETYPE_IO;
-            pDisk->VDIIOCallbacks.pfnOpen            = vdIOOpen;
-            pDisk->VDIIOCallbacks.pfnClose           = vdIOClose;
-            pDisk->VDIIOCallbacks.pfnGetSize         = vdIOGetSize;
-            pDisk->VDIIOCallbacks.pfnSetSize         = vdIOSetSize;
-            pDisk->VDIIOCallbacks.pfnReadSync        = vdIOReadSync;
-            pDisk->VDIIOCallbacks.pfnWriteSync       = vdIOWriteSync;
-            pDisk->VDIIOCallbacks.pfnFlushSync       = vdIOFlushSync;
-            pDisk->VDIIOCallbacks.pfnReadUserAsync   = vdIOReadUserAsync;
-            pDisk->VDIIOCallbacks.pfnWriteUserAsync  = vdIOWriteUserAsync;
-            pDisk->VDIIOCallbacks.pfnReadMetaAsync   = vdIOReadMetaAsync;
-            pDisk->VDIIOCallbacks.pfnWriteMetaAsync  = vdIOWriteMetaAsync;
-            pDisk->VDIIOCallbacks.pfnMetaXferRelease = vdIOMetaXferRelease;
-            pDisk->VDIIOCallbacks.pfnFlushAsync      = vdIOFlushAsync;
-            pDisk->VDIIOCallbacks.pfnIoCtxCopyFrom   = vdIOIoCtxCopyFrom;
-            pDisk->VDIIOCallbacks.pfnIoCtxCopyTo     = vdIOIoCtxCopyTo;
-            pDisk->VDIIOCallbacks.pfnIoCtxSet        = vdIOIoCtxSet;
+            pDisk->VDIIOCallbacks.cbSize                 = sizeof(VDINTERFACEIO);
+            pDisk->VDIIOCallbacks.enmInterface           = VDINTERFACETYPE_IO;
+            pDisk->VDIIOCallbacks.pfnOpen                = vdIOOpen;
+            pDisk->VDIIOCallbacks.pfnClose               = vdIOClose;
+            pDisk->VDIIOCallbacks.pfnGetSize             = vdIOGetSize;
+            pDisk->VDIIOCallbacks.pfnSetSize             = vdIOSetSize;
+            pDisk->VDIIOCallbacks.pfnReadSync            = vdIOReadSync;
+            pDisk->VDIIOCallbacks.pfnWriteSync           = vdIOWriteSync;
+            pDisk->VDIIOCallbacks.pfnFlushSync           = vdIOFlushSync;
+            pDisk->VDIIOCallbacks.pfnReadUserAsync       = vdIOReadUserAsync;
+            pDisk->VDIIOCallbacks.pfnWriteUserAsync      = vdIOWriteUserAsync;
+            pDisk->VDIIOCallbacks.pfnReadMetaAsync       = vdIOReadMetaAsync;
+            pDisk->VDIIOCallbacks.pfnWriteMetaAsync      = vdIOWriteMetaAsync;
+            pDisk->VDIIOCallbacks.pfnMetaXferRelease     = vdIOMetaXferRelease;
+            pDisk->VDIIOCallbacks.pfnFlushAsync          = vdIOFlushAsync;
+            pDisk->VDIIOCallbacks.pfnIoCtxCopyFrom       = vdIOIoCtxCopyFrom;
+            pDisk->VDIIOCallbacks.pfnIoCtxCopyTo         = vdIOIoCtxCopyTo;
+            pDisk->VDIIOCallbacks.pfnIoCtxSet            = vdIOIoCtxSet;
+            pDisk->VDIIOCallbacks.pfnIoCtxSegArrayCreate = vdIOIoCtxSegArrayCreate;
+            pDisk->VDIIOCallbacks.pfnIoCtxCompleted      = vdIOIoCtxCompleted;
 
             *ppDisk = pDisk;
         }
