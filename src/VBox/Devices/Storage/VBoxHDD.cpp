@@ -972,11 +972,8 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
             }
         }
 
-        if (RT_SUCCESS(rc))
-        {
-            ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbThisRead);
-        }
-        else if (rc == VERR_VD_BLOCK_FREE)
+        /* The task state will be updated on success already, don't do it here!. */
+        if (rc == VERR_VD_BLOCK_FREE)
         {
             /* No image in the chain contains the data for the block. */
             vdIoCtxSet(pIoCtx, '\0', cbThisRead);
@@ -2757,10 +2754,16 @@ static size_t vdIOIoCtxCopyTo(void *pvUser, PVDIOCTX pIoCtx,
 {
     PVDIMAGE pImage = (PVDIMAGE)pvUser;
     PVBOXHDD pDisk  = pImage->pDisk;
+    size_t cbCopied = 0;
 
     VD_THREAD_IS_CRITSECT_OWNER(pDisk);
 
-    return vdIoCtxCopyTo(pIoCtx, (uint8_t *)pvBuf, cbBuf);
+    cbCopied = vdIoCtxCopyTo(pIoCtx, (uint8_t *)pvBuf, cbBuf);
+    Assert(cbCopied == cbBuf);
+
+    ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbCopied);
+
+    return cbCopied;
 }
 
 static size_t vdIOIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
@@ -2768,10 +2771,16 @@ static size_t vdIOIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
 {
     PVDIMAGE pImage = (PVDIMAGE)pvUser;
     PVBOXHDD pDisk  = pImage->pDisk;
+    size_t cbCopied = 0;
 
     VD_THREAD_IS_CRITSECT_OWNER(pDisk);
 
-    return vdIoCtxCopyFrom(pIoCtx, (uint8_t *)pvBuf, cbBuf);
+    cbCopied = vdIoCtxCopyFrom(pIoCtx, (uint8_t *)pvBuf, cbBuf);
+    Assert(cbCopied == cbBuf);
+
+    ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbCopied);
+
+    return cbCopied;
 }
 
 static size_t vdIOIoCtxSet(void *pvUser, PVDIOCTX pIoCtx,
@@ -2779,10 +2788,16 @@ static size_t vdIOIoCtxSet(void *pvUser, PVDIOCTX pIoCtx,
 {
     PVDIMAGE pImage = (PVDIMAGE)pvUser;
     PVBOXHDD pDisk  = pImage->pDisk;
+    size_t cbSet = 0;
 
     VD_THREAD_IS_CRITSECT_OWNER(pDisk);
 
-    return vdIoCtxSet(pIoCtx, ch, cb);
+    cbSet = vdIoCtxSet(pIoCtx, ch, cb);
+    Assert(cbSet == cb);
+
+    ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbSet);
+
+    return cbSet;
 }
 
 /**
