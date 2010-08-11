@@ -761,7 +761,7 @@ RTDECL(int) RTSocketReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, si
 #ifdef RT_OS_WINDOWS
     int cbNow = cbBuffer >= INT_MAX/2 ? INT_MAX/2 : (int)cbBuffer;
 
-    int cbRead = recv(pThis->hNative, pvBuffer, cbNow, MSG_NOSIGNAL);
+    int cbRead = recv(pThis->hNative, (char *)pvBuffer, cbNow, MSG_NOSIGNAL);
     if (cbRead >= 0)
     {
         *pcbRead = cbRead;
@@ -809,7 +809,7 @@ RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
 #ifdef RT_OS_WINDOWS
     int cbNow = RT_MIN((int)cbBuffer, INT_MAX/2);
 
-    int cbWritten = send(pThis->hNative, pvBuffer, cbNow, MSG_NOSIGNAL);
+    int cbWritten = send(pThis->hNative, (const char *)pvBuffer, cbNow, MSG_NOSIGNAL);
 
     if (cbWritten >= 0)
     {
