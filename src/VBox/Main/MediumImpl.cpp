@@ -788,6 +788,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
          * created by VirtualBox nor deleted, so we place the hard disk to
          * Created state here and also add it to the registry */
         m->state = MediumState_Created;
+        // create new UUID
         unconst(m->id).create();
 
         AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -806,14 +807,15 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * location. The enOpenMode parameter defines whether the medium will be opened
  * read/write or read-only.
  *
- * This gets called by VirtualBox::OpenHardDisk(), OpenDVDImage and OpenFloppyImage();
- * this also gets called by Machine::AttachDevice() and createImplicitDiffs()
- * when new diff images are created.
+ * This gets called by VirtualBox::OpenMedium() and also by
+ * Machine::AttachDevice() and createImplicitDiffs() when new diff
+ * images are created.
  *
- * Note that the UUID, format and the parent of this medium will be
- * determined when reading the medium storage unit, unless new values are
- * specified by the parameters. If the detected or set parent is
- * not known to VirtualBox, then this method will fail.
+ * For hard disks, the UUID, format and the parent of this medium will be
+ * determined when reading the medium storage unit. For DVD and floppy images,
+ * which have no UUIDs in their storage units, new UUIDs are created.
+ * If the detected or set parent is not known to VirtualBox, then this method
+ * will fail.
  *
  * @param aVirtualBox   VirtualBox object.
  * @param aLocation     Storage unit location.
@@ -854,6 +856,11 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     else
         rc = setLocation(aLocation, "RAW");
     if (FAILED(rc)) return rc;
+
+    if (    aDeviceType == DeviceType_DVD
+         || aDeviceType == DeviceType_Floppy)
+        // create new UUID
+        unconst(m->id).create();
 
     /* get all the information about the medium from the storage unit */
     rc = queryInfo(false /* fSetImageId */, false /* fSetParentId */);
