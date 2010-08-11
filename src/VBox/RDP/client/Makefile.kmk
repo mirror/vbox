@@ -20,6 +20,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Globals
 VBOX_PATH_RDESKTOP_SRC := $(PATH_SUB_CURRENT)
+VBOX_PATH_DEVICES_USB  := $(PATH_ROOT)/src/VBox/Devices/USB
 VBOX_RDESKTOP_SRC_SUBDIR = rdesktop-1.6.0-vrdp
 
 #
@@ -91,6 +92,11 @@ rdesktop-vrdp_SOURCES.linux = \
 	rdpsnd_oss.c \
 	vrdp/rdpusb.c \
 	vrdp/USBProxyDevice-linux.c
+rdesktop-vrdp_INCS += \
+    $(VBOX_PATH_RDESKTOP_SRC) \
+    $(VBOX_PATH_RDESKTOP_SRC)/vrdp \
+    $(VBOX_PATH_DEVICES_USB) \
+    $(PATH_ROOT)/include/VBox
 # @todo implement usb proxy for Solaris
 rdesktop-vrdp_SOURCES.solaris = \
 	rdpsnd_sun.c
@@ -119,52 +125,60 @@ rdesktop-vrdp-keymaps_SOURCES = $(wildcard $(VBOX_PATH_RDESKTOP_SRC)/keymaps/*)
 #
 ## @todo change this to an INSTALLS target.
 OTHERS += $(PATH_BIN)/rdesktop-vrdp.tar.gz
-OTHER_CLEAN += $(OTHERS) $(PATH_TARGET)/$(VBOX_RDESKTOP_SRC_SUBDIR)
+OTHER_CLEAN += $(OTHERS)
 
 
 include $(KBUILD_PATH)/subfooter.kmk
 
-rdesktop-vrdp_TARSOURCES = \
-	COPYING \
-	README \
-	configure \
-	configure.ac \
-	config.sub \
-	config.guess \
-	bootstrap \
-	install-sh \
-	Makefile.in \
-	proto.head \
-	proto.tail \
-	rdesktop.spec \
-	*.c \
-	*.h \
-	keymaps/?? \
-	keymaps/??-?? \
-	keymaps/common \
-	keymaps/modifiers \
-	keymaps/convert-map \
-	doc/HACKING \
-	doc/AUTHORS \
-	doc/TODO \
-	doc/ChangeLog \
-	doc/keymapping.txt \
-	doc/keymap-names.txt \
-	doc/ipv6.txt \
-	doc/licensing.txt \
-	doc/patches.txt \
-	doc/redirection.txt \
-	doc/rdesktop.1 \
-	vrdp/*.c \
-	vrdp/*.h
+INSTALLS += rdesktop-bin
+rdesktop-bin_INST    = obj/$(VBOX_RDESKTOP_SRC_SUBDIR)
+rdesktop-bin_MODE    = a+rx,u+w
+rdesktop-bin_SOURCES = \
+    $(foreach i,configure \
+                config.sub \
+                config.guess \
+                bootstrap \
+                install-sh, \
+            client/$i=>$i)
 
-$(PATH_TARGET)/$(VBOX_RDESKTOP_SRC_SUBDIR):
-	$(MKDIR) -p $(@D)
-	$(LN_SYMLINK) $(abspath $(VBOX_PATH_RDESKTOP_SRC)) $@
+INSTALLS += rdesktop-nonbin
+rdesktop-nonbin_INST    = obj/$(VBOX_RDESKTOP_SRC_SUBDIR)
+rdesktop-nonbin_MODE    = a+r,u+w
+rdesktop-nonbin_SOURCES = \
+    $(foreach i,COPYING \
+                README \
+                configure.ac \
+                Makefile.in \
+                proto.head \
+                proto.tail \
+                rdesktop.spec \
+                keymaps/common \
+                keymaps/modifiers \
+                keymaps/convert-map \
+                doc/HACKING \
+                doc/AUTHORS \
+                doc/TODO \
+                doc/ChangeLog \
+                doc/keymapping.txt \
+                doc/keymap-names.txt \
+                doc/ipv6.txt \
+                doc/licensing.txt \
+                doc/patches.txt \
+                doc/redirection.txt \
+                doc/rdesktop.1 \
+                vrdp/rdpusb.c \
+                vrdp/runtime.h \
+                vrdp/vrdpusb.h, \
+            client/$i=>$i) \
+    $(PATH_ROOT)/include/VBox/vusb.h=>vrdp/vusb.h \
+    $(VBOX_PATH_DEVICES_USB)/linux/USBProxyDevice-linux.cpp=>vrdp/USBProxyDevice-linux.c \
+    $(VBOX_PATH_DEVICES_USB)/USBProxyDevice.h=>vrdp/USBProxyDevice.h \
+    $(foreach i,*.c *.h keymaps/?? keymaps/??-??, \
+        $(foreach j,$(wildcard $(VBOX_PATH_RDESKTOP_SRC)/$i), \
+            client/$(dir $i)$(notdir $j)=>$(dir $i)$(notdir $j)))
 
 $(PATH_BIN)/rdesktop-vrdp.tar.gz: \
-		$(addprefix $(PATH_ROOT)/src/VBox/RDP/client/,$(rdesktop-vrdp_TARSOURCES)) \
-		| $(PATH_TARGET)/$(VBOX_RDESKTOP_SRC_SUBDIR)
+		rdesktop-bin \
+		rdesktop-nonbin
 	$(call MSG_TOOL,tar/gzip,,$@)
-	$(QUIET)cd $(PATH_TARGET) && tar -chf - $(addprefix $(VBOX_RDESKTOP_SRC_SUBDIR)/,$(rdesktop-vrdp_TARSOURCES)) | gzip - > $@
-
+	$(QUIET)cd $(PATH_TARGET) && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR) | gzip - > $@
