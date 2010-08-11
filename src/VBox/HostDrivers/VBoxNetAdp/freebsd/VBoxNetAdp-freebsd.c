@@ -102,7 +102,7 @@ VBoxNetAdpFreeBSDModuleEvent(struct module *pMod, int enmEventType, void *pvArg)
 {
     int rc = 0;
 
-    Log(("VBoxNetFltFreeBSDModuleEvent\n"));
+    Log(("VBoxNetAdpFreeBSDModuleEvent\n"));
 
     switch (enmEventType)
     {
