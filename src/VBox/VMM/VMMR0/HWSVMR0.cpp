@@ -959,7 +959,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hwaccm.s.StatExit1);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hwaccm.s.StatExit2);
 
-    int         rc = VINF_SUCCESS;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
     SVM_VMCB   *pVMCB;
     bool        fSyncTPR = false;
@@ -1839,17 +1839,18 @@ ResumeExecution:
     {
         /* EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault. */
         uint32_t    errCode        = pVMCB->ctrl.u64ExitInfo1;     /* EXITINFO1 = error code */
-        RTGCPHYS    uFaultAddress  = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
+        RTGCPHYS    GCPhysFault    = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
         PGMMODE     enmShwPagingMode;
 
         Assert(pVM->hwaccm.s.fNestedPaging);
-        LogFlow(("Nested page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
+        LogFlow(("Nested page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, GCPhysFault, errCode));
 
 #ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
         /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
         if (    pVM->hwaccm.s.fTRPPatchingAllowed
-            &&  (uFaultAddress & 0xfff) == 0x080
-            &&  !(errCode & X86_TRAP_PF_P)  /* not present */
+            &&  (GCPhysFault & PAGE_OFFSET_MASK) == 0x080
+            &&  (   !(errCode & X86_TRAP_PF_P)  /* not present */
+                 || (errCode & (X86_TRAP_PF_P | X86_TRAP_PF_RSVD)) == (X86_TRAP_PF_P | X86_TRAP_PF_RSVD) /* mmio optimization */)
             &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
             &&  !CPUMIsGuestInLongModeEx(pCtx)
             &&  pVM->hwaccm.s.cPatches < RT_ELEMENTS(pVM->hwaccm.s.aPatches))
@@ -1858,7 +1859,7 @@ ResumeExecution:
             PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
             GCPhysApicBase &= PAGE_BASE_GC_MASK;
 
-            if (uFaultAddress == GCPhysApicBase + 0x80)
+            if (GCPhysFault == GCPhysApicBase + 0x80)
             {
                 /* Only attempt to patch the instruction once. */
                 PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
@@ -1871,24 +1872,38 @@ ResumeExecution:
         }
 #endif
 
-        /* Exit qualification contains the linear address of the page fault. */
-        TRPMAssertTrap(pVCpu, X86_XCPT_PF, TRPM_TRAP);
-        TRPMSetErrorCode(pVCpu, errCode);
-        TRPMSetFaultAddress(pVCpu, uFaultAddress);
-
         /* Handle the pagefault trap for the nested shadow table. */
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 /** @todo shadow this in a variable. */
         if (CPUMIsGuestInLongModeEx(pCtx))
             enmShwPagingMode = PGMMODE_AMD64_NX;
         else
 #endif
             enmShwPagingMode = PGMGetHostMode(pVM);
 
-        rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmShwPagingMode, errCode, CPUMCTX2CORE(pCtx), uFaultAddress);
+        /* MMIO optimization */
+        Assert((errCode & (X86_TRAP_PF_RSVD | X86_TRAP_PF_P)) != X86_TRAP_PF_RSVD);
+        if ((errCode & (X86_TRAP_PF_RSVD | X86_TRAP_PF_P)) == (X86_TRAP_PF_RSVD | X86_TRAP_PF_P))
+        {
+            rc = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmShwPagingMode, CPUMCTX2CORE(pCtx), GCPhysFault);
+            if (rc == VINF_SUCCESS)
+            {
+                Log2(("PGMR0Trap0eHandlerNPMisconfig(,,,%RGp) at %RGv -> resume\n", GCPhysFault, (RTGCPTR)pCtx->rip));
+                goto ResumeExecution;
+            }
+            Log2(("PGMR0Trap0eHandlerNPMisconfig(,,,%RGp) at %RGv -> resume\n", GCPhysFault, (RTGCPTR)pCtx->rip));
+            break;
+        }
+
+        /* Exit qualification contains the linear address of the page fault. */
+        TRPMAssertTrap(pVCpu, X86_XCPT_PF, TRPM_TRAP);
+        TRPMSetErrorCode(pVCpu, errCode);
+        TRPMSetFaultAddress(pVCpu, GCPhysFault);
+
+        rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmShwPagingMode, errCode, CPUMCTX2CORE(pCtx), GCPhysFault);
         Log2(("PGMR0Trap0eHandlerNestedPaging %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
-            Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
+            Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, GCPhysFault, errCode));
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowPF);
 
             TRPMResetTrap(pVCpu);
@@ -2189,13 +2204,13 @@ ResumeExecution:
                 {
                     Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
-                    rc = VBOXSTRICTRC_TODO(IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->prefix, uIOSize));
+                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->prefix, uIOSize);
                 }
                 else
                 {
                     Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
-                    rc = VBOXSTRICTRC_TODO(IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->prefix, uIOSize));
+                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->prefix, uIOSize);
                 }
             }
             else
@@ -2210,7 +2225,7 @@ ResumeExecution:
             {
                 Log2(("IOMIOPortWrite %RGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOWrite);
-                rc = VBOXSTRICTRC_TODO(IOMIOPortWrite(pVM, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
+                rc = IOMIOPortWrite(pVM, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
                 if (rc == VINF_IOM_HC_IOPORT_WRITE)
                     HWACCMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pVMCB->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, uIOSize);
             }
@@ -2219,7 +2234,7 @@ ResumeExecution:
                 uint32_t u32Val = 0;
 
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIORead);
-                rc = VBOXSTRICTRC_TODO(IOMIOPortRead(pVM, IoExitInfo.n.u16Port, &u32Val, uIOSize));
+                rc = IOMIOPortRead(pVM, IoExitInfo.n.u16Port, &u32Val, uIOSize);
                 if (IOM_SUCCESS(rc))
                 {
                     /* Write back to the EAX register. */

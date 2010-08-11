@@ -3173,6 +3173,8 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatSyncPagePD[X86_PG_ENTRIES];     /**< SyncPage - PD distribution. */
 
     /* R0 only: */
+    STAMPROFILE StatR0NpMiscfg;                     /**< R0: PGMR0Trap0eHandlerNPMisconfig() profiling. */
+    STAMCOUNTER StatR0NpMiscfgSyncPage;             /**< R0: SyncPage calls from PGMR0Trap0eHandlerNPMisconfig(). */
 
     /* RZ only: */
     STAMPROFILE StatRZTrap0e;                       /**< RC/R0: PGMTrap0eHandler() profiling. */
@@ -3743,6 +3745,7 @@ int             pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 int             pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 
 int             pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
+int             pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhysFault, uint32_t cPages, PGMMODE enmShwPagingMode);
 
 int             pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd);
 int             pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt);
