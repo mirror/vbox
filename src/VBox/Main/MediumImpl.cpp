@@ -3633,7 +3633,7 @@ HRESULT Medium::queryInfo()
 
                     Guid id = parentId;
                     ComObjPtr<Medium> pParent;
-                    rc = m->pVirtualBox->findHardDisk(&id, NULL, false /* aSetError */, &pParent);
+                    rc = m->pVirtualBox->findHardDisk(&id, Utf8Str::Empty, false /* aSetError */, &pParent);
                     if (FAILED(rc))
                     {
                         lastAccessError = Utf8StrFmt(

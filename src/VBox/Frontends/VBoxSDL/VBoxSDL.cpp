@@ -1412,7 +1412,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          */
         Bstr hdaFileBstr = hdaFile;
         ComPtr<IMedium> hardDisk;
-        virtualBox->FindHardDisk(hdaFileBstr, hardDisk.asOutParam());
+        virtualBox->FindMedium(hdaFileBstr, DeviceType_HardDisk, hardDisk.asOutParam());
         if (!hardDisk)
         {
             /* we've not found the image */
@@ -1496,7 +1496,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (FAILED(rc))
             {
                 /* try to find an existing one */
-                rc = virtualBox->FindFloppyImage(medium, floppyMedium.asOutParam());
+                rc = virtualBox->FindMedium(medium, DeviceType_Floppy, floppyMedium.asOutParam());
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
@@ -1581,7 +1581,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (FAILED(rc))
             {
                 /* try to find an existing one */
-                rc = virtualBox->FindDVDImage(medium, dvdMedium.asOutParam());
+                rc = virtualBox->FindMedium(medium, DeviceType_DVD, dvdMedium.asOutParam());
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
