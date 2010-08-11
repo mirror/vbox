@@ -1040,7 +1040,7 @@ static int iomMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, R
     int rc = iomLock(pVM);
 #ifndef IN_RING3
     if (rc == VERR_SEM_BUSY)
-        return (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
+        return VINF_IOM_HC_MMIO_READ_WRITE;
 #endif
     AssertRC(rc);
 
@@ -1071,7 +1071,7 @@ static int iomMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, R
         STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
         STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOFailures);
         iomUnlock(pVM);
-        return (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
+        return VINF_IOM_HC_MMIO_READ_WRITE;
 # endif
     }
 #endif
@@ -1204,7 +1204,7 @@ static int iomMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, R
          */
         default:
             STAM_COUNTER_INC(&pVM->iom.s.StatRZInstOther);
-            rc = (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
+            rc = VINF_IOM_HC_MMIO_READ_WRITE;
             break;
     }
 
@@ -1274,7 +1274,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXC
     int rc2 = iomLock(pVM);
 #ifndef IN_RING3
     if (rc2 == VERR_SEM_BUSY)
-        return (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
+        return VINF_IOM_HC_MMIO_READ_WRITE;
 #endif
     VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, uErrorCode, pCtxCore, GCPhysFault, iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
     iomUnlock(pVM);
