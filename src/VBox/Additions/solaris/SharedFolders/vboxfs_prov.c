@@ -40,6 +40,13 @@
 
 static VBSFCLIENT vbox_client;
 
+static int sfprov_vbox2errno(int rc)
+{
+	if (rc == VERR_ACCESS_DENIED)
+		return (EACCES);
+	return (RTErrConvertToErrno(rc));
+}
+
 /*
  * utility to create strings
  */
@@ -72,21 +79,21 @@ sfprov_connect(int version)
 	rc = vboxInit();
 	if (RT_SUCCESS(rc))
 	{
-	    rc = vboxConnect(&vbox_client);
-        if (RT_SUCCESS(rc))
-        {
-            rc = vboxCallSetUtf8(&vbox_client);
-            if (RT_SUCCESS(rc))
-            {
-            	return ((sfp_connection_t *)&vbox_client);
-            }
-            else
-        		cmn_err(CE_WARN, "sfprov_connect: vboxCallSetUtf8() failed");
+		rc = vboxConnect(&vbox_client);
+		if (RT_SUCCESS(rc))
+		{
+			rc = vboxCallSetUtf8(&vbox_client);
+			if (RT_SUCCESS(rc))
+			{
+				return ((sfp_connection_t *)&vbox_client);
+			}
+			else
+				cmn_err(CE_WARN, "sfprov_connect: vboxCallSetUtf8() failed");
 
-		    vboxDisconnect(&vbox_client);
-        }
-        else
-    		cmn_err(CE_WARN, "sfprov_connect: vboxConnect() failed rc=%d", rc);
+			vboxDisconnect(&vbox_client);
+		}
+		else
+			cmn_err(CE_WARN, "sfprov_connect: vboxConnect() failed rc=%d", rc);
 		vboxUninit();
 	}
 	else
@@ -244,6 +251,7 @@ struct sfp_file {
 int
 sfprov_create(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 {
+
 	int rc;
 	SHFLCREATEPARMS parms;
 	SHFLSTRING *str;
@@ -260,8 +268,10 @@ sfprov_create(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 
 	if (RT_FAILURE(rc))
 	{
-		cmn_err(CE_NOTE, "sfprov_create: vboxCallCreate failed. path=%s rc=%d\n", path, rc);
-		return (EINVAL);
+		if (rc != VERR_ACCESS_DENIED && rc != VERR_WRITE_PROTECT)
+			cmn_err(CE_WARN, "sfprov_create: vboxCallCreate failed! path=%s rc=%d\n", path, rc);
+		rc = sfprov_vbox2errno(rc);
+		return (rc);
 	}
 	if (parms.Handle == SHFL_HANDLE_NIL) {
 		if (parms.Result == SHFL_FILE_EXISTS)
@@ -296,7 +306,7 @@ sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 	rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
 	if (RT_FAILURE(rc) && rc != VERR_ACCESS_DENIED) {
 		kmem_free(str, size);
-		return RTErrConvertToErrno(rc);
+		return sfprov_vbox2errno(rc);
 	}
 	if (parms.Handle == SHFL_HANDLE_NIL) {
 		if (parms.Result == SHFL_PATH_NOT_FOUND ||
@@ -309,7 +319,7 @@ sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 		rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
 		if (RT_FAILURE(rc)) {
 			kmem_free(str, size);
-			return RTErrConvertToErrno(rc);
+			return sfprov_vbox2errno(rc);
 		}
 		if (parms.Handle == SHFL_HANDLE_NIL) {
 			kmem_free(str, size);
@@ -665,9 +675,12 @@ sfprov_set_attr(
 	rc = vboxCallFSInfo(&vbox_client, &mnt->map, parms.Handle,
 	    (SHFL_INFO_SET | SHFL_INFO_FILE), &bytes, (SHFLDIRINFO *)&info);
 	if (RT_FAILURE(rc)) {
-		cmn_err(CE_WARN, "sfprov_set_attr: vboxCallFSInfo(%s, FILE) failed rc=%d",
+		if (rc != VERR_ACCESS_DENIED && rc != VERR_WRITE_PROTECT)
+		{
+			cmn_err(CE_WARN, "sfprov_set_attr: vboxCallFSInfo(%s, FILE) failed rc=%d",
 		    path, rc);
-		err = RTErrConvertToErrno(rc);
+		}
+		err = sfprov_vbox2errno(rc);
 		goto fail1;
 	}
 
@@ -722,7 +735,7 @@ sfprov_set_size(sfp_mount_t *mnt, char *path, uint64_t size)
 	if (RT_FAILURE(rc)) {
 		cmn_err(CE_WARN, "sfprov_set_size: vboxCallFSInfo(%s, SIZE) failed rc=%d",
 		    path, rc);
-		err = RTErrConvertToErrno(rc);
+		err = sfprov_vbox2errno(rc);
 		goto fail1;
 	}
 
@@ -760,7 +773,7 @@ sfprov_mkdir(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 	kmem_free(str, size);
 
 	if (RT_FAILURE(rc))
-		return (EINVAL);
+		return (sfprov_vbox2errno(rc));
 	if (parms.Handle == SHFL_HANDLE_NIL) {
 		if (parms.Result == SHFL_FILE_EXISTS)
 			return (EEXIST);
@@ -784,7 +797,7 @@ sfprov_remove(sfp_mount_t *mnt, char *path)
 	rc = vboxCallRemove(&vbox_client, &mnt->map, str, SHFL_REMOVE_FILE);
 	kmem_free(str, size);
 	if (RT_FAILURE(rc))
-		return (EINVAL);
+		return (sfprov_vbox2errno(rc));
 	return (0);
 }
 
@@ -799,7 +812,7 @@ sfprov_rmdir(sfp_mount_t *mnt, char *path)
 	rc = vboxCallRemove(&vbox_client, &mnt->map, str, SHFL_REMOVE_DIR);
 	kmem_free(str, size);
 	if (RT_FAILURE(rc))
-		return (RTErrConvertToErrno(rc));
+		return (sfprov_vbox2errno(rc));
 	return (0);
 }
 
@@ -818,7 +831,7 @@ sfprov_rename(sfp_mount_t *mnt, char *from, char *to, uint_t is_dir)
 	kmem_free(old, old_size);
 	kmem_free(new, new_size);
 	if (RT_FAILURE(rc))
-		return (RTErrConvertToErrno(rc));
+		return (sfprov_vbox2errno(rc));
 	return (0);
 }
 
@@ -928,7 +941,7 @@ sfprov_readdir(
 			break;
 
 		default:
-			error = RTErrConvertToErrno(error);
+			error = sfprov_vbox2errno(error);
 			goto done;
 		}
 
