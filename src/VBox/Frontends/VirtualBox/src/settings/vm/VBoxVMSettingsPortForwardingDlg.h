@@ -110,12 +110,14 @@ private slots:
     void sltDelRule();
 
     /* Table slots: */
+    void sltTableDataChanged();
     void sltCurrentChanged();
     void sltShowTableContexMenu(const QPoint &position);
     void sltAdjustTable();
 
     /* Dialog slots: */
     void accept();
+    void reject();
 
 private:
 
@@ -124,6 +126,9 @@ private:
 
     /* Event filter: */
     bool eventFilter(QObject *pObj, QEvent *pEvent);
+
+    /* Flags: */
+    bool fIsTableDataChanged;
 
     /* Widgets: */
     QITableView *m_pTableView;

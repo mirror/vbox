@@ -413,6 +413,7 @@ private:
 VBoxVMSettingsPortForwardingDlg::VBoxVMSettingsPortForwardingDlg(QWidget *pParent,
                                                                  const UIPortForwardingDataList &rules)
     : QIWithRetranslateUI<QIDialog>(pParent)
+    , fIsTableDataChanged(false)
     , m_pTableView(0)
     , m_pToolBar(0)
     , m_pButtonBox(0)
@@ -478,6 +479,9 @@ VBoxVMSettingsPortForwardingDlg::VBoxVMSettingsPortForwardingDlg(QWidget *pParen
 
     /* Create model: */
     m_pModel = new UIPortForwardingModel(this, rules);
+    connect(m_pModel, SIGNAL(dataChanged(const QModelIndex &, const QModelIndex &)), this, SLOT(sltTableDataChanged()));
+    connect(m_pModel, SIGNAL(rowsInserted(const QModelIndex &, int, int)), this, SLOT(sltTableDataChanged()));
+    connect(m_pModel, SIGNAL(rowsRemoved(const QModelIndex &, int, int)), this, SLOT(sltTableDataChanged()));
     m_pTableView->setModel(m_pModel);
 
     /* Register delegates editors: */
@@ -567,6 +571,12 @@ void VBoxVMSettingsPortForwardingDlg::sltDelRule()
     sltAdjustTable();
 }
 
+/* Table data change handler: */
+void VBoxVMSettingsPortForwardingDlg::sltTableDataChanged()
+{
+    fIsTableDataChanged = true;
+}
+
 /* Table index-change handler: */
 void VBoxVMSettingsPortForwardingDlg::sltCurrentChanged()
 {
@@ -635,6 +645,15 @@ void VBoxVMSettingsPortForwardingDlg::accept()
     }
     /* Base class accept() slot: */
     QIWithRetranslateUI<QIDialog>::accept();
+}
+
+void VBoxVMSettingsPortForwardingDlg::reject()
+{
+    /* Check if table data was changed: */
+    if (fIsTableDataChanged && !vboxProblem().confirmCancelingPortForwardingDialog(this))
+        return;
+    /* Base class reject() slot: */
+    QIWithRetranslateUI<QIDialog>::reject();
 }
 
 /* UI Retranslation slot: */

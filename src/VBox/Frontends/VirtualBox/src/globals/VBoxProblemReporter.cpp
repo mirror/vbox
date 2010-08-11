@@ -2353,6 +2353,13 @@ void VBoxProblemReporter::warnAboutIncorrectPort(QWidget *pParent) const
                "None of the host or guest port values may be set to zero."));
 }
 
+bool VBoxProblemReporter::confirmCancelingPortForwardingDialog(QWidget *pParent) const
+{
+    return messageOkCancel(pParent, Question,
+        tr("<p>Canceling the port forwarding configuration process will cause "
+           "any unsaved changes to be lost. Do you really wish to do so?</p>"));
+}
+
 void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal,
                                             const QString &errorID,
                                             const QString &errorMsg) const
