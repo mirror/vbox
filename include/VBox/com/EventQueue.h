@@ -103,10 +103,12 @@ public:
     {
         return mEventQ.get();
     }
+#else
+    static int dispatchMessageOnWindows(MSG const *pMsg, int rc);
 #endif
 
 private:
-    static EventQueue *mMainQueue;
+    static EventQueue *sMainQueue;
 
 #ifndef VBOX_WITH_XPCOM
 
@@ -119,10 +121,10 @@ private:
 
     /** Whether it was created (and thus needs destroying) or if a queue already
      *  associated with the thread was used. */
-    BOOL mEQCreated;
+    bool mEQCreated;
 
     /** Whether event processing should be interrupted. */
-    BOOL mInterrupted;
+    bool mInterrupted;
 
     nsCOMPtr <nsIEventQueue> mEventQ;
     nsCOMPtr <nsIEventQueueService> mEventQService;
