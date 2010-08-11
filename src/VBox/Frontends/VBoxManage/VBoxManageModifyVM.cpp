@@ -616,7 +616,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_HDD: // deprecated
             case MODIFYVM_SATAPORT: // deprecated
             {
-                uint32_t u1, u2 = 0;
+                uint32_t u1 = 0, u2 = 0;
                 Bstr bstrController = L"IDE Controller";
 
                 switch (c)
