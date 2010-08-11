@@ -1805,36 +1805,66 @@
       </param>
     </method>
 
-    <method name="openHardDisk">
+    <method name="openMedium">
       <desc>
-        Opens a medium from an existing location, optionally replacing
-        the image UUID and/or parent UUID.
+        Opens a medium from an existing storage location.
 
-        After the medium is successfully opened by this method, it gets
-        remembered by (known to) this VirtualBox installation and will be
-        accessible through the <link to="#findMedium"/> method. Remembered base media
-        are also returned as part of the <link to="#hardDisks"/> array and can
-        be attached to virtual machines. See <link to="IMedium" /> for more details.
+        Once a medium has been opened, VirtualBox saves the medium in a media
+        registry. Prior to VirtualBox 3.3, this registry had to be the global
+        media registry in the VirtualBox.xml file, which was shared between
+        all machines and made transporting machines from one host to another
+        difficult. Now you can optionally specify an <link to="IMachine" />
+        instance, in which case the medium will be remembered in that machine's
+        registry. This is the recommended procedure for machines created with
+        VirtualBox 3.3 or later. <i>(not yet implemented)</i>
 
-        If a differencing medium is to be opened by this method, the
+        Depending on the given device type, the file at the storage location
+        must be in one of the media formats understood by VirtualBox:
+
+        <ul>
+          <li>With a "HardDisk" device type, the file must be a hard disk image
+            in one of the formats supported by VirtualBox (see
+            <link to="ISystemProperties::mediumFormats" />).
+            After this method succeeds, if the medium is a base medium, it
+            will be added to the <link to="#hardDisks"/> array attribute. </li>
+          <li>With a "DVD" device type, the file must be an ISO 9960 CD/DVD image.
+            After this method succeeds, the medium will be added to the
+            <link to="#DVDImages"/> array attribute.</li>
+          <li>With a "Floppy" device type, the file must be an RAW floppy image.
+            After this method succeeds, the medium will be added to the
+            <link to="#floppyImages"/> array attribute.</li>
+        </ul>
+
+        After having been opened, the medium can be found by the <link to="#findMedium"/>
+        method and can be attached to virtual machines. See <link to="IMedium" /> for more details.
+
+        The UUID of the newly opened medium will either be retrieved from the
+        storage location, if the format supports it (e.g. for hard disk images),
+        or a new UUID will be randomly generated (e.g. for ISO and RAW files).
+        If for some reason you need to change the medium's UUID, use
+        <link to="IMedium::setIDs" />.
+
+        If a differencing hard disk medium is to be opened by this method, the
         operation will succeed only if its parent medium and all ancestors,
         if any, are already known to this VirtualBox installation (for example,
         were opened by this method before).
 
-        This method tries to guess the storage format of the specified medium
+        This method attempts to guess the storage format of the specified medium
         by reading medium data at the specified location.
 
-        If @a accessMode is ReadWrite (which it should be), the image is opened
-        for read/write access and must have according permissions, as VirtualBox
-        may actually write status information into the disk's metadata sections.
+        If @a accessMode is ReadWrite (which it should be for hard disks and floppies),
+        the image is opened for read/write access and must have according permissions,
+        as VirtualBox may actually write status information into the disk's metadata
+        sections.
 
-        Note that write access is required for all typical image usage in VirtualBox,
+        Note that write access is required for all typical hard disk usage in VirtualBox,
         since VirtualBox may need to write metadata such as a UUID into the image.
         The only exception is opening a source image temporarily for copying and
-        cloning when the image will quickly be closed again.
+        cloning (see <link to="IMedium::cloneTo" /> when the image will be closed
+        again soon.
 
-        Note that the format of the location string is storage format specific.
-        See <link to="IMedium::location"/>, IMedium and
+        The format of the location string is storage format specific. See
+        <link to="IMedium::location"/>, IMedium and
         <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
 
         <result name="VBOX_E_FILE_ERROR">
@@ -1847,7 +1877,9 @@
         <result name="E_INVALIDARG">
           Invalid medium storage format.
         </result>
-
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Medium has already been added to a media registry.
+        </result>
       </desc>
       <param name="location" type="wstring" dir="in">
         <desc>
@@ -1855,33 +1887,14 @@
           the supported storage formats.
         </desc>
       </param>
+      <param name="deviceType" type="DeviceType" dir="in">
+        <desc>
+          Must be one of "HardDisk", "DVD" or "Floppy".
+        </desc>
+      </param>
       <param name="accessMode" type="AccessMode" dir="in">
-          <desc>
-              Determines whether to open the image in read/write or read-only mode.
-          </desc>
-      </param>
-      <param name="setImageId" type="boolean" dir="in">
-          <desc>
-              Select whether a new image UUID is set or not.
-          </desc>
-      </param>
-      <param name="imageId" type="uuid" mod="string" dir="in">
-          <desc>
-              New UUID for the image. If an empty string is passed, then a new
-              UUID is automatically created. Specifying a zero UUIDs is not valid.
-          </desc>
-      </param>
-      <param name="setParentId" type="boolean" dir="in">
-          <desc>
-              Select whether a new parent UUID is set or not.
-          </desc>
-      </param>
-      <param name="parentId" type="uuid" mod="string" dir="in">
-          <desc>
-              New parent UUID for the image. If an empty string is passed, then a
-              new UUID is automatically created, provided @a setParentId is
-              @c true. A zero UUID is valid.
-          </desc>
+        <desc>Whether to open the image in read/write or read-only mode. For
+        a "DVD" device type, this is ignored and read-only mode is always assumed.</desc>
       </param>
       <param name="medium" type="IMedium" dir="return">
         <desc>Opened medium object.</desc>
@@ -1895,8 +1908,7 @@
 
         The given medium must be known to this VirtualBox installation, i.e.
         it must be previously created by <link to="#createHardDisk"/> or opened
-        by <link to="#openHardDisk"/> or <link to="#openDVDImage" /> or
-        <link to="#openFloppyImage" />.
+        by <link to="#openMedium"/>.
 
         The search is done by comparing the value of the @a location argument to
         the <link to="IMedium::location"/> and <link to="IMedium::id" />
@@ -1923,95 +1935,6 @@
       </param>
       <param name="medium" type="IMedium" dir="return">
         <desc>Medium object, if found.</desc>
-      </param>
-    </method>
-
-    <method name="openDVDImage">
-      <desc>
-        Opens a CD/DVD image contained in the specified file of the supported
-        format and assigns it the given UUID.
-
-        After the image is successfully opened by this method, it gets
-        remembered by (known to) this VirtualBox installation and will be
-        accessible through the <link to="#findMedium"/> method.
-        Remembered images are also returned as part of the <link to="#DVDImages"/>
-        array and can be mounted to virtual machines. See <link to="IMedium" />
-        for more details.
-
-        See <link to="IMedium::location"/> to get more details about the format
-        of the location string.
-
-        <note>
-          Currently only ISO 9960 CD/DVD images are supported by VirtualBox.
-        </note>
-
-        <result name="VBOX_E_FILE_ERROR">
-          Invalid CD/DVD image file location or could not find the CD/DVD
-          image at the specified location.
-        </result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          CD/DVD image already exists in the media registry.
-        </result>
-
-      </desc>
-      <param name="location" type="wstring" dir="in">
-        <desc>
-          Full path to the file that contains a valid CD/DVD image.
-        </desc>
-      </param>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>
-          UUID to assign to the given image within this VirtualBox installation.
-          If an empty (@c null) UUID is specified, the system will randomly
-          generate a new UUID.
-        </desc>
-      </param>
-      <param name="image" type="IMedium" dir="return">
-        <desc>Opened CD/DVD image object.</desc>
-      </param>
-    </method>
-
-    <method name="openFloppyImage">
-      <desc>
-        Opens a floppy image contained in the specified file of the supported
-        format and assigns it the given UUID.
-
-        After the image is successfully opened by this method, it gets
-        remembered by (known to) this VirtualBox installation and will be
-        accessible through the <link to="#findMedium"/> method.
-        Remembered images are also returned as part of the <link to="#floppyImages"/>
-        array and can be mounted to virtual machines. See <link to="IMedium" />
-        for more details.
-
-        See <link to="IMedium::location"/> to get more details about the format
-        of the location string.
-
-        <result name="VBOX_E_FILE_ERROR">
-          Invalid floppy image file location or could not find the floppy
-          image at the specified location.
-        </result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Floppy image already exists in the media registry.
-        </result>
-
-        <note>
-          Currently, only raw floppy images are supported by VirtualBox.
-        </note>
-      </desc>
-      <param name="location" type="wstring" dir="in">
-        <desc>
-          Full path to the file that contains a valid floppy image.
-        </desc>
-      </param>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>
-          UUID to assign to the given image file within this VirtualBox
-          installation. If an empty (@c null) UUID is specified, the system will
-          randomly generate a new UUID.
-        </desc>
-      </param>
-      <param name="image" type="IMedium" dir="return">
-        <desc>Opened floppy image object.</desc>
       </param>
     </method>
 
@@ -7341,7 +7264,7 @@
         <see>
           IMedium,
           <link to="IVirtualBox::createHardDisk"/>,
-          <link to="IVirtualBox::openHardDisk"/>,
+          <link to="IVirtualBox::openMedium"/>,
           <link to="IMedium::location"/>
         </see>
       </desc>
@@ -8553,15 +8476,8 @@
           attribute.</li>
       </ul>
 
-      Existing media are opened using the following methods, depending on the
-      media type:
-      <ul>
-        <li><link to="IVirtualBox::openHardDisk"/></li>
-        <li><link to="IVirtualBox::openDVDImage"/></li>
-        <li><link to="IVirtualBox::openFloppyImage"/></li>
-      </ul>
-
-      New hard disk media can be created with the VirtualBox API using the
+      Existing media are opened using <link to="IVirtualBox::openMedium"/>;
+      new hard disk media can be created with the VirtualBox API using the
       <link to="IVirtualBox::createHardDisk"/> method.
 
       CD/DVD and floppy images (ISO and RAW files) are usually created outside
@@ -8652,7 +8568,7 @@
 
       New base hard disks are created using
       <link to="IVirtualBox::createHardDisk"/>. Existing hard disks are
-      opened using <link to="IVirtualBox::openHardDisk"/>. Differencing hard
+      opened using <link to="IVirtualBox::openMedium"/>. Differencing hard
       disks are usually implicitly created by VirtualBox when needed but may
       also be created explicitly using <link to="#createDiffStorage"/>.
 
@@ -9168,6 +9084,42 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <method name="setIDs">
+      <desc>
+        Changes the UUID and parent UUID for a hard disk medium.
+      </desc>
+      <param name="setImageId" type="boolean" dir="in">
+        <desc>
+          Select whether a new image UUID is set or not.
+        </desc>
+      </param>
+      <param name="imageId" type="uuid" mod="string" dir="in">
+        <desc>
+          New UUID for the image. If an empty string is passed, then a new
+          UUID is automatically created, provided that @a setImageId is @c true.
+          Specifying a zero UUID is not allowed.
+        </desc>
+      </param>
+      <param name="setParentId" type="boolean" dir="in">
+        <desc>
+          Select whether a new parent UUID is set or not.
+        </desc>
+      </param>
+      <param name="parentId" type="uuid" mod="string" dir="in">
+        <desc>
+          New parent UUID for the image. If an empty string is passed, then a
+          new UUID is automatically created, provided @a setParentId is
+          @c true. A zero UUID is valid.
+        </desc>
+      </param>
+        <result name="E_INVALIDARG">
+          Invalid parameter combination.
+        </result>
+      <result name="VBOX_E_NOT_SUPPORTED">
+        Medium is not a hard disk medium.
+      </result>
+    </method>
+
     <method name="refreshState">
       <desc>
         If the current medium state (see <link to="MediumState"/>) is one of
@@ -9396,11 +9348,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         and must not have any known child media, otherwise the
         operation will fail.
 
-        When the medium is successfully closed, it gets removed from
-        the list of remembered media, but its storage unit is not
-        deleted. In particular, this means that this medium can be
-        later opened again using the <link
-        to="IVirtualBox::openHardDisk"/> call.
+        When the medium is successfully closed, it is removed from
+        the list of registered media, but its storage unit is not
+        deleted. In particular, this means that this medium can
+        later be opened again using the <link to="IVirtualBox::openMedium"/>
+        call.
 
         Note that after this method successfully returns, the given medium
         object becomes uninitialized. This means that any attempt

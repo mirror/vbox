@@ -612,70 +612,38 @@ int handleModifyVM(HandlerArg *a)
             }
 
             case MODIFYVM_HDA: // deprecated
-            {
-                if (!strcmp(ValueUnion.psz, "none"))
-                {
-                    machine->DetachDevice(Bstr("IDE Controller"), 0, 0);
-                }
-                else
-                {
-                    ComPtr<IMedium> hardDisk;
-                    rc = a->virtualBox->FindMedium(Bstr(ValueUnion.psz), DeviceType_HardDisk, hardDisk.asOutParam());
-                    if (FAILED(rc))
-                    {
-                        /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox,
-                                    OpenHardDisk(Bstr(ValueUnion.psz),
-                                                 AccessMode_ReadWrite, false, Bstr(""),
-                                                 false, Bstr(""), hardDisk.asOutParam()));
-                    }
-                    if (hardDisk)
-                    {
-                        Bstr uuid;
-                        hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR(machine, AttachDevice(Bstr("IDE Controller"), 0, 0, DeviceType_HardDisk, uuid));
-                    }
-                    else
-                        rc = E_FAIL;
-                }
-                break;
-            }
-
             case MODIFYVM_HDB: // deprecated
-            {
-                if (!strcmp(ValueUnion.psz, "none"))
-                {
-                    machine->DetachDevice(Bstr("IDE Controller"), 0, 1);
-                }
-                else
-                {
-                    ComPtr<IMedium> hardDisk;
-                    rc = a->virtualBox->FindMedium(Bstr(ValueUnion.psz), DeviceType_HardDisk, hardDisk.asOutParam());
-                    if (FAILED(rc))
-                    {
-                        /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox,
-                                    OpenHardDisk(Bstr(ValueUnion.psz),
-                                                 AccessMode_ReadWrite, false, Bstr(""),
-                                                 false, Bstr(""), hardDisk.asOutParam()));
-                    }
-                    if (hardDisk)
-                    {
-                        Bstr uuid;
-                        hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR(machine, AttachDevice(Bstr("IDE Controller"), 0, 1, DeviceType_HardDisk, uuid));
-                    }
-                    else
-                        rc = E_FAIL;
-                }
-                break;
-            }
-
             case MODIFYVM_HDD: // deprecated
+            case MODIFYVM_SATAPORT: // deprecated
             {
+                uint32_t u1, u2 = 0;
+                Bstr bstrController = L"IDE Controller";
+
+                switch (c)
+                {
+                    case MODIFYVM_HDA: // deprecated
+                        u1 = 0;
+                    break;
+
+                    case MODIFYVM_HDB: // deprecated
+                        u1 = 0;
+                        u2 = 1;
+                    break;
+
+                    case MODIFYVM_HDD: // deprecated
+                        u1 = 1;
+                        u2 = 1;
+                    break;
+
+                    case MODIFYVM_SATAPORT: // deprecated
+                        u1 = GetOptState.uIndex;
+                        bstrController = L"SATA";
+                    break;
+                }
+
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
-                    machine->DetachDevice(Bstr("IDE Controller"), 1, 1);
+                    machine->DetachDevice(bstrController, u1, u2);
                 }
                 else
                 {
@@ -685,15 +653,16 @@ int handleModifyVM(HandlerArg *a)
                     {
                         /* open the new hard disk object */
                         CHECK_ERROR(a->virtualBox,
-                                    OpenHardDisk(Bstr(ValueUnion.psz),
-                                                 AccessMode_ReadWrite, false, Bstr(""),
-                                                 false, Bstr(""), hardDisk.asOutParam()));
+                                    OpenMedium(Bstr(ValueUnion.psz),
+                                               DeviceType_HardDisk,
+                                               AccessMode_ReadWrite,
+                                               hardDisk.asOutParam()));
                     }
                     if (hardDisk)
                     {
                         Bstr uuid;
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR(machine, AttachDevice(Bstr("IDE Controller"), 1, 1, DeviceType_HardDisk, uuid));
+                        CHECK_ERROR(machine, AttachDevice(bstrController, u1, u2, DeviceType_HardDisk, uuid));
                     }
                     else
                         rc = E_FAIL;
@@ -747,39 +716,6 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_SATAPORT: // deprecated
-            {
-                if (!strcmp(ValueUnion.psz, "none"))
-                {
-                    machine->DetachDevice(Bstr("SATA"), GetOptState.uIndex, 0);
-                }
-                else
-                {
-                    /* first guess is that it's a UUID */
-                    ComPtr<IMedium> hardDisk;
-                    rc = a->virtualBox->FindMedium(Bstr(ValueUnion.psz), DeviceType_HardDisk, hardDisk.asOutParam());
-                    if (FAILED(rc))
-                    {
-                        /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox,
-                                    OpenHardDisk(Bstr(ValueUnion.psz), AccessMode_ReadWrite,
-                                                 false, Bstr(""), false,
-                                                 Bstr(""), hardDisk.asOutParam()));
-                    }
-                    if (hardDisk)
-                    {
-                        Bstr uuid;
-                        hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR(machine,
-                                    AttachDevice(Bstr("SATA"), GetOptState.uIndex,
-                                                 0, DeviceType_HardDisk, uuid));
-                    }
-                    else
-                        rc = E_FAIL;
-                }
-                break;
-            }
-
             case MODIFYVM_SATA: // deprecated
             {
                 if (!strcmp(ValueUnion.psz, "on") || !strcmp(ValueUnion.psz, "enable"))
@@ -813,9 +749,10 @@ int handleModifyVM(HandlerArg *a)
                     {
                         /* open the new hard disk object */
                         CHECK_ERROR(a->virtualBox,
-                                     OpenHardDisk(Bstr(ValueUnion.psz),
-                                                       AccessMode_ReadWrite, false, Bstr(""),
-                                                       false, Bstr(""), hardDisk.asOutParam()));
+                                    OpenMedium(Bstr(ValueUnion.psz),
+                                               DeviceType_HardDisk,
+                                               AccessMode_ReadWrite,
+                                               hardDisk.asOutParam()));
                     }
                     if (hardDisk)
                     {
@@ -939,8 +876,11 @@ int handleModifyVM(HandlerArg *a)
                     {
                         /* not registered, do that on the fly */
                         Bstr emptyUUID;
-                        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(ValueUnion.psz),
-                                     emptyUUID, dvdMedium.asOutParam()));
+                        CHECK_ERROR(a->virtualBox,
+                                    OpenMedium(Bstr(ValueUnion.psz),
+                                               DeviceType_DVD,
+                                               AccessMode_ReadWrite,
+                                               dvdMedium.asOutParam()));
                     }
                     if (!dvdMedium)
                     {
@@ -1006,9 +946,10 @@ int handleModifyVM(HandlerArg *a)
                             /* not registered, do that on the fly */
                             Bstr emptyUUID;
                             CHECK_ERROR(a->virtualBox,
-                                         OpenFloppyImage(Bstr(ValueUnion.psz),
-                                                         emptyUUID,
-                                                         floppyMedium.asOutParam()));
+                                        OpenMedium(Bstr(ValueUnion.psz),
+                                                   DeviceType_Floppy,
+                                                   AccessMode_ReadWrite,
+                                                   floppyMedium.asOutParam()));
                         }
                         if (!floppyMedium)
                         {

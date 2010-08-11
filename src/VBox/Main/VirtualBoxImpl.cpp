@@ -1403,62 +1403,71 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
-                                      AccessMode_T accessMode,
-                                      BOOL aSetImageId,
-                                      IN_BSTR aImageId,
-                                      BOOL aSetParentId,
-                                      IN_BSTR aParentId,
-                                      IMedium **aHardDisk)
+STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
+                                    DeviceType_T deviceType,
+                                    AccessMode_T accessMode,
+                                    IMedium **aMedium)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
-    CheckComArgOutSafeArrayPointerValid(aHardDisk);
+    CheckComArgOutSafeArrayPointerValid(aMedium);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* we don't access non-const data members so no need to lock */
-
     HRESULT rc = E_FAIL;
 
-    ComObjPtr<Medium> hardDisk;
-    hardDisk.createObject();
-    Guid imageId, parentId;
-    if (aSetImageId)
+    switch (deviceType)
     {
-        imageId = Guid(aImageId);
-        if (imageId.isEmpty())
-            return setError(E_INVALIDARG, tr("Argument %s is empty"), "aImageId");
+        case DeviceType_HardDisk:
+        case DeviceType_Floppy:
+        break;
+
+        case DeviceType_DVD:
+            accessMode = AccessMode_ReadOnly;
+        break;
+
+        default:
+            return setError(E_INVALIDARG, "Device type must be HardDisk, DVD or Floppy");
     }
-    if (aSetParentId)
-        parentId = Guid(aParentId);
-    rc = hardDisk->init(this,
-                        aLocation,
-                        (accessMode == AccessMode_ReadWrite) ? Medium::OpenReadWrite : Medium::OpenReadOnly,
-                        DeviceType_HardDisk,
-                        aSetImageId,
-                        imageId,
-                        aSetParentId,
-                        parentId);
+
+    ComObjPtr<Medium> pMedium;
+    pMedium.createObject();
+    rc = pMedium->init(this,
+                       aLocation,
+                       (accessMode == AccessMode_ReadWrite) ? Medium::OpenReadWrite : Medium::OpenReadOnly,
+                       deviceType);
 
     if (SUCCEEDED(rc))
     {
-        bool fNeedsSaveSettings = false;
+        bool fNeedsGlobalSaveSettings = false;
+
+        AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+        switch (deviceType)
         {
-            AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-            rc = registerHardDisk(hardDisk, &fNeedsSaveSettings);
+            case DeviceType_HardDisk:
+                rc = registerHardDisk(pMedium, &fNeedsGlobalSaveSettings);
+            break;
+
+            case DeviceType_DVD:
+            case DeviceType_Floppy:
+                rc = registerImage(pMedium, deviceType, &fNeedsGlobalSaveSettings);
+            break;
         }
+
+        treeLock.release();
 
         /* Note that it's important to call uninit() on failure to register
          * because the differencing hard disk would have been already associated
          * with the parent and this association needs to be broken. */
 
         if (SUCCEEDED(rc))
-            hardDisk.queryInterfaceTo(aHardDisk);
+            pMedium.queryInterfaceTo(aMedium);
         else
-            hardDisk->uninit();
+            pMedium->uninit();
 
-        if (fNeedsSaveSettings)
+        if (fNeedsGlobalSaveSettings)
         {
             AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
             saveSettings();
@@ -1507,102 +1516,6 @@ STDMETHODIMP VirtualBox::FindMedium(IN_BSTR   aLocation,
 
     /* the below will set *aHardDisk to NULL if hardDisk is null */
     pMedium.queryInterfaceTo(aMedium);
-
-    return rc;
-}
-
-/** @note Doesn't lock anything. */
-STDMETHODIMP VirtualBox::OpenDVDImage(IN_BSTR aLocation,
-                                      IN_BSTR aId,
-                                      IMedium **aDVDImage)
-{
-    CheckComArgStrNotEmptyOrNull(aLocation);
-    CheckComArgOutSafeArrayPointerValid(aDVDImage);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT rc = VBOX_E_FILE_ERROR;
-
-    Guid id(aId);
-    /* generate an UUID if not specified */
-    if (id.isEmpty())
-        id.create();
-
-    ComObjPtr<Medium> image;
-    image.createObject();
-    rc = image->init(this,
-                     aLocation,
-                     Medium::OpenReadOnly,
-                     DeviceType_DVD,
-                     true /* aSetImageId */,
-                     id,
-                     false /* aSetParentId */,
-                     Guid());
-    if (SUCCEEDED(rc))
-    {
-        AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-        bool fNeedsSaveSettings = false;
-        rc = registerImage(image, DeviceType_DVD, &fNeedsSaveSettings);
-        treeLock.release();
-
-        if (SUCCEEDED(rc))
-            image.queryInterfaceTo(aDVDImage);
-
-        if (fNeedsSaveSettings)
-        {
-            AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
-            saveSettings();
-        }
-    }
-
-    return rc;
-}
-
-/** @note Doesn't lock anything. */
-STDMETHODIMP VirtualBox::OpenFloppyImage(IN_BSTR aLocation,
-                                         IN_BSTR aId,
-                                         IMedium **aFloppyImage)
-{
-    CheckComArgStrNotEmptyOrNull(aLocation);
-    CheckComArgOutSafeArrayPointerValid(aFloppyImage);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT rc = VBOX_E_FILE_ERROR;
-
-    Guid id(aId);
-    /* generate an UUID if not specified */
-    if (id.isEmpty())
-        id.create();
-
-    ComObjPtr<Medium> image;
-    image.createObject();
-    rc = image->init(this,
-                     aLocation,
-                     Medium::OpenReadWrite,
-                     DeviceType_Floppy,
-                     true /* aSetImageId */,
-                     id,
-                     false /* aSetParentId */,
-                     Guid());
-    if (SUCCEEDED(rc))
-    {
-        AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-        bool fNeedsSaveSettings = false;
-        rc = registerImage(image, DeviceType_Floppy, &fNeedsSaveSettings);
-        treeLock.release();
-
-        if (SUCCEEDED(rc))
-            image.queryInterfaceTo(aFloppyImage);
-
-        if (fNeedsSaveSettings)
-        {
-            AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
-            saveSettings();
-        }
-    }
 
     return rc;
 }
