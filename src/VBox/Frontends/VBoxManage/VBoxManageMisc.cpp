@@ -432,7 +432,7 @@ int handleDiscardState(HandlerArg *a)
             {
                 ComPtr<IConsole> console;
                 CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-                CHECK_ERROR_BREAK(console, DiscardSavedState());
+                CHECK_ERROR_BREAK(console, DiscardSavedState(true /* fDeleteFile */));
             } while (0);
             CHECK_ERROR_BREAK(a->session, UnlockMachine());
         } while (0);

@@ -2987,13 +2987,21 @@
      internal="yes"
      wsmap="suppress"
      >
+    <method name="setRemoveSavedStateFile">
+      <desc>
+        Updates the flag whether the saved state file is removed on a
+        machine state change from Saved to PoweredOff.
+      </desc>
+      <param name="aRemove" type="boolean" dir="in"/>
+    </method>
+
     <method name="updateState">
       <desc>
         Updates the VM state.
         <note>
-          This operation will also update the settings file with
-          the correct information about the saved state file
-          and delete this file from disk when appropriate.
+          This operation will also update the settings file with the correct
+          information about the saved state file and delete this file from disk
+          when appropriate.
         </note>
       </desc>
       <param name="state" type="MachineState" dir="in"/>
@@ -6150,8 +6158,7 @@
     <method name="discardSavedState">
       <desc>
         Forcibly resets the machine to "Powered Off" state if it is
-        currently in the "Saved" state (previously created by <link to="#saveState"/>)
-        and deletes the file into which the machine state was saved.
+        currently in the "Saved" state (previously created by <link to="#saveState"/>).
         Next time the machine is powered up, a clean boot will occur.
         <note>
           This operation is equivalent to resetting or powering off
@@ -6159,10 +6166,19 @@
           operating system; as with resetting a running phyiscal
           computer, it can can lead to data loss.
         </note>
+        If @a fRemoveFile is @c true, the file in the machine directory
+        into which the machine state was saved is also deleted. If
+        this is @c false, then the state can be recovered and later
+        re-inserted into a machine using <link to="#adoptSavedState" />.
+        The location of the file can be found in the
+        <link to="IMachine::stateFilePath" /> attribute.
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine not in state Saved.
         </result>
       </desc>
+      <param name="fRemoveFile" type="boolean" dir="in" >
+        <desc>Whether to also remove the saved state file.</desc>
+      </param>
     </method>
 
     <method name="getDeviceActivity">
