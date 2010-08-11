@@ -13729,163 +13729,163 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <const name="OnMachineStateChanged" value="32">
       <desc>
-        <see>IMachineStateChangedEvent</see>
+        See <link to="IMachineStateChangedEvent">IMachineStateChangedEvent</link>.
       </desc>
     </const>
     <const name="OnMachineDataChanged" value="33">
       <desc>
-        <see>IMachineDataChangedEvent</see>
+        See <link to="IMachineDataChangedEvent">IMachineDataChangedEvent</link>.
       </desc>
     </const>
     <const name="OnExtraDataChanged" value="34">
       <desc>
-        <see>IExtraDataChangedEvent</see>
+        See <link to="IExtraDataChangedEvent">IExtraDataChangedEvent</link>.
       </desc>
     </const>
      <const name="OnExtraDataCanChange" value="35">
       <desc>
-        <see>IExtraDataCanChangeEvent</see>
+        See <link to="IExtraDataCanChangeEvent">IExtraDataCanChangeEvent</link>.
       </desc>
     </const>
     <const name="OnMediumRegistered" value="36">
       <desc>
-        <see>IMediumRegistered</see>
+        See <link to="IMediumRegisteredEvent">IMediumRegisteredEvent</link>.
       </desc>
     </const>
     <const name="OnMachineRegistered" value="37">
       <desc>
-        <see>IMachineRegisteredEvent</see>
+        See <link to="IMachineRegisteredEvent">IMachineRegisteredEvent</link>.
       </desc>
     </const>
     <const name="OnSessionStateChanged" value="38">
       <desc>
-        <see>ISessionStateChangedEvent</see>
+        See <link to="ISessionStateChangedEvent">ISessionStateChangedEvent</link>.
       </desc>
     </const>
     <const name="OnSnapshotTaken" value="39">
       <desc>
-        <see>ISnapshotTakenEvent</see>
+        See <link to="ISnapshotTakenEvent">ISnapshotTakenEvent</link>.
       </desc>
     </const>
     <const name="OnSnapshotDeleted" value="40">
       <desc>
-        <see>ISnapshotDeletedEvent</see>
+        See <link to="ISnapshotDeletedEvent">ISnapshotDeletedEvent</link>.
       </desc>
     </const>
     <const name="OnSnapshotChanged" value="41">
       <desc>
-        <see>ISnapshotChangedEvent</see>
+        See <link to="ISnapshotChangedEvent">ISnapshotChangedEvent</link>.
       </desc>
     </const>
     <const name="OnGuestPropertyChanged" value="42">
       <desc>
-        <see>IGuestPropertyChangedEvent</see>
+        See <link to="IGuestPropertyChangedEvent">IGuestPropertyChangedEvent</link>.
       </desc>
     </const>
     <!-- Console events -->
     <const name="OnMousePointerShapeChanged" value="43">
       <desc>
-        <see>IMousePointerShapeChangedEvent</see>
+        See <link to="IMousePointerShapeChangedEvent">IMousePointerShapeChangedEvent</link>.
       </desc>
     </const>
     <const name="OnMouseCapabilityChanged" value="44">
       <desc>
-        <see>IMouseCapabilityChangedEvent</see>
+        See <link to="IMouseCapabilityChangedEvent">IMouseCapabilityChangedEvent</link>.
       </desc>
     </const>
     <const name="OnKeyboardLedsChanged" value="45">
       <desc>
-        <see>IKeyboardLedsChangedEvent</see>
+        See <link to="IKeyboardLedsChangedEvent">IKeyboardLedsChangedEvent</link>.
       </desc>
     </const>
     <const name="OnStateChanged" value="46">
       <desc>
-        <see>IStateChangedEvent</see>
+        See <link to="IStateChangedEvent">IStateChangedEvent</link>.
       </desc>
     </const>
     <const name="OnAdditionsStateChanged" value="47">
       <desc>
-        <see>IAdditionsStateChangedEvent</see>
+        See <link to="IAdditionsStateChangedEvent">IAdditionsStateChangedEvent</link>.
       </desc>
     </const>
     <const name="OnNetworkAdapterChanged" value="48">
       <desc>
-        <see>INetworkAdapterChangedEvent</see>
+        See <link to="INetworkAdapterChangedEvent">INetworkAdapterChangedEvent</link>.
       </desc>
     </const>
     <const name="OnSerialPortChanged" value="49">
       <desc>
-        <see>ISerialPortChangedEvent</see>
+        See <link to="ISerialPortChangedEvent">ISerialPortChangedEvent</link>.
       </desc>
     </const>
     <const name="OnParallelPortChanged" value="50">
       <desc>
-        <see>IParallelPortChangedEvent</see>
+        See <link to="IParallelPortChangedEvent">IParallelPortChangedEvent</link>.
       </desc>
     </const>
     <const name="OnStorageControllerChanged" value="51">
       <desc>
-        <see>IStorageControllerChangedEvent</see>
+        See <link to="IStorageControllerChangedEvent">IStorageControllerChangedEvent</link>.
       </desc>
     </const>
     <const name="OnMediumChanged" value="52">
       <desc>
-        <see>IMediumChangedEvent</see>
+        See <link to="IMediumChangedEvent">IMediumChangedEvent</link>.
       </desc>
     </const>
     <const name="OnVRDPServerChanged" value="53">
       <desc>
-        <see>IVRDPServerChangedEvent</see>
+        See <link to="IVRDPServerChangedEvent">IVRDPServerChangedEvent</link>.
       </desc>
     </const>
     <const name="OnUSBControllerChanged" value="54">
       <desc>
-        <see>IUSBControllerChangedEvent</see>
+        See <link to="IUSBControllerChangedEvent">IUSBControllerChangedEvent</link>.
       </desc>
     </const>
     <const name="OnUSBDeviceStateChanged" value="55">
       <desc>
-        <see>IUSBDeviceStateChangedEvent</see>
+        See <link to="IUSBDeviceStateChangedEvent">IUSBDeviceStateChangedEvent</link>.
       </desc>
     </const>
     <const name="OnSharedFolderChanged" value="56">
       <desc>
-        <see>ISharedFolderChangedEvent</see>
+        See <link to="ISharedFolderChangedEvent">ISharedFolderChangedEvent</link>.
       </desc>
     </const>
     <const name="OnRuntimeError" value="57">
       <desc>
-        <see>IRuntimeErrorEvent</see>
+        See <link to="IRuntimeErrorEvent">IRuntimeErrorEvent</link>.
       </desc>
     </const>
     <const name="OnCanShowWindow" value="58">
       <desc>
-        <see>ICanShowWindowEvent</see>
+        See <link to="ICanShowWindowEvent">ICanShowWindowEvent</link>.
       </desc>
     </const>
     <const name="OnShowWindow" value="59">
       <desc>
-        <see>IShowWindowEvent</see>
+        See <link to="IShowWindowEvent">IShowWindowEvent</link>.
       </desc>
     </const>
     <const name="OnCPUChanged" value="60">
       <desc>
-        <see>ICPUChangedEvent</see>
+        See <link to="ICPUChangedEvent">ICPUChangedEvent</link>.
       </desc>
     </const>
     <const name="OnRemoteDisplayInfoChanged" value="61">
       <desc>
-        <see>IRemoteDisplayInfoChangedEvent</see>
+        See <link to="IRemoteDisplayInfoChangedEvent">IRemoteDisplayInfoChangedEvent</link>.
       </desc>
     </const>
     <const name="OnEventSourceChanged" value="62">
       <desc>
-        <see>IEventSourceChangedEvent</see>
+        See <link to="IEventSourceChangedEvent">IEventSourceChangedEvent</link>.
       </desc>
     </const>
     <const name="OnCPUPriorityChanged" value="63">
       <desc>
-        <see>ICPUPriorityChangedEvent</see>
+        See <link to="ICPUPriorityChangedEvent">ICPUPriorityChangedEvent</link>.
       </desc>
     </const>
     <!-- Last event marker -->
@@ -14205,6 +14205,32 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Any of the settings of the given machine has changed.
     </desc>
+  </interface>
+
+  <interface
+      name="IMediumRegisteredEvent" extends="IEvent"
+      uuid="53fac49a-b7f1-4a5a-a4ef-a11dd9c2a458"
+      wsmap="managed" autogen="VBoxEvent" id="OnMediumRegistered"
+      >
+    <desc>
+      The given medium was registered or unregistered
+      within this VirtualBox installation.
+    </desc>
+
+    <attribute name="mediumId" readonly="yes" type="uuid" mod="string">
+      <desc>ID of the medium this event relates to.</desc>
+    </attribute>
+
+    <attribute name="mediumType" readonly="yes" type="DeviceType">
+      <desc>Type of the medium this event relates to.</desc>
+    </attribute>
+    
+    <attribute name="registered" type="boolean" readonly="yes">
+      <desc>
+        If @c true, the medium was registered, otherwise it was
+        unregistered.
+      </desc>
+    </attribute>
   </interface>
 
   <interface
