@@ -369,6 +369,7 @@ public:
     void cannotExportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL) const;
 
     void warnAboutIncorrectPort(QWidget *pParent) const;
+    bool confirmCancelingPortForwardingDialog(QWidget *pParent) const;
 
     void showRuntimeError (const CConsole &console, bool fatal,
                            const QString &errorID,
