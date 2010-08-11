@@ -186,7 +186,8 @@ endif
 ifdef VBOX_WITH_VRDP
  VBOX_LNX_STRIP_BIN += \
 	VBoxVRDP.so \
-	VRDPAuth.so
+	VRDPAuth.so \
+	VRDPAuthSimple.so
  ifdef VBOX_WITH_VRDP_RDESKTOP
   VBOX_LNX_NO_STRIP += \
 	rdesktop-vrdp.tar.gz
