@@ -89,19 +89,21 @@ static int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD,
 static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList, bool *pfSuccess);
 
 /** Function object to be invoked on filenames from a directory. */
-class pathHandler
+typedef struct pathHandler
 {
     /** Called on each element of the sysfs directory.  Can e.g. store
      * interesting entries in a list. */
-    virtual bool handle(const char *pcszNode) = 0;
-public:
-    bool doHandle(const char *pcszNode)
-    {
-        AssertPtr(pcszNode);
-        Assert(pcszNode[0] == '/');
-        return handle(pcszNode);
-    }
-};
+    bool (*handle)(pathHandler *pHandle, const char *pcszNode);
+} pathHandler;
+
+static bool phDoHandle(pathHandler *pHandler, const char *pcszNode)
+{
+    AssertPtr(pHandler);
+    AssertPtr(pHandler->handle);
+    AssertPtr(pcszNode);
+    Assert(pcszNode[0] == '/');
+    return pHandler->handle(pHandler, pcszNode);
+}
 
 static int walkDirectory(const char *pcszPath, pathHandler *pHandler,
                          bool useRealPath);
@@ -1042,60 +1044,51 @@ public:
 /** Class wrapper around an inotify watch (or a group of them to be precise).
  * Inherits from pathHandler so that it can be passed to walkDirectory() to
  * easily add all files from a directory. */
-class inotifyWatch : public pathHandler
+typedef struct inotifyWatch
 {
+    /** The pathHandler we inherit from - this must be the first structure
+     * member */
+    pathHandler mParent;
     /** Pointer to the inotify_add_watch() glibc function/Linux API */
     int (*inotify_add_watch)(int, const char *, uint32_t);
     /** The native handle of the inotify fd. */
     int mhInotify;
-    /** Object initialisation status, to save us throwing an exception from
-     * the constructor if we can't initialise */
-    int mStatus;
+} inotifyWatch;
 
-    /** Object initialistation */
-    int initInotify(void);
+/** The flags we pass to inotify - modify, create, delete, change permissions
+ */
+#define IN_FLAGS 0x306
 
-public:
-    /** Add @a pcszPath to the list of files and directories to be monitored */
-    virtual bool handle(const char *pcszPath);
+static bool iwHandle(pathHandler *pParent, const char *pcszPath)
+{
+    AssertPtrReturn(pParent, false);
+    AssertReturn(pParent->handle == iwHandle, false);
+    inotifyWatch *pSelf = (inotifyWatch *)pParent;
+    errno = 0;
+    if (  pSelf->inotify_add_watch(pSelf->mhInotify, pcszPath, IN_FLAGS) >= 0
+        || (errno == EACCES))
+        return true;
+    /* Other errors listed in the manpage can be treated as fatal */
+    return false;
+}
 
-    inotifyWatch(void) : mhInotify(-1)
-    {
-        mStatus = initInotify();
-    }
-
-    ~inotifyWatch(void)
-    {
-        if (mhInotify != -1)
-        {
-            close(mhInotify);
-            mhInotify = -1;
-        }
-    }
-
-    int getStatus(void)
-    {
-        return mStatus;
-    }
-
-    int getFD(void)
-    {
-        AssertRCReturn(mStatus, -1);
-        return mhInotify;
-    }
-};
-
-int inotifyWatch::initInotify(void)
+/** Object initialisation */
+static int iwInit(inotifyWatch *pSelf)
 {
     int (*inotify_init)(void);
     int fd, flags;
+    int rc = VINF_SUCCESS;
 
+    AssertPtr(pSelf);
+    pSelf->mParent.handle = iwHandle;
+    pSelf->mhInotify = -1;
     errno = 0;
     *(void **)(&inotify_init) = dlsym(RTLD_DEFAULT, "inotify_init");
     if (!inotify_init)
         return VERR_LDR_IMPORTED_SYMBOL_NOT_FOUND;
-    *(void **)(&inotify_add_watch) = dlsym(RTLD_DEFAULT, "inotify_add_watch");
-    if (!inotify_add_watch)
+    *(void **)(&pSelf->inotify_add_watch)
+                    = dlsym(RTLD_DEFAULT, "inotify_add_watch");
+    if (!pSelf->inotify_add_watch)
         return VERR_LDR_IMPORTED_SYMBOL_NOT_FOUND;
     fd = inotify_init();
     if (fd < 0)
@@ -1104,8 +1097,6 @@ int inotifyWatch::initInotify(void)
         return RTErrConvertFromErrno(errno);
     }
     Assert(errno == 0);
-
-    int rc = VINF_SUCCESS;
 
     flags = fcntl(fd, F_GETFL, NULL);
     if (   flags < 0
@@ -1119,24 +1110,25 @@ int inotifyWatch::initInotify(void)
     else
     {
         Assert(errno == 0);
-        mhInotify = fd;
+        pSelf->mhInotify = fd;
     }
     return rc;
 }
 
-/** The flags we pass to inotify - modify, create, delete, change permissions
- */
-#define IN_FLAGS 0x306
-
-bool inotifyWatch::handle(const char *pcszPath)
+static void iwTerm(inotifyWatch *pSelf)
 {
-    AssertRCReturn(mStatus, false);
-    errno = 0;
-    if (  inotify_add_watch(mhInotify, pcszPath, IN_FLAGS) >= 0
-        || (errno == EACCES))
-        return true;
-    /* Other errors listed in the manpage can be treated as fatal */
-    return false;
+    AssertPtrReturnVoid(pSelf);
+    if (pSelf->mhInotify != -1)
+    {
+        close(pSelf->mhInotify);
+        pSelf->mhInotify = -1;
+    }
+}
+
+static int iwGetFD(inotifyWatch *pSelf)
+{
+    AssertPtrReturn(pSelf, -1);
+    return pSelf->mhInotify;
 }
 
 # define SYSFS_USB_DEVICE_PATH "/dev/bus/usb"
@@ -1242,9 +1234,9 @@ hotplugInotifyImpl::hotplugInotifyImpl(void) :
 #  endif
     int rc;
     do {
-        if (RT_FAILURE(rc = mWatches.getStatus()))
+        if (RT_FAILURE(rc = iwInit(&mWatches)))
             break;
-        mWatches.doHandle(SYSFS_USB_DEVICE_PATH);
+        phDoHandle(&mWatches.mParent, SYSFS_USB_DEVICE_PATH);
         if (RT_FAILURE(rc = pipeCreateSimple(&mhWakeupPipeR, &mhWakeupPipeW)))
             break;
     } while(0);
@@ -1267,6 +1259,7 @@ void hotplugInotifyImpl::term(void)
         close(mhWakeupPipeW);
         mhWakeupPipeW = -1;
     }
+    iwTerm(&mWatches);
 }
 
 int hotplugInotifyImpl::drainInotify()
@@ -1277,7 +1270,7 @@ int hotplugInotifyImpl::drainInotify()
     AssertRCReturn(mStatus, VERR_WRONG_ORDER);
     errno = 0;
     do {
-        cchRead = read(mWatches.getFD(), chBuf, sizeof(chBuf));
+        cchRead = read(iwGetFD(&mWatches), chBuf, sizeof(chBuf));
     } while (cchRead > 0);
     if (cchRead == 0)
         return VINF_SUCCESS;
@@ -1308,12 +1301,12 @@ int hotplugInotifyImpl::Wait(RTMSINTERVAL aMillies)
     do {
         struct pollfd pollFD[MAX_POLLID];
 
-        if (RT_FAILURE(rc = walkDirectory(SYSFS_USB_DEVICE_PATH, &mWatches,
+        if (RT_FAILURE(rc = walkDirectory(SYSFS_USB_DEVICE_PATH, &mWatches.mParent,
                                           false)))
             break;
         pollFD[RPIPE_ID].fd = mhWakeupPipeR;
         pollFD[RPIPE_ID].events = POLLIN;
-        pollFD[INOTIFY_ID].fd = mWatches.getFD();
+        pollFD[INOTIFY_ID].fd = iwGetFD(&mWatches);
         pollFD[INOTIFY_ID].events = POLLIN | POLLERR | POLLHUP;
         errno = 0;
         int cPolled = poll(pollFD, RT_ELEMENTS(pollFD), aMillies);
@@ -1423,11 +1416,11 @@ int walkDirectory(const char *pcszPath, pathHandler *pHandler, bool useRealPath)
             rc = RTPathReal(szPath, szAbsPath, sizeof(szAbsPath));
             if (RT_FAILURE(rc))
                 break;  /* The file can vanish if a device is unplugged. */
-            if (!pHandler->doHandle(szAbsPath))
+            if (!phDoHandle(pHandler, szAbsPath))
                 break;
         }
         else
-            if (!pHandler->doHandle(szPath))
+            if (!phDoHandle(pHandler, szPath))
                 break;
     }
     RTDirClose(pDir);
@@ -1481,108 +1474,127 @@ static unsigned usbDeviceFromDevNum(dev_t devNum)
  * Tell whether a file in /sys/bus/usb/devices is a device rather than an
  * interface.  To be used with getDeviceInfoFromSysfs().
  */
-class matchUSBDevice : public pathHandler
+typedef struct matchUSBDevice
 {
+    /** The pathHandler object we inherit from - must come first */
+    pathHandler mParent;
     USBDeviceInfoList *mList;
-public:
-    matchUSBDevice(USBDeviceInfoList *pList) : mList(pList) {}
-private:
-    virtual bool handle(const char *pcszNode)
-    {
-        const char *pcszFile = strrchr(pcszNode, '/');
-        if (strchr(pcszFile, ':'))
-            return true;
-        dev_t devnum = RTLinuxSysFsReadDevNumFile("%s/dev", pcszNode);
-        /* Sanity test of our static helpers */
-        Assert(usbBusFromDevNum(makedev(USBDEVICE_MAJOR, 517)) == 5);
-        Assert(usbDeviceFromDevNum(makedev(USBDEVICE_MAJOR, 517)) == 6);
-        AssertReturn (devnum, true);
-        char szDevPath[RTPATH_MAX];
-        ssize_t cchDevPath;
-        cchDevPath = RTLinuxFindDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
-                                           szDevPath, sizeof(szDevPath),
-                                           "/dev/bus/usb/%.3d/%.3d",
-                                           usbBusFromDevNum(devnum),
-                                           usbDeviceFromDevNum(devnum));
-        if (cchDevPath < 0)
-            return true;
-        try
-        {
-            mList->push_back(USBDeviceInfo(szDevPath, pcszNode));
-        }
-        catch(std::bad_alloc &e)
-        {
-            return false;
-        }
+} matchUSBDevice;
+
+static bool mudHandle(pathHandler *pParent, const char *pcszNode)
+{
+    AssertPtrReturn(pParent, false);
+    AssertReturn(pParent->handle = mudHandle, false);
+    matchUSBDevice *pSelf = (matchUSBDevice *)pParent;
+    const char *pcszFile = strrchr(pcszNode, '/');
+    if (strchr(pcszFile, ':'))
         return true;
+    dev_t devnum = RTLinuxSysFsReadDevNumFile("%s/dev", pcszNode);
+    /* Sanity test of our static helpers */
+    Assert(usbBusFromDevNum(makedev(USBDEVICE_MAJOR, 517)) == 5);
+    Assert(usbDeviceFromDevNum(makedev(USBDEVICE_MAJOR, 517)) == 6);
+    AssertReturn (devnum, true);
+    char szDevPath[RTPATH_MAX];
+    ssize_t cchDevPath;
+    cchDevPath = RTLinuxFindDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
+                                       szDevPath, sizeof(szDevPath),
+                                       "/dev/bus/usb/%.3d/%.3d",
+                                       usbBusFromDevNum(devnum),
+                                       usbDeviceFromDevNum(devnum));
+    if (cchDevPath < 0)
+        return true;
+    try
+    {
+        pSelf->mList->push_back(USBDeviceInfo(szDevPath, pcszNode));
     }
-};
+    catch(std::bad_alloc &e)
+    {
+        return false;
+    }
+    return true;
+}
+
+static void mudInit(matchUSBDevice *pSelf, USBDeviceInfoList *pList)
+{
+    AssertPtrReturnVoid(pSelf);
+    pSelf->mParent.handle = mudHandle;
+    pSelf->mList = pList;
+}
+
 
 /**
  * Tell whether a file in /sys/bus/usb/devices is an interface rather than a
  * device.  To be used with getDeviceInfoFromSysfs().
  */
-class matchUSBInterface : public pathHandler
+typedef struct matchUSBInterface
 {
+    /** The pathHandler class we inherit from - must be the first member. */
+    pathHandler mParent;
     USBDeviceInfo *mInfo;
-public:
-    /** This constructor is currently used to unit test the class logic in
-     * debug builds.  Since no access is made to anything outside the class,
-     * this shouldn't cause any slowdown worth mentioning. */
-    matchUSBInterface(USBDeviceInfo *pInfo) : mInfo(pInfo)
-    {
-        Assert(isAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-0:1.0",
-               "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
-        Assert(!isAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-1",
-               "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
-        Assert(!isAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-0:1.0/driver",
-               "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
-    }
-private:
-    /** The logic for testing whether a sysfs address corresponds to an
-     * interface of a device.  Both must be referenced by their canonical
-     * sysfs paths.  This is not tested, as the test requires file-system
-     * interaction. */
-    bool isAnInterfaceOf(const char *pcszIface, const char *pcszDev)
-    {
-        size_t cchDev = strlen(pcszDev);
+} matchUSBInterface;
 
-        AssertPtr(pcszIface);
-        AssertPtr(pcszDev);
-        Assert(pcszIface[0] == '/');
-        Assert(pcszDev[0] == '/');
-        Assert(pcszDev[cchDev - 1] != '/');
-        /* If this passes, pcszIface is at least cchDev long */
-        if (strncmp(pcszIface, pcszDev, cchDev))
-            return false;
-        /* If this passes, pcszIface is longer than cchDev */
-        if (pcszIface[cchDev] != '/')
-            return false;
-        /* In sysfs an interface is an immediate subdirectory of the device */
-        if (strchr(pcszIface + cchDev + 1, '/'))
-            return false;
-        /* And it always has a colon in its name */
-        if (!strchr(pcszIface + cchDev + 1, ':'))
-            return false;
-        /* And hopefully we have now elimitated everything else */
-        return true;
-    }
+/** The logic for testing whether a sysfs address corresponds to an
+ * interface of a device.  Both must be referenced by their canonical
+ * sysfs paths.  This is not tested, as the test requires file-system
+ * interaction. */
+static bool muiIsAnInterfaceOf(const char *pcszIface, const char *pcszDev)
+{
+    size_t cchDev = strlen(pcszDev);
 
-    virtual bool handle(const char *pcszNode)
-    {
-        if (!isAnInterfaceOf(pcszNode, mInfo->mSysfsPath.c_str()))
-            return true;
-        try
-        {
-            mInfo->mInterfaces.push_back(pcszNode);
-        }
-        catch(std::bad_alloc &e)
-        {
-            return false;
-        }
+    AssertPtr(pcszIface);
+    AssertPtr(pcszDev);
+    Assert(pcszIface[0] == '/');
+    Assert(pcszDev[0] == '/');
+    Assert(pcszDev[cchDev - 1] != '/');
+    /* If this passes, pcszIface is at least cchDev long */
+    if (strncmp(pcszIface, pcszDev, cchDev))
+        return false;
+    /* If this passes, pcszIface is longer than cchDev */
+    if (pcszIface[cchDev] != '/')
+        return false;
+    /* In sysfs an interface is an immediate subdirectory of the device */
+    if (strchr(pcszIface + cchDev + 1, '/'))
+        return false;
+    /* And it always has a colon in its name */
+    if (!strchr(pcszIface + cchDev + 1, ':'))
+        return false;
+    /* And hopefully we have now elimitated everything else */
+    return true;
+}
+
+static bool muiHandle(pathHandler *pParent, const char *pcszNode)
+{
+    AssertPtrReturn(pParent, false);
+    AssertReturn(pParent->handle == muiHandle, false);
+    matchUSBInterface *pSelf = (matchUSBInterface *)pParent;
+    if (!muiIsAnInterfaceOf(pcszNode, pSelf->mInfo->mSysfsPath.c_str()))
         return true;
+    try
+    {
+        pSelf->mInfo->mInterfaces.push_back(pcszNode);
     }
-};
+    catch(std::bad_alloc &e)
+    {
+        return false;
+    }
+    return true;
+}
+
+/** This constructor is currently used to unit test the class logic in
+ * debug builds.  Since no access is made to anything outside the class,
+ * this shouldn't cause any slowdown worth mentioning. */
+static void muiInit(matchUSBInterface *pSelf, USBDeviceInfo *pInfo)
+{
+    Assert(muiIsAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-0:1.0",
+           "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
+    Assert(!muiIsAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-1",
+           "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
+    Assert(!muiIsAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-0:1.0/driver",
+           "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
+    AssertPtrReturnVoid(pSelf);
+    pSelf->mInfo = pInfo;
+    pSelf->mParent.handle = muiHandle;
+}
 
 /**
  * Helper function to query the sysfs subsystem for information about USB
@@ -1601,16 +1613,19 @@ static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
     LogFlowFunc (("pList=%p, pfSuccess=%p\n",
                   pList, pfSuccess));
     size_t cDevices = pList->size();
-    matchUSBDevice devHandler(pList);
-    int rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &devHandler);
+    matchUSBDevice devHandler;
+    mudInit(&devHandler, pList);
+    int rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &devHandler.mParent);
     do {
         if (RT_FAILURE(rc))
             break;
         for (USBDeviceInfoList::iterator pInfo = pList->begin();
              pInfo != pList->end(); ++pInfo)
         {
-            matchUSBInterface ifaceHandler(&*pInfo);
-            rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &ifaceHandler);
+            matchUSBInterface ifaceHandler;
+            muiInit(&ifaceHandler, &*pInfo);
+            rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices",
+                                        &ifaceHandler.mParent);
             if (RT_FAILURE(rc))
                 break;
         }
