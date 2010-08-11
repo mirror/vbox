@@ -139,7 +139,6 @@ struct Medium::Data
 
     bool autoReset : 1;
 
-    /** the following members are invalid after changing UUID on open */
     const Guid uuidImage;
     const Guid uuidParentImage;
 
@@ -643,7 +642,6 @@ HRESULT Medium::MergeTask::handler()
 {
     return mMedium->taskMergeHandler(*this);
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -1650,6 +1648,14 @@ STDMETHODIMP Medium::SetIDs(BOOL aSetImageId,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    switch (m->state)
+    {
+        case MediumState_Created:
+            break;
+        default:
+            return setStateError();
+    }
 
     Guid imageId, parentId;
     if (aSetImageId)
