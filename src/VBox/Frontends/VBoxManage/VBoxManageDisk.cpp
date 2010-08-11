@@ -422,15 +422,9 @@ int handleModifyHardDisk(HandlerArg *a)
         return errorSyntax(USAGE_MODIFYHD, "No operation specified");
 
     /* first guess is that it's a UUID */
-    Guid uuid(FilenameOrUuid);
-    rc = a->virtualBox->GetHardDisk(uuid.toUtf16(), hardDisk.asOutParam());
-    /* no? then it must be a filename */
-    if (!hardDisk)
-    {
-        CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(FilenameOrUuid), hardDisk.asOutParam()));
-        if (FAILED(rc))
-            return 1;
-    }
+    CHECK_ERROR(a->virtualBox, FindMedium(Bstr(FilenameOrUuid), DeviceType_HardDisk, hardDisk.asOutParam()));
+    if (FAILED(rc))
+        return 1;
 
     if (fModifyDiskType)
     {
@@ -612,11 +606,7 @@ int handleCloneHardDisk(HandlerArg *a)
     bool fSrcUnknown = false;
     bool fDstUnknown = false;
 
-    /* first guess is that it's a UUID */
-    rc = a->virtualBox->GetHardDisk(src, srcDisk.asOutParam());
-    /* no? then it must be a filename */
-    if (FAILED (rc))
-        rc = a->virtualBox->FindHardDisk(src, srcDisk.asOutParam());
+    rc = a->virtualBox->FindMedium(src, DeviceType_HardDisk, srcDisk.asOutParam());
     /* no? well, then it's an unknown image */
     if (FAILED (rc))
     {
@@ -646,11 +636,7 @@ int handleCloneHardDisk(HandlerArg *a)
         /* open/create destination hard disk */
         if (fExisting)
         {
-            /* first guess is that it's a UUID */
-            rc = a->virtualBox->GetHardDisk(dst, dstDisk.asOutParam());
-            /* no? then it must be a filename */
-            if (FAILED (rc))
-                rc = a->virtualBox->FindHardDisk(dst, dstDisk.asOutParam());
+            rc = a->virtualBox->FindMedium(dst, DeviceType_HardDisk, dstDisk.asOutParam());
             /* no? well, then it's an unknown image */
             if (FAILED (rc))
             {
@@ -1150,33 +1136,27 @@ int handleShowHardDiskInfo(HandlerArg *a)
     ComPtr<IMedium> hardDisk;
     bool unknown = false;
     /* first guess is that it's a UUID */
-    Bstr uuid(FilenameOrUuid);
-    rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
-    /* no? then it must be a filename */
+    rc = a->virtualBox->FindMedium(Bstr(FilenameOrUuid), DeviceType_HardDisk, hardDisk.asOutParam());
+    /* no? well, then it's an unkwnown image */
     if (FAILED (rc))
     {
-        rc = a->virtualBox->FindHardDisk(Bstr(FilenameOrUuid), hardDisk.asOutParam());
-        /* no? well, then it's an unkwnown image */
-        if (FAILED (rc))
+        rc = a->virtualBox->OpenHardDisk(Bstr(FilenameOrUuid), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam());
+        if (rc == VBOX_E_FILE_ERROR)
         {
-            rc = a->virtualBox->OpenHardDisk(Bstr(FilenameOrUuid), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam());
-            if (rc == VBOX_E_FILE_ERROR)
+            char szFilenameAbs[RTPATH_MAX] = "";
+            int vrc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
+            if (RT_FAILURE(vrc))
             {
-                char szFilenameAbs[RTPATH_MAX] = "";
-                int vrc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
-                if (RT_FAILURE(vrc))
-                {
-                    RTPrintf("Cannot convert filename \"%s\" to absolute path\n", FilenameOrUuid);
-                    return 1;
-                }
-                CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(szFilenameAbs), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam()));
+                RTPrintf("Cannot convert filename \"%s\" to absolute path\n", FilenameOrUuid);
+                return 1;
             }
-            else if (FAILED(rc))
-                CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(FilenameOrUuid), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam()));
-            if (SUCCEEDED (rc))
-            {
-                unknown = true;
-            }
+            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(szFilenameAbs), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam()));
+        }
+        else if (FAILED(rc))
+            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(FilenameOrUuid), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam()));
+        if (SUCCEEDED (rc))
+        {
+            unknown = true;
         }
     }
     do
@@ -1184,6 +1164,7 @@ int handleShowHardDiskInfo(HandlerArg *a)
         if (!SUCCEEDED(rc))
             break;
 
+        Bstr uuid;
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
         RTPrintf("UUID:                 %s\n", Utf8Str(uuid).c_str());
 
@@ -1559,38 +1540,12 @@ int handleCloseMedium(HandlerArg *a)
 
     ComPtr<IMedium> medium;
 
-    /* first guess is that it's a UUID */
-    Bstr uuid(FilenameOrUuid);
-
     if (cmd == CMD_DISK)
-    {
-        rc = a->virtualBox->GetHardDisk(uuid, medium.asOutParam());
-        /* not a UUID or not registered? Then it must be a filename */
-        if (!medium)
-        {
-            CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(FilenameOrUuid), medium.asOutParam()));
-        }
-    }
-    else
-    if (cmd == CMD_DVD)
-    {
-        rc = a->virtualBox->GetDVDImage(uuid, medium.asOutParam());
-        /* not a UUID or not registered? Then it must be a filename */
-        if (!medium)
-        {
-            CHECK_ERROR(a->virtualBox, FindDVDImage(Bstr(FilenameOrUuid), medium.asOutParam()));
-        }
-    }
-    else
-    if (cmd == CMD_FLOPPY)
-    {
-        rc = a->virtualBox->GetFloppyImage(uuid, medium.asOutParam());
-        /* not a UUID or not registered? Then it must be a filename */
-        if (!medium)
-        {
-            CHECK_ERROR(a->virtualBox, FindFloppyImage(Bstr(FilenameOrUuid), medium.asOutParam()));
-        }
-    }
+        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(FilenameOrUuid), DeviceType_HardDisk, medium.asOutParam()));
+    else if (cmd == CMD_DVD)
+        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(FilenameOrUuid), DeviceType_DVD, medium.asOutParam()));
+    else if (cmd == CMD_FLOPPY)
+        CHECK_ERROR(a->virtualBox, FindMedium(Bstr(FilenameOrUuid), DeviceType_Floppy, medium.asOutParam()));
 
     if (SUCCEEDED(rc) && medium)
     {

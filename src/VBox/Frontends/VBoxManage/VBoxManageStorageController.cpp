@@ -326,43 +326,25 @@ int handleStorageAttach(HandlerArg *a)
 
                     if (deviceType == DeviceType_DVD)
                     {
-                        Bstr uuid(pszMedium);
                         ComPtr<IMedium> dvdMedium;
-                        /* first assume it's a UUID */
-                        rc = a->virtualBox->GetDVDImage(uuid, dvdMedium.asOutParam());
-                        if (FAILED(rc) || !dvdMedium)
-                        {
-                            /* must be a filename, check if it's in the collection */
-                            a->virtualBox->FindDVDImage(Bstr(pszMedium), dvdMedium.asOutParam());
-                        }
+                        rc = a->virtualBox->FindMedium(Bstr(pszMedium), DeviceType_DVD, dvdMedium.asOutParam());
                         if (dvdMedium)
-                        {
                             /*
                              * ok so the medium and attachment both are DVD's so it is
                              * safe to assume that we are dealing with a DVD here
                              */
                             pszType = "dvddrive";
-                        }
                     }
                     else if (deviceType == DeviceType_HardDisk)
                     {
-                        Bstr uuid(pszMedium);
                         ComPtr<IMedium> hardDisk;
-                        /* first assume it's a UUID */
-                        rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
-                        if (FAILED(rc) || !hardDisk)
-                        {
-                            /* must be a filename, check if it's in the collection */
-                            a->virtualBox->FindHardDisk(Bstr(pszMedium), hardDisk.asOutParam());
-                        }
+                        rc = a->virtualBox->FindMedium(Bstr(pszMedium), DeviceType_HardDisk, hardDisk.asOutParam());
                         if (hardDisk)
-                        {
                             /*
                              * ok so the medium and attachment both are hdd's so it is
                              * safe to assume that we are dealing with a hdd here
                              */
                             pszType = "hdd";
-                        }
                     }
                 }
             }
@@ -467,20 +449,13 @@ int handleStorageAttach(HandlerArg *a)
                 }
                 else
                 {
-                    /* first assume it's a UUID */
-                    uuid = pszMedium;
-                    rc = a->virtualBox->GetDVDImage(uuid, dvdMedium.asOutParam());
+                    rc = a->virtualBox->FindMedium(Bstr(pszMedium), DeviceType_DVD, dvdMedium.asOutParam());
                     if (FAILED(rc) || !dvdMedium)
                     {
-                        /* must be a filename, check if it's in the collection */
-                        rc = a->virtualBox->FindDVDImage(Bstr(pszMedium), dvdMedium.asOutParam());
                         /* not registered, do that on the fly */
-                        if (!dvdMedium)
-                        {
-                            Bstr emptyUUID;
-                            CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(pszMedium),
-                                         emptyUUID, dvdMedium.asOutParam()));
-                        }
+                        Bstr emptyUUID;
+                        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(pszMedium),
+                                     emptyUUID, dvdMedium.asOutParam()));
                     }
                     if (!dvdMedium)
                     {
@@ -506,26 +481,22 @@ int handleStorageAttach(HandlerArg *a)
             machine->DetachDevice(Bstr(pszCtl), port, device);
 
             /* first guess is that it's a UUID */
-            Bstr uuid(pszMedium);
             ComPtr<IMedium> hardDisk;
-            rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+            rc = a->virtualBox->FindMedium(Bstr(pszMedium), DeviceType_HardDisk, hardDisk.asOutParam());
 
             /* not successful? Then it must be a filename */
             if (!hardDisk)
             {
-                rc = a->virtualBox->FindHardDisk(Bstr(pszMedium), hardDisk.asOutParam());
-                if (FAILED(rc))
-                {
-                    /* open the new hard disk object */
-                    CHECK_ERROR(a->virtualBox,
-                                 OpenHardDisk(Bstr(pszMedium),
-                                              AccessMode_ReadWrite, false, Bstr(""),
-                                              false, Bstr(""), hardDisk.asOutParam()));
-                }
+                /* open the new hard disk object */
+                CHECK_ERROR(a->virtualBox,
+                             OpenHardDisk(Bstr(pszMedium),
+                                          AccessMode_ReadWrite, false, Bstr(""),
+                                          false, Bstr(""), hardDisk.asOutParam()));
             }
 
             if (hardDisk)
             {
+                Bstr uuid;
                 hardDisk->COMGETTER(Id)(uuid.asOutParam());
                 CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_HardDisk, uuid));
             }
@@ -562,21 +533,15 @@ int handleStorageAttach(HandlerArg *a)
             else
             {
                 /* first assume it's a UUID */
-                uuid = pszMedium;
-                rc = a->virtualBox->GetFloppyImage(uuid, floppyMedium.asOutParam());
+                rc = a->virtualBox->FindMedium(Bstr(pszMedium), DeviceType_Floppy, floppyMedium.asOutParam());
                 if (FAILED(rc) || !floppyMedium)
                 {
-                    /* must be a filename, check if it's in the collection */
-                    rc = a->virtualBox->FindFloppyImage(Bstr(pszMedium), floppyMedium.asOutParam());
                     /* not registered, do that on the fly */
-                    if (!floppyMedium)
-                    {
-                        Bstr emptyUUID;
-                        CHECK_ERROR(a->virtualBox,
-                                     OpenFloppyImage(Bstr(pszMedium),
-                                                     emptyUUID,
-                                                     floppyMedium.asOutParam()));
-                    }
+                    Bstr emptyUUID;
+                    CHECK_ERROR(a->virtualBox,
+                                 OpenFloppyImage(Bstr(pszMedium),
+                                                 emptyUUID,
+                                                 floppyMedium.asOutParam()));
                 }
 
                 if (!floppyMedium)

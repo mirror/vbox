@@ -3172,7 +3172,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     {
         case DeviceType_HardDisk:
             /* find a hard disk by UUID */
-            rc = mParent->findHardDisk(&uuid, NULL, true /* aSetError */, &medium);
+            rc = mParent->findHardDisk(&uuid, Utf8Str::Empty, true /* aSetError */, &medium);
             if (FAILED(rc)) return rc;
             break;
 
@@ -7140,7 +7140,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             case DeviceType_HardDisk:
             {
                 /* find a hard disk by UUID */
-                rc = mParent->findHardDisk(&dev.uuid, NULL, true /* aDoSetError */, &medium);
+                rc = mParent->findHardDisk(&dev.uuid, Utf8Str::Empty, true /* aDoSetError */, &medium);
                 if (FAILED(rc))
                 {
                     if (isSnapshotMachine())

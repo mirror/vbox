@@ -356,7 +356,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     CVirtualBox vbox = vboxGlobal().virtualBox();
     QString strUuid;
 
-    CMedium image = vbox.FindDVDImage(strSource);
+    CMedium image = vbox.FindMedium(strSource, KDeviceType_DVD);
     if (image.isNull())
     {
         image = vbox.OpenDVDImage(strSource, strUuid);

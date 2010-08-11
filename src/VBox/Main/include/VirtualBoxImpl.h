@@ -135,18 +135,12 @@ public:
                              BOOL aSetImageId, IN_BSTR aImageId,
                              BOOL aSetParentId, IN_BSTR aParentId,
                              IMedium **aHardDisk);
-    STDMETHOD(GetHardDisk) (IN_BSTR aId, IMedium **aHardDisk);
-    STDMETHOD(FindHardDisk) (IN_BSTR aLocation, IMedium **aHardDisk);
+    STDMETHOD(FindMedium) (IN_BSTR aLocation, DeviceType_T deviceType, IMedium **aMedium);
 
     STDMETHOD(OpenDVDImage) (IN_BSTR aLocation, IN_BSTR aId,
                              IMedium **aDVDImage);
-    STDMETHOD(GetDVDImage) (IN_BSTR aId, IMedium **aDVDImage);
-    STDMETHOD(FindDVDImage) (IN_BSTR aLocation, IMedium **aDVDImage);
-
     STDMETHOD(OpenFloppyImage) (IN_BSTR aLocation, IN_BSTR aId,
                                 IMedium **aFloppyImage);
-    STDMETHOD(GetFloppyImage) (IN_BSTR aId, IMedium **aFloppyImage);
-    STDMETHOD(FindFloppyImage) (IN_BSTR aLocation, IMedium **aFloppyImage);
 
     STDMETHOD(GetGuestOSType) (IN_BSTR aId, IGuestOSType **aType);
     STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount);
@@ -220,8 +214,10 @@ public:
                          bool aSetError,
                          ComObjPtr<Machine> *machine = NULL);
 
-    HRESULT findHardDisk(const Guid *aId, CBSTR aLocation,
-                          bool aSetError, ComObjPtr<Medium> *aHardDisk = NULL);
+    HRESULT findHardDisk(const Guid *aId,
+                         const Utf8Str &strLocation,
+                         bool aSetError,
+                         ComObjPtr<Medium> *aHardDisk = NULL);
     HRESULT findDVDOrFloppyImage(DeviceType_T mediumType,
                                  const Guid *aId,
                                  const Utf8Str &aLocation,

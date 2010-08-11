@@ -1468,38 +1468,45 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::GetHardDisk(IN_BSTR   aId,
-                                     IMedium **aHardDisk)
+STDMETHODIMP VirtualBox::FindMedium(IN_BSTR   aLocation,
+                                    DeviceType_T aDeviceType,
+                                    IMedium **aMedium)
 {
-    CheckComArgOutSafeArrayPointerValid(aHardDisk);
+    CheckComArgOutSafeArrayPointerValid(aMedium);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    Guid id(aId);
-    ComObjPtr<Medium> hardDisk;
-    HRESULT rc = findHardDisk(&id, NULL, true /* setError */, &hardDisk);
+    Guid id(aLocation);
+    Utf8Str strLocation(aLocation);
+
+    HRESULT rc;
+    ComObjPtr<Medium> pMedium;
+
+    switch (aDeviceType)
+    {
+        case DeviceType_HardDisk:
+            if (!id.isEmpty())
+                rc = findHardDisk(&id, Utf8Str::Empty, true /* setError */, &pMedium);
+            else
+                rc = findHardDisk(NULL, strLocation, true /* setError */, &pMedium);
+        break;
+
+        case DeviceType_Floppy:
+        case DeviceType_DVD:
+            if (!id.isEmpty())
+                rc = findDVDOrFloppyImage(aDeviceType, &id, Utf8Str::Empty, true /* setError */, &pMedium);
+            else
+                rc = findDVDOrFloppyImage(aDeviceType, NULL, strLocation, true /* setError */, &pMedium);
+        break;
+
+        default:
+            return setError(E_INVALIDARG,
+                            tr("Invalid device type %d"), aDeviceType);
+    }
 
     /* the below will set *aHardDisk to NULL if hardDisk is null */
-    hardDisk.queryInterfaceTo(aHardDisk);
-
-    return rc;
-}
-
-STDMETHODIMP VirtualBox::FindHardDisk(IN_BSTR aLocation,
-                                      IMedium **aHardDisk)
-{
-    CheckComArgStrNotEmptyOrNull(aLocation);
-    CheckComArgOutSafeArrayPointerValid(aHardDisk);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    ComObjPtr<Medium> hardDisk;
-    HRESULT rc = findHardDisk(NULL, aLocation, true /* setError */, &hardDisk);
-
-    /* the below will set *aHardDisk to NULL if hardDisk is null */
-    hardDisk.queryInterfaceTo(aHardDisk);
+    pMedium.queryInterfaceTo(aMedium);
 
     return rc;
 }
@@ -1552,42 +1559,6 @@ STDMETHODIMP VirtualBox::OpenDVDImage(IN_BSTR aLocation,
     return rc;
 }
 
-/** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetDVDImage(IN_BSTR aId, IMedium **aDVDImage)
-{
-    CheckComArgOutSafeArrayPointerValid(aDVDImage);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    Guid id(aId);
-    ComObjPtr<Medium> image;
-    HRESULT rc = findDVDOrFloppyImage(DeviceType_DVD, &id, Utf8Str::Empty, true /* setError */, &image);
-
-    /* the below will set *aDVDImage to NULL if image is null */
-    image.queryInterfaceTo(aDVDImage);
-
-    return rc;
-}
-
-/** @note Locks objects! */
-STDMETHODIMP VirtualBox::FindDVDImage(IN_BSTR aLocation, IMedium **aDVDImage)
-{
-    CheckComArgStrNotEmptyOrNull(aLocation);
-    CheckComArgOutSafeArrayPointerValid(aDVDImage);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    ComObjPtr<Medium> image;
-    HRESULT rc = findDVDOrFloppyImage(DeviceType_DVD, NULL, aLocation, true /* setError */, &image);
-
-    /* the below will set *aDVDImage to NULL if dvd is null */
-    image.queryInterfaceTo(aDVDImage);
-
-    return rc;
-}
-
 /** @note Doesn't lock anything. */
 STDMETHODIMP VirtualBox::OpenFloppyImage(IN_BSTR aLocation,
                                          IN_BSTR aId,
@@ -1632,44 +1603,6 @@ STDMETHODIMP VirtualBox::OpenFloppyImage(IN_BSTR aLocation,
             saveSettings();
         }
     }
-
-    return rc;
-}
-
-/** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetFloppyImage(IN_BSTR aId, IMedium **aFloppyImage)
-
-{
-    CheckComArgOutSafeArrayPointerValid(aFloppyImage);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    Guid id(aId);
-    ComObjPtr<Medium> image;
-    HRESULT rc = findDVDOrFloppyImage(DeviceType_Floppy, &id, Utf8Str::Empty, true /* setError */, &image);
-
-    /* the below will set *aFloppyImage to NULL if image is null */
-    image.queryInterfaceTo(aFloppyImage);
-
-    return rc;
-}
-
-/** @note Locks objects! */
-STDMETHODIMP VirtualBox::FindFloppyImage(IN_BSTR aLocation,
-                                         IMedium **aFloppyImage)
-{
-    CheckComArgStrNotEmptyOrNull(aLocation);
-    CheckComArgOutSafeArrayPointerValid(aFloppyImage);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    ComObjPtr<Medium> image;
-    HRESULT rc = findDVDOrFloppyImage(DeviceType_Floppy, NULL, aLocation, true /* setError */, &image);
-
-    /* the below will set *aFloppyImage to NULL if img is null */
-    image.queryInterfaceTo(aFloppyImage);
 
     return rc;
 }
@@ -2711,11 +2644,11 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
  * @note Locks the media tree for reading.
  */
 HRESULT VirtualBox::findHardDisk(const Guid *aId,
-                                 CBSTR aLocation,
+                                 const Utf8Str &strLocation,
                                  bool aSetError,
                                  ComObjPtr<Medium> *aHardDisk /*= NULL*/)
 {
-    AssertReturn(aId || aLocation, E_INVALIDARG);
+    AssertReturn(aId || !strLocation.isEmpty(), E_INVALIDARG);
 
     // we use the hard disks map, but it is protected by the
     // hard disk _list_ lock handle
@@ -2735,17 +2668,15 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
 
     /* then iterate and search by location */
     int result = -1;
-    if (aLocation)
+    if (!strLocation.isEmpty())
     {
-        Utf8Str location = aLocation;
-
         for (HardDiskMap::const_iterator it = m->mapHardDisks.begin();
              it != m->mapHardDisks.end();
              ++ it)
         {
             const ComObjPtr<Medium> &hd = (*it).second;
 
-            HRESULT rc = hd->compareLocationTo(location, result);
+            HRESULT rc = hd->compareLocationTo(strLocation, result);
             if (FAILED(rc)) return rc;
 
             if (result == 0)
@@ -2768,8 +2699,8 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
                      m->strSettingsFilePath.c_str());
         else
             setError(rc,
-                     tr("Could not find a hard disk with location '%ls' in the media registry ('%s')"),
-                     aLocation,
+                     tr("Could not find a hard disk with location '%s' in the media registry ('%s')"),
+                     strLocation.c_str(),
                      m->strSettingsFilePath.c_str());
     }
 

@@ -1482,7 +1482,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             ComPtr<IProgress> pProgress2;
 
             Log(("Finding source disk \"%ls\"\n", bstrSrcFilePath.raw()));
-            rc = mVirtualBox->FindHardDisk(bstrSrcFilePath, pSourceDisk.asOutParam());
+            rc = mVirtualBox->FindMedium(bstrSrcFilePath, DeviceType_HardDisk, pSourceDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 
             Bstr uuidSource;

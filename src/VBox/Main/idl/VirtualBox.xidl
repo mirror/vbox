@@ -1767,9 +1767,9 @@
 
         After the storage unit is successfully created, the medium gets
         remembered by this VirtualBox installation and will be accessible
-        through <link to="#getHardDisk"/> and <link to="#findHardDisk"/>
-        methods. Remembered base medium are also returned as part of
-        the <link to="#hardDisks"/> array. See IMedium for more details.
+        through the <link to="#findMedium"/> method. Remembered base medium
+        are also returned as part of the <link to="#hardDisks"/> array.
+        See <link to="IMedium" /> for more details.
 
         The list of all storage formats supported by this VirtualBox
         installation can be obtained using
@@ -1812,10 +1812,9 @@
 
         After the medium is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
-        accessible through <link to="#getHardDisk"/> and
-        <link to="#findHardDisk"/> methods. Remembered base media
+        accessible through the <link to="#findMedium"/> method. Remembered base media
         are also returned as part of the <link to="#hardDisks"/> array and can
-        be attached to virtual machines. See IMedium for more details.
+        be attached to virtual machines. See <link to="IMedium" /> for more details.
 
         If a differencing medium is to be opened by this method, the
         operation will succeed only if its parent medium and all ancestors,
@@ -1889,39 +1888,19 @@
       </param>
     </method>
 
-    <method name="getHardDisk" const="yes">
+    <method name="findMedium">
       <desc>
-        Returns a medium with the given UUID.
-
-        The medium with the given UUID must be known to this VirtualBox
-        installation, i.e. it must be previously created by
-        <link to="#createHardDisk"/> or opened by <link
-        to="#openHardDisk"/>, or attached to some known virtual machine.
-
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          No medium object matching @a id found.
-        </result>
-
-      </desc>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the medium to look for.</desc>
-      </param>
-      <param name="medium" type="IMedium" dir="return">
-        <desc>Found medium object.</desc>
-      </param>
-    </method>
-
-    <method name="findHardDisk">
-      <desc>
-        Returns a medium that uses the given location to store medium data.
+        Returns a medium of the given type that uses the given location or
+        UUID to store medium data.
 
         The given medium must be known to this VirtualBox installation, i.e.
-        it must be previously created by
-        <link to="#createHardDisk"/> or opened by <link
-        to="#openHardDisk"/>, or attached to some known virtual machine.
+        it must be previously created by <link to="#createHardDisk"/> or opened
+        by <link to="#openHardDisk"/> or <link to="#openDVDImage" /> or
+        <link to="#openFloppyImage" />.
 
         The search is done by comparing the value of the @a location argument to
-        the <link to="IMedium::location"/> attribute of each known medium.
+        the <link to="IMedium::location"/> and <link to="IMedium::id" />
+        attributes of each known medium.
 
         For locations represented by file names in the host's file system, the
         requested location can be a path relative to the
@@ -1935,13 +1914,15 @@
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           No medium object matching @a location found.
         </result>
-
       </desc>
       <param name="location" type="wstring" dir="in">
-        <desc>Location string to search for.</desc>
+        <desc>What to search for. This can either be the UUID or the location string of an open medium.</desc>
+      </param>
+      <param name="type" type="DeviceType" dir="in">
+        <desc>Device type (must be HardDisk, DVD or Floppy)</desc>
       </param>
       <param name="medium" type="IMedium" dir="return">
-        <desc>Found medium object.</desc>
+        <desc>Medium object, if found.</desc>
       </param>
     </method>
 
@@ -1952,10 +1933,10 @@
 
         After the image is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
-        accessible through <link to="#getDVDImage"/> and
-        <link to="#findDVDImage"/> methods. Remembered images are also
-        returned as part of the <link to="#DVDImages"/> array and can be mounted
-        to virtual machines. See IMedium for more details.
+        accessible through the <link to="#findMedium"/> method.
+        Remembered images are also returned as part of the <link to="#DVDImages"/>
+        array and can be mounted to virtual machines. See <link to="IMedium" />
+        for more details.
 
         See <link to="IMedium::location"/> to get more details about the format
         of the location string.
@@ -1990,62 +1971,6 @@
       </param>
     </method>
 
-    <method name="getDVDImage">
-      <desc>
-        Returns a CD/DVD image with the given UUID.
-
-        The image with the given UUID must be known to this VirtualBox
-        installation, i.e. it must be previously opened by <link
-        to="#openDVDImage"/>, or mounted to some known virtual machine.
-
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          No matching DVD image found in the media registry.
-        </result>
-
-      </desc>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the image to look for.</desc>
-      </param>
-      <param name="image" type="IMedium" dir="return">
-        <desc>Found CD/DVD image object.</desc>
-      </param>
-    </method>
-
-    <method name="findDVDImage">
-      <desc>
-        Returns a CD/DVD image with the given image location.
-
-        The image with the given UUID must be known to this VirtualBox
-        installation, i.e. it must be previously opened by <link
-        to="#openDVDImage"/>, or mounted to some known virtual machine.
-
-        The search is done by comparing the value of the @a location argument to
-        the <link to="IMedium::location"/> attribute of each known CD/DVD image.
-
-        The requested location can be a path relative to the
-        <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
-        only a file name without any path is given, the
-        <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
-        folder</link> will be prepended to the file name before searching. Note
-        that on case sensitive file systems, a case sensitive comparison is
-        performed, otherwise the case in the file path is ignored.
-
-        <result name="VBOX_E_FILE_ERROR">
-          Invalid image file location.
-        </result>
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          No matching DVD image found in the media registry.
-        </result>
-
-      </desc>
-      <param name="location" type="wstring" dir="in">
-        <desc>CD/DVD image file path to look for.</desc>
-      </param>
-      <param name="image" type="IMedium" dir="return">
-        <desc>Found CD/DVD image object.</desc>
-      </param>
-    </method>
-
     <method name="openFloppyImage">
       <desc>
         Opens a floppy image contained in the specified file of the supported
@@ -2053,10 +1978,10 @@
 
         After the image is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
-        accessible through <link to="#getFloppyImage"/> and
-        <link to="#findFloppyImage"/> methods. Remembered images are also
-        returned as part of the <link to="#floppyImages"/> array and can be
-        mounted to virtual machines. See IMedium for more details.
+        accessible through the <link to="#findMedium"/> method.
+        Remembered images are also returned as part of the <link to="#floppyImages"/>
+        array and can be mounted to virtual machines. See <link to="IMedium" />
+        for more details.
 
         See <link to="IMedium::location"/> to get more details about the format
         of the location string.
@@ -2087,62 +2012,6 @@
       </param>
       <param name="image" type="IMedium" dir="return">
         <desc>Opened floppy image object.</desc>
-      </param>
-    </method>
-
-    <method name="getFloppyImage">
-      <desc>
-        Returns a floppy image with the given UUID.
-
-        The image with the given UUID must be known to this VirtualBox
-        installation, i.e. it must be previously opened by <link
-        to="#openFloppyImage"/>, or mounted to some known virtual machine.
-
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          No matching floppy image found in the media registry.
-        </result>
-
-      </desc>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the image to look for.</desc>
-      </param>
-      <param name="image" type="IMedium" dir="return">
-        <desc>Found floppy image object.</desc>
-      </param>
-    </method>
-
-    <method name="findFloppyImage">
-      <desc>
-        Returns a floppy image with the given image location.
-
-        The image with the given UUID must be known to this VirtualBox
-        installation, i.e. it must be previously opened by <link
-        to="#openFloppyImage"/>, or mounted to some known virtual machine.
-
-        The search is done by comparing the value of the @a location argument to
-        the <link to="IMedium::location"/> attribute of each known floppy image.
-
-        The requested location can be a path relative to the
-        <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
-        only a file name without any path is given, the
-        <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
-        folder</link> will be prepended to the file name before searching. Note
-        that on case sensitive file systems, a case sensitive comparison is
-        performed, otherwise the case of symbols in the file path is ignored.
-
-        <result name="VBOX_E_FILE_ERROR">
-          Invalid image file location.
-        </result>
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          No matching floppy image found in the media registry.
-        </result>
-
-      </desc>
-      <param name="location" type="wstring" dir="in">
-        <desc>Floppy image file path to look for.</desc>
-      </param>
-      <param name="image" type="IMedium" dir="return">
-        <desc>Found floppy image object.</desc>
       </param>
     </method>
 
@@ -8718,9 +8587,7 @@
       <link to="IVirtualBox::hardDisks"/>,
       <link to="IVirtualBox::DVDImages"/> and
       <link to="IVirtualBox::floppyImages"/> attributes. Individual media can be
-      quickly found by UUID using <link to="IVirtualBox::getHardDisk"/>
-      and similar methods or by location using
-      <link to="IVirtualBox::findHardDisk"/> and similar methods.
+      quickly found using the <link to="IVirtualBox::findMedium"/> method.
 
       Only known media can be attached to virtual machines.
 
@@ -8792,8 +8659,7 @@
       After the hard disk is successfully created (including the storage unit)
       or opened, it becomes a known hard disk (remembered in the internal media
       registry). Known hard disks can be attached to a virtual machine, accessed
-      through <link to="IVirtualBox::getHardDisk"/> and
-      <link to="IVirtualBox::findHardDisk"/> methods or enumerated using the
+      through <link to="IVirtualBox::findMedium"/> or enumerated using the
       <link to="IVirtualBox::hardDisks"/> array (only for base hard disks).
 
       The following methods, besides <link to="IMedium::close"/>,
