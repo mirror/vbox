@@ -205,6 +205,7 @@ class PlatformMSCOM:
             import win32api
             from win32con import DUPLICATE_SAME_ACCESS
             from win32api import GetCurrentThread,GetCurrentThreadId,DuplicateHandle,GetCurrentProcess
+            import threading
             pid = GetCurrentProcess()
             self.tid = GetCurrentThreadId()
             handle = DuplicateHandle(pid, GetCurrentThread(), pid, 0, 0, DUPLICATE_SAME_ACCESS)
@@ -216,6 +217,8 @@ class PlatformMSCOM:
             DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr
             win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
             win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
+            self.oIntCv = threading.Condition()
+            self.fInterrupted = False;
 
     def getSessionObject(self, vbox):
         import win32com
@@ -270,7 +273,7 @@ class PlatformMSCOM:
 
     def waitForEvents(self, timeout):
         from win32api import GetCurrentThreadId
-        from win32con import INFINITE
+        from win32event import INFINITE
         from win32event import MsgWaitForMultipleObjects, \
                                QS_ALLINPUT, WAIT_TIMEOUT, WAIT_OBJECT_0
         from pythoncom import PumpWaitingMessages
@@ -294,6 +297,14 @@ class PlatformMSCOM:
         else:
             # Timeout
             rc = 1;
+
+        # check for interruption
+        self.oIntCv.acquire()
+        if self.fInterrupted:
+            self.fInterrupted = False
+            rc = 1;
+        self.oIntCv.release()
+
         return rc;
 
     def interruptWaitEvents(self):
@@ -308,7 +319,14 @@ class PlatformMSCOM:
         """
         from win32api import PostThreadMessage
         from win32con import WM_USER
-        return PostThreadMessage(self.tid, WM_USER, None, 0xf241b819)
+        self.oIntCv.acquire()
+        self.fInterrupted = True
+        self.oIntCv.release()
+        try:
+            PostThreadMessage(self.tid, WM_USER, None, 0xf241b819)
+        except:
+            return False;
+        return True;
 
     def deinit(self):
         import pythoncom
