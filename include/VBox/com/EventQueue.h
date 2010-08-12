@@ -91,7 +91,7 @@ public:
     ~EventQueue();
 
     BOOL postEvent(Event *event);
-    int processEventQueue(uint32_t cMsTimeout);
+    int processEventQueue(RTMSINTERVAL cMsTimeout);
     int interruptEventQueueProcessing();
     int getSelectFD();
     static int init();

@@ -280,10 +280,13 @@ static int waitForEventsOnDarwin(RTMSINTERVAL cMsTimeout)
      */
     CFTimeInterval rdTimeout = cMsTimeout == RT_INDEFINITE_WAIT ? 1e10 : (double)cMsTimeout / 1000;
     OSStatus orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, rdTimeout, true /*returnAfterSourceHandled*/);
-    /** @todo Not entire sure if the poll actually processes more than one message.
-     *        Feel free to check the sources anyone.  */
     if (orc == kCFRunLoopRunHandledSource)
-        orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, false /*returnAfterSourceHandled*/);
+    {
+        OSStatus orc2 = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, false /*returnAfterSourceHandled*/);
+        if (   orc2 == kCFRunLoopRunStopped
+            || orc2 == kCFRunLoopRunFinished)
+            orc = orc2;
+    }
     if (    orc == 0
         ||  orc == kCFRunLoopRunHandledSource)
         return VINF_SUCCESS;
@@ -300,7 +303,7 @@ static int waitForEventsOnDarwin(RTMSINTERVAL cMsTimeout)
  *
  * @retval  VINF_SUCCESS
  * @retval  VERR_TIMEOUT
- * @retval  VERR_INTERRUPTED
+ * @retval  VINF_INTERRUPTED
  * @retval  VERR_INTERNAL_ERROR_4
  *
  * @param   pQueue          The queue to wait on.
@@ -332,7 +335,7 @@ static int waitForEventsOnXPCOM(nsIEventQueue *pQueue, RTMSINTERVAL cMsTimeout)
     else if (rc == 0)
         rc = VERR_TIMEOUT;
     else if (errno == EINTR)
-        rc = VERR_INTERRUPTED;
+        rc = VINF_INTERRUPTED;
     else
     {
         AssertMsgFailed(("rc=%d errno=%d\n", rc, errno));
@@ -451,14 +454,12 @@ static int processPendingEvents(nsIEventQueue *pQueue)
  * @retval  VERR_INVALID_CONTEXT if called on the wrong thread.
  * @retval  VERR_INTERRUPTED if interruptEventQueueProcessing was called.
  *          On Windows will also be returned when WM_QUIT is encountered.
- *          On UNIXy systems this may also be returned when a signal is
- *          dispatched on the calling thread.
  *          On Darwin this may also be returned when the native queue is
  *          stopped or destroyed/finished.
- * @todo Change this method to use some status other than VERR_INTERRUPTED
- *       for indicating harmless interruptions by the system, or some other
- *       status for indicating interruptEventQueueProcessing/WM_QUIT.  Maybe
- *       VINF_INTERRUPTED for system interruption would be best appropriate.
+ * @retval  VINF_INTERRUPTED if the native system call was interrupted by a
+ *          an asynchronous event delivery (signal) or just felt like returning
+ *          out of bounds.  On darwin it will also be returned if the queue is
+ *          stopped.
  */
 int EventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
 {
@@ -534,6 +535,7 @@ int EventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
     }
 #endif // !VBOX_WITH_XPCOM
 
+    Assert(rc != VERR_TIMEOUT || cMsTimeout != RT_INDEFINITE_WAIT);
     return rc;
 }
 

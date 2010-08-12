@@ -371,7 +371,7 @@ XPCOM_NATIVE2(waitForEvents) (JNIEnv *env, jobject, jlong aTimeout)
         return 0;
 
     if (   rc == VERR_TIMEOUT
-           || rc == VERR_INTERRUPTED)
+        || rc == VERR_INTERRUPTED)
         return 1;
 
     return 2;
