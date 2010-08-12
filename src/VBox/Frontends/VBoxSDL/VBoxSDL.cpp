@@ -1425,9 +1425,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             /*
              * Go and attach it!
              */
-            Bstr uuidHD;
             Bstr storageCtlName;
-            hardDisk->COMGETTER(Id)(uuidHD.asOutParam());
 
             /* get the first IDE controller to attach the harddisk to
              * and if there is none, add one temporarily
@@ -1462,7 +1460,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
             }
 
-            gMachine->AttachDevice(storageCtlName, 0, 0, DeviceType_HardDisk, uuidHD);
+            gMachine->AttachDevice(storageCtlName, 0, 0, DeviceType_HardDisk, hardDisk);
             /// @todo why is this attachment saved?
         }
         else

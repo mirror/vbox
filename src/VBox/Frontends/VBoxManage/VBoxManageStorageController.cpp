@@ -286,7 +286,7 @@ int handleStorageAttach(HandlerArg *a)
 
             /* attach a empty floppy/dvd drive after removing previous attachment */
             machine->DetachDevice(Bstr(pszCtl), port, device);
-            CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl), port, device, deviceType, Bstr("")));
+            CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl), port, device, deviceType, NULL));
         }
     }
     else
@@ -410,12 +410,12 @@ int handleStorageAttach(HandlerArg *a)
                     if (deviceType != DeviceType_DVD)
                     {
                         machine->DetachDevice(Bstr(pszCtl), port, device);
-                        rc = machine->AttachDevice(Bstr(pszCtl), port, device, DeviceType_DVD, Bstr(""));
+                        rc = machine->AttachDevice(Bstr(pszCtl), port, device, DeviceType_DVD, NULL);
                     }
                 }
                 else
                 {
-                    rc = machine->AttachDevice(Bstr(pszCtl), port, device, DeviceType_DVD, Bstr(""));
+                    rc = machine->AttachDevice(Bstr(pszCtl), port, device, DeviceType_DVD, NULL);
                 }
             }
 
@@ -500,9 +500,7 @@ int handleStorageAttach(HandlerArg *a)
 
             if (hardDisk)
             {
-                Bstr uuid;
-                hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_HardDisk, uuid));
+                CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_HardDisk, hardDisk));
             }
             else
             {
@@ -519,7 +517,7 @@ int handleStorageAttach(HandlerArg *a)
 
             if (   !fRunTime
                 && !floppyAttachment)
-                CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_Floppy, Bstr("")));
+                CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_Floppy, NULL));
 
             /* host drive? */
             if (!RTStrNICmp(pszMedium, "host:", 5))

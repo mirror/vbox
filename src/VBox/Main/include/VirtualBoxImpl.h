@@ -53,6 +53,7 @@ struct VMClientWatcherData;
 namespace settings
 {
     class MainConfigFile;
+    class MediaRegistry;
 }
 
 class ATL_NO_VTABLE VirtualBox :
@@ -95,7 +96,8 @@ public:
     /* public initializer/uninitializer for internal purposes only */
     HRESULT init();
     HRESULT initMachines();
-    HRESULT initMedia();
+    HRESULT initMedia(const Guid &uuidMachineRegistry,
+                      const settings::MediaRegistry mediaRegistry);
     void uninit();
 
     /* IVirtualBox properties */
@@ -126,8 +128,9 @@ public:
     STDMETHOD(FindMachine) (IN_BSTR aName, IMachine **aMachine);
     STDMETHOD(CreateAppliance) (IAppliance **anAppliance);
 
-    STDMETHOD(CreateHardDisk)(IN_BSTR aFormat, IN_BSTR aLocation,
-                               IMedium **aHardDisk);
+    STDMETHOD(CreateHardDisk)(IN_BSTR aFormat,
+                              IN_BSTR aLocation,
+                              IMedium **aHardDisk);
     STDMETHOD(OpenMedium)(IN_BSTR aLocation,
                           DeviceType_T deviceType,
                           AccessMode_T accessMode,
@@ -203,10 +206,10 @@ public:
     void getOpenedMachines(SessionMachinesList &aMachines,
                            InternalControlList *aControls = NULL);
 
-    HRESULT findMachine (const Guid &aId,
-                         bool fPermitInaccessible,
-                         bool aSetError,
-                         ComObjPtr<Machine> *machine = NULL);
+    HRESULT findMachine(const Guid &aId,
+                        bool fPermitInaccessible,
+                        bool aSetError,
+                        ComObjPtr<Machine> *machine = NULL);
 
     HRESULT findHardDisk(const Guid *aId,
                          const Utf8Str &strLocation,
@@ -225,6 +228,8 @@ public:
     HRESULT findGuestOSType(const Bstr &bstrOSType,
                             GuestOSType*& pGuestOSType);
 
+    const Guid& getGlobalRegistryId() const;
+
     const ComObjPtr<Host>& host() const;
     SystemProperties* getSystemProperties() const;
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
@@ -241,17 +246,19 @@ public:
     int calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
     void copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
 
-    HRESULT registerHardDisk(Medium *aHardDisk, bool *pfNeedsSaveSettings);
-    HRESULT unregisterHardDisk(Medium *aHardDisk, bool *pfNeedsSaveSettings);
+    HRESULT registerHardDisk(Medium *aHardDisk, bool *pfNeedsGlobalSaveSettings);
+    HRESULT unregisterHardDisk(Medium *aHardDisk, bool *pfNeedsGlobalSaveSettings);
 
-    HRESULT registerImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsSaveSettings);
-    HRESULT unregisterImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsSaveSettings);
+    HRESULT registerImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsGlobalSaveSettings);
+    HRESULT unregisterImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsGlobalSaveSettings);
 
-    HRESULT unregisterMachine(Machine *pMachine);
+    HRESULT unregisterMachine(Machine *pMachine, const Guid &id);
 
     void rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDir,
                                            const Utf8Str &strNewConfigDir);
 
+    void saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
+                           const Guid &uuidRegistry);
     HRESULT saveSettings();
 
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName);
@@ -269,6 +276,8 @@ private:
     {
         return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
     }
+
+    Utf8Str getRegistryPath(Medium *pMedium);
 
     HRESULT checkMediaForConflicts2(const Guid &aId, const Utf8Str &aLocation,
                                     Utf8Str &aConflictType);

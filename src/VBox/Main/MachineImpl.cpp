@@ -3096,10 +3096,10 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                                    LONG aControllerPort,
                                    LONG aDevice,
                                    DeviceType_T aType,
-                                   IN_BSTR aId)
+                                   IMedium *aMedium)
 {
     LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d aType=%d aId=\"%ls\"\n",
-                     aControllerName, aControllerPort, aDevice, aType, aId));
+                     aControllerName, aControllerPort, aDevice, aType, aMedium));
 
     CheckComArgStrNotEmptyOrNull(aControllerName);
 
@@ -3108,7 +3108,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     // if this becomes true then we need to call saveSettings in the end
     // @todo r=dj there is no error handling so far...
-    bool fNeedsSaveSettings = false;
+    bool fNeedsGlobalSaveSettings = false;
 
     // request the host lock first, since might be calling Host methods for getting host drives;
     // next, protect the media tree all the while we're in here, as well as our member variables
@@ -3164,28 +3164,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                             aControllerPort, aDevice, aControllerName);
     }
 
-    Guid uuid(aId);
-
-    ComObjPtr<Medium> medium;
-
-    switch (aType)
-    {
-        case DeviceType_HardDisk:
-            /* find a hard disk by UUID */
-            rc = mParent->findHardDisk(&uuid, Utf8Str::Empty, true /* aSetError */, &medium);
-            if (FAILED(rc)) return rc;
-            break;
-
-        case DeviceType_DVD:
-        case DeviceType_Floppy:
-            rc = mParent->findRemoveableMedium(aType, uuid, true /* fRefresh */, medium);
-        break;
-
-        default:
-            return setError(E_INVALIDARG,
-                            tr("The device type %d is not recognized"),
-                            (int)aType);
-    }
+    ComObjPtr<Medium> medium = static_cast<Medium*>(aMedium);
+    if (aMedium && medium.isNull())
+        return setError(E_INVALIDARG, "The given medium pointer is invalid");
 
     AutoCaller mediumCaller(medium);
     if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
@@ -3222,13 +3203,13 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 if (pAttachTemp->matches(aControllerName, aControllerPort, aDevice))
                 {
                     /* the simplest case: restore the whole attachment
-                    * and return, nothing else to do */
+                     * and return, nothing else to do */
                     mMediaData->mAttachments.push_back(pAttachTemp);
                     return S_OK;
                 }
 
                 /* bus/channel/device differ; we need a new attachment object,
-                    * but don't try to associate it again */
+                 * but don't try to associate it again */
                 associate = false;
                 break;
             }
@@ -3393,7 +3374,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         rc = diff->init(mParent,
                         medium->getPreferredDiffFormat(),
                         Utf8Str(mUserData->m_strSnapshotFolderFull).append(RTPATH_SLASH_STR),
-                        &fNeedsSaveSettings);
+                        medium->getRegistryMachineId(),         // store this diff in the same registry as the parent
+                        &fNeedsGlobalSaveSettings);
         if (FAILED(rc)) return rc;
 
         /* Apply the normal locking logic to the entire chain. */
@@ -3425,7 +3407,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                                                pMediumLockList,
                                                NULL /* aProgress */,
                                                true /* aWait */,
-                                               &fNeedsSaveSettings);
+                                               &fNeedsGlobalSaveSettings);
 
                 alock.enter();
                 treeLock.enter();
@@ -3462,11 +3444,16 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     if (associate && !medium.isNull())
     {
-        /* as the last step, associate the medium to the VM */
+        // as the last step, associate the medium to the VM
         rc = medium->addBackReference(mData->mUuid);
-        /* here we can fail because of Deleting, or being in process of
-         * creating a Diff */
+        // here we can fail because of Deleting, or being in process of creating a Diff
         if (FAILED(rc)) return rc;
+
+        // and decide which medium registry to use now that the medium is attached:
+        if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
+            medium->setRegistryIdIfFirst(getId());        // machine UUID
+        else
+            medium->setRegistryIdIfFirst(mParent->getGlobalRegistryId()); // VirtualBox global registry UUID
     }
 
     /* success: finally remember the attachment */
@@ -3474,7 +3461,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     mMediaData.backup();
     mMediaData->mAttachments.push_back(attachment);
 
-    if (fNeedsSaveSettings)
+    if (fNeedsGlobalSaveSettings)
     {
         // save the global settings; for that we should hold only the VirtualBox lock
         mediumLock.release();
@@ -3952,15 +3939,38 @@ STDMETHODIMP Machine::DiscardSettings()
 STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
                                  ComSafeArrayOut(IMedium*, aMedia))
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    // use AutoLimitedCaller because this call is valid on inaccessible machines as well
+    AutoLimitedCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Guid id(getId());
 
     if (mData->mSession.mState != SessionState_Unlocked)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Cannot unregister the machine '%s' while it is locked"),
                         mUserData->s.strName.c_str());
+
+    // wait for state dependants to drop to zero
+    ensureNoStateDependencies();
+
+    if (!mData->mAccessible)
+    {
+        // inaccessible maschines can only be unregistered; uninitialize ourselves
+        // here because currently there may be no unregistered that are inaccessible
+        // (this state combination is not supported). Note releasing the caller and
+        // leaving the lock before alling uninit()
+        alock.leave();
+        autoCaller.release();
+
+        uninit();
+
+        mParent->unregisterMachine(this, id);
+            // calls VirtualBox::saveSettings()
+
+        return S_OK;
+    }
 
     HRESULT rc = S_OK;
 
@@ -4054,7 +4064,7 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
     SafeIfaceArray<IMedium> sfaMedia(llMedia);
     sfaMedia.detachTo(ComSafeArrayOutArg(aMedia));
 
-    mParent->unregisterMachine(this);
+    mParent->unregisterMachine(this, id);
             // calls VirtualBox::saveSettings()
 
     return S_OK;
@@ -6680,6 +6690,14 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
      */
     mUserData.commitCopy();
 
+    // machine registry, if present (must be loaded before snapshots)
+    if (config.canHaveOwnMediaRegistry())
+    {
+        rc = mParent->initMedia(getId(),         // media registry ID == machine UUID
+                                config.mediaRegistry);
+        if (FAILED(rc)) return rc;
+    }
+
     /* Snapshot node (optional) */
     size_t cRootSnapshots;
     if ((cRootSnapshots = config.llFirstSnapshot.size()))
@@ -6695,11 +6713,11 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
         if (FAILED(rc)) return rc;
     }
 
-    /* Hardware node (required) */
+    // hardware data
     rc = loadHardware(config.hardwareMachine);
     if (FAILED(rc)) return rc;
 
-    /* Load storage controllers */
+    // load storage controllers
     rc = loadStorageControllers(config.storageMachine);
     if (FAILED(rc)) return rc;
 
@@ -7778,6 +7796,12 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     rc = saveStorageControllers(config.storageMachine);
     if (FAILED(rc)) throw rc;
 
+    // save machine's media registry if this is VirtualBox 3.3 or later
+    if (config.canHaveOwnMediaRegistry())
+        mParent->saveMediaRegistry(config.mediaRegistry,
+                                   getId());            // only media with registry ID == machine UUID
+            // this throws HRESULT
+
     // save snapshots
     rc = saveAllSnapshots(config);
     if (FAILED(rc)) throw rc;
@@ -8356,6 +8380,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
             rc = diff->init(mParent,
                             pMedium->getPreferredDiffFormat(),
                             Utf8Str(mUserData->m_strSnapshotFolderFull).append(RTPATH_SLASH_STR),
+                            pMedium->getRegistryMachineId(),        // store the diff in the same registry as the parent
                             pfNeedsSaveSettings);
             if (FAILED(rc)) throw rc;
 

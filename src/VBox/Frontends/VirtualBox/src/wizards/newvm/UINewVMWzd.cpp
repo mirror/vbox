@@ -753,17 +753,20 @@ bool UINewVMWzdPage5::constructMachine()
         {
             CMachine m = session.GetMachine();
 
+            QString strId = field("hardDiskId").toString();
             /* Boot hard disk */
-            if (!field("hardDiskId").toString().isNull())
+            if (!strId.isNull())
             {
-                m.AttachDevice(ctrHdName, 0, 0, KDeviceType_HardDisk, field("hardDiskId").toString());
+                VBoxMedium vmedium = vboxGlobal().findMedium(strId);
+                CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
+                m.AttachDevice(ctrHdName, 0, 0, KDeviceType_HardDisk, medium);
                 if (!m.isOk())
                     vboxProblem().cannotAttachDevice(this, m, VBoxDefs::MediumType_HardDisk,
                                                      field("hardDiskLocation").toString(), ctrHdBus, 0, 0);
             }
 
             /* Attach empty CD/DVD ROM Device */
-            m.AttachDevice(ctrDvdName, 1, 0, KDeviceType_DVD, QString(""));
+            m.AttachDevice(ctrDvdName, 1, 0, KDeviceType_DVD, CMedium());
             if (!m.isOk())
                 vboxProblem().cannotAttachDevice(this, m, VBoxDefs::MediumType_DVD, QString(), ctrDvdBus, 1, 0);
 

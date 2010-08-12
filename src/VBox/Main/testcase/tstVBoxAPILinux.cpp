@@ -329,17 +329,13 @@ void createVM(IVirtualBox *virtualBox)
             else
             {
                 /*
-                 * Now that it's created, we can assign it to the VM. This is done
-                 * by UUID, so query that one fist. The UUID has been assigned automatically
-                 * when we've created the image.
+                 * Now that it's created, we can assign it to the VM.
                  */
-                nsXPIDLString vdiUUID;
-                hardDisk->GetId(getter_Copies(vdiUUID));
                 rc = machine->AttachDevice(NS_LITERAL_STRING("IDE Controller").get(), // controller identifier
                                            0,                              // channel number on the controller
                                            0,                              // device number on the controller
                                            DeviceType_HardDisk,
-                                           vdiUUID);
+                                           hardDisk);
                 if (NS_FAILED(rc))
                 {
                     printf("Error: could not attach hard disk! rc=%08X\n", rc);

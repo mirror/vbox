@@ -1436,13 +1436,13 @@
 
     <attribute name="DVDImages" type="IMedium" readonly="yes" safearray="yes">
       <desc>
-        Array of CD/DVD image objects registered with this VirtualBox instance.
+        Array of CD/DVD image objects currently in use by this VirtualBox instance.
       </desc>
     </attribute>
 
     <attribute name="floppyImages" type="IMedium" readonly="yes" safearray="yes">
       <desc>
-        Array of floppy image objects registered with this VirtualBox instance.
+        Array of floppy image objects currently in use by this VirtualBox instance.
       </desc>
     </attribute>
 
@@ -1704,11 +1704,9 @@
         remain uninitialized until the medium storage unit is successfully
         created by one of the above methods.
 
-        After the storage unit is successfully created, the medium gets
-        remembered by this VirtualBox installation and will be accessible
-        through the <link to="#findMedium"/> method. Remembered base medium
-        are also returned as part of the <link to="#hardDisks"/> array.
-        See <link to="IMedium" /> for more details.
+        After the storage unit is successfully created, it will be
+        accessible through the <link to="#findMedium"/> method and can
+        be found in the <link to="#hardDisks"/> array.
 
         The list of all storage formats supported by this VirtualBox
         installation can be obtained using
@@ -1748,14 +1746,8 @@
       <desc>
         Opens a medium from an existing storage location.
 
-        Once a medium has been opened, VirtualBox saves the medium in a media
-        registry. Prior to VirtualBox 3.3, this registry had to be the global
-        media registry in the VirtualBox.xml file, which was shared between
-        all machines and made transporting machines from one host to another
-        difficult. Now you can optionally specify an <link to="IMachine" />
-        instance, in which case the medium will be remembered in that machine's
-        registry. This is the recommended procedure for machines created with
-        VirtualBox 3.3 or later. <i>(not yet implemented)</i>
+        Once a medium has been opened, it can be passed to other VirtualBox
+        methods, in particular to <link to="IMachine::AttachDevice" />.
 
         Depending on the given device type, the file at the storage location
         must be in one of the media formats understood by VirtualBox:
@@ -1805,6 +1797,18 @@
         The format of the location string is storage format specific. See
         <link to="IMedium::location"/>, IMedium and
         <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
+
+        Prior to VirtualBox 3.3, opening a medium added it to a global media
+        registry in the VirtualBox.xml file, which was shared between
+        all machines and made transporting machines and their media from one
+        host to another difficult.
+
+        Starting with VirtualBox 3.3, media are only added to a registry when
+        they are attached to a machine. Machines created with VirtualBox 3.3
+        or later can have their own media registry. As a result, a medium attached
+        to such a machine will be remembered in that machine's XML settings file.
+        Media attached to older machines will continue to be added to the global
+        registry.
 
         <result name="VBOX_E_FILE_ERROR">
           Invalid medium storage file location or could not find the medium
@@ -2750,7 +2754,6 @@
         item in @a aVBoxValues[] will contain a qualified path specification to where VirtualBox uses the
         hard disk image. This means that on import the image will be copied and converted from the
         "ovf" location to the "vbox" location; on export, this will be handled the other way round.
-        On import, the target image will also be registered with VirtualBox.
 
         The matching item in the @a aExtraConfigValues[] array must contain a string of the following
         format: "controller=&lt;index&gt;;channel=&lt;c&gt;"
@@ -4224,44 +4227,19 @@
 
         This method is intended for managing storage devices in general while a
         machine is powered off. It can be used to attach and detach fixed
-        and removeable media.
-
-        Starting with VirtualBox 3.3, media no longer have to be globally
-        registered before they can be attached to a virtual machine. For
-        compatibility with machines created by older versions of VirtualBox
-        and for greater flexibility with managing removable media, media
-        can still be registered globally. As a result, there are now
-        several variants of attaching media:
+        and removeable media. The following kind of media can be attached
+        to a machine:
 
         <ul>
-          <li>To directly attach a medium without first registering it
-            globally, simply pass the file name of its storage unit in the
-            @a medium string parameter. This works for all media formats
-            supported by the <li to="VirtualBox::openMedium" /> method.
-            The difference is that the medium will not be saved in the
-            global media registry, but only with the machine settings
-            XML file. For better portability of the machine as a whole,
-            it is recommended to place the storage unit in the machine's
-            folder as well.
-          </li>
-
-          <li>To attach a medium that has been globally registered using
-            <li to="VirtualBox::openMedium" />, call that method with the
-            full path of a storage unit. Then, retrieve the UUID of that
-            medium from its <link to="IMedium::id" /> attribute and pass
-            that UUID into this method. This way, the medium will be
-            saved in the global media registry in the VirtualBox.xml
-            settings file. This is still the recommended way to manage
-            removable media such as ISO and RAW files if they are to be
-            used by several virtual machines and the storage unit is not
-            located in the machine's directory.
+          <li>For fixed and removable media, you can pass in a medium that was
+            previously opened using <link to="VirtualBox::openMedium" />.
           </li>
 
           <li>Only for storage devices supporting removable media (such as
-            DVDs and floppies), you can also specify an empty string to
-            indicate an empty drive or the UUID of a host DVD or floppy
-            drive; those UUIDs can be obtained from <link to="IHost::DVDDrives" />
-            and <link to="IHost::floppyDrives"/>.
+            DVDs and floppies), you can also specify a null pointer to
+            indicate an empty drive or one of the medium objects listed
+            in the <link to="IHost::DVDDrives" /> and <link to="IHost::floppyDrives"/>
+            arrays to indicate a host drive.
             For removeable devices, you can also use <link to="IMachine::mountMedium"/>
             to change the media while the machine is running.
           </li>
@@ -4325,11 +4303,12 @@
         be 0.</desc>
       </param>
       <param name="type" type="DeviceType" dir="in">
-        <desc>Device type of the attached device.</desc>
+        <desc>Device type of the attached device. For media opened by
+        <link to="IVirtualBox::openMedium" />, this must match the device type
+        specified there.</desc>
       </param>
-      <param name="medium" type="wstring" dir="in">
-        <desc>Path of the storage unit or UUID of the medium or the UUID of a
-          host drive to mount, or an empty string for an empty drive.</desc>
+      <param name="medium" type="IMedium" dir="in">
+        <desc>Medium to mount or NULL for an empty drive.</desc>
       </param>
     </method>
 

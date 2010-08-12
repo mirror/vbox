@@ -190,7 +190,7 @@ class Medium::Task
 public:
     Task(Medium *aMedium, Progress *aProgress)
         : mVDOperationIfaces(NULL),
-          m_pfNeedsSaveSettings(NULL),
+          m_pfNeedsGlobalSaveSettings(NULL),
           mMedium(aMedium),
           mMediumCaller(aMedium),
           mThread(NIL_RTTHREAD),
@@ -233,7 +233,7 @@ public:
     // Whether the caller needs to call VirtualBox::saveSettings() after
     // the task function returns. Only used in synchronous (wait) mode;
     // otherwise the task will save the settings itself.
-    bool *m_pfNeedsSaveSettings;
+    bool *m_pfNeedsGlobalSaveSettings;
 
     const ComObjPtr<Medium> mMedium;
     AutoCaller mMediumCaller;
@@ -727,7 +727,13 @@ void Medium::FinalRelease()
  * Initializes an empty hard disk object without creating or opening an associated
  * storage unit.
  *
- * This gets called by VirtualBox::CreateHardDisk().
+ * This gets called by VirtualBox::CreateHardDisk() in which case uuidMachineRegistry
+ * is empty since starting with VirtualBox 3.3, we no longer add opened media to a
+ * registry automatically (this is deferred until the medium is attached to a machine).
+ *
+ * This also gets called when VirtualBox creates diff images; in this case uuidMachineRegistry
+ * is set to the registry of the parent image to make sure they all end up in the same
+ * file.
  *
  * For hard disks that don't have the VD_CAP_CREATE_FIXED or
  * VD_CAP_CREATE_DYNAMIC capability (and therefore cannot be created or deleted
@@ -735,14 +741,17 @@ void Medium::FinalRelease()
  * ready for use so the state of the hard disk object will be set to Created.
  *
  * @param aVirtualBox   VirtualBox object.
+ * @param aFormat
  * @param aLocation     Storage unit location.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ * @param uuidMachineRegistry The registry to which this medium should be added (global registry UUI or medium UUID or empty if none).
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      const Utf8Str &aFormat,
                      const Utf8Str &aLocation,
-                     bool *pfNeedsSaveSettings)
+                     const Guid &uuidMachineRegistry,
+                     bool *pfNeedsGlobalSaveSettings)
 {
     AssertReturn(aVirtualBox != NULL, E_FAIL);
     AssertReturn(!aFormat.isEmpty(), E_FAIL);
@@ -753,8 +762,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
     HRESULT rc = S_OK;
 
-    /* share VirtualBox weakly (parent remains NULL so far) */
     unconst(m->pVirtualBox) = aVirtualBox;
+    m->uuidRegistryMachine = uuidMachineRegistry;
 
     /* no storage yet */
     m->state = MediumState_NotCreated;
@@ -790,7 +799,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         unconst(m->id).create();
 
         AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-        rc = m->pVirtualBox->registerHardDisk(this, pfNeedsSaveSettings);
+        rc = m->pVirtualBox->registerHardDisk(this, pfNeedsGlobalSaveSettings);
     }
 
     /* Confirm a successful initialization when it's the case */
@@ -808,6 +817,10 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * This gets called by VirtualBox::OpenMedium() and also by
  * Machine::AttachDevice() and createImplicitDiffs() when new diff
  * images are created.
+ *
+ * There is no registry for this case since starting with VirtualBox 3.3, we
+ * no longer add opened media to a registry automatically (this is deferred
+ * until the medium is attached to a machine).
  *
  * For hard disks, the UUID, format and the parent of this medium will be
  * determined when reading the medium storage unit. For DVD and floppy images,
@@ -834,7 +847,6 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
     HRESULT rc = S_OK;
 
-    /* share VirtualBox weakly (parent remains NULL so far) */
     unconst(m->pVirtualBox) = aVirtualBox;
 
     /* there must be a storage unit */
@@ -892,9 +904,14 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * Initializes the medium object by loading its data from the given settings
  * node. In this mode, the medium will always be opened read/write.
  *
+ * In this case, since we're loading from a registry, uuidMachineRegistry is
+ * always set: it's either the global registry UUID or a machine UUID when
+ * loading from a per-machine registry.
+ *
  * @param aVirtualBox   VirtualBox object.
  * @param aParent       Parent medium disk or NULL for a root (base) medium.
  * @param aDeviceType   Device type of the medium.
+ * @param uuidMachineRegistry The registry to which this medium should be added (global registry UUI or medium UUID).
  * @param aNode         Configuration settings.
  *
  * @note Locks VirtualBox for writing, the medium tree for writing.
@@ -902,6 +919,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      Medium *aParent,
                      DeviceType_T aDeviceType,
+                     const Guid &uuidMachineRegistry,
                      const settings::Medium &data)
 {
     using namespace settings;
@@ -914,8 +932,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
     HRESULT rc = S_OK;
 
-    /* share VirtualBox and parent weakly */
     unconst(m->pVirtualBox) = aVirtualBox;
+    m->uuidRegistryMachine = uuidMachineRegistry;
 
     /* register with VirtualBox/parent early, since uninit() will
      * unconditionally unregister on failure */
@@ -1019,10 +1037,11 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         rc = pHD->init(aVirtualBox,
                        this,            // parent
                        aDeviceType,
+                       uuidMachineRegistry,
                        med);              // child data
         if (FAILED(rc)) break;
 
-        rc = m->pVirtualBox->registerHardDisk(pHD, NULL /*pfNeedsSaveSettings*/);
+        rc = m->pVirtualBox->registerHardDisk(pHD, NULL /*pfNeedsGlobalSaveSettings*/);
         if (FAILED(rc)) break;
     }
 
@@ -1036,6 +1055,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 /**
  * Initializes the medium object by providing the host drive information.
  * Not used for anything but the host floppy/host DVD case.
+ *
+ * There is no registry for this case.
  *
  * @param aVirtualBox   VirtualBox object.
  * @param aDeviceType   Device type of the medium.
@@ -1056,7 +1077,6 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    /* share VirtualBox weakly (parent remains NULL so far) */
     unconst(m->pVirtualBox) = aVirtualBox;
 
     /* fake up a UUID which is unique, but also reproducible */
@@ -1961,10 +1981,10 @@ STDMETHODIMP Medium::Close()
     // make a copy of VirtualBox pointer which gets nulled by uninit()
     ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
 
-    bool fNeedsSaveSettings = false;
-    HRESULT rc = close(&fNeedsSaveSettings, autoCaller);
+    bool fNeedsGlobalSaveSettings = false;
+    HRESULT rc = close(&fNeedsGlobalSaveSettings, autoCaller);
 
-    if (fNeedsSaveSettings)
+    if (fNeedsGlobalSaveSettings)
     {
         AutoWriteLock vboxlock(pVirtualBox COMMA_LOCKVAL_SRC_POS);
         pVirtualBox->saveSettings();
@@ -2179,13 +2199,13 @@ STDMETHODIMP Medium::DeleteStorage(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    bool fNeedsSaveSettings = false;
+    bool fNeedsGlobalSaveSettings = false;
     ComObjPtr<Progress> pProgress;
 
     HRESULT rc = deleteStorage(&pProgress,
                                false /* aWait */,
-                               &fNeedsSaveSettings);
-    if (fNeedsSaveSettings)
+                               &fNeedsGlobalSaveSettings);
+    if (fNeedsGlobalSaveSettings)
     {
         AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
         m->pVirtualBox->saveSettings();
@@ -2235,7 +2255,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
     ComObjPtr <Progress> pProgress;
 
     rc = createDiffStorage(diff, aVariant, pMediumLockList, &pProgress,
-                           false /* aWait */, NULL /* pfNeedsSaveSettings*/);
+                           false /* aWait */, NULL /* pfNeedsGlobalSaveSettings*/);
     if (FAILED(rc))
         delete pMediumLockList;
     else
@@ -2270,7 +2290,7 @@ STDMETHODIMP Medium::MergeTo(IMedium *aTarget, IProgress **aProgress)
 
     rc = mergeTo(pTarget, fMergeForward, pParentForTarget, childrenToReparent,
                  pMediumLockList, &pProgress, false /* aWait */,
-                 NULL /* pfNeedsSaveSettings */);
+                 NULL /* pfNeedsGlobalSaveSettings */);
     if (FAILED(rc))
         cancelMergeTo(childrenToReparent, pMediumLockList);
     else
@@ -3267,6 +3287,28 @@ Utf8Str Medium::getName()
 }
 
 /**
+ * This sets the UUID of the machine in whose registry this medium should
+ * be registered, or the UUID of the global VirtualBox.xml registry, but
+ * only if no registry ID had been previously set.
+ * @param id
+ */
+void Medium::setRegistryIdIfFirst(const Guid& id)
+{
+    if (m->uuidRegistryMachine.isEmpty())
+        m->uuidRegistryMachine = id;
+}
+
+/**
+ * Returns the UUID of the machine in whose registry this medium is registered,
+ * or the UUID of the global VirtualBox.xml registry.
+ * @return
+ */
+const Guid& Medium::getRegistryId() const
+{
+    return m->uuidRegistryMachine;
+}
+
+/**
  * Sets the value of m->strLocation and calculates the value of m->strLocationFull.
  *
  * Treats non-FS-path locations specially, and prepends the default medium
@@ -3850,7 +3892,7 @@ HRESULT Medium::setStateError()
  * After this returns with success, uninit() has been called on the medium, and
  * the object is no longer usable ("not ready" state).
  *
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *                This only works in "wait" mode; otherwise saveSettings gets called automatically by the thread that was created,
  *                and this parameter is ignored.
@@ -3858,7 +3900,7 @@ HRESULT Medium::setStateError()
  *                   upon which the Medium instance gets uninitialized.
  * @return
  */
-HRESULT Medium::close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller)
+HRESULT Medium::close(bool *pfNeedsGlobalSaveSettings, AutoCaller &autoCaller)
 {
     // we're accessing parent/child and backrefs, so lock the tree first, then ourselves
     AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
@@ -3895,7 +3937,7 @@ HRESULT Medium::close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller)
         // remove from the list of known media before performing actual
         // uninitialization (to keep the media registry consistent on
         // failure to do so)
-        rc = unregisterWithVirtualBox(pfNeedsSaveSettings);
+        rc = unregisterWithVirtualBox(pfNeedsGlobalSaveSettings);
         if (FAILED(rc)) return rc;
     }
 
@@ -3929,7 +3971,7 @@ HRESULT Medium::close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller)
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *                This only works in "wait" mode; otherwise saveSettings gets called automatically by the thread that was created,
  *                and this parameter is ignored.
@@ -3939,7 +3981,7 @@ HRESULT Medium::close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller)
  */
 HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
                               bool aWait,
-                              bool *pfNeedsSaveSettings)
+                              bool *pfNeedsGlobalSaveSettings)
 {
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
 
@@ -4041,7 +4083,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
          * actual deletion (we favor the consistency of the media registry
          * which would have been broken if unregisterWithVirtualBox() failed
          * after we successfully deleted the storage) */
-        rc = unregisterWithVirtualBox(pfNeedsSaveSettings);
+        rc = unregisterWithVirtualBox(pfNeedsGlobalSaveSettings);
         if (FAILED(rc))
             throw rc;
         // no longer need lock
@@ -4077,7 +4119,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
     if (SUCCEEDED(rc))
     {
         if (aWait)
-            rc = runNow(pTask, NULL /* pfNeedsSaveSettings*/);
+            rc = runNow(pTask, NULL /* pfNeedsGlobalSaveSettings*/);
         else
             rc = startThread(pTask);
 
@@ -4200,7 +4242,7 @@ HRESULT Medium::unmarkLockedForDeletion()
  *                          operation completion.
  * @param aWait             @c true if this method should block instead of
  *                          creating an asynchronous thread.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been
  *                          initialized to false and that will be set to true
  *                          by this function if the caller should invoke
  *                          VirtualBox::saveSettings() because the global
@@ -4216,7 +4258,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
                                   MediumLockList *aMediumLockList,
                                   ComObjPtr<Progress> *aProgress,
                                   bool aWait,
-                                  bool *pfNeedsSaveSettings)
+                                  bool *pfNeedsGlobalSaveSettings)
 {
     AssertReturn(!aTarget.isNull(), E_FAIL);
     AssertReturn(aMediumLockList, E_FAIL);
@@ -4306,7 +4348,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
     if (SUCCEEDED(rc))
     {
         if (aWait)
-            rc = runNow(pTask, pfNeedsSaveSettings);
+            rc = runNow(pTask, pfNeedsGlobalSaveSettings);
         else
             rc = startThread(pTask);
 
@@ -4684,7 +4726,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *                This only works in "wait" mode; otherwise saveSettings gets called automatically by the thread that was created,
  *                and this parameter is ignored.
@@ -4699,7 +4741,7 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
                         MediumLockList *aMediumLockList,
                         ComObjPtr <Progress> *aProgress,
                         bool aWait,
-                        bool *pfNeedsSaveSettings)
+                        bool *pfNeedsGlobalSaveSettings)
 {
     AssertReturn(pTarget != NULL, E_FAIL);
     AssertReturn(pTarget != this, E_FAIL);
@@ -4761,7 +4803,7 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
     if (SUCCEEDED(rc))
     {
         if (aWait)
-            rc = runNow(pTask, pfNeedsSaveSettings);
+            rc = runNow(pTask, pfNeedsGlobalSaveSettings);
         else
             rc = startThread(pTask);
 
@@ -4862,12 +4904,12 @@ HRESULT Medium::canClose()
  * This calls either VirtualBox::unregisterImage or VirtualBox::unregisterHardDisk depending
  * on the device type of this medium.
  *
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
  * @note Caller must have locked the media tree lock for writing!
  */
-HRESULT Medium::unregisterWithVirtualBox(bool *pfNeedsSaveSettings)
+HRESULT Medium::unregisterWithVirtualBox(bool *pfNeedsGlobalSaveSettings)
 {
     /* Note that we need to de-associate ourselves from the parent to let
      * unregisterHardDisk() properly save the registry */
@@ -4884,15 +4926,15 @@ HRESULT Medium::unregisterWithVirtualBox(bool *pfNeedsSaveSettings)
     switch (m->devType)
     {
         case DeviceType_DVD:
-            rc = m->pVirtualBox->unregisterImage(this, DeviceType_DVD, pfNeedsSaveSettings);
+            rc = m->pVirtualBox->unregisterImage(this, DeviceType_DVD, pfNeedsGlobalSaveSettings);
         break;
 
         case DeviceType_Floppy:
-            rc = m->pVirtualBox->unregisterImage(this, DeviceType_Floppy, pfNeedsSaveSettings);
+            rc = m->pVirtualBox->unregisterImage(this, DeviceType_Floppy, pfNeedsGlobalSaveSettings);
         break;
 
         case DeviceType_HardDisk:
-            rc = m->pVirtualBox->unregisterHardDisk(this, pfNeedsSaveSettings);
+            rc = m->pVirtualBox->unregisterHardDisk(this, pfNeedsGlobalSaveSettings);
         break;
 
         default:
@@ -5319,7 +5361,7 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
  *       complete the progress object in this case.
  */
 HRESULT Medium::runNow(Medium::Task *pTask,
-                       bool *pfNeedsSaveSettings)
+                       bool *pfNeedsGlobalSaveSettings)
 {
 #ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     /* Extreme paranoia: The calling thread should not hold the medium
@@ -5329,7 +5371,7 @@ HRESULT Medium::runNow(Medium::Task *pTask,
     Assert(!AutoLockHoldsLocksInClass(getLockingClass()));
 #endif
 
-    pTask->m_pfNeedsSaveSettings = pfNeedsSaveSettings;
+    pTask->m_pfNeedsGlobalSaveSettings = pfNeedsGlobalSaveSettings;
 
     /* NIL_RTTHREAD indicates synchronous call. */
     return (HRESULT)Medium::Task::fntMediumTask(NIL_RTTHREAD, pTask);
@@ -5427,12 +5469,12 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
         /* register with mVirtualBox as the last step and move to
          * Created state only on success (leaving an orphan file is
          * better than breaking media registry consistency) */
-        bool fNeedsSaveSettings = false;
+        bool fNeedsGlobalSaveSettings = false;
         AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-        rc = m->pVirtualBox->registerHardDisk(this, &fNeedsSaveSettings);
+        rc = m->pVirtualBox->registerHardDisk(this, &fNeedsGlobalSaveSettings);
         treeLock.release();
 
-        if (fNeedsSaveSettings)
+        if (fNeedsGlobalSaveSettings)
         {
             AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
             m->pVirtualBox->saveSettings();
@@ -5469,7 +5511,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
  * This task always gets started from Medium::createDiffStorage() and can run
  * synchronously or asynchronously depending on the "wait" parameter passed to
  * that function. If we run synchronously, the caller expects the bool
- * *pfNeedsSaveSettings to be set before returning; otherwise (in asynchronous
+ * *pfNeedsGlobalSaveSettings to be set before returning; otherwise (in asynchronous
  * mode), we save the settings ourselves.
  *
  * @param task
@@ -5479,7 +5521,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 {
     HRESULT rc = S_OK;
 
-    bool fNeedsSaveSettings = false;
+    bool fNeedsGlobalSaveSettings = false;
 
     const ComObjPtr<Medium> &pTarget = task.mTarget;
 
@@ -5608,7 +5650,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
         /* register with mVirtualBox as the last step and move to
          * Created state only on success (leaving an orphan file is
          * better than breaking media registry consistency) */
-        rc = m->pVirtualBox->registerHardDisk(pTarget, &fNeedsSaveSettings);
+        rc = m->pVirtualBox->registerHardDisk(pTarget, &fNeedsGlobalSaveSettings);
 
         if (FAILED(rc))
             /* break the parent association on failure to register */
@@ -5643,7 +5685,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
     if (task.isAsync())
     {
-        if (fNeedsSaveSettings)
+        if (fNeedsGlobalSaveSettings)
         {
             // save the global settings; for that we should hold only the VirtualBox lock
             mediaLock.release();
@@ -5653,8 +5695,8 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
     }
     else
         // synchronous mode: report save settings result to caller
-        if (task.m_pfNeedsSaveSettings)
-            *task.m_pfNeedsSaveSettings = fNeedsSaveSettings;
+        if (task.m_pfNeedsGlobalSaveSettings)
+            *task.m_pfNeedsGlobalSaveSettings = fNeedsGlobalSaveSettings;
 
     /* Note that in sync mode, it's the caller's responsibility to
      * unlock the medium. */
@@ -5668,7 +5710,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
  * This task always gets started from Medium::mergeTo() and can run
  * synchronously or asynchrously depending on the "wait" parameter passed to
  * that function. If we run synchronously, the caller expects the bool
- * *pfNeedsSaveSettings to be set before returning; otherwise (in asynchronous
+ * *pfNeedsGlobalSaveSettings to be set before returning; otherwise (in asynchronous
  * mode), we save the settings ourselves.
  *
  * @param task
@@ -5830,7 +5872,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
         {
             /* first, unregister the target since it may become a base
              * medium which needs re-registration */
-            rc2 = m->pVirtualBox->unregisterHardDisk(pTarget, NULL /*&fNeedsSaveSettings*/);
+            rc2 = m->pVirtualBox->unregisterHardDisk(pTarget, NULL /*&fNeedsGlobalSaveSettings*/);
             AssertComRC(rc2);
 
             /* then, reparent it and disconnect the deleted branch at
@@ -5844,7 +5886,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
             }
 
             /* then, register again */
-            rc2 = m->pVirtualBox->registerHardDisk(pTarget, NULL /*&fNeedsSaveSettings*/);
+            rc2 = m->pVirtualBox->registerHardDisk(pTarget, NULL /*&fNeedsGlobalSaveSettings*/);
             AssertComRC(rc2);
         }
         else
@@ -5898,7 +5940,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
             }
 
             rc2 = pMedium->m->pVirtualBox->unregisterHardDisk(pMedium,
-                                                              NULL /*pfNeedsSaveSettings*/);
+                                                              NULL /*pfNeedsGlobalSaveSettings*/);
             AssertComRC(rc2);
 
             /* now, uninitialize the deleted medium (note that
@@ -5940,8 +5982,8 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
     }
     else
         // synchronous mode: report save settings result to caller
-        if (task.m_pfNeedsSaveSettings)
-            *task.m_pfNeedsSaveSettings = true;
+        if (task.m_pfNeedsGlobalSaveSettings)
+            *task.m_pfNeedsGlobalSaveSettings = true;
 
     if (FAILED(rc))
     {
@@ -6159,7 +6201,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
             /* register with mVirtualBox as the last step and move to
              * Created state only on success (leaving an orphan file is
              * better than breaking media registry consistency) */
-            rc = pParent->m->pVirtualBox->registerHardDisk(pTarget, NULL /* pfNeedsSaveSettings */);
+            rc = pParent->m->pVirtualBox->registerHardDisk(pTarget, NULL /* pfNeedsGlobalSaveSettings */);
 
             if (FAILED(rc))
                 /* break parent association on failure to register */
@@ -6168,7 +6210,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
         else
         {
             /* just register  */
-            rc = m->pVirtualBox->registerHardDisk(pTarget, NULL /* pfNeedsSaveSettings */);
+            rc = m->pVirtualBox->registerHardDisk(pTarget, NULL /* pfNeedsGlobalSaveSettings */);
         }
     }
 

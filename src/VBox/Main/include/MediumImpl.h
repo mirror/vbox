@@ -71,10 +71,11 @@ public:
     HRESULT init(VirtualBox *aVirtualBox,
                  const Utf8Str &aFormat,
                  const Utf8Str &aLocation,
-                 bool *pfNeedsSaveSettings);
+                 const Guid &uuidMachineRegistry,
+                 bool *pfNeedsGlobalSaveSettings);
 
     // initializer for opening existing media
-    // (VirtualBox::OpenHardDisk/DVD(); Machine::AttachDevice())
+    // (VirtualBox::OpenMedium(); Machine::AttachDevice())
     HRESULT init(VirtualBox *aVirtualBox,
                  const Utf8Str &aLocation,
                  HDDOpenMode enOpenMode,
@@ -84,6 +85,7 @@ public:
     HRESULT init(VirtualBox *aVirtualBox,
                  Medium *aParent,
                  DeviceType_T aDeviceType,
+                 const Guid &uuidMachineRegistry,
                  const settings::Medium &data);
 
     // initializer for host floppy/DVD
@@ -175,6 +177,9 @@ public:
     MediumType_T getType() const;
     Utf8Str getName();
 
+    void setRegistryIdIfFirst(const Guid& id);
+    const Guid& getRegistryId() const;
+
     HRESULT addBackReference(const Guid &aMachineId,
                              const Guid &aSnapshotId = Guid::Empty);
     HRESULT removeBackReference(const Guid &aMachineId,
@@ -207,10 +212,10 @@ public:
                               MediumLockList *pMediumLockList,
                               ComObjPtr<Progress> *aProgress,
                               bool aWait,
-                              bool *pfNeedsSaveSettings);
+                              bool *pfNeedsGlobalSaveSettings);
 
-    HRESULT close(bool *pfNeedsSaveSettings, AutoCaller &autoCaller);
-    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, bool *pfNeedsSaveSettings);
+    HRESULT close(bool *pfNeedsGlobalSaveSettings, AutoCaller &autoCaller);
+    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, bool *pfNeedsGlobalSaveSettings);
     HRESULT markForDeletion();
     HRESULT unmarkForDeletion();
     HRESULT markLockedForDeletion();
@@ -231,7 +236,7 @@ public:
                     MediumLockList *aMediumLockList,
                     ComObjPtr<Progress> *aProgress,
                     bool aWait,
-                    bool *pfNeedsSaveSettings);
+                    bool *pfNeedsGlobalSaveSettings);
     void cancelMergeTo(const MediaList &aChildrenToReparent,
                        MediumLockList *aMediumLockList);
 
@@ -245,7 +250,7 @@ private:
     HRESULT queryInfo(bool fSetImageId, bool fSetParentId);
 
     HRESULT canClose();
-    HRESULT unregisterWithVirtualBox(bool *pfNeedsSaveSettings);
+    HRESULT unregisterWithVirtualBox(bool *pfNeedsGlobalSaveSettings);
 
     HRESULT setStateError();
 
@@ -296,7 +301,7 @@ private:
     friend class MergeTask;
 
     HRESULT startThread(Medium::Task *pTask);
-    HRESULT runNow(Medium::Task *pTask, bool *pfNeedsSaveSettings);
+    HRESULT runNow(Medium::Task *pTask, bool *pfNeedsGlobalSaveSettings);
 
     HRESULT taskCreateBaseHandler(Medium::CreateBaseTask &task);
     HRESULT taskCreateDiffHandler(Medium::CreateDiffTask &task);
