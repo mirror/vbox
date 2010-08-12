@@ -4316,7 +4316,7 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
  */
 DECLCALLBACK(void) pgmR3PhysWriteCountTMCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
 {
-    uint32_t uInterval = (uint32_t) pvUser;
+    uint32_t uInterval = (uint32_t)(uintptr_t)pvUser;
 
     if (pVM->pgm.s.fCountingPhysWrites)
     {
