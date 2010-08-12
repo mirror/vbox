@@ -270,14 +270,20 @@ class PlatformMSCOM:
 
     def waitForEvents(self, timeout):
         from win32api import GetCurrentThreadId
+        from win32con import INFINITE
         from win32event import MsgWaitForMultipleObjects, \
                                QS_ALLINPUT, WAIT_TIMEOUT, WAIT_OBJECT_0
         from pythoncom import PumpWaitingMessages
+        import types
 
+        if not isinstance(timeout, types.IntType):
+            raise TypeError("The timeout argument is not an integer")
         if (self.tid != GetCurrentThreadId()):
             raise Exception("wait for events from the same thread you inited!")
 
-        rc = MsgWaitForMultipleObjects(self.handles, 0, timeout, QS_ALLINPUT)
+        if timeout < 0:     cMsTimeout = INFINITE
+        else:               cMsTimeout = timeout
+        rc = MsgWaitForMultipleObjects(self.handles, 0, cMsTimeout, QS_ALLINPUT)
         if rc >= WAIT_OBJECT_0 and rc < WAIT_OBJECT_0+len(self.handles):
             # is it possible?
             rc = 2;
@@ -558,15 +564,18 @@ class VirtualBoxManager:
         Returns 0 if events was processed.
         Returns 1 if timed out or interrupted in some way.
         Returns 2 on error (like not supported for web services).
-        Returns None or raises an exception if called on the wrong thread or if
-        the timeout is not an integer value.
+
+        Raises an exception if the calling thread is not the main thread (the one
+        that initialized VirtualBoxManager) or if the time isn't an integer.
         """
         return self.platform.waitForEvents(timeout)
 
     def interruptWaitEvents(self):
         """
+        Interrupt a waitForEvents call.
+        This is normally called from a worker thread.
 
-
+        Returns True on success, False on failure.
         """
         return self.platform.interruptWaitEvents()
 
