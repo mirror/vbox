@@ -510,9 +510,11 @@ void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("VBoxManage convertfromraw   <filename> <outputfile>\n"
                  "                            [--format VDI|VMDK|VHD]\n"
                  "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
+#ifndef RT_OS_WINDOWS
                  "VBoxManage convertfromraw   stdin <outputfile> <bytes>\n"
                  "                            [--format VDI|VMDK|VHD]\n"
                  "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
+#endif
                  "\n");
     }
 
