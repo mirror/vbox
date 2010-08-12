@@ -2140,7 +2140,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                 PteSrc.n.u1User     = 1;
 
                 PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
-#ifdef VBOX_STRICT
+#ifdef DEBUG_sandervl
                 if (pVM->pgm.s.fCountingPhysWrites)
                     pPTDst->a[iPTDst].n.u1Write = 0;
 #endif
