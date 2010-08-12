@@ -3525,16 +3525,7 @@
         </ul>
         If any of the above limitations are hit, <link to="#saveSettings"/>
         will return an appropriate error message explaining the exact
-        reason and the changes you made to this machine will not be
-        saved.
-        <note>
-          For "legacy" machines created using the
-          <link to="IVirtualBox::createLegacyMachine"/> call,
-          the above naming limitations do not apply because the
-          machine name does not affect the settings file name.
-          The settings file name remains the same as it was specified
-          during machine creation and never changes.
-        </note>
+        reason and the changes you made to this machine will not be saved.
       </desc>
     </attribute>
 
