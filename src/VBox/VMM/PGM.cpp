@@ -1803,6 +1803,7 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersMapping,       "/PGM/CPU%u/RZ/Trap0e/Handlers/Mapping",        "Number of traps due to access handlers in mappings.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersOutOfSync,     "/PGM/CPU%u/RZ/Trap0e/Handlers/OutOfSync",      "Number of traps due to out-of-sync handled pages.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersPhysical,      "/PGM/CPU%u/RZ/Trap0e/Handlers/Physical",       "Number of traps due to physical access handlers.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersPhysicalOpt,   "/PGM/CPU%u/RZ/Trap0e/Handlers/PhysicalOpt",    "Number of the physical access handler traps using the optimization.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersVirtual,       "/PGM/CPU%u/RZ/Trap0e/Handlers/Virtual",        "Number of traps due to virtual access handlers.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersVirtualByPhys, "/PGM/CPU%u/RZ/Trap0e/Handlers/VirtualByPhys",  "Number of traps due to virtual access handlers by physical address.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersVirtualUnmarked,"/PGM/CPU%u/RZ/Trap0e/Handlers/VirtualUnmarked","Number of traps due to virtual access handlers by virtual address (without proper physical flags).");

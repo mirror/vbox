@@ -3199,6 +3199,7 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatRZTrap0eHandlersMapping;        /**< RC/R0: Number of traps due to access handlers in mappings. */
     STAMCOUNTER StatRZTrap0eHandlersOutOfSync;      /**< RC/R0: Number of out-of-sync handled pages. */
     STAMCOUNTER StatRZTrap0eHandlersPhysical;       /**< RC/R0: Number of traps due to physical access handlers. */
+    STAMCOUNTER StatRZTrap0eHandlersPhysicalOpt;    /**< RC/R0: Number of the physical access handler traps using the optimization. */
     STAMCOUNTER StatRZTrap0eHandlersVirtual;        /**< RC/R0: Number of traps due to virtual access handlers. */
     STAMCOUNTER StatRZTrap0eHandlersVirtualByPhys;  /**< RC/R0: Number of traps due to virtual access handlers found by physical address. */
     STAMCOUNTER StatRZTrap0eHandlersVirtualUnmarked;/**< RC/R0: Number of traps due to virtual access handlers found by virtual address (without proper physical flags). */

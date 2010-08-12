@@ -128,6 +128,8 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPU pVCpu, PGSTPTWALK pGs
 /**
  * Deal with a guest page fault.
  *
+ * The caller has taken the PGM lock.
+ *
  * @returns Strict VBox status code.
  *
  * @param   pVCpu           The current CPU.
@@ -136,13 +138,15 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPU pVCpu, PGSTPTWALK pGs
  * @param   pvFault         The fault address.
  * @param   pPage           The guest page at @a pvFault.
  * @param   pGstWalk        The guest page table walk result.
+ * @param   pfLockTaken     PGM lock taken here or not (out).  This is true
+ *                          when we're called.
  */
 static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
+                                                                RTGCPTR pvFault, PPGMPAGE pPage, bool *pfLockTaken
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-                                                                RTGCPTR pvFault, PPGMPAGE pPage, PGSTPTWALK pGstWalk)
-# else
-                                                                RTGCPTR pvFault, PPGMPAGE pPage)
+                                                                , PGSTPTWALK pGstWalk
 # endif
+                                                                )
 {
 # if !PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     GSTPDE const    PdeSrcDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A };
@@ -196,39 +200,38 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                       ("Unexpected trap for physical handler: %08X (phys=%08x) pPage=%R[pgmpage] uErr=%X, enum=%d\n",
                        pvFault, GCPhysFault, pPage, uErr, pCur->enmType));
 
-# if defined(IN_RC) || defined(IN_RING0) /** @todo remove this */
             if (pCur->CTX_SUFF(pfnHandler))
             {
-                PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+                PPGMPOOL            pPool      = pVM->pgm.s.CTX_SUFF(pPool);
+                void               *pvUser     = pCur->CTX_SUFF(pvUser);
 #  ifdef IN_RING0
                 PFNPGMR0PHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
 #  else
                 PFNPGMRCPHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
 #  endif
-                bool  fLeaveLock = (pfnHandler != pPool->CTX_SUFF(pfnAccessHandler));
-                void *pvUser = pCur->CTX_SUFF(pvUser);
 
                 STAM_PROFILE_START(&pCur->Stat, h);
-                if (fLeaveLock)
-                    pgmUnlock(pVM); /** @todo: Not entirely safe. */
+                if (pfnHandler != pPool->CTX_SUFF(pfnAccessHandler))
+                {
+                    pgmUnlock(pVM);
+                    *pfLockTaken = false;
+                }
 
                 rc = pfnHandler(pVM, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
-                if (fLeaveLock)
-                    pgmLock(pVM);
+
 #  ifdef VBOX_WITH_STATISTICS
+                pgmLock(pVM);
                 pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
                 if (pCur)
                     STAM_PROFILE_STOP(&pCur->Stat, h);
-#  else
-                pCur = NULL;    /* might be invalid by now. */
+                pgmUnlock(pVM);
 #  endif
-
             }
             else
-# endif /* IN_RC || IN_RING0 */
                 rc = VINF_EM_RAW_EMULATE_INSTR;
 
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysical);
+            if (uErr & X86_TRAP_PF_RSVD) STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysical);
             STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2HndPhys; });
             return rc;
         }
@@ -284,10 +287,20 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
             {
 #   ifdef IN_RC
                 STAM_PROFILE_START(&pCur->Stat, h);
+                RTGCPTR                     GCPtrStart = pCur->Core.Key;
+                CTX_MID(PFNPGM,VIRTHANDLER) pfnHandler = pCur->CTX_SUFF(pfnHandler);
                 pgmUnlock(pVM);
-                rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, pvFault - pCur->Core.Key);
+                *pfLockTaken = false;
+
+                rc = pfnHandler(pVM, uErr, pRegFrame, pvFault, GCPtrStart, pvFault - GCPtrStart);
+
+#    ifdef VBOX_WITH_STATISTICS
                 pgmLock(pVM);
-                STAM_PROFILE_STOP(&pCur->Stat, h);
+                pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, pvFault);
+                if (pCur)
+                    STAM_PROFILE_STOP(&pCur->Stat, h);
+                pgmUnlock(pVM);
+#    endif
 #   else
                 rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
 #   endif
@@ -309,13 +322,25 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
             {
                 Assert((pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) == (pGstWalk->Core.GCPhys & X86_PTE_PAE_PG_MASK));
 #   ifdef IN_RC
-                RTGCPTR off = (iPage << PAGE_SHIFT) + (pvFault & PAGE_OFFSET_MASK) - (pCur->Core.Key & PAGE_OFFSET_MASK);
-                Assert(off < pCur->cb);
                 STAM_PROFILE_START(&pCur->Stat, h);
+                RTGCPTR                     GCPtrStart = pCur->Core.Key;
+                CTX_MID(PFNPGM,VIRTHANDLER) pfnHandler = pCur->CTX_SUFF(pfnHandler);
                 pgmUnlock(pVM);
-                rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, off);
+                *pfLockTaken = false;
+
+                RTGCPTR off = (iPage << PAGE_SHIFT)
+                            + (pvFault    & PAGE_OFFSET_MASK)
+                            - (GCPtrStart & PAGE_OFFSET_MASK);
+                Assert(off < pCur->cb);
+                rc = pfnHandler(pVM, uErr, pRegFrame, pvFault, GCPtrStart, off);
+
+#    ifdef VBOX_WITH_STATISTICS
                 pgmLock(pVM);
-                STAM_PROFILE_STOP(&pCur->Stat, h);
+                pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, GCPtrStart);
+                if (pCur)
+                    STAM_PROFILE_STOP(&pCur->Stat, h);
+                pgmUnlock(pVM);
+#    endif
 #   else
                 rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
 #   endif
@@ -420,33 +445,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
            )
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerGuestFault)(pVCpu, &GstWalk, uErr));
     }
-#  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
-#  ifdef PGM_WITH_MMIO_OPTIMIZATIONS
-    /*
-     * If it is a reserved bit fault we know that it is an MMIO or access
-     * handler related fault and can skip the dirty page stuff below.
-     */
-    if (uErr & X86_TRAP_PF_RSVD)
-    {
-/** @todo This is not complete code. take locks */
-        Assert(uErr & X86_TRAP_PF_P);
-        PPGMPAGE pPage;
-/** @todo Only all physical access handlers here, so optimize further. */
-#   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-        rc = pgmPhysGetPageEx(&pVM->pgm.s, GstWalk.Core.GCPhys, &pPage);
-        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
-                                                                                 &GstWalk));
-#   else
-        rc = pgmPhysGetPageEx(&pVM->pgm.s, (RTGCPHYS)pvFault, &pPage);
-        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage));
-#   endif
-    }
-#  endif /* PGM_WITH_MMIO_OPTIMIZATIONS */
-
-#  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     /*
      * Set the accessed and dirty flags.
      */
@@ -502,6 +501,32 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
     /* Take the big lock now. */
     *pfLockTaken = true;
     pgmLock(pVM);
+
+#  ifdef PGM_WITH_MMIO_OPTIMIZATIONS
+    /*
+     * If it is a reserved bit fault we know that it is an MMIO (access
+     * handler) related fault and can skip some 200 lines of code.
+     */
+    if (uErr & X86_TRAP_PF_RSVD)
+    {
+        Assert(uErr & X86_TRAP_PF_P);
+        PPGMPAGE pPage;
+#   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+        rc = pgmPhysGetPageEx(&pVM->pgm.s, GstWalk.Core.GCPhys, &pPage);
+        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
+                                                                                 pfLockTaken, &GstWalk));
+        rc = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, 1, uErr);
+#   else
+        rc = pgmPhysGetPageEx(&pVM->pgm.s, (RTGCPHYS)pvFault, &pPage);
+        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
+                                                                                 pfLockTaken));
+        rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, pvFault, 1, uErr);
+#   endif
+        AssertRC(rc);
+    }
+#  endif /* PGM_WITH_MMIO_OPTIMIZATIONS */
 
     /*
      * Fetch the guest PDE, PDPE and PML4E.
@@ -705,9 +730,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
      */
     if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage, &GstWalk));
+        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage, pfLockTaken,
+                                                                             &GstWalk));
 # else
-        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage));
+        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage, pfLockTaken));
 # endif
 
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTimeOutOfSync, c);
@@ -1439,12 +1465,9 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint32_t
     }
 #ifdef PGM_WITH_MMIO_OPTIMIZATIONS
 # if PGM_SHW_TYPE == PGM_TYPE_EPT || PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_AMD64
-    else if (   PGM_PAGE_IS_MMIO(pPage)
-#  if PGM_SHW_TYPE != PGM_TYPE_EPT
-             && (       (fPteSrc & (X86_PTE_RW /*| X86_PTE_D | X86_PTE_A*/ | X86_PTE_US )) /* #PF handles D & A first. */
-                    ==             (X86_PTE_RW /*| X86_PTE_D | X86_PTE_A*/)
-                 || BTH_IS_NP_ACTIVE(pVM) )
-#  endif
+    else if (   PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)
+             && (   BTH_IS_NP_ACTIVE(pVM)
+                 || (fPteSrc & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_RW) /** @todo remove X86_PTE_US */
 #  if PGM_SHW_TYPE == PGM_TYPE_AMD64
              && pVM->pgm.s.fLessThan52PhysicalAddressBits
 #  endif

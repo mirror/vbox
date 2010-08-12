@@ -214,6 +214,9 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
               || enmShwPagingMode == PGMMODE_AMD64  || enmShwPagingMode == PGMMODE_AMD64_NX || enmShwPagingMode == PGMMODE_EPT,
               ("enmShwPagingMode=%d\n", enmShwPagingMode));
 
+    /* Reserved shouldn't end up here. */
+    Assert(!(uErr & X86_TRAP_PF_RSVD));
+
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Error code stats.
