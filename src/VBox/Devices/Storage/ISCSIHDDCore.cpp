@@ -617,7 +617,10 @@ typedef struct ISCSIIMAGE
     PISCSIPDUTX         pIScsiPDUTxTail;
     /** PDU we are currently transmitting. */
     PISCSIPDUTX         pIScsiPDUTxCur;
-
+    /** Number of commands waiting for an answer from the target.
+     * Used for timeout handling for poll.
+     */
+    unsigned            cCmdsWaiting;
     /** Table of commands waiting for a response from the target. */
     PISCSICMD           aCmdsWaiting[ISCSI_CMD_WAITING_ENTRIES];
 } ISCSIIMAGE;
@@ -750,6 +753,7 @@ static void iscsiCmdInsert(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd)
     pIScsiCmdOld = pImage->aCmdsWaiting[idx];
     pIScsiCmd->pNext = pIScsiCmdOld;
     pImage->aCmdsWaiting[idx] = pIScsiCmd;
+    pImage->cCmdsWaiting++;
 }
 
 static PISCSICMD iscsiCmdRemove(PISCSIIMAGE pImage, uint32_t Itt)
@@ -779,7 +783,7 @@ static PISCSICMD iscsiCmdRemove(PISCSIIMAGE pImage, uint32_t Itt)
             pImage->aCmdsWaiting[idx] = pIScsiCmd->pNext;
             Assert(!pImage->aCmdsWaiting[idx] || VALID_PTR(pImage->aCmdsWaiting[idx]));
         }
-
+        pImage->cCmdsWaiting--;
     }
 
     return pIScsiCmd;
@@ -3264,7 +3268,14 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
         fEvents = 0;
 
         /* Wait for work or for data from the target. */
-        rc = iscsiIoThreadWait(pImage, RT_INDEFINITE_WAIT, pImage->fPollEvents, &fEvents);
+        RTMSINTERVAL msWait;
+
+        if (pImage->cCmdsWaiting)
+            msWait = pImage->uReadTimeout;
+        else
+            msWait = RT_INDEFINITE_WAIT;
+
+        rc = iscsiIoThreadWait(pImage, msWait, pImage->fPollEvents, &fEvents);
         if (rc == VERR_INTERRUPTED)
         {
             /* Check the queue. */
@@ -3292,6 +3303,16 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
 
                 pIScsiCmd = iscsiCmdGet(pImage);
             }
+        }
+        else if (rc == VERR_TIMEOUT)
+        {
+            /*
+             * We are waiting for a response from the target but
+             * it didn't answered yet.
+             * We assume the connection is broken and try to reconnect.
+             */
+            LogFlow(("Timed out while waiting for an asnwer from the target, reconnecting\n"));
+            iscsiReattach(pImage);
         }
         else if (RT_SUCCESS(rc))
         {
