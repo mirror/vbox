@@ -239,7 +239,9 @@ struct VirtualBox::Data
           threadClientWatcher(NIL_RTTHREAD),
           threadAsyncEvent(NIL_RTTHREAD),
           pAsyncEventQ(NULL)
-    {}
+    {
+        unconst(uuidMediaRegistry).create();
+    }
 
     ~Data()
     {
@@ -256,6 +258,9 @@ struct VirtualBox::Data
     // VirtualBox main settings file
     const Utf8Str                       strSettingsFilePath;
     settings::MainConfigFile            *pMainConfigFile;
+
+    // pseudo machine ID for global media registry (recreated on every startup)
+    const Guid                          uuidMediaRegistry;
 
     // const objects not requiring locking
     const ComObjPtr<Host>               pHost;
@@ -464,7 +469,8 @@ HRESULT VirtualBox::init()
         }
 
         /* all registered media, needed by machines */
-        if (FAILED(rc = initMedia()))
+        if (FAILED(rc = initMedia(m->uuidMediaRegistry,
+                                  m->pMainConfigFile->mediaRegistry)))
             throw rc;
 
         /* machines */
@@ -592,14 +598,39 @@ HRESULT VirtualBox::initMachines()
     return S_OK;
 }
 
-HRESULT VirtualBox::initMedia()
+/**
+ * Loads a media registry from XML and adds the media contained therein to
+ * the global lists of known media.
+ *
+ * This now (3.3) gets called from two locations:
+ *
+ *  --  VirtualBox::init(), to load the global media registry from VirtualBox.xml;
+ *
+ *  --  Machine::loadMachineDataFromSettings(), to load the per-machine registry
+ *      from machine XML, for machines created with VirtualBox 3.3 or later.
+ *
+ * In both cases, the media found are added to the global lists so the
+ * global arrays of media (including the GUI's virtual media manager)
+ * continue to work as before.
+ *
+ * @param uuidMachineRegistry The UUID of the media registry. This is either the
+ *       transient UUID created at VirtualBox startup for the global registry or
+ *       a machine ID.
+ * @param mediaRegistry The XML settings structure to load, either from VirtualBox.xml
+ *       or a machine XML.
+ * @return
+ */
+HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
+                              const settings::MediaRegistry mediaRegistry)
 {
+    LogFlow(("VirtualBox::initMedia ENTERING, uuidRegistry=%s\n", uuidRegistry.toString().c_str()));
+
     AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
     settings::MediaList::const_iterator it;
-    for (it = m->pMainConfigFile->mediaRegistry.llHardDisks.begin();
-         it != m->pMainConfigFile->mediaRegistry.llHardDisks.end();
+    for (it = mediaRegistry.llHardDisks.begin();
+         it != mediaRegistry.llHardDisks.end();
          ++it)
     {
         const settings::Medium &xmlHD = *it;
@@ -607,44 +638,60 @@ HRESULT VirtualBox::initMedia()
         ComObjPtr<Medium> pHardDisk;
         if (SUCCEEDED(rc = pHardDisk.createObject()))
             rc = pHardDisk->init(this,
-                                 NULL,           // parent
+                                 NULL,          // parent
                                  DeviceType_HardDisk,
-                                 xmlHD);         // XML data; this recurses to processes the children
+                                 uuidRegistry,
+                                 xmlHD);        // XML data; this recurses to processes the children
         if (FAILED(rc)) return rc;
 
-        rc = registerHardDisk(pHardDisk, NULL /*pfNeedsSaveSettings*/ );
+        rc = registerHardDisk(pHardDisk,
+                              NULL /*pfNeedsGlobalSaveSettings*/ );
         if (FAILED(rc)) return rc;
     }
 
-    for (it = m->pMainConfigFile->mediaRegistry.llDvdImages.begin();
-         it != m->pMainConfigFile->mediaRegistry.llDvdImages.end();
+    for (it = mediaRegistry.llDvdImages.begin();
+         it != mediaRegistry.llDvdImages.end();
          ++it)
     {
         const settings::Medium &xmlDvd = *it;
 
         ComObjPtr<Medium> pImage;
         if (SUCCEEDED(pImage.createObject()))
-            rc = pImage->init(this, NULL, DeviceType_DVD, xmlDvd);
+            rc = pImage->init(this,
+                              NULL,
+                              DeviceType_DVD,
+                              uuidRegistry,
+                              xmlDvd);
         if (FAILED(rc)) return rc;
 
-        rc = registerImage(pImage, DeviceType_DVD, NULL /*pfNeedsSaveSettings*/ );
+        rc = registerImage(pImage,
+                           DeviceType_DVD,
+                           NULL /*pfNeedsGlobalSaveSettings*/ );
         if (FAILED(rc)) return rc;
     }
 
-    for (it = m->pMainConfigFile->mediaRegistry.llFloppyImages.begin();
-         it != m->pMainConfigFile->mediaRegistry.llFloppyImages.end();
+    for (it = mediaRegistry.llFloppyImages.begin();
+         it != mediaRegistry.llFloppyImages.end();
          ++it)
     {
         const settings::Medium &xmlFloppy = *it;
 
         ComObjPtr<Medium> pImage;
         if (SUCCEEDED(pImage.createObject()))
-            rc = pImage->init(this, NULL, DeviceType_Floppy, xmlFloppy);
+            rc = pImage->init(this,
+                              NULL,
+                              DeviceType_Floppy,
+                              uuidRegistry,
+                              xmlFloppy);
         if (FAILED(rc)) return rc;
 
-        rc = registerImage(pImage, DeviceType_Floppy, NULL /*pfNeedsSaveSettings*/ );
+        rc = registerImage(pImage,
+                           DeviceType_Floppy,
+                           NULL /*pfNeedsGlobalSaveSettings*/ );
         if (FAILED(rc)) return rc;
     }
+
+    LogFlow(("VirtualBox::initMedia LEAVING\n"));
 
     return S_OK;
 }
@@ -1327,21 +1374,20 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
     if (format.isEmpty())
         getDefaultHardDiskFormat(format);
 
-    HRESULT rc = E_FAIL;
-
-    bool fNeedsSaveSettings = false;
+    bool fNeedsGlobalSaveSettings = false;
 
     ComObjPtr<Medium> hardDisk;
     hardDisk.createObject();
-    rc = hardDisk->init(this,
-                        format,
-                        aLocation,
-                        &fNeedsSaveSettings);
+    HRESULT rc = hardDisk->init(this,
+                                format,
+                                aLocation,
+                                Guid::Empty,        // media registry
+                                &fNeedsGlobalSaveSettings);
 
     if (SUCCEEDED(rc))
         hardDisk.queryInterfaceTo(aHardDisk);
 
-    if (fNeedsSaveSettings)
+    if (fNeedsGlobalSaveSettings)
     {
         AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
         saveSettings();
@@ -1361,8 +1407,10 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    bool fNeedsGlobalSaveSettings = false;
+    ComObjPtr<Medium> pMedium;
+
     /* we don't access non-const data members so no need to lock */
-    HRESULT rc = E_FAIL;
 
     switch (deviceType)
     {
@@ -1378,28 +1426,28 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
             return setError(E_INVALIDARG, "Device type must be HardDisk, DVD or Floppy");
     }
 
-    ComObjPtr<Medium> pMedium;
     pMedium.createObject();
-    rc = pMedium->init(this,
-                       aLocation,
-                       (accessMode == AccessMode_ReadWrite) ? Medium::OpenReadWrite : Medium::OpenReadOnly,
-                       deviceType);
+    HRESULT rc = pMedium->init(this,
+                               aLocation,
+                               (accessMode == AccessMode_ReadWrite) ? Medium::OpenReadWrite : Medium::OpenReadOnly,
+                               deviceType);
 
     if (SUCCEEDED(rc))
     {
-        bool fNeedsGlobalSaveSettings = false;
-
         AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
         switch (deviceType)
         {
             case DeviceType_HardDisk:
-                rc = registerHardDisk(pMedium, &fNeedsGlobalSaveSettings);
+                rc = registerHardDisk(pMedium,
+                                      &fNeedsGlobalSaveSettings);
             break;
 
             case DeviceType_DVD:
             case DeviceType_Floppy:
-                rc = registerImage(pMedium, deviceType, &fNeedsGlobalSaveSettings);
+                rc = registerImage(pMedium,
+                                   deviceType,
+                                   &fNeedsGlobalSaveSettings);
             break;
         }
 
@@ -1409,16 +1457,17 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
          * because the differencing hard disk would have been already associated
          * with the parent and this association needs to be broken. */
 
-        if (SUCCEEDED(rc))
-            pMedium.queryInterfaceTo(aMedium);
-        else
+        if (FAILED(rc))
             pMedium->uninit();
+    }
 
-        if (fNeedsGlobalSaveSettings)
-        {
-            AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
-            saveSettings();
-        }
+    if (SUCCEEDED(rc))
+        pMedium.queryInterfaceTo(aMedium);
+
+    if (fNeedsGlobalSaveSettings)
+    {
+        AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
+        saveSettings();
     }
 
     return rc;
@@ -2748,6 +2797,25 @@ HRESULT VirtualBox::findGuestOSType(const Bstr &bstrOSType,
                     bstrOSType.raw());
 }
 
+/**
+ * Returns the pseudo-machine UUID that is created on each VirtualBox startup
+ * and that is used to identify the global media registry.
+ *
+ * Starting with VirtualBox 3.3 each medium remembers in its instance data
+ * in which media registry it is saved (if any): this can either be a machine
+ * UUID, if it's in a per-machine media registry, or this global ID.
+ *
+ * This UUID is only used to identify the VirtualBox object while VirtualBox
+ * is running. It is not saved anywhere and thus gets recreated with every
+ * VirtualBox startup.
+ *
+ * @return
+ */
+const Guid& VirtualBox::getGlobalRegistryId() const
+{
+    return m->uuidMediaRegistry;
+}
+
 const ComObjPtr<Host>& VirtualBox::host() const
 {
     return m->pHost;
@@ -2857,6 +2925,20 @@ void VirtualBox::copyPathRelativeToConfig(const Utf8Str &strSource,
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
+Utf8Str VirtualBox::getRegistryPath(Medium *pMedium)
+{
+    const Guid &rid = pMedium->getRegistryId();
+
+    if (!rid.isEmpty())
+    {
+        if (rid == getGlobalRegistryId())
+            return settingsFilePath();
+
+        return rid.toString();
+    }
+    return "[null]";
+}
+
 /**
  * Checks if there is a hard disk, DVD or floppy image with the given ID or
  * location already registered.
@@ -2956,6 +3038,87 @@ void VirtualBox::rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDi
 }
 
 /**
+ * Goes through all known media (hard disks, floppies and DVDs) and saves
+ * those into the given settings::MediaRegistry structures whose registry
+ * ID match the given UUID.
+ *
+ * This gets called from two contexts:
+ *
+ *  -- VirtualBox::saveSettings() with the UUID of the global registry
+ *     (VirtualBox::Data.uuidRegistry); this will save those media
+ *     which had been loaded from the global registry or have been
+ *     attached to a "legacy" machine which can't save its own registry;
+ *
+ *  -- Machine::saveSettings() with the UUID of a machine, if a medium
+ *     has been attached to a machine created with VirtualBox 3.3 or later.
+ *
+ * Media which have only been temporarily opened without having been
+ * attached to a machine have a NULL registry UUID and therefore don't
+ * get saved.
+ *
+ * This throws HRESULT on errors!
+ *
+ * @param mediaRegistry
+ * @param uuidRegistry
+ * @return
+ */
+void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
+                                   const Guid &uuidRegistry)
+{
+    HRESULT rc;
+    // hard disks
+    mediaRegistry.llHardDisks.clear();
+    for (MediaList::const_iterator it = m->allHardDisks.begin();
+         it != m->allHardDisks.end();
+         ++it)
+    {
+        Medium *pMedium = *it;
+        // is medium in global registry:?
+        if (pMedium->getRegistryId() == uuidRegistry)
+        {
+            settings::Medium med;
+            rc = pMedium->saveSettings(med);     // this recurses into its children
+            if (FAILED(rc)) throw rc;
+            mediaRegistry.llHardDisks.push_back(med);
+        }
+    }
+
+    // CD/DVD images
+    mediaRegistry.llDvdImages.clear();
+    for (MediaList::const_iterator it = m->allDVDImages.begin();
+         it != m->allDVDImages.end();
+         ++it)
+    {
+        Medium *pMedium = *it;
+        // is medium in global registry:?
+        if (pMedium->getRegistryId() == uuidRegistry)
+        {
+            settings::Medium med;
+            rc = pMedium->saveSettings(med);
+            if (FAILED(rc)) throw rc;
+            mediaRegistry.llDvdImages.push_back(med);
+        }
+    }
+
+    // floppy images
+    mediaRegistry.llFloppyImages.clear();
+    for (MediaList::const_iterator it = m->allFloppyImages.begin();
+         it != m->allFloppyImages.end();
+         ++it)
+    {
+        Medium *pMedium = *it;
+        // is medium in global registry:?
+        if (pMedium->getRegistryId() == uuidRegistry)
+        {
+            settings::Medium med;
+            rc = pMedium->saveSettings(med);
+            if (FAILED(rc)) throw rc;
+            mediaRegistry.llFloppyImages.push_back(med);
+        }
+    }
+}
+
+/**
  *  Helper function which actually writes out VirtualBox.xml, the main configuration file.
  *  Gets called from the public VirtualBox::SaveSettings() as well as from various other
  *  places internally when settings need saving.
@@ -3018,50 +3181,21 @@ HRESULT VirtualBox::saveSettings()
                      it2 != m->llPendingMachineRenames.end();
                      ++it2)
                 {
-                    const Data::PendingMachineRename &pmr = *it2;
-                    pMedium->updatePath(pmr.strConfigDirOld,
-                                        pmr.strConfigDirNew);
+                    // is medium in global registry:?
+                    if (pMedium->getRegistryId() == m->uuidMediaRegistry)
+                    {
+                        const Data::PendingMachineRename &pmr = *it2;
+                        pMedium->updatePath(pmr.strConfigDirOld,
+                                            pmr.strConfigDirNew);
+                    }
                 }
             }
             // done, don't do it again until we have more machine renames
             m->llPendingMachineRenames.clear();
         }
 
-        // hard disks
-        m->pMainConfigFile->mediaRegistry.llHardDisks.clear();
-        for (MediaList::const_iterator it = m->allHardDisks.begin();
-             it != m->allHardDisks.end();
-             ++it)
-        {
-            settings::Medium med;
-            rc = (*it)->saveSettings(med);     // this recurses into its children
-            if (FAILED(rc)) throw rc;
-            m->pMainConfigFile->mediaRegistry.llHardDisks.push_back(med);
-        }
-
-        /* CD/DVD images */
-        m->pMainConfigFile->mediaRegistry.llDvdImages.clear();
-        for (MediaList::const_iterator it = m->allDVDImages.begin();
-             it != m->allDVDImages.end();
-             ++it)
-        {
-            settings::Medium med;
-            rc = (*it)->saveSettings(med);
-            if (FAILED(rc)) throw rc;
-            m->pMainConfigFile->mediaRegistry.llDvdImages.push_back(med);
-        }
-
-        /* floppy images */
-        m->pMainConfigFile->mediaRegistry.llFloppyImages.clear();
-        for (MediaList::const_iterator it = m->allFloppyImages.begin();
-             it != m->allFloppyImages.end();
-             ++it)
-        {
-            settings::Medium med;
-            rc = (*it)->saveSettings(med);
-            if (FAILED(rc)) throw rc;
-            m->pMainConfigFile->mediaRegistry.llFloppyImages.push_back(med);
-        }
+        saveMediaRegistry(m->pMainConfigFile->mediaRegistry,
+                          m->uuidMediaRegistry);
 
         mediaLock.release();
 
@@ -3168,23 +3302,26 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
 }
 
 /**
- * Remembers the given hard disk by storing it in the hard disk registry.
- *
- * @param aHardDisk     Hard disk object to remember.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
+ * Remembers the given hard disk by storing it in either the global hard disk registry
+ * or a machine one.
  *
  * @note Caller must hold the media tree lock for writing; in addition, this locks @a aHardDisk for reading
+ *
+ * @param aHardDisk Hard disk object to remember.
+ * @param uuidMachineRegistry UUID of machine whose registry should be used, or a NULL UUID for the global registry.
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
+ * @return
  */
-HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
-                                     bool *pfNeedsSaveSettings)
+HRESULT VirtualBox::registerHardDisk(Medium *pMedium,
+                                     bool *pfNeedsGlobalSaveSettings)
 {
-    AssertReturn(aHardDisk != NULL, E_INVALIDARG);
+    AssertReturn(pMedium != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    AutoCaller hardDiskCaller(aHardDisk);
+    AutoCaller hardDiskCaller(pMedium);
     AssertComRCReturn(hardDiskCaller.rc(), hardDiskCaller.rc());
 
     // caller must hold the media tree write lock
@@ -3194,10 +3331,10 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
     Utf8Str strLocationFull;
     ComObjPtr<Medium> pParent;
     {
-        AutoReadLock hardDiskLock(aHardDisk COMMA_LOCKVAL_SRC_POS);
-        id = aHardDisk->getId();
-        strLocationFull = aHardDisk->getLocationFull();
-        pParent = aHardDisk->getParent();
+        AutoReadLock hardDiskLock(pMedium COMMA_LOCKVAL_SRC_POS);
+        id = pMedium->getId();
+        strLocationFull = pMedium->getLocationFull();
+        pParent = pMedium->getParent();
     }
 
     HRESULT rc;
@@ -3209,23 +3346,27 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
     if (FAILED(rc)) return rc;
 
     if (strConflict.length())
+    {
         return setError(E_INVALIDARG,
-                        tr("Cannot register the hard disk '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
+                        tr("Cannot register the hard disk '%s' {%RTuuid} because a %s already exists"),
                         strLocationFull.c_str(),
                         id.raw(),
                         strConflict.c_str(),
                         m->strSettingsFilePath.c_str());
+    }
 
     // store base (root) hard disks in the list
     if (pParent.isNull())
-        m->allHardDisks.getList().push_back(aHardDisk);
+        m->allHardDisks.getList().push_back(pMedium);
                 // access the list directly because we already locked the list above
 
     // store all hard disks (even differencing images) in the map
-    m->mapHardDisks[id] = aHardDisk;
+    m->mapHardDisks[id] = pMedium;
 
-    if (pfNeedsSaveSettings)
-        *pfNeedsSaveSettings = true;
+    if (pfNeedsGlobalSaveSettings)
+        // global settings need saving only if the medium is to be saved in the global registry
+        if (pMedium->getRegistryId() == m->uuidMediaRegistry)
+            *pfNeedsGlobalSaveSettings = true;
 
     return rc;
 }
@@ -3234,13 +3375,13 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
  * Removes the given hard disk from the hard disk registry.
  *
  * @param aHardDisk     Hard disk object to remove.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
  * @note Caller must hold the media tree lock for writing; in addition, this locks @a aHardDisk for reading
  */
 HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
-                                       bool *pfNeedsSaveSettings)
+                                       bool *pfNeedsGlobalSaveSettings)
 {
     AssertReturn(aHardDisk != NULL, E_INVALIDARG);
 
@@ -3271,8 +3412,10 @@ HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
     Assert(cnt == 1);
     NOREF(cnt);
 
-    if (pfNeedsSaveSettings)
-        *pfNeedsSaveSettings = true;
+    if (pfNeedsGlobalSaveSettings)
+        // global settings need saving only if the medium is to be saved in the global registry
+        if (aHardDisk->getRegistryId() == m->uuidMediaRegistry)
+            *pfNeedsGlobalSaveSettings = true;
 
     return S_OK;
 }
@@ -3282,21 +3425,22 @@ HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
  *
  * @param argImage      Image object to remember.
  * @param argType       Either DeviceType_DVD or DeviceType_Floppy.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ * @param uuidMachineRegistry UUID of machine whose registry should be used, or a NULL UUID for the global registry.
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
  * @note Caller must hold the media tree lock for writing; in addition, this locks @a argImage for reading
  */
-HRESULT VirtualBox::registerImage(Medium *argImage,
+HRESULT VirtualBox::registerImage(Medium *pMedium,
                                   DeviceType_T argType,
-                                  bool *pfNeedsSaveSettings)
+                                  bool *pfNeedsGlobalSaveSettings)
 {
-    AssertReturn(argImage != NULL, E_INVALIDARG);
+    AssertReturn(pMedium != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    AutoCaller imageCaller(argImage);
+    AutoCaller imageCaller(pMedium);
     AssertComRCReturn(imageCaller.rc(), imageCaller.rc());
 
     // caller must hold the media tree write lock
@@ -3306,10 +3450,10 @@ HRESULT VirtualBox::registerImage(Medium *argImage,
     Utf8Str strLocationFull;
     ComObjPtr<Medium> pParent;
     {
-        AutoReadLock al(argImage COMMA_LOCKVAL_SRC_POS);
-        id = argImage->getId();
-        strLocationFull = argImage->getLocationFull();
-        pParent = argImage->getParent();
+        AutoReadLock al(pMedium COMMA_LOCKVAL_SRC_POS);
+        id = pMedium->getId();
+        strLocationFull = pMedium->getLocationFull();
+        pParent = pMedium->getParent();
     }
 
     // work on DVDs or floppies list?
@@ -3321,24 +3465,26 @@ HRESULT VirtualBox::registerImage(Medium *argImage,
 
     Utf8Str strConflict;
     rc = checkMediaForConflicts2(id,
-                                    strLocationFull,
-                                    strConflict);
+                                 strLocationFull,
+                                 strConflict);
     if (FAILED(rc)) return rc;
 
     if (strConflict.length())
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot register the image '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
+                        tr("Cannot register the image '%s' with UUID {%RTuuid} from '%s' because a %s already exists"),
                         strLocationFull.c_str(),
                         id.raw(),
-                        strConflict.c_str(),
-                        m->strSettingsFilePath.c_str());
+                        getRegistryPath(pMedium).c_str(),
+                        strConflict.c_str());
 
     // add to the collection
-    all.getList().push_back(argImage);
+    all.getList().push_back(pMedium);
             // access the list directly because we already locked the list above
 
-    if (pfNeedsSaveSettings)
-        *pfNeedsSaveSettings = true;
+    if (pfNeedsGlobalSaveSettings)
+        // global settings need saving only if the medium is to be saved in the global registry
+        if (pMedium->getRegistryId() == m->uuidMediaRegistry)
+            *pfNeedsGlobalSaveSettings = true;
 
     return rc;
 }
@@ -3348,14 +3494,14 @@ HRESULT VirtualBox::registerImage(Medium *argImage,
  *
  * @param argImage        Image object to remove.
  * @param argType         Either DeviceType_DVD or DeviceType_Floppy.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
  * @note Caller must hold the media tree lock for writing; in addition, this locks @a argImage for reading
  */
 HRESULT VirtualBox::unregisterImage(Medium *argImage,
                                     DeviceType_T argType,
-                                    bool *pfNeedsSaveSettings)
+                                    bool *pfNeedsGlobalSaveSettings)
 {
     AssertReturn(argImage != NULL, E_INVALIDARG);
 
@@ -3384,8 +3530,10 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
 
     HRESULT rc = S_OK;
 
-    if (pfNeedsSaveSettings)
-        *pfNeedsSaveSettings = true;
+    if (pfNeedsGlobalSaveSettings)
+        // global settings need saving only if the medium is to be saved in the global registry
+        if (argImage->getRegistryId() == m->uuidMediaRegistry)
+            *pfNeedsGlobalSaveSettings = true;
 
     return rc;
 }
@@ -3394,12 +3542,12 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
  * Removes the given machine object from the internal list of registered machines.
  * Called from Machine::Unregister().
  * @param pMachine
+ * @param id  UUID of the machine. Must be passed by caller because machine may be dead by this time.
  * @return
  */
-HRESULT VirtualBox::unregisterMachine(Machine *pMachine)
+HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
+                                      const Guid &id)
 {
-    const Guid &id = pMachine->getId();
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // remove from the collection of registered machines

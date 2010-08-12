@@ -130,6 +130,10 @@ struct Medium
 };
 
 /**
+ * A media registry. Starting with VirtualBox 3.3, this can appear in both the
+ * VirtualBox.xml file as well as machine XML files with settings version 1.11
+ * or higher, so these lists are now in ConfigFileBase.
+ *
  * NOTE: If you add any fields in here, you must update a) the constructor and b)
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
@@ -915,6 +919,8 @@ public:
     MachineConfigFile(const com::Utf8Str *pstrFilename);
 
     bool operator==(const MachineConfigFile &m) const;
+
+    bool canHaveOwnMediaRegistry() const;
 
     void importMachineXML(const xml::ElementNode &elmMachine);
 

@@ -1741,6 +1741,17 @@ MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
 }
 
 /**
+ * Public routine which returns true if this machine config file can have its
+ * own media registry (which is true for settings version v1.11 and higher,
+ * i.e. files created by VirtualBox 3.3 and higher).
+ * @return
+ */
+bool MachineConfigFile::canHaveOwnMediaRegistry() const
+{
+    return (m->sv >= SettingsVersion_v1_11);
+}
+
+/**
  * Public routine which allows for importing machine XML from an external DOM tree.
  * Use this after having called the constructor with a NULL argument.
  *
@@ -3096,6 +3107,8 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
                 pelmMachineChild->getAttributeValue("address", machineUserData.strTeleporterAddress);
                 pelmMachineChild->getAttributeValue("password", machineUserData.strTeleporterPassword);
             }
+            else if (pelmMachineChild->nameEquals("MediaRegistry"))
+                readMediaRegistry(*pelmMachineChild, mediaRegistry);
         }
 
         if (m->sv < SettingsVersion_v1_9)
@@ -3997,6 +4010,11 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         pelmTeleporter->setAttribute("password", machineUserData.strTeleporterPassword);
     }
 
+    if (    (fl & BuildMachineXML_MediaRegistry)
+         && (m->sv >= SettingsVersion_v1_11)
+       )
+        buildMediaRegistry(elmMachine, mediaRegistry);
+
     buildExtraData(elmMachine, mapExtraDataItems);
 
     if (    (fl & BuildMachineXML_IncludeSnapshots)
@@ -4008,11 +4026,6 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
                                storageMachine,
                                !!(fl & BuildMachineXML_SkipRemovableMedia),
                                pllElementsWithUuidAttributes);
-
-    if (    (fl & BuildMachineXML_MediaRegistry)
-         && (m->sv >= SettingsVersion_v1_11)
-       )
-        buildMediaRegistry(elmMachine, mediaRegistry);
 }
 
 /**

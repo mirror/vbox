@@ -1855,7 +1855,10 @@ void VBoxVMSettingsHD::putBackTo()
             KDeviceType attDeviceType = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
             QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
             QString attMediumLocation = mStorageModel->data (attIndex, StorageModel::R_AttLocation).toString();
-            mMachine.AttachDevice (ctrName, attStorageSlot.port, attStorageSlot.device, attDeviceType, attMediumId);
+
+            VBoxMedium vmedium = vboxGlobal().findMedium(attMediumId);
+            CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
+            mMachine.AttachDevice(ctrName, attStorageSlot.port, attStorageSlot.device, attDeviceType, medium);
             if (mMachine.isOk())
             {
                 if (attDeviceType == KDeviceType_DVD)

@@ -1356,7 +1356,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     // if this becomes true, we need to call VirtualBox::saveSettings() in the end
-    bool fNeedsSaveSettings = false;
+    bool fNeedsGlobalSaveSettings = false;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1439,7 +1439,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         rc = createImplicitDiffs(aConsoleProgress,
                                  1,            // operation weight; must be the same as in Console::TakeSnapshot()
                                  !!fTakingSnapshotOnline,
-                                 &fNeedsSaveSettings);
+                                 &fNeedsGlobalSaveSettings);
         if (FAILED(rc))
             throw rc;
 
@@ -1500,7 +1500,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     else
         *aStateFilePath = NULL;
 
-    // @todo r=dj normally we would need to save the settings if fNeedsSaveSettings was set to true,
+    // @todo r=dj normally we would need to save the settings if fNeedsGlobalSaveSettings was set to true,
     // but since we have no error handling that cleans up the diff image that might have gotten created,
     // there's no point in saving the disk registry at this point either... this needs fixing.
 
@@ -2319,7 +2319,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
     HRESULT rc = S_OK;
 
     bool fMachineSettingsChanged = false;       // Machine
-    bool fNeedsSaveSettings = false;            // VirtualBox.xml
+    bool fNeedsGlobalSaveSettings = false;            // VirtualBox.xml
 
     Guid snapshotId;
 
@@ -2563,7 +2563,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                     rc = pMedium->deleteStorage(&aTask.pProgress,
                                                 true /* aWait */,
                                                 &fNeedsSave);
-                    fNeedsSaveSettings |= fNeedsSave;
+                    fNeedsGlobalSaveSettings |= fNeedsSave;
                     if (FAILED(rc))
                         throw rc;
 
@@ -2606,7 +2606,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                                true /* aWait */,
                                                &fNeedsSave);
                 }
-                fNeedsSaveSettings |= fNeedsSave;
+                fNeedsGlobalSaveSettings |= fNeedsSave;
 
                 // If the merge failed, we need to do our best to have a usable
                 // VM configuration afterwards. The return code doesn't tell
@@ -2753,7 +2753,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         setMachineState(aTask.machineStateBackup);
         updateMachineStateOnClient();
 
-        if (fMachineSettingsChanged || fNeedsSaveSettings)
+        if (fMachineSettingsChanged || fNeedsGlobalSaveSettings)
         {
             if (fMachineSettingsChanged)
             {
@@ -2764,10 +2764,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 // snapshot). Should be fixed, but don't drop SaveS_Force
                 // then, as it avoids a rather costly config equality check
                 // when we know that it is changed.
-                saveSettings(&fNeedsSaveSettings, SaveS_Force | SaveS_InformCallbacksAnyway);
+                saveSettings(&fNeedsGlobalSaveSettings, SaveS_Force | SaveS_InformCallbacksAnyway);
             }
 
-            if (fNeedsSaveSettings)
+            if (fNeedsGlobalSaveSettings)
             {
                 AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
                 mParent->saveSettings();
@@ -3136,7 +3136,7 @@ void SessionMachine::cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
  * @param aMediumLockList Where to store the created medium lock list (may
  *                      return NULL if no real merge is necessary).
  * @param aProgress     Progress indicator.
- * @param pfNeedsSaveSettings Whether the VM settings need to be saved (out).
+ * @param pfNeedsMachineSaveSettings Whether the VM settings need to be saved (out).
  */
 HRESULT SessionMachine::onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMediumAttachment,
                                           const ComObjPtr<Medium> &aSource,
@@ -3146,7 +3146,7 @@ HRESULT SessionMachine::onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMe
                                           const MediaList &aChildrenToReparent,
                                           MediumLockList *aMediumLockList,
                                           ComObjPtr<Progress> &aProgress,
-                                          bool *pfNeedsSaveSettings)
+                                          bool *pfNeedsMachineSaveSettings)
 {
     AssertReturn(aSource != NULL, E_FAIL);
     AssertReturn(aTarget != NULL, E_FAIL);
@@ -3224,8 +3224,8 @@ HRESULT SessionMachine::onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMe
 
     // The callback mentioned above takes care of update the medium state
 
-    if (pfNeedsSaveSettings)
-        *pfNeedsSaveSettings = true;
+    if (pfNeedsMachineSaveSettings)
+        *pfNeedsMachineSaveSettings = true;
 
     return rc;
 }
@@ -3259,9 +3259,11 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
 
     if (aMergeForward)
     {
+        Guid uuidRegistry = pTarget->getRegistryId();
+
         // first, unregister the target since it may become a base
         // hard disk which needs re-registration
-        rc = mParent->unregisterHardDisk(pTarget, NULL /*&fNeedsSaveSettings*/);
+        rc = mParent->unregisterHardDisk(pTarget, NULL /*&fNeedsGlobalSaveSettings*/);
         AssertComRC(rc);
 
         // then, reparent it and disconnect the deleted branch at
@@ -3272,7 +3274,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
             pSource->deparent();
 
         // then, register again
-        rc = mParent->registerHardDisk(pTarget, NULL /*&fNeedsSaveSettings*/);
+        rc = mParent->registerHardDisk(pTarget, NULL /*&fNeedsGlobalSaveSettings*/);
         AssertComRC(rc);
     }
     else
@@ -3343,7 +3345,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
         else
         {
             rc = mParent->unregisterHardDisk(pMedium,
-                                             NULL /*pfNeedsSaveSettings*/);
+                                             NULL /*pfNeedsGlobalSaveSettings*/);
             AssertComRC(rc);
 
             /* now, uninitialize the deleted hard disk (note that

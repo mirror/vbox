@@ -1315,7 +1315,9 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                )
                 srcFormat = L"VMDK";
             // create an empty hard disk
-            rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(strTargetPath), pTargetHD.asOutParam());
+            rc = mVirtualBox->CreateHardDisk(srcFormat,
+                                             Bstr(strTargetPath),
+                                             pTargetHD.asOutParam());
             if (FAILED(rc)) DebugBreakThrow(rc);
 
             // create a dynamic growing disk image with the given capacity
@@ -1353,7 +1355,9 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             rc = pSourceHD->COMGETTER(Format)(srcFormat.asOutParam());
             if (FAILED(rc)) DebugBreakThrow(rc);
             /* Create a new hard disk interface for the destination disk image */
-            rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(strTargetPath), pTargetHD.asOutParam());
+            rc = mVirtualBox->CreateHardDisk(srcFormat,
+                                             Bstr(strTargetPath),
+                                             pTargetHD.asOutParam());
             if (FAILED(rc)) DebugBreakThrow(rc);
             /* Clone the source disk image */
             rc = pSourceHD->CloneTo(pTargetHD, MediumVariant_Standard, NULL, pProgress2.asOutParam());
@@ -1706,7 +1710,8 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     Bstr bstrNewMachineId;
     rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
     if (FAILED(rc)) DebugBreakThrow(rc);
-    m->llGuidsMachinesCreated.push_back(Guid(bstrNewMachineId));
+    Guid uuidNewMachine(bstrNewMachineId);
+    m->llGuidsMachinesCreated.push_back(uuidNewMachine);
 
     // Add floppies and CD-ROMs to the appropriate controllers.
     std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
@@ -1873,9 +1878,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 ComPtr<IMachine> sMachine;
                 rc = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
                 if (FAILED(rc)) DebugBreakThrow(rc);
-                Bstr hdId;
-                rc = pTargetHD->COMGETTER(Id)(hdId.asOutParam());
-                if (FAILED(rc)) DebugBreakThrow(rc);
 
                 // find the hard disk controller to which we should attach
                 ovf::HardDiskController hdc = (*vsysThis.mapControllers.find(ovfVdisk.idController)).second;
@@ -1896,7 +1898,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                             mhda.lControllerPort,          // long controllerPort
                                             mhda.lDevice,           // long device
                                             DeviceType_HardDisk,    // DeviceType_T type
-                                            hdId);                  // uuid id
+                                            pTargetHD);
                 if (FAILED(rc)) DebugBreakThrow(rc);
 
                 stack.llHardDiskAttachments.push_back(mhda);
