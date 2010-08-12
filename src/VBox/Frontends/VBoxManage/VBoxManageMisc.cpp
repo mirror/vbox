@@ -181,7 +181,6 @@ int handleCreateVM(HandlerArg *a)
 {
     HRESULT rc;
     Bstr baseFolder;
-    Bstr settingsFile;
     Bstr name;
     Bstr osTypeId;
     RTUUID id;
@@ -197,14 +196,6 @@ int handleCreateVM(HandlerArg *a)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             baseFolder = a->argv[i];
-        }
-        else if (   !strcmp(a->argv[i], "--settingsfile")
-                 || !strcmp(a->argv[i], "-settingsfile"))
-        {
-            if (a->argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", a->argv[i]);
-            i++;
-            settingsFile = a->argv[i];
         }
         else if (   !strcmp(a->argv[i], "--name")
                  || !strcmp(a->argv[i], "-name"))
@@ -242,19 +233,17 @@ int handleCreateVM(HandlerArg *a)
     if (!name)
         return errorSyntax(USAGE_CREATEVM, "Parameter --name is required");
 
-    if (!baseFolder.isEmpty() && !settingsFile.isEmpty())
-        return errorSyntax(USAGE_CREATEVM, "Cannot specify both --basefolder and --settingsfile together");
-
     do
     {
         ComPtr<IMachine> machine;
 
-        if (settingsFile.isEmpty())
-            CHECK_ERROR_BREAK(a->virtualBox,
-                CreateMachine(name, osTypeId, baseFolder, Guid(id).toUtf16(), FALSE, machine.asOutParam()));
-        else
-            CHECK_ERROR_BREAK(a->virtualBox,
-                CreateLegacyMachine(name, osTypeId, settingsFile, Guid(id).toUtf16(), machine.asOutParam()));
+        CHECK_ERROR_BREAK(a->virtualBox,
+                          CreateMachine(name,
+                                        osTypeId,
+                                        baseFolder,
+                                        Guid(id).toUtf16(),
+                                        FALSE,
+                                        machine.asOutParam()));
 
         CHECK_ERROR_BREAK(machine, SaveSettings());
         if (fRegister)
@@ -263,6 +252,7 @@ int handleCreateVM(HandlerArg *a)
         }
         Bstr uuid;
         CHECK_ERROR_BREAK(machine, COMGETTER(Id)(uuid.asOutParam()));
+        Bstr settingsFile;
         CHECK_ERROR_BREAK(machine, COMGETTER(SettingsFilePath)(settingsFile.asOutParam()));
         RTPrintf("Virtual machine '%ls' is created%s.\n"
                  "UUID: %s\n"
