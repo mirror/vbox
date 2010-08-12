@@ -28,15 +28,16 @@
 #include <VBox/version.h>
 
 #include <iprt/buildconfig.h>
-#include <iprt/thread.h>
-#include <iprt/rand.h>
-#include <iprt/initterm.h>
-#include <iprt/getopt.h>
 #include <iprt/ctype.h>
-#include <iprt/process.h>
-#include <iprt/string.h>
+#include <iprt/getopt.h>
+#include <iprt/initterm.h>
 #include <iprt/ldr.h>
+#include <iprt/message.h>
+#include <iprt/process.h>
+#include <iprt/rand.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
 #include <iprt/time.h>
 
 // workaround for compile problems on gcc 4.1
@@ -103,7 +104,7 @@ unsigned int            g_cMaxWorkerThreads = 100;      // max. no. of worker th
 unsigned int            g_cMaxKeepAlive = 100;          // maximum number of soap requests in one connection
 
 bool                    g_fVerbose = false;             // be verbose
-PRTSTREAM               g_pstrLog = NULL;
+PRTSTREAM               g_pStrmLog = NULL;
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 bool                    g_fDaemonize = false;           // run in background.
@@ -264,15 +265,16 @@ public:
         soap_set_imode(m_soap, SOAP_IO_KEEPALIVE | SOAP_C_UTFSTRING);
         m_soap->max_keep_alive = g_cMaxKeepAlive;
 
-        if (!RT_SUCCESS(RTThreadCreate(&m_pThread,
-                                       fntWrapper,
-                                       this,             // pvUser
-                                       0,               // cbStack,
-                                       RTTHREADTYPE_MAIN_HEAVY_WORKER,
-                                       0,
-                                       m_strThread.c_str())))
+        int rc = RTThreadCreate(&m_pThread,
+                                fntWrapper,
+                                this,             // pvUser
+                                0,               // cbStack,
+                                RTTHREADTYPE_MAIN_HEAVY_WORKER,
+                                0,
+                                m_strThread.c_str());
+        if (RT_FAILURE(rc))
         {
-            RTStrmPrintf(g_pStdErr, "[!] Cannot start worker thread %d\n", u);
+            RTMsgError("Cannot start worker thread %d: %Rrc\n", u, rc);
             exit(1);
         }
     }
@@ -502,10 +504,10 @@ void WebLog(const char *pszFormat, ...)
     RTPrintf("%s %s", strPrefix.c_str(), psz);
 
     // log file
-    if (g_pstrLog)
+    if (g_pStrmLog)
     {
-        RTStrmPrintf(g_pstrLog, "%s %s", strPrefix.c_str(), psz);
-        RTStrmFlush(g_pstrLog);
+        RTStrmPrintf(g_pStrmLog, "%s %s", strPrefix.c_str(), psz);
+        RTStrmFlush(g_pStrmLog);
     }
 
 #ifdef DEBUG
@@ -618,10 +620,10 @@ int fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
  */
 int main(int argc, char* argv[])
 {
-    int rc;
-
     // intialize runtime
-    RTR3Init();
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
 
     // store a log prefix for this thread
     g_mapThreads[RTThreadSelf()] = "[M  ]";
@@ -656,12 +658,9 @@ int main(int argc, char* argv[])
 
             case 'F':
             {
-                int rc2 = RTStrmOpen(ValueUnion.psz, "a", &g_pstrLog);
+                int rc2 = RTStrmOpen(ValueUnion.psz, "a", &g_pStrmLog);
                 if (rc2)
-                {
-                    RTPrintf("Error: Cannot open log file \"%s\" for writing, error %d.\n", ValueUnion.psz, rc2);
-                    exit(2);
-                }
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot open log file \"%s\" for writing: %Rrc", ValueUnion.psz, rc2);
 
                 WebLog("Sun VirtualBox Webservice Version %s\n"
                        "Opened log file \"%s\"\n", VBOX_VERSION_STRING, ValueUnion.psz);
@@ -704,44 +703,38 @@ int main(int argc, char* argv[])
     {
         rc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, NULL);
         if (RT_FAILURE(rc))
-        {
-            RTStrmPrintf(g_pStdErr, "vboxwebsrv: failed to daemonize, rc=%Rrc. exiting.\n", rc);
-            exit(1);
-        }
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to daemonize, rc=%Rrc. exiting.", rc);
     }
 #endif
 
     // intialize COM/XPCOM
-    rc = com::Initialize();
-    if (FAILED(rc))
-    {
-        RTPrintf("ERROR: failed to initialize COM!\n");
-        return rc;
-    }
+    HRESULT hrc = com::Initialize();
+    if (FAILED(hrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to initialize COM! hrc=%Rhrc\n", hrc);
 
     ComPtr<ISession> session;
 
-    rc = g_pVirtualBox.createLocalObject(CLSID_VirtualBox);
-    if (FAILED(rc))
-        RTPrintf("ERROR: failed to create the VirtualBox object!\n");
+    hrc = g_pVirtualBox.createLocalObject(CLSID_VirtualBox);
+    if (FAILED(hrc))
+        RTMsgError("failed to create the VirtualBox object!");
     else
     {
-        rc = session.createInprocObject(CLSID_Session);
-        if (FAILED(rc))
-            RTPrintf("ERROR: failed to create a session object!\n");
+        hrc = session.createInprocObject(CLSID_Session);
+        if (FAILED(hrc))
+            RTMsgError("failed to create a session object!");
     }
 
-    if (FAILED(rc))
+    if (FAILED(hrc))
     {
         com::ErrorInfo info;
         if (!info.isFullAvailable() && !info.isBasicAvailable())
         {
-            com::GluePrintRCMessage(rc);
-            RTPrintf("Most likely, the VirtualBox COM server is not running or failed to start.\n");
+            com::GluePrintRCMessage(hrc);
+            RTMsgError("Most likely, the VirtualBox COM server is not running or failed to start.");
         }
         else
             com::GluePrintErrorInfo(info);
-        return rc;
+        return RTEXITCODE_FAILURE;
     }
 
     // create the global mutexes
@@ -751,35 +744,29 @@ int main(int argc, char* argv[])
     g_pWebLogLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
 
     // SOAP queue pumper thread
-    RTTHREAD  tQPumper;
-    if (RTThreadCreate(&tQPumper,
-                       fntQPumper,
-                       NULL,        // pvUser
-                       0,           // cbStack (default)
-                       RTTHREADTYPE_MAIN_WORKER,
-                       0,           // flags
-                       "SoapQPumper"))
-    {
-        RTStrmPrintf(g_pStdErr, "[!] Cannot start SOAP queue pumper thread\n");
-        exit(1);
-    }
+    rc = RTThreadCreate(NULL,
+                        fntQPumper,
+                        NULL,        // pvUser
+                        0,           // cbStack (default)
+                        RTTHREADTYPE_MAIN_WORKER,
+                        0,           // flags
+                        "SoapQPumper");
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot start SOAP queue pumper thread: %Rrc", rc);
 
     // watchdog thread
     if (g_iWatchdogTimeoutSecs > 0)
     {
         // start our watchdog thread
-        RTTHREAD  tWatchdog;
-        if (RTThreadCreate(&tWatchdog,
-                           fntWatchdog,
-                           NULL,
-                           0,
-                           RTTHREADTYPE_MAIN_WORKER,
-                           0,
-                           "Watchdog"))
-        {
-            RTStrmPrintf(g_pStdErr, "[!] Cannot start watchdog thread\n");
-            exit(1);
-        }
+        rc = RTThreadCreate(NULL,
+                            fntWatchdog,
+                            NULL,
+                            0,
+                            RTTHREADTYPE_MAIN_WORKER,
+                            0,
+                            "Watchdog");
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot start watchdog thread: %Rrc", rc);
     }
 
     com::EventQueue *pQ = com::EventQueue::getMainEventQueue();
@@ -789,7 +776,7 @@ int main(int argc, char* argv[])
         WEBDEBUG(("Pumping COM event queue\n"));
         int vrc = pQ->processEventQueue(RT_INDEFINITE_WAIT);
         if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
-            com::GluePrintRCMessage(vrc);
+            RTMsgError("processEventQueue -> %Rrc", rc);
     }
 
     com::Shutdown();
