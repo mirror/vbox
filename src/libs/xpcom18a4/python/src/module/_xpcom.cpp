@@ -522,7 +522,7 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
       || rc == VERR_INTERRUPTED)
       return PyInt_FromLong(1);
 
-  return NULL; /** @todo throw correct exception */
+  return PyInt_FromLong(2);
 }
 
 static PyObject*
@@ -533,9 +533,8 @@ PyXPCOMMethod_InterruptWait(PyObject *self, PyObject *args)
   if (!aEventQ)
       return NULL;
 
-  aEventQ->interruptEventQueueProcessing();
-
-  return PyInt_FromLong(0);
+  int rc = aEventQ->interruptEventQueueProcessing();
+  return PyBool_FromLong(RT_SUCCESS(rc));
 }
 
 static void deinitVBoxPython();

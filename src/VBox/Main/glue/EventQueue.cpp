@@ -48,12 +48,10 @@ namespace com
             return ret; \
     } while (0)
 
-/** Magic LPARAM value for the WM_USER messages that we're posting. */
-# if ARCH_BITS == 64
-#  define EVENTQUEUE_WIN_LPARAM_MAGIC   UINT64_C(0xf241b8196623bb4c)
-# else
-#  define EVENTQUEUE_WIN_LPARAM_MAGIC   UINT32_C(0xf241b819)
-# endif
+/** Magic LPARAM value for the WM_USER messages that we're posting.
+ * @remarks This magic value is duplicated in
+ *          vboxapi/PlatformMSCOM::interruptWaitEvents(). */
+#define EVENTQUEUE_WIN_LPARAM_MAGIC   UINT32_C(0xf241b819)
 
 
 #else // VBOX_WITH_XPCOM
@@ -564,7 +562,7 @@ int EventQueue::interruptEventQueueProcessing()
 BOOL EventQueue::postEvent(Event *event)
 {
 #ifndef VBOX_WITH_XPCOM
-
+    /* Note! The event == NULL case is duplicated in vboxapi/PlatformMSCOM::interruptWaitEvents(). */
     return PostThreadMessage(mThreadId, WM_USER, (WPARAM)event, EVENTQUEUE_WIN_LPARAM_MAGIC);
 
 #else // VBOX_WITH_XPCOM
