@@ -1183,59 +1183,6 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::CreateLegacyMachine(IN_BSTR aName,
-                                             IN_BSTR aOsTypeId,
-                                             IN_BSTR aSettingsFile,
-                                             IN_BSTR aId,
-                                             IMachine **aMachine)
-{
-    CheckComArgStrNotEmptyOrNull(aName);
-    CheckComArgStrNotEmptyOrNull(aSettingsFile);
-    /** @todo tighten checks on aId? */
-    CheckComArgOutPointerValid(aMachine);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT rc = E_FAIL;
-
-    Utf8Str settingsFile = aSettingsFile;
-    /* append the default extension if none */
-    if (!RTPathHaveExt(settingsFile.c_str()))
-        settingsFile = Utf8StrFmt("%s.xml", settingsFile.c_str());
-
-    /* create a new object */
-    ComObjPtr<Machine> machine;
-    rc = machine.createObject();
-    if (FAILED(rc)) return rc;
-
-    /* Create UUID if an empty one was specified. */
-    Guid id(aId);
-    if (id.isEmpty())
-        id.create();
-
-    GuestOSType *osType = NULL;
-    rc = findGuestOSType(Bstr(aOsTypeId), osType);
-    if (FAILED(rc)) return rc;
-
-    /* initialize the machine object */
-    rc = machine->init(this,
-                       settingsFile,
-                       Utf8Str(aName),
-                       id,
-                       osType,
-                       FALSE /* aOverride */,
-                       FALSE /* aNameSync */);
-    if (SUCCEEDED(rc))
-    {
-        /* set the return value */
-        rc = machine.queryInterfaceTo(aMachine);
-        AssertComRC(rc);
-    }
-
-    return rc;
-}
-
 STDMETHODIMP VirtualBox::OpenMachine(IN_BSTR aSettingsFile,
                                      IMachine **aMachine)
 {

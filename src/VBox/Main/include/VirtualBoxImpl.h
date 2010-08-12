@@ -118,11 +118,8 @@ public:
     STDMETHOD(COMGETTER(EventSource))           (IEventSource ** aEventSource);
 
     /* IVirtualBox methods */
-
     STDMETHOD(CreateMachine) (IN_BSTR aName, IN_BSTR aOsTypeId, IN_BSTR aBaseFolder,
                               IN_BSTR aId, BOOL aOverride, IMachine **aMachine);
-    STDMETHOD(CreateLegacyMachine) (IN_BSTR aName, IN_BSTR aOsTypeId, IN_BSTR aSettingsFile,
-                                    IN_BSTR aId, IMachine **aMachine);
     STDMETHOD(OpenMachine) (IN_BSTR aSettingsFile, IMachine **aMachine);
     STDMETHOD(RegisterMachine) (IMachine *aMachine);
     STDMETHOD(GetMachine) (IN_BSTR aId, IMachine **aMachine);

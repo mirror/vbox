@@ -1589,66 +1589,6 @@
       </param>
     </method>
 
-    <method name="createLegacyMachine">
-      <desc>
-        Creates a new virtual machine in "legacy" mode, using the specified
-        settings file to store machine settings.
-
-        As opposed to machines created by <link to="#createMachine"/>,
-        the settings file of the machine created in "legacy" mode is not
-        automatically renamed when the machine name is changed -- it will always
-        remain the same as specified in this method call.
-
-        The specified settings file name can be absolute (full path) or relative
-        to the <link to="IVirtualBox::homeFolder">VirtualBox home
-        directory</link>. If the file name doesn't contain an extension, the
-        default extension (.xml) will be appended.
-
-        Note that the configuration of the newly created machine is not
-        saved to disk (and therefore no settings file is created)
-        until <link to="IMachine::saveSettings"/> is called. If the
-        specified settings file already exists, this method
-        will fail with <link to="VBOX_E_FILE_ERROR"/>.
-
-        See <link to="#createMachine"/> for more information.
-
-        @deprecated This method may be removed later. Use <link
-        to="IVirtualBox::createMachine"/> instead.
-
-        <note>
-          There is no way to change the name of the settings file
-          of the machine created in "legacy" mode.
-        </note>
-
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          @a osTypeId is invalid.
-        </result>
-        <result name="VBOX_E_FILE_ERROR">
-          @a settingsFile is invalid or the settings file already exists or
-          could not be created due to an I/O error.
-        </result>
-        <result name="E_INVALIDARG">
-          @a name or @a settingsFile is empty or @c null.
-        </result>
-      </desc>
-
-      <param name="name" type="wstring" dir="in">
-        <desc>Machine name.</desc>
-      </param>
-      <param name="osTypeId" type="wstring" dir="in">
-        <desc>Machine OS Type ID.</desc>
-      </param>
-      <param name="settingsFile" type="wstring" dir="in">
-        <desc>Name of the machine settings file.</desc>
-      </param>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>Machine UUID (optional).</desc>
-      </param>
-      <param name="machine" type="IMachine" dir="return">
-        <desc>Created machine object.</desc>
-      </param>
-    </method>
-
     <method name="openMachine">
       <desc>
         Opens a virtual machine from the existing settings file.
@@ -1661,7 +1601,6 @@
         and must be a valid machine settings file whose contents
         will be used to construct the machine object.
 
-        @deprecated Will be removed soon.
         <result name="VBOX_E_FILE_ERROR">
           Settings file name invalid, not found or sharing violation.
         </result>
@@ -4292,34 +4231,68 @@
         controller (<link to="IStorageController" />, identified by @a name),
         at the indicated port and device.
 
-        This method is intended for managing storage devices in general (it works
-        for both fixed and removable media) while a machine is powered off.
+        This method is intended for managing storage devices in general while a
+        machine is powered off. It can be used to attach and detach fixed
+        and removeable media.
+
+        Starting with VirtualBox 3.3, media no longer have to be globally
+        registered before they can be attached to a virtual machine. For
+        compatibility with machines created by older versions of VirtualBox
+        and for greater flexibility with managing removable media, media
+        can still be registered globally. As a result, there are now
+        several variants of attaching media:
+
+        <ul>
+          <li>To directly attach a medium without first registering it
+            globally, simply pass the file name of its storage unit in the
+            @a medium string parameter. This works for all media formats
+            supported by the <li to="VirtualBox::openMedium" /> method.
+            The difference is that the medium will not be saved in the
+            global media registry, but only with the machine settings
+            XML file. For better portability of the machine as a whole,
+            it is recommended to place the storage unit in the machine's
+            folder as well.
+          </li>
+
+          <li>To attach a medium that has been globally registered using
+            <li to="VirtualBox::openMedium" />, call that method with the
+            full path of a storage unit. Then, retrieve the UUID of that
+            medium from its <link to="IMedium::id" /> attribute and pass
+            that UUID into this method. This way, the medium will be
+            saved in the global media registry in the VirtualBox.xml
+            settings file. This is still the recommended way to manage
+            removable media such as ISO and RAW files if they are to be
+            used by several virtual machines and the storage unit is not
+            located in the machine's directory.
+          </li>
+
+          <li>Only for storage devices supporting removable media (such as
+            DVDs and floppies), you can also specify an empty string to
+            indicate an empty drive or the UUID of a host DVD or floppy
+            drive; those UUIDs can be obtained from <link to="IHost::DVDDrives" />
+            and <link to="IHost::floppyDrives"/>.
+            For removeable devices, you can also use <link to="IMachine::mountMedium"/>
+            to change the media while the machine is running.
+          </li>
+        </ul>
+
         In a VM's default configuration of virtual machines, the secondary
         master of the IDE controller is used for a CD/DVD drive.
-
-        For fixed media such as hard disks, the given medium identifier cannot
-        be a zero UUID.
-
-        For storage devices supporting removable media (such as DVDs and floppies),
-        you can also use <link to="IMachine::mountMedium"/> for changing the media
-        while the machine is running. For those devices, you can also specify
-        a zero UUID to indicate an empty drive or the UUID of a host drive;
-        see <link to="IMediumAttachment" /> for details.
 
         After calling this returns successfully, a new instance of
         <link to="IMediumAttachment"/> will appear in the machine's list of medium
         attachments (see <link to="IMachine::mediumAttachments"/>).
 
-        The specified device slot must not have a device attached to it,
-        or this method will fail.
-
         See <link to="IMedium"/> and <link to="IMediumAttachment"/> for more
         information about attaching media.
 
+        The specified device slot must not have a device attached to it,
+        or this method will fail.
+
         <note>
-          You cannot attach a device to a running machine. Also, you cannot
-          attach a device to a newly created machine until this machine's
-          settings are saved to disk using <link to="#saveSettings"/>.
+          You cannot attach a device to a newly created machine until
+          this machine's settings are saved to disk using
+          <link to="#saveSettings"/>.
         </note>
         <note>
           If the medium is being attached indirectly, a new differencing medium
@@ -4331,7 +4304,8 @@
         </note>
 
         <result name="E_INVALIDARG">
-          SATA device, SATA port, IDE port or IDE slot out of range.
+          SATA device, SATA port, IDE port or IDE slot out of range, or
+          file or UUID not found.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Machine must be registered before media can be attached.
@@ -4362,10 +4336,9 @@
       <param name="type" type="DeviceType" dir="in">
         <desc>Device type of the attached device.</desc>
       </param>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the medium to mount. Can be a zero UUID or the UUID of
-          a host drive for removeable media; see <link to="IMediumAttachment" />
-          for details.</desc>
+      <param name="medium" type="wstring" dir="in">
+        <desc>Path of the storage unit or UUID of the medium or the UUID of a
+          host drive to mount, or an empty string for an empty drive.</desc>
       </param>
     </method>
 
@@ -14224,7 +14197,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="mediumType" readonly="yes" type="DeviceType">
       <desc>Type of the medium this event relates to.</desc>
     </attribute>
-    
+
     <attribute name="registered" type="boolean" readonly="yes">
       <desc>
         If @c true, the medium was registered, otherwise it was
