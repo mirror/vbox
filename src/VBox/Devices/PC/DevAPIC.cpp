@@ -558,7 +558,7 @@ static int apic_bus_deliver(APICDeviceInfo* dev,
 #else
             /* We shall send init IPI only in R3, R0 calls should be
                rescheduled to R3 */
-            return  VINF_IOM_HC_MMIO_READ_WRITE;
+            return VINF_IOM_HC_MMIO_READ_WRITE;
 #endif /* IN_RING3 */
 
 #else
