@@ -501,28 +501,40 @@ PyObject *LogConsoleMessage(PyObject *self, PyObject *args)
 static PyObject*
 PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
 {
-  PRInt32 aTimeout;
+    PRInt32 aTimeout;
 
-  if (!PyArg_ParseTuple(args, "i", &aTimeout))
-    return NULL; /** @todo throw exception */
+    if (!PyArg_ParseTuple(args, "i", &aTimeout))
+    {
+        PyErr_SetString(PyExc_TypeError, "the timeout argument is not an integer");
+        return NULL;
+    }
 
-  int rc;
-  com::EventQueue* aEventQ = com::EventQueue::getMainEventQueue();
-  NS_WARN_IF_FALSE(aEventQ != nsnull, "Null main event queue");
-  if (!aEventQ)
-      return NULL;
+    int rc;
+    com::EventQueue* aEventQ = com::EventQueue::getMainEventQueue();
+    NS_WARN_IF_FALSE(aEventQ != nsnull, "Null main event queue");
+    if (!aEventQ)
+	{
+        PyErr_SetString(PyExc_TypeError, "the main event queue is NULL");
+        return NULL;
+	}
 
-  Py_BEGIN_ALLOW_THREADS
-  rc = aEventQ->processEventQueue(aTimeout < 0 ? RT_INDEFINITE_WAIT : (uint32_t)aTimeout);
-  Py_END_ALLOW_THREADS
-  if (RT_SUCCESS(rc))
-      return PyInt_FromLong(0);
+    Py_BEGIN_ALLOW_THREADS
+    rc = aEventQ->processEventQueue(aTimeout < 0 ? RT_INDEFINITE_WAIT : (uint32_t)aTimeout);
+    Py_END_ALLOW_THREADS
+    if (RT_SUCCESS(rc))
+        return PyInt_FromLong(0);
 
-  if (   rc == VERR_TIMEOUT
-      || rc == VERR_INTERRUPTED)
-      return PyInt_FromLong(1);
+    if (   rc == VERR_TIMEOUT
+        || rc == VERR_INTERRUPTED)
+        return PyInt_FromLong(1);
 
-  return PyInt_FromLong(2);
+    if (rc == VERR_INVALID_CONTEXT)
+	{
+        PyErr_SetString(PyExc_Exception, "wrong thread, use the main thread");
+		return NULL;
+	}
+
+    return PyInt_FromLong(2);
 }
 
 static PyObject*
