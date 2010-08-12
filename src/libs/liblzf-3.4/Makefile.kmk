@@ -21,7 +21,8 @@ include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += VBox-liblzf
 if1of ($(KBUILD_TARGET),os2 win)
- LIBRARIES += VBox-liblzf-static
+ # only required for (now) disabled VBoxFidHdd
+ # LIBRARIES += VBox-liblzf-static
 endif
 VBox-liblzf_TEMPLATE = VBOXR3
 VBox-liblzf_BLD_TYPE = release # WARNING! Always optimizing this lib.

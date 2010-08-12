@@ -50,7 +50,8 @@ endif
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable tstVDSetUuid
  if1of ($(KBUILD_TARGET), darwin freebsd linux win solaris)
-  PROGRAMS += VBoxFixHdd
+ # disable as no longer required
+ # PROGRAMS += VBoxFixHdd
  endif
  ifeq ($(KBUILD_TARGET),l4)
   tstVD_TEMPLATE = VBOXLNXHOSTR3EXE
