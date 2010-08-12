@@ -774,8 +774,8 @@ int main(int argc, char* argv[])
     {
         // we have to process main event queue
         WEBDEBUG(("Pumping COM event queue\n"));
-        int vrc = pQ->processEventQueue(RT_INDEFINITE_WAIT);
-        if (RT_FAILURE(vrc))
+        rc = pQ->processEventQueue(RT_INDEFINITE_WAIT);
+        if (RT_FAILURE(rc))
             RTMsgError("processEventQueue -> %Rrc", rc);
     }
 
