@@ -21,7 +21,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Globals
 VBOX_PATH_RDESKTOP_SRC := $(PATH_SUB_CURRENT)
 VBOX_PATH_DEVICES_USB  := $(PATH_ROOT)/src/VBox/Devices/USB
-VBOX_RDESKTOP_SRC_SUBDIR = rdesktop-1.6.0-vrdp-tmp
+VBOX_RDESKTOP_SRC_SUBDIR = rdesktop-1.6.0-vrdp
 
 #
 # The rdesktop-vrdp program.
@@ -179,7 +179,8 @@ $(PATH_BIN)/rdesktop-vrdp.tar.gz: \
 		$$(rdesktop-bin_1_TARGET) \
 		$$(rdesktop-nonbin_1_TARGET)
 	$(call MSG_TOOL,tar/gzip,,$@)
-	$(QUIET)cd $(PATH_TARGET) && rm -f rdesktop-1.6.0-vrdp
+	# Temporary hack to fix incremental builds (will cause one build failure)
+	$(QUIET)rm -f $(PATH_TARGET)/$(VBOX_RDESKTOP_SRC_SUBDIR) 2> /dev/null || /bin/true
 	$(QUIET)cd $(PATH_TARGET) && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR) | gzip - > $@
 
 
