@@ -3305,7 +3305,7 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                 rc = iscsiRecvPDUAsync(pImage);
                 if (rc == VERR_BROKEN_PIPE)
                     iscsiReattach(pImage);
-                if (RT_FAILURE(rc))
+                else if (RT_FAILURE(rc))
                     LogRel(("iSCSI: Handling incoming request failed %Rrc\n", rc));
             }
             else if (fEvents & VD_INTERFACETCPNET_EVT_WRITE)
