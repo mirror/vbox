@@ -630,6 +630,9 @@ static DECLCALLBACK(int)  pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
 # ifdef VBOX_STRICT
 static DECLCALLBACK(int)  pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 # endif
+# ifdef DEBUG_sandervl
+static DECLCALLBACK(int)  pgmR3CmdCountPhysWrites(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+# endif
 static DECLCALLBACK(int)  pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 #endif
 
@@ -652,6 +655,15 @@ static const DBGCVARDESC g_aPgmPhysToFileArgs[] =
     {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "nozero",       "If present, zero pages are skipped." },
 };
 
+# ifdef DEBUG_sandervl
+static const DBGCVARDESC g_aPgmCountPhysWritesArgs[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "enabled",      "on/off." },
+    {  1,           1,          DBGCVAR_CAT_NUMBER_NO_RANGE,     0,                     "interval",     "Interval in ms." },
+};
+# endif
+
 /** Command descriptors. */
 static const DBGCCMD    g_aCmds[] =
 {
@@ -660,13 +672,16 @@ static const DBGCCMD    g_aCmds[] =
     { "pgmsync",       0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSync,       "",                     "Sync the CR3 page." },
     { "pgmerror",      0, 1,        &g_aPgmErrorArgs[0],      1,            NULL,               0,          pgmR3CmdError,      "",                     "Enables inject runtime of errors into parts of PGM." },
     { "pgmerroroff",   0, 1,        &g_aPgmErrorArgs[0],      1,            NULL,               0,          pgmR3CmdError,      "",                     "Disables inject runtime errors into parts of PGM." },
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     { "pgmassertcr3",  0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
-#endif
-#if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
+#  if HC_ARCH_BITS == 64
     { "pgmcheckduppages", 0, 0,     NULL,                     0,            NULL,               0,          pgmR3CmdCheckDuplicatePages,  "",           "Check for duplicate pages in all running VMs." },
     { "pgmsharedmodules", 0, 0,     NULL,                     0,            NULL,               0,          pgmR3CmdShowSharedModules,  "",             "Print shared modules info." },
-#endif
+#  endif
+# endif
+# ifdef DEBUG_sandervl
+    { "pgmcountphyswrites", 2, 2,   &g_aPgmCountPhysWritesArgs[0], 2,       NULL,               0,          pgmR3CmdCountPhysWrites, "",                "Count physical page writes."},
+# endif
     { "pgmsyncalways", 0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
     { "pgmphystofile", 1, 2,        &g_aPgmPhysToFileArgs[0], 2,            NULL,               0,          pgmR3CmdPhysToFile, "",                     "Save the physical memory to file." },
 };
@@ -1655,6 +1670,11 @@ static int pgmR3InitStats(PVM pVM)
 # define PGM_REG_PROFILE(a, b, c) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b); \
         AssertRC(rc);
+
+#ifdef DEBUG_sandervl
+    PGM_REG_COUNTER(&pPGM->StatRZFTPhysPageWrite,             "/PGM/FT/RZ/PageWrite",               "The number of times a physical page was written to (FT stats).");
+    PGM_REG_COUNTER(&pPGM->StatR3FTPhysPageWrite,             "/PGM/FT/R3/PageWrite",               "The number of times a physical page was written to (FT stats).");
+#endif
 
     PGMSTATS *pStats = pVM->pgm.s.pStatsR3;
 
@@ -4286,6 +4306,81 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
     return VINF_SUCCESS;
 }
+
+/**
+ * Internal timer callback function.
+ *
+ * @param   pVM             The VM.
+ * @param   pTimer          The timer handle.
+ * @param   pvUser          User argument specified upon timer creation.
+ */
+DECLCALLBACK(void) pgmR3PhysWriteCountTMCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
+{
+    uint32_t uInterval = (uint32_t) pvUser;
+
+    if (pVM->pgm.s.fCountingPhysWrites)
+    {
+        pgmR3PoolClearAll(pVM, true/* fFlushRemTlb */);
+
+        /* Program next invocation. */
+        int rc = TMTimerSetMillies(pVM->pgm.s.pPhysWritesCountTimer, uInterval);
+        AssertRC(rc);
+    }
+}
+
+# ifdef DEBUG_sandervl
+/**
+ * The '.pgmcountphyswrites' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) pgmR3CmdCountPhysWrites(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /*
+     * Validate input.
+     */
+    if (!pVM)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
+    if (    cArgs != 2
+        ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING
+        ||  paArgs[1].enmType != DBGCVAR_CAT_NUMBER_NO_RANGE)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: parser error, invalid arguments.\n");
+
+    if (!strcmp(paArgs[0].u.pszString, "off"))
+    {
+        if (!pVM->pgm.s.fCountingPhysWrites)
+            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: not enabled!\n");
+
+        TMTimerStop(pVM->pgm.s.pPhysWritesCountTimer);
+        TMR3TimerDestroy(pVM->pgm.s.pPhysWritesCountTimer);
+        pVM->pgm.s.pPhysWritesCountTimer = NULL;
+        pVM->pgm.s.fCountingPhysWrites = false;
+        return VINF_SUCCESS;
+    }
+    else
+    if (strcmp(paArgs[0].u.pszString, "on"))
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid 1st argument '%s', must be 'on' or 'off'.\n", paArgs[0].u.pszString);
+
+    if (    paArgs[1].u.u64Number < 10
+        ||  paArgs[1].u.u64Number > 1000)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid 2nd argument '%d', must be between 10 and 1000 ms.\n", paArgs[1].u.u64Number);
+
+    int rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, pgmR3PhysWriteCountTMCallback, (void *)(uint32_t)paArgs[1].u.u64Number, "Physical page write counting timer", &pVM->pgm.s.pPhysWritesCountTimer);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pVM->pgm.s.fCountingPhysWrites = true;
+    rc = TMTimerSetMillies(pVM->pgm.s.pPhysWritesCountTimer, paArgs[1].u.u64Number);
+    AssertRC(rc);
+    return VINF_SUCCESS;
+}
+# endif /* DEBUG_sandervl */
+
 #endif /* VBOX_STRICT */
 
 

@@ -999,7 +999,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 return VINF_SUCCESS;
             }
         }
-        /** @todo else: WTF are we here? */
+        /** @todo else: why are we here? */
 
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && defined(VBOX_STRICT)
         /*
@@ -1879,7 +1879,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                                          && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                                    )
 #endif /* else: CSAM not active */
-                                    PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
+                                   PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
                                       GCPtrCurPage, PteSrc.n.u1Present,
                                       PteSrc.n.u1Write & PdeSrc.n.u1Write,
@@ -2140,6 +2140,10 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                 PteSrc.n.u1User     = 1;
 
                 PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
+#ifdef VBOX_STRICT
+                if (pVM->pgm.s.fCountingPhysWrites)
+                    pPTDst->a[iPTDst].n.u1Write = 0;
+#endif
 
                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
                       GCPtrCurPage, PteSrc.n.u1Present,
@@ -2162,6 +2166,14 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
         const unsigned  iPTDst       = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
         RTGCPTR         GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
         GSTPTE          PteSrc;
+
+#ifdef DEBUG_sandervl
+        if (    pVM->pgm.s.fCountingPhysWrites
+            &&  ((uErr & (X86_TRAP_PF_RW|X86_TRAP_PF_P)) == X86_TRAP_PF_RW))
+        {
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat, FTPhysPageWrite));
+        }
+#endif
 
         /* Fake the page table entry */
         PteSrc.u = GCPtrCurPage;
