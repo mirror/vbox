@@ -285,11 +285,11 @@ static int waitForEventsOnDarwin(RTMSINTERVAL cMsTimeout)
             || orc2 == kCFRunLoopRunFinished)
             orc = orc2;
     }
-    if (    orc == 0
-        ||  orc == kCFRunLoopRunHandledSource)
+    if (   orc == 0 /*???*/
+        || orc == kCFRunLoopRunHandledSource)
         return VINF_SUCCESS;
-    if (    orc == kCFRunLoopRunStopped
-        ||  orc == kCFRunLoopRunFinished)
+    if (   orc == kCFRunLoopRunStopped
+        || orc == kCFRunLoopRunFinished)
         return VERR_INTERRUPTED;
     AssertMsg(orc == kCFRunLoopRunTimedOut, ("Unexpected status code from CFRunLoopRunInMode: %#x", orc));
     return VERR_TIMEOUT;
@@ -418,20 +418,34 @@ static int processPendingEvents(void)
 /**
  * Process pending XPCOM events.
  * @param pQueue The queue to process events on.
- * @returns VINF_SUCCESS or VERR_TIMEOUT.
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_TIMEOUT
+ * @retval  VERR_INTERRUPTED (darwin only)
+ * @retval  VERR_INTERNAL_ERROR_2
  */
 static int processPendingEvents(nsIEventQueue *pQueue)
 {
-    /* Check for timeout condition so the caller can be a bit more lazy. */
+    /* ProcessPendingEvents doesn't report back what it did, so check here. */
     PRBool fHasEvents = PR_FALSE;
     nsresult hr = pQueue->PendingEvents(&fHasEvents);
     if (NS_FAILED(hr))
         return VERR_INTERNAL_ERROR_2;
-    if (!fHasEvents)
-        return VERR_TIMEOUT;
 
-    pQueue->ProcessPendingEvents();
-    return VINF_SUCCESS;
+    /* Process pending events. */
+    int rc = VINF_SUCCESS;
+    if (fHasEvents)
+        pQueue->ProcessPendingEvents();
+    else
+        rc = VERR_TIMEOUT;
+
+# ifdef RT_OS_DARWIN
+    /* Process pending native events. */
+    int rc2 = waitForEventsOnDarwin(0);
+    if (rc == VERR_TIMEOUT || rc2 == VERR_INTERRUPTED)
+        rc = rc2;
+# endif
+
+    return rc;
 }
 
 #endif // VBOX_WITH_XPCOM
