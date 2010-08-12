@@ -1747,7 +1747,7 @@
         Opens a medium from an existing storage location.
 
         Once a medium has been opened, it can be passed to other VirtualBox
-        methods, in particular to <link to="IMachine::AttachDevice" />.
+        methods, in particular to <link to="IMachine::attachDevice" />.
 
         Depending on the given device type, the file at the storage location
         must be in one of the media formats understood by VirtualBox:
@@ -4232,7 +4232,7 @@
 
         <ul>
           <li>For fixed and removable media, you can pass in a medium that was
-            previously opened using <link to="VirtualBox::openMedium" />.
+            previously opened using <link to="IVirtualBox::openMedium" />.
           </li>
 
           <li>Only for storage devices supporting removable media (such as
