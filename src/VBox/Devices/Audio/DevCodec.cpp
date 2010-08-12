@@ -928,7 +928,6 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) = 0x7F | RT_BIT(7);
 
             pNode->dac.node.au32F00_param[9] = (0xf << 16) | RT_BIT(11) |  RT_BIT(10) | RT_BIT(2) | RT_BIT(0);
-            pNode->dac.node.au32F00_param[5] = (0x3 << 4) | 0x3;
             pNode->dac.u32F0c_param = 0;
             pNode->dac.u32F05_param = 0x3 << 4 | 0x3; /* PS-Act: D3, Set: D3  */
         break;
