@@ -341,7 +341,8 @@ typedef struct SCSIREQ
     size_t          cbI2TData;
     /** Length of Target2Initiator data buffer. */
     size_t          cbT2IData;
-    /** Length of sense buffer. */
+    /** Length of sense buffer
+     * This contains the number of sense bytes received upon completion. */
     size_t          cbSense;
     /** Completion status of the command. */
     uint8_t         status;
@@ -375,6 +376,12 @@ typedef struct SCSIREQASYNC
     uint8_t         abCDB[10];
     /** The sense buffer. */
     uint8_t         abSense[96];
+    /** Status code to return if we got sense data. */
+    int             rcSense;
+    /** Number of retries if the command completes with sense
+     * data before we return with an error.
+     */
+    unsigned        cSenseRetries;
     /** The number of entries in the I2T S/G list. */
     unsigned        cI2TSegs;
     /** The number of entries in the T2I S/G list. */
@@ -660,7 +667,7 @@ static const VDCONFIGINFO s_iscsiConfigInfo[] =
 /* iSCSI low-level functions (only to be used from the iSCSI high-level functions). */
 static uint32_t iscsiNewITT(PISCSIIMAGE pImage);
 static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq, uint32_t uFlags);
-static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes, bool fSelect);
+static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes);
 static int iscsiRecvPDUAsync(PISCSIIMAGE pImage);
 static int iscsiSendPDUAsync(PISCSIIMAGE pImage);
 static int iscsiValidatePDU(PISCSIRES paRes, uint32_t cnRes);
@@ -778,6 +785,38 @@ static PISCSICMD iscsiCmdRemove(PISCSIIMAGE pImage, uint32_t Itt)
     return pIScsiCmd;
 }
 
+/**
+ * Removes all commands from the table and returns the
+ * list head
+ *
+ * @returns Pointer to the head of teh command list.
+ * @param   pImage    iSCSI connection to use.
+ */
+static PISCSICMD iscsiCmdRemoveAll(PISCSIIMAGE pImage)
+{
+    PISCSICMD pIScsiCmdHead = NULL;
+
+    for (unsigned idx = 0; idx < RT_ELEMENTS(pImage->aCmdsWaiting); idx++)
+    {
+        PISCSICMD pHead;
+        PISCSICMD pTail;
+
+        pHead = pImage->aCmdsWaiting[idx];
+        pImage->aCmdsWaiting[idx] = NULL;
+
+        /* Get the tail. */
+        pTail = pHead;
+        while (pTail->pNext)
+            pTail = pTail->pNext;
+
+        /* Concatenate. */
+        pTail->pNext = pIScsiCmdHead;
+        pIScsiCmdHead = pHead;
+    }
+
+    return pIScsiCmdHead;
+}
+
 static int iscsiTransportConnect(PISCSIIMAGE pImage)
 {
     int rc;
@@ -828,7 +867,7 @@ static int iscsiTransportConnect(PISCSIIMAGE pImage)
 }
 
 
-static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned int cnResponse, bool fSelect)
+static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned int cnResponse)
 {
     int rc = VINF_SUCCESS;
     unsigned int i = 0;
@@ -859,13 +898,10 @@ static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned
                 break;
             }
             Assert(cMilliesRemaining < 1000000);
-            if (fSelect)
-            {
-                rc = pImage->pInterfaceNetCallbacks->pfnSelectOne(pImage->Socket,
-                                                                  cMilliesRemaining);
-                if (RT_FAILURE(rc))
-                    break;
-            }
+            rc = pImage->pInterfaceNetCallbacks->pfnSelectOne(pImage->Socket,
+                                                              cMilliesRemaining);
+            if (RT_FAILURE(rc))
+                break;
             rc = pImage->pInterfaceNetCallbacks->pfnRead(pImage->Socket,
                                                          pDst, residual,
                                                          &cbActuallyRead);
@@ -1350,7 +1386,7 @@ restart:
             aISCSIRes[cnISCSIRes].cbSeg = sizeof(bBuf);
             cnISCSIRes++;
 
-            rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes, true);
+            rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes);
             if (RT_FAILURE(rc))
                 break;
             /** @todo collect partial login responses with Continue bit set. */
@@ -1641,7 +1677,7 @@ static int iscsiDetach(void *pvUser)
 
             aISCSIRes.pvSeg = aResBHS;
             aISCSIRes.cbSeg = sizeof(aResBHS);
-            rc = iscsiRecvPDU(pImage, itt, &aISCSIRes, 1, true);
+            rc = iscsiRecvPDU(pImage, itt, &aISCSIRes, 1);
             if (RT_SUCCESS(rc))
             {
                 if (RT_N2H_U32(aResBHS[0]) != (ISCSI_FINAL_BIT | ISCSIOP_LOGOUT_RES))
@@ -1801,7 +1837,7 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
         aISCSIRes[cnISCSIRes].cbSeg = sizeof(aStatus);
         cnISCSIRes++;
 
-        rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes, true);
+        rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes);
         if (RT_FAILURE(rc))
             break;
 
@@ -1980,7 +2016,7 @@ static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq,
  * @param   paRes       Pointer to array of iSCSI response sections.
  * @param   cnRes       Number of valid iSCSI response sections in the array.
  */
-static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes, bool fSelect)
+static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes)
 {
     int rc = VINF_SUCCESS;
     ISCSIRES aResBuf;
@@ -1989,7 +2025,7 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
     {
         aResBuf.pvSeg = pImage->pvRecvPDUBuf;
         aResBuf.cbSeg = pImage->cbRecvPDUBuf;
-        rc = iscsiTransportRead(pImage, &aResBuf, 1, fSelect);
+        rc = iscsiTransportRead(pImage, &aResBuf, 1);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
@@ -2144,6 +2180,39 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
 
 
 /**
+ * Reset the PDU buffer
+ *
+ * @param   pImage      The iSCSI connection state to be used.
+ */
+static void iscsiRecvPDUReset(PISCSIIMAGE pImage)
+{
+    pImage->cbRecvPDUResidual = ISCSI_BHS_SIZE;
+    pImage->fRecvPDUBHS       = true;
+    pImage->pbRecvPDUBufCur   = (uint8_t *)pImage->pvRecvPDUBuf;
+}
+
+static void iscsiPDUTxAdd(PISCSIIMAGE pImage, PISCSIPDUTX pIScsiPDUTx, bool fFront)
+{
+    if (!fFront)
+    {
+        /* Link the PDU at the tail of the list. */
+        if (!pImage->pIScsiPDUTxHead)
+            pImage->pIScsiPDUTxHead = pIScsiPDUTx;
+        else
+            pImage->pIScsiPDUTxTail->pNext = pIScsiPDUTx;
+        pImage->pIScsiPDUTxTail = pIScsiPDUTx;
+    }
+    else
+    {
+        /* Link PDU to at the front of the list. */
+        pIScsiPDUTx->pNext = pImage->pIScsiPDUTxHead;
+        pImage->pIScsiPDUTxHead = pIScsiPDUTx;
+        if (!pImage->pIScsiPDUTxTail)
+            pImage->pIScsiPDUTxTail = pIScsiPDUTx;
+    }
+}
+
+/**
  * Receives a PDU in a non blocking way.
  *
  * @returns VBOX status code.
@@ -2161,11 +2230,9 @@ static int iscsiRecvPDUAsync(PISCSIIMAGE pImage)
     {
         /*
          * We are receiving a new PDU, don't read more than the BHS initially
-         * until we now the real size of the PDU.
+         * until we know the real size of the PDU.
          */
-        pImage->cbRecvPDUResidual = ISCSI_BHS_SIZE;
-        pImage->fRecvPDUBHS       = true;
-        pImage->pbRecvPDUBufCur   = (uint8_t *)pImage->pvRecvPDUBuf;
+        iscsiRecvPDUReset(pImage);
         LogFlow(("Receiving new PDU\n"));
     }
 
@@ -2377,11 +2444,7 @@ static int iscsiRecvPDUProcess(PISCSIIMAGE pImage, PISCSIRES paRes, uint32_t cnR
                     RTSgBufInit(&pIScsiPDUTx->SgBuf, pIScsiPDUTx->aISCSIReq, cnISCSIReq);
 
                     /* Link the PDU to the list. */
-                    if (!pImage->pIScsiPDUTxHead)
-                        pImage->pIScsiPDUTxHead = pIScsiPDUTx;
-                    else
-                        pImage->pIScsiPDUTxTail->pNext = pIScsiPDUTx;
-                    pImage->pIScsiPDUTxTail = pIScsiPDUTx;
+                    iscsiPDUTxAdd(pImage, pIScsiPDUTx, false /* fFront */);
 
                     /* Start transfer of a PDU if there is no one active at the moment. */
                     if (!pImage->pIScsiPDUTxCur)
@@ -2467,7 +2530,7 @@ static int iscsiValidatePDU(PISCSIRES paRes, uint32_t cnRes)
                 return VERR_PARSE_ERROR;
             break;
         case ISCSIOP_ASYN_MSG:
-            /* Asynchronous Messages must not have the final bit unser and may not contain
+            /* Asynchronous Messages must not have the final bit unset and may not contain
              * an initiator task tag. */
             if (    ((hw0 & ISCSI_FINAL_BIT) == 0)
                 ||  (RT_N2H_U32(pcrgResBHS[4]) != ISCSI_TASK_TAG_RSVD))
@@ -2489,6 +2552,7 @@ static int iscsiValidatePDU(PISCSIRES paRes, uint32_t cnRes)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Prepares a PDU to transfer for the given command and adds it to the list.
  */
@@ -2497,6 +2561,7 @@ static int iscsiPDUTxPrepare(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd)
     int rc = VINF_SUCCESS;
     uint32_t *paReqBHS;
     size_t cbData = 0;
+    size_t cbSegs = 0;
     PSCSIREQ pScsiReq;
     PISCSIPDUTX pIScsiPDU = NULL;
 
@@ -2546,6 +2611,7 @@ static int iscsiPDUTxPrepare(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd)
     pIScsiPDU->aISCSIReq[cnISCSIReq].cbSeg = sizeof(pIScsiPDU->aBHS);
     pIScsiPDU->aISCSIReq[cnISCSIReq].pvSeg = pIScsiPDU->aBHS;
     cnISCSIReq++;
+    cbSegs = sizeof(pIScsiPDU->aBHS);
     /* Padding is not necessary for the BHS. */
 
     if (pScsiReq->cbI2TData)
@@ -2555,6 +2621,7 @@ static int iscsiPDUTxPrepare(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd)
             Assert(cnISCSIReq < cI2TSegs);
             pIScsiPDU->aISCSIReq[cnISCSIReq].cbSeg = pScsiReq->paI2TSegs[cSeg].cbSeg;
             pIScsiPDU->aISCSIReq[cnISCSIReq].pvSeg = pScsiReq->paI2TSegs[cSeg].pvSeg;
+            cbSegs += pScsiReq->paI2TSegs[cSeg].cbSeg;
             cnISCSIReq++;
 
             /* Add padding if necessary. */
@@ -2563,21 +2630,18 @@ static int iscsiPDUTxPrepare(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd)
                 Assert(cnISCSIReq < cI2TSegs);
                 pIScsiPDU->aISCSIReq[cnISCSIReq].pvSeg = &pImage->aPadding[0];
                 pIScsiPDU->aISCSIReq[cnISCSIReq].cbSeg = 4 - (pScsiReq->paI2TSegs[cSeg].cbSeg & 3);
+                cbSegs += pIScsiPDU->aISCSIReq[cnISCSIReq].cbSeg;
                 cnISCSIReq++;
             }
         }
     }
 
     pIScsiPDU->cISCSIReq = cnISCSIReq;
-    pIScsiPDU->cbSgLeft  = pScsiReq->cbI2TData + sizeof(pIScsiPDU->aBHS);
+    pIScsiPDU->cbSgLeft  = cbSegs;
     RTSgBufInit(&pIScsiPDU->SgBuf, pIScsiPDU->aISCSIReq, cnISCSIReq);
 
     /* Link the PDU to the list. */
-    if (!pImage->pIScsiPDUTxHead)
-        pImage->pIScsiPDUTxHead = pIScsiPDU;
-    else
-        pImage->pIScsiPDUTxTail->pNext = pIScsiPDU;
-    pImage->pIScsiPDUTxTail = pIScsiPDU;
+    iscsiPDUTxAdd(pImage, pIScsiPDU, false /* fFront */);
 
     /* Start transfer of a PDU if there is no one active at the moment. */
     if (!pImage->pIScsiPDUTxCur)
@@ -2672,7 +2736,7 @@ static int iscsiRecvPDUUpdateRequest(PISCSIIMAGE pImage, PISCSIRES paRes, uint32
 
             if (final && cbData > pScsiReq->cbT2IData)
             {
-                /* The received PDU is partially stored in the buffer for status.
+                /* The received PDU is bigger than what we requested.
                  * Must not happen under normal circumstances and is a target error. */
                 rc = VERR_BUFFER_OVERFLOW;
             }
@@ -2694,9 +2758,15 @@ static int iscsiRecvPDUUpdateRequest(PISCSIIMAGE pImage, PISCSIRES paRes, uint32
             rc = VERR_PARSE_ERROR;
     }
 
+    /* Log any errors here but ignore the PDU. */
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("iSCSI: Received malformed PDU from target %s (rc=%Rrc), ignoring\n", pImage->pszTargetName, rc));
+        rc = VINF_SUCCESS;
+    }
+
     return rc;
 }
-
 
 /**
  * Appends a key-value pair to the buffer. Normal ASCII strings (cbValue == 0) and large binary values
@@ -3068,7 +3138,7 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
     PISCSIIMAGE pImage = (PISCSIIMAGE)pvUser;
 
-    /* Initialise the initial event mask. */
+    /* Initialize the initial event mask. */
     pImage->fPollEvents = VD_INTERFACETCPNET_EVT_READ | VD_INTERFACETCPNET_EVT_ERROR;
 
     while (pImage->fRunning)
@@ -3092,6 +3162,7 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                     case ISCSICMDTYPE_REQ:
                     {
                         rc = iscsiPDUTxPrepare(pImage, pIScsiCmd);
+                        AssertRC(rc);
                         break;
                     }
                     case ISCSICMDTYPE_EXEC:
@@ -3109,6 +3180,7 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
         }
         else if (RT_SUCCESS(rc))
         {
+            Assert(pImage->state == ISCSISTATE_NORMAL);
             LogFlow(("Got socket events %#x\n", fEvents));
 
             if (fEvents & VD_INTERFACETCPNET_EVT_READ)
@@ -3128,10 +3200,102 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
             }
             else if (fEvents & VD_INTERFACETCPNET_EVT_ERROR)
             {
-                /** @todo: Determine type of error, reset states, reconnect
-                 * and resend all active PDUs.
-                 */
+                PISCSICMD pIScsiCmdHead = NULL;
+                PISCSICMD pIScsiCmd = NULL;
+                PISCSICMD pIScsiCmdCur = NULL;
+                PISCSIPDUTX pIScsiPDUTx = NULL;
                 LogFlow(("An error ocurred\n"));
+
+                /* Close connection. */
+                iscsiTransportClose(pImage);
+                pImage->state = ISCSISTATE_FREE;
+
+                /* Reset PDU we are receiving. */
+                iscsiRecvPDUReset(pImage);
+
+                /*
+                 * Abort all PDUs we are about to transmit,
+                 * the command need a new Itt if the relogin is successful.
+                 */
+                while (pImage->pIScsiPDUTxHead)
+                {
+                    pIScsiPDUTx = pImage->pIScsiPDUTxHead;
+                    pImage->pIScsiPDUTxHead = pIScsiPDUTx->pNext;
+
+                    pIScsiCmd = pIScsiPDUTx->pIScsiCmd;
+
+                    if (pIScsiCmd)
+                    {
+                        /* Place on command list. */
+                        pIScsiCmd->pNext = pIScsiCmdHead;
+                        pIScsiCmdHead = pIScsiCmd;
+                    }
+                    RTMemFree(pIScsiPDUTx);
+                }
+
+                /* Clear the current PDU too. */
+                if (pImage->pIScsiPDUTxCur)
+                {
+                    pIScsiPDUTx = pImage->pIScsiPDUTxCur;
+
+                    pImage->pIScsiPDUTxCur = NULL;
+                    pIScsiCmd = pIScsiPDUTx->pIScsiCmd;
+
+                    if (pIScsiCmd)
+                    {
+                        pIScsiCmd->pNext = pIScsiCmdHead;
+                        pIScsiCmdHead = pIScsiCmd;
+                    }
+                    RTMemFree(pIScsiPDUTx);
+                }
+
+                /*
+                 * Get all commands which are waiting for a response
+                 * They need to be resend too after a successful reconnect.
+                 */
+                pIScsiCmd = iscsiCmdRemoveAll(pImage);
+
+                pIScsiCmdCur = pIScsiCmd;
+                while (pIScsiCmdCur->pNext)
+                    pIScsiCmdCur = pIScsiCmdCur->pNext;
+
+                /*
+                 * Place them in front of the list because they are the oldest requests
+                 * and need to be processed first to minimize the risk to time out.
+                 */
+                pIScsiCmdCur->pNext = pIScsiCmdHead;
+                pIScsiCmdHead = pIScsiCmd;
+
+                /* Try to attach. */
+                rc = iscsiAttach(pImage);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Phew, we have a connection again.
+                     * Prepare new PDUs for the aborted commands.
+                     */
+                    while (pIScsiCmdHead)
+                    {
+                        pIScsiCmd = pIScsiCmdHead;
+                        pIScsiCmdHead = pIScsiCmdHead->pNext;
+
+                        rc = iscsiPDUTxPrepare(pImage, pIScsiCmd);
+                        AssertRC(rc);
+                    }
+                }
+                else
+                {
+                    /*
+                     * Still no luck, complete commands with error so the caller
+                     * has a chance to inform the user and maybe resend the command.
+                     */
+                    while (pIScsiCmdHead)
+                    {
+                        pIScsiCmd = pIScsiCmdHead;
+                        pIScsiCmdHead = pIScsiCmdHead->pNext;
+
+                        iscsiCmdComplete(pImage, pIScsiCmd, VERR_BROKEN_PIPE);
+                    }
+                }
             }
             else
                 LogRel(("iSCSI: Received unexpected event %#x\n", fEvents));
@@ -3143,39 +3307,6 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
     }
 
     return VINF_SUCCESS;
-}
-
-static void iscsiCommandAsyncComplete(PISCSIIMAGE pImage, int rcReq, void *pvUser)
-{
-    size_t cbTransfered = 0;
-    PSCSIREQASYNC pReqAsync = (PSCSIREQASYNC)pvUser;
-    PSCSIREQ pScsiReq = pReqAsync->pScsiReq;
-
-    /** @todo Retry and sense buffer handling. */
-
-    if (pScsiReq->enmXfer == SCSIXFER_FROM_TARGET)
-        cbTransfered = pScsiReq->cbT2IData;
-    else if (pScsiReq->enmXfer == SCSIXFER_TO_TARGET)
-        cbTransfered = pScsiReq->cbI2TData;
-    else
-        AssertMsg(pScsiReq->enmXfer == SCSIXFER_NONE, ("To/From transfers are not supported yet\n"));
-
-    /* Continue I/O context. */
-    pImage->pInterfaceIoCallbacks->pfnIoCtxCompleted(pImage->pInterfaceIo->pvUser,
-                                                     pReqAsync->pIoCtx, rcReq,
-                                                     cbTransfered);
-
-    RTMemFree(pScsiReq);
-    RTMemFree(pReqAsync);
-}
-
-static void iscsiCommandCompleteSync(PISCSIIMAGE pImage, int rcReq, void *pvUser)
-{
-    PISCSICMDSYNC pIScsiCmdSync = (PISCSICMDSYNC)pvUser;
-
-    pIScsiCmdSync->rcCmd = rcReq;
-    int rc = RTSemEventSignal(pIScsiCmdSync->EventSem);
-    AssertRC(rc);
 }
 
 /**
@@ -3207,6 +3338,15 @@ static int iscsiCommandAsync(PISCSIIMAGE pImage, PSCSIREQ pScsiReq,
         rc = VERR_NOT_SUPPORTED;
 
     return rc;
+}
+
+static void iscsiCommandCompleteSync(PISCSIIMAGE pImage, int rcReq, void *pvUser)
+{
+    PISCSICMDSYNC pIScsiCmdSync = (PISCSICMDSYNC)pvUser;
+
+    pIScsiCmdSync->rcCmd = rcReq;
+    int rc = RTSemEventSignal(pIScsiCmdSync->EventSem);
+    AssertRC(rc);
 }
 
 /**
@@ -3336,6 +3476,52 @@ static int iscsiExecSync(PISCSIIMAGE pImage, PFNISCSIEXEC pfnExec, void *pvUser)
 
     return rc;
 }
+
+
+static void iscsiCommandAsyncComplete(PISCSIIMAGE pImage, int rcReq, void *pvUser)
+{
+    bool fComplete = true;
+    size_t cbTransfered = 0;
+    PSCSIREQASYNC pReqAsync = (PSCSIREQASYNC)pvUser;
+    PSCSIREQ pScsiReq = pReqAsync->pScsiReq;
+
+    if (   RT_SUCCESS(rcReq)
+        && pScsiReq->cbSense > 0)
+    {
+        /* Try again if possible. */
+        if (pReqAsync->cSenseRetries > 0)
+        {
+            pReqAsync->cSenseRetries--;
+            pScsiReq->cbSense = sizeof(pReqAsync->abSense);
+            int rc = iscsiCommandAsync(pImage, pScsiReq, iscsiCommandAsyncComplete, pReqAsync);
+            if (RT_SUCCESS(rc))
+                fComplete = false;
+            else
+                rcReq = pReqAsync->rcSense;
+        }
+        else
+            rcReq = pReqAsync->rcSense;
+    }
+
+    if (fComplete)
+    {
+        if (pScsiReq->enmXfer == SCSIXFER_FROM_TARGET)
+            cbTransfered = pScsiReq->cbT2IData;
+        else if (pScsiReq->enmXfer == SCSIXFER_TO_TARGET)
+            cbTransfered = pScsiReq->cbI2TData;
+        else
+            AssertMsg(pScsiReq->enmXfer == SCSIXFER_NONE, ("To/From transfers are not supported yet\n"));
+
+        /* Continue I/O context. */
+        pImage->pInterfaceIoCallbacks->pfnIoCtxCompleted(pImage->pInterfaceIo->pvUser,
+                                                         pReqAsync->pIoCtx, rcReq,
+                                                         cbTransfered);
+
+        RTMemFree(pScsiReq);
+        RTMemFree(pReqAsync);
+    }
+}
+
 
 /**
  * Internal. Free all allocated space for representing an image, and optionally
@@ -5017,6 +5203,8 @@ static int iscsiAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbToRead
             pReqAsync->cT2ISegs = cT2ISegs;
             pReqAsync->pIoCtx = pIoCtx;
             pReqAsync->pScsiReq = pReq;
+            pReqAsync->cSenseRetries = 10;
+            pReqAsync->rcSense       = VERR_READ_ERROR;
 
             pbCDB[0] = SCSI_READ_10;
             pbCDB[1] = 0;         /* reserved */
@@ -5115,6 +5303,8 @@ static int iscsiAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbToWri
             pReqAsync->cI2TSegs = cI2TSegs;
             pReqAsync->pIoCtx = pIoCtx;
             pReqAsync->pScsiReq = pReq;
+            pReqAsync->cSenseRetries = 10;
+            pReqAsync->rcSense       = VERR_WRITE_ERROR;
 
             pbCDB[0] = SCSI_WRITE_10;
             pbCDB[1] = 0;         /* reserved */
@@ -5177,8 +5367,10 @@ static int iscsiAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
         {
             uint8_t *pbCDB = &pReqAsync->abCDB[0];
 
-            pReqAsync->pIoCtx   = pIoCtx;
-            pReqAsync->pScsiReq = pReq;
+            pReqAsync->pIoCtx        = pIoCtx;
+            pReqAsync->pScsiReq      = pReq;
+            pReqAsync->cSenseRetries = 0;
+            pReqAsync->rcSense       = VINF_SUCCESS;
 
             pbCDB[0] = SCSI_SYNCHRONIZE_CACHE;
             pbCDB[1] = 0;         /* reserved */
