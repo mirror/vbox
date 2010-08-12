@@ -632,6 +632,7 @@ static DECLCALLBACK(int)  pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 # endif
 # ifdef DEBUG_sandervl
 static DECLCALLBACK(int)  pgmR3CmdCountPhysWrites(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(void) pgmR3PhysWriteCountTMCallback(PVM pVM, PTMTIMER pTimer, void *pvUser);
 # endif
 static DECLCALLBACK(int)  pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 #endif
@@ -2140,6 +2141,11 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
      */
     if (pVM->pgm.s.fRamPreAlloc)
         rc = pgmR3PhysRamPreAllocate(pVM);
+
+#ifdef DEBUG_sandervl
+    rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, pgmR3PhysWriteCountTMCallback, NULL, "Physical page write counting timer", &pVM->pgm.s.pPhysWritesCountTimer);
+    AssertRC(rc);
+#endif
 
     LogRel(("PGMR3InitFinalize: 4 MB PSE mask %RGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
     return rc;
@@ -4307,6 +4313,7 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     return VINF_SUCCESS;
 }
 
+# ifdef DEBUG_sandervl
 /**
  * Internal timer callback function.
  *
@@ -4314,21 +4321,18 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
  * @param   pTimer          The timer handle.
  * @param   pvUser          User argument specified upon timer creation.
  */
-DECLCALLBACK(void) pgmR3PhysWriteCountTMCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) pgmR3PhysWriteCountTMCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
 {
-    uint32_t uInterval = (uint32_t)(uintptr_t)pvUser;
-
     if (pVM->pgm.s.fCountingPhysWrites)
     {
         pgmR3PoolClearAll(pVM, true/* fFlushRemTlb */);
 
         /* Program next invocation. */
-        int rc = TMTimerSetMillies(pVM->pgm.s.pPhysWritesCountTimer, uInterval);
+        int rc = TMTimerSetMillies(pVM->pgm.s.pPhysWritesCountTimer, pVM->pgm.s.u32PhysWriteCountTimerInterval);
         AssertRC(rc);
     }
 }
 
-# ifdef DEBUG_sandervl
 /**
  * The '.pgmcountphyswrites' command.
  *
@@ -4357,8 +4361,6 @@ static DECLCALLBACK(int) pgmR3CmdCountPhysWrites(PCDBGCCMD pCmd, PDBGCCMDHLP pCm
             return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: not enabled!\n");
 
         TMTimerStop(pVM->pgm.s.pPhysWritesCountTimer);
-        TMR3TimerDestroy(pVM->pgm.s.pPhysWritesCountTimer);
-        pVM->pgm.s.pPhysWritesCountTimer = NULL;
         pVM->pgm.s.fCountingPhysWrites = false;
         return VINF_SUCCESS;
     }
@@ -4370,12 +4372,9 @@ static DECLCALLBACK(int) pgmR3CmdCountPhysWrites(PCDBGCCMD pCmd, PDBGCCMDHLP pCm
         ||  paArgs[1].u.u64Number > 1000)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid 2nd argument '%d', must be between 10 and 1000 ms.\n", paArgs[1].u.u64Number);
 
-    int rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, pgmR3PhysWriteCountTMCallback, (void *)(uint32_t)paArgs[1].u.u64Number, "Physical page write counting timer", &pVM->pgm.s.pPhysWritesCountTimer);
-    if (RT_FAILURE(rc))
-        return rc;
-
+    pVM->pgm.s.u32PhysWriteCountTimerInterval = paArgs[1].u.u64Number;
     pVM->pgm.s.fCountingPhysWrites = true;
-    rc = TMTimerSetMillies(pVM->pgm.s.pPhysWritesCountTimer, paArgs[1].u.u64Number);
+    int rc = TMTimerSetMillies(pVM->pgm.s.pPhysWritesCountTimer, paArgs[1].u.u64Number);
     AssertRC(rc);
     return VINF_SUCCESS;
 }
