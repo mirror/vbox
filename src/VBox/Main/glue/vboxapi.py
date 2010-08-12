@@ -280,18 +280,29 @@ class PlatformMSCOM:
         rc = MsgWaitForMultipleObjects(self.handles, 0, timeout, QS_ALLINPUT)
         if rc >= WAIT_OBJECT_0 and rc < WAIT_OBJECT_0+len(self.handles):
             # is it possible?
-            pass
+            rc = 2;
         elif rc==WAIT_OBJECT_0 + len(self.handles):
             # Waiting messages
             PumpWaitingMessages()
+            rc = 0;
         else:
             # Timeout
-            pass
+            rc = 1;
+        return rc;
 
     def interruptWaitEvents(self):
+        """
+        Basically a python implementation of EventQueue::postEvent().
+
+        The magic value must be in sync with the C++ implementation or this
+        won't work.
+
+        Note that because of this method we cannot easily make use of a
+        non-visible Window to handle the message like we would like to do.
+        """
         from win32api import PostThreadMessage
         from win32con import WM_USER
-        PostThreadMessage(self.tid, WM_USER, None, None)
+        return PostThreadMessage(self.tid, WM_USER, None, 0xf241b819)
 
     def deinit(self):
         import pythoncom
@@ -355,11 +366,11 @@ class PlatformXPCOM:
 
     def waitForEvents(self, timeout):
         import xpcom
-        xpcom._xpcom.WaitForEvents(timeout)
+        return xpcom._xpcom.WaitForEvents(timeout)
 
     def interruptWaitEvents(self):
         import xpcom
-        xpcom._xpcom.InterruptWait()
+        return xpcom._xpcom.InterruptWait()
 
     def deinit(self):
         import xpcom
@@ -438,11 +449,11 @@ class PlatformWEBSERVICE:
 
     def waitForEvents(self, timeout):
         # Webservices cannot do that yet
-        pass
+        return 2;
 
     def interruptWaitEvents(self, timeout):
         # Webservices cannot do that yet
-        pass
+        return False;
 
     def deinit(self):
         try:
@@ -538,9 +549,25 @@ class VirtualBoxManager:
         return self.platform.createListener(impl, arg)
 
     def waitForEvents(self, timeout):
+        """
+        Wait for events to arrive and process them.
+
+        The timeout is in milliseconds.  A negative value means waiting for
+        ever, while 0 does not wait at all.
+
+        Returns 0 if events was processed.
+        Returns 1 if timed out or interrupted in some way.
+        Returns 2 on error (like not supported for web services).
+        Returns None or raises an exception if called on the wrong thread or if
+        the timeout is not an integer value.
+        """
         return self.platform.waitForEvents(timeout)
 
     def interruptWaitEvents(self):
+        """
+
+
+        """
         return self.platform.interruptWaitEvents()
 
     def getPerfCollector(self, vbox):
