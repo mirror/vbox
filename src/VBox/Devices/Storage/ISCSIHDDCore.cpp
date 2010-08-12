@@ -804,14 +804,17 @@ static PISCSICMD iscsiCmdRemoveAll(PISCSIIMAGE pImage)
         pHead = pImage->aCmdsWaiting[idx];
         pImage->aCmdsWaiting[idx] = NULL;
 
-        /* Get the tail. */
-        pTail = pHead;
-        while (pTail->pNext)
-            pTail = pTail->pNext;
+        if (pHead)
+        {
+            /* Get the tail. */
+            pTail = pHead;
+            while (pTail->pNext)
+                pTail = pTail->pNext;
 
-        /* Concatenate. */
-        pTail->pNext = pIScsiCmdHead;
-        pIScsiCmdHead = pHead;
+            /* Concatenate. */
+            pTail->pNext = pIScsiCmdHead;
+            pIScsiCmdHead = pHead;
+        }
     }
 
     return pIScsiCmdHead;
@@ -2238,6 +2241,9 @@ static int iscsiRecvPDUAsync(PISCSIIMAGE pImage)
 
     rc = pImage->pInterfaceNetCallbacks->pfnReadNB(pImage->Socket, pImage->pbRecvPDUBufCur,
                                                    pImage->cbRecvPDUResidual, &cbActuallyRead);
+    if (RT_SUCCESS(rc) && cbActuallyRead == 0)
+        rc = VERR_BROKEN_PIPE;
+
     if (RT_SUCCESS(rc))
     {
         LogFlow(("Received %zu bytes\n", cbActuallyRead));
@@ -3132,6 +3138,115 @@ static void iscsiCmdComplete(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd, int rcCmd)
 }
 
 /**
+ * Reattaches the to the target after an error aborting
+ * pending commands and resending them.
+ *
+ * @param    pImage    iSCSI connection state.
+ */
+static void iscsiReattach(PISCSIIMAGE pImage)
+{
+    int rc = VINF_SUCCESS;
+    PISCSICMD pIScsiCmdHead = NULL;
+    PISCSICMD pIScsiCmd = NULL;
+    PISCSICMD pIScsiCmdCur = NULL;
+    PISCSIPDUTX pIScsiPDUTx = NULL;
+
+    /* Close connection. */
+    iscsiTransportClose(pImage);
+    pImage->state = ISCSISTATE_FREE;
+
+    /* Reset PDU we are receiving. */
+    iscsiRecvPDUReset(pImage);
+
+    /*
+     * Abort all PDUs we are about to transmit,
+     * the command need a new Itt if the relogin is successful.
+     */
+    while (pImage->pIScsiPDUTxHead)
+    {
+        pIScsiPDUTx = pImage->pIScsiPDUTxHead;
+        pImage->pIScsiPDUTxHead = pIScsiPDUTx->pNext;
+
+        pIScsiCmd = pIScsiPDUTx->pIScsiCmd;
+
+        if (pIScsiCmd)
+        {
+            /* Place on command list. */
+            pIScsiCmd->pNext = pIScsiCmdHead;
+            pIScsiCmdHead = pIScsiCmd;
+        }
+        RTMemFree(pIScsiPDUTx);
+    }
+
+    /* Clear the current PDU too. */
+    if (pImage->pIScsiPDUTxCur)
+    {
+        pIScsiPDUTx = pImage->pIScsiPDUTxCur;
+
+        pImage->pIScsiPDUTxCur = NULL;
+        pIScsiCmd = pIScsiPDUTx->pIScsiCmd;
+
+        if (pIScsiCmd)
+        {
+            pIScsiCmd->pNext = pIScsiCmdHead;
+            pIScsiCmdHead = pIScsiCmd;
+        }
+        RTMemFree(pIScsiPDUTx);
+    }
+
+    /*
+     * Get all commands which are waiting for a response
+     * They need to be resend too after a successful reconnect.
+     */
+    pIScsiCmd = iscsiCmdRemoveAll(pImage);
+
+    if (pIScsiCmd)
+    {
+        pIScsiCmdCur = pIScsiCmd;
+        while (pIScsiCmdCur->pNext)
+            pIScsiCmdCur = pIScsiCmdCur->pNext;
+
+        /*
+         * Place them in front of the list because they are the oldest requests
+         * and need to be processed first to minimize the risk to time out.
+         */
+        pIScsiCmdCur->pNext = pIScsiCmdHead;
+        pIScsiCmdHead = pIScsiCmd;
+    }
+
+    /* Try to attach. */
+    rc = iscsiAttach(pImage);
+    if (RT_SUCCESS(rc))
+    {
+        /* Phew, we have a connection again.
+         * Prepare new PDUs for the aborted commands.
+         */
+        while (pIScsiCmdHead)
+        {
+            pIScsiCmd = pIScsiCmdHead;
+            pIScsiCmdHead = pIScsiCmdHead->pNext;
+
+            rc = iscsiPDUTxPrepare(pImage, pIScsiCmd);
+            AssertRC(rc);
+        }
+    }
+    else
+    {
+        /*
+         * Still no luck, complete commands with error so the caller
+         * has a chance to inform the user and maybe resend the command.
+         */
+        while (pIScsiCmdHead)
+        {
+            pIScsiCmd = pIScsiCmdHead;
+            pIScsiCmdHead = pIScsiCmdHead->pNext;
+
+            iscsiCmdComplete(pImage, pIScsiCmd, VERR_BROKEN_PIPE);
+        }
+    }
+}
+
+/**
  * Internal. Main iSCSI I/O worker.
  */
 static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
@@ -3188,6 +3303,8 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                 /* Continue or start a new PDU receive task */
                 LogFlow(("There is data on the socket\n"));
                 rc = iscsiRecvPDUAsync(pImage);
+                if (rc == VERR_BROKEN_PIPE)
+                    iscsiReattach(pImage);
                 if (RT_FAILURE(rc))
                     LogRel(("iSCSI: Handling incoming request failed %Rrc\n", rc));
             }
@@ -3200,102 +3317,8 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
             }
             else if (fEvents & VD_INTERFACETCPNET_EVT_ERROR)
             {
-                PISCSICMD pIScsiCmdHead = NULL;
-                PISCSICMD pIScsiCmd = NULL;
-                PISCSICMD pIScsiCmdCur = NULL;
-                PISCSIPDUTX pIScsiPDUTx = NULL;
                 LogFlow(("An error ocurred\n"));
-
-                /* Close connection. */
-                iscsiTransportClose(pImage);
-                pImage->state = ISCSISTATE_FREE;
-
-                /* Reset PDU we are receiving. */
-                iscsiRecvPDUReset(pImage);
-
-                /*
-                 * Abort all PDUs we are about to transmit,
-                 * the command need a new Itt if the relogin is successful.
-                 */
-                while (pImage->pIScsiPDUTxHead)
-                {
-                    pIScsiPDUTx = pImage->pIScsiPDUTxHead;
-                    pImage->pIScsiPDUTxHead = pIScsiPDUTx->pNext;
-
-                    pIScsiCmd = pIScsiPDUTx->pIScsiCmd;
-
-                    if (pIScsiCmd)
-                    {
-                        /* Place on command list. */
-                        pIScsiCmd->pNext = pIScsiCmdHead;
-                        pIScsiCmdHead = pIScsiCmd;
-                    }
-                    RTMemFree(pIScsiPDUTx);
-                }
-
-                /* Clear the current PDU too. */
-                if (pImage->pIScsiPDUTxCur)
-                {
-                    pIScsiPDUTx = pImage->pIScsiPDUTxCur;
-
-                    pImage->pIScsiPDUTxCur = NULL;
-                    pIScsiCmd = pIScsiPDUTx->pIScsiCmd;
-
-                    if (pIScsiCmd)
-                    {
-                        pIScsiCmd->pNext = pIScsiCmdHead;
-                        pIScsiCmdHead = pIScsiCmd;
-                    }
-                    RTMemFree(pIScsiPDUTx);
-                }
-
-                /*
-                 * Get all commands which are waiting for a response
-                 * They need to be resend too after a successful reconnect.
-                 */
-                pIScsiCmd = iscsiCmdRemoveAll(pImage);
-
-                pIScsiCmdCur = pIScsiCmd;
-                while (pIScsiCmdCur->pNext)
-                    pIScsiCmdCur = pIScsiCmdCur->pNext;
-
-                /*
-                 * Place them in front of the list because they are the oldest requests
-                 * and need to be processed first to minimize the risk to time out.
-                 */
-                pIScsiCmdCur->pNext = pIScsiCmdHead;
-                pIScsiCmdHead = pIScsiCmd;
-
-                /* Try to attach. */
-                rc = iscsiAttach(pImage);
-                if (RT_SUCCESS(rc))
-                {
-                    /* Phew, we have a connection again.
-                     * Prepare new PDUs for the aborted commands.
-                     */
-                    while (pIScsiCmdHead)
-                    {
-                        pIScsiCmd = pIScsiCmdHead;
-                        pIScsiCmdHead = pIScsiCmdHead->pNext;
-
-                        rc = iscsiPDUTxPrepare(pImage, pIScsiCmd);
-                        AssertRC(rc);
-                    }
-                }
-                else
-                {
-                    /*
-                     * Still no luck, complete commands with error so the caller
-                     * has a chance to inform the user and maybe resend the command.
-                     */
-                    while (pIScsiCmdHead)
-                    {
-                        pIScsiCmd = pIScsiCmdHead;
-                        pIScsiCmdHead = pIScsiCmdHead->pNext;
-
-                        iscsiCmdComplete(pImage, pIScsiCmd, VERR_BROKEN_PIPE);
-                    }
-                }
+                iscsiReattach(pImage);
             }
             else
                 LogRel(("iSCSI: Received unexpected event %#x\n", fEvents));
