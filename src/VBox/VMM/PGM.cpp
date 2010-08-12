@@ -660,7 +660,7 @@ static const DBGCVARDESC g_aPgmCountPhysWritesArgs[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "enabled",      "on/off." },
-    {  1,           1,          DBGCVAR_CAT_NUMBER_NO_RANGE,     0,                     "interval",     "Interval in ms." },
+    {  1,           1,          DBGCVAR_CAT_NUMBER_NO_RANGE, 0,                              "interval",     "Interval in ms." },
 };
 # endif
 
@@ -4348,7 +4348,7 @@ static DECLCALLBACK(int) pgmR3CmdCountPhysWrites(PCDBGCCMD pCmd, PDBGCCMDHLP pCm
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
     if (    cArgs != 2
         ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING
-        ||  paArgs[1].enmType != DBGCVAR_CAT_NUMBER_NO_RANGE)
+        ||  paArgs[1].enmType != DBGCVAR_TYPE_NUMBER)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: parser error, invalid arguments.\n");
 
     if (!strcmp(paArgs[0].u.pszString, "off"))
