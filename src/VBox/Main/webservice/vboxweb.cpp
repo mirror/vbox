@@ -770,12 +770,12 @@ int main(int argc, char* argv[])
     }
 
     com::EventQueue *pQ = com::EventQueue::getMainEventQueue();
-    while (1)
+    for (;;)
     {
         // we have to process main event queue
         WEBDEBUG(("Pumping COM event queue\n"));
         int vrc = pQ->processEventQueue(RT_INDEFINITE_WAIT);
-        if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
+        if (RT_FAILURE(vrc))
             RTMsgError("processEventQueue -> %Rrc", rc);
     }
 
