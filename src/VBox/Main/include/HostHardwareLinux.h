@@ -108,68 +108,109 @@ typedef VBoxMainDriveInfo::DriveInfoList DriveInfoList;
 /** Convenience typedef. */
 typedef VBoxMainDriveInfo::DriveInfo DriveInfo;
 
+
+/** Vector type for the list of interfaces. */
+#define VECTOR_TYPE       char *
+#define VECTOR_TYPENAME   USBInterfaceList
+static inline void USBInterfaceListCleanup(char **ppsz)
+{
+    RTStrFree(*ppsz);
+}
+#define VECTOR_DESTRUCTOR USBInterfaceListCleanup
+#include "vector.h"
+
+/** Structure describing a host USB device */
+typedef struct USBDeviceInfo
+{
+    /** The device node of the device. */
+    char *mDevice;
+    /** The system identifier of the device.  Specific to the probing
+     * method. */
+    char *mSysfsPath;
+    /** Type for the list of interfaces. */
+    USBInterfaceList mInterfaces;
+} USBDeviceInfo;
+
+
+/** Destructor. */
+static inline void USBDevInfoCleanup(USBDeviceInfo *pSelf)
+{
+    RTStrFree(pSelf->mDevice);
+    RTStrFree(pSelf->mSysfsPath);
+    pSelf->mDevice = pSelf->mSysfsPath = NULL;
+    USBInterfaceList_cleanup(&pSelf->mInterfaces);
+}
+
+
+/** Constructor - the strings will be duplicated. */
+static inline int USBDevInfoInit(USBDeviceInfo *pSelf, const char *aDevice,
+                                 const char *aSystemID)
+{
+    pSelf->mDevice = aDevice ? RTStrDup(aDevice) : NULL;
+    pSelf->mSysfsPath = aSystemID ? RTStrDup(aSystemID) : NULL;
+    if (   !USBInterfaceList_init(&pSelf->mInterfaces)
+        || (aDevice && !pSelf->mDevice) || (aSystemID && ! pSelf->mSysfsPath))
+    {
+        USBDevInfoCleanup(pSelf);
+        return 0;
+    }
+    return 1;
+}
+
+
+/** Vector type holding device information */
+#define VECTOR_TYPE       USBDeviceInfo
+#define VECTOR_TYPENAME   USBDeviceInfoList
+#define VECTOR_DESTRUCTOR USBDevInfoCleanup
+#include "vector.h"
+
+
 /**
  * Class for probing and returning information about host USB devices.
  * To use this class, create an instance, call the update methods to do the
  * actual probing and use the iterator methods to get the result of the probe.
  */
-class VBoxMainUSBDeviceInfo
+typedef struct VBoxMainUSBDeviceInfo
 {
-public:
-    /** Structure describing a host USB device */
-    struct USBDeviceInfo
-    {
-        /** The device node of the device. */
-        iprt::MiniString mDevice;
-        /** The system identifier of the device.  Specific to the probing
-         * method. */
-        iprt::MiniString mSysfsPath;
-        /** Type for the list of interfaces. */
-        typedef std::vector<iprt::MiniString> InterfaceList;
-        /** The system IDs of the device's interfaces. */
-        InterfaceList mInterfaces;
-
-        /** Constructors */
-        USBDeviceInfo(const iprt::MiniString &aDevice,
-                      const iprt::MiniString &aSystemID)
-            : mDevice(aDevice),
-              mSysfsPath(aSystemID)
-        { }
-    };
-
-    /** List (resp vector) holding drive information */
-    typedef std::vector<USBDeviceInfo> DeviceInfoList;
-
-    /**
-     * Search for host USB devices and rebuild the list, which remains empty
-     * until the first time this method is called.
-     * @returns iprt status code
-     */
-    int UpdateDevices ();
-
-    /** Get the first element in the list of USB devices. */
-    DeviceInfoList::const_iterator DevicesBegin()
-    {
-        return mDeviceList.begin();
-    }
-
-    /** Get the last element in the list of USB devices. */
-    DeviceInfoList::const_iterator DevicesEnd()
-    {
-        return mDeviceList.end();
-    }
-
-private:
     /** The list of currently available USB devices */
-    DeviceInfoList mDeviceList;
-};
+    USBDeviceInfoList mDeviceList;
+} VBoxMainUSBDeviceInfo;
 
-/** Convenience typedef. */
-typedef VBoxMainUSBDeviceInfo::DeviceInfoList USBDeviceInfoList;
-/** Convenience typedef. */
-typedef VBoxMainUSBDeviceInfo::USBDeviceInfo USBDeviceInfo;
-/** Convenience typedef. */
-typedef VBoxMainUSBDeviceInfo::USBDeviceInfo::InterfaceList USBInterfaceList;
+/** Constructor */
+static inline int VBoxMainUSBDevInfoInit(VBoxMainUSBDeviceInfo *pSelf)
+{
+    return USBDeviceInfoList_init(&pSelf->mDeviceList);
+}
+
+/** Destructor */
+static inline void VBoxMainUSBDevInfoCleanup(VBoxMainUSBDeviceInfo *pSelf)
+{
+    USBDeviceInfoList_cleanup(&pSelf->mDeviceList);
+}
+
+/**
+ * Search for host USB devices and rebuild the list, which remains empty
+ * until the first time this method is called.
+ * @returns iprt status code
+ */
+int USBDevInfoUpdateDevices(VBoxMainUSBDeviceInfo *pSelf);
+
+
+/** Get the first element in the list of USB devices. */
+static inline const USBDeviceInfoList_iterator *USBDevInfoBegin
+                (VBoxMainUSBDeviceInfo *pSelf)
+{
+    return USBDeviceInfoList_begin(&pSelf->mDeviceList);
+}
+
+
+/** Get the last element in the list of USB devices. */
+static inline const USBDeviceInfoList_iterator *USBDevInfoEnd
+                (VBoxMainUSBDeviceInfo *pSelf)
+{
+    return USBDeviceInfoList_end(&pSelf->mDeviceList);
+}
+
 
 /** Implementation of the hotplug waiter class below */
 class VBoxMainHotplugWaiterImpl
