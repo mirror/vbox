@@ -518,7 +518,7 @@ int EventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
     {
         BOOL fRet;
         MSG  Msg;
-        int  rc = VINF_SUCCESS;
+        rc = VINF_SUCCESS;
         while (   (fRet = GetMessage(&Msg, NULL /*hWnd*/, WM_USER, WM_USER))
                && fRet != -1
                && rc != VERR_INTERRUPTED)
