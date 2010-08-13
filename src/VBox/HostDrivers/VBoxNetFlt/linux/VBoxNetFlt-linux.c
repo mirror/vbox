@@ -88,8 +88,21 @@
 #  else
 #   define VBOX_SKB_CHECKSUM_HELP(skb)      (!skb_checksum_help(skb))
 #  endif
+/* Versions prior 2.6.10 use stats for both bstats and qstats */
+#  define bstats stats
+#  define qstats stats
 # endif
 #endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 13)
+static inline int qdisc_drop(struct sk_buff *skb, struct Qdisc *sch)
+{
+    kfree_skb(skb);
+    sch->stats.drops++;
+
+    return NET_XMIT_DROP;
+}
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 13) */
 
 #ifndef NET_IP_ALIGN
 # define NET_IP_ALIGN 2
@@ -132,17 +145,6 @@
 # if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(5, 4)
 #  define VBOXNETFLT_WITH_GRO               1
 # endif
-/* RHEL uses stats for both bstats and qstats */
-#define bstats stats
-#define qstats stats
-
-static inline int qdisc_drop(struct sk_buff *skb, struct Qdisc *sch)
-{
-    kfree_skb(skb);
-    sch->stats.drops++;
-
-    return NET_XMIT_DROP;
-}
 #endif
 
 /*******************************************************************************
