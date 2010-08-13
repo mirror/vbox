@@ -1,0 +1,34 @@
+#!/bin/sh
+
+#
+# Copyright (C) 2007-2010 Oracle Corporation
+#
+# Use only with permission.
+#
+
+#
+# Unload any old extension that might be loaded already (ignore failures).
+#
+sync
+if kextstat -lb org.virtualbox.kext.VBoxNetAdp 2>&1 | grep -q org.virtualbox.kext.VBoxNetAdp; then
+    kextunload -m org.virtualbox.kext.VBoxNetAdp
+fi
+if kextstat -lb org.virtualbox.kext.VBoxNetFlt 2>&1 | grep -q org.virtualbox.kext.VBoxNetFlt; then
+    kextunload -m org.virtualbox.kext.VBoxNetFlt
+fi
+if kextstat -lb org.virtualbox.kext.VBoxUSB 2>&1 | grep -q org.virtualbox.kext.VBoxUSB; then
+    kextunload -m org.virtualbox.kext.VBoxUSB
+fi
+if kextstat -lb org.virtualbox.kext.VBoxDrv 2>&1 | grep -q org.virtualbox.kext.VBoxDrv; then
+    kextunload -m org.virtualbox.kext.VBoxDrv
+fi
+
+#
+# Load the extension, exit on first error.
+#
+sync
+kextload    /Library/Extensions/VBoxDrv.kext
+kextload -d /Library/Extensions/VBoxDrv.kext      /Library/Extensions/VBoxUSB.kext
+kextload -d /Library/Extensions/VBoxDrv.kext      /Library/Extensions/VBoxNetFlt.kext
+kextload -d /Library/Extensions/VBoxDrv.kext      /Library/Extensions/VBoxNetAdp.kext
+

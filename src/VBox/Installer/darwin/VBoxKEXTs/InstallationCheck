@@ -1,0 +1,15 @@
+#!/bin/sh
+
+#
+# Copyright (C) 2006-2010 Oracle Corporation
+#
+# Use only with permission.
+#
+
+MACHINE=`uname -m`
+# Check that this is an x86/x86_64 system.
+if test "$MACHINE" != "i386" && test "$MACHINE" != "x86_64"; then
+    exit 112 # (112 = 96 + 16)
+fi
+exit 0
+

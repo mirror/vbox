@@ -1,0 +1,20 @@
+#!/bin/sh
+
+#
+# Copyright (C) 2008-2010 Oracle Corporation
+#
+# Use only with permission.
+#
+
+GREP=/usr/bin/grep
+PS=/bin/ps
+
+RESULT=0
+
+# Check if there are running vms
+PROCS=`${PS} -e | ${GREP} -E  "VirtualBoxVM.*startvm|VBoxNetDHCP" | ${GREP} -v grep`
+if [ "${PROCS}x" != "x" ]; then
+  RESULT=1;
+fi
+
+exit $RESULT
