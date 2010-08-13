@@ -614,7 +614,7 @@ VBOX_DI_VBAPP_DYLIBS.x86 := \
 	MacOS/VBoxREM64.dylib
 ifdef VBOX_WITH_PYTHON
  VBOX_DI_VBAPP_DYLIBS.x86 += \
- 	$(if-expr defined(VBOX_WITH_MAC_OS_X_10_5_SUPPORT),MacOS/VBoxPython2_5.so,) \
+ 	MacOS/VBoxPython2_5.so \
 	$(if-expr defined(VBOX_WITH_MAC_OS_X_10_4_SUPPORT),MacOS/VBoxPython2_3.so,)
 endif
 
