@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -93,11 +93,11 @@ rdesktop-vrdp_SOURCES.linux = \
 	vrdp/rdpusb.c \
 	vrdp/USBProxyDevice-linux.c
 rdesktop-vrdp_INCS += \
-    $(VBOX_PATH_RDESKTOP_SRC) \
-    $(VBOX_PATH_RDESKTOP_SRC)/vrdp \
-    $(VBOX_PATH_DEVICES_USB) \
-    $(PATH_ROOT)/include/VBox
-# @todo implement usb proxy for Solaris
+	$(VBOX_PATH_RDESKTOP_SRC) \
+	$(VBOX_PATH_RDESKTOP_SRC)/vrdp \
+	$(VBOX_PATH_DEVICES_USB) \
+	$(PATH_ROOT)/include/VBox
+## @todo implement usb proxy for Solaris
 rdesktop-vrdp_SOURCES.solaris = \
 	rdpsnd_sun.c
 rdesktop-vrdp_SOURCES.freebsd = \
@@ -127,61 +127,59 @@ rdesktop-vrdp-keymaps_SOURCES = $(wildcard $(VBOX_PATH_RDESKTOP_SRC)/keymaps/*)
 OTHERS += $(PATH_BIN)/rdesktop-vrdp.tar.gz
 OTHER_CLEAN += $(OTHERS)
 
-
 INSTALLS += rdesktop-bin
-rdesktop-bin_INST    = obj/$(VBOX_RDESKTOP_SRC_SUBDIR)
+rdesktop-bin_INST    = obj/rdesktop-src/$(VBOX_RDESKTOP_SRC_SUBDIR)/
 rdesktop-bin_MODE    = a+rx,u+w
 rdesktop-bin_SOURCES = \
-    configure \
-    config.sub \
-    config.guess \
-    bootstrap \
-    install-sh
+	configure \
+	config.sub \
+	config.guess \
+	bootstrap \
+	install-sh
 
 INSTALLS += rdesktop-nonbin
-rdesktop-nonbin_INST    = obj/$(VBOX_RDESKTOP_SRC_SUBDIR)
+rdesktop-nonbin_INST    = obj/rdesktop-src/$(VBOX_RDESKTOP_SRC_SUBDIR)/
 rdesktop-nonbin_MODE    = a+r,u+w
 rdesktop-nonbin_SOURCES = \
-    $(foreach i,COPYING \
-                README \
-                configure.ac \
-                Makefile.in \
-                proto.head \
-                proto.tail \
-                rdesktop.spec \
-                keymaps/common \
-                keymaps/modifiers \
-                keymaps/convert-map \
-                doc/HACKING \
-                doc/AUTHORS \
-                doc/TODO \
-                doc/ChangeLog \
-                doc/keymapping.txt \
-                doc/keymap-names.txt \
-                doc/ipv6.txt \
-                doc/licensing.txt \
-                doc/patches.txt \
-                doc/redirection.txt \
-                doc/rdesktop.1 \
-                vrdp/rdpusb.c \
-                vrdp/runtime.h \
-                vrdp/vrdpusb.h, \
-            $i=>$i) \
-    $(PATH_ROOT)/include/VBox/vusb.h=>vrdp/vusb.h \
-    $(VBOX_PATH_DEVICES_USB)/linux/USBProxyDevice-linux.cpp=>vrdp/USBProxyDevice-linux.c \
-    $(VBOX_PATH_DEVICES_USB)/USBProxyDevice.h=>vrdp/USBProxyDevice.h \
-    $(foreach i,*.c *.h keymaps/?? keymaps/??-??, \
-        $(foreach j,$(wildcard $(VBOX_PATH_RDESKTOP_SRC)/$i), \
-            $(dir $i)$(notdir $j)=>$(dir $i)$(notdir $j)))
+	$(foreach i,\
+		COPYING \
+		README \
+		configure.ac \
+		Makefile.in \
+		proto.head \
+		proto.tail \
+		rdesktop.spec \
+		keymaps/common \
+		keymaps/modifiers \
+		keymaps/convert-map \
+		doc/HACKING \
+		doc/AUTHORS \
+		doc/TODO \
+		doc/ChangeLog \
+		doc/keymapping.txt \
+		doc/keymap-names.txt \
+		doc/ipv6.txt \
+		doc/licensing.txt \
+		doc/patches.txt \
+		doc/redirection.txt \
+		doc/rdesktop.1 \
+		vrdp/rdpusb.c \
+		vrdp/runtime.h \
+		vrdp/vrdpusb.h \
+	  , $i=>$i) \
+	$(PATH_ROOT)/include/VBox/vusb.h=>vrdp/vusb.h \
+	$(VBOX_PATH_DEVICES_USB)/linux/USBProxyDevice-linux.cpp=>vrdp/USBProxyDevice-linux.c \
+	$(VBOX_PATH_DEVICES_USB)/USBProxyDevice.h=>vrdp/USBProxyDevice.h \
+	$(foreach i, *.c *.h keymaps/?? keymaps/??-?? \
+	  , $(foreach j, $(wildcard $(VBOX_PATH_RDESKTOP_SRC)/$i) \
+	      , $(dir $i)$(notdir $j)=>$(dir $i)$(notdir $j)))
 
 
 $(PATH_BIN)/rdesktop-vrdp.tar.gz: \
 		$$(rdesktop-bin_1_TARGET) \
 		$$(rdesktop-nonbin_1_TARGET)
 	$(call MSG_TOOL,tar/gzip,,$@)
-	# Temporary hack to fix incremental builds (will cause one build failure)
-	$(QUIET)rm -f $(PATH_TARGET)/$(VBOX_RDESKTOP_SRC_SUBDIR) 2> /dev/null || /bin/true
-	$(QUIET)cd $(PATH_TARGET) && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR) | gzip - > $@
+	$(QUIET)cd $(PATH_INS)/obj/rdesktop-src/ && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR)/ | gzip - > $@
 
 
 include $(KBUILD_PATH)/subfooter.kmk
