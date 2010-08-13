@@ -1,0 +1,53 @@
+# $Id$
+## @file
+# Sub-Makefile for the Guest Additions loader.
+#
+
+#
+# Copyright (C) 2008 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+# This has to be 32-bit, so don't include it in the 64-bit build.
+if "$(KBUILD_TARGET_ARCH)" == "x86"
+ PROGRAMS.x86 += VBoxWindowsAdditions
+ VBoxWindowsAdditions_TEMPLATE= VBOXGUESTR3EXE
+ VBoxWindowsAdditions_DEFS    = _WIN32_WINNT=0x0400 _UNICODE UNICODE
+ VBoxWindowsAdditions_SOURCES = \
+ 	VBoxWindowsAdditions.cpp \
+ 	VBoxWindowsAdditions.rc
+
+ VBoxWindowsAdditions_LDFLAGS  = \
+ 	/DISALLOWLIB:msvcrt.lib \
+ 	/DISALLOWLIB:msvcprt.lib \
+ 	/DISALLOWLIB:libcmt.lib
+
+ VBoxWindowsAdditions_LIBS     = \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL)_LIB)/oldnames.lib \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL)_LIB)/libcmt.lib \
+	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL)_LIB)/libcpmt.lib
+
+ # Version stuff.
+ VBoxWindowsAdditions.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
+ VBoxWindowsAdditions.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+
+ # The icon location is configurable.
+ VBoxWindowsAdditions.rc_INCS += $(PATH_VBoxWindowsAdditions)
+ VBoxWindowsAdditions.rc_DEPS += $(PATH_VBoxWindowsAdditions)/VBoxWindowsAdditions-icon.rc
+ VBoxWindowsAdditions.rc_CLEAN = $(PATH_VBoxWindowsAdditions)/VBoxWindowsAdditions-icon.rc
+
+
+ # Icon include file.
+$$(PATH_VBoxWindowsAdditions)/VBoxWindowsAdditions-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) Makefile.kmk | $$(dir $$@)
+	$(RM) -f $@
+	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
+
+endif # x86 only
+
+include	$(KBUILD_PATH)/subfooter.kmk
+

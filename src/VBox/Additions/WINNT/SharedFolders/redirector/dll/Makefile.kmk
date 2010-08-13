@@ -1,0 +1,36 @@
+# $Id$
+## @file
+# Sub-Makefile for the VirtualBox Windows Guest Shared Folders Network Provider.
+#
+
+#
+# Copyright (C) 2006-2007 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+DLLS += VBoxMRXNP
+VBoxMRXNP_TEMPLATE    = VBOXGUESTR3DLL
+VBoxMRXNP_SDKS        = WINDDK
+VBoxMRXNP_DEFS        = LOG_TO_BACKDOOR _WIN32_WINNT=0x0500 UNICODE WIN32_LEAN_AND_MEAN=1
+
+VBoxMRXNP_INCS        = \
+	$(PATH_SUB_ROOT)/WINNT/SharedFolders/include
+
+VBoxMRXNP_SOURCES     = \
+	dllmain.cpp \
+	vboxmrxp.cpp \
+	vboxmrxp.rc \
+	vboxmrxp.def
+
+VBoxMRXNP_LIBS     = \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
+
+include	$(KBUILD_PATH)/subfooter.kmk
+

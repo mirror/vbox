@@ -1,0 +1,20 @@
+# $Id$
+## @file
+# Sub-Makefile for the Windows guest shared folders.
+#
+
+#
+# Copyright (C) 2006-2007 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+# Include sub-makefile(s).
+include $(PATH_SUB_CURRENT)/redirector/Makefile.kmk
+
+include	$(KBUILD_PATH)/subfooter.kmk
+

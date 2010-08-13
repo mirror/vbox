@@ -1,0 +1,15 @@
+;
+; VBCoInst -- Guest Additions Driver Co Installation Module
+; Copyright (C) 2006-2007 Oracle Corporation
+;
+; Oracle Corporation confidential
+; All rights reserved
+;
+
+LIBRARY  VBCOINST
+
+EXPORTS
+   VBoxCoInstaller
+
+
+
