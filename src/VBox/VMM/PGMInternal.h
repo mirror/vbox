@@ -2340,7 +2340,9 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
  * Get the @a cRefs field from a tracking data word.
  *
  * @returns The @a cRefs field
- * @param   u16         The tracking data word. */
+ * @param   u16         The tracking data word.
+ * @remarks This will only return 1 or PGMPOOL_TD_CREFS_PHYSEXT for a
+ *          non-zero @a u16. */
 #define PGMPOOL_TD_GET_CREFS(u16)       ( ((u16) >> PGMPOOL_TD_CREFS_SHIFT) & PGMPOOL_TD_CREFS_MASK )
 
 /** @def PGMPOOL_TD_GET_IDX
