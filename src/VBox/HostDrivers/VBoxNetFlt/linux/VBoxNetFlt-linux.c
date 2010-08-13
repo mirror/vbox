@@ -351,11 +351,18 @@ static int vboxNetFltQdiscRequeue(struct sk_buff *skb, struct Qdisc *sch)
 static unsigned int vboxNetFltQdiscDrop(struct Qdisc *sch)
 {
     PVBOXNETQDISCPRIV pPriv = qdisc_priv(sch);
+    unsigned int cbLen;
 
-    ++sch->qstats.drops;
-    --sch->q.qlen;
     if (pPriv->pChild->ops->drop)
-        return pPriv->pChild->ops->drop(pPriv->pChild);
+    {
+        cbLen = pPriv->pChild->ops->drop(pPriv->pChild);
+        if (cbLen != 0)
+        {
+            ++sch->qstats.drops;
+            --sch->q.qlen;
+            return cbLen;
+        }
+    }
 
     return 0;
 }
@@ -606,6 +613,8 @@ static void vboxNetFltLinuxQdiscInstall(PVBOXNETFLTINS pThis, struct net_device 
         atomic_inc(&pNew->refcnt);
 # endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32) */
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
+        /* Synch the queue len with our child */
+        pNew->q.qlen = pPriv->pChild->q.qlen;
     }
     else
     {
@@ -2231,6 +2240,9 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 
 int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 {
+#ifdef VBOXNETFLT_WITH_QDISC
+    vboxNetFltLinuxQdiscRemove(pThis, NULL);
+#endif /* VBOXNETFLT_WITH_QDISC */
     /*
      * Remove packet handler when we get disconnected from internal switch as
      * we don't want the handler to forward packets to disconnected switch.
@@ -2274,9 +2286,6 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 #ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
     vboxNetFltLinuxUnhookDev(pThis, NULL);
 #endif
-#ifdef VBOXNETFLT_WITH_QDISC
-    vboxNetFltLinuxQdiscRemove(pThis, NULL);
-#endif /* VBOXNETFLT_WITH_QDISC */
 
     /** @todo This code may race vboxNetFltLinuxUnregisterDevice (very very
      *        unlikely, but none the less).  Since it doesn't actually update the
