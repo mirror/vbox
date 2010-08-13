@@ -994,22 +994,29 @@ int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
 }
 
 
-int USBDevInfoUpdateDevices (VBoxMainUSBDeviceInfo *pSelf)
+int VBoxMainUSBDeviceInfo::UpdateDevices ()
 {
-    LogFlowFunc(("entered\n"));
+    LogFlowThisFunc(("entered\n"));
     int rc = VINF_SUCCESS;
     bool success = false;  /* Have we succeeded in finding anything yet? */
-    USBDeviceInfoList_clear(&pSelf->mDeviceList);
+    try
+    {
+        mDeviceList.clear();
 #ifdef VBOX_USB_WITH_SYSFS
 # ifdef VBOX_USB_WITH_INOTIFY
-    if (   RT_SUCCESS(rc)
-        && (!success || testing()))
-        rc = getUSBDeviceInfoFromSysfs(&pSelf->mDeviceList, &success);
+        if (   RT_SUCCESS(rc)
+            && (!success || testing()))
+            rc = getUSBDeviceInfoFromSysfs(&mDeviceList, &success);
 # endif
 #else /* !VBOX_USB_WITH_SYSFS */
-    NOREF(success);
+        NOREF(success);
 #endif /* !VBOX_USB_WITH_SYSFS */
-    LogFlowFunc(("rc=%Rrc\n", rc));
+    }
+    catch(std::bad_alloc &e)
+    {
+        rc = VERR_NO_MEMORY;
+    }
+    LogFlowThisFunc(("rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1496,13 +1503,15 @@ static bool mudHandle(pathHandler *pParent, const char *pcszNode)
                                        usbDeviceFromDevNum(devnum));
     if (cchDevPath < 0)
         return true;
-    
-    USBDeviceInfo info;
-    if (USBDevInfoInit(&info, szDevPath, pcszNode))
-        if (USBDeviceInfoList_push_back(pSelf->mList, &info))
-            return true;
-    USBDevInfoCleanup(&info);
-    return false;
+    try
+    {
+        pSelf->mList->push_back(USBDeviceInfo(szDevPath, pcszNode));
+    }
+    catch(std::bad_alloc &e)
+    {
+        return false;
+    }
+    return true;
 }
 
 static void mudInit(matchUSBDevice *pSelf, USBDeviceInfoList *pList)
@@ -1558,14 +1567,17 @@ static bool muiHandle(pathHandler *pParent, const char *pcszNode)
     AssertPtrReturn(pParent, false);
     AssertReturn(pParent->handle == muiHandle, false);
     matchUSBInterface *pSelf = (matchUSBInterface *)pParent;
-    if (!muiIsAnInterfaceOf(pcszNode, pSelf->mInfo->mSysfsPath))
+    if (!muiIsAnInterfaceOf(pcszNode, pSelf->mInfo->mSysfsPath.c_str()))
         return true;
-    char *pcszDup = RTStrDup(pcszNode);
-    if (pcszDup)
-        if (USBInterfaceList_push_back(&pSelf->mInfo->mInterfaces, &pcszDup))
-            return true;
-    RTStrFree(pcszDup);
-    return false;
+    try
+    {
+        pSelf->mInfo->mInterfaces.push_back(pcszNode);
+    }
+    catch(std::bad_alloc &e)
+    {
+        return false;
+    }
+    return true;
 }
 
 /** This constructor is currently used to unit test the class logic in
@@ -1600,27 +1612,28 @@ static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
     AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER); /* Valid or Null */
     LogFlowFunc (("pList=%p, pfSuccess=%p\n",
                   pList, pfSuccess));
+    size_t cDevices = pList->size();
     matchUSBDevice devHandler;
     mudInit(&devHandler, pList);
     int rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &devHandler.mParent);
     do {
         if (RT_FAILURE(rc))
             break;
-        USBDeviceInfoList_iterator info;
-        USBDeviceInfoList_iter_init(&info,
-                                    USBDeviceInfoList_begin(pList));
-        while (!USBDeviceInfoList_iter_eq(&info,
-                                          USBDeviceInfoList_end(pList)))
+        for (USBDeviceInfoList::iterator pInfo = pList->begin();
+             pInfo != pList->end(); ++pInfo)
         {
             matchUSBInterface ifaceHandler;
-            muiInit(&ifaceHandler, USBDeviceInfoList_iter_target(&info));
+            muiInit(&ifaceHandler, &*pInfo);
             rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices",
                                         &ifaceHandler.mParent);
             if (RT_FAILURE(rc))
                 break;
-            USBDeviceInfoList_iter_incr(&info);
         }
     } while(0);
+    if (RT_FAILURE(rc))
+        /* Clean up again */
+        while (pList->size() > cDevices)
+            pList->pop_back();
     if (pfSuccess)
         *pfSuccess = RT_SUCCESS(rc);
     LogFlow (("rc=%Rrc\n", rc));
