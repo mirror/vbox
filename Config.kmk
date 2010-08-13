@@ -831,9 +831,6 @@ ifdef VBOX_OSE
  VBOX_WITH_VRDP=
  VBOX_WITH_USB=
  VBOX_WITH_EHCI=
- ifn1of ($(KBUILD_TARGET), darwin linux solaris win freebsd)
-  VBOX_WITH_NETFLT=
- endif
  VBOX_WITH_OS2_ADDITIONS_BIN=
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_KCHMVIEWER=
@@ -842,7 +839,7 @@ ifdef VBOX_OSE
  VBOX_WITH_TESTSUITE=
  VBOX_WITH_INTEL_PXE=
  VBOX_WITH_FFMPEG=
- ifn1of ($(KBUILD_TARGET), linux solaris)
+ ifn1of ($(KBUILD_TARGET), linux solaris win)
   # Only the Linux, Solaris installers are public
   VBOX_WITH_INSTALLER=
  endif
