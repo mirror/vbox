@@ -39,6 +39,7 @@ PACKING  += $(PATH_BIN)/VirtualBox.tar.bz2
 if !defined(VBOX_NO_LINUX_RUN_INSTALLER)
  PACKING += $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME) \
             $(PATH_BIN)/VirtualBox-dbg.tar.bz2
+endif
 
 OTHER_CLEAN   += \
 	$(addprefix $(VBOX_LNX_INST_STAGE_DIR)/,\
