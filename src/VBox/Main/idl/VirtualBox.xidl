@@ -3397,7 +3397,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="082c38ff-d9b3-4b12-b540-01516a931f17"
+     uuid="d647d330-02fa-4614-a2a0-3029c3db942e"
      wsmap="managed"
      >
     <desc>
@@ -5472,7 +5472,7 @@
           Bitmap height.
         </desc>
       </param>
-      <param name="data" type="octet" dir="return" safearray="yes">
+      <param name="data" type="octet" safearray="yes" dir="return">
         <desc>
           Array with resulting bitmap data.
         </desc>
