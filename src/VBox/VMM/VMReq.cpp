@@ -881,7 +881,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies)
     {
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
-        Assert(pReq->idDstCpu != VMCPUID_ANY_QUEUE || pUVCpu);
+        /* Note: pUVCpu may or may not be NULL in the VMCPUID_ANY_QUEUE case; we don't care. */
 
         /*
          * Insert it.
