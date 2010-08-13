@@ -38,8 +38,9 @@
 #    easily write a short script that connects to the web service properly.
 #    This WSDL file ends up in $(VBOXWEB_OUT_DIR)/vboxweb.wsdl.
 #
-# 2) We use xsltproc and websrv-gsoapH.xsl to generate a so-called
-#    "gSoap header file": $(VBOXWEB_OUT_DIR)/gsoapH_from_xslt.h.
+# 2) We use xsltproc and websrv-wsdl2gsoapH.xsl to generate a so-called
+#    "gSoap header file": $(VBOXWEB_OUT_DIR)/gsoapH_from_xslt.h from
+#    the WSDL previously generated.
 #    This file looks like a C header file, but really isn't meant
 #    to be included by a C compiler. Instead, it just happens to be the
 #    format that gSOAP uses to specify SOAP interfaces instead of WSDL.
@@ -61,7 +62,7 @@
 #    implementations with useful code that does something. This is where more
 #    code generation via XSLT comes in:
 #
-# 4) We use xsltproc to generate tons of c++ code directly from the XIDL that
+# 4) We use xsltproc to generate tons of C++ code directly from the XIDL that
 #    maps each SOAP method to our COM methods. This large C++ file is
 #    $(VBOXWEB_OUT_DIR)/methodmaps.cpp. The actual webservice executable (vboxwebsrv,
 #    which acts as an HTTP server) is composed of this file, plus hard-coded
@@ -145,7 +146,7 @@ BLDDIRS += $(VBOXWEB_OUT_DIR)
 VBOX_PATH_WEBSERVICE          := $(PATH_SUB_CURRENT)
 
 # If this is set, all webservice files are considered out-of-date every time
-# this make file is touched. Otherwise, set this to empty.
+# this makefile is touched. Otherwise, set this to empty.
 RECOMPILE_ON_MAKEFILE_CURRENT := $(MAKEFILE_CURRENT)
 
 PATH_TARGET_SOAPDEMOXML       := $(VBOXWEB_OUT_DIR)/demo_soapxml
@@ -153,8 +154,11 @@ PATH_TARGET_SOAPDEMOHEADERS   := $(VBOXWEB_OUT_DIR)/demo_headers
 PATH_TARGET_SOAPDEMONSMAPS    := $(VBOXWEB_OUT_DIR)/demo_namespacemaps
 PATH_TARGET_WEBTEST           := $(VBOXWEB_OUT_DIR)/webtest
 
+# platform-specific XIDL file generated from $(VBOXWEB_IDL_SRC):
 VBOXWEB_IDL_SRC_ORIG          := $(VBOX_XIDL_FILE)
+# the original XIDL file:
 VBOXWEB_IDL_SRC               := $(VBOXWEB_OUT_DIR)/VirtualBox.xidl
+
 VBOXWEB_WSDL                   = $(VBOX_PATH_SDK)/bindings/webservice/vboxweb.wsdl
 VBOXWEBSERVICE_WSDL            = $(VBOX_PATH_SDK)/bindings/webservice/vboxwebService.wsdl
 
@@ -406,7 +410,7 @@ endif # VBOX_GSOAP_INSTALLED
 
 ifdef VBOX_ONLY_SDK
  #
- # Global relevant to the SDK.
+ # Globals relevant to the SDK.
  #
  VBOXWEB_GLUE_PYTHON           = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_wrappers.py
  VBOXWEB_WS_PYTHON             = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_services.py
@@ -499,7 +503,6 @@ OTHER_CLEAN += \
 	$(VBOXWEB_TYPEMAP) \
 	$(VBOXWEB_IDL_SRC)
 
-
 # generate platform-specific XIDL file from original XIDL file
 $(VBOXWEB_IDL_SRC): $(VBOXWEB_IDL_SRC_ORIG) $(VBOX_PATH_WEBSERVICE)/platform-xidl.xsl | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using platform-xidl.xsl)
@@ -552,9 +555,6 @@ $(VBOXWEB_TYPEMAP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-typemap.xs
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-typemap.xsl $<
 
 # generate gsoap pseudo-C header file from that WSDL; once via XSLT...
-# $(VBOXWEB_GSOAPH_FROM_XSLT): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-gsoapH.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
-#	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-gsoapH.xsl)
-#	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-gsoapH.xsl $<
 $(VBOXWEB_GSOAPH_FROM_XSLT): $(VBOXWEB_WSDL) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl2gsoapH.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_WSDL) using websrv-wsdl2gsoapH.xsl)
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-wsdl2gsoapH.xsl $<
@@ -565,14 +565,15 @@ $(NSMAP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-nsmap.xsl $(VBOX_PAT
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-nsmap.xsl)
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-nsmap.xsl $<
 
-
-
 ifdef VBOX_GSOAP_INSTALLED
 # ... and once with the gSOAP tool (just for comparison, we don't use it for licensing reasons)
 $(VBOXWEB_GSOAPH_FROM_GSOAP): $(VBOXWEB_WSDL) $(VBOXWEB_TYPEMAP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,)
 	$(VBOX_WSDL2H) $(VBOXWEB_WSDL_VERBOSE) -t$(VBOXWEB_TYPEMAP) -nvbox -o $@ $<
 
+# this sets the gsoap header that we use for further compilation; if stuff works, then the
+# one we generate via XSLT produces the same end result as the one from the gSOAP tool;
+# with this variable we can swap for testing, but shipped code must use VBOXWEB_GSOAPH_FROM_XSLT
 GSOAPH_RELEVANT = $(VBOXWEB_GSOAPH_FROM_XSLT)
 
 # wsdl2h -v: verbose
@@ -591,7 +592,7 @@ $(VBOXWEB_OUT_DIR)/gsoap_generate_all_ts \
 : $(VBOXWEB_GSOAPH_FROM_GSOAP) $(VBOXWEB_GSOAPH_FROM_XSLT) $(NSMAP) $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,lots of files,$(GSOAPH_RELEVANT))
 	$(RM) -f $@
-	$(REDIRECT) -C $(VBOXWEB_OUT_DIR) -- $(VBOX_SOAPCPP2) $(VBOXWEB_SOAPCPP2_SKIP_FILES) -L -w -I$(VBOX_PATH_GSOAP_IMPORT) $(GSOAPH_RELEVANT)
+	$(REDIRECT) -C $(VBOXWEB_OUT_DIR) -- $(VBOX_SOAPCPP2) $(VBOXWEB_SOAPCPP2_SKIP_FILES) -L -2 -w -I$(VBOX_PATH_GSOAP_IMPORT) $(GSOAPH_RELEVANT)
 	$(APPEND) $@ done
 
 # copy the generated headers and stuff. This has to be a seperate rule if we
