@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+#
+# Copyright (C) 2008-2010 Oracle Corporation
+#
+# Use only with permission.
+#
+-->
+<installer-gui-script minSpecVersion="1.0">
+    <title>VirtualBox_title</title>
+    <options customize="allow" allow-external-scripts="yes" rootVolumeOnly="true"/>
+    <installation-check script="checkPrerequisite()"></installation-check>
+    <domains enable_anywhere="true"/>
+    <script>
+    /* js:pkmk:start */
+    function checkPrerequisite()
+    {
+       try
+       {
+         test = system.sysctl('hw.machine');
+         system.log("Hardware architecture detected: " + test);
+         result = !(test == 'i386' || test == 'x86_64');
+       } catch (e) { system.log(e); }
+
+       if(result)
+       {
+         my.result.type = 'Fatal';
+         my.result.title = system.localizedString('UNSUPPORTED_HW_MACHINE_TLE');
+         my.result.message = system.localizedString('UNSUPPORTED_HW_MACHINE_MSG');
+         return result;
+       }
+
+       try
+       {
+         test = system.version['ProductVersion'];
+         system.log("OS version detected: " + test);
+         result = !(system.compareVersions(test, '10.5') >= 0);
+       } catch (e) { system.log(e); }
+
+       if(result)
+       {
+         my.result.type = 'Fatal';
+         my.result.title = system.localizedString('UNSUPPORTED_OS_TLE');
+         my.result.message = system.localizedString('UNSUPPORTED_OS_MSG');
+         return result;
+       }
+
+       try
+       {
+         result = system.run('checkforrunningvms') == '1';
+       } catch (e) { system.log(e); }
+
+       if(result)
+       {
+         my.result.type = 'Fatal';
+         my.result.title = system.localizedString('RUNNING_VMS_TLE');
+         my.result.message = system.localizedString('RUNNING_VMS_MSG');
+       }
+       return result;
+    }
+    /* js:pkmk:end */
+    </script>
+    <background file="background.tif" alignment="topleft" scaling="none"/>
+    <welcome file="Welcome.html"/>
+    <license file="License.rtf"/>
+    <conclusion file="Conclusion.html"/>
+    <choices-outline>
+        <line choice="choiceVBoxKEXTs"></line>
+        <line choice="choiceVBoxStartup"></line>
+        <line choice="choiceVBox"></line>
+        <line choice="choiceVBoxCLI"></line>
+    </choices-outline>
+    <choice id="choiceVBoxKEXTs" title="choiceVBoxKEXTs_title" description="choiceVBoxKEXTs_msg" start_selected="true" start_enabled="false" start_visible="true">
+        <pkg-ref id="org.virtualbox.pkg.vboxkexts"></pkg-ref>
+    </choice>
+    <choice id="choiceVBoxStartup" title="choiceVBoxStartup_title" description="choiceVBoxStartup_msg" start_selected="true" start_enabled="false" start_visible="true">
+        <pkg-ref id="org.virtualbox.pkg.vboxstartupitems"></pkg-ref>
+    </choice>
+    <choice id="choiceVBox" title="choiceVBox_title" description="choiceVBox_msg" start_selected="true" start_enabled="false" start_visible="true">
+        <pkg-ref id="org.virtualbox.pkg.virtualbox"></pkg-ref>
+    </choice>
+    <choice id="choiceVBoxCLI" title="choiceVBoxCLI_title" description="choiceVBoxCLI_msg" start_selected="true" start_enabled="true" start_visible="true">
+        <pkg-ref id="org.virtualbox.pkg.virtualboxcli"></pkg-ref>
+    </choice>
+    <pkg-ref id="org.virtualbox.pkg.vboxkexts" auth="Root">file:./Contents/Packages/VBoxKEXTs.pkg</pkg-ref>
+    <pkg-ref id="org.virtualbox.pkg.vboxstartupitems" auth="Root">file:./Contents/Packages/VBoxStartupItems.pkg</pkg-ref>
+    <pkg-ref id="org.virtualbox.pkg.virtualbox" auth="Root">file:./Contents/Packages/VirtualBox.pkg</pkg-ref>
+    <pkg-ref id="org.virtualbox.pkg.virtualboxcli" auth="Root">file:./Contents/Packages/VirtualBoxCLI.pkg</pkg-ref>
+</installer-gui-script>

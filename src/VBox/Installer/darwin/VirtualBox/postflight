@@ -1,0 +1,66 @@
+#!/bin/sh
+
+#
+# Copyright (C) 2007-2010 Oracle Corporation
+#
+# Use only with permission.
+#
+
+#
+# Correct the ownership of the directories in case there
+# was an existing installation.
+#
+chown -R root:admin /Applications/VirtualBox.app
+
+#
+# Select the right architecture.
+#
+MY_ARCH=`uname -m`
+if test "$MY_ARCH" = "x86_64"; then
+  MY_ARCH="amd64"
+else
+  MY_ARCH="x86"
+fi
+set -e
+for trg in `ls /Applications/VirtualBox.app/Contents/MacOS/*-${MY_ARCH}`;
+do
+    linkname=`echo "$trg" | sed -e 's|-'"${MY_ARCH}"'$||' `
+    if test "$linkname" = "$trg"; then
+        echo "oops: $trg" 1>&2
+        exit 1;
+    fi
+    rm -f         "$linkname"
+    ln -vh "$trg" "$linkname"
+done
+
+#
+# Install the Python bindings
+#
+
+VBOX_INSTALL_PATH=/Applications/VirtualBox.app/Contents/MacOS
+PYTHON="python python2.3 python2.5 python2.6"
+if [ -e "${VBOX_INSTALL_PATH}/sdk/installer/vboxapisetup.py" ]; then
+    for p in $PYTHON; do
+    	# Install the python bindings if python is in the path
+    	if [ "`\${p} -c 'print "test"' 2> /dev/null`" = "test" ]; then
+    		echo  1>&2 "Python found: ${p}, installing bindings..."
+    		# Pass install path via environment
+    		export VBOX_INSTALL_PATH
+    		/bin/sh -c "cd $VBOX_INSTALL_PATH/sdk/installer && ${p} vboxapisetup.py install 2> /dev/null"
+    	fi
+    done
+fi
+
+#
+# Install any custom files
+#
+CP="/bin/cp -f"
+CPDIR="${CP} -R"
+DATAPATH="`/usr/bin/dirname "${0}"`/../../../../../.."
+if [ -d "${DATAPATH}/.custom" ]; then
+   echo  1>&2 "Copy ${DATAPATH}/.custom to ${VBOX_INSTALL_PATH}...";
+   ${CPDIR} "${DATAPATH}/.custom/"   "${VBOX_INSTALL_PATH}/custom"
+fi
+
+exit 0;
+

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
+<plist version="0.9">
+<dict>
+        <key>VirtualBox Support Driver</key>                                    <string>VirtualBox Support Driver</string>
+        <key>Loading VBoxDrv.kext</key>                                         <string>Loading VBoxDrv.kext</string>
+        <key>Loading VBoxUSB.kext</key>                                         <string>Loading VBoxUSB.kext</string>
+        <key>Loading VBoxNetFlt.kext</key>                                      <string>Loading VBoxNetFlt.kext</string>
+        <key>Loading VBoxNetAdp.kext</key>                                      <string>Loading VBoxNetAdp.kext</string>
+        <key>Unloading VBoxDrv.kext</key>                                       <string>Unoading VBoxDrv.kext</string>
+        <key>Unloading VBoxUSB.kext</key>                                       <string>Unoading VBoxUSB.kext</string>
+        <key>Unloading VBoxNetFlt.kext</key>                                    <string>Unoading VBoxNetFlt.kext</string>
+        <key>Unloading VBoxNetAdp.kext</key>                                    <string>Unoading VBoxNetAdp.kext</string>
+        <key>Error: /Library/Extensions/VBoxDrv.kext is missing</key>           <string>Error: /Library/Extensions/VBoxDrv.kext is missing</string>
+        <key>Error: /Library/Extensions/VBoxUSB.kext is missing</key>           <string>Error: /Library/Extensions/VBoxUSB.kext is missing</string>
+        <key>Error: /Library/Extensions/VBoxNetFlt.kext is missing</key>        <string>Error: /Library/Extensions/VBoxNetFlt.kext is missing</string>
+        <key>Error: /Library/Extensions/VBoxNetAdp.kext is missing</key>        <string>Error: /Library/Extensions/VBoxNetAdp.kext is missing</string>
+        <key>Error: VBoxDrv.kext is already loaded</key>                        <string>Error: VBoxDrv.kext is already loaded</string>
+        <key>Error: VBoxUSB.kext is already loaded</key>                        <string>Error: VBoxUSB.kext is already loaded</string>
+        <key>Error: VBoxNetFlt.kext is already loaded</key>                     <string>Error: VBoxNetFlt.kext is already loaded</string>
+        <key>Error: VBoxNetAdp.kext is already loaded</key>                     <string>Error: VBoxNetAdp.kext is already loaded</string>
+        <key>Error: Failed to load /Library/Extensions/VBoxDrv.kext</key>       <string>Error: Failed to load /Library/Extensions/VBoxDrv.kext</string>
+        <key>Error: Failed to load /Library/Extensions/VBoxUSB.kext</key>       <string>Error: Failed to load /Library/Extensions/VBoxUSB.kext</string>
+        <key>Error: Failed to load /Library/Extensions/VBoxNetFlt.kext</key>    <string>Error: Failed to load /Library/Extensions/VBoxNetFlt.kext</string>
+        <key>Error: Failed to load /Library/Extensions/VBoxNetAdp.kext</key>    <string>Error: Failed to load /Library/Extensions/VBoxNetAdp.kext</string>
+        <key>Error: Failed to unload VBoxDrv.kext</key>                         <string>Error: Failed to unload VBoxDrv.kext</string>
+        <key>Error: Failed to unload VBoxUSB.kext</key>                         <string>Error: Failed to unload VBoxUSB.kext</string>
+        <key>Error: Failed to unload VBoxNetFlt.kext</key>                      <string>Error: Failed to unload VBoxNetFlt.kext</string>
+        <key>Error: Failed to unload VBoxNetAdp.kext</key>                      <string>Error: Failed to unload VBoxNetAdp.kext</string>
+</dict>
+</plist>
+
