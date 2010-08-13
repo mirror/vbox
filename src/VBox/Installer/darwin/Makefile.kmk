@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2009 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -21,7 +21,9 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Include sub-makefiles.
 #
-include $(PATH_SUB_CURRENT)/InstallerPlugins/Makefile.kmk
+ifndef VBOX_OSE
+ include $(PATH_SUB_CURRENT)/InstallerPlugins/Makefile.kmk
+endif
 
 
 #
@@ -79,7 +81,6 @@ XARGS=/usr/bin/xargs
 UNZIP=/usr/bin/unzip
 AWK=/usr/bin/awk
 HDIUTIL=/usr/bin/hdiutil
-
 
 #
 # Install the darwin docs/license.
@@ -189,10 +190,11 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg \
 		$$(TARGET_RegistrationPane) \
-		$(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Info.plist \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/*.lproj/*.strings \
-		            $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/*.lproj/RegistrationPane.nib/*.nib) \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/* \
+		$(if $(VBOX_OSE), , \
+    		$(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Info.plist \
+	    	$$(wildcard $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/*.lproj/*.strings \
+		                $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/*.lproj/RegistrationPane.nib/*.nib)) \
+	    $$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/* \
 		            $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_HTML) \
@@ -284,6 +286,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 		-mi $(VBOX_PATH_PACK_TMP)/Packages
 	@# Copy the plugins.
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/distribution.dist                $@/Contents/
+ifndef VBOX_OSE
 	$(MKDIR) -p $@/Contents/Plugins/
 ifdef VBOX_WITH_SERIALNUMBER_INSTALL
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/InstallerPlugins/InstallerSections.plist         $@/Contents/Plugins/InstallerSections.plist
@@ -306,6 +309,7 @@ endif
 		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_REGISTRATIONPANE_INFOPLIST_STRINGS)                  $@/Contents/Plugins/RegistrationPane.bundle/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/InfoPlist.strings$(NLTAB) \
 		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_REGISTRATIONPANE_LOCALIZABLE_STRINGS)                $@/Contents/Plugins/RegistrationPane.bundle/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Localizable.strings$(NLTAB) \
 	)
+endif
 	@# Cleanup.
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.root \
@@ -317,7 +321,10 @@ endif
 #
 # The VirtualBox Kernel extensions.
 #
-VBOX_DI_KEXTS_UNIVERSAL = VBoxDrv VBoxUSB VBoxNetFlt VBoxNetAdp
+VBOX_DI_KEXTS_UNIVERSAL = VBoxDrv VBoxNetFlt VBoxNetAdp
+ifndef VBOX_OSE
+ VBOX_DI_KEXTS_UNIVERSAL += VBoxUSB
+endif
 VBOX_DI_KEXTS = $(VBOX_DI_KEXTS_UNIVERSAL)
 
 $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
@@ -607,7 +614,7 @@ VBOX_DI_VBAPP_DYLIBS.x86 := \
 	MacOS/VBoxREM64.dylib
 ifdef VBOX_WITH_PYTHON
  VBOX_DI_VBAPP_DYLIBS.x86 += \
- 	MacOS/VBoxPython2_5.so \
+ 	$(if-expr defined(VBOX_WITH_MAC_OS_X_10_5_SUPPORT),MacOS/VBoxPython2_5.so,) \
 	$(if-expr defined(VBOX_WITH_MAC_OS_X_10_4_SUPPORT),MacOS/VBoxPython2_3.so,)
 endif
 
@@ -1064,340 +1071,6 @@ endif
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.desc \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res
 
-#
-# The OpenSolaris VM bundle distribution package.
-#
-$(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg: \
-		$(VBOX_PATH_PACK_TMP)/PackagesBundle/SolarisVM.pkg \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBoxBundle_mpkg/* \
-		            $(VBOX_PATH_DI_SRC)/VirtualBoxBundle_mpkg/*.lproj/*) \
-		$$(TARGET_RegistrationPane) \
-		$(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Info.plist \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/*.lproj/*.strings \
-		            $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/*.lproj/RegistrationPane.nib/*.nib) \
-		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
-			$(VBOX_BRAND_$(f)_VIRTUALBOXBUNDLE_DESCRIPTION_PLIST) \
-			$(VBOX_BRAND_$(f)_VIRTUALBOXBUNDLE_LOCALIZABLE_STRINGS)) \
-		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
-	sudo rm -Rf \
-		$@ \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.desc \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.res
-	@# Correct directory permissions are important.
-	$(MKDIR) -p \
-		$(@D) \
-		$@/Contents \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.desc \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.res
-	@# Do keyword replacement in the package info and description files.
-	$(SED) \
-		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-		--output $(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.desc/Info.plist \
-		$(VBOX_PATH_DI_SRC)/VirtualBoxBundle_mpkg/Info.plist
-	$(SED) \
-		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-		--output $(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.desc/Description.plist \
-		$(VBOX_PATH_DI_SRC)/VirtualBoxBundle_mpkg/Description.plist
-	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBoxBundle_mpkg/check_files              $(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.res/
-	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBoxBundle_mpkg/vboxtest                 $(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.res/
-	@# Build the package.
-	$(VBOX_PACKAGEMAKER) -build -v \
-		-p $@ \
-		-r $(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.res \
-		-i $(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.desc/Info.plist \
-		-d $(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.desc/Description.plist \
-		-mi $(VBOX_PATH_PACK_TMP)/PackagesBundle
-	@# Create a distribution file.
-	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBoxBundle_mpkg/distribution.dist        $@/Contents/
-	$(SED) \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-		--output $@/Contents/Resources/English.lproj/Localizable.strings \
-		$(VBOX_PATH_DI_SRC)/VirtualBoxBundle_mpkg/Localizable.strings
-	@# Make a link to the plugin directory of the VirtualBox.mpkg
-	$(LN) -s ../../VirtualBox.mpkg/Contents/Plugins                                       $@/Contents/Plugins
-	@# Make links to the other resources, so they are up to date & don't waste space on the dvd.
-	$(LN) -s ../../../VirtualBox.mpkg/Contents/Resources/checkforrunningvms               $@/Contents/Resources/checkforrunningvms
-	$(LN) -s ../../../../VirtualBox.mpkg/Contents/Resources/English.lproj/Welcome.html    $@/Contents/Resources/English.lproj/Welcome.html
-	$(LN) -s ../../../../VirtualBox.mpkg/Contents/Resources/English.lproj/Conclusion.html $@/Contents/Resources/English.lproj/Conclusion.html
-	$(LN) -s ../../../../VirtualBox.mpkg/Contents/Resources/English.lproj/License.rtf     $@/Contents/Resources/English.lproj/License.rtf
-	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
-		$(MKDIR) -p \
-			$@/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
-		$(SED) \
-			-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-			-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-			-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-			-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-			-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-			-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-			-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-			--output $@/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Description.plist \
-			$(VBOX_BRAND_$(f)_VIRTUALBOXBUNDLE_DESCRIPTION_PLIST)$(NLTAB) \
-		$(SED) \
-			-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-			-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-			-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-			--output $@/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Localizable.strings \
-			$(VBOX_BRAND_$(f)_VIRTUALBOXBUNDLE_LOCALIZABLE_STRINGS)$(NLTAB) \
-		$(LN) -s ../../../../VirtualBox.mpkg/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Welcome.html     $@/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Welcome.html$(NLTAB) \
-		$(LN) -s ../../../../VirtualBox.mpkg/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Conclusion.html  $@/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Conclusion.html$(NLTAB) \
-		$(LN) -s ../../../../VirtualBox.mpkg/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/License.rtf      $@/Contents/Resources/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/License.rtf$(NLTAB) \
-	)
-	$(LN) -s ../../../VirtualBox.mpkg/Contents/Resources/background.tif $@/Contents/Resources/background.tif
-	@# Cleanup.
-	sudo rm -Rf \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.desc \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg.res
-
-
-$(VBOX_PATH_DIST)/VBoxMacBundleInstaller-$(KBUILD_TARGET_ARCH).zip: \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxBundle.mpkg \
-		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
-	$(RM) -Rf $@
-	$(REDIRECT) -C $(VBOX_PATH_PACK_TMP) -- $(ZIP) -9ry $@ VirtualBoxBundle.mpkg/
-
-#
-# The OpenSolaris VM
-#
-$(VBOX_PATH_PACK_TMP)/PackagesBundle/SolarisVM.pkg: \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/SolarisVM/* \
-		            $(VBOX_PATH_DI_SRC)/SolarisVM/*.lproj/*) \
-		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
-	$(call MSG_TOOL,PackageMaker,,,$@)
-	@# Cleanup any previously failed attempts.
-	sudo rm -Rf \
-		$@ \
-		$(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.root \
-		$(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.desc \
-		$(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.res
-	@# Correct directory permissions are important.
-	$(MKDIR) -p \
-		$(@D) \
-		$(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.root \
-		$(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.desc \
-		$(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.res
-	@# Do keyword replacement in the package info and description files.
-	$(SED) \
-		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-		--output $(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.desc/Info.plist \
-		$(VBOX_PATH_DI_SRC)/SolarisVM/Info.plist
-	$(SED) \
-		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-		--output $(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.desc/Description.plist \
-		$(VBOX_PATH_DI_SRC)/SolarisVM/Description.plist
-	@# Copy the resources.
-	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/SolarisVM/postflight     $(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.res/
-	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/SolarisVM/pget           $(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.res/
-	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/SolarisVM/config         $(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.res/
-	@# Build the package.
-	$(VBOX_PACKAGEMAKER) -build -v \
-		-p $@ \
-		-f $(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.root \
-		-r $(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.res \
-		-i $(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.desc/Info.plist \
-		-d $(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.desc/Description.plist
-	@# Cleanup
-	sudo rm -Rf \
-		$(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.root \
-		$(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.desc \
-		$(VBOX_PATH_PACK_TMP)/SolarisVM.pkg.res
-
-#
-# The VirtualBox bundle iso file
-#
-# The iso file should contain all platform installers (Win, Mac, Linux,
-# Solaris). Additionally it adds an example VM (OpenSolaris) which currently is
-# automatically installed and configured on Windows & Mac OS X. In the following
-# make step no one of the necessary files will be created. All is fetch
-# external and build in the release step. This makes sure that the version info
-# is fixed for the current release. This is also true for the Win & Mac bundle
-# installers. The following variables define the locations of the various
-# needed files.
-## @todo Maybe we can automatically download the VBoxAll package.
-#
-VBOX_TMP_DIR ?= /VBox
-VBOX_ALL ?= $(VBOX_TMP_DIR)/VirtualBox-all*.tar.bz2
-
-# Calculate the vdi size in KBytes
-# zip version
-#VBOX_EXAMPLE_VDI_SIZE ?= $(int-div $(shell $(UNZIP) -l $(VBOX_BRAND_EXAMPLE_VDI) "*.vdi" | $(AWK) '/vdi/{print $$1}'), 1024)
-# tar.gz version
-#VBOX_EXAMPLE_VDI_SIZE ?= $(int-div $(shell $(GZIP) -dc $(VBOX_BRAND_EXAMPLE_VDI) | $(TAR) -tvf - | $(AWK) '/vdi/{print $$3}'), 1024)
-# gz version
-# Buggy gzip. If the original file size is greater than 4GB they is reported
-# wrong with the -l switch. So manually add the missing 4GB. See
-# http://www.mail-archive.com/bug-gzip@gnu.org/msg00168.html for the bugreport.
-VBOX_EXAMPLE_VDI_SIZE ?= $(int-div $(int-add $(shell $(GZIP) -lq $(VBOX_BRAND_EXAMPLE_VDI) | $(AWK) '/vdi/{print $$2}'), 4294967296), 1024)
-
-# Unpack the vbox all to a temp directory
-$(VBOX_PATH_PACK_TMP)/VirtualBoxAll/: \
-		$(VBOX_ALL) \
-		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
-	sudo rm -Rf \
-		$@
-	$(MKDIR) -p \
-		$@
-	$(TAR) -xjvf $(VBOX_ALL) -C $@
-
-# Create the standard iso (No bundle installer and therfor necessary files).
-$(VBOX_PATH_DIST)/VirtualBox.iso: \
-		gen_isoimage_dir_CD \
-		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
-	sudo rm -Rf \
-		$@
-	$(MKDIR) -p \
-		$(@D)
-	@# All the files are there so create the hybrid iso
-	$(HDIUTIL) makehybrid \
-		-o $@ \
-		-hfs \
-		-iso \
-		-joliet \
-		-hfs-volume-name    "VirtualBox" \
-		-iso-volume-name    "VirtualBox" \
-		-joliet-volume-name "VirtualBox" \
-		-hfs-openfolder "$(VBOX_PATH_PACK_TMP)/IsoImage" \
-		-hide-hfs    "$(VBOX_PATH_PACK_TMP)/IsoImage/{$(subst $(SP),$(COMMA),$(VBOX_BRAND_INST_HIDE_MAC))}" \
-		-hide-iso    "$(VBOX_PATH_PACK_TMP)/IsoImage/{$(subst $(SP),$(COMMA),$(VBOX_BRAND_INST_HIDE_WIN))}" \
-		-hide-joliet "$(VBOX_PATH_PACK_TMP)/IsoImage/{$(subst $(SP),$(COMMA),$(VBOX_BRAND_INST_HIDE_WIN))}" \
-		$(VBOX_PATH_PACK_TMP)/IsoImage
-	@# Generate MD5 sum
-	$(REDIRECT) -C $(@D) -- $(MD5SUM_EXT) -p -o VirtualBox.md5 VirtualBox.iso
-
-# Create the bundle iso.
-$(VBOX_PATH_DIST)/VirtualBoxBundle.iso: \
-		gen_isoimage_dir_DVD \
-		$(VBOX_BRAND_EXAMPLE_MACHINE_INI) \
-		$(VBOX_BRAND_EXAMPLE_VDI) \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxAll/VBoxWinBundleInstaller-x86.zip \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxAll/VBoxWinBundleInstaller-amd64.zip \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxAll/VBoxMacBundleInstaller-x86.zip \
-		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
-	$(eval VBOX_WIN_BUNDLE_INSTALLER_FILES.x86   ?= $(shell $(UNZIP) -qql $(VBOX_PATH_PACK_TMP)/VirtualBoxAll/VBoxWinBundleInstaller-x86.zip | $(AWK) '{print $$4}' | $(SED) 's/\/.*//g' | uniq))
-	$(eval VBOX_WIN_BUNDLE_INSTALLER_FILES.amd64 ?= $(shell $(UNZIP) -qql $(VBOX_PATH_PACK_TMP)/VirtualBoxAll/VBoxWinBundleInstaller-amd64.zip | $(AWK) '{print $$4}' | $(SED) 's/\/.*//g' | uniq))
-	sudo rm -Rf \
-		$@
-	$(MKDIR) -p \
-		$(@D)
-	@# Install the example vm stuff
-	$(INSTALL) -m 0644 $(VBOX_BRAND_EXAMPLE_MACHINE_INI) $(VBOX_PATH_PACK_TMP)/IsoImage/
-	$(INSTALL) -m 0644 $(VBOX_BRAND_EXAMPLE_VDI) $(VBOX_PATH_PACK_TMP)/IsoImage/
-	@# Copy the Win bundle installer stuff
-	$(UNZIP) $(VBOX_PATH_PACK_TMP)/VirtualBoxAll/VBoxWinBundleInstaller-x86.zip -d $(VBOX_PATH_PACK_TMP)/IsoImage/
-	$(UNZIP) $(VBOX_PATH_PACK_TMP)/VirtualBoxAll/VBoxWinBundleInstaller-amd64.zip -d $(VBOX_PATH_PACK_TMP)/IsoImage/
-	@# Copy the Mac bundle installer stuff
-	$(UNZIP) $(VBOX_PATH_PACK_TMP)/VirtualBoxAll/VBoxMacBundleInstaller-x86.zip -d $(VBOX_PATH_PACK_TMP)/IsoImage/
-	@# Write the right file size of the vdi to the bundle installer. For that
-	@# we need a tmp file cause sed doesn't do infile replacement.
-	$(SED) \
-		-e 's/\(solarisvm.*installKBytes="\).*\(" auth="None"\)/\1$(VBOX_EXAMPLE_VDI_SIZE)\2/g' \
-		--output $(VBOX_PATH_PACK_TMP)/distribution.dist.tmp \
-		$(VBOX_PATH_PACK_TMP)/IsoImage/VirtualBoxBundle.mpkg/Contents/distribution.dist
-	$(MV) $(VBOX_PATH_PACK_TMP)/distribution.dist.tmp $(VBOX_PATH_PACK_TMP)/IsoImage/VirtualBoxBundle.mpkg/Contents/distribution.dist
-	@# We need a little different DS_Store than the one in the standard installer
-	$(INSTALL) -m 644 $(VBOX_PATH_DI_SRC)/BundleIsoImage/DS_Store $(VBOX_PATH_PACK_TMP)/IsoImage/.DS_Store
-	@# All the files are there so create the hybrid iso
-	$(HDIUTIL) makehybrid \
-		-o $@ \
-		-hfs \
-		-udf \
-		-hfs-volume-name "VirtualBox" \
-		-udf-volume-name "VirtualBox" \
-		-hfs-openfolder "$(VBOX_PATH_PACK_TMP)/IsoImage" \
-		-hide-hfs "$(VBOX_PATH_PACK_TMP)/IsoImage/{$(subst $(SP),$(COMMA),$(VBOX_WIN_BUNDLE_INSTALLER_FILES.x86) $(VBOX_WIN_BUNDLE_INSTALLER_FILES.amd64) $(VBOX_BRAND_INST_HIDE_MAC))}" \
-		-hide-udf "$(VBOX_PATH_PACK_TMP)/IsoImage/{$(subst $(SP),$(COMMA),$(VBOX_BRAND_INST_HIDE_WIN))}" \
-		$(VBOX_PATH_PACK_TMP)/IsoImage
-	@# Generate MD5 sum
-	$(REDIRECT) -C $(@D) -- $(MD5SUM_EXT) -p -o VirtualBoxBundle.md5 VirtualBoxBundle.iso
-
-# We have to make sure that $(VBOX_PATH_PACK_TMP)/IsoImage/ contains only files
-# which should be there. Therewith we make it a define & delete it on every
-# recreation.
-VBOX_TMP_MOUNT ?= /tmp/IsoImage.mnt
-define def_gen_isoimage_dir
-gen_isoimage_dir_$(medium): \
-		$(VBOX_PATH_PACK_TMP)/VirtualBoxAll/ \
-		$(VBOX_BRAND_CUSTOM) \
-		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
-	sudo rm -Rf \
-		$(VBOX_PATH_PACK_TMP)/IsoImage
-	#test ! -e $(VBOX_TMP_MOUNT) || ($(HDIUTIL) detach $(VBOX_TMP_MOUNT) && sudo rmdir $(VBOX_TMP_MOUNT))
-	test ! -e $(VBOX_TMP_MOUNT) || (sudo rmdir $(VBOX_TMP_MOUNT))
-	@# Correct directory permissions are important.
-	$(MKDIR) -p \
-		$(VBOX_PATH_PACK_TMP)/IsoImage/ \
-		$(VBOX_TMP_MOUNT)
-ifdef VBOX_BRAND_CUSTOM
-	$(MKDIR) -p $(VBOX_PATH_PACK_TMP)/IsoImage/.custom
+ifndef VBOX_OSE
+ include $(PATH_SUB_CURRENT)/Bundle.kmk
 endif
-	@# Copy all platform installer without the OS X one and the other extra files
-	$(CP_EXT) $(patsubst %,$(VBOX_PATH_PACK_TMP)/VirtualBoxAll/%,$(VBOX_BRAND_INST_$(medium)_FILES)) $(VBOX_PATH_PACK_TMP)/IsoImage/
-	@# Copy custom stuff if defined
-	$(foreach custom, $(VBOX_BRAND_CUSTOM) \
-		 ,$(INSTALL) -m 644  $(custom) $(VBOX_PATH_PACK_TMP)/IsoImage/.custom/$(NLTAB))
-	@# Copy all user manuals
-ifdef VBOX_BRAND_en_EN_MANUAL_NAME
-	$(INSTALL) -m 644 $(VBOX_PATH_PACK_TMP)/VirtualBoxAll/UserManual.pdf       $(VBOX_PATH_PACK_TMP)/IsoImage/$(VBOX_BRAND_en_EN_MANUAL_NAME).pdf
-else
-	$(INSTALL) -m 644 $(VBOX_PATH_PACK_TMP)/VirtualBoxAll/UserManual.pdf       $(VBOX_PATH_PACK_TMP)/IsoImage/User\ Manual.pdf
-endif
-ifdef VBOX_BRAND_de_DE_MANUAL_NAME
-	$(INSTALL) -m 644 $(VBOX_PATH_PACK_TMP)/VirtualBoxAll/UserManual_de_DE.pdf "$(VBOX_PATH_PACK_TMP)/IsoImage/$(VBOX_BRAND_de_DE_MANUAL_NAME).pdf"
-endif
-ifdef VBOX_BRAND_fr_FR_MANUAL_NAME
-	$(INSTALL) -m 644 $(VBOX_PATH_PACK_TMP)/VirtualBoxAll/UserManual_fr_FR.pdf "$(VBOX_PATH_PACK_TMP)/IsoImage/$(VBOX_BRAND_fr_FR_MANUAL_NAME).pdf"
-endif
-ifdef VBOX_WITH_COMBINED_PACKAGE
-	@# Rename the Windows multi platform installer (.exe) to a unique name the HTML auto start menu can handle
-	$(MV) $(firstword $(wildcard $(VBOX_PATH_PACK_TMP)/IsoImage/VirtualBox-*-Win.exe)) "$(VBOX_PATH_PACK_TMP)/IsoImage/VirtualBox-Win.exe"
-endif
-	@# Temporary mount the dmg file
-	@# Note: man hdiutil: "Note that mountpoint paths must be less than MNAMELEN
-	@# characters (90 as of this writing)." So we use a path in /tmp/.
-	$(HDIUTIL) attach -noautoopen -readonly -mountpoint $(VBOX_TMP_MOUNT) $(patsubst %,$(VBOX_PATH_PACK_TMP)/VirtualBoxAll/%,VirtualBox-*-OSX.dmg)
-	@# Copy all the necessary stuff over
-	$(INSTALL) $(VBOX_TMP_MOUNT)/VirtualBox_Uninstall.tool $(VBOX_PATH_PACK_TMP)/IsoImage/
-	$(INSTALL) $(VBOX_TMP_MOUNT)/.DS_Store $(VBOX_PATH_PACK_TMP)/IsoImage/
-	$(CP) -R $(VBOX_TMP_MOUNT)/.background $(VBOX_PATH_PACK_TMP)/IsoImage/
-	$(CP) -R $(VBOX_TMP_MOUNT)/VirtualBox.mpkg $(VBOX_PATH_PACK_TMP)/IsoImage/
-ifdef VBOX_BRAND_DARWIN_DISKIMAGE_LN_APP
-	$(LN) -s /Applications/ $(VBOX_PATH_PACK_TMP)/IsoImage/Applications
-endif
-	@# Copy specific files
-	$(VBOX_BRAND_INST_$(medium)_GEN_ISOIMAGE_DIR)
-	@# Unmount the dmg file
-	$(HDIUTIL) detach $(VBOX_TMP_MOUNT)
-	@# Cleanup
-	sudo rm -Rf \
-		$(VBOX_TMP_MOUNT)
-endef
-
-# Generate a rule for the CD & the DVD respectively.
-$(foreach medium,$(VBOX_BRAND_MEDIA),$(eval $(def_gen_isoimage_dir)))
-
