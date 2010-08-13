@@ -14119,6 +14119,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
 
+   <interface
+      name="IReusableEvent" extends="IEvent"
+      uuid="69bfb134-80f6-4266-8e20-16371f68fa25"
+      wsmap="managed"
+      >
+    <desc>Base abstract interface for all reusable events.</desc>
+
+    <attribute name="generation" readonly="yes" type="unsigned long">
+      <desc>Current generation of event, incremented on reuse.</desc>
+    </attribute>
+
+    <method name="reuse">
+      <desc>
+        Marks an event as reused, increments 'generation', fields shall no
+        longer be considered valid.
+      </desc>
+    </method>
+  </interface>
+
   <interface
       name="IMachineEvent" extends="IEvent"
       uuid="92ed7b1a-0d96-40ed-ae46-a564d484325e"
