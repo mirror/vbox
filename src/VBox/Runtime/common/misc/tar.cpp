@@ -155,7 +155,7 @@ static int rtTarCopyFileFrom(RTFILE hFile, const char *pszTargetName, PRTTARRECO
     for (;;)
     {
         if (pfnProgressCallback)
-            pfnProgressCallback(100.0 / cbOverallSize * cbOverallWritten, pvUser);
+            pfnProgressCallback((unsigned)(100.0 / cbOverallSize * cbOverallWritten), pvUser);
         /* Finished already? */
         if (cbAllWritten == cbToCopy)
             break;
@@ -269,7 +269,7 @@ static int rtTarCopyFileTo(RTFILE hFile, const char *pszSrcName, const uint64_t 
             for (;;)
             {
                 if (pfnProgressCallback)
-                    pfnProgressCallback(100.0 / cbOverallSize * cbOverallWritten, pvUser);
+                    pfnProgressCallback((unsigned)(100.0 / cbOverallSize * cbOverallWritten), pvUser);
                 if (cbAllWritten >= cbSize)
                     break;
                 size_t cbToRead = sizeof(record);
