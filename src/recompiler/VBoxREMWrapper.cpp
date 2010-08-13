@@ -517,16 +517,16 @@ static const REMPARMDESC g_aArgsCPUMGetGuestCpl[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PCPUMCTXCORE),       NULL },
 };
 
-/* EMInterpretInstructionCPUEx args */
-static const REMPARMDESC g_aArgsEMInterpretInstructionCPUEx[] =
+/* EMInterpretInstructionCPU args */
+static const REMPARMDESC g_aArgsEMInterpretInstructionCPU[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PDISCPUSTATE),       NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PCPUMCTXCORE),       NULL },
     { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR),            NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(EMCODETYPE),         NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(EMCODETYPE),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL }
 };
 
 /* CPUMQueryGuestMsr args */
@@ -1291,7 +1291,7 @@ static REMFNDESC g_aVMMImports[] =
     { "VMR3ReqFree",                            VMM_FN(VMR3ReqFree),                    &g_aArgsVMR3ReqFree[0],                     RT_ELEMENTS(g_aArgsVMR3ReqFree),                       REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(int), NULL },
     { "VMR3GetVMCPUId",                         VMM_FN(VMR3GetVMCPUId),                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "VMR3GetVMCPUNativeThread",               VMM_FN(VMR3GetVMCPUNativeThread),       &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
-    { "EMInterpretInstructionCPUEx",            VMM_FN(EMInterpretInstructionCPUEx),    &g_aArgsEMInterpretInstructionCPUEx[0],     RT_ELEMENTS(g_aArgsEMInterpretInstructionCPUEx),       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "EMInterpretInstructionCPU",              VMM_FN(EMInterpretInstructionCPU),      &g_aArgsEMInterpretInstructionCPU[0],       RT_ELEMENTS(g_aArgsEMInterpretInstructionCPU),       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
 //    { "",                        VMM_FN(),                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),   NULL },
 };
 

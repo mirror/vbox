@@ -521,7 +521,8 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
-            rc = EMInterpretInstructionCPU(pVM, VMMGetCpu0(pVM), &cpu, pRegFrame, 0 /* not relevant here */, &size);
+            rc = EMInterpretInstructionCPU(pVM, VMMGetCpu0(pVM), &cpu, pRegFrame, 0 /* not relevant here */,
+                                           EMCODETYPE_SUPERVISOR, &size);
             if (rc != VINF_SUCCESS)
             {
                 Log(("EMInterpretInstructionCPU failed with %Rrc\n", rc));
