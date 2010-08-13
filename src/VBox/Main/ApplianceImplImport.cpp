@@ -22,6 +22,8 @@
 #include <iprt/s3.h>
 #include <iprt/sha.h>
 #include <iprt/manifest.h>
+#include <iprt/tar.h>
+#include <iprt/stream.h>
 
 #include <VBox/com/array.h>
 
@@ -76,7 +78,8 @@ STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
 
     // see if we can handle this file; for now we insist it has an ".ovf" extension
     Utf8Str strPath (path);
-    if (!strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+    if (!(   strPath.endsWith(".ovf", Utf8Str::CaseInsensitive)
+          || strPath.endsWith(".ova", Utf8Str::CaseInsensitive)))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Appliance file must have .ovf extension"));
 
@@ -598,10 +601,14 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
  * Appliance::taskThreadImportOrExport() which will then call readFS() or readS3().
  * This will then open the OVF with ovfreader.cpp.
  *
- * This is in a separate private method because it is used from two locations:
+ * This is in a separate private method because it is used from three locations:
  *
  * 1) from the public Appliance::Read().
- * 2) from Appliance::readS3(), which got called from a previous instance of Appliance::taskThreadImportOrExport().
+ *
+ * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl(), which
+ *    called Appliance::readFSOVA(), which called Appliance::importImpl(), which then called this again.
+ *
+ * 3) from Appliance::readS3(), which got called from a previous instance of Appliance::taskThreadImportOrExport().
  *
  * @param aLocInfo
  * @param aProgress
@@ -657,7 +664,15 @@ HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &a
  * @param pTask
  * @return
  */
-HRESULT Appliance::readFS(const LocationInfo &locInfo)
+HRESULT Appliance::readFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pProgress)
+{
+    if (locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+        return readFSOVF(locInfo, pProgress);
+    else
+        return readFSOVA(locInfo, pProgress);
+}
+
+HRESULT Appliance::readFSOVF(const LocationInfo &locInfo, ComObjPtr<Progress> & /* pProgress */)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -692,6 +707,107 @@ HRESULT Appliance::readFS(const LocationInfo &locInfo)
     {
         rc = aRC;
     }
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+
+    return rc;
+}
+
+HRESULT Appliance::readFSOVA(const LocationInfo &locInfo, ComObjPtr<Progress> &pProgress)
+{
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", this));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+    int vrc = VINF_SUCCESS;
+    char szOSTmpDir[RTPATH_MAX];
+    RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
+    /* The template for the temporary directory created below */
+    char *pszTmpDir;
+    RTStrAPrintf(&pszTmpDir, "%s"RTPATH_SLASH_STR"vbox-ovf-XXXXXX", szOSTmpDir);
+    list< pair<Utf8Str, ULONG> > filesList;
+    Utf8Str strTmpOvf;
+
+    try
+    {
+        /* Extract the path */
+        Utf8Str tmpPath = locInfo.strPath;
+        /* Remove the ova extension */
+        tmpPath.stripExt();
+        tmpPath += ".ovf";
+
+        /* We need a temporary directory which we can put the OVF file & all
+         * disk images in */
+        vrc = RTDirCreateTemp(pszTmpDir);
+        if (RT_FAILURE(vrc))
+            DebugBreakThrow(setError(VBOX_E_FILE_ERROR,
+                           tr("Cannot create temporary directory '%s' (%Rrc)"), pszTmpDir, vrc));
+
+        /* The temporary name of the target OVF file */
+        strTmpOvf = Utf8StrFmt("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
+
+        /* Next we have to download the OVF */
+        char *papszFile = RTPathFilename(strTmpOvf.c_str());
+        vrc = RTTarExtractFiles(locInfo.strPath.c_str(), pszTmpDir, &papszFile, 1, 0, 0);
+        if (RT_FAILURE(vrc))
+        {
+            if (vrc == VERR_FILE_NOT_FOUND)
+                DebugBreakThrow(setError(VBOX_E_IPRT_ERROR,
+                                         tr("Can't find ovf file '%s' in archive '%s' (%Rrc)"), papszFile, locInfo.strPath.c_str(), vrc));
+            else
+                DebugBreakThrow(setError(VBOX_E_IPRT_ERROR,
+                                         tr("Can't unpack the archive file '%s' (%Rrc)"), locInfo.strPath.c_str(), vrc));
+        }
+
+        // todo: check this out
+//        pTask->pProgress->SetNextOperation(Bstr(tr("Reading")), 1);
+
+        /* Prepare the temporary reading of the OVF */
+        ComObjPtr<Progress> progress;
+        LocationInfo li;
+        li.strPath = strTmpOvf;
+        /* Start the reading from the fs */
+        rc = readImpl(li, progress);
+        if (FAILED(rc)) DebugBreakThrow(rc);
+
+        /* Unlock the appliance for the reading thread */
+        appLock.release();
+        /* Wait until the reading is done, but report the progress back to the
+           caller */
+        ComPtr<IProgress> progressInt(progress);
+        waitForAsyncProgress(pProgress, progressInt); /* Any errors will be thrown */
+
+        /* Again lock the appliance for the next steps */
+        appLock.acquire();
+    }
+    catch(HRESULT aRC)
+    {
+        rc = aRC;
+    }
+    /* Delete all files which where temporary created */
+    if (RTPathExists(strTmpOvf.c_str()))
+    {
+        vrc = RTFileDelete(strTmpOvf.c_str());
+        if (RT_FAILURE(vrc))
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Cannot delete file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
+    }
+    /* Delete the temporary directory */
+    if (RTPathExists(pszTmpDir))
+    {
+        vrc = RTDirRemove(pszTmpDir);
+        if (RT_FAILURE(vrc))
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
+    }
+    if (pszTmpDir)
+        RTStrFree(pszTmpDir);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -938,34 +1054,38 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
  * @param aProgress
  * @return
  */
-HRESULT Appliance::importImpl(const LocationInfo &aLocInfo,
-                              ComObjPtr<Progress> &aProgress)
+HRESULT Appliance::importImpl(const LocationInfo &locInfo,
+                              ComObjPtr<Progress> &progress)
 {
     HRESULT rc = S_OK;
 
     SetUpProgressMode mode;
-    m->strManifestFile.setNull();
-    if (aLocInfo.storageType == VFSType_File)
+    if (locInfo.storageType == VFSType_File)
     {
-        Utf8Str strMfFile = manifestFileName(aLocInfo.strPath);
-        if (RTPathExists(strMfFile.c_str()))
+        mode = ImportFileNoManifest;
+        Utf8Str strMfFile = manifestFileName(locInfo.strPath);
+        if (!locInfo.strPath.endsWith(".ova", Utf8Str::CaseInsensitive))
         {
-            m->strManifestFile = strMfFile;
-            mode = ImportFileWithManifest;
+            if (RTPathExists(strMfFile.c_str()))
+                mode = ImportFileWithManifest;
         }
         else
-            mode = ImportFileNoManifest;
+        {
+            if (RTTarQueryFileExists(locInfo.strPath.c_str(), RTPathFilename(strMfFile.c_str())) == VINF_SUCCESS)
+                mode = ImportFileWithManifest;
+        }
     }
     else
          mode = ImportS3;
 
-    rc = setUpProgress(aProgress,
-                       BstrFmt(tr("Importing appliance '%s'"), aLocInfo.strPath.c_str()),
+    rc = setUpProgress(locInfo,
+                       progress,
+                       BstrFmt(tr("Importing appliance '%s'"), locInfo.strPath.c_str()),
                        mode);
     if (FAILED(rc)) DebugBreakThrow(rc);
 
     /* Initialize our worker task */
-    std::auto_ptr<TaskOVF> task(new TaskOVF(this, TaskOVF::Import, aLocInfo, aProgress));
+    std::auto_ptr<TaskOVF> task(new TaskOVF(this, TaskOVF::Import, locInfo, progress));
 
     rc = task->startThread();
     if (FAILED(rc)) DebugBreakThrow(rc);
@@ -992,9 +1112,10 @@ HRESULT Appliance::manifestVerify(const LocationInfo &locInfo,
 {
     HRESULT rc = S_OK;
 
-    if (!m->strManifestFile.isEmpty())
+    Utf8Str strManifestFile = manifestFileName(locInfo.strPath);
+    if (!strManifestFile.isEmpty())
     {
-        const char *pcszManifestFileOnly = RTPathFilename(m->strManifestFile.c_str());
+        const char *pcszManifestFileOnly = RTPathFilename(strManifestFile.c_str());
         pProgress->SetNextOperation(BstrFmt(tr("Verifying manifest file '%s'"), pcszManifestFileOnly),
                                     m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally
 
@@ -1042,7 +1163,7 @@ HRESULT Appliance::manifestVerify(const LocationInfo &locInfo,
 
         // this call can take a very long time
         size_t cIndexOnError;
-        vrc = RTManifestVerify(m->strManifestFile.c_str(),
+        vrc = RTManifestVerify(strManifestFile.c_str(),
                                pTestList,
                                filesList.size() + 1,
                                &cIndexOnError);
@@ -1074,18 +1195,28 @@ HRESULT Appliance::manifestVerify(const LocationInfo &locInfo,
  * and therefore runs on the OVF import worker thread. This creates one or more new machines according to the
  * VirtualSystemScription instances created by Appliance::Interpret().
  *
- * This runs in two contexts:
+ * This runs in three contexts:
  *
  * 1) in a first worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl();
  *
  * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl(), which
- *    called Appliance::importS3(), which called Appliance::importImpl(), which then called this.
+ *    called Appliance::importFSOVA(), which called Appliance::importImpl(), which then called this again.
+ *
+ * 3) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl(), which
+ *    called Appliance::importS3(), which called Appliance::importImpl(), which then called this again.
  *
  * @param pTask
  * @return
  */
-HRESULT Appliance::importFS(const LocationInfo &locInfo,
-                            ComObjPtr<Progress> &pProgress)
+HRESULT Appliance::importFS(TaskOVF *pTask)
+{
+    if (!Utf8Str(RTPathExt(pTask->locInfo.strPath.c_str())).compare(".ovf", Utf8Str::CaseInsensitive))
+        return importFSOVF(pTask);
+    else
+        return importFSOVA(pTask);
+}
+
+HRESULT Appliance::importFSOVF(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -1093,7 +1224,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    Assert(!pProgress.isNull());
+    Assert(!pTask->pProgress.isNull());
 
     // Change the appliance state so we can safely leave the lock while doing time-consuming
     // disk imports; also the below method calls do all kinds of locking which conflicts with
@@ -1111,7 +1242,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
     // if pReader != NULL
 
     // rollback for errors:
-    ImportStack stack(locInfo, reader.m_mapDisks, pProgress);
+    ImportStack stack(pTask->locInfo, reader.m_mapDisks, pTask->pProgress);
 
     // clear the list of imported machines, if any
     m->llGuidsMachinesCreated.clear();
@@ -1119,7 +1250,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
     try
     {
         // if a manifest file exists, verify the content; we then need all files which are referenced by the OVF & the OVF itself
-        rc = manifestVerify(locInfo, reader, pProgress);
+        rc = manifestVerify(pTask->locInfo, reader, pTask->pProgress);
         if (FAILED(rc)) DebugBreakThrow(rc);
 
         // create a session for the machine + disks we manipulate below
@@ -1254,6 +1385,144 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
     return rc;
 }
 
+HRESULT Appliance::importFSOVA(TaskOVF *pTask)
+{
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", this));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
+
+    int vrc = VINF_SUCCESS;
+    char szOSTmpDir[RTPATH_MAX];
+    RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
+    /* The template for the temporary directory created below */
+    char *pszTmpDir;
+    RTStrAPrintf(&pszTmpDir, "%s"RTPATH_SLASH_STR"vbox-ovf-XXXXXX", szOSTmpDir);
+    list< pair<Utf8Str, ULONG> > filesList;
+    const char** paFiles = 0;
+
+    HRESULT rc = S_OK;
+    try
+    {
+        /* Extract the path */
+        Utf8Str tmpPath = pTask->locInfo.strPath;
+        /* Remove the ova extension */
+        tmpPath.stripExt();
+        tmpPath += ".ovf";
+
+        /* We need a temporary directory which we can put the all disk images
+         * in */
+        vrc = RTDirCreateTemp(pszTmpDir);
+        if (RT_FAILURE(vrc))
+            DebugBreakThrow(setError(VBOX_E_FILE_ERROR,
+                                     tr("Cannot create temporary directory '%s' (%Rrc)"), pszTmpDir, vrc));
+
+        /* Provide a OVF file (haven't to exist) so the import routine can
+         * figure out where the disk images/manifest file are located. */
+        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
+        /* Add the manifest file to the list of files to extract, but only if
+           one is in the archive. */
+        Utf8Str strManifestFile = manifestFileName(strTmpOvf);
+        vrc = RTTarQueryFileExists(pTask->locInfo.strPath.c_str(), RTPathFilename(strManifestFile.c_str()));
+        if (RT_SUCCESS(vrc))
+            filesList.push_back(pair<Utf8Str, ULONG>(strManifestFile.c_str(), 1));
+
+        ULONG ulWeight = m->ulWeightForXmlOperation;
+        /* Add every disks of every virtual system to an internal list */
+        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+        for (it = m->virtualSystemDescriptions.begin();
+             it != m->virtualSystemDescriptions.end();
+             ++it)
+        {
+            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+            std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
+            for (itH = avsdeHDs.begin();
+                 itH != avsdeHDs.end();
+                 ++itH)
+            {
+                const Utf8Str &strTargetFile = (*itH)->strOvf;
+                if (!strTargetFile.isEmpty())
+                {
+                    /* The temporary name of the target disk file */
+                    Utf8StrFmt strTmpDisk("%s/%s", pszTmpDir, RTPathFilename(strTargetFile.c_str()));
+                    filesList.push_back(pair<Utf8Str, ULONG>(strTmpDisk, (*itH)->ulSizeMB));
+                    ulWeight += (*itH)->ulSizeMB;
+                }
+            }
+        }
+
+        /* Download all files */
+        paFiles = (const char**)RTMemAlloc(sizeof(char*) * filesList.size());
+        int i = 0;
+        for (list< pair<Utf8Str, ULONG> >::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1, ++i)
+            paFiles[i] = RTPathFilename((*it1).first.c_str());
+        if (!pTask->pProgress.isNull())
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Unpacking file '%s'"), RTPathFilename(pTask->locInfo.strPath.c_str())), ulWeight);
+        vrc = RTTarExtractFiles(pTask->locInfo.strPath.c_str(), pszTmpDir, paFiles, filesList.size(), pTask->updateProgress, &pTask);
+        if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Cannot unpack archive file '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+
+//        if (!pTask->pProgress.isNull())
+//            pTask->pProgress->SetNextOperation(BstrFmt(tr("Importing appliance")), m->ulWeightForXmlOperation);
+
+        ComObjPtr<Progress> progress;
+        /* Import the whole temporary OVF & the disk images */
+        LocationInfo li;
+        li.strPath = strTmpOvf;
+        rc = importImpl(li, progress);
+        if (FAILED(rc)) DebugBreakThrow(rc);
+
+        /* Unlock the appliance for the fs import thread */
+        appLock.release();
+        /* Wait until the import is done, but report the progress back to the
+           caller */
+        ComPtr<IProgress> progressInt(progress);
+        waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
+
+        /* Again lock the appliance for the next steps */
+        appLock.acquire();
+    }
+    catch(HRESULT aRC)
+    {
+        rc = aRC;
+    }
+    /* Delete the temporary files list */
+    if (paFiles)
+        RTMemFree(paFiles);
+    /* Delete all files which where temporary created */
+    for (list< pair<Utf8Str, ULONG> >::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1)
+    {
+        const char *pszFilePath = (*it1).first.c_str();
+        if (RTPathExists(pszFilePath))
+        {
+            vrc = RTFileDelete(pszFilePath);
+            if (RT_FAILURE(vrc))
+                rc = setError(VBOX_E_FILE_ERROR,
+                              tr("Cannot delete file '%s' (%Rrc)"), pszFilePath, vrc);
+        }
+    }
+    /* Delete the temporary directory */
+    if (RTPathExists(pszTmpDir))
+    {
+        vrc = RTDirRemove(pszTmpDir);
+        if (RT_FAILURE(vrc))
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
+    }
+    if (pszTmpDir)
+        RTStrFree(pszTmpDir);
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+
+    return rc;
+}
+
 /**
  * Imports one disk image. This is common code shared between
  *  --  importMachineGeneric() for the OVF case; in that case the information comes from
@@ -1364,7 +1633,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             if (FAILED(rc)) DebugBreakThrow(rc);
 
             /* Advance to the next operation */
-            stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()),
+            stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), RTPathFilename(strSrcFilePath.c_str())),
                                               di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally);
         }
 
@@ -2162,7 +2431,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
         vrc = RTDirCreateTemp(pszTmpDir);
         if (RT_FAILURE(vrc))
             DebugBreakThrow(setError(VBOX_E_FILE_ERROR,
-                                     tr("Cannot create temporary directory '%s'"), pszTmpDir));
+                                     tr("Cannot create temporary directory '%s' (%Rrc)"), pszTmpDir, vrc));
 
         /* Add every disks of every virtual system to an internal list */
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;

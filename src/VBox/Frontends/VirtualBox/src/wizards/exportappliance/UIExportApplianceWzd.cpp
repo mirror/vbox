@@ -371,7 +371,7 @@ UIExportApplianceWzdPage4::UIExportApplianceWzdPage4()
     m_pFileSelector->setMode(VBoxFilePathSelectorWidget::Mode_File_Save);
     m_pFileSelector->setEditable(true);
     m_pFileSelector->setButtonPosition(VBoxEmptyFileSelector::RightPosition);
-    m_pFileSelector->setDefaultSaveExt("ovf");
+    m_pFileSelector->setDefaultSaveExt("ova");
 
     /* Complete validators for the file selector page */
     connect(m_pLeUsername, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
@@ -401,7 +401,7 @@ void UIExportApplianceWzdPage4::retranslateUi()
 
     /* Translate the file selector */
     m_pFileSelector->setFileDialogTitle(tr("Select a file to export into"));
-    m_pFileSelector->setFileFilters(tr("Open Virtualization Format (%1)").arg("*.ovf"));
+    m_pFileSelector->setFileFilters(tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
 }
 
 void UIExportApplianceWzdPage4::initializePage()
@@ -477,7 +477,7 @@ void UIExportApplianceWzdPage4::initializePage()
         if (field("machineNames").toStringList().size() == 1)
             strName = field("machineNames").toStringList()[0];
 
-        strName += ".ovf";
+        strName += ".ova";
 
         if (storageType == Filesystem)
             strName = QDir::toNativeSeparators(QString("%1/%2").arg(vboxGlobal().documentsPath()).arg(strName));
@@ -490,7 +490,8 @@ void UIExportApplianceWzdPage4::initializePage()
 
 bool UIExportApplianceWzdPage4::isComplete() const
 {
-    bool bComplete = m_pFileSelector->path().toLower().endsWith(".ovf");
+    const QString &strFile = m_pFileSelector->path().toLower();
+    bool bComplete = (strFile.endsWith(".ovf") || strFile.endsWith(".ova"));
     StorageType storageType = field("storageType").value<StorageType>();
     switch (storageType)
     {
@@ -518,22 +519,27 @@ bool UIExportApplianceWzdPage4::exportAppliance()
     AssertMsg(!field("applianceWidget").value<ExportAppliancePointer>().isNull(),
               ("Appliance Widget Pointer is not set!\n"));
     CAppliance *appliance = field("applianceWidget").value<ExportAppliancePointer>()->appliance();
-    QFileInfo fi(m_pFileSelector->path());
-    QVector<QString> files;
-    files << fi.fileName();
     /* We need to know every filename which will be created, so that we can
      * ask the user for confirmation of overwriting. For that we iterating
      * over all virtual systems & fetch all descriptions of the type
-     * HardDiskImage. */
-    CVirtualSystemDescriptionVector vsds = appliance->GetVirtualSystemDescriptions();
-    for (int i = 0; i < vsds.size(); ++ i)
+     * HardDiskImage. Also add the manifest file to the check. In the ova
+     * case only the target file itself get checked. */
+    QFileInfo fi(m_pFileSelector->path());
+    QVector<QString> files;
+    files << fi.fileName();
+    if (fi.suffix().toLower() == "ovf")
     {
-        QVector<KVirtualSystemDescriptionType> types;
-        QVector<QString> refs, origValues, configValues, extraConfigValues;
-        vsds[i].GetDescriptionByType(KVirtualSystemDescriptionType_HardDiskImage, types,
-                                     refs, origValues, configValues, extraConfigValues);
-        foreach (const QString &s, origValues)
-            files << QString("%2").arg(s);
+        files << fi.baseName() + ".mf";
+        CVirtualSystemDescriptionVector vsds = appliance->GetVirtualSystemDescriptions();
+        for (int i = 0; i < vsds.size(); ++ i)
+        {
+            QVector<KVirtualSystemDescriptionType> types;
+            QVector<QString> refs, origValues, configValues, extraConfigValues;
+            vsds[i].GetDescriptionByType(KVirtualSystemDescriptionType_HardDiskImage, types,
+                                         refs, origValues, configValues, extraConfigValues);
+            foreach (const QString &s, origValues)
+                files << QString("%2").arg(s);
+        }
     }
     CVFSExplorer explorer = appliance->CreateVFSExplorer(uri());
     CProgress progress = explorer.Update();
@@ -592,7 +598,7 @@ bool UIExportApplianceWzdPage4::exportAppliance()
 bool UIExportApplianceWzdPage4::exportVMs(CAppliance &appliance)
 {
     /* Write the appliance */
-    QString version = m_pSelectOVF09->isChecked() ? "ovf-0.9" : "ovf-1.0";
+    const QString version = m_pSelectOVF09->isChecked() ? "ovf-0.9" : "ovf-1.0";
     CProgress progress = appliance.Write(version, uri());
     bool fResult = appliance.isOk();
     if (fResult)

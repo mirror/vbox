@@ -164,7 +164,7 @@ void UIImportApplianceWzdPage1::retranslateUi()
 
     /* Translate the file selector */
     m_pFileSelector->setFileDialogTitle(tr("Select an appliance to import"));
-    m_pFileSelector->setFileFilters(tr("Open Virtualization Format (%1)").arg("*.ovf"));
+    m_pFileSelector->setFileFilters(tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
 
     /* Wizard page 1 title */
     setTitle(tr("Welcome to the Appliance Import Wizard!"));
@@ -184,7 +184,8 @@ void UIImportApplianceWzdPage1::initializePage()
 
 bool UIImportApplianceWzdPage1::isComplete() const
 {
-    return m_pFileSelector->path().toLower().endsWith(".ovf") && QFileInfo(m_pFileSelector->path()).exists();
+    const QString &strFile = m_pFileSelector->path().toLower();
+    return (strFile.endsWith(".ovf") || strFile.endsWith(".ova")) && QFileInfo(m_pFileSelector->path()).exists();
 }
 
 bool UIImportApplianceWzdPage1::validatePage()

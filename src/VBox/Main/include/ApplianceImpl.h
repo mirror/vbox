@@ -121,22 +121,25 @@ private:
     void addWarning(const char* aWarning, ...);
 
     void disksWeight();
+    struct LocationInfo;
     enum SetUpProgressMode { ImportFileWithManifest, ImportFileNoManifest, ImportS3, WriteFile, WriteS3 };
-    HRESULT setUpProgress(ComObjPtr<Progress> &pProgress,
+    HRESULT setUpProgress(const LocationInfo &locInfo,
+                          ComObjPtr<Progress> &pProgress,
                           const Bstr &bstrDescription,
                           SetUpProgressMode mode);
 
-    struct LocationInfo;
     void parseURI(Utf8Str strUri, LocationInfo &locInfo) const;
     void parseBucket(Utf8Str &aPath, Utf8Str &aBucket);
-    Utf8Str manifestFileName(Utf8Str aPath) const;
+    Utf8Str manifestFileName(const Utf8Str& aPath) const;
 
     HRESULT readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     struct TaskOVF;
     static DECLCALLBACK(int) taskThreadImportOrExport(RTTHREAD aThread, void *pvUser);
 
-    HRESULT readFS(const LocationInfo &locInfo);
+    HRESULT readFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pProgress);
+    HRESULT readFSOVF(const LocationInfo &locInfo, ComObjPtr<Progress> &pProgress);
+    HRESULT readFSOVA(const LocationInfo &locInfo, ComObjPtr<Progress> &pProgress);
     HRESULT readS3(TaskOVF *pTask);
 
     void convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
@@ -148,7 +151,9 @@ private:
     HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
     HRESULT manifestVerify(const LocationInfo &locInfo, const ovf::OVFReader &reader, ComObjPtr<Progress> &pProgress);
 
-    HRESULT importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &aProgress);
+    HRESULT importFS(TaskOVF *pTask);
+    HRESULT importFSOVF(TaskOVF *pTask);
+    HRESULT importFSOVA(TaskOVF *pTask);
 
     struct ImportStack;
     void importOneDiskImage(const ovf::DiskImage &di,
@@ -174,7 +179,9 @@ private:
                                      OVFFormat enFormat,
                                      XMLStack &stack);
 
-    HRESULT writeFS(const LocationInfo &locInfo, const OVFFormat enFormat, ComObjPtr<Progress> &pProgress);
+    HRESULT writeFS(TaskOVF *pTask);
+    HRESULT writeFSOVF(TaskOVF *pTask);
+    HRESULT writeFSOVA(TaskOVF *pTask);
     HRESULT writeS3(TaskOVF *pTask);
 
     friend class Machine;

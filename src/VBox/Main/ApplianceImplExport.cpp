@@ -21,6 +21,8 @@
 #include <iprt/param.h>
 #include <iprt/s3.h>
 #include <iprt/manifest.h>
+#include <iprt/tar.h>
+#include <iprt/stream.h>
 
 #include <VBox/version.h>
 
@@ -565,9 +567,10 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgres
 
     // see if we can handle this file; for now we insist it has an ".ovf" extension
     Utf8Str strPath = path;
-    if (!strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+    if (!(   strPath.endsWith(".ovf", Utf8Str::CaseInsensitive)
+          || strPath.endsWith(".ova", Utf8Str::CaseInsensitive)))
         return setError(VBOX_E_FILE_ERROR,
-                        tr("Appliance file must have .ovf extension"));
+                        tr("Appliance file must have .ovf or .ova extension"));
 
     Utf8Str strFormat(format);
     OVFFormat ovfF;
@@ -612,7 +615,11 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgres
  * This is in a separate private method because it is used from two locations:
  *
  * 1) from the public Appliance::Write().
- * 2) from Appliance::writeS3(), which got called from a previous instance of Appliance::taskThreadWriteOVF().
+ *
+ * 2) in a second worker thread; in that case, Appliance::Write() called Appliance::writeImpl(), which
+ *    called Appliance::writeFSOVA(), which called Appliance::writeImpl(), which then called this again.
+ *
+ * 3) from Appliance::writeS3(), which got called from a previous instance of Appliance::taskThreadWriteOVF().
  *
  * @param aFormat
  * @param aLocInfo
@@ -624,7 +631,8 @@ HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, Co
     HRESULT rc = S_OK;
     try
     {
-        rc = setUpProgress(aProgress,
+        rc = setUpProgress(aLocInfo,
+                           aProgress,
                            BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
                            (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
 
@@ -1309,8 +1317,8 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
 }
 
 /**
- * Actual worker code for writing out OVF to disk. This is called from Appliance::taskThreadWriteOVF()
- * and therefore runs on the OVF write worker thread. This runs in two contexts:
+ * Actual worker code for writing out OVF/OVA to disk. This is called from Appliance::taskThreadWriteOVF()
+ * and therefore runs on the OVF/OVA write worker thread. This runs in two contexts:
  *
  * 1) in a first worker thread; in that case, Appliance::Write() called Appliance::writeImpl();
  *
@@ -1322,8 +1330,17 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
  * @param pTask
  * @return
  */
-HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat, ComObjPtr<Progress> &pProgress)
+HRESULT Appliance::writeFS(TaskOVF *pTask)
 {
+    if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+        return writeFSOVF(pTask);
+    else
+        return writeFSOVA(pTask);
+}
+
+HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
+{
+    LogFlowFuncEnter();
     LogFlowFunc(("ENTER appliance %p\n", this));
 
     AutoCaller autoCaller(this);
@@ -1338,10 +1355,10 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
         xml::Document doc;
         xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
 
-        pelmRoot->setAttribute("ovf:version", (enFormat == OVF_1_0) ? "1.0" : "0.9");
+        pelmRoot->setAttribute("ovf:version", (pTask->enFormat == OVF_1_0) ? "1.0" : "0.9");
         pelmRoot->setAttribute("xml:lang", "en-US");
 
-        Utf8Str strNamespace = (enFormat == OVF_0_9)
+        Utf8Str strNamespace = (pTask->enFormat == OVF_0_9)
             ? "http://www.vmware.com/schema/ovf/1/envelope"     // 0.9
             : "http://schemas.dmtf.org/ovf/envelope/1";         // 1.0
         pelmRoot->setAttribute("xmlns", strNamespace);
@@ -1363,7 +1380,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
                 <Disk ovf:capacity="4294967296" ovf:diskId="lamp" ovf:format="..." ovf:populatedSize="1924967692"/>
             </DiskSection> */
         xml::ElementNode *pelmDiskSection;
-        if (enFormat == OVF_0_9)
+        if (pTask->enFormat == OVF_0_9)
         {
             // <Section xsi:type="ovf:DiskSection_Type">
             pelmDiskSection = pelmRoot->createChild("Section");
@@ -1388,7 +1405,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
                 </Network>
             </NetworkSection> */
         xml::ElementNode *pelmNetworkSection;
-        if (enFormat == OVF_0_9)
+        if (pTask->enFormat == OVF_0_9)
         {
             // <Section xsi:type="ovf:NetworkSection_Type">
             pelmNetworkSection = pelmRoot->createChild("Section");
@@ -1414,7 +1431,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
         xml::ElementNode *pelmToAddVirtualSystemsTo;
         if (m->virtualSystemDescriptions.size() > 1)
         {
-            if (enFormat == OVF_0_9)
+            if (pTask->enFormat == OVF_0_9)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Cannot export more than one virtual system with OVF 0.9, use OVF 1.0"));
 
@@ -1438,7 +1455,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             buildXMLForOneVirtualSystem(*pelmToAddVirtualSystemsTo,
                                         &llElementsWithUuidAttributes,
                                         vsdescThis,
-                                        enFormat,
+                                        pTask->enFormat,
                                         stack);         // disks and networks stack
         }
 
@@ -1493,7 +1510,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             // output filename
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
             // target path needs to be composed from where the output OVF is
-            Utf8Str strTargetFilePath(locInfo.strPath);
+            Utf8Str strTargetFilePath(pTask->locInfo.strPath);
             strTargetFilePath.stripFilename();
             strTargetFilePath.append("/");
             strTargetFilePath.append(strTargetFileNameOnly);
@@ -1517,11 +1534,11 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
                 if (FAILED(rc)) throw rc;
 
                 // advance to the next operation
-                pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), strTargetFilePath.c_str()),
-                                            pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
+                pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), RTPathFilename(strTargetFilePath.c_str())),
+                                                   pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
-                waitForAsyncProgress(pProgress, pProgress2);
+                waitForAsyncProgress(pTask->pProgress, pProgress2);
             }
             catch (HRESULT rc3)
             {
@@ -1567,7 +1584,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             pelmDisk->setAttribute("ovf:diskId", strDiskID);
             pelmDisk->setAttribute("ovf:fileRef", strFileRef);
             pelmDisk->setAttribute("ovf:format",
-                    (enFormat == OVF_0_9)
+                    (pTask->enFormat == OVF_0_9)
                         ?  "http://www.vmware.com/specifications/vmdk.html#sparse"      // must be sparse or ovftool chokes
                         :  "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized"
                                                                                     // correct string as communicated to us by VMware (public bug #6612)
@@ -1592,16 +1609,16 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
 
         // now go write the XML
         xml::XmlFileWriter writer(doc);
-        writer.write(locInfo.strPath.c_str(), false /*fSafe*/);
+        writer.write(pTask->locInfo.strPath.c_str(), false /*fSafe*/);
 
         // Create & write the manifest file
-        Utf8Str strMfFile = manifestFileName(locInfo.strPath.c_str());
+        Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath.c_str());
         const char *pcszManifestFileOnly = RTPathFilename(strMfFile.c_str());
-        pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), pcszManifestFileOnly),
-                                    m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
+        pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), pcszManifestFileOnly),
+                                           m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
 
         const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*)*diskList.size() + 1);
-        ppManifestFiles[0] = locInfo.strPath.c_str();
+        ppManifestFiles[0] = pTask->locInfo.strPath.c_str();
         list<Utf8Str>::const_iterator it1;
         size_t i = 1;
         for (it1 = diskList.begin();
@@ -1628,6 +1645,149 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
     AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
     // reset the state so others can call methods again
     m->state = Data::ApplianceIdle;
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+
+    return rc;
+}
+
+HRESULT Appliance::writeFSOVA(TaskOVF *pTask)
+{
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", this));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT rc = S_OK;
+
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
+
+    int vrc = VINF_SUCCESS;
+
+    char szOSTmpDir[RTPATH_MAX];
+    RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
+    /* The template for the temporary directory created below */
+    char *pszTmpDir;
+    RTStrAPrintf(&pszTmpDir, "%s"RTPATH_SLASH_STR"vbox-ovf-XXXXXX", szOSTmpDir);
+    list<Utf8Str> filesList;
+    const char** paFiles = 0;
+
+    try
+    {
+        /* Extract the path */
+        Utf8Str tmpPath = pTask->locInfo.strPath;
+        /* Remove the ova extension */
+        tmpPath.stripExt();
+        tmpPath += ".ovf";
+
+        /* We need a temporary directory which we can put the OVF file & all
+         * disk images in */
+        vrc = RTDirCreateTemp(pszTmpDir);
+        if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Cannot create temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
+
+        /* The temporary name of the target OVF file */
+        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
+
+        /* Prepare the temporary writing of the OVF */
+        ComObjPtr<Progress> progress;
+        /* Create a temporary file based location info for the sub task */
+        LocationInfo li;
+        li.strPath = strTmpOvf;
+        rc = writeImpl(pTask->enFormat, li, progress);
+        if (FAILED(rc)) throw rc;
+
+        /* Unlock the appliance for the writing thread */
+        appLock.release();
+        /* Wait until the writing is done, but report the progress back to the
+           caller */
+        ComPtr<IProgress> progressInt(progress);
+        waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
+
+        /* Again lock the appliance for the next steps */
+        appLock.acquire();
+
+        vrc = RTPathExists(strTmpOvf.c_str()); /* Paranoid check */
+        if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Cannot find source file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
+        /* Add the OVF file */
+        filesList.push_back(strTmpOvf); /* Use 1% of the total for the OVF file upload */
+        Utf8Str strMfFile = manifestFileName(strTmpOvf);
+        filesList.push_back(strMfFile); /* Use 1% of the total for the manifest file upload */
+
+        ULONG ulWeight = 2 * m->ulWeightForXmlOperation;
+        /* Now add every disks of every virtual system */
+        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+        for (it = m->virtualSystemDescriptions.begin();
+             it != m->virtualSystemDescriptions.end();
+             ++it)
+        {
+            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+            std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
+            for (itH = avsdeHDs.begin();
+                 itH != avsdeHDs.end();
+                 ++itH)
+            {
+                const Utf8Str &strTargetFileNameOnly = (*itH)->strOvf;
+                /* Target path needs to be composed from where the output OVF is */
+                Utf8Str strTargetFilePath(strTmpOvf);
+                strTargetFilePath.stripFilename();
+                strTargetFilePath.append("/");
+                strTargetFilePath.append(strTargetFileNameOnly);
+                vrc = RTPathExists(strTargetFilePath.c_str()); /* Paranoid check */
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Cannot find source file '%s' (%Rrc)"), strTargetFilePath.c_str(), vrc);
+                filesList.push_back(strTargetFilePath);
+                ulWeight += (*itH)->ulSizeMB;
+            }
+        }
+        paFiles = (const char**)RTMemAlloc(sizeof(char*) * filesList.size());
+        int i = 0;
+        for (list<Utf8Str>::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1, ++i)
+            paFiles[i] = (*it1).c_str();
+        pTask->pProgress->SetNextOperation(BstrFmt(tr("Packing into '%s'"), RTPathFilename(pTask->locInfo.strPath.c_str())), ulWeight);
+        /* Create the tar file out of our file list. */
+        vrc = RTTarCreate(pTask->locInfo.strPath.c_str(), paFiles, filesList.size(), pTask->updateProgress, &pTask);
+        if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Cannot create OVA file '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+    }
+    catch(HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    /* Delete the temporary files list */
+    if (paFiles)
+        RTMemFree(paFiles);
+    /* Delete all files which where temporary created */
+    for (list<Utf8Str>::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1)
+    {
+        const char *pszFilePath = (*it1).c_str();
+        if (RTPathExists(pszFilePath))
+        {
+            vrc = RTFileDelete(pszFilePath);
+            if (RT_FAILURE(vrc))
+                rc = setError(VBOX_E_FILE_ERROR,
+                              tr("Cannot delete file '%s' (%Rrc)"), pszFilePath, vrc);
+        }
+    }
+    /* Delete the temporary directory */
+    if (RTPathExists(pszTmpDir))
+    {
+        vrc = RTDirRemove(pszTmpDir);
+        if (RT_FAILURE(vrc))
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
+    }
+    if (pszTmpDir)
+        RTStrFree(pszTmpDir);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -1679,7 +1839,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
         vrc = RTDirCreateTemp(pszTmpDir);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR,
-                           tr("Cannot create temporary directory '%s'"), pszTmpDir);
+                           tr("Cannot create temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
 
         /* The temporary name of the target OVF file */
         Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
@@ -1705,7 +1865,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
         vrc = RTPathExists(strTmpOvf.c_str()); /* Paranoid check */
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR,
-                           tr("Cannot find source file '%s'"), strTmpOvf.c_str());
+                           tr("Cannot find source file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
         /* Add the OVF file */
         filesList.push_back(pair<Utf8Str, ULONG>(strTmpOvf, m->ulWeightForXmlOperation)); /* Use 1% of the total for the OVF file upload */
         Utf8Str strMfFile = manifestFileName(strTmpOvf);
@@ -1733,7 +1893,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
                 vrc = RTPathExists(strTargetFilePath.c_str()); /* Paranoid check */
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Cannot find source file '%s'"), strTargetFilePath.c_str());
+                                   tr("Cannot find source file '%s' (%Rrc)"), strTargetFilePath.c_str(), vrc);
                 filesList.push_back(pair<Utf8Str, ULONG>(strTargetFilePath, (*itH)->ulSizeMB));
             }
         }
