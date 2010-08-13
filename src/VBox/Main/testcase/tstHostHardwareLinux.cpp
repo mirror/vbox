@@ -91,8 +91,7 @@ int main()
     }
 #ifdef VBOX_USB_WITH_SYSFS
     VBoxMainUSBDeviceInfo deviceInfo;
-    AssertReturn(VBoxMainUSBDevInfoInit(&deviceInfo), 1);
-    rc = USBDevInfoUpdateDevices(&deviceInfo);
+    rc = deviceInfo.UpdateDevices();
     if (RT_FAILURE(rc))
     {
         RTPrintf ("Failed to update the host USB device information, error %Rrc\n",
@@ -100,55 +99,49 @@ int main()
         return 1;
     }
     RTPrintf ("Listing USB devices detected:\n");
-    USBDeviceInfoList_iterator it;
-    USBDeviceInfoList_iter_init(&it, USBDevInfoBegin(&deviceInfo));
-    for (; !USBDeviceInfoList_iter_eq(&it, USBDevInfoEnd(&deviceInfo));
-           USBDeviceInfoList_iter_incr(&it))
+    for (USBDeviceInfoList::const_iterator it = deviceInfo.DevicesBegin();
+         it != deviceInfo.DevicesEnd(); ++it)
     {
         char szProduct[1024];
-        USBDeviceInfo *pInfo = USBDeviceInfoList_iter_target(&it);
         if (RTLinuxSysFsReadStrFile(szProduct, sizeof(szProduct),
-                                    "%s/product", pInfo->mSysfsPath) == -1)
+                                    "%s/product", it->mSysfsPath.c_str()) == -1)
         {
             if (errno != ENOENT)
             {
                 RTPrintf ("Failed to get the product name for device %s: error %s\n",
-                          pInfo->mDevice, strerror(errno));
+                          it->mDevice.c_str(), strerror(errno));
                 return 1;
             }
             else
                 szProduct[0] = '\0';
         }
-        RTPrintf ("  device: %s (%s), sysfs path: %s\n", szProduct, pInfo->mDevice,
-                  pInfo->mSysfsPath);
+        RTPrintf ("  device: %s (%s), sysfs path: %s\n", szProduct, it->mDevice.c_str(),
+                  it->mSysfsPath.c_str());
         RTPrintf ("    interfaces:\n");
-        USBInterfaceList_iterator it2;
-        USBInterfaceList_iter_init(&it2, USBInterfaceList_begin(&pInfo->mInterfaces));
-        for (; !USBInterfaceList_iter_eq(&it2, USBInterfaceList_end(&pInfo->mInterfaces));
-               USBInterfaceList_iter_incr(&it2))
+        for (USBInterfaceList::const_iterator it2 = it->mInterfaces.begin();
+             it2 != it->mInterfaces.end(); ++it2)
         {
             char szDriver[RTPATH_MAX];
-            char *pszIf = *USBInterfaceList_iter_target(&it2);
             strcpy(szDriver, "none");
             ssize_t size = RTLinuxSysFsGetLinkDest(szDriver, sizeof(szDriver),
-                                                   "%s/driver", pszIf);
+                                                   "%s/driver", it2->c_str());
             if (size == -1 && errno != ENOENT)
             {
                 RTPrintf ("Failed to get the driver for interface %s of device %s: error %s\n",
-                          pszIf, pInfo->mDevice, strerror(errno));
+                          it2->c_str(), it->mDevice.c_str(), strerror(errno));
                 return 1;
             }
-            if (RTLinuxSysFsExists("%s/driver", pszIf) != (size != -1))
+            if (RTLinuxSysFsExists("%s/driver", it2->c_str()) != (size != -1))
             {
                 RTPrintf ("RTLinuxSysFsExists did not return the expected value for the driver link of interface %s of device %s.\n",
-                          pszIf, pInfo->mDevice);
+                          it2->c_str(), it->mDevice.c_str());
                 return 1;
             }
             uint64_t u64InterfaceClass;
             u64InterfaceClass = RTLinuxSysFsReadIntFile(16, "%s/bInterfaceClass",
-                                                        pszIf);
+                                                        it2->c_str());
             RTPrintf ("      sysfs path: %s, driver: %s, interface class: 0x%x\n",
-                      pszIf, szDriver, u64InterfaceClass);
+                      it2->c_str(), szDriver, u64InterfaceClass);
         }
     }
     VBoxMainHotplugWaiter waiter;
