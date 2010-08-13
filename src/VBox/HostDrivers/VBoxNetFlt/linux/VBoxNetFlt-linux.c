@@ -354,7 +354,9 @@ static int vboxNetFltQdiscRequeue(struct sk_buff *skb, struct Qdisc *sch)
     if (rc == 0)
     {
         sch->q.qlen++;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 10)
         sch->qstats.requeues++;
+#endif
     }
 
     return rc;
