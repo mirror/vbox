@@ -72,8 +72,6 @@ struct Appliance::Data
 
     std::list<Utf8Str>  llWarnings;
 
-    Utf8Str             strManifestFile;    // on import, contains path of manifest file if it exists
-
     ULONG               ulWeightForXmlOperation;
     ULONG               ulWeightForManifestOperation;
     ULONG               ulTotalDisksMB;

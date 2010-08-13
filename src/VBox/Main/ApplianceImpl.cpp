@@ -666,6 +666,7 @@ void Appliance::waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis,
     BOOL fCompleted;
     BOOL fCanceled;
     ULONG currentPercent;
+    ULONG cOp = 0;
     while (SUCCEEDED(pProgressAsync->COMGETTER(Completed(&fCompleted))))
     {
         rc = pProgressThis->COMGETTER(Canceled)(&fCanceled);
@@ -675,11 +676,32 @@ void Appliance::waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis,
             pProgressAsync->Cancel();
             break;
         }
+        /* Check if the current operation have changed. It is also possible
+           that in the meantime more than one async operation was finished. So
+           we have to loop as long as we reached the same operation count. */
+        ULONG curOp;
+        for(;;)
+        {
+            rc = pProgressAsync->COMGETTER(Operation(&curOp));
+            if (FAILED(rc)) throw rc;
+            if (cOp != curOp)
+            {
+                Bstr bstr;
+                ULONG currentWeight;
+                rc = pProgressAsync->COMGETTER(OperationDescription(bstr.asOutParam()));
+                if (FAILED(rc)) throw rc;
+                rc = pProgressAsync->COMGETTER(OperationWeight(&currentWeight));
+                if (FAILED(rc)) throw rc;
+                rc = pProgressThis->SetNextOperation(bstr, currentWeight);
+                if (FAILED(rc)) throw rc;
+                ++cOp;
+            }else
+                break;
+        }
 
-        rc = pProgressAsync->COMGETTER(Percent(&currentPercent));
+        rc = pProgressAsync->COMGETTER(OperationPercent(&currentPercent));
         if (FAILED(rc)) throw rc;
-        if (!pProgressThis.isNull())
-            pProgressThis->SetCurrentOperationProgress(currentPercent);
+        pProgressThis->SetCurrentOperationProgress(currentPercent);
         if (fCompleted)
             break;
 
@@ -744,6 +766,7 @@ void Appliance::disksWeight()
 
 }
 
+#include <iprt/tar.h>
 /**
  * Called from Appliance::importImpl() and Appliance::writeImpl() to set up a
  * progress object with the proper weights and maximum progress values.
@@ -753,7 +776,8 @@ void Appliance::disksWeight()
  * @param mode
  * @return
  */
-HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
+HRESULT Appliance::setUpProgress(const LocationInfo &locInfo,
+                                 ComObjPtr<Progress> &pProgress,
                                  const Bstr &bstrDescription,
                                  SetUpProgressMode mode)
 {
@@ -784,20 +808,39 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
         ulTotalOperationsWeight = 1;
     }
 
+    bool fOVA = locInfo.strPath.endsWith(".ova", Utf8Str::CaseInsensitive);
     switch (mode)
     {
         case ImportFileNoManifest:
-        break;
+        {
+            if (fOVA)
+            {
+                // Another operation for packing
+                ++cOperations;
 
+                // assume that packing the files into the archive has the same weight than creating all files in the ovf exporting step
+                ulTotalOperationsWeight += m->ulTotalDisksMB;
+            }
+            break;
+        }
         case ImportFileWithManifest:
         case WriteFile:
+        {
             ++cOperations;          // another one for creating the manifest
 
-            // assume that checking or creating the manifest will take 10% of the time it takes to export the disks
+            // assume that creating the manifest will take 10% of the time it takes to export the disks
             m->ulWeightForManifestOperation = m->ulTotalDisksMB / 10;
             ulTotalOperationsWeight += m->ulWeightForManifestOperation;
-        break;
+            if (fOVA)
+            {
+                // Another operation for packing
+                ++cOperations;
 
+                // assume that packing the files into the archive has the same weight than creating all files in the ovf exporting step
+                ulTotalOperationsWeight += m->ulTotalDisksMB;
+            }
+            break;
+        }
         case ImportS3:
         {
             cOperations += 1 + 1;     // another one for the manifest file & another one for the import
@@ -813,9 +856,8 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
 
             ULONG ulInitWeight = (ULONG)((double)ulTotalOperationsWeight * 0.1  / 100);  // use 0.1% for init
             ulTotalOperationsWeight += ulInitWeight;
+            break;
         }
-        break;
-
         case WriteS3:
         {
             cOperations += 1 + 1;     // another one for the mf & another one for temporary creation
@@ -833,8 +875,8 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
             }
             ULONG ulOVFCreationWeight = (ULONG)((double)ulTotalOperationsWeight * 50.0 / 100.0); /* Use 50% for the creation of the OVF & the disks */
             ulTotalOperationsWeight += ulOVFCreationWeight;
+            break;
         }
-        break;
     }
 
     Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n",
@@ -915,16 +957,17 @@ void Appliance::parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
                        tr("You doesn't provide a bucket name in the URI '%s'"), aPath.c_str());
 }
 
-Utf8Str Appliance::manifestFileName(Utf8Str aPath) const
+Utf8Str Appliance::manifestFileName(const Utf8Str& aPath) const
 {
+    Utf8Str strTmpPath = aPath;
     /* Get the name part */
-    char *pszMfName = RTStrDup(RTPathFilename(aPath.c_str()));
+    char *pszMfName = RTStrDup(RTPathFilename(strTmpPath.c_str()));
     /* Strip any extensions */
     RTPathStripExt(pszMfName);
     /* Path without the filename */
-    aPath.stripFilename();
+    strTmpPath.stripFilename();
     /* Format the manifest path */
-    Utf8StrFmt strMfFile("%s/%s.mf", aPath.c_str(), pszMfName);
+    Utf8StrFmt strMfFile("%s/%s.mf", strTmpPath.c_str(), pszMfName);
     RTStrFree(pszMfName);
     return strMfFile;
 }
@@ -972,21 +1015,21 @@ DECLCALLBACK(int) Appliance::taskThreadImportOrExport(RTTHREAD /* aThread */, vo
     {
         case TaskOVF::Read:
             if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->readFS(task->locInfo);
+                taskrc = pAppliance->readFS(task->locInfo, task->pProgress);
             else if (task->locInfo.storageType == VFSType_S3)
                 taskrc = pAppliance->readS3(task.get());
         break;
 
         case TaskOVF::Import:
             if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->importFS(task->locInfo, task->pProgress);
+                taskrc = pAppliance->importFS(task.get());
             else if (task->locInfo.storageType == VFSType_S3)
                 taskrc = pAppliance->importS3(task.get());
         break;
 
         case TaskOVF::Write:
             if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->writeFS(task->locInfo, task->enFormat, task->pProgress);
+                taskrc = pAppliance->writeFS(task.get());
             else if (task->locInfo.storageType == VFSType_S3)
                 taskrc = pAppliance->writeS3(task.get());
         break;
