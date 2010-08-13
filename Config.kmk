@@ -847,6 +847,9 @@ ifdef VBOX_OSE
  endif
  VBOX_USB_WITH_SYSFS=
  # branding
+ VBOX_BRAND_LICENSE_HTML       := $(PATH_ROOT)/doc/License-gpl-2.0.html
+ VBOX_BRAND_LICENSE_RTF        := $(PATH_ROOT)/doc/License-gpl-2.0.rtf
+ VBOX_BRAND_LICENSE_TXT        := $(PATH_ROOT)/doc/License-gpl-2.0.txt
  VBOX_BRAND_BIOS_LOGO          := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/ose_logo.bmp
  VBOX_BRAND_GUI_ABOUT_PNG      := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/about.png
  VBOX_BRAND_GUI_ABOUT_16PX_PNG := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/about_16px.png
