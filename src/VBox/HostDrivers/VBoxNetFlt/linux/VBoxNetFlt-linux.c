@@ -2231,7 +2231,11 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 
 int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 {
-    /* Nothing to do here. */
+    /*
+     * Remove packet handler when we get disconnected from internal switch as
+     * we don't want the handler to forward packets to disconnected switch.
+     */
+    dev_remove_pack(&pThis->u.s.PacketType);
     return VINF_SUCCESS;
 }
 
@@ -2286,7 +2290,6 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 
     if (fRegistered)
     {
-        dev_remove_pack(&pThis->u.s.PacketType);
 #ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
         skb_queue_purge(&pThis->u.s.XmitQueue);
 #endif
