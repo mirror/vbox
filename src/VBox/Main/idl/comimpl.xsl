@@ -578,6 +578,7 @@ private:
 
 
 <xsl:template name="genSwitchCase">
+  <xsl:param name="ifaceName" />
   <xsl:param name="implName" />
   <xsl:param name="reinit" />
   <xsl:variable name="waitable">
@@ -594,9 +595,10 @@ private:
   <xsl:value-of select="       '         {&#10;'"/>
   <xsl:choose>
     <xsl:when test="$reinit='yes'">
-      <xsl:value-of select="concat('              ComPtr&lt;', $implName, '&gt; obj;&#10;')"/>
-      <xsl:value-of select="       '              obj = mEvent;&#10;'"/>
-      <xsl:value-of select="       '              Assert(obj);&#10;'"/>
+      <xsl:value-of select="concat('              ComPtr&lt;', $ifaceName, '&gt; iobj;&#10;')"/>
+      <xsl:value-of select="       '              iobj = mEvent;&#10;'"/>
+      <xsl:value-of select="       '              Assert(!iobj.isNull());&#10;'"/>
+      <xsl:value-of select="concat('              ',$implName, '* obj = (', $implName, '*)(', $ifaceName, '*)iobj;&#10;')"/>
       <xsl:value-of select="       '              obj->Reuse();&#10;'"/>
     </xsl:when>
     <xsl:otherwise>
@@ -633,6 +635,7 @@ HRESULT VBoxEventDesc::init(IEventSource* aSource, VBoxEventType_T aType, ...)
       <xsl:value-of select="substring(@name, 2)" />
     </xsl:variable>
     <xsl:call-template name="genSwitchCase">
+      <xsl:with-param name="ifaceName" select="@name" />
       <xsl:with-param name="implName" select="$implName" />
       <xsl:with-param name="reinit" select="'no'" />
     </xsl:call-template>
@@ -663,6 +666,7 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
       <xsl:value-of select="substring(@name, 2)" />
     </xsl:variable>
     <xsl:call-template name="genSwitchCase">
+      <xsl:with-param name="ifaceName" select="@name" />
       <xsl:with-param name="implName" select="$implName" />
       <xsl:with-param name="reinit" select="'yes'" />
     </xsl:call-template>
