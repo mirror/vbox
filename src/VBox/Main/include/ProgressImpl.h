@@ -71,6 +71,7 @@ public:
     STDMETHOD(COMGETTER(Operation)) (ULONG *aOperation);
     STDMETHOD(COMGETTER(OperationDescription)) (BSTR *aOperationDescription);
     STDMETHOD(COMGETTER(OperationPercent)) (ULONG *aOperationPercent);
+    STDMETHOD(COMGETTER(OperationWeight)) (ULONG *aOperationWeight);
     STDMETHOD(COMSETTER(Timeout)) (ULONG aTimeout);
     STDMETHOD(COMGETTER(Timeout)) (ULONG *aTimeout);
 

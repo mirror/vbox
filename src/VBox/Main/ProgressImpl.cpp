@@ -501,6 +501,20 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationPercent)(ULONG *aOperationPercent)
     return S_OK;
 }
 
+STDMETHODIMP ProgressBase::COMGETTER(OperationWeight)(ULONG *aOperationWeight)
+{
+    CheckComArgOutPointerValid(aOperationWeight);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aOperationWeight = m_ulCurrentOperationWeight;
+
+    return S_OK;
+}
+
 STDMETHODIMP ProgressBase::COMSETTER(Timeout)(ULONG aTimeout)
 {
     AutoCaller autoCaller(this);

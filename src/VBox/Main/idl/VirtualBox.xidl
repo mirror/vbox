@@ -7830,7 +7830,7 @@
 
   <interface
      name="IProgress" extends="$unknown"
-     uuid="856aa038-853f-42e2-acf7-6e7b02dbe294"
+     uuid="A163C98F-8635-4AA8-B770-A9941737F3EF"
      wsmap="managed"
      >
     <desc>
@@ -7952,6 +7952,10 @@
 
     <attribute name="operationPercent" type="unsigned long" readonly="yes">
         <desc>Progress value of the current sub-operation only, in percent.</desc>
+    </attribute>
+
+    <attribute name="operationWeight" type="unsigned long" readonly="yes">
+        <desc>Weight value of the current sub-operation only.</desc>
     </attribute>
 
     <attribute name="timeout" type="unsigned long">
