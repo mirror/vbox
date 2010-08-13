@@ -2231,10 +2231,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 
 int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 {
-#ifdef VBOXNETFLT_WITH_QDISC
-    vboxNetFltLinuxQdiscRemove(pThis, NULL);
-#endif /* VBOXNETFLT_WITH_QDISC */
-    dev_remove_pack(&pThis->u.s.PacketType);
+    /* Nothing to do here. */
     return VINF_SUCCESS;
 }
 
@@ -2273,6 +2270,9 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 #ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
     vboxNetFltLinuxUnhookDev(pThis, NULL);
 #endif
+#ifdef VBOXNETFLT_WITH_QDISC
+    vboxNetFltLinuxQdiscRemove(pThis, NULL);
+#endif /* VBOXNETFLT_WITH_QDISC */
 
     /** @todo This code may race vboxNetFltLinuxUnregisterDevice (very very
      *        unlikely, but none the less).  Since it doesn't actually update the
@@ -2286,6 +2286,7 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 
     if (fRegistered)
     {
+        dev_remove_pack(&pThis->u.s.PacketType);
 #ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
         skb_queue_purge(&pThis->u.s.XmitQueue);
 #endif
