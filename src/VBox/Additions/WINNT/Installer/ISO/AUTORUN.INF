@@ -1,0 +1,11 @@
+;
+; Copyright (C) 2006-2010 Oracle Corporation
+;
+; Oracle Corporation confidential
+; All rights reserved
+;
+
+[autorun]
+open=VBoxWindowsAdditions.exe
+icon=VBoxWindowsAdditions.exe
+label=VirtualBox Guest Additions

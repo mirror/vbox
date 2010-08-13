@@ -1,0 +1,90 @@
+# $Id$
+## @file
+# Sub-Makefile for the VirtualBox Windows Guest Shared Folders FSD.
+#
+
+#
+# Copyright (C) 2006-2007 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+#
+# rdbss
+#
+LIBRARIES += rdbss
+rdbss_TEMPLATE       = VBOXGUESTR0
+rdbss_SOURCES        = rdbss/rdbss.def
+
+#
+# VBoxSF
+#
+SYSMODS += VBoxSF
+VBoxSF_TEMPLATE    = VBOXGUESTR0
+VBoxSF_DEFS        = LOG_TO_BACKDOOR VBOX_WITH_HGCM IN_RING0 VBOX_GUEST
+VBoxSF_DEFS       += VBOX_ASYNC_RW VBOX_FAIL_FASTIO
+
+VBoxSF_SDKS.x86    = WINDDKW2K
+VBoxSF_SDKS.amd64  = WINDDKWLH
+
+VBoxSF_INCS        = \
+	../../../../common/VBoxGuestLib
+VBoxSF_LDFLAGS.x86   = -Entry:DriverEntry@8
+VBoxSF_LDFLAGS.amd64 = -Entry:DriverEntry
+VBoxSF_CFLAGS      = -wd4005
+VBoxSF_SOURCES     =  \
+	devctrl.c \
+	devfcb.c \
+	downlvli.c \
+	ea.c \
+	fileinfo.c \
+	init.c \
+	locks.c \
+	netroot.c \
+	notimpl.c \
+	openclos.c \
+	read.c \
+	rename.c \
+	srvcall.c \
+	transprt.c \
+	write.c \
+	vbsfhlp.c \
+	wmlkm.c \
+	rdbss_vbox.c \
+ 	VBoxSF.rc
+
+VBoxSF_LIBS.x86  = \
+	$(PATH_SDK_WINDDKW2K_LIB.x86)/fre/rxce.lib \
+	$(PATH_SDK_WINDDKW2K_LIB.x86)/fre/rdbsslib.lib \
+	$(PATH_SDK_WINDDKW2K_LIB.x86)/fre/copysup.lib \
+	$(PATH_SDK_WINDDKW2K_LIB.x86)/ntoskrnl.lib \
+	$(PATH_SDK_WINDDKW2K_LIB.x86)/hal.lib \
+	$(PATH_SDK_WINDDKW2K_LIB.x86)/ksecdd.lib \
+	$(PATH_SDK_WINDDKW2K_LIB.x86)/BufferOverflowK.lib
+
+VBoxSF_LIBS.amd64  = \
+	$(PATH_SDK_WINDDKWLH_LIB.amd64)/rxce.lib \
+	$(PATH_SDK_WINDDKWLH_LIB.amd64)/rdbsslib.lib \
+	$(PATH_SDK_WINDDKWLH_LIB.amd64)/copysup.lib \
+	$(PATH_SDK_WINDDKWLH_LIB.amd64)/ntoskrnl.lib \
+	$(PATH_SDK_WINDDKWLH_LIB.amd64)/hal.lib \
+	$(PATH_SDK_WINDDKWLH_LIB.amd64)/ksecdd.lib \
+	$(PATH_SDK_WINDDKWLH_LIB.amd64)/BufferOverflowK.lib
+
+VBoxSF_LIBS = \
+	$(VBOX_LIB_VBGL_R0) \
+	$(VBOX_LIB_IPRT_GUEST_R0)
+
+## Use with checked RDBSS libraries
+##	$(PATH_SDK_W2K3DDKX86_LIB)/bufferoverflowk.lib \
+
+##        rdbss.asm \
+##	$(PATH_LIB)/rdbss$(VBOXW32GUEST_SUFF_LIB)
+
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
