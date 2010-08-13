@@ -839,8 +839,7 @@ ifdef VBOX_OSE
  VBOX_WITH_TESTSUITE=
  VBOX_WITH_INTEL_PXE=
  VBOX_WITH_FFMPEG=
- ifn1of ($(KBUILD_TARGET), linux solaris win)
-  # Only the Linux, Solaris installers are public
+ ifn1of ($(KBUILD_TARGET), darwin linux solaris win)
   VBOX_WITH_INSTALLER=
  endif
  if1of ($(KBUILD_TARGET), solaris)
