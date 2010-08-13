@@ -51,9 +51,9 @@
 #include "../VBoxNetFltInternal.h"
 
 /*
- * Uncomment the following line to enable qdisc support.
+ * Comment out the following line to disable qdisc support.
  */
-//#define VBOXNETFLT_WITH_QDISC
+#define VBOXNETFLT_WITH_QDISC
 #ifdef VBOXNETFLT_WITH_QDISC
 #include <net/pkt_sched.h>
 #endif /* VBOXNETFLT_WITH_QDISC */
