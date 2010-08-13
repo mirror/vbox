@@ -118,6 +118,7 @@ LIBXCURSOR="-lXcursor"
 LIBXMU="-lXmu"
 LIBXINERAMA="-lXinerama"
 LIBXRANDR="-lXrandr"
+MAKESELF="makeself"
 MESA="-lGL"
 INCZ=""
 LIBZ="-lz"
@@ -1937,6 +1938,7 @@ setup_wine()
   log_success "found"
 }
 
+
 #
 # Check for gSOAP.
 #
@@ -2029,6 +2031,22 @@ check_darwinversion()
       ;;
   esac
   log_success "found version $darwin_ver (SDK: $sdk)"
+}
+
+
+check_makeself()
+{
+  test_header "makeself"
+  if check_avail "$MAKESELF" makeself; then
+    makeself_ver=`$MAKESELF --version|grep version|sed 's+^Makeself.*version \([0-9\.]*\).*+\1+'`
+    if [ $? -ne 0 ]; then
+      log_failure "not found"
+      fail
+    else
+      log_success "found version $makeself_ver"
+      cnf_append "VBOX_MAKESELF" "`which_wrapper $MAKESELF`"
+    fi
+  fi
 }
 
 
@@ -2482,6 +2500,7 @@ if [ "$OS" = "linux" ]; then
   check_libcap
   check_compiler_h
   [ "$BUILD_MACHINE" = "amd64" -a $WITH_VMMRAW -eq 1 ] && check_32bit
+  check_makeself
 fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
