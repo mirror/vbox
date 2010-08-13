@@ -3793,7 +3793,7 @@
     <attribute name="stateFilePath" type="wstring" readonly="yes">
       <desc>
         Full path to the file that stores the execution state of
-        the machine when it is in the <link to="MachineState_Saved"/> state.
+        the machine when it is in the <link to="MachineState::Saved"/> state.
         <note>
           When the machine is not in the Saved state, this attribute is
           an empty string.
@@ -4159,7 +4159,7 @@
         the boot order.
 
         To indicate that no device is associated with the given position,
-        <link to="DeviceType_Null"/> should be used.
+        <link to="DeviceType::Null"/> should be used.
 
         @todo setHardDiskBootOrder(), setNetworkBootOrder()
 
@@ -4196,7 +4196,7 @@
         retrieve the individual device that occupies the given position.
 
         If here are no devices at the given position, then
-        <link to="DeviceType_Null"/> is returned.
+        <link to="DeviceType::Null"/> is returned.
 
         @todo getHardDiskBootOrder(), getNetworkBootOrder()
 
@@ -5880,13 +5880,13 @@
         start from the beginning (as if the real hardware were just
         powered on).
 
-        If the machine is in the <link to="MachineState_Saved"/> state,
+        If the machine is in the <link to="MachineState::Saved"/> state,
         it will continue its execution the point where the state has
         been saved.
 
         If the machine <link to="IMachine::teleporterEnabled"/> property is
         enabled on the machine being powered up, the machine will wait for an
-        incoming teleportation in the <link to="MachineState_TeleportingIn"/>
+        incoming teleportation in the <link to="MachineState::TeleportingIn"/>
         state. The returned progress object will have at least three
         operations where the last three are defined as: (1) powering up and
         starting TCP server, (2) waiting for incoming teleportations, and
@@ -5914,8 +5914,8 @@
     <method name="powerUpPaused">
       <desc>
         Identical to powerUp except that the VM will enter the
-        <link to="MachineState_Paused"/> state, instead of
-        <link to="MachineState_Running"/>.
+        <link to="MachineState::Paused"/> state, instead of
+        <link to="MachineState::Running"/>.
 
         <see>#powerUp</see>
         <result name="VBOX_E_INVALID_VM_STATE">
@@ -6141,13 +6141,13 @@
         USB controller of the virtual machine.
 
         The device needs to be in one of the following states:
-        <link to="USBDeviceState_Busy"/>,
-        <link to="USBDeviceState_Available"/> or
-        <link to="USBDeviceState_Held"/>,
+        <link to="USBDeviceState::Busy"/>,
+        <link to="USBDeviceState::Available"/> or
+        <link to="USBDeviceState::Held"/>,
         otherwise an error is immediately returned.
 
         When the device state is
-        <link to="USBDeviceState_Busy">Busy</link>, an error may also
+        <link to="USBDeviceState::Busy">Busy</link>, an error may also
         be returned if the host computer refuses to release it for some reason.
 
         <see>IUSBController::deviceFilters, USBDeviceState</see>
@@ -6393,7 +6393,7 @@
         media are created for all normal media of the machine.
 
         If the given snapshot is an online snapshot, the machine will go to
-        the <link to="MachineState_Saved"> saved state</link>, so that the
+        the <link to="MachineState::Saved"> saved state</link>, so that the
         next time it is powered on, the execution state will be restored
         from the state of the snapshot.
 
@@ -6402,7 +6402,7 @@
         </note>
 
         <note>
-          If the machine state is <link to="MachineState_Saved">Saved</link>
+          If the machine state is <link to="MachineState::Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
           deleted (as if <link to="IConsole::discardSavedState"/> were
           called).
@@ -8108,16 +8108,16 @@
 
       Each snapshot contains the settings of the virtual machine (hardware
       configuration etc.). In addition, if the machine was running when the
-      snapshot was taken (<link to="IMachine::state"/> is <link to="MachineState_Running"/>),
+      snapshot was taken (<link to="IMachine::state"/> is <link to="MachineState::Running"/>),
       the current VM state is saved in the snapshot (similarly to what happens
       when a VM's state is saved). The snapshot is then said to
       be <i>online</i> because when restoring it, the VM will be running.
 
-      If the machine is saved (<link to="MachineState_Saved"/>), the snapshot
+      If the machine is saved (<link to="MachineState::Saved"/>), the snapshot
       receives a copy of the execution state file (<link to="IMachine::stateFilePath"/>).
 
-      Otherwise, if the machine was not running (<link to="MachineState_PoweredOff"/>
-      or <link to="MachineState_Aborted"/>), the snapshot is <i>offline</i>;
+      Otherwise, if the machine was not running (<link to="MachineState::PoweredOff"/>
+      or <link to="MachineState::Aborted"/>), the snapshot is <i>offline</i>;
       it then contains a so-called "zero execution state", representing a
       machine that is powered off.
 
@@ -8560,7 +8560,7 @@
       Another extension to the <link to="IMedium::location"/> attribute is that
       there is a possibility to cause VirtualBox to compose a unique value for
       the file name part of the location using the UUID of the hard disk. This
-      applies only to hard disks in <link to="MediumState_NotCreated"/> state,
+      applies only to hard disks in <link to="MediumState::NotCreated"/> state,
       e.g. before the storage unit is created, and works as follows. You set the
       value of the <link to="IMedium::location"/> attribute to a location
       specification which only contains the path specification but not the file
@@ -8760,11 +8760,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <note>
           For some storage types, reading this attribute may return an outdated
           (last known) value when <link to="#state"/> is <link
-          to="MediumState_Inaccessible"/> or <link
-          to="MediumState_LockedWrite"/> because the value of this attribute is
+          to="MediumState::Inaccessible"/> or <link
+          to="MediumState::LockedWrite"/> because the value of this attribute is
           stored within the storage unit itself. Also note that changing the
           attribute value is not possible in such case, as well as when the
-          medium is the <link to="MediumState_LockedRead"/> state.
+          medium is the <link to="MediumState::LockedRead"/> state.
         </note>
       </desc>
     </attribute>
@@ -8849,8 +8849,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         <note>
           For media whose <link to="#state"/> is <link
-          to="MediumState_Inaccessible"/>, the value of this property is the
-          last known size. For <link to="MediumState_NotCreated"/> media,
+          to="MediumState::Inaccessible"/>, the value of this property is the
+          last known size. For <link to="MediumState::NotCreated"/> media,
           the returned value is zero.
         </note>
       </desc>
@@ -8898,16 +8898,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
               changed.
           </li>
           <li>As long as the medium has children, its type cannot be set
-              to <link to="MediumType_Writethrough"/>.
+              to <link to="MediumType::Writethrough"/>.
           </li>
           <li>The type of all differencing media is
-              <link to="MediumType_Normal"/> and cannot be changed.
+              <link to="MediumType::Normal"/> and cannot be changed.
           </li>
         </ul>
 
         The type of a newly created or opened medium is set to
-        <link to="MediumType_Normal"/>, except for DVD and floppy media,
-        which have a type of <link to="MediumType_Writethrough"/>.
+        <link to="MediumType::Normal"/>, except for DVD and floppy media,
+        which have a type of <link to="MediumType::Writethrough"/>.
       </desc>
     </attribute>
 
@@ -8958,9 +8958,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         will be attached indirectly by creating a new differencing child
         medium for that. See the interface description for more information.
 
-        Note that all <link to="MediumType_Immutable">Immutable</link> media
+        Note that all <link to="MediumType::Immutable">Immutable</link> media
         are always read-only while all
-        <link to="MediumType_Writethrough">Writethrough</link> media are
+        <link to="MediumType::Writethrough">Writethrough</link> media are
         always not.
 
         <note>
@@ -8985,8 +8985,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </note>
         <note>
           For media whose state is <link to="#state"/> is <link
-          to="MediumState_Inaccessible"/>, the value of this property is the
-          last known logical size. For <link to="MediumState_NotCreated"/>
+          to="MediumState::Inaccessible"/>, the value of this property is the
+          last known logical size. For <link to="MediumState::NotCreated"/>
           media, the returned value is zero.
         </note>
       </desc>
@@ -9470,13 +9470,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <link to="#deleteStorage"/>, otherwise the operation will fail.
 
         Before the operation starts, the medium is placed in
-        <link to="MediumState_Creating"/> state. If the create operation
-        fails, the medium will be placed back in <link to="MediumState_NotCreated"/>
+        <link to="MediumState::Creating"/> state. If the create operation
+        fails, the medium will be placed back in <link to="MediumState::NotCreated"/>
         state.
 
         After the returned progress object reports that the operation has
         successfully completed, the medium state will be set to <link
-        to="MediumState_Created"/>, the medium will be remembered by this
+        to="MediumState::Created"/>, the medium will be remembered by this
         VirtualBox installation and may be attached to virtual machines.
 
         <result name="VBOX_E_NOT_SUPPORTED">
@@ -9504,17 +9504,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         It will also fail if there is no storage unit to delete or if deletion
         is already in progress, or if the medium is being in use (locked for
         read or for write) or inaccessible. Therefore, the only valid state for
-        this operation to succeed is <link to="MediumState_Created"/>.
+        this operation to succeed is <link to="MediumState::Created"/>.
 
         Before the operation starts, the medium is placed in
-        <link to="MediumState_Deleting"/> state and gets removed from the list
+        <link to="MediumState::Deleting"/> state and gets removed from the list
         of remembered hard disks (media registry). If the delete operation
         fails, the medium will be remembered again and placed back to
-        <link to="MediumState_Created"/> state.
+        <link to="MediumState::Created"/> state.
 
         After the returned progress object reports that the operation is
         complete, the medium state will be set to
-        <link to="MediumState_NotCreated"/> and you will be able to use one of
+        <link to="MediumState::NotCreated"/> and you will be able to use one of
         the storage creation methods to create it again.
 
         <see>#close()</see>
@@ -9547,10 +9547,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         medium in the format and at the location defined by the @a target
         argument.
 
-        The target medium must be in <link to="MediumState_NotCreated"/>
+        The target medium must be in <link to="MediumState::NotCreated"/>
         state (i.e. must not have an existing storage unit). Upon successful
         completion, this operation will set the type of the target medium to
-        <link to="MediumType_Normal"/> and create a storage unit necessary to
+        <link to="MediumType::Normal"/> and create a storage unit necessary to
         represent the differencing medium data in the given format (according
         to the storage format of the target object).
 
@@ -9559,7 +9559,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         VirtualBox installation and may be attached to virtual machines.
 
         <note>
-          The medium will be set to <link to="MediumState_LockedRead"/>
+          The medium will be set to <link to="MediumState::LockedRead"/>
           state for the duration of this operation.
         </note>
         <result name="VBOX_E_OBJECT_IN_USE">
@@ -9624,7 +9624,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           </li>
           <li>
             Neither the source medium nor the target medium is an
-            <link to="MediumType_Immutable"/> medium.
+            <link to="MediumType::Immutable"/> medium.
           </li>
           <li>
             The part of the medium tree from the source medium to the
@@ -9637,15 +9637,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           </li>
           <li>
             None of the involved media are in
-            <link to="MediumState_LockedRead"/> or
-            <link to="MediumState_LockedWrite"/> state.
+            <link to="MediumState::LockedRead"/> or
+            <link to="MediumState::LockedWrite"/> state.
           </li>
         </ul>
 
         <note>
           This (source) medium and all intermediates will be placed to <link
-          to="MediumState_Deleting"/> state and the target medium will be
-          placed to <link to="MediumState_LockedWrite"/> state and for the
+          to="MediumState::Deleting"/> state and the target medium will be
+          placed to <link to="MediumState::LockedWrite"/> state and for the
           duration of this operation.
         </note>
       </desc>
@@ -9664,9 +9664,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Starts creating a clone of this medium in the format and at the
         location defined by the @a target argument.
 
-        The target medium must be either in <link to="MediumState_NotCreated"/>
+        The target medium must be either in <link to="MediumState::NotCreated"/>
         state (i.e. must not have an existing storage unit) or in
-        <link to="MediumState_Created"/> state (i.e. created and not locked, and
+        <link to="MediumState::Created"/> state (i.e. created and not locked, and
         big enough to hold the data or else the copy will be partial). Upon
         successful completion, the cloned medium will contain exactly the
         same sector data as the medium being cloned, except that in the
@@ -9686,7 +9686,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         VirtualBox installation and may be attached to virtual machines.
 
         <note>
-          This medium will be placed to <link to="MediumState_LockedRead"/>
+          This medium will be placed to <link to="MediumState::LockedRead"/>
           state for the duration of this operation.
         </note>
         <result name="E_NOTIMPL">
@@ -9716,9 +9716,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         This potentially creates temporary images, which can require a
         substantial amount of additional disk space.
 
-        This medium will be placed to <link to="MediumState_LockedWrite"/>
+        This medium will be placed to <link to="MediumState::LockedWrite"/>
         state and all its parent media (if any) will be placed to
-        <link to="MediumState_LockedRead"/> state for the duration of this
+        <link to="MediumState::LockedRead"/> state for the duration of this
         operation.
 
         Please note that the results can be either returned straight away,
@@ -9747,7 +9747,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         temporary copy of the medium, so the additional disk space requirement
         is usually much lower than using the clone operation.
 
-        This medium will be placed to <link to="MediumState_LockedWrite"/>
+        This medium will be placed to <link to="MediumState::LockedWrite"/>
         state for the duration of this operation.
 
         Please note that the results can be either returned straight away,
@@ -9783,8 +9783,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           This is not a differencing medium.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Medium is not in <link to="MediumState_Created"/> or
-          <link to="MediumState_Inaccessible"/> state.
+          Medium is not in <link to="MediumState::Created"/> or
+          <link to="MediumState::Inaccessible"/> state.
         </result>
       </desc>
       <param name="progress" type="IProgress" dir="return">
@@ -9970,7 +9970,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         same and corresponds to the number of supported properties.
 
         The returned arrays are filled in only if the
-        <link to="MediumFormatCapabilities_Properties"/> flag is set.
+        <link to="MediumFormatCapabilities::Properties"/> flag is set.
         All arguments must be non-@c null.
 
         <see>DataType</see>
@@ -10298,7 +10298,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="bitsPerPixel" type="unsigned long" readonly="yes">
       <desc>
         Color depth, in bits per pixel. When <link to="#pixelFormat"/> is <link
-        to="FramebufferPixelFormat_FOURCC_RGB">FOURCC_RGB</link>, valid values
+        to="FramebufferPixelFormat::FOURCC_RGB">FOURCC_RGB</link>, valid values
         are: 8, 15, 16, 24 and 32.
       </desc>
     </attribute>
@@ -10306,7 +10306,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="bytesPerLine" type="unsigned long" readonly="yes">
       <desc>
         Scan line size, in bytes. When <link to="#pixelFormat"/> is <link
-        to="FramebufferPixelFormat_FOURCC_RGB">FOURCC_RGB</link>, the
+        to="FramebufferPixelFormat::FOURCC_RGB">FOURCC_RGB</link>, the
         size of the scan line must be aligned to 32 bits.
       </desc>
     </attribute>
@@ -10317,7 +10317,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         to="FramebufferPixelFormat"/> or a raw FOURCC code.
         <note>
           This attribute must never return <link
-          to="FramebufferPixelFormat_Opaque"/> -- the format of the buffer
+          to="FramebufferPixelFormat::Opaque"/> -- the format of the buffer
           <link to="#address"/> points to must be always known.
         </note>
       </desc>
@@ -10423,7 +10423,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The @a pixelFormat parameter defines whether the direct mode is
         available or not. If @a pixelFormat is <link
-        to="FramebufferPixelFormat_Opaque"/> then direct access to the guest
+        to="FramebufferPixelFormat::Opaque"/> then direct access to the guest
         VRAM buffer is not available -- the @a VRAM, @a bitsPerPixel and
         @a bytesPerLine parameters must be ignored and the implementation must use
         the indirect mode (where it provides its own buffer in one of the
@@ -10464,7 +10464,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         to="#address"/> points to. Note also that the <link to="#bitsPerPixel"/>
         value must always correlate with <link to="#pixelFormat"/>. Note that
         the <link to="#pixelFormat"/> attribute must never return <link
-        to="FramebufferPixelFormat_Opaque"/> regardless of the selected mode.
+        to="FramebufferPixelFormat::Opaque"/> regardless of the selected mode.
 
         <note>
           This method is called by the IDisplay object under the
@@ -11422,9 +11422,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         These filters are also activated when the machine is powered up.
         They are run against a list of all currently available USB
         devices (in states
-        <link to="USBDeviceState_Available"/>,
-        <link to="USBDeviceState_Busy"/>,
-        <link to="USBDeviceState_Held"/>) that were not previously
+        <link to="USBDeviceState::Available"/>,
+        <link to="USBDeviceState::Busy"/>,
+        <link to="USBDeviceState::Held"/>) that were not previously
         ignored by global filters.
 
         If at least one filter matches the USB device in question, this
@@ -12737,7 +12737,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Calling this method is required every time a machine has been locked
         for a particular session using the <link to="IMachine::launchVMProcess" />
         or <link to="IMachine::lockMachine" /> calls. Otherwise the state of
-        the machine will be set to <link to="MachineState_Aborted" /> on the
+        the machine will be set to <link to="MachineState::Aborted" /> on the
         server, and changes made to the machine settings will be lost.
 
         Generally, it is recommended to unlock all machines explicitly
@@ -14656,11 +14656,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Notification when a shared folder is added or removed.
       The @a scope argument defines one of three scopes:
       <link to="IVirtualBox::sharedFolders">global shared folders</link>
-      (<link to="Scope_Global">Global</link>),
+      (<link to="Scope::Global">Global</link>),
       <link to="IMachine::sharedFolders">permanent shared folders</link> of
-      the machine (<link to="Scope_Machine">Machine</link>) or <link
+      the machine (<link to="Scope::Machine">Machine</link>) or <link
       to="IConsole::sharedFolders">transient shared folders</link> of the
-      machine (<link to="Scope_Session">Session</link>). Interested callees
+      machine (<link to="Scope::Session">Session</link>). Interested callees
       should use query the corresponding collections to find out what has
       changed.
     </desc>
