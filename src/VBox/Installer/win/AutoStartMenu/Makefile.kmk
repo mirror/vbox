@@ -1,0 +1,49 @@
+# $Id$
+## @file
+# Sub-Makefile for the DVD autostart menu.
+#
+
+#
+# Copyright (C) 2008 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+
+PROGRAMS += AutoStartMenu
+AutoStartMenu_TEMPLATE= VBOXR3STATIC
+# _UNICODE UNICODE
+AutoStartMenu_DEFS    = _WIN32_WINNT=0x0400
+AutoStartMenu_SOURCES = \
+	AutoStartMenu.cpp \
+	DocHostUiHandler.cpp \
+	HTMLWindow.cpp \
+	OleClientSite.cpp \
+	OleInPlaceSite.cpp \
+	stdHelpers.cpp \
+	Tracer.cpp \
+	UrlHelper.cpp \
+	VariantHelper.cpp \
+	AutoStartMenu.rc
+
+AutoStartMenu.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
+AutoStartMenu.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+
+# The icon location is configurable.
+AutoStartMenu.rc_INCS += $(PATH_AutoStartMenu)
+AutoStartMenu.rc_DEPS += $(PATH_AutoStartMenu)/AutoStartMenu-icon.rc
+AutoStartMenu.rc_CLEAN = $(PATH_AutoStartMenu)/AutoStartMenu-icon.rc
+
+# Icon include file.
+$$(PATH_AutoStartMenu)/AutoStartMenu-icon.rc: \
+		$$(VBOX_WINDOWS_ICON_FILE) $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(RM) -f $@
+	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+
+
+include	$(KBUILD_PATH)/subfooter.kmk
+

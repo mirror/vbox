@@ -1,0 +1,4 @@
+<Include>
+    <Registry Root="HKLM" Key="$(var.Property_RegKey)" Name="Version" Value="%VER%" Type="string" />
+    <Registry Root="HKLM" Key="$(var.Property_RegKey)" Name="InstallDir" Value="[INSTALLDIR]" Type="string" />
+</Include>
