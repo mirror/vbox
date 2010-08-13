@@ -283,36 +283,36 @@ typedef enum PGMMODE
 
 
 
-VMMDECL(bool)       PGMIsLocked(PVM pVM);
-VMMDECL(bool)       PGMIsLockOwner(PVM pVM);
+VMMDECL(bool)           PGMIsLocked(PVM pVM);
+VMMDECL(bool)           PGMIsLockOwner(PVM pVM);
 
-VMMDECL(int)        PGMRegisterStringFormatTypes(void);
-VMMDECL(void)       PGMDeregisterStringFormatTypes(void);
-VMMDECL(RTHCPHYS)   PGMGetHyperCR3(PVMCPU pVCpu);
-VMMDECL(RTHCPHYS)   PGMGetNestedCR3(PVMCPU pVCpu, PGMMODE enmShadowMode);
-VMMDECL(RTHCPHYS)   PGMGetInterHCCR3(PVM pVM);
-VMMDECL(RTHCPHYS)   PGMGetInterRCCR3(PVM pVM, PVMCPU pVCpu);
-VMMDECL(RTHCPHYS)   PGMGetInter32BitCR3(PVM pVM);
-VMMDECL(RTHCPHYS)   PGMGetInterPaeCR3(PVM pVM);
-VMMDECL(RTHCPHYS)   PGMGetInterAmd64CR3(PVM pVM);
-VMMDECL(int)        PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
-VMMDECL(int)        PGMPrefetchPage(PVMCPU pVCpu, RTGCPTR GCPtrPage);
-VMMDECL(int)        PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess);
-VMMDECL(int)        PGMIsValidAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess);
-VMMDECL(int)        PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
-VMMDECL(int)        PGMMap(PVM pVM, RTGCPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPages, unsigned fFlags);
-VMMDECL(int)        PGMMapSetPage(PVM pVM, RTGCPTR GCPtr, uint64_t cb, uint64_t fFlags);
-VMMDECL(int)        PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+VMMDECL(int)            PGMRegisterStringFormatTypes(void);
+VMMDECL(void)           PGMDeregisterStringFormatTypes(void);
+VMMDECL(RTHCPHYS)       PGMGetHyperCR3(PVMCPU pVCpu);
+VMMDECL(RTHCPHYS)       PGMGetNestedCR3(PVMCPU pVCpu, PGMMODE enmShadowMode);
+VMMDECL(RTHCPHYS)       PGMGetInterHCCR3(PVM pVM);
+VMMDECL(RTHCPHYS)       PGMGetInterRCCR3(PVM pVM, PVMCPU pVCpu);
+VMMDECL(RTHCPHYS)       PGMGetInter32BitCR3(PVM pVM);
+VMMDECL(RTHCPHYS)       PGMGetInterPaeCR3(PVM pVM);
+VMMDECL(RTHCPHYS)       PGMGetInterAmd64CR3(PVM pVM);
+VMMDECL(int)            PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
+VMMDECL(int)            PGMPrefetchPage(PVMCPU pVCpu, RTGCPTR GCPtrPage);
+VMMDECL(int)            PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess);
+VMMDECL(int)            PGMIsValidAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess);
+VMMDECL(VBOXSTRICTRC)   PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
+VMMDECL(int)            PGMMap(PVM pVM, RTGCPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPages, unsigned fFlags);
+VMMDECL(int)            PGMMapSetPage(PVM pVM, RTGCPTR GCPtr, uint64_t cb, uint64_t fFlags);
+VMMDECL(int)            PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 #ifndef IN_RING0
-VMMDECL(bool)       PGMMapHasConflicts(PVM pVM);
+VMMDECL(bool)           PGMMapHasConflicts(PVM pVM);
 #endif
 #ifdef VBOX_STRICT
-VMMDECL(void)       PGMMapCheck(PVM pVM);
+VMMDECL(void)           PGMMapCheck(PVM pVM);
 #endif
-VMMDECL(int)        PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
-VMMDECL(int)        PGMShwMakePageReadonly(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
-VMMDECL(int)        PGMShwMakePageWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
-VMMDECL(int)        PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
+VMMDECL(int)            PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
+VMMDECL(int)            PGMShwMakePageReadonly(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
+VMMDECL(int)            PGMShwMakePageWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
+VMMDECL(int)            PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
 /** @name Flags for PGMShwMakePageReadonly, PGMShwMakePageWritable and
  *        PGMShwMakePageNotPresent
  * @{ */

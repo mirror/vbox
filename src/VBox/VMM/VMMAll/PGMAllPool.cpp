@@ -119,6 +119,7 @@ DECLINLINE(bool) pgmPoolIsBigPage(PGMPOOLKIND enmKind)
  * @returns VBox status code suitable for scheduling.
  * @param   pPool       The pool.
  * @param   pPage       A page in the chain.
+ * @todo VBOXSTRICTRC
  */
 int pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
@@ -851,6 +852,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
  * @param   pRegFrame   The trap register frame.
  * @param   GCPhysFault The fault address as guest physical address.
  * @param   pvFault     The fault address.
+ * @todo VBOXSTRICTRC
  */
 static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
                                      PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
@@ -861,12 +863,16 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
     int rc = pgmPoolMonitorChainFlush(pPool, pPage);
 
     /*
-     * Emulate the instruction (xp/w2k problem, requires pc/cr2/sp detection). Must do this in raw mode (!); XP boot will fail otherwise
+     * Emulate the instruction (xp/w2k problem, requires pc/cr2/sp detection).
+     * Must do this in raw mode (!); XP boot will fail otherwise.
      */
     uint32_t cbWritten;
-    int rc2 = EMInterpretInstructionCPUEx(pVM, pVCpu, pDis, pRegFrame, pvFault, &cbWritten, EMCODETYPE_ALL);
+    VBOXSTRICTRC rc2 = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL, &cbWritten);
     if (RT_SUCCESS(rc2))
+    {
         pRegFrame->rip += pDis->opsize;
+        AssertMsg(rc2 == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rc2))); /* ASSUMES no complicated stuff here. */
+    }
     else if (rc2 == VERR_EM_INTERPRETER)
     {
 #ifdef IN_RC
@@ -885,7 +891,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
         }
     }
     else
-        rc = rc2;
+        rc = VBOXSTRICTRC_VAL(rc2);
 
     LogFlow(("pgmPoolAccessHandlerPT: returns %Rrc (flushed)\n", rc));
     return rc;
@@ -1001,9 +1007,12 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
      * Interpret the instruction.
      */
     uint32_t cb;
-    int rc = EMInterpretInstructionCPUEx(pVM, pVCpu, pDis, pRegFrame, pvFault, &cb, EMCODETYPE_ALL);
+    VBOXSTRICTRC rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL, &cb);
     if (RT_SUCCESS(rc))
+    {
         pRegFrame->rip += pDis->opsize;
+        AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rc))); /* ASSUMES no complicated stuff here. */
+    }
     else if (rc == VERR_EM_INTERPRETER)
     {
         LogFlow(("pgmPoolAccessHandlerPTWorker: Interpretation failed for %04x:%RGv - opcode=%d\n",
@@ -1042,8 +1051,8 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
     }
 #endif
 
-    LogFlow(("pgmPoolAccessHandlerSimple: returns %Rrc cb=%d\n", rc, cb));
-    return rc;
+    LogFlow(("pgmPoolAccessHandlerSimple: returns %Rrc cb=%d\n", VBOXSTRICTRC_VAL(rc), cb));
+    return VBOXSTRICTRC_VAL(rc);
 }
 
 /**

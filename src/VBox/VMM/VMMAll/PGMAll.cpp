@@ -693,7 +693,7 @@ VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32
 /**
  * Emulation of the invlpg instruction (HC only actually).
  *
- * @returns VBox status code, special care required.
+ * @returns Strict VBox status code, special care required.
  * @retval  VINF_PGM_SYNC_CR3 - handled.
  * @retval  VINF_EM_RAW_EMULATE_INSTR - not handled (RC only).
  * @retval  VERR_REM_FLUSHED_PAGES_OVERFLOW - not handled.
@@ -705,6 +705,7 @@ VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32
  *          safe, but there could be edge cases!
  *
  * @todo    Flush page or page directory only if necessary!
+ * @todo    VBOXSTRICTRC
  */
 VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 {
@@ -796,14 +797,14 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  * @param   pRegFrame   Register frame.
  * @param   pvFault     Fault address.
  */
-VMMDECL(int) PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
+VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
     uint32_t cb;
-    int rc = EMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault, &cb);
+    VBOXSTRICTRC rc = EMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault, &cb);
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
     if (rc != VINF_SUCCESS)
-        Log(("PGMInterpretInstruction: returns %Rrc (pvFault=%RGv)\n", rc, pvFault));
+        Log(("PGMInterpretInstruction: returns %Rrc (pvFault=%RGv)\n", VBOXSTRICTRC_VAL(rc), pvFault));
     return rc;
 }
 

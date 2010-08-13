@@ -74,7 +74,8 @@ typedef struct
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize, EMCODETYPE enmCodeType = EMCODETYPE_SUPERVISOR);
+DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+                                                   RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize);
 
 
 
@@ -310,12 +311,12 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
  *          to worry about e.g. invalid modrm combinations (!)
  */
-VMMDECL(int) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     RTGCPTR pbCode;
 
     LogFlow(("EMInterpretInstruction %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
-    int rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
+    VBOXSTRICTRC rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
     if (RT_SUCCESS(rc))
     {
         uint32_t     cbOp;
@@ -325,7 +326,7 @@ VMMDECL(int) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         if (RT_SUCCESS(rc))
         {
             Assert(cbOp == pDis->opsize);
-            rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, pcbSize);
+            rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, pcbSize);
             if (RT_SUCCESS(rc))
                 pRegFrame->rip += cbOp; /* Move on to the next instruction. */
 
@@ -341,7 +342,7 @@ VMMDECL(int) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  *
  * EIP is *NOT* updated!
  *
- * @returns VBox status code.
+ * @returns VBox strict status code.
  * @retval  VINF_*                  Scheduling instructions. When these are returned, it
  *                                  starts to get a bit tricky to know whether code was
  *                                  executed or not... We'll address this when it becomes a problem.
@@ -364,10 +365,11 @@ VMMDECL(int) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  * @todo    At this time we do NOT check if the instruction overwrites vital information.
  *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-VMMDECL(int) EMInterpretInstructionCPUEx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize, EMCODETYPE enmCodeType)
+VMMDECL(VBOXSTRICTRC) EMInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+                                                RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize)
 {
     STAM_PROFILE_START(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
-    int rc = emInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, pcbSize, enmCodeType);
+    VBOXSTRICTRC rc = emInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, enmCodeType, pcbSize);
     STAM_PROFILE_STOP(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
     if (RT_SUCCESS(rc))
         STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretSucceeded));
@@ -1764,22 +1766,20 @@ static int emInterpretWbInvd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
  * @param   pAddrGC     Operand address
  *
  */
-VMMDECL(int) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
+VMMDECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
 {
-    int rc;
-
     /** @todo is addr always a flat linear address or ds based
      * (in absence of segment override prefixes)????
      */
 #ifdef IN_RC
     LogFlow(("RC: EMULATE: invlpg %RGv\n", pAddrGC));
 #endif
-    rc = PGMInvalidatePage(pVCpu, pAddrGC);
+    VBOXSTRICTRC rc = PGMInvalidatePage(pVCpu, pAddrGC);
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
         return VINF_SUCCESS;
     AssertMsgReturn(rc == VINF_EM_RAW_EMULATE_INSTR,
-                    ("%Rrc addr=%RGv\n", rc, pAddrGC),
+                    ("%Rrc addr=%RGv\n", VBOXSTRICTRC_VAL(rc), pAddrGC),
                     VERR_EM_INTERPRETER);
     return rc;
 }
@@ -1788,12 +1788,12 @@ VMMDECL(int) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RT
 /**
  * INVLPG Emulation.
  */
-static int emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static VBOXSTRICTRC emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1;
     RTGCPTR     addr;
 
-    int rc = DISQueryParamVal(pRegFrame, pDis, &pDis->param1, &param1, PARAM_SOURCE);
+    VBOXSTRICTRC rc = DISQueryParamVal(pRegFrame, pDis, &pDis->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -1821,7 +1821,7 @@ static int emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
         ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
         return VINF_SUCCESS;
     AssertMsgReturn(rc == VINF_EM_RAW_EMULATE_INSTR,
-                    ("%Rrc addr=%RGv\n", rc, addr),
+                    ("%Rrc addr=%RGv\n", VBOXSTRICTRC_VAL(rc), addr),
                     VERR_EM_INTERPRETER);
     return rc;
 }
@@ -2425,7 +2425,8 @@ static int emInterpretSti(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
 /**
  * HLT Emulation.
  */
-static int emInterpretHlt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static VBOXSTRICTRC
+emInterpretHlt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     return VINF_EM_HALT;
 }
@@ -2572,7 +2573,7 @@ static int emInterpretMonitor(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
 /**
  * MWAIT Emulation.
  */
-VMMDECL(int) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMMDECL(VBOXSTRICTRC) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     uint32_t u32Dummy, u32ExtFeatures, cpl, u32MWaitFeatures;
 
@@ -2616,7 +2617,7 @@ VMMDECL(int) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     return VINF_EM_HALT;
 }
 
-static int emInterpretMWait(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static VBOXSTRICTRC emInterpretMWait(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     return EMInterpretMWait(pVM, pVCpu, pRegFrame);
 }
@@ -2801,8 +2802,8 @@ static int emInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  * Internal worker.
  * @copydoc EMInterpretInstructionCPU
  */
-DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                          uint32_t *pcbSize, EMCODETYPE enmCodeType)
+DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+                                                   RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize)
 {
     Assert(enmCodeType == EMCODETYPE_SUPERVISOR || enmCodeType == EMCODETYPE_ALL);
     Assert(pcbSize);
@@ -2941,7 +2942,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
     }
 #endif
 
-    int rc;
+    VBOXSTRICTRC rc;
 #if (defined(VBOX_STRICT) || defined(LOG_ENABLED))
     LogFlow(("emInterpretInstructionCPU %s\n", emGetMnemonic(pDis)));
 #endif

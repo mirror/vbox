@@ -3289,7 +3289,7 @@ ResumeExecution:
                     }
 
                     default:
-                        rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, &cbSize);
+                        rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR, &cbSize);
                         break;
                     }
 

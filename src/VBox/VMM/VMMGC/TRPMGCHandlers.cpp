@@ -548,7 +548,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         {
             LogFlow(("TRPMGCTrap06Handler: -> EMInterpretInstructionCPU\n"));
             uint32_t cbIgnored;
-            rc = EMInterpretInstructionCPU(pVM, pVCpu, &Cpu, pRegFrame, PC, &cbIgnored);
+            rc = EMInterpretInstructionCPU(pVM, pVCpu, &Cpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR, &cbIgnored);
             if (RT_SUCCESS(rc))
                 pRegFrame->eip += Cpu.opsize;
         }
@@ -793,7 +793,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         case OP_WRMSR:
         {
             uint32_t cbIgnored;
-            rc = EMInterpretInstructionCPU(pVM, pVCpu, pCpu, pRegFrame, PC, &cbIgnored);
+            rc = EMInterpretInstructionCPU(pVM, pVCpu, pCpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR, &cbIgnored);
             if (RT_SUCCESS(rc))
                 pRegFrame->eip += pCpu->opsize;
             else if (rc == VERR_EM_INTERPRETER)
@@ -872,7 +872,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         case OP_RDPMC:
         {
             uint32_t cbIgnored;
-            rc = EMInterpretInstructionCPU(pVM, pVCpu, pCpu, pRegFrame, PC, &cbIgnored);
+            rc = EMInterpretInstructionCPU(pVM, pVCpu, pCpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR, &cbIgnored);
             if (RT_SUCCESS(rc))
                 pRegFrame->eip += pCpu->opsize;
             else if (rc == VERR_EM_INTERPRETER)
