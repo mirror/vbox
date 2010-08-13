@@ -132,6 +132,17 @@
 # if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(5, 4)
 #  define VBOXNETFLT_WITH_GRO               1
 # endif
+/* RHEL uses stats for both bstats and qstats */
+#define bstats stats
+#define qstats stats
+
+static inline int qdisc_drop(struct sk_buff *skb, struct Qdisc *sch)
+{
+    kfree_skb(skb);
+    sch->stats.drops++;
+
+    return NET_XMIT_DROP;
+}
 #endif
 
 /*******************************************************************************
