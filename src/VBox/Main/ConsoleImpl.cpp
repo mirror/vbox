@@ -214,7 +214,8 @@ struct VMPowerUpTask : public VMProgressTask
         : VMProgressTask(aConsole, aProgress, false /* aUsesVMPtr */),
           mConfigConstructor(NULL),
           mStartPaused(false),
-          mTeleporterEnabled(FALSE)
+          mTeleporterEnabled(FALSE),
+          mFaultToleranceSyncEnabled(FALSE)
     {}
 
     PFNCFGMCONSTRUCTOR mConfigConstructor;
@@ -222,6 +223,7 @@ struct VMPowerUpTask : public VMProgressTask
     Console::SharedFolderDataMap mSharedFolders;
     bool mStartPaused;
     BOOL mTeleporterEnabled;
+    BOOL mFaultToleranceSyncEnabled;
 
     /* array of progress objects for hard disk reset operations */
     typedef std::list< ComPtr<IProgress> > ProgressList;
@@ -1661,6 +1663,16 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
                     break;
             }
             return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down at this point in a live snapshot"));
+
+        /* Try cancel the FT sync. */
+        case MachineState_FaultTolerantSyncing:
+            if (!mptrCancelableProgress.isNull())
+            {
+                HRESULT hrc = mptrCancelableProgress->Cancel();
+                if (SUCCEEDED(hrc))
+                    break;
+            }
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down at this point in a fault tolerant sync"));
 
         /* extra nice error message for a common case */
         case MachineState_Saved:
@@ -5199,6 +5211,12 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     }
 #endif
 
+    /* test the FaultToleranceState property  */
+    FaultToleranceState_T enmFaultToleranceState;
+    rc = mMachine->COMGETTER(FaultToleranceState)(&enmFaultToleranceState);
+    if (FAILED(rc)) return rc;
+    BOOL fFaultToleranceSyncEnabled = (enmFaultToleranceState == FaultToleranceState_Target);
+
     /* create a progress object to track progress of this operation */
     ComObjPtr<Progress> powerupProgress;
     powerupProgress.createObject();
@@ -5207,13 +5225,17 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         progressDesc = tr("Restoring virtual machine");
     else if (fTeleporterEnabled)
         progressDesc = tr("Teleporting virtual machine");
+    else if (fFaultToleranceSyncEnabled)
+        progressDesc = tr("Fault Tolerance syncing of remote virtual machine");
     else
         progressDesc = tr("Starting virtual machine");
-    if (mMachineState == MachineState_Saved || !fTeleporterEnabled)
+    if (    mMachineState == MachineState_Saved 
+        ||  !fTeleporterEnabled)
         rc = powerupProgress->init(static_cast<IConsole *>(this),
                                    progressDesc,
                                    FALSE /* aCancelable */);
     else
+    if (fTeleporterEnabled)
         rc = powerupProgress->init(static_cast<IConsole *>(this),
                                    progressDesc,
                                    TRUE /* aCancelable */,
@@ -5222,6 +5244,17 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                                    Bstr(tr("Teleporting virtual machine")),
                                    1    /* ulFirstOperationWeight */,
                                    NULL);
+    else
+    if (fFaultToleranceSyncEnabled)
+        rc = powerupProgress->init(static_cast<IConsole *>(this),
+                                   progressDesc,
+                                   TRUE /* aCancelable */,
+                                   3    /* cOperations */,
+                                   10   /* ulTotalOperationsWeight */,
+                                   Bstr(tr("Fault Tolerance syncing of remote virtual machine")),
+                                   1    /* ulFirstOperationWeight */,
+                                   NULL);
+
     if (FAILED(rc))
         return rc;
 
@@ -5259,6 +5292,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     if (mMachineState == MachineState_Saved)
         task->mSavedStateFile = savedStateFile;
     task->mTeleporterEnabled = fTeleporterEnabled;
+    task->mFaultToleranceSyncEnabled = fFaultToleranceSyncEnabled;
 
     /* Reset differencing hard disks for which autoReset is true,
      * but only if the machine has no snapshots OR the current snapshot
@@ -5363,6 +5397,8 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         setMachineState(MachineState_Restoring);
     else if (fTeleporterEnabled)
         setMachineState(MachineState_TeleportingIn);
+    else if (enmFaultToleranceState == FaultToleranceState_Target)
+        setMachineState(MachineState_FaultTolerantSyncing);
     else
         setMachineState(MachineState_Starting);
 
@@ -5430,6 +5466,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
               || mMachineState == MachineState_Saving
               || mMachineState == MachineState_Restoring
               || mMachineState == MachineState_TeleportingPausedVM
+              || mMachineState == MachineState_FaultTolerantSyncing
               || mMachineState == MachineState_TeleportingIn
               , ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
 
@@ -5444,6 +5481,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
     if (   !mVMPoweredOff
         && (   mMachineState == MachineState_Starting
             || mMachineState == MachineState_Restoring
+            || mMachineState == MachineState_FaultTolerantSyncing
             || mMachineState == MachineState_TeleportingIn)
        )
         mVMPoweredOff = true;
@@ -5462,6 +5500,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
         && mMachineState != MachineState_Stopping
         && mMachineState != MachineState_TeleportingIn
         && mMachineState != MachineState_TeleportingPausedVM
+        && mMachineState != MachineState_FaultTolerantSyncing
        )
         setMachineState(MachineState_Stopping);
 
@@ -6085,6 +6124,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 && that->mMachineState != MachineState_Saving
                 && that->mMachineState != MachineState_Restoring
                 && that->mMachineState != MachineState_TeleportingIn
+                && that->mMachineState != MachineState_FaultTolerantSyncing
                 && that->mMachineState != MachineState_TeleportingPausedVM
                 && !that->mVMIsAlreadyPoweringOff
                )
@@ -6189,6 +6229,10 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                     /* Successfully teleported the VM. */
                     that->setMachineState(MachineState_Teleported);
                     break;
+                case MachineState_FaultTolerantSyncing:
+                    /* Fault tolerant sync failed or was canceled.  Back to powered off. */
+                    that->setMachineState(MachineState_PoweredOff);
+                    break;
             }
             break;
         }
@@ -6215,7 +6259,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 case MachineState_Restoring:
                 case MachineState_Stopping:
                 case MachineState_TeleportingIn:
-                    /* The worker threads handles the transition. */
+                    /* The worker thread handles the transition. */
                     break;
 
                 default:
@@ -6259,7 +6303,8 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
         case VMSTATE_RUNNING:
         {
             if (   aOldState == VMSTATE_POWERING_ON
-                || aOldState == VMSTATE_RESUMING)
+                || aOldState == VMSTATE_RESUMING
+                || aOldState == VMSTATE_RUNNING_FT)
             {
                 AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
@@ -6274,7 +6319,9 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                                || that->mMachineState == MachineState_Paused
                                || that->mMachineState == MachineState_Saving
                               )
-                           && aOldState == VMSTATE_RESUMING));
+                           && aOldState == VMSTATE_RESUMING)
+                       || (   that->mMachineState == MachineState_FaultTolerantSyncing
+                           && aOldState == VMSTATE_RUNNING_FT));
 
                 that->setMachineState(MachineState_Running);
             }
@@ -6285,6 +6332,11 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
         case VMSTATE_RUNNING_LS:
             AssertMsg(   that->mMachineState == MachineState_LiveSnapshotting
                       || that->mMachineState == MachineState_Teleporting,
+                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(aOldState),  VMR3GetStateName(aState) ));
+            break;
+
+        case VMSTATE_RUNNING_FT:
+            AssertMsg(that->mMachineState == MachineState_FaultTolerantSyncing,
                       ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(aOldState),  VMR3GetStateName(aState) ));
             break;
 
@@ -7219,7 +7271,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
          * Note! The media will be unlocked automatically by
          *       SessionMachine::setMachineState() when the VM is powered down.
          */
-        if (!task->mTeleporterEnabled)
+        if (    !task->mTeleporterEnabled
+            &&  !task->mFaultToleranceSyncEnabled)
         {
             rc = console->mControl->LockMedia();
             if (FAILED(rc)) throw rc;
