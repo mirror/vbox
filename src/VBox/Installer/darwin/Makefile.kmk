@@ -89,8 +89,7 @@ INSTALLS += darwin-docs
 darwin-docs_INST = $(INST_DIST)
 darwin-docs_MODE = a+r,u+w
 darwin-docs_SOURCES = \
-	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE \
-	$(PATH_ROOT)/doc/ReadMe-MacOSX.txt
+	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE
 
 
 #
