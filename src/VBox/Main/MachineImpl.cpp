@@ -2597,6 +2597,34 @@ STDMETHODIMP Machine::COMSETTER(FaultToleranceState)(FaultToleranceState_T aStat
     return S_OK;
 }
 
+STDMETHODIMP Machine::COMGETTER(FaultToleranceAddress)(BSTR *aAddress)
+{
+    CheckComArgOutPointerValid(aAddress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mUserData->s.strFaultToleranceAddress.cloneTo(aAddress);
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(FaultToleranceAddress)(IN_BSTR aAddress)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* @todo deal with running state change. */
+
+    setModified(IsModified_MachineData);
+    mUserData.backup();
+    mUserData->s.strFaultToleranceAddress = aAddress;
+    return S_OK;
+}
+
 STDMETHODIMP Machine::COMGETTER(FaultTolerancePort)(ULONG *aPort)
 {
     CheckComArgOutPointerValid(aPort);
@@ -2625,20 +2653,20 @@ STDMETHODIMP Machine::COMSETTER(FaultTolerancePort)(ULONG aPort)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(FaultToleranceAddress)(BSTR *aAddress)
+STDMETHODIMP Machine::COMGETTER(FaultToleranceSyncInterval)(ULONG *aInterval)
 {
-    CheckComArgOutPointerValid(aAddress);
+    CheckComArgOutPointerValid(aInterval);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mUserData->s.strFaultToleranceAddress.cloneTo(aAddress);
+    *aInterval = mUserData->s.uFaultToleranceInterval;
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(FaultToleranceAddress)(IN_BSTR aAddress)
+STDMETHODIMP Machine::COMSETTER(FaultToleranceSyncInterval)(ULONG aInterval)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2649,7 +2677,7 @@ STDMETHODIMP Machine::COMSETTER(FaultToleranceAddress)(IN_BSTR aAddress)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->s.strFaultToleranceAddress = aAddress;
+    mUserData->s.uFaultToleranceInterval = aInterval;
     return S_OK;
 }
 

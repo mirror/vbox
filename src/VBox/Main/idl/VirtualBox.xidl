@@ -3966,6 +3966,12 @@
         The address the fault tolerance source or target.
       </desc>
     </attribute>
+
+    <attribute name="faultToleranceSyncInterval" type="unsigned long">
+      <desc>
+        The interval in ms used for syncing the state between source and target.
+      </desc>
+    </attribute>
       
     <attribute name="RTCUseUTC" type="boolean">
       <desc>
