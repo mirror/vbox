@@ -248,8 +248,9 @@
   <xsl:param name="forceelem" />
 
   <xsl:variable name="needarray" select="($safearray='yes') and not($forceelem='yes')" />
+  <xsl:variable name="needlist" select="($needarray) and not($type='octet')" />
 
-  <xsl:if test="$needarray">
+  <xsl:if test="($needlist)">
     <xsl:value-of select="'List&lt;'" />
   </xsl:if>
 
@@ -270,9 +271,14 @@
     </xsl:otherwise>
   </xsl:choose>
 
-  <xsl:if test="$needarray">
-    <xsl:value-of select="'&gt;'" />
-  </xsl:if>
+  <xsl:choose>
+    <xsl:when test="($needlist)">
+      <xsl:value-of select="'&gt;'" />
+    </xsl:when>
+    <xsl:when test="($needarray)">
+      <xsl:value-of select="'[]'" />
+    </xsl:when>
+  </xsl:choose>
 </xsl:template>
 
 <!--
@@ -509,19 +515,11 @@
        </xsl:choose>
     </xsl:when>
 
-    <xsl:when test="$idltype='unsigned long long'">
-      <xsl:choose>
-        <xsl:when test="$safearray='yes'">
-          <xsl:value-of select="concat('Helper.wrapUnsignedLongLong(', $value,')')"/>
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:value-of select="concat('Helper.doubleToBigInteger(', $value,')')"/>
-        </xsl:otherwise>
-      </xsl:choose>
-    </xsl:when>
-
     <xsl:otherwise>
       <xsl:choose>
+        <xsl:when test="($safearray='yes') and ($idltype='octet')">
+          <xsl:value-of select="$value"/>
+        </xsl:when>
         <xsl:when test="$safearray='yes'">
           <xsl:value-of select="concat('Helper.wrap(', $value,')')"/>
         </xsl:when>
@@ -655,6 +653,9 @@
         </xsl:when>
         <xsl:when test="//interface[@name=$idltype] or $idltype='$unknown'">
           <xsl:value-of select="concat('Helper.wrap(',$elemgluetype,'.class, port, ', $value,')')"/>
+        </xsl:when>
+        <xsl:when test="$idltype='octet'">
+          <xsl:value-of select="concat('Helper.wrapBytes(',$value,')')"/>
         </xsl:when>
         <xsl:otherwise>
            <xsl:value-of select="$value" />
@@ -2373,7 +2374,7 @@ public class Helper {
 
     public static <T1, T2> List<T1> wrap2(Class<T1> wrapperClass1, Class<T2> wrapperClass2, T2[] thisPtrs) {
         try {
-            if (thisPtrs==null) 
+            if (thisPtrs==null)
                 return null;
 
             Constructor<T1> c = wrapperClass1.getConstructor(wrapperClass2);
@@ -3226,6 +3227,17 @@ public class Helper {
         } catch (InvocationTargetException e) {
             throw new AssertionError(e);
         }
+    }
+    // temporary method, will bo away soon
+    public static byte[] wrapBytes(List<Short> arr)
+    {
+       if (arr == null)
+          return null;
+       int i = 0;
+       byte[] rv = new byte[arr.size()];
+       for (short s : arr)
+           rv[i++] = (byte)(s & 0xff);
+       return rv;
     }
 }
 ]]></xsl:text>

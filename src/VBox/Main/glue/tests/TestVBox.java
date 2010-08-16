@@ -115,23 +115,6 @@ public class TestVBox
         }
     }
 
-    /*
-    static void testReadLogBI(VirtualBoxManager mgr, IVirtualBox vbox)
-    {
-        IMachine m =  vbox.getMachines().get(0);
-        long logNo = 0;
-        BigInteger off = BigInteger.valueOf(0);
-        BigInteger size = BigInteger.valueOf(16 * 1024);
-        while (true)
-        {
-            byte[] buf = m.readLog(logNo, off, size);
-            if (buf.length == 0)
-                break;
-            System.out.print(new String(buf));
-            off.add(BigInteger.valueOf(buf.length));
-        }
-    }
-
     static void testReadLog(VirtualBoxManager mgr, IVirtualBox vbox)
     {
         IMachine m =  vbox.getMachines().get(0);
@@ -146,8 +129,7 @@ public class TestVBox
             System.out.print(new String(buf));
             off += buf.length;
         }
-        }
-    */
+    }
 
 
     public static void main(String[] args)

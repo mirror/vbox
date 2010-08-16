@@ -157,7 +157,7 @@
               select='"EnumCom2Soap_"' />
 
 <xsl:variable name="G_aSharedTypes">
-  <type idlname="octet"              xmlname="unsignedByte"  cname="unsigned char"    gluename="BYTE"    javaname="Short" />
+  <type idlname="octet"              xmlname="unsignedByte"  cname="unsigned char"    gluename="BYTE"    javaname="byte" />
   <type idlname="boolean"            xmlname="boolean"       cname="bool"             gluename="BOOL"    javaname="Boolean" />
   <type idlname="short"              xmlname="short"         cname="short"            gluename="SHORT"   javaname="Short" />
   <type idlname="unsigned short"     xmlname="unsignedShort" cname="unsigned short"   gluename="USHORT"  javaname="Integer" />
