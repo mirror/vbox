@@ -268,30 +268,14 @@ STDMETHODIMP Guest::COMGETTER(SupportsGraphics) (BOOL *aSupportsGraphics)
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMGETTER(PageFusionEnabled) (BOOL *aPageFusionEnabled)
+BOOL Guest::isPageFusionEnabled()
 {
-    CheckComArgOutPointerValid(aPageFusionEnabled);
-
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.rc())) return false;
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aPageFusionEnabled = mfPageFusionEnabled;
-
-    return S_OK;
-}
-
-STDMETHODIMP Guest::COMSETTER(PageFusionEnabled) (BOOL aPageFusionEnabled)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /** todo; API complete, but not implemented */
-
-    return E_NOTIMPL;
+    return mfPageFusionEnabled;
 }
 
 STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)

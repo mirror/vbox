@@ -587,8 +587,7 @@ DECLCALLBACK(int) vmmdevIsPageFusionEnabled(PPDMIVMMDEVCONNECTOR pInterface, boo
     if (!guest)
         return VERR_INVALID_PARAMETER; /** @todo wrong error */
 
-    guest->COMGETTER(PageFusionEnabled)(&val);
-    *pfPageFusionEnabled = !!val;
+    *pfPageFusionEnabled = !!guest->isPageFusionEnabled();
     return VINF_SUCCESS;
 }
 

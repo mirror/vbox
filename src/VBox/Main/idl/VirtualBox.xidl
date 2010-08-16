@@ -7592,7 +7592,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="d915dff1-ed38-495a-91f1-ab6c53932468"
+     uuid="506da00d-1ca5-4ccf-851d-8683253d0f5e"
      wsmap="managed"
      >
     <desc>
@@ -7653,10 +7653,6 @@
 
     <attribute name="memoryBalloonSize" type="unsigned long">
       <desc>Guest system memory balloon size in megabytes (transient property).</desc>
-    </attribute>
-
-    <attribute name="pageFusionEnabled" type="boolean">
-      <desc>Flag whether page fusion is enabled or not.</desc>
     </attribute>
 
     <attribute name="statisticsUpdateInterval" type="unsigned long">

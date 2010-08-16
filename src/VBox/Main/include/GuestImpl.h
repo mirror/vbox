@@ -89,8 +89,6 @@ public:
 #endif
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
-    STDMETHOD(COMGETTER(PageFusionEnabled)) (BOOL *aPageFusionEnabled);
-    STDMETHOD(COMSETTER(PageFusionEnabled)) (BOOL aPageFusionEnabled);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
     STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
 
@@ -113,6 +111,7 @@ public:
     void setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags);
     void setSupportedFeatures(ULONG64 ulCaps, ULONG64 ulActive);
     HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
+    BOOL isPageFusionEnabled();
 
 # ifdef VBOX_WITH_GUEST_CONTROL
     /** Static callback for handling guest notifications. */

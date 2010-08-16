@@ -1524,6 +1524,7 @@ STDMETHODIMP Machine::COMSETTER(PageFusionEnabled) (BOOL enabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    /** @todo must support changes for running vms and keep this in sync with IGuest. */
     setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mPageFusionEnabled = enabled;
