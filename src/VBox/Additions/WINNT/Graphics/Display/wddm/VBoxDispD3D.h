@@ -150,6 +150,7 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     /* object type is defined by enmD3DIfType enum */
     IUnknown *pD3DIf;
     VBOXDISP_D3DIFTYPE enmD3DIfType;
+    HANDLE hSharedHandle;
     VBOXWDDMDISP_LOCKINFO LockInfo;
     VBOXWDDM_DIRTYREGION DirtyRegion; /* <- dirty region to notify host about */
     VBOXWDDM_SURFACE_DESC SurfDesc;
