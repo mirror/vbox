@@ -2762,6 +2762,7 @@ VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
         case VMSTATE_RESUMING:          return "RESUMING";
         case VMSTATE_RUNNING:           return "RUNNING";
         case VMSTATE_RUNNING_LS:        return "RUNNING_LS";
+        case VMSTATE_RUNNING_FT:        return "RUNNING_FT";
         case VMSTATE_RESETTING:         return "RESETTING";
         case VMSTATE_RESETTING_LS:      return "RESETTING_LS";
         case VMSTATE_SUSPENDED:         return "SUSPENDED";
@@ -2842,6 +2843,7 @@ static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew
                             || enmStateNew == VMSTATE_SUSPENDING
                             || enmStateNew == VMSTATE_RESETTING
                             || enmStateNew == VMSTATE_RUNNING_LS
+                            || enmStateNew == VMSTATE_RUNNING_FT
                             || enmStateNew == VMSTATE_DEBUGGING
                             || enmStateNew == VMSTATE_FATAL_ERROR
                             || enmStateNew == VMSTATE_GURU_MEDITATION
@@ -2857,6 +2859,13 @@ static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew
                             || enmStateNew == VMSTATE_DEBUGGING_LS
                             || enmStateNew == VMSTATE_FATAL_ERROR_LS
                             || enmStateNew == VMSTATE_GURU_MEDITATION_LS
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_RUNNING_FT:
+            AssertMsgReturn(   enmStateNew == VMSTATE_POWERING_OFF
+                            || enmStateNew == VMSTATE_FATAL_ERROR
+                            || enmStateNew == VMSTATE_GURU_MEDITATION
                             , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
             break;
 
