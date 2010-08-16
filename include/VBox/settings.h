@@ -859,7 +859,8 @@ struct MachineUserData
           uTeleporterPort(0),
           fRTCUseUTC(false),
           enmFaultToleranceState(FaultToleranceState_Inactive),
-          uFaultTolerancePort(0)
+          uFaultTolerancePort(0),
+          uFaultToleranceInterval(0)
     { }
 
     bool operator==(const MachineUserData &c) const
@@ -875,6 +876,7 @@ struct MachineUserData
                && (strTeleporterPassword      == c.strTeleporterPassword)
                && (enmFaultToleranceState     == c.enmFaultToleranceState)
                && (uFaultTolerancePort        == c.uFaultTolerancePort)
+               && (uFaultToleranceInterval    == c.uFaultToleranceInterval)
                && (strFaultToleranceAddress   == c.strFaultToleranceAddress)
                && (fRTCUseUTC                 == c.fRTCUseUTC);
     }
@@ -891,6 +893,7 @@ struct MachineUserData
     FaultToleranceState_T   enmFaultToleranceState;
     uint32_t                uFaultTolerancePort;
     com::Utf8Str            strFaultToleranceAddress;
+    uint32_t                uFaultToleranceInterval;
     bool                    fRTCUseUTC;
 };
 
