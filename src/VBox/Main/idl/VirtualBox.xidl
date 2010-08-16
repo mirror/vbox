@@ -905,6 +905,24 @@
   </enum>
 
   <enum
+   name="FaultToleranceState"
+   uuid="05f65593-743e-4862-8700-57bf6cc48f3f"
+  >
+    <desc>
+      Used with <link to="IMachine::faultToleranceState" />.
+    </desc>
+    <const name="Inactive" value="1">
+      <desc>No fault tolerance enabled.</desc>
+    </const>
+    <const name="Source" value="2">
+      <desc>Fault tolerant source VM.</desc>
+    </const>
+    <const name="Target" value="3">
+      <desc>Fault tolerant target VM.</desc>
+    </const>
+  </enum>
+    
+  <enum
    name="LockType"
    uuid="138b53f8-db4b-47c5-b32b-4ef52f769413"
   >
@@ -3397,7 +3415,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="d647d330-02fa-4614-a2a0-3029c3db942e"
+     uuid="7315c8f6-5010-4e2a-9242-c84ead390d55"
      wsmap="managed"
      >
     <desc>
@@ -3928,6 +3946,27 @@
       </desc>
     </attribute>
 
+    <attribute name="faultToleranceState" type="FaultToleranceState">
+      <desc>
+        Fault tolerance state; disabled, source or target.
+        This property can be changed at any time. If you change it for a running
+        VM, then the fault tolerance address and port must be set beforehand.
+      </desc>
+    </attribute>
+
+    <attribute name="faultTolerancePort" type="unsigned long">
+      <desc>
+        The TCP port the fault tolerance source or target will use for
+        communication.
+      </desc>
+    </attribute>
+
+    <attribute name="faultToleranceAddress" type="wstring">
+      <desc>
+        The address the fault tolerance source or target.
+      </desc>
+    </attribute>
+      
     <attribute name="RTCUseUTC" type="boolean">
       <desc>
         When set to @a true, the RTC device of the virtual machine will run
