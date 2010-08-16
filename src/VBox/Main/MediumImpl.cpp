@@ -3577,6 +3577,10 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
     uint64_t mediumSize = 0;
     uint64_t mediumLogicalSize = 0;
 
+    /* Flag whether a base image has a non-zero parent UUID and thus
+     * need repairing after it was closed again. */
+    bool fRepairImageZeroParentUuid = false;
+
     /* leave the lock before a lengthy operation */
     vrc = RTSemEventMultiReset(m->queryInfoSem);
     AssertRCReturn(vrc, E_FAIL);
@@ -3727,16 +3731,29 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
 
                     if (m->pParent.isNull())
                     {
+                        /* Due to a bug in VDCopy() in VirtualBox 3.0.0-3.0.14
+                         * and 3.1.0-3.1.8 there are base images out there
+                         * which have a non-zero parent UUID. No point in
+                         * complaining about them, instead automatically
+                         * repair the problem. Later we can bring back the
+                         * error message, but we should wait until really
+                         * most users have repaired their images, either with
+                         * VBoxFixHdd or this way. */
+#if 1
+                        fRepairImageZeroParentUuid = true;
+#else /* 0 */
                         lastAccessError = Utf8StrFmt(
                                 tr("Medium type of '%s' is differencing but it is not associated with any parent medium in the media registry ('%s')"),
                                 location.c_str(),
                                 m->pVirtualBox->settingsFilePath().c_str());
                         throw S_OK;
+#endif /* 0 */
                     }
 
                     AutoReadLock parentLock(m->pParent COMMA_LOCKVAL_SRC_POS);
-                    if (    m->pParent->getState() != MediumState_Inaccessible
-                         && m->pParent->getId() != parentId)
+                    if (   !fRepairImageZeroParentUuid
+                        && m->pParent->getState() != MediumState_Inaccessible
+                        && m->pParent->getId() != parentId)
                     {
                         lastAccessError = Utf8StrFmt(
                                 tr("Parent UUID {%RTuuid} of the medium '%s' does not match UUID {%RTuuid} of its parent medium stored in the media registry ('%s')"),
@@ -3763,7 +3780,6 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         }
 
         VDDestroy(hdd);
-
     }
     catch (HRESULT aRC)
     {
@@ -3799,11 +3815,68 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
     else
         m->preLockState = MediumState_Inaccessible;
 
+    HRESULT rc2;
     if (uOpenFlags & (VD_OPEN_FLAGS_READONLY || VD_OPEN_FLAGS_SHAREABLE))
-        rc = UnlockRead(NULL);
+        rc2 = UnlockRead(NULL);
     else
-        rc = UnlockWrite(NULL);
+        rc2 = UnlockWrite(NULL);
+    if (SUCCEEDED(rc) && FAILED(rc2))
+        rc = rc2;
     if (FAILED(rc)) return rc;
+
+    /* If this is a base image which incorrectly has a parent UUID set,
+     * repair the image now by zeroing the parent UUID. This is only done
+     * when we have structural information from a config file, on import
+     * this is not possible. If someone would accidentally call openMedium
+     * with a diff image before the base is registered this would destroy
+     * the diff. Not acceptable. */
+    if (fRepairImageZeroParentUuid)
+    {
+        rc = LockWrite(NULL);
+        if (FAILED(rc)) return rc;
+
+        alock.leave();
+
+        try
+        {
+            PVBOXHDD hdd;
+            vrc = VDCreate(m->vdDiskIfaces, &hdd);
+            ComAssertRCThrow(vrc, E_FAIL);
+
+            try
+            {
+                vrc = VDOpen(hdd,
+                             format.c_str(),
+                             location.c_str(),
+                             uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
+                             m->vdDiskIfaces);
+                if (RT_FAILURE(vrc))
+                    throw S_OK;
+
+                RTUUID zeroParentUuid;
+                RTUuidClear(&zeroParentUuid);
+                vrc = VDSetParentUuid(hdd, 0, &zeroParentUuid);
+                ComAssertRCThrow(vrc, E_FAIL);
+            }
+            catch (HRESULT aRC)
+            {
+                rc = aRC;
+            }
+
+            VDDestroy(hdd);
+        }
+        catch (HRESULT aRC)
+        {
+            rc = aRC;
+        }
+
+        alock.enter();
+
+        rc = UnlockWrite(NULL);
+        if (SUCCEEDED(rc) && FAILED(rc2))
+            rc = rc2;
+        if (FAILED(rc)) return rc;
+    }
 
     return rc;
 }
