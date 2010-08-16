@@ -187,7 +187,7 @@ public interface nsIComponentRegistrar extends nsISupports
 {
    public static final String NS_ICOMPONENTREGISTRAR_IID =
     "{2417cbfe-65ad-48a6-b4b6-eb84db174392}";
-   
+
    // No methods - placeholder
 }
 
@@ -207,7 +207,7 @@ public interface nsIFile extends nsISupports
 {
   public static final String NS_IFILE_IID =
     "{c8c0a080-0868-11d3-915f-d9d889d48e3c}";
- 
+
   // No methods - placeholder
 }
 
@@ -226,7 +226,7 @@ public interface nsILocalFile extends nsIFile
 {
   public static final String NS_ILOCALFILE_IID =
     "{aa610f20-a889-11d3-8c81-000064657374}";
- 
+
   // No methods - placeholder
 }
 
@@ -304,7 +304,7 @@ public interface nsILocalFile extends nsIFile
     </xsl:when>
 
     <xsl:when test="$type='octet'">
-      <xsl:value-of select="'short'" />
+      <xsl:value-of select="'byte'" />
     </xsl:when>
 
     <xsl:when test="$type='boolean'">

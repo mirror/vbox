@@ -314,7 +314,7 @@
         </xsl:when>
 
         <xsl:when test="$type='octet'">
-          <xsl:value-of select="'short'" />
+          <xsl:value-of select="'byte'" />
         </xsl:when>
 
         <xsl:when test="$type='boolean'">
@@ -2203,8 +2203,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 
 public class Helper {
-    public static List<Short> wrap(short[] vals) {
-        if (vals==null || vals.length == 0)  return Collections.emptyList();
+    public static List<Short> wrap(byte[] vals) {
+        if (vals==null)
+            return null;
 
         List<Short> ret = new ArrayList<Short>(vals.length);
         for (short v : vals) {
@@ -2214,17 +2215,19 @@ public class Helper {
     }
 
     public static List<Integer> wrap(int[] vals) {
-        if (vals==null || vals.length == 0)  return Collections.emptyList();
+        if (vals==null)
+             return null;
 
         List<Integer> ret = new ArrayList<Integer>(vals.length);
         for (int v : vals) {
-                ret.add(v);
+             ret.add(v);
         }
         return ret;
     }
 
     public static List<Long> wrap(long[] vals) {
-        if (vals==null || vals.length == 0)  return Collections.emptyList();
+        if (vals==null)
+             return null;
 
         List<Long> ret = new ArrayList<Long>(vals.length);
         for (long v : vals) {
@@ -2234,17 +2237,18 @@ public class Helper {
     }
 
     public static List<String> wrap(String[] vals) {
-        if (vals==null || vals.length == 0)  return Collections.emptyList();
-
+        if (vals==null)
+            return null;
         List<String> ret = new ArrayList<String>(vals.length);
         for (String v : vals) {
-                ret.add(v);
+            ret.add(v);
         }
         return ret;
     }
 
     public static <T> List<T> wrap(Class<T> wrapperClass, T[] thisPtrs) {
-        if (thisPtrs==null || thisPtrs.length == 0)  return Collections.emptyList();
+        if (thisPtrs==null)
+             return null;
 
         List<T> ret = new ArrayList<T>(thisPtrs.length);
         for (T thisPtr : thisPtrs) {
@@ -2284,7 +2288,8 @@ public class Helper {
 
 
     public static short[] unwrap(List<Short> vals) {
-        if (vals==null || vals.size() == 0)  return new short[0];
+        if (vals==null)
+           return null;
 
         short[] ret = new short[vals.size()];
         int i = 0;
@@ -2295,7 +2300,8 @@ public class Helper {
     }
 
     public static int[] unwrap(List<Integer> vals) {
-        if (vals==null || vals.size() == 0)  return new int[0];
+        if (vals == null)
+           return null;
 
         int[] ret = new int[vals.size()];
         int i = 0;
@@ -2306,7 +2312,8 @@ public class Helper {
     }
 
     public static long[] unwrap(List<Long> vals) {
-        if (vals==null || vals.size() == 0)  return new long[0];
+        if (vals == null)
+           return null;
 
         long[] ret = new long[vals.size()];
         int i = 0;
@@ -2317,7 +2324,8 @@ public class Helper {
     }
 
     public static boolean[] unwrap(List<Boolean> vals) {
-        if (vals==null || vals.size() == 0)  return new boolean[0];
+        if (vals==null)
+           return null;
 
         boolean[] ret = new boolean[vals.size()];
         int i = 0;
@@ -2328,7 +2336,8 @@ public class Helper {
     }
 
     public static String[] unwrap(List<String> vals) {
-        if (vals==null || vals.size() == 0)  return new String[0];
+        if (vals==null)
+            return null;
 
         String[] ret = new String[vals.size()];
         int i = 0;
@@ -2364,7 +2373,8 @@ public class Helper {
 
     public static <T1, T2> List<T1> wrap2(Class<T1> wrapperClass1, Class<T2> wrapperClass2, T2[] thisPtrs) {
         try {
-            if (thisPtrs==null || thisPtrs.length == 0)  return Collections.emptyList();
+            if (thisPtrs==null) 
+                return null;
 
             Constructor<T1> c = wrapperClass1.getConstructor(wrapperClass2);
             List<T1> ret = new ArrayList<T1>(thisPtrs.length);
@@ -2412,7 +2422,7 @@ public class Helper {
 
     @SuppressWarnings("unchecked")
     public static <T1 extends IUnknown,T2> T2[] unwrap2(Class<T1> wrapperClass1, Class<T2> wrapperClass2, List<T1> thisPtrs) {
-        if (thisPtrs==null || thisPtrs.size() == 0)  return null;
+        if (thisPtrs==null)  return null;
 
         T2 ret[] = (T2[])Array.newInstance(wrapperClass2, thisPtrs.size());
         int i = 0;
