@@ -103,6 +103,8 @@ typedef enum SCSIDEVTYPE
 /** Mask for extracting the SCSI device type out of the first byte of the INQUIRY response. */
 #define SCSI_DEVTYPE_MASK 0x1f
 
+/** Mask to extract the CmdQue bit out of the seventh byte of the INQUIRY resposne. */
+#define SCSI_INQUIRY_CMDQUE_MASK 0x02
 
 /** Maximum PDU payload size we can handle in one piece. Greater or equal than
  * s_iscsiConfigDefaultWriteSplit. */
@@ -599,6 +601,8 @@ typedef struct ISCSIIMAGE
     RTTHREAD            hThreadIo;
     /** Flag whether the thread should be still running. */
     volatile bool       fRunning;
+    /* Flag whether the target supports command queuing. */
+    bool                fCmdQueuingSupported;
     /** Flag whether extended select is supported. */
     bool                fExtendedSelectSupported;
     /** Padding used for aligning the PDUs. */
@@ -1262,7 +1266,7 @@ restart:
     pImage->CmdSN = 1;
     pImage->ExpCmdSN = 0;
     pImage->MaxCmdSN = 1;
-    pImage->ExpStatSN = 1;
+    pImage->ExpStatSN = 0;
 
     /*
      * Send login request to target.
@@ -1359,12 +1363,7 @@ restart:
         aReqBHS[4] = itt;
         aReqBHS[5] = RT_H2N_U32(1 << 16);   /* CID=1,reserved */
         aReqBHS[6] = RT_H2N_U32(pImage->CmdSN);
-#if 0 /** @todo This ExpStatSN hack is required to make the netbsd-iscsi target working. Could be a bug in the target,
-       * but they claim a bunch of other initiators works fine with it... Needs looking into. */
-        aReqBHS[7] = RT_H2N_U32(RT_MIN(pImage->ExpCmdSN, pImage->MaxCmdSN));
-#else
         aReqBHS[7] = RT_H2N_U32(pImage->ExpStatSN);
-#endif
         aReqBHS[8] = 0;             /* reserved */
         aReqBHS[9] = 0;             /* reserved */
         aReqBHS[10] = 0;            /* reserved */
@@ -4041,6 +4040,18 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
             LogRel(("iSCSI: Unsupported SCSI peripheral device type %d for target %s\n", devType & SCSI_DEVTYPE_MASK, pImage->pszTargetName));
             goto out;
         }
+        uint8_t uCmdQueue = (sr.cbT2IData >= 8) ? data8[7] & SCSI_INQUIRY_CMDQUE_MASK : 0;
+        if (uCmdQueue > 0)
+            pImage->fCmdQueuingSupported = true;
+        else if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
+        {
+            rc = VERR_NOT_SUPPORTED;
+            goto out;
+        }
+
+        LogRel(("iSCSI: target address %s, target name %s, %s command queuing\n",
+                pImage->pszTargetAddress, pImage->pszTargetName,
+                pImage->fCmdQueuingSupported ? "supports" : "doesn't support"));
     }
     else
     {
@@ -5199,7 +5210,8 @@ static int iscsiComposeName(PVDINTERFACE pConfig, char **pszName)
 
 static bool iscsiIsAsyncIOSupported(void *pvBackendData)
 {
-    return true;
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pvBackendData;
+    return pImage->fCmdQueuingSupported;
 }
 
 static int iscsiAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbToRead,
@@ -5427,7 +5439,7 @@ static int iscsiAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
             pbCDB[8] = 0;         /* reserved */
             pbCDB[9] = 0;         /* control */
 
-            pReq->enmXfer = SCSIXFER_TO_TARGET;
+            pReq->enmXfer = SCSIXFER_NONE;
             pReq->cbCmd   = sizeof(pReqAsync->abCDB);
             pReq->pvCmd   = pReqAsync->abCDB;
             pReq->cbI2TData = 0;
