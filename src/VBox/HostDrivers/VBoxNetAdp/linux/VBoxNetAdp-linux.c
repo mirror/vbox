@@ -60,7 +60,13 @@ static void VBoxNetAdpLinuxUnload(void);
 
 static int VBoxNetAdpLinuxOpen(struct inode *pInode, struct file *pFilp);
 static int VBoxNetAdpLinuxClose(struct inode *pInode, struct file *pFilp);
-static int VBoxNetAdpLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
+static int VBoxNetAdpLinuxIOCtl(struct inode *pInode, struct file *pFilp,
+                                unsigned int uCmd, unsigned long ulArg);
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
+static long VBoxNetAdpLinuxIOCtlUnlocked(struct file *pFilp, unsigned int uCmd,
+                                         unsigned long ulArg);
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -83,7 +89,11 @@ static struct file_operations gFileOpsVBoxNetAdp =
     owner:      THIS_MODULE,
     open:       VBoxNetAdpLinuxOpen,
     release:    VBoxNetAdpLinuxClose,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
     ioctl:      VBoxNetAdpLinuxIOCtl,
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
+    unlocked_ioctl: VBoxNetAdpLinuxIOCtlUnlocked,
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
 };
 
 /** The miscdevice structure. */
@@ -255,7 +265,13 @@ static int VBoxNetAdpLinuxClose(struct inode *pInode, struct file *pFilp)
  * @param   uCmd        The function specified to ioctl().
  * @param   ulArg       The argument specified to ioctl().
  */
-static int VBoxNetAdpLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
+static int VBoxNetAdpLinuxIOCtl(struct inode *pInode, struct file *pFilp,
+                                unsigned int uCmd, unsigned long ulArg)
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
+static long VBoxNetAdpLinuxIOCtlUnlocked(struct file *pFilp, unsigned int uCmd,
+                                         unsigned long ulArg)
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
 {
     VBOXNETADPREQ Req;
     PVBOXNETADP pAdp;
