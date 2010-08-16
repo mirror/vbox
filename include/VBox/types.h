@@ -157,6 +157,8 @@ typedef enum VMSTATE
     VMSTATE_RUNNING,
     /** Live save: The VM is running and the state is being saved. */
     VMSTATE_RUNNING_LS,
+    /** Fault Tolerance: The VM is running and the state is being synced. */
+    VMSTATE_RUNNING_FT,
     /** The VM is being reset. */
     VMSTATE_RESETTING,
     /** Live save: The VM is being reset and immediately suspended. */
