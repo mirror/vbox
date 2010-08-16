@@ -857,10 +857,10 @@ struct MachineUserData
         : fNameSync(true),
           fTeleporterEnabled(false),
           uTeleporterPort(0),
-          fRTCUseUTC(false),
           enmFaultToleranceState(FaultToleranceState_Inactive),
           uFaultTolerancePort(0),
-          uFaultToleranceInterval(0)
+          uFaultToleranceInterval(0),
+          fRTCUseUTC(false)
     { }
 
     bool operator==(const MachineUserData &c) const
