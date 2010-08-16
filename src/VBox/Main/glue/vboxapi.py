@@ -407,8 +407,7 @@ class PlatformXPCOM:
 class PlatformWEBSERVICE:
     def __init__(self, params):
         sys.path.append(os.path.join(VboxSdkDir,'bindings', 'webservice', 'python', 'lib'))
-        # not really needed, but just fail early if misconfigured
-        import VirtualBox_services
+        #import VirtualBox_services
         import VirtualBox_wrappers
         from VirtualBox_wrappers import IWebsessionManager2
 
