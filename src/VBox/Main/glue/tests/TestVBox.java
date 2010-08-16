@@ -115,6 +115,41 @@ public class TestVBox
         }
     }
 
+    /*
+    static void testReadLogBI(VirtualBoxManager mgr, IVirtualBox vbox)
+    {
+        IMachine m =  vbox.getMachines().get(0);
+        long logNo = 0;
+        BigInteger off = BigInteger.valueOf(0);
+        BigInteger size = BigInteger.valueOf(16 * 1024);
+        while (true)
+        {
+            byte[] buf = m.readLog(logNo, off, size);
+            if (buf.length == 0)
+                break;
+            System.out.print(new String(buf));
+            off.add(BigInteger.valueOf(buf.length));
+        }
+    }
+
+    static void testReadLog(VirtualBoxManager mgr, IVirtualBox vbox)
+    {
+        IMachine m =  vbox.getMachines().get(0);
+        long logNo = 0;
+        long off = 0;
+        long size = 16 * 1024;
+        while (true)
+        {
+            byte[] buf = m.readLog(logNo, off, size);
+            if (buf.length == 0)
+                break;
+            System.out.print(new String(buf));
+            off += buf.length;
+        }
+        }
+    */
+
+
     public static void main(String[] args)
     {
         VirtualBoxManager mgr = VirtualBoxManager.createInstance(null);
@@ -153,6 +188,7 @@ public class TestVBox
             {
                 System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
                 testEnumeration(mgr, vbox);
+                //testReadLog(mgr, vbox);
                 testStart(mgr, vbox);
                 testEvents(mgr, vbox.getEventSource());
 
