@@ -813,7 +813,6 @@ void UIMachineLogic::sltMachineStateChanged()
 void UIMachineLogic::sltAdditionsStateChanged()
 {
     /* Variable falgs: */
-    bool fIsAdditionsActive = uisession()->isGuestAdditionsActive();
     bool fIsSupportsGraphics = uisession()->isGuestSupportsGraphics();
     bool fIsSupportsSeamless = uisession()->isGuestSupportsSeamless();
 
@@ -823,10 +822,6 @@ void UIMachineLogic::sltAdditionsStateChanged()
 
     /* Check if we should enter some extended mode: */
     sltCheckRequestedModes();
-
-    /* A check whether the installed Guest Additions on the guest are up-to-date is now
-     * performed by the Guest Additions itself (via VBoxTray/VBoxClient), so no need to
-     * do something here anymore. */
 }
 
 void UIMachineLogic::sltMouseCapabilityChanged()
