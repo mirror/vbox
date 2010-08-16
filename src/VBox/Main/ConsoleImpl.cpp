@@ -7454,6 +7454,11 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         AssertRC(vrc2);
                     }
                 }
+                else if (task->mFaultToleranceSyncEnabled)
+                {
+                    /** @todo */
+                    rc = E_NOTIMPL;
+                }
                 else if (task->mStartPaused)
                     /* done */
                     console->setMachineState(MachineState_Paused);
