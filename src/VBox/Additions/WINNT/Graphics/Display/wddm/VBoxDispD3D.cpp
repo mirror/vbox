@@ -3483,6 +3483,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
                 CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[0];
                 IDirect3DTexture9 *pD3DIfTex;
+                HANDLE hSharedHandle = NULL;
 #if 0
                 hr = pDevice->pDevice9If->CreateTexture(pSurf->Width,
                                             pSurf->Height,
@@ -3502,7 +3503,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                                             vboxDDI2D3DFormat(pResource->Format),
                                             vboxDDI2D3DPool(pResource->Pool),
                                             &pD3DIfTex,
-                                            NULL /* HANDLE* pSharedHandle */,
+                                            pResource->Flags.SharedResource ? &hSharedHandle : NULL,
                                             pResource->Pool == D3DDDIPOOL_SYSTEMMEM ? pRc->aAllocations[0].pvMem : NULL);
 #endif
                 Assert(hr == S_OK);
@@ -3511,6 +3512,8 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                     Assert(pD3DIfTex);
                     pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_TEXTURE;
                     pAllocation->pD3DIf = pD3DIfTex;
+                    Assert(!!(pResource->Flags.SharedResource) == !!(hSharedHandle));
+                    pAllocation->hSharedHandle = hSharedHandle;
 #if 0
                     if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
                     {
@@ -3722,6 +3725,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 for (UINT i = 0; i < pResource->SurfCount; ++i)
                 {
                     D3DDDI_ALLOCATIONINFO *pDdiAllocI = &pDdiAllocate->pAllocationInfo[i];
+                    PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
                     Assert(pDdiAllocI->pPrivateDriverData);
                     Assert(pDdiAllocI->PrivateDriverDataSize == sizeof (VBOXWDDM_ALLOCINFO));
                     PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pDdiAllocI->pPrivateDriverData;
@@ -3739,6 +3743,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 
                     pAllocInfo->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
                     pAllocInfo->fFlags = pResource->Flags;
+                    pAllocInfo->hSharedHandle = pAllocation->hSharedHandle;
                     pAllocInfo->SurfDesc.width = pSurf->Width;
                     pAllocInfo->SurfDesc.height = pSurf->Height;
                     pAllocInfo->SurfDesc.format = pResource->Format;
@@ -5176,11 +5181,9 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
         }
         else
         {
-            Assert(0); /* <-- need to test that */
-
             /* this is a "generic" resource whose creation is initiaded by the UMD */
             Assert(pData->PrivateDriverDataSize == sizeof (VBOXWDDM_RCINFO));
-            if (pData->PrivateDriverDataSize >= sizeof (VBOXWDDM_RCINFO))
+            if (pData->PrivateDriverDataSize == sizeof (VBOXWDDM_RCINFO))
             {
                 VBOXWDDM_RCINFO *pRcInfo = (VBOXWDDM_RCINFO*)pData->pPrivateDriverData;
                 Assert(pRcInfo->fFlags == VBOXWDDM_RESOURCE_F_TYPE_GENERIC);
@@ -5188,6 +5191,61 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
                 pRc->fFlags = pRcInfo->fFlags | VBOXWDDM_RESOURCE_F_OPENNED;
                 pRc->RcDesc = pRcInfo->RcDesc;
                 pRc->cAllocations = pData->NumAllocations;
+
+                for (UINT i = 0; i < pData->NumAllocations; ++i)
+                {
+                    PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+                    D3DDDI_OPENALLOCATIONINFO* pOAI = pData->pOpenAllocationInfo;
+                    Assert(pOAI->PrivateDriverDataSize == sizeof (VBOXWDDM_ALLOCINFO));
+                    if (pOAI->PrivateDriverDataSize != sizeof (VBOXWDDM_ALLOCINFO))
+                    {
+                        hr = E_INVALIDARG;
+                        break;
+                    }
+                    Assert(pOAI->pPrivateDriverData);
+                    PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pOAI->pPrivateDriverData;
+                    pAllocation->hAllocation = pOAI->hAllocation;
+                    pAllocation->enmType = pAllocInfo->enmType;
+                    pAllocation->hSharedHandle = pAllocInfo->hSharedHandle;
+                    pAllocation->SurfDesc = pAllocInfo->SurfDesc;
+                    Assert(pAllocation->hSharedHandle);
+                }
+
+                Assert(pRc->RcDesc.fFlags.SharedResource);
+                if (pRc->RcDesc.fFlags.Texture)
+                {
+                    Assert(pDevice->pDevice9If);
+
+                    PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
+                    IDirect3DTexture9 *pD3DIfTex;
+                    HANDLE hSharedHandle = pAllocation->hSharedHandle;
+                    Assert(pAllocation->hSharedHandle);
+
+                    hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9CreateTexture((IDirect3DDevice9Ex *)pDevice->pDevice9If,
+                                                pAllocation->SurfDesc.width,
+                                                pAllocation->SurfDesc.height,
+                                                pRc->cAllocations,
+                                                vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
+                                                vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
+                                                vboxDDI2D3DPool(pRc->RcDesc.enmPool),
+                                                &pD3DIfTex,
+                                                &hSharedHandle,
+                                                NULL);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        Assert(pD3DIfTex);
+                        pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_TEXTURE;
+                        pAllocation->pD3DIf = pD3DIfTex;
+                        Assert(pAllocation->hSharedHandle == hSharedHandle);
+                        Assert(pAllocation->hSharedHandle);
+                    }
+                }
+                else
+                {
+                    /* impl */
+                    Assert(0);
+                }
             }
             else
                 hr = E_INVALIDARG;
