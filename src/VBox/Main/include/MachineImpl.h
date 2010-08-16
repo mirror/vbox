@@ -431,6 +431,12 @@ public:
     STDMETHOD(COMSETTER(TeleporterAddress))(IN_BSTR aAddress);
     STDMETHOD(COMGETTER(TeleporterPassword))(BSTR *aPassword);
     STDMETHOD(COMSETTER(TeleporterPassword))(IN_BSTR aPassword);
+    STDMETHOD(COMGETTER(FaultToleranceState))(FaultToleranceState_T *aEnabled);
+    STDMETHOD(COMSETTER(FaultToleranceState))(FaultToleranceState_T aEnabled);
+    STDMETHOD(COMGETTER(FaultTolerancePort))(ULONG *aPort);
+    STDMETHOD(COMSETTER(FaultTolerancePort))(ULONG aPort);
+    STDMETHOD(COMGETTER(FaultToleranceAddress))(BSTR *aAddress);
+    STDMETHOD(COMSETTER(FaultToleranceAddress))(IN_BSTR aAddress);
     STDMETHOD(COMGETTER(RTCUseUTC))(BOOL *aEnabled);
     STDMETHOD(COMSETTER(RTCUseUTC))(BOOL aEnabled);
     STDMETHOD(COMGETTER(FirmwareType)) (FirmwareType_T *aFirmware);

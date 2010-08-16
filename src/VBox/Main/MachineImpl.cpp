@@ -2569,6 +2569,90 @@ STDMETHODIMP Machine::COMSETTER(TeleporterPassword)(IN_BSTR aPassword)
     return S_OK;
 }
 
+STDMETHODIMP Machine::COMGETTER(FaultToleranceState)(FaultToleranceState_T *aState)
+{
+    CheckComArgOutPointerValid(aState);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aState = mUserData->s.enmFaultToleranceState;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(FaultToleranceState)(FaultToleranceState_T aState)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* @todo deal with running state change. */
+
+    setModified(IsModified_MachineData);
+    mUserData.backup();
+    mUserData->s.enmFaultToleranceState = aState;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(FaultTolerancePort)(ULONG *aPort)
+{
+    CheckComArgOutPointerValid(aPort);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aPort = mUserData->s.uFaultTolerancePort;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(FaultTolerancePort)(ULONG aPort)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* @todo deal with running state change. */
+
+    setModified(IsModified_MachineData);
+    mUserData.backup();
+    mUserData->s.uFaultTolerancePort = aPort;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(FaultToleranceAddress)(BSTR *aAddress)
+{
+    CheckComArgOutPointerValid(aAddress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mUserData->s.strFaultToleranceAddress.cloneTo(aAddress);
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(FaultToleranceAddress)(IN_BSTR aAddress)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* @todo deal with running state change. */
+
+    setModified(IsModified_MachineData);
+    mUserData.backup();
+    mUserData->s.strFaultToleranceAddress = aAddress;
+    return S_OK;
+}
+
 STDMETHODIMP Machine::COMGETTER(RTCUseUTC)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
