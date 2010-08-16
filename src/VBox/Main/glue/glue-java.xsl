@@ -294,11 +294,6 @@
   <xsl:choose>
     <xsl:when test="($G_vboxGlueStyle='xpcom')">
       <xsl:choose>
-        <xsl:when test="$type='unsigned long long'">
-          <!-- stupid, rewrite the bridge -->
-          <xsl:value-of select="'double'" />
-        </xsl:when>
-
         <xsl:when test="$type='long long'">
           <xsl:value-of select="'long'" />
         </xsl:when>
@@ -390,10 +385,6 @@
 
         <xsl:when test="//enum[@name=$type]">
           <xsl:value-of select="concat($G_virtualBoxPackageCom, '.', $type)" />
-        </xsl:when>
-
-        <xsl:when test="$type='unsigned long long'">
-          <xsl:value-of select="'BigInteger'" />
         </xsl:when>
 
         <xsl:when test="$type='long long'">
@@ -552,7 +543,14 @@
           <xsl:with-param name="forceelem" select="'yes'" />
         </xsl:call-template>
       </xsl:variable>
-      <xsl:value-of select="concat('Helper.wrap(', $elemgluetype, '.class, ', $value,'.toSafeArray())')"/>
+      <xsl:choose>
+        <xsl:when test="($idltype='octet')">
+          <xsl:value-of select="concat('Helper.wrapBytes(', $value, '.toSafeArray())')"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="concat('Helper.wrap(', $elemgluetype, '.class, ', $value,'.toSafeArray())')"/>
+        </xsl:otherwise>
+      </xsl:choose>
     </xsl:when>
 
     <xsl:when test="//interface[@name=$idltype] or $idltype='$unknown'">
@@ -598,10 +596,6 @@
 
     <xsl:when test="$idltype='long long'">
       <xsl:value-of select="concat($value,'.getLong()')"/>
-    </xsl:when>
-
-    <xsl:when test="$idltype='unsigned long long'">
-      <xsl:value-of select="concat('Helper.longToBigInteger(',$value,'.getLong())')"/>
     </xsl:when>
 
     <xsl:otherwise>
@@ -816,10 +810,6 @@
           <xsl:value-of select="concat($value,'.value()')"/>
         </xsl:otherwise>
       </xsl:choose>
-    </xsl:when>
-
-    <xsl:when test="$idltype='unsigned long long'">
-      <xsl:value-of select="concat('Helper.bigIntegerToDouble(', $value,')')"/>
     </xsl:when>
 
     <xsl:otherwise>
@@ -1956,7 +1946,6 @@
     <xsl:with-param name="package" select="$G_virtualBoxPackage" />
   </xsl:call-template>
 
-   <xsl:text>import java.math.BigInteger;&#10;</xsl:text>
    <xsl:text>import java.util.List;&#10;</xsl:text>
 
     <xsl:choose>
@@ -2007,7 +1996,6 @@
     <xsl:with-param name="package" select="$G_virtualBoxPackage" />
   </xsl:call-template>
 
-  <xsl:text>import java.math.BigInteger;&#10;</xsl:text>
   <xsl:text>import java.util.List;&#10;</xsl:text>
 
   <xsl:value-of select="concat('public interface ', $ifname, ' {&#10;')" />
@@ -2031,7 +2019,6 @@
     <xsl:with-param name="package" select="$G_virtualBoxPackage" />
   </xsl:call-template>
 
-  <xsl:text>import java.math.BigInteger;&#10;</xsl:text>
   <xsl:text>import java.util.List;&#10;</xsl:text>
 
   <xsl:variable name="backtype">
@@ -2201,7 +2188,6 @@ import java.util.Collections;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
 
 public class Helper {
     public static List<Short> wrap(byte[] vals) {
@@ -2278,15 +2264,6 @@ public class Helper {
             throw new AssertionError(e);
         }
     }
-
-    public static List<BigInteger> wrapUnsignedLongLong(double vals[]) {
-        List<BigInteger> ret = new ArrayList<BigInteger>(vals.length);
-        for (double v : vals) {
-                ret.add(doubleToBigInteger(v));
-        }
-        return ret;
-    }
-
 
     public static short[] unwrap(List<Short> vals) {
         if (vals==null)
@@ -2431,14 +2408,6 @@ public class Helper {
           ret[i++] = (T2)obj.getWrapped();
         }
         return ret;
-    }
-
-    /* We do loose precision here */
-    public static BigInteger doubleToBigInteger(double val) {
-        return new BigInteger(Long.toString((long)val));
-    }
-    public static double bigIntegerToDouble(BigInteger val) {
-        return val.doubleValue();
     }
 }
 ]]></xsl:text>
@@ -2701,7 +2670,6 @@ import java.util.Collections;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
 import com.jacob.com.*;
 
 public class Helper {
@@ -2795,6 +2763,22 @@ public class Helper {
            default:
               throw new RuntimeException("unhandled variant type "+vt);
        }
+    }
+
+    public static byte[] wrapBytes(SafeArray sa) {
+        if (sa==null)  return null;
+
+        int saLen = sa.getUBound() - sa.getLBound() + 1;
+
+        byte[] ret = new byte[saLen];
+        int j = 0;
+        for (int i = sa.getLBound(); i <= sa.getUBound(); i++)
+        {
+           Variant v = sa.getVariant(i);
+           // come upo with more effective approach!!!
+           ret[j++] = v.getByte();
+        }
+        return ret;
     }
 
     @SuppressWarnings("unchecked")
@@ -2942,11 +2926,7 @@ public class Helper {
         }
         return ret;
     }
-
-    public static BigInteger longToBigInteger(long value) {
-         return BigInteger.valueOf(value);
-    }
-
+   
     /* We have very long invoke lists sometimes */
     public static Variant invoke(Dispatch d, String method, Object ... args)
     {
