@@ -385,7 +385,7 @@ STDMETHODIMP FFmpegFB::COMGETTER(Overlay) (IFramebufferOverlay **aOverlay)
  * @returns          COM status code
  * @retval  winId Associated window id
  */
-STDMETHODIMP FFmpegFB::COMGETTER(WinId) (ULONG64 *winId)
+STDMETHODIMP FFmpegFB::COMGETTER(WinId) (LONG64 *winId)
 {
     if (!winId)
         return E_POINTER;
