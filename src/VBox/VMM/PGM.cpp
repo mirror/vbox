@@ -661,7 +661,7 @@ static const DBGCVARDESC g_aPgmCountPhysWritesArgs[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "enabled",      "on/off." },
-    {  1,           1,          DBGCVAR_CAT_NUMBER_NO_RANGE, 0,                              "interval",     "Interval in ms." },
+    {  1,           1,          DBGCVAR_CAT_NUMBER_NO_RANGE, 0,                         "interval",     "Interval in ms." },
 };
 # endif
 
@@ -1672,10 +1672,10 @@ static int pgmR3InitStats(PVM pVM)
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b); \
         AssertRC(rc);
 
-#ifdef DEBUG_sandervl
+# ifdef DEBUG_sandervl
     PGM_REG_COUNTER(&pPGM->StatRZFTPhysPageWrite,             "/PGM/FT/RZ/PageWrite",               "The number of times a physical page was written to (FT stats).");
     PGM_REG_COUNTER(&pPGM->StatR3FTPhysPageWrite,             "/PGM/FT/R3/PageWrite",               "The number of times a physical page was written to (FT stats).");
-#endif
+# endif
 
     PGMSTATS *pStats = pVM->pgm.s.pStatsR3;
 
@@ -4422,7 +4422,7 @@ static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
 
 /**
- * The '.pgmsyncalways' command.
+ * The '.pgmphystofile' command.
  *
  * @returns VBox status.
  * @param   pCmd        Pointer to the command descriptor (as registered).
