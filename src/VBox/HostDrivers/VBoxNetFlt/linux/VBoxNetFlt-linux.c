@@ -222,10 +222,13 @@ unsigned dev_get_flags(const struct net_device *dev)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
 #define QDISC_IS_BUSY(dev, qdisc)  test_bit(__LINK_STATE_SCHED, &dev->state)
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 #define QDISC_IS_BUSY(dev, qdisc) (test_bit(__QDISC_STATE_RUNNING, &qdisc->state) || \
                                    test_bit(__QDISC_STATE_SCHED, &qdisc->state))
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
+#define QDISC_IS_BUSY(dev, qdisc) (qdisc_is_running(q) || \
+                                   test_bit(__QDISC_STATE_SCHED, &qdisc->state))
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
 
 struct VBoxNetQDiscPriv
 {
