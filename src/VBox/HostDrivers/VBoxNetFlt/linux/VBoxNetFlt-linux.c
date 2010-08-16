@@ -226,7 +226,7 @@ unsigned dev_get_flags(const struct net_device *dev)
 #define QDISC_IS_BUSY(dev, qdisc) (test_bit(__QDISC_STATE_RUNNING, &qdisc->state) || \
                                    test_bit(__QDISC_STATE_SCHED, &qdisc->state))
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
-#define QDISC_IS_BUSY(dev, qdisc) (qdisc_is_running(q) || \
+#define QDISC_IS_BUSY(dev, qdisc) (qdisc_is_running(qdisc) || \
                                    test_bit(__QDISC_STATE_SCHED, &qdisc->state))
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
 
