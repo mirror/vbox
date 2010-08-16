@@ -434,7 +434,7 @@
 
                         <File Id="vrdpauthdll" Name="VRDPAuth.dll" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VRDPAuth.dll" />
-                        <File Id="vrdpauthsimpledll" Name="VRDPASim.dll" DiskId="1"  Vital="yes"
+                        <File Id="vrdpauthsimpledll" Name="VRDPASim.dll" LongName="VRDPAuthSimple.dll" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VRDPAuthSimple.dll" />
 
                         <File Id="vmmgc" Name="VMMGC.gc" DiskId="1"  Vital="yes"
