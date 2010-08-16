@@ -3107,6 +3107,23 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
                 pelmMachineChild->getAttributeValue("address", machineUserData.strTeleporterAddress);
                 pelmMachineChild->getAttributeValue("password", machineUserData.strTeleporterPassword);
             }
+            else if (pelmMachineChild->nameEquals("FaultTolerance"))
+            {
+                Utf8Str strFaultToleranceSate;
+                if (pelmMachineChild->getAttributeValue("state", strFaultToleranceSate))
+                {
+                    if (strFaultToleranceSate == "source")
+                        machineUserData.enmFaultToleranceState = FaultToleranceState_Source;
+                    else
+                    if (strFaultToleranceSate == "target")
+                        machineUserData.enmFaultToleranceState = FaultToleranceState_Target;
+                    else
+                        machineUserData.enmFaultToleranceState = FaultToleranceState_Inactive;
+                }               
+                pelmMachineChild->getAttributeValue("port", machineUserData.uFaultTolerancePort);
+                pelmMachineChild->getAttributeValue("address", machineUserData.strFaultToleranceAddress);
+                pelmMachineChild->getAttributeValue("interval", machineUserData.uFaultToleranceInterval);
+            }
             else if (pelmMachineChild->nameEquals("MediaRegistry"))
                 readMediaRegistry(*pelmMachineChild, mediaRegistry);
         }
@@ -4010,6 +4027,33 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         pelmTeleporter->setAttribute("password", machineUserData.strTeleporterPassword);
     }
 
+    if (    m->sv >= SettingsVersion_v1_11
+        &&  (   machineUserData.enmFaultToleranceState != FaultToleranceState_Inactive
+            ||  machineUserData.uFaultTolerancePort
+            ||  machineUserData.uFaultToleranceInterval
+            ||  !machineUserData.strFaultToleranceAddress.isEmpty()
+            )
+       )
+    {
+        xml::ElementNode *pelmFaultTolerance = elmMachine.createChild("FaultTolerance");
+        switch (machineUserData.enmFaultToleranceState)
+        {
+        case FaultToleranceState_Inactive:
+            pelmFaultTolerance->setAttribute("state", "inactive");
+            break;
+        case FaultToleranceState_Source:
+            pelmFaultTolerance->setAttribute("state", "source");
+            break;
+        case FaultToleranceState_Target:
+            pelmFaultTolerance->setAttribute("state", "target");
+            break;
+        }
+
+        pelmFaultTolerance->setAttribute("port", machineUserData.uFaultTolerancePort);
+        pelmFaultTolerance->setAttribute("address", machineUserData.strFaultToleranceAddress);
+        pelmFaultTolerance->setAttribute("interval", machineUserData.uFaultToleranceInterval);
+    }
+
     if (    (fl & BuildMachineXML_MediaRegistry)
          && (m->sv >= SettingsVersion_v1_11)
        )
@@ -4143,9 +4187,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_11)
     {
-        // VirtualBox 3.3 adds HD audio, CPU priorities and per-machine media registries
+        // VirtualBox 3.3 adds HD audio, CPU priorities, fault tolerance and per-machine media registries
         if (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
              || hardwareMachine.ulCpuPriority != 100
+             || machineUserData.enmFaultToleranceState != FaultToleranceState_Inactive
+             || machineUserData.uFaultTolerancePort
+             || machineUserData.uFaultToleranceInterval
+             || !machineUserData.strFaultToleranceAddress.isEmpty()
              || mediaRegistry.llHardDisks.size()
              || mediaRegistry.llDvdImages.size()
              || mediaRegistry.llFloppyImages.size()
