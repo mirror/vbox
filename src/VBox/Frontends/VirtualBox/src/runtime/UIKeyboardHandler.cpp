@@ -1244,7 +1244,10 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
             if (!XkbTranslateKeySym(display, &ks, 0, &ch, 1, NULL) == 1)
                 ch = 0;
             if (ch)
+            {
                 QChar c = QString::fromLocal8Bit(&ch, 1)[0];
+                processed = machineLogic()->actionsPool()->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + QChar(c).toUpper().unicode())));
+            }
         }
 #elif defined (Q_WS_MAC)
         if (pUniKey && pUniKey[0] && !pUniKey[1])
