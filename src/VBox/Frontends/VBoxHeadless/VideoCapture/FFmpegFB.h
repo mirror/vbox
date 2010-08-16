@@ -77,7 +77,7 @@ public:
     STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *usesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
-    STDMETHOD(COMGETTER(WinId)) (ULONG64 *winId);
+    STDMETHOD(COMGETTER(WinId)) (LONG64 *winId);
 
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y, ULONG w, ULONG h);
     STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, BYTE *vram,
