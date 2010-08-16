@@ -22,6 +22,7 @@
 
 #include "VBoxDispD3DCmn.h"
 #include "VBoxDispD3D.h"
+#include "VBoxScreen.h"
 
 #ifdef VBOXDISPMP_TEST
 HRESULT vboxDispMpTstStart();
@@ -33,6 +34,8 @@ HRESULT vboxDispMpTstStop();
 #endif
 
 #define VBOXWDDMDISP_WITH_TMPWORKAROUND 1
+
+static VBOXSCREENMONRUNNER g_VBoxScreenMonRunner;
 
 //#define VBOXWDDMOVERLAY_TEST
 
@@ -1343,12 +1346,11 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
                     DWORD     dwReason,
                     LPVOID    lpReserved)
 {
-    BOOL bOk = TRUE;
-
     switch (dwReason)
     {
         case DLL_PROCESS_ATTACH:
         {
+            vboxVDbgPrint(("VBoxDispD3D: DLL loaded.\n"));
 #ifdef VBOXWDDMDISP_DEBUG
             vboxVDbgVEHandlerRegister();
 #endif
@@ -1356,18 +1358,29 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 
             HRESULT hr = vboxDispCmInit();
             Assert(hr == S_OK);
-#ifdef VBOXDISPMP_TEST
             if (hr == S_OK)
             {
+#ifdef VBOXDISPMP_TEST
                 hr = vboxDispMpTstStart();
                 Assert(hr == S_OK);
-            }
+                if (hr == S_OK)
 #endif
-            if (hr == S_OK)
-                vboxVDbgPrint(("VBoxDispD3D: DLL loaded.\n"));
-            else
-                bOk = FALSE;
-
+                {
+                    hr = VBoxScreenMRunnerStart(&g_VBoxScreenMonRunner);
+                    Assert(hr == S_OK);
+                    /* succeed in any way */
+                    hr = S_OK;
+                    if (hr == S_OK)
+                    {
+                        vboxVDbgPrint(("VBoxDispD3D: DLL loaded OK\n"));
+                        return TRUE;
+                    }
+#ifdef VBOXDISPMP_TEST
+                    vboxDispMpTstStop();
+#endif
+                }
+                vboxDispCmTerm();
+            }
 //                VbglR3Init();
             break;
         }
@@ -1377,19 +1390,24 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 #ifdef VBOXWDDMDISP_DEBUG
             vboxVDbgVEHandlerUnregister();
 #endif
-            HRESULT hr;
-#ifdef VBOXDISPMP_TEST
-            hr = vboxDispMpTstStop();
+            HRESULT hr = VBoxScreenMRunnerStop(&g_VBoxScreenMonRunner);
             Assert(hr == S_OK);
             if (hr == S_OK)
-#endif
             {
-                hr = vboxDispCmTerm();
+#ifdef VBOXDISPMP_TEST
+                hr = vboxDispMpTstStop();
                 Assert(hr == S_OK);
                 if (hr == S_OK)
-                    vboxVDbgPrint(("VBoxDispD3D: DLL unloaded.\n"));
-                else
-                    bOk = FALSE;
+#endif
+                {
+                    hr = vboxDispCmTerm();
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        vboxVDbgPrint(("VBoxDispD3D: DLL unloaded.\n"));
+                        return TRUE;
+                    }
+                }
             }
 //                VbglR3Term();
             /// @todo RTR3Term();
@@ -1397,9 +1415,9 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
         }
 
         default:
-            break;
+            return TRUE;
     }
-    return bOk;
+    return FALSE;
 }
 
 static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_ADAPTER pAdapter, D3DCAPS9 *pCaps)

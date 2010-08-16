@@ -24,6 +24,7 @@
 # define VBOXESC_REINITVIDEOMODES           0xABCD9003
 # define VBOXESC_GETVBOXVIDEOCMCMD          0xABCD9004
 # define VBOXESC_DBGPRINT                   0xABCD9005
+# define VBOXESC_SCREENLAYOUT               0xABCD9006
 
 typedef struct
 {

@@ -112,7 +112,7 @@ static DWORD vboxDispIfWDDMAdapterOp(PCVBOXDISPIF pIf, LPCWSTR pDevName, PFNVBOX
 {
     D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME OpenAdapterData = {0};
     wcsncpy(OpenAdapterData.DeviceName, pDevName, RT_ELEMENTS(OpenAdapterData.DeviceName) - 1 /* the last one is always \0 */);
-    DWORD err = ERROR_GEN_FAILURE;
+    DWORD err = NO_ERROR;
     NTSTATUS Status = pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName(&OpenAdapterData);
     if (!Status)
     {
@@ -132,7 +132,10 @@ static DWORD vboxDispIfWDDMAdapterOp(PCVBOXDISPIF pIf, LPCWSTR pDevName, PFNVBOX
         }
     }
     else
+    {
         Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName failed, Status (0x%x)\n", Status));
+        err = ERROR_GEN_FAILURE;
+    }
 
     return err;
 }

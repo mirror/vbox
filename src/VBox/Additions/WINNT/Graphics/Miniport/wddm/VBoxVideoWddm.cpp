@@ -86,7 +86,7 @@ VBOXVIDEOOFFSET vboxWddmValidatePrimary(PVBOXWDDM_ALLOCATION pAllocation)
     return offVram;
 }
 
-NTSTATUS vboxWddmGhDisplayPostInfoScreen (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
+NTSTATUS vboxWddmGhDisplayPostInfoScreen (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation, POINT * pVScreenPos)
 {
     VBOXVIDEOOFFSET offVram = pAllocation->offVram;
     Assert(offVram != VBOXVIDEOOFFSET_VOID);
@@ -104,8 +104,8 @@ NTSTATUS vboxWddmGhDisplayPostInfoScreen (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_A
         VBVAINFOSCREEN *pScreen = (VBVAINFOSCREEN *)p;
 
         pScreen->u32ViewIndex    = pAllocation->SurfDesc.VidPnSourceId;
-        pScreen->i32OriginX      = 0;
-        pScreen->i32OriginY      = 0;
+        pScreen->i32OriginX      = pVScreenPos->x;
+        pScreen->i32OriginY      = pVScreenPos->y;
         pScreen->u32StartOffset  = 0; //(uint32_t)offVram; /* we pretend the view is located at the start of each framebuffer */
         pScreen->u32LineSize     = pAllocation->SurfDesc.pitch;
         pScreen->u32Width        = pAllocation->SurfDesc.width;
@@ -168,15 +168,23 @@ NTSTATUS vboxWddmGhDisplaySetMode(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATIO
     return STATUS_UNSUCCESSFUL;
 }
 
+NTSTATUS vboxWddmGhDisplayUpdateScreenPos(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, POINT *pVScreenPos)
+{
+    if (pSource->VScreenPos.x == pVScreenPos->x
+            && pSource->VScreenPos.y == pVScreenPos->y)
+        return STATUS_SUCCESS;
+
+    pSource->VScreenPos = *pVScreenPos;
+
+    PVBOXWDDM_ALLOCATION pAllocation = VBOXWDDM_FB_ALLOCATION(pSource);
+    NTSTATUS Status = vboxWddmGhDisplayPostInfoScreen(pDevExt, pAllocation, &pSource->VScreenPos);
+    Assert(Status == STATUS_SUCCESS);
+    return Status;
+}
 
 NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource)
 {
-
-#ifndef VBOXWDDM_RENDER_FROM_SHADOW
-    PVBOXWDDM_ALLOCATION pAllocation = pSource->pPrimaryAllocation;
-#else
-    PVBOXWDDM_ALLOCATION pAllocation = pSource->pShadowAllocation;
-#endif
+    PVBOXWDDM_ALLOCATION pAllocation = VBOXWDDM_FB_ALLOCATION(pSource);
     VBOXVIDEOOFFSET offVram = vboxWddmValidatePrimary(pAllocation);
     Assert(offVram != VBOXVIDEOOFFSET_VOID);
     if (offVram == VBOXVIDEOOFFSET_VOID)
@@ -193,7 +201,7 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pS
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
         {
-            Status = vboxWddmGhDisplayPostInfoScreen(pDevExt, pAllocation);
+            Status = vboxWddmGhDisplayPostInfoScreen(pDevExt, pAllocation, &pSource->VScreenPos);
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
                 drprintf((__FUNCTION__": vboxWddmGhDisplayPostInfoScreen failed\n"));
@@ -1698,7 +1706,7 @@ DxgkDdiDescribeAllocation(
     CONST HANDLE  hAdapter,
     DXGKARG_DESCRIBEALLOCATION*  pDescribeAllocation)
 {
-//    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
 
@@ -1711,7 +1719,7 @@ DxgkDdiDescribeAllocation(
     pDescribeAllocation->RefreshRate.Denominator = 1000;
     pDescribeAllocation->PrivateDriverFormatAttribute = 0;
 
-//    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     return STATUS_SUCCESS;
 }
@@ -2057,7 +2065,7 @@ NTSTATUS vboxWddmCallIsr(PDEVICE_EXTENSION pDevExt)
     return Status;
 }
 
-static void vboxWddmSubmitBltCmd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CONTEXT pContext, PVBOXWDDM_DMA_PRESENT_BLT pBlt)
+static void vboxWddmSubmitBltCmd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_CONTEXT pContext, PVBOXWDDM_DMA_PRESENT_BLT pBlt)
 {
     PVBOXVDMAPIPE_CMD_RECTSINFO pRectsCmd = (PVBOXVDMAPIPE_CMD_RECTSINFO)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_RECTSINFO, RT_OFFSETOF(VBOXVDMAPIPE_CMD_RECTSINFO, ContextsRects.UpdateRects.aRects[pBlt->DstRects.UpdateRects.cRects]));
     Assert(pRectsCmd);
@@ -2065,6 +2073,11 @@ static void vboxWddmSubmitBltCmd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CONTEXT pC
     {
         pRectsCmd->pContext = pContext;
         memcpy(&pRectsCmd->ContextsRects, &pBlt->DstRects, RT_OFFSETOF(VBOXVDMAPIPE_RECTS, UpdateRects.aRects[pBlt->DstRects.UpdateRects.cRects]));
+        vboxWddmRectTranslate(&pRectsCmd->ContextsRects.ContextRect, pSource->VScreenPos.x, pSource->VScreenPos.y);
+        for (UINT i = 0; i < pRectsCmd->ContextsRects.UpdateRects.cRects; ++i)
+        {
+            vboxWddmRectTranslate(&pRectsCmd->ContextsRects.UpdateRects.aRects[i], pSource->VScreenPos.x, pSource->VScreenPos.y);
+        }
         NTSTATUS tmpStatus = vboxVdmaGgCmdSubmit(&pDevExt->u.primary.Vdma.DmaGg, &pRectsCmd->Hdr);
         Assert(tmpStatus == STATUS_SUCCESS);
         if (tmpStatus != STATUS_SUCCESS)
@@ -2110,6 +2123,7 @@ DxgkDdiSubmitCommand(
             VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->SrcAllocInfo.srcId];
             vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
             PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW pRFS = (PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW)pPrivateData;
+            vboxWddmRectTranslate(&pRFS->rect, pSource->VScreenPos.x, pSource->VScreenPos.y);
             uint32_t cDMACmdsOutstanding = ASMAtomicReadU32(&pDevExt->cDMACmdsOutstanding);
             if (!cDMACmdsOutstanding)
                 VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &pRFS->rect);
@@ -2162,6 +2176,8 @@ DxgkDdiSubmitCommand(
                                 else
                                     rect = pBlt->DstRects.ContextRect;
 
+                                vboxWddmRectTranslate(&rect, pSource->VScreenPos.x, pSource->VScreenPos.y);
+
                                 uint32_t cDMACmdsOutstanding = ASMAtomicReadU32(&pDevExt->cDMACmdsOutstanding);
                                 if (!cDMACmdsOutstanding)
                                     VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &rect);
@@ -2170,7 +2186,7 @@ DxgkDdiSubmitCommand(
                                     Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
                                     VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, &pSource->Vbva, &rect);
                                 }
-                                vboxWddmSubmitBltCmd(pDevExt, pContext, pBlt);
+                                vboxWddmSubmitBltCmd(pDevExt, pSource, pContext, pBlt);
                                 break;
                             }
                             case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
@@ -2179,7 +2195,7 @@ DxgkDdiSubmitCommand(
                                 Assert(pSrcAlloc->fRcFlags.RenderTarget);
                                 if (pSrcAlloc->fRcFlags.RenderTarget)
                                 {
-                                    vboxWddmSubmitBltCmd(pDevExt, pContext, pBlt);
+                                    vboxWddmSubmitBltCmd(pDevExt, pSource, pContext, pBlt);
                                 }
                                 break;
                             }
@@ -2221,12 +2237,13 @@ DxgkDdiSubmitCommand(
             if (pRectsCmd)
             {
                 PVBOXWDDM_ALLOCATION pAlloc = pPrivateData->SrcAllocInfo.pAlloc;
+                VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->SrcAllocInfo.srcId];
                 pRectsCmd->pContext = pContext;
                 RECT r;
-                r.top = 0;
-                r.left = 0;
-                r.right = pAlloc->SurfDesc.width;
-                r.bottom = pAlloc->SurfDesc.height;
+                r.left = pSource->VScreenPos.x;
+                r.top = pSource->VScreenPos.y;
+                r.right = pAlloc->SurfDesc.width + pSource->VScreenPos.x;
+                r.bottom = pAlloc->SurfDesc.height + pSource->VScreenPos.y;
                 pRectsCmd->ContextsRects.ContextRect = r;
                 pRectsCmd->ContextsRects.UpdateRects.cRects = 1;
                 pRectsCmd->ContextsRects.UpdateRects.aRects[0] = r;
@@ -2842,6 +2859,35 @@ DxgkDdiEscape(
                 /* @todo: implement */
                 Status = STATUS_SUCCESS;
                 break;
+            case VBOXESC_SCREENLAYOUT:
+            {
+                Assert(pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT));
+                if (pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT))
+                {
+                    PVBOXDISPIFESCAPE_SCREENLAYOUT pLo = (PVBOXDISPIFESCAPE_SCREENLAYOUT)pEscapeHdr;
+                    Assert(pLo->ScreenLayout.cScreens <= (UINT)pDevExt->u.primary.cDisplays);
+                    for (UINT i = 0; i < pLo->ScreenLayout.cScreens; ++i)
+                    {
+                        PVBOXSCREENLAYOUT_ELEMENT pEl = &pLo->ScreenLayout.aScreens[i];
+                        Assert(pEl->VidPnSourceId < (UINT)pDevExt->u.primary.cDisplays);
+                        if (pEl->VidPnSourceId < (UINT)pDevExt->u.primary.cDisplays)
+                        {
+                            PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pEl->VidPnSourceId];
+                            NTSTATUS tmpStatus = vboxWddmGhDisplayUpdateScreenPos(pDevExt, pSource, &pEl->pos);
+                            Assert(tmpStatus == STATUS_SUCCESS);
+                        }
+                    }
+                    Status = STATUS_SUCCESS;
+                    break;
+                }
+                else
+                {
+                    drprintf((__FUNCTION__": VBOXESC_SCREENLAYOUT: incorrect buffer size (%d) < sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT) (%d)\n",
+                            pEscape->PrivateDriverDataSize, sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT)));
+                    AssertBreakpoint();
+                    Status = STATUS_INVALID_PARAMETER;
+                }
+            }
             case VBOXESC_REINITVIDEOMODES:
                 VBoxWddmInvalidateModesTable(pDevExt);
                 Status = STATUS_SUCCESS;
@@ -2924,7 +2970,7 @@ DxgkDdiIsSupportedVidPn(
     /* The DxgkDdiIsSupportedVidPn should be made pageable. */
     PAGED_CODE();
 
-//    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
 
@@ -3015,7 +3061,7 @@ DxgkDdiIsSupportedVidPn(
     }
     pIsSupportedVidPnArg->IsVidPnSupported = bSupported;
 
-//    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
     return Status;
 }
@@ -3132,7 +3178,7 @@ DxgkDdiEnumVidPnCofuncModality(
     /* The DxgkDdiEnumVidPnCofuncModality function should be made pageable. */
     PAGED_CODE();
 
-//    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
 
@@ -3179,7 +3225,7 @@ DxgkDdiEnumVidPnCofuncModality(
     else
         drprintf((__FUNCTION__ ": DxgkCbQueryVidPnInterface failed Status(0x%x)\n", Status));
 
-//    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
     return Status;
 }
@@ -3484,7 +3530,7 @@ DxgkDdiGetScanLine(
     CONST HANDLE  hAdapter,
     DXGKARG_GETSCANLINE*  pGetScanLine)
 {
-//    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
 
@@ -3512,7 +3558,7 @@ DxgkDdiGetScanLine(
         pGetScanLine->ScanLine = 0;
     }
 
-//    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     return STATUS_SUCCESS;
 }
