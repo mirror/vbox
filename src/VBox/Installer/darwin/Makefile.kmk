@@ -1070,6 +1070,8 @@ endif
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.desc \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res
 
+
 ifndef VBOX_OSE
- include $(PATH_SUB_CURRENT)/darwin/Bundle.kmk
+ include $(VBOX_PATH_DI_SRC)/Bundle.kmk
 endif
+
