@@ -889,7 +889,7 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     {
         /* Provide credentials only if there are no logged in users. */
         Bstr noLoggedInUsersValue;
-        ULONG64 ul64Timestamp = 0;
+        LONG64 ul64Timestamp = 0;
         Bstr flags;
 
         hrc = getGuestProperty(Bstr("/VirtualBox/GuestInfo/OS/NoLoggedInUsers"),
@@ -1322,7 +1322,7 @@ DECLCALLBACK(int) Console::doGuestPropNotification(void *pvExtension,
 HRESULT Console::doEnumerateGuestProperties(CBSTR aPatterns,
                                             ComSafeArrayOut(BSTR, aNames),
                                             ComSafeArrayOut(BSTR, aValues),
-                                            ComSafeArrayOut(ULONG64, aTimestamps),
+                                            ComSafeArrayOut(LONG64, aTimestamps),
                                             ComSafeArrayOut(BSTR, aFlags))
 {
     using namespace guestProp;
@@ -1390,7 +1390,7 @@ HRESULT Console::doEnumerateGuestProperties(CBSTR aPatterns,
      */
     com::SafeArray<BSTR> names(cEntries);
     com::SafeArray<BSTR> values(cEntries);
-    com::SafeArray<ULONG64> timestamps(cEntries);
+    com::SafeArray<LONG64> timestamps(cEntries);
     com::SafeArray<BSTR> flags(cEntries);
     size_t iBuf = 0;
     /* Rely on the service to have formated the data correctly. */
@@ -4160,7 +4160,7 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
  * @note Temporarily locks this object for writing.
  */
 HRESULT Console::getGuestProperty(IN_BSTR aName, BSTR *aValue,
-                                  ULONG64 *aTimestamp, BSTR *aFlags)
+                                  LONG64 *aTimestamp, BSTR *aFlags)
 {
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
@@ -4312,7 +4312,7 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
 HRESULT Console::enumerateGuestProperties(IN_BSTR aPatterns,
                                           ComSafeArrayOut(BSTR, aNames),
                                           ComSafeArrayOut(BSTR, aValues),
-                                          ComSafeArrayOut(ULONG64, aTimestamps),
+                                          ComSafeArrayOut(LONG64, aTimestamps),
                                           ComSafeArrayOut(BSTR, aFlags))
 {
 #ifndef VBOX_WITH_GUEST_PROPS
@@ -4772,7 +4772,7 @@ void Console::onRuntimeError(BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage)
 /**
  * @note Locks this object for reading.
  */
-HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
+HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
 {
     AssertReturn(aCanShow, E_POINTER);
     AssertReturn(aWinId, E_POINTER);
@@ -4814,7 +4814,7 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
     }
     else
     {
-        evDesc.init(mEventSource, VBoxEventType_OnShowWindow, UINT64_C(0));
+        evDesc.init(mEventSource, VBoxEventType_OnShowWindow, INT64_C(0));
         BOOL fDelivered = evDesc.fire(5000); /* Wait up to 5 secs for delivery */
         //Assert(fDelivered);
         if (fDelivered)
@@ -4822,7 +4822,7 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
             ComPtr<IEvent> aEvent;
             evDesc.getEvent(aEvent.asOutParam());
             ComPtr<IShowWindowEvent> aShowEvent = aEvent;
-            ULONG64 aEvWinId = 0;
+            LONG64 aEvWinId = 0;
             if (aShowEvent)
             {
                 aShowEvent->COMGETTER(WinId)(&aEvWinId);

@@ -926,7 +926,7 @@
       <desc>Fault tolerant target VM.</desc>
     </const>
   </enum>
-    
+
   <enum
    name="LockType"
    uuid="138b53f8-db4b-47c5-b32b-4ef52f769413"
@@ -3276,7 +3276,7 @@
           corresponding entries in the @a name array.
         </desc>
       </param>
-      <param name="timestamp" type="unsigned long long" dir="out" safearray="yes">
+      <param name="timestamp" type="long long" dir="out" safearray="yes">
         <desc>
           The time stamps of the properties returned.  The array entries match
           the corresponding entries in the @a name array.
@@ -3304,7 +3304,7 @@
           The value of the property.
         </desc>
       </param>
-      <param name="timestamp" type="unsigned long long" dir="in">
+      <param name="timestamp" type="long long" dir="in">
         <desc>
           The timestamp of the property.
         </desc>
@@ -3977,7 +3977,7 @@
         The interval in ms used for syncing the state between source and target.
       </desc>
     </attribute>
-      
+
     <attribute name="RTCUseUTC" type="boolean">
       <desc>
         When set to @a true, the RTC device of the virtual machine will run
@@ -5275,7 +5275,7 @@
         </result>
 
       </desc>
-      <param name="winId" type="unsigned long long" dir="return">
+      <param name="winId" type="long long" dir="return">
         <desc>
           Platform-dependent identifier of the top-level VM console
           window, or zero if this method has performed all actions
@@ -5305,7 +5305,7 @@
           will be empty.
         </desc>
       </param>
-      <param name="timestamp" type="unsigned long long" dir="out">
+      <param name="timestamp" type="long long" dir="out">
         <desc>
           The time at which the property was last modified, as seen by the
           server process.
@@ -5355,7 +5355,7 @@
           The name of the property to read.
         </desc>
       </param>
-      <param name="value" type="unsigned long long" dir="return">
+      <param name="value" type="long long" dir="return">
         <desc>
           The timestamp.  If the property does not exist then this will be
           empty.
@@ -5457,7 +5457,7 @@
           corresponding entries in the @a name array.
         </desc>
       </param>
-      <param name="timestamp" type="unsigned long long" dir="out" safearray="yes">
+      <param name="timestamp" type="long long" dir="out" safearray="yes">
         <desc>
           The time stamps of the properties returned.  The array entries match
           the corresponding entries in the @a name array.
@@ -5646,12 +5646,12 @@
           Which log file to read. 0=current log file.
         </desc>
       </param>
-      <param name="offset" type="unsigned long long" dir="in">
+      <param name="offset" type="long long" dir="in">
         <desc>
           Offset in the log file.
         </desc>
       </param>
-      <param name="size" type="unsigned long long" dir="in">
+      <param name="size" type="long long" dir="in">
         <desc>
           Chunk size to read in the log file.
         </desc>
@@ -5716,25 +5716,25 @@
       </desc>
     </attribute>
 
-    <attribute name="bytesSent" type="unsigned long long" readonly="yes">
+    <attribute name="bytesSent" type="long long" readonly="yes">
       <desc>
         How many bytes were sent in last or current, if still active, connection.
       </desc>
     </attribute>
 
-    <attribute name="bytesSentTotal" type="unsigned long long" readonly="yes">
+    <attribute name="bytesSentTotal" type="long long" readonly="yes">
       <desc>
         How many bytes were sent in all connections.
       </desc>
     </attribute>
 
-    <attribute name="bytesReceived" type="unsigned long long" readonly="yes">
+    <attribute name="bytesReceived" type="long long" readonly="yes">
       <desc>
         How many bytes were received in last or current, if still active, connection.
       </desc>
     </attribute>
 
-    <attribute name="bytesReceivedTotal" type="unsigned long long" readonly="yes">
+    <attribute name="bytesReceivedTotal" type="long long" readonly="yes">
       <desc>
         How many bytes were received in all connections.
       </desc>
@@ -7172,7 +7172,7 @@
       <desc>Maximum of monitors which could be connected.</desc>
     </attribute>
 
-    <attribute name="maxVDISize" type="unsigned long long" readonly="yes">
+    <attribute name="maxVDISize" type="long long" readonly="yes">
       <desc>Maximum size of a virtual disk image in Megabytes.</desc>
     </attribute>
 
@@ -7340,7 +7340,7 @@
       </desc>
     </attribute>
 
-    <attribute name="freeDiskSpaceWarning" type="unsigned long long">
+    <attribute name="freeDiskSpaceWarning" type="long long">
       <desc>Issue a warning if the free disk space is below (or in some disk
       intensive operation is expected to go below) the given size in
       Megabytes.</desc>
@@ -7351,7 +7351,7 @@
       intensive operation is expected to go below) the given percentage.</desc>
     </attribute>
 
-    <attribute name="freeDiskSpaceError" type="unsigned long long">
+    <attribute name="freeDiskSpaceError" type="long long">
       <desc>Issue an error if the free disk space is below (or in some disk
       intensive operation is expected to go below) the given size in
       Megabytes.</desc>
@@ -7820,7 +7820,7 @@
           data. Pass 0 for an infinite timeout.
         </desc>
       </param>
-      <param name="size" type="unsigned long long" dir="in">
+      <param name="size" type="long long" dir="in">
         <desc>
           Size in bytes to read in the buffer.
         </desc>
@@ -8889,7 +8889,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>True if this corresponds to a drive on the host.</desc>
     </attribute>
 
-    <attribute name="size" type="unsigned long long" readonly="yes">
+    <attribute name="size" type="long long" readonly="yes">
       <desc>
         Physical size of the storage unit used to hold medium data (in bytes).
 
@@ -9018,7 +9018,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="logicalSize" type="unsigned long long" readonly="yes">
+    <attribute name="logicalSize" type="long long" readonly="yes">
       <desc>
         Logical size of this medium (in megabytes), as reported to the
         guest OS running inside the virtual machine this medium is
@@ -9530,7 +9530,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           to="IMediumFormat::capabilities"/>.
         </result>
       </desc>
-      <param name="logicalSize" type="unsigned long long" dir="in">
+      <param name="logicalSize" type="long long" dir="in">
         <desc>Maximum logical size of the medium in megabytes.</desc>
       </param>
       <param name="variant" type="MediumVariant" dir="in">
@@ -9804,7 +9804,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Medium format does not support resizing.
         </result>
       </desc>
-      <param name="logicalSize" type="unsigned long long" dir="in">
+      <param name="logicalSize" type="long long" dir="in">
         <desc>New nominal capacity of the medium in megabytes.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -10402,7 +10402,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="winId" type="unsigned long long" readonly="yes">
+    <attribute name="winId" type="long long" readonly="yes">
       <desc>
         Platform-dependent identifier of the window where context of this
         frame buffer is drawn, or zero if there's no such window.
@@ -11405,7 +11405,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <!-- @todo method for setting log flags, groups and destination! -->
 
-    <attribute name="VM" type="unsigned long long" readonly="yes">
+    <attribute name="VM" type="long long" readonly="yes">
       <desc>
         Gets the VM handle. This is only for internal use while
         we carve the details of this interface.
@@ -12574,7 +12574,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="check" type="boolean" dir="in"/>
       <param name="canShow" type="boolean" dir="out"/>
-      <param name="winId" type="unsigned long long" dir="out"/>
+      <param name="winId" type="long long" dir="out"/>
     </method>
 
     <method name="accessGuestProperty">
@@ -12596,7 +12596,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="flags" type="wstring" dir="in"/>
       <param name="isSetter" type="boolean" dir="in"/>
       <param name="retValue" type="wstring" dir="out"/>
-      <param name="retTimestamp" type="unsigned long long" dir="out"/>
+      <param name="retTimestamp" type="long long" dir="out"/>
       <param name="retFlags" type="wstring" dir="out"/>
     </method>
 
@@ -12631,7 +12631,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           corresponding entries in the @a key array.
         </desc>
       </param>
-      <param name="timestamp" type="unsigned long long" dir="out" safearray="yes">
+      <param name="timestamp" type="long long" dir="out" safearray="yes">
         <desc>
           The time stamps of the properties returned.  The array entries match
           the corresponding entries in the @a key array.
@@ -14982,7 +14982,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         window is now active and in foreground, to indicate that no
         further action is required on the caller's side.
     </desc>
-    <attribute name="winId" type="unsigned long long">
+    <attribute name="winId" type="long long">
       <desc>
          Platform-dependent identifier of the top-level VM console
           window, or zero if this method has performed all actions

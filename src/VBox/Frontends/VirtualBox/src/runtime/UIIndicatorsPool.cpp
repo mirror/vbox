@@ -279,9 +279,9 @@ public:
         uint64_t u64Now = RTTimeSpecGetNano(RTTimeNow(&time));
 
         QString strFlags, strCount;
-        ULONG64 uTimestamp;
-        machine.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count", strCount, uTimestamp, strFlags);
-        bool fPropsValid = (u64Now - uTimestamp < UINT64_C(60000000000)); /* timeout beacon */
+        LONG64 iTimestamp;
+        machine.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count", strCount, iTimestamp, strFlags);
+        bool fPropsValid = (u64Now - iTimestamp < UINT64_C(60000000000)); /* timeout beacon */
 
         QStringList ipList, macList;
         if (fPropsValid)
@@ -728,4 +728,3 @@ QIStateIndicator* UIIndicatorsPool::indicator(UIIndicatorIndex index)
 }
 
 #include "UIIndicatorsPool.moc"
-

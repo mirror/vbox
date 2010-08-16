@@ -196,7 +196,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
          * instead.
          */
         Bstr addVersion;
-        ULONG64 u64Timestamp;
+        LONG64 u64Timestamp;
         Bstr flags;
         hr = mParent->machine()->GetGuestProperty(Bstr("/VirtualBox/GuestAdd/Version"),
                                                   addVersion.asOutParam(), &u64Timestamp, flags.asOutParam());
@@ -1214,7 +1214,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ULONG64 aSize, ComSafeArrayOut(BYTE, aData))
+STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, LONG64 aSize, ComSafeArrayOut(BYTE, aData))
 {
 /** @todo r=bird: Eventually we should clean up all the timeout parameters
  *        in the API and have the same way of specifying infinite waits!  */
@@ -1557,7 +1557,7 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
  * @param ulCaps
  * @param ulActive
  */
-void Guest::setSupportedFeatures(ULONG64 ulCaps, ULONG64 ulActive)
+void Guest::setSupportedFeatures(LONG64 ulCaps, LONG64 ulActive)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -1569,4 +1569,3 @@ void Guest::setSupportedFeatures(ULONG64 ulCaps, ULONG64 ulActive)
     mData.mSupportsGraphics = (ulCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS);
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
-

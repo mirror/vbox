@@ -4551,11 +4551,11 @@ STDMETHODIMP Machine::CanShowConsoleWindow(BOOL *aCanShow)
     if (!directControl)
         return S_OK;
 
-    ULONG64 dummy;
+    LONG64 dummy;
     return directControl->OnShowWindow(TRUE /* aCheck */, aCanShow, &dummy);
 }
 
-STDMETHODIMP Machine::ShowConsoleWindow(ULONG64 *aWinId)
+STDMETHODIMP Machine::ShowConsoleWindow(LONG64 *aWinId)
 {
     CheckComArgOutPointerValid(aWinId);
 
@@ -4588,7 +4588,7 @@ STDMETHODIMP Machine::ShowConsoleWindow(ULONG64 *aWinId)
  */
 HRESULT Machine::getGuestPropertyFromService(IN_BSTR aName,
                                              BSTR *aValue,
-                                             ULONG64 *aTimestamp,
+                                             LONG64 *aTimestamp,
                                              BSTR *aFlags) const
 {
     using namespace guestProp;
@@ -4621,7 +4621,7 @@ HRESULT Machine::getGuestPropertyFromService(IN_BSTR aName,
  */
 HRESULT Machine::getGuestPropertyFromVM(IN_BSTR aName,
                                         BSTR *aValue,
-                                        ULONG64 *aTimestamp,
+                                        LONG64 *aTimestamp,
                                         BSTR *aFlags) const
 {
     HRESULT rc;
@@ -4643,7 +4643,7 @@ HRESULT Machine::getGuestPropertyFromVM(IN_BSTR aName,
 
 STDMETHODIMP Machine::GetGuestProperty(IN_BSTR aName,
                                        BSTR *aValue,
-                                       ULONG64 *aTimestamp,
+                                       LONG64 *aTimestamp,
                                        BSTR *aFlags)
 {
 #ifndef VBOX_WITH_GUEST_PROPS
@@ -4667,12 +4667,12 @@ STDMETHODIMP Machine::GetGuestProperty(IN_BSTR aName,
 
 STDMETHODIMP Machine::GetGuestPropertyValue(IN_BSTR aName, BSTR *aValue)
 {
-    ULONG64 dummyTimestamp;
+    LONG64 dummyTimestamp;
     Bstr dummyFlags;
     return GetGuestProperty(aName, aValue, &dummyTimestamp, dummyFlags.asOutParam());
 }
 
-STDMETHODIMP Machine::GetGuestPropertyTimestamp(IN_BSTR aName, ULONG64 *aTimestamp)
+STDMETHODIMP Machine::GetGuestPropertyTimestamp(IN_BSTR aName, LONG64 *aTimestamp)
 {
     Bstr dummyValue;
     Bstr dummyFlags;
@@ -4799,7 +4799,7 @@ HRESULT Machine::setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
             mData->mSession.mDirectControl;
 
         BSTR dummy = NULL; /* will not be changed (setter) */
-        ULONG64 dummy64;
+        LONG64 dummy64;
         if (!directControl)
             rc = E_ACCESSDENIED;
         else
@@ -4851,7 +4851,7 @@ STDMETHODIMP Machine::SetGuestPropertyValue(IN_BSTR aName, IN_BSTR aValue)
 HRESULT Machine::enumerateGuestPropertiesInService
                 (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
                  ComSafeArrayOut(BSTR, aValues),
-                 ComSafeArrayOut(ULONG64, aTimestamps),
+                 ComSafeArrayOut(LONG64, aTimestamps),
                  ComSafeArrayOut(BSTR, aFlags))
 {
     using namespace guestProp;
@@ -4881,7 +4881,7 @@ HRESULT Machine::enumerateGuestPropertiesInService
     size_t cEntries = propList.size();
     SafeArray<BSTR> names(cEntries);
     SafeArray<BSTR> values(cEntries);
-    SafeArray<ULONG64> timestamps(cEntries);
+    SafeArray<LONG64> timestamps(cEntries);
     SafeArray<BSTR> flags(cEntries);
     size_t iProp = 0;
     for (HWData::GuestPropertyList::iterator it = propList.begin();
@@ -4912,7 +4912,7 @@ HRESULT Machine::enumerateGuestPropertiesInService
 HRESULT Machine::enumerateGuestPropertiesOnVM
                 (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
                  ComSafeArrayOut(BSTR, aValues),
-                 ComSafeArrayOut(ULONG64, aTimestamps),
+                 ComSafeArrayOut(LONG64, aTimestamps),
                  ComSafeArrayOut(BSTR, aFlags))
 {
     HRESULT rc;
@@ -4934,7 +4934,7 @@ HRESULT Machine::enumerateGuestPropertiesOnVM
 STDMETHODIMP Machine::EnumerateGuestProperties(IN_BSTR aPatterns,
                                                ComSafeArrayOut(BSTR, aNames),
                                                ComSafeArrayOut(BSTR, aValues),
-                                               ComSafeArrayOut(ULONG64, aTimestamps),
+                                               ComSafeArrayOut(LONG64, aTimestamps),
                                                ComSafeArrayOut(BSTR, aFlags))
 {
 #ifndef VBOX_WITH_GUEST_PROPS
@@ -5581,7 +5581,7 @@ STDMETHODIMP Machine::QueryLogFilename(ULONG aIdx, BSTR *aName)
     return S_OK;
 }
 
-STDMETHODIMP Machine::ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSafeArrayOut(BYTE, aData))
+STDMETHODIMP Machine::ReadLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, ComSafeArrayOut(BYTE, aData))
 {
     LogFlowThisFunc(("\n"));
     CheckComArgOutSafeArrayPointerValid(aData);
@@ -10545,7 +10545,7 @@ STDMETHODIMP SessionMachine::AdoptSavedState(IN_BSTR aSavedStateFile)
 
 STDMETHODIMP SessionMachine::PullGuestProperties(ComSafeArrayOut(BSTR, aNames),
                                                  ComSafeArrayOut(BSTR, aValues),
-                                                 ComSafeArrayOut(ULONG64, aTimestamps),
+                                                 ComSafeArrayOut(LONG64, aTimestamps),
                                                  ComSafeArrayOut(BSTR, aFlags))
 {
     LogFlowThisFunc(("\n"));
@@ -10566,7 +10566,7 @@ STDMETHODIMP SessionMachine::PullGuestProperties(ComSafeArrayOut(BSTR, aNames),
     size_t cEntries = mHWData->mGuestProperties.size();
     com::SafeArray<BSTR> names(cEntries);
     com::SafeArray<BSTR> values(cEntries);
-    com::SafeArray<ULONG64> timestamps(cEntries);
+    com::SafeArray<LONG64> timestamps(cEntries);
     com::SafeArray<BSTR> flags(cEntries);
     unsigned i = 0;
     for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
@@ -10599,7 +10599,7 @@ STDMETHODIMP SessionMachine::PullGuestProperties(ComSafeArrayOut(BSTR, aNames),
 
 STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
                                                IN_BSTR aValue,
-                                               ULONG64 aTimestamp,
+                                               LONG64 aTimestamp,
                                                IN_BSTR aFlags)
 {
     LogFlowThisFunc(("\n"));

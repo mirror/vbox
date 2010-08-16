@@ -239,7 +239,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestMonitors)(ULONG *maxMonitors)
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(ULONG64 *maxVDISize)
+STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(LONG64 *maxVDISize)
 {
     CheckComArgOutPointerValid(maxVDISize);
 
@@ -617,14 +617,14 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat)(IN_BSTR aDefault
     return rc;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpaceWarning)(ULONG64 *aFreeSpace)
+STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpaceWarning)(LONG64 *aFreeSpace)
 {
     CheckComArgOutPointerValid(aFreeSpace);
 
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpaceWarning)(ULONG64 /* aFreeSpace */)
+STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpaceWarning)(LONG64 /* aFreeSpace */)
 {
     ReturnComNotImplemented();
 }
@@ -641,14 +641,14 @@ STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpacePercentWarning)(ULONG /* a
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpaceError)(ULONG64 *aFreeSpace)
+STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpaceError)(LONG64 *aFreeSpace)
 {
     CheckComArgOutPointerValid(aFreeSpace);
 
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpaceError)(ULONG64 /* aFreeSpace */)
+STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpaceError)(LONG64 /* aFreeSpace */)
 {
     ReturnComNotImplemented();
 }
@@ -926,4 +926,3 @@ HRESULT SystemProperties::setWebServiceAuthLibrary(const Utf8Str &aPath)
 
     return S_OK;
 }
-

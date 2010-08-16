@@ -313,7 +313,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
             Utf8Str strTargetVmdkName;
             Utf8Str strLocation;
-            ULONG64 ullSize = 0;
+            LONG64  llSize = 0;
 
             if (    deviceType == DeviceType_HardDisk
                  && pMedium
@@ -347,7 +347,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                 rc = pBaseMedium->RefreshState(&ms);
                 if (FAILED(rc)) throw rc;
 
-                rc = pBaseMedium->COMGETTER(Size)(&ullSize);
+                rc = pBaseMedium->COMGETTER(Size)(&llSize);
                 if (FAILED(rc)) throw rc;
             }
 
@@ -416,12 +416,12 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             switch (deviceType)
             {
                 case DeviceType_HardDisk:
-                    Log(("Adding VirtualSystemDescriptionType_HardDiskImage, disk size: %RI64\n", ullSize));
+                    Log(("Adding VirtualSystemDescriptionType_HardDiskImage, disk size: %RI64\n", llSize));
                     pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
                                        strTargetVmdkName,   // disk ID: let's use the name
                                        strTargetVmdkName,   // OVF value:
                                        strLocation, // vbox value: media path
-                                       (uint32_t)(ullSize / _1M),
+                                       (uint32_t)(llSize / _1M),
                                        strExtra);
                 break;
 
@@ -1550,11 +1550,11 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
             diskList.push_back(strTargetFilePath);
 
             // we need the following for the XML
-            ULONG64 cbFile = 0;        // actual file size
+            LONG64 cbFile = 0;        // actual file size
             rc = pTargetDisk->COMGETTER(Size)(&cbFile);
             if (FAILED(rc)) throw rc;
 
-            ULONG64 cbCapacity = 0;     // size reported to guest
+            LONG64 cbCapacity = 0;     // size reported to guest
             rc = pTargetDisk->COMGETTER(LogicalSize)(&cbCapacity);
             if (FAILED(rc)) throw rc;
             // capacity is reported in megabytes, so...

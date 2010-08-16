@@ -95,13 +95,13 @@ public:
     STDMETHOD(OnSharedFolderChange)(BOOL aGlobal);
     STDMETHOD(OnUSBDeviceAttach)(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
     STDMETHOD(OnUSBDeviceDetach)(IN_BSTR aId, IVirtualBoxErrorInfo *aError);
-    STDMETHOD(OnShowWindow)(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
+    STDMETHOD(OnShowWindow)(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId);
     STDMETHOD(AccessGuestProperty)(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
-                                   BOOL aIsSetter, BSTR *aRetValue, ULONG64 *aRetTimestamp, BSTR *aRetFlags);
+                                   BOOL aIsSetter, BSTR *aRetValue, LONG64 *aRetTimestamp, BSTR *aRetFlags);
     STDMETHOD(EnumerateGuestProperties)(IN_BSTR aPatterns,
                                         ComSafeArrayOut(BSTR, aNames),
                                         ComSafeArrayOut(BSTR, aValues),
-                                        ComSafeArrayOut(ULONG64, aTimestamps),
+                                        ComSafeArrayOut(LONG64, aTimestamps),
                                         ComSafeArrayOut(BSTR, aFlags));
     STDMETHOD(OnlineMergeMedium)(IMediumAttachment *aMediumAttachment,
                                  ULONG aSourceIdx, ULONG aTargetIdx,

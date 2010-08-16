@@ -1778,10 +1778,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         ULONG   NumberOfClients;
         LONG64  BeginTime;
         LONG64  EndTime;
-        ULONG64 BytesSent;
-        ULONG64 BytesSentTotal;
-        ULONG64 BytesReceived;
-        ULONG64 BytesReceivedTotal;
+        LONG64  BytesSent;
+        LONG64  BytesSentTotal;
+        LONG64  BytesReceived;
+        LONG64  BytesReceivedTotal;
         Bstr    User;
         Bstr    Domain;
         Bstr    ClientName;
@@ -1840,8 +1840,8 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("Last ended:         %s\n", timestr);
             }
 
-            uint64_t ThroughputSend = 0;
-            uint64_t ThroughputReceive = 0;
+            int64_t ThroughputSend = 0;
+            int64_t ThroughputReceive = 0;
             if (EndTime != BeginTime)
             {
                 ThroughputSend = (BytesSent * 1000) / (EndTime - BeginTime);
@@ -1850,23 +1850,23 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
             if (details == VMINFO_MACHINEREADABLE)
             {
-                RTPrintf("VRDPBytesSent=%llu\n", BytesSent);
-                RTPrintf("VRDPThroughputSend=%llu\n", ThroughputSend);
-                RTPrintf("VRDPBytesSentTotal=%llu\n", BytesSentTotal);
+                RTPrintf("VRDPBytesSent=%lld\n", BytesSent);
+                RTPrintf("VRDPThroughputSend=%lld\n", ThroughputSend);
+                RTPrintf("VRDPBytesSentTotal=%lld\n", BytesSentTotal);
 
-                RTPrintf("VRDPBytesReceived=%llu\n", BytesReceived);
-                RTPrintf("VRDPThroughputReceive=%llu\n", ThroughputReceive);
-                RTPrintf("VRDPBytesReceivedTotal=%llu\n", BytesReceivedTotal);
+                RTPrintf("VRDPBytesReceived=%lld\n", BytesReceived);
+                RTPrintf("VRDPThroughputReceive=%lld\n", ThroughputReceive);
+                RTPrintf("VRDPBytesReceivedTotal=%lld\n", BytesReceivedTotal);
             }
             else
             {
-                RTPrintf("Sent:               %llu Bytes\n", BytesSent);
-                RTPrintf("Average speed:      %llu B/s\n", ThroughputSend);
-                RTPrintf("Sent total:         %llu Bytes\n", BytesSentTotal);
+                RTPrintf("Sent:               %lld Bytes\n", BytesSent);
+                RTPrintf("Average speed:      %lld B/s\n", ThroughputSend);
+                RTPrintf("Sent total:         %lld Bytes\n", BytesSentTotal);
 
-                RTPrintf("Received:           %llu Bytes\n", BytesReceived);
-                RTPrintf("Speed:              %llu B/s\n", ThroughputReceive);
-                RTPrintf("Received total:     %llu Bytes\n", BytesReceivedTotal);
+                RTPrintf("Received:           %lld Bytes\n", BytesReceived);
+                RTPrintf("Speed:              %lld B/s\n", ThroughputReceive);
+                RTPrintf("Received total:     %lld Bytes\n", BytesReceivedTotal);
             }
 
             if (Active)

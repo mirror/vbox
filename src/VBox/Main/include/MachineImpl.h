@@ -236,7 +236,7 @@ public:
             /** Property value */
             Utf8Str strValue;
             /** Property timestamp */
-            ULONG64 mTimestamp;
+            LONG64 mTimestamp;
             /** Property flags */
             ULONG mFlags;
         };
@@ -491,13 +491,13 @@ public:
     STDMETHOD(CreateSharedFolder)(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount);
     STDMETHOD(RemoveSharedFolder)(IN_BSTR aName);
     STDMETHOD(CanShowConsoleWindow)(BOOL *aCanShow);
-    STDMETHOD(ShowConsoleWindow)(ULONG64 *aWinId);
-    STDMETHOD(GetGuestProperty)(IN_BSTR aName, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags);
+    STDMETHOD(ShowConsoleWindow)(LONG64 *aWinId);
+    STDMETHOD(GetGuestProperty)(IN_BSTR aName, BSTR *aValue, LONG64 *aTimestamp, BSTR *aFlags);
     STDMETHOD(GetGuestPropertyValue)(IN_BSTR aName, BSTR *aValue);
-    STDMETHOD(GetGuestPropertyTimestamp)(IN_BSTR aName, ULONG64 *aTimestamp);
+    STDMETHOD(GetGuestPropertyTimestamp)(IN_BSTR aName, LONG64 *aTimestamp);
     STDMETHOD(SetGuestProperty)(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags);
     STDMETHOD(SetGuestPropertyValue)(IN_BSTR aName, IN_BSTR aValue);
-    STDMETHOD(EnumerateGuestProperties)(IN_BSTR aPattern, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
+    STDMETHOD(EnumerateGuestProperties)(IN_BSTR aPattern, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(LONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
     STDMETHOD(GetMediumAttachmentsOfController)(IN_BSTR aName, ComSafeArrayOut(IMediumAttachment *, aAttachments));
     STDMETHOD(GetMediumAttachment)(IN_BSTR aConstrollerName, LONG aControllerPort, LONG aDevice, IMediumAttachment **aAttachment);
     STDMETHOD(AddStorageController)(IN_BSTR aName, StorageBus_T aConnectionType, IStorageController **controller);
@@ -512,7 +512,7 @@ public:
     STDMETHOD(HotUnplugCPU(ULONG aCpu));
     STDMETHOD(GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached));
     STDMETHOD(QueryLogFilename(ULONG aIdx, BSTR *aName));
-    STDMETHOD(ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSafeArrayOut(BYTE, aData)));
+    STDMETHOD(ReadLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, ComSafeArrayOut(BYTE, aData)));
 
     // public methods only for internal purposes
 
@@ -798,9 +798,9 @@ protected:
 
 #ifdef VBOX_WITH_GUEST_PROPS
     HRESULT getGuestPropertyFromService(IN_BSTR aName, BSTR *aValue,
-                                        ULONG64 *aTimestamp, BSTR *aFlags) const;
+                                        LONG64 *aTimestamp, BSTR *aFlags) const;
     HRESULT getGuestPropertyFromVM(IN_BSTR aName, BSTR *aValue,
-                                   ULONG64 *aTimestamp, BSTR *aFlags) const;
+                                   LONG64 *aTimestamp, BSTR *aFlags) const;
     HRESULT setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
                                       IN_BSTR aFlags);
     HRESULT setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
@@ -808,12 +808,12 @@ protected:
     HRESULT enumerateGuestPropertiesInService
                 (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
                  ComSafeArrayOut(BSTR, aValues),
-                 ComSafeArrayOut(ULONG64, aTimestamps),
+                 ComSafeArrayOut(LONG64, aTimestamps),
                  ComSafeArrayOut(BSTR, aFlags));
     HRESULT enumerateGuestPropertiesOnVM
                 (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
                  ComSafeArrayOut(BSTR, aValues),
-                 ComSafeArrayOut(ULONG64, aTimestamps),
+                 ComSafeArrayOut(LONG64, aTimestamps),
                  ComSafeArrayOut(BSTR, aFlags));
 #endif /* VBOX_WITH_GUEST_PROPS */
 
@@ -928,9 +928,9 @@ public:
                                MachineState_T *aMachineState,
                                IProgress **aProgress);
     STDMETHOD(PullGuestProperties)(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues),
-              ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
+              ComSafeArrayOut(LONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
     STDMETHOD(PushGuestProperty)(IN_BSTR aName, IN_BSTR aValue,
-                                  ULONG64 aTimestamp, IN_BSTR aFlags);
+                                  LONG64 aTimestamp, IN_BSTR aFlags);
     STDMETHOD(LockMedia)()   { return lockMedia(); }
     STDMETHOD(UnlockMedia)() { unlockMedia(); return S_OK; }
 

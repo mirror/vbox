@@ -74,11 +74,11 @@ int VBoxDbgGui::init(ISession *pSession)
                 /*
                  * Get the VM handle.
                  */
-                ULONG64 ullVM;
-                hrc = m_pMachineDebugger->COMGETTER(VM)(&ullVM);
+                LONG64 llVM;
+                hrc = m_pMachineDebugger->COMGETTER(VM)(&llVM);
                 if (SUCCEEDED(hrc))
                 {
-                    rc = init((PVM)(uintptr_t)ullVM);
+                    rc = init((PVM)(intptr_t)llVM);
                     if (RT_SUCCESS(rc))
                         return rc;
                 }

@@ -824,7 +824,7 @@ int handleList(HandlerArg *a)
 
             Bstr str;
             ULONG ulValue;
-            ULONG64 ul64Value;
+            LONG64 i64Value;
 
             systemProperties->COMGETTER(MinGuestRAM)(&ulValue);
             RTPrintf("Minimum guest RAM size:          %u Megabytes\n", ulValue);
@@ -838,8 +838,8 @@ int handleList(HandlerArg *a)
             RTPrintf("Minimum guest CPU count:         %u\n", ulValue);
             systemProperties->COMGETTER(MaxGuestCPUCount)(&ulValue);
             RTPrintf("Maximum guest CPU count:         %u\n", ulValue);
-            systemProperties->COMGETTER(MaxVDISize)(&ul64Value);
-            RTPrintf("Maximum VDI size:                %lu Megabytes\n", ul64Value);
+            systemProperties->COMGETTER(MaxVDISize)(&i64Value);
+            RTPrintf("Maximum VDI size:                %lld Megabytes\n", i64Value);
             systemProperties->COMGETTER(NetworkAdapterCount)(&ulValue);
             RTPrintf("Maximum Network Adapter count:   %u\n", ulValue);
             systemProperties->COMGETTER(SerialPortCount)(&ulValue);

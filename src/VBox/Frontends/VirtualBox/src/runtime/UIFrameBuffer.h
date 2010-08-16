@@ -155,7 +155,7 @@ public:
     STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *pbUsesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *puHeightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **ppOverlay);
-    STDMETHOD(COMGETTER(WinId)) (ULONG64 *pWinId);
+    STDMETHOD(COMGETTER(WinId)) (LONG64 *pWinId);
 
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
@@ -238,7 +238,7 @@ protected:
     int m_width;
     int m_height;
     QSize m_scaledSize;
-    uint64_t m_uWinId;
+    int64_t m_WinId;
     bool m_fIsDeleted;
 
 #if defined (Q_OS_WIN32)
@@ -249,4 +249,3 @@ private:
 };
 
 #endif // !___UIFrameBuffer_h___
-

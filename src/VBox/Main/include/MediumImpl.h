@@ -110,7 +110,7 @@ public:
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
     STDMETHOD(COMGETTER(DeviceType))(DeviceType_T *aDeviceType);
     STDMETHOD(COMGETTER(HostDrive))(BOOL *aHostDrive);
-    STDMETHOD(COMGETTER(Size))(ULONG64 *aSize);
+    STDMETHOD(COMGETTER(Size))(LONG64 *aSize);
     STDMETHOD(COMGETTER(Format))(BSTR *aFormat);
     STDMETHOD(COMGETTER(MediumFormat))(IMediumFormat **aMediumFormat);
     STDMETHOD(COMGETTER(Type))(MediumType_T *aType);
@@ -119,7 +119,7 @@ public:
     STDMETHOD(COMGETTER(Children))(ComSafeArrayOut(IMedium *, aChildren));
     STDMETHOD(COMGETTER(Base))(IMedium **aBase);
     STDMETHOD(COMGETTER(ReadOnly))(BOOL *aReadOnly);
-    STDMETHOD(COMGETTER(LogicalSize))(ULONG64 *aLogicalSize);
+    STDMETHOD(COMGETTER(LogicalSize))(LONG64 *aLogicalSize);
     STDMETHOD(COMGETTER(AutoReset))(BOOL *aAutoReset);
     STDMETHOD(COMSETTER(AutoReset))(BOOL aAutoReset);
     STDMETHOD(COMGETTER(LastAccessError))(BSTR *aLastAccessError);
@@ -143,7 +143,7 @@ public:
                              ComSafeArrayOut(BSTR, aReturnValues));
     STDMETHOD(SetProperties)(ComSafeArrayIn(IN_BSTR, aNames),
                              ComSafeArrayIn(IN_BSTR, aValues));
-    STDMETHOD(CreateBaseStorage)(ULONG64 aLogicalSize,
+    STDMETHOD(CreateBaseStorage)(LONG64 aLogicalSize,
                                  MediumVariant_T aVariant,
                                  IProgress **aProgress);
     STDMETHOD(DeleteStorage)(IProgress **aProgress);
@@ -154,7 +154,7 @@ public:
     STDMETHOD(CloneTo)(IMedium *aTarget, MediumVariant_T aVariant,
                         IMedium *aParent, IProgress **aProgress);
     STDMETHOD(Compact)(IProgress **aProgress);
-    STDMETHOD(Resize)(ULONG64 aLogicalSize, IProgress **aProgress);
+    STDMETHOD(Resize)(LONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(Reset)(IProgress **aProgress);
 
     // unsafe methods for internal purposes only (ensure there is

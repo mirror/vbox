@@ -45,7 +45,7 @@ UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
 #endif
 {
     AssertMsg(m_pMachineView, ("UIMachineView must not be null\n"));
-    m_uWinId = (m_pMachineView && m_pMachineView->viewport()) ? (ULONG64)m_pMachineView->viewport()->winId() : 0;
+    m_WinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
     int rc = RTCritSectInit(&m_critSect);
     AssertRC(rc);
 }
@@ -128,11 +128,11 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Overlay) (IFramebufferOverlay **ppOverlay)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(WinId) (ULONG64 *puWinId)
+STDMETHODIMP UIFrameBuffer::COMGETTER(WinId) (LONG64 *pWinId)
 {
-    if (!puWinId)
+    if (!pWinId)
         return E_POINTER;
-    *puWinId = m_uWinId;
+    *pWinId = m_WinId;
     return S_OK;
 }
 
@@ -247,7 +247,6 @@ void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
 void UIFrameBuffer::setView(UIMachineView * pView)
 {
     m_pMachineView = pView;
-    m_uWinId = (m_pMachineView && m_pMachineView->viewport()) ? (ULONG64)m_pMachineView->viewport()->winId() : 0;
+    m_WinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 }
 #endif
-

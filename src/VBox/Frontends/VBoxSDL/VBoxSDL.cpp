@@ -516,9 +516,9 @@ public:
                 if (SDL_GetWMInfo(&info))
                 {
 #if defined(VBOXSDL_WITH_X11)
-                    swev->COMSETTER(WinId)((ULONG64)info.info.x11.wmwindow);
+                    swev->COMSETTER(WinId)((LONG64)info.info.x11.wmwindow);
 #elif defined(RT_OS_WINDOWS)
-                    swev->COMSETTER(WinId)((ULONG64)info.window);
+                    swev->COMSETTER(WinId)((LONG64)info.window);
 #else
                     AssertFailed();
 #endif
@@ -820,7 +820,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #endif
 #ifdef VBOX_WIN32_UI
     bool fWin32UI = true;
-    uint64_t winId = 0;
+    int64_t winId = 0;
 #endif
     bool fShowSDLConfig    = false;
     uint32_t fixedWidth    = ~(uint32_t)0;

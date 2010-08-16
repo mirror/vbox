@@ -67,7 +67,7 @@ public:
     STDMETHOD(COMGETTER(MinGuestCPUCount) (ULONG *minCPUCount));
     STDMETHOD(COMGETTER(MaxGuestCPUCount) (ULONG *maxCPUCount));
     STDMETHOD(COMGETTER(MaxGuestMonitors) (ULONG *maxMonitors));
-    STDMETHOD(COMGETTER(MaxVDISize) (ULONG64 *maxVDISize));
+    STDMETHOD(COMGETTER(MaxVDISize) (LONG64 *maxVDISize));
     STDMETHOD(COMGETTER(NetworkAdapterCount) (ULONG *count));
     STDMETHOD(COMGETTER(SerialPortCount) (ULONG *count));
     STDMETHOD(COMGETTER(ParallelPortCount) (ULONG *count));
@@ -79,12 +79,12 @@ public:
     STDMETHOD(COMGETTER(MediumFormats)) (ComSafeArrayOut (IMediumFormat *, aMediumFormats));
     STDMETHOD(COMGETTER(DefaultHardDiskFormat)) (BSTR *aDefaultHardDiskFormat);
     STDMETHOD(COMSETTER(DefaultHardDiskFormat)) (IN_BSTR aDefaultHardDiskFormat);
-    STDMETHOD(COMGETTER(FreeDiskSpaceWarning))(ULONG64 *aFreeDiskSpace);
-    STDMETHOD(COMSETTER(FreeDiskSpaceWarning))(ULONG64 aFreeDiskSpace);
+    STDMETHOD(COMGETTER(FreeDiskSpaceWarning))(LONG64 *aFreeDiskSpace);
+    STDMETHOD(COMSETTER(FreeDiskSpaceWarning))(LONG64 aFreeDiskSpace);
     STDMETHOD(COMGETTER(FreeDiskSpacePercentWarning))(ULONG *aFreeDiskSpacePercent);
     STDMETHOD(COMSETTER(FreeDiskSpacePercentWarning))(ULONG aFreeDiskSpacePercent);
-    STDMETHOD(COMGETTER(FreeDiskSpaceError))(ULONG64 *aFreeDiskSpace);
-    STDMETHOD(COMSETTER(FreeDiskSpaceError))(ULONG64 aFreeDiskSpace);
+    STDMETHOD(COMGETTER(FreeDiskSpaceError))(LONG64 *aFreeDiskSpace);
+    STDMETHOD(COMSETTER(FreeDiskSpaceError))(LONG64 aFreeDiskSpace);
     STDMETHOD(COMGETTER(FreeDiskSpacePercentError))(ULONG *aFreeDiskSpacePercent);
     STDMETHOD(COMSETTER(FreeDiskSpacePercentError))(ULONG aFreeDiskSpacePercent);
     STDMETHOD(COMGETTER(RemoteDisplayAuthLibrary)) (BSTR *aRemoteDisplayAuthLibrary);
