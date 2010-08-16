@@ -561,6 +561,7 @@ static NTSTATUS vboxVdmaGgDmaColorFill(PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCF)
                     if (!vboxWddmRectIsEmpty(&UnionRect))
                     {
                         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pCF->VidPnSourceId];
+                        vboxWddmRectTranslate(&UnionRect, pSource->VScreenPos.x, pSource->VScreenPos.y);
                         VBOXVBVA_OP_WITHLOCK(ReportDirtyRect, pDevExt, &pSource->Vbva, &UnionRect);
                     }
                 }

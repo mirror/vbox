@@ -177,6 +177,7 @@ typedef struct VBOXWDDM_SOURCE
      * but keep it here for now */
     VBOXWDDM_VHWA Vhwa;
 #endif
+    POINT VScreenPos;
     VBOXWDDM_POINTER_INFO PointerInfo;
 } VBOXWDDM_SOURCE, *PVBOXWDDM_SOURCE;
 
