@@ -417,7 +417,7 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(Overlay)(IFramebufferOverlay **aOverlay)
  * @returns COM status code.
  * @param   winId Handle of associated window.
  */
-STDMETHODIMP VBoxSDLFB::COMGETTER(WinId)(uint64_t *winId)
+STDMETHODIMP VBoxSDLFB::COMGETTER(WinId)(int64_t *winId)
 {
     if (!winId)
         return E_POINTER;
@@ -873,12 +873,12 @@ void VBoxSDLFB::resizeSDL(void)
     SDL_SysWMinfo info;
     SDL_VERSION(&info.version);
     if (SDL_GetWMInfo(&info))
-        mWinId = (ULONG64) info.window;
+        mWinId = (LONG64) info.window;
 # elif defined (RT_OS_LINUX)
     SDL_SysWMinfo info;
     SDL_VERSION(&info.version);
     if (SDL_GetWMInfo(&info))
-        mWinId = (ULONG64) info.info.x11.wmwindow;
+        mWinId = (LONG64) info.info.x11.wmwindow;
 # else
     /* XXX ignore this for other architectures */
 # endif
@@ -1465,7 +1465,7 @@ STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(Overlay)(IFramebufferOverlay **aOverlay
  * @returns COM status code
  * @param   winId Address of result buffer.
  */
-STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(WinId)(ULONG64 *winId)
+STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(WinId)(LONG64 *winId)
 {
     LogFlow(("VBoxSDLFBOverlay::GetWinId\n"));
     if (!winId)

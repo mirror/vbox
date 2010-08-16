@@ -1359,7 +1359,7 @@ STDMETHODIMP Medium::COMGETTER(HostDrive)(BOOL *aHostDrive)
     return S_OK;
 }
 
-STDMETHODIMP Medium::COMGETTER(Size)(ULONG64 *aSize)
+STDMETHODIMP Medium::COMGETTER(Size)(LONG64 *aSize)
 {
     CheckComArgOutPointerValid(aSize);
 
@@ -1546,7 +1546,7 @@ STDMETHODIMP Medium::COMGETTER(ReadOnly)(BOOL *aReadOnly)
     return S_OK;
 }
 
-STDMETHODIMP Medium::COMGETTER(LogicalSize)(ULONG64 *aLogicalSize)
+STDMETHODIMP Medium::COMGETTER(LogicalSize)(LONG64 *aLogicalSize)
 {
     CheckComArgOutPointerValid(aLogicalSize);
 
@@ -2125,7 +2125,7 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
     return rc;
 }
 
-STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
+STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
                                        MediumVariant_T aVariant,
                                        IProgress **aProgress)
 {
@@ -2487,7 +2487,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
     return rc;
 }
 
-STDMETHODIMP Medium::Resize(ULONG64 aLogicalSize, IProgress **aProgress)
+STDMETHODIMP Medium::Resize(LONG64 aLogicalSize, IProgress **aProgress)
 {
     CheckComArgOutPointerValid(aProgress);
 

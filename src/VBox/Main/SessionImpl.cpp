@@ -682,7 +682,7 @@ STDMETHODIMP Session::OnUSBDeviceDetach(IN_BSTR aId,
     return mConsole->onUSBDeviceDetach(aId, aError);
 }
 
-STDMETHODIMP Session::OnShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
+STDMETHODIMP Session::OnShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -706,7 +706,7 @@ STDMETHODIMP Session::OnShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
 }
 
 STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
-                                          BOOL aIsSetter, BSTR *aRetValue, ULONG64 *aRetTimestamp, BSTR *aRetFlags)
+                                          BOOL aIsSetter, BSTR *aRetValue, LONG64 *aRetTimestamp, BSTR *aRetFlags)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
     AutoCaller autoCaller(this);
@@ -742,7 +742,7 @@ STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR
 STDMETHODIMP Session::EnumerateGuestProperties(IN_BSTR aPatterns,
                                                ComSafeArrayOut(BSTR, aNames),
                                                ComSafeArrayOut(BSTR, aValues),
-                                               ComSafeArrayOut(ULONG64, aTimestamps),
+                                               ComSafeArrayOut(LONG64, aTimestamps),
                                                ComSafeArrayOut(BSTR, aFlags))
 {
 #ifdef VBOX_WITH_GUEST_PROPS

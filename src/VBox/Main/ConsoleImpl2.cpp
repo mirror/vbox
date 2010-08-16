@@ -2612,15 +2612,15 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                  * still don't have a snapshot folder. */
                 (void)RTFsQueryType(utfSnap.c_str(), &enmFsTypeSnap);
                 LogRel(("File system of '%s' is %s\n", utfFile.c_str(), RTFsTypeName(enmFsTypeFile)));
-                ULONG64 u64Size;
-                hrc = pMedium->COMGETTER(LogicalSize)(&u64Size);                            H();
-                u64Size *= _1M;
+                LONG64 i64Size;
+                hrc = pMedium->COMGETTER(LogicalSize)(&i64Size);                            H();
+                i64Size *= _1M;
 #ifdef RT_OS_WINDOWS
                 if (   enmFsTypeFile == RTFSTYPE_FAT
-                    && u64Size >= _4G)
+                    && i64Size >= _4G)
                 {
                     const char *pszUnit;
-                    uint64_t u64Print = formatDiskSize(u64Size, &pszUnit);
+                    uint64_t u64Print = formatDiskSize((uint64_t)i64Size, &pszUnit);
                     setVMRuntimeErrorCallbackF(pVM, this, 0,
                             "FatPartitionDetected",
                             N_("The medium '%ls' has a logical size of %RU64%s "
@@ -2647,11 +2647,11 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                         RTFileClose(file);
                         if (   RT_SUCCESS(rc)
                             && maxSize > 0
-                            && u64Size > (ULONG64)maxSize)
+                            && i64Size > (LONG64)maxSize)
                         {
                             const char *pszUnitSiz;
                             const char *pszUnitMax;
-                            uint64_t u64PrintSiz = formatDiskSize(u64Size, &pszUnitSiz);
+                            uint64_t u64PrintSiz = formatDiskSize((LONG64)i64Size, &pszUnitSiz);
                             uint64_t u64PrintMax = formatDiskSize(maxSize, &pszUnitMax);
                             setVMRuntimeErrorCallbackF(pVM, this, 0,
                                     "FatPartitionDetected", /* <= not exact but ... */
@@ -2672,11 +2672,11 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                  * Here we test only for a FAT partition as we had to create a dummy file otherwise
                  */
                 if (   enmFsTypeSnap == RTFSTYPE_FAT
-                    && u64Size >= _4G
+                    && i64Size >= _4G
                     && !mfSnapshotFolderSizeWarningShown)
                 {
                     const char *pszUnit;
-                    uint64_t u64Print = formatDiskSize(u64Size, &pszUnit);
+                    uint64_t u64Print = formatDiskSize(i64Size, &pszUnit);
                     setVMRuntimeErrorCallbackF(pVM, this, 0,
                             "FatPartitionDetected",
 #ifdef RT_OS_WINDOWS
@@ -4219,7 +4219,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
          */
         SafeArray<BSTR> namesOut;
         SafeArray<BSTR> valuesOut;
-        SafeArray<ULONG64> timestampsOut;
+        SafeArray<LONG64> timestampsOut;
         SafeArray<BSTR> flagsOut;
         HRESULT hrc;
         hrc = pConsole->mControl->PullGuestProperties(ComSafeArrayAsOutParam(namesOut),
@@ -4240,7 +4240,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
         ULONG64 *pau64Timestamps;
         papszNames = (char **)RTMemTmpAllocZ(sizeof(void *) * cAlloc);
         papszValues = (char **)RTMemTmpAllocZ(sizeof(void *) * cAlloc);
-        pau64Timestamps = (ULONG64 *)RTMemTmpAllocZ(sizeof(ULONG64) * cAlloc);
+        pau64Timestamps = (LONG64 *)RTMemTmpAllocZ(sizeof(ULONG64) * cAlloc);
         papszFlags = (char **)RTMemTmpAllocZ(sizeof(void *) * cAlloc);
         if (papszNames && papszValues && pau64Timestamps && papszFlags)
         {

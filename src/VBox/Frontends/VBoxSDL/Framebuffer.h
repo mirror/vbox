@@ -82,7 +82,7 @@ public:
     STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *usesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
-    STDMETHOD(COMGETTER(WinId)) (uint64_t *winId);
+    STDMETHOD(COMGETTER(WinId)) (int64_t *winId);
 
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y, ULONG w, ULONG h);
     STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, BYTE *vram,
@@ -119,7 +119,7 @@ public:
     void setSecureLabelColor(uint32_t colorFG, uint32_t colorBG);
     void paintSecureLabel(int x, int y, int w, int h, bool fForce);
 #endif
-    void setWinId(uint64_t winId) { mWinId = winId; }
+    void setWinId(int64_t winId) { mWinId = winId; }
     void setOrigin(int32_t axOrigin, int32_t ayOrigin) { mOriginX = axOrigin; mOriginY = ayOrigin; }
     bool getFullscreen() { return mfFullscreen; }
 
@@ -172,7 +172,7 @@ private:
     /** flag whether we print out SDL information */
     bool mfShowSDLConfig;
     /** handle to window where framebuffer context is being drawn*/
-    uint64_t mWinId;
+    int64_t mWinId;
 #ifdef VBOX_SECURELABEL
     /** current secure label text */
     Utf8Str mSecureLabelText;
@@ -243,7 +243,7 @@ public:
     STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *usesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
-    STDMETHOD(COMGETTER(WinId)) (ULONG64 *winId);
+    STDMETHOD(COMGETTER(WinId)) (LONG64 *winId);
 
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();

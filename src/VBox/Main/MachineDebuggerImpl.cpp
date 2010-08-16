@@ -625,7 +625,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate) (ULONG aPct)
  *                  Since there is no uintptr_t in COM, we're using the max integer.
  *                  (No, ULONG is not pointer sized!)
  */
-STDMETHODIMP MachineDebugger::COMGETTER(VM) (ULONG64 *aVm)
+STDMETHODIMP MachineDebugger::COMGETTER(VM) (LONG64 *aVm)
 {
     CheckComArgOutPointerValid(aVm);
 
@@ -637,7 +637,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(VM) (ULONG64 *aVm)
     Console::SafeVMPtr pVM(mParent);
     if (FAILED(pVM.rc())) return pVM.rc();
 
-    *aVm = (uintptr_t)pVM.raw();
+    *aVm = (intptr_t)pVM.raw();
 
     /*
      *  Note: pVM protection provided by SafeVMPtr is no more effective

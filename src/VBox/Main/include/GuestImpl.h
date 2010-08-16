@@ -85,7 +85,7 @@ public:
     STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
 #if 0
     /** @todo Will replace SupportsSeamless, SupportsGraphics, ... */
-    STDMETHOD(COMGETTER(AdditionsFeatureAvailable)) (ULONG64 aFeature, BOOL *aActive, BOOL *aAvailable);
+    STDMETHOD(COMGETTER(AdditionsFeatureAvailable)) (LONG64 aFeature, BOOL *aActive, BOOL *aAvailable);
 #endif
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
@@ -99,7 +99,7 @@ public:
                               ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress);
-    STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ULONG64 aSize, ComSafeArrayOut(BYTE, aData));
+    STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, LONG64 aSize, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ULONG *aStatus);
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
@@ -109,7 +109,7 @@ public:
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
     void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
     void setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags);
-    void setSupportedFeatures(ULONG64 ulCaps, ULONG64 ulActive);
+    void setSupportedFeatures(LONG64 ulCaps, LONG64 ulActive);
     HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
     BOOL isPageFusionEnabled();
 

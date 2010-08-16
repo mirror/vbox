@@ -93,17 +93,17 @@ static int handleGetGuestProperty(HandlerArg *a)
         a->session->COMGETTER(Machine)(machine.asOutParam());
 
         Bstr value;
-        ULONG64 u64Timestamp;
+        LONG64 i64Timestamp;
         Bstr flags;
         CHECK_ERROR(machine, GetGuestProperty(Bstr(a->argv[1]), value.asOutParam(),
-                                              &u64Timestamp, flags.asOutParam()));
+                                              &i64Timestamp, flags.asOutParam()));
         if (!value)
             RTPrintf("No value set!\n");
         if (value)
             RTPrintf("Value: %lS\n", value.raw());
         if (value && verbose)
         {
-            RTPrintf("Timestamp: %lld\n", u64Timestamp);
+            RTPrintf("Timestamp: %lld\n", i64Timestamp);
             RTPrintf("Flags: %lS\n", flags.raw());
         }
     }
@@ -219,7 +219,7 @@ static int handleEnumGuestProperty(HandlerArg *a)
 
         com::SafeArray<BSTR> names;
         com::SafeArray<BSTR> values;
-        com::SafeArray<ULONG64> timestamps;
+        com::SafeArray<LONG64> timestamps;
         com::SafeArray<BSTR> flags;
         CHECK_ERROR(machine, EnumerateGuestProperties(Bstr(Utf8Patterns),
                                                       ComSafeArrayAsOutParam(names),

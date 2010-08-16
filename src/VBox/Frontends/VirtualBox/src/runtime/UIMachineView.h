@@ -230,4 +230,3 @@ protected:
 };
 
 #endif // !___UIMachineView_h___
-

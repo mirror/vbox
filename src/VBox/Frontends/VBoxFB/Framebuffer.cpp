@@ -198,7 +198,7 @@ NS_IMETHODIMP VBoxDirectFB::GetOverlay(IFramebufferOverlay **overlay)
     return NS_OK;
 }
 
-NS_IMETHODIMP VBoxDirectFB::GetWinId(PRUint64 *winId)
+NS_IMETHODIMP VBoxDirectFB::GetWinId(PRint64 *winId)
 {
     if (!winId)
         return NS_ERROR_INVALID_POINTER;

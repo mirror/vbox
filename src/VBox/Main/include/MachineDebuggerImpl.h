@@ -70,7 +70,7 @@ public:
     STDMETHOD(COMGETTER(PAEEnabled)) (BOOL *aEnabled);
     STDMETHOD(COMGETTER(VirtualTimeRate)) (ULONG *aPct);
     STDMETHOD(COMSETTER(VirtualTimeRate)) (ULONG aPct);
-    STDMETHOD(COMGETTER(VM)) (ULONG64 *aVm);
+    STDMETHOD(COMGETTER(VM)) (LONG64 *aVm);
     STDMETHOD(InjectNMI)();
 
     // IMachineDebugger methods

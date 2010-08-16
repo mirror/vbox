@@ -34,4 +34,3 @@ int32_t getBestVideoMode(uint32_t width, uint32_t height, uint32_t bpp);
 
 
 #endif // __H_HELPER
-
