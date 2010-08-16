@@ -4237,12 +4237,12 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
 
         char **papszNames, **papszValues, **papszFlags;
         char szEmpty[] = "";
-        ULONG64 *pau64Timestamps;
+        LONG64 *pai64Timestamps;
         papszNames = (char **)RTMemTmpAllocZ(sizeof(void *) * cAlloc);
         papszValues = (char **)RTMemTmpAllocZ(sizeof(void *) * cAlloc);
-        pau64Timestamps = (LONG64 *)RTMemTmpAllocZ(sizeof(ULONG64) * cAlloc);
+        pai64Timestamps = (LONG64 *)RTMemTmpAllocZ(sizeof(LONG64) * cAlloc);
         papszFlags = (char **)RTMemTmpAllocZ(sizeof(void *) * cAlloc);
-        if (papszNames && papszValues && pau64Timestamps && papszFlags)
+        if (papszNames && papszValues && pai64Timestamps && papszFlags)
         {
             for (unsigned i = 0; RT_SUCCESS(rc) && i < cProps; ++i)
             {
@@ -4256,7 +4256,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
                     papszValues[i] = szEmpty;
                 if (RT_FAILURE(rc))
                     break;
-                pau64Timestamps[i] = timestampsOut[i];
+                pai64Timestamps[i] = timestampsOut[i];
                 if (flagsOut[i])
                     rc = RTUtf16ToUtf8(flagsOut[i], &papszFlags[i]);
                 else
@@ -4266,7 +4266,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
                 configSetProperties(pConsole->mVMMDev,
                                     (void *)papszNames,
                                     (void *)papszValues,
-                                    (void *)pau64Timestamps,
+                                    (void *)pai64Timestamps,
                                     (void *)papszFlags);
             for (unsigned i = 0; i < cProps; ++i)
             {
@@ -4281,7 +4281,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
             rc = VERR_NO_MEMORY;
         RTMemTmpFree(papszNames);
         RTMemTmpFree(papszValues);
-        RTMemTmpFree(pau64Timestamps);
+        RTMemTmpFree(pai64Timestamps);
         RTMemTmpFree(papszFlags);
         AssertRCReturn(rc, rc);
 
