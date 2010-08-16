@@ -749,7 +749,7 @@
             <xsl:when test=".='unsigned long'">ULONG *</xsl:when>
             <xsl:when test=".='unsigned long long'">
               <xsl:message terminate="yes">
-                 <xsl:value-of select="'&quot;unsigned long long&quot; no longer supported" />
+                 <xsl:value-of select="'&quot;unsigned long long&quot; no longer supported'" />
               </xsl:message>
             </xsl:when>
             <xsl:otherwise>
@@ -810,7 +810,7 @@
         <xsl:when test=".='$unknown'">IUnknown *</xsl:when>
         <xsl:when test=".='unsigned long long'">
           <xsl:message terminate="yes">
-            <xsl:value-of select="'&quot;unsigned long long&quot; no longer supported" />
+            <xsl:value-of select="'&quot;unsigned long long&quot; no longer supported'" />
           </xsl:message>
         </xsl:when>
         <xsl:otherwise>
