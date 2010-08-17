@@ -911,7 +911,7 @@
 
   <enum
    name="FaultToleranceState"
-   uuid="05f65593-743e-4862-8700-57bf6cc48f3f"
+   uuid="5124f7ec-6b67-493c-9dee-ee45a44114e1"
   >
     <desc>
       Used with <link to="IMachine::faultToleranceState" />.
@@ -919,11 +919,11 @@
     <const name="Inactive" value="1">
       <desc>No fault tolerance enabled.</desc>
     </const>
-    <const name="Source" value="2">
-      <desc>Fault tolerant source VM.</desc>
+    <const name="Master" value="2">
+      <desc>Fault tolerant master VM.</desc>
     </const>
-    <const name="Target" value="3">
-      <desc>Fault tolerant target VM.</desc>
+    <const name="Clone" value="3">
+      <desc>Fault tolerant clone VM.</desc>
     </const>
   </enum>
 
