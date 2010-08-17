@@ -1009,6 +1009,7 @@ public:
     }
 
     inline void initFrom(const com::SafeArray<T> & aRef);
+    inline void initFrom(const T* aPtr, size_t aSize);
 
     // Public methods for internal purposes only.
 
@@ -1217,6 +1218,13 @@ inline void com::SafeArray<BYTE>::initFrom(const com::SafeArray<BYTE> & aRef)
     resize(sSize);
     ::memcpy(raw(), aRef.raw(), sSize);
 }
+template<>
+inline void com::SafeArray<BYTE>::initFrom(const BYTE* aPtr, size_t aSize)
+{
+    resize(aSize);
+    ::memcpy(raw(), aPtr, aSize);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
