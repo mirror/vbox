@@ -132,7 +132,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
     fOpenMode |= O_BINARY;              /* (pc) */
 #endif
 #ifdef O_LARGEFILE
-    fOpenMode |= O_LARGEFILE;           /* (linux) */
+    fOpenMode |= O_LARGEFILE;           /* (linux, solaris) */
 #endif
 #ifdef O_NOINHERIT
     if (!(fOpen & RTFILE_O_INHERIT))
