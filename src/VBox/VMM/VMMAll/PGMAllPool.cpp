@@ -3113,7 +3113,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                 if ((pPT->a[i].u & (X86_PTE_PAE_PG_MASK | X86_PTE_P | X86_PTE_PAE_MBZ_MASK_NX)) == u64)
                     Log(("i=%d cFound=%d\n", i, ++cFound));
 #endif
-            AssertFatalMsgFailed(("iFirstPresent=%d cPresent=%d u64=%RX64 poolkind=%x\n", pPage->iFirstPresent, pPage->cPresent, u64, pPage->enmKind));
+            AssertFatalMsgFailed(("iFirstPresent=%d cPresent=%d u64=%RX64 poolkind=%x iPte=%d PT=%RX64\n", pPage->iFirstPresent, pPage->cPresent, u64, pPage->enmKind, iPte, pPT->a[iPte].u));
             PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPT);
             break;
         }
