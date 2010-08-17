@@ -339,6 +339,7 @@ sf_read_super_24(struct super_block *sb, void *data, int flags)
 
 /* this is called when vfs is about to destroy the [inode]. all
    resources associated with this [inode] must be cleared here */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 static void sf_clear_inode(struct inode *inode)
 {
     struct sf_inode_info *sf_i;
@@ -353,6 +354,25 @@ static void sf_clear_inode(struct inode *inode)
     kfree(sf_i);
     SET_INODE_INFO(inode, NULL);
 }
+#else
+static void sf_evict_inode(struct inode *inode)
+{
+    struct sf_inode_info *sf_i;
+
+    TRACE();
+    truncate_inode_pages(&inode->i_data, 0);
+    end_writeback(inode);
+
+    sf_i = GET_INODE_INFO(inode);
+    if (!sf_i)
+        return;
+
+    BUG_ON(!sf_i->path);
+    kfree(sf_i->path);
+    kfree(sf_i);
+    SET_INODE_INFO(inode, NULL);
+}
+#endif
 
 /* this is called by vfs when it wants to populate [inode] with data.
    the only thing that is known about inode at this point is its index
@@ -397,7 +417,11 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 
 static struct super_operations sf_super_ops =
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
     .clear_inode = sf_clear_inode,
+#else
+    .evict_inode = sf_evict_inode,
+#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
     .read_inode  = sf_read_inode,
 #endif
