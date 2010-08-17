@@ -26,12 +26,13 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/ssm.h>
+#include <VBox/log.h>
 
 #include <iprt/assert.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
-#include <VBox/log.h>
+#include <iprt/tcp.h>
 
 /**
  * Initializes the FTM.
@@ -79,6 +80,26 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
 }
 
 /**
+ * Listen for incoming traffic destined for the standby VM.
+ *
+ * @copydoc FNRTTCPSERVE
+ *
+ * @returns VINF_SUCCESS or VERR_TCP_SERVER_STOP.
+ */
+static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser)
+{
+    PVM pVM = (PVM)pvUser;
+
+    /*
+     * Disable Nagle.
+     */
+    int rc = RTTcpSetSendCoalescing(Sock, false /*fEnable*/);
+    AssertRC(rc);
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Powers on the fault tolerant virtual machine.
  *
  * @returns VBox status code.
@@ -118,6 +139,16 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
     else
     {
         /* standby */
+        PRTTCPSERVER hServer;
+
+        rc = RTTcpServerCreateEx(pszAddress, uPort, &hServer);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        rc = RTTcpServerListen(hServer, ftmR3StandbyServeConnection, pVM);
+        /** @todo deal with the exit code to check if we should activate this standby VM. */
+
+        RTTcpServerDestroy(hServer);
     }
     return VERR_NOT_IMPLEMENTED;
 }
