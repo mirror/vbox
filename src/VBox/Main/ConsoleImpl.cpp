@@ -7476,7 +7476,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         Utf8Str strAddress(bstrAddress);
                         const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
 
-                        /* Start FT syncing. */
+                        /* Power on the FT enabled VM. */
                         vrc = FTMR3PowerOn(pVM, (task->mEnmFaultToleranceState == FaultToleranceState_Source) /* fSource */, uInterval, pszAddress, uPort);
                         AssertRC(vrc);
                     }
