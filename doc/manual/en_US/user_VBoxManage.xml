@@ -1,0 +1,2591 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="vboxmanage">
+  <title>VBoxManage</title>
+
+  <sect1>
+    <title>Introduction</title>
+
+    <para>As briefly mentioned in <xref linkend="frontends" />, VBoxManage is
+    the command-line interface to VirtualBox. With it, you can completely
+    control VirtualBox from the command line of your host operating system.
+    VBoxManage supports all the features that the graphical user interface
+    gives you access to, but it supports a lot more than that. It exposes
+    really all the features of the virtualization engine, even those that
+    cannot (yet) be accessed from the GUI.</para>
+
+    <para>You will need to use the command line if you want to</para>
+
+    <para><itemizedlist>
+        <listitem>
+          <para>use a different user interface than the main GUI (for example,
+          VBoxSDL or the VBoxHeadless server);</para>
+        </listitem>
+
+        <listitem>
+          <para>control some of the more advanced and experimental
+          configuration settings for a VM.</para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para>There are two main things to keep in mind when using
+    <computeroutput>VBoxManage</computeroutput>: First,
+    <computeroutput>VBoxManage</computeroutput> must always be used with a
+    specific "subcommand", such as "list" or "createvm" or "startvm". All the
+    subcommands that <computeroutput>VBoxManage</computeroutput> supports are
+    described in detail in <xref linkend="vboxmanage" />.</para>
+
+    <para>Second, most of these subcommands require that you specify a
+    particular virtual machine after the subcommand. There are two ways you
+    can do this:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>You can specify the VM name, as it is shown in the VirtualBox
+        GUI. Note that if that name contains spaces, then you must enclose the
+        entire name in double quotes (as it is always required with command
+        line arguments that contain spaces).</para>
+
+        <para>For example:<screen>VBoxManage startvm "Windows XP"</screen></para>
+      </listitem>
+
+      <listitem>
+        <para>You can specify the UUID, which is the internal unique
+        identifier that VirtualBox uses to refer to the virtual machine.
+        Assuming that the aforementioned VM called "Windows XP" has the UUID
+        shown below, the following command has the same effect as the
+        previous:<screen>VBoxManage startvm 670e746d-abea-4ba6-ad02-2a3b043810a5</screen></para>
+      </listitem>
+    </itemizedlist>
+
+    <para>You can type <computeroutput>VBoxManage list vms</computeroutput> to
+    have all currently registered VMs listed with all their settings,
+    including their respective names and UUIDs.</para>
+
+    <para>Some typical examples of how to control VirtualBox from the command
+    line are listed below:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>To create a new virtual machine from the command line and
+        immediately register it with VirtualBox, use
+        <computeroutput>VBoxManage createvm</computeroutput> with the
+        <computeroutput>--register</computeroutput> option,<footnote>
+            <para>For details, see <xref
+            linkend="vboxmanage-createvm" />.</para>
+          </footnote> like this:</para>
+
+        <screen>$ VBoxManage createvm --name "SUSE 10.2" --register
+VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
+(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+All rights reserved.
+
+Virtual machine 'SUSE 10.2' is created.
+UUID: c89fc351-8ec6-4f02-a048-57f4d25288e5
+Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
+</screen>
+
+        <para>As can be seen from the above output, a new virtual machine has
+        been created with a new UUID and a new XML settings file.</para>
+      </listitem>
+
+      <listitem>
+        <para>To show the configuration of a particular VM, use
+        <computeroutput>VBoxManage showvminfo</computeroutput>; see <xref
+        linkend="vboxmanage-showvminfo" /> for details and an example.</para>
+      </listitem>
+
+      <listitem>
+        <para>To change settings while a VM is powered off, use
+        <computeroutput>VBoxManage modifyvm</computeroutput>, e.g. as
+        follows:<screen>VBoxManage modifyvm "Windows XP" --memory "512MB"</screen></para>
+
+        <para>For details, see <xref linkend="vboxmanage-modifyvm" />.</para>
+      </listitem>
+
+      <listitem>
+        <para>To control VM operation, use one of the following:<itemizedlist>
+            <listitem>
+              <para>To start a VM that is currently powered off, use
+              <computeroutput>VBoxManage startvm</computeroutput>; see <xref
+              linkend="vboxmanage-startvm" /> for details.</para>
+            </listitem>
+
+            <listitem>
+              <para>To pause or save a VM that is currently running or change
+              some of its settings, use <computeroutput>VBoxManage
+              controlvm</computeroutput>; see <xref
+              linkend="vboxmanage-controlvm" /> for details.</para>
+            </listitem>
+          </itemizedlist></para>
+      </listitem>
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Commands overview</title>
+
+    <para>When running VBoxManage without parameters or when supplying an
+    invalid command line, the below syntax diagram will be shown. Note that
+    the output will be slightly different depending on the host platform; when
+    in doubt, check the output of <computeroutput>VBoxManage</computeroutput>
+    for the commands available on your particular host.</para>
+
+    <screen>$VBOX_MANAGE_OUTPUT</screen>
+
+    <para>Each time VBoxManage is invoked, only one command can be executed.
+    However, a command might support several subcommands which then can be
+    invoked in one single call. The following sections provide detailed
+    reference information on the different commands.</para>
+  </sect1>
+
+  <sect1 id="vboxmanage-list">
+    <title>VBoxManage list</title>
+
+    <para>The <computeroutput>list</computeroutput> command gives relevant
+    information about your system and information about VirtualBox's current
+    settings.</para>
+
+    <para>The following subcommands are available with
+    <computeroutput>VBoxManage list</computeroutput>: <itemizedlist>
+        <listitem>
+          <para><computeroutput>vms</computeroutput> lists all virtual
+          machines currently registered with VirtualBox. By default this
+          displays a compact list with each VM's name and UUID; if you also
+          specify <computeroutput>--long</computeroutput> or
+          <computeroutput>-l</computeroutput>, this will be a detailed list as
+          with the <computeroutput>showvminfo</computeroutput> command (see
+          below).</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>runningvms</computeroutput> lists all
+          currently running virtual machines by their unique identifiers
+          (UUIDs) in the same format as with
+          <computeroutput>vms</computeroutput>.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>hdds</computeroutput>,
+          <computeroutput>dvds</computeroutput> and
+          <computeroutput>floppies</computeroutput> all give you information
+          about virtual disk images currently registered in VirtualBox,
+          including all their settings, the unique identifiers (UUIDs)
+          associated with them by VirtualBox and all files associated with
+          them.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>ostypes</computeroutput> lists all guest
+          operating systems presently known to VirtualBox, along with the
+          identifiers used to refer to them with the
+          <computeroutput>modifyvm</computeroutput> command.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>hostdvds</computeroutput>,
+          <computeroutput>hostfloppies</computeroutput> and
+          <computeroutput>hostifs</computeroutput>, respectively, list DVD,
+          floppy and host networking interfaces on the host, along with the
+          name used to access them from within VirtualBox.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>hostusb</computeroutput> supplies information
+          about USB devices attached to the host, notably information useful
+          for constructing USB filters and whether they are currently in use
+          by the host.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>usbfilters</computeroutput> lists all global
+          USB filters registered with VirtualBox -- that is, filters for
+          devices which are accessible to all virtual machines -- and displays
+          the filter parameters.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>systemproperties</computeroutput> displays
+          some global VirtualBox settings, such as minimum and maximum guest
+          RAM and virtual hard disk size, folder settings and the current
+          authentication library in use.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>hddbackends</computeroutput> lists all known
+          hdd backends of VirtualBox. Beside the name of the backend itself,
+          descriptions about the capabilities, configuration and other useful
+          informations are displayed.</para>
+        </listitem>
+      </itemizedlist></para>
+  </sect1>
+
+  <sect1 id="vboxmanage-showvminfo">
+    <title>VBoxManage showvminfo</title>
+
+    <para>The <computeroutput>showvminfo</computeroutput> command shows
+    information about a particular virtual machine. This is the same
+    information as <computeroutput>VBoxManage list vms --long</computeroutput>
+    would show for all virtual machines.</para>
+
+    <para>You will get information similar to the following:</para>
+
+    <para><screen>$ VBoxManage showvminfo "Windows XP"
+VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
+(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+All rights reserved.
+
+Name:            Windows XP
+Guest OS:        Other/Unknown
+UUID:            1bf3464d-57c6-4d49-92a9-a5cc3816b7e7
+Config file:     /home/username/.VirtualBox/Machines/Windows XP/Windows XP.xml
+Memory size:     512MB
+VRAM size:       12MB
+Number of CPUs:  2
+Synthetic Cpu:   off
+Boot menu mode:  message and menu
+Boot Device (1): DVD
+Boot Device (2): HardDisk
+Boot Device (3): Not Assigned
+Boot Device (4): Not Assigned
+ACPI:            on
+IOAPIC:          on
+PAE:             on
+Time offset:     0 ms
+Hardw. virt.ext: on
+Hardw. virt.ext exclusive: on
+Nested Paging:   on
+VT-x VPID:       off
+State:           powered off (since 2009-10-20T14:52:19.000000000)
+Monitor count:   1
+3D Acceleration: off
+2D Video Acceleration: off
+Teleporter Enabled: off
+Teleporter Port: 0
+Teleporter Address:
+Teleporter Password:
+Storage Controller      (0): IDE Controller
+Storage Controller Type (0): PIIX4
+Storage Controller      (1): Floppy Controller 1
+Storage Controller Type (1): I82078
+IDE Controller (0, 0): /home/user/windows.vdi (UUID: 46f6e53a-4557-460a-9b95-68b0f17d744b)
+IDE Controller (0, 1): /home/user/openbsd-cd46.iso (UUID: 4335e162-59d3-4512-91d5-b63e94eebe0b)
+Floppy Controller 1 (0, 0): /home/user/floppy.img (UUID: 62ac6ccb-df36-42f2-972e-22f836368137)
+NIC 1:           disabled
+NIC 2:           disabled
+NIC 3:           disabled
+NIC 4:           disabled
+NIC 5:           disabled
+NIC 6:           disabled
+NIC 7:           disabled
+NIC 8:           disabled
+UART 1:          disabled
+UART 2:          disabled
+Audio:           disabled (Driver: Unknown)
+Clipboard Mode:  Bidirectional
+VRDP:            disabled
+USB:             disabled
+
+USB Device Filters:
+&lt;none&gt;
+
+Shared folders:
+&lt;none&gt;
+
+Statistics update:  disabled
+</screen></para>
+  </sect1>
+
+  <sect1>
+    <title>VBoxManage registervm / unregistervm</title>
+
+    <para>The <computeroutput>registervm</computeroutput> command allows you
+    to import a virtual machine definition in an XML file into VirtualBox. The
+    machine must not conflict with one already registered in VirtualBox and it
+    may not have any hard or removable disks attached. It is advisable to
+    place the definition file in the machines folder before registering
+    it.<note>
+        <para>When creating a new virtual machine with
+        <computeroutput>VBoxManage createvm</computeroutput> (see below), you
+        can directly specify the <computeroutput>--register</computeroutput>
+        option to avoid having to register it separately.</para>
+      </note></para>
+
+    <para>The <computeroutput>unregistervm</computeroutput> command
+    unregisters a virtual machine. If
+    <computeroutput>--delete</computeroutput> is also specified, the following
+    files will automatically be deleted as well:<orderedlist>
+        <listitem>
+          <para>all hard disk image files, including differencing files, which
+          are used by the machine and not shared with other machines;</para>
+        </listitem>
+
+        <listitem>
+          <para>saved state files that the machine created, if any (one if the
+          machine was in "saved" state and one for each online
+          snapshot);</para>
+        </listitem>
+
+        <listitem>
+          <para>the machine XML file and its backups;</para>
+        </listitem>
+
+        <listitem>
+          <para>the machine log files, if any;</para>
+        </listitem>
+
+        <listitem>
+          <para>the machine directory, if it is empty after having deleted all
+          the above.</para>
+        </listitem>
+      </orderedlist></para>
+  </sect1>
+
+  <sect1>
+    <title id="vboxmanage-createvm">VBoxManage createvm</title>
+
+    <para>This command creates a new XML virtual machine definition
+    file.</para>
+
+    <para>The <computeroutput>--name &lt;name&gt;</computeroutput> parameter
+    is required and must specify the name of the machine. Since this name is
+    used by default as the file name of the settings file (with the extension
+    <computeroutput>.xml</computeroutput>) and the machine folder (a subfolder
+    of the <computeroutput>.VirtualBox/Machines</computeroutput> folder), it
+    must conform to your host operating system's requirements for file name
+    specifications. If the VM is later renamed, the file and folder names will
+    change automatically.</para>
+
+    <para>However, if the <computeroutput>--basefolder
+    &lt;path&gt;</computeroutput> option is used, the machine folder will be
+    named <computeroutput>&lt;path&gt;</computeroutput>. In this case, the
+    names of the file and the folder will not change if the virtual machine is
+    renamed.</para>
+
+    <para>By default, this command only creates the XML file without
+    automatically registering the VM with your VirtualBox installation. To
+    register the VM instantly, use the optional
+    <computeroutput>--register</computeroutput> option, or run
+    <computeroutput>VBoxManage registervm</computeroutput> separately
+    afterwards.</para>
+  </sect1>
+
+  <sect1 id="vboxmanage-modifyvm">
+    <title>VBoxManage modifyvm</title>
+
+    <para>This command changes the properties of a registered virtual machine
+    which is not running. Most of the properties that this command makes
+    available correspond to the VM settings that VirtualBox graphical user
+    interface displays in each VM's "Settings" dialog; these were described in
+    <xref linkend="BasicConcepts" />. Some of the more advanced settings,
+    however, are only available through the
+    <computeroutput>VBoxManage</computeroutput> interface.</para>
+
+    <para>These commands require that the machine is powered off (neither
+    running nor in "saved" state). Some machine settings can also be changed
+    while a machine is running; those settings will then have a corresponding
+    subcommand with the <computeroutput>VBoxManage controlvm</computeroutput>
+    subcommand (see <xref linkend="vboxmanage-controlvm" />).</para>
+
+    <sect2>
+      <title>General settings</title>
+
+      <para>The following general settings are available through
+      <computeroutput>VBoxManage modifyvm</computeroutput>:<itemizedlist>
+          <listitem>
+            <para><computeroutput>--name &lt;name&gt;</computeroutput>: This
+            changes the VM's name and possibly renames the internal virtual
+            machine files, as described with <computeroutput>VBoxManage
+            createvm</computeroutput> above.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--ostype &lt;ostype&gt;</computeroutput>:
+            This specifies what guest operating system is supposed to run in
+            the VM. To learn about the various identifiers that can be used
+            here, use <computeroutput>VBoxManage list
+            ostypes</computeroutput>.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--memory
+            &lt;memorysize&gt;</computeroutput>: This sets the amount of RAM,
+            in MB, that the virtual machine should allocate for itself from
+            the host. See the remarks in <xref linkend="gui-createvm" /> for
+            more information.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vram &lt;vramsize&gt;</computeroutput>:
+            This sets the amount of RAM that the virtual graphics card should
+            have. See <xref linkend="settings-display" /> for details.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--acpi on|off</computeroutput>;
+            <computeroutput>--ioapic on|off</computeroutput>: These two
+            determine whether the VM should have ACPI and I/O APIC support,
+            respectively; see <xref linkend="settings-motherboard" /> for
+            details.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--hardwareuuid
+            &lt;uuid&gt;</computeroutput>: The UUID presented to the guest via
+            memory tables (DMI/SMBIOS), hardware and guest properties. By
+            default this is the same as the VM uuid. Useful when cloning a VM.
+            Teleporting takes care of this automatically.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--cpus &lt;cpucount&gt;</computeroutput>:
+            This sets the number of virtual CPUs for the virtual machine (see
+            <xref linkend="settings-processor" />). If CPU hot-plugging is
+            enabled (see below), this then sets the
+            <emphasis>maximum</emphasis> number of virtual CPUs that can be
+            plugged into the virtual machines.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--rtcuseutc on|off</computeroutput>: This
+            option lets the real-time clock (RTC) operate in UTC time (see
+            <xref linkend="settings-motherboard" />).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--cpuhotplug on|off</computeroutput>: This
+            enables CPU hot-plugging. When enabled, virtual CPUs can be added
+            to and removed from a virtual machine while it is running. See
+            <xref linkend="cpuhotplug" /> for more information.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--plugcpu|unplugcpu
+            &lt;id&gt;</computeroutput>: If CPU hot-plugging is enabled (see
+            above), this adds a virtual CPU to the virtual machines (or
+            removes one). <computeroutput>&lt;id&gt;</computeroutput>
+            specifies the index of the virtual CPU to be added or removed and
+            must be a number from 0 to the maximum no. of CPUs configured with
+            the <computeroutput>--cpus</computeroutput> option. CPU 0 can
+            never be removed.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--synthcpu on|off</computeroutput>: This
+            setting determines whether VirtualBox will expose a synthetic CPU
+            to the guest to allow live migration between host systems that
+            differ significantly.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--pae on|off</computeroutput>: This
+            enables/disables PAE (see <xref
+            linkend="settings-processor" />).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--hpet on|off</computeroutput>: This
+            enables/disables a High Precision Event Timer (HPET) which can
+            replace the legacy system timers. This is turned off by default.
+            Note that Windows supports a HPET only from Vista onwards.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--hwvirtex on|off|default</computeroutput>:
+            This enables or disables the use of hardware virtualization
+            extensions (Intel VT-x or AMD-V) in the processor of your host
+            system; see <xref linkend="hwvirt" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--hwvirtexexcl on|off</computeroutput>: This
+            specifies whether VirtualBox will make exclusive use of the
+            hardware virtualization extensions (Intel VT-x or AMD-V) in the
+            processor of your host system; see <xref linkend="hwvirt" />. If
+            you wish to simultaneously share these extensions with other
+            hypervisors, then you must disable this setting. Doing so has
+            negative performance implications.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--nestedpaging on|off</computeroutput>: If
+            hardware virtualization is enabled, this additional setting
+            enables or disables the use of the nested paging feature in the
+            processor of your host system; see <xref
+            linkend="hwvirt" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--largepages on|off</computeroutput>: If
+            hardware virtualization <emphasis>and</emphasis> nested paging are
+            enabled, for Intel VT-x only, an additional performance
+            improvement of up to 5% can be obtained by enabling this setting.
+            This causes the hypervisor to use large pages to reduce TLB use
+            and overhead.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vtxvpid on|off</computeroutput>: If
+            hardware virtualization is enabled, for Intel VT-x only, this
+            additional setting enables or disables the use of the tagged TLB
+            (VPID) feature in the processor of your host system; see <xref
+            linkend="hwvirt" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--accelerate3d on|off</computeroutput>: This
+            enables, if the Guest Additions are installed, whether hardware 3D
+            acceleration should be available; see <xref
+            linkend="guestadd-3d" />.</para>
+          </listitem>
+
+          <listitem>
+            <para>You can influence the BIOS logo that is displayed when a
+            virtual machine starts up with a number of settings. Per default,
+            a VirtualBox logo is displayed.</para>
+
+            <para>With <computeroutput>--bioslogofadein
+            on|off</computeroutput> and <computeroutput>--bioslogofadeout
+            on|off</computeroutput>, you can determine whether the logo should
+            fade in and out, respectively.</para>
+
+            <para>With <computeroutput>--bioslogodisplaytime
+            &lt;msec&gt;</computeroutput> you can set how long the logo should
+            be visible, in milliseconds.</para>
+
+            <para>With <computeroutput>--bioslogoimagepath
+            &lt;imagepath&gt;</computeroutput> you can, if you are so
+            inclined, replace the image that is shown, with your own logo. The
+            image must be an uncompressed 256 color BMP file.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--biosbootmenu
+            disabled|menuonly|messageandmenu</computeroutput>: This specifies
+            whether the BIOS allows the user to select a temporary boot
+            device. <computeroutput>menuonly</computeroutput> suppresses the
+            message, but the user can still press F12 to select a temporary
+            boot device.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--boot&lt;1-4&gt;
+            none|floppy|dvd|disk|net</computeroutput>: This specifies the boot
+            order for the virtual machine. There are four "slots", which the
+            VM will try to access from 1 to 4, and for each of which you can
+            set a device that the VM should attempt to boot from.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--snapshotfolder
+            default|&lt;path&gt;</computeroutput>: This allows you to specify
+            the folder in which snapshots will be kept for a virtual
+            machine.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--firmware efi|bios</computeroutput>:
+            Specifies which firmware is used to boot particular virtual
+            machine: EFI or BIOS. Use EFI only if your fully understand what
+            you're doing.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--guestmemoryballoon
+            &lt;size&gt;</computeroutput> sets the default size of the guest
+            memory balloon, that is, memory allocated by the VirtualBox Guest
+            Additions from the guest operating system and returned to the
+            hypervisor for re-use by other virtual machines. &lt;size&gt; must
+            be specified in megabytes. The default size is 0 megabytes. For
+            details, see <xref linkend="guestadd-balloon" />.</para>
+          </listitem>
+        </itemizedlist></para>
+    </sect2>
+
+    <sect2>
+      <title>Networking settings</title>
+
+      <para>The following networking settings are available through
+      <computeroutput>VBoxManage modifyvm</computeroutput>. With all these
+      settings, the decimal number directly following the option name ("1-N"
+      in the list below) specifies the virtual network adapter whose settings
+      should be changed.<itemizedlist>
+          <listitem>
+            <para><computeroutput>--nic&lt;1-N&gt;
+            none|null|nat|bridged|intnet|hostonly|vde</computeroutput>: With
+            this, you can set, for each of the VM's virtual network cards,
+            what type of networking should be available. They can be not
+            present (<computeroutput>none</computeroutput>), not connected to
+            the host (<computeroutput>null</computeroutput>), use network
+            address translation (<computeroutput>nat</computeroutput>),
+            bridged networking (<computeroutput>bridged</computeroutput>) or
+            communicate with other virtual machines using internal networking
+            (<computeroutput>intnet</computeroutput>), host-only networking
+            (<computeroutput>hostonly</computeroutput>) or on Linux and
+            FreeBSD hosts a Virtual Distributed Ethernet switch
+            (<computeroutput>vde</computeroutput>). These options correspond
+            to the modes which are described in detail in <xref
+            linkend="networkingmodes" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--nictype&lt;1-N&gt;
+            Am79C970A|Am79C973|82540EM|82543GC|82545EM|virtio</computeroutput>:
+            This allows you, for each of the VM's virtual network cards, to
+            specify which networking hardware VirtualBox presents to the
+            guest; see <xref linkend="nichardware" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--cableconnected&lt;1-N&gt;
+            on|off</computeroutput>: This allows you to temporarily disconnect
+            a virtual network interface, as if a network cable had been pulled
+            from a real network card. This might be useful for resetting
+            certain software components in the VM.</para>
+          </listitem>
+
+          <listitem>
+            <para>With the "nictrace" options, you can optionally trace
+            network traffic by dumping it to a file, for debugging
+            purposes.</para>
+
+            <para>With <computeroutput>--nictrace&lt;1-N&gt;
+            on|off</computeroutput>, you can enable network tracing for a
+            particular virtual network card.</para>
+
+            <para>If enabled, you must specify with
+            <computeroutput>--nictracefile&lt;1-N&gt;
+            &lt;filename&gt;</computeroutput> what file the trace should be
+            logged to.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--bridgeadapter&lt;1-N&gt;
+            none|&lt;devicename&gt;</computeroutput>: If bridged networking
+            has been enabled for a virtual network card (see the
+            <computeroutput>--nic</computeroutput> option above; otherwise
+            this setting has no effect), use this option to specify which host
+            interface the given virtual network interface will use. For
+            details, please see <xref linkend="network_bridged" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--hostonlyadapter&lt;1-N&gt;
+            none|&lt;devicename&gt;</computeroutput>: If host-only networking
+            has been enabled for a virtual network card (see the --nic option
+            above; otherwise this setting has no effect), use this option to
+            specify which host-only networking interface the given virtual
+            network interface will use. For details, please see <xref
+            linkend="network_hostonly" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--intnet&lt;1-N&gt;
+            network</computeroutput>: If internal networking has been enabled
+            for a virtual network card (see the
+            <computeroutput>--nic</computeroutput> option above; otherwise
+            this setting has no effect), use this option to specify the name
+            of the internal network (see <xref
+            linkend="network_internal" />).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--macaddress&lt;1-N&gt;
+            auto|&lt;mac&gt;</computeroutput>: With this option you can set
+            the MAC address of the virtual network card. Normally, each
+            virtual network card is assigned a random address by VirtualBox at
+            VM creation.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vdenet&lt;1-N&gt;
+            network</computeroutput>: If Virtual Distributed Ethernet is
+            available on the host and has been enabled for a virtual network
+            card (see the <computeroutput>--nic</computeroutput> option above;
+            otherwise this setting has no effect). Use this option to specify
+            the name of a VDE network for the interface to connect to (see
+            <xref linkend="networkingmodes" /> and the VDE
+            documentation).</para>
+          </listitem>
+        </itemizedlist></para>
+
+      <sect3>
+        <title>NAT Networking settings.</title>
+
+        <para>The following NAT networking settings are available through
+        <computeroutput>VBoxManage modifyvm</computeroutput>. With all these
+        settings, the decimal number directly following the option name ("1-N"
+        in the list below) specifies the virtual network adapter whose
+        settings should be changed.<itemizedlist>
+            <listitem>
+              <para><computeroutput>--natpf&lt;1-N&gt;
+              [&lt;name&gt;],tcp|udp,[&lt;hostip&gt;],&lt;hostport&gt;,[&lt;guestip&gt;],
+              &lt;guestport&gt;</computeroutput>: This option defines a NAT
+              port-forwarding rule (please see <xref linkend="natforward" />
+              for details).</para>
+            </listitem>
+
+            <listitem>
+              <para><computeroutput>--natpf&lt;1-N&gt; delete
+              &lt;name&gt;</computeroutput>: This option deletes a NAT
+              port-forwarding rule (please see <xref linkend="natforward" />
+              for details).</para>
+            </listitem>
+
+            <listitem>
+              <para><computeroutput>--nattftpprefix&lt;1-N&gt;
+              &lt;prefix&gt;</computeroutput>: This option defines a prefix
+              for the built-in TFTP server, i.e. where the boot file is
+              located (please see <xref linkend="nat-tftp" /> and <xref
+              linkend="nat-adv-tftp" /> for details).</para>
+            </listitem>
+
+            <listitem>
+              <para><computeroutput>--nattftpfile&lt;1-N&gt;
+              &lt;bootfile&gt;</computeroutput>: This option defines the TFT
+              boot file (please see <xref linkend="nat-adv-tftp" /> for
+              details).</para>
+            </listitem>
+
+            <listitem>
+              <para><computeroutput>--nattftpserver&lt;1-N&gt;
+              &lt;tftpserver&gt;</computeroutput>: This option defines the
+              TFTP server address to boot from (please see <xref
+              linkend="nat-adv-tftp" /> for details).</para>
+            </listitem>
+
+            <listitem>
+              <para><computeroutput>--natdnspassdomain&lt;1-N&gt;
+              on|off</computeroutput>: This option specifies whether the
+              built-in DHCP server passes the domain name for network name
+              resolution.</para>
+            </listitem>
+
+            <listitem>
+              <para><computeroutput>--natdnsproxy&lt;1-N&gt;
+              on|off</computeroutput>: This option makes the NAT engine proxy
+              all guest DNS requests to the host's DNS servers (please see
+              <xref linkend="nat-adv-dns" /> for details).</para>
+            </listitem>
+
+            <listitem>
+              <para><computeroutput>--natdnshostresolver&lt;1-N&gt;
+              on|off</computeroutput>: This option makes the NAT engine use
+              the host's resolver mechanisms to handle DNS requests (please
+              see <xref linkend="nat-adv-dns" /> for details).</para>
+            </listitem>
+
+            <listitem>
+              <para><computeroutput>--natnatsettings&lt;1-N&gt;
+              [&lt;mtu&gt;],[&lt;socksnd&gt;],[&lt;sockrcv&gt;],[&lt;tcpsnd&gt;],
+              [&lt;tcprcv&gt;]</computeroutput>: This option controls several
+              NAT settings (please see <xref linkend="nat-adv-settings" /> for
+              details).</para>
+            </listitem>
+
+            <listitem>
+              <para><computeroutput>--nataliasmode&lt;1-N&gt;
+              default|[log],[proxyonly],[sameports]</computeroutput>: This
+              option defines behaviour of NAT engine core: log - enables
+              logging, proxyonly - switches of aliasing mode makes NAT
+              transparent, sameports enforces NAT engine to send packets via
+              the same port as they originated on, default - disable all
+              mentioned modes above . (please see <xref
+              linkend="nat-adv-alias" /> for details).</para>
+            </listitem>
+          </itemizedlist></para>
+      </sect3>
+    </sect2>
+
+    <sect2 id="vboxmanage-modifyvm-other">
+      <title>Serial port, audio, clipboard, VRDP and USB settings</title>
+
+      <para>The following other hardware settings are available through
+      <computeroutput>VBoxManage modifyvm</computeroutput>:<itemizedlist>
+          <listitem>
+            <para><computeroutput>--uart&lt;1-N&gt; off|&lt;I/O base&gt;
+            &lt;IRQ&gt;</computeroutput>: With this option you can configure
+            virtual serial ports for the VM; see <xref
+            linkend="serialports" /> for an introduction.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--uartmode&lt;1-N&gt;
+            &lt;arg&gt;</computeroutput>: This setting controls how VirtualBox
+            connects a given virtual serial port (previously configured with
+            the <computeroutput>--uartX</computeroutput> setting, see above)
+            to the host on which the virtual machine is running. As described
+            in detail in <xref linkend="serialports" />, for each such port,
+            you can specify <computeroutput>&lt;arg&gt;</computeroutput> as
+            one of the following options:<itemizedlist>
+                <listitem>
+                  <para><computeroutput>disconnected</computeroutput>: Even
+                  though the serial port is shown to the guest, it has no
+                  "other end" -- like a real COM port without a cable.</para>
+                </listitem>
+
+                <listitem>
+                  <para><computeroutput>server
+                  &lt;pipename&gt;</computeroutput>: On a Windows host, this
+                  tells VirtualBox to create a named pipe on the host named
+                  <computeroutput>&lt;pipename&gt;</computeroutput> and
+                  connect the virtual serial device to it. Note that Windows
+                  requires that the name of a named pipe begin with
+                  <computeroutput>\\.\pipe\</computeroutput>.</para>
+
+                  <para>On a Linux host, instead of a named pipe, a local
+                  domain socket is used.</para>
+                </listitem>
+
+                <listitem>
+                  <para><computeroutput>client
+                  &lt;pipename&gt;</computeroutput>: This operates just like
+                  <computeroutput>server ...</computeroutput>, except that the
+                  pipe (or local domain socket) is not created by VirtualBox,
+                  but assumed to exist already.</para>
+                </listitem>
+
+                <listitem>
+                  <para><computeroutput>&lt;devicename&gt;</computeroutput>:
+                  If, instead of the above, the device name of a physical
+                  hardware serial port of the host is specified, the virtual
+                  serial port is connected to that hardware port. On a Windows
+                  host, the device name will be a COM port such as
+                  <computeroutput>COM1</computeroutput>; on a Linux host, the
+                  device name will look like
+                  <computeroutput>/dev/ttyS0</computeroutput>. This allows you
+                  to "wire" a real serial port to a virtual machine.</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--audio none|null|oss</computeroutput>: With
+            this option, you can set whether the VM should have audio
+            support.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--clipboard
+            disabled|hosttoguest|guesttohost|bidirectional</computeroutput>:
+            With this setting, you can select whether the guest operating
+            system's clipboard should be shared with the host; see <xref
+            linkend="generalsettings" />. This requires that the Guest
+            Additions be installed in the virtual machine.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--monitorcount
+            &lt;count&gt;</computeroutput>: This enables multi-monitor
+            support; see <xref linkend="settings-display" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--usb on|off</computeroutput>: This option
+            enables or disables the VM's virtual USB controller; see <xref
+            linkend="settings-usb" /> for details.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--usbehci on|off</computeroutput>: This
+            option enables or disables the VM's virtual USB 2.0 controller;
+            see <xref linkend="settings-usb" /> for details.</para>
+          </listitem>
+        </itemizedlist></para>
+    </sect2>
+
+    <sect2>
+      <title>Remote machine settings</title>
+
+      <para>The following settings that affect remote machine behavior are
+      available through <computeroutput>VBoxManage
+      modifyvm</computeroutput>:<itemizedlist>
+          <listitem>
+            <para><computeroutput>--vrdp on|off</computeroutput>: With the
+            VirtualBox graphical user interface, this enables or disables the
+            built-in VRDP server. Note that if you are using
+            <computeroutput>VBoxHeadless</computeroutput> (see <xref
+            linkend="vboxheadless" />), VRDP output is always enabled.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdpport
+            default|&lt;ports&gt;</computeroutput>: A port or a range of ports
+            the VRDP server can bind to; "default" or "0" means port 3389, the
+            standard port for RDP. You can specify a comma-separated list of
+            ports or ranges of ports. Use a dash between two port numbers to
+            specify a range. The VRDP server will bind to <emphasis
+            role="bold">one</emphasis> of available ports from the specified
+            list. Only one machine can use a given port at a time. For
+            example, the option <computeroutput> --vrdpport
+            5000,5010-5012</computeroutput> will tell the server to bind to
+            one of following ports: 5000, 5010, 5011 or 5012.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdpaddress &lt;IP
+            address&gt;</computeroutput>: The IP address of the host network
+            interface the VRDP server will bind to. If specified, the VRDP
+            server will accept connections only on the specified host network
+            interface.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdpauthtype
+            null|external|guest</computeroutput>: This allows you to choose
+            whether and how authorization will be performed; see <xref
+            linkend="vrdp-auth" /> for details.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdpmulticon on|off</computeroutput>: This
+            enables multiple VRDP connections to the same VRDP server; see
+            <xref lang="" linkend="vrdp-multiconnection" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdpreusecon on|off</computeroutput>: This
+            specifies the VRDP server behavior when multiple connections are
+            disabled. When this option is enabled, the VRDP server will allow
+            a new client to connect and drop the existing connection. When
+            this option is disabled (this is the default setting), a new
+            connection will not be accepted if there is already a client
+            connected to the server.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdpvideochannel on|off</computeroutput>:
+            This enables VRDP video acceleration; see <xref lang=""
+            linkend="vrdp-videochannel" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdpvideochannelquality
+            &lt;percent&gt;</computeroutput>: Sets the image quality for VRDP
+            video acceleration; see <xref lang=""
+            linkend="vrdp-videochannel" />.</para>
+          </listitem>
+        </itemizedlist></para>
+    </sect2>
+
+    <sect2 id="vboxmanage-modifyvm-teleport">
+      <title>Teleporting settings</title>
+
+      <para>With the following commands for <computeroutput>VBoxManage
+      modifyvm</computeroutput> you can configure a machine to be a target for
+      teleporting. See <xref linkend="teleporting" /> for an
+      introduction.<itemizedlist>
+          <listitem>
+            <para><computeroutput>--teleporter on|off</computeroutput>: With
+            this setting you turn on or off whether a machine waits for a
+            teleporting request to come in on the network when it is started.
+            If "on", when the machine is started, it does not boot the virtual
+            machine as it would normally; instead, it then waits for a
+            teleporting request to come in on the port and address listed with
+            the next two parameters.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--teleporterport
+            &lt;port&gt;</computeroutput>, <computeroutput>--teleporteraddress
+            &lt;address&gt;</computeroutput>: these must be used with
+            --teleporter and tell the virtual machine on which port and
+            address it should listen for a teleporting request from another
+            virtual machine. <computeroutput>&lt;port&gt;</computeroutput> can
+            be any free TCP/IP port number (e.g. 6000);
+            <computeroutput>&lt;address&gt;</computeroutput> can be any IP
+            address or hostname and specifies the TCP/IP socket to bind to.
+            The default is "0.0.0.0", which means any address.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--teleporterpassword
+            &lt;password&gt;</computeroutput>: if this optional argument is
+            given, then the teleporting request will only succeed if the
+            source machine specifies the same password as the one given with
+            this command.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--cpuid &lt;leaf&gt; &lt;eax&gt; &lt;ebx&gt;
+            &lt;ecx&gt; &lt;edx&gt;</computeroutput>: Advanced users can use
+            this command before a teleporting operation to restrict the
+            virtual CPU capabilities that VirtualBox presents to the guest
+            operating system. This must be run on both the source and the
+            target machines involved in the teleporting and will then modify
+            what the guest sees when it executes the
+            <computeroutput>CPUID</computeroutput> machine instruction. This
+            might help with misbehaving applications that wrongly assume that
+            certain CPU capabilities are present. The meaning of the
+            parameters is hardware dependent; please refer to the AMD or Intel
+            processor manuals.</para>
+          </listitem>
+        </itemizedlist></para>
+    </sect2>
+  </sect1>
+
+  <sect1 id="vboxmanage-import">
+    <title>VBoxManage import</title>
+
+    <para>This command imports a virtual appliance in OVF format by copying
+    the virtual disk images and creating virtual machines in VirtualBox. See
+    <xref linkend="ovf" /> for an introduction to appliances.</para>
+
+    <para>The <computeroutput>import</computeroutput> subcommand takes at
+    least the path name of an OVF file as input and expects the disk images,
+    if needed, in the same directory as the OVF file. A lot of additional
+    command-line options are supported to control in detail what is being
+    imported and modify the import parameters, but the details depend on the
+    content of the OVF file.</para>
+
+    <para>It is therefore recommended to first run the import subcommand with
+    the <computeroutput>--dry-run</computeroutput> or
+    <computeroutput>-n</computeroutput> option. This will then print a
+    description of the appliance's contents to the screen how it would be
+    imported into VirtualBox, together with the optional command-line options
+    to influence the import behavior.</para>
+
+    <para>As an example, here is the screen output with a sample appliance
+    containing a Windows XP guest:<screen>VBoxManage import WindowsXp.ovf --dry-run
+Interpreting WindowsXp.ovf...
+OK.
+Virtual system 0:
+ 0: Suggested OS type: "WindowsXP"
+    (change with "--vsys 0 --ostype &lt;type&gt;"; use "list ostypes" to list all)
+ 1: Suggested VM name "Windows XP Professional_1"
+    (change with "--vsys 0 --vmname &lt;name&gt;")
+ 3: Number of CPUs: 1
+    (change with "--vsys 0 --cpus &lt;n&gt;")
+ 4: Guest memory: 956 MB (change with "--vsys 0 --memory &lt;MB&gt;")
+ 5: Sound card (appliance expects "ensoniq1371", can change on import)
+    (disable with "--vsys 0 --unit 5 --ignore")
+ 6: USB controller
+    (disable with "--vsys 0 --unit 6 --ignore")
+ 7: Network adapter: orig bridged, config 2, extra type=bridged
+ 8: Floppy
+    (disable with "--vsys 0 --unit 8 --ignore")
+ 9: SCSI controller, type BusLogic
+    (change with "--vsys 0 --unit 9 --scsitype {BusLogic|LsiLogic}";
+    disable with "--vsys 0 --unit 9 --ignore")
+10: IDE controller, type PIIX4
+    (disable with "--vsys 0 --unit 10 --ignore")
+11: Hard disk image: source image=WindowsXp.vmdk,
+      target path=/home/user/disks/WindowsXp.vmdk, controller=9;channel=0
+    (change controller with "--vsys 0 --unit 11 --controller &lt;id&gt;";
+    disable with "--vsys 0 --unit 11 --ignore")</screen></para>
+
+    <para>As you can see, the individual configuration items are numbered, and
+    depending on their type support different command-line options. The import
+    subcommand can be directed to ignore many such items with a
+    <computeroutput>--vsys X --unit Y --ignore</computeroutput> option, where
+    X is the number of the virtual system (zero unless there are several
+    virtual system descriptions in the appliance) and Y the item number, as
+    printed on the screen.</para>
+
+    <para>In the above example, Item #1 specifies the name of the target
+    machine in VirtualBox. Items #9 and #10 specify hard disk controllers,
+    respectively. Item #11 describes a hard disk image; in this case, the
+    additional <computeroutput>--controller</computeroutput> option indicates
+    which item the disk image should be connected to, with the default coming
+    from the OVF file.</para>
+
+    <para>You can combine several items for the same virtual system behind the
+    same <computeroutput>--vsys</computeroutput> option. For example, to
+    import a machine as described in the OVF, but without the sound card and
+    without the USB controller, and with the disk image connected to the IDE
+    controller instead of the SCSI controller, use this:<screen>VBoxManage import WindowsXp.ovf
+      --vsys 0 --unit 5 --ignore --unit 6 --ignore --unit 11 --controller 10</screen></para>
+  </sect1>
+
+  <sect1 id="vboxmanage-export">
+    <title>VBoxManage export</title>
+
+    <para>This command exports one or more virtual machines from VirtualBox
+    into a virtual appliance in OVF format, including copying their virtual
+    disk images to compressed VMDK. See <xref linkend="ovf" /> for an
+    introduction to appliances.</para>
+
+    <para>The <computeroutput>export</computeroutput> command is simple to
+    use: list the machine (or the machines) that you would like to export to
+    the same OVF file and specify the target OVF file after an additional
+    <computeroutput>--output</computeroutput> or
+    <computeroutput>-o</computeroutput> option. Note that the directory of the
+    target OVF file will also receive the exported disk images in the
+    compressed VMDK format (regardless of the original format) and should have
+    enough disk space left for them.</para>
+
+    <para>Beside a simple export of a given virtual machine, you can append
+    several product information to the appliance file. Use
+    <computeroutput>--product</computeroutput>,
+    <computeroutput>--producturl</computeroutput>,
+    <computeroutput>--vendor</computeroutput>,
+    <computeroutput>--vendorurl</computeroutput> and
+    <computeroutput>--version</computeroutput> to specify this additional
+    information. For legal reasons you may add a license text or the content
+    of a license file by using the <computeroutput>--eula</computeroutput> and
+    <computeroutput>--eulafile</computeroutput> option respectively. As with
+    OVF import, you must use the <computeroutput>--vsys X</computeroutput>
+    option to direct the previously mentioned options to the correct virtual
+    machine.</para>
+
+    <para>For virtualization products which aren't fully compatible with the
+    OVF standard 1.0 you can enable a OVF 0.9 legacy mode with the
+    <computeroutput>--legacy09</computeroutput> option.</para>
+  </sect1>
+
+  <sect1 id="vboxmanage-startvm">
+    <title>VBoxManage startvm</title>
+
+    <para>This command starts a virtual machine that is currently in the
+    "Powered off" or "Saved" states.</para>
+
+    <note>
+      <para>This is provided for backwards compatibility only. We recommend to
+      start virtual machines directly by running the respective front-end, as
+      you might otherwise miss important error and state information that
+      VirtualBox may display on the console. This is especially important for
+      front-ends other than <computeroutput>VirtualBox</computeroutput>, our
+      graphical user interface, because those cannot display error messages in
+      a popup window. See <xref linkend="vboxheadless" /> for more
+      information.</para>
+    </note>
+
+    <para>The optional <computeroutput>--type</computeroutput> specifier
+    determines whether the machine will be started in a window (GUI mode,
+    which is the default) or whether the output should go through
+    <computeroutput>VBoxHeadless</computeroutput>, with VRDP enabled or not;
+    see <xref linkend="vboxheadless" /> for more information. The list of
+    types is subject to change, and it's not guaranteed that all types are
+    accepted by any product variant.</para>
+
+    <para>The following values are allowed:</para>
+
+    <glosslist>
+      <glossentry>
+        <glossterm>gui</glossterm>
+
+        <glossdef>
+          <para>Starts a VM showing a GUI window. This is the default.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>vrdp</glossterm>
+
+        <glossdef>
+          <para>Starts a VM showing a GUI window, with its graphics card
+          output accessible by an RDP client.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>headless</glossterm>
+
+        <glossdef>
+          <para>Starts a VM without a window for remote RDP display
+          only.</para>
+        </glossdef>
+      </glossentry>
+    </glosslist>
+  </sect1>
+
+  <sect1 id="vboxmanage-controlvm">
+    <title>VBoxManage controlvm</title>
+
+    <para>The <computeroutput>controlvm</computeroutput> subcommand allows you
+    to change the state of a virtual machine that is currently running. The
+    following can be specified:</para>
+
+    <para><itemizedlist>
+        <listitem>
+          <para><computeroutput>VBoxManage controlvm &lt;vm&gt;
+          pause</computeroutput> temporarily puts a virtual machine on hold,
+          without changing its state for good. The VM window will be painted
+          in gray to indicate that the VM is currently paused. (This is
+          equivalent to selecting the "Pause" item in the "Machine" menu of
+          the GUI.)</para>
+        </listitem>
+
+        <listitem>
+          <para>Use <computeroutput>VBoxManage controlvm &lt;vm&gt;
+          resume</computeroutput> to undo a previous
+          <computeroutput>pause</computeroutput> command. (This is equivalent
+          to selecting the "Resume" item in the "Machine" menu of the
+          GUI.)</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>VBoxManage controlvm &lt;vm&gt;
+          reset</computeroutput> has the same effect on a virtual machine as
+          pressing the "Reset" button on a real computer: a cold reboot of the
+          virtual machine, which will restart and boot the guest operating
+          system again immediately. The state of the VM is not saved
+          beforehand, and data may be lost. (This is equivalent to selecting
+          the "Reset" item in the "Machine" menu of the GUI.)</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>VBoxManage controlvm &lt;vm&gt;
+          poweroff</computeroutput> has the same effect on a virtual machine
+          as pulling the power cable on a real computer. Again, the state of
+          the VM is not saved beforehand, and data may be lost. (This is
+          equivalent to selecting the "Close" item in the "Machine" menu of
+          the GUI or pressing the window's close button, and then selecting
+          "Power off the machine" in the dialog.)</para>
+
+          <para>After this, the VM's state will be "Powered off". From there,
+          it can be started again; see <xref
+          linkend="vboxmanage-startvm" />.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>VBoxManage controlvm &lt;vm&gt;
+          savestate</computeroutput> will save the current state of the VM to
+          disk and then stop the VM. (This is equivalent to selecting the
+          "Close" item in the "Machine" menu of the GUI or pressing the
+          window's close button, and then selecting "Save the machine state"
+          in the dialog.)</para>
+
+          <para>After this, the VM's state will be "Saved". From there, it can
+          be started again; see <xref linkend="vboxmanage-startvm" />.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>VBoxManage controlvm &lt;vm&gt; teleport
+          --hostname &lt;name&gt; --port &lt;port&gt; [--password
+          &lt;password&gt;]</computeroutput> makes the machine the source of a
+          teleporting operation and initiates a teleport to the given target.
+          See <xref linkend="teleporting" /> for an introduction. If the
+          optional password is specified, it must match the password that was
+          given to the <computeroutput>modifyvm</computeroutput> command for
+          the target machine; see <xref
+          linkend="vboxmanage-modifyvm-teleport" /> for details.</para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para>A few extra options are available with
+    <computeroutput>controlvm</computeroutput> that do not directly affect the
+    VM's running state:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>The <computeroutput>setlinkstate&lt;1-N&gt;</computeroutput>
+        operation connects or disconnects virtual network cables from their
+        network interfaces.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>nic&lt;1-N&gt;
+        null|nat|bridged|intnet|hostonly</computeroutput>: With this, you can
+        set, for each of the VM's virtual network cards, what type of
+        networking should be available. They can be not connected to the host
+        (<computeroutput>null</computeroutput>), use network address
+        translation (<computeroutput>nat</computeroutput>), bridged networking
+        (<computeroutput>bridged</computeroutput>) or communicate with other
+        virtual machines using internal networking
+        (<computeroutput>intnet</computeroutput>) or host-only networking
+        (<computeroutput>hostonly</computeroutput>). These options correspond
+        to the modes which are described in detail in <xref
+        linkend="networkingmodes" />.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>usbattach</computeroutput> and
+        <computeroutput>usbdettach</computeroutput> make host USB devices
+        visible to the virtual machine on the fly, without the need for
+        creating filters first. The USB devices can be specified by UUID
+        (unique identifier) or by address on the host system.</para>
+
+        <para>You can use <computeroutput>VBoxManage list
+        usbhost</computeroutput> to locate this information.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>vrdp on|off</computeroutput> lets you enable or
+        disable the built-in VRDP server.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>vrdpport default|&lt;ports&gt;</computeroutput>
+        changes the port or a range of ports that the VRDP server can bind to;
+        "default" or "0" means port 3389, the standard port for RDP. For
+        details, see the description for the
+        <computeroutput>--vrdpport</computeroutput> option in <xref
+        linkend="vboxmanage-modifyvm-other" />.</para>
+      </listitem>
+
+      <listitem>
+        <para><computeroutput>setvideomodehint</computeroutput> requests that
+        the guest system change to a particular video mode. This requires that
+        the Guest Additions be installed, and will not work for all guest
+        systems.</para>
+      </listitem>
+
+      <listitem>
+        <para>The <computeroutput>setcredentials</computeroutput> operation is
+        used for remote logons in Windows guests. For details, please refer to
+        <xref linkend="autologon" />.</para>
+      </listitem>
+
+      <listitem>
+        <para>The <computeroutput>guestmemoryballoon</computeroutput>
+        operation changes the size of the guest memory balloon, that is,
+        memory allocated by the VirtualBox Guest Additions from the guest
+        operating system and returned to the hypervisor for re-use by other
+        virtual machines. This must be specified in megabytes. For details,
+        see <xref linkend="guestadd-balloon" />.</para>
+      </listitem>
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>VBoxManage discardstate</title>
+
+    <para>This command discards the saved state of a virtual machine which is
+    not currently running, which will cause its operating system to restart
+    next time you start it. This is the equivalent of pulling out the power
+    cable on a physical machine, and should be avoided if possible.</para>
+  </sect1>
+
+  <sect1>
+    <title>VBoxManage snapshot</title>
+
+    <para>This command is used to control snapshots from the command line. A
+    snapshot consists of a complete copy of the virtual machine settings,
+    copied at the time when the snapshot was taken, and optionally a virtual
+    machine saved state file if the snapshot was taken while the machine was
+    running. After a snapshot has been taken, VirtualBox creates differencing
+    hard disk for each normal hard disk associated with the machine so that
+    when a snapshot is restored, the contents of the virtual machine's virtual
+    hard disks can be quickly reset by simply dropping the pre-existing
+    differencing files.</para>
+
+    <para>The <computeroutput>take</computeroutput> operation takes a snapshot
+    of the current state of the virtual machine. You must supply a name for
+    the snapshot and can optionally supply a description. The new snapshot is
+    inserted into the snapshots tree as a child of the current snapshot and
+    then becomes the new current snapshot.</para>
+
+    <para>The <computeroutput>delete</computeroutput> operation deletes a
+    snapshot (specified by name or by UUID). This can take a while to finish
+    since the differencing images associated with the snapshot might need to
+    be merged with their child differencing images.</para>
+
+    <para>The <computeroutput>restore</computeroutput> operation will restore
+    the given snapshot (specified by name or by UUID) by resetting the virtual
+    machine's settings and current state to that of the snapshot. The previous
+    current state of the machine will be lost. After this, the given snapshot
+    becomes the new "current" snapshot so that subsequent snapshots are
+    inserted under the snapshot from which was restored.</para>
+
+    <para>The <computeroutput>restorecurrent</computeroutput> operation is a
+    shortcut to restore the current snapshot (i.e. the snapshot from which the
+    current state is derived). This subcommand is equivalent to using the
+    "restore" subcommand with the name or UUID of the current snapshot, except
+    that it avoids the extra step of determining that name or UUID.</para>
+
+    <para>With the <computeroutput>edit</computeroutput> operation, you can
+    change the name or description of an existing snapshot.</para>
+
+    <para>With the <computeroutput>showvminfo</computeroutput> operation, you
+    can view the virtual machine settings that were stored with an existing
+    snapshot.</para>
+  </sect1>
+
+  <sect1 id="vboxmanage-registerimage">
+    <title>VBoxManage openmedium / closemedium</title>
+
+    <para>These commands register or unregister hard disk, DVD or floppy
+    images in VirtualBox. This is the command-line equivalent of the Virtual
+    Media Manager; see <xref linkend="vdis" /> for more information.<note>
+        <para>For compatibility with earlier versions of VirtualBox, the
+        "registerimage" and "unregisterimage" commands are also supported and
+        mapped internally to the "openmedium" and "closemedium" commands,
+        respectively.</para>
+      </note></para>
+
+    <para>When you register an images you can optionally specify a new UUID
+    for the image. For hard disk images the parent UUID can be changed as
+    well. You can also specify the type of the medium, see <xref
+    linkend="hdimagewrites" /> for details.</para>
+
+    <para>When you unregister an image, you can optionally specify that the
+    image should be deleted. You will get appropriate diagnostics that the
+    deletion failed, however the image will become unregistered in any
+    case.</para>
+  </sect1>
+
+  <sect1 id="vboxmanage-storage">
+    <title>VBoxManage storagectl / storageattach</title>
+
+    <para>These commands allow to attach new storage controllers to a VM,
+    modify or remove the existing ones and also allows the user to change the
+    hard disk, DVD or floppy images attached to them. The list of the storage
+    controllers attached to the VM can be found by the command:</para>
+
+    <screen>VBoxManage showvminfo &lt;vmname&gt;</screen>
+
+    <para>See also <xref linkend="vboxmanage-showvminfo" />.</para>
+
+    <sect2 id="vboxmanage-storagectl">
+      <title>VBoxManage storagectl</title>
+
+      <para>This command attaches/modifies/removes a storage controller. The
+      syntax is as follows:</para>
+
+      <screen>VBoxManage storagectl       &lt;uuid|vmname&gt;
+                            --name &lt;name&gt;
+                            [--add &lt;ide/sata/scsi/floppy&gt;]
+                            [--controller &lt;LsiLogic/BusLogic/IntelAhci/PIIX3/
+                                           PIIX4/ICH6/I8207&gt;]
+                            [--sataideemulation&lt;1-4&gt; &lt;1-30&gt;]
+                            [--sataportcount &lt;1-30&gt;]
+                            [--hostiocache on|off]
+                            [--remove]</screen>
+
+      <para>where the parameters mean: <glosslist>
+          <glossentry>
+            <glossterm>uuid|vmname</glossterm>
+
+            <glossdef>
+              <para>The VM UUID or VM Name. Mandatory.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>name</glossterm>
+
+            <glossdef>
+              <para>Name of the storage controller. Mandatory.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>add</glossterm>
+
+            <glossdef>
+              <para>Define the type of the system bus to which the storage
+              controller must be connected.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>controller</glossterm>
+
+            <glossdef>
+              <para>Allows to choose the type of chipset being emulated for
+              the given storage controller.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>sataideemulation</glossterm>
+
+            <glossdef>
+              <para>This specifies which SATA ports should operate in IDE
+              emulation mode. As explained in <xref
+              linkend="harddiskcontrollers" />, by default, this is the case
+              for SATA ports 1-4; with this command, you can map four IDE
+              channels to any of the 30 supported SATA ports.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>sataportcount</glossterm>
+
+            <glossdef>
+              <para>This determines how many ports the SATA controller should
+              support.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>hostiocache</glossterm>
+
+            <glossdef>
+              <para>Configures the use of the host I/O cache for all disk
+              images attached to this storage controller. For details, please
+              see <xref linkend="iocaching" />.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>remove</glossterm>
+
+            <glossdef>
+              <para>Removes the storage controller from the VM config.</para>
+            </glossdef>
+          </glossentry>
+        </glosslist></para>
+    </sect2>
+
+    <sect2>
+      <title>VBoxManage storageattach</title>
+
+      <para>This command attaches/modifies/removes a storage medium connected
+      to the storage controller named by --storagectl. The syntax is as
+      follows:</para>
+
+      <screen>VBoxManage storageattach    &lt;uuid|vmname&gt;
+                            --storagectl &lt;name&gt;
+                            --port &lt;number&gt;
+                            --device &lt;number&gt;
+                            [--type dvddrive|hdd|fdd
+                             --medium none|emptydrive|uuid|filename|host:&lt;drive&gt;]
+                            [--passthrough on|off]
+                            [--forceunmount]</screen>
+
+      <para>where the parameters mean: <glosslist>
+          <glossentry>
+            <glossterm>uuid|vmname</glossterm>
+
+            <glossdef>
+              <para>The VM UUID or VM Name. Mandatory.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>storagectl</glossterm>
+
+            <glossdef>
+              <para>Name of the storage controller. Mandatory.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>port</glossterm>
+
+            <glossdef>
+              <para>Port number to which the medium has to be
+              attached/detached/modified. Mandatory.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>device</glossterm>
+
+            <glossdef>
+              <para>Device Number to which the medium has to be
+              attached/detached/modified. Mandatory.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>type</glossterm>
+
+            <glossdef>
+              <para>Define the type of the drive to which the medium is being
+              attached/detached/modified.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>medium</glossterm>
+
+            <glossdef>
+              <para>Allows to specify if the DVD/Floppy drive or Harddisk is
+              to be completely detached (none) or just an empty DVD/Floppy
+              drive needs to be attached (emptydrive). If uuid, filename or
+              host:&lt;drive&gt; is specified then it is attached to the
+              storage controller at the specified port and device
+              number.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>passthrough</glossterm>
+
+            <glossdef>
+              <para>With this, you can enable DVD writing support (currently
+              experimental; see <xref linkend="storage-write-cds" />).</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>forceunmount</glossterm>
+
+            <glossdef>
+              <para>If this option is specified then you can unmount the
+              DVD/CD/Floppy or mount a new DVD/CD/Floppy even if the previous
+              one is locked down by the guest for reading.</para>
+            </glossdef>
+          </glossentry>
+        </glosslist></para>
+
+      <note>
+        <para>The option "--medium none" doesn't work when the VM is running
+        because you can't remove DVD/Floppy Drives or Harddisks when the VM is
+        running.</para>
+      </note>
+    </sect2>
+  </sect1>
+
+  <sect1>
+    <title>VBoxManage showhdinfo</title>
+
+    <para>This command shows information about a virtual hard disk image,
+    notably its size, its size on disk, its type and the VM it is in use
+    by.<note>
+        <para>For compatibility with earlier versions of VirtualBox, the
+        "showvdiinfo" command is also supported and mapped internally to the
+        "showhdinfo" command.</para>
+      </note></para>
+  </sect1>
+
+  <sect1 id="vboxmanage-createvdi">
+    <title>VBoxManage createhd</title>
+
+    <para>This command creates a new virtual hard disk image. The syntax is as
+    follows:</para>
+
+    <screen>VBoxManage createhd         --filename &lt;filename&gt;
+                            --size &lt;megabytes&gt;
+                            [--format VDI|VMDK|VHD] (default: VDI)
+                            [--variant Standard,Fixed,Split2G,Stream,ESX]
+                            [--type normal|writethrough] (default: normal)
+                            [--comment &lt;comment&gt;]
+                            [--remember]</screen>
+
+    <para>where the parameters mean:<glosslist>
+        <glossentry>
+          <glossterm>filename</glossterm>
+
+          <glossdef>
+            <para>Allows to choose a file name. Mandatory.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>size</glossterm>
+
+          <glossdef>
+            <para>Allows to define the image capacity, in 1 MiB units.
+            Mandatory.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>format</glossterm>
+
+          <glossdef>
+            <para>Allows to choose a file format for the output file different
+            from the file format of the input file.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>variant</glossterm>
+
+          <glossdef>
+            <para>Allows to choose a file format variant for the output file.
+            It is a comma-separated list of variant flags. Not all
+            combinations are supported, and specifying inconsistent flags will
+            result in an error message.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>type</glossterm>
+
+          <glossdef>
+            <para>Only honored if --remember is also specified. Defines what
+            kind of hard disk type this image should be.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>comment</glossterm>
+
+          <glossdef>
+            <para>Allows to attach a comment to the image.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>remember</glossterm>
+
+          <glossdef>
+            <para>Keep the destination image registered after it was
+            successfully written.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist> <note>
+        <para>For compatibility with earlier versions of VirtualBox, the
+        "createvdi" command is also supported and mapped internally to the
+        "createhd" command.</para>
+      </note></para>
+  </sect1>
+
+  <sect1 id="vboxmanage-modifyvdi">
+    <title>VBoxManage modifyhd</title>
+
+    <para>With the <computeroutput>modifyhd</computeroutput> command, you can
+    change the type of an existing image between the normal, immutable and
+    write-through modes; see <xref linkend="hdimagewrites" /> for
+    details.<note>
+        <para>For compatibility with earlier versions of VirtualBox, the
+        "modifyvdi" command is also supported and mapped internally to the
+        "modifyhd" command.</para>
+      </note></para>
+
+    <para>For immutable (differencing) hard disks only, the
+    <computeroutput>modifyhd autoreset on|off</computeroutput> command
+    determines whether the disk is automatically reset on every VM startup
+    (again, see <xref linkend="hdimagewrites" />). The default is "on".</para>
+
+    <para>In addition, the <computeroutput>modifyhd --compact</computeroutput>
+    command can be used to compact disk images, i.e. remove blocks that only
+    contains zeroes. For this operation to be effective, it is required to
+    zero out free space in the guest system using a suitable software tool.
+    Microsoft provides the <computeroutput>sdelete</computeroutput> tool for
+    Windows guests. Execute <computeroutput>sdelete -c</computeroutput> in the
+    guest to zero the free disk space before compressing the virtual disk
+    image. Compaction works both for base images and for diff images created
+    as part of a snapshot.</para>
+  </sect1>
+
+  <sect1 id="vboxmanage-clonevdi">
+    <title>VBoxManage clonehd</title>
+
+    <para>This command duplicates a registered virtual hard disk image to a
+    new image file with a new unique identifier (UUID). The new image can be
+    transferred to another host system or imported into VirtualBox again using
+    the Virtual Media Manager; see <xref linkend="vdis" /> and <xref
+    linkend="cloningvdis" />. The syntax is as follows:</para>
+
+    <screen>VBoxManage clonehd         &lt;uuid&gt;|&lt;filename&gt; &lt;outputfile&gt;
+                           [--format VDI|VMDK|VHD|RAW|&lt;other&gt;]
+                           [--variant Standard,Fixed,Split2G,Stream,ESX]
+                           [--type normal|writethrough|immutable]
+                           [--remember]</screen>
+
+    <para>where the parameters mean:<glosslist>
+        <glossentry>
+          <glossterm>format</glossterm>
+
+          <glossdef>
+            <para>Allow to choose a file format for the output file different
+            from the file format of the input file.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>variant</glossterm>
+
+          <glossdef>
+            <para>Allow to choose a file format variant for the output file.
+            It is a comma-separated list of variant flags. Not all
+            combinations are supported, and specifying inconsistent flags will
+            result in an error message.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>type</glossterm>
+
+          <glossdef>
+            <para>Only honored if --remember is also specified. Defines what
+            kind of hard disk type this image should be.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>remember</glossterm>
+
+          <glossdef>
+            <para>Keep the destination image registered after it was
+            successfully written.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist> <note>
+        <para>For compatibility with earlier versions of VirtualBox, the
+        "clonevdi" command is also supported and mapped internally to the
+        "clonehd" command.</para>
+      </note></para>
+  </sect1>
+
+  <sect1>
+    <title>VBoxManage convertfromraw</title>
+
+    <para>This command converts a raw disk image to a VirtualBox Disk Image
+    (VDI) file. The syntax is as follows:</para>
+
+    <screen>VBoxManage convertfromraw   &lt;filename&gt; &lt;outputfile&gt;
+                            [--format VDI|VMDK|VHD]
+                            [--variant Standard,Fixed,Split2G,Stream,ESX]
+VBoxManage convertfromraw   stdin &lt;outputfile&gt; &lt;bytes&gt;
+                            [--format VDI|VMDK|VHD]
+                            [--variant Standard,Fixed,Split2G,Stream,ESX]</screen>
+
+    <para>where the parameters mean:<glosslist>
+        <glossentry>
+          <glossterm>format</glossterm>
+
+          <glossdef>
+            <para>Select the disk image format to create. Default is
+            VDI.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>variant</glossterm>
+
+          <glossdef>
+            <para>Allow to choose a file format variant for the output file.
+            It is a comma-separated list of variant flags. Not all
+            combinations are supported, and specifying inconsistent flags will
+            result in an error message.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist> The second form forces VBoxManage to read the content for
+    the disk image from standard input (useful for using that command in a
+    pipe).</para>
+
+    <para><note>
+        <para>For compatibility with earlier versions of VirtualBox, the
+        "convertdd" command is also supported and mapped internally to the
+        "convertfromraw" command.</para>
+      </note></para>
+  </sect1>
+
+  <sect1 id="vboxmanage-addiscsidisk">
+    <title>VBoxManage addiscsidisk</title>
+
+    <para>The <computeroutput>addiscsidisk</computeroutput> command attaches
+    an iSCSI network storage unit to VirtualBox. The iSCSI target can then be
+    made available to and used by a virtual machine as though it were a
+    standard write-through virtual disk image.</para>
+
+    <para>This command has the following syntax:<screen>VBoxManage addiscsidisk --server &lt;name&gt;|&lt;ip&gt;
+                        --target &lt;target&gt;
+                        [--port &lt;port&gt;]
+                        [--lun &lt;lun&gt;]
+                        [--username &lt;username&gt;]
+                        [--password &lt;password&gt;]
+                        [--type normal|writethrough|immutable]
+                        [--comment &lt;comment&gt;]
+                        [--intnet]</screen></para>
+
+    <para>where the parameters mean:<glosslist>
+        <glossentry>
+          <glossterm>server</glossterm>
+
+          <glossdef>
+            <para>The host name or IP address of the iSCSI target.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>target</glossterm>
+
+          <glossdef>
+            <para>Target name string. This is determined by the iSCSI target
+            and used to identify the storage resource.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>port</glossterm>
+
+          <glossdef>
+            <para>TCP/IP port number of the iSCSI service on the target
+            (optional).</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>lun</glossterm>
+
+          <glossdef>
+            <para>Logical Unit Number of the target resource (optional).
+            Often, this value is zero.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>username, password</glossterm>
+
+          <glossdef>
+            <para>Username and password for target authentication, if required
+            (optional).<note>
+                <para>Currently, username and password are stored without
+                encryption (i.e. in cleartext) in the machine configuration
+                file.</para>
+              </note></para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>type</glossterm>
+
+          <glossdef>
+            <para>Defines what kind of hard disk type this image should
+            be.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>comment</glossterm>
+
+          <glossdef>
+            <para>Any description that you want to have stored with this item
+            (optional; e.g. "Big storage server downstairs"). This is stored
+            internally only and not needed for operation.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>intnet</glossterm>
+
+          <glossdef>
+            <para>Connect to the iSCSI target via Internal Networking. This
+            needs further configuration which is described in <xref
+            linkend="iscsi-intnet" />.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist></para>
+  </sect1>
+
+  <sect1>
+    <title>VBoxManage getextradata/setextradata</title>
+
+    <para>These commands let you attach and retrieve string data to a virtual
+    machine or to a VirtualBox configuration (by specifying
+    <computeroutput>global</computeroutput> instead of a virtual machine
+    name). You must specify a key (as a text string) to associate the data
+    with, which you can later use to retrieve it. For example:</para>
+
+    <screen>VBoxManage setextradata Fedora5 installdate 2006.01.01
+VBoxManage setextradata SUSE10 installdate 2006.02.02</screen>
+
+    <para>would associate the string "2006.01.01" with the key installdate for
+    the virtual machine Fedora5, and "2006.02.02" on the machine SUSE10. You
+    could retrieve the information as follows:</para>
+
+    <screen>VBoxManage getextradata Fedora5 installdate</screen>
+
+    <para>which would return</para>
+
+    <screen>VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
+(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+All rights reserved.
+
+Value: 2006.01.01</screen>
+  </sect1>
+
+  <sect1>
+    <title>VBoxManage setproperty</title>
+
+    <para>This command is used to change global settings which affect the
+    entire VirtualBox installation. Some of these correspond to the settings
+    in the "Global settings" dialog in the graphical user interface. The
+    following properties are available:<glosslist>
+        <glossentry>
+          <glossterm>hdfolder</glossterm>
+
+          <glossdef>
+            <para>This specifies the default folder that is used to keep disk
+            image files (.vdi, .vmdk, .vhd).</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>machinefolder</glossterm>
+
+          <glossdef>
+            <para>This specifies the default folder in which virtual machine
+            definitions are kept; see <xref linkend="vboxconfigdata" /> for
+            details.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>vrdpauthlibrary</glossterm>
+
+          <glossdef>
+            <para>This specifies which library to use when "external" VRDP
+            authentication has been selected for a particular virtual machine;
+            see <xref linkend="vrdp-auth" /> for details.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>websrvauthlibrary</glossterm>
+
+          <glossdef>
+            <para>This specifies which library the web service uses to
+            authenticate users. For details about the VirtualBox web service,
+            please refer to the separate VirtualBox SDK reference (see <xref
+            linkend="VirtualBoxAPI" />).</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>hwvirtexenabled</glossterm>
+
+          <glossdef>
+            <para>This selects whether or not hardware virtualization support
+            is enabled by default.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist></para>
+  </sect1>
+
+  <sect1>
+    <title>VBoxManage usbfilter add/modify/remove</title>
+
+    <para>The <computeroutput>usbfilter</computeroutput> commands are used for
+    working with USB filters in virtual machines, or global filters which
+    affect the whole VirtualBox setup. Global filters are applied before
+    machine-specific filters, and may be used to prevent devices from being
+    captured by any virtual machine. Global filters are always applied in a
+    particular order, and only the first filter which fits a device is
+    applied. So for example, if the first global filter says to hold (make
+    available) a particular Kingston memory stick device and the second to
+    ignore all Kingston devices, that memory stick will be available to any
+    machine with an appropriate filter, but no other Kingston device
+    will.</para>
+
+    <para>When creating a USB filter using <computeroutput>usbfilter
+    add</computeroutput>, you must supply three or four mandatory parameters.
+    The index specifies the position in the list at which the filter should be
+    placed. If there is already a filter at that position, then it and the
+    following ones will be shifted back one place. Otherwise the new filter
+    will be added onto the end of the list. The
+    <computeroutput>target</computeroutput> parameter selects the virtual
+    machine that the filter should be attached to or use "global" to apply it
+    to all virtual machines. <computeroutput>name</computeroutput> is a name
+    for the new filter and for global filters,
+    <computeroutput>action</computeroutput> says whether to allow machines
+    access to devices that fit the filter description ("hold") or not to give
+    them access ("ignore"). In addition, you should specify parameters to
+    filter by. You can find the parameters for devices attached to your system
+    using <computeroutput>VBoxManage list usbhost</computeroutput>. Finally,
+    you can specify whether the filter should be active, and for local
+    filters, whether they are for local devices, remote (over an RDP
+    connection) or either.</para>
+
+    <para>When you modify a USB filter using <computeroutput>usbfilter
+    modify</computeroutput>, you must specify the filter by index (see the
+    output of <computeroutput>VBoxManage list usbfilters</computeroutput> to
+    find global filter indexes and that of <computeroutput>VBoxManage
+    showvminfo</computeroutput> to find indexes for individual machines) and
+    by target, which is either a virtual machine or "global". The properties
+    which can be changed are the same as for <computeroutput>usbfilter
+    add</computeroutput>. To remove a filter, use <computeroutput>usbfilter
+    remove</computeroutput> and specify the index and the target.</para>
+  </sect1>
+
+  <sect1>
+    <title>VBoxManage sharedfolder add/remove</title>
+
+    <para>This command allows you to share folders on the host computer with
+    guest operating systems. For this, the guest systems must have a version
+    of the VirtualBox Guest Additions installed which supports this
+    functionality.</para>
+
+    <para>Shared folders are described in detail in <xref
+    linkend="sharedfolders" />.</para>
+  </sect1>
+
+  <sect1>
+    <title id="metrics">VBoxManage metrics</title>
+
+    <para>This command supports monitoring the usage of system resources.
+    Resources are represented by various metrics associated with the host
+    system or a particular VM. For example, the host system has a
+    <computeroutput>CPU/Load/User</computeroutput> metric that shows the
+    percentage of time CPUs spend executing in user mode over a specific
+    sampling period.</para>
+
+    <para>Metric data is collected and retained internally; it may be
+    retrieved at any time with the <computeroutput>VBoxManage metrics
+    query</computeroutput> subcommand. The data is available as long as the
+    background <computeroutput>VBoxSVC</computeroutput> process is alive. That
+    process terminates shortly after all VMs and frontends have been
+    closed.</para>
+
+    <para>By default no metrics are collected at all. Metrics collection does
+    not start until <computeroutput>VBoxManage metrics setup</computeroutput>
+    is invoked with a proper sampling interval and the number of metrics to be
+    retained. The interval is measured in seconds. For example, to enable
+    collecting the host processor and memory usage metrics every second and
+    keeping the 5 most current samples, the following command can be
+    used:</para>
+
+    <screen>VBoxManage metrics setup --period 1 --samples 5 host CPU/Load,RAM/Usage</screen>
+
+    <para>Metric collection can only be enabled for started VMs. Collected
+    data and collection settings for a particular VM will disappear as soon as
+    it shuts down. Use <computeroutput>VBoxManage metrics list
+    </computeroutput> subcommand to see which metrics are currently available.
+    You can also use <computeroutput>--list</computeroutput> option with any
+    subcommand that modifies metric settings to find out which metrics were
+    affected.</para>
+
+    <para>Note that the <computeroutput>VBoxManage metrics
+    setup</computeroutput> subcommand discards all samples that may have been
+    previously collected for the specified set of objects and metrics.</para>
+
+    <para>To enable or disable metrics collection without discarding the data
+    <computeroutput>VBoxManage metrics enable</computeroutput> and
+    <computeroutput>VBoxManage metrics disable</computeroutput> subcommands
+    can be used. Note that these subcommands expect metrics, not submetrics,
+    like <code>CPU/Load</code> or <code>RAM/Usage</code> as parameters. In
+    other words enabling <code>CPU/Load/User</code> while disabling
+    <code>CPU/Load/Kernel</code> is not supported.</para>
+
+    <para>The host and VMs have different sets of associated metrics.
+    Available metrics can be listed with <computeroutput>VBoxManage metrics
+    list</computeroutput> subcommand.</para>
+
+    <para>A complete metric name may include an aggregate function. The name
+    has the following form:
+    <computeroutput>Category/Metric[/SubMetric][:aggregate]</computeroutput>.
+    For example, <computeroutput>RAM/Usage/Free:min</computeroutput> stands
+    for the minimum amount of available memory over all retained data if
+    applied to the host object.</para>
+
+    <para>Subcommands may apply to all objects and metrics or can be limited
+    to one object or/and a list of metrics. If no objects or metrics are given
+    in the parameters, the subcommands will apply to all available metrics of
+    all objects. You may use an asterisk
+    ("<computeroutput>*</computeroutput>") to explicitly specify that the
+    command should be applied to all objects or metrics. Use "host" as the
+    object name to limit the scope of the command to host-related metrics. To
+    limit the scope to a subset of metrics, use a metric list with names
+    separated by commas.</para>
+
+    <para>For example, to query metric data on the CPU time spent in user and
+    kernel modes by the virtual machine named "test", you can use the
+    following command:</para>
+
+    <screen>VBoxManage query test CPU/Load/User,CPU/Load/Kernel</screen>
+
+    <para>The following list summarizes the available subcommands:</para>
+
+    <glosslist>
+      <glossentry>
+        <glossterm>list</glossterm>
+
+        <glossdef>
+          <para>This subcommand shows the parameters of the currently existing
+          metrics. Note that VM-specific metrics are only available when a
+          particular VM is running.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>setup</glossterm>
+
+        <glossdef>
+          <para>This subcommand sets the interval between taking two samples
+          of metric data and the number of samples retained internally. The
+          retained data is available for displaying with the
+          <code>query</code> subcommand. The <computeroutput>--list
+          </computeroutput> option shows which metrics have been modified as
+          the result of the command execution.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>enable</glossterm>
+
+        <glossdef>
+          <para>This subcommand "resumes" data collection after it has been
+          stopped with <code>disable</code> subcommand. Note that specifying
+          submetrics as parameters will not enable underlying metrics. Use
+          <computeroutput>--list</computeroutput> to find out if the command
+          did what was expected.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>disable</glossterm>
+
+        <glossdef>
+          <para>This subcommand "suspends" data collection without affecting
+          collection parameters or collected data. Note that specifying
+          submetrics as parameters will not disable underlying metrics. Use
+          <computeroutput>--list</computeroutput> to find out if the command
+          did what was expected.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>query</glossterm>
+
+        <glossdef>
+          <para>This subcommand retrieves and displays the currently retained
+          metric data.<note>
+              <para>The <code>query</code> subcommand does not remove or
+              "flush" retained data. If you query often enough you will see
+              how old samples are gradually being "phased out" by new
+              samples.</para>
+            </note></para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>collect</glossterm>
+
+        <glossdef>
+          <para>This subcommand sets the interval between taking two samples
+          of metric data and the number of samples retained internally. The
+          collected data is displayed periodically until Ctrl-C is pressed
+          unless the <computeroutput>--detach</computeroutput> option is
+          specified. With the <computeroutput>--detach</computeroutput>
+          option, this subcommand operates the same way as <code>setup</code>
+          does. The <computeroutput>--list</computeroutput> option shows which
+          metrics match the specified filter.</para>
+        </glossdef>
+      </glossentry>
+    </glosslist>
+  </sect1>
+
+  <sect1 id="vboxmanage-guestproperty">
+    <title>VBoxManage guestproperty</title>
+
+    <para>The "guestproperty" commands allow you to get or set properties of a
+    running virtual machine. Please see <xref linkend="guestadd-guestprops" />
+    for an introduction. As explained there, guest properties are arbitrary
+    key/value string pairs which can be written to and read from by either the
+    guest or the host, so they can be used as a low-volume communication
+    channel for strings, provided that a guest is running and has the Guest
+    Additions installed. In addition, a number of values whose keys begin with
+    "/VirtualBox/" are automatically set and maintained by the Guest
+    Additions.</para>
+
+    <para>The following subcommands are available (where
+    <computeroutput>&lt;vm&gt;</computeroutput>, in each case, can either be a
+    VM name or a VM UUID, as with the other VBoxManage commands):<itemizedlist>
+        <listitem>
+          <para><computeroutput>enumerate &lt;vm&gt; [-patterns
+          &lt;pattern&gt;]</computeroutput>: This lists all the guest
+          properties that are available for the given VM, including the value.
+          This list will be very limited if the guest's service process cannot
+          be contacted, e.g. because the VM is not running or the Guest
+          Additions are not installed.</para>
+
+          <para>If <computeroutput>--patterns &lt;pattern&gt;</computeroutput>
+          is specified, it acts as a filter to only list properties that match
+          the given pattern. The pattern can contain the following wildcard
+          characters:<itemizedlist>
+              <listitem>
+                <para><computeroutput>*</computeroutput> (asterisk):
+                represents any number of characters; for example,
+                "<computeroutput>/VirtualBox*</computeroutput>" would match
+                all properties beginning with "/VirtualBox".</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>?</computeroutput> (question mark):
+                represents a single arbitrary character; for example,
+                "<computeroutput>fo?</computeroutput>" would match both "foo"
+                and "for".</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>|</computeroutput> (pipe symbol): can be
+                used to specify multiple alternative patterns; for example,
+                "<computeroutput>s*|t*</computeroutput>" would match anything
+                starting with either "s" or "t".</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>get &lt;vm&gt;</computeroutput>: This
+          retrieves the value of a single property only. If the property
+          cannot be found (e.g. because the guest is not running), this will
+          print "No value set!".</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>set &lt;vm&gt; &lt;property&gt; [&lt;value&gt;
+          [-flags &lt;flags&gt;]]</computeroutput>: This allows you to set a
+          guest property by specifying the key and value. If
+          <computeroutput>&lt;value&gt;</computeroutput> is omitted, the
+          property is deleted. With <computeroutput>--flags</computeroutput>
+          you can optionally specify additional behavior (you can combine
+          several by separating them with commas):<itemizedlist>
+              <listitem>
+                <para><computeroutput>TRANSIENT</computeroutput>: the value
+                will not be stored with the VM data when the VM exits;</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>RDONLYGUEST</computeroutput>: the value
+                can only be changed by the host, but the guest can only read
+                it;</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>RDONLYHOST</computeroutput>: reversely,
+                the value can only be changed by the guest, but the host can
+                only read it;</para>
+              </listitem>
+
+              <listitem>
+                <para><computeroutput>READONLY</computeroutput>: a combination
+                of the two, the value cannot be changed at all.</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>wait &lt;vm&gt; &lt;pattern&gt; --timeout
+          &lt;timeout&gt;</computeroutput>: This waits for a particular value
+          described by "pattern" to change or to be deleted or created. The
+          pattern rules are the same as for the "enumerate" subcommand
+          above.</para>
+        </listitem>
+      </itemizedlist></para>
+  </sect1>
+
+  <sect1 id="vboxmanage-guestcontrol">
+    <title>VBoxManage guestcontrol</title>
+
+    <para>The "guestcontrol" commands allow you to control certain things
+    inside a guest from the host. Please see <xref
+    linkend="guestadd-guestcontrol" /> for an introduction.</para>
+
+    <para>Generally, the syntax is as follows:</para>
+
+    <screen>VBoxManage guestcontrol &lt;command&gt;</screen>
+
+    <para>At this time, the only available
+    <computeroutput>&lt;command&gt;</computeroutput> is "execute", which
+    allows for executing a program/script (process) which is already installed
+    and runnable on the guest. This command only works while a VM is up and
+    running and has the following syntax:</para>
+
+    <screen>VBoxManage guestcontrol execute &lt;vmname&gt;|&lt;uuid&gt;
+        &lt;pathToProgram&gt;
+        --username &lt;name&gt; --password &lt;password&gt;
+        [--arguments "&lt;arguments&gt;"]
+        [--environment "&lt;NAME&gt;=&lt;VALUE&gt; [&lt;NAME&gt;=&lt;VALUE&gt;]"]
+        [--flags &lt;flags&gt;] [--timeout &lt;msec&gt;]
+        [--verbose] [--wait-for exit,stdout,stderr||]</screen>
+
+    <para>where the parameters mean: <glosslist>
+        <glossentry>
+          <glossterm>uuid|vmname</glossterm>
+
+          <glossdef>
+            <para>The VM UUID or VM name. Mandatory.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>pathToProgram</glossterm>
+
+          <glossdef>
+            <para>Absolute path and process name of process to execute in the
+            guest, e.g.
+            <computeroutput>C:\Windows\System32\calc.exe</computeroutput></para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>--arguments "&lt;arguments&gt;"</glossterm>
+
+          <glossdef>
+            <para>One or more arguments to pass to the process being
+            executed.</para>
+
+            <para>Arguments containing spaces must be enclosed in quotation
+            marks. More than one <computeroutput>--arguments</computeroutput>
+            at a time can be specified to keep the command line tidy.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>--environment "&lt;NAME&gt;=&lt;VALUE&gt;"</glossterm>
+
+          <glossdef>
+            <para>One or more environment variables to be set or unset.</para>
+
+            <para>By default, the new process in the guest will be created
+            with the the standard environment of the guest OS. This option
+            allows for modifying that environment. To set/modify a variable, a
+            pair of <computeroutput>NAME=VALUE</computeroutput> must be
+            specified; to unset a certain variable, the name with no value
+            must set, e.g. <computeroutput>NAME=</computeroutput>.</para>
+
+            <para>Arguments containing spaces must be enclosed in quotation
+            marks. More than one
+            <computeroutput>--environment</computeroutput> at a time can be
+            specified to keep the command line tidy.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>--flags &lt;flags&gt;</glossterm>
+
+          <glossdef>
+            <para>Additional flags to set. This is not used at the
+            moment.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>--timeout &lt;msec&gt;</glossterm>
+
+          <glossdef>
+            <para>Value (in milliseconds) that specifies the time how long the
+            started process is allowed to run and how long VBoxManage waits
+            for getting output from that process. If no timeout is specified,
+            VBoxManage will wait forever until the started process ends or an
+            error occured.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>--username &lt;name&gt;</glossterm>
+
+          <glossdef>
+            <para>Name of the user the process should run under. This user
+            must exist on the guest OS.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>--password &lt;password&gt;</glossterm>
+
+          <glossdef>
+            <para>Password of the user account specified with
+            <computeroutput>--username</computeroutput>. If not given, an
+            empty password is assumed.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>--verbose</glossterm>
+
+          <glossdef>
+            <para>Tells VBoxManage to be more verbose during the
+            execution.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>--wait-for &lt;action&gt;</glossterm>
+
+          <glossdef>
+            <para>Tells VBoxManage to wait for a certain action to happen and
+            react to it. The following actions are available: <glosslist>
+                <glossentry>
+                  <glossterm>exit</glossterm>
+
+                  <glossdef>
+                    <para>Waits until the process ends and outputs its exit
+                    code along with the exit reason/flags.</para>
+                  </glossdef>
+                </glossentry>
+
+                <glossentry>
+                  <glossterm>stdout or stderr</glossterm>
+
+                  <glossdef>
+                    <para>Waits until the process ends and outputs its exit
+                    code along with the exit reason/flags. After that
+                    VBoxManage retrieves the output collected from the guest
+                    process's stdout and stderr.</para>
+                  </glossdef>
+                </glossentry>
+              </glosslist></para>
+          </glossdef>
+        </glossentry>
+      </glosslist></para>
+
+    <para><note>
+        <para>On Windows there are certain limitations for graphical
+        applications; please see <xref linkend="KnownIssues" /> for more
+        information.</para>
+      </note> Examples: <screen>VBoxManage --nologo guestcontrol execute "My VM" "/bin/ls" --arguments "-l /usr"
+           --username foo --password bar --wait-for stdout</screen> <screen>VBoxManage --nologo guestcontrol execute "My VM" "c:\\windows\\system32\\ipconfig.exe"
+           --username foo --password bar --wait-for stdout</screen> Note that
+    the double backslashes in the second example are only required on Unix
+    hosts.</para>
+  </sect1>
+
+  <sect1 id="vboxmanage-dhcpserver">
+    <title>VBoxManage dhcpserver</title>
+
+    <para>The "dhcpserver" commands allow you to control the DHCP server that
+    is built into VirtualBox. You may find this useful when using internal or
+    host-only networking. (Theoretically, you can enable it for a bridged
+    network as well, but that will likely cause conflicts with other DHCP
+    servers in your physical network.)</para>
+
+    <para>Use the following command line options:<itemizedlist>
+        <listitem>
+          <para>If you use internal networking for a virtual network adapter
+          of a virtual machine, use <computeroutput>VBoxManage dhcpserver add
+          --netname &lt;network_name&gt;</computeroutput>, where
+          <computeroutput>&lt;network_name&gt;</computeroutput> is the same
+          network name you used with <computeroutput>VBoxManage modifyvm
+          &lt;vmname&gt; --intnet&lt;X&gt;
+          &lt;network_name&gt;</computeroutput>.</para>
+        </listitem>
+
+        <listitem>
+          <para>If you use host-only networking for a virtual network adapter
+          of a virtual machine, use <computeroutput>VBoxManage dhcpserver add
+          --ifname &lt;hostonly_if_name&gt;</computeroutput> instead, where
+          <computeroutput>&lt;hostonly_if_name&gt;</computeroutput> is the
+          same host-only interface name you used with
+          <computeroutput>VBoxManage modifyvm &lt;vmname&gt;
+          --hostonlyadapter&lt;X&gt;
+          &lt;hostonly_if_name&gt;</computeroutput>.</para>
+
+          <para>Alternatively, you can also use the --netname option as with
+          internal networks if you know the host-only network's name; you can
+          see the names with <computeroutput>VBoxManage list
+          hostonlyifs</computeroutput> (see <xref linkend="vboxmanage-list" />
+          above).</para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para>The following additional parameters are required when first adding a
+    DHCP server:<itemizedlist>
+        <listitem>
+          <para>With <computeroutput>--ip</computeroutput>, specify the IP
+          address of the DHCP server itself.</para>
+        </listitem>
+
+        <listitem>
+          <para>With <computeroutput>--netmask</computeroutput>, specify the
+          netmask of the network.</para>
+        </listitem>
+
+        <listitem>
+          <para>With <computeroutput>--lowerip</computeroutput> and
+          <computeroutput>--upperip</computeroutput>, you can specify the
+          lowest and highest IP address, respectively, that the DHCP server
+          will hand out to clients.</para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para>Finally, you must specify <computeroutput>--enable</computeroutput>
+    or the DHCP server will be created in the disabled state, doing
+    nothing.</para>
+
+    <para>After this, VirtualBox will automatically start the DHCP server for
+    given internal or host-only network as soon as the first virtual machine
+    which uses that network is started.</para>
+
+    <para>Reversely, use <computeroutput>VBoxManage dhcpserver
+    remove</computeroutput> with the given <computeroutput>--netname
+    &lt;network_name&gt;</computeroutput> or <computeroutput>--ifname
+    &lt;hostonly_if_name&gt;</computeroutput> to remove the DHCP server again
+    for the given internal or host-only network.</para>
+
+    <para>To modify the settings of a DHCP server created earlier with
+    <computeroutput>VBoxManage dhcpserver add</computeroutput>, you can use
+    <computeroutput>VBoxManage dhcpserver modify</computeroutput> for a given
+    network or host-only interface name.</para>
+  </sect1>
+</chapter>
