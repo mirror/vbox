@@ -249,7 +249,8 @@ static void PNGAPI png_output_flush_fn(png_structp png_ptr)
 }
 
 static int displayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
-                          uint8_t **ppu8PNG, uint32_t *pcbPNG, uint32_t *pcxPNG, uint32_t *pcyPNG)
+                          uint8_t **ppu8PNG, uint32_t *pcbPNG, uint32_t *pcxPNG, uint32_t *pcyPNG,
+                          uint8_t fLimitSize)
 {
     int rc = VINF_SUCCESS;
 
@@ -258,7 +259,7 @@ static int displayMakePNG(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
     uint32_t volatile cxBitmap = 0; /* gcc setjmp warning */
     uint32_t volatile cyBitmap = 0; /* gcc setjmp warning */
 
-    if (cx < kMaxSizePNG && cy < kMaxSizePNG)
+    if (!fLimitSize || (cx < kMaxSizePNG && cy < kMaxSizePNG))
     {
         /* Save unscaled screenshot. */
         pu8Bitmap = pu8Data;
@@ -447,7 +448,7 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
 
             /* Prepare a small thumbnail and a PNG screenshot. */
             displayMakeThumbnail(pu8Data, cx, cy, &pu8Thumbnail, &cbThumbnail, &cxThumbnail, &cyThumbnail);
-            displayMakePNG(pu8Data, cx, cy, &pu8PNG, &cbPNG, &cxPNG, &cyPNG);
+            displayMakePNG(pu8Data, cx, cy, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 1);
 
             /* This can be called from any thread. */
             that->mpDrv->pUpPort->pfnFreeScreenshot (that->mpDrv->pUpPort, pu8Data);
@@ -2602,8 +2603,7 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
         }
 
         com::SafeArray<BYTE> screenData (cbData);
-        for (unsigned i = 0; i < cbData; i++)
-            screenData[i] = pu8Data[i];
+        screenData.initFrom(pu8Data, cbData);
         screenData.detachTo(ComSafeArrayOutArg(aScreenData));
     }
     else if (vrc == VERR_NOT_IMPLEMENTED)
@@ -2619,6 +2619,80 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
     LogFlowFuncLeave();
     return rc;
 }
+
+STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, ULONG height,
+                                             ComSafeArrayOut(BYTE, aScreenData))
+{
+    LogFlowFuncEnter();
+    LogFlowFunc (("width=%d, height=%d\n",
+                  width, height));
+
+    CheckComArgOutSafeArrayPointerValid(aScreenData);
+    CheckComArgExpr(width, width != 0);
+    CheckComArgExpr(height, height != 0);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    CHECK_CONSOLE_DRV (mpDrv);
+
+    Console::SafeVMPtr pVM(mParent);
+    if (FAILED(pVM.rc())) return pVM.rc();
+
+    HRESULT rc = S_OK;
+
+    LogFlowFunc (("Sending SCREENSHOT request\n"));
+
+    /* Leave lock because other thread (EMT) is called and it may initiate a resize
+     * which also needs lock.
+     *
+     * This method does not need the lock anymore.
+     */
+    alock.leave();
+
+    size_t cbData = width * 4 * height;
+    uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbData);
+
+    if (!pu8Data)
+        return E_OUTOFMEMORY;
+
+#ifdef VBOX_WITH_OLD_VBVA_LOCK
+    int vrc = displayTakeScreenshot(pVM, this, mpDrv, aScreenId, pu8Data, width, height);
+#else
+    int vrc = displayTakeScreenshot(pVM, mpDrv, pu8Data, width, height);
+#endif /* !VBOX_WITH_OLD_VBVA_LOCK */
+
+    if (RT_SUCCESS(vrc))
+    {
+        uint8_t *pu8PNG = NULL;
+        uint32_t cbPNG = 0;
+        uint32_t cxPNG = 0;
+        uint32_t cyPNG = 0;
+
+        displayMakePNG(pu8Data, width, height, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 0);
+
+        com::SafeArray<BYTE> screenData (cbPNG);
+        screenData.initFrom(pu8PNG, cbPNG);
+        RTMemFree(pu8PNG);
+
+        screenData.detachTo(ComSafeArrayOutArg(aScreenData));
+    }
+    else if (vrc == VERR_NOT_IMPLEMENTED)
+        rc = setError(E_NOTIMPL,
+                      tr("This feature is not implemented"));
+    else
+        rc = setError(VBOX_E_IPRT_ERROR,
+                      tr("Could not take a screenshot (%Rrc)"), vrc);
+
+    RTMemFree(pu8Data);
+
+    LogFlowFunc (("rc=%08X\n", rc));
+    LogFlowFuncLeave();
+    return rc;
+}
+
 
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
 int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height)

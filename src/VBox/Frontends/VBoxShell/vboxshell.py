@@ -355,7 +355,7 @@ def monitorSource(ctx, es, active, dur):
         es.unregisterListener(listener)
 
 
-def takeScreenshot(ctx,console,args):
+def takeScreenshotOld(ctx,console,args):
     from PIL import Image
     display = console.display
     if len(args) > 0:
@@ -383,6 +383,32 @@ def takeScreenshot(ctx,console,args):
     im = Image.frombuffer(mode, size, str(data), "raw", mode, 0, 1)
     im.save(f, "PNG")
 
+def takeScreenshot(ctx,console,args):
+    display = console.display
+    if len(args) > 0:
+        f = args[0]
+    else:
+        f = "/tmp/screenshot.png"
+    if len(args) > 3:
+        screen = int(args[3])
+    else:
+        screen = 0
+    (fbw, fbh, fbbpp) = display.getScreenResolution(screen)
+    if len(args) > 1:
+        w = int(args[1])
+    else:
+        w = fbw
+    if len(args) > 2:
+        h = int(args[2])
+    else:
+        h = fbh
+
+    print "Saving screenshot (%d x %d) screen %d in %s..." %(w,h,screen,f)
+    data = display.takeScreenShotPNGToArray(screen, w,h)
+    size = (w,h)
+    file = open(f, 'wb')
+    file.write(data)
+    file.close()
 
 def teleport(ctx,session,console,args):
     if args[0].find(":") == -1:

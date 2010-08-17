@@ -10701,7 +10701,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IDisplay" extends="$unknown"
-     uuid="1fa79e39-0cc9-4ab3-9df3-ed3e96b42496"
+     uuid="09EED313-CD56-4D06-BD56-FAC0F716B5DD"
      wsmap="managed"
      >
     <desc>
@@ -10817,6 +10817,40 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         This API is slow, but could be the only option to get guest screenshot
         for scriptable languages not allowed to manipulate with addresses
         directly.
+
+        <result name="E_NOTIMPL">
+          Feature not implemented.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not take a screenshot.
+        </result>
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>
+          Monitor to take screenshot from.
+        </desc>
+      </param>
+      <param name="width" type="unsigned long" dir="in">
+        <desc>
+          Desired image width.
+        </desc>
+      </param>
+      <param name="height" type="unsigned long" dir="in">
+        <desc>
+          Desired image height.
+        </desc>
+      </param>
+      <param name="screenData" type="octet" dir="return" safearray="yes">
+        <desc>
+          Array with resulting screen data.
+        </desc>
+      </param>
+    </method>
+
+     <method name="takeScreenShotPNGToArray">
+      <desc>
+        Takes a guest screen shot of the requested size and returns it as
+        PNG image in array.
 
         <result name="E_NOTIMPL">
           Feature not implemented.
