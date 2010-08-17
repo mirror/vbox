@@ -1,5 +1,5 @@
 /** @file
- * FTM - Fault Tolerance Monitor. (VMM)
+ * FTM - Fault Tolerance Manager
  */
 
 /*
@@ -40,9 +40,11 @@ RT_C_DECLS_BEGIN
  * @ingroup grp_ftm
  * @{
  */
-VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fSource, unsigned uInterval, char *pszAddress, unsigned uPort);
+VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fSource, unsigned uInterval, const char *pszAddress, unsigned uPort);
 
 #endif /* IN_RING3 */
+
+/** @} */
 
 /** @} */
 

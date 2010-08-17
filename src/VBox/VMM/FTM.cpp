@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * GMM - Global Memory Manager, ring-3 request wrappers.
+ * FTM - Fault Tolerance Manager
  */
 
 /*
@@ -20,20 +20,18 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_FTM
-#include <VBox/gmm.h>
 #include <VBox/vmm.h>
 #include <VBox/vm.h>
-#include <VBox/sup.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
+#include <VBox/ftm.h>
 
 #include <iprt/assert.h>
 #include <VBox/log.h>
-#include <iprt/mem.h>
-#include <iprt/string.h>
 
 
-VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fSource, unsigned uInterval, char *pszAddress, unsigned uPort)
+
+VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fSource, unsigned uInterval, const char *pszAddress, unsigned uPort)
 {
     return VERR_NOT_IMPLEMENTED;
 }
