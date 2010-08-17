@@ -32,6 +32,8 @@
 
 DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq)
 {
+    size_t cbReqExpected;
+
     if (!pReq || cbReq < sizeof (VMMDevRequestHeader))
     {
         dprintf(("VbglGRVerify: Invalid parameter: pReq = %p, cbReq = %d\n", pReq, cbReq));
@@ -45,7 +47,7 @@ DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq)
     }
 
     /* The request size must correspond to the request type. */
-    size_t cbReqExpected = vmmdevGetRequestSize(pReq->requestType);
+    cbReqExpected = vmmdevGetRequestSize(pReq->requestType);
 
     if (cbReq < cbReqExpected)
     {
