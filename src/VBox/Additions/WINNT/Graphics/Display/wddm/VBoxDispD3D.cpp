@@ -3471,8 +3471,8 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                         tstW /= 2;
                         tstH /= 2;
                         CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
-                        Assert(pSurf->Width == tstW);
-                        Assert(pSurf->Height == tstH);
+                        Assert((pSurf->Width == tstW) || (!tstW && (pSurf->Width==1)));
+                        Assert((pSurf->Height == tstH) || (!tstH && (pSurf->Height==1)));
                     }
                 }
 #endif
