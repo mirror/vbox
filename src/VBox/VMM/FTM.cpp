@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,15 +24,42 @@
 #include <VBox/vm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/ftm.h>
+#include "FTMInternal.h"
 
 #include <iprt/assert.h>
 #include <VBox/log.h>
 
 
-
-VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fSource, unsigned uInterval, const char *pszAddress, unsigned uPort)
+/**
+ * Powers on the fault tolerant virtual machine.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM to power on.
+ * @param   fMaster     FT master or clone
+ * @param   uInterval   FT sync interval
+ * @param   pszAddress  Master VM address
+ * @param   uPort       Master VM port
+ *
+ * @thread      Any thread.
+ * @vmstate     Created
+ * @vmstateto   PoweringOn+Running (master), PoweringOn+Running_FT (clone)
+ */
+VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const char *pszAddress, unsigned uPort)
 {
+    VMSTATE enmVMState = VMR3GetState(pVM);
+    AssertMsgReturn(enmVMState == VMSTATE_POWERING_ON,
+                    ("%s\n", VMR3GetStateName(enmVMState)),
+                    VERR_INTERNAL_ERROR_4);
+
+    if (fMaster)
+    {
+        return VMR3PowerOn(pVM);
+    }
+    else
+    {
+        /* clone */
+    }
     return VERR_NOT_IMPLEMENTED;
 }
 

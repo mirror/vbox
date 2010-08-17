@@ -70,7 +70,8 @@ struc VM
     .fCSAMEnabled           resb 1
     .fHWACCMEnabled         resb 1
     .fHwVirtExtForced       resb 1
-    .fPARAVEnabled          resb 1
+    .fFaultTolerantMaster   resb 1
+    .fUseLargePages         resb 1
 
     alignb 8
 
