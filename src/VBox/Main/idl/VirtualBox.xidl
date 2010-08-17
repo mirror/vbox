@@ -922,8 +922,8 @@
     <const name="Master" value="2">
       <desc>Fault tolerant master VM.</desc>
     </const>
-    <const name="Clone" value="3">
-      <desc>Fault tolerant clone VM.</desc>
+    <const name="Standby" value="3">
+      <desc>Fault tolerant standby VM.</desc>
     </const>
   </enum>
 

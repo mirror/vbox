@@ -5216,7 +5216,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     FaultToleranceState_T enmFaultToleranceState;
     rc = mMachine->COMGETTER(FaultToleranceState)(&enmFaultToleranceState);
     if (FAILED(rc)) return rc;
-    BOOL fFaultToleranceSyncEnabled = (enmFaultToleranceState == FaultToleranceState_Clone);
+    BOOL fFaultToleranceSyncEnabled = (enmFaultToleranceState == FaultToleranceState_Standby);
 
     /* create a progress object to track progress of this operation */
     ComObjPtr<Progress> powerupProgress;
@@ -5398,7 +5398,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         setMachineState(MachineState_Restoring);
     else if (fTeleporterEnabled)
         setMachineState(MachineState_TeleportingIn);
-    else if (enmFaultToleranceState == FaultToleranceState_Clone)
+    else if (enmFaultToleranceState == FaultToleranceState_Standby)
         setMachineState(MachineState_FaultTolerantSyncing);
     else
         setMachineState(MachineState_Starting);
@@ -7273,7 +7273,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
          *       SessionMachine::setMachineState() when the VM is powered down.
          */
         if (    !task->mTeleporterEnabled
-            &&  task->mEnmFaultToleranceState != FaultToleranceState_Clone)
+            &&  task->mEnmFaultToleranceState != FaultToleranceState_Standby)
         {
             rc = console->mControl->LockMedia();
             if (FAILED(rc)) throw rc;
