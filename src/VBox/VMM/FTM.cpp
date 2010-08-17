@@ -1,4 +1,4 @@
-/* $Id: GMM.cpp 63491 2010-07-08 09:12:48Z sandervl $ */
+/* $Id$ */
 /** @file
  * GMM - Global Memory Manager, ring-3 request wrappers.
  */
