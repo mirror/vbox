@@ -54,7 +54,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
 {
     int         rc = VINF_SUCCESS;
     RTR0MEMOBJ  MemObj = NIL_RTR0MEMOBJ;
-    uint32_t    fAccess = RTMEM_PROT_READ | (fWriteAccess ? RTMEM_PROT_WRITE : 0);
+    uint32_t    fAccess;
 
     /* Zero size buffers shouldn't be locked. */
     if (u32Size == 0)
@@ -107,6 +107,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
      *       we lock both kernel pages on all systems, even those where we
      *       know they aren't pagable.
      */
+    fAccess = RTMEM_PROT_READ | (fWriteAccess ? RTMEM_PROT_WRITE : 0);
     if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
         rc = RTR0MemObjLockUser(&MemObj, (RTR3PTR)pv, u32Size, fAccess, NIL_RTR0PROCESS);
     else
