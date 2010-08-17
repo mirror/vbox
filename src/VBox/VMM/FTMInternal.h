@@ -38,6 +38,7 @@ typedef struct FTM
     char       *pszAddress;
     unsigned    uPort;
     unsigned    uInterval;
+
 } FTM;
 
 /** @} */
