@@ -87,6 +87,7 @@ VMMR3_SOURCES   = \
 	EM.cpp \
 	EMRaw.cpp \
 	EMHwaccm.cpp \
+	FTM.cpp \
 	IOM.cpp \
 	GMM.cpp \
 	MM.cpp \

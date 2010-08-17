@@ -207,6 +207,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_VUSB,
     /** EM group. */
     LOG_GROUP_EM,
+    /** FTM group. */
+    LOG_GROUP_FTM,
     /** GMM group. */
     LOG_GROUP_GMM,
     /** GUI group. */
@@ -434,6 +436,7 @@ typedef enum LOGGROUP
     "DRV_VSWITCH",  \
     "DRV_VUSB",     \
     "EM",           \
+    "FTM",          \
     "GMM",          \
     "GUI",          \
     "GVMM",         \
