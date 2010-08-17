@@ -53,7 +53,7 @@ struct VMClientWatcherData;
 namespace settings
 {
     class MainConfigFile;
-    class MediaRegistry;
+    struct MediaRegistry;
 }
 
 class ATL_NO_VTABLE VirtualBox :
