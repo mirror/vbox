@@ -85,6 +85,7 @@
 #include <VBox/pdmnetifs.h>
 #include <VBox/vusb.h>
 #include <VBox/mm.h>
+#include <VBox/ftm.h>
 #include <VBox/ssm.h>
 #include <VBox/version.h>
 #ifdef VBOX_WITH_USB
@@ -215,7 +216,7 @@ struct VMPowerUpTask : public VMProgressTask
           mConfigConstructor(NULL),
           mStartPaused(false),
           mTeleporterEnabled(FALSE),
-          mFaultToleranceSyncEnabled(FALSE)
+          mEnmFaultToleranceState(FaultToleranceState_Inactive)
     {}
 
     PFNCFGMCONSTRUCTOR mConfigConstructor;
@@ -223,7 +224,7 @@ struct VMPowerUpTask : public VMProgressTask
     Console::SharedFolderDataMap mSharedFolders;
     bool mStartPaused;
     BOOL mTeleporterEnabled;
-    BOOL mFaultToleranceSyncEnabled;
+    FaultToleranceState_T mEnmFaultToleranceState;
 
     /* array of progress objects for hard disk reset operations */
     typedef std::list< ComPtr<IProgress> > ProgressList;
@@ -5292,7 +5293,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     if (mMachineState == MachineState_Saved)
         task->mSavedStateFile = savedStateFile;
     task->mTeleporterEnabled = fTeleporterEnabled;
-    task->mFaultToleranceSyncEnabled = fFaultToleranceSyncEnabled;
+    task->mEnmFaultToleranceState = enmFaultToleranceState;
 
     /* Reset differencing hard disks for which autoReset is true,
      * but only if the machine has no snapshots OR the current snapshot
@@ -7272,7 +7273,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
          *       SessionMachine::setMachineState() when the VM is powered down.
          */
         if (    !task->mTeleporterEnabled
-            &&  !task->mFaultToleranceSyncEnabled)
+            &&  task->mEnmFaultToleranceState != FaultToleranceState_Target)
         {
             rc = console->mControl->LockMedia();
             if (FAILED(rc)) throw rc;
@@ -7454,10 +7455,31 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         AssertRC(vrc2);
                     }
                 }
-                else if (task->mFaultToleranceSyncEnabled)
+                else if (task->mEnmFaultToleranceState != FaultToleranceState_Inactive)
                 {
-                    /** @todo */
-                    rc = E_NOTIMPL;
+                    /*
+                     * Get the config.
+                     */
+                    ULONG uPort;
+                    ULONG uInterval;
+                    Bstr bstrAddress;
+
+                    rc = pMachine->COMGETTER(FaultTolerancePort)(&uPort);
+                    if (SUCCEEDED(rc))
+                    {
+                        rc = pMachine->COMGETTER(FaultToleranceSyncInterval)(&uInterval);
+                        if (SUCCEEDED(rc))
+                            rc = pMachine->COMGETTER(FaultToleranceAddress)(bstrAddress.asOutParam());
+                    }
+                    if (SUCCEEDED(rc))
+                    {
+                        Utf8Str strAddress(bstrAddress);
+                        const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
+
+                        /* Start FT syncing. */
+                        vrc = FTMR3PowerOn(pVM, (task->mEnmFaultToleranceState == FaultToleranceState_Source) /* fSource */, uInterval, pszAddress, uPort);
+                        AssertRC(vrc);
+                    }
                 }
                 else if (task->mStartPaused)
                     /* done */
