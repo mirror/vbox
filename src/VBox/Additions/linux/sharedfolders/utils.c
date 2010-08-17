@@ -385,7 +385,6 @@ static int sf_make_path(const char *caller, struct sf_inode_info *sf_i,
     SHFLSTRING *tmp;
     uint16_t p_len;
     uint8_t *p_name;
-    uint8_t *dst;
     int fRoot = 0;
 
     TRACE();
