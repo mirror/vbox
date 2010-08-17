@@ -786,8 +786,8 @@ typedef struct VM
     /** Hardware VM support is required and non-optional.
      * This is initialized together with the rest of the VM structure. */
     bool                        fHwVirtExtForced;
-    /** PARAV enabled flag. */
-    bool                        fPARAVEnabled;
+    /** Set when this VM is the master FT node. */
+    bool                        fFaultTolerantMaster;
     /** Large page enabled flag. */
     bool                        fUseLargePages;
     /** @} */
@@ -961,6 +961,15 @@ typedef struct VM
         uint8_t     padding[128];        /* multiple of 64 */
     } ssm;
 
+    /** FTM part. */
+    union
+    {
+#ifdef ___FTMInternal_h
+        struct FTM  s;
+#endif
+        uint8_t     padding[128];        /* multiple of 64 */
+    } ftm;
+
     /** REM part. */
     union
     {
@@ -990,17 +999,8 @@ typedef struct VM
         uint8_t     padding[8];         /* multiple of 8 */
     } cfgm;
 
-    /** PARAV part. */
-    union
-    {
-#ifdef ___PARAVInternal_h
-        struct PARAV s;
-#endif
-        uint8_t     padding[24];        /* multiple of 8 */
-    } parav;
-
     /** Padding for aligning the cpu array on a page boundrary. */
-    uint8_t         abAlignment2[1992];
+    uint8_t         abAlignment2[1886];
 
     /* ---- end small stuff ---- */
 

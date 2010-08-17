@@ -40,7 +40,7 @@ RT_C_DECLS_BEGIN
  * @ingroup grp_ftm
  * @{
  */
-VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fSource, unsigned uInterval, const char *pszAddress, unsigned uPort);
+VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const char *pszAddress, unsigned uPort);
 
 #endif /* IN_RING3 */
 
