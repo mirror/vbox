@@ -1,4 +1,4 @@
-/* $Id$ */
+/* $Id */
 /** @file
  * FTM - Fault Tolerance Manager
  */
@@ -36,14 +36,14 @@
  * @returns VBox status code.
  *
  * @param   pVM         The VM to power on.
- * @param   fMaster     FT master or clone
+ * @param   fMaster     FT master or standby
  * @param   uInterval   FT sync interval
  * @param   pszAddress  Master VM address
  * @param   uPort       Master VM port
  *
  * @thread      Any thread.
  * @vmstate     Created
- * @vmstateto   PoweringOn+Running (master), PoweringOn+Running_FT (clone)
+ * @vmstateto   PoweringOn+Running (master), PoweringOn+Running_FT (standby)
  */
 VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const char *pszAddress, unsigned uPort)
 {
@@ -58,7 +58,7 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
     }
     else
     {
-        /* clone */
+        /* standby */
     }
     return VERR_NOT_IMPLEMENTED;
 }
