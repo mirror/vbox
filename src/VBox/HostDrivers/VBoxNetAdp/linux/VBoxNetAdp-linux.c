@@ -62,10 +62,11 @@ static int VBoxNetAdpLinuxOpen(struct inode *pInode, struct file *pFilp);
 static int VBoxNetAdpLinuxClose(struct inode *pInode, struct file *pFilp);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 static int VBoxNetAdpLinuxIOCtl(struct inode *pInode, struct file *pFilp,
+                                unsigned int uCmd, unsigned long ulArg);
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
 static long VBoxNetAdpLinuxIOCtlUnlocked(struct file *pFilp,
+                                         unsigned int uCmd, unsigned long ulArg);
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36) */
-                                unsigned int uCmd, unsigned long ulArg);
 
 /*******************************************************************************
 *   Global Variables                                                           *
