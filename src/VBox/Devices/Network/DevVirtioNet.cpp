@@ -986,9 +986,12 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
                     Assert(pSgBuf->cSegs == 1);
                     /* Assemble a complete frame. */
                     for (unsigned int i = 1; i < elem.nOut; i++)
+                    {
                         PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns), elem.aSegsOut[i].addr,
                                           ((uint8_t*)pSgBuf->aSegs[0].pvSeg) + uOffset,
                                           elem.aSegsOut[i].cb);
+                        uOffset += elem.aSegsOut[i].cb;
+                    }
                     pSgBuf->cbUsed = uSize;
                     vnetPacketDump(pState, (uint8_t*)pSgBuf->aSegs[0].pvSeg, uSize, "--> Outgoing");
                     if (pGso)
