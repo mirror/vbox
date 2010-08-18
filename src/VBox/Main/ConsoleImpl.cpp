@@ -5231,7 +5231,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     else
         progressDesc = tr("Starting virtual machine");
     if (    mMachineState == MachineState_Saved 
-        ||  !fTeleporterEnabled)
+        ||  (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
         rc = powerupProgress->init(static_cast<IConsole *>(this),
                                    progressDesc,
                                    FALSE /* aCancelable */);
