@@ -129,8 +129,6 @@ struct VNetState_st
     uint32_t    padding;
 #endif
 
-    /** transmit buffer */
-    R3PTRTYPE(uint8_t*)     pTxBuf;
     /**< Link Up(/Restore) Timer. */
     PTMTIMERR3              pLinkUpTimer;
 #ifdef VNET_TX_DELAY
@@ -961,20 +959,12 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
         }
         else
         {
+            unsigned int uSize = 0;
             STAM_PROFILE_ADV_START(&pState->StatTransmit, a);
-            /* Assemble a complete frame. */
-            for (unsigned int i = 1; i < elem.nOut && uOffset < VNET_MAX_FRAME_SIZE; i++)
-            {
-                unsigned int uSize = elem.aSegsOut[i].cb;
-                if (uSize > VNET_MAX_FRAME_SIZE - uOffset)
-                {
-                    Log(("%s vnetQueueTransmit: Packet is too big (>64k), truncating...\n", INSTANCE(pState)));
-                    uSize = VNET_MAX_FRAME_SIZE - uOffset;
-                }
-                PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns), elem.aSegsOut[i].addr,
-                                  pState->pTxBuf + uOffset, uSize);
-                uOffset += uSize;
-            }
+            /* Compute total frame size. */
+            for (unsigned int i = 1; i < elem.nOut; i++)
+                uSize += elem.aSegsOut[i].cb;
+            Assert(uSize <= VNET_MAX_FRAME_SIZE);
             if (pState->pDrv)
             {
                 VNETHDR Hdr;
@@ -985,31 +975,38 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
 
                 STAM_REL_COUNTER_INC(&pState->StatTransmitPackets);
 
-                vnetPacketDump(pState, pState->pTxBuf, uOffset, "--> Outgoing");
-
                 STAM_PROFILE_START(&pState->StatTransmitSend, a);
 
                 pGso = vnetSetupGsoCtx(&Gso, &Hdr);
-                if (pGso)
-                    STAM_REL_COUNTER_INC(&pState->StatTransmitGSO);
-                else if (Hdr.u8Flags & VNETHDR_F_NEEDS_CSUM)
-                {
-                    STAM_REL_COUNTER_INC(&pState->StatTransmitCSum);
-                    /*
-                     * This is not GSO frame but checksum offloading is requested.
-                     */
-                    vnetCompleteChecksum(pState->pTxBuf, uOffset, Hdr.u16CSumStart, Hdr.u16CSumOffset);
-                }
                 /** @todo Optimize away the extra copying! (lazy bird) */
                 PPDMSCATTERGATHER pSgBuf;
-                int rc = pState->pDrv->pfnAllocBuf(pState->pDrv, uOffset, pGso, &pSgBuf);
+                int rc = pState->pDrv->pfnAllocBuf(pState->pDrv, uSize, pGso, &pSgBuf);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pSgBuf->cSegs == 1);
-                    memcpy(pSgBuf->aSegs[0].pvSeg, pState->pTxBuf, uOffset);
-                    pSgBuf->cbUsed = uOffset;
+                    /* Assemble a complete frame. */
+                    for (unsigned int i = 1; i < elem.nOut; i++)
+                        PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns), elem.aSegsOut[i].addr,
+                                          ((uint8_t*)pSgBuf->aSegs[0].pvSeg) + uOffset,
+                                          elem.aSegsOut[i].cb);
+                    pSgBuf->cbUsed = uSize;
+                    vnetPacketDump(pState, (uint8_t*)pSgBuf->aSegs[0].pvSeg, uSize, "--> Outgoing");
+                    if (pGso)
+                        STAM_REL_COUNTER_INC(&pState->StatTransmitGSO);
+                    else if (Hdr.u8Flags & VNETHDR_F_NEEDS_CSUM)
+                    {
+                        STAM_REL_COUNTER_INC(&pState->StatTransmitCSum);
+                        /*
+                         * This is not GSO frame but checksum offloading is requested.
+                         */
+                        vnetCompleteChecksum((uint8_t*)pSgBuf->aSegs[0].pvSeg, uSize,
+                                             Hdr.u16CSumStart, Hdr.u16CSumOffset);
+                    }
+
                     rc = pState->pDrv->pfnSendBuf(pState->pDrv, pSgBuf, false);
                 }
+                else
+                    LogRel(("virtio-net: failed to allocate SG buffer: size=%u rc=%Rrc\n", uSize, rc));
 
                 STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
                 STAM_REL_COUNTER_ADD(&pState->StatTransmitBytes, uOffset);
@@ -1755,11 +1752,6 @@ static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
         pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
     }
 
-    if (pState->pTxBuf)
-    {
-        RTMemFree(pState->pTxBuf);
-        pState->pTxBuf = NULL;
-    }
     // if (PDMCritSectIsInitialized(&pState->csRx))
     //     PDMR3CritSectDelete(&pState->csRx);
 
@@ -1821,10 +1813,6 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pState->INetworkConfig.pfnGetMac         = vnetGetMac;
     pState->INetworkConfig.pfnGetLinkState   = vnetGetLinkState;
     pState->INetworkConfig.pfnSetLinkState   = vnetSetLinkState;
-
-    pState->pTxBuf = (uint8_t *)RTMemAllocZ(VNET_MAX_FRAME_SIZE);
-    AssertMsgReturn(pState->pTxBuf,
-                    ("Cannot allocate TX buffer for virtio-net device\n"), VERR_NO_MEMORY);
 
     /* Initialize critical section. */
     // char szTmp[sizeof(pState->VPCI.szInstance) + 2];
