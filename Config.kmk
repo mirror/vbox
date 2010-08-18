@@ -2159,7 +2159,7 @@ SDK_VBOX_LIBCURL_LIBS ?= $(PATH_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
 SDK_VBOX_LIBCURL_DEFS ?= BUILDING_LIBCURL
 
 SDK_VBOX_FFMPEG       = .
-if1of ($(KBUILD_TARGET), darwin linux os2 win)
+if1of ($(KBUILD_TARGET), darwin linux os2 solaris win)
  SDK_VBOX_FFMPEG_INCS ?= \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavutil \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavcodec \
