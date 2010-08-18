@@ -7202,6 +7202,17 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDPUSBDEVICEDESC *p
 }
 
 /**
+ * Progress cancelation callback for fault tolerance VM poweron
+ */
+static void faultToleranceProgressCancelCallback(void *pvUser)
+{
+    PVM pVM = (PVM)pvUser;
+
+    if (pVM)
+        FTMR3CancelStandby(pVM);
+}
+
+/**
  * Thread function which starts the VM (also from saved state) and
  * track progress.
  *
@@ -7473,19 +7484,23 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         if (SUCCEEDED(rc))
                             rc = pMachine->COMGETTER(FaultTolerancePassword)(bstrPassword.asOutParam());
                     }
-                    if (SUCCEEDED(rc))
+                    if (task->mProgress->setCancelCallback(faultToleranceProgressCancelCallback, pVM))
                     {
-                        Utf8Str strAddress(bstrAddress);
-                        const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
-                        Utf8Str strPassword(bstrPassword);
-                        const char *pszPassword = strPassword.isEmpty() ? NULL : strPassword.c_str();
-
-                        /** @todo set progress cancel callback! */
-
-                        /* Power on the FT enabled VM. */
-                        vrc = FTMR3PowerOn(pVM, (task->mEnmFaultToleranceState == FaultToleranceState_Master) /* fMaster */, uInterval, pszAddress, uPort, pszPassword);
-                        AssertRC(vrc);
+                        if (SUCCEEDED(rc))
+                        {
+                            Utf8Str strAddress(bstrAddress);
+                            const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
+                            Utf8Str strPassword(bstrPassword);
+                            const char *pszPassword = strPassword.isEmpty() ? NULL : strPassword.c_str();
+    
+                            /* Power on the FT enabled VM. */
+                            vrc = FTMR3PowerOn(pVM, (task->mEnmFaultToleranceState == FaultToleranceState_Master) /* fMaster */, uInterval, pszAddress, uPort, pszPassword);
+                            AssertRC(vrc);
+                        }
+                        task->mProgress->setCancelCallback(NULL, NULL);
                     }
+                    else
+                        rc = E_FAIL;
                 }
                 else if (task->mStartPaused)
                     /* done */
