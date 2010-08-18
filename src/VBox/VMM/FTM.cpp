@@ -1,4 +1,4 @@
-/* $Id */
+/* $Id$ */
 /** @file
  * FTM - Fault Tolerance Manager
  */
