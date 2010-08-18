@@ -3213,7 +3213,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     {
         if (    VarTssAddr.u64Range > 0
             &&  VarTssAddr.u64Range < sizeof(X86TSS32) - 4)
-            enmTssType == kTss16;
+            enmTssType = kTss16;
         else
         {
             uint64_t uEfer;
