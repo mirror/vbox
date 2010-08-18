@@ -28,32 +28,32 @@ int vboxVbvaDisable (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva);
 int vboxVbvaDestroy(PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva);
 int vboxVbvaCreate(struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva, ULONG offBuffer, ULONG cbBuffer, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId);
 int vboxVbvaReportCmdOffset (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva, uint32_t offCmd);
-int vboxVbvaReportDirtyRect (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva, RECT *pRectOrig);
+int vboxVbvaReportDirtyRect (struct _DEVICE_EXTENSION* pDevExt, struct VBOXWDDM_SOURCE *pSrc, RECT *pRectOrig);
 BOOL vboxVbvaBufferBeginUpdate (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva);
 void vboxVbvaBufferEndUpdate (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva);
 
-#define VBOXVBVA_OP(_op, _pdext, _pvbva, _arg) \
+#define VBOXVBVA_OP(_op, _pdext, _psrc, _arg) \
         do { \
-            if (vboxVbvaBufferBeginUpdate(_pdext, _pvbva)) \
+            if (vboxVbvaBufferBeginUpdate(_pdext, &(_psrc)->Vbva)) \
             { \
-                vboxVbva##_op(_pdext, _pvbva, _arg); \
-                vboxVbvaBufferEndUpdate(_pdext, _pvbva); \
+                vboxVbva##_op(_pdext, _psrc, _arg); \
+                vboxVbvaBufferEndUpdate(_pdext, &(_psrc)->Vbva); \
             } \
         } while (0)
 
-#define VBOXVBVA_OP_WITHLOCK_ATDPC(_op, _pdext, _pvbva, _arg) \
+#define VBOXVBVA_OP_WITHLOCK_ATDPC(_op, _pdext, _psrc, _arg) \
         do { \
-            KeAcquireSpinLockAtDpcLevel(&(_pvbva)->Lock);  \
-            VBOXVBVA_OP(_op, _pdext, _pvbva, _arg);        \
-            KeReleaseSpinLockFromDpcLevel(&(_pvbva)->Lock);\
+            KeAcquireSpinLockAtDpcLevel(&(_psrc)->Vbva.Lock);  \
+            VBOXVBVA_OP(_op, _pdext, _psrc, _arg);        \
+            KeReleaseSpinLockFromDpcLevel(&(_psrc)->Vbva.Lock);\
         } while (0)
 
-#define VBOXVBVA_OP_WITHLOCK(_op, _pdext, _pvbva, _arg) \
+#define VBOXVBVA_OP_WITHLOCK(_op, _pdext, _psrc, _arg) \
         do { \
             KIRQL OldIrql; \
-            KeAcquireSpinLock(&(_pvbva)->Lock, &OldIrql);  \
-            VBOXVBVA_OP(_op, _pdext, _pvbva, _arg);        \
-            KeReleaseSpinLock(&(_pvbva)->Lock, OldIrql);   \
+            KeAcquireSpinLock(&(_psrc)->Vbva.Lock, &OldIrql);  \
+            VBOXVBVA_OP(_op, _pdext, _psrc, _arg);        \
+            KeReleaseSpinLock(&(_psrc)->Vbva.Lock, OldIrql);   \
         } while (0)
 
 

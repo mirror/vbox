@@ -345,14 +345,14 @@ int vboxWrite (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva, const void *pv, u
 }
 
 
-int vboxVbvaReportDirtyRect (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva, RECT *pRectOrig)
+int vboxVbvaReportDirtyRect (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSrc, RECT *pRectOrig)
 {
         VBVACMDHDR hdr;
 
         RECT rect = *pRectOrig;
 
-        if (rect.left < 0) rect.left = 0;
-        if (rect.top < 0) rect.top = 0;
+//        if (rect.left < 0) rect.left = 0;
+//        if (rect.top < 0) rect.top = 0;
 //        if (rect.right > (int)ppdev->cxScreen) rect.right = ppdev->cxScreen;
 //        if (rect.bottom > (int)ppdev->cyScreen) rect.bottom = ppdev->cyScreen;
 
@@ -361,10 +361,10 @@ int vboxVbvaReportDirtyRect (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva, REC
         hdr.w = (uint16_t)(rect.right - rect.left);
         hdr.h = (uint16_t)(rect.bottom - rect.top);
 
-//        hdr.x += (int16_t)ppdev->ptlDevOrg.x;
-//        hdr.y += (int16_t)ppdev->ptlDevOrg.y;
+        hdr.x += (int16_t)pSrc->VScreenPos.x;
+        hdr.y += (int16_t)pSrc->VScreenPos.y;
 
-        return vboxWrite (pDevExt, pVbva, &hdr, sizeof(hdr));
+        return vboxWrite (pDevExt, &pSrc->Vbva, &hdr, sizeof(hdr));
 }
 
 #ifdef VBOXVDMA_WITH_VBVA
