@@ -3945,7 +3945,7 @@
 
     <attribute name="teleporterPassword" type="wstring">
       <desc>
-        The password the to check for on the target teleporter.  This is just a
+        The password to check for on the target teleporter. This is just a
         very basic measure to prevent simple hacks and operators accidentally
         beaming a virtual machine to the wrong place.
       </desc>
@@ -3974,7 +3974,7 @@
 
     <attribute name="faultTolerancePassword" type="wstring">
       <desc>
-        The password the to check for on the standby VM.  This is just a
+        The password to check for on the standby VM.  This is just a
         very basic measure to prevent simple hacks and operators accidentally
         choosing the wrong standby VM.
       </desc>
