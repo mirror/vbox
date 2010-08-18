@@ -336,6 +336,15 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 
 /* Predicates */
 
+typedef struct HDABDLEDESC
+{
+    uint64_t    u64BdleCviAddr;
+    uint32_t    u32BdleMaxCvi;
+    uint32_t    u32BdleCvi;
+    uint32_t    u32BdleCviLen;
+    uint32_t    u32BdleCviPos;
+    bool        fBdleCviIoc; 
+} HDABDLEDESC, *PHDABDLEDESC;
 
 typedef struct INTELHDLinkState
 {
@@ -349,13 +358,9 @@ typedef struct INTELHDLinkState
     PDMIBASE                IBase;
     RTGCPHYS    addrMMReg;
     uint32_t     au32Regs[113];
-    /* Current BD index  */
-    uint32_t    u32Cvi;
-    uint64_t    u64CviAddr;
-    /* Length of current BD entry */
-    uint32_t    u32CviLen;
-    uint32_t    u32CviPos;
-    uint32_t    u32Cbp;
+    HDABDLEDESC  stInBdle;
+    HDABDLEDESC  stOutBdle;
+    HDABDLEDESC  stMicBdle;
     /* Interrupt on completition */
     bool        fCviIoc;
     uint64_t    u64CORBBase;
@@ -422,7 +427,7 @@ DECLCALLBACK(int)hdaRegWriteU16(INTELHDLinkState* pState, uint32_t offset, uint3
 DECLCALLBACK(int)hdaRegReadU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 DECLCALLBACK(int)hdaRegWriteU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 static int hdaLookup(INTELHDLinkState* pState, uint32_t u32Offset);
-static void fetch_bd(INTELHDLinkState *pState);
+static void fetch_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64BaseDMA);
 
 /* see 302349 p 6.2*/
 const static struct stIchIntelHDRegMap
@@ -573,6 +578,9 @@ const static struct stIchIntelHDRegMap
 
 static int hdaProcessInterrupt(INTELHDLinkState* pState)
 {
+#define IS_INTERRUPT_OCCURED_AND_ENABLED(pState, num)                       \
+        (   INTCTL_SX((pState), num)                                        \
+         && (SDSTS(pState, num) & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS))) 
     bool fIrq = false;
     if(   INTCTL_CIE(pState)
        && (   RIRBSTS_RINTFL(pState)
@@ -581,8 +589,8 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
     {
         fIrq = true;
     }
-    if (   INTCTL_SX(pState, 4)
-        && SDSTS(pState, 4) && HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS))
+    if (   IS_INTERRUPT_OCCURED_AND_ENABLED(pState, 0)
+        || IS_INTERRUPT_OCCURED_AND_ENABLED(pState, 4))
     {
         fIrq = true;
     }
@@ -966,20 +974,31 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))
     {
         Log(("hda: DMA(%x) switched on\n", offset));
-        AUD_set_active_in(pState->Codec.voice_pi, 1);
-        AUD_set_active_in(pState->Codec.voice_mc, 1);
+        if (offset == 0x80)
+        {
+            AUD_set_active_in(pState->Codec.voice_pi, 1);
+            //AUD_set_active_in(pState->Codec.voice_mc, 1);
+        }
         if (offset == 0x100)
         {
-            fetch_bd(pState);
-            AUD_set_active_out(pState->Codec.voice_po, 1);
+            uint64_t u64BaseDMA = SDBDPL(pState, 4);
+            u64BaseDMA |= (((uint64_t)SDBDPU(pState, 4)) << 32);
+            if (u64BaseDMA)
+            {
+                //fetch_bd(pState, u64BaseDMA);
+                AUD_set_active_out(pState->Codec.voice_po, 1);
+            }
             //SDSTS(pState, 4) |= (1<<5);
         }
     }
     else
     {
         Log(("hda: DMA(%x) switched off\n", offset));
-        AUD_set_active_in(pState->Codec.voice_pi, 0);
-        AUD_set_active_in(pState->Codec.voice_mc, 0);
+        if (offset == 0x80)
+        {
+            AUD_set_active_in(pState->Codec.voice_pi, 0);
+            //AUD_set_active_in(pState->Codec.voice_mc, 0);
+        }
         if (offset == 0x100)
         {
             SDSTS(pState, 4) &= ~(1<<5);
@@ -1121,7 +1140,7 @@ DECLCALLBACK(int)hdaRegWriteRIRBSTS(INTELHDLinkState* pState, uint32_t offset, u
     return hdaProcessInterrupt(pState);
 }
 
-static void dump_bd(INTELHDLinkState *pState)
+static void dump_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64BaseDMA)
 {
     uint64_t addr;
     uint32_t len;
@@ -1130,32 +1149,71 @@ static void dump_bd(INTELHDLinkState *pState)
     uint32_t counter;
     uint32_t i;
     uint32_t sum = 0;
-    for (i = 0; i <= SDLVI(pState, 4); ++i)
+    Assert(pBdle && pBdle->u32BdleMaxCvi);
+    for (i = 0; i <= pBdle->u32BdleMaxCvi; ++i)
     {
-        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), SDBDPL(pState, 4) + i*16, bdle, 16);
+        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), u64BaseDMA + i*16, bdle, 16);
         addr = *(uint64_t *)bdle;
         len = *(uint32_t *)&bdle[8];
         ioc = *(uint32_t *)&bdle[12];
-        Log(("hda: %s bdle[%d] a:%x, len:%x, ios:%d\n",  (i == pState->u32Cvi? "[C]": "   "), i, addr, len, ioc));
+        Log(("hda: %s bdle[%d] a:%x, len:%x, ios:%d\n",  (i == pBdle->u32BdleCvi? "[C]": "   "), i, addr, len, ioc));
         sum += len;
     }
     Log(("hda: sum: %d\n", sum));
     for (i = 0; i < 8; ++i)
     {
         PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pState->u64DPBase + i*8, &counter, 4);
-        Log(("hda: %s stream[%d] counter=%x\n", (i) == SDCTL_NUM(pState, 4)? "[C]": "   ", i , counter));
+        Log(("hda: %s stream[%d] counter=%x\n", i == SDCTL_NUM(pState, 4) || i == SDCTL_NUM(pState, 0)? "[C]": "   ",
+             i , counter));
     }
 }
-static void fetch_bd(INTELHDLinkState *pState)
+static void fetch_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64BaseDMA)
 {
-    dump_bd(pState);
     uint8_t  bdle[16];
-    PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), SDBDPL(pState, 4) + pState->u32Cvi*16, bdle, 16);
-    pState->u64CviAddr = *(uint64_t *)bdle;
-    pState->u32CviLen = *(uint32_t *)&bdle[8];
-    pState->fCviIoc = (*(uint32_t *)&bdle[12]) & 0x1;
+    Assert((u64BaseDMA && pBdle && pBdle->u32BdleMaxCvi));
+    PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), u64BaseDMA + pBdle->u32BdleCvi*16, bdle, 16);
+    pBdle->u64BdleCviAddr = *(uint64_t *)bdle;
+    pBdle->u32BdleCviLen = *(uint32_t *)&bdle[8];
+    pBdle->fBdleCviIoc = (*(uint32_t *)&bdle[12]) & 0x1;
+    dump_bd(pState, pBdle, u64BaseDMA);
 }
 
+static uint32_t read_audio(INTELHDLinkState *pState, int avail, bool *fStop)
+{
+    uint8_t tmpbuf[4096];
+    uint32_t temp;
+    uint32_t u32Rest = 0;
+    uint32_t cbRead = 0;
+    uint32_t to_copy = 0;
+    /* todo: add input line detection */
+    PHDABDLEDESC pBdle = &pState->stInBdle;
+    SWVoiceIn *voice = pState->Codec.voice_pi;
+    u32Rest = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
+    temp = audio_MIN(u32Rest, (uint32_t)avail);
+    if (!temp)
+    {
+        *fStop = true;
+        return cbRead;
+    }
+    while (temp)
+    {
+        int copied;
+        to_copy = audio_MIN(temp, 4096U);
+        copied = AUD_read (voice, tmpbuf, to_copy);
+        Log (("hda: read_audio max=%x to_copy=%x copied=%x\n",
+              avail, to_copy, copied));
+        if (!copied)
+        {
+            *fStop = true;
+            break;
+        }
+        PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, tmpbuf, copied);
+        temp    -= copied;
+        cbRead += copied;
+        pBdle->u32BdleCviPos += copied;
+    }
+    return cbRead;
+}
 static uint32_t write_audio(INTELHDLinkState *pState, int avail, bool *fStop)
 {
     uint8_t tmpbuf[4096];
@@ -1163,7 +1221,8 @@ static uint32_t write_audio(INTELHDLinkState *pState, int avail, bool *fStop)
     uint32_t u32Rest;
     uint32_t written = 0;
     int to_copy = 0;
-    u32Rest = pState->u32CviLen - pState->u32CviPos;
+    PHDABDLEDESC pBdle = &pState->stOutBdle;
+    u32Rest = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
     temp = audio_MIN(u32Rest, (uint32_t)avail);
     if (!temp)
     {
@@ -1174,7 +1233,7 @@ static uint32_t write_audio(INTELHDLinkState *pState, int avail, bool *fStop)
     {
         int copied;
         to_copy = audio_MIN(temp, 4096U);
-        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pState->u64CviAddr + pState->u32CviPos, tmpbuf, to_copy);
+        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, tmpbuf, to_copy);
         copied = AUD_write (pState->Codec.voice_po, tmpbuf, to_copy);
         Log (("hda: write_audio max=%x to_copy=%x copied=%x\n",
               avail, to_copy, copied));
@@ -1186,7 +1245,7 @@ static uint32_t write_audio(INTELHDLinkState *pState, int avail, bool *fStop)
         }
         temp    -= copied;
         written += copied;
-        pState->u32CviPos += copied;
+        pBdle->u32BdleCviPos += copied;
     }
     return written;
 }
@@ -1200,63 +1259,101 @@ DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
 DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int avail)
 {
     bool fStop = false;
+    uint64_t u64BaseDMA = 0;
+    PHDABDLEDESC pBdle = NULL;
     INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pHDAState;
-    switch(src)
+    uint32_t u32Counter;
+    uint32_t nBytes;
+    uint32_t u32Ctl;
+    uint32_t *pu32Sts;
+    uint8_t  u8Strm;
+    uint32_t *pu32Lpib;
+    uint32_t u32Lcbl;
+    switch (src)
     {
         case PO_INDEX:
         {
-            uint32_t written;
-            uint32_t u32Counter;
-            if (   !(SDCTL(pState, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))
-                || avail == 0)
-                return;
-            SDCTL(pState, 4) |= ((pState->Codec.pNodes[2].dac.u32F06_param & (0xf << 4)) >> 4) << 20;
-            //fetch_bd(pState);
-            while(   avail
-                  && !fStop)
+            u8Strm = 4;
+            u32Ctl = SDCTL(pState, 4);
+            u64BaseDMA = SDBDPL(pState, 4);
+            u64BaseDMA |= (((uint64_t)SDBDPU(pState, 4)) << 32);
+            pu32Lpib = &SDLPIB(pState, 4);
+            pu32Sts = &SDSTS(pState, 4);
+            u32Lcbl = SDLCBL(pState, 4);
+            pBdle = &pState->stOutBdle;
+            pBdle->u32BdleMaxCvi = SDLVI(pState, 4);
+            break;
+        }
+        case PI_INDEX:
+        {
+            u8Strm = 0;
+            u32Ctl = SDCTL(pState, 0);
+            pu32Lpib = &SDLPIB(pState, 0);
+            pu32Sts = &SDSTS(pState, 0);
+            u32Lcbl = SDLCBL(pState, 0);
+            u64BaseDMA = SDBDPL(pState, 0);
+            u64BaseDMA |= (((uint64_t)SDBDPU(pState, 0)) << 32);
+            pBdle = &pState->stInBdle;
+            pBdle->u32BdleMaxCvi = SDLVI(pState, 0);
+            break;
+        }
+        default:
+            return;
+    }
+    if (   !(u32Ctl & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))
+        || !avail
+        || !u64BaseDMA)
+        return;
+    fetch_bd(pState, pBdle, u64BaseDMA);
+    while(   avail
+          && !fStop)
+    {
+        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1) + u8Strm*8, &u32Counter, 4);
+        switch (src)
+        {
+            case PO_INDEX:
+                nBytes = write_audio(pState, avail, &fStop);
+                break;
+            case PI_INDEX:
+                nBytes = read_audio(pState, avail, &fStop);
+                break;
+            default:
+                AssertMsgFailed(("Unsupported"));
+        }
+        if (   fStop 
+            && pBdle->u32BdleCviLen != pBdle->u32BdleCviPos)
+            break;
+        *pu32Lpib += nBytes;
+        avail -= nBytes;
+        u32Counter += nBytes;
+        PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1) + u8Strm*8, &u32Counter, 4);
+        if (   pBdle->u32BdleCviPos == pBdle->u32BdleCviLen
+            || *pu32Lpib == u32Lcbl)
+        {
+            if (   u32Ctl & HDA_REG_FIELD_FLAG_MASK(SDCTL, ICE)
+                && (   (   pBdle->u32BdleCviPos == pBdle->u32BdleCviLen
+                        && pBdle->fBdleCviIoc )
+                    || *pu32Lpib == u32Lcbl))
             {
-                PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1) + 4*8, &u32Counter, 4);
-                written = write_audio(pState, avail, &fStop);
-                if (   fStop 
-                    && pState->u32CviLen != pState->u32CviPos)
-                    break;
-                SDLPIB(pState, 4) += written; /* bytes ? */
-                avail -= written;
-                u32Counter += written;
-                PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1) + 4*8, &u32Counter, 4);
-                if (   pState->u32CviPos == pState->u32CviLen
-                    || SDLPIB(pState, 4) == SDLCBL(pState, 4))
+                *pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS);
+                hdaProcessInterrupt(pState);
+                if (*pu32Lpib == u32Lcbl)
                 {
-                    if (   SDCTL(pState, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, ICE)
-                        && (   (   pState->u32CviPos == pState->u32CviLen
-                                && pState->fCviIoc )
-                            || SDLPIB(pState, 4) == SDLCBL(pState, 4)))
-                    {
-                        SDSTS(pState,4) |= HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS);
-                        hdaProcessInterrupt(pState);
-                        if (SDLPIB(pState, 4) == SDLCBL(pState, 4))
-                        {
-                            SDLPIB(pState, 4) = 0;
-                            u32Counter = 0;
-                            PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1)  + 4*8, &u32Counter, 4);
-                        }
-                    }
-                    if (pState->u32CviPos == pState->u32CviLen)
-                    {
-                        pState->u32CviPos = 0;
-                        pState->u32Cvi++;
-                        if (pState->u32Cvi == SDLVI(pState, 4) + 1)
-                            pState->u32Cvi = 0;
-                    }
-                    fStop = false;
-                    fetch_bd(pState);
+                    *pu32Lpib = 0;
+                    u32Counter = 0;
+                    PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1)  + u8Strm*8, &u32Counter, 4);
                 }
             }
+            if (pBdle->u32BdleCviPos == pBdle->u32BdleCviLen)
+            {
+                pBdle->u32BdleCviPos = 0;
+                pBdle->u32BdleCvi++;
+                if (pBdle->u32BdleCvi == pBdle->u32BdleMaxCvi + 1)
+                    pBdle->u32BdleCvi = 0;
+            }
+            fStop = false;
+            fetch_bd(pState, pBdle, u64BaseDMA);
         }
-        break;
-        AssertMsgFailed(("Unexpected index: %x\n", src));
-        default:
-            break;
     }
 }
 
