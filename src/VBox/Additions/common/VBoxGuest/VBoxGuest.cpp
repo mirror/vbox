@@ -1180,12 +1180,12 @@ DECLINLINE(int) WaitEventCheckCondition(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWaitE
 static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                                           VBoxGuestWaitEventInfo *pInfo,  size_t *pcbDataReturned, bool fInterruptible)
 {
-    const uint32_t fReqEvents = pInfo->u32EventMaskIn;
-    uint32_t fResEvents;
-    int iEvent;
-    int rc;
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    PVBOXGUESTWAIT pWait;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    const uint32_t  fReqEvents = pInfo->u32EventMaskIn;
+    uint32_t        fResEvents;
+    int             iEvent;
+    PVBOXGUESTWAIT  pWait;
+    int             rc;
 
     pInfo->u32EventFlagsOut = 0;
     pInfo->u32Result = VBOXGUEST_WAITEVENT_ERROR;
@@ -1363,14 +1363,15 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
 static int VBoxGuestCommonIOCtl_VMMRequest(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                                            VMMDevRequestHeader *pReqHdr, size_t cbData, size_t *pcbDataReturned)
 {
+    int                     rc;
+    VMMDevRequestHeader    *pReqCopy;
+
     /*
      * Validate the header and request size.
      */
     const VMMDevRequestType enmType   = pReqHdr->requestType;
     const uint32_t          cbReq     = pReqHdr->size;
     const uint32_t          cbMinSize = vmmdevGetRequestSize(enmType);
-    int rc;
-    VMMDevRequestHeader *pReqCopy;
 
     Log(("VBoxGuestCommonIOCtl: VMMREQUEST type %d\n", pReqHdr->requestType));
 
@@ -1608,7 +1609,7 @@ static int VBoxGuestCommonIOCtl_HGCMConnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGUEST
             RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock, &Tmp);
             if (i >= RT_ELEMENTS(pSession->aHGCMClientIds))
             {
-                static unsigned s_cErrors = 0;
+                static unsigned             s_cErrors = 0;
                 VBoxGuestHGCMDisconnectInfo Info;
 
                 if (s_cErrors++ < 32)
@@ -1633,11 +1634,10 @@ static int VBoxGuestCommonIOCtl_HGCMDisconnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
     /*
      * Validate the client id and invalidate its entry while we're in the call.
      */
-    const uint32_t u32ClientId = pInfo->u32ClientID;
-    unsigned i;
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    int rc;
-
+    int             rc;
+    const uint32_t  u32ClientId = pInfo->u32ClientID;
+    unsigned        i;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquireNoInts(pDevExt->SessionSpinlock, &Tmp);
     for (i = 0; i < RT_ELEMENTS(pSession->aHGCMClientIds); i++)
         if (pSession->aHGCMClientIds[i] == u32ClientId)
@@ -1684,12 +1684,12 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
                                          uint32_t cMillies, bool fInterruptible, bool f32bit,
                                          size_t cbExtra, size_t cbData, size_t *pcbDataReturned)
 {
-    size_t cbActual;
-    const uint32_t u32ClientId = pInfo->u32ClientID;
-    unsigned i;
-    int rc;
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    uint32_t fFlags;
+    const uint32_t  u32ClientId = pInfo->u32ClientID;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    uint32_t        fFlags;
+    size_t          cbActual;
+    unsigned        i;
+    int             rc;
 
     /*
      * Some more validations.
@@ -1783,8 +1783,8 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
  */
 static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt, uint32_t *pu32ClientId, size_t *pcbDataReturned)
 {
-    int rc;
-    VBoxGuestHGCMConnectInfo Info;
+    int                         rc;
+    VBoxGuestHGCMConnectInfo    CnInfo;
 
     Log(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: Current u32ClientId=%RX32\n", pDevExt->u32ClipboardClientId));
 
@@ -1793,19 +1793,19 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
      */
     if (pDevExt->u32ClipboardClientId != 0)
     {
-        VBoxGuestHGCMDisconnectInfo Info;
-        Info.result = VERR_WRONG_ORDER;
-        Info.u32ClientID = pDevExt->u32ClipboardClientId;
-        rc = VbglR0HGCMInternalDisconnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
+        VBoxGuestHGCMDisconnectInfo DiInfo;
+        DiInfo.result = VERR_WRONG_ORDER;
+        DiInfo.u32ClientID = pDevExt->u32ClipboardClientId;
+        rc = VbglR0HGCMInternalDisconnect(&DiInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
         if (RT_SUCCESS(rc))
         {
             LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: failed to disconnect old client. VbglHGCMDisconnect -> rc=%Rrc\n", rc));
             return rc;
         }
-        if (RT_FAILURE((int32_t)Info.result))
+        if (RT_FAILURE((int32_t)DiInfo.result))
         {
-            Log(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: failed to disconnect old client. Info.result=%Rrc\n", rc));
-            return Info.result;
+            Log(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: failed to disconnect old client. DiInfo.result=%Rrc\n", DiInfo.result));
+            return DiInfo.result;
         }
         pDevExt->u32ClipboardClientId = 0;
     }
@@ -1813,27 +1813,27 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
     /*
      * Try connect.
      */
-    Info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    strcpy(Info.Loc.u.host.achName, "VBoxSharedClipboard");
-    Info.u32ClientID = 0;
-    Info.result = VERR_WRONG_ORDER;
+    CnInfo.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
+    strcpy(CnInfo.Loc.u.host.achName, "VBoxSharedClipboard");
+    CnInfo.u32ClientID = 0;
+    CnInfo.result = VERR_WRONG_ORDER;
 
-    rc = VbglR0HGCMInternalConnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
+    rc = VbglR0HGCMInternalConnect(&CnInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
     if (RT_FAILURE(rc))
     {
         LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: VbglHGCMConnected -> rc=%Rrc\n", rc));
         return rc;
     }
-    if (RT_FAILURE(Info.result))
+    if (RT_FAILURE(CnInfo.result))
     {
         LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: VbglHGCMConnected -> rc=%Rrc\n", rc));
         return rc;
     }
 
-    Log(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: connected successfully u32ClientId=%RX32\n", Info.u32ClientID));
+    Log(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: connected successfully u32ClientId=%RX32\n", CnInfo.u32ClientID));
 
-    pDevExt->u32ClipboardClientId = Info.u32ClientID;
-    *pu32ClientId = Info.u32ClientID;
+    pDevExt->u32ClipboardClientId = CnInfo.u32ClientID;
+    *pu32ClientId = CnInfo.u32ClientID;
     if (pcbDataReturned)
         *pcbDataReturned = sizeof(uint32_t);
 
@@ -2002,7 +2002,6 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
                          void *pvData, size_t cbData, size_t *pcbDataReturned)
 {
     int rc;
-
     Log(("VBoxGuestCommonIOCtl: iFunction=%#x pDevExt=%p pSession=%p pvData=%p cbData=%zu\n",
          iFunction, pDevExt, pSession, pvData, cbData));
 
