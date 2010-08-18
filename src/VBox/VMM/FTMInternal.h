@@ -21,6 +21,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/ftm.h>
+#include <iprt/tcp.h>
 
 
 /** @defgroup grp_ftm_int Internals.
@@ -35,10 +36,22 @@
  */
 typedef struct FTM
 {
-    char       *pszAddress;
-    char       *pszPassword;
-    unsigned    uPort;
-    unsigned    uInterval;
+    /** Address of the standby VM. */
+    char               *pszAddress;
+    /** Port of the standby VM. */
+    unsigned            uPort;
+    /** Password to access the syncing server of the standby VM. */
+    char               *pszPassword;
+    /** Syncing interval in ms. */
+    unsigned            uInterval;
+
+    /** Set when this VM is the standby FT node. */
+    bool                fIsStandbyNode;
+
+    struct
+    {
+        PRTTCPSERVER    hServer;
+    } standby;
 
 } FTM;
 
