@@ -155,6 +155,11 @@ typedef struct VBOXWDDM_POINTER_INFO
     } Attributes;
 } VBOXWDDM_POINTER_INFO, *PVBOXWDDM_POINTER_INFO;
 
+typedef struct VBOXWDDM_GLOBAL_POINTER_INFO
+{
+    uint32_t cVisible;
+} VBOXWDDM_GLOBAL_POINTER_INFO, *PVBOXWDDM_GLOBAL_POINTER_INFO;
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
 typedef struct VBOXWDDM_VHWA
 {
@@ -307,6 +312,8 @@ typedef struct _DEVICE_EXTENSION
    FAST_MUTEX ContextMutex;
    volatile uint32_t cContexts3D;
    volatile uint32_t cDMACmdsOutstanding;
+
+   VBOXWDDM_GLOBAL_POINTER_INFO PointerInfo;
 
    VBOXSHGSMILIST CtlList;
    VBOXSHGSMILIST DmaCmdList;

@@ -2667,17 +2667,27 @@ DxgkDdiSetPointerPosition(
     /* mouse integration is ON */
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     PVBOXWDDM_POINTER_INFO pPointerInfo = &pDevExt->aSources[pSetPointerPosition->VidPnSourceId].PointerInfo;
+    PVBOXWDDM_GLOBAL_POINTER_INFO pGlobalPointerInfo = &pDevExt->PointerInfo;
     PVIDEO_POINTER_ATTRIBUTES pPointerAttributes = &pPointerInfo->Attributes.data;
     BOOLEAN bNotifyVisibility;
     if (pSetPointerPosition->Flags.Visible)
     {
-        bNotifyVisibility = !(pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE);
-        pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_VISIBLE;
+        bNotifyVisibility = (pGlobalPointerInfo->cVisible == 0);
+        if (!(pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE))
+        {
+            ++pGlobalPointerInfo->cVisible;
+            pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_VISIBLE;
+        }
     }
     else
     {
-        bNotifyVisibility = !!(pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE);
-        pPointerAttributes->Enable &= ~VBOX_MOUSE_POINTER_VISIBLE;
+        if (!!(pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE))
+        {
+            --pGlobalPointerInfo->cVisible;
+            Assert(pGlobalPointerInfo->cVisible < UINT32_MAX/2);
+            pPointerAttributes->Enable &= ~VBOX_MOUSE_POINTER_VISIBLE;
+            bNotifyVisibility = (pGlobalPointerInfo->cVisible == 0);
+        }
     }
 
     pPointerAttributes->Column = pSetPointerPosition->X;

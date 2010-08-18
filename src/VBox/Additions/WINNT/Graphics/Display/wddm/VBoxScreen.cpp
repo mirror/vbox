@@ -415,8 +415,6 @@ HRESULT vboxScreenMonRun()
 
     HRESULT hr = S_FALSE;
 
-    Assert(0);
-
     if (!pMon->bInited)
     {
         PeekMessage(&Msg,
@@ -526,7 +524,12 @@ HRESULT VBoxScreenMRunnerStop(PVBOXSCREENMONRUNNER pMon)
     if (bResult)
     {
         DWORD dwErr = WaitForSingleObject(pMon->hThread, INFINITE);
-        if (dwErr != WAIT_OBJECT_0)
+        if (dwErr == WAIT_OBJECT_0)
+        {
+            CloseHandle(pMon->hThread);
+            pMon->hThread = 0;
+        }
+        else
         {
             DWORD winErr = GetLastError();
             hr = HRESULT_FROM_WIN32(winErr);
@@ -536,8 +539,13 @@ HRESULT VBoxScreenMRunnerStop(PVBOXSCREENMONRUNNER pMon)
     else
     {
         DWORD winErr = GetLastError();
-        hr = HRESULT_FROM_WIN32(winErr);
-        Assert(0);
+        Assert(winErr != ERROR_SUCCESS);
+        if (winErr != ERROR_INVALID_THREAD_ID)
+        {
+            hr = HRESULT_FROM_WIN32(winErr);
+            Assert(0);
+        }
+        /* else - treat as OK */
     }
 
     return hr;
