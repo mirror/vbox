@@ -2660,6 +2660,38 @@ STDMETHODIMP Machine::COMSETTER(FaultTolerancePort)(ULONG aPort)
     return S_OK;
 }
 
+STDMETHODIMP Machine::COMGETTER(FaultTolerancePassword)(BSTR *aPassword)
+{
+    CheckComArgOutPointerValid(aPassword);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mUserData->s.strFaultTolerancePassword.cloneTo(aPassword);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(FaultTolerancePassword)(IN_BSTR aPassword)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* @todo deal with running state change. */
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mUserData.backup();
+    mUserData->s.strFaultTolerancePassword = aPassword;
+
+    return S_OK;
+}
+
 STDMETHODIMP Machine::COMGETTER(FaultToleranceSyncInterval)(ULONG *aInterval)
 {
     CheckComArgOutPointerValid(aInterval);

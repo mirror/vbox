@@ -437,6 +437,8 @@ public:
     STDMETHOD(COMSETTER(FaultToleranceAddress))(IN_BSTR aAddress);
     STDMETHOD(COMGETTER(FaultTolerancePort))(ULONG *aPort);
     STDMETHOD(COMSETTER(FaultTolerancePort))(ULONG aPort);
+    STDMETHOD(COMGETTER(FaultTolerancePassword))(BSTR *aPassword);
+    STDMETHOD(COMSETTER(FaultTolerancePassword))(IN_BSTR aPassword);
     STDMETHOD(COMGETTER(FaultToleranceSyncInterval))(ULONG *aInterval);
     STDMETHOD(COMSETTER(FaultToleranceSyncInterval))(ULONG aInterval);
     STDMETHOD(COMGETTER(RTCUseUTC))(BOOL *aEnabled);
