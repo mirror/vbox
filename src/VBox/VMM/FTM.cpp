@@ -43,9 +43,11 @@
 VMMR3DECL(int) FTMR3Init(PVM pVM)
 {
     /** @todo saved state for master nodes! */
-    pVM->ftm.s.pszAddress     = NULL;
-    pVM->ftm.s.pszPassword    = NULL;
-    pVM->fFaultTolerantMaster = false;
+    pVM->ftm.s.pszAddress       = NULL;
+    pVM->ftm.s.pszPassword      = NULL;
+    pVM->fFaultTolerantMaster   = false;
+    pVM->ftm.s.fIsStandbyNode   = false;
+    pVM->ftm.s.standby.hServer  = NULL;
     return VINF_SUCCESS;
 }
 
@@ -64,6 +66,8 @@ VMMR3DECL(int) FTMR3Term(PVM pVM)
         RTMemFree(pVM->ftm.s.pszAddress);
     if (pVM->ftm.s.pszPassword)
         RTMemFree(pVM->ftm.s.pszPassword);
+    if (pVM->ftm.s.standby.hServer)
+        RTTcpServerDestroy(pVM->ftm.s.standby.hServer);
 
     return VINF_SUCCESS;
 }
@@ -110,9 +114,9 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
  * @param   pVM         The VM to power on.
  * @param   fMaster     FT master or standby
  * @param   uInterval   FT sync interval
- * @param   pszAddress  Master VM address
- * @param   uPort       Master VM port
- * @param   pszPassword FT password
+ * @param   pszAddress  Standby VM address
+ * @param   uPort       Standby VM port
+ * @param   pszPassword FT password (NULL for none)
  *
  * @thread      Any thread.
  * @vmstate     Created
@@ -120,7 +124,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
  */
 VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const char *pszAddress, unsigned uPort, const char *pszPassword)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 
     VMSTATE enmVMState = VMR3GetState(pVM);
     AssertMsgReturn(enmVMState == VMSTATE_POWERING_ON,
@@ -146,17 +150,31 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
     else
     {
         /* standby */
-        PRTTCPSERVER hServer;
-
-        rc = RTTcpServerCreateEx(pszAddress, uPort, &hServer);
+        rc = RTTcpServerCreateEx(pszAddress, uPort, &pVM->ftm.s.standby.hServer);
         if (RT_FAILURE(rc))
             return rc;
+        pVM->ftm.s.fIsStandbyNode = true;
 
-        rc = RTTcpServerListen(hServer, ftmR3StandbyServeConnection, pVM);
+        rc = RTTcpServerListen(pVM->ftm.s.standby.hServer, ftmR3StandbyServeConnection, pVM);
         /** @todo deal with the exit code to check if we should activate this standby VM. */
 
-        RTTcpServerDestroy(hServer);
+        RTTcpServerDestroy(pVM->ftm.s.standby.hServer);
+        pVM->ftm.s.standby.hServer = NULL;
     }
-    return VERR_NOT_IMPLEMENTED;
+    return rc;
 }
 
+/**
+ * Powers off the fault tolerant virtual machine (standby).
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM to power on.
+ */
+VMMR3DECL(int) FTMR3StandbyCancel(PVM pVM)
+{
+    AssertReturn(!pVM->fFaultTolerantMaster, VERR_NOT_SUPPORTED);
+    Assert(pVM->ftm.s.standby.hServer);
+
+    return RTTcpServerShutdown(pVM->ftm.s.standby.hServer);
+}
