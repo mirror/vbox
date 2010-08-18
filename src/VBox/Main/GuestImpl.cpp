@@ -1554,18 +1554,19 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
 /**
  * Sets the supported features (and whether they are active or not).
  *
- * @param ulCaps
- * @param ulActive
+ * @param   fCaps       Guest capability bit mask (VMMDEV_GUEST_SUPPORTS_XXX).
+ * @param   fActive     No idea what this is supposed to be, it's always 0 and
+ *                      not references by this method.
  */
-void Guest::setSupportedFeatures(LONG64 ulCaps, LONG64 ulActive)
+void Guest::setSupportedFeatures(uint32_t fCaps, uint32_t fActive)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mSupportsSeamless = (ulCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS);
+    mData.mSupportsSeamless = (fCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS);
     /** @todo Add VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING */
-    mData.mSupportsGraphics = (ulCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+    mData.mSupportsGraphics = (fCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS);
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
