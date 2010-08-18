@@ -53,7 +53,7 @@
 int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess, uint32_t fFlags)
 {
     int         rc      = VINF_SUCCESS;
-#ifdef RT_OS_WINDOWS
+#ifndef RT_OS_WINDOWS
     RTR0MEMOBJ  MemObj  = NIL_RTR0MEMOBJ;
     uint32_t    fAccess = RTMEM_PROT_READ | (fWriteAccess ? RTMEM_PROT_WRITE : 0);
 #endif
