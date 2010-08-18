@@ -18,10 +18,12 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_VIRTIO_NET
 #define VNET_GC_SUPPORT
+//#define VNET_WITH_GSO
 
 #include <VBox/pdmdev.h>
 #include <VBox/pdmnetifs.h>
 #include <iprt/asm.h>
+#include <iprt/net.h>
 #include <iprt/semaphore.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
@@ -189,6 +191,10 @@ struct VNetState_st
 
     STAMCOUNTER             StatReceiveBytes;
     STAMCOUNTER             StatTransmitBytes;
+    STAMCOUNTER             StatReceiveGSO;
+    STAMCOUNTER             StatTransmitPackets;
+    STAMCOUNTER             StatTransmitGSO;
+    STAMCOUNTER             StatTransmitCSum;
 #if defined(VBOX_WITH_STATISTICS)
     STAMPROFILE             StatReceive;
     STAMPROFILE             StatReceiveStore;
@@ -204,7 +210,13 @@ typedef VNETSTATE *PVNETSTATE;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-#define VNETHDR_GSO_NONE 0
+#define VNETHDR_F_NEEDS_CSUM     1       // Use u16CSumStart, u16CSumOffset
+
+#define VNETHDR_GSO_NONE         0       // Not a GSO frame
+#define VNETHDR_GSO_TCPV4        1       // GSO frame, IPv4 TCP (TSO)
+#define VNETHDR_GSO_UDP          3       // GSO frame, IPv4 UDP (UFO)
+#define VNETHDR_GSO_TCPV6        4       // GSO frame, IPv6 TCP
+#define VNETHDR_GSO_ECN          0x80    // TCP has ECN set
 
 struct VNetHdr
 {
@@ -303,7 +315,14 @@ PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
         | VNET_F_STATUS
         | VNET_F_CTRL_VQ
         | VNET_F_CTRL_RX
-        | VNET_F_CTRL_VLAN;
+        | VNET_F_CTRL_VLAN
+#ifdef VNET_WITH_GSO
+        | VNET_F_CSUM
+        | VNET_F_HOST_TSO4
+        | VNET_F_HOST_TSO6
+        | VNET_F_HOST_UFO
+#endif
+        ;
 }
 
 PDMBOTHCBDECL(uint32_t) vnetGetHostMinimalFeatures(void *pvState)
@@ -832,6 +851,70 @@ static DECLCALLBACK(void) vnetQueueReceive(void *pvState, PVQUEUE pQueue)
     vnetWakeupReceive(pState->VPCI.CTX_SUFF(pDevIns));
 }
 
+/**
+ * Sets up the GSO context according to the Virtio header.
+ *
+ * @param   pGso                The GSO context to setup.
+ * @param   pCtx                The context descriptor.
+ */
+DECLINLINE(PPDMNETWORKGSO) vnetSetupGsoCtx(PPDMNETWORKGSO pGso, VNETHDR const *pHdr)
+{
+    pGso->u8Type = PDMNETWORKGSOTYPE_INVALID;
+
+    if (pHdr->u8GSOType & VNETHDR_GSO_ECN)
+    {
+        AssertMsgFailed(("Unsupported flag in virtio header: ECN\n"));
+        return NULL;
+    }
+    switch (pHdr->u8GSOType & ~VNETHDR_GSO_ECN)
+    {
+        case VNETHDR_GSO_TCPV4:
+            pGso->u8Type = PDMNETWORKGSOTYPE_IPV4_TCP;
+            break;
+        case VNETHDR_GSO_TCPV6:
+            pGso->u8Type = PDMNETWORKGSOTYPE_IPV6_TCP;
+            break;
+        case VNETHDR_GSO_UDP:
+            pGso->u8Type = PDMNETWORKGSOTYPE_IPV4_UDP;
+            break;
+        default:
+            return NULL;
+    }
+    if (pHdr->u8Flags & VNETHDR_F_NEEDS_CSUM)
+        pGso->offHdr2  = pHdr->u16CSumStart;
+    else
+    {
+        AssertMsgFailed(("GSO without checksum offloading!\n"));
+        return NULL;
+    }
+    pGso->offHdr1  = sizeof(RTNETETHERHDR);
+    pGso->cbHdrs   = pHdr->u16HdrLen;
+    pGso->cbMaxSeg = pHdr->u16GSOSize;
+    return pGso;
+}
+
+DECLINLINE(uint16_t) vnetCSum16(const void *pvBuf, size_t cb)
+{
+    uint32_t  csum = 0;
+    uint16_t *pu16 = (uint16_t *)pvBuf;
+
+    while (cb > 1)
+    {
+        csum += *pu16++;
+        cb -= 2;
+    }
+    if (cb)
+        csum += *(uint8_t*)pu16;
+    while (csum >> 16)
+        csum = (csum >> 16) + (csum & 0xFFFF);
+    return ~csum;
+}
+
+DECLINLINE(void) vnetCompleteChecksum(uint8_t *pBuf, unsigned cbSize, uint16_t uStart, uint16_t uOffset)
+{
+    *(uint16_t*)(pBuf + uStart + uOffset) = vnetCSum16(pBuf + uStart, cbSize - uStart);
+}
+
 static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool fOnWorkerThread)
 {
     /*
@@ -894,13 +977,32 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
             }
             if (pState->pDrv)
             {
+                VNETHDR Hdr;
+                PDMNETWORKGSO Gso, *pGso;
+
+                PDMDevHlpPhysRead(pState->VPCI.CTX_SUFF(pDevIns), elem.aSegsOut[0].addr,
+                                  &Hdr, sizeof(Hdr));
+
+                STAM_REL_COUNTER_INC(&pState->StatTransmitPackets);
+
                 vnetPacketDump(pState, pState->pTxBuf, uOffset, "--> Outgoing");
 
                 STAM_PROFILE_START(&pState->StatTransmitSend, a);
 
+                pGso = vnetSetupGsoCtx(&Gso, &Hdr);
+                if (pGso)
+                    STAM_REL_COUNTER_INC(&pState->StatTransmitGSO);
+                else if (Hdr.u8Flags & VNETHDR_F_NEEDS_CSUM)
+                {
+                    STAM_REL_COUNTER_INC(&pState->StatTransmitCSum);
+                    /*
+                     * This is not GSO frame but checksum offloading is requested.
+                     */
+                    vnetCompleteChecksum(pState->pTxBuf, uOffset, Hdr.u16CSumStart, Hdr.u16CSumOffset);
+                }
                 /** @todo Optimize away the extra copying! (lazy bird) */
                 PPDMSCATTERGATHER pSgBuf;
-                int rc = pState->pDrv->pfnAllocBuf(pState->pDrv, uOffset, NULL /*pGso*/, &pSgBuf);
+                int rc = pState->pDrv->pfnAllocBuf(pState->pDrv, uOffset, pGso, &pSgBuf);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pSgBuf->cSegs == 1);
@@ -1804,8 +1906,12 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = vnetReset(pState);
     AssertRC(rc);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/VNet%d/ReceiveBytes", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/VNet%d/TransmitBytes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/VNet%d/Bytes/Receive", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/VNet%d/Bytes/Transmit", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveGSO,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,          "Number of received GSO packets",     "/Devices/VNet%d/Packets/ReceiveGSO", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitPackets,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,          "Number of sent packets",             "/Devices/VNet%d/Packets/Transmit", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitGSO,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,          "Number of sent GSO packets",         "/Devices/VNet%d/Packets/Transmit-Gso", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitCSum,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,          "Number of completed TX checksums",   "/Devices/VNet%d/Packets/Transmit-Csum", iInstance);
 #if defined(VBOX_WITH_STATISTICS)
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive",                  "/Devices/VNet%d/Receive/Total", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveStore,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive storing",          "/Devices/VNet%d/Receive/Store", iInstance);
