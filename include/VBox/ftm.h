@@ -43,7 +43,7 @@ RT_C_DECLS_BEGIN
 VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const char *pszAddress, unsigned uPort, const char *pszPassword);
 VMMR3DECL(int) FTMR3Init(PVM pVM);
 VMMR3DECL(int) FTMR3Term(PVM pVM);
-VMMR3DECL(int) FTMR3StandbyCancel(PVM pVM);
+VMMR3DECL(int) FTMR3CancelStandby(PVM pVM);
 
 #endif /* IN_RING3 */
 

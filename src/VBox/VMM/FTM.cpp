@@ -171,7 +171,7 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
  *
  * @param   pVM         The VM to power on.
  */
-VMMR3DECL(int) FTMR3StandbyCancel(PVM pVM)
+VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
 {
     AssertReturn(!pVM->fFaultTolerantMaster, VERR_NOT_SUPPORTED);
     Assert(pVM->ftm.s.standby.hServer);
