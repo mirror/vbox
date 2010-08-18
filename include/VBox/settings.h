@@ -878,6 +878,7 @@ struct MachineUserData
                && (uFaultTolerancePort        == c.uFaultTolerancePort)
                && (uFaultToleranceInterval    == c.uFaultToleranceInterval)
                && (strFaultToleranceAddress   == c.strFaultToleranceAddress)
+               && (strFaultTolerancePassword  == c.strFaultTolerancePassword)
                && (fRTCUseUTC                 == c.fRTCUseUTC);
     }
 
@@ -893,6 +894,7 @@ struct MachineUserData
     FaultToleranceState_T   enmFaultToleranceState;
     uint32_t                uFaultTolerancePort;
     com::Utf8Str            strFaultToleranceAddress;
+    com::Utf8Str            strFaultTolerancePassword;
     uint32_t                uFaultToleranceInterval;
     bool                    fRTCUseUTC;
 };

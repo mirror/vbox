@@ -3420,7 +3420,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="7315c8f6-5010-4e2a-9242-c84ead390d55"
+     uuid="70ddc295-39fb-46e2-a93b-854e123b2b97"
      wsmap="managed"
      >
     <desc>
@@ -3972,6 +3972,14 @@
       </desc>
     </attribute>
 
+    <attribute name="faultTolerancePassword" type="wstring">
+      <desc>
+        The password the to check for on the standby VM.  This is just a
+        very basic measure to prevent simple hacks and operators accidentally
+        choosing the wrong standby VM.
+      </desc>
+    </attribute>
+      
     <attribute name="faultToleranceSyncInterval" type="unsigned long">
       <desc>
         The interval in ms used for syncing the state between source and target.

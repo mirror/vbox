@@ -7476,6 +7476,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         Utf8Str strAddress(bstrAddress);
                         const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
 
+                        /** @todo set progress cancel callback! */
+
                         /* Power on the FT enabled VM. */
                         vrc = FTMR3PowerOn(pVM, (task->mEnmFaultToleranceState == FaultToleranceState_Master) /* fMaster */, uInterval, pszAddress, uPort);
                         AssertRC(vrc);

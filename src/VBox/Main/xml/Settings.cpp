@@ -3123,6 +3123,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
                 pelmMachineChild->getAttributeValue("port", machineUserData.uFaultTolerancePort);
                 pelmMachineChild->getAttributeValue("address", machineUserData.strFaultToleranceAddress);
                 pelmMachineChild->getAttributeValue("interval", machineUserData.uFaultToleranceInterval);
+                pelmMachineChild->getAttributeValue("password", machineUserData.strFaultTolerancePassword);
             }
             else if (pelmMachineChild->nameEquals("MediaRegistry"))
                 readMediaRegistry(*pelmMachineChild, mediaRegistry);
@@ -4052,6 +4053,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         pelmFaultTolerance->setAttribute("port", machineUserData.uFaultTolerancePort);
         pelmFaultTolerance->setAttribute("address", machineUserData.strFaultToleranceAddress);
         pelmFaultTolerance->setAttribute("interval", machineUserData.uFaultToleranceInterval);
+        pelmFaultTolerance->setAttribute("password", machineUserData.strFaultTolerancePassword);
     }
 
     if (    (fl & BuildMachineXML_MediaRegistry)
