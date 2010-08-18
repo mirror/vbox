@@ -362,8 +362,11 @@ if [ "$ACTION" = "install" ]; then
 
     # Install runlevel scripts
     install_init_script vboxdrv.sh vboxdrv
+    install_init_script vboxweb-service.sh vboxweb-service
     delrunlevel vboxdrv > /dev/null 2>&1
     addrunlevel vboxdrv 20 80 # This may produce useful output
+    delrunlevel vboxweb-service > /dev/null 2>&1
+    addrunlevel vboxweb-service 25 75 # This may produce useful output
 
     # Create users group
     groupadd $GROUPNAME 2> /dev/null
