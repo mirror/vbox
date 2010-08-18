@@ -34,11 +34,15 @@ if [ "$PREV_INSTALLATION" = "" ]; then
     abort "Couldn't find a VirtualBox installation to uninstall."
 fi
 
+# Stop the web service
+stop_init_script vboxweb-service
+delrunlevel vboxweb-service > /dev/null 2>&1
+remove_init_script vboxweb-service
 # Stop kernel module and uninstall runlevel script
 stop_init_script vboxdrv
 delrunlevel vboxdrv > /dev/null 2>&1
 remove_init_script vboxdrv
-# Stop host networking and uninstall runlevel script
+# Stop host networking and uninstall runlevel script (obsolete)
 stop_init_script vboxnet
 delrunlevel vboxnet > /dev/null 2>&1
 remove_init_script vboxnet

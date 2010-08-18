@@ -48,11 +48,13 @@ OTHER_CLEAN   += \
 		deffiles \
 		routines.sh \
 		vboxdrv.sh \
+		vboxweb-service.sh \
 		VirtualBox.tar.bz2 \
 		LICENSE) \
 	$(wildcard $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-*) \
 	$(addprefix $(VBOX_LNX_INST_OUT_DIR)/,\
 		vboxdrv.sh \
+		vboxweb-service.sh \
 		install.sh)
 
 #
@@ -268,6 +270,7 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(VBOX_PATH_LNX_INST_SRC)/deffiles \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
+		$(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/install.sh \
 		$(VBOX_PATH_LNX_INST_SRC)/vboxdrv-pardus.py \
 		$(VBOX_PATH_LNX_INST_SRC)/uninstall.sh \
@@ -281,7 +284,8 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/deffiles             $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)    $(VBOX_LNX_INST_STAGE_DIR)/LICENSE)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh            $(VBOX_LNX_INST_STAGE_DIR)/
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/vboxdrv-pardus.py            $(VBOX_LNX_INST_STAGE_DIR)/
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh    $(VBOX_LNX_INST_STAGE_DIR)/
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/vboxdrv-pardus.py    $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/install.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/uninstall.sh         $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(RM) -f $@
@@ -290,6 +294,14 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 
 # files that needs editing before they can be included in the generic installer.
 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $$(dir $$@)
+	$(QUIET)$(SED_EXT) \
+		-e "s|%NOLSB%|yes|g" \
+		-e "s|%DEBIAN%||g" \
+		-e "s|%PACKAGE%|virtualbox|g" \
+		--output $@ \
+		$<
+
+$(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxweb-service.sh.in | $$(dir $$@)
 	$(QUIET)$(SED_EXT) \
 		-e "s|%NOLSB%|yes|g" \
 		-e "s|%DEBIAN%||g" \
