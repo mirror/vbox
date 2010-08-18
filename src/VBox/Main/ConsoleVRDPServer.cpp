@@ -2214,7 +2214,7 @@ void RemoteDisplayInfo::uninit()
     }                                                                     \
     extern void IMPL_GETTER_BOOL_DUMMY(void)
 
-#define IMPL_GETTER_SCALAR(_aType, _aName, _aIndex)                       \
+#define IMPL_GETTER_SCALAR(_aType, _aName, _aIndex, _aValueMask)          \
     STDMETHODIMP RemoteDisplayInfo::COMGETTER(_aName) (_aType *a##_aName) \
     {                                                                     \
         if (!a##_aName)                                                   \
@@ -2232,6 +2232,7 @@ void RemoteDisplayInfo::uninit()
         mParent->consoleVRDPServer ()->QueryInfo                          \
             (_aIndex, &value, sizeof (value), &cbOut);                    \
                                                                           \
+        if (_aValueMask) value &= (_aValueMask);                          \
         *a##_aName = cbOut? value: 0;                                     \
                                                                           \
         return S_OK;                                                      \
@@ -2286,20 +2287,20 @@ void RemoteDisplayInfo::uninit()
     extern void IMPL_GETTER_BSTR_DUMMY(void)
 
 IMPL_GETTER_BOOL   (BOOL,    Active,             VRDP_QI_ACTIVE);
-IMPL_GETTER_SCALAR (LONG,    Port,               VRDP_QI_PORT);
-IMPL_GETTER_SCALAR (ULONG,   NumberOfClients,    VRDP_QI_NUMBER_OF_CLIENTS);
-IMPL_GETTER_SCALAR (LONG64,  BeginTime,          VRDP_QI_BEGIN_TIME);
-IMPL_GETTER_SCALAR (LONG64,  EndTime,            VRDP_QI_END_TIME);
-IMPL_GETTER_SCALAR (LONG64,  BytesSent,          VRDP_QI_BYTES_SENT);
-IMPL_GETTER_SCALAR (LONG64,  BytesSentTotal,     VRDP_QI_BYTES_SENT_TOTAL);
-IMPL_GETTER_SCALAR (LONG64,  BytesReceived,      VRDP_QI_BYTES_RECEIVED);
-IMPL_GETTER_SCALAR (LONG64,  BytesReceivedTotal, VRDP_QI_BYTES_RECEIVED_TOTAL);
+IMPL_GETTER_SCALAR (LONG,    Port,               VRDP_QI_PORT,                  0);
+IMPL_GETTER_SCALAR (ULONG,   NumberOfClients,    VRDP_QI_NUMBER_OF_CLIENTS,     0);
+IMPL_GETTER_SCALAR (LONG64,  BeginTime,          VRDP_QI_BEGIN_TIME,            0);
+IMPL_GETTER_SCALAR (LONG64,  EndTime,            VRDP_QI_END_TIME,              0);
+IMPL_GETTER_SCALAR (LONG64,  BytesSent,          VRDP_QI_BYTES_SENT,            INT64_MAX);
+IMPL_GETTER_SCALAR (LONG64,  BytesSentTotal,     VRDP_QI_BYTES_SENT_TOTAL,      INT64_MAX);
+IMPL_GETTER_SCALAR (LONG64,  BytesReceived,      VRDP_QI_BYTES_RECEIVED,        INT64_MAX);
+IMPL_GETTER_SCALAR (LONG64,  BytesReceivedTotal, VRDP_QI_BYTES_RECEIVED_TOTAL,  INT64_MAX);
 IMPL_GETTER_BSTR   (BSTR,    User,               VRDP_QI_USER);
 IMPL_GETTER_BSTR   (BSTR,    Domain,             VRDP_QI_DOMAIN);
 IMPL_GETTER_BSTR   (BSTR,    ClientName,         VRDP_QI_CLIENT_NAME);
 IMPL_GETTER_BSTR   (BSTR,    ClientIP,           VRDP_QI_CLIENT_IP);
-IMPL_GETTER_SCALAR (ULONG,   ClientVersion,      VRDP_QI_CLIENT_VERSION);
-IMPL_GETTER_SCALAR (ULONG,   EncryptionStyle,    VRDP_QI_ENCRYPTION_STYLE);
+IMPL_GETTER_SCALAR (ULONG,   ClientVersion,      VRDP_QI_CLIENT_VERSION,        0);
+IMPL_GETTER_SCALAR (ULONG,   EncryptionStyle,    VRDP_QI_ENCRYPTION_STYLE,      0);
 
 #undef IMPL_GETTER_BSTR
 #undef IMPL_GETTER_SCALAR
