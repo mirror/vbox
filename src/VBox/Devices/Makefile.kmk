@@ -186,6 +186,13 @@ ifdef VBOX_WITH_VDE
  VBoxDD_DEFS           += VBOX_WITH_VDE
 endif
 
+ifdef VBOX_WITH_NEWPCI
+ DevPCI.cpp           := Bus/DevPCI-new.cpp
+else
+ DevPCI.cpp           := Bus/DevPCI.cpp
+endif
+
+
 VBoxDD_LIBS             = \
 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
@@ -296,7 +303,7 @@ DevicesR3_SOURCES       = \
 	Input/DevPS2.cpp \
 	Input/UsbKbd.cpp \
 	Input/UsbMouse.cpp \
-	Bus/DevPCI.cpp \
+	$(DevPCI.cpp) \
 	Graphics/DevVGA.cpp \
 	Storage/DevATA.cpp \
 	PC/DevPit-i8254.cpp \
@@ -529,7 +536,7 @@ endif # !VBOX_WITH_DYNAMIC_DSDT
 PC/ACPI/VBoxAcpi.cpp_INCS = $(PATH_DevicesR3)
 
 # For finding PCIInternal.h from VBox/pci.h.
-Bus/DevPCI.cpp_INCS      = Bus
+$(DevPCI.cpp)_INCS      = Bus
 
 # For finding and generating vbetables.h (see Graphics/BIOS/Makefile.kmk).
 Graphics/DevVGA.cpp_INCS = $(PATH_VgaBiosBin)
@@ -548,7 +555,7 @@ ifdef VBOX_WITH_RAW_MODE
  VBoxDDGC_INCS          := \
  	$(PATH_SUB_CURRENT)
  VBoxDDGC_SOURCES        = \
- 	Bus/DevPCI.cpp \
+ 	$(DevPCI.cpp) \
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
  	PC/DevACPI.cpp \
@@ -659,7 +666,7 @@ VBoxDDR0_DEFS           = IN_RT_R0 VBOX_WITH_HGCM # - WTF is IN_RT_R0 doing here
 VBoxDDR0_INCS          := \
 	$(PATH_SUB_CURRENT)
 VBoxDDR0_SOURCES        = \
-	Bus/DevPCI.cpp \
+	$(DevPCI.cpp) \
 	Graphics/DevVGA.cpp \
 	Input/DevPS2.cpp \
 	PC/DevACPI.cpp \
