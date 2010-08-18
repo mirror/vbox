@@ -159,7 +159,6 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define CORBSIZE_SZ(pState) (HDA_REG(pState, ICH6_HDA_REG_CORBSIZE) & ICH6_HDA_CORBSIZE_SZ)
 #define CORBSIZE_SZ_CAP(pState) (HDA_REG(pState, ICH6_HDA_REG_CORBSIZE) & ICH6_HDA_CORBSIZE_SZ_CAP)
 /* till ich 10 sizes of CORB and RIRB are harcoded to 256 in real hw */
-#define CORBSIZE(pState) (255)
 
 #define ICH6_HDA_REG_RIRLBASE  20 /* 0x50 */
 #define ICH6_HDA_REG_RIRUBASE  21 /* 0x54 */
@@ -195,7 +194,6 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 
 #define RIRBSIZE_SZ(pState)     (HDA_REG(pState, ICH6_HDA_REG_RIRBSIZE) & ICH6_HDA_RIRBSIZE_SZ)
 #define RIRBSIZE_SZ_CAP(pState) (HDA_REG(pState, ICH6_HDA_REG_RIRBSIZE) & ICH6_HDA_RIRBSIZE_SZ_CAP)
-#define RIRBSIZE(pState)        (255)
 
 
 #define ICH6_HDA_REG_IC   27 /* 0x60 */
@@ -368,14 +366,10 @@ typedef struct INTELHDLinkState
     uint32_t    *pu32CorbBuf;
     /* size in bytes of CORB buf */
     uint32_t    cbCorbBuf;
-    /* size in double words of CORB buf */
-    uint8_t     cdwCorbBuf;
     /* pointer on RIRB buf */
     uint64_t    *pu64RirbBuf;
     /* size in bytes of RIRB buf */
     uint32_t    cbRirbBuf;
-    /* size in quad words of RIRB buf */
-    uint8_t     cdqRirbBuf;
     /* indicates if HDA in reset. */
     bool        fInReset;
     CODECState  Codec;
@@ -1425,16 +1419,14 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     LogRel(("hda: inter HDA reset.\n"));
     //** @todo r=michaln: There should be LogRel statements when the guest initializes
     // or resets the HDA chip, and possibly also when opening the PCM streams.
-    pThis->hda.cdwCorbBuf = CORBSIZE(&pThis->hda);
-    pThis->hda.cbCorbBuf = CORBSIZE(&pThis->hda) * sizeof(uint32_t);
+    pThis->hda.cbCorbBuf = 256 * sizeof(uint32_t);
 
     if (pThis->hda.pu32CorbBuf)
         memset(pThis->hda.pu32CorbBuf, 0, pThis->hda.cbCorbBuf);
     else
         pThis->hda.pu32CorbBuf = (uint32_t *)RTMemAllocZ(pThis->hda.cbCorbBuf);
 
-    pThis->hda.cdqRirbBuf = RIRBSIZE(&pThis->hda);
-    pThis->hda.cbRirbBuf = RIRBSIZE(&pThis->hda) * sizeof(uint64_t);
+    pThis->hda.cbRirbBuf = 256 * sizeof(uint64_t);
     if (pThis->hda.pu64RirbBuf)
         memset(pThis->hda.pu64RirbBuf, 0, pThis->hda.cbRirbBuf);
     else
