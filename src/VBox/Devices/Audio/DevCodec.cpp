@@ -122,7 +122,7 @@ extern "C" {
     || CODEC_NID((cmd)) == 0x1B)
 
 static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode);
-static int codecToAudVolume(struct CODECState *pState);
+static int codecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt);
 
 static inline void codecSetRegister(uint32_t *pu32Reg, uint32_t u32Cmd, uint8_t u8Offset, uint32_t mask)
 {
@@ -248,7 +248,9 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
                 codecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd, 0);
         }
         if (CODEC_NID(cmd) == 2)
-            codecToAudVolume(pState);
+            codecToAudVolume(pAmplifier, AUD_MIXER_VOLUME);
+        if (CODEC_NID(cmd) == 0x17) /* Microphone */
+            codecToAudVolume(pAmplifier, AUD_MIXER_PCM);
     }
     return VINF_SUCCESS;
 }
@@ -1009,9 +1011,10 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F08_param = 0;
             pNode->node.au32F00_param[0xC] = RT_BIT(5)|RT_BIT(2);
             pNode->port.u32F07_param = RT_BIT(5);
-            pNode->port.u32F09_param = 0;
+            pNode->port.u32F09_param = RT_BIT(31);
             if (!pState->fInReset)
-                pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x51, 0x30, 0x81, 0x01);
+                pNode->port.u32F1c_param = (0x2 << 30) /* built-in */ | (0xA << 20) /* mic. */
+                    | (0x1 << 16) | (0x30 << 8) | 0x51;
             break;
         case 0xF:
             pNode->node.name = "PortF";
@@ -1110,16 +1113,26 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
     return VINF_SUCCESS;
 }
 
-static int codecToAudVolume(struct CODECState *pState)
+static int codecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
 {
-    PCODECNODE pNode = &pState->pNodes[2];
-    int mute = AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) & RT_BIT(7);
-    mute |= AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) & RT_BIT(7);
+    uint32_t dir = AMPLIFIER_OUT;
+    switch (mt)
+    {
+        case AUD_MIXER_VOLUME:
+            dir = AMPLIFIER_OUT;
+            break;
+        case AUD_MIXER_PCM:
+        case AUD_MIXER_LINE_IN:
+            dir = AMPLIFIER_IN;
+            break;
+    }
+    int mute = AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_LEFT, 0) & RT_BIT(7);
+    mute |= AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_RIGHT, 0) & RT_BIT(7);
     mute >>=7;
     mute &= 0x1;
-    uint8_t lVol = AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) & 0x7f;
-    uint8_t rVol = AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) & 0x7f;
-    AUD_set_volume(AUD_MIXER_VOLUME, &mute, &lVol, &rVol);
+    uint8_t lVol = AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_LEFT, 0) & 0x7f;
+    uint8_t rVol = AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_RIGHT, 0) & 0x7f;
+    AUD_set_volume(mt, &mute, &lVol, &rVol);
     return VINF_SUCCESS;
 }
 
@@ -1248,7 +1261,8 @@ int stac9220Construct(CODECState *pState)
         LogRel (("HDAcodec: WARNING: Unable to open PCM MC!\n"));
     if (!pState->voice_po)
         LogRel (("HDAcodec: WARNING: Unable to open PCM OUT!\n"));
-    codecToAudVolume(pState);
+    codecToAudVolume(&pState->pNodes[2].dac.B_params, AUD_MIXER_VOLUME);
+    codecToAudVolume(&pState->pNodes[0x17].adcvol.B_params, AUD_MIXER_PCM);
     return VINF_SUCCESS;
 }
 int stac9220Destruct(CODECState *pCodecState)
