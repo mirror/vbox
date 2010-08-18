@@ -36,6 +36,7 @@
 typedef struct FTM
 {
     char       *pszAddress;
+    char       *pszPassword;
     unsigned    uPort;
     unsigned    uInterval;
 

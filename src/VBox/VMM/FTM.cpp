@@ -44,6 +44,7 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
 {
     /** @todo saved state for master nodes! */
     pVM->ftm.s.pszAddress     = NULL;
+    pVM->ftm.s.pszPassword    = NULL;
     pVM->fFaultTolerantMaster = false;
     return VINF_SUCCESS;
 }
@@ -61,6 +62,8 @@ VMMR3DECL(int) FTMR3Term(PVM pVM)
 {
     if (pVM->ftm.s.pszAddress)
         RTMemFree(pVM->ftm.s.pszAddress);
+    if (pVM->ftm.s.pszPassword)
+        RTMemFree(pVM->ftm.s.pszPassword);
 
     return VINF_SUCCESS;
 }
@@ -109,12 +112,13 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
  * @param   uInterval   FT sync interval
  * @param   pszAddress  Master VM address
  * @param   uPort       Master VM port
+ * @param   pszPassword FT password
  *
  * @thread      Any thread.
  * @vmstate     Created
  * @vmstateto   PoweringOn+Running (master), PoweringOn+Running_FT (standby)
  */
-VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const char *pszAddress, unsigned uPort)
+VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const char *pszAddress, unsigned uPort, const char *pszPassword)
 {
     int rc;
 
@@ -122,10 +126,13 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
     AssertMsgReturn(enmVMState == VMSTATE_POWERING_ON,
                     ("%s\n", VMR3GetStateName(enmVMState)),
                     VERR_INTERNAL_ERROR_4);
+    AssertReturn(pszAddress, VERR_INVALID_PARAMETER);
 
-    pVM->ftm.s.uInterval  = uInterval;
-    pVM->ftm.s.uPort      = uPort;
-    pVM->ftm.s.pszAddress = RTStrDup(pszAddress);
+    pVM->ftm.s.uInterval   = uInterval;
+    pVM->ftm.s.uPort       = uPort;
+    pVM->ftm.s.pszAddress  = RTStrDup(pszAddress);
+    if (pszPassword)
+        pVM->ftm.s.pszPassword = RTStrDup(pszPassword);
     if (fMaster)
     {
         rc = RTThreadCreate(NULL, ftmR3MasterThread, NULL,
