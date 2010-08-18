@@ -124,13 +124,11 @@ struct VNetState_st
     R3PTRTYPE(PPDMQUEUE)    pCanRxQueueR3;           /**< Rx wakeup signaller - R3. */
     R0PTRTYPE(PPDMQUEUE)    pCanRxQueueR0;           /**< Rx wakeup signaller - R0. */
     RCPTRTYPE(PPDMQUEUE)    pCanRxQueueRC;           /**< Rx wakeup signaller - RC. */
-
-#if HC_ARCH_BITS == 64
-    uint32_t    padding;
-#endif
+    uint32_t                padding;
 
     /**< Link Up(/Restore) Timer. */
     PTMTIMERR3              pLinkUpTimer;
+
 #ifdef VNET_TX_DELAY
     /**< Transmit Delay Timer - R3. */
     PTMTIMERR3              pTxTimerR3;
@@ -139,17 +137,17 @@ struct VNetState_st
     /**< Transmit Delay Timer - GC. */
     PTMTIMERRC              pTxTimerRC;
 
-#if HC_ARCH_BITS == 64
-    uint32_t    padding2;
-#endif
+# if HC_ARCH_BITS == 64
+    uint32_t                padding2;
+# endif
 
-    uint32_t   u32i;
-    uint32_t   u32AvgDiff;
-    uint32_t   u32MinDiff;
-    uint32_t   u32MaxDiff;
-    uint64_t   u64NanoTS;
-
+    uint32_t                u32i;
+    uint32_t                u32AvgDiff;
+    uint32_t                u32MinDiff;
+    uint32_t                u32MaxDiff;
+    uint64_t                u64NanoTS;
 #endif /* VNET_TX_DELAY */
+
     /** Indicates transmission in progress -- only one thread is allowed. */
     uint32_t                uIsTransmitting;
 
