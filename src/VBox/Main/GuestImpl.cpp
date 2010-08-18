@@ -1224,9 +1224,10 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
     using namespace guestControl;
 
     CheckComArgExpr(aPID, aPID > 0);
-
+    if (aSize < 0)
+        return setError(E_INVALIDARG, tr("The size argument (%lld) is negative"), aSize);
     if (aFlags != 0) /* Flags are not supported at the moment. */
-        return E_INVALIDARG;
+        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();

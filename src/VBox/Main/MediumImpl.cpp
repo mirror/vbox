@@ -2130,6 +2130,8 @@ STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
                                        IProgress **aProgress)
 {
     CheckComArgOutPointerValid(aProgress);
+    if (aLogicalSize < 0)
+        return setError(E_INVALIDARG, tr("The medium size argument (%lld) is negative"), aLogicalSize);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
