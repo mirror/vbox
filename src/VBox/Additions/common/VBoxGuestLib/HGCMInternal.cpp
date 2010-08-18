@@ -304,18 +304,15 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                         Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p locked kernel -> %p\n",
                               iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, hObj));
                     }
+                    else if (cb > VBGLR0_MAX_HGCM_USER_PARM)
+                    {
+                        Log(("GstHGCMCall: id=%#x fn=%u parm=%u pv=%p cb=%#x > %#x -> out of range\n",
+                             pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr,
+                             cb, VBGLR0_MAX_HGCM_USER_PARM));
+                        return VERR_OUT_OF_RANGE;
+                    }
                     else
                     {
-                        bool fCopyIn;
-
-                        if (cb > VBGLR0_MAX_HGCM_USER_PARM)
-                        {
-                            Log(("GstHGCMCall: id=%#x fn=%u parm=%u pv=%p cb=%#x > %#x -> out of range\n",
-                                 pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr,
-                                 cb, VBGLR0_MAX_HGCM_USER_PARM));
-                            return VERR_OUT_OF_RANGE;
-                        }
-
 #ifndef USE_BOUNCE_BUFFERS
                         rc = RTR0MemObjLockUser(&hObj, (RTR3PTR)pSrcParm->u.Pointer.u.linearAddr, cb, fAccess, NIL_RTR0PROCESS);
                         if (RT_FAILURE(rc))
@@ -338,8 +335,8 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                         /** @todo A more efficient strategy would be to combine buffers. However it
                          *        is probably going to be more massive than the current code, so
                          *        it can wait till later.   */
-                        fCopyIn =    pSrcParm->type != VMMDevHGCMParmType_LinAddr_Out
-                                  && pSrcParm->type != VMMDevHGCMParmType_LinAddr_Locked_Out;
+                        bool fCopyIn = pSrcParm->type != VMMDevHGCMParmType_LinAddr_Out
+                                    && pSrcParm->type != VMMDevHGCMParmType_LinAddr_Locked_Out;
                         if (cb <= PAGE_SIZE / 2 - 16)
                         {
                             pvSmallBuf = fCopyIn ? RTMemTmpAlloc(cb) : RTMemTmpAllocZ(cb);
