@@ -2123,14 +2123,13 @@ DxgkDdiSubmitCommand(
             VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->SrcAllocInfo.srcId];
             vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
             PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW pRFS = (PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW)pPrivateData;
-            vboxWddmRectTranslate(&pRFS->rect, pSource->VScreenPos.x, pSource->VScreenPos.y);
             uint32_t cDMACmdsOutstanding = ASMAtomicReadU32(&pDevExt->cDMACmdsOutstanding);
             if (!cDMACmdsOutstanding)
-                VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &pRFS->rect);
+                VBOXVBVA_OP(ReportDirtyRect, pDevExt, pSource, &pRFS->rect);
             else
             {
                 Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
-                VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, &pSource->Vbva, &pRFS->rect);
+                VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, pSource, &pRFS->rect);
             }
             /* get DPC data at IRQL */
 
@@ -2176,15 +2175,13 @@ DxgkDdiSubmitCommand(
                                 else
                                     rect = pBlt->DstRects.ContextRect;
 
-                                vboxWddmRectTranslate(&rect, pSource->VScreenPos.x, pSource->VScreenPos.y);
-
                                 uint32_t cDMACmdsOutstanding = ASMAtomicReadU32(&pDevExt->cDMACmdsOutstanding);
                                 if (!cDMACmdsOutstanding)
-                                    VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &rect);
+                                    VBOXVBVA_OP(ReportDirtyRect, pDevExt, pSource, &rect);
                                 else
                                 {
                                     Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
-                                    VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, &pSource->Vbva, &rect);
+                                    VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, pSource, &rect);
                                 }
                                 vboxWddmSubmitBltCmd(pDevExt, pSource, pContext, pBlt);
                                 break;
