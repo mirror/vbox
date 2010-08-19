@@ -231,7 +231,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                 rc = VINF_EM_RAW_EMULATE_INSTR;
 
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysical);
-            if (uErr & X86_TRAP_PF_RSVD) STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysical);
+            if (uErr & X86_TRAP_PF_RSVD) STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysicalOpt);
             STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2HndPhys; });
             return rc;
         }
@@ -513,13 +513,13 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
         PPGMPAGE pPage;
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         rc = pgmPhysGetPageEx(&pVM->pgm.s, GstWalk.Core.GCPhys, &pPage);
-        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
                                                                                  pfLockTaken, &GstWalk));
         rc = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, 1, uErr);
 #   else
         rc = pgmPhysGetPageEx(&pVM->pgm.s, (RTGCPHYS)pvFault, &pPage);
-        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
                                                                                  pfLockTaken));
         rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, pvFault, 1, uErr);
@@ -2790,6 +2790,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
              * Fill the shadow page table.
              */
             /* Get address and flags from the source PDE. */
+            Assert(GST_IS_PDE_VALID(pVCpu, PdeSrc));
             SHWPTE PteDstBase;
             SHW_PTE_SET(PteDstBase, PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT));
 
@@ -2839,17 +2840,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 # endif
 
                         if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                        {
-/** @todo call SyncHandlerPte !!
- *  FIXME FIXME FIXME */
-                            if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
-                            {
-                                SHW_PTE_SET(PteDst, PGM_PAGE_GET_HCPHYS(pPage) | SHW_PTE_GET_U(PteDstBase));
-                                SHW_PTE_SET_RO(PteDst);
-                            }
-                            else
-                                SHW_PTE_SET(PteDst, 0);
-                        }
+                            PGM_BTH_NAME(SyncHandlerPte)(pVM, pPage, SHW_PTE_GET_U(PteDstBase), &PteDst);
                         else if (PGM_PAGE_IS_BALLOONED(pPage))
                             SHW_PTE_SET(PteDst, 0); /* Handle ballooned pages at #PF time. */
 # ifndef IN_RING0
