@@ -351,6 +351,7 @@ static const RTGETOPTDEF g_aModifyHardDiskOptions[] =
     { "--compact",      'c', RTGETOPT_REQ_NOTHING },
     { "-compact",       'c', RTGETOPT_REQ_NOTHING },    // deprecated
     { "compact",        'c', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "--resize",       'r', RTGETOPT_REQ_UINT64 }
 };
 
 int handleModifyHardDisk(HandlerArg *a)
@@ -360,7 +361,9 @@ int handleModifyHardDisk(HandlerArg *a)
     ComPtr<IMedium> hardDisk;
     MediumType_T DiskType;
     bool AutoReset = false;
-    bool fModifyDiskType = false, fModifyAutoReset = false, fModifyCompact = false;;
+    bool fModifyDiskType = false, fModifyAutoReset = false, fModifyCompact = false;
+    bool fModifyResize = true;
+    uint64_t resizeMB = 0;
     const char *FilenameOrUuid = NULL;
 
     int c;
@@ -391,6 +394,11 @@ int handleModifyHardDisk(HandlerArg *a)
                 fModifyCompact = true;
                 break;
 
+            case 'r':   // --resize
+                resizeMB = ValueUnion.u64;
+                fModifyResize = true;
+                break;
+
             case VINF_GETOPT_NOT_OPTION:
                 if (!FilenameOrUuid)
                     FilenameOrUuid = ValueUnion.psz;
@@ -418,7 +426,7 @@ int handleModifyHardDisk(HandlerArg *a)
     if (!FilenameOrUuid)
         return errorSyntax(USAGE_MODIFYHD, "Disk name or UUID required");
 
-    if (!fModifyDiskType && !fModifyAutoReset && !fModifyCompact)
+    if (!fModifyDiskType && !fModifyAutoReset && !fModifyCompact && !fModifyResize)
         return errorSyntax(USAGE_MODIFYHD, "No operation specified");
 
     /* first guess is that it's a UUID */
@@ -482,6 +490,51 @@ int handleModifyHardDisk(HandlerArg *a)
                 else if (rc == VBOX_E_NOT_SUPPORTED)
                 {
                     RTPrintf("Error: Compact hard disk operation for this format is not implemented yet!\n");
+                }
+                else
+                    com::GluePrintRCMessage(rc);
+            }
+            if (unknown)
+                hardDisk->Close();
+        }
+    }
+
+    if (fModifyResize)
+    {
+        bool unknown = false;
+        /* the hard disk image might not be registered */
+        if (!hardDisk)
+        {
+            unknown = true;
+            rc = a->virtualBox->OpenMedium(Bstr(FilenameOrUuid), DeviceType_HardDisk, AccessMode_ReadWrite, hardDisk.asOutParam());
+            if (rc == VBOX_E_FILE_ERROR)
+            {
+                char szFilenameAbs[RTPATH_MAX] = "";
+                int irc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
+                if (RT_FAILURE(irc))
+                {
+                    RTPrintf("Cannot convert filename \"%s\" to absolute path\n", FilenameOrUuid);
+                    return 1;
+                }
+                CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs), DeviceType_HardDisk, AccessMode_ReadWrite, hardDisk.asOutParam()));
+            }
+        }
+        if (SUCCEEDED(rc) && hardDisk)
+        {
+            ComPtr<IProgress> progress;
+            CHECK_ERROR(hardDisk, Resize(resizeMB, progress.asOutParam()));
+            if (SUCCEEDED(rc))
+                rc = showProgress(progress);
+            if (FAILED(rc))
+            {
+                if (rc == E_NOTIMPL)
+                {
+                    RTPrintf("Error: Resize hard disk operation is not implemented!\n");
+                    RTPrintf("The functionality will be restored later.\n");
+                }
+                else if (rc == VBOX_E_NOT_SUPPORTED)
+                {
+                    RTPrintf("Error: Resize hard disk operation for this format is not implemented yet!\n");
                 }
                 else
                     com::GluePrintRCMessage(rc);
