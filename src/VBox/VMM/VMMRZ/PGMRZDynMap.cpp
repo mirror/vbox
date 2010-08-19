@@ -1948,6 +1948,7 @@ VMMDECL(void) PGMRZDynMapFlushAutoSet(PVMCPU pVCpu)
      */
     uint32_t cEntries = pSet->cEntries;
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
+    Assert(pSet->iSubset == UINT32_MAX);
 #ifdef IN_RC
     if (RT_ELEMENTS(pSet->aEntries) > MM_HYPER_DYNAMIC_SIZE / PAGE_SIZE)
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->aStatRZDynMapSetFilledPct[(cEntries * 10 / (MM_HYPER_DYNAMIC_SIZE / PAGE_SIZE)) % 11]);
@@ -2096,6 +2097,7 @@ VMMDECL(uint32_t) PGMRZDynMapPushAutoSubset(PVMCPU pVCpu)
     pSet->iSubset = pSet->cEntries;
     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapSubsets);
 
+    AssertMsg(iPrevSubset <= pSet->iSubset || iPrevSubset == UINT32_MAX, ("iPrevSubset=%#x iSubset=%#x\n", iPrevSubset, pSet->iSubset));
     return iPrevSubset;
 }
 
@@ -2112,7 +2114,7 @@ VMMDECL(void) PGMRZDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
     uint32_t        cEntries = pSet->cEntries;
     LogFlow(("PGMRZDynMapPopAutoSubset: pVCpu=%p iPrevSubset=%u iSubset=%u cEntries=%u\n", pVCpu, iPrevSubset, pSet->iSubset, cEntries));
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
-    AssertReturnVoid(pSet->iSubset >= iPrevSubset || iPrevSubset == UINT32_MAX);
+    AssertMsgReturnVoid(pSet->iSubset >= iPrevSubset || iPrevSubset == UINT32_MAX, ("iPrevSubset=%u iSubset=%u cEntries=%u\n", iPrevSubset, pSet->iSubset, cEntries));
 #ifdef IN_RC
     if (RT_ELEMENTS(pSet->aEntries) > MM_HYPER_DYNAMIC_SIZE / PAGE_SIZE)
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->aStatRZDynMapSetFilledPct[(cEntries * 10 / (MM_HYPER_DYNAMIC_SIZE / PAGE_SIZE)) % 11]);
@@ -2124,6 +2126,7 @@ VMMDECL(void) PGMRZDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
     {
         AssertMsg(cEntries < PGMMAPSET_MAX_FILL, ("%u\n", cEntries));
         pgmDynMapFlushSubset(pSet);
+        Assert(pSet->cEntries >= iPrevSubset || iPrevSubset == UINT32_MAX);
     }
     pSet->iSubset = iPrevSubset;
 }
@@ -2371,6 +2374,7 @@ int pgmRZDynMapHCPageCommon(PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv RTLOG_C
         if (i < 0)
         {
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapSetSearchMisses);
+#if 0 /* this is very bogus */
             if (pSet->iSubset < pSet->cEntries)
             {
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapSetSearchFlushes);
@@ -2378,6 +2382,7 @@ int pgmRZDynMapHCPageCommon(PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv RTLOG_C
                 AssertMsg(pSet->cEntries < PGMMAPSET_MAX_FILL, ("%u\n", pSet->cEntries));
                 pgmDynMapFlushSubset(pSet);
             }
+#endif
 
             if (RT_UNLIKELY(pSet->cEntries >= RT_ELEMENTS(pSet->aEntries)))
             {
