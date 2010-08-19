@@ -967,7 +967,7 @@ typedef struct VM
 #ifdef ___FTMInternal_h
         struct FTM  s;
 #endif
-        uint8_t     padding[128];        /* multiple of 64 */
+        uint8_t     padding[512];        /* multiple of 64 */
     } ftm;
 
     /** REM part. */
@@ -1000,7 +1000,7 @@ typedef struct VM
     } cfgm;
 
     /** Padding for aligning the cpu array on a page boundrary. */
-    uint8_t         abAlignment2[1886];
+    uint8_t         abAlignment2[1502];
 
     /* ---- end small stuff ---- */
 

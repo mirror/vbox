@@ -47,6 +47,12 @@ static const char g_szWelcome[] = "VirtualBox-Fault-Tolerance-Sync-1.0\n";
  */
 VMMR3DECL(int) FTMR3Init(PVM pVM)
 {
+    /*
+     * Assert alignment and sizes.
+     */
+    AssertCompile(sizeof(pVM->ftm.s) <= sizeof(pVM->ftm.padding));
+    AssertCompileMemberAlignment(FTM, CritSect, sizeof(uintptr_t));
+
     /** @todo saved state for master nodes! */
     pVM->ftm.s.pszAddress               = NULL;
     pVM->ftm.s.pszPassword              = NULL;
@@ -55,6 +61,18 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
     pVM->ftm.s.standby.hServer          = NULL;
     pVM->ftm.s.master.hShutdownEvent    = NIL_RTSEMEVENT;
     pVM->ftm.s.hSocket                  = NIL_RTSOCKET;
+
+    /*
+     * Initialize the PGM critical section.
+     */
+    int rc = PDMR3CritSectInit(pVM, &pVM->ftm.s.CritSect, RT_SRC_POS, "FTM");
+    AssertRCReturn(rc, rc);
+
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatReceivedMem,               STAMTYPE_COUNTER, "/FT/Received/Mem",                   STAMUNIT_BYTES, "The amount of memory pages that was received.");
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatReceivedState,             STAMTYPE_COUNTER, "/FT/Received/State",                 STAMUNIT_BYTES, "The amount of state information that was received.");
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatSentMem,                   STAMTYPE_COUNTER, "/FT/Sent/Mem",                       STAMUNIT_BYTES, "The amount of memory pages that was sent.");
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatSentState,                 STAMTYPE_COUNTER, "/FT/Sent/State",                     STAMUNIT_BYTES, "The amount of state information that was sent.");
+
     return VINF_SUCCESS;
 }
 
@@ -80,6 +98,7 @@ VMMR3DECL(int) FTMR3Term(PVM pVM)
     if (pVM->ftm.s.master.hShutdownEvent != NIL_RTSEMEVENT)
         RTSemEventDestroy(pVM->ftm.s.master.hShutdownEvent);
 
+    PDMR3CritSectDelete(&pVM->ftm.s.CritSect);
     return VINF_SUCCESS;
 }
 
@@ -251,7 +270,10 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
                     /* ACK */
                     rc = ftmR3TcpReadACK(pVM, "password", "Invalid password");
                     if (RT_SUCCESS(rc))
+                    {
+                        /** todo: verify VM config. */
                         break;
+                    }
                 }
             }
             rc = RTTcpClientClose(pVM->ftm.s.hSocket);
@@ -267,6 +289,12 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
      * Start the sync process.
      */
 
+    for (;;)
+    {
+        rc = RTSemEventWait(pVM->ftm.s.master.hShutdownEvent, pVM->ftm.s.uInterval);
+        if (rc != VERR_TIMEOUT)
+            break;    /* told to quit */            
+    }
     return rc;
 }
 
@@ -321,6 +349,8 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
     rc = ftmR3TcpWriteACK(pVM);
     if (RT_FAILURE(rc))
         return VINF_SUCCESS;
+
+    /** todo: verify VM config. */
 
     /*
      * Stop the server.
@@ -385,11 +415,15 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
                     VERR_INTERNAL_ERROR_4);
     AssertReturn(pszAddress, VERR_INVALID_PARAMETER);
 
-    pVM->ftm.s.uInterval   = uInterval;
-    pVM->ftm.s.uPort       = uPort;
-    pVM->ftm.s.pszAddress  = RTStrDup(pszAddress);
+    if (pVM->ftm.s.uInterval)
+        pVM->ftm.s.uInterval    = uInterval;
+    else
+        pVM->ftm.s.uInterval    = 50;   /* standard sync interval of 50ms */
+
+    pVM->ftm.s.uPort            = uPort;
+    pVM->ftm.s.pszAddress       = RTStrDup(pszAddress);
     if (pszPassword)
-        pVM->ftm.s.pszPassword = RTStrDup(pszPassword);
+        pVM->ftm.s.pszPassword  = RTStrDup(pszPassword);
     if (fMaster)
     {
         rc = RTSemEventCreate(&pVM->ftm.s.master.hShutdownEvent);
@@ -434,4 +468,20 @@ VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
     Assert(pVM->ftm.s.standby.hServer);
 
     return RTTcpServerShutdown(pVM->ftm.s.standby.hServer);
+}
+
+
+/**
+ * Initiates a checkpoint update on the master node
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM to power on.
+ */
+VMMR3DECL(int) FTMR3Checkpoint(PVM pVM)
+{
+    if (!pVM->fFaultTolerantMaster)
+        return VINF_SUCCESS;
+
+    return VERR_NOT_IMPLEMENTED;
 }
