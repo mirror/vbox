@@ -39,6 +39,10 @@
 # include <sys/old_procfs.h>
 # undef _FILE_OFFSET_BITS
 # define _FILE_OFFSET_BITS 64
+#else
+# include <procfs.h>
+# include <sys/procfs.h>
+# include <sys/old_procfs.h>
 #endif
 # include <limits.h>
 # include <thread.h>
