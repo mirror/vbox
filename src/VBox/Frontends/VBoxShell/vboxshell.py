@@ -883,7 +883,7 @@ def infoCmd(ctx,args):
     return 0
 
 def startCmd(ctx, args):
-    if (len(args) < 2:
+    if len(args) < 2:
         print "usage: start name <frontend>"
         return 0
     mach = argsToMach(ctx,args)
