@@ -2038,6 +2038,24 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
                             PVDINTERFACE pVDIfsOperation);
 
 /**
+ * Resizes the the given disk image to the given size.
+ *
+ * @return  VBox status 
+ * @return  VERR_VD_IMAGE_READ_ONLY if image is not writable.
+ * @return  VERR_NOT_SUPPORTED if this kind of image can be compacted, but
+ *
+ * @param   pDisk           Pointer to the HDD container.
+ * @param   cbSize          New size of the image.
+ * @param   pPCHSGeometry   Pointer to the new physical disk geometry <= (16383,16,63). Not NULL.
+ * @param   pLCHSGeometry   Pointer to the new logical disk geometry <= (x,255,63). Not NULL.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+ */
+VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
+                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
+                           PCPDMMEDIAGEOMETRY pLCHSGeometry,
+                           PVDINTERFACE pVDIfsOperation);
+
+/**
  * Closes the last opened image file in HDD container.
  * If previous image file was opened in read-only mode (the normal case) and
  * the last opened image is in read-write mode then the previous image will be

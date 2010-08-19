@@ -4907,6 +4907,105 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
 }
 
 /**
+ * Resizes the the given disk image to the given size.
+ *
+ * @return  VBox status 
+ * @return  VERR_VD_IMAGE_READ_ONLY if image is not writable.
+ * @return  VERR_NOT_SUPPORTED if this kind of image can be compacted, but
+ *
+ * @param   pDisk           Pointer to the HDD container.
+ * @param   cbSize          New size of the image.
+ * @param   pPCHSGeometry   Pointer to the new physical disk geometry <= (16383,16,63). Not NULL.
+ * @param   pLCHSGeometry   Pointer to the new logical disk geometry <= (x,255,63). Not NULL.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+ */
+VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
+                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
+                           PCPDMMEDIAGEOMETRY pLCHSGeometry,
+                           PVDINTERFACE pVDIfsOperation)
+{
+    int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false, fLockWrite = false;
+
+    LogFlowFunc(("pDisk=%#p cbSize=%llu pVDIfsOperation=%#p\n",
+                 pDisk, cbSize, pVDIfsOperation));
+
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+
+    do {
+        /* Check arguments. */
+        AssertMsgBreakStmt(VALID_PTR(pDisk), ("pDisk=%#p\n", pDisk),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE,
+                  ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
+        /* Not supported if the disk has child images attached. */
+        AssertMsgBreakStmt(pDisk->cImages == 1, ("cImages=%u\n", pDisk->cImages),
+                           rc = VERR_NOT_SUPPORTED);
+
+        PVDIMAGE pImage = pDisk->pBase;
+
+        /* If there is no compact callback for not file based backends then
+         * the backend doesn't need compaction. No need to make much fuss about
+         * this. For file based ones signal this as not yet supported. */
+        if (!pImage->Backend->pfnResize)
+        {
+            if (pImage->Backend->uBackendCaps & VD_CAP_FILE)
+                rc = VERR_NOT_SUPPORTED;
+            else
+                rc = VINF_SUCCESS;
+            break;
+        }
+
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = false;
+
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
+        rc = pImage->Backend->pfnResize(pImage->pvBackendData,
+                                        cbSize,
+                                        pPCHSGeometry,
+                                        pLCHSGeometry,
+                                        0, 99,
+                                        pDisk->pVDIfsDisk,
+                                        pImage->pVDIfsImage,
+                                        pVDIfsOperation);
+    } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+    else if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pCbProgress && pCbProgress->pfnProgress)
+            pCbProgress->pfnProgress(pIfProgress->pvUser, 100);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/**
  * Closes the last opened image file in HDD container.
  * If previous image file was opened in read-only mode (the normal case) and
  * the last opened image is in read-write mode then the previous image will be

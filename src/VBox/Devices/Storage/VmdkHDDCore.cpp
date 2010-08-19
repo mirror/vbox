@@ -6882,5 +6882,9 @@ VBOXHDDBACKEND g_VmdkBackend =
     /* pfnComposeLocation */
     genericFileComposeLocation,
     /* pfnComposeName */
-    genericFileComposeName
+    genericFileComposeName,
+    /* pfnCompact */
+    NULL,
+    /* pfnResize */
+    NULL
 };
