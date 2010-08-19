@@ -137,9 +137,13 @@ DECLCALLBACK(HRESULT) vboxDispMpGetRegions(PVBOXDISPMP_REGIONS pRegions, DWORD d
     {
         Assert(pHdr);
         VBOXWDDMDISP_CONTEXT *pContext = (VBOXWDDMDISP_CONTEXT*)pHdr->u64UmData;
-        Assert(pContext->pDevice->hWnd);
-        pRegions->hWnd = pContext->pDevice->hWnd;
-        pRegions->pRegions = (PVBOXVIDEOCM_CMD_RECTS)(((uint8_t*)pHdr) + sizeof (VBOXVIDEOCM_CMD_HDR));
+        PVBOXVIDEOCM_CMD_RECTS_INTERNAL pCmdInternal = (PVBOXVIDEOCM_CMD_RECTS_INTERNAL)(((uint8_t*)pHdr) + sizeof (VBOXVIDEOCM_CMD_HDR));
+        UINT iScreen = pContext->pDevice->cScreens == 1 ? pContext->pDevice->iPrimaryScreen : pCmdInternal->VidPnSourceId;
+        PVBOXWDDMDISP_SCREEN pScreen = &pContext->pDevice->aScreens[iScreen];
+        Assert(pScreen->hWnd);
+        Assert(pScreen->pDevice9If);
+        pRegions->hWnd = pScreen->hWnd;
+        pRegions->pRegions = &pCmdInternal->Cmd;
     }
     return hr;
 }

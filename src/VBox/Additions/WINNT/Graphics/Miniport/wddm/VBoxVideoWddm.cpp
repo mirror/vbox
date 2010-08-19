@@ -2065,13 +2065,16 @@ NTSTATUS vboxWddmCallIsr(PDEVICE_EXTENSION pDevExt)
     return Status;
 }
 
-static void vboxWddmSubmitBltCmd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_CONTEXT pContext, PVBOXWDDM_DMA_PRESENT_BLT pBlt)
+static void vboxWddmSubmitBltCmd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_DMA_PRESENT_BLT pBlt)
 {
     PVBOXVDMAPIPE_CMD_RECTSINFO pRectsCmd = (PVBOXVDMAPIPE_CMD_RECTSINFO)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_RECTSINFO, RT_OFFSETOF(VBOXVDMAPIPE_CMD_RECTSINFO, ContextsRects.UpdateRects.aRects[pBlt->DstRects.UpdateRects.cRects]));
     Assert(pRectsCmd);
     if (pRectsCmd)
     {
+        VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pBlt->Hdr.DstAllocInfo.srcId];
+        VBOXWDDM_CONTEXT *pContext = pBlt->Hdr.pContext;
         pRectsCmd->pContext = pContext;
+        pRectsCmd->VidPnSourceId = pBlt->Hdr.SrcAllocInfo.srcId;
         memcpy(&pRectsCmd->ContextsRects, &pBlt->DstRects, RT_OFFSETOF(VBOXVDMAPIPE_RECTS, UpdateRects.aRects[pBlt->DstRects.UpdateRects.cRects]));
         vboxWddmRectTranslate(&pRectsCmd->ContextsRects.ContextRect, pSource->VScreenPos.x, pSource->VScreenPos.y);
         for (UINT i = 0; i < pRectsCmd->ContextsRects.UpdateRects.cRects; ++i)
@@ -2183,7 +2186,7 @@ DxgkDdiSubmitCommand(
                                     Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
                                     VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, pSource, &rect);
                                 }
-                                vboxWddmSubmitBltCmd(pDevExt, pSource, pContext, pBlt);
+                                vboxWddmSubmitBltCmd(pDevExt, pBlt);
                                 break;
                             }
                             case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
@@ -2192,7 +2195,7 @@ DxgkDdiSubmitCommand(
                                 Assert(pSrcAlloc->fRcFlags.RenderTarget);
                                 if (pSrcAlloc->fRcFlags.RenderTarget)
                                 {
-                                    vboxWddmSubmitBltCmd(pDevExt, pSource, pContext, pBlt);
+                                    vboxWddmSubmitBltCmd(pDevExt, pBlt);
                                 }
                                 break;
                             }
@@ -2236,6 +2239,7 @@ DxgkDdiSubmitCommand(
                 PVBOXWDDM_ALLOCATION pAlloc = pPrivateData->SrcAllocInfo.pAlloc;
                 VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->SrcAllocInfo.srcId];
                 pRectsCmd->pContext = pContext;
+                pRectsCmd->VidPnSourceId = pPrivateData->SrcAllocInfo.srcId;
                 RECT r;
                 r.left = pSource->VScreenPos.x;
                 r.top = pSource->VScreenPos.y;
