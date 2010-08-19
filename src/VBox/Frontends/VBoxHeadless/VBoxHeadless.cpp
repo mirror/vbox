@@ -66,6 +66,7 @@ using namespace com;
 # include "FramebufferVNC.h"
 #endif
 
+#include "NullFramebuffer.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -88,7 +89,6 @@ static volatile bool g_fTerminateFE = false;
 #ifdef VBOX_WITH_VNC
 static VNCFB *g_pFramebufferVNC;
 #endif
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -906,8 +906,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         ULONG cMonitors = 1;
         machine->COMGETTER(MonitorCount)(&cMonitors);
 
-#ifdef VBOX_WITH_VRDP
         unsigned uScreenId;
+#ifdef VBOX_WITH_VRDP
         for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
         {
 # ifdef VBOX_FFMPEG
@@ -938,6 +938,22 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
 #endif
+        // fill in remaining slots with null framebuffers
+        for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
+        {
+            ComPtr<IFramebuffer> fb;
+            LONG xOrigin, yOrigin;
+            HRESULT hrc2 = display->GetFramebuffer(uScreenId,
+                                                   fb.asOutParam(),
+                                                   &xOrigin, &yOrigin);
+            if (hrc2 == S_OK && fb.isNull())
+            {
+                NullFB *pNullFB =  new NullFB();
+                pNullFB->AddRef();
+                pNullFB->init();
+                display->SetFramebuffer(uScreenId, pNullFB);
+            }
+        }
 
         /* get the machine debugger (isn't necessarily available) */
         ComPtr <IMachineDebugger> machineDebugger;
@@ -1214,3 +1230,8 @@ int main(int argc, char **argv, char **envp)
     return TrustedMain(argc, argv, envp);
 }
 #endif /* !VBOX_WITH_HARDENING */
+
+#ifdef VBOX_WITH_XPCOM
+NS_DECL_CLASSINFO(NullFB)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(NullFB, IFramebuffer)
+#endif
