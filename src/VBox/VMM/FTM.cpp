@@ -294,8 +294,8 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
     {
         if (!pVM->ftm.s.fCheckpointingActive)
         {
-            int rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
-            AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+            int rc2 = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
+            AssertMsg(rc2 == VINF_SUCCESS, ("%Rrc\n", rc));
 
             /* sync the changed memory with the standby node. */
 
