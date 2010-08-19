@@ -355,7 +355,7 @@ DECLINLINE(unsigned) getImageBlocksOffset(PVDIHEADER ph)
     return 0;
 }
 
-DECLINLINE(unsigned) getImageDataOffset(PVDIHEADER ph)
+DECLINLINE(uint32_t) getImageDataOffset(PVDIHEADER ph)
 {
     switch (GET_MAJOR_HEADER_VERSION(ph))
     {
@@ -365,6 +365,16 @@ DECLINLINE(unsigned) getImageDataOffset(PVDIHEADER ph)
     }
     AssertFailed();
     return 0;
+}
+
+DECLINLINE(void) setImageDataOffset(PVDIHEADER ph, uint32_t offData)
+{
+    switch (GET_MAJOR_HEADER_VERSION(ph))
+    {
+        case 0: return;
+        case 1: ph->u.v1.offData = offData;
+    }
+    AssertFailed();
 }
 
 DECLINLINE(PVDIDISKGEOMETRY) getImageLCHSGeometry(PVDIHEADER ph)
@@ -395,6 +405,16 @@ DECLINLINE(uint64_t) getImageDiskSize(PVDIHEADER ph)
     }
     AssertFailed();
     return 0;
+}
+
+DECLINLINE(void) setImageDiskSize(PVDIHEADER ph, uint64_t cbDisk)
+{
+    switch (GET_MAJOR_HEADER_VERSION(ph))
+    {
+        case 0: ph->u.v0.cbDisk = cbDisk; return;
+        case 1: ph->u.v1.cbDisk = cbDisk; return;
+    }
+    AssertFailed();
 }
 
 DECLINLINE(unsigned) getImageBlockSize(PVDIHEADER ph)
@@ -429,6 +449,17 @@ DECLINLINE(unsigned) getImageBlocks(PVDIHEADER ph)
     AssertFailed();
     return 0;
 }
+
+DECLINLINE(void) setImageBlocks(PVDIHEADER ph, unsigned cBlocks)
+{
+    switch (GET_MAJOR_HEADER_VERSION(ph))
+    {
+        case 0: ph->u.v0.cBlocks = cBlocks; return;
+        case 1: ph->u.v1.cBlocks = cBlocks; return;
+    }
+    AssertFailed();
+}
+
 
 DECLINLINE(unsigned) getImageBlocksAllocated(PVDIHEADER ph)
 {
