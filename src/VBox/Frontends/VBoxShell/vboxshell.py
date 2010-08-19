@@ -820,8 +820,11 @@ def infoCmd(ctx,args):
     print "  Keyboard [keyboardHidType]: %s (%s)" %(asEnumElem(ctx,"KeyboardHidType", mach.keyboardHidType), mach.keyboardHidType)
     print "  Pointing device [pointingHidType]: %s (%s)" %(asEnumElem(ctx,"PointingHidType", mach.pointingHidType), mach.pointingHidType)
     print "  Last changed [n/a]: " + time.asctime(time.localtime(long(mach.lastStateChange)/1000))
-    print "  VRDP server [VRDPServer.enabled]: %s" %(asState(mach.VRDPServer.enabled))
-
+    # OSE has no VRDP
+    try:
+        print "  VRDP server [VRDPServer.enabled]: %s" %(asState(mach.VRDPServer.enabled))
+    except:
+        pass
     print
     print colCat(ctx,"  I/O subsystem info:")
     print "   Cache enabled [ioCacheEnabled]: %s" %(asState(mach.ioCacheEnabled))
@@ -880,6 +883,9 @@ def infoCmd(ctx,args):
     return 0
 
 def startCmd(ctx, args):
+    if (len(args) < 2:
+        print "usage: start name <frontend>"
+        return 0
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
@@ -2790,7 +2796,7 @@ aliases = {'s':'start',
            'v':'verbose'}
 
 commands = {'help':['Prints help information', helpCmd, 0],
-            'start':['Start virtual machine by name or uuid: start Linux', startCmd, 0],
+            'start':['Start virtual machine by name or uuid: start Linux vrdp', startCmd, 0],
             'createVm':['Create virtual machine: createVm macvm MacOS', createVmCmd, 0],
             'removeVm':['Remove virtual machine', removeVmCmd, 0],
             'pause':['Pause virtual machine', pauseCmd, 0],
@@ -2820,7 +2826,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'sleep':['Sleep for specified number of seconds: sleep 3.14159', sleepCmd, 0],
             'shell':['Execute external shell command: shell "ls /etc/rc*"', shellCmd, 0],
             'exportVm':['Export VM in OVF format: exportVm Win /tmp/win.ovf', exportVMCmd, 0],
-            'screenshot':['Take VM screenshot to a file: screenshot Win /tmp/win.png 1024 768', screenshotCmd, 0],
+            'screenshot':['Take VM screenshot to a file: screenshot Win /tmp/win.png 1024 768 0', screenshotCmd, 0],
             'teleport':['Teleport VM to another box (see openportal): teleport Win anotherhost:8000 <passwd> <maxDowntime>', teleportCmd, 0],
             'typeGuest':['Type arbitrary text in guest: typeGuest Linux "^lls\\n&UP;&BKSP;ess /etc/hosts\\nq^c" 0.7', typeGuestCmd, 0],
             'openportal':['Open portal for teleportation of VM from another box (see teleport): openportal Win 8000 <passwd>', openportalCmd, 0],
