@@ -459,21 +459,29 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFram
         Assert(PGMIsLockOwner(pVM));
         pgmUnlock(pVM);
     }
-    if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
-        rc = VINF_SUCCESS;
+    LogFlow(("PGMTrap0eHandler: uErr=%RGx pvFault=%RGv rc=%Rrc\n", uErr, pvFault, rc));
+
+    /*
+     * Return code tweaks.
+     */
+    if (rc != VINF_SUCCESS)
+    {
+        if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
+            rc = VINF_SUCCESS;
 
 # ifdef IN_RING0
-    /* Note: hack alert for difficult to reproduce problem. */
-    if (    rc == VERR_PAGE_NOT_PRESENT                 /* SMP only ; disassembly might fail. */
-        ||  rc == VERR_PAGE_TABLE_NOT_PRESENT           /* seen with UNI & SMP */
-        ||  rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT   /* seen with SMP */
-        ||  rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)     /* precaution */
-    {
-        Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT (%d) for page fault at %RGv error code %x (rip=%RGv)\n", rc, pvFault, uErr, pRegFrame->rip));
-        /* Some kind of inconsistency in the SMP case; it's safe to just execute the instruction again; not sure about single VCPU VMs though. */
-        rc = VINF_SUCCESS;
-    }
+        /* Note: hack alert for difficult to reproduce problem. */
+        if (    rc == VERR_PAGE_NOT_PRESENT                 /* SMP only ; disassembly might fail. */
+            ||  rc == VERR_PAGE_TABLE_NOT_PRESENT           /* seen with UNI & SMP */
+            ||  rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT   /* seen with SMP */
+            ||  rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)     /* precaution */
+        {
+            Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT (%d) for page fault at %RGv error code %x (rip=%RGv)\n", rc, pvFault, uErr, pRegFrame->rip));
+            /* Some kind of inconsistency in the SMP case; it's safe to just execute the instruction again; not sure about single VCPU VMs though. */
+            rc = VINF_SUCCESS;
+        }
 # endif
+    }
 
     STAM_STATS({ if (rc == VINF_EM_RAW_GUEST_TRAP) STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eGuestPF); });
     STAM_STATS({ if (!pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution))
