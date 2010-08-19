@@ -89,7 +89,7 @@ VMMDECL(int) PGMMap(PVM pVM, RTGCUINTPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPage
                 pCur->aPTs[iPT].CTX_SUFF(pPT)->a[iPageNo].u = (uint32_t)Pte.u;      /* ASSUMES HCPhys < 4GB and/or that we're never gonna do 32-bit on a PAE host! */
 
                 /* pae */
-                pCur->aPTs[iPT].CTX_SUFF(paPaePTs)[iPageNo / 512].a[iPageNo % 512].u = Pte.u;
+                PGMSHWPTEPAE_SET(pCur->aPTs[iPT].CTX_SUFF(paPaePTs)[iPageNo / 512].a[iPageNo % 512], Pte.u);
 
                 /* next */
                 cbPages -= PAGE_SIZE;
@@ -143,7 +143,7 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     /*
      * Validate input.
      */
-    AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK), ("fFlags=%#x\n", fFlags));
+    AssertMsg(!(fFlags & (X86_PTE_PAE_PG_MASK | X86_PTE_PAE_MBZ_MASK_NX)), ("fFlags=%#x\n", fFlags));
     Assert(cb);
 
     /*
@@ -181,8 +181,11 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
                     pCur->aPTs[iPT].CTX_SUFF(pPT)->a[iPTE].u |= fFlags & ~X86_PTE_PG_MASK;
 
                     /* PAE */
-                    pCur->aPTs[iPT].CTX_SUFF(paPaePTs)[iPTE / 512].a[iPTE % 512].u &= fMask | X86_PTE_PAE_PG_MASK;
-                    pCur->aPTs[iPT].CTX_SUFF(paPaePTs)[iPTE / 512].a[iPTE % 512].u |= fFlags & ~X86_PTE_PAE_PG_MASK;
+                    PPGMSHWPTEPAE pPtePae = &pCur->aPTs[iPT].CTX_SUFF(paPaePTs)[iPTE / 512].a[iPTE % 512];
+                    PGMSHWPTEPAE_SET(*pPtePae,
+                                       (  PGMSHWPTEPAE_GET_U(*pPtePae)
+                                        & (fMask | X86_PTE_PAE_PG_MASK))
+                                     | (fFlags & ~(X86_PTE_PAE_PG_MASK | X86_PTE_PAE_MBZ_MASK_NX)));
 
                     /* invalidate tls */
                     PGM_INVL_PG(VMMGetCpu(pVM), (RTGCUINTPTR)pCur->GCPtr + off);

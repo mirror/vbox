@@ -3557,13 +3557,13 @@ int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
  * @param   cMaxDepth   The maxium depth.
  * @param   pHlp        Pointer to the output functions.
  */
-static int  pgmR3DumpHierarchyHCPaePT(PVM pVM, PX86PTPAE pPT, uint64_t u64Address, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp)
+static int  pgmR3DumpHierarchyHCPaePT(PVM pVM, PCPGMSHWPTPAE pPT, uint64_t u64Address, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp)
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
-    {
-        X86PTEPAE Pte = pPT->a[i];
-        if (Pte.n.u1Present)
+        if (PGMSHWPTEPAE_IS_P(pPT->a[i]))
         {
+            X86PTEPAE Pte;
+            Pte.u = PGMSHWPTEPAE_GET_U(pPT->a[i]);
             pHlp->pfnPrintf(pHlp,
                             fLongMode       /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
                             ? "%016llx 3    | P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx\n"
@@ -3583,7 +3583,6 @@ static int  pgmR3DumpHierarchyHCPaePT(PVM pVM, PX86PTPAE pPT, uint64_t u64Addres
                             Pte.u & PGM_PTFLAGS_CSAM_VALIDATED? 'v' : '-',
                             Pte.u & X86_PTE_PAE_PG_MASK);
         }
-    }
     return VINF_SUCCESS;
 }
 
@@ -3658,11 +3657,11 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
                 if (cMaxDepth >= 1)
                 {
                     /** @todo what about using the page pool for mapping PTs? */
-                    uint64_t    u64AddressPT = u64Address + ((uint64_t)i << X86_PD_PAE_SHIFT);
-                    RTHCPHYS    HCPhysPT     = Pde.u & X86_PDE_PAE_PG_MASK;
-                    PX86PTPAE   pPT          = NULL;
+                    uint64_t        u64AddressPT = u64Address + ((uint64_t)i << X86_PD_PAE_SHIFT);
+                    RTHCPHYS        HCPhysPT     = Pde.u & X86_PDE_PAE_PG_MASK;
+                    PPGMSHWPTPAE    pPT          = NULL;
                     if (!(Pde.u & PGM_PDFLAGS_MAPPING))
-                        pPT = (PX86PTPAE)MMPagePhys2Page(pVM, HCPhysPT);
+                        pPT = (PPGMSHWPTPAE)MMPagePhys2Page(pVM, HCPhysPT);
                     else
                     {
                         for (PPGMMAPPING pMap = pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)

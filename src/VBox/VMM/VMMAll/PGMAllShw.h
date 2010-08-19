@@ -30,6 +30,21 @@
 #undef SHW_PD_SHIFT
 #undef SHW_PD_MASK
 #undef SHW_PTE_PG_MASK
+#undef SHW_PTE_IS_P
+#undef SHW_PTE_IS_RW
+#undef SHW_PTE_IS_US
+#undef SHW_PTE_IS_A
+#undef SHW_PTE_IS_D
+#undef SHW_PTE_IS_P_RW
+#undef SHW_PTE_IS_TRACK_DIRTY
+#undef SHW_PTE_GET_HCPHYS
+#undef SHW_PTE_GET_U
+#undef SHW_PTE_LOG64
+#undef SHW_PTE_SET
+#undef SHW_PTE_ATOMIC_SET
+#undef SHW_PTE_ATOMIC_SET2
+#undef SHW_PTE_SET_RO
+#undef SHW_PTE_SET_RW
 #undef SHW_PT_SHIFT
 #undef SHW_PT_MASK
 #undef SHW_TOTAL_PD_ENTRIES
@@ -39,73 +54,118 @@
 #undef SHW_POOL_ROOT_IDX
 
 #if PGM_SHW_TYPE == PGM_TYPE_32BIT
-# define SHWPT                  X86PT
-# define PSHWPT                 PX86PT
-# define SHWPTE                 X86PTE
-# define PSHWPTE                PX86PTE
-# define SHWPD                  X86PD
-# define PSHWPD                 PX86PD
-# define SHWPDE                 X86PDE
-# define PSHWPDE                PX86PDE
-# define SHW_PDE_PG_MASK        X86_PDE_PG_MASK
-# define SHW_PD_SHIFT           X86_PD_SHIFT
-# define SHW_PD_MASK            X86_PD_MASK
-# define SHW_TOTAL_PD_ENTRIES   X86_PG_ENTRIES
-# define SHW_PTE_PG_MASK        X86_PTE_PG_MASK
-# define SHW_PT_SHIFT           X86_PT_SHIFT
-# define SHW_PT_MASK            X86_PT_MASK
-# define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_PD
+# define SHWPT                          X86PT
+# define PSHWPT                         PX86PT
+# define SHWPTE                         X86PTE
+# define PSHWPTE                        PX86PTE
+# define SHWPD                          X86PD
+# define PSHWPD                         PX86PD
+# define SHWPDE                         X86PDE
+# define PSHWPDE                        PX86PDE
+# define SHW_PDE_PG_MASK                X86_PDE_PG_MASK
+# define SHW_PD_SHIFT                   X86_PD_SHIFT
+# define SHW_PD_MASK                    X86_PD_MASK
+# define SHW_TOTAL_PD_ENTRIES           X86_PG_ENTRIES
+# define SHW_PTE_PG_MASK                X86_PTE_PG_MASK
+# define SHW_PTE_IS_P(Pte)              ( (Pte).n.u1Present )
+# define SHW_PTE_IS_RW(Pte)             ( (Pte).n.u1Write )
+# define SHW_PTE_IS_US(Pte)             ( (Pte).n.u1User )
+# define SHW_PTE_IS_A(Pte)              ( (Pte).n.u1Accessed )
+# define SHW_PTE_IS_D(Pte)              ( (Pte).n.u1Dirty )
+# define SHW_PTE_IS_P_RW(Pte)           ( (Pte).n.u1Present && (Pte).n.u1Write )
+# define SHW_PTE_IS_TRACK_DIRTY(Pte)    ( !!((Pte).u & PGM_PTFLAGS_TRACK_DIRTY) )
+# define SHW_PTE_GET_HCPHYS(Pte)        ( (Pte).u & X86_PTE_PG_MASK )
+# define SHW_PTE_LOG64(Pte)             ( (uint64_t)(Pte).u )
+# define SHW_PTE_GET_U(Pte)             ( (Pte).u )             /**< Use with care. */
+# define SHW_PTE_SET(Pte, uNew)         do { (Pte).u = (uNew); } while (0)
+# define SHW_PTE_ATOMIC_SET(Pte, uNew)  do { ASMAtomicWriteU32(&(Pte).u, (uNew)); } while (0)
+# define SHW_PTE_ATOMIC_SET2(Pte, Pte2) do { ASMAtomicWriteU32(&(Pte).u, (Pte2).u); } while (0)
+# define SHW_PTE_SET_RO(Pte)            do { (Pte).n.u1Write = 0; } while (0)
+# define SHW_PTE_SET_RW(Pte)            do { (Pte).n.u1Write = 1; } while (0)
+# define SHW_PT_SHIFT                   X86_PT_SHIFT
+# define SHW_PT_MASK                    X86_PT_MASK
+# define SHW_POOL_ROOT_IDX              PGMPOOL_IDX_PD
 
 #elif PGM_SHW_TYPE == PGM_TYPE_EPT
-# define SHWPT                  EPTPT
-# define PSHWPT                 PEPTPT
-# define SHWPTE                 EPTPTE
-# define PSHWPTE                PEPTPTE
-# define SHWPD                  EPTPD
-# define PSHWPD                 PEPTPD
-# define SHWPDE                 EPTPDE
-# define PSHWPDE                PEPTPDE
-# define SHW_PDE_PG_MASK        EPT_PDE_PG_MASK
-# define SHW_PD_SHIFT           EPT_PD_SHIFT
-# define SHW_PD_MASK            EPT_PD_MASK
-# define SHW_PTE_PG_MASK        EPT_PTE_PG_MASK
-# define SHW_PT_SHIFT           EPT_PT_SHIFT
-# define SHW_PT_MASK            EPT_PT_MASK
-# define SHW_PDPT_SHIFT         EPT_PDPT_SHIFT
-# define SHW_PDPT_MASK          EPT_PDPT_MASK
-# define SHW_PDPE_PG_MASK       EPT_PDPE_PG_MASK
-# define SHW_TOTAL_PD_ENTRIES   (EPT_PG_AMD64_ENTRIES*EPT_PG_AMD64_PDPE_ENTRIES)
-# define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_NESTED_ROOT      /* do not use! exception is real mode & protected mode without paging. */
+# define SHWPT                          EPTPT
+# define PSHWPT                         PEPTPT
+# define SHWPTE                         EPTPTE
+# define PSHWPTE                        PEPTPTE
+# define SHWPD                          EPTPD
+# define PSHWPD                         PEPTPD
+# define SHWPDE                         EPTPDE
+# define PSHWPDE                        PEPTPDE
+# define SHW_PDE_PG_MASK                EPT_PDE_PG_MASK
+# define SHW_PD_SHIFT                   EPT_PD_SHIFT
+# define SHW_PD_MASK                    EPT_PD_MASK
+# define SHW_PTE_PG_MASK                EPT_PTE_PG_MASK
+# define SHW_PTE_IS_P(Pte)              ( (Pte).n.u1Present )  /* Approximation, works for us. */
+# define SHW_PTE_IS_RW(Pte)             ( (Pte).n.u1Write )
+# define SHW_PTE_IS_US(Pte)             ( true )
+# define SHW_PTE_IS_A(Pte)              ( true )
+# define SHW_PTE_IS_D(Pte)              ( true )
+# define SHW_PTE_IS_P_RW(Pte)           ( (Pte).n.u1Present && (Pte).n.u1Write )
+# define SHW_PTE_IS_TRACK_DIRTY(Pte)    ( false )
+# define SHW_PTE_GET_HCPHYS(Pte)        ( (Pte).u & X86_PTE_PG_MASK )
+# define SHW_PTE_LOG64(Pte)             ( (Pte).u )
+# define SHW_PTE_GET_U(Pte)             ( (Pte).u )             /**< Use with care. */
+# define SHW_PTE_SET(Pte, uNew)         do { (Pte).u = (uNew); } while (0)
+# define SHW_PTE_ATOMIC_SET(Pte, uNew)  do { ASMAtomicWriteU64(&(Pte).u, (uNew)); } while (0)
+# define SHW_PTE_ATOMIC_SET2(Pte, Pte2) do { ASMAtomicWriteU64(&(Pte).u, (Pte2).u); } while (0)
+# define SHW_PTE_SET_RO(Pte)            do { (Pte).n.u1Write = 0; } while (0)
+# define SHW_PTE_SET_RW(Pte)            do { (Pte).n.u1Write = 1; } while (0)
+# define SHW_PT_SHIFT                   EPT_PT_SHIFT
+# define SHW_PT_MASK                    EPT_PT_MASK
+# define SHW_PDPT_SHIFT                 EPT_PDPT_SHIFT
+# define SHW_PDPT_MASK                  EPT_PDPT_MASK
+# define SHW_PDPE_PG_MASK               EPT_PDPE_PG_MASK
+# define SHW_TOTAL_PD_ENTRIES           (EPT_PG_AMD64_ENTRIES*EPT_PG_AMD64_PDPE_ENTRIES)
+# define SHW_POOL_ROOT_IDX              PGMPOOL_IDX_NESTED_ROOT      /* do not use! exception is real mode & protected mode without paging. */
 
 #else
-# define SHWPT                  X86PTPAE
-# define PSHWPT                 PX86PTPAE
-# define SHWPTE                 X86PTEPAE
-# define PSHWPTE                PX86PTEPAE
-# define SHWPD                  X86PDPAE
-# define PSHWPD                 PX86PDPAE
-# define SHWPDE                 X86PDEPAE
-# define PSHWPDE                PX86PDEPAE
-# define SHW_PDE_PG_MASK        X86_PDE_PAE_PG_MASK
-# define SHW_PD_SHIFT           X86_PD_PAE_SHIFT
-# define SHW_PD_MASK            X86_PD_PAE_MASK
-# define SHW_PTE_PG_MASK        X86_PTE_PAE_PG_MASK
-# define SHW_PT_SHIFT           X86_PT_PAE_SHIFT
-# define SHW_PT_MASK            X86_PT_PAE_MASK
+# define SHWPT                          PGMSHWPTPAE
+# define PSHWPT                         PPGMSHWPTPAE
+# define SHWPTE                         PGMSHWPTEPAE
+# define PSHWPTE                        PPGMSHWPTEPAE
+# define SHWPD                          X86PDPAE
+# define PSHWPD                         PX86PDPAE
+# define SHWPDE                         X86PDEPAE
+# define PSHWPDE                        PX86PDEPAE
+# define SHW_PDE_PG_MASK                X86_PDE_PAE_PG_MASK
+# define SHW_PD_SHIFT                   X86_PD_PAE_SHIFT
+# define SHW_PD_MASK                    X86_PD_PAE_MASK
+# define SHW_PTE_PG_MASK                X86_PTE_PAE_PG_MASK
+# define SHW_PTE_IS_P(Pte)              PGMSHWPTEPAE_IS_P(Pte)
+# define SHW_PTE_IS_RW(Pte)             PGMSHWPTEPAE_IS_RW(Pte)
+# define SHW_PTE_IS_US(Pte)             PGMSHWPTEPAE_IS_US(Pte)
+# define SHW_PTE_IS_A(Pte)              PGMSHWPTEPAE_IS_A(Pte)
+# define SHW_PTE_IS_D(Pte)              PGMSHWPTEPAE_IS_D(Pte)
+# define SHW_PTE_IS_P_RW(Pte)           PGMSHWPTEPAE_IS_P_RW(Pte)
+# define SHW_PTE_IS_TRACK_DIRTY(Pte)    PGMSHWPTEPAE_IS_TRACK_DIRTY(Pte)
+# define SHW_PTE_GET_HCPHYS(Pte)        PGMSHWPTEPAE_GET_HCPHYS(Pte)
+# define SHW_PTE_LOG64(Pte)             PGMSHWPTEPAE_GET_LOG(Pte)
+# define SHW_PTE_GET_U(Pte)             PGMSHWPTEPAE_GET_U(Pte)     /**< Use with care. */
+# define SHW_PTE_SET(Pte, uNew)         PGMSHWPTEPAE_SET(Pte, uNew)
+# define SHW_PTE_ATOMIC_SET(Pte, uNew)  PGMSHWPTEPAE_ATOMIC_SET(Pte, uNew)
+# define SHW_PTE_ATOMIC_SET2(Pte, Pte2) PGMSHWPTEPAE_ATOMIC_SET2(Pte, Pte2)
+# define SHW_PTE_SET_RO(Pte)            PGMSHWPTEPAE_SET_RO(Pte)
+# define SHW_PTE_SET_RW(Pte)            PGMSHWPTEPAE_SET_RW(Pte)
+# define SHW_PT_SHIFT                   X86_PT_PAE_SHIFT
+# define SHW_PT_MASK                    X86_PT_PAE_MASK
 
 # if PGM_SHW_TYPE == PGM_TYPE_AMD64
-#  define SHW_PDPT_SHIFT        X86_PDPT_SHIFT
-#  define SHW_PDPT_MASK         X86_PDPT_MASK_AMD64
-#  define SHW_PDPE_PG_MASK      X86_PDPE_PG_MASK
-#  define SHW_TOTAL_PD_ENTRIES  (X86_PG_AMD64_ENTRIES*X86_PG_AMD64_PDPE_ENTRIES)
-#  define SHW_POOL_ROOT_IDX     PGMPOOL_IDX_AMD64_CR3
+#  define SHW_PDPT_SHIFT                X86_PDPT_SHIFT
+#  define SHW_PDPT_MASK                 X86_PDPT_MASK_AMD64
+#  define SHW_PDPE_PG_MASK              X86_PDPE_PG_MASK
+#  define SHW_TOTAL_PD_ENTRIES          (X86_PG_AMD64_ENTRIES * X86_PG_AMD64_PDPE_ENTRIES)
+#  define SHW_POOL_ROOT_IDX             PGMPOOL_IDX_AMD64_CR3
 
 # else /* 32 bits PAE mode */
-#  define SHW_PDPT_SHIFT        X86_PDPT_SHIFT
-#  define SHW_PDPT_MASK         X86_PDPT_MASK_PAE
-#  define SHW_PDPE_PG_MASK      X86_PDPE_PG_MASK
-#  define SHW_TOTAL_PD_ENTRIES  (X86_PG_PAE_ENTRIES*X86_PG_PAE_PDPE_ENTRIES)
-#  define SHW_POOL_ROOT_IDX     PGMPOOL_IDX_PDPT
+#  define SHW_PDPT_SHIFT                X86_PDPT_SHIFT
+#  define SHW_PDPT_MASK                 X86_PDPT_MASK_PAE
+#  define SHW_PDPE_PG_MASK              X86_PDPE_PG_MASK
+#  define SHW_TOTAL_PD_ENTRIES          (X86_PG_PAE_ENTRIES * X86_PG_PAE_PDPE_ENTRIES)
+#  define SHW_POOL_ROOT_IDX             PGMPOOL_IDX_PDPT
 
 # endif
 #endif
@@ -253,7 +313,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     }
     const unsigned  iPt = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
     SHWPTE          Pte = pPT->a[iPt];
-    if (!Pte.n.u1Present)
+    if (!SHW_PTE_IS_P(Pte))
         return VERR_PAGE_NOT_PRESENT;
 
     /*
@@ -263,17 +323,17 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
      */
     if (pfFlags)
     {
-        *pfFlags = (Pte.u & ~SHW_PTE_PG_MASK)
+        *pfFlags = (SHW_PTE_GET_U(Pte) & ~SHW_PTE_PG_MASK)
                  & ((Pde.u & (X86_PTE_RW | X86_PTE_US)) | ~(uint64_t)(X86_PTE_RW | X86_PTE_US));
 # if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE) /** @todo why do we have to check the guest state here? */
         /* The NX bit is determined by a bitwise OR between the PT and PD */
-        if (((Pte.u | Pde.u) & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu))
+        if (((SHW_PTE_GET_U(Pte) | Pde.u) & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu))
             *pfFlags |= X86_PTE_PAE_NX;
 # endif
     }
 
     if (pHCPhys)
-        *pHCPhys = Pte.u & SHW_PTE_PG_MASK;
+        *pHCPhys = SHW_PTE_GET_HCPHYS(Pte);
 
     return VINF_SUCCESS;
 #endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
@@ -374,21 +434,20 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
         unsigned        iPTE = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
         while (iPTE < RT_ELEMENTS(pPT->a))
         {
-            if (pPT->a[iPTE].n.u1Present)
+            if (SHW_PTE_IS_P(pPT->a[iPTE]))
             {
                 SHWPTE const    OrgPte = pPT->a[iPTE];
                 SHWPTE          NewPte;
 
-                NewPte.u = (OrgPte.u & (fMask | SHW_PTE_PG_MASK)) | (fFlags & ~SHW_PTE_PG_MASK);
-                Assert(NewPte.n.u1Present);
-                if (!NewPte.n.u1Present)
+                SHW_PTE_SET(NewPte, (SHW_PTE_GET_U(OrgPte) & (fMask | SHW_PTE_PG_MASK)) | (fFlags & ~SHW_PTE_PG_MASK));
+                if (!SHW_PTE_IS_P(NewPte))
                 {
                     /** @todo Some CSAM code path might end up here and upset
                      *  the page pool. */
                     AssertFailed();
                 }
-                else if (   NewPte.n.u1Write
-                         && !OrgPte.n.u1Write
+                else if (   SHW_PTE_IS_RW(NewPte)
+                         && !SHW_PTE_IS_RW(OrgPte)
                          && !(fOpFlags & PGM_MK_PG_IS_MMIO2) )
                 {
                     /** @todo Optimize \#PF handling by caching data.  We can
@@ -413,7 +472,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
                     }
                 }
 
-                ASMAtomicWriteSize(&pPT->a[iPTE], NewPte.u);
+                SHW_PTE_ATOMIC_SET2(pPT->a[iPTE], NewPte);
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
                 HWACCMInvalidatePhysPage(pVM, (RTGCPHYS)GCPtr);
 # else
