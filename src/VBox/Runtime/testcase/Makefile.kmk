@@ -125,6 +125,8 @@ PROGRAMS.linux += \
 	tstRTBitOperationsPIC3 \
 	tstInlineAsmPIC \
 	tstInlineAsmPIC3
+PROGRAMS.solaris += \
+	tstRTCoreDump
 PROGRAMS.l4 += \
 	tstIoCtl
 PROGRAMS.darwin += \
@@ -492,6 +494,9 @@ tstRTUuid_TEMPLATE = VBOXR3TSTEXE
 tstRTUuid_SOURCES = tstRTUuid.cpp
 
 tstUtf8_SOURCES = tstUtf8.cpp
+
+tstRTCoreDump_TEMPLACE = VBOXR3TSTEXE
+tstRTCoreDump_SOURCES = tstRTCoreDump.cpp
 
 #
 # odds and ends
