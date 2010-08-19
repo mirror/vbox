@@ -34,6 +34,11 @@
 #include <iprt/mem.h>
 #include <iprt/tcp.h>
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static const char g_szWelcome[] = "VirtualBox-Fault-Tolerance-Sync-1.0\n";
+
 /**
  * Initializes the FTM.
  *
@@ -43,11 +48,13 @@
 VMMR3DECL(int) FTMR3Init(PVM pVM)
 {
     /** @todo saved state for master nodes! */
-    pVM->ftm.s.pszAddress       = NULL;
-    pVM->ftm.s.pszPassword      = NULL;
-    pVM->fFaultTolerantMaster   = false;
-    pVM->ftm.s.fIsStandbyNode   = false;
-    pVM->ftm.s.standby.hServer  = NULL;
+    pVM->ftm.s.pszAddress               = NULL;
+    pVM->ftm.s.pszPassword              = NULL;
+    pVM->fFaultTolerantMaster           = false;
+    pVM->ftm.s.fIsStandbyNode           = false;
+    pVM->ftm.s.standby.hServer          = NULL;
+    pVM->ftm.s.master.hShutdownEvent    = NIL_RTSEMEVENT;
+    pVM->ftm.s.hSocket                  = NIL_RTSOCKET;
     return VINF_SUCCESS;
 }
 
@@ -55,7 +62,7 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
  * Terminates the FTM.
  *
  * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
+ * the VM itself is at this point powered off or suspended.
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
@@ -66,10 +73,142 @@ VMMR3DECL(int) FTMR3Term(PVM pVM)
         RTMemFree(pVM->ftm.s.pszAddress);
     if (pVM->ftm.s.pszPassword)
         RTMemFree(pVM->ftm.s.pszPassword);
+    if (pVM->ftm.s.hSocket != NIL_RTSOCKET)
+        RTTcpClientClose(pVM->ftm.s.hSocket);
     if (pVM->ftm.s.standby.hServer)
         RTTcpServerDestroy(pVM->ftm.s.standby.hServer);
+    if (pVM->ftm.s.master.hShutdownEvent != NIL_RTSEMEVENT)
+        RTSemEventDestroy(pVM->ftm.s.master.hShutdownEvent);
 
     return VINF_SUCCESS;
+}
+
+
+static int ftmR3TcpWriteACK(PVM pVM)
+{
+    int rc = RTTcpWrite(pVM->ftm.s.hSocket, "ACK\n", sizeof("ACK\n") - 1);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("FTSync: RTTcpWrite(,ACK,) -> %Rrc\n", rc));
+    }
+    return rc;
+}
+
+
+static int ftmR3TcpWriteNACK(PVM pVM, int32_t rc2, const char *pszMsgText = NULL)
+{
+    char    szMsg[256];
+    size_t  cch;
+    if (pszMsgText && *pszMsgText)
+    {
+        cch = RTStrPrintf(szMsg, sizeof(szMsg), "NACK=%d;%s\n", rc2, pszMsgText);
+        for (size_t off = 6; off + 1 < cch; off++)
+            if (szMsg[off] == '\n')
+                szMsg[off] = '\r';
+    }
+    else
+        cch = RTStrPrintf(szMsg, sizeof(szMsg), "NACK=%d\n", rc2);
+    int rc = RTTcpWrite(pVM->ftm.s.hSocket, szMsg, cch);
+    if (RT_FAILURE(rc))
+        LogRel(("FTSync: RTTcpWrite(,%s,%zu) -> %Rrc\n", szMsg, cch, rc));
+    return rc;
+}
+
+/**
+ * Reads a string from the socket.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pState      The teleporter state structure.
+ * @param   pszBuf      The output buffer.
+ * @param   cchBuf      The size of the output buffer.
+ *
+ */
+static int ftmR3TcpReadLine(PVM pVM, char *pszBuf, size_t cchBuf)
+{
+    char       *pszStart = pszBuf;
+    RTSOCKET    Sock     = pVM->ftm.s.hSocket;
+
+    AssertReturn(cchBuf > 1, VERR_INTERNAL_ERROR);
+    *pszBuf = '\0';
+
+    /* dead simple approach. */
+    for (;;)
+    {
+        char ch;
+        int rc = RTTcpRead(Sock, &ch, sizeof(ch), NULL);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("FTSync: RTTcpRead -> %Rrc while reading string ('%s')\n", rc, pszStart));
+            return rc;
+        }
+        if (    ch == '\n'
+            ||  ch == '\0')
+            return VINF_SUCCESS;
+        if (cchBuf <= 1)
+        {
+            LogRel(("FTSync: String buffer overflow: '%s'\n", pszStart));
+            return VERR_BUFFER_OVERFLOW;
+        }
+        *pszBuf++ = ch;
+        *pszBuf = '\0';
+        cchBuf--;
+    }
+}
+
+/**
+ * Reads an ACK or NACK.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM to operate on.
+ * @param   pszWhich            Which ACK is this this?
+ * @param   pszNAckMsg          Optional NACK message.
+ */
+static int ftmR3TcpReadACK(PVM pVM, const char *pszWhich, const char *pszNAckMsg /*= NULL*/)
+{
+    char szMsg[256];
+    int rc = ftmR3TcpReadLine(pVM, szMsg, sizeof(szMsg));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (!strcmp(szMsg, "ACK"))
+        return VINF_SUCCESS;
+
+    if (!strncmp(szMsg, "NACK=", sizeof("NACK=") - 1))
+    {
+        char *pszMsgText = strchr(szMsg, ';');
+        if (pszMsgText)
+            *pszMsgText++ = '\0';
+
+        int32_t vrc2;
+        rc = RTStrToInt32Full(&szMsg[sizeof("NACK=") - 1], 10, &vrc2);
+        if (rc == VINF_SUCCESS)
+        {
+            /*
+             * Well formed NACK, transform it into an error.
+             */
+            if (pszNAckMsg)
+            {
+                LogRel(("FTSync: %s: NACK=%Rrc (%d)\n", pszWhich, vrc2, vrc2));
+                return VERR_INTERNAL_ERROR;
+            }
+
+            if (pszMsgText)
+            {
+                pszMsgText = RTStrStrip(pszMsgText);
+                for (size_t off = 0; pszMsgText[off]; off++)
+                    if (pszMsgText[off] == '\r')
+                        pszMsgText[off] = '\n';
+
+                LogRel(("FTSync: %s: NACK=%Rrc (%d) - '%s'\n", pszWhich, vrc2, vrc2, pszMsgText));
+            }
+            return VERR_INTERNAL_ERROR_2;
+        }
+
+        if (pszMsgText)
+            pszMsgText[-1] = ';';
+    }
+    return VERR_INTERNAL_ERROR_3;
 }
 
 /**
@@ -83,7 +222,52 @@ VMMR3DECL(int) FTMR3Term(PVM pVM)
  */
 static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
 {
-    return VINF_SUCCESS;
+    int rc  = VINF_SUCCESS;
+    PVM pVM = (PVM)pvUser;
+
+    for (;;)
+    {
+        /*
+         * Try connect to the standby machine.
+         */
+        rc = RTTcpClientConnect(pVM->ftm.s.pszAddress, pVM->ftm.s.uPort, &pVM->ftm.s.hSocket);
+        if (RT_SUCCESS(rc))
+        {
+            /* Disable Nagle. */
+            rc = RTTcpSetSendCoalescing(pVM->ftm.s.hSocket, false /*fEnable*/);
+            AssertRC(rc);
+
+            /* Read and check the welcome message. */
+            char szLine[RT_MAX(128, sizeof(g_szWelcome))];
+            RT_ZERO(szLine);
+            rc = RTTcpRead(pVM->ftm.s.hSocket, szLine, sizeof(g_szWelcome) - 1, NULL);
+            if (    RT_SUCCESS(rc)
+                &&  !strcmp(szLine, g_szWelcome))
+            {
+                /* password */
+                rc = RTTcpWrite(pVM->ftm.s.hSocket, pVM->ftm.s.pszPassword, strlen(pVM->ftm.s.pszPassword));
+                if (RT_SUCCESS(rc))
+                {
+                    /* ACK */
+                    rc = ftmR3TcpReadACK(pVM, "password", "Invalid password");
+                    if (RT_SUCCESS(rc))
+                        break;
+                }
+            }
+            rc = RTTcpClientClose(pVM->ftm.s.hSocket);
+            AssertRC(rc);
+            pVM->ftm.s.hSocket = NIL_RTSOCKET;
+        }
+        rc = RTSemEventWait(pVM->ftm.s.master.hShutdownEvent, 1000 /* 1 second */);
+        if (rc != VERR_TIMEOUT)
+            return VINF_SUCCESS;    /* told to quit */            
+    }
+
+    /* Successfully initialized the connection to the standby node.
+     * Start the sync process.
+     */
+
+    return rc;
 }
 
 /**
@@ -97,13 +281,82 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
 {
     PVM pVM = (PVM)pvUser;
 
+    pVM->ftm.s.hSocket = Sock;
+
     /*
      * Disable Nagle.
      */
     int rc = RTTcpSetSendCoalescing(Sock, false /*fEnable*/);
     AssertRC(rc);
 
-    return VINF_SUCCESS;
+    /* Send the welcome message to the master node. */
+    rc = RTTcpWrite(Sock, g_szWelcome, sizeof(g_szWelcome) - 1);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("Teleporter: Failed to write welcome message: %Rrc\n", rc));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Password.
+     */
+    const char *pszPassword = pVM->ftm.s.pszPassword;
+    unsigned    off = 0;
+    while (pszPassword[off])
+    {
+        char ch;
+        rc = RTTcpRead(Sock, &ch, sizeof(ch), NULL);
+        if (    RT_FAILURE(rc)
+            ||  pszPassword[off] != ch)
+        {
+            if (RT_FAILURE(rc))
+                LogRel(("FTSync: Password read failure (off=%u): %Rrc\n", off, rc));
+            else
+                LogRel(("FTSync: Invalid password (off=%u)\n", off));
+            ftmR3TcpWriteNACK(pVM, VERR_AUTHENTICATION_FAILURE);
+            return VINF_SUCCESS;
+        }
+        off++;
+    }
+    rc = ftmR3TcpWriteACK(pVM);
+    if (RT_FAILURE(rc))
+        return VINF_SUCCESS;
+
+    /*
+     * Stop the server.
+     *
+     * Note! After this point we must return VERR_TCP_SERVER_STOP, while prior
+     *       to it we must not return that value!
+     */
+    RTTcpServerShutdown(pVM->ftm.s.standby.hServer);
+
+    /*
+     * Command processing loop.
+     */
+    bool fDone = false;
+    for (;;)
+    {
+        char szCmd[128];
+        rc = ftmR3TcpReadLine(pVM, szCmd, sizeof(szCmd));
+        if (RT_FAILURE(rc))
+            break;
+
+        if (!strcmp(szCmd, "mem-sync"))
+        {
+        }
+        else
+        if (!strcmp(szCmd, "heartbeat"))
+        {
+        }
+        else
+        if (!strcmp(szCmd, "checkpoint"))
+        {
+        }
+        if (RT_FAILURE(rc))
+            break;
+    }
+    LogFlowFunc(("returns mRc=%Rrc\n", rc));
+    return VERR_TCP_SERVER_STOP;
 }
 
 /**
@@ -139,7 +392,11 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
         pVM->ftm.s.pszPassword = RTStrDup(pszPassword);
     if (fMaster)
     {
-        rc = RTThreadCreate(NULL, ftmR3MasterThread, NULL,
+        rc = RTSemEventCreate(&pVM->ftm.s.master.hShutdownEvent);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        rc = RTThreadCreate(NULL, ftmR3MasterThread, pVM,
                             0, RTTHREADTYPE_IO /* higher than normal priority */, 0, "ftmR3MasterThread");
         if (RT_FAILURE(rc))
             return rc;
