@@ -4975,7 +4975,7 @@ VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
         fLockWrite = true;
 
         rc = pImage->Backend->pfnResize(pImage->pvBackendData,
-                                        cbSize,
+                                        cbSize * _1M,
                                         pPCHSGeometry,
                                         pLCHSGeometry,
                                         0, 99,
