@@ -1349,6 +1349,13 @@ typedef RTSOCKET                                   *PRTSOCKET;
 /** Nil socket handle. */
 #define NIL_RTSOCKET                                ((RTSOCKET)0)
 
+/** Pointer to a RTTCPSERVER handle. */
+typedef struct RTTCPSERVER                         *PRTTCPSERVER;
+/** Pointer to a RTTCPSERVER handle. */
+typedef PRTTCPSERVER                               *PPRTTCPSERVER;
+/** Nil RTTCPSERVER handle. */
+#define NIL_RTTCPSERVER                            ((PRTTCPSERVER)0)
+
 /** Thread handle.*/
 typedef R3R0PTRTYPE(struct RTTHREADINT *)           RTTHREAD;
 /** Pointer to thread handle. */
