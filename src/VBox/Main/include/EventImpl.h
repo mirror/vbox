@@ -198,6 +198,11 @@ public:
   */
  HRESULT reinit(VBoxEventType_T aType, ...);
 
+ void uninit()
+ {
+     mEvent.setNull();
+     mEventSource.setNull();
+ }
 
  void getEvent(IEvent ** aEvent)
  {
