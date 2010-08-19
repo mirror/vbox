@@ -322,9 +322,11 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
  * @param   enmShwPagingMode    Paging mode for the nested page tables.
  * @param   pRegFrame           Trap register frame.
  * @param   GCPhysFault         The fault address.
+ * @param   uErr                The error code, UINT32_MAX if not available
+ *                              (VT-x).
  */
 VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode,
-                                                      PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault)
+                                                      PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr)
 {
 #ifdef PGM_WITH_MMIO_OPTIMIZATIONS
     STAM_PROFILE_START(&pVCpu->CTX_SUFF(pStats)->StatR0NpMiscfg, a);
@@ -335,7 +337,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGM
      */
     pgmLock(pVM);
     PPGMPHYSHANDLER pHandler = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
-    if (RT_LIKELY(pHandler))
+    if (RT_LIKELY(pHandler && pHandler->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE))
     {
         if (pHandler->CTX_SUFF(pfnHandler))
         {
@@ -344,7 +346,8 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGM
             STAM_PROFILE_START(&pHandler->Stat, h);
             pgmUnlock(pVM);
 
-            rc = pfnHandler(pVM, RTGCPTR_MAX /*uErr*/, pRegFrame, GCPhysFault, GCPhysFault, pvUser);
+            Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pfnHandler, uErr, GCPhysFault, pvUser));
+            rc = pfnHandler(pVM, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame, GCPhysFault, GCPhysFault, pvUser);
 
 #ifdef VBOX_WITH_STATISTICS
             pgmLock(pVM);
@@ -357,6 +360,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGM
         else
         {
             pgmUnlock(pVM);
+            Log(("PGMR0Trap0eHandlerNPMisconfig: %RGp (uErr=%#x) -> R3\n", GCPhysFault, uErr));
             rc = VINF_EM_RAW_EMULATE_INSTR;
         }
     }
@@ -365,6 +369,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGM
         /*
          * Must be out of sync, so do a SyncPage and restart the instruction.
          */
+        Log(("PGMR0Trap0eHandlerNPMisconfig: Out of sync page at %RGp (uErr=%#x)\n", GCPhysFault, uErr));
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfgSyncPage);
         rc = pgmShwSyncNestedPageLocked(pVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
         pgmUnlock(pVM);

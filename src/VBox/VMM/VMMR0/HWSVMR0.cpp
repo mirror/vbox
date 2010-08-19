@@ -1885,7 +1885,7 @@ ResumeExecution:
         Assert((errCode & (X86_TRAP_PF_RSVD | X86_TRAP_PF_P)) != X86_TRAP_PF_RSVD);
         if ((errCode & (X86_TRAP_PF_RSVD | X86_TRAP_PF_P)) == (X86_TRAP_PF_RSVD | X86_TRAP_PF_P))
         {
-            rc = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmShwPagingMode, CPUMCTX2CORE(pCtx), GCPhysFault);
+            rc = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmShwPagingMode, CPUMCTX2CORE(pCtx), GCPhysFault, errCode);
             if (rc == VINF_SUCCESS)
             {
                 Log2(("PGMR0Trap0eHandlerNPMisconfig(,,,%RGp) at %RGv -> resume\n", GCPhysFault, (RTGCPTR)pCtx->rip));
