@@ -288,6 +288,7 @@ private:
     class CreateDiffTask;
     class CloneTask;
     class CompactTask;
+    class ResizeTask;
     class ResetTask;
     class DeleteTask;
     class MergeTask;
@@ -296,6 +297,7 @@ private:
     friend class CreateDiffTask;
     friend class CloneTask;
     friend class CompactTask;
+    friend class ResizeTask;
     friend class ResetTask;
     friend class DeleteTask;
     friend class MergeTask;
@@ -310,6 +312,7 @@ private:
     HRESULT taskDeleteHandler(Medium::DeleteTask &task);
     HRESULT taskResetHandler(Medium::ResetTask &task);
     HRESULT taskCompactHandler(Medium::CompactTask &task);
+    HRESULT taskResizeHandler(Medium::ResizeTask &task);
 
     struct Data;            // opaque data struct, defined in MediumImpl.cpp
     Data *m;

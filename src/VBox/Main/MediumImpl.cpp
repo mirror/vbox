@@ -400,6 +400,37 @@ private:
     bool mfKeepMediumLockList;
 };
 
+class Medium::ResizeTask : public Medium::Task
+{
+public:
+    ResizeTask(Medium *aMedium,
+               uint64_t aSize,
+               Progress *aProgress,
+               MediumLockList *aMediumLockList,
+               bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
+          mSize(aSize),
+          mpMediumLockList(aMediumLockList),
+          mfKeepMediumLockList(fKeepMediumLockList)
+    {
+        AssertReturnVoidStmt(aMediumLockList != NULL, mRC = E_FAIL);
+    }
+
+    ~ResizeTask()
+    {
+        if (!mfKeepMediumLockList && mpMediumLockList)
+            delete mpMediumLockList;
+    }
+
+    uint64_t        mSize;
+    MediumLockList *mpMediumLockList;
+
+private:
+    virtual HRESULT handler();
+
+    bool mfKeepMediumLockList;
+};
+
 class Medium::ResetTask : public Medium::Task
 {
 public:
@@ -618,6 +649,15 @@ HRESULT Medium::CompactTask::handler()
 {
     return mMedium->taskCompactHandler(*this);
 }
+
+/**
+ * Implementation code for the "resize" task.
+ */
+HRESULT Medium::ResizeTask::handler()
+{
+    return mMedium->taskResizeHandler(*this);
+}
+
 
 /**
  * Implementation code for the "reset" task.
@@ -2496,9 +2536,70 @@ STDMETHODIMP Medium::Resize(LONG64 aLogicalSize, IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    NOREF(aLogicalSize);
-    NOREF(aProgress);
-    ReturnComNotImplemented();
+    HRESULT rc = S_OK;
+    ComObjPtr <Progress> pProgress;
+    Medium::Task *pTask = NULL;
+
+    try
+    {
+        /* We need to lock both the current object, and the tree lock (would
+         * cause a lock order violation otherwise) for createMediumLockList. */
+        AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
+                                      this->lockHandle()
+                                      COMMA_LOCKVAL_SRC_POS);
+
+        /* Build the medium lock list. */
+        MediumLockList *pMediumLockList(new MediumLockList());
+        rc = createMediumLockList(true /* fFailIfInaccessible */ ,
+                                  true /* fMediumLockWrite */,
+                                  NULL,
+                                  *pMediumLockList);
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw rc;
+        }
+
+        rc = pMediumLockList->Lock();
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock media when compacting '%s'"),
+                           getLocationFull().c_str());
+        }
+
+        pProgress.createObject();
+        rc = pProgress->init(m->pVirtualBox,
+                             static_cast <IMedium *>(this),
+                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.c_str()),
+                             TRUE /* aCancelable */);
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw rc;
+        }
+
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new Medium::ResizeTask(this, aLogicalSize, pProgress, pMediumLockList);
+        rc = pTask->rc();
+        AssertComRC(rc);
+        if (FAILED(rc))
+            throw rc;
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        rc = startThread(pTask);
+
+        if (SUCCEEDED(rc))
+            pProgress.queryInterfaceTo(aProgress);
+    }
+    else if (pTask != NULL)
+        delete pTask;
+
+    return rc;
 }
 
 STDMETHODIMP Medium::Reset(IProgress **aProgress)
@@ -6611,6 +6712,104 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
             thisLock.release();
 
             vrc = VDCompact(hdd, VD_LAST_IMAGE, task.mVDOperationIfaces);
+            if (RT_FAILURE(vrc))
+            {
+                if (vrc == VERR_NOT_SUPPORTED)
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                   tr("Compacting is not yet supported for medium '%s'"),
+                                   location.c_str());
+                else if (vrc == VERR_NOT_IMPLEMENTED)
+                    throw setError(E_NOTIMPL,
+                                   tr("Compacting is not implemented, medium '%s'"),
+                                   location.c_str());
+                else
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Could not compact medium '%s'%s"),
+                                   location.c_str(),
+                                   vdError(vrc).c_str());
+            }
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    /* Everything is explicitly unlocked when the task exits,
+     * as the task destruction also destroys the media chain. */
+
+    return rc;
+}
+
+/**
+ * Implementation code for the "resize" task.
+ *
+ * @param task
+ * @return
+ */
+HRESULT Medium::taskResizeHandler(Medium::ResizeTask &task)
+{
+    HRESULT rc = S_OK;
+
+    /* Lock all in {parent,child} order. The lock is also used as a
+     * signal from the task initiator (which releases it only after
+     * RTThreadCreate()) that we can start the job. */
+    AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+
+    try
+    {
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        try
+        {
+            /* Open all media in the chain. */
+            MediumLockList::Base::const_iterator mediumListBegin =
+                task.mpMediumLockList->GetBegin();
+            MediumLockList::Base::const_iterator mediumListEnd =
+                task.mpMediumLockList->GetEnd();
+            MediumLockList::Base::const_iterator mediumListLast =
+                mediumListEnd;
+            mediumListLast--;
+            for (MediumLockList::Base::const_iterator it = mediumListBegin;
+                 it != mediumListEnd;
+                 ++it)
+            {
+                const MediumLock &mediumLock = *it;
+                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+                /* sanity check */
+                if (it == mediumListLast)
+                    Assert(pMedium->m->state == MediumState_LockedWrite);
+                else
+                    Assert(pMedium->m->state == MediumState_LockedRead);
+
+                /* Open all media but last in read-only mode. Do not handle
+                 * shareable media, as compaction and sharing are mutually
+                 * exclusive. */
+                vrc = VDOpen(hdd,
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
+                             (it == mediumListLast) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                             pMedium->m->vdDiskIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Could not open the medium storage unit '%s'%s"),
+                                   pMedium->m->strLocationFull.c_str(),
+                                   vdError(vrc).c_str());
+            }
+
+            Assert(m->state == MediumState_LockedWrite);
+
+            Utf8Str location(m->strLocationFull);
+
+            /* unlock before the potentially lengthy operation */
+            thisLock.release();
+
+            PDMMEDIAGEOMETRY geo = {0, 0, 0}; /* auto */
+            vrc = VDResize(hdd, task.mSize, &geo, &geo, task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
             {
                 if (vrc == VERR_NOT_SUPPORTED)
