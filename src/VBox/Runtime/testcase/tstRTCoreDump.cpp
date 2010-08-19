@@ -72,30 +72,6 @@ volatile bool g_fCoreDumpInProgress = false;
 
 
 /**
- * Reads a file in a given offset making sure an interruption doesn't cause a failure.
- *
- * @param hFile         Handle to the file to read.
- * @param pv            Where to store the read data.
- * @param cb            Size of the data to read.
- * @param off           Offset to read from.
- *
- * @return Number of bytes actually read.
- */
-static ssize_t ReadFileAt(RTFILE hFile, void *pv, size_t cb, RTFOFF off)
-{
-    while (1)
-    {
-        ssize_t cbRead = pread(hFile, pv, cb, off);
-        if (   cbRead < 0
-            && errno == EINTR)
-        {
-            continue;
-        }
-        return cbRead;
-    }
-}
-
-/**
  * Determines endianness of the system. Just for completeness.
  *
  * @return Will return false if system is little endian, true otherwise.
@@ -166,13 +142,15 @@ static int WriteFileNoIntr(RTFILE hFile, const void *pcv, size_t cbToRead)
  *
  * @return VINF_SUCCESS, if all the given bytes was read in, otherwise VERR_READ_ERROR.
  */
-static ssize_t ReadProcAddrSpace(PVBOXPROCESS pVBoxProc, void *pv, size_t cb, RTFOFF off)
+static ssize_t ReadProcAddrSpace(PVBOXPROCESS pVBoxProc, RTFOFF off, void *pvBuf, size_t cbToRead)
 {
-    ssize_t cbRead = ReadFileAt(pVBoxProc->hAs, pv, cb, off);
-    if (cbRead == (ssize_t)cb)
-        return VINF_SUCCESS;
-    else
-        return VERR_READ_ERROR;
+    while (1)
+    {
+        int rc = RTFileReadAt(pVBoxProc->hAs, off, pvBuf, cbToRead, NULL);
+        if (rc == VERR_INTERRUPTED)
+            continue;
+        return rc;
+    }
 }
 
 
@@ -368,212 +346,6 @@ int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, void **pp
     }
     else
         CORELOGREL(("ProcReadFileInto: failed to open %s. rc=%Rrc\n", szPath, rc));
-    return rc;
-}
-
-
-/**
- * Reads an ELF header from the given offset in a file.
- *
- * @param hFile         The file to read.
- * @param off           The offset where ELF header resides.
- * @param pHdr          Where to store the read-in ELF header.
- * @param pcSecHdrs     Where to store the number of section headers.
- * @param pSecHdrIndex  Where to store the section header index.
- * @param pcProgHdrs    Where to store the number of program headers.
- *
- * @return VBox status code.
- */
-int ElfReadHdr(RTFILE hFile, RTFOFF off, Ehdr *pHdr, uint32_t *pcSecHdrs, uint32_t *pSecHdrIndex, uint32_t *pcProgHdrs)
-{
-    /*
-     * Read ELF header from the given position.
-     */
-    int rc = ReadFileAt(hFile, pHdr, sizeof(Ehdr), off) != sizeof(Ehdr);
-    if (RT_FAILURE(rc))
-    {
-        CORELOGREL(("ElfReadHdr: pfnRead failed rc=%d\n", rc));
-        return VERR_READ_ERROR;
-    }
-
-    /*
-     * Validate ELF header.
-     */
-    if (   pHdr->e_ident[EI_MAG0] != ELFMAG0
-        || pHdr->e_ident[EI_MAG1] != ELFMAG1
-        || pHdr->e_ident[EI_MAG2] != ELFMAG2
-        || pHdr->e_ident[EI_MAG3] != ELFMAG3
-#ifdef BIG_ENDIAN
-        || pHdr->e_ident[EI_DATA] != ELFDATA2MSB
-#else
-        || pHdr->e_ident[EI_DATA] != ELFDATA2LSB
-#endif
-        || pHdr->e_ident[EI_VERSION] != EV_CURRENT)
-    {
-        CORELOGREL(("ElfReadHdr: Bad format(1)\n", rc));
-        return VERR_BAD_EXE_FORMAT;
-    }
-
-    if (
-#ifdef RT_ARCH_AMD64
-           pHdr->e_ident[EI_CLASS] != ELFCLASS64
-        || (   pHdr->e_machine != EM_AMD64
-            && pHdr->e_machine != EM_X86_64)
-#else
-           pHdr->e_ident[EI_CLASS] != ELFCLASS32
-        || (   pHdr->e_machine != EM_386
-            && pHdr->e_machine != EM_486)
-#endif
-        )
-    {
-        CORELOGREL(("ElfReadHdr: Bad format(2)\n", rc));
-        return VERR_BAD_EXE_FORMAT;
-    }
-
-    if (   pHdr->e_type != ET_EXEC
-        && pHdr->e_type != ET_DYN)
-    {
-        CORELOGREL(("ElfReadHdr: Bad format(3)\n", rc));
-        return VERR_BAD_EXE_FORMAT;
-    }
-
-    if (   pHdr->e_shoff < pHdr->e_ehsize
-        && !(pHdr->e_shoff && pHdr->e_shnum))
-    {
-        CORELOGREL(("ElfReadHdr: Section headers overlap ELF header!\n"));
-        return VERR_BAD_EXE_FORMAT;
-    }
-
-    uint64_t cbFileSize = 0;
-    rc = RTFileGetSize(hFile, &cbFileSize);
-    if (   RT_SUCCESS(rc)
-        && (   pHdr->e_shoff + pHdr->e_shnum * pHdr->e_shentsize > cbFileSize
-            || pHdr->e_shoff + pHdr->e_shnum * pHdr->e_shentsize < pHdr->e_shoff))
-    {
-        CORELOGREL(("ElfReadHdr: Section headers goes beyond file cbFileSize=%u shoff=%u\n", cbFileSize, pHdr->e_shoff));
-        return VERR_BAD_EXE_FORMAT;
-    }
-
-    *pcSecHdrs = pHdr->e_shnum;
-    *pSecHdrIndex = pHdr->e_shstrndx;
-    *pcProgHdrs = pHdr->e_phnum;
-
-    /*
-     * If pcSecHdrs, pSecHdrIndex or pcProgHdrs is at it's max value, we need to
-     * read the section header at index 0 for getting the real values.
-     */
-    if (   (*pcSecHdrs == 0 && pHdr->e_shoff != 0)
-        || *pSecHdrIndex == SHN_XINDEX
-        || *pcProgHdrs == PN_XNUM)
-    {
-        Shdr SecHdr;
-        if (pHdr->e_shoff == 0)
-        {
-            CORELOGREL(("ElfReadHdr: invalid section header offset %d\n", pHdr->e_shoff));
-            return VERR_ELF_EXE_NOT_SUPPORTED;
-        }
-
-        rc = ReadFileAt(hFile, &SecHdr, sizeof(SecHdr), pHdr->e_shoff);
-        if (RT_SUCCESS(rc))
-        {
-            if (*pcSecHdrs == 0)
-                *pcSecHdrs = SecHdr.sh_size;
-            if (*pSecHdrIndex == SHN_XINDEX)
-                *pSecHdrIndex = SecHdr.sh_link;
-            if (*pcProgHdrs == PN_XNUM && SecHdr.sh_info != 0)
-                *pcProgHdrs = SecHdr.sh_info;
-        }
-        else
-            return rc;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Read a section header from an ELF file.
- *
- * @param hFile             The file to read.
- * @param offElfStart       Offset that represents the start of the ELF header.
- * @param pHdr              Pointer to the ELF header.
- * @param cSecHdrs          Number of section headers.
- * @param SecHdrIndex       Index into the section header table.
- * @param ppvSecHdr         Where to store the pointer to the read-in section header.
- * @param pcbSecHdr         Where to store the size of the read-in section header.
- * @param ppszSecHdrStr     Where to store the section header string table.
- * @param pcbSecHdrStr      Where to store the size of the section header string table.
- *
- * @return VBox status code.
- */
-int ElfReadSecHdr(PVBOXCORE pVBoxCore, RTFILE hFile, RTFOFF offElfStart, const Ehdr *pHdr, uint32_t cSecHdrs, uint32_t SecHdrIndex,
-                  void **ppvSecHdr, size_t *pcbSecHdr, char **ppszSecHdrStr, size_t *pcbSecHdrStr)
-{
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
-
-    /*
-     * Since we use e_shentsize to index into the array of section headers, make sure it's 8-byte aligned.
-     * We use all the members through sh_entsize (on both 32, 64 bit) so e_shentsize must be large enough.
-     */
-    Shdr *pSecHdr;
-    ssize_t cSize = RT_OFFSETOF(Shdr, sh_entsize) + sizeof(pSecHdr->sh_entsize);
-    if (   pHdr->e_shentsize < cSize
-        || (pHdr->e_shentsize & 3) != 0
-        || SecHdrIndex > cSecHdrs)
-    {
-        CORELOGREL(("ElfReadSecHdr: invalid format\n"));
-        return VERR_BAD_EXE_FORMAT;
-    }
-
-    /*
-     * Allocate & read in the section header.
-     */
-    int rc = VINF_SUCCESS;
-    *pcbSecHdr = cSecHdrs * pHdr->e_shentsize;
-    *ppvSecHdr = GetMemoryChunk(pVBoxCore, *pcbSecHdr);
-    if (!*ppvSecHdr)
-    {
-        rc = ReadFileAt(hFile, *ppvSecHdr, *pcbSecHdr, pHdr->e_shoff);
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Allocate & read in the section string table.
-             */
-            pSecHdr = (Shdr *)((char *)*ppvSecHdr + SecHdrIndex * pHdr->e_shentsize);
-            if (pSecHdr->sh_size > 0)
-            {
-                *pcbSecHdrStr = pSecHdr->sh_size;
-                *ppszSecHdrStr = (char *)GetMemoryChunk(pVBoxCore, *pcbSecHdrStr);
-                if (*ppszSecHdrStr)
-                {
-                    rc = ReadFileAt(hFile, *ppszSecHdrStr, *pcbSecHdrStr, pSecHdr->sh_offset);
-                    if (RT_SUCCESS(rc))
-                    {
-                        (*ppszSecHdrStr)[*pcbSecHdrStr - 1] = '\0';
-                        return VINF_SUCCESS;
-                    }
-                    else
-                        CORELOGREL(("ElfReadSecHdr: failed to read section header string table at %u\n", pSecHdr->sh_offset));
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-            else
-            {
-                CORELOGREL(("ElfReadSecHdr: invalid section header string table size\n"));
-                rc = VERR_BAD_EXE_FORMAT;
-            }
-        }
-        else
-            CORELOGREL(("ElfReadSecHdr: failed to read section header at %u\n", pHdr->e_shoff));
-
-        *ppvSecHdr = NULL;
-        *pcbSecHdr = 0;
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
     return rc;
 }
 
@@ -852,7 +624,7 @@ int ReadProcMappings(PVBOXCORE pVBoxCore)
                                 while (k < pCur->pMap.pr_size)
                                 {
                                     size_t cb = RT_MIN(sizeof(achBuf), pCur->pMap.pr_size - k);
-                                    int rc2 = ReadProcAddrSpace(pVBoxProc, &achBuf, cb, pCur->pMap.pr_vaddr + k);
+                                    int rc2 = ReadProcAddrSpace(pVBoxProc, pCur->pMap.pr_vaddr + k, &achBuf, cb);
                                     if (RT_FAILURE(rc2))
                                     {
                                         CORELOGREL(("ReadProcMappings: skipping mapping. vaddr=%#x rc=%Rrc\n", pCur->pMap.pr_vaddr, rc2));
@@ -1707,7 +1479,7 @@ int ElfWriteMappings(PVBOXCORE pVBoxCore)
             while (k < pMapInfo->pMap.pr_size)
             {
                 size_t cb = RT_MIN(sizeof(achBuf), pMapInfo->pMap.pr_size - k);
-                int rc2 = ReadProcAddrSpace(pVBoxProc, &achBuf, cb, pMapInfo->pMap.pr_vaddr + k);
+                int rc2 = ReadProcAddrSpace(pVBoxProc, pMapInfo->pMap.pr_vaddr + k, &achBuf, cb);
                 if (RT_FAILURE(rc2))
                 {
                     CORELOGREL(("ElfWriteMappings: Failed to read mapping, can't recover. Bye. rc=%Rrc\n", rc));
