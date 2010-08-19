@@ -1559,7 +1559,7 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     else
         Log(("Removed dirty page %RGp cMods=%d cChanges=%d\n", pPage->GCPhys, pPage->cModifications, cChanges));
 
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_R0) || defined(IN_RC)
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
     PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #endif
 }
@@ -3345,7 +3345,7 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
                 rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPhysPage);
             *pfFlushTLBs = true;
 
-# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_R0) || defined(IN_RC)
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
             PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
 # endif
         }
@@ -4615,7 +4615,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
      */
     pgmPoolCacheFlushPage(pPool, pPage);
 
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_R0) || defined(IN_RC)
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
     /* Heavy stuff done. */
     PGMRZDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #endif
