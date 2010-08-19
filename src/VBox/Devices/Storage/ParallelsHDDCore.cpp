@@ -1434,6 +1434,8 @@ VBOXHDDBACKEND g_ParallelsBackend =
     /* pfnComposeName */
     genericFileComposeName,
     /* pfnCompact */
+    NULL,
+    /* pfnResize */
     NULL
 };
 

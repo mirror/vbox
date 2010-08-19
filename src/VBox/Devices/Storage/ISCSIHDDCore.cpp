@@ -5567,5 +5567,7 @@ VBOXHDDBACKEND g_ISCSIBackend =
     /* pfnComposeName */
     iscsiComposeName,
     /* pfnCompact */
+    NULL,
+    /* pfnResize */
     NULL
 };

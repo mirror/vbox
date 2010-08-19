@@ -539,6 +539,31 @@ typedef struct VBOXHDDBACKEND
                                            PVDINTERFACE pVDIfsImage,
                                            PVDINTERFACE pVDIfsOperation));
 
+    /**
+     * Resize the image. The pointer may be NULL, indicating that this
+     * isn't supported yet (for file-based images) or not necessary.
+     *
+     * @returns VBox status code.
+     * @returns VERR_NOT_SUPPORTED if this image cannot be compacted yet.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   cbSize          New size of the image.
+     * @param   pPCHSGeometry   Pointer to the new physical disk geometry <= (16383,16,63). Not NULL.
+     * @param   pLCHSGeometry   Pointer to the new logical disk geometry <= (x,255,63). Not NULL.
+     * @param   uPercentStart   Starting value for progress percentage.
+     * @param   uPercentSpan    Span for varying progress percentage.
+     * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+     * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+     * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnResize, (void *pvBackendData,
+                                          uint64_t cbSize,
+                                          PCPDMMEDIAGEOMETRY pPCHSGeometry,
+                                          PCPDMMEDIAGEOMETRY pLCHSGeometry,
+                                          unsigned uPercentStart, unsigned uPercentSpan,
+                                          PVDINTERFACE pVDIfsDisk,
+                                          PVDINTERFACE pVDIfsImage,
+                                          PVDINTERFACE pVDIfsOperation));
+
 } VBOXHDDBACKEND;
 
 /** Pointer to VD backend. */

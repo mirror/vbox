@@ -1342,6 +1342,8 @@ VBOXHDDBACKEND g_RawBackend =
     /* pfnComposeName */
     genericFileComposeName,
     /* pfnCompact */
+    NULL,
+    /* pfnResize */
     NULL
 };
 

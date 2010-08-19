@@ -2614,6 +2614,8 @@ VBOXHDDBACKEND g_VDIBackend =
     /* pfnComposeName */
     genericFileComposeName,
     /* pfnCompact */
-    vdiCompact
+    vdiCompact,
+    /* pfnResize */
+    NULL
 };
 
