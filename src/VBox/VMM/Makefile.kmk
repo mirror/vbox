@@ -146,6 +146,7 @@ VMMR3_SOURCES   = \
 	VMMAll/SELMAll.cpp \
 	VMMAll/EMAll.cpp \
 	VMMAll/EMAllA.asm \
+	VMMAll/FTMAll.cpp \
 	VMMAll/TMAll.cpp \
 	VMMAll/TMAllCpu.cpp \
 	VMMAll/TMAllReal.cpp \
@@ -372,6 +373,7 @@ ifdef VBOX_WITH_RAW_MODE
  	VMMAll/IOMAllMMIO.cpp \
  	VMMAll/EMAll.cpp \
  	VMMAll/EMAllA.asm \
+	VMMAll/FTMAll.cpp \
  	VMMAll/MMAll.cpp \
  	VMMAll/MMAllHyper.cpp \
  	VMMAll/PDMAll.cpp \
@@ -461,6 +463,7 @@ VMMR0_SOURCES   = \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/EMAll.cpp \
 	VMMAll/EMAllA.asm \
+	VMMAll/FTMAll.cpp \
 	VMMAll/HWACCMAll.cpp \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMMIO.cpp \

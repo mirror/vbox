@@ -33,6 +33,7 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/tcp.h>
+#include <iprt/semaphore.h>
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -58,7 +59,7 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
     pVM->ftm.s.pszPassword              = NULL;
     pVM->fFaultTolerantMaster           = false;
     pVM->ftm.s.fIsStandbyNode           = false;
-    pVM->ftm.s.standby.hServer          = NULL;
+    pVM->ftm.s.standby.hServer          = NIL_RTTCPSERVER;
     pVM->ftm.s.master.hShutdownEvent    = NIL_RTSEMEVENT;
     pVM->ftm.s.hSocket                  = NIL_RTSOCKET;
 
@@ -291,6 +292,16 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
 
     for (;;)
     {
+        if (!pVM->ftm.s.fCheckpointingActive)
+        {
+            int rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
+            AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+
+            /* sync the changed memory with the standby node. */
+
+            PDMCritSectLeave(&pVM->ftm.s.CritSect);
+
+        }
         rc = RTSemEventWait(pVM->ftm.s.master.hShutdownEvent, pVM->ftm.s.uInterval);
         if (rc != VERR_TIMEOUT)
             break;    /* told to quit */            
@@ -394,7 +405,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
  *
  * @returns VBox status code.
  *
- * @param   pVM         The VM to power on.
+ * @param   pVM         The VM to operate on.
  * @param   fMaster     FT master or standby
  * @param   uInterval   FT sync interval
  * @param   pszAddress  Standby VM address
@@ -460,7 +471,7 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
  *
  * @returns VBox status code.
  *
- * @param   pVM         The VM to power on.
+ * @param   pVM         The VM to operate on.
  */
 VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
 {
@@ -472,16 +483,23 @@ VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
 
 
 /**
- * Initiates a checkpoint update on the master node
+ * Performs a full sync to the standby node
  *
  * @returns VBox status code.
  *
- * @param   pVM         The VM to power on.
+ * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) FTMR3Checkpoint(PVM pVM)
+VMMR3DECL(int) FTMR3SyncState(PVM pVM)
 {
     if (!pVM->fFaultTolerantMaster)
         return VINF_SUCCESS;
+
+    pVM->ftm.s.fCheckpointingActive = true;
+    int rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
+    AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+
+    PDMCritSectLeave(&pVM->ftm.s.CritSect);
+    pVM->ftm.s.fCheckpointingActive = false;
 
     return VERR_NOT_IMPLEMENTED;
 }
