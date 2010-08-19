@@ -3457,7 +3457,7 @@ ResumeExecution:
         AssertRC(rc2);
         Log(("VMX_EXIT_EPT_MISCONFIG for %RGp\n", GCPhys));
 
-        rc = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pCtx), GCPhys);
+        rc = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pCtx), GCPhys, UINT32_MAX);
         if (rc == VINF_SUCCESS)
         {
             Log2(("PGMR0Trap0eHandlerNPMisconfig(,,,%RGp) at %RGv -> resume\n", GCPhys, (RTGCPTR)pCtx->rip));

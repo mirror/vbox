@@ -422,7 +422,7 @@ VMMR0DECL(int)      PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu);
 VMMR0DECL(int)      PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu);
 VMMR0DECL(int)      PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, uint32_t cRegions, PGMMSHAREDREGIONDESC pRegions);
 VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
-VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault);
+VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
 VMMR0DECL(int)      PGMR0DynMapInit(void);
 VMMR0DECL(void)     PGMR0DynMapTerm(void);
