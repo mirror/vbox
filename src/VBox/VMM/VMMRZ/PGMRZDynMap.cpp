@@ -1290,7 +1290,7 @@ VMMRCDECL(int) PGMRCDynMapInit(PVM pVM)
         if (pThis->fLegacyMode)
             pThis->paPages[iPage].uPte.pLegacy = &pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage];
         else
-            pThis->paPages[iPage].uPte.pPae    = &pVM->pgm.s.paDynPageMapPaePTEsGC[iPage];
+            pThis->paPages[iPage].uPte.pPae    = (PX86PTEPAE)&pVM->pgm.s.paDynPageMapPaePTEsGC[iPage];
     }
 
     pVM->pgm.s.pRCDynMap = pThis;

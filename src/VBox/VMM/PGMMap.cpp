@@ -171,7 +171,7 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, uint32_t fFlags, 
          */
         pNew->aPTs[i].HCPhysPaePT0 = MMR3HyperHCVirt2HCPhys(pVM, pbPTs);
         pNew->aPTs[i].HCPhysPaePT1 = MMR3HyperHCVirt2HCPhys(pVM, pbPTs + PAGE_SIZE);
-        pNew->aPTs[i].paPaePTsR3 = (PX86PTPAE)pbPTs;
+        pNew->aPTs[i].paPaePTsR3 = (PPGMSHWPTPAE)pbPTs;
         pNew->aPTs[i].paPaePTsRC = MMHyperR3ToRC(pVM, pbPTs);
         pNew->aPTs[i].paPaePTsR0 = MMHyperR3ToR0(pVM, pbPTs);
         pbPTs += PAGE_SIZE * 2;
@@ -1404,9 +1404,10 @@ VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
             unsigned iPTE = (off >> PAGE_SHIFT) & X86_PT_MASK;
             while (cb > 0 && iPTE < RT_ELEMENTS(CTXALLSUFF(pCur->aPTs[iPT].pPT)->a))
             {
-                if (!CTXALLSUFF(pCur->aPTs[iPT].paPaePTs)[iPTE / 512].a[iPTE % 512].n.u1Present)
+                PCPGMSHWPTEPAE pPte = &pCur->aPTs[iPT].CTXALLSUFF(paPaePTs)[iPTE / 512].a[iPTE % 512];
+                if (!PGMSHWPTEPAE_IS_P(*pPte))
                     return VERR_PAGE_NOT_PRESENT;
-                RTHCPHYS HCPhys = CTXALLSUFF(pCur->aPTs[iPT].paPaePTs)[iPTE / 512].a[iPTE % 512].u & X86_PTE_PAE_PG_MASK;
+                RTHCPHYS HCPhys = PGMSHWPTEPAE_GET_HCPHYS(*pPte);
 
                 /*
                  * Get the virtual page from the physical one.

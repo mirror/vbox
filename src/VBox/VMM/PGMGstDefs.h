@@ -72,15 +72,27 @@
 #  define GST_IS_NX_ACTIVE(pVCpu)               (true && This_should_perhaps_not_be_used_in_this_context)
 #  define BTH_IS_NP_ACTIVE(pVM)                 (true)
 # else
-#  define GSTPT                                 SHWPT
-#  define PGSTPT                                PSHWPT
-#  define GSTPTE                                SHWPTE
-#  define PGSTPTE                               PSHWPTE
-#  define GSTPD                                 SHWPD
-#  define PGSTPD                                PSHWPD
-#  define GSTPDE                                SHWPDE
-#  define PGSTPDE                               PSHWPDE
-#  define GST_PTE_PG_MASK                       SHW_PTE_PG_MASK
+#  if PGM_SHW_TYPE == PGM_TYPE_32BIT /* Same as shadow paging, but no PGMSHWPTEPAE. */
+#   define GSTPT                                X86PT
+#   define PGSTPT                               PX86PT
+#   define GSTPTE                               X86PTE
+#   define PGSTPTE                              PX86PTE
+#   define GSTPD                                X86PD
+#   define PGSTPD                               PX86PD
+#   define GSTPDE                               X86PDE
+#   define PGSTPDE                              PX86PDE
+#   define GST_PTE_PG_MASK                      X86_PTE_PG_MASK
+#  else
+#   define GSTPT                                X86PTPAE
+#   define PGSTPT                               PX86PTPAE
+#   define GSTPTE                               X86PTEPAE
+#   define PGSTPTE                              PX86PTEPAE
+#   define GSTPD                                X86PDPAE
+#   define PGSTPD                               PX86PDPAE
+#   define GSTPDE                               X86PDEPAE
+#   define PGSTPDE                              PX86PDEPAE
+#   define GST_PTE_PG_MASK                      X86_PTE_PAE_PG_MASK
+#  endif
 #  define GST_IS_NX_ACTIVE(pVCpu)               (pgmGstIsNoExecuteActive(pVCpu))
 #  if PGM_GST_TYPE == PGM_TYPE_PROT             /* (comment at top of PGMAllBth.h) */
 #   define BTH_IS_NP_ACTIVE(pVM)                (pVM->pgm.s.fNestedPaging)

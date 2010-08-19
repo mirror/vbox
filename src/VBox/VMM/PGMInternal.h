@@ -413,6 +413,95 @@
 # define PGM_INVL_ALL_VCPU_TLBS(pVM)            HWACCMFlushTLBOnAllVCpus(pVM)
 #endif
 
+
+/** @name Safer Shadow PAE PT/PTE
+ * For helping avoid misinterpreting invalid PAE/AMD64 page table entries as
+ * present.
+ *
+ * @{
+ */
+#if 1
+/**
+ * For making sure that u1Present and X86_PTE_P checks doesn't mistake
+ * invalid entries for present.
+ * @sa X86PTEPAE.
+ */
+typedef union PGMSHWPTEPAE
+{
+    /** Unsigned integer view */
+    X86PGPAEUINT    uCareful;
+#if 0
+    /* Not bit field view. */
+    /** 32-bit view. */
+    uint32_t        au32[2];
+    /** 16-bit view. */
+    uint16_t        au16[4];
+    /** 8-bit view. */
+    uint8_t         au8[8];
+#endif
+} PGMSHWPTEPAE;
+
+# define PGMSHWPTEPAE_IS_P(Pte)                 ( ((Pte).uCareful & (X86_PTE_P | X86_PTE_PAE_MBZ_MASK_NX)) == X86_PTE_P )
+# define PGMSHWPTEPAE_IS_RW(Pte)                ( !!((Pte).uCareful & X86_PTE_RW))
+# define PGMSHWPTEPAE_IS_US(Pte)                ( !!((Pte).uCareful & X86_PTE_US))
+# define PGMSHWPTEPAE_IS_A(Pte)                 ( !!((Pte).uCareful & X86_PTE_A))
+# define PGMSHWPTEPAE_IS_D(Pte)                 ( !!((Pte).uCareful & X86_PTE_D))
+# define PGMSHWPTEPAE_IS_TRACK_DIRTY(Pte)       ( !!((Pte).uCareful & PGM_PTFLAGS_TRACK_DIRTY) )
+# define PGMSHWPTEPAE_IS_P_RW(Pte)              ( ((Pte).uCareful & (X86_PTE_P | X86_PTE_RW | X86_PTE_PAE_MBZ_MASK_NX)) == (X86_PTE_P | X86_PTE_RW) )
+# define PGMSHWPTEPAE_GET_LOG(Pte)              ( (Pte).uCareful )
+# define PGMSHWPTEPAE_GET_HCPHYS(Pte)           ( (Pte).uCareful & X86_PTE_PAE_PG_MASK )
+# define PGMSHWPTEPAE_GET_U(Pte)                ( (Pte).uCareful ) /**< Use with care. */
+# define PGMSHWPTEPAE_SET(Pte, uVal)            do { (Pte).uCareful = (uVal); } while (0)
+# define PGMSHWPTEPAE_SET2(Pte, Pte2)           do { (Pte).uCareful = (Pte2).uCareful; } while (0)
+# define PGMSHWPTEPAE_ATOMIC_SET(Pte, uVal)     do { ASMAtomicWriteU64(&(Pte).uCareful, (uVal)); } while (0)
+# define PGMSHWPTEPAE_ATOMIC_SET2(Pte, Pte2)    do { ASMAtomicWriteU64(&(Pte).uCareful, (Pte2).uCareful); } while (0)
+# define PGMSHWPTEPAE_SET_RO(Pte)               do { (Pte).uCareful &= ~(X86PGPAEUINT)X86_PTE_RW; } while (0)
+# define PGMSHWPTEPAE_SET_RW(Pte)               do { (Pte).uCareful |= X86_PTE_RW; } while (0)
+
+/**
+ * For making sure that u1Present and X86_PTE_P checks doesn't mistake
+ * invalid entries for present.
+ * @sa X86PTPAE.
+ */
+typedef struct PGMSHWPTPAE
+{
+    PGMSHWPTEPAE  a[X86_PG_PAE_ENTRIES];
+} PGMSHWPTPAE;
+
+#else
+typedef X86PTEPAE           PGMSHWPTEPAE;
+typedef X86PTPAE            PGMSHWPTPAE;
+# define PGMSHWPTEPAE_IS_P(Pte)                 ( (Pte).n.u1Present )
+# define PGMSHWPTEPAE_IS_RW(Pte)                ( (Pte).n.u1Write )
+# define PGMSHWPTEPAE_IS_US(Pte)                ( (Pte).n.u1User )
+# define PGMSHWPTEPAE_IS_A(Pte)                 ( (Pte).n.u1Accessed )
+# define PGMSHWPTEPAE_IS_D(Pte)                 ( (Pte).n.u1Dirty )
+# define PGMSHWPTEPAE_IS_TRACK_DIRTY(Pte)       ( !!((Pte).u & PGM_PTFLAGS_TRACK_DIRTY) )
+# define PGMSHWPTEPAE_IS_P_RW(Pte)              ( ((Pte).u & (X86_PTE_P | X86_PTE_RW)) == (X86_PTE_P | X86_PTE_RW) )
+# define PGMSHWPTEPAE_GET_LOG(Pte)              ( (Pte).u )
+# define PGMSHWPTEPAE_GET_HCPHYS(Pte)           ( (Pte).u & X86_PTE_PAE_PG_MASK )
+# define PGMSHWPTEPAE_GET_U(Pte)                ( (Pte).u ) /**< Use with care. */
+# define PGMSHWPTEPAE_SET(Pte, uVal)            do { (Pte).u = (uVal); } while (0)
+# define PGMSHWPTEPAE_SET2(Pte, Pte2)           do { (Pte).u = (Pte2).u; } while (0)
+# define PGMSHWPTEPAE_ATOMIC_SET(Pte, uVal)     do { ASMAtomicWriteU64(&(Pte).u, (uVal)); } while (0)
+# define PGMSHWPTEPAE_ATOMIC_SET2(Pte, Pte2)    do { ASMAtomicWriteU64(&(Pte).u, (Pte2).u); } while (0)
+# define PGMSHWPTEPAE_SET_RO(Pte)               do { (Pte).u &= ~(X86PGPAEUINT)X86_PTE_RW; } while (0)
+# define PGMSHWPTEPAE_SET_RW(Pte)               do { (Pte).u |= X86_PTE_RW; } while (0)
+
+#endif
+
+/** Pointer to a shadow PAE PTE.  */
+typedef PGMSHWPTEPAE       *PPGMSHWPTEPAE;
+/** Pointer to a const shadow PAE PTE.  */
+typedef PGMSHWPTEPAE const *PCPGMSHWPTEPAE;
+
+/** Pointer to a shadow PAE page table.  */
+typedef PGMSHWPTPAE        *PPGMSHWPTPAE;
+/** Pointer to a const shadow PAE page table.  */
+typedef PGMSHWPTPAE const  *PCPGMSHWPTPAE;
+/** @}  */
+
+
 /** Size of the GCPtrConflict array in PGMMAPPING.
  * @remarks Must be a power of two. */
 #define PGMMAPPING_CONFLICT_MAX         8
@@ -466,15 +555,15 @@ typedef struct PGMMAPPING
         /** The HC virtual address of the 32-bit page table. */
         R3PTRTYPE(PX86PT)               pPTR3;
         /** The HC virtual address of the two PAE page table. (i.e 1024 entries instead of 512) */
-        R3PTRTYPE(PX86PTPAE)            paPaePTsR3;
+        R3PTRTYPE(PPGMSHWPTPAE)         paPaePTsR3;
         /** The RC virtual address of the 32-bit page table. */
         RCPTRTYPE(PX86PT)               pPTRC;
         /** The RC virtual address of the two PAE page table. */
-        RCPTRTYPE(PX86PTPAE)            paPaePTsRC;
+        RCPTRTYPE(PPGMSHWPTPAE)         paPaePTsRC;
         /** The R0 virtual address of the 32-bit page table. */
         R0PTRTYPE(PX86PT)               pPTR0;
         /** The R0 virtual address of the two PAE page table. */
-        R0PTRTYPE(PX86PTPAE)            paPaePTsR0;
+        R0PTRTYPE(PPGMSHWPTPAE)         paPaePTsR0;
     } aPTs[1];
 } PGMMAPPING;
 /** Pointer to structure for tracking GC Mappings. */
@@ -2317,7 +2406,7 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
 /** The mask applied after shifting the tracking data down by
  * PGMPOOL_TD_CREFS_SHIFT. */
 #define PGMPOOL_TD_CREFS_MASK           0x3
-/** The cRef value used to indiciate that the idx is the head of a
+/** The cRefs value used to indiciate that the idx is the head of a
  * physical cross reference list. */
 #define PGMPOOL_TD_CREFS_PHYSEXT        PGMPOOL_TD_CREFS_MASK
 /** The shift used to get idx. */
@@ -2916,7 +3005,7 @@ typedef struct PGM
     /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
     RCPTRTYPE(PX86PTE)              paDynPageMap32BitPTEsGC;
     /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
-    RCPTRTYPE(PX86PTEPAE)           paDynPageMapPaePTEsGC;
+    RCPTRTYPE(PPGMSHWPTEPAE)        paDynPageMapPaePTEsGC;
 
 
     /** Pointer to the 5 page CR3 content mapping.

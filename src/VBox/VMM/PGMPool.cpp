@@ -649,7 +649,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                             case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                             {
                                 bool fFoundFirst = false;
-                                PX86PTPAE pPT = (PX86PTPAE)pvShw;
+                                PPGMSHWPTPAE pPT = (PPGMSHWPTPAE)pvShw;
                                 for (unsigned ptIndex = 0; ptIndex < RT_ELEMENTS(pPT->a); ptIndex++)
                                 {
                                     if (pPT->a[ptIndex].u)
@@ -661,9 +661,9 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                                                 Log(("ptIndex = %d first present = %d\n", ptIndex, pPage->iFirstPresent));
                                             fFoundFirst = true;
                                         }
-                                        if (pPT->a[ptIndex].n.u1Present)
+                                        if (PGMSHWPTEPAE_IS_P(pPT->a[ptIndex]))
                                         {
-                                            pgmPoolTracDerefGCPhysHint(pPool, pPage, pPT->a[ptIndex].u & X86_PTE_PAE_PG_MASK, NIL_RTGCPHYS);
+                                            pgmPoolTracDerefGCPhysHint(pPool, pPage, PGMSHWPTEPAE_GET_HCPHYS(pPT->a[ptIndex]), NIL_RTGCPHYS);
                                             if (pPage->iFirstPresent == ptIndex)
                                                 pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
                                         }
@@ -847,7 +847,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         /* Todo: cover other paging modes too. */
         if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
         {
-            PX86PTPAE pShwPT = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
+            PPGMSHWPTPAE pShwPT = (PPGMSHWPTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
             {
                 PX86PTPAE pGstPT;
                 PGMPAGEMAPLOCK LockPage;
@@ -856,30 +856,29 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                 /* Check if any PTEs are out of sync. */
                 for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
                 {
-                    if (pShwPT->a[j].n.u1Present)
+                    if (PGMSHWPTEPAE_IS_P(pShwPT->a[j]))
                     {
                         RTHCPHYS HCPhys = NIL_RTHCPHYS;
                         rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[j].u & X86_PTE_PAE_PG_MASK, &HCPhys);
-                        if (    rc != VINF_SUCCESS
-                            ||  (pShwPT->a[j].u & X86_PTE_PAE_PG_MASK) != HCPhys)
+                        if (   rc != VINF_SUCCESS
+                            || PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[j]) != HCPhys)
                         {
                             if (fFirstMsg)
                             {
                                 pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
                                 fFirstMsg = false;
                             }
-                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch HCPhys: rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
+                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch HCPhys: rc=%Rrc idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), HCPhys);
                         }
-                        else
-                        if (    pShwPT->a[j].n.u1Write
-                            &&  !pGstPT->a[j].n.u1Write)
+                        else if (   PGMSHWPTEPAE_IS_RW(pShwPT->a[j])
+                                 && !pGstPT->a[j].n.u1Write)
                         {
                             if (fFirstMsg)
                             {
                                 pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
                                 fFirstMsg = false;
                             }
-                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch r/w gst/shw: idx=%d guest %RX64 shw=%RX64 vs %RHp\n", j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
+                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch r/w gst/shw: idx=%d guest %RX64 shw=%RX64 vs %RHp\n", j, pGstPT->a[j].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), HCPhys);
                         }
                     }
                 }
@@ -898,23 +897,22 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
                     if (pTempPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
                     {
-                        PX86PTPAE pShwPT2 = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pTempPage);
+                        PPGMSHWPTPAE pShwPT2 = (PPGMSHWPTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pTempPage);
 
                         for (unsigned k = 0; k < RT_ELEMENTS(pShwPT->a); k++)
                         {
-                            if (    pShwPT2->a[k].n.u1Present
-                                &&  pShwPT2->a[k].n.u1Write
+                            if (    PGMSHWPTEPAE_IS_P_RW(pShwPT2->a[k])
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
                                 &&  !pPage->fDirty
 # endif
-                                &&  ((pShwPT2->a[k].u & X86_PTE_PAE_PG_MASK) == HCPhysPT))
+                                &&  PGMSHWPTEPAE_GET_HCPHYS(pShwPT2->a[k]) == HCPhysPT)
                             {
                                 if (fFirstMsg)
                                 {
                                     pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
                                     fFirstMsg = false;
                                 }
-                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch: r/w: GCPhys=%RGp idx=%d shw %RX64 %RX64\n", pTempPage->GCPhys, k, pShwPT->a[k].u, pShwPT2->a[k].u);
+                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch: r/w: GCPhys=%RGp idx=%d shw %RX64 %RX64\n", pTempPage->GCPhys, k, PGMSHWPTEPAE_GET_LOG(pShwPT->a[k]), PGMSHWPTEPAE_GET_LOG(pShwPT2->a[k]));
                             }
                         }
                     }
