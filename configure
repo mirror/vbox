@@ -2500,7 +2500,8 @@ if [ "$OS" = "linux" ]; then
   check_libcap
   check_compiler_h
   [ "$BUILD_MACHINE" = "amd64" -a $WITH_VMMRAW -eq 1 ] && check_32bit
-  check_makeself
+  # tools/common/makeself*
+  [ $OSE -ge 1 ] && check_makeself
 fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
