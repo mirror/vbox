@@ -59,11 +59,6 @@ typedef DECLCALLBACK(int) FNRTTCPSERVE(RTSOCKET Sock, void *pvUser);
 /** Pointer to a RTTCPSERVE(). */
 typedef FNRTTCPSERVE *PFNRTTCPSERVE;
 
-/** Pointer to a RTTCPSERVER handle. */
-typedef struct RTTCPSERVER *PRTTCPSERVER;
-/** Pointer to a RTTCPSERVER handle. */
-typedef PRTTCPSERVER *PPRTTCPSERVER;
-
 /**
  * Create single connection at a time TCP Server in a separate thread.
  *
