@@ -838,7 +838,7 @@ int ReadProcMappings(PVBOXCORE pVBoxCore)
                             PVBOXSOLMAPINFO pPrev = NULL;
                             for (uint64_t i = 0; i < pVBoxProc->cMappings; i++, pMap++, pCur++)
                             {
-                                pCur->pMap = *pMap;
+                                memcpy(&pCur->pMap, pMap, sizeof(pCur->pMap));
                                 if (pPrev)
                                     pPrev->pNext = pCur;
 
@@ -1769,6 +1769,7 @@ int ElfWriteMappingHeaders(PVBOXCORE pVBoxCore)
         ProgHdr.p_memsz  = pMapInfo->pMap.pr_size;      /* Size of the memory image of the mapping */
         ProgHdr.p_filesz = pMapInfo->pMap.pr_size;      /* Size of the file image of the mapping */
 
+        ProgHdr.p_flags = 0;                            /* Reset fields in a loop when needed! */
         if (pMapInfo->pMap.pr_mflags & MA_READ)
             ProgHdr.p_flags |= PF_R;
         if (pMapInfo->pMap.pr_mflags & MA_WRITE)
@@ -2148,6 +2149,7 @@ void CoreSigHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
         }
         else
         {
+            /* @todo detect if we are awaiting for ourselves, if so don't. */
             CORELOGREL(("CoreSigHandler: Core dump already in progress! Waiting before signalling Sig=%d.\n", Sig));
             int64_t iTimeout = 10000;  /* timeout (ms) */
             while (!ASMAtomicUoReadBool(&g_fCoreDumpInProgress))
@@ -2212,7 +2214,7 @@ int main()
     /*
      * Send signal to dump core.
      */
-    kill(getpid(), SIGUSR1);
+    kill(getpid(), SIGSEGV);
     g_cErrors++;
 
     sleep(10);
