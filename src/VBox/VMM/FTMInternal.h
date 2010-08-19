@@ -23,8 +23,6 @@
 #include <VBox/ftm.h>
 #include <VBox/stam.h>
 #include <VBox/pdmcritsect.h>
-#include <iprt/tcp.h>
-#include <iprt/semaphore.h>
 
 /** @defgroup grp_ftm_int Internals.
  * @ingroup grp_ftm
@@ -49,7 +47,9 @@ typedef struct FTM
 
     /** Set when this VM is the standby FT node. */
     bool                fIsStandbyNode;
-    bool                fAlignment[7];
+    /** Set when this master VM is busy with checkpointing. */
+    bool                fCheckpointingActive;
+    bool                fAlignment[6];
 
     /** Current active socket. */
     RTSOCKET            hSocket;
@@ -64,7 +64,7 @@ typedef struct FTM
         RTSEMEVENT      hShutdownEvent;
     } master;
 
-    /** FTm critical section.
+    /** FTM critical section.
      * This makes sure only the checkpoint or sync is active
      */
     PDMCRITSECT         CritSect;
