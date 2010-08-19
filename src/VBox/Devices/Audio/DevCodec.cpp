@@ -1270,3 +1270,16 @@ int stac9220Destruct(CODECState *pCodecState)
     RTMemFree(pCodecState->pNodes);
     return VINF_SUCCESS;
 }
+
+int stac9220SaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
+{
+    SSMR3PutMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * STAC9220_NODE_COUNT);
+    return VINF_SUCCESS;
+}
+int stac9220LoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
+{
+    SSMR3GetMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * STAC9220_NODE_COUNT);
+    codecToAudVolume(&pCodecState->pNodes[2].dac.B_params, AUD_MIXER_VOLUME);
+    codecToAudVolume(&pCodecState->pNodes[0x17].adcvol.B_params, AUD_MIXER_PCM);
+    return VINF_SUCCESS;
+}

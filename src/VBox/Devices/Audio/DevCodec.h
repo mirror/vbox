@@ -232,5 +232,7 @@ typedef struct CODECState
 
 int stac9220Construct(CODECState *pCodecState);
 int stac9220Destruct(CODECState *pCodecState);
+int stac9220SaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
+int stac9220LoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
 
 #endif
