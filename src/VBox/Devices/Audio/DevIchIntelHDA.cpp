@@ -40,7 +40,7 @@ extern "C" {
 #define USE_MIXER
 #endif
 
-#define INTELHD_SSM_VERSION 1
+#define HDA_SSM_VERSION 1
 PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
@@ -132,7 +132,9 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define INTSTS_SANY(pState) (INTSTS((pState)) & 0xFF)
 
 #define ICH6_HDA_REG_CORBLBASE  13 /* 0x40 */
+#define CORBLBASE(pState) (HDA_REG((pState), CORBLBASE))
 #define ICH6_HDA_REG_CORBUBASE  14 /* 0x44 */
+#define CORBUBASE(pState) (HDA_REG((pState), CORBUBASE))
 #define ICH6_HDA_REG_CORBWP  15 /* 48 */
 #define ICH6_HDA_REG_CORBRP  16 /* 4A */
 #define ICH6_HDA_CORBRP_RST_SHIFT  15
@@ -161,7 +163,10 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 /* till ich 10 sizes of CORB and RIRB are harcoded to 256 in real hw */
 
 #define ICH6_HDA_REG_RIRLBASE  20 /* 0x50 */
+#define RIRLBASE(pState) (HDA_REG((pState), RIRLBASE))
+
 #define ICH6_HDA_REG_RIRUBASE  21 /* 0x54 */
+#define RIRUBASE(pState) (HDA_REG((pState), RIRUBASE))
 
 #define ICH6_HDA_REG_RIRBWP  22 /* 0x58 */
 #define ICH6_HDA_RIRBWP_RST_SHIFT  (15)
@@ -366,7 +371,6 @@ typedef struct INTELHDLinkState
     uint64_t    u64CORBBase;
     uint64_t    u64RIRBBase;
     uint64_t    u64DPBase;
-    uint8_t     u8CORBRP;
     /* pointer on CORB buf */
     uint32_t    *pu32CorbBuf;
     /* size in bytes of CORB buf */
@@ -908,10 +912,7 @@ DECLCALLBACK(int)hdaRegReadGCAP(INTELHDLinkState* pState, uint32_t offset, uint3
 DECLCALLBACK(int)hdaRegWriteCORBRP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
 {
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(CORBRP, RST))
-    {
-        pState->u8CORBRP = 0;
         CORBRP(pState) = 0;
-    }
     else
         return hdaRegWriteU8(pState, offset, index, u32Value);
     return VINF_SUCCESS;
@@ -1489,6 +1490,65 @@ static DECLCALLBACK(int) hdaMap (PPCIDEVICE pPciDev, int iRegion,
     return VINF_SUCCESS;
 }
 
+/**
+ * Saves a state of the HDA device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSMHandle  The handle to save the state to.
+ */
+static DECLCALLBACK(int) hdaSaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+{
+    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    /* Save Codec nodes states */
+    stac9220SaveState(&pThis->hda.Codec, pSSMHandle);
+    /* Save MMIO registers */
+    SSMR3PutMem (pSSMHandle, pThis->hda.au32Regs, sizeof (pThis->hda.au32Regs));
+    /* Save HDA dma counters */
+    SSMR3PutMem (pSSMHandle, &pThis->hda.stOutBdle, sizeof (HDABDLEDESC));
+    SSMR3PutMem (pSSMHandle, &pThis->hda.stMicBdle, sizeof (HDABDLEDESC));
+    SSMR3PutMem (pSSMHandle, &pThis->hda.stInBdle, sizeof (HDABDLEDESC));
+    uint8_t voices = AUD_is_active_in(pThis->hda.Codec.voice_pi)? RT_BIT(0):0;
+    voices |= AUD_is_active_in(pThis->hda.Codec.voice_mc)? RT_BIT(1):0;
+    voices |= AUD_is_active_out(pThis->hda.Codec.voice_po)? RT_BIT(2):0;
+    SSMR3PutU8(pSSMHandle, voices);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Loads a saved HDA device state.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pSSMHandle  The handle to the saved state.
+ * @param   uVersion    The data unit version number.
+ * @param   uPass       The data pass.
+ */
+static DECLCALLBACK(int) hdaLoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
+                                          uint32_t uVersion, uint32_t uPass)
+{
+    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    /* Load Codec nodes states */
+    stac9220LoadState(&pThis->hda.Codec, pSSMHandle);
+    /* Load MMIO registers */
+    SSMR3GetMem (pSSMHandle, pThis->hda.au32Regs, sizeof (pThis->hda.au32Regs));
+    /* Load HDA dma counters */
+    SSMR3GetMem (pSSMHandle, &pThis->hda.stOutBdle, sizeof (HDABDLEDESC));
+    SSMR3GetMem (pSSMHandle, &pThis->hda.stMicBdle, sizeof (HDABDLEDESC));
+    SSMR3GetMem (pSSMHandle, &pThis->hda.stInBdle, sizeof (HDABDLEDESC));
+    uint8_t voices;
+    SSMR3GetU8(pSSMHandle, &voices);
+    AUD_set_active_in(pThis->hda.Codec.voice_pi, voices & RT_BIT(0));
+    AUD_set_active_in(pThis->hda.Codec.voice_mc, voices & RT_BIT(1));
+    AUD_set_active_out(pThis->hda.Codec.voice_po, voices & RT_BIT(2));
+    pThis->hda.u64CORBBase = CORBLBASE(&pThis->hda);
+    pThis->hda.u64CORBBase |= ((uint64_t)CORBUBASE(&pThis->hda)) << 32;
+    pThis->hda.u64RIRBBase = RIRLBASE(&pThis->hda);
+    pThis->hda.u64RIRBBase |= ((uint64_t)RIRUBASE(&pThis->hda)) << 32;
+    pThis->hda.u64DPBase = DPLBASE(&pThis->hda);
+    pThis->hda.u64DPBase |= ((uint64_t)DPUBASE(&pThis->hda)) << 32;
+    return VINF_SUCCESS;
+}
 
 /**
  * Reset notification.
@@ -1645,6 +1705,10 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
 
     rc = PDMDevHlpPCIIORegionRegister (pDevIns, 0, 0x4000, PCI_ADDRESS_SPACE_MEM,
                                        hdaMap);
+    if (RT_FAILURE (rc))
+        return rc;
+
+    rc = PDMDevHlpSSMRegister (pDevIns, HDA_SSM_VERSION, sizeof(*pThis), hdaSaveExec, hdaLoadExec);
     if (RT_FAILURE (rc))
         return rc;
 
