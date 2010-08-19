@@ -492,6 +492,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--type normal|writethrough|immutable|shareable]\n"
                  "                            [--autoreset on|off]\n"
                  "                            [--compact]\n"
+                 "                            [--resize <megabytes>]\n"
                  "\n");
     }
 
