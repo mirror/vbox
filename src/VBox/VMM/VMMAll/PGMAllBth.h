@@ -175,8 +175,8 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
              *
              * ASSUMES that there is only one handler per page or that they have similar write properties.
              */
-            if (    pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
-                && !(uErr & X86_TRAP_PF_P))
+            if (   !(uErr & X86_TRAP_PF_P)
+                &&  pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE)
             {
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
                 rc = PGM_BTH_NAME(SyncPage)(pVCpu, pGstWalk->Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
@@ -194,11 +194,45 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                 }
             }
 #  endif
+#  ifdef PGM_WITH_MMIO_OPTIMIZATIONS
+            /*
+             * If the access was not thru a #PF(RSVD|...) resync the page.
+             */
+            if (   !(uErr & X86_TRAP_PF_RSVD)
+                && pCur->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
+#   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+                && pGstWalk->Core.fEffectiveRW
+                && !pGstWalk->Core.fEffectiveUS /** @todo Remove pGstWalk->Core.fEffectiveUS and X86_PTE_US further down in the sync code. */
+#   endif
+               )
+            {
+#   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+                rc = PGM_BTH_NAME(SyncPage)(pVCpu, pGstWalk->Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
+#   else
+                rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, pvFault, PGM_SYNC_NR_PAGES, uErr);
+#   endif
+                if (    RT_FAILURE(rc)
+                    || rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
+                {
+                    AssertRC(rc);
+                    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersOutOfSync);
+                    STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2OutOfSyncHndPhys; });
+                    return rc;
+                }
+            }
+#  endif
 
             AssertMsg(   pCur->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
                       || (pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE && (uErr & X86_TRAP_PF_RW)),
                       ("Unexpected trap for physical handler: %08X (phys=%08x) pPage=%R[pgmpage] uErr=%X, enum=%d\n",
                        pvFault, GCPhysFault, pPage, uErr, pCur->enmType));
+            if (pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE)
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysWrite);
+            else
+            {
+                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysAll);
+                if (uErr & X86_TRAP_PF_RSVD) STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysAllOpt);
+            }
 
             if (pCur->CTX_SUFF(pfnHandler))
             {
@@ -230,8 +264,6 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
             else
                 rc = VINF_EM_RAW_EMULATE_INSTR;
 
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysical);
-            if (uErr & X86_TRAP_PF_RSVD) STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysicalOpt);
             STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2HndPhys; });
             return rc;
         }
@@ -1470,7 +1502,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint32_t
 # if PGM_SHW_TYPE == PGM_TYPE_EPT || PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_AMD64
     else if (   PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)
              && (   BTH_IS_NP_ACTIVE(pVM)
-                 || (fPteSrc & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_RW) /** @todo remove X86_PTE_US */
+                 || (fPteSrc & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_RW) /** @todo Remove X86_PTE_US here and pGstWalk->Core.fEffectiveUS before the sync page test. */
 #  if PGM_SHW_TYPE == PGM_TYPE_AMD64
              && pVM->pgm.s.fLessThan52PhysicalAddressBits
 #  endif
