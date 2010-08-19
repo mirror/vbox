@@ -27,9 +27,8 @@
 #include <iprt/assert.h>
 
 
-/* @todo: implement a check to ensure display & miniport versions match.
- * One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 4
+/* One would increase this whenever definitions in this file are changed */
+#define VBOXVIDEOIF_VERSION 5
 
 /* create allocation func */
 typedef enum
@@ -212,8 +211,15 @@ typedef struct VBOXVIDEOCM_CMD_RECTS
     VBOXWDDM_RECTS_INFO RectsInfo;
 } VBOXVIDEOCM_CMD_RECTS, *PVBOXVIDEOCM_CMD_RECTS;
 
-#define VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS(_cRects) (RT_OFFSETOF(VBOXVIDEOCM_CMD_RECTS, RectsInfo.aRects[(_cRects)]))
-#define VBOXVIDEOCM_CMD_RECTS_SIZE(_pCmd) (VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS((_pCmd)->cRects))
+typedef struct VBOXVIDEOCM_CMD_RECTS_INTERNAL
+{
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
+    UINT u32Reserved;
+    VBOXVIDEOCM_CMD_RECTS Cmd;
+} VBOXVIDEOCM_CMD_RECTS_INTERNAL, *PVBOXVIDEOCM_CMD_RECTS_INTERNAL;
+
+#define VBOXVIDEOCM_CMD_RECTS_INTERNAL_SIZE4CRECTS(_cRects) (RT_OFFSETOF(VBOXVIDEOCM_CMD_RECTS_INTERNAL, Cmd.RectsInfo.aRects[(_cRects)]))
+#define VBOXVIDEOCM_CMD_RECTS_INTERNAL_SIZE(_pCmd) (VBOXVIDEOCM_CMD_RECTS_INTERNAL_SIZE4CRECTS((_pCmd)->cRects))
 
 typedef struct VBOXWDDM_GETVBOXVIDEOCMCMD_HDR
 {

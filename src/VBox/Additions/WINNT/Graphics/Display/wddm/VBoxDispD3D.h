@@ -90,6 +90,14 @@ typedef struct VBOXWDDMDISP_INDICES_INFO
   UINT   uiStride;
 } VBOXWDDMDISP_INDICES_INFO;
 
+typedef struct VBOXWDDMDISP_SCREEN
+{
+    IDirect3DDevice9 *pDevice9If;
+    struct VBOXWDDMDISP_RESOURCE *pRenderTargetRc;
+    uint32_t iRenderTargetFrontBuf;
+    HWND hWnd;
+} VBOXWDDMDISP_SCREEN, *PVBOXWDDMDISP_SCREEN;
+
 typedef struct VBOXWDDMDISP_DEVICE
 {
     HANDLE hDevice;
@@ -100,12 +108,9 @@ typedef struct VBOXWDDMDISP_DEVICE
     VOID *pvCmdBuffer;
     UINT cbCmdBuffer;
     D3DDDI_CREATEDEVICEFLAGS fFlags;
-    HWND hWnd;
 #ifndef VBOXWDDM_WITH_VISIBLE_FB
     IDirect3DSurface9 *pRenderTargetFbCopy;
 #endif
-    struct VBOXWDDMDISP_RESOURCE *pRenderTargetRc;
-    uint32_t iRenderTargetFrontBuf;
     /* number of StreamSources set */
     UINT cStreamSources;
     VBOXWDDMDISP_STREAMSOURCEUM aStreamSourceUm[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
@@ -114,11 +119,14 @@ typedef struct VBOXWDDMDISP_DEVICE
     VBOXWDDMDISP_INDICIESUM IndiciesUm;
     VBOXWDDMDISP_ALLOCATION *pIndicesAlloc;
     VBOXWDDMDISP_INDICES_INFO IndiciesInfo;
-    IDirect3DDevice9 *pDevice9If;
     /* need to cache the ViewPort data because IDirect3DDevice9::SetViewport
      * is split into two calls : SetViewport & SetZRange */
     D3DVIEWPORT9 ViewPort;
     VBOXWDDMDISP_CONTEXT DefaultContext;
+
+    UINT iPrimaryScreen;
+    UINT cScreens;
+    VBOXWDDMDISP_SCREEN aScreens[VBOX_VIDEO_MAX_SCREENS];
 } VBOXWDDMDISP_DEVICE, *PVBOXWDDMDISP_DEVICE;
 
 typedef struct VBOXWDDMDISP_LOCKINFO
@@ -149,6 +157,7 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     void* pvMem;
     /* object type is defined by enmD3DIfType enum */
     IUnknown *pD3DIf;
+    IUnknown *pSecondaryOpenedD3DIf;
     VBOXDISP_D3DIFTYPE enmD3DIfType;
     HANDLE hSharedHandle;
     VBOXWDDMDISP_LOCKINFO LockInfo;
