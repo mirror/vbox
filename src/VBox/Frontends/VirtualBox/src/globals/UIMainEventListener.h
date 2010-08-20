@@ -82,7 +82,7 @@ signals:
     void sigSharedFolderChange();
     void sigRuntimeError(bool fFatal, QString strId, QString strMessage);
     void sigCanShowWindow(bool &fVeto, QString &strReason); /* use Qt::DirectConnection */
-    void sigShowWindow(ULONG64 &winId); /* use Qt::DirectConnection */
+    void sigShowWindow(LONG64 &winId); /* use Qt::DirectConnection */
 
 #ifdef Q_WS_WIN
 private:
