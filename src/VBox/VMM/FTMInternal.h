@@ -54,6 +54,17 @@ typedef struct FTM
     /** Current active socket. */
     RTSOCKET            hSocket;
 
+    /** State sync. */
+    struct
+    {
+        unsigned            uOffStream;
+        unsigned            cbReadBlock;
+        bool                fStopReading;
+        bool                fIOError;
+        bool                fEndOfStream;
+        bool                fAlignment[5];
+    } syncstate;
+
     struct
     {
         PRTTCPSERVER    hServer;
