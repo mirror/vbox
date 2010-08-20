@@ -1965,9 +1965,10 @@ STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
         case HWVirtExPropertyType_LargePages:
             *aVal = mHWData->mHWVirtExLargePagesEnabled;
             break;
-            
+
         case HWVirtExPropertyType_Force:
             *aVal = mHWData->mHWVirtExForceEnabled;
+            break;
 
         default:
             return E_INVALIDARG;
@@ -2022,7 +2023,7 @@ STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
             mHWData.backup();
             mHWData->mHWVirtExForceEnabled = !!aVal;
             break;
-            
+
         default:
             return E_INVALIDARG;
     }
