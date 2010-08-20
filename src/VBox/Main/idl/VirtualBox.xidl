@@ -907,6 +907,12 @@
         Whether large page allocation is enabled; requires nested paging and a 64 bits host.
       </desc>
     </const>
+    <const name="Force"               value="6">
+      <desc>
+        Whether the VM should fail to start if hardware virtualization (VT-x/AMD-V) cannot be used. If
+        not set, there will be an automatic fallback to software virtualization.
+      </desc>
+    </const>
   </enum>
 
   <enum

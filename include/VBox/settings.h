@@ -685,6 +685,7 @@ struct Hardware
                         fNestedPaging,
                         fLargePages,
                         fVPID,
+                        fHardwareVirtForce,
                         fSyntheticCpu,
                         fPAE;
     uint32_t            cCPUs;
