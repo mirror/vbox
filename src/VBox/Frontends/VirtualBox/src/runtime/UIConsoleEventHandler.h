@@ -51,7 +51,7 @@ signals:
 
 private slots:
     void sltCanShowWindow(bool &fVeto, QString &strReason);
-    void sltShowWindow(ULONG64 &winId);
+    void sltShowWindow(LONG64 &winId);
 
 private:
     UIConsoleEventHandler(UISession *pSession);
