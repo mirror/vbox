@@ -65,7 +65,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
          */
         case KVBoxEventType_OnMachineStateChanged:
         {
-            CMachineStateChangedEvent es(event);
+            CMachineStateChangedEvent es(pEvent);
             emit sigMachineStateChange(es.GetMachineId(), es.GetState());
             break;
         }
@@ -77,7 +77,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         case KVBoxEventType_OnExtraDataCanChange:
         {
-            CExtraDataCanChangeEvent es(event);
+            CExtraDataCanChangeEvent es(pEvent);
             /* Has to be done in place to give an answer */
             bool fVeto = false;
             QString strReason;
@@ -88,7 +88,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         case KVBoxEventType_OnExtraDataChanged:
         {
-            CExtraDataChangedEvent es(event);
+            CExtraDataChangedEvent es(pEvent);
             emit sigExtraDataChange(es.GetMachineId(), es.GetKey(), es.GetValue());
             break;
         }
@@ -97,13 +97,13 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
          */
         case KVBoxEventType_OnMachineRegistered:
         {
-            CMachineRegisteredEvent es(event);
+            CMachineRegisteredEvent es(pEvent);
             emit sigMachineRegistered(es.GetMachineId(), es.GetRegistered());
             break;
         }
         case KVBoxEventType_OnSessionStateChanged:
         {
-            CSessionStateChangedEvent es(event);
+            CSessionStateChangedEvent es(pEvent);
             emit sigSessionStateChange(es.GetMachineId(), es.GetState());
             break;
         }
@@ -113,7 +113,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
          */
         case KVBoxEventType_OnSnapshotChanged:
         {
-            CSnapshotChangedEvent es(event);
+            CSnapshotChangedEvent es(pEvent);
             emit sigSnapshotChange(es.GetMachineId(), es.GetSnapshotId());
             break;
         }
@@ -125,25 +125,25 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
          */
         case KVBoxEventType_OnMousePointerShapeChanged:
         {
-            CMousePointerShapeChangedEvent es(event);
+            CMousePointerShapeChangedEvent es(pEvent);
             emit sigMousePointerShapeChange(es.GetVisible(), es.GetAlpha(), QPoint(es.GetXhot(), es.GetYhot()), QSize(es.GetWidth(), es.GetHeight()), es.GetShape());
             break;
         }
         case KVBoxEventType_OnMouseCapabilityChanged:
         {
-            CMouseCapabilityChangedEvent es(event);
+            CMouseCapabilityChangedEvent es(pEvent);
             emit sigMouseCapabilityChange(es.GetSupportsAbsolute(), es.GetSupportsRelative(), es.GetNeedsHostCursor());
             break;
         }
         case KVBoxEventType_OnKeyboardLedsChanged:
         {
-            CKeyboardLedsChangedEvent es(event);
+            CKeyboardLedsChangedEvent es(pEvent);
             emit sigKeyboardLedsChangeEvent(es.GetNumLock(), es.GetCapsLock(), es.GetScrollLock());
             break;
         }
         case KVBoxEventType_OnStateChanged:
         {
-            CStateChangedEvent es(event);
+            CStateChangedEvent es(pEvent);
             emit sigStateChange(es.GetState());
             break;
         }
@@ -154,7 +154,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         case KVBoxEventType_OnNetworkAdapterChanged:
         {
-            CNetworkAdapterChangedEvent es(event);
+            CNetworkAdapterChangedEvent es(pEvent);
             emit sigNetworkAdapterChange(es.GetNetworkAdapter());
             break;
         }
@@ -165,7 +165,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
          */
         case KVBoxEventType_OnMediumChanged:
         {
-            CMediumChangedEvent es(event);
+            CMediumChangedEvent es(pEvent);
             emit sigMediumChange(es.GetMediumAttachment());
             break;
         }
@@ -181,25 +181,25 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         case KVBoxEventType_OnUSBDeviceStateChanged:
         {
-            CUSBDeviceStateChangedEvent es(event);
+            CUSBDeviceStateChangedEvent es(pEvent);
             emit sigUSBDeviceStateChange(es.GetDevice(), es.GetAttached(), es.GetError());
             break;
         }
         case KVBoxEventType_OnSharedFolderChanged:
         {
-            CSharedFolderChangedEvent es(event);
+            CSharedFolderChangedEvent es(pEvent);
             emit sigSharedFolderChange();
             break;
         }
         case KVBoxEventType_OnRuntimeError:
         {
-            CRuntimeErrorEvent es(event);
+            CRuntimeErrorEvent es(pEvent);
             emit sigRuntimeError(es.GetFatal(), es.GetId(), es.GetMessage());
             break;
         }
         case KVBoxEventType_OnCanShowWindow:
         {
-            CCanShowWindowEvent es(event);
+            CCanShowWindowEvent es(pEvent);
             /* Has to be done in place to give an answer */
             bool fVeto = false;
             QString strReason;
@@ -210,7 +210,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         case KVBoxEventType_OnShowWindow:
         {
-            CShowWindowEvent es(event);
+            CShowWindowEvent es(pEvent);
             /* Has to be done in place to give an answer */
             ULONG64 winId;
             emit sigShowWindow(winId);
