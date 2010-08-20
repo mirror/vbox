@@ -132,8 +132,8 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
 
     /* This returns a winId, so we have to respond to the event and have to use
      * a direct connection therefor. */
-    connect(pListener, SIGNAL(sigShowWindow(ULONG64&)),
-            this, SLOT(sltShowWindow(ULONG64&)),
+    connect(pListener, SIGNAL(sigShowWindow(LONG64&)),
+            this, SLOT(sltShowWindow(LONG64&)),
             Qt::DirectConnection);
 }
 
@@ -149,7 +149,7 @@ void UIConsoleEventHandler::sltCanShowWindow(bool & /* fVeto */, QString & /* st
     /* No veto, so nothing for us to do. */
 }
 
-void UIConsoleEventHandler::sltShowWindow(ULONG64 &winId)
+void UIConsoleEventHandler::sltShowWindow(LONG64 &winId)
 {
 #ifdef Q_WS_MAC
         /* Let's try the simple approach first - grab the focus.
