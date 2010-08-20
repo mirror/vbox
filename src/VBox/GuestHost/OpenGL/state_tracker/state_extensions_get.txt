@@ -55,12 +55,12 @@ GLboolean GL_PER_STAGE_CONSTANTS_NV GL_NV_register_combiners2 g->regcombiner.ena
 # GL_ARB_texture_cube_map
 
 GLboolean GL_TEXTURE_CUBE_MAP_ARB GL_ARB_texture_cube_map g->texture.unit[g->texture.curTextureUnit].enabledCubeMap
-GLint GL_TEXTURE_BINDING_CUBE_MAP_ARB GL_ARB_texture_cube_map g->texture.unit[g->texture.curTextureUnit].currentTextureCubeMap->name
+GLint GL_TEXTURE_BINDING_CUBE_MAP_ARB GL_ARB_texture_cube_map g->texture.unit[g->texture.curTextureUnit].currentTextureCubeMap->id
 GLint GL_MAX_CUBE_MAP_TEXTURE_SIZE_ARB GL_ARB_texture_cube_map g->limits.maxCubeMapTextureSize
 
 # GL_NV_texture_rectangle
 GLboolean GL_TEXTURE_RECTANGLE_NV GL_NV_texture_rectangle g->texture.unit[g->texture.curTextureUnit].enabledRect
-GLint GL_TEXTURE_BINDING_RECTANGLE_NV GL_NV_texture_rectangle g->texture.unit[g->texture.curTextureUnit].currentTextureRect->name
+GLint GL_TEXTURE_BINDING_RECTANGLE_NV GL_NV_texture_rectangle g->texture.unit[g->texture.curTextureUnit].currentTextureRect->id
 GLint GL_MAX_RECTANGLE_TEXTURE_SIZE_NV GL_NV_texture_rectangle g->limits.maxRectTextureSize
 
 # GL_NV_fragment_program
@@ -130,9 +130,9 @@ GLint GL_GENERATE_MIPMAP_HINT GL_SGIS_generate_mipmap  g->hint.generateMipmap
 GLboolean GL_POINT_SPRITE_ARB GL_ARB_point_sprite g->point.pointSprite
 
 # GL_ARB_vertex_buffer_object
-GLuint GL_ARRAY_BUFFER_BINDING_ARB GL_ARB_vertex_buffer_object g->bufferobject.arrayBuffer->name
-GLuint GL_ELEMENT_ARRAY_BUFFER_BINDING_ARB GL_ARB_vertex_buffer_object g->bufferobject.elementsBuffer->name
+GLuint GL_ARRAY_BUFFER_BINDING_ARB GL_ARB_vertex_buffer_object g->bufferobject.arrayBuffer->id
+GLuint GL_ELEMENT_ARRAY_BUFFER_BINDING_ARB GL_ARB_vertex_buffer_object g->bufferobject.elementsBuffer->id
 
 # GL_ARB_pixel_buffer_object
-GLuint GL_PIXEL_PACK_BUFFER_BINDING_ARB GL_ARB_pixel_buffer_object g->bufferobject.packBuffer->name
-GLuint GL_PIXEL_UNPACK_BUFFER_BINDING_ARB GL_ARB_pixel_buffer_object g->bufferobject.unpackBuffer->name
+GLuint GL_PIXEL_PACK_BUFFER_BINDING_ARB GL_ARB_pixel_buffer_object g->bufferobject.packBuffer->id
+GLuint GL_PIXEL_UNPACK_BUFFER_BINDING_ARB GL_ARB_pixel_buffer_object g->bufferobject.unpackBuffer->id

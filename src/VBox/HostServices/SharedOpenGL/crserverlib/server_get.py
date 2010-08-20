@@ -99,6 +99,15 @@ no_pnames = [
     'GetFramebufferAttachmentParameterivEXT'
 ];
 
+convert_bufferid = [
+    'GetVertexAttribdvARB',
+    'GetVertexAttribdvNV',
+    'GetVertexAttribfvARB',
+    'GetVertexAttribfvNV',
+    'GetVertexAttribivARB',
+    'GetVertexAttribivNV'
+];
+
 from get_components import *;
 
 keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
@@ -124,6 +133,12 @@ for func_name in keys:
         params[-1] = (local_argname, local_argtype, 0)
 
         print '\tcr_server.head_spu->dispatch_table.%s( %s );' % ( func_name, apiutil.MakeCallString(params) )
+
+        if func_name in convert_bufferid:
+            print '\tif (pname==GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB){'
+            print '\t\tlocal_params[0]=(%s)crStateBufferHWIDtoID((GLint)local_params[0]);' % (local_argtype);
+            print '\t}'
+
         if func_name in no_pnames:
             print '\tcrServerReturnValue( &(%s[0]), %d*sizeof(%s) );' % (local_argname, max_components[func_name], local_argtype );
         else:

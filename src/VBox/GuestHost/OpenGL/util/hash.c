@@ -416,8 +416,6 @@ GLuint crHashtableAllocKeys( CRHashTable *h,  GLsizei range)
 #ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&h->mutex);
 #endif
-    for ( i = 0; i < range; i++)
-        crHashtableAdd( h, i + res , NULL );
     return res;
 }
 

@@ -13,36 +13,14 @@
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGenTextures( GLsizei n, GLuint *textures )
 {
-    GLsizei i;
-    GLuint *local_textures = (GLuint *) crAlloc( n*sizeof( *local_textures) );
+    GLuint *local_textures = (GLuint *) crAlloc(n*sizeof(*local_textures));
     (void) textures;
-    cr_server.head_spu->dispatch_table.GenTextures( n, local_textures );
 
-    /* This is somewhat hacky.
-     * We have to make sure we're going to generate unique texture IDs.
-     * That wasn't the case before snapshot loading, because we could just rely on host video drivers.
-     * Now we could have a set of loaded texture IDs which aren't already reserved in the host driver.
-     * Note: It seems, that it's easy to reserve ATI/NVidia IDs, by simply calling glGenTextures
-     * with n==number of loaded textures. But it's really implementation dependant. So can't rely that it'll not change.
-     */
-    for (i=0; i<n; ++i)
-    {
-        /* translate the ID as it'd be done in glBindTexture call */
-        GLuint tID = crServerTranslateTextureID(local_textures[i]);
-        /* check if we have a texture with same ID loaded from snapshot */
-        while (crStateIsTexture(tID))
-        {
-            /* request new ID */
-            cr_server.head_spu->dispatch_table.GenTextures(1, &tID);
-            local_textures[i] = tID;
-            tID = crServerTranslateTextureID(tID);
-        }
-    }
+    crStateGenTextures(n, local_textures);
 
-    crServerReturnValue( local_textures, n*sizeof( *local_textures ) );
+    crServerReturnValue(local_textures, n*sizeof(*local_textures));
     crFree( local_textures );
 }
-
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGenProgramsNV( GLsizei n, GLuint * ids )
 {

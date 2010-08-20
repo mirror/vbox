@@ -36,12 +36,10 @@ crStateFramebufferObjectInit(CRContext *ctx)
     fbo->readFB = NULL;
     fbo->drawFB = NULL;
     fbo->renderbuffer = NULL;
-    fbo->framebuffers = crAllocHashtable();
-    fbo->renderbuffers = crAllocHashtable();
     fbo->bResyncNeeded = GL_FALSE;
 }
 
-static void crStateFreeFBO(void *data)
+void crStateFreeFBO(void *data)
 {
     CRFramebufferObject *pObj = (CRFramebufferObject *)data;
 
@@ -55,7 +53,7 @@ static void crStateFreeFBO(void *data)
     crFree(pObj);
 }
 
-static void crStateFreeRBO(void *data)
+void crStateFreeRBO(void *data)
 {
     CRRenderbufferObject *pObj = (CRRenderbufferObject *)data;
 
@@ -77,9 +75,6 @@ crStateFramebufferObjectDestroy(CRContext *ctx)
     fbo->readFB = NULL;
     fbo->drawFB = NULL;
     fbo->renderbuffer = NULL;
-
-    crFreeHashtable(fbo->framebuffers, crStateFreeFBO);
-    crFreeHashtable(fbo->renderbuffers, crStateFreeRBO);
 }
 
 DECLEXPORT(void) STATE_APIENTRY
@@ -93,7 +88,7 @@ crStateBindRenderbufferEXT(GLenum target, GLuint renderbuffer)
 
     if (renderbuffer)
     {
-        fbo->renderbuffer = (CRRenderbufferObject*) crHashtableSearch(fbo->renderbuffers, renderbuffer);
+        fbo->renderbuffer = (CRRenderbufferObject*) crHashtableSearch(g->shared->rbTable, renderbuffer);
         if (!fbo->renderbuffer)
         {
             fbo->renderbuffer = (CRRenderbufferObject*) crCalloc(sizeof(CRRenderbufferObject));
@@ -101,7 +96,7 @@ crStateBindRenderbufferEXT(GLenum target, GLuint renderbuffer)
             fbo->renderbuffer->id = renderbuffer;
             fbo->renderbuffer->hwid = renderbuffer;
             fbo->renderbuffer->internalformat = GL_RGBA;
-            crHashtableAdd(fbo->renderbuffers, renderbuffer, fbo->renderbuffer);
+            crHashtableAdd(g->shared->rbTable, renderbuffer, fbo->renderbuffer);
         }
     }
     else fbo->renderbuffer = NULL;
@@ -160,7 +155,7 @@ crStateDeleteRenderbuffersEXT(GLsizei n, const GLuint *renderbuffers)
         if (renderbuffers[i])
         {
             CRRenderbufferObject *rbo;
-            rbo = (CRRenderbufferObject*) crHashtableSearch(fbo->renderbuffers, renderbuffers[i]);
+            rbo = (CRRenderbufferObject*) crHashtableSearch(g->shared->rbTable, renderbuffers[i]);
             if (rbo)
             {
                 if (fbo->renderbuffer==rbo)
@@ -172,7 +167,7 @@ crStateDeleteRenderbuffersEXT(GLsizei n, const GLuint *renderbuffers)
                 crStateCheckFBOAttachments(fbo->readFB, renderbuffers[i], GL_READ_FRAMEBUFFER);
                 crStateCheckFBOAttachments(fbo->drawFB, renderbuffers[i], GL_DRAW_FRAMEBUFFER);
 
-                crHashtableDelete(fbo->renderbuffers, renderbuffers[i], crStateFreeRBO);
+                crHashtableDelete(g->shared->rbTable, renderbuffers[i], crStateFreeRBO);
             }
         }
     }
@@ -290,7 +285,7 @@ crStateBindFramebufferEXT(GLenum target, GLuint framebuffer)
 
     if (framebuffer)
     {
-        pFBO = (CRFramebufferObject*) crHashtableSearch(fbo->framebuffers, framebuffer);
+        pFBO = (CRFramebufferObject*) crHashtableSearch(g->shared->fbTable, framebuffer);
         if (!pFBO)
         {
             pFBO = (CRFramebufferObject*) crCalloc(sizeof(CRFramebufferObject));
@@ -298,7 +293,7 @@ crStateBindFramebufferEXT(GLenum target, GLuint framebuffer)
             pFBO->id = framebuffer;
             pFBO->hwid = framebuffer;
             crStateInitFrameBuffer(pFBO);
-            crHashtableAdd(fbo->framebuffers, framebuffer, pFBO);
+            crHashtableAdd(g->shared->fbTable, framebuffer, pFBO);
         }
     }
 
@@ -337,7 +332,7 @@ crStateDeleteFramebuffersEXT(GLsizei n, const GLuint *framebuffers)
         if (framebuffers[i])
         {
             CRFramebufferObject *fb;
-            fb = (CRFramebufferObject*) crHashtableSearch(fbo->framebuffers, framebuffers[i]);
+            fb = (CRFramebufferObject*) crHashtableSearch(g->shared->fbTable, framebuffers[i]);
             if (fb)
             {
                 if (fbo->readFB==fb)
@@ -348,7 +343,7 @@ crStateDeleteFramebuffersEXT(GLsizei n, const GLuint *framebuffers)
                 {
                     fbo->drawFB = NULL;
                 }
-                crHashtableDelete(fbo->framebuffers, framebuffers[i], crStateFreeFBO);
+                crHashtableDelete(g->shared->fbTable, framebuffers[i], crStateFreeFBO);
             }
         }
     }
@@ -554,7 +549,7 @@ crStateFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum rende
         return;
     }
 
-    rb = (CRRenderbufferObject*) crHashtableSearch(fbo->renderbuffers, renderbuffer);
+    rb = (CRRenderbufferObject*) crHashtableSearch(g->shared->rbTable, renderbuffer);
     CRSTATE_FBO_CHECKERR(!rb, GL_INVALID_OPERATION, "rb doesn't exist");
 
 #ifdef IN_GUEST
@@ -638,20 +633,22 @@ static void crStateSyncAP(CRFBOAttachmentPoint *pAP, GLenum ap, CRContext *ctx)
             tobj = (CRTextureObj *) crHashtableSearch(ctx->shared->textureTable, pAP->name);
             if (tobj)
             {
+                CRASSERT(!tobj->id || tobj->hwid);
+
                 switch (tobj->target)
                 {
                     case GL_TEXTURE_1D:
-                        diff_api.FramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, ap, tobj->target, pAP->name, pAP->level);
+                        diff_api.FramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, ap, tobj->target, crStateGetTextureObjHWID(tobj), pAP->level);
                         break;
                     case GL_TEXTURE_2D:
                     case GL_TEXTURE_RECTANGLE_ARB:
-                        diff_api.FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, ap, tobj->target, pAP->name, pAP->level);
+                        diff_api.FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, ap, tobj->target, crStateGetTextureObjHWID(tobj), pAP->level);
                         break;
                     case GL_TEXTURE_CUBE_MAP_ARB:
-                        diff_api.FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, ap, pAP->face, pAP->name, pAP->level);
+                        diff_api.FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, ap, pAP->face, crStateGetTextureObjHWID(tobj), pAP->level);
                         break;
                     case GL_TEXTURE_3D:
-                        diff_api.FramebufferTexture3DEXT(GL_FRAMEBUFFER_EXT, ap, tobj->target, pAP->name, pAP->level, pAP->zoffset);
+                        diff_api.FramebufferTexture3DEXT(GL_FRAMEBUFFER_EXT, ap, tobj->target, crStateGetTextureObjHWID(tobj), pAP->level, pAP->zoffset);
                         break;
                     default:
                         crWarning("Unexpected textarget %d", tobj->target);
@@ -663,7 +660,7 @@ static void crStateSyncAP(CRFBOAttachmentPoint *pAP, GLenum ap, CRContext *ctx)
             }
             break;
         case GL_RENDERBUFFER_EXT:
-            pRBO = (CRRenderbufferObject*) crHashtableSearch(ctx->framebufferobject.renderbuffers, pAP->name);
+            pRBO = (CRRenderbufferObject*) crHashtableSearch(ctx->shared->rbTable, pAP->name);
             diff_api.FramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, ap, GL_RENDERBUFFER_EXT, pRBO->hwid);
             break;
         case GL_NONE:
@@ -699,8 +696,8 @@ crStateFramebufferObjectSwitch(CRContext *from, CRContext *to)
     {
         to->framebufferobject.bResyncNeeded = GL_FALSE;
 
-        crHashtableWalk(to->framebufferobject.renderbuffers, crStateSyncRenderbuffersCB, NULL);
-        crHashtableWalk(to->framebufferobject.framebuffers, crStateSyncFramebuffersCB, to);
+        crHashtableWalk(to->shared->rbTable, crStateSyncRenderbuffersCB, NULL);
+        crHashtableWalk(to->shared->fbTable, crStateSyncFramebuffersCB, to);
 
         if (to->framebufferobject.drawFB==to->framebufferobject.readFB)
         {
@@ -750,7 +747,7 @@ crStateFramebufferObjectSwitch(CRContext *from, CRContext *to)
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetFramebufferHWID(GLuint id)
 {
     CRContext *g = GetCurrentContext();
-    CRFramebufferObject *pFBO = (CRFramebufferObject*) crHashtableSearch(g->framebufferobject.framebuffers, id);
+    CRFramebufferObject *pFBO = (CRFramebufferObject*) crHashtableSearch(g->shared->fbTable, id);
 
     return pFBO ? pFBO->hwid : 0;
 }
@@ -758,7 +755,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetFramebufferHWID(GLuint id)
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetRenderbufferHWID(GLuint id)
 {
     CRContext *g = GetCurrentContext();
-    CRRenderbufferObject *pRBO = (CRRenderbufferObject*) crHashtableSearch(g->framebufferobject.renderbuffers, id);
+    CRRenderbufferObject *pRBO = (CRRenderbufferObject*) crHashtableSearch(g->shared->rbTable, id);
 
     return pRBO ? pRBO->hwid : 0;
 }
@@ -791,7 +788,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateFBOHWIDtoID(GLuint hwid)
     parms.id = hwid;
     parms.hwid = hwid;
 
-    crHashtableWalk(g->framebufferobject.framebuffers, crStateCheckFBOHWIDCB, &parms);
+    crHashtableWalk(g->shared->fbTable, crStateCheckFBOHWIDCB, &parms);
     return parms.id;
 }
 
@@ -803,7 +800,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateRBOHWIDtoID(GLuint hwid)
     parms.id = hwid;
     parms.hwid = hwid;
 
-    crHashtableWalk(g->framebufferobject.renderbuffers, crStateCheckRBOHWIDCB, &parms);
+    crHashtableWalk(g->shared->rbTable, crStateCheckRBOHWIDCB, &parms);
     return parms.id;
 }
 

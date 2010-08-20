@@ -82,10 +82,14 @@ copy_texunit(CRTextureUnit *dest, const CRTextureUnit *src)
 }
 
 static void
-copy_texobj(CRTextureObj *dest, const CRTextureObj *src, GLboolean copyName)
+copy_texobj(CRTextureObj *dest, CRTextureObj *src, GLboolean copyName)
 {
     if (copyName)
-        dest->name = src->name;
+    {
+        dest->id = src->id;
+        dest->hwid = crStateGetTextureObjHWID(src);
+    }
+
     dest->borderColor = src->borderColor;
     dest->wrapS = src->wrapS;
     dest->wrapT = src->wrapT;
@@ -1060,20 +1064,20 @@ void STATE_APIENTRY crStatePopAttrib(void)
         {
             copy_texunit(&g->texture.unit[i], &tState->unit[i]);
             /* first, restore the bindings! */
-            g->texture.unit[i].currentTexture1D = crStateTextureGet(GL_TEXTURE_1D, tState->unit[i].Saved1D.name);
+            g->texture.unit[i].currentTexture1D = crStateTextureGet(GL_TEXTURE_1D, tState->unit[i].Saved1D.id);
             copy_texobj(g->texture.unit[i].currentTexture1D, &tState->unit[i].Saved1D, GL_FALSE);
-            g->texture.unit[i].currentTexture2D = crStateTextureGet(GL_TEXTURE_2D, tState->unit[i].Saved2D.name);
+            g->texture.unit[i].currentTexture2D = crStateTextureGet(GL_TEXTURE_2D, tState->unit[i].Saved2D.id);
             copy_texobj(g->texture.unit[i].currentTexture2D, &tState->unit[i].Saved2D, GL_FALSE);
 #ifdef CR_OPENGL_VERSION_1_2
-            g->texture.unit[i].currentTexture3D = crStateTextureGet(GL_TEXTURE_3D, tState->unit[i].Saved3D.name);
+            g->texture.unit[i].currentTexture3D = crStateTextureGet(GL_TEXTURE_3D, tState->unit[i].Saved3D.id);
             copy_texobj(g->texture.unit[i].currentTexture3D, &tState->unit[i].Saved3D, GL_FALSE);
 #endif
 #ifdef CR_ARB_texture_cube_map
-            g->texture.unit[i].currentTextureCubeMap = crStateTextureGet(GL_TEXTURE_CUBE_MAP_ARB, tState->unit[i].SavedCubeMap.name);
+            g->texture.unit[i].currentTextureCubeMap = crStateTextureGet(GL_TEXTURE_CUBE_MAP_ARB, tState->unit[i].SavedCubeMap.id);
             copy_texobj(g->texture.unit[i].currentTextureCubeMap, &tState->unit[i].SavedCubeMap, GL_FALSE);
 #endif
 #ifdef CR_NV_texture_rectangle
-            g->texture.unit[i].currentTextureRect = crStateTextureGet(GL_TEXTURE_CUBE_MAP_ARB, tState->unit[i].SavedRect.name);
+            g->texture.unit[i].currentTextureRect = crStateTextureGet(GL_TEXTURE_CUBE_MAP_ARB, tState->unit[i].SavedRect.id);
             copy_texobj(g->texture.unit[i].currentTextureRect, &tState->unit[i].SavedRect, GL_FALSE);
 #endif
         }

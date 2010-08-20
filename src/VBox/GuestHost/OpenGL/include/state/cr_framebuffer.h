@@ -61,8 +61,6 @@ typedef struct {
 typedef struct {
     CRFramebufferObject     *readFB, *drawFB;
     CRRenderbufferObject    *renderbuffer;
-    CRHashTable             *framebuffers;
-    CRHashTable             *renderbuffers;
 
     /* Indicates that we have to resend FBO data to GPU on first glMakeCurrent call with owning context */
     GLboolean   bResyncNeeded;

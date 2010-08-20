@@ -60,7 +60,8 @@ typedef struct {
 
 typedef struct {
     GLenum                 target;
-    GLuint                 name;
+    GLuint                 id;
+    GLuint                 hwid;
 
     /* The mipmap levels */
     CRTextureLevel        *level[6];  /* 6 cube faces */
@@ -236,6 +237,9 @@ DECLEXPORT(void) crStateDiffAllTextureObjects( CRContext *g, CRbitvalue *bitID, 
 DECLEXPORT(void) crStateDeleteTextureObjectData(CRTextureObj *tobj);
 DECLEXPORT(void) crStateDeleteTextureObject(CRTextureObj *tobj);
 
+DECLEXPORT(GLuint) STATE_APIENTRY crStateTextureHWIDtoID(GLuint hwid);
+DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureHWID(GLuint id);
+DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureObjHWID(CRTextureObj *tobj);
 
 #ifdef __cplusplus
 }

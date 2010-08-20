@@ -792,6 +792,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         CRCreateInfo_t createInfo;
         char psz[200];
         GLint ctxID;
+        CRContext* pContext;
 
         rc = SSMR3GetMem(pSSM, &key, sizeof(key));
         AssertRCReturn(rc, rc);
@@ -807,6 +808,10 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 
         ctxID = crServerDispatchCreateContextEx(createInfo.pszDpyName, createInfo.visualBits, 0, key, createInfo.internalID);
         CRASSERT((int64_t)ctxID == (int64_t)key);
+
+        pContext = (CRContext*) crHashtableSearch(cr_server.contextTable, key);
+        CRASSERT(pContext);
+        pContext->shared->id=-1;
     }
 
     /* Restore context state data */
@@ -820,7 +825,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         pContext = (CRContext*) crHashtableSearch(cr_server.contextTable, key);
         CRASSERT(pContext);
 
-        rc = crStateLoadContext(pContext, pSSM);
+        rc = crStateLoadContext(pContext, cr_server.contextTable, pSSM);
         AssertRCReturn(rc, rc);
     }
 

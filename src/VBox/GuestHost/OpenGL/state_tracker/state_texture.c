@@ -171,7 +171,7 @@ void crStateTextureInit(CRContext *ctx)
 
 void
 crStateTextureInitTextureObj(CRContext *ctx, CRTextureObj *tobj,
-                                                         GLuint name, GLenum target)
+                             GLuint name, GLenum target)
 {
     const CRTextureState *t = &(ctx->texture);
     int i, face;
@@ -193,7 +193,12 @@ crStateTextureInitTextureObj(CRContext *ctx, CRTextureObj *tobj,
     tobj->maxLevel      = 1000;
 #endif
     tobj->target        = target;
-    tobj->name          = name;
+    tobj->id            = name;
+    tobj->hwid          = 0;
+
+#ifndef IN_GUEST
+    crStateGetTextureObjHWID(tobj);
+#endif
 
     CRASSERT(t->maxLevel);
 
@@ -3145,4 +3150,50 @@ crStateIsTexture(GLuint texture)
 
     GET_TOBJ(tobj, g, texture);
     return tobj != NULL;
+}
+
+static void crStateCheckTextureHWIDCB(unsigned long key, void *data1, void *data2)
+{
+    CRTextureObj *pTex = (CRTextureObj *) data1;
+    crCheckIDHWID_t *pParms = (crCheckIDHWID_t*) data2;
+    (void) key;
+
+    if (crStateGetTextureObjHWID(pTex)==pParms->hwid)
+        pParms->id = pTex->id;
+}
+
+DECLEXPORT(GLuint) STATE_APIENTRY crStateTextureHWIDtoID(GLuint hwid)
+{
+    CRContext *g = GetCurrentContext();
+    crCheckIDHWID_t parms;
+
+    parms.id = hwid;
+    parms.hwid = hwid;
+
+    crHashtableWalk(g->shared->textureTable, crStateCheckTextureHWIDCB, &parms);
+    return parms.id;
+}
+
+DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureHWID(GLuint id)
+{
+    CRContext *g = GetCurrentContext();
+    CRTextureObj *tobj = GET_TOBJ(tobj, g, id);
+
+    return tobj ? crStateGetTextureObjHWID(tobj) : 0;
+}
+
+DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureObjHWID(CRTextureObj *tobj)
+{
+    CRASSERT(tobj);
+
+#ifndef IN_GUEST
+    if (tobj->id && !tobj->hwid)
+    {
+        CRASSERT(diff_api.GenTextures);
+        diff_api.GenTextures(1, &tobj->hwid);
+        CRASSERT(tobj->hwid);
+    }
+#endif
+
+    return tobj->hwid;
 }

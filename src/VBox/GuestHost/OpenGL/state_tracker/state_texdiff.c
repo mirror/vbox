@@ -184,37 +184,37 @@ void crStateTextureSwitch( CRTextureBits *tb, CRbitvalue *bitID,
                 diff_api.ActiveTextureARB( i + GL_TEXTURE0_ARB );
                 activeUnit = i;
             }
-            if (from->unit[i].currentTexture1D->name != to->unit[i].currentTexture1D->name) 
+            if (from->unit[i].currentTexture1D->id != to->unit[i].currentTexture1D->id) 
             {
-                diff_api.BindTexture(GL_TEXTURE_1D, to->unit[i].currentTexture1D->name);
+                diff_api.BindTexture(GL_TEXTURE_1D, crStateGetTextureObjHWID(to->unit[i].currentTexture1D));
                 FILLDIRTY(tb->current[i]);
                 FILLDIRTY(tb->dirty);
             }
-            if (from->unit[i].currentTexture2D->name != to->unit[i].currentTexture2D->name) 
+            if (from->unit[i].currentTexture2D->id != to->unit[i].currentTexture2D->id) 
             {
-                diff_api.BindTexture(GL_TEXTURE_2D, to->unit[i].currentTexture2D->name);
+                diff_api.BindTexture(GL_TEXTURE_2D, crStateGetTextureObjHWID(to->unit[i].currentTexture2D));
                 FILLDIRTY(tb->current[i]);
                 FILLDIRTY(tb->dirty);
             }
 #ifdef CR_OPENGL_VERSION_1_2
-            if (from->unit[i].currentTexture3D->name != to->unit[i].currentTexture3D->name) {
-                diff_api.BindTexture(GL_TEXTURE_3D, to->unit[i].currentTexture3D->name);
+            if (from->unit[i].currentTexture3D->id != to->unit[i].currentTexture3D->id) {
+                diff_api.BindTexture(GL_TEXTURE_3D, crStateGetTextureObjHWID(to->unit[i].currentTexture3D));
                 FILLDIRTY(tb->current[i]);
                 FILLDIRTY(tb->dirty);
             }
 #endif
 #ifdef CR_ARB_texture_cube_map
             if (fromCtx->extensions.ARB_texture_cube_map &&
-                from->unit[i].currentTextureCubeMap->name != to->unit[i].currentTextureCubeMap->name) {
-                diff_api.BindTexture(GL_TEXTURE_CUBE_MAP_ARB, to->unit[i].currentTextureCubeMap->name);
+                from->unit[i].currentTextureCubeMap->id != to->unit[i].currentTextureCubeMap->id) {
+                diff_api.BindTexture(GL_TEXTURE_CUBE_MAP_ARB, crStateGetTextureObjHWID(to->unit[i].currentTextureCubeMap));
                 FILLDIRTY(tb->current[i]);
                 FILLDIRTY(tb->dirty);
             }
 #endif
 #ifdef CR_NV_texture_rectangle
             if (fromCtx->extensions.NV_texture_rectangle &&
-                from->unit[i].currentTextureRect->name != to->unit[i].currentTextureRect->name) {
-                diff_api.BindTexture(GL_TEXTURE_RECTANGLE_NV, to->unit[i].currentTextureRect->name);
+                from->unit[i].currentTextureRect->id != to->unit[i].currentTextureRect->id) {
+                diff_api.BindTexture(GL_TEXTURE_RECTANGLE_NV, crStateGetTextureObjHWID(to->unit[i].currentTextureRect));
                 FILLDIRTY(tb->current[i]);
                 FILLDIRTY(tb->dirty);
             }
@@ -615,7 +615,7 @@ crStateTextureObjectDiff(CRContext *fromCtx,
     }
 #endif
 
-    diff_api.BindTexture( tobj->target, tobj->name );
+    diff_api.BindTexture(tobj->target, crStateGetTextureObjHWID(tobj));
 
     if (alwaysDirty || CHECKDIRTY(tobj->paramsBit[u], bitID)) 
     {
@@ -1303,7 +1303,7 @@ crStateTextureDiff( CRTextureBits *tb, CRbitvalue *bitID,
             {
                 if (*fromBinding != tobj)
                 {
-                    diff_api.BindTexture(tobj->target, tobj->name);
+                    diff_api.BindTexture(tobj->target, crStateGetTextureObjHWID(tobj));
                     *fromBinding = tobj;
                 }
             }
@@ -1388,14 +1388,14 @@ crStateDiffAllTextureObjects( CRContext *g, CRbitvalue *bitID, GLboolean bForceU
 
     /* save current texture bindings */
     origUnit = g->texture.curTextureUnit;
-    orig1D = g->texture.unit[0].currentTexture1D->name;
-    orig2D = g->texture.unit[0].currentTexture2D->name;
-    orig3D = g->texture.unit[0].currentTexture3D->name;
+    orig1D = crStateGetTextureObjHWID(g->texture.unit[0].currentTexture1D);
+    orig2D = crStateGetTextureObjHWID(g->texture.unit[0].currentTexture2D);
+    orig3D = crStateGetTextureObjHWID(g->texture.unit[0].currentTexture3D);
 #ifdef CR_ARB_texture_cube_map
-    origCube = g->texture.unit[0].currentTextureCubeMap->name;
+    origCube = crStateGetTextureObjHWID(g->texture.unit[0].currentTextureCubeMap);
 #endif
 #ifdef CR_NV_texture_rectangle
-    origRect = g->texture.unit[0].currentTextureRect->name;
+    origRect = crStateGetTextureObjHWID(g->texture.unit[0].currentTextureRect);
 #endif
 
     /* use texture unit 0 for updates */
