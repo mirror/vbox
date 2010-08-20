@@ -5,7 +5,7 @@
 
 #
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -97,6 +97,7 @@ OBJS   = \
 	r0drv/linux/timer-r0drv-linux.o \
 	r0drv/generic/semspinmutex-r0drv-generic.o \
 	common/alloc/alloc.o \
+	common/checksum/crc32.o \
 	common/checksum/ipv4.o \
 	common/checksum/ipv6.o \
 	common/err/RTErrConvertFromErrno.o \
