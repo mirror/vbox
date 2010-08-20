@@ -27,6 +27,7 @@
 #include <VBox/param.h>
 #include <VBox/ssm.h>
 #include <VBox/log.h>
+#include <VBox/pgm.h>
 
 #include <iprt/assert.h>
 #include <iprt/thread.h>
@@ -294,13 +295,12 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
     {
         if (!pVM->ftm.s.fCheckpointingActive)
         {
-            int rc2 = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
-            AssertMsg(rc2 == VINF_SUCCESS, ("%Rrc\n", rc));
+            rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
+            AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
 
             /* sync the changed memory with the standby node. */
 
             PDMCritSectLeave(&pVM->ftm.s.CritSect);
-
         }
         rc = RTSemEventWait(pVM->ftm.s.master.hShutdownEvent, pVM->ftm.s.uInterval);
         if (rc != VERR_TIMEOUT)
@@ -447,6 +447,14 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
             return rc;
 
         pVM->fFaultTolerantMaster = true;
+        if (PGMIsUsingLargePages(pVM))
+        {
+            /* Must disable large page usage as 2 MB pages are too big to write monitor. */
+            LogRel(("FTSync: disabling large page usage.\n"));
+            PGMSetLargePageUsage(pVM, false);
+        }
+        /** @todo might need to disable page fusion as well */
+
         return VMR3PowerOn(pVM);
     }
     else

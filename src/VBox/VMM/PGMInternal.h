@@ -3223,16 +3223,6 @@ typedef struct PGM
     STAMCOUNTER                     StatLargePageRecheck;               /**< The number of times we rechecked a disabled large page.*/
     /** @} */
 
-#ifdef DEBUG_sandervl
-    PTMTIMERR3                      pPhysWritesCountTimer;
-    uint32_t                        u32PhysWriteCountTimerInterval;
-    bool                            fCountingPhysWrites;
-    uint8_t                         u8Alignment[3];
-
-    STAMCOUNTER                     StatR3FTPhysPageWrite;              /**< R3: The number of times a physical page was written to (FT stats) */
-    STAMCOUNTER                     StatRZFTPhysPageWrite;              /**< RC/R0: The number of times a physical page was written to (FT stats) */
-#endif
-
 #ifdef VBOX_WITH_STATISTICS
     /** @name Statistics on the heap.
      * @{ */
