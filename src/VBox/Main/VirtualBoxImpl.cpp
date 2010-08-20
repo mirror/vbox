@@ -3346,14 +3346,12 @@ HRESULT VirtualBox::registerHardDisk(Medium *pMedium,
     if (FAILED(rc)) return rc;
 
     if (strConflict.length())
-    {
         return setError(E_INVALIDARG,
                         tr("Cannot register the hard disk '%s' {%RTuuid} because a %s already exists"),
                         strLocationFull.c_str(),
                         id.raw(),
                         strConflict.c_str(),
                         m->strSettingsFilePath.c_str());
-    }
 
     // store base (root) hard disks in the list
     if (pParent.isNull())
@@ -3536,6 +3534,85 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
             *pfNeedsGlobalSaveSettings = true;
 
     return rc;
+}
+
+/**
+ * Little helper called from unregisterMachineMedia() to recursively add media to the given list,
+ * with children appearing before their parents.
+ * @param llMedia
+ * @param pMedium
+ */
+void VirtualBox::pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium)
+{
+    // recurse first, then add ourselves; this way children end up on the
+    // list before their parents
+
+    const MediaList &llChildren = pMedium->getChildren();
+    for (MediaList::const_iterator it = llChildren.begin();
+         it != llChildren.end();
+         ++it)
+    {
+        Medium *pChild = *it;
+        pushMediumToListWithChildren(llMedia, pChild);
+    }
+
+    Log(("Pushing medium %RTuuid\n", pMedium->getId().raw()));
+    llMedia.push_back(pMedium);
+}
+
+/**
+ * Unregisters all Medium objects which belong to the given machine registry.
+ * Gets called from Machine::uninit() just before the machine object dies
+ * and must only be called with a machine UUID as the registry ID.
+ *
+ * Locks the media tree.
+ *
+ * @param uuidMachine Medium registry ID (always a machine UUID)
+ * @return
+ */
+HRESULT VirtualBox::unregisterMachineMedia(const Guid &uuidMachine)
+{
+    Assert(!uuidMachine.isEmpty());
+
+    LogFlowFuncEnter();
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    MediaList llMedia2Close;
+
+    {
+        AutoWriteLock mlock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        for (MediaOList::iterator it = m->allHardDisks.getList().begin();
+             it != m->allHardDisks.getList().end();
+             ++it)
+        {
+            ComObjPtr<Medium> pMedium = *it;
+
+            const Guid &uuidRegistryThis = pMedium->getRegistryId();
+            if (    !uuidRegistryThis.isEmpty()
+                 && (uuidRegistryThis == uuidMachine)
+               )
+            {
+                // recursively with children first
+                pushMediumToListWithChildren(llMedia2Close, pMedium);
+            }
+        }
+    }
+
+    for (MediaList::iterator it = llMedia2Close.begin();
+         it != llMedia2Close.end();
+         ++it)
+    {
+        ComObjPtr<Medium> pMedium = *it;
+        Log(("Closing medium %RTuuid\n", pMedium->getId().raw()));
+        AutoCaller mac(pMedium);
+        pMedium->close(NULL /* pfNeedsGlobalSaveSettings*/, mac);
+    }
+
+    LogFlowFuncLeave();
+
+    return S_OK;
 }
 
 /**

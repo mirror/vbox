@@ -252,6 +252,9 @@ public:
     HRESULT registerImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsGlobalSaveSettings);
     HRESULT unregisterImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsGlobalSaveSettings);
 
+    void pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium);
+    HRESULT unregisterMachineMedia(const Guid &id);
+
     HRESULT unregisterMachine(Machine *pMachine, const Guid &id);
 
     void rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDir,
