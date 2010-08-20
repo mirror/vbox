@@ -372,7 +372,7 @@ DECLINLINE(void) setImageDataOffset(PVDIHEADER ph, uint32_t offData)
     switch (GET_MAJOR_HEADER_VERSION(ph))
     {
         case 0: return;
-        case 1: ph->u.v1.offData = offData;
+        case 1: ph->u.v1.offData = offData; return;
     }
     AssertFailed();
 }
