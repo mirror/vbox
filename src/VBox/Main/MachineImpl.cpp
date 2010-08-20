@@ -754,6 +754,9 @@ void Machine::uninit()
         Assert(mData->mSession.mMachine.isNull());
     }
 
+    // uninit media from this machine's media registry
+    mParent->unregisterMachineMedia(getId());
+
     /* the lock is no more necessary (SessionMachine is uninitialized) */
     alock.leave();
 
