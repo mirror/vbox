@@ -2176,11 +2176,6 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                 PteSrc.n.u1User     = 1;
 
                 PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
-#ifdef DEBUG_sandervl
-                if (pVM->pgm.s.fCountingPhysWrites)
-                    pPTDst->a[iPTDst].n.u1Write = 0;
-#endif
-
                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
                       GCPtrCurPage, PteSrc.n.u1Present,
                       PteSrc.n.u1Write & PdeSrc.n.u1Write,
@@ -2202,14 +2197,6 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
         const unsigned  iPTDst       = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
         RTGCPTR         GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
         GSTPTE          PteSrc;
-
-#ifdef DEBUG_sandervl
-        if (    pVM->pgm.s.fCountingPhysWrites
-            &&  ((uErr & (X86_TRAP_PF_RW|X86_TRAP_PF_P)) == (X86_TRAP_PF_RW|X86_TRAP_PF_P)))
-        {
-            STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat, FTPhysPageWrite));
-        }
-#endif
 
         /* Fake the page table entry */
         PteSrc.u = GCPtrCurPage;

@@ -630,10 +630,6 @@ static DECLCALLBACK(int)  pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
 # ifdef VBOX_STRICT
 static DECLCALLBACK(int)  pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 # endif
-# ifdef DEBUG_sandervl
-static DECLCALLBACK(int)  pgmR3CmdCountPhysWrites(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(void) pgmR3PhysWriteCountTMCallback(PVM pVM, PTMTIMER pTimer, void *pvUser);
-# endif
 static DECLCALLBACK(int)  pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 #endif
 
@@ -679,9 +675,6 @@ static const DBGCCMD    g_aCmds[] =
     { "pgmcheckduppages", 0, 0,     NULL,                     0,            NULL,               0,          pgmR3CmdCheckDuplicatePages,  "",           "Check for duplicate pages in all running VMs." },
     { "pgmsharedmodules", 0, 0,     NULL,                     0,            NULL,               0,          pgmR3CmdShowSharedModules,  "",             "Print shared modules info." },
 #  endif
-# endif
-# ifdef DEBUG_sandervl
-    { "pgmcountphyswrites", 2, 2,   &g_aPgmCountPhysWritesArgs[0], 2,       NULL,               0,          pgmR3CmdCountPhysWrites, "",                "Count physical page writes."},
 # endif
     { "pgmsyncalways", 0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
     { "pgmphystofile", 1, 2,        &g_aPgmPhysToFileArgs[0], 2,            NULL,               0,          pgmR3CmdPhysToFile, "",                     "Save the physical memory to file." },
@@ -1672,11 +1665,6 @@ static int pgmR3InitStats(PVM pVM)
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b); \
         AssertRC(rc);
 
-# ifdef DEBUG_sandervl
-    PGM_REG_COUNTER(&pPGM->StatRZFTPhysPageWrite,             "/PGM/FT/RZ/PageWrite",               "The number of times a physical page was written to (FT stats).");
-    PGM_REG_COUNTER(&pPGM->StatR3FTPhysPageWrite,             "/PGM/FT/R3/PageWrite",               "The number of times a physical page was written to (FT stats).");
-# endif
-
     PGMSTATS *pStats = pVM->pgm.s.pStatsR3;
 
     PGM_REG_PROFILE(&pStats->StatAllocLargePage,                "/PGM/LargePage/Prof/Alloc",          "Time spent by the host OS for large page allocation.");
@@ -2142,11 +2130,6 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
      */
     if (pVM->pgm.s.fRamPreAlloc)
         rc = pgmR3PhysRamPreAllocate(pVM);
-
-#ifdef DEBUG_sandervl
-    rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, pgmR3PhysWriteCountTMCallback, NULL, "Physical page write counting timer", &pVM->pgm.s.pPhysWritesCountTimer);
-    AssertRC(rc);
-#endif
 
     LogRel(("PGMR3InitFinalize: 4 MB PSE mask %RGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
     return rc;
@@ -4312,74 +4295,6 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
     return VINF_SUCCESS;
 }
-
-# ifdef DEBUG_sandervl
-/**
- * Internal timer callback function.
- *
- * @param   pVM             The VM.
- * @param   pTimer          The timer handle.
- * @param   pvUser          User argument specified upon timer creation.
- */
-static DECLCALLBACK(void) pgmR3PhysWriteCountTMCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
-{
-    if (pVM->pgm.s.fCountingPhysWrites)
-    {
-        pgmR3PoolClearAll(pVM, true/* fFlushRemTlb */);
-
-        /* Program next invocation. */
-        int rc = TMTimerSetMillies(pVM->pgm.s.pPhysWritesCountTimer, pVM->pgm.s.u32PhysWriteCountTimerInterval);
-        AssertRC(rc);
-    }
-}
-
-/**
- * The '.pgmcountphyswrites' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
- */
-static DECLCALLBACK(int) pgmR3CmdCountPhysWrites(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
-{
-    /*
-     * Validate input.
-     */
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
-    if (    cArgs != 2
-        ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING
-        ||  paArgs[1].enmType != DBGCVAR_TYPE_NUMBER)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: parser error, invalid arguments.\n");
-
-    if (!strcmp(paArgs[0].u.pszString, "off"))
-    {
-        if (!pVM->pgm.s.fCountingPhysWrites)
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: not enabled!\n");
-
-        TMTimerStop(pVM->pgm.s.pPhysWritesCountTimer);
-        pVM->pgm.s.fCountingPhysWrites = false;
-        return VINF_SUCCESS;
-    }
-    else
-    if (strcmp(paArgs[0].u.pszString, "on"))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid 1st argument '%s', must be 'on' or 'off'.\n", paArgs[0].u.pszString);
-
-    if (    paArgs[1].u.u64Number < 10
-        ||  paArgs[1].u.u64Number > 1000)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid 2nd argument '%d', must be between 10 and 1000 ms.\n", paArgs[1].u.u64Number);
-
-    pVM->pgm.s.u32PhysWriteCountTimerInterval = paArgs[1].u.u64Number;
-    pVM->pgm.s.fCountingPhysWrites = true;
-    int rc = TMTimerSetMillies(pVM->pgm.s.pPhysWritesCountTimer, paArgs[1].u.u64Number);
-    AssertRC(rc);
-    return VINF_SUCCESS;
-}
-# endif /* DEBUG_sandervl */
-
 #endif /* VBOX_STRICT */
 
 
