@@ -159,6 +159,7 @@ Machine::HWData::HWData()
     mHWVirtExLargePagesEnabled = false;
 #endif
     mHWVirtExVPIDEnabled = true;
+    mHWVirtExForceEnabled = false;
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
     mHWVirtExExclusive = false;
 #else
@@ -1964,6 +1965,9 @@ STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
         case HWVirtExPropertyType_LargePages:
             *aVal = mHWData->mHWVirtExLargePagesEnabled;
             break;
+            
+        case HWVirtExPropertyType_Force:
+            *aVal = mHWData->mHWVirtExForceEnabled;
 
         default:
             return E_INVALIDARG;
@@ -2013,6 +2017,12 @@ STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
             mHWData->mHWVirtExLargePagesEnabled = !!aVal;
             break;
 
+        case HWVirtExPropertyType_Force:
+            setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mHWVirtExForceEnabled = !!aVal;
+            break;
+            
         default:
             return E_INVALIDARG;
     }
@@ -7021,6 +7031,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mHWVirtExNestedPagingEnabled = data.fNestedPaging;
         mHWData->mHWVirtExLargePagesEnabled   = data.fLargePages;
         mHWData->mHWVirtExVPIDEnabled         = data.fVPID;
+        mHWData->mHWVirtExForceEnabled        = data.fHardwareVirtForce;
         mHWData->mPAEEnabled                  = data.fPAE;
         mHWData->mSyntheticCpu                = data.fSyntheticCpu;
 
@@ -8055,6 +8066,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.fNestedPaging          = !!mHWData->mHWVirtExNestedPagingEnabled;
         data.fLargePages            = !!mHWData->mHWVirtExLargePagesEnabled;
         data.fVPID                  = !!mHWData->mHWVirtExVPIDEnabled;
+        data.fHardwareVirtForce     = !!mHWData->mHWVirtExForceEnabled;
         data.fPAE                   = !!mHWData->mPAEEnabled;
         data.fSyntheticCpu          = !!mHWData->mSyntheticCpu;
 
