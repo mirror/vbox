@@ -467,8 +467,8 @@
     <xsl:with-param name="name" select="@name" />
   </xsl:call-template>
   <xsl:value-of select="       '    END_COM_MAP()&#10;'" />
-  <xsl:value-of select="concat('    ', $implName, '() {}&#10;')" />
-  <xsl:value-of select="concat('    virtual ~', $implName, '() {}&#10;')" />
+  <xsl:value-of select="concat('    ',$implName,'() { /*printf(&quot;',$implName,'\n&quot;)*/;}&#10;')" />
+  <xsl:value-of select="concat('    virtual ~',$implName,'() { /*printf(&quot;~',$implName,'\n&quot;)*/; uninit(); }&#10;')" />
   <xsl:text><![CDATA[
     HRESULT FinalConstruct()
     {
@@ -500,7 +500,11 @@
     }
     void uninit()
     {
-        mEvent->uninit();
+        if (!mEvent.isNull())
+        {
+           mEvent->uninit();
+           mEvent.setNull();
+        }
     }
 ]]></xsl:text>
   <xsl:choose>
@@ -691,9 +695,9 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
   </xsl:call-template>
 
 <xsl:text><![CDATA[
-  #include <VBox/com/array.h>
-  #include <iprt/asm.h>
-  #include "EventImpl.h"
+#include <VBox/com/array.h>
+#include <iprt/asm.h>
+#include "EventImpl.h"
 ]]></xsl:text>
 
 
