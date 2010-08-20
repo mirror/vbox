@@ -2546,24 +2546,26 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
         rc = VERR_NOT_SUPPORTED;
     else if (cbSize > getImageDiskSize(&pImage->Header))
     {
-        unsigned cBlocksAllocated = getImageBlocksAllocated(&pImage->Header);
-        uint64_t cbNew  = cbSize - getImageDiskSize(&pImage->Header);
-        uint32_t cBlocksNew = cbNew / getImageBlockSize(&pImage->Header);
-        if (cbNew % getImageBlockSize(&pImage->Header))
+        unsigned cBlocksAllocated = getImageBlocksAllocated(&pImage->Header); /** < Blocks currently allocated, doesn't change during resize */
+        uint32_t cBlocksNew = cbSize / getImageBlockSize(&pImage->Header);    /** < New number of blocks in the image after the resize */
+        if (cbSize % getImageBlockSize(&pImage->Header))
             cBlocksNew++;
-        uint32_t cbAdditionalBlockspace = cBlocksNew * sizeof(VDIIMAGEBLOCKPOINTER);
-        uint64_t cbBlockspace = getImageBlocks(&pImage->Header) * sizeof(VDIIMAGEBLOCKPOINTER) + cbAdditionalBlockspace;
 
-        uint64_t offImageDataNew = RT_ALIGN_32(pImage->offStartBlocks + cbBlockspace, VDI_GEOMETRY_SECTOR_SIZE);
+        uint32_t cBlocksOld      = getImageBlocks(&pImage->Header);           /** < Number of blocks before the resize. */
+        uint64_t cbBlockspaceNew = cBlocksNew * sizeof(VDIIMAGEBLOCKPOINTER); /** < Required space for the block array after the resize. */
+        uint64_t offStartDataNew = RT_ALIGN_32(pImage->offStartBlocks + cbBlockspaceNew, VDI_GEOMETRY_SECTOR_SIZE); /** < New start offset for block data after the resize */
 
-        if (   pImage->offStartData != offImageDataNew
+        if (   pImage->offStartData != offStartDataNew
             && getImageBlocksAllocated(&pImage->Header) > 0)
         {
             /* Calculate how many sectors nee to be relocated. */
-            uint64_t cbOverlapping = offImageDataNew - pImage->offStartData;
+            uint64_t cbOverlapping = offStartDataNew - pImage->offStartData;
             unsigned cBlocksReloc = cbOverlapping / getImageBlockSize(&pImage->Header);
             if (cbOverlapping % getImageBlockSize(&pImage->Header))
                 cBlocksReloc++;
+
+            cBlocksReloc = RT_MIN(cBlocksReloc, cBlocksAllocated);
+            offStartDataNew = pImage->offStartData;
 
             /* Do the relocation. */
             LogFlow(("Relocating %u blocks\n", cBlocksReloc));
@@ -2575,7 +2577,6 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
             void *pvBuf = NULL, *pvZero = NULL;
             do
             {
-                uint64_t offBlockCur = pImage->offStartData;
                 VDIIMAGEBLOCKPOINTER uBlock = 0;
 
                 /* Allocate data buffer. */
@@ -2597,12 +2598,12 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
                 for (unsigned i = 0; i < cBlocksReloc; i++)
                 {
                     /* Search the index in the block table. */
-                    for (unsigned idxBlock = 0; idxBlock < cBlocksAllocated; idxBlock++)
+                    for (unsigned idxBlock = 0; idxBlock < cBlocksOld; idxBlock++)
                     {
                         if (pImage->paBlocks[idxBlock] == uBlock)
                         {
                             /* Read data and append to the end of the image. */
-                            rc = vdiFileReadSync(pImage, offBlockCur, pvBuf, pImage->cbTotalBlockData, NULL);
+                            rc = vdiFileReadSync(pImage, offStartDataNew, pvBuf, pImage->cbTotalBlockData, NULL);
                             if (RT_FAILURE(rc))
                                 break;
 
@@ -2616,26 +2617,29 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
                                 break;
 
                             /* Zero out the old block area. */
-                            rc = vdiFileWriteSync(pImage, offBlockCur, pvZero, pImage->cbTotalBlockData, NULL);
+                            rc = vdiFileWriteSync(pImage, offStartDataNew, pvZero, pImage->cbTotalBlockData, NULL);
                             if (RT_FAILURE(rc))
                                 break;
 
                             /* Update block counter. */
-                            pImage->paBlocks[idxBlock] = cBlocksAllocated;
+                            pImage->paBlocks[idxBlock] = cBlocksAllocated - 1;
 
                             /*
                              * Decrease the block number of all other entries in the array.
                              * They were moved one block to the front.
                              * Doing it as a separate step iterating over the array again
-                             * because an error while relocating the one block might end up
+                             * because an error while relocating the block might end up
                              * in a corrupted image otherwise.
                              */
-                            for (unsigned idxBlock2 = 0; idxBlock2 < cBlocksAllocated; idxBlock2++)
+                            for (unsigned idxBlock2 = 0; idxBlock2 < cBlocksOld; idxBlock2++)
                             {
                                 if (   idxBlock2 != idxBlock
                                     && IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[idxBlock2]))
                                     pImage->paBlocks[idxBlock2]--;
                             }
+
+                            /* Continue with the next block. */
+                            break;
                         }
                     }
 
@@ -2643,7 +2647,7 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
                         break;
 
                     uBlock++;
-                    offBlockCur += pImage->cbTotalBlockData;
+                    offStartDataNew += pImage->cbTotalBlockData;
                 }
             } while (0);
 
@@ -2654,16 +2658,25 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
         }
 
         /*
+         * We need to update the new offsets for the image data in the out of memory
+         * case too because we relocated the blocks already.
+         */
+        pImage->offStartData = offStartDataNew;
+        setImageDataOffset(&pImage->Header, offStartDataNew);
+
+        /*
          * Relocation done, expand the block array and update the header with
          * the new data.
          */
         if (RT_SUCCESS(rc))
         {
-            PVDIIMAGEBLOCKPOINTER paBlocksNew = (PVDIIMAGEBLOCKPOINTER)RTMemRealloc(pImage->paBlocks, getImageBlocks(&pImage->Header) + cBlocksNew);
+            PVDIIMAGEBLOCKPOINTER paBlocksNew = (PVDIIMAGEBLOCKPOINTER)RTMemRealloc(pImage->paBlocks, cbBlockspaceNew);
             if (paBlocksNew)
             {
+                pImage->paBlocks = paBlocksNew;
+
                 /* Mark the new blocks as unallocated. */
-                for (unsigned idxBlock = getImageBlocks(&pImage->Header); idxBlock < getImageBlocks(&pImage->Header) + cBlocksNew; idxBlock++)
+                for (unsigned idxBlock = cBlocksOld; idxBlock < cBlocksNew; idxBlock++)
                     pImage->paBlocks[idxBlock] = VDI_IMAGE_BLOCK_FREE;
             }
             else
@@ -2671,34 +2684,26 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
 
             /* Write the block array before updating the rest. */
             rc = vdiFileWriteSync(pImage, pImage->offStartBlocks, pImage->paBlocks,
-                                  sizeof(VDIIMAGEBLOCKPOINTER) * (getImageBlocks(&pImage->Header) + cBlocksNew),
-                                  NULL);
-        }
+                                  cbBlockspaceNew, NULL);
 
-        if (RT_SUCCESS(rc))
-        {
-            /* Update size and new block count. */
-            setImageDiskSize(&pImage->Header, cbSize);
-            setImageBlocks(&pImage->Header, getImageBlocks(&pImage->Header) + cBlocksNew);
-            /* Update geometry. */
-            pImage->PCHSGeometry = *pPCHSGeometry;
-
-            PVDIDISKGEOMETRY pGeometry = getImageLCHSGeometry(&pImage->Header);
-            if (pGeometry)
+            if (RT_SUCCESS(rc))
             {
-                pGeometry->cCylinders = pLCHSGeometry->cCylinders;
-                pGeometry->cHeads = pLCHSGeometry->cHeads;
-                pGeometry->cSectors = pLCHSGeometry->cSectors;
-                pGeometry->cbSector = VDI_GEOMETRY_SECTOR_SIZE;
+                /* Update size and new block count. */
+                setImageDiskSize(&pImage->Header, cbSize);
+                setImageBlocks(&pImage->Header, cBlocksNew);
+                /* Update geometry. */
+                pImage->PCHSGeometry = *pPCHSGeometry;
+
+                PVDIDISKGEOMETRY pGeometry = getImageLCHSGeometry(&pImage->Header);
+                if (pGeometry)
+                {
+                    pGeometry->cCylinders = pLCHSGeometry->cCylinders;
+                    pGeometry->cHeads = pLCHSGeometry->cHeads;
+                    pGeometry->cSectors = pLCHSGeometry->cSectors;
+                    pGeometry->cbSector = VDI_GEOMETRY_SECTOR_SIZE;
+                }
             }
         }
-
-        /*
-         * We need to update the new offsets for the image data in the out of memory
-         * case too because we relocated the blocks already.
-         */
-        pImage->offStartData = offImageDataNew;
-        setImageDataOffset(&pImage->Header, offImageDataNew);
 
         /* Update header information in base image file. */
         vdiFlushImage(pImage);
