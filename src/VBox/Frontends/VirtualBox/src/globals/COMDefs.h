@@ -685,11 +685,8 @@ public:
         if (aIface)
         {
             mIface = NULL;
-#if !defined (VBOX_WITH_XPCOM)
-            B::mRC = aIface->QueryInterface (_ATL_IIDOF (I), (void **) &mIface);
-#else /* !defined (VBOX_WITH_XPCOM) */
-            B::mRC = aIface->QueryInterface (NS_GET_IID (I), (void **) &mIface);
-#endif /* !defined (VBOX_WITH_XPCOM) */
+            B::mRC = aIface->QueryInterface (COM_IIDOF (I), (void **) &mIface);
+            release (aIface);
         }
         else
         {
