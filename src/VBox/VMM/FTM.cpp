@@ -35,6 +35,31 @@
 #include <iprt/mem.h>
 #include <iprt/tcp.h>
 #include <iprt/semaphore.h>
+#include <iprt/asm.h>
+
+/*******************************************************************************
+ * Structures and Typedefs                                                     *
+ *******************************************************************************/
+
+/**
+ * TCP stream header.
+ *
+ * This is an extra layer for fixing the problem with figuring out when the SSM
+ * stream ends.
+ */
+typedef struct FTMTCPHDR
+{
+    /** Magic value. */
+    uint32_t    u32Magic;
+    /** The size of the data block following this header.
+     * 0 indicates the end of the stream, while UINT32_MAX indicates
+     * cancelation. */
+    uint32_t    cb;
+} FTMTCPHDR;
+/** Magic value for TELEPORTERTCPHDR::u32Magic. (Egberto Gismonti Amin) */
+#define FTMTCPHDR_MAGIC       UINT32_C(0x19471205)
+/** The max block size. */
+#define FTMTCPHDR_MAX_SIZE    UINT32_C(0x00fffff8)
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -231,6 +256,268 @@ static int ftmR3TcpReadACK(PVM pVM, const char *pszWhich, const char *pszNAckMsg
     }
     return VERR_INTERNAL_ERROR_3;
 }
+
+/**
+ * @copydoc SSMSTRMOPS::pfnWrite
+ */
+static DECLCALLBACK(int) ftmR3TcpOpWrite(void *pvUser, uint64_t offStream, const void *pvBuf, size_t cbToWrite)
+{
+    PVM pVM = (PVM)pvUser;
+
+    AssertReturn(cbToWrite > 0, VINF_SUCCESS);
+    AssertReturn(cbToWrite < UINT32_MAX, VERR_OUT_OF_RANGE);
+    AssertReturn(pVM->fFaultTolerantMaster, VERR_INVALID_HANDLE);
+
+    for (;;)
+    {
+        FTMTCPHDR Hdr;
+        Hdr.u32Magic = FTMTCPHDR_MAGIC;
+        Hdr.cb       = RT_MIN((uint32_t)cbToWrite, FTMTCPHDR_MAX_SIZE);
+        int rc = RTTcpSgWriteL(pVM->ftm.s.hSocket, 2, &Hdr, sizeof(Hdr), pvBuf, (size_t)Hdr.cb);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("FTSync/TCP: Write error: %Rrc (cb=%#x)\n", rc, Hdr.cb));
+            return rc;
+        }
+        pVM->ftm.s.syncstate.uOffStream += Hdr.cb;
+        if (Hdr.cb == cbToWrite)
+            return VINF_SUCCESS;
+
+        /* advance */
+        cbToWrite -= Hdr.cb;
+        pvBuf = (uint8_t const *)pvBuf + Hdr.cb;
+    }
+}
+
+
+/**
+ * Selects and poll for close condition.
+ *
+ * We can use a relatively high poll timeout here since it's only used to get
+ * us out of error paths.  In the normal cause of events, we'll get a
+ * end-of-stream header.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pState          The teleporter state data.
+ */
+static int ftmR3TcpReadSelect(PVM pVM)
+{
+    int rc;
+    do
+    {
+        rc = RTTcpSelectOne(pVM->ftm.s.hSocket, 1000);
+        if (RT_FAILURE(rc) && rc != VERR_TIMEOUT)
+        {
+            pVM->ftm.s.syncstate.fIOError = true;
+            LogRel(("FTSync/TCP: Header select error: %Rrc\n", rc));
+            break;
+        }
+        if (pVM->ftm.s.syncstate.fStopReading)
+        {
+            rc = VERR_EOF;
+            break;
+        }
+    } while (rc == VERR_TIMEOUT);
+    return rc;
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnRead
+ */
+static DECLCALLBACK(int) ftmR3TcpOpRead(void *pvUser, uint64_t offStream, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    PVM pVM = (PVM)pvUser;
+    AssertReturn(!pVM->fFaultTolerantMaster, VERR_INVALID_HANDLE);
+
+    for (;;)
+    {
+        int rc;
+
+        /*
+         * Check for various conditions and may have been signalled.
+         */
+        if (pVM->ftm.s.syncstate.fEndOfStream)
+            return VERR_EOF;
+        if (pVM->ftm.s.syncstate.fStopReading)
+            return VERR_EOF;
+        if (pVM->ftm.s.syncstate.fIOError)
+            return VERR_IO_GEN_FAILURE;
+
+        /*
+         * If there is no more data in the current block, read the next
+         * block header.
+         */
+        if (!pVM->ftm.s.syncstate.cbReadBlock)
+        {
+            rc = ftmR3TcpReadSelect(pVM);
+            if (RT_FAILURE(rc))
+                return rc;
+            FTMTCPHDR Hdr;
+            rc = RTTcpRead(pVM->ftm.s.hSocket, &Hdr, sizeof(Hdr), NULL);
+            if (RT_FAILURE(rc))
+            {
+                pVM->ftm.s.syncstate.fIOError = true;
+                LogRel(("FTSync/TCP: Header read error: %Rrc\n", rc));
+                return rc;
+            }
+
+            if (RT_UNLIKELY(   Hdr.u32Magic != FTMTCPHDR_MAGIC
+                            || Hdr.cb > FTMTCPHDR_MAX_SIZE
+                            || Hdr.cb == 0))
+            {
+                if (    Hdr.u32Magic == FTMTCPHDR_MAGIC
+                    &&  (   Hdr.cb == 0
+                         || Hdr.cb == UINT32_MAX)
+                   )
+                {
+                    pVM->ftm.s.syncstate.fEndOfStream = true;
+                    pVM->ftm.s.syncstate.cbReadBlock  = 0;
+                    return Hdr.cb ? VERR_SSM_CANCELLED : VERR_EOF;
+                }
+                pVM->ftm.s.syncstate.fIOError = true;
+                LogRel(("FTSync/TCP: Invalid block: u32Magic=%#x cb=%#x\n", Hdr.u32Magic, Hdr.cb));
+                return VERR_IO_GEN_FAILURE;
+            }
+
+            pVM->ftm.s.syncstate.cbReadBlock = Hdr.cb;
+            if (pVM->ftm.s.syncstate.fStopReading)
+                return VERR_EOF;
+        }
+
+        /*
+         * Read more data.
+         */
+        rc = ftmR3TcpReadSelect(pVM);
+        if (RT_FAILURE(rc))
+            return rc;
+        uint32_t cb = (uint32_t)RT_MIN(pVM->ftm.s.syncstate.cbReadBlock, cbToRead);
+        rc = RTTcpRead(pVM->ftm.s.hSocket, pvBuf, cb, pcbRead);
+        if (RT_FAILURE(rc))
+        {
+            pVM->ftm.s.syncstate.fIOError = true;
+            LogRel(("FTSync/TCP: Data read error: %Rrc (cb=%#x)\n", rc, cb));
+            return rc;
+        }
+        if (pcbRead)
+        {
+            cb = (uint32_t)*pcbRead;
+            pVM->ftm.s.syncstate.uOffStream   += cb;
+            pVM->ftm.s.syncstate.cbReadBlock -= cb;
+            return VINF_SUCCESS;
+        }
+        pVM->ftm.s.syncstate.uOffStream   += cb;
+        pVM->ftm.s.syncstate.cbReadBlock -= cb;
+        if (cbToRead == cb)
+            return VINF_SUCCESS;
+
+        /* Advance to the next block. */
+        cbToRead -= cb;
+        pvBuf = (uint8_t *)pvBuf + cb;
+    }
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnSeek
+ */
+static DECLCALLBACK(int) ftmR3TcpOpSeek(void *pvUser, int64_t offSeek, unsigned uMethod, uint64_t *poffActual)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnTell
+ */
+static DECLCALLBACK(uint64_t) ftmR3TcpOpTell(void *pvUser)
+{
+    PVM pVM = (PVM)pvUser;
+    return pVM->ftm.s.syncstate.uOffStream;
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnSize
+ */
+static DECLCALLBACK(int) ftmR3TcpOpSize(void *pvUser, uint64_t *pcb)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnIsOk
+ */
+static DECLCALLBACK(int) ftmR3TcpOpIsOk(void *pvUser)
+{
+    PVM pVM = (PVM)pvUser;
+
+    if (pVM->fFaultTolerantMaster)
+    {
+        /* Poll for incoming NACKs and errors from the other side */
+        int rc = RTTcpSelectOne(pVM->ftm.s.hSocket, 0);
+        if (rc != VERR_TIMEOUT)
+        {
+            if (RT_SUCCESS(rc))
+            {
+                LogRel(("FTSync/TCP: Incoming data detect by IsOk, assuming it is a cancellation NACK.\n"));
+                rc = VERR_SSM_CANCELLED;
+            }
+            else
+                LogRel(("FTSync/TCP: RTTcpSelectOne -> %Rrc (IsOk).\n", rc));
+            return rc;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnClose
+ */
+static DECLCALLBACK(int) ftmR3TcpOpClose(void *pvUser, bool fCanceled)
+{
+    PVM pVM = (PVM)pvUser;
+
+    if (pVM->fFaultTolerantMaster)
+    {
+        FTMTCPHDR EofHdr;
+        EofHdr.u32Magic = FTMTCPHDR_MAGIC;
+        EofHdr.cb       = fCanceled ? UINT32_MAX : 0;
+        int rc = RTTcpWrite(pVM->ftm.s.hSocket, &EofHdr, sizeof(EofHdr));
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("FTSync/TCP: EOF Header write error: %Rrc\n", rc));
+            return rc;
+        }
+    }
+    else
+    {
+        ASMAtomicWriteBool(&pVM->ftm.s.syncstate.fStopReading, true);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Method table for a TCP based stream.
+ */
+static SSMSTRMOPS const g_ftmR3TcpOps =
+{
+    SSMSTRMOPS_VERSION,
+    ftmR3TcpOpWrite,
+    ftmR3TcpOpRead,
+    ftmR3TcpOpSeek,
+    ftmR3TcpOpTell,
+    ftmR3TcpOpSize,
+    ftmR3TcpOpIsOk,
+    ftmR3TcpOpClose,
+    SSMSTRMOPS_VERSION
+};
 
 /**
  * Thread function which starts syncing process for this master VM
@@ -505,6 +792,15 @@ VMMR3DECL(int) FTMR3SyncState(PVM pVM)
     pVM->ftm.s.fCheckpointingActive = true;
     int rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
     AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+
+    /* Reset the sync state. */
+    pVM->ftm.s.syncstate.uOffStream   = 0;
+    pVM->ftm.s.syncstate.cbReadBlock  = 0;
+    pVM->ftm.s.syncstate.fStopReading = false;
+    pVM->ftm.s.syncstate.fIOError     = false;
+    pVM->ftm.s.syncstate.fEndOfStream = false;
+
+    /** @todo sync state + changed memory. */
 
     PDMCritSectLeave(&pVM->ftm.s.CritSect);
     pVM->ftm.s.fCheckpointingActive = false;
