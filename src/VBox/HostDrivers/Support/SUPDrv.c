@@ -46,10 +46,10 @@
 #include <iprt/spinlock.h>
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
-#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_WINDOWS)
-# include <iprt/net.h>
-# include <iprt/crc32.h>
-# include <iprt/string.h>
+#include <iprt/net.h>
+#include <iprt/crc32.h>
+#include <iprt/string.h>
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 # include <iprt/rand.h>
 # include <iprt/path.h>
 #endif
@@ -299,8 +299,22 @@ static SUPFUNC g_aFunctions[] =
     { "RTAssertMayPanic",                       (void *)RTAssertMayPanic },
     { "RTAssertSetMayPanic",                    (void *)RTAssertSetMayPanic },
     { "RTAssertAreQuiet",                       (void *)RTAssertAreQuiet },
-#ifdef RT_OS_WINDOWS
-    /* We need to include more of our runtime to prevent the dynamically linked R0 modules to get too large. */
+    { "RTStrFormat",                            (void *)RTStrFormat },
+    { "RTStrFormatNumber",                      (void *)RTStrFormatNumber },
+    { "RTStrFormatTypeDeregister",              (void *)RTStrFormatTypeDeregister },
+    { "RTStrFormatTypeRegister",                (void *)RTStrFormatTypeRegister },
+    { "RTStrFormatTypeSetUser",                 (void *)RTStrFormatTypeSetUser },
+    { "RTStrFormatV",                           (void *)RTStrFormatV },
+    { "RTStrPrintf",                            (void *)RTStrPrintf },
+    { "RTStrPrintfEx",                          (void *)RTStrPrintfEx },
+    { "RTStrPrintfExV",                         (void *)RTStrPrintfExV },
+    { "RTStrPrintfV",                           (void *)RTStrPrintfV },
+    { "RTHandleTableAllocWithCtx",              (void *)RTHandleTableAllocWithCtx },
+    { "RTHandleTableCreate",                    (void *)RTHandleTableCreate },
+    { "RTHandleTableCreateEx",                  (void *)RTHandleTableCreateEx },
+    { "RTHandleTableDestroy",                   (void *)RTHandleTableDestroy },
+    { "RTHandleTableFreeWithCtx",               (void *)RTHandleTableFreeWithCtx },
+    { "RTHandleTableLookupWithCtx",             (void *)RTHandleTableLookupWithCtx },
     { "RTNetIPv4AddDataChecksum",               (void *)RTNetIPv4AddDataChecksum },
     { "RTNetIPv4AddTCPChecksum",                (void *)RTNetIPv4AddTCPChecksum },
     { "RTNetIPv4AddUDPChecksum",                (void *)RTNetIPv4AddUDPChecksum },
@@ -321,27 +335,10 @@ static SUPFUNC g_aFunctions[] =
     { "RTNetIPv6PseudoChecksumEx",              (void *)RTNetIPv6PseudoChecksumEx },
     { "RTNetTCPChecksum",                       (void *)RTNetTCPChecksum },
     { "RTNetUDPChecksum",                       (void *)RTNetUDPChecksum },
-    { "RTStrFormat",                            (void *)RTStrFormat },
-    { "RTStrFormatNumber",                      (void *)RTStrFormatNumber },
-    { "RTStrFormatTypeDeregister",              (void *)RTStrFormatTypeDeregister },
-    { "RTStrFormatTypeRegister",                (void *)RTStrFormatTypeRegister },
-    { "RTStrFormatTypeSetUser",                 (void *)RTStrFormatTypeSetUser },
-    { "RTStrFormatV",                           (void *)RTStrFormatV },
-    { "RTStrPrintf",                            (void *)RTStrPrintf },
-    { "RTStrPrintfEx",                          (void *)RTStrPrintfEx },
-    { "RTStrPrintfExV",                         (void *)RTStrPrintfExV },
-    { "RTStrPrintfV",                           (void *)RTStrPrintfV },
     { "RTCrc32",                                (void *)RTCrc32 },
     { "RTCrc32Finish",                          (void *)RTCrc32Finish },
     { "RTCrc32Process",                         (void *)RTCrc32Process },
     { "RTCrc32Start",                           (void *)RTCrc32Start },
-    { "RTHandleTableAllocWithCtx",              (void *)RTHandleTableAllocWithCtx },
-    { "RTHandleTableCreate",                    (void *)RTHandleTableCreate },
-    { "RTHandleTableCreateEx",                  (void *)RTHandleTableCreateEx },
-    { "RTHandleTableDestroy",                   (void *)RTHandleTableDestroy },
-    { "RTHandleTableFreeWithCtx",               (void *)RTHandleTableFreeWithCtx },
-    { "RTHandleTableLookupWithCtx",             (void *)RTHandleTableLookupWithCtx },
-#endif
 };
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
@@ -352,11 +349,7 @@ static SUPFUNC g_aFunctions[] =
 PFNRT g_apfnVBoxDrvIPRTDeps[] =
 {
     /* VBoxNetFlt */
-    (PFNRT)RTCrc32,
     (PFNRT)RTErrConvertFromErrno,
-    (PFNRT)RTNetIPv4IsHdrValid,
-    (PFNRT)RTNetIPv4TCPChecksum,
-    (PFNRT)RTNetIPv4UDPChecksum,
     (PFNRT)RTUuidCompare,
     (PFNRT)RTUuidCompareStr,
     (PFNRT)RTUuidFromStr,

@@ -104,7 +104,8 @@ SRCS += \
 .PATH:	${.CURDIR}/common/checksum
 SRCS += \
 	crc32.c \
-	ipv4.c
+	ipv4.c \
+	ipv6.c
 
 .PATH:	${.CURDIR}/common/table
 SRCS += \
