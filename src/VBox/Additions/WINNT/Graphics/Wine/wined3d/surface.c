@@ -481,6 +481,12 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
         cleanup(surface);
         return hr;
     }
+#ifdef VBOXWDDM
+    if (shared_handle && !*shared_handle)
+    {
+        *shared_handle = VBOXSHRC_GET_SHAREHANDLE(surface);
+    }
+#endif
 
     return hr;
 }
@@ -520,6 +526,12 @@ void surface_set_texture_name(IWineD3DSurface *iface, GLuint new_name, BOOL srgb
         IWineD3DSurface_ModifyLocation(iface, flag, FALSE);
     }
 
+#ifdef VBOXWDDM
+    if (VBOXSHRC_IS_SHARED(This))
+    {
+        VBOXSHRC_SET_SHAREHANDLE(This, new_name);
+    }
+#endif
     *name = new_name;
     surface_force_reload(iface);
 }
@@ -978,16 +990,33 @@ GLenum surface_get_gl_buffer(IWineD3DSurface *iface)
     return GL_BACK;
 }
 
+#ifdef VBOXWDDM
+static HRESULT WINAPI IWineD3DSurfaceImpl_LoadLocation(IWineD3DSurface *iface, DWORD flag, const RECT *rect);
+#endif
+
 /* Slightly inefficient way to handle multiple dirty rects but it works :) */
 void surface_add_dirty_rect(IWineD3DSurface *iface, const RECT *dirty_rect)
 {
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
     IWineD3DBaseTexture *baseTexture = NULL;
 
-    if (!(This->Flags & SFLAG_INSYSMEM) && (This->Flags & SFLAG_INTEXTURE))
-        IWineD3DSurface_LoadLocation(iface, SFLAG_INSYSMEM, NULL /* no partial locking for textures yet */);
+#ifdef VBOXWDDM
+    if (VBOXSHRC_IS_SHARED(This))
+    {
+        if (!VBOXSHRC_IS_SHARED_OPENED(This))
+            IWineD3DSurfaceImpl_LoadLocation(iface, SFLAG_INTEXTURE, NULL);
+        else
+            This->Flags |= SFLAG_INTEXTURE;
+    }
+    else
+#endif
+    {
+        if (!(This->Flags & SFLAG_INSYSMEM) && (This->Flags & SFLAG_INTEXTURE))
+            IWineD3DSurface_LoadLocation(iface, SFLAG_INSYSMEM, NULL /* no partial locking for textures yet */);
 
-    IWineD3DSurface_ModifyLocation(iface, SFLAG_INSYSMEM, TRUE);
+        IWineD3DSurface_ModifyLocation(iface, SFLAG_INSYSMEM, TRUE);
+    }
+
     if (dirty_rect)
     {
         This->dirtyRect.left = min(This->dirtyRect.left, dirty_rect->left);
@@ -2600,7 +2629,22 @@ static void WINAPI IWineD3DSurfaceImpl_BindTexture(IWineD3DSurface *iface, BOOL 
         if (!This->texture_level)
         {
             if (!*name) {
-                glGenTextures(1, name);
+#ifdef VBOXWDDM
+                if (VBOXSHRC_IS_SHARED_OPENED(This))
+                {
+                    *name = VBOXSHRC_GET_SHAREHANDLE(This);
+                }
+                else
+#endif
+                {
+                    glGenTextures(1, name);
+#ifdef VBOXWDDM
+                    if (VBOXSHRC_IS_SHARED(This))
+                    {
+                        VBOXSHRC_SET_SHAREHANDLE(This, *name);
+                    }
+#endif
+                }
                 checkGLcall("glGenTextures");
                 TRACE("Surface %p given name %d\n", This, *name);
 
@@ -4021,7 +4065,12 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_PrivateSetup(IWineD3DSurface *iface) {
         }
     }
 
-    This->Flags |= SFLAG_INSYSMEM;
+#ifdef VBOXWDDM
+    if (!VBOXSHRC_IS_SHARED(This))
+#endif
+    {
+        This->Flags |= SFLAG_INSYSMEM;
+    }
 
     return WINED3D_OK;
 }

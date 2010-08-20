@@ -2181,6 +2181,10 @@ static BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
 
     gl_info->supported[WINED3D_GL_EXT_NONE] = TRUE;
 
+#ifdef VBOXWDDM
+    gl_info->supported[VBOX_SHARED_CONTEXTS] = TRUE;
+#endif
+
     while (*GL_Extensions)
     {
         const char *start;

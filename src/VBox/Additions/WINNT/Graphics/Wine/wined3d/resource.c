@@ -65,6 +65,15 @@ HRESULT resource_init(IWineD3DResource *iface, WINED3DRESOURCETYPE resource_type
         resource->allocatedMemory = pvClientMem;
         resource->heapMemory = NULL;
     }
+    else if (pool == WINED3DPOOL_DEFAULT && shared_handle)
+    {
+        resource->allocatedMemory = NULL;
+        resource->heapMemory = NULL;
+        resource->sharerc_handle = shared_handle;
+        resource->sharerc_flags = VBOXSHRC_F_SHARED;
+        if (*shared_handle)
+            resource->sharerc_flags |= VBOXSHRC_F_SHARED_OPENED;
+    }
     else
 #endif
     {
