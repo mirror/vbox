@@ -53,6 +53,9 @@ typedef struct FTM
 
     /** Current active socket. */
     RTSOCKET            hSocket;
+#if HC_ARCH_BITS == 32
+    RTSOCKET            hSocketAlignment; /**< Alignment padding. */
+#endif
 
     /** State sync. */
     struct
@@ -85,6 +88,7 @@ typedef struct FTM
     STAMCOUNTER         StatSentMem;
     STAMCOUNTER         StatSentState;
 } FTM;
+AssertCompileMemberAlignment(FTM, CritSect, 8);
 
 /** @} */
 
