@@ -1802,7 +1802,7 @@ int CreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext)
                     rc = AllocMemoryArea(pVBoxCore);
                     if (RT_SUCCESS(rc))
                     {
-                        struct COREACCUMULATORS
+                        struct COREACCUMULATOR
                         {
                             const char        *pszName;
                             PFNCOREACCUMULATOR pfnAcc;
