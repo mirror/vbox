@@ -39,6 +39,11 @@ static WCHAR VBoxDACType[] = L"Integrated RAMDAC";
 static WCHAR VBoxAdapterString[] = L"VirtualBox Video Adapter";
 static WCHAR VBoxBiosString[] = L"Version 0xB0C2 or later";
 
+VIDEO_ACCESS_RANGE  VGARanges[] = {
+    { 0x000003B0, 0x00000000, 0x0000000C, 1, 1, 1, 0 }, /* 0x3B0-0x3BB */
+    { 0x000003C0, 0x00000000, 0x00000020, 1, 1, 1, 0 }, /* 0x3C0-0x3DF */
+    { 0x000A0000, 0x00000000, 0x00020000, 0, 0, 1, 0 }, /* 0xA0000-0xBFFFF */
+};
 /*
  * Globals for the last custom resolution set. This is important
  * for system startup so that we report the last currently set
@@ -78,6 +83,9 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
     InitData.HwSetPowerState = VBoxVideoSetPowerState;
     InitData.HwGetVideoChildDescriptor = VBoxVideoGetChildDescriptor;
     InitData.HwDeviceExtensionSize = sizeof(DEVICE_EXTENSION);
+    // report legacy VGA resource ranges
+    InitData.HwLegacyResourceList  = VGARanges;
+    InitData.HwLegacyResourceCount = sizeof(VGARanges) / sizeof(VGARanges[0]);
 
     // our DDK is at the Win2k3 level so we have to take special measures
     // for backwards compatibility
@@ -1868,13 +1876,14 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
 
           /* no matter what we get with VideoPortGetAccessRanges, we assert the default ranges */
       }
-#endif /* VBOX_WITH_HGSMI */
+#else
       rc = VideoPortVerifyAccessRanges(HwDeviceExtension, 1, AccessRanges);
       dprintf(("VBoxVideo::VBoxVideoFindAdapter: VideoPortVerifyAccessRanges returned 0x%x\n", rc));
       // @todo for some reason, I get an ERROR_INVALID_PARAMETER from NT4 SP0
       // It does not seem to like getting me these port addresses. So I just
       // pretend success to make the driver work.
       rc = NO_ERROR;
+#endif /* VBOX_WITH_HGSMI */
 
 #ifndef VBOX_WITH_HGSMI
       /* Initialize VBoxGuest library */
