@@ -430,7 +430,7 @@ $(VBOX_LNX_ADD_ARCHIVE.$(KBUILD_TARGET_ARCH)): \
 		$(VBOX_LNX_ADD_INST_DEP_ON_MAKEFILE) \
 		$(VBOX_VERSION_STAMP)
 	$(call MSG_L1,Packing $@)
-	$(QUIET)$(RM) -f -- $@ $(dir $@).*VBoxGuestAdditions-*r*.tar.bz2
+	$(QUIET)$(RM) -f -- $(wildcard $(dir $@)VBoxGuestAdditions-*r*.tar.bz2)
 	$(QUIET)$(MKDIR) -p $(@D)
 ifdef VBOX_USE_PBZIP2
  	$(QUIET)tar --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
