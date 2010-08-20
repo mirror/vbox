@@ -53,6 +53,10 @@
 #include "wine/list.h"
 #include "wine/rbtree.h"
 
+#ifdef VBOXWDDM
+# include "vboxsharedrc.h"
+#endif
+
 /* Driver quirks */
 #define WINED3D_QUIRK_ARB_VS_OFFSET_LIMIT       0x00000001
 #define WINED3D_QUIRK_SET_TEXCOORD_W            0x00000002
@@ -1803,6 +1807,10 @@ typedef struct IWineD3DResourceClass
     DWORD                   priority;
     BYTE                   *allocatedMemory; /* Pointer to the real data location */
     BYTE                   *heapMemory; /* Pointer to the HeapAlloced block of memory */
+#ifdef VBOXWDDM
+    DWORD                   sharerc_flags; /* shared resource flags */
+    DWORD                   sharerc_handle;
+#endif
     struct list             privateData;
     struct list             resource_list_entry;
     const struct wined3d_parent_ops *parent_ops;
@@ -1920,7 +1928,12 @@ DWORD basetexture_get_level_count(IWineD3DBaseTexture *iface) DECLSPEC_HIDDEN;
 DWORD basetexture_get_lod(IWineD3DBaseTexture *iface) DECLSPEC_HIDDEN;
 HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DRESOURCETYPE resource_type,
         IWineD3DDeviceImpl *device, UINT size, DWORD usage, const struct wined3d_format_desc *format_desc,
-        WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops) DECLSPEC_HIDDEN;
+        WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
+#ifdef VBOXWDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        ) DECLSPEC_HIDDEN;
 HRESULT basetexture_set_autogen_filter_type(IWineD3DBaseTexture *iface,
         WINED3DTEXTUREFILTERTYPE filter_type) DECLSPEC_HIDDEN;
 BOOL basetexture_set_dirty(IWineD3DBaseTexture *iface, BOOL dirty) DECLSPEC_HIDDEN;
@@ -2229,7 +2242,6 @@ void flip_surface(IWineD3DSurfaceImpl *front, IWineD3DSurfaceImpl *back) DECLSPE
 
 #ifdef VBOXWDDM
 # define SFLAG_CLIENTMEM     0x10000000 /* SYSMEM surface using client-supplied memory buffer */
-
 # define SFLAG_DONOTFREE_VBOXWDDM SFLAG_CLIENTMEM
 #else
 # define SFLAG_DONOTFREE_VBOXWDDM 0

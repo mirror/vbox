@@ -1508,6 +1508,10 @@ struct wined3d_context *context_create(IWineD3DSwapChainImpl *swapchain, IWineD3
         GL_EXTCALL(glProvokingVertexEXT(GL_FIRST_VERTEX_CONVENTION_EXT));
     }
 
+#ifdef VBOXWDDM
+    GL_EXTCALL(glChromiumParameteriCR(GL_SHARE_CONTEXT_RESOURCES_CR, GL_TRUE));
+#endif
+
     LEAVE_GL();
 
     device->frag_pipe->enable_extension((IWineD3DDevice *)device, TRUE);
