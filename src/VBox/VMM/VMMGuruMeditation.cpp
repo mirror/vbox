@@ -64,6 +64,12 @@ typedef struct VMMR3FATALDUMPINFOHLP
     RTUINT      fLoggerDestFlags;
     /** Whether to output to stderr or not. */
     bool        fStdErr;
+    /** Whether we're still recording the summary or not. */
+    bool        fRecSummary;
+    /** Buffer for the summary. */
+    char        szSummary[4096];
+    /** The current summary offset. */
+    uint32_t    offSummary;
 } VMMR3FATALDUMPINFOHLP, *PVMMR3FATALDUMPINFOHLP;
 /** Pointer to a VMMR3FATALDUMPINFOHLP structure. */
 typedef const VMMR3FATALDUMPINFOHLP *PCVMMR3FATALDUMPINFOHLP;
@@ -94,7 +100,7 @@ static DECLCALLBACK(void) vmmR3FatalDumpInfoHlp_pfnPrintf(PCDBGFINFOHLP pHlp, co
  */
 static DECLCALLBACK(void) vmmR3FatalDumpInfoHlp_pfnPrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
 {
-    PCVMMR3FATALDUMPINFOHLP pMyHlp = (PCVMMR3FATALDUMPINFOHLP)pHlp;
+    PVMMR3FATALDUMPINFOHLP pMyHlp = (PVMMR3FATALDUMPINFOHLP)pHlp;
 
     if (pMyHlp->pRelLogger)
     {
@@ -116,6 +122,19 @@ static DECLCALLBACK(void) vmmR3FatalDumpInfoHlp_pfnPrintfV(PCDBGFINFOHLP pHlp, c
         va_copy(args2, args);
         RTStrmPrintfV(g_pStdErr, pszFormat, args);
         va_end(args2);
+    }
+    if (pMyHlp->fRecSummary)
+    {
+        uint32_t cchLeft = sizeof(pMyHlp->szSummary) - pMyHlp->offSummary;
+        if (cchLeft > 1)
+        {
+            va_list args2;
+            va_copy(args2, args);
+            size_t cch = RTStrPrintfV(&pMyHlp->szSummary[pMyHlp->offSummary], cchLeft, pszFormat, args);
+            va_end(args2);
+            Assert(cch <= cchLeft);
+            pMyHlp->offSummary += cch;
+        }
     }
 }
 
@@ -160,12 +179,18 @@ static void vmmR3FatalDumpInfoHlpInit(PVMMR3FATALDUMPINFOHLP pHlp)
     /*
      * Check if we need write to stderr.
      */
-#ifdef DEBUG_sandervl
-    pHlp->fStdErr = false; /* takes too long to display here */
-#else
     pHlp->fStdErr = (!pHlp->pRelLogger || !(pHlp->pRelLogger->fDestFlags & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)))
                  && (!pHlp->pLogger || !(pHlp->pLogger->fDestFlags & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)));
+#ifdef DEBUG_sandervl
+    pHlp->fStdErr = false; /* takes too long to display here */
 #endif
+
+    /*
+     * Init the summary recording.
+     */
+    pHlp->fRecSummary  = true;
+    pHlp->offSummary   = 0;
+    pHlp->szSummary[0] = '\0';
 }
 
 
@@ -438,6 +463,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                     }
 
                     /* raw stack */
+                    Hlp.fRecSummary = false;
                     pHlp->pfnPrintf(pHlp,
                                     "!!\n"
                                     "!! Raw stack (mind the direction). \n"
@@ -551,6 +577,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                 }
 
                 /* raw stack */
+                Hlp.fRecSummary = false;
                 pHlp->pfnPrintf(pHlp,
                                 "!!\n"
                                 "!! Raw stack (mind the direction). pbEMTStackRC=%RRv pbEMTStackBottomRC=%RRv\n"
@@ -568,6 +595,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
         }
 
     } /* switch (rcErr) */
+    Hlp.fRecSummary = false;
 
 
     /*
@@ -618,6 +646,15 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
     pHlp->pfnPrintf(pHlp,
                     "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 
+
+    /*
+     * Repeate the summary to stderr so we don't have to scroll half a mile up.
+     */
+    if (Hlp.szSummary[0])
+        RTStrmPrintf(g_pStdErr,
+                     "%s"
+                     "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n",
+                     Hlp.szSummary);
 
     /*
      * Delete the output instance (flushing and restoring of flags).
