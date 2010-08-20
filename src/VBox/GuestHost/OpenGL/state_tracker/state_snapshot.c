@@ -68,7 +68,7 @@ static int32_t crStateSaveTextureObjData(CRTextureObj *pTexture, PSSMHANDLE pSSM
     
     CRASSERT(pTexture && pSSM);
 
-    crDebug("crStateSaveTextureObjData %u. START", pTexture->name);
+    crDebug("crStateSaveTextureObjData %u. START", pTexture->id);
 
     for (face = 0; face < 6; face++) {
         CRASSERT(pTexture->level[face]);
@@ -97,7 +97,7 @@ static int32_t crStateSaveTextureObjData(CRTextureObj *pTexture, PSSMHANDLE pSSM
 
                 if (!bound)
                 {
-                    diff_api.BindTexture(pTexture->target, pTexture->name);
+                    diff_api.BindTexture(pTexture->target, pTexture->hwid);
                     bound = GL_TRUE;
                 }
 
@@ -163,7 +163,7 @@ static int32_t crStateSaveTextureObjData(CRTextureObj *pTexture, PSSMHANDLE pSSM
         }
     }
 
-    crDebug("crStateSaveTextureObjData %u. END", pTexture->name);
+    crDebug("crStateSaveTextureObjData %u. END", pTexture->id);
 
     return VINF_SUCCESS;
 }
@@ -250,7 +250,7 @@ static int32_t crStateSaveTextureObjPtr(CRTextureObj *pTexture, PSSMHANDLE pSSM)
      * but it could be NULL for unused attribute stack depths.
      */
     if (pTexture)
-        return SSMR3PutU32(pSSM, pTexture->name);
+        return SSMR3PutU32(pSSM, pTexture->id);
     else
         return VINF_SUCCESS;
 }
@@ -487,9 +487,9 @@ static void crStateSaveBufferObjectCB(unsigned long key, void *data1, void *data
         rc = SSMR3PutMem(pSSM, pBufferObj->data, pBufferObj->size);
         CRASSERT(rc == VINF_SUCCESS);
     }
-    else if (pBufferObj->name!=0 && pBufferObj->size>0)
+    else if (pBufferObj->id!=0 && pBufferObj->size>0)
     {
-        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, pBufferObj->name);
+        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, pBufferObj->hwid);
         pBufferObj->pointer = diff_api.MapBufferARB(GL_ARRAY_BUFFER_ARB, GL_READ_ONLY_ARB);
         rc = SSMR3PutMem(pSSM, &pBufferObj->pointer, sizeof(pBufferObj->pointer));
         CRASSERT(rc == VINF_SUCCESS);
@@ -855,7 +855,7 @@ static int32_t crStateSaveClientPointer(CRVertexArrays *pArrays, int32_t index, 
 
     cp = crStateGetClientPointerByIndex(index, pArrays);
 
-    rc = SSMR3PutU32(pSSM, cp->buffer->name);
+    rc = SSMR3PutU32(pSSM, cp->buffer->id);
     AssertRCReturn(rc, rc);
 
 #ifdef CR_EXT_compiled_vertex_array
@@ -880,7 +880,7 @@ static int32_t crStateLoadClientPointer(CRVertexArrays *pArrays, int32_t index, 
 
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);
-    cp->buffer = ui==0 ? pContext->bufferobject.nullBuffer : crHashtableSearch(pContext->bufferobject.buffers, ui);
+    cp->buffer = ui==0 ? pContext->bufferobject.nullBuffer : crHashtableSearch(pContext->shared->buffersTable, ui);
 
 #ifdef CR_EXT_compiled_vertex_array
     if (cp->locked)
@@ -1010,6 +1010,7 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 {
     int32_t rc, i;
     uint32_t ui32, j;
+    GLboolean bSaveShared = GL_TRUE;
 
     CRASSERT(pContext && pSSM);
 
@@ -1021,6 +1022,18 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 
     if (crHashtableNumElements(pContext->program.programHash)>0)
         crDebug("Saving state with %d programs", crHashtableNumElements(pContext->program.programHash));
+
+    rc = SSMR3PutS32(pSSM, pContext->shared->id);
+    if (pContext->shared->refCount>1)
+    {
+        bSaveShared = pContext->shared->saveCount==0;
+
+        ++pContext->shared->saveCount;
+        if (pContext->shared->saveCount == pContext->shared->refCount)
+        {
+            pContext->shared->saveCount=0;
+        }
+    }
 
     /* Save transform state */
     rc = SSMR3PutMem(pSSM, pContext->transform.clipPlane, sizeof(GLvectord)*CR_MAX_CLIP_PLANES);
@@ -1070,31 +1083,34 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 #endif
 
     /* Save shared textures */
-    CRASSERT(pContext->shared && pContext->shared->textureTable);
-    ui32 = crHashtableNumElements(pContext->shared->textureTable);
-    rc = SSMR3PutU32(pSSM, ui32);
-    AssertRCReturn(rc, rc);
-    crHashtableWalk(pContext->shared->textureTable, crStateSaveSharedTextureCB, pSSM);
+    if (bSaveShared)
+    {
+        CRASSERT(pContext->shared && pContext->shared->textureTable);
+        ui32 = crHashtableNumElements(pContext->shared->textureTable);
+        rc = SSMR3PutU32(pSSM, ui32);
+        AssertRCReturn(rc, rc);
+        crHashtableWalk(pContext->shared->textureTable, crStateSaveSharedTextureCB, pSSM);
 
 #ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
-    /* Restore previous texture bindings via diff_api */
-    if (ui32)
-    {
-        CRTextureUnit *pTexUnit;
+        /* Restore previous texture bindings via diff_api */
+        if (ui32)
+        {
+            CRTextureUnit *pTexUnit;
 
-        pTexUnit = &pContext->texture.unit[pContext->texture.curTextureUnit];
+            pTexUnit = &pContext->texture.unit[pContext->texture.curTextureUnit];
 
-        diff_api.BindTexture(GL_TEXTURE_1D, pTexUnit->currentTexture1D->name);
-        diff_api.BindTexture(GL_TEXTURE_2D, pTexUnit->currentTexture2D->name);
-        diff_api.BindTexture(GL_TEXTURE_3D, pTexUnit->currentTexture3D->name);
+            diff_api.BindTexture(GL_TEXTURE_1D, pTexUnit->currentTexture1D->hwid);
+            diff_api.BindTexture(GL_TEXTURE_2D, pTexUnit->currentTexture2D->hwid);
+            diff_api.BindTexture(GL_TEXTURE_3D, pTexUnit->currentTexture3D->hwid);
 #ifdef CR_ARB_texture_cube_map
-        diff_api.BindTexture(GL_TEXTURE_CUBE_MAP_ARB, pTexUnit->currentTextureCubeMap->name);
+            diff_api.BindTexture(GL_TEXTURE_CUBE_MAP_ARB, pTexUnit->currentTextureCubeMap->hwid);
 #endif
 #ifdef CR_NV_texture_rectangle
-        diff_api.BindTexture(GL_TEXTURE_RECTANGLE_NV, pTexUnit->currentTextureRect->name);
+            diff_api.BindTexture(GL_TEXTURE_RECTANGLE_NV, pTexUnit->currentTextureRect->hwid);
+#endif
+        }
 #endif
     }
-#endif
 
     /* Save current texture pointers */
     for (i=0; i<CR_MAX_TEXTURE_UNITS; ++i)
@@ -1167,24 +1183,31 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 
 #ifdef CR_ARB_vertex_buffer_object
     /* Save buffer objects */
-    ui32 = crHashtableNumElements(pContext->bufferobject.buffers);
+    ui32 = bSaveShared? crHashtableNumElements(pContext->shared->buffersTable):0;
     rc = SSMR3PutU32(pSSM, ui32);
     AssertRCReturn(rc, rc);
+
     /* Save default one*/
     crStateSaveBufferObjectCB(0, pContext->bufferobject.nullBuffer, pSSM);
-    /* Save all the rest */
-    crHashtableWalk(pContext->bufferobject.buffers, crStateSaveBufferObjectCB, pSSM);
+
+    if (bSaveShared)
+    {
+        /* Save all the rest */
+        crHashtableWalk(pContext->shared->buffersTable, crStateSaveBufferObjectCB, pSSM);
+    }
+
     /* Restore binding */
-    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, pContext->bufferobject.arrayBuffer->name);
+    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, pContext->bufferobject.arrayBuffer->hwid);
+
     /* Save pointers */
-    rc = SSMR3PutU32(pSSM, pContext->bufferobject.arrayBuffer->name);
+    rc = SSMR3PutU32(pSSM, pContext->bufferobject.arrayBuffer->id);
     AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pContext->bufferobject.elementsBuffer->name);
+    rc = SSMR3PutU32(pSSM, pContext->bufferobject.elementsBuffer->id);
     AssertRCReturn(rc, rc);
 #ifdef CR_ARB_pixel_buffer_object
-    rc = SSMR3PutU32(pSSM, pContext->bufferobject.packBuffer->name);
+    rc = SSMR3PutU32(pSSM, pContext->bufferobject.packBuffer->id);
     AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pContext->bufferobject.unpackBuffer->name);
+    rc = SSMR3PutU32(pSSM, pContext->bufferobject.unpackBuffer->id);
     AssertRCReturn(rc, rc);
 #endif
     /* Save clint pointers and buffer bindings*/
@@ -1225,14 +1248,17 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 
 #ifdef CR_EXT_framebuffer_object
     /* Save FBOs */
-    ui32 = crHashtableNumElements(pContext->framebufferobject.framebuffers);
-    rc = SSMR3PutU32(pSSM, ui32);
-    AssertRCReturn(rc, rc);
-    crHashtableWalk(pContext->framebufferobject.framebuffers, crStateSaveFramebuffersCB, pSSM);
-    ui32 = crHashtableNumElements(pContext->framebufferobject.renderbuffers);
-    rc = SSMR3PutU32(pSSM, ui32);
-    AssertRCReturn(rc, rc);
-    crHashtableWalk(pContext->framebufferobject.renderbuffers, crStateSaveRenderbuffersCB, pSSM);
+    if (bSaveShared)
+    {
+        ui32 = crHashtableNumElements(pContext->shared->fbTable);
+        rc = SSMR3PutU32(pSSM, ui32);
+        AssertRCReturn(rc, rc);
+        crHashtableWalk(pContext->shared->fbTable, crStateSaveFramebuffersCB, pSSM);
+        ui32 = crHashtableNumElements(pContext->shared->rbTable);
+        rc = SSMR3PutU32(pSSM, ui32);
+        AssertRCReturn(rc, rc);
+        crHashtableWalk(pContext->shared->rbTable, crStateSaveRenderbuffersCB, pSSM);
+    }
     rc = SSMR3PutU32(pSSM, pContext->framebufferobject.drawFB?pContext->framebufferobject.drawFB->id:0);
     AssertRCReturn(rc, rc);
     rc = SSMR3PutU32(pSSM, pContext->framebufferobject.readFB?pContext->framebufferobject.readFB->id:0);
@@ -1298,15 +1324,32 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
+typedef struct _crFindSharedCtxParms {
+    CRContext *pSrcCtx, *pDstCtx;
+} crFindSharedCtxParms_t;
+
+static void crStateFindSharedCB(unsigned long key, void *data1, void *data2)
+{
+    CRContext *pContext = (CRContext *) data1;
+    crFindSharedCtxParms_t *pParms = (crFindSharedCtxParms_t *) data2;
+    (void) key;
+
+    if (pContext!=pParms->pSrcCtx && pContext->shared->id==pParms->pSrcCtx->shared->id)
+    {
+        pParms->pDstCtx->shared = pContext->shared;
+    }
+}
+
 #define SLC_COPYPTR(ptr) pTmpContext->ptr = pContext->ptr
 #define SLC_ASSSERT_NULL_PTR(ptr) CRASSERT(!pContext->ptr)
 
-int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
+int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHANDLE pSSM)
 {
     CRContext* pTmpContext;
     int32_t rc, i, j;
     uint32_t uiNumElems, ui, k;
     unsigned long key;
+    GLboolean bLoadShared = GL_TRUE;
 
     CRASSERT(pContext && pSSM);
 
@@ -1318,7 +1361,31 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
     rc = SSMR3GetMem(pSSM, pTmpContext, sizeof(*pTmpContext));
     AssertRCReturn(rc, rc);
 
-    SLC_COPYPTR(shared);
+    /* Deal with shared state */
+    {
+        crFindSharedCtxParms_t parms;
+
+        rc = SSMR3GetS32(pSSM, &pContext->shared->id);
+        AssertRCReturn(rc, rc);
+
+        pTmpContext->shared = NULL;
+        parms.pSrcCtx = pContext;
+        parms.pDstCtx = pTmpContext;
+        crHashtableWalk(pCtxTable, crStateFindSharedCB, &parms);
+
+        if (pTmpContext->shared)
+        {
+            CRASSERT(pContext->shared->refCount==1 && pTmpContext->shared->refCount>1);
+            bLoadShared = GL_FALSE;
+            crStateFreeShared(pContext->shared);
+            pContext->shared = NULL;
+        }
+        else
+        {
+            SLC_COPYPTR(shared);
+        }
+    }
+
     SLC_COPYPTR(flush_func);
     SLC_COPYPTR(flush_arg);
 
@@ -1340,7 +1407,6 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
     }
 
 #ifdef CR_ARB_vertex_buffer_object
-    SLC_COPYPTR(bufferobject.buffers);
     SLC_COPYPTR(bufferobject.nullBuffer);
 #endif
 
@@ -1448,11 +1514,6 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
         SLC_COPYPTR(transform.programStack[i].stack);
     }
 
-#ifdef CR_EXT_framebuffer_object
-    SLC_COPYPTR(framebufferobject.framebuffers);
-    SLC_COPYPTR(framebufferobject.renderbuffers);
-#endif
-
 #ifdef CR_OPENGL_VERSION_2_0
     SLC_COPYPTR(glsl.shaders);
     SLC_COPYPTR(glsl.programs);
@@ -1515,33 +1576,38 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
 #endif
 
-    /* Load shared textures */
-    CRASSERT(pContext->shared && pContext->shared->textureTable);
-    rc = SSMR3GetU32(pSSM, &uiNumElems);
-    AssertRCReturn(rc, rc);
-    for (ui=0; ui<uiNumElems; ++ui)
+    if (bLoadShared)
     {
-        CRTextureObj *pTexture;
-
-        rc = SSMR3GetMem(pSSM, &key, sizeof(key));
+        /* Load shared textures */
+        CRASSERT(pContext->shared && pContext->shared->textureTable);
+        rc = SSMR3GetU32(pSSM, &uiNumElems);
         AssertRCReturn(rc, rc);
+        for (ui=0; ui<uiNumElems; ++ui)
+        {
+            CRTextureObj *pTexture;
 
-        pTexture = (CRTextureObj *) crCalloc(sizeof(CRTextureObj));
-        if (!pTexture) return VERR_NO_MEMORY;
+            rc = SSMR3GetMem(pSSM, &key, sizeof(key));
+            AssertRCReturn(rc, rc);
 
-        rc = SSMR3GetMem(pSSM, pTexture, sizeof(*pTexture));
-        AssertRCReturn(rc, rc);
+            pTexture = (CRTextureObj *) crCalloc(sizeof(CRTextureObj));
+            if (!pTexture) return VERR_NO_MEMORY;
 
-        /*allocate actual memory*/
-        for (i=0; i<6; ++i) {
-            pTexture->level[i] = (CRTextureLevel *) crCalloc(sizeof(CRTextureLevel) * CR_MAX_MIPMAP_LEVELS);
-            if (!pTexture->level[i]) return VERR_NO_MEMORY;
+            rc = SSMR3GetMem(pSSM, pTexture, sizeof(*pTexture));
+            AssertRCReturn(rc, rc);
+
+            pTexture->hwid = 0;
+
+            /*allocate actual memory*/
+            for (i=0; i<6; ++i) {
+                pTexture->level[i] = (CRTextureLevel *) crCalloc(sizeof(CRTextureLevel) * CR_MAX_MIPMAP_LEVELS);
+                if (!pTexture->level[i]) return VERR_NO_MEMORY;
+            }
+
+            rc = crStateLoadTextureObjData(pTexture, pSSM);
+            AssertRCReturn(rc, rc);
+
+            crHashtableAdd(pContext->shared->textureTable, key, pTexture);
         }
-
-        rc = crStateLoadTextureObjData(pTexture, pSSM);
-        AssertRCReturn(rc, rc);
-
-        crHashtableAdd(pContext->shared->textureTable, key, pTexture);
     }
 
     /* Load current texture pointers */
@@ -1640,6 +1706,8 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
         rc = SSMR3GetMem(pSSM, pBufferObj, sizeof(*pBufferObj));
         AssertRCReturn(rc, rc);
 
+        pBufferObj->hwid = 0;
+
         if (pBufferObj->data)
         {
             CRASSERT(pBufferObj->size>0);
@@ -1647,7 +1715,7 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
             rc = SSMR3GetMem(pSSM, pBufferObj->data, pBufferObj->size);
             AssertRCReturn(rc, rc);
         } 
-        else if (pBufferObj->name!=0 && pBufferObj->size>0)
+        else if (pBufferObj->id!=0 && pBufferObj->size>0)
         {
             rc = SSMR3GetMem(pSSM, &pBufferObj->data, sizeof(pBufferObj->data));
             AssertRCReturn(rc, rc);
@@ -1662,10 +1730,10 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
 
 
         if (key!=0)
-            crHashtableAdd(pContext->bufferobject.buffers, key, pBufferObj);        
+            crHashtableAdd(pContext->shared->buffersTable, key, pBufferObj);        
     }
     /* Load pointers */
-#define CRS_GET_BO(name) (((name)==0) ? (pContext->bufferobject.nullBuffer) : crHashtableSearch(pContext->bufferobject.buffers, name))
+#define CRS_GET_BO(name) (((name)==0) ? (pContext->bufferobject.nullBuffer) : crHashtableSearch(pContext->shared->buffersTable, name))
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);
     pContext->bufferobject.arrayBuffer = CRS_GET_BO(ui);
@@ -1734,54 +1802,57 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
 
 #ifdef CR_EXT_framebuffer_object
     /* Load FBOs */
-    rc = SSMR3GetU32(pSSM, &uiNumElems);
-    AssertRCReturn(rc, rc);
-    for (ui=0; ui<uiNumElems; ++ui)
+    if (bLoadShared)
     {
-        CRFramebufferObject *pFBO;
-        pFBO = crAlloc(sizeof(*pFBO));
-        if (!pFBO) return VERR_NO_MEMORY;
-
-        rc = SSMR3GetMem(pSSM, &key, sizeof(key));
+        rc = SSMR3GetU32(pSSM, &uiNumElems);
         AssertRCReturn(rc, rc);
+        for (ui=0; ui<uiNumElems; ++ui)
+        {
+            CRFramebufferObject *pFBO;
+            pFBO = crAlloc(sizeof(*pFBO));
+            if (!pFBO) return VERR_NO_MEMORY;
 
-        rc = SSMR3GetMem(pSSM, pFBO, sizeof(*pFBO));
+            rc = SSMR3GetMem(pSSM, &key, sizeof(key));
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3GetMem(pSSM, pFBO, sizeof(*pFBO));
+            AssertRCReturn(rc, rc);
+
+            crHashtableAdd(pContext->shared->fbTable, key, pFBO);
+        }
+
+        rc = SSMR3GetU32(pSSM, &uiNumElems);
         AssertRCReturn(rc, rc);
+        for (ui=0; ui<uiNumElems; ++ui)
+        {
+            CRRenderbufferObject *pRBO;
+            pRBO = crAlloc(sizeof(*pRBO));
+            if (!pRBO) return VERR_NO_MEMORY;
 
-        crHashtableAdd(pContext->framebufferobject.framebuffers, key, pFBO);
-    }
+            rc = SSMR3GetMem(pSSM, &key, sizeof(key));
+            AssertRCReturn(rc, rc);
 
-    rc = SSMR3GetU32(pSSM, &uiNumElems);
-    AssertRCReturn(rc, rc);
-    for (ui=0; ui<uiNumElems; ++ui)
-    {
-        CRRenderbufferObject *pRBO;
-        pRBO = crAlloc(sizeof(*pRBO));
-        if (!pRBO) return VERR_NO_MEMORY;
+            rc = SSMR3GetMem(pSSM, pRBO, sizeof(*pRBO));
+            AssertRCReturn(rc, rc);
 
-        rc = SSMR3GetMem(pSSM, &key, sizeof(key));
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3GetMem(pSSM, pRBO, sizeof(*pRBO));
-        AssertRCReturn(rc, rc);
-
-        crHashtableAdd(pContext->framebufferobject.renderbuffers, key, pRBO);
+            crHashtableAdd(pContext->shared->rbTable, key, pRBO);
+        }
     }
 
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);
     pContext->framebufferobject.drawFB = ui==0 ? NULL 
-                                               : crHashtableSearch(pContext->framebufferobject.framebuffers, ui);
+                                               : crHashtableSearch(pContext->shared->fbTable, ui);
 
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);
     pContext->framebufferobject.readFB = ui==0 ? NULL 
-                                               : crHashtableSearch(pContext->framebufferobject.framebuffers, ui);
+                                               : crHashtableSearch(pContext->shared->fbTable, ui);
 
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);
     pContext->framebufferobject.renderbuffer = ui==0 ? NULL 
-                                                     : crHashtableSearch(pContext->framebufferobject.renderbuffers, ui);
+                                                     : crHashtableSearch(pContext->shared->rbTable, ui);
 
     /* Mark FBOs/RBOs for resending to GPU */
     pContext->framebufferobject.bResyncNeeded = GL_TRUE;

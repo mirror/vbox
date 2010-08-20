@@ -60,10 +60,7 @@ for index in range(len(funcs)):
         GLuint texid;
         CRASSERT(tablesize/sizeof(%s)==1);
         texid = (GLuint) *get_values;
-        if (texid)
-        {
-            *get_values = (%s) (texid - cr_server.curClient->number * 100000);
-        }
+        *get_values = (%s) crStateTextureHWIDtoID(texid);
     }
     else if (GL_CURRENT_PROGRAM==pname)
     {
@@ -92,7 +89,24 @@ for index in range(len(funcs)):
         rbid = (GLuint) *get_values;
         *get_values = (%s) crStateRBOHWIDtoID(rbid);
     }
-    """ % (types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index])
+    else if (GL_ARRAY_BUFFER_BINDING_ARB==pname
+             || GL_ELEMENT_ARRAY_BUFFER_BINDING_ARB==pname
+             || GL_VERTEX_ARRAY_BUFFER_BINDING_ARB==pname
+             || GL_NORMAL_ARRAY_BUFFER_BINDING_ARB==pname
+             || GL_COLOR_ARRAY_BUFFER_BINDING_ARB==pname
+             || GL_INDEX_ARRAY_BUFFER_BINDING_ARB==pname
+             || GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING_ARB==pname
+             || GL_EDGE_FLAG_ARRAY_BUFFER_BINDING_ARB==pname
+             || GL_SECONDARY_COLOR_ARRAY_BUFFER_BINDING_ARB==pname
+             || GL_FOG_COORDINATE_ARRAY_BUFFER_BINDING_ARB==pname
+             || GL_WEIGHT_ARRAY_BUFFER_BINDING_ARB==pname)
+    {
+        GLuint bufid;
+        CRASSERT(tablesize/sizeof(%s)==1);
+        bufid = (GLuint) *get_values;
+        *get_values = (%s) crStateBufferHWIDtoID(bufid);
+    }
+    """ % (types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index])
     print '\tcrServerReturnValue( get_values, tablesize );'
     print '\tcrFree(get_values);'
     print '}\n'

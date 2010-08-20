@@ -1516,20 +1516,20 @@ void STATE_APIENTRY crStateFlushVertexArrayRangeNV(void)
 }
 
 /*Returns if the given clientpointer could be used on server side directly*/
-#define CRSTATE_IS_SERVER_CP(cp) (!(cp).enabled || !(cp).p || ((cp).buffer && (cp).buffer->name) || ((cp).locked))
+#define CRSTATE_IS_SERVER_CP(cp) (!(cp).enabled || !(cp).p || ((cp).buffer && (cp).buffer->id) || ((cp).locked))
 
 static void crStateDumpClientPointer(CRClientPointer *cp, const char *name, int i)
 {
   if (i<0 && cp->enabled)
   {
     crDebug("CP(%s): enabled:%d ptr:%p buffer:%p buffer.name:%i locked: %i %s",
-            name, cp->enabled, cp->p, cp->buffer, cp->buffer? cp->buffer->name:-1, (int)cp->locked,
+            name, cp->enabled, cp->p, cp->buffer, cp->buffer? cp->buffer->id:-1, (int)cp->locked,
             CRSTATE_IS_SERVER_CP(*cp) ? "":"!FAIL!");
   }
   else if (0==i || cp->enabled)
   {
     crDebug("CP(%s%i): enabled:%d ptr:%p buffer:%p buffer.name:%i locked: %i %s",
-            name, i, cp->enabled, cp->p, cp->buffer, cp->buffer? cp->buffer->name:-1, (int)cp->locked,
+            name, i, cp->enabled, cp->p, cp->buffer, cp->buffer? cp->buffer->id:-1, (int)cp->locked,
             CRSTATE_IS_SERVER_CP(*cp) ? "":"!FAIL!");
   }
 }
@@ -1611,7 +1611,7 @@ crStateUseServerArrayElements(void)
 #ifdef CR_ARB_vertex_buffer_object
     CRContext *g = GetCurrentContext();
     if (g->bufferobject.elementsBuffer &&
-            g->bufferobject.elementsBuffer->name > 0)
+            g->bufferobject.elementsBuffer->id > 0)
         return GL_TRUE;
     else
         return GL_FALSE;

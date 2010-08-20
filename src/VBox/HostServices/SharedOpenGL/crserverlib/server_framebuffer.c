@@ -45,35 +45,20 @@ crServerDispatchGenRenderbuffersEXT(GLsizei n, GLuint *renderbuffers)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchFramebufferTexture1DEXT(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
 {
-    if (texture)
-    {
-        texture = crServerTranslateTextureID(texture);
-    }
-
     crStateFramebufferTexture1DEXT(target, attachment, textarget, texture, level);
-    cr_server.head_spu->dispatch_table.FramebufferTexture1DEXT(target, attachment, textarget, texture, level);
+    cr_server.head_spu->dispatch_table.FramebufferTexture1DEXT(target, attachment, textarget, crStateGetTextureHWID(texture), level);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchFramebufferTexture2DEXT(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
 {
-    if (texture)
-    {
-        texture = crServerTranslateTextureID(texture);
-    }
-
     crStateFramebufferTexture2DEXT(target, attachment, textarget, texture, level);
-    cr_server.head_spu->dispatch_table.FramebufferTexture2DEXT(target, attachment, textarget, texture, level);
+    cr_server.head_spu->dispatch_table.FramebufferTexture2DEXT(target, attachment, textarget, crStateGetTextureHWID(texture), level);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchFramebufferTexture3DEXT(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset)
 {
-    if (texture)
-    {
-        texture = crServerTranslateTextureID(texture);
-    }
-
     crStateFramebufferTexture3DEXT(target, attachment, textarget, texture, level, zoffset);
-    cr_server.head_spu->dispatch_table.FramebufferTexture3DEXT(target, attachment, textarget, texture, level, zoffset);
+    cr_server.head_spu->dispatch_table.FramebufferTexture3DEXT(target, attachment, textarget, crStateGetTextureHWID(texture), level, zoffset);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchBindFramebufferEXT(GLenum target, GLuint framebuffer)
@@ -120,20 +105,21 @@ crServerDispatchGetFramebufferAttachmentParameterivEXT(GLenum target, GLenum att
 	(void) params;
 	crStateGetFramebufferAttachmentParameterivEXT(target, attachment, pname, local_params);
 
-    if (GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME_EXT==pname)
-    {
-        GLint type;
-        crStateGetFramebufferAttachmentParameterivEXT(target, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_EXT, &type);
-        if (GL_TEXTURE==type)
-        {
-            /*todo, add reverse of crServerTranslateTextureID*/
-            if (!cr_server.sharedTextureObjects && local_params[0])
-            {
-                int client = cr_server.curClient->number;
-                local_params[0] = local_params[0] - client * 100000;
-            }
-        }
-    }
-
 	crServerReturnValue(&(local_params[0]), 1*sizeof(GLint));
+}
+
+GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsFramebufferEXT( GLuint framebuffer )
+{
+    GLboolean retval;
+    retval = cr_server.head_spu->dispatch_table.IsFramebufferEXT(crStateGetFramebufferHWID(framebuffer));
+    crServerReturnValue( &retval, sizeof(retval) );
+    return retval; /* WILL PROBABLY BE IGNORED */
+}
+
+GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsRenderbufferEXT( GLuint renderbuffer )
+{
+    GLboolean retval;
+    retval = cr_server.head_spu->dispatch_table.IsRenderbufferEXT(crStateGetRenderbufferHWID(renderbuffer));
+    crServerReturnValue( &retval, sizeof(retval) );
+    return retval; /* WILL PROBABLY BE IGNORED */
 }

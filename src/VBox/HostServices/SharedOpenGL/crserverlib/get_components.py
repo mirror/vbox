@@ -103,7 +103,7 @@ num_extended_components = {
 	'GL_BUFFER_USAGE_ARB': (1, 'CR_ARB_vertex_buffer_object'),
 	'GL_BUFFER_ACCESS_ARB': (1, 'CR_ARB_vertex_buffer_object'),
 	'GL_BUFFER_MAPPED_ARB': (1, 'CR_ARB_vertex_buffer_object'),
-	'GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING': (4, 'CR_ARB_vertex_buffer_object'),
+	'GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB': (1, 'CR_ARB_vertex_buffer_object'),
 	'GL_QUERY_COUNTER_BITS_ARB': (1, 'CR_ARB_occlusion_query'),
 	'GL_QUERY_RESULT_AVAILABLE_ARB': (1, 'CR_ARB_occlusion_query'),
 	'GL_QUERY_RESULT_ARB': (1, 'CR_ARB_occlusion_query'),

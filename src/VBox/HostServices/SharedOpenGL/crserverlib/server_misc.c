@@ -215,6 +215,9 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParametervCR(GLenum target
 void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParameteriCR(GLenum target, GLint value)
 {
   switch (target) {
+    case GL_SHARE_CONTEXT_RESOURCES_CR:
+        crStateShareContext(value);
+        break;
     case GL_SHARED_DISPLAY_LISTS_CR:
         cr_server.sharedDisplayLists = value;
         break;

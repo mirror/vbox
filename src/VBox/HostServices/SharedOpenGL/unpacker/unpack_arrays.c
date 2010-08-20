@@ -229,7 +229,7 @@ void crUnpackExtendLockArraysEXT(void)
         index = READ_DATA(offset, int);
         offset += sizeof(int);
         cp = crStateGetClientPointerByIndex(index, &c->array);
-        CRASSERT(cp && cp->enabled && (!cp->buffer || !cp->buffer->name));
+        CRASSERT(cp && cp->enabled && (!cp->buffer || !cp->buffer->id));
         data = crAlloc((first+count)*cp->bytesPerIndex);
         crMemcpy(data+first*cp->bytesPerIndex, DATA_POINTER(offset, GLvoid), count*cp->bytesPerIndex);
         offset += count*cp->bytesPerIndex;

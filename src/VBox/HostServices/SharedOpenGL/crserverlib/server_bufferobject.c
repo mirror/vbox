@@ -58,3 +58,19 @@ crServerDispatchGetBufferSubDataARB(GLenum target, GLintptrARB offset,
 		crError("Out of memory in crServerDispatchGetBufferSubDataARB");
 	}
 }
+
+void SERVER_DISPATCH_APIENTRY
+crServerDispatchBindBufferARB(GLenum target, GLuint buffer)
+{
+    crStateBindBufferARB(target, buffer);
+    cr_server.head_spu->dispatch_table.BindBufferARB(target, crStateGetBufferHWID(buffer));
+}
+
+GLboolean SERVER_DISPATCH_APIENTRY
+crServerDispatchIsBufferARB(GLuint buffer)
+{
+    GLboolean retval;
+    retval = cr_server.head_spu->dispatch_table.IsBufferARB(crStateGetBufferHWID(buffer));
+    crServerReturnValue( &retval, sizeof(retval) );
+    return retval; /* WILL PROBABLY BE IGNORED */
+}

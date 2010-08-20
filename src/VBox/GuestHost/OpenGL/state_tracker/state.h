@@ -40,21 +40,21 @@ void crStateBufferObjectInit(CRContext *ctx);
 void crStateBufferObjectDestroy (CRContext *ctx);
 
 void crStateBufferObjectDiff(CRBufferObjectBits *bb, CRbitvalue *bitID,
-														 CRContext *fromCtx, CRContext *toCtx);
+                             CRContext *fromCtx, CRContext *toCtx);
 
 void crStateBufferObjectSwitch(CRBufferObjectBits *bb, CRbitvalue *bitID, 
-															 CRContext *fromCtx, CRContext *toCtx);
-
+                               CRContext *fromCtx, CRContext *toCtx);
 
 /* These would normally be in cr_client.h */
 
 void crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID, CRContext *from, CRContext *to);
-											 
-void crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,	CRContext *from, CRContext *to);
+                                             
+void crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,   CRContext *from, CRContext *to);
 
+void crStateGetTextureObjectAndImage(CRContext *g, GLenum texTarget, GLint level,
+                                     CRTextureObj **obj, CRTextureLevel **img);
 
-void
-crStateGetTextureObjectAndImage(CRContext *g, GLenum texTarget, GLint level,
-																CRTextureObj **obj, CRTextureLevel **img);
-
+void crStateFreeBufferObject(void *data);
+void crStateFreeFBO(void *data);
+void crStateFreeRBO(void *data);
 #endif

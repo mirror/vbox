@@ -9,6 +9,7 @@
 
 #include "cr_hash.h"
 #include "state/cr_statetypes.h"
+#include "state/cr_statefuncs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +30,8 @@ typedef struct {
  */
 typedef struct {
 	GLuint refCount;
-	GLuint name;
+	GLuint id;
+    GLuint hwid;
 	GLenum usage;
 	GLenum access;
 	GLuint size;      /* buffer size in bytes */
@@ -50,13 +52,14 @@ typedef struct {
 
 	CRBufferObject *nullBuffer;  /* name = 0 */
 
-	CRHashTable *buffers;
-
     GLboolean   bResyncNeeded;
 } CRBufferObjectState;
 
 DECLEXPORT(CRBufferObject *) crStateGetBoundBufferObject(GLenum target, CRBufferObjectState *b);
 DECLEXPORT(GLboolean) crStateIsBufferBound(GLenum target);
+
+DECLEXPORT(GLuint) STATE_APIENTRY crStateBufferHWIDtoID(GLuint hwid);
+DECLEXPORT(GLuint) STATE_APIENTRY crStateGetBufferHWID(GLuint id);
 
 #ifdef __cplusplus
 }

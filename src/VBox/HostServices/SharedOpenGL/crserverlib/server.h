@@ -86,7 +86,6 @@ GLint crServerGenerateID(GLint *pCounter);
 
 GLint crServerSPUWindowID(GLint serverWindow);
 
-GLuint crServerTranslateTextureID(GLuint id);
 GLuint crServerTranslateProgramID(GLuint id);
 
 void crServerCheckMuralGeometry(CRMuralInfo *mural);

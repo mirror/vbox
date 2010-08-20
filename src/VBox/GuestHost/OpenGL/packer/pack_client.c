@@ -661,7 +661,7 @@ crPackDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indice
 #ifdef CR_ARB_vertex_buffer_object
     CRBufferObject *elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
     packet_length += sizeof(GLint);
-    if (elementsBuffer && elementsBuffer->name)
+    if (elementsBuffer && elementsBuffer->id)
     {
         /*@todo not sure it's possible, and not sure what to do*/
         if (!elementsBuffer->data)
@@ -708,7 +708,7 @@ crPackDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
 #ifdef CR_ARB_vertex_buffer_object
     CRBufferObject *elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
     packet_length += sizeof(GLint);
-    if (elementsBuffer && elementsBuffer->name)
+    if (elementsBuffer && elementsBuffer->id)
     {
         /*@todo not sure it's possible, and not sure what to do*/
         if (!elementsBuffer->data)
@@ -1028,7 +1028,7 @@ static void crPackLockClientPointer(GLint first, GLint count, unsigned char **pp
 
     if (cp->enabled)
     {
-        if (cp->buffer && cp->buffer->name)
+        if (cp->buffer && cp->buffer->id)
         {
             crWarning("crPackLockClientPointer called when there's VBO enabled!");
         }

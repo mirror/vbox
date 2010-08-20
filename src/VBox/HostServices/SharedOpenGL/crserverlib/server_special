@@ -234,3 +234,10 @@ CompressedTexImage3DARB
 TexImage1D
 TexImage2D
 TexImage3D
+BindBufferARB
+IsBufferARB
+IsFramebufferEXT
+IsRenderbufferEXT
+GetAttribLocation
+GetHandleARB
+GetUniformLocation
