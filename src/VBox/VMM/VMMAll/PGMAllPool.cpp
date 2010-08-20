@@ -1010,7 +1010,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
             /* Check the new value written by the guest. If present and with a bogus physical address, then
              * it's fairly safe to assume the guest is reusing the PT.
              */
-            if (PGMSHWPTEPAE_IS_P(GstPte))
+            if (GstPte.n.u1Present)
             {
                 RTHCPHYS HCPhys = -1;
                 int rc = PGMPhysGCPhys2HCPhys(pVM, GstPte.u & X86_PTE_PAE_PG_MASK, &HCPhys);
@@ -1530,8 +1530,6 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     bool  fFlush;
     unsigned cChanges = pgmPoolTrackFlushPTPaePae(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PTPAE)pvGst,
                                                   (PCX86PTPAE)&pPool->aDirtyPages[idxSlot][0], fAllowRemoval, &fFlush);
-    PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
-    PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvShw);
     STAM_PROFILE_STOP(&pPool->StatTrackDeref,a);
     /* Note: we might want to consider keeping the dirty page active in case there were many changes. */
 
@@ -1553,6 +1551,8 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     {
         Assert(fAllowRemoval);
         Log(("Flush reused page table!\n"));
+        PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
+        PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvShw);
         pgmPoolFlushPage(pPool, pPage);
         STAM_COUNTER_INC(&pPool->StatForceFlushReused);
     }
