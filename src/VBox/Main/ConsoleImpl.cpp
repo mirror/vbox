@@ -6750,9 +6750,11 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
     /* If we are using a static TAP device then try to open it. */
     Utf8Str str(tapDeviceName);
     if (str.length() + strlen(szTapdev) <= sizeof(szTapdev))
-        strcat(szTapdev, str.raw());
+        strcat(szTapdev, str.c_str());
     else
-        memcpy(szTapdev + strlen(szTapdev), str.raw(), sizeof(szTapdev) - strlen(szTapdev) - 1); /** @todo bitch about names which are too long... */
+        memcpy(szTapdev + strlen(szTapdev), str.c_str(), 
+sizeof(szTapdev) - 
+strlen(szTapdev) - 1); /** @todo bitch about names which are too long... */
     int rcVBox = RTFileOpen(&maTapFD[slot], szTapdev,
                             RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT | RTFILE_O_NON_BLOCK);
 
