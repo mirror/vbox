@@ -1012,6 +1012,13 @@ static int vboxfuseOp_open(const char *pszPath, struct fuse_file_info *pInfo)
         return -EINVAL;
     if ((pInfo->flags & O_ACCMODE) == O_ACCMODE)
         return -EINVAL;
+#elif defined(RT_OS_FREEBSD)
+    if (pInfo->flags & (  O_APPEND | O_ASYNC | O_DIRECT /* | O_LARGEFILE ? */
+                        | O_NOCTTY | O_NOFOLLOW | O_NONBLOCK
+                        /* | O_SYNC ? */))
+        return -EINVAL;
+    if ((pInfo->flags & O_ACCMODE) == O_ACCMODE)
+        return -EINVAL;
 #else
 # error "Port me"
 #endif
