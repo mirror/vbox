@@ -125,7 +125,7 @@ static DECLCALLBACK(void) vmmR3FatalDumpInfoHlp_pfnPrintfV(PCDBGFINFOHLP pHlp, c
     }
     if (pMyHlp->fRecSummary)
     {
-        uint32_t cchLeft = sizeof(pMyHlp->szSummary) - pMyHlp->offSummary;
+        size_t cchLeft = sizeof(pMyHlp->szSummary) - pMyHlp->offSummary;
         if (cchLeft > 1)
         {
             va_list args2;
