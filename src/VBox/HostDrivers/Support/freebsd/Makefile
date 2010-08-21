@@ -50,7 +50,8 @@ SRCS += \
 
 .PATH:	${.CURDIR}/alloc
 SRCS += \
-	heapsimple.c
+	heapsimple.c \
+	alloc.c
 
 .PATH:	${.CURDIR}/common/err
 SRCS += \
@@ -110,6 +111,10 @@ SRCS += \
 .PATH:	${.CURDIR}/common/table
 SRCS += \
 	avlpv.c
+
+.PATH:	${.CURDIR}/common/time
+SRCS += \
+	time.c
 
 .PATH:	${.CURDIR}/generic
 SRCS += \
