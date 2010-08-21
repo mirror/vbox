@@ -1500,15 +1500,15 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     AssertMsg(pPage->fDirty, ("Page %RGp (slot=%d) not marked dirty!", pPage->GCPhys, idxSlot));
     Log(("Flush dirty page %RGp cMods=%d\n", pPage->GCPhys, pPage->cModifications));
 
-    /* First write protect the page again to catch all write accesses. (before checking for changes -> SMP) */
-    int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys);
-    Assert(rc == VINF_SUCCESS);
-    pPage->fDirty = false;
-
 #if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
     PVMCPU   pVCpu = VMMGetCpu(pVM);
     uint32_t iPrevSubset = PGMRZDynMapPushAutoSubset(pVCpu);
 #endif
+
+    /* First write protect the page again to catch all write accesses. (before checking for changes -> SMP) */
+    int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys);
+    Assert(rc == VINF_SUCCESS);
+    pPage->fDirty = false;
 
 #ifdef VBOX_STRICT
     uint64_t fFlags = 0;
@@ -1530,6 +1530,8 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     bool  fFlush;
     unsigned cChanges = pgmPoolTrackFlushPTPaePae(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PTPAE)pvGst,
                                                   (PCX86PTPAE)&pPool->aDirtyPages[idxSlot][0], fAllowRemoval, &fFlush);
+    PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
+    PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvShw);
     STAM_PROFILE_STOP(&pPool->StatTrackDeref,a);
     /* Note: we might want to consider keeping the dirty page active in case there were many changes. */
 
@@ -1551,8 +1553,6 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     {
         Assert(fAllowRemoval);
         Log(("Flush reused page table!\n"));
-        PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
-        PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvShw);
         pgmPoolFlushPage(pPool, pPage);
         STAM_COUNTER_INC(&pPool->StatForceFlushReused);
     }
@@ -2707,7 +2707,8 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
 
 #  ifdef VBOX_STRICT
     /*
-     * Check that the entry doesn't already exists. We only allow multiple users of top-level paging structures (SHW_POOL_ROOT_IDX).
+     * Check that the entry doesn't already exists. We only allow multiple
+     * users of top-level paging structures (SHW_POOL_ROOT_IDX).
      */
     if (pPage->iUserHead != NIL_PGMPOOL_USER_INDEX)
     {
@@ -3615,7 +3616,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         /* 32-bit entries */
         case PGMPOOLKIND_32BIT_PD:
         case PGMPOOLKIND_32BIT_PD_PHYS:
-            ASMAtomicWriteSize(&u.pau32[iUserTable], 0);
+            ASMAtomicWriteU32(&u.pau32[iUserTable], 0);
             break;
 
         /* 64-bit entries */
@@ -3624,7 +3625,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-#if defined(IN_RC)
+#ifdef IN_RC
             /*
              * In 32 bits PAE mode we *must* invalidate the TLB when changing a
              * PDPT entry; the CPU fetches them only during cr3 load, so any
@@ -3645,7 +3646,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_ROOT_NESTED:
         case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
-            ASMAtomicWriteSize(&u.pau64[iUserTable], 0);
+            ASMAtomicWriteU64(&u.pau64[iUserTable], 0);
             break;
 
         default:
