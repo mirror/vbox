@@ -1923,7 +1923,6 @@ VMMDECL(void) PGMRZDynMapReleaseAutoSet(PVMCPU pVCpu)
     else
 #endif
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->aStatRZDynMapSetFilledPct[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
-    AssertMsg(cEntries < PGMMAPSET_MAX_FILL, ("%u\n", cEntries));
     if (cEntries > RT_ELEMENTS(pSet->aEntries) * 50 / 100)
         Log(("PGMRZDynMapReleaseAutoSet: cEntries=%d\n", cEntries));
     else
@@ -1958,8 +1957,6 @@ VMMDECL(void) PGMRZDynMapFlushAutoSet(PVMCPU pVCpu)
     if (cEntries >= RT_ELEMENTS(pSet->aEntries) * 45 / 100)
     {
         pSet->cEntries = 0;
-
-        AssertMsg(cEntries < PGMMAPSET_MAX_FILL, ("%u\n", cEntries));
         Log(("PGMDynMapFlushAutoSet: cEntries=%d\n", pSet->cEntries));
 
         pgmDynMapFlushAutoSetWorker(pSet, cEntries);
@@ -2085,14 +2082,19 @@ VMMDECL(uint32_t) PGMRZDynMapPushAutoSubset(PVMCPU pVCpu)
     uint32_t        iPrevSubset = pSet->iSubset;
     LogFlow(("PGMRZDynMapPushAutoSubset: pVCpu=%p iPrevSubset=%u\n", pVCpu, iPrevSubset));
 
+    /*
+     * If it looks like we're approaching the max set size or mapping space
+     * optimize the set to drop off unused pages.
+     */
+    if (   pSet->cEntries > RT_ELEMENTS(pSet->aEntries) * 60 / 100
 #ifdef IN_RC
-    /* kludge */
-    if (pSet->cEntries > MM_HYPER_DYNAMIC_SIZE / PAGE_SIZE / 2)
+        || pSet->cEntries > MM_HYPER_DYNAMIC_SIZE / PAGE_SIZE / 2  /** @todo need to do this for r0 as well.*/
+#endif
+        )
     {
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapSetOptimize);
         pgmDynMapOptimizeAutoSet(pSet);
     }
-#endif
 
     pSet->iSubset = pSet->cEntries;
     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapSubsets);
@@ -2124,7 +2126,6 @@ VMMDECL(void) PGMRZDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
     if (    cEntries >= RT_ELEMENTS(pSet->aEntries) * 40 / 100
         &&  cEntries != pSet->iSubset)
     {
-        AssertMsg(cEntries < PGMMAPSET_MAX_FILL, ("%u\n", cEntries));
         pgmDynMapFlushSubset(pSet);
         Assert(pSet->cEntries >= iPrevSubset || iPrevSubset == UINT32_MAX);
     }
@@ -2379,7 +2380,6 @@ int pgmRZDynMapHCPageCommon(PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv RTLOG_C
             {
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapSetSearchFlushes);
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->aStatRZDynMapSetFilledPct[(pSet->cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
-                AssertMsg(pSet->cEntries < PGMMAPSET_MAX_FILL, ("%u\n", pSet->cEntries));
                 pgmDynMapFlushSubset(pSet);
             }
 #endif
