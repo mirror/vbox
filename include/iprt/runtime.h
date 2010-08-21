@@ -31,14 +31,13 @@
 #include <iprt/param.h>
 #include <iprt/initterm.h>
 
-#ifndef IN_RC
-# include <iprt/alloc.h>
+#if !defined(IN_RC) && !defined(IN_RING0_AGNOSTIC)
+# include <iprt/alloca.h>
 #endif
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>
-#include <iprt/crc32.h>
-#include <iprt/crc64.h>
+#include <iprt/crc.h>
 #include <iprt/critsect.h>
 #include <iprt/dir.h>
 #include <iprt/err.h>

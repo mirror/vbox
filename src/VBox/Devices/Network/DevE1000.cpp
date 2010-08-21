@@ -43,7 +43,7 @@
 //#define E1K_REL_STATS
 //#define E1K_USE_SUPLIB_SEMEVENT
 
-#include <iprt/crc32.h>
+#include <iprt/crc.h>
 #include <iprt/ctype.h>
 #include <iprt/net.h>
 #include <iprt/semaphore.h>

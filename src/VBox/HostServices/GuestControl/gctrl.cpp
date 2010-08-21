@@ -29,7 +29,7 @@
 /** @todo Remove unused header files below! */
 #include <iprt/alloca.h>
 #include <iprt/initterm.h>
-#include <iprt/crc32.h>
+#include <iprt/crc.h>
 #include <iprt/ctype.h>
 #include <iprt/env.h>
 #include <iprt/file.h>

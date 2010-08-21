@@ -19,7 +19,7 @@
 
 #include "driver.h"
 #include <VBox/VRDPOrders.h>
-#include <iprt/crc64.h>
+#include <iprt/crc.h>
 
 /*
  * The client's glyph cache theoretically consists of 10 caches:

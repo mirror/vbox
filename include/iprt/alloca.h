@@ -23,8 +23,12 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef __iprt_alloca_h__
-#define __iprt_alloca_h__
+#ifndef ___iprt_alloca_h
+#define ___iprt_alloca_h
+
+#if defined(IN_RC) || defined(IN_RING0_AGNOSTIC)
+# error "No alloca() in raw-mode and agnostic ring-0 context as it may have external dependencies like libgcc."
+#endif
 
 /*
  * If there are more difficult platforms out there, we'll do OS
@@ -37,6 +41,7 @@
  && (defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD))
 /* ASSUMES GNU C */
 # define alloca(cb) __builtin_alloca(cb)
+
 #else
 # include <stdlib.h>
 # if !defined(RT_OS_DARWIN) && !defined(RT_OS_FREEBSD)

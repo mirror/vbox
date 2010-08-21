@@ -31,7 +31,7 @@
 #include <iprt/mem.h>
 #include <iprt/thread.h>
 #include <iprt/spinlock.h>
-#include <iprt/crc32.h>
+#include <iprt/crc.h>
 #include <iprt/err.h>
 #include <iprt/ctype.h>
 #define VBOXNETFLT_SOLARIS_IPV6_POLLING
