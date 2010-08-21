@@ -48,6 +48,7 @@ Debugger_SOURCES   = \
 	DBGCCommands.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp \
+	DBGCGdbRemoteStub.cpp \
 	DBGCTcp.cpp
 
 #
