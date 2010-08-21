@@ -2328,6 +2328,9 @@ static int iscsiSendPDUAsync(PISCSIIMAGE pImage)
     } while (   RT_SUCCESS(rc)
              && !pImage->pIScsiPDUTxCur);
 
+    if (rc == VERR_TRY_AGAIN)
+        rc = VINF_SUCCESS;
+
     /* Add the write poll flag if we still have something to send, clear it otherwise. */
     if (pImage->pIScsiPDUTxCur)
         pImage->fPollEvents |= VD_INTERFACETCPNET_EVT_WRITE;
