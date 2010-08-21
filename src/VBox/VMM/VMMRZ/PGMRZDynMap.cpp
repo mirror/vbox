@@ -253,7 +253,7 @@ typedef struct PGMR0DYNMAP
      * This does not include guard pages. */
     uint32_t                    cLoad;
     /** The max load ever.
-     * This is maintained to get trigger adding of more mapping space. */
+     * This is maintained to trigger the adding of more mapping space. */
     uint32_t                    cMaxLoad;
 # ifndef IN_RC
     /** Initialization / termination lock. */
@@ -1864,6 +1864,29 @@ VMMR0DECL(bool) PGMR0DynMapStartOrMigrateAutoSet(PVMCPU pVCpu)
 
 
 /**
+ * Checks if the set has high load.
+ *
+ * @returns true on high load, otherwise false.
+ * @param   pSet            The set.
+ */
+DECLINLINE(bool) pgmRZDynMapHasHighLoad(PPGMMAPSET pSet)
+{
+#ifdef IN_RC
+    if (pSet->cEntries < MM_HYPER_DYNAMIC_SIZE / PAGE_SIZE / 2)
+        return false;
+#endif
+
+    PPGMRZDYNMAP pThis = PGMRZDYNMAP_SET_2_DYNMAP(pSet);
+    uint32_t cUnusedPages = pThis->cPages - pThis->cLoad;
+#ifdef IN_RC
+    return cUnusedPages <= MM_HYPER_DYNAMIC_SIZE / PAGE_SIZE * 36 / 100;
+#else
+    return cUnusedPages <= PGMR0DYNMAP_PAGES_PER_CPU_MIN;
+#endif
+}
+
+
+/**
  * Worker that performs the actual flushing of the set.
  *
  * @param   pSet        The set to flush.
@@ -1954,7 +1977,8 @@ VMMDECL(void) PGMRZDynMapFlushAutoSet(PVMCPU pVCpu)
     else
 #endif
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->aStatRZDynMapSetFilledPct[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
-    if (cEntries >= RT_ELEMENTS(pSet->aEntries) * 45 / 100)
+    if (   cEntries >= RT_ELEMENTS(pSet->aEntries) * 45 / 100
+        || pgmRZDynMapHasHighLoad(pSet))
     {
         pSet->cEntries = 0;
         Log(("PGMDynMapFlushAutoSet: cEntries=%d\n", pSet->cEntries));
@@ -2087,10 +2111,7 @@ VMMDECL(uint32_t) PGMRZDynMapPushAutoSubset(PVMCPU pVCpu)
      * optimize the set to drop off unused pages.
      */
     if (   pSet->cEntries > RT_ELEMENTS(pSet->aEntries) * 60 / 100
-#ifdef IN_RC
-        || pSet->cEntries > MM_HYPER_DYNAMIC_SIZE / PAGE_SIZE / 2  /** @todo need to do this for r0 as well.*/
-#endif
-        )
+        || pgmRZDynMapHasHighLoad(pSet))
     {
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZDynMapSetOptimize);
         pgmDynMapOptimizeAutoSet(pSet);
