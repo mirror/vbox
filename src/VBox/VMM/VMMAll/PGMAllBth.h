@@ -2812,7 +2812,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
              * Fill the shadow page table.
              */
             /* Get address and flags from the source PDE. */
-//            Assert(GST_IS_PDE_VALID(pVCpu, PdeSrc));
+            Assert(GST_IS_BIG_PDE_VALID(pVCpu, PdeSrc));
             SHWPTE PteDstBase;
             SHW_PTE_SET(PteDstBase, PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT));
 
