@@ -1026,7 +1026,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 uint64_t fPageShw;
                 rc = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
                 AssertMsg((RT_SUCCESS(rc) && (fPageShw & X86_PTE_RW)) || pVM->cCpus > 1 /* new monitor can be installed/page table flushed between the trap exit and PGMTrap0eHandler */,
-                          ("rc=%Rrc fPageShw=%RX64 \n", rc, fPageShw));
+                          ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
 #   endif /* VBOX_STRICT */
                 STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2OutOfSyncHndObs; });
                 return VINF_SUCCESS;
@@ -2812,7 +2812,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
              * Fill the shadow page table.
              */
             /* Get address and flags from the source PDE. */
-            Assert(GST_IS_PDE_VALID(pVCpu, PdeSrc));
+//            Assert(GST_IS_PDE_VALID(pVCpu, PdeSrc));
             SHWPTE PteDstBase;
             SHW_PTE_SET(PteDstBase, PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT));
 
