@@ -20,7 +20,7 @@
 
 #include "driver.h"
 #include "vrdpbmp.h"
-#include <iprt/crc64.h>
+#include <iprt/crc.h>
 #include <VBox/VRDPOrders.h>
 
 /*

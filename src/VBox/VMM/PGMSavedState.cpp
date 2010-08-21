@@ -34,7 +34,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/crc32.h>
+#include <iprt/crc.h>
 #include <iprt/mem.h>
 #include <iprt/sha.h>
 #include <iprt/string.h>

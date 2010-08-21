@@ -34,7 +34,7 @@
 #include <iprt/getopt.h>
 #include <iprt/rand.h>
 #include <iprt/log.h>
-#include <iprt/crc32.h>
+#include <iprt/crc.h>
 #include <iprt/net.h>
 
 #include "../Pcap.h"

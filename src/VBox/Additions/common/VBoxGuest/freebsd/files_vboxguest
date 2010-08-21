@@ -54,7 +54,6 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/include/iprt/types.h=>include/iprt/types.h \
     ${PATH_ROOT}/include/iprt/uuid.h=>include/iprt/uuid.h \
     ${PATH_ROOT}/include/iprt/crc.h=>include/iprt/crc.h \
-    ${PATH_ROOT}/include/iprt/crc32.h=>include/iprt/crc32.h \
     ${PATH_ROOT}/include/iprt/net.h=>include/iprt/net.h \
     ${PATH_ROOT}/include/iprt/rand.h=>include/iprt/rand.h \
     ${PATH_ROOT}/include/iprt/path.h=>include/iprt/path.h \

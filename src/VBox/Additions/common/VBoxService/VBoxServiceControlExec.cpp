@@ -1,4 +1,3 @@
-
 /* $Id$ */
 /** @file
  * VBoxServiceControlExec - Utility functions for process execution.
@@ -21,7 +20,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/assert.h>
-#include <iprt/crc32.h>
+#include <iprt/crc.h>
 #include <iprt/ctype.h>
 #include <iprt/env.h>
 #include <iprt/file.h>

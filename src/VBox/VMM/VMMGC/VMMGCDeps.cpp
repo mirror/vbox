@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <iprt/crc.h>
 #include <iprt/string.h>
-#include <iprt/crc32.h>
 
 PFNRT g_VMMGCDeps[] =
 {

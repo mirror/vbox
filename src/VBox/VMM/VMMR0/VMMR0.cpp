@@ -41,7 +41,7 @@
 
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
-#include <iprt/crc32.h>
+#include <iprt/crc.h>
 #include <iprt/mp.h>
 #include <iprt/once.h>
 #include <iprt/stdarg.h>

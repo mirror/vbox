@@ -50,7 +50,7 @@
 #endif
 #ifdef RTZIP_USE_LZF
 # include <lzf.h>
-# include <iprt/crc32.h>
+# include <iprt/crc.h>
 #endif
 #ifdef RTZIP_USE_LZJB
 # include "lzjb.h"

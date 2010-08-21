@@ -30,8 +30,7 @@
 *******************************************************************************/
 #include <iprt/sha.h>
 #include <iprt/md5.h>
-#include <iprt/crc32.h>
-#include <iprt/crc64.h>
+#include <iprt/crc.h>
 
 #include <iprt/ctype.h>
 #include <iprt/err.h>
