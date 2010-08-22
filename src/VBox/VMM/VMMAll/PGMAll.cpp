@@ -2235,6 +2235,11 @@ VMM_INT_DECL(void) PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe)
         pVCpu->pgm.s.fGstAmd64MbzPdpeMask    &= ~X86_PDPE_LM_NX;
         pVCpu->pgm.s.fGstAmd64MbzBigPdpeMask &= ~X86_PDPE_LM_NX;
         pVCpu->pgm.s.fGstAmd64MbzPml4eMask   &= ~X86_PML4E_NX;
+
+        pVCpu->pgm.s.fGst64ShadowedPteMask        |= X86_PTE_PAE_NX;
+        pVCpu->pgm.s.fGst64ShadowedPdeMask        |= X86_PDE_PAE_NX;
+        pVCpu->pgm.s.fGst64ShadowedBigPdeMask     |= X86_PDE2M_PAE_NX;
+        pVCpu->pgm.s.fGst64ShadowedBigPde4PteMask |= X86_PDE2M_PAE_NX;
     }
     else
     {
@@ -2242,13 +2247,18 @@ VMM_INT_DECL(void) PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe)
         pVCpu->pgm.s.fGstPaeMbzPteMask       |= X86_PTE_PAE_NX;
         pVCpu->pgm.s.fGstPaeMbzPdeMask       |= X86_PDE_PAE_NX;
         pVCpu->pgm.s.fGstPaeMbzBigPdeMask    |= X86_PDE2M_PAE_NX;
-        /*pVCpu->pgm.s.fGstPaeMbzPdpeMask - N/A */
+        /*pVCpu->pgm.s.fGstPaeMbzPdpeMask -N/A */
         pVCpu->pgm.s.fGstAmd64MbzPteMask     |= X86_PTE_PAE_NX;
         pVCpu->pgm.s.fGstAmd64MbzPdeMask     |= X86_PDE_PAE_NX;
         pVCpu->pgm.s.fGstAmd64MbzBigPdeMask  |= X86_PDE2M_PAE_NX;
         pVCpu->pgm.s.fGstAmd64MbzPdpeMask    |= X86_PDPE_LM_NX;
         pVCpu->pgm.s.fGstAmd64MbzBigPdpeMask |= X86_PDPE_LM_NX;
         pVCpu->pgm.s.fGstAmd64MbzPml4eMask   |= X86_PML4E_NX;
+
+        pVCpu->pgm.s.fGst64ShadowedPteMask        &= ~X86_PTE_PAE_NX;
+        pVCpu->pgm.s.fGst64ShadowedPdeMask        &= ~X86_PDE_PAE_NX;
+        pVCpu->pgm.s.fGst64ShadowedBigPdeMask     &= ~X86_PDE2M_PAE_NX;
+        pVCpu->pgm.s.fGst64ShadowedBigPde4PteMask &= ~X86_PDE2M_PAE_NX;
     }
 }
 

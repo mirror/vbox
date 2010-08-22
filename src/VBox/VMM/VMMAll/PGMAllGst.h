@@ -163,7 +163,7 @@ static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
             if (RT_UNLIKELY(!GST_IS_BIG_PDE_VALID(pVCpu, Pde)))
                 return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 2);
 
-            pWalk->Core.GCPhys       = GST_GET_PDE_BIG_PG_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
+            pWalk->Core.GCPhys       = GST_GET_BIG_PDE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
                                      | (GCPtr & GST_BIG_PAGE_OFFSET_MASK);
             uint8_t fEffectiveXX     = (uint8_t)pWalk->Pde.u
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
@@ -194,7 +194,7 @@ static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
         /*
          * The PTE.
          */
-        rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, Pde.u & GST_PDE_PG_MASK, &pWalk->pPt);
+        rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GST_GET_PDE_GCPHYS(Pde), &pWalk->pPt);
         if (RT_FAILURE(rc))
             return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 1, rc);
     }
@@ -213,7 +213,7 @@ static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
         /*
          * We're done.
          */
-        pWalk->Core.GCPhys       = (Pte.u & GST_PDE_PG_MASK)
+        pWalk->Core.GCPhys       = GST_GET_PDE_GCPHYS(Pte)
                                  | (GCPtr & PAGE_OFFSET_MASK);
         uint8_t fEffectiveXX     = (uint8_t)pWalk->Pte.u
                                  & (uint8_t)pWalk->Pde.u
@@ -367,7 +367,7 @@ PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t f
         else
         {
             /*
-             * 4MB Page table
+             * 2/4MB Page table
              */
             GSTPDE PdeNew;
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -500,7 +500,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                  * Normal page table.
                  */
                 PGSTPT pPT;
-                int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, Pde.u & GST_PDE_PG_MASK, &pPT);
+                int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GST_GET_PDE_GCPHYS(Pde), &pPT);
                 if (RT_SUCCESS(rc))
                 {
                     for (unsigned iPTE = (GCPtr >> GST_PT_SHIFT) & GST_PT_MASK;
@@ -557,7 +557,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                 /*
                  * 2/4MB page.
                  */
-                RTGCPHYS GCPhys = (RTGCPHYS)(Pde.u & GST_PDE_PG_MASK);
+                RTGCPHYS GCPhys = (RTGCPHYS)GST_GET_PDE_GCPHYS(Pde);
                 for (unsigned i4KB = (GCPtr >> GST_PT_SHIFT) & GST_PT_MASK;
                      i4KB < PAGE_SIZE / sizeof(GSTPDE) && iPage < pCur->cPages;
                      i4KB++, iPage++, GCPtr += PAGE_SIZE, offPage = 0)

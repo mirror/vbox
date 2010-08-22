@@ -2097,20 +2097,26 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         /** @todo The manuals are not entirely clear whether the physical
          *        address width is relevant.  See table 5-9 in the intel
          *        manual vs the PDE4M descriptions.  Write testcase (NP). */
-        pVCpu->pgm.s.fGst32BitMbzBigPdeMask  = ((uint32_t)(fMbzPageFrameMask >> (32 - 13)) & X86_PDE4M_PG_HIGH_MASK)
-                                             | X86_PDE4M_MBZ_MASK;
+        pVCpu->pgm.s.fGst32BitMbzBigPdeMask   = ((uint32_t)(fMbzPageFrameMask >> (32 - 13)) & X86_PDE4M_PG_HIGH_MASK)
+                                              | X86_PDE4M_MBZ_MASK;
 
-        pVCpu->pgm.s.fGstPaeMbzPteMask       = fMbzPageFrameMask | X86_PTE_PAE_MBZ_MASK_NO_NX;
-        pVCpu->pgm.s.fGstPaeMbzPdeMask       = fMbzPageFrameMask | X86_PDE_PAE_MBZ_MASK_NO_NX;
-        pVCpu->pgm.s.fGstPaeMbzBigPdeMask    = fMbzPageFrameMask | X86_PDE2M_PAE_MBZ_MASK_NO_NX;
-        pVCpu->pgm.s.fGstPaeMbzPdpeMask      = fMbzPageFrameMask | X86_PDPE_PAE_MBZ_MASK;
+        pVCpu->pgm.s.fGstPaeMbzPteMask        = fMbzPageFrameMask | X86_PTE_PAE_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstPaeMbzPdeMask        = fMbzPageFrameMask | X86_PDE_PAE_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstPaeMbzBigPdeMask     = fMbzPageFrameMask | X86_PDE2M_PAE_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstPaeMbzPdpeMask       = fMbzPageFrameMask | X86_PDPE_PAE_MBZ_MASK;
 
-        pVCpu->pgm.s.fGstAmd64MbzPteMask     = fMbzPageFrameMask | X86_PTE_LM_MBZ_MASK_NO_NX;
-        pVCpu->pgm.s.fGstAmd64MbzPdeMask     = fMbzPageFrameMask | X86_PDE_LM_MBZ_MASK_NX;
-        pVCpu->pgm.s.fGstAmd64MbzBigPdeMask  = fMbzPageFrameMask | X86_PDE2M_LM_MBZ_MASK_NX;
-        pVCpu->pgm.s.fGstAmd64MbzPdpeMask    = fMbzPageFrameMask | X86_PDPE_LM_MBZ_MASK_NO_NX;
-        pVCpu->pgm.s.fGstAmd64MbzBigPdpeMask = fMbzPageFrameMask | X86_PDPE1G_LM_MBZ_MASK_NO_NX;
-        pVCpu->pgm.s.fGstAmd64MbzPml4eMask   = fMbzPageFrameMask | X86_PML4E_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPteMask      = fMbzPageFrameMask | X86_PTE_LM_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPdeMask      = fMbzPageFrameMask | X86_PDE_LM_MBZ_MASK_NX;
+        pVCpu->pgm.s.fGstAmd64MbzBigPdeMask   = fMbzPageFrameMask | X86_PDE2M_LM_MBZ_MASK_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPdpeMask     = fMbzPageFrameMask | X86_PDPE_LM_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstAmd64MbzBigPdpeMask  = fMbzPageFrameMask | X86_PDPE1G_LM_MBZ_MASK_NO_NX;
+        pVCpu->pgm.s.fGstAmd64MbzPml4eMask    = fMbzPageFrameMask | X86_PML4E_MBZ_MASK_NO_NX;
+
+        pVCpu->pgm.s.fGst64ShadowedPteMask    = X86_PTE_P   | X86_PTE_RW   | X86_PTE_US   | X86_PTE_G | X86_PTE_A | X86_PTE_D;
+        pVCpu->pgm.s.fGst64ShadowedPdeMask    = X86_PDE_P   | X86_PDE_RW   | X86_PDE_US   | X86_PDE_A;
+        pVCpu->pgm.s.fGst64ShadowedBigPdeMask = X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A;
+        pVCpu->pgm.s.fGst64ShadowedBigPde4PteMask =
+            X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_G | X86_PDE4M_A | X86_PDE4M_D;
     }
 
     /*

@@ -1269,7 +1269,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
              * 4KB - page.
              */
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
-            RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE_PG_MASK;
+            RTGCPHYS        GCPhys   = GST_GET_PDE_GCPHYS(PdeSrc);
 
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
             /* Reset the modification counter (OpenSolaris trashes tlb entries very often) */
@@ -1320,7 +1320,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
              */
             /* Before freeing the page, check if anything really changed. */
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
-            RTGCPHYS        GCPhys   = GST_GET_PDE_BIG_PG_GCPHYS(pVM, PdeSrc);
+            RTGCPHYS        GCPhys   = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
@@ -1329,9 +1329,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
                 &&  pShwPage->enmKind == BTH_PGMPOOLKIND_PT_FOR_BIG)
             {
                 /* ASSUMES a the given bits are identical for 4M and normal PDEs */
-                /** @todo PAT */
-                if (        (PdeSrc.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD))
-                        ==  (PdeDst.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD))
+                /** @todo This test is wrong as it cannot check the G bit!
+                 *        FIXME */
+                if (        (PdeSrc.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US))
+                        ==  (PdeDst.u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US))
                     &&  (   PdeSrc.b.u1Dirty /** @todo rainy day: What about read-only 4M pages? not very common, but still... */
                          || (PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY)))
                 {
@@ -1831,7 +1832,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     RTGCPHYS        GCPhys;
     if (!fBigPage)
     {
-        GCPhys = PdeSrc.u & GST_PDE_PG_MASK;
+        GCPhys = GST_GET_PDE_GCPHYS(PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
         /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
         GCPhys |= (iPDDst & 1) * (PAGE_SIZE / 2);
@@ -1839,12 +1840,13 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     }
     else
     {
-        GCPhys = GST_GET_PDE_BIG_PG_GCPHYS(pVM, PdeSrc);
+        GCPhys = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
         /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
         GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
 # endif
     }
+    /** @todo This doesn't check the G bit of 2/4MB pages. FIXME */
     if (    fPdeValid
         &&  pShwPage->GCPhys == GCPhys
         &&  PdeSrc.n.u1Present
@@ -1869,7 +1871,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                  * 4KB Page - Map the guest page table.
                  */
                 PGSTPT pPTSrc;
-                int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, PdeSrc.u & GST_PDE_PG_MASK, &pPTSrc);
+                int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GST_GET_PDE_GCPHYS(PdeSrc), &pPTSrc);
                 if (RT_SUCCESS(rc))
                 {
 # ifdef PGM_SYNC_N_PAGES
@@ -1958,7 +1960,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                  * (There are many causes of getting here, it's no longer only CSAM.)
                  */
                 /* Calculate the GC physical address of this 4KB shadow page. */
-                GCPhys = GST_GET_PDE_BIG_PG_GCPHYS(pVM, PdeSrc) | (GCPtrPage & GST_BIG_PAGE_OFFSET_MASK);
+                GCPhys = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc) | (GCPtrPage & GST_BIG_PAGE_OFFSET_MASK);
                 /* Find ram range. */
                 PPGMPAGE pPage;
                 int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
@@ -1992,14 +1994,9 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                      */
                     SHWPTE PteDst;
                     if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                        PGM_BTH_NAME(SyncHandlerPte)(pVM, pPage,
-                                                     PdeSrc.u & ~(  X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK
-                                                                  | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT),
-                                                     &PteDst);
+                        PGM_BTH_NAME(SyncHandlerPte)(pVM, pPage, GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, PdeSrc), &PteDst);
                     else
-                        SHW_PTE_SET(PteDst,
-                                      (PdeSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
-                                    | PGM_PAGE_GET_HCPHYS(pPage));
+                        SHW_PTE_SET(PteDst, GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, PdeSrc) | PGM_PAGE_GET_HCPHYS(pPage));
 
                     const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                     if (    SHW_PTE_IS_P(PteDst)
@@ -2049,7 +2046,8 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                 else
                 {
                     LogFlow(("PGM_GCPHYS_2_PTR %RGp (big) failed with %Rrc\n", GCPhys, rc));
-                    /** @todo must wipe the shadow page table in this case. */
+                    /** @todo must wipe the shadow page table entry in this
+                     *        case. */
                 }
             }
             PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
@@ -2066,7 +2064,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     }
     else
     {
-/// @todo        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPagePDOutOfSync));
+/// @todo        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPagePDOutOfSyncAndInvalid));
         Log2(("SyncPage: Bad PDE at %RGp PdeSrc=%RX64 PdeDst=%RX64 (GCPhys %RGp vs %RGp)\n",
               GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u, pShwPage->GCPhys, GCPhys));
     }
@@ -2366,7 +2364,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
      * Map the guest page table.
      */
     PGSTPT pPTSrc;
-    int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, pPdeSrc->u & GST_PDE_PG_MASK, &pPTSrc);
+    int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GST_GET_PDE_GCPHYS(*pPdeSrc), &pPTSrc);
     if (RT_FAILURE(rc))
     {
         AssertRC(rc);
@@ -2475,8 +2473,16 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
 /**
  * Sync a shadow page table.
  *
- * The shadow page table is not present. This includes the case where
- * there is a conflict with a mapping.
+ * The shadow page table is not present in the shadow PDE.
+ *
+ * Handles mapping conflicts.
+ *
+ * This is called by VerifyAccessSyncPage, PrefetchPage, InvalidatePage (on
+ * conflict), and Trap0eHandler.
+ *
+ * A precodition for this method is that the shadow PDE is not present.  The
+ * caller must take the PGM lock before checking this and continue to hold it
+ * when calling this method.
  *
  * @returns VBox status code.
  * @param   pVCpu       The VMCPU handle.
@@ -2507,9 +2513,13 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     int             rc       = VINF_SUCCESS;
 
     /*
-     * Validate input a little bit.
+     * Some input validation first.
      */
     AssertMsg(iPDSrc == ((GCPtrPage >> GST_PD_SHIFT) & GST_PD_MASK), ("iPDSrc=%x GCPtrPage=%RGv\n", iPDSrc, GCPtrPage));
+
+    /*
+     * Get the relevant shadow PDE entry.
+     */
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;
     PSHWPDE         pPdeDst  = pgmShwGet32BitPDEPtr(pVCpu, GCPtrPage);
@@ -2586,21 +2596,22 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
     /*
-     * Sync page directory entry.
+     * Sync the page directory entry.
      */
-    GSTPDE  PdeSrc = pPDSrc->a[iPDSrc];
-    if (PdeSrc.n.u1Present)
+    GSTPDE      PdeSrc = pPDSrc->a[iPDSrc];
+    const bool  fPageTable = !PdeSrc.b.u1Size || !GST_IS_PSE_ACTIVE(pVCpu);
+    if (   PdeSrc.n.u1Present
+        && (fPageTable ? GST_IS_PDE_VALID(pVCpu, PdeSrc) : GST_IS_BIG_PDE_VALID(pVCpu, PdeSrc)) )
     {
         /*
          * Allocate & map the page table.
          */
         PSHWPT          pPTDst;
-        const bool      fPageTable = !PdeSrc.b.u1Size || !GST_IS_PSE_ACTIVE(pVCpu);
         PPGMPOOLPAGE    pShwPage;
         RTGCPHYS        GCPhys;
         if (fPageTable)
         {
-            GCPhys = PdeSrc.u & GST_PDE_PG_MASK;
+            GCPhys = GST_GET_PDE_GCPHYS(PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
             GCPhys |= (iPDDst & 1) * (PAGE_SIZE / 2);
@@ -2611,12 +2622,12 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
         {
             PGMPOOLACCESS enmAccess;
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
-            const bool fNoExecute = PdeSrc.n.u1NoExecute && GST_IS_NX_ACTIVE(pVCpu);
+            const bool  fNoExecute = PdeSrc.n.u1NoExecute && GST_IS_NX_ACTIVE(pVCpu);
 # else
-            const bool fNoExecute = false;
+            const bool  fNoExecute = false;
 # endif
 
-            GCPhys = GST_GET_PDE_BIG_PG_GCPHYS(pVM, PdeSrc);
+            GCPhys = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
             GCPhys |= GCPtrPage & (1 << X86_PD_PAE_SHIFT);
@@ -2646,12 +2657,10 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
              * The PT was cached, just hook it up.
              */
             if (fPageTable)
-                PdeDst.u = pShwPage->Core.Key
-                         | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
+                PdeDst.u = pShwPage->Core.Key | GST_GET_PDE_SHW_FLAGS(pVCpu, PdeSrc);
             else
             {
-                PdeDst.u = pShwPage->Core.Key
-                         | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
+                PdeDst.u = pShwPage->Core.Key | GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, PdeSrc);
                 /* (see explanation and assumptions further down.) */
                 if (    !PdeSrc.b.u1Dirty
                     &&  PdeSrc.b.u1Write)
@@ -2673,12 +2682,23 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
         }
         else
             AssertMsgFailedReturn(("rc=%Rrc\n", rc), VERR_INTERNAL_ERROR);
+        /** @todo Why do we bother preserving X86_PDE_AVL_MASK here?
+         * Both PGM_PDFLAGS_MAPPING and PGM_PDFLAGS_TRACK_DIRTY should be
+         * irrelevant at this point. */
         PdeDst.u &= X86_PDE_AVL_MASK;
         PdeDst.u |= pShwPage->Core.Key;
 
         /*
          * Page directory has been accessed (this is a fault situation, remember).
          */
+        /** @todo
+         * Well, when the caller is PrefetchPage or InvalidatePage is isn't a
+         * fault situation.  What's more, the Trap0eHandler has already set the
+         * accessed bit.  So, it's actually just VerifyAccessSyncPage which
+         * might need setting the accessed flag.
+         *
+         * The best idea is to leave this change to the caller and add an
+         * assertion that it's set already. */
         pPDSrc->a[iPDSrc].n.u1Accessed = 1;
         if (fPageTable)
         {
@@ -2690,14 +2710,14 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             Log2(("SyncPT:   4K  %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx}\n",
                   GCPtrPage, PdeSrc.b.u1Present, PdeSrc.b.u1Write, PdeSrc.b.u1User, (uint64_t)PdeSrc.u));
             PGSTPT pPTSrc;
-            rc = PGM_GCPHYS_2_PTR(pVM, PdeSrc.u & GST_PDE_PG_MASK, &pPTSrc);
+            rc = PGM_GCPHYS_2_PTR(pVM, GST_GET_PDE_GCPHYS(PdeSrc), &pPTSrc);
             if (RT_SUCCESS(rc))
             {
                 /*
                  * Start by syncing the page directory entry so CSAM's TLB trick works.
                  */
                 PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | X86_PDE_AVL_MASK))
-                         | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
+                         | GST_GET_PDE_SHW_FLAGS(pVCpu, PdeSrc);
                 ASMAtomicWriteSize(pPdeDst, PdeDst.u);
                 PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
 
@@ -2761,7 +2781,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                               PteSrc.n.u1User & PdeSrc.n.u1User,
                               (uint64_t)PteSrc.u,
                               SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : "", SHW_PTE_LOG64(pPTDst->a[iPTDst]), iPTSrc, PdeSrc.au32[0],
-                              (RTGCPHYS)((PdeSrc.u & GST_PDE_PG_MASK) + iPTSrc*sizeof(PteSrc)) ));
+                              (RTGCPHYS)(GST_GET_PDE_GCPHYS(PdeSrc) + iPTSrc*sizeof(PteSrc)) ));
                     }
                     /* else: the page table was cleared by the pool */
                 } /* for PTEs */
@@ -2786,7 +2806,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
              * Start by syncing the page directory entry.
              */
             PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | (X86_PDE_AVL_MASK & ~PGM_PDFLAGS_TRACK_DIRTY)))
-                     | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
+                     | GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, PdeSrc);
 
             /*
              * If the page is not flagged as dirty and is writable, then make it read-only
@@ -2812,9 +2832,8 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
              * Fill the shadow page table.
              */
             /* Get address and flags from the source PDE. */
-            Assert(GST_IS_BIG_PDE_VALID(pVCpu, PdeSrc));
             SHWPTE PteDstBase;
-            SHW_PTE_SET(PteDstBase, PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT));
+            SHW_PTE_SET(PteDstBase, GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, PdeSrc));
 
             /* Loop thru the entries in the shadow PT. */
             const RTGCPTR   GCPtr  = (GCPtrPage >> SHW_PD_SHIFT) << SHW_PD_SHIFT; NOREF(GCPtr);
@@ -3847,7 +3866,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                     if (    !PdeSrc.b.u1Size
                         ||  !fBigPagesSupported)
                     {
-                        GCPhysGst = PdeSrc.u & GST_PDE_PG_MASK;
+                        GCPhysGst = GST_GET_PDE_GCPHYS(PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                         GCPhysGst |= (iPDDst & 1) * (PAGE_SIZE / 2);
 # endif
@@ -3863,7 +3882,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                             continue;
                         }
 # endif
-                        GCPhysGst = GST_GET_PDE_BIG_PG_GCPHYS(pVM, PdeSrc);
+                        GCPhysGst = GST_GET_BIG_PDE_GCPHYS(pVM, PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                         GCPhysGst |= GCPtr & RT_BIT(X86_PAGE_2M_SHIFT);
 # endif
@@ -3950,11 +3969,11 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                             {
 # ifdef IN_RING3
                                 PGMAssertHandlerAndFlagsInSync(pVM);
-                                PGMR3DumpHierarchyGC(pVM, cr3, cr4, (PdeSrc.u & GST_PDE_PG_MASK));
+                                PGMR3DumpHierarchyGC(pVM, cr3, cr4, GST_GET_PDE_GCPHYS(PdeSrc));
 # endif
                                 AssertMsgFailed(("Out of sync (!P) PTE at %RGv! PteSrc=%#RX64 PteDst=%#RX64 pPTSrc=%RGv iPTSrc=%x PdeSrc=%x physpte=%RGp\n",
                                                 GCPtr + off, (uint64_t)PteSrc.u, SHW_PTE_LOG64(PteDst), pPTSrc, iPT + offPTSrc, PdeSrc.au32[0],
-                                                (PdeSrc.u & GST_PDE_PG_MASK) + (iPT + offPTSrc)*sizeof(PteSrc)));
+                                                (uint64_t)GST_GET_PDE_GCPHYS(PdeSrc) + (iPT + offPTSrc)*sizeof(PteSrc)));
                                 cErrors++;
                                 continue;
                             }

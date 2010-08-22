@@ -1651,7 +1651,7 @@ bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
     if (!pPool->cDirtyPages)
         return false;
 
-    GCPhys = GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1);
+    GCPhys = GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
     for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
     {
@@ -1722,7 +1722,7 @@ void pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT)
     if (!pPool->cDirtyPages)
         return;
 
-    GCPhysPT = GCPhysPT & ~(RTGCPHYS)(PAGE_SIZE - 1);
+    GCPhysPT = GCPhysPT & ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
     for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
     {
@@ -2154,7 +2154,7 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
     /*
      * Look up the GCPhys in the hash.
      */
-    RTGCPHYS GCPhys = pNewPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1);
+    RTGCPHYS GCPhys = pNewPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
     unsigned i = pPool->aiHash[PGMPOOL_HASH(GCPhys)];
     if (i == NIL_PGMPOOL_IDX)
         return NULL;
@@ -2228,7 +2228,7 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
  */
 static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    LogFlow(("pgmPoolMonitorInsert %RGp\n", pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1)));
+    LogFlow(("pgmPoolMonitorInsert %RGp\n", pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK));
 
     /*
      * Filter out the relevant kinds.
@@ -2300,9 +2300,9 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     {
         Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX); Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
         PVM pVM = pPool->CTX_SUFF(pVM);
-        const RTGCPHYS GCPhysPage = pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1);
+        const RTGCPHYS GCPhysPage = pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
         rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
-                                          GCPhysPage, GCPhysPage + (PAGE_SIZE - 1),
+                                          GCPhysPage, GCPhysPage + PAGE_OFFSET_MASK,
                                           pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
                                           pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
                                           pPool->pfnAccessHandlerRC, MMHyperCCToRC(pVM, pPage),
@@ -2383,7 +2383,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         {
             PPGMPOOLPAGE pNewHead = &pPool->aPages[pPage->iMonitoredNext];
             pNewHead->iMonitoredPrev = NIL_PGMPOOL_IDX;
-            rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
+            rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK,
                                                    pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pNewHead),
                                                    pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pNewHead),
                                                    pPool->pfnAccessHandlerRC, MMHyperCCToRC(pVM, pNewHead),
@@ -2405,7 +2405,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     }
     else
     {
-        rc = PGMHandlerPhysicalDeregister(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1));
+        rc = PGMHandlerPhysicalDeregister(pVM, pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
         AssertFatalRC(rc);
         PVMCPU pVCpu = VMMGetCpu(pVM);
         AssertFatalMsg(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3),
@@ -3047,7 +3047,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 
                     case PGM_PAGE_HNDL_PHYS_STATE_WRITE:        /* Write access is monitored. */
                         u64OrMask = 0;
-                        u64AndMask = ~((uint64_t)X86_PTE_RW);
+                        u64AndMask = ~(uint64_t)X86_PTE_RW;
                         fRet = true;
                         STAM_COUNTER_INC(&pPool->StatTrackFlushEntryKeep);
                         break;
@@ -4929,7 +4929,7 @@ void pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys)
     /*
      * Look up the GCPhys in the hash.
      */
-    GCPhys = GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1);
+    GCPhys = GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
     unsigned i = pPool->aiHash[PGMPOOL_HASH(GCPhys)];
     if (i == NIL_PGMPOOL_IDX)
         return;
@@ -5167,7 +5167,7 @@ void pgmR3PoolReset(PVM pVM)
         pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
         if (pPage->fMonitored)
         {
-            int rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
+            int rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK,
                                                        pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
                                                        pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
                                                        pPool->pfnAccessHandlerRC, MMHyperCCToRC(pVM, pPage),
