@@ -3511,18 +3511,6 @@ typedef struct PGMCPU
     bool                            afAlignment2[3];
     /** @} */
 
-    /** @name PAE and AMD64 Guest Paging.
-     * @{ */
-    /** Mask containing the PTE bits that we shadow. */
-    uint64_t                        fGst64ShadowedPteMask;
-    /** Mask containing the PDE bits that we shadow. */
-    uint64_t                        fGst64ShadowedPdeMask;
-    /** Mask containing the big page PDE bits that we shadow in the PDE. */
-    uint64_t                        fGst64ShadowedBigPdeMask;
-    /** Mask containing the big page PDE bits that we shadow in the PTE. */
-    uint64_t                        fGst64ShadowedBigPde4PteMask;
-    /** @}  */
-
     /** @name PAE Guest Paging.
      * @{ */
     /** The guest's page directory pointer table, static RC mapping. */
@@ -3584,6 +3572,18 @@ typedef struct PGMCPU
     /** Mask containing the MBZ PML4E bits. */
     uint64_t                        fGstAmd64MbzPml4eMask;
     /** @} */
+
+    /** @name PAE and AMD64 Guest Paging.
+     * @{ */
+    /** Mask containing the PTE bits that we shadow. */
+    uint64_t                        fGst64ShadowedPteMask;
+    /** Mask containing the PDE bits that we shadow. */
+    uint64_t                        fGst64ShadowedPdeMask;
+    /** Mask containing the big page PDE bits that we shadow in the PDE. */
+    uint64_t                        fGst64ShadowedBigPdeMask;
+    /** Mask containing the big page PDE bits that we shadow in the PTE. */
+    uint64_t                        fGst64ShadowedBigPde4PteMask;
+    /** @}  */
 
     /** Pointer to the page of the current active CR3 - R3 Ptr. */
     R3PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R3;
