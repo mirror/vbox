@@ -37,6 +37,7 @@
 #undef GST_PD_SHIFT
 #undef GST_PD_MASK
 #undef GST_PTE_PG_MASK
+#undef GST_GET_PTE_SHW_FLAGS
 #undef GST_PT_SHIFT
 #undef GST_PT_MASK
 #undef GST_TOTAL_PD_ENTRIES
@@ -45,7 +46,11 @@
 #undef GST_PDPT_SHIFT
 #undef GST_PDPT_MASK
 #undef GST_PDPE_PG_MASK
-#undef GST_GET_PDE_BIG_PG_GCPHYS
+#undef GST_GET_PDE_GCPHYS
+#undef GST_GET_BIG_PDE_GCPHYS
+#undef GST_GET_PDE_SHW_FLAGS
+#undef GST_GET_BIG_PDE_SHW_FLAGS
+#undef GST_GET_BIG_PDE_SHW_FLAGS_4_PTE
 #undef GST_IS_PTE_VALID
 #undef GST_IS_PDE_VALID
 #undef GST_IS_BIG_PDE_VALID
@@ -100,6 +105,10 @@
 #   define BTH_IS_NP_ACTIVE(pVM)                (false)
 #  endif
 # endif
+# define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)      (true && This_should_perhaps_not_be_used_in_this_context) //??
+# define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      (true && This_should_perhaps_not_be_used_in_this_context) //??
+# define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde)  (true && This_should_perhaps_not_be_used_in_this_context) //??
+# define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde) (true && This_should_perhaps_not_be_used_in_this_context) //??
 # define GST_IS_PTE_VALID(pVCpu, Pte)           (true)
 # define GST_IS_PDE_VALID(pVCpu, Pde)           (true)
 # define GST_IS_BIG_PDE_VALID(pVCpu, Pde)       (true)
@@ -124,11 +133,18 @@
 # define GST_BIG_PAGE_OFFSET_MASK               X86_PAGE_4M_OFFSET_MASK
 # define GST_PDE_PG_MASK                        X86_PDE_PG_MASK
 # define GST_PDE_BIG_PG_MASK                    X86_PDE4M_PG_MASK
-# define GST_GET_PDE_BIG_PG_GCPHYS(pVM, PdeGst) pgmGstGet4MBPhysPage(&(pVM)->pgm.s, PdeGst)
+# define GST_GET_PDE_GCPHYS(Pde)                ((Pde).u & GST_PDE_PG_MASK)
+# define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       pgmGstGet4MBPhysPage(&(pVM)->pgm.s, Pde)
+# define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      ((Pde).u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_A))
+# define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde) \
+    ((Pde).u & (X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A))
+# define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde) \
+    ((Pde).u & (X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_G))
 # define GST_PD_SHIFT                           X86_PD_SHIFT
 # define GST_PD_MASK                            X86_PD_MASK
 # define GST_TOTAL_PD_ENTRIES                   X86_PG_ENTRIES
 # define GST_PTE_PG_MASK                        X86_PTE_PG_MASK
+# define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)      ((Pte).u & (X86_PTE_P | X86_PTE_RW | X86_PTE_US | X86_PTE_A | X86_PTE_D | X86_PTE_G))
 # define GST_PT_SHIFT                           X86_PT_SHIFT
 # define GST_PT_MASK                            X86_PT_MASK
 # define GST_CR3_PAGE_MASK                      X86_CR3_PAGE_MASK
@@ -156,7 +172,13 @@
 # define GST_BIG_PAGE_OFFSET_MASK               X86_PAGE_2M_OFFSET_MASK
 # define GST_PDE_PG_MASK                        X86_PDE_PAE_PG_MASK_FULL
 # define GST_PDE_BIG_PG_MASK                    X86_PDE2M_PAE_PG_MASK
-# define GST_GET_PDE_BIG_PG_GCPHYS(pVM, PdeGst) ((PdeGst).u & GST_PDE_BIG_PG_MASK)
+# define GST_GET_PDE_GCPHYS(Pde)                ((Pde).u & X86_PDE_PAE_PG_MASK_FULL)
+# define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       ((Pde).u & GST_PDE_BIG_PG_MASK)
+# define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)      ((Pte).u & (pVCpu)->pgm.s.fGst64ShadowedPteMask )
+# define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedPdeMask )
+# define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde)  ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedBigPdeMask )
+# define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde)  ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedBigPde4PteMask )
+
 # define GST_PD_SHIFT                           X86_PD_PAE_SHIFT
 # define GST_PD_MASK                            X86_PD_PAE_MASK
 # if PGM_GST_TYPE == PGM_TYPE_PAE
