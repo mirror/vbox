@@ -266,6 +266,13 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PFNVMATERROR pfnVMAtError, void *pvU
 #endif
                     break;
 
+#ifndef RT_OS_DARWIN
+                case VERR_HWACCM_CONFIG_MISMATCH:
+                    pszError = N_("VT-x/AMD-V is either not available on your host or disabled. "
+                                  "This hardware extension is required by the VM configuration");
+                    break;
+#endif
+
                 case VERR_SVM_IN_USE:
 #ifdef RT_OS_LINUX
                     pszError = N_("VirtualBox can't enable the AMD-V extension. "
