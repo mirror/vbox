@@ -1767,17 +1767,6 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
    VP_STATUS rc;
    USHORT DispiId;
    ULONG AdapterMemorySize = VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES;
-   VIDEO_ACCESS_RANGE AccessRanges[] =
-   {
-      {
-         {0, VBE_DISPI_LFB_PHYSICAL_ADDRESS},
-         VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES,
-         0,
-         FALSE,
-         FALSE,
-         0
-      }
-   };
 
    dprintf(("VBoxVideo::VBoxVideoFindAdapter %p\n", HwDeviceExtension));
 
@@ -1830,73 +1819,58 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
          L"HardwareInformation.BiosString",
          VBoxBiosString,
          sizeof(VBoxBiosString));
+
+      dprintf(("VBoxVideo::VBoxVideoFindAdapter: calling VideoPortGetAccessRanges\n"));
+
 #ifdef VBOX_WITH_HGSMI
-      if (VBoxHGSMIIsSupported ((PDEVICE_EXTENSION)HwDeviceExtension))
-      {
-          dprintf(("VBoxVideo::VBoxVideoFindAdapter: calling VideoPortGetAccessRanges\n"));
-
-          ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
-          ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
-
-          VIDEO_ACCESS_RANGE tmpRanges[4];
-          ULONG slot = 0;
-
-          VideoPortZeroMemory(tmpRanges, sizeof(tmpRanges));
-
-          /* need to call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up */
-          VP_STATUS status;
-          if (vboxQueryWinVersion() == WINNT4)
-          {
-              /* NT crashes if either of 'vendorId, 'deviceId' or 'slot' parameters is NULL,
-               * and needs PCI ids for a successful VideoPortGetAccessRanges call.
-               */
-              ULONG vendorId = 0x80EE;
-              ULONG deviceId = 0xBEEF;
-              status = VideoPortGetAccessRanges(HwDeviceExtension,
-                                                0,
-                                                NULL,
-                                                sizeof (tmpRanges)/sizeof (tmpRanges[0]),
-                                                tmpRanges,
-                                                &vendorId,
-                                                &deviceId,
-                                                &slot);
-          }
-          else
-          {
-              status = VideoPortGetAccessRanges(HwDeviceExtension,
-                                                0,
-                                                NULL,
-                                                sizeof (tmpRanges)/sizeof (tmpRanges[0]),
-                                                tmpRanges,
-                                                NULL,
-                                                NULL,
-                                                &slot);
-          }
-          dprintf(("VBoxVideo::VBoxVideoFindAdapter: VideoPortGetAccessRanges status 0x%x\n", status));
-
-          /* no matter what we get with VideoPortGetAccessRanges, we assert the default ranges */
-      }
-#else
-      rc = VideoPortVerifyAccessRanges(HwDeviceExtension, 1, AccessRanges);
-      dprintf(("VBoxVideo::VBoxVideoFindAdapter: VideoPortVerifyAccessRanges returned 0x%x\n", rc));
-      // @todo for some reason, I get an ERROR_INVALID_PARAMETER from NT4 SP0
-      // It does not seem to like getting me these port addresses. So I just
-      // pretend success to make the driver work.
-      rc = NO_ERROR;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
 #endif /* VBOX_WITH_HGSMI */
 
-#ifndef VBOX_WITH_HGSMI
-      /* Initialize VBoxGuest library */
-      rc = VbglInit ();
+      VIDEO_ACCESS_RANGE tmpRanges[4];
+      ULONG slot = 0;
 
+      VideoPortZeroMemory(tmpRanges, sizeof(tmpRanges));
+
+      /* need to call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up */
+      VP_STATUS status;
+      if (vboxQueryWinVersion() == WINNT4)
+      {
+          /* NT crashes if either of 'vendorId, 'deviceId' or 'slot' parameters is NULL,
+           * and needs PCI ids for a successful VideoPortGetAccessRanges call.
+           */
+          ULONG vendorId = 0x80EE;
+          ULONG deviceId = 0xBEEF;
+          status = VideoPortGetAccessRanges(HwDeviceExtension,
+                                            0,
+                                            NULL,
+                                            sizeof (tmpRanges)/sizeof (tmpRanges[0]),
+                                            tmpRanges,
+                                            &vendorId,
+                                            &deviceId,
+                                            &slot);
+      }
+      else
+      {
+          status = VideoPortGetAccessRanges(HwDeviceExtension,
+                                            0,
+                                            NULL,
+                                            sizeof (tmpRanges)/sizeof (tmpRanges[0]),
+                                            tmpRanges,
+                                            NULL,
+                                            NULL,
+                                            &slot);
+      }
+      dprintf(("VBoxVideo::VBoxVideoFindAdapter: VideoPortGetAccessRanges status 0x%x\n", status));
+
+      /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
+      rc = VbglInit ();
       dprintf(("VBoxVideo::VBoxVideoFindAdapter: VbglInit returned 0x%x\n", rc));
 
+#ifndef VBOX_WITH_HGSMI
       /* Setup the Device Extension and if possible secondary displays. */
       VBoxSetupDisplays((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo, AdapterMemorySize);
 #else
-      /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
-      rc = VbglInit ();
-
       /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported. Old
        * code will be ifdef'ed and later removed.
        * The host will however support both old and new interface to keep compatibility
