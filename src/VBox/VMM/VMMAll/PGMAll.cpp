@@ -404,7 +404,7 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFram
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
-    Log(("PGMTrap0eHandler: uErr=%RGx pvFault=%RGv eip=%04x:%RGv\n", uErr, pvFault, pRegFrame->cs, (RTGCPTR)pRegFrame->rip));
+    Log(("PGMTrap0eHandler: uErr=%RGx pvFault=%RGv eip=%04x:%RGv cr3=%RGp\n", uErr, pvFault, pRegFrame->cs, (RTGCPTR)pRegFrame->rip, (RTGCPHYS)CPUMGetGuestCR3(pVCpu)));
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0e, a);
     STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
 
@@ -1190,6 +1190,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
+Log4(("pgmShwGetLongModePDPtr %RGv -> *ppPD=%p PDE=%p/%RX64\n", GCPtr, *ppPD, &(*ppPD)->a[(GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK], (*ppPD)->a[(GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK].u));
     return VINF_SUCCESS;
 }
 

@@ -46,6 +46,7 @@
 #undef GST_PDPT_SHIFT
 #undef GST_PDPT_MASK
 #undef GST_PDPE_PG_MASK
+#undef GST_GET_PTE_GCPHYS
 #undef GST_GET_PDE_GCPHYS
 #undef GST_GET_BIG_PDE_GCPHYS
 #undef GST_GET_PDE_SHW_FLAGS
@@ -105,7 +106,10 @@
 #   define BTH_IS_NP_ACTIVE(pVM)                (false)
 #  endif
 # endif
-# define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)      (true && This_should_perhaps_not_be_used_in_this_context) //??
+# define GST_GET_PTE_GCPHYS(Pte)                ((Pte).u & GST_PTE_PG_MASK)
+# define GST_GET_PDE_GCPHYS(Pde)                (true && This_should_perhaps_not_be_used_in_this_context) //??
+# define GST_GET_BIG_PDE_GCPHYS(Pde)            (true && This_should_perhaps_not_be_used_in_this_context) //??
+# define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)      ((Pte).u & (X86_PTE_P | X86_PTE_RW | X86_PTE_US | X86_PTE_A | X86_PTE_D | X86_PTE_G)) /**< @todo Could return P|RW|US|A|D here without consulting the PTE. */
 # define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      (true && This_should_perhaps_not_be_used_in_this_context) //??
 # define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde)  (true && This_should_perhaps_not_be_used_in_this_context) //??
 # define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde) (true && This_should_perhaps_not_be_used_in_this_context) //??
@@ -133,6 +137,7 @@
 # define GST_BIG_PAGE_OFFSET_MASK               X86_PAGE_4M_OFFSET_MASK
 # define GST_PDE_PG_MASK                        X86_PDE_PG_MASK
 # define GST_PDE_BIG_PG_MASK                    X86_PDE4M_PG_MASK
+# define GST_GET_PTE_GCPHYS(Pte)                ((Pte).u & GST_PDE_PG_MASK)
 # define GST_GET_PDE_GCPHYS(Pde)                ((Pde).u & GST_PDE_PG_MASK)
 # define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       pgmGstGet4MBPhysPage(&(pVM)->pgm.s, Pde)
 # define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      ((Pde).u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_A))
@@ -172,7 +177,8 @@
 # define GST_BIG_PAGE_OFFSET_MASK               X86_PAGE_2M_OFFSET_MASK
 # define GST_PDE_PG_MASK                        X86_PDE_PAE_PG_MASK_FULL
 # define GST_PDE_BIG_PG_MASK                    X86_PDE2M_PAE_PG_MASK
-# define GST_GET_PDE_GCPHYS(Pde)                ((Pde).u & X86_PDE_PAE_PG_MASK_FULL)
+# define GST_GET_PTE_GCPHYS(Pte)                ((Pte).u & GST_PTE_PG_MASK)
+# define GST_GET_PDE_GCPHYS(Pde)                ((Pde).u & GST_PDE_PG_MASK)
 # define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       ((Pde).u & GST_PDE_BIG_PG_MASK)
 # define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)      ((Pte).u & (pVCpu)->pgm.s.fGst64ShadowedPteMask )
 # define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedPdeMask )

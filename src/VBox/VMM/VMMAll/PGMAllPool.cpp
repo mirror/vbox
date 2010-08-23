@@ -173,7 +173,7 @@ DECLINLINE(int) pgmPoolPhysSimpleReadGCPhys(PVM pVM, void *pvDst, CTXTYPE(RTGCPT
  */
 void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, unsigned cbWrite)
 {
-    AssertMsg(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX, ("%#x (idx=%#x)\n", pPage->iMonitoredPrev, pPage->idx));
+    AssertMsg(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX, ("%u (idx=%u)\n", pPage->iMonitoredPrev, pPage->idx));
     const unsigned off     = GCPhysFault & PAGE_OFFSET_MASK;
     PVM pVM = pPool->CTX_SUFF(pVM);
 
@@ -1802,7 +1802,7 @@ DECLINLINE(void) pgmPoolHashRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             }
             if (i == NIL_PGMPOOL_IDX)
             {
-                AssertReleaseMsgFailed(("GCPhys=%RGp idx=%#x\n", pPage->GCPhys, pPage->idx));
+                AssertReleaseMsgFailed(("GCPhys=%RGp idx=%d\n", pPage->GCPhys, pPage->idx));
                 break;
             }
             iPrev = i;
@@ -2005,7 +2005,7 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
      * Look up the GCPhys in the hash.
      */
     unsigned i = pPool->aiHash[PGMPOOL_HASH(GCPhys)];
-    Log3(("pgmPoolCacheAlloc: %RGp kind %s iUser=%x iUserTable=%x SLOT=%d\n", GCPhys, pgmPoolPoolKindToStr(enmKind), iUser, iUserTable, i));
+    Log3(("pgmPoolCacheAlloc: %RGp kind %s iUser=%d iUserTable=%x SLOT=%d\n", GCPhys, pgmPoolPoolKindToStr(enmKind), iUser, iUserTable, i));
     if (i != NIL_PGMPOOL_IDX)
     {
         do
@@ -2623,7 +2623,7 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
     int rc = VINF_SUCCESS;
     PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
 
-    LogFlow(("pgmPoolTrackInsert GCPhys=%RGp iUser %x iUserTable %x\n", GCPhys, iUser, iUserTable));
+    LogFlow(("pgmPoolTrackInsert GCPhys=%RGp iUser=%d iUserTable=%x\n", GCPhys, iUser, iUserTable));
 
 #ifdef VBOX_STRICT
     /*
@@ -2812,7 +2812,7 @@ static void pgmPoolTrackFreeUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iU
     }
 
     /* Fatal: didn't find it */
-    AssertFatalMsgFailed(("Didn't find the user entry! iUser=%#x iUserTable=%#x GCPhys=%RGp\n",
+    AssertFatalMsgFailed(("Didn't find the user entry! iUser=%d iUserTable=%#x GCPhys=%RGp\n",
                           iUser, iUserTable, pPage->GCPhys));
 }
 
@@ -3650,7 +3650,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             break;
 
         default:
-            AssertFatalMsgFailed(("enmKind=%d iUser=%#x iUserTable=%#x\n", pUserPage->enmKind, pUser->iUser, pUser->iUserTable));
+            AssertFatalMsgFailed(("enmKind=%d iUser=%d iUserTable=%#x\n", pUserPage->enmKind, pUser->iUser, pUser->iUserTable));
     }
     PGM_DYNMAP_UNUSED_HINT_VM(pPool->CTX_SUFF(pVM), u.pau64);
 }
@@ -4677,7 +4677,7 @@ void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint3
     PVM pVM = pPool->CTX_SUFF(pVM);
 
     STAM_PROFILE_START(&pPool->StatFree, a);
-    LogFlow(("pgmPoolFreeByPage: pPage=%p:{.Key=%RHp, .idx=%d, enmKind=%s} iUser=%#x iUserTable=%#x\n",
+    LogFlow(("pgmPoolFreeByPage: pPage=%p:{.Key=%RHp, .idx=%d, enmKind=%s} iUser=%d iUserTable=%#x\n",
              pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), iUser, iUserTable));
     Assert(pPage->idx >= PGMPOOL_IDX_FIRST);
     pgmLock(pVM);
@@ -4704,7 +4704,7 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
 {
     PVM pVM = pPool->CTX_SUFF(pVM);
 
-    LogFlow(("pgmPoolMakeMoreFreePages: iUser=%#x\n", iUser));
+    LogFlow(("pgmPoolMakeMoreFreePages: iUser=%d\n", iUser));
 
     /*
      * If the pool isn't full grown yet, expand it.
@@ -4762,7 +4762,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_ADV_START(&pPool->StatAlloc, a);
-    LogFlow(("pgmPoolAlloc: GCPhys=%RGp enmKind=%s iUser=%#x iUserTable=%#x\n", GCPhys, pgmPoolPoolKindToStr(enmKind), iUser, iUserTable));
+    LogFlow(("pgmPoolAllocEx: GCPhys=%RGp enmKind=%s iUser=%d iUserTable=%#x\n", GCPhys, pgmPoolPoolKindToStr(enmKind), iUser, iUserTable));
     *ppPage = NULL;
     /** @todo CSAM/PGMPrefetchPage messes up here during CSAMR3CheckGates
      *  (TRPMR3SyncIDT) because of FF priority. Try fix that?
@@ -4779,7 +4779,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
                 pgmPoolLockPage(pPool, *ppPage);
             pgmUnlock(pVM);
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
-            LogFlow(("pgmPoolAlloc: cached returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
+            LogFlow(("pgmPoolAllocEx: cached returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
             return rc2;
         }
     }
@@ -4795,7 +4795,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
         if (RT_FAILURE(rc))
         {
             pgmUnlock(pVM);
-            Log(("pgmPoolAlloc: returns %Rrc (Free)\n", rc));
+            Log(("pgmPoolAllocEx: returns %Rrc (Free)\n", rc));
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
             return rc;
         }
@@ -4846,7 +4846,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
         pPool->iFreeHead    = pPage->idx;
         pgmUnlock(pVM);
         STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
-        Log(("pgmPoolAlloc: returns %Rrc (Insert)\n", rc3));
+        Log(("pgmPoolAllocEx: returns %Rrc (Insert)\n", rc3));
         return rc3;
     }
 
@@ -4870,7 +4870,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
     if (fLockPage)
         pgmPoolLockPage(pPool, pPage);
     pgmUnlock(pVM);
-    LogFlow(("pgmPoolAlloc: returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d, .fCached=%RTbool, .fMonitored=%RTbool}\n",
+    LogFlow(("pgmPoolAllocEx: returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d, .fCached=%RTbool, .fMonitored=%RTbool}\n",
              rc, pPage, pPage->Core.Key, pPage->idx, pPage->fCached, pPage->fMonitored));
     STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
     return rc;
@@ -4887,7 +4887,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
  */
 void pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable)
 {
-    LogFlow(("pgmPoolFree: HCPhys=%RHp iUser=%#x iUserTable=%#x\n", HCPhys, iUser, iUserTable));
+    LogFlow(("pgmPoolFree: HCPhys=%RHp iUser=%d iUserTable=%#x\n", HCPhys, iUser, iUserTable));
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, HCPhys), iUser, iUserTable);
 }
