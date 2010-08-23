@@ -1449,9 +1449,39 @@ int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG 
     return Status;
 }
 
+/* Unmapping adapter information must be done carefully WRT the interrupt handler. */
+BOOLEAN VBoxUnmapAdpInfoCallback(PVOID ext)
+{
+    PDEVICE_EXTENSION   PrimaryExtension = (PDEVICE_EXTENSION)ext;
+    void                *ppv;
+
+    ppv = PrimaryExtension->u.primary.pvAdapterInformation;
+    if (ppv)
+    {
+#ifndef VBOXWDDM
+        VideoPortUnmapMemory(PrimaryExtension, ppv, NULL);
+#else
+        NTSTATUS ntStatus = PrimaryExtension->u.primary.DxgkInterface.DxgkCbUnmapMemory(PrimaryExtension->u.primary.DxgkInterface.DeviceHandle,
+                ppv);
+        Assert(ntStatus == STATUS_SUCCESS);
+#endif
+        PrimaryExtension->u.primary.pvAdapterInformation = NULL;
+        PrimaryExtension->u.primary.pHostFlags           = NULL;    /* Mapped through pvAdapterInformation */
+    }
+    return TRUE;
+}
+
+void VBoxUnmapAdapterInformation(PDEVICE_EXTENSION PrimaryExtension)
+{
+    dprintf(("VBoxVideo::VBoxUnmapAdapterInformation\n"));
+
+    VideoPortSynchronizeExecution(PrimaryExtension, VpMediumPriority,
+                                  VBoxUnmapAdpInfoCallback, PrimaryExtension);
+}
+
 void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG ulSize)
 {
-    dprintf(("VBoxVideo::VBoxMapAdapterMemory\n"));
+    dprintf(("VBoxVideo::VBoxUnmapAdapterMemory\n"));
 
     if (*ppv)
     {
@@ -1750,7 +1780,7 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
     {
         /* Unmap the memory if VBoxVideo is not supported. */
         VBoxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvMiniportHeap, PrimaryExtension->u.primary.cbMiniportHeap);
-        VBoxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvAdapterInformation, VBOX_VIDEO_ADAPTER_INFORMATION_SIZE);
+        VBoxUnmapAdapterInformation (PrimaryExtension);
     }
 
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
@@ -2843,7 +2873,7 @@ BOOLEAN VBoxVideoResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
     VbglTerminate ();
 
     VBoxUnmapAdapterMemory (pDevExt, &pDevExt->u.primary.pvMiniportHeap, pDevExt->u.primary.cbMiniportHeap);
-    VBoxUnmapAdapterMemory (pDevExt, &pDevExt->u.primary.pvAdapterInformation, VBVA_ADAPTER_INFORMATION_SIZE);
+    VBoxUnmapAdapterInformation (pDevExt);
 
     return TRUE;
 }

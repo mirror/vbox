@@ -740,6 +740,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     PrimaryExtension->u.primary.cbMiniportHeap           = 0;
     PrimaryExtension->u.primary.pvMiniportHeap           = NULL;
     PrimaryExtension->u.primary.pvAdapterInformation     = NULL;
+    PrimaryExtension->u.primary.pHostFlags               = NULL;
     PrimaryExtension->u.primary.ulMaxFrameBufferSize     = 0;
     PrimaryExtension->u.primary.bHGSMI                   = VBoxHGSMIIsSupported (PrimaryExtension);
     VBoxVideoCmnMemZero(&PrimaryExtension->u.primary.areaHostHeap, sizeof(HGSMIAREA));
@@ -1038,7 +1039,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     {
         /* Unmap the memory if VBoxVideo is not supported. */
         VBoxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvMiniportHeap, PrimaryExtension->u.primary.cbMiniportHeap);
-        VBoxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvAdapterInformation, VBVA_ADAPTER_INFORMATION_SIZE);
+        VBoxUnmapAdapterInformation (PrimaryExtension);
 
         HGSMIHeapDestroy (&PrimaryExtension->u.primary.hgsmiAdapterHeap);
     }
@@ -1092,7 +1093,7 @@ int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension)
                 HGSMIHeapDestroy(&PrimaryExtension->u.primary.hgsmiAdapterHeap);
 
                 /* Map the adapter information. It will be needed for HGSMI IO. */
-                /*rc = */VBoxUnmapAdapterMemory(PrimaryExtension, &PrimaryExtension->u.primary.pvAdapterInformation, VBVA_ADAPTER_INFORMATION_SIZE);
+                /*rc = */VBoxUnmapAdapterInformation(PrimaryExtension);
 /*
                 AssertRC(rc);
                 if (RT_FAILURE(rc))

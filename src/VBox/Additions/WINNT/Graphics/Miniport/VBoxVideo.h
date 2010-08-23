@@ -850,6 +850,7 @@ int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
 
 void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
                              void **ppv, ULONG ulSize);
+void VBoxUnmapAdapterInformation (PDEVICE_EXTENSION PrimaryExtension);
 
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
 
