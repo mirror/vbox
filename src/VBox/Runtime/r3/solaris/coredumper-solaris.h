@@ -60,7 +60,7 @@
 #endif
 
 /**
- * ELF NOTE header.
+ * ELFNOTEHDR: ELF NOTE header.
  */
 typedef struct ELFNOTEHDR
 {
@@ -69,7 +69,11 @@ typedef struct ELFNOTEHDR
 } ELFNOTEHDR;
 typedef ELFNOTEHDR *PELFNOTEHDR;
 
+
 #ifdef RT_OS_SOLARIS
+/**
+ * VBOXSOLMAPINFO: Memory mapping description.
+ */
 typedef struct VBOXSOLMAPINFO
 {
     prmap_t                         pMap;                       /* Proc description of this mapping */
@@ -78,6 +82,18 @@ typedef struct VBOXSOLMAPINFO
 } VBOXSOLMAPINFO;
 typedef VBOXSOLMAPINFO *PVBOXSOLMAPINFO;
 
+/**
+ * VBOXSOLCORETYPE: Whether this is an old or new style core.
+ */
+typedef enum VBOXSOLCORETYPE
+{
+    enmOldEra       = 0x01d,        /* old */
+    enmNewEra       = 0x5c151       /* sci-fi */
+} VBOXSOLCORETYPE;
+
+/**
+ * VBOXSOLTHREADINFO: Per-Thread information.
+ */
 typedef struct VBOXSOLTHREADINFO
 {
     lwpsinfo_t                      Info;                       /* Proc description of this thread */
@@ -87,9 +103,10 @@ typedef struct VBOXSOLTHREADINFO
 typedef VBOXSOLTHREADINFO *PVBOXSOLTHREADINFO;
 #endif
 
-typedef int (*PFNCOREREADER)(RTFILE hFile, void *pv, size_t cb);
-typedef int (*PFNCOREWRITER)(RTFILE hFile, const void *pcv, size_t cb);
 
+/**
+ * VBOXPROCESS: Current (also the core target) process information.
+ */
 typedef struct VBOXPROCESS
 {
     RTPROCESS                       Process;                    /* The pid of the process */
@@ -126,6 +143,12 @@ typedef struct VBOXPROCESS
 } VBOXPROCESS;
 typedef VBOXPROCESS *PVBOXPROCESS;
 
+typedef int (*PFNCOREREADER)(RTFILE hFile, void *pv, size_t cb);
+typedef int (*PFNCOREWRITER)(RTFILE hFile, const void *pcv, size_t cb);
+
+/**
+ * VBOXCORE: Core file object.
+ */
 typedef struct VBOXCORE
 {
     char                            szCorePath[PATH_MAX];       /* Path of the core file */
@@ -141,4 +164,5 @@ typedef struct VBOXCORE
 } VBOXCORE;
 typedef VBOXCORE *PVBOXCORE;
 
-typedef int (*PFNCOREACCUMULATOR)(PVBOXCORE pVBoxCOre);
+typedef int (*PFNCOREACCUMULATOR)(PVBOXCORE pVBoxCore);
+

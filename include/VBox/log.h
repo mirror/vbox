@@ -61,6 +61,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEFAULT = RTLOGGROUP_FIRST_USER,
     /** CFGM group. */
     LOG_GROUP_CFGM,
+    /** Core Dumper group. **/
+    LOG_GROUP_CORE_DUMPER,
     /** CPUM group. */
     LOG_GROUP_CPUM,
     /** CSAM group. */
@@ -363,6 +365,7 @@ typedef enum LOGGROUP
     RT_LOGGROUP_NAMES, \
     "DEFAULT",      \
     "CFGM",         \
+    "CORE_DUMPER",  \
     "CPUM",         \
     "CSAM",         \
     "DBGC",         \
