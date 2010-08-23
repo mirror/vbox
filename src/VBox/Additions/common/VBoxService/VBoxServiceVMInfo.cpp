@@ -35,8 +35,8 @@
 # include <sys/socket.h>
 # include <net/if.h>
 # include <unistd.h>
-# ifndef RT_OS_FREEBSD /* The header does not exist anymore since FreeBSD 9-current */
-#  include <utmp.h>
+# ifndef RT_OS_FREEBSD
+#  include <utmpx.h> /* @todo FreeBSD 9 should have this. */
 # endif
 # ifdef RT_OS_SOLARIS
 #  include <sys/sockio.h>
@@ -214,7 +214,7 @@ static void vboxserviceVMInfoWriteFixedProperties(void)
  */
 static int vboxserviceVMInfoWriteUsers(void)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     char *pszUserList = NULL;
     uint32_t cUsersInList = 0;
 
@@ -226,7 +226,9 @@ static int vboxserviceVMInfoWriteUsers(void)
 # endif
 
 #elif defined(RT_OS_FREEBSD)
-    /** @todo FreeBSD: Port logged on user info retrival. */
+    /** @todo FreeBSD: Port logged on user info retrival.
+     *                 However, FreeBSD 9 supports utmpx, so we could use the code
+     *                 block below (?). */
     rc = VERR_NOT_IMPLEMENTED;
 
 #elif defined(RT_OS_OS2)
@@ -234,22 +236,8 @@ static int vboxserviceVMInfoWriteUsers(void)
     rc = VERR_NOT_IMPLEMENTED;
 
 #else
-    /** @todo Add utmpx support? */
-    rc = utmpname(UTMP_FILE);
-# ifdef RT_OS_SOLARIS
-    if (rc != 1)
-# else
-    if (rc != 0)
-# endif
-    {
-        VBoxServiceError("VMInfo/Users: Could not set UTMP file! Error: %ld\n", errno);
-        rc = VERR_GENERAL_FAILURE;
-    }
-    else
-        rc = VINF_SUCCESS;
-
-    setutent();
-    utmp *ut_user;
+    setutxent();
+    utmpx *ut_user;
     uint32_t cListSize = 32;
 
     /* Allocate a first array to hold 32 users max. */
@@ -258,7 +246,7 @@ static int vboxserviceVMInfoWriteUsers(void)
         rc = VERR_NO_MEMORY;
 
     /* Process all entries in the utmp file. */
-    while (   (ut_user = getutent())
+    while (   (ut_user = getutxent())
            && RT_SUCCESS(rc))
     {
         VBoxServiceVerbose(4, "VMInfo: Found logged in user \"%s\"\n", ut_user->ut_user);
@@ -315,7 +303,7 @@ static int vboxserviceVMInfoWriteUsers(void)
         RTStrFree(papszUsers[i]);
     RTMemFree(papszUsers);
 
-    endutent(); /* Close utmp file. */
+    endutxent(); /* Close utmpx file. */
 #endif
     Assert(RT_FAILURE(rc) || cUsersInList == 0 || (pszUserList && *pszUserList));
     if (RT_FAILURE(rc))
