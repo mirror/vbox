@@ -88,6 +88,7 @@ WITH_KMODS=1
 WITH_OPENGL=1
 WITH_HARDENING=1
 WITH_VDE=0
+WITH_DOCS=1
 BUILD_LIBXML2=
 BUILD_LIBXSLT=
 BUILD_LIBCURL=
@@ -2093,6 +2094,7 @@ EOF
 [ $WITH_KMODS   -eq 1 ] && echo "  --disable-kmods          don't build Linux kernel modules (host and guest)"
 [ $WITH_OPENGL  -eq 1 ] && echo "  --disable-opengl         disable OpenGL support (2D & 3D)"
 [ $WITH_GSOAP   -eq 0 ] && echo "  --enable-webservice      enable the webservice stuff"
+[ $WITH_DOCS    -eq 1 ] && echo "  --disable-docs           don't build the documentation"
 [ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
   --disable-hardening      don't be strict about /dev/vboxdrv access
@@ -2259,6 +2261,9 @@ for option in $*; do
       ;;
     --disable-hardening)
       WITH_HARDENING=0
+      ;;
+    --disable-docs)
+      WITH_DOCS=0
       ;;
     --enable-hardening)
       WITH_HARDENING=2
@@ -2519,6 +2524,12 @@ if [ "$OS" = "linux" -o "$OS" = "freebsd" ]; then
   if [ $WITH_VDE -eq 1 ]; then
     cnf_append "VBOX_WITH_VDE" "1"
   fi
+fi
+
+# DOCS
+if [ $WITH_DOCS -eq 0 ]; then
+  cnf_append "VBOX_WITH_DOCS" ""
+  cnf_append "VBOX_WITH_DOCS_PACKING" ""
 fi
 
 # success!
