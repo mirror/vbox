@@ -40,6 +40,7 @@ VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fAc
     : VBoxToolBar(pParent)
     , m_pAutoHideAction(0)
     , m_pDisplayLabel(0)
+    , m_pMinimizeAction(0)
     , m_pRestoreAction(0)
     , m_pCloseAction(0)
     , m_fActive(fActive)
@@ -94,6 +95,13 @@ VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fAc
 
     /* Right label margin: */
     m_LabelMargins << widgetForAction(addWidget(new QWidget(this)));
+
+    /* Minimize action: */
+    m_pMinimizeAction = new QAction(this);
+    m_pMinimizeAction->setIcon(UIIconPool::iconSet(":/discard_16px.png"));
+    m_pMinimizeAction->setToolTip(tr("Minimize Window"));
+    connect(m_pMinimizeAction, SIGNAL(triggered()), this, SIGNAL(minimizeAction()));
+    addAction(m_pMinimizeAction);
 
     /* Exit action: */
     m_pRestoreAction = new QAction(this);
@@ -455,6 +463,8 @@ void VBoxMiniToolBar::setMouseTrackingEnabled(bool fEnabled)
         m_pDisplayLabel->setMouseTracking(fEnabled);
     if (m_pAutoHideAction && widgetForAction(m_pAutoHideAction))
         widgetForAction(m_pAutoHideAction)->setMouseTracking(fEnabled);
+    if (m_pMinimizeAction && widgetForAction(m_pMinimizeAction))
+        widgetForAction(m_pMinimizeAction)->setMouseTracking(fEnabled);
     if (m_pRestoreAction && widgetForAction(m_pRestoreAction))
         widgetForAction(m_pRestoreAction)->setMouseTracking(fEnabled);
     if (m_pCloseAction && widgetForAction(m_pCloseAction))
