@@ -6836,6 +6836,28 @@ static HRESULT WINAPI IWineD3DDeviceImpl_GetSurfaceFromDC(IWineD3DDevice *iface,
     return WINED3DERR_INVALIDCALL;
 }
 
+#ifdef VBOXWDDM
+static HRESULT WINAPI IWineD3DDeviceImpl_Flush(IWineD3DDevice *iface)
+{
+    IWineD3DSwapChain *swapChain = NULL;
+    int i;
+    int swapchains = IWineD3DDeviceImpl_GetNumberOfSwapChains(iface);
+
+    TRACE("iface %p.\n", iface);
+
+    for(i = 0 ; i < swapchains ; i ++) {
+
+        IWineD3DDeviceImpl_GetSwapChain(iface, i, &swapChain);
+        TRACE("presentinng chain %d, %p\n", i, swapChain);
+        IWineD3DSwapChain_Flush(swapChain);
+        IWineD3DSwapChain_Release(swapChain);
+    }
+
+    return WINED3D_OK;
+}
+
+#endif
+
 /**********************************************************
  * IWineD3DDevice VTbl follows
  **********************************************************/
@@ -6988,6 +7010,10 @@ static const IWineD3DDeviceVtbl IWineD3DDevice_Vtbl =
     IWineD3DDeviceImpl_GetSurfaceFromDC,
     IWineD3DDeviceImpl_AcquireFocusWindow,
     IWineD3DDeviceImpl_ReleaseFocusWindow,
+#ifdef VBOXWDDM
+    /* VBox WDDM extensions */
+    IWineD3DDeviceImpl_Flush,
+#endif
 };
 
 HRESULT device_init(IWineD3DDeviceImpl *device, IWineD3DImpl *wined3d,

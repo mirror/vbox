@@ -6125,6 +6125,10 @@ typedef struct IWineD3DSwapChainVtbl {
         IWineD3DSwapChain* This,
         WINED3DGAMMARAMP *ramp);
 
+#ifdef VBOXWDDM
+    HRESULT (STDMETHODCALLTYPE *Flush)(
+        IWineD3DSwapChain* This);
+#endif
     END_INTERFACE
 } IWineD3DSwapChainVtbl;
 interface IWineD3DSwapChain {
@@ -6150,6 +6154,9 @@ interface IWineD3DSwapChain {
 #define IWineD3DSwapChain_GetPresentParameters(This,present_parameters) (This)->lpVtbl->GetPresentParameters(This,present_parameters)
 #define IWineD3DSwapChain_SetGammaRamp(This,flags,ramp) (This)->lpVtbl->SetGammaRamp(This,flags,ramp)
 #define IWineD3DSwapChain_GetGammaRamp(This,ramp) (This)->lpVtbl->GetGammaRamp(This,ramp)
+#ifdef VBOXWDDM
+#define IWineD3DSwapChain_Flush(This) (This)->lpVtbl->Flush(This)
+#endif
 #endif
 
 #endif
@@ -8054,6 +8061,11 @@ typedef struct IWineD3DDeviceVtbl {
     void (STDMETHODCALLTYPE *ReleaseFocusWindow)(
         IWineD3DDevice* This);
 
+#ifdef VBOXWDDM
+    HRESULT (STDMETHODCALLTYPE *Flush)(
+        IWineD3DDevice* This);
+#endif
+
     END_INTERFACE
 } IWineD3DDeviceVtbl;
 interface IWineD3DDevice {
@@ -8209,6 +8221,9 @@ interface IWineD3DDevice {
 #define IWineD3DDevice_GetSurfaceFromDC(This,dc,surface) (This)->lpVtbl->GetSurfaceFromDC(This,dc,surface)
 #define IWineD3DDevice_AcquireFocusWindow(This,window) (This)->lpVtbl->AcquireFocusWindow(This,window)
 #define IWineD3DDevice_ReleaseFocusWindow(This) (This)->lpVtbl->ReleaseFocusWindow(This)
+#ifdef VBOXWDDM
+#define IWineD3DDevice_Flush(This) (This)->lpVtbl->Flush(This)
+#endif
 #endif
 
 #endif

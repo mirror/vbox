@@ -713,6 +713,22 @@ static void WINAPI IDirect3DDevice9Impl_GetGammaRamp(LPDIRECT3DDEVICE9EX iface, 
 }
 
 #ifdef VBOXWDDM
+#pragma comment(linker, "/export:VBoxWineExD3DDev9Flush=_VBoxWineExD3DDev9Flush@4")
+
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Flush(IDirect3DDevice9Ex *iface)
+{
+    IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
+    HRESULT hr;
+
+    TRACE("iface %p, Flush\n", iface);
+
+    wined3d_mutex_lock();
+    hr = IWineD3DDevice_Flush(This->WineD3DDevice);
+    wined3d_mutex_unlock();
+
+    return hr;
+}
+
 #pragma comment(linker, "/export:VBoxWineExD3DDev9CreateTexture=_VBoxWineExD3DDev9CreateTexture@40")
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *iface,
