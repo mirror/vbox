@@ -22,6 +22,19 @@
 #include <msi.h>
 #include <msiquery.h>
 
+
+#if (_MSC_VER < 1400) /* Provide _stprintf_s to VC < 8.0. */
+int _stprintf_s(TCHAR *buffer, size_t cbBuffer, const TCHAR *format, ...)
+{
+    int ret;
+    va_list args;
+    va_start(args, format);
+    ret = _vsntprintf(buffer, cbBuffer, format, args);
+    va_end(args);
+    return ret;
+}
+#endif
+
 UINT VBoxGetProperty(MSIHANDLE a_hModule, TCHAR* a_pszName, TCHAR* a_pValue, DWORD a_dwSize)
 {
     UINT uiRet = ERROR_SUCCESS;
