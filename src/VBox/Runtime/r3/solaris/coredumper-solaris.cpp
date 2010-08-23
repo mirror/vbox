@@ -77,10 +77,10 @@ static char                g_szCoreDumpFile[PATH_MAX] = { 0 };
     } while (0)
 
 
-/** 
- * Wrapper function to write IPRT format style string to the syslog. 
- * 
- * @param pszFormat         Format string 
+/**
+ * Wrapper function to write IPRT format style string to the syslog.
+ *
+ * @param pszFormat         Format string
  */
 static void rtCoreDumperSysLogWrapper(const char *pszFormat, ...)
 {
@@ -198,17 +198,17 @@ static inline bool IsProcessArchNative(PVBOXPROCESS pVBoxProc)
  */
 static size_t GetFileSize(const char *pszPath)
 {
-    size_t cb = 0;
+    uint64_t cb = 0;
     RTFILE hFile;
     int rc = RTFileOpen(&hFile, pszPath, RTFILE_O_OPEN | RTFILE_O_READ);
     if (RT_SUCCESS(rc))
     {
-        RTFileGetSize(hFile, (uint64_t *)&cb);
+        RTFileGetSize(hFile, &cb);
         RTFileClose(hFile);
     }
     else
         CORELOGRELSYS((CORELOG_NAME "GetFileSize failed to open %s rc=%Rrc\n", pszPath, rc));
-    return cb;
+    return cb < ~(size_t)0 ? (size_t)cb : ~(size_t)0;
 }
 
 
@@ -350,7 +350,7 @@ static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, vo
     int rc = RTFileOpen(&hFile, szPath, RTFILE_O_OPEN | RTFILE_O_READ);
     if (RT_SUCCESS(rc))
     {
-        RTFileGetSize(hFile, (uint64_t *)pcb);
+        RTFileGetSize(hFile, (uint64_t *)pcb); /** @todo size_t != uint64_t! */
         if (*pcb > 0)
         {
             *ppv = GetMemoryChunk(pVBoxCore, *pcb);
@@ -514,7 +514,7 @@ static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
     }
 
     size_t cbAuxFile = 0;
-    RTFileGetSize(hFile, (uint64_t *)&cbAuxFile);
+    RTFileGetSize(hFile, (uint64_t *)&cbAuxFile);  /** @todo size_t != uint64_t! */
     if (cbAuxFile >= sizeof(auxv_t))
     {
         pVBoxProc->pAuxVecs = (auxv_t*)GetMemoryChunk(pVBoxCore, cbAuxFile + sizeof(auxv_t));
@@ -606,7 +606,7 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
          * Allocate and read all the prmap_t objects from proc.
          */
         size_t cbMapFile = 0;
-        RTFileGetSize(hFile, (uint64_t *)&cbMapFile);
+        RTFileGetSize(hFile, (uint64_t *)&cbMapFile);  /** @todo size_t != uint64_t! */
         if (cbMapFile >= sizeof(prmap_t))
         {
             prmap_t *pMap = (prmap_t*)GetMemoryChunk(pVBoxCore, cbMapFile);
