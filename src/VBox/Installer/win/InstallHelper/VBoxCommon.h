@@ -18,6 +18,10 @@
 #ifndef __VBoxInstallHelper_Common_h__
 #define __VBoxInstallHelper_Common_h__
 
+#if (_MSC_VER < 1400) /* Provide _stprintf_s to VC < 8.0. */
+int _stprintf_s(TCHAR *buffer, size_t cbBuffer, const TCHAR *format, ...);
+#endif
+
 UINT VBoxGetProperty(MSIHANDLE a_hModule, TCHAR* a_pszName, TCHAR* a_pValue, DWORD a_dwSize);
 UINT VBoxSetProperty(MSIHANDLE a_hModule, TCHAR* a_pszName, TCHAR* a_pValue);
 
