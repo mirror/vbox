@@ -259,7 +259,7 @@ static int AllocMemoryArea(PVBOXCORE pVBoxCore)
     }
 
     /*
-     * Make Room for our own mapping accountant entry which will also be included in the core.
+     * Make room for our own mapping accountant entry which will also be included in the core.
      */
     cb += sizeof(VBOXSOLMAPINFO);
 
@@ -1069,7 +1069,7 @@ static void GetOldProcessStatus(PVBOXCORE pVBoxCore, lwpsinfo_t *pInfo, lwpstatu
  *
  * @return VBox error code.
  */
-static int ResumeAllThreads(PVBOXPROCESS pVBoxProc)
+static int rtCoreDumperResumeThreads(PVBOXPROCESS pVBoxProc)
 {
     AssertReturn(pVBoxProc, VERR_INVALID_POINTER);
 
@@ -1123,7 +1123,7 @@ static int ResumeAllThreads(PVBOXPROCESS pVBoxProc)
  *
  * @return VBox error code.
  */
-static int SuspendAllThreads(PVBOXPROCESS pVBoxProc)
+static int rtCoreDumperSuspendThreads(PVBOXPROCESS pVBoxProc)
 {
     char szCurThread[128];
     char szPath[PATH_MAX];
@@ -1169,14 +1169,14 @@ static int SuspendAllThreads(PVBOXPROCESS pVBoxProc)
         }
         else
         {
-            CORELOGRELSYS((CORELOG_NAME "SuspendAllThreads: Failed to open %s cTries=%d\n", szPath, cTries));
+            CORELOGRELSYS((CORELOG_NAME "SuspendThreads: Failed to open %s cTries=%d\n", szPath, cTries));
             rc = VERR_READ_ERROR;
             break;
         }
     }
 
     if (RT_SUCCESS(rc))
-        CORELOG((CORELOG_NAME "Stopped %u threads successfully with %u tries\n", cThreads, cTries));
+        CORELOG((CORELOG_NAME "SuspendThreads: Stopped %u threads successfully with %u tries\n", cThreads, cTries));
 
     return rc;
 }
@@ -1612,11 +1612,10 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Create the core file.
      */
-    RTStrPrintf(szPath, sizeof(szPath), "/export/home/ram/vbox/out/solaris.amd64/release/bin/%s", pVBoxCore->szCorePath, pVBoxCore->VBoxProc.Process); /* @todo fix this */
-    rc = RTFileOpen(&pVBoxCore->hCoreFile, szPath, RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_READWRITE | RTFILE_O_DENY_ALL);
+    rc = RTFileOpen(&pVBoxCore->hCoreFile, pVBoxCore->szCorePath, RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_READWRITE | RTFILE_O_DENY_ALL);
     if (RT_FAILURE(rc))
     {
-        CORELOGRELSYS((CORELOG_NAME "WriteCore: failed to open %s. rc=%Rrc\n", szPath, rc));
+        CORELOGRELSYS((CORELOG_NAME "WriteCore: failed to open %s. rc=%Rrc\n", pVBoxCore->szCorePath, rc));
         goto WriteCoreDone;
     }
 
@@ -1746,7 +1745,7 @@ WriteCoreDone:
         pVBoxProc->hAs = NIL_RTFILE;
     }
 
-    ResumeAllThreads(pVBoxProc);
+    rtCoreDumperResumeThreads(pVBoxProc);
     return rc;
 }
 
@@ -1806,7 +1805,7 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext)
     /*
      * Quiesce the process.
      */
-    int rc = SuspendAllThreads(pVBoxProc);
+    int rc = rtCoreDumperSuspendThreads(pVBoxProc);
     if (RT_SUCCESS(rc))
     {
         rc = ProcReadInfo(pVBoxCore);
@@ -1877,7 +1876,7 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext)
         /*
          * Resume threads on failure.
          */
-        ResumeAllThreads(pVBoxProc);
+        rtCoreDumperResumeThreads(pVBoxProc);
     }
     else
         CORELOG((CORELOG_NAME "CreateCore: SuspendAllThreads failed. Thread bomb!?! rc=%Rrc\n", rc));
