@@ -2201,12 +2201,12 @@ function CheckForMkisofs(strFnameMkisofs)
    PrintHdr "mkisofs"
 
    CheckForMkisofs = False
-   LogPrint "trying: strPathMkisofs=" & strPathMkisofs
+   LogPrint "trying: strFnameMkisofs=" & strFnameMkisofs
 
-   if FileExists(strFnameMkisofs)
+   if FileExists(strFnameMkisofs) = false then
       LogPrint "Testing '" & strFnameMkisofs & " not found"
    else
-      CfgPrint "VBOX_MKISOFS          := " & strPathMkisofs & "\mkisofs.exe"
+      CfgPrint "VBOX_MKISOFS          := " & strFnameMkisofs
       CheckForMkisofs = True
    end if
 
