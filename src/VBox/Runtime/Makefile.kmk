@@ -758,6 +758,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/utf8-posix.cpp \
 	r3/solaris/alloc-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
+	r3/solaris/coredumper-solaris.cpp \
 	r3/solaris/rtProcInitExePath-solaris.cpp
 RuntimeR3_SOURCES.solaris.amd64 = \
 	r3/solaris/RTSystemQueryDmiString-solaris.cpp
