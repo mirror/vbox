@@ -1478,11 +1478,12 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVMCPU pVCpu, PPGMPOOLP
  *
  * @param   pVM         The VM handle.
  * @param   pPage       The page in question.
- * @param   fPteSrc     The flags of the source PTE.
+ * @param   fPteSrc     The shadowed flags of the source PTE.  Must include the
+ *                      A (accessed) bit so it can be emulated correctly.
  * @param   pPteDst     The shadow PTE (output).  This is temporary storage and
  *                      does not need to be set atomically.
  */
-DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint32_t fPteSrc, PSHWPTE pPteDst)
+DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint64_t fPteSrc, PSHWPTE pPteDst)
 {
     /** @todo r=bird: Are we actually handling dirty and access bits for pages with access handlers correctly? No.
      *  Update: \#PF should deal with this before or after calling the handlers. It has all the info to do the job efficiently. */
@@ -1497,9 +1498,13 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint32_t
         pPteDst->n.u3EMT       = VMX_EPT_MEMTYPE_WB;
         /* PteDst.n.u1Write = 0 && PteDst.n.u1Size = 0 */
 #else
-        SHW_PTE_SET(*pPteDst,
-                      (fPteSrc & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT | X86_PTE_RW))
-                    | PGM_PAGE_GET_HCPHYS(pPage));
+        if (fPteSrc & X86_PTE_A)
+        {
+            SHW_PTE_SET(*pPteDst, fPteSrc | PGM_PAGE_GET_HCPHYS(pPage));
+            SHW_PTE_SET_RO(*pPteDst);
+        }
+        else
+            SHW_PTE_SET(*pPteDst, 0);
 #endif
     }
 #ifdef PGM_WITH_MMIO_OPTIMIZATIONS
@@ -1579,7 +1584,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
          * Find the ram range.
          */
         PPGMPAGE pPage;
-        int rc = pgmPhysGetPageEx(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK, &pPage);
+        int rc = pgmPhysGetPageEx(&pVM->pgm.s, GST_GET_PTE_GCPHYS(PteSrc), &pPage);
         if (RT_SUCCESS(rc))
         {
             /* Ignore ballooned pages.
@@ -1607,7 +1612,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
                      )
                )
             {
-                rc = pgmPhysPageMakeWritable(pVM, pPage, PteSrc.u & GST_PTE_PG_MASK);
+                rc = pgmPhysPageMakeWritable(pVM, pPage, GST_GET_PTE_GCPHYS(PteSrc));
                 AssertRC(rc);
             }
 #endif
@@ -1617,10 +1622,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
              */
             SHWPTE PteDst;
             if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                PGM_BTH_NAME(SyncHandlerPte)(pVM, pPage,
-                                             PteSrc.u & ~(  X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK
-                                                          | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT),
-                                             &PteDst);
+                PGM_BTH_NAME(SyncHandlerPte)(pVM, pPage, GST_GET_PTE_SHW_FLAGS(pVCpu, PteSrc), &PteDst);
             else
             {
 #if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
@@ -1642,9 +1644,10 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
                 {
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPage));
                     SHW_PTE_SET(PteDst,
-                                  (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT | X86_PTE_RW))
+                                  GST_GET_PTE_SHW_FLAGS(pVCpu, PteSrc)
                                 | PGM_PAGE_GET_HCPHYS(pPage)
                                 | PGM_PTFLAGS_TRACK_DIRTY);
+                    SHW_PTE_SET_RO(PteDst);
                 }
                 else
 #endif
@@ -1659,9 +1662,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
                     PteDst.n.u3EMT       = VMX_EPT_MEMTYPE_WB;
                     /* PteDst.n.u1Size = 0 */
 #else
-                    SHW_PTE_SET(PteDst,
-                                  (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
-                                | PGM_PAGE_GET_HCPHYS(pPage));
+                    SHW_PTE_SET(PteDst, GST_GET_PTE_SHW_FLAGS(pVCpu, PteSrc) | PGM_PAGE_GET_HCPHYS(pPage));
 #endif
                 }
 
@@ -1674,7 +1675,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
                     /* Still applies to shared pages. */
                     Assert(!PGM_PAGE_IS_ZERO(pPage));
                     SHW_PTE_SET_RO(PteDst);   /** @todo this isn't quite working yet. Why, isn't it? */
-                    Log3(("SyncPageWorker: write-protecting %RGp pPage=%R[pgmpage]at iPTDst=%d\n", (RTGCPHYS)(PteSrc.u & X86_PTE_PAE_PG_MASK), pPage, iPTDst));
+                    Log3(("SyncPageWorker: write-protecting %RGp pPage=%R[pgmpage]at iPTDst=%d\n", (RTGCPHYS)GST_GET_PTE_GCPHYS(PteSrc), pPage, iPTDst));
                 }
             }
 
@@ -1924,7 +1925,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
                                       GCPtrCurPage, PteSrc.n.u1Present,
                                       PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                                      PteSrc.n.u1User & PdeSrc.n.u1User,
+                                      PteSrc.n.u1User  & PdeSrc.n.u1User,
                                       (uint64_t)PteSrc.u,
                                       SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                                       SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
@@ -1941,7 +1942,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                         Log2(("SyncPage: 4K  %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx %s\n",
                               GCPtrPage, PteSrc.n.u1Present,
                               PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                              PteSrc.n.u1User & PdeSrc.n.u1User,
+                              PteSrc.n.u1User  & PdeSrc.n.u1User,
                               (uint64_t)PteSrc.u,
                               SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                               SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
@@ -2180,7 +2181,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
                       GCPtrCurPage, PteSrc.n.u1Present,
                       PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                      PteSrc.n.u1User & PdeSrc.n.u1User,
+                      PteSrc.n.u1User  & PdeSrc.n.u1User,
                       (uint64_t)PteSrc.u,
                       SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                       SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
@@ -2211,7 +2212,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
         Log2(("SyncPage: 4K  %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}PteDst=%08llx%s\n",
               GCPtrPage, PteSrc.n.u1Present,
               PteSrc.n.u1Write & PdeSrc.n.u1Write,
-              PteSrc.n.u1User & PdeSrc.n.u1User,
+              PteSrc.n.u1User  & PdeSrc.n.u1User,
               (uint64_t)PteSrc.u,
               SHW_PTE_LOG64(pPTDst->a[iPTDst]),
               SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
@@ -2398,7 +2399,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
             {
                 if (SHW_PTE_IS_TRACK_DIRTY(*pPteDst))
                 {
-                    PPGMPAGE pPage  = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & GST_PTE_PG_MASK);
+                    PPGMPAGE pPage  = pgmPhysGetPage(&pVM->pgm.s, GST_GET_PTE_GCPHYS(*pPteSrc));
                     SHWPTE   PteDst = *pPteDst;
 
                     LogFlow(("DIRTY page trap addr=%RGv\n", GCPtrPage));
@@ -2424,7 +2425,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
                             if (   PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED
                                 && PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
                             {
-                                rc = pgmPhysPageMakeWritable(pVM, pPage, pPteSrc->u & GST_PTE_PG_MASK);
+                                rc = pgmPhysPageMakeWritable(pVM, pPage, GST_GET_PTE_GCPHYS(*pPteSrc));
                                 AssertRC(rc);
                             }
                             if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)
@@ -2748,13 +2749,15 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                 unsigned        iPTDst    = 0;
                 const unsigned  iPTDstEnd = RT_ELEMENTS(pPTDst->a);
 # endif /* !PGM_SYNC_N_PAGES */
+                RTGCPTR         GCPtrCur  = (GCPtrPage & ~(RTGCPTR)((1 << SHW_PD_SHIFT) - 1))
+                                          | ((RTGCPTR)iPTDst << PAGE_SHIFT);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
                 const unsigned  offPTSrc  = ((GCPtrPage >> SHW_PD_SHIFT) & 1) * 512;
 # else
                 const unsigned  offPTSrc  = 0;
 # endif
-                for (; iPTDst < iPTDstEnd; iPTDst++)
+                for (; iPTDst < iPTDstEnd; iPTDst++, GCPtrCur += PAGE_SIZE)
                 {
                     const unsigned iPTSrc = iPTDst + offPTSrc;
                     const GSTPTE   PteSrc = pPTSrc->a[iPTSrc];
@@ -2769,17 +2772,17 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                          */
                         PPGMPAGE pPage;
                         if (    ((PdeSrc.u & pPTSrc->a[iPTSrc].u) & (X86_PTE_RW | X86_PTE_US))
-                            ||  !CSAMDoesPageNeedScanning(pVM, (iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT))
-                            ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK))
+                            ||  !CSAMDoesPageNeedScanning(pVM, GCPtrCur)
+                            ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, GST_GET_PTE_GCPHYS(PteSrc)))
                                  &&  PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                            )
 # endif
                             PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPT:   4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s dst.raw=%08llx iPTSrc=%x PdeSrc.u=%x physpte=%RGp\n",
-                              (RTGCPTR)(((RTGCPTR)iPDSrc << GST_PD_SHIFT) | ((RTGCPTR)iPTSrc << PAGE_SHIFT)),
+                              GCPtrCur,
                               PteSrc.n.u1Present,
                               PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                              PteSrc.n.u1User & PdeSrc.n.u1User,
+                              PteSrc.n.u1User  & PdeSrc.n.u1User,
                               (uint64_t)PteSrc.u,
                               SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : "", SHW_PTE_LOG64(pPTDst->a[iPTDst]), iPTSrc, PdeSrc.au32[0],
                               (RTGCPHYS)(GST_GET_PDE_GCPHYS(PdeSrc) + iPTSrc*sizeof(PteSrc)) ));
@@ -3986,7 +3989,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 
                             /* match the physical addresses */
                             HCPhysShw = SHW_PTE_GET_HCPHYS(PteDst);
-                            GCPhysGst = PteSrc.u & GST_PTE_PG_MASK;
+                            GCPhysGst = GST_GET_PTE_GCPHYS(PteSrc);
 
 # ifdef IN_RING3
                             rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysGst, &HCPhys);
