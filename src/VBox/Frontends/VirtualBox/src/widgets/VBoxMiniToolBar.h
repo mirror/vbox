@@ -58,6 +58,7 @@ public:
 
 signals:
 
+    void minimizeAction();
     void exitAction();
     void closeAction();
     void geometryUpdated();
@@ -83,6 +84,7 @@ private:
 
     QAction *m_pAutoHideAction;
     QLabel *m_pDisplayLabel;
+    QAction *m_pMinimizeAction;
     QAction *m_pRestoreAction;
     QAction *m_pCloseAction;
 
