@@ -38,7 +38,12 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
             Assert(pD3D->pfnVBoxWineExD3DDev9CreateTexture);
             if (pD3D->pfnVBoxWineExD3DDev9CreateTexture)
             {
-                return S_OK;
+                pD3D->pfnVBoxWineExD3DDev9Flush = (PFNVBOXWINEEXD3DDEV9_FLUSH)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Flush");
+                Assert(pD3D->pfnVBoxWineExD3DDev9Flush);
+                if (pD3D->pfnVBoxWineExD3DDev9Flush)
+                {
+                    return S_OK;
+                }
             }
         }
         else

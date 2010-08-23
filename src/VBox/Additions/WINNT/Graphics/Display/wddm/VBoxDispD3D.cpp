@@ -4153,12 +4153,23 @@ static HRESULT APIENTRY vboxWddmDDevFlush(HANDLE hDevice)
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
         Assert(pDevice->cScreens);
-        for (UINT i = 0; i < RT_ELEMENTS(pDevice->aScreens); ++i)
+        UINT cProcessed = 0;
+        for (UINT i = 0; cProcessed < pDevice->cScreens && i < RT_ELEMENTS(pDevice->aScreens); ++i)
         {
             PVBOXWDDMDISP_SCREEN pScreen = &pDevice->aScreens[i];
             if (pScreen->pDevice9If)
             {
-                /* @todo: make a flush */
+                ++cProcessed;
+                if (pScreen->pRenderTargetRc->cAllocations == 1)
+                {
+                    hr = pScreen->pDevice9If->Present(NULL, NULL, NULL, NULL);
+                    Assert(hr == S_OK);
+                }
+                else
+                {
+                    hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pScreen->pDevice9If);
+                    Assert(hr == S_OK);
+                }
             }
         }
     }

@@ -252,6 +252,15 @@ static HRESULT WINAPI IWineGDISwapChainImpl_Present(IWineD3DSwapChain *iface, CO
     return WINED3D_OK;
 }
 
+#ifdef VBOXWDDM
+static HRESULT WINAPI IWineGDISwapChainImpl_Flush(IWineD3DSwapChain *iface) {
+    IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl *) iface;
+
+    WARN("GDI Swapchain doesn't implement flush, returning WINED3DERR_INVALIDCALL\n");
+    return WINED3DERR_INVALIDCALL;
+}
+#endif
+
 const IWineD3DSwapChainVtbl IWineGDISwapChain_Vtbl =
 {
     /* IUnknown */
@@ -270,5 +279,8 @@ const IWineD3DSwapChainVtbl IWineGDISwapChain_Vtbl =
     IWineD3DBaseSwapChainImpl_GetDisplayMode,
     IWineD3DBaseSwapChainImpl_GetPresentParameters,
     IWineD3DBaseSwapChainImpl_SetGammaRamp,
-    IWineD3DBaseSwapChainImpl_GetGammaRamp
+    IWineD3DBaseSwapChainImpl_GetGammaRamp,
+#ifdef VBOXWDM
+    IWineGDISwapChainImpl_Flush,
+#endif
 };
