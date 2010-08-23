@@ -250,7 +250,7 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
         if (CODEC_NID(cmd) == 2)
             codecToAudVolume(pAmplifier, AUD_MIXER_VOLUME);
         if (CODEC_NID(cmd) == 0x17) /* Microphone */
-            codecToAudVolume(pAmplifier, AUD_MIXER_PCM);
+            codecToAudVolume(pAmplifier, AUD_MIXER_LINE_IN);
     }
     return VINF_SUCCESS;
 }
@@ -1119,9 +1119,9 @@ static int codecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
     switch (mt)
     {
         case AUD_MIXER_VOLUME:
+        case AUD_MIXER_PCM:
             dir = AMPLIFIER_OUT;
             break;
-        case AUD_MIXER_PCM:
         case AUD_MIXER_LINE_IN:
             dir = AMPLIFIER_IN;
             break;
@@ -1262,7 +1262,7 @@ int stac9220Construct(CODECState *pState)
     if (!pState->voice_po)
         LogRel (("HDAcodec: WARNING: Unable to open PCM OUT!\n"));
     codecToAudVolume(&pState->pNodes[2].dac.B_params, AUD_MIXER_VOLUME);
-    codecToAudVolume(&pState->pNodes[0x17].adcvol.B_params, AUD_MIXER_PCM);
+    codecToAudVolume(&pState->pNodes[0x17].adcvol.B_params, AUD_MIXER_LINE_IN);
     return VINF_SUCCESS;
 }
 int stac9220Destruct(CODECState *pCodecState)
@@ -1280,6 +1280,6 @@ int stac9220LoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
 {
     SSMR3GetMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * STAC9220_NODE_COUNT);
     codecToAudVolume(&pCodecState->pNodes[2].dac.B_params, AUD_MIXER_VOLUME);
-    codecToAudVolume(&pCodecState->pNodes[0x17].adcvol.B_params, AUD_MIXER_PCM);
+    codecToAudVolume(&pCodecState->pNodes[0x17].adcvol.B_params, AUD_MIXER_LINE_IN);
     return VINF_SUCCESS;
 }
