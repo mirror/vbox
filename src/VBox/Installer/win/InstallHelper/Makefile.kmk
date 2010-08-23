@@ -43,7 +43,9 @@ endif
 
 ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_WITH_TESTCASES
-  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+  ifndef VBOX_OSE
+   include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+  endif
  endif
 endif
 
