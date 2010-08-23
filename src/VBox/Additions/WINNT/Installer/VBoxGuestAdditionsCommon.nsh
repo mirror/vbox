@@ -99,12 +99,6 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxSF.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxMRXNP.dll"
 
-  ; AMD PCNet driver
-  SetOutPath "$0\Network\AMD"
-  FILE "..\Network\AMD\netamd.inf"
-  FILE "..\Network\AMD\pcntpci5.cat"
-  FILE "..\Network\AMD\PCNTPCI5.sys"
-
   ; Auto-Logon
   SetOutPath "$0\AutoLogon"
   FILE "$%PATH_OUT%\bin\additions\VBoxGINA.dll"

@@ -10,12 +10,6 @@ Function Vista_CopyFiles
   ;FILE "$%PATH_OUT%\bin\additions\VBoxNET.inf"
   ;FILE "$%PATH_OUT%\bin\additions\VBoxNET.sys"
 
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
-  ; AMD PCNet network driver
-  FILE "..\Network\AMD\netamd.inf"
-  FILE "..\Network\AMD\pcntpci5.cat"
-  FILE "..\Network\AMD\PCNTPCI5.sys"
-!endif
 
 FunctionEnd
 
@@ -30,13 +24,6 @@ Function Vista_InstallFiles
   ;Pop $0                      ; Ret value
   ;IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
   ;Goto done
-
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
-  ; AMD PCnet drivers
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /i "PCI\VEN_1022&DEV_2000&SUBSYS_20001022&REV_40" "$INSTDIR\netamd.inf" "Net"'
-  Pop $0                      ; Ret value
-  IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
-!endif
 
   Goto done
 
