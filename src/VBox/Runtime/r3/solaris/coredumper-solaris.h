@@ -88,7 +88,7 @@ typedef VBOXSOLMAPINFO *PVBOXSOLMAPINFO;
 typedef enum VBOXSOLCORETYPE
 {
     enmOldEra       = 0x01d,        /* old */
-    enmNewEra       = 0x5c151       /* sci-fi */
+    enmNewEra       = 0x5c1f1       /* sci-fi */
 } VBOXSOLCORETYPE;
 
 /**
