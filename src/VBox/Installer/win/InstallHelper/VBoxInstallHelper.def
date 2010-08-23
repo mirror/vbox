@@ -1,0 +1,24 @@
+; $Id$
+;; @file
+; VBoxInstallHelper - Defines the exports the MSI engine uses.
+;
+
+;
+; Copyright (C) 2008 Oracle Corporation
+;
+; Oracle Corporation confidential
+; All rights reserved
+;
+
+LIBRARY "VBoxInstallHelper"
+EXPORTS
+    IsSerialCheckNeeded
+    CheckSerial
+    InstallPythonAPI
+    InstallBranding
+    UninstallBranding
+    InstallNetFlt
+    UninstallNetFlt
+    UninstallTAPInstances
+    CreateHostOnlyInterface
+    RemoveHostOnlyInterfaces
