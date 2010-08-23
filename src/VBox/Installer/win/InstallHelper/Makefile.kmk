@@ -1,0 +1,45 @@
+# $Id$
+## @file
+# Sub-Makefile for VBoxInstallHelper.dll.
+#
+
+#
+# Copyright (C) 2010 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+DLLS += VBoxInstallHelper
+VBoxInstallHelper_TEMPLATE = VBOXR3STATIC
+VBoxInstallHelper_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
+VBoxInstallHelper_DEFS    += VBOX_SVN_REV=$(VBOX_SVN_REV)
+VBoxInstallHelper_DEPS     = $(VBOX_SVN_REV_KMK)
+ifdef VBOX_WITH_NETFLT
+ VBoxInstallHelper_DEFS   += VBOX_WITH_NETFLT=1
+endif
+VBoxInstallHelper_SOURCES  = \
+	VBoxInstallHelper.cpp \
+	VBoxInstallHelper.def \
+	VBoxCommon.cpp
+ifndef VBOX_OSE
+ VBoxInstallHelper_SOURCES += internal/VBoxSerial.cpp
+endif
+VBoxInstallHelper_SDKS     = WINPSDK W2K3DDK
+VBoxInstallHelper_LIBS     = $(PATH_SDK_W2K3DDK_LIB)/Msi.lib
+ifdef VBOX_WITH_NETFLT
+ VBoxInstallHelper_LIBS   += $(PATH_LIB)/WinNetConfig.lib \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+endif
+
+ifeq ($(KBUILD_TARGET),win)
+ ifdef VBOX_WITH_TESTCASES
+  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ endif
+endif
+
+include	$(KBUILD_PATH)/subfooter.kmk
