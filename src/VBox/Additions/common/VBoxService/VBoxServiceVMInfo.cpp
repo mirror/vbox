@@ -40,6 +40,7 @@
 # endif
 # ifdef RT_OS_SOLARIS
 #  include <sys/sockio.h>
+#  include <net/if_arp.h>
 # endif
 # ifdef RT_OS_FREEBSD
 #  include <ifaddrs.h> /* getifaddrs, freeifaddrs */
@@ -581,21 +582,47 @@ static int vboxserviceVMInfoWriteNetwork(void)
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
 # if defined(RT_OS_SOLARIS)
-        if (ioctl(sd, SIOCGENADDR, &ifrequest[i]) < 0)
+        /*
+         * "ifreq" is obsolete on Solaris. We use the recommended "lifreq".
+         * We might fail if the interface has not been assigned an IP address.
+         * That doesn't matter; as long as it's plumbed we can pick it up.
+         * But, if it has not acquired an IP address we cannot obtain it's MAC
+         * address this way, so we just use all zeros there.
+         */
+        RTMAC IfMac;
+        RT_ZERO(IfMac);
+        struct lifreq IfReq;
+        RT_ZERO(IfReq);
+        AssertCompile(sizeof(IfReq.lifr_name) >= sizeof(ifrequest[i].ifr_name));
+        strncpy(IfReq.lifr_name, ifrequest[i].ifr_name, sizeof(ifrequest[i].ifr_name));
+        if (ioctl(sd, SIOCGLIFADDR, &IfReq) >= 0)
+        {
+            struct arpreq ArpReq;
+            RT_ZERO(ArpReq);
+            memcpy(&ArpReq.arp_pa, &IfReq.lifr_addr, sizeof(struct sockaddr_in));
+
+            if (ioctl(sd, SIOCGARP, &ArpReq) >= 0)
+                memcpy(&IfMac, ArpReq.arp_ha.sa_data, sizeof(IfMac));
+            else
+                VBoxServiceError("VMInfo/Network: failed to ioctl(SIOCGARP) on socket: Error %d\n", errno);
+        }
+        else
+            VBoxServiceError("VMInfo/Network: failed to ioctl(SIOCGLIFADDR) on socket: Error %d\n", errno);
 # else
         if (ioctl(sd, SIOCGIFHWADDR, &ifrequest[i]) < 0)
-# endif
         {
+            /* @todo don't fail here, handle failure with zero MAC address */
             VBoxServiceError("VMInfo/Network: Failed to ioctl(SIOCGIFHWADDR) on socket: Error %d\n", errno);
             close(sd);
             return RTErrConvertFromErrno(errno);
         }
+# endif
 
         char szMac[32];
 # if defined(RT_OS_SOLARIS)
-        uint8_t *pu8Mac = (uint8_t*)&ifrequest[i].ifr_enaddr[0];
+        uint8_t *pu8Mac = IfMac.au8;
 # else
-        uint8_t *pu8Mac = (uint8_t*)&ifrequest[i].ifr_hwaddr.sa_data[0];
+        uint8_t *pu8Mac = (uint8_t*)&ifrequest[i].ifr_hwaddr.sa_data[0];        /* @todo see above */
 # endif
         RTStrPrintf(szMac, sizeof(szMac), "%02X%02X%02X%02X%02X%02X",
                     pu8Mac[0], pu8Mac[1], pu8Mac[2], pu8Mac[3],  pu8Mac[4], pu8Mac[5]);
