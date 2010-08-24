@@ -740,6 +740,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/accessible/*) \
 		$(if-expr defined(VBOX_WITH_PYTHON), $(addprefix $(VBOX_PATH_DIST)/, $(VBOX_DI_VBAPP_PYTHON_FILES)),) \
                 $(if-expr defined(VBOX_WITH_JXPCOM), $(addprefix $(VBOX_PATH_DIST)/, sdk/bindings/xpcom/java/vboxjxpcom.jar),) \
+		$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxwebsrv.plist,) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,PackageMaker,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -789,6 +790,9 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 	@# Install all supported language files
 	$(foreach f, $(VBOX_INSTALL_LANG_FILES) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/nls/$(f)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/nls/$(f)$(NLTAB))
+ifdef VBOX_WITH_WEBSERVICES
+	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxwebsrv.plist   $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/
+endif
 	@# Install the python stuff
 ifdef VBOX_WITH_PYTHON
 	$(foreach f,$(VBOX_DI_VBAPP_PYTHON_FILES) \
