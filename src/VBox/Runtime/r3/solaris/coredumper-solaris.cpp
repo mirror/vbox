@@ -224,7 +224,6 @@ static size_t GetFileSize(const char *pszPath)
 static int AllocMemoryArea(PVBOXCORE pVBoxCore)
 {
     AssertReturn(pVBoxCore->pvCore == NULL, VERR_ALREADY_EXISTS);
-    AssertReturn(pVBoxCore->VBoxProc.Process != NIL_RTPROCESS, VERR_PROCESS_NOT_FOUND);
 
     struct VBOXSOLPREALLOCTABLE
     {
