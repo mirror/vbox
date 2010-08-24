@@ -93,49 +93,71 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
     { \
         /* Get the 64-bit right side value. */ \
         uint64_t u64Right; \
-        int rc = dbgcOpHelperGetNumber(pDbgc, pArg2, &u64Right); \
-        if (fIsDiv && RT_SUCCESS(rc) && !u64Right) /* div/0 kludge */ \
-            DBGCVAR_INIT_NUMBER(pResult, UINT64_MAX); \
+        int rc = dbgcOpHelperGetNumber((pDbgc), (pArg2), &u64Right); \
+        if ((fIsDiv) && RT_SUCCESS(rc) && !u64Right) /* div/0 kludge */ \
+            DBGCVAR_INIT_NUMBER((pResult), UINT64_MAX); \
         else if (RT_SUCCESS(rc)) \
         { \
             /* Apply it to the left hand side. */ \
-            if (   pArg1->enmType == DBGCVAR_TYPE_SYMBOL \
-                || pArg1->enmType == DBGCVAR_TYPE_STRING) \
+            if (   (pArg1)->enmType == DBGCVAR_TYPE_SYMBOL \
+                || (pArg1)->enmType == DBGCVAR_TYPE_STRING) \
             { \
-                rc = dbgcSymbolGet(pDbgc, pArg1->u.pszString, DBGCVAR_TYPE_ANY, pResult); \
+                rc = dbgcSymbolGet((pDbgc), (pArg1)->u.pszString, DBGCVAR_TYPE_ANY, (pResult)); \
                 if (RT_FAILURE(rc)) \
                     return rc; \
             } \
             else \
-                *pResult = *pArg1; \
-            switch (pResult->enmType) \
+                *(pResult) = *(pArg1); \
+            switch ((pResult)->enmType) \
             { \
                 case DBGCVAR_TYPE_GC_FLAT: \
-                    pResult->u.GCFlat       = pResult->u.GCFlat     Operator  u64Right; \
+                    (pResult)->u.GCFlat     = (pResult)->u.GCFlat     Operator  u64Right; \
                     break; \
                 case DBGCVAR_TYPE_GC_FAR: \
-                    pResult->u.GCFar.off    = pResult->u.GCFar.off  Operator  u64Right; \
+                    (pResult)->u.GCFar.off  = (pResult)->u.GCFar.off  Operator  u64Right; \
                     break; \
                 case DBGCVAR_TYPE_GC_PHYS: \
-                    pResult->u.GCPhys       = pResult->u.GCPhys     Operator  u64Right; \
+                    (pResult)->u.GCPhys     = (pResult)->u.GCPhys     Operator  u64Right; \
                     break; \
                 case DBGCVAR_TYPE_HC_FLAT: \
-                    pResult->u.pvHCFlat     = (void *)((uintptr_t)pResult->u.pvHCFlat  Operator  u64Right); \
+                    (pResult)->u.pvHCFlat   = (void *)((uintptr_t)(pResult)->u.pvHCFlat  Operator  u64Right); \
                     break; \
                 case DBGCVAR_TYPE_HC_FAR: \
-                    pResult->u.HCFar.off    = pResult->u.HCFar.off  Operator  u64Right; \
+                    (pResult)->u.HCFar.off  = (pResult)->u.HCFar.off  Operator  u64Right; \
                     break; \
                 case DBGCVAR_TYPE_HC_PHYS: \
-                    pResult->u.HCPhys       = pResult->u.HCPhys     Operator  u64Right; \
+                    (pResult)->u.HCPhys     = (pResult)->u.HCPhys     Operator  u64Right; \
                     break; \
                 case DBGCVAR_TYPE_NUMBER: \
-                    pResult->u.u64Number    = pResult->u.u64Number  Operator  u64Right; \
+                    (pResult)->u.u64Number  = (pResult)->u.u64Number  Operator  u64Right; \
                     break; \
                 default: \
                     return VERR_PARSE_INCORRECT_ARG_TYPE; \
             } \
         } \
         return rc; \
+    } while (0)
+
+
+/**
+ * Switch the factors/whatver so we preserve pointers.
+ * Far pointers are considered more  important that physical and flat pointers.
+ *
+ * @param   pArg1           The left side argument.  Input & output.
+ * @param   pArg2           The right side argument.  Input & output.
+ */
+#define DBGC_GEN_ARIT_POINTER_TO_THE_LEFT(pArg1, pArg2) \
+    do \
+    { \
+        if (    DBGCVAR_ISPOINTER((pArg2)->enmType) \
+            &&  (   !DBGCVAR_ISPOINTER((pArg1)->enmType) \
+                 || (   DBGCVAR_IS_FAR_PTR((pArg2)->enmType) \
+                     && !DBGCVAR_IS_FAR_PTR((pArg1)->enmType)))) \
+        { \
+            PCDBGCVAR pTmp = (pArg1); \
+            (pArg2) = (pArg1); \
+            (pArg1) = pTmp; \
+        } \
     } while (0)
 
 
@@ -844,21 +866,7 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 static DECLCALLBACK(int) dbgcOpMult(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpMult\n"));
-
-    /*
-     * Switch the factors so we preserve pointers, far pointers are considered more
-     * important that physical and flat pointers.
-     */
-    if (    DBGCVAR_ISPOINTER(pArg2->enmType)
-        &&  (   !DBGCVAR_ISPOINTER(pArg1->enmType)
-             || (   DBGCVAR_IS_FAR_PTR(pArg2->enmType)
-                 && !DBGCVAR_IS_FAR_PTR(pArg1->enmType))))
-    {
-        PCDBGCVAR pTmp = pArg1;
-        pArg2 = pArg1;
-        pArg1 = pTmp;
-    }
-
+    DBGC_GEN_ARIT_POINTER_TO_THE_LEFT(pArg1, pArg2);
     DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, *, false);
 }
 
@@ -1401,6 +1409,7 @@ static DECLCALLBACK(int) dbgcOpBitwiseShiftRight(PDBGC pDbgc, PCDBGCVAR pArg1, P
 static DECLCALLBACK(int) dbgcOpBitwiseAnd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBitwiseAnd\n"));
+    DBGC_GEN_ARIT_POINTER_TO_THE_LEFT(pArg1, pArg2);
     DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, &, false);
 }
 
@@ -1419,6 +1428,7 @@ static DECLCALLBACK(int) dbgcOpBitwiseAnd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVA
 static DECLCALLBACK(int) dbgcOpBitwiseXor(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBitwiseXor\n"));
+    DBGC_GEN_ARIT_POINTER_TO_THE_LEFT(pArg1, pArg2);
     DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, ^, false);
 }
 
@@ -1437,6 +1447,7 @@ static DECLCALLBACK(int) dbgcOpBitwiseXor(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVA
 static DECLCALLBACK(int) dbgcOpBitwiseOr(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBitwiseOr\n"));
+    DBGC_GEN_ARIT_POINTER_TO_THE_LEFT(pArg1, pArg2);
     DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, |, false);
 }
 
@@ -1455,6 +1466,7 @@ static DECLCALLBACK(int) dbgcOpBitwiseOr(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR
 static DECLCALLBACK(int) dbgcOpBooleanAnd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBooleanAnd\n"));
+    /** @todo force numeric return value? */
     DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, &&, false);
 }
 
@@ -1473,6 +1485,7 @@ static DECLCALLBACK(int) dbgcOpBooleanAnd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVA
 static DECLCALLBACK(int) dbgcOpBooleanOr(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBooleanOr\n"));
+    /** @todo force numeric return value? */
     DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, ||, false);
 }
 
