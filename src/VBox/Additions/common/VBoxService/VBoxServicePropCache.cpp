@@ -85,6 +85,41 @@ PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheInsertEntryInternal(PVBOXSERVIC
 }
 
 
+/** @todo Docs */
+int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, uint32_t fFlags, const char *pszValueFormat, ...)
+{
+    AssertPtr(pszName);
+    int rc;
+    if (pszValueFormat != NULL)
+    {
+        va_list va;
+        va_start(va, pszValueFormat);
+
+        char *pszValue;
+        if (RTStrAPrintfV(&pszValue, pszValueFormat, va) >= 0)
+        {
+            /*
+             * Because a value can be temporary we have to make sure it also
+             * gets deleted when the property cache did not have the cache to
+             * gracefully clean it up (due to a hard VM reset etc), so set this
+             * guest property using the TRANSIENT flag.
+             */
+            rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue,
+                                        (fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY)
+                                      ? "TRANSIENT"
+                                      : NULL);
+            RTStrFree(pszValue);
+        }
+        va_end(va);
+    }
+    else
+    {
+        rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, NULL);
+    }
+    return rc;
+}
+
+
 /**
  * Creates a property cache.
  *
@@ -222,7 +257,7 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
             if (fUpdate)
             {
                 /* Write the update. */
-                rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pszValue);
+                rc = vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName, fFlags, pszValue);
                 RTStrFree(pNode->pszValue);
                 pNode->pszValue = RTStrDup(pszValue);
             }
@@ -237,7 +272,8 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
                 /* Delete property (but do not remove from cache) if not deleted yet. */
                 RTStrFree(pNode->pszValue);
                 pNode->pszValue = NULL;
-                rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, NULL);
+                rc = vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName,
+                                                    0, /* Flags */ NULL /* Value */);
             }
             else
                 rc = VINF_NO_CHANGE; /* No update needed. */
@@ -280,7 +316,8 @@ int VBoxServicePropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache)
     {
         RTListForEach(&pCache->NodeHead, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc)
         {
-            rc = VBoxServiceWritePropF(pCache->uClientID, pNodeIt->pszName, pNodeIt->pszValue);
+            rc = vboxServicePropCacheWritePropF(pCache->uClientID, pNodeIt->pszName,
+                                                pNodeIt->fFlags, pNodeIt->pszValue);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -308,7 +345,7 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
         while (pNode)
         {
             if ((pNode->fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY) == 0)
-                VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pNode->pszValueReset);
+                vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName, pNode->fFlags, pNode->pszValueReset);
 
             AssertPtr(pNode->pszName);
             RTStrFree(pNode->pszName);
