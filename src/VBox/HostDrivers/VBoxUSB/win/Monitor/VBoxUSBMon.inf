@@ -1,0 +1,61 @@
+;
+; VBox host drivers - USB drivers - Win32 USB monitor driver
+;
+; Installation file
+;
+; Copyright (C) 2006-2007 Oracle Corporation
+;
+; Oracle Corporation confidential
+; All rights reserved
+;
+
+[Version]
+Signature         = "$Windows NT$"
+Provider          = %SUN%
+;edit-DriverVer = 08/26/2008,2.00.0000
+DriverPackageType = KernelService
+Class             = System
+ClassGuid         = {ce4a90b5-1d8c-435d-b349-232ce55cb17f}
+;cat CatalogFile = VBoxUSBMon.cat
+
+[Manufacturer]
+;x86 %SUN%=SUN
+;amd64 %SUN%=SUN, NTamd64
+
+[DefaultInstall.NT]
+CopyFiles = VBoxUSBMonitor.CopyFiles
+
+[VBoxUSBMonitor.CopyFiles]
+VBoxUSBMon.sys
+
+[DefaultInstall.NT.Services]
+AddService = VBoxUSBMon, 0x00000002, VBoxUSBMon_Service_Inst
+
+[VBoxUSBMon_Service_Inst]
+DisplayName    = %VBoxUSBMon.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+;StartType      = 3                  ; SERVICE_DEMAND_START
+StartType      = 1                  ; autostart to fix Vista problem
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\VBoxUSBMon.sys
+
+[SourceDisksNames]
+1 = %VBoxUSBMon.MediaDesc%
+
+[SourceDisksFiles]
+VBoxUSBMon.sys = 1
+
+[DestinationDirs]
+DefaultDestDir = 12	; DIRID_DRIVERS
+
+[Strings]
+SUN = "Sun Microsystems, Inc."
+VBoxUSBMon.SvcDesc	= "VirtualBox USB Monitor Driver"
+VBoxUSBMon.MediaDesc 	= "VirtualBox USB Monitor Driver Disc"
+
+; Useful constants
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_DEMAND_START  = 3
+SERVICE_ERROR_IGNORE  = 0
+REG_EXPAND_SZ         = 0x00020000
+REG_DWORD             = 0x00010001
