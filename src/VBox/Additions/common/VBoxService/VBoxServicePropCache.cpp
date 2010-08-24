@@ -302,20 +302,24 @@ int VBoxServicePropCacheUpdateByPath(PVBOXSERVICEVEPROPCACHE pCache, const char 
         RTStrAPrintfV(&pszPath, pszPathFormat, va);
         va_end(va);
         if (!pszPath)
-            return VERR_NO_STR_MEMORY;
-
-        /* Iterate through all nodes and compare their paths. */
-        RTListForEach(&pCache->NodeHead, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc)
         {
-            if (RTStrStr(pNodeIt->pszName, pszPath) == pNodeIt->pszName)
-            {
-                /** @todo Use some internal function to update the node directly, this is slow atm. */
-                rc = VBoxServicePropCacheUpdate(pCache, pNodeIt->pszName, pszValue);
-            }
-            if (RT_FAILURE(rc))
-                break;
+            rc = VERR_NO_STR_MEMORY;
         }
-        RTStrFree(pszPath);
+        else
+        {
+            /* Iterate through all nodes and compare their paths. */
+            RTListForEach(&pCache->NodeHead, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc)
+            {
+                if (RTStrStr(pNodeIt->pszName, pszPath) == pNodeIt->pszName)
+                {
+                    /** @todo Use some internal function to update the node directly, this is slow atm. */
+                    rc = VBoxServicePropCacheUpdate(pCache, pNodeIt->pszName, pszValue);
+                }
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            RTStrFree(pszPath);
+        }
         RTCritSectLeave(&pCache->CritSect);
     }
     return rc;
