@@ -615,9 +615,8 @@ static int vboxserviceVMInfoWriteNetwork(void)
         }
         else
         {
-            rc = RTErrConvertFromErrno(errno);
-            VBoxServiceError("VMInfo/Network: failed to ioctl(SIOCGLIFADDR) on socket: Error %Rrc\n", rc);
-            break;
+            VBoxServiceVerbose(2, "VMInfo/Network: Interface %d has no assigned IP address, skipping ...\n", i);
+            continue;
         }
 # else
         if (ioctl(sd, SIOCGIFHWADDR, &ifrequest[i]) < 0)
