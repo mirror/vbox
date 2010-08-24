@@ -183,8 +183,6 @@ typedef struct VHDIMAGE
     VHDFooter       vhdFooterCopy;
     /** Current end offset of the file (without the disk footer). */
     uint64_t        uCurrentEndOfFile;
-    /** Start offset of data blocks. */
-    uint64_t        uDataBlockStart;
     /** Size of the data block bitmap in sectors. */
     uint32_t        cDataBlockBitmapSectors;
     /** Start of the block allocation table. */
@@ -546,6 +544,31 @@ out:
 }
 
 /**
+ * Internal: Update the VHD footer.
+ */
+static int vhdUpdateFooter(PVHDIMAGE pImage)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Update fields which can change. */
+    pImage->vhdFooterCopy.CurSize              = RT_H2BE_U64(pImage->cbSize);
+    pImage->vhdFooterCopy.DiskGeometryCylinder = RT_H2BE_U16(pImage->PCHSGeometry.cCylinders);
+    pImage->vhdFooterCopy.DiskGeometryHeads    = pImage->PCHSGeometry.cHeads;
+    pImage->vhdFooterCopy.DiskGeometrySectors  = pImage->PCHSGeometry.cSectors;
+
+    pImage->vhdFooterCopy.Checksum = 0;
+    pImage->vhdFooterCopy.Checksum = RT_H2BE_U32(vhdChecksum(&pImage->vhdFooterCopy, sizeof(VHDFooter)));
+
+    if (pImage->pBlockAllocationTable)
+        rc = vhdFileWriteSync(pImage, 0, &pImage->vhdFooterCopy, sizeof(VHDFooter), NULL);
+
+    if (RT_SUCCESS(rc))
+        rc = vhdFileWriteSync(pImage, pImage->uCurrentEndOfFile, &pImage->vhdFooterCopy, sizeof(VHDFooter), NULL);
+
+    return rc;
+}
+
+/**
  * Internal: Update dynamic disk header from VHDIMAGE.
  */
 static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
@@ -599,14 +622,18 @@ static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
     }
     /* Update parent's UUID */
     memcpy(ddh.ParentUuid, pImage->ParentUuid.au8, sizeof(ddh.ParentUuid));
+
+    /* Update data offset and number of table entries. */
+    ddh.MaxTableEntries = RT_H2BE_U32(pImage->cBlockAllocationTableEntries);
+
     ddh.Checksum = 0;
     ddh.Checksum = RT_H2BE_U32(vhdChecksum(&ddh, sizeof(ddh)));
     rc = vhdFileWriteSync(pImage, pImage->u64DataOffset, &ddh, sizeof(ddh), NULL);
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Update the VHD footer copy. */
-    rc = vhdFileWriteSync(pImage, 0, &pImage->vhdFooterCopy, sizeof(VHDFooter), NULL);
+    /* Update the VHD footer. */
+    rc = vhdUpdateFooter(pImage);
 
 out:
     return rc;
@@ -889,8 +916,6 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
     LogFlowFunc(("uBlockAllocationTableOffset=%llu\n", uBlockAllocationTableOffset));
     pImage->uBlockAllocationTableOffset = uBlockAllocationTableOffset;
     rc = vhdFileReadSync(pImage, uBlockAllocationTableOffset, pBlockAllocationTable, pImage->cBlockAllocationTableEntries * sizeof(uint32_t), NULL);
-    pImage->uDataBlockStart = uBlockAllocationTableOffset + pImage->cBlockAllocationTableEntries * sizeof(uint32_t);
-    LogFlowFunc(("uDataBlockStart=%llu\n", pImage->uDataBlockStart));
 
     /*
      * Because the offset entries inside the allocation table are stored big endian
@@ -1091,7 +1116,7 @@ static int vhdSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 
     /* Image must be opened and the new flags must be valid. Just readonly and
      * info flags are supported. */
-    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_SHAREABLE)))
+    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_SHAREABLE  | VD_OPEN_FLAGS_ASYNC_IO)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
@@ -1521,11 +1546,12 @@ static int vhdFlush(void *pBackendData)
          * Write the block allocation table after the copy of the disk footer and the dynamic disk header.
          */
         vhdFileWriteSync(pImage, pImage->uBlockAllocationTableOffset, pBlockAllocationTableToWrite, cbBlockAllocationTableToWrite, NULL);
-        vhdFileWriteSync(pImage, pImage->uCurrentEndOfFile, &pImage->vhdFooterCopy, sizeof(VHDFooter), NULL);
         if (pImage->fDynHdrNeedsUpdate)
             vhdDynamicHeaderUpdate(pImage);
         RTMemFree(pBlockAllocationTableToWrite);
     }
+
+    vhdUpdateFooter(pImage);
 
     int rc = vhdFileFlushSync(pImage);
 
@@ -2657,6 +2683,191 @@ static int vhdAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
                                                         NULL, NULL);
 }
 
+
+/** @copydoc VBOXHDDBACKEND::pfnResize */
+static int vhdResize(void *pvBackendData, uint64_t cbSize,
+                     PCPDMMEDIAGEOMETRY pPCHSGeometry, PCPDMMEDIAGEOMETRY pLCHSGeometry,
+                     unsigned uPercentStart, unsigned uPercentSpan,
+                     PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                     PVDINTERFACE pVDIfsOperation)
+{
+    PVHDIMAGE pImage = (PVHDIMAGE)pvBackendData;
+    int rc = VINF_SUCCESS;
+
+    PFNVDPROGRESS pfnProgress = NULL;
+    void *pvUser = NULL;
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+    {
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+        if (pCbProgress)
+            pfnProgress = pCbProgress->pfnProgress;
+        pvUser = pIfProgress->pvUser;
+    }
+
+    /* Making the image smaller is not supported at the moment. */
+    if (   cbSize < pImage->cbSize
+        || pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
+        rc = VERR_NOT_SUPPORTED;
+    else if (cbSize > pImage->cbSize)
+    {
+        unsigned cBlocksAllocated = 0;
+        size_t cbBlock = pImage->cbDataBlock + pImage->cbDataBlockBitmap;     /** < Size of a block including the sector bitmap. */
+        uint32_t cBlocksNew = cbSize / pImage->cbDataBlock;                   /** < New number of blocks in the image after the resize */
+        if (cbSize % pImage->cbDataBlock)
+            cBlocksNew++;
+
+        uint32_t cBlocksOld      = pImage->cBlockAllocationTableEntries;      /** < Number of blocks before the resize. */
+        uint64_t cbBlockspaceNew = RT_ALIGN_32(cBlocksNew * sizeof(uint32_t), VHD_SECTOR_SIZE);                         /** < Required space for the block array after the resize. */
+        uint64_t offStartDataNew = RT_ALIGN_32(pImage->uBlockAllocationTableOffset + cbBlockspaceNew, VHD_SECTOR_SIZE); /** < New start offset for block data after the resize */
+        uint64_t offStartDataOld = ~0ULL;
+
+        /* Go through the BAT and finde the data start offset. */
+        for (unsigned idxBlock = 0; idxBlock < pImage->cBlockAllocationTableEntries; idxBlock++)
+        {
+            if (pImage->pBlockAllocationTable[idxBlock] != ~0U)
+            {
+                uint64_t offStartBlock = pImage->pBlockAllocationTable[idxBlock] * VHD_SECTOR_SIZE;
+                if (offStartBlock < offStartDataOld)
+                    offStartDataOld = offStartBlock;
+                cBlocksAllocated++;
+            }
+        }
+
+        if (   offStartDataOld != offStartDataNew
+            && cBlocksAllocated > 0)
+        {
+            /* Calculate how many sectors nee to be relocated. */
+            uint64_t cbOverlapping = offStartDataNew - offStartDataOld;
+            unsigned cBlocksReloc = cbOverlapping / cbBlock;
+            if (cbOverlapping % cbBlock)
+                cBlocksReloc++;
+
+            cBlocksReloc = RT_MIN(cBlocksReloc, cBlocksAllocated);
+            offStartDataNew = offStartDataOld;
+
+            /* Do the relocation. */
+            LogFlow(("Relocating %u blocks\n", cBlocksReloc));
+
+            /*
+             * Get the blocks we need to relocate first, they are appended to the end
+             * of the image.
+             */
+            void *pvBuf = NULL, *pvZero = NULL;
+            do
+            {
+                /* Allocate data buffer. */
+                pvBuf = RTMemAllocZ(cbBlock);
+                if (!pvBuf)
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+
+                /* Allocate buffer for overwrting with zeroes. */
+                pvZero = RTMemAllocZ(cbBlock);
+                if (!pvZero)
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+
+                for (unsigned i = 0; i < cBlocksReloc; i++)
+                {
+                    uint32_t uBlock = offStartDataNew / VHD_SECTOR_SIZE;
+
+                    /* Search the index in the block table. */
+                    for (unsigned idxBlock = 0; idxBlock < cBlocksOld; idxBlock++)
+                    {
+                        if (pImage->pBlockAllocationTable[idxBlock] == uBlock)
+                        {
+                            /* Read data and append to the end of the image. */
+                            rc = vhdFileReadSync(pImage, offStartDataNew, pvBuf, cbBlock, NULL);
+                            if (RT_FAILURE(rc))
+                                break;
+
+                            rc = vhdFileWriteSync(pImage, pImage->uCurrentEndOfFile, pvBuf, cbBlock, NULL);
+                            if (RT_FAILURE(rc))
+                                break;
+
+                            /* Zero out the old block area. */
+                            rc = vhdFileWriteSync(pImage, offStartDataNew, pvZero, cbBlock, NULL);
+                            if (RT_FAILURE(rc))
+                                break;
+
+                            /* Update block counter. */
+                            pImage->pBlockAllocationTable[idxBlock] = pImage->uCurrentEndOfFile / VHD_SECTOR_SIZE;
+
+                            pImage->uCurrentEndOfFile += cbBlock;
+
+                            /* Continue with the next block. */
+                            break;
+                        }
+                    }
+
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    offStartDataNew += cbBlock;
+                }
+            } while (0);
+
+            if (pvBuf)
+                RTMemFree(pvBuf);
+            if (pvZero)
+                RTMemFree(pvZero);
+        }
+
+        /*
+         * Relocation done, expand the block array and update the header with
+         * the new data.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t *paBlocksNew = (uint32_t *)RTMemRealloc(pImage->pBlockAllocationTable, cBlocksNew * sizeof(uint32_t));
+            if (paBlocksNew)
+            {
+                pImage->pBlockAllocationTable = paBlocksNew;
+
+                /* Mark the new blocks as unallocated. */
+                for (unsigned idxBlock = cBlocksOld; idxBlock < cBlocksNew; idxBlock++)
+                    pImage->pBlockAllocationTable[idxBlock] = ~0U;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Write the block array before updating the rest. */
+                rc = vhdFileWriteSync(pImage, pImage->uBlockAllocationTableOffset, pImage->pBlockAllocationTable,
+                                      cBlocksNew * sizeof(uint32_t), NULL);
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Update size and new block count. */
+                pImage->cBlockAllocationTableEntries = cBlocksNew;
+                pImage->cbSize = cbSize;
+
+                /* Update geometry. */
+                pImage->PCHSGeometry = *pPCHSGeometry;
+                pImage->LCHSGeometry = *pLCHSGeometry;
+            }
+        }
+
+        /* Update header information in base image file. */
+        pImage->fDynHdrNeedsUpdate = true;
+        vhdFlush(pImage);
+    }
+    /* Same size doesn't change the image at all. */
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+
 VBOXHDDBACKEND g_VhdBackend =
 {
     /* pszBackendName */
@@ -2756,5 +2967,5 @@ VBOXHDDBACKEND g_VhdBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
-    NULL
+    vhdResize
 };
