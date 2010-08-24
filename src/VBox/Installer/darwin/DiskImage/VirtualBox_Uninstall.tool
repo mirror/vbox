@@ -48,6 +48,9 @@ fi
 my_directories=""
 my_files=""
 
+# Users files first
+test -f "${HOME}/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist"  && my_files="$my_files ${HOME}/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist"
+
 test -d /Library/StartupItems/VirtualBox/          && my_directories="$my_directories /Library/StartupItems/VirtualBox/"
 test -d /Library/Receipts/VBoxStartupItems.pkg/    && my_directories="$my_directories /Library/Receipts/VBoxStartupItems.pkg/"
 
