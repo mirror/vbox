@@ -1014,9 +1014,9 @@ TARBALLROOT ?= VirtualBox-$(VBOX_VERSION_STRING)
 TARBALLNAME ?= VirtualBox-$(VBOX_VERSION_STRING).tar.bz2
 snapshot-ose:
 	@$(call MSG_L1,Creating tarball $(TARBALLPATH)/$(TARBALLNAME))
-	@if [ -r "$(PATH_ROOT)/src/VBox/Devices/USB/USBProxyDevice.cpp" ]; then \
+	@if [ -r "$(PATH_ROOT)/src/VBox/RDP/server/server.cpp" ]; then \
 	    echo; \
-	    echo "Found USB stuff, refused to build OSE tarball!"; \
+	    echo "Found RDP stuff, refused to build OSE tarball!"; \
 	    echo; \
 	    exit 1; \
 	fi; \
@@ -1058,9 +1058,9 @@ ZIPROOT ?= VirtualBox-$(VBOX_VERSION_STRING)
 ZIPNAME ?= VirtualBox-$(VBOX_VERSION_STRING).zip
 snapshot-puel:
 	@$(call MSG_L1,Creating zip $(ZIPPATH)/$(ZIPNAME))
-	@if [ ! -r "$(PATH_ROOT)/src/VBox/Devices/USB/USBProxyDevice.cpp" ]; then \
+	@if [ ! -r "$(PATH_ROOT)/src/VBox/RDP/server/server.cpp" ]; then \
 	    echo; \
-	    echo "Did not find USB stuff, is this an OSE branch?"; \
+	    echo "Did not find RDP stuff, is this an OSE branch?"; \
 	    echo; \
 	    exit 1; \
 	 fi

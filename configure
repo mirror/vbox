@@ -2139,7 +2139,7 @@ EOF
 #
 
 # test if we are OSE
-if [ $OSE -eq 1 -a -r "`cd \`dirname $0\`; pwd`/src/VBox/Devices/USB/USBProxyDevice.cpp" ]; then
+if [ $OSE -eq 1 -a -r "`cd \`dirname $0\`; pwd`/src/VBox/RDP/server/server.cpp" ]; then
   OSE=0
   # Set this as a reminder to print a log message once we know the path of the
   # log file
@@ -2371,7 +2371,7 @@ EOF
 
 # Print log warning about OSE if necessary
 if [ -n "$NOT_OSE" ]; then
-  echo "Found USB devices, assuming VBOX_OSE = FALSE" >> $LOG
+  echo "Found RDP server, assuming VBOX_OSE = FALSE" >> $LOG
   echo >> $LOG
 fi
 
