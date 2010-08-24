@@ -570,8 +570,7 @@
                               Source="$(env.PATH_OUT)\bin\VBoxSDL.exe" />
                         <File Id="sdldll" Name="SDL.dll" DiskId="1" Vital="yes"
                               Source="$(env.PATH_OUT)\bin\SDL.dll" />
-<!-- todo: make the sdlttf available as an env var instead of this hack -->
-<?if $(env.BUILD_TARGET_ARCH) != "amd64" ?>
+<?if $(env.VBOX_WITH_SECURELABEL) = "yes" ?>
                         <File Id="sdlttfdll" Name="SDL_ttf.dll" DiskId="1" Vital="yes"
                               Source="$(env.PATH_OUT)\bin\SDL_ttf.dll" />
 <?endif?>
