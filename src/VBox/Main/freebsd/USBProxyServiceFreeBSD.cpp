@@ -1,0 +1,339 @@
+/* $Id$ */
+/** @file
+ * VirtualBox USB Proxy Service, FreeBSD Specialization.
+ */
+
+/*
+ * Copyright (C) 2006-2010 Oracle Corporation
+ *
+ * Oracle Corporation confidential
+ * All rights reserved
+ */
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include "USBProxyService.h"
+#include "Logging.h"
+
+#include <VBox/usb.h>
+#include <VBox/usblib.h>
+#include <VBox/err.h>
+
+#include <iprt/string.h>
+#include <iprt/alloc.h>
+#include <iprt/assert.h>
+#include <iprt/file.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
+#include <iprt/semaphore.h>
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/poll.h>
+#include <dev/usb/usb.h>
+#include <dev/usb/usb_ioctl.h>
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+
+/**
+ * Initialize data members.
+ */
+USBProxyServiceFreeBSD::USBProxyServiceFreeBSD(Host *aHost)
+    : USBProxyService(aHost)
+{
+    LogFlowThisFunc(("aHost=%p\n", aHost));
+}
+
+
+/**
+ * Initializes the object (called right after construction).
+ *
+ * @returns S_OK on success and non-fatal failures, some COM error otherwise.
+ */
+HRESULT USBProxyServiceFreeBSD::init(void)
+{
+    /*
+     * Call the superclass method first.
+     */
+    HRESULT hrc = USBProxyService::init();
+    AssertComRCReturn(hrc, hrc);
+
+    /*
+     * Create semaphore.
+     */
+    int rc = RTSemEventCreate(&mNotifyEventSem);
+    if (RT_FAILURE(rc))
+    {
+        mLastError = rc;
+        return E_FAIL;
+    }
+
+    /*
+     * Start the poller thread.
+     */
+    start();
+    return S_OK;
+}
+
+
+/**
+ * Stop all service threads and free the device chain.
+ */
+USBProxyServiceFreeBSD::~USBProxyServiceFreeBSD()
+{
+    LogFlowThisFunc(("\n"));
+
+    /*
+     * Stop the service.
+     */
+    if (isActive())
+        stop();
+
+    RTSemEventDestroy(mNotifyEventSem);
+    mNotifyEventSem = NULL;
+}
+
+
+int USBProxyServiceFreeBSD::captureDevice(HostUSBDevice *aDevice)
+{
+    Log(("USBProxyServiceFreeBSD::captureDevice: %p {%s}\n", aDevice, aDevice->getName().raw()));
+    AssertReturn(aDevice, VERR_GENERAL_FAILURE);
+    AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
+    /*
+     * Don't think we need to do anything when the device is held... fake it.
+     */
+    Assert(aDevice->getUnistate() == kHostUSBDeviceState_Capturing);
+    interruptWait();
+
+    return VINF_SUCCESS;
+}
+
+
+int USBProxyServiceFreeBSD::releaseDevice(HostUSBDevice *aDevice)
+{
+    Log(("USBProxyServiceFreeBSD::releaseDevice: %p\n", aDevice));
+    AssertReturn(aDevice, VERR_GENERAL_FAILURE);
+    AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+
+    /*
+     * We're not really holding it atm., just fake it.
+     */
+    Assert(aDevice->getUnistate() == kHostUSBDeviceState_ReleasingToHost);
+    interruptWait();
+
+    return VINF_SUCCESS;
+}
+
+
+bool USBProxyServiceFreeBSD::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
+{
+    return updateDeviceStateFake(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
+}
+
+
+/**
+ * A device was added, we need to adjust mUdevPolls.
+ *
+ * See USBProxyService::deviceAdded for details.
+ */
+void USBProxyServiceFreeBSD::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice)
+{
+    USBProxyService::deviceAdded(aDevice, llOpenedMachines, aUSBDevice);
+}
+
+int USBProxyServiceFreeBSD::wait(RTMSINTERVAL aMillies)
+{
+    return RTSemEventWait(mNotifyEventSem, aMillies < 1000 ? 1000 : 5000);
+}
+
+
+int USBProxyServiceFreeBSD::interruptWait(void)
+{
+    return RTSemEventSignal(mNotifyEventSem);
+}
+
+
+/**
+ * Dumps a USBDEVICE structure to the log using LogLevel 3.
+ * @param   pDev        The structure to log.
+ * @todo    This is really common code.
+ */
+DECLINLINE(void) usbLogDevice(PUSBDEVICE pDev)
+{
+    NOREF(pDev);
+
+    Log3(("USB device:\n"));
+    Log3(("Product: %s (%x)\n", pDev->pszProduct, pDev->idProduct));
+    Log3(("Manufacturer: %s (Vendor ID %x)\n", pDev->pszManufacturer, pDev->idVendor));
+    Log3(("Serial number: %s (%llx)\n", pDev->pszSerialNumber, pDev->u64SerialHash));
+    Log3(("Device revision: %d\n", pDev->bcdDevice));
+    Log3(("Device class: %x\n", pDev->bDeviceClass));
+    Log3(("Device subclass: %x\n", pDev->bDeviceSubClass));
+    Log3(("Device protocol: %x\n", pDev->bDeviceProtocol));
+    Log3(("USB version number: %d\n", pDev->bcdUSB));
+    Log3(("Device speed: %s\n",
+            pDev->enmSpeed == USBDEVICESPEED_UNKNOWN  ? "unknown"
+          : pDev->enmSpeed == USBDEVICESPEED_LOW      ? "1.5 MBit/s"
+          : pDev->enmSpeed == USBDEVICESPEED_FULL     ? "12 MBit/s"
+          : pDev->enmSpeed == USBDEVICESPEED_HIGH     ? "480 MBit/s"
+          : pDev->enmSpeed == USBDEVICESPEED_VARIABLE ? "variable"
+          :                                             "invalid"));
+    Log3(("Number of configurations: %d\n", pDev->bNumConfigurations));
+    Log3(("Bus number: %d\n", pDev->bBus));
+    Log3(("Port number: %d\n", pDev->bPort));
+    Log3(("Device number: %d\n", pDev->bDevNum));
+    Log3(("Device state: %s\n",
+            pDev->enmState == USBDEVICESTATE_UNSUPPORTED   ? "unsupported"
+          : pDev->enmState == USBDEVICESTATE_USED_BY_HOST  ? "in use by host"
+          : pDev->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE ? "in use by host, possibly capturable"
+          : pDev->enmState == USBDEVICESTATE_UNUSED        ? "not in use"
+          : pDev->enmState == USBDEVICESTATE_HELD_BY_PROXY ? "held by proxy"
+          : pDev->enmState == USBDEVICESTATE_USED_BY_GUEST ? "used by guest"
+          :                                                  "invalid"));
+    Log3(("OS device address: %s\n", pDev->pszAddress));
+}
+
+PUSBDEVICE USBProxyServiceFreeBSD::getDevices(void)
+{
+    PUSBDEVICE pDevices = NULL;
+    int FileUsb = 0;
+    int iBus  = 0;
+    int iAddr = 1;
+    int rc = VINF_SUCCESS;
+    char *pszDevicePath = NULL;
+
+    for (;;)
+    {
+        rc = RTStrAPrintf(&pszDevicePath, "/dev/%s%d.%d", USB_GENERIC_NAME, iBus, iAddr);
+        if (RT_FAILURE(rc))
+        {
+            mLastError = rc;
+            break;
+        }
+
+        LogFlowFunc((": Opening %s\n", pszDevicePath));
+
+        FileUsb = open(pszDevicePath, O_RDONLY);
+        if (FileUsb < 0)
+        {
+            if (   (errno != ENOENT)
+                && (errno != EACCES))
+                mLastError = RTErrConvertFromErrno(errno);
+
+            RTStrFree(pszDevicePath);
+
+            if ((errno == ENOENT) && (iAddr > 1))
+            {
+                iAddr = 1;
+                iBus++;
+                continue;
+            }
+            else if (errno == EACCES)
+            {
+                /* Skip devices without the right permission. */
+                iAddr++;
+                continue;
+            }
+            else
+                break;
+        }
+
+        LogFlowFunc((": %s opened successfully\n", pszDevicePath));
+
+        struct usb_device_info UsbDevInfo;
+        memset(&UsbDevInfo, 0, sizeof(struct usb_device_info));
+
+        rc = ioctl(FileUsb, USB_GET_DEVICEINFO, &UsbDevInfo);
+        if (rc < 0)
+        {
+            LogFlowFunc((": Error querying device info rc=%Rrc\n", RTErrConvertFromErrno(errno)));
+            mLastError = RTErrConvertFromErrno(errno);
+            close(FileUsb);
+            RTStrFree(pszDevicePath);
+            break;
+        }
+
+        /* Filter out hubs */
+        if (UsbDevInfo.udi_class != 0x09)
+        {
+            PUSBDEVICE pDevice = (PUSBDEVICE)RTMemAllocZ(sizeof(USBDEVICE));
+            if (!pDevice)
+            {
+                mLastError = VERR_NO_MEMORY;
+                close(FileUsb);
+                RTStrFree(pszDevicePath);
+                break;
+            }
+
+            pDevice->enmState           = USBDEVICESTATE_UNUSED;;
+            pDevice->bBus               = UsbDevInfo.udi_bus;
+            pDevice->bDeviceClass       = UsbDevInfo.udi_class;
+            pDevice->bDeviceSubClass    = UsbDevInfo.udi_subclass;
+            pDevice->bDeviceProtocol    = UsbDevInfo.udi_protocol;
+            pDevice->bNumConfigurations = UsbDevInfo.udi_config_no;
+            pDevice->idVendor           = UsbDevInfo.udi_vendorNo;
+            pDevice->idProduct          = UsbDevInfo.udi_productNo;
+            pDevice->bDevNum            = UsbDevInfo.udi_index;
+
+            switch (UsbDevInfo.udi_speed)
+            {
+                case USB_SPEED_LOW:
+                    pDevice->enmSpeed = USBDEVICESPEED_LOW;
+                    break;
+                case USB_SPEED_FULL:
+                    pDevice->enmSpeed = USBDEVICESPEED_FULL;
+                    break;
+                case USB_SPEED_HIGH:
+                    pDevice->enmSpeed = USBDEVICESPEED_HIGH;
+                    break;
+                case USB_SPEED_SUPER:
+                case USB_SPEED_VARIABLE:
+                default:
+                    pDevice->enmSpeed = USBDEVICESPEED_UNKNOWN;
+            }
+
+            if (UsbDevInfo.udi_vendor[0] != '\0')
+                pDevice->pszManufacturer = RTStrDupN(UsbDevInfo.udi_vendor, sizeof(UsbDevInfo.udi_vendor));
+
+            if (UsbDevInfo.udi_product[0] != '\0')
+                pDevice->pszProduct = RTStrDupN(UsbDevInfo.udi_product, sizeof(UsbDevInfo.udi_product));
+
+            if (UsbDevInfo.udi_serial[0] != '\0')
+            {
+                pDevice->pszSerialNumber = RTStrDupN(UsbDevInfo.udi_serial, sizeof(UsbDevInfo.udi_serial));
+                pDevice->u64SerialHash   = USBLibHashSerial(pDevice->pszSerialNumber);
+            }
+            pDevice->pszAddress = RTStrDup(pszDevicePath);
+            pDevice->enmState   = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
+
+            usbLogDevice(pDevice);
+
+            pDevice->pNext = pDevices;
+            if (pDevices)
+                pDevices->pPrev = pDevice;
+            pDevices = pDevice;
+        }
+        close(FileUsb);
+        RTStrFree(pszDevicePath);
+        iAddr++;
+    }
+
+    return pDevices;
+}
+
