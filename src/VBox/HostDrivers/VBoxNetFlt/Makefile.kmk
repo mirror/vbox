@@ -366,8 +366,7 @@ ifeq ($(KBUILD_TARGET),linux)
  VBoxNetFlt-src_MODE    = a+r,u+w
  VBoxNetFlt-src_SOURCES = $(subst ",,$(VBOX_VBOXNETFLT_SOURCES)) #"
  VBoxNetFlt-src_SOURCES+= \
- 	$(if $(VBOX_OSE),,\
-	  $(PATH_VBoxNetFlt-src)/dkms.conf) \
+	$(PATH_VBoxNetFlt-src)/dkms.conf \
 	$(PATH_VBoxNetFlt-src)/Makefile
  VBoxNetFlt-src_CLEAN   = \
 	$(PATH_VBoxNetFlt-src)/dkms.conf \
@@ -378,7 +377,7 @@ ifeq ($(KBUILD_TARGET),linux)
  VBoxNetFlt-sh_MODE    = a+rx,u+w
  VBoxNetFlt-sh_SOURCES = \
 	$(PATH_VBoxNetFlt-sh)/build_in_tmp \
-	$(if $(VBOX_OSE),,$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
+	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
  VBoxNetFlt-sh_CLEAN   = $(PATH_VBoxNetFlt-sh)/build_in_tmp
 
 

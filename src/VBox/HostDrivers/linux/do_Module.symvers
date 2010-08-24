@@ -1,0 +1,28 @@
+#!/bin/sh
+
+#
+# This script is used when building kernel modules from DKMS. I don't
+# know how to solve the problem of inter-module dependencies better.
+#
+# Copyright (C) 2008 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SYMFILE="/tmp/$1-Module.symvers"
+case "$2" in
+  save)
+    if [ -f "$3" ]; then
+      cp "$3" "$SYMFILE"
+    fi
+    ;;
+  restore)
+    if [ -f "$SYMFILE" ]; then
+      cp "$SYMFILE" "$3"
+    fi
+    ;;
+  *)
+    echo "Usage: <modname> save|restore <location of Module.symvers>"
+    ;;
+esac

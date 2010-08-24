@@ -102,8 +102,7 @@ ifeq ($(KBUILD_TARGET),linux)
  VBoxNetAdp-src_MODE    = a+r,u+w
  VBoxNetAdp-src_SOURCES = $(subst ",,$(VBOX_VBOXNETADP_SOURCES)) #"
  VBoxNetAdp-src_SOURCES+= \
- 	$(if $(VBOX_OSE),,\
-	  $(PATH_VBoxNetAdp-src)/dkms.conf) \
+	$(PATH_VBoxNetAdp-src)/dkms.conf \
 	$(PATH_VBoxNetAdp-src)/Makefile
  VBoxNetAdp-src_CLEAN   = \
 	$(PATH_VBoxNetAdp-src)/dkms.conf \
@@ -114,8 +113,7 @@ ifeq ($(KBUILD_TARGET),linux)
  VBoxNetAdp-sh_MODE    = a+rx,u+w
  VBoxNetAdp-sh_SOURCES = \
 	$(PATH_VBoxNetAdp-sh)/build_in_tmp \
-	$(if $(VBOX_OSE),,\
-	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
+	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
  VBoxNetAdp-sh_CLEAN   = $(PATH_VBoxNetAdp-sh)/build_in_tmp
 
 
