@@ -97,7 +97,7 @@ ifeq ($(KBUILD_TARGET),linux)
  vboxguest-src_INST     = $(INST_ADDITIONS)src/vboxguest/
  vboxguest-src_MODE     = a+r,u+w
  vboxguest-src_SOURCES  = $(subst ",,$(FILES_VBOXGUEST_NOBIN))
- vboxguest-src_SOURCES += $(if $(VBOX_OSE),,$(vboxguest-sh_0_OUTDIR)/dkms.conf)
+ vboxguest-src_SOURCES += $(vboxguest-sh_0_OUTDIR)/dkms.conf
  vboxguest-src_CLEAN    = $(vboxguest-sh_0_OUTDIR)/dkms.conf
 
  $$(vboxguest-sh_0_OUTDIR)/dkms.conf: \
@@ -112,7 +112,7 @@ ifeq ($(KBUILD_TARGET),linux)
  vboxguest-sh_INST      = $(INST_ADDITIONS)src/vboxguest/
  vboxguest-sh_MODE      = a+rx,u+w
  vboxguest-sh_SOURCES   = $(subst ",,$(FILES_VBOXGUEST_BIN))
- vboxguest-sh_SOURCES  += $(if $(VBOX_OSE),,$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
+ vboxguest-sh_SOURCES  += $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
  vboxguest-sh_SOURCES  += $(vboxguest-sh_0_OUTDIR)/build_in_tmp
  vboxguest-sh_CLEAN     = $(vboxguest-sh_0_OUTDIR)/build_in_tmp
 
