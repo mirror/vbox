@@ -416,9 +416,10 @@
 <?endif ?>
                         <File Id="vboxvmmdll" Name="VBoxVMM.dll" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VBoxVMM.dll" />
+<?if $(env.VBOX_WITH_VRDP) = "yes" ?>
                         <File Id="vboxvrdpdll" Name="VBoxVRDP.dll" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VBoxVRDP.dll" />
-
+<?endif ?>
                         <File Id="vboxshfolderdll" Name="VBoxSF.dll" LongName="VBoxSharedFolders.dll" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VBoxSharedFolders.dll" />
                         <File Id="vboxshclpbrddll" Name="VBoxClip.dll" LongName="VBoxSharedClipboard.dll" DiskId="1"  Vital="yes"
@@ -431,12 +432,12 @@
                         <File Id="vboxguestctrldll" Name="VBoxCtrl.dll" LongName="VBoxGuestControlSvc.dll" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VBoxGuestControlSvc.dll" />
 <?endif ?>
-
+<?if $(env.VBOX_WITH_VRDP) = "yes" ?>
                         <File Id="vrdpauthdll" Name="VRDPAuth.dll" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VRDPAuth.dll" />
                         <File Id="vrdpauthsimpledll" Name="VRDPASim.dll" LongName="VRDPAuthSimple.dll" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VRDPAuthSimple.dll" />
-
+<?endif ?>
                         <File Id="vmmgc" Name="VMMGC.gc" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VMMGC.gc" />
                         <File Id="vboxddgc" Name="VBoxDDGC.gc" DiskId="1"  Vital="yes"
