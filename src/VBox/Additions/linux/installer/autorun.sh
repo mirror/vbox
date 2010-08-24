@@ -40,8 +40,8 @@ esac
 
 # execute the installer
 if test "$ostype" = "Linux"; then
-    if test -f "$path/VBoxLinuxAdditions-$arch.run"; then
-      exec gksu /bin/sh "$path/VBoxLinuxAdditions-$arch.run"
+    if test -f "$path/VBoxLinuxAdditions.run"; then
+      exec gksu /bin/sh "$path/VBoxLinuxAdditions.run"
     fi
 
     # else: unknown failure
