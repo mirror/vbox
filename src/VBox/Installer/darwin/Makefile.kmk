@@ -320,10 +320,7 @@ endif
 #
 # The VirtualBox Kernel extensions.
 #
-VBOX_DI_KEXTS_UNIVERSAL = VBoxDrv VBoxNetFlt VBoxNetAdp
-ifndef VBOX_OSE
- VBOX_DI_KEXTS_UNIVERSAL += VBoxUSB
-endif
+VBOX_DI_KEXTS_UNIVERSAL = VBoxDrv VBoxNetFlt VBoxNetAdp VBoxUSB
 VBOX_DI_KEXTS = $(VBOX_DI_KEXTS_UNIVERSAL)
 
 $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
