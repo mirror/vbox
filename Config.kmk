@@ -368,10 +368,6 @@ VBOX_WITH_AHCI = 1
 VBOX_WITH_PDM_ASYNC_COMPLETION = 1
 # Temporary switch for enabling / disabling the new USB code on Darwin.
 VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
-# Enable USB code that relies on USBA driver election callback & our own USB client driver on Solaris.
-ifdef VBOX_WITH_USB
- VBOX_WITH_NEW_USB_CODE_ON_SOLARIS=1
-endif
 ifdef VBOX_WITH_USB
  VBOX_WITH_VUSB = 1
 endif

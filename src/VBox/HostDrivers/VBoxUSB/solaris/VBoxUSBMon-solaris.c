@@ -32,9 +32,7 @@
 #include <iprt/process.h>
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
-# include <iprt/path.h>
-#endif
+#include <iprt/path.h>
 
 #define USBDRV_MAJOR_VER    2
 #define USBDRV_MINOR_VER    0
@@ -143,7 +141,6 @@ static struct modlinkage g_VBoxUSBMonSolarisModLinkage =
     NULL,
 };
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
 /**
  * Client driver info.
  */
@@ -153,7 +150,6 @@ typedef struct vboxusbmon_client_t
     VBOXUSB_CLIENT_INFO         Info;                       /* Client registeration data. */
     struct vboxusbmon_client_t *pNext;                      /* Pointer to next client */
 } vboxusbmon_client_t;
-#endif
 
 /**
  * Device state info.
@@ -171,14 +167,10 @@ typedef struct
 static dev_info_t *g_pDip;
 /** Global Mutex. */
 static kmutex_t g_VBoxUSBMonSolarisMtx;
-
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
 /** Number of userland clients that have kept us open. */
 static uint64_t g_cVBoxUSBMonSolarisClient = 0;
 /** Global list of client drivers registered with us. */
 vboxusbmon_client_t *g_pVBoxUSBMonSolarisClients = 0;
-#endif
-
 /** Opaque pointer to list of soft states. */
 static void *g_pVBoxUSBMonSolarisState;
 
@@ -187,21 +179,16 @@ static void *g_pVBoxUSBMonSolarisState;
 *******************************************************************************/
 static int vboxUSBMonSolarisProcessIOCtl(int iFunction, void *pvState, void *pvData, size_t cbData, size_t *pcbReturnedData);
 static int vboxUSBMonSolarisResetDevice(char *pszDevicePath, bool fReattach);
-#ifndef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
-static int vboxUSBMonSolarisGetDeviceInstance(char *pszDevicePath, int32_t *pInstance);
-#endif
 
 
 /*******************************************************************************
 *   Monitor Global Hooks                                                       *
 *******************************************************************************/
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
 static int vboxUSBMonSolarisClientInfo(vboxusbmon_state_t *pState, PVBOXUSB_CLIENT_INFO pClientInfo);
 int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO pClientInfo);
 int VBoxUSBMonSolarisUnregisterClient(dev_info_t *pClientDip);
 int VBoxUSBMonSolarisElectDriver(usb_dev_descr_t *pDevDesc, usb_dev_str_t *pDevStrings, char *pszDevicePath, int Bus, int Port,
                                 char **ppszDrv, void *pvReserved);
-#endif
 
 
 /**
@@ -351,7 +338,6 @@ static int VBoxUSBMonSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
     {
         case DDI_DETACH:
         {
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
             /*
              * Free all registered clients' info.
              */
@@ -364,7 +350,6 @@ static int VBoxUSBMonSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
                 pCur = pNext;
             }
             mutex_exit(&g_VBoxUSBMonSolarisMtx);
-#endif
 
             vboxusbmon_state_t *pState = ddi_get_driver_private(g_pDip);
             if (pState)
@@ -446,7 +431,6 @@ static int VBoxUSBMonSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCre
         return ENXIO;
     }
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
     mutex_enter(&g_VBoxUSBMonSolarisMtx);
     if (!g_cVBoxUSBMonSolarisClient)
     {
@@ -462,7 +446,6 @@ static int VBoxUSBMonSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCre
     }
     g_cVBoxUSBMonSolarisClient++;
     mutex_exit(&g_VBoxUSBMonSolarisMtx);
-#endif
 
     for (iOpenInstance = 0; iOpenInstance < 4096; iOpenInstance++)
     {
@@ -476,11 +459,9 @@ static int VBoxUSBMonSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCre
     if (!pState)
     {
         LogRel((DEVICE_NAME ":VBoxUSBMonSolarisOpen: too many open instances."));
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
         mutex_enter(&g_VBoxUSBMonSolarisMtx);
         g_cVBoxUSBMonSolarisClient--;
         mutex_exit(&g_VBoxUSBMonSolarisMtx);
-#endif
         return ENXIO;
     }
 
@@ -507,7 +488,6 @@ static int VBoxUSBMonSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred
         return EFAULT;
     }
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
     mutex_enter(&g_VBoxUSBMonSolarisMtx);
     g_cVBoxUSBMonSolarisClient--;
     if (!g_cVBoxUSBMonSolarisClient)
@@ -526,7 +506,6 @@ static int VBoxUSBMonSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred
     }
     else
         mutex_exit(&g_VBoxUSBMonSolarisMtx);
-#endif
 
     /*
      * Remove all filters for this client process.
@@ -770,7 +749,6 @@ static int vboxUSBMonSolarisProcessIOCtl(int iFunction, void *pvState, void *pvD
             break;
         }
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
         case VBOXUSBMON_IOCTL_CLIENT_INFO:
         {
             CHECKRET_MIN_SIZE("CLIENT_INFO", sizeof(VBOXUSBREQ_CLIENT_INFO));
@@ -781,18 +759,6 @@ static int vboxUSBMonSolarisProcessIOCtl(int iFunction, void *pvState, void *pvD
             LogFlow((DEVICE_NAME ":vboxUSBMonSolarisProcessIOCtl: CLIENT_INFO (Process:%d) returned %d\n", pState->Process, rc));
             break;
         }
-#else
-        case VBOXUSBMON_IOCTL_DEVICE_INSTANCE:
-        {
-            CHECKRET_MIN_SIZE("DEVICE_INSTANCE", sizeof(VBOXUSBREQ_DEVICE_INSTANCE));
-
-            VBOXUSBREQ_DEVICE_INSTANCE *pReq = (VBOXUSBREQ_DEVICE_INSTANCE *)pvData;
-            rc = vboxUSBMonSolarisGetDeviceInstance(pReq->szDevicePath, (int32_t *)pReq->pInstance);
-            *pcbReturnedData = cbData;
-            LogFlow((DEVICE_NAME ":vboxUSBMonSolarisProcessIOCtl: DEVICE_INSTANCE returned %d\n", rc));
-            break;
-        }
-#endif
 
         case VBOXUSBMON_IOCTL_GET_VERSION:
         {
@@ -824,7 +790,6 @@ static int vboxUSBMonSolarisResetDevice(char *pszDevicePath, bool fReattach)
 
     LogFlowFunc((DEVICE_NAME ":vboxUSBMonSolarisResetDevice pszDevicePath=%s fReattach=%d\n", pszDevicePath, fReattach));
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
     /*
      * Try grabbing the dev_info_t.
      */
@@ -877,72 +842,8 @@ static int vboxUSBMonSolarisResetDevice(char *pszDevicePath, bool fReattach)
         LogRel((DEVICE_NAME ":vboxUSBMonSolarisResetDevice Cannot obtain device info for %s\n", pszDevicePath));
     }
 
-#else
-    /*
-     * Try grabbing the dev_info_t.
-     */
-    dev_info_t *pDeviceInfo = e_ddi_hold_devi_by_path(pszDevicePath, 0);
-    if (pDeviceInfo)
-    {
-        /*
-         * Try re-enumerating the device.
-         */
-        rc = usb_reset_device(pDeviceInfo, fReattach ? USB_RESET_LVL_REATTACH : USB_RESET_LVL_DEFAULT);
-        LogFlow((DEVICE_NAME ":usb_reset_device for %s level=%s returned %d\n", pszDevicePath, fReattach ? "ReAttach" : "Default", rc));
-
-        ddi_release_devi(pDeviceInfo);
-        switch (rc)
-        {
-            case USB_SUCCESS:         rc = VINF_SUCCESS;                break;
-            case USB_INVALID_PERM:    rc = VERR_PERMISSION_DENIED;      break;
-            case USB_INVALID_ARGS:    rc = VERR_INVALID_PARAMETER;      break;
-
-            /* @todo find better codes for these (especially USB_BUSY) */
-            case USB_BUSY:
-            case USB_INVALID_CONTEXT:
-            case USB_FAILURE:         rc = VERR_GENERAL_FAILURE;        break;
-
-            default:                  rc = VERR_UNRESOLVED_ERROR;       break;
-        }
-    }
-    else
-    {
-        rc = VERR_INVALID_HANDLE;
-        LogRel(("vboxUSBMonSolarisResetDevice: Cannot obtain dev_info_t for Device %s\n", pszDevicePath));
-    }
-#endif
-
     return rc;
 }
-
-#ifndef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
-
-static int vboxUSBMonSolarisGetDeviceInstance(char *pszDevicePath, int32_t *pInstance)
-{
-    LogFlowFunc((DEVICE_NAME ":vboxUSBMonSolarisGetDeviceInstance pszDevicePath=%s pInstance=%p\n", pszDevicePath, pInstance));
-
-    AssertPtrReturn(pInstance, VERR_INVALID_POINTER);
-
-    /*
-     * Try grabbing the dev_info_t.
-     */
-    dev_info_t *pDeviceInfo = e_ddi_hold_devi_by_path(pszDevicePath, 0);
-    if (pDeviceInfo)
-    {
-        /*
-         * Get device instance.
-         */
-        *pInstance = ddi_get_instance(pDeviceInfo);
-        ddi_release_devi(pDeviceInfo);
-        LogFlow(("vboxUSBMonSolarisGetDeviceInstance: instance %d\n", *pInstance));
-        return VINF_SUCCESS;
-    }
-    else
-        LogRel(("vboxUSBMonSolarisGetDeviceInstance: Cannot obtain dev_info_t for Device %s\n", pszDevicePath));
-    return VERR_INVALID_HANDLE;
-}
-
-#else /* VBOX_WITH_NEW_USB_CODE_ON_SOLARIS */
 
 static int vboxUSBMonSolarisClientInfo(vboxusbmon_state_t *pState, PVBOXUSB_CLIENT_INFO pClientInfo)
 {
@@ -1149,6 +1050,3 @@ int VBoxUSBMonSolarisElectDriver(usb_dev_descr_t *pDevDesc, usb_dev_str_t *pDevS
                     pDevDesc->idVendor, pDevDesc->idProduct, pszDevicePath));
     return USB_SUCCESS;
 }
-
-#endif
-
