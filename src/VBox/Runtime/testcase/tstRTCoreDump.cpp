@@ -85,6 +85,7 @@ int main()
             g_cErrors++;
             RTPrintf("RTCoreDumperTakeDump failed. rc=%Rrc\n", rc);
         }
+        RTCoreDumperDisable();
     }
     else
     {
