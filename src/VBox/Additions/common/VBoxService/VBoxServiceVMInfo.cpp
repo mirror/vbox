@@ -646,7 +646,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
 
     close(sd);
     if (RT_FAILURE(rc))
-        VBoxServiceError("VMInfo/Network: Network enumeration for interface %d failed with error %Rrc\n", i, rc);
+        VBoxServiceError("VMInfo/Network: Network enumeration for interface %u failed with error %Rrc\n", cIfacesReport, rc);
 
 #endif /* !RT_OS_WINDOWS */
 
