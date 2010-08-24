@@ -1141,7 +1141,7 @@ VMMR3_INT_DECL(int)     SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const
 VMMR3_INT_DECL(int)     SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance);
 VMMR3DECL(int)          SSMR3DeregisterInternal(PVM pVM, const char *pszName);
 VMMR3DECL(int)          SSMR3DeregisterExternal(PVM pVM, const char *pszName);
-VMMR3DECL(int)          SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
+VMMR3DECL(int)          SSMR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
 VMMR3_INT_DECL(int)     SSMR3LiveSave(PVM pVM, uint32_t cMsMaxDowntime,
                                       const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOps,
                                       SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser,

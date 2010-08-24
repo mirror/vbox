@@ -817,6 +817,77 @@ void pgmR3PoolClearAll(PVM pVM, bool fFlushRemTlb)
     AssertRC(rc);
 }
 
+/**
+ * Protect all pgm pool page table entries to monitor writes
+ *
+ * @param   pVM         The VM handle.
+ *
+ * Remark: assumes the caller will flush all TLBs (!!)
+ */     
+void pgmR3PoolWriteProtectPages(PVM pVM)
+{
+    Assert(PGMIsLockOwner(pVM));
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    unsigned cLeft = pPool->cUsedPages;
+    unsigned iPage = pPool->cCurPages;
+    while (--iPage >= PGMPOOL_IDX_FIRST)
+    {
+        PPGMPOOLPAGE pPage = &pPool->aPages[iPage];
+        if (    pPage->GCPhys != NIL_RTGCPHYS
+            &&  pPage->cPresent)
+        {
+            union
+            {
+                void           *pv;
+                PX86PT          pPT;
+                PPGMSHWPTPAE    pPTPae;
+                PEPTPT          pPTEpt;
+            } uShw;
+            uShw.pv = NULL;
+
+            switch (pPage->enmKind)
+            {
+                /*
+                 * We only care about shadow page tables.
+                 */
+                case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
+                case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
+                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+                    for (unsigned iShw = 0; iShw < RT_ELEMENTS(uShw.pPT); iShw++)
+                    {
+                        if (uShw.pPT->a[iShw].n.u1Present)
+                            uShw.pPT->a[iShw].n.u1Write = 0;
+                    }
+                    break;
+
+                case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
+                case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
+                case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
+                case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+                    for (unsigned iShw = 0; iShw < RT_ELEMENTS(uShw.pPTPae); iShw++)
+                    {
+                        if (uShw.pPTPae->a[iShw].n.u1Present)
+                            uShw.pPTPae->a[iShw].n.u1Write = 0;
+                    }
+                    break;
+
+                case PGMPOOLKIND_EPT_PT_FOR_PHYS:
+                    for (unsigned iShw = 0; iShw < RT_ELEMENTS(uShw.pPTEpt); iShw++)
+                    {
+                        if (uShw.pPTEpt->a[iShw].n.u1Present)
+                            uShw.pPTEpt->a[iShw].n.u1Write = 0;
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+            if (!--cLeft)
+                break;
+        }
+    }
+}
 
 #ifdef VBOX_WITH_DEBUGGER
 /**

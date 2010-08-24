@@ -1640,8 +1640,7 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, uint32_t cMsMaxDowntime, const char *
                              VMSTATE_RUNNING_LS, VMSTATE_RUNNING);
     if (rc == 1 && enmAfter != SSMAFTER_TELEPORT)
     {
-        Assert(!pStreamOps);
-        rc = SSMR3Save(pVM, pszFilename, enmAfter, pfnProgress, pvProgressUser);
+        rc = SSMR3Save(pVM, pszFilename, pStreamOps, pvStreamOpsUser, enmAfter, pfnProgress, pvProgressUser);
         vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SAVING);
     }
     else if (rc == 2 || enmAfter == SSMAFTER_TELEPORT)
@@ -1748,6 +1747,8 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
  *
  * @param   pVM                 The VM which state should be saved.
  * @param   pszFilename         The name of the save state file.
+ * @param   pStreamOps          The stream methods.
+ * @param   pvStreamOpsUser     The user argument to the stream methods.
  * @param   fContinueAfterwards Whether continue execution afterwards or not.
  *                              When in doubt, set this to true.
  * @param   pfnProgress         Progress callback. Optional.
@@ -1759,8 +1760,8 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
  * @vmstateto   Saving+Suspended or
  *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
  */
-VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwards,
-                        PFNVMPROGRESS pfnProgress, void *pvUser, bool *pfSuspended)
+VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                        bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser, bool *pfSuspended)
 {
     LogFlow(("VMR3Save: pVM=%p pszFilename=%p:{%s} fContinueAfterwards=%RTbool pfnProgress=%p pvUser=%p pfSuspended=%p\n",
              pVM, pszFilename, pszFilename, fContinueAfterwards, pfnProgress, pvUser, pfSuspended));
@@ -1781,7 +1782,7 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
      */
     SSMAFTER enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
     int rc = vmR3SaveTeleport(pVM, 250 /*cMsMaxDowntime*/,
-                              pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/,
+                              pszFilename, pStreamOps, pvStreamOpsUser,
                               enmAfter, pfnProgress, pvUser, pfSuspended);
     LogFlow(("VMR3Save: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
     return rc;
