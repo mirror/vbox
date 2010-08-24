@@ -1105,16 +1105,25 @@ static HRESULT vboxWddmRenderTargetUpdate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
     }
 
     pAlloc = &pRc->aAllocations[iNewRTFB];
-#ifdef VBOXWDDM_WITH_VISIBLE_FB
-    HRESULT tmpHr = vboxWddmRenderTargetUpdateSurface(pDevice, pAlloc, ~0UL /* <- for the frontbuffer */);
-    Assert(tmpHr == S_OK);
-#else
-    if (pAlloc->pD3DIf)
+    if (pRc->cAllocations > 1)
     {
-        pAlloc->pD3DIf->Release();
-        pAlloc->pD3DIf = NULL;
-    }
+#ifdef VBOXWDDM_WITH_VISIBLE_FB
+        HRESULT tmpHr = vboxWddmRenderTargetUpdateSurface(pDevice, pAlloc, ~0UL /* <- for the frontbuffer */);
+        Assert(tmpHr == S_OK);
+#else
+        if (pAlloc->pD3DIf)
+        {
+            pAlloc->pD3DIf->Release();
+            pAlloc->pD3DIf = NULL;
+        }
 #endif
+    }
+    else
+    {
+        /* work-around wine backbuffer for devices w/o backbuffers */
+        HRESULT tmpHr = vboxWddmRenderTargetUpdateSurface(pDevice, pAlloc, 0);
+        Assert(tmpHr == S_OK);
+    }
 
 #ifdef DEBUG
     for (UINT i = 0; i < pRc->cAllocations; ++i)
@@ -1122,7 +1131,7 @@ static HRESULT vboxWddmRenderTargetUpdate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
         pAlloc = &pRc->aAllocations[i];
         if (iNewRTFB == i)
         {
-            Assert(!pAlloc->pD3DIf);
+            Assert((!pAlloc->pD3DIf) == (pRc->cAllocations > 1));
         }
 
         for (UINT j = i+1; j < pRc->cAllocations; ++j)
@@ -4160,12 +4169,12 @@ static HRESULT APIENTRY vboxWddmDDevFlush(HANDLE hDevice)
             if (pScreen->pDevice9If)
             {
                 ++cProcessed;
-                if (pScreen->pRenderTargetRc->cAllocations == 1)
-                {
-                    hr = pScreen->pDevice9If->Present(NULL, NULL, NULL, NULL);
-                    Assert(hr == S_OK);
-                }
-                else
+//                if (pScreen->pRenderTargetRc->cAllocations == 1)
+//                {
+//                    hr = pScreen->pDevice9If->Present(NULL, NULL, NULL, NULL);
+//                    Assert(hr == S_OK);
+//                }
+//                else
                 {
                     hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pScreen->pDevice9If);
                     Assert(hr == S_OK);
@@ -4546,7 +4555,8 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
         do
         {
 #ifndef VBOXWDDM_WITH_VISIBLE_FB
-            if (pSrcRc == pScreen->pRenderTargetRc && pScreen->iRenderTargetFrontBuf == pData->SrcSubResourceIndex)
+            if (pSrcRc == pScreen->pRenderTargetRc && pScreen->iRenderTargetFrontBuf == pData->SrcSubResourceIndex
+                    && pScreen->pRenderTargetRc->cAllocations > 1) /* work-around wine backbuffer */
             {
                 PVBOXWDDMDISP_ALLOCATION pSrcAlloc = &pSrcRc->aAllocations[pData->SrcSubResourceIndex];
                 PVBOXWDDMDISP_ALLOCATION pDstAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
