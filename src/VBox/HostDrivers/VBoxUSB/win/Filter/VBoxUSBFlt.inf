@@ -1,0 +1,65 @@
+;
+; VBox host drivers - USB drivers - Win32 USB filter driver
+;
+; Installation file
+;
+; Copyright (C) 2006-2007 Oracle Corporation
+;
+; Oracle Corporation confidential
+; All rights reserved
+;
+
+[Version]
+Signature         = "$Windows NT$"
+Provider          = %sun%
+;edit-DriverVer = 08/26/2008,2.00.0000
+DriverPackageType = ClassFilter
+;cat CatalogFile = VBoxUSBFlt.cat
+
+[DefaultInstall.NT]
+CopyFiles = VBoxUSBFilter.CopyFiles
+AddReg    = VBoxUSBFilter.AddReg
+
+[VBoxUSBFilter.CopyFiles]
+VBoxUSBFlt.sys
+
+[VBoxUSBFilter.AddReg]
+HKLM, System\CurrentControlSet\Control\Class\{36FC9E60-C465-11CF-8056-444553540000}, LowerFilters, 0x00010000, VBoxUSBFlt
+
+[DefaultInstall.NT.Services]
+AddService = VBoxUSBFlt, , VBoxUSBFlt_Service_Inst, VBoxUSBFlt_EventLog_Inst
+
+[VBoxUSBFlt_Service_Inst]
+DisplayName    = %VBoxUSBFlt.SvcDesc%
+ServiceType    = %SERVICE_KERNEL_DRIVER%
+StartType      = %SERVICE_DEMAND_START%
+ErrorControl   = %SERVICE_ERROR_IGNORE%
+ServiceBinary  = %12%\VBoxUSBFlt.sys
+
+[VBoxUSBFlt_EventLog_Inst]
+AddReg = VBoxUSBFlt_EventLog_AddReg
+
+[VBoxUSBFlt_EventLog_AddReg]
+HKR,,EventMessageFile, %REG_EXPAND_SZ%,"%%SystemRoot%%\System32\IoLogMsg.dll;%%SystemRoot%%\System32\drivers\VBoxUSBFlt.sys"
+HKR,,TypesSupported, %REG_DWORD%, 7
+
+[SourceDisksNames]
+1 = %VBoxUSBFlt.MediaDesc%
+
+[SourceDisksFiles]
+VBoxUSBFlt.sys = 1
+
+[DestinationDirs]
+DefaultDestDir = 12	; DIRID_DRIVERS
+
+[Strings]
+sun                     = "Sun Microsystems, Inc."
+VBoxUSBFlt.SvcDesc	= "VirtualBox USB Filter Driver"
+VBoxUSBFlt.MediaDesc 	= "VirtualBox USB Filter Driver Disc"
+
+; Useful constants
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_DEMAND_START  = 3
+SERVICE_ERROR_IGNORE  = 0
+REG_EXPAND_SZ         = 0x00020000
+REG_DWORD             = 0x00010001
