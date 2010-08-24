@@ -3788,6 +3788,7 @@ void            pgmR3PoolResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu);
 void            pgmR3PoolReset(PVM pVM);
 void            pgmR3PoolClearAll(PVM pVM, bool fFlushRemTlb);
 DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, void *fpvFlushRemTbl);
+void            pgmR3PoolWriteProtectPages(PVM pVM);
 
 #endif /* IN_RING3 */
 #if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || IN_RC

@@ -4885,14 +4885,18 @@ static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS 
  * @returns VBox status.
  *
  * @param   pVM             The VM handle.
- * @param   pszFilename     Name of the file to save the state in.
+ * @param   pszFilename     Name of the file to save the state in. NULL if pStreamOps is used.
+ * @param   pStreamOps      The stream method table. NULL if pszFilename is
+ *                          used.
+ * @param   pvStreamOpsUser The user argument to the stream methods.
  * @param   enmAfter        What is planned after a successful save operation.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
  *
  * @thread  EMT
  */
-VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
+VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, 
+                         SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("SSMR3Save: pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
     VM_ASSERT_EMT0(pVM);
@@ -4905,6 +4909,19 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                     ("%d\n", enmAfter),
                     VERR_INVALID_PARAMETER);
 
+    AssertReturn(!pszFilename != !pStreamOps, VERR_INVALID_PARAMETER);
+    if (pStreamOps)
+    {
+        AssertReturn(pStreamOps->u32Version == SSMSTRMOPS_VERSION, VERR_INVALID_MAGIC);
+        AssertReturn(pStreamOps->u32EndVersion == SSMSTRMOPS_VERSION, VERR_INVALID_MAGIC);
+        AssertReturn(pStreamOps->pfnWrite, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnRead, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnSeek, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnTell, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnSize, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnClose, VERR_INVALID_PARAMETER);
+    }
+
     /*
      * Create the saved state file and handle.
      *
@@ -4912,13 +4929,14 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      * so we reserve 20% for the 'Done' period.
      */
     PSSMHANDLE pSSM;
-    int rc = ssmR3SaveDoCreateFile(pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/,
+    int rc = ssmR3SaveDoCreateFile(pVM, pszFilename, pStreamOps, pvStreamOpsUser,
                                    enmAfter, pfnProgress, pvUser, &pSSM);
     if (RT_FAILURE(rc))
         return rc;
     pSSM->uPercentLive    = 0;
     pSSM->uPercentPrepare = 20;
     pSSM->uPercentDone    = 2;
+    pSSM->fLiveSave       = false;
 
     /*
      * Write the saved state stream header and join paths with

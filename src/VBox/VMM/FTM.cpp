@@ -520,13 +520,51 @@ static SSMSTRMOPS const g_ftmR3TcpOps =
 };
 
 /**
+ * Sync the VM state partially or fully
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   enmState    Which state to sync
+ */
+static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
+{
+    int rc;
+
+    if (enmState != FTMSYNCSTATE_DELTA_MEMORY)
+    {
+        rc = VMR3Suspend(pVM);
+        AssertReturnVoid(RT_SUCCESS(rc));
+    }
+
+    switch (enmState)
+    {
+    case FTMSYNCSTATE_FULL:
+        break;
+
+    case FTMSYNCSTATE_DELTA_VM:
+        break;
+
+    case FTMSYNCSTATE_DELTA_MEMORY:
+        break;
+    }
+    /* Write protect all memory. */
+    rc = PGMR3PhysWriteProtectRAM(pVM);
+    AssertRC(rc);
+
+    if (enmState != FTMSYNCSTATE_DELTA_MEMORY)
+    {
+        rc = VMR3Resume(pVM);
+        AssertRC(rc);
+    }
+}
+
+/**
  * Thread function which starts syncing process for this master VM
  *
  * @param   Thread      The thread id.
  * @param   pvUser      Not used
  * @return  VINF_SUCCESS (ignored).
  *
- * @note Locks the Console object for writing.
  */
 static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
 {
@@ -577,6 +615,13 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
     /* Successfully initialized the connection to the standby node.
      * Start the sync process.
      */
+
+    /* First sync all memory and write protect everything so 
+     * we can send changed pages later on.
+     */
+
+    rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3PerformSync, 2, pVM, FTMSYNCSTATE_FULL);
+    AssertRC(rc);
 
     for (;;)
     {

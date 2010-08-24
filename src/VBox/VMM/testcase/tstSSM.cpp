@@ -744,7 +744,7 @@ int main(int argc, char **argv)
      * Attempt a save.
      */
     uint64_t u64Start = RTTimeNanoTS();
-    rc = SSMR3Save(pVM, pszFilename, SSMAFTER_DESTROY, NULL, NULL);
+    rc = SSMR3Save(pVM, pszFilename, NULL, NULL, SSMAFTER_DESTROY, NULL, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Save #1 -> %Rrc\n", rc);
