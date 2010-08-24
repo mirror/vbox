@@ -979,9 +979,6 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
 
     /** @todo pointless to write protect the physical page pointed to by RSP. */
 
-    /*
-     * Clear all the GCPhys links and rebuild the phys ext free list.
-     */
     for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
@@ -1003,7 +1000,11 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
                         /** @todo Optimize this: Don't always re-enable write
                             * monitoring if the page is known to be very busy. */
                         if (PGM_PAGE_IS_WRITTEN_TO(pPage))
+                        {
                             PGM_PAGE_CLEAR_WRITTEN_TO(pPage);
+                            /* Remember this dirty page for the next (memory) sync. */
+                            PGM_PAGE_SET_FT_DIRTY(pPage);
+                        }
 
                         PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_WRITE_MONITORED);
                         break;
@@ -1041,6 +1042,56 @@ VMMR3DECL(int) PGMR3PhysWriteProtectRAM(PVM pVM)
 
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysWriteProtectRAMRendezvous, NULL);
     AssertRC(rc);
+    return rc;
+}
+
+/**
+ * Enumerate all dirty FT pages
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pfnEnum     Enumerate callback handler
+ * @param   pvUser      Enumerate callback handler parameter
+ */
+VMMR3DECL(int) PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pfnEnum, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+
+    pgmLock(pVM);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+         pRam;
+         pRam = pRam->CTX_SUFF(pNext))
+    {
+        if (!PGM_RAM_RANGE_IS_AD_HOC(pRam))
+        {
+            unsigned iPage = pRam->cb >> PAGE_SHIFT;
+            while (iPage-- > 0)
+            {
+                PPGMPAGE pPage = &pRam->aPages[iPage];
+                if (RT_LIKELY(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM))
+                {
+                    /*
+                     * A RAM page.
+                     */
+                    switch (PGM_PAGE_GET_STATE(pPage))
+                    {
+                    case PGM_PAGE_STATE_ALLOCATED:
+                        if (    !PGM_PAGE_IS_WRITTEN_TO(pPage)
+                            &&  PGM_PAGE_IS_FT_DIRTY(pPage))
+                        {
+                            /** @todo this is risky; the range might be changed, but little choice as the sync costs a lot of time */
+                            pgmUnlock(pVM);
+                            pfnEnum(pVM, pRam->GCPhys + iPage * PAGE_SIZE, 0, 0, pvUser);
+                            pgmLock(pVM);
+                            PGM_PAGE_CLEAR_FT_DIRTY(pPage);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    pgmUnlock(pVM);
     return rc;
 }
 

@@ -545,6 +545,7 @@ static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
         break;
 
     case FTMSYNCSTATE_DELTA_MEMORY:
+        /* Nothing to do as we sync the memory in an async thread; no need to block EMT. */
         break;
     }
     /* Write protect all memory. */
@@ -556,6 +557,20 @@ static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
         rc = VMR3Resume(pVM);
         AssertRC(rc);
     }
+}
+
+/**
+ * PGMR3PhysEnumDirtyFTPages callback for syncing dirty physical pages
+ *
+ * @param   pVM             VM Handle.
+ * @param   GCPhys          GC physical address
+ * @param   pRange          HC virtual address of the page(s)
+ * @param   cbRange         Size of the dirty range in bytes.
+ * @param   pvUser          User argument
+ */
+static DECLCALLBACK(int) ftmR3SyncDirtyPage(PVM pVM, RTGCPHYS GCPhys, uint8_t *pRange, unsigned cbRange, void *pvUser)
+{
+    return VINF_SUCCESS;
 }
 
 /**
@@ -625,18 +640,24 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
 
     for (;;)
     {
+        rc = RTSemEventWait(pVM->ftm.s.master.hShutdownEvent, pVM->ftm.s.uInterval);
+        if (rc != VERR_TIMEOUT)
+            break;    /* told to quit */
+
         if (!pVM->ftm.s.fCheckpointingActive)
         {
             rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
             AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
 
             /* sync the changed memory with the standby node. */
+            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3PerformSync, 2, pVM, FTMSYNCSTATE_DELTA_MEMORY);
+            AssertRC(rc);
+
+            rc = PGMR3PhysEnumDirtyFTPages(pVM, ftmR3SyncDirtyPage, NULL /* pvUser */);
+            AssertRC(rc);
 
             PDMCritSectLeave(&pVM->ftm.s.CritSect);
         }
-        rc = RTSemEventWait(pVM->ftm.s.master.hShutdownEvent, pVM->ftm.s.uInterval);
-        if (rc != VERR_TIMEOUT)
-            break;    /* told to quit */            
     }
     return rc;
 }
@@ -845,7 +866,9 @@ VMMR3DECL(int) FTMR3SyncState(PVM pVM)
     pVM->ftm.s.syncstate.fIOError     = false;
     pVM->ftm.s.syncstate.fEndOfStream = false;
 
-    /** @todo sync state + changed memory. */
+    /* Sync state + changed memory. */
+    rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3PerformSync, 2, pVM, FTMSYNCSTATE_DELTA_VM);
+    AssertRC(rc);
 
     PDMCritSectLeave(&pVM->ftm.s.CritSect);
     pVM->ftm.s.fCheckpointingActive = false;
