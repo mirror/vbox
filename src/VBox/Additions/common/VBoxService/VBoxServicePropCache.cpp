@@ -204,7 +204,7 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
 /**
  * Updates the local guest property cache and writes it to HGCM if outdated.
  *
- * @returns VBox status code. Errors will be logged.
+ * @returns VBox status code.
  *
  * @param   pCache          The property cache.
  * @param   pszName         The property name.
@@ -300,6 +300,55 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
     /* Delete temp stuff. */
     RTStrFree(pszValue);
 
+    return rc;
+}
+
+
+/**
+ * Updates all cache values which are matching the specified path.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pCache          The property cache.
+ * @param   pszValue        The value to set.  A NULL will delete the value.
+ * @param   fFlags          Flags to set.
+ * @param   pszPathFormat   The path format string.  May not be null and has
+ *                          to be an absolute path.
+ * @param   ...             Format arguments.
+ */
+int VBoxServicePropCacheUpdateByPath(PVBOXSERVICEVEPROPCACHE pCache, const char *pszValue, uint32_t fFlags, const char *pszPathFormat, ...)
+{
+    AssertPtr(pCache);
+    AssertPtr(pszPathFormat);
+    int rc = VERR_NOT_FOUND;
+    PVBOXSERVICEVEPROPCACHEENTRY pNodeIt = NULL;
+    if (RT_SUCCESS(RTCritSectEnter(&pCache->CritSect)))
+    {
+        /*
+         * Format the value first.
+         */
+        char *pszPath = NULL;
+        va_list va;
+        va_start(va, pszPathFormat);
+        RTStrAPrintfV(&pszPath, pszPathFormat, va);
+        va_end(va);
+        if (!pszPath)
+            return VERR_NO_STR_MEMORY;
+
+        /* Iterate through all nodes and compare their paths. */
+        RTListForEach(&pCache->NodeHead, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc)
+        {
+            if (RTStrStr(pNodeIt->pszName, pszPath) == pNodeIt->pszName)
+            {
+                /** @todo Use some internal function to update the node directly, this is slow atm. */
+                rc = VBoxServicePropCacheUpdate(pCache, pNodeIt->pszName, pszValue);
+            }
+            if (RT_FAILURE(rc))
+                break;
+        }
+        RTStrFree(pszPath);
+        RTCritSectLeave(&pCache->CritSect);
+    }
     return rc;
 }
 
