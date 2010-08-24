@@ -340,17 +340,12 @@ static int solarisWalkDeviceNode(di_node_t Node, void *pvArg)
             AssertBreak(pCur->pszAddress);
 #endif
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
             char pathBuf[PATH_MAX];
             RTStrPrintf(pathBuf, sizeof(pathBuf), "%s", pszDevicePath);
             RTPathStripFilename(pathBuf);
 
             char szBuf[PATH_MAX + 48];
             RTStrPrintf(szBuf, sizeof(szBuf), "%#x:%#x:%d:%s", pCur->idVendor, pCur->idProduct, pCur->bcdDevice, pathBuf);
-#else
-            char szBuf[2 * PATH_MAX];
-            RTStrPrintf(szBuf, sizeof(szBuf), "/dev/usb/%x.%x/%d|%s", pCur->idVendor, pCur->idProduct, 0, pszDevicePath);
-#endif
             pCur->pszAddress = RTStrDup(szBuf);
 
             pCur->pszDevicePath = RTStrDup(pszDevicePath);
@@ -411,42 +406,11 @@ static USBDEVICESTATE solarisDetermineUSBDeviceState(PUSBDEVICE pDevice, di_node
     if (!pszDriverName)
         return USBDEVICESTATE_UNUSED;
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
     if (!strncmp(pszDriverName, VBOXUSB_DRIVER_NAME, sizeof(VBOXUSB_DRIVER_NAME) - 1))
         return USBDEVICESTATE_HELD_BY_PROXY;
 
     NOREF(pDevice);
     return USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
-#else
-
-    USBDEVICESTATE enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
-
-    /* Filter out keyboards, mouse */
-    if (!pDevice->fPartialDescriptor)
-    {
-        /*
-         * Here we have a fully valid device descriptor, so we fine
-         * tune what's usable and what's not.
-         */
-        if (   pDevice->bDeviceClass == 3           /* HID */
-            && (   pDevice->bDeviceProtocol == 1        /* Mouse */
-                || pDevice->bDeviceProtocol == 2))      /* Keyboard */
-        {
-            return USBDEVICESTATE_USED_BY_HOST;
-        }
-    }
-    else
-    {
-        /*
-         * Old Nevadas don't give full device descriptor in ring-3.
-         * So those Nevadas we just filter out all HIDs as unusable.
-         */
-        if (!strcmp(pszDriverName, "hid"))
-            return USBDEVICESTATE_USED_BY_HOST;
-    }
-
-    return enmState;
-#endif
 }
 
 
@@ -461,7 +425,6 @@ int USBProxyServiceSolaris::captureDevice(HostUSBDevice *aDevice)
     Assert(aDevice->getUnistate() == kHostUSBDeviceState_Capturing);
     AssertReturn(aDevice->mUsb, VERR_INVALID_POINTER);
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
     /*
      * Create a one-shot capture filter for the device and reset the device.
      */
@@ -487,98 +450,11 @@ int USBProxyServiceSolaris::captureDevice(HostUSBDevice *aDevice)
     }
     LogFlowThisFunc(("returns %Rrc pvId=%p\n", rc, pvId));
     return rc;
-
-#else
-
-    /*
-     * Add the driver alias for binding the USB device to our driver.
-     */
-    PUSBDEVICE pDev = aDevice->mUsb;
-    int rc = USBLibAddDeviceAlias(pDev);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Reconnect and configure the device into an 'online' state because hard reset via
-         * usb_reset_device(9F) leaves the devices in an indeterminent state sometimes.
-         * In case of errors here, ignore them and prod further...
-         */
-        rc = USBLibResetDevice(pDev->pszDevicePath, true);
-        if (rc)
-            LogRel(("USBService: USBLibResetDevice failed. device=%s rc=%d\n", pDev->pszDevicePath, rc));
-
-        /*
-         * Get device driver instance number.
-         */
-        int iInstance;
-        rc = USBLibDeviceInstance(pDev->pszDevicePath, &iInstance);
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Check device node to verify driver binding.
-             */
-            char szDevNode[PATH_MAX];
-            RTStrPrintf(szDevNode, sizeof(szDevNode), "/dev/usb/%x.%x/%d", pDev->idVendor, pDev->idProduct, 0);
-
-            /*
-             * Wait for the driver to export the device nodes with a timeout of ~5 seconds.
-             */
-            unsigned cTimeout = 0;
-            bool fExportedNodes = false;
-            while (cTimeout < 5000)
-            {
-                if (RTPathExists(szDevNode))
-                {
-                    fExportedNodes = true;
-                    break;
-                }
-                RTThreadSleep(500);
-                cTimeout += 500;
-            }
-            if (fExportedNodes)
-            {
-#if 0
-                /*
-                 * This does not work. ProxyDevice somehow still gets the old values.
-                 * Update our device with the node path as well as the device tree path.
-                 */
-                RTStrFree((char *)pDev->pszAddress);
-                RTStrAPrintf(const_cast<char **>(&pDev->pszAddress), "%s|/devices%s", szDevNode, pDev->pszDevicePath);
-#endif
-
-                /*
-                 * We don't need the system alias for this device anymore now that we've captured it.
-                 * This will also ensure that in case VirtualBox crashes at a later point with
-                 * a captured device it will not affect the user's USB devices.
-                 */
-                USBLibRemoveDeviceAlias(pDev);
-                syslog(LOG_ERR, "USBPService: Success captured %s\n", aDevice->getName().c_str());
-                return VINF_SUCCESS;
-            }
-            else
-            {
-                rc = VERR_PATH_NOT_FOUND;
-                LogRel(("USBService: failed to stat %s for device.\n", szDevNode));
-                syslog(LOG_ERR, "USBService: failed to stat %s for device.\n", szDevNode);
-            }
-        }
-        else
-            LogRel(("USBService: failed to obtain device instance number for %s rc=%Rrc\n", aDevice->getName().c_str(), rc));
-    }
-    else
-        LogRel(("USBService: failed to add alias for device %s devicepath=%s rc=%Rrc\n", aDevice->getName().c_str(), pDev->pszDevicePath, rc));
-
-    USBLibRemoveDeviceAlias(pDev);
-    syslog(LOG_ERR, "USBPService: failed to capture device %s.\n", aDevice->getName().c_str());
-    return VERR_OPEN_FAILED;
-
-#endif
-
 }
 
 
 void USBProxyServiceSolaris::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
 {
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
     /*
      * Remove the one-shot filter if necessary.
      */
@@ -586,7 +462,6 @@ void USBProxyServiceSolaris::captureDeviceCompleted(HostUSBDevice *aDevice, bool
     if (!aSuccess && aDevice->mOneShotId)
         USBLibRemoveFilter(aDevice->mOneShotId);
     aDevice->mOneShotId = NULL;
-#endif
 }
 
 
@@ -600,8 +475,6 @@ int USBProxyServiceSolaris::releaseDevice(HostUSBDevice *aDevice)
     AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
     Assert(aDevice->getUnistate() == kHostUSBDeviceState_ReleasingToHost);
     AssertReturn(aDevice->mUsb, VERR_INVALID_POINTER);
-
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
 
     /*
      * Create a one-shot ignore filter for the device and reset it.
@@ -628,33 +501,11 @@ int USBProxyServiceSolaris::releaseDevice(HostUSBDevice *aDevice)
     }
     LogFlowThisFunc(("returns %Rrc pvId=%p\n", rc, pvId));
     return rc;
-
-#else
-
-    /*
-     * Though may not be strictly remove the driver alias for releasing the USB device
-     * from our driver, ignore errors here as we usually remove the alias immediately after capturing.
-     */
-    PUSBDEVICE pDev = aDevice->mUsb;
-    int rc = USBLibRemoveDeviceAlias(pDev);
-    Assert(pDev->pszDevicePath);
-    rc = USBLibResetDevice(pDev->pszDevicePath, true /* Re-attach */);
-    if (RT_SUCCESS(rc))
-        return VINF_SUCCESS;
-
-    /* The Solaris specifics are free'd in USBProxyService::freeDeviceMembers */
-
-    LogRel(("USBService: failed to reset device %s devicepath=%s rc=%Rrc\n", aDevice->getName().c_str(), pDev->pszDevicePath, rc));
-    return rc;
-
-#endif
-
 }
 
 
 void USBProxyServiceSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
 {
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
     /*
      * Remove the one-shot filter if necessary.
      */
@@ -662,17 +513,12 @@ void USBProxyServiceSolaris::releaseDeviceCompleted(HostUSBDevice *aDevice, bool
     if (!aSuccess && aDevice->mOneShotId)
         USBLibRemoveFilter(aDevice->mOneShotId);
     aDevice->mOneShotId = NULL;
-#endif
 }
 
 
 bool USBProxyServiceSolaris::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
 {
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
     return USBProxyService::updateDeviceState(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
-#else
-    return updateDeviceStateFake(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
-#endif
 }
 
 /**
@@ -684,4 +530,3 @@ void solarisFreeUSBDevice(PUSBDEVICE pDevice)
 {
     USBProxyService::freeDevice(pDevice);
 }
-

@@ -200,11 +200,7 @@ typedef struct
 #endif
 
 /** USB driver name*/
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
-# define VBOXUSB_DRIVER_NAME     "vboxusb"
-#else
-# define VBOXUSB_DRIVER_NAME     "ugen"
-#endif
+#define VBOXUSB_DRIVER_NAME     "vboxusb"
 #define VBOXUSB_HELPER_NAME     "VBoxUSBHelper"
 
 /* No automatic buffering, size limited to 255 bytes => use VBOXUSBREQ for everything. */

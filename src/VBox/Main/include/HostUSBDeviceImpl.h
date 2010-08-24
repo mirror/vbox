@@ -317,10 +317,8 @@ private:
 #ifdef RT_OS_SOLARIS
     friend class USBProxyServiceSolaris;
 
-# ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
     /** One-shot filter id only for new code */
     void *mOneShotId;
-# endif
 #endif
 #ifdef RT_OS_LINUX
     friend class USBProxyServiceLinux;

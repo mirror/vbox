@@ -1136,7 +1136,7 @@ ifdef VBOX_WITH_USB
  Drivers_DEFS.solaris    += VUSB_HAVE_USBPROXY_DEVICE
  Drivers_SOURCES.solaris += \
 	USB/USBProxyDevice.cpp \
-	USB/solaris/$(if $(VBOX_WITH_NEW_USB_CODE_ON_SOLARIS),USBProxyDevice2-solaris.cpp,USBProxyDevice-solaris.cpp)
+	USB/solaris/USBProxyDevice-solaris.cpp
 
  Drivers_DEFS.freebsd      += VUSB_HAVE_USBPROXY_DEVICE
  Drivers_SOURCES.freebsd   += \
