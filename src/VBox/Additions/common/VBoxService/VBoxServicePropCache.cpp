@@ -414,8 +414,8 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
              * (eventually) set TRANSIENT flag from it so that it doesn't get deleted
              * by the host side in order to put the actual reset value in it.
              */
-            if ((pNode->fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY) == 0)
-                vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName, 0 /* Flags */, pNode->pszValueReset);
+            if (pNode->fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY)
+                vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName, 0 /* Flags, clear all */, pNode->pszValueReset);
 
             AssertPtr(pNode->pszName);
             RTStrFree(pNode->pszName);
