@@ -287,7 +287,7 @@ typedef const DBGCVAR *PCDBGCVAR;
         do { \
             DBGCVAR_INIT(pVar); \
             (pVar)->enmType = DBGCVAR_TYPE_NUMBER; \
-            (pVar)->u.u64 = (Value); \
+            (pVar)->u.u64Number = (Value); \
         } while (0)
 
 
