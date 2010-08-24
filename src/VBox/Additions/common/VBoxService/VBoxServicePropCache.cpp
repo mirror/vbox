@@ -98,16 +98,18 @@ int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, ui
         char *pszValue;
         if (RTStrAPrintfV(&pszValue, pszValueFormat, va) >= 0)
         {
-            /*
-             * Because a value can be temporary we have to make sure it also
-             * gets deleted when the property cache did not have the chance to
-             * gracefully clean it up (due to a hard VM reset etc), so set this
-             * guest property using the TRANSIENT flag.
-             */
-            rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue,
-                                        (fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY)
-                                      ? "TRANSIENT"
-                                      : NULL);
+            if (fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY)
+            {
+                /*
+                 * Because a value can be temporary we have to make sure it also
+                 * gets deleted when the property cache did not have the chance to
+                 * gracefully clean it up (due to a hard VM reset etc), so set this
+                 * guest property using the TRANSIENT flag.
+                 */
+                rc = VbglR3GuestPropWrite(u32ClientId, pszName, pszValue, "TRANSIENT");
+            }
+            else
+                rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, pszValue);
             RTStrFree(pszValue);
         }
         va_end(va);
