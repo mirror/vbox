@@ -163,7 +163,7 @@ $(foreach lang,$(VBOX_INSTALLER_LANGUAGES),$(eval $(def_vbox_lang_xml)))
 #       between the tag and the RTF license text.
 #
 define def_vbox_license_xml
-$(VBOX_WIN_INST_OUT_DIR)/Languages/License_$(lang).wxl: $(MAKEFILE_CURRENT) | $$$$(dir $$$$@)
+$(VBOX_WIN_INST_OUT_DIR)/Languages/License_$(lang).wxl: $(license_file) $(MAKEFILE_CURRENT) | $$$$(dir $$$$@)
 	$$(call MSG_GENERATE,,$$@,$$<)
 	$(APPEND) -t $$@ '<?xml version="1.0" encoding="utf-8"?>'
 	$(APPEND) $$@ '<WixLocalization xmlns="http://schemas.microsoft.com/wix/2003/11/localization" Codepage="1252">'
