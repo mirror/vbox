@@ -3569,7 +3569,7 @@ static int  pgmR3DumpHierarchyHCPaePT(PVM pVM, PCPGMSHWPTPAE pPT, uint64_t u64Ad
                             Pte.n.u1PAT         ? "AT" : "--",
                             Pte.n.u1NoExecute   ? "NX" : "--",
                             Pte.u & PGM_PTFLAGS_TRACK_DIRTY   ? 'd' : '-',
-                            Pte.u & RT_BIT(10)                   ? '1' : '0',
+                            Pte.u & RT_BIT(10)                ? '1' : '0',
                             Pte.u & PGM_PTFLAGS_CSAM_VALIDATED? 'v' : '-',
                             Pte.u & X86_PTE_PAE_PG_MASK);
         }
@@ -3621,7 +3621,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
                                 Pde.b.u1CacheDisable? "CD" : "--",
                                 Pde.b.u1PAT         ? "AT" : "--",
                                 Pde.b.u1NoExecute   ? "NX" : "--",
-                                Pde.u & RT_BIT_64(9)                ? '1' : '0',
+                                Pde.u & RT_BIT_64(9)            ? '1' : '0',
                                 Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                 Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                 Pde.u & X86_PDE_PAE_PG_MASK);
@@ -3640,7 +3640,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
                                 Pde.n.u1WriteThru   ? "WT" : "--",
                                 Pde.n.u1CacheDisable? "CD" : "--",
                                 Pde.n.u1NoExecute   ? "NX" : "--",
-                                Pde.u & RT_BIT_64(9)                ? '1' : '0',
+                                Pde.u & RT_BIT_64(9)            ? '1' : '0',
                                 Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                 Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                 Pde.u & X86_PDE_PAE_PG_MASK);
@@ -3727,9 +3727,9 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Ad
                                 Pdpe.lm.u1CacheDisable? "CD" : "--",
                                 Pdpe.lm.u3Reserved & 2? "!"  : "..",/* mbz */
                                 Pdpe.lm.u1NoExecute   ? "NX" : "--",
-                                Pdpe.u & RT_BIT(9)                   ? '1' : '0',
+                                Pdpe.u & RT_BIT(9)                ? '1' : '0',
                                 Pdpe.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
-                                Pdpe.u & RT_BIT(11)                  ? '1' : '0',
+                                Pdpe.u & RT_BIT(11)               ? '1' : '0',
                                 Pdpe.u & X86_PDPE_PG_MASK);
             else
                 pHlp->pfnPrintf(pHlp,      /*P             G  WT CD AT NX 4M a p ?  */
@@ -3740,9 +3740,9 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Ad
                                 Pdpe.n.u1WriteThru   ? "WT" : "--",
                                 Pdpe.n.u1CacheDisable? "CD" : "--",
                                 Pdpe.n.u4Reserved & 2? "!"  : "..",/* mbz */
-                                Pdpe.u & RT_BIT(9)                   ? '1' : '0',
+                                Pdpe.u & RT_BIT(9)                ? '1' : '0',
                                 Pdpe.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
-                                Pdpe.u & RT_BIT(11)                  ? '1' : '0',
+                                Pdpe.u & RT_BIT(11)               ? '1' : '0',
                                 Pdpe.u & X86_PDPE_PG_MASK);
             if (cMaxDepth >= 1)
             {
@@ -3795,9 +3795,9 @@ static int pgmR3DumpHierarchyHcPaePML4(PVM pVM, RTHCPHYS HCPhys, uint32_t cr4, u
                             Pml4e.n.u1CacheDisable? "CD" : "--",
                             Pml4e.n.u3Reserved & 2? "!"  : "..",/* mbz */
                             Pml4e.n.u1NoExecute   ? "NX" : "--",
-                            Pml4e.u & RT_BIT(9)                   ? '1' : '0',
+                            Pml4e.u & RT_BIT(9)                ? '1' : '0',
                             Pml4e.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
-                            Pml4e.u & RT_BIT(11)                  ? '1' : '0',
+                            Pml4e.u & RT_BIT(11)               ? '1' : '0',
                             Pml4e.u & X86_PML4E_PG_MASK);
 
             if (cMaxDepth >= 1)
@@ -3840,7 +3840,7 @@ int  pgmR3DumpHierarchyHC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, PCDBG
                             Pte.n.u1CacheDisable? "CD" : "--",
                             Pte.n.u1PAT         ? "AT" : "--",
                             Pte.u & PGM_PTFLAGS_TRACK_DIRTY     ? 'd' : '-',
-                            Pte.u & RT_BIT(10)                     ? '1' : '0',
+                            Pte.u & RT_BIT(10)                  ? '1' : '0',
                             Pte.u & PGM_PTFLAGS_CSAM_VALIDATED  ? 'v' : '-',
                             Pte.u & X86_PDE_PG_MASK);
         }
@@ -3887,7 +3887,7 @@ int  pgmR3DumpHierarchyHC32BitPD(PVM pVM, uint32_t cr3, uint32_t cr4, unsigned c
                                 Pde.b.u1WriteThru   ? "WT" : "--",
                                 Pde.b.u1CacheDisable? "CD" : "--",
                                 Pde.b.u1PAT         ? "AT" : "--",
-                                Pde.u & RT_BIT_64(9)                ? '1' : '0',
+                                Pde.u & RT_BIT_64(9)            ? '1' : '0',
                                 Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                 Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                 Pde.u & X86_PDE4M_PG_MASK);
@@ -3903,7 +3903,7 @@ int  pgmR3DumpHierarchyHC32BitPD(PVM pVM, uint32_t cr3, uint32_t cr4, unsigned c
                                 Pde.n.u1Reserved1   ? '?'  : '.', /* ignored */
                                 Pde.n.u1WriteThru   ? "WT" : "--",
                                 Pde.n.u1CacheDisable? "CD" : "--",
-                                Pde.u & RT_BIT_64(9)                ? '1' : '0',
+                                Pde.u & RT_BIT_64(9)            ? '1' : '0',
                                 Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                 Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                 Pde.u & X86_PDE_PG_MASK);
@@ -3970,7 +3970,7 @@ int pgmR3DumpHierarchyGC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, RTGCPH
                  Pte.n.u1CacheDisable? "CD" : "--",
                  Pte.n.u1PAT         ? "AT" : "--",
                  Pte.u & PGM_PTFLAGS_TRACK_DIRTY     ? 'd' : '-',
-                 Pte.u & RT_BIT(10)                     ? '1' : '0',
+                 Pte.u & RT_BIT(10)                  ? '1' : '0',
                  Pte.u & PGM_PTFLAGS_CSAM_VALIDATED  ? 'v' : '-',
                  Pte.u & X86_PDE_PG_MASK));
 
