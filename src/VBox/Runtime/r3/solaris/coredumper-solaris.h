@@ -165,4 +165,5 @@ typedef struct VBOXCORE
 typedef VBOXCORE *PVBOXCORE;
 
 typedef int (*PFNCOREACCUMULATOR)(PVBOXCORE pVBoxCore);
+typedef int (*PFNCORETHREADWORKER)(PVBOXCORE pVBoxCore, void *pvThreadInfo);
 
