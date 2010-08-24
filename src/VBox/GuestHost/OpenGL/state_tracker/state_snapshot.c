@@ -817,12 +817,8 @@ static void crStateSaveGLSLProgramCB(unsigned long key, void *data1, void *data2
                 if (size>1)
                 {
                     sprintf(pIndexStr, "[%i]", j);
-                    location = diff_api.GetUniformLocation(pProgram->hwid, name);
                 }
-                else
-                {
-                    location = i;
-                }
+                location = diff_api.GetUniformLocation(pProgram->hwid, name);
 
                 rc = SSMR3PutMem(pSSM, &type, sizeof(type));
                 CRASSERT(rc == VINF_SUCCESS);
