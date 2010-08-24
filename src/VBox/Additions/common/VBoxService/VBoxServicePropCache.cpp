@@ -140,7 +140,17 @@ int VBoxServicePropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientI
 }
 
 
-/** @todo Docs */
+/**
+ * Updates a cache entry without submitting any changes to the host.
+ * This is handy for defining default values/flags.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pCache          The property cache.
+ * @param   pszName         The property name.
+ * @param   fFlags          The property flags to set.
+ * @param   pszValueReset   The property reset value.
+ */
 int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
                                     const char *pszName, uint32_t fFlags, const char *pszValueReset)
 {
@@ -175,7 +185,7 @@ int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
 /**
  * Updates the local guest property cache and writes it to HGCM if outdated.
  *
- * @returns VBox status code. Errors will be logged.
+ * @returns VBox status code.
  *
  * @param   pCache          The property cache.
  * @param   pszName         The property name.
@@ -208,6 +218,8 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
  *
  * @param   pCache          The property cache.
  * @param   pszName         The property name.
+ * @param   fFlags          The property flags to set.
+ * @param   pszValueReset   The property reset value.
  * @param   pszValueFormat  The property format string.  If this is NULL then
  *                          the property will be deleted (if possible).
  * @param   ...             Format arguments.
