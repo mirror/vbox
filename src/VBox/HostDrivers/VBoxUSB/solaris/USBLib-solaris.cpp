@@ -100,7 +100,6 @@ USBLIB_DECL(int) USBLibInit(void)
     g_File = File;
 
     ASMAtomicIncU32(&g_cUsers);
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
     /*
      * Check the USBMonitor version.
      */
@@ -130,7 +129,6 @@ USBLIB_DECL(int) USBLibInit(void)
         ASMAtomicDecU32(&g_cUsers);
         return rc;
     }
-#endif
 
     return VINF_SUCCESS;
 }
@@ -191,7 +189,6 @@ USBLIB_DECL(void) USBLibRemoveFilter(void *pvId)
 }
 
 
-#ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
 USBLIB_DECL(int) USBLibGetClientInfo(char *pszDeviceIdent, char **ppszClientPath, int *pInstance)
 {
     LogFlow((USBLIBR3 ":USBLibGetClientInfo pszDeviceIdent=%s ppszClientPath=%p pInstance=%p\n",
@@ -220,30 +217,6 @@ USBLIB_DECL(int) USBLibGetClientInfo(char *pszDeviceIdent, char **ppszClientPath
 
     return rc;
 }
-
-#else
-
-USBLIB_DECL(int) USBLibDeviceInstance(char *pszDevicePath, int *pInstance)
-{
-    LogFlow((USBLIBR3 ":USBLibDeviceInstance pszDevicePath=%s pInstance=%p\n", pszDevicePath, pInstance));
-
-    size_t cbReq = sizeof(VBOXUSBREQ_DEVICE_INSTANCE) + strlen(pszDevicePath);
-    VBOXUSBREQ_DEVICE_INSTANCE *pReq = (VBOXUSBREQ_DEVICE_INSTANCE *)RTMemTmpAllocZ(cbReq);
-    if (RT_UNLIKELY(!pReq))
-        return VERR_NO_MEMORY;
-
-    pReq->pInstance = pInstance;
-    strncpy(pReq->szDevicePath, pszDevicePath, strlen(pszDevicePath));
-
-    int rc = usblibDoIOCtl(VBOXUSBMON_IOCTL_DEVICE_INSTANCE, pReq, cbReq);
-    if (RT_FAILURE(rc))
-        LogRel((USBLIBR3 ":VBOXUSBMON_IOCTL_DEVICE_INSTANCE failed! rc=%Rrc\n", rc));
-
-    RTMemFree(pReq);
-    return rc;
-}
-
-#endif
 
 
 #if 1
