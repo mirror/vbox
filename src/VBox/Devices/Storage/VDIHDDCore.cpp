@@ -2541,8 +2541,14 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
         pvUser = pIfProgress->pvUser;
     }
 
-    /* Making the image smaller is not supported at the moment. */
-    if (cbSize < getImageDiskSize(&pImage->Header) || GET_MAJOR_HEADER_VERSION(&pImage->Header) == 0)
+    /*
+     * Making the image smaller is not supported at the moment. 
+     * Resizing is also not supported for fixed size images and
+     * very old images.
+     */
+    if (   cbSize < getImageDiskSize(&pImage->Header)
+        || GET_MAJOR_HEADER_VERSION(&pImage->Header) == 0
+        || pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
         rc = VERR_NOT_SUPPORTED;
     else if (cbSize > getImageDiskSize(&pImage->Header))
     {
@@ -2556,7 +2562,7 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
         uint64_t offStartDataNew = RT_ALIGN_32(pImage->offStartBlocks + cbBlockspaceNew, VDI_GEOMETRY_SECTOR_SIZE); /** < New start offset for block data after the resize */
 
         if (   pImage->offStartData != offStartDataNew
-            && getImageBlocksAllocated(&pImage->Header) > 0)
+            && cBlocksAllocated > 0)
         {
             /* Calculate how many sectors nee to be relocated. */
             uint64_t cbOverlapping = offStartDataNew - pImage->offStartData;
