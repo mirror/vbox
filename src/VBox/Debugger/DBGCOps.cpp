@@ -72,6 +72,74 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/**
+ * Generic implementation of a binary operator.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VBox evaluation / parsing error code on failure.
+ *          The caller does the bitching.
+ * @param   pDbgc           Debugger console instance data.
+ * @param   pArg1           The first argument.
+ * @param   pArg2           The 2nd argument.
+ * @param   pResult         Where to store the result.
+ * @param   Operator        The C operator.
+ * @param   fIsDiv          Set if it's division and we need to check for zero on the
+ *                          right hand side.
+ */
+#define DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, Operator, fIsDiv) \
+    do \
+    { \
+        /* Get the 64-bit right side value. */ \
+        uint64_t u64Right; \
+        int rc = dbgcOpHelperGetNumber(pDbgc, pArg2, &u64Right); \
+        if (fIsDiv && RT_SUCCESS(rc) && !u64Right) /* div/0 kludge */ \
+            DBGCVAR_INIT_NUMBER(pResult, UINT64_MAX); \
+        else if (RT_SUCCESS(rc)) \
+        { \
+            /* Apply it to the left hand side. */ \
+            if (   pArg1->enmType == DBGCVAR_TYPE_SYMBOL \
+                || pArg1->enmType == DBGCVAR_TYPE_STRING) \
+            { \
+                rc = dbgcSymbolGet(pDbgc, pArg1->u.pszString, DBGCVAR_TYPE_ANY, pResult); \
+                if (RT_FAILURE(rc)) \
+                    return rc; \
+            } \
+            else \
+                *pResult = *pArg1; \
+            switch (pResult->enmType) \
+            { \
+                case DBGCVAR_TYPE_GC_FLAT: \
+                    pResult->u.GCFlat       = pResult->u.GCFlat     Operator  u64Right; \
+                    break; \
+                case DBGCVAR_TYPE_GC_FAR: \
+                    pResult->u.GCFar.off    = pResult->u.GCFar.off  Operator  u64Right; \
+                    break; \
+                case DBGCVAR_TYPE_GC_PHYS: \
+                    pResult->u.GCPhys       = pResult->u.GCPhys     Operator  u64Right; \
+                    break; \
+                case DBGCVAR_TYPE_HC_FLAT: \
+                    pResult->u.pvHCFlat     = (void *)((uintptr_t)pResult->u.pvHCFlat  Operator  u64Right); \
+                    break; \
+                case DBGCVAR_TYPE_HC_FAR: \
+                    pResult->u.HCFar.off    = pResult->u.HCFar.off  Operator  u64Right; \
+                    break; \
+                case DBGCVAR_TYPE_HC_PHYS: \
+                    pResult->u.HCPhys       = pResult->u.HCPhys     Operator  u64Right; \
+                    break; \
+                case DBGCVAR_TYPE_NUMBER: \
+                    pResult->u.u64Number    = pResult->u.u64Number  Operator  u64Right; \
+                    break; \
+                default: \
+                    return VERR_PARSE_INCORRECT_ARG_TYPE; \
+            } \
+        } \
+        return rc; \
+    } while (0)
+
+
+/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Operators. */
@@ -111,9 +179,58 @@ const unsigned g_cOps = RT_ELEMENTS(g_aOps);
 
 
 /**
+ * Convers an argument to a number value.
+ *
+ * @returns VBox status code.
+ * @param   pDbgc               The DBGC instance.
+ * @param   pArg                The argument to convert.
+ * @param   pu64Ret             Where to return the value.
+ */
+static int dbgcOpHelperGetNumber(PDBGC pDbgc, PCDBGCVAR pArg, uint64_t *pu64Ret)
+{
+    DBGCVAR Var = *pArg;
+    switch (Var.enmType)
+    {
+        case DBGCVAR_TYPE_GC_FLAT:
+            *pu64Ret = Var.u.GCFlat;
+            break;
+        case DBGCVAR_TYPE_GC_FAR:
+            *pu64Ret = Var.u.GCFar.off;
+            break;
+        case DBGCVAR_TYPE_GC_PHYS:
+            *pu64Ret = Var.u.GCPhys;
+            break;
+        case DBGCVAR_TYPE_HC_FLAT:
+            *pu64Ret = (uintptr_t)Var.u.pvHCFlat;
+            break;
+        case DBGCVAR_TYPE_HC_FAR:
+            *pu64Ret = Var.u.HCFar.off;
+            break;
+        case DBGCVAR_TYPE_HC_PHYS:
+            *pu64Ret = Var.u.HCPhys;
+            break;
+        case DBGCVAR_TYPE_STRING:
+        case DBGCVAR_TYPE_SYMBOL:
+        {
+            int rc = dbgcSymbolGet(pDbgc, Var.u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
+            if (RT_FAILURE(rc))
+                return rc;
+            /* fall thru */
+        }
+        case DBGCVAR_TYPE_NUMBER:
+            *pu64Ret = Var.u.u64Number;
+            break;
+        default:
+            return VERR_PARSE_INCORRECT_ARG_TYPE;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Minus (unary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -122,7 +239,7 @@ const unsigned g_cOps = RT_ELEMENTS(g_aOps);
  */
 static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpMinus\n"));
+    LogFlow(("dbgcOpMinus\n"));
     *pResult = *pArg;
     switch (pArg->enmType)
     {
@@ -154,14 +271,14 @@ static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
             return VERR_PARSE_INCORRECT_ARG_TYPE;
     }
     NOREF(pDbgc);
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Pluss (unary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -170,7 +287,7 @@ static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
  */
 static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpPluss\n"));
+    LogFlow(("dbgcOpPluss\n"));
     *pResult = *pArg;
     switch (pArg->enmType)
     {
@@ -189,14 +306,14 @@ static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
             return VERR_PARSE_INCORRECT_ARG_TYPE;
     }
     NOREF(pDbgc);
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Boolean not (unary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -205,7 +322,7 @@ static DECLCALLBACK(int) dbgcOpPluss(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
  */
 static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpBooleanNot\n"));
+    LogFlow(("dbgcOpBooleanNot\n"));
     *pResult = *pArg;
     switch (pArg->enmType)
     {
@@ -240,14 +357,14 @@ static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR 
     }
     pResult->enmType = DBGCVAR_TYPE_NUMBER;
     NOREF(pDbgc);
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Bitwise not (unary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -256,7 +373,7 @@ static DECLCALLBACK(int) dbgcOpBooleanNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR 
  */
 static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpBitwiseNot\n"));
+    LogFlow(("dbgcOpBitwiseNot\n"));
     *pResult = *pArg;
     switch (pArg->enmType)
     {
@@ -288,14 +405,14 @@ static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR 
             return VERR_PARSE_INCORRECT_ARG_TYPE;
     }
     NOREF(pDbgc);
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Reference variable (unary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -304,7 +421,8 @@ static DECLCALLBACK(int) dbgcOpBitwiseNot(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR 
  */
 static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpVar: %s\n", pArg->u.pszString));
+    LogFlow(("dbgcOpVar: %s\n", pArg->u.pszString));
+
     /*
      * Parse sanity.
      */
@@ -320,7 +438,7 @@ static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult
         if (!strcmp(pszVar, pDbgc->papVars[iVar]->szName))
         {
             *pResult = pDbgc->papVars[iVar]->Var;
-            return 0;
+            return VINF_SUCCESS;
         }
     }
 
@@ -340,7 +458,7 @@ static DECLCALLBACK(int) dbgcOpVar(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult
  */
 DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpAddrFlat\n"));
+    LogFlow(("dbgcOpAddrFlat\n"));
     int     rc;
     *pResult = *pArg;
 
@@ -399,7 +517,7 @@ DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 /**
  * Physical address (unary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -408,7 +526,7 @@ DECLCALLBACK(int) dbgcOpAddrFlat(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
  */
 DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpAddrPhys\n"));
+    LogFlow(("dbgcOpAddrPhys\n"));
     int         rc;
     DBGFADDRESS Address;
 
@@ -422,7 +540,7 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
                                   DBGFR3AddrFromFlat(pDbgc->pVM, &Address, pArg->u.GCFlat),
                                   &pResult->u.GCPhys);
             if (RT_SUCCESS(rc))
-                return 0;
+                return VINF_SUCCESS;
             return VERR_PARSE_CONVERSION_FAILED;
 
         case DBGCVAR_TYPE_GC_FAR:
@@ -433,19 +551,19 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
                 pResult->enmType = DBGCVAR_TYPE_GC_PHYS;
                 rc = DBGFR3AddrToPhys(pDbgc->pVM, pDbgc->idCpu, &Address, &pResult->u.GCPhys);
                 if (RT_SUCCESS(rc))
-                    return 0;
+                    return VINF_SUCCESS;
             }
             return VERR_PARSE_CONVERSION_FAILED;
 
         case DBGCVAR_TYPE_GC_PHYS:
-            return 0;
+            return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_HC_FLAT:
             Assert(pDbgc->pVM);
             pResult->enmType = DBGCVAR_TYPE_GC_PHYS;
             rc = PGMR3DbgR3Ptr2GCPhys(pDbgc->pVM, pArg->u.pvHCFlat, &pResult->u.GCPhys);
             if (RT_SUCCESS(rc))
-                return 0;
+                return VINF_SUCCESS;
             /** @todo more memory types! */
             return VERR_PARSE_CONVERSION_FAILED;
 
@@ -453,12 +571,12 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
             return VERR_PARSE_INCORRECT_ARG_TYPE;
 
         case DBGCVAR_TYPE_HC_PHYS:
-            return 0;
+            return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_NUMBER:
             pResult->enmType    = DBGCVAR_TYPE_GC_PHYS;
             pResult->u.GCPhys   = (RTGCPHYS)pResult->u.u64Number;
-            return 0;
+            return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_STRING:
             return dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_GC_PHYS, pResult);
@@ -467,14 +585,14 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
         default:
             return VERR_PARSE_INCORRECT_ARG_TYPE;
     }
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Physical host address (unary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -483,7 +601,7 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
  */
 DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpAddrPhys\n"));
+    LogFlow(("dbgcOpAddrPhys\n"));
     DBGFADDRESS Address;
     int         rc;
 
@@ -497,7 +615,7 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
                                       DBGFR3AddrFromFlat(pDbgc->pVM, &Address, pArg->u.GCFlat),
                                       &pResult->u.GCPhys);
             if (RT_SUCCESS(rc))
-                return 0;
+                return VINF_SUCCESS;
             return VERR_PARSE_CONVERSION_FAILED;
 
         case DBGCVAR_TYPE_GC_FAR:
@@ -509,7 +627,7 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
                 pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
                 rc = DBGFR3AddrToHostPhys(pDbgc->pVM, pDbgc->idCpu, &Address, &pResult->u.GCPhys);
                 if (RT_SUCCESS(rc))
-                    return 0;
+                    return VINF_SUCCESS;
             }
             return VERR_PARSE_CONVERSION_FAILED;
         }
@@ -521,7 +639,7 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
                                       DBGFR3AddrFromPhys(pDbgc->pVM, &Address, pArg->u.GCPhys),
                                       &pResult->u.GCPhys);
             if (RT_SUCCESS(rc))
-                return 0;
+                return VINF_SUCCESS;
             return VERR_PARSE_CONVERSION_FAILED;
 
         case DBGCVAR_TYPE_HC_FLAT:
@@ -529,7 +647,7 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
             pResult->enmType = DBGCVAR_TYPE_HC_PHYS;
             rc = PGMR3DbgR3Ptr2HCPhys(pDbgc->pVM, pArg->u.pvHCFlat, &pResult->u.HCPhys);
             if (RT_SUCCESS(rc))
-                return 0;
+                return VINF_SUCCESS;
             /** @todo more memory types! */
             return VERR_PARSE_CONVERSION_FAILED;
 
@@ -537,12 +655,12 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
             return VERR_PARSE_INCORRECT_ARG_TYPE;
 
         case DBGCVAR_TYPE_HC_PHYS:
-            return 0;
+            return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_NUMBER:
             pResult->enmType    = DBGCVAR_TYPE_HC_PHYS;
             pResult->u.HCPhys   = (RTGCPHYS)pResult->u.u64Number;
-            return 0;
+            return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_STRING:
             return dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_HC_PHYS, pResult);
@@ -551,14 +669,14 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
         default:
             return VERR_PARSE_INCORRECT_ARG_TYPE;
     }
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Host address (unary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -567,7 +685,7 @@ DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
  */
 DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 {
-    Log6(("dbgcOpAddrHost\n"));
+    LogFlow(("dbgcOpAddrHost\n"));
     int             rc;
     DBGFADDRESS     Address;
 
@@ -582,7 +700,7 @@ DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
                                            false /*fReadOnly */,
                                            &pResult->u.pvHCFlat);
             if (RT_SUCCESS(rc))
-                return 0;
+                return VINF_SUCCESS;
             return VERR_PARSE_CONVERSION_FAILED;
 
         case DBGCVAR_TYPE_GC_FAR:
@@ -594,7 +712,7 @@ DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
                 rc = DBGFR3AddrToVolatileR3Ptr(pDbgc->pVM, pDbgc->idCpu, &Address,
                                                false /*fReadOnly*/, &pResult->u.pvHCFlat);
                 if (RT_SUCCESS(rc))
-                    return 0;
+                    return VINF_SUCCESS;
             }
             return VERR_PARSE_CONVERSION_FAILED;
 
@@ -606,11 +724,11 @@ DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
                                            false /*fReadOnly */,
                                            &pResult->u.pvHCFlat);
             if (RT_SUCCESS(rc))
-                return 0;
+                return VINF_SUCCESS;
             return VERR_PARSE_CONVERSION_FAILED;
 
         case DBGCVAR_TYPE_HC_FLAT:
-            return 0;
+            return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_HC_FAR:
         case DBGCVAR_TYPE_HC_PHYS:
@@ -620,7 +738,7 @@ DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
         case DBGCVAR_TYPE_NUMBER:
             pResult->enmType    = DBGCVAR_TYPE_HC_FLAT;
             pResult->u.pvHCFlat = (void *)(uintptr_t)pResult->u.u64Number;
-            return 0;
+            return VINF_SUCCESS;
 
         case DBGCVAR_TYPE_STRING:
             return dbgcSymbolGet(pDbgc, pArg->u.pszString, DBGCVAR_TYPE_HC_FLAT, pResult);
@@ -635,7 +753,7 @@ DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
 /**
  * Bitwise not (unary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -644,7 +762,7 @@ DECLCALLBACK(int) dbgcOpAddrHost(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResult)
  */
 static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpAddrFar\n"));
+    LogFlow(("dbgcOpAddrFar\n"));
     int     rc;
 
     switch (pArg1->enmType)
@@ -707,7 +825,7 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
         default:
             return VERR_PARSE_INCORRECT_ARG_TYPE;
     }
-    return 0;
+    return VINF_SUCCESS;
 
 }
 
@@ -715,7 +833,7 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 /**
  * Multiplication operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -725,8 +843,7 @@ static DECLCALLBACK(int) dbgcOpAddrFar(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
  */
 static DECLCALLBACK(int) dbgcOpMult(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpMult\n"));
-    int     rc;
+    LogFlow(("dbgcOpMult\n"));
 
     /*
      * Switch the factors so we preserve pointers, far pointers are considered more
@@ -742,68 +859,14 @@ static DECLCALLBACK(int) dbgcOpMult(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg
         pArg1 = pTmp;
     }
 
-    /*
-     * Convert the 2nd number into a number we use multiply the first with.
-     */
-    DBGCVAR Factor2 = *pArg2;
-    if (    Factor2.enmType == DBGCVAR_TYPE_STRING
-        ||  Factor2.enmType == DBGCVAR_TYPE_SYMBOL)
-    {
-        rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, &Factor2);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-    uint64_t u64Factor;
-    switch (Factor2.enmType)
-    {
-        case DBGCVAR_TYPE_GC_FLAT:  u64Factor = Factor2.u.GCFlat; break;
-        case DBGCVAR_TYPE_GC_FAR:   u64Factor = Factor2.u.GCFar.off; break;
-        case DBGCVAR_TYPE_GC_PHYS:  u64Factor = Factor2.u.GCPhys; break;
-        case DBGCVAR_TYPE_HC_FLAT:  u64Factor = (uintptr_t)Factor2.u.pvHCFlat; break;
-        case DBGCVAR_TYPE_HC_FAR:   u64Factor = Factor2.u.HCFar.off; break;
-        case DBGCVAR_TYPE_HC_PHYS:  u64Factor = Factor2.u.HCPhys; break;
-        case DBGCVAR_TYPE_NUMBER:   u64Factor = Factor2.u.u64Number; break;
-        default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
-    }
-
-    /*
-     * Fix symbols in the 1st factor.
-     */
-    *pResult = *pArg1;
-    if (    pResult->enmType == DBGCVAR_TYPE_STRING
-        ||  pResult->enmType == DBGCVAR_TYPE_SYMBOL)
-    {
-        rc = dbgcSymbolGet(pDbgc, pArg1->u.pszString, DBGCVAR_TYPE_ANY, pResult);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    /*
-     * Do the multiplication.
-     */
-    switch (pArg1->enmType)
-    {
-        case DBGCVAR_TYPE_GC_FLAT:  pResult->u.GCFlat *= u64Factor; break;
-        case DBGCVAR_TYPE_GC_FAR:   pResult->u.GCFar.off *= u64Factor; break;
-        case DBGCVAR_TYPE_GC_PHYS:  pResult->u.GCPhys *= u64Factor; break;
-        case DBGCVAR_TYPE_HC_FLAT:
-            pResult->u.pvHCFlat = (void *)(uintptr_t)((uintptr_t)pResult->u.pvHCFlat * u64Factor);
-            break;
-        case DBGCVAR_TYPE_HC_FAR:   pResult->u.HCFar.off *= u64Factor; break;
-        case DBGCVAR_TYPE_HC_PHYS:  pResult->u.HCPhys *= u64Factor; break;
-        case DBGCVAR_TYPE_NUMBER:   pResult->u.u64Number *= u64Factor; break;
-        default:
-            return VERR_PARSE_INCORRECT_ARG_TYPE;
-    }
-    return 0;
+    DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, *, false);
 }
 
 
 /**
  * Division operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -814,15 +877,14 @@ static DECLCALLBACK(int) dbgcOpMult(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg
 static DECLCALLBACK(int) dbgcOpDiv(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpDiv\n"));
-    NOREF(pDbgc); NOREF(pArg1); NOREF(pArg2); NOREF(pResult);
-    return -1;
+    DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, /, true);
 }
 
 
 /**
  * Modulus operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -833,15 +895,14 @@ static DECLCALLBACK(int) dbgcOpDiv(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
 static DECLCALLBACK(int) dbgcOpMod(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpMod\n"));
-    NOREF(pDbgc); NOREF(pArg1); NOREF(pArg2); NOREF(pResult);
-    return -1;
+    DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, %, false);
 }
 
 
 /**
  * Addition operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -851,7 +912,7 @@ static DECLCALLBACK(int) dbgcOpMod(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
  */
 static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpAdd\n"));
+    LogFlow(("dbgcOpAdd\n"));
 
     /*
      * An addition operation will return (when possible) the left side type in the
@@ -1028,14 +1089,14 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             return VERR_PARSE_INVALID_OPERATION;
 
     }
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Subtration operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1045,7 +1106,7 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
  */
 static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpSub\n"));
+    LogFlow(("dbgcOpSub\n"));
 
     /*
      * An subtraction operation will return the left side type in the expression.
@@ -1286,14 +1347,14 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
             return VERR_PARSE_INVALID_OPERATION;
 
     }
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Bitwise shift left operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1304,15 +1365,14 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
 static DECLCALLBACK(int) dbgcOpBitwiseShiftLeft(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBitwiseShiftLeft\n"));
-    NOREF(pDbgc); NOREF(pArg1); NOREF(pArg2); NOREF(pResult);
-    return -1;
+    DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, <<, false);
 }
 
 
 /**
  * Bitwise shift right operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1323,15 +1383,14 @@ static DECLCALLBACK(int) dbgcOpBitwiseShiftLeft(PDBGC pDbgc, PCDBGCVAR pArg1, PC
 static DECLCALLBACK(int) dbgcOpBitwiseShiftRight(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBitwiseShiftRight\n"));
-    NOREF(pDbgc); NOREF(pArg1); NOREF(pArg2); NOREF(pResult);
-    return -1;
+    DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, >>, false);
 }
 
 
 /**
  * Bitwise and operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1342,15 +1401,14 @@ static DECLCALLBACK(int) dbgcOpBitwiseShiftRight(PDBGC pDbgc, PCDBGCVAR pArg1, P
 static DECLCALLBACK(int) dbgcOpBitwiseAnd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBitwiseAnd\n"));
-    NOREF(pDbgc); NOREF(pArg1); NOREF(pArg2); NOREF(pResult);
-    return -1;
+    DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, &, false);
 }
 
 
 /**
  * Bitwise exclusive or operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1361,15 +1419,14 @@ static DECLCALLBACK(int) dbgcOpBitwiseAnd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVA
 static DECLCALLBACK(int) dbgcOpBitwiseXor(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBitwiseXor\n"));
-    NOREF(pDbgc); NOREF(pArg1); NOREF(pArg2); NOREF(pResult);
-    return -1;
+    DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, ^, false);
 }
 
 
 /**
  * Bitwise inclusive or operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1380,15 +1437,14 @@ static DECLCALLBACK(int) dbgcOpBitwiseXor(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVA
 static DECLCALLBACK(int) dbgcOpBitwiseOr(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBitwiseOr\n"));
-    NOREF(pDbgc); NOREF(pArg1); NOREF(pArg2); NOREF(pResult);
-    return -1;
+    DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, |, false);
 }
 
 
 /**
  * Boolean and operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1399,15 +1455,14 @@ static DECLCALLBACK(int) dbgcOpBitwiseOr(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR
 static DECLCALLBACK(int) dbgcOpBooleanAnd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBooleanAnd\n"));
-    NOREF(pDbgc); NOREF(pArg1); NOREF(pArg2); NOREF(pResult);
-    return -1;
+    DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, &&, false);
 }
 
 
 /**
  * Boolean or operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1418,15 +1473,14 @@ static DECLCALLBACK(int) dbgcOpBooleanAnd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVA
 static DECLCALLBACK(int) dbgcOpBooleanOr(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
     LogFlow(("dbgcOpBooleanOr\n"));
-    NOREF(pDbgc); NOREF(pArg1); NOREF(pArg2); NOREF(pResult);
-    return -1;
+    DBGC_GEN_ARIT_BINARY_OP(pDbgc, pArg1, pArg2, pResult, ||, false);
 }
 
 
 /**
  * Range to operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1436,7 +1490,8 @@ static DECLCALLBACK(int) dbgcOpBooleanOr(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR
  */
 static DECLCALLBACK(int) dbgcOpRangeLength(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpRangeLength\n"));
+    LogFlow(("dbgcOpRangeLength\n"));
+
     /*
      * Make result. Strings needs to be resolved into symbols.
      */
@@ -1479,7 +1534,7 @@ static DECLCALLBACK(int) dbgcOpRangeLength(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCV
 /**
  * Range to operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1489,7 +1544,7 @@ static DECLCALLBACK(int) dbgcOpRangeLength(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCV
  */
 static DECLCALLBACK(int) dbgcOpRangeLengthBytes(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpRangeLengthBytes\n"));
+    LogFlow(("dbgcOpRangeLengthBytes\n"));
     int rc = dbgcOpRangeLength(pDbgc, pArg1, pArg2, pResult);
     if (RT_SUCCESS(rc))
         pResult->enmRangeType = DBGCVAR_RANGE_BYTES;
@@ -1500,7 +1555,7 @@ static DECLCALLBACK(int) dbgcOpRangeLengthBytes(PDBGC pDbgc, PCDBGCVAR pArg1, PC
 /**
  * Range to operator (binary).
  *
- * @returns 0 on success.
+ * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
  *          The caller does the bitching.
  * @param   pDbgc       Debugger console instance data.
@@ -1510,7 +1565,8 @@ static DECLCALLBACK(int) dbgcOpRangeLengthBytes(PDBGC pDbgc, PCDBGCVAR pArg1, PC
  */
 static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2, PDBGCVAR pResult)
 {
-//    LogFlow(("dbgcOpRangeTo\n"));
+    LogFlow(("dbgcOpRangeTo\n"));
+
     /*
      * Calc number of bytes between the two args.
      */
@@ -1550,7 +1606,7 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
             return VERR_PARSE_INVALID_OPERATION;
     }
 
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
