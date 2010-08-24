@@ -495,6 +495,13 @@ static void surface_force_reload(IWineD3DSurface *iface)
 {
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
 
+#if defined(DEBUG_misha) && defined (VBOXWDDM)
+    if (VBOXSHRC_IS_SHARED(This))
+    {
+        Assert(0);
+    }
+#endif
+
     This->Flags &= ~(SFLAG_ALLOCATED | SFLAG_SRGBALLOCATED);
 }
 
@@ -886,16 +893,21 @@ static void surface_allocate_surface(IWineD3DSurfaceImpl *This, const struct win
         }
     }
 
-    if (format_desc->Flags & WINED3DFMT_FLAG_COMPRESSED && mem)
+#ifdef VBOXWDDM
+    if (!VBOXSHRC_IS_SHARED_OPENED(This))
+#endif
     {
-        GL_EXTCALL(glCompressedTexImage2DARB(This->texture_target, This->texture_level,
-                internal, width, height, 0, This->resource.size, mem));
-    }
-    else
-    {
-        glTexImage2D(This->texture_target, This->texture_level,
-                internal, width, height, 0, format_desc->glFormat, format_desc->glType, mem);
-        checkGLcall("glTexImage2D");
+        if (format_desc->Flags & WINED3DFMT_FLAG_COMPRESSED && mem)
+        {
+            GL_EXTCALL(glCompressedTexImage2DARB(This->texture_target, This->texture_level,
+                    internal, width, height, 0, This->resource.size, mem));
+        }
+        else
+        {
+            glTexImage2D(This->texture_target, This->texture_level,
+                    internal, width, height, 0, format_desc->glFormat, format_desc->glType, mem);
+            checkGLcall("glTexImage2D");
+        }
     }
 
     if(enable_client_storage) {
@@ -1000,22 +1012,10 @@ void surface_add_dirty_rect(IWineD3DSurface *iface, const RECT *dirty_rect)
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
     IWineD3DBaseTexture *baseTexture = NULL;
 
-#ifdef VBOXWDDM
-    if (VBOXSHRC_IS_SHARED(This))
-    {
-        if (!VBOXSHRC_IS_SHARED_OPENED(This))
-            IWineD3DSurfaceImpl_LoadLocation(iface, SFLAG_INTEXTURE, NULL);
-        else
-            This->Flags |= SFLAG_INTEXTURE;
-    }
-    else
-#endif
-    {
-        if (!(This->Flags & SFLAG_INSYSMEM) && (This->Flags & SFLAG_INTEXTURE))
-            IWineD3DSurface_LoadLocation(iface, SFLAG_INSYSMEM, NULL /* no partial locking for textures yet */);
+    if (!(This->Flags & SFLAG_INSYSMEM) && (This->Flags & SFLAG_INTEXTURE))
+        IWineD3DSurface_LoadLocation(iface, SFLAG_INSYSMEM, NULL /* no partial locking for textures yet */);
 
-        IWineD3DSurface_ModifyLocation(iface, SFLAG_INSYSMEM, TRUE);
-    }
+    IWineD3DSurface_ModifyLocation(iface, SFLAG_INSYSMEM, TRUE);
 
     if (dirty_rect)
     {
@@ -3981,6 +3981,10 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_RealizePalette(IWineD3DSurface *iface)
     return WINED3D_OK;
 }
 
+#ifdef VBOXWDDM
+static HRESULT WINAPI IWineD3DSurfaceImpl_LoadLocation(IWineD3DSurface *iface, DWORD flag, const RECT *rect);
+#endif
+
 static HRESULT WINAPI IWineD3DSurfaceImpl_PrivateSetup(IWineD3DSurface *iface) {
     /** Check against the maximum texture sizes supported by the video card **/
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *) iface;
@@ -4065,12 +4069,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_PrivateSetup(IWineD3DSurface *iface) {
         }
     }
 
-#ifdef VBOXWDDM
-    if (!VBOXSHRC_IS_SHARED(This))
-#endif
-    {
-        This->Flags |= SFLAG_INSYSMEM;
-    }
+    This->Flags |= SFLAG_INSYSMEM;
 
     return WINED3D_OK;
 }
@@ -4280,6 +4279,13 @@ static void WINAPI IWineD3DSurfaceImpl_ModifyLocation(IWineD3DSurface *iface, DW
     if(persistent) {
         if(((This->Flags & SFLAG_INTEXTURE) && !(flag & SFLAG_INTEXTURE)) ||
            ((This->Flags & SFLAG_INSRGBTEX) && !(flag & SFLAG_INSRGBTEX))) {
+#ifdef VBOXWDDM
+            if (VBOXSHRC_IS_SHARED(This))
+            {
+                IWineD3DSurfaceImpl_LoadLocation(iface, SFLAG_INTEXTURE, NULL);
+            }
+            else
+#endif
             if (IWineD3DSurface_GetContainer(iface, &IID_IWineD3DBaseTexture, (void **)&texture) == WINED3D_OK) {
                 TRACE("Passing to container\n");
                 IWineD3DBaseTexture_SetDirty(texture, TRUE);
@@ -4297,6 +4303,13 @@ static void WINAPI IWineD3DSurfaceImpl_ModifyLocation(IWineD3DSurface *iface, DW
         }
     } else {
         if((This->Flags & (SFLAG_INTEXTURE | SFLAG_INSRGBTEX)) && (flag & (SFLAG_INTEXTURE | SFLAG_INSRGBTEX))) {
+#ifdef VBOXWDDM
+            if (VBOXSHRC_IS_SHARED(This))
+            {
+                IWineD3DSurfaceImpl_LoadLocation(iface, SFLAG_INTEXTURE, NULL);
+            }
+            else
+#endif
             if (IWineD3DSurface_GetContainer(iface, &IID_IWineD3DBaseTexture, (void **)&texture) == WINED3D_OK) {
                 TRACE("Passing to container\n");
                 IWineD3DBaseTexture_SetDirty(texture, TRUE);
