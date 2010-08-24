@@ -3232,6 +3232,8 @@ static void iscsiReattach(PISCSIIMAGE pImage)
             pIScsiCmd = pIScsiCmdHead;
             pIScsiCmdHead = pIScsiCmdHead->pNext;
 
+            pIScsiCmd->pNext = NULL;
+
             rc = iscsiPDUTxPrepare(pImage, pIScsiCmd);
             AssertRC(rc);
         }
