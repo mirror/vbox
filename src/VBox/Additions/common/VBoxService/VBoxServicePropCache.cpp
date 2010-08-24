@@ -112,6 +112,8 @@ int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, ui
                 rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, pszValue);
             RTStrFree(pszValue);
         }
+        else
+            rc = VERR_NO_MEMORY;
         va_end(va);
     }
     else
