@@ -829,7 +829,6 @@ endif
 #
 ifdef VBOX_OSE
  VBOX_WITH_VRDP=
- VBOX_WITH_USB=
  VBOX_WITH_EHCI=
  VBOX_WITH_OS2_ADDITIONS_BIN=
  VBOX_WITH_SECURELABEL=
@@ -847,7 +846,6 @@ ifdef VBOX_OSE
  if1of ($(KBUILD_TARGET), solaris)
   VBOX_WITH_NEW_USB_CODE_ON_SOLARIS=
  endif
- VBOX_USB_WITH_SYSFS=
  # branding
  VBOX_BRAND_LICENSE_HTML       := $(PATH_ROOT)/doc/License-gpl-2.0.html
  VBOX_BRAND_LICENSE_RTF        := $(PATH_ROOT)/doc/License-gpl-2.0.rtf
