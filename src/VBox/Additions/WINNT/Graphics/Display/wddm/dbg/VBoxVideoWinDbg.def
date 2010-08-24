@@ -1,0 +1,15 @@
+;/*
+; Copyright (C) 2010 Oracle Corporation
+;
+; Oracle Corporation confidential
+; All rights reserved
+;
+; */
+LIBRARY vbvdbg
+
+EXPORTS
+    CheckVersion
+    WinDbgExtensionDllInit
+    ExtensionApiVersion
+    help
+    ms
