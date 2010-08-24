@@ -321,17 +321,17 @@ int main()
             tstNumOp(pDbgc, "0i1024 / 0i4",                             256);
 
             tstNumOp(pDbgc, "1<<1",                                     2);
-            tstNumOp(pDbgc, "1<<0i32",                                  0x0000000100000000);
-            tstNumOp(pDbgc, "1<<0i48",                                  0x0001000000000000);
-            tstNumOp(pDbgc, "1<<0i63",                                  0x8000000000000000);
+            tstNumOp(pDbgc, "1<<0i32",                                  UINT64_C(0x0000000100000000));
+            tstNumOp(pDbgc, "1<<0i48",                                  UINT64_C(0x0001000000000000));
+            tstNumOp(pDbgc, "1<<0i63",                                  UINT64_C(0x8000000000000000));
 
-            tstNumOp(pDbgc, "fedcba0987654321>>0i04",                   0x0fedcba098765432);
-            tstNumOp(pDbgc, "fedcba0987654321>>0i32",                   0xfedcba09);
-            tstNumOp(pDbgc, "fedcba0987654321>>0i48",                   0x0000fedc);
+            tstNumOp(pDbgc, "fedcba0987654321>>0i04",                   UINT64_C(0x0fedcba098765432));
+            tstNumOp(pDbgc, "fedcba0987654321>>0i32",                   UINT64_C(0xfedcba09));
+            tstNumOp(pDbgc, "fedcba0987654321>>0i48",                   UINT64_C(0x0000fedc));
 
             tstNumOp(pDbgc, "0ef & 4",                                  4);
-            tstNumOp(pDbgc, "01234567891 & fff",                        0x00000000891);
-            tstNumOp(pDbgc, "01234567891 & ~fff",                       0x01234567000);
+            tstNumOp(pDbgc, "01234567891 & fff",                        UINT64_C(0x00000000891));
+            tstNumOp(pDbgc, "01234567891 & ~fff",                       UINT64_C(0x01234567000));
 
             tstNumOp(pDbgc, "1 | 1",                                    1);
             tstNumOp(pDbgc, "0 | 4",                                    4);
