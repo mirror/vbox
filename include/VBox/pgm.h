@@ -230,6 +230,19 @@ typedef DECLCALLBACK(int) FNPGMR3VIRTINVALIDATE(PVM pVM, RTGCPTR GCPtr);
 typedef FNPGMR3VIRTINVALIDATE *PFNPGMR3VIRTINVALIDATE;
 
 /**
+ * PGMR3PhysEnumDirtyFTPages callback for syncing dirty physical pages
+ *
+ * @param   pVM             VM Handle.
+ * @param   GCPhys          GC physical address
+ * @param   pRange          HC virtual address of the page(s)
+ * @param   cbRange         Size of the dirty range in bytes.
+ * @param   pvUser          User argument.
+ */
+typedef DECLCALLBACK(int) FNPGMENUMDIRTYFTPAGES(PVM pVM, RTGCPHYS GCPhys, uint8_t *pRange, unsigned cbRange, void *pvUser);
+/** Pointer to PGMR3PhysEnumDirtyFTPages callback. */
+typedef FNPGMENUMDIRTYFTPAGES *PFNPGMENUMDIRTYFTPAGES;
+
+/**
  * Paging mode.
  */
 typedef enum PGMMODE
@@ -457,6 +470,7 @@ VMMR3DECL(int)      PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
 VMMR3DECL(int)      PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const char *pszDesc);
 VMMR3DECL(int)      PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage);
 VMMR3DECL(int)      PGMR3PhysWriteProtectRAM(PVM pVM);
+VMMR3DECL(int)      PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pfnEnum, void *pvUser);
 VMMR3DECL(int)      PGMR3QueryVMMMemoryStats(PVM pVM, uint64_t *puTotalAllocSize, uint64_t *puTotalFreeSize, uint64_t *puTotalBalloonSize, uint64_t *puTotalSharedSize);
 VMMR3DECL(int)      PGMR3QueryMemoryStats(PVM pVM, uint64_t *pulTotalMem, uint64_t *pulPrivateMem, uint64_t *puTotalSharedMem, uint64_t *puTotalZeroMem);
 VMMR3DECL(int)      PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
