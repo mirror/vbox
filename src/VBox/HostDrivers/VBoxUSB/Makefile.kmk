@@ -1,0 +1,64 @@
+# $Id$
+## @file
+# Sub-Makefile for the Windows USB drivers.
+#
+
+#
+# Copyright (C) 2006-2007 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+# Include sub-makefiles.
+if1of ($(KBUILD_TARGET), darwin solaris win)
+ include $(PATH_SUB_CURRENT)/$(KBUILD_TARGET)/Makefile.kmk
+endif
+
+#
+# USBLib - The static USB Library for use in VBoxSVC and VBoxDD.
+#
+# Note! Drivers using USBFilter.cpp should just add ../USBFilter.cpp
+#       to their source list.
+#
+LIBRARIES += USBLib
+USBLib_TEMPLATE       = VBOXR3
+USBLib_SDKS.win       = WINPSDK W2K3DDK
+USBLib_DEFS           = IN_USBLIB
+USBLib_DEFS.solaris  = $(if $(VBOX_WITH_NEW_USB_CODE_ON_SOLARIS),VBOX_WITH_NEW_USB_CODE_ON_SOLARIS)
+USBLib_DEFS.os2       = STATIC_USBCALLS
+USBLib_SOURCES        = \
+	USBLib.cpp \
+	USBFilter.cpp
+
+# OS specific bits if applicable.
+USBLib_SOURCES.darwin = \
+	darwin/USBLib-darwin.cpp
+USBLib_SOURCES.os2 = \
+	os2/usbcalls.c
+USBLib_SOURCES.solaris = \
+	solaris/USBLib-solaris.cpp
+USBLib_SOURCES.win = \
+	win/USBLib-win.cpp
+
+
+#
+# USBFilter testcase.
+#
+ifdef VBOX_WITH_TESTCASES
+PROGRAMS += tstUSBFilter
+tstUSBFilter_TEMPLATE = VBOXR3TSTEXE
+tstUSBFilter_DEFS = IN_USBLIB
+tstUSBFilter_SOURCES  = \
+	testcase/tstUSBFilter.cpp
+tstUSBFilter_LIBS  = \
+        $(TARGET_USBLib)
+endif
+
+
+# generate rules
+include $(KBUILD_PATH)/subfooter.kmk
+

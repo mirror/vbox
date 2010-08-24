@@ -1,0 +1,56 @@
+# $Id$
+## @file
+# Sub-Makefile for the Solaris VBoxUSB kernel extension.
+#
+
+#
+# Copyright (C) 2008 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+#
+# VBoxUSBHelper - Setuid binary helper for updating driver alias.
+#
+PROGRAMS.solaris      += VBoxUSBHelper
+VBoxUSBHelper_TEMPLATE = VBOXR3EXE
+VBoxUSBHelper_SOURCES  = VBoxUSBHelper.cpp
+VBoxUSBHelper_LIBS     = nvpair device
+
+#
+# vboxusbmon - The Solaris USB Monitor Kernel module.
+#
+SYSMODS.solaris         += vboxusbmon
+vboxusbmon_TEMPLATE      = VBOXR0DRV
+vboxusbmon_DEFS          = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) \
+	$(if $(VBOX_WITH_NEW_USB_CODE_ON_SOLARIS),VBOX_WITH_NEW_USB_CODE_ON_SOLARIS,)
+vboxusbmon_DEPS         += $(VBOX_SVN_REV_KMK)
+vboxusbmon_INCS         := . .. \
+	$(if $(VBOX_WITH_NEW_USB_CODE_ON_SOLARIS),include/,)
+vboxusbmon_LDFLAGS      += -N drv/vboxdrv -N misc/usba
+vboxusbmon_SOURCES       = \
+	VBoxUSBMon-solaris.c \
+	../USBFilter.cpp \
+	../VBoxUSBFilterMgr.cpp
+
+ifdef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
+#
+# vboxusb - The Solaris Generic USB Client Kernel module.
+#
+SYSMODS.solaris         += vboxusb
+vboxusb_TEMPLATE         = VBOXR0DRV
+vboxusb_DEFS             = IN_RT_R0 IN_SUP_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) \
+	$(if $(VBOX_WITH_NEW_USB_CODE_ON_SOLARIS),VBOX_WITH_NEW_USB_CODE_ON_SOLARIS,)
+vboxusb_DEPS            += $(VBOX_SVN_REV_KMK)
+vboxusb_INCS            := . include/
+vboxusb_LDFLAGS         += -N drv/vboxdrv -N drv/vboxusbmon -N misc/usba
+vboxusb_SOURCES          = \
+	VBoxUSB-solaris.c
+endif
+
+include	$(KBUILD_PATH)/subfooter.kmk
+

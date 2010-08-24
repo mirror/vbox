@@ -1,0 +1,64 @@
+;
+; VBox host drivers - USB drivers - Win32 USB device
+;
+; Copyright (C) 2006-2007 Oracle Corporation
+;
+; Oracle Corporation confidential
+; All rights reserved
+;
+
+[Version]
+Signature="$Windows NT$"
+Class=USB
+ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
+provider=%sun%
+;edit-DriverVer=08/26/2008,2.00.0000
+;cat CatalogFile=VBoxUSB.cat
+
+[SourceDisksNames]
+1=%Disk_Description%,,,
+
+[SourceDisksFiles]
+VBoxUSB.sys = 1
+
+[Manufacturer]
+;x86   %MfgName%=sun
+;amd64 %MfgName%=sun, NTamd64
+
+;x86   [sun]
+;amd64 [sun.NTamd64]
+%USB\VID_80EE&PID_CAFE.DeviceDesc%=VBoxUSB.Dev, USB\VID_80EE&PID_CAFE
+
+[DestinationDirs]
+VBoxUSB.Files.Ext = 10,System32\Drivers
+
+[VBoxUSB.Dev.NT]
+CopyFiles=VBoxUSB.Files.Ext
+
+[VBoxUSB.Dev.NT.Services]
+Addservice = VBoxUSB, 0x00000002, VBoxUSB.AddService
+
+[VBoxUSB.AddService]
+DisplayName    = %VBoxUSB.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\VBoxUSB.sys
+AddReg         = VBoxUSB.AddReg
+LoadOrderGroup = Base
+
+[VBoxUSB.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,VBoxUSB.sys
+
+[VBoxUSB.Files.Ext]
+VBoxUSB.sys
+
+;---------------------------------------------------------------;
+
+[Strings]
+sun="Sun Microsystems, Inc."
+MfgName="Sun Microsystems, Inc."
+Disk_Description="VBoxUSB Installation Disk"
+USB\VID_80EE&PID_CAFE.DeviceDesc="VirtualBox USB"
+VBoxUSB.SvcDesc="VirtualBox USB"
