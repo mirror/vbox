@@ -115,7 +115,7 @@ static bool IsBigEndian()
  * @param pv                Where to store the read data.
  * @param cbToRead          Size of data to read.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ReadFileNoIntr(RTFILE hFile, void *pv, size_t cbToRead)
 {
@@ -138,7 +138,7 @@ static int ReadFileNoIntr(RTFILE hFile, void *pv, size_t cbToRead)
  * @param pv                Pointer to what to write.
  * @param cbToRead          Size of data to write.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int WriteFileNoIntr(RTFILE hFile, const void *pcv, size_t cbToRead)
 {
@@ -219,7 +219,7 @@ static size_t GetFileSize(const char *pszPath)
  *
  * @param pVBoxCore         Pointer to the core object.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int AllocMemoryArea(PVBOXCORE pVBoxCore)
 {
@@ -338,7 +338,7 @@ static void *GetMemoryChunk(PVBOXCORE pVBoxCore, size_t cb)
  * @param ppv               Where to store the allocated buffer.
  * @param pcb               Where to store size of the buffer.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, void **ppv, size_t *pcb)
 {
@@ -350,7 +350,9 @@ static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, vo
     int rc = RTFileOpen(&hFile, szPath, RTFILE_O_OPEN | RTFILE_O_READ);
     if (RT_SUCCESS(rc))
     {
-        RTFileGetSize(hFile, (uint64_t *)pcb); /** @todo size_t != uint64_t! */
+        uint64_t u64Size;
+        RTFileGetSize(hFile, &u64Size);
+        *pcb = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
         if (*pcb > 0)
         {
             *ppv = GetMemoryChunk(pVBoxCore, *pcb);
@@ -377,7 +379,7 @@ static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, vo
  *
  * @param pVBoxCore         Pointer to the core object.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ProcReadInfo(PVBOXCORE pVBoxCore)
 {
@@ -405,7 +407,7 @@ static int ProcReadInfo(PVBOXCORE pVBoxCore)
  *
  * @param pVBoxCore         Pointer to the core object.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ProcReadStatus(PVBOXCORE pVBoxCore)
 {
@@ -436,7 +438,7 @@ static int ProcReadStatus(PVBOXCORE pVBoxCore)
  * @param pVBoxCore         Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ProcReadCred(PVBOXCORE pVBoxCore)
 {
@@ -453,7 +455,7 @@ static int ProcReadCred(PVBOXCORE pVBoxCore)
  * @param pVBoxCore         Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ProcReadPriv(PVBOXCORE pVBoxCore)
 {
@@ -479,7 +481,7 @@ static int ProcReadPriv(PVBOXCORE pVBoxCore)
  * @param pVBoxProc         Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ProcReadLdt(PVBOXCORE pVBoxCore)
 {
@@ -496,7 +498,7 @@ static int ProcReadLdt(PVBOXCORE pVBoxCore)
  * @param pVBoxCore         Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
 {
@@ -513,8 +515,9 @@ static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
         return rc;
     }
 
-    size_t cbAuxFile = 0;
-    RTFileGetSize(hFile, (uint64_t *)&cbAuxFile);  /** @todo size_t != uint64_t! */
+    uint64_t u64Size;
+    RTFileGetSize(hFile, &u64Size);
+    size_t cbAuxFile = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
     if (cbAuxFile >= sizeof(auxv_t))
     {
         pVBoxProc->pAuxVecs = (auxv_t*)GetMemoryChunk(pVBoxCore, cbAuxFile + sizeof(auxv_t));
@@ -584,7 +587,7 @@ static long GetAuxVal(PVBOXPROCESS pVBoxProc, int Type)
  * @param   pVBoxCore           Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ProcReadMappings(PVBOXCORE pVBoxCore)
 {
@@ -605,8 +608,9 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
         /*
          * Allocate and read all the prmap_t objects from proc.
          */
-        size_t cbMapFile = 0;
-        RTFileGetSize(hFile, (uint64_t *)&cbMapFile);  /** @todo size_t != uint64_t! */
+        uint64_t u64Size;
+        RTFileGetSize(hFile, &u64Size);
+        size_t cbMapFile = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
         if (cbMapFile >= sizeof(prmap_t))
         {
             prmap_t *pMap = (prmap_t*)GetMemoryChunk(pVBoxCore, cbMapFile);
@@ -715,7 +719,7 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
  * @param pVBoxCore         Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ProcReadThreads(PVBOXCORE pVBoxCore)
 {
@@ -875,7 +879,7 @@ static int ProcReadThreads(PVBOXCORE pVBoxCore)
  *
  * @param pVBoxCore         Pointer to the core object.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ProcReadMiscInfo(PVBOXCORE pVBoxCore)
 {
@@ -1062,16 +1066,120 @@ static void GetOldProcessStatus(PVBOXCORE pVBoxCore, lwpsinfo_t *pInfo, lwpstatu
 }
 
 
+/** 
+ * Callback for rtCoreDumperForEachThread to suspend a thread.
+ * 
+ * @param pVBoxCore             Pointer to the core object.
+ * @param pvThreadInfo          Opaque pointer to thread information.
+ * 
+ * @return IPRT status code.
+ */
+static int suspendThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
+{
+    AssertPtrReturn(pvThreadInfo, VERR_INVALID_POINTER);
+    NOREF(pVBoxCore);
+
+    lwpsinfo_t *pThreadInfo = (lwpsinfo_t *)pvThreadInfo;
+    CORELOGRELSYS((CORELOG_NAME ":suspendThread %d\n", (lwpid_t)pThreadInfo->pr_lwpid));
+    if ((lwpid_t)pThreadInfo->pr_lwpid != pVBoxCore->VBoxProc.hCurThread)
+        _lwp_suspend(pThreadInfo->pr_lwpid);
+    return VINF_SUCCESS;
+}
+
+
+/** 
+ * Callback for rtCoreDumperForEachThread to resume a thread.
+ * 
+ * @param pVBoxCore             Pointer to the core object.
+ * @param pvThreadInfo          Opaque pointer to thread information.
+ * 
+ * @return IPRT status code.
+ */
+static int resumeThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
+{
+    AssertPtrReturn(pvThreadInfo, VERR_INVALID_POINTER);
+    NOREF(pVBoxCore);
+
+    lwpsinfo_t *pThreadInfo = (lwpsinfo_t *)pvThreadInfo;
+    if ((lwpid_t)pThreadInfo->pr_lwpid != (lwpid_t)pVBoxCore->VBoxProc.hCurThread)
+        _lwp_continue(pThreadInfo->pr_lwpid);
+    return VINF_SUCCESS;
+}
+
+
+/** 
+ * Calls a thread worker function for all threads in the process as described by /proc 
+ * 
+ * @param pVBoxCore             Pointer to the core object.
+ * @param pcThreads             Number of threads read.
+ * @param pfnWorker             Callback function for each thread.
+ * 
+ * @return IPRT status code.
+ */
+static int rtCoreDumperForEachThread(PVBOXCORE pVBoxCore,  uint64_t *pcThreads, PFNCORETHREADWORKER pfnWorker)
+{
+    AssertPtrReturn(pVBoxCore, VERR_INVALID_POINTER);
+
+    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+
+    /*
+     * Read the information for threads.
+     * Format: prheader_t + array of lwpsinfo_t's.
+     */
+    char szLpsInfoPath[PATH_MAX];
+    RTStrPrintf(szLpsInfoPath, sizeof(szLpsInfoPath), "/proc/%d/lpsinfo", (int)pVBoxProc->Process);
+
+    RTFILE hFile = NIL_RTFILE;
+    int rc = RTFileOpen(&hFile, szLpsInfoPath, RTFILE_O_READ);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t u64Size;
+        RTFileGetSize(hFile, &u64Size);
+        size_t cbInfoHdrAndData = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
+        void *pvInfoHdr = mmap(NULL, cbInfoHdrAndData, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1 /* fd */, 0 /* offset */);
+        if (pvInfoHdr)
+        {
+            rc = RTFileRead(hFile, pvInfoHdr, cbInfoHdrAndData, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                prheader_t *pHeader = (prheader_t *)pvInfoHdr;
+                lwpsinfo_t *pThreadInfo = (lwpsinfo_t *)((uintptr_t)pvInfoHdr + sizeof(prheader_t));
+                for (unsigned i = 0; i < pHeader->pr_nent; i++)
+                {
+                    pfnWorker(pVBoxCore, pThreadInfo);
+                    pThreadInfo = (lwpsinfo_t *)((uintptr_t)pThreadInfo + pHeader->pr_entsize);
+                }
+                if (pcThreads)
+                    *pcThreads = pHeader->pr_nent;
+            }
+
+            munmap(pvInfoHdr, cbInfoHdrAndData);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+        RTFileClose(hFile);
+    }
+
+    return rc;
+}
+
+
 /**
  * Resume all threads of this process.
  *
- * @param pVBoxProc         Pointer to the VBox process.
+ * @param pVBoxCore             Pointer to the core object.
  *
- * @return VBox error code.
+ * @return IPRT status code..
  */
-static int rtCoreDumperResumeThreads(PVBOXPROCESS pVBoxProc)
+static int rtCoreDumperResumeThreads(PVBOXCORE pVBoxCore)
 {
-    AssertReturn(pVBoxProc, VERR_INVALID_POINTER);
+    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+
+#if 1
+    uint64_t cThreads;
+    return rtCoreDumperForEachThread(pVBoxCore, &cThreads, resumeThread);
+#else
+    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
 
     char szCurThread[128];
     char szPath[PATH_MAX];
@@ -1110,21 +1218,50 @@ static int rtCoreDumperResumeThreads(PVBOXPROCESS pVBoxProc)
         CORELOGRELSYS((CORELOG_NAME "ResumeAllThreads: Failed to open %s\n", szPath));
         rc = VERR_READ_ERROR;
     }
-
     return rc;
+#endif
 }
 
 
 /**
- * Stop all running threads of this process. Before dumping any
- * core we need to make sure the process is quiesced.
+ * Stop all running threads of this process except the current one. 
  *
- * @param pVBoxProc         Pointer to the VBox process.
- *
- * @return VBox error code.
+ * @param pVBoxCore         Pointer to the core object.
+ *  
+ * @return IPRT status code.
  */
-static int rtCoreDumperSuspendThreads(PVBOXPROCESS pVBoxProc)
+static int rtCoreDumperSuspendThreads(PVBOXCORE pVBoxCore)
 {
+    AssertPtrReturn(pVBoxCore, VERR_INVALID_POINTER);
+
+    /*
+     * This function tries to ensures while we suspend threads, no newly spawned threads 
+     * or a combination of spawning and terminating threads can cause any threads to be left running. 
+     * The assumption here is that threads can only increase not decrease across iterations.
+     */
+#if 1
+    uint16_t cTries = 0;
+    uint64_t aThreads[4];
+    RT_ZERO(aThreads);
+    int rc = VERR_GENERAL_FAILURE;
+    void *pv = NULL;
+    size_t cb = 0;
+    for (cTries = 0; cTries < RT_ELEMENTS(aThreads); cTries++)
+    {
+        rc = rtCoreDumperForEachThread(pVBoxCore, &aThreads[cTries], suspendThread);
+        if (RT_FAILURE(rc))
+            break;
+    }
+    if (   RT_SUCCESS(rc)
+        && aThreads[cTries - 1] != aThreads[cTries - 2])
+    {
+        CORELOGRELSYS((CORELOG_NAME "rtCoreDumperSuspendThreads: possible thread bomb!?\n"));
+        rc = VERR_GENERAL_FAILURE;   /* @todo better error code */
+    }
+    return rc;
+#else
+    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+
     char szCurThread[128];
     char szPath[PATH_MAX];
     PRTDIR pDir = NULL;
@@ -1179,6 +1316,7 @@ static int rtCoreDumperSuspendThreads(PVBOXPROCESS pVBoxProc)
         CORELOG((CORELOG_NAME "SuspendThreads: Stopped %u threads successfully with %u tries\n", cThreads, cTries));
 
     return rc;
+#endif
 }
 
 
@@ -1203,7 +1341,7 @@ static inline size_t ElfNoteHeaderSize(size_t cb)
  * @param pcv               Opaque pointer to the data, if NULL only computes size.
  * @param cb                Size of the data.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ElfWriteNoteHeader(PVBOXCORE pVBoxCore, uint_t Type, const void *pcv, size_t cb)
 {
@@ -1327,7 +1465,7 @@ static size_t ElfNoteSectionSize(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
  * @param pVBoxCore         Pointer to the core object.
  * @param enmType           Type of core file information required.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ElfWriteNoteSection(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
 {
@@ -1470,7 +1608,7 @@ static int ElfWriteNoteSection(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
  *
  * @param pVBoxCore         Pointer to the core object.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ElfWriteMappings(PVBOXCORE pVBoxCore)
 {
@@ -1530,7 +1668,7 @@ static int ElfWriteMappings(PVBOXCORE pVBoxCore)
  *
  * @param pVBoxCore         Pointer to the core object.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int ElfWriteMappingHeaders(PVBOXCORE pVBoxCore)
 {
@@ -1745,7 +1883,7 @@ WriteCoreDone:
         pVBoxProc->hAs = NIL_RTFILE;
     }
 
-    rtCoreDumperResumeThreads(pVBoxProc);
+    rtCoreDumperResumeThreads(pVBoxCore);
     return rc;
 }
 
@@ -1759,7 +1897,7 @@ WriteCoreDone:
  * @param pContext          Pointer to the caller context thread.
  *
  * @remarks Halts all threads.
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext)
 {
@@ -1805,7 +1943,7 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext)
     /*
      * Quiesce the process.
      */
-    int rc = rtCoreDumperSuspendThreads(pVBoxProc);
+    int rc = rtCoreDumperSuspendThreads(pVBoxCore);
     if (RT_SUCCESS(rc))
     {
         rc = ProcReadInfo(pVBoxCore);
@@ -1876,7 +2014,7 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext)
         /*
          * Resume threads on failure.
          */
-        rtCoreDumperResumeThreads(pVBoxProc);
+        rtCoreDumperResumeThreads(pVBoxCore);
     }
     else
         CORELOG((CORELOG_NAME "CreateCore: SuspendAllThreads failed. Thread bomb!?! rc=%Rrc\n", rc));
@@ -1890,7 +2028,7 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext)
  *
  * @param pVBoxCore         Pointer to the core object.
  *
- * @return VBox status code.
+ * @return IPRT status code.
  */
 static int rtCoreDumperDestroyCore(PVBOXCORE pVBoxCore)
 {
@@ -1909,7 +2047,7 @@ static int rtCoreDumperDestroyCore(PVBOXCORE pVBoxCore)
  * because it can be called from signal handlers.
  *
  * @param   pContext            The context of the caller.
- * @returns VBox status code.
+ * @returns IPRT status code.
  */
 static int rtCoreDumperTakeDump(ucontext_t *pContext)
 {
@@ -1931,7 +2069,7 @@ static int rtCoreDumperTakeDump(ucontext_t *pContext)
     {
         rc = rtCoreDumperWriteCore(&VBoxCore, &WriteFileNoIntr);
         if (RT_SUCCESS(rc))
-            CORELOGRELSYS((CORELOG_NAME "Success! Core written to %s\n", VBoxCore.szCorePath));
+            CORELOGRELSYS((CORELOG_NAME "Core dumped in %s\n", VBoxCore.szCorePath));
         else
             CORELOGRELSYS((CORELOG_NAME "TakeDump: WriteCore failed. szCorePath=%s rc=%Rrc\n", VBoxCore.szCorePath, rc));
 
