@@ -21,9 +21,8 @@
 #include <VBox/dbg.h>
 #include "../DBGCInternal.h"
 
-#include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/initterm.h>
+#include <iprt/test.h>
 
 
 /*******************************************************************************
@@ -38,8 +37,9 @@ static DECLCALLBACK(void) tstDBGCBackSetReady(PDBGCBACK pBack, bool fReady);
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Global error counter. */
-static unsigned g_cErrors = 0;
+/** The test handle. */
+static RTTEST g_hTest = NIL_RTTEST;
+
 /** The DBGC backend structure for use in this testcase. */
 static DBGCBACK g_tstBack =
 {
@@ -49,9 +49,14 @@ static DBGCBACK g_tstBack =
     tstDBGCBackSetReady
 };
 /** For keeping track of output prefixing. */
-static bool g_fPendingPrefix = true;
+static bool     g_fPendingPrefix = true;
 /** Pointer to the current input position. */
-const char *g_pszInput = NULL;
+const char     *g_pszInput = NULL;
+/** The output of the last command. */
+static char     g_szOutput[1024];
+/** The current offset into g_szOutput. */
+static size_t   g_offOutput = 0;
+
 
 /**
  * Checks if there is input.
@@ -119,14 +124,24 @@ static DECLCALLBACK(int) tstDBGCBackWrite(PDBGCBACK pBack, const void *pvBuf, si
         *pcbWritten = cbBuf;
     while (cbBuf-- > 0)
     {
+        /* screen/log output */
         if (g_fPendingPrefix)
         {
-            RTPrintf("tstDBGCParser:  OUTPUT: ");
+            RTTestPrintfNl(g_hTest, RTTESTLVL_ALWAYS, "OUTPUT: ");
             g_fPendingPrefix = false;
         }
         if (*pch == '\n')
             g_fPendingPrefix = true;
-        RTPrintf("%c", *pch);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "%c", *pch);
+
+        /* buffer output */
+        if (g_offOutput < sizeof(g_szOutput) - 1)
+        {
+            g_szOutput[g_offOutput++] = *pch;
+            g_szOutput[g_offOutput] = '\0';
+        }
+
+        /* advance */
         pch++;
     }
     return VINF_SUCCESS;
@@ -153,7 +168,7 @@ static DECLCALLBACK(void) tstDBGCBackSetReady(PDBGCBACK pBack, bool fReady)
 static void tstCompleteOutput(void)
 {
     if (!g_fPendingPrefix)
-        RTPrintf("\n");
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "\n");
     g_fPendingPrefix = true;
 }
 
@@ -163,25 +178,81 @@ static void tstCompleteOutput(void)
  * @param   pDbgc           Pointer to the debugger instance.
  * @param   pszCmds         The command to test.
  * @param   rcCmd           The expected result.
+ * @param   fNoExecute      When set, the command is not executed.
+ * @param   pszExpected     Expected output.  This does not need to include all
+ *                          of the output, just the start of it.  Thus the
+ *                          prompt can be omitted.
  */
-static void tstTry(PDBGC pDbgc, const char *pszCmds, int rcCmd)
+static void tstTryEx(PDBGC pDbgc, const char *pszCmds, int rcCmd, bool fNoExecute, const char *pszExpected)
 {
+    RT_ZERO(g_szOutput);
+    g_offOutput = 0;
     g_pszInput = pszCmds;
     if (strchr(pszCmds, '\0')[-1] == '\n')
-        RTPrintf("tstDBGCParser: RUNNING: %s", pszCmds);
+        RTTestPrintfNl(g_hTest, RTTESTLVL_ALWAYS, "RUNNING: %s", pszCmds);
     else
-        RTPrintf("tstDBGCParser: RUNNING: %s\n", pszCmds);
+        RTTestPrintfNl(g_hTest, RTTESTLVL_ALWAYS, "RUNNING: %s\n", pszCmds);
 
     pDbgc->rcCmd = VERR_INTERNAL_ERROR;
-    dbgcProcessInput(pDbgc, true /* fNoExecute */);
+    dbgcProcessInput(pDbgc, fNoExecute);
     tstCompleteOutput();
 
     if (pDbgc->rcCmd != rcCmd)
-    {
-        RTPrintf("tstDBGCParser: rcCmd=%Rrc expected =%Rrc\n", pDbgc->rcCmd, rcCmd);
-        g_cErrors++;
-    }
+        RTTestFailed(g_hTest, "rcCmd=%Rrc expected =%Rrc\n", pDbgc->rcCmd, rcCmd);
+    else if (   !fNoExecute
+             && pszExpected
+             && strncmp(pszExpected, g_szOutput, strlen(pszExpected)))
+        RTTestFailed(g_hTest, "Wrong output - expected \"%s\"", pszExpected);
 }
+
+
+/**
+ * Tries one command string without executing it.
+ *
+ * @param   pDbgc           Pointer to the debugger instance.
+ * @param   pszCmds         The command to test.
+ * @param   rcCmd           The expected result.
+ */
+static void tstTry(PDBGC pDbgc, const char *pszCmds, int rcCmd)
+{
+    return tstTryEx(pDbgc, pszCmds, rcCmd, true /*fNoExecute*/, NULL);
+}
+
+
+/**
+ * Tries to execute one command string.
+ * @param   pDbgc           Pointer to the debugger instance.
+ * @param   pszCmds         The command to test.
+ * @param   rcCmd           The expected result.
+ * @param   pszExpected     Expected output.  This does not need to include all
+ *                          of the output, just the start of it.  Thus the
+ *                          prompt can be omitted.
+ */
+static void tstTryExec(PDBGC pDbgc, const char *pszCmds, int rcCmd, const char *pszExpected)
+{
+    return tstTryEx(pDbgc, pszCmds, rcCmd, false /*fNoExecute*/, pszExpected);
+}
+
+
+/**
+ * Test an operator on an expression resulting a plain number.
+ *
+ * @param   pDbgc           Pointer to the debugger instance.
+ * @param   pszExpr         The express to test.
+ * @param   u64Expect       The expected result.
+ */
+static void tstNumOp(PDBGC pDbgc, const char *pszExpr, uint64_t u64Expect)
+{
+    char szCmd[80];
+    RTStrPrintf(szCmd, sizeof(szCmd), "format %s\n", pszExpr);
+
+    char szExpected[80];
+    RTStrPrintf(szExpected, sizeof(szExpected),
+                "Number: hex %llx  dec 0i%lld  oct 0t%llo", u64Expect, u64Expect, u64Expect);
+
+    return tstTryEx(pDbgc, szCmd, VINF_SUCCESS, false /*fNoExecute*/, szExpected);
+}
+
 
 
 int main()
@@ -189,14 +260,16 @@ int main()
     /*
      * Init.
      */
-    RTR3Init();
-    RTPrintf("tstDBGCParser: TESTING...\n");
+    int rc = RTTestInitAndCreate("tstDBGCParser", &g_hTest);
+    if (rc)
+        return rc;
+    RTTestBanner(g_hTest);
 
     /*
      * Create a DBGC instance.
      */
     PDBGC pDbgc;
-    int rc = dbgcCreate(&pDbgc, &g_tstBack, 0);
+    rc = dbgcCreate(&pDbgc, &g_tstBack, 0);
     if (RT_SUCCESS(rc))
     {
         rc = dbgcProcessInput(pDbgc, true /* fNoExecute */);
@@ -204,9 +277,85 @@ int main()
         if (RT_SUCCESS(rc))
         {
             tstTry(pDbgc, "stop\n", VINF_SUCCESS);
+            tstTry(pDbgc, "format 1\n", VINF_SUCCESS);
             tstTry(pDbgc, "format \n", VERR_PARSE_TOO_FEW_ARGUMENTS);
             tstTry(pDbgc, "format 0 1 23 4\n", VERR_PARSE_TOO_MANY_ARGUMENTS);
             tstTry(pDbgc, "sa 3 23 4 'q' \"21123123\" 'b' \n", VINF_SUCCESS);
+
+            tstNumOp(pDbgc, "1",                                        1);
+            tstNumOp(pDbgc, "1",                                        1);
+            tstNumOp(pDbgc, "1",                                        1);
+
+            tstNumOp(pDbgc, "+1",                                       1);
+            tstNumOp(pDbgc, "++++++1",                                  1);
+
+            tstNumOp(pDbgc, "-1",                                       UINT64_MAX);
+            tstNumOp(pDbgc, "--1",                                      1);
+            tstNumOp(pDbgc, "---1",                                     UINT64_MAX);
+            tstNumOp(pDbgc, "----1",                                    1);
+
+            tstNumOp(pDbgc, "~0",                                       UINT64_MAX);
+            tstNumOp(pDbgc, "~1",                                       UINT64_MAX-1);
+            tstNumOp(pDbgc, "~~0",                                      0);
+            tstNumOp(pDbgc, "~~1",                                      1);
+
+            tstNumOp(pDbgc, "!1",                                       0);
+            tstNumOp(pDbgc, "!0",                                       1);
+            tstNumOp(pDbgc, "!42",                                      0);
+            tstNumOp(pDbgc, "!!42",                                     1);
+            tstNumOp(pDbgc, "!!!42",                                    0);
+            tstNumOp(pDbgc, "!!!!42",                                   1);
+
+            tstNumOp(pDbgc, "1 +1",                                     2);
+            tstNumOp(pDbgc, "1 + 1",                                    2);
+            tstNumOp(pDbgc, "1+1",                                      2);
+            tstNumOp(pDbgc, "1+ 1",                                     2);
+
+            tstNumOp(pDbgc, "1 - 1",                                    0);
+            tstNumOp(pDbgc, "99 - 90",                                  9);
+
+            tstNumOp(pDbgc, "2 * 2",                                    4);
+
+            tstNumOp(pDbgc, "2 / 2",                                    1);
+            tstNumOp(pDbgc, "2 / 0",                                    UINT64_MAX);
+            tstNumOp(pDbgc, "0i1024 / 0i4",                             256);
+
+            tstNumOp(pDbgc, "1<<1",                                     2);
+            tstNumOp(pDbgc, "1<<0i32",                                  0x0000000100000000);
+            tstNumOp(pDbgc, "1<<0i48",                                  0x0001000000000000);
+            tstNumOp(pDbgc, "1<<0i63",                                  0x8000000000000000);
+
+            tstNumOp(pDbgc, "fedcba0987654321>>0i04",                   0x0fedcba098765432);
+            tstNumOp(pDbgc, "fedcba0987654321>>0i32",                   0xfedcba09);
+            tstNumOp(pDbgc, "fedcba0987654321>>0i48",                   0x0000fedc);
+
+            tstNumOp(pDbgc, "0ef & 4",                                  4);
+            tstNumOp(pDbgc, "01234567891 & fff",                        0x00000000891);
+            tstNumOp(pDbgc, "01234567891 & ~fff",                       0x01234567000);
+
+            tstNumOp(pDbgc, "1 | 1",                                    1);
+            tstNumOp(pDbgc, "0 | 4",                                    4);
+            tstNumOp(pDbgc, "4 | 0",                                    4);
+            tstNumOp(pDbgc, "4 | 4",                                    4);
+            tstNumOp(pDbgc, "1 | 4 | 2",                                7);
+
+            tstNumOp(pDbgc, "1 ^ 1",                                    0);
+            tstNumOp(pDbgc, "1 ^ 0",                                    1);
+            tstNumOp(pDbgc, "0 ^ 1",                                    1);
+            tstNumOp(pDbgc, "3 ^ 1",                                    2);
+            tstNumOp(pDbgc, "7 ^ 3",                                    4);
+
+            tstNumOp(pDbgc, "7 || 3",                                   1);
+            tstNumOp(pDbgc, "1 || 0",                                   1);
+            tstNumOp(pDbgc, "0 || 1",                                   1);
+            tstNumOp(pDbgc, "0 || 0",                                   0);
+
+            tstNumOp(pDbgc, "0 && 0",                                   0);
+            tstNumOp(pDbgc, "1 && 0",                                   0);
+            tstNumOp(pDbgc, "0 && 1",                                   0);
+            tstNumOp(pDbgc, "1 && 1",                                   1);
+            tstNumOp(pDbgc, "4 && 1",                                   1);
+
         }
 
         dbgcDestroy(pDbgc);
@@ -215,9 +364,5 @@ int main()
     /*
      * Summary
      */
-    if (!g_cErrors)
-        RTPrintf("tstDBGCParser: SUCCESS\n");
-    else
-        RTPrintf("tstDBGCParser: FAILURE - %d errors\n", g_cErrors);
-    return g_cErrors != 0;
+    return RTTestSummaryAndDestroy(g_hTest);
 }
