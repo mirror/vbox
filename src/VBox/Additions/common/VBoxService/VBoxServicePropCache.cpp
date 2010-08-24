@@ -197,38 +197,6 @@ int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
  */
 int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValueFormat, ...)
 {
-    char *pszValue = NULL;
-    int rc;
-    if (pszValueFormat)
-    {
-        va_list va;
-        va_start(va, pszValueFormat);
-        RTStrAPrintfV(&pszValue, pszValueFormat, va);
-        va_end(va);
-    }
-    rc = VBoxServicePropCacheUpdateEx(pCache, pszName, 0 /* Not used */, NULL /* Not used */, pszValue);
-    if (pszValue)
-        RTStrFree(pszValue);
-    return rc;
-}
-
-
-/**
- * Updates the local guest property cache and writes it to HGCM if outdated.
- *
- * @returns VBox status code.
- *
- * @param   pCache          The property cache.
- * @param   pszName         The property name.
- * @param   fFlags          The property flags to set.
- * @param   pszValueReset   The property reset value.
- * @param   pszValueFormat  The property format string.  If this is NULL then
- *                          the property will be deleted (if possible).
- * @param   ...             Format arguments.
- */
-int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags,
-                                 const char *pszValueReset, const char *pszValueFormat, ...)
-{
     AssertPtr(pCache);
     Assert(pCache->uClientID);
     AssertPtr(pszName);
@@ -273,7 +241,7 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
             if (fUpdate)
             {
                 /* Write the update. */
-                rc = vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName, fFlags, pszValue);
+                rc = vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName, pNode->fFlags, pszValue);
                 RTStrFree(pNode->pszValue);
                 pNode->pszValue = RTStrDup(pszValue);
             }
@@ -295,25 +263,12 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
                 rc = VINF_NO_CHANGE; /* No update needed. */
         }
 
-        /* Update rest of the fields. */
-        if (pszValueReset)
-        {
-            if (pNode->pszValueReset)
-                RTStrFree(pNode->pszValueReset);
-            pNode->pszValueReset = RTStrDup(pszValueReset);
-        }
-        if (fFlags)
-            pNode->fFlags = fFlags;
-
         /* Release cache. */
-        int rc2 = RTCritSectLeave(&pCache->CritSect);
-        if (RT_SUCCESS(rc))
-            rc2 = rc;
+        RTCritSectLeave(&pCache->CritSect);
     }
 
     /* Delete temp stuff. */
     RTStrFree(pszValue);
-
     return rc;
 }
 
