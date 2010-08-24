@@ -4974,14 +4974,48 @@ VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
         AssertRC(rc2);
         fLockWrite = true;
 
-        rc = pImage->Backend->pfnResize(pImage->pvBackendData,
-                                        cbSize * _1M,
-                                        pPCHSGeometry,
-                                        pLCHSGeometry,
-                                        0, 99,
-                                        pDisk->pVDIfsDisk,
-                                        pImage->pVDIfsImage,
-                                        pVDIfsOperation);
+        PDMMEDIAGEOMETRY PCHSGeometryOld;
+        PDMMEDIAGEOMETRY LCHSGeometryOld;
+        PCPDMMEDIAGEOMETRY pPCHSGeometryNew;
+        PCPDMMEDIAGEOMETRY pLCHSGeometryNew;
+
+        if (pPCHSGeometry->cCylinders == 0)
+        {
+            /* Auto-detect marker, calculate new value ourself. */
+            rc = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData, &PCHSGeometryOld);
+            if (RT_SUCCESS(rc) && (PCHSGeometryOld.cCylinders != 0))
+                PCHSGeometryOld.cCylinders = RT_MIN(cbSize / 512 / PCHSGeometryOld.cHeads / PCHSGeometryOld.cSectors, 16383);
+            else if (rc == VERR_VD_GEOMETRY_NOT_SET)
+                rc = VINF_SUCCESS;
+
+            pPCHSGeometryNew = &PCHSGeometryOld;
+        }
+        else
+            pPCHSGeometryNew = pPCHSGeometry;
+
+        if (pLCHSGeometry->cCylinders == 0)
+        {
+            /* Auto-detect marker, calculate new value ourself. */
+            rc = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData, &LCHSGeometryOld);
+            if (RT_SUCCESS(rc) && (LCHSGeometryOld.cCylinders != 0))
+                LCHSGeometryOld.cCylinders = cbSize / 512 / LCHSGeometryOld.cHeads / LCHSGeometryOld.cSectors;
+            else if (rc == VERR_VD_GEOMETRY_NOT_SET)
+                rc = VINF_SUCCESS;
+
+            pLCHSGeometryNew = &LCHSGeometryOld;
+        }
+        else
+            pLCHSGeometryNew = pLCHSGeometry;
+
+        if (RT_SUCCESS(rc))
+            rc = pImage->Backend->pfnResize(pImage->pvBackendData,
+                                            cbSize * _1M,
+                                            pPCHSGeometryNew,
+                                            pLCHSGeometryNew,
+                                            0, 99,
+                                            pDisk->pVDIfsDisk,
+                                            pImage->pVDIfsImage,
+                                            pVDIfsOperation);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
