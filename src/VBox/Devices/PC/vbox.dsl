@@ -116,41 +116,43 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         Store (Arg0, PICM)
     }
 
+    // Declare indexed registers used for reading configuration information
+    OperationRegion (SYSI, SystemIO, 0x4048, 0x08)
+    Field (SYSI, DwordAcc, NoLock, Preserve)
+    {
+       IDX0, 32,
+       DAT0, 32,
+    }
+
+    IndexField (IDX0, DAT0, DwordAcc, NoLock, Preserve)
+    {
+        MEML,  32,
+        UIOA,  32,
+        UHPT,  32,
+        USMC,  32,
+        UFDC,  32,
+        // UCP0-UCP3 no longer used and only kept here for saved state compatibilty
+        UCP0,  32,
+        UCP1,  32,
+        UCP2,  32,
+        UCP3,  32,
+        MEMH,  32,
+        URTC,  32,
+        CPUL,  32,
+        CPUC,  32,
+        CPET,  32,
+        CPEV,  32,
+        NICA,  32,
+        HDAA,  32,
+        PWRS,  32,
+        Offset (0x80),
+        ININ, 32,
+        Offset (0x200),
+        VAIN, 32,
+    }
+
     Scope (\_SB)
     {
-        OperationRegion (SYSI, SystemIO, 0x4048, 0x08)
-        Field (SYSI, DwordAcc, NoLock, Preserve)
-        {
-            IDX0, 32,
-            DAT0, 32,
-        }
-
-        IndexField (IDX0, DAT0, DwordAcc, NoLock, Preserve)
-        {
-            MEML,  32,
-            UIOA,  32,
-            UHPT,  32,
-            USMC,  32,
-            UFDC,  32,
-            // UCP0-UCP3 no longer used and only kept here for saved state compatibilty
-            UCP0,  32,
-            UCP1,  32,
-            UCP2,  32,
-            UCP3,  32,
-            MEMH,  32,
-            URTC,  32,
-            CPUL,  32,
-            CPUC,  32,
-            CPET,  32,
-            CPEV,  32,
-            NICA,  32,
-            HDAA,  32,
-            Offset (0x80),
-            ININ, 32,
-            Offset (0x200),
-            VAIN, 32,
-        }
-
         Method (_INI, 0, NotSerialized)
         {
             Store (0xbadc0de, VAIN)
@@ -1303,6 +1305,21 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         0x00,
         0x00,
     })
+
+    // Shift one by the power state number
+//    If (And(PWRS, ShiftLeft(One,1))) {
+        Name (_S1, Package (2) {
+            0x01,
+            0x01,
+        })
+//    }
+
+//    If (And(PWRS, ShiftLeft(One,4))) {
+        Name (_S4, Package (2) {
+            0x05,
+            0x05,
+        })
+//    }
 
     Name (_S5, Package (2) {
         0x05,

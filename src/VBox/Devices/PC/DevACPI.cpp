@@ -161,7 +161,8 @@ enum
     SYSTEM_INFO_INDEX_CPU_EVENT         = 14, /**< The CPU id the event is for */
     SYSTEM_INFO_INDEX_NIC_ADDRESS       = 15, /**< NIC PCI address, or 0 */
     SYSTEM_INFO_INDEX_AUDIO_ADDRESS     = 16, /**< Audio card PCI address, or 0 */
-    SYSTEM_INFO_INDEX_END               = 17,
+    SYSTEM_INFO_INDEX_POWER_STATES      = 17,
+    SYSTEM_INFO_INDEX_END               = 18,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -258,7 +259,13 @@ typedef struct ACPIState
     uint32_t            u32NicPciAddress;
     /** Primary audio card PCI address */
     uint32_t            u32AudioPciAddress;
-    uint32_t            u32Pad0;
+    /** Flag whether S1 power state is enabled */
+    bool                fS1Enabled;
+    /** Flag whether S4 power state is enabled */
+    bool                fS4Enabled;
+    /** Flag whether S1 triggers a state save */
+    bool                fSuspendToDisk;
+//    uint32_t            u32Pad0;
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -1044,6 +1051,30 @@ static int acpiPowerDown(ACPIState *s)
     return rc;
 }
 
+static int acpiSleep(ACPIState *s)
+{
+    int rc;
+    /* First pause the VM to stop it executing. Note that failures aren't fatal, we can
+     * just continue the guest as if it was immediately resumed.
+     */
+    rc = PDMDevHlpVMSuspend(s->pDevIns);    /* This is VM pause, not really ACPI suspend. */
+
+    /* The guest was probably reading the PMSTS register in a loop. The resume flag must
+     * be set before continuing in any way - needs to be part of saved state.
+     */
+    s->pm1a_sts |= WAK_STS; 
+
+    if (RT_FAILURE(rc))
+        AssertMsgFailed(("Could not pause the VM. rc = %Rrc\n", rc));
+
+    if (s->fSuspendToDisk) {
+//        rc = PDMDevHlpVMSuspendToDisk(s->pDevIns);
+        if (RT_FAILURE(rc))
+            AssertMsgFailed(("Could not save VM state. rc = %Rrc\n", rc));        
+    }
+    return rc;
+}
+
 /** Converts a ACPI port interface pointer to an ACPI state pointer. */
 #define IACPIPORT_2_ACPISTATE(pInterface) ( (ACPIState*)((uintptr_t)pInterface - RT_OFFSETOF(ACPIState, IACPIPort)) )
 
@@ -1164,8 +1195,14 @@ static int acpiPM1aCtlWritew(ACPIState *s, uint32_t addr, uint32_t val)
         {
             case 0x00:                  /* S0 */
                 break;
+            case 0x01:                  /* S1 */
+                LogRel(("Entering S1 power state (powered-on suspend)\n"));
+                return acpiSleep(s);
+            case 0x04:                  /* S4 */
+                LogRel(("Entering S4 power state (suspend to disk)\n"));
+                return acpiPowerDown(s);/* Same behavior as S5 */
             case 0x05:                  /* S5 */
-                LogRel(("Entering S5 (power down)\n"));
+                LogRel(("Entering S5 power state (power down)\n"));
                 return acpiPowerDown(s);
             default:
                 AssertMsgFailed(("Unknown sleep state %#x\n", uSleepState));
@@ -1511,6 +1548,14 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 
                 case SYSTEM_INFO_INDEX_AUDIO_ADDRESS:
                     *pu32 = s->u32AudioPciAddress;
+                    break;
+
+                case SYSTEM_INFO_INDEX_POWER_STATES:
+                    *pu32 = RT_BIT(0) | RT_BIT(5);  /* S1 and S5 always exposed */
+                    if (s->fS1Enabled)              /* Optionally expose S1 and S4 */
+                        *pu32 |= RT_BIT(1);
+                    if (s->fS4Enabled)
+                        *pu32 |= RT_BIT(4);
                     break;
 
                 /* This is only for compatability with older saved states that
@@ -2359,6 +2404,9 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "ShowCpu\0"
                               "NicPciAddress\0"
                               "AudioPciAddress\0"
+                              "EnableSuspendToDisk\0"
+                              "PowerS1Enabled\0"
+                              "PowerS4Enabled\0"
                               "CpuHotPlug\0"
                               "AmlFilePath\0"
                               ))
@@ -2418,6 +2466,24 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"AudioPciAddress\""));
+
+    /* query whether S1 power state should be exposed */
+    rc = CFGMR3QueryBoolDef(pCfg, "PowerS1Enabled", &s->fS1Enabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"PowerS1Enabled\""));
+
+    /* query whether S4 power state should be exposed */
+    rc = CFGMR3QueryBoolDef(pCfg, "PowerS4Enabled", &s->fS4Enabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"PowerS1Enabled\""));
+
+    /* query whether S1 power state should save the VM state */
+    rc = CFGMR3QueryBoolDef(pCfg, "EnableSuspendToDisk", &s->fSuspendToDisk, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"EnableSuspendToDisk\""));
 
     /* query whether we are allow CPU hot plugging */
     rc = CFGMR3QueryBoolDef(pCfg, "CpuHotPlug", &s->fCpuHotPlug, false);
