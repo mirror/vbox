@@ -754,6 +754,74 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
         } break;
 #endif /* VBOX_WITH_VRDP_VIDEO_CHANNEL */
 
+        case VRDP_QP_FEATURE:
+        {
+            if (cbBuffer < sizeof(VRDPFEATURE))
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            size_t cbInfo = cbBuffer - RT_OFFSETOF(VRDPFEATURE, achInfo);
+
+            VRDPFEATURE *pFeature = (VRDPFEATURE *)pvBuffer;
+
+            size_t cchInfo = 0;
+            rc = RTStrNLenEx(pFeature->achInfo, cbInfo, &cchInfo);
+
+            if (RT_FAILURE(rc))
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            /* features are mapped to "VRDP/Feature/NAME" extra data. */
+            com::Utf8Str extraData("VRDP/Feature/"); 
+            extraData += pFeature->achInfo;
+
+            com::Bstr bstrValue;
+
+            /* @todo these features should be per client. */
+            NOREF(pFeature->u32ClientId);
+
+            if (   RTStrICmp(pFeature->achInfo, "Client/DisableDisplay") == 0
+                || RTStrICmp(pFeature->achInfo, "Client/DisableInput") == 0
+                || RTStrICmp(pFeature->achInfo, "Client/DisableAudio") == 0
+                || RTStrICmp(pFeature->achInfo, "Client/DisableUSB") == 0
+                || RTStrICmp(pFeature->achInfo, "Client/DisableClipboard") == 0
+               )
+            {
+                HRESULT hrc = server->mConsole->machine ()->GetExtraData(com::Bstr(extraData), bstrValue.asOutParam());
+                if (hrc == S_OK && !bstrValue.isEmpty())
+                {
+                    rc = VINF_SUCCESS;
+                }
+            }
+            else
+            {
+                rc = VERR_NOT_SUPPORTED;
+            }
+
+            /* Copy the value string to the callers buffer. */
+            if (rc == VINF_SUCCESS)
+            {
+                com::Utf8Str value = bstrValue;
+
+                size_t cb = value.length() + 1;
+
+                if ((size_t)cbInfo >= cb)
+                {
+                    memcpy(pFeature->achInfo, value.c_str(), cb);
+                }
+                else
+                {
+                    rc = VINF_BUFFER_OVERFLOW;
+                }
+
+                *pcbOut = (uint32_t)cb;
+            }
+        } break;
+
         case VRDP_SP_NETWORK_BIND_PORT:
         {
             if (cbBuffer != sizeof(uint32_t))
