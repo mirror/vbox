@@ -3558,28 +3558,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
 
 
 #ifdef VBOX_STRICT
-#ifdef IN_RC
-# undef AssertMsgFailed
-# define AssertMsgFailed Log
-#endif
-#ifdef IN_RING3
-# include <VBox/dbgf.h>
-
-/**
- * Dumps a page table hierarchy use only physical addresses and cr4/lm flags.
- *
- * @returns VBox status code (VINF_SUCCESS).
- * @param   cr3         The root of the hierarchy.
- * @param   crr         The cr4, only PAE and PSE is currently used.
- * @param   fLongMode   Set if long mode, false if not long mode.
- * @param   cMaxDepth   Number of levels to dump.
- * @param   pHlp        Pointer to the output functions.
- */
-RT_C_DECLS_BEGIN
-VMMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint32_t cr3, uint32_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp);
-RT_C_DECLS_END
-
-#endif
+# ifdef IN_RC
+#  undef AssertMsgFailed
+#  define AssertMsgFailed Log
+# endif
 
 /**
  * Checks that the shadow page table is in sync with the guest one.
