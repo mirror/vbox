@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2007-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -124,7 +124,8 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAd
 VMMR3DECL(int) DBGFR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, RTGCUINTPTR uAlign,
                              const void *pvNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress)
 {
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
     return VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3MemScan, 8,
                            pVM, idCpu, pAddress, &cbRange, &uAlign, pvNeedle, cbNeedle, pHitAddress);
 
@@ -203,7 +204,8 @@ static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAd
  */
 VMMR3DECL(int) DBGFR3MemRead(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead)
 {
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
     if ((pAddress->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_RING0)
     {
         AssertCompile(sizeof(RTHCUINTPTR) <= sizeof(pAddress->FlatPtr));
@@ -282,7 +284,8 @@ VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddres
     if (cchBuf <= 0)
         return VERR_INVALID_PARAMETER;
     memset(pszBuf, 0, cchBuf);
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
 
     /*
      * Pass it on to the EMT.
@@ -361,7 +364,8 @@ static DECLCALLBACK(int) dbgfR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pA
  */
 VMMR3DECL(int) DBGFR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, void const *pvBuf, size_t cbWrite)
 {
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
     return VMR3ReqCallWaitU(pVM->pUVM, idCpu, (PFNRT)dbgfR3MemWrite, 5, pVM, idCpu, pAddress, pvBuf, cbWrite);
 }
 
@@ -453,7 +457,8 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, u
  */
 VMMR3DECL(int) DBGFR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, uint32_t fFlags, PDBGFSELINFO pSelInfo)
 {
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
     AssertReturn(!(fFlags & ~(DBGFSELQI_FLAGS_DT_GUEST | DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE)), VERR_INVALID_PARAMETER);
     AssertReturn(    (fFlags & (DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE))
                   !=           (DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE), VERR_INVALID_PARAMETER);
@@ -502,5 +507,156 @@ VMMDECL(int) DBGFR3SelInfoValidateCS(PCDBGFSELINFO pSelInfo, RTSEL SelCPL)
         return VERR_NOT_CODE_SELECTOR;
     }
     return VERR_SELECTOR_NOT_PRESENT;
+}
+
+
+/**
+ * Convers a PGM paging mode to a set of DBGFPGDMP_XXX flags.
+ *
+ * @returns Flags. UINT32_MAX if the mode is invalid (asserted).
+ * @param   enmMode             The mode.
+ */
+static uint32_t dbgfR3PagingDumpModeToFlags(PGMMODE enmMode)
+{
+    switch (enmMode)
+    {
+        case PGMMODE_32_BIT:
+            return DBGFPGDMP_FLAGS_PSE;
+        case PGMMODE_PAE:
+            return DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE;
+        case PGMMODE_PAE_NX:
+            return DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_NXE;
+        case PGMMODE_AMD64:
+            return DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME;
+        case PGMMODE_AMD64_NX:
+            return DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME | DBGFPGDMP_FLAGS_NXE;
+        case PGMMODE_NESTED:
+            return DBGFPGDMP_FLAGS_NP;
+        case PGMMODE_EPT:
+            return DBGFPGDMP_FLAGS_EPT;
+        default:
+            AssertFailedReturn(UINT32_MAX);
+    }
+}
+
+
+/**
+ * EMT worker for DBGFR3PagingDumpEx.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   idCpu           The current CPU ID.
+ * @param   fFlags          The flags, DBGFPGDMP_FLAGS_XXX.  Valid.
+ * @param   pcr3            The CR3 to use (unless we're getting the current
+ *                          state, see @a fFlags).
+ * @param   pu64FirstAddr   The first address.
+ * @param   pu64LastAddr    The last address.
+ * @param   cMaxDepth       The depth.
+ * @param   pHlp            The output callbacks.
+ */
+static DECLCALLBACK(int) dbgfR3PagingDumpEx(PVM pVM, VMCPUID idCpu, uint32_t fFlags, uint64_t *pcr3,
+                                            uint64_t *pu64FirstAddr, uint64_t *pu64LastAddr,
+                                            uint32_t cMaxDepth, PCDBGFINFOHLP pHlp)
+{
+    /*
+     * Implement dumping both context by means of recursion.
+     */
+    if ((fFlags & (DBGFPGDMP_FLAGS_GUEST | DBGFPGDMP_FLAGS_SHADOW)) == (DBGFPGDMP_FLAGS_GUEST | DBGFPGDMP_FLAGS_SHADOW))
+    {
+        int rc1 = dbgfR3PagingDumpEx(pVM, idCpu, fFlags & ~DBGFPGDMP_FLAGS_GUEST,
+                                     pcr3, pu64FirstAddr, pu64LastAddr, cMaxDepth, pHlp);
+        int rc2 = dbgfR3PagingDumpEx(pVM, idCpu, fFlags & ~DBGFPGDMP_FLAGS_SHADOW,
+                                     pcr3, pu64FirstAddr, pu64LastAddr, cMaxDepth, pHlp);
+        return RT_FAILURE(rc1) ? rc1 : rc2;
+    }
+
+    /*
+     * Get the current CR3/mode if required.
+     */
+    uint64_t cr3 = *pcr3;
+    if (fFlags & (DBGFPGDMP_FLAGS_CURRENT_CR3 | DBGFPGDMP_FLAGS_CURRENT_MODE))
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        if (fFlags & DBGFPGDMP_FLAGS_SHADOW)
+        {
+            if (fFlags & DBGFPGDMP_FLAGS_CURRENT_CR3)
+                cr3 = PGMGetHyperCR3(pVCpu);
+            if (fFlags & DBGFPGDMP_FLAGS_CURRENT_MODE)
+            {
+                fFlags |= dbgfR3PagingDumpModeToFlags(PGMGetShadowMode(pVCpu));
+                if (fFlags & DBGFPGDMP_FLAGS_NP)
+                {
+                    fFlags |= dbgfR3PagingDumpModeToFlags(PGMGetHostMode(pVM));
+                    if (HC_ARCH_BITS == 32 && CPUMIsGuestInLongMode(pVCpu))
+                        fFlags |= DBGFPGDMP_FLAGS_LME;
+                }
+            }
+        }
+        else
+        {
+            if (fFlags & DBGFPGDMP_FLAGS_CURRENT_CR3)
+                cr3 = CPUMGetGuestCR3(pVCpu);
+            if (fFlags & DBGFPGDMP_FLAGS_CURRENT_MODE)
+            {
+                AssertCompile(DBGFPGDMP_FLAGS_PSE == X86_CR4_PSE);      AssertCompile(DBGFPGDMP_FLAGS_PAE == X86_CR4_PAE);
+                fFlags |= CPUMGetGuestCR4(pVCpu)  & (X86_CR4_PSE | X86_CR4_PAE);
+                AssertCompile(DBGFPGDMP_FLAGS_LME == MSR_K6_EFER_LME);  AssertCompile(DBGFPGDMP_FLAGS_NXE == MSR_K6_EFER_NXE);
+                fFlags |= CPUMGetGuestEFER(pVCpu) & (MSR_K6_EFER_LME & MSR_K6_EFER_NXE);
+            }
+        }
+    }
+    fFlags &= ~(DBGFPGDMP_FLAGS_CURRENT_MODE | DBGFPGDMP_FLAGS_CURRENT_CR3);
+
+    /*
+     * Call PGM to do the real work.
+     */
+    int rc;
+    if (fFlags & DBGFPGDMP_FLAGS_SHADOW)
+        rc = PGMR3DumpHierarchyHCEx(pVM, cr3, fFlags, *pu64FirstAddr, *pu64LastAddr, cMaxDepth, pHlp);
+    else
+        rc = PGMR3DumpHierarchyGCEx(pVM, cr3, fFlags, *pu64FirstAddr, *pu64LastAddr, cMaxDepth, pHlp);
+    return rc;
+}
+
+
+/**
+ * Dump paging structures.
+ *
+ * This API can be used to dump both guest and shadow structures.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   idCpu           The current CPU ID.
+ * @param   fFlags          The flags, DBGFPGDMP_FLAGS_XXX.
+ * @param   cr3             The CR3 to use (unless we're getting the current
+ *                          state, see @a fFlags).
+ * @param   u64FirstAddr    The address to start dumping at.
+ * @param   u64LastAddr     The address to end dumping after.
+ * @param   cMaxDepth       The depth.
+ * @param   pHlp            The output callbacks.  Defaults to the debug log if
+ *                          NULL.
+ */
+VMMDECL(int) DBGFR3PagingDumpEx(PVM pVM, VMCPUID idCpu, uint32_t fFlags, uint64_t cr3, uint64_t u64FirstAddr,
+                                uint64_t u64LastAddr, uint32_t cMaxDepth, PCDBGFINFOHLP pHlp)
+{
+    /*
+     * Input validation.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+    AssertReturn(!(fFlags & ~DBGFPGDMP_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(fFlags & (DBGFPGDMP_FLAGS_SHADOW | DBGFPGDMP_FLAGS_GUEST), VERR_INVALID_PARAMETER);
+    AssertReturn((fFlags & DBGFPGDMP_FLAGS_CURRENT_MODE) || !(fFlags & DBGFPGDMP_FLAGS_MODE_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(   !(fFlags & DBGFPGDMP_FLAGS_EPT)
+                 || !(fFlags & (DBGFPGDMP_FLAGS_LME | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_NXE))
+                 , VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(cMaxDepth, VERR_INVALID_PARAMETER);
+
+    /*
+     * Forward the request to the target CPU.
+     */
+    return VMR3ReqCallWaitU(pVM->pUVM, idCpu, (PFNRT)dbgfR3PagingDumpEx, 8,
+                            pVM, idCpu, fFlags, &cr3, &u64FirstAddr, &u64LastAddr, cMaxDepth, pHlp);
 }
 

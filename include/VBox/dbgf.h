@@ -917,6 +917,49 @@ VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddres
 VMMR3DECL(int) DBGFR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, void const *pvBuf, size_t cbRead);
 
 
+/** @name Flags for DBGFR3PagingDumpEx, PGMR3DumpHierarchyHCEx and
+ * PGMR3DumpHierarchyGCEx
+ * @{ */
+/** The CR3 from the current CPU state. */
+#define DBGFPGDMP_FLAGS_CURRENT_CR3     RT_BIT_32(0)
+/** The current CPU paging mode (PSE, PAE, LM, EPT, NX). */
+#define DBGFPGDMP_FLAGS_CURRENT_MODE    RT_BIT_32(1)
+/** Whether PSE is enabled (!DBGFPGDMP_FLAGS_CURRENT_STATE).
+ * Same value as X86_CR4_PSE. */
+#define DBGFPGDMP_FLAGS_PSE             RT_BIT_32(4) /*  */
+/** Whether PAE is enabled (!DBGFPGDMP_FLAGS_CURRENT_STATE).
+ * Same value as X86_CR4_PAE. */
+#define DBGFPGDMP_FLAGS_PAE             RT_BIT_32(5) /*  */
+/** Whether LME is enabled (!DBGFPGDMP_FLAGS_CURRENT_STATE).
+ * Same value as MSR_K6_EFER_LME. */
+#define DBGFPGDMP_FLAGS_LME             RT_BIT_32(8)
+/** Whether nested paging is enabled (!DBGFPGDMP_FLAGS_CURRENT_STATE). */
+#define DBGFPGDMP_FLAGS_NP              RT_BIT_32(9)
+/** Whether extended nested page tables are enabled
+ * (!DBGFPGDMP_FLAGS_CURRENT_STATE). */
+#define DBGFPGDMP_FLAGS_EPT             RT_BIT_32(10)
+/** Whether no-execution is enabled (!DBGFPGDMP_FLAGS_CURRENT_STATE).
+ * Same value as MSR_K6_EFER_NXE. */
+#define DBGFPGDMP_FLAGS_NXE             RT_BIT_32(11)
+/** Whether to print the header. */
+#define DBGFPGDMP_FLAGS_HEADER          RT_BIT_32(28)
+/** Whether to dump additional page information. */
+#define DBGFPGDMP_FLAGS_PAGE_INFO       RT_BIT_32(29)
+/** Dump the shadow tables if set.
+ * Cannot be used together with DBGFPGDMP_FLAGS_GUEST. */
+#define DBGFPGDMP_FLAGS_SHADOW          RT_BIT_32(30)
+/** Dump the guest tables if set.
+ * Cannot be used together with DBGFPGDMP_FLAGS_SHADOW. */
+#define DBGFPGDMP_FLAGS_GUEST           RT_BIT_32(31)
+/** Mask of valid bits. */
+#define DBGFPGDMP_FLAGS_VALID_MASK      UINT32_C(0xf0000f33)
+/** The mask of bits controlling the paging mode. */
+#define DBGFPGDMP_FLAGS_MODE_MASK       UINT32_C(0x00000f32)
+/** @}  */
+VMMDECL(int) DBGFR3PagingDumpEx(PVM pVM, VMCPUID idCpu, uint32_t fFlags, uint64_t cr3, uint64_t u64FirstAddr,
+                                uint64_t u64LastAddr, uint32_t cMaxDepth, PCDBGFINFOHLP pHlp);
+
+
 /** @name DBGFR3SelQueryInfo flags.
  * @{ */
 /** Get the info from the guest descriptor table. */

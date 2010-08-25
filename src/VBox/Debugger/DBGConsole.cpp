@@ -1965,6 +1965,7 @@ int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
     //pDbgc->DisasmPos        = {0};
     //pDbgc->SourcePos        = {0};
     //pDbgc->DumpPos          = {0};
+    pDbgc->pLastPos          = &pDbgc->DisasmPos;
     //pDbgc->cbDumpElement    = 0;
     //pDbgc->cVars            = 0;
     //pDbgc->paVars           = NULL;
