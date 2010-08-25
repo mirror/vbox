@@ -371,11 +371,18 @@ DECLINLINE(int) rtStrConvertWrapper(const char *pchInput, size_t cchInput, const
     if (hSelf != NIL_RTTHREAD)
     {
         PRTTHREADINT pThread = rtThreadGet(hSelf);
-        if (   pThread
-            && (pThread->fIntFlags & (RTTHREADINT_FLAGS_ALIEN | RTTHREADINT_FLAGS_MAIN)) != RTTHREADINT_FLAGS_ALIEN)
-            return rtstrConvertCached(pchInput, cchInput, pszInputCS,
-                                      (void **)ppszOutput, cbOutput, pszOutputCS,
-                                      cFactor, (iconv_t *)&pThread->ahIconvs[enmCacheIdx]);
+        if (pThread)
+        {
+            if ((pThread->fIntFlags & (RTTHREADINT_FLAGS_ALIEN | RTTHREADINT_FLAGS_MAIN)) != RTTHREADINT_FLAGS_ALIEN)
+            {
+                int rc = rtstrConvertCached(pchInput, cchInput, pszInputCS,
+                                            (void **)ppszOutput, cbOutput, pszOutputCS,
+                                            cFactor, (iconv_t *)&pThread->ahIconvs[enmCacheIdx]);
+                rtThreadRelease(pThread);
+                return rc;
+            }
+            rtThreadRelease(pThread);
+        }
     }
 #endif
     return rtStrConvertUncached(pchInput, cchInput, pszInputCS,
