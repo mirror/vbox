@@ -567,8 +567,11 @@ VBOX_DI_VBAPP_DYLIBS = \
 	MacOS/VBoxXPCOMC.dylib \
 	MacOS/components/VBoxC.dylib \
 	MacOS/components/VBoxSVCM.dylib \
-	MacOS/components/VBoxXPCOMIPCC.dylib \
+	MacOS/components/VBoxXPCOMIPCC.dylib
+ifneq ($(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/accessible/libqtaccessiblewidgets.dylib),)
+ VBOX_DI_VBAPP_DYLIBS += \
 	MacOS/accessible/libqtaccessiblewidgets.dylib
+endif
 ifdef VBOX_WITH_GUEST_CONTROL
  VBOX_DI_VBAPP_DYLIBS += \
 	MacOS/VBoxGuestControlSvc.dylib
