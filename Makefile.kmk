@@ -182,49 +182,57 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
 endif
 
 
-ifdef VBOX_WITH_QT4_SUN
 #
 # Install our Qt DLLs / Shared Objects / Frameworks.
 # Note: The installer fixes the darwin .dylibs when hardening is enabled.
 #
+ifeq ($(KBUILD_TARGET),darwin)
  INSTALLS += qt4-bin
  qt4-bin_MODE = 755
- ifeq ($(KBUILD_TARGET),darwin)
-  qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
-  qt4-bin_SOURCES = $(foreach qtmod, QtCore QtGui QtNetwork $(if $(VBOX_GUI_USE_QGL), QtOpenGL,) \
-   	,$(VBOX_PATH_QT4)/Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox)
-  ifdef VBOX_WITH_COCOA_QT
-   qt4-bin_SOURCES += \
-   	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/classes.nib \
-   	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/info.nib \
-   	$(VBOX_PATH_QT4)/Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGuiVBox.framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
-  endif
+ qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
+ qt4-bin_SOURCES = $(foreach qtmod, QtCore QtGui QtNetwork $(if $(VBOX_GUI_USE_QGL), QtOpenGL,) \
+  	,$(PATH_SDK_QT4_LIB)/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX)=>Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX))
+ ifdef VBOX_WITH_COCOA_QT
+  qt4-bin_SOURCES += \
+  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
+  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib=>Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
+  	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib=>Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
+ endif
+ ifneq ($(wildcard $(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib),)
   qt4-bin_SOURCES += \
   	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
-  qt4-bin_SYMLINKS = $(foreach qtmod, QtCore QtGui QtNetwork $(if $(VBOX_GUI_USE_QGL), QtOpenGL,) \
-  		,Frameworks/$(qtmod)VBox.framework/$(qtmod)VBox=>Versions/4/$(qtmod)VBox)
-  ifdef VBOX_WITH_COCOA_QT
-   qt4-bin_SYMLINKS += \
-   	Frameworks/QtGuiVBox.framework/Resources=>Versions/4/Resources/
-  endif
- else ifeq ($(KBUILD_TARGET),win)
-  qt4-bin_INST = $(INST_BIN)
-  qt4-bin_SOURCES = \
-	$(VBOX_PATH_QT4_LIB)/QtCoreVBox4.dll \
-	$(VBOX_PATH_QT4_LIB)/QtGuiVBox4.dll \
-	$(VBOX_PATH_QT4_LIB)/QtNetworkVBox4.dll \
-	$(if $(VBOX_GUI_USE_QGL), $(VBOX_PATH_QT4_LIB)/QtOpenGLVBox4.dll,) \
-	$(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4.dll=>accessible/qtaccessiblewidgets4.dll
- else
-  qt4-bin_INST = $(INST_BIN)
-  qt4-bin_SOURCES = \
-	$(VBOX_PATH_QT4_LIB)/libQtCoreVBox.so.4 \
-	$(VBOX_PATH_QT4_LIB)/libQtGuiVBox.so.4 \
-	$(VBOX_PATH_QT4_LIB)/libQtNetworkVBox.so.4 \
-	$(if $(VBOX_GUI_USE_QGL), $(VBOX_PATH_QT4_LIB)/libQtOpenGLVBox.so.4,) \
-	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
  endif
-endif # VBOX_WITH_QT4_SUN
+ qt4-bin_SYMLINKS = $(foreach qtmod, QtCore QtGui QtNetwork $(if $(VBOX_GUI_USE_QGL), QtOpenGL,) \
+ 		,Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/$(qtmod)$(VBOX_QT4_INFIX)=>Versions/4/$(qtmod)$(VBOX_QT4_INFIX))
+ ifdef VBOX_WITH_COCOA_QT
+  qt4-bin_SYMLINKS += \
+  	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Resources=>Versions/4/Resources/
+ endif
+else
+ ifdef VBOX_WITH_QT4_SUN
+  ifeq ($(KBUILD_TARGET),win)
+   INSTALLS += qt4-bin
+   qt4-bin_MODE = 755
+   qt4-bin_INST = $(INST_BIN)
+   qt4-bin_SOURCES = \
+ 	$(VBOX_PATH_QT4_LIB)/QtCoreVBox4.dll \
+ 	$(VBOX_PATH_QT4_LIB)/QtGuiVBox4.dll \
+ 	$(VBOX_PATH_QT4_LIB)/QtNetworkVBox4.dll \
+ 	$(if $(VBOX_GUI_USE_QGL), $(VBOX_PATH_QT4_LIB)/QtOpenGLVBox4.dll,) \
+ 	$(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4.dll=>accessible/qtaccessiblewidgets4.dll
+  else
+   INSTALLS += qt4-bin
+   qt4-bin_MODE = 755
+   qt4-bin_INST = $(INST_BIN)
+   qt4-bin_SOURCES = \
+ 	$(VBOX_PATH_QT4_LIB)/libQtCoreVBox.so.4 \
+ 	$(VBOX_PATH_QT4_LIB)/libQtGuiVBox.so.4 \
+ 	$(VBOX_PATH_QT4_LIB)/libQtNetworkVBox.so.4 \
+ 	$(if $(VBOX_GUI_USE_QGL), $(VBOX_PATH_QT4_LIB)/libQtOpenGLVBox.so.4,) \
+ 	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
+  endif
+ endif # VBOX_WITH_QT4_SUN
+endif
 
 
 #
