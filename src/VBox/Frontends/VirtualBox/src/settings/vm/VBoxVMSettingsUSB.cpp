@@ -130,6 +130,10 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
 
     /* Applying language settings */
     retranslateUi();
+
+#ifndef VBOX_WITH_EHCI
+    mCbUSB2->setHidden(true);
+#endif
 }
 
 bool VBoxVMSettingsUSB::isOHCIEnabled() const
