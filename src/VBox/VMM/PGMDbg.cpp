@@ -68,7 +68,7 @@ typedef struct PGMR3DUMPHIERARCHYSTATE
     /** The last address to dump structures for. */
     uint64_t        u64LastAddress;
     /** The number of leaf entries that we've printed. */
-    uint64_t        cLeafs;
+    uint64_t        cLeaves;
 } PGMR3DUMPHIERARCHYSTATE;
 /** Pointer to the paging hierarchy dumper state. */
 typedef PGMR3DUMPHIERARCHYSTATE *PPGMR3DUMPHIERARCHYSTATE;
@@ -888,7 +888,7 @@ static int  pgmR3DumpHierarchyHCPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
                                     Pte.u & PGM_PTFLAGS_CSAM_VALIDATED? 'v' : '-',
                                     Pte.u & X86_PTE_PAE_PG_MASK);
 
-            pState->cLeafs++;
+            pState->cLeaves++;
         }
         else if (PGMSHWPTEPAE_GET_U(pPT->a[i]) & X86_PTE_P)
         {
@@ -906,7 +906,7 @@ static int  pgmR3DumpHierarchyHCPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
                                         :  "%08llx 2   |  invalid: %RX64\n",
                                         pState->u64Address + ((uint64_t)i << X86_PT_PAE_SHIFT),
                                         PGMSHWPTEPAE_GET_U(pPT->a[i]));
-            pState->cLeafs++;
+            pState->cLeaves++;
         }
     return VINF_SUCCESS;
 }
@@ -974,7 +974,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
                     pState->pHlp->pfnPrintf(pState->pHlp, " 20:13=%02llx!", (Pde.u >> 13) & 0xff);
                 pState->pHlp->pfnPrintf(pState->pHlp, "\n");
 
-                pState->cLeafs++;
+                pState->cLeaves++;
             }
             else
             {
@@ -1006,7 +1006,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
                         rc = rc2;
                 }
                 else
-                    pState->cLeafs++;
+                    pState->cLeaves++;
             }
         }
     }
@@ -1097,7 +1097,7 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                     rc = rc2;
             }
             else
-                pState->cLeafs++;
+                pState->cLeaves++;
         }
     }
     return rc;
@@ -1161,7 +1161,7 @@ static int pgmR3DumpHierarchyHcPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                     rc = rc2;
             }
             else
-                pState->cLeafs++;
+                pState->cLeaves++;
         }
     }
     return rc;
@@ -1288,7 +1288,7 @@ static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                           ((Pde.u & X86_PDE4M_PG_HIGH_MASK) << X86_PDE4M_PG_HIGH_SHIFT)
                                         | (Pde.u & X86_PDE4M_PG_MASK) );
-                pState->cLeafs++;
+                pState->cLeaves++;
             }
             else
             {
@@ -1313,7 +1313,7 @@ static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                         rc = rc2;
                 }
                 else
-                    pState->cLeafs++;
+                    pState->cLeaves++;
             }
         }
     }
@@ -1390,7 +1390,7 @@ VMMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fL
     State.u64Address        = 0;
     State.u64FirstAddress   = 0;
     State.u64LastAddress    = fLongMode ? UINT64_MAX : UINT32_MAX;
-    State.cLeafs            = 0;
+    State.cLeaves           = 0;
     return pdmR3DumpHierarchyHcDoIt(&State, cr3, cMaxDepth);
 }
 
