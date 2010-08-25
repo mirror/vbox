@@ -1157,7 +1157,7 @@ static void dump_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64Ba
         addr = *(uint64_t *)bdle;
         len = *(uint32_t *)&bdle[8];
         ioc = *(uint32_t *)&bdle[12];
-        Log(("hda: %s bdle[%d] a:%x, len:%x, ios:%d\n",  (i == pBdle->u32BdleCvi? "[C]": "   "), i, addr, len, ioc));
+        Log(("hda: %s bdle[%d] a:%lx, len:%x, ioc:%d\n",  (i == pBdle->u32BdleCvi? "[C]": "   "), i, addr, len, ioc));
         sum += len;
     }
     Log(("hda: sum: %d\n", sum));
