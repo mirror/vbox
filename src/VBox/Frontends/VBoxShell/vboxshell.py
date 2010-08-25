@@ -256,8 +256,11 @@ class CachedMach:
 def cacheMachines(ctx,list):
     result = []
     for m in list:
-        elem = CachedMach(m)
-        result.append(elem)
+        try:
+            elem = CachedMach(m)
+            result.append(elem)
+        except:
+            pass
     return result
 
 def getMachines(ctx, invalidate = False, simple=False):
@@ -560,7 +563,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
 
 
 def cmdClosedVm(ctx,mach,cmd,args=[],save=True):
-    session = ctx['global'].openMachineSession(mach, False)
+    session = ctx['global'].openMachineSession(mach, True)
     mach = session.machine
     try:
         cmd(ctx, mach, args)
@@ -570,7 +573,12 @@ def cmdClosedVm(ctx,mach,cmd,args=[],save=True):
         if g_verbose:
             traceback.print_exc()
     if save:
-         mach.saveSettings()
+        try:
+            mach.saveSettings()
+        except Exception, e:
+            printErr(ctx,e)
+            if g_verbose:
+                traceback.print_exc()
     ctx['global'].closeMachineSession(session)
 
 
@@ -763,11 +771,16 @@ def enumFromString(ctx,enum,str):
 
 def listCmd(ctx, args):
     for m in getMachines(ctx, True):
-        if m.teleporterEnabled:
-            tele = "[T] "
-        else:
-            tele = "    "
-        print "%sMachine '%s' [%s], machineState=%s, sessionState=%s" %(tele,colVm(ctx,m.name),m.id,asEnumElem(ctx, "MachineState", m.state), asEnumElem(ctx,"SessionState", m.sessionState))
+        try:
+            if m.teleporterEnabled:
+                tele = "[T] "
+            else:
+                tele = "    "
+                print "%sMachine '%s' [%s], machineState=%s, sessionState=%s" %(tele,colVm(ctx,m.name),m.id,asEnumElem(ctx, "MachineState", m.state), asEnumElem(ctx,"SessionState", m.sessionState))
+        except Exception, e:
+            printErr(ctx,e)
+            if g_verbose:
+                traceback.print_exc()
     return 0
 
 def infoCmd(ctx,args):
