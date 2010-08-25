@@ -686,13 +686,14 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
             uint32_t cbLen = 0;
             while (cbLen < cbEnv)
             {
-                if (RTStrAPrintf(&pData->papszEnv[i++], "%s", pcCur) < 0)
+                int cbStr = RTStrAPrintf(&pData->papszEnv[i++], "%s", pcCur);
+                if (cbStr < 0)
                 {
                     rc = VERR_NO_MEMORY;
                     break;
                 }
-                cbLen += strlen(pcCur) + 1; /* Skip terminating zero. */
-                pcCur += cbLen;
+                cbLen += cbStr + 1; /* Skip terminating '\0' */
+                pcCur += cbStr + 1; /* Skip terminating '\0' */
             }
         }
 
