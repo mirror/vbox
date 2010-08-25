@@ -686,6 +686,12 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
             uint32_t cbLen = 0;
             while (cbLen < cbEnv)
             {
+                /* sanity check */
+                if (i >= uNumEnvVars)
+                {
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
                 int cbStr = RTStrAPrintf(&pData->papszEnv[i++], "%s", pcCur);
                 if (cbStr < 0)
                 {
