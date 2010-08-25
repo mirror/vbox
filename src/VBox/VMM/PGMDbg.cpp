@@ -58,9 +58,17 @@ typedef struct PGMR3DUMPHIERARCHYSTATE
     bool            fPae;
     /** Set if long mode is enabled. */
     bool            fLme;
+    /** Set if nested paging. */
+    bool            fNp;
+    /** Set if EPT. */
+    bool            fEpt;
     /** The number or chars the address needs. */
     uint8_t         cchAddress;
-    bool            afReserved[4];
+    /** Dump the page info as well (shadow page summary / guest physical
+     *  page summary). */
+    bool            fDumpPageInfo;
+    /** Whether or not to print the header. */
+    bool            fPrintHeader;
     /** The current address.  */
     uint64_t        u64Address;
     /** The last address to dump structures for. */
@@ -826,14 +834,41 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR
 
 
 /**
+ * Dumps the a shadow page summary or smth.
+ *
+ * @param   pState              The dumper state.
+ * @param   HCPhys              The page address.
+ */
+static void pgmR3DumpHierarchyHcShwPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys)
+{
+    /* later */
+    NOREF(pState); NOREF(HCPhys);
+}
+
+
+/**
+ * Figures out which guest page this is and dumps a summary.
+ *
+ * @param   pState              The dumper state.
+ * @param   HCPhys              The page address.
+ * @param   cbPage              The page size.
+ */
+static void pgmR3DumpHierarchyHcPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, uint32_t cbPage)
+{
+    /* later */
+    NOREF(pState); NOREF(HCPhys); NOREF(cbPage);
+}
+
+
+/**
  * Dumps a PAE shadow page table.
  *
  * @returns VBox status code (VINF_SUCCESS).
- * @param   pArgs       Dumper state.
- * @param   pPT         Pointer to the page table.
- * @param   pHlp        Pointer to the output functions.
+ * @param   pState              The dumper state.
+ * @param   HCPhys              The page table address.
+ * @param   fIsMapping          Whether it is a mapping.
  */
-static int  pgmR3DumpHierarchyHCPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fIsMapping)
+static int pgmR3DumpHierarchyHCPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fIsMapping)
 {
     PPGMSHWPTPAE pPT = NULL;
     if (!fIsMapping)
@@ -864,48 +899,58 @@ static int  pgmR3DumpHierarchyHCPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
         return VERR_INVALID_PARAMETER;
     }
 
-    for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
-        if (PGMSHWPTEPAE_IS_P(pPT->a[i]))
+    const uint64_t  u64BaseAddress  = pState->u64Address & ~(RT_BIT_64(X86_PT_PAE_SHIFT) - 1);
+    uint32_t        iFirst          = (pState->u64FirstAddress >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK;
+    uint32_t        iLast           = (pState->u64LastAddress  >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK;
+    for (uint32_t i = iFirst; i <= iLast; i++)
+        if (PGMSHWPTEPAE_GET_U(pPT->a[i]) & X86_PTE_P)
         {
-            X86PTEPAE Pte;
-            Pte.u = PGMSHWPTEPAE_GET_U(pPT->a[i]);
-            pState->pHlp->pfnPrintf(pState->pHlp,
-                                    pState->fLme  /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
-                                    ? "%016llx 3    | P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx\n"
-                                    :  "%08llx 2   |  P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx\n",
-                                    pState->u64Address + ((uint64_t)i << X86_PT_PAE_SHIFT),
-                                    Pte.n.u1Write       ? 'W'  : 'R',
-                                    Pte.n.u1User        ? 'U'  : 'S',
-                                    Pte.n.u1Accessed    ? 'A'  : '-',
-                                    Pte.n.u1Dirty       ? 'D'  : '-',
-                                    Pte.n.u1Global      ? 'G'  : '-',
-                                    Pte.n.u1WriteThru   ? "WT" : "--",
-                                    Pte.n.u1CacheDisable? "CD" : "--",
-                                    Pte.n.u1PAT         ? "AT" : "--",
-                                    Pte.n.u1NoExecute   ? "NX" : "--",
-                                    Pte.u & PGM_PTFLAGS_TRACK_DIRTY   ? 'd' : '-',
-                                    Pte.u & RT_BIT(10)                ? '1' : '0',
-                                    Pte.u & PGM_PTFLAGS_CSAM_VALIDATED? 'v' : '-',
-                                    Pte.u & X86_PTE_PAE_PG_MASK);
+            pState->u64Address = u64BaseAddress + ((uint64_t)i << X86_PT_PAE_SHIFT);
+            if (   pState->u64Address < pState->u64FirstAddress
+                || pState->u64Address > pState->u64LastAddress)
+                continue;
 
-            pState->cLeaves++;
-        }
-        else if (PGMSHWPTEPAE_GET_U(pPT->a[i]) & X86_PTE_P)
-        {
-            if (   (PGMSHWPTEPAE_GET_U(pPT->a[i]) & (pState->pVM->pgm.s.HCPhysInvMmioPg | X86_PTE_PAE_MBZ_MASK_NO_NX))
-                ==                                  (pState->pVM->pgm.s.HCPhysInvMmioPg | X86_PTE_PAE_MBZ_MASK_NO_NX))
+            if (PGMSHWPTEPAE_IS_P(pPT->a[i]))
+            {
+                X86PTEPAE Pte;
+                Pte.u = PGMSHWPTEPAE_GET_U(pPT->a[i]);
+                pState->pHlp->pfnPrintf(pState->pHlp,
+                                        pState->fLme  /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
+                                        ? "%016llx 3    | P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx"
+                                        :  "%08llx 2   |  P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx",
+                                        pState->u64Address,
+                                        Pte.n.u1Write       ? 'W'  : 'R',
+                                        Pte.n.u1User        ? 'U'  : 'S',
+                                        Pte.n.u1Accessed    ? 'A'  : '-',
+                                        Pte.n.u1Dirty       ? 'D'  : '-',
+                                        Pte.n.u1Global      ? 'G'  : '-',
+                                        Pte.n.u1WriteThru   ? "WT" : "--",
+                                        Pte.n.u1CacheDisable? "CD" : "--",
+                                        Pte.n.u1PAT         ? "AT" : "--",
+                                        Pte.n.u1NoExecute   ? "NX" : "--",
+                                        Pte.u & PGM_PTFLAGS_TRACK_DIRTY   ? 'd' : '-',
+                                        Pte.u & RT_BIT(10)                ? '1' : '0',
+                                        Pte.u & PGM_PTFLAGS_CSAM_VALIDATED? 'v' : '-',
+                                        Pte.u & X86_PTE_PAE_PG_MASK);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyHcPageInfo(pState, Pte.u & X86_PTE_PAE_PG_MASK, _4K);
+                if ((Pte.u >> 52) & 0x7ff)
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx%s", (Pte.u >> 52) & 0x7ff, pState->fLme ? "" : "!");
+                pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+            }
+            else if (   (PGMSHWPTEPAE_GET_U(pPT->a[i]) & (pState->pVM->pgm.s.HCPhysInvMmioPg | X86_PTE_PAE_MBZ_MASK_NO_NX))
+                     ==                                  (pState->pVM->pgm.s.HCPhysInvMmioPg | X86_PTE_PAE_MBZ_MASK_NO_NX))
                 pState->pHlp->pfnPrintf(pState->pHlp,
                                         pState->fLme
                                         ? "%016llx 3    | invalid / MMIO optimization\n"
                                         :  "%08llx 2   |  invalid / MMIO optimization\n",
-                                        pState->u64Address + ((uint64_t)i << X86_PT_PAE_SHIFT));
+                                        pState->u64Address);
             else
                 pState->pHlp->pfnPrintf(pState->pHlp,
                                         pState->fLme
                                         ? "%016llx 3    | invalid: %RX64\n"
                                         :  "%08llx 2   |  invalid: %RX64\n",
-                                        pState->u64Address + ((uint64_t)i << X86_PT_PAE_SHIFT),
-                                        PGMSHWPTEPAE_GET_U(pPT->a[i]));
+                                        pState->u64Address, PGMSHWPTEPAE_GET_U(pPT->a[i]));
             pState->cLeaves++;
         }
     return VINF_SUCCESS;
@@ -939,15 +984,15 @@ static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
     }
 
     int             rc              = VINF_SUCCESS;
-    const uint64_t  u64BaseAddress  = pState->u64Address;
-    for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
+    const uint64_t  u64BaseAddress  = pState->u64Address & ~(RT_BIT_64(X86_PD_PAE_SHIFT) - 1);
+    uint32_t        iFirst          = (pState->u64FirstAddress >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+    uint32_t        iLast           = (pState->u64LastAddress  >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+    for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PDEPAE Pde = pPD->a[i];
-        pState->u64Address = u64BaseAddress + ((uint64_t)i << X86_PD_PAE_SHIFT);
-        if (    Pde.n.u1Present
-            &&  pState->u64Address >= pState->u64FirstAddress
-            &&  pState->u64Address <= pState->u64LastAddress)
+        if (Pde.n.u1Present)
         {
+            pState->u64Address = u64BaseAddress + ((uint64_t)i << X86_PD_PAE_SHIFT);
             if (Pde.b.u1Size)
             {
                 pState->pHlp->pfnPrintf(pState->pHlp,
@@ -968,10 +1013,12 @@ static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE2M_PAE_PG_MASK);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyHcPageInfo(pState, Pde.u & X86_PDE2M_PAE_PG_MASK, _2M);
                 if ((Pde.u >> 52) & 0x7ff)
-                    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx!", (Pde.u >> 52) & 0x7ff);
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx%s", (Pde.u >> 52) & 0x7ff, pState->fLme ? "" : "!");
                 if ((Pde.u >> 13) & 0xff)
-                    pState->pHlp->pfnPrintf(pState->pHlp, " 20:13=%02llx!", (Pde.u >> 13) & 0xff);
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 20:13=%02llx%s", (Pde.u >> 13) & 0x0ff, pState->fLme ? "" : "!");
                 pState->pHlp->pfnPrintf(pState->pHlp, "\n");
 
                 pState->cLeaves++;
@@ -995,6 +1042,8 @@ static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE_PAE_PG_MASK_FULL);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyHcShwPageInfo(pState, Pde.u & X86_PDE_PAE_PG_MASK_FULL);
                 if ((Pde.u >> 52) & 0x7ff)
                     pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx!", (Pde.u >> 52) & 0x7ff);
                 pState->pHlp->pfnPrintf(pState->pHlp, "\n");
@@ -1028,6 +1077,10 @@ static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
  */
 static int  pgmR3DumpHierarchyHCPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
+    /* Fend of addresses that are out of range in PAE mode - simplifies the code below. */
+    if (!pState->fLme && pState->u64Address >= _4G)
+        return VINF_SUCCESS;
+
     Assert(cMaxDepth > 0);
     cMaxDepth--;
 
@@ -1041,19 +1094,17 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
     }
 
     int             rc              = VINF_SUCCESS;
-    const uint64_t  u64BaseAddress  = pState->u64Address;
-    const unsigned  c               = pState->fLme ? RT_ELEMENTS(pPDPT->a) : X86_PG_PAE_PDPE_ENTRIES;
-    for (unsigned i = 0; i < c; i++)
+    const uint64_t  u64BaseAddress  = pState->u64Address & ~(RT_BIT_64(X86_PDPT_SHIFT) - 1);
+    uint32_t        iFirst          = (pState->u64FirstAddress >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    uint32_t        iLast           = (pState->u64LastAddress  >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PDPE Pdpe = pPDPT->a[i];
-        pState->u64Address = u64BaseAddress + ((uint64_t)i << X86_PDPT_SHIFT);
-        if (    Pdpe.n.u1Present
-            &&  pState->u64Address >= pState->u64FirstAddress
-            &&  pState->u64Address <= pState->u64LastAddress)
+        if (Pdpe.n.u1Present)
         {
             if (pState->fLme)
             {
-                pState->pHlp->pfnPrintf(pState->pHlp, /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
+                pState->pHlp->pfnPrintf(pState->pHlp, /*P R  S  A  D  G  WT CD AT NX .. a p ?  */
                                         "%016llx 1  |   P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
                                         pState->u64Address,
                                         Pdpe.lm.u1Write       ? 'W'  : 'R',
@@ -1069,27 +1120,36 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                                         Pdpe.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
                                         Pdpe.u & RT_BIT(11)               ? '1' : '0',
                                         Pdpe.u & X86_PDPE_PG_MASK_FULL);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyHcShwPageInfo(pState, Pdpe.u & X86_PDPE_PG_MASK_FULL);
                 if ((Pdpe.u >> 52) & 0x7ff)
-                    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx\n", (Pdpe.u >> 52) & 0x7ff);
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx", (Pdpe.u >> 52) & 0x7ff);
             }
             else
             {
-                pState->pHlp->pfnPrintf(pState->pHlp,/*P             G  WT CD AT NX 4M a p ?  */
-                                        "%08llx 0 |    P             %c %s %s %s %s .. %c%c%c  %016llx",
+                pState->pHlp->pfnPrintf(pState->pHlp,/*P R  S  A  D  G  WT CD AT NX .. a p ?  */
+                                        "%08llx 0 |    P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
                                         pState->u64Address,
+                                        Pdpe.n.u2Reserved & 1? '!'  : '.', /* mbz */
+                                        Pdpe.n.u2Reserved & 2? '!'  : '.', /* mbz */
                                         Pdpe.n.u4Reserved & 1? '!'  : '.', /* mbz */
-                                        Pdpe.n.u4Reserved & 4? '!'  : '.', /* mbz */
+                                        Pdpe.n.u4Reserved & 2? '!'  : '.', /* mbz */
+                                        Pdpe.n.u4Reserved & 8? '!'  : '.', /* mbz */
                                         Pdpe.n.u1WriteThru   ? "WT" : "--",
                                         Pdpe.n.u1CacheDisable? "CD" : "--",
                                         Pdpe.n.u4Reserved & 2? "!"  : "..",/* mbz */
+                                        Pdpe.lm.u1NoExecute  ? "!!"  : "..",/* mbz */
                                         Pdpe.u & RT_BIT(9)                ? '1' : '0',
                                         Pdpe.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
                                         Pdpe.u & RT_BIT(11)               ? '1' : '0',
                                         Pdpe.u & X86_PDPE_PG_MASK_FULL);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyHcShwPageInfo(pState, Pdpe.u & X86_PDPE_PG_MASK_FULL);
                 if ((Pdpe.u >> 52) & 0xfff)
-                    pState->pHlp->pfnPrintf(pState->pHlp, " 63:52=%03llx\n", (Pdpe.u >> 52) & 0xfff);
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 63:52=%03llx!", (Pdpe.u >> 52) & 0xfff);
             }
             pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
             if (cMaxDepth)
             {
                 int rc2 = pgmR3DumpHierarchyHCPaePD(pState, Pdpe.u & X86_PDPE_PG_MASK_FULL, cMaxDepth);
@@ -1114,6 +1174,9 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
  */
 static int pgmR3DumpHierarchyHcPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
+    Assert(cMaxDepth);
+    cMaxDepth--;
+
     PX86PML4 pPML4 = (PX86PML4)MMPagePhys2Page(pState->pVM, HCPhys);
     if (!pPML4)
     {
@@ -1122,17 +1185,15 @@ static int pgmR3DumpHierarchyHcPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
     }
 
     int         rc      = VINF_SUCCESS;
-    uint32_t    cFound  = 0;
-    for (uint32_t i = (pState->u64LastAddress >> X86_PML4_SHIFT) & X86_PML4_MASK; i < RT_ELEMENTS(pPML4->a); i++)
+    uint32_t    iFirst  = (pState->u64FirstAddress >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    uint32_t    iLast   = (pState->u64LastAddress  >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PML4E Pml4e = pPML4->a[i];
-        pState->u64Address = ((uint64_t)i << X86_PML4_SHIFT)
-                           | (((uint64_t)i >> (X86_PML4_SHIFT - X86_PDPT_SHIFT - 1)) * UINT64_C(0xffff000000000000));
-        if (    Pml4e.n.u1Present
-            &&  pState->u64Address >= pState->u64FirstAddress
-            &&  pState->u64Address <= pState->u64LastAddress
-           )
+        if (Pml4e.n.u1Present)
         {
+            pState->u64Address = ((uint64_t)i << X86_PML4_SHIFT)
+                               | (i >= RT_ELEMENTS(pPML4->a) / 2 ? UINT64_C(0xffff000000000000) : 0);
             pState->pHlp->pfnPrintf(pState->pHlp, /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
                                     "%016llx 0 |    P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
                                     pState->u64Address,
@@ -1149,14 +1210,15 @@ static int pgmR3DumpHierarchyHcPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                     Pml4e.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
                                     Pml4e.u & RT_BIT(11)               ? '1' : '0',
                                     Pml4e.u & X86_PML4E_PG_MASK);
-            /** @todo Dump the shadow page referenced? */
+            if (pState->fDumpPageInfo)
+                pgmR3DumpHierarchyHcShwPageInfo(pState, Pml4e.u & X86_PML4E_PG_MASK);
             if ((Pml4e.u >> 52) & 0x7ff)
                 pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx!", (Pml4e.u >> 52) & 0x7ff);
             pState->pHlp->pfnPrintf(pState->pHlp, "\n");
 
-            if (cMaxDepth >= 1)
+            if (cMaxDepth)
             {
-                int rc2 = pgmR3DumpHierarchyHCPaePDPT(pState, Pml4e.u & X86_PML4E_PG_MASK, cMaxDepth - 1);
+                int rc2 = pgmR3DumpHierarchyHCPaePDPT(pState, Pml4e.u & X86_PML4E_PG_MASK, cMaxDepth);
                 if (rc2 < rc && RT_SUCCESS(rc))
                     rc = rc2;
             }
@@ -1205,18 +1267,18 @@ static int pgmR3DumpHierarchyHC32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
     }
 
 
-    for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
+    const uint64_t  u64BaseAddress  = pState->u64Address & ~(RT_BIT_64(X86_PT_SHIFT) - 1);
+    uint32_t        iFirst          = RT_MIN(pState->u64FirstAddress >> X86_PT_SHIFT, X86_PG_ENTRIES);
+    uint32_t        iLast           = RT_MIN(pState->u64LastAddress  >> X86_PT_SHIFT, X86_PG_ENTRIES - 1);
+    for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PTE Pte = pPT->a[i];
         if (Pte.n.u1Present)
         {
-            uint64_t u64Address = pState->u64Address + (i << X86_PT_SHIFT);
-            if (   u64Address < pState->u64FirstAddress
-                || u64Address < pState->u64LastAddress)
-                continue;
+            pState->u64Address = u64BaseAddress + (i << X86_PT_SHIFT);
             pState->pHlp->pfnPrintf(pState->pHlp,/*P R  S  A  D  G  WT CD AT NX 4M a m d  */
-                                    "%08llx 1  |   P %c %c %c %c %c %s %s %s .. 4K %c%c%c  %08x\n",
-                                    u64Address,
+                                    "%08llx 1  |   P %c %c %c %c %c %s %s %s .. 4K %c%c%c  %08x",
+                                    pState->u64Address,
                                     Pte.n.u1Write       ? 'W'  : 'R',
                                     Pte.n.u1User        ? 'U'  : 'S',
                                     Pte.n.u1Accessed    ? 'A'  : '-',
@@ -1229,6 +1291,9 @@ static int pgmR3DumpHierarchyHC32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                     Pte.u & RT_BIT(10)                  ? '1' : '0',
                                     Pte.u & PGM_PTFLAGS_CSAM_VALIDATED  ? 'v' : '-',
                                     Pte.u & X86_PDE_PG_MASK);
+            if (pState->fDumpPageInfo)
+                pgmR3DumpHierarchyHcPageInfo(pState, Pte.u & X86_PDE_PG_MASK, _4K);
+            pState->pHlp->pfnPrintf(pState->pHlp, "\n");
         }
     }
     return VINF_SUCCESS;
@@ -1247,6 +1312,9 @@ static int pgmR3DumpHierarchyHC32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
  */
 static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
+    if (pState->u64Address >= _4G)
+        return VINF_SUCCESS;
+
     Assert(cMaxDepth > 0);
     cMaxDepth--;
 
@@ -1259,21 +1327,21 @@ static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
     }
 
     int             rc              = VINF_SUCCESS;
-    const uint64_t  u64BaseAddress  = pState->u64Address;
-    for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
+    const uint64_t  u64BaseAddress  = pState->u64Address & ~(RT_BIT_64(X86_PD_SHIFT) - 1);
+    uint32_t        iFirst          = RT_MIN(pState->u64FirstAddress >> X86_PD_SHIFT, X86_PG_ENTRIES);
+    uint32_t        iLast           = RT_MIN(pState->u64LastAddress  >> X86_PD_SHIFT, X86_PG_ENTRIES - 1);
+    for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PDE Pde = pPD->a[i];
         if (Pde.n.u1Present)
         {
             pState->u64Address = (uint32_t)i << X86_PD_SHIFT;
-            if (   pState->u64Address < pState->u64FirstAddress
-                && pState->u64Address > pState->u64LastAddress)
-                continue;
-
             if (Pde.b.u1Size && pState->fPse)
             {
+                uint64_t u64Phys = ((uint64_t)(Pde.u & X86_PDE4M_PG_HIGH_MASK) << X86_PDE4M_PG_HIGH_SHIFT)
+                                 | (Pde.u & X86_PDE4M_PG_MASK);
                 pState->pHlp->pfnPrintf(pState->pHlp,/*P R  S  A  D  G  WT CD AT NX 4M a m d   phys */
-                                        "%08llx 0 |    P %c %c %c %c %c %s %s %s .. 4M %c%c%c  %08llx\n",
+                                        "%08llx 0 |    P %c %c %c %c %c %s %s %s .. 4M %c%c%c  %08llx",
                                         pState->u64Address,
                                         Pde.b.u1Write       ? 'W'  : 'R',
                                         Pde.b.u1User        ? 'U'  : 'S',
@@ -1286,14 +1354,16 @@ static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                         Pde.u & RT_BIT_32(9)            ? '1' : '0',
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
-                                          ((Pde.u & X86_PDE4M_PG_HIGH_MASK) << X86_PDE4M_PG_HIGH_SHIFT)
-                                        | (Pde.u & X86_PDE4M_PG_MASK) );
+                                        u64Phys);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyHcPageInfo(pState, u64Phys, _4M);
+                pState->pHlp->pfnPrintf(pState->pHlp, "\n");
                 pState->cLeaves++;
             }
             else
             {
                 pState->pHlp->pfnPrintf(pState->pHlp,/*P R  S  A  D  G  WT CD AT NX 4M a m d   phys */
-                                        "%08llx 0 |    P %c %c %c %c %c %s %s .. .. 4K %c%c%c  %08x\n",
+                                        "%08llx 0 |    P %c %c %c %c %c %s %s .. .. 4K %c%c%c  %08x",
                                         pState->u64Address,
                                         Pde.n.u1Write       ? 'W'  : 'R',
                                         Pde.n.u1User        ? 'U'  : 'S',
@@ -1306,6 +1376,10 @@ static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE_PG_MASK);
+                if (pState->fDumpPageInfo)
+                    pgmR3DumpHierarchyHcShwPageInfo(pState, Pde.u & X86_PDE_PG_MASK);
+                pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
                 if (cMaxDepth)
                 {
                     int rc2 = pgmR3DumpHierarchyHC32BitPT(pState, Pde.u & X86_PDE_PG_MASK, !!(Pde.u & PGM_PDFLAGS_MAPPING));
@@ -1332,35 +1406,107 @@ static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
  */
 static int pdmR3DumpHierarchyHcDoIt(PPGMR3DUMPHIERARCHYSTATE pState, uint64_t cr3, unsigned cMaxDepth)
 {
+    int rc;
     const unsigned cch = pState->cchAddress;
-    pState->pHlp->pfnPrintf(pState->pHlp,
-                            "cr3=%0*llx %s\n"
-                            "%-*s        P - Present\n"
-                            "%-*s        | R/W - Read (0) / Write (1)\n"
-                            "%-*s        | | U/S - User (1) / Supervisor (0)\n"
-                            "%-*s        | | | A - Accessed\n"
-                            "%-*s        | | | | D - Dirty\n"
-                            "%-*s        | | | | | G - Global\n"
-                            "%-*s        | | | | | | WT - Write thru\n"
-                            "%-*s        | | | | | | |  CD - Cache disable\n"
-                            "%-*s        | | | | | | |  |  AT - Attribute table (PAT)\n"
-                            "%-*s        | | | | | | |  |  |  NX - No execute (K8)\n"
-                            "%-*s        | | | | | | |  |  |  |  4K/4M/2M - Page size.\n"
-                            "%-*s        | | | | | | |  |  |  |  |  AVL - a=allocated; m=mapping; d=track dirty;\n"
-                            "%-*s        | | | | | | |  |  |  |  |  |     p=permanent; v=validated;\n"
-                            "%-*s Level  | | | | | | |  |  |  |  |  |    Page\n"
-                          /* xxxx n **** P R S A D G WT CD AT NX 4M AVL xxxxxxxxxxxxx
-                                         - W U - - - -- -- -- -- -- 010 */
-                            ,
-                            cch, cr3,
-                            pState->fLme ? "Long Mode" : pState->fPae ? "PAE" : pState->fPse ? "32-bit w/ PSE" : "32-bit",
-                            cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "",
-                            cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address");
-    if (pState->fLme)
-        return pgmR3DumpHierarchyHcPaePML4(pState, cr3 & X86_CR3_PAGE_MASK,     cMaxDepth);
-    if (pState->fPae)
-        return pgmR3DumpHierarchyHCPaePDPT(pState, cr3 & X86_CR3_PAE_PAGE_MASK, cMaxDepth);
-    return     pgmR3DumpHierarchyHC32BitPD(pState, cr3 & X86_CR3_PAGE_MASK,     cMaxDepth);
+    if (pState->fEpt)
+    {
+        if (pState->fPrintHeader)
+            pState->pHlp->pfnPrintf(pState->pHlp,
+                                    "cr3=%0*llx Extended Page Tables\n"
+                                    "%-*s        R - Readable\n"
+                                    "%-*s        | W - Writeable\n"
+                                    "%-*s        | | X - Executable\n"
+                                    "%-*s        | | | EMT - EPT memory type\n"
+                                    "%-*s        | | | |   PAT - Ignored PAT?\n"
+                                    "%-*s        | | | |   |    AVL1 - 4 available bits\n"
+                                    "%-*s        | | | |   |    |   AVL2 - 12 available bits\n"
+                                    "%-*s Level  | | | |   |    |    |     page  \n"
+                                  /* xxxx n **** R W X EMT PAT AVL1 AVL2   xxxxxxxxxxxxx
+                                                 R W X  7   0   f   fff    0123456701234567 */
+                                    ,
+                                    cch, cr3,
+                                    cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address");
+
+        pState->pHlp->pfnPrintf(pState->pHlp, "EPT dumping is not yet implemented, sorry.\n");
+        /** @todo implemented EPT dumping. */
+        rc = VERR_NOT_IMPLEMENTED;
+    }
+    else
+    {
+        if (pState->fPrintHeader)
+            pState->pHlp->pfnPrintf(pState->pHlp,
+                                    "cr3=%0*llx %s%s\n"
+                                    "%-*s        P - Present\n"
+                                    "%-*s        | R/W - Read (0) / Write (1)\n"
+                                    "%-*s        | | U/S - User (1) / Supervisor (0)\n"
+                                    "%-*s        | | | A - Accessed\n"
+                                    "%-*s        | | | | D - Dirty\n"
+                                    "%-*s        | | | | | G - Global\n"
+                                    "%-*s        | | | | | | WT - Write thru\n"
+                                    "%-*s        | | | | | | |  CD - Cache disable\n"
+                                    "%-*s        | | | | | | |  |  AT - Attribute table (PAT)\n"
+                                    "%-*s        | | | | | | |  |  |  NX - No execute (K8)\n"
+                                    "%-*s        | | | | | | |  |  |  |  4K/4M/2M - Page size.\n"
+                                    "%-*s        | | | | | | |  |  |  |  |  AVL - a=allocated; m=mapping; d=track dirty;\n"
+                                    "%-*s        | | | | | | |  |  |  |  |  |     p=permanent; v=validated;\n"
+                                    "%-*s Level  | | | | | | |  |  |  |  |  |    Page\n"
+                                  /* xxxx n **** P R S A D G WT CD AT NX 4M AVL xxxxxxxxxxxxx
+                                                 - W U - - - -- -- -- -- -- 010 */
+                                    ,
+                                    cch, cr3,
+                                    pState->fLme ? "Long Mode" : pState->fPae ? "PAE" : pState->fPse ? "32-bit w/ PSE" : "32-bit",
+                                    pState->fNp ? " Nested Paging" : "",
+                                    cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "",
+                                    cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address");
+        if (pState->fLme)
+            rc = pgmR3DumpHierarchyHcPaePML4(pState, cr3 & X86_CR3_PAGE_MASK,     cMaxDepth);
+        else if (pState->fPae)
+            rc = pgmR3DumpHierarchyHCPaePDPT(pState, cr3 & X86_CR3_PAE_PAGE_MASK, cMaxDepth);
+        else
+            rc = pgmR3DumpHierarchyHC32BitPD(pState, cr3 & X86_CR3_PAGE_MASK,     cMaxDepth);
+    }
+    return rc;
+}
+
+
+/**
+ * dbgfR3PagingDumpEx worker.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   cr3             The CR3 register value.
+ * @param   fFlags          The flags, DBGFPGDMP_FLAGS_XXX.
+ * @param   u64FirstAddr    The start address.
+ * @param   u64LastAddr     The address to stop after.
+ * @param   cMaxDepth       The max depth.
+ * @param   pHlp            The output callbacks.  Defaults to log if NULL.
+ *
+ * @internal
+ */
+VMMR3_INT_DECL(int) PGMR3DumpHierarchyHCEx(PVM pVM, uint64_t cr3, uint32_t fFlags, uint64_t u64FirstAddr, uint64_t u64LastAddr,
+                                           uint32_t cMaxDepth, PCDBGFINFOHLP pHlp)
+{
+    /* Minimal validation as we're only supposed to service DBGF. */
+    AssertReturn(~(fFlags & ~DBGFPGDMP_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & (DBGFPGDMP_FLAGS_CURRENT_MODE | DBGFPGDMP_FLAGS_CURRENT_CR3)), VERR_INVALID_PARAMETER);
+    AssertReturn(fFlags & DBGFPGDMP_FLAGS_SHADOW, VERR_INVALID_PARAMETER);
+
+    PGMR3DUMPHIERARCHYSTATE State;
+    State.pVM               = pVM;
+    State.pHlp              = pHlp ? pHlp : DBGFR3InfoLogHlp();
+    State.fPse              = !!(fFlags & (DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME));
+    State.fPae              = !!(fFlags & (DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME));
+    State.fLme              = !!(fFlags & DBGFPGDMP_FLAGS_LME);
+    State.fNp               = !!(fFlags & DBGFPGDMP_FLAGS_NP);
+    State.fEpt              = !!(fFlags & DBGFPGDMP_FLAGS_EPT);
+    State.cchAddress        = State.fLme ? 16 : 8;
+    State.fDumpPageInfo     = !!(fFlags & DBGFPGDMP_FLAGS_PAGE_INFO);
+    State.fPrintHeader      = !!(fFlags & DBGFPGDMP_FLAGS_HEADER);
+    State.u64Address        = u64FirstAddr;
+    State.u64FirstAddress   = u64FirstAddr;
+    State.u64LastAddress    = u64LastAddr;
+    State.cLeaves           = 0;
+    return pdmR3DumpHierarchyHcDoIt(&State, cr3, cMaxDepth);
 }
 
 
@@ -1386,7 +1532,11 @@ VMMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fL
     State.fPse              = (cr4 & X86_CR4_PSE) || (cr4 & X86_CR4_PAE) || fLongMode;
     State.fPae              = (cr4 & X86_CR4_PAE) || fLongMode;
     State.fLme              = fLongMode;
+    State.fNp               = false;
+    State.fEpt              = false;
     State.cchAddress        = fLongMode ? 16 : 8;
+    State.fDumpPageInfo     = false;
+    State.fPrintHeader      = true;
     State.u64Address        = 0;
     State.u64FirstAddress   = 0;
     State.u64LastAddress    = fLongMode ? UINT64_MAX : UINT32_MAX;
@@ -1554,5 +1704,47 @@ VMMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHY
     }
     PGMPhysReleasePageMappingLock(pVM, &LockCr3);
     return rc;
+}
+
+
+/**
+ * dbgfR3PagingDumpEx worker.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   cr3             The CR3 register value.
+ * @param   fFlags          The flags, DBGFPGDMP_FLAGS_XXX.
+ * @param   FirstAddr       The start address.
+ * @param   LastAddr        The address to stop after.
+ * @param   cMaxDepth       The max depth.
+ * @param   pHlp            The output callbacks.  Defaults to log if NULL.
+ *
+ * @internal
+ */
+VMMR3_INT_DECL(int) PGMR3DumpHierarchyGCEx(PVM pVM, uint64_t cr3, uint32_t fFlags, RTGCPTR FirstAddr, RTGCPTR LastAddr,
+                                           uint32_t cMaxDepth, PCDBGFINFOHLP pHlp)
+{
+    /* Minimal validation as we're only supposed to service DBGF. */
+    AssertReturn(~(fFlags & ~DBGFPGDMP_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & (DBGFPGDMP_FLAGS_CURRENT_MODE | DBGFPGDMP_FLAGS_CURRENT_CR3)), VERR_INVALID_PARAMETER);
+    AssertReturn(fFlags & DBGFPGDMP_FLAGS_GUEST, VERR_INVALID_PARAMETER);
+
+    PGMR3DUMPHIERARCHYSTATE State;
+    State.pVM               = pVM;
+    State.pHlp              = pHlp ? pHlp : DBGFR3InfoLogHlp();
+    State.fPse              = !!(fFlags & (DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME));
+    State.fPae              = !!(fFlags & (DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME));
+    State.fLme              = !!(fFlags & DBGFPGDMP_FLAGS_LME);
+    State.fNp               = !!(fFlags & DBGFPGDMP_FLAGS_NP);
+    State.fEpt              = !!(fFlags & DBGFPGDMP_FLAGS_EPT);
+    State.cchAddress        = State.fLme ? 16 : 8;
+    State.fDumpPageInfo     = !!(fFlags & DBGFPGDMP_FLAGS_PAGE_INFO);
+    State.fPrintHeader      = !!(fFlags & DBGFPGDMP_FLAGS_HEADER);
+    State.u64Address        = FirstAddr;
+    State.u64FirstAddress   = FirstAddr;
+    State.u64LastAddress    = LastAddr;
+    State.cLeaves           = 0;
+    //return pdmR3DumpHierarchyGcDoIt(&State, cr3, cMaxDepth);
+    return VERR_NOT_IMPLEMENTED;
 }
 

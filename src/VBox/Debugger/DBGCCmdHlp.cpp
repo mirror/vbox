@@ -791,23 +791,98 @@ static DECLCALLBACK(int) dbgcHlpVarToBool(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, b
 
 
 /**
+ * @interface_method_impl{DBGCCMDHLP,pfnVarGetRange}
+ */
+static DECLCALLBACK(int) dbgcHlpVarGetRange(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar, uint64_t cbElement, uint64_t cbDefault,
+                                            uint64_t *pcbRange)
+{
+/** @todo implement this properly, strings/symbols are not resolved now. */
+    switch (pVar->enmRangeType)
+    {
+        default:
+        case DBGCVAR_RANGE_NONE:
+            *pcbRange = cbDefault;
+            break;
+        case DBGCVAR_RANGE_BYTES:
+            *pcbRange = pVar->u64Range;
+            break;
+        case DBGCVAR_RANGE_ELEMENTS:
+            *pcbRange = pVar->u64Range * cbElement;
+            break;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Info helper callback wrapper - print formatted string.
+ *
+ * @param   pHlp        Pointer to this structure.
+ * @param   pszFormat   The format string.
+ * @param   ...         Arguments.
+ */
+static DECLCALLBACK(void) dbgcHlpGetDbgfOutputHlp_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
+{
+    PDBGC pDbgc = RT_FROM_MEMBER(pHlp, DBGC, DbgfOutputHlp);
+    va_list va;
+    va_start(va, pszFormat);
+    pDbgc->CmdHlp.pfnPrintfV(&pDbgc->CmdHlp, NULL, pszFormat, va);
+    va_end(va);
+}
+
+
+/**
+ * Info helper callback wrapper - print formatted string.
+ *
+ * @param   pHlp        Pointer to this structure.
+ * @param   pszFormat   The format string.
+ * @param   args        Argument list.
+ */
+static DECLCALLBACK(void) dbgcHlpGetDbgfOutputHlp_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
+{
+    PDBGC pDbgc = RT_FROM_MEMBER(pHlp, DBGC, DbgfOutputHlp);
+    pDbgc->CmdHlp.pfnPrintfV(&pDbgc->CmdHlp, NULL, pszFormat, args);
+}
+
+
+/**
+ * @interface_method_impl{DBGCCMDHLP,pfnGetDbgfOutputHlp}
+ */
+static DECLCALLBACK(PCDBGFINFOHLP) dbgcHlpGetDbgfOutputHlp(PDBGCCMDHLP pCmdHlp)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+
+    /* Lazy init */
+    if (!pDbgc->DbgfOutputHlp.pfnPrintf)
+    {
+        pDbgc->DbgfOutputHlp.pfnPrintf  = dbgcHlpGetDbgfOutputHlp_Printf;
+        pDbgc->DbgfOutputHlp.pfnPrintfV = dbgcHlpGetDbgfOutputHlp_PrintfV;
+    }
+
+    return &pDbgc->DbgfOutputHlp;
+}
+
+
+/**
  * Initializes the Command Helpers for a DBGC instance.
  *
  * @param   pDbgc   Pointer to the DBGC instance.
  */
 void dbgcInitCmdHlp(PDBGC pDbgc)
 {
-    pDbgc->CmdHlp.pfnWrite      = dbgcHlpWrite;
-    pDbgc->CmdHlp.pfnPrintfV    = dbgcHlpPrintfV;
-    pDbgc->CmdHlp.pfnPrintf     = dbgcHlpPrintf;
-    pDbgc->CmdHlp.pfnVBoxErrorV = dbgcHlpVBoxErrorV;
-    pDbgc->CmdHlp.pfnVBoxError  = dbgcHlpVBoxError;
-    pDbgc->CmdHlp.pfnMemRead    = dbgcHlpMemRead;
-    pDbgc->CmdHlp.pfnMemWrite   = dbgcHlpMemWrite;
-    pDbgc->CmdHlp.pfnEvalV      = dbgcHlpEvalV;
-    pDbgc->CmdHlp.pfnExec       = dbgcHlpExec;
-    pDbgc->CmdHlp.pfnFailV      = dbgcHlpFailV;
-    pDbgc->CmdHlp.pfnVarToDbgfAddr = dbgcHlpVarToDbgfAddr;
-    pDbgc->CmdHlp.pfnVarToBool = dbgcHlpVarToBool;
+    pDbgc->CmdHlp.pfnWrite              = dbgcHlpWrite;
+    pDbgc->CmdHlp.pfnPrintfV            = dbgcHlpPrintfV;
+    pDbgc->CmdHlp.pfnPrintf             = dbgcHlpPrintf;
+    pDbgc->CmdHlp.pfnVBoxErrorV         = dbgcHlpVBoxErrorV;
+    pDbgc->CmdHlp.pfnVBoxError          = dbgcHlpVBoxError;
+    pDbgc->CmdHlp.pfnMemRead            = dbgcHlpMemRead;
+    pDbgc->CmdHlp.pfnMemWrite           = dbgcHlpMemWrite;
+    pDbgc->CmdHlp.pfnEvalV              = dbgcHlpEvalV;
+    pDbgc->CmdHlp.pfnExec               = dbgcHlpExec;
+    pDbgc->CmdHlp.pfnFailV              = dbgcHlpFailV;
+    pDbgc->CmdHlp.pfnVarToDbgfAddr      = dbgcHlpVarToDbgfAddr;
+    pDbgc->CmdHlp.pfnVarToBool          = dbgcHlpVarToBool;
+    pDbgc->CmdHlp.pfnVarGetRange        = dbgcHlpVarGetRange;
+    pDbgc->CmdHlp.pfnGetDbgfOutputHlp   = dbgcHlpGetDbgfOutputHlp;
 }
 

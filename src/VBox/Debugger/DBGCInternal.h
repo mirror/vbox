@@ -144,6 +144,8 @@ typedef struct DBGC
 {
     /** Command helpers. */
     DBGCCMDHLP          CmdHlp;
+    /** Wrappers for DBGF output. */
+    DBGFINFOHLP         DbgfOutputHlp;
     /** Pointer to backend callback structure. */
     PDBGCBACK           pBack;
 
@@ -175,6 +177,9 @@ typedef struct DBGC
     DBGCVAR             DumpPos;
     /** Size of the previous dump element. */
     unsigned            cbDumpElement;
+    /** Points to DisasmPos, SourcePos or DumpPos depending on which was
+     *  used last. */
+    PCDBGCVAR           pLastPos;
 
     /** Number of variables in papVars. */
     unsigned            cVars;

@@ -57,6 +57,7 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
 static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpPageTableBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
@@ -163,6 +164,16 @@ static const DBGCVARDESC    g_aArgDumpPDAddr[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address of the page directory entry to start dumping from." },
+};
+
+
+/** 'dph*' arguments. */
+static const DBGCVARDESC    g_aArgDumpPH[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_GC_POINTER, 0,                              "address",      "Where in the address space to start dumping and for how long (range).  The default address/range will be used if omitted." },
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     DBGCVD_FLAGS_DEP_PREV,          "cr3",          "The CR3 value to use.  The current CR3 of the context will be used if omitted." },
+    {  0,           1,          DBGCVAR_CAT_STRING,     DBGCVD_FLAGS_DEP_PREV,          "mode",         "The paging mode: legacy, pse, pae, long, ept. Append '-np' for nested paging and '-nx' for no-execute.  The current mode will be used if omitted." },
 };
 
 
@@ -313,6 +324,9 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "dpdb",       1,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),     NULL,               0,       dbgcCmdDumpPageDirBoth, "[addr] [index]",   "Dumps page directory entries of the guest and the hypervisor. " },
     { "dpdg",       0,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),     NULL,               0,       dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the guest." },
     { "dpdh",       0,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),     NULL,               0,       dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the hypervisor. " },
+    { "dph",        0,        3,        &g_aArgDumpPH[0],   RT_ELEMENTS(g_aArgDumpPH),     NULL,               0, dbgcCmdDumpPageHierarchy, "[addr [cr3 [mode]]",   "Dumps the paging hierarchy at for specfied address range. Default context." },
+    { "dphg",       0,        3,        &g_aArgDumpPH[0],   RT_ELEMENTS(g_aArgDumpPH),     NULL,               0, dbgcCmdDumpPageHierarchy, "[addr [cr3 [mode]]",   "Dumps the paging hierarchy at for specfied address range. Guest context." },
+    { "dphh",       0,        3,        &g_aArgDumpPH[0],   RT_ELEMENTS(g_aArgDumpPH),     NULL,               0, dbgcCmdDumpPageHierarchy, "[addr [cr3 [mode]]",   "Dumps the paging hierarchy at for specfied address range. Hypervisor context." },
     { "dpt",        1,        1,        &g_aArgDumpPT[0],   RT_ELEMENTS(g_aArgDumpPT),     NULL,               0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the default context." },
     { "dpta",       1,        1,        &g_aArgDumpPTAddr[0],RT_ELEMENTS(g_aArgDumpPTAddr), NULL,              0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps specified page table." },
     { "dptb",       1,        1,        &g_aArgDumpPT[0],   RT_ELEMENTS(g_aArgDumpPT),     NULL,               0,       dbgcCmdDumpPageTableBoth,"<addr>",          "Dumps page table entries of the guest and the hypervisor." },
@@ -978,6 +992,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     }
     else
         pDbgc->DisasmPos = paArgs[0];
+    pDbgc->pLastPos = &pDbgc->DisasmPos;
 
     /*
      * Range.
@@ -1136,6 +1151,7 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     }
     else
         pDbgc->SourcePos = paArgs[0];
+    pDbgc->pLastPos = &pDbgc->SourcePos;
 
     /*
      * Ensure the source address is flat GC.
@@ -2376,6 +2392,8 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
             return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "internal error: Unknown range type %d.\n", pDbgc->DumpPos.enmRangeType);
     }
 
+    pDbgc->pLastPos = &pDbgc->DumpPos;
+
     /*
      * Do the dumping.
      */
@@ -2846,6 +2864,124 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
     NOREF(pCmd); NOREF(paArgs); NOREF(cArgs); NOREF(pResult);
     return rc2;
 }
+
+
+/**
+ * The 'dph*' commands.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    if (!pVM)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "No VM.\n");
+
+    /*
+     * Figure the context.
+     */
+    uint32_t fFlags = 0;
+    if (pCmd->pszCmd[3] == '\0')
+        fFlags |= pDbgc->fRegCtxGuest ? DBGFPGDMP_FLAGS_GUEST : DBGFPGDMP_FLAGS_SHADOW;
+    else if (pCmd->pszCmd[3] == 'g')
+        fFlags |= DBGFPGDMP_FLAGS_GUEST;
+    else if (pCmd->pszCmd[3] == 'h')
+        fFlags |= DBGFPGDMP_FLAGS_SHADOW;
+    else
+        fFlags |= DBGFPGDMP_FLAGS_GUEST | DBGFPGDMP_FLAGS_SHADOW;
+
+    /*
+     * Get the range.
+     */
+    PCDBGCVAR   pRange = cArgs > 0 ? &paArgs[0] : pDbgc->pLastPos;
+    RTGCPTR     GCPtrFirst;
+    int rc = DBGCCmdHlpVarToFlatAddr(pCmdHlp, pRange, &GCPtrFirst);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Failed to convert %DV to a flat address: %Rrc", pRange, rc);
+
+    uint64_t cbRange;
+    rc = DBGCCmdHlpVarGetRange(pCmdHlp, pRange, 1, PAGE_SIZE * 8, &cbRange);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Failed to obtain the range of %DV: %Rrc", pRange, rc);
+
+    RTGCPTR GCPtrLast = RTGCPTR_MAX - GCPtrFirst;
+    if (cbRange >= GCPtrLast)
+        GCPtrLast = RTGCPTR_MAX;
+    else if (!cbRange)
+        GCPtrLast = GCPtrFirst;
+    else
+        GCPtrLast = GCPtrFirst + cbRange - 1;
+
+    /*
+     * Do we have a CR3?
+     */
+    uint64_t cr3 = 0;
+    if (cArgs > 1)
+    {
+        if ((fFlags & (DBGFPGDMP_FLAGS_GUEST | DBGFPGDMP_FLAGS_SHADOW)) == (DBGFPGDMP_FLAGS_GUEST | DBGFPGDMP_FLAGS_SHADOW))
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "No CR3 or mode arguments when dumping both context, please.");
+        if (paArgs[1].enmType != DBGCVAR_TYPE_NUMBER)
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "The CR3 argument is not a number: %DV", &paArgs[1]);
+        cr3 = paArgs[1].u.u64Number;
+    }
+    else
+        fFlags |= DBGFPGDMP_FLAGS_CURRENT_CR3;
+
+    /*
+     * Do we have a mode?
+     */
+    if (cArgs > 2)
+    {
+        if (paArgs[2].enmType != DBGCVAR_TYPE_STRING)
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "The mode argument is not a string: %DV", &paArgs[2]);
+        static const struct MODETOFLAGS
+        {
+            const char *pszName;
+            uint32_t    fFlags;
+        } s_aModeToFlags[] =
+        {
+            { "ept",        DBGFPGDMP_FLAGS_EPT },
+            { "legacy",     0 },
+            { "legacy-np",  DBGFPGDMP_FLAGS_NP },
+            { "pse",        DBGFPGDMP_FLAGS_PSE },
+            { "pse-np",     DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_NP },
+            { "pae",        DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE },
+            { "pae-np",     DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_NP },
+            { "pae-nx",     DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_NXE },
+            { "pae-nx-np",  DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_NXE | DBGFPGDMP_FLAGS_NP },
+            { "long",       DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME },
+            { "long-np",    DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME | DBGFPGDMP_FLAGS_NP },
+            { "long-nx",    DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME | DBGFPGDMP_FLAGS_NXE },
+            { "long-nx-np", DBGFPGDMP_FLAGS_PSE | DBGFPGDMP_FLAGS_PAE | DBGFPGDMP_FLAGS_LME | DBGFPGDMP_FLAGS_NXE | DBGFPGDMP_FLAGS_NP }
+        };
+        int i = RT_ELEMENTS(s_aModeToFlags);
+        while (i-- > 0)
+            if (!strcmp(s_aModeToFlags[i].pszName, paArgs[2].u.pszString))
+            {
+                fFlags |= s_aModeToFlags[i].fFlags;
+                break;
+            }
+        if (i < 0)
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "Unknown mode: \"%s\"", paArgs[2].u.pszString);
+    }
+    else
+        fFlags |= DBGFPGDMP_FLAGS_CURRENT_MODE;
+
+    /*
+     * Call the worker.
+     */
+    rc = DBGFR3PagingDumpEx(pVM, pDbgc->idCpu, fFlags, cr3, GCPtrFirst, GCPtrLast, 99 /*cMaxDepth*/,
+                            DBGCCmdHlpGetDbgfOutputHlp(pCmdHlp));
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "DBGFR3PagingDumpEx: %Rrc\n", rc);
+    return VINF_SUCCESS;
+}
+
 
 
 /**
