@@ -34,6 +34,7 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/tcp.h>
+#include <iprt/socket.h>
 #include <iprt/semaphore.h>
 #include <iprt/asm.h>
 
@@ -210,7 +211,7 @@ static int ftmR3TcpReadLine(PVM pVM, char *pszBuf, size_t cchBuf)
  * @param   pszWhich            Which ACK is this this?
  * @param   pszNAckMsg          Optional NACK message.
  */
-static int ftmR3TcpReadACK(PVM pVM, const char *pszWhich, const char *pszNAckMsg /*= NULL*/)
+static int ftmR3TcpReadACK(PVM pVM, const char *pszWhich, const char *pszNAckMsg = NULL)
 {
     char szMsg[256];
     int rc = ftmR3TcpReadLine(pVM, szMsg, sizeof(szMsg));
@@ -255,6 +256,25 @@ static int ftmR3TcpReadACK(PVM pVM, const char *pszWhich, const char *pszNAckMsg
             pszMsgText[-1] = ';';
     }
     return VERR_INTERNAL_ERROR_3;
+}
+
+/**
+ * Submitts a command to the destination and waits for the ACK.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM                 The VM to operate on.
+ * @param   pszCommand          The command.
+ * @param   fWaitForAck         Whether to wait for the ACK.
+ */
+static int ftmR3TcpSubmitCommand(PVM pVM, const char *pszCommand, bool fWaitForAck = true)
+{
+    int rc = RTTcpSgWriteL(pVM->ftm.s.hSocket, 2, pszCommand, strlen(pszCommand), "\n", sizeof("\n") - 1);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (!fWaitForAck)
+        return VINF_SUCCESS;
+    return ftmR3TcpReadACK(pVM, pszCommand);
 }
 
 /**
@@ -539,7 +559,19 @@ static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
     switch (enmState)
     {
     case FTMSYNCSTATE_FULL:
+    {
+        bool fSuspended = false;
+
+        rc = ftmR3TcpSubmitCommand(pVM, "full-sync");
+        AssertRC(rc);
+
+        rc = VMR3Save(pVM, NULL /* pszFilename */, &g_ftmR3TcpOps, pVM, true /* fContinueAfterwards */, NULL, NULL, &fSuspended);
+        AssertRC(rc);
+
+        rc = ftmR3TcpReadACK(pVM, "full-sync-complete");
+        AssertRC(rc);
         break;
+    }
 
     case FTMSYNCSTATE_DELTA_VM:
         break;
@@ -732,6 +764,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
     {
         char szCmd[128];
         rc = ftmR3TcpReadLine(pVM, szCmd, sizeof(szCmd));
+        AssertRC(rc);
         if (RT_FAILURE(rc))
             break;
 
@@ -746,8 +779,41 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
         if (!strcmp(szCmd, "checkpoint"))
         {
         }
-        if (RT_FAILURE(rc))
-            break;
+        else
+        if (!strcmp(szCmd, "full-sync"))
+        {
+            rc = ftmR3TcpWriteACK(pVM);
+            AssertRC(rc);
+            if (RT_FAILURE(rc))
+                continue;
+
+            RTSocketRetain(pVM->ftm.s.hSocket); /* For concurrent access by I/O thread and EMT. */
+            pVM->ftm.s.syncstate.uOffStream = 0;
+
+            rc = VMR3LoadFromStream(pVM, &g_ftmR3TcpOps, pVM, NULL, NULL);
+            RTSocketRelease(pVM->ftm.s.hSocket);
+            AssertRC(rc);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("FTSync: VMR3LoadFromStream -> %Rrc\n", rc));
+                ftmR3TcpWriteNACK(pVM, rc);
+                continue;
+            }
+
+            /* The EOS might not have been read, make sure it is. */
+            pVM->ftm.s.syncstate.fStopReading = false;
+            size_t cbRead;
+            rc = ftmR3TcpOpRead(pVM, pVM->ftm.s.syncstate.uOffStream, szCmd, 1, &cbRead);
+            if (rc != VERR_EOF)
+            {
+                LogRel(("FTSync: Draining teleporterTcpOpRead -> %Rrc\n", rc));
+                ftmR3TcpWriteNACK(pVM, rc);
+                continue;
+            }
+
+            rc = ftmR3TcpWriteACK(pVM);
+            AssertRC(rc);
+        }        
     }
     LogFlowFunc(("returns mRc=%Rrc\n", rc));
     return VERR_TCP_SERVER_STOP;
@@ -866,7 +932,7 @@ VMMR3DECL(int) FTMR3SyncState(PVM pVM)
     pVM->ftm.s.syncstate.fIOError     = false;
     pVM->ftm.s.syncstate.fEndOfStream = false;
 
-    /* Sync state + changed memory. */
+    /* Sync state + changed memory with the standby node. */
     rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3PerformSync, 2, pVM, FTMSYNCSTATE_DELTA_VM);
     AssertRC(rc);
 
