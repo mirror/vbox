@@ -64,6 +64,8 @@ typedef struct RTPOLLSETHNDENT
     uint32_t        id;
     /** The events we're waiting for here. */
     uint32_t        fEvents;
+    /** Saved events. */
+    uint32_t        fEventsSaved;
     /** Set if this is the final entry for this handle.
      * If the handle is entered more than once, this will be clear for all but
      * the last entry. */
@@ -93,6 +95,61 @@ typedef struct RTPOLLSETINTERNAL
     RTPOLLSETHNDENT     aHandles[MAXIMUM_WAIT_OBJECTS];
 } RTPOLLSETINTERNAL;
 
+/**
+ * Starts polling based on the handle type.
+ */
+static uint32_t rtPollHndStart(RTPOLLSETINTERNAL *pThis, PRTPOLLSETHNDENT pHnd, bool fNoWait)
+{
+    uint32_t fEvents = 0;
+
+    switch (pHnd->enmType)
+    {
+        case RTHANDLETYPE_PIPE:
+            fEvents = rtPipePollStart(pHnd->u.hPipe, pThis, pHnd->fEvents,
+                                      pHnd->fFinalEntry, fNoWait);
+        break;
+
+        case RTHANDLETYPE_SOCKET:
+            fEvents = rtSocketPollStart(pHnd->u.hSocket, pThis, pHnd->fEvents,
+                                        pHnd->fFinalEntry, fNoWait);
+            break;
+
+        default:
+            AssertFailed();
+            fEvents = UINT32_MAX;
+            break;
+    }
+
+    return fEvents;
+}
+
+/**
+ * Cleans up polling based on the handle type.
+ */
+static uint32_t rtPollHndDone(PRTPOLLSETHNDENT pHnd)
+{
+    uint32_t fEvents = 0;
+
+    switch (pHnd->enmType)
+    {
+        case RTHANDLETYPE_PIPE:
+            fEvents = rtPipePollDone(pHnd->u.hPipe, pHnd->fEvents,
+                                     pHnd->fFinalEntry);
+            break;
+
+        case RTHANDLETYPE_SOCKET:
+            fEvents = rtSocketPollDone(pHnd->u.hSocket, pHnd->fEvents,
+                                       pHnd->fFinalEntry);
+            break;
+
+        default:
+            AssertFailed();
+            fEvents = UINT32_MAX;
+            break;
+    }
+
+    return fEvents;
+}
 
 /**
  * Common worker for RTPoll and RTPollNoResume
@@ -124,23 +181,14 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
     uint32_t        i;
     for (i = 0; i < cHandles; i++)
     {
-        switch (pThis->aHandles[i].enmType)
+        if (pThis->aHandles[i].fEventsSaved)
         {
-            case RTHANDLETYPE_PIPE:
-                fEvents = rtPipePollStart(pThis->aHandles[i].u.hPipe, pThis, pThis->aHandles[i].fEvents,
-                                          pThis->aHandles[i].fFinalEntry, fNoWait);
-                break;
-
-            case RTHANDLETYPE_SOCKET:
-                fEvents = rtSocketPollStart(pThis->aHandles[i].u.hSocket, pThis, pThis->aHandles[i].fEvents,
-                                            pThis->aHandles[i].fFinalEntry, fNoWait);
-                break;
-
-            default:
-                AssertFailed();
-                fEvents = UINT32_MAX;
-                break;
+            fEvents = pThis->aHandles[i].fEventsSaved;
+            pThis->aHandles[i].fEventsSaved = 0;
+            break;
         }
+
+        fEvents = rtPollHndStart(pThis, &pThis->aHandles[i], fNoWait);
         if (fEvents)
             break;
     }
@@ -162,22 +210,7 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
         if (!fNoWait)
             while (i-- > 0)
             {
-                switch (pThis->aHandles[i].enmType)
-                {
-                    case RTHANDLETYPE_PIPE:
-                        rtPipePollDone(pThis->aHandles[i].u.hPipe, pThis->aHandles[i].fEvents,
-                                       pThis->aHandles[i].fFinalEntry);
-                        break;
-
-                    case RTHANDLETYPE_SOCKET:
-                        rtSocketPollDone(pThis->aHandles[i].u.hSocket, pThis->aHandles[i].fEvents,
-                                         pThis->aHandles[i].fFinalEntry);
-                        break;
-
-                    default:
-                        AssertFailed();
-                        break;
-                }
+                pThis->aHandles[i].fEventsSaved = rtPollHndDone(&pThis->aHandles[i]);
             }
 
         return rc;
@@ -208,38 +241,24 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
     /*
      * Get event (if pending) and do wait cleanup.
      */
-    /** @todo r=aeichner: The loop below overwrites events if
-     *  more than one source has events pending.
-     */
-    i = cHandles;
-    while (i-- > 0)
+    for (unsigned i = 0; i < cHandles; i++)
     {
-        fEvents = 0;
-        switch (pThis->aHandles[i].enmType)
+        if (!fEvents)
         {
-            case RTHANDLETYPE_PIPE:
-                fEvents = rtPipePollDone(pThis->aHandles[i].u.hPipe, pThis->aHandles[i].fEvents,
-                                         pThis->aHandles[i].fFinalEntry);
-                break;
+            fEvents = rtPollHndDone(&pThis->aHandles[i]);
 
-            case RTHANDLETYPE_SOCKET:
-                fEvents = rtSocketPollDone(pThis->aHandles[i].u.hSocket, pThis->aHandles[i].fEvents,
-                                           pThis->aHandles[i].fFinalEntry);
-                break;
-
-            default:
-                AssertFailed();
-                break;
+            if (fEvents)
+            {
+                Assert(fEvents != UINT32_MAX);
+                if (pfEvents)
+                 *pfEvents = fEvents;
+                if (pid)
+                 *pid = pThis->aHandles[i].id;
+                rc = VINF_SUCCESS;
+            }
         }
-        if (fEvents)
-        {
-            Assert(fEvents != UINT32_MAX);
-            if (pfEvents)
-                *pfEvents = fEvents;
-            if (pid)
-                *pid = pThis->aHandles[i].id;
-            rc = VINF_SUCCESS;
-        }
+        else
+            pThis->aHandles[i].fEventsSaved = rtPollHndDone(&pThis->aHandles[i]);
     }
 
     return rc;
