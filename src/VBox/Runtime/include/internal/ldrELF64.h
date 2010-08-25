@@ -109,6 +109,17 @@ typedef struct {
 } Elf64_Phdr;
 
 /*
+ * Note header. (added by Ramshankar)
+ */
+
+typedef struct {
+	Elf64_Word	n_namesz;	/* length of note's name */
+	Elf64_Word	n_descsz;	/* length of note's desc */
+	Elf64_Word	n_type;		/* type of note */
+} Elf64_Nhdr;
+
+
+/*
  * Dynamic structure.  The ".dynamic" section contains an array of them.
  */
 
