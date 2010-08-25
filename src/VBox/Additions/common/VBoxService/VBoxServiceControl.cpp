@@ -354,11 +354,12 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
     while (pNode)
     {
         PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pNode->Node, VBOXSERVICECTRLTHREAD, Node);
+        bool fLast = RTListNodeIsLast(&g_GuestControlExecThreads, &pNode->Node);
 
         RTListNodeRemove(&pNode->Node);
         RTMemFree(pNode);
 
-        if (pNext && RTListNodeIsLast(&g_GuestControlExecThreads, &pNext->Node))
+        if (fLast)
             break;
 
         pNode = pNext;
