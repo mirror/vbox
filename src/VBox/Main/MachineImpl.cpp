@@ -46,6 +46,7 @@
 #include "VirtualBoxErrorInfoImpl.h"
 #include "GuestImpl.h"
 #include "StorageControllerImpl.h"
+#include "DisplayImpl.h"
 
 #ifdef VBOX_WITH_USB
 # include "USBProxyService.h"
@@ -5446,6 +5447,56 @@ STDMETHODIMP Machine::ReadSavedThumbnailToArray(ULONG aScreenId, BOOL aBGR, ULON
     return S_OK;
 }
 
+
+STDMETHODIMP Machine::ReadSavedThumbnailPNGToArray(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData))
+{
+    LogFlowThisFunc(("\n"));
+
+    CheckComArgNotNull(aWidth);
+    CheckComArgNotNull(aHeight);
+    CheckComArgOutSafeArrayPointerValid(aData);
+
+    if (aScreenId != 0)
+        return E_NOTIMPL;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    uint8_t *pu8Data = NULL;
+    uint32_t cbData = 0;
+    uint32_t u32Width = 0;
+    uint32_t u32Height = 0;
+
+    int vrc = readSavedDisplayScreenshot(mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
+
+    if (RT_FAILURE(vrc))
+        return setError(VBOX_E_IPRT_ERROR,
+                        tr("Saved screenshot data is not available (%Rrc)"),
+                        vrc);
+
+    *aWidth = u32Width;
+    *aHeight = u32Height;
+
+    uint8_t *pu8PNG = NULL;
+    uint32_t cbPNG = 0;
+    uint32_t cxPNG = 0;
+    uint32_t cyPNG = 0;
+
+    DisplayMakePNG(pu8Data, u32Width, u32Height, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 0);
+
+    com::SafeArray<BYTE> screenData(cbPNG);
+    screenData.initFrom(pu8PNG, cbPNG);
+    RTMemFree(pu8PNG);
+
+    screenData.detachTo(ComSafeArrayOutArg(aData));
+
+    freeSavedDisplayScreenshot(pu8Data);
+
+    return S_OK;
+}
+
 STDMETHODIMP Machine::QuerySavedScreenshotPNGSize(ULONG aScreenId, ULONG *aSize, ULONG *aWidth, ULONG *aHeight)
 {
     LogFlowThisFunc(("\n"));
@@ -5508,15 +5559,14 @@ STDMETHODIMP Machine::ReadSavedScreenshotPNGToArray(ULONG aScreenId, ULONG *aWid
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
-                        tr("Saved screenshot data is not available (%Rrc)"),
+                        tr("Saved screenshot thumbnail data is not available (%Rrc)"),
                         vrc);
 
     *aWidth = u32Width;
     *aHeight = u32Height;
 
     com::SafeArray<BYTE> png(cbData);
-    for (unsigned i = 0; i < cbData; i++)
-        png[i] = pu8Data[i];
+    png.initFrom(pu8Data, cbData);
     png.detachTo(ComSafeArrayOutArg(aData));
 
     freeSavedDisplayScreenshot(pu8Data);

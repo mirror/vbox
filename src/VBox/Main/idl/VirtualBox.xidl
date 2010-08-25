@@ -3426,7 +3426,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="70ddc295-39fb-46e2-a93b-854e123b2b97"
+     uuid="5c3e7670-aa0d-460a-8d0b-9111b69a3906"
      wsmap="managed"
      >
     <desc>
@@ -3985,7 +3985,7 @@
         choosing the wrong standby VM.
       </desc>
     </attribute>
-      
+
     <attribute name="faultToleranceSyncInterval" type="unsigned long">
       <desc>
         The interval in ms used for syncing the state between source and target.
@@ -5539,6 +5539,32 @@
       <param name="data" type="octet" safearray="yes" dir="return">
         <desc>
           Array with resulting bitmap data.
+        </desc>
+      </param>
+    </method>
+
+    <method name="readSavedThumbnailPNGToArray">
+      <desc>
+        Thumbnail in PNG format is retrieved to an array of bytes.
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>
+          Saved guest screen to read from.
+        </desc>
+      </param>
+      <param name="width" type="unsigned long" dir="out">
+        <desc>
+          Image width.
+        </desc>
+      </param>
+      <param name="height" type="unsigned long" dir="out">
+        <desc>
+          Image height.
+        </desc>
+      </param>
+      <param name="data" type="octet" dir="return" safearray="yes">
+        <desc>
+          Array with resulting PNG data.
         </desc>
       </param>
     </method>
@@ -10861,7 +10887,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-     <method name="takeScreenShotPNGToArray">
+    <method name="takeScreenShotPNGToArray">
       <desc>
         Takes a guest screen shot of the requested size and returns it as
         PNG image in array.
