@@ -533,10 +533,6 @@ VMMR3DECL(int)      PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmT
 VMMDECL(int)        PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, R3PTRTYPE(PFNPGMR3VIRTINVALIDATE) pfnInvalidateR3);
 VMMDECL(int)        PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr);
 VMMR3DECL(int)      PGMR3PoolGrow(PVM pVM);
-#ifdef ___VBox_dbgf_h /** @todo fix this! */
-VMMR3DECL(int)      PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp);
-#endif
-VMMR3DECL(int)      PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHYS PhysSearch);
 
 VMMR3DECL(int)      PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **ppv);
 VMMR3DECL(uint8_t)  PGMR3PhysReadU8(PVM pVM, RTGCPHYS GCPhys);
@@ -567,6 +563,8 @@ VMMR3DECL(int)      PGMR3DbgReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, si
 VMMR3DECL(int)      PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pvSrc, size_t cb, uint32_t fFlags, size_t *pcbWritten);
 VMMR3DECL(int)      PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, RTGCPHYS GCPhysAlign, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCPHYS pGCPhysHit);
 VMMR3DECL(int)      PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR cbRange, RTGCPTR GCPtrAlign, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPhysHit);
+VMMR3DECL(int)      PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp);
+VMMR3DECL(int)      PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHYS PhysSearch);
 
 
 /** @name Page sharing

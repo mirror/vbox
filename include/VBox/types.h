@@ -854,11 +854,18 @@ typedef struct PGMPAGEMAPLOCK
 typedef PGMPAGEMAPLOCK *PPGMPAGEMAPLOCK;
 
 
+/** Pointer to a info helper callback structure. */
+typedef struct DBGFINFOHLP *PDBGFINFOHLP;
+/** Pointer to a const info helper callback structure. */
+typedef const struct DBGFINFOHLP *PCDBGFINFOHLP;
+
+
 /** Configuration manager tree node - A key. */
 typedef struct CFGMNODE *PCFGMNODE;
 
 /** Configuration manager tree leaf - A value. */
 typedef struct CFGMLEAF *PCFGMLEAF;
+
 
 /**
  * CPU modes.

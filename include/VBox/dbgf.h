@@ -413,11 +413,6 @@ VMMR3DECL(CPUMMODE)     DBGFR3CpuGetMode(PVM pVM, VMCPUID idCpu);
 
 
 
-/** Pointer to a info helper callback structure. */
-typedef struct DBGFINFOHLP *PDBGFINFOHLP;
-/** Pointer to a const info helper callback structure. */
-typedef const struct DBGFINFOHLP *PCDBGFINFOHLP;
-
 /**
  * Info helper callback structure.
  */
