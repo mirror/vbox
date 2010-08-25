@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,6 +38,41 @@
 /** The max needle size that we will bother searching for
  * This must not be more than half a page! */
 #define MAX_NEEDLE_SIZE     256
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/**
+ * State structure for the paging hierarchy dumpers.
+ */
+typedef struct PGMR3DUMPHIERARCHYSTATE
+{
+    /** The VM handle. */
+    PVM             pVM;
+    /** Output helpers. */
+    PCDBGFINFOHLP   pHlp;
+    /** Set if PSE, PAE or long mode is enabled. */
+    bool            fPse;
+    /** Set if PAE or long mode is enabled. */
+    bool            fPae;
+    /** Set if long mode is enabled. */
+    bool            fLme;
+    /** The number or chars the address needs. */
+    uint8_t         cchAddress;
+    bool            afReserved[4];
+    /** The current address.  */
+    uint64_t        u64Address;
+    /** The last address to dump structures for. */
+    uint64_t        u64FirstAddress;
+    /** The last address to dump structures for. */
+    uint64_t        u64LastAddress;
+    /** The number of leaf entries that we've printed. */
+    uint64_t        cLeafs;
+} PGMR3DUMPHIERARCHYSTATE;
+/** Pointer to the paging hierarchy dumper state. */
+typedef PGMR3DUMPHIERARCHYSTATE *PPGMR3DUMPHIERARCHYSTATE;
+
 
 
 /**
@@ -787,5 +822,737 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR
         GCPtr += (RTGCPTR)cIncPages << PAGE_SHIFT;
     }
     return VERR_DBGF_MEM_NOT_FOUND;
+}
+
+
+/**
+ * Dumps a PAE shadow page table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pArgs       Dumper state.
+ * @param   pPT         Pointer to the page table.
+ * @param   pHlp        Pointer to the output functions.
+ */
+static int  pgmR3DumpHierarchyHCPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fIsMapping)
+{
+    PPGMSHWPTPAE pPT = NULL;
+    if (!fIsMapping)
+        pPT = (PPGMSHWPTPAE)MMPagePhys2Page(pState->pVM, HCPhys);
+    else
+    {
+        for (PPGMMAPPING pMap = pState->pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
+        {
+            uint64_t off = pState->u64Address - pMap->GCPtr;
+            if (off < pMap->cb)
+            {
+                const int iPDE = (uint32_t)(off >> X86_PD_SHIFT);
+                const int iSub = (int)((off >> X86_PD_PAE_SHIFT) & 1); /* MSC is a pain sometimes */
+                if ((iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0) != HCPhys)
+                    pState->pHlp->pfnPrintf(pState->pHlp,
+                                            "%0*llx error! Mapping error! PT %d has HCPhysPT=%RHp not %RHp is in the PD.\n",
+                                            pState->cchAddress, pState->u64Address, iPDE,
+                                            iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0, HCPhys);
+                pPT = &pMap->aPTs[iPDE].paPaePTsR3[iSub];
+                break;
+            }
+        }
+    }
+    if (!pPT)
+    {
+        pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! Page table at HCPhys=%RHp was not found in the page pool!\n",
+                                pState->cchAddress, pState->u64Address, HCPhys);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
+        if (PGMSHWPTEPAE_IS_P(pPT->a[i]))
+        {
+            X86PTEPAE Pte;
+            Pte.u = PGMSHWPTEPAE_GET_U(pPT->a[i]);
+            pState->pHlp->pfnPrintf(pState->pHlp,
+                                    pState->fLme  /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
+                                    ? "%016llx 3    | P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx\n"
+                                    :  "%08llx 2   |  P %c %c %c %c %c %s %s %s %s 4K %c%c%c  %016llx\n",
+                                    pState->u64Address + ((uint64_t)i << X86_PT_PAE_SHIFT),
+                                    Pte.n.u1Write       ? 'W'  : 'R',
+                                    Pte.n.u1User        ? 'U'  : 'S',
+                                    Pte.n.u1Accessed    ? 'A'  : '-',
+                                    Pte.n.u1Dirty       ? 'D'  : '-',
+                                    Pte.n.u1Global      ? 'G'  : '-',
+                                    Pte.n.u1WriteThru   ? "WT" : "--",
+                                    Pte.n.u1CacheDisable? "CD" : "--",
+                                    Pte.n.u1PAT         ? "AT" : "--",
+                                    Pte.n.u1NoExecute   ? "NX" : "--",
+                                    Pte.u & PGM_PTFLAGS_TRACK_DIRTY   ? 'd' : '-',
+                                    Pte.u & RT_BIT(10)                ? '1' : '0',
+                                    Pte.u & PGM_PTFLAGS_CSAM_VALIDATED? 'v' : '-',
+                                    Pte.u & X86_PTE_PAE_PG_MASK);
+
+            pState->cLeafs++;
+        }
+        else if (PGMSHWPTEPAE_GET_U(pPT->a[i]) & X86_PTE_P)
+        {
+            if (   (PGMSHWPTEPAE_GET_U(pPT->a[i]) & (pState->pVM->pgm.s.HCPhysInvMmioPg | X86_PTE_PAE_MBZ_MASK_NO_NX))
+                ==                                  (pState->pVM->pgm.s.HCPhysInvMmioPg | X86_PTE_PAE_MBZ_MASK_NO_NX))
+                pState->pHlp->pfnPrintf(pState->pHlp,
+                                        pState->fLme
+                                        ? "%016llx 3    | invalid / MMIO optimization\n"
+                                        :  "%08llx 2   |  invalid / MMIO optimization\n",
+                                        pState->u64Address + ((uint64_t)i << X86_PT_PAE_SHIFT));
+            else
+                pState->pHlp->pfnPrintf(pState->pHlp,
+                                        pState->fLme
+                                        ? "%016llx 3    | invalid: %RX64\n"
+                                        :  "%08llx 2   |  invalid: %RX64\n",
+                                        pState->u64Address + ((uint64_t)i << X86_PT_PAE_SHIFT),
+                                        PGMSHWPTEPAE_GET_U(pPT->a[i]));
+            pState->cLeafs++;
+        }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Dumps a PAE shadow page directory table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pVM         The VM handle.
+ * @param   HCPhys      The physical address of the page directory table.
+ * @param   u64Address  The virtual address of the page table starts.
+ * @param   cr4         The CR4, PSE is currently used.
+ * @param   fLongMode   Set if this a long mode table; clear if it's a legacy mode table.
+ * @param   cMaxDepth   The maxium depth.
+ * @param   pHlp        Pointer to the output functions.
+ */
+static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+{
+    Assert(cMaxDepth > 0);
+    cMaxDepth--;
+
+    PX86PDPAE pPD = (PX86PDPAE)MMPagePhys2Page(pState->pVM, HCPhys);
+    if (!pPD)
+    {
+        pState->pHlp->pfnPrintf(pState->pHlp,
+                                "%0*llx error! Page directory at HCPhys=%RHp was not found in the page pool!\n",
+                                pState->cchAddress, pState->u64Address, HCPhys);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    int             rc              = VINF_SUCCESS;
+    const uint64_t  u64BaseAddress  = pState->u64Address;
+    for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
+    {
+        X86PDEPAE Pde = pPD->a[i];
+        pState->u64Address = u64BaseAddress + ((uint64_t)i << X86_PD_PAE_SHIFT);
+        if (    Pde.n.u1Present
+            &&  pState->u64Address >= pState->u64FirstAddress
+            &&  pState->u64Address <= pState->u64LastAddress)
+        {
+            if (Pde.b.u1Size)
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp,
+                                        pState->fLme    /*P R  S  A  D  G  WT CD AT NX 2M a  p ?  phys*/
+                                        ? "%016llx 2   |  P %c %c %c %c %c %s %s %s %s 2M %c%c%c  %016llx"
+                                        :  "%08llx 1  |   P %c %c %c %c %c %s %s %s %s 2M %c%c%c  %016llx",
+                                        pState->u64Address,
+                                        Pde.b.u1Write       ? 'W'  : 'R',
+                                        Pde.b.u1User        ? 'U'  : 'S',
+                                        Pde.b.u1Accessed    ? 'A'  : '-',
+                                        Pde.b.u1Dirty       ? 'D'  : '-',
+                                        Pde.b.u1Global      ? 'G'  : '-',
+                                        Pde.b.u1WriteThru   ? "WT" : "--",
+                                        Pde.b.u1CacheDisable? "CD" : "--",
+                                        Pde.b.u1PAT         ? "AT" : "--",
+                                        Pde.b.u1NoExecute   ? "NX" : "--",
+                                        Pde.u & RT_BIT_64(9)            ? '1' : '0',
+                                        Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
+                                        Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
+                                        Pde.u & X86_PDE2M_PAE_PG_MASK);
+                if ((Pde.u >> 52) & 0x7ff)
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx!", (Pde.u >> 52) & 0x7ff);
+                if ((Pde.u >> 13) & 0xff)
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 20:13=%02llx!", (Pde.u >> 13) & 0xff);
+                pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+                pState->cLeafs++;
+            }
+            else
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp,
+                                        pState->fLme    /*P R  S  A  D  G  WT CD AT NX 4M a  p ?  phys */
+                                        ? "%016llx 2   |  P %c %c %c %c %c %s %s .. %s 4K %c%c%c  %016llx"
+                                        :  "%08llx 1  |   P %c %c %c %c %c %s %s .. %s 4K %c%c%c  %016llx",
+                                        pState->u64Address,
+                                        Pde.n.u1Write       ? 'W'  : 'R',
+                                        Pde.n.u1User        ? 'U'  : 'S',
+                                        Pde.n.u1Accessed    ? 'A'  : '-',
+                                        Pde.n.u1Reserved0   ? '?'  : '.', /* ignored */
+                                        Pde.n.u1Reserved1   ? '?'  : '.', /* ignored */
+                                        Pde.n.u1WriteThru   ? "WT" : "--",
+                                        Pde.n.u1CacheDisable? "CD" : "--",
+                                        Pde.n.u1NoExecute   ? "NX" : "--",
+                                        Pde.u & RT_BIT_64(9)            ? '1' : '0',
+                                        Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
+                                        Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
+                                        Pde.u & X86_PDE_PAE_PG_MASK_FULL);
+                if ((Pde.u >> 52) & 0x7ff)
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx!", (Pde.u >> 52) & 0x7ff);
+                pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+                if (cMaxDepth)
+                {
+                    int rc2 = pgmR3DumpHierarchyHCPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK_FULL, !!(Pde.u & PGM_PDFLAGS_MAPPING));
+                    if (rc2 < rc && RT_SUCCESS(rc))
+                        rc = rc2;
+                }
+                else
+                    pState->cLeafs++;
+            }
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Dumps a PAE shadow page directory pointer table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pVM         The VM handle.
+ * @param   HCPhys      The physical address of the page directory pointer table.
+ * @param   u64Address  The virtual address of the page table starts.
+ * @param   cr4         The CR4, PSE is currently used.
+ * @param   fLongMode   Set if this a long mode table; clear if it's a legacy mode table.
+ * @param   cMaxDepth   The maxium depth.
+ * @param   pHlp        Pointer to the output functions.
+ */
+static int  pgmR3DumpHierarchyHCPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+{
+    Assert(cMaxDepth > 0);
+    cMaxDepth--;
+
+    PX86PDPT pPDPT = (PX86PDPT)MMPagePhys2Page(pState->pVM, HCPhys);
+    if (!pPDPT)
+    {
+        pState->pHlp->pfnPrintf(pState->pHlp,
+                                "%0*llx error! Page directory pointer table at HCPhys=%RHp was not found in the page pool!\n",
+                                pState->cchAddress, pState->u64Address, HCPhys);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    int             rc              = VINF_SUCCESS;
+    const uint64_t  u64BaseAddress  = pState->u64Address;
+    const unsigned  c               = pState->fLme ? RT_ELEMENTS(pPDPT->a) : X86_PG_PAE_PDPE_ENTRIES;
+    for (unsigned i = 0; i < c; i++)
+    {
+        X86PDPE Pdpe = pPDPT->a[i];
+        pState->u64Address = u64BaseAddress + ((uint64_t)i << X86_PDPT_SHIFT);
+        if (    Pdpe.n.u1Present
+            &&  pState->u64Address >= pState->u64FirstAddress
+            &&  pState->u64Address <= pState->u64LastAddress)
+        {
+            if (pState->fLme)
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp, /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
+                                        "%016llx 1  |   P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
+                                        pState->u64Address,
+                                        Pdpe.lm.u1Write       ? 'W'  : 'R',
+                                        Pdpe.lm.u1User        ? 'U'  : 'S',
+                                        Pdpe.lm.u1Accessed    ? 'A'  : '-',
+                                        Pdpe.lm.u3Reserved & 1? '?'  : '.', /* ignored */
+                                        Pdpe.lm.u3Reserved & 4? '!'  : '.', /* mbz */
+                                        Pdpe.lm.u1WriteThru   ? "WT" : "--",
+                                        Pdpe.lm.u1CacheDisable? "CD" : "--",
+                                        Pdpe.lm.u3Reserved & 2? "!"  : "..",/* mbz */
+                                        Pdpe.lm.u1NoExecute   ? "NX" : "--",
+                                        Pdpe.u & RT_BIT(9)                ? '1' : '0',
+                                        Pdpe.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
+                                        Pdpe.u & RT_BIT(11)               ? '1' : '0',
+                                        Pdpe.u & X86_PDPE_PG_MASK_FULL);
+                if ((Pdpe.u >> 52) & 0x7ff)
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx\n", (Pdpe.u >> 52) & 0x7ff);
+            }
+            else
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp,/*P             G  WT CD AT NX 4M a p ?  */
+                                        "%08llx 0 |    P             %c %s %s %s %s .. %c%c%c  %016llx",
+                                        pState->u64Address,
+                                        Pdpe.n.u4Reserved & 1? '!'  : '.', /* mbz */
+                                        Pdpe.n.u4Reserved & 4? '!'  : '.', /* mbz */
+                                        Pdpe.n.u1WriteThru   ? "WT" : "--",
+                                        Pdpe.n.u1CacheDisable? "CD" : "--",
+                                        Pdpe.n.u4Reserved & 2? "!"  : "..",/* mbz */
+                                        Pdpe.u & RT_BIT(9)                ? '1' : '0',
+                                        Pdpe.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
+                                        Pdpe.u & RT_BIT(11)               ? '1' : '0',
+                                        Pdpe.u & X86_PDPE_PG_MASK_FULL);
+                if ((Pdpe.u >> 52) & 0xfff)
+                    pState->pHlp->pfnPrintf(pState->pHlp, " 63:52=%03llx\n", (Pdpe.u >> 52) & 0xfff);
+            }
+            pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+            if (cMaxDepth)
+            {
+                int rc2 = pgmR3DumpHierarchyHCPaePD(pState, Pdpe.u & X86_PDPE_PG_MASK_FULL, cMaxDepth);
+                if (rc2 < rc && RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+            else
+                pState->cLeafs++;
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Dumps a 32-bit shadow page table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pVM         The VM handle.
+ * @param   HCPhys      The physical address of the table.
+ * @param   cMaxDepth   The maxium depth.
+ */
+static int pgmR3DumpHierarchyHcPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+{
+    PX86PML4 pPML4 = (PX86PML4)MMPagePhys2Page(pState->pVM, HCPhys);
+    if (!pPML4)
+    {
+        pState->pHlp->pfnPrintf(pState->pHlp, "Page map level 4 at HCPhys=%RHp was not found in the page pool!\n", HCPhys);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    int         rc      = VINF_SUCCESS;
+    uint32_t    cFound  = 0;
+    for (uint32_t i = (pState->u64LastAddress >> X86_PML4_SHIFT) & X86_PML4_MASK; i < RT_ELEMENTS(pPML4->a); i++)
+    {
+        X86PML4E Pml4e = pPML4->a[i];
+        pState->u64Address = ((uint64_t)i << X86_PML4_SHIFT)
+                           | (((uint64_t)i >> (X86_PML4_SHIFT - X86_PDPT_SHIFT - 1)) * UINT64_C(0xffff000000000000));
+        if (    Pml4e.n.u1Present
+            &&  pState->u64Address >= pState->u64FirstAddress
+            &&  pState->u64Address <= pState->u64LastAddress
+           )
+        {
+            pState->pHlp->pfnPrintf(pState->pHlp, /*P R  S  A  D  G  WT CD AT NX 4M a p ?  */
+                                    "%016llx 0 |    P %c %c %c %c %c %s %s %s %s .. %c%c%c  %016llx",
+                                    pState->u64Address,
+                                    Pml4e.n.u1Write       ? 'W'  : 'R',
+                                    Pml4e.n.u1User        ? 'U'  : 'S',
+                                    Pml4e.n.u1Accessed    ? 'A'  : '-',
+                                    Pml4e.n.u3Reserved & 1? '?'  : '.', /* ignored */
+                                    Pml4e.n.u3Reserved & 4? '!'  : '.', /* mbz */
+                                    Pml4e.n.u1WriteThru   ? "WT" : "--",
+                                    Pml4e.n.u1CacheDisable? "CD" : "--",
+                                    Pml4e.n.u3Reserved & 2? "!"  : "..",/* mbz */
+                                    Pml4e.n.u1NoExecute   ? "NX" : "--",
+                                    Pml4e.u & RT_BIT(9)                ? '1' : '0',
+                                    Pml4e.u & PGM_PLXFLAGS_PERMANENT   ? 'p' : '-',
+                                    Pml4e.u & RT_BIT(11)               ? '1' : '0',
+                                    Pml4e.u & X86_PML4E_PG_MASK);
+            /** @todo Dump the shadow page referenced? */
+            if ((Pml4e.u >> 52) & 0x7ff)
+                pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx!", (Pml4e.u >> 52) & 0x7ff);
+            pState->pHlp->pfnPrintf(pState->pHlp, "\n");
+
+            if (cMaxDepth >= 1)
+            {
+                int rc2 = pgmR3DumpHierarchyHCPaePDPT(pState, Pml4e.u & X86_PML4E_PG_MASK, cMaxDepth - 1);
+                if (rc2 < rc && RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+            else
+                pState->cLeafs++;
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Dumps a 32-bit shadow page table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pVM         The VM handle.
+ * @param   pPT         Pointer to the page table.
+ * @param   u32Address  The virtual address this table starts at.
+ * @param   pHlp        Pointer to the output functions.
+ */
+static int pgmR3DumpHierarchyHC32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fMapping)
+{
+    /** @todo what about using the page pool for mapping PTs? */
+    PX86PT pPT = NULL;
+    if (!fMapping)
+        pPT = (PX86PT)MMPagePhys2Page(pState->pVM, HCPhys);
+    else
+    {
+        for (PPGMMAPPING pMap = pState->pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
+            if (pState->u64Address - pMap->GCPtr < pMap->cb)
+            {
+                int iPDE = (pState->u64Address - pMap->GCPtr) >> X86_PD_SHIFT;
+                if (pMap->aPTs[iPDE].HCPhysPT != HCPhys)
+                    pState->pHlp->pfnPrintf(pState->pHlp,
+                                            "%08llx error! Mapping error! PT %d has HCPhysPT=%RHp not %RHp is in the PD.\n",
+                                            pState->u64Address, iPDE, pMap->aPTs[iPDE].HCPhysPT, HCPhys);
+                pPT = pMap->aPTs[iPDE].pPTR3;
+            }
+    }
+    if (!pPT)
+    {
+        pState->pHlp->pfnPrintf(pState->pHlp,
+                                "%08llx error! Page table at %#x was not found in the page pool!\n",
+                                pState->u64Address, HCPhys);
+        return VERR_INVALID_PARAMETER;
+    }
+
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
+    {
+        X86PTE Pte = pPT->a[i];
+        if (Pte.n.u1Present)
+        {
+            uint64_t u64Address = pState->u64Address + (i << X86_PT_SHIFT);
+            if (   u64Address < pState->u64FirstAddress
+                || u64Address < pState->u64LastAddress)
+                continue;
+            pState->pHlp->pfnPrintf(pState->pHlp,/*P R  S  A  D  G  WT CD AT NX 4M a m d  */
+                                    "%08llx 1  |   P %c %c %c %c %c %s %s %s .. 4K %c%c%c  %08x\n",
+                                    u64Address,
+                                    Pte.n.u1Write       ? 'W'  : 'R',
+                                    Pte.n.u1User        ? 'U'  : 'S',
+                                    Pte.n.u1Accessed    ? 'A'  : '-',
+                                    Pte.n.u1Dirty       ? 'D'  : '-',
+                                    Pte.n.u1Global      ? 'G'  : '-',
+                                    Pte.n.u1WriteThru   ? "WT" : "--",
+                                    Pte.n.u1CacheDisable? "CD" : "--",
+                                    Pte.n.u1PAT         ? "AT" : "--",
+                                    Pte.u & PGM_PTFLAGS_TRACK_DIRTY     ? 'd' : '-',
+                                    Pte.u & RT_BIT(10)                  ? '1' : '0',
+                                    Pte.u & PGM_PTFLAGS_CSAM_VALIDATED  ? 'v' : '-',
+                                    Pte.u & X86_PDE_PG_MASK);
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Dumps a 32-bit shadow page directory and page tables.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pVM         The VM handle.
+ * @param   cr3         The root of the hierarchy.
+ * @param   cr4         The CR4, PSE is currently used.
+ * @param   cMaxDepth   How deep into the hierarchy the dumper should go.
+ * @param   pHlp        Pointer to the output functions.
+ */
+static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+{
+    Assert(cMaxDepth > 0);
+    cMaxDepth--;
+
+    PX86PD pPD = (PX86PD)MMPagePhys2Page(pState->pVM, HCPhys);
+    if (!pPD)
+    {
+        pState->pHlp->pfnPrintf(pState->pHlp,
+                                "Page directory at %#x was not found in the page pool!\n", HCPhys);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    int             rc              = VINF_SUCCESS;
+    const uint64_t  u64BaseAddress  = pState->u64Address;
+    for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
+    {
+        X86PDE Pde = pPD->a[i];
+        if (Pde.n.u1Present)
+        {
+            pState->u64Address = (uint32_t)i << X86_PD_SHIFT;
+            if (   pState->u64Address < pState->u64FirstAddress
+                && pState->u64Address > pState->u64LastAddress)
+                continue;
+
+            if (Pde.b.u1Size && pState->fPse)
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp,/*P R  S  A  D  G  WT CD AT NX 4M a m d   phys */
+                                        "%08llx 0 |    P %c %c %c %c %c %s %s %s .. 4M %c%c%c  %08llx\n",
+                                        pState->u64Address,
+                                        Pde.b.u1Write       ? 'W'  : 'R',
+                                        Pde.b.u1User        ? 'U'  : 'S',
+                                        Pde.b.u1Accessed    ? 'A'  : '-',
+                                        Pde.b.u1Dirty       ? 'D'  : '-',
+                                        Pde.b.u1Global      ? 'G'  : '-',
+                                        Pde.b.u1WriteThru   ? "WT" : "--",
+                                        Pde.b.u1CacheDisable? "CD" : "--",
+                                        Pde.b.u1PAT         ? "AT" : "--",
+                                        Pde.u & RT_BIT_32(9)            ? '1' : '0',
+                                        Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
+                                        Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
+                                          ((Pde.u & X86_PDE4M_PG_HIGH_MASK) << X86_PDE4M_PG_HIGH_SHIFT)
+                                        | (Pde.u & X86_PDE4M_PG_MASK) );
+                pState->cLeafs++;
+            }
+            else
+            {
+                pState->pHlp->pfnPrintf(pState->pHlp,/*P R  S  A  D  G  WT CD AT NX 4M a m d   phys */
+                                        "%08llx 0 |    P %c %c %c %c %c %s %s .. .. 4K %c%c%c  %08x\n",
+                                        pState->u64Address,
+                                        Pde.n.u1Write       ? 'W'  : 'R',
+                                        Pde.n.u1User        ? 'U'  : 'S',
+                                        Pde.n.u1Accessed    ? 'A'  : '-',
+                                        Pde.n.u1Reserved0   ? '?'  : '.', /* ignored */
+                                        Pde.n.u1Reserved1   ? '?'  : '.', /* ignored */
+                                        Pde.n.u1WriteThru   ? "WT" : "--",
+                                        Pde.n.u1CacheDisable? "CD" : "--",
+                                        Pde.u & RT_BIT_32(9)            ? '1' : '0',
+                                        Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
+                                        Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
+                                        Pde.u & X86_PDE_PG_MASK);
+                if (cMaxDepth)
+                {
+                    int rc2 = pgmR3DumpHierarchyHC32BitPT(pState, Pde.u & X86_PDE_PG_MASK, !!(Pde.u & PGM_PDFLAGS_MAPPING));
+                    if (rc2 < rc && RT_SUCCESS(rc))
+                        rc = rc2;
+                }
+                else
+                    pState->cLeafs++;
+            }
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Internal worker that initiates the actual dump.
+ *
+ * @returns VBox status code.
+ * @param   pState              The dumper state.
+ * @param   cr3                 The CR3 value.
+ * @param   cMaxDepth           The max depth.
+ */
+static int pdmR3DumpHierarchyHcDoIt(PPGMR3DUMPHIERARCHYSTATE pState, uint64_t cr3, unsigned cMaxDepth)
+{
+    const unsigned cch = pState->cchAddress;
+    pState->pHlp->pfnPrintf(pState->pHlp,
+                            "cr3=%0*llx %s\n"
+                            "%-*s        P - Present\n"
+                            "%-*s        | R/W - Read (0) / Write (1)\n"
+                            "%-*s        | | U/S - User (1) / Supervisor (0)\n"
+                            "%-*s        | | | A - Accessed\n"
+                            "%-*s        | | | | D - Dirty\n"
+                            "%-*s        | | | | | G - Global\n"
+                            "%-*s        | | | | | | WT - Write thru\n"
+                            "%-*s        | | | | | | |  CD - Cache disable\n"
+                            "%-*s        | | | | | | |  |  AT - Attribute table (PAT)\n"
+                            "%-*s        | | | | | | |  |  |  NX - No execute (K8)\n"
+                            "%-*s        | | | | | | |  |  |  |  4K/4M/2M - Page size.\n"
+                            "%-*s        | | | | | | |  |  |  |  |  AVL - a=allocated; m=mapping; d=track dirty;\n"
+                            "%-*s        | | | | | | |  |  |  |  |  |     p=permanent; v=validated;\n"
+                            "%-*s Level  | | | | | | |  |  |  |  |  |    Page\n"
+                          /* xxxx n **** P R S A D G WT CD AT NX 4M AVL xxxxxxxxxxxxx
+                                         - W U - - - -- -- -- -- -- 010 */
+                            ,
+                            cch, cr3,
+                            pState->fLme ? "Long Mode" : pState->fPae ? "PAE" : pState->fPse ? "32-bit w/ PSE" : "32-bit",
+                            cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "",
+                            cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address");
+    if (pState->fLme)
+        return pgmR3DumpHierarchyHcPaePML4(pState, cr3 & X86_CR3_PAGE_MASK,     cMaxDepth);
+    if (pState->fPae)
+        return pgmR3DumpHierarchyHCPaePDPT(pState, cr3 & X86_CR3_PAE_PAGE_MASK, cMaxDepth);
+    return     pgmR3DumpHierarchyHC32BitPD(pState, cr3 & X86_CR3_PAGE_MASK,     cMaxDepth);
+}
+
+
+/**
+ * Dumps a page table hierarchy use only physical addresses and cr4/lm flags.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pVM         The VM handle.
+ * @param   cr3         The root of the hierarchy.
+ * @param   cr4         The cr4, only PAE and PSE is currently used.
+ * @param   fLongMode   Set if long mode, false if not long mode.
+ * @param   cMaxDepth   Number of levels to dump.
+ * @param   pHlp        Pointer to the output functions.
+ */
+VMMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp)
+{
+    if (!cMaxDepth)
+        return VINF_SUCCESS;
+
+    PGMR3DUMPHIERARCHYSTATE State;
+    State.pVM               = pVM;
+    State.pHlp              = pHlp ? pHlp : DBGFR3InfoLogHlp();
+    State.fPse              = (cr4 & X86_CR4_PSE) || (cr4 & X86_CR4_PAE) || fLongMode;
+    State.fPae              = (cr4 & X86_CR4_PAE) || fLongMode;
+    State.fLme              = fLongMode;
+    State.cchAddress        = fLongMode ? 16 : 8;
+    State.u64Address        = 0;
+    State.u64FirstAddress   = 0;
+    State.u64LastAddress    = fLongMode ? UINT64_MAX : UINT32_MAX;
+    State.cLeafs            = 0;
+    return pdmR3DumpHierarchyHcDoIt(&State, cr3, cMaxDepth);
+}
+
+
+
+/**
+ * Dumps a 32-bit shadow page table.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pVM         The VM handle.
+ * @param   pPT         Pointer to the page table.
+ * @param   u32Address  The virtual address this table starts at.
+ * @param   PhysSearch  Address to search for.
+ */
+int pgmR3DumpHierarchyGC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, RTGCPHYS PhysSearch)
+{
+    for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
+    {
+        X86PTE Pte = pPT->a[i];
+        if (Pte.n.u1Present)
+        {
+            Log((           /*P R  S  A  D  G  WT CD AT NX 4M a m d  */
+                 "%08x 1  |   P %c %c %c %c %c %s %s %s .. 4K %c%c%c  %08x\n",
+                 u32Address + (i << X86_PT_SHIFT),
+                 Pte.n.u1Write       ? 'W'  : 'R',
+                 Pte.n.u1User        ? 'U'  : 'S',
+                 Pte.n.u1Accessed    ? 'A'  : '-',
+                 Pte.n.u1Dirty       ? 'D'  : '-',
+                 Pte.n.u1Global      ? 'G'  : '-',
+                 Pte.n.u1WriteThru   ? "WT" : "--",
+                 Pte.n.u1CacheDisable? "CD" : "--",
+                 Pte.n.u1PAT         ? "AT" : "--",
+                 Pte.u & PGM_PTFLAGS_TRACK_DIRTY     ? 'd' : '-',
+                 Pte.u & RT_BIT(10)                  ? '1' : '0',
+                 Pte.u & PGM_PTFLAGS_CSAM_VALIDATED  ? 'v' : '-',
+                 Pte.u & X86_PDE_PG_MASK));
+
+            if ((Pte.u & X86_PDE_PG_MASK) == PhysSearch)
+            {
+                uint64_t fPageShw = 0;
+                RTHCPHYS pPhysHC = 0;
+
+                /** @todo SMP support!! */
+                PGMShwGetPage(&pVM->aCpus[0], (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), &fPageShw, &pPhysHC);
+                Log(("Found %RGp at %RGv -> flags=%llx\n", PhysSearch, (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), fPageShw));
+            }
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Dumps a 32-bit guest page directory and page tables.
+ *
+ * @returns VBox status code (VINF_SUCCESS).
+ * @param   pVM         The VM handle.
+ * @param   cr3         The root of the hierarchy.
+ * @param   cr4         The CR4, PSE is currently used.
+ * @param   PhysSearch  Address to search for.
+ */
+VMMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHYS PhysSearch)
+{
+    bool fLongMode = false;
+    const unsigned cch = fLongMode ? 16 : 8; NOREF(cch);
+    PX86PD pPD = 0;
+    PGMPAGEMAPLOCK LockCr3;
+
+    int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, cr3 & X86_CR3_PAGE_MASK, (const void **)&pPD, &LockCr3);
+    if (    RT_FAILURE(rc)
+        ||  !pPD)
+    {
+        Log(("Page directory at %#x was not found in the page pool!\n", cr3 & X86_CR3_PAGE_MASK));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    Log(("cr3=%08x cr4=%08x%s\n"
+         "%-*s        P - Present\n"
+         "%-*s        | R/W - Read (0) / Write (1)\n"
+         "%-*s        | | U/S - User (1) / Supervisor (0)\n"
+         "%-*s        | | | A - Accessed\n"
+         "%-*s        | | | | D - Dirty\n"
+         "%-*s        | | | | | G - Global\n"
+         "%-*s        | | | | | | WT - Write thru\n"
+         "%-*s        | | | | | | |  CD - Cache disable\n"
+         "%-*s        | | | | | | |  |  AT - Attribute table (PAT)\n"
+         "%-*s        | | | | | | |  |  |  NX - No execute (K8)\n"
+         "%-*s        | | | | | | |  |  |  |  4K/4M/2M - Page size.\n"
+         "%-*s        | | | | | | |  |  |  |  |  AVL - a=allocated; m=mapping; d=track dirty;\n"
+         "%-*s        | | | | | | |  |  |  |  |  |     p=permanent; v=validated;\n"
+         "%-*s Level  | | | | | | |  |  |  |  |  |    Page\n"
+       /* xxxx n **** P R S A D G WT CD AT NX 4M AVL xxxxxxxxxxxxx
+                      - W U - - - -- -- -- -- -- 010 */
+         , cr3, cr4, fLongMode ? " Long Mode" : "",
+         cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "",
+         cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address"));
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
+    {
+        X86PDE Pde = pPD->a[i];
+        if (Pde.n.u1Present)
+        {
+            const uint32_t u32Address = i << X86_PD_SHIFT;
+
+            if ((cr4 & X86_CR4_PSE) && Pde.b.u1Size)
+                Log((           /*P R  S  A  D  G  WT CD AT NX 4M a m d  */
+                     "%08x 0 |    P %c %c %c %c %c %s %s %s .. 4M %c%c%c  %08x\n",
+                     u32Address,
+                     Pde.b.u1Write       ? 'W'  : 'R',
+                     Pde.b.u1User        ? 'U'  : 'S',
+                     Pde.b.u1Accessed    ? 'A'  : '-',
+                     Pde.b.u1Dirty       ? 'D'  : '-',
+                     Pde.b.u1Global      ? 'G'  : '-',
+                     Pde.b.u1WriteThru   ? "WT" : "--",
+                     Pde.b.u1CacheDisable? "CD" : "--",
+                     Pde.b.u1PAT         ? "AT" : "--",
+                     Pde.u & RT_BIT(9)      ? '1' : '0',
+                     Pde.u & RT_BIT(10)     ? '1' : '0',
+                     Pde.u & RT_BIT(11)     ? '1' : '0',
+                     pgmGstGet4MBPhysPage(&pVM->pgm.s, Pde)));
+            /** @todo PhysSearch */
+            else
+            {
+                Log((           /*P R  S  A  D  G  WT CD AT NX 4M a m d  */
+                     "%08x 0 |    P %c %c %c %c %c %s %s .. .. 4K %c%c%c  %08x\n",
+                     u32Address,
+                     Pde.n.u1Write       ? 'W'  : 'R',
+                     Pde.n.u1User        ? 'U'  : 'S',
+                     Pde.n.u1Accessed    ? 'A'  : '-',
+                     Pde.n.u1Reserved0   ? '?'  : '.', /* ignored */
+                     Pde.n.u1Reserved1   ? '?'  : '.', /* ignored */
+                     Pde.n.u1WriteThru   ? "WT" : "--",
+                     Pde.n.u1CacheDisable? "CD" : "--",
+                     Pde.u & RT_BIT(9)      ? '1' : '0',
+                     Pde.u & RT_BIT(10)     ? '1' : '0',
+                     Pde.u & RT_BIT(11)     ? '1' : '0',
+                     Pde.u & X86_PDE_PG_MASK));
+                ////if (cMaxDepth >= 1)
+                {
+                    /** @todo what about using the page pool for mapping PTs? */
+                    RTGCPHYS GCPhys = Pde.u & X86_PDE_PG_MASK;
+                    PX86PT pPT = NULL;
+                    PGMPAGEMAPLOCK LockPT;
+
+                    rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, (const void **)&pPT, &LockPT);
+
+                    int rc2 = VERR_INVALID_PARAMETER;
+                    if (pPT)
+                        rc2 = pgmR3DumpHierarchyGC32BitPT(pVM, pPT, u32Address, PhysSearch);
+                    else
+                        Log(("%08x error! Page table at %#x was not found in the page pool!\n", u32Address, GCPhys));
+
+                    if (rc == VINF_SUCCESS)
+                        PGMPhysReleasePageMappingLock(pVM, &LockPT);
+
+                    if (rc2 < rc && RT_SUCCESS(rc))
+                        rc = rc2;
+                }
+            }
+        }
+    }
+    PGMPhysReleasePageMappingLock(pVM, &LockCr3);
+    return rc;
 }
 
