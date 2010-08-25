@@ -959,11 +959,19 @@ typedef struct _VRDPENTRYPOINTS_2
 #define VRDP_QP_VIDEO_CHANNEL_QUALITY (6)
 #define VRDP_QP_VIDEO_CHANNEL_SUNFLSH (7)
 #endif /* VBOX_WITH_VRDP_VIDEO_CHANNEL */
+#define VRDP_QP_FEATURE           (8)
 
 #define VRDP_SP_BASE 0x1000
 #define VRDP_SP_NETWORK_BIND_PORT (VRDP_SP_BASE + 1)
 
 #pragma pack(1)
+/* VRDP_QP_FEATURE data. */
+typedef struct _VRDPFEATURE
+{
+    uint32_t u32ClientId;
+    char     achInfo[1]; /* UTF8 property input name and output value. */
+} VRDPFEATURE;
+
 /* A framebuffer description. */
 typedef struct _VRDPFRAMEBUFFERINFO
 {
@@ -1187,9 +1195,12 @@ typedef VRDPCALLBACKS_1 VRDPCALLBACKS_2;
  * Create a new VRDP server instance. The instance is fully functional but refuses
  * client connections until the entry point VRDPEnableConnections is called by the application.
  *
- * The caller prepares the callbacks structure. The header.u64Version field
- * must be initialized with the version of the insterface to use.
- * The server will initialize the callbacks table to match the requested interface.
+ * The caller prepares the VRDPCALLBACKS_* structure. The header.u64Version field of the
+ * structure must be initialized with the version of the interface to use.
+ * The server will return pointer to VRDPENTRYPOINTS_* table in *ppEntryPoints
+ * to match the requested interface.
+ * That is if pCallbacks->header.u64Version == VRDP_INTERFACE_VERSION_1, then the server
+ * expects pCallbacks to point to VRDPCALLBACKS_1 and will return a pointer to VRDPENTRYPOINTS_1.
  *
  * @param pCallback     Pointer to the application callbacks which let the server to fetch
  *                      the configuration data and to access the desktop.
