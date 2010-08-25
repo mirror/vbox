@@ -911,6 +911,8 @@ if 1
 			$(foreach qtmod, $(VBOX_DI_VBAPP_QTMODS), \
 				-change           @executable_path/../Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
 				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
+				-change              $(VBOX_PATH_QT4)/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
+				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
 				-change                                          $(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
 				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
 				) \
