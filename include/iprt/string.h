@@ -1629,7 +1629,8 @@ RTDECL(int) RTStrFormatTypeSetUser(const char *pszType, void *pvUser);
 /**
  * String printf.
  *
- * @returns The length of the returned string (in pszBuffer).
+ * @returns The length of the returned string (in pszBuffer) excluding the
+ *          terminator.
  * @param   pszBuffer   Output buffer.
  * @param   cchBuffer   Size of the output buffer.
  * @param   pszFormat   The format string.
@@ -1640,7 +1641,8 @@ RTDECL(size_t) RTStrPrintfV(char *pszBuffer, size_t cchBuffer, const char *pszFo
 /**
  * String printf.
  *
- * @returns The length of the returned string (in pszBuffer).
+ * @returns The length of the returned string (in pszBuffer) excluding the
+ *          terminator.
  * @param   pszBuffer   Output buffer.
  * @param   cchBuffer   Size of the output buffer.
  * @param   pszFormat   The format string.
@@ -1652,7 +1654,8 @@ RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFor
 /**
  * String printf with custom formatting.
  *
- * @returns The length of the returned string (in pszBuffer).
+ * @returns The length of the returned string (in pszBuffer) excluding the
+ *          terminator.
  * @param   pfnFormat   Pointer to handler function for the custom formats.
  * @param   pvArg       Argument to the pfnFormat function.
  * @param   pszBuffer   Output buffer.
@@ -1665,7 +1668,8 @@ RTDECL(size_t) RTStrPrintfExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuff
 /**
  * String printf with custom formatting.
  *
- * @returns The length of the returned string (in pszBuffer).
+ * @returns The length of the returned string (in pszBuffer) excluding the
+ *          terminator.
  * @param   pfnFormat   Pointer to handler function for the custom formats.
  * @param   pvArg       Argument to the pfnFormat function.
  * @param   pszBuffer   Output buffer.
@@ -1679,7 +1683,8 @@ RTDECL(size_t) RTStrPrintfEx(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffe
 /**
  * Allocating string printf (default tag).
  *
- * @returns The length of the string in the returned *ppszBuffer.
+ * @returns The length of the string in the returned *ppszBuffer excluding the
+ *          terminator.
  * @returns -1 on failure.
  * @param   ppszBuffer  Where to store the pointer to the allocated output buffer.
  *                      The buffer should be freed using RTStrFree().
@@ -1692,7 +1697,8 @@ RTDECL(size_t) RTStrPrintfEx(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffe
 /**
  * Allocating string printf (custom tag).
  *
- * @returns The length of the string in the returned *ppszBuffer.
+ * @returns The length of the string in the returned *ppszBuffer excluding the
+ *          terminator.
  * @returns -1 on failure.
  * @param   ppszBuffer  Where to store the pointer to the allocated output buffer.
  *                      The buffer should be freed using RTStrFree().
@@ -1706,7 +1712,8 @@ RTDECL(int) RTStrAPrintfVTag(char **ppszBuffer, const char *pszFormat, va_list a
 /**
  * Allocating string printf.
  *
- * @returns The length of the string in the returned *ppszBuffer.
+ * @returns The length of the string in the returned *ppszBuffer excluding the
+ *          terminator.
  * @returns -1 on failure.
  * @param   ppszBuffer  Where to store the pointer to the allocated output buffer.
  *                      The buffer should be freed using RTStrFree().
@@ -1727,7 +1734,8 @@ DECLINLINE(int) RTStrAPrintf(char **ppszBuffer, const char *pszFormat, ...)
 /**
  * Allocating string printf (custom tag).
  *
- * @returns The length of the string in the returned *ppszBuffer.
+ * @returns The length of the string in the returned *ppszBuffer excluding the
+ *          terminator.
  * @returns -1 on failure.
  * @param   ppszBuffer  Where to store the pointer to the allocated output buffer.
  *                      The buffer should be freed using RTStrFree().
