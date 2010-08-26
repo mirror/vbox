@@ -116,7 +116,7 @@ USBProxyServiceFreeBSD::~USBProxyServiceFreeBSD()
 
 int USBProxyServiceFreeBSD::captureDevice(HostUSBDevice *aDevice)
 {
-    Log(("USBProxyServiceFreeBSD::captureDevice: %p {%s}\n", aDevice, aDevice->getName().raw()));
+    Log(("USBProxyServiceFreeBSD::captureDevice: %p {%s}\n", aDevice, aDevice->getName().c_str()));
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
     AssertReturn(aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
