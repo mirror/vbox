@@ -1073,7 +1073,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
 
     /* Allocate page directory pointer table if not present. */
     if (    !pPml4e->n.u1Present
-        &&  !(pPml4e->u & X86_PML4E_PG_MASK_FULL))
+        &&  !(pPml4e->u & X86_PML4E_PG_MASK))
     {
         RTGCPTR64   GCPml4;
         PGMPOOLKIND enmKind;
@@ -1088,7 +1088,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
         }
         else
         {
-            GCPml4  = uGstPml4e & X86_PML4E_PG_MASK_FULL;
+            GCPml4  = uGstPml4e & X86_PML4E_PG_MASK;
             enmKind = PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT;
         }
 
@@ -1098,7 +1098,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
     }
     else
     {
-        pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK_FULL);
+        pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
         pgmPoolCacheUsed(pPool, pShwPage);
@@ -1176,7 +1176,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
 
     PVM             pVM      = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL        pPool    = pVM->pgm.s.CTX_SUFF(pPool);
-    PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK_FULL);
+    PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
     const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
