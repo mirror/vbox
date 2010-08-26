@@ -3592,6 +3592,10 @@ typedef struct PGMCPU
     uint64_t                        fGstAmd64MbzBigPdpeMask;
     /** Mask containing the MBZ PML4E bits. */
     uint64_t                        fGstAmd64MbzPml4eMask;
+    /** Mask containing the PDPE bits that we shadow. */
+    uint64_t                        fGstAmd64ShadowedPdpeMask;
+    /** Mask containing the PML4E bits that we shadow. */
+    uint64_t                        fGstAmd64ShadowedPml4eMask;
     /** @} */
 
     /** @name PAE and AMD64 Guest Paging.

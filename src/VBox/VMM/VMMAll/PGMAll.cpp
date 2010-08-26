@@ -1054,8 +1054,8 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE
  * @returns VBox status.
  * @param   pVCpu       VMCPU handle.
  * @param   GCPtr       The address.
- * @param   uGstPml4e   Guest PML4 entry
- * @param   uGstPdpe    Guest PDPT entry
+ * @param   uGstPml4e   Guest PML4 entry (valid).
+ * @param   uGstPdpe    Guest PDPT entry (valid).
  * @param   ppPD        Receives address of page directory
  */
 static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
@@ -1104,8 +1104,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
         pgmPoolCacheUsed(pPool, pShwPage);
     }
     /* The PDPT was cached or created; hook it up now. */
-    pPml4e->u |= pShwPage->Core.Key
-              | (uGstPml4e & ~(X86_PML4E_PG_MASK_FULL | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
+    pPml4e->u |= pShwPage->Core.Key | (uGstPml4e & pVCpu->pgm.s.fGstAmd64ShadowedPml4eMask);
 
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
@@ -1142,8 +1141,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
         pgmPoolCacheUsed(pPool, pShwPage);
     }
     /* The PD was cached or created; hook it up now. */
-    pPdpe->u |= pShwPage->Core.Key
-             | (uGstPdpe & ~(X86_PDPE_PG_MASK_FULL | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
+    pPdpe->u |= pShwPage->Core.Key | (uGstPdpe & pVCpu->pgm.s.fGstAmd64ShadowedPdpeMask);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     return VINF_SUCCESS;
@@ -1190,7 +1188,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
-Log4(("pgmShwGetLongModePDPtr %RGv -> *ppPD=%p PDE=%p/%RX64\n", GCPtr, *ppPD, &(*ppPD)->a[(GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK], (*ppPD)->a[(GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK].u));
+    Log4(("pgmShwGetLongModePDPtr %RGv -> *ppPD=%p PDE=%p/%RX64\n", GCPtr, *ppPD, &(*ppPD)->a[(GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK], (*ppPD)->a[(GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK].u));
     return VINF_SUCCESS;
 }
 
@@ -2241,6 +2239,8 @@ VMM_INT_DECL(void) PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe)
         pVCpu->pgm.s.fGst64ShadowedPdeMask        |= X86_PDE_PAE_NX;
         pVCpu->pgm.s.fGst64ShadowedBigPdeMask     |= X86_PDE2M_PAE_NX;
         pVCpu->pgm.s.fGst64ShadowedBigPde4PteMask |= X86_PDE2M_PAE_NX;
+        pVCpu->pgm.s.fGstAmd64ShadowedPdpeMask    |= X86_PDPE_LM_NX;
+        pVCpu->pgm.s.fGstAmd64ShadowedPml4eMask   |= X86_PML4E_NX;
     }
     else
     {
@@ -2260,6 +2260,8 @@ VMM_INT_DECL(void) PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe)
         pVCpu->pgm.s.fGst64ShadowedPdeMask        &= ~X86_PDE_PAE_NX;
         pVCpu->pgm.s.fGst64ShadowedBigPdeMask     &= ~X86_PDE2M_PAE_NX;
         pVCpu->pgm.s.fGst64ShadowedBigPde4PteMask &= ~X86_PDE2M_PAE_NX;
+        pVCpu->pgm.s.fGstAmd64ShadowedPdpeMask    &= ~X86_PDPE_LM_NX;
+        pVCpu->pgm.s.fGstAmd64ShadowedPml4eMask   &= ~X86_PML4E_NX;
     }
 }
 
