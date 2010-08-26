@@ -2,7 +2,7 @@
 #
 # Oracle VM VirtualBox
 #
-# Copyright (C) 2006-2009 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -87,6 +87,9 @@ case "$APP" in
     ;;
   VBoxHeadless)
     exec "/usr/lib/virtualbox/VBoxHeadless" "$@"
+    ;;
+  vboxwebsrv)
+    exec "/usr/lib/virtualbox/vboxwebsrv" "$@"
     ;;
   *)
     echo "Unknown application - $APP"
