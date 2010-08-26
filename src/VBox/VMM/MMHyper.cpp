@@ -1168,6 +1168,90 @@ VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvR3)
 }
 
 
+/**
+ * Implements the return case of MMR3HyperQueryInfoFromHCPhys.
+ *
+ * @returns VINF_SUCCESS, VINF_BUFFER_OVERFLOW.
+ * @param   pVM                 The VM handle.
+ * @param   HCPhys              The host physical address to look for.
+ * @param   pLookup             The HMA lookup entry corresponding to HCPhys.
+ * @param   pszWhat             Where to return the description.
+ * @param   cbWhat              Size of the return buffer.
+ * @param   pcbAlloc            Where to return the size of whatever it is.
+ */
+static int mmR3HyperQueryInfoFromHCPhysFound(PVM pVM, RTHCPHYS HCPhys, PMMLOOKUPHYPER pLookup,
+                                             char *pszWhat, size_t cbWhat, uint32_t *pcbAlloc)
+{
+    *pcbAlloc = pLookup->cb;
+    int rc = RTStrCopy(pszWhat, cbWhat, pLookup->pszDesc);
+    return rc == VERR_BUFFER_OVERFLOW ? VINF_BUFFER_OVERFLOW : rc;
+}
+
+
+/**
+ * Scans the HMA for the physical page and reports back a description if found.
+ *
+ * @returns VINF_SUCCESS, VINF_BUFFER_OVERFLOW, VERR_NOT_FOUND.
+ * @param   pVM                 The VM handle.
+ * @param   HCPhys              The host physical address to look for.
+ * @param   pszWhat             Where to return the description.
+ * @param   cbWhat              Size of the return buffer.
+ * @param   pcbAlloc            Where to return the size of whatever it is.
+ */
+VMMR3_INT_DECL(int) MMR3HyperQueryInfoFromHCPhys(PVM pVM, RTHCPHYS HCPhys, char *pszWhat, size_t cbWhat, uint32_t *pcbAlloc)
+{
+    RTHCPHYS        HCPhysPage = HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK;
+    PMMLOOKUPHYPER  pLookup    = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.pHyperHeapR3 + pVM->mm.s.offLookupHyper);
+    for (;;)
+    {
+        switch (pLookup->enmType)
+        {
+            case MMLOOKUPHYPERTYPE_LOCKED:
+            {
+                uint32_t i = pLookup->cb >> PAGE_SHIFT;
+                while (i-- > 0)
+                    if (pLookup->u.Locked.paHCPhysPages[i] == HCPhysPage)
+                        return mmR3HyperQueryInfoFromHCPhysFound(pVM, HCPhys, pLookup, pszWhat, cbWhat, pcbAlloc);
+                break;
+            }
+
+            case MMLOOKUPHYPERTYPE_HCPHYS:
+            {
+                if (pLookup->u.HCPhys.HCPhys - HCPhysPage < pLookup->cb)
+                    return mmR3HyperQueryInfoFromHCPhysFound(pVM, HCPhys, pLookup, pszWhat, cbWhat, pcbAlloc);
+                break;
+            }
+
+            case MMLOOKUPHYPERTYPE_MMIO2:
+            case MMLOOKUPHYPERTYPE_GCPHYS:
+            case MMLOOKUPHYPERTYPE_DYNAMIC:
+            {
+                /* brute force. */
+                uint32_t i = pLookup->cb >> PAGE_SHIFT;
+                while (i-- > 0)
+                {
+                    RTGCPTR     GCPtr = pLookup->off + pVM->mm.s.pvHyperAreaGC;
+                    RTHCPHYS    HCPhysCur;
+                    int rc = PGMMapGetPage(pVM, GCPtr, NULL, &HCPhysCur);
+                    if (RT_SUCCESS(rc) && HCPhysCur == HCPhysPage)
+                        return mmR3HyperQueryInfoFromHCPhysFound(pVM, HCPhys, pLookup, pszWhat, cbWhat, pcbAlloc);
+                }
+                break;
+            }
+            default:
+                AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
+                break;
+        }
+
+        /* next */
+        if ((unsigned)pLookup->offNext == NIL_OFFSET)
+            break;
+        pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
+    }
+    return VERR_NOT_FOUND;
+}
+
+
 #if 0 /* unused, not implemented */
 /**
  * Convert hypervisor HC physical address to HC virtual address.

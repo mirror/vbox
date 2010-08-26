@@ -4914,6 +4914,22 @@ PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
     return pPage;
 }
 
+
+/**
+ * Internal worker for finding a page for debugging purposes, no assertions.
+ *
+ * @returns Pointer to the shadow page structure.  NULL on if not found.
+ * @param   pPool       The pool.
+ * @param   HCPhys      The HC physical address of the shadow page.
+ */
+PPGMPOOLPAGE pgmPoolQueryPageForDbg(PPGMPOOL pPool, RTHCPHYS HCPhys)
+{
+    PVM pVM = pPool->CTX_SUFF(pVM);
+    Assert(PGMIsLockOwner(pVM));
+    return (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, HCPhys & X86_PTE_PAE_PG_MASK_FULL);
+}
+
+
 #ifdef IN_RING3 /* currently only used in ring 3; save some space in the R0 & GC modules (left it here as we might need it elsewhere later on) */
 /**
  * Flush the specified page if present

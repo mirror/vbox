@@ -314,6 +314,7 @@ VMMDECL(int)            PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbS
 VMMDECL(int)            PGMIsValidAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess);
 VMMDECL(VBOXSTRICTRC)   PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
 VMMDECL(int)            PGMMap(PVM pVM, RTGCPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPages, unsigned fFlags);
+VMMDECL(int)            PGMMapGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 VMMDECL(int)            PGMMapSetPage(PVM pVM, RTGCPTR GCPtr, uint64_t cb, uint64_t fFlags);
 VMMDECL(int)            PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 #ifndef IN_RING0
