@@ -1045,7 +1045,7 @@ static void vusbDevCancelAllUrbs(PVUSBDEV pDev, bool fDetaching)
         if (pUrb->VUsb.pDev == pDev)
         {
             LogFlow(("%s: vusbDevCancelAllUrbs: CANCELING URB\n", pUrb->pszDesc));
-            vusbUrbCancel(pUrb);
+            vusbUrbCancel(pUrb, CANCELMODE_FAIL);
         }
         pUrb = pNext;
     }

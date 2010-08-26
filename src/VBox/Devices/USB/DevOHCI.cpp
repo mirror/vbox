@@ -2415,6 +2415,14 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
      * with the data copying, buffer pointer advancing and error handling.
      */
     int cFmAge = ohci_in_flight_remove_urb(pOhci, pUrb);
+    if (pUrb->enmStatus == VUSBSTATUS_UNDO)
+    {
+        /* Leave the TD alone - the HCD doesn't want us talking to the device. */
+        Log(("%s: ohciRhXferCompletion: CANCELED {ED=%#010x cTds=%d TD0=%#010x age %d}\n",
+             pUrb->pszDesc, pUrb->Hci.EdAddr, pUrb->Hci.cTds, pUrb->Hci.paTds[0].TdAddr, cFmAge));
+        STAM_COUNTER_INC(&pOhci->StatDroppedUrbs);
+        return;
+    }
     bool fHasBeenCanceled = false;
     if (    (Ed.HeadP & ED_HEAD_HALTED)
         ||  (Ed.hwinfo & ED_HWINFO_SKIP)
@@ -2437,7 +2445,7 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
 
     /*
      * Complete the TD updating and write the back.
-     * When appropirate also copy data back to the guest memory.
+     * When appropriate also copy data back to the guest memory.
      */
     if (pUrb->enmType == VUSBXFERTYPE_ISOC)
         ohciRhXferCompleteIsochronousURB(pOhci, pUrb, &Ed, cFmAge);

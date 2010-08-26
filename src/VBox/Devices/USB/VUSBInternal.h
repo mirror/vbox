@@ -406,6 +406,16 @@ AssertCompileMemberAlignment(VUSBROOTHUB, Total, 8);
 /** Converts a pointer to VUSBROOTHUB::IRhConnector to a PVUSBROOTHUB. */
 #define VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface) (PVUSBROOTHUB)( (uintptr_t)(pInterface) - RT_OFFSETOF(VUSBROOTHUB, IRhConnector) )
 
+/**
+ * URB cancellation modes
+ */
+typedef enum CANCELMODE
+{
+    /** complete the URB with an error (CRC). */
+    CANCELMODE_FAIL = 0,
+    /** do not change the URB contents. */
+    CANCELMODE_UNDO
+} CANCELMODE;
 
 /* @} */
 
@@ -416,7 +426,7 @@ AssertCompileMemberAlignment(VUSBROOTHUB, Total, 8);
 int  vusbUrbSubmit(PVUSBURB pUrb);
 void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete);
 void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies);
-void vusbUrbCancel(PVUSBURB pUrb);
+void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode);
 void vusbUrbRipe(PVUSBURB pUrb);
 void vusbUrbCompletionRh(PVUSBURB pUrb);
 

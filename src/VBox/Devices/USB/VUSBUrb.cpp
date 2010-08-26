@@ -2010,10 +2010,16 @@ static void vusbUrbCompletion(PVUSBURB pUrb)
  * An URB which is in the cancel state after pfnCancel will remain in that
  * state and in the async list until its reaped. When it's finally reaped
  * it will be unlinked and freed without doing any completion.
+ * 
+ * There are different modes of canceling an URB. When devices are being
+ * disconnected etc., they will be completed with an error (CRC). However,
+ * when the HC needs to temporarily halt communication with a device, the
+ * URB/TD must be left alone if possible.
  *
  * @param   pUrb        The URB to cancel.
+ * @param   mode        The way the URB should be canceled.
  */
-void vusbUrbCancel(PVUSBURB pUrb)
+void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode)
 {
     vusbUrbAssert(pUrb);
 #ifdef VBOX_WITH_STATISTICS
@@ -2053,7 +2059,18 @@ void vusbUrbCancel(PVUSBURB pUrb)
     else
     {
         AssertMsg(pUrb->enmState == VUSBURBSTATE_CANCELLED, ("Invalid state %d, pUrb=%p\n", pUrb->enmState, pUrb));
-        pUrb->enmStatus = VUSBSTATUS_CRC;
+        switch (mode)
+        {
+            default:
+                AssertMsgFailed(("Invalid cancel mode\n"));
+            case CANCELMODE_FAIL:
+                pUrb->enmStatus = VUSBSTATUS_CRC;
+                break;
+            case CANCELMODE_UNDO:
+                pUrb->enmStatus = VUSBSTATUS_UNDO;
+                break;
+
+        }
     }
 }
 
