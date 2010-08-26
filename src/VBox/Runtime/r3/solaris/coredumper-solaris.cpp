@@ -53,6 +53,8 @@
 # include <sys/mman.h>
 #endif  /* RT_OS_SOLARIS */
 
+#include "internal/ldrElf.h"
+
 /*******************************************************************************
 *   Globals                                                                    *
 *******************************************************************************/
@@ -76,6 +78,16 @@ static char                g_szCoreDumpFile[PATH_MAX] = { 0 };
         rtCoreDumperSysLogWrapper a; \
     } while (0)
 
+
+/**
+ * ELFNOTEHDR: ELF NOTE header.
+ */
+typedef struct ELFNOTEHDR
+{
+    Elf_Nhdr                        Hdr;                        /* Header of NOTE section */
+    char                            achName[8];                 /* Name of NOTE section */
+} ELFNOTEHDR;
+typedef ELFNOTEHDR *PELFNOTEHDR;
 
 /**
  * Wrapper function to write IPRT format style string to the syslog.
@@ -1674,7 +1686,7 @@ static int ElfWriteMappingHeaders(PVBOXCORE pVBoxCore)
     AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
 
     PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
-    Phdr ProgHdr;
+    Elf_Phdr ProgHdr;
     RT_ZERO(ProgHdr);
     ProgHdr.p_type = PT_LOAD;
 
@@ -1762,7 +1774,7 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Write the ELF header.
      */
-    Ehdr ElfHdr;
+    Elf_Hdr ElfHdr;
     RT_ZERO(ElfHdr);
     ElfHdr.e_ident[EI_MAG0]  = ELFMAG0;
     ElfHdr.e_ident[EI_MAG1]  = ELFMAG1;
@@ -1784,8 +1796,8 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
         ElfHdr.e_phnum       = cProgHdrs;
     ElfHdr.e_ehsize          = sizeof(ElfHdr);
     ElfHdr.e_phoff           = sizeof(ElfHdr);
-    ElfHdr.e_phentsize       = sizeof(Phdr);
-    ElfHdr.e_shentsize       = sizeof(Shdr);
+    ElfHdr.e_phentsize       = sizeof(Elf_Phdr);
+    ElfHdr.e_shentsize       = sizeof(Elf_Shdr);
     rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, &ElfHdr, sizeof(ElfHdr));
     if (RT_FAILURE(rc))
     {
@@ -1796,7 +1808,7 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Setup program header.
      */
-    Phdr ProgHdr;
+    Elf_Phdr ProgHdr;
     RT_ZERO(ProgHdr);
     ProgHdr.p_type = PT_NOTE;
     ProgHdr.p_flags = PF_R;

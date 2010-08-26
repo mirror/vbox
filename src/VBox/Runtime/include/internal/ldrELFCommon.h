@@ -138,6 +138,7 @@ typedef struct {
 #define EM_SPARCV9	43	/* SPARC v9 64-bit */
 #define EM_IA_64	50	/* Intel IA-64 Processor */
 #define EM_X86_64	62	/* Advanced Micro Devices x86-64 */
+#define EM_AMD64    EM_X86_64   /* SunOS compatibility (added by Ramshankar) */
 #define EM_ALPHA	0x9026	/* Alpha (written in the absence of an ABI */
 
 /* Special section indexes. */
@@ -272,9 +273,38 @@ typedef struct {
 				   thread-local storage scheme. */
 
 /* Values for n_type.  Used in core files. */
+#if defined(RT_OS_FREEBSD)  /* (added by Ramshankar) */
 #define NT_PRSTATUS	1	/* Process status. */
 #define NT_FPREGSET	2	/* Floating point registers. */
 #define NT_PRPSINFO	3	/* Process state info. */
+#elif defined(RT_OS_SOLARIS) /* (added by Ramshankar) */
+#define	NT_PRSTATUS	1	/* prstatus_t <sys/old_procfs.h>	*/
+#define	NT_PRFPREG	2	/* prfpregset_t	<sys/old_procfs.h>	*/
+#define	NT_PRPSINFO	3	/* prpsinfo_t <sys/old_procfs.h>	*/
+#define	NT_PRXREG	4	/* prxregset_t <sys/procfs.h> */
+#define	NT_PLATFORM	5	/* string from sysinfo(SI_PLATFORM)	*/
+#define	NT_AUXV		6	/* auxv_t array	<sys/auxv.h> */
+#define	NT_LDT		9	/* ssd array <sys/sysi86.h> IA32 only */
+#define	NT_PSTATUS	10	/* pstatus_t <sys/procfs.h> */
+#define	NT_PSINFO	13	/* psinfo_t	<sys/procfs.h> */
+#define	NT_PRCRED	14	/* prcred_t	<sys/procfs.h> */
+#define	NT_UTSNAME	15	/* struct utsname <sys/utsname.h> */
+#define	NT_LWPSTATUS	16	/* lwpstatus_t	<sys/procfs.h> */
+#define	NT_LWPSINFO	17	/* lwpsinfo_t <sys/procfs.h> */
+#define	NT_PRPRIV	18	/* prpriv_t	<sys/procfs.h>	*/
+#define	NT_PRPRIVINFO	19	/* priv_impl_info_t <sys/priv.h> */
+#define	NT_CONTENT	20	/* core_content_t <sys/corectl.h> */
+#define	NT_ZONENAME	21	/* string from getzonenamebyid(3C) */
+#define	PF_SUNW_FAILURE	0x00100000	/* mapping absent due to failure */
+#define	PN_XNUM		0xffff	/* extended program header index */
+#elif defined(RT_OS_LINUX) /* (added by Ramshankar) */
+#define NT_PRSTATUS     1   /* Process status. */
+#define NT_PRFPREG      2   /* Floating point registers. */
+#define NT_PRPSINFO     3   /* Process state info. */
+#define NT_TASKSTRUCT   4   /* Task info. */
+#define NT_AUXV         6   /* Process auxiliary vectors. */
+#define NT_PRXFPREG     0x46e62b7f /* from gdb5.1/include/elf/common.h */
+#endif
 
 /* Symbol Binding - ELFNN_ST_BIND - st_info */
 #define STB_LOCAL	0	/* Local symbol */
