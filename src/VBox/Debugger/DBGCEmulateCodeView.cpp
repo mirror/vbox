@@ -2746,7 +2746,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
             iEntry = (VarGCPtr.u.GCFlat >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
             VarPDEAddr = VarCur;
-            VarPDEAddr.u.u64Number = Pdpe.u & X86_PDPE_PG_MASK;
+            VarPDEAddr.u.u64Number = Pdpe.u & X86_PDPE_PG_MASK_FULL;
             VarPDEAddr.u.u64Number += iEntry * sizeof(X86PDEPAE);
         }
         else
@@ -3115,7 +3115,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             if (!Pdpe.n.u1Present)
                 return DBGCCmdHlpPrintf(pCmdHlp, "Page directory is not present for %Dv.\n", &VarGCPtr);
 
-            VarCur.u.u64Number = Pdpe.u & X86_PDPE_PG_MASK;
+            VarCur.u.u64Number = Pdpe.u & X86_PDPE_PG_MASK_FULL;
 
             /* Page directory (PAE). */
             X86PDEPAE Pde;
