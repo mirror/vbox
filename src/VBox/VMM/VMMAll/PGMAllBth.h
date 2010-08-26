@@ -352,7 +352,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                 &&  (   uErr & X86_TRAP_PF_RW
                      || pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
             {
-                Assert((pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) == (pGstWalk->Core.GCPhys & X86_PTE_PAE_PG_MASK));
+                Assert((pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK_FULL) == (pGstWalk->Core.GCPhys & X86_PTE_PAE_PG_MASK_FULL));
 #   ifdef IN_RC
                 STAM_PROFILE_START(&pCur->Stat, h);
                 RTGCPTR                     GCPtrStart = pCur->Core.Key;
@@ -4204,7 +4204,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                             if (!SHW_PTE_IS_P(PteDst)) /** @todo deal with ALL handlers and CSAM !P pages! */
                                 continue;
 
-                            fIgnoreFlags = X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_PAT | X86_PTE_D | X86_PTE_A | X86_PTE_G | X86_PTE_PAE_NX;
+                            fIgnoreFlags = X86_PTE_PAE_PG_MASK_FULL | X86_PTE_AVL_MASK | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_PAT | X86_PTE_D | X86_PTE_A | X86_PTE_G | X86_PTE_PAE_NX;
 
                             /* match the physical addresses */
                             HCPhysShw = SHW_PTE_GET_HCPHYS(PteDst);
