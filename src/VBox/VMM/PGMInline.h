@@ -761,7 +761,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PVMCPU pVCpu, RTGCPTR GCPtr)
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
             PX86PDPAE   pGuestPD = NULL;
             int rc = pgmRZDynMapGCPageInlined(pVCpu,
-                                              pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK,
+                                              pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK_FULL,
                                               (void **)&pGuestPD
                                               RTLOG_COMMA_SRC_POS);
             if (RT_SUCCESS(rc))
@@ -770,7 +770,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PVMCPU pVCpu, RTGCPTR GCPtr)
 #else
             PX86PDPAE   pGuestPD = pVCpu->pgm.s.CTX_SUFF(apGstPaePDs)[iPdpt];
             if (    !pGuestPD
-                ||  (pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK) != pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt])
+                ||  (pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK_FULL) != pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt])
                 pgmGstLazyMapPaePD(pVCpu, iPdpt, &pGuestPD);
             if (pGuestPD)
                 return pGuestPD->a[iPD];
@@ -814,7 +814,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, unsigned *p
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPAE   pGuestPD = NULL;
     int rc = pgmRZDynMapGCPageInlined(pVCpu,
-                                      pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK,
+                                      pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK_FULL,
                                       (void **)&pGuestPD
                                       RTLOG_COMMA_SRC_POS);
     if (RT_FAILURE(rc))
@@ -825,7 +825,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, unsigned *p
 #else
     PX86PDPAE   pGuestPD = pVCpu->pgm.s.CTX_SUFF(apGstPaePDs)[iPdpt];
     if (    !pGuestPD
-        ||  (pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK) != pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt])
+        ||  (pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK_FULL) != pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt])
         pgmGstLazyMapPaePD(pVCpu, iPdpt, &pGuestPD);
 #endif
 
@@ -931,7 +931,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDE(PVMCPU pVCpu, RTGCPTR64 GCPtr)
                 &&  !(pPdptTemp->a[iPdpt].u & pVCpu->pgm.s.fGstAmd64MbzPdpeMask) )
             {
                 PCX86PDPAE pPD;
-                rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
+                rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK_FULL, &pPD);
                 if (RT_SUCCESS(rc))
                 {
                     const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
@@ -988,7 +988,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86
 
     /* The PDE. */
     PX86PDPAE pPD;
-    rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
+    rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK_FULL, &pPD);
     if (RT_FAILURE(rc))
     {
         AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
