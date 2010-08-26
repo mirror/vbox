@@ -41,16 +41,6 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** Chunk size for dynamically allocated physical memory. */
-#define PGM_DYNAMIC_CHUNK_SIZE          (1*1024*1024)
-/** Shift GC physical address by 20 bits to get the offset into the pvHCChunkHC array. */
-#define PGM_DYNAMIC_CHUNK_SHIFT         20
-/** Dynamic chunk offset mask. */
-#define PGM_DYNAMIC_CHUNK_OFFSET_MASK   0xfffff
-/** Dynamic chunk base mask. */
-#define PGM_DYNAMIC_CHUNK_BASE_MASK     (~(RTGCPHYS)PGM_DYNAMIC_CHUNK_OFFSET_MASK)
-
-
 /**
  * FNPGMRELOCATE callback mode.
  */
