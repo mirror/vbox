@@ -3955,7 +3955,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                             {
 # ifdef IN_RING3
                                 PGMAssertHandlerAndFlagsInSync(pVM);
-                                PGMR3DumpHierarchyGC(pVM, cr3, cr4, GST_GET_PDE_GCPHYS(PdeSrc));
+                                DBGFR3PagingDumpEx(pVM, pVCpu->idCpu, DBGFPGDMP_FLAGS_CURRENT_CR3 | DBGFPGDMP_FLAGS_CURRENT_MODE
+                                                   | DBGFPGDMP_FLAGS_GUEST | DBGFPGDMP_FLAGS_HEADER | DBGFPGDMP_FLAGS_PRINT_CR3,
+                                                   0, 0, UINT64_MAX, 99, NULL);
 # endif
                                 AssertMsgFailed(("Out of sync (!P) PTE at %RGv! PteSrc=%#RX64 PteDst=%#RX64 pPTSrc=%RGv iPTSrc=%x PdeSrc=%x physpte=%RGp\n",
                                                 GCPtr + off, (uint64_t)PteSrc.u, SHW_PTE_LOG64(PteDst), pPTSrc, iPT + offPTSrc, PdeSrc.au32[0],

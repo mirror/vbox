@@ -1637,8 +1637,8 @@ static int pgmR3DumpHierarchyShwDoIt(PPGMR3DUMPHIERARCHYSTATE pState, uint64_t c
  *
  * @internal
  */
-VMMR3_INT_DECL(int) PGMR3DumpHierarchyHCEx(PVM pVM, uint64_t cr3, uint32_t fFlags, uint64_t u64FirstAddr, uint64_t u64LastAddr,
-                                           uint32_t cMaxDepth, PCDBGFINFOHLP pHlp)
+VMMR3_INT_DECL(int) PGMR3DumpHierarchyShw(PVM pVM, uint64_t cr3, uint32_t fFlags, uint64_t u64FirstAddr, uint64_t u64LastAddr,
+                                          uint32_t cMaxDepth, PCDBGFINFOHLP pHlp)
 {
     /* Minimal validation as we're only supposed to service DBGF. */
     AssertReturn(~(fFlags & ~DBGFPGDMP_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
@@ -1680,172 +1680,6 @@ VMMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fL
 
     return DBGFR3PagingDumpEx(pVM, pVCpu->idCpu, fFlags, cr3, 0, fLongMode ? UINT64_MAX : UINT32_MAX, cMaxDepth, pHlp);
 }
-
-
-////// kill this code //////
-
-/**
- * Dumps a 32-bit shadow page table.
- *
- * @returns VBox status code (VINF_SUCCESS).
- * @param   pVM         The VM handle.
- * @param   pPT         Pointer to the page table.
- * @param   u32Address  The virtual address this table starts at.
- * @param   PhysSearch  Address to search for.
- */
-int pgmR3DumpHierarchyGC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, RTGCPHYS PhysSearch)
-{
-    for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
-    {
-        X86PTE Pte = pPT->a[i];
-        if (Pte.n.u1Present)
-        {
-            Log((           /*P R  S  A  D  G  WT CD AT NX 4M a m d  */
-                 "%08x 1  |   P %c %c %c %c %c %s %s %s .. 4K %c%c%c  %08x\n",
-                 u32Address + (i << X86_PT_SHIFT),
-                 Pte.n.u1Write       ? 'W'  : 'R',
-                 Pte.n.u1User        ? 'U'  : 'S',
-                 Pte.n.u1Accessed    ? 'A'  : '-',
-                 Pte.n.u1Dirty       ? 'D'  : '-',
-                 Pte.n.u1Global      ? 'G'  : '-',
-                 Pte.n.u1WriteThru   ? "WT" : "--",
-                 Pte.n.u1CacheDisable? "CD" : "--",
-                 Pte.n.u1PAT         ? "AT" : "--",
-                 Pte.u & PGM_PTFLAGS_TRACK_DIRTY     ? 'd' : '-',
-                 Pte.u & RT_BIT(10)                  ? '1' : '0',
-                 Pte.u & PGM_PTFLAGS_CSAM_VALIDATED  ? 'v' : '-',
-                 Pte.u & X86_PDE_PG_MASK));
-
-            if ((Pte.u & X86_PDE_PG_MASK) == PhysSearch)
-            {
-                uint64_t fPageShw = 0;
-                RTHCPHYS pPhysHC = 0;
-
-                /** @todo SMP support!! */
-                PGMShwGetPage(&pVM->aCpus[0], (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), &fPageShw, &pPhysHC);
-                Log(("Found %RGp at %RGv -> flags=%llx\n", PhysSearch, (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), fPageShw));
-            }
-        }
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Dumps a 32-bit guest page directory and page tables.
- *
- * @returns VBox status code (VINF_SUCCESS).
- * @param   pVM         The VM handle.
- * @param   cr3         The root of the hierarchy.
- * @param   cr4         The CR4, PSE is currently used.
- * @param   PhysSearch  Address to search for.
- * @deprecated Use DBGFR3PagingDumpEx.
- */
-VMMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHYS PhysSearch)
-{
-    bool fLongMode = false;
-    const unsigned cch = fLongMode ? 16 : 8; NOREF(cch);
-    PX86PD pPD = 0;
-    PGMPAGEMAPLOCK LockCr3;
-
-    int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, cr3 & X86_CR3_PAGE_MASK, (const void **)&pPD, &LockCr3);
-    if (    RT_FAILURE(rc)
-        ||  !pPD)
-    {
-        Log(("Page directory at %#x was not found in the page pool!\n", cr3 & X86_CR3_PAGE_MASK));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    Log(("cr3=%08x cr4=%08x%s\n"
-         "%-*s        P - Present\n"
-         "%-*s        | R/W - Read (0) / Write (1)\n"
-         "%-*s        | | U/S - User (1) / Supervisor (0)\n"
-         "%-*s        | | | A - Accessed\n"
-         "%-*s        | | | | D - Dirty\n"
-         "%-*s        | | | | | G - Global\n"
-         "%-*s        | | | | | | WT - Write thru\n"
-         "%-*s        | | | | | | |  CD - Cache disable\n"
-         "%-*s        | | | | | | |  |  AT - Attribute table (PAT)\n"
-         "%-*s        | | | | | | |  |  |  NX - No execute (K8)\n"
-         "%-*s        | | | | | | |  |  |  |  4K/4M/2M - Page size.\n"
-         "%-*s        | | | | | | |  |  |  |  |  AVL - a=allocated; m=mapping; d=track dirty;\n"
-         "%-*s        | | | | | | |  |  |  |  |  |     p=permanent; v=validated;\n"
-         "%-*s Level  | | | | | | |  |  |  |  |  |    Page\n"
-       /* xxxx n **** P R S A D G WT CD AT NX 4M AVL xxxxxxxxxxxxx
-                      - W U - - - -- -- -- -- -- 010 */
-         , cr3, cr4, fLongMode ? " Long Mode" : "",
-         cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "",
-         cch, "", cch, "", cch, "", cch, "", cch, "", cch, "", cch, "Address"));
-
-    for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
-    {
-        X86PDE Pde = pPD->a[i];
-        if (Pde.n.u1Present)
-        {
-            const uint32_t u32Address = i << X86_PD_SHIFT;
-
-            if ((cr4 & X86_CR4_PSE) && Pde.b.u1Size)
-                Log((           /*P R  S  A  D  G  WT CD AT NX 4M a m d  */
-                     "%08x 0 |    P %c %c %c %c %c %s %s %s .. 4M %c%c%c  %08x\n",
-                     u32Address,
-                     Pde.b.u1Write       ? 'W'  : 'R',
-                     Pde.b.u1User        ? 'U'  : 'S',
-                     Pde.b.u1Accessed    ? 'A'  : '-',
-                     Pde.b.u1Dirty       ? 'D'  : '-',
-                     Pde.b.u1Global      ? 'G'  : '-',
-                     Pde.b.u1WriteThru   ? "WT" : "--",
-                     Pde.b.u1CacheDisable? "CD" : "--",
-                     Pde.b.u1PAT         ? "AT" : "--",
-                     Pde.u & RT_BIT(9)      ? '1' : '0',
-                     Pde.u & RT_BIT(10)     ? '1' : '0',
-                     Pde.u & RT_BIT(11)     ? '1' : '0',
-                     pgmGstGet4MBPhysPage(&pVM->pgm.s, Pde)));
-            /** @todo PhysSearch */
-            else
-            {
-                Log((           /*P R  S  A  D  G  WT CD AT NX 4M a m d  */
-                     "%08x 0 |    P %c %c %c %c %c %s %s .. .. 4K %c%c%c  %08x\n",
-                     u32Address,
-                     Pde.n.u1Write       ? 'W'  : 'R',
-                     Pde.n.u1User        ? 'U'  : 'S',
-                     Pde.n.u1Accessed    ? 'A'  : '-',
-                     Pde.n.u1Reserved0   ? '?'  : '.', /* ignored */
-                     Pde.n.u1Reserved1   ? '?'  : '.', /* ignored */
-                     Pde.n.u1WriteThru   ? "WT" : "--",
-                     Pde.n.u1CacheDisable? "CD" : "--",
-                     Pde.u & RT_BIT(9)      ? '1' : '0',
-                     Pde.u & RT_BIT(10)     ? '1' : '0',
-                     Pde.u & RT_BIT(11)     ? '1' : '0',
-                     Pde.u & X86_PDE_PG_MASK));
-                ////if (cMaxDepth >= 1)
-                {
-                    /** @todo what about using the page pool for mapping PTs? */
-                    RTGCPHYS GCPhys = Pde.u & X86_PDE_PG_MASK;
-                    PX86PT pPT = NULL;
-                    PGMPAGEMAPLOCK LockPT;
-
-                    rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, (const void **)&pPT, &LockPT);
-
-                    int rc2 = VERR_INVALID_PARAMETER;
-                    if (pPT)
-                        rc2 = pgmR3DumpHierarchyGC32BitPT(pVM, pPT, u32Address, PhysSearch);
-                    else
-                        Log(("%08x error! Page table at %#x was not found in the page pool!\n", u32Address, GCPhys));
-
-                    if (rc == VINF_SUCCESS)
-                        PGMPhysReleasePageMappingLock(pVM, &LockPT);
-
-                    if (rc2 < rc && RT_SUCCESS(rc))
-                        rc = rc2;
-                }
-            }
-        }
-    }
-    PGMPhysReleasePageMappingLock(pVM, &LockCr3);
-    return rc;
-}
-
-/////// end of to-be-killed code. ///////
 
 
 /**
@@ -2480,8 +2314,8 @@ static int pgmR3DumpHierarchyGstDoIt(PPGMR3DUMPHIERARCHYSTATE pState, uint64_t c
  *
  * @internal
  */
-VMMR3_INT_DECL(int) PGMR3DumpHierarchyGCEx(PVM pVM, uint64_t cr3, uint32_t fFlags, RTGCPTR FirstAddr, RTGCPTR LastAddr,
-                                           uint32_t cMaxDepth, PCDBGFINFOHLP pHlp)
+VMMR3_INT_DECL(int) PGMR3DumpHierarchyGst(PVM pVM, uint64_t cr3, uint32_t fFlags, RTGCPTR FirstAddr, RTGCPTR LastAddr,
+                                          uint32_t cMaxDepth, PCDBGFINFOHLP pHlp)
 {
     /* Minimal validation as we're only supposed to service DBGF. */
     AssertReturn(~(fFlags & ~DBGFPGDMP_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
