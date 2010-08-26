@@ -985,8 +985,8 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
     {
         if (!PGM_RAM_RANGE_IS_AD_HOC(pRam))
         {
-            unsigned iPage = pRam->cb >> PAGE_SHIFT;
-            while (iPage-- > 0)
+            unsigned cPages = pRam->cb >> PAGE_SHIFT;
+            for (unsigned iPage = 0; iPage < cPages; iPage++)
             {
                 PPGMPAGE pPage = &pRam->aPages[iPage];
                 if (RT_LIKELY(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM))
@@ -1064,12 +1064,14 @@ VMMR3DECL(int) PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pfnEnum
     {
         if (!PGM_RAM_RANGE_IS_AD_HOC(pRam))
         {
-            unsigned iPage = pRam->cb >> PAGE_SHIFT;
-            while (iPage-- > 0)
+            unsigned cPages = pRam->cb >> PAGE_SHIFT;
+            for (unsigned iPage = 0; iPage < cPages; iPage++)
             {
                 PPGMPAGE pPage = &pRam->aPages[iPage];
                 if (RT_LIKELY(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM))
                 {
+                    unsigned cbPageRange = PAGE_SIZE;
+
                     /*
                      * A RAM page.
                      */
@@ -1079,11 +1081,41 @@ VMMR3DECL(int) PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pfnEnum
                         if (    !PGM_PAGE_IS_WRITTEN_TO(pPage)
                             &&  PGM_PAGE_IS_FT_DIRTY(pPage))
                         {
-                            /** @todo this is risky; the range might be changed, but little choice as the sync costs a lot of time */
-                            pgmUnlock(pVM);
-                            pfnEnum(pVM, pRam->GCPhys + iPage * PAGE_SIZE, 0, 0, pvUser);
-                            pgmLock(pVM);
-                            PGM_PAGE_CLEAR_FT_DIRTY(pPage);
+                            unsigned       iPageClean  = iPage + 1;
+                            RTGCPHYS       GCPhysPage  = pRam->GCPhys + iPage * PAGE_SIZE;
+                            uint8_t       *pu8Page     = NULL;
+                            PGMPAGEMAPLOCK Lock;
+
+                            /* Find the next clean page, so we can merge adjacent dirty pages. */
+                            for (; iPageClean < cPages; iPageClean++)
+                            {
+                                PPGMPAGE pPageNext = &pRam->aPages[iPageClean];
+                                if (    RT_UNLIKELY(PGM_PAGE_GET_TYPE(pPageNext) != PGMPAGETYPE_RAM)
+                                    ||  PGM_PAGE_GET_STATE(pPageNext) != PGM_PAGE_STATE_ALLOCATED
+                                    ||  PGM_PAGE_IS_WRITTEN_TO(pPageNext)
+                                    ||  !PGM_PAGE_IS_FT_DIRTY(pPageNext)
+                                    /* Crossing a chunk boundary? */
+                                    ||  (GCPhysPage & GMM_PAGEID_IDX_MASK) != ((GCPhysPage + cbPageRange) & GMM_PAGEID_IDX_MASK)
+                                   )
+                                   break;
+
+                                cbPageRange += PAGE_SIZE;
+                            }
+
+                            rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhysPage, (const void **)&pu8Page, &Lock);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /** @todo this is risky; the range might be changed, but little choice as the sync costs a lot of time */
+                                pgmUnlock(pVM);
+                                pfnEnum(pVM, GCPhysPage, pu8Page, cbPageRange, pvUser);
+                                pgmLock(pVM);
+                                PGMPhysReleasePageMappingLock(pVM, &Lock);
+                            }
+
+                            for (iPage; iPage < iPageClean; iPage++)
+                                PGM_PAGE_CLEAR_FT_DIRTY(&pRam->aPages[iPage]);
+
+                            iPage = iPageClean - 1;
                         }
                         break;
                     }
