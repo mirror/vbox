@@ -661,7 +661,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 if (uShw.pPML4->a[iShw].n.u1Present)
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPML4->a[iShw].u));
-                    pgmPoolFree(pVM, uShw.pPML4->a[iShw].u & X86_PML4E_PG_MASK, pPage->idx, iShw);
+                    pgmPoolFree(pVM, uShw.pPML4->a[iShw].u & X86_PML4E_PG_MASK_FULL, pPage->idx, iShw);
                     ASMAtomicWriteSize(&uShw.pPML4->a[iShw].u, 0);
                 }
                 /* paranoia / a bit assumptive. */
@@ -672,7 +672,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     if (uShw.pPML4->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPML4->a[iShw2].u));
-                        pgmPoolFree(pVM, uShw.pPML4->a[iShw2].u & X86_PML4E_PG_MASK, pPage->idx, iShw2);
+                        pgmPoolFree(pVM, uShw.pPML4->a[iShw2].u & X86_PML4E_PG_MASK_FULL, pPage->idx, iShw2);
                         ASMAtomicWriteSize(&uShw.pPML4->a[iShw2].u, 0);
                     }
                 }
@@ -4347,7 +4347,7 @@ DECLINLINE(void) pgmPoolTrackDerefPML464Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
             if (pSubPage)
                 pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
             else
-                AssertFatalMsgFailed(("%RX64\n", pShwPML4->a[i].u & X86_PML4E_PG_MASK));
+                AssertFatalMsgFailed(("%RX64\n", pShwPML4->a[i].u & X86_PML4E_PG_MASK_FULL));
             /** @todo 64-bit guests: have to ensure that we're not exhausting the dynamic mappings! */
         }
     }

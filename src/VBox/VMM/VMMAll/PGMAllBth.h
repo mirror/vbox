@@ -3668,7 +3668,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
             continue;
         }
 
-        pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
+        pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK_FULL);
         GCPhysPdptSrc = pPml4eSrc->u & X86_PML4E_PG_MASK_FULL;
 
         if (pPml4eSrc->n.u1Present != pPml4eDst->n.u1Present)
