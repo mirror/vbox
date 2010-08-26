@@ -425,12 +425,7 @@
 %define X86_PDPE_A                          RT_BIT(5)
 %define X86_PDPE_LM_PS                      RT_BIT(7)
 %define X86_PDPE_AVL_MASK                   (RT_BIT(9) | RT_BIT(10) | RT_BIT(11))
-%if 1
-%define X86_PDPE_PG_MASK                    0x0000fffffffff000
-%define X86_PDPE_PG_MASK_FULL               0x000ffffffffff000
-%else
 %define X86_PDPE_PG_MASK                    0x000ffffffffff000
-%endif
 %define X86_PDPE_PAE_MBZ_MASK               0xfff00000000001e6
 %define X86_PDPE_LM_NX                      RT_BIT_64(63)
 %define X86_PDPE_LM_MBZ_MASK_NX             0x0000000000000180

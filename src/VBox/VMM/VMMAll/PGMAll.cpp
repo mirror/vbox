@@ -939,7 +939,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
 
     /* Allocate page directory if not present. */
     if (    !pPdpe->n.u1Present
-        &&  !(pPdpe->u & X86_PDPE_PG_MASK_FULL))
+        &&  !(pPdpe->u & X86_PDPE_PG_MASK))
     {
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
@@ -961,13 +961,13 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
                      */
                     Assert(!HWACCMIsEnabled(pVM));
 
-                    GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK_FULL;
+                    GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
                     enmKind = PGMPOOLKIND_PAE_PD_PHYS;
                     uGstPdpe |= X86_PDPE_P;
                 }
                 else
                 {
-                    GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK_FULL;
+                    GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
                     enmKind = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
                 }
             }
@@ -997,9 +997,9 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
     }
     else
     {
-        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK_FULL);
+        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
-        Assert((pPdpe->u & X86_PDPE_PG_MASK_FULL) == pShwPage->Core.Key);
+        Assert((pPdpe->u & X86_PDPE_PG_MASK) == pShwPage->Core.Key);
 
         pgmPoolCacheUsed(pPool, pShwPage);
     }
@@ -1030,10 +1030,10 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE
         LogFlow(("pgmShwGetPaePoolPagePD: PD %d not present (%RX64)\n", iPdPt, pPdpt->a[iPdPt].u));
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
     }
-    AssertMsg(pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK_FULL, ("GCPtr=%RGv\n", GCPtr));
+    AssertMsg(pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK, ("GCPtr=%RGv\n", GCPtr));
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK_FULL);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, VERR_INTERNAL_ERROR);
 
     *ppShwPde = pShwPde;
@@ -1111,7 +1111,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
 
     /* Allocate page directory if not present. */
     if (    !pPdpe->n.u1Present
-        &&  !(pPdpe->u & X86_PDPE_PG_MASK_FULL))
+        &&  !(pPdpe->u & X86_PDPE_PG_MASK))
     {
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
@@ -1124,7 +1124,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
         }
         else
         {
-            GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK_FULL;
+            GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
             enmKind = PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD;
         }
 
@@ -1134,7 +1134,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
     }
     else
     {
-        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK_FULL);
+        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
         pgmPoolCacheUsed(pPool, pShwPage);
@@ -1183,7 +1183,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
     if (!pPdpt->a[iPdPt].n.u1Present)
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
 
-    pShwPage = pgmPoolGetPage(pPool, pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK_FULL);
+    pShwPage = pgmPoolGetPage(pPool, pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
@@ -1532,7 +1532,7 @@ int pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
     PX86PDPT        pGuestPDPT  = pVCpu->pgm.s.CTX_SUFF(pGstPaePdpt);
     Assert(pGuestPDPT);
     Assert(pGuestPDPT->a[iPdpt].n.u1Present);
-    RTGCPHYS        GCPhys      = pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK_FULL;
+    RTGCPHYS        GCPhys      = pGuestPDPT->a[iPdpt].u & X86_PDPE_PG_MASK;
     bool const      fChanged    = pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt] != GCPhys;
 
     PPGMPAGE        pPage;
