@@ -1657,13 +1657,7 @@ typedef const X86PDPAE *PCX86PDPAE;
 /** Bits 9-11 - - Available for use to system software. */
 #define X86_PDPE_AVL_MASK                   (RT_BIT(9) | RT_BIT(10) | RT_BIT(11))
 /** Bits 12-51 - - PAE - Physical Page number of the next level. */
-#if 1 /* we're using this internally and have to mask of the top 16-bit. */
-#define X86_PDPE_PG_MASK                    UINT64_C(0x0000fffffffff000)
-/** @todo Get rid of the above hack; makes code unreadable. */
-#define X86_PDPE_PG_MASK_FULL               UINT64_C(0x000ffffffffff000)
-#else
 #define X86_PDPE_PG_MASK                    UINT64_C(0x000ffffffffff000)
-#endif
 /** Bits 63-52, 8-5, 2-1 - - PAE - MBZ bits (NX is long mode only). */
 #define X86_PDPE_PAE_MBZ_MASK               UINT64_C(0xfff00000000001e6)
 /** Bits 63 - NX - LM - No execution flag. Long Mode only. */

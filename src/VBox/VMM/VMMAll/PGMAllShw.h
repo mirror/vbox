@@ -156,14 +156,14 @@
 # if PGM_SHW_TYPE == PGM_TYPE_AMD64
 #  define SHW_PDPT_SHIFT                X86_PDPT_SHIFT
 #  define SHW_PDPT_MASK                 X86_PDPT_MASK_AMD64
-#  define SHW_PDPE_PG_MASK              X86_PDPE_PG_MASK_FULL
+#  define SHW_PDPE_PG_MASK              X86_PDPE_PG_MASK
 #  define SHW_TOTAL_PD_ENTRIES          (X86_PG_AMD64_ENTRIES * X86_PG_AMD64_PDPE_ENTRIES)
 #  define SHW_POOL_ROOT_IDX             PGMPOOL_IDX_AMD64_CR3
 
 # else /* 32 bits PAE mode */
 #  define SHW_PDPT_SHIFT                X86_PDPT_SHIFT
 #  define SHW_PDPT_MASK                 X86_PDPT_MASK_PAE
-#  define SHW_PDPE_PG_MASK              X86_PDPE_PG_MASK_FULL
+#  define SHW_PDPE_PG_MASK              X86_PDPE_PG_MASK
 #  define SHW_TOTAL_PD_ENTRIES          (X86_PG_PAE_ENTRIES * X86_PG_PAE_PDPE_ENTRIES)
 #  define SHW_POOL_ROOT_IDX             PGMPOOL_IDX_PDPT
 
@@ -226,7 +226,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
 
     /* PD */
     PX86PDPAE       pPd;
-    rc = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pdpe.u & X86_PDPE_PG_MASK_FULL, &pPd);
+    rc = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
     if (RT_FAILURE(rc))
         return rc;
     const unsigned  iPd = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
@@ -392,7 +392,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
 
         /* PD */
         PX86PDPAE       pPd;
-        rc = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pdpe.u & X86_PDPE_PG_MASK_FULL, &pPd);
+        rc = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
         if (RT_FAILURE(rc))
             return rc;
         const unsigned iPd = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
