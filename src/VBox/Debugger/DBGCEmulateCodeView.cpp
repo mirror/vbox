@@ -2794,7 +2794,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                              ? "%016llx big phys=%016llx %s %s %s %s %s avl=%02x %s %s %s %s %s"
                              :   "%08llx big phys=%08llx %s %s %s %s %s avl=%02x %s %s %s %s %s",
                              Pde.u,
-                             Pde.u & X86_PDE_PAE_PG_MASK,
+                             Pde.u & X86_PDE_PAE_PG_MASK_FULL,
                              Pde.b.u1Present        ? "p "  : "np",
                              Pde.b.u1Write          ? "w"   : "r",
                              Pde.b.u1User           ? "u"   : "s",
@@ -2812,7 +2812,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                              ? "%016llx 4kb phys=%016llx %s %s %s %s %s avl=%02x %s %s %s %s"
                              :   "%08llx 4kb phys=%08llx %s %s %s %s %s avl=%02x %s %s %s %s",
                              Pde.u,
-                             Pde.u & X86_PDE_PAE_PG_MASK,
+                             Pde.u & X86_PDE_PAE_PG_MASK_FULL,
                              Pde.n.u1Present        ? "p "  : "np",
                              Pde.n.u1Write          ? "w"   : "r",
                              Pde.n.u1User           ? "u"   : "s",
@@ -3130,7 +3130,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
 
             iEntry = (VarGCPtr.u.GCFlat >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK;
             VarPTEAddr = VarCur;
-            VarPTEAddr.u.u64Number = Pde.u & X86_PDE_PAE_PG_MASK;
+            VarPTEAddr.u.u64Number = Pde.u & X86_PDE_PAE_PG_MASK_FULL;
             VarPTEAddr.u.u64Number += iEntry * sizeof(X86PTEPAE);
         }
         else
