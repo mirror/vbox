@@ -75,6 +75,7 @@ VMMR3_SOURCES   = \
 	DBGFAddr.cpp \
 	DBGFAddrSpace.cpp \
 	DBGFBp.cpp \
+	DBGFCoreWrite.cpp \
 	DBGFCpu.cpp \
 	DBGFDisas.cpp \
 	DBGFInfo.cpp \

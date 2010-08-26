@@ -75,6 +75,7 @@ static DECLCALLBACK(int) dbgcCmdShowPlugIns(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 static DECLCALLBACK(int) dbgcCmdHarakiri(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdEcho(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int) dbgcCmdRunScript(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int) dbgcCmdWriteCore(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 
 
 /*******************************************************************************
@@ -213,6 +214,12 @@ static const DBGCVARDESC    g_aArgSet[] =
 };
 
 
+/** writecore arguments. */
+static const DBGCVARDESC    g_aArgWriteCore[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "path",         "Filename string." },
+};
 
 
 
@@ -220,40 +227,41 @@ static const DBGCVARDESC    g_aArgSet[] =
 const DBGCCMD    g_aCmds[] =
 {
     /* pszCmd,      cArgsMin, cArgsMax, paArgDescs,         cArgDescs,                  pResultDesc,fFlags,pfnHandler        pszSyntax,          ....pszDescription */
-    { "bye",        0,        0,        NULL,               0,                          NULL,       0,     dbgcCmdQuit,      "",                     "Exits the debugger." },
-    { "cpu",        0,        1,        &g_aArgCpu[0],      RT_ELEMENTS(g_aArgCpu),     NULL,       0,     dbgcCmdCpu,       "[idCpu]",              "If no argument, display the current CPU, else change to the specified CPU." },
-    { "echo",       1,        ~0,       &g_aArgMultiStr[0], RT_ELEMENTS(g_aArgMultiStr),NULL,       0,     dbgcCmdEcho,      "<str1> [str2..[strN]]", "Displays the strings separated by one blank space and the last one followed by a newline." },
-    { "exit",       0,        0,        NULL,               0,                          NULL,       0,     dbgcCmdQuit,      "",                     "Exits the debugger." },
-    { "format",     1,        1,        &g_aArgAny[0],      RT_ELEMENTS(g_aArgAny),     NULL,       0,     dbgcCmdFormat,    "",                     "Evaluates an expression and formats it." },
-    { "detect",     0,        0,        NULL,               0,                          NULL,       0,     dbgcCmdDetect,    "",                     "Detects or re-detects the guest os and starts the OS specific digger." },
-    { "harakiri",   0,        0,        NULL,               0,                          NULL,       0,     dbgcCmdHarakiri,  "",                     "Kills debugger process." },
-    { "help",       0,        ~0,       &g_aArgHelp[0],     RT_ELEMENTS(g_aArgHelp),    NULL,       0,     dbgcCmdHelp,      "[cmd/op [..]]",        "Display help. For help about info items try 'info help'." },
-    { "info",       1,        2,        &g_aArgInfo[0],     RT_ELEMENTS(g_aArgInfo),    NULL,       0,     dbgcCmdInfo,      "<info> [args]",        "Display info register in the DBGF. For a list of info items try 'info help'." },
-    { "loadimage",  2,        3,        &g_aArgLoadImage[0],RT_ELEMENTS(g_aArgLoadImage),NULL,      0,     dbgcCmdLoadImage, "<filename> <address> [name]",
+    { "bye",        0,        0,        NULL,                0,                          NULL,       0,     dbgcCmdQuit,      "",                     "Exits the debugger." },
+    { "cpu",        0,        1,        &g_aArgCpu[0],       RT_ELEMENTS(g_aArgCpu),     NULL,       0,     dbgcCmdCpu,       "[idCpu]",              "If no argument, display the current CPU, else change to the specified CPU." },
+    { "echo",       1,        ~0,       &g_aArgMultiStr[0],  RT_ELEMENTS(g_aArgMultiStr),NULL,       0,     dbgcCmdEcho,      "<str1> [str2..[strN]]", "Displays the strings separated by one blank space and the last one followed by a newline." },
+    { "exit",       0,        0,        NULL,                0,                          NULL,       0,     dbgcCmdQuit,      "",                     "Exits the debugger." },
+    { "format",     1,        1,        &g_aArgAny[0],       RT_ELEMENTS(g_aArgAny),     NULL,       0,     dbgcCmdFormat,    "",                     "Evaluates an expression and formats it." },
+    { "detect",     0,        0,        NULL,                0,                          NULL,       0,     dbgcCmdDetect,    "",                     "Detects or re-detects the guest os and starts the OS specific digger." },
+    { "harakiri",   0,        0,        NULL,                0,                          NULL,       0,     dbgcCmdHarakiri,  "",                     "Kills debugger process." },
+    { "help",       0,        ~0,       &g_aArgHelp[0],      RT_ELEMENTS(g_aArgHelp),    NULL,       0,     dbgcCmdHelp,      "[cmd/op [..]]",        "Display help. For help about info items try 'info help'." },
+    { "info",       1,        2,        &g_aArgInfo[0],      RT_ELEMENTS(g_aArgInfo),    NULL,       0,     dbgcCmdInfo,      "<info> [args]",        "Display info register in the DBGF. For a list of info items try 'info help'." },
+    { "loadimage",  2,        3,        &g_aArgLoadImage[0], RT_ELEMENTS(g_aArgLoadImage),NULL,      0,     dbgcCmdLoadImage, "<filename> <address> [name]",
                                                                                                                                                      "Loads the symbols of an executable image at the specified address. "
                                                                                                                                                      /*"Optionally giving the module a name other than the file name stem."*/ }, /** @todo implement line breaks */
-    { "loadmap",    2,        5,        &g_aArgLoadMap[0],  RT_ELEMENTS(g_aArgLoadMap), NULL,       0,     dbgcCmdLoadMap,   "<filename> <address> [name] [subtrahend] [seg]",
+    { "loadmap",    2,        5,        &g_aArgLoadMap[0],   RT_ELEMENTS(g_aArgLoadMap), NULL,       0,     dbgcCmdLoadMap,   "<filename> <address> [name] [subtrahend] [seg]",
                                                                                                                                                      "Loads the symbols from a map file, usually at a specified address. "
                                                                                                                                                      /*"Optionally giving the module a name other than the file name stem "
                                                                                                                                                      "and a subtrahend to subtract from the addresses."*/ },
-    { "loadplugin", 1,        1,        &g_aArgPlugIn[0],   RT_ELEMENTS(g_aArgPlugIn),  NULL,       0,     dbgcCmdLoadPlugIn,"<plugin1> [plugin2..N]", "Loads one or more plugins" },
-    { "loadseg",    3,        4,        &g_aArgLoadSeg[0],  RT_ELEMENTS(g_aArgLoadSeg), NULL,       0,     dbgcCmdLoadSeg,   "<filename> <address> <seg> [name]",
+    { "loadplugin", 1,        1,        &g_aArgPlugIn[0],    RT_ELEMENTS(g_aArgPlugIn),  NULL,       0,     dbgcCmdLoadPlugIn,"<plugin1> [plugin2..N]", "Loads one or more plugins" },
+    { "loadseg",    3,        4,        &g_aArgLoadSeg[0],   RT_ELEMENTS(g_aArgLoadSeg), NULL,       0,     dbgcCmdLoadSeg,   "<filename> <address> <seg> [name]",
                                                                                                                                                      "Loads the symbols of a segment in the executable image at the specified address. "
                                                                                                                                                      /*"Optionally giving the module a name other than the file name stem."*/ },
-    { "loadsyms",   1,        5,        &g_aArgLoadSyms[0], RT_ELEMENTS(g_aArgLoadSyms),NULL,       0,     dbgcCmdLoadSyms,  "<filename> [delta] [module] [module address]", "Loads symbols from a text file. Optionally giving a delta and a module." },
-    { "loadvars",   1,        1,        &g_aArgFilename[0], RT_ELEMENTS(g_aArgFilename),NULL,       0,     dbgcCmdLoadVars,  "<filename>",           "Load variables from file. One per line, same as the args to the set command." },
-    { "log",        1,        1,        &g_aArgLog[0],      RT_ELEMENTS(g_aArgLog),     NULL,       0,     dbgcCmdLog,       "<group string>",       "Modifies the logging group settings (VBOX_LOG)" },
-    { "logdest",    1,        1,        &g_aArgLogDest[0],  RT_ELEMENTS(g_aArgLogDest), NULL,       0,     dbgcCmdLogDest,   "<dest string>",        "Modifies the logging destination (VBOX_LOG_DEST)." },
-    { "logflags",   1,        1,        &g_aArgLogFlags[0], RT_ELEMENTS(g_aArgLogFlags),NULL,       0,     dbgcCmdLogFlags,  "<flags string>",       "Modifies the logging flags (VBOX_LOG_FLAGS)." },
-    { "quit",       0,        0,        NULL,               0,                          NULL,       0,     dbgcCmdQuit,      "",                     "Exits the debugger." },
-    { "runscript",  1,        1,        &g_aArgFilename[0], RT_ELEMENTS(g_aArgFilename),NULL,       0,     dbgcCmdRunScript, "<filename>",           "Runs the command listed in the script. Lines starting with '#' "
-                                                                                                                                                     "(after removing blanks) are comment. blank lines are ignored. Stops on failure." },
-    { "set",        2,        2,        &g_aArgSet[0],      RT_ELEMENTS(g_aArgSet),     NULL,       0,     dbgcCmdSet,       "<var> <value>",        "Sets a global variable." },
-    { "showplugins",0,        0,        NULL,               0,                          NULL,       0,    dbgcCmdShowPlugIns,"",                     "List loaded plugins." },
-    { "showvars",   0,        0,        NULL,               0,                          NULL,       0,     dbgcCmdShowVars,  "",                     "List all the defined variables." },
-    { "stop",       0,        0,        NULL,               0,                          NULL,       0,     dbgcCmdStop,      "",                     "Stop execution." },
-    { "unloadplugin", 1,     ~0,        &g_aArgPlugIn[0],   RT_ELEMENTS(g_aArgPlugIn),  NULL,       0,  dbgcCmdUnloadPlugIn, "<plugin1> [plugin2..N]", "Unloads one or more plugins." },
-    { "unset",      1,       ~0,        &g_aArgMultiStr[0], RT_ELEMENTS(g_aArgMultiStr),NULL,       0,     dbgcCmdUnset,     "<var1> [var1..[varN]]", "Unsets (delete) one or more global variables." },
+    { "loadsyms",   1,        5,        &g_aArgLoadSyms[0],  RT_ELEMENTS(g_aArgLoadSyms),NULL,       0,     dbgcCmdLoadSyms,  "<filename> [delta] [module] [module address]", "Loads symbols from a text file. Optionally giving a delta and a module." },
+    { "loadvars",   1,        1,        &g_aArgFilename[0],  RT_ELEMENTS(g_aArgFilename),NULL,       0,     dbgcCmdLoadVars,  "<filename>",           "Load variables from file. One per line, same as the args to the set command." },
+    { "log",        1,        1,        &g_aArgLog[0],       RT_ELEMENTS(g_aArgLog),     NULL,       0,     dbgcCmdLog,       "<group string>",       "Modifies the logging group settings (VBOX_LOG)" },
+    { "logdest",    1,        1,        &g_aArgLogDest[0],    RT_ELEMENTS(g_aArgLogDest), NULL,      0,     dbgcCmdLogDest,   "<dest string>",        "Modifies the logging destination (VBOX_LOG_DEST)." },
+    { "logflags",   1,        1,        &g_aArgLogFlags[0],  RT_ELEMENTS(g_aArgLogFlags),NULL,       0,     dbgcCmdLogFlags,  "<flags string>",       "Modifies the logging flags (VBOX_LOG_FLAGS)." },
+    { "quit",       0,        0,        NULL,                0,                          NULL,       0,     dbgcCmdQuit,      "",                     "Exits the debugger." },
+    { "runscript",  1,        1,        &g_aArgFilename[0],  RT_ELEMENTS(g_aArgFilename),NULL,       0,     dbgcCmdRunScript, "<filename>",           "Runs the command listed in the script. Lines starting with '#' "
+                                                                                                                                                      "(after removing blanks) are comment. blank lines are ignored. Stops on failure." },
+    { "set",        2,        2,        &g_aArgSet[0],       RT_ELEMENTS(g_aArgSet),     NULL,       0,     dbgcCmdSet,       "<var> <value>",        "Sets a global variable." },
+    { "showplugins",0,        0,        NULL,                0,                          NULL,       0,    dbgcCmdShowPlugIns,"",                     "List loaded plugins." },
+    { "showvars",   0,        0,        NULL,                0,                          NULL,       0,     dbgcCmdShowVars,  "",                     "List all the defined variables." },
+    { "stop",       0,        0,        NULL,                0,                          NULL,       0,     dbgcCmdStop,      "",                     "Stop execution." },
+    { "unloadplugin", 1,     ~0,        &g_aArgPlugIn[0],    RT_ELEMENTS(g_aArgPlugIn),  NULL,       0,  dbgcCmdUnloadPlugIn, "<plugin1> [plugin2..N]", "Unloads one or more plugins." },
+    { "unset",      1,       ~0,        &g_aArgMultiStr[0],  RT_ELEMENTS(g_aArgMultiStr),NULL,       0,     dbgcCmdUnset,     "<var1> [var1..[varN]]",  "Unsets (delete) one or more global variables." },
+    { "writecore",  1,        1,        &g_aArgWriteCore[0], RT_ELEMENTS(g_aArgWriteCore), NULL,     0,   dbgcCmdWriteCore,   "<filename>",           "Write core to file." },
 };
 
 /** The number of native commands. */
@@ -2072,5 +2080,41 @@ static DECLCALLBACK(int) dbgcCmdHarakiri(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
     for (;;)
         exit(126);
     NOREF(pCmd); NOREF(pCmdHlp); NOREF(pVM); NOREF(paArgs); NOREF(cArgs); NOREF(pResult);
+}
+
+
+/**
+ * The 'writecore' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) dbgcCmdWriteCore(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    Log(("dbgcCmdWriteCore\n"));
+
+    /*
+     * Validate input, lots of paranoia here.
+     */
+    if (    cArgs != 1
+        ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
+    {
+        AssertMsgFailed(("Expected one string exactly!\n"));
+        return VERR_PARSE_INCORRECT_ARG_TYPE;
+    }
+
+    const char *pszDumpPath = paArgs[0].u.pszString;
+    if (!pszDumpPath)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Missing file path.\n");
+
+    int rc = DBGFR3CoreWrite(pVM, 0, pszDumpPath);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "DBGFR3WriteCore failed. rc=%Rrc\n", rc);
+
+    return VINF_SUCCESS;
 }
 
