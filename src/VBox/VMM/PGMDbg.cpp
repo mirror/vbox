@@ -944,8 +944,35 @@ static int pgmR3DumpHierarchyHcMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
  */
 static void pgmR3DumpHierarchyHcShwPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys)
 {
-    /* later */
-    NOREF(pState); NOREF(HCPhys);
+    pgmLock(pState->pVM);
+    char            szPage[80];
+    PPGMPOOLPAGE    pPage = pgmPoolQueryPageForDbg(pState->pVM->pgm.s.CTX_SUFF(pPool), HCPhys);
+    if (pPage)
+        RTStrPrintf(szPage, sizeof(szPage), " idx=0i%u", pPage->idx);
+    else
+    {
+        /* probably a mapping */
+        strcpy(szPage, " not found");
+        for (PPGMMAPPING pMap = pState->pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
+        {
+            uint64_t off = pState->u64Address - pMap->GCPtr;
+            if (off < pMap->cb)
+            {
+                const int iPDE = (uint32_t)(off >> X86_PD_SHIFT);
+                if (pMap->aPTs[iPDE].HCPhysPT == HCPhys)
+                    RTStrPrintf(szPage, sizeof(szPage), " #%u: %s", iPDE, pMap->pszDesc);
+                else if (pMap->aPTs[iPDE].HCPhysPaePT0 == HCPhys)
+                    RTStrPrintf(szPage, sizeof(szPage), " #%u/0: %s", iPDE, pMap->pszDesc);
+                else if (pMap->aPTs[iPDE].HCPhysPaePT1 == HCPhys)
+                    RTStrPrintf(szPage, sizeof(szPage), " #%u/1: %s", iPDE, pMap->pszDesc);
+                else
+                    continue;
+                break;
+            }
+        }
+    }
+    pgmUnlock(pState->pVM);
+    pState->pHlp->pfnPrintf(pState->pHlp, "%s", szPage);
 }
 
 
@@ -958,14 +985,12 @@ static void pgmR3DumpHierarchyHcShwPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTH
  */
 static void pgmR3DumpHierarchyHcPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, uint32_t cbPage)
 {
-    /* later */
-    NOREF(pState); NOREF(HCPhys); NOREF(cbPage);
-    RTGCPHYS GCPhys;
+    char        szPage[80];
+    RTGCPHYS    GCPhys;
     int rc = PGMR3DbgHCPhys2GCPhys(pState->pVM, HCPhys, &GCPhys);
     if (RT_SUCCESS(rc))
     {
         pgmLock(pState->pVM);
-        char      szPage[80];
         PCPGMPAGE pPage = pgmPhysGetPage(&pState->pVM->pgm.s, GCPhys);
         if (pPage)
             RTStrPrintf(szPage, sizeof(szPage), "%R[pgmpage]", pPage);
@@ -975,7 +1000,15 @@ static void pgmR3DumpHierarchyHcPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
         pState->pHlp->pfnPrintf(pState->pHlp, " -> %RGp %s", GCPhys, szPage);
     }
     else
-        pState->pHlp->pfnPrintf(pState->pHlp, " not found");
+    {
+        /* check the heap */
+        uint32_t cbAlloc;
+        rc = MMR3HyperQueryInfoFromHCPhys(pState->pVM, HCPhys, szPage, sizeof(szPage), &cbAlloc);
+        if (RT_SUCCESS(rc))
+            pState->pHlp->pfnPrintf(pState->pHlp, " %s %#x bytes", szPage, cbAlloc);
+        else
+            pState->pHlp->pfnPrintf(pState->pHlp, " not found");
+    }
 }
 
 
@@ -1111,8 +1144,8 @@ static int  pgmR3DumpHierarchyHcPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
             {
                 pState->pHlp->pfnPrintf(pState->pHlp,
                                         pState->fLme    /*P R  S  A  D  G  WT CD AT NX 4M a  p ?  phys */
-                                        ? "%016llx 2   |  P %c %c %c %c %c %s %s .. %s 4K %c%c%c  %016llx"
-                                        :  "%08llx 1  |   P %c %c %c %c %c %s %s .. %s 4K %c%c%c  %016llx",
+                                        ? "%016llx 2   |  P %c %c %c %c %c %s %s .. %s .. %c%c%c  %016llx"
+                                        :  "%08llx 1  |   P %c %c %c %c %c %s %s .. %s .. %c%c%c  %016llx",
                                         pState->u64Address,
                                         Pde.n.u1Write       ? 'W'  : 'R',
                                         Pde.n.u1User        ? 'U'  : 'S',
