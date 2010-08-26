@@ -545,15 +545,9 @@ VBOX_INSTALL_LANG_LPROJ := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES))
 #
 # The VirtualBox Application.
 #
-VBOX_DI_VBAPP_QTMODS = \
-	QtCore QtGui QtNetwork
-
-ifdef VBOX_GUI_USE_QGL
- VBOX_DI_VBAPP_QTMODS += QtOpenGL
-endif
 
 VBOX_DI_VBAPP_DYLIBS = \
-	$(foreach qtmod, $(VBOX_DI_VBAPP_QTMODS), Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX)) \
+	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/4/$(qtmod)) \
 	MacOS/VBoxDD.dylib \
 	MacOS/VBoxDD2.dylib \
 	MacOS/VBoxDDU.dylib \
@@ -692,7 +686,7 @@ endif
 VBOX_DI_VBAPP_SYMLINKS = \
 	Resources/VirtualBoxVM.app/Contents/MacOS=>../../../MacOS/ \
 	Resources/VirtualBoxVM.app/Contents/Resources=>../../../Resources/ \
-	$(foreach qtmod, $(VBOX_DI_VBAPP_QTMODS), Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/$(qtmod)$(VBOX_QT4_INFIX)=>Versions/4/$(qtmod)$(VBOX_QT4_INFIX))
+	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod))
 ifdef VBOX_WITH_COCOA_QT
 VBOX_DI_VBAPP_SYMLINKS += \
 	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Resources=>Versions/4/Resources/
@@ -894,9 +888,9 @@ endif
 #ifdef VBOX_WITH_HARDENING - disabled temporarily
 if 1
 	@# We cannot use @executable_path together with setuid binaries, dyld gets upset about it. So, fix Qt libs and users.
-	$(foreach qtmod, $(VBOX_DI_VBAPP_QTMODS) \
-		,install_name_tool -id /Applications/VirtualBox.app/Contents/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
-			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX)$(NLTAB) )
+	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
+		,install_name_tool -id /Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
+			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod)$(NLTAB) )
 	$(foreach f, \
 		$(VBOX_DI_VBAPP_DYLIBS) \
 		$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE), \
@@ -908,15 +902,15 @@ if 1
 			$(addsuffix -$(KBUILD_TARGET_ARCH), $(VBOX_DI_VBAPP_PROGS)) \
 			) \
 		,install_name_tool \
-			$(foreach qtmod, $(VBOX_DI_VBAPP_QTMODS), \
-				-change           @executable_path/../Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
-				-change              $(VBOX_PATH_QT4)/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
-				-change                          $(PATH_SDK_QT4)/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
-				-change                                          $(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
-				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod)$(VBOX_QT4_INFIX).framework/Versions/4/$(qtmod)$(VBOX_QT4_INFIX) \
+			$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), \
+				-change           @executable_path/../Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
+				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
+				-change              $(VBOX_PATH_QT4)/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
+				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
+				-change                          $(PATH_SDK_QT4)/$(qtmod).framework/Versions/4/$(qtmod) \
+				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
+				-change                                          $(qtmod).framework/Versions/4/$(qtmod) \
+				/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
 				) \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(f)$(NLTAB) )
 endif
