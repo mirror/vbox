@@ -540,7 +540,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
                         pgmPoolFree(pVM,
-                                    uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK,
+                                    uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK_FULL,
                                     pPage->idx,
                                     iShw);
                         ASMAtomicWriteSize(&uShw.pPDPT->a[iShw].u, 0);
@@ -571,7 +571,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                             {
                                 LogFlow(("pgmPoolMonitorChainChanging: pae pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));
                                 pgmPoolFree(pVM,
-                                            uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK,
+                                            uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK_FULL,
                                             pPage->idx,
                                             iShw2);
                                 ASMAtomicWriteSize(&uShw.pPDPT->a[iShw2].u, 0);
@@ -631,7 +631,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 if (uShw.pPDPT->a[iShw].n.u1Present)
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
-                    pgmPoolFree(pVM, uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK, pPage->idx, iShw);
+                    pgmPoolFree(pVM, uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK_FULL, pPage->idx, iShw);
                     ASMAtomicWriteSize(&uShw.pPDPT->a[iShw].u, 0);
                 }
                 /* paranoia / a bit assumptive. */
@@ -642,7 +642,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     if (uShw.pPDPT->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));
-                        pgmPoolFree(pVM, uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK, pPage->idx, iShw2);
+                        pgmPoolFree(pVM, uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK_FULL, pPage->idx, iShw2);
                         ASMAtomicWriteSize(&uShw.pPDPT->a[iShw2].u, 0);
                     }
                 }
@@ -4295,11 +4295,11 @@ DECLINLINE(void) pgmPoolTrackDerefPDPTPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX
             &&  !(pShwPDPT->a[i].u & PGM_PLXFLAGS_MAPPING)
            )
         {
-            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & X86_PDPE_PG_MASK);
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & X86_PDPE_PG_MASK_FULL);
             if (pSubPage)
                 pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
             else
-                AssertFatalMsgFailed(("%RX64\n", pShwPDPT->a[i].u & X86_PDPE_PG_MASK));
+                AssertFatalMsgFailed(("%RX64\n", pShwPDPT->a[i].u & X86_PDPE_PG_MASK_FULL));
         }
     }
 }
@@ -4319,11 +4319,11 @@ DECLINLINE(void) pgmPoolTrackDerefPDPT64Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
         Assert(!(pShwPDPT->a[i].u & PGM_PLXFLAGS_MAPPING));
         if (pShwPDPT->a[i].n.u1Present)
         {
-            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & X86_PDPE_PG_MASK);
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & X86_PDPE_PG_MASK_FULL);
             if (pSubPage)
                 pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
             else
-                AssertFatalMsgFailed(("%RX64\n", pShwPDPT->a[i].u & X86_PDPE_PG_MASK));
+                AssertFatalMsgFailed(("%RX64\n", pShwPDPT->a[i].u & X86_PDPE_PG_MASK_FULL));
             /** @todo 64-bit guests: have to ensure that we're not exhausting the dynamic mappings! */
         }
     }
@@ -4343,7 +4343,7 @@ DECLINLINE(void) pgmPoolTrackDerefPML464Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
     {
         if (pShwPML4->a[i].n.u1Present)
         {
-            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPML4->a[i].u & X86_PDPE_PG_MASK);
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPML4->a[i].u & X86_PDPE_PG_MASK_FULL);
             if (pSubPage)
                 pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
             else
