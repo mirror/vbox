@@ -1449,15 +1449,29 @@ int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG 
     return Status;
 }
 
-/* Unmapping adapter information must be done carefully WRT the interrupt handler. */
 BOOLEAN VBoxUnmapAdpInfoCallback(PVOID ext)
 {
     PDEVICE_EXTENSION   PrimaryExtension = (PDEVICE_EXTENSION)ext;
+    Assert(PrimaryExtension);
+
+    PrimaryExtension->u.primary.pHostFlags = NULL;
+    return TRUE;
+}
+
+void VBoxUnmapAdapterInformation(PDEVICE_EXTENSION PrimaryExtension)
+{
     void                *ppv;
+
+    dprintf(("VBoxVideo::VBoxUnmapAdapterInformation\n"));
 
     ppv = PrimaryExtension->u.primary.pvAdapterInformation;
     if (ppv)
     {
+        /* The pHostFlags field is mapped through pvAdapterInformation. It must be cleared first,
+         * and it must be done in a way which avoids races with the interrupt handler.
+         */
+        VideoPortSynchronizeExecution(PrimaryExtension, VpMediumPriority,
+                                      VBoxUnmapAdpInfoCallback, PrimaryExtension);
 #ifndef VBOXWDDM
         VideoPortUnmapMemory(PrimaryExtension, ppv, NULL);
 #else
@@ -1466,17 +1480,7 @@ BOOLEAN VBoxUnmapAdpInfoCallback(PVOID ext)
         Assert(ntStatus == STATUS_SUCCESS);
 #endif
         PrimaryExtension->u.primary.pvAdapterInformation = NULL;
-        PrimaryExtension->u.primary.pHostFlags           = NULL;    /* Mapped through pvAdapterInformation */
     }
-    return TRUE;
-}
-
-void VBoxUnmapAdapterInformation(PDEVICE_EXTENSION PrimaryExtension)
-{
-    dprintf(("VBoxVideo::VBoxUnmapAdapterInformation\n"));
-
-    VideoPortSynchronizeExecution(PrimaryExtension, VpMediumPriority,
-                                  VBoxUnmapAdpInfoCallback, PrimaryExtension);
 }
 
 void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG ulSize)
