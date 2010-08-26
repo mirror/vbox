@@ -351,7 +351,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 /*
                  * Mark the page as locked; disallow flushing.
                  */
-                PPGMPOOLPAGE    pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
+                PPGMPOOLPAGE    pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdPt].u & X86_PDPE_PG_MASK_FULL);
                 AssertFatal(pPoolPagePd);
                 if (!pgmPoolIsPageLocked(&pVM->pgm.s, pPoolPagePd))
                     pgmPoolLockPage(pPool, pPoolPagePd);
@@ -499,7 +499,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                  * clear the hypervisor mappings.
                  */
                 if (    pCurrentShwPdpt
-                    &&  (pCurrentShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK) == (pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK) )
+                    &&  (pCurrentShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK_FULL) == (pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK_FULL) )
                 {
                     LogFlow(("pgmMapClearShadowPDEs: Pdpe %d reused -> don't clear hypervisor mappings!\n", iPdpt));
                     break;
@@ -523,7 +523,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                 if (    fDeactivateCR3
                     ||  !(pShwPdpt->a[iPdpt].u & PGM_PLXFLAGS_MAPPING))
                 {
-                    PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+                    PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK_FULL);
                     AssertFatal(pPoolPagePd);
                     if (pgmPoolIsPageLocked(&pVM->pgm.s, pPoolPagePd))
                         pgmPoolUnlockPage(pPool, pPoolPagePd);
@@ -605,7 +605,7 @@ static void pgmMapCheckShadowPDEs(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pShwPageCR
                            pShwPdpt->a[iPdpt].u,
                            iPDE, iPdpt, iPaePDE, pMap->GCPtr, R3STRING(pMap->pszDesc) ));
 
-                PCPGMPOOLPAGE   pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+                PCPGMPOOLPAGE   pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK_FULL);
                 AssertFatal(pPoolPagePd);
                 AssertMsg(pPoolPagePd->cLocked, (".idx=%d .type=%d\n", pPoolPagePd->idx, pPoolPagePd->enmKind));
                 break;

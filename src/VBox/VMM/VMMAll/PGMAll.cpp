@@ -939,7 +939,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
 
     /* Allocate page directory if not present. */
     if (    !pPdpe->n.u1Present
-        &&  !(pPdpe->u & X86_PDPE_PG_MASK))
+        &&  !(pPdpe->u & X86_PDPE_PG_MASK_FULL))
     {
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
@@ -997,9 +997,9 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
     }
     else
     {
-        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
+        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK_FULL);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
-        Assert((pPdpe->u & X86_PDPE_PG_MASK) == pShwPage->Core.Key);
+        Assert((pPdpe->u & X86_PDPE_PG_MASK_FULL) == pShwPage->Core.Key);
 
         pgmPoolCacheUsed(pPool, pShwPage);
     }
@@ -1030,10 +1030,10 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE
         LogFlow(("pgmShwGetPaePoolPagePD: PD %d not present (%RX64)\n", iPdPt, pPdpt->a[iPdPt].u));
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
     }
-    AssertMsg(pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK, ("GCPtr=%RGv\n", GCPtr));
+    AssertMsg(pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK_FULL, ("GCPtr=%RGv\n", GCPtr));
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK_FULL);
     AssertReturn(pShwPde, VERR_INTERNAL_ERROR);
 
     *ppShwPde = pShwPde;
@@ -1111,7 +1111,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
 
     /* Allocate page directory if not present. */
     if (    !pPdpe->n.u1Present
-        &&  !(pPdpe->u & X86_PDPE_PG_MASK))
+        &&  !(pPdpe->u & X86_PDPE_PG_MASK_FULL))
     {
         RTGCPTR64   GCPdPt;
         PGMPOOLKIND enmKind;
@@ -1134,7 +1134,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
     }
     else
     {
-        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
+        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK_FULL);
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
         pgmPoolCacheUsed(pPool, pShwPage);
@@ -1183,7 +1183,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
     if (!pPdpt->a[iPdPt].n.u1Present)
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
 
-    pShwPage = pgmPoolGetPage(pPool, pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
+    pShwPage = pgmPoolGetPage(pPool, pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK_FULL);
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
