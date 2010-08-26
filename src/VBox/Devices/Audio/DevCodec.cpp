@@ -346,6 +346,9 @@ static int codecGetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F07_param;
     else if (STAC9220_IS_CD_CMD(cmd))
         *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
+    else if (   STAC9220_IS_RESERVED_CMD(cmd)
+             && CODEC_NID(cmd) == 0x1b)
+        *pResp = pState->pNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     else
         AssertMsgFailed(("Unsupported"));
     return VINF_SUCCESS;
@@ -371,6 +374,9 @@ static int codecSetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F07_param;
     else if (STAC9220_IS_CD_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
+    else if (   STAC9220_IS_RESERVED_CMD(cmd)
+             && CODEC_NID(cmd) == 0x1b)
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     Assert((pu32Reg));
     if (pu32Reg)
         codecSetRegisterU8(pu32Reg, cmd, 0);
@@ -1162,6 +1168,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0x9] = (0x4 << 20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
             pNode->node.au32F00_param[0xE] = 0x1;
             pNode->node.au8F02_param[0] = 0x1a;
+            pNode->reserved.u32F07_param = 0;
             break;
         default:
         break;
