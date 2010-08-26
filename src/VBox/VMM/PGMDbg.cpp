@@ -1738,7 +1738,7 @@ static void pgmR3DumpHierarchyGstCheckReservedHighBits(PPGMR3DUMPHIERARCHYSTATE 
 {
     uint32_t uRsvd = (u64Entry & pState->u64HighReservedBits) >> 52;
     if (uRsvd)
-        pState->pHlp->pfnPrintf(pState->pHlp, " %u:52=%03llx%s",
+        pState->pHlp->pfnPrintf(pState->pHlp, " %u:52=%03x%s",
                                 pState->uLastRsvdBit, uRsvd, pState->fLme ? "" : "!");
     /** @todo check the valid physical bits as well. */
 }
