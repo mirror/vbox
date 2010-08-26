@@ -4824,7 +4824,7 @@ VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(QObject *pNotif
 VBoxVHWACommandElementProcessor::~VBoxVHWACommandElementProcessor()
 {
     Assert(!m_NotifyObjectRefs.refs());
-    Assert(!m_CmdPipe.isEmpty());
+    Assert(m_CmdPipe.isEmpty());
     RTCritSectDelete(&mCritSect);
 }
 
