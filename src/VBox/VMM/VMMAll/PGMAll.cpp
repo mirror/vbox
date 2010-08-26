@@ -1088,7 +1088,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
         }
         else
         {
-            GCPml4  = uGstPml4e & X86_PML4E_PG_MASK;
+            GCPml4  = uGstPml4e & X86_PML4E_PG_MASK_FULL;
             enmKind = PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT;
         }
 
@@ -1105,7 +1105,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
     }
     /* The PDPT was cached or created; hook it up now. */
     pPml4e->u |= pShwPage->Core.Key
-              | (uGstPml4e & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
+              | (uGstPml4e & ~(X86_PML4E_PG_MASK_FULL | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
 
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
