@@ -57,10 +57,30 @@ typedef struct FTMTCPHDR
      * cancelation. */
     uint32_t    cb;
 } FTMTCPHDR;
-/** Magic value for TELEPORTERTCPHDR::u32Magic. (Egberto Gismonti Amin) */
+/** Magic value for FTMTCPHDR::u32Magic. (Egberto Gismonti Amin) */
 #define FTMTCPHDR_MAGIC       UINT32_C(0x19471205)
 /** The max block size. */
 #define FTMTCPHDR_MAX_SIZE    UINT32_C(0x00fffff8)
+
+/**
+ * TCP stream header.
+ *
+ * This is an extra layer for fixing the problem with figuring out when the SSM
+ * stream ends.
+ */
+typedef struct FTMTCPHDRMEM
+{
+    /** Magic value. */
+    uint32_t    u32Magic;
+    /** Size (Uncompressed) of the pages following the header. */
+    uint32_t    cbPageRange;
+    /** GC Physical address of the page(s) to sync. */
+    RTGCPHYS    GCPhys;
+    /** The size of the data block following this header.
+     * 0 indicates the end of the stream, while UINT32_MAX indicates
+     * cancelation. */
+    uint32_t    cb;
+} FTMTCPHDRMEM;
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -602,6 +622,18 @@ static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
  */
 static DECLCALLBACK(int) ftmR3SyncDirtyPage(PVM pVM, RTGCPHYS GCPhys, uint8_t *pRange, unsigned cbRange, void *pvUser)
 {
+    FTMTCPHDRMEM Hdr;
+    Hdr.u32Magic    = FTMTCPHDR_MAGIC;
+    Hdr.GCPhys      = GCPhys;
+    Hdr.cbPageRange = cbRange;
+    Hdr.cb          = cbRange;
+    /** @todo compress page(s). */
+    int rc = RTTcpSgWriteL(pVM->ftm.s.hSocket, 2, &Hdr, sizeof(Hdr), pRange, (size_t)Hdr.cb);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("FTSync/TCP: Write error (ftmR3SyncDirtyPage): %Rrc (cb=%#x)\n", rc, Hdr.cb));
+        return rc;
+    }
     return VINF_SUCCESS;
 }
 
@@ -681,11 +713,28 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
             rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
             AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
 
+            rc = ftmR3TcpSubmitCommand(pVM, "mem-sync");
+            AssertRC(rc);
+
             /* sync the changed memory with the standby node. */
             rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3PerformSync, 2, pVM, FTMSYNCSTATE_DELTA_MEMORY);
             AssertRC(rc);
 
+            /* Enumerate all dirty pages and send them to the standby VM. */
             rc = PGMR3PhysEnumDirtyFTPages(pVM, ftmR3SyncDirtyPage, NULL /* pvUser */);
+            AssertRC(rc);
+
+            /* Send last memory header to signal the end. */
+            FTMTCPHDRMEM Hdr;
+            Hdr.u32Magic    = FTMTCPHDR_MAGIC;
+            Hdr.GCPhys      = 0;
+            Hdr.cbPageRange = 0;
+            Hdr.cb          = 0;
+            int rc = RTTcpSgWriteL(pVM->ftm.s.hSocket, 1, &Hdr, sizeof(Hdr));
+            if (RT_FAILURE(rc))
+                LogRel(("FTSync/TCP: Write error (ftmR3MasterThread): %Rrc (cb=%#x)\n", rc, Hdr.cb));
+
+            rc = ftmR3TcpReadACK(pVM, "mem-sync-complete");
             AssertRC(rc);
 
             PDMCritSectLeave(&pVM->ftm.s.CritSect);
@@ -770,6 +819,50 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
 
         if (!strcmp(szCmd, "mem-sync"))
         {
+            rc = ftmR3TcpWriteACK(pVM);
+            AssertRC(rc);
+            if (RT_FAILURE(rc))
+                continue;
+
+            while (true)
+            {
+                FTMTCPHDRMEM Hdr;
+                void *pPage;
+
+                /* Read memory header. */
+                rc = RTTcpRead(pVM->ftm.s.hSocket, &Hdr, sizeof(Hdr), NULL);
+                if (RT_FAILURE(rc))
+                {
+                    Log(("RTTcpRead failed with %Rrc\n", rc));
+                    break;
+                }
+
+                if (Hdr.cb == 0)
+                    break;  /* end of sync. */
+
+                Assert(Hdr.cb == Hdr.cbPageRange);  /** @todo uncompress */
+
+                /* Allocate memory to hold the page(s). */
+                pPage = RTMemAlloc(Hdr.cbPageRange);
+                AssertBreak(pPage);
+
+                /* Fetch the page(s). */
+                rc = RTTcpRead(pVM->ftm.s.hSocket, pPage, Hdr.cb, NULL);
+                if (RT_FAILURE(rc))
+                {
+                    Log(("RTTcpRead page data (%d bytes) failed with %Rrc\n", Hdr.cb, rc));
+                    break;
+                }
+
+                /* Update the guest memory of the standby VM. */
+                rc = PGMPhysWrite(pVM, Hdr.GCPhys, pPage, Hdr.cbPageRange);
+                AssertRC(rc);
+
+                RTMemFree(pPage);
+            }
+
+            rc = ftmR3TcpWriteACK(pVM);
+            AssertRC(rc);
         }
         else
         if (!strcmp(szCmd, "heartbeat"))
