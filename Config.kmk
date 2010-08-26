@@ -3432,6 +3432,9 @@ ifdef VBOX_WITH_QTGUI
   VBOX_QT4_INFIX=VBox
  endif
 
+ VBOX_QT4_MOD = QtCore QtGui QtNetwork $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
+ VBOX_QT4_MOD_NAMES = $(foreach qtmod,$(VBOX_QT4_MOD),$(qtmod)$(VBOX_QT4_INFIX))
+
  #
  # Handmade configuration of qt4 - very annoying, this needs to
  # be cleaned up properly later some time (not important now).
