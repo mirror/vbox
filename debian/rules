@@ -41,7 +41,7 @@ moddir   := $(current)/debian/modules
 prefix   := $(current)/debian/$(verpkg)
 arch     := $(shell dpkg --print-architecture)
 verfile  := $(builddir)/version-generated.mk
-ose      := 1
+ose      := $(if $(OSE),1,$(if $(wildcard $(vboxroot)/src/VBox/RDP/server),,1))
 svnrev   := 0
 NOMODS   ?= $(ose)
 NOQT     ?= $(HEADLESS)
@@ -226,11 +226,15 @@ ifeq ($(ose),)
 	    LICENSE $(if $(HEADLESS),,License-*.html))
 	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
 	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
-	rmdir $(archdir)/additions
 	if [ -d $(archdir)/accessible ]; then mv $(archdir)/accessible $(prefix)/usr/lib/virtualbox; fi
 else
-	dh_installdocs
+	dh_installdocs \
+	    $(archdir)/UserManual*.pdf
+	rm $(addprefix $(archdir)/,UserManual*.pdf)
+	for i in additions/VBoxGuestAdditions.iso; do \
+	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
 endif
+	rmdir $(archdir)/additions
 	rmdir $(archdir)
 	rmdir $(prefix)/opt
 	dh_link \
