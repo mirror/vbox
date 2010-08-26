@@ -2885,7 +2885,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pC
     /*
      * Figure the context.
      */
-    uint32_t fFlags = 0;
+    uint32_t fFlags = DBGFPGDMP_FLAGS_PAGE_INFO | DBGFPGDMP_FLAGS_HEADER;
     if (pCmd->pszCmd[3] == '\0')
         fFlags |= pDbgc->fRegCtxGuest ? DBGFPGDMP_FLAGS_GUEST : DBGFPGDMP_FLAGS_SHADOW;
     else if (pCmd->pszCmd[3] == 'g')
