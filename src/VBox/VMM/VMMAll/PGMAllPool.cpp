@@ -3290,7 +3290,7 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
         PPGMPAGE pPhysBase;
         RTGCPHYS GCPhysBase = GCPhysPage & X86_PDE2M_PAE_PG_MASK;
 
-        GCPhysPage &= X86_PDE_PAE_PG_MASK;
+        GCPhysPage &= X86_PDE_PAE_PG_MASK_FULL;
 
         /* Fetch the large page base. */
         if (GCPhysBase != GCPhysPage)
