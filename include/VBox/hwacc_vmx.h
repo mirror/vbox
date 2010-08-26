@@ -72,7 +72,7 @@ typedef struct EPTPML4EBITS
 AssertCompileSize(EPTPML4EBITS, 8);
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
-#define EPT_PML4E_PG_MASK       X86_PML4E_PG_MASK_FULL
+#define EPT_PML4E_PG_MASK       X86_PML4E_PG_MASK
 /** The page shift to get the PML4 index. */
 #define EPT_PML4_SHIFT          X86_PML4_SHIFT
 /** The PML4 index mask (apply to a shifted page address). */

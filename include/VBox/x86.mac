@@ -447,12 +447,7 @@
 %define X86_PML4E_PCD                       RT_BIT(4)
 %define X86_PML4E_A                         RT_BIT(5)
 %define X86_PML4E_AVL_MASK                  (RT_BIT(9) | RT_BIT(10) | RT_BIT(11))
-%if 1
-%define X86_PML4E_PG_MASK                   ( 0x0000fffffffff000 )
-%define X86_PML4E_PG_MASK_FULL              ( 0x000ffffffffff000 )
-%else
 %define X86_PML4E_PG_MASK                   ( 0x000ffffffffff000 )
-%endif
 %define X86_PML4E_MBZ_MASK_NX               0x0000000000000080
 %define X86_PML4E_MBZ_MASK_NO_NX            0x8000000000000080
 %define X86_PML4E_NX                        RT_BIT_64(63)

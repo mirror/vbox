@@ -1808,12 +1808,7 @@ typedef const X86PDPT *PCX86PDPT;
 /** Bits 9-11 - - Available for use to system software. */
 #define X86_PML4E_AVL_MASK                  (RT_BIT(9) | RT_BIT(10) | RT_BIT(11))
 /** Bits 12-51 - - PAE - Physical Page number of the next level. */
-#if 1 /* we're using this internally and have to mask of the top 16-bit. */
-#define X86_PML4E_PG_MASK                   ( 0x0000fffffffff000ULL )
-#define X86_PML4E_PG_MASK_FULL              ( 0x000ffffffffff000ULL )
-#else
-#define X86_PML4E_PG_MASK                   ( 0x000ffffffffff000ULL )
-#endif
+#define X86_PML4E_PG_MASK                   UINT64_C(0x000ffffffffff000)
 /** Bits 8, 7 - - MBZ bits when NX is active. */
 #define X86_PML4E_MBZ_MASK_NX               UINT64_C(0x0000000000000080)
 /** Bits 63, 7 - - MBZ bits when no NX. */

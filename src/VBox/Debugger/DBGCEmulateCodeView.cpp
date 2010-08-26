@@ -2730,7 +2730,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
             if (!Pml4e.n.u1Present)
                 return DBGCCmdHlpPrintf(pCmdHlp, "Page directory pointer table is not present for %Dv.\n", &VarGCPtr);
 
-            VarCur.u.u64Number = Pml4e.u & X86_PML4E_PG_MASK_FULL;
+            VarCur.u.u64Number = Pml4e.u & X86_PML4E_PG_MASK;
             Assert(fPAE);
         }
         if (fPAE)
@@ -3101,7 +3101,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             if (!Pml4e.n.u1Present)
                 return DBGCCmdHlpPrintf(pCmdHlp, "Page directory pointer table is not present for %Dv.\n", &VarGCPtr);
 
-            VarCur.u.u64Number = Pml4e.u & X86_PML4E_PG_MASK_FULL;
+            VarCur.u.u64Number = Pml4e.u & X86_PML4E_PG_MASK;
             Assert(fPAE);
         }
         if (fPAE)
