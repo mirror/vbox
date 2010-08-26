@@ -823,6 +823,8 @@ typedef enum VUSBSTATUS
     VUSBSTATUS_DATA_OVERRUN,
     /** The isochronous buffer hasn't been touched. */
     VUSBSTATUS_NOT_ACCESSED,
+    /** Canceled/undone URB (VUSB internal). */
+    VUSBSTATUS_UNDO,
     /** Invalid status. */
     VUSBSTATUS_INVALID = 0x7f
 } VUSBSTATUS;

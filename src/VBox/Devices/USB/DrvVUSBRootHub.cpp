@@ -584,7 +584,7 @@ static DECLCALLBACK(int) vusbRhCancelUrbsEp(PVUSBIROOTHUBCONNECTOR pInterface, P
      * Cancel and reap the URB(s) on an endpoint.
      */
     LogFlow(("vusbRhCancelUrbsEp: pRh=%p pUrb=%p\n", pRh));
-    vusbUrbCancel(pUrb);
+    vusbUrbCancel(pUrb, CANCELMODE_UNDO);
 
     PVUSBURB pRipe;
     if (pUrb->enmState == VUSBURBSTATE_REAPED)
@@ -612,7 +612,7 @@ static DECLCALLBACK(void) vusbRhCancelAllUrbs(PVUSBIROOTHUBCONNECTOR pInterface)
     while (pUrb)
     {
         PVUSBURB pNext = pUrb->VUsb.pNext;
-        vusbUrbCancel(pUrb);
+        vusbUrbCancel(pUrb, CANCELMODE_FAIL);
         pUrb = pNext;
     }
 
