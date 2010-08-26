@@ -270,7 +270,6 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--hpet",                     MODIFYVM_HPET,                      RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocache",                  MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocachesize",              MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32 },
-    { "--iocachesize",              MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32 },
     { "--faulttolerance",           MODIFYVM_FAULT_TOLERANCE,           RTGETOPT_REQ_STRING },
     { "--faulttoleranceaddress",    MODIFYVM_FAULT_TOLERANCE_ADDRESS,   RTGETOPT_REQ_STRING },
     { "--faulttoleranceport",       MODIFYVM_FAULT_TOLERANCE_PORT,      RTGETOPT_REQ_UINT32 },
