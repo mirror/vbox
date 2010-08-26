@@ -123,17 +123,19 @@ MAKESELF="makeself"
 MESA="-lGL"
 INCZ=""
 LIBZ="-lz"
-INCPNG=""
-LIBPNG="-lpng"
 CXX_FLAGS=""
 if [ "$OS" = "freebsd" ]; then
   INCCURL="-I/usr/local/include"
   LIBCURL="-L/usr/local/lib -lcurl"
   INCPULSE="-I/usr/local/include"
   LIBPULSE="-L/usr/local/lib"
+  INCPNG="-I/usr/local/include"
+  LIBPNG="-L/usr/local/lib -lpng"
 else
   INCCURL=""
   LIBCURL="-lcurl"
+  INCPNG=""
+  LIBPNG="-lpng"
 fi
 PKGCONFIG="`which_wrapper pkg-config`"
 PYTHONDIR="/usr /usr/local"
@@ -2458,7 +2460,7 @@ check_libxml2
 check_ssl
 check_curl
 [ "$OS" != "darwin"  ] && check_z
-[ "$OS" != "darwin" -a "$OS" != "freebsd" ] && check_png
+[ "$OS" != "darwin"  ] && check_png
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
 [ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
