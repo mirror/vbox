@@ -117,9 +117,23 @@ extern "C" {
 
 /* STAC9220 6.2 & 6.12 */
 #define STAC9220_IS_RESERVED_CMD(cmd) ( \
-    CODEC_NID((cmd)) == 0x19            \
+       CODEC_NID((cmd)) == 0x9          \
+    || CODEC_NID((cmd)) == 0x19         \
     || CODEC_NID((cmd)) == 0x1A         \
     || CODEC_NID((cmd)) == 0x1B)
+
+#define CODEC_POWER_MASK        0x3
+#define CODEC_POWER_ACT_SHIFT   (4)
+#define CODEC_POWER_SET_SHIFT   (0)
+#define CODEC_POWER_D0          (0)
+#define CODEC_POWER_D1          (1)
+#define CODEC_POWER_D2          (2)
+#define CODEC_POWER_D3          (3)
+#define CODEC_POWER_PROPOGATE_STATE(node)                                                           \
+    do {                                                                                            \
+        node.u32F05_param &= (CODEC_POWER_MASK);                                                    \
+        node.u32F05_param |= (node.u32F05_param & CODEC_POWER_MASK) << CODEC_POWER_ACT_SHIFT;     \
+    }while(0)
 
 static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode);
 static int codecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt);
@@ -636,9 +650,34 @@ static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
     Assert((pu32Reg));
     if (!pu32Reg)
         return VINF_SUCCESS;
-    *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
+
+    if (!STAC9220_IS_AFG_CMD(cmd))
+    {
+        *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
+        *pu32Reg |= (pState->pNodes[1].afg.u32F05_param & (CODEC_VERB_4BIT_DATA << 4));
+    }
+    else
+        *pu32Reg &= ~CODEC_VERB_4BIT_DATA;
+
     *pu32Reg |= cmd & CODEC_VERB_4BIT_DATA;
-    *pu32Reg |= (cmd & CODEC_VERB_4BIT_DATA) << 4;
+    /* Propogate next power state only if AFG is on or verb modifies AFG power state */
+    if (   STAC9220_IS_AFG_CMD(cmd)
+        || !pState->pNodes[1].afg.u32F05_param)
+    {
+        *pu32Reg &= ~(CODEC_POWER_MASK << CODEC_POWER_ACT_SHIFT);
+        *pu32Reg |= (cmd & CODEC_VERB_4BIT_DATA) << 4;
+        if (   STAC9220_IS_AFG_CMD(cmd)
+            && (cmd & CODEC_POWER_MASK) == CODEC_POWER_D0)
+        {
+            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[2].dac);
+            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[3].dac);
+            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[4].dac);
+            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[5].dac);
+            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[6].dac);
+            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[7].dac);
+            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[0x11].dac);
+        }
+    }
     return VINF_SUCCESS;
 }
 
@@ -882,7 +921,7 @@ static int codecSetConfig3 (struct CODECState *pState, uint32_t cmd, uint64_t *p
 static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode)
 {
     pNode->node.id = nodenum;
-    pNode->node.au32F00_param[0xF] = RT_BIT(3)|RT_BIT(0); /* Power statest Supported: D0-yes, D1, D2, D3-no*/
+    pNode->node.au32F00_param[0xF] = 0; /* Power statest Supported: are the same as AFG reports */
     switch (nodenum)
     {
         /* Root Node*/
@@ -896,18 +935,18 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             break;
         case 1:
             pNode->afg.node.name = "AFG";
-            pNode->node.au32F00_param[4] = 2 << 16 | 0x17; /* starting node - 2; total numbers of nodes  0x17 */
+            pNode->node.au32F00_param[4] = 2 << 16 | 0x1A; /* starting node - 2; total numbers of nodes  0x1A */
             pNode->node.au32F00_param[5] = RT_BIT(8)|RT_BIT(0);
             pNode->node.au32F00_param[8] = RT_MAKE_U32_FROM_U8(0x0d, 0x0d, 0x01, 0x0); /* Capabilities */
             //pNode->node.au32F00_param[0xa] = RT_BIT(19)|RT_BIT(18)|RT_BIT(17)|RT_BIT(10)|RT_BIT(9)|RT_BIT(8)|RT_BIT(7)|RT_BIT(6)|RT_BIT(5);
-            pNode->node.au32F00_param[0xa] = RT_BIT(17)|RT_BIT(5);
-            pNode->node.au32F00_param[0xc] = (17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
-            pNode->node.au32F00_param[0xb] = RT_BIT(0);
-            pNode->node.au32F00_param[0xd] = RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
+            pNode->node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
+            pNode->node.au32F00_param[0xC] = (17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
+            pNode->node.au32F00_param[0xB] = RT_BIT(0);
+            pNode->node.au32F00_param[0xD] = RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
             pNode->node.au32F00_param[0x12] = RT_BIT(31)|(0x2 << 16)|(0x7f << 8)|0x7f;
             pNode->node.au32F00_param[0x11] = 0;
-            pNode->node.au32F00_param[0xF] = RT_BIT(30)|RT_BIT(3)|RT_BIT(0); /* Power statest Supported: D0-yes, D1, D2, D3-no*/
-            pNode->afg.u32F05_param = 0x3 << 4| 0x3; /* PS-Act: D3, PS->Set D3  */
+            pNode->node.au32F00_param[0xF] = 0xF;
+            pNode->afg.u32F05_param = 0x2 << 4| 0x2; /* PS-Act: D3, PS->Set D3  */
             pNode->afg.u32F20_param = 0x83847882;
             pNode->afg.u32F08_param = 0;
             break;
@@ -929,7 +968,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_LEFT, 0) = 0x7F | RT_BIT(7);
             AMPLIFIER_REGISTER(pNode->dac.B_params, AMPLIFIER_OUT, AMPLIFIER_RIGHT, 0) = 0x7F | RT_BIT(7);
 
-            pNode->dac.node.au32F00_param[9] = (0xf << 16) | RT_BIT(11) |  RT_BIT(10) | RT_BIT(2) | RT_BIT(0);
+            pNode->dac.node.au32F00_param[9] = (0xD << 16) | RT_BIT(11) |  RT_BIT(10) | RT_BIT(2) | RT_BIT(0);
             pNode->dac.u32F0c_param = 0;
             pNode->dac.u32F05_param = 0x3 << 4 | 0x3; /* PS-Act: D3, Set: D3  */
         break;
@@ -961,8 +1000,10 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 9:
             pNode->node.name = "Reserved_0";
             pNode->spdifin.u32A_param = (0x1<<4) | 0x1;
-            pNode->spdifin.node.au32F00_param[9] = (0x1 << 20)|(4 << 16) | RT_BIT(9)|RT_BIT(4)|0x1;
-            pNode->node.au32F00_param[0xa] = RT_BIT(17)|RT_BIT(5);
+            pNode->spdifin.node.au32F00_param[9] = (0x1 << 20)|(4 << 16) | RT_BIT(9)| RT_BIT(8)|RT_BIT(4)|0x1;
+            pNode->node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
+            pNode->node.au32F00_param[0xE] = RT_BIT(0);
+            pNode->node.au8F02_param[0] = 0x11;
             pNode->spdifin.node.au32F00_param[0xB] = RT_BIT(2)|RT_BIT(0);
             pNode->spdifin.u32F06_param = 0;
             pNode->spdifin.u32F0d_param = 0;
@@ -1032,10 +1073,10 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.name = "DigOut_0";
             pNode->node.au32F00_param[9] = (4<<20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
             pNode->node.au32F00_param[0xC] = RT_BIT(4);
-            pNode->node.au32F00_param[0xE] = 0x2;
+            pNode->node.au32F00_param[0xE] = 0x3;
             pNode->digout.u32F01_param = 0;
             /* STAC9220 spec defines default connection list containing reserved nodes, that confuses some drivers. */
-            *(uint32_t *)pNode->node.au8F02_param = RT_MAKE_U32_FROM_U8(0x08, 0x17, 0x0, 0);
+            *(uint32_t *)pNode->node.au8F02_param = RT_MAKE_U32_FROM_U8(0x08, 0x17, 0x19, 0);
             pNode->digout.u32F07_param = 0;
             if (!pState->fInReset)
                 pNode->digout.u32F1c_param = RT_MAKE_U32_FROM_U8(0x30, 0x10, 0x45, 0x01);
@@ -1107,6 +1148,21 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             AMPLIFIER_REGISTER(pNode->adcvol.B_params, AMPLIFIER_IN, AMPLIFIER_LEFT, 0) = RT_BIT(7);
             AMPLIFIER_REGISTER(pNode->adcvol.B_params, AMPLIFIER_IN, AMPLIFIER_RIGHT, 0) = RT_BIT(7);
             pNode->adcvol.u32F0c_param = 0;
+            break;
+        case 0x19:
+            pNode->node.name = "Reserved_1";
+            pNode->node.au32F00_param[0x9] = (0xF << 20)|(0x3 << 16)|RT_BIT(9)|RT_BIT(0);
+            break;
+        case 0x1A:
+            pNode->node.name = "Reserved_2";
+            pNode->node.au32F00_param[0x9] = (0x3 << 16)|RT_BIT(9)|RT_BIT(0);
+            break;
+        case 0x1B:
+            pNode->node.name = "Reserved_3";
+            pNode->node.au32F00_param[0x9] = (0x4 << 20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
+            pNode->node.au32F00_param[0xE] = 0x1;
+            pNode->node.au8F02_param[0] = 0x1a;
+            break;
         default:
         break;
     }
@@ -1180,9 +1236,12 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
 {
     int rc = VINF_SUCCESS;
     Assert(CODEC_CAD(cmd) == pState->id);
+    if (STAC9220_IS_RESERVED_CMD(cmd))
+    {
+        LogRel(("HDAcodec: cmd %x was addressed to reseved node\n", cmd));
+    }
     if (   CODEC_VERBDATA(cmd) == 0
-        || CODEC_NID(cmd) >= STAC9220_NODE_COUNT
-        || STAC9220_IS_RESERVED_CMD(cmd))
+        || CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
     {
         *pfn = codecUnimplemented;
         //** @todo r=michaln: There needs to be a counter to avoid log flooding (see e.g. DevRTC.cpp)
