@@ -2867,7 +2867,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
 
 
 /**
- * The 'dph*' commands.
+ * The 'dph*' commands and main part of 'm'.
  *
  * @returns VBox status.
  * @param   pCmd        Pointer to the command descriptor (as registered).
@@ -2883,17 +2883,23 @@ static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pC
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "No VM.\n");
 
     /*
-     * Figure the context.
+     * Figure the context and base flags.
      */
-    uint32_t fFlags = DBGFPGDMP_FLAGS_PAGE_INFO | DBGFPGDMP_FLAGS_HEADER;
-    if (pCmd->pszCmd[3] == '\0')
+    uint32_t fFlags = DBGFPGDMP_FLAGS_PAGE_INFO | DBGFPGDMP_FLAGS_PRINT_CR3;
+    if (pCmd->pszCmd[0] == 'm')
+        fFlags |= DBGFPGDMP_FLAGS_GUEST | DBGFPGDMP_FLAGS_SHADOW;
+    else if (pCmd->pszCmd[3] == '\0')
         fFlags |= pDbgc->fRegCtxGuest ? DBGFPGDMP_FLAGS_GUEST : DBGFPGDMP_FLAGS_SHADOW;
     else if (pCmd->pszCmd[3] == 'g')
         fFlags |= DBGFPGDMP_FLAGS_GUEST;
     else if (pCmd->pszCmd[3] == 'h')
         fFlags |= DBGFPGDMP_FLAGS_SHADOW;
     else
-        fFlags |= DBGFPGDMP_FLAGS_GUEST | DBGFPGDMP_FLAGS_SHADOW;
+        AssertFailed();
+
+    if (pDbgc->cPagingHierarchyDumps == 0)
+        fFlags |= DBGFPGDMP_FLAGS_HEADER;
+    pDbgc->cPagingHierarchyDumps = (pDbgc->cPagingHierarchyDumps + 1) % 42;
 
     /*
      * Get the range.
@@ -3585,23 +3591,7 @@ static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     DBGCCmdHlpPrintf(pCmdHlp, "Address: %DV\n", &paArgs[0]);
     if (!pVM)
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "No VM.\n");
-
-    DBGCCmdHlpPrintf(pCmdHlp, "guest pd (dpdg %DV):\n", &paArgs[0]);
-    int rc1 = pCmdHlp->pfnExec(pCmdHlp, "dpdg %DV",     &paArgs[0]);
-    DBGCCmdHlpPrintf(pCmdHlp, "hyper pd (dpdh %DV):\n", &paArgs[0]);
-    int rc2 = pCmdHlp->pfnExec(pCmdHlp, "dpdh %DV",     &paArgs[0]);
-    DBGCCmdHlpPrintf(pCmdHlp, "guest pt (dptg %DV):\n", &paArgs[0]);
-    int rc3 = pCmdHlp->pfnExec(pCmdHlp, "dptg %DV",     &paArgs[0]);
-    DBGCCmdHlpPrintf(pCmdHlp, "hyper pt (dpth %DV):\n", &paArgs[0]);
-    int rc4 = pCmdHlp->pfnExec(pCmdHlp, "dpth %DV",     &paArgs[0]);
-    if (RT_FAILURE(rc1))
-        return rc1;
-    if (RT_FAILURE(rc2))
-        return rc2;
-    if (RT_FAILURE(rc3))
-        return rc3;
-    NOREF(pCmd); NOREF(cArgs); NOREF(pResult);
-    return rc4;
+    return dbgcCmdDumpPageHierarchy(pCmd, pCmdHlp, pVM, paArgs, cArgs, pResult);
 }
 
 

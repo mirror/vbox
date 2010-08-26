@@ -168,6 +168,8 @@ typedef struct DBGC
     bool                fRegCtxGuest;
     /** Indicates whether the register are terse or sparse. */
     bool                fRegTerse;
+    /** Counter use to suppress the printing of the headers. */
+    uint8_t             cPagingHierarchyDumps;
 
     /** Current dissassembler position. */
     DBGCVAR             DisasmPos;
