@@ -1962,6 +1962,7 @@ int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
     //pDbgc->fLog             = false;
     pDbgc->fRegCtxGuest     = true;
     pDbgc->fRegTerse        = true;
+    //pDbgc->cPagingHierarchyDumps = 0;
     //pDbgc->DisasmPos        = {0};
     //pDbgc->SourcePos        = {0};
     //pDbgc->DumpPos          = {0};

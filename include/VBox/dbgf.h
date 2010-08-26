@@ -941,6 +941,8 @@ VMMR3DECL(int) DBGFR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, vo
 /** Whether no-execution is enabled (!DBGFPGDMP_FLAGS_CURRENT_STATE).
  * Same value as MSR_K6_EFER_NXE. */
 #define DBGFPGDMP_FLAGS_NXE             RT_BIT_32(11)
+/** Whether to print the CR3. */
+#define DBGFPGDMP_FLAGS_PRINT_CR3       RT_BIT_32(27)
 /** Whether to print the header. */
 #define DBGFPGDMP_FLAGS_HEADER          RT_BIT_32(28)
 /** Whether to dump additional page information. */
@@ -952,7 +954,7 @@ VMMR3DECL(int) DBGFR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, vo
  * Cannot be used together with DBGFPGDMP_FLAGS_SHADOW. */
 #define DBGFPGDMP_FLAGS_GUEST           RT_BIT_32(31)
 /** Mask of valid bits. */
-#define DBGFPGDMP_FLAGS_VALID_MASK      UINT32_C(0xf0000f33)
+#define DBGFPGDMP_FLAGS_VALID_MASK      UINT32_C(0xf8000f33)
 /** The mask of bits controlling the paging mode. */
 #define DBGFPGDMP_FLAGS_MODE_MASK       UINT32_C(0x00000f32)
 /** @}  */
