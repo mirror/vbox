@@ -834,6 +834,109 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR
 
 
 /**
+ * The simple way out, too tired to think of a more elegant solution.
+ *
+ * @returns The base address of this page table/directory/whatever.
+ * @param   pState              The state where we get the current address.
+ * @param   cShift              The shift count for the table entries.
+ * @param   cEntries            The number of table entries.
+ * @param   piFirst             Where to return the table index of the first
+ *                              entry to dump.
+ * @param   piLast              Where to return the table index of the last
+ *                              entry.
+ */
+static uint64_t pgmR3DumpHierarchyCalcRange(PPGMR3DUMPHIERARCHYSTATE pState, uint32_t cShift, uint32_t cEntries,
+                                            uint32_t *piFirst, uint32_t *piLast)
+{
+    const uint64_t iBase  = (pState->u64Address     >> cShift) & ~(uint64_t)(cEntries - 1);
+    const uint64_t iFirst = pState->u64FirstAddress >> cShift;
+    const uint64_t iLast  = pState->u64LastAddress  >> cShift;
+
+    if (   iBase                >= iFirst
+        && iBase + cEntries - 1 <= iLast)
+    {
+        /* full range. */
+        *piFirst = 0;
+        *piLast  = cEntries - 1;
+    }
+    else if (   iBase + cEntries - 1 < iFirst
+             || iBase                > iLast)
+    {
+        /* no match */
+        *piFirst = cEntries;
+        *piLast  = 0;
+    }
+    else
+    {
+        /* partial overlap */
+        *piFirst = iBase <= iFirst
+                 ? iFirst - iBase
+                 : 0;
+        *piLast  = iBase + cEntries - 1 <= iLast
+                 ? cEntries - 1
+                 : iLast - iBase;
+    }
+
+    return iBase << cShift;
+}
+
+
+/**
+ * Maps/finds the shadow page.
+ *
+ * @returns VBox status code.
+ * @param   pState              The dumper state.
+ * @param   HCPhys              The physical address of the shadow page.
+ * @param   pszDesc             The description.
+ * @param   fIsMapping          Set if it's a mapping.
+ * @param   ppv                 Where to return the pointer.
+ */
+static int pgmR3DumpHierarchyHcMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, const char *pszDesc,
+                                       bool fIsMapping, void **ppv)
+{
+    void *pvPage;
+    if (!fIsMapping)
+    {
+        int rc = MMPagePhys2PageTry(pState->pVM, HCPhys, &pvPage);
+        if (RT_FAILURE(rc))
+        {
+            pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! %s at HCPhys=%RHp was not found in the page pool!\n",
+                                    pState->cchAddress, pState->u64Address, pszDesc, HCPhys);
+            return rc;
+        }
+    }
+    else
+    {
+        pvPage = NULL;
+        for (PPGMMAPPING pMap = pState->pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
+        {
+            uint64_t off = pState->u64Address - pMap->GCPtr;
+            if (off < pMap->cb)
+            {
+                const int iPDE = (uint32_t)(off >> X86_PD_SHIFT);
+                const int iSub = (int)((off >> X86_PD_PAE_SHIFT) & 1); /* MSC is a pain sometimes */
+                if ((iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0) != HCPhys)
+                    pState->pHlp->pfnPrintf(pState->pHlp,
+                                            "%0*llx error! Mapping error! PT %d has HCPhysPT=%RHp not %RHp is in the PD.\n",
+                                            pState->cchAddress, pState->u64Address, iPDE,
+                                            iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0, HCPhys);
+                pvPage = &pMap->aPTs[iPDE].paPaePTsR3[iSub];
+                break;
+            }
+        }
+        if (!pvPage)
+        {
+            pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! PT mapping %s at HCPhys=%RHp was not found in the page pool!\n",
+                                    pState->cchAddress, pState->u64Address, HCPhys);
+            return VERR_INVALID_PARAMETER;
+        }
+    }
+    *ppv = pvPage;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Dumps the a shadow page summary or smth.
  *
  * @param   pState              The dumper state.
@@ -857,6 +960,22 @@ static void pgmR3DumpHierarchyHcPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
 {
     /* later */
     NOREF(pState); NOREF(HCPhys); NOREF(cbPage);
+    RTGCPHYS GCPhys;
+    int rc = PGMR3DbgHCPhys2GCPhys(pState->pVM, HCPhys, &GCPhys);
+    if (RT_SUCCESS(rc))
+    {
+        pgmLock(pState->pVM);
+        char      szPage[80];
+        PCPGMPAGE pPage = pgmPhysGetPage(&pState->pVM->pgm.s, GCPhys);
+        if (pPage)
+            RTStrPrintf(szPage, sizeof(szPage), "%R[pgmpage]", pPage);
+        else
+            strcpy(szPage, "not found");
+        pgmUnlock(pState->pVM);
+        pState->pHlp->pfnPrintf(pState->pHlp, " -> %RGp %s", GCPhys, szPage);
+    }
+    else
+        pState->pHlp->pfnPrintf(pState->pHlp, " not found");
 }
 
 
@@ -870,46 +989,17 @@ static void pgmR3DumpHierarchyHcPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
  */
 static int pgmR3DumpHierarchyHCPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fIsMapping)
 {
-    PPGMSHWPTPAE pPT = NULL;
-    if (!fIsMapping)
-        pPT = (PPGMSHWPTPAE)MMPagePhys2Page(pState->pVM, HCPhys);
-    else
-    {
-        for (PPGMMAPPING pMap = pState->pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
-        {
-            uint64_t off = pState->u64Address - pMap->GCPtr;
-            if (off < pMap->cb)
-            {
-                const int iPDE = (uint32_t)(off >> X86_PD_SHIFT);
-                const int iSub = (int)((off >> X86_PD_PAE_SHIFT) & 1); /* MSC is a pain sometimes */
-                if ((iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0) != HCPhys)
-                    pState->pHlp->pfnPrintf(pState->pHlp,
-                                            "%0*llx error! Mapping error! PT %d has HCPhysPT=%RHp not %RHp is in the PD.\n",
-                                            pState->cchAddress, pState->u64Address, iPDE,
-                                            iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0, HCPhys);
-                pPT = &pMap->aPTs[iPDE].paPaePTsR3[iSub];
-                break;
-            }
-        }
-    }
-    if (!pPT)
-    {
-        pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! Page table at HCPhys=%RHp was not found in the page pool!\n",
-                                pState->cchAddress, pState->u64Address, HCPhys);
-        return VERR_INVALID_PARAMETER;
-    }
+    PPGMSHWPTPAE pPT;
+    int rc = pgmR3DumpHierarchyHcMapPage(pState, HCPhys, "Page table", fIsMapping, (void **)&pPT);
+    if (RT_FAILURE(rc))
+        return rc;
 
-    const uint64_t  u64BaseAddress  = pState->u64Address & ~(RT_BIT_64(X86_PT_PAE_SHIFT) - 1);
-    uint32_t        iFirst          = (pState->u64FirstAddress >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK;
-    uint32_t        iLast           = (pState->u64LastAddress  >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK;
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, X86_PT_PAE_SHIFT, X86_PG_PAE_ENTRIES, &iFirst, &iLast);
     for (uint32_t i = iFirst; i <= iLast; i++)
         if (PGMSHWPTEPAE_GET_U(pPT->a[i]) & X86_PTE_P)
         {
             pState->u64Address = u64BaseAddress + ((uint64_t)i << X86_PT_PAE_SHIFT);
-            if (   pState->u64Address < pState->u64FirstAddress
-                || pState->u64Address > pState->u64LastAddress)
-                continue;
-
             if (PGMSHWPTEPAE_IS_P(pPT->a[i]))
             {
                 X86PTEPAE Pte;
@@ -971,22 +1061,16 @@ static int pgmR3DumpHierarchyHCPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS H
  */
 static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
+    PX86PDPAE pPD;
+    int rc = pgmR3DumpHierarchyHcMapPage(pState, HCPhys, "Page directory", false, (void **)&pPD);
+    if (RT_FAILURE(rc))
+        return rc;
+
     Assert(cMaxDepth > 0);
     cMaxDepth--;
 
-    PX86PDPAE pPD = (PX86PDPAE)MMPagePhys2Page(pState->pVM, HCPhys);
-    if (!pPD)
-    {
-        pState->pHlp->pfnPrintf(pState->pHlp,
-                                "%0*llx error! Page directory at HCPhys=%RHp was not found in the page pool!\n",
-                                pState->cchAddress, pState->u64Address, HCPhys);
-        return VERR_INVALID_PARAMETER;
-    }
-
-    int             rc              = VINF_SUCCESS;
-    const uint64_t  u64BaseAddress  = pState->u64Address & ~(RT_BIT_64(X86_PD_PAE_SHIFT) - 1);
-    uint32_t        iFirst          = (pState->u64FirstAddress >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-    uint32_t        iLast           = (pState->u64LastAddress  >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, X86_PD_PAE_SHIFT, X86_PG_PAE_ENTRIES, &iFirst, &iLast);
     for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PDEPAE Pde = pPD->a[i];
@@ -1081,27 +1165,24 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
     if (!pState->fLme && pState->u64Address >= _4G)
         return VINF_SUCCESS;
 
+    PX86PDPT pPDPT;
+    int rc = pgmR3DumpHierarchyHcMapPage(pState, HCPhys, "Page directory pointer table", false, (void **)&pPDPT);
+    if (RT_FAILURE(rc))
+        return rc;
+
     Assert(cMaxDepth > 0);
     cMaxDepth--;
 
-    PX86PDPT pPDPT = (PX86PDPT)MMPagePhys2Page(pState->pVM, HCPhys);
-    if (!pPDPT)
-    {
-        pState->pHlp->pfnPrintf(pState->pHlp,
-                                "%0*llx error! Page directory pointer table at HCPhys=%RHp was not found in the page pool!\n",
-                                pState->cchAddress, pState->u64Address, HCPhys);
-        return VERR_INVALID_PARAMETER;
-    }
-
-    int             rc              = VINF_SUCCESS;
-    const uint64_t  u64BaseAddress  = pState->u64Address & ~(RT_BIT_64(X86_PDPT_SHIFT) - 1);
-    uint32_t        iFirst          = (pState->u64FirstAddress >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-    uint32_t        iLast           = (pState->u64LastAddress  >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, X86_PDPT_SHIFT,
+                                                          pState->fLme ? X86_PG_AMD64_PDPE_ENTRIES : X86_PG_PAE_PDPE_ENTRIES,
+                                                          &iFirst, &iLast);
     for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PDPE Pdpe = pPDPT->a[i];
         if (Pdpe.n.u1Present)
         {
+            pState->u64Address = u64BaseAddress + ((uint64_t)i << X86_PDPT_SHIFT);
             if (pState->fLme)
             {
                 pState->pHlp->pfnPrintf(pState->pHlp, /*P R  S  A  D  G  WT CD AT NX .. a p ?  */
@@ -1174,19 +1255,18 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
  */
 static int pgmR3DumpHierarchyHcPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
+    PX86PML4 pPML4;
+    int rc = pgmR3DumpHierarchyHcMapPage(pState, HCPhys, "Page map level 4", false, (void **)&pPML4);
+    if (RT_FAILURE(rc))
+        return rc;
+
     Assert(cMaxDepth);
     cMaxDepth--;
 
-    PX86PML4 pPML4 = (PX86PML4)MMPagePhys2Page(pState->pVM, HCPhys);
-    if (!pPML4)
-    {
-        pState->pHlp->pfnPrintf(pState->pHlp, "Page map level 4 at HCPhys=%RHp was not found in the page pool!\n", HCPhys);
-        return VERR_INVALID_PARAMETER;
-    }
-
-    int         rc      = VINF_SUCCESS;
-    uint32_t    iFirst  = (pState->u64FirstAddress >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    uint32_t    iLast   = (pState->u64LastAddress  >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    const uint64_t  u64BaseAddress  = u64BaseAddress & ~(RT_BIT_64(X86_PML4_SHIFT) - 1);
+    uint32_t        iFirst          = u64BaseAddress >= pState->u64FirstAddress ? 0
+                                    : RT_MIN((pState->u64FirstAddress -u64BaseAddress) >> X86_PML4_SHIFT, X86_PG_PAE_ENTRIES);
+    uint32_t        iLast           = RT_MIN((pState->u64LastAddress - u64BaseAddress) >> X86_PML4_SHIFT, X86_PG_PAE_ENTRIES-1);
     for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PML4E Pml4e = pPML4->a[i];
@@ -1241,35 +1321,13 @@ static int pgmR3DumpHierarchyHcPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
  */
 static int pgmR3DumpHierarchyHC32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fMapping)
 {
-    /** @todo what about using the page pool for mapping PTs? */
-    PX86PT pPT = NULL;
-    if (!fMapping)
-        pPT = (PX86PT)MMPagePhys2Page(pState->pVM, HCPhys);
-    else
-    {
-        for (PPGMMAPPING pMap = pState->pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
-            if (pState->u64Address - pMap->GCPtr < pMap->cb)
-            {
-                int iPDE = (pState->u64Address - pMap->GCPtr) >> X86_PD_SHIFT;
-                if (pMap->aPTs[iPDE].HCPhysPT != HCPhys)
-                    pState->pHlp->pfnPrintf(pState->pHlp,
-                                            "%08llx error! Mapping error! PT %d has HCPhysPT=%RHp not %RHp is in the PD.\n",
-                                            pState->u64Address, iPDE, pMap->aPTs[iPDE].HCPhysPT, HCPhys);
-                pPT = pMap->aPTs[iPDE].pPTR3;
-            }
-    }
-    if (!pPT)
-    {
-        pState->pHlp->pfnPrintf(pState->pHlp,
-                                "%08llx error! Page table at %#x was not found in the page pool!\n",
-                                pState->u64Address, HCPhys);
-        return VERR_INVALID_PARAMETER;
-    }
+    PX86PT pPT;
+    int rc = pgmR3DumpHierarchyHcMapPage(pState, HCPhys, "Page table", fMapping, (void **)&pPT);
+    if (RT_FAILURE(rc))
+        return rc;
 
-
-    const uint64_t  u64BaseAddress  = pState->u64Address & ~(RT_BIT_64(X86_PT_SHIFT) - 1);
-    uint32_t        iFirst          = RT_MIN(pState->u64FirstAddress >> X86_PT_SHIFT, X86_PG_ENTRIES);
-    uint32_t        iLast           = RT_MIN(pState->u64LastAddress  >> X86_PT_SHIFT, X86_PG_ENTRIES - 1);
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, X86_PT_SHIFT, X86_PG_ENTRIES, &iFirst, &iLast);
     for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PTE Pte = pPT->a[i];
@@ -1315,21 +1373,16 @@ static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
     if (pState->u64Address >= _4G)
         return VINF_SUCCESS;
 
+    PX86PD pPD;
+    int rc = pgmR3DumpHierarchyHcMapPage(pState, HCPhys, "Page directory", false, (void **)&pPD);
+    if (RT_FAILURE(rc))
+        return rc;
+
     Assert(cMaxDepth > 0);
     cMaxDepth--;
 
-    PX86PD pPD = (PX86PD)MMPagePhys2Page(pState->pVM, HCPhys);
-    if (!pPD)
-    {
-        pState->pHlp->pfnPrintf(pState->pHlp,
-                                "Page directory at %#x was not found in the page pool!\n", HCPhys);
-        return VERR_INVALID_PARAMETER;
-    }
-
-    int             rc              = VINF_SUCCESS;
-    const uint64_t  u64BaseAddress  = pState->u64Address & ~(RT_BIT_64(X86_PD_SHIFT) - 1);
-    uint32_t        iFirst          = RT_MIN(pState->u64FirstAddress >> X86_PD_SHIFT, X86_PG_ENTRIES);
-    uint32_t        iLast           = RT_MIN(pState->u64LastAddress  >> X86_PD_SHIFT, X86_PG_ENTRIES - 1);
+    uint32_t iFirst, iLast;
+    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, X86_PD_SHIFT, X86_PG_ENTRIES, &iFirst, &iLast);
     for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PDE Pde = pPD->a[i];
