@@ -1424,4 +1424,34 @@ name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
     <para>Combinations of all of these options are allowed. If all options are
       specified, the VM cannot be shut down from the GUI.</para>
   </sect1>
+
+  <sect1 id="vboxwebsrv-daemon">
+    <title>Starting <computeroutput>vboxwebsrv</computeroutput> automatically</title>
+
+    <para><computeroutput>vboxwebsrv</computeroutput> is used for controlling
+    VirtualBox remotely. As the client base using this interface is growing, we
+    added start scripts for the various operation systems we support. The
+    following describes how to use them.
+
+    <itemizedlist>
+        <listitem>
+          <para>On Mac OS X, launchd is used. An example configuration file can
+          be found in
+          <computeroutput>$HOME/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</computeroutput>.
+          It has to be enabled by changing the
+          <computeroutput>Disabled</computeroutput> key from
+          <computeroutput>true</computeroutput> to
+          <computeroutput>false</computeroutput>. To manually start the service
+          use the following command:
+          <screen>launchctl load ~/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</screen>
+          
+          For additional information on how launchd services could be
+          configured see 
+          <literal><ulink
+      url="http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html">http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ulink></literal>.
+          </para>
+        </listitem>
+    </itemizedlist>
+    </para>
+  </sect1>
 </chapter>
