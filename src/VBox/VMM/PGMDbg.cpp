@@ -987,7 +987,7 @@ static void pgmR3DumpHierarchyHcPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
  * @param   HCPhys              The page table address.
  * @param   fIsMapping          Whether it is a mapping.
  */
-static int pgmR3DumpHierarchyHCPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fIsMapping)
+static int pgmR3DumpHierarchyHcPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fIsMapping)
 {
     PPGMSHWPTPAE pPT;
     int rc = pgmR3DumpHierarchyHcMapPage(pState, HCPhys, "Page table", fIsMapping, (void **)&pPT);
@@ -1059,7 +1059,7 @@ static int pgmR3DumpHierarchyHCPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS H
  * @param   cMaxDepth   The maxium depth.
  * @param   pHlp        Pointer to the output functions.
  */
-static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+static int  pgmR3DumpHierarchyHcPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
     PX86PDPAE pPD;
     int rc = pgmR3DumpHierarchyHcMapPage(pState, HCPhys, "Page directory", false, (void **)&pPD);
@@ -1134,7 +1134,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
 
                 if (cMaxDepth)
                 {
-                    int rc2 = pgmR3DumpHierarchyHCPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK_FULL, !!(Pde.u & PGM_PDFLAGS_MAPPING));
+                    int rc2 = pgmR3DumpHierarchyHcPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK_FULL, !!(Pde.u & PGM_PDFLAGS_MAPPING));
                     if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }
@@ -1159,7 +1159,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
  * @param   cMaxDepth   The maxium depth.
  * @param   pHlp        Pointer to the output functions.
  */
-static int  pgmR3DumpHierarchyHCPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+static int  pgmR3DumpHierarchyHcPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
     /* Fend of addresses that are out of range in PAE mode - simplifies the code below. */
     if (!pState->fLme && pState->u64Address >= _4G)
@@ -1233,7 +1233,7 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
 
             if (cMaxDepth)
             {
-                int rc2 = pgmR3DumpHierarchyHCPaePD(pState, Pdpe.u & X86_PDPE_PG_MASK_FULL, cMaxDepth);
+                int rc2 = pgmR3DumpHierarchyHcPaePD(pState, Pdpe.u & X86_PDPE_PG_MASK_FULL, cMaxDepth);
                 if (rc2 < rc && RT_SUCCESS(rc))
                     rc = rc2;
             }
@@ -1263,10 +1263,22 @@ static int pgmR3DumpHierarchyHcPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
     Assert(cMaxDepth);
     cMaxDepth--;
 
-    const uint64_t  u64BaseAddress  = u64BaseAddress & ~(RT_BIT_64(X86_PML4_SHIFT) - 1);
-    uint32_t        iFirst          = u64BaseAddress >= pState->u64FirstAddress ? 0
-                                    : RT_MIN((pState->u64FirstAddress -u64BaseAddress) >> X86_PML4_SHIFT, X86_PG_PAE_ENTRIES);
-    uint32_t        iLast           = RT_MIN((pState->u64LastAddress - u64BaseAddress) >> X86_PML4_SHIFT, X86_PG_PAE_ENTRIES-1);
+    /*
+     * This is a bit tricky as we're working on unsigned addresses while the
+     * AMD64 spec uses signed tricks.
+     */
+    uint32_t iFirst = (pState->u64FirstAddress >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    uint32_t iLast  = (pState->u64LastAddress  >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    if (   pState->u64LastAddress  <= UINT64_C(0x00007fffffffffff)
+        || pState->u64FirstAddress >= UINT64_C(0xffff800000000000))
+    { /* Simple, nothing to adjust */ }
+    else if (pState->u64FirstAddress <= UINT64_C(0x00007fffffffffff))
+        iLast = X86_PG_AMD64_ENTRIES / 2 - 1;
+    else if (pState->u64LastAddress  >= UINT64_C(0xffff800000000000))
+        iFirst = X86_PG_AMD64_ENTRIES / 2;
+    else
+        iFirst = X86_PG_AMD64_ENTRIES; /* neither address is canonical */
+
     for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PML4E Pml4e = pPML4->a[i];
@@ -1298,7 +1310,7 @@ static int pgmR3DumpHierarchyHcPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
 
             if (cMaxDepth)
             {
-                int rc2 = pgmR3DumpHierarchyHCPaePDPT(pState, Pml4e.u & X86_PML4E_PG_MASK, cMaxDepth);
+                int rc2 = pgmR3DumpHierarchyHcPaePDPT(pState, Pml4e.u & X86_PML4E_PG_MASK, cMaxDepth);
                 if (rc2 < rc && RT_SUCCESS(rc))
                     rc = rc2;
             }
@@ -1319,7 +1331,7 @@ static int pgmR3DumpHierarchyHcPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
  * @param   u32Address  The virtual address this table starts at.
  * @param   pHlp        Pointer to the output functions.
  */
-static int pgmR3DumpHierarchyHC32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fMapping)
+static int pgmR3DumpHierarchyHc32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fMapping)
 {
     PX86PT pPT;
     int rc = pgmR3DumpHierarchyHcMapPage(pState, HCPhys, "Page table", fMapping, (void **)&pPT);
@@ -1368,7 +1380,7 @@ static int pgmR3DumpHierarchyHC32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
  * @param   cMaxDepth   How deep into the hierarchy the dumper should go.
  * @param   pHlp        Pointer to the output functions.
  */
-static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
+static int pgmR3DumpHierarchyHc32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
     if (pState->u64Address >= _4G)
         return VINF_SUCCESS;
@@ -1435,7 +1447,7 @@ static int pgmR3DumpHierarchyHC32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
 
                 if (cMaxDepth)
                 {
-                    int rc2 = pgmR3DumpHierarchyHC32BitPT(pState, Pde.u & X86_PDE_PG_MASK, !!(Pde.u & PGM_PDFLAGS_MAPPING));
+                    int rc2 = pgmR3DumpHierarchyHc32BitPT(pState, Pde.u & X86_PDE_PG_MASK, !!(Pde.u & PGM_PDFLAGS_MAPPING));
                     if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }
@@ -1514,9 +1526,9 @@ static int pdmR3DumpHierarchyHcDoIt(PPGMR3DUMPHIERARCHYSTATE pState, uint64_t cr
         if (pState->fLme)
             rc = pgmR3DumpHierarchyHcPaePML4(pState, cr3 & X86_CR3_PAGE_MASK,     cMaxDepth);
         else if (pState->fPae)
-            rc = pgmR3DumpHierarchyHCPaePDPT(pState, cr3 & X86_CR3_PAE_PAGE_MASK, cMaxDepth);
+            rc = pgmR3DumpHierarchyHcPaePDPT(pState, cr3 & X86_CR3_PAE_PAGE_MASK, cMaxDepth);
         else
-            rc = pgmR3DumpHierarchyHC32BitPD(pState, cr3 & X86_CR3_PAGE_MASK,     cMaxDepth);
+            rc = pgmR3DumpHierarchyHc32BitPD(pState, cr3 & X86_CR3_PAGE_MASK,     cMaxDepth);
     }
     return rc;
 }
