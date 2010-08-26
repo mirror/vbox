@@ -236,6 +236,11 @@ VMMR3DECL(int) DBGFR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, uint32_t fF
     return VERR_INTERNAL_ERROR;
 }
 
+VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, VMCPUID idCpu, const char *pszDumpPath)
+{
+    return VERR_INTERNAL_ERROR;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // The rest should eventually be replaced by DBGF calls and eliminated. //

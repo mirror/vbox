@@ -42,6 +42,7 @@ PFNRT g_apfnDeps[] =
     (PFNRT)DBGFR3StackWalkEnd,
     (PFNRT)DBGFR3AsSymbolByAddr,
     (PFNRT)DBGFR3CpuGetMode,
+    (PFNRT)DBGFR3CoreWrite,
     (PFNRT)DBGFR3MemScan,
     (PFNRT)DBGFR3RegQueryU8,
     (PFNRT)EMInterpretInstruction,
