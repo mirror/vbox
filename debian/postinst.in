@@ -11,13 +11,16 @@
 # be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-# we can be called with the following arguments:
+# we can be called with the following arguments (6.5 of Debian policy):
 #  configure:         (our version): installing/configuring new version
 #  abort-upgrade:     (old version): upgrading to a new version failed
 #  abort-remove:      (our version): removing this package failed
 #  abort-deconfigure: (our version): error during resolving conflicts
 
 LOG="/var/log/vbox-install.log"
+
+# defaults
+[ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
 if [ "$1" = "configure" ]; then
 
@@ -36,8 +39,8 @@ if [ "$1" = "configure" ]; then
     rm /etc/vbox/vbox.cfg
   fi
 
-  # install udev rule
-  if [ -d /etc/udev/rules.d ]; then
+  # install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox)
+  if [ -d /etc/udev/rules.d -a "$INSTALL_NO_UDEV" != "1" ]; then
     udev_call=""
     udev_app=`which udevadm 2> /dev/null`
     if [ $? -eq 0 ]; then
@@ -57,15 +60,41 @@ if [ "$1" = "configure" ]; then
       fi
     fi
     echo "KERNEL=${udev_fix}\"vboxdrv\", NAME=\"vboxdrv\", OWNER=\"root\", GROUP=\"root\", MODE=\"0600\"" \
-      > /etc/udev/rules.d/60-vboxdrv.rules
+      > /etc/udev/rules.d/10-vboxdrv.rules
+    if [ "$INSTALL_NO_GROUP" != "1" ]; then
+      echo "SUBSYSTEM=${udev_fix}\"usb_device\", GROUP=\"vboxusers\", MODE=\"0664\"" \
+        >> /etc/udev/rules.d/10-vboxdrv.rules
+      echo "SUBSYSTEM=${udev_fix}\"usb\", ENV{DEVTYPE}==\"usb_device\", GROUP=\"vboxusers\", MODE=\"0664\"" \
+        >> /etc/udev/rules.d/10-vboxdrv.rules
+    else
+      echo "SUBSYSTEM=${udev_fix}\"usb_device\", GROUP=\"root\", MODE=\"0664\"" \
+        >> /etc/udev/rules.d/10-vboxdrv.rules
+      echo "SUBSYSTEM=${udev_fix}\"usb\", ENV{DEVTYPE}==\"usb_device\", GROUP=\"root\", MODE=\"0664\"" \
+        >> /etc/udev/rules.d/10-vboxdrv.rules
+    fi
+  fi
+  # Remove old udev description file
+  if [ -f /etc/udev/rules.d/60-vboxdrv.rules ]; then
+      rm -f /etc/udev/rules.d/60-vboxdrv.rules 2> /dev/null
+  fi
+  # Push the permissions to the USB device nodes.  One of these should match.
+  # Rather nasty to use udevadm trigger for this, but I don't know of any
+  # better way.
+  udevadm trigger --subsystem-match=usb > /dev/null 2>&1
+  udevtrigger --subsystem-match=usb > /dev/null 2>&1
+  udevtrigger --subsystem-match=usb_device > /dev/null 2>&1
+  udevplug -Busb > /dev/null 2>&1
+
+  # create users groups (disable with INSTALL_NO_GROUP=1 in /etc/default/virtualbox)
+  if [ "$INSTALL_NO_GROUP" != "1" ]; then
+    db_input low virtualbox/group-vboxusers || true
+    db_go || true
+    addgroup --system vboxusers || true
   fi
 
-  # create users groups
-  db_input high virtualbox/group-vboxusers || true
-  db_go || true
-  addgroup --system vboxusers || true
-
-  if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
+  # try to build a kernel module (disable with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox)
+  REGISTER_DKMS=1
+  if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko -a "$INSTALL_NO_VBOXDRV" != "1" ]; then
     db_get virtualbox/module-compilation-allowed
     if [ "$RET" = "false" ]; then
       cat << EOF
@@ -73,7 +102,7 @@ Unable to find a precompiled module for the current kernel
 though module compilation denied by debconf setting.
 EOF
     else
-      db_input critical virtualbox/module-compilation-allowed || true
+      db_input low virtualbox/module-compilation-allowed || true
       db_go || true
       db_get virtualbox/module-compilation-allowed
       if [ "$RET" = "true" ]; then
@@ -169,6 +198,13 @@ EOF
   fi
   if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetAdpCtl > /dev/null 2>&1; then
     chmod 4511 /usr/lib/virtualbox/VBoxNetAdpCtl
+  fi
+
+  # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
+  if [ "$INSTALL_NO_VBOXDRV" = "1" ]; then
+    rm -f /lib/modules/*/misc/vboxdrv.ko
+    rm -f /lib/modules/*/misc/vboxnetflt.ko
+    rm -f /lib/modules/*/misc/vboxnetadp.ko
   fi
 
 fi # $1 = "configure"
