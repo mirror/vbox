@@ -730,7 +730,7 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
             Hdr.GCPhys      = 0;
             Hdr.cbPageRange = 0;
             Hdr.cb          = 0;
-            int rc = RTTcpSgWriteL(pVM->ftm.s.hSocket, 1, &Hdr, sizeof(Hdr));
+            rc = RTTcpSgWriteL(pVM->ftm.s.hSocket, 1, &Hdr, sizeof(Hdr));
             if (RT_FAILURE(rc))
                 LogRel(("FTSync/TCP: Write error (ftmR3MasterThread): %Rrc (cb=%#x)\n", rc, Hdr.cb));
 
