@@ -320,6 +320,13 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--iocachesize <I/O cache size in MB>]\n"
 #endif
                 );
+        RTPrintf("                            [--faulttolerance master|standby]\n"
+                 "                            [--faulttoleranceaddress <name>]\n"
+                 "                            [--faulttoleranceport <port>]\n"
+                 "                            [--faulttolerancesyncinterval <msec>]\n"
+                 "                            [--faulttolerancepassword <password>]\n"
+                 );
+
         RTPrintf("\n");
     }
 

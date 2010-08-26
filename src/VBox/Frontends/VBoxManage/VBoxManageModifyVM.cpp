@@ -155,7 +155,12 @@ enum
     MODIFYVM_HARDWARE_UUID,
     MODIFYVM_HPET,
     MODIFYVM_IOCACHE,
-    MODIFYVM_IOCACHESIZE
+    MODIFYVM_IOCACHESIZE,
+    MODIFYVM_FAULT_TOLERANCE,
+    MODIFYVM_FAULT_TOLERANCE_ADDRESS,
+    MODIFYVM_FAULT_TOLERANCE_PORT,
+    MODIFYVM_FAULT_TOLERANCE_PASSWORD,
+    MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL,
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -265,6 +270,12 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--hpet",                     MODIFYVM_HPET,                      RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocache",                  MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocachesize",              MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32 },
+    { "--iocachesize",              MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32 },
+    { "--faulttolerance",           MODIFYVM_FAULT_TOLERANCE,           RTGETOPT_REQ_STRING },
+    { "--faulttoleranceaddress",    MODIFYVM_FAULT_TOLERANCE_ADDRESS,   RTGETOPT_REQ_STRING },
+    { "--faulttoleranceport",       MODIFYVM_FAULT_TOLERANCE_PORT,      RTGETOPT_REQ_UINT32 },
+    { "--faulttolerancepassword",   MODIFYVM_FAULT_TOLERANCE_PASSWORD,  RTGETOPT_REQ_STRING },
+    { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
 };
 
 int handleModifyVM(HandlerArg *a)
@@ -1898,6 +1909,49 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_TELEPORTER_PASSWORD:
             {
                 CHECK_ERROR(machine, COMSETTER(TeleporterPassword)(Bstr(ValueUnion.psz)));
+                break;
+            }
+
+            case MODIFYVM_FAULT_TOLERANCE:
+            {
+                if (!strcmp(ValueUnion.psz, "master"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(FaultToleranceState(FaultToleranceState_Master)));
+                }
+                else
+                if (!strcmp(ValueUnion.psz, "standby"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(FaultToleranceState(FaultToleranceState_Standby)));
+                }
+                else
+                {
+                    errorArgument("Invalid --faulttolerance argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                break;
+            }
+
+            case MODIFYVM_FAULT_TOLERANCE_ADDRESS:
+            {
+                CHECK_ERROR(machine, COMSETTER(FaultToleranceAddress)(Bstr(ValueUnion.psz)));
+                break;
+            }
+
+            case MODIFYVM_FAULT_TOLERANCE_PORT:
+            {
+                CHECK_ERROR(machine, COMSETTER(FaultTolerancePort)(ValueUnion.u32));
+                break;
+            }
+
+            case MODIFYVM_FAULT_TOLERANCE_PASSWORD:
+            {
+                CHECK_ERROR(machine, COMSETTER(FaultTolerancePassword)(Bstr(ValueUnion.psz)));
+                break;
+            }
+
+            case MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL:
+            {
+                CHECK_ERROR(machine, COMSETTER(FaultToleranceSyncInterval)(ValueUnion.u32));
                 break;
             }
 
