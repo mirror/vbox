@@ -155,7 +155,7 @@ VMMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys
     if (HCPhys == NIL_RTHCPHYS)
         return VERR_INVALID_POINTER;
     unsigned off = HCPhys & PAGE_OFFSET_MASK;
-    HCPhys &= X86_PTE_PAE_PG_MASK;
+    HCPhys &= X86_PTE_PAE_PG_MASK_FULL;
     if (HCPhys == 0)
         return VERR_INVALID_POINTER;
 
@@ -1103,9 +1103,9 @@ static int pgmR3DumpHierarchyShwPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
                                         Pte.u & PGM_PTFLAGS_TRACK_DIRTY   ? 'd' : '-',
                                         Pte.u & RT_BIT(10)                ? '1' : '0',
                                         Pte.u & PGM_PTFLAGS_CSAM_VALIDATED? 'v' : '-',
-                                        Pte.u & X86_PTE_PAE_PG_MASK);
+                                        Pte.u & X86_PTE_PAE_PG_MASK_FULL);
                 if (pState->fDumpPageInfo)
-                    pgmR3DumpHierarchyShwGuestPageInfo(pState, Pte.u & X86_PTE_PAE_PG_MASK, _4K);
+                    pgmR3DumpHierarchyShwGuestPageInfo(pState, Pte.u & X86_PTE_PAE_PG_MASK_FULL, _4K);
                 if ((Pte.u >> 52) & 0x7ff)
                     pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx%s", (Pte.u >> 52) & 0x7ff, pState->fLme ? "" : "!");
                 pState->pHlp->pfnPrintf(pState->pHlp, "\n");
@@ -1784,9 +1784,9 @@ static int pgmR3DumpHierarchyGstPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPHYS 
                                     Pte.u & RT_BIT(9)   ? '1' : '0',
                                     Pte.u & RT_BIT(10)  ? '1' : '0',
                                     Pte.u & RT_BIT(11)  ? '1' : '0',
-                                    Pte.u & X86_PTE_PAE_PG_MASK);
+                                    Pte.u & X86_PTE_PAE_PG_MASK_FULL);
             if (pState->fDumpPageInfo)
-                pgmR3DumpHierarchyGstPageInfo(pState, Pte.u & X86_PTE_PAE_PG_MASK, _4K);
+                pgmR3DumpHierarchyGstPageInfo(pState, Pte.u & X86_PTE_PAE_PG_MASK_FULL, _4K);
             pgmR3DumpHierarchyGstCheckReservedHighBits(pState, Pte.u);
             pState->pHlp->pfnPrintf(pState->pHlp, "\n");
             pState->cLeaves++;
