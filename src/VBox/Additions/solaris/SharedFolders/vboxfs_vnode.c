@@ -711,7 +711,7 @@ sffs_readdir(
 		eofp = &dummy_eof;
 	*eofp = 0;
 
-	if (uiop->uio_loffset >= MAXOFF_T) {
+	if (uiop->uio_loffset >= MAXOFFSET_T) {
 		*eofp = 1;
 		return (0);
 	}
@@ -962,8 +962,15 @@ sffs_read(
 		return (EISDIR);
 	if (vp->v_type != VREG)
 		return (EINVAL);
-	if (uio->uio_loffset >= MAXOFF_T)
-		return (0);
+	if (uio->uio_loffset >= MAXOFFSET_T)
+	{
+		proc_t *p = ttoproc(curthread);
+		mutex_enter(&p->p_lock);
+		(void) rctl_action(rctlproc_legacy[RLIMIT_FSIZE], p->p_rctls,
+			p, RCA_UNSAFE_SIGINFO);
+		mutex_exit(&p->p_lock);
+		return (EFBIG);
+	}
 	if (uio->uio_loffset < 0)
 		return (EINVAL);
 	total = uio->uio_resid;
@@ -1050,8 +1057,6 @@ sffs_write(
 	}
 	if (limit == RLIM64_INFINITY || limit > MAXOFFSET_T)
 		limit = MAXOFFSET_T;
-	if (limit > MAXOFF_T)
-		limit = MAXOFF_T;
 
 	if (uiop->uio_loffset >= limit) {
 		proc_t *p = ttoproc(curthread);
@@ -1063,7 +1068,7 @@ sffs_write(
 		return (EFBIG);
 	}
 
-	if (uiop->uio_loffset >= MAXOFF_T) {
+	if (uiop->uio_loffset >= MAXOFFSET_T) {
 		mutex_exit(&sffs_lock);
 		return (EFBIG);
 	}
