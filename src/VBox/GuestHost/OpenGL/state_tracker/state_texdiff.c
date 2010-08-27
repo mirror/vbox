@@ -184,20 +184,21 @@ void crStateTextureSwitch( CRTextureBits *tb, CRbitvalue *bitID,
                 diff_api.ActiveTextureARB( i + GL_TEXTURE0_ARB );
                 activeUnit = i;
             }
-            if (from->unit[i].currentTexture1D->id != to->unit[i].currentTexture1D->id) 
+            if (from->unit[i].currentTexture1D->hwid != to->unit[i].currentTexture1D->hwid)
             {
                 diff_api.BindTexture(GL_TEXTURE_1D, crStateGetTextureObjHWID(to->unit[i].currentTexture1D));
                 FILLDIRTY(tb->current[i]);
                 FILLDIRTY(tb->dirty);
             }
-            if (from->unit[i].currentTexture2D->id != to->unit[i].currentTexture2D->id) 
+            if (from->unit[i].currentTexture2D->hwid != to->unit[i].currentTexture2D->hwid)
             {
                 diff_api.BindTexture(GL_TEXTURE_2D, crStateGetTextureObjHWID(to->unit[i].currentTexture2D));
                 FILLDIRTY(tb->current[i]);
                 FILLDIRTY(tb->dirty);
             }
 #ifdef CR_OPENGL_VERSION_1_2
-            if (from->unit[i].currentTexture3D->id != to->unit[i].currentTexture3D->id) {
+            if (from->unit[i].currentTexture3D->hwid != to->unit[i].currentTexture3D->hwid)
+            {
                 diff_api.BindTexture(GL_TEXTURE_3D, crStateGetTextureObjHWID(to->unit[i].currentTexture3D));
                 FILLDIRTY(tb->current[i]);
                 FILLDIRTY(tb->dirty);
@@ -205,7 +206,8 @@ void crStateTextureSwitch( CRTextureBits *tb, CRbitvalue *bitID,
 #endif
 #ifdef CR_ARB_texture_cube_map
             if (fromCtx->extensions.ARB_texture_cube_map &&
-                from->unit[i].currentTextureCubeMap->id != to->unit[i].currentTextureCubeMap->id) {
+                from->unit[i].currentTextureCubeMap->hwid != to->unit[i].currentTextureCubeMap->hwid)
+            {
                 diff_api.BindTexture(GL_TEXTURE_CUBE_MAP_ARB, crStateGetTextureObjHWID(to->unit[i].currentTextureCubeMap));
                 FILLDIRTY(tb->current[i]);
                 FILLDIRTY(tb->dirty);
@@ -213,12 +215,14 @@ void crStateTextureSwitch( CRTextureBits *tb, CRbitvalue *bitID,
 #endif
 #ifdef CR_NV_texture_rectangle
             if (fromCtx->extensions.NV_texture_rectangle &&
-                from->unit[i].currentTextureRect->id != to->unit[i].currentTextureRect->id) {
+                from->unit[i].currentTextureRect->hwid != to->unit[i].currentTextureRect->hwid)
+            {
                 diff_api.BindTexture(GL_TEXTURE_RECTANGLE_NV, crStateGetTextureObjHWID(to->unit[i].currentTextureRect));
                 FILLDIRTY(tb->current[i]);
                 FILLDIRTY(tb->dirty);
             }
 #endif
+            CLEARDIRTY(tb->current[i], nbitID);
         }
 
         if (CHECKDIRTY(tb->objGen[i], bitID)) 
