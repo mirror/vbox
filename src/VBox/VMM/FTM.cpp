@@ -637,6 +637,7 @@ static DECLCALLBACK(int) ftmR3SyncDirtyPage(PVM pVM, RTGCPHYS GCPhys, uint8_t *p
         LogRel(("FTSync/TCP: Write error (ftmR3SyncDirtyPage): %Rrc (cb=%#x)\n", rc, Hdr.cb));
         return rc;
     }
+    pVM->ftm.s.StatSentMem.c += Hdr.cb + sizeof(Hdr);
     return VINF_SUCCESS;
 }
 
@@ -841,6 +842,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
                     Log(("RTTcpRead failed with %Rrc\n", rc));
                     break;
                 }
+                pVM->ftm.s.StatReceivedMem.c += sizeof(Hdr);
 
                 if (Hdr.cb == 0)
                     break;  /* end of sync. */
@@ -858,6 +860,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
                     Log(("RTTcpRead page data (%d bytes) failed with %Rrc\n", Hdr.cb, rc));
                     break;
                 }
+                pVM->ftm.s.StatReceivedMem.c += Hdr.cb;
 
                 /* Update the guest memory of the standby VM. */
                 rc = PGMPhysWrite(pVM, Hdr.GCPhys, pPage, Hdr.cbPageRange);
