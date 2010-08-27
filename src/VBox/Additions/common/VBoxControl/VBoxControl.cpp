@@ -1061,8 +1061,8 @@ static int enumGuestProperty(int argc, char *argv[])
     char const * const *papszPatterns = NULL;
     uint32_t cPatterns = 0;
     if (    argc > 1
-        && (   RTStrICmp(argv[0], "-patterns") == 0)
-            || RTStrICmp(argv[0], "--patterns") == 0)
+        && (   RTStrICmp(argv[0], "-patterns") == 0
+            || RTStrICmp(argv[0], "--patterns") == 0))
     {
         papszPatterns = (char const * const *)&argv[1];
         cPatterns = argc - 1;
