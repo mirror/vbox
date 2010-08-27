@@ -31,7 +31,9 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
-#include <iprt/alloca.h>
+#ifndef IN_RING0
+# include <iprt/alloca.h>
+#endif
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/err.h>
@@ -175,6 +177,11 @@ RTDECL(int) RTStrAAppendNTag(char **ppsz, const char *pszAppend, size_t cchAppen
 }
 
 
+#ifndef IN_RING0
+
+/* XXX Currently not needed anywhere. alloca() induces some linker problems for ring 0 code
+ * with newer versions of VCC */
+
 RTDECL(int) RTStrAAppendExNVTag(char **ppsz, size_t cPairs, va_list va, const char *pszTag)
 {
     AssertPtr(ppsz);
@@ -233,6 +240,8 @@ RTDECL(int) RTStrAAppendExNVTag(char **ppsz, size_t cPairs, va_list va, const ch
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTStrAAppendExNVTag);
+
+#endif
 
 
 RTDECL(int) RTStrATruncateTag(char **ppsz, size_t cchNew, const char *pszTag)
