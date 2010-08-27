@@ -882,7 +882,7 @@ static int pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cP
         PX86PTPAE pPTPae = pPTPaeDefault;
         if (pVM->pgm.s.apInterPaePDs[iPDPE]->a[iPDE].u)
         {
-            RTHCPHYS HCPhysPT = pVM->pgm.s.apInterPaePDs[iPDPE]->a[iPDE].u & X86_PDE_PAE_PG_MASK_FULL;
+            RTHCPHYS HCPhysPT = pVM->pgm.s.apInterPaePDs[iPDPE]->a[iPDE].u & X86_PDE_PAE_PG_MASK;
             if (HCPhysPT == MMPage2Phys(pVM, pVM->pgm.s.apInterPaePTs[0]))
                 pPTPae = pVM->pgm.s.apInterPaePTs[0];
             else if (HCPhysPT == MMPage2Phys(pVM, pVM->pgm.s.apInterPaePTs[0]))
@@ -949,7 +949,7 @@ static void pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPh
         Assert(pVM->pgm.s.apInterPaePDs[iPDPE]);
         PX86PTPAE pPTPae;
         if (pVM->pgm.s.apInterPaePDs[iPDPE]->a[iPDE].u)
-            pPTPae = (PX86PTPAE)MMPagePhys2Page(pVM, pVM->pgm.s.apInterPaePDs[iPDPE]->a[iPDE].u & X86_PDE_PAE_PG_MASK_FULL);
+            pPTPae = (PX86PTPAE)MMPagePhys2Page(pVM, pVM->pgm.s.apInterPaePDs[iPDPE]->a[iPDE].u & X86_PDE_PAE_PG_MASK);
         else
         {
             pPTPae = pPTPaeDefault;

@@ -1203,16 +1203,16 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                         Pde.u & RT_BIT_64(9)            ? '1' : '0',
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
-                                        Pde.u & X86_PDE_PAE_PG_MASK_FULL);
+                                        Pde.u & X86_PDE_PAE_PG_MASK);
                 if (pState->fDumpPageInfo)
-                    pgmR3DumpHierarchyShwTablePageInfo(pState, Pde.u & X86_PDE_PAE_PG_MASK_FULL);
+                    pgmR3DumpHierarchyShwTablePageInfo(pState, Pde.u & X86_PDE_PAE_PG_MASK);
                 if ((Pde.u >> 52) & 0x7ff)
                     pState->pHlp->pfnPrintf(pState->pHlp, " 62:52=%03llx!", (Pde.u >> 52) & 0x7ff);
                 pState->pHlp->pfnPrintf(pState->pHlp, "\n");
 
                 if (cMaxDepth)
                 {
-                    int rc2 = pgmR3DumpHierarchyShwPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK_FULL, !!(Pde.u & PGM_PDFLAGS_MAPPING));
+                    int rc2 = pgmR3DumpHierarchyShwPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK, !!(Pde.u & PGM_PDFLAGS_MAPPING));
                     if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }
@@ -1872,15 +1872,15 @@ static int  pgmR3DumpHierarchyGstPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPHYS
                                         Pde.u & RT_BIT_64(9)  ? '1' : '0',
                                         Pde.u & RT_BIT_64(10) ? '1' : '0',
                                         Pde.u & RT_BIT_64(11) ? '1' : '0',
-                                        Pde.u & X86_PDE_PAE_PG_MASK_FULL);
+                                        Pde.u & X86_PDE_PAE_PG_MASK);
                 if (pState->fDumpPageInfo)
-                    pgmR3DumpHierarchyGstPageInfo(pState, Pde.u & X86_PDE_PAE_PG_MASK_FULL, _4K);
+                    pgmR3DumpHierarchyGstPageInfo(pState, Pde.u & X86_PDE_PAE_PG_MASK, _4K);
                 pgmR3DumpHierarchyGstCheckReservedHighBits(pState, Pde.u);
                 pState->pHlp->pfnPrintf(pState->pHlp, "\n");
 
                 if (cMaxDepth)
                 {
-                    int rc2 = pgmR3DumpHierarchyGstPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK_FULL);
+                    int rc2 = pgmR3DumpHierarchyGstPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK);
                     if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }

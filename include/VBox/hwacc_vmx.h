@@ -209,7 +209,7 @@ typedef struct EPTPDEBITS
 AssertCompileSize(EPTPDEBITS, 8);
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
-#define EPT_PDE_PG_MASK         X86_PDE_PAE_PG_MASK_FULL
+#define EPT_PDE_PG_MASK         X86_PDE_PAE_PG_MASK
 /** The page shift to get the PD index. */
 #define EPT_PD_SHIFT            X86_PD_PAE_SHIFT
 /** The PD index mask (apply to a shifted page address). */
