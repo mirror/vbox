@@ -619,6 +619,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
     if (VBOXSHRC_IS_SHARED(texture))
     {
         Assert(shared_handle);
+        VBOXSHRC_SET_INITIALIZED(texture);
         IWineD3DSurface_LoadLocation(texture->surfaces[0], SFLAG_INTEXTURE, NULL);
         if (!VBOXSHRC_IS_SHARED_OPENED(texture))
         {
@@ -628,6 +629,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
         else
         {
             Assert(*shared_handle);
+            Assert(*shared_handle == VBOXSHRC_GET_SHAREHANDLE(texture));
         }
 #ifdef DEBUG
         for (i = 0; i < texture->baseTexture.levels; ++i)

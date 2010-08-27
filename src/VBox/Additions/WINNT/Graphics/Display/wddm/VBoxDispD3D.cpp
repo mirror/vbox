@@ -1358,6 +1358,23 @@ static void vboxResourceFree(PVBOXWDDMDISP_RESOURCE pRc)
     RTMemFree(pRc);
 }
 
+static CRITICAL_SECTION g_VBoxCritSect;
+
+void vboxDispLock()
+{
+    EnterCriticalSection(&g_VBoxCritSect);
+}
+
+void vboxDispUnlock()
+{
+    LeaveCriticalSection(&g_VBoxCritSect);
+}
+
+void vboxDispLockInit()
+{
+    InitializeCriticalSection(&g_VBoxCritSect);
+}
+
 /**
  * DLL entry point.
  */
@@ -1369,6 +1386,8 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
     {
         case DLL_PROCESS_ATTACH:
         {
+            vboxDispLockInit();
+
             vboxVDbgPrint(("VBoxDispD3D: DLL loaded.\n"));
 #ifdef VBOXWDDMDISP_DEBUG
             vboxVDbgVEHandlerRegister();
@@ -1385,8 +1404,8 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
                 if (hr == S_OK)
 #endif
                 {
-                    hr = VBoxScreenMRunnerStart(&g_VBoxScreenMonRunner);
-                    Assert(hr == S_OK);
+//                    hr = VBoxScreenMRunnerStart(&g_VBoxScreenMonRunner);
+//                    Assert(hr == S_OK);
                     /* succeed in any way */
                     hr = S_OK;
                     if (hr == S_OK)
@@ -1409,9 +1428,10 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 #ifdef VBOXWDDMDISP_DEBUG
             vboxVDbgVEHandlerUnregister();
 #endif
-            HRESULT hr = VBoxScreenMRunnerStop(&g_VBoxScreenMonRunner);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
+            HRESULT hr = S_OK;
+//            hr = VBoxScreenMRunnerStop(&g_VBoxScreenMonRunner);
+//            Assert(hr == S_OK);
+//            if (hr == S_OK)
             {
 #ifdef VBOXDISPMP_TEST
                 hr = vboxDispMpTstStop();
@@ -1849,6 +1869,14 @@ static HRESULT APIENTRY vboxWddmDDevSetTexture(HANDLE hDevice, UINT Stage, HANDL
     {
         Assert(pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE);
         pD3DIfTex = (IDirect3DTexture9*)pRc->aAllocations[0].pD3DIf;
+#ifdef DEBUG_misha
+        bool bDo = false;
+
+        if (bDo)
+        {
+            vboxVDbgDumpSurfData((pDevice, "SetTexture:\n", pRc, 0 /* alloc index*/, NULL, NULL, "\n"));
+        }
+#endif
     }
     else
         pD3DIfTex = NULL;
@@ -5721,16 +5749,24 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 {
     vboxVDbgPrint(("==> "__FUNCTION__"\n"));
 
+//    vboxDispLock();
+
+    HRESULT hr = E_FAIL;
+
+    do
+    {
+
     VBOXWDDM_QI Query;
     D3DDDICB_QUERYADAPTERINFO DdiQuery;
     DdiQuery.PrivateDriverDataSize = sizeof(Query);
     DdiQuery.pPrivateDriverData = &Query;
-    HRESULT hr = pOpenData->pAdapterCallbacks->pfnQueryAdapterInfoCb(pOpenData->hAdapter, &DdiQuery);
+    hr = pOpenData->pAdapterCallbacks->pfnQueryAdapterInfoCb(pOpenData->hAdapter, &DdiQuery);
     Assert(hr == S_OK);
     if (hr != S_OK)
     {
         vboxVDbgPrintR((__FUNCTION__": pfnQueryAdapterInfoCb failed, hr (%d)\n", hr));
-        return E_FAIL;
+        hr = E_FAIL;
+        break;
     }
 
     /* check the miniport version match display version */
@@ -5739,7 +5775,8 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
         vboxVDbgPrintR((__FUNCTION__": miniport version mismatch, expected (%d), but was (%d)\n",
                 VBOXVIDEOIF_VERSION,
                 Query.u32Version));
-        return E_FAIL;
+        hr = E_FAIL;
+        break;
     }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -5781,6 +5818,7 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
+//                    Assert(0);
                     hr = pAdapter->D3D.pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &pAdapter->pD3D9If);
                     Assert(hr == S_OK);
                     if (hr == S_OK)
@@ -5822,6 +5860,10 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
         hr = E_OUTOFMEMORY;
     }
 
+    } while (0);
+
+//    vboxDispUnlock();
+
     vboxVDbgPrint(("<== "__FUNCTION__", hr (%d)\n", hr));
 
     return hr;
@@ -5851,6 +5893,14 @@ VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
         Assert(pRect->bottom > pRect->top);
         vboxVDbgMpPrintRect((pDevice, "rect: ", pRect, "\n"));
     }
+
+    BOOL bReleaseSurf = false;
+    if (!pSurf)
+    {
+        HRESULT tmpHr = vboxWddmSurfGet(pRc, iAlloc, &pSurf);
+        Assert(tmpHr == S_OK);
+        bReleaseSurf = TRUE;
+    }
     HRESULT srcHr = pSurf->LockRect(&Lr, NULL, D3DLOCK_READONLY);
     Assert(srcHr == S_OK);
     if (srcHr == S_OK)
@@ -5875,6 +5925,9 @@ VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
     {
         vboxVDbgMpPrint((pDevice, "%s\n", pSuffix));
     }
+
+    if (bReleaseSurf)
+        pSurf->Release();
 }
 
 VOID vboxVDbgDoDumpSurfDataBySurf(const PVBOXWDDMDISP_DEVICE pDevice, IDirect3DSurface9 *pSurf)
