@@ -3024,31 +3024,31 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               </listitem>
 
               <listitem>
-                 RDPWebClient.isRDPWebControlById(ElementId) 
+                 RDPWebClient.isRDPWebControlById(ElementId)
 
                 <para>Returns true if the given id refers to a RDPWeb Flash
                 element.</para>
 
-                 
+
               </listitem>
 
               <listitem>
-                 RDPWebClient.isRDPWebControlByElement(Element) 
+                 RDPWebClient.isRDPWebControlByElement(Element)
 
                 <para>Returns true if the given element is a RDPWeb Flash
                 element.</para>
 
-                 
+
               </listitem>
 
               <listitem>
-                 RDPWebClient.getFlashById(ElementId) 
+                 RDPWebClient.getFlashById(ElementId)
 
                 <para>Returns an element, which is referenced by the given id.
                 This function will try to resolve any element, event if it is
                 not a Flash movie.</para>
 
-                 
+
               </listitem>
             </itemizedlist></para>
         </sect3>
@@ -3387,6 +3387,15 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           Guest Additions interface version but the installed Guest Additions
           version + revision in form of
           <computeroutput>3.3.0r12345</computeroutput>.</para>
+        </listitem>
+
+        <listitem>
+          <para><xref linkend="IGuest__additionsActive"
+          xreflabel="additionsActive()" /> was replaced by
+          <xref linkend="IGuest__additionsRunLevel" xreflabel="additionsRunLevel()" />
+          and <xref linkend="IGuest__getAdditionsStatus" xreflabel="getAdditionsStatus()" />
+          in order to support a more detailed status of the current Guest
+          Additions loading/readiness state.</para>
         </listitem>
 
         <listitem>
