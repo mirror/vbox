@@ -99,7 +99,7 @@ void *MLDMemAllocDbg (size_t cb, bool fTmp, bool fZero, const char *pszCaller, i
 void *MLDMemReallocDbg (void *pv, size_t cb, const char *pszCaller, int iLine);
 void MLDMemFreeDbg (void *pv, bool fTmp);
 
-void MLDMemInit (void);
+void MLDMemInit (const char *pszPrefix);
 void MLDMemUninit (void);
 
 void MLDMemDump (void);
