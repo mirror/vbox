@@ -278,6 +278,9 @@ static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
 {
     Assert(PGMIsLockOwner(pVM));
 
+    if (FTMIsDeltaLoadSaveActive(pVM))
+        return VINF_SUCCESS;    /* nothing to do as nothing has changed here */
+
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
         pRom->idSavedState = UINT8_MAX;
 
@@ -1626,6 +1629,8 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                                     SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
                                     SSMR3PutGCPhys(pSSM, GCPhys);
                                     rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+                                    PGM_PAGE_CLEAR_WRITTEN_TO(pCurPage);
+                                    PGM_PAGE_CLEAR_FT_DIRTY(pCurPage);
                                 }
                                 /* else nothing changed, so skip it. */
                             }
