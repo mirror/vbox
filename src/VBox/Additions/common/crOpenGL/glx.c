@@ -1099,7 +1099,7 @@ DECLEXPORT(const char *) VBOXGLXTAG(glXQueryExtensionsString)( Display *dpy, int
 {
     /* XXX maybe also advertise GLX_SGIS_multisample? */
 
-    static const char *retval = "GLX_ARB_multisample GLX_EXT_texture_from_pixmap GLX_SGIX_fbconfig";
+    static const char *retval = "GLX_ARB_multisample GLX_EXT_texture_from_pixmap GLX_SGIX_fbconfig GLX_ARB_get_proc_address";
 
     (void) dpy;
     (void) screen;
