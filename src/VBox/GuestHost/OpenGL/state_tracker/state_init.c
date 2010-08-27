@@ -238,13 +238,6 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
         ctx->limits.level = 1;
     }
 
-/*
-    if (ctx->id>0)
-    {
-        crStateShareContext(GL_TRUE);
-    }
-*/
-
     return ctx;
 }
 
