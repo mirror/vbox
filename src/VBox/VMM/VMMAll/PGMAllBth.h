@@ -1808,11 +1808,21 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
 # endif
     SHWPDE          PdeDst   = *pPdeDst;
 
-    /* In the guest SMP case we could have blocked while another VCPU reused this page table. */
+    /*
+     * - In the guest SMP case we could have blocked while another VCPU reused
+     *   this page table.
+     * - With W7-64 we may also take this path when the the A bit is cleared on
+     *   higher level tables (PDPE/PML4E).  The guest does not invalidate the
+     *   relevant TLB entries.  If we're write monitoring any page mapped by
+     *   the modified entry, we may end up here with a "stale" TLB entry.
+     */
     if (!PdeDst.n.u1Present)
     {
-        LogAlways(("CPU%d: SyncPage: Pde at %RGv changed behind our back! (pPdeDst=%p/%RX64)\n", pVCpu->idCpu, GCPtrPage, pPdeDst, (uint64_t)PdeDst.u));
-        AssertMsg(pVM->cCpus > 1, ("Unexpected missing PDE p=%p/%RX64\n", pPdeDst, (uint64_t)PdeDst.u));
+        Log(("CPU%u: SyncPage: Pde at %RGv changed behind our back? (pPdeDst=%p/%RX64) uErr=%#x\n", pVCpu->idCpu, GCPtrPage, pPdeDst, (uint64_t)PdeDst.u, (uint32_t)uErr));
+        AssertMsg(pVM->cCpus > 1 || (uErr & (X86_TRAP_PF_P | X86_TRAP_PF_RW)) == (X86_TRAP_PF_P | X86_TRAP_PF_RW),
+                  ("Unexpected missing PDE p=%p/%RX64 uErr=%#x\n", pPdeDst, (uint64_t)PdeDst.u, (uint32_t)uErr));
+        if (uErr & X86_TRAP_PF_P)
+            PGM_INVL_PG(pVCpu, GCPtrPage);
         return VINF_SUCCESS;    /* force the instruction to be executed again. */
     }
 
