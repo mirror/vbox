@@ -144,7 +144,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
     pNew->Core.Key      = GCPhys;
     pNew->Core.KeyLast  = GCPhysLast;
     pNew->enmType       = enmType;
-    pNew->cPages        = (GCPhysLast - (GCPhys & X86_PTE_PAE_PG_MASK_FULL) + PAGE_SIZE) >> PAGE_SHIFT;
+    pNew->cPages        = (GCPhysLast - (GCPhys & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
     pNew->pfnHandlerR3  = pfnHandlerR3;
     pNew->pvUserR3      = pvUserR3;
     pNew->pfnHandlerR0  = pfnHandlerR0;
@@ -306,14 +306,14 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
             if (    pPage
                 &&  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE)
             {
-                RTGCPHYS GCPhys = (GCPhysStart + (PAGE_SIZE - 1)) & X86_PTE_PAE_PG_MASK_FULL;
+                RTGCPHYS GCPhys = (GCPhysStart + (PAGE_SIZE - 1)) & X86_PTE_PAE_PG_MASK;
                 if (    GCPhys > GCPhysLast
                     ||  GCPhys < GCPhysStart)
                     return;
                 GCPhysStart = GCPhys;
             }
             else
-                GCPhysStart &= X86_PTE_PAE_PG_MASK_FULL;
+                GCPhysStart &= X86_PTE_PAE_PG_MASK;
             Assert(!pPage || PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO); /* these are page aligned atm! */
         }
 
@@ -323,7 +323,7 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
             if (    pPage
                 &&  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE)
             {
-                RTGCPHYS GCPhys = (GCPhysLast & X86_PTE_PAE_PG_MASK_FULL) - 1;
+                RTGCPHYS GCPhys = (GCPhysLast & X86_PTE_PAE_PG_MASK) - 1;
                 if (    GCPhys < GCPhysStart
                     ||  GCPhys > GCPhysLast)
                     return;
@@ -535,7 +535,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
             {
                 pCur->Core.Key      = GCPhys;
                 pCur->Core.KeyLast  = GCPhysLast;
-                pCur->cPages        = (GCPhysLast - (GCPhys & X86_PTE_PAE_PG_MASK_FULL) + 1) >> PAGE_SHIFT;
+                pCur->cPages        = (GCPhysLast - (GCPhys & X86_PTE_PAE_PG_MASK) + 1) >> PAGE_SHIFT;
 
                 if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pCur->Core))
                 {
@@ -683,10 +683,10 @@ VMMDECL(int) PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSp
              */
             *pNew = *pCur;
             pNew->Core.Key      = GCPhysSplit;
-            pNew->cPages        = (pNew->Core.KeyLast - (pNew->Core.Key & X86_PTE_PAE_PG_MASK_FULL) + PAGE_SIZE) >> PAGE_SHIFT;
+            pNew->cPages        = (pNew->Core.KeyLast - (pNew->Core.Key & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
 
             pCur->Core.KeyLast  = GCPhysSplit - 1;
-            pCur->cPages        = (pCur->Core.KeyLast - (pCur->Core.Key & X86_PTE_PAE_PG_MASK_FULL) + PAGE_SIZE) >> PAGE_SHIFT;
+            pCur->cPages        = (pCur->Core.KeyLast - (pCur->Core.Key & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
 
             if (RT_LIKELY(RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pNew->Core)))
             {
@@ -749,7 +749,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
                     if (RT_LIKELY(pCur3 == pCur2))
                     {
                         pCur1->Core.KeyLast  = pCur2->Core.KeyLast;
-                        pCur1->cPages        = (pCur1->Core.KeyLast - (pCur1->Core.Key & X86_PTE_PAE_PG_MASK_FULL) + PAGE_SIZE) >> PAGE_SHIFT;
+                        pCur1->cPages        = (pCur1->Core.KeyLast - (pCur1->Core.Key & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
                         LogFlow(("PGMHandlerPhysicalJoin: %RGp-%RGp %RGp-%RGp\n",
                                  pCur1->Core.Key, pCur1->Core.KeyLast, pCur2->Core.Key, pCur2->Core.KeyLast));
                         pVM->pgm.s.pLastPhysHandlerR0 = 0;
@@ -1480,7 +1480,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOneByPhysAddr(PAVLROGCPTRNODECOR
 
     for (unsigned iPage = 0; iPage < pCur->cPages; iPage++)
     {
-        if ((pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK_FULL) == pState->GCPhys)
+        if ((pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) == pState->GCPhys)
         {
             unsigned uState = pgmHandlerVirtualCalcState(pCur);
             if (pState->uVirtState < uState)
@@ -1573,7 +1573,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
             }
 
             AssertRCReturn(rc, 0);
-            if ((pVirt->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK_FULL) != GCPhysGst)
+            if ((pVirt->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) != GCPhysGst)
             {
                 AssertMsgFailed(("virt handler phys out of sync. %RGp GCPhysGst=%RGp iPage=%#x %RGv %s\n",
                                 pVirt->aPhysToVirt[iPage].Core.Key, GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
@@ -1712,7 +1712,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                         PPGMPHYS2VIRTHANDLER pPhys2Virt = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGetBestFit(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers,
                                                                                                         GCPhysKey, true /* above-or-equal */);
                         if (    !pPhys2Virt
-                            ||  (pPhys2Virt->Core.Key & X86_PTE_PAE_PG_MASK_FULL) != State.GCPhys)
+                            ||  (pPhys2Virt->Core.Key & X86_PTE_PAE_PG_MASK) != State.GCPhys)
                             break;
 
                         /* the head */
@@ -1731,7 +1731,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                         }
 
                         /* done? */
-                        if ((GCPhysKey & X86_PTE_PAE_PG_MASK_FULL) != State.GCPhys)
+                        if ((GCPhysKey & X86_PTE_PAE_PG_MASK) != State.GCPhys)
                             break;
                     }
 #else

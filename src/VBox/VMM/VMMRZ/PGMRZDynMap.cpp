@@ -1009,7 +1009,7 @@ static int pgmR0DynMapAddSeg(PPGMRZDYNMAP pThis, uint32_t cPages)
             RTHCPHYS HCPhysPage = RTR0MemObjGetPagePhysAddr(pSeg->hMemObj, iPage - pSeg->iPage);
             RTHCPHYS HCPhysPte  = pThis->fLegacyMode
                                 ? pThis->paPages[iPage].uPte.pLegacy->u & X86_PTE_PG_MASK
-                                : pThis->paPages[iPage].uPte.pPae->u    & X86_PTE_PAE_PG_MASK_FULL;
+                                : pThis->paPages[iPage].uPte.pPae->u    & X86_PTE_PAE_PG_MASK;
             if (HCPhysPage != HCPhysPte)
             {
                 LogRel(("pgmR0DynMapAddSeg: internal error - page #%u HCPhysPage=%RHp HCPhysPte=%RHp pbPage=%p pvPte=%p\n",
@@ -1439,7 +1439,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMRZDYNMAP pThis, RTHCPHYS HCPhys, uint32_
         X86PGPAEUINT    uOld2 = uOld; NOREF(uOld2);
         X86PGPAEUINT    uNew  = (uOld & (X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
                               | X86_PTE_P | X86_PTE_RW | X86_PTE_A | X86_PTE_D
-                              | (HCPhys & X86_PTE_PAE_PG_MASK_FULL);
+                              | (HCPhys & X86_PTE_PAE_PG_MASK);
         while (!ASMAtomicCmpXchgExU64(&paPages[iFreePage].uPte.pPae->u, uNew, uOld, &uOld))
             AssertMsgFailed(("uOld=%#llx uOld2=%#llx uNew=%#llx\n", uOld, uOld2, uNew));
         Assert(paPages[iFreePage].uPte.pPae->u == uNew);
@@ -1623,7 +1623,7 @@ static int pgmRZDynMapAssertIntegrity(PPGMRZDYNMAP pThis)
 #ifdef IN_RING0
                                | (paSavedPTEs[iPage] & (X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
 #endif
-                               | (paPages[iPage].HCPhys & X86_PTE_PAE_PG_MASK_FULL);
+                               | (paPages[iPage].HCPhys & X86_PTE_PAE_PG_MASK);
                 CHECK_RET(paPages[iPage].uPte.pLegacy->u == uPte,
                           ("#%u: %#x %#x", iPage, paPages[iPage].uPte.pLegacy->u, uPte));
                 if (paPages[iPage].cRefs)
@@ -1663,7 +1663,7 @@ static int pgmRZDynMapAssertIntegrity(PPGMRZDYNMAP pThis)
 #ifdef IN_RING0
                                   | (paSavedPTEs[iPage] & (X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
 #endif
-                                  | (paPages[iPage].HCPhys & X86_PTE_PAE_PG_MASK_FULL);
+                                  | (paPages[iPage].HCPhys & X86_PTE_PAE_PG_MASK);
                 CHECK_RET(paPages[iPage].uPte.pPae->u == uPte,
                           ("#%u: %#llx %#llx", iPage, paPages[iPage].uPte.pLegacy->u, uPte));
                 if (paPages[iPage].cRefs)

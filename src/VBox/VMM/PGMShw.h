@@ -89,7 +89,7 @@
 # define SHW_PDE_PG_MASK        X86_PDE_PAE_PG_MASK
 # define SHW_PD_SHIFT           X86_PD_PAE_SHIFT
 # define SHW_PD_MASK            X86_PD_PAE_MASK
-# define SHW_PTE_PG_MASK        X86_PTE_PAE_PG_MASK_FULL
+# define SHW_PTE_PG_MASK        X86_PTE_PAE_PG_MASK
 # define SHW_PT_SHIFT           X86_PT_PAE_SHIFT
 # define SHW_PT_MASK            X86_PT_PAE_MASK
 

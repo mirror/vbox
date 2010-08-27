@@ -74,7 +74,7 @@
 #  define PGSTPD                                PX86PDPAE
 #  define GSTPDE                                X86PDEPAE
 #  define PGSTPDE                               PX86PDEPAE
-#  define GST_PTE_PG_MASK                       X86_PTE_PAE_PG_MASK_FULL
+#  define GST_PTE_PG_MASK                       X86_PTE_PAE_PG_MASK
 #  define GST_IS_NX_ACTIVE(pVCpu)               (true && This_should_perhaps_not_be_used_in_this_context)
 #  define BTH_IS_NP_ACTIVE(pVM)                 (true)
 # else
@@ -97,7 +97,7 @@
 #   define PGSTPD                               PX86PDPAE
 #   define GSTPDE                               X86PDEPAE
 #   define PGSTPDE                              PX86PDEPAE
-#   define GST_PTE_PG_MASK                      X86_PTE_PAE_PG_MASK_FULL
+#   define GST_PTE_PG_MASK                      X86_PTE_PAE_PG_MASK
 #  endif
 #  define GST_IS_NX_ACTIVE(pVCpu)               (pgmGstIsNoExecuteActive(pVCpu))
 #  if PGM_GST_TYPE == PGM_TYPE_PROT             /* (comment at top of PGMAllBth.h) */
@@ -196,7 +196,7 @@
 #  define GST_PDPE_PG_MASK                      X86_PDPE_PG_MASK
 #  define GST_PDPT_SHIFT                        X86_PDPT_SHIFT
 #  define GST_PDPT_MASK                         X86_PDPT_MASK_PAE
-#  define GST_PTE_PG_MASK                       X86_PTE_PAE_PG_MASK_FULL
+#  define GST_PTE_PG_MASK                       X86_PTE_PAE_PG_MASK
 #  define GST_CR3_PAGE_MASK                     X86_CR3_PAE_PAGE_MASK
 #  define GST_IS_PTE_VALID(pVCpu, Pte)          (!( (Pte).u   & (pVCpu)->pgm.s.fGstPaeMbzPteMask ))
 #  define GST_IS_PDE_VALID(pVCpu, Pde)          (!( (Pde).u   & (pVCpu)->pgm.s.fGstPaeMbzPdeMask ))
@@ -213,7 +213,7 @@
 #  define GST_PDPT_SHIFT                        X86_PDPT_SHIFT
 #  define GST_PDPE_PG_MASK                      X86_PDPE_PG_MASK
 #  define GST_PDPT_MASK                         X86_PDPT_MASK_AMD64
-#  define GST_PTE_PG_MASK                       X86_PTE_PAE_PG_MASK_FULL
+#  define GST_PTE_PG_MASK                       X86_PTE_PAE_PG_MASK
 #  define GST_CR3_PAGE_MASK                     X86_CR3_AMD64_PAGE_MASK
 #  define GST_IS_PTE_VALID(pVCpu, Pte)          (!( (Pte).u   & (pVCpu)->pgm.s.fGstAmd64MbzPteMask ))
 #  define GST_IS_PDE_VALID(pVCpu, Pde)          (!( (Pde).u   & (pVCpu)->pgm.s.fGstAmd64MbzPdeMask ))
