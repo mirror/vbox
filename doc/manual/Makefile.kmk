@@ -172,11 +172,9 @@ ifdef VBOX_WITH_DOCS
  		catalog docbook \
  		UserManual.fo) \
  	$(foreach f,$(VBOX_MANUAL_LANGUAGES), $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/, \
- 		docbook-fo-formatcfg.xsl \
  		docbook-htmlhelp-formatcfg.xsl \
 		docbook-html-one-page-formatcfg.xsl \
 		docbook-html-chunks-formatcfg.xsl \
- 		titlepage-fo.xsl \
  		titlepage-htmlhelp.xsl )) \
  	$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_MANUAL_PNG_FILES_$(f)))) \
  	$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(f)))) \
@@ -214,8 +212,16 @@ HTMLHELPOPTS =
 ##########################################################################################
 
 # tool locations
-DOCBOOKPATH    ?= $(PATH_DEVTOOLS)/common/DocBook/v1.69.1
-DOCBOOKDTDPATH ?= $(PATH_DEVTOOLS)/common/docbook-xml/v4.3
+ifndef VBOX_OSE
+ # use docbook from our tools directory
+ DOCBOOKPATH          ?= $(PATH_DEVTOOLS)/common/DocBook/v1.69.1
+ DOCBOOKDTDPATH       ?= $(PATH_DEVTOOLS)/common/docbook-xml/v4.3
+ XML_CATALOG          ?= $(VBOX_PATH_MANUAL_OUTBASE)/catalog
+ XML_CATALOG_DOCBOOK  ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook
+else
+ # use docbook of the build host
+ DOCBOOKPATH          ?= http://docbook.sourceforge.net/release/xsl/current/
+endif
 VBOXMANAGEPATH ?= $(PATH_BIN)/VBoxManage$(SUFF_EXE)
 
 ifeq ($(KBUILD_HOST),win)
@@ -226,13 +232,6 @@ else
  	( pdflatex -version | head -1 | grep 141592 > /dev/null ) && echo -halt-on-error )
  PDFLATEX          = pdflatex $(PDFLATEX_HALT) -interaction batchmode
 endif
-
-DOCBOOK_HTMLHELP_XSL_CFG = $(VBOX_PATH_MANUAL_OUTBASE)/docbook-htmlhelp-formatcfg.xsl
-
-XML_CATALOG              = $(VBOX_PATH_MANUAL_OUTBASE)/catalog
-XML_CATALOG_DOCBOOK      = $(VBOX_PATH_MANUAL_OUTBASE)/docbook
-
-export XML_CATALOG_FILES = $(XML_CATALOG)
 
 # Windows HTML Help Workshop compiler (stupid thing always returns an error!)
 HHC = -$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe
@@ -349,6 +348,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.xml: \
 ##########################################################################################
 
 # Create a catalog file for xsltproc that points to docbook catalog.
+ifneq ($(XML_CATALOG),)
 $(XML_CATALOG): $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Creating catalog $@)
 	$(QUIET)$(RM) -f $@.tmp $@
@@ -371,6 +371,7 @@ $(XML_CATALOG_DOCBOOK): $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(QUIET)$(APPEND) $@.tmp '<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">'
 	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ELEMENTS DocBook XML Information Pool V4.3//EN"          uri="file:///$(DOCBOOKDTDPATH)/dbpoolx.mod"/>'
 	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD DocBook XML V4.3//EN"                                uri="file:///$(DOCBOOKDTDPATH)/docbookx.dtd"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD DocBook XML V4.4//EN"                                uri="file:///$(DOCBOOKDTDPATH)/docbookx.dtd"/>'
 	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ENTITIES DocBook XML Character Entities V4.3//EN"        uri="file:///$(DOCBOOKDTDPATH)/dbcentx.mod"/>'
 	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ENTITIES DocBook XML Notations V4.3//EN"                 uri="file:///$(DOCBOOKDTDPATH)/dbnotnx.mod"/>'
 	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ENTITIES DocBook XML Additional General Entities V4.3//EN" uri="file:///$(DOCBOOKDTDPATH)/dbgenent.mod"/>'
@@ -379,6 +380,8 @@ $(XML_CATALOG_DOCBOOK): $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD DocBook XML CALS Table Model V4.3//EN"               uri="file:///$(DOCBOOKDTDPATH)/calstblx.dtd"/>'
 	$(QUIET)$(APPEND) $@.tmp '  <rewriteSystem systemIdStartString="http://www.oasis-open.org/docbook/xml/4.3" rewritePrefix="file:///$(DOCBOOKDTDPATH)"/>'
 	$(QUIET)$(APPEND) $@.tmp '  <rewriteURI         uriStartString="http://www.oasis-open.org/docbook/xml/4.3" rewritePrefix="file:///$(DOCBOOKDTDPATH)"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <rewriteSystem systemIdStartString="http://www.oasis-open.org/docbook/xml/4.4" rewritePrefix="file:///$(DOCBOOKDTDPATH)"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <rewriteURI         uriStartString="http://www.oasis-open.org/docbook/xml/4.4" rewritePrefix="file:///$(DOCBOOKDTDPATH)"/>'
 	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Arrow Relations//EN"   uri="file:///$(DOCBOOKDTDPATH)/ent/iso-amsa.ent"/>'
 	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Binary Operators//EN"  uri="file:///$(DOCBOOKDTDPATH)/ent/iso-amsb.ent"/>'
 	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Delimiters//EN"        uri="file:///$(DOCBOOKDTDPATH)/ent/iso-amsc.ent"/>'
@@ -400,16 +403,7 @@ $(XML_CATALOG_DOCBOOK): $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES General Technical//EN"                     uri="file:///$(DOCBOOKDTDPATH)/ent/iso-tech.ent"/>'
 	$(QUIET)$(APPEND) $@.tmp '</catalog>'
 	$(QUIET)$(MV) -f $@.tmp $@
-
-# intermediate step to do some variable replacement in the XSL configuration
-$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/docbook-fo-formatcfg.xsl): \
-		$(VBOX_PATH_MANUAL_SRC)/docbook-fo-formatcfg.xsl $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_L1,Pre-processing $(@F) to $@)
-	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(DOCBOOKPATH)|g' \
-	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
-	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@.tmp $<
-	$(QUIET)$(MV) -f $@.tmp $@
+endif
 
 # intermediate step to do some variable replacement in the XSL configuration
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/docbook-htmlhelp-formatcfg.xsl): \
@@ -419,14 +413,6 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/docbook-html
 	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(DOCBOOKPATH)|g' \
 	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
 	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@.tmp $<
-	$(QUIET)$(MV) -f $@.tmp $@
-
-# Prepare the XSL file for our title page, FO variant.
-$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/titlepage-fo.xsl): \
-		$(VBOX_PATH_MANUAL_SRC)/titlepage-fo.xml $(DOCBOOKPATH)/template/titlepage.xsl $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_L1,xsltproc $<)
-	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet -o $@.tmp $(DOCBOOKPATH)/template/titlepage.xsl $<
 	$(QUIET)$(MV) -f $@.tmp $@
 
 # Prepare the XSL file for our title page, htmlhelp variant.
@@ -484,7 +470,8 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.p
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.pdf : \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.tex \
 		$(if $(VBOX_OSE),,$(VBOX_PATH_MANUAL_OUTBASE)/%/ucs.sty) \
-		$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_MANUAL_PNG_FILES_$(f)))) | $$(dir $$@)
+		$(foreach f,$(VBOX_MANUAL_LANGUAGES),\
+		  $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_MANUAL_PNG_FILES_$(f)))) | $$(dir $$@)
 # PDF generation via Latex: generate the .tex file
 	$(call MSG_L1,pdflatex $< (three passes) -> $@)
 	$(QUIET)$(REDIRECT) -C $(@D) -- $(PDFLATEX) UserManual.tex
@@ -504,7 +491,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.t
 #   generate TeX source from processed docbook and store it in UserManual.tex.tmp;
 #   pass current language to xsltproc in TARGETLANG variable (extract it from the
 #   current directory, should become "de_DE" or the like)
-	$(VBOX_XSLTPROC) $(XSLTPROC_VERBOSE) --xinclude --nonet --stringparam TARGETLANG $(notdir $(@D)) -o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
+	$(QUIET)$(VBOX_XSLTPROC) $(XSLTPROC_VERBOSE) --xinclude --nonet --stringparam TARGETLANG $(notdir $(@D)) -o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
 #   for pretty quotes, replace " with `` or '' depending on whether it's at the start of a word;
 #   the \QUOTE{} was inserted by docbook2latex.xsl for all quotes _outside_ of screen sections
 	$(QUIET)$(SED) \
@@ -592,8 +579,11 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/htm
 	$(call MSG_L1,xsltproc $<,=> $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet --output $(@D)/ \
-		--stringparam htmlhelp.chm $(subst /,\\,$(@D)/../VirtualBox.chm) $(HTMLHELPOPTS) $(@D)/../docbook-htmlhelp-formatcfg.xsl \
+	$(QUIET)$(if $(XML_CATALOG),XML_CATALOG_FILES=$(XML_CATALOG)) \
+		$(VBOX_XSLTPROC) --xinclude --nonet --output $(@D)/ \
+		--stringparam htmlhelp.chm \
+		$(subst /,\\,$(@D)/../VirtualBox.chm) \
+		$(HTMLHELPOPTS) $(@D)/../docbook-htmlhelp-formatcfg.xsl \
 		$<
 
 # copy the PNG files.
