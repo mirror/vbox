@@ -853,7 +853,7 @@ VMMDECL(int) PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHC
  */
 DECLINLINE(int) pdmShwModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags)
 {
-    AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK_FULL), ("fFlags=%#llx\n", fFlags));
+    AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK), ("fFlags=%#llx\n", fFlags));
     Assert(!(fOpFlags & ~(PGM_MK_PG_IS_MMIO2 | PGM_MK_PG_IS_WRITE_FAULT)));
 
     GCPtr &= PAGE_BASE_GC_MASK; /** @todo this ain't necessary, right... */
@@ -1405,7 +1405,7 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t 
     /*
      * Validate input.
      */
-    AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK_FULL), ("fFlags=%#llx\n", fFlags));
+    AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK), ("fFlags=%#llx\n", fFlags));
     Assert(cb);
 
     LogFlow(("PGMGstModifyPage %RGv %d bytes fFlags=%08llx fMask=%08llx\n", GCPtr, cb, fFlags, fMask));

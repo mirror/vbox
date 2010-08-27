@@ -69,7 +69,7 @@
 # define GST_PDE4M_PG_MASK          X86_PDE4M_PAE_PG_MASK
 # define GST_PD_SHIFT               X86_PD_PAE_SHIFT
 # define GST_PD_MASK                X86_PD_PAE_MASK
-# define GST_PTE_PG_MASK            X86_PTE_PAE_PG_MASK_FULL
+# define GST_PTE_PG_MASK            X86_PTE_PAE_PG_MASK
 # define GST_PT_SHIFT               X86_PT_PAE_SHIFT
 # define GST_PT_MASK                X86_PT_PAE_MASK
 #endif

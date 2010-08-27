@@ -352,7 +352,7 @@ PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t f
             while (iPTE < RT_ELEMENTS(Walk.pPt->a))
             {
                 GSTPTE Pte = Walk.pPt->a[iPTE];
-                Pte.u = (Pte.u & (fMask | X86_PTE_PAE_PG_MASK_FULL))
+                Pte.u = (Pte.u & (fMask | X86_PTE_PAE_PG_MASK))
                       | (fFlags & ~GST_PTE_PG_MASK);
                 Walk.pPt->a[iPTE] = Pte;
 

@@ -318,9 +318,9 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
         cbRam = 0;
     else
         AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamSize\", rc=%Rrc.\n", rc), rc);
-    AssertLogRelMsg(!(cbRam & ~X86_PTE_PAE_PG_MASK_FULL), ("%RGp X86_PTE_PAE_PG_MASK_FULL=%RX64\n", cbRam, X86_PTE_PAE_PG_MASK_FULL));
+    AssertLogRelMsg(!(cbRam & ~X86_PTE_PAE_PG_MASK), ("%RGp X86_PTE_PAE_PG_MASK=%RX64\n", cbRam, X86_PTE_PAE_PG_MASK));
     AssertLogRelMsgReturn(cbRam <= GMM_GCPHYS_LAST, ("cbRam=%RGp GMM_GCPHYS_LAST=%RX64\n", cbRam, GMM_GCPHYS_LAST), VERR_OUT_OF_RANGE);
-    cbRam &= X86_PTE_PAE_PG_MASK_FULL;
+    cbRam &= X86_PTE_PAE_PG_MASK;
     pVM->mm.s.cbRamBase = cbRam;
 
     /** @cfgm{RamHoleSize, uint32_t, 0, 4032MB, 512MB}
@@ -739,7 +739,7 @@ VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
      * Iterate thru the lookup records for HMA.
      */
     uint32_t off = HCPhys & PAGE_OFFSET_MASK;
-    HCPhys &= X86_PTE_PAE_PG_MASK_FULL;
+    HCPhys &= X86_PTE_PAE_PG_MASK;
     PMMLOOKUPHYPER pCur = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap) + pVM->mm.s.offLookupHyper);
     for (;;)
     {

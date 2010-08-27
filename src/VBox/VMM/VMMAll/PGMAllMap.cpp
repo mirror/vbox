@@ -74,7 +74,7 @@ VMMDECL(int) PGMMap(PVM pVM, RTGCUINTPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPage
              * Setup PTE.
              */
             X86PTEPAE Pte;
-            Pte.u = fFlags | (HCPhys & X86_PTE_PAE_PG_MASK_FULL);
+            Pte.u = fFlags | (HCPhys & X86_PTE_PAE_PG_MASK);
 
             /*
              * Update the page tables.
@@ -143,7 +143,7 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     /*
      * Validate input.
      */
-    AssertMsg(!(fFlags & (X86_PTE_PAE_PG_MASK_FULL | X86_PTE_PAE_MBZ_MASK_NX)), ("fFlags=%#x\n", fFlags));
+    AssertMsg(!(fFlags & (X86_PTE_PAE_PG_MASK | X86_PTE_PAE_MBZ_MASK_NX)), ("fFlags=%#x\n", fFlags));
     Assert(cb);
 
     /*
@@ -184,8 +184,8 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
                     PPGMSHWPTEPAE pPtePae = &pCur->aPTs[iPT].CTX_SUFF(paPaePTs)[iPTE / 512].a[iPTE % 512];
                     PGMSHWPTEPAE_SET(*pPtePae,
                                        (  PGMSHWPTEPAE_GET_U(*pPtePae)
-                                        & (fMask | X86_PTE_PAE_PG_MASK_FULL))
-                                     | (fFlags & ~(X86_PTE_PAE_PG_MASK_FULL | X86_PTE_PAE_MBZ_MASK_NX)));
+                                        & (fMask | X86_PTE_PAE_PG_MASK))
+                                     | (fFlags & ~(X86_PTE_PAE_PG_MASK | X86_PTE_PAE_MBZ_MASK_NX)));
 
                     /* invalidate tls */
                     PGM_INVL_PG(VMMGetCpu(pVM), (RTGCUINTPTR)pCur->GCPtr + off);
@@ -242,7 +242,7 @@ VMMDECL(int) PGMMapGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS 
             if (PGMSHWPTEPAE_IS_P(*pPtePae))
             {
                 if (pfFlags)
-                    *pfFlags = PGMSHWPTEPAE_GET_U(*pPtePae) & ~X86_PTE_PAE_PG_MASK_FULL;
+                    *pfFlags = PGMSHWPTEPAE_GET_U(*pPtePae) & ~X86_PTE_PAE_PG_MASK;
                 if (pHCPhys)
                     *pHCPhys = PGMSHWPTEPAE_GET_HCPHYS(*pPtePae);
             }

@@ -2721,7 +2721,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
         {
             /* Page Map Level 4 Lookup. */
             /* Check if it's a valid address first? */
-            VarCur.u.u64Number &= X86_PTE_PAE_PG_MASK_FULL;
+            VarCur.u.u64Number &= X86_PTE_PAE_PG_MASK;
             VarCur.u.u64Number += (((uint64_t)VarGCPtr.u.GCFlat >> X86_PML4_SHIFT) & X86_PML4_MASK) * sizeof(X86PML4E);
             X86PML4E Pml4e;
             rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pml4e, sizeof(Pml4e), &VarCur, NULL);
@@ -3092,7 +3092,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
         {
             /* Page Map Level 4 Lookup. */
             /* Check if it's a valid address first? */
-            VarCur.u.u64Number &= X86_PTE_PAE_PG_MASK_FULL;
+            VarCur.u.u64Number &= X86_PTE_PAE_PG_MASK;
             VarCur.u.u64Number += (((uint64_t)VarGCPtr.u.GCFlat >> X86_PML4_SHIFT) & X86_PML4_MASK) * sizeof(X86PML4E);
             X86PML4E Pml4e;
             rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pml4e, sizeof(Pml4e), &VarCur, NULL);
@@ -3188,7 +3188,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
                          ? "%016llx 4kb phys=%016llx %s %s %s %s %s avl=%02x %s %s %s %s %s"
                          :   "%08llx 4kb phys=%08llx %s %s %s %s %s avl=%02x %s %s %s %s %s",
                          Pte.u,
-                         Pte.u & X86_PTE_PAE_PG_MASK_FULL,
+                         Pte.u & X86_PTE_PAE_PG_MASK,
                          Pte.n.u1Present         ? "p " : "np",
                          Pte.n.u1Write           ? "w" : "r",
                          Pte.n.u1User            ? "u" : "s",
