@@ -359,13 +359,13 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 else if (pShwPaePd->a[iPaePde].u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(PGMGetGuestMode(pVCpu) >= PGMMODE_PAE); /** @todo We may hit this during reset, will fix later. */
-                    AssertFatalMsg(   (pShwPaePd->a[iPaePde].u & X86_PDE_PAE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT0
+                    AssertFatalMsg(   (pShwPaePd->a[iPaePde].u & X86_PDE_PAE_PG_MASK_FULL) == pMap->aPTs[i].HCPhysPaePT0
                                    || !PGMMODE_WITH_PAGING(PGMGetGuestMode(pVCpu)),
-                                   ("%RX64 vs %RX64\n", pShwPaePd->a[iPaePde+1].u & X86_PDE_PAE_PG_MASK, pMap->aPTs[i].HCPhysPaePT0));
+                                   ("%RX64 vs %RX64\n", pShwPaePd->a[iPaePde+1].u & X86_PDE_PAE_PG_MASK_FULL, pMap->aPTs[i].HCPhysPaePT0));
                     Assert(pShwPaePd->a[iPaePde+1].u & PGM_PDFLAGS_MAPPING);
-                    AssertFatalMsg(   (pShwPaePd->a[iPaePde+1].u & X86_PDE_PAE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT1
+                    AssertFatalMsg(   (pShwPaePd->a[iPaePde+1].u & X86_PDE_PAE_PG_MASK_FULL) == pMap->aPTs[i].HCPhysPaePT1
                                    || !PGMMODE_WITH_PAGING(PGMGetGuestMode(pVCpu)),
-                                   ("%RX64 vs %RX64\n", pShwPaePd->a[iPaePde+1].u & X86_PDE_PAE_PG_MASK, pMap->aPTs[i].HCPhysPaePT1));
+                                   ("%RX64 vs %RX64\n", pShwPaePd->a[iPaePde+1].u & X86_PDE_PAE_PG_MASK_FULL, pMap->aPTs[i].HCPhysPaePT1));
                 }
 #endif
 
@@ -373,12 +373,12 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                  * Insert our first PT, freeing anything we might be replacing unless it's a mapping (i.e. us).
                  */
                 Assert(   (pShwPaePd->a[iPaePde].u & (X86_PDE_P | PGM_PDFLAGS_MAPPING)) != (X86_PDE_P | PGM_PDFLAGS_MAPPING)
-                       || (pShwPaePd->a[iPaePde].u & X86_PDE_PAE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT0);
+                       || (pShwPaePd->a[iPaePde].u & X86_PDE_PAE_PG_MASK_FULL) == pMap->aPTs[i].HCPhysPaePT0);
                 if (    pShwPaePd->a[iPaePde].n.u1Present
                     &&  !(pShwPaePd->a[iPaePde].u & PGM_PDFLAGS_MAPPING))
                 {
                     Assert(!(pShwPaePd->a[iPaePde].u & PGM_PDFLAGS_MAPPING));
-                    pgmPoolFree(pVM, pShwPaePd->a[iPaePde].u & X86_PDE_PAE_PG_MASK, pPoolPagePd->idx, iPaePde);
+                    pgmPoolFree(pVM, pShwPaePd->a[iPaePde].u & X86_PDE_PAE_PG_MASK_FULL, pPoolPagePd->idx, iPaePde);
                 }
                 pShwPaePd->a[iPaePde].u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US
                                         | pMap->aPTs[i].HCPhysPaePT0;
@@ -387,7 +387,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 iPaePde++;
                 AssertFatal(iPaePde < 512);
                 Assert(   (pShwPaePd->a[iPaePde].u & (X86_PDE_P | PGM_PDFLAGS_MAPPING)) != (X86_PDE_P | PGM_PDFLAGS_MAPPING)
-                       || (pShwPaePd->a[iPaePde].u & X86_PDE_PAE_PG_MASK) == pMap->aPTs[i].HCPhysPaePT1);
+                       || (pShwPaePd->a[iPaePde].u & X86_PDE_PAE_PG_MASK_FULL) == pMap->aPTs[i].HCPhysPaePT1);
                 if (    pShwPaePd->a[iPaePde].n.u1Present
                     &&  !(pShwPaePd->a[iPaePde].u & PGM_PDFLAGS_MAPPING))
                     pgmPoolFree(pVM, pShwPaePd->a[iPaePde].u & X86_PDE_PG_MASK, pPoolPagePd->idx, iPaePde);
