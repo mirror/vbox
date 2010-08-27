@@ -7632,7 +7632,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="506da00d-1ca5-4ccf-851d-8683253d0f5e"
+     uuid="cd80e5b8-faef-4be3-8d0e-d68fee10708d"
      wsmap="managed"
      >
     <desc>
@@ -7659,11 +7659,9 @@
       </desc>
     </attribute>
 
-    <attribute name="additionsActive" type="boolean" readonly="yes">
+    <attribute name="additionsRunLevel" type="unsigned long" readonly="yes">
       <desc>
-        Flag whether the Guest Additions are installed and active
-        in which case their version will be returned by the
-        <link to="#additionsVersion"/> property.
+        Current run level of the Guest Additions.
       </desc>
     </attribute>
 
@@ -7741,6 +7739,23 @@
       </param>
       <param name="memSharedTotal" type="unsigned long" dir="out">
         <desc>Total amount of shared memory in the hypervisor</desc>
+      </param>
+    </method>
+
+    <method name="getAdditionsStatus">
+      <desc>
+        Retrieve the current status of a certain Guest Additions run level.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Wrong status level specified.
+        </result>
+
+      </desc>
+      <param name="level" type="unsigned long" dir="in">
+        <desc>Status level to check</desc>
+      </param>
+      <param name="active" type="boolean" dir="return">
+        <desc>Flag whether the status level has been reached or not</desc>
       </param>
     </method>
 

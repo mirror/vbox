@@ -71,8 +71,6 @@ HRESULT Guest::init (Console *aParent)
 
     unconst(mParent) = aParent;
 
-    /* mData.mAdditionsActive is FALSE */
-
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -161,16 +159,14 @@ STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMGETTER(AdditionsActive) (BOOL *aAdditionsActive)
+STDMETHODIMP Guest::COMGETTER(AdditionsRunLevel) (ULONG *aRunLevel)
 {
-    CheckComArgOutPointerValid(aAdditionsActive);
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aAdditionsActive = mData.mAdditionsActive;
+    *aRunLevel = mData.mAdditionsRunLevel;
 
     return S_OK;
 }
@@ -186,7 +182,8 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
 
     HRESULT hr = S_OK;
     if (   mData.mAdditionsVersion.isEmpty()
-        && mData.mAdditionsActive) /* Only try alternative way if GA are active! */
+        /* Only try alternative way if GA are active! */
+        && mData.mAdditionsRunLevel > VBoxGuestAdditionsRunLevel_None)
     {
         /*
          * If we got back an empty string from GetAdditionsVersion() we either
@@ -207,7 +204,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
                                                       addRevision.asOutParam(), &u64Timestamp, flags.asOutParam());
             if (   hr == S_OK
                 && !addVersion.isEmpty()
-                && !addVersion.isEmpty())
+                && !addRevision.isEmpty())
             {
                 /* Some Guest Additions versions had interchanged version + revision values,
                  * so check if the version value at least has a dot to identify it and change
@@ -429,6 +426,37 @@ HRESULT Guest::setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
 
     mCurrentGuestStat[enmType] = aVal;
     return S_OK;
+}
+
+STDMETHODIMP Guest::GetAdditionsStatus(ULONG aLevel, BOOL *aActive)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+    switch (aLevel)
+    {
+        case 0: /* System */
+            *aActive = (mData.mAdditionsRunLevel > VBoxGuestAdditionsRunLevel_None);
+            break;
+
+        case 1: /* Userland */
+            *aActive = (mData.mAdditionsRunLevel >= VBoxGuestAdditionsRunLevel_Userland);
+            break;
+
+        case 2: /* Desktop */
+            *aActive = (mData.mAdditionsRunLevel >= VBoxGuestAdditionsRunLevel_Desktop);
+            break;
+
+        default:
+            rc = setError(VBOX_E_NOT_SUPPORTED,
+                          tr("Invalid status level defined: %u"), aLevel);
+            break;
+    }
+
+    return rc;
 }
 
 STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
@@ -1485,24 +1513,28 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
      * so they just rely on the aInterfaceVersion string (which gets set by
      * VMMDevReportGuestInfo).
      *
-     * So only mark the Additions as being active when we don't have the Additions
-     * version set.
+     * So only mark the Additions as being active (run level = system) when we
+     * don't have the Additions version set.
      */
     if (mData.mAdditionsVersion.isEmpty())
-        mData.mAdditionsActive = !aInterfaceVersion.isEmpty();
+    {
+        mData.mAdditionsRunLevel = aInterfaceVersion.isEmpty()
+                                 ? VBoxGuestAdditionsRunLevel_None
+                                 : VBoxGuestAdditionsRunLevel_System;
+    }
+
     /*
      * Older Additions didn't have this finer grained capability bit,
      * so enable it by default.  Newer Additions will not enable this here
      * and use the setSupportedFeatures function instead.
      */
-    mData.mSupportsGraphics = mData.mAdditionsActive;
+    mData.mSupportsGraphics = mData.mAdditionsRunLevel > VBoxGuestAdditionsRunLevel_None;
 
     /*
-     * Note! There is a race going on between setting mAdditionsActive and
+     * Note! There is a race going on between setting mAdditionsRunLevel and
      * mSupportsGraphics here and disabling/enabling it later according to
      * its real status when using new(er) Guest Additions.
      */
-
     mData.mOSTypeId = Global::OSTypeId (aOsType);
 }
 
@@ -1545,11 +1577,33 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /*
-     * Only mark Guest Additions as active when VBoxService started up.
-     */
-    mData.mAdditionsActive = (   Facility == VBoxGuestStatusFacility_VBoxService
-                              && Status   == VBoxGuestStatusCurrent_Active) ? TRUE : FALSE;
+    uint32_t uCurFacility = Facility + (Status == VBoxGuestStatusCurrent_Active ? 0 : -1);
+
+    /* First check for disabled status. */
+    if (   Facility < VBoxGuestStatusFacility_VBoxGuestDriver
+        || (   Facility == VBoxGuestStatusFacility_All
+            && (   Status   == VBoxGuestStatusCurrent_Inactive
+                || Status   == VBoxGuestStatusCurrent_Disabled
+               )
+           )
+       )
+    {
+        mData.mAdditionsRunLevel = VBoxGuestAdditionsRunLevel_None;
+    }
+    else if (uCurFacility >= VBoxGuestStatusFacility_VBoxTray)
+    {
+        mData.mAdditionsRunLevel = VBoxGuestAdditionsRunLevel_Desktop;
+    }
+    else if (uCurFacility >= VBoxGuestStatusFacility_VBoxService)
+    {
+        mData.mAdditionsRunLevel = VBoxGuestAdditionsRunLevel_Userland;
+    }
+    else if (uCurFacility >= VBoxGuestStatusFacility_VBoxGuestDriver)
+    {
+        mData.mAdditionsRunLevel = VBoxGuestAdditionsRunLevel_System;
+    }
+    else /* Should never happen! */
+        AssertMsgFailed(("Invalid facility status/run level detected! uCurFacility=%ld\n", uCurFacility));
 }
 
 /**
