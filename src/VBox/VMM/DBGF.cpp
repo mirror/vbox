@@ -27,11 +27,12 @@
  * management.
  *
  * The interface is working in a manner similar to the win32, linux and os2
- * debugger interfaces. It interface has an asynchronous nature. This comes from
- * the fact that the VMM and the Debugger are running in different threads. They
- * are refered to as the "emulation thread" and the "debugger thread", or as the
- * "ping thread" and the "pong thread, respectivly. (The last set of names comes
- * from the use of the Ping-Pong synchronization construct from the RTSem API.)
+ * debugger interfaces. The interface has an asynchronous nature. This comes
+ * from the fact that the VMM and the Debugger are running in different threads.
+ * They are refered to as the "emulation thread" and the "debugger thread", or
+ * as the "ping thread" and the "pong thread, respectivly. (The last set of
+ * names comes from the use of the Ping-Pong synchronization construct from the
+ * RTSem API.)
  *
  * @see grp_dbgf
  *
@@ -48,8 +49,8 @@
  * for the emulation thread to send a ping, thus indicating that there is an
  * event waiting to be processed.
  *
- * An event can be a respons to an command issued previously, the hitting of a
- * breakpoint, or running into a bad/fatal VMM condition. The debugger now have
+ * An event can be a respons to a command issued previously, the hitting of a
+ * breakpoint, or running into a bad/fatal VMM condition. The debugger now has
  * the ping and must respond to the event at hand - the VMM is waiting. This
  * usually means that the user of the debugger must do something, but it doesn't
  * have to. The debugger is free to call any DBGF function (nearly at least)
