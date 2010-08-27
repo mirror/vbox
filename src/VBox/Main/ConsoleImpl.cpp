@@ -5230,7 +5230,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         progressDesc = tr("Fault Tolerance syncing of remote virtual machine");
     else
         progressDesc = tr("Starting virtual machine");
-    if (    mMachineState == MachineState_Saved 
+    if (    mMachineState == MachineState_Saved
         ||  (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
         rc = powerupProgress->init(static_cast<IConsole *>(this),
                                    progressDesc,
@@ -6752,9 +6752,8 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
     if (str.length() + strlen(szTapdev) <= sizeof(szTapdev))
         strcat(szTapdev, str.c_str());
     else
-        memcpy(szTapdev + strlen(szTapdev), str.c_str(), 
-sizeof(szTapdev) - 
-strlen(szTapdev) - 1); /** @todo bitch about names which are too long... */
+        memcpy(szTapdev + strlen(szTapdev), str.c_str(),
+               sizeof(szTapdev) - strlen(szTapdev) - 1); /** @todo bitch about names which are too long... */
     int rcVBox = RTFileOpen(&maTapFD[slot], szTapdev,
                             RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT | RTFILE_O_NON_BLOCK);
 
@@ -7494,7 +7493,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                             const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
                             Utf8Str strPassword(bstrPassword);
                             const char *pszPassword = strPassword.isEmpty() ? NULL : strPassword.c_str();
-    
+
                             /* Power on the FT enabled VM. */
                             vrc = FTMR3PowerOn(pVM, (task->mEnmFaultToleranceState == FaultToleranceState_Master) /* fMaster */, uInterval, pszAddress, uPort, pszPassword);
                             AssertRC(vrc);
