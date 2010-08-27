@@ -229,6 +229,8 @@ ifeq ($(ose),)
 	    LICENSE $(if $(HEADLESS),,License-*.html))
 	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
 	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
+	$(if $(HEADLESS),,mv $(archdir)/rdesktop-vrdp $(prefix)/usr/bin)
+	$(if $(HEADLESS),,mv $(archdir)/rdesktop-vrdp-keymaps $(prefix)/usr/share/$(package))
 	if [ -d $(archdir)/accessible ]; then mv $(archdir)/accessible $(prefix)/usr/lib/virtualbox; fi
 else
 	dh_installdocs \
@@ -270,6 +272,7 @@ endif
 	cat debian/postinst.in | sed -e 's|%VER%|$(ver)|g' > debian/postinst
 	dh_installdebconf
 	dh_installchangelogs
+	dh_installmenu
 	dh_link
 ifeq ($(DEBUG),)
 	dh_strip --keep-debug --exclude=libQtCoreVBox.so.4 --exclude=libQtGuiVBox.so.4 --exclude=libQtNetworkVBox.so.4 --exclude=libQtOpenGLVBox.so.4 --exclude=libqtaccessiblewidgets.so
