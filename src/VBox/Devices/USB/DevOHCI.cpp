@@ -347,6 +347,8 @@ typedef struct OHCI
     bool                fIdle;
     /** A flag indicating that the bulk list may have in-flight URBs. */
     bool                fBulkNeedsCleaning;
+
+    uint32_t            Alignment3;     /**< Align size on a 8 byte boundary. */
 } OHCI;
 
 /* Standard OHCI bus speed */
