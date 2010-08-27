@@ -1077,12 +1077,12 @@ static void GetOldProcessStatus(PVBOXCORE pVBoxCore, lwpsinfo_t *pInfo, lwpstatu
 }
 
 
-/** 
+/**
  * Callback for rtCoreDumperForEachThread to suspend a thread.
- * 
+ *
  * @param pVBoxCore             Pointer to the core object.
  * @param pvThreadInfo          Opaque pointer to thread information.
- * 
+ *
  * @return IPRT status code.
  */
 static int suspendThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
@@ -1098,12 +1098,12 @@ static int suspendThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
 }
 
 
-/** 
+/**
  * Callback for rtCoreDumperForEachThread to resume a thread.
- * 
+ *
  * @param pVBoxCore             Pointer to the core object.
  * @param pvThreadInfo          Opaque pointer to thread information.
- * 
+ *
  * @return IPRT status code.
  */
 static int resumeThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
@@ -1118,13 +1118,13 @@ static int resumeThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
 }
 
 
-/** 
- * Calls a thread worker function for all threads in the process as described by /proc 
- * 
+/**
+ * Calls a thread worker function for all threads in the process as described by /proc
+ *
  * @param pVBoxCore             Pointer to the core object.
  * @param pcThreads             Number of threads read.
  * @param pfnWorker             Callback function for each thread.
- * 
+ *
  * @return IPRT status code.
  */
 static int rtCoreDumperForEachThread(PVBOXCORE pVBoxCore,  uint64_t *pcThreads, PFNCORETHREADWORKER pfnWorker)
@@ -1235,10 +1235,10 @@ static int rtCoreDumperResumeThreads(PVBOXCORE pVBoxCore)
 
 
 /**
- * Stop all running threads of this process except the current one. 
+ * Stop all running threads of this process except the current one.
  *
  * @param pVBoxCore         Pointer to the core object.
- *  
+ *
  * @return IPRT status code.
  */
 static int rtCoreDumperSuspendThreads(PVBOXCORE pVBoxCore)
@@ -1246,8 +1246,8 @@ static int rtCoreDumperSuspendThreads(PVBOXCORE pVBoxCore)
     AssertPtrReturn(pVBoxCore, VERR_INVALID_POINTER);
 
     /*
-     * This function tries to ensures while we suspend threads, no newly spawned threads 
-     * or a combination of spawning and terminating threads can cause any threads to be left running. 
+     * This function tries to ensures while we suspend threads, no newly spawned threads
+     * or a combination of spawning and terminating threads can cause any threads to be left running.
      * The assumption here is that threads can only increase not decrease across iterations.
      */
 #if 1
@@ -1774,7 +1774,7 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Write the ELF header.
      */
-    Elf_Hdr ElfHdr;
+    Elf_Ehdr ElfHdr;
     RT_ZERO(ElfHdr);
     ElfHdr.e_ident[EI_MAG0]  = ELFMAG0;
     ElfHdr.e_ident[EI_MAG1]  = ELFMAG1;
