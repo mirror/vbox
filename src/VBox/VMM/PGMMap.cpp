@@ -781,7 +781,7 @@ VMMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, un
      */
     cbPages += (uint32_t)HCPhys & PAGE_OFFSET_MASK;
     cbPages  = RT_ALIGN(cbPages, PAGE_SIZE);
-    HCPhys  &= X86_PTE_PAE_PG_MASK;
+    HCPhys  &= X86_PTE_PAE_PG_MASK_FULL;
     Addr    &= PAGE_BASE_MASK;
     /* We only care about the first 4GB, because on AMD64 we'll be repeating them all over the address space. */
     uint32_t uAddress = (uint32_t)Addr;

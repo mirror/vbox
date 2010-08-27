@@ -925,7 +925,7 @@ SUPR3DECL(int) supR3PageLock(void *pvStart, size_t cPages, PSUPPAGE paPages)
             {
                 paPages[iPage].uReserved = 0;
                 paPages[iPage].Phys = pReq->u.Out.aPages[iPage];
-                Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
+                Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK_FULL));
             }
         }
         RTMemTmpFree(pReq);
@@ -1020,7 +1020,7 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
             {
                 paPages[iPage].uReserved = 0;
                 paPages[iPage].Phys = (iPage + 4321) << PAGE_SHIFT;
-                Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
+                Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK_FULL));
             }
         return VINF_SUCCESS;
     }
@@ -1064,7 +1064,7 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
                     {
                         paPages[iPage].uReserved = 0;
                         paPages[iPage].Phys = pReq->u.Out.aPages[iPage];
-                        Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
+                        Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK_FULL));
                     }
 #ifdef RT_OS_DARWIN /* HACK ALERT! */
                 supR3TouchPages(pReq->u.Out.pvR3, cPages);
@@ -1351,7 +1351,7 @@ SUPR3DECL(int) SUPR3LowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0
                 {
                     paPages[iPage].uReserved = 0;
                     paPages[iPage].Phys = pReq->u.Out.aPages[iPage];
-                    Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
+                    Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK_FULL));
                     Assert(paPages[iPage].Phys <= UINT32_C(0xfffff000));
                 }
 #ifdef RT_OS_DARWIN /* HACK ALERT! */

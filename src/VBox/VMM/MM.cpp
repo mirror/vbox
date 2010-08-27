@@ -739,7 +739,7 @@ VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
      * Iterate thru the lookup records for HMA.
      */
     uint32_t off = HCPhys & PAGE_OFFSET_MASK;
-    HCPhys &= X86_PTE_PAE_PG_MASK;
+    HCPhys &= X86_PTE_PAE_PG_MASK_FULL;
     PMMLOOKUPHYPER pCur = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap) + pVM->mm.s.offLookupHyper);
     for (;;)
     {
