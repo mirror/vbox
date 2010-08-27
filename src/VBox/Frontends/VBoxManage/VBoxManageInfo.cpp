@@ -1932,14 +1932,14 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("OS type:                             %lS\n", guestString.raw());
             }
 
-            BOOL guestFlag;
-            rc = guest->COMGETTER(AdditionsActive)(&guestFlag);
+            ULONG guestRunLevel;
+            rc = guest->COMGETTER(AdditionsRunLevel)(&guestRunLevel);
             if (SUCCEEDED(rc))
             {
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("GuestAdditionsActive=%s\n", guestFlag ? "on" : "off");
+                    RTPrintf("GuestAdditionsRunLevel=%u\n", guestRunLevel);
                 else
-                    RTPrintf("Additions active:                    %s\n", guestFlag ? "yes" : "no");
+                    RTPrintf("Additions run level:                 %u\n", guestRunLevel);
             }
 
             if (details == VMINFO_FULL)

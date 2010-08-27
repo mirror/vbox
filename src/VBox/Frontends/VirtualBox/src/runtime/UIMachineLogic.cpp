@@ -812,7 +812,7 @@ void UIMachineLogic::sltMachineStateChanged()
 
 void UIMachineLogic::sltAdditionsStateChanged()
 {
-    /* Variable falgs: */
+    /* Variable flags: */
     bool fIsSupportsGraphics = uisession()->isGuestSupportsGraphics();
     bool fIsSupportsSeamless = uisession()->isGuestSupportsSeamless();
 

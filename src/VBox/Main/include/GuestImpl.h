@@ -74,11 +74,7 @@ public:
 
     // IGuest properties
     STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
-#if 0
-    /** @todo Will replace old AdditionsActive call. */
-    STDMETHOD(COMGETTER(AdditionsActive)) (ULONG aLevel, BOOL *aAdditionsActive);
-#endif
-    STDMETHOD(COMGETTER(AdditionsActive)) (BOOL *aAdditionsActive);
+    STDMETHOD(COMGETTER(AdditionsRunLevel)) (ULONG *aRunLevel);
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
     /** @todo Remove later by replacing it by AdditionsFeatureAvailable(). */
     STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
@@ -93,6 +89,7 @@ public:
     STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
 
     // IGuest methods
+    STDMETHOD(GetAdditionsStatus)(ULONG aLevel, BOOL *aActive);
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
     STDMETHOD(ExecuteProcess)(IN_BSTR aCommand, ULONG aFlags,
@@ -162,17 +159,29 @@ private:
     uint32_t addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress* pProgress);
 # endif
 
+    /**
+     * Guest additions run level.
+     */
+    enum VBoxGuestAdditionsRunLevel
+    {
+        VBoxGuestAdditionsRunLevel_None     = 0,
+        VBoxGuestAdditionsRunLevel_System   = 100,
+        VBoxGuestAdditionsRunLevel_Userland = 200,
+        VBoxGuestAdditionsRunLevel_Desktop  = 400,
+        VBoxGuestAdditionsRunLevel_SizeHack = 0x7fffffff
+    };
+
     struct Data
     {
-        Data() : mAdditionsActive (FALSE), mSupportsSeamless (FALSE),
+        Data() : mAdditionsRunLevel (0), mSupportsSeamless (FALSE),
                  mSupportsGraphics (FALSE) {}
 
-        Bstr  mOSTypeId;
-        BOOL  mAdditionsActive;
-        Bstr  mAdditionsVersion;
-        Bstr  mInterfaceVersion;
-        BOOL  mSupportsSeamless;
-        BOOL  mSupportsGraphics;
+        Bstr     mOSTypeId;
+        uint32_t mAdditionsRunLevel;
+        Bstr     mAdditionsVersion;
+        Bstr     mInterfaceVersion;
+        BOOL     mSupportsSeamless;
+        BOOL     mSupportsGraphics;
     };
 
     ULONG mMemoryBalloonSize;

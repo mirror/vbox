@@ -103,7 +103,7 @@ public:
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
 
     /* Guest additions state getters: */
-    bool isGuestAdditionsActive() const { return m_fIsGuestAdditionsActive; }
+    bool isGuestAdditionsActive() const { return (m_ulGuestAdditionsRunLevel > 0); }
     bool isGuestSupportsGraphics() const { return isGuestAdditionsActive() && m_fIsGuestSupportsGraphics; }
     bool isGuestSupportsSeamless() const { return isGuestSupportsGraphics() && m_fIsGuestSupportsSeamless; }
 
@@ -233,9 +233,9 @@ private:
     bool m_fIsAutoCaptureDisabled : 1;
 
     /* Guest additions flags: */
-    bool m_fIsGuestAdditionsActive : 1;
-    bool m_fIsGuestSupportsGraphics : 1;
-    bool m_fIsGuestSupportsSeamless : 1;
+    ULONG m_ulGuestAdditionsRunLevel;
+    bool  m_fIsGuestSupportsGraphics : 1;
+    bool  m_fIsGuestSupportsSeamless : 1;
 
     /* Keyboard flags: */
     bool m_fNumLock : 1;
