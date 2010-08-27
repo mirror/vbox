@@ -569,6 +569,7 @@ static SSMSTRMOPS const g_ftmR3TcpOps =
 static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
 {
     int rc;
+    bool fFullSync = false;
 
     if (enmState != FTMSYNCSTATE_DELTA_MEMORY)
     {
@@ -579,22 +580,24 @@ static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
     switch (enmState)
     {
     case FTMSYNCSTATE_FULL:
+        fFullSync = true;
+        /* no break */
+    case FTMSYNCSTATE_DELTA_VM:
     {
         bool fSuspended = false;
 
-        rc = ftmR3TcpSubmitCommand(pVM, "full-sync");
+        rc = ftmR3TcpSubmitCommand(pVM, (fFullSync) ? "full-sync" : "checkpoint");
         AssertRC(rc);
 
+        pVM->ftm.s.fDeltaLoadSaveActive = (fFullSync == false);
         rc = VMR3Save(pVM, NULL /* pszFilename */, &g_ftmR3TcpOps, pVM, true /* fContinueAfterwards */, NULL, NULL, &fSuspended);
+        pVM->ftm.s.fDeltaLoadSaveActive = false;
         AssertRC(rc);
 
-        rc = ftmR3TcpReadACK(pVM, "full-sync-complete");
+        rc = ftmR3TcpReadACK(pVM, (fFullSync) ? "full-sync-complete" : "checkpoint-complete");
         AssertRC(rc);
         break;
     }
-
-    case FTMSYNCSTATE_DELTA_VM:
-        break;
 
     case FTMSYNCSTATE_DELTA_MEMORY:
         /* Nothing to do as we sync the memory in an async thread; no need to block EMT. */
@@ -811,7 +814,9 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
     bool fDone = false;
     for (;;)
     {
+        bool fFullSync = false;
         char szCmd[128];
+
         rc = ftmR3TcpReadLine(pVM, szCmd, sizeof(szCmd));
         AssertRC(rc);
         if (RT_FAILURE(rc))
@@ -865,15 +870,9 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
             AssertRC(rc);
         }
         else
-        if (!strcmp(szCmd, "heartbeat"))
-        {
-        }
-        else
-        if (!strcmp(szCmd, "checkpoint"))
-        {
-        }
-        else
-        if (!strcmp(szCmd, "full-sync"))
+        if (    !strcmp(szCmd, "checkpoint")
+            ||  (fFullSync = true)  /* intended assignment */
+            ||  !strcmp(szCmd, "full-sync"))
         {
             rc = ftmR3TcpWriteACK(pVM);
             AssertRC(rc);
@@ -883,7 +882,9 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
             RTSocketRetain(pVM->ftm.s.hSocket); /* For concurrent access by I/O thread and EMT. */
             pVM->ftm.s.syncstate.uOffStream = 0;
 
+            pVM->ftm.s.fDeltaLoadSaveActive = (fFullSync == false);
             rc = VMR3LoadFromStream(pVM, &g_ftmR3TcpOps, pVM, NULL, NULL);
+            pVM->ftm.s.fDeltaLoadSaveActive = false;
             RTSocketRelease(pVM->ftm.s.hSocket);
             AssertRC(rc);
             if (RT_FAILURE(rc))
@@ -906,7 +907,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
 
             rc = ftmR3TcpWriteACK(pVM);
             AssertRC(rc);
-        }        
+        }
     }
     LogFlowFunc(("returns mRc=%Rrc\n", rc));
     return VERR_TCP_SERVER_STOP;

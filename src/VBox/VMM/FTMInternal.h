@@ -59,7 +59,9 @@ typedef struct FTM
     bool                fIsStandbyNode;
     /** Set when this master VM is busy with checkpointing. */
     bool                fCheckpointingActive;
-    bool                fAlignment[6];
+    /** Set when VM save/restore should only include changed pages. */
+    bool                fDeltaLoadSaveActive;
+    bool                fAlignment[5];
 
     /** Current active socket. */
     RTSOCKET            hSocket;
