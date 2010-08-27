@@ -586,10 +586,6 @@ VBoxC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 #temporary define
 VBoxC_DEFS += MMSEAMLESS
 
-ifdef VBOX_WITH_VRDP_MEMLEAK_DETECTOR
-VBoxC_DEFS += VBOX_WITH_VRDP_MEMLEAK_DETECTOR
-endif
-
 VBoxC_INCS          = \
 	include \
 	$(PATH_VBoxC) \
