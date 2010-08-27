@@ -2521,7 +2521,7 @@ static int vdIOReadMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
     {
 #ifdef RT_STRICT
         pMetaXfer = (PVDMETAXFER)RTAvlrFileOffsetGetBestFit(pIoStorage->pTreeMetaXfers, uOffset, false /* fAbove */);
-        AssertMsg(!pMetaXfer || (pMetaXfer->Core.Key + pMetaXfer->cbMeta <= uOffset),
+        AssertMsg(!pMetaXfer || (pMetaXfer->Core.Key + pMetaXfer->cbMeta <= (RTFOFF)uOffset),
                   ("Overlapping meta transfers!\n"));
 #endif
 
