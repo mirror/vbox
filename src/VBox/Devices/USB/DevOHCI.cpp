@@ -345,8 +345,8 @@ typedef struct OHCI
     uint32_t            uFrameRate;
     /** Idle detection flag; must be cleared at start of frame */
     bool                fIdle;
-
-    uint32_t            Alignment3;     /**< Align size on a 8 byte boundary. */
+    /** A flag indicating that the bulk list may have in-flight URBs. */
+    bool                fBulkNeedsCleaning;
 } OHCI;
 
 /* Standard OHCI bus speed */
@@ -3156,6 +3156,7 @@ static void ohciServiceBulkList(POHCI pOhci)
      *   our way thru to the end each time.
      */
     pOhci->status &= ~OHCI_STATUS_BLF;
+    pOhci->fBulkNeedsCleaning = false;
     pOhci->bulk_cur = 0;
 
     uint32_t EdAddr = pOhci->bulk_head;
@@ -3167,6 +3168,7 @@ static void ohciServiceBulkList(POHCI pOhci)
         if (ohciIsEdReady(&Ed))
         {
             pOhci->status |= OHCI_STATUS_BLF;
+            pOhci->fBulkNeedsCleaning = true;
 
 #if 1
             /*
@@ -3229,6 +3231,48 @@ static void ohciServiceBulkList(POHCI pOhci)
     if (g_fLogBulkEPs)
         ohciDumpEdList(pOhci, pOhci->bulk_head, "Bulk after ", true);
 #endif
+}
+
+/**
+ * Abort outstanding transfers on the bulk list.
+ *
+ * If the guest disabled bulk list processing, we must abort any outstanding transfers
+ * (that is, cancel in-flight URBs associated with the list). This is required because
+ * there may be outstanding read URBs that will never get a response from the device
+ * and would block further communication.
+ */
+static void ohciUndoBulkList(POHCI pOhci)
+{
+#ifdef LOG_ENABLED
+    if (g_fLogBulkEPs)
+        ohciDumpEdList(pOhci, pOhci->bulk_head, "Bulk before", true);
+    if (pOhci->bulk_cur)
+        Log(("ohciUndoBulkList: bulk_cur=%#010x before list processing!!! HCD has positioned us!!!\n", pOhci->bulk_cur));
+#endif
+
+    /* This flag follows OHCI_STATUS_BLF, but BLF doesn't change when list processing is disabled. */
+    pOhci->fBulkNeedsCleaning = false;
+
+    uint32_t EdAddr = pOhci->bulk_head;
+    while (EdAddr)
+    {
+        OHCIED Ed;
+        ohciReadEd(pOhci, EdAddr, &Ed);
+        Assert(!(Ed.hwinfo & ED_HWINFO_ISO)); /* the guest is screwing us */
+        if (ohciIsEdReady(&Ed))
+        {
+            uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
+            if (ohciIsTdInFlight(pOhci, TdAddr))
+            {
+                LogFlow(("ohciUndoBulkList: Ed=%#010RX32 Ed.TailP=%#010RX32 UNDO\n", EdAddr, Ed.TailP));
+                PVUSBURB pUrb = ohciTdInFlightUrb(pOhci, TdAddr);
+                if (pUrb)
+                    pOhci->RootHub.pIRhConn->pfnCancelUrbsEp(pOhci->RootHub.pIRhConn, pUrb);
+            }
+        }
+        /* next endpoint */
+        EdAddr = Ed.NextED & ED_PTR_MASK;
+    }
 }
 
 
@@ -3510,6 +3554,9 @@ static void ohciStartOfFrame(POHCI pOhci)
     if (    (pOhci->ctl & OHCI_CTL_BLE)
         &&  (pOhci->status & OHCI_STATUS_BLF))
         ohciServiceBulkList(pOhci);
+    else if ((pOhci->status & OHCI_STATUS_BLF)
+        &&    pOhci->fBulkNeedsCleaning)
+        ohciUndoBulkList(pOhci);    /* If list disabled but not empty, abort endpoints. */
 
 #if 1
     /*
