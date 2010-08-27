@@ -34,26 +34,19 @@
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
 # include <linux/string.h>
 #elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
-/**
- * XXX: Very ugly hack to get things build on recent FreeBSD
- * builds. They have memchr now and we need to include
- * param.h to get __FreeBSD_version and make
- * memchr available based on the version below
- * or we can't compile the kernel module on
- * older versions anymore.
+/** @todo
+ * XXX: Very ugly hack to get things build on recent FreeBSD builds. They have
+ * memchr now and we need to include param.h to get __FreeBSD_version and make
+ * memchr available based on the version below or we can't compile the kernel
+ * module on older versions anymore.
  *
- * But including param.h here opens Pandora's box
- * because we clash with a few defines
- * namely PVM and PAGE_SIZE.
- * We can safely undefine PVM here but not PAGE_SIZE
- * because this results in build errors sooner or later.
- * Luckily this define is in a header included by param.h
- * (machine/param.h). We define the guards here
- * to prevent inclusion of it if PAGE_SIZE
- * was defined already.
+ * But including param.h here opens Pandora's box because we clash with a few
+ * defines namely PVM and PAGE_SIZE. We can safely undefine PVM here but not
+ * PAGE_SIZE because this results in build errors sooner or later. Luckily this
+ * define is in a header included by param.h (machine/param.h). We define the
+ * guards here to prevent inclusion of it if PAGE_SIZE was defined already.
  *
- * @todo r=aeichner: Search for an elegant solution
- *                   and cleanup this mess ASAP!
+ * @todo aeichner: Search for an elegant solution and cleanup this mess ASAP!
  */
 # ifdef PAGE_SIZE
 #  define _AMD64_INCLUDE_PARAM_H_
