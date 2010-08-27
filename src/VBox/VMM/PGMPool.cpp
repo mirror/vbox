@@ -867,8 +867,8 @@ void pgmR3PoolWriteProtectPages(PVM pVM)
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                     for (unsigned iShw = 0; iShw < RT_ELEMENTS(uShw.pPTPae->a); iShw++)
                     {
-                        if (uShw.pPTPae->a[iShw].n.u1Present)
-                            uShw.pPTPae->a[iShw].n.u1Write = 0;
+                        if (PGMSHWPTEPAE_IS_P(uShw.pPTPae->a[iShw]))
+                            PGMSHWPTEPAE_SET_RO(uShw.pPTPae->a[iShw]);
                     }
                     break;
 

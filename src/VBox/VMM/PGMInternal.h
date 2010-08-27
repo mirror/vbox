@@ -420,7 +420,7 @@
  *
  * @{
  */
-#if 0
+#if 1
 /**
  * For making sure that u1Present and X86_PTE_P checks doesn't mistake
  * invalid entries for present.
