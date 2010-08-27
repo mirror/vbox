@@ -214,7 +214,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                                uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK,
                                                GstPte.u & X86_PTE_PG_MASK,
                                                iShw);
-                    ASMAtomicWriteSize(&uShw.pPT->a[iShw], 0);
+                    ASMAtomicWriteU32(&uShw.pPT->a[iShw].u, 0);
                 }
                 break;
             }
@@ -278,7 +278,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                         uShw.pPDPae->a[iShw+i].u & X86_PDE_PAE_PG_MASK,
                                         pPage->idx,
                                         iShw + i);
-                            ASMAtomicWriteSize(&uShw.pPDPae->a[iShw+i], 0);
+                            ASMAtomicWriteU64(&uShw.pPDPae->a[iShw+i].u, 0);
                         }
 
                         /* paranoia / a bit assumptive. */
@@ -305,7 +305,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                                 uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                                 pPage->idx,
                                                 iShw2);
-                                    ASMAtomicWriteSize(&uShw.pPDPae->a[iShw2].u, 0);
+                                    ASMAtomicWriteU64(&uShw.pPDPae->a[iShw2].u, 0);
                                 }
                             }
                         }
@@ -388,7 +388,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                     uShw.pPD->a[iShw].u & X86_PDE_PAE_PG_MASK,
                                     pPage->idx,
                                     iShw);
-                        ASMAtomicWriteSize(&uShw.pPD->a[iShw].u, 0);
+                        ASMAtomicWriteU32(&uShw.pPD->a[iShw].u, 0);
                     }
                 }
                 /* paranoia / a bit assumptive. */
@@ -420,7 +420,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                             uShw.pPD->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                             pPage->idx,
                                             iShw2);
-                                ASMAtomicWriteSize(&uShw.pPD->a[iShw2].u, 0);
+                                ASMAtomicWriteU32(&uShw.pPD->a[iShw2].u, 0);
                             }
                         }
                     }
@@ -434,7 +434,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     ASMProbeReadByte(pvAddress);
 # endif
                     pgmPoolFree(pVM, uShw.pPD->a[iShw].u & X86_PDE_PG_MASK, pPage->idx, iShw);
-                    ASMAtomicWriteSize(&uShw.pPD->a[iShw].u, 0);
+                    ASMAtomicWriteU32(&uShw.pPD->a[iShw].u, 0);
                 }
 #endif
                 break;
@@ -471,7 +471,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                     uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
                                     pPage->idx,
                                     iShw);
-                        ASMAtomicWriteSize(&uShw.pPDPae->a[iShw].u, 0);
+                        ASMAtomicWriteU64(&uShw.pPDPae->a[iShw].u, 0);
                     }
                 }
                 /* paranoia / a bit assumptive. */
@@ -502,7 +502,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                     uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                     pPage->idx,
                                     iShw2);
-                        ASMAtomicWriteSize(&uShw.pPDPae->a[iShw2].u, 0);
+                        ASMAtomicWriteU64(&uShw.pPDPae->a[iShw2].u, 0);
                     }
                 }
                 break;
@@ -543,7 +543,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                     uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK,
                                     pPage->idx,
                                     iShw);
-                        ASMAtomicWriteSize(&uShw.pPDPT->a[iShw].u, 0);
+                        ASMAtomicWriteU64(&uShw.pPDPT->a[iShw].u, 0);
                     }
 
                     /* paranoia / a bit assumptive. */
@@ -574,7 +574,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                             uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK,
                                             pPage->idx,
                                             iShw2);
-                                ASMAtomicWriteSize(&uShw.pPDPT->a[iShw2].u, 0);
+                                ASMAtomicWriteU64(&uShw.pPDPT->a[iShw2].u, 0);
                             }
                         }
                     }
@@ -596,7 +596,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                 uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
                                 pPage->idx,
                                 iShw);
-                    ASMAtomicWriteSize(&uShw.pPDPae->a[iShw].u, 0);
+                    ASMAtomicWriteU64(&uShw.pPDPae->a[iShw].u, 0);
                 }
                 /* paranoia / a bit assumptive. */
                 if (    (off & 7)
@@ -613,7 +613,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                     uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                     pPage->idx,
                                     iShw2);
-                        ASMAtomicWriteSize(&uShw.pPDPae->a[iShw2].u, 0);
+                        ASMAtomicWriteU64(&uShw.pPDPae->a[iShw2].u, 0);
                     }
                 }
                 break;
@@ -632,7 +632,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
                     pgmPoolFree(pVM, uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK, pPage->idx, iShw);
-                    ASMAtomicWriteSize(&uShw.pPDPT->a[iShw].u, 0);
+                    ASMAtomicWriteU64(&uShw.pPDPT->a[iShw].u, 0);
                 }
                 /* paranoia / a bit assumptive. */
                 if (    (off & 7)
@@ -643,7 +643,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));
                         pgmPoolFree(pVM, uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK, pPage->idx, iShw2);
-                        ASMAtomicWriteSize(&uShw.pPDPT->a[iShw2].u, 0);
+                        ASMAtomicWriteU64(&uShw.pPDPT->a[iShw2].u, 0);
                     }
                 }
                 break;
@@ -662,7 +662,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPML4->a[iShw].u));
                     pgmPoolFree(pVM, uShw.pPML4->a[iShw].u & X86_PML4E_PG_MASK, pPage->idx, iShw);
-                    ASMAtomicWriteSize(&uShw.pPML4->a[iShw].u, 0);
+                    ASMAtomicWriteU64(&uShw.pPML4->a[iShw].u, 0);
                 }
                 /* paranoia / a bit assumptive. */
                 if (    (off & 7)
@@ -673,7 +673,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPML4->a[iShw2].u));
                         pgmPoolFree(pVM, uShw.pPML4->a[iShw2].u & X86_PML4E_PG_MASK, pPage->idx, iShw2);
-                        ASMAtomicWriteSize(&uShw.pPML4->a[iShw2].u, 0);
+                        ASMAtomicWriteU64(&uShw.pPML4->a[iShw2].u, 0);
                     }
                 }
                 break;
@@ -3004,7 +3004,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                 if (Pte.u & PGM_PTFLAGS_TRACK_DIRTY)
                     Pte.n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
 
-                ASMAtomicWriteSize(&pPT->a[iPte].u, Pte.u);
+                ASMAtomicWriteU32(&pPT->a[iPte].u, Pte.u);
                 PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPT);
                 return fRet;
             }
