@@ -275,7 +275,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                         {
                             LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw+i, uShw.pPDPae->a[iShw+i].u));
                             pgmPoolFree(pVM,
-                                        uShw.pPDPae->a[iShw+i].u & X86_PDE_PAE_PG_MASK_FULL,
+                                        uShw.pPDPae->a[iShw+i].u & X86_PDE_PAE_PG_MASK,
                                         pPage->idx,
                                         iShw + i);
                             ASMAtomicWriteSize(&uShw.pPDPae->a[iShw+i], 0);
@@ -302,7 +302,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                 {
                                     LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
                                     pgmPoolFree(pVM,
-                                                uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK_FULL,
+                                                uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                                 pPage->idx,
                                                 iShw2);
                                     ASMAtomicWriteSize(&uShw.pPDPae->a[iShw2].u, 0);
@@ -385,7 +385,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: 32 bit pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPD->a[iShw].u));
                         pgmPoolFree(pVM,
-                                    uShw.pPD->a[iShw].u & X86_PDE_PAE_PG_MASK_FULL,
+                                    uShw.pPD->a[iShw].u & X86_PDE_PAE_PG_MASK,
                                     pPage->idx,
                                     iShw);
                         ASMAtomicWriteSize(&uShw.pPD->a[iShw].u, 0);
@@ -417,7 +417,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                             {
                                 LogFlow(("pgmPoolMonitorChainChanging: 32 bit pd iShw=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPD->a[iShw2].u));
                                 pgmPoolFree(pVM,
-                                            uShw.pPD->a[iShw2].u & X86_PDE_PAE_PG_MASK_FULL,
+                                            uShw.pPD->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                             pPage->idx,
                                             iShw2);
                                 ASMAtomicWriteSize(&uShw.pPD->a[iShw2].u, 0);
@@ -468,7 +468,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
                         pgmPoolFree(pVM,
-                                    uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK_FULL,
+                                    uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
                                     pPage->idx,
                                     iShw);
                         ASMAtomicWriteSize(&uShw.pPDPae->a[iShw].u, 0);
@@ -499,7 +499,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
                         pgmPoolFree(pVM,
-                                    uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK_FULL,
+                                    uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                     pPage->idx,
                                     iShw2);
                         ASMAtomicWriteSize(&uShw.pPDPae->a[iShw2].u, 0);
@@ -593,7 +593,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
                     pgmPoolFree(pVM,
-                                uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK_FULL,
+                                uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
                                 pPage->idx,
                                 iShw);
                     ASMAtomicWriteSize(&uShw.pPDPae->a[iShw].u, 0);
@@ -610,7 +610,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
                         pgmPoolFree(pVM,
-                                    uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK_FULL,
+                                    uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                     pPage->idx,
                                     iShw2);
                         ASMAtomicWriteSize(&uShw.pPDPae->a[iShw2].u, 0);
@@ -3290,7 +3290,7 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
         PPGMPAGE pPhysBase;
         RTGCPHYS GCPhysBase = GCPhysPage & X86_PDE2M_PAE_PG_MASK;
 
-        GCPhysPage &= X86_PDE_PAE_PG_MASK_FULL;
+        GCPhysPage &= X86_PDE_PAE_PG_MASK;
 
         /* Fetch the large page base. */
         if (GCPhysBase != GCPhysPage)
@@ -4269,11 +4269,11 @@ DECLINLINE(void) pgmPoolTrackDerefPDPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86
             else
 #endif
             {
-                PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPD->a[i].u & X86_PDE_PAE_PG_MASK_FULL);
+                PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPD->a[i].u & X86_PDE_PAE_PG_MASK);
                 if (pSubPage)
                     pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
                 else
-                    AssertFatalMsgFailed(("%RX64\n", pShwPD->a[i].u & X86_PDE_PAE_PG_MASK_FULL));
+                    AssertFatalMsgFailed(("%RX64\n", pShwPD->a[i].u & X86_PDE_PAE_PG_MASK));
                 /** @todo 64-bit guests: have to ensure that we're not exhausting the dynamic mappings! */
             }
         }

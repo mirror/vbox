@@ -1314,16 +1314,7 @@ typedef const X86PTPAE *PCX86PTPAE;
 #define X86_PDE_PG_MASK                     ( 0xfffff000 )
 
 /** Bits 12-51 - - PAE - Physical Page number of the next level. */
-#if 1 /* we're using this internally and have to mask of the top 16-bit. */
-/* Note: This is kind of dangerous if the guest uses these bits (legally or illegally);
- *       we partly or that part into shadow page table entries. Will be corrected
- *       soon.
- */
-#define X86_PDE_PAE_PG_MASK                 ( 0x0000fffffffff000ULL )
-#define X86_PDE_PAE_PG_MASK_FULL            ( 0x000ffffffffff000ULL )
-#else
-#define X86_PDE_PAE_PG_MASK                 ( 0x000ffffffffff000ULL )
-#endif
+#define X86_PDE_PAE_PG_MASK                 UINT64_C(0x000ffffffffff000)
 /** Bits 63 - NX - PAE/LM - No execution flag. */
 #define X86_PDE_PAE_NX                      RT_BIT_64(63)
 /** Bits 62-52, 7 - - PAE - MBZ bits when NX is active. */
