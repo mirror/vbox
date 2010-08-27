@@ -106,12 +106,7 @@ typedef struct VMCPU
     /** Which host CPU ID is this EMT running on.
      * Only valid when in RC or HWACCMR0 with scheduling disabled. */
     RTCPUID volatile        idHostCpu;
-    /** State data for use by ad hoc profiling. */
-    uint32_t                uAdHoc;
-    /** Profiling samples for use by ad hoc profiling. */
-    STAMPROFILEADV          aStatAdHoc[8];
 
-#if HC_ARCH_BITS == 32
     /** Align the next bit on a 64-byte boundary and make sure it starts at the same
      *  offset in both 64-bit and 32-bit builds.
      *
@@ -120,8 +115,7 @@ typedef struct VMCPU
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      *   */
-    uint8_t                 abAlignment1[HC_ARCH_BITS == 32 ? 20 : 0];
-#endif
+    uint8_t                 abAlignment1[HC_ARCH_BITS == 32 ? 24 : 4];
 
     /** CPUM part. */
     union
@@ -206,7 +200,7 @@ typedef struct VMCPU
     } dbgf;
 
     /** Align the following members on page boundrary. */
-    uint8_t                 abAlignment2[256];
+    uint8_t                 abAlignment2[576];
 
     /** PGM part. */
     union
@@ -473,10 +467,10 @@ typedef struct VMCPU
 /** @def VMCPU_FF_ISSET
  * Checks if a force action flag is set for the given VCPU.
  *
- * @param   pVCpu   VMCPU Handle.
+ * @param   pVCpu     VMCPU Handle.
  * @param   fFlag   The flag to check.
  */
-#define VMCPU_FF_ISSET(pVCpu, fFlag)        (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
+#define VMCPU_FF_ISSET(pVCpu, fFlag)  (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
 
 /** @def VM_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending.
