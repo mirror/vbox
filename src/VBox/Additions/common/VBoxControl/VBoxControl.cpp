@@ -620,8 +620,8 @@ int handleSetVideoAcceleration(int argc, char *argv[])
 
     /* must have exactly one argument: the new offset */
     if (   (argc != 1)
-        || (   strcmp(argv[0], "on")
-            && strcmp(argv[0], "off")))
+        || (   RTStrICmp(argv[0], "on")
+            && RTStrICmp(argv[0], "off")))
     {
         usage(SET_VIDEO_ACCEL);
         return 1;
@@ -632,7 +632,7 @@ int handleSetVideoAcceleration(int argc, char *argv[])
     if (hkeyVideo)
     {
         int fAccel = 0;
-        if (!strcmp(argv[0], "on"))
+        if (RTStrICmp(argv[0], "on") == 0)
             fAccel = 1;
         /* set a new value */
         status = RegSetValueExA(hkeyVideo, "EnableVideoAccel", 0, REG_DWORD, (LPBYTE)&fAccel, sizeof(fAccel));
@@ -893,9 +893,13 @@ int getGuestProperty(int argc, char **argv)
 {
     using namespace guestProp;
 
-    bool verbose = false;
-    if ((2 == argc) && (0 == strcmp(argv[1], "-verbose")))
-        verbose = true;
+    bool fVerbose = false;
+    if (   2 == argc
+        && (   RTStrICmp(argv[1], "-verbose")  == 0
+            || RTStrICmp(argv[1], "--verbose") == 0))
+    {
+        fVerbose = true;
+    }
     else if (argc != 1)
     {
         usage(GUEST_PROP);
@@ -909,9 +913,9 @@ int getGuestProperty(int argc, char **argv)
     if (!RT_SUCCESS(rc))
         VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
 
-/*
- * Here we actually retrieve the value from the host.
- */
+    /*
+     * Here we actually retrieve the value from the host.
+     */
     const char *pszName = argv[0];
     char *pszValue = NULL;
     uint64_t u64Timestamp = 0;
@@ -953,15 +957,16 @@ int getGuestProperty(int argc, char **argv)
         else if (!RT_SUCCESS(rc) && (rc != VERR_NOT_FOUND))
             VBoxControlError("Failed to retrieve the property value, error %Rrc\n", rc);
     }
-/*
- * And display it on the guest console.
- */
+
+    /*
+     * And display it on the guest console.
+     */
     if (VERR_NOT_FOUND == rc)
         RTPrintf("No value set!\n");
     else if (RT_SUCCESS(rc))
     {
         RTPrintf("Value: %S\n", pszValue);
-        if (verbose)
+        if (fVerbose)
         {
             RTPrintf("Timestamp: %lld ns\n", u64Timestamp);
             RTPrintf("Flags: %S\n", pszFlags);
@@ -984,10 +989,10 @@ int getGuestProperty(int argc, char **argv)
  */
 static int setGuestProperty(int argc, char *argv[])
 {
-/*
- * Check the syntax.  We can deduce the correct syntax from the number of
- * arguments.
- */
+    /*
+     * Check the syntax.  We can deduce the correct syntax from the number of
+     * arguments.
+     */
     bool usageOK = true;
     const char *pszName = NULL;
     const char *pszValue = NULL;
@@ -1001,7 +1006,8 @@ static int setGuestProperty(int argc, char *argv[])
     else if (4 == argc)
     {
         pszValue = argv[1];
-        if (strcmp(argv[2], "-flags") != 0)
+        if (   RTStrICmp(argv[2], "-flags") != 0
+            && RTStrICmp(argv[2], "--flags") != 0)
             usageOK = false;
         pszFlags = argv[3];
     }
@@ -1015,9 +1021,9 @@ static int setGuestProperty(int argc, char *argv[])
     /* This is always needed. */
     pszName = argv[0];
 
-/*
- * Do the actual setting.
- */
+    /*
+     * Do the actual setting.
+     */
     uint32_t u32ClientId = 0;
     int rc = VINF_SUCCESS;
     rc = VbglR3GuestPropConnect(&u32ClientId);
@@ -1055,7 +1061,8 @@ static int enumGuestProperty(int argc, char *argv[])
     char const * const *papszPatterns = NULL;
     uint32_t cPatterns = 0;
     if (    argc > 1
-        && !strcmp(argv[0], "-patterns"))
+        && (   RTStrICmp(argv[0], "-patterns") == 0)
+            || RTStrICmp(argv[0], "--patterns") == 0)
     {
         papszPatterns = (char const * const *)&argv[1];
         cPatterns = argc - 1;
@@ -1128,7 +1135,8 @@ int waitGuestProperty(int argc, char **argv)
     pszPatterns = argv[0];
     for (int i = 1; usageOK && i < argc; ++i)
     {
-        if (strcmp(argv[i], "-timeout") == 0)
+        if (   RTStrICmp(argv[i], "-timeout")  == 0
+            || RTStrICmp(argv[i], "--timeout") == 0)
         {
             if (   i + 1 >= argc
                 || RTStrToUInt32Full(argv[i + 1], 10, &u32Timeout)
@@ -1138,7 +1146,8 @@ int waitGuestProperty(int argc, char **argv)
             else
                 ++i;
         }
-        else if (strcmp(argv[i], "-timestamp") == 0)
+        else if (   RTStrICmp(argv[i], "-timestamp")  == 0
+                 || RTStrICmp(argv[i], "--timestamp") == 0)
         {
             if (   i + 1 >= argc
                 || RTStrToUInt64Full(argv[i + 1], 10, &u64TimestampIn)
@@ -1215,9 +1224,10 @@ int waitGuestProperty(int argc, char **argv)
             VBoxControlError("Failed to get a notification, error %Rrc\n", rc);
 #endif
     }
-/*
- * And display it on the guest console.
- */
+
+    /*
+     * And display it on the guest console.
+     */
     if (VERR_NOT_FOUND == rc)
         RTPrintf("No value set!\n");
     else if (rc == VERR_BUFFER_OVERFLOW)
@@ -1251,13 +1261,13 @@ static int handleGuestProperty(int argc, char *argv[])
         usage(GUEST_PROP);
         return 1;
     }
-    if (0 == strcmp(argv[0], "get"))
+    if (0 == RTStrICmp(argv[0], "get"))
         return getGuestProperty(argc - 1, argv + 1);
-    else if (0 == strcmp(argv[0], "set"))
+    else if (0 == RTStrICmp(argv[0], "set"))
         return setGuestProperty(argc - 1, argv + 1);
-    else if (0 == strcmp(argv[0], "enumerate"))
+    else if (0 == RTStrICmp(argv[0], "enumerate"))
         return enumGuestProperty(argc - 1, argv + 1);
-    else if (0 == strcmp(argv[0], "wait"))
+    else if (0 == RTStrICmp(argv[0], "wait"))
         return waitGuestProperty(argc - 1, argv + 1);
     /* else */
     usage(GUEST_PROP);
@@ -1275,8 +1285,9 @@ int listSharedFolders(int argc, char **argv)
     bool fOnlyShowAutoMount = false;
     if (argc == 1)
     {
-        if (   RTStrICmp(argv[0], "-automount") == 0
-            || RTStrICmp(argv[0], "/automount") == 0)
+        if (   RTStrICmp(argv[0], "-automount")  == 0
+            || RTStrICmp(argv[0], "--automount") == 0
+           )
         {
             fOnlyShowAutoMount = true;
         }
@@ -1346,7 +1357,7 @@ static int handleSharedFolder(int argc, char *argv[])
         usage(GUEST_SHAREDFOLDERS);
         return 1;
     }
-    if (0 == strcmp(argv[0], "list"))
+    if (0 == RTStrICmp(argv[0], "list"))
         return listSharedFolders(argc - 1, argv + 1);
     /* else */
     usage(GUEST_SHAREDFOLDERS);
@@ -1392,38 +1403,40 @@ int main(int argc, char **argv)
     /** The index of the command line argument we are currently processing */
     int iArg = 1;
     /** Should we show the logo text? */
-    bool showlogo = true;
+    bool fShowLogo = true;
     /** Should we print the usage after the logo?  For the -help switch. */
-    bool dohelp = false;
+    bool fDoHelp = false;
     /** Will we be executing a command or just printing information? */
-    bool onlyinfo = false;
+    bool fOnlyInfo = false;
 
-/*
- * Start by handling command line switches
- */
+    /*
+     * Start by handling command line switches
+     */
 
     /** Are we finished with handling switches? */
     bool done = false;
     while (!done && (iArg < argc))
     {
-        if (   (0 == strcmp(argv[iArg], "-v"))
-            || (0 == strcmp(argv[iArg], "--version"))
-            || (0 == strcmp(argv[iArg], "-version"))
-            || (0 == strcmp(argv[iArg], "getversion"))
+        if (   0 == RTStrICmp(argv[iArg], "-v")
+            || 0 == RTStrICmp(argv[iArg], "--version")
+            || 0 == RTStrICmp(argv[iArg], "-version")
+            || 0 == RTStrICmp(argv[iArg], "getversion")
            )
             {
                 /* Print version number, and do nothing else. */
                 RTPrintf("%sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
-                onlyinfo = true;
-                showlogo = false;
+                fOnlyInfo = true;
+                fShowLogo = false;
                 done = true;
             }
-        else if (0 == strcmp(argv[iArg], "-nologo"))
-            showlogo = false;
-        else if (0 == strcmp(argv[iArg], "-help"))
+        else if (   0 == RTStrICmp(argv[iArg], "-nologo")
+                 || 0 == RTStrICmp(argv[iArg], "--nologo"))
+            fShowLogo = false;
+        else if (   0 == RTStrICmp(argv[iArg], "-help")
+                 || 0 == RTStrICmp(argv[iArg], "--help"))
         {
-            onlyinfo = true;
-            dohelp = true;
+            fOnlyInfo = true;
+            fDoHelp = true;
             done = true;
         }
         else
@@ -1434,25 +1447,25 @@ int main(int argc, char **argv)
             ++iArg;
     }
 
-/*
- * Find the application name, show our logo if the user hasn't suppressed it,
- * and show the usage if the user asked us to
- */
+    /*
+     * Find the application name, show our logo if the user hasn't suppressed it,
+     * and show the usage if the user asked us to
+     */
 
     g_pszProgName = RTPathFilename(argv[0]);
-    if (showlogo)
+    if (fShowLogo)
         RTPrintf(VBOX_PRODUCT " Guest Additions Command Line Management Interface Version "
                  VBOX_VERSION_STRING "\n"
                  "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                  "All rights reserved.\n\n");
-    if (dohelp)
+    if (fDoHelp)
         usage();
 
-/*
- * Do global initialisation for the programme if we will be handling a command
- */
+    /*
+     * Do global initialisation for the programme if we will be handling a command
+     */
 
-    if (!onlyinfo)
+    if (!fOnlyInfo)
     {
         rrc = RTR3Init(); /** @todo r=bird: This ALWAYS goes first, the only exception is when you have to parse args to figure out which to call! */
         if (!RT_SUCCESS(rrc))
@@ -1472,11 +1485,11 @@ int main(int argc, char **argv)
         }
     }
 
-/*
- * Now look for an actual command in the argument list and handle it.
- */
+    /*
+     * Now look for an actual command in the argument list and handle it.
+     */
 
-    if (!onlyinfo && (0 == rc))
+    if (!fOnlyInfo && (0 == rc))
     {
         /*
          * The input is in the guest OS'es codepage (NT guarantees ACP).
@@ -1500,7 +1513,7 @@ int main(int argc, char **argv)
                    && !found
                    && (g_commandHandlers[index].command != NULL))
             {
-                if (0 == strcmp(argv[iArg], g_commandHandlers[index].command))
+                if (0 == RTStrICmp(argv[iArg], g_commandHandlers[index].command))
                     found = true;
                 else
                     ++index;
@@ -1528,9 +1541,9 @@ int main(int argc, char **argv)
 
     }
 
-/*
- * And exit, returning the status
- */
+    /*
+     * And exit, returning the status
+     */
 
     return rc;
 }
