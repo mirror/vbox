@@ -1467,15 +1467,20 @@ void VBoxUnmapAdapterInformation(PDEVICE_EXTENSION PrimaryExtension)
     ppv = PrimaryExtension->u.primary.pvAdapterInformation;
     if (ppv)
     {
+#ifndef VBOXWDDM
         /* The pHostFlags field is mapped through pvAdapterInformation. It must be cleared first,
          * and it must be done in a way which avoids races with the interrupt handler.
          */
         VideoPortSynchronizeExecution(PrimaryExtension, VpMediumPriority,
                                       VBoxUnmapAdpInfoCallback, PrimaryExtension);
-#ifndef VBOXWDDM
         VideoPortUnmapMemory(PrimaryExtension, ppv, NULL);
 #else
-        NTSTATUS ntStatus = PrimaryExtension->u.primary.DxgkInterface.DxgkCbUnmapMemory(PrimaryExtension->u.primary.DxgkInterface.DeviceHandle,
+        BOOLEAN bRet;
+        NTSTATUS ntStatus = PrimaryExtension->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(PrimaryExtension->u.primary.DxgkInterface.DeviceHandle,
+                VBoxUnmapAdpInfoCallback, PrimaryExtension,
+                0, &bRet);
+        Assert(ntStatus == STATUS_SUCCESS);
+        ntStatus = PrimaryExtension->u.primary.DxgkInterface.DxgkCbUnmapMemory(PrimaryExtension->u.primary.DxgkInterface.DeviceHandle,
                 ppv);
         Assert(ntStatus == STATUS_SUCCESS);
 #endif
