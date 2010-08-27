@@ -85,6 +85,7 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     VBOX_DO_STRIP_MODULES= \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\"" \
+	     $(if $(ose),,VBOX_WITH_DOCS_CHM=1) \
 	     VBOX_SVN_REV=$(svnrev) \
 	     $(if $(NODOCS),VBOX_WITH_DOCS= ,)\
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
@@ -145,8 +146,8 @@ debian/modules-stamp: debian/build-stamp
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f debian/preinst debian/postinst
-	rm -f debian/$(package).init debian/vboxdrv.init
+	rm -f debian/preinst debian/postinst debian/prerm
+	rm -f debian/$(package).init debian/vboxdrv.init debian/vboxweb-service.init
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -rf $(builddir) $(moddir)
@@ -263,6 +264,7 @@ endif
 	    $(vboxroot)/src/VBox/Installer/linux/vboxweb-service.sh.in > debian/vboxweb-service.init
 	dh_installinit --name=vboxweb-service --noscripts
 	cat debian/preinst.in | sed -e 's|%VER%|$(ver)|g' > debian/preinst
+	cat debian/prerm.in | sed -e 's|%VER%|$(ver)|g' > debian/prerm
 	cat debian/postinst.in | sed -e 's|%VER%|$(ver)|g' > debian/postinst
 	dh_installdebconf
 	dh_installchangelogs
