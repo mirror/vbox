@@ -16,14 +16,17 @@
 #ifndef ___vboxsharedrc_h___
 #define ___vboxsharedrc_h___
 
-#define VBOXSHRC_F_SHARED         0x00000001 /* shared rc */
-#define VBOXSHRC_F_SHARED_OPENED  0x00000002 /* if set shared rc is opened, otherwise it is created */
+#define VBOXSHRC_F_SHARED              0x00000001 /* shared rc */
+#define VBOXSHRC_F_SHARED_OPENED       0x00000002 /* if set shared rc is opened, otherwise it is created */
+#define VBOXSHRC_F_INITIALIZED         0x00000004 /* set once shared rc is initialized */
 
 #define VBOXSHRC_GET_SHAREFLAFS(_o) ((_o)->resource.sharerc_flags)
 #define VBOXSHRC_GET_SHAREHANDLE(_o) ((_o)->resource.sharerc_handle)
 #define VBOXSHRC_SET_SHAREHANDLE(_o, _h) ((_o)->resource.sharerc_handle = (_h))
+#define VBOXSHRC_SET_INITIALIZED(_o) (VBOXSHRC_GET_SHAREFLAFS(_o) |= VBOXSHRC_F_INITIALIZED)
 #define VBOXSHRC_IS_SHARED(_o) (!!(VBOXSHRC_GET_SHAREFLAFS(_o) & VBOXSHRC_F_SHARED))
 #define VBOXSHRC_IS_SHARED_OPENED(_o) (!!(VBOXSHRC_GET_SHAREFLAFS(_o) & VBOXSHRC_F_SHARED_OPENED))
+#define VBOXSHRC_IS_INITIALIZED(_o) (!!(VBOXSHRC_GET_SHAREFLAFS(_o) & VBOXSHRC_F_INITIALIZED))
 
 #ifdef DEBUG_misha
 /* just for simplicity */

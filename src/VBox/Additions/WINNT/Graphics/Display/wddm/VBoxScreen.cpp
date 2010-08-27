@@ -478,6 +478,17 @@ HRESULT vboxScreenMonRun()
 static DWORD WINAPI vboxScreenMRunnerThread(void *pvUser)
 {
     PVBOXSCREENMONRUNNER pRunner = (PVBOXSCREENMONRUNNER)pvUser;
+    Assert(0);
+
+    BOOL bRc = SetEvent(pRunner->hEvent);
+    if (!bRc)
+    {
+        DWORD winErr = GetLastError();
+        Log((__FUNCTION__": SetEvent failed, winErr = (%d)", winErr));
+        HRESULT tmpHr = HRESULT_FROM_WIN32(winErr);
+        Assert(0);
+        Assert(tmpHr != S_OK);
+    }
 
     HRESULT hr = vboxScreenMonInit();
     Assert(hr == S_OK);
@@ -496,20 +507,42 @@ HRESULT VBoxScreenMRunnerStart(PVBOXSCREENMONRUNNER pMon)
     HRESULT hr = E_FAIL;
     memset(pMon, 0, sizeof (VBOXSCREENMONRUNNER));
 
-    pMon->hThread = CreateThread(NULL /* LPSECURITY_ATTRIBUTES lpThreadAttributes */,
-                                          0 /* SIZE_T dwStackSize */,
-                                          vboxScreenMRunnerThread,
-                                          pMon,
-                                          0 /* DWORD dwCreationFlags */,
-                                          &pMon->idThread);
-    if (pMon->hThread)
-        return S_OK;
-
-    DWORD winErr = GetLastError();
-    Log((__FUNCTION__": CreateThread failed, winErr = (%d)", winErr));
-    hr = HRESULT_FROM_WIN32(winErr);
-    Assert(0);
-    Assert(hr != S_OK);
+    pMon->hEvent = CreateEvent(NULL, /* LPSECURITY_ATTRIBUTES lpEventAttributes*/
+            FALSE, /* BOOL bManualReset*/
+            FALSE, /* BOOL bInitialState */
+            NULL /* LPCTSTR lpName */
+          );
+    if (pMon->hEvent)
+    {
+        pMon->hThread = CreateThread(NULL /* LPSECURITY_ATTRIBUTES lpThreadAttributes */,
+                                              0 /* SIZE_T dwStackSize */,
+                                              vboxScreenMRunnerThread,
+                                              pMon,
+                                              0 /* DWORD dwCreationFlags */,
+                                              &pMon->idThread);
+        if (pMon->hThread)
+        {
+            Assert(0);
+            return S_OK;
+        }
+        else
+        {
+            DWORD winErr = GetLastError();
+            Log((__FUNCTION__": CreateThread failed, winErr = (%d)", winErr));
+            hr = HRESULT_FROM_WIN32(winErr);
+            Assert(0);
+            Assert(hr != S_OK);
+        }
+        CloseHandle(pMon->hEvent);
+    }
+    else
+    {
+        DWORD winErr = GetLastError();
+        Log((__FUNCTION__": CreateEvent failed, winErr = (%d)", winErr));
+        hr = HRESULT_FROM_WIN32(winErr);
+        Assert(0);
+        Assert(hr != S_OK);
+    }
 
     return hr;
 }
@@ -519,33 +552,64 @@ HRESULT VBoxScreenMRunnerStop(PVBOXSCREENMONRUNNER pMon)
     if (!pMon->hThread)
         return S_OK;
 
-    BOOL bResult = PostThreadMessage(pMon->idThread, WM_QUIT, 0, 0);
-    HRESULT hr = S_OK;
-    if (bResult)
+    Assert(0);
+
+    HANDLE ahHandles[2];
+    ahHandles[0] = pMon->hThread;
+    ahHandles[1] = pMon->hEvent;
+    DWORD dwResult = WaitForMultipleObjects(2, ahHandles,
+      FALSE, /* BOOL bWaitAll */
+      INFINITE /* DWORD dwMilliseconds */
+    );
+    HRESULT hr = E_FAIL;
+    if (dwResult == WAIT_OBJECT_0 + 1) /* Event is signaled */
     {
-        DWORD dwErr = WaitForSingleObject(pMon->hThread, INFINITE);
-        if (dwErr == WAIT_OBJECT_0)
+        BOOL bResult = PostThreadMessage(pMon->idThread, WM_QUIT, 0, 0);
+        if (bResult)
         {
-            CloseHandle(pMon->hThread);
-            pMon->hThread = 0;
+            DWORD dwErr = WaitForSingleObject(pMon->hThread, INFINITE);
+            if (dwErr == WAIT_OBJECT_0)
+            {
+                hr = S_OK;
+            }
+            else
+            {
+                DWORD winErr = GetLastError();
+                hr = HRESULT_FROM_WIN32(winErr);
+                Assert(0);
+            }
         }
         else
         {
             DWORD winErr = GetLastError();
-            hr = HRESULT_FROM_WIN32(winErr);
-            Assert(0);
+            Assert(winErr != ERROR_SUCCESS);
+            if (winErr == ERROR_INVALID_THREAD_ID)
+            {
+                hr = S_OK;
+            }
+            else
+            {
+                hr = HRESULT_FROM_WIN32(winErr);
+                Assert(0);
+            }
         }
+    }
+    else if (dwResult == WAIT_OBJECT_0)
+    {
+        /* thread has terminated already */
+        hr = S_OK;
     }
     else
     {
-        DWORD winErr = GetLastError();
-        Assert(winErr != ERROR_SUCCESS);
-        if (winErr != ERROR_INVALID_THREAD_ID)
-        {
-            hr = HRESULT_FROM_WIN32(winErr);
-            Assert(0);
-        }
-        /* else - treat as OK */
+        Assert(0);
+    }
+
+    if (hr == S_OK)
+    {
+        CloseHandle(pMon->hThread);
+        pMon->hThread = 0;
+        CloseHandle(pMon->hEvent);
+        pMon->hThread = 0;
     }
 
     return hr;

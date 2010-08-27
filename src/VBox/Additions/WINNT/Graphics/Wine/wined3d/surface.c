@@ -481,12 +481,6 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
         cleanup(surface);
         return hr;
     }
-#ifdef VBOXWDDM
-    if (shared_handle && !*shared_handle)
-    {
-        *shared_handle = VBOXSHRC_GET_SHAREHANDLE(surface);
-    }
-#endif
 
     return hr;
 }
@@ -496,7 +490,7 @@ static void surface_force_reload(IWineD3DSurface *iface)
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
 
 #if defined(DEBUG_misha) && defined (VBOXWDDM)
-    if (VBOXSHRC_IS_SHARED(This))
+    if (VBOXSHRC_IS_INITIALIZED(This))
     {
         Assert(0);
     }
@@ -2024,17 +2018,22 @@ static void surface_release_client_storage(IWineD3DSurface *iface)
 
     ENTER_GL();
     glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_FALSE);
-    if(This->texture_name)
+#ifdef VBOXWDDM
+    if (!VBOXSHRC_IS_SHARED_OPENED(This))
+#endif
     {
-        surface_bind_and_dirtify(This, FALSE);
-        glTexImage2D(This->texture_target, This->texture_level,
-                     GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    }
-    if(This->texture_name_srgb)
-    {
-        surface_bind_and_dirtify(This, TRUE);
-        glTexImage2D(This->texture_target, This->texture_level,
-                     GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        if(This->texture_name)
+        {
+            surface_bind_and_dirtify(This, FALSE);
+            glTexImage2D(This->texture_target, This->texture_level,
+                         GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        }
+        if(This->texture_name_srgb)
+        {
+            surface_bind_and_dirtify(This, TRUE);
+            glTexImage2D(This->texture_target, This->texture_level,
+                         GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        }
     }
     glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_TRUE);
 
@@ -4279,19 +4278,13 @@ static void WINAPI IWineD3DSurfaceImpl_ModifyLocation(IWineD3DSurface *iface, DW
     if(persistent) {
         if(((This->Flags & SFLAG_INTEXTURE) && !(flag & SFLAG_INTEXTURE)) ||
            ((This->Flags & SFLAG_INSRGBTEX) && !(flag & SFLAG_INSRGBTEX))) {
-#ifdef VBOXWDDM
-            if (VBOXSHRC_IS_SHARED(This))
-            {
-                IWineD3DSurfaceImpl_LoadLocation(iface, SFLAG_INTEXTURE, NULL);
-            }
-            else
-#endif
             if (IWineD3DSurface_GetContainer(iface, &IID_IWineD3DBaseTexture, (void **)&texture) == WINED3D_OK) {
                 TRACE("Passing to container\n");
                 IWineD3DBaseTexture_SetDirty(texture, TRUE);
                 IWineD3DBaseTexture_Release(texture);
             }
         }
+
         This->Flags &= ~SFLAG_LOCATIONS;
         This->Flags |= flag;
 
@@ -4303,21 +4296,30 @@ static void WINAPI IWineD3DSurfaceImpl_ModifyLocation(IWineD3DSurface *iface, DW
         }
     } else {
         if((This->Flags & (SFLAG_INTEXTURE | SFLAG_INSRGBTEX)) && (flag & (SFLAG_INTEXTURE | SFLAG_INSRGBTEX))) {
-#ifdef VBOXWDDM
-            if (VBOXSHRC_IS_SHARED(This))
-            {
-                IWineD3DSurfaceImpl_LoadLocation(iface, SFLAG_INTEXTURE, NULL);
-            }
-            else
-#endif
             if (IWineD3DSurface_GetContainer(iface, &IID_IWineD3DBaseTexture, (void **)&texture) == WINED3D_OK) {
                 TRACE("Passing to container\n");
                 IWineD3DBaseTexture_SetDirty(texture, TRUE);
                 IWineD3DBaseTexture_Release(texture);
             }
         }
+
         This->Flags &= ~flag;
     }
+
+#ifdef VBOXWDDM
+    if(VBOXSHRC_IS_INITIALIZED(This)) {
+        /* with the shared resource only texture can be considered valid
+         * to make sure changes done to the resource in the other device context are visible
+         * because the resource contents is shared via texture.
+         * This is why we ensure texture location is the one and only which is always valid */
+        if(!(This->Flags & SFLAG_INTEXTURE)) {
+            IWineD3DSurfaceImpl_LoadLocation(iface, SFLAG_INTEXTURE, NULL);
+        } else {
+            This->Flags &= ~SFLAG_LOCATIONS;
+            This->Flags |= SFLAG_INTEXTURE;
+        }
+    }
+#endif
 
     if(!(This->Flags & SFLAG_LOCATIONS)) {
         ERR("%p: Surface does not have any up to date location\n", This);
@@ -4618,13 +4620,34 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_LoadLocation(IWineD3DSurface *iface, D
         }
     }
 
-    if(rect == NULL) {
-        This->Flags |= flag;
+#ifdef VBOXWDDM
+    if (VBOXSHRC_IS_INITIALIZED(This))
+    {
+        /* with the shared resource only texture can be considered valid
+         * to make sure changes done to the resource in the other device context are visible
+         * because the resource contents is shared via texture.
+         * One can load and use other locations as needed,
+         * but they should be reloaded each time on each usage */
+        Assert(!!(This->Flags & SFLAG_INTEXTURE) || !!(flag & SFLAG_INTEXTURE));
+        This->Flags &= ~SFLAG_LOCATIONS;
+        This->Flags |= SFLAG_INTEXTURE;
+        /* @todo: SFLAG_INSRGBTEX ?? */
+//        if (in_fbo)
+//        {
+//            This->Flags |= SFLAG_INDRAWABLE;
+//        }
     }
+    else
+#endif
+    {
+        if(rect == NULL) {
+            This->Flags |= flag;
+        }
 
-    if (in_fbo && (This->Flags & (SFLAG_INTEXTURE | SFLAG_INDRAWABLE))) {
-        /* With ORM_FBO, SFLAG_INTEXTURE and SFLAG_INDRAWABLE are the same for offscreen targets. */
-        This->Flags |= (SFLAG_INTEXTURE | SFLAG_INDRAWABLE);
+        if (in_fbo && (This->Flags & (SFLAG_INTEXTURE | SFLAG_INDRAWABLE))) {
+            /* With ORM_FBO, SFLAG_INTEXTURE and SFLAG_INDRAWABLE are the same for offscreen targets. */
+            This->Flags |= (SFLAG_INTEXTURE | SFLAG_INDRAWABLE);
+        }
     }
 
     return WINED3D_OK;
