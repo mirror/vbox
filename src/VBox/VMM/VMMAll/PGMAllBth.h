@@ -557,6 +557,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
         rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, pvFault, 1, uErr);
 #   endif
         AssertRC(rc);
+        PGM_INVL_PG(pVCpu, pvFault);
+        return rc; /* Restart with the corrected entry. */
     }
 #  endif /* PGM_WITH_MMIO_OPTIMIZATIONS */
 
