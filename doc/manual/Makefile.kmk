@@ -214,23 +214,23 @@ HTMLHELPOPTS =
 # tool locations
 ifndef VBOX_OSE
  # use docbook from our tools directory
- DOCBOOKPATH          ?= $(PATH_DEVTOOLS)/common/DocBook/v1.69.1
- DOCBOOKDTDPATH       ?= $(PATH_DEVTOOLS)/common/docbook-xml/v4.3
- XML_CATALOG          ?= $(VBOX_PATH_MANUAL_OUTBASE)/catalog
- XML_CATALOG_DOCBOOK  ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook
+ DOCBOOKPATH         ?= $(PATH_DEVTOOLS)/common/DocBook/v1.69.1
+ DOCBOOKDTDPATH      ?= $(PATH_DEVTOOLS)/common/docbook-xml/v4.3
+ XML_CATALOG         ?= $(VBOX_PATH_MANUAL_OUTBASE)/catalog
+ XML_CATALOG_DOCBOOK ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook
 else
  # use docbook of the build host
- DOCBOOKPATH          ?= http://docbook.sourceforge.net/release/xsl/current/
+ DOCBOOKPATH         ?= http://docbook.sourceforge.net/release/xsl/current/
 endif
-VBOXMANAGEPATH ?= $(PATH_BIN)/VBoxManage$(SUFF_EXE)
+VBOXMANAGEPATH       ?= $(PATH_BIN)/VBoxManage$(SUFF_EXE)
 
 ifeq ($(KBUILD_HOST),win)
  # tell MiKTeX to automatically download packages
- PDFLATEX          = pdflatex -halt-on-error -interaction batchmode --enable-installer
+ PDFLATEX             = pdflatex -halt-on-error -interaction batchmode --enable-installer
 else
- PDFLATEX_HALT     = $(shell \
+ PDFLATEX_HALT        = $(shell \
  	( pdflatex -version | head -1 | grep 141592 > /dev/null ) && echo -halt-on-error )
- PDFLATEX          = pdflatex $(PDFLATEX_HALT) -interaction batchmode
+ PDFLATEX             = pdflatex $(PDFLATEX_HALT) -interaction batchmode
 endif
 
 # Windows HTML Help Workshop compiler (stupid thing always returns an error!)
