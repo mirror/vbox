@@ -1811,8 +1811,8 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     /* In the guest SMP case we could have blocked while another VCPU reused this page table. */
     if (!PdeDst.n.u1Present)
     {
+        LogAlways(("CPU%d: SyncPage: Pde at %RGv changed behind our back! (pPdeDst=%p/%RX64)\n", pVCpu->idCpu, GCPtrPage, pPdeDst, (uint64_t)PdeDst.u));
         AssertMsg(pVM->cCpus > 1, ("Unexpected missing PDE p=%p/%RX64\n", pPdeDst, (uint64_t)PdeDst.u));
-        Log(("CPU%d: SyncPage: Pde at %RGv changed behind our back!\n", pVCpu->idCpu, GCPtrPage));
         return VINF_SUCCESS;    /* force the instruction to be executed again. */
     }
 
@@ -1888,21 +1888,23 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                          * We're setting PGM_SYNC_NR_PAGES pages around the faulting page to sync it and
                          * deal with locality.
                          */
-                        unsigned        iPTDst    = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
+                        unsigned        iPTDst      = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
+                        const unsigned  iPTDstPage  = iPTDst;
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                         /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
-                        const unsigned  offPTSrc  = ((GCPtrPage >> SHW_PD_SHIFT) & 1) * 512;
+                        const unsigned  offPTSrc    = ((GCPtrPage >> SHW_PD_SHIFT) & 1) * 512;
 #  else
-                        const unsigned  offPTSrc  = 0;
+                        const unsigned  offPTSrc    = 0;
 #  endif
-                        const unsigned  iPTDstEnd = RT_MIN(iPTDst + PGM_SYNC_NR_PAGES / 2, RT_ELEMENTS(pPTDst->a));
+                        const unsigned  iPTDstEnd   = RT_MIN(iPTDst + PGM_SYNC_NR_PAGES / 2, RT_ELEMENTS(pPTDst->a));
                         if (iPTDst < PGM_SYNC_NR_PAGES / 2)
                             iPTDst = 0;
                         else
                             iPTDst -= PGM_SYNC_NR_PAGES / 2;
                         for (; iPTDst < iPTDstEnd; iPTDst++)
                         {
-                            if (!SHW_PTE_IS_P(pPTDst->a[iPTDst]))
+                            if (   !SHW_PTE_IS_P(pPTDst->a[iPTDst])
+                                || iPTDst == iPTDstPage)    /* always sync GCPtrPage */
                             {
                                 GSTPTE PteSrc = pPTSrc->a[offPTSrc + iPTDst];
                                 RTGCPTR GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
