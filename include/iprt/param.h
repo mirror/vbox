@@ -112,7 +112,7 @@
  * @returns Page aligned address (it's an RTHCPHYS or RTGCPHYS).
  * @param   Phys    The physical address to align.
  */
-#define PHYS_PAGE_ADDRESS(Phys) ((Phys) & X86_PTE_PAE_PG_MASK)
+#define PHYS_PAGE_ADDRESS(Phys) ((Phys) & X86_PTE_PAE_PG_MASK_FULL)
 
 /**
  * Host max path (the reasonable value).

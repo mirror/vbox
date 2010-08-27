@@ -501,7 +501,7 @@ VMMR3DECL(void *) MMR3PageDummyHCPtr(PVM pVM)
         pVM->mm.s.pvDummyPage = mmR3PagePoolAlloc(pVM->mm.s.pPagePoolR3);
         AssertRelease(pVM->mm.s.pvDummyPage);
         pVM->mm.s.HCPhysDummyPage = mmPagePoolPtr2Phys(pVM->mm.s.pPagePoolR3, pVM->mm.s.pvDummyPage);
-        AssertRelease(!(pVM->mm.s.HCPhysDummyPage & ~X86_PTE_PAE_PG_MASK));
+        AssertRelease(!(pVM->mm.s.HCPhysDummyPage & ~X86_PTE_PAE_PG_MASK_FULL));
     }
     return pVM->mm.s.pvDummyPage;
 }

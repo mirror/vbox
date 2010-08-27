@@ -61,7 +61,7 @@ void *mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys)
     /*
      * Lookup the virtual address.
      */
-    PMMPPLOOKUPHCPHYS pLookup = (PMMPPLOOKUPHCPHYS)RTAvlHCPhysGet(&pPool->pLookupPhys, HCPhys & X86_PTE_PAE_PG_MASK);
+    PMMPPLOOKUPHCPHYS pLookup = (PMMPPLOOKUPHCPHYS)RTAvlHCPhysGet(&pPool->pLookupPhys, HCPhys & X86_PTE_PAE_PG_MASK_FULL);
     if (pLookup)
     {
         STAM_COUNTER_INC(&pPool->cToVirtCalls);

@@ -209,9 +209,9 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 
                     int rc = pgmPoolPhysSimpleReadGCPhys(pVM, &GstPte, pvAddress, GCPhysFault, sizeof(GstPte));
                     AssertRC(rc);
-                    Log4(("pgmPoolMonitorChainChanging 32_32: deref %016RX64 GCPhys %08RX32\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, GstPte.u & X86_PTE_PG_MASK));
+                    Log4(("pgmPoolMonitorChainChanging 32_32: deref %016RX64 GCPhys %08RX32\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK_FULL, GstPte.u & X86_PTE_PG_MASK));
                     pgmPoolTracDerefGCPhysHint(pPool, pPage,
-                                               uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK,
+                                               uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK_FULL,
                                                GstPte.u & X86_PTE_PG_MASK,
                                                iShw);
                     ASMAtomicWriteSize(&uShw.pPT->a[iShw], 0);
@@ -234,7 +234,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                         int rc = pgmPoolPhysSimpleReadGCPhys(pVM, &GstPte, pvAddress, GCPhysFault, sizeof(GstPte));
                         AssertRC(rc);
 
-                        Log4(("pgmPoolMonitorChainChanging pae_32: deref %016RX64 GCPhys %08RX32\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, GstPte.u & X86_PTE_PG_MASK));
+                        Log4(("pgmPoolMonitorChainChanging pae_32: deref %016RX64 GCPhys %08RX32\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK_FULL, GstPte.u & X86_PTE_PG_MASK));
                         pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                    PGMSHWPTEPAE_GET_HCPHYS(uShw.pPTPae->a[iShw]),
                                                    GstPte.u & X86_PTE_PG_MASK,
@@ -3071,9 +3071,9 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
             }
 
 #if 1 /** @todo FIXME r64700 regression? */
-            if ((PGMSHWPTEPAE_GET_U(pPT->a[iPte]) & (X86_PTE_PAE_PG_MASK | X86_PTE_P)) == u64)
+            if ((PGMSHWPTEPAE_GET_U(pPT->a[iPte]) & (X86_PTE_PAE_PG_MASK_FULL | X86_PTE_P)) == u64)
 #else
-            if ((PGMSHWPTEPAE_GET_U(pPT->a[iPte]) & (X86_PTE_PAE_PG_MASK | X86_PTE_P | X86_PTE_PAE_MBZ_MASK_NX)) == u64)
+            if ((PGMSHWPTEPAE_GET_U(pPT->a[iPte]) & (X86_PTE_PAE_PG_MASK_FULL | X86_PTE_P | X86_PTE_PAE_MBZ_MASK_NX)) == u64)
 #endif
             {
                 X86PTEPAE Pte;
@@ -3089,12 +3089,12 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
             }
 #ifdef LOG_ENABLED
             Log(("iFirstPresent=%d cPresent=%d\n", pPage->iFirstPresent, pPage->cPresent));
-            Log(("Found %RX64 expected %RX64\n", PGMSHWPTEPAE_GET_U(pPT->a[iPte]) & (X86_PTE_PAE_PG_MASK | X86_PTE_P | X86_PTE_PAE_MBZ_MASK_NX), u64));
+            Log(("Found %RX64 expected %RX64\n", PGMSHWPTEPAE_GET_U(pPT->a[iPte]) & (X86_PTE_PAE_PG_MASK_FULL | X86_PTE_P | X86_PTE_PAE_MBZ_MASK_NX), u64));
             for (unsigned i = 0, cFound = 0; i < RT_ELEMENTS(pPT->a); i++)
 # if 1 /** @todo FIXME r64700 regression? */
-                if ((PGMSHWPTEPAE_GET_U(pPT->a[i]) & (X86_PTE_PAE_PG_MASK | X86_PTE_P)) == u64)
+                if ((PGMSHWPTEPAE_GET_U(pPT->a[i]) & (X86_PTE_PAE_PG_MASK_FULL | X86_PTE_P)) == u64)
 # else
-                if ((PGMSHWPTEPAE_GET_U(pPT->a[i]) & (X86_PTE_PAE_PG_MASK | X86_PTE_P | X86_PTE_PAE_MBZ_MASK_NX)) == u64)
+                if ((PGMSHWPTEPAE_GET_U(pPT->a[i]) & (X86_PTE_PAE_PG_MASK_FULL | X86_PTE_P | X86_PTE_PAE_MBZ_MASK_NX)) == u64)
 # endif
                     Log(("i=%d cFound=%d\n", i, ++cFound));
 #endif
@@ -3460,7 +3460,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
                     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPT->a); i++)
                         if (PGMSHWPTEPAE_IS_P(pPT->a[i]))
                         {
-                            if ((PGMSHWPTEPAE_GET_U(pPT->a[i]) & (X86_PTE_PAE_PG_MASK | X86_PTE_P)) == u64)
+                            if ((PGMSHWPTEPAE_GET_U(pPT->a[i]) & (X86_PTE_PAE_PG_MASK_FULL | X86_PTE_P)) == u64)
                             {
                                 //Log4(("pgmPoolTrackFlushGCPhysPTsSlow: idx=%d i=%d pte=%RX64\n", iPage, i, pPT->a[i]));
                                 PGMSHWPTEPAE_SET(pPT->a[i], 0); /// @todo why not atomic?
@@ -4908,7 +4908,7 @@ PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
     /*
      * Look up the page.
      */
-    PPGMPOOLPAGE pPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, HCPhys & X86_PTE_PAE_PG_MASK);
+    PPGMPOOLPAGE pPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, HCPhys & X86_PTE_PAE_PG_MASK_FULL);
 
     AssertFatalMsg(pPage && pPage->enmKind != PGMPOOLKIND_FREE, ("HCPhys=%RHp pPage=%p idx=%d\n", HCPhys, pPage, (pPage) ? pPage->idx : 0));
     return pPage;
