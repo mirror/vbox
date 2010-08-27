@@ -1009,6 +1009,10 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
     updateGuestPropertiesVRDPDisconnect(u32ClientId);
 #endif /* VBOX_WITH_GUEST_PROPS */
 
+#ifdef VBOX_WITH_VRDP_MEMLEAK_DETECTOR
+    MLDMemDump();
+#endif /* !VBOX_WITH_VRDP_MEMLEAK_DETECTOR */
+
     LogFlowFuncLeave();
     return;
 }
