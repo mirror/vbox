@@ -111,6 +111,8 @@ debian/build-stamp $(verfile):
 	    VBOX_NO_LINUX_RUN_INSTALLER=1 \
 	    VBOX_LNX_ADD_ARCHIVE.x86=$(builddir)/bin/additions/VBoxGuestAdditions-x86-r$(svnrev).tar.bz2 \
 	    VBOX_LNX_ADD_ARCHIVE.amd64=$(builddir)/bin/additions/VBoxGuestAdditions-amd64-r$(svnrev).tar.bz2 \
+	    VBOX_PATH_ADDITIONS.linux.x86=$(builddir)/bin/additions \
+	    VBOX_PATH_ADDITIONS.linux.amd64=$(builddir)/bin/additions \
 	    packing
 	touch debian/build-stamp
 
