@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevPCI - PCI BUS Device.
+ * DevPCI - ICH9 southbridge PCI bus emulation Device.
  */
 
 /*
@@ -64,15 +64,6 @@ typedef struct
 
 } PCIBUS, *PPCIBUS;
 
-/**
- * PIIX3 ISA Bridge state.
- */
-typedef struct
-{
-    /** The PCI device of the bridge. */
-    PCIDEVICE dev;
-} PIIX3, *PPIIX3;
-
 
 /** @def PCI_IRQ_PINS
  * Number of pins for interrupts (PIRQ#0...PIRQ#3)
@@ -103,8 +94,6 @@ typedef struct PCIGLOBALS
     uint32_t            Alignment0;
 #endif
 
-    /** ISA bridge state. */
-    PIIX3               PIIX3State;
     /** PCI bus which is attached to the host-to-PCI bridge. */
     PCIBUS              PciBus;
 
@@ -127,13 +116,13 @@ typedef PCIGLOBALS *PPCIGLOBALS;
 
 #ifdef IN_RING3
 
-static DECLCALLBACK(int) pciConstruct(PPDMDEVINS pDevIns, 
-                                      int        iInstance, 
-                                      PCFGMNODE  pCfg)
+static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
+                                          int        iInstance,
+                                          PCFGMNODE  pCfg)
 {
     int rc;
     Assert(iInstance == 0);
-    
+
     /*
      * Validate and read configuration.
      */
@@ -146,7 +135,7 @@ static DECLCALLBACK(int) pciConstruct(PPDMDEVINS pDevIns,
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"IOAPIC\""));
-    
+
     /* check if RC code is enabled. */
     bool fGCEnabled;
     rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
@@ -165,23 +154,25 @@ static DECLCALLBACK(int) pciConstruct(PPDMDEVINS pDevIns,
     /*
      * Init data and register the PCI bus.
      */
-    PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);    
+    PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     pGlobals->fUseIoApic          = fUseIoApic;
-    
+
     return VINF_SUCCESS;
 }
 
 /**
  * @copydoc FNPDMDEVRELOCATE
  */
-static DECLCALLBACK(void) pciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+static DECLCALLBACK(void) ich9pciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
 }
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns, 
+                                                  int        iInstance, 
+                                                  PCFGMNODE  pCfg)
 {
     int rc;
 
@@ -212,7 +203,7 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
 /**
  * @copydoc FNPDMDEVRESET
  */
-static DECLCALLBACK(void) pcibridgeReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) ich9pcibridgeReset(PPDMDEVINS pDevIns)
 {
 }
 
@@ -220,25 +211,25 @@ static DECLCALLBACK(void) pcibridgeReset(PPDMDEVINS pDevIns)
 /**
  * @copydoc FNPDMDEVRELOCATE
  */
-static DECLCALLBACK(void) pcibridgeRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+static DECLCALLBACK(void) ich9pcibridgeRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
 }
 
 /**
  * The PCI bus device registration structure.
  */
-const PDMDEVREG g_DevicePCI =
+const PDMDEVREG g_DevicePciIch9 =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
     /* szName */
-    "pci",
+    "ich9pci",
     /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
-    "i440FX PCI bridge and PIIX3 ISA bridge.",
+    "ICH9 PCI bridge",
     /* fFlags */
     PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
@@ -248,11 +239,11 @@ const PDMDEVREG g_DevicePCI =
     /* cbInstance */
     sizeof(PCIGLOBALS),
     /* pfnConstruct */
-    pciConstruct,
+    ich9pciConstruct,
     /* pfnDestruct */
     NULL,
     /* pfnRelocate */
-    pciRelocate,
+    ich9pciRelocate,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -283,18 +274,18 @@ const PDMDEVREG g_DevicePCI =
  * The device registration structure
  * for the PCI-to-PCI bridge.
  */
-const PDMDEVREG g_DevicePCIBridge =
+const PDMDEVREG g_DevicePciIch9Bridge =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
     /* szName */
-    "pcibridge",
+    "ich9pcibridge",
     /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
-    "82801 Mobile PCI to PCI bridge",
+    "ICH9 PCI to PCI bridge",
     /* fFlags */
     PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
@@ -304,17 +295,17 @@ const PDMDEVREG g_DevicePCIBridge =
     /* cbInstance */
     sizeof(PCIBUS),
     /* pfnConstruct */
-    pcibridgeConstruct,
+    ich9pcibridgeConstruct,
     /* pfnDestruct */
     NULL,
     /* pfnRelocate */
-    pcibridgeRelocate,
+    ich9pcibridgeRelocate,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    pcibridgeReset,
+    ich9pcibridgeReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
