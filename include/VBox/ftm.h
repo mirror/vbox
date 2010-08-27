@@ -34,6 +34,7 @@ RT_C_DECLS_BEGIN
 /** @defgroup grp_ftm        The Fault Tolerance Monitor / Manager API
  * @{
  */
+VMMDECL(bool)  FTMIsDeltaLoadSaveActive(PVM pVM);
 
 #ifdef IN_RING3
 /** @defgroup grp_ftm_r3     The FTM Host Context Ring-3 API

@@ -48,3 +48,17 @@ VMMDECL(int) FTMSetCheckpoint(PVM pVM)
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
+
+
+/**
+ * Checks if the delta save/load is enabled
+ *
+ * @returns true/false
+ *
+ * @param   pVM         The VM to operate on.
+ */
+VMMDECL(bool)  FTMIsDeltaLoadSaveActive(PVM pVM)
+{
+    return pVM->ftm.s.fDeltaLoadSaveActive;
+}
+
