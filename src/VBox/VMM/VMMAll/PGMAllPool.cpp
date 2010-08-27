@@ -4098,6 +4098,8 @@ void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCP
 DECLINLINE(void) pgmPoolTrackDerefPT32Bit32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PT pShwPT, PCX86PT pGstPT)
 {
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
+    {
+        Assert(!(pShwPT->a[i].u & RT_BIT_32(10)));
         if (pShwPT->a[i].n.u1Present)
         {
             Log4(("pgmPoolTrackDerefPT32Bit32Bit: i=%d pte=%RX32 hint=%RX32\n",
@@ -4106,6 +4108,7 @@ DECLINLINE(void) pgmPoolTrackDerefPT32Bit32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPag
             if (!pPage->cPresent)
                 break;
         }
+    }
 }
 
 
@@ -4120,6 +4123,9 @@ DECLINLINE(void) pgmPoolTrackDerefPT32Bit32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPag
 DECLINLINE(void) pgmPoolTrackDerefPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMSHWPTPAE pShwPT, PCX86PT pGstPT)
 {
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
+    {
+        Assert(   (PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & UINT64_C(0x7ff0000000000400)) == 0
+               || (PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & UINT64_C(0x7ff0000000000400)) == UINT64_C(0x7ff0000000000000));
         if (PGMSHWPTEPAE_IS_P(pShwPT->a[i]))
         {
             Log4(("pgmPoolTrackDerefPTPae32Bit: i=%d pte=%RX64 hint=%RX32\n",
@@ -4128,6 +4134,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage,
             if (!pPage->cPresent)
                 break;
         }
+    }
 }
 
 
@@ -4142,6 +4149,9 @@ DECLINLINE(void) pgmPoolTrackDerefPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage,
 DECLINLINE(void) pgmPoolTrackDerefPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMSHWPTPAE pShwPT, PCX86PTPAE pGstPT)
 {
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
+    {
+        Assert(   (PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & UINT64_C(0x7ff0000000000400)) == 0
+               || (PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & UINT64_C(0x7ff0000000000400)) == UINT64_C(0x7ff0000000000000));
         if (PGMSHWPTEPAE_IS_P(pShwPT->a[i]))
         {
             Log4(("pgmPoolTrackDerefPTPaePae: i=%d pte=%RX32 hint=%RX32\n",
@@ -4150,6 +4160,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
             if (!pPage->cPresent)
                 break;
         }
+    }
 }
 
 
@@ -4164,6 +4175,8 @@ DECLINLINE(void) pgmPoolTrackDerefPT32Bit4MB(PPGMPOOL pPool, PPGMPOOLPAGE pPage,
 {
     RTGCPHYS GCPhys = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++, GCPhys += PAGE_SIZE)
+    {
+        Assert(!(pShwPT->a[i].u & RT_BIT_32(10)));
         if (pShwPT->a[i].n.u1Present)
         {
             Log4(("pgmPoolTrackDerefPT32Bit4MB: i=%d pte=%RX32 GCPhys=%RGp\n",
@@ -4172,6 +4185,7 @@ DECLINLINE(void) pgmPoolTrackDerefPT32Bit4MB(PPGMPOOL pPool, PPGMPOOLPAGE pPage,
             if (!pPage->cPresent)
                 break;
         }
+    }
 }
 
 
@@ -4186,6 +4200,9 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaeBig(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
 {
     RTGCPHYS GCPhys = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++, GCPhys += PAGE_SIZE)
+    {
+        Assert(   (PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & UINT64_C(0x7ff0000000000400)) == 0
+               || (PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & UINT64_C(0x7ff0000000000400)) == UINT64_C(0x7ff0000000000000));
         if (PGMSHWPTEPAE_IS_P(pShwPT->a[i]))
         {
             Log4(("pgmPoolTrackDerefPTPaeBig: i=%d pte=%RX64 hint=%RGp\n",
@@ -4194,6 +4211,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaeBig(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
             if (!pPage->cPresent)
                 break;
         }
+    }
 }
 
 
@@ -4208,6 +4226,8 @@ DECLINLINE(void) pgmPoolTrackDerefPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
 {
     RTGCPHYS GCPhys = pPage->GCPhys + PAGE_SIZE * pPage->iFirstPresent;
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++, GCPhys += PAGE_SIZE)
+    {
+        Assert((pShwPT->a[i].u & UINT64_C(0xfff0000000000f80)) == 0);
         if (pShwPT->a[i].n.u1Present)
         {
             Log4(("pgmPoolTrackDerefPTEPT: i=%d pte=%RX64 GCPhys=%RX64\n",
@@ -4216,6 +4236,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
             if (!pPage->cPresent)
                 break;
         }
+    }
 }
 
 
@@ -4231,6 +4252,7 @@ DECLINLINE(void) pgmPoolTrackDerefPD(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PD 
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
     {
+        Assert(!(pShwPD->a[i].u & RT_BIT_32(9)));
         if (    pShwPD->a[i].n.u1Present
             &&  !(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING)
            )
@@ -4255,9 +4277,9 @@ DECLINLINE(void) pgmPoolTrackDerefPDPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
     {
-        if (    pShwPD->a[i].n.u1Present
-            &&  !(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING)
-           )
+        Assert((pShwPD->a[i].u & (X86_PDE_PAE_MBZ_MASK_NX | UINT64_C(0x7ff0000000000200))) == 0);
+        if (   pShwPD->a[i].n.u1Present
+            && !(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING))
         {
 #ifdef PGM_WITH_LARGE_PAGES
             if (pShwPD->a[i].b.u1Size)
@@ -4291,6 +4313,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDPTPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX
 {
     for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
     {
+        Assert((pShwPDPT->a[i].u & (X86_PDPE_PAE_MBZ_MASK | UINT64_C(0x7ff0000000000200))) == 0);
         if (    pShwPDPT->a[i].n.u1Present
             &&  !(pShwPDPT->a[i].u & PGM_PLXFLAGS_MAPPING)
            )
@@ -4316,7 +4339,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDPT64Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPDPT->a); i++)
     {
-        Assert(!(pShwPDPT->a[i].u & PGM_PLXFLAGS_MAPPING));
+        Assert((pShwPDPT->a[i].u & (X86_PDPE_LM_MBZ_MASK_NX | UINT64_C(0x7ff0000000000200))) == 0);
         if (pShwPDPT->a[i].n.u1Present)
         {
             PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & X86_PDPE_PG_MASK);
@@ -4341,6 +4364,7 @@ DECLINLINE(void) pgmPoolTrackDerefPML464Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPML4->a); i++)
     {
+        Assert((pShwPML4->a[i].u & (X86_PML4E_MBZ_MASK_NX | UINT64_C(0x7ff0000000000200))) == 0);
         if (pShwPML4->a[i].n.u1Present)
         {
             PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPML4->a[i].u & X86_PDPE_PG_MASK);
@@ -4365,6 +4389,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
     {
+        Assert((pShwPD->a[i].u & UINT64_C(0xfff0000000000f80)) == 0);
         if (pShwPD->a[i].n.u1Present)
         {
 #ifdef PGM_WITH_LARGE_PAGES
@@ -4400,6 +4425,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PE
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPDPT->a); i++)
     {
+        Assert((pShwPDPT->a[i].u & UINT64_C(0xfff0000000000f80)) == 0);
         if (pShwPDPT->a[i].n.u1Present)
         {
             PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & EPT_PDPTE_PG_MASK);
