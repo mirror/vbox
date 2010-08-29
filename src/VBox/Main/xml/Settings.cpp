@@ -46,7 +46,7 @@
  *      have been no incompatible changes yet.
  *
  *   4) In the settings writer method, write the setting _only_ if the current settings
- *      version (stored in m->sv) is high enough. That is, for VirtualBox 3.3, write it
+ *      version (stored in m->sv) is high enough. That is, for VirtualBox 4.0, write it
  *      only if (m->sv >= SettingsVersion_v1_11).
  */
 
@@ -735,7 +735,7 @@ void ConfigFileBase::readMedium(MediaType t,
  * of the given MediaRegistry structure.
  *
  * This is used in both MainConfigFile and MachineConfigFile since starting with
- * VirtualBox 3.3, we can have media registries in both.
+ * VirtualBox 4.0, we can have media registries in both.
  *
  * For pre-1.4 files, this gets called with the <DiskRegistry> chunk instead.
  *
@@ -1028,7 +1028,7 @@ void ConfigFileBase::buildHardDisk(xml::ElementNode &elmMedium,
  * structure under it.
  *
  * This is used in both MainConfigFile and MachineConfigFile since starting with
- * VirtualBox 3.3, we can have media registries in both.
+ * VirtualBox 4.0, we can have media registries in both.
  *
  * @param elmParent
  * @param mr
@@ -1745,7 +1745,7 @@ MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
 /**
  * Public routine which returns true if this machine config file can have its
  * own media registry (which is true for settings version v1.11 and higher,
- * i.e. files created by VirtualBox 3.3 and higher).
+ * i.e. files created by VirtualBox 4.0 and higher).
  * @return
  */
 bool MachineConfigFile::canHaveOwnMediaRegistry() const
@@ -2267,7 +2267,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExVPID")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fVPID);
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtForce")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirtForce);            
+                pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirtForce);
 
             if (!(pelmCPUChild = pelmHwChild->findChildElement("PAE")))
             {
@@ -3123,7 +3123,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
                         machineUserData.enmFaultToleranceState = FaultToleranceState_Standby;
                     else
                         machineUserData.enmFaultToleranceState = FaultToleranceState_Inactive;
-                }               
+                }
                 pelmMachineChild->getAttributeValue("port", machineUserData.uFaultTolerancePort);
                 pelmMachineChild->getAttributeValue("address", machineUserData.strFaultToleranceAddress);
                 pelmMachineChild->getAttributeValue("interval", machineUserData.uFaultToleranceInterval);
@@ -3180,9 +3180,9 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     if (hw.fLargePages)
         pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
-    
+
     if (m->sv >= SettingsVersion_v1_9)
-        pelmCPU->createChild("HardwareVirtForce")->setAttribute("enabled", hw.fHardwareVirtForce);    
+        pelmCPU->createChild("HardwareVirtForce")->setAttribute("enabled", hw.fHardwareVirtForce);
 
     if (m->sv >= SettingsVersion_v1_10)
     {
@@ -3970,7 +3970,7 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
  *  --  BuildMachineXML_MediaRegistry: If set, the machine's media registry will
  *      be written, if present. This is not set when called from OVF because OVF
  *      has its own variant of a media registry. This flag is ignored unless the
- *      settings version is at least v1.11 (VirtualBox 3.3).
+ *      settings version is at least v1.11 (VirtualBox 4.0).
  *
  *  --  BuildMachineXML_IncludeSnapshots: If set, descend into the snapshots tree
  *      of the machine and write out <Snapshot> and possibly more snapshots under
@@ -4196,7 +4196,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_11)
     {
-        // VirtualBox 3.3 adds HD audio, CPU priorities, fault tolerance and per-machine media registries
+        // VirtualBox 4.0 adds HD audio, CPU priorities, fault tolerance and per-machine media registries
         if (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
              || hardwareMachine.ulCpuPriority != 100
              || machineUserData.enmFaultToleranceState != FaultToleranceState_Inactive
@@ -4235,7 +4235,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             {
                 const AttachedDevice &att = *it2;
 
-                // Bandwidth limitations are new in VirtualBox 3.3 (1.11)
+                // Bandwidth limitations are new in VirtualBox 4.0 (1.11)
                 if (    (m->sv < SettingsVersion_v1_11)
                      && (att.ulBandwidthLimit != 0)
                    )
@@ -4315,7 +4315,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                  && (netit->ulBandwidthLimit)
                )
             {
-                /* New in VirtualBox 3.3 */
+                /* New in VirtualBox 4.0 */
                 m->sv = SettingsVersion_v1_11;
                 break;
             }
