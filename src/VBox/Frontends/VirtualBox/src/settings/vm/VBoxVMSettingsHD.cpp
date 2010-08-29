@@ -2228,10 +2228,8 @@ void VBoxVMSettingsHD::getInformation()
 
                 /* Getting Passthrough state */
                 bool isHostDrive = mStorageModel->data (index, StorageModel::R_AttIsHostDrive).toBool();
-                /* Passthrough is currently available only for the IDE controller DVD device */
-                bool isIdeCtr = mStorageModel->data (index.parent(), StorageModel::R_CtrBusType).value <KStorageBus>() == KStorageBus_IDE;
-                mCbPassthrough->setEnabled (isHostDrive && isIdeCtr);
-                mCbPassthrough->setChecked (isHostDrive && isIdeCtr && mStorageModel->data (index, StorageModel::R_AttIsPassthrough).toBool());
+                mCbPassthrough->setEnabled (isHostDrive);
+                mCbPassthrough->setChecked (isHostDrive && mStorageModel->data (index, StorageModel::R_AttIsPassthrough).toBool());
 
                 /* Update optional widgets visibility */
                 updateAdditionalObjects (device);
