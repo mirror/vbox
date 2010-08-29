@@ -659,6 +659,7 @@ HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, Co
  * Called from Appliance::writeFS() for each virtual system (machine) that needs XML written out.
  *
  * @param elmToAddVirtualSystemsTo XML element to append elements to.
+ * @param pllElementsWithUuidAttributes out: list of XML elements produced here with UUID attributes for quick fixing by caller later
  * @param vsdescThis The IVirtualSystemDescription instance for which to write XML.
  * @param enFormat OVF format (0.9 or 1.0).
  * @param stack Structure for temporary private data shared with caller.
@@ -1597,13 +1598,17 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
             // now, we might have other XML elements from vbox:Machine pointing to this image,
             // but those would refer to the UUID of the _source_ image (which we created the
             // export image from); those UUIDs need to be fixed to the export image
+            Utf8Str strGuidSourceCurly = guidSource.toStringCurly();
             for (std::list<xml::ElementNode*>::iterator eit = llElementsWithUuidAttributes.begin();
                  eit != llElementsWithUuidAttributes.end();
                  ++eit)
             {
                 xml::ElementNode *pelmImage = *eit;
-                // overwrite existing uuid attribute
-                pelmImage->setAttribute("uuid", guidTarget.toStringCurly());
+                Utf8Str strUUID;
+                pelmImage->getAttributeValue("uuid", strUUID);
+                if (strUUID == strGuidSourceCurly)
+                    // overwrite existing uuid attribute
+                    pelmImage->setAttribute("uuid", guidTarget.toStringCurly());
             }
         }
 
