@@ -87,7 +87,7 @@
  * Enables optimizations for MMIO handlers that exploits X86_TRAP_PF_RSVD and
  * VMX_EXIT_EPT_MISCONFIG.
  */
-#if 0 /* ! remember to disable before committing ! XXX TODO  */
+#if 1 /* testing */
 # define PGM_WITH_MMIO_OPTIMIZATIONS
 #endif
 
