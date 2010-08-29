@@ -477,10 +477,8 @@ typedef struct AHCIPort
     /** First task throwing an error. */
     R3PTRTYPE(volatile PAHCIPORTTASKSTATE) pTaskErr;
 
-    uint32_t                        u32Alignment5[4];
-
-#if 0 /*HC_ARCH_BITS == 32*/
-    uint32_t                        u32Alignment6;
+#if HC_ARCH_BITS == 32
+    uint32_t                        u32Alignment7;
 #endif
 
     /** Release statistics: number of DMA commands. */
