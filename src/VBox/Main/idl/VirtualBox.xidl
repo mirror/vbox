@@ -8167,7 +8167,7 @@
       The following operations exist:
 
       <ul>
-          <li><link to="IConsole::takeSnapshot"/>: creates a new snapshot
+          <li><link to="IConsole::takeSnapshot"/> creates a new snapshot
               by creating new, empty differencing images for the machine's
               media and saving the VM settings and (if the VM is running)
               the current VM state in the snapshot.
@@ -8181,29 +8181,36 @@
 
               The current machine state is not changed by taking a snapshot.
               If the machine is running, it will resume execution after the
-              snapshot has been taken.
+              snapshot has been taken. After calling this,
+              <link to="IMachine::currentSnapshot" /> is set to the snapshot
+              just created.
           </li>
 
-          <li><link to="IConsole::restoreSnapshot"/>: this goes back to
-              a previous snapshot. This resets the machine's state to that of
-              the previous snapshot by deleting the differencing image of each
-              of the machine's media and setting the machine's settings
-              and state to the state that was saved in the snapshot (if any).
+          <li><link to="IConsole::restoreSnapshot"/> resets a machine to
+              the state of a previous snapshot by deleting the differencing
+              image of each of the machine's media and setting the machine's
+              settings and state to the state that was saved in the snapshot (if any).
 
-              This destroys the machine's current state.
+              This destroys the machine's current state. After calling this,
+              <link to="IMachine::currentSnapshot" /> is set to the snapshot that was
+              restored.
           </li>
 
-          <li><link to="IConsole::deleteSnapshot"/>: deletes a snapshot
+          <li><link to="IConsole::deleteSnapshot"/> deletes a snapshot
               without affecting the current machine state.
 
-              This does not change the machine, but instead frees the resources
-              allocated when the snapshot was taken: the settings and machine state
-              is deleted (if any), and the snapshot's differencing image for each
-              of the machine's media gets merged with its parent image.
+              This does not change the current machine state, but instead frees the
+              resources allocated when the snapshot was taken: the settings and machine
+              state file are deleted (if any), and the snapshot's differencing image for
+              each of the machine's media gets merged with its parent image.
 
               Neither the current machine state nor other snapshots are affected
               by this operation, except that parent media will be modified
               to contain the disk data associated with the snapshot being deleted.
+
+              When deleting the current snapshot, the <link to="IMachine::currentSnapshot" />
+              attribute is set to the current snapshot's parent or NULL if it
+              has no parent. Otherwise the attribute is unchanged.
           </li>
       </ul>
 
@@ -8221,26 +8228,6 @@
       or <link to="MachineState::Aborted"/>), the snapshot is <i>offline</i>;
       it then contains a so-called "zero execution state", representing a
       machine that is powered off.
-
-      <h3>Snapshot branches and the "current" snapshot</h3>
-
-      Snapshots can be chained, whereby every next snapshot is based on the
-      previous one. This chaining is related to medium branching
-      (see the <link to="IMedium"/> description) in that every time
-      a new snapshot is created, a new differencing medium is implicitly
-      created for all normal media attached to the machine.
-
-      Each virtual machine has a "current snapshot", identified by
-      <link to="IMachine::currentSnapshot"/>. Presently, this is always set
-      to the last snapshot in the chain. In a future version of VirtualBox,
-      it will be possible to reset a machine's current state to that of an
-      earlier snapshot without deleting the current state so that it will be
-      possible to create alternative snapshot paths in a snapshot tree.
-
-      In the current implementation, multiple snapshot branches within one
-      virtual machine are not allowed. Every machine has a single branch,
-      and <link to="IConsole::takeSnapshot"/> operation adds a new
-      snapshot to the top of that branch.
     </desc>
 
     <attribute name="id" type="uuid" mod="string" readonly="yes">
