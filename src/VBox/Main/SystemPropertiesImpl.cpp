@@ -473,6 +473,7 @@ STDMETHODIMP SystemProperties::GetDeviceTypesForStorageBus(StorageBus_T aBus,
     switch (aBus)
     {
         case StorageBus_IDE:
+        case StorageBus_SATA:
         {
             com::SafeArray<DeviceType_T> saDeviceTypes(2);
             saDeviceTypes[0] = DeviceType_DVD;
@@ -480,7 +481,6 @@ STDMETHODIMP SystemProperties::GetDeviceTypesForStorageBus(StorageBus_T aBus,
             saDeviceTypes.detachTo(ComSafeArrayOutArg(aDeviceTypes));
             break;
         }
-        case StorageBus_SATA:
         case StorageBus_SCSI:
         case StorageBus_SAS:
         {
