@@ -3,7 +3,7 @@
   "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
   <para>
   <sect1>
-    <title>Version 3.3.0 (2010-xx-xx)</title>
+    <title>Version 4.0.0 (2010-xx-xx)</title>
 
     <para>This version is a major update. The following major new features
       were added:</para>
@@ -65,8 +65,7 @@
       </listitem>
 
       <listitem>
-        <para>Sharing disks: support for attaching one disk to several VMs
-          without external tools and tricks</para>
+        <para>SATA: allow to attach CD/DVD-ROM drives including passthrough</para>
       </listitem>
 
       <listitem>
@@ -587,22 +586,22 @@
       </listitem>
 
       <listitem>
-        <para>Shared folders: fixed issue with copying read-only files
+        <para>Shared Folders: fixed issue with copying read-only files
           (Linux guests only; bug #4890)</para>
       </listitem>
 
       <listitem>
-        <para>Shared folders: renamed the guest kernel module from <emphasis>vboxvfs</emphasis>
+        <para>Shared Folders: renamed the guest kernel module from <emphasis>vboxvfs</emphasis>
           to <emphasis>vboxsf</emphasis> to make it load on demand by the Linux kernel.
           Fixes mounting from /etc/fstab in Ubuntu 10.04</para>
       </listitem>
 
       <listitem>
-        <para>Shared folders: fixed setuid file permissions (Solaris guests only)</para>
+        <para>Shared Folders: fixed setuid file permissions (Solaris guests only)</para>
       </listitem>
 
       <listitem>
-        <para>Shared folders: fixed deleting directories recursively
+        <para>Shared Folders: fixed deleting directories recursively
           (Solaris guests only; bug #6513)</para>
       </listitem>
 
@@ -1028,7 +1027,7 @@
       </listitem>
 
       <listitem>
-        <para>Shared folders: fixed resolving of symlink target on Linux
+        <para>Shared Folders: fixed resolving of symlink target on Linux
           (3.1.2 regression)</para>
       </listitem>
 
@@ -1272,7 +1271,7 @@
       </listitem>
 
       <listitem>
-        <para>Shared folders: fixed resolving of symlink target (bug #5631)</para>
+        <para>Shared Folders: fixed resolving of symlink target (bug #5631)</para>
       </listitem>
 
       <listitem>
@@ -1489,11 +1488,11 @@
       </listitem>
 
       <listitem>
-        <para>Shared folders: VBOXSVR is visible in Network folder (Windows guests, bug #4842)</para>
+        <para>Shared Folders: VBOXSVR is visible in Network folder (Windows guests, bug #4842)</para>
       </listitem>
 
       <listitem>
-        <para>Shared folders: performance improvements (Windows guests, bug #1728)</para>
+        <para>Shared Folders: performance improvements (Windows guests, bug #1728)</para>
       </listitem>
 
       <listitem>
@@ -1609,7 +1608,7 @@
       </listitem>
 
       <listitem>
-        <para>Shared folders: fixed changing case of file names (bug #2520)</para>
+        <para>Shared Folders: fixed changing case of file names (bug #2520)</para>
       </listitem>
 
       <listitem>
