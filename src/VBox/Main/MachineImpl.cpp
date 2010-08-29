@@ -3635,6 +3635,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
         // and decide which medium registry to use now that the medium is attached:
         if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
+            // machine XML is VirtualBox 4.0 or higher:
             medium->setRegistryIdIfFirst(getId());        // machine UUID
         else
             medium->setRegistryIdIfFirst(mParent->getGlobalRegistryId()); // VirtualBox global registry UUID
@@ -8032,7 +8033,7 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     rc = saveStorageControllers(config.storageMachine);
     if (FAILED(rc)) throw rc;
 
-    // save machine's media registry if this is VirtualBox 3.3 or later
+    // save machine's media registry if this is VirtualBox 4.0 or later
     if (config.canHaveOwnMediaRegistry())
         mParent->saveMediaRegistry(config.mediaRegistry,
                                    getId());            // only media with registry ID == machine UUID

@@ -602,12 +602,12 @@ HRESULT VirtualBox::initMachines()
  * Loads a media registry from XML and adds the media contained therein to
  * the global lists of known media.
  *
- * This now (3.3) gets called from two locations:
+ * This now (4.0) gets called from two locations:
  *
  *  --  VirtualBox::init(), to load the global media registry from VirtualBox.xml;
  *
  *  --  Machine::loadMachineDataFromSettings(), to load the per-machine registry
- *      from machine XML, for machines created with VirtualBox 3.3 or later.
+ *      from machine XML, for machines created with VirtualBox 4.0 or later.
  *
  * In both cases, the media found are added to the global lists so the
  * global arrays of media (including the GUI's virtual media manager)
@@ -2801,7 +2801,7 @@ HRESULT VirtualBox::findGuestOSType(const Bstr &bstrOSType,
  * Returns the pseudo-machine UUID that is created on each VirtualBox startup
  * and that is used to identify the global media registry.
  *
- * Starting with VirtualBox 3.3 each medium remembers in its instance data
+ * Starting with VirtualBox 4.0 each medium remembers in its instance data
  * in which media registry it is saved (if any): this can either be a machine
  * UUID, if it's in a per-machine media registry, or this global ID.
  *
@@ -3050,7 +3050,7 @@ void VirtualBox::rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDi
  *     attached to a "legacy" machine which can't save its own registry;
  *
  *  -- Machine::saveSettings() with the UUID of a machine, if a medium
- *     has been attached to a machine created with VirtualBox 3.3 or later.
+ *     has been attached to a machine created with VirtualBox 4.0 or later.
  *
  * Media which have only been temporarily opened without having been
  * attached to a machine have a NULL registry UUID and therefore don't

@@ -466,7 +466,7 @@
            -->
     </const>
     <const name="v1_11"     value="13">
-      <desc>Settings version "1.11", written by VirtualBox 3.3.x.</desc>
+      <desc>Settings version "1.11", written by VirtualBox 4.0.x.</desc>
       <!-- Machine changes: HD Audio controller, per-machine disk registries
            -->
     </const>
