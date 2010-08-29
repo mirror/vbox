@@ -1901,6 +1901,8 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     pAhciPort->uActReadPos = 0;
     pAhciPort->uActTasksActive = 0;
 
+    ASMAtomicWriteU32(&pAhciPort->MediaEventStatus, ATA_EVENT_STATUS_UNCHANGED);
+
     if (pAhciPort->pDrvBase)
     {
         pAhciPort->regCMD |= AHCI_PORT_CMD_CPS; /* Indicate that there is a device on that port */
@@ -3765,6 +3767,10 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
             else
                 atapiCmdErrorSimple(pAhciPort, pAhciPortTaskState, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
             break;
+        case SCSI_GET_EVENT_STATUS_NOTIFICATION:
+            cbMax = ataBE2H_U16(pbPacket + 7);
+            atapiDoTransfer(pAhciPort, pAhciPortTaskState, ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION);
+            break;
         case SCSI_MODE_SENSE_10:
             {
                 uint8_t uPageControl, uPageCode;
@@ -4390,6 +4396,7 @@ static AHCITXDIR atapiParseCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPort
 static void ahciFinishStorageDeviceReset(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState)
 {
     /* Send a status good D2H FIS. */
+    ASMAtomicWriteU32(&pAhciPort->MediaEventStatus, ATA_EVENT_STATUS_UNCHANGED);
     pAhciPort->fResetDevice = false;
     if (pAhciPort->regCMD & AHCI_PORT_CMD_FRE)
         ahciPostFirstD2HFisIntoMemory(pAhciPort);
@@ -7141,7 +7148,7 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
         pAhciPort->PCHSGeometry.cCylinders = 0;
         pAhciPort->PCHSGeometry.cHeads     = 0;
         pAhciPort->PCHSGeometry.cSectors   = 0;
-        LogRel(("AHCI LUN#%d: CD/DVD, total number of sectors %Ld\n", pAhciPort->iLUN, pAhciPort->cTotalSectors));
+        LogRel(("AHCI LUN#%d: CD/DVD, total number of sectors %Ld, passthrough %s\n", pAhciPort->iLUN, pAhciPort->cTotalSectors, (pAhciPort->fATAPIPassthrough ? "enabled" : "disabled")));
     }
     else
     {
