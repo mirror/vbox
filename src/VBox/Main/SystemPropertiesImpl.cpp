@@ -503,6 +503,34 @@ STDMETHODIMP SystemProperties::GetDeviceTypesForStorageBus(StorageBus_T aBus,
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::GetDefaultIoCacheSettingForStorageController(StorageControllerType_T aControllerType, BOOL *aEnabled)
+{
+    CheckComArgOutPointerValid(aEnabled);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* no need to lock, this is const */
+    switch (aControllerType)
+    {
+        case StorageControllerType_LsiLogic:
+        case StorageControllerType_BusLogic:
+        case StorageControllerType_IntelAhci:
+        case StorageControllerType_LsiLogicSas:
+            *aEnabled = false;
+            break;
+        case StorageControllerType_PIIX3:
+        case StorageControllerType_PIIX4:
+        case StorageControllerType_ICH6:
+        case StorageControllerType_I82078:
+            *aEnabled = true;
+            break;
+        default:
+            AssertMsgFailed(("Invalid controller type %d\n", aControllerType));
+    }
+    return S_OK;
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder)(BSTR *aDefaultMachineFolder)
 {
     CheckComArgOutPointerValid(aDefaultMachineFolder);
