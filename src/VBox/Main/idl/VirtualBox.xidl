@@ -7172,7 +7172,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="07c3ffd8-8f59-49cc-b608-53a332e85cc3"
+     uuid="ee9e41c6-8fbe-490b-8602-6272507ed98b"
      wsmap="managed"
      >
     <desc>
@@ -7527,6 +7527,19 @@
 
       <param name="deviceTypes" type="DeviceType" safearray="yes" dir="return">
         <desc>The list of all supported device types for the given storage bus.</desc>
+      </param>
+    </method>
+
+    <method name="getDefaultIoCacheSettingForStorageController">
+      <desc>Returns the default I/O cache setting for the
+        given storage controller</desc>
+
+      <param name="controllerType" type="StorageControllerType" dir="in">
+        <desc>The storage controller to the setting for.</desc>
+      </param>
+
+      <param name="enabled" type="boolean" dir="return">
+        <desc>Returned flag indicating the default value</desc>
       </param>
     </method>
   </interface>
