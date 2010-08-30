@@ -1007,6 +1007,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
                         }
 
                         PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_WRITE_MONITORED);
+                        pVM->pgm.s.cMonitoredPages++;
                         break;
 
                     case PGM_PAGE_STATE_SHARED:
