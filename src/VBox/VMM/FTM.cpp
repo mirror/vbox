@@ -937,7 +937,7 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
     int rc = VINF_SUCCESS;
 
     VMSTATE enmVMState = VMR3GetState(pVM);
-    AssertMsgReturn(enmVMState == VMSTATE_POWERING_ON,
+    AssertMsgReturn(enmVMState == VMSTATE_CREATED,
                     ("%s\n", VMR3GetStateName(enmVMState)),
                     VERR_INTERNAL_ERROR_4);
     AssertReturn(pszAddress, VERR_INVALID_PARAMETER);
@@ -958,7 +958,7 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
             return rc;
 
         rc = RTThreadCreate(NULL, ftmR3MasterThread, pVM,
-                            0, RTTHREADTYPE_IO /* higher than normal priority */, 0, "ftmR3MasterThread");
+                            0, RTTHREADTYPE_IO /* higher than normal priority */, 0, "ftmMaster");
         if (RT_FAILURE(rc))
             return rc;
 
