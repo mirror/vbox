@@ -3138,6 +3138,19 @@ DECLINLINE(bool) ohciIsEdReady(PCOHCIED pEd)
 
 
 /**
+ * Checks if an endpoint has TDs queued (not necessarily ready to have them processed).
+ *
+ * @returns true if endpoint may have TDs queued.
+ * @param   pEd     The endpoint data.
+ */
+DECLINLINE(bool) ohciIsEdPresent(PCOHCIED pEd)
+{
+    return (pEd->HeadP & ED_PTR_MASK) != (pEd->TailP & ED_PTR_MASK)
+         && !(pEd->HeadP & ED_HEAD_HALTED);
+}
+
+
+/**
  * Services the bulk list.
  *
  * On the bulk list we must reassemble URBs from multiple TDs using heuristics
@@ -3261,7 +3274,7 @@ static void ohciUndoBulkList(POHCI pOhci)
         OHCIED Ed;
         ohciReadEd(pOhci, EdAddr, &Ed);
         Assert(!(Ed.hwinfo & ED_HWINFO_ISO)); /* the guest is screwing us */
-        if (ohciIsEdReady(&Ed))
+        if (ohciIsEdPresent(&Ed))
         {
             uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
             if (ohciIsTdInFlight(pOhci, TdAddr))
