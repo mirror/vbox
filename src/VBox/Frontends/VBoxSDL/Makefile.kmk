@@ -50,15 +50,6 @@ VBoxSDL_SOURCES    = \
 	Helper.cpp
 VBoxSDL_SOURCES.darwin = \
 	VBoxSDLMain-darwin.m
-ifndef VBOX_OSE
- VBoxSDL_SOURCES.win = \
-	win32/WinUI.cpp \
-	win32/TitlebarButtons.cpp \
-	win32/VBoxSDL.rc
-win32/VBoxSDL.rc_INCS = $(PATH_VBoxSDL)
-win32/VBoxSDL.rc_DEPS = $(PATH_VBoxSDL)/VBoxSDL-icon.rc
-win32/VBoxSDL.rc_CLEAN = $(PATH_VBoxSDL)/VBoxSDL-icon.rc
-endif
 
 VBoxSDL_DEFS       =
 ifdef VBOX_WITH_SDL13
