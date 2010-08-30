@@ -136,15 +136,27 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
 VMMR3DECL(int) FTMR3Term(PVM pVM)
 {
     if (pVM->ftm.s.master.hShutdownEvent != NIL_RTSEMEVENT)
+    {
         RTSemEventDestroy(pVM->ftm.s.master.hShutdownEvent);
+        pVM->ftm.s.master.hShutdownEvent = NIL_RTSEMEVENT;
+    }
     if (pVM->ftm.s.hSocket != NIL_RTSOCKET)
+    {
         RTTcpClientClose(pVM->ftm.s.hSocket);
+        pVM->ftm.s.hSocket = NIL_RTSOCKET;
+    }
     if (pVM->ftm.s.standby.hServer)
+    {
         RTTcpServerDestroy(pVM->ftm.s.standby.hServer);
+        pVM->ftm.s.standby.hServer = NULL;
+    }
     if (pVM->ftm.s.pszAddress)
         RTMemFree(pVM->ftm.s.pszAddress);
     if (pVM->ftm.s.pszPassword)
         RTMemFree(pVM->ftm.s.pszPassword);
+
+    pVM->ftm.s.pszAddress  = NULL;
+    pVM->ftm.s.pszPassword = NULL;
 
     PDMR3CritSectDelete(&pVM->ftm.s.CritSect);
     return VINF_SUCCESS;
@@ -986,8 +998,13 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
         rc = RTTcpServerListen(pVM->ftm.s.standby.hServer, ftmR3StandbyServeConnection, pVM);
         /** @todo deal with the exit code to check if we should activate this standby VM. */
 
-        RTTcpServerDestroy(pVM->ftm.s.standby.hServer);
-        pVM->ftm.s.standby.hServer = NULL;
+        if (pVM->ftm.s.standby.hServer)
+        {
+            RTTcpServerDestroy(pVM->ftm.s.standby.hServer);
+            pVM->ftm.s.standby.hServer = NULL;
+        }
+        if (rc == VERR_TCP_SERVER_SHUTDOWN)
+            rc = VINF_SUCCESS;  /* ignore this error; the standby process was cancelled. */
     }
     return rc;
 }
