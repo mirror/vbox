@@ -3509,7 +3509,7 @@ static int atapiPassthroughSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort p
                 break;
             case SCSI_READ_CD:
                 iATAPILBA = ataBE2H_U32(pAhciPortTaskState->aATAPICmd + 2);
-                cSectors = ataBE2H_U24(pAhciPortTaskState->aATAPICmd + 6) / pAhciPortTaskState->cbATAPISector;
+                cSectors = ataBE2H_U24(pAhciPortTaskState->aATAPICmd + 6);
                 break;
             case SCSI_READ_CD_MSF:
                 iATAPILBA = ataMSF2LBA(pAhciPortTaskState->aATAPICmd + 3);
@@ -4196,7 +4196,7 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIPORTTASKSTAT
             goto sendcmd;
         case SCSI_READ_CD:
             pAhciPortTaskState->cbATAPISector = 2048; /**< @todo this size is not always correct */
-            cbTransfer = ataBE2H_U24(pbPacket + 6) / pAhciPortTaskState->cbATAPISector * pAhciPortTaskState->cbATAPISector;
+            cbTransfer = ataBE2H_U24(pbPacket + 6) * pAhciPortTaskState->cbATAPISector;
             enmTxDir = AHCITXDIR_READ;
             goto sendcmd;
         case SCSI_READ_CD_MSF:

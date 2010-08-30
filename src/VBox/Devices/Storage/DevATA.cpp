@@ -1934,7 +1934,7 @@ static bool atapiPassthroughSS(ATADevState *s)
                 break;
             case SCSI_READ_CD:
                 iATAPILBA = ataBE2H_U32(s->aATAPICmd + 2);
-                cSectors = ataBE2H_U24(s->aATAPICmd + 6) / s->cbATAPISector;
+                cSectors = ataBE2H_U24(s->aATAPICmd + 6);
                 break;
             case SCSI_READ_CD_MSF:
                 iATAPILBA = ataMSF2LBA(s->aATAPICmd + 3);
@@ -3189,7 +3189,7 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             goto sendcmd;
         case SCSI_READ_CD:
             s->cbATAPISector = 2048; /**< @todo this size is not always correct */
-            cbTransfer = ataBE2H_U24(pbPacket + 6) / s->cbATAPISector * s->cbATAPISector;
+            cbTransfer = ataBE2H_U24(pbPacket + 6) * s->cbATAPISector;
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_CD_MSF:
