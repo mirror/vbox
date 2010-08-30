@@ -362,7 +362,7 @@ int handleModifyHardDisk(HandlerArg *a)
     MediumType_T DiskType;
     bool AutoReset = false;
     bool fModifyDiskType = false, fModifyAutoReset = false, fModifyCompact = false;
-    bool fModifyResize = true;
+    bool fModifyResize = false;
     uint64_t resizeMB = 0;
     const char *FilenameOrUuid = NULL;
 
