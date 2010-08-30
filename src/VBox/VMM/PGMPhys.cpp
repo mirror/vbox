@@ -996,7 +996,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
                      */
                     switch (PGM_PAGE_GET_STATE(pPage))
                     {
-                    case PGM_PAGE_STATE_ALLOCATED:                    
+                    case PGM_PAGE_STATE_ALLOCATED:
                         /** @todo Optimize this: Don't always re-enable write
                             * monitoring if the page is known to be very busy. */
                         if (PGM_PAGE_IS_WRITTEN_TO(pPage))
@@ -1625,7 +1625,8 @@ int pgmR3PhysRamReset(PVM pVM)
                         break;
 
                     case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
-                        pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                        pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT),
+                                                           true /*fDoAccounting*/);
                         break;
 
                     case PGMPAGETYPE_MMIO2:
@@ -1675,7 +1676,8 @@ int pgmR3PhysRamReset(PVM pVM)
                         break;
 
                     case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
-                        pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                        pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT),
+                                                           true /*fDoAccounting*/);
                         break;
 
                     case PGMPAGETYPE_MMIO2:
@@ -3333,7 +3335,8 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
 
                     /* flush references to the page. */
                     PPGMPAGE pRamPage = pgmPhysGetPage(&pVM->pgm.s, pRom->GCPhys + (iPage << PAGE_SHIFT));
-                    int rc2 = pgmPoolTrackFlushGCPhys(pVM, pRom->GCPhys + (iPage << PAGE_SHIFT), pRamPage, &fFlushTLB);
+                    int rc2 = pgmPoolTrackUpdateGCPhys(pVM, pRom->GCPhys + (iPage << PAGE_SHIFT), pRamPage,
+                                                       true /*fFlushPTEs*/, &fFlushTLB);
                     if (rc2 != VINF_SUCCESS && (rc == VINF_SUCCESS || RT_FAILURE(rc2)))
                         rc = rc2;
 
@@ -4030,7 +4033,7 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
         return VINF_SUCCESS;
 
     const uint32_t idPage = PGM_PAGE_GET_PAGEID(pPage);
-    Log3(("pgmPhysFreePage: idPage=%#x HCPhys=%RGp pPage=%R[pgmpage]\n", idPage, pPage));
+    Log3(("pgmPhysFreePage: idPage=%#x GCPhys=%RGp pPage=%R[pgmpage]\n", idPage, GCPhys, pPage));
     if (RT_UNLIKELY(    idPage == NIL_GMM_PAGEID
                     ||  idPage > GMM_PAGEID_LAST
                     ||  PGM_PAGE_GET_CHUNKID(pPage) == NIL_GMM_CHUNKID))

@@ -339,35 +339,58 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGM
     PPGMPHYSHANDLER pHandler = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
     if (RT_LIKELY(pHandler && pHandler->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE))
     {
-        if (pHandler->CTX_SUFF(pfnHandler))
+        /*
+         * If the handle has aliases page or pages that have been temporarily
+         * disabled, we'll have to take a detour to make sure we resync them
+         * to avoid lots of unnecessary exits.
+         */
+        PPGMPAGE pPage;
+        if (   (   pHandler->cAliasedPages
+                || pHandler->cTmpOffPages)
+            && (   (pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysFault)) == NULL
+                || PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
+           )
         {
-            CTX_MID(PFNPGM,PHYSHANDLER) pfnHandler = pHandler->CTX_SUFF(pfnHandler);
-            void                       *pvUser     = pHandler->CTX_SUFF(pvUser);
-            STAM_PROFILE_START(&pHandler->Stat, h);
+            Log(("PGMR0Trap0eHandlerNPMisconfig: Resyncing aliases / tmp-off page at %RGp (uErr=%#x) %R[pgmpage]\n", GCPhysFault, uErr, pPage));
+            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfgSyncPage);
+            rc = pgmShwSyncNestedPageLocked(pVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
             pgmUnlock(pVM);
-
-            Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pfnHandler, uErr, GCPhysFault, pvUser));
-            rc = pfnHandler(pVM, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame, GCPhysFault, GCPhysFault, pvUser);
-
-#ifdef VBOX_WITH_STATISTICS
-            pgmLock(pVM);
-            pHandler = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
-            if (pHandler)
-                STAM_PROFILE_STOP(&pHandler->Stat, h);
-            pgmUnlock(pVM);
-#endif
         }
         else
         {
-            pgmUnlock(pVM);
-            Log(("PGMR0Trap0eHandlerNPMisconfig: %RGp (uErr=%#x) -> R3\n", GCPhysFault, uErr));
-            rc = VINF_EM_RAW_EMULATE_INSTR;
+            if (pHandler->CTX_SUFF(pfnHandler))
+            {
+                CTX_MID(PFNPGM,PHYSHANDLER) pfnHandler = pHandler->CTX_SUFF(pfnHandler);
+                void                       *pvUser     = pHandler->CTX_SUFF(pvUser);
+                STAM_PROFILE_START(&pHandler->Stat, h);
+                pgmUnlock(pVM);
+
+                Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pfnHandler, uErr, GCPhysFault, pvUser));
+                rc = pfnHandler(pVM, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame, GCPhysFault, GCPhysFault, pvUser);
+
+#ifdef VBOX_WITH_STATISTICS
+                pgmLock(pVM);
+                pHandler = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
+                if (pHandler)
+                    STAM_PROFILE_STOP(&pHandler->Stat, h);
+                pgmUnlock(pVM);
+#endif
+            }
+            else
+            {
+                pgmUnlock(pVM);
+                Log(("PGMR0Trap0eHandlerNPMisconfig: %RGp (uErr=%#x) -> R3\n", GCPhysFault, uErr));
+                rc = VINF_EM_RAW_EMULATE_INSTR;
+            }
         }
     }
     else
     {
         /*
          * Must be out of sync, so do a SyncPage and restart the instruction.
+         *
+         * ASSUMES that ALL handlers are page aligned and covers whole pages
+         * (assumption asserted in PGMHandlerPhysicalRegisterEx).
          */
         Log(("PGMR0Trap0eHandlerNPMisconfig: Out of sync page at %RGp (uErr=%#x)\n", GCPhysFault, uErr));
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfgSyncPage);
