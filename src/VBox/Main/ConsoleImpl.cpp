@@ -6264,6 +6264,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 case MachineState_Restoring:
                 case MachineState_Stopping:
                 case MachineState_TeleportingIn:
+                case MachineState_FaultTolerantSyncing:
                     /* The worker thread handles the transition. */
                     break;
 
