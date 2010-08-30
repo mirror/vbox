@@ -7643,6 +7643,28 @@
 
   </interface>
 
+  <enum
+    name="AdditionsRunLevelType"
+    uuid="a25417ee-a9dd-4f5b-b0dc-377860087754"
+  >
+    <desc>
+      Guest Additions run level type.
+    </desc>
+
+    <const name="None"     value="0">
+      <desc>Guest Additions are not loaded.</desc>
+    </const>
+    <const name="System"   value="1">
+        <desc>Guest drivers are loaded.</desc>
+    </const>
+    <const name="Userland" value="2">
+        <desc>Common components (such as application services) are loaded.</desc>
+    </const>
+    <const name="Desktop"  value="3">
+        <desc>Per-user desktop components are loaded.</desc>
+    </const>
+  </enum>
+
   <interface
      name="IGuest" extends="$unknown"
      uuid="cd80e5b8-faef-4be3-8d0e-d68fee10708d"
@@ -7672,7 +7694,7 @@
       </desc>
     </attribute>
 
-    <attribute name="additionsRunLevel" type="unsigned long" readonly="yes">
+    <attribute name="additionsRunLevel" type="AdditionsRunLevelType" readonly="yes">
       <desc>
         Current run level of the Guest Additions.
       </desc>
@@ -7764,7 +7786,7 @@
         </result>
 
       </desc>
-      <param name="level" type="unsigned long" dir="in">
+      <param name="level" type="AdditionsRunLevelType" dir="in">
         <desc>Status level to check</desc>
       </param>
       <param name="active" type="boolean" dir="return">

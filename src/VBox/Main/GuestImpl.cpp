@@ -159,7 +159,7 @@ STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMGETTER(AdditionsRunLevel) (ULONG *aRunLevel)
+STDMETHODIMP Guest::COMGETTER(AdditionsRunLevel) (AdditionsRunLevelType_T *aRunLevel)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -183,7 +183,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
     HRESULT hr = S_OK;
     if (   mData.mAdditionsVersion.isEmpty()
         /* Only try alternative way if GA are active! */
-        && mData.mAdditionsRunLevel > VBoxGuestAdditionsRunLevel_None)
+        && mData.mAdditionsRunLevel > AdditionsRunLevelType_None)
     {
         /*
          * If we got back an empty string from GetAdditionsVersion() we either
@@ -428,7 +428,7 @@ HRESULT Guest::setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
     return S_OK;
 }
 
-STDMETHODIMP Guest::GetAdditionsStatus(ULONG aLevel, BOOL *aActive)
+STDMETHODIMP Guest::GetAdditionsStatus(AdditionsRunLevelType_T aLevel, BOOL *aActive)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -438,16 +438,16 @@ STDMETHODIMP Guest::GetAdditionsStatus(ULONG aLevel, BOOL *aActive)
     HRESULT rc = S_OK;
     switch (aLevel)
     {
-        case 0: /* System */
-            *aActive = (mData.mAdditionsRunLevel > VBoxGuestAdditionsRunLevel_None);
+        case AdditionsRunLevelType_System:
+            *aActive = (mData.mAdditionsRunLevel > AdditionsRunLevelType_None);
             break;
 
-        case 1: /* Userland */
-            *aActive = (mData.mAdditionsRunLevel >= VBoxGuestAdditionsRunLevel_Userland);
+        case AdditionsRunLevelType_Userland:
+            *aActive = (mData.mAdditionsRunLevel >= AdditionsRunLevelType_Userland);
             break;
 
-        case 2: /* Desktop */
-            *aActive = (mData.mAdditionsRunLevel >= VBoxGuestAdditionsRunLevel_Desktop);
+        case AdditionsRunLevelType_Desktop:
+            *aActive = (mData.mAdditionsRunLevel >= AdditionsRunLevelType_Desktop);
             break;
 
         default:
@@ -1519,8 +1519,8 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
     if (mData.mAdditionsVersion.isEmpty())
     {
         mData.mAdditionsRunLevel = aInterfaceVersion.isEmpty()
-                                 ? VBoxGuestAdditionsRunLevel_None
-                                 : VBoxGuestAdditionsRunLevel_System;
+                                 ? AdditionsRunLevelType_None
+                                 : AdditionsRunLevelType_System;
     }
 
     /*
@@ -1528,7 +1528,7 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
      * so enable it by default.  Newer Additions will not enable this here
      * and use the setSupportedFeatures function instead.
      */
-    mData.mSupportsGraphics = mData.mAdditionsRunLevel > VBoxGuestAdditionsRunLevel_None;
+    mData.mSupportsGraphics = mData.mAdditionsRunLevel > AdditionsRunLevelType_None;
 
     /*
      * Note! There is a race going on between setting mAdditionsRunLevel and
@@ -1588,19 +1588,19 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
            )
        )
     {
-        mData.mAdditionsRunLevel = VBoxGuestAdditionsRunLevel_None;
+        mData.mAdditionsRunLevel = AdditionsRunLevelType_None;
     }
     else if (uCurFacility >= VBoxGuestStatusFacility_VBoxTray)
     {
-        mData.mAdditionsRunLevel = VBoxGuestAdditionsRunLevel_Desktop;
+        mData.mAdditionsRunLevel = AdditionsRunLevelType_Desktop;
     }
     else if (uCurFacility >= VBoxGuestStatusFacility_VBoxService)
     {
-        mData.mAdditionsRunLevel = VBoxGuestAdditionsRunLevel_Userland;
+        mData.mAdditionsRunLevel = AdditionsRunLevelType_Userland;
     }
     else if (uCurFacility >= VBoxGuestStatusFacility_VBoxGuestDriver)
     {
-        mData.mAdditionsRunLevel = VBoxGuestAdditionsRunLevel_System;
+        mData.mAdditionsRunLevel = AdditionsRunLevelType_System;
     }
     else /* Should never happen! */
         AssertMsgFailed(("Invalid facility status/run level detected! uCurFacility=%ld\n", uCurFacility));
