@@ -1221,6 +1221,7 @@ hotplugInotifyImpl::hotplugInotifyImpl(void) :
     /* Excercise the code path (term() on a not-fully-initialised object) as
      * well as we can.  On an uninitialised object this method is a sematic
      * no-op. */
+    mWatches.mhInotify = -1; /* term will access this variable */
     term();
     /* For now this probing method should only be used if nothing else is
      * available */
