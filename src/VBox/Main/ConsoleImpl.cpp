@@ -6272,6 +6272,10 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 case MachineState_Running:
                     that->setMachineState(MachineState_Paused);
                     break;
+
+                case MachineState_Paused:
+                    /* Nothing to do. */
+                    break;
             }
             break;
         }
