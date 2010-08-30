@@ -1976,7 +1976,7 @@ static bool atapiPassthroughSS(ATADevState *s)
                     break;
                 case SCSI_READ_CD:
                     ataH2BE_U32(aATAPICmd + 2, iATAPILBA);
-                    ataH2BE_U24(aATAPICmd + 6, cbCurrTX);
+                    ataH2BE_U24(aATAPICmd + 6, cReqSectors);
                     break;
                 case SCSI_READ_CD_MSF:
                     ataLBA2MSF(aATAPICmd + 3, iATAPILBA);
