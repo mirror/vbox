@@ -689,7 +689,9 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
                 &&  !strcmp(szLine, g_szWelcome))
             {
                 /* password */
-                rc = RTTcpWrite(pVM->ftm.s.hSocket, pVM->ftm.s.pszPassword, strlen(pVM->ftm.s.pszPassword));
+                if (pVM->ftm.s.pszPassword)
+                    rc = RTTcpWrite(pVM->ftm.s.hSocket, pVM->ftm.s.pszPassword, strlen(pVM->ftm.s.pszPassword));
+
                 if (RT_SUCCESS(rc))
                 {
                     /* ACK */
@@ -792,22 +794,25 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
      * Password.
      */
     const char *pszPassword = pVM->ftm.s.pszPassword;
-    unsigned    off = 0;
-    while (pszPassword[off])
+    if (pszPassword)
     {
-        char ch;
-        rc = RTTcpRead(Sock, &ch, sizeof(ch), NULL);
-        if (    RT_FAILURE(rc)
-            ||  pszPassword[off] != ch)
+        unsigned    off = 0;
+        while (pszPassword[off])
         {
-            if (RT_FAILURE(rc))
-                LogRel(("FTSync: Password read failure (off=%u): %Rrc\n", off, rc));
-            else
-                LogRel(("FTSync: Invalid password (off=%u)\n", off));
-            ftmR3TcpWriteNACK(pVM, VERR_AUTHENTICATION_FAILURE);
-            return VINF_SUCCESS;
+            char ch;
+            rc = RTTcpRead(Sock, &ch, sizeof(ch), NULL);
+            if (    RT_FAILURE(rc)
+                ||  pszPassword[off] != ch)
+            {
+                if (RT_FAILURE(rc))
+                    LogRel(("FTSync: Password read failure (off=%u): %Rrc\n", off, rc));
+                else
+                    LogRel(("FTSync: Invalid password (off=%u)\n", off));
+                ftmR3TcpWriteNACK(pVM, VERR_AUTHENTICATION_FAILURE);
+                return VINF_SUCCESS;
+            }
+            off++;
         }
-        off++;
     }
     rc = ftmR3TcpWriteACK(pVM);
     if (RT_FAILURE(rc))
