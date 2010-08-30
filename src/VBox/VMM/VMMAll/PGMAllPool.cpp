@@ -3774,7 +3774,17 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
     PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
 
-    /* special common case. */
+    /*
+     * Special common cases.
+     */
+    if (paPhysExts[iPhysExt].aidx[1] == NIL_PGMPOOL_IDX)
+    {
+        paPhysExts[iPhysExt].aidx[1] = iShwPT;
+        paPhysExts[iPhysExt].apte[1] = iPte;
+        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliasedMany);
+        LogFlow(("pgmPoolTrackPhysExtInsert: %d:{,%d pte %d,}\n", iPhysExt, iShwPT, iPte));
+        return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
+    }
     if (paPhysExts[iPhysExt].aidx[2] == NIL_PGMPOOL_IDX)
     {
         paPhysExts[iPhysExt].aidx[2] = iShwPT;
@@ -3783,8 +3793,11 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
         LogFlow(("pgmPoolTrackPhysExtInsert: %d:{,,%d pte %d}\n", iPhysExt, iShwPT, iPte));
         return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
     }
+    AssertCompile(RT_ELEMENTS(paPhysExts[iPhysExt].aidx) == 3);
 
-    /* general treatment. */
+    /*
+     * General treatment.
+     */
     const uint16_t iPhysExtStart = iPhysExt;
     unsigned cMax = 15;
     for (;;)
@@ -3806,9 +3819,16 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
             LogFlow(("pgmPoolTrackPhysExtInsert: overflow (1) iShwPT=%d\n", iShwPT));
             return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED);
         }
+
+        /* advance */
+        iPhysExt = paPhysExts[iPhysExt].iNext;
+        if (iPhysExt == NIL_PGMPOOL_IDX)
+            break;
     }
 
-    /* add another extent to the list. */
+    /*
+     * Add another extent to the list.
+     */
     PPGMPOOLPHYSEXT pNew = pgmPoolTrackPhysExtAlloc(pVM, &iPhysExt);
     if (!pNew)
     {
