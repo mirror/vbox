@@ -64,6 +64,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
     trayIconEnabled = false;
     dockPreviewEnabled = true;
     presentationModeEnabled = false;
+    hostScreenSaverDisabled = false;
 }
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
@@ -77,6 +78,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &th
     trayIconEnabled = that.trayIconEnabled;
     dockPreviewEnabled = that.dockPreviewEnabled;
     presentationModeEnabled = that.presentationModeEnabled;
+    hostScreenSaverDisabled = that.hostScreenSaverDisabled;
 }
 
 VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
@@ -94,7 +96,8 @@ bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) con
          remapScancodes == that.remapScancodes &&
          trayIconEnabled == that.trayIconEnabled &&
          dockPreviewEnabled == that.dockPreviewEnabled &&
-         presentationModeEnabled == that.presentationModeEnabled
+         presentationModeEnabled == that.presentationModeEnabled &&
+         hostScreenSaverDisabled == that.hostScreenSaverDisabled
         );
 }
 
@@ -125,8 +128,9 @@ gPropertyMap[] =
     { "GUI/TrayIcon/Enabled",                      "trayIconEnabled",         "true|false", true },
 #ifdef Q_WS_MAC
     { VBoxDefs::GUI_RealtimeDockIconUpdateEnabled, "dockPreviewEnabled",      "true|false", true },
-    { VBoxDefs::GUI_PresentationModeEnabled,       "presentationModeEnabled", "true|false", true }
+    { VBoxDefs::GUI_PresentationModeEnabled,       "presentationModeEnabled", "true|false", true },
 #endif /* Q_WS_MAC */
+    { "GUI/HostScreenSaverDisabled",                "hostScreenSaverDisabled",     "true|false", true }
 };
 
 void VBoxGlobalSettings::setHostKey (int key)

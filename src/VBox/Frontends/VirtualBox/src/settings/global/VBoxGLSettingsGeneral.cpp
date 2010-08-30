@@ -17,10 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Global includes */
+#include <QDir>
+
+/* Local includes */
 #include "VBoxGLSettingsGeneral.h"
 #include "VBoxGlobal.h"
-
-#include <QDir>
 
 VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 {
@@ -29,9 +31,20 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 
 #ifndef VBOX_GUI_WITH_SYSTRAY
     mCbCheckTrayIcon->hide();
-#endif /* VBOX_GUI_WITH_SYSTRAY */
-    if (   mCbCheckTrayIcon->isHidden()
-        && mCbCheckPresentationMode->isHidden())
+    mWtSpacer1->hide();
+#endif /* !VBOX_GUI_WITH_SYSTRAY */
+#ifndef Q_WS_MAC
+    mCbCheckPresentationMode->hide();
+    mWtSpacer2->hide();
+#endif /* !Q_WS_MAC */
+#ifndef Q_WS_WIN
+    mCbDisableHostScreenSaver->hide();
+    mWtSpacer3->hide();
+#endif /* !Q_WS_WIN */
+
+    if (mCbCheckTrayIcon->isHidden() &&
+        mCbCheckPresentationMode->isHidden() &&
+        mCbDisableHostScreenSaver->isHidden())
         mLnSeparator2->hide();
 
     mPsHardDisk->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
@@ -53,6 +66,7 @@ void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
 #ifdef Q_WS_MAC
     mCbCheckPresentationMode->setChecked (aGs.presentationModeEnabled());
 #endif /* Q_WS_MAC */
+    mCbDisableHostScreenSaver->setChecked (aGs.hostScreenSaverDisabled());
 }
 
 void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
@@ -68,14 +82,7 @@ void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
 #ifdef Q_WS_MAC
     aGs.setPresentationModeEnabled (mCbCheckPresentationMode->isChecked());
 #endif /* Q_WS_MAC */
-}
-
-void VBoxGLSettingsGeneral::setOrderAfter (QWidget *aWidget)
-{
-    setTabOrder (aWidget, mPsHardDisk);
-    setTabOrder (mPsHardDisk, mPsMach);
-    setTabOrder (mPsMach, mPsVRDP);
-    setTabOrder (mPsVRDP, mCbCheckTrayIcon);
+    aGs.setHostScreenSaverDisabled (mCbDisableHostScreenSaver->isChecked());
 }
 
 void VBoxGLSettingsGeneral::retranslateUi()

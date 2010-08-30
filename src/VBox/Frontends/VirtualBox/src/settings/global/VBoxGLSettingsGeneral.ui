@@ -110,8 +110,8 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="0" rowspan="2">
-    <widget class="QWidget" name="mWtSpacer">
+   <item row="5" column="0">
+    <widget class="QWidget" name="mWtSpacer1">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
        <horstretch>0</horstretch>
@@ -136,10 +136,46 @@
      </property>
     </widget>
    </item>
+   <item row="6" column="0">
+    <widget class="QWidget" name="mWtSpacer2">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumWidth">
+      <number>34</number>
+     </property>
+    </widget>
+   </item>
    <item row="6" column="1" colspan="2">
     <widget class="QCheckBox" name="mCbCheckPresentationMode">
      <property name="text">
       <string>&amp;Auto show Dock and Menubar in fullscreen</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QWidget" name="mWtSpacer3">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumWidth">
+      <number>34</number>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1" colspan="2">
+    <widget class="QCheckBox" name="mCbDisableHostScreenSaver">
+     <property name="whatsThis">
+      <string>When checked, the host screen saver will be disabled whenever a virtual machine is running.</string>
+     </property>
+     <property name="text">
+      <string>Disable Host &amp;ScreenSaver</string>
      </property>
     </widget>
    </item>

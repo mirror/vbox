@@ -38,8 +38,6 @@ protected:
     void putBackTo (CSystemProperties &aProps,
                     VBoxGlobalSettings &aGs);
 
-    void setOrderAfter (QWidget *aWidget);
-
     void retranslateUi();
 };
 
