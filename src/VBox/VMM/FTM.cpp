@@ -689,9 +689,8 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
                     }
                 }
             }
-            rc = RTTcpClientClose(pVM->ftm.s.hSocket);
-            AssertRC(rc);
-            pVM->ftm.s.hSocket = NIL_RTSOCKET;
+            /* Failed, so don't bother anymore. */
+            return VINF_SUCCESS;
         }
         rc = RTSemEventWait(pVM->ftm.s.master.hShutdownEvent, 1000 /* 1 second */);
         if (rc != VERR_TIMEOUT)
