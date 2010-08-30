@@ -843,7 +843,7 @@ void pgmR3PoolWriteProtectPages(PVM pVM)
                 PPGMSHWPTPAE    pPTPae;
                 PEPTPT          pPTEpt;
             } uShw;
-            uShw.pv = NULL;
+            uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
 
             switch (pPage->enmKind)
             {
