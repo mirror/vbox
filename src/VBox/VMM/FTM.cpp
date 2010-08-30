@@ -135,16 +135,16 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
  */
 VMMR3DECL(int) FTMR3Term(PVM pVM)
 {
-    if (pVM->ftm.s.pszAddress)
-        RTMemFree(pVM->ftm.s.pszAddress);
-    if (pVM->ftm.s.pszPassword)
-        RTMemFree(pVM->ftm.s.pszPassword);
+    if (pVM->ftm.s.master.hShutdownEvent != NIL_RTSEMEVENT)
+        RTSemEventDestroy(pVM->ftm.s.master.hShutdownEvent);
     if (pVM->ftm.s.hSocket != NIL_RTSOCKET)
         RTTcpClientClose(pVM->ftm.s.hSocket);
     if (pVM->ftm.s.standby.hServer)
         RTTcpServerDestroy(pVM->ftm.s.standby.hServer);
-    if (pVM->ftm.s.master.hShutdownEvent != NIL_RTSEMEVENT)
-        RTSemEventDestroy(pVM->ftm.s.master.hShutdownEvent);
+    if (pVM->ftm.s.pszAddress)
+        RTMemFree(pVM->ftm.s.pszAddress);
+    if (pVM->ftm.s.pszPassword)
+        RTMemFree(pVM->ftm.s.pszPassword);
 
     PDMR3CritSectDelete(&pVM->ftm.s.CritSect);
     return VINF_SUCCESS;
@@ -659,9 +659,12 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
         /*
          * Try connect to the standby machine.
          */
+        Log(("ftmR3MasterThread: client connect to %s %d\n", pVM->ftm.s.pszAddress, pVM->ftm.s.uPort));
         rc = RTTcpClientConnect(pVM->ftm.s.pszAddress, pVM->ftm.s.uPort, &pVM->ftm.s.hSocket);
         if (RT_SUCCESS(rc))
         {
+            Log(("ftmR3MasterThread: CONNECTED\n"));
+
             /* Disable Nagle. */
             rc = RTTcpSetSendCoalescing(pVM->ftm.s.hSocket, false /*fEnable*/);
             AssertRC(rc);
