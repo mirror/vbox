@@ -1773,7 +1773,7 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOp
     *pfSuspended = false;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_OTHER_THREAD(pVM);
-    AssertPtrReturn(pszFilename || pStreamOps, VERR_INVALID_POINTER);
+    AssertReturn(VALID_PTR(pszFilename) || pStreamOps, VERR_INVALID_POINTER);
     AssertReturn(pStreamOps || *pszFilename, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfnProgress, VERR_INVALID_POINTER);
 
