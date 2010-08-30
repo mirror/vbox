@@ -98,6 +98,11 @@
 #define ATA_EVENT_STATUS_MEDIA_CHANGED          3    /**< medium was removed + new medium was inserted */
 #define ATA_EVENT_STATUS_MEDIA_EJECT_REQUESTED  4    /**< medium eject requested (eject button pressed) */
 
+/* Media track type */
+#define ATA_MEDIA_TYPE_UNKNOWN                  0    /**< unknown CD type */
+#define ATA_MEDIA_TYPE_DATA                     1    /**< Data CD */
+#define ATA_MEDIA_TYPE_CDDA                     2    /**< CD-DA  (audio) CD type */
+
 /**
  * Length of the configurable VPD data (without termination)
  */
@@ -206,7 +211,8 @@ typedef struct ATADevState
     /** The same for GET_EVENT_STATUS for mechanism */
     volatile uint32_t MediaEventStatus;
 
-    uint32_t Alignment0;
+    /** Media type if known. */
+    volatile uint32_t MediaTrackType;
 
     /** The status LED state for this drive. */
     PDMLED Led;
@@ -1877,6 +1883,13 @@ static bool atapiReadSS(ATADevState *s)
     return false;
 }
 
+/**
+ * Sets the given media track type.
+ */
+static uint32_t ataMediumTypeSet(ATADevState *s, uint32_t MediaTrackType)
+{
+    return ASMAtomicXchgU32(&s->MediaTrackType, MediaTrackType);
+}
 
 static bool atapiPassthroughSS(ATADevState *s)
 {
@@ -2033,6 +2046,35 @@ static bool atapiPassthroughSS(ATADevState *s)
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 8, "VBOX", 8);
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 16, "CD-ROM", 16);
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 32, "1.0", 4);
+            }
+            else if (s->aATAPICmd[0] == SCSI_READ_TOC_PMA_ATIP)
+            {
+                /* Set the media type if we can detect it. */
+                uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
+
+                /** @todo: Implemented only for formatted TOC now. */
+                if (   (s->aATAPICmd[1] & 0xf) == 0
+                    && cbTransfer >= 6)
+                {
+                    uint32_t NewMediaType;
+                    uint32_t OldMediaType;
+
+                    if (pbBuf[5] & 0x4)
+                        NewMediaType = ATA_MEDIA_TYPE_DATA;
+                    else
+                        NewMediaType = ATA_MEDIA_TYPE_CDDA;
+
+                    OldMediaType = ataMediumTypeSet(s, NewMediaType);
+
+                    if (OldMediaType != NewMediaType)
+                        LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough, detected %s CD\n",
+                                s->iLUN,
+                                NewMediaType == ATA_MEDIA_TYPE_DATA
+                                ? "data"
+                                : "audio"));
+                }
+                else /* Play safe and set to unknown. */
+                    ataMediumTypeSet(s, ATA_MEDIA_TYPE_UNKNOWN);
             }
             if (cbTransfer)
                 Log3(("ATAPI PT data read (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
@@ -3188,10 +3230,40 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_CD:
-            s->cbATAPISector = 2048; /**< @todo this size is not always correct */
+        {
+            /* Get sector size based on the expected sector type field. */
+            switch ((pbPacket[1] >> 2) & 0x7)
+            {
+                case 0x0: /* All types. */
+                    if (ASMAtomicReadU32(&s->MediaTrackType) == ATA_MEDIA_TYPE_CDDA)
+                        s->cbATAPISector = 2352;
+                    else
+                        s->cbATAPISector = 2048; /* Might be incorrect if we couldn't determine the type. */
+                    break;
+                case 0x1: /* CD-DA */
+                    s->cbATAPISector = 2352;
+                    break;
+                case 0x2: /* Mode 1 */
+                    s->cbATAPISector = 2048;
+                    break;
+                case 0x3: /* Mode 2 formless */
+                    s->cbATAPISector = 2336;
+                    break;
+                case 0x4: /* Mode 2 form 1 */
+                    s->cbATAPISector = 2048;
+                    break;
+                case 0x5: /* Mode 2 form 2 */
+                    s->cbATAPISector = 2324;
+                    break;
+                default: /* Reserved */
+                    AssertMsgFailed(("Unknown sector type\n"));
+                    s->cbATAPISector = 0; /** @todo we should probably fail the command here already. */
+            }
+
             cbTransfer = ataBE2H_U24(pbPacket + 6) * s->cbATAPISector;
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
+        }
         case SCSI_READ_CD_MSF:
             cSectors = ataMSF2LBA(pbPacket + 6) - ataMSF2LBA(pbPacket + 3);
             if (cSectors > 32)
@@ -3434,7 +3506,6 @@ static void ataMediumInserted(ATADevState *s)
     } while (!ASMAtomicCmpXchgU32(&s->MediaEventStatus, NewStatus, OldStatus));
 }
 
-
 /**
  * Called when a media is mounted.
  *
@@ -3460,6 +3531,7 @@ static DECLCALLBACK(void) ataMountNotify(PPDMIMOUNTNOTIFY pInterface)
     if (pIf->cNotifiedMediaChange < 2)
         pIf->cNotifiedMediaChange = 2;
     ataMediumInserted(pIf);
+    ataMediumTypeSet(pIf, ATA_MEDIA_TYPE_UNKNOWN);
 }
 
 /**
@@ -3480,6 +3552,7 @@ static DECLCALLBACK(void) ataUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
      */
     pIf->cNotifiedMediaChange = 4;
     ataMediumRemoved(pIf);
+    ataMediumTypeSet(pIf, ATA_MEDIA_TYPE_UNKNOWN);
 }
 
 static void ataPacketBT(ATADevState *s)
@@ -3496,6 +3569,7 @@ static void ataResetDevice(ATADevState *s)
     s->cMultSectors = ATA_MAX_MULT_SECTORS;
     s->cNotifiedMediaChange = 0;
     ASMAtomicWriteU32(&s->MediaEventStatus, ATA_EVENT_STATUS_UNCHANGED);
+    ASMAtomicWriteU32(&s->MediaTrackType, ATA_MEDIA_TYPE_UNKNOWN);
     ataUnsetIRQ(s);
 
     s->uATARegSelect = 0x20;
