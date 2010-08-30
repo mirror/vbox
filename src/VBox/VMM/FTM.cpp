@@ -116,10 +116,16 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
     int rc = PDMR3CritSectInit(pVM, &pVM->ftm.s.CritSect, RT_SRC_POS, "FTM");
     AssertRCReturn(rc, rc);
 
-    STAM_REL_REG(pVM, &pVM->ftm.s.StatReceivedMem,               STAMTYPE_COUNTER, "/FT/Received/Mem",                   STAMUNIT_BYTES, "The amount of memory pages that was received.");
-    STAM_REL_REG(pVM, &pVM->ftm.s.StatReceivedState,             STAMTYPE_COUNTER, "/FT/Received/State",                 STAMUNIT_BYTES, "The amount of state information that was received.");
-    STAM_REL_REG(pVM, &pVM->ftm.s.StatSentMem,                   STAMTYPE_COUNTER, "/FT/Sent/Mem",                       STAMUNIT_BYTES, "The amount of memory pages that was sent.");
-    STAM_REL_REG(pVM, &pVM->ftm.s.StatSentState,                 STAMTYPE_COUNTER, "/FT/Sent/State",                     STAMUNIT_BYTES, "The amount of state information that was sent.");
+    /*
+     * Register statistics.
+     */
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatReceivedMem,               STAMTYPE_COUNTER, "/FT/Received/Mem",                  STAMUNIT_BYTES, "The amount of memory pages that was received.");
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatReceivedState,             STAMTYPE_COUNTER, "/FT/Received/State",                STAMUNIT_BYTES, "The amount of state information that was received.");
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatSentMem,                   STAMTYPE_COUNTER, "/FT/Sent/Mem",                      STAMUNIT_BYTES, "The amount of memory pages that was sent.");
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatSentState,                 STAMTYPE_COUNTER, "/FT/Sent/State",                    STAMUNIT_BYTES, "The amount of state information that was sent.");
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatDeltaVM,                   STAMTYPE_COUNTER, "/FT/Sync/DeltaVM",                  STAMUNIT_OCCURENCES, "Number of delta vm syncs.");
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatFullSync,                  STAMTYPE_COUNTER, "/FT/Sync/Full",                     STAMUNIT_OCCURENCES, "Number of full vm syncs.");
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatDeltaMem,                  STAMTYPE_COUNTER, "/FT/Sync/DeltaMem",                 STAMUNIT_OCCURENCES, "Number of delta mem syncs.");
 
     return VINF_SUCCESS;
 }
@@ -577,13 +583,25 @@ static SSMSTRMOPS const g_ftmR3TcpOps =
 };
 
 /**
+ * VMR3ReqCallWait callback
+ *
+ * @param   pVM         The VM handle.
+ *
+ */
+static DECLCALLBACK(void) ftmR3WriteProtectMemory(PVM pVM)
+{
+    int rc = PGMR3PhysWriteProtectRAM(pVM);
+    AssertRC(rc);
+}
+
+/**
  * Sync the VM state partially or fully
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  * @param   enmState    Which state to sync
  */
-static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
+static int ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
 {
     int rc;
     bool fFullSync = false;
@@ -591,7 +609,7 @@ static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
     if (enmState != FTMSYNCSTATE_DELTA_MEMORY)
     {
         rc = VMR3Suspend(pVM);
-        AssertReturnVoid(RT_SUCCESS(rc));
+        AssertRCReturn(rc, rc);
     }
 
     switch (enmState)
@@ -602,6 +620,8 @@ static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
     case FTMSYNCSTATE_DELTA_VM:
     {
         bool fSuspended = false;
+
+        STAM_REL_COUNTER_INC((fFullSync) ? &pVM->ftm.s.StatFullSync : &pVM->ftm.s.StatDeltaVM);
 
         rc = ftmR3TcpSubmitCommand(pVM, (fFullSync) ? "full-sync" : "checkpoint");
         AssertRC(rc);
@@ -618,17 +638,20 @@ static DECLCALLBACK(void) ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
 
     case FTMSYNCSTATE_DELTA_MEMORY:
         /* Nothing to do as we sync the memory in an async thread; no need to block EMT. */
+        STAM_REL_COUNTER_INC(&pVM->ftm.s.StatDeltaMem);
         break;
     }
+
     /* Write protect all memory. */
-    rc = PGMR3PhysWriteProtectRAM(pVM);
-    AssertRC(rc);
+    rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3WriteProtectMemory, 1, pVM);
+    AssertRCReturn(rc, rc);
 
     if (enmState != FTMSYNCSTATE_DELTA_MEMORY)
     {
         rc = VMR3Resume(pVM);
-        AssertRC(rc);
+        AssertRCReturn(rc, rc);
     }
+    return VINF_SUCCESS;
 }
 
 /**
@@ -724,8 +747,7 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
      * we can send changed pages later on.
      */
 
-    rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3PerformSync, 2, pVM, FTMSYNCSTATE_FULL);
-    AssertRC(rc);
+    rc = ftmR3PerformSync(pVM, FTMSYNCSTATE_FULL);
 
     for (;;)
     {
@@ -742,8 +764,7 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
             AssertRC(rc);
 
             /* sync the changed memory with the standby node. */
-            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3PerformSync, 2, pVM, FTMSYNCSTATE_DELTA_MEMORY);
-            AssertRC(rc);
+            rc = ftmR3PerformSync(pVM, FTMSYNCSTATE_DELTA_MEMORY);
 
             /* Enumerate all dirty pages and send them to the standby VM. */
             rc = PGMR3PhysEnumDirtyFTPages(pVM, ftmR3SyncDirtyPage, NULL /* pvUser */);
@@ -1044,6 +1065,8 @@ VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
  */
 VMMR3DECL(int) FTMR3SyncState(PVM pVM)
 {
+    VM_ASSERT_OTHER_THREAD(pVM);
+
     if (!pVM->fFaultTolerantMaster)
         return VINF_SUCCESS;
 
@@ -1059,8 +1082,7 @@ VMMR3DECL(int) FTMR3SyncState(PVM pVM)
     pVM->ftm.s.syncstate.fEndOfStream = false;
 
     /* Sync state + changed memory with the standby node. */
-    rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3PerformSync, 2, pVM, FTMSYNCSTATE_DELTA_VM);
-    AssertRC(rc);
+    rc = ftmR3PerformSync(pVM, FTMSYNCSTATE_DELTA_VM);
 
     PDMCritSectLeave(&pVM->ftm.s.CritSect);
     pVM->ftm.s.fCheckpointingActive = false;
