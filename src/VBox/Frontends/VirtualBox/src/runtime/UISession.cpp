@@ -602,6 +602,12 @@ void UISession::loadSessionSettings()
         strSettings = machine.GetExtraData(VBoxDefs::GUI_AutoresizeGuest);
         QAction *pGuestAutoresizeSwitch = uimachine()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize);
         pGuestAutoresizeSwitch->setChecked(strSettings != "off");
+
+#ifdef Q_WS_WIN
+        /* Disable host screen-saver if requested: */
+        if (vboxGlobal().settings().hostScreenSaverDisabled())
+            SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, false, 0, 0);
+#endif /* Q_WS_WIN */
     }
 }
 
@@ -619,6 +625,11 @@ void UISession::saveSessionSettings()
         machine.SetExtraData(VBoxDefs::GUI_AutoresizeGuest,
                              uimachine()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked() ?
                              QString() : "off");
+
+#ifdef Q_WS_WIN
+        /* Restore screen-saver activity to system default: */
+        SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, true, 0, 0);
+#endif /* Q_WS_WIN */
     }
 }
 
