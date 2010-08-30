@@ -331,6 +331,7 @@ static DECLCALLBACK(int) ftmR3TcpOpWrite(void *pvUser, uint64_t offStream, const
             LogRel(("FTSync/TCP: Write error: %Rrc (cb=%#x)\n", rc, Hdr.cb));
             return rc;
         }
+        pVM->ftm.s.StatSentState.c      += Hdr.cb + sizeof(Hdr);
         pVM->ftm.s.syncstate.uOffStream += Hdr.cb;
         if (Hdr.cb == cbToWrite)
             return VINF_SUCCESS;
@@ -414,6 +415,7 @@ static DECLCALLBACK(int) ftmR3TcpOpRead(void *pvUser, uint64_t offStream, void *
                 LogRel(("FTSync/TCP: Header read error: %Rrc\n", rc));
                 return rc;
             }
+            pVM->ftm.s.StatReceivedState.c += sizeof(Hdr);
 
             if (RT_UNLIKELY(   Hdr.u32Magic != FTMTCPHDR_MAGIC
                             || Hdr.cb > FTMTCPHDR_MAX_SIZE
@@ -444,6 +446,7 @@ static DECLCALLBACK(int) ftmR3TcpOpRead(void *pvUser, uint64_t offStream, void *
         rc = ftmR3TcpReadSelect(pVM);
         if (RT_FAILURE(rc))
             return rc;
+
         uint32_t cb = (uint32_t)RT_MIN(pVM->ftm.s.syncstate.cbReadBlock, cbToRead);
         rc = RTTcpRead(pVM->ftm.s.hSocket, pvBuf, cb, pcbRead);
         if (RT_FAILURE(rc))
@@ -455,11 +458,13 @@ static DECLCALLBACK(int) ftmR3TcpOpRead(void *pvUser, uint64_t offStream, void *
         if (pcbRead)
         {
             cb = (uint32_t)*pcbRead;
-            pVM->ftm.s.syncstate.uOffStream   += cb;
+            pVM->ftm.s.StatReceivedState.c   += cb;
+            pVM->ftm.s.syncstate.uOffStream  += cb;
             pVM->ftm.s.syncstate.cbReadBlock -= cb;
             return VINF_SUCCESS;
         }
-        pVM->ftm.s.syncstate.uOffStream   += cb;
+        pVM->ftm.s.StatReceivedState.c   += cb;
+        pVM->ftm.s.syncstate.uOffStream  += cb;
         pVM->ftm.s.syncstate.cbReadBlock -= cb;
         if (cbToRead == cb)
             return VINF_SUCCESS;
