@@ -3205,7 +3205,7 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             iATAPILBA = ataBE2H_U32(pbPacket + 2);
             cSectors = ataBE2H_U16(pbPacket + 7);
             Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
-            s->cbATAPISector = 2048; /**< @todo this size is not always correct */
+            s->cbATAPISector = 2048;
             cbTransfer = cSectors * s->cbATAPISector;
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
@@ -3213,7 +3213,7 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             iATAPILBA = ataBE2H_U32(pbPacket + 2);
             cSectors = ataBE2H_U32(pbPacket + 6);
             Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
-            s->cbATAPISector = 2048; /**< @todo this size is not always correct */
+            s->cbATAPISector = 2048;
             cbTransfer = cSectors * s->cbATAPISector;
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
@@ -3230,6 +3230,7 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_CD:
+        case SCSI_READ_CD_MSF:
         {
             /* Get sector size based on the expected sector type field. */
             switch ((pbPacket[1] >> 2) & 0x7)
@@ -3260,18 +3261,18 @@ static void atapiParseCmdPassthrough(ATADevState *s)
                     s->cbATAPISector = 0; /** @todo we should probably fail the command here already. */
             }
 
-            cbTransfer = ataBE2H_U24(pbPacket + 6) * s->cbATAPISector;
+            if (pbPacket[0] == SCSI_READ_CD)
+                cbTransfer = ataBE2H_U24(pbPacket + 6) * s->cbATAPISector;
+            else /* SCSI_READ_MSF */
+            {
+                cSectors = ataMSF2LBA(pbPacket + 6) - ataMSF2LBA(pbPacket + 3);
+                if (cSectors > 32)
+                    cSectors = 32; /* Limit transfer size to 64~74K. Safety first. In any case this can only harm software doing CDDA extraction. */
+                cbTransfer = cSectors * s->cbATAPISector;
+            }
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
         }
-        case SCSI_READ_CD_MSF:
-            cSectors = ataMSF2LBA(pbPacket + 6) - ataMSF2LBA(pbPacket + 3);
-            if (cSectors > 32)
-                cSectors = 32; /* Limit transfer size to 64~74K. Safety first. In any case this can only harm software doing CDDA extraction. */
-            s->cbATAPISector = 2048; /**< @todo this size is not always correct */
-            cbTransfer = cSectors * s->cbATAPISector;
-            uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
-            goto sendcmd;
         case SCSI_READ_DISC_INFORMATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
