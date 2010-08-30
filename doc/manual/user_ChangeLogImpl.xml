@@ -65,6 +65,10 @@
       </listitem>
 
       <listitem>
+        <para>3D support: guest app stack corruption when using glGetVertexAttrib[ifd]v (bug #7395)</para>
+      </listitem>
+
+      <listitem>
         <para>SATA: allow to attach CD/DVD-ROM drives including passthrough</para>
       </listitem>
 
