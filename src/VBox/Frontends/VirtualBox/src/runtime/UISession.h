@@ -103,7 +103,7 @@ public:
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
 
     /* Guest additions state getters: */
-    bool isGuestAdditionsActive() const { return (m_ulGuestAdditionsRunLevel > 0); }
+    bool isGuestAdditionsActive() const { return (m_ulGuestAdditionsRunLevel > AdditionsRunLevelType_None); }
     bool isGuestSupportsGraphics() const { return isGuestAdditionsActive() && m_fIsGuestSupportsGraphics; }
     bool isGuestSupportsSeamless() const { return isGuestSupportsGraphics() && m_fIsGuestSupportsSeamless; }
 
