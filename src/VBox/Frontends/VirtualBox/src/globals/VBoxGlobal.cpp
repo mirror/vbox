@@ -2672,6 +2672,7 @@ void VBoxGlobal::retranslateUi()
     mMachineStates [KMachineState_DeletingSnapshotOnline] = tr ("Deleting Snapshot", "MachineState");
     mMachineStates [KMachineState_DeletingSnapshotPaused] = tr ("Deleting Snapshot", "MachineState");
     mMachineStates [KMachineState_SettingUp] =  tr ("Setting Up", "MachineState");
+    mMachineStates [KMachineState_FaultTolerantSyncing]   = tr ("Fault Tolerant Syncing", "MachineState");
 
     mSessionStates [KSessionState_Unlocked] =   tr ("Unlocked", "SessionState");
     mSessionStates [KSessionState_Locked] =     tr ("Locked", "SessionState");
