@@ -278,9 +278,6 @@ static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
 {
     Assert(PGMIsLockOwner(pVM));
 
-    if (FTMIsDeltaLoadSaveActive(pVM))
-        return VINF_SUCCESS;    /* nothing to do as nothing has changed here */
-
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
         pRom->idSavedState = UINT8_MAX;
 
