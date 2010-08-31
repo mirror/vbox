@@ -1901,16 +1901,17 @@ DxgkDdiPatch(
      * Value == 4 is RedirectedPresent
      * we do not expect any other flags to be set here */
 //    Assert(pPatch->Flags.Value == 2 || pPatch->Flags.Value == 4);
-    Assert(pPatch->DmaBufferPrivateDataSize >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR));
-    Assert(pPatch->DmaBufferPrivateDataSubmissionEndOffset - pPatch->DmaBufferPrivateDataSubmissionStartOffset >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR));
-    if (pPatch->DmaBufferPrivateDataSubmissionEndOffset - pPatch->DmaBufferPrivateDataSubmissionStartOffset >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR))
+    Assert(pPatch->DmaBufferPrivateDataSize >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR));
+    Assert(pPatch->DmaBufferPrivateDataSubmissionEndOffset - pPatch->DmaBufferPrivateDataSubmissionStartOffset >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR));
+    if (pPatch->DmaBufferPrivateDataSubmissionEndOffset - pPatch->DmaBufferPrivateDataSubmissionStartOffset >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR))
     {
-        VBOXWDDM_DMA_PRIVATEDATA_HDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_HDR*)((uint8_t*)pPatch->pDmaBufferPrivateData + pPatch->DmaBufferPrivateDataSubmissionStartOffset);
-        switch (pPrivateData->enmCmd)
+        VBOXWDDM_DMA_PRIVATEDATA_BASEHDR *pPrivateDataBase = (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR*)((uint8_t*)pPatch->pDmaBufferPrivateData + pPatch->DmaBufferPrivateDataSubmissionStartOffset);
+        switch (pPrivateDataBase->enmCmd)
         {
             case VBOXVDMACMD_TYPE_DMA_PRESENT_SHADOW2PRIMARY:
             case VBOXVDMACMD_TYPE_DMA_PRESENT_BLT:
             {
+                VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
                 Assert(pPatch->PatchLocationListSubmissionLength == 2);
                 const D3DDDI_PATCHLOCATIONLIST* pPatchList = &pPatch->pPatchLocationList[pPatch->PatchLocationListSubmissionStart];
                 Assert(pPatchList->AllocationIndex == DXGK_PRESENT_SOURCE_INDEX);
@@ -1931,6 +1932,7 @@ DxgkDdiPatch(
             }
             case VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP:
             {
+                VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
                 Assert(pPatch->PatchLocationListSubmissionLength == 1);
                 const D3DDDI_PATCHLOCATIONLIST* pPatchList = &pPatch->pPatchLocationList[pPatch->PatchLocationListSubmissionStart];
                 Assert(pPatchList->AllocationIndex == DXGK_PRESENT_SOURCE_INDEX);
@@ -1943,6 +1945,7 @@ DxgkDdiPatch(
             }
             case VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL:
             {
+                VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
                 Assert(pPatch->PatchLocationListSubmissionLength == 1);
                 const D3DDDI_PATCHLOCATIONLIST* pPatchList = &pPatch->pPatchLocationList[pPatch->PatchLocationListSubmissionStart];
                 Assert(pPatchList->AllocationIndex == DXGK_PRESENT_DESTINATION_INDEX);
@@ -1982,10 +1985,10 @@ DxgkDdiPatch(
     }
     else
     {
-        drprintf((__FUNCTION__": DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR) (%d)\n",
+        drprintf((__FUNCTION__": DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR) (%d)\n",
                 pPatch->DmaBufferPrivateDataSubmissionEndOffset,
                 pPatch->DmaBufferPrivateDataSubmissionStartOffset,
-                sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR)));
+                sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -2108,23 +2111,24 @@ DxgkDdiSubmitCommand(
 
     /* the DMA command buffer is located in system RAM, the host will need to pick it from there */
     //BufInfo.fFlags = 0; /* see VBOXVDMACBUF_FLAG_xx */
-    Assert(pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset - pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR));
-    if (pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset - pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset < sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR))
+    Assert(pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset - pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR));
+    if (pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset - pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR))
     {
-        drprintf((__FUNCTION__": DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR) (%d)\n",
+        drprintf((__FUNCTION__": DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR) (%d)\n",
                 pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset,
                 pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset,
-                sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR)));
+                sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
         return STATUS_INVALID_PARAMETER;
     }
 
-    PVBOXWDDM_DMA_PRIVATEDATA_HDR pPrivateData = (PVBOXWDDM_DMA_PRIVATEDATA_HDR)((uint8_t*)pSubmitCommand->pDmaBufferPrivateData + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
-    Assert(pPrivateData);
-    switch (pPrivateData->enmCmd)
+    PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pPrivateDataBase = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)((uint8_t*)pSubmitCommand->pDmaBufferPrivateData + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
+    Assert(pPrivateDataBase);
+    switch (pPrivateDataBase->enmCmd)
     {
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
         case VBOXVDMACMD_TYPE_DMA_PRESENT_SHADOW2PRIMARY:
         {
+            VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
             VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->SrcAllocInfo.srcId];
             vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
             PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW pRFS = (PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW)pPrivateData;
@@ -2144,6 +2148,7 @@ DxgkDdiSubmitCommand(
 #endif
         case VBOXVDMACMD_TYPE_DMA_PRESENT_BLT:
         {
+            VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
             PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pSubmitCommand->hContext;
             Assert(pContext);
             Assert(pContext->pDevice);
@@ -2233,6 +2238,7 @@ DxgkDdiSubmitCommand(
         }
         case VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP:
         {
+            VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
             PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pSubmitCommand->hContext;
             PVBOXVDMAPIPE_CMD_RECTSINFO pRectsCmd = (PVBOXVDMAPIPE_CMD_RECTSINFO)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_RECTSINFO, RT_OFFSETOF(VBOXVDMAPIPE_CMD_RECTSINFO, ContextsRects.UpdateRects.aRects[1]));
             Assert(pRectsCmd);
@@ -2261,6 +2267,7 @@ DxgkDdiSubmitCommand(
         }
         case VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL:
         {
+            VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
             PVBOXWDDM_DMA_PRESENT_CLRFILL pCF = (PVBOXWDDM_DMA_PRESENT_CLRFILL)pPrivateData;
             PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pSubmitCommand->hContext;
             PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCFCmd = (PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_DMACMD_CLRFILL, RT_OFFSETOF(VBOXVDMAPIPE_CMD_DMACMD_CLRFILL, Rects.aRects[pCF->Rects.cRects]));
@@ -2322,6 +2329,7 @@ DxgkDdiSubmitCommand(
         default:
         {
             AssertBreakpoint();
+            VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
             PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, 0);
             if (!pDr)
             {
@@ -3786,15 +3794,32 @@ DxgkDdiRender(
     CONST HANDLE  hContext,
     DXGKARG_RENDER  *pRender)
 {
-    drprintf(("==> "__FUNCTION__ ", !!NOT_IMPLEMENTED!! hContext(0x%x)\n", hContext));
+    drprintf(("==> "__FUNCTION__ ", hContext(0x%x)\n", hContext));
 
+    Assert(pRender->DmaBufferPrivateDataSize >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR));
+    if (pRender->DmaBufferPrivateDataSize < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR))
+    {
+        drprintf((__FUNCTION__": Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXWDDM_DMA_PRIVATEDATA_BASEHDR (%d)\n",
+                pRender->DmaBufferPrivateDataSize , sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR)));
+        /* @todo: can this actually happen? what status to return? */
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pPrivateData = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)pRender->pDmaBufferPrivateData;
+    pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_NOP;
+
+    pRender->pDmaBufferPrivateData = (uint8_t*)pRender->pDmaBufferPrivateData + sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR);
     pRender->pDmaBuffer = ((uint8_t*)pRender->pDmaBuffer) + pRender->CommandLength;
-    /* @todo: impl  */
-    AssertBreakpoint();
+    Assert(pRender->DmaSize >= pRender->CommandLength);
+    Assert(pRender->PatchLocationListOutSize >= pRender->PatchLocationListInSize);
+    UINT cbPLL = pRender->PatchLocationListInSize * sizeof (pRender->pPatchLocationListOut[0]);
+    memcpy(pRender->pPatchLocationListOut, pRender->pPatchLocationListIn, cbPLL);
+    pRender->pPatchLocationListOut += pRender->PatchLocationListInSize;
 
-    drprintf(("<== "__FUNCTION__ ", !!NOT_IMPLEMENTED!! hContext(0x%x)\n", hContext));
+    drprintf(("<== "__FUNCTION__ ", hContext(0x%x)\n", hContext));
 
-    return STATUS_NOT_IMPLEMENTED;
+    return Status;
 }
 
 #define VBOXVDMACMD_DMA_PRESENT_BLT_MINSIZE() (VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_PRESENT_BLT))
@@ -3890,17 +3915,17 @@ DxgkDdiPresent(
     PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
     PDEVICE_EXTENSION pDevExt = pDevice->pAdapter;
 
-    Assert(pPresent->DmaBufferPrivateDataSize >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR));
-    if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR))
+    Assert(pPresent->DmaBufferPrivateDataSize >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR));
+    if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR))
     {
-        drprintf((__FUNCTION__": Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXWDDM_DMA_PRIVATEDATA_HDR (%d)\n", pPresent->DmaBufferPrivateDataSize , sizeof (VBOXWDDM_DMA_PRIVATEDATA_HDR)));
+        drprintf((__FUNCTION__": Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR (%d)\n", pPresent->DmaBufferPrivateDataSize , sizeof (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR)));
         /* @todo: can this actually happen? what status tu return? */
         return STATUS_INVALID_PARAMETER;
     }
 
-    PVBOXWDDM_DMA_PRIVATEDATA_HDR pPrivateData = (PVBOXWDDM_DMA_PRIVATEDATA_HDR)pPresent->pDmaBufferPrivateData;
+    PVBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR pPrivateData = (PVBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR)pPresent->pDmaBufferPrivateData;
     pPrivateData->pContext = pContext;
-    pPrivateData->fFlags.Value = 0;
+    pPrivateData->BaseHdr.fFlags.Value = 0;
     uint32_t cContexts3D = ASMAtomicReadU32(&pDevExt->cContexts3D);
 #define VBOXWDDM_DUMMY_DMABUFFER_SIZE sizeof(RECT)
 
@@ -3980,7 +4005,7 @@ DxgkDdiPresent(
 
 
                                     /* we do not know the shadow address yet, perform dummy DMA cycle */
-                                    pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_SHADOW2PRIMARY;
+                                    pPrivateData->BaseHdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_SHADOW2PRIMARY;
                                     vboxWddmPopulateDmaAllocInfo(&pPrivateData->SrcAllocInfo, pSrcAlloc, pSrc);
 //                                  no need to fill dst surf info here
 //                                  vboxWddmPopulateDmaAllocInfo(&pPrivateData->DstAllocInfo, pDstAlloc, pDst);
@@ -4001,7 +4026,7 @@ DxgkDdiPresent(
                      * or because there are d3d contexts and we need to report visible rects */
 #endif
                     UINT cbCmd = pPresent->DmaBufferPrivateDataSize;
-                    pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_BLT;
+                    pPrivateData->BaseHdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_BLT;
 
                     vboxWddmPopulateDmaAllocInfo(&pPrivateData->SrcAllocInfo, pSrcAlloc, pSrc);
                     vboxWddmPopulateDmaAllocInfo(&pPrivateData->DstAllocInfo, pDstAlloc, pDst);
@@ -4094,9 +4119,9 @@ DxgkDdiPresent(
                                 cbCmd -= sizeof (VBOXVDMA_RECTL);
                             }
                             Assert(i);
-                            pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_BLT;
+                            pPrivateData->BaseHdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_BLT;
                             pTransfer->cDstSubRects = i;
-                            pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + sizeof(VBOXWDDM_DMA_PRIVATEDATA_HDR);
+                            pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + sizeof(VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR);
                         }
                         else
                         {
@@ -4226,7 +4251,7 @@ DxgkDdiPresent(
         if (pSrcAlloc)
         {
             Assert(cContexts3D);
-            pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP;
+            pPrivateData->BaseHdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP;
 
             vboxWddmPopulateDmaAllocInfo(&pPrivateData->SrcAllocInfo, pSrcAlloc, pSrc);
 
@@ -4257,7 +4282,7 @@ DxgkDdiPresent(
         if (pDstAlloc)
         {
             UINT cbCmd = pPresent->DmaBufferPrivateDataSize;
-            pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL;
+            pPrivateData->BaseHdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL;
 
             vboxWddmPopulateDmaAllocInfo(&pPrivateData->DstAllocInfo, pDstAlloc, pDst);
 
