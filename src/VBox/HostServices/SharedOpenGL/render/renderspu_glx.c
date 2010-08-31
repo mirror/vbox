@@ -1681,4 +1681,5 @@ void renderspu_SystemReparentWindow(WindowInfo *window)
                                              RootWindow(window->visual->dpy, window->visual->visual->screen);
 
     XReparentWindow(window->visual->dpy, window->window, parent, window->x, window->y);
+    XSync(window->visual->dpy, False);
 }
