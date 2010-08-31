@@ -924,8 +924,8 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
         }
         else
         if (    !strcmp(szCmd, "checkpoint")
-            ||  (fFullSync = true)  /* intended assignment */
-            ||  !strcmp(szCmd, "full-sync"))
+            ||  !strcmp(szCmd, "full-sync")
+            ||  (fFullSync = true))  /* intended assignment */
         {
             rc = ftmR3TcpWriteACK(pVM);
             AssertRC(rc);
