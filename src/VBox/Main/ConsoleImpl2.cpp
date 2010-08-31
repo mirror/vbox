@@ -819,14 +819,27 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * PCI buses.
          */
-        InsertConfigNode(pDevices, "pci", &pDev); /* piix3 */
+        ChipsetType_T chipsetType;
+        hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                H();
+
+        switch (chipsetType)
+        {
+            default:
+                Assert(false);
+            case ChipsetType_PIIX3:
+                InsertConfigNode(pDevices, "piix3pci", &pDev);
+                break;
+            case ChipsetType_ICH9:
+                InsertConfigNode(pDevices, "ich9pci", &pDev);
+                break;
+        }
         InsertConfigNode(pDev,     "0", &pInst);
         InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
         InsertConfigNode(pInst,    "Config", &pCfg);
         InsertConfigInteger(pCfg, "IOAPIC", fIOAPIC);
 
 #if 0 /* enable this to test PCI bridging */
-        InsertConfigNode(pDevices, "pcibridge", &pDev);
+        InsertConfigNode(pDevices, "piix3pcibridge", &pDev);
         InsertConfigNode(pDev,     "0", &pInst);
         InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
         InsertConfigNode(pInst,    "Config", &pCfg);

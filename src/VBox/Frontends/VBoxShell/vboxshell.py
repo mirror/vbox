@@ -802,6 +802,7 @@ def infoCmd(ctx,args):
     print "  RAM [memorySize]: %dM" %(mach.memorySize)
     print "  VRAM [VRAMSize]: %dM" %(mach.VRAMSize)
     print "  Monitors [monitorCount]: %d" %(mach.monitorCount)
+    print "  Chipset [chipsetType]: %s (%s)" %(asEnumElem(ctx,"ChipsetType", mach.chipsetType), mach.chipsetType)
     print
     print "  Clipboard mode [clipboardMode]: %s (%s)" %(asEnumElem(ctx,"ClipboardMode", mach.clipboardMode), mach.clipboardMode)
     print "  Machine status [n/a]: %s (%s)" % (asEnumElem(ctx,"SessionState", mach.sessionState), mach.sessionState)

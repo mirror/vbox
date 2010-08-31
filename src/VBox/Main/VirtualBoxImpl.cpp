@@ -461,7 +461,8 @@ HRESULT VirtualBox::init()
                                           Global::sOSTypes[i].dvdStorageControllerType,
                                           Global::sOSTypes[i].dvdStorageBusType,
                                           Global::sOSTypes[i].hdStorageControllerType,
-                                          Global::sOSTypes[i].hdStorageBusType);
+                                          Global::sOSTypes[i].hdStorageBusType,
+                                          Global::sOSTypes[i].chipsetType);
                 if (SUCCEEDED(rc))
                     m->allGuestOSTypes.addChild(guestOSTypeObj);
             }

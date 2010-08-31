@@ -704,10 +704,12 @@ struct Hardware
     uint32_t            cMonitors;
     bool                fAccelerate3D,
                         fAccelerate2DVideo;     // requires settings version 1.8 (VirtualBox 3.1)
-    FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)
+    FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)    
 
     PointingHidType_T   pointingHidType;        // requires settings version 1.10 (VirtualBox 3.2)
     KeyboardHidType_T   keyboardHidType;        // requires settings version 1.10 (VirtualBox 3.2)
+
+    ChipsetType_T       chipsetType;            // requires settings version 1.11 (VirtualBox 4.0)
 
     VRDPSettings        vrdpSettings;
 

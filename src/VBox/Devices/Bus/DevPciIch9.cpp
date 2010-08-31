@@ -170,8 +170,8 @@ static DECLCALLBACK(void) ich9pciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelt
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns, 
-                                                  int        iInstance, 
+static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
+                                                  int        iInstance,
                                                   PCFGMNODE  pCfg)
 {
     int rc;
