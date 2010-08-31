@@ -58,6 +58,11 @@
 #include <vector>
 
 #include <errno.h>
+#include <dirent.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
 
 /******************************************************************************
 *   Global Variables                                                          *
@@ -105,9 +110,18 @@ static bool phDoHandle(pathHandler *pHandler, const char *pcszNode)
     return pHandler->handle(pHandler, pcszNode);
 }
 
+/** Vector of char *-s for holding directory entries */
+#define VECTOR_TYPE       char *
+#define VECTOR_TYPENAME   filePaths
+static inline void filePathsCleanup(char **ppsz)
+{
+    free(*ppsz);
+}
+#define VECTOR_DESTRUCTOR filePathsCleanup
+#include "vector.h"
+
 static int walkDirectory(const char *pcszPath, pathHandler *pHandler,
-                         bool useRealPath);
-static int getDeviceInfoFromSysfs(const char *pcszPath, pathHandler *pHandler);
+                         int withRealPath);
 # endif
 #endif /* VBOX_USB_WITH_SYSFS */
 
@@ -1365,80 +1379,145 @@ VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
 
 #ifdef VBOX_USB_WITH_SYSFS
 # ifdef VBOX_USB_WITH_INOTIFY
-/**
- * Helper function to walk a directory, calling a function object on its files
- * @returns iprt status code
- * @param   pcszPath     Directory to walk.
- * @param   pHandler     Handler object which will be invoked on each file
- * @param   useRealPath  Whether to resolve the filename to its real path
- *                       before calling the handler.  In this case the target
- *                       must exist.
- *
- * @returns IPRT status code
- */
-/* static */
-int walkDirectory(const char *pcszPath, pathHandler *pHandler, bool useRealPath)
+/** Helper for readFilePathsFromDir().  Adds a path to the vector if it is not
+ * NULL and not a dotfile (".", "..", ".*"). */
+static int maybeAddPathToVector(const char *pcszPath, const char *pcszEntry,
+                                filePaths *pvpchDevs)
 {
-    AssertPtrReturn(pcszPath, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHandler, VERR_INVALID_POINTER);
-    LogFlowFunc (("pcszPath=%s, pHandler=%p\n", pcszPath, pHandler));
-    PRTDIR pDir = NULL;
-    int rc;
+    filePaths_op_table *pOps = &filePaths_ops;
+    char *pszPath;
 
-    rc = RTDirOpen(&pDir, pcszPath);
-    if (RT_FAILURE(rc))
-        return rc;
-    while (RT_SUCCESS(rc))
+    if (!pcszPath)
+        return 0;
+    if (pcszEntry[0] == '.')
+        return 0;
+    pszPath = strdup(pcszPath);
+    if (!pszPath)
+        return ENOMEM;
+    if (!pOps->push_back(pvpchDevs, &pszPath))
+        return ENOMEM;
+    return 0;
+}
+
+/** Helper for readFilePaths().  Adds the entries from the open directory
+ * @a pDir to the vector @a pvpchDevs using either the full path or the
+ * realpath() and skipping hidden files and files on which realpath() fails. */
+static int readFilePathsFromDir(const char *pcszPath, DIR *pDir,
+                                filePaths *pvpchDevs, int withRealPath)
+{
+    struct dirent entry, *pResult;
+    int err;
+
+    for (err = readdir_r(pDir, &entry, &pResult); pResult;
+         err = readdir_r(pDir, &entry, &pResult))
     {
-        RTDIRENTRY entry;
-        char szPath[RTPATH_MAX], szAbsPath[RTPATH_MAX];
-
-        rc = RTDirRead(pDir, &entry, NULL);
-        Assert(rc != VERR_BUFFER_OVERFLOW);  /* Should never happen... */
-            /* We break on "no more files" as well as on "real" errors */
-        if (RT_FAILURE(rc))
-            break;
-        if (entry.szName[0] == '.')
-            continue;
-        if (RTStrPrintf(szPath, sizeof(szPath), "%s/%s", pcszPath,
-                        entry.szName) >= sizeof(szPath))
-            rc = VERR_BUFFER_OVERFLOW;
-        if (RT_FAILURE(rc))
-            break;
-        if (useRealPath)
-        {
-            rc = RTPathReal(szPath, szAbsPath, sizeof(szAbsPath));
-            if (RT_FAILURE(rc))
-                break;  /* The file can vanish if a device is unplugged. */
-            if (!phDoHandle(pHandler, szAbsPath))
-                break;
-        }
+        /* We (implicitly) require that PATH_MAX be defined */
+        char szPath[PATH_MAX + 1], szRealPath[PATH_MAX + 1], *pszPath;
+        if (snprintf(szPath, sizeof(szPath), "%s/%s", pcszPath,
+                     entry.d_name) < 0)
+            return errno;
+        if (withRealPath)
+            pszPath = realpath(szPath, szRealPath);
         else
-            if (!phDoHandle(pHandler, szPath))
-                break;
+            pszPath = szPath;
+        if ((err = maybeAddPathToVector(pszPath, entry.d_name, pvpchDevs)))
+            return err;
     }
-    RTDirClose(pDir);
-    if (rc == VERR_NO_MORE_FILES)
-        rc = VINF_SUCCESS;
-    LogFlow (("rc=%Rrc\n", rc));
-    return rc;
+    return err;
 }
 
 
 /**
- * Helper function to walk a sysfs directory for extracting information about
- * devices.
- * @returns iprt status code
- * @param   pcszPath   Sysfs directory to walk.  Must exist.
- * @param   pHandler   Handler object which will be invoked on each directory
- *                     entry
+ * Helper for walkDirectory to dump the names of a directory's entries into a
+ * vector of char pointers.
  *
- * @returns IPRT status code
+ * @returns zero on success or (positive) posix error value.
+ * @param   pcszPath      the path to dump.  
+ * @param   pvpchDevs     an empty vector of char pointers - must be cleaned up
+ *                        by the caller even on failure.
+ * @param   withRealPath  whether to canonicalise the filename with realpath
+ */
+static int readFilePaths(const char *pcszPath, filePaths *pvpchDevs,
+                         int withRealPath)
+{
+    filePaths_op_table *pOps = &filePaths_ops;
+    DIR *pDir;
+    int err;
+
+    AssertPtrReturn(pvpchDevs, EINVAL);
+    AssertReturn(pOps->size(pvpchDevs) == 0, EINVAL);
+    AssertPtrReturn(pcszPath, EINVAL);
+
+    pDir = opendir(pcszPath);
+    if (!pDir)
+        return errno;
+    err = readFilePathsFromDir(pcszPath, pDir, pvpchDevs, withRealPath);
+    if (closedir(pDir) < 0 && !err)
+        err = errno;
+    return err;
+}
+
+
+/**
+ * Helper for walkDirectory to walk a set of files, calling a function
+ * object on each.
+ *
+ * @returns zero on success or (positive) posix error value.
+ * @param   pcszPath     the path of the directory
+ * @param   pvpchDevs    vector of char strings containing the directory entry
+ *                       names
+ * @param   pHandler     Handler object which will be invoked on each file
+ */
+static int walkFiles(const char *pcszPath, filePaths *pvpchDevs,
+                     pathHandler *pHandler)
+{
+    filePaths_op_table *pOps = &filePaths_ops;
+    filePaths_iter_op_table *pItOps = &filePaths_iter_ops;
+    filePaths_iterator it;
+
+    AssertPtrReturn(pvpchDevs, EINVAL);
+    AssertPtrReturn(pHandler, EINVAL);
+
+    pItOps->init(&it, pOps->begin(pvpchDevs));
+    for (; !pItOps->eq(&it, pOps->end(pvpchDevs)); pItOps->incr(&it))
+    {
+        const char *pszEntry;
+
+        pszEntry = *pItOps->target(&it);
+        if (!pszEntry)
+            return ENOMEM;
+        if (!phDoHandle(pHandler, pszEntry))
+            break;
+    }
+    return 0;
+}
+
+
+/**
+ * Walk a directory and applying a function object to each entry which doesn't
+ * start with a dot.
+ * @returns iprt status code
+ * @param   pcszPath      Directory to walk.  May not be '/'-terminated.
+ * @param   pHandler      Handler object which will be invoked on each
+ *                        directoryentry
+ * @param   withRealPath  Whether to apply realpath() to each entry before
+ *                        invoking the handler
  */
 /* static */
-int getDeviceInfoFromSysfs(const char *pcszPath, pathHandler *pHandler)
+int walkDirectory(const char *pcszPath, pathHandler *pHandler, int withRealPath)
 {
-    return walkDirectory(pcszPath, pHandler, true);
+    filePaths vpchDevs;
+    filePaths_init(&vpchDevs);
+    int rc;
+
+    AssertPtrReturn(pcszPath, VERR_INVALID_POINTER);
+    AssertReturn(pcszPath[strlen(pcszPath)] != '/', VERR_INVALID_PARAMETER);
+
+    rc = readFilePaths(pcszPath, &vpchDevs, withRealPath);
+    if (!rc)
+        rc = walkFiles(pcszPath, &vpchDevs, pHandler);
+    filePaths_cleanup(&vpchDevs);
+    return RTErrConvertFromErrno(rc);
 }
 
 
@@ -1487,7 +1566,8 @@ static bool mudHandle(pathHandler *pParent, const char *pcszNode)
     /* Sanity test of our static helpers */
     Assert(usbBusFromDevNum(makedev(USBDEVICE_MAJOR, 517)) == 5);
     Assert(usbDeviceFromDevNum(makedev(USBDEVICE_MAJOR, 517)) == 6);
-    AssertReturn (devnum, true);
+    if (!devnum)
+        return true;
     char szDevPath[RTPATH_MAX];
     ssize_t cchDevPath;
     cchDevPath = RTLinuxFindDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
@@ -1603,7 +1683,7 @@ static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
                   pList, pfSuccess));
     matchUSBDevice devHandler;
     mudInit(&devHandler, pList);
-    int rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &devHandler.mParent);
+    int rc = walkDirectory("/sys/bus/usb/devices", &devHandler.mParent, true);
     do {
         if (RT_FAILURE(rc))
             break;
@@ -1615,8 +1695,8 @@ static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
         {
             matchUSBInterface ifaceHandler;
             muiInit(&ifaceHandler, USBDeviceInfoList_iter_target(&info));
-            rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices",
-                                        &ifaceHandler.mParent);
+            rc = walkDirectory("/sys/bus/usb/devices", &ifaceHandler.mParent,
+                               true);
             if (RT_FAILURE(rc))
                 break;
             USBDeviceInfoList_iter_incr(&info);
