@@ -54,7 +54,8 @@ public:
                   StorageControllerType_T aDvdStorageControllerType,
                   StorageBus_T aDvdStorageBusType,
                   StorageControllerType_T aHdStorageControllerType,
-                  StorageBus_T aHdStorageBusType);
+                  StorageBus_T aHdStorageBusType,
+                  ChipsetType_T aChipsetType);
     void uninit();
 
     // IGuestOSType properties
@@ -79,6 +80,7 @@ public:
     STDMETHOD(COMGETTER(RecommendedHpet)) (BOOL *aRecommendedHpet);
     STDMETHOD(COMGETTER(RecommendedUsbTablet)) (BOOL *aRecommendedUsbTablet);
     STDMETHOD(COMGETTER(RecommendedRtcUseUtc)) (BOOL *aRecommendedRtcUseUtc);
+    STDMETHOD(COMGETTER(RecommendedChipset)) (ChipsetType_T *aChipsetType);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }
@@ -107,6 +109,7 @@ private:
     const StorageBus_T mDvdStorageBusType;
     const StorageControllerType_T mHdStorageControllerType;
     const StorageBus_T mHdStorageBusType;
+    const ChipsetType_T mChipsetType;
 };
 
 #endif // ____H_GUESTOSTYPEIMPL

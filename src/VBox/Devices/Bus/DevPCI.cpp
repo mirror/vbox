@@ -2136,7 +2136,7 @@ const PDMDEVREG g_DevicePCI =
     /* u32Version */
     PDM_DEVREG_VERSION,
     /* szName */
-    "pci",
+    "piix3pci",
     /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */
@@ -2498,7 +2498,7 @@ const PDMDEVREG g_DevicePCIBridge =
     /* u32Version */
     PDM_DEVREG_VERSION,
     /* szName */
-    "pcibridge",
+    "piix3pcibridge",
     /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */

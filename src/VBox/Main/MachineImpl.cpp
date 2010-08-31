@@ -187,6 +187,7 @@ Machine::HWData::HWData()
     mFirmwareType = FirmwareType_BIOS;
     mKeyboardHidType = KeyboardHidType_PS2Keyboard;
     mPointingHidType = PointingHidType_PS2Mouse;
+    mChipsetType = ChipsetType_PIIX3;
 
     for (size_t i = 0; i < RT_ELEMENTS(mCPUAttached); i++)
         mCPUAttached[i] = false;
@@ -1106,6 +1107,36 @@ STDMETHODIMP Machine::COMSETTER(PointingHidType)(PointingHidType_T  aPointingHid
     setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mPointingHidType = aPointingHidType;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(ChipsetType)(ChipsetType_T *aChipsetType)
+{
+    CheckComArgOutPointerValid(aChipsetType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aChipsetType = mHWData->mChipsetType;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(ChipsetType)(ChipsetType_T aChipsetType)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mChipsetType = aChipsetType;
 
     return S_OK;
 }
@@ -7169,6 +7200,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHidType = data.pointingHidType;
         mHWData->mKeyboardHidType = data.keyboardHidType;
+        mHWData->mChipsetType = data.chipsetType;
         mHWData->mHpetEnabled = data.fHpetEnabled;
 
 #ifdef VBOX_WITH_VRDP
@@ -8163,6 +8195,9 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         // HID
         data.pointingHidType = mHWData->mPointingHidType;
         data.keyboardHidType = mHWData->mKeyboardHidType;
+
+        // chipset
+        data.chipsetType = mHWData->mChipsetType;
 
         // HPET
         data.fHpetEnabled = !!mHWData->mHpetEnabled;

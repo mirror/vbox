@@ -34,6 +34,7 @@ GuestOSType::GuestOSType()
     , mDvdStorageBusType(StorageBus_IDE)
     , mHdStorageControllerType(StorageControllerType_PIIX3)
     , mHdStorageBusType(StorageBus_IDE)
+    , mChipsetType(ChipsetType_PIIX3)
 {
 }
 
@@ -77,7 +78,8 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
                            StorageControllerType_T aDvdStorageControllerType,
                            StorageBus_T aDvdStorageBusType,
                            StorageControllerType_T aHdStorageControllerType,
-                           StorageBus_T aHdStorageBusType)
+                           StorageBus_T aHdStorageBusType,
+                           ChipsetType_T aChipsetType)
 {
 #if 0
     LogFlowThisFunc(("aFamilyId='%s', aFamilyDescription='%s', "
@@ -110,12 +112,13 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
     unconst(mRAMSize) = aRAMSize;
     unconst(mVRAMSize) = aVRAMSize;
     unconst(mHDDSize) = aHDDSize;
-    unconst(mNetworkAdapterType) = aNetworkAdapterType;
-    unconst(mNumSerialEnabled) = aNumSerialEnabled;
+    unconst(mNetworkAdapterType)       = aNetworkAdapterType;
+    unconst(mNumSerialEnabled)         = aNumSerialEnabled;
     unconst(mDvdStorageControllerType) = aDvdStorageControllerType;
     unconst(mDvdStorageBusType)        = aDvdStorageBusType;
     unconst(mHdStorageControllerType)  = aHdStorageControllerType;
     unconst(mHdStorageBusType)         = aHdStorageBusType;
+    unconst(mChipsetType)              = aChipsetType;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -410,6 +413,19 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedRtcUseUtc) (BOOL *aRecommendedRtc
 
     /* HID type is constant during life time, no need to lock */
     *aRecommendedRtcUseUtc = !!(mOSHint & VBOXOSHINT_RTCUTC);
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedChipset) (ChipsetType_T *aChipsetType)
+{
+    CheckComArgOutPointerValid(aChipsetType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* chipset type is constant during life time, no need to lock */
+    *aChipsetType = mChipsetType;
 
     return S_OK;
 }

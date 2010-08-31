@@ -1548,6 +1548,7 @@ Hardware::Hardware()
           firmwareType(FirmwareType_BIOS),
           pointingHidType(PointingHidType_PS2Mouse),
           keyboardHidType(KeyboardHidType_PS2Keyboard),
+          chipsetType(ChipsetType_PIIX3),
           clipboardMode(ClipboardMode_Bidirectional),
           ulMemoryBalloonSize(0),
           fPageFusionEnabled(false)
@@ -1595,9 +1596,10 @@ bool Hardware::operator==(const Hardware& h) const
                   && (cMonitors                 == h.cMonitors)
                   && (fAccelerate3D             == h.fAccelerate3D)
                   && (fAccelerate2DVideo        == h.fAccelerate2DVideo)
-                  && (firmwareType              == h.firmwareType)
+                  && (firmwareType              == h.firmwareType)                     
                   && (pointingHidType           == h.pointingHidType)
                   && (keyboardHidType           == h.keyboardHidType)
+                  && (chipsetType               == h.chipsetType)
                   && (vrdpSettings              == h.vrdpSettings)
                   && (biosSettings              == h.biosSettings)
                   && (usbController             == h.usbController)
@@ -2350,6 +2352,22 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                                           pelmHwChild,
                                           N_("Invalid value '%s' in HID/Pointing/@type"),
                                           strHidType.c_str());
+            }
+        }
+        else if (pelmHwChild->nameEquals("Chipset"))
+        {
+            Utf8Str strChipsetType;
+            if (pelmHwChild->getAttributeValue("type", strChipsetType))
+            {
+                if (strChipsetType == "PIIX3")
+                    hw.chipsetType = ChipsetType_PIIX3;
+                else if (strChipsetType == "ICH9")
+                    hw.chipsetType = ChipsetType_ICH9;
+                else
+                    throw ConfigFileError(this,
+                                          pelmHwChild,
+                                          N_("Invalid value '%s' in Chipset/@type"),
+                                          strChipsetType.c_str());
             }
         }
         else if (pelmHwChild->nameEquals("HPET"))
@@ -3279,6 +3297,21 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     {
          xml::ElementNode *pelmHpet = pelmHardware->createChild("HPET");
          pelmHpet->setAttribute("enabled", hw.fHpetEnabled);
+    }
+
+    if (    (m->sv >= SettingsVersion_v1_11)
+       )
+    {
+         xml::ElementNode *pelmChipset = pelmHardware->createChild("Chipset");
+         const char *pcszChipset;
+
+         switch (hw.chipsetType)
+         {
+            case ChipsetType_PIIX3:             pcszChipset = "PIIX3";   break;
+            case ChipsetType_ICH9:              pcszChipset = "ICH9";    break;
+            default:            Assert(false);  pcszChipset = "PIIX3";   break;
+         }
+         pelmChipset->setAttribute("Type", pcszChipset);
     }
 
     xml::ElementNode *pelmBoot = pelmHardware->createChild("Boot");
@@ -4417,4 +4450,3 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
         throw;
     }
 }
-
