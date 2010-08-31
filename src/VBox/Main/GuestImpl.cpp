@@ -1518,9 +1518,10 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
      */
     if (mData.mAdditionsVersion.isEmpty())
     {
-        mData.mAdditionsRunLevel = aInterfaceVersion.isEmpty()
-                                 ? AdditionsRunLevelType_None
-                                 : AdditionsRunLevelType_System;
+        if (aInterfaceVersion.isEmpty())
+            mData.mAdditionsRunLevel = AdditionsRunLevelType_None;
+        else
+            mData.mAdditionsRunLevel = AdditionsRunLevelType_System;
     }
 
     /*
