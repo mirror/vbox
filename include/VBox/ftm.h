@@ -57,7 +57,7 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
 VMMR3DECL(int) FTMR3Init(PVM pVM);
 VMMR3DECL(int) FTMR3Term(PVM pVM);
 VMMR3DECL(int) FTMR3CancelStandby(PVM pVM);
-VMMR3DECL(int) FTMR3SyncState(PVM pVM);
+VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType);
 
 #endif /* IN_RING3 */
 

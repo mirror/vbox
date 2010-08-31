@@ -1065,11 +1065,10 @@ VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
  * @returns VBox status code.
  *
  * @param   pVM         The VM to operate on.
+ * @param   enmType     Checkpoint type
  */
-VMMR3DECL(int) FTMR3SyncState(PVM pVM)
+VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType)
 {
-    VM_ASSERT_OTHER_THREAD(pVM);
-
     if (!pVM->fFaultTolerantMaster)
         return VINF_SUCCESS;
 
