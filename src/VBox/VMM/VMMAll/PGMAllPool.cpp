@@ -3822,7 +3822,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
 
         /* advance */
         iPhysExt = paPhysExts[iPhysExt].iNext;
-        if (iPhysExt == NIL_PGMPOOL_IDX)
+        if (iPhysExt == NIL_PGMPOOL_PHYSEXT_INDEX)
             break;
     }
 
