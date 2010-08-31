@@ -41,6 +41,9 @@
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#ifdef RTMEMALLOC_USE_TRACKER
+# include <iprt/memtracker.h>
+#endif
 #include <iprt/param.h>
 #include <iprt/string.h>
 
@@ -94,7 +97,11 @@ RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 #else /* !RTALLOC_USE_EFENCE */
 
     AssertMsg(cb, ("Allocating ZERO bytes is really not a good idea! Good luck with the next assertion!\n"));
+# ifdef RTMEMALLOC_USE_TRACKER
+    void *pv = RTMemTrackerHdrAlloc(malloc(cb + sizeof(RTMEMTRACKERHDR)), cb, pszTag, RTMEMTRACKERMETHOD_ALLOC);
+# else
     void *pv = malloc(cb);
+# endif
     AssertMsg(pv, ("malloc(%#zx) failed!!!\n", cb));
     AssertMsg(   cb < RTMEM_ALIGNMENT
               || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1))
@@ -114,7 +121,11 @@ RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 
     AssertMsg(cb, ("Allocating ZERO bytes is really not a good idea! Good luck with the next assertion!\n"));
 
+# ifdef RTMEMALLOC_USE_TRACKER
+    void *pv = RTMemTrackerHdrAlloc(calloc(1, cb + sizeof(RTMEMTRACKERHDR)), cb, pszTag, RTMEMTRACKERMETHOD_ALLOCZ);
+#else
     void *pv = calloc(1, cb);
+#endif
     AssertMsg(pv, ("calloc(1,%#zx) failed!!!\n", cb));
     AssertMsg(   cb < RTMEM_ALIGNMENT
               || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1))
@@ -164,7 +175,25 @@ RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) R
 
 #else /* !RTALLOC_USE_EFENCE */
 
+# ifdef RTALLOC_USE_TRACKER
+    void *pv;
+    if (!pvOld)
+    {
+        if (cbNew)
+            pv = RTMemTrackerHdrAlloc(realloc(pvOld, cbNew + sizeof(RTMEMTRACKERHDR)), cbNew,
+                                      pszTag, RTMEMTRACKERMETHOD_REALLOC);
+        else
+            pv = NULL;
+    }
+    else
+    {
+        RTMemTrackerHdrReallocPrep(pvOld, 0, pszTag, RTMEMTRACKERMETHOD_REALLOC);
+        pv = RTMemTrackerHdrRealloc(realloc(pvOld, cbNew + sizeof(RTMEMTRACKERHDR)), cbNew, pvOld,
+                                    pszTag, RTMEMTRACKERMETHOD_REALLOC);
+    }
+# else
     void *pv = realloc(pvOld, cbNew);
+# endif
     AssertMsg(pv || !cbNew, ("realloc(%p, %#zx) failed!!!\n", pvOld, cbNew));
     AssertMsg(   cbNew < RTMEM_ALIGNMENT
               || !((uintptr_t)pv & (RTMEM_ALIGNMENT - 1))
@@ -181,6 +210,9 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
 #ifdef RTALLOC_USE_EFENCE
         rtR3MemFree("Free", RTMEMTYPE_RTMEMFREE, pv, ASMReturnAddress(), NULL, 0, NULL);
 #else
+# ifdef RTALLOC_USE_TRACKER
+        pv = RTMemTrackerHdrFree(pv, 0, NULL, RTMEMTRACKERMETHOD_FREE);
+# endif
         free(pv);
 #endif
 }
