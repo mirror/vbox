@@ -907,7 +907,11 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
                 pVM->ftm.s.StatReceivedMem.c += Hdr.cb;
 
                 /* Update the guest memory of the standby VM. */
+#if 1
+                rc = PGMR3PhysWriteExternal(pVM, Hdr.GCPhys, pPage, Hdr.cbPageRange, "FTMemSync");
+#else
                 rc = PGMPhysWrite(pVM, Hdr.GCPhys, pPage, Hdr.cbPageRange);
+#endif
                 AssertRC(rc);
 
                 RTMemFree(pPage);

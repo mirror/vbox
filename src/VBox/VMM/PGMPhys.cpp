@@ -271,7 +271,7 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
                  *
                  * Allocating writable pages and access handlers are
                  * problematic, write monitored pages are simple and can be
-                 * dealth with here.
+                 * dealt with here.
                  */
                 if (    PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
                     ||  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
