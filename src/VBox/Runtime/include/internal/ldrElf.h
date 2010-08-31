@@ -28,7 +28,7 @@
 #ifndef ___internal_ldrELF_h
 #define ___internal_ldrELF_h
 
-#if defined(RT_ARCH_AMD64)
+#if ARCH_BITS == 64
 # include "ldrELF64.h"
 typedef Elf64_Addr          Elf_Addr;
 typedef Elf64_Half          Elf_Half;
@@ -53,7 +53,7 @@ typedef	Elf64_Sym           Elf_Sym;
 #define ELF_ST_TYPE         ELF64_ST_TYPE
 #define ELF_ST_INFO         ELF64_ST_INFO
 
-#elif defined(RT_ARCH_X86)
+#elif ARCH_BITS == 32
 # include "ldrELF32.h"
 typedef Elf32_Addr          Elf_Addr;
 typedef Elf32_Half          Elf_Half;
@@ -79,8 +79,8 @@ typedef	Elf32_Sym           Elf_Sym;
 #define ELF_ST_INFO         ELF32_ST_INFO
 
 #else
-# error Unknown arch!
+# error Unsupported ARCH_BITS value.
 #endif
 
-#endif  /* ___internal_ldrELF_h */
+#endif /* !___internal_ldrELF_h */
 
