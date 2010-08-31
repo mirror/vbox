@@ -34,7 +34,19 @@ RT_C_DECLS_BEGIN
 /** @defgroup grp_ftm        The Fault Tolerance Monitor / Manager API
  * @{
  */
+
+/**
+ * Fault tolerance checkpoint type.
+ */
+typedef enum FTMCHECKPOINTTYPE
+{
+    FTMCHECKPOINTTYPE_NETWORK,
+    FTMCHECKPOINTTYPE_STORAGE,
+    FTMCHECKPOINTTYPE_32BIT_HACK = 0x7fffffff
+} FTMCHECKPOINTTYPE;
+
 VMMDECL(bool)  FTMIsDeltaLoadSaveActive(PVM pVM);
+VMMDECL(int)   FTMSetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType);
 
 #ifdef IN_RING3
 /** @defgroup grp_ftm_r3     The FTM Host Context Ring-3 API

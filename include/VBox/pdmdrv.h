@@ -39,6 +39,7 @@
 #include <VBox/dbgf.h>
 #include <VBox/mm.h>
 #include <VBox/err.h>
+#include <VBox/ftm.h>
 #include <iprt/stdarg.h>
 
 RT_C_DECLS_BEGIN
@@ -627,11 +628,20 @@ typedef struct PDMDRVHLPRC
      */
     DECLRCCALLBACKMEMBER(bool, pfnAssertOther,(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction));
 
+    /**
+     * Notify FTM about a checkpoint occurance
+     *
+     * @param   pDrvIns             The driver instance.
+     * @param   enmType             Checkpoint type
+     * @thread  Any
+     */
+    DECLRCCALLBACKMEMBER(int, pfnFTSetCheckpoint,(PPDMDRVINS pDrvIns, FTMCHECKPOINTTYPE enmType));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPRC;
 /** Current PDMDRVHLPRC version number. */
-#define PDM_DRVHLPRC_VERSION                    PDM_VERSION_MAKE(0xf0f9, 1, 0)
+#define PDM_DRVHLPRC_VERSION                    PDM_VERSION_MAKE(0xf0fA, 1, 0)
 
 
 /**
@@ -714,11 +724,20 @@ typedef struct PDMDRVHLPR0
      */
     DECLR0CALLBACKMEMBER(bool, pfnAssertOther,(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction));
 
+    /**
+     * Notify FTM about a checkpoint occurance
+     *
+     * @param   pDrvIns             The driver instance.
+     * @param   enmType             Checkpoint type
+     * @thread  Any
+     */
+    DECLR0CALLBACKMEMBER(int, pfnFTSetCheckpoint,(PPDMDRVINS pDrvIns, FTMCHECKPOINTTYPE enmType));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR0;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR0_VERSION                    PDM_VERSION_MAKE(0xf0f8, 1, 0)
+#define PDM_DRVHLPR0_VERSION                    PDM_VERSION_MAKE(0xf0f9, 1, 0)
 
 
 #ifdef IN_RING3
@@ -1195,11 +1214,20 @@ typedef struct PDMDRVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnCallR0,(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg));
 
+    /**
+     * Notify FTM about a checkpoint occurance
+     *
+     * @param   pDrvIns             The driver instance.
+     * @param   enmType             Checkpoint type
+     * @thread  Any
+     */
+    DECLR3CALLBACKMEMBER(int, pfnFTSetCheckpoint,(PPDMDRVINS pDrvIns, FTMCHECKPOINTTYPE enmType));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 1, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fc, 1, 0)
 
 #endif /* IN_RING3 */
 
@@ -1278,6 +1306,13 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint32_t fFlags,
 # define PDMDRV_ASSERT_OTHER(pDrvIns)  do { } while (0)
 #endif
 
+/**
+ * @copydoc PDMDRVHLP::pfnFTSetCheckpoint
+ */
+DECLINLINE(int) PDMDrvHlpFTSetCheckpoint(PPDMDRVINS pDrvIns, FTMCHECKPOINTTYPE enmType)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnFTSetCheckpoint(pDrvIns, enmType);
+}
 
 #ifdef IN_RING3
 
