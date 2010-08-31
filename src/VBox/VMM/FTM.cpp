@@ -1074,6 +1074,9 @@ VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
     if (!pVM->fFaultTolerantMaster)
         return VINF_SUCCESS;
 
+    /** @todo handle ring-0 callbacks on EMT. */
+    VM_ASSERT_OTHER_THREAD(pVM); 
+
     switch (enmCheckpoint)
     {
     case FTMCHECKPOINTTYPE_NETWORK:
