@@ -1089,5 +1089,5 @@ VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType)
     PDMCritSectLeave(&pVM->ftm.s.CritSect);
     pVM->ftm.s.fCheckpointingActive = false;
 
-    return VERR_NOT_IMPLEMENTED;
+    return rc;
 }
