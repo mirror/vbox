@@ -864,7 +864,6 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
         char szCmd[128];
 
         rc = ftmR3TcpReadLine(pVM, szCmd, sizeof(szCmd));
-        AssertRC(rc);
         if (RT_FAILURE(rc))
             break;
 
