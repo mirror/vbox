@@ -62,6 +62,7 @@
 #include <iprt/time.h>
 #include <iprt/mem.h>
 #include <iprt/sg.h>
+#include <iprt/log.h>
 
 #include "internal/magics.h"
 #include "internal/socket.h"
@@ -143,6 +144,8 @@ typedef struct RTSOCKETINT
     /** The events we're currently subscribing to with WSAEventSelect.
      * This is ZERO if we're currently not subscribing to anything. */
     uint32_t            fSubscribedEvts;
+    /** Saved events which are only posted once */
+    uint32_t            fEventsSaved;
 #endif /* RT_OS_WINDOWS */
 } RTSOCKETINT;
 
@@ -852,6 +855,7 @@ RTDECL(int) RTSocketSgWriteNB(RTSOCKET hSocket, PCRTSGBUF pSgBuf, size_t *pcbWri
     AssertReturn(pSgBuf->cSegs > 0, VERR_INVALID_PARAMETER);
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
+
     int rc = rtSocketSwitchBlockingMode(pThis, false /* fBlocking */);
     if (RT_FAILURE(rc))
         return rc;
@@ -1367,6 +1371,7 @@ static int rtSocketPollUpdateEvents(RTSOCKETINT *pThis, uint32_t fEvents)
         fNetworkEvents |= FD_WRITE;
     if (fEvents & RTPOLL_EVT_ERROR)
         fNetworkEvents |= FD_CLOSE;
+    LogFlowFunc(("fNetworkEvents=%#x\n", fNetworkEvents));
     if (WSAEventSelect(pThis->hNative, pThis->hEvent, fNetworkEvents) == 0)
     {
         pThis->fSubscribedEvts = fEvents;
@@ -1390,6 +1395,8 @@ static uint32_t rtSocketPollCheck(RTSOCKETINT *pThis, uint32_t fEvents)
 {
     int         rc         = VINF_SUCCESS;
     uint32_t    fRetEvents = 0;
+
+    LogFlowFunc(("pThis=%#p fEvents=%#x\n", pThis, fEvents));
 
     /* Make sure WSAEnumNetworkEvents returns what we want. */
     if ((pThis->fSubscribedEvts & fEvents) != fEvents)
@@ -1430,6 +1437,7 @@ static uint32_t rtSocketPollCheck(RTSOCKETINT *pThis, uint32_t fEvents)
         /** @todo  */
     }
 
+    LogFlowFunc(("fRetEvents=%#x\n", fRetEvents));
     return fRetEvents;
 }
 
@@ -1470,7 +1478,10 @@ uint32_t rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvent
     }
 
     /* (rtSocketPollCheck will reset the event object). */
-    uint32_t fRetEvents = rtSocketPollCheck(pThis, fEvents);
+    uint32_t fRetEvents = pThis->fEventsSaved;
+    pThis->fEventsSaved = 0; /* Reset */
+    fRetEvents |= rtSocketPollCheck(pThis, fEvents);
+
     if (   !fRetEvents
         && !fNoWait)
     {
@@ -1515,8 +1526,9 @@ uint32_t rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvent
  *                              this method is called in reverse order, so the
  *                              first call will have this set (when the entire
  *                              set was processed).
+ * @param   fHarvestEvents      Set if we should check for pending events.
  */
-uint32_t rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry)
+uint32_t rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents)
 {
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, 0);
@@ -1527,6 +1539,19 @@ uint32_t rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry)
     /* Harvest events and clear the event mask for the next round of polling. */
     uint32_t fRetEvents = rtSocketPollCheck(pThis, fEvents);
     pThis->fPollEvts = 0;
+
+    /*
+     * Save the write event if required.
+     * it is only posted once and might get lost
+     * if the another source in the pollset with a higher priority
+     * has pending events.
+    */
+    if (   !fHarvestEvents
+        && fRetEvents)
+    {
+        pThis->fEventsSaved = fRetEvents;
+        fRetEvents = 0;
+    }
 
     /* Make the socket blocking again and unlock the handle. */
     if (pThis->cUsers == 1)

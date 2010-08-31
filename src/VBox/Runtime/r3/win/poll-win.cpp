@@ -166,12 +166,12 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
                 {
                     case RTHANDLETYPE_PIPE:
                         rtPipePollDone(pThis->aHandles[i].u.hPipe, pThis->aHandles[i].fEvents,
-                                       pThis->aHandles[i].fFinalEntry);
+                                       pThis->aHandles[i].fFinalEntry, false);
                         break;
 
                     case RTHANDLETYPE_SOCKET:
                         rtSocketPollDone(pThis->aHandles[i].u.hSocket, pThis->aHandles[i].fEvents,
-                                         pThis->aHandles[i].fFinalEntry);
+                                         pThis->aHandles[i].fFinalEntry, false);
                         break;
 
                     default:
@@ -208,32 +208,31 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
     /*
      * Get event (if pending) and do wait cleanup.
      */
-    /** @todo r=aeichner: The loop below overwrites events if
-     *  more than one source has events pending.
-     */
-    i = cHandles;
-    while (i-- > 0)
+    bool fHarvestEvents = true;
+    for (i = 0; i < cHandles; i++)
     {
         fEvents = 0;
         switch (pThis->aHandles[i].enmType)
         {
             case RTHANDLETYPE_PIPE:
                 fEvents = rtPipePollDone(pThis->aHandles[i].u.hPipe, pThis->aHandles[i].fEvents,
-                                         pThis->aHandles[i].fFinalEntry);
+                                         pThis->aHandles[i].fFinalEntry, fHarvestEvents);
                 break;
 
             case RTHANDLETYPE_SOCKET:
                 fEvents = rtSocketPollDone(pThis->aHandles[i].u.hSocket, pThis->aHandles[i].fEvents,
-                                           pThis->aHandles[i].fFinalEntry);
+                                           pThis->aHandles[i].fFinalEntry, fHarvestEvents);
                 break;
 
             default:
                 AssertFailed();
                 break;
         }
-        if (fEvents)
+        if (   fEvents
+            && fHarvestEvents)
         {
             Assert(fEvents != UINT32_MAX);
+            fHarvestEvents = false;
             if (pfEvents)
                 *pfEvents = fEvents;
             if (pid)
