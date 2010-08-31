@@ -625,8 +625,7 @@ static int ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
 
         STAM_REL_COUNTER_INC((fFullSync) ? &pVM->ftm.s.StatFullSync : &pVM->ftm.s.StatDeltaVM);
 
-        rc = ftmR3TcpSubmitCommand(pVM, (fFullSync) ? "full-sync" : "checkpoint");
-        AssertRC(rc);
+        RTSocketRetain(pVM->ftm.s.hSocket); /* For concurrent access by I/O thread and EMT. */
 
         /* Reset the sync state. */
         pVM->ftm.s.syncstate.uOffStream   = 0;
@@ -635,6 +634,9 @@ static int ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
         pVM->ftm.s.syncstate.fIOError     = false;
         pVM->ftm.s.syncstate.fEndOfStream = false;
 
+        rc = ftmR3TcpSubmitCommand(pVM, (fFullSync) ? "full-sync" : "checkpoint");
+        AssertRC(rc);
+
         pVM->ftm.s.fDeltaLoadSaveActive = (fFullSync == false);
         rc = VMR3Save(pVM, NULL /* pszFilename */, &g_ftmR3TcpOps, pVM, true /* fContinueAfterwards */, NULL, NULL, &fSuspended);
         pVM->ftm.s.fDeltaLoadSaveActive = false;
@@ -642,6 +644,8 @@ static int ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
 
         rc = ftmR3TcpReadACK(pVM, (fFullSync) ? "full-sync-complete" : "checkpoint-complete");
         AssertRC(rc);
+
+        RTSocketRelease(pVM->ftm.s.hSocket);
         break;
     }
 
