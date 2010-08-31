@@ -715,12 +715,14 @@ static DECLCALLBACK(bool) pdmR0DrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char
     return false;
 }
 
+
 /** @interface_method_impl{PDMDRVHLPR0,pfnFTSetCheckpoint} */
 static DECLCALLBACK(int) pdmR0DrvHlp_FTSetCheckpoint(PPDMDRVINS pDrvIns, FTMCHECKPOINTTYPE enmType)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     return FTMSetCheckpoint(pDrvIns->Internal.s.pVMR0, enmType);
 }
+
 
 /**
  * The Ring-0 Context Driver Helper Callbacks.
