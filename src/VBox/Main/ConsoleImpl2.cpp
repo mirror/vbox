@@ -827,7 +827,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             default:
                 Assert(false);
             case ChipsetType_PIIX3:
-                InsertConfigNode(pDevices, "piix3pci", &pDev);
+                InsertConfigNode(pDevices, "pci", &pDev);
                 break;
             case ChipsetType_ICH9:
                 InsertConfigNode(pDevices, "ich9pci", &pDev);
@@ -839,7 +839,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigInteger(pCfg, "IOAPIC", fIOAPIC);
 
 #if 0 /* enable this to test PCI bridging */
-        InsertConfigNode(pDevices, "piix3pcibridge", &pDev);
+        InsertConfigNode(pDevices, "pcibridge", &pDev);
         InsertConfigNode(pDev,     "0", &pInst);
         InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
         InsertConfigNode(pInst,    "Config", &pCfg);
