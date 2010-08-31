@@ -1007,6 +1007,55 @@ int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
     return rc;
 }
 
+/** Vector type for the list of interfaces. */
+#define VECTOR_TYPE       char *
+#define VECTOR_TYPENAME   usbInterfaceList
+static void usbInterfaceListCleanup(char **ppsz)
+{
+    RTStrFree(*ppsz);
+}
+#define VECTOR_DESTRUCTOR usbInterfaceListCleanup
+#include "vector.h"
+
+struct USBInterfaceList
+{
+    /** The vector of devices */
+    usbInterfaceList mList;
+    /** The single traversal iterator */
+    usbInterfaceList_iterator mIt;
+};
+
+void USBDevInfoCleanup(USBDeviceInfo *pSelf)
+{
+    RTStrFree(pSelf->mDevice);
+    RTStrFree(pSelf->mSysfsPath);
+    pSelf->mDevice = pSelf->mSysfsPath = NULL;
+    if (pSelf->mInterfaces)
+    {
+        usbInterfaceList_cleanup(&pSelf->mInterfaces->mList);
+        RTMemFree(pSelf->mInterfaces);
+    }
+}
+
+int USBDevInfoInit(USBDeviceInfo *pSelf, const char *aDevice,
+                   const char *aSystemID)
+{
+    const usbInterfaceList_iterator *pItBegin;
+
+    pSelf->mDevice = aDevice ? RTStrDup(aDevice) : NULL;
+    pSelf->mSysfsPath = aSystemID ? RTStrDup(aSystemID) : NULL;
+    pSelf->mInterfaces = (struct USBInterfaceList *) RTMemAllocZ(sizeof(struct USBInterfaceList));
+    if (   !pSelf->mInterfaces
+        || !usbInterfaceList_init(&pSelf->mInterfaces->mList)
+        || (aDevice && !pSelf->mDevice) || (aSystemID && ! pSelf->mSysfsPath))
+    {
+        USBDevInfoCleanup(pSelf);
+        return 0;
+    }
+    pItBegin = usbInterfaceList_begin(&pSelf->mInterfaces->mList);
+    usbInterfaceList_iter_init(&pSelf->mInterfaces->mIt, pItBegin);
+    return 1;
+}
 
 int USBDevInfoUpdateDevices (VBoxMainUSBDeviceInfo *pSelf)
 {
@@ -1026,6 +1075,30 @@ int USBDevInfoUpdateDevices (VBoxMainUSBDeviceInfo *pSelf)
     LogFlowFunc(("rc=%Rrc\n", rc));
     return rc;
 }
+
+char *USBDevInfoFirstInterface(struct USBInterfaceList *pInterfaces)
+{
+    const usbInterfaceList_iterator *pItBegin, *pItEnd;
+    pItBegin = usbInterfaceList_begin(&pInterfaces->mList);
+    pItEnd = usbInterfaceList_end(&pInterfaces->mList);
+    usbInterfaceList_iter_init(&pInterfaces->mIt, pItBegin);
+    if (usbInterfaceList_iter_eq(pItBegin, pItEnd))
+        return NULL;
+    return *usbInterfaceList_iter_target(&pInterfaces->mIt);
+}
+
+char *USBDevInfoNextInterface(struct USBInterfaceList *pInterfaces)
+{
+    const usbInterfaceList_iterator *pItEnd;
+    pItEnd = usbInterfaceList_end(&pInterfaces->mList);
+    if (usbInterfaceList_iter_eq(&pInterfaces->mIt, pItEnd))
+        return NULL;
+    usbInterfaceList_iter_incr(&pInterfaces->mIt);
+    if (usbInterfaceList_iter_eq(&pInterfaces->mIt, pItEnd))
+        return NULL;
+    return *usbInterfaceList_iter_target(&pInterfaces->mIt);
+}
+
 
 class hotplugNullImpl : public VBoxMainHotplugWaiterImpl
 {
@@ -1643,7 +1716,8 @@ static bool muiHandle(pathHandler *pParent, const char *pcszNode)
         return true;
     char *pcszDup = RTStrDup(pcszNode);
     if (pcszDup)
-        if (USBInterfaceList_push_back(&pSelf->mInfo->mInterfaces, &pcszDup))
+        if (usbInterfaceList_push_back(&pSelf->mInfo->mInterfaces->mList,
+                                       &pcszDup))
             return true;
     RTStrFree(pcszDup);
     return false;
