@@ -1848,6 +1848,7 @@ static bool atapiReadSS(ATADevState *s)
         default:
             break;
     }
+    s->Led.Actual.s.fReading = 0;
     STAM_PROFILE_ADV_STOP(&s->StatReads, r);
 
     STAM_PROFILE_START(&pCtl->StatLockWait, a);
@@ -1856,7 +1857,6 @@ static bool atapiReadSS(ATADevState *s)
 
     if (RT_SUCCESS(rc))
     {
-        s->Led.Actual.s.fReading = 0;
         STAM_REL_COUNTER_ADD(&s->StatBytesRead, s->cbATAPISector * cSectors);
 
         /* The initial buffer end value has been set up based on the total
