@@ -1594,6 +1594,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                     int         rc;
                     RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
                     bool        fZero  = PGM_PAGE_IS_ZERO(pCurPage) || PGM_PAGE_IS_BALLOONED(pCurPage);
+                    bool        fSkipped = false;
 
                     if (!fZero)
                     {
@@ -1623,13 +1624,20 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                                 if (    PGM_PAGE_IS_WRITTEN_TO(pCurPage)
                                     ||  PGM_PAGE_IS_FT_DIRTY(pCurPage))
                                 {
-                                    SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
-                                    SSMR3PutGCPhys(pSSM, GCPhys);
+                                    if (GCPhys == GCPhysLast + PAGE_SIZE)
+                                        SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW);
+                                    else
+                                    {
+                                        SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
+                                        SSMR3PutGCPhys(pSSM, GCPhys);
+                                    }
                                     rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
                                     PGM_PAGE_CLEAR_WRITTEN_TO(pCurPage);
                                     PGM_PAGE_CLEAR_FT_DIRTY(pCurPage);
                                 }
                                 /* else nothing changed, so skip it. */
+                                else
+                                    fSkipped = true;
                             }
                             else
                             {
@@ -1677,7 +1685,8 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         return rc;
 
                     pgmLock(pVM);
-                    GCPhysLast = GCPhys;
+                    if (!fSkipped)
+                        GCPhysLast = GCPhys;
                     if (paLSPages)
                     {
                         paLSPages[iPage].fDirty = 0;
