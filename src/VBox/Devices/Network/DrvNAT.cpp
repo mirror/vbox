@@ -531,6 +531,9 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
     int rc;
     if (pThis->pSlirpThread->enmState == PDMTHREADSTATE_RUNNING)
     {
+        /* Set an FTM checkpoint as this operation changes the state permanently. */
+        PDMDrvHlpFTSetCheckpoint(pThis->pDrvIns, FTMCHECKPOINTTYPE_NETWORK);
+
 #ifdef VBOX_WITH_SLIRP_MT
         PRTREQQUEUE pQueue = (PRTREQQUEUE)slirp_get_queue(pThis->pNATState);
 #else
