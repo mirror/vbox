@@ -1014,6 +1014,9 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
             stub.spuDispatch.WindowPosition(window->spuWindow, x, y);
         if (winW > 0 && winH > 0)
             stub.spu->dispatch_table.Viewport( 0, 0, winW, winH );
+#ifdef VBOX_WITH_WDDM
+        stub.spu->dispatch_table.WindowVisibleRegion(window->spuWindow, 0, NULL);
+#endif
     }
 
     /* Update window mapping state.
