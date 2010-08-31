@@ -641,7 +641,7 @@ typedef struct PDMDRVHLPRC
     uint32_t                        u32TheEnd;
 } PDMDRVHLPRC;
 /** Current PDMDRVHLPRC version number. */
-#define PDM_DRVHLPRC_VERSION                    PDM_VERSION_MAKE(0xf0fA, 1, 0)
+#define PDM_DRVHLPRC_VERSION                    PDM_VERSION_MAKE(0xf0f9, 2, 0)
 
 
 /**
@@ -737,7 +737,7 @@ typedef struct PDMDRVHLPR0
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR0;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR0_VERSION                    PDM_VERSION_MAKE(0xf0f9, 1, 0)
+#define PDM_DRVHLPR0_VERSION                    PDM_VERSION_MAKE(0xf0f8, 2, 0)
 
 
 #ifdef IN_RING3
@@ -1227,7 +1227,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fc, 1, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 2, 0)
 
 #endif /* IN_RING3 */
 
@@ -1313,6 +1313,7 @@ DECLINLINE(int) PDMDrvHlpFTSetCheckpoint(PPDMDRVINS pDrvIns, FTMCHECKPOINTTYPE e
 {
     return pDrvIns->CTX_SUFF(pHlp)->pfnFTSetCheckpoint(pDrvIns, enmType);
 }
+
 
 #ifdef IN_RING3
 
