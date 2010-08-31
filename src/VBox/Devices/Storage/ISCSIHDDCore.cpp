@@ -2308,6 +2308,7 @@ static int iscsiSendPDUAsync(PISCSIIMAGE pImage)
 
         /* Send as much as we can. */
         rc = pImage->pInterfaceNetCallbacks->pfnSgWriteNB(pImage->Socket, &pImage->pIScsiPDUTxCur->SgBuf, &cbSent);
+        LogFlow(("SgWriteNB returned rc=%Rrc cbSent=%zu\n", rc, cbSent));
         if (RT_SUCCESS(rc))
         {
             LogFlow(("Sent %zu bytes for PDU %#p\n", cbSent, pImage->pIScsiPDUTxCur));
@@ -2337,6 +2338,7 @@ static int iscsiSendPDUAsync(PISCSIIMAGE pImage)
     else
         pImage->fPollEvents &= ~VD_INTERFACETCPNET_EVT_WRITE;
 
+    LogFlowFunc(("rc=%Rrc pIScsiPDUTxCur=%#p\n", rc, pImage->pIScsiPDUTxCur));
     return rc;
 }
 
@@ -3279,6 +3281,7 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
         else
             msWait = RT_INDEFINITE_WAIT;
 
+        LogFlow(("Waiting for events fPollEvents=%#x\n", pImage->fPollEvents));
         rc = iscsiIoThreadWait(pImage, msWait, pImage->fPollEvents, &fEvents);
         if (rc == VERR_INTERRUPTED)
         {
@@ -3333,20 +3336,20 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                 else if (RT_FAILURE(rc))
                     LogRel(("iSCSI: Handling incoming request failed %Rrc\n", rc));
             }
-            else if (fEvents & VD_INTERFACETCPNET_EVT_WRITE)
+
+            if (fEvents & VD_INTERFACETCPNET_EVT_WRITE)
             {
                 LogFlow(("The socket is writable\n"));
                 rc = iscsiSendPDUAsync(pImage);
                 if (RT_FAILURE(rc))
                     LogRel(("iSCSI: Sending PDU failed %Rrc\n", rc));
             }
-            else if (fEvents & VD_INTERFACETCPNET_EVT_ERROR)
+
+            if (fEvents & VD_INTERFACETCPNET_EVT_ERROR)
             {
                 LogFlow(("An error ocurred\n"));
                 iscsiReattach(pImage);
             }
-            else
-                LogRel(("iSCSI: Received unexpected event %#x\n", fEvents));
         }
         else
         {
