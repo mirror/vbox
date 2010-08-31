@@ -86,8 +86,10 @@ xf86ShowUnusedOptions
 xf86SlowBcopy
 xf86UnMapVidMem
 xf86ValidateModes
+xf86calloc
 xf86close
 xf86errno
+xf86free
 xf86ioctl
 xf86isspace
 xf86memchr

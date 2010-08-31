@@ -169,7 +169,7 @@ static VBOXPtr
 VBOXGetRec(ScrnInfoPtr pScrn)
 {
     if (!pScrn->driverPrivate) {
-        pScrn->driverPrivate = xcalloc(sizeof(VBOXRec), 1);
+        pScrn->driverPrivate = calloc(sizeof(VBOXRec), 1);
     }
 
     return ((VBOXPtr)pScrn->driverPrivate);
@@ -179,9 +179,9 @@ static void
 VBOXFreeRec(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-    xfree(pVBox->savedPal);
-    xfree(pVBox->fonts);
-    xfree(pScrn->driverPrivate);
+    free(pVBox->savedPal);
+    free(pVBox->fonts);
+    free(pScrn->driverPrivate);
     pScrn->driverPrivate = NULL;
 }
 
@@ -625,11 +625,11 @@ VBOXProbe(DriverPtr drv, int flags)
 		    }
 		}
 	    }
-	    xfree(usedChips);
+	    free(usedChips);
 	}
     }
 
-    xfree(devSections);
+    free(devSections);
 
     return (foundScreen);
 }
@@ -759,7 +759,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* options */
     xf86CollectOptions(pScrn, NULL);
-    if (!(pVBox->Options = xalloc(sizeof(VBOXOptions))))
+    if (!(pVBox->Options = malloc(sizeof(VBOXOptions))))
         return FALSE;
     memcpy(pVBox->Options, VBOXOptions, sizeof(VBOXOptions));
     xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, pVBox->Options);
@@ -1122,7 +1122,7 @@ VBOXValidMode(int scrn, DisplayModePtr p, Bool flag, int pass)
     for (v = mon->vrefresh[0].lo; v <= mon->vrefresh[0].hi; v++) {
         mode = xf86CVTMode(p->HDisplay, p->VDisplay, v, 0, 0);
         ret = xf86CheckModeForMonitor(mode, mon);
-        xfree(mode);
+        free(mode);
         if (ret == MODE_OK)
             break;
     }
@@ -1350,7 +1350,7 @@ VBOXSaveRestore(ScrnInfoPtr pScrn, vbeSaveRestoreFunction function)
             {
                 /* don't rely on the memory not being touched */
                 if (pVBox->pstate == NULL)
-                    pVBox->pstate = xalloc(pVBox->stateSize);
+                    pVBox->pstate = malloc(pVBox->stateSize);
                 memcpy(pVBox->pstate, pVBox->state,
                        (unsigned) pVBox->stateSize);
             }
