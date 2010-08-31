@@ -36,8 +36,9 @@
  * @returns VBox status code.
  *
  * @param   pVM         The VM to operate on.
+ * @param   enmType     Checkpoint type
  */
-VMMDECL(int) FTMSetCheckpoint(PVM pVM)
+VMMDECL(int)   FTMSetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType)
 {
     if (!pVM->fFaultTolerantMaster)
         return VINF_SUCCESS;
