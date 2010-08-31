@@ -27,7 +27,7 @@
 /** The size of a vector element */
 #define VECTOR_ELEMENT_SIZE sizeof(VECTOR_TYPE)
 /** The unit by which the vector capacity is increased */
-#define VECTOR_ALLOC_UNIT VECTOR_ELEMENT_SIZE * 16
+#define VECTOR_ALLOC_UNIT 16
 
 #ifndef VECTOR_TYPE
 /** VECTOR_TYPE must be defined to the type that the vector will contain.  The
@@ -64,6 +64,9 @@ typedef struct VECTOR_TYPENAME
     VECTOR_TYPE *mCapacity;
 } VECTOR_TYPENAME;
 
+/** Non-constant iterator over the vector */
+typedef VECTOR_TYPE *VECTOR_PUBLIC(iterator);
+
 /*** Private methods ***/
 
 /** Destructor that does nothing. */
@@ -77,12 +80,13 @@ static inline int VECTOR_INTERNAL(expand)(VECTOR_TYPENAME *pSelf)
 {
     size_t cNewCap = pSelf->mCapacity - pSelf->mBegin + VECTOR_ALLOC_UNIT;
     size_t cOffEnd = pSelf->mEnd - pSelf->mBegin;
-    void *pRealloc = VECTOR_ALLOCATOR(pSelf->mBegin, cNewCap);
+    void *pRealloc = VECTOR_ALLOCATOR(pSelf->mBegin,
+                                      cNewCap * VECTOR_ELEMENT_SIZE);
     if (!pRealloc)
         return 0;
     pSelf->mBegin = (VECTOR_TYPE *)pRealloc;
     pSelf->mEnd = pSelf->mBegin + cOffEnd;
-    pSelf->mCapacity = pSelf->mBegin + cNewCap / VECTOR_ELEMENT_SIZE;
+    pSelf->mCapacity = pSelf->mBegin + cNewCap;
     memset(pSelf->mEnd, 0, pSelf->mCapacity - pSelf->mEnd);
     return 1;
 }
@@ -143,10 +147,51 @@ static inline size_t VECTOR_PUBLIC(size)(VECTOR_TYPENAME *pSelf)
     return (pSelf->mEnd - pSelf->mBegin) / VECTOR_ELEMENT_SIZE;
 }
 
-/*** Iterators ***/
+/** Get the special "begin" iterator for a vector */
+static inline const VECTOR_PUBLIC(iterator) *VECTOR_PUBLIC(begin)
+                                                 (VECTOR_TYPENAME *pSelf)
+{
+    return &pSelf->mBegin;
+}
 
-/** Non-constant iterator over the vector */
-typedef VECTOR_TYPE *VECTOR_PUBLIC(iterator);
+/** Get the special "end" iterator for a vector */
+static inline const VECTOR_PUBLIC(iterator) *VECTOR_PUBLIC(end)
+                                                 (VECTOR_TYPENAME *pSelf)
+{
+    return &pSelf->mEnd;
+}
+
+/** A structure with pointers to class operations to save too much use of long
+ * identifiers in source code.  Use like:
+ *   <vector_type>_op_table *pOps = &<vector_type>_ops;
+ * and then
+ *   pOps->init(&my_vector);
+ */
+typedef const struct VECTOR_INTERNAL(op_table)
+{
+    int    (*init)      (VECTOR_TYPENAME *pSelf);
+    void   (*cleanup)   (VECTOR_TYPENAME *pSelf);
+    int    (*push_back) (VECTOR_TYPENAME *pSelf, VECTOR_TYPE *pElement);
+    void   (*clear)     (VECTOR_TYPENAME *pSelf);
+    size_t (*size)      (VECTOR_TYPENAME *pSelf);
+    const VECTOR_PUBLIC(iterator) *
+           (*begin)     (VECTOR_TYPENAME *pSelf);
+    const VECTOR_PUBLIC(iterator) *
+           (*end)       (VECTOR_TYPENAME *pSelf);
+} VECTOR_PUBLIC(op_table);
+
+static VECTOR_PUBLIC(op_table) VECTOR_PUBLIC(ops) =
+{
+    VECTOR_PUBLIC(init),
+    VECTOR_PUBLIC(cleanup),
+    VECTOR_PUBLIC(push_back),
+    VECTOR_PUBLIC(clear),
+    VECTOR_PUBLIC(size),
+    VECTOR_PUBLIC(begin),
+    VECTOR_PUBLIC(end)
+};
+
+/*** Iterator methods ***/
 
 /** Initialise a newly allocated iterator */
 static inline void VECTOR_PUBLIC(iter_init)(VECTOR_PUBLIC(iterator) *pSelf,
@@ -167,20 +212,6 @@ static inline void VECTOR_PUBLIC(iter_incr)(VECTOR_PUBLIC(iterator) *pSelf)
     ++*pSelf;
 }
 
-/** Get the special "begin" iterator for a vector */
-static inline const VECTOR_PUBLIC(iterator) *VECTOR_PUBLIC(begin)
-                                                 (VECTOR_TYPENAME *pSelf)
-{
-    return &pSelf->mBegin;
-}
-
-/** Get the special "end" iterator for a vector */
-static inline const VECTOR_PUBLIC(iterator) *VECTOR_PUBLIC(end)
-                                                 (VECTOR_TYPENAME *pSelf)
-{
-    return &pSelf->mEnd;
-}
-
 /** Test whether an iterator is less than another. */
 static inline int VECTOR_PUBLIC(iter_lt)(const VECTOR_PUBLIC(iterator) *pFirst,
                                          const VECTOR_PUBLIC(iterator) *pSecond)
@@ -195,6 +226,33 @@ static inline int VECTOR_PUBLIC(iter_eq)(const VECTOR_PUBLIC(iterator) *pFirst,
 {
     return *pFirst == *pSecond;
 }
+
+/** A structure with pointers to iterator operations to save too much use of
+ * long identifiers in source code.  Use like:
+ *   <vector_type>_iter_op_table *pOps = &<vector_type>_iter_ops;
+ * and then
+ *   pOps->init(&my_iter, &other_iter);
+ */
+typedef const struct VECTOR_INTERNAL(iter_op_table)
+{
+    void         (*init)    (VECTOR_PUBLIC(iterator) *pSelf,
+                             const VECTOR_PUBLIC(iterator) *pOther);
+    VECTOR_TYPE *(*target)  (VECTOR_PUBLIC(iterator) *pSelf);
+    void         (*incr)    (VECTOR_PUBLIC(iterator) *pSelf);
+    int          (*lt) (const VECTOR_PUBLIC(iterator) *pFirst,
+                             const VECTOR_PUBLIC(iterator) *pSecond);
+    int          (*eq) (const VECTOR_PUBLIC(iterator) *pFirst,
+                             const VECTOR_PUBLIC(iterator) *pSecond);
+} VECTOR_PUBLIC(iter_op_table);
+
+static VECTOR_PUBLIC(iter_op_table) VECTOR_PUBLIC(iter_ops) =
+{
+    VECTOR_PUBLIC(iter_init),
+    VECTOR_PUBLIC(iter_target),
+    VECTOR_PUBLIC(iter_incr),
+    VECTOR_PUBLIC(iter_lt),
+    VECTOR_PUBLIC(iter_eq)
+};
 
 /* We need to undefine anything we have defined (and for convenience we also
  * undefine our "parameter" macros) as this header may be included multiple
