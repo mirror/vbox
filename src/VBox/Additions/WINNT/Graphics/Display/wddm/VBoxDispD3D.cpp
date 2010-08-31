@@ -4230,16 +4230,21 @@ static HRESULT vboxWddmNSCAddAlloc(PVBOXWDDMDISP_NSCADD pData, PVBOXWDDMDISP_ALL
 static HRESULT vboxWddmNotifySharedChange(PVBOXWDDMDISP_DEVICE pDevice)
 {
     VBOXWDDMDISP_NSCADD NscAdd;
+    BOOL bReinitRenderData = TRUE;
 
     do
     {
-        NscAdd.pvCommandBuffer = pDevice->DefaultContext.ContextInfo.pCommandBuffer;
-        NscAdd.cbCommandBuffer = pDevice->DefaultContext.ContextInfo.CommandBufferSize;
-        NscAdd.pAllocationList = pDevice->DefaultContext.ContextInfo.pAllocationList;
-        NscAdd.cAllocationList = pDevice->DefaultContext.ContextInfo.AllocationListSize;
-        NscAdd.pPatchLocationList = pDevice->DefaultContext.ContextInfo.pPatchLocationList;
-        NscAdd.cPatchLocationList = pDevice->DefaultContext.ContextInfo.PatchLocationListSize;
-        NscAdd.cAllocations = 0;
+        if (bReinitRenderData)
+        {
+            NscAdd.pvCommandBuffer = pDevice->DefaultContext.ContextInfo.pCommandBuffer;
+            NscAdd.cbCommandBuffer = pDevice->DefaultContext.ContextInfo.CommandBufferSize;
+            NscAdd.pAllocationList = pDevice->DefaultContext.ContextInfo.pAllocationList;
+            NscAdd.cAllocationList = pDevice->DefaultContext.ContextInfo.AllocationListSize;
+            NscAdd.pPatchLocationList = pDevice->DefaultContext.ContextInfo.pPatchLocationList;
+            NscAdd.cPatchLocationList = pDevice->DefaultContext.ContextInfo.PatchLocationListSize;
+            NscAdd.cAllocations = 0;
+            bReinitRenderData = FALSE;
+        }
 
         EnterCriticalSection(&pDevice->DirtyAllocListLock);
 
@@ -4289,6 +4294,7 @@ static HRESULT vboxWddmNotifySharedChange(PVBOXWDDMDISP_DEVICE pDevice)
             pDevice->DefaultContext.ContextInfo.pAllocationList = RenderData.pNewAllocationList;
             pDevice->DefaultContext.ContextInfo.PatchLocationListSize = RenderData.NewPatchLocationListSize;
             pDevice->DefaultContext.ContextInfo.pPatchLocationList = RenderData.pNewPatchLocationList;
+            bReinitRenderData = TRUE;
         }
         else
             break;
