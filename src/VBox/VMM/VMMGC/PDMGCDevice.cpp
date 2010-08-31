@@ -683,12 +683,14 @@ static DECLCALLBACK(bool) pdmRCDrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char
     return false;
 }
 
+
 /** @interface_method_impl{PDMDRVHLPRC,pfnFTSetCheckpoint} */
 static DECLCALLBACK(int) pdmRCDrvHlp_FTSetCheckpoint(PPDMDRVINS pDrvIns, FTMCHECKPOINTTYPE enmType)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     return FTMSetCheckpoint(pDrvIns->Internal.s.pVMRC, enmType);
 }
+
 
 /**
  * The Raw-Mode Context Driver Helper Callbacks.

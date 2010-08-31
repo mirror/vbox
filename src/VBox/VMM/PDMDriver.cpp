@@ -1351,12 +1351,14 @@ static DECLCALLBACK(int) pdmR3DrvHlp_CallR0(PPDMDRVINS pDrvIns, uint32_t uOperat
     return rc;
 }
 
+
 /** @interface_method_impl{PDMDRVHLP,pfnFTSetCheckpoint} */
 static DECLCALLBACK(int) pdmR3DrvHlp_FTSetCheckpoint(PPDMDRVINS pDrvIns, FTMCHECKPOINTTYPE enmType)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     return FTMSetCheckpoint(pDrvIns->Internal.s.pVMR3, enmType);
 }
+
 
 /**
  * The driver helper structure.
