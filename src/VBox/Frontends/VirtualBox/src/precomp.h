@@ -1,6 +1,5 @@
 /* $Id$*/
 /** @file
- *
  * Header used if VBOX_WITH_PRECOMPILED_HEADERS is active.
  */
 
