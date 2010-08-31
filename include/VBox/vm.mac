@@ -126,6 +126,9 @@ struc VMCPU
     .uAdHoc                 resd 1
     .aStatAdHoc             resb STAMPROFILEADV_size * 8
 
+%if HC_ARCH_BITS == 32
+    .abAlignment1           resd 16+1
+%endif
     alignb 64
 
     .cpum                   resb 4096

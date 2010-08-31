@@ -121,7 +121,7 @@ typedef struct VMCPU
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      *   */
-    uint8_t                 abAlignment1[HC_ARCH_BITS == 32 ? 64 : 56];
+    uint8_t                 abAlignment1[HC_ARCH_BITS == 32 ? 16+64 : 56];
 
     /** CPUM part. */
     union
