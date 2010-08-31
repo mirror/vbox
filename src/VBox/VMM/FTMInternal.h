@@ -102,6 +102,9 @@ typedef struct FTM
     STAMCOUNTER         StatDeltaMem;
     STAMCOUNTER         StatDeltaVM;
     STAMCOUNTER         StatFullSync;
+    STAMCOUNTER         StatCheckpointNetwork;
+    STAMCOUNTER         StatCheckpointStorage;
+
 } FTM;
 AssertCompileMemberAlignment(FTM, CritSect, 8);
 
