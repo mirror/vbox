@@ -198,8 +198,8 @@ int VBoxProblemReporter::message (QWidget *aParent, Type aType, const QString &a
             break;
     }
 
-    QIMessageBox *box = new QIMessageBox (title, aMessage, icon, aButton1, aButton2,
-                                          aButton3, aParent, aAutoConfirmId);
+    QPointer<QIMessageBox> box = new QIMessageBox (title, aMessage, icon, aButton1, aButton2,
+                                                   aButton3, aParent, aAutoConfirmId);
 
     if (!aText1.isNull())
         box->setButtonText (0, aText1);
@@ -221,14 +221,15 @@ int VBoxProblemReporter::message (QWidget *aParent, Type aType, const QString &a
 
     if (aAutoConfirmId)
     {
-        if (box->isFlagChecked())
+        if (box && box->isFlagChecked())
         {
             msgs << aAutoConfirmId;
             vbox.SetExtraData (VBoxDefs::GUI_SuppressMessages, msgs.join (","));
         }
     }
 
-    delete box;
+    if (box)
+        delete box;
 
     return rc;
 }
