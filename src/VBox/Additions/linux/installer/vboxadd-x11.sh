@@ -312,17 +312,25 @@ setup()
 
     echo
     case $x_version in
-        1.8.99.* )
+        1.9.99.* )
             echo "Warning: unsupported pre-release version of X.Org Server installed.  Not"
             echo "installing the X.Org drivers."
             dox11config=""
+            ;;
+        1.8.99.* | 1.9.* )
+            begin "Installing X.Org Server 1.9 modules"
+            vboxvideo_src=vboxvideo_drv_19.so
+            vboxmouse_src=vboxmouse_drv_19.so
+            doxorgconfd="true"
+            # Fedora 14 looks likely to ship without vboxvideo detection
+            # test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.7.99.* | 1.8.* )
             begin "Installing X.Org Server 1.8 modules"
             vboxvideo_src=vboxvideo_drv_18.so
             vboxmouse_src=vboxmouse_drv_18.so
             doxorgconfd="true"
-            # Fedora 13 looks likely to ship without vboxvideo detection
+            # Fedora 13 shipped without vboxvideo detection
             test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.6.99.* | 1.7.* )
