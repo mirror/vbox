@@ -109,16 +109,6 @@ typedef VBoxMainDriveInfo::DriveInfoList DriveInfoList;
 typedef VBoxMainDriveInfo::DriveInfo DriveInfo;
 
 
-/** Vector type for the list of interfaces. */
-#define VECTOR_TYPE       char *
-#define VECTOR_TYPENAME   USBInterfaceList
-static inline void USBInterfaceListCleanup(char **ppsz)
-{
-    RTStrFree(*ppsz);
-}
-#define VECTOR_DESTRUCTOR USBInterfaceListCleanup
-#include "vector.h"
-
 /** Structure describing a host USB device */
 typedef struct USBDeviceInfo
 {
@@ -127,35 +117,28 @@ typedef struct USBDeviceInfo
     /** The system identifier of the device.  Specific to the probing
      * method. */
     char *mSysfsPath;
-    /** Type for the list of interfaces. */
-    USBInterfaceList mInterfaces;
+    /** List of interfaces.  Only one simulaneous traversal is possible. */
+    struct USBInterfaceList *mInterfaces;
 } USBDeviceInfo;
 
-
 /** Destructor. */
-static inline void USBDevInfoCleanup(USBDeviceInfo *pSelf)
-{
-    RTStrFree(pSelf->mDevice);
-    RTStrFree(pSelf->mSysfsPath);
-    pSelf->mDevice = pSelf->mSysfsPath = NULL;
-    USBInterfaceList_cleanup(&pSelf->mInterfaces);
-}
-
+void USBDevInfoCleanup(USBDeviceInfo *pSelf);
 
 /** Constructor - the strings will be duplicated. */
-static inline int USBDevInfoInit(USBDeviceInfo *pSelf, const char *aDevice,
-                                 const char *aSystemID)
-{
-    pSelf->mDevice = aDevice ? RTStrDup(aDevice) : NULL;
-    pSelf->mSysfsPath = aSystemID ? RTStrDup(aSystemID) : NULL;
-    if (   !USBInterfaceList_init(&pSelf->mInterfaces)
-        || (aDevice && !pSelf->mDevice) || (aSystemID && ! pSelf->mSysfsPath))
-    {
-        USBDevInfoCleanup(pSelf);
-        return 0;
-    }
-    return 1;
-}
+int USBDevInfoInit(USBDeviceInfo *pSelf, const char *aDevice,
+                   const char *aSystemID);
+
+/**
+ * Return the first in a list of USB device interfaces (that is, its sysfs
+ * path), or NULL if there are none.
+ */
+char *USBDevInfoFirstInterface(struct USBInterfaceList *pInterfaces);
+
+/**
+ * Return the next in a list of USB device interfaces (that is, its sysfs
+ * path), or NULL if there are none.
+ */
+char *USBDevInfoNextInterface(struct USBInterfaceList *pInterfaces);
 
 
 /** Vector type holding device information */
@@ -194,7 +177,6 @@ static inline void VBoxMainUSBDevInfoCleanup(VBoxMainUSBDeviceInfo *pSelf)
  * @returns iprt status code
  */
 int USBDevInfoUpdateDevices(VBoxMainUSBDeviceInfo *pSelf);
-
 
 /** Get the first element in the list of USB devices. */
 static inline const USBDeviceInfoList_iterator *USBDevInfoBegin

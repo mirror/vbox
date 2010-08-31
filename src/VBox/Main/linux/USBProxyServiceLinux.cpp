@@ -1339,11 +1339,10 @@ static int convertSysfsStrToBCD(const char *pszBuf, uint16_t *pu16)
 PUSBDEVICE USBProxyServiceLinux::getDevicesFromSysfs(void)
 {
 #ifdef VBOX_USB_WITH_SYSFS
-    USBDevInfoUpdateDevices(&mDeviceList);
     /* Add each of the devices found to the chain. */
     PUSBDEVICE pFirst = NULL;
     PUSBDEVICE pLast  = NULL;
-    int        rc     = VINF_SUCCESS;
+    int        rc     = USBDevInfoUpdateDevices(&mDeviceList);
     USBDeviceInfoList_iterator it;
     USBDeviceInfoList_iter_init(&it, USBDevInfoBegin(&mDeviceList));
     for (;    RT_SUCCESS(rc)
@@ -1441,20 +1440,19 @@ PUSBDEVICE USBProxyServiceLinux::getDevicesFromSysfs(void)
                 Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
 
             /* Check the interfaces to see if we can support the device. */
-            USBInterfaceList_iterator it2;
+            char *pszIf;
             USBDeviceInfo *udi = USBDeviceInfoList_iter_target(&it);
-            USBInterfaceList_iter_init(&it2, USBInterfaceList_begin(&udi->mInterfaces));
-            for (; !USBInterfaceList_iter_eq(&it2, USBInterfaceList_end(&udi->mInterfaces));
-                   USBInterfaceList_iter_incr(&it2))
+            for (pszIf = USBDevInfoFirstInterface(udi->mInterfaces); pszIf;
+                 pszIf = USBDevInfoNextInterface(udi->mInterfaces))
             {
                 ssize_t cb = RTLinuxSysFsGetLinkDest(szBuf, sizeof(szBuf), "%s/driver",
-                                                     *USBInterfaceList_iter_target(&it2));
+                                                     pszIf);
                 if (cb > 0 && Dev->enmState != USBDEVICESTATE_UNSUPPORTED)
                     Dev->enmState = (strcmp(szBuf, "hub") == 0)
                                   ? USBDEVICESTATE_UNSUPPORTED
                                   : USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
                 if (RTLinuxSysFsReadIntFile(16, "%s/bInterfaceClass",
-                                            *USBInterfaceList_iter_target(&it2)) == 9 /* hub */)
+                                            pszIf) == 9 /* hub */)
                     Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
             }
 
