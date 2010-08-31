@@ -35,7 +35,7 @@ RT_C_DECLS_BEGIN
 #ifdef RT_OS_WINDOWS
 int         rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PHANDLE ph);
 uint32_t    rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait);
-uint32_t    rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry);
+uint32_t    rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents);
 #endif /* RT_OS_WINDOWS */
 
 RT_C_DECLS_END
