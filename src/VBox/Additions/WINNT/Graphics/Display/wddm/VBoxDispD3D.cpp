@@ -1181,7 +1181,7 @@ static void vboxWddmDbgRenderTargetCheck(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDM
 #ifdef VBOXWDDM_WITH_VISIBLE_FB
     vboxWddmDbgRenderTargetUpdateCheckSurface(pDevice, pAlloc, ~0UL /* <- for the frontbuffer */);
 #else
-    Assert(pAlloc->pD3DIf == NULL);
+    Assert((!pAlloc->pD3DIf) == (pRc->cAllocations > 1));
 #endif
 
     for (UINT i = 0; i < pRc->cAllocations; ++i)
@@ -1189,7 +1189,7 @@ static void vboxWddmDbgRenderTargetCheck(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDM
         pAlloc = &pRc->aAllocations[i];
         if (iNewRTFB == i)
         {
-            Assert(!pAlloc->pD3DIf);
+            Assert((!pAlloc->pD3DIf) == (pRc->cAllocations > 1));
         }
 
         for (UINT j = i+1; j < pRc->cAllocations; ++j)
