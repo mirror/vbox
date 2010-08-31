@@ -226,7 +226,7 @@ static const DBGCVARDESC    g_aArgWriteCore[] =
 /** Command descriptors for the basic commands. */
 const DBGCCMD    g_aCmds[] =
 {
-    /* pszCmd,      cArgsMin, cArgsMax, paArgDescs,         cArgDescs,                  pResultDesc,fFlags,pfnHandler        pszSyntax,          ....pszDescription */
+    /* pszCmd,      cArgsMin, cArgsMax, paArgDescs,          cArgDescs,                  pResultDesc,fFlags,pfnHandler        pszSyntax,          ....pszDescription */
     { "bye",        0,        0,        NULL,                0,                          NULL,       0,     dbgcCmdQuit,      "",                     "Exits the debugger." },
     { "cpu",        0,        1,        &g_aArgCpu[0],       RT_ELEMENTS(g_aArgCpu),     NULL,       0,     dbgcCmdCpu,       "[idCpu]",              "If no argument, display the current CPU, else change to the specified CPU." },
     { "echo",       1,        ~0,       &g_aArgMultiStr[0],  RT_ELEMENTS(g_aArgMultiStr),NULL,       0,     dbgcCmdEcho,      "<str1> [str2..[strN]]", "Displays the strings separated by one blank space and the last one followed by a newline." },
@@ -250,7 +250,7 @@ const DBGCCMD    g_aCmds[] =
     { "loadsyms",   1,        5,        &g_aArgLoadSyms[0],  RT_ELEMENTS(g_aArgLoadSyms),NULL,       0,     dbgcCmdLoadSyms,  "<filename> [delta] [module] [module address]", "Loads symbols from a text file. Optionally giving a delta and a module." },
     { "loadvars",   1,        1,        &g_aArgFilename[0],  RT_ELEMENTS(g_aArgFilename),NULL,       0,     dbgcCmdLoadVars,  "<filename>",           "Load variables from file. One per line, same as the args to the set command." },
     { "log",        1,        1,        &g_aArgLog[0],       RT_ELEMENTS(g_aArgLog),     NULL,       0,     dbgcCmdLog,       "<group string>",       "Modifies the logging group settings (VBOX_LOG)" },
-    { "logdest",    1,        1,        &g_aArgLogDest[0],    RT_ELEMENTS(g_aArgLogDest), NULL,      0,     dbgcCmdLogDest,   "<dest string>",        "Modifies the logging destination (VBOX_LOG_DEST)." },
+    { "logdest",    1,        1,        &g_aArgLogDest[0],   RT_ELEMENTS(g_aArgLogDest), NULL,       0,     dbgcCmdLogDest,   "<dest string>",        "Modifies the logging destination (VBOX_LOG_DEST)." },
     { "logflags",   1,        1,        &g_aArgLogFlags[0],  RT_ELEMENTS(g_aArgLogFlags),NULL,       0,     dbgcCmdLogFlags,  "<flags string>",       "Modifies the logging flags (VBOX_LOG_FLAGS)." },
     { "quit",       0,        0,        NULL,                0,                          NULL,       0,     dbgcCmdQuit,      "",                     "Exits the debugger." },
     { "runscript",  1,        1,        &g_aArgFilename[0],  RT_ELEMENTS(g_aArgFilename),NULL,       0,     dbgcCmdRunScript, "<filename>",           "Runs the command listed in the script. Lines starting with '#' "
