@@ -192,7 +192,7 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
             ulong mRealBPP;
         public:
             RemindEvent (ulong aRealBPP)
-                : VBoxAsyncEvent(100), mRealBPP (aRealBPP) {}
+                : VBoxAsyncEvent(0), mRealBPP (aRealBPP) {}
             void handle()
             {
                 vboxProblem().remindAboutWrongColorDepth (mRealBPP, 32);
