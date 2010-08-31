@@ -628,6 +628,13 @@ static int ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
         rc = ftmR3TcpSubmitCommand(pVM, (fFullSync) ? "full-sync" : "checkpoint");
         AssertRC(rc);
 
+        /* Reset the sync state. */
+        pVM->ftm.s.syncstate.uOffStream   = 0;
+        pVM->ftm.s.syncstate.cbReadBlock  = 0;
+        pVM->ftm.s.syncstate.fStopReading = false;
+        pVM->ftm.s.syncstate.fIOError     = false;
+        pVM->ftm.s.syncstate.fEndOfStream = false;
+
         pVM->ftm.s.fDeltaLoadSaveActive = (fFullSync == false);
         rc = VMR3Save(pVM, NULL /* pszFilename */, &g_ftmR3TcpOps, pVM, true /* fContinueAfterwards */, NULL, NULL, &fSuspended);
         pVM->ftm.s.fDeltaLoadSaveActive = false;
@@ -933,7 +940,13 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
                 continue;
 
             RTSocketRetain(pVM->ftm.s.hSocket); /* For concurrent access by I/O thread and EMT. */
-            pVM->ftm.s.syncstate.uOffStream = 0;
+
+            /* Reset the sync state. */
+            pVM->ftm.s.syncstate.uOffStream   = 0;
+            pVM->ftm.s.syncstate.cbReadBlock  = 0;
+            pVM->ftm.s.syncstate.fStopReading = false;
+            pVM->ftm.s.syncstate.fIOError     = false;
+            pVM->ftm.s.syncstate.fEndOfStream = false;
 
             pVM->ftm.s.fDeltaLoadSaveActive = (fFullSync == false);
             rc = VMR3LoadFromStream(pVM, &g_ftmR3TcpOps, pVM, NULL, NULL);
@@ -1114,13 +1127,6 @@ VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
         rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
 
     AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
-
-    /* Reset the sync state. */
-    pVM->ftm.s.syncstate.uOffStream   = 0;
-    pVM->ftm.s.syncstate.cbReadBlock  = 0;
-    pVM->ftm.s.syncstate.fStopReading = false;
-    pVM->ftm.s.syncstate.fIOError     = false;
-    pVM->ftm.s.syncstate.fEndOfStream = false;
 
     /* Sync state + changed memory with the standby node. */
     rc = ftmR3PerformSync(pVM, FTMSYNCSTATE_DELTA_VM);
