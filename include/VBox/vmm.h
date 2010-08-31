@@ -104,6 +104,8 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_VM_R0_ASSERTION,
     /** Ring switch to force preemption. */
     VMMCALLRING3_VM_R0_PREEMPT,
+    /** Sync the FTM state with the standby node. */
+    VMMCALLRING3_FTM_SET_CHECKPOINT,
     /** The usual 32-bit hack. */
     VMMCALLRING3_32BIT_HACK = 0x7fffffff
 } VMMCALLRING3;

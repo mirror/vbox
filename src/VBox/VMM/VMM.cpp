@@ -73,6 +73,7 @@
 #include "VMMInternal.h"
 #include "VMMSwitcher/VMMSwitcher.h"
 #include <VBox/vm.h>
+#include <VBox/ftm.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -2144,6 +2145,10 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_VM_R0_PREEMPT:
             pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
+            break;
+
+        case VMMCALLRING3_FTM_SET_CHECKPOINT:
+            pVCpu->vmm.s.rcCallRing3 = FTMR3SetCheckpoint(pVM, (FTMCHECKPOINTTYPE)pVCpu->vmm.s.u64CallRing3Arg);
             break;
 
         default:
