@@ -1071,11 +1071,10 @@ VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
  */
 VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
 {
+    int rc;
+
     if (!pVM->fFaultTolerantMaster)
         return VINF_SUCCESS;
-
-    /** @todo handle ring-0 callbacks on EMT. */
-    VM_ASSERT_OTHER_THREAD(pVM); 
 
     switch (enmCheckpoint)
     {
@@ -1086,11 +1085,34 @@ VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
     case FTMCHECKPOINTTYPE_STORAGE:
         STAM_REL_COUNTER_INC(&pVM->ftm.s.StatCheckpointStorage);
         break;
+
     default:
         break;
     }
     pVM->ftm.s.fCheckpointingActive = true;
-    int rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
+    if (VM_IS_EMT(pVM))
+    {
+        PVMCPU pVCpu = VMMGetCpu(pVM);
+
+        /* We must take special care here as the memory sync is competing with us and requires a responsive EMT. */
+        while ((rc = PDMCritSectTryEnter(&pVM->ftm.s.CritSect)) == VERR_SEM_BUSY)
+        {
+            if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            {
+                rc = VMMR3EmtRendezvousFF(pVM, pVCpu);
+                AssertRC(rc);
+            }
+
+            if (VM_FF_ISPENDING(pVM, VM_FF_REQUEST))
+            {
+                rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
+                AssertRC(rc);
+            }
+        }
+    }
+    else
+        rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
+
     AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
 
     /* Reset the sync state. */
