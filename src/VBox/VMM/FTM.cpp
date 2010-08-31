@@ -1086,6 +1086,8 @@ VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
     case FTMCHECKPOINTTYPE_STORAGE:
         STAM_REL_COUNTER_INC(&pVM->ftm.s.StatCheckpointStorage);
         break;
+    default:
+        break;
     }
     pVM->ftm.s.fCheckpointingActive = true;
     int rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
