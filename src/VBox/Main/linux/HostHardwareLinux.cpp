@@ -1541,8 +1541,7 @@ static int readFilePaths(const char *pcszPath, filePaths *pvpchDevs,
  *                       names
  * @param   pHandler     Handler object which will be invoked on each file
  */
-static int walkFiles(const char *pcszPath, filePaths *pvpchDevs,
-                     pathHandler *pHandler)
+static int walkFiles(filePaths *pvpchDevs, pathHandler *pHandler)
 {
     filePaths_op_table *pOps = &filePaths_ops;
     filePaths_iter_op_table *pItOps = &filePaths_iter_ops;
@@ -1588,7 +1587,7 @@ int walkDirectory(const char *pcszPath, pathHandler *pHandler, int withRealPath)
 
     rc = readFilePaths(pcszPath, &vpchDevs, withRealPath);
     if (!rc)
-        rc = walkFiles(pcszPath, &vpchDevs, pHandler);
+        rc = walkFiles(&vpchDevs, pHandler);
     filePaths_cleanup(&vpchDevs);
     return RTErrConvertFromErrno(rc);
 }
