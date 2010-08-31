@@ -53,8 +53,6 @@
 #include <VBox/pdmnetifs.h>
 #include <VBox/pdmnetinline.h>
 #include <VBox/param.h>
-#include <VBox/tm.h>
-#include <VBox/vm.h>
 #include "../Builtins.h"
 
 #include "DevEEPROM.h"
