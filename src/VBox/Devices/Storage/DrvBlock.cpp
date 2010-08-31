@@ -159,6 +159,9 @@ static DECLCALLBACK(int) drvblockWrite(PPDMIBLOCK pInterface, uint64_t off, cons
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
 
+    /* Set an FTM checkpoint as this operation changes the state permanently. */
+    PDMDrvHlpFTSetCheckpoint(pThis->pDrvIns, FTMCHECKPOINTTYPE_STORAGE);
+
     int rc = pThis->pDrvMedia->pfnWrite(pThis->pDrvMedia, off, pvBuf, cbWrite);
 #ifdef VBOX_PERIODIC_FLUSH
     if (pThis->cbFlushInterval)

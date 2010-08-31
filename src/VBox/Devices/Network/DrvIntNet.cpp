@@ -479,6 +479,9 @@ PDMBOTHCBDECL(int) drvIntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGAT
     if (pSgBuf->pvUser)
         STAM_COUNTER_INC(&pThis->StatSentGso);
 
+    /* Set an FTM checkpoint as this operation changes the state permanently. */
+    PDMDrvHlpFTSetCheckpoint(pThis->CTX_SUFF(pDrvIns), FTMCHECKPOINTTYPE_NETWORK);
+
     /*
      * Commit the frame and push it thru the switch.
      */
