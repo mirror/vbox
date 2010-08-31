@@ -144,7 +144,7 @@ typedef struct RTSOCKETINT
     /** The events we're currently subscribing to with WSAEventSelect.
      * This is ZERO if we're currently not subscribing to anything. */
     uint32_t            fSubscribedEvts;
-    /** Saved events which are only posted once */
+    /** Saved events which are only posted once. */
     uint32_t            fEventsSaved;
 #endif /* RT_OS_WINDOWS */
 } RTSOCKETINT;
@@ -855,7 +855,6 @@ RTDECL(int) RTSocketSgWriteNB(RTSOCKET hSocket, PCRTSGBUF pSgBuf, size_t *pcbWri
     AssertReturn(pSgBuf->cSegs > 0, VERR_INVALID_PARAMETER);
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
-
     int rc = rtSocketSwitchBlockingMode(pThis, false /* fBlocking */);
     if (RT_FAILURE(rc))
         return rc;
@@ -1542,10 +1541,9 @@ uint32_t rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry, 
 
     /*
      * Save the write event if required.
-     * it is only posted once and might get lost
-     * if the another source in the pollset with a higher priority
-     * has pending events.
-    */
+     * It is only posted once and might get lost if the another source in the
+     * pollset with a higher priority has pending events.
+     */
     if (   !fHarvestEvents
         && fRetEvents)
     {
