@@ -126,7 +126,9 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
     STAM_REL_REG(pVM, &pVM->ftm.s.StatDeltaVM,                   STAMTYPE_COUNTER, "/FT/Sync/DeltaVM",                  STAMUNIT_OCCURENCES, "Number of delta vm syncs.");
     STAM_REL_REG(pVM, &pVM->ftm.s.StatFullSync,                  STAMTYPE_COUNTER, "/FT/Sync/Full",                     STAMUNIT_OCCURENCES, "Number of full vm syncs.");
     STAM_REL_REG(pVM, &pVM->ftm.s.StatDeltaMem,                  STAMTYPE_COUNTER, "/FT/Sync/DeltaMem",                 STAMUNIT_OCCURENCES, "Number of delta mem syncs.");
-
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatCheckpointStorage,         STAMTYPE_COUNTER, "/FT/Checkpoint/Storage",            STAMUNIT_OCCURENCES, "Number of storage checkpoints.");
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatCheckpointNetwork,         STAMTYPE_COUNTER, "/FT/Checkpoint/Network",            STAMUNIT_OCCURENCES, "Number of network checkpoints.");
+    
     return VINF_SUCCESS;
 }
 
@@ -1064,14 +1066,24 @@ VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
  *
  * @returns VBox status code.
  *
- * @param   pVM         The VM to operate on.
- * @param   enmType     Checkpoint type
+ * @param   pVM             The VM to operate on.
+ * @param   enmCheckpoint   Checkpoint type
  */
-VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType)
+VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
 {
     if (!pVM->fFaultTolerantMaster)
         return VINF_SUCCESS;
 
+    switch (enmCheckpoint)
+    {
+    case FTMCHECKPOINTTYPE_NETWORK:
+        STAM_REL_COUNTER_INC(&pVM->ftm.s.StatCheckpointNetwork);
+        break;
+
+    case FTMCHECKPOINTTYPE_STORAGE:
+        STAM_REL_COUNTER_INC(&pVM->ftm.s.StatCheckpointStorage);
+        break;
+    }
     pVM->ftm.s.fCheckpointingActive = true;
     int rc = PDMCritSectEnter(&pVM->ftm.s.CritSect, VERR_SEM_BUSY);
     AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
