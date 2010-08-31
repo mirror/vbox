@@ -94,6 +94,8 @@ typedef struct VMCPU
     PVMR3                   pVMR3;
     /** Ring-0 Host Context VM Pointer. */
     PVMR0                   pVMR0;
+    /** Alignment padding. */
+    RTR0PTR                 pvR0Padding;
     /** Raw-mode Context VM Pointer. */
     PVMRC                   pVMRC;
     /** The CPU ID.
@@ -111,7 +113,6 @@ typedef struct VMCPU
     /** Profiling samples for use by ad hoc profiling. */
     STAMPROFILEADV          aStatAdHoc[8];
 
-#if HC_ARCH_BITS == 32
     /** Align the next bit on a 64-byte boundary and make sure it starts at the same
      *  offset in both 64-bit and 32-bit builds.
      *
@@ -120,8 +121,7 @@ typedef struct VMCPU
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      *   */
-    uint8_t                 abAlignment1[HC_ARCH_BITS == 32 ? 20 : 0];
-#endif
+    uint8_t                 abAlignment1[HC_ARCH_BITS == 32 ? 64 : 56];
 
     /** CPUM part. */
     union
@@ -206,7 +206,7 @@ typedef struct VMCPU
     } dbgf;
 
     /** Align the following members on page boundrary. */
-    uint8_t                 abAlignment2[256];
+    uint8_t                 abAlignment2[192];
 
     /** PGM part. */
     union
