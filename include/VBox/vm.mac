@@ -116,6 +116,7 @@ struc VMCPU
     .pUVCpu                 RTR3PTR_RES 1
     .pVMR3                  RTR3PTR_RES 1
     .pVMR0                  RTR0PTR_RES 1
+    .pvR0Padding            RTR0PTR_RES 1
     .pVMRC                  RTRCPTR_RES 1
     .idCpu                  resd 1
 
