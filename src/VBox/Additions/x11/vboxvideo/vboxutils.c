@@ -172,7 +172,7 @@ vbox_close(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     TRACE_ENTRY();
 
-    xfree (pVBox->reqp);
+    free (pVBox->reqp);
     pVBox->reqp = NULL;
     TRACE_EXIT();
 }
@@ -436,7 +436,7 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     }
 
     size = vmmdevGetRequestSize(VMMDevReq_SetPointerShape);
-    p = xcalloc(1, size);
+    p = calloc(1, size);
     if (p)
     {
         rc = vmmdevInitRequest(p, VMMDevReq_SetPointerShape);
@@ -449,7 +449,7 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
             return TRUE;
         }
         xf86DrvMsg(scrnIndex, X_ERROR, "Could not init VMM request: rc = %d\n", rc);
-        xfree(p);
+        free(p);
     }
     xf86DrvMsg(scrnIndex, X_ERROR, "Could not allocate %lu bytes for VMM request\n", (unsigned long)size);
     return FALSE;
@@ -608,7 +608,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     pVBox->pointerSize = sizeMask + sizeRgba;
     sizeRequest = pVBox->pointerSize + pVBox->pointerHeaderSize;
 
-    p = c = xcalloc (1, sizeRequest);
+    p = c = calloc (1, sizeRequest);
     if (!c)
         RETERROR(scrnIndex, NULL,
                  "Error failed to alloc %lu bytes for cursor\n",
@@ -618,7 +618,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     if (RT_FAILURE(rc))
     {
         xf86DrvMsg(scrnIndex, X_ERROR, "Could not init VMM request: rc = %d\n", rc);
-        xfree(p);
+        free(p);
         return NULL;
     }
 
@@ -765,7 +765,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
 
     pVBox->pointerSize = w * h * 4 + sizeMask;
     sizeRequest = pVBox->pointerSize + pVBox->pointerHeaderSize;
-    p = xcalloc(1, sizeRequest);
+    p = calloc(1, sizeRequest);
     if (!p)
         RETERROR(scrnIndex, ,
                  "Error failed to alloc %lu bytes for cursor\n",
@@ -815,7 +815,7 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     }
 
     VbglR3SetPointerShapeReq(reqp);
-    xfree(p);
+    free(p);
 }
 #endif
 
@@ -1091,7 +1091,7 @@ static void vboxFillDisplayMode(DisplayModePtr m, const char *pszName,
     if (pszName)
     {
         if (m->name)
-            xfree(m->name);
+            free(m->name);
         m->name      = xnfstrdup(pszName);
     }
 }
