@@ -1953,6 +1953,8 @@ DxgkDdiPatch(
                 pPrivateData->DstAllocInfo.offAlloc = (VBOXVIDEOOFFSET)pDstAllocationList->PhysicalAddress.QuadPart;
                 break;
             }
+            case VBOXVDMACMD_TYPE_DMA_NOP:
+                break;
             default:
             {
                 AssertBreakpoint();
@@ -2307,6 +2309,14 @@ DxgkDdiSubmitCommand(
             Status = vboxWddmDmaCmdNotifyCompletion(pDevExt, pPrivateData->pContext, pSubmitCommand->SubmissionFenceId);
             Assert(Status == STATUS_SUCCESS);
 
+            break;
+        }
+        case VBOXVDMACMD_TYPE_DMA_NOP:
+        {
+            PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pSubmitCommand->hContext;
+            Assert(pContext);
+            Status = vboxWddmDmaCmdNotifyCompletion(pDevExt, pContext, pSubmitCommand->SubmissionFenceId);
+            Assert(Status == STATUS_SUCCESS);
             break;
         }
         default:
@@ -3778,6 +3788,8 @@ DxgkDdiRender(
 {
     drprintf(("==> "__FUNCTION__ ", !!NOT_IMPLEMENTED!! hContext(0x%x)\n", hContext));
 
+    pRender->pDmaBuffer = ((uint8_t*)pRender->pDmaBuffer) + pRender->CommandLength;
+    /* @todo: impl  */
     AssertBreakpoint();
 
     drprintf(("<== "__FUNCTION__ ", !!NOT_IMPLEMENTED!! hContext(0x%x)\n", hContext));

@@ -4010,6 +4010,11 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
                 pAlloc->pD3DIf->Release();
             if (pAlloc->pSecondaryOpenedD3DIf)
                 pAlloc->pSecondaryOpenedD3DIf->Release();
+
+            EnterCriticalSection(&pDevice->DirtyAllocListLock);
+            if (pAlloc->DirtyAllocListEntry.pNext)
+                RTListNodeRemove(&pAlloc->DirtyAllocListEntry);
+            LeaveCriticalSection(&pDevice->DirtyAllocListLock);
         }
     }
 
@@ -4181,6 +4186,117 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
+
+typedef struct VBOXWDDMDISP_NSCADD
+{
+    VOID* pvCommandBuffer;
+    UINT cbCommandBuffer;
+    D3DDDI_ALLOCATIONLIST* pAllocationList;
+    UINT cAllocationList;
+    D3DDDI_PATCHLOCATIONLIST* pPatchLocationList;
+    UINT cPatchLocationList;
+    UINT cAllocations;
+}VBOXWDDMDISP_NSCADD, *PVBOXWDDMDISP_NSCADD;
+
+static HRESULT vboxWddmNSCAddAlloc(PVBOXWDDMDISP_NSCADD pData, PVBOXWDDMDISP_ALLOCATION pAlloc, BOOL bWrite)
+{
+    HRESULT hr = S_OK;
+    if (pData->cAllocationList && pData->cPatchLocationList && pData->cbCommandBuffer > 4)
+    {
+        memset(pData->pAllocationList, 0, sizeof (D3DDDI_ALLOCATIONLIST));
+        pData->pAllocationList[0].hAllocation = pAlloc->hAllocation;
+        if (bWrite)
+            pData->pAllocationList[0].WriteOperation = 1;
+
+        memset(pData->pPatchLocationList, 0, sizeof (D3DDDI_PATCHLOCATIONLIST));
+        pData->pPatchLocationList[0].PatchOffset = pData->cAllocations*4;
+        pData->pPatchLocationList[0].AllocationIndex = pData->cAllocations;
+
+        pData->cbCommandBuffer -= 4;
+        --pData->cAllocationList;
+        --pData->cPatchLocationList;
+        ++pData->cAllocations;
+    }
+    else
+        hr = S_FALSE;
+
+    ++pData->pAllocationList;
+    ++pData->pPatchLocationList;
+    pData->pvCommandBuffer = (VOID*)(((uint8_t*)pData->pvCommandBuffer) + 4);
+
+    return hr;
+}
+
+static HRESULT vboxWddmNotifySharedChange(PVBOXWDDMDISP_DEVICE pDevice)
+{
+    VBOXWDDMDISP_NSCADD NscAdd;
+
+    do
+    {
+        NscAdd.pvCommandBuffer = pDevice->DefaultContext.ContextInfo.pCommandBuffer;
+        NscAdd.cbCommandBuffer = pDevice->DefaultContext.ContextInfo.CommandBufferSize;
+        NscAdd.pAllocationList = pDevice->DefaultContext.ContextInfo.pAllocationList;
+        NscAdd.cAllocationList = pDevice->DefaultContext.ContextInfo.AllocationListSize;
+        NscAdd.pPatchLocationList = pDevice->DefaultContext.ContextInfo.pPatchLocationList;
+        NscAdd.cPatchLocationList = pDevice->DefaultContext.ContextInfo.PatchLocationListSize;
+        NscAdd.cAllocations = 0;
+
+        EnterCriticalSection(&pDevice->DirtyAllocListLock);
+
+        PVBOXWDDMDISP_ALLOCATION pAlloc = RTListNodeGetFirst(&pDevice->DirtyAllocList, VBOXWDDMDISP_ALLOCATION, DirtyAllocListEntry);
+        if (pAlloc)
+        {
+            HRESULT tmpHr = vboxWddmNSCAddAlloc(&NscAdd, pAlloc, TRUE);
+            Assert(tmpHr == S_OK || tmpHr == S_FALSE);
+            if (tmpHr == S_OK)
+            {
+                RTListNodeRemove(&pAlloc->DirtyAllocListEntry);
+                LeaveCriticalSection(&pDevice->DirtyAllocListLock);
+                continue;
+            }
+
+            LeaveCriticalSection(&pDevice->DirtyAllocListLock);
+
+        }
+        else
+        {
+            LeaveCriticalSection(&pDevice->DirtyAllocListLock);
+            if (!NscAdd.cAllocations)
+                break;
+        }
+
+        D3DDDICB_RENDER RenderData = {0};
+        RenderData.CommandLength = pDevice->DefaultContext.ContextInfo.CommandBufferSize - NscAdd.cbCommandBuffer;
+        Assert(RenderData.CommandLength);
+        Assert(RenderData.CommandLength < UINT32_MAX/2);
+        RenderData.CommandOffset = 0;
+        RenderData.NumAllocations = pDevice->DefaultContext.ContextInfo.AllocationListSize - NscAdd.cAllocationList;
+        Assert(RenderData.NumAllocations == NscAdd.cAllocations);
+        RenderData.NumPatchLocations = pDevice->DefaultContext.ContextInfo.PatchLocationListSize - NscAdd.cPatchLocationList;
+        Assert(RenderData.NumPatchLocations == NscAdd.cAllocations);
+        RenderData.NewCommandBufferSize = sizeof (VBOXVDMACMD) + 4 * (100);
+        RenderData.NewAllocationListSize = 100;
+        RenderData.NewPatchLocationListSize = 100;
+        RenderData.hContext = pDevice->DefaultContext.ContextInfo.hContext;
+
+        HRESULT hr = pDevice->RtCallbacks.pfnRenderCb(pDevice->hDevice, &RenderData);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            pDevice->DefaultContext.ContextInfo.CommandBufferSize = RenderData.NewCommandBufferSize;
+            pDevice->DefaultContext.ContextInfo.pCommandBuffer = RenderData.pNewCommandBuffer;
+            pDevice->DefaultContext.ContextInfo.AllocationListSize = RenderData.NewAllocationListSize;
+            pDevice->DefaultContext.ContextInfo.pAllocationList = RenderData.pNewAllocationList;
+            pDevice->DefaultContext.ContextInfo.PatchLocationListSize = RenderData.NewPatchLocationListSize;
+            pDevice->DefaultContext.ContextInfo.pPatchLocationList = RenderData.pNewPatchLocationList;
+        }
+        else
+            break;
+    } while (1);
+
+    return S_OK;
+}
+
 static HRESULT APIENTRY vboxWddmDDevFlush(HANDLE hDevice)
 {
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
@@ -4209,6 +4325,8 @@ static HRESULT APIENTRY vboxWddmDDevFlush(HANDLE hDevice)
                 }
             }
         }
+
+        vboxWddmNotifySharedChange(pDevice);
     }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
@@ -4813,6 +4931,15 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
         }
     }
 #endif
+
+    if (pDstRc->RcDesc.fFlags.SharedResource)
+    {
+        PVBOXWDDMDISP_ALLOCATION pAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
+        EnterCriticalSection(&pDevice->DirtyAllocListLock);
+        if (!pAlloc->DirtyAllocListEntry.pNext)
+            RTListAppend(&pDevice->DirtyAllocList, &pAlloc->DirtyAllocListEntry);
+        LeaveCriticalSection(&pDevice->DirtyAllocListLock);
+    }
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
@@ -5580,6 +5707,9 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
         pDevice->ViewPort.Height = 1;
         pDevice->ViewPort.MinZ = 0.;
         pDevice->ViewPort.MaxZ = 1.;
+
+        InitializeCriticalSection(&pDevice->DirtyAllocListLock);
+        RTListInit(&pDevice->DirtyAllocList);
 
         Assert(!pCreateData->AllocationListSize);
         Assert(!pCreateData->PatchLocationListSize);

@@ -94,6 +94,7 @@ typedef struct VBOXWDDMDISP_SCREEN
 {
     IDirect3DDevice9 *pDevice9If;
     struct VBOXWDDMDISP_RESOURCE *pRenderTargetRc;
+    struct VBOXWDDMDISP_RESOURCE *pDstSharedRc;
     uint32_t iRenderTargetFrontBuf;
     HWND hWnd;
 } VBOXWDDMDISP_SCREEN, *PVBOXWDDMDISP_SCREEN;
@@ -123,6 +124,9 @@ typedef struct VBOXWDDMDISP_DEVICE
      * is split into two calls : SetViewport & SetZRange */
     D3DVIEWPORT9 ViewPort;
     VBOXWDDMDISP_CONTEXT DefaultContext;
+
+    CRITICAL_SECTION DirtyAllocListLock;
+    RTLISTNODE DirtyAllocList;
 
     UINT iPrimaryScreen;
     UINT cScreens;
@@ -159,6 +163,7 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     IUnknown *pD3DIf;
     IUnknown *pSecondaryOpenedD3DIf;
     VBOXDISP_D3DIFTYPE enmD3DIfType;
+    RTLISTNODE DirtyAllocListEntry;
     HANDLE hSharedHandle;
     VBOXWDDMDISP_LOCKINFO LockInfo;
     VBOXWDDM_DIRTYREGION DirtyRegion; /* <- dirty region to notify host about */
