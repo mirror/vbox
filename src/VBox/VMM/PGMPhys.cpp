@@ -1077,6 +1077,7 @@ VMMR3DECL(int) PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pfnEnum
                     switch (PGM_PAGE_GET_STATE(pPage))
                     {
                     case PGM_PAGE_STATE_ALLOCATED:
+                    case PGM_PAGE_STATE_WRITE_MONITORED:
                         if (    !PGM_PAGE_IS_WRITTEN_TO(pPage)  /* not very recently updated? */
                             &&  PGM_PAGE_IS_FT_DIRTY(pPage))
                         {
