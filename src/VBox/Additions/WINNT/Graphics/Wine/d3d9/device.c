@@ -934,12 +934,13 @@ static HRESULT WINAPI IDirect3DDevice9Impl_CreateIndexBuffer(IDirect3DDevice9Ex 
     return D3D_OK;
 }
 
-#ifdef VBOXWDDM
-HRESULT VBoxWineExD3DDev9CreateSurface(LPDIRECT3DDEVICE9EX iface, UINT Width, UINT Height,
+static HRESULT IDirect3DDevice9Impl_CreateSurface(LPDIRECT3DDEVICE9EX iface, UINT Width, UINT Height,
         D3DFORMAT Format, BOOL Lockable, BOOL Discard, UINT Level, IDirect3DSurface9 **ppSurface,
         UINT Usage, D3DPOOL Pool, D3DMULTISAMPLE_TYPE MultiSample, DWORD MultisampleQuality
+#ifdef VBOXWDDM
         , HANDLE *shared_handle
         , void *pvClientMem
+#endif
         )
 {
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
@@ -959,47 +960,12 @@ HRESULT VBoxWineExD3DDev9CreateSurface(LPDIRECT3DDEVICE9EX iface, UINT Width, UI
     }
 
     hr = surface_init(object, This, Width, Height, Format, Lockable, Discard,
-            Level, Usage, Pool, MultiSample, MultisampleQuality,
-            shared_handle, pvClientMem);
-    if (FAILED(hr))
-    {
-        WARN("Failed to initialize surface, hr %#x.\n", hr);
-        HeapFree(GetProcessHeap(), 0, object);
-        return hr;
-    }
-
-    TRACE("Created surface %p.\n", object);
-    *ppSurface = (IDirect3DSurface9 *)object;
-
-    return D3D_OK;
-}
-#endif
-static HRESULT IDirect3DDevice9Impl_CreateSurface(LPDIRECT3DDEVICE9EX iface, UINT Width, UINT Height,
-        D3DFORMAT Format, BOOL Lockable, BOOL Discard, UINT Level, IDirect3DSurface9 **ppSurface,
-        UINT Usage, D3DPOOL Pool, D3DMULTISAMPLE_TYPE MultiSample, DWORD MultisampleQuality)
-{
+            Level, Usage, Pool, MultiSample, MultisampleQuality
 #ifdef VBOXWDDM
-    return VBoxWineExD3DDev9CreateSurface(iface, Width, Height, Format, Lockable, Discard, Level, ppSurface,
-            Usage, Pool, MultiSample, MultisampleQuality, NULL, NULL);
-#else
-    IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
-    IDirect3DSurface9Impl *object;
-    HRESULT hr;
-
-    TRACE("iface %p, width %u, height %u, format %#x, lockable %#x, discard %#x, level %u, surface %p.\n"
-            "usage %#x, pool %#x, multisample_type %#x, multisample_quality %u.\n",
-            iface, Width, Height, Format, Lockable, Discard, Level, ppSurface,
-            Usage, Pool, MultiSample, MultisampleQuality);
-
-    object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(IDirect3DSurface9Impl));
-    if (!object)
-    {
-        FIXME("Failed to allocate surface memory.\n");
-        return D3DERR_OUTOFVIDEOMEMORY;
-    }
-
-    hr = surface_init(object, This, Width, Height, Format, Lockable, Discard,
-            Level, Usage, Pool, MultiSample, MultisampleQuality);
+            , shared_handle
+            , pvClientMem
+#endif
+            );
     if (FAILED(hr))
     {
         WARN("Failed to initialize surface, hr %#x.\n", hr);
@@ -1011,7 +977,6 @@ static HRESULT IDirect3DDevice9Impl_CreateSurface(LPDIRECT3DDEVICE9EX iface, UIN
     *ppSurface = (IDirect3DSurface9 *)object;
 
     return D3D_OK;
-#endif
 }
 
 static HRESULT WINAPI IDirect3DDevice9Impl_CreateRenderTarget(IDirect3DDevice9Ex *iface, UINT Width, UINT Height,
@@ -1026,7 +991,12 @@ static HRESULT WINAPI IDirect3DDevice9Impl_CreateRenderTarget(IDirect3DDevice9Ex
             Lockable, ppSurface, pSharedHandle);
 
     hr = IDirect3DDevice9Impl_CreateSurface(iface, Width, Height, Format, Lockable, FALSE /* Discard */,
-            0 /* Level */, ppSurface, D3DUSAGE_RENDERTARGET, D3DPOOL_DEFAULT, MultiSample, MultisampleQuality);
+            0 /* Level */, ppSurface, D3DUSAGE_RENDERTARGET, D3DPOOL_DEFAULT, MultiSample, MultisampleQuality
+#ifdef VBOXWDDM
+            , pSharedHandle
+            , NULL
+#endif
+            );
 
     return hr;
 }
@@ -1043,7 +1013,12 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_CreateDepthStencilSurface(LPDIRECT3
             Discard, ppSurface, pSharedHandle);
 
     hr = IDirect3DDevice9Impl_CreateSurface(iface, Width, Height, Format, TRUE /* Lockable */, Discard,
-            0 /* Level */, ppSurface, D3DUSAGE_DEPTHSTENCIL, D3DPOOL_DEFAULT, MultiSample, MultisampleQuality);
+            0 /* Level */, ppSurface, D3DUSAGE_DEPTHSTENCIL, D3DPOOL_DEFAULT, MultiSample, MultisampleQuality
+#ifdef VBOXWDDM
+            , pSharedHandle
+            , NULL
+#endif
+            );
 
     return hr;
 }
@@ -1178,7 +1153,12 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_CreateOffscreenPlainSurface(LPDIREC
         */
     hr = IDirect3DDevice9Impl_CreateSurface(iface, Width, Height, Format, TRUE /* Lockable */, FALSE /* Discard */,
             0 /* Level */, ppSurface, 0 /* Usage (undefined/none) */, (WINED3DPOOL)Pool, D3DMULTISAMPLE_NONE,
-            0 /* MultisampleQuality */);
+            0 /* MultisampleQuality */
+#ifdef VBOXWDDM
+            , pSharedHandle
+            , NULL
+#endif
+            );
 
     return hr;
 }
@@ -2755,20 +2735,14 @@ static HRESULT STDMETHODCALLTYPE device_parent_CreateSurface(IWineD3DDeviceParen
     if (pool == WINED3DPOOL_DEFAULT && !(usage & D3DUSAGE_DYNAMIC))
         lockable = FALSE;
 
-#ifdef VBOXWDDM
-    hr = VBoxWineExD3DDev9CreateSurface((IDirect3DDevice9Ex *)This, width, height,
-            d3dformat_from_wined3dformat(format), lockable, FALSE /* Discard */, level,
-            (IDirect3DSurface9 **)&d3d_surface, usage, pool, D3DMULTISAMPLE_NONE, 0 /* MultisampleQuality */
-            , shared_handle
-            , pvClientMem
-            );
-
-#else
     hr = IDirect3DDevice9Impl_CreateSurface((IDirect3DDevice9Ex *)This, width, height,
             d3dformat_from_wined3dformat(format), lockable, FALSE /* Discard */, level,
             (IDirect3DSurface9 **)&d3d_surface, usage, pool, D3DMULTISAMPLE_NONE, 0 /* MultisampleQuality */
-            );
+#ifdef VBOXWDDM
+            , shared_handle
+            , pvClientMem
 #endif
+            );
     if (FAILED(hr))
     {
         ERR("(%p) CreateSurface failed, returning %#x\n", iface, hr);
