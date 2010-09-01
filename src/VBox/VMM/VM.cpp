@@ -1760,8 +1760,7 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
  * @vmstateto   Saving+Suspended or
  *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
  */
-VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                        bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser, bool *pfSuspended)
+VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser, bool *pfSuspended)
 {
     LogFlow(("VMR3Save: pVM=%p pszFilename=%p:{%s} fContinueAfterwards=%RTbool pfnProgress=%p pvUser=%p pfSuspended=%p\n",
              pVM, pszFilename, pszFilename, fContinueAfterwards, pfnProgress, pvUser, pfSuspended));
@@ -1773,8 +1772,8 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOp
     *pfSuspended = false;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_OTHER_THREAD(pVM);
-    AssertReturn(VALID_PTR(pszFilename) || pStreamOps, VERR_INVALID_POINTER);
-    AssertReturn(pStreamOps || *pszFilename, VERR_INVALID_PARAMETER);
+    AssertReturn(VALID_PTR(pszFilename), VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfnProgress, VERR_INVALID_POINTER);
 
     /*
@@ -1782,8 +1781,54 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOp
      */
     SSMAFTER enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
     int rc = vmR3SaveTeleport(pVM, 250 /*cMsMaxDowntime*/,
-                              pszFilename, pStreamOps, pvStreamOpsUser,
+                              pszFilename, NULL /* pStreamOps */, NULL /* pvStreamOpsUser */,
                               enmAfter, pfnProgress, pvUser, pfSuspended);
+    LogFlow(("VMR3Save: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
+    return rc;
+}
+
+/**
+ * Save current VM state (used by FTM)
+ *
+ * Can be used for both saving the state and creating snapshots.
+ *
+ * When called for a VM in the Running state, the saved state is created live
+ * and the VM is only suspended when the final part of the saving is preformed.
+ * The VM state will not be restored to Running in this case and it's up to the
+ * caller to call VMR3Resume if this is desirable.  (The rational is that the
+ * caller probably wish to reconfigure the disks before resuming the VM.)
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM                 The VM which state should be saved.
+ * @param   pStreamOps          The stream methods.
+ * @param   pvStreamOpsUser     The user argument to the stream methods.
+ * @param   pfSuspended         Set if we suspended the VM.
+ *
+ * @thread      Any
+ * @vmstate     Suspended or Running
+ * @vmstateto   Saving+Suspended or
+ *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
+ */
+VMMR3DECL(int) VMR3SaveFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, bool *pfSuspended)
+{
+    LogFlow(("VMR3SaveFT: pVM=%p pStreamOps=%p pvSteamOpsUser=%p pfSuspended=%p\n",
+             pVM, pStreamOps, pvStreamOpsUser, pfSuspended));
+
+    /*
+     * Validate input.
+     */
+    AssertPtr(pfSuspended);
+    *pfSuspended = false;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(pStreamOps, VERR_INVALID_PARAMETER);
+
+    /*
+     * Join paths with VMR3Teleport.
+     */
+    int rc = vmR3SaveTeleport(pVM, 250 /*cMsMaxDowntime*/,
+                              NULL, pStreamOps, pvStreamOpsUser,
+                              SSMAFTER_CONTINUE, NULL, NULL, pfSuspended);
     LogFlow(("VMR3Save: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
     return rc;
 }
