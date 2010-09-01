@@ -130,8 +130,10 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
     STAM_REL_REG(pVM, &pVM->ftm.s.StatFullSync,                  STAMTYPE_COUNTER, "/FT/Sync/Full",                     STAMUNIT_OCCURENCES, "Number of full vm syncs.");
     STAM_REL_REG(pVM, &pVM->ftm.s.StatDeltaMem,                  STAMTYPE_COUNTER, "/FT/Sync/DeltaMem",                 STAMUNIT_OCCURENCES, "Number of delta mem syncs.");
     STAM_REL_REG(pVM, &pVM->ftm.s.StatCheckpointStorage,         STAMTYPE_COUNTER, "/FT/Checkpoint/Storage",            STAMUNIT_OCCURENCES, "Number of storage checkpoints.");
-    STAM_REL_REG(pVM, &pVM->ftm.s.StatCheckpointNetwork,         STAMTYPE_COUNTER, "/FT/Checkpoint/Network",            STAMUNIT_OCCURENCES, "Number of network checkpoints.");
-    
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatCheckpointNetwork,         STAMTYPE_COUNTER, "/FT/Checkpoint/Network",            STAMUNIT_OCCURENCES, "Number of network checkpoints.");    
+#ifdef VBOX_WITH_STATISTICS
+    STAM_REG(pVM,     &pVM->ftm.s.StatCheckpoint,                STAMTYPE_PROFILE, "/FT/Checkpoint",                    STAMUNIT_TICKS_PER_CALL, "Profiling of FTMR3SetCheckpoint.");
+#endif
     return VINF_SUCCESS;
 }
 
@@ -1142,8 +1144,12 @@ VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
 
     AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
 
+    STAM_PROFILE_START(&pVM->ftm.s.StatCheckpoint, a);
+
     /* Sync state + changed memory with the standby node. */
     rc = ftmR3PerformSync(pVM, FTMSYNCSTATE_DELTA_VM);
+
+    STAM_PROFILE_STOP(&pVM->ftm.s.StatCheckpoint, a);
 
     PDMCritSectLeave(&pVM->ftm.s.CritSect);
     pVM->ftm.s.fCheckpointingActive = false;

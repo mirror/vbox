@@ -104,7 +104,7 @@ typedef struct FTM
     STAMCOUNTER         StatFullSync;
     STAMCOUNTER         StatCheckpointNetwork;
     STAMCOUNTER         StatCheckpointStorage;
-
+    STAMPROFILE         StatCheckpoint;
 } FTM;
 AssertCompileMemberAlignment(FTM, CritSect, 8);
 
