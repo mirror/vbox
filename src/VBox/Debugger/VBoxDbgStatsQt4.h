@@ -73,6 +73,11 @@ public:
      */
     void resetStats(const QString &rPatStr);
 
+    /**
+     * Resizes the columns to fit the content.
+     */
+    void resizeColumnsToContent();
+
 protected:
     /**
      * Expands or collapses a sub-tree.
@@ -105,6 +110,7 @@ protected slots:
     void actCopy();
     void actToLog();
     void actToRelLog();
+    void actAdjColumns();
     /** @} */
 
 
@@ -143,6 +149,8 @@ protected:
     QAction *m_pToLogAct;
     /** To Release Log action. */
     QAction *m_pToRelLogAct;
+    /** Adjust the columns. */
+    QAction *m_pAdjColumns;
 #if 0
     /** Save Tree (to file) action. */
     QAction *m_SaveFileAct;

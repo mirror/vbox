@@ -596,7 +596,7 @@ static char *formatNumber(char *psz, uint64_t u64)
             break;
         psz--;
         if (!(++cDigits % 3))
-            *psz-- = ' ';
+            *psz-- = ',';
     }
     return psz;
 }
@@ -623,7 +623,7 @@ static char *formatNumberSigned(char *psz, int64_t i64)
             break;
         psz--;
         if (!(++cDigits % 3))
-            *psz-- = ' ';
+            *psz-- = ',';
     }
     if (fNegative)
         *--psz = '-';
@@ -2673,20 +2673,25 @@ VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_p
     m_pCopyAct     = new QAction("&Copy", this);
     m_pToLogAct    = new QAction("To &Log", this);
     m_pToRelLogAct = new QAction("T&o Release Log", this);
+    m_pAdjColumns  = new QAction("&Adjust Columns", this);
 
     m_pCopyAct->setShortcut(QKeySequence::Copy);
     m_pExpandAct->setShortcut(QKeySequence("Ctrl+E"));
     m_pCollapseAct->setShortcut(QKeySequence("Ctrl+D"));
     m_pRefreshAct->setShortcut(QKeySequence("Ctrl+R"));
+    m_pResetAct->setShortcut(QKeySequence("Alt+R"));
     m_pToLogAct->setShortcut(QKeySequence("Ctrl+Z"));
     m_pToRelLogAct->setShortcut(QKeySequence("Alt+Z"));
+    m_pAdjColumns->setShortcut(QKeySequence("Ctrl+A"));
 
     addAction(m_pCopyAct);
     addAction(m_pExpandAct);
     addAction(m_pCollapseAct);
     addAction(m_pRefreshAct);
+    addAction(m_pResetAct);
     addAction(m_pToLogAct);
     addAction(m_pToRelLogAct);
+    addAction(m_pAdjColumns);
 
     connect(m_pExpandAct,   SIGNAL(triggered(bool)), this, SLOT(actExpand()));
     connect(m_pCollapseAct, SIGNAL(triggered(bool)), this, SLOT(actCollapse()));
@@ -2695,6 +2700,7 @@ VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_p
     connect(m_pCopyAct,     SIGNAL(triggered(bool)), this, SLOT(actCopy()));
     connect(m_pToLogAct,    SIGNAL(triggered(bool)), this, SLOT(actToLog()));
     connect(m_pToRelLogAct, SIGNAL(triggered(bool)), this, SLOT(actToRelLog()));
+    connect(m_pAdjColumns,  SIGNAL(triggered(bool)), this, SLOT(actAdjColumns()));
 
 
     /*
@@ -2729,6 +2735,7 @@ VBoxDbgStatsView::VBoxDbgStatsView(VBoxDbgGui *a_pDbgGui, VBoxDbgStatsModel *a_p
     m_pViewMenu->addAction(m_pExpandAct);
     m_pViewMenu->addAction(m_pCollapseAct);
     m_pViewMenu->addSeparator();
+    m_pViewMenu->addAction(m_pAdjColumns);
 
     /* the header menu */
     QHeaderView *pHdrView = header();
@@ -2757,6 +2764,7 @@ VBoxDbgStatsView::~VBoxDbgStatsView()
     DELETE_IT(m_pCopyAct);
     DELETE_IT(m_pToLogAct);
     DELETE_IT(m_pToRelLogAct);
+    DELETE_IT(m_pAdjColumns);
 #undef DELETE_IT
 }
 
@@ -2767,6 +2775,14 @@ VBoxDbgStatsView::updateStats(const QString &rPatStr)
     m_PatStr = rPatStr;
     if (m_pModel->updateStatsByPattern(rPatStr))
         setRootIndex(m_pModel->getRootIndex()); /* hack */
+}
+
+
+void
+VBoxDbgStatsView::resizeColumnsToContent()
+{
+    for (int i = 0; i <= 8; i++)
+        resizeColumnToContents(i);
 }
 
 
@@ -2917,6 +2933,13 @@ VBoxDbgStatsView::actToRelLog()
 }
 
 
+void
+VBoxDbgStatsView::actAdjColumns()
+{
+    resizeColumnsToContent();
+}
+
+
 
 
 
@@ -2996,8 +3019,7 @@ VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszPat/* = NULL*/,
      * Seems this has to be done with all nodes expanded.
      */
     m_pView->expandAll();
-    for (int i = 0; i <= 8; i++)
-        m_pView->resizeColumnToContents(i);
+    m_pView->resizeColumnsToContent();
     m_pView->collapseAll();
 
     /*
