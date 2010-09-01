@@ -1810,6 +1810,18 @@ EOF
     echo "  Cannot compile 32-bit applications (missing headers and/or libraries)!"
     echo "  Check the file $LOG for detailed error information."
     fail
+  else
+    echo "executing the binary" >> $LOG
+    $ODIR.tmp_out 2> $ODIR.test_execute.log
+    rc=$?
+    cat $ODIR.test_execute.log >> $LOG
+    if [ $rc -ne 0 ]; then
+      echo
+      echo "  Cannot execute 32-bit applications! Either enable 32-bit support in the"
+      echo "  kernel configuration or use --disable-vmmraw to disable 32-bit guests."
+      fail
+      return 1
+    fi
   fi
   log_success ""
 }
