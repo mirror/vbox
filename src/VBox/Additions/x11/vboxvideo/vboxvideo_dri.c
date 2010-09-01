@@ -83,8 +83,8 @@ VBOXInitVisualConfigs(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     TRACE_ENTRY();
     int cConfigs = 2;  /* With and without double buffering */
     __GLXvisualConfig *pConfigs = NULL;
-    pConfigs = (__GLXvisualConfig*) xcalloc(sizeof(__GLXvisualConfig),
-                                            cConfigs);
+    pConfigs = (__GLXvisualConfig*) calloc(sizeof(__GLXvisualConfig),
+                                           cConfigs);
     if (!pConfigs)
     {
         rc = FALSE;
@@ -132,7 +132,7 @@ VBOXInitVisualConfigs(ScrnInfoPtr pScrn, VBOXPtr pVBox)
         GlxSetVisualConfigs(cConfigs, pConfigs, NULL);
     }
     if (!rc && pConfigs)
-        xfree(pConfigs);
+        free(pConfigs);
     TRACE_LOG("returning %s\n", BOOL_STR(rc));
     return rc;
 }
@@ -243,7 +243,7 @@ Bool VBOXDRIScreenInit(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
 #ifdef PCIACCESS
         pDRIInfo->busIdString = DRICreatePCIBusID(pVBox->pciInfo);
 #else
-        pDRIInfo->busIdString = xalloc(64);
+        pDRIInfo->busIdString = alloc(64);
         sprintf(pDRIInfo->busIdString, "PCI:%d:%d:%d",
             ((pciConfigPtr)pVBox->pciInfo->thisCard)->busnum,
 	        ((pciConfigPtr)pVBox->pciInfo->thisCard)->devnum,
@@ -325,7 +325,7 @@ VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox)
     DRIDestroyInfoRec(pVBox->pDRIInfo);
     pVBox->pDRIInfo=0;
     if (pVBox->pVisualConfigs)
-        xfree(pVBox->pVisualConfigs);
+        free(pVBox->pVisualConfigs);
     pVBox->cVisualConfigs = 0;
     pVBox->pVisualConfigs = NULL;
 }

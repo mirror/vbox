@@ -21,9 +21,6 @@ VBESetGetPaletteData
 VBESetVBEMode
 XNFcalloc
 XNFstrdup
-Xalloc
-Xcalloc
-Xfree
 _Jv_RegisterClasses
 ___errno
 __cxa_finalize
