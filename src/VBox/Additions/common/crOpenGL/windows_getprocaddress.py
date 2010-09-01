@@ -100,6 +100,11 @@ extern BOOL WINAPI wglChoosePixelFormatEXT_prox(HDC hdc, const int *piAttributes
 extern BOOL WINAPI wglGetPixelFormatAttribivEXT_prox(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int *piAttributes, int *pValues);
 extern BOOL WINAPI wglGetPixelFormatAttribfvEXT_prox(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int *piAttributes, float *pValues);
 
+BOOL WINAPI wglSwapIntervalEXT(int interval)
+{
+    return false;
+}
+
 CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 {
     int i;
@@ -128,6 +133,8 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
     if (!crStrcmp( name, "wglChoosePixelFormatARB" )) return (CR_PROC) wglChoosePixelFormatEXT;
     if (!crStrcmp( name, "wglGetPixelFormatAttribivARB" )) return (CR_PROC) wglGetPixelFormatAttribivEXT;
     if (!crStrcmp( name, "wglGetPixelFormatAttribfvARB" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
+
+    if (!crStrcmp( name, "wglSwapIntervalEXT" )) return (CR_PROC) wglSwapIntervalEXT;
 
     crDebug("Returning GetProcAddress:NULL for %s", name);
     return NULL;
