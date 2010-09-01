@@ -114,7 +114,17 @@ vbvdbg_SOURCES  = \
 	wddm/dbg/VBoxVideoWinDbg.cpp \
 	wddm/dbg/VBoxVideoWinDbg.def
 vbvdbg_SDKS     = WINDDKWLH
+
+PROGRAMS += tstMvWnd
+tstMvWnd_TEMPLATE = VBOXR3EXE
+tstMvWnd_DEFS = UNICODE _UNICODE 
+tstMvWnd_SOURCES  = \
+	wddm/dbg/tstMvWnd.cpp
+tstMvWnd_LIBS  = \
+        $(LIB_RUNTIME)
+tstMvWnd_LDFLAGS.win = /SUBSYSTEM:windows
 endif
+
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
