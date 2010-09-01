@@ -527,14 +527,14 @@
 
       <para>The following commands change corresponding server settings:</para>
 
-      <screen>vboxmanage setextradata VMNAME "VRDP/Feature/Client/DisableDisplay" 1</screen>
-      <screen>vboxmanage setextradata VMNAME "VRDP/Feature/Client/DisableInput" 1</screen>
-      <screen>vboxmanage setextradata VMNAME "VRDP/Feature/Client/DisableUSB" 1</screen>
-      <screen>vboxmanage setextradata VMNAME "VRDP/Feature/Client/DisableAudio" 1</screen>
-      <screen>vboxmanage setextradata VMNAME "VRDP/Feature/Client/DisableClipboard" 1</screen>
+      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableDisplay" 1</screen>
+      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableInput" 1</screen>
+      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableUSB" 1</screen>
+      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableAudio" 1</screen>
+      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableClipboard" 1</screen>
 
       <para>To reenable a feature use a similar command without the trailing 1. For example:
-      <screen>vboxmanage setextradata VMNAME "VRDP/Feature/Client/DisableDisplay"</screen></para>
+      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableDisplay"</screen></para>
     </sect2>
   </sect1>
 
