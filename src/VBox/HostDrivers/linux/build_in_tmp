@@ -2,9 +2,9 @@
 
 #
 # Script to build a kernel module in /tmp. Useful if the module sources
-# are installed in read-only directory.
+# are installed in read-only directory. Not for DKMS!
 #
-# Copyright (C) 2007 Oracle Corporation
+# Copyright (C) 2007-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -17,45 +17,6 @@
 
 # Set the build type
 export BUILD_TYPE=_BUILDTYPE_
-
-# Attempt to build using DKMS first
-DKMS=`which dkms 2>/dev/null` 
-if [ "$1" = "--no-dkms" ]; then
-  shift
-  DKMS=""
-fi
-if [ -n "$DKMS" ]
-then
-    echo "Attempting to install using DKMS"
-    $DKMS status -m _MODULE_ | while read line
-    # first, remove _any_ old module
-    do
-        if echo "$line" | grep -q added > /dev/null ||
-           echo "$line" | grep -q built > /dev/null ||
-           echo "$line" | grep -q installed > /dev/null; then
-            # either 'vboxvideo, <version>: added' or 'vboxvideo, <version>, ...: installed'
-            version=`echo "$line" | sed "s/_MODULE_,\([^,]*\)[,:].*/\1/;t;d"`
-            echo "  removing old DKMS module _MODULE_ version $version"
-            $DKMS remove -m _MODULE_ -v $version --all
-        fi
-    done
-    # there should not be any more matches
-    status=`$DKMS status -m _MODULE_ -v _VERSION_`
-    if echo $status | grep added > /dev/null ||
-        echo $status | grep built > /dev/null ||
-        echo $status | grep installed > /dev/null
-    then
-        $DKMS remove -m _MODULE_ -v _VERSION_ --all
-    fi
-    # finally install the module
-    if $DKMS add -m _MODULE_ -v _VERSION_ &&
-        $DKMS build -m _MODULE_ -v _VERSION_ &&
-        $DKMS install -m _MODULE_ -v _VERSION_ --force
-    then
-        exit 0
-    fi
-    echo "Failed to install using DKMS, attempting to install without"
-fi
 
 # find a unique temp directory
 num=0

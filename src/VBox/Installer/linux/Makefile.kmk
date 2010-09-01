@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -145,8 +145,7 @@ VBOX_LNX_NO_STRIP = \
 	$(if $(VBOX_WITH_PYTHON),vboxshell.py,) \
 	VBoxSysInfo.sh \
 	VBox.sh \
-	VBox.png \
-	src
+	VBox.png
 
 # Qt4 GUI
 ifdef VBOX_WITH_QTGUI
@@ -253,7 +252,7 @@ endif
 #
 # All the bin files that goes into the archives.
 #
-VBOX_LNX_ARCH_FILES := $(VBOX_LNX_STRIP_BIN) $(VBOX_LNX_STRIP_OBJ) $(VBOX_LNX_NO_STRIP)
+VBOX_LNX_ARCH_FILES := $(VBOX_LNX_STRIP_BIN) $(VBOX_LNX_STRIP_OBJ) $(VBOX_LNX_NO_STRIP) src
 
 # Cleanup of the files we copy/symlink from bin.
 OTHER_CLEAN += $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/,$(VBOX_LNX_ARCH_FILES)) \
@@ -380,6 +379,13 @@ else # strip to temp file because of umask.
 	$(QUIET)$(INSTALL) -m 0644 $@.tmp $@
 	$(QUIET)$(RM) -f -- $@.tmp
 endif
+
+# special rule for the kernel modules
+$(VBOX_LNX_INST_OUT_DIR)/archive/src: $(PATH_BIN)/src | $(dir $@)
+	$(call MSG_INST_SYM,$<,$@)
+	$(QUIET)$(RM) -Rf $@
+	$(QUIET)$(MKDIR) $@
+	$(QUIET)$(LN_SYMLINK) $< $@/vboxhost
 
 # pattern rule for linking the VBOX_LNX_NO_STRIP into archive/
 $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/,$(VBOX_LNX_NO_STRIP)): \

@@ -249,9 +249,7 @@ endif
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
 	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
-	    usr/share/virtualbox/src/vboxdrv    usr/src/vboxdrv-$(ver) \
-	    usr/share/virtualbox/src/vboxnetflt usr/src/vboxnetflt-$(ver) \
-	    usr/share/virtualbox/src/vboxnetadp usr/src/vboxnetadp-$(ver)
+	    usr/share/virtualbox/src/vboxhost   usr/src/vboxhost-$(ver)
 	dh_desktop
 	dh_installmenu
 	$(if $(NOMODS),,dh_installmodules)

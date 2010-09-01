@@ -41,6 +41,7 @@ VBOX_LNX_ADD_INST_LIB_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)lib/
 VBOX_LNX_ADD_INST_SHARE_DIR       := $(VBOX_LNX_ADD_INST_OUT_DIR)share/
 VBOX_LNX_ADD_INST_MOD_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)lib/$(VBOX_LNX_ADD_PACKAGE_NAME)/
 VBOX_LNX_ADD_INST_KMOD_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)src/
+VBOX_LNX_ADD_INST_KMOD_DIR_MOD    := $(VBOX_LNX_ADD_INST_OUT_DIR)src/vboxguest-$(VBOX_VERSION_STRING)/
 VBOX_LNX_ADD_INST_INIT_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)init/
 
 # Installation paths for debug symbols
@@ -81,6 +82,7 @@ BLDDIRS     += \
 	$(VBOX_LNX_ADD_INST_LIB_DIR) \
 	$(VBOX_LNX_ADD_INST_MOD_DIR) \
 	$(VBOX_LNX_ADD_INST_KMOD_DIR) \
+	$(VBOX_LNX_ADD_INST_KMOD_DIR_MOD) \
 	$(VBOX_LNX_ADD_INST_INIT_DIR) \
 	$(VBOX_LNX_ADD_INST_DBG_DIR) \
 	$(VBOX_LNX_ADD_DBG_BIN_DIR) \
@@ -154,11 +156,8 @@ VBOX_ADD_STRIP_OBJ.linux = \
 	vboxvideo_drv.o
 
 VBOX_ADD_KMOD = \
-	vboxguest
-
-VBOX_ADD_KMOD.linux = \
-	vboxsf \
-	vboxvideo
+	$(addprefix vboxguest-$(VBOX_VERSION_STRING)/,\
+		vboxguest vboxsf vboxvideo Makefile dkms.conf do_dkms)
 
 VBOX_ADD_INIT.linux = \
 	vboxadd \
@@ -172,10 +171,8 @@ VBOX_LNX_ADD_STRIP_LIB = $(VBOX_ADD_STRIP_LIB) $(VBOX_ADD_STRIP_LIB.linux)
 VBOX_LNX_ADD_STRIP_MOD = $(VBOX_ADD_STRIP_MOD) $(VBOX_ADD_STRIP_MOD.linux)
 VBOX_LNX_ADD_MOD       = $(VBOX_ADD_MOD) $(VBOX_ADD_MOD.linux)
 VBOX_LNX_ADD_STRIP_OBJ = $(VBOX_ADD_STRIP_OBJ) $(VBOX_ADD_STRIP_OBJ.linux)
-VBOX_LNX_ADD_KMOD      = $(VBOX_ADD_KMOD) $(VBOX_ADD_KMOD.linux)
+VBOX_LNX_ADD_KMOD      = $(VBOX_ADD_KMOD)
 VBOX_LNX_ADD_INIT      = $(VBOX_ADD_INIT) $(VBOX_ADD_INIT.linux)
-
-VBOX_LNX_ADD_KMOD_VERSIONED := $(addsuffix -$(VBOX_VERSION_STRING),$(VBOX_LNX_ADD_KMOD))
 
 #
 # All the files that go into the archive
@@ -188,7 +185,7 @@ VBOX_LNX_ADD_INST_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_MOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_VERSIONED)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_INIT))
 
@@ -271,11 +268,9 @@ else # strip to temp file because of umask.
 endif
 
 # pattern rule for copying the VBOX_LNX_ADD_KMOD files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_VERSIONED)): \
-		$(VBOX_LNX_ADD_INST_KMOD_DIR)%-$(VBOX_VERSION_STRING) : $(PATH_BIN)/additions/src/% | $(VBOX_LNX_ADD_INST_KMOD_DIR)
+$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD)): \
+		$(VBOX_LNX_ADD_INST_KMOD_DIR_MOD)% : $(PATH_BIN)/additions/src/% | $$(dir $$@)
 	$(call MSG_INST_DIR,$<,$@)
-# Remove target directories first, otherwise the behaviour of cp will not be
-# what we want if it already exists. See the cp manual page for more details.
 	$(QUIET)$(RM) -Rf $@
 	$(QUIET)cp -af $< $@
 

@@ -64,7 +64,7 @@ usage() {
 }
 
 module_loaded() {
-    lsmod | grep -q vboxdrv
+    lsmod | grep -q "vboxdrv[^_-]"
 }
 
 # This routine makes sure that there is no previous installation of
@@ -267,6 +267,7 @@ if [ "$ACTION" = "install" ]; then
             stop_init_script vboxdrv
             if [ -n "$DKMS" ]
             then
+                $DKMS remove -m vboxhost -v $INSTALL_VER --all > /dev/null 2>&1
                 $DKMS remove -m vboxdrv -v $INSTALL_VER --all > /dev/null 2>&1
                 $DKMS remove -m vboxnetflt -v $INSTALL_VER --all > /dev/null 2>&1
                 $DKMS remove -m vboxnetadp -v $INSTALL_VER --all > /dev/null 2>&1
@@ -381,9 +382,7 @@ if [ "$ACTION" = "install" ]; then
     ln -sf $INSTALLATION_DIR/VBox.png /usr/share/pixmaps/VBox.png
     ln -sf $INSTALLATION_DIR/virtualbox.desktop /usr/share/applications/virtualbox.desktop
     ln -sf $INSTALLATION_DIR/rdesktop-vrdp /usr/bin/rdesktop-vrdp
-    ln -sf $INSTALLATION_DIR/src/vboxdrv /usr/src/vboxdrv-_VERSION_
-    ln -sf $INSTALLATION_DIR/src/vboxnetflt /usr/src/vboxnetflt-_VERSION_
-    ln -sf $INSTALLATION_DIR/src/vboxnetadp /usr/src/vboxnetadp-_VERSION_
+    ln -sf $INSTALLATION_DIR/src/vboxhost /usr/src/vboxhost-_VERSION_
 
     # If Python is available, install Python bindings
     if [ -n "$PYTHON" ]; then
@@ -431,58 +430,22 @@ if [ "$ACTION" = "install" ]; then
     udevtrigger --subsystem-match=usb_device > /dev/null 2>&1
     udevplug -Busb > /dev/null 2>&1
 
+    # Write the configuration. Do this before we call /etc/init.d/vboxdrv setup!
+    echo "# VirtualBox installation directory" > $CONFIG_DIR/$CONFIG
+    echo "INSTALL_DIR='$INSTALLATION_DIR'" >> $CONFIG_DIR/$CONFIG
+    echo "# VirtualBox version" >> $CONFIG_DIR/$CONFIG
+    echo "INSTALL_VER='$VERSION'" >> $CONFIG_DIR/$CONFIG
+    echo "INSTALL_REV='$SVNREV'" >> $CONFIG_DIR/$CONFIG
+
     # Make kernel module
     MODULE_FAILED="false"
     if [ "$BUILD_MODULE" = "true" ]
     then
-        info "Building the VirtualBox vboxdrv kernel module"
+        info "Building the VirtualBox kernel modules"
         log "Output from the module build process (the Linux kernel build system) follows:"
         cur=`pwd`
         log ""
-        cd $INSTALLATION_DIR/src/vboxdrv
-        ./build_in_tmp \
-          --save-module-symvers /tmp/vboxdrv-Module.symvers \
-          --no-print-directory install >> $LOG 2>&1
-        RETVAL=$?
-        if [ $RETVAL -ne 0 ]
-        then
-            info "Failed to build the vboxdrv kernel module."
-            info "Please check the log file $LOG for more information."
-            MODULE_FAILED="true"
-            RC_SCRIPT=1
-        else
-            info "Building the VirtualBox netflt kernel module"
-            log "Output from the module build process (the Linux kernel build system) follows:"
-            cd $INSTALLATION_DIR/src/vboxnetflt
-            ./build_in_tmp \
-              --use-module-symvers /tmp/vboxdrv-Module.symvers \
-              --no-print-directory install >> $LOG 2>&1
-            RETVAL=$?
-            if [ $RETVAL -ne 0 ]
-            then
-                info "Failed to build the vboxnetflt kernel module."
-                info "Please check the log file $LOG for more information."
-                MODULE_FAILED="true"
-                RC_SCRIPT=1
-            else
-                info "Building the VirtualBox netadp kernel module"
-                log "Output from the module build process (the Linux kernel build system) follows:"
-                cd $INSTALLATION_DIR/src/vboxnetadp
-                ./build_in_tmp \
-                    --use-module-symvers /tmp/vboxdrv-Module.symvers \
-                    --no-print-directory install >> $LOG 2>&1
-                RETVAL=$?
-                if [ $RETVAL -ne 0 ]
-                then
-                    info "Failed to build the vboxnetadp kernel module."
-                    info "Please check the log file $LOG for more information."
-                    MODULE_FAILED="true"
-                    RC_SCRIPT=1
-                fi
-            fi
-        fi
-        # cleanup
-        rm -f /tmp/vboxdrv-Module.symvers
+        setup_init_script vboxdrv
         # Start VirtualBox kernel module
         if [ $RETVAL -eq 0 ] && ! start_init_script vboxdrv; then
             info "Failed to load the kernel module."
@@ -494,11 +457,6 @@ if [ "$ACTION" = "install" ]; then
         cd $cur
     fi
 
-    echo "# VirtualBox installation directory" > $CONFIG_DIR/$CONFIG
-    echo "INSTALL_DIR='$INSTALLATION_DIR'" >> $CONFIG_DIR/$CONFIG
-    echo "# VirtualBox version" >> $CONFIG_DIR/$CONFIG
-    echo "INSTALL_VER='$VERSION'" >> $CONFIG_DIR/$CONFIG
-    echo "INSTALL_REV='$SVNREV'" >> $CONFIG_DIR/$CONFIG
     info ""
     if [ ! "$MODULE_FAILED" = "true" ]
     then

@@ -4,7 +4,7 @@
 
 #
 #
-# Copyright (C) 2009 Oracle Corporation
+# Copyright (C) 2009-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -14,6 +14,14 @@
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
+
+ifneq ($(KBUILD_EXTMOD),)
+
+# DKMS
+
+obj-m = vboxguest/ vboxsf/ vboxvideo/
+
+else # ! KBUILD_EXTMOD
 
 KBUILD_VERBOSE =
 
@@ -59,3 +67,5 @@ load:
 	@/sbin/rmmod vboxguest || true
 	@/sbin/insmod vboxguest.ko
 	@if [ -f vboxsf.ko ]; then /sbin/insmod vboxsf.ko; fi
+
+endif # ! KBUILD_EXTMOD

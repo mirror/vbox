@@ -4,7 +4,7 @@
 
 #
 #
-# Copyright (C) 2008-2009 Oracle Corporation
+# Copyright (C) 2008-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -14,6 +14,22 @@
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
+
+ifneq ($(KBUILD_EXTMOD),)
+
+# DKMS
+
+obj-m = vboxdrv/
+ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxnetflt/Makefile),)
+ obj-m += vboxnetflt/
+endif
+ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxnetadp/Makefile),)
+ obj-m += vboxnetadp/
+endif
+
+else # ! KBUILD_EXTMOD
+
+# convenience Makefile without DKMS
 
 KBUILD_VERBOSE =
 
@@ -74,3 +90,5 @@ load:
 			/sbin/insmod $$module.ko; \
 		fi; \
 	done
+
+endif # ! KBUILD_EXTMOD

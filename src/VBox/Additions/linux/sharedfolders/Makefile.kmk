@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -32,8 +32,6 @@ include $(PATH_SUB_CURRENT)/files_vboxsf
 vboxsf-mod_INST        = $(INST_ADDITIONS)src/vboxsf/
 vboxsf-mod_MODE        = a+r,u+w
 vboxsf-mod_SOURCES     = $(subst ",,$(FILES_VBOXSF_NOBIN))
-vboxsf-mod_SOURCES    += $(PATH_vboxsf-mod)/dkms.conf
-vboxsf-mod_CLEAN      += $(PATH_vboxsf-mod)/dkms.conf
 
 vboxsf-sh_INST        = $(INST_ADDITIONS)src/vboxsf/
 vboxsf-sh_MODE        = a+rx,u+w
@@ -97,13 +95,6 @@ $$(PATH_vboxsf-sh)/build_in_tmp: \
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxsf;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
 	$(QUIET)chmod 0755 $@
-
-$$(PATH_vboxsf-mod)/dkms.conf: \
-		$(PATH_SUB_CURRENT)/dkms.conf \
-		$(VBOX_VERSION_STAMP) \
-		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" --output $@ $<
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

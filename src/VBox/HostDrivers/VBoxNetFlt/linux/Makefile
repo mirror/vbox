@@ -5,7 +5,7 @@
 
 #
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -160,6 +160,7 @@ ifndef INCL
   KBUILD_EXTMOD := $(shell pwd)
  endif
  INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
+ INCL    += $(addprefix -I$(KBUILD_EXTMOD)/vboxnetflt,/ /include /r0drv/linux)
  export INCL
 endif
 KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DRT_WITH_VBOX -DVBOX_WITH_HARDENING
