@@ -11,6 +11,64 @@
 #include "server_dispatch.h"
 #include "server.h"
 
+#ifdef VBOXCR_LOGFPS
+#include <iprt/timer.h>
+#include <iprt/ctype.h>
+typedef struct VBOXCRFPS
+{
+    uint64_t mPeriodSum;
+    uint64_t *mpaPeriods;
+    uint64_t mPrevTime;
+    uint64_t mcFrames;
+    uint32_t mcPeriods;
+    uint32_t miPeriod;
+} VBOXCRFPS, *PVBOXCRFPS;
+
+void vboxCrFpsInit(PVBOXCRFPS pFps, uint32_t cPeriods)
+{
+    memset(pFps, 0, sizeof (*pFps));
+    pFps->mcPeriods = cPeriods;
+    pFps->mpaPeriods = malloc(sizeof (pFps->mpaPeriods[0]) * cPeriods);
+    memset(pFps->mpaPeriods, 0, cPeriods * sizeof(pFps->mpaPeriods[0]));
+}
+
+void vboxCrFpsTerm(PVBOXCRFPS pFps)
+{
+    free(pFps->mpaPeriods);
+}
+
+void vboxCrFpsReportFrame(PVBOXCRFPS pFps)
+{
+    uint64_t cur = RTTimeNanoTS();
+    if(pFps->mPrevTime)
+    {
+        uint64_t curPeriod = cur - pFps->mPrevTime;
+        pFps->mPeriodSum += curPeriod - pFps->mpaPeriods[pFps->miPeriod];
+        pFps->mpaPeriods[pFps->miPeriod] = curPeriod;
+        ++pFps->miPeriod;
+        pFps->miPeriod %= pFps->mcPeriods;
+    }
+    pFps->mPrevTime = cur;
+    ++pFps->mcFrames;
+}
+
+uint64_t vboxCrFpsGetEveragePeriod(PVBOXCRFPS pFps)
+{
+    return pFps->mPeriodSum / pFps->mcPeriods;
+}
+
+double vboxCrFpsGetFps(PVBOXCRFPS pFps)
+{
+    return ((double)1000000000.0) / vboxCrFpsGetEveragePeriod(pFps);
+}
+
+uint64_t vboxCrFpsGetNumFrames(PVBOXCRFPS pFps)
+{
+    return pFps->mcFrames;
+}
+
+#endif
+
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchClear( GLenum mask )
 {
@@ -47,7 +105,22 @@ void SERVER_DISPATCH_APIENTRY
 crServerDispatchSwapBuffers( GLint window, GLint flags )
 {
   CRMuralInfo *mural;
+#ifdef VBOXCR_LOGFPS
+  static VBOXCRFPS Fps;
+  static bool bFpsInited = false;
 
+  if (!bFpsInited)
+  {
+      vboxCrFpsInit(&Fps, 64 /* cPeriods */);
+      bFpsInited = true;
+  }
+  vboxCrFpsReportFrame(&Fps);
+  if(!(vboxCrFpsGetNumFrames(&Fps) % 31))
+  {
+      double fps = vboxCrFpsGetFps(&Fps);
+      crDebug("fps: %f\n", fps);
+  }
+#endif
 	mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
 	if (!mural) {
 		 return;

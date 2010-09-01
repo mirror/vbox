@@ -143,6 +143,9 @@ VBoxOGLcrserverlib_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/server_get.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_simpleget.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.h
+ifdef VBOXCR_LOGFPS
+VBoxOGLcrserverlib_DEFS += VBOXCR_LOGFPS 
+endif	
 
 #
 # Generate files for VBoxOGLcrserverlib
