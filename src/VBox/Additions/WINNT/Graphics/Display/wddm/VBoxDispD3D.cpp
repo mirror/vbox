@@ -4111,10 +4111,9 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
             IDirect3DSurface9 *pDataRt = (IDirect3DSurface9*)pAlloc->pSecondaryOpenedD3DIf;
             Assert(pDataRt);
             Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
-//            do we actually need to do flush here ?
-//            hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pPrimaryScreen->pDevice9If);
-//            Assert(hr == S_OK);
-//            if (hr == S_OK)
+            hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pPrimaryScreen->pDevice9If);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
             {
                 hr = pScreen->pDevice9If->GetRenderTarget(0, &pSecondaryRt);
                 Assert(hr == S_OK);
