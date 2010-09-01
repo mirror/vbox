@@ -589,7 +589,9 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
         /* Use the callback to create the texture surface. */
         hr = IWineD3DDeviceParent_CreateSurface(device->device_parent, parent, tmp_w, tmp_h, format_desc->format,
                 usage, pool, i, WINED3DCUBEMAP_FACE_POSITIVE_X, &texture->surfaces[i]
-                , shared_handle
+                , NULL /* <- we first create a surface in an everage "non-shared" fashion and initialize its share properties later (see below)
+                        * this is done this way because the surface does not have its parent (texture) setup properly
+                        * thus we can not initialize texture at this stage */
                 , pvClientMem);
 
 #else
@@ -620,6 +622,16 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
     {
         Assert(shared_handle);
         VBOXSHRC_SET_INITIALIZED(texture);
+        for (i = 0; i < texture->baseTexture.levels; ++i)
+        {
+            VBOXSHRC_COPY_SHAREDATA((IWineD3DSurfaceImpl*)texture->surfaces[i], texture);
+        }
+#ifdef DEBUG
+        for (i = 0; i < texture->baseTexture.levels; ++i)
+        {
+            Assert(!((IWineD3DSurfaceImpl*)texture->surfaces[i])->texture_name);
+        }
+#endif
         IWineD3DSurface_LoadLocation(texture->surfaces[0], SFLAG_INTEXTURE, NULL);
         if (!VBOXSHRC_IS_SHARED_OPENED(texture))
         {

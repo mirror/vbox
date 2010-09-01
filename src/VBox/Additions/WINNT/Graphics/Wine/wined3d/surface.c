@@ -482,6 +482,29 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
         return hr;
     }
 
+#ifdef VBOXWDDM
+    if (VBOXSHRC_IS_SHARED(surface))
+    {
+        Assert(shared_handle);
+        VBOXSHRC_SET_INITIALIZED(surface);
+        IWineD3DSurface_LoadLocation(surface, SFLAG_INTEXTURE, NULL);
+        if (!VBOXSHRC_IS_SHARED_OPENED(surface))
+        {
+            Assert(!(*shared_handle));
+            *shared_handle = VBOXSHRC_GET_SHAREHANDLE(surface);
+        }
+        else
+        {
+            Assert(*shared_handle);
+            Assert(*shared_handle == VBOXSHRC_GET_SHAREHANDLE(surface));
+        }
+    }
+    else
+    {
+        Assert(!shared_handle);
+    }
+#endif
+
     return hr;
 }
 

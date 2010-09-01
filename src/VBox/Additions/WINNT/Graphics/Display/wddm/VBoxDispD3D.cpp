@@ -4105,20 +4105,28 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
         if (pRc->RcDesc.VidPnSourceId != pDevice->iPrimaryScreen)
         {
             PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SrcSubResourceIndex];
+            PVBOXWDDMDISP_SCREEN pPrimaryScreen = &pDevice->aScreens[pDevice->iPrimaryScreen];
+            Assert(pPrimaryScreen->pDevice9If);
             IDirect3DSurface9 *pSecondaryRt;
             IDirect3DSurface9 *pDataRt = (IDirect3DSurface9*)pAlloc->pSecondaryOpenedD3DIf;
             Assert(pDataRt);
             Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
-            hr = pScreen->pDevice9If->GetRenderTarget(0, &pSecondaryRt);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
+//            do we actually need to do flush here ?
+//            hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pPrimaryScreen->pDevice9If);
+//            Assert(hr == S_OK);
+//            if (hr == S_OK)
             {
-                hr = pScreen->pDevice9If->StretchRect(pDataRt,
-                                    NULL,
-                                    pSecondaryRt,
-                                    NULL,
-                                    D3DTEXF_NONE);
-                pSecondaryRt->Release();
+                hr = pScreen->pDevice9If->GetRenderTarget(0, &pSecondaryRt);
+                Assert(hr == S_OK);
+                if (hr == S_OK)
+                {
+                    hr = pScreen->pDevice9If->StretchRect(pDataRt,
+                                        NULL,
+                                        pSecondaryRt,
+                                        NULL,
+                                        D3DTEXF_NONE);
+                    pSecondaryRt->Release();
+                }
             }
         }
 
