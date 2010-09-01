@@ -1222,6 +1222,9 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Init the static parts.
      */
     pThis->pDrvInsR3                                = pDrvIns;
+#ifdef VBOX_WITH_DRVINTNET_IN_R0
+    pThis->pDrvInsR0                                = PDMDRVINS_2_R0PTR(pDrvIns);
+#endif
     pThis->hIf                                      = INTNET_HANDLE_INVALID;
     pThis->hRecvThread                              = NIL_RTTHREAD;
     pThis->hRecvEvt                                 = NIL_RTSEMEVENT;
