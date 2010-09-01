@@ -69,6 +69,10 @@
       </listitem>
 
       <listitem>
+        <para>3D support: fixed broken 3d support when switching to fullscreen/seamless modes (bug #7314)</para>
+      </listitem>
+
+      <listitem>
         <para>SATA: allow to attach CD/DVD-ROM drives including passthrough</para>
       </listitem>
 
