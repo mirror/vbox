@@ -2119,7 +2119,7 @@ VMMR3DECL(int) EMR3NotifyResume(PVM pVM)
     PVMCPU pVCpu = VMMGetCpu(pVM);
     EMSTATE enmCurState = pVCpu->em.s.enmState;
 
-    TMR3NotifyResume(pVM, pVCpu);  /* Stop the virtual time. */
+    TMR3NotifyResume(pVM, pVCpu);  /* Resume the virtual time. */
     pVCpu->em.s.enmState     = pVCpu->em.s.enmPrevState;
     pVCpu->em.s.enmPrevState = enmCurState;
     return VINF_SUCCESS;
