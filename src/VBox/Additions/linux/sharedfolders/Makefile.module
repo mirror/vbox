@@ -172,6 +172,7 @@ ifndef INCL
   KBUILD_EXTMOD := $(shell pwd)
  endif
  INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
+ INCL    += $(addprefix -I$(KBUILD_EXTMOD)/vboxsf,/ /include /r0drv/linux)
  export INCL
 endif
 KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 \

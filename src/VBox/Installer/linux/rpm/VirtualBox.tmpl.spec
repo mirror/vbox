@@ -134,9 +134,7 @@ ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxSDL
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxVRDP
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxHeadless
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxwebsrv
-ln -s /usr/share/virtualbox/src/vboxdrv $RPM_BUILD_ROOT/usr/src/vboxdrv-%VER%
-ln -s /usr/share/virtualbox/src/vboxnetflt $RPM_BUILD_ROOT/usr/src/vboxnetflt-%VER%
-ln -s /usr/share/virtualbox/src/vboxnetadp $RPM_BUILD_ROOT/usr/src/vboxnetadp-%VER%
+ln -s /usr/share/virtualbox/src/vboxhost $RPM_BUILD_ROOT/usr/src/vboxhost-%VER%
 mv virtualbox.desktop $RPM_BUILD_ROOT/usr/share/applications/virtualbox.desktop
 mv VBox.png $RPM_BUILD_ROOT/usr/share/pixmaps/VBox.png
 
@@ -266,8 +264,8 @@ fi
 %update_menus
 %endif
 
-# try to build a kernel module (disable with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox)
-REGISTER_DKMS=1
+# Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
+BUILD_MODULES=0
 if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko -a "$INSTALL_NO_VBOXDRV" != "1" ]; then
   # compile problem
   cat << EOF
@@ -275,88 +273,7 @@ No precompiled module for this kernel found -- trying to build one. Messages
 emitted during module compilation will be logged to $LOG.
 
 EOF
-  rm -f /etc/vbox/module_not_compiled
-  echo "** Compiling vboxdrv" > /var/log/vbox-install.log
-  if ! /usr/share/virtualbox/src/vboxdrv/build_in_tmp \
-    --save-module-symvers /tmp/vboxdrv-Module.symvers \
-    --no-print-directory KBUILD_VERBOSE= \
-    install >> /var/log/vbox-install.log 2>&1; then
-    cat << EOF
-Compilation of the kernel module FAILED! VirtualBox will not start until this
-problem is fixed. Please consult $LOG to find out why the
-kernel module does not compile. Most probably the kernel sources are not found.
-Install them and execute
-
-  /etc/init.d/vboxdrv setup
-
-as root.
-
-EOF
-    touch /etc/vbox/module_not_compiled
-  else
-    echo "** Compiling vboxnetflt" >> /var/log/vbox-install.log
-    if ! /usr/share/virtualbox/src/vboxnetflt/build_in_tmp \
-      --use-module-symvers /tmp/vboxdrv-Module.symvers \
-      --no-print-directory KBUILD_VERBOSE= \
-      install >> /var/log/vbox-install.log 2>&1; then
-      cat << EOF
-Compilation of the kernel module FAILED! VirtualBox will not start until this
-problem is fixed. Please consult $LOG to find out why the
-kernel module does not compile. Most probably the kernel sources are not found.
-Install them and execute
-
-  /etc/init.d/vboxdrv setup
-
-as root.
-
-EOF
-      touch /etc/vbox/module_not_compiled
-    else
-      echo "** Compiling vboxnetadp" >> /var/log/vbox-install.log
-      if ! /usr/share/virtualbox/src/vboxnetadp/build_in_tmp \
-        --use-module-symvers /tmp/vboxdrv-Module.symvers \
-        --no-print-directory KBUILD_VERBOSE= \
-        install >> /var/log/vbox-install.log 2>&1; then
-        cat << EOF
-Compilation of the kernel module FAILED! VirtualBox will not start until this
-problem is fixed. Please consult $LOG to find out why the
-kernel module does not compile. Most probably the kernel sources are not found.
-Install them and execute
-
-  /etc/init.d/vboxdrv setup
-
-as root.
-
-EOF
-        touch /etc/vbox/module_not_compiled
-      fi
-    fi
-  fi
-  rm -f /tmp/vboxdrv-Module.symvers
-  if [ ! -f /etc/vbox/module_not_compiled ]; then
-    cat << EOF
-Success!
-
-EOF
-    REGISTER_DKMS=
-  fi
-fi
-# Register at DKMS. If the modules were built above, they are already registered
-if [ -n "$REGISTER_DKMS" ]; then
-  DKMS=`which dkms 2>/dev/null`
-  if [ -n "$DKMS" ]; then
-    for m in vboxdrv vboxnetflt vboxnetadp; do
-      $DKMS status -m $m | while read line; do
-        if echo "$line" | grep -q added > /dev/null ||
-           echo "$line" | grep -q built > /dev/null ||
-           echo "$line" | grep -q installed > /dev/null; then
-             v=`echo "$line" | sed "s/$m,\([^,]*\)[,:].*/\1/;t;d"`
-             $DKMS remove -m $m -v $v --all > /dev/null 2>&1
-        fi
-      done
-      $DKMS add -m $m -v %VER% > /dev/null 2>&1
-    done
-  fi
+  BUILD_MODULES=1
 fi
 # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
 if [ "$INSTALL_NO_VBOXDRV" = "1" ]; then
@@ -367,11 +284,12 @@ fi
 if lsmod | grep -q "vboxdrv[^_-]"; then
   /etc/init.d/vboxdrv stop || true
 fi
-if [ ! -f /etc/vbox/module_not_compiled ]; then
-  depmod -a
+if [ $BUILD_MODULES -eq 1 ]; then
+  /etc/init.d/vboxdrv setup || true
+else
   /etc/init.d/vboxdrv start > /dev/null
-  /etc/init.d/vboxweb-service start > /dev/null
 fi
+/etc/init.d/vboxweb-service start > /dev/null
 
 
 %preun
@@ -404,9 +322,7 @@ if [ "$1" = 0 ]; then
 fi
 DKMS=`which dkms 2>/dev/null`
 if [ -n "$DKMS" ]; then
-  $DKMS remove -m vboxnetadp -v %VER% --all > /dev/null 2>&1 || true
-  $DKMS remove -m vboxnetflt -v %VER% --all > /dev/null 2>&1 || true
-  $DKMS remove -m vboxdrv -v %VER% --all > /dev/null 2>&1 || true
+  $DKMS remove -m vboxhost -v %VER% --all > /dev/null 2>&1 || true
 fi
 
 

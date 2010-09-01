@@ -43,11 +43,11 @@ if [ "$1" = "upgrade" -o "$1" = "remove" -o "$1" = "failed-upgrade" ]; then
 fi
 
 # make sure we de-register the DMKS modules before the files get removed
-DKMS=`which dkms 2>/dev/null`
-if [ -n "$DKMS" ]; then
-  $DKMS remove -m vboxnetadp -v %VER% --all > /dev/null 2>&1 || true
-  $DKMS remove -m vboxnetflt -v %VER% --all > /dev/null 2>&1 || true
-  $DKMS remove -m vboxdrv -v %VER% --all > /dev/null 2>&1 || true
+if [ "$1" = "upgrade" -o "$1" = "remove" -o "$1" = "deconfigure" ]; then
+  DKMS=`which dkms 2>/dev/null`
+  if [ -n "$DKMS" ]; then
+    $DKMS remove -m vboxhost -v %VER% --all > /dev/null 2>&1 || true
+  fi
 fi
 
 # Stop vboxnet/vboxdrv manually as we use our own error handling in postrm

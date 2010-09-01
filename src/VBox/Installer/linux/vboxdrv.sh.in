@@ -43,14 +43,16 @@ fi
 
 if [ -n "$INSTALL_DIR" ]; then
     VBOXMANAGE="$INSTALL_DIR/VBoxManage"
-    BUILDVBOXDRV="$INSTALL_DIR/src/vboxdrv/build_in_tmp"
-    BUILDVBOXNETFLT="$INSTALL_DIR/src/vboxnetflt/build_in_tmp"
-    BUILDVBOXNETADP="$INSTALL_DIR/src/vboxnetadp/build_in_tmp"
+    DODKMS="$INSTALL_DIR/src/vboxhost/do_dkms"
+    BUILDVBOXDRV="$INSTALL_DIR/src/vboxhost/vboxdrv/build_in_tmp"
+    BUILDVBOXNETFLT="$INSTALL_DIR/src/vboxhost/vboxnetflt/build_in_tmp"
+    BUILDVBOXNETADP="$INSTALL_DIR/src/vboxhost/vboxnetadp/build_in_tmp"
 else
     VBOXMANAGE="/usr/lib/%PACKAGE%/VBoxManage"
-    BUILDVBOXDRV="/usr/share/%PACKAGE%/src/vboxdrv/build_in_tmp"
-    BUILDVBOXNETFLT="/usr/share/%PACKAGE%/src/vboxnetflt/build_in_tmp"
-    BUILDVBOXNETADP="/usr/share/%PACKAGE%/src/vboxnetadp/build_in_tmp"
+    DODKMS="/usr/share/%PACKAGE%/src/vboxhost/do_dkms"
+    BUILDVBOXDRV="/usr/share/%PACKAGE%/src/vboxhost/vboxdrv/build_in_tmp"
+    BUILDVBOXNETFLT="/usr/share/%PACKAGE%/src/vboxhost/vboxnetflt/build_in_tmp"
+    BUILDVBOXNETADP="/usr/share/%PACKAGE%/src/vboxhost/vboxnetadp/build_in_tmp"
 fi
 
 # silently exit if the package was uninstalled but not purged,
@@ -279,9 +281,13 @@ stop_vms()
     fi
 }
 
+# setup_script
 setup()
 {
     stop
+    begin_msg "Uninstalling old VirtualBox DKMS kernel modules"
+    $DODKMS uninstall > $LOG
+    succ_msg
     if find /lib/modules/`uname -r` -name "vboxnetadp\.*" 2>/dev/null|grep -q vboxnetadp; then
         begin_msg "Removing old VirtualBox netadp kernel module"
         find /lib/modules/`uname -r` -name "vboxnetadp\.*" 2>/dev/null|xargs rm -f 2>/dev/null
@@ -297,21 +303,25 @@ setup()
         find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
         succ_msg
     fi
-    begin_msg "Recompiling VirtualBox kernel module"
-    if ! $BUILDVBOXDRV \
-        --save-module-symvers /tmp/vboxdrv-Module.symvers \
-        --no-print-directory install > $LOG 2>&1; then
-        failure "Look at $LOG to find out what went wrong"
-    fi
-    if ! $BUILDVBOXNETFLT \
-        --use-module-symvers /tmp/vboxdrv-Module.symvers \
+    begin_msg "Trying to register the VirtualBox kernel modules using DKMS"
+    if ! $DODKMS install >> $LOG; then
+      fail_msg "Failed, trying without DKMS"
+      begin_msg "Recompiling VirtualBox kernel module"
+      if ! $BUILDVBOXDRV \
+          --save-module-symvers /tmp/vboxdrv-Module.symvers \
+          --no-print-directory install >> $LOG 2>&1; then
+          failure "Look at $LOG to find out what went wrong"
+      fi
+      if ! $BUILDVBOXNETFLT \
+          --use-module-symvers /tmp/vboxdrv-Module.symvers \
+          --no-print-directory install >> $LOG 2>&1; then
+          failure "Look at $LOG to find out what went wrong"
+      fi
+      if ! $BUILDVBOXNETADP \
+          --use-module-symvers /tmp/vboxdrv-Module.symvers \
         --no-print-directory install >> $LOG 2>&1; then
-        failure "Look at $LOG to find out what went wrong"
-    fi
-    if ! $BUILDVBOXNETADP \
-        --use-module-symvers /tmp/vboxdrv-Module.symvers \
-        --no-print-directory install >> $LOG 2>&1; then
-        failure "Look at $LOG to find out what went wrong"
+          failure "Look at $LOG to find out what went wrong"
+      fi
     fi
     rm -f /etc/vbox/module_not_compiled
     succ_msg

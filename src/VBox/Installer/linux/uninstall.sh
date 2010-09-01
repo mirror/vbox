@@ -1,4 +1,19 @@
 #!/bin/sh
+#
+# Oracle VM VirtualBox
+# VirtualBox linux uninstallation script
+
+#
+# Copyright (C) 2009-2010 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
 
 . `dirname $0`/routines.sh
 
@@ -48,7 +63,7 @@ delrunlevel vboxnet > /dev/null 2>&1
 remove_init_script vboxnet
 # Remove kernel module installed
 if [ -n "$DKMS" ]; then
-    $DKMS remove -m vboxdrv -v $INSTALL_VER --all > /dev/null 2>&1
+    $DKMS remove -m vboxhost -v $INSTALL_VER --all > /dev/null 2>&1
 fi
 if [ -z "$VBOX_DONT_REMOVE_OLD_MODULES" ]; then
     find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2> /dev/null
@@ -57,6 +72,7 @@ if [ -z "$VBOX_DONT_REMOVE_OLD_MODULES" ]; then
     # Remove directories we have installed to in the past
     find /lib/modules/`uname -r` -name vbox\* 2>/dev/null|xargs rmdir -p 2> /dev/null
     find /lib/modules/`uname -r` -name misc\* 2>/dev/null|xargs rmdir -p 2> /dev/null
+    rm -f /usr/src/vboxhost-$INSTALL_VER 2> /dev/null
     rm -f /usr/src/vboxdrv-$INSTALL_VER 2> /dev/null
     rm -f /usr/src/vboxnetflt-$INSTALL_VER 2> /dev/null
     rm -f /usr/src/vboxnetadp-$INSTALL_VER 2> /dev/null

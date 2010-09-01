@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2008 Oracle Corporation
+# Copyright (C) 2008-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -366,10 +366,8 @@ ifeq ($(KBUILD_TARGET),linux)
  VBoxNetFlt-src_MODE    = a+r,u+w
  VBoxNetFlt-src_SOURCES = $(subst ",,$(VBOX_VBOXNETFLT_SOURCES)) #"
  VBoxNetFlt-src_SOURCES+= \
-	$(PATH_VBoxNetFlt-src)/dkms.conf \
 	$(PATH_VBoxNetFlt-src)/Makefile
  VBoxNetFlt-src_CLEAN   = \
-	$(PATH_VBoxNetFlt-src)/dkms.conf \
 	$(PATH_VBoxNetFlt-src)/Makefile	\
 	$(PATH_TARGET)/VBoxNetFlt-src-1.dep
 
@@ -402,14 +400,6 @@ ifeq ($(KBUILD_TARGET),linux)
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxnetflt;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
 	$(QUIET)chmod 0755 $@
-
- # Script needed for building the kernel module
- $$(PATH_VBoxNetFlt-src)/dkms.conf: \
-		$(PATH_SUB_CURRENT)/linux/dkms.conf \
-		$(VBOX_VERSION_STAMP) \
-		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" --output $@ $<
 
 endif # linux
 
