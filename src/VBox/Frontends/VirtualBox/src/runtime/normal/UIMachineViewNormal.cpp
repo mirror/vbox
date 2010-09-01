@@ -143,8 +143,9 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
             if (uisession()->isGuestResizeIgnored())
                 return true;
 
-            /* We are starting to perform machine-view resize: */
-            bool oldIgnoreMainwndResize = isMachineWindowResizeIgnored();
+            /* We are starting to perform machine-view resize,
+             * we should temporary ignore other if they are trying to be: */
+            bool fWasMachineWindowResizeIgnored = isMachineWindowResizeIgnored();
             setMachineWindowResizeIgnored(true);
 
             /* Get guest resize-event: */
@@ -162,46 +163,37 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
             /* Perform machine-view resize: */
             resize(pResizeEvent->width(), pResizeEvent->height());
 
-            /* Let our toplevel widget calculate its sizeHint properly. */
-#ifdef Q_WS_X11
-            /* We use processEvents rather than sendPostedEvents & set the time out value to max cause on X11 otherwise
-             * the layout isn't calculated correctly. Dosn't find the bug in Qt, but this could be triggered through
-             * the async nature of the X11 window event system. */
-            qApp->processEvents();
-#else /* Q_WS_X11 */
+            /* May be we have to restrict minimum size? */
+            maybeRestrictMinimumSize();
+
+            /* Let our toplevel widget calculate its sizeHint properly: */
             QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
-#endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
             machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
 #endif /* Q_WS_MAC */
 
-            /* May be we have to restrict minimum size? */
-            maybeRestrictMinimumSize();
-
             /* Update machine-view sliders: */
             updateSliders();
 
-            /* Normalize geometry: */
-            normalizeGeometry(true /* adjustPosition */);
+            /* Normalize machine-window geometry: */
+            normalizeGeometry(true /* Adjust Position? */);
 
-            /* Report to the VM thread that we finished resizing */
+            /* Report to the VM thread that we finished resizing: */
             session().GetConsole().GetDisplay().ResizeCompleted(screenId());
 
             /* We are finishing to perform machine-view resize: */
-            setMachineWindowResizeIgnored(oldIgnoreMainwndResize);
-
-            /* Make sure that all posted signals are processed: */
-            qApp->processEvents();
+            setMachineWindowResizeIgnored(fWasMachineWindowResizeIgnored);
 
             /* We also recalculate the desktop geometry if this is determined
-             * automatically.  In fact, we only need this on the first resize,
+             * automatically. In fact, we only need this on the first resize,
              * but it is done every time to keep the code simpler. */
             calculateDesktopGeometry();
 
             /* Emit a signal about guest was resized: */
             emit resizeHintDone();
 
+            pEvent->accept();
             return true;
         }
 

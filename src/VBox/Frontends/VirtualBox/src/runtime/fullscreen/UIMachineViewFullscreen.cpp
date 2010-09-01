@@ -148,13 +148,14 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
     {
         case VBoxDefs::ResizeEventType:
         {
-            /* Some situations requires framebuffer resize events to be ignored at all,
+            /* Some situations require framebuffer resize events to be ignored at all,
              * leaving machine-window, machine-view and framebuffer sizes preserved: */
             if (uisession()->isGuestResizeIgnored())
                 return true;
 
-            /* We are starting to perform machine-view resize: */
-            bool oldIgnoreMainwndResize = isMachineWindowResizeIgnored();
+            /* We are starting to perform machine-view resize,
+             * we should temporary ignore other if they are trying to be: */
+            bool fWasMachineWindowResizeIgnored = isMachineWindowResizeIgnored();
             setMachineWindowResizeIgnored(true);
 
             /* Get guest resize-event: */
@@ -172,34 +173,24 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
             /* Perform machine-view resize: */
             resize(pResizeEvent->width(), pResizeEvent->height());
 
-            /* Let our toplevel widget calculate its sizeHint properly. */
-#ifdef Q_WS_X11
-            /* We use processEvents rather than sendPostedEvents & set the time out value to max cause on X11 otherwise
-             * the layout isn't calculated correctly. Dosn't find the bug in Qt, but this could be triggered through
-             * the async nature of the X11 window event system. */
-            QCoreApplication::processEvents(QEventLoop::AllEvents, INT_MAX);
-#else /* Q_WS_X11 */
+            /* May be we have to restrict minimum size? */
+            maybeRestrictMinimumSize();
+
+            /* Let our toplevel widget calculate its sizeHint properly: */
             QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
-#endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
             machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
 #endif /* Q_WS_MAC */
 
-            /* May be we have to restrict minimum size? */
-            maybeRestrictMinimumSize();
-
             /* Update machine-view sliders: */
             updateSliders();
 
-            /* Report to the VM thread that we finished resizing */
+            /* Report to the VM thread that we finished resizing: */
             session().GetConsole().GetDisplay().ResizeCompleted(screenId());
 
             /* We are finishing to perform machine-view resize: */
-            setMachineWindowResizeIgnored(oldIgnoreMainwndResize);
-
-            /* Make sure that all posted signals are processed: */
-            qApp->processEvents();
+            setMachineWindowResizeIgnored(fWasMachineWindowResizeIgnored);
 
             /* We also recalculate the desktop geometry if this is determined
              * automatically.  In fact, we only need this on the first resize,
@@ -213,6 +204,7 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
             if (m_pSyncBlocker && m_pSyncBlocker->isRunning())
                 m_pSyncBlocker->quit();
 
+            pEvent->accept();
             return true;
         }
 
