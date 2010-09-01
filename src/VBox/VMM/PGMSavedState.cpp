@@ -3089,7 +3089,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
                 AssertLogRelRCReturn(rc, rc);
 
                 /* Update pVM->pgm.s.GCPhysCR3. */
-                Assert(pVCpu->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
+                Assert(pVCpu->pgm.s.GCPhysCR3 == NIL_RTGCPHYS || FTMIsDeltaLoadSaveActive(pVM));
                 RTGCPHYS GCPhysCR3 = CPUMGetGuestCR3(pVCpu);
                 if (    pVCpu->pgm.s.enmGuestMode == PGMMODE_PAE
                     ||  pVCpu->pgm.s.enmGuestMode == PGMMODE_PAE_NX
