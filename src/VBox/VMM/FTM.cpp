@@ -39,6 +39,7 @@
 #include <iprt/asm.h>
 
 #include <include/internal/vm.h>
+#include <include/internal/em.h>
 
 /*******************************************************************************
  * Structures and Typedefs                                                     *
@@ -616,7 +617,7 @@ static int ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
         AssertRCReturn(rc, rc);
         /** Hack alert as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
         if (VM_IS_EMT(pVM))
-            TMR3NotifySuspend(pVM, VMMGetCpu(pVM));  /* Stop the virtual time. */
+            EMR3NotifySuspend(pVM);
     }
 
     switch (enmState)
@@ -671,7 +672,7 @@ static int ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
 
         /** Hack alert as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
         if (VM_IS_EMT(pVM))
-            TMR3NotifyResume(pVM, VMMGetCpu(pVM));  /* Stop the virtual time. */
+            EMR3NotifyResume(pVM);
     }
     return VINF_SUCCESS;
 }

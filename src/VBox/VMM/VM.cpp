@@ -1829,7 +1829,7 @@ VMMR3DECL(int) VMR3SaveFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUse
     int rc = vmR3SaveTeleport(pVM, 250 /*cMsMaxDowntime*/,
                               NULL, pStreamOps, pvStreamOpsUser,
                               SSMAFTER_CONTINUE, NULL, NULL, pfSuspended);
-    LogFlow(("VMR3Save: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
+    LogFlow(("VMR3SaveFT: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
     return rc;
 }
 
