@@ -180,7 +180,7 @@ static int Elf64WriteNoteHeader(RTFILE hFile, uint16_t Type, const char *pszName
     ELFNOTEHDR ElfNoteHdr;
     RT_ZERO(ElfNoteHdr);
     RTStrCopy(ElfNoteHdr.achName, sizeof(ElfNoteHdr.achName) - 1, pszName);
-    ElfNoteHdr.Hdr.n_namesz = strlen(ElfNoteHdr.achName) + 1;
+    ElfNoteHdr.Hdr.n_namesz = (Elf64_Word)strlen(ElfNoteHdr.achName) + 1;
     ElfNoteHdr.Hdr.n_type   = Type;
 
     static const char s_achPad[3] = { 0, 0, 0 };
