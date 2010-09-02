@@ -80,6 +80,7 @@
 #include <iprt/system.h>
 
 #include <VBox/vmapi.h>
+#include <VBox/vmm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/pdmnetifs.h>
@@ -352,6 +353,7 @@ Console::Console()
     , mVMIsAlreadyPoweringOff(false)
     , mfSnapshotFolderSizeWarningShown(false)
     , mfSnapshotFolderExt4WarningShown(false)
+    , mpVmm2UserMethods(NULL)
     , mVMMDev(NULL)
     , mAudioSniffer(NULL)
     , mVMStateChangeCallbackDisabled(false)
@@ -375,6 +377,16 @@ HRESULT Console::FinalConstruct()
 
     for (unsigned i = 0; i < RT_ELEMENTS(maStorageDevType); ++ i)
         maStorageDevType[i] = DeviceType_Null;
+
+    VMM2USERMETHODS *pVmm2UserMethods = (VMM2USERMETHODS *)RTMemAlloc(sizeof(*mpVmm2UserMethods) + sizeof(Console *));
+    if (!pVmm2UserMethods)
+        return E_OUTOFMEMORY;
+    pVmm2UserMethods->u32Magic      = VMM2USERMETHODS_MAGIC;
+    pVmm2UserMethods->u32Version    = VMM2USERMETHODS_VERSION;
+    pVmm2UserMethods->pfnSaveState  = Console::vmm2User_SaveState;
+    pVmm2UserMethods->u32EndMagic   = VMM2USERMETHODS_MAGIC;
+    *(Console **)(pVmm2UserMethods + 1) = this; /* lazy bird. */
+    mpVmm2UserMethods = pVmm2UserMethods;
 
     return S_OK;
 }
@@ -507,6 +519,12 @@ void Console::uninit()
     {
         RTSemEventDestroy(mVMZeroCallersSem);
         mVMZeroCallersSem = NIL_RTSEMEVENT;
+    }
+
+    if (mpVmm2UserMethods)
+    {
+        RTMemFree((void *)mpVmm2UserMethods);
+        mpVmm2UserMethods = NULL;
     }
 
     if (mAudioSniffer)
@@ -7361,7 +7379,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
          */
         alock.leave();
 
-        vrc = VMR3Create(cCpus, NULL,
+        vrc = VMR3Create(cCpus, console->mpVmm2UserMethods,
                          Console::genericVMSetErrorCallback, &task->mErrorMsg,
                          task->mConfigConstructor, static_cast<Console *>(console),
                          &pVM);
@@ -8160,6 +8178,25 @@ DECLCALLBACK(int) Console::powerDownThread(RTTHREAD Thread, void *pvUser)
     LogFlowFuncLeave();
     return VINF_SUCCESS;
 }
+
+
+/**
+ * @interface_method_impl{VMM2USERMETHODS,pfnSaveState}
+ */
+/*static*/
+DECLCALLBACK(int) Console::vmm2User_SaveState(PCVMM2USERMETHODS pThis, PVM pVM)
+{
+    Console *pConsole = *(Console **)(pThis + 1); /* lazy bird */
+
+    /*
+     * For now, just call SaveState.  We should probably try notify the GUI so
+     * it can pop up a progress object and stuff.
+     */
+    HRESULT hrc = pConsole->SaveState(NULL);
+    return SUCCEEDED(hrc) ? VINF_SUCCESS : Global::vboxStatusCodeFromCOM(hrc);
+}
+
+
 
 /**
  * The Main status driver instance data.
