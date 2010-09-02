@@ -34,6 +34,10 @@ typedef struct _VBOXCLIPBOARDCONTEXT
 
     HWND     hwndNextInChain;
 
+    UINT     timerRefresh;
+
+    bool     fCBChainPingInProcess;
+
 //    bool     fOperational;
 
 //    uint32_t u32LastSentFormat;
@@ -43,6 +47,7 @@ typedef struct _VBOXCLIPBOARDCONTEXT
 
 static char gachWindowClassName[] = "VBoxSharedClipboardClass";
 
+enum { CBCHAIN_TIMEOUT = 5000 /* ms */ };
 
 static int vboxClipboardChanged(VBOXCLIPBOARDCONTEXT *pCtx)
 {
@@ -98,6 +103,32 @@ static int vboxClipboardChanged(VBOXCLIPBOARDCONTEXT *pCtx)
     return rc;
 }
 
+/* Add ourselves into the chain of cliboard listeners */
+static void addToCBChain (VBOXCLIPBOARDCONTEXT *pCtx)
+{
+    pCtx->hwndNextInChain = SetClipboardViewer (pCtx->hwnd);
+}
+
+/* Remove ourselves from the chain of cliboard listeners */
+static void removeFromCBChain (VBOXCLIPBOARDCONTEXT *pCtx)
+{
+    ChangeClipboardChain (pCtx->hwnd, pCtx->hwndNextInChain);
+    pCtx->hwndNextInChain = NULL;
+}
+
+/* Callback which is invoked when we have successfully pinged ourselves down the
+ * clipboard chain.  We simply unset a boolean flag to say that we are responding.
+ * There is a race if a ping returns after the next one is initiated, but nothing
+ * very bad is likely to happen. */
+VOID CALLBACK CBChainPingProc(HWND hwnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult)
+{
+    (void) hwnd;
+    (void) uMsg;
+    (void) lResult;
+    VBOXCLIPBOARDCONTEXT *pCtx = (VBOXCLIPBOARDCONTEXT *)dwData;
+    pCtx->fCBChainPingInProcess = FALSE;
+}
+
 static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     LRESULT rc = 0;
@@ -122,7 +153,10 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                 if (pCtx->hwndNextInChain)
                 {
                     /* Pass the message further. */
-                    rc = SendMessage(pCtx->hwndNextInChain, WM_CHANGECBCHAIN, wParam, lParam);
+                    DWORD dwResult;
+                    rc = SendMessageTimeout(pCtx->hwndNextInChain, WM_CHANGECBCHAIN, wParam, lParam, 0, CBCHAIN_TIMEOUT, &dwResult);
+                    if (!rc)
+                        rc = dwResult;
                 }
             }
         } break;
@@ -141,9 +175,28 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
             }
 
             /* Pass the message to next windows in the clipboard chain. */
-            SendMessage(pCtx->hwndNextInChain, msg, wParam, lParam);
+            SendMessageTimeout(pCtx->hwndNextInChain, msg, wParam, lParam, 0, CBCHAIN_TIMEOUT, NULL);
         } break;
 
+        case WM_TIMER:
+        {
+            HWND hViewer = GetClipboardViewer();
+
+            /* Re-register ourselves in the clipboard chain if our last ping
+             * timed out or there seems to be no valid chain. */
+            if (!hViewer || pCtx->fCBChainPingInProcess)
+            {
+                removeFromCBChain(pCtx);
+                addToCBChain(pCtx);
+            }
+            /* Start a new ping by passing a dummy WM_CHANGECBCHAIN to be
+             * processed by ourselves to the chain. */
+            pCtx->fCBChainPingInProcess = TRUE;
+            hViewer = GetClipboardViewer();
+            if (hViewer)
+                SendMessageCallback(hViewer, WM_CHANGECBCHAIN, (WPARAM)pCtx->hwndNextInChain, (LPARAM)pCtx->hwndNextInChain, CBChainPingProc, (ULONG_PTR) pCtx);
+        } break;
+        
         case WM_CLOSE:
         {
             /* Do nothing. Ignore the message. */
@@ -517,7 +570,8 @@ static int vboxClipboardInit (VBOXCLIPBOARDCONTEXT *pCtx)
             SetWindowPos(pCtx->hwnd, HWND_TOPMOST, -200, -200, 0, 0,
                          SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
 
-            pCtx->hwndNextInChain = SetClipboardViewer (pCtx->hwnd);
+            addToCBChain(pCtx);
+            pCtx->timerRefresh = SetTimer(pCtx->hwnd, 0, 10 * 1000, NULL);
         }
     }
 
@@ -529,8 +583,9 @@ static void vboxClipboardDestroy(VBOXCLIPBOARDCONTEXT *pCtx)
 {
     if (pCtx->hwnd)
     {
-        ChangeClipboardChain (pCtx->hwnd, pCtx->hwndNextInChain);
-        pCtx->hwndNextInChain = NULL;
+        removeFromCBChain(pCtx);
+        if (pCtx->timerRefresh)
+            KillTimer(pCtx->hwnd, 0);
 
         DestroyWindow (pCtx->hwnd);
         pCtx->hwnd = NULL;
