@@ -1623,21 +1623,26 @@ static DECLCALLBACK(int) vmR3LiveDoStep2(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns VBox status code.
  *
- * @param   pVM             The VM handle.
- * @param   cMsMaxDowntime  The maximum downtime given as milliseconds.
- * @param   pszFilename     The name of the file.  NULL if pStreamOps is used.
- * @param   pStreamOps      The stream methods.  NULL if pszFilename is used.
- * @param   pvStreamOpsUser The user argument to the stream methods.
- * @param   enmAfter        What to do afterwards.
- * @param   pfnProgress     Progress callback. Optional.
- * @param   pvProgressUser  User argument for the progress callback.
- * @param   ppSSM           Where to return the saved state handle in case of a
- *                          live snapshot scenario.
+ * @param   pVM                 The VM handle.
+ * @param   cMsMaxDowntime      The maximum downtime given as milliseconds.
+ * @param   pszFilename         The name of the file.  NULL if pStreamOps is used.
+ * @param   pStreamOps          The stream methods.  NULL if pszFilename is used.
+ * @param   pvStreamOpsUser     The user argument to the stream methods.
+ * @param   enmAfter            What to do afterwards.
+ * @param   pfnProgress         Progress callback. Optional.
+ * @param   pvProgressUser      User argument for the progress callback.
+ * @param   ppSSM               Where to return the saved state handle in case of a
+ *                              live snapshot scenario.
+ * @param   fSkipStateChanges   Set if we're supposed to skip state changes (FTM delta case)
+ *
  * @thread  EMT
  */
 static DECLCALLBACK(int) vmR3Save(PVM pVM, uint32_t cMsMaxDowntime, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                                  SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, PSSMHANDLE *ppSSM)
+                                  SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, PSSMHANDLE *ppSSM,
+                                  bool fSkipStateChanges)
 {
+    int rc = VINF_SUCCESS;
+
     LogFlow(("vmR3Save: pVM=%p cMsMaxDowntime=%u pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p enmAfter=%d pfnProgress=%p pvProgressUser=%p ppSSM=%p\n",
              pVM, cMsMaxDowntime, pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, enmAfter, pfnProgress, pvProgressUser, ppSSM));
 
@@ -1656,16 +1661,27 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, uint32_t cMsMaxDowntime, const char *
     /*
      * Change the state and perform/start the saving.
      */
-    int rc = vmR3TrySetState(pVM, "VMR3Save", 2,
+    if (!fSkipStateChanges)
+    {
+        rc = vmR3TrySetState(pVM, "VMR3Save", 2,
                              VMSTATE_SAVING,     VMSTATE_SUSPENDED,
                              VMSTATE_RUNNING_LS, VMSTATE_RUNNING);
+    }
+    else
+    {
+        Assert(enmAfter != SSMAFTER_TELEPORT);
+        rc = 1;
+    }
+
     if (rc == 1 && enmAfter != SSMAFTER_TELEPORT)
     {
         rc = SSMR3Save(pVM, pszFilename, pStreamOps, pvStreamOpsUser, enmAfter, pfnProgress, pvProgressUser);
-        vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SAVING);
+        if (!fSkipStateChanges)
+            vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SAVING);
     }
     else if (rc == 2 || enmAfter == SSMAFTER_TELEPORT)
     {
+        Assert(!fSkipStateChanges);
         if (enmAfter == SSMAFTER_TELEPORT)
             pVM->vm.s.fTeleportedAndNotFullyResumedYet = true;
         rc = SSMR3LiveSave(pVM, cMsMaxDowntime, pszFilename, pStreamOps, pvStreamOpsUser,
@@ -1683,32 +1699,36 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, uint32_t cMsMaxDowntime, const char *
  *
  * @returns VBox status code.
  *
- * @param   pVM             The VM handle.
+ * @param   pVM                 The VM handle.
  * @param   cMsMaxDowntime      The maximum downtime given as milliseconds.
- * @param   pszFilename     The name of the file.  NULL if pStreamOps is used.
- * @param   pStreamOps      The stream methods.  NULL if pszFilename is used.
- * @param   pvStreamOpsUser The user argument to the stream methods.
- * @param   enmAfter        What to do afterwards.
- * @param   pfnProgress     Progress callback. Optional.
- * @param   pvProgressUser  User argument for the progress callback.
- * @param   pfSuspended     Set if we suspended the VM.
+ * @param   pszFilename         The name of the file.  NULL if pStreamOps is used.
+ * @param   pStreamOps          The stream methods.  NULL if pszFilename is used.
+ * @param   pvStreamOpsUser     The user argument to the stream methods.
+ * @param   enmAfter            What to do afterwards.
+ * @param   pfnProgress         Progress callback. Optional.
+ * @param   pvProgressUser      User argument for the progress callback.
+ * @param   pfSuspended         Set if we suspended the VM.
+ * @param   fSkipStateChanges   Set if we're supposed to skip state changes (FTM delta case)
  *
  * @thread  Non-EMT
  */
 static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
                             const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                            SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool *pfSuspended)
+                            SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool *pfSuspended,
+                            bool fSkipStateChanges)
 {
     /*
      * Request the operation in EMT(0).
      */
     PSSMHANDLE pSSM;
     int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
-                              (PFNRT)vmR3Save, 9, pVM, cMsMaxDowntime, pszFilename, pStreamOps, pvStreamOpsUser,
-                              enmAfter, pfnProgress, pvProgressUser, &pSSM);
+                              (PFNRT)vmR3Save, 10, pVM, cMsMaxDowntime, pszFilename, pStreamOps, pvStreamOpsUser,
+                              enmAfter, pfnProgress, pvProgressUser, &pSSM, fSkipStateChanges);
     if (    RT_SUCCESS(rc)
         &&  pSSM)
     {
+        Assert(!fSkipStateChanges);
+
         /*
          * Live snapshot.
          *
@@ -1803,7 +1823,8 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
     SSMAFTER enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
     int rc = vmR3SaveTeleport(pVM, 250 /*cMsMaxDowntime*/,
                               pszFilename, NULL /* pStreamOps */, NULL /* pvStreamOpsUser */,
-                              enmAfter, pfnProgress, pvUser, pfSuspended);
+                              enmAfter, pfnProgress, pvUser, pfSuspended,
+                              false /* fSkipStateChanges */);
     LogFlow(("VMR3Save: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
     return rc;
 }
@@ -1825,13 +1846,15 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
  * @param   pStreamOps          The stream methods.
  * @param   pvStreamOpsUser     The user argument to the stream methods.
  * @param   pfSuspended         Set if we suspended the VM.
+ * @param   fSkipStateChanges   Set if we're supposed to skip state changes (FTM delta case)
  *
  * @thread      Any
  * @vmstate     Suspended or Running
  * @vmstateto   Saving+Suspended or
  *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
  */
-VMMR3DECL(int) VMR3SaveFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, bool *pfSuspended)
+VMMR3DECL(int) VMR3SaveFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, bool *pfSuspended,
+                          bool fSkipStateChanges)
 {
     LogFlow(("VMR3SaveFT: pVM=%p pStreamOps=%p pvSteamOpsUser=%p pfSuspended=%p\n",
              pVM, pStreamOps, pvStreamOpsUser, pfSuspended));
@@ -1849,7 +1872,8 @@ VMMR3DECL(int) VMR3SaveFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUse
      */
     int rc = vmR3SaveTeleport(pVM, 250 /*cMsMaxDowntime*/,
                               NULL, pStreamOps, pvStreamOpsUser,
-                              SSMAFTER_CONTINUE, NULL, NULL, pfSuspended);
+                              SSMAFTER_CONTINUE, NULL, NULL, pfSuspended,
+                              fSkipStateChanges);
     LogFlow(("VMR3SaveFT: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
     return rc;
 }
@@ -1894,7 +1918,8 @@ VMMR3DECL(int) VMR3Teleport(PVM pVM, uint32_t cMsMaxDowntime, PCSSMSTRMOPS pStre
      */
     int rc = vmR3SaveTeleport(pVM, cMsMaxDowntime,
                               NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser,
-                              SSMAFTER_TELEPORT, pfnProgress, pvProgressUser, pfSuspended);
+                              SSMAFTER_TELEPORT, pfnProgress, pvProgressUser, pfSuspended,
+                              false /* fSkipStateChanges */);
     LogFlow(("VMR3Teleport: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
     return rc;
 }

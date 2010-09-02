@@ -29,16 +29,6 @@
  * @{
  */
 
-typedef enum
-{
-    /* Sync the changed memory pages. */
-    FTMSYNCSTATE_DELTA_MEMORY,
-    /* Sync the changed state (memory + vm/device internal state) */
-    FTMSYNCSTATE_DELTA_VM,
-    /* Sync the entire VM state. */
-    FTMSYNCSTATE_FULL
-} FTMSYNCSTATE;
-
 
 /**
  * FTM VM Instance data.
