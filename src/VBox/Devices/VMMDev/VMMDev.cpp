@@ -411,7 +411,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
     {
         Log(("VMMDev request header size too small! size = %d\n", requestHeader.size));
         rcRet = VINF_SUCCESS;
-        goto end; /** @todo shouldn't (/ no need to) write back.*/
+        goto l_end; /** @todo shouldn't (/ no need to) write back.*/
     }
 
     /* check the version of the header structure */
@@ -419,7 +419,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
     {
         Log(("VMMDev: guest header version (0x%08X) differs from ours (0x%08X)\n", requestHeader.version, VMMDEV_REQUEST_HEADER_VERSION));
         rcRet = VINF_SUCCESS;
-        goto end; /** @todo shouldn't (/ no need to) write back.*/
+        goto l_end; /** @todo shouldn't (/ no need to) write back.*/
     }
 
     Log2(("VMMDev request issued: %d\n", requestHeader.requestType));
@@ -433,7 +433,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         Log(("VMMDev: guest has not yet reported to us. Refusing operation.\n"));
         requestHeader.rc = VERR_NOT_SUPPORTED;
         rcRet = VINF_SUCCESS;
-        goto end;
+        goto l_end;
     }
 
     /* Check upper limit */
@@ -442,7 +442,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         LogRel(("VMMDev: request packet too big (%x). Refusing operation.\n", requestHeader.size));
         requestHeader.rc = VERR_NOT_SUPPORTED;
         rcRet = VINF_SUCCESS;
-        goto end;
+        goto l_end;
     }
 
     /* Read the entire request packet */
@@ -452,7 +452,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         Log(("VMMDev: RTMemAlloc failed!\n"));
         rcRet = VINF_SUCCESS;
         requestHeader.rc = VERR_NO_MEMORY;
-        goto end;
+        goto l_end;
     }
     PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, pRequestHeader, requestHeader.size);
 
@@ -879,8 +879,16 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                     case VMMDevPowerState_SaveState:
                     {
-                        /** @todo no API for that yet */
-                        pRequestHeader->rc = VERR_NOT_IMPLEMENTED;
+                        if (true /*pThis->fAllowGuestToSaveState*/)
+                        {
+                            LogRel(("Guest requests the VM to be saved and powered off\n"));
+                            pRequestHeader->rc = rcRet = PDMDevHlpVMSuspendSaveAndPowerOff(pDevIns);
+                        }
+                        else
+                        {
+                            LogRel(("Guest requests the VM to be saved and powered off, declined\n"));
+                            pRequestHeader->rc = VERR_ACCESS_DENIED;
+                        }
                         break;
                     }
 
@@ -1933,7 +1941,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         }
     }
 
-end:
+l_end:
     /* Write the result back to guest memory */
     if (pRequestHeader)
     {
