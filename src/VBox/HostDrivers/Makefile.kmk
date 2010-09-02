@@ -62,20 +62,6 @@ if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
   HostDrivers-dkms-src_MODE    = a+r,u+w
   HostDrivers-dkms-src_SOURCES = $(PATH_HostDrivers-dkms-src)/dkms.conf
   HostDrivers-dkms-src_CLEAN   = $(PATH_HostDrivers-dkms-src)/dkms.conf
- endif
-
- if1of ($(KBUILD_TARGET),freebsd)
-  #
-  # Install the export_modules script for tar'ing the module sources on FreeBSD hosts
-  #
-  INSTALLS += HostDrivers-sh
-  HostDrivers-sh_INST    = bin/
-  HostDrivers-sh_MODE    = a+rx,u+w
-  HostDrivers-sh_SOURCES.freebsd = freebsd/export_modules
- endif
-endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
-
-# Scripts needed for building the kernel modules
 
 $$(PATH_HostDrivers-dkms-src)/dkms.conf: \
 		$(PATH_SUB_CURRENT)/linux/dkms.conf \
@@ -98,6 +84,19 @@ $$(PATH_HostDrivers-dkms-sh)/do_dkms: \
 		-e "s;_MODULE_;vboxhost;g" \
 		-e "s;_OLDMODULES_;vboxhost vboxdrv vboxnetflt vboxnetadp;g" \
 		--output $@ $<
+
+ endif
+
+ if1of ($(KBUILD_TARGET),freebsd)
+  #
+  # Install the export_modules script for tar'ing the module sources on FreeBSD hosts
+  #
+  INSTALLS += HostDrivers-sh
+  HostDrivers-sh_INST    = bin/
+  HostDrivers-sh_MODE    = a+rx,u+w
+  HostDrivers-sh_SOURCES.freebsd = freebsd/export_modules
+ endif
+endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
 
 # Let kBuild generate the rules.
 include $(KBUILD_PATH)/subfooter.kmk
