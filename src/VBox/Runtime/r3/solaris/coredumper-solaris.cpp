@@ -53,7 +53,8 @@
 # include <sys/mman.h>
 #endif  /* RT_OS_SOLARIS */
 
-#include "internal/ldrElf.h"
+#include "internal/ldrELF.h"
+#include "internal/ldrELF64.h"
 
 /*******************************************************************************
 *   Globals                                                                    *
@@ -84,7 +85,7 @@ static char                g_szCoreDumpFile[PATH_MAX] = { 0 };
  */
 typedef struct ELFNOTEHDR
 {
-    Elf_Nhdr                        Hdr;                        /* Header of NOTE section */
+    Elf64_Nhdr                      Hdr;                        /* Header of NOTE section */
     char                            achName[8];                 /* Name of NOTE section */
 } ELFNOTEHDR;
 typedef ELFNOTEHDR *PELFNOTEHDR;
