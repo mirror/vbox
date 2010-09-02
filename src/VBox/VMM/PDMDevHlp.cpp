@@ -2828,6 +2828,24 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMSuspendSaveAndPowerOff} */
+static DECLCALLBACK(int) pdmR3DevHlp_VMSuspendSaveAndPowerOff(PPDMDEVINS pDevIns)
+{
+    int rc;
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+    LogFlow(("pdmR3DevHlp_VMSuspendSaveAndPowerOff: caller='%s'/%d:\n",
+             pDevIns->pReg->szName, pDevIns->iInstance));
+
+    /** @todo We'll have to queue a request to avoid deadlock issues. */
+    rc = VERR_NOT_IMPLEMENTED;
+
+    LogFlow(("pdmR3DevHlp_VMSuspendSaveAndPowerOff: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnVMPowerOff} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
 {
@@ -2994,6 +3012,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_UnregisterVMMDevHeap,
     pdmR3DevHlp_VMReset,
     pdmR3DevHlp_VMSuspend,
+    pdmR3DevHlp_VMSuspendSaveAndPowerOff,
     pdmR3DevHlp_VMPowerOff,
     pdmR3DevHlp_A20IsEnabled,
     pdmR3DevHlp_A20Set,
@@ -3051,6 +3070,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMReset(PPDMDEVINS pDevIns)
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnVMSuspend} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMSuspend(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMSuspendSaveAndPowerOff} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMSuspendSaveAndPowerOff(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
@@ -3190,6 +3218,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap,
     pdmR3DevHlp_Untrusted_VMReset,
     pdmR3DevHlp_Untrusted_VMSuspend,
+    pdmR3DevHlp_Untrusted_VMSuspendSaveAndPowerOff,
     pdmR3DevHlp_Untrusted_VMPowerOff,
     pdmR3DevHlp_Untrusted_A20IsEnabled,
     pdmR3DevHlp_Untrusted_A20Set,

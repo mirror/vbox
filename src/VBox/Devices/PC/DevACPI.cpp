@@ -212,7 +212,7 @@ typedef struct ACPIState
     /** The number of bytes below 4GB. */
     uint32_t            cbRamLow;
 
-    /** Current ACPI S* state. We support S0 and S5 */
+    /** Current ACPI S* state. We support S0 and S5. */
     uint32_t            uSleepState;
     uint8_t             au8RSDPPage[0x1000];
     /** This is a workaround for incorrect index field handling by Intels ACPICA.
@@ -247,25 +247,26 @@ typedef struct ACPIState
     VMCPUSET            CpuSetAttached;
     /** Which CPU to check for the locked status. */
     uint32_t            idCpuLockCheck;
-    /** Mask of locked CPUs (used by the guest) */
+    /** Mask of locked CPUs (used by the guest). */
     VMCPUSET            CpuSetLocked;
-    /** The CPU event type */
+    /** The CPU event type. */
     uint32_t            u32CpuEventType;
-    /** The CPU id affected */
+    /** The CPU id affected. */
     uint32_t            u32CpuEvent;
-    /** Flag whether CPU hot plugging is enabled */
+    /** Flag whether CPU hot plugging is enabled. */
     bool                fCpuHotPlug;
-    /** Primary NIC PCI address */
+    /** Primary NIC PCI address. */
     uint32_t            u32NicPciAddress;
-    /** Primary audio card PCI address */
+    /** Primary audio card PCI address. */
     uint32_t            u32AudioPciAddress;
-    /** Flag whether S1 power state is enabled */
+    /** Flag whether S1 power state is enabled. */
     bool                fS1Enabled;
-    /** Flag whether S4 power state is enabled */
+    /** Flag whether S4 power state is enabled. */
     bool                fS4Enabled;
-    /** Flag whether S1 triggers a state save */
-    bool                fSuspendToDisk;
-//    uint32_t            u32Pad0;
+    /** Flag whether S1 triggers a state save. */
+    bool                fSuspendToSavedState;
+    /** Flag whether to set WAK_STS on resume (restore included). */
+    bool                fSetWakeupOnResume;
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -273,14 +274,14 @@ typedef struct ACPIState
     PDMIACPIPORT        IACPIPort;
     /** Pointer to the device instance. */
     PPDMDEVINSR3        pDevIns;
-    /** Pointer to the driver base interface */
+    /** Pointer to the driver base interface. */
     R3PTRTYPE(PPDMIBASE) pDrvBase;
-    /** Pointer to the driver connector interface */
+    /** Pointer to the driver connector interface. */
     R3PTRTYPE(PPDMIACPICONNECTOR) pDrv;
 
-    /* Pointer to default PCI config read function */
+    /** Pointer to default PCI config read function. */
     R3PTRTYPE(PFNPCICONFIGREAD)   pfnAcpiPciConfigRead;
-    /* Pointer to default PCI config write function */
+    /** Pointer to default PCI config write function. */
     R3PTRTYPE(PFNPCICONFIGWRITE)  pfnAcpiPciConfigWrite;
 } ACPIState;
 
@@ -1051,26 +1052,23 @@ static int acpiPowerDown(ACPIState *s)
     return rc;
 }
 
-static int acpiSleep(ACPIState *s)
+static int acpiSleep(ACPIState *pThis)
 {
     int rc;
-    /* First pause the VM to stop it executing. Note that failures aren't fatal, we can
-     * just continue the guest as if it was immediately resumed.
-     */
-    rc = PDMDevHlpVMSuspend(s->pDevIns);    /* This is VM pause, not really ACPI suspend. */
 
-    /* The guest was probably reading the PMSTS register in a loop. The resume flag must
-     * be set before continuing in any way - needs to be part of saved state.
-     */
-    s->pm1a_sts |= WAK_STS; 
-
-    if (RT_FAILURE(rc))
-        AssertMsgFailed(("Could not pause the VM. rc = %Rrc\n", rc));
-
-    if (s->fSuspendToDisk) {
-//        rc = PDMDevHlpVMSuspendToDisk(s->pDevIns);
-        if (RT_FAILURE(rc))
-            AssertMsgFailed(("Could not save VM state. rc = %Rrc\n", rc));        
+    /* We must set WAK_STS on resume (includes restore) so the guest knows that
+       we've woken up and can continue executing code.  The guest is probably
+       reading the PMSTS register in a loop to check this. */
+    pThis->fSetWakeupOnResume = true;
+    if (pThis->fSuspendToSavedState)
+    {
+        rc = PDMDevHlpVMSuspendSaveAndPowerOff(pThis->pDevIns);
+        AssertRC(rc);
+    }
+    else
+    {
+        rc = PDMDevHlpVMSuspend(pThis->pDevIns);
+        AssertRC(rc);
     }
     return rc;
 }
@@ -2004,51 +2002,80 @@ static const SSMFIELD g_AcpiSavedStateFields5[] =
     SSMFIELD_ENTRY_TERM()
 };
 
-
-static DECLCALLBACK(int) acpi_save_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+/**
+ * Saved state structure description, version 6.
+ */
+static const SSMFIELD g_AcpiSavedStateFields6[] =
 {
-    ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
-    return SSMR3PutStruct(pSSMHandle, s, &g_AcpiSavedStateFields5[0]);
+    SSMFIELD_ENTRY(ACPIState, pm1a_en),
+    SSMFIELD_ENTRY(ACPIState, pm1a_sts),
+    SSMFIELD_ENTRY(ACPIState, pm1a_ctl),
+    SSMFIELD_ENTRY(ACPIState, pm_timer_initial),
+    SSMFIELD_ENTRY(ACPIState, gpe0_en),
+    SSMFIELD_ENTRY(ACPIState, gpe0_sts),
+    SSMFIELD_ENTRY(ACPIState, uBatteryIndex),
+    SSMFIELD_ENTRY(ACPIState, uSystemInfoIndex),
+    SSMFIELD_ENTRY(ACPIState, uSleepState),
+    SSMFIELD_ENTRY(ACPIState, u8IndexShift),
+    SSMFIELD_ENTRY(ACPIState, uPmIoPortBase),
+    SSMFIELD_ENTRY(ACPIState, fSuspendToSavedState),
+    SSMFIELD_ENTRY_TERM()
+};
+
+
+/**
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
+ */
+static DECLCALLBACK(int) acpiSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+{
+    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    return SSMR3PutStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields6[0]);
 }
 
-static DECLCALLBACK(int) acpi_load_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
-                                         uint32_t uVersion, uint32_t uPass)
+/**
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
+ */
+static DECLCALLBACK(int) acpiLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
+                                       uint32_t uVersion, uint32_t uPass)
 {
-    ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
-
+    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+
     /*
-     * Unregister PM handlers, will register with actual base
-     * after state successfully loaded.
+     * Unregister PM handlers, will register with actual base after state
+     * successfully loaded.
      */
-    int rc = acpiUnregisterPmHandlers(s);
+    int rc = acpiUnregisterPmHandlers(pThis);
     if (RT_FAILURE(rc))
         return rc;
 
     switch (uVersion)
     {
         case 4:
-            rc = SSMR3GetStruct(pSSMHandle, s, &g_AcpiSavedStateFields4[0]);
-            /** @todo Provide saner defaults for fields not found in saved state. */
+            rc = SSMR3GetStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields4[0]);
             break;
         case 5:
-            rc = SSMR3GetStruct(pSSMHandle, s, &g_AcpiSavedStateFields5[0]);
+            rc = SSMR3GetStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields5[0]);
+            break;
+        case 6:
+            rc = SSMR3GetStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields6[0]);
             break;
         default:
-            return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+            rc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+            break;
     }
     if (RT_SUCCESS(rc))
     {
-        rc = acpiRegisterPmHandlers(s);
+        rc = acpiRegisterPmHandlers(pThis);
         if (RT_FAILURE(rc))
             return rc;
-        rc = acpiFetchBatteryStatus(s);
+        rc = acpiFetchBatteryStatus(pThis);
         if (RT_FAILURE(rc))
             return rc;
-        rc = acpiFetchBatteryInfo(s);
+        rc = acpiFetchBatteryInfo(pThis);
         if (RT_FAILURE(rc))
             return rc;
-        rc = acpiPMTimerReset(s);
+        rc = acpiPMTimerReset(pThis);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -2350,6 +2377,23 @@ static DECLCALLBACK(void) acpiDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     }
 }
 
+/**
+ * @interface_method_impl{PDMDEVREG,pfnResume}
+ */
+static DECLCALLBACK(void) acpiResume(PPDMDEVINS pDevIns)
+{
+    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    if (pThis->fSetWakeupOnResume)
+    {
+        Log(("acpiResume: setting WAK_STS\n"));
+        pThis->fSetWakeupOnResume = false;
+        pThis->pm1a_sts |= WAK_STS;
+    }
+}
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnReset}
+ */
 static DECLCALLBACK(void) acpiReset(PPDMDEVINS pDevIns)
 {
     ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
@@ -2372,7 +2416,7 @@ static DECLCALLBACK(void) acpiReset(PPDMDEVINS pDevIns)
 }
 
 /**
- * Relocates the GC pointer members.
+ * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
 static DECLCALLBACK(void) acpiRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
@@ -2480,7 +2524,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                 N_("Configuration error: Failed to read \"PowerS1Enabled\""));
 
     /* query whether S1 power state should save the VM state */
-    rc = CFGMR3QueryBoolDef(pCfg, "EnableSuspendToDisk", &s->fSuspendToDisk, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "EnableSuspendToDisk", &s->fSuspendToSavedState, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"EnableSuspendToDisk\""));
@@ -2658,7 +2702,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                    acpiPciConfigRead,  &s->pfnAcpiPciConfigRead,
                                    acpiPciConfigWrite, &s->pfnAcpiPciConfigWrite);
 
-    rc = PDMDevHlpSSMRegister(pDevIns, 5, sizeof(*s), acpi_save_state, acpi_load_state);
+    rc = PDMDevHlpSSMRegister(pDevIns, 6, sizeof(*s), acpiSaveState, acpiLoadState);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2723,7 +2767,7 @@ const PDMDEVREG g_DeviceACPI =
     /* pfnSuspend */
     NULL,
     /* pfnResume */
-    NULL,
+    acpiResume,
     /* pfnAttach */
     acpiAttach,
     /* pfnDetach */
