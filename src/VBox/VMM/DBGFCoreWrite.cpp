@@ -15,41 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
-#define LOG_GROUP LOG_GROUP_DBGF
-#include <iprt/param.h>
-#include <iprt/file.h>
-#include <VBox/dbgf.h>
-#include "DBGFInternal.h"
-#include <VBox/vm.h>
-#include <VBox/pgm.h>
-#include <VBox/err.h>
-#include <VBox/log.h>
-#include <VBox/mm.h>
-
-#include "../Runtime/include/internal/ldrELF64.h"
-
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-#ifdef DEBUG_ramshankar
-# undef Log
-# define Log LogRel
-#endif
-#define DBGFLOG_NAME           "DGBFCoreWrite"
-
-/**
- * DBGFCOREDATA: Core data.
- */
-typedef struct
-{
-    const char *pszDumpPath;    /* File path to dump the core into. */
-} DBGFCOREDATA, *PDBGFCOREDATA;
-
-
 /*
  * VBox VMCore Format:
  * [ ELF 64 Header]  -- Only 1
@@ -74,6 +39,52 @@ typedef struct
  *
  */
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#define LOG_GROUP LOG_GROUP_DBGF
+#include <iprt/param.h>
+#include <iprt/file.h>
+
+#include "DBGFInternal.h"
+
+#include <VBox/cpum.h>
+#include "CPUMInternal.h"
+#include <VBox/dbgf.h>
+#include <VBox/vm.h>
+#include <VBox/pgm.h>
+#include <VBox/err.h>
+#include <VBox/log.h>
+#include <VBox/mm.h>
+
+#include "../Runtime/include/internal/ldrELF64.h"
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#ifdef DEBUG_ramshankar
+# undef Log
+# define Log LogRel
+#endif
+#define DBGFLOG_NAME           "DGBFCoreWrite"
+
+static const int s_NoteAlign = 4;
+
+/**
+ * DBGFCOREDATA: Core data.
+ */
+typedef struct
+{
+    const char *pszDumpPath;    /* File path to dump the core into. */
+} DBGFCOREDATA, *PDBGFCOREDATA;
+
+typedef struct
+{
+    Elf64_Nhdr  Hdr;            /* 64-bit NOTE Header */
+    char        achName[8];    /* Name of NOTE section */
+} ELFNOTEHDR;
+
+
 /**
  * ELF function to write 64-bit ELF header.
  *
@@ -87,8 +98,6 @@ typedef struct
  */
 static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs, uint64_t *pcbElfHdr)
 {
-AssertCompile(sizeof(uint32_t) == 4);
-
     Elf64_Ehdr ElfHdr;
     RT_ZERO(ElfHdr);
     ElfHdr.e_ident[EI_MAG0]  = ELFMAG0;
@@ -154,11 +163,24 @@ static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint6
 
 
 /**
+ * Returns the size of the NOTE section given the size of the data.
+ *
+ * @param cb                Size of the data part of the NOTE.
+ *
+ * @return The size of the NOTE section as rounded to the file alignment.
+ */
+static inline int Elf64NoteSectionSize(uint64_t cb)
+{
+    return sizeof(ELFNOTEHDR) + RT_ALIGN_64(cb, s_NoteAlign);
+}
+
+
+/**
  * Elf function to write 64-bit note header.
  *
  * @param hFile             The file to write to.
  * @param Type              Type of this section.
- * @param pszName           Name of this section, will be limited to 8 bytes.
+ * @param pszName           Name of this section, will be limited to 16 bytes.
  * @param pcv               Opaque pointer to the data, if NULL only computes size.
  * @param cb                Size of the data.
  * @param pcbNoteHdr        Where to store the size of written header to file,
@@ -166,26 +188,21 @@ static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint6
  *
  * @return IPRT status code.
  */
-static int Elf64WriteNoteHeader(RTFILE hFile, uint16_t Type, const char *pszName, const void *pcv, uint64_t cb, uint64_t *pcbNoteHdr)
+static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, const void *pcv, uint64_t cb, uint64_t *pcbNoteHdr)
 {
     AssertReturn(pcv, VERR_INVALID_POINTER);
     AssertReturn(cb > 0, VERR_NO_DATA);
 
-    typedef struct
-    {
-        Elf64_Nhdr  Hdr;            /* 64-bit NOTE Header */
-        char        achName[8];     /* Name of NOTE section */
-    } ELFNOTEHDR;
-
     ELFNOTEHDR ElfNoteHdr;
     RT_ZERO(ElfNoteHdr);
-    RTStrCopy(ElfNoteHdr.achName, sizeof(ElfNoteHdr.achName) - 1, pszName);
-    ElfNoteHdr.Hdr.n_namesz = (Elf64_Word)strlen(ElfNoteHdr.achName) + 1;
+    RTStrCopy(ElfNoteHdr.achName, sizeof(ElfNoteHdr.achName), pszName);
+    ElfNoteHdr.Hdr.n_namesz = (Elf64_Word)strlen(ElfNoteHdr.achName);
     ElfNoteHdr.Hdr.n_type   = Type;
+    size_t cbNameAlign = RT_ALIGN_Z(ElfNoteHdr.Hdr.n_namesz, 8);
 
-    static const char s_achPad[3] = { 0, 0, 0 };
-    uint64_t cbAlign = RT_ALIGN_64(cb, 4);
-    ElfNoteHdr.Hdr.n_descsz = cbAlign;
+    static const char s_achPad[7] = { 0, 0, 0, 0, 0, 0, 0 };
+    uint64_t cbAlign = RT_ALIGN_64(cb, s_NoteAlign);
+    ElfNoteHdr.Hdr.n_descsz = (Elf64_Word)cbAlign;
 
     /*
      * Write note header and description.
@@ -193,6 +210,9 @@ static int Elf64WriteNoteHeader(RTFILE hFile, uint16_t Type, const char *pszName
     int rc = RTFileWrite(hFile, &ElfNoteHdr, sizeof(ElfNoteHdr), NULL /* full write */);
     if (RT_SUCCESS(rc))
     {
+        if (cbNameAlign > ElfNoteHdr.Hdr.n_namesz)
+            rc = RTFileWrite(hFile, s_achPad, cbNameAlign - ElfNoteHdr.Hdr.n_namesz, NULL);
+
         rc = RTFileWrite(hFile, pcv, cb, NULL /* full write */);
         if (RT_SUCCESS(rc))
         {
@@ -235,7 +255,6 @@ static uint32_t dbgfR3GetRamRangeCount(PVM pVM)
  * @param   pvData           Opaque data.
  *
  * @return VBox status code.
- * @remarks The VM must be suspended before calling this function.
  */
 static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *pvData)
 {
@@ -258,7 +277,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     /*
      * Compute size of the note section.
      */
-    uint64_t cbNoteSection = pVM->cCpus * sizeof(CPUMCTX);
+    uint64_t cbNoteSection = Elf64NoteSectionSize(pVM->cCpus * sizeof(CPUMCTX));
     uint64_t off = 0;
 
     /*
@@ -335,9 +354,15 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
                  */
                 if (RT_SUCCESS(rc))
                 {
-                    for (uint32_t iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+                    for (uint32_t i = 0; i < pVM->cCpus; i++)
                     {
-                        /** @todo -XXX- cpus */
+                        PCPUMCTX pCpuCtx = &pVM->aCpus[i].cpum.s.Guest;
+                        rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, "VBOXCPU", pCpuCtx, sizeof(CPUMCTX), NULL /* pcbNoteHdr */);
+                        if (RT_FAILURE(rc))
+                        {
+                            LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", i, rc));
+                            break;
+                        }
                     }
                 }
             }
