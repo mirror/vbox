@@ -544,6 +544,8 @@ private:
     static DECLCALLBACK(int)   saveStateThread(RTTHREAD Thread, void *pvUser);
     static DECLCALLBACK(int)   powerDownThread(RTTHREAD Thread, void *pvUser);
 
+    static DECLCALLBACK(int)    vmm2User_SaveState(PCVMM2USERMETHODS pThis, PVM pVM);
+
     static DECLCALLBACK(void *) drvStatus_QueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(void)   drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface, unsigned iLUN);
     static DECLCALLBACK(void)   drvStatus_Destruct(PPDMDRVINS pDrvIns);
@@ -627,10 +629,14 @@ private:
     /** true if we already showed the snapshot folder ext4/xfs bug warning. */
     bool mfSnapshotFolderExt4WarningShown : 1;
 
+    /** Pointer to the VMM -> User (that's us) callbacks.
+     * This structure is followed by a pointer to the Console object. */
+    PCVMM2USERMETHODS mpVmm2UserMethods;
+
     /** The current network attachment type in the VM.
-     * This doesn't have to match the network attachment type
-     * maintained in the NetworkAdapter. This is needed to
-     * change the network attachment dynamically.
+     * This doesn't have to match the network attachment type maintained in the
+     * NetworkAdapter. This is needed to change the network attachment
+     * dynamically.
      */
     NetworkAttachmentType_T meAttachmentType[SchemaDefs::NetworkAdapterCount];
 
