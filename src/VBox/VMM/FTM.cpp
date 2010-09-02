@@ -945,7 +945,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
             pVM->ftm.s.syncstate.fEndOfStream = false;
 
             pVM->ftm.s.fDeltaLoadSaveActive = (fFullSync == false);
-            rc = VMR3LoadFromStream(pVM, &g_ftmR3TcpOps, pVM, NULL, NULL);
+            rc = VMR3LoadFromStreamFT(pVM, &g_ftmR3TcpOps, pVM);
             pVM->ftm.s.fDeltaLoadSaveActive = false;
             RTSocketRelease(pVM->ftm.s.hSocket);
             AssertRC(rc);
