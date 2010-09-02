@@ -99,15 +99,15 @@ mv VBoxTunctl $RPM_BUILD_ROOT/usr/bin
 for d in /lib/modules/*; do
   if [ -L $d/build ]; then
     rm -f /tmp/vboxdrv-Module.symvers
-    ./src/vboxdrv/build_in_tmp \
+    ./src/vboxhost/vboxdrv/build_in_tmp \
       --save-module-symvers /tmp/vboxdrv-Module.symvers \
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
-    ./src/vboxnetflt/build_in_tmp \
+    ./src/vboxhost/vboxnetflt/build_in_tmp \
       --use-module-symvers /tmp/vboxdrv-Module.symvers \
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
-    ./src/vboxnetadp/build_in_tmp \
+    ./src/vboxhost/vboxnetadp/build_in_tmp \
       --use-module-symvers /tmp/vboxdrv-Module.symvers \
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
