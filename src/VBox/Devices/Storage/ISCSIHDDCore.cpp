@@ -474,6 +474,8 @@ typedef struct ISCSIPDUTX
     struct ISCSIPDUTX *pNext;
     /** The BHS. */
     uint32_t    aBHS[12];
+    /** Assigned CmdSN for this PDU. */
+    uint32_t    CmdSN;
     /** The S/G buffer used for sending. */
     RTSGBUF     SgBuf;
     /** Number of bytes to send until the PDU completed. */
@@ -689,6 +691,7 @@ static int iscsiUpdateParameters(PISCSIIMAGE pImage, const uint8_t *pbBuf, size_
 
 /* Serial number arithmetic comparison. */
 static bool serial_number_less(uint32_t sn1, uint32_t sn2);
+static bool serial_number_greater(uint32_t sn1, uint32_t sn2);
 
 /* CHAP-MD5 functions. */
 #ifdef IMPLEMENT_TARGET_AUTH
@@ -2294,10 +2297,15 @@ static int iscsiSendPDUAsync(PISCSIIMAGE pImage)
 
     do
     {
-        /* If there is no PDU active, get the first one from the list. */
+        /*
+         * If there is no PDU active, get the first one from the list.
+         * Check that we are allowed to transfer the PDU by comparing the
+         * command sequence number and the maximum sequence number allowed by the target.
+         */
         if (!pImage->pIScsiPDUTxCur)
         {
-            if (!pImage->pIScsiPDUTxHead)
+            if (   !pImage->pIScsiPDUTxHead
+                || serial_number_greater(pImage->pIScsiPDUTxHead->CmdSN, pImage->MaxCmdSN))
                 break;
 
             pImage->pIScsiPDUTxCur = pImage->pIScsiPDUTxHead;
@@ -2416,6 +2424,10 @@ static int iscsiRecvPDUProcess(PISCSIIMAGE pImage, PISCSIRES paRes, uint32_t cnR
                  * Get the request and update its state.
                  */
                 rc = iscsiRecvPDUUpdateRequest(pImage, paRes, cnRes);
+                /* Try to send more PDUs now that we updated the MaxCmdSN field */
+                if (   RT_SUCCESS(rc)
+                    && !pImage->pIScsiPDUTxCur)
+                    rc = iscsiSendPDUAsync(pImage);
             }
             else
             {
@@ -2618,6 +2630,8 @@ static int iscsiPDUTxPrepare(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd)
     paReqBHS[6] = RT_H2N_U32(pImage->CmdSN);
     paReqBHS[7] = RT_H2N_U32(pImage->ExpStatSN);
     memcpy(paReqBHS + 8, pScsiReq->pvCmd, pScsiReq->cbCmd);
+
+    pIScsiPDU->CmdSN = pImage->CmdSN;
     pImage->CmdSN++;
 
     /* Setup the S/G buffers. */
@@ -3034,6 +3048,11 @@ static int iscsiUpdateParameters(PISCSIIMAGE pImage, const uint8_t *pbBuf, size_
 static bool serial_number_less(uint32_t s1, uint32_t s2)
 {
     return (s1 < s2 && s2 - s1 < 0x80000000) || (s1 > s2 && s1 - s2 > 0x80000000);
+}
+
+static bool serial_number_greater(uint32_t s1, uint32_t s2)
+{
+    return (s1 < s2 && s2 - s1 > 0x80000000) || (s1 > s2 && s1 - s2 < 0x80000000);
 }
 
 
