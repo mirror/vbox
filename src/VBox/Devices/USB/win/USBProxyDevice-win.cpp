@@ -403,11 +403,12 @@ static bool usbProxyWinClearHaltedEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
 /**
  * Aborts a pipe/endpoint (cancels all outstanding URBs on the endpoint).
  */
-static bool usbProxyWinAbortEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
+static int usbProxyWinAbortEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
 {
     PPRIV_USBW32 pPriv = (PPRIV_USBW32)pProxyDev->Backend.pv;
     USBSUP_CLEAR_ENDPOINT in;
     DWORD cbReturned;
+    int  rc;
 
     Assert(pPriv);
 
@@ -416,17 +417,18 @@ static bool usbProxyWinAbortEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
 
     cbReturned = 0;
     if (DeviceIoControl(pPriv->hDev, SUPUSB_IOCTL_USB_ABORT_ENDPOINT, &in, sizeof(in), NULL, 0, &cbReturned, NULL))
-        return true;
+        return VINF_SUCCESS;
 
-    if (    GetLastError() == ERROR_INVALID_HANDLE_STATE
-        ||  GetLastError() == ERROR_BAD_COMMAND)
+    rc = GetLastError();
+    if (    rc == ERROR_INVALID_HANDLE_STATE
+        ||  rc == ERROR_BAD_COMMAND)
     {
         Log(("usbproxy: device %x unplugged!!\n", pPriv->hDev));
         pProxyDev->fDetached = true;
     }
     else
         AssertMsgFailed(("lasterr=%d\n", GetLastError()));
-    return false;
+    return RTErrConvertFromWin32(rc);
 }
 
 /**
@@ -734,25 +736,41 @@ static DECLCALLBACK(int) usbProxyWinAsyncIoThread(RTTHREAD ThreadSelf, void *lpP
 }
 
 /**
- * Cancel an in-flight URB.
+ * Cancels an in-flight URB.
+ *
+ * The URB requires reaping, so we don't change its state.
+ *
+ * @remark  There isn't a way to cancel a specific URB on Windows.
+ *          on darwin. The interface only supports the aborting of
+ *          all URBs pending on an endpoint. Luckily that is usually
+ *          exactly what the guest wants to do.
  */
 static void usbProxyWinUrbCancel(PVUSBURB pUrb)
 {
     PUSBPROXYDEV      pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
     PPRIV_USBW32      pPriv     = (PPRIV_USBW32)pProxyDev->Backend.pv;
     PQUEUED_URB       pQUrbWin  = (PQUEUED_URB)pUrb->Dev.pvPrivate;
+    int                     rc;
+    USBSUP_CLEAR_ENDPOINT   in;
+    DWORD                   cbReturned;
     Assert(pQUrbWin);
 
-    /*
-     * We've no way of canceling it, so we'll have to wait till
-     * it's ripe and can be reaped. The caller will deal with this.
-     */
-    pQUrbWin->fCancelled = TRUE;
-    Log(("Cancel urb %p\n", pUrb));
+    in.bEndpoint = pUrb->EndPt | (pUrb->enmDir == VUSBDIRECTION_IN ? 0x80 : 0);
+    Log(("Cancel urb %p, endpoint %x\n", pUrb, in.bEndpoint));
 
-    /* Note CancelIoEx can cancel all pending IO requests for a file handle or a specific overlapped request.
-     * Unfortunately Vista+ only.
-     */
+    cbReturned = 0;
+    if (DeviceIoControl(pPriv->hDev, SUPUSB_IOCTL_USB_ABORT_ENDPOINT, &in, sizeof(in), NULL, 0, &cbReturned, NULL))
+        return;
+    
+    rc = GetLastError();
+    if (    rc == ERROR_INVALID_HANDLE_STATE
+        ||  rc == ERROR_BAD_COMMAND)
+    {
+        Log(("usbproxy: device %x unplugged!!\n", pPriv->hDev));
+        pProxyDev->fDetached = true;
+    }
+    else
+        AssertMsgFailed(("lasterr=%d\n", GetLastError()));
 }
 
 
