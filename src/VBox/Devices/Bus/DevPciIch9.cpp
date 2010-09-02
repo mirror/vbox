@@ -32,14 +32,14 @@
 /**
  * PCI Bus instance.
  */
-typedef struct
+typedef struct PCIBus
 {
     /** Bus number. */
     int32_t             iBus;
     /** Number of bridges attached to the bus. */
     uint32_t            cBridges;
 
-    /** Array of PCI devices. */
+    /** Array of PCI devices. We assume 32 slots, each with 8 functions. */
     R3PTRTYPE(PPCIDEVICE) devices[256];
     /** Array of bridges attached to the bus. */
     R3PTRTYPE(PPCIDEVICE *) papBridgesR3;
@@ -290,8 +290,185 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
     return 0;
 }
 
+static DECLCALLBACK(uint32_t) ich9pciConfigRead(PCIDevice *aDev, uint32_t u32Address, unsigned len)
+{
+    if (u32Address + len >= 256)
+    {
+        Assert(false);
+        return 0;
+    }
+
+    switch (len)
+    {
+        case 1:
+            return aDev->config[u32Address];
+        case 2:
+            return RT_LE2H_U16(*(uint16_t *)(aDev->config + u32Address));
+        default:
+        case 4:
+            return RT_LE2H_U32(*(uint32_t *)(aDev->config + u32Address));
+    }
+}
+
+
+static DECLCALLBACK(void) ich9pciConfigWrite(PCIDevice *aDev, uint32_t u32Address, uint32_t val, unsigned len)
+{
+    // @todo: write me
+}
+
+/* Slot/functions assignment per table at p. 12 of ICH9 family spec update */
+static const struct {
+    const char* pszName;
+    int32_t     iSlot;
+    int32_t     iFunction;
+} PciSlotAssignments[] = {
+    {
+        "piix3ide", 1, 1 // do we really need it?
+    },
+    {
+        "lan",      25, 0
+    },
+    {
+        "hda",      27, 0 /* High Definition Audio */
+    },
+    {
+        "i82801",   30, 0 /* Host Controller */
+    },
+    {
+        "lpc",      31, 0 /* Low Pin Count bus */
+    },
+    {
+        "ahci",     31, 2 /* SATA controller */
+    },
+    {
+        "smbus",    31, 3 /* System Management Bus */
+    },
+    {
+        "thermal",  31, 6 /* Thermal controller */
+    },
+};
+static int assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName)
+{
+    /* Hardcoded slots/functions, per chipset spec */
+    for (size_t i = 0; i < RT_ELEMENTS(PciSlotAssignments); i++)
+    {
+        if (!strcmp(pszName, PciSlotAssignments[i].pszName))
+        {
+            pPciDev->Int.s.fRequestedDevFn = true;
+            return (PciSlotAssignments[i].iSlot << 3) + PciSlotAssignments[i].iFunction;
+        }
+    }
+
+    /* Otherwise when assigning a slot, we need to make sure all its functions are available */
+    for (int iPos = 0; iPos < (int)RT_ELEMENTS(pBus->devices); iPos += 8)
+        if (        !pBus->devices[iPos]
+                &&  !pBus->devices[iPos + 1]
+                &&  !pBus->devices[iPos + 2]
+                &&  !pBus->devices[iPos + 3]
+                &&  !pBus->devices[iPos + 4]
+                &&  !pBus->devices[iPos + 5]
+                &&  !pBus->devices[iPos + 6]
+                &&  !pBus->devices[iPos + 7])
+        {
+            pPciDev->Int.s.fRequestedDevFn = false;
+            return iPos;
+        }
+
+    return -1;
+}
+
+static bool hasHardAssignedDevsInSlot(PPCIBUS pBus, int iSlot)
+{
+    PCIDevice** aSlot = &pBus->devices[iSlot << 3];
+
+    return    (aSlot[0] && aSlot[0]->Int.s.fRequestedDevFn)
+           || (aSlot[1] && aSlot[1]->Int.s.fRequestedDevFn)
+           || (aSlot[2] && aSlot[2]->Int.s.fRequestedDevFn)
+           || (aSlot[3] && aSlot[3]->Int.s.fRequestedDevFn)
+           || (aSlot[4] && aSlot[4]->Int.s.fRequestedDevFn)
+           || (aSlot[5] && aSlot[5]->Int.s.fRequestedDevFn)
+           || (aSlot[6] && aSlot[6]->Int.s.fRequestedDevFn)
+           || (aSlot[7] && aSlot[7]->Int.s.fRequestedDevFn)
+           ;
+}
+
 static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const char *pszName)
 {
+    /*
+     * Find device position
+     */
+    if (iDev < 0)
+    {
+        iDev = assignPosition(pBus, pPciDev, pszName);
+        if (iDev < 0)
+        {
+             AssertMsgFailed(("Couldn't find free spot!\n"));
+             return VERR_PDM_TOO_PCI_MANY_DEVICES;
+        }
+    }
+
+    /*
+     * Check if we can really take this slot, possibly by relocating
+     * its current habitant, if it wasn't hard assigned too.
+     */
+    if (pPciDev->Int.s.fRequestedDevFn &&
+        pBus->devices[iDev]            &&
+        pBus->devices[iDev]->Int.s.fRequestedDevFn)
+    {
+        /*
+         * Smth like hasHardAssignedDevsInSlot(pBus, iDev >> 3) shall be use to make 
+         * it compatible with DevPCI.cpp version, but this way we cannot assign 
+         * in accordance with the chipset spec.
+         */
+        AssertReleaseMsgFailed(("Configuration error:'%s' and '%s' are both configured as device %d\n",
+                                 pszName, pBus->devices[iDev]->name, iDev));
+        return VERR_INTERNAL_ERROR;
+    }
+
+    if (pBus->devices[iDev])
+    {
+        /* if we got here, we shall (and usually can) relocate the device */
+        int iRelDev = assignPosition(pBus, pBus->devices[iDev], pBus->devices[iDev]->name);
+        if (iRelDev < 0 || iRelDev == iDev)
+        {
+            AssertMsgFailed(("Couldn't find free spot!\n"));
+            return VERR_PDM_TOO_PCI_MANY_DEVICES;
+        }
+        /* Copy device function by function to its new position */
+        for (int i = 0; i < 8; i++)
+        {
+            if (!pBus->devices[iDev + i])
+                continue;
+            Log(("PCI: relocating '%s' from slot %#x to %#x\n", pBus->devices[iDev + i]->name, iDev + i, iRelDev + i));
+            pBus->devices[iRelDev + i] = pBus->devices[iDev + i];
+            pBus->devices[iRelDev + i]->devfn = i;
+            pBus->devices[iDev + i] = NULL;
+        }
+    }
+
+    /*
+     * Fill in device information.
+     */
+    pPciDev->devfn                  = iDev;
+    pPciDev->name                   = pszName;
+    pPciDev->Int.s.pBusR3           = pBus;
+    pPciDev->Int.s.pBusR0           = MMHyperR3ToR0(PDMDevHlpGetVM(pBus->CTX_SUFF(pDevIns)), pBus);
+    pPciDev->Int.s.pBusRC           = MMHyperR3ToRC(PDMDevHlpGetVM(pBus->CTX_SUFF(pDevIns)), pBus);
+    pPciDev->Int.s.pfnConfigRead    = ich9pciConfigRead;
+    pPciDev->Int.s.pfnConfigWrite   = ich9pciConfigWrite;
+    pBus->devices[iDev]             = pPciDev;
+    if (pPciDev->Int.s.fPciToPciBridge)
+    {
+        AssertMsg(pBus->cBridges < RT_ELEMENTS(pBus->devices), ("Number of bridges exceeds the number of possible devices on the bus\n"));
+        AssertMsg(pPciDev->Int.s.pfnBridgeConfigRead && pPciDev->Int.s.pfnBridgeConfigWrite,
+                  ("device is a bridge but does not implement read/write functions\n"));
+        pBus->papBridgesR3[pBus->cBridges] = pPciDev;
+        pBus->cBridges++;
+    }
+
+    Log(("PCI: Registered device %d function %d (%#x) '%s'.\n",
+         iDev >> 3, iDev & 7, 0x80000000 | (iDev << 8), pszName));
+
     return VINF_SUCCESS;
 }
 
@@ -395,7 +572,11 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
 
     pBus->PciDev.pDevIns              = pDevIns;
     pBus->PciDev.Int.s.fRequestedDevFn= true;
+    /* We register Host<->PCI controller on the bus */
     ich9pciRegisterInternal(pBus, 0, &pBus->PciDev, "i82801");
+
+    /** @todo: ther chipset devices shall be registered too */
+    /** @todo: bridges? */
 
     return VINF_SUCCESS;
 }

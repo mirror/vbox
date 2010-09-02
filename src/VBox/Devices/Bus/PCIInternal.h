@@ -68,6 +68,9 @@ typedef FNPCIBRIDGECONFIGWRITE *PFNPCIBRIDGECONFIGWRITE;
 /** Pointer to a PFNPCICONFIGWRITE. */
 typedef PFNPCIBRIDGECONFIGWRITE *PPFNPCIBRIDGECONFIGWRITE;
 
+/* Forward declaration */
+struct PCIBus;
+
 /**
  * PCI Device - Internal data.
  */
