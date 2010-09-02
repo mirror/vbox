@@ -306,7 +306,7 @@ typedef struct {
 #define NT_PRXFPREG     0x46e62b7f /* from gdb5.1/include/elf/common.h */
 #endif
 
-/* VirtualBox specific NOTE sections (added by Ramshankar */
+/* VirtualBox specific NOTE sections (added by Ramshankar) */
 #ifdef VBOX
 #define NT_VBOXCPU  0xace
 #endif
