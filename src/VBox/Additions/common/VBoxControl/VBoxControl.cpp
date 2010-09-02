@@ -23,6 +23,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
+#include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
@@ -512,12 +513,12 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     return TRUE;
 }
 
-int handleSetVideoMode(int argc, char *argv[])
+static RTEXITCODE handleSetVideoMode(int argc, char *argv[])
 {
     if (argc != 3 && argc != 4)
     {
         usage(SET_VIDEO_MODE);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     DWORD xres = atoi(argv[0]);
@@ -549,11 +550,13 @@ int handleSetVideoMode(int argc, char *argv[])
             ResizeDisplayDevice(scr, xres, yres, bpp);
             RTPrintf("done.\n");
         }
-        else VBoxControlError("Error retrieving API for display change!");
+        else
+            VBoxControlError("Error retrieving API for display change!");
     }
-    else VBoxControlError("Error retrieving handle to user32.dll!");
+    else
+        VBoxControlError("Error retrieving handle to user32.dll!");
 
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
 HKEY getVideoKey(bool writable)
@@ -592,7 +595,7 @@ HKEY getVideoKey(bool writable)
     return hkeyVideo;
 }
 
-int handleGetVideoAcceleration(int argc, char *argv[])
+static RTEXITCODE handleGetVideoAcceleration(int argc, char *argv[])
 {
     ULONG status;
     HKEY hkeyVideo = getVideoKey(false);
@@ -610,10 +613,10 @@ int handleGetVideoAcceleration(int argc, char *argv[])
             RTPrintf("Video acceleration: %s\n", fAcceleration ? "on" : "off");
         RegCloseKey(hkeyVideo);
     }
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
-int handleSetVideoAcceleration(int argc, char *argv[])
+static RTEXITCODE handleSetVideoAcceleration(int argc, char *argv[])
 {
     ULONG status;
     HKEY hkeyVideo;
@@ -624,7 +627,7 @@ int handleSetVideoAcceleration(int argc, char *argv[])
             && RTStrICmp(argv[0], "off")))
     {
         usage(SET_VIDEO_ACCEL);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     hkeyVideo = getVideoKey(true);
@@ -642,7 +645,7 @@ int handleSetVideoAcceleration(int argc, char *argv[])
         }
         RegCloseKey(hkeyVideo);
     }
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
 #define MAX_CUSTOM_MODES 128
@@ -754,12 +757,12 @@ void writeCustomModes(HKEY hkeyVideo)
 
 }
 
-int handleListCustomModes(int argc, char *argv[])
+static RTEXITCODE handleListCustomModes(int argc, char *argv[])
 {
     if (argc != 0)
     {
         usage(LIST_CUST_MODES);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     HKEY hkeyVideo = getVideoKey(false);
@@ -779,15 +782,15 @@ int handleListCustomModes(int argc, char *argv[])
         }
         RegCloseKey(hkeyVideo);
     }
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
-int handleAddCustomMode(int argc, char *argv[])
+static RTEXITCODE handleAddCustomMode(int argc, char *argv[])
 {
     if (argc != 3)
     {
         usage(ADD_CUST_MODE);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     DWORD xres = atoi(argv[0]);
@@ -802,7 +805,7 @@ int handleAddCustomMode(int argc, char *argv[])
             || (bpp != 32)))
     {
         VBoxControlError("Error: invalid mode specified!\n");
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     HKEY hkeyVideo = getVideoKey(true);
@@ -840,15 +843,15 @@ int handleAddCustomMode(int argc, char *argv[])
         }
         RegCloseKey(hkeyVideo);
     }
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
-int handleRemoveCustomMode(int argc, char *argv[])
+static RTEXITCODE handleRemoveCustomMode(int argc, char *argv[])
 {
     if (argc != 3)
     {
         usage(REMOVE_CUST_MODE);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     DWORD xres = atoi(argv[0]);
@@ -876,7 +879,7 @@ int handleRemoveCustomMode(int argc, char *argv[])
         RegCloseKey(hkeyVideo);
     }
 
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
 #endif /* RT_OS_WINDOWS */
@@ -886,10 +889,10 @@ int handleRemoveCustomMode(int argc, char *argv[])
  * Retrieves a value from the guest property store.
  * This is accessed through the "VBoxGuestPropSvc" HGCM service.
  *
- * @returns 0 on success, 1 on failure
+ * @returns Command exit code.
  * @note see the command line API description for parameters
  */
-int getGuestProperty(int argc, char **argv)
+static RTEXITCODE getGuestProperty(int argc, char **argv)
 {
     using namespace guestProp;
 
@@ -902,7 +905,7 @@ int getGuestProperty(int argc, char **argv)
     else if (argc != 1)
     {
         usage(GUEST_PROP);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     uint32_t u32ClientId = 0;
@@ -975,7 +978,7 @@ int getGuestProperty(int argc, char **argv)
     if (u32ClientId != 0)
         VbglR3GuestPropDisconnect(u32ClientId);
     RTMemFree(pvBuf);
-    return RT_SUCCESS(rc) ? 0 : 1;
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
@@ -983,10 +986,10 @@ int getGuestProperty(int argc, char **argv)
  * Writes a value to the guest property store.
  * This is accessed through the "VBoxGuestPropSvc" HGCM service.
  *
- * @returns 0 on success, 1 on failure
+ * @returns Command exit code.
  * @note see the command line API description for parameters
  */
-static int setGuestProperty(int argc, char *argv[])
+static RTEXITCODE setGuestProperty(int argc, char *argv[])
 {
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
@@ -1015,7 +1018,7 @@ static int setGuestProperty(int argc, char *argv[])
     if (!usageOK)
     {
         usage(GUEST_PROP);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
     /* This is always needed. */
     pszName = argv[0];
@@ -1040,7 +1043,7 @@ static int setGuestProperty(int argc, char *argv[])
 
     if (u32ClientId != 0)
         VbglR3GuestPropDisconnect(u32ClientId);
-    return RT_SUCCESS(rc) ? 0 : 1;
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
@@ -1048,10 +1051,10 @@ static int setGuestProperty(int argc, char *argv[])
  * Enumerates the properties in the guest property store.
  * This is accessed through the "VBoxGuestPropSvc" HGCM service.
  *
- * @returns 0 on success, 1 on failure
+ * @returns Command exit code.
  * @note see the command line API description for parameters
  */
-static int enumGuestProperty(int argc, char *argv[])
+static RTEXITCODE enumGuestProperty(int argc, char *argv[])
 {
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
@@ -1069,7 +1072,7 @@ static int enumGuestProperty(int argc, char *argv[])
     else if (argc != 0)
     {
         usage(GUEST_PROP);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     /*
@@ -1107,7 +1110,7 @@ static int enumGuestProperty(int argc, char *argv[])
     }
     else
         VBoxControlError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
-    return RT_SUCCESS(rc) ? 0 : 1;
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
@@ -1115,10 +1118,10 @@ static int enumGuestProperty(int argc, char *argv[])
  * Waits for notifications of changes to guest properties.
  * This is accessed through the "VBoxGuestPropSvc" HGCM service.
  *
- * @returns 0 on success, 1 on failure
+ * @returns Command exit code.
  * @note see the command line API description for parameters
  */
-int waitGuestProperty(int argc, char **argv)
+static RTEXITCODE waitGuestProperty(int argc, char **argv)
 {
     using namespace guestProp;
 
@@ -1162,7 +1165,7 @@ int waitGuestProperty(int argc, char **argv)
     if (!usageOK)
     {
         usage(GUEST_PROP);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     /*
@@ -1242,7 +1245,7 @@ int waitGuestProperty(int argc, char **argv)
     if (u32ClientId != 0)
         VbglR3GuestPropDisconnect(u32ClientId);
     RTMemFree(pvBuf);
-    return RT_SUCCESS(rc) ? 0 : 1;
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
@@ -1253,24 +1256,24 @@ int waitGuestProperty(int argc, char **argv)
  * @returns 0 on success, 1 on failure
  * @note see the command line API description for parameters
  */
-static int handleGuestProperty(int argc, char *argv[])
+static RTEXITCODE handleGuestProperty(int argc, char *argv[])
 {
     if (0 == argc)
     {
         usage(GUEST_PROP);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
-    if (0 == strcmp(argv[0], "get"))
+    if (!strcmp(argv[0], "get"))
         return getGuestProperty(argc - 1, argv + 1);
-    else if (0 == strcmp(argv[0], "set"))
+    else if (!strcmp(argv[0], "set"))
         return setGuestProperty(argc - 1, argv + 1);
-    else if (0 == strcmp(argv[0], "enumerate"))
+    else if (!strcmp(argv[0], "enumerate"))
         return enumGuestProperty(argc - 1, argv + 1);
-    else if (0 == strcmp(argv[0], "wait"))
+    else if (!strcmp(argv[0], "wait"))
         return waitGuestProperty(argc - 1, argv + 1);
     /* else */
     usage(GUEST_PROP);
-    return 1;
+    return RTEXITCODE_FAILURE;
 }
 #endif
 
@@ -1278,18 +1281,15 @@ static int handleGuestProperty(int argc, char *argv[])
 /**
  * Lists the Shared Folders provided by the host.
  */
-int listSharedFolders(int argc, char **argv)
+static RTEXITCODE listSharedFolders(int argc, char **argv)
 {
     bool usageOK = true;
     bool fOnlyShowAutoMount = false;
     if (argc == 1)
     {
-        if (   strcmp(argv[0], "-automount")  == 0
-            || strcmp(argv[0], "--automount") == 0
-           )
-        {
+        if (   !strcmp(argv[0], "-automount")
+            || !strcmp(argv[0], "--automount"))
             fOnlyShowAutoMount = true;
-        }
         else
             usageOK = false;
     }
@@ -1299,7 +1299,7 @@ int listSharedFolders(int argc, char **argv)
     if (!usageOK)
     {
         usage(GUEST_SHAREDFOLDERS);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     uint32_t u32ClientId;
@@ -1340,7 +1340,7 @@ int listSharedFolders(int argc, char **argv)
             VBoxControlError("Error while getting the shared folder mappings, rc = %Rrc\n", rc);
         VbglR3SharedFolderDisconnect(u32ClientId);
     }
-    return RT_SUCCESS(rc) ? 0 : 1;
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 /**
@@ -1349,54 +1349,54 @@ int listSharedFolders(int argc, char **argv)
  * @returns 0 on success, 1 on failure
  * @note see the command line API description for parameters
  */
-static int handleSharedFolder(int argc, char *argv[])
+static RTEXITCODE handleSharedFolder(int argc, char *argv[])
 {
     if (0 == argc)
     {
         usage(GUEST_SHAREDFOLDERS);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
-    if (0 == strcmp(argv[0], "list"))
+    if (!strcmp(argv[0], "list"))
         return listSharedFolders(argc - 1, argv + 1);
     /* else */
     usage(GUEST_SHAREDFOLDERS);
-    return 1;
+    return RTEXITCODE_FAILURE;
 }
 #endif
 
 /** command handler type */
-typedef DECLCALLBACK(int) FNHANDLER(int argc, char *argv[]);
+typedef DECLCALLBACK(RTEXITCODE) FNHANDLER(int argc, char *argv[]);
 typedef FNHANDLER *PFNHANDLER;
 
 /** The table of all registered command handlers. */
 struct COMMANDHANDLER
 {
-    const char *command;
-    PFNHANDLER handler;
-} g_commandHandlers[] =
+    const char *pszCommand;
+    PFNHANDLER pfnHandler;
+} g_aCommandHandlers[] =
 {
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
-    { "getvideoacceleration", handleGetVideoAcceleration },
-    { "setvideoacceleration", handleSetVideoAcceleration },
-    { "listcustommodes", handleListCustomModes },
-    { "addcustommode", handleAddCustomMode },
-    { "removecustommode", handleRemoveCustomMode },
-    { "setvideomode", handleSetVideoMode },
+    { "getvideoacceleration",   handleGetVideoAcceleration },
+    { "setvideoacceleration",   handleSetVideoAcceleration },
+    { "listcustommodes",        handleListCustomModes },
+    { "addcustommode",          handleAddCustomMode },
+    { "removecustommode",       handleRemoveCustomMode },
+    { "setvideomode",           handleSetVideoMode },
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
-    { "guestproperty", handleGuestProperty },
+    { "guestproperty",          handleGuestProperty },
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
-    { "sharedfolder", handleSharedFolder },
+    { "sharedfolder",           handleSharedFolder },
 #endif
-    { NULL, NULL }  /* terminator */
+    { NULL,                     NULL }  /* unnecessary terminator entry */
 };
 
 /** Main function */
 int main(int argc, char **argv)
 {
     /** The application's global return code */
-    int rc = 0;
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     /** An IPRT return code for local use */
     int rrc = VINF_SUCCESS;
     /** The index of the command line argument we are currently processing */
@@ -1408,19 +1408,22 @@ int main(int argc, char **argv)
     /** Will we be executing a command or just printing information? */
     bool fOnlyInfo = false;
 
+    rrc = RTR3Init();
+    if (RT_FAILURE(rrc))
+        return RTMsgInitFailure(rrc);
+
     /*
      * Start by handling command line switches
      */
-
-    /** Are we finished with handling switches? */
-    bool done = false;
+    /** @todo RTGetOpt conversion of the whole file. */
+    bool done = false;      /**< Are we finished with handling switches? */
     while (!done && (iArg < argc))
     {
-        if (   0 == strcmp(argv[iArg], "-V")
-            || 0 == strcmp(argv[iArg], "-v")
-            || 0 == strcmp(argv[iArg], "--version")
-            || 0 == strcmp(argv[iArg], "-version")
-            || 0 == strcmp(argv[iArg], "getversion")
+        if (   !strcmp(argv[iArg], "-V")
+            || !strcmp(argv[iArg], "-v")
+            || !strcmp(argv[iArg], "--version")
+            || !strcmp(argv[iArg], "-version")
+            || !strcmp(argv[iArg], "getversion")
            )
             {
                 /* Print version number, and do nothing else. */
@@ -1429,11 +1432,11 @@ int main(int argc, char **argv)
                 fShowLogo = false;
                 done = true;
             }
-        else if (   0 == strcmp(argv[iArg], "-nologo")
-                 || 0 == strcmp(argv[iArg], "--nologo"))
+        else if (   !strcmp(argv[iArg], "-nologo")
+                 || !strcmp(argv[iArg], "--nologo"))
             fShowLogo = false;
-        else if (   0 == strcmp(argv[iArg], "-help")
-                 || 0 == strcmp(argv[iArg], "--help"))
+        else if (   !strcmp(argv[iArg], "-help")
+                 || !strcmp(argv[iArg], "--help"))
         {
             fOnlyInfo = true;
             fDoHelp = true;
@@ -1451,7 +1454,6 @@ int main(int argc, char **argv)
      * Find the application name, show our logo if the user hasn't suppressed it,
      * and show the usage if the user asked us to
      */
-
     g_pszProgName = RTPathFilename(argv[0]);
     if (fShowLogo)
         RTPrintf(VBOX_PRODUCT " Guest Additions Command Line Management Interface Version "
@@ -1464,24 +1466,15 @@ int main(int argc, char **argv)
     /*
      * Do global initialisation for the programme if we will be handling a command
      */
-
     if (!fOnlyInfo)
     {
-        rrc = RTR3Init(); /** @todo r=bird: This ALWAYS goes first, the only exception is when you have to parse args to figure out which to call! */
-        if (!RT_SUCCESS(rrc))
+        rrc = VbglR3Init();
+        if (RT_FAILURE(rrc))
         {
-            VBoxControlError("Failed to initialise the VirtualBox runtime - error %Rrc\n", rrc);
-            rc = 1;
-        }
-        if (0 == rc)
-        {
-            if (!RT_SUCCESS(VbglR3Init()))
-            {
-                VBoxControlError("Could not contact the host system.  Make sure that you are running this\n"
-                                 "application inside a VirtualBox guest system, and that you have sufficient\n"
-                                 "user permissions.\n");
-                rc = 1;
-            }
+            VBoxControlError("Could not contact the host system.  Make sure that you are running this\n"
+                             "application inside a VirtualBox guest system, and that you have sufficient\n"
+                             "user permissions.\n");
+            rcExit = RTEXITCODE_FAILURE;
         }
     }
 
@@ -1489,18 +1482,20 @@ int main(int argc, char **argv)
      * Now look for an actual command in the argument list and handle it.
      */
 
-    if (!fOnlyInfo && (0 == rc))
+    if (!fOnlyInfo && rcExit == RTEXITCODE_SUCCESS)
     {
         /*
          * The input is in the guest OS'es codepage (NT guarantees ACP).
          * For VBox we use UTF-8.  For simplicity, just convert the argv[] array
          * here.
          */
+        /** @todo this must be done before we start checking for --help and
+         *        stuff above. */
         for (int i = iArg; i < argc; i++)
         {
-            char *converted;
-            RTStrCurrentCPToUtf8(&converted, argv[i]);
-            argv[i] = converted;
+            char *pszConverted;
+            RTStrCurrentCPToUtf8(&pszConverted, argv[i]);
+            argv[i] = pszConverted;
         }
 
         if (argc > iArg)
@@ -1509,27 +1504,27 @@ int main(int argc, char **argv)
             bool found = false;
             /** And if so, what is its position in the table? */
             unsigned index = 0;
-            while (   index < RT_ELEMENTS(g_commandHandlers)
+            while (   index < RT_ELEMENTS(g_aCommandHandlers)
                    && !found
-                   && (g_commandHandlers[index].command != NULL))
+                   && (g_aCommandHandlers[index].pszCommand != NULL))
             {
-                if (0 == strcmp(argv[iArg], g_commandHandlers[index].command))
+                if (!strcmp(argv[iArg], g_aCommandHandlers[index].pszCommand))
                     found = true;
                 else
                     ++index;
             }
             if (found)
-                rc = g_commandHandlers[index].handler(argc - iArg - 1, argv + iArg + 1);
+                rcExit = g_aCommandHandlers[index].pfnHandler(argc - iArg - 1, argv + iArg + 1);
             else
             {
-                rc = 1;
+                rcExit = RTEXITCODE_FAILURE;
                 usage();
             }
         }
         else
         {
             /* The user didn't specify a command. */
-            rc = 1;
+            rcExit = RTEXITCODE_FAILURE;
             usage();
         }
 
@@ -1538,13 +1533,11 @@ int main(int argc, char **argv)
          */
         for (int i = iArg; i < argc; i++)
             RTStrFree(argv[i]);
-
     }
 
     /*
      * And exit, returning the status
      */
-
-    return rc;
+    return rcExit;
 }
 
