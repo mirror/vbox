@@ -37,61 +37,59 @@
 int VBoxGuestReportGuestInfo(VBOXOSTYPE enmOSType)
 {
     /*
-     * Important: VMMDev *awaits* a VMMDevReportGuestInfo or VMMDevReportGuestInfo2 message
-     *            first in order to accept all other VMMDev messages! Otherwise you'd get
-     *            a VERR_NOT_SUPPORTED error.
-     *
-     * VBox version <= 3.2: VMMDevReportGuestInfo must always come first.
+     * Allocate and fill in the two guest info reports.
      */
-    VMMDevReportGuestInfo2 *pReq = NULL;
-    VMMDevReportGuestInfo *pReq3 = NULL;
-    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof (VMMDevReportGuestInfo2), VMMDevReq_ReportGuestInfo2);
+    VMMDevReportGuestInfo2 *pReqInfo2 = NULL;
+    VMMDevReportGuestInfo  *pReqInfo1 = NULL;
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReqInfo2, sizeof (VMMDevReportGuestInfo2), VMMDevReq_ReportGuestInfo2);
     Log(("VBoxGuestReportGuestInfo: VbglGRAlloc VMMDevReportGuestInfo2 completed with rc=%Rrc\n", rc));
     if (RT_SUCCESS(rc))
     {
-        pReq->guestInfo.additionsMajor = VBOX_VERSION_MAJOR;
-        pReq->guestInfo.additionsMinor = VBOX_VERSION_MINOR;
-        pReq->guestInfo.additionsBuild = VBOX_VERSION_BUILD;
-        pReq->guestInfo.additionsRevision = VBOX_SVN_REV;
-        pReq->guestInfo.additionsFeatures = 0; /* Not (never?) used. */
-        RTStrCopy(pReq->guestInfo.szName, sizeof(pReq->guestInfo.szName), VBOX_VERSION_STRING);
-        
-        rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq3, sizeof (VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
+        pReqInfo2->guestInfo.additionsMajor    = VBOX_VERSION_MAJOR;
+        pReqInfo2->guestInfo.additionsMinor    = VBOX_VERSION_MINOR;
+        pReqInfo2->guestInfo.additionsBuild    = VBOX_VERSION_BUILD;
+        pReqInfo2->guestInfo.additionsRevision = VBOX_SVN_REV;
+        pReqInfo2->guestInfo.additionsFeatures = 0; /* (no features defined yet) */
+        RTStrCopy(pReqInfo2->guestInfo.szName, sizeof(pReqInfo2->guestInfo.szName), VBOX_VERSION_STRING);
+
+        rc = VbglGRAlloc((VMMDevRequestHeader **)&pReqInfo1, sizeof (VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
         Log(("VBoxGuestReportGuestInfo: VbglGRAlloc VMMDevReportGuestInfo completed with rc=%Rrc\n", rc));
         if (RT_SUCCESS(rc))
         {
-            pReq3->guestInfo.interfaceVersion = VMMDEV_VERSION;
-            pReq3->guestInfo.osType = enmOSType;
+            pReqInfo1->guestInfo.interfaceVersion = VMMDEV_VERSION;
+            pReqInfo1->guestInfo.osType           = enmOSType;
 
-            rc = VbglGRPerform(&pReq->header);
+            /*
+             * There are two protocols here:
+             *      1. Info2 + Info1. Supported by >=3.2.51.
+             *      2. Info1 and optionally Info2. The old protocol.
+             *
+             * We try protocol 1 first.  It will fail with VERR_NOT_SUPPORTED
+             * if not supported by the VMMDev (message ordering requirement).
+             */
+            rc = VbglGRPerform(&pReqInfo2->header);
             Log(("VBoxGuestReportGuestInfo: VbglGRPerform VMMDevReportGuestInfo2 completed with rc=%Rrc\n", rc));
-            if (rc == VERR_NOT_IMPLEMENTED)
+            if (RT_SUCCESS(rc))
             {
-                /* Compatibility with pre VBox-3.2 hosts -- VMMDevReportGuestInfo2 not implemented. */
-                rc = VINF_SUCCESS;
-            }
-            if (rc == VERR_NOT_SUPPORTED)
-            {
-                /* Compatibility with VBox 3.2 hosts:
-                 * They rely on sending VMMDevReportGuestInfo as the very first request */
-                rc = VbglGRPerform(&pReq3->header);
-                Log(("VBoxGuestReportGuestInfo: VbglGRPerform VMMDevReportGuestInfo completed with rc=%Rrc\n", rc));
-                rc = VbglGRPerform(&pReq->header);
-                Log(("VBoxGuestReportGuestInfo: VbglGRPerform VMMDevReportGuestInfo2 completed with rc=%Rrc\n", rc));
-            }
-            else
-            {
-                /*
-                 * Hosts newer than VBox 3.2:
-                 * VMMDevReportGuestInfo acts as a beacon and signals the host that all
-                 * guest information is now complete. So always send this report last!
-                 */
-                rc = VbglGRPerform(&pReq3->header);
+                rc = VbglGRPerform(&pReqInfo1->header);
                 Log(("VBoxGuestReportGuestInfo: VbglGRPerform VMMDevReportGuestInfo completed with rc=%Rrc\n", rc));
             }
-            VbglGRFree(&pReq3->header);
+            else if (   rc == VERR_NOT_SUPPORTED
+                     || rc == VERR_NOT_IMPLEMENTED)
+            {
+                rc = VbglGRPerform(&pReqInfo1->header);
+                Log(("VBoxGuestReportGuestInfo: VbglGRPerform VMMDevReportGuestInfo completed with rc=%Rrc\n", rc));
+                if (RT_SUCCESS(rc))
+                {
+                    rc = VbglGRPerform(&pReqInfo2->header);
+                    Log(("VBoxGuestReportGuestInfo: VbglGRPerform VMMDevReportGuestInfo2 completed with rc=%Rrc\n", rc));
+                    if (rc == VERR_NOT_IMPLEMENTED)
+                        rc = VINF_SUCCESS;
+                }
+            }
+            VbglGRFree(&pReqInfo1->header);
         }
-        VbglGRFree(&pReq->header);
+        VbglGRFree(&pReqInfo2->header);
     }
 
     return rc;
