@@ -1931,19 +1931,23 @@ VMMR3DECL(int) VMR3Teleport(PVM pVM, uint32_t cMsMaxDowntime, PCSSMSTRMOPS pStre
  *
  * @returns VBox status code.
  *
- * @param   pVM             The VM handle.
- * @param   pszFilename     The name of the file.  NULL if pStreamOps is used.
- * @param   pStreamOps      The stream methods.  NULL if pszFilename is used.
- * @param   pvStreamOpsUser The user argument to the stream methods.
- * @param   pfnProgress     Progress callback. Optional.
- * @param   pvUser          User argument for the progress callback.
- * @param   fTeleporting    Indicates whether we're teleporting or not.
+ * @param   pVM                 The VM handle.
+ * @param   pszFilename         The name of the file.  NULL if pStreamOps is used.
+ * @param   pStreamOps          The stream methods.  NULL if pszFilename is used.
+ * @param   pvStreamOpsUser     The user argument to the stream methods.
+ * @param   pfnProgress         Progress callback. Optional.
+ * @param   pvUser              User argument for the progress callback.
+ * @param   fTeleporting        Indicates whether we're teleporting or not.
+ * @param   fSkipStateChanges   Set if we're supposed to skip state changes (FTM delta case)
  *
  * @thread  EMT.
  */
 static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                                  PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool fTeleporting)
+                                  PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool fTeleporting,
+                                  bool fSkipStateChanges)
 {
+    int rc = VINF_SUCCESS;
+
     LogFlow(("vmR3Load: pVM=%p pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p pfnProgress=%p pvProgressUser=%p fTeleporting=%RTbool\n",
              pVM, pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser, fTeleporting));
 
@@ -1955,17 +1959,20 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
     AssertPtrNull(pStreamOps);
     AssertPtrNull(pfnProgress);
 
-    /*
-     * Change the state and perform the load.
-     *
-     * Always perform a relocation round afterwards to make sure hypervisor
-     * selectors and such are correct.
-     */
-    int rc = vmR3TrySetState(pVM, "VMR3Load", 2,
-                             VMSTATE_LOADING, VMSTATE_CREATED,
-                             VMSTATE_LOADING, VMSTATE_SUSPENDED);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (!fSkipStateChanges)
+    {
+        /*
+         * Change the state and perform the load.
+         *
+         * Always perform a relocation round afterwards to make sure hypervisor
+         * selectors and such are correct.
+         */
+        rc = vmR3TrySetState(pVM, "VMR3Load", 2,
+                                 VMSTATE_LOADING, VMSTATE_CREATED,
+                                 VMSTATE_LOADING, VMSTATE_SUSPENDED);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
     pVM->vm.s.fTeleportedAndNotFullyResumedYet = fTeleporting;
 
     uint32_t cErrorsPriorToSave = VMR3GetErrorCount(pVM);
@@ -1973,12 +1980,15 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
     if (RT_SUCCESS(rc))
     {
         VMR3Relocate(pVM, 0 /*offDelta*/);
-        vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_LOADING);
+        if (!fSkipStateChanges)
+            vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_LOADING);
     }
     else
     {
         pVM->vm.s.fTeleportedAndNotFullyResumedYet = false;
-        vmR3SetState(pVM, VMSTATE_LOAD_FAILURE, VMSTATE_LOADING);
+        if (!fSkipStateChanges)
+            vmR3SetState(pVM, VMSTATE_LOAD_FAILURE, VMSTATE_LOADING);
+
         if (cErrorsPriorToSave == VMR3GetErrorCount(pVM))
             rc = VMSetError(pVM, rc, RT_SRC_POS,
                             N_("Unable to restore the virtual machine's saved state from '%s'. "
@@ -2023,9 +2033,9 @@ VMMR3DECL(int) VMR3LoadFromFile(PVM pVM, const char *pszFilename, PFNVMPROGRESS 
      * Forward the request to EMT(0).  No need to setup a rendezvous here
      * since there is no execution taking place when this call is allowed.
      */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 7,
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
                               pVM, pszFilename, (uintptr_t)NULL /*pStreamOps*/, (uintptr_t)NULL /*pvStreamOpsUser*/, pfnProgress, pvUser,
-                              false /*fTeleporting*/);
+                              false /*fTeleporting*/, false /* fSkipStateChanges */);
     LogFlow(("VMR3LoadFromFile: returns %Rrc\n", rc));
     return rc;
 }
@@ -2062,13 +2072,50 @@ VMMR3DECL(int) VMR3LoadFromStream(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStre
      * Forward the request to EMT(0).  No need to setup a rendezvous here
      * since there is no execution taking place when this call is allowed.
      */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 7,
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
                               pVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser,
-                              true /*fTeleporting*/);
+                              true /*fTeleporting*/, false /* fSkipStateChanges */);
     LogFlow(("VMR3LoadFromStream: returns %Rrc\n", rc));
     return rc;
 }
 
+
+/**
+ * VMR3LoadFromFileFT for arbritrary file streams.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pStreamOps      The stream methods.
+ * @param   pvStreamOpsUser The user argument to the stream methods.
+ * @param   pfnProgress     Progress callback. Optional.
+ * @param   pvProgressUser  User argument for the progress callback.
+ *
+ * @thread      Any thread.
+ * @vmstate     Created, Suspended
+ * @vmstateto   Loading+Suspended
+ */
+VMMR3DECL(int) VMR3LoadFromStreamFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser)
+{
+    LogFlow(("VMR3LoadFromStreamFT: pVM=%p pStreamOps=%p pvStreamOpsUser=%p\n",
+             pVM, pStreamOps, pvStreamOpsUser));
+
+    /*
+     * Validate input.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(pStreamOps, VERR_INVALID_POINTER);
+
+    /*
+     * Forward the request to EMT(0).  No need to setup a rendezvous here
+     * since there is no execution taking place when this call is allowed.
+     */
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
+                              pVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, NULL, NULL,
+                              true /*fTeleporting*/, true /* fSkipStateChanges */);
+    LogFlow(("VMR3LoadFromStream: returns %Rrc\n", rc));
+    return rc;
+}
 
 /**
  * EMT rendezvous worker for VMR3PowerOff.
