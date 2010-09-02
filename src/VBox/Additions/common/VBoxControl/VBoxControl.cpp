@@ -81,6 +81,12 @@ enum VBoxControlUsage
 #ifdef VBOX_WITH_SHARED_FOLDERS
     GUEST_SHAREDFOLDERS,
 #endif
+    TAKE_SNAPSHOT,
+    SAVE_STATE,
+    SUSPEND,
+    POWER_OFF,
+    VERSION,
+    HELP,
     USAGE_ALL = UINT32_MAX
 };
 
@@ -94,21 +100,21 @@ static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
 /* Exclude the Windows bits from the test version.  Anyone who needs to test
  * them can fix this. */
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
-    if ((GET_VIDEO_ACCEL == eWhich) || (USAGE_ALL == eWhich))
+    if (GET_VIDEO_ACCEL == eWhich || eWhich == USAGE_ALL)
         doUsage("", g_pszProgName, "getvideoacceleration");
-    if ((SET_VIDEO_ACCEL == eWhich) || (USAGE_ALL == eWhich))
+    if (SET_VIDEO_ACCEL == eWhich || eWhich == USAGE_ALL)
         doUsage("<on|off>", g_pszProgName, "setvideoacceleration");
-    if ((LIST_CUST_MODES == eWhich) || (USAGE_ALL == eWhich))
+    if (LIST_CUST_MODES == eWhich || eWhich == USAGE_ALL)
         doUsage("", g_pszProgName, "listcustommodes");
-    if ((ADD_CUST_MODE == eWhich) || (USAGE_ALL == eWhich))
+    if (ADD_CUST_MODE == eWhich || eWhich == USAGE_ALL)
         doUsage("<width> <height> <bpp>", g_pszProgName, "addcustommode");
-    if ((REMOVE_CUST_MODE == eWhich) || (USAGE_ALL == eWhich))
+    if (REMOVE_CUST_MODE == eWhich || eWhich == USAGE_ALL)
         doUsage("<width> <height> <bpp>", g_pszProgName, "removecustommode");
-    if ((SET_VIDEO_MODE == eWhich) || (USAGE_ALL == eWhich))
+    if (SET_VIDEO_MODE == eWhich || eWhich == USAGE_ALL)
         doUsage("<width> <height> <bpp> <screen>", g_pszProgName, "setvideomode");
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
-    if ((GUEST_PROP == eWhich) || (USAGE_ALL == eWhich))
+    if (GUEST_PROP == eWhich || eWhich == USAGE_ALL)
     {
         doUsage("get <property> [-verbose]", g_pszProgName, "guestproperty");
         doUsage("set <property> [<value> [-flags <flags>]]", g_pszProgName, "guestproperty");
@@ -119,12 +125,26 @@ static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
     }
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
-    if ((GUEST_SHAREDFOLDERS == eWhich) || (USAGE_ALL == eWhich))
+    if (GUEST_SHAREDFOLDERS == eWhich || eWhich == USAGE_ALL)
     {
         doUsage("list [-automount]", g_pszProgName, "sharedfolder");
     }
 #endif
+
+    if (eWhich == TAKE_SNAPSHOT || eWhich == USAGE_ALL)
+        doUsage("", g_pszProgName, "takesnapshot");
+    if (eWhich == SAVE_STATE || eWhich == USAGE_ALL)
+        doUsage("", g_pszProgName, "savestate");
+    if (eWhich == SUSPEND   || eWhich == USAGE_ALL)
+        doUsage("", g_pszProgName, "suspend");
+    if (eWhich == POWER_OFF  || eWhich == USAGE_ALL)
+        doUsage("", g_pszProgName, "poweroff");
+    if (eWhich == HELP      || eWhich == USAGE_ALL)
+        doUsage("[command]", g_pszProgName, "help");
+    if (eWhich == VERSION   || eWhich == USAGE_ALL)
+        doUsage("", g_pszProgName, "version");
 }
+
 /** @} */
 
 /**
@@ -1382,6 +1402,41 @@ static RTEXITCODE handleSharedFolder(int argc, char *argv[])
 }
 #endif
 
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: takesnapshot}
+ */
+static RTEXITCODE handleTakeSnapshot(int argc, char *argv[])
+{
+    return VBoxControlError("not implemented");
+}
+
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: savestate}
+ */
+static RTEXITCODE handleSaveState(int argc, char *argv[])
+{
+    return VBoxControlError("not implemented");
+}
+
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: suspend|pause}
+ */
+static RTEXITCODE handleSuspend(int argc, char *argv[])
+{
+    return VBoxControlError("not implemented");
+}
+
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: poweroff|powerdown}
+ */
+static RTEXITCODE handlePowerOff(int argc, char *argv[])
+{
+    return VBoxControlError("not implemented");
+}
+
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: version}
+ */
 static RTEXITCODE handleVersion(int argc, char *argv[])
 {
     if (argc)
@@ -1390,6 +1445,9 @@ static RTEXITCODE handleVersion(int argc, char *argv[])
     return RTEXITCODE_SUCCESS;
 }
 
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: help}
+ */
 static RTEXITCODE handleHelp(int argc, char *argv[])
 {
     /* ignore arguments for now. */
@@ -1398,14 +1456,14 @@ static RTEXITCODE handleHelp(int argc, char *argv[])
 }
 
 /** command handler type */
-typedef DECLCALLBACK(RTEXITCODE) FNHANDLER(int argc, char *argv[]);
-typedef FNHANDLER *PFNHANDLER;
+typedef DECLCALLBACK(RTEXITCODE) FNVBOXCTRLCMDHANDLER(int argc, char *argv[]);
+typedef FNVBOXCTRLCMDHANDLER *PFNVBOXCTRLCMDHANDLER;
 
 /** The table of all registered command handlers. */
 struct COMMANDHANDLER
 {
     const char *pszCommand;
-    PFNHANDLER pfnHandler;
+    PFNVBOXCTRLCMDHANDLER pfnHandler;
 } g_aCommandHandlers[] =
 {
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
@@ -1422,6 +1480,12 @@ struct COMMANDHANDLER
 #ifdef VBOX_WITH_SHARED_FOLDERS
     { "sharedfolder",           handleSharedFolder },
 #endif
+    { "takesnapshot",           handleTakeSnapshot },
+    { "savestate",              handleSaveState },
+    { "suspend",                handleSuspend },
+    { "pause",                  handleSuspend },
+    { "poweroff",               handlePowerOff },
+    { "powerdown",              handlePowerOff },
     { "getversion",             handleVersion },
     { "version",                handleVersion },
     { "help",                   handleHelp }
