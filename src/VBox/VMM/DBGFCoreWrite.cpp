@@ -169,7 +169,7 @@ static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint6
  *
  * @return The size of the NOTE section as rounded to the file alignment.
  */
-static inline int Elf64NoteSectionSize(uint64_t cb)
+static inline uint64_t Elf64NoteSectionSize(uint64_t cb)
 {
     return sizeof(ELFNOTEHDR) + RT_ALIGN_64(cb, s_NoteAlign);
 }
