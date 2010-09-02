@@ -1091,9 +1091,8 @@ static int suspendThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
     AssertPtrReturn(pvThreadInfo, VERR_INVALID_POINTER);
     NOREF(pVBoxCore);
 
-    CORELOG((CORELOG_NAME ":suspendThread %d\n", (lwpid_t)pThreadInfo->pr_lwpid));
-
     lwpsinfo_t *pThreadInfo = (lwpsinfo_t *)pvThreadInfo;
+    CORELOG((CORELOG_NAME ":suspendThread %d\n", (lwpid_t)pThreadInfo->pr_lwpid));
     if ((lwpid_t)pThreadInfo->pr_lwpid != pVBoxCore->VBoxProc.hCurThread)
         _lwp_suspend(pThreadInfo->pr_lwpid);
     return VINF_SUCCESS;
@@ -1113,9 +1112,8 @@ static int resumeThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
     AssertPtrReturn(pvThreadInfo, VERR_INVALID_POINTER);
     NOREF(pVBoxCore);
 
-    CORELOG((CORELOG_NAME ":resumeThread %d\n", (lwpid_t)pThreadInfo->pr_lwpid));
-
     lwpsinfo_t *pThreadInfo = (lwpsinfo_t *)pvThreadInfo;
+    CORELOG((CORELOG_NAME ":resumeThread %d\n", (lwpid_t)pThreadInfo->pr_lwpid));
     if ((lwpid_t)pThreadInfo->pr_lwpid != (lwpid_t)pVBoxCore->VBoxProc.hCurThread)
         _lwp_continue(pThreadInfo->pr_lwpid);
     return VINF_SUCCESS;
