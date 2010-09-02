@@ -25,10 +25,30 @@
 #include <VBox/dbgf.h>
 #include "DBGFInternal.h"
 #include <VBox/vm.h>
+#include <VBox/pgm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <VBox/mm.h>
 
 #include "../Runtime/include/internal/ldrELF64.h"
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#ifdef DEBUG_ramshankar
+# undef Log
+# define Log LogRel
+#endif
+#define DBGFLOG_NAME           "DGBFCoreWrite"
+
+/**
+ * DBGFCOREDATA: Core data.
+ */
+typedef struct
+{
+    const char *pszDumpPath;    /* File path to dump the core into. */
+} DBGFCOREDATA, *PDBGFCOREDATA;
+
 
 /*
  * VBox VMCore Format:
@@ -65,8 +85,10 @@
  *
  * @return IPRT status code.
  */
-static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs, size_t *pcbElfHdr)
+static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs, uint64_t *pcbElfHdr)
 {
+AssertCompile(sizeof(uint32_t) == 4);
+
     Elf64_Ehdr ElfHdr;
     RT_ZERO(ElfHdr);
     ElfHdr.e_ident[EI_MAG0]  = ELFMAG0;
@@ -102,17 +124,18 @@ static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs,
  *
  * @param hFile             The file to write to.
  * @param Type              Type of program header (PT_*).
- * @param fFlags            Flags (access permissions).
+ * @param fFlags            Flags (access permissions, PF_*).
  * @param offFileData       File offset of contents.
  * @param cbFileData        Size of contents in the file.
  * @param cbMemData         Size of contents in memory.
+ * @param Phys              Physical address, pass zero if not applicable.
  * @param pcbProgHdr        Where to store the size of written header to file,
  *                          can be NULL.
  *
  * @return IPRT status code.
  */
-static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, RTFOFF offFileData, size_t cbFileData, size_t cbMemData,
-                                size_t *pcbProgHdr)
+static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint64_t offFileData, uint64_t cbFileData, uint64_t cbMemData,
+                             RTGCPHYS Phys, uint64_t *pcbProgHdr)
 {
     Elf64_Phdr ProgHdr;
     RT_ZERO(ProgHdr);
@@ -121,6 +144,7 @@ static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, RTFOF
     ProgHdr.p_offset        = offFileData;
     ProgHdr.p_filesz        = cbFileData;
     ProgHdr.p_memsz         = cbMemData;
+    ProgHdr.p_paddr         = Phys;
 
     int rc = RTFileWrite(hFile, &ProgHdr, sizeof(ProgHdr), NULL /* full write */);
     if (RT_SUCCESS(rc) && pcbProgHdr)
@@ -130,81 +154,198 @@ static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, RTFOF
 
 
 /**
- * Count the number of memory blobs that go into the core file.
+ * Elf function to write 64-bit note header.
  *
- * We cannot do a page-by-page dump of the entire guest memory as there will be
- * way too many entries. Also we don't want to dump MMIO regions which means we
- * cannot have a 1:1 mapping between core file offset and memory offset. Instead
- * we dump the memory in blobs. A memory blob is a contiguous memory area
- * suitable for dumping to a core file.
+ * @param hFile             The file to write to.
+ * @param Type              Type of this section.
+ * @param pszName           Name of this section, will be limited to 8 bytes.
+ * @param pcv               Opaque pointer to the data, if NULL only computes size.
+ * @param cb                Size of the data.
+ * @param pcbNoteHdr        Where to store the size of written header to file,
+ *                          can be NULL.
  *
- * @param pVM               The VM handle.
- * @oaram idCpu             The target CPU ID.
- *
- * @return Number of memory blobs.
+ * @return IPRT status code.
  */
-static int dbgfR3CountMemoryBlobs(PVM pVM, VMCPUID idCpu)
+static int Elf64WriteNoteHeader(RTFILE hFile, uint_t Type, const char *pszName, const void *pcv, uint64_t cb, uint64_t *pcbNoteHdr)
 {
-    /* @todo */
-    return 0;
+    AssertReturn(pcv, VERR_INVALID_POINTER);
+    AssertReturn(cb > 0, VERR_NO_DATA);
+
+    typedef struct
+    {
+        Elf64_Nhdr  Hdr;            /* 64-bit NOTE Header */
+        char        achName[8];     /* Name of NOTE section */
+    } ELFNOTEHDR;
+
+    ELFNOTEHDR ElfNoteHdr;
+    RT_ZERO(ElfNoteHdr);
+    RTStrCopy(ElfNoteHdr.achName, sizeof(ElfNoteHdr.achName) - 1, pszName);
+    ElfNoteHdr.Hdr.n_namesz = strlen(ElfNoteHdr.achName) + 1;
+    ElfNoteHdr.Hdr.n_type   = Type;
+
+    static const char s_achPad[3] = { 0, 0, 0 };
+    uint64_t cbAlign = RT_ALIGN_64(cb, 4);
+    ElfNoteHdr.Hdr.n_descsz = cbAlign;
+
+    /*
+     * Write note header and description.
+     */
+    int rc = RTFileWrite(hFile, &ElfNoteHdr, sizeof(ElfNoteHdr), NULL /* full write */);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileWrite(hFile, pcv, cb, NULL /* full write */);
+        if (RT_SUCCESS(rc))
+        {
+            if (cbAlign > cb)
+                rc = RTFileWrite(hFile, s_achPad, cbAlign - cb, NULL /* full write*/);
+        }
+    }
+
+    if (RT_FAILURE(rc))
+        LogRel((DBGFLOG_NAME ":RTFileWrite failed. rc=%Rrc pszName=%s cb=%u cbAlign=%u\n", rc, pszName, cb, cbAlign));
+
+    return rc;
 }
 
 
 /**
- * EMT worker function for DBGFR3CoreWrite.
+ * Count the number of memory ranges that go into the core file.
+ *
+ * We cannot do a page-by-page dump of the entire guest memory as there will be
+ * way too many program header entries. Also we don't want to dump MMIO regions
+ * which means we cannot have a 1:1 mapping between core file offset and memory
+ * offset. Instead we dump the memory in ranges. A memory range is a contiguous
+ * memory area suitable for dumping to a core file.
+ *
+ * @param pVM               The VM handle.
+ *
+ * @return Number of memory ranges
+ */
+static uint32_t dbgfR3GetRamRangeCount(PVM pVM)
+{
+    return PGMR3PhysGetRamRangeCount(pVM);
+}
+
+
+/**
+ * EMT Rendezvous worker function for DBGFR3CoreWrite.
  *
  * @param   pVM              The VM handle.
- * @param   idCpu            The target CPU ID.
- * @param   pszDumpPath      The full path of the file to dump into.
+ * @param   pVCpu            The handle of the calling VCPU.
+ * @param   pvData           Opaque data.
  *
  * @return VBox status code.
+ * @remarks The VM must be suspended before calling this function.
  */
-static DECLCALLBACK(int) dbgfR3CoreWrite(PVM pVM, VMCPUID idCpu, const char *pszDumpPath)
+static DECLCALLBACK(int) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *pvData)
 {
     /*
      * Validate input.
      */
-    Assert(idCpu == VMMGetCpuId(pVM));
-    AssertReturn(pszDumpPath, VERR_INVALID_POINTER);
+    AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(pVCpu, VERR_INVALID_VMCPU_HANDLE);
+    AssertReturn(pvData, VERR_INVALID_POINTER);
 
-    /*
-     * Halt the VM if it is not already halted.
-     */
-    int rc = VINF_SUCCESS;
-    if (!DBGFR3IsHalted(pVM))
-    {
-        rc = DBGFR3Halt(pVM);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
+    PDBGFCOREDATA pDbgfData = (PDBGFCOREDATA)pvData;
 
     /*
      * Collect core information.
      */
-    uint16_t cMemBlobs = dbgfR3CountMemoryBlobs(pVM, idCpu);
-    uint16_t cProgHdrs = cMemBlobs + 1;   /* One PT_NOTE Program header */
+    uint32_t u32MemRanges = dbgfR3GetRamRangeCount(pVM);
+    uint16_t cMemRanges   = u32MemRanges < UINT16_MAX - 1 ? u32MemRanges : UINT16_MAX - 1;    /* One PT_NOTE Program header */
+    uint16_t cProgHdrs    = cMemRanges + 1;
 
     /*
-     * Write the core file.
+     * Compute size of the note section.
+     */
+    uint64_t cbNoteSection = pVM->cCpus * sizeof(CPUMCTX);
+    uint64_t off = 0;
+
+    /*
+     * Create the core file.
      */
     RTFILE hFile = NIL_RTFILE;
-    rc = RTFileOpen(&hFile, pszDumpPath, RTFILE_O_CREATE | RTFILE_O_READWRITE);
+    int rc = RTFileOpen(&hFile, pDbgfData->pszDumpPath, RTFILE_O_CREATE_REPLACE | RTFILE_O_READWRITE);
     if (RT_SUCCESS(rc))
     {
-        size_t cbElfHdr = 0;
-        rc = Elf64WriteElfHdr(hFile, 0, 0 /* cSecHdrs */, &cbElfHdr);
+        /*
+         * Write ELF header.
+         */
+        uint64_t cbElfHdr = 0;
+        rc = Elf64WriteElfHdr(hFile, cProgHdrs, 0 /* cSecHdrs */, &cbElfHdr);
+        off += cbElfHdr;
         if (RT_SUCCESS(rc))
         {
+            /*
+             * Write PT_NOTE program header.
+             */
+            uint64_t cbProgHdr = 0;
+            rc = Elf64WriteProgHdr(hFile, PT_NOTE, PF_R,
+                                   cbElfHdr + cProgHdrs * sizeof(Elf64_Phdr),   /* file offset to contents */
+                                   cbNoteSection,                               /* size in core file */
+                                   cbNoteSection,                               /* size in memory */
+                                   0,                                           /* physical address */
+                                   &cbProgHdr);
+            Assert(cbProgHdr == sizeof(Elf64_Phdr));
+            off += cbProgHdr;
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Write PT_LOAD program header for each memory range.
+                 */
+                uint64_t offMemRange = off + cbNoteSection;
+                for (uint16_t iRange = 0; iRange < cMemRanges; iRange++)
+                {
+                    RTGCPHYS GCPhysStart;
+                    RTGCPHYS GCPhysEnd;
+
+                    bool fIsMmio;
+                    rc = PGMR3PhysGetRange(pVM, iRange, &GCPhysStart, &GCPhysEnd, NULL /* pszDesc */, &fIsMmio);
+                    if (RT_FAILURE(rc))
+                    {
+                        LogRel((DBGFLOG_NAME ": PGMR3PhysGetRange failed for iRange(%u) rc=%Rrc\n", iRange, rc));
+                        break;
+                    }
+
+                    uint64_t cbMemRange  = GCPhysEnd - GCPhysStart + 1;
+                    uint64_t cbFileRange = fIsMmio ? 0 : cbMemRange;
+
+                    LogRel((DBGFLOG_NAME ": PGMR3PhysGetRange iRange=%u GCPhysStart=%#x GCPhysEnd=%#x cbMemRange=%u\n",
+                            iRange, GCPhysStart, GCPhysEnd, cbMemRange));
+
+                    rc = Elf64WriteProgHdr(hFile, PT_LOAD, PF_R,
+                                           offMemRange,                         /* file offset to contents */
+                                           cbFileRange,                         /* size in core file */
+                                           cbMemRange,                          /* size in memory */
+                                           GCPhysStart,                         /* physical address */
+                                           &cbProgHdr);
+                    Assert(cbProgHdr == sizeof(Elf64_Phdr));
+                    if (RT_FAILURE(rc))
+                    {
+                        LogRel((DBGFLOG_NAME ":Elf64WriteProgHdr failed for memory range(%u) cbFileRange=%u cbMemRange=%u rc=%Rrc\n", iRange,
+                                cbFileRange, cbMemRange, rc));
+                        break;
+                    }
+
+                    offMemRange += cbFileRange;
+                }
+
+                /*
+                 * Write the CPU context note headers and data.
+                 */
+                if (RT_SUCCESS(rc))
+                {
+                    for (uint32_t iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+                    {
+                        /** @todo -XXX- cpus */
+                    }
+                }
+            }
 
         }
 
         RTFileClose(hFile);
     }
-
-    /*
-     * Resume the VM.
-     */
-    DBGFR3Resume(pVM);
 
     return rc;
 }
@@ -218,6 +359,8 @@ static DECLCALLBACK(int) dbgfR3CoreWrite(PVM pVM, VMCPUID idCpu, const char *psz
  * @param   idCpu               The target CPU ID.
  * @param   pszDumpPath         The path of the file to dump into, cannot be
  *                              NULL.
+ *
+ * @remarks The VM must be suspended before calling this function.
  */
 VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, VMCPUID idCpu, const char *pszDumpPath)
 {
@@ -226,8 +369,13 @@ VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, VMCPUID idCpu, const char *pszDumpPath)
     AssertReturn(pszDumpPath, VERR_INVALID_HANDLE);
 
     /*
-     * Pass the core write request down to EMT.
+     * Pass the core write request down to EMT rendezvous which makes sure
+     * other EMTs, if any, are not running.
      */
-    return VMR3ReqCallWaitU(pVM->pUVM, idCpu, (PFNRT)dbgfR3CoreWrite, 3, pVM, idCpu, pszDumpPath);
+    DBGFCOREDATA CoreData;
+    RT_ZERO(CoreData);
+    CoreData.pszDumpPath = pszDumpPath;
+
+    return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, dbgfR3CoreWrite, &CoreData);
 }
 
