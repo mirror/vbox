@@ -42,16 +42,16 @@ VBoxCredProv_INCS        := \
 	$(VBOX_PATH_PSDK_200702)/Include
 VBoxCredProv_LIBS.x86  := \
 	$(VBOX_PATH_PSDK_200702)/Lib/Uuid.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/Credui.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/credui.lib \
 	$(VBOX_PATH_PSDK_200702)/Lib/Secur32.Lib \
 	$(VBOX_PATH_PSDK_200702)/Lib/ShLwApi.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/netapi32.lib
+	$(VBOX_PATH_PSDK_200702)/Lib/NetAPI32.Lib
 VBoxCredProv_LIBS.amd64  := \
 	$(VBOX_PATH_PSDK_200702)/Lib/x64/Uuid.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/x64/Credui.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/x64/credui.lib \
 	$(VBOX_PATH_PSDK_200702)/Lib/x64/Secur32.Lib \
 	$(VBOX_PATH_PSDK_200702)/Lib/x64/ShLwApi.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/x64/netapi32.Lib
+	$(VBOX_PATH_PSDK_200702)/Lib/x64/NetAPI32.Lib
 
 VBoxCredProv_LIBS    += \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
