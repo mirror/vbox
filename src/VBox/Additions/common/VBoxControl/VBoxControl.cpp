@@ -895,11 +895,10 @@ int getGuestProperty(int argc, char **argv)
 
     bool fVerbose = false;
     if (   2 == argc
-        && (   RTStrICmp(argv[1], "-verbose")  == 0
-            || RTStrICmp(argv[1], "--verbose") == 0))
-    {
+        && (   strcmp(argv[1], "-verbose")  == 0
+            || strcmp(argv[1], "--verbose") == 0)
+       )
         fVerbose = true;
-    }
     else if (argc != 1)
     {
         usage(GUEST_PROP);
@@ -1006,8 +1005,8 @@ static int setGuestProperty(int argc, char *argv[])
     else if (4 == argc)
     {
         pszValue = argv[1];
-        if (   RTStrICmp(argv[2], "-flags") != 0
-            && RTStrICmp(argv[2], "--flags") != 0)
+        if (   strcmp(argv[2], "-flags") != 0
+            && strcmp(argv[2], "--flags") != 0)
             usageOK = false;
         pszFlags = argv[3];
     }
@@ -1061,8 +1060,8 @@ static int enumGuestProperty(int argc, char *argv[])
     char const * const *papszPatterns = NULL;
     uint32_t cPatterns = 0;
     if (    argc > 1
-        && (   RTStrICmp(argv[0], "-patterns") == 0
-            || RTStrICmp(argv[0], "--patterns") == 0))
+        && (   strcmp(argv[0], "-patterns") == 0
+            || strcmp(argv[0], "--patterns") == 0))
     {
         papszPatterns = (char const * const *)&argv[1];
         cPatterns = argc - 1;
@@ -1135,8 +1134,8 @@ int waitGuestProperty(int argc, char **argv)
     pszPatterns = argv[0];
     for (int i = 1; usageOK && i < argc; ++i)
     {
-        if (   RTStrICmp(argv[i], "-timeout")  == 0
-            || RTStrICmp(argv[i], "--timeout") == 0)
+        if (   strcmp(argv[i], "-timeout")  == 0
+            || strcmp(argv[i], "--timeout") == 0)
         {
             if (   i + 1 >= argc
                 || RTStrToUInt32Full(argv[i + 1], 10, &u32Timeout)
@@ -1146,8 +1145,8 @@ int waitGuestProperty(int argc, char **argv)
             else
                 ++i;
         }
-        else if (   RTStrICmp(argv[i], "-timestamp")  == 0
-                 || RTStrICmp(argv[i], "--timestamp") == 0)
+        else if (   strcmp(argv[i], "-timestamp")  == 0
+                 || strcmp(argv[i], "--timestamp") == 0)
         {
             if (   i + 1 >= argc
                 || RTStrToUInt64Full(argv[i + 1], 10, &u64TimestampIn)
@@ -1261,13 +1260,13 @@ static int handleGuestProperty(int argc, char *argv[])
         usage(GUEST_PROP);
         return 1;
     }
-    if (0 == RTStrICmp(argv[0], "get"))
+    if (0 == strcmp(argv[0], "get"))
         return getGuestProperty(argc - 1, argv + 1);
-    else if (0 == RTStrICmp(argv[0], "set"))
+    else if (0 == strcmp(argv[0], "set"))
         return setGuestProperty(argc - 1, argv + 1);
-    else if (0 == RTStrICmp(argv[0], "enumerate"))
+    else if (0 == strcmp(argv[0], "enumerate"))
         return enumGuestProperty(argc - 1, argv + 1);
-    else if (0 == RTStrICmp(argv[0], "wait"))
+    else if (0 == strcmp(argv[0], "wait"))
         return waitGuestProperty(argc - 1, argv + 1);
     /* else */
     usage(GUEST_PROP);
@@ -1285,8 +1284,8 @@ int listSharedFolders(int argc, char **argv)
     bool fOnlyShowAutoMount = false;
     if (argc == 1)
     {
-        if (   RTStrICmp(argv[0], "-automount")  == 0
-            || RTStrICmp(argv[0], "--automount") == 0
+        if (   strcmp(argv[0], "-automount")  == 0
+            || strcmp(argv[0], "--automount") == 0
            )
         {
             fOnlyShowAutoMount = true;
@@ -1357,7 +1356,7 @@ static int handleSharedFolder(int argc, char *argv[])
         usage(GUEST_SHAREDFOLDERS);
         return 1;
     }
-    if (0 == RTStrICmp(argv[0], "list"))
+    if (0 == strcmp(argv[0], "list"))
         return listSharedFolders(argc - 1, argv + 1);
     /* else */
     usage(GUEST_SHAREDFOLDERS);
@@ -1417,10 +1416,11 @@ int main(int argc, char **argv)
     bool done = false;
     while (!done && (iArg < argc))
     {
-        if (   0 == RTStrICmp(argv[iArg], "-v")
-            || 0 == RTStrICmp(argv[iArg], "--version")
-            || 0 == RTStrICmp(argv[iArg], "-version")
-            || 0 == RTStrICmp(argv[iArg], "getversion")
+        if (   0 == strcmp(argv[iArg], "-V")
+            || 0 == strcmp(argv[iArg], "-v")
+            || 0 == strcmp(argv[iArg], "--version")
+            || 0 == strcmp(argv[iArg], "-version")
+            || 0 == strcmp(argv[iArg], "getversion")
            )
             {
                 /* Print version number, and do nothing else. */
@@ -1429,11 +1429,11 @@ int main(int argc, char **argv)
                 fShowLogo = false;
                 done = true;
             }
-        else if (   0 == RTStrICmp(argv[iArg], "-nologo")
-                 || 0 == RTStrICmp(argv[iArg], "--nologo"))
+        else if (   0 == strcmp(argv[iArg], "-nologo")
+                 || 0 == strcmp(argv[iArg], "--nologo"))
             fShowLogo = false;
-        else if (   0 == RTStrICmp(argv[iArg], "-help")
-                 || 0 == RTStrICmp(argv[iArg], "--help"))
+        else if (   0 == strcmp(argv[iArg], "-help")
+                 || 0 == strcmp(argv[iArg], "--help"))
         {
             fOnlyInfo = true;
             fDoHelp = true;
@@ -1513,7 +1513,7 @@ int main(int argc, char **argv)
                    && !found
                    && (g_commandHandlers[index].command != NULL))
             {
-                if (0 == RTStrICmp(argv[iArg], g_commandHandlers[index].command))
+                if (0 == strcmp(argv[iArg], g_commandHandlers[index].command))
                     found = true;
                 else
                     ++index;
