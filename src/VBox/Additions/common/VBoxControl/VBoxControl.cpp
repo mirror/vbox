@@ -65,7 +65,7 @@ static void doUsage(char const *line, char const *name = "", char const *command
 }
 
 /** Enumerate the different parts of the usage we might want to print out */
-enum g_eUsage
+enum VBoxControlUsage
 {
 #ifdef RT_OS_WINDOWS
     GET_VIDEO_ACCEL,
@@ -84,7 +84,7 @@ enum g_eUsage
     USAGE_ALL = UINT32_MAX
 };
 
-static void usage(g_eUsage eWhich = USAGE_ALL)
+static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
 {
     RTPrintf("Usage:\n\n");
     doUsage("print version number and exit", g_pszProgName, "[-v|-version]");
@@ -130,17 +130,34 @@ static void usage(g_eUsage eWhich = USAGE_ALL)
 /**
  * Displays an error message.
  *
- * @param   pszFormat   The message text.
+ * @returns RTEXITCODE_FAILURE.
+ * @param   pszFormat   The message text. No newline.
  * @param   ...         Format arguments.
  */
-static void VBoxControlError(const char *pszFormat, ...)
+static RTEXITCODE VBoxControlError(const char *pszFormat, ...)
 {
-    // RTStrmPrintf(g_pStdErr, "%s: error: ", g_pszProgName);
-
     va_list va;
     va_start(va, pszFormat);
-    RTStrmPrintfV(g_pStdErr, pszFormat, va);
+    RTMsgErrorV(pszFormat, va);
     va_end(va);
+    return RTEXITCODE_FAILURE;
+}
+
+
+/**
+ * Displays an syntax error message.
+ *
+ * @returns RTEXITCODE_FAILURE.
+ * @param   pszFormat   The message text. No newline.
+ * @param   ...         Format arguments.
+ */
+static RTEXITCODE VBoxControlSyntaxError(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTMsgErrorV(pszFormat, va);
+    va_end(va);
+    return RTEXITCODE_FAILURE;
 }
 
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
@@ -804,7 +821,7 @@ static RTEXITCODE handleAddCustomMode(int argc, char *argv[])
             || (bpp != 24)
             || (bpp != 32)))
     {
-        VBoxControlError("Error: invalid mode specified!\n");
+        VBoxControlError("invalid mode specified!\n");
         return RTEXITCODE_FAILURE;
     }
 
@@ -1348,6 +1365,7 @@ static RTEXITCODE listSharedFolders(int argc, char **argv)
  *
  * @returns 0 on success, 1 on failure
  * @note see the command line API description for parameters
+ *      (r=bird: yeah, right. The API description contains nil about params)
  */
 static RTEXITCODE handleSharedFolder(int argc, char *argv[])
 {
@@ -1363,6 +1381,21 @@ static RTEXITCODE handleSharedFolder(int argc, char *argv[])
     return RTEXITCODE_FAILURE;
 }
 #endif
+
+static RTEXITCODE handleVersion(int argc, char *argv[])
+{
+    if (argc)
+        return VBoxControlSyntaxError("getversion does not take any arguments");
+    RTPrintf("%sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
+    return RTEXITCODE_SUCCESS;
+}
+
+static RTEXITCODE handleHelp(int argc, char *argv[])
+{
+    /* ignore arguments for now. */
+    usage();
+    return RTEXITCODE_SUCCESS;
+}
 
 /** command handler type */
 typedef DECLCALLBACK(RTEXITCODE) FNHANDLER(int argc, char *argv[]);
@@ -1389,7 +1422,9 @@ struct COMMANDHANDLER
 #ifdef VBOX_WITH_SHARED_FOLDERS
     { "sharedfolder",           handleSharedFolder },
 #endif
-    { NULL,                     NULL }  /* unnecessary terminator entry */
+    { "getversion",             handleVersion },
+    { "version",                handleVersion },
+    { "help",                   handleHelp }
 };
 
 /** Main function */
@@ -1423,7 +1458,6 @@ int main(int argc, char **argv)
             || !strcmp(argv[iArg], "-v")
             || !strcmp(argv[iArg], "--version")
             || !strcmp(argv[iArg], "-version")
-            || !strcmp(argv[iArg], "getversion")
            )
             {
                 /* Print version number, and do nothing else. */
@@ -1500,22 +1534,17 @@ int main(int argc, char **argv)
 
         if (argc > iArg)
         {
-            /** Is next parameter a known command? */
-            bool found = false;
-            /** And if so, what is its position in the table? */
-            unsigned index = 0;
-            while (   index < RT_ELEMENTS(g_aCommandHandlers)
-                   && !found
-                   && (g_aCommandHandlers[index].pszCommand != NULL))
-            {
-                if (!strcmp(argv[iArg], g_aCommandHandlers[index].pszCommand))
-                    found = true;
-                else
-                    ++index;
-            }
-            if (found)
-                rcExit = g_aCommandHandlers[index].pfnHandler(argc - iArg - 1, argv + iArg + 1);
-            else
+            /*
+             * Try locate the command and execute it, complain if not found.
+             */
+            unsigned i;
+            for (i = 0; i < RT_ELEMENTS(g_aCommandHandlers); i++)
+                if (!strcmp(argv[iArg], g_aCommandHandlers[i].pszCommand))
+                {
+                    rcExit = g_aCommandHandlers[i].pfnHandler(argc - iArg - 1, argv + iArg + 1);
+                    break;
+                }
+            if (i >= RT_ELEMENTS(g_aCommandHandlers))
             {
                 rcExit = RTEXITCODE_FAILURE;
                 usage();
