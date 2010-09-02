@@ -675,7 +675,7 @@ static DECLCALLBACK(int) ftmR3SyncDirtyPage(PVM pVM, RTGCPHYS GCPhys, uint8_t *p
         return rc;
     }
     pVM->ftm.s.StatSentMem.c += Hdr.cb + sizeof(Hdr);
-    return VINF_SUCCESS;
+    return (pVM->ftm.s.fCheckpointingActive) ? VERR_INTERRUPTED : VINF_SUCCESS;
 }
 
 /**
@@ -762,12 +762,18 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
 
             /* sync the changed memory with the standby node. */
             /* Write protect all memory. */
-            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3WriteProtectMemory, 1, pVM);
-            AssertRC(rc);
+            if (!pVM->ftm.s.fCheckpointingActive)
+            {
+                rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3WriteProtectMemory, 1, pVM);
+                AssertRC(rc);
+            }
 
             /* Enumerate all dirty pages and send them to the standby VM. */
-            rc = PGMR3PhysEnumDirtyFTPages(pVM, ftmR3SyncDirtyPage, NULL /* pvUser */);
-            AssertRC(rc);
+            if (!pVM->ftm.s.fCheckpointingActive)
+            {
+                rc = PGMR3PhysEnumDirtyFTPages(pVM, ftmR3SyncDirtyPage, NULL /* pvUser */);
+                Assert(rc == VINF_SUCCESS || rc == VERR_INTERRUPTED);
+            }
 
             /* Send last memory header to signal the end. */
             FTMTCPHDRMEM Hdr;
