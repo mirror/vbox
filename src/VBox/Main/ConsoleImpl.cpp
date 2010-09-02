@@ -7361,7 +7361,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
          */
         alock.leave();
 
-        vrc = VMR3Create(cCpus, Console::genericVMSetErrorCallback, &task->mErrorMsg,
+        vrc = VMR3Create(cCpus, NULL,
+                         Console::genericVMSetErrorCallback, &task->mErrorMsg,
                          task->mConfigConstructor, static_cast<Console *>(console),
                          &pVM);
 

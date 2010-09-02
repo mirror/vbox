@@ -71,20 +71,25 @@ AssertCompileMemberAlignment(UVMCPU, vm, 32);
 typedef struct UVM
 {
     /** Magic / eye-catcher (UVM_MAGIC). */
-    uint32_t        u32Magic;
+    uint32_t            u32Magic;
     /** The number of virtual CPUs. */
-    uint32_t        cCpus;
+    uint32_t            cCpus;
     /** The ring-3 mapping of the shared VM structure. */
-    PVM             pVM;
+    PVM                 pVM;
     /** Pointer to the next VM.
      * We keep a per process list of VM for the event that a process could
      * contain more than one VM.
      * @todo move this into vm.s!
      */
-    struct UVM     *pNext;
+    struct UVM         *pNext;
 
+    /** Pointer to the optional method table provided by the VMM user. */
+    PCVMM2USERMETHODS   pVmm2UserMethods;
+
+#if HC_ARCH_BITS == 32
     /** Align the next member on a 32 byte boundrary. */
-    uint8_t         abAlignment0[HC_ARCH_BITS == 32 ? 16 : 8];
+    uint8_t             abAlignment0[HC_ARCH_BITS == 32 ? 12 : 0];
+#endif
 
     /** The VM internal data. */
     union
