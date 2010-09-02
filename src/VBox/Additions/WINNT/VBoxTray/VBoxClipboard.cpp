@@ -153,10 +153,10 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                 if (pCtx->hwndNextInChain)
                 {
                     /* Pass the message further. */
-                    DWORD dwResult;
+                    DWORD_PTR dwResult;
                     rc = SendMessageTimeout(pCtx->hwndNextInChain, WM_CHANGECBCHAIN, wParam, lParam, 0, CBCHAIN_TIMEOUT, &dwResult);
                     if (!rc)
-                        rc = dwResult;
+                        rc = (LRESULT) dwResult;
                 }
             }
         } break;
