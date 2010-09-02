@@ -574,7 +574,7 @@ int main(int argc, char *argv[])
     RTR3InitAndSUPLib();
 
     PVM pVM;
-    rc = VMR3Create(1, NULL, NULL, NULL, NULL, &pVM);
+    rc = VMR3Create(1, NULL, NULL, NULL, NULL, NULL, &pVM);
     if (RT_SUCCESS(rc))
     {
         /*

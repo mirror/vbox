@@ -27,7 +27,9 @@
 #include <VBox/iom.h>
 #include <VBox/rem.h>
 #include <VBox/dbgf.h>
+#include <VBox/vmapi.h>
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 #include <VBox/vmm.h>
 
 #include <VBox/version.h>
@@ -2813,6 +2815,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns)
     LogFlow(("pdmR3DevHlp_VMSuspend: caller='%s'/%d:\n",
              pDevIns->pReg->szName, pDevIns->iInstance));
 
+    /** @todo Always take the SMP path - fewer code paths. */
     if (pVM->cCpus > 1)
     {
         /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */
@@ -2828,18 +2831,64 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns)
 }
 
 
+/**
+ * Worker for pdmR3DevHlp_VMSuspendSaveAndPowerOff that is invoked via a queued
+ * EMT request to avoid deadlocks.
+ *
+ * @returns VBox status code fit for scheduling.
+ * @param   pVM                 The VM handle.
+ * @param   pDevIns             The device that triggered this action.
+ */
+static DECLCALLBACK(int) pdmR3DevHlp_VMSuspendSaveAndPowerOffWorker(PVM pVM, PPDMDEVINS pDevIns)
+{
+    /*
+     * Suspend the VM first then do the saving.
+     */
+    int rc = VMR3Suspend(pVM);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pVM->pUVM->pVmm2UserMethods->pfnSaveState(pVM->pUVM->pVmm2UserMethods, pVM);
+
+        /*
+         * On success, power off the VM, on failure we'll leave it suspended.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            rc = VMR3PowerOff(pVM);
+            if (RT_FAILURE(rc))
+                LogRel(("%s/SSP: VMR3PowerOff failed: %Rrc\n", pDevIns->pReg->szName, rc));
+        }
+        else
+            LogRel(("%s/SSP: pfnSaveState failed: %Rrc\n", pDevIns->pReg->szName, rc));
+    }
+    else
+        LogRel(("%s/SSP: Suspend failed: %Rrc\n", pDevIns->pReg->szName, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnVMSuspendSaveAndPowerOff} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMSuspendSaveAndPowerOff(PPDMDEVINS pDevIns)
 {
-    int rc;
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_VMSuspendSaveAndPowerOff: caller='%s'/%d:\n",
              pDevIns->pReg->szName, pDevIns->iInstance));
 
-    /** @todo We'll have to queue a request to avoid deadlock issues. */
-    rc = VERR_NOT_IMPLEMENTED;
+    int rc;
+    if (   pVM->pUVM->pVmm2UserMethods
+        && pVM->pUVM->pVmm2UserMethods->pfnSaveState)
+    {
+        rc = VMR3ReqCallNoWaitU(pVM->pUVM, VMCPUID_ANY_QUEUE, (PFNRT)pdmR3DevHlp_VMSuspendSaveAndPowerOffWorker, 2, pVM, pDevIns);
+        if (RT_SUCCESS(rc))
+        {
+            LogRel(("%s: Suspending, Saving and Powering Off the VM\n", pDevIns->pReg->szName));
+            rc = VINF_EM_SUSPEND;
+        }
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlow(("pdmR3DevHlp_VMSuspendSaveAndPowerOff: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -2856,6 +2905,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
     LogFlow(("pdmR3DevHlp_VMPowerOff: caller='%s'/%d:\n",
              pDevIns->pReg->szName, pDevIns->iInstance));
 
+    /** @todo Always take the SMP path - fewer code paths. */
     if (pVM->cCpus > 1)
     {
         /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */

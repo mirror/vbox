@@ -118,22 +118,22 @@ static PVMATDTOR    g_pVMAtDtorHead = NULL;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int               vmR3CreateUVM(uint32_t cCpus, PUVM *ppUVM);
-static int               vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
-static int               vmR3InitRing3(PVM pVM, PUVM pUVM);
-static int               vmR3InitVMCpu(PVM pVM);
-static int               vmR3InitRing0(PVM pVM);
-static int               vmR3InitGC(PVM pVM);
-static int               vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
+static int                  vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUVM *ppUVM);
+static int                  vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
+static int                  vmR3InitRing3(PVM pVM, PUVM pUVM);
+static int                  vmR3InitVMCpu(PVM pVM);
+static int                  vmR3InitRing0(PVM pVM);
+static int                  vmR3InitGC(PVM pVM);
+static int                  vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
-static void              vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
-static void              vmR3AtDtor(PVM pVM);
-static bool              vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew);
-static void              vmR3DoAtState(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
-static int               vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, ...);
-static void              vmR3SetStateLocked(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
-static void              vmR3SetState(PVM pVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
-static int               vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
+static void                 vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
+static void                 vmR3AtDtor(PVM pVM);
+static bool                 vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew);
+static void                 vmR3DoAtState(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
+static int                  vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, ...);
+static void                 vmR3SetStateLocked(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
+static void                 vmR3SetState(PVM pVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
+static int                  vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
 
 
 /**
@@ -168,6 +168,9 @@ VMMR3DECL(int)   VMR3GlobalInit(void)
  * @returns 0 on success.
  * @returns VBox error code on failure.
  * @param   cCpus               Number of virtual CPUs for the new VM.
+ * @param   pVmm2UserMethods    An optional method table that the VMM can use to
+ *                              make the user perform various action, like for
+ *                              instance state saving.
  * @param   pfnVMAtError        Pointer to callback function for setting VM
  *                              errors. This was added as an implicit call to
  *                              VMR3AtErrorRegister() since there is no way the
@@ -180,10 +183,25 @@ VMMR3DECL(int)   VMR3GlobalInit(void)
  * @param   pvUserCFGM          The user argument passed to pfnCFGMConstructor.
  * @param   ppVM                Where to store the 'handle' of the created VM.
  */
-VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM, PVM *ppVM)
+VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
+                            PFNVMATERROR pfnVMAtError, void *pvUserVM,
+                            PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM,
+                            PVM *ppVM)
 {
-    LogFlow(("VMR3Create: cCpus=%RU32 pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p\n",
-             cCpus, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM));
+    LogFlow(("VMR3Create: cCpus=%RU32 pVmm2UserMethods=%p pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p\n",
+             cCpus, pVmm2UserMethods, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM));
+
+    if (pVmm2UserMethods)
+    {
+        AssertPtrReturn(pVmm2UserMethods, VERR_INVALID_POINTER);
+        AssertReturn(pVmm2UserMethods->u32Magic    == VMM2USERMETHODS_MAGIC,   VERR_INVALID_PARAMETER);
+        AssertReturn(pVmm2UserMethods->u32Version  == VMM2USERMETHODS_VERSION, VERR_INVALID_PARAMETER);
+        AssertPtrReturn(pVmm2UserMethods->pfnSaveState, VERR_INVALID_POINTER);
+        AssertReturn(pVmm2UserMethods->u32EndMagic == VMM2USERMETHODS_MAGIC,   VERR_INVALID_PARAMETER);
+    }
+    AssertPtrNullReturn(pfnVMAtError, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnCFGMConstructor, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppVM, VERR_INVALID_POINTER);
 
     /*
      * Because of the current hackiness of the applications
@@ -209,7 +227,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PFNVMATERROR pfnVMAtError, void *pvU
      * and consoliate a bit of cleanup code.
      */
     PUVM pUVM = NULL;                   /* shuts up gcc */
-    int rc = vmR3CreateUVM(cCpus, &pUVM);
+    int rc = vmR3CreateUVM(cCpus, pVmm2UserMethods, &pUVM);
     if (RT_FAILURE(rc))
         return rc;
     if (pfnVMAtError)
@@ -416,10 +434,12 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PFNVMATERROR pfnVMAtError, void *pvU
  * will terminate that.
  *
  * @returns VBox status code.
- * @param   cCpus   Number of virtual CPUs
- * @param   ppUVM   Where to store the UVM pointer.
+ * @param   cCpus               Number of virtual CPUs
+ * @param   pVmm2UserMethods    Pointer to the optional VMM -> User method
+ *                              table.
+ * @param   ppUVM               Where to store the UVM pointer.
  */
-static int vmR3CreateUVM(uint32_t cCpus, PUVM *ppUVM)
+static int vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUVM *ppUVM)
 {
     uint32_t i;
 
@@ -428,8 +448,9 @@ static int vmR3CreateUVM(uint32_t cCpus, PUVM *ppUVM)
      */
     PUVM pUVM = (PUVM)RTMemPageAllocZ(RT_OFFSETOF(UVM, aCpus[cCpus]));
     AssertReturn(pUVM, VERR_NO_MEMORY);
-    pUVM->u32Magic = UVM_MAGIC;
-    pUVM->cCpus = cCpus;
+    pUVM->u32Magic          = UVM_MAGIC;
+    pUVM->cCpus             = cCpus;
+    pUVM->pVmm2UserMethods  = pVmm2UserMethods;
 
     AssertCompile(sizeof(pUVM->vm.s) <= sizeof(pUVM->vm.padding));
 

@@ -718,6 +718,10 @@ typedef VBOXTSS *PVBOXTSS;
 typedef const VBOXTSS *PCVBOXTSS;
 
 
+/** Pointer to a callback method table provided by the VM API user. */
+typedef struct VMM2USERMETHODS const *PCVMM2USERMETHODS;
+
+
 /**
  * Data transport buffer (scatter/gather)
  */

@@ -249,7 +249,7 @@ int main(int argc, char **argv)
      */
     RTPrintf(TESTCASE ": Initializing...\n");
     PVM pVM;
-    rc = VMR3Create(g_cCpus, NULL, NULL, tstVMMConfigConstructor, NULL, &pVM);
+    rc = VMR3Create(g_cCpus, NULL, NULL, NULL, tstVMMConfigConstructor, NULL, &pVM);
     if (RT_SUCCESS(rc))
     {
         PDMR3LdrEnumModules(pVM, tstVMMLdrEnum, NULL);

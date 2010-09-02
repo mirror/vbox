@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
      */
     RTPrintf(TESTCASE ": Initializing...\n");
     PVM pVM;
-    int rc = VMR3Create(1, NULL, NULL, NULL, NULL, &pVM);
+    int rc = VMR3Create(1, NULL, NULL, NULL, NULL, NULL, &pVM);
     if (RT_SUCCESS(rc))
     {
         /*

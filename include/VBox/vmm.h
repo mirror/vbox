@@ -138,6 +138,38 @@ typedef DECLCALLBACK(VBOXSTRICTRC) FNVMMEMTRENDEZVOUS(PVM pVM, PVMCPU pVCpu, voi
 /** Pointer to a rendezvous callback function. */
 typedef FNVMMEMTRENDEZVOUS *PFNVMMEMTRENDEZVOUS;
 
+/**
+ * Method table that the VMM uses to call back the user of the VMM.
+ */
+typedef struct VMM2USERMETHODS
+{
+    /** Magic value (VMM2USERMETHODS_MAGIC). */
+    uint32_t    u32Magic;
+    /** Structure version (VMM2USERMETHODS_VERSION). */
+    uint32_t    u32Version;
+
+    /**
+     * Save the VM state.
+     *
+     * @returns VBox status code.
+     * @param   pThis       Pointer to the callback method table.
+     * @param   pVM         The VM handle.
+     *
+     * @remarks This member shall be set to NULL if the operation is not
+     *          supported.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSaveState,(PCVMM2USERMETHODS pThis, PVM pVM));
+    /** @todo Move pfnVMAtError and pfnCFGMConstructor here? */
+
+    /** Magic value (VMM2USERMETHODS_MAGIC) marking the end of the structure. */
+    uint32_t    u32EndMagic;
+} VMM2USERMETHODS;
+
+/** Magic value of the VMM2USERMETHODS (Franz Kafka). */
+#define VMM2USERMETHODS_MAGIC         UINT32_C(0x18830703)
+/** The VMM2USERMETHODS structure version. */
+#define VMM2USERMETHODS_VERSION       UINT32_C(0x00010000)
+
 
 VMMDECL(RTRCPTR)     VMMGetStackRC(PVMCPU pVCpu);
 VMMDECL(VMCPUID)     VMMGetCpuId(PVM pVM);

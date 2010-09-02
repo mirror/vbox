@@ -1063,7 +1063,14 @@ static int acpiSleep(ACPIState *pThis)
     if (pThis->fSuspendToSavedState)
     {
         rc = PDMDevHlpVMSuspendSaveAndPowerOff(pThis->pDevIns);
-        AssertRC(rc);
+        if (rc != VERR_NOT_SUPPORTED)
+            AssertRC(rc);
+        else
+        {
+            LogRel(("ACPI: PDMDevHlpVMSuspendSaveAndPowerOff is not supported, falling back to suspend-only\n"));
+            rc = PDMDevHlpVMSuspend(pThis->pDevIns);
+            AssertRC(rc);
+        }
     }
     else
     {
