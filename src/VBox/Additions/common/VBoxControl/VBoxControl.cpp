@@ -1407,6 +1407,7 @@ static RTEXITCODE handleSharedFolder(int argc, char *argv[])
  */
 static RTEXITCODE handleTakeSnapshot(int argc, char *argv[])
 {
+    //VbglR3VmTakeSnapshot(argv[0], argv[1]);
     return VBoxControlError("not implemented");
 }
 
@@ -1415,6 +1416,7 @@ static RTEXITCODE handleTakeSnapshot(int argc, char *argv[])
  */
 static RTEXITCODE handleSaveState(int argc, char *argv[])
 {
+    //VbglR3VmSaveState();
     return VBoxControlError("not implemented");
 }
 
@@ -1423,6 +1425,7 @@ static RTEXITCODE handleSaveState(int argc, char *argv[])
  */
 static RTEXITCODE handleSuspend(int argc, char *argv[])
 {
+    //VbglR3VmSuspend();
     return VBoxControlError("not implemented");
 }
 
@@ -1431,6 +1434,7 @@ static RTEXITCODE handleSuspend(int argc, char *argv[])
  */
 static RTEXITCODE handlePowerOff(int argc, char *argv[])
 {
+    //VbglR3VmPowerOff();
     return VBoxControlError("not implemented");
 }
 
@@ -1523,13 +1527,13 @@ int main(int argc, char **argv)
             || !strcmp(argv[iArg], "--version")
             || !strcmp(argv[iArg], "-version")
            )
-            {
-                /* Print version number, and do nothing else. */
-                RTPrintf("%sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
-                fOnlyInfo = true;
-                fShowLogo = false;
-                done = true;
-            }
+        {
+            /* Print version number, and do nothing else. */
+            RTPrintf("%sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
+            fOnlyInfo = true;
+            fShowLogo = false;
+            done = true;
+        }
         else if (   !strcmp(argv[iArg], "-nologo")
                  || !strcmp(argv[iArg], "--nologo"))
             fShowLogo = false;
