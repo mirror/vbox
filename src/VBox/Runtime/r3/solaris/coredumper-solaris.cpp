@@ -1091,8 +1091,9 @@ static int suspendThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
     AssertPtrReturn(pvThreadInfo, VERR_INVALID_POINTER);
     NOREF(pVBoxCore);
 
+    CORELOG((CORELOG_NAME ":suspendThread %d\n", (lwpid_t)pThreadInfo->pr_lwpid));
+
     lwpsinfo_t *pThreadInfo = (lwpsinfo_t *)pvThreadInfo;
-    CORELOGRELSYS((CORELOG_NAME ":suspendThread %d\n", (lwpid_t)pThreadInfo->pr_lwpid));
     if ((lwpid_t)pThreadInfo->pr_lwpid != pVBoxCore->VBoxProc.hCurThread)
         _lwp_suspend(pThreadInfo->pr_lwpid);
     return VINF_SUCCESS;
@@ -1111,6 +1112,8 @@ static int resumeThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
 {
     AssertPtrReturn(pvThreadInfo, VERR_INVALID_POINTER);
     NOREF(pVBoxCore);
+
+    CORELOG((CORELOG_NAME ":resumeThread %d\n", (lwpid_t)pThreadInfo->pr_lwpid));
 
     lwpsinfo_t *pThreadInfo = (lwpsinfo_t *)pvThreadInfo;
     if ((lwpid_t)pThreadInfo->pr_lwpid != (lwpid_t)pVBoxCore->VBoxProc.hCurThread)
@@ -1371,16 +1374,26 @@ static int ElfWriteNoteHeader(PVBOXCORE pVBoxCore, uint_t Type, const void *pcv,
     ElfNoteHdr.achName[1] = 'O';
     ElfNoteHdr.achName[2] = 'R';
     ElfNoteHdr.achName[3] = 'E';
+
+    static const char s_achPad[3] = { 0, 0, 0 };
+    size_t cbAlign = RT_ALIGN_Z(cb, 4);
     ElfNoteHdr.Hdr.n_namesz = 5;
     ElfNoteHdr.Hdr.n_type = Type;
-    ElfNoteHdr.Hdr.n_descsz = RT_ALIGN_Z(cb, 4);
+    ElfNoteHdr.Hdr.n_descsz = cbAlign;
 
     /*
      * Write note header and description.
      */
     rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, &ElfNoteHdr, sizeof(ElfNoteHdr));
     if (RT_SUCCESS(rc))
-       rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, pcv, ElfNoteHdr.Hdr.n_descsz);
+    {
+       rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, pcv, cb);
+       if (RT_SUCCESS(rc))
+       {
+           if (cbAlign > cb)
+               rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, s_achPad, cbAlign - cb);
+       }
+    }
 
     if (RT_FAILURE(rc))
         CORELOGRELSYS((CORELOG_NAME "ElfWriteNote: pfnWriter failed. Type=%d rc=%Rrc\n", Type, rc));
