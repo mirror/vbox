@@ -81,7 +81,7 @@ typedef struct
 typedef struct
 {
     Elf64_Nhdr  Hdr;            /* 64-bit NOTE Header */
-    char        achName[8];    /* Name of NOTE section */
+    char        achName[8];     /* Name of NOTE section */
 } ELFNOTEHDR;
 
 
