@@ -3101,6 +3101,15 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnVMSuspend,(PPDMDEVINS pDevIns));
 
     /**
+     * Suspends, saves and powers off the VM.
+     *
+     * @returns The appropriate VBox status code to pass around.
+     * @param   pDevIns             The device instance.
+     * @thread  An emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVMSuspendSaveAndPowerOff,(PPDMDEVINS pDevIns));
+
+    /**
      * Power off the VM.
      *
      * @returns The appropriate VBox status code to pass around on power off.
@@ -4398,6 +4407,14 @@ DECLINLINE(int) PDMDevHlpVMReset(PPDMDEVINS pDevIns)
 DECLINLINE(int) PDMDevHlpVMSuspend(PPDMDEVINS pDevIns)
 {
     return pDevIns->pHlpR3->pfnVMSuspend(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnVMSuspendSaveAndPowerOff
+ */
+DECLINLINE(int) PDMDevHlpVMSuspendSaveAndPowerOff(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pHlpR3->pfnVMSuspendSaveAndPowerOff(pDevIns);
 }
 
 /**
