@@ -28,6 +28,7 @@
 #include <VBox/ssm.h>
 #include <VBox/log.h>
 #include <VBox/pgm.h>
+#include <VBox/pdm.h>
 
 #include <iprt/assert.h>
 #include <iprt/thread.h>
@@ -589,6 +590,7 @@ static SSMSTRMOPS const g_ftmR3TcpOps =
     SSMSTRMOPS_VERSION
 };
 
+
 /**
  * VMR3ReqCallWait callback
  *
@@ -601,83 +603,53 @@ static DECLCALLBACK(void) ftmR3WriteProtectMemory(PVM pVM)
     AssertRC(rc);
 }
 
+
 /**
- * Sync the VM state partially or fully
+ * Sync the VM state
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
- * @param   enmState    Which state to sync
  */
-static int ftmR3PerformSync(PVM pVM, FTMSYNCSTATE enmState)
+static int ftmR3PerformFullSync(PVM pVM)
 {
-    int rc;
-    bool fFullSync = false;
+    bool fSuspended = false;
 
-    if (enmState != FTMSYNCSTATE_DELTA_MEMORY)
-    {
-        rc = VMR3Suspend(pVM);
-        AssertRCReturn(rc, rc);
-        /** Hack alert as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
-        if (VM_IS_EMT(pVM))
-            EMR3NotifySuspend(pVM);
-    }
+    int rc = VMR3Suspend(pVM);
+    AssertRCReturn(rc, rc);
 
-    switch (enmState)
-    {
-    case FTMSYNCSTATE_FULL:
-        fFullSync = true;
-        /* no break */
-    case FTMSYNCSTATE_DELTA_VM:
-    {
-        bool fSuspended = false;
+    STAM_REL_COUNTER_INC(&pVM->ftm.s.StatFullSync);
 
-        STAM_REL_COUNTER_INC((fFullSync) ? &pVM->ftm.s.StatFullSync : &pVM->ftm.s.StatDeltaVM);
+    RTSocketRetain(pVM->ftm.s.hSocket); /* For concurrent access by I/O thread and EMT. */
 
-        RTSocketRetain(pVM->ftm.s.hSocket); /* For concurrent access by I/O thread and EMT. */
+    /* Reset the sync state. */
+    pVM->ftm.s.syncstate.uOffStream   = 0;
+    pVM->ftm.s.syncstate.cbReadBlock  = 0;
+    pVM->ftm.s.syncstate.fStopReading = false;
+    pVM->ftm.s.syncstate.fIOError     = false;
+    pVM->ftm.s.syncstate.fEndOfStream = false;
 
-        /* Reset the sync state. */
-        pVM->ftm.s.syncstate.uOffStream   = 0;
-        pVM->ftm.s.syncstate.cbReadBlock  = 0;
-        pVM->ftm.s.syncstate.fStopReading = false;
-        pVM->ftm.s.syncstate.fIOError     = false;
-        pVM->ftm.s.syncstate.fEndOfStream = false;
+    rc = ftmR3TcpSubmitCommand(pVM, "full-sync");
+    AssertRC(rc);
 
-        rc = ftmR3TcpSubmitCommand(pVM, (fFullSync) ? "full-sync" : "checkpoint");
-        AssertRC(rc);
+    pVM->ftm.s.fDeltaLoadSaveActive = false;
+    rc = VMR3SaveFT(pVM, &g_ftmR3TcpOps, pVM, &fSuspended, false /* fSkipStateChanges */);
+    AssertRC(rc);
 
-        pVM->ftm.s.fDeltaLoadSaveActive = (fFullSync == false);
-        rc = VMR3SaveFT(pVM, &g_ftmR3TcpOps, pVM, &fSuspended);
-        pVM->ftm.s.fDeltaLoadSaveActive = false;
-        AssertRC(rc);
+    rc = ftmR3TcpReadACK(pVM, "full-sync-complete");
+    AssertRC(rc);
 
-        rc = ftmR3TcpReadACK(pVM, (fFullSync) ? "full-sync-complete" : "checkpoint-complete");
-        AssertRC(rc);
-
-        RTSocketRelease(pVM->ftm.s.hSocket);
-        break;
-    }
-
-    case FTMSYNCSTATE_DELTA_MEMORY:
-        /* Nothing to do as we sync the memory in an async thread; no need to block EMT. */
-        STAM_REL_COUNTER_INC(&pVM->ftm.s.StatDeltaMem);
-        break;
-    }
+    RTSocketRelease(pVM->ftm.s.hSocket);
 
     /* Write protect all memory. */
     rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3WriteProtectMemory, 1, pVM);
     AssertRCReturn(rc, rc);
 
-    if (enmState != FTMSYNCSTATE_DELTA_MEMORY)
-    {
-        rc = VMR3Resume(pVM);
-        AssertRCReturn(rc, rc);
+    rc = VMR3Resume(pVM);
+    AssertRC(rc);
 
-        /** Hack alert as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
-        if (VM_IS_EMT(pVM))
-            EMR3NotifyResume(pVM);
-    }
-    return VINF_SUCCESS;
+    return rc;
 }
+
 
 /**
  * PGMR3PhysEnumDirtyFTPages callback for syncing dirty physical pages
@@ -772,7 +744,7 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
      * we can send changed pages later on.
      */
 
-    rc = ftmR3PerformSync(pVM, FTMSYNCSTATE_FULL);
+    rc = ftmR3PerformFullSync(pVM);
 
     for (;;)
     {
@@ -789,7 +761,9 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
             AssertRC(rc);
 
             /* sync the changed memory with the standby node. */
-            rc = ftmR3PerformSync(pVM, FTMSYNCSTATE_DELTA_MEMORY);
+            /* Write protect all memory. */
+            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3WriteProtectMemory, 1, pVM);
+            AssertRC(rc);
 
             /* Enumerate all dirty pages and send them to the standby VM. */
             rc = PGMR3PhysEnumDirtyFTPages(pVM, ftmR3SyncDirtyPage, NULL /* pvUser */);
@@ -1089,6 +1063,68 @@ VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
     return RTTcpServerShutdown(pVM->ftm.s.standby.hServer);
 }
 
+/**
+ * Rendezvous callback used by FTMR3SetCheckpoint
+ * Sync state + changed memory with the standby node.
+ *
+ * This is only called on one of the EMTs while the other ones are waiting for
+ * it to complete this function.
+ *
+ * @returns VINF_SUCCESS (VBox strict status code).
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
+ * @param   pvUser      User parameter
+ */
+static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+    bool fSuspended = false;
+
+    /** We don't call VMR3Suspend here to avoid the overhead of state changes and notifications. This 
+     *  is only a short suspend.
+     */
+    PDMR3Suspend(pVM);
+
+    /** Hack alert: as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
+    EMR3NotifySuspend(pVM);
+
+    STAM_REL_COUNTER_INC(&pVM->ftm.s.StatDeltaVM);
+
+    RTSocketRetain(pVM->ftm.s.hSocket); /* For concurrent access by I/O thread and EMT. */
+
+    /* Reset the sync state. */
+    pVM->ftm.s.syncstate.uOffStream   = 0;
+    pVM->ftm.s.syncstate.cbReadBlock  = 0;
+    pVM->ftm.s.syncstate.fStopReading = false;
+    pVM->ftm.s.syncstate.fIOError     = false;
+    pVM->ftm.s.syncstate.fEndOfStream = false;
+
+    rc = ftmR3TcpSubmitCommand(pVM, "checkpoint");
+    AssertRC(rc);
+
+    pVM->ftm.s.fDeltaLoadSaveActive = true;
+    rc = VMR3SaveFT(pVM, &g_ftmR3TcpOps, pVM, &fSuspended, true /* fSkipStateChanges */);
+    pVM->ftm.s.fDeltaLoadSaveActive = false;
+    AssertRC(rc);
+
+    rc = ftmR3TcpReadACK(pVM, "checkpoint-complete");
+    AssertRC(rc);
+
+    RTSocketRelease(pVM->ftm.s.hSocket);
+
+    /* Write protect all memory. */
+    rc = PGMR3PhysWriteProtectRAM(pVM);
+    AssertRC(rc);
+
+    /** We don't call VMR3Resume here to avoid the overhead of state changes and notifications. This 
+     *  is only a short suspend.
+     */
+    PDMR3Resume(pVM);
+
+    /** Hack alert as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
+    EMR3NotifyResume(pVM);
+    return rc;
+}
 
 /**
  * Performs a full sync to the standby node
@@ -1146,8 +1182,7 @@ VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
 
     STAM_PROFILE_START(&pVM->ftm.s.StatCheckpoint, a);
 
-    /* Sync state + changed memory with the standby node. */
-    rc = ftmR3PerformSync(pVM, FTMSYNCSTATE_DELTA_VM);
+    rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, ftmR3SetCheckpointRendezvous, NULL);
 
     STAM_PROFILE_STOP(&pVM->ftm.s.StatCheckpoint, a);
 
