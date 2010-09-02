@@ -33,7 +33,7 @@ VBOX_PATH_PSDK_200702    := \
 tstCredentialProvider_INCS        := \
 	$(VBOX_PATH_PSDK_200702)/Include
 tstCredentialProvider_LIBS.x86  := \
-	$(VBOX_PATH_PSDK_200702)/Lib/Credui.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/credui.lib \
 	$(VBOX_PATH_PSDK_200702)/Lib/Secur32.Lib
 tstCredentialProvider_LIBS.amd64  := \
 	$(VBOX_PATH_PSDK_200702)/Lib/x64/Credui.Lib \
