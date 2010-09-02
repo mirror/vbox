@@ -93,15 +93,15 @@ static DECLCALLBACK(int) pgmR3PhysReadExternalEMT(PVM pVM, PRTGCPHYS pGCPhys, vo
 
 
 /**
- * Write to physical memory, external users.
+ * Read from physical memory, external users.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS.
  *
  * @param   pVM             VM Handle.
- * @param   GCPhys          Physical address to write to.
- * @param   pvBuf           What to write.
- * @param   cbWrite         How many bytes to write.
+ * @param   GCPhys          Physical address to read from.
+ * @param   pvBuf           Where to read into.
+ * @param   cbRead          How many bytes to read.
  *
  * @thread  Any but EMTs.
  */
@@ -1127,6 +1127,63 @@ VMMR3DECL(int) PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pfnEnum
     pgmUnlock(pVM);
     return rc;
 }
+
+
+/**
+ * Gets the number of ram ranges.
+ *
+ * @returns Number of ram ranges.  Returns UINT32_MAX if @a pVM is invalid.
+ * @param   pVM             The VM handle.
+ */
+VMMR3DECL(uint32_t) PGMR3PhysGetRamRangeCount(PVM pVM)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT32_MAX);
+
+    pgmLock(pVM);
+    uint32_t cRamRanges = 0;
+    for (PPGMRAMRANGE pCur = pVM->pgm.s.CTX_SUFF(pRamRanges); pCur; pCur = pCur->CTX_SUFF(pNext))
+        cRamRanges++;
+    pgmUnlock(pVM);
+    return cRamRanges;
+}
+
+
+/**
+ * Get information about a range.
+ *
+ * @returns VINF_SUCCESS or VERR_OUT_OF_RANGE.
+ * @param   pVM             The VM handle
+ * @param   iRange          The ordinal of the range.
+ * @param   pGCPhysStart    Where to return the start of the range. Optional.
+ * @param   pGCPhysLast     Where to return the address of the last byte in the
+ *                          range. Optional.
+ * @param   pfIsMmio        Where to indicate that this is a pure MMIO range.
+ *                          Optional.
+ */
+VMMR3DECL(int) PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStart, PRTGCPHYS pGCPhysLast,
+                                 const char **ppszDesc, bool *pfIsMmio)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    pgmLock(pVM);
+    uint32_t iCurRange = 0;
+    for (PPGMRAMRANGE pCur = pVM->pgm.s.CTX_SUFF(pRamRanges); pCur; pCur = pCur->CTX_SUFF(pNext), iCurRange++)
+        if (iCurRange == iRange)
+        {
+            if (pGCPhysStart)
+                *pGCPhysStart = pCur->GCPhys;
+            if (pGCPhysLast)
+                *pGCPhysLast = pCur->GCPhysLast;
+            if (pfIsMmio)
+                *pfIsMmio = !!(pCur->fFlags & PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO);
+
+            pgmUnlock(pVM);
+            return VINF_SUCCESS;
+        }
+    pgmUnlock(pVM);
+    return VERR_OUT_OF_RANGE;
+}
+
 
 /**
  * Query the amount of free memory inside VMMR0
