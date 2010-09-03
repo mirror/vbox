@@ -282,6 +282,7 @@ static DECLCALLBACK(int) drvTAPNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
         uint8_t const  *pbFrame = (uint8_t const *)pSgBuf->aSegs[0].pvSeg;
         PCPDMNETWORKGSO pGso    = (PCPDMNETWORKGSO)pSgBuf->pvUser;
         uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, pSgBuf->cbUsed);  Assert(cSegs > 1);
+        rc = VINF_SUCCESS;
         for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
         {
             uint32_t cbSegFrame;
