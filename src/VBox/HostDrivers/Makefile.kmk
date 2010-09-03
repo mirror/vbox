@@ -55,7 +55,7 @@ if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
   HostDrivers-dkms-sh_INST    = bin/src/
   HostDrivers-dkms-sh_MODE    = a+rx,u+w
   HostDrivers-dkms-sh_SOURCES = $(PATH_HostDrivers-dkms-sh)/do_dkms
-  HostDrivers-dkms-sh_CLEAN   = $(PATH_HostDrviers-dkms-sh)/do_dkms
+  HostDrivers-dkms-sh_CLEAN   = $(PATH_HostDrivers-dkms-sh)/do_dkms
 
   INSTALLS += HostDrivers-dkms-src
   HostDrivers-dkms-src_INST    = bin/src/
