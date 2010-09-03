@@ -181,6 +181,9 @@ $(addprefix $$(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_H)): \
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(CP_EXT) $< $@
 
+OTHER_CLEAN += \
+	$(addprefix $(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_CPP)) \
+	$(addprefix $(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_H))
 
 
 endif # !VBOX_WITH_HARDENING || !darwin
