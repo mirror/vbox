@@ -120,7 +120,7 @@ static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs,
     ElfHdr.e_phentsize       = sizeof(Elf64_Phdr);
     ElfHdr.e_shentsize       = sizeof(Elf64_Shdr);
 
-    int rc = RTFileWrite(hFile, &ElfHdr, sizeof(ElfHdr), NULL /* full write */);
+    int rc = RTFileWrite(hFile, &ElfHdr, sizeof(ElfHdr), NULL /* all */);
     if (RT_SUCCESS(rc) && pcbElfHdr)
         *pcbElfHdr = sizeof(ElfHdr);
     return rc;
@@ -154,7 +154,7 @@ static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint6
     ProgHdr.p_memsz         = cbMemData;
     ProgHdr.p_paddr         = Phys;
 
-    int rc = RTFileWrite(hFile, &ProgHdr, sizeof(ProgHdr), NULL /* full write */);
+    int rc = RTFileWrite(hFile, &ProgHdr, sizeof(ProgHdr), NULL /* all */);
     if (RT_SUCCESS(rc) && pcbProgHdr)
         *pcbProgHdr = sizeof(ProgHdr);
     return rc;
@@ -220,13 +220,13 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
     /*
      * Write note header.
      */
-    int rc = RTFileWrite(hFile, &ElfNoteHdr, sizeof(ElfNoteHdr), NULL /* full write */);
+    int rc = RTFileWrite(hFile, &ElfNoteHdr, sizeof(ElfNoteHdr), NULL /* all */);
     if (RT_SUCCESS(rc))
     {
         /*
          * Write note name.
          */
-        rc = RTFileWrite(hFile, szNoteName, cbName, NULL /* full write */);
+        rc = RTFileWrite(hFile, szNoteName, cbName, NULL /* all */);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -240,14 +240,14 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
                 /*
                  * Write note data.
                  */
-                rc = RTFileWrite(hFile, pcvData, cbData, NULL /* full write */);
+                rc = RTFileWrite(hFile, pcvData, cbData, NULL /* all */);
                 if (RT_SUCCESS(rc))
                 {
                     /*
                      * Write note data padding if required.
                      */
                     if (cbDataAlign > cbData)
-                        rc = RTFileWrite(hFile, s_achPad, cbDataAlign - cbData, NULL /* full write*/);
+                        rc = RTFileWrite(hFile, s_achPad, cbDataAlign - cbData, NULL /* all*/);
                 }
             }
         }
@@ -386,15 +386,78 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
                  */
                 if (RT_SUCCESS(rc))
                 {
-                    for (uint32_t i = 0; i < pVM->cCpus; i++)
+                    for (uint32_t iCpu = 0; iCpu < pVM->cCpus; iCpu++)
                     {
-                        PCPUMCTX pCpuCtx = &pVM->aCpus[i].cpum.s.Guest;
+                        PCPUMCTX pCpuCtx = &pVM->aCpus[iCpu].cpum.s.Guest;
                         rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, s_pcszCoreVBoxCpu, pCpuCtx, sizeof(CPUMCTX), NULL /* pcbNoteHdr */);
                         if (RT_FAILURE(rc))
                         {
-                            LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", i, rc));
+                            LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", iCpu, rc));
                             break;
                         }
+                    }
+                }
+
+                /*
+                 * Write memory ranges.
+                 */
+                if (RT_SUCCESS(rc))
+                {
+                    for (uint16_t iRange = 0; iRange < cMemRanges; iRange++)
+                    {
+                        RTGCPHYS GCPhysStart;
+                        RTGCPHYS GCPhysEnd;
+                        bool fIsMmio;
+                        rc = PGMR3PhysGetRange(pVM, iRange, &GCPhysStart, &GCPhysEnd, NULL /* pszDesc */, &fIsMmio);
+                        if (RT_FAILURE(rc))
+                        {
+                            LogRel((DBGFLOG_NAME ":PGMR3PhysGetRange(2) failed for iRange(%u) rc=%Rrc\n", iRange, rc));
+                            break;
+                        }
+
+                        if (fIsMmio)
+                            continue;
+
+                        /*
+                         * Write page-by-page of this memory range.
+                         */
+                        uint64_t cbMemRange  = GCPhysEnd - GCPhysStart + 1;
+                        uint64_t cbFileRange = fIsMmio ? 0 : cbMemRange;
+                        uint64_t cPages = cbMemRange >> PAGE_SHIFT;
+                        for (uint64_t iPage = 0; iPage < cPages; iPage++)
+                        {
+                            const int cbBuf = PAGE_SIZE;
+                            void *pvBuf     = MMR3HeapAlloc(pVM, MM_TAG_DBGF_CORE_WRITE, cbBuf);
+                            if (RT_UNLIKELY(!pvBuf))
+                            {
+                                LogRel((DBGFLOG_NAME ":MMR3HeapAlloc failed. iRange=%u iPage=%u\n", iRange, iPage));
+                                break;
+                            }
+
+                            rc = PGMPhysRead(pVM, GCPhysStart, pvBuf, cbBuf);
+                            if (RT_FAILURE(rc))
+                            {
+                                /*
+                                 * For some reason this failed, write out a zero page instead.
+                                 */
+                                LogRel((DBGFLOG_NAME ":PGMPhysRead failed for iRange=%u iPage=%u. rc=%Rrc. Ignoring...\n", iRange,
+                                        iPage, rc));
+                                memset(pvBuf, 0, cbBuf);
+                            }
+
+                            rc = RTFileWrite(hFile, pvBuf, cbBuf, NULL /* all */);
+                            if (RT_FAILURE(rc))
+                            {
+                                LogRel((DBGFLOG_NAME ":RTFileWrite failed. iRange=%u iPage=%u rc=%Rrc\n", iRange, iPage, rc));
+                                MMR3HeapFree(pvBuf);
+                                break;
+                            }
+
+                            MMR3HeapFree(pvBuf);
+                        }
+
+                        if (RT_FAILURE(rc))
+                            break;
                     }
                 }
             }
