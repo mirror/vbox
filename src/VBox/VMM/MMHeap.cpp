@@ -130,7 +130,7 @@ void mmR3HeapDestroy(PMMHEAP pHeap)
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   cbSize      Size of the block.
  */
 VMMR3DECL(void *) MMR3HeapAllocU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
@@ -154,7 +154,7 @@ VMMR3DECL(void *) MMR3HeapAllocU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
  * @param   pVM         VM handle.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   cbSize      Size of the block.
  */
 VMMR3DECL(void *) MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize)
@@ -170,7 +170,7 @@ VMMR3DECL(void *) MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize)
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   cbSize      Size of the block.
  * @param   ppv         Where to store the pointer to the allocated memory on success.
  */
@@ -194,7 +194,7 @@ VMMR3DECL(int) MMR3HeapAllocExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **p
  * @param   pVM         VM handle.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   cbSize      Size of the block.
  * @param   ppv         Where to store the pointer to the allocated memory on success.
  */
@@ -217,7 +217,7 @@ VMMR3DECL(int) MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   cbSize      Size of the block.
  */
 VMMR3DECL(void *) MMR3HeapAllocZU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
@@ -233,7 +233,7 @@ VMMR3DECL(void *) MMR3HeapAllocZU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
  * @param   pVM         VM handle.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   cbSize      Size of the block.
  */
 VMMR3DECL(void *) MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize)
@@ -249,7 +249,7 @@ VMMR3DECL(void *) MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize)
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   cbSize      Size of the block.
  * @param   ppv         Where to store the pointer to the allocated memory on success.
  */
@@ -273,7 +273,7 @@ VMMR3DECL(int) MMR3HeapAllocZExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **
  * @param   pVM         VM handle.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   cbSize      Size of the block.
  * @param   ppv         Where to store the pointer to the allocated memory on success.
  */
@@ -296,7 +296,7 @@ VMMR3DECL(int) MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv
  * @param   pHeap       Heap handle.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   cbSize      Size of the block.
  * @param   fZero       Whether or not to zero the memory block.
  */
@@ -517,7 +517,7 @@ VMMR3DECL(void *) MMR3HeapRealloc(void *pv, size_t cbNewSize)
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   psz         The string to duplicate. NULL is allowed.
  */
 VMMR3DECL(char *) MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz)
@@ -542,7 +542,7 @@ VMMR3DECL(char *) MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz)
  * @param   pVM         The VM handle.
  * @param   enmTag      Statistics tag. Statistics are collected on a per tag
  *                      basis in addition to a global one. Thus we can easily
- *                      identify how memory is used by the VM.
+ *                      identify how memory is used by the VM. See MM_TAG_*.
  * @param   psz         The string to duplicate. NULL is allowed.
  */
 VMMR3DECL(char *) MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz)
