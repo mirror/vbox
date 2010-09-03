@@ -1822,7 +1822,7 @@ $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
 		$(VBOX_XIDL_FILE_SRC) \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(filter %.xidl,$^))
-	$(VBOX_XSLTPROC) -o $@ $< $(filter %.xidl,$^)
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(filter %.xidl,$^)
 
 
 if "$(KBUILD_TARGET)" == "freebsd"
