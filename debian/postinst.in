@@ -132,33 +132,44 @@ if [ "$1" = "configure" ]; then
     fi
 
     BUILD_MODULES=0
+    REGISTER_MODULES=1
     # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
-    if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko -a "$INSTALL_NO_VBOXDRV" != "1" ]; then
-      db_get virtualbox/module-compilation-allowed
-      if [ "$RET" = "false" ]; then
-        cat << EOF
+    if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
+      REGISTER_MODULES=0
+      if [ "$INSTALL_NO_VBOXDRV" != "1" ]; then
+        db_get virtualbox/module-compilation-allowed
+        if [ "$RET" = "false" ]; then
+          cat << EOF
 Unable to find a precompiled module for the current kernel
 though module compilation denied by debconf setting.
 EOF
-      else
-        db_input low virtualbox/module-compilation-allowed || true
-        db_go || true
-        db_get virtualbox/module-compilation-allowed
-        if [ "$RET" = "true" ]; then
-          BUILD_MODULES=1
+        else
+          db_input low virtualbox/module-compilation-allowed || true
+          db_go || true
+          db_get virtualbox/module-compilation-allowed
+          if [ "$RET" = "true" ]; then
+            BUILD_MODULES=1
+          fi
         fi
       fi
     fi
 
-    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-      if [ $BUILD_MODULES -eq 1 ]; then
+    if [ $BUILD_MODULES -eq 1 ]; then
+      if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
         invoke-rc.d vboxdrv setup || true
       else
-        invoke-rc.d vboxdrv start || exit $?
+        /etc/init.d/vboxdrv setup || true
       fi
     else
-      if [ $BUILD_MODULES -eq 1 ]; then
-        /etc/init.d/vboxdrv setup || true
+      # shipped modules found, register sources at DKMS anyway
+      if [ $REGISTER_MODULES -eq 1 ]; then
+        DKMS=`which dkms 2>/dev/null`
+        if [ -n "$DKMS" ]; then
+          $DKMS add -m vboxhost -v %VER% > /dev/null 2>&1 || true
+        fi
+      fi
+      if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+        invoke-rc.d vboxdrv start || exit $?
       else
         /etc/init.d/vboxdrv start || exit $?
       fi
