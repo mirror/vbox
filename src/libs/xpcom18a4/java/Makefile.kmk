@@ -112,6 +112,7 @@ VBoxJXpcom-inst-jar_BLDDIRS += $(VBOX_JXPCOM_GEN)/java $(VBOX_JXPCOM_GEN)/java/g
 # For VBoxJXpcom, not currently used.
 #
 $(VBOX_JXPCOM_GENH): $$(VBOX_JXPCOM_JAR)
+	$(call MSG_L1,Generating $@ from $<)
 	$(QUIET)$(VBOX_JAVAH) -classpath $(VBOX_JXPCOM_JDEST) -d $(VBOX_JXPCOM_JDEST) \
 		org.mozilla.xpcom.internal.XPCOMImpl \
 		org.mozilla.xpcom.internal.GREImpl \
@@ -124,7 +125,8 @@ $(VBOX_JXPCOM_GENH): $$(VBOX_JXPCOM_JAR)
 # Generate error constants.
 #
 $(VBOX_JXPCOM_NSERROR): $(VBOX_PATH_XPCOM_SRC)/xpcom/base/nsError.h $(VBOX_JXPCOM_SRC)/tools/gen-nsError.pl | $(VBOX_JXPCOM_GEN)/java/
-	perl $(VBOX_JXPCOM_SRC)/tools/gen-nsError.pl < $< > $@
+	$(call MSG_L1,Generating $@)
+	$(QUIET)perl $(VBOX_JXPCOM_SRC)/tools/gen-nsError.pl < $< > $@
 
 ifndef VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 #
@@ -136,7 +138,7 @@ $(VBOX_JXPCOM_GEN)/jxpcomgen.list: \
                $(VBOX_FILESPLIT)   \
                $(VBOX_JXPCOM_SRC)/tools/genjifaces.xsl \
                | $(VBOX_JXPCOM_GEN)/java/interfaces/
-	$(QUIET)echo Generating Java interface files
+	$(call MSG_L1,Generating Java interface files)
 	$(QUIET)$(RM) -f $(wildcard $(VBOX_JXPCOM_GEN)/java/interfaces/*.java)
 	$(QUIET)$(VBOX_XSLTPROC)   \
               -o $(VBOX_JXPCOM_GEN)/java/interfaces/merged.file $(VBOX_JXPCOM_SRC)/tools/genjifaces.xsl $<
