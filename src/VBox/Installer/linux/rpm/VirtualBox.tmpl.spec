@@ -266,14 +266,18 @@ fi
 
 # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
 BUILD_MODULES=0
-if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko -a "$INSTALL_NO_VBOXDRV" != "1" ]; then
-  # compile problem
-  cat << EOF
+REGISTER_MODULES=1
+if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
+  REGISTER_MODULES=0
+  if [ "$INSTALL_NO_VBOXDRV" != "1" ]; then
+    # compile problem
+    cat << EOF
 No precompiled module for this kernel found -- trying to build one. Messages
 emitted during module compilation will be logged to $LOG.
 
 EOF
-  BUILD_MODULES=1
+    BUILD_MODULES=1
+  fi
 fi
 # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
 if [ "$INSTALL_NO_VBOXDRV" = "1" ]; then
@@ -287,6 +291,12 @@ fi
 if [ $BUILD_MODULES -eq 1 ]; then
   /etc/init.d/vboxdrv setup || true
 else
+  if [ $REGISTER_MODULES -eq 1 ]; then
+    DKMS=`which dkms 2>/dev/null`
+    if [ -n "$DKMS" ]; then
+      $DKMS remove -m vboxhost -v %VER% --all > /dev/null 2>&1 || true
+    fi
+  fi
   /etc/init.d/vboxdrv start > /dev/null
 fi
 /etc/init.d/vboxweb-service start > /dev/null
