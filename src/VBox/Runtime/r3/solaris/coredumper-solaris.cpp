@@ -1373,6 +1373,10 @@ static int ElfWriteNoteHeader(PVBOXCORE pVBoxCore, uint_t Type, const void *pcv,
     ElfNoteHdr.achName[2] = 'R';
     ElfNoteHdr.achName[3] = 'E';
 
+    /*
+     * This is a known violation of the 64-bit ELF spec., see xTracker #5211 comment#3
+     * for the historic reasons as to the padding and namesz anomalies.
+     */
     static const char s_achPad[3] = { 0, 0, 0 };
     size_t cbAlign = RT_ALIGN_Z(cb, 4);
     ElfNoteHdr.Hdr.n_namesz = 5;
