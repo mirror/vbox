@@ -78,32 +78,41 @@
 #ifdef VBOX_PYXPCOM
 // unfortunatelly, if SOLARIS is defined Python porting layer 
 // defines gethostname() in invalid fashion what kills compilation
-#ifdef SOLARIS
-#undef SOLARIS
-#define SOLARIS_WAS_DEFINED
-#endif
+# ifdef SOLARIS
+#  undef SOLARIS
+#  define SOLARIS_WAS_DEFINED
+# endif
+
+// Python.h/pyconfig.h redefines _XOPEN_SOURCE on some hosts
+# ifdef _XOPEN_SOURCE
+#  define VBOX_XOPEN_SOURCE_DEFINED _XOPEN_SOURCE
+#  undef _XOPEN_SOURCE
+# endif
+
+#endif /* VBOX_PYXPCOM */
 
 #include <Python.h>
-
-#ifdef SOLARIS_WAS_DEFINED
-#define SOLARIS
-#undef SOLARIS_WAS_DEFINED
-#endif
 
 #ifdef VBOX_PYXPCOM
-#if (PY_VERSION_HEX <= 0x02040000)
-// although in more recent versions of Python this type is ssize_t, earlier 
+
+# ifdef SOLARIS_WAS_DEFINED
+#  define SOLARIS
+#  undef SOLARIS_WAS_DEFINED
+# endif
+
+// restore the old value of _XOPEN_SOURCE if not defined by Python.h/pyconfig.h
+# if !defined(_XOPEN_SOURCE) && defined(VBOX_XOPEN_SOURCE_DEFINED)
+#  define _XOPEN_SOURCE VBOX_XOPEN_SOURCE_DEFINED
+# endif
+# undef VBOX_XOPEN_SOURCE_DEFINED
+
+# if (PY_VERSION_HEX <= 0x02040000)
+// although in more recent versions of Python this type is ssize_t, earlier
 // it was used as int
 typedef int Py_ssize_t;
-#endif
+# endif
 
-#else
-
-#include <Python.h>
-
-#endif
-
-#if (PY_VERSION_HEX <= 0x02030000)
+# if (PY_VERSION_HEX <= 0x02030000)
 // this one not defined before
 inline PyObject *PyBool_FromLong(long ok)
 {
@@ -115,9 +124,9 @@ inline PyObject *PyBool_FromLong(long ok)
    Py_INCREF(result);
    return result;
 }
-#endif
+# endif
 
-#endif
+#endif /* VBOX_PYXPCOM */
 
 #ifdef BUILD_PYXPCOM
     /* We are building the main dll */

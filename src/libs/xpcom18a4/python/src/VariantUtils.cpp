@@ -365,7 +365,9 @@ PRBool FillSingleArray(void *array_ptr, PyObject *sequence_ob, PRUint32 sequence
 			return PR_FALSE;
 		memcpy(pthis, PyString_AS_STRING(sequence_ob), sequence_size);
 		if (release_seq)
+                {
 			Py_DECREF(sequence_ob);
+                }
 		return PR_TRUE;
 	}
 
