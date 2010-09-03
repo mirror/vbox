@@ -68,7 +68,12 @@
 #endif
 #define DBGFLOG_NAME           "DGBFCoreWrite"
 
-static const int s_NoteAlign = 4;
+/*
+ * For now use Solaris-specific padding and namesz length (i.e. includes NULL terminator)
+ */
+static const int s_NoteAlign  = 4;      /* @todo see #5211 comment 3 */
+static const int s_cbNoteName = 16;
+static const char *s_pcszCoreVBoxCpu = "VBOXCPU";
 
 /**
  * DBGFCOREDATA: Core data.
@@ -77,12 +82,6 @@ typedef struct
 {
     const char *pszDumpPath;    /* File path to dump the core into. */
 } DBGFCOREDATA, *PDBGFCOREDATA;
-
-typedef struct
-{
-    Elf64_Nhdr  Hdr;            /* 64-bit NOTE Header */
-    char        achName[8];     /* Name of NOTE section */
-} ELFNOTEHDR;
 
 
 /**
@@ -163,15 +162,23 @@ static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint6
 
 
 /**
- * Returns the size of the NOTE section given the size of the data.
+ * Returns the size of the NOTE section given the name and size of the data.
  *
- * @param cb                Size of the data part of the NOTE.
+ * @param pszName           Name of the note section.
+ * @param cb                Size of the data portion of the note section.
  *
  * @return The size of the NOTE section as rounded to the file alignment.
  */
-static inline uint64_t Elf64NoteSectionSize(uint64_t cb)
+static inline uint64_t Elf64NoteSectionSize(const char *pszName, uint64_t cbData)
 {
-    return sizeof(ELFNOTEHDR) + RT_ALIGN_64(cb, s_NoteAlign);
+    uint64_t cbNote = sizeof(Elf64_Nhdr);
+
+    size_t cbName = strlen(pszName) + 1;
+    size_t cbNameAlign = RT_ALIGN_Z(cbName, s_NoteAlign);
+
+    cbNote += cbNameAlign;
+    cbNote += RT_ALIGN_64(cbData, s_NoteAlign);
+    return cbNote;
 }
 
 
@@ -180,49 +187,74 @@ static inline uint64_t Elf64NoteSectionSize(uint64_t cb)
  *
  * @param hFile             The file to write to.
  * @param Type              Type of this section.
- * @param pszName           Name of this section, will be limited to 16 bytes.
+ * @param pszName           Name of this section.
  * @param pcv               Opaque pointer to the data, if NULL only computes size.
- * @param cb                Size of the data.
+ * @param cbData            Size of the data.
  * @param pcbNoteHdr        Where to store the size of written header to file,
  *                          can be NULL.
  *
  * @return IPRT status code.
  */
-static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, const void *pcv, uint64_t cb, uint64_t *pcbNoteHdr)
+static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, const void *pcvData, uint64_t cbData, uint64_t *pcbNoteHdr)
 {
-    AssertReturn(pcv, VERR_INVALID_POINTER);
-    AssertReturn(cb > 0, VERR_NO_DATA);
+    AssertReturn(pcvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData > 0, VERR_NO_DATA);
 
-    ELFNOTEHDR ElfNoteHdr;
-    RT_ZERO(ElfNoteHdr);
-    RTStrCopy(ElfNoteHdr.achName, sizeof(ElfNoteHdr.achName), pszName);
-    ElfNoteHdr.Hdr.n_namesz = (Elf64_Word)strlen(ElfNoteHdr.achName);
-    ElfNoteHdr.Hdr.n_type   = Type;
-    size_t cbNameAlign = RT_ALIGN_Z(ElfNoteHdr.Hdr.n_namesz, 8);
+    char szNoteName[s_cbNoteName];
+    RT_ZERO(szNoteName);
+    RTStrCopy(szNoteName, sizeof(szNoteName), pszName);
+
+    size_t cbName        = strlen(szNoteName) + 1;
+    size_t cbNameAlign   = RT_ALIGN_Z(cbName, s_NoteAlign);
+    uint64_t cbDataAlign = RT_ALIGN_64(cbData, s_NoteAlign);
 
     static const char s_achPad[7] = { 0, 0, 0, 0, 0, 0, 0 };
-    uint64_t cbAlign = RT_ALIGN_64(cb, s_NoteAlign);
-    ElfNoteHdr.Hdr.n_descsz = (Elf64_Word)cbAlign;
+    AssertCompile(sizeof(s_achPad) >= s_NoteAlign - 1);
+
+    Elf64_Nhdr ElfNoteHdr;
+    RT_ZERO(ElfNoteHdr);
+    ElfNoteHdr.n_namesz = (Elf64_Word)cbName;   /* @todo fix this later to NOT include NULL terminator */
+    ElfNoteHdr.n_type   = Type;
+    ElfNoteHdr.n_descsz = (Elf64_Word)cbDataAlign;
 
     /*
-     * Write note header and description.
+     * Write note header.
      */
     int rc = RTFileWrite(hFile, &ElfNoteHdr, sizeof(ElfNoteHdr), NULL /* full write */);
     if (RT_SUCCESS(rc))
     {
-        if (cbNameAlign > ElfNoteHdr.Hdr.n_namesz)
-            rc = RTFileWrite(hFile, s_achPad, cbNameAlign - ElfNoteHdr.Hdr.n_namesz, NULL);
-
-        rc = RTFileWrite(hFile, pcv, cb, NULL /* full write */);
+        /*
+         * Write note name.
+         */
+        rc = RTFileWrite(hFile, szNoteName, cbName, NULL /* full write */);
         if (RT_SUCCESS(rc))
         {
-            if (cbAlign > cb)
-                rc = RTFileWrite(hFile, s_achPad, cbAlign - cb, NULL /* full write*/);
+            /*
+             * Write note name padding if required.
+             */
+            if (cbNameAlign > cbName)
+                rc = RTFileWrite(hFile, s_achPad, cbNameAlign - cbName, NULL);
+
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Write note data.
+                 */
+                rc = RTFileWrite(hFile, pcvData, cbData, NULL /* full write */);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Write note data padding if required.
+                     */
+                    if (cbDataAlign > cbData)
+                        rc = RTFileWrite(hFile, s_achPad, cbDataAlign - cbData, NULL /* full write*/);
+                }
+            }
         }
     }
 
     if (RT_FAILURE(rc))
-        LogRel((DBGFLOG_NAME ":RTFileWrite failed. rc=%Rrc pszName=%s cb=%u cbAlign=%u\n", rc, pszName, cb, cbAlign));
+        LogRel((DBGFLOG_NAME ":RTFileWrite failed. rc=%Rrc pszName=%s cbData=%u cbDataAlign=%u\n", rc, pszName, cbData, cbDataAlign));
 
     return rc;
 }
@@ -277,7 +309,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     /*
      * Compute size of the note section.
      */
-    uint64_t cbNoteSection = Elf64NoteSectionSize(pVM->cCpus * sizeof(CPUMCTX));
+    uint64_t cbNoteSection = pVM->cCpus * Elf64NoteSectionSize(s_pcszCoreVBoxCpu, sizeof(CPUMCTX));
     uint64_t off = 0;
 
     /*
@@ -357,7 +389,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
                     for (uint32_t i = 0; i < pVM->cCpus; i++)
                     {
                         PCPUMCTX pCpuCtx = &pVM->aCpus[i].cpum.s.Guest;
-                        rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, "VBOXCPU", pCpuCtx, sizeof(CPUMCTX), NULL /* pcbNoteHdr */);
+                        rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, s_pcszCoreVBoxCpu, pCpuCtx, sizeof(CPUMCTX), NULL /* pcbNoteHdr */);
                         if (RT_FAILURE(rc))
                         {
                             LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", i, rc));
