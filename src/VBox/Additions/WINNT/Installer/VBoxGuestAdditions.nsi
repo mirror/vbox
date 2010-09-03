@@ -53,71 +53,81 @@ VIAddVersionKey "InternalName" "${PRODUCT_OUTPUT}"
   !include "x64.nsh"
 !endif
 
-; Use modern UI (MUI)
-!include "MUI.nsh"
+; Set Modern UI (MUI) as default
+!define USE_MUI
 
-; MUI Settings
-!define MUI_WELCOMEFINISHPAGE_BITMAP "$%VBOX_BRAND_WIN_ADD_INST_DLGBMP%"
-!define MUI_ABORTWARNING
-!define MUI_WELCOMEPAGE_TITLE_3LINES "Welcome to the ${PRODUCT_NAME} Additions Setup"
+!ifdef USE_MUI
+  ; Use modern UI, version 2
+  !include "MUI2.nsh"
 
-; API defines
-!define SM_CLEANBOOT 67
+  ; MUI Settings
+  !define MUI_WELCOMEFINISHPAGE_BITMAP "$%VBOX_BRAND_WIN_ADD_INST_DLGBMP%"
+  !define MUI_ABORTWARNING
+  !define MUI_WELCOMEPAGE_TITLE_3LINES "Welcome to the ${PRODUCT_NAME} Additions Setup"
 
-; Icons
-!if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
-  !define MUI_ICON "$%VBOX_NSIS_ICON_FILE%"
-  !define MUI_UNICON "$%VBOX_NSIS_ICON_FILE%"
-!else   ; 64-bit
-  !define MUI_ICON "$%VBOX_WINDOWS_ADDITIONS_ICON_FILE%"
-  !define MUI_UNICON "$%VBOX_WINDOWS_ADDITIONS_ICON_FILE%"
+  ; API defines
+  !define SM_CLEANBOOT 67
+
+  ; Icons
+  !if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
+    !define MUI_ICON "$%VBOX_NSIS_ICON_FILE%"
+    !define MUI_UNICON "$%VBOX_NSIS_ICON_FILE%"
+  !else   ; 64-bit
+    !define MUI_ICON "$%VBOX_WINDOWS_ADDITIONS_ICON_FILE%"
+    !define MUI_UNICON "$%VBOX_WINDOWS_ADDITIONS_ICON_FILE%"
+  !endif
+
+  ; Welcome page
+  !insertmacro MUI_PAGE_WELCOME
+  ; License page
+  !insertmacro MUI_PAGE_LICENSE "$(VBOX_LICENSE)"
+  !define MUI_LICENSEPAGE_RADIOBUTTONS
+  ; Directory page
+  !insertmacro MUI_PAGE_DIRECTORY
+  ; Components Page
+  !insertmacro MUI_PAGE_COMPONENTS
+  ; Instfiles page
+  !insertmacro MUI_PAGE_INSTFILES
+
+  !ifndef _DEBUG
+    !define MUI_FINISHPAGE_TITLE_3LINES   ; Have a bit more vertical space for text
+    !insertmacro MUI_PAGE_FINISH          ; Only show in release mode - useful information for debugging!
+  !endif
+
+  ; Uninstaller pages
+  !insertmacro MUI_UNPAGE_INSTFILES
+
+  ; Define languages we will use
+  !insertmacro MUI_LANGUAGE "English"
+  !insertmacro MUI_LANGUAGE "French"
+  !insertmacro MUI_LANGUAGE "German"
+
+  ; Set branding text which appears on the horizontal line at the bottom
+  BrandingText "VirtualBox Windows Additions"
+
+  ; Set license language
+  LicenseLangString VBOX_LICENSE ${LANG_ENGLISH} "$%VBOX_BRAND_LICENSE_RTF%"
+
+  ; If license files not available (OSE / PUEL) build, then use the English one as default.
+  !ifdef VBOX_BRAND_fr_FR_LICENSE_RTF
+    LicenseLangString VBOX_LICENSE ${LANG_FRENCH} "$%VBOX_BRAND_fr_FR_LICENSE_RTF%"
+  !else
+    LicenseLangString VBOX_LICENSE ${LANG_FRENCH} "$%VBOX_BRAND_LICENSE_RTF%"
+  !endif
+  !ifdef VBOX_BRAND_de_DE_LICENSE_RTF
+    LicenseLangString VBOX_LICENSE ${LANG_GERMAN} "$%VBOX_BRAND_de_DE_LICENSE_RTF%"
+  !else
+    LicenseLangString VBOX_LICENSE ${LANG_GERMAN} "$%VBOX_BRAND_LICENSE_RTF%"
+  !endif
+
+  !insertmacro MUI_RESERVEFILE_LANGDLL
+!else ; !USE_MUI
+    XPStyle on
+    Page license
+    Page components
+    Page directory
+    Page instfiles
 !endif
-
-; Welcome page
-!insertmacro MUI_PAGE_WELCOME
-; License page
-!insertmacro MUI_PAGE_LICENSE "$(VBOX_LICENSE)"
-!define MUI_LICENSEPAGE_RADIOBUTTONS
-; Directory page
-!insertmacro MUI_PAGE_DIRECTORY
-; Components Page
-!insertmacro MUI_PAGE_COMPONENTS
-; Instfiles page
-!insertmacro MUI_PAGE_INSTFILES
-
-!ifndef _DEBUG
-  !define MUI_FINISHPAGE_TITLE_3LINES   ; Have a bit more vertical space for text
-  !insertmacro MUI_PAGE_FINISH          ; Only show in release mode - useful information for debugging!
-!endif
-
-; Uninstaller pages
-!insertmacro MUI_UNPAGE_INSTFILES
-
-; Define languages we will use
-!insertmacro MUI_LANGUAGE "English"
-!insertmacro MUI_LANGUAGE "French"
-!insertmacro MUI_LANGUAGE "German"
-
-; Set branding text which appears on the horizontal line at the bottom
-BrandingText "VirtualBox Windows Additions"
-
-; Set license language
-LicenseLangString VBOX_LICENSE ${LANG_ENGLISH} "$%VBOX_BRAND_LICENSE_RTF%"
-
-; If license files not available (OSE / PUEL) build, then use the English one as default.
-!ifdef VBOX_BRAND_fr_FR_LICENSE_RTF
- LicenseLangString VBOX_LICENSE ${LANG_FRENCH} "$%VBOX_BRAND_fr_FR_LICENSE_RTF%"
-!else
- LicenseLangString VBOX_LICENSE ${LANG_FRENCH} "$%VBOX_BRAND_LICENSE_RTF%"
-!endif
-!ifdef VBOX_BRAND_de_DE_LICENSE_RTF
- LicenseLangString VBOX_LICENSE ${LANG_GERMAN} "$%VBOX_BRAND_de_DE_LICENSE_RTF%"
-!else
- LicenseLangString VBOX_LICENSE ${LANG_GERMAN} "$%VBOX_BRAND_LICENSE_RTF%"
-!endif
-
-!insertmacro MUI_RESERVEFILE_LANGDLL
-; MUI end ------
 
 ; Language files
 !include "Languages\English.nsh"
@@ -819,14 +829,16 @@ exit:
 SectionEnd
 !endif ; VBOX_WITH_CROGL
 
-;Assign language strings to sections
-!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} $(VBOX_COMPONENT_MAIN_DESC)
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC02} $(VBOX_COMPONENT_AUTOLOGON_DESC)
-!if $%VBOX_WITH_CROGL% == "1"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC03} $(VBOX_COMPONENT_D3D_DESC)
-!endif
-!insertmacro MUI_FUNCTION_DESCRIPTION_END
+!ifdef USE_MUI
+  ;Assign language strings to sections
+  !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+    !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} $(VBOX_COMPONENT_MAIN_DESC)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SEC02} $(VBOX_COMPONENT_AUTOLOGON_DESC)
+  !if $%VBOX_WITH_CROGL% == "1"
+    !insertmacro MUI_DESCRIPTION_TEXT ${SEC03} $(VBOX_COMPONENT_D3D_DESC)
+  !endif
+  !insertmacro MUI_FUNCTION_DESCRIPTION_END
+!endif ; USE_MUI
 
 Section -Content
 
@@ -869,6 +881,29 @@ Section -Post
   DetailPrint "Installation completed."
 
 SectionEnd
+
+; !!! NOTE: This function *has* to be right under the last section; otherwise it does
+;           *not* get called! Don't ask me why ... !!!
+Function .onSelChange
+
+  Push $0
+
+  ; Section: D3D
+  SectionGetFlags ${SEC03} $0
+
+  ${If} $0 == ${SF_SELECTED}
+    ; If we're not in safe mode, print a warning and don't install D3D support
+    ${If} $g_iSystemMode == '0'
+        IntOp $0 $0 & ${SECTION_OFF} ; Unselect section again
+        SectionSetFlags ${SEC03} $0
+        MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_NO_SM) /SD IDOK
+        Return
+    ${EndIf}
+  ${EndIf}
+
+  Pop $0
+
+FunctionEnd
 
 ; This function is called when a critical error occured
 Function .onInstFailed
@@ -949,10 +984,12 @@ Function .onInit
   ${EndIf}
 !endif
 
+!ifdef USE_MUI
   ; Display language selection dialog (will be hidden in silent mode!)
   !ifdef VBOX_INSTALLER_ADD_LANGUAGES
     !insertmacro MUI_LANGDLL_DISPLAY
   !endif
+!endif
 
   ; Do some checks before we actually start ...
   Call IsUserAdmin
@@ -1057,27 +1094,6 @@ proceed:
 
   ; Retrieve Windows version we're running on and store it in $g_strWinVersion
   Call un.GetWindowsVer
-
-FunctionEnd
-
-Function .onSelChange
-
-  Push $0
-
-  ; Section: D3D
-  SectionGetFlags ${SEC03} $0
-
-  ${If} $0 == ${SF_SELECTED}
-    ; If we're not in safe mode, print a warning and don't install D3D support
-    ${If} $g_iSystemMode == '0'
-        IntOp $0 $0 & ${SECTION_OFF} ; Unselect section again
-        SectionSetFlags ${SEC03} $0
-        MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_NO_SM) /SD IDOK
-        Return
-    ${EndIf}
-  ${EndIf}
-
-  Pop $0
 
 FunctionEnd
 
