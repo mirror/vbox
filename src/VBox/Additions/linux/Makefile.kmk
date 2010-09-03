@@ -196,7 +196,7 @@ VBOX_LNX_ADD_DBG_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_DBG_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD))
 
 # Cleanup of the the installer directory files
-OTHER_CLEAN += $(VBOX_LNX_ADD_INST_FILES) $(VBOX_LNX_ADD_DEBUG_FILES)
+OTHER_CLEAN += $(VBOX_LNX_ADD_INST_FILES) $(VBOX_LNX_ADD_DBG_FILES)
 
 # pattern rules for copying the debug info from the VBOX_LNX_ADD_STRIP_* files to the installation directory
 $(addprefix $(VBOX_LNX_ADD_DBG_BIN_DIR),$(VBOX_LNX_ADD_STRIP_BIN)): \
@@ -403,7 +403,7 @@ $(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh: \
 	    $<
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_ADD_INST_OUT_DIR)install.sh $@
 	$(QUIET)$(RM) $(VBOX_LNX_ADD_INST_OUT_DIR)install.sh
-OTHERS_CLEAN += \
+OTHER_CLEAN += \
 	$(VBOX_LNX_ADD_INST_OUT_DIR)install.sh \
 	$(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh
 
