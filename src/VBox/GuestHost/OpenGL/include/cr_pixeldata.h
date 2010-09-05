@@ -42,7 +42,7 @@ DECLEXPORT(void) crPixelCopy3D( GLsizei width, GLsizei height, GLsizei depth,
 DECLEXPORT(void) crBitmapCopy( GLsizei width, GLsizei height, GLubyte *dstPtr,
 									 const GLubyte *srcPtr, const CRPixelPackState *srcPacking );
 
-
+DECLEXPORT(void) crDumpTGA(GLint w, GLint h, GLvoid *data);
 #ifdef __cplusplus
 }
 #endif

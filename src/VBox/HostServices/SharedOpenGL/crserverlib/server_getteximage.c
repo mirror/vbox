@@ -42,6 +42,40 @@ crServerDispatchGetTexImage(GLenum target, GLint level, GLenum format,
 
     size = crTextureSize(format, type, width, height, depth);
 
+#if 0
+    {
+        CRContext *ctx = crStateGetCurrent();
+        CRTextureObj *tobj;
+        CRTextureLevel *tl;
+        GLint id;
+
+        crDebug("GetTexImage: %d, %i, %d, %d", target, level, format, type);
+        crDebug("===StateTracker===");
+        crDebug("Current TU: %i", ctx->texture.curTextureUnit);
+
+        if (target==GL_TEXTURE_2D)
+        {
+            tobj = ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D;
+            CRASSERT(tobj);
+            tl = &tobj->level[0][level];
+            crDebug("Texture %i(hw %i), w=%i, h=%i", tobj->id, tobj->hwid, tl->width, tl->height, tl->depth);
+        }
+        else
+        {
+            crDebug("Not 2D tex");
+        }
+
+        crDebug("===GPU===");
+        cr_server.head_spu->dispatch_table.GetIntegerv(GL_ACTIVE_TEXTURE, &id);
+        crDebug("Current TU: %i", id);
+        if (target==GL_TEXTURE_2D)
+        {
+            cr_server.head_spu->dispatch_table.GetIntegerv(GL_TEXTURE_BINDING_2D, &id);
+            crDebug("Texture: %i, w=%i, h=%i, d=%i", id, width, height, depth);
+        }
+    }
+#endif
+
     if (size && (buffer = crAlloc(size))) {
         /* Note, the other pixel PACK parameters (default values) should
          * be OK at this point.
