@@ -3121,23 +3121,37 @@ static inline void fb_copy_to_texture_direct(IWineD3DSurfaceImpl *This, IWineD3D
          *
          * However, stretching in x direction can be avoided if not necessary
          */
-        for(row = dst_rect.top; row < dst_rect.bottom; row++) {
-            if ((xrel - 1.0f < -eps) || (xrel - 1.0f > eps))
-            {
-                /* Well, that stuff works, but it's very slow.
-                 * find a better way instead
-                 */
-                UINT col;
 
-                for(col = dst_rect.left; col < dst_rect.right; col++) {
+        if (!((xrel - 1.0f < -eps) || (xrel - 1.0f > eps))
+            && !((yrel - 1.0f < -eps) || (yrel - 1.0f > eps)))
+        {
+            /* No stretching involved, so just pass negative height and let host side take care of inverting */
+
+            glCopyTexSubImage2D(This->texture_target, This->texture_level,
+                dst_rect.left /*xoffset */, dst_rect.top /* y offset */,
+                src_rect->left, Src->currentDesc.Height - src_rect->bottom,
+                dst_rect.right - dst_rect.left, -(dst_rect.bottom-dst_rect.top));
+        }
+        else
+        {
+            for(row = dst_rect.top; row < dst_rect.bottom; row++) {
+                if ((xrel - 1.0f < -eps) || (xrel - 1.0f > eps))
+                {
+                    /* Well, that stuff works, but it's very slow.
+                     * find a better way instead
+                     */
+                    UINT col;
+
+                    for(col = dst_rect.left; col < dst_rect.right; col++) {
+                        glCopyTexSubImage2D(This->texture_target, This->texture_level,
+                                dst_rect.left + col /* x offset */, row /* y offset */,
+                                src_rect->left + col * xrel, yoffset - (int) (row * yrel), 1, 1);
+                    }
+                } else {
                     glCopyTexSubImage2D(This->texture_target, This->texture_level,
-                            dst_rect.left + col /* x offset */, row /* y offset */,
-                            src_rect->left + col * xrel, yoffset - (int) (row * yrel), 1, 1);
+                            dst_rect.left /* x offset */, row /* y offset */,
+                            src_rect->left, yoffset - (int) (row * yrel), dst_rect.right - dst_rect.left, 1);
                 }
-            } else {
-                glCopyTexSubImage2D(This->texture_target, This->texture_level,
-                        dst_rect.left /* x offset */, row /* y offset */,
-                        src_rect->left, yoffset - (int) (row * yrel), dst_rect.right - dst_rect.left, 1);
             }
         }
     }

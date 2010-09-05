@@ -8,6 +8,7 @@
 #include "cr_error.h"
 #include "cr_mem.h"
 #include "cr_version.h"
+#include <stdio.h>
 #include <math.h>
 
 #if defined(WINDOWS)
@@ -1774,4 +1775,56 @@ void crBitmapCopy( GLsizei width, GLsizei height, GLubyte *dstPtr,
             }
         }
     }
+}
+
+static int _tnum = 0;
+#pragma pack(1)
+typedef struct tgaheader_tag
+{
+    char  idlen;
+
+    char  colormap;
+
+    char  imagetype;
+
+    short cm_index;
+    short cm_len;
+    char  cm_entrysize;
+
+    short x, y, w, h;
+    char  depth;
+    char  imagedesc;
+    
+} tgaheader_t;
+#pragma pack()
+
+void crDumpTGA(GLint w, GLint h, GLvoid *data)
+{
+    char fname[200];
+    tgaheader_t header;
+    FILE *out;
+
+    if (!w || !h) return;
+
+    sprintf(fname, "tex%i.tga", _tnum++);
+    out = fopen(fname, "w");
+    if (!out) crError("can't create %s!", fname);
+
+    header.idlen = 0;
+    header.colormap = 0;
+    header.imagetype = 2;
+    header.cm_index = 0;
+    header.cm_len = 0;
+    header.cm_entrysize = 0;
+    header.x = 0;
+    header.y = 0;
+    header.w = w;
+    header.h = h;
+    header.depth = 32;
+    header.imagedesc = 0x08;
+    fwrite(&header, sizeof(header), 1, out);
+
+    fwrite(data, w*h*4, 1, out);
+
+    fclose(out);
 }

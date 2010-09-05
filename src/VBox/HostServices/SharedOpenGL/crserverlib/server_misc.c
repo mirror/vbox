@@ -8,6 +8,8 @@
 #include "server.h"
 #include "cr_error.h"
 #include "cr_mem.h"
+#include "cr_string.h"
+#include "cr_pixeldata.h"
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchSelectBuffer( GLsizei size, GLuint *buffer )
 {
@@ -267,3 +269,171 @@ GLint crServerGenerateID(GLint *pCounter)
     return (*pCounter)++;
 }
 
+void SERVER_DISPATCH_APIENTRY 
+crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
+{
+    /*@todo pbo/fbo disabled for now as it's slower, check on other gpus*/
+    static int siHavePBO = 0;
+    static int siHaveFBO = 0;
+
+    if ((target!=GL_TEXTURE_2D) || (height>=0))
+    {
+        cr_server.head_spu->dispatch_table.CopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height);
+    }
+    else /* negative height, means we have to Yinvert the source pixels while copying */
+    {
+        SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
+
+        if (siHavePBO<0)
+        {
+            const char *ext = gl->GetString(GL_EXTENSIONS);
+            siHavePBO = crStrstr(ext, "GL_ARB_pixel_buffer_object") ? 1:0;
+        }
+
+        if (siHaveFBO<0)
+        {
+            const char *ext = gl->GetString(GL_EXTENSIONS);
+            siHaveFBO = crStrstr(ext, "GL_EXT_framebuffer_object") ? 1:0;
+        }
+
+        if (siHavePBO==0 && siHaveFBO==0)
+        {
+            GLint dRow, sRow;
+            for (dRow=yoffset, sRow=y-height-1; dRow<yoffset-height; dRow++, sRow--)
+            {
+                gl->CopyTexSubImage2D(target, level, xoffset, dRow, x, sRow, width, 1);
+            }
+        }
+        else if (siHaveFBO==1) /*@todo more states to set and restore here*/
+        {
+            GLint tID, fboID;
+            GLenum status;
+            CRContext *ctx = crStateGetCurrent();
+
+            gl->GenTextures(1, &tID);
+            gl->BindTexture(target, tID);
+            gl->CopyTexImage2D(target, level, GL_RGBA, x, y, width, -height, 0);
+            gl->GenFramebuffersEXT(1, &fboID);
+            gl->BindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboID);
+            gl->FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, target, 
+                                        ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D->hwid, level);
+            status = gl->CheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+            if (status != GL_FRAMEBUFFER_COMPLETE_EXT)
+            {
+                crWarning("Framebuffer status 0x%x", status);
+            }
+
+            gl->Enable(target);
+            gl->PushAttrib(GL_VIEWPORT_BIT);
+            gl->Viewport(xoffset, yoffset, width, -height);
+            gl->MatrixMode(GL_PROJECTION);
+            gl->PushMatrix();
+            gl->LoadIdentity();
+            gl->MatrixMode(GL_MODELVIEW);
+	        gl->PushMatrix();
+            gl->LoadIdentity();
+
+            gl->Disable(GL_DEPTH_TEST);
+            gl->Disable(GL_CULL_FACE);
+            gl->Disable(GL_STENCIL_TEST);
+            gl->Disable(GL_SCISSOR_TEST);
+
+            gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+            gl->TexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+            gl->TexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            gl->TexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            gl->TexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+            gl->Begin(GL_QUADS);
+                gl->TexCoord2f(0.0f, 1.0f);
+                gl->Vertex2f(-1.0, -1.0);
+
+                gl->TexCoord2f(0.0f, 0.0f);
+                gl->Vertex2f(-1.0f, 1.0f);
+
+                gl->TexCoord2f(1.0f, 0.0f);
+                gl->Vertex2f(1.0f, 1.0f);
+
+                gl->TexCoord2f(1.0f, 1.0f);
+                gl->Vertex2f(1.0f, -1.0f);
+            gl->End();
+
+            gl->PopMatrix();
+            gl->MatrixMode(GL_PROJECTION);
+            gl->PopMatrix();
+            gl->PopAttrib();
+
+            gl->FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, target, 0, level);
+            gl->BindFramebufferEXT(GL_FRAMEBUFFER_EXT, ctx->framebufferobject.drawFB ? ctx->framebufferobject.drawFB->hwid:0);
+            gl->BindTexture(target, ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D->hwid);
+            gl->DeleteFramebuffersEXT(1, &fboID);
+            gl->DeleteTextures(1, &tID);
+
+#if 0
+            {
+                GLint dRow, sRow, w, h;
+                void *img1, *img2;
+
+                w = ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D->level[0][level].width;
+                h = ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D->level[0][level].height;
+
+                img1 = crAlloc(4*w*h);
+                img2 = crAlloc(4*w*h);
+                CRASSERT(img1 && img2);
+
+                gl->GetTexImage(target, level, GL_BGRA, GL_UNSIGNED_BYTE, img1);
+
+            
+                for (dRow=yoffset, sRow=y-height-1; dRow<yoffset-height; dRow++, sRow--)
+                {
+                    gl->CopyTexSubImage2D(target, level, xoffset, dRow, x, sRow, width, 1);
+                }
+
+                gl->GetTexImage(target, level, GL_BGRA, GL_UNSIGNED_BYTE, img2);
+
+                if (crMemcmp(img1, img2, 4*w*h))
+                {
+                    crDebug("MISMATCH! (%x, %i, ->%i,%i  <-%i, %i  [%ix%i])", target, level, xoffset, yoffset, x, y, width, height);
+                    crDumpTGA(w, h, img1);
+                    crDumpTGA(w, h, img2);
+                    DebugBreak();
+                }
+                crFree(img1);
+                crFree(img2);
+            }
+#endif
+        }
+        else
+        {
+            GLint pboId, dRow, sRow;
+            CRContext *ctx = crStateGetCurrent();
+
+            gl->GenBuffersARB(1, &pboId);
+            gl->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pboId);
+            gl->BufferDataARB(GL_PIXEL_PACK_BUFFER_ARB, -width*height*4, 0, GL_STATIC_COPY_ARB);
+
+#if 1
+            gl->ReadPixels(x, y, width, -height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+            gl->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, ctx->bufferobject.packBuffer->hwid);
+
+            gl->BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pboId);
+            for (dRow=yoffset, sRow=-height-1; dRow<yoffset-height; dRow++, sRow--)
+            {
+                gl->TexSubImage2D(target, level, xoffset, dRow, width, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)((uintptr_t)sRow*width*4));
+            }
+#else /*few times slower again*/
+            for (dRow=0, sRow=y-height-1; dRow<-height; dRow++, sRow--)
+            {
+                gl->ReadPixels(x, sRow, width, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)((uintptr_t)dRow*width*4));
+            }
+            gl->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, ctx->bufferobject.packBuffer->hwid);
+
+            gl->BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pboId);
+            gl->TexSubImage2D(target, level, xoffset, yoffset, width, -height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+#endif
+
+            gl->BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, ctx->bufferobject.unpackBuffer->hwid);
+            gl->DeleteBuffersARB(1, &pboId);
+        }
+    }
+}
