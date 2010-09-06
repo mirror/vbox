@@ -162,19 +162,18 @@ DECLINLINE(void) vecCleanupPtr(VECTOR_PTR *pvec)
     pvec->mcbElement = cbElement; \
     pvec->muTypeHash = uTypeHash; \
     pvec->mpfnCleanup = pfnCleanup ? pfnCleanup : vecNoCleanup; \
-    pvec->mpvaElements = NULL; \
-    return VEC_EXPAND(pvec);
+    pvec->mpvaElements = NULL;
 
 /** Initialise a vector. */
-DECLINLINE(int) vecInitObj(VECTOR_OBJ *pvec, size_t cbElement,
-                             unsigned uTypeHash, void (*pfnCleanup)(void *))
+DECLINLINE(void) vecInitObj(VECTOR_OBJ *pvec, size_t cbElement,
+                            unsigned uTypeHash, void (*pfnCleanup)(void *))
 {
     VEC_INIT(pvec, cbElement, uTypeHash, pfnCleanup)
 }
 
 /** Initialise a pointer vector. */
-DECLINLINE(int) vecInitPtr(VECTOR_PTR *pvec, size_t cbElement,
-                             unsigned uTypeHash, void (*pfnCleanup)(void *))
+DECLINLINE(void) vecInitPtr(VECTOR_PTR *pvec, size_t cbElement,
+                            unsigned uTypeHash, void (*pfnCleanup)(void *))
 {
     VEC_INIT(pvec, cbElement, uTypeHash, pfnCleanup)
 }
@@ -211,8 +210,7 @@ DECLINLINE(int) vecPushBackPtr(VECTOR_PTR *pvec, unsigned uTypeHash,
 /*** Public interface macros ***/
 
 /**
- * Initialise a vector structure.
- * @returns iprt status code (VINF_SUCCESS or VERR_NO_MEMORY)
+ * Initialise a vector structure.  Always succeeds.
  * @param   pvec        pointer to an uninitialised vector structure
  * @param   type        the type of the objects in the vector.  As this is
  *                      hashed by the preprocessor use of space etc is
@@ -226,8 +224,7 @@ DECLINLINE(int) vecPushBackPtr(VECTOR_PTR *pvec, unsigned uTypeHash,
                (void (*)(void*)) pfnCleanup)
 
 /**
- * Initialise a vector-of-pointers structure.
- * @returns iprt status code (VINF_SUCCESS or VERR_NO_MEMORY)
+ * Initialise a vector-of-pointers structure.  Always succeeds.
  * @param   pvec        pointer to an uninitialised vector structure
  * @param   type        the type of the pointers in the vector, including the
  *                      final "*".  As this is hashed by the preprocessor use

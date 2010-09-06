@@ -262,9 +262,7 @@ int USBProxyServiceLinux::initSysfs(void)
     Assert(!mUsingUsbfsDevices);
 
 #ifdef VBOX_USB_WITH_SYSFS
-    int rc2;
-    if (RT_FAILURE((rc2 = VBoxMainUSBDevInfoInit(&mDeviceList))))
-        return rc2;
+    VBoxMainUSBDevInfoInit(&mDeviceList);
     int rc = mWaiter.getStatus();
     if (RT_SUCCESS(rc) || rc == VERR_TIMEOUT || rc == VERR_TRY_AGAIN)
         rc = start();

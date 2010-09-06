@@ -141,9 +141,9 @@ typedef struct VBoxMainUSBDeviceInfo
 } VBoxMainUSBDeviceInfo;
 
 /** Constructor */
-static inline int VBoxMainUSBDevInfoInit(VBoxMainUSBDeviceInfo *pSelf)
+static inline void VBoxMainUSBDevInfoInit(VBoxMainUSBDeviceInfo *pSelf)
 {
-    return VEC_INIT_OBJ(&pSelf->mvecDevInfo, USBDeviceInfo, USBDevInfoCleanup);
+    VEC_INIT_OBJ(&pSelf->mvecDevInfo, USBDeviceInfo, USBDevInfoCleanup);
 }
 
 /** Destructor */

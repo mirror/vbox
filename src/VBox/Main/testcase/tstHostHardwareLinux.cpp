@@ -91,7 +91,7 @@ int main()
     }
 #ifdef VBOX_USB_WITH_SYSFS
     VBoxMainUSBDeviceInfo deviceInfo;
-    AssertRCReturn(VBoxMainUSBDevInfoInit(&deviceInfo), 1);
+    VBoxMainUSBDevInfoInit(&deviceInfo);
     rc = USBDevInfoUpdateDevices(&deviceInfo);
     if (RT_FAILURE(rc))
     {
