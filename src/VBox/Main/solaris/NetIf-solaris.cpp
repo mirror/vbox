@@ -63,6 +63,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
         SolarisNICMap.insert(NICPair("afe", "ADMtek Centaur/Comet Fast Ethernet"));
         SolarisNICMap.insert(NICPair("aggr", "Link Aggregation Interface"));
         SolarisNICMap.insert(NICPair("bge", "Broadcom BCM57xx Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("bnx", "Broadcom NetXtreme Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("ce", "Cassini Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("chxge", "Chelsio Ethernet"));
         SolarisNICMap.insert(NICPair("dmfe", "Davicom Fast Ethernet"));
