@@ -308,7 +308,8 @@ typedef struct {
 
 /* VirtualBox specific NOTE sections (added by Ramshankar) */
 #ifdef VBOX
-#define NT_VBOXCPU  0xace
+#define NT_VBOXCORE 0xb00
+#define NT_VBOXCPU  0xb01
 #endif
 
 /* Symbol Binding - ELFNN_ST_BIND - st_info */
