@@ -262,8 +262,9 @@ int USBProxyServiceLinux::initSysfs(void)
     Assert(!mUsingUsbfsDevices);
 
 #ifdef VBOX_USB_WITH_SYSFS
-    if (!VBoxMainUSBDevInfoInit(&mDeviceList))
-        return VERR_NO_MEMORY;
+    int rc2;
+    if (RT_FAILURE((rc2 = VBoxMainUSBDevInfoInit(&mDeviceList))))
+        return rc2;
     int rc = mWaiter.getStatus();
     if (RT_SUCCESS(rc) || rc == VERR_TIMEOUT || rc == VERR_TRY_AGAIN)
         rc = start();
@@ -1343,18 +1344,15 @@ PUSBDEVICE USBProxyServiceLinux::getDevicesFromSysfs(void)
     PUSBDEVICE pFirst = NULL;
     PUSBDEVICE pLast  = NULL;
     int        rc     = USBDevInfoUpdateDevices(&mDeviceList);
-    USBDeviceInfoList_iterator it;
-    USBDeviceInfoList_iter_init(&it, USBDevInfoBegin(&mDeviceList));
-    for (;    RT_SUCCESS(rc)
-           && !USBDeviceInfoList_iter_eq(&it, USBDevInfoEnd(&mDeviceList));
-           USBDeviceInfoList_iter_incr(&it))
+    USBDeviceInfo *pInfo;
+    VEC_FOR_EACH(&mDeviceList.mvecDevInfo, USBDeviceInfo, pInfo)
     {
         USBDEVICE *Dev = (USBDEVICE *)RTMemAllocZ(sizeof(USBDEVICE));
         if (!Dev)
             rc = VERR_NO_MEMORY;
         if (RT_SUCCESS(rc))
         {
-            const char *pszSysfsPath = USBDeviceInfoList_iter_target(&it)->mSysfsPath;
+            const char *pszSysfsPath = pInfo->mSysfsPath;
 
             /* Fill in the simple fields */
             Dev->enmState = USBDEVICESTATE_UNUSED;
@@ -1440,19 +1438,17 @@ PUSBDEVICE USBProxyServiceLinux::getDevicesFromSysfs(void)
                 Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
 
             /* Check the interfaces to see if we can support the device. */
-            char *pszIf;
-            USBDeviceInfo *udi = USBDeviceInfoList_iter_target(&it);
-            for (pszIf = USBDevInfoFirstInterface(udi->mInterfaces); pszIf;
-                 pszIf = USBDevInfoNextInterface(udi->mInterfaces))
+            char **ppszIf;
+            VEC_FOR_EACH(&pInfo->mvecpszInterfaces, char *, ppszIf)
             {
                 ssize_t cb = RTLinuxSysFsGetLinkDest(szBuf, sizeof(szBuf), "%s/driver",
-                                                     pszIf);
+                                                     *ppszIf);
                 if (cb > 0 && Dev->enmState != USBDEVICESTATE_UNSUPPORTED)
                     Dev->enmState = (strcmp(szBuf, "hub") == 0)
                                   ? USBDEVICESTATE_UNSUPPORTED
                                   : USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
                 if (RTLinuxSysFsReadIntFile(16, "%s/bInterfaceClass",
-                                            pszIf) == 9 /* hub */)
+                                            *ppszIf) == 9 /* hub */)
                     Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
             }
 
@@ -1462,7 +1458,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevicesFromSysfs(void)
             char szDeviceClean[RTPATH_MAX];
             char szSysfsClean[RTPATH_MAX];
             char *pszAddress = NULL;
-            if (   RT_SUCCESS(RTPathReal(USBDeviceInfoList_iter_target(&it)->mDevice, szDeviceClean,
+            if (   RT_SUCCESS(RTPathReal(pInfo->mDevice, szDeviceClean,
                                          sizeof(szDeviceClean)))
                 && RT_SUCCESS(RTPathReal(pszSysfsPath, szSysfsClean,
                                          sizeof(szSysfsClean)))
@@ -1490,6 +1486,8 @@ PUSBDEVICE USBProxyServiceLinux::getDevicesFromSysfs(void)
         }
         else
             freeDevice(Dev);
+        if (RT_FAILURE(rc))
+            break;
     }
     if (RT_FAILURE(rc))
         while (pFirst)
