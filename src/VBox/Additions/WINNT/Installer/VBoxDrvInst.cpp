@@ -60,6 +60,9 @@ struct IdEntry
 #define EXIT_REBOOT  (1)
 #define EXIT_FAIL    (2)
 #define EXIT_USAGE   (3)
+#ifdef VBOXWDDM
+#define EXIT_FALSE   (4)
+#endif
 
 /* Dynamic loaded libs */
 HMODULE g_hSetupAPI = NULL;
@@ -1461,6 +1464,95 @@ int UninstallDriver (_TCHAR* a_pszHwID)
     return iRet;
 }
 
+#ifdef VBOXWDDM
+/*++
+
+ Routine Description:
+
+ Dump information about what files were installed for driver package
+ <tab>Installed using OEM123.INF section [abc.NT]
+ <tab><tab>file...
+
+ Arguments:
+
+ Devs    )_ uniquely identify device
+ DevInfo )
+
+ Return Value:
+
+ none
+
+ --*/
+int MatchDriverCallback (HDEVINFO Devs, PSP_DEVINFO_DATA DevInfo, DWORD Index, LPVOID Context)
+{
+    /* Do this by 'searching' for the current driver
+     mimmicing a copy-only install to our own file queue
+     and then parsing that file queue */
+    SP_DRVINFO_DATA driverInfoData;
+    SP_DRVINFO_DETAIL_DATA driverInfoDetail;
+    LPCTSTR pStr = (LPCTSTR)Context;
+    int success = EXIT_FAIL;
+
+    ZeroMemory(&driverInfoData,sizeof(driverInfoData));
+    driverInfoData.cbSize = sizeof(driverInfoData);
+
+    if (!FindCurrentDriver(Devs, DevInfo, &driverInfoData))
+        return EXIT_FAIL;
+
+    _tprintf(_T("Driver files found!\n"));
+
+    /* Get useful driver information */
+    driverInfoDetail.cbSize = sizeof(SP_DRVINFO_DETAIL_DATA);
+    if (!g_pfnSetupDiGetDriverInfoDetail(Devs, DevInfo, &driverInfoData, &driverInfoDetail, sizeof(SP_DRVINFO_DETAIL_DATA), NULL) && GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+    {
+        /* No information about driver or section */
+        _tprintf(_T("No information about driver or section!\n"));
+        goto final;
+    }
+
+    if (!driverInfoDetail.InfFileName[0] || !driverInfoDetail.SectionName[0])
+    {
+        _tprintf(_T("Driver or section name is empty!\n"));
+        goto final;
+    }
+
+    _tprintf(_T("Desc: %s\n"), driverInfoDetail.DrvDescription);
+    _tprintf(_T("SecName: %s\n"), driverInfoDetail.SectionName);
+    _tprintf(_T("INF-File: %s\n"), driverInfoDetail.InfFileName);
+
+    if (_tcsstr(driverInfoDetail.DrvDescription, pStr))
+    {
+        _tprintf(_T("Driver name matched\n"));
+        success = EXIT_OK;
+    }
+    else
+    {
+        _tprintf(_T("Driver name NOT matched\n"));
+        success = EXIT_FALSE;
+    }
+
+    final:
+
+    g_pfnSetupDiDestroyDriverInfoList(Devs, DevInfo, SPDIT_CLASSDRIVER);
+
+    if (EXIT_OK != success && EXIT_FALSE != success)
+    {
+        _tprintf(_T("Something went wrong while delete the OEM INF-files!\n\n"));
+    }
+
+    return success;
+}
+
+int MatchDriver (_TCHAR* a_pszHwID, _TCHAR* a_pszDrvName)
+{
+    _tprintf(_T("Checking Device: %ws ; for driver desc string %ws\n"), a_pszHwID, a_pszDrvName);
+
+    int iRet = EnumerateDevices(NULL, NULL, DIGCF_PRESENT, 1, &a_pszHwID, MatchDriverCallback, a_pszDrvName);
+
+    return iRet;
+}
+#endif
+
 int ExecuteInfFile (_TCHAR* a_pszSection, int a_iMode, _TCHAR* a_pszInf)
 {
     _tprintf(_T("Executing INF-File: %ws (%ws) ...\n"), a_pszInf, a_pszSection);
@@ -2190,6 +2282,29 @@ int __cdecl _tmain (int argc, _TCHAR* argv[])
                     rc = EXIT_USAGE;
             }
         }
+#ifdef VBOXWDDM
+        else if (0 == _tcsicmp(argv[1], _T("/matchdrv")))
+        {
+            if (argc < 4)
+            {
+                rc = EXIT_USAGE;
+            }
+            else
+            {
+                if (OSinfo.dwMajorVersion < 5)
+                {
+                    _tprintf(_T("ERROR: Platform not supported yet!\n"));
+                    rc = ERROR_NOT_SUPPORTED;
+                }
+
+                if (rc == ERROR_SUCCESS)
+                {
+                    _stprintf(szHwID, _T("%ws"), argv[2]);
+                    rc = MatchDriver(szHwID, argv[3]);
+                }
+            }
+        }
+#endif
     }
 
     if (rc == EXIT_USAGE)

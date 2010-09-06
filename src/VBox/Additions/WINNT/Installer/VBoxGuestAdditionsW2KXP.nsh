@@ -450,6 +450,20 @@ FunctionEnd
 Function ${un}W2K_Uninstall
 
   Push $0
+!if $%VBOXWDDM% == "1"
+  ; First check whether wddm driver is installed
+  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /matchdrv "PCI\VEN_80EE&DEV_BEEF&SUBSYS_00000000&REV_00" "WDDM"'
+  Pop $0    ; Ret value
+  ${If} $0 == "0"
+    DetailPrint "WDDM Driver is installed"
+    StrCpy $g_bInstallWDDM "true"
+  ${ElseIf} $0 == "4"
+    DetailPrint "Non-WDDM Driver is installed"
+  ${Else}
+    DetailPrint "Error occured"
+    ; @todo Add error handling here!
+  ${Endif}
+!endif
 
   ; Remove VirtualBox graphics adapter & PCI base drivers
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /u "PCI\VEN_80EE&DEV_BEEF&SUBSYS_00000000&REV_00"'
@@ -463,10 +477,16 @@ Function ${un}W2K_Uninstall
   ; @todo restore old drivers
 
   ; Remove video driver
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /delsvc VBoxVideo'
-  Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxVideo.sys"
-  Delete /REBOOTOK "$g_strSystemDir\VBoxDisp.dll"
-
+  ${If} $g_bInstallWDDM == "true"
+    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /delsvc VBoxVideoWddm'
+    Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxVideoWddm.sys"
+    Delete /REBOOTOK "$g_strSystemDir\VBoxDispD3D.dll"
+  ${Else}
+    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /delsvc VBoxVideo'
+    Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxVideo.sys"
+    Delete /REBOOTOK "$g_strSystemDir\VBoxDisp.dll"
+  ${Endif}
+  
   ; Remove mouse driver
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /delsvc VBoxMouse'
   Pop $0    ; Ret value
