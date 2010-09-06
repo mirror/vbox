@@ -339,6 +339,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
      */
     uint64_t cbElfHdr = 0;
     uint64_t cbProgHdr = 0;
+    uint64_t offMemRange = 0;
     rc = Elf64WriteElfHdr(hFile, cProgHdrs, 0 /* cSecHdrs */, &cbElfHdr);
     off += cbElfHdr;
     if (RT_FAILURE(rc))
@@ -368,7 +369,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     /*
      * Write PT_LOAD program header for each memory range.
      */
-    uint64_t offMemRange = off + cbNoteSection;
+    offMemRange = off + cbNoteSection;
     for (uint16_t iRange = 0; iRange < cMemRanges; iRange++)
     {
         RTGCPHYS GCPhysStart;
