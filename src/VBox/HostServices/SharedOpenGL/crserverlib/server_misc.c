@@ -286,13 +286,13 @@ crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
 
         if (siHavePBO<0)
         {
-            const char *ext = gl->GetString(GL_EXTENSIONS);
+            const char *ext = (const char*)gl->GetString(GL_EXTENSIONS);
             siHavePBO = crStrstr(ext, "GL_ARB_pixel_buffer_object") ? 1:0;
         }
 
         if (siHaveFBO<0)
         {
-            const char *ext = gl->GetString(GL_EXTENSIONS);
+            const char *ext = (const char*)gl->GetString(GL_EXTENSIONS);
             siHaveFBO = crStrstr(ext, "GL_EXT_framebuffer_object") ? 1:0;
         }
 
@@ -306,7 +306,7 @@ crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
         }
         else if (siHaveFBO==1) /*@todo more states to set and restore here*/
         {
-            GLint tID, fboID;
+            GLuint tID, fboID;
             GLenum status;
             CRContext *ctx = crStateGetCurrent();
 
@@ -405,7 +405,7 @@ crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
         }
         else
         {
-            GLint pboId, dRow, sRow;
+            GLuint pboId, dRow, sRow;
             CRContext *ctx = crStateGetCurrent();
 
             gl->GenBuffersARB(1, &pboId);
