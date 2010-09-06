@@ -76,8 +76,6 @@ OBJS += math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
 endif
 
-ifneq ($(MAKECMDGOALS),clean)
-
 ifeq ($(KERNELRELEASE),)
 
  #
@@ -163,7 +161,8 @@ ifndef INCL
  INCL    += $(addprefix -I$(KBUILD_EXTMOD)/vboxnetflt,/ /include /r0drv/linux)
  export INCL
 endif
-KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DRT_WITH_VBOX -DVBOX_WITH_HARDENING
+KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 \
+	    -DIN_SUP_R0 -DVBOX -DRT_WITH_VBOX -DVBOX_WITH_HARDENING
 ifdef VBOX_REDHAT_KABI
  KFLAGS  += -DVBOX_REDHAT_KABI
 endif
@@ -203,7 +202,7 @@ all: $(MODULE)
 obj-m += $(MODULE).o
 
 $(MODULE):
-	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
+	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) -C $(KERN_DIR) modules
 
 install: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
@@ -215,10 +214,5 @@ install_rpm: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
 	install -m 0664 $(MODULE).$(MODULE_EXT) $(MODULE_DIR)
 
-endif # eq($(MAKECMDGOALS),clean)
-
-# important: Don't remove Module.symvers! DKMS does 'make clean' before building ...
 clean:
-	for f in . linux r0drv r0drv/linux VBox common/err common/string common/log generic math/gcc; \
-	    do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
-	rm -rf .vboxnetflt* .tmp_ver* vboxnetflt.* Modules.symvers modules.order
+	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) -C $(KERN_DIR) clean
