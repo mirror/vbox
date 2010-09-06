@@ -51,7 +51,7 @@ void VBoxLogString(HANDLE hDriver, char *pszStr);
 
 int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
-    Log(("VBoxSeamlessInit\n"));
+    Log(("VBoxTray: VBoxSeamlessInit\n"));
 
     *pfStartThread = false;
     gCtx.pEnv = pEnv;
@@ -64,7 +64,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
        a missing API function "UnhookWinEvent" used by the dynamically loaded VBoxHook.dll below */
     if (OSinfo.dwMajorVersion <= 4)         /* Windows NT 4.0 or older */
     {
-        Log(("VBoxSeamlessInit: Windows NT 4.0 or older not supported!\n"));
+        Log(("VBoxTray: VBoxSeamlessInit: Windows NT 4.0 or older not supported!\n"));
         return VERR_NOT_SUPPORTED;
     }
 
@@ -84,7 +84,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
         if (!DeviceIoControl(pEnv->hDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(vmmreqGuestCaps)), &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
                              &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
         {
-            Log(("VBoxSeamlessInit: VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
+            Log(("VBoxTray: VBoxSeamlessInit: VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
             return VERR_INVALID_PARAMETER;
         }
 
@@ -94,7 +94,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
     }
     else
     {
-        Log(("VBoxSeamlessInit: LoadLibrary failed with %d\n", GetLastError()));
+        Log(("VBoxTray: VBoxSeamlessInit: LoadLibrary failed with %d\n", GetLastError()));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -104,7 +104,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
 
 void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
-    Log(("VBoxSeamlessDestroy\n"));
+    Log(("VBoxTray: VBoxSeamlessDestroy\n"));
     /* inform the host that we no longer support the seamless window mode */
     VMMDevReqGuestCapabilities vmmreqGuestCaps = {0};
     vmmdevInitRequest((VMMDevRequestHeader*)&vmmreqGuestCaps, VMMDevReq_ReportGuestCapabilities);
@@ -114,7 +114,7 @@ void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     if (!DeviceIoControl(pEnv->hDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(vmmreqGuestCaps)), &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
                          &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
     {
-        Log(("VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
+        Log(("VBoxTray: VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
     }
 
     if (gCtx.pfnVBoxRemoveHook)
@@ -160,7 +160,7 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
         ||  (dwStyle & WS_CHILD))
         return TRUE;
 
-    Log(("VBoxEnumFunc %x\n", hwnd));
+    Log(("VBoxTray: VBoxEnumFunc %x\n", hwnd));
     /* Only visible windows that are present on the desktop are interesting here */
 #ifndef MMSEAMLESS
     if (    GetWindowRect(hwnd, &rectWindow)
@@ -181,15 +181,15 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
             && dwStyle == (WS_POPUP|WS_VISIBLE|WS_CLIPSIBLINGS)
             && dwExStyle == (WS_EX_LAYERED|WS_EX_TOOLWINDOW|WS_EX_TRANSPARENT|WS_EX_TOPMOST))
         {
-            Log(("Filter out shadow window style=%x exstyle=%x\n", dwStyle, dwExStyle));
+            Log(("VBoxTray: Filter out shadow window style=%x exstyle=%x\n", dwStyle, dwExStyle));
             return TRUE;
         }
 
         /** @todo will this suffice? The Program Manager window covers the whole screen */
         if (strcmp(szWindowText, "Program Manager"))
         {
-            Log(("Enum hwnd=%x rect (%d,%d) (%d,%d)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
-            Log(("title=%s style=%x exStyle=%x\n", szWindowText, dwStyle, dwExStyle));
+            Log(("VBoxTray: Enum hwnd=%x rect (%d,%d) (%d,%d)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
+            Log(("VBoxTray: title=%s style=%x exStyle=%x\n", szWindowText, dwStyle, dwExStyle));
 
             HRGN hrgn = CreateRectRgn(0,0,0,0);
 
@@ -197,7 +197,7 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
 
             if (ret == ERROR)
             {
-                Log(("GetWindowRgn failed with rc=%d\n", GetLastError()));
+                Log(("VBoxTray: GetWindowRgn failed with rc=%d\n", GetLastError()));
                 SetRectRgn(hrgn, rectVisible.left, rectVisible.top, rectVisible.right, rectVisible.bottom);
             }
             else
@@ -216,8 +216,8 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
         }
         else
         {
-            Log(("Enum hwnd=%x rect (%d,%d) (%d,%d) (ignored)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
-            Log(("title=%s style=%x\n", szWindowText, dwStyle));
+            Log(("VBoxTray: Enum hwnd=%x rect (%d,%d) (%d,%d) (ignored)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
+            Log(("VBoxTray: title=%s style=%x\n", szWindowText, dwStyle));
         }
     }
     return TRUE; /* continue enumeration */
@@ -232,7 +232,7 @@ void VBoxSeamlessCheckWindows()
 
 #ifndef MMSEAMLESS
     GetWindowRect(GetDesktopWindow(), &param.rect);
-    Log(("VBoxRecheckVisibleWindows desktop=%x rect (%d,%d) (%d,%d)\n", GetDesktopWindow(), param.rect.left, param.rect.top, param.rect.right, param.rect.bottom));
+    Log(("VBoxTray: VBoxRecheckVisibleWindows desktop=%x rect (%d,%d) (%d,%d)\n", GetDesktopWindow(), param.rect.left, param.rect.top, param.rect.right, param.rect.bottom));
 #endif
     EnumWindows(VBoxEnumFunc, (LPARAM)&param);
 
@@ -254,11 +254,11 @@ void VBoxSeamlessCheckWindows()
                 {
 #ifdef DEBUG
                     RECT *lpRect = (RECT *)&lpRgnData->Buffer[0];
-                    Log(("New visible region: \n"));
+                    Log(("VBoxTray: New visible region: \n"));
 
                     for (DWORD i=0;i<lpRgnData->rdh.nCount;i++)
                     {
-                        Log(("visible rect (%d,%d)(%d,%d)\n", lpRect[i].left, lpRect[i].top, lpRect[i].right, lpRect[i].bottom));
+                        Log(("VBoxTray: visible rect (%d,%d)(%d,%d)\n", lpRect[i].left, lpRect[i].top, lpRect[i].right, lpRect[i].bottom));
                     }
 #endif
                     LPRGNDATA lpCtxRgnData = VBOXDISPIFESCAPE_DATA(gCtx.lpEscapeData, RGNDATA);
@@ -274,7 +274,7 @@ void VBoxSeamlessCheckWindows()
                         gCtx.lpEscapeData = lpEscapeData;
                     }
                     else
-                        Log(("Visible rectangles haven't changed; ignore\n"));
+                        Log(("VBoxTray: Visible rectangles haven't changed; ignore\n"));
                 }
                 if (lpEscapeData != gCtx.lpEscapeData)
                     free(lpEscapeData);
@@ -304,11 +304,11 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        Log(("VBoxSeamlessThread: DeviceIOControl(CtlMask - or) succeeded\n"));
+        Log(("VBoxTray: VBoxSeamlessThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
     else
     {
-        Log(("VBoxSeamlessThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+        Log(("VBoxTray: VBoxSeamlessThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
         return 0;
     }
 
@@ -320,18 +320,18 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            Log(("VBoxSeamlessThread: DeviceIOControl succeded\n"));
+            Log(("VBoxTray: VBoxSeamlessThread: DeviceIOControl succeded\n"));
 
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            Log(("VBoxSeamlessThread: checking event\n"));
+            Log(("VBoxTray: VBoxSeamlessThread: checking event\n"));
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
             {
-                Log(("VBoxTray: going to get seamless change information.\n"));
+                Log(("VBoxTray: VBoxTray: going to get seamless change information.\n"));
 
                 /* We got at least one event. Read the requested resolution
                  * and try to set it until success. New events will not be seen
@@ -348,17 +348,17 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                                                                  &seamlessChangeRequest, sizeof(seamlessChangeRequest), &cbReturned, NULL);
                     if (fSeamlessChangeQueried)
                     {
-                        Log(("VBoxSeamlessThread: mode change to %d\n", seamlessChangeRequest.mode));
+                        Log(("VBoxTray: VBoxSeamlessThread: mode change to %d\n", seamlessChangeRequest.mode));
 
                         switch(seamlessChangeRequest.mode)
                         {
                         case VMMDev_Seamless_Disabled:
                             if (fWasScreenSaverActive)
                             {
-                                Log(("Re-enabling the screensaver\n"));
+                                Log(("VBoxTray: Re-enabling the screensaver\n"));
                                 ret = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, TRUE, NULL, 0);
                                 if (!ret)
-                                    Log(("SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
+                                    Log(("VBoxTray: SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
                             }
                             PostMessage(gToolWindow, WM_VBOX_REMOVE_SEAMLESS_HOOK, 0, 0);
                             break;
@@ -366,14 +366,14 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                         case VMMDev_Seamless_Visible_Region:
                             ret = SystemParametersInfo(SPI_GETSCREENSAVEACTIVE, 0, &fWasScreenSaverActive, 0);
                             if (!ret)
-                                Log(("SystemParametersInfo SPI_GETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
+                                Log(("VBoxTray: SystemParametersInfo SPI_GETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
 
                             if (fWasScreenSaverActive)
-                                Log(("Disabling the screensaver\n"));
+                                Log(("VBoxTray: Disabling the screensaver\n"));
 
                             ret = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
                             if (!ret)
-                                Log(("SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
+                                Log(("VBoxTray: SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
                             PostMessage(gToolWindow, WM_VBOX_INSTALL_SEAMLESS_HOOK, 0, 0);
                             break;
 
@@ -388,7 +388,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                     }
                     else
                     {
-                        Log(("VBoxSeamlessThread: error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
+                        Log(("VBoxTray: VBoxSeamlessThread: error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
                     }
                     /* sleep a bit to not eat too much CPU while retrying */
                     /* are we supposed to stop? */
@@ -402,7 +402,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
         }
         else
         {
-            Log(("VBoxTray: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
+            Log(("VBoxTray: VBoxTray: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
             {
@@ -417,14 +417,14 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
     maskInfo.u32NotMask = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        Log(("VBoxSeamlessThread: DeviceIOControl(CtlMask - not) succeeded\n"));
+        Log(("VBoxTray: VBoxSeamlessThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }
     else
     {
-        Log(("VBoxSeamlessThread: DeviceIOControl(CtlMask) failed\n"));
+        Log(("VBoxTray: VBoxSeamlessThread: DeviceIOControl(CtlMask) failed\n"));
     }
 
-    Log(("VBoxSeamlessThread: finished seamless change request thread\n"));
+    Log(("VBoxTray: VBoxSeamlessThread: finished seamless change request thread\n"));
     return 0;
 }
 
