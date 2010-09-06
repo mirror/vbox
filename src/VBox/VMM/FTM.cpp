@@ -41,6 +41,7 @@
 
 #include <include/internal/vm.h>
 #include <include/internal/em.h>
+#include <include/internal/pgm.h>
 
 /*******************************************************************************
  * Structures and Typedefs                                                     *
@@ -1125,6 +1126,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
     /** We don't call VMR3Resume here to avoid the overhead of state changes and notifications. This 
      *  is only a short suspend.
      */
+    PGMR3ResetNoMorePhysWritesFlag(pVM);
     PDMR3Resume(pVM);
 
     /** Hack alert as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
