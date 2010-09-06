@@ -92,7 +92,7 @@ static BOOL vboxTrayIconAdd()
     HICON hIcon = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
     if (hIcon == NULL)
     {
-        Log(("Could not load tray icon, err %08X\n", GetLastError()));
+        Log(("VBoxTray: Could not load tray icon, err %08X\n", GetLastError()));
         return FALSE;
     }
 
@@ -111,7 +111,7 @@ static BOOL vboxTrayIconAdd()
     BOOL fCreated = Shell_NotifyIcon(NIM_ADD, &gNotifyIconData);
     if (!fCreated)
     {
-        Log(("Could not create tray icon, err %08X\n", GetLastError()));
+        Log(("VBoxTray: Could not create tray icon, err %08X\n", GetLastError()));
         RT_ZERO(gNotifyIconData);
     }
 
@@ -151,7 +151,7 @@ static int vboxStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
     while (pTable->pszName)
     {
-        Log(("Starting %s...\n", pTable->pszName));
+        Log(("VBoxTray: Starting %s...\n", pTable->pszName));
 
         int rc = VINF_SUCCESS;
 
@@ -168,7 +168,7 @@ static int vboxStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
         if (RT_FAILURE (rc))
         {
-            Log(("Failed to initialize rc = %Rrc.\n", rc));
+            Log(("VBoxTray: Failed to initialize rc = %Rrc.\n", rc));
         }
         else
         {
@@ -191,7 +191,7 @@ static int vboxStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
             if (RT_FAILURE (rc))
             {
-                Log(("Failed to start the thread.\n"));
+                Log(("VBoxTray: Failed to start the thread.\n"));
 
                 if (pTable->pfnDestroy)
                 {

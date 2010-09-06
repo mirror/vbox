@@ -37,7 +37,7 @@ static VBOXRESTORECONTEXT gCtx = {0};
 
 int VBoxRestoreInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
-    Log(("VBoxRestoreInit\n"));
+    Log(("VBoxTray: VBoxRestoreInit\n"));
 
     gCtx.pEnv      = pEnv;
     gCtx.fRDPState = ERROR_NOT_SUPPORTED;
@@ -52,7 +52,7 @@ int VBoxRestoreInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
 
 void VBoxRestoreDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
-    Log(("VBoxRestoreDestroy\n"));
+    Log(("VBoxTray: VBoxRestoreDestroy\n"));
     return;
 }
 
@@ -70,7 +70,7 @@ void VBoxRestoreCheckVRDP()
 
     /* send to display driver */
     ret = VBoxDispIfEscape(&gCtx.pEnv->dispIf, &escape, 0);
-    Log(("VBoxRestoreSession -> VRDP activate state = %d\n", ret));
+    Log(("VBoxTray: VBoxRestoreSession -> VRDP activate state = %d\n", ret));
 
     if (ret != gCtx.fRDPState)
     {
@@ -78,7 +78,7 @@ void VBoxRestoreCheckVRDP()
 
         if (!DeviceIoControl (gCtx.pEnv->hDriver, ret == NO_ERROR ? VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION : VBOXGUEST_IOCTL_DISABLE_VRDP_SESSION, NULL, 0, NULL, 0, &cbReturned, NULL))
         {
-            Log(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+            Log(("VBoxTray: VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
         }
         gCtx.fRDPState = ret;
     }
@@ -100,11 +100,11 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        Log(("VBoxRestoreThread: DeviceIOControl(CtlMask - or) succeeded\n"));
+        Log(("VBoxTray: VBoxRestoreThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
     else
     {
-        Log(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+        Log(("VBoxTray: VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
         return 0;
     }
 
@@ -116,13 +116,13 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_RESTORED;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            Log(("VBoxRestoreThread: DeviceIOControl succeded\n"));
+            Log(("VBoxTray: VBoxRestoreThread: DeviceIOControl succeded\n"));
 
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            Log(("VBoxRestoreThread: checking event\n"));
+            Log(("VBoxTray: VBoxRestoreThread: checking event\n"));
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_RESTORED)
@@ -133,7 +133,7 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
         }
         else
         {
-            Log(("VBoxTray: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
+            Log(("VBoxTray: VBoxTray: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
 
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
@@ -149,14 +149,14 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
     maskInfo.u32NotMask = VMMDEV_EVENT_RESTORED;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        Log(("VBoxRestoreThread: DeviceIOControl(CtlMask - not) succeeded\n"));
+        Log(("VBoxTray: VBoxRestoreThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }
     else
     {
-        Log(("VBoxRestoreThread: DeviceIOControl(CtlMask) failed\n"));
+        Log(("VBoxTray: VBoxRestoreThread: DeviceIOControl(CtlMask) failed\n"));
     }
 
-    Log(("VBoxRestoreThread: finished seamless change request thread\n"));
+    Log(("VBoxTray: VBoxRestoreThread: finished seamless change request thread\n"));
     return 0;
 }
 
