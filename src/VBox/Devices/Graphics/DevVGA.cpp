@@ -5338,7 +5338,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
      * This is true because coordinates were verified.
      */
     pu8Src = s->vram_ptrR3;
-    pu8Src += u32OffsetSrc + y * cbLineSrc + x * cbPixelSrc;
+    pu8Src += u32OffsetSrc * 4 + y * cbLineSrc + x * cbPixelSrc;
 
     /* Render VRAM to framebuffer. */
 
