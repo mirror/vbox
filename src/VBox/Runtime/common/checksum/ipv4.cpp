@@ -298,6 +298,7 @@ RT_EXPORT_SYMBOL(RTNetIPv4AddTCPChecksum);
  */
 DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t u32Sum, bool *pfOdd)
 {
+    uint16_t const *pw = (uint16_t const *)pvData;
     if (*pfOdd)
     {
 #ifdef RT_BIG_ENDIAN
@@ -315,7 +316,6 @@ DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData,
     }
 
     /* iterate the data. */
-    uint16_t const *pw = (uint16_t const *)pvData;
     while (cbData > 1)
     {
         u32Sum += *pw;
@@ -397,8 +397,9 @@ RT_EXPORT_SYMBOL(RTNetIPv4FinalizeChecksum);
  */
 RTDECL(uint16_t) RTNetUDPChecksum(uint32_t u32Sum, PCRTNETUDP pUdpHdr)
 {
+    bool fOdd;
     u32Sum = rtNetIPv4AddUDPChecksum(pUdpHdr, u32Sum);
-    bool fOdd = false;
+    fOdd = false;
     u32Sum = rtNetIPv4AddDataChecksum(pUdpHdr + 1, RT_BE2H_U16(pUdpHdr->uh_ulen) - sizeof(*pUdpHdr), u32Sum, &fOdd);
     return rtNetIPv4FinalizeChecksum(u32Sum);
 }
@@ -418,9 +419,10 @@ RT_EXPORT_SYMBOL(RTNetUDPChecksum);
  */
 RTDECL(uint16_t) RTNetIPv4UDPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData)
 {
+    bool fOdd;
     uint32_t u32Sum = rtNetIPv4PseudoChecksum(pIpHdr);
     u32Sum = rtNetIPv4AddUDPChecksum(pUdpHdr, u32Sum);
-    bool fOdd = false;
+    fOdd = false;
     u32Sum = rtNetIPv4AddDataChecksum(pvData, RT_BE2H_U16(pUdpHdr->uh_ulen) - sizeof(*pUdpHdr), u32Sum, &fOdd);
     return rtNetIPv4FinalizeChecksum(u32Sum);
 }
@@ -441,9 +443,10 @@ DECLINLINE(bool) rtNetIPv4IsUDPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr,
     /*
      * Size validation.
      */
+    size_t cb;
     if (RT_UNLIKELY(cbPktMax < RTNETUDP_MIN_LEN))
         return false;
-    size_t cb = RT_BE2H_U16(pUdpHdr->uh_ulen);
+    cb = RT_BE2H_U16(pUdpHdr->uh_ulen);
     if (RT_UNLIKELY(cb > cbPktMax))
         return false;
     if (RT_UNLIKELY(cb > (size_t)(RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4)))
@@ -509,10 +512,12 @@ RT_EXPORT_SYMBOL(RTNetIPv4IsUDPValid);
  */
 RTDECL(uint16_t) RTNetIPv4TCPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, void const *pvData)
 {
+    bool fOdd;
+    size_t cbData;
     uint32_t u32Sum = rtNetIPv4PseudoChecksum(pIpHdr);
     u32Sum = rtNetIPv4AddTCPChecksum(pTcpHdr, u32Sum);
-    bool fOdd = false;
-    size_t cbData = RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4 - pTcpHdr->th_off * 4;
+    fOdd = false;
+    cbData = RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4 - pTcpHdr->th_off * 4;
     u32Sum = rtNetIPv4AddDataChecksum(pvData ? pvData : (uint8_t const *)pTcpHdr + pTcpHdr->th_off * 4,
                                       cbData, u32Sum, &fOdd);
     return rtNetIPv4FinalizeChecksum(u32Sum);
@@ -535,8 +540,9 @@ RT_EXPORT_SYMBOL(RTNetIPv4TCPChecksum);
  */
 RTDECL(uint16_t) RTNetTCPChecksum(uint32_t u32Sum, PCRTNETTCP pTcpHdr, void const *pvData, size_t cbData)
 {
+    bool fOdd;
     u32Sum = rtNetIPv4AddTCPChecksum(pTcpHdr, u32Sum);
-    bool fOdd = false;
+    fOdd = false;
     u32Sum = rtNetIPv4AddDataChecksum(pvData, cbData, u32Sum, &fOdd);
     return rtNetIPv4FinalizeChecksum(u32Sum);
 }
@@ -555,6 +561,9 @@ RT_EXPORT_SYMBOL(RTNetTCPChecksum);
  */
 DECLINLINE(bool) rtNetIPv4IsTCPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, size_t cbHdrMax, size_t cbPktMax)
 {
+    size_t cbTcpHdr;
+    size_t cbTcp;
+
     Assert(cbPktMax >= cbHdrMax);
 
     /*
@@ -562,10 +571,10 @@ DECLINLINE(bool) rtNetIPv4IsTCPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr,
      */
     if (RT_UNLIKELY(cbPktMax < RTNETTCP_MIN_LEN))
         return false;
-    size_t cbTcpHdr = pTcpHdr->th_off * 4;
+    cbTcpHdr = pTcpHdr->th_off * 4;
     if (RT_UNLIKELY(cbTcpHdr > cbHdrMax))
         return false;
-    size_t cbTcp = RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4;
+    cbTcp = RT_BE2H_U16(pIpHdr->ip_len) - pIpHdr->ip_hl * 4;
     if (RT_UNLIKELY(cbTcp > cbPktMax))
         return false;
     return true;
@@ -641,6 +650,10 @@ RT_EXPORT_SYMBOL(RTNetIPv4IsTCPValid);
  */
 RTDECL(bool) RTNetIPv4IsDHCPValid(PCRTNETUDP pUdpHdr, PCRTNETBOOTP pDhcp, size_t cbDhcp, uint8_t *pMsgType)
 {
+    ssize_t cbLeft;
+    uint8_t MsgType;
+    PCRTNETDHCPOPT pOpt;
+
     AssertPtrNull(pMsgType);
     if (pMsgType)
         *pMsgType = 0;
@@ -673,14 +686,14 @@ RTDECL(bool) RTNetIPv4IsDHCPValid(PCRTNETUDP pUdpHdr, PCRTNETBOOTP pDhcp, size_t
      * Check the DHCP cookie and make sure it isn't followed by an END option
      * (because that seems to be indicating that it's BOOTP and not DHCP).
      */
-    ssize_t cbLeft = (ssize_t)cbDhcp - RT_OFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_cookie) + sizeof(pDhcp->bp_vend.Dhcp.dhcp_cookie);
+    cbLeft = (ssize_t)cbDhcp - RT_OFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_cookie) + sizeof(pDhcp->bp_vend.Dhcp.dhcp_cookie);
     if (cbLeft < 0)
         return true;
     if (RT_UNLIKELY(RT_BE2H_U32(pDhcp->bp_vend.Dhcp.dhcp_cookie) != RTNET_DHCP_COOKIE))
         return false;
     if (cbLeft < 1)
         return true;
-    PCRTNETDHCPOPT pOpt = (PCRTNETDHCPOPT)&pDhcp->bp_vend.Dhcp.dhcp_opts[0];
+    pOpt = (PCRTNETDHCPOPT)&pDhcp->bp_vend.Dhcp.dhcp_opts[0];
     if (pOpt->dhcp_opt == RTNET_DHCP_OPT_END)
         return false;
 
@@ -690,7 +703,7 @@ RTDECL(bool) RTNetIPv4IsDHCPValid(PCRTNETUDP pUdpHdr, PCRTNETBOOTP pDhcp, size_t
      * We're not strict about termination (END) for many reasons, however,
      * we don't accept END without MSG_TYPE.
      */
-    uint8_t MsgType = 0;
+    MsgType = 0;
     while (cbLeft > 0)
     {
         if (pOpt->dhcp_opt == RTNET_DHCP_OPT_END)
