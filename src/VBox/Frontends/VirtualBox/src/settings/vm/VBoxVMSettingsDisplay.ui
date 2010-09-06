@@ -451,7 +451,7 @@
                 <string>Specifies whether multiple simultaneous connections to the VM are permitted.</string>
                </property>
                <property name="text">
-                <string>Allow Multiple Connections</string>
+                <string>&amp;Allow Multiple Connections</string>
                </property>
               </widget>
              </item>
