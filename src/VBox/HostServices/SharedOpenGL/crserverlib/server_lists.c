@@ -323,18 +323,20 @@ crServerDispatchAreTexturesResident(GLsizei n, const GLuint *textures,
                                     GLboolean *residences)
 {
     GLboolean retval;
-    GLboolean *res = (GLboolean *) crAlloc(n * sizeof(GLboolean));
     GLsizei i;
+    GLboolean *res = (GLboolean *) crAlloc(n * sizeof(GLboolean));
+    GLuint *textures2 = (GLuint *) crAlloc(n * sizeof(GLuint));
 
     (void) residences;
-
-    if (!cr_server.sharedTextureObjects) {
-        GLuint *textures2 = (GLuint *) crAlloc(n * sizeof(GLuint));
-        for (i = 0; i < n; i++)
-            textures2[i] = crStateGetTextureHWID(textures[i]);
-        retval = cr_server.head_spu->dispatch_table.AreTexturesResident(n, textures2, res);
-        crFree(textures2);
+        
+    for (i = 0; i < n; i++)
+    {
+        textures2[i] = crStateGetTextureHWID(textures[i]);
     }
+    retval = cr_server.head_spu->dispatch_table.AreTexturesResident(n, textures2, res);
+
+    crFree(textures2);
+
     crServerReturnValue(res, n * sizeof(GLboolean));
 
     crFree(res);
