@@ -382,7 +382,10 @@ static HGSMIOFFSET hgsmiProcessGuestCmdCompletion(HGSMIINSTANCE *pIns)
             hgsmiListRemove (&pIns->guestCmdCompleted, pHead, NULL);
 
         if(!pIns->guestCmdCompleted.pHead)
-            pIns->pHGFlags->u32HostFlags &= (~HGSMIHOSTFLAGS_GCOMMAND_COMPLETED);
+        {
+            if(pIns->pHGFlags)
+                pIns->pHGFlags->u32HostFlags &= (~HGSMIHOSTFLAGS_GCOMMAND_COMPLETED);
+        }
 
         hgsmiFIFOUnlock(pIns);
 
