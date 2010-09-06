@@ -235,8 +235,10 @@ bool vboxWddmCheckUpdateShadowAddress(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURC
 
 HGSMIHEAP* vboxWddmHgsmiGetHeapFromCmdOffset(PDEVICE_EXTENSION pDevExt, HGSMIOFFSET offCmd)
 {
+#ifdef VBOXVDMA
     if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.area, offCmd))
         return &pDevExt->u.primary.Vdma.CmdHeap;
+#endif
     if (HGSMIAreaContainsOffset(&pDevExt->u.primary.hgsmiAdapterHeap.area, offCmd))
         return &pDevExt->u.primary.hgsmiAdapterHeap;
     return NULL;
@@ -246,13 +248,17 @@ typedef enum
 {
     VBOXWDDM_HGSMICMD_TYPE_UNDEFINED = 0,
     VBOXWDDM_HGSMICMD_TYPE_CTL       = 1,
+#ifdef VBOXVDMA
     VBOXWDDM_HGSMICMD_TYPE_DMACMD    = 2
+#endif
 } VBOXWDDM_HGSMICMD_TYPE;
 
 VBOXWDDM_HGSMICMD_TYPE vboxWddmHgsmiGetCmdTypeFromOffset(PDEVICE_EXTENSION pDevExt, HGSMIOFFSET offCmd)
 {
+#ifdef VBOXVDMA
     if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.area, offCmd))
         return VBOXWDDM_HGSMICMD_TYPE_DMACMD;
+#endif
     if (HGSMIAreaContainsOffset(&pDevExt->u.primary.hgsmiAdapterHeap.area, offCmd))
         return VBOXWDDM_HGSMICMD_TYPE_CTL;
     return VBOXWDDM_HGSMICMD_TYPE_UNDEFINED;
@@ -804,9 +810,13 @@ BOOLEAN DxgkDdiInterruptRoutine(
     if (pDevExt->u.primary.pHostFlags) /* If HGSMI is enabled at all. */
     {
         VBOXSHGSMILIST CtlList;
+#ifdef VBOXVDMA
         VBOXSHGSMILIST DmaCmdList;
+#endif
         vboxSHGSMIListInit(&CtlList);
+#ifdef VBOXVDMA
         vboxSHGSMIListInit(&DmaCmdList);
+#endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
         VBOXSHGSMILIST VhwaCmdList;
@@ -829,10 +839,12 @@ BOOLEAN DxgkDdiInterruptRoutine(
                     HGSMIHEAP * pHeap = NULL;
                     switch (enmType)
                     {
+#ifdef VBOXVDMA
                         case VBOXWDDM_HGSMICMD_TYPE_DMACMD:
                             pList = &DmaCmdList;
                             pHeap = &pDevExt->u.primary.Vdma.CmdHeap;
                             break;
+#endif
                         case VBOXWDDM_HGSMICMD_TYPE_CTL:
                             pList = &CtlList;
                             pHeap = &pDevExt->u.primary.hgsmiAdapterHeap;
@@ -850,6 +862,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
                         {
                             switch (chInfo)
                             {
+#ifdef VBOXVDMA
                                 case VBVA_VDMA_CMD:
                                 case VBVA_VDMA_CTL:
                                 {
@@ -857,6 +870,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
                                     AssertRC(rc);
                                     break;
                                 }
+#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                 case VBVA_VHWA_CMD:
                                 {
@@ -887,13 +901,13 @@ BOOLEAN DxgkDdiInterruptRoutine(
             vboxSHGSMIListCat(&pDevExt->CtlList, &CtlList);
             bNeedDpc = TRUE;
         }
-
+#ifdef VBOXVDMA
         if (!vboxSHGSMIListIsEmpty(&DmaCmdList))
         {
             vboxSHGSMIListCat(&pDevExt->DmaCmdList, &DmaCmdList);
             bNeedDpc = TRUE;
         }
-
+#endif
         if (!vboxSHGSMIListIsEmpty(&VhwaCmdList))
         {
             vboxSHGSMIListCat(&pDevExt->VhwaCmdList, &VhwaCmdList);
@@ -936,7 +950,9 @@ BOOLEAN DxgkDdiInterruptRoutine(
 typedef struct VBOXWDDM_DPCDATA
 {
     VBOXSHGSMILIST CtlList;
+#ifdef VBOXVDMA
     VBOXSHGSMILIST DmaCmdList;
+#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     VBOXSHGSMILIST VhwaCmdList;
 #endif
@@ -954,7 +970,9 @@ BOOLEAN vboxWddmGetDPCDataCallback(PVOID Context)
     PVBOXWDDM_GETDPCDATA_CONTEXT pdc = (PVBOXWDDM_GETDPCDATA_CONTEXT)Context;
 
     vboxSHGSMIListDetach2List(&pdc->pDevExt->CtlList, &pdc->data.CtlList);
+#ifdef VBOXVDMA
     vboxSHGSMIListDetach2List(&pdc->pDevExt->DmaCmdList, &pdc->data.DmaCmdList);
+#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     vboxSHGSMIListDetach2List(&pdc->pDevExt->VhwaCmdList, &pdc->data.VhwaCmdList);
 #endif
@@ -992,13 +1010,13 @@ VOID DxgkDdiDpcRoutine(
         int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.hgsmiAdapterHeap, &context.data.CtlList);
         AssertRC(rc);
     }
-
+#ifdef VBOXVDMA
     if (!vboxSHGSMIListIsEmpty(&context.data.DmaCmdList))
     {
         int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.Vdma.CmdHeap, &context.data.DmaCmdList);
         AssertRC(rc);
     }
-
+#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     if (!vboxSHGSMIListIsEmpty(&context.data.VhwaCmdList))
     {
@@ -2329,6 +2347,7 @@ DxgkDdiSubmitCommand(
         default:
         {
             AssertBreakpoint();
+#ifdef VBOXVDMA
             VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
             PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, 0);
             if (!pDr)
@@ -2349,6 +2368,7 @@ DxgkDdiSubmitCommand(
             pDr->Location.phBuf = pSubmitCommand->DmaBufferPhysicalAddress.QuadPart + pSubmitCommand->DmaBufferSubmissionStartOffset;
 
             vboxVdmaCBufDrSubmit(pDevExt, &pDevExt->u.primary.Vdma, pDr);
+#endif
             break;
         }
     }
@@ -3830,6 +3850,7 @@ DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmGetAllocationFromAllocList(PDEVICE_EXTE
     return vboxWddmGetAllocationFromOpenData(pDevExt, (PVBOXWDDM_OPENALLOCATION)pAllocList->hDeviceSpecificAllocation);
 }
 
+#ifdef VBOXVDMA
 DECLINLINE(VOID) vboxWddmRectlFromRect(const RECT *pRect, PVBOXVDMA_RECTL pRectl)
 {
     pRectl->left = (int16_t)pRect->left;
@@ -3852,6 +3873,7 @@ DECLINLINE(VOID) vboxWddmSurfDescFromAllocation(PVBOXWDDM_ALLOCATION pAllocation
     pDesc->pitch = pAllocation->SurfDesc.pitch;
     pDesc->fFlags = 0;
 }
+#endif
 
 DECLINLINE(BOOLEAN) vboxWddmPixFormatConversionSupported(D3DDDIFORMAT From, D3DDDIFORMAT To)
 {
@@ -4071,7 +4093,7 @@ DxgkDdiPresent(
                     ++pPresent->pPatchLocationListOut;
 
                     break;
-
+#ifdef VBOXVDMA
                     cbCmd = pPresent->DmaSize;
 
                     Assert(pPresent->SubRectCnt);
@@ -4136,6 +4158,7 @@ DxgkDdiPresent(
                         drprintf((__FUNCTION__": cbCmd too small!! (%d)\n", cbCmd));
                         Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
                     }
+#endif
                 } while(0);
             }
             else

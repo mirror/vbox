@@ -956,18 +956,26 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
                             - PrimaryExtension->u.primary.cbMiniportHeap
                             - VBVA_ADAPTER_INFORMATION_SIZE;
 
-        ULONG ulSize = ulAvailable / 2;
-
+        ULONG ulSize;
+        ULONG offset;
+#ifdef VBOXVDMA
+        ulSize = ulAvailable / 2;
         if (ulSize > VBOXWDDM_C_VDMA_BUFFER_SIZE)
             ulSize = VBOXWDDM_C_VDMA_BUFFER_SIZE;
 
         /* Align down to 4096 bytes. */
         ulSize &= ~0xFFF;
-        ULONG offset = ulAvailable - ulSize;
+        offset = ulAvailable - ulSize;
 
         Assert(!(offset & 0xFFF));
-
-        rc = vboxVdmaCreate (PrimaryExtension, &PrimaryExtension->u.primary.Vdma, offset, ulSize);
+#else
+        offset = ulAvailable;
+#endif
+        rc = vboxVdmaCreate (PrimaryExtension, &PrimaryExtension->u.primary.Vdma
+#ifdef VBOXVDMA
+                , offset, ulSize
+#endif
+                );
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {

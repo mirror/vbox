@@ -95,8 +95,8 @@ endif
 ifdef VBOXWDDM_WITH_GL
 VBoxVideoWddm-inf_SOURCES += \
  $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGL.dll \
- $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxD3D9.dll \
- $(PATH_TARGET)/VBoxVideoWddmCat.dir/wined3d.dll \
+ $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxD3D9wddm.dll \
+ $(PATH_TARGET)/VBoxVideoWddmCat.dir/wined3dwddm.dll \
  $(PATH_TARGET)/VBoxVideoWddmCat.dir/libWine.dll \
  $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLarrayspu.dll \
  $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLcrutil.dll \
@@ -146,10 +146,10 @@ ifdef VBOXWDDM_WITH_GL
 $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGL.dll: $$(TARGET_VBoxOGL) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxD3D9.dll: $$(TARGET_VBoxD3D9) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxD3D9wddm.dll: $$(TARGET_VBoxD3D9wddm) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoWddmCat.dir/wined3d.dll: $$(TARGET_wined3d) | $$(call DIRDEP,$$(@D))
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/wined3dwddm.dll: $$(TARGET_wined3dwddm) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxVideoWddmCat.dir/libWine.dll: $$(TARGET_libWine) | $$(call DIRDEP,$$(@D))
@@ -212,8 +212,8 @@ $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.cat: \
         $(if $(VBOXWDDM_WITH_DISPD3D), $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D.dll, ) \
         $(if $(VBOXWDDM_WITH_DISPD3D), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D64.dll, ), ) \
         $(if $(VBOXWDDM_WITH_GL),  $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGL.dll \
-                                   $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxD3D9.dll \
-                                   $(PATH_TARGET)/VBoxVideoWddmCat.dir/wined3d.dll \
+                                   $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxD3D9wddm.dll \
+                                   $(PATH_TARGET)/VBoxVideoWddmCat.dir/wined3dwddm.dll \
                                    $(PATH_TARGET)/VBoxVideoWddmCat.dir/libWine.dll \
                                    $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLarrayspu.dll \
                                    $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLcrutil.dll \

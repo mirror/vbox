@@ -186,6 +186,27 @@ Function W2K_CopyFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxService.exe" ; Only used by W2K and up (for Shared Folders at the moment)
 
 !if $%VBOX_WITH_CROGL% == "1"
+  !if $%VBOXWDDM% == "1"
+    ${If} $g_bInstallWDDM == "true"
+      SetOutPath "$INSTDIR"
+      ; WDDM Video driver
+      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
+      FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLcrutil.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLpackspu.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"  
+      FILE "$%PATH_OUT%\bin\additions\libWine.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"
+      FILE "$%PATH_OUT%\bin\additions\wined3dwddm.dll"
+      SetOutPath $g_strSystemDir   
+      Goto doneCr
+    ${EndIf}
+  !endif
   ; crOpenGL
   SetOutPath $g_strSystemDir
   FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
@@ -210,6 +231,8 @@ Function W2K_CopyFiles
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxOGL.dll"
     ${DisableX64FSRedirection}
   !endif
+
+doneCr:
 
 !endif ; VBOX_WITH_CROGL
 
@@ -265,7 +288,12 @@ drv_video:
   StrCmp $g_bNoVideoDrv "true" drv_guest
   SetOutPath "$INSTDIR"
   DetailPrint "Installing video driver ..."
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /i "PCI\VEN_80EE&DEV_BEEF&SUBSYS_00000000&REV_00" "$INSTDIR\VBoxVideo.inf" "Display"'
+  ${If} $g_bInstallWDDM == "true"
+    DetailPrint "WDDM Driver being installed ..."
+    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /i "PCI\VEN_80EE&DEV_BEEF&SUBSYS_00000000&REV_00" "$INSTDIR\VBoxVideoWddm.inf" "Display"'
+  ${Else}
+    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /i "PCI\VEN_80EE&DEV_BEEF&SUBSYS_00000000&REV_00" "$INSTDIR\VBoxVideo.inf" "Display"'
+  ${EndIf}
   Pop $0                      ; Ret value
   LogText "Video driver result: $0"
   IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
@@ -327,25 +355,27 @@ sf:
 
 !if $%VBOX_WITH_CROGL% == "1"
 cropengl:
+  ${If} $g_bInstallWDDM == "true"
+  ${Else}
+    DetailPrint "Installing 3D OpenGL support ..."
+    WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Version" 2
+    WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "DriverVersion" 1
+    WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Flags" 1
+    WriteRegStr   HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Dll" "VBoxOGL.dll"
 
-  DetailPrint "Installing 3D OpenGL support ..."
-  WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Version" 2
-  WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "DriverVersion" 1
-  WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Flags" 1
-  WriteRegStr   HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Dll" "VBoxOGL.dll"
-
-  ; Write additional keys required for Windows 7 & XP 64-bit (but for 32-bit stuff)
-  Push $R0
-  Call GetWindowsVersion
-  Pop $R0 ; Windows Version
-  ${If} $R0 == '7'
-  ${OrIf} $R0 == 'XP'
-    WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Version" 2
-    WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "DriverVersion" 1
-    WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Flags" 1
-    WriteRegStr   HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Dll" "VBoxOGL.dll"
-  ${EndIf}
-  Pop $R0
+    ; Write additional keys required for Windows 7 & XP 64-bit (but for 32-bit stuff)
+    Push $R0
+    Call GetWindowsVersion
+    Pop $R0 ; Windows Version
+    ${If} $R0 == '7'
+    ${OrIf} $R0 == 'XP'
+      WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Version" 2
+      WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "DriverVersion" 1
+      WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Flags" 1
+      WriteRegStr   HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Dll" "VBoxOGL.dll"
+    ${EndIf}
+    Pop $R0
+  ${Endif}
 !endif
 
   Goto done

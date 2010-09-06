@@ -176,6 +176,7 @@ Var g_bNoMouseDrv       ; Cmd line: Do not install the VBoxMouse driver
 Var g_bWithAutoLogon    ; Cmd line: Install VBoxGINA / VBoxCredProv for auto logon support
 Var g_bWithD3D          ; Cmd line: Install Direct3D support
 Var g_bOnlyExtract      ; Cmd line: Only extract all files, do *not* install them. Only valid with param "/D" (target directory)
+Var g_bInstallWDDM      ; WDDM mode
 
 ; Platform parts of this installer
 !include "VBoxGuestAdditionsCommon.nsh"
@@ -681,6 +682,13 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
 
   Call GetWindowsVersion
   Pop $R0 ; Windows Version
+  
+!if $%VBOXWDDM% == "1"
+  ${If} $g_bInstallWDDM == "true"
+    ; All D3D Components are installed with WDDM driver package, nothing to be done here 
+    Return
+  ${EndIf}
+!endif
 
   ; If we're not in safe mode, print a warning and do nothing here
   ${If} $g_iSystemMode == '0'
@@ -892,12 +900,31 @@ Function .onSelChange
   SectionGetFlags ${SEC03} $0
 
   ${If} $0 == ${SF_SELECTED}
-    ; If we're not in safe mode, print a warning and don't install D3D support
-    ${If} $g_iSystemMode == '0'
+!if $%VBOXWDDM% == "1"
+  !if $%BUILD_TARGET_ARCH% == "x86"
+      Push $R0
+      Call GetWindowsVersion
+      Pop $R0 ; Now contains Windows version
+      DetailPrint "WDDM: winver ($R0)"
+      ${If} $R0 == "Vista"
+      ${OrIf} $R0 == "7"
+        DetailPrint "WDDM: ENABLED!!"
+        StrCpy $g_bInstallWDDM "true"
+      ${EndIf}
+      Pop $R0
+  !endif
+!endif
+    ; Now check what need to be done here depending on WDDM flag
+    ${If} $g_bInstallWDDM == "true"
+      ; Nothing to be done here	 
+    ${Else}
+      ; If we're not in safe mode, print a warning and don't install D3D support
+      ${If} $g_iSystemMode == '0'
         IntOp $0 $0 & ${SECTION_OFF} ; Unselect section again
         SectionSetFlags ${SEC03} $0
         MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_NO_SM) /SD IDOK
         Return
+      ${EndIf}
     ${EndIf}
   ${EndIf}
 

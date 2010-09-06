@@ -128,9 +128,6 @@ wined3d_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK
 if "$(KBUILD_TYPE)" != "debug" || defined(DEBUG_misha)
  wined3d_DEFS        += WINE_NO_DEBUG_MSGS
 endif
-ifdef VBOXWDDM
- wined3d_DEFS        += VBOXWDDM 
-endif
 wined3d_INCS         := $(PATH_SUB_CURRENT)/include
 wined3d_SOURCES      := \
     wined3d/arb_program_shader.c \
@@ -170,6 +167,13 @@ wined3d_SOURCES      := \
     wined3d/wined3d.def
 wined3d_LIBS = \
     $(PATH_LIB)/libWine$(VBOX_SUFF_LIB)
+    
+ifdef VBOXWDDM
+DLLS += wined3dwddm
+wined3dwddm_EXTENDS  = wined3d
+wined3dwddm_DEFS    += $(wined3d_DEFS) VBOXWDDM
+wined3dwddm_SOURCES  = $(subst wined3d.def,wined3dwddm.def,$(wined3d_SOURCES))
+endif
 
 DLLS += VBoxD3D8
 
@@ -222,9 +226,6 @@ VBoxD3D9_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOC
 if "$(KBUILD_TYPE)" != "debug" || defined(DEBUG_misha)
  VBoxD3D9_DEFS       += WINE_NO_DEBUG_MSGS
 endif
-ifdef VBOXWDDM
- VBoxD3D9_DEFS        += VBOXWDDM IN_VBOXWINEEX 
-endif
 VBoxD3D9_INCS         := $(PATH_SUB_CURRENT)/include
 VBoxD3D9_SOURCES      := \
     d3d9/cubetexture.c \
@@ -247,6 +248,14 @@ VBoxD3D9_SOURCES      := \
 VBoxD3D9_LIBS = \
     $(PATH_LIB)/libWine$(VBOX_SUFF_LIB) \
     $(PATH_LIB)/wined3d$(VBOX_SUFF_LIB)
+
+ifdef VBOXWDDM
+DLLS += VBoxD3D9wddm
+VBoxD3D9wddm_EXTENDS  = VBoxD3D9
+VBoxD3D9wddm_DEFS += $(VBoxD3D9_DEFS) VBOXWDDM IN_VBOXWINEEX
+VBoxD3D9wddm_SOURCES  = $(subst d3d9.def,d3d9wddm.def,$(VBoxD3D9_SOURCES))
+VBoxD3D9wddm_LIBS = $(subst wined3d$(VBOX_SUFF_LIB),wined3dwddm$(VBOX_SUFF_LIB),$(VBoxD3D9_LIBS))
+endif
 
 DLLS += d3d8
 d3d8_TEMPLATE      = VBOXGUESTR3NPDLL

@@ -26,7 +26,7 @@ void VBoxDispD3DClose(VBOXDISPD3D *pD3D)
 
 HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
 {
-    pD3D->hD3DLib = LoadLibraryW(L"VBoxD3D9.dll");
+    pD3D->hD3DLib = LoadLibraryW(L"VBoxD3D9wddm.dll");
     Assert(pD3D->hD3DLib);
     if (pD3D->hD3DLib)
     {

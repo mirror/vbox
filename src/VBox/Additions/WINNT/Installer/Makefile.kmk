@@ -109,7 +109,11 @@ DRIVER_FILES += \
 	$(PATH_BIN)/additions/VBoxOGLpackspu.dll \
 	$(PATH_BIN)/additions/VBoxOGLpassthroughspu.dll \
 	$(PATH_BIN)/additions/VBoxOGLfeedbackspu.dll \
-	$$(PATH_BIN)/additions/VBoxOGL.dll
+	$(PATH_BIN)/additions/VBoxOGL.dll \
+	$(VBOX_PATH_ADDITIONS.win.x86)/libWine.dll \
+    $(VBOX_PATH_ADDITIONS.win.x86)/wined3d.dll \
+    $(VBOX_PATH_ADDITIONS.win.x86)/VBoxD3D9.dll \
+	$(VBOX_PATH_ADDITIONS.win.x86)/VBoxD3D8.dll
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
     # Also include 32-bit DLLs on 64-bit guests to enable
     # running 32-bit OpenGL apps on that.
@@ -121,6 +125,17 @@ DRIVER_FILES += \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGLpassthroughspu.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGLfeedbackspu.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGL.dll
+ endif
+endif
+ifdef VBOXWDDM
+ ifeq ($(KBUILD_TARGET_ARCH),x86)
+DRIVER_FILES += \
+	$(PATH_BIN)/additions/VBoxVideoWddm.sys \
+	$(PATH_BIN)/additions/VBoxVideoWddm.inf \
+	$(PATH_BIN)/additions/VBoxVideoWddm.cat \
+	$(PATH_BIN)/additions/VBoxDispD3D.dll \
+	$(PATH_BIN)/additions/wined3dwddm.dll \
+	$(PATH_BIN)/additions/VBoxD3D9wddm.dll
  endif
 endif
 
@@ -140,6 +155,7 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'VBOX_WINDOWS_ADDITIONS_ICON_FILE=$(subst /,\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))' \
 	-E 'VBOX_NSIS_ICON_FILE=$(subst /,\,$(VBOX_NSIS_ICON_FILE))' \
 	-E 'VBOX_WITH_CROGL=$(if $(VBOX_WITH_CROGL),1,0)' \
+	-E 'VBOXWDDM=$(if $(VBOXWDDM),1,0)' \
 	-E 'VBOX_BRAND_WIN_ADD_INST_DLGBMP=$(subst /,\,$(VBOX_BRAND_WIN_ADD_INST_DLGBMP))' \
 	-E 'VBOX_BRAND_LICENSE_RTF=$(subst /,\,$(VBOX_BRAND_LICENSE_RTF))' \
 	$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),-E 'VBOX_BRAND_$(lang)_LICENSE_RTF=$(VBOX_BRAND_$(lang)_LICENSE_RTF)') \
