@@ -144,11 +144,18 @@ mv VBox.png $RPM_BUILD_ROOT/usr/share/pixmaps/VBox.png
 [ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
 # check for active VMs
-if pidof VBoxSVC > /dev/null 2>&1; then
-  echo "A copy of VirtualBox is currently running.  Please close it and try again. Please note"
-  echo "that it can take up to ten seconds for VirtualBox (in particular the VBoxSVC daemon) to"
-  echo "finish running."
-  exit 1
+VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null || true`
+if [ -n "$VBOXSVC_PID" ]; then
+  # try graceful termination; terminate the webservice first
+  /etc/init.d/vboxweb-service stop || true
+  kill -USR1 $VBOXSVC_PID
+  sleep 1
+  if pidof VBoxSVC > /dev/null 2>&1; then
+    echo "A copy of VirtualBox is currently running.  Please close it and try again. Please note"
+    echo "that it can take up to ten seconds for VirtualBox (in particular the VBoxSVC daemon) to"
+    echo "finish running."
+    exit 1
+  fi
 fi
 
 # check for old installation
@@ -304,11 +311,17 @@ fi
 
 %preun
 # check for active VMs
-if pidof VBoxSVC > /dev/null 2>&1; then
-  echo "A copy of VirtualBox is currently running.  Please close it and try again. Please note"
-  echo "that it can take up to ten seconds for VirtualBox (in particular the VBoxSVC daemon) to"
-  echo "finish running."
-  exit 1
+VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null || true`
+if [ -n "$VBOXSVC_PID" ]; then
+  # try graceful termination; terminate the webservice first
+  /etc/init.d/vboxweb-service stop || true
+  sleep 1
+  if pidof VBoxSVC > /dev/null 2>&1; then
+    echo "A copy of VirtualBox is currently running.  Please close it and try again. Please note"
+    echo "that it can take up to ten seconds for VirtualBox (in particular the VBoxSVC daemon) to"
+    echo "finish running."
+    exit 1
+  fi
 fi
 
 %if %{?rpm_suse:1}%{!?rpm_suse:0}

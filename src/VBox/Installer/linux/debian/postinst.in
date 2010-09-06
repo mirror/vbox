@@ -177,11 +177,11 @@ EOF
   fi
   if [ -x "/etc/init.d/vboxweb-service" ]; then
     update-rc.d vboxweb-service defaults >/dev/null
-#    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-#        invoke-rc.d vboxweb-service start || exit $?
-#    else
-#        /etc/init.d/vboxweb-service start || exit $?
-#    fi
+    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+        invoke-rc.d vboxweb-service start || exit $?
+    else
+        /etc/init.d/vboxweb-service start || exit $?
+    fi
   fi
 
 fi # $1 = "configure"
