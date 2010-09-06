@@ -654,7 +654,7 @@ void stubSetDefaultConfigurationOptions(void)
         int i;
 
         /* Apply viewport hack only if we're running under wine */
-        if (NULL!=GetModuleHandle("wined3d.dll"))
+        if (NULL!=GetModuleHandle("wined3d.dll") || NULL != GetModuleHandle("wined3dwddm.dll"))
         {
             crGetProcName(name, 1000);
             for (i=0; gsViewportHackApps[i]; ++i)

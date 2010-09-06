@@ -681,6 +681,7 @@ NTSTATUS vboxVdmaGgCmdSubmit(PVBOXVDMAGG pVdma, PVBOXVDMAPIPE_CMD_DR pCmd)
 
 /* end */
 
+#ifdef VBOXVDMA
 /*
  * This is currently used by VDMA. It is invisible for Vdma API clients since
  * Vdma transport may change if we choose to use another (e.g. more light-weight)
@@ -765,10 +766,19 @@ static int vboxVdmaInformHost(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, VB
 
     return rc;
 }
+#endif
 
 /* create a DMACommand buffer */
-int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuffer, ULONG cbBuffer)
+int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo
+#ifdef VBOXVDMA
+        , ULONG offBuffer, ULONG cbBuffer
+#endif
+        )
 {
+    int rc;
+    pInfo->fEnabled           = FALSE;
+
+#ifdef VBOXVDMA
     Assert((offBuffer & 0xfff) == 0);
     Assert((cbBuffer & 0xfff) == 0);
     Assert(offBuffer);
@@ -782,11 +792,9 @@ int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuff
         drprintf((__FUNCTION__": invalid parameters: offBuffer(0x%x), cbBuffer(0x%x)", offBuffer, cbBuffer));
         return VERR_INVALID_PARAMETER;
     }
-
-    pInfo->fEnabled           = FALSE;
     PVOID pvBuffer;
 
-    int rc = VBoxMapAdapterMemory (pDevExt,
+    rc = VBoxMapAdapterMemory (pDevExt,
                                    &pvBuffer,
                                    offBuffer,
                                    cbBuffer);
@@ -801,6 +809,7 @@ int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuff
                              false /*fOffsetBased*/);
         Assert(RT_SUCCESS(rc));
         if(RT_SUCCESS(rc))
+#endif
         {
             NTSTATUS Status = vboxVdmaGgConstruct(&pInfo->DmaGg);
             Assert(Status == STATUS_SUCCESS);
@@ -808,6 +817,7 @@ int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuff
                 return VINF_SUCCESS;
             rc = VERR_GENERAL_FAILURE;
         }
+#ifdef VBOXVDMA
         else
             drprintf((__FUNCTION__": HGSMIHeapSetup failed rc = 0x%x\n", rc));
 
@@ -815,7 +825,7 @@ int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuff
     }
     else
         drprintf((__FUNCTION__": VBoxMapAdapterMemory failed rc = 0x%x\n", rc));
-
+#endif
     return rc;
 }
 
@@ -829,10 +839,13 @@ int vboxVdmaDisable (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
 
     /* ensure nothing else is submitted */
     pInfo->fEnabled        = FALSE;
-
+#ifdef VBOXVDMA
     int rc = vboxVdmaInformHost (pDevExt, pInfo, VBOXVDMA_CTL_TYPE_DISABLE);
     AssertRC(rc);
     return rc;
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
 int vboxVdmaEnable (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
@@ -842,15 +855,19 @@ int vboxVdmaEnable (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
     Assert(!pInfo->fEnabled);
     if (pInfo->fEnabled)
         return VINF_ALREADY_INITIALIZED;
-
+#ifdef VBOXVDMA
     int rc = vboxVdmaInformHost (pDevExt, pInfo, VBOXVDMA_CTL_TYPE_ENABLE);
     Assert(RT_SUCCESS(rc));
     if (RT_SUCCESS(rc))
         pInfo->fEnabled        = TRUE;
 
     return rc;
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
+#ifdef VBOXVDMA
 int vboxVdmaFlush (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
 {
     dfprintf((__FUNCTION__"\n"));
@@ -864,6 +881,7 @@ int vboxVdmaFlush (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
 
     return rc;
 }
+#endif
 
 int vboxVdmaDestroy (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
 {
@@ -875,13 +893,16 @@ int vboxVdmaDestroy (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
         Assert(!pInfo->fEnabled);
         if (pInfo->fEnabled)
             rc = vboxVdmaDisable (pDevExt, pInfo);
+#ifdef VBOXVDMA
         VBoxUnmapAdapterMemory (pDevExt, (void**)&pInfo->CmdHeap.area.pu8Base, pInfo->CmdHeap.area.cbArea);
+#endif
     }
     else
         rc = VERR_GENERAL_FAILURE;
     return rc;
 }
 
+#ifdef VBOXVDMA
 void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
 {
     VBoxSHGSMICommandFree (&pInfo->CmdHeap, pDr);
@@ -1002,3 +1023,4 @@ int vboxVdmaCBufDrSubmit(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOXVD
         rc = VERR_INVALID_PARAMETER;
     return rc;
 }
+#endif

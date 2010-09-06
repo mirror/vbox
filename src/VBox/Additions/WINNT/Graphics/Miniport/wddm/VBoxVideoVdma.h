@@ -102,7 +102,9 @@ typedef struct VBOXVDMAGG
 /* DMA commands are currently submitted over HGSMI */
 typedef struct VBOXVDMAINFO
 {
+#ifdef VBOXVDMA
     HGSMIHEAP CmdHeap;
+#endif
     UINT      uLastCompletedPagingBufferCmdFenceId;
     BOOL      fEnabled;
 #if 0
@@ -112,15 +114,20 @@ typedef struct VBOXVDMAINFO
     VBOXVDMAGG DmaGg;
 } VBOXVDMAINFO, *PVBOXVDMAINFO;
 
-int vboxVdmaCreate (struct _DEVICE_EXTENSION* pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuffer, ULONG cbBuffer
+int vboxVdmaCreate (struct _DEVICE_EXTENSION* pDevExt, VBOXVDMAINFO *pInfo
+#ifdef VBOXVDMA
+        , ULONG offBuffer, ULONG cbBuffer
+#endif
 #if 0
         , PFNVBOXVDMASUBMIT pfnSubmit, PVOID pvContext
 #endif
         );
 int vboxVdmaDisable (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaEnable (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
-int vboxVdmaFlush (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaDestroy (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
+
+#ifdef VBOXVDMA
+int vboxVdmaFlush (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaCBufDrSubmit (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr);
 struct VBOXVDMACBUF_DR* vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, uint32_t cbTrailingData);
 void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, struct VBOXVDMACBUF_DR* pDr);
@@ -128,7 +135,7 @@ void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, struct VBOXVDMACBUF_DR* pDr);
 #define VBOXVDMACBUF_DR_DATA_OFFSET() (sizeof (VBOXVDMACBUF_DR))
 #define VBOXVDMACBUF_DR_SIZE(_cbData) (VBOXVDMACBUF_DR_DATA_OFFSET() + (_cbData))
 #define VBOXVDMACBUF_DR_DATA(_pDr) ( ((uint8_t*)(_pDr)) + VBOXVDMACBUF_DR_DATA_OFFSET() )
-
+#endif
 NTSTATUS vboxVdmaGgCmdSubmit(PVBOXVDMAGG pVdma, PVBOXVDMAPIPE_CMD_DR pCmd);
 PVBOXVDMAPIPE_CMD_DR vboxVdmaGgCmdCreate(PVBOXVDMAGG pVdma, VBOXVDMAPIPE_CMD_TYPE enmType, uint32_t cbCmd);
 void vboxVdmaGgCmdDestroy(PVBOXVDMAPIPE_CMD_DR pDr);

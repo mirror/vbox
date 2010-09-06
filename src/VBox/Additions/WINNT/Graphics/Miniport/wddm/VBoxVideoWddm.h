@@ -23,10 +23,18 @@
 #define VBOXWDDM_C_POINTER_MAX_WIDTH  64
 #define VBOXWDDM_C_POINTER_MAX_HEIGHT 64
 
+#ifdef VBOXVDMA
 #define VBOXWDDM_C_VDMA_BUFFER_SIZE   (64*_1K)
+#endif
 
 #ifdef VBOXWDDM_WITH_VBVA
 # define VBOXWDDM_RENDER_FROM_SHADOW
+#endif
+
+#ifndef VBOXWDDM_RENDER_FROM_SHADOW
+# ifndef VBOXVDMA
+#  error "VBOXVDMA must be defined!!!"
+# endif
 #endif
 
 #ifndef DEBUG_misha

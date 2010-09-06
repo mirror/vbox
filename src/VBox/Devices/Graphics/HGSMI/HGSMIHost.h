@@ -131,7 +131,7 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
 
 int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM);
 
-#ifdef VBOXVDMA
+#ifdef VBOXWDDM
 int HGSMICompleteGuestCommand(PHGSMIINSTANCE pIns, void *pvMem, bool bDoIrq);
 #endif
 

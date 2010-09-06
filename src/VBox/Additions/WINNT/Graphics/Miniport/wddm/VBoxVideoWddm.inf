@@ -58,8 +58,8 @@ VBoxVideoWddm.sys
 ;x86   [VBoxVideo.GL]
 ;amd64 [VBoxVideo.GL_wow64]
 ;gl VBoxOGL.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;gl VBoxD3D9.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;gl wined3d.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;gl VBoxD3D9wddm.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;gl wined3dwddm.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 ;gl libWine.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 ;gl VBoxOGLarrayspu.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 ;gl VBoxOGLcrutil.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
@@ -101,9 +101,9 @@ HKR,, VgaCompatible, %REG_DWORD%, 0
 ;amd64 ;gl 11,,VBoxOGL64.dll,1
 ;gl 11,,VBoxOGL.dll,1
 ;amd64 ;gl 11,,VBoxD3D964.dll,1
-;gl 11,,VBoxD3D9.dll,1
+;gl 11,,VBoxD3D9wddm.dll,1
 ;amd64 ;gl 11,,wined3d64.dll,1
-;gl 11,,wined3d.dll,1
+;gl 11,,wined3dwddm.dll,1
 ;amd64 ;gl 11,,libWine64.dll,1
 ;gl 11,,libWine.dll,1
 ;amd64 ;gl 11,,VBoxOGLarrayspu64.dll,1
@@ -147,9 +147,9 @@ VBoxVideoWddm.sys = 1
 ;amd64 ;gl VBoxOGL64.dll = 1
 ;gl VBoxOGL.dll = 1
 ;amd64 ;gl VBoxD3D964.dll = 1
-;gl VBoxD3D9.dll = 1
+;gl VBoxD3D9wddm.dll = 1
 ;amd64 ;gl wined3d64.dll = 1
-;gl wined3d.dll = 1
+;gl wined3dwddm.dll = 1
 ;amd64 ;gl libWine64.dll = 1
 ;gl libWine.dll = 1
 ;amd64 ;gl VBoxOGLarrayspu64.dll = 1
