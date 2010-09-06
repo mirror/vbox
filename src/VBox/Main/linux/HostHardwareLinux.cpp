@@ -24,6 +24,7 @@
 *******************************************************************************/
 
 #include <HostHardwareLinux.h>
+#include <vector.h>
 
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -91,7 +92,8 @@ static int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD,
                                  bool *pfSuccess);
 #ifdef VBOX_USB_WITH_SYSFS
 # ifdef VBOX_USB_WITH_INOTIFY
-static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList, bool *pfSuccess);
+static int getUSBDeviceInfoFromSysfs(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo,
+                                     bool *pfSuccess);
 
 /** Function object to be invoked on filenames from a directory. */
 typedef struct pathHandler
@@ -109,16 +111,6 @@ static bool phDoHandle(pathHandler *pHandler, const char *pcszNode)
     Assert(pcszNode[0] == '/');
     return pHandler->handle(pHandler, pcszNode);
 }
-
-/** Vector of char *-s for holding directory entries */
-#define VECTOR_TYPE       char *
-#define VECTOR_TYPENAME   filePaths
-static inline void filePathsCleanup(char **ppsz)
-{
-    free(*ppsz);
-}
-#define VECTOR_DESTRUCTOR filePathsCleanup
-#include "vector.h"
 
 static int walkDirectory(const char *pcszPath, pathHandler *pHandler,
                          int withRealPath);
@@ -1007,53 +999,25 @@ int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
     return rc;
 }
 
-/** Vector type for the list of interfaces. */
-#define VECTOR_TYPE       char *
-#define VECTOR_TYPENAME   usbInterfaceList
-static void usbInterfaceListCleanup(char **ppsz)
-{
-    RTStrFree(*ppsz);
-}
-#define VECTOR_DESTRUCTOR usbInterfaceListCleanup
-#include "vector.h"
-
-struct USBInterfaceList
-{
-    /** The vector of devices */
-    usbInterfaceList mList;
-    /** The single traversal iterator */
-    usbInterfaceList_iterator mIt;
-};
-
 void USBDevInfoCleanup(USBDeviceInfo *pSelf)
 {
     RTStrFree(pSelf->mDevice);
     RTStrFree(pSelf->mSysfsPath);
     pSelf->mDevice = pSelf->mSysfsPath = NULL;
-    if (pSelf->mInterfaces)
-    {
-        usbInterfaceList_cleanup(&pSelf->mInterfaces->mList);
-        RTMemFree(pSelf->mInterfaces);
-    }
+    VEC_CLEANUP_PTR(&pSelf->mvecpszInterfaces);
 }
 
 int USBDevInfoInit(USBDeviceInfo *pSelf, const char *aDevice,
                    const char *aSystemID)
 {
-    const usbInterfaceList_iterator *pItBegin;
-
     pSelf->mDevice = aDevice ? RTStrDup(aDevice) : NULL;
     pSelf->mSysfsPath = aSystemID ? RTStrDup(aSystemID) : NULL;
-    pSelf->mInterfaces = (struct USBInterfaceList *) RTMemAllocZ(sizeof(struct USBInterfaceList));
-    if (   !pSelf->mInterfaces
-        || !usbInterfaceList_init(&pSelf->mInterfaces->mList)
+    if (   RT_FAILURE(VEC_INIT_PTR(&pSelf->mvecpszInterfaces, char *, RTStrFree))
         || (aDevice && !pSelf->mDevice) || (aSystemID && ! pSelf->mSysfsPath))
     {
         USBDevInfoCleanup(pSelf);
         return 0;
     }
-    pItBegin = usbInterfaceList_begin(&pSelf->mInterfaces->mList);
-    usbInterfaceList_iter_init(&pSelf->mInterfaces->mIt, pItBegin);
     return 1;
 }
 
@@ -1062,41 +1026,18 @@ int USBDevInfoUpdateDevices (VBoxMainUSBDeviceInfo *pSelf)
     LogFlowFunc(("entered\n"));
     int rc = VINF_SUCCESS;
     bool success = false;  /* Have we succeeded in finding anything yet? */
-    USBDeviceInfoList_clear(&pSelf->mDeviceList);
+    VEC_CLEAR_OBJ(&pSelf->mvecDevInfo);
 #ifdef VBOX_USB_WITH_SYSFS
 # ifdef VBOX_USB_WITH_INOTIFY
     if (   RT_SUCCESS(rc)
         && (!success || testing()))
-        rc = getUSBDeviceInfoFromSysfs(&pSelf->mDeviceList, &success);
+        rc = getUSBDeviceInfoFromSysfs(&pSelf->mvecDevInfo, &success);
 # endif
 #else /* !VBOX_USB_WITH_SYSFS */
     NOREF(success);
 #endif /* !VBOX_USB_WITH_SYSFS */
     LogFlowFunc(("rc=%Rrc\n", rc));
     return rc;
-}
-
-char *USBDevInfoFirstInterface(struct USBInterfaceList *pInterfaces)
-{
-    const usbInterfaceList_iterator *pItBegin, *pItEnd;
-    pItBegin = usbInterfaceList_begin(&pInterfaces->mList);
-    pItEnd = usbInterfaceList_end(&pInterfaces->mList);
-    usbInterfaceList_iter_init(&pInterfaces->mIt, pItBegin);
-    if (usbInterfaceList_iter_eq(pItBegin, pItEnd))
-        return NULL;
-    return *usbInterfaceList_iter_target(&pInterfaces->mIt);
-}
-
-char *USBDevInfoNextInterface(struct USBInterfaceList *pInterfaces)
-{
-    const usbInterfaceList_iterator *pItEnd;
-    pItEnd = usbInterfaceList_end(&pInterfaces->mList);
-    if (usbInterfaceList_iter_eq(&pInterfaces->mIt, pItEnd))
-        return NULL;
-    usbInterfaceList_iter_incr(&pInterfaces->mIt);
-    if (usbInterfaceList_iter_eq(&pInterfaces->mIt, pItEnd))
-        return NULL;
-    return *usbInterfaceList_iter_target(&pInterfaces->mIt);
 }
 
 
@@ -1455,19 +1396,18 @@ VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
 /** Helper for readFilePathsFromDir().  Adds a path to the vector if it is not
  * NULL and not a dotfile (".", "..", ".*"). */
 static int maybeAddPathToVector(const char *pcszPath, const char *pcszEntry,
-                                filePaths *pvpchDevs)
+                                VECTOR_PTR(char *) *pvpchDevs)
 {
-    filePaths_op_table *pOps = &filePaths_ops;
     char *pszPath;
 
     if (!pcszPath)
         return 0;
     if (pcszEntry[0] == '.')
         return 0;
-    pszPath = strdup(pcszPath);
+    pszPath = RTStrDup(pcszPath);
     if (!pszPath)
         return ENOMEM;
-    if (!pOps->push_back(pvpchDevs, &pszPath))
+    if (RT_FAILURE(VEC_PUSH_BACK_PTR(pvpchDevs, char *, pszPath)))
         return ENOMEM;
     return 0;
 }
@@ -1476,7 +1416,7 @@ static int maybeAddPathToVector(const char *pcszPath, const char *pcszEntry,
  * @a pDir to the vector @a pvpchDevs using either the full path or the
  * realpath() and skipping hidden files and files on which realpath() fails. */
 static int readFilePathsFromDir(const char *pcszPath, DIR *pDir,
-                                filePaths *pvpchDevs, int withRealPath)
+                                VECTOR_PTR(char *) *pvpchDevs, int withRealPath)
 {
     struct dirent entry, *pResult;
     int err;
@@ -1510,15 +1450,14 @@ static int readFilePathsFromDir(const char *pcszPath, DIR *pDir,
  *                        by the caller even on failure.
  * @param   withRealPath  whether to canonicalise the filename with realpath
  */
-static int readFilePaths(const char *pcszPath, filePaths *pvpchDevs,
+static int readFilePaths(const char *pcszPath, VECTOR_PTR(char *) *pvpchDevs,
                          int withRealPath)
 {
-    filePaths_op_table *pOps = &filePaths_ops;
     DIR *pDir;
     int err;
 
     AssertPtrReturn(pvpchDevs, EINVAL);
-    AssertReturn(pOps->size(pvpchDevs) == 0, EINVAL);
+    AssertReturn(VEC_SIZE_PTR(pvpchDevs) == 0, EINVAL);
     AssertPtrReturn(pcszPath, EINVAL);
 
     pDir = opendir(pcszPath);
@@ -1541,26 +1480,16 @@ static int readFilePaths(const char *pcszPath, filePaths *pvpchDevs,
  *                       names
  * @param   pHandler     Handler object which will be invoked on each file
  */
-static int walkFiles(filePaths *pvpchDevs, pathHandler *pHandler)
+static int walkFiles(VECTOR_PTR(char *) *pvpchDevs, pathHandler *pHandler)
 {
-    filePaths_op_table *pOps = &filePaths_ops;
-    filePaths_iter_op_table *pItOps = &filePaths_iter_ops;
-    filePaths_iterator it;
+    char **ppszEntry;
 
     AssertPtrReturn(pvpchDevs, EINVAL);
     AssertPtrReturn(pHandler, EINVAL);
 
-    pItOps->init(&it, pOps->begin(pvpchDevs));
-    for (; !pItOps->eq(&it, pOps->end(pvpchDevs)); pItOps->incr(&it))
-    {
-        const char *pszEntry;
-
-        pszEntry = *pItOps->target(&it);
-        if (!pszEntry)
-            return ENOMEM;
-        if (!phDoHandle(pHandler, pszEntry))
+    VEC_FOR_EACH(pvpchDevs, char *, ppszEntry)
+        if (!phDoHandle(pHandler, *ppszEntry))
             break;
-    }
     return 0;
 }
 
@@ -1578,17 +1507,18 @@ static int walkFiles(filePaths *pvpchDevs, pathHandler *pHandler)
 /* static */
 int walkDirectory(const char *pcszPath, pathHandler *pHandler, int withRealPath)
 {
-    filePaths vpchDevs;
-    filePaths_init(&vpchDevs);
+    VECTOR_PTR(char *) vpchDevs;
     int rc;
 
     AssertPtrReturn(pcszPath, VERR_INVALID_POINTER);
     AssertReturn(pcszPath[strlen(pcszPath)] != '/', VERR_INVALID_PARAMETER);
 
+    if (RT_FAILURE((rc = VEC_INIT_PTR(&vpchDevs, char *, RTStrFree))))
+        return rc;
     rc = readFilePaths(pcszPath, &vpchDevs, withRealPath);
     if (!rc)
         rc = walkFiles(&vpchDevs, pHandler);
-    filePaths_cleanup(&vpchDevs);
+    VEC_CLEANUP_PTR(&vpchDevs);
     return RTErrConvertFromErrno(rc);
 }
 
@@ -1623,7 +1553,7 @@ typedef struct matchUSBDevice
 {
     /** The pathHandler object we inherit from - must come first */
     pathHandler mParent;
-    USBDeviceInfoList *mList;
+    VECTOR_OBJ(USBDeviceInfo) *mpvecDevInfo;
 } matchUSBDevice;
 
 static bool mudHandle(pathHandler *pParent, const char *pcszNode)
@@ -1652,17 +1582,19 @@ static bool mudHandle(pathHandler *pParent, const char *pcszNode)
     
     USBDeviceInfo info;
     if (USBDevInfoInit(&info, szDevPath, pcszNode))
-        if (USBDeviceInfoList_push_back(pSelf->mList, &info))
+        if (RT_SUCCESS(VEC_PUSH_BACK_OBJ(pSelf->mpvecDevInfo, USBDeviceInfo,
+                                         &info)))
             return true;
     USBDevInfoCleanup(&info);
     return false;
 }
 
-static void mudInit(matchUSBDevice *pSelf, USBDeviceInfoList *pList)
+static void mudInit(matchUSBDevice *pSelf,
+                    VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo)
 {
     AssertPtrReturnVoid(pSelf);
     pSelf->mParent.handle = mudHandle;
-    pSelf->mList = pList;
+    pSelf->mpvecDevInfo = pvecDevInfo;
 }
 
 
@@ -1713,12 +1645,12 @@ static bool muiHandle(pathHandler *pParent, const char *pcszNode)
     matchUSBInterface *pSelf = (matchUSBInterface *)pParent;
     if (!muiIsAnInterfaceOf(pcszNode, pSelf->mInfo->mSysfsPath))
         return true;
-    char *pcszDup = RTStrDup(pcszNode);
-    if (pcszDup)
-        if (usbInterfaceList_push_back(&pSelf->mInfo->mInterfaces->mList,
-                                       &pcszDup))
+    char *pszDup = (char *)RTStrDup(pcszNode);
+    if (pszDup)
+        if (RT_SUCCESS(VEC_PUSH_BACK_PTR(&pSelf->mInfo->mvecpszInterfaces,
+                                         char *, pszDup)))
             return true;
-    RTStrFree(pcszDup);
+    RTStrFree(pszDup);
     return false;
 }
 
@@ -1747,32 +1679,29 @@ static void muiInit(matchUSBInterface *pSelf, USBDeviceInfo *pInfo)
  *
  * @returns IPRT status code
  */
-static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
-                                     bool *pfSuccess)
+/* static */
+int getUSBDeviceInfoFromSysfs(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo,
+                              bool *pfSuccess)
 {
-    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvecDevInfo, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER); /* Valid or Null */
-    LogFlowFunc (("pList=%p, pfSuccess=%p\n",
-                  pList, pfSuccess));
+    LogFlowFunc (("pvecDevInfo=%p, pfSuccess=%p\n",
+                  pvecDevInfo, pfSuccess));
     matchUSBDevice devHandler;
-    mudInit(&devHandler, pList);
+    mudInit(&devHandler, pvecDevInfo);
     int rc = walkDirectory("/sys/bus/usb/devices", &devHandler.mParent, true);
     do {
         if (RT_FAILURE(rc))
             break;
-        USBDeviceInfoList_iterator info;
-        USBDeviceInfoList_iter_init(&info,
-                                    USBDeviceInfoList_begin(pList));
-        while (!USBDeviceInfoList_iter_eq(&info,
-                                          USBDeviceInfoList_end(pList)))
+        USBDeviceInfo *pInfo;
+        VEC_FOR_EACH(pvecDevInfo, USBDeviceInfo, pInfo)
         {
             matchUSBInterface ifaceHandler;
-            muiInit(&ifaceHandler, USBDeviceInfoList_iter_target(&info));
+            muiInit(&ifaceHandler, pInfo);
             rc = walkDirectory("/sys/bus/usb/devices", &ifaceHandler.mParent,
                                true);
             if (RT_FAILURE(rc))
                 break;
-            USBDeviceInfoList_iter_incr(&info);
         }
     } while(0);
     if (pfSuccess)
