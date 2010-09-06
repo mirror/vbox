@@ -26,7 +26,7 @@
 #ifndef ___VBox_version_h
 #define ___VBox_version_h
 
-/* Product info */
+/* Product info. */
 #include <product-generated.h>
 
 #ifndef RC_INVOKED
@@ -34,7 +34,7 @@
 
 /** Combined version number. */
 # define VBOX_VERSION                    (VBOX_VERSION_MAJOR << 16 | VBOX_VERSION_MINOR)
-/** Get minor version from combined version */
+/** Get minor version from combined version. */
 # define VBOX_GET_VERSION_MINOR(uVer)    ((uVer) & 0xffff)
 /** Get major version from combined version. */
 # define VBOX_GET_VERSION_MAJOR(uVer)    ((uVer) >> 16)
@@ -45,7 +45,7 @@
  * The returned number can be used in normal integer comparsions and will yield
  * the expected results.
  *
- * @param   uMajor      The major version nu.ber
+ * @param   uMajor      The major version number.
  * @param   uMinor      The minor version number.
  * @param   uBuild      The build number.
  * @returns Full version number.
