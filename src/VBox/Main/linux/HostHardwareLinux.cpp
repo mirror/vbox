@@ -1322,12 +1322,9 @@ int hotplugInotifyImpl::Wait(RTMSINTERVAL aMillies)
     VECTOR_PTR(char *) vecpchDevs;
 
     AssertRCReturn(mStatus, VERR_WRONG_ORDER);
-    if (RT_FAILURE(rc = VEC_INIT_PTR(&vecpchDevs, char *, RTStrFree)))
-        return rc;
     bool fEntered = ASMAtomicCmpXchgU32(&mfWaiting, 1, 0);
-    if (!fEntered)
-        VEC_CLEANUP_PTR(&vecpchDevs);
     AssertReturn(fEntered, VERR_WRONG_ORDER);
+    VEC_INIT_PTR(&vecpchDevs, char *, RTStrFree);
     do {
         struct pollfd pollFD[MAX_POLLID];
 
@@ -1417,8 +1414,8 @@ int USBDevInfoInit(USBDeviceInfo *pSelf, const char *aDevice,
 {
     pSelf->mDevice = aDevice ? RTStrDup(aDevice) : NULL;
     pSelf->mSysfsPath = aSystemID ? RTStrDup(aSystemID) : NULL;
-    if (   RT_FAILURE(VEC_INIT_PTR(&pSelf->mvecpszInterfaces, char *, RTStrFree))
-        || (aDevice && !pSelf->mDevice) || (aSystemID && ! pSelf->mSysfsPath))
+    VEC_INIT_PTR(&pSelf->mvecpszInterfaces, char *, RTStrFree);
+    if ((aDevice && !pSelf->mDevice) || (aSystemID && ! pSelf->mSysfsPath))
     {
         USBDevInfoCleanup(pSelf);
         return 0;
@@ -1583,11 +1580,11 @@ static int doUpdateUSBDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo,
 
 int USBDevInfoUpdateDevices (VBoxMainUSBDeviceInfo *pSelf)
 {
+    int rc = VINF_SUCCESS;
+
     LogFlowFunc(("entered\n"));
     VECTOR_PTR(char *) vecpchDevs;
-    int rc = VEC_INIT_PTR(&vecpchDevs, char *, RTStrFree);
-    if (RT_FAILURE(rc))
-        return rc;
+    VEC_INIT_PTR(&vecpchDevs, char *, RTStrFree);
     VEC_CLEAR_OBJ(&pSelf->mvecDevInfo);
 #ifdef VBOX_USB_WITH_SYSFS
 # ifdef VBOX_USB_WITH_INOTIFY
