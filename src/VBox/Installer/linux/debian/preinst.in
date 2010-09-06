@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 #
 # Copyright (C) 2006-2010 Oracle Corporation
 #
@@ -26,11 +26,22 @@ if [ "$1" = "install" -o "$1" = "upgrade" ]; then
   db_capb backup
 
   # check for active VMs
-  if pidof VBoxSVC > /dev/null 2>&1; then
-    db_fset virtualbox/old-running seen false || true
-    db_input critical virtualbox/old-running || true
-    db_go || true
-    exit 1
+  VBOXSVC_PID=`pidof VBoxSVC 2> /dev/null || true`
+  if [ -n "$VBOXSVC_PID" ]; then
+    # try graceful termination; terminate the webservice first
+    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+      invoke-rc.d vboxweb-service stop || true
+    else
+      /etc/init.d/vboxweb-service stop || true
+    fi
+    kill -USR1 $VBOXSVC_PID
+    sleep 1
+    if pidof VBoxSVC > /dev/null 2>&1; then   
+      db_fset virtualbox/old-running seen false || true
+      db_input critical virtualbox/old-running || true
+      db_go || true
+      exit 1
+    fi
   fi
 
   # check for old installation

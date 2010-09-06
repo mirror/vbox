@@ -126,7 +126,7 @@ fi
 
 if [ "$system" = "debian" ]; then
     daemon() {
-        start-stop-daemon --chuid "$VBOXWEB_USER" --start --exec $1 -- $2
+        start-stop-daemon --background --chuid "$1" --start --exec $2 -- $3
     }
     killproc() {
         start-stop-daemon --stop --exec $@
@@ -147,7 +147,7 @@ fi
 if [ "$system" = "gentoo" ]; then
     . /sbin/functions.sh
     daemon() {
-        start-stop-daemon --start --exec $1 -- $2
+        start-stop-daemon --start --exec $2 -- $3
     }
     killproc() {
         start-stop-daemon --stop --exec $@
@@ -173,7 +173,7 @@ if [ "$system" = "arch" ]; then
     . /etc/rc.d/functions
     daemon() {
         $@
-        test $? -eq 0 && add_daemon rc.`basename $1`
+        test $? -eq 0 && add_daemon rc.`basename $2`
     }
     killproc() {
         killall $@
@@ -194,7 +194,7 @@ fi
 
 if [ "$system" = "slackware" ]; then
     daemon() {
-        $1 $2
+        $2 $3
     }
     killproc() {
         killall $1
@@ -216,7 +216,7 @@ fi
 if [ "$system" = "lfs" ]; then
     . /etc/rc.d/init.d/functions
     daemon() {
-        loadproc $1 $2
+        loadproc $2 $3
     }
     if [ -n "$NOLSB" ]; then
         fail_msg() {
@@ -268,9 +268,11 @@ start() {
         [ -n "$VBOXWEB_THREADS" ]        && PARAMS="$PARAMS -T $VBOXWEB_THREADS"
         [ -n "$VBOXWEB_KEEPALIVE" ]      && PARAMS="$PARAMS -k $VBOXWEB_KEEPALIVE"
         [ -n "$VBOXWEB_LOGFILE" ]        && PARAMS="$PARAMS -F $VBOXWEB_LOGFILE"
-        daemon $binary -b $PARAMS > /dev/null 2>&1
-        RETVAL=$?
-        test $RETVAL -eq 0 && echo `pidof VBoxService` > $PIDFILE
+        for u in $VBOXWEB_USER; do
+            daemon $u $binary $PARAMS > /dev/null 2>&1
+        done
+        PID=`pidof $binary 2>/dev/null`
+        [ -n "$PID" ] && echo "$PID" > $PIDFILE
         succ_msg
     fi
     return $RETVAL
@@ -279,13 +281,11 @@ start() {
 stop() {
     if test -f $PIDFILE; then
         begin_msg "Stopping VirtualBox web service";
-        vboxdrvrunning || {
-            fail_msg "VirtualBox kernel module not loaded!"
-            exit 0
-        }
         killproc $binary
         RETVAL=$?
-        test $RETVAL -eq 0 && rm -f $PIDFILE
+        if ! pidof $binary > /dev/null 2>&1; then
+            rm -f $PIDFILE
+        fi
         succ_msg
     fi
     return $RETVAL
