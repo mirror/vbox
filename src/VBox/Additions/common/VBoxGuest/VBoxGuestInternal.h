@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -142,9 +142,29 @@ typedef struct VBOXGUESTDEVEXT
     /** The current clipboard client ID, 0 if no client.
      * For implementing the VBOXGUEST_IOCTL_CLIPBOARD_CONNECT interface. */
     uint32_t                    u32ClipboardClientId;
-
+#ifdef VBOX_WITH_VRDP_SESSION_HANDLING
+    BOOL                        fVRDPEnabled;
+#endif
     /** Memory balloon information for RTR0MemObjAllocPhysNC(). */
     VBOXGUESTMEMBALLOON         MemBalloon;
+    /** Align the next bit on a 64-byte boundary and make sure it starts at the same
+     *  offset in both 64-bit and 32-bit builds.
+     *
+     * @remarks The aligments of the members that are larger than 48 bytes should be
+     *          64-byte for cache line reasons. structs containing small amounts of
+     *          data could be lumped together at the end with a < 64 byte padding
+     *          following it (to grow into and align the struct size).
+     */
+    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 24 : 4];
+
+    /** Windows part. */
+    union
+    {
+#ifdef ___VBoxGuest_win_h
+        VBOXGUESTDEVEXTWIN          s;
+#endif
+        uint8_t                     padding[256];      /* Multiple of 64; fix me! */
+    } win;
 
 } VBOXGUESTDEVEXT;
 /** Pointer to the VBoxGuest driver data. */
@@ -199,6 +219,10 @@ int  VBoxGuestSetGuestCapabilities(uint32_t fOr, uint32_t fNot);
 int  VBoxGuestCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);
 int  VBoxGuestCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);
 void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
+
+#ifdef VBOX_WITH_HGCM
+int  VBoxGuestHGCMInitCommunication(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType);
+#endif
 
 int  VBoxGuestCommonIOCtlFast(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
 int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
