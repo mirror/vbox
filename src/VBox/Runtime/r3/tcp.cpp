@@ -1002,6 +1002,13 @@ RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies)
 }
 
 
+RTR3DECL(int)  RTTcpSelectOneEx(RTSOCKET Sock, uint32_t fEvents, uint32_t *pfEvents,
+                                RTMSINTERVAL cMillies)
+{
+    return RTSocketSelectOneEx(Sock, fEvents, pfEvents, cMillies);
+}
+
+
 RTR3DECL(int) RTTcpGetLocalAddress(RTSOCKET Sock, PRTNETADDR pAddr)
 {
     return RTSocketGetLocalAddress(Sock, pAddr);
