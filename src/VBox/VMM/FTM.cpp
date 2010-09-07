@@ -916,7 +916,7 @@ static DECLCALLBACK(int) ftmR3StandbyThread(RTTHREAD Thread, void *pvUser)
             if (u64TimeNow > pVM->ftm.s.standby.u64LastHeartbeat + pVM->ftm.s.uInterval * 4)
             {
                 /* Timeout; prepare to fallover. */
-                LogRel(("FTM: TIMEOUT (%RX64 vs %RX64): activate standby VM!\n", u64TimeNow, pVM->ftm.s.standby.u64LastHeartbeat + pVM->ftm.s.uInterval * 2));
+                LogRel(("FTSync: TIMEOUT (%RX64 vs %RX64 ms): activate standby VM!\n", u64TimeNow, pVM->ftm.s.standby.u64LastHeartbeat + pVM->ftm.s.uInterval * 2));
 
                 pVM->ftm.s.fActivateStandby = true;
                 /** todo: prevent split-brain. */
