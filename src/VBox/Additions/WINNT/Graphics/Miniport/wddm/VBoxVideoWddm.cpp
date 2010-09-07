@@ -86,14 +86,8 @@ VBOXVIDEOOFFSET vboxWddmValidatePrimary(PVBOXWDDM_ALLOCATION pAllocation)
     return offVram;
 }
 
-NTSTATUS vboxWddmGhDisplayPostInfoScreen (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation, POINT * pVScreenPos)
+NTSTATUS vboxWddmGhDisplayPostInfoScreenBySDesc (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SURFACE_DESC pDesc, POINT * pVScreenPos, uint16_t fFlags)
 {
-    VBOXVIDEOOFFSET offVram = pAllocation->offVram;
-    Assert(offVram != VBOXVIDEOOFFSET_VOID);
-//    if (offVram == VBOXVIDEOOFFSET_VOID)
-//        return STATUS_INVALID_PARAMETER;
-
-    /* Issue the screen info command. */
     void *p = vboxHGSMIBufferAlloc (pDevExt,
                                       sizeof (VBVAINFOSCREEN),
                                       HGSMI_CH_VBVA,
@@ -103,15 +97,15 @@ NTSTATUS vboxWddmGhDisplayPostInfoScreen (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_A
     {
         VBVAINFOSCREEN *pScreen = (VBVAINFOSCREEN *)p;
 
-        pScreen->u32ViewIndex    = pAllocation->SurfDesc.VidPnSourceId;
+        pScreen->u32ViewIndex    = pDesc->VidPnSourceId;
         pScreen->i32OriginX      = pVScreenPos->x;
         pScreen->i32OriginY      = pVScreenPos->y;
         pScreen->u32StartOffset  = 0; //(uint32_t)offVram; /* we pretend the view is located at the start of each framebuffer */
-        pScreen->u32LineSize     = pAllocation->SurfDesc.pitch;
-        pScreen->u32Width        = pAllocation->SurfDesc.width;
-        pScreen->u32Height       = pAllocation->SurfDesc.height;
-        pScreen->u16BitsPerPixel = (uint16_t)pAllocation->SurfDesc.bpp;
-        pScreen->u16Flags        = VBVA_SCREEN_F_ACTIVE;
+        pScreen->u32LineSize     = pDesc->pitch;
+        pScreen->u32Width        = pDesc->width;
+        pScreen->u32Height       = pDesc->height;
+        pScreen->u16BitsPerPixel = (uint16_t)pDesc->bpp;
+        pScreen->u16Flags        = fFlags;
 
         vboxHGSMIBufferSubmit (pDevExt, p);
 
@@ -119,6 +113,14 @@ NTSTATUS vboxWddmGhDisplayPostInfoScreen (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_A
     }
 
     return STATUS_SUCCESS;
+
+}
+
+NTSTATUS vboxWddmGhDisplayPostInfoScreen (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation, POINT * pVScreenPos)
+{
+    NTSTATUS Status = vboxWddmGhDisplayPostInfoScreenBySDesc(pDevExt, &pAllocation->SurfDesc, pVScreenPos, VBVA_SCREEN_F_ACTIVE);
+    Assert(Status == STATUS_SUCCESS);
+    return Status;
 }
 
 NTSTATUS vboxWddmGhDisplayPostInfoView(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
@@ -1157,6 +1159,8 @@ VOID DxgkDdiResetDevice(
 {
     /* DxgkDdiResetDevice can be called at any IRQL, so it must be in nonpageable memory.  */
     vboxVDbgBreakF();
+
+
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
     dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
