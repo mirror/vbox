@@ -859,7 +859,8 @@ static int ftmR3SyncMem(PVM pVM)
                 break;
             }
             pVM->ftm.s.StatReceivedMem.c += PAGE_SIZE;
-            Hdr.cbPageRange -= PAGE_SIZE;
+            Hdr.cbPageRange              -= PAGE_SIZE;
+            GCPhys                       += PAGE_SIZE;
         }
     }
     return VINF_SUCCESS;
