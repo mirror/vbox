@@ -236,16 +236,7 @@ NTSTATUS vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                     }
                 }
             }
-/*
-#ifdef VBOX_WITH_HGCM
-            if (NT_SUCCESS(rc))
-            {
-                int vrc = VBoxGuestHGCMInitCommunication(pDevExt, vboxguestwinVersionToOSType(g_winVersion));
-                if (RT_FAILURE(vrc))
-                    rc = STATUS_UNSUCCESSFUL;
-            }
-#endif
-*/
+
             if (NT_SUCCESS(rc))
             {
 #ifdef VBOX_WITH_HGCM
@@ -546,11 +537,9 @@ NTSTATUS vboxguestwinPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                                     && pDevExt->win.s.LastSystemPowerAction == PowerActionHibernate)
                                 {
                                     Log(("VBoxGuest::vboxguestwinGuestPower: Returning from hibernation!\n"));
-#ifdef VBOX_WITH_HGCM
-                                    int rc = VBoxGuestHGCMInitCommunication(pDevExt, vboxguestwinVersionToOSType(g_winVersion));
+                                    int rc = VBoxGuestReinitDevExtAfterHibernation(pDevExt, vboxguestwinVersionToOSType(g_winVersion));
                                     if (RT_FAILURE(rc))
-                                        Log(("VBoxGuest::vboxguestwinGuestPower: Cannot re-init HGCM chain, rc = %d!\n", rc));
-#endif
+                                        Log(("VBoxGuest::vboxguestwinGuestPower: Cannot re-init VMMDev chain, rc = %d!\n", rc));
                                 }
                             }
                             break;

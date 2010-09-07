@@ -40,6 +40,11 @@
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 # include "revision-generated.h"
 #endif
+#ifdef RT_OS_WINDOWS
+# ifndef CTL_CODE
+#  include <Windows.h>
+# endif
+#endif
 
 
 /*******************************************************************************
@@ -434,6 +439,29 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBal
      */
     *pfHandleInR3 = pDevExt->MemBalloon.fUseKernelAPI ? false : true;
 
+    return rc;
+}
+
+
+/**
+ * Helper to reinit the VBoxVMM communication after hibernation.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt         The device extension.
+ * @param   enmOSType       The OS type.
+ */
+int VBoxGuestReinitDevExtAfterHibernation(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType)
+{
+    int rc = VBoxGuestReportGuestInfo(enmOSType);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VBoxGuestReportDriverStatus(true /* Driver is active */);
+        if (RT_FAILURE(rc))
+            Log(("VBoxGuest::VBoxGuestReinitDevExtAfterHibernation: could not report guest driver status, rc=%Rrc\n", rc));
+    }
+    else
+        Log(("VBoxGuest::VBoxGuestReinitDevExtAfterHibernation: could not report guest information to host, rc=%Rrc\n", rc));
+    Log(("VBoxGuest::VBoxGuestReinitDevExtAfterHibernation: returned with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1560,34 +1588,6 @@ static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallbackInterruptible(VMMDevHGCMR
                                                 true /* fInterruptible */,
                                                 u32User /* cMillies */ );
 
-}
-
-
-/**
- * Helper to reinit the VBoxVMM communication after hibernation.
- *
- * @returns VBox status code.
- * @param   pDevExt         The device extension.
- * @param   enmOSType       The OS type.
- *
- * @todo    r=bird: This is a misnomer, it's related to VMMDev communication in
- *          general, not only HGCM.  Further, it's reinit only.  Init can only
- *          be done VBoxGuestInitDevExt.  A better name would be
- *          VBoxGuestReinitDevExtAfterHibernation.
- */
-int VBoxGuestHGCMInitCommunication(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType)
-{
-    int rc = VBoxGuestReportGuestInfo(enmOSType);
-    if (RT_SUCCESS(rc))
-    {
-        rc = VBoxGuestReportDriverStatus(true /* Driver is active */);
-        if (RT_FAILURE(rc))
-            Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: could not report guest driver status, rc=%Rrc\n", rc));
-    }
-    else
-        Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: could not report guest information to host, rc=%Rrc\n", rc));
-    Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: returned with rc=%Rrc\n", rc));
-    return rc;
 }
 
 
