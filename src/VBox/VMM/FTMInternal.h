@@ -33,7 +33,7 @@
 /** Physical page tree node. */
 typedef struct FTMPHYSPAGETREENODE
 {
-    AVLOGCPHYSNODECORE  Core;
+    AVLGCPHYSNODECORE   Core;
     void               *pPage;
 } FTMPHYSPAGETREENODE;
 /** Pointer to FTMPHYSPAGETREENODE */
@@ -78,8 +78,8 @@ typedef struct FTM
 
     struct
     {
-        R3PTRTYPE(PRTTCPSERVER)            hServer;
-        R3PTRTYPE(PPAVLOGCPHYSNODECORE)    ppPhysPageTree;
+        R3PTRTYPE(PRTTCPSERVER)    hServer;
+        AVLGCPHYSTREE              PhysPageTree;
     } standby;
 
     struct

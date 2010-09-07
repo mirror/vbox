@@ -92,7 +92,7 @@ typedef struct FTMTCPHDRMEM
 *******************************************************************************/
 static const char g_szWelcome[] = "VirtualBox-Fault-Tolerance-Sync-1.0\n";
 
-static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLOGCPHYSNODECORE pBaseNode, void *pvUser);
+static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNode, void *pvUser);
 
 /**
  * Initializes the FTM.
@@ -173,10 +173,10 @@ VMMR3DECL(int) FTMR3Term(PVM pVM)
         RTMemFree(pVM->ftm.s.pszPassword);
 
     /* Remove all pending memory updates. */
-    if (pVM->ftm.s.standby.ppPhysPageTree)
+    if (&pVM->ftm.s.standby.PhysPageTree)
     {
-        RTAvloGCPhysDestroy(pVM->ftm.s.standby.ppPhysPageTree, ftmR3PageTreeDestroyCallback, NULL);
-        pVM->ftm.s.standby.ppPhysPageTree = NULL;
+        RTAvlGCPhysDestroy(&pVM->ftm.s.standby.PhysPageTree, ftmR3PageTreeDestroyCallback, NULL);
+        pVM->ftm.s.standby.PhysPageTree = NULL;
     }
 
     pVM->ftm.s.pszAddress  = NULL;
@@ -815,7 +815,6 @@ static int ftmR3SyncMem(PVM pVM)
     while (true)
     {
         FTMTCPHDRMEM Hdr;
-        void *pPage;
         RTGCPHYS GCPhys;
 
         /* Read memory header. */
@@ -838,7 +837,7 @@ static int ftmR3SyncMem(PVM pVM)
 
         while (Hdr.cbPageRange)
         {
-            PFTMPHYSPAGETREENODE pNode = (PFTMPHYSPAGETREENODE)RTAvloGCPhysGet(pVM->ftm.s.standby.ppPhysPageTree, GCPhys);
+            PFTMPHYSPAGETREENODE pNode = (PFTMPHYSPAGETREENODE)RTAvlGCPhysGet(&pVM->ftm.s.standby.PhysPageTree, GCPhys);
             if (!pNode)
             {
                 /* Allocate memory for the node and page. */
@@ -848,13 +847,12 @@ static int ftmR3SyncMem(PVM pVM)
                 /* Insert the node into the tree. */
                 pNode->Core.Key = GCPhys;
                 pNode->pPage = (void *)(pNode + 1);
-                bool fRet = RTAvloGCPhysInsert(pVM->ftm.s.standby.ppPhysPageTree, &pNode->Core);
+                bool fRet = RTAvlGCPhysInsert(&pVM->ftm.s.standby.PhysPageTree, &pNode->Core);
                 Assert(fRet);
             }
-            pPage = pNode->pPage;
 
             /* Fetch the page. */
-            rc = RTTcpRead(pVM->ftm.s.hSocket, pPage, PAGE_SIZE, NULL);
+            rc = RTTcpRead(pVM->ftm.s.hSocket, pNode->pPage, PAGE_SIZE, NULL);
             if (RT_FAILURE(rc))
             {
                 Log(("RTTcpRead page data (%d bytes) failed with %Rrc\n", Hdr.cb, rc));
@@ -869,13 +867,13 @@ static int ftmR3SyncMem(PVM pVM)
 
 
 /**
- * Callback handler for RTAvloGCPhysDestroy 
+ * Callback handler for RTAvlGCPhysDestroy
  *
  * @returns 0 to continue, otherwise stop
  * @param   pBaseNode       Node to destroy
  * @param   pvUser          User parameter
  */
-static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLOGCPHYSNODECORE pBaseNode, void *pvUser)
+static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNode, void *pvUser)
 {
     PVM pVM = (PVM)pvUser;
     PFTMPHYSPAGETREENODE pNode = (PFTMPHYSPAGETREENODE)pBaseNode;
@@ -993,10 +991,10 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
                 continue;
 
             /* Flush all pending memory updates. */
-            if (pVM->ftm.s.standby.ppPhysPageTree)
+            if (&pVM->ftm.s.standby.PhysPageTree)
             {
-                RTAvloGCPhysDestroy(pVM->ftm.s.standby.ppPhysPageTree, ftmR3PageTreeDestroyCallback, pVM);
-                pVM->ftm.s.standby.ppPhysPageTree = NULL;
+                RTAvlGCPhysDestroy(&pVM->ftm.s.standby.PhysPageTree, ftmR3PageTreeDestroyCallback, pVM);
+                pVM->ftm.s.standby.PhysPageTree = NULL;
             }
 
             RTSocketRetain(pVM->ftm.s.hSocket); /* For concurrent access by I/O thread and EMT. */
