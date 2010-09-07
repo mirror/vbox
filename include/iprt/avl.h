@@ -911,6 +911,54 @@ RTDECL(int)                     RTAvlHCPhysDestroy(PAVLHCPHYSTREE pTree, PAVLHCP
 
 /** @} */
 
+/** AVL tree of RTGCPHYSes.
+ * @{
+ */
+
+/**
+ * AVL 'pointer' type for the relative offset pointer scheme.
+ */
+typedef struct _AVLGCPhysNodeCore  *AVLGCPHYSPTR;
+
+/**
+ * AVL Core node.
+ */
+typedef struct _AVLGCPhysNodeCore
+{
+    /** Offset to the left leaf node, relative to this field. */
+    AVLGCPHYSPTR        pLeft;
+    /** Offset to the right leaf node, relative to this field. */
+    AVLGCPHYSPTR        pRight;
+    /** Key value. */
+    RTGCPHYS            Key;
+    /** Height of this tree: max(height(left), height(right)) + 1 */
+    unsigned char       uchHeight;
+} AVLGCPHYSNODECORE, *PAVLGCPHYSNODECORE;
+
+/** A offset base tree with RTGCPHYS keys. */
+typedef AVLGCPHYSPTR      AVLGCPHYSTREE;
+/** Pointer to a offset base tree with RTGCPHYS keys. */
+typedef AVLGCPHYSTREE    *PAVLGCPHYSTREE;
+
+/** Pointer to an internal tree pointer.
+ * In this case it's a pointer to a relative offset. */
+typedef AVLGCPHYSTREE    *PPAVLGCPHYSNODECORE;
+
+/** Callback function for RTAvlGCPhysDoWithAll() and RTAvlGCPhysDestroy(). */
+typedef DECLCALLBACK(int)   AVLGCPHYSCALLBACK(PAVLGCPHYSNODECORE pNode, void *pvUser);
+/** Pointer to callback function for RTAvlGCPhysDoWithAll() and RTAvlGCPhysDestroy(). */
+typedef AVLGCPHYSCALLBACK *PAVLGCPHYSCALLBACK;
+
+RTDECL(bool)                    RTAvlGCPhysInsert(PAVLGCPHYSTREE pTree, PAVLGCPHYSNODECORE pNode);
+RTDECL(PAVLGCPHYSNODECORE)      RTAvlGCPhysRemove(PAVLGCPHYSTREE pTree, RTGCPHYS Key);
+RTDECL(PAVLGCPHYSNODECORE)      RTAvlGCPhysGet(PAVLGCPHYSTREE pTree, RTGCPHYS Key);
+RTDECL(int)                     RTAvlGCPhysDoWithAll(PAVLGCPHYSTREE pTree, int fFromLeft, PAVLGCPHYSCALLBACK pfnCallBack, void *pvParam);
+RTDECL(PAVLGCPHYSNODECORE)      RTAvlGCPhysGetBestFit(PAVLGCPHYSTREE ppTree, RTGCPHYS Key, bool fAbove);
+RTDECL(PAVLGCPHYSNODECORE)      RTAvlGCPhysRemoveBestFit(PAVLGCPHYSTREE ppTree, RTGCPHYS Key, bool fAbove);
+RTDECL(int)                     RTAvlGCPhysDestroy(PAVLGCPHYSTREE pTree, PAVLGCPHYSCALLBACK pfnCallBack, void *pvParam);
+
+/** @} */
+
 
 /** AVL tree of RTFOFF ranges.
  * @{
