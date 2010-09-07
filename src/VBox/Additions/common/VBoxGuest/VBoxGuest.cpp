@@ -1994,7 +1994,7 @@ static int VBoxGuestCommonIOCtl_ChangeMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, PV
 static int VBoxGuestCommonIOCtl_EnableVRDPSession(VBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
     /* Nothing to do here right now, since this only is supported on Windows at the moment. */
-    return VINF_SUCCESS;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 
@@ -2009,7 +2009,7 @@ static int VBoxGuestCommonIOCtl_EnableVRDPSession(VBOXGUESTDEVEXT pDevExt, PVBOX
 static int VBoxGuestCommonIOCtl_DisableVRDPSession(VBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
     /* Nothing to do here right now, since this only is supported on Windows at the moment. */
-    return VINF_SUCCESS;
+    return VERR_NOT_IMPLEMENTED;
 }
 #endif /* VBOX_WITH_VRDP_SESSION_HANDLING */
 
