@@ -713,7 +713,7 @@ static void WINAPI IDirect3DDevice9Impl_GetGammaRamp(LPDIRECT3DDEVICE9EX iface, 
 }
 
 #ifdef VBOXWDDM
-#pragma comment(linker, "/export:VBoxWineExD3DDev9Flush=_VBoxWineExD3DDev9Flush@4")
+//#pragma comment(linker, "/export:VBoxWineExD3DDev9Flush=_VBoxWineExD3DDev9Flush@4")
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Flush(IDirect3DDevice9Ex *iface)
 {
@@ -729,7 +729,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Flush(IDirect3DDevice9Ex *iface)
     return hr;
 }
 
-#pragma comment(linker, "/export:VBoxWineExD3DDev9CreateTexture=_VBoxWineExD3DDev9CreateTexture@40")
+//#pragma comment(linker, "/export:VBoxWineExD3DDev9CreateTexture=_VBoxWineExD3DDev9CreateTexture@40")
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *iface,
         UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format,
@@ -767,6 +767,14 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *ifac
 
     return D3D_OK;
 }
+
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Update(IDirect3DDevice9Ex *iface, D3DPRESENT_PARAMETERS * pParams, IDirect3DDevice9Ex **outIface)
+{
+    IDirect3DDevice9_AddRef(iface);
+    *outIface = iface;
+    return D3D_OK;
+}
+
 #endif
 
 static HRESULT WINAPI IDirect3DDevice9Impl_CreateTexture(IDirect3DDevice9Ex *iface,

@@ -40,6 +40,8 @@
 # define VBOXWDDMDISP_DEBUG_DUMPSURFDATA
 #endif
 
+//#define VBOXDISP_EARLYCREATEDEVICE
+
 #if 0
 # ifdef Assert
 #  undef Assert

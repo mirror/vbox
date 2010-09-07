@@ -94,7 +94,7 @@ typedef struct VBOXWDDMDISP_SCREEN
 {
     IDirect3DDevice9 *pDevice9If;
     struct VBOXWDDMDISP_RESOURCE *pRenderTargetRc;
-    struct VBOXWDDMDISP_RESOURCE *pDstSharedRc;
+//    struct VBOXWDDMDISP_RESOURCE *pDstSharedRc;
     uint32_t iRenderTargetFrontBuf;
     HWND hWnd;
 } VBOXWDDMDISP_SCREEN, *PVBOXWDDMDISP_SCREEN;

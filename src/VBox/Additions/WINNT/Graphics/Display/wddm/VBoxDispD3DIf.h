@@ -36,6 +36,9 @@ typedef struct VBOXDISPD3D
 
     PFNVBOXWINEEXD3DDEV9_FLUSH pfnVBoxWineExD3DDev9Flush;
 
+    PFNVBOXWINEEXD3DDEV9_UPDATE pfnVBoxWineExD3DDev9Update;
+
+
     /* module handle */
     HMODULE hD3DLib;
 } VBOXDISPD3D;
