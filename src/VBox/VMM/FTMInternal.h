@@ -64,9 +64,6 @@ typedef struct FTM
 
     /** Current active socket. */
     RTSOCKET            hSocket;
-#if HC_ARCH_BITS == 32
-    RTSOCKET            hSocketAlignment;
-#endif
 
     /** State sync. */
     struct
