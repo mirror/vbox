@@ -40,11 +40,6 @@
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 # include "revision-generated.h"
 #endif
-#if defined(RT_OS_WINDOWS)
-RT_C_DECLS_BEGIN
-# include <ntddk.h>
-RT_C_DECLS_END
-#endif
 
 
 /*******************************************************************************
@@ -1569,9 +1564,16 @@ static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallbackInterruptible(VMMDevHGCMR
 
 
 /**
- * Helper to (re-)init the HGCM communication.
+ * Helper to reinit the VBoxVMM communication after hibernation.
  *
- * @param pDevExt   Device extension
+ * @returns VBox status code.
+ * @param   pDevExt         The device extension.
+ * @param   enmOSType       The OS type.
+ *
+ * @todo    r=bird: This is a misnomer, it's related to VMMDev communication in
+ *          general, not only HGCM.  Further, it's reinit only.  Init can only
+ *          be done VBoxGuestInitDevExt.  A better name would be
+ *          VBoxGuestReinitDevExtAfterHibernation.
  */
 int VBoxGuestHGCMInitCommunication(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType)
 {
@@ -1580,11 +1582,11 @@ int VBoxGuestHGCMInitCommunication(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSTyp
     {
         rc = VBoxGuestReportDriverStatus(true /* Driver is active */);
         if (RT_FAILURE(rc))
-            Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: could not report guest driver status, vrc = %d\n", rc));
+            Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: could not report guest driver status, rc=%Rrc\n", rc));
     }
     else
-        Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: could not report guest information to host, vrc = %d\n", rc));
-    Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: returned with vrc = %d\n", rc));
+        Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: could not report guest information to host, rc=%Rrc\n", rc));
+    Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: returned with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1965,9 +1967,7 @@ static int VBoxGuestCommonIOCtl_ChangeMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, PV
 
         if (pDevExt->MemBalloon.pOwner == pSession)
         {
-            rc = vboxGuestSetBalloonSizeFromUser(pDevExt, pSession,
-                                                 pInfo->u64ChunkAddr,
-                                                 pInfo->fInflate > 0 ? true : false);
+            rc = vboxGuestSetBalloonSizeFromUser(pDevExt, pSession, pInfo->u64ChunkAddr, !!pInfo->fInflate);
             if (pcbDataReturned)
                 *pcbDataReturned = 0;
         }
