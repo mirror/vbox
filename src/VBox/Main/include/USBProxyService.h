@@ -228,8 +228,6 @@ private:
 private:
     /** File handle to the '/proc/bus/usb/devices' file. */
     RTFILE mFile;
-    /** Stream for mFile. */
-    FILE *mStream;
     /** Pipe used to interrupt wait(), the read end. */
     RTFILE mWakeupPipeR;
     /** Pipe used to interrupt wait(), the write end. */
