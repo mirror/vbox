@@ -130,34 +130,13 @@ int USBDevInfoInit(USBDeviceInfo *pSelf, const char *aDevice,
                    const char *aSystemID);
 
 /**
- * Class for probing and returning information about host USB devices.
- * To use this class, create an instance, call the update methods to do the
- * actual probing and use the iterator methods to get the result of the probe.
- */
-typedef struct VBoxMainUSBDeviceInfo
-{
-    /** The list of currently available USB devices */
-    VECTOR_OBJ(USBDeviceInfo) mvecDevInfo;
-} VBoxMainUSBDeviceInfo;
-
-/** Constructor */
-static inline void VBoxMainUSBDevInfoInit(VBoxMainUSBDeviceInfo *pSelf)
-{
-    VEC_INIT_OBJ(&pSelf->mvecDevInfo, USBDeviceInfo, USBDevInfoCleanup);
-}
-
-/** Destructor */
-static inline void VBoxMainUSBDevInfoCleanup(VBoxMainUSBDeviceInfo *pSelf)
-{
-    VEC_CLEANUP_OBJ(&pSelf->mvecDevInfo);
-}
-
-/**
- * Search for host USB devices and rebuild the list, which remains empty
- * until the first time this method is called.
+ * Enumerate USB devices attached to the host using sysfs and return them as a
+ * vector
  * @returns iprt status code
+ * @param pvecDevInfo  vector to add the devices onto the end of.  Should be
+ *                     initialised and empty.
  */
-int USBDevInfoUpdateDevices(VBoxMainUSBDeviceInfo *pSelf);
+int USBSysfsEnumerateHostDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo);
 
 
 /** Implementation of the hotplug waiter class below */

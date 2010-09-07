@@ -218,9 +218,6 @@ protected:
     virtual int wait(RTMSINTERVAL aMillies);
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
-    PUSBDEVICE getDevicesFromUsbfs(void);
-    PUSBDEVICE getDevicesFromSysfs(void);
-    int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc);
     virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice);
     virtual bool updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine);
 
@@ -244,8 +241,6 @@ private:
     /** Number of 500ms polls left to do. See usbDeterminState for details. */
     unsigned mUdevPolls;
 #  ifdef VBOX_USB_WITH_SYSFS
-    /** Object used for querying device information from hal. */
-    VBoxMainUSBDeviceInfo mDeviceList;
     /** Object used for polling for hotplug events from hal. */
     VBoxMainHotplugWaiter mWaiter;
 #  endif

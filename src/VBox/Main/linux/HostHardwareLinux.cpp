@@ -1548,12 +1548,12 @@ static int addIfInterfaceOf(const char *pcszNode, USBDeviceInfo *pInfo)
 }
 
 /**
- * Logic for USBDevInfoUpdateDevices.
+ * Logic for USBSysfsEnumerateHostDevices.
  * @param pvecDevInfo  vector of device information structures to add device
  *                     information to
  * @param pvecpchDevs  empty scratch vector which will be freed by the caller
  */
-static int doUpdateUSBDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo,
+static int doSysfsEnumerateHostDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo,
                               VECTOR_PTR(char *) *pvecpchDevs)
 {
     char **ppszEntry;
@@ -1578,17 +1578,17 @@ static int doUpdateUSBDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo,
 # endif /* VBOX_USB_WITH_INOTIFY */
 #endif /* VBOX_USB_WITH_SYSFS */
 
-int USBDevInfoUpdateDevices (VBoxMainUSBDeviceInfo *pSelf)
+int USBSysfsEnumerateHostDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo)
 {
-    int rc = VINF_SUCCESS;
-
-    LogFlowFunc(("entered\n"));
     VECTOR_PTR(char *) vecpchDevs;
+    int rc = VERR_NOT_IMPLEMENTED;
+
+    AssertReturn(VEC_SIZE_OBJ(pvecDevInfo) == 0, VERR_INVALID_PARAMETER);
+    LogFlowFunc(("entered\n"));
     VEC_INIT_PTR(&vecpchDevs, char *, RTStrFree);
-    VEC_CLEAR_OBJ(&pSelf->mvecDevInfo);
 #ifdef VBOX_USB_WITH_SYSFS
 # ifdef VBOX_USB_WITH_INOTIFY
-    rc = doUpdateUSBDevices(&pSelf->mvecDevInfo, &vecpchDevs);
+    rc = doSysfsEnumerateHostDevices(pvecDevInfo, &vecpchDevs);
 # endif
 #endif /* !VBOX_USB_WITH_SYSFS */
     VEC_CLEANUP_PTR(&vecpchDevs);

@@ -262,7 +262,6 @@ int USBProxyServiceLinux::initSysfs(void)
     Assert(!mUsingUsbfsDevices);
 
 #ifdef VBOX_USB_WITH_SYSFS
-    VBoxMainUSBDevInfoInit(&mDeviceList);
     int rc = mWaiter.getStatus();
     if (RT_SUCCESS(rc) || rc == VERR_TIMEOUT || rc == VERR_TRY_AGAIN)
         rc = start();
@@ -474,6 +473,38 @@ int USBProxyServiceLinux::interruptWait(void)
     return rc;
 }
 
+/**
+ * Free all the members of a USB device created by the Linux enumeration code.
+ * @note this duplicates a USBProxyService method which we needed access too
+ *       without pulling in the rest of the proxy service code.
+ *
+ * @param   pDevice     Pointer to the device.
+ */
+static void deviceFreeMembers(PUSBDEVICE pDevice)
+{
+    RTStrFree((char *)pDevice->pszManufacturer);
+    pDevice->pszManufacturer = NULL;
+    RTStrFree((char *)pDevice->pszProduct);
+    pDevice->pszProduct = NULL;
+    RTStrFree((char *)pDevice->pszSerialNumber);
+    pDevice->pszSerialNumber = NULL;
+
+    RTStrFree((char *)pDevice->pszAddress);
+    pDevice->pszAddress = NULL;
+}
+
+/**
+ * Free one USB device created by the Linux enumeration code.
+ * @note this duplicates a USBProxyService method which we needed access too
+ *       without pulling in the rest of the proxy service code.
+ *
+ * @param   pDevice     Pointer to the device.
+ */
+static void deviceFree(PUSBDEVICE pDevice)
+{
+    deviceFreeMembers(pDevice);
+    RTMemFree(pDevice);
+}
 
 /**
  * "reads" the number suffix. It's more like validating it and
@@ -835,13 +866,13 @@ static USBDEVICESTATE usbDeterminState(PCUSBDEVICE pDevice)
 
 
 /** Just a worker for USBProxyServiceLinux::getDevices that avoids some code duplication. */
-int USBProxyServiceLinux::addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc)
+static int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, const char *pcszUsbfsRoot, int rc)
 {
     /* usbDeterminState requires the address. */
     PUSBDEVICE pDevNew = (PUSBDEVICE)RTMemDup(pDev, sizeof(*pDev));
     if (pDevNew)
     {
-        RTStrAPrintf((char **)&pDevNew->pszAddress, "%s/%03d/%03d", mUsbfsRoot.c_str(), pDevNew->bBus, pDevNew->bDevNum);
+        RTStrAPrintf((char **)&pDevNew->pszAddress, "%s/%03d/%03d", pcszUsbfsRoot, pDevNew->bBus, pDevNew->bDevNum);
         if (pDevNew->pszAddress)
         {
             pDevNew->enmState = usbDeterminState(pDevNew);
@@ -854,31 +885,49 @@ int USBProxyServiceLinux::addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst,
                 *pppNext = &pDevNew->pNext;
             }
             else
-                freeDevice(pDevNew);
+                deviceFree(pDevNew);
         }
         else
         {
-            freeDevice(pDevNew);
+            deviceFree(pDevNew);
             rc = VERR_NO_MEMORY;
         }
     }
     else
     {
         rc = VERR_NO_MEMORY;
-        freeDeviceMembers(pDev);
+        deviceFreeMembers(pDev);
     }
 
     return rc;
 }
 
 
+static int openDevicesFile(const char *pcszUsbfsRoot, FILE **ppFile)
+{
+    char *pszPath;
+    FILE *pFile;
+    RTStrAPrintf(&pszPath, "%s/devices", pcszUsbfsRoot);
+    if (!pszPath)
+        return VERR_NO_MEMORY;
+    pFile = fopen(pszPath, "r");
+    RTStrFree(pszPath);
+    if (!pFile)
+        return RTErrConvertFromErrno(errno);
+    *ppFile = pFile;
+    return VINF_SUCCESS;
+}
+
 /**
  * USBProxyService::getDevices() implementation for usbfs.
  */
-PUSBDEVICE USBProxyServiceLinux::getDevicesFromUsbfs(void)
+static PUSBDEVICE getDevicesFromUsbfs(const char *pcszUsbfsRoot)
 {
     PUSBDEVICE pFirst = NULL;
-    if (mStream)
+    FILE *pFile;
+    int rc;
+    rc = openDevicesFile(pcszUsbfsRoot, &pFile);
+    if (RT_SUCCESS(rc))
     {
         PUSBDEVICE     *ppNext = NULL;
         int             cHits = 0;
@@ -887,28 +936,16 @@ PUSBDEVICE USBProxyServiceLinux::getDevicesFromUsbfs(void)
         RT_ZERO(Dev);
         Dev.enmState = USBDEVICESTATE_UNUSED;
 
-        /*
-         * Rewind the stream and make 100% sure we flush the buffer.
-         *
-         * We've had trouble with rewind() messing up on buffered streams when attaching
-         * device clusters such as the Bloomberg keyboard. Therefor the stream is now
-         * without a permanent buffer (see the constructor) and we'll employ a temporary
-         * stack buffer while parsing the file (speed).
-         */
-        rewind(mStream);
-        char szBuf[1024];
-        setvbuf(mStream, szBuf, _IOFBF, sizeof(szBuf));
-
-        int rc = VINF_SUCCESS;
+        rc = VINF_SUCCESS;
         while (     RT_SUCCESS(rc)
-               &&   fgets(szLine, sizeof(szLine), mStream))
+               &&   fgets(szLine, sizeof(szLine), pFile))
         {
             char   *psz;
             char   *pszValue;
 
             /* validate and remove the trailing newline. */
             psz = strchr(szLine, '\0');
-            if (psz[-1] != '\n' && !feof(mStream))
+            if (psz[-1] != '\n' && !feof(pFile))
             {
                 AssertMsgFailed(("Line too long. (cch=%d)\n", strlen(szLine)));
                 continue;
@@ -946,9 +983,9 @@ PUSBDEVICE USBProxyServiceLinux::getDevicesFromUsbfs(void)
                     /* add */
                     AssertMsg(cHits >= 3 || cHits == 0, ("cHits=%d\n", cHits));
                     if (cHits >= 3)
-                        rc = addDeviceToChain(&Dev, &pFirst, &ppNext, rc);
+                        rc = addDeviceToChain(&Dev, &pFirst, &ppNext, pcszUsbfsRoot, rc);
                     else
-                        freeDeviceMembers(&Dev);
+                        deviceFreeMembers(&Dev);
 
                     /* Reset device state */
                     memset(&Dev, 0, sizeof (Dev));
@@ -1138,28 +1175,23 @@ PUSBDEVICE USBProxyServiceLinux::getDevicesFromUsbfs(void)
          */
         AssertMsg(cHits >= 3 || cHits == 0, ("cHits=%d\n", cHits));
         if (cHits >= 3)
-            rc = addDeviceToChain(&Dev, &pFirst, &ppNext, rc);
+            rc = addDeviceToChain(&Dev, &pFirst, &ppNext, pcszUsbfsRoot, rc);
 
         /*
          * Success?
          */
         if (RT_FAILURE(rc))
         {
-            LogFlow(("USBProxyServiceLinux::getDevices: rc=%Rrc\n", rc));
             while (pFirst)
             {
                 PUSBDEVICE pFree = pFirst;
                 pFirst = pFirst->pNext;
-                freeDevice(pFree);
+                deviceFree(pFree);
             }
         }
-
-        /*
-         * Turn buffering off to detach it from the local buffer and to
-         * make subsequent rewind() calls work correctly.
-         */
-        setvbuf(mStream, NULL, _IONBF, 0);
     }
+    if (RT_FAILURE(rc))
+        LogFlow(("USBProxyServiceLinux::getDevices: rc=%Rrc\n", rc));
     return pFirst;
 }
 
@@ -1332,142 +1364,154 @@ static int convertSysfsStrToBCD(const char *pszBuf, uint16_t *pu16)
 
 #endif  /* VBOX_USB_WITH_SYSFS */
 
+static void fillInDeviceFromSysfs(USBDEVICE *Dev, USBDeviceInfo *pInfo)
+{
+    int rc;
+    const char *pszSysfsPath = pInfo->mSysfsPath;
+
+    /* Fill in the simple fields */
+    Dev->enmState           = USBDEVICESTATE_UNUSED;
+    Dev->bBus               = RTLinuxSysFsReadIntFile(10, "%s/busnum", pszSysfsPath);
+    Dev->bDeviceClass       = RTLinuxSysFsReadIntFile(16, "%s/bDeviceClass", pszSysfsPath);
+    Dev->bDeviceSubClass    = RTLinuxSysFsReadIntFile(16, "%s/bDeviceSubClass", pszSysfsPath);
+    Dev->bDeviceProtocol    = RTLinuxSysFsReadIntFile(16, "%s/bDeviceProtocol", pszSysfsPath);
+    Dev->bNumConfigurations = RTLinuxSysFsReadIntFile(10, "%s/bNumConfigurations", pszSysfsPath);
+    Dev->idVendor           = RTLinuxSysFsReadIntFile(16, "%s/idVendor", pszSysfsPath);
+    Dev->idProduct          = RTLinuxSysFsReadIntFile(16, "%s/idProduct", pszSysfsPath);
+    Dev->bDevNum            = RTLinuxSysFsReadIntFile(10, "%s/devnum", pszSysfsPath);
+
+    /* Now deal with the non-numeric bits. */
+    char szBuf[1024];  /* Should be larger than anything a sane device
+                        * will need, and insane devices can be unsupported
+                        * until further notice. */
+    ssize_t cchRead;
+
+    /* For simplicity, we just do strcmps on the next one. */
+    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/speed",
+                                      pszSysfsPath);
+    if (cchRead <= 0 || (size_t) cchRead == sizeof(szBuf))
+        Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
+    else
+        Dev->enmSpeed =   !strcmp(szBuf, "1.5") ? USBDEVICESPEED_LOW
+                        : !strcmp(szBuf, "12")  ? USBDEVICESPEED_FULL
+                        : !strcmp(szBuf, "480") ? USBDEVICESPEED_HIGH
+                        : USBDEVICESPEED_UNKNOWN;
+
+    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/version",
+                                      pszSysfsPath);
+    if (cchRead <= 0 || (size_t) cchRead == sizeof(szBuf))
+        Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
+    else
+    {
+        rc = convertSysfsStrToBCD(szBuf, &Dev->bcdUSB);
+        if (RT_FAILURE(rc))
+        {
+            Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
+            Dev->bcdUSB = (uint16_t)-1;
+        }
+    }
+
+    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/bcdDevice",
+                                      pszSysfsPath);
+    if (cchRead <= 0 || (size_t) cchRead == sizeof(szBuf))
+        Dev->bcdDevice = (uint16_t)-1;
+    else
+    {
+        rc = convertSysfsStrToBCD(szBuf, &Dev->bcdDevice);
+        if (RT_FAILURE(rc))
+            Dev->bcdDevice = (uint16_t)-1;
+    }
+
+    /* Now do things that need string duplication */
+    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/product",
+                                      pszSysfsPath);
+    if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
+    {
+        RTStrPurgeEncoding(szBuf);
+        Dev->pszProduct = RTStrDup(szBuf);
+    }
+
+    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/serial",
+                                      pszSysfsPath);
+    if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
+    {
+        RTStrPurgeEncoding(szBuf);
+        Dev->pszSerialNumber = RTStrDup(szBuf);
+        Dev->u64SerialHash = USBLibHashSerial(szBuf);
+    }
+
+    cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/manufacturer",
+                                      pszSysfsPath);
+    if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
+    {
+        RTStrPurgeEncoding(szBuf);
+        Dev->pszManufacturer = RTStrDup(szBuf);
+    }
+
+    /* Work out the port number */
+    if (RT_FAILURE(usbGetPortFromSysfsPath(pszSysfsPath, &Dev->bPort)))
+        Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
+
+    /* Check the interfaces to see if we can support the device. */
+    char **ppszIf;
+    VEC_FOR_EACH(&pInfo->mvecpszInterfaces, char *, ppszIf)
+    {
+        ssize_t cb = RTLinuxSysFsGetLinkDest(szBuf, sizeof(szBuf), "%s/driver",
+                                             *ppszIf);
+        if (cb > 0 && Dev->enmState != USBDEVICESTATE_UNSUPPORTED)
+            Dev->enmState = (strcmp(szBuf, "hub") == 0)
+                          ? USBDEVICESTATE_UNSUPPORTED
+                          : USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
+        if (RTLinuxSysFsReadIntFile(16, "%s/bInterfaceClass",
+                                    *ppszIf) == 9 /* hub */)
+            Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
+    }
+
+    /* We want a copy of the device node and sysfs paths guaranteed not to
+     * contain double slashes, since we use a double slash as a separator in
+     * the pszAddress field. */
+    char szDeviceClean[RTPATH_MAX];
+    char szSysfsClean[RTPATH_MAX];
+    char *pszAddress = NULL;
+    if (   RT_SUCCESS(RTPathReal(pInfo->mDevice, szDeviceClean,
+                                 sizeof(szDeviceClean)))
+        && RT_SUCCESS(RTPathReal(pszSysfsPath, szSysfsClean,
+                                 sizeof(szSysfsClean)))
+       )
+        RTStrAPrintf(&pszAddress, "sysfs:%s//device:%s", szSysfsClean,
+                     szDeviceClean);
+    Dev->pszAddress = pszAddress;
+
+    /* Work out from the data collected whether we can support this device. */
+    Dev->enmState = usbDeterminState(Dev);
+    usbLogDevice(Dev);
+}
+
 /**
  * USBProxyService::getDevices() implementation for sysfs.
  */
-PUSBDEVICE USBProxyServiceLinux::getDevicesFromSysfs(void)
+static PUSBDEVICE getDevicesFromSysfs(void)
 {
 #ifdef VBOX_USB_WITH_SYSFS
     /* Add each of the devices found to the chain. */
     PUSBDEVICE pFirst = NULL;
     PUSBDEVICE pLast  = NULL;
-    int        rc     = USBDevInfoUpdateDevices(&mDeviceList);
+    VECTOR_OBJ(USBDeviceInfo) vecDevInfo;
     USBDeviceInfo *pInfo;
-    VEC_FOR_EACH(&mDeviceList.mvecDevInfo, USBDeviceInfo, pInfo)
+    int rc;
+
+    VEC_INIT_OBJ(&vecDevInfo, USBDeviceInfo, USBDevInfoCleanup);
+    rc = USBSysfsEnumerateHostDevices(&vecDevInfo);
+    if (RT_FAILURE(rc))
+        return NULL;
+    VEC_FOR_EACH(&vecDevInfo, USBDeviceInfo, pInfo)
     {
         USBDEVICE *Dev = (USBDEVICE *)RTMemAllocZ(sizeof(USBDEVICE));
         if (!Dev)
             rc = VERR_NO_MEMORY;
         if (RT_SUCCESS(rc))
         {
-            const char *pszSysfsPath = pInfo->mSysfsPath;
-
-            /* Fill in the simple fields */
-            Dev->enmState = USBDEVICESTATE_UNUSED;
-            Dev->bBus               = RTLinuxSysFsReadIntFile(10, "%s/busnum", pszSysfsPath);
-            Dev->bDeviceClass       = RTLinuxSysFsReadIntFile(16, "%s/bDeviceClass", pszSysfsPath);
-            Dev->bDeviceSubClass    = RTLinuxSysFsReadIntFile(16, "%s/bDeviceSubClass", pszSysfsPath);
-            Dev->bDeviceProtocol    = RTLinuxSysFsReadIntFile(16, "%s/bDeviceProtocol", pszSysfsPath);
-            Dev->bNumConfigurations = RTLinuxSysFsReadIntFile(10, "%s/bNumConfigurations", pszSysfsPath);
-            Dev->idVendor           = RTLinuxSysFsReadIntFile(16, "%s/idVendor", pszSysfsPath);
-            Dev->idProduct          = RTLinuxSysFsReadIntFile(16, "%s/idProduct", pszSysfsPath);
-            Dev->bDevNum            = RTLinuxSysFsReadIntFile(10, "%s/devnum", pszSysfsPath);
-
-            /* Now deal with the non-numeric bits. */
-            char szBuf[1024];  /* Should be larger than anything a sane device
-                                * will need, and insane devices can be unsupported
-                                * until further notice. */
-            ssize_t cchRead;
-
-            /* For simplicity, we just do strcmps on the next one. */
-            cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/speed",
-                                              pszSysfsPath);
-            if (cchRead <= 0 || (size_t) cchRead == sizeof(szBuf))
-                Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
-            else
-                Dev->enmSpeed =   !strcmp(szBuf, "1.5") ? USBDEVICESPEED_LOW
-                                : !strcmp(szBuf, "12")  ? USBDEVICESPEED_FULL
-                                : !strcmp(szBuf, "480") ? USBDEVICESPEED_HIGH
-                                : USBDEVICESPEED_UNKNOWN;
-
-            cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/version",
-                                              pszSysfsPath);
-            if (cchRead <= 0 || (size_t) cchRead == sizeof(szBuf))
-                Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
-            else
-            {
-                rc = convertSysfsStrToBCD(szBuf, &Dev->bcdUSB);
-                if (RT_FAILURE(rc))
-                {
-                    Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
-                    Dev->bcdUSB = (uint16_t)-1;
-                }
-            }
-
-            cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/bcdDevice",
-                                              pszSysfsPath);
-            if (cchRead <= 0 || (size_t) cchRead == sizeof(szBuf))
-                Dev->bcdDevice = (uint16_t)-1;
-            else
-            {
-                rc = convertSysfsStrToBCD(szBuf, &Dev->bcdDevice);
-                if (RT_FAILURE(rc))
-                    Dev->bcdDevice = (uint16_t)-1;
-            }
-
-            /* Now do things that need string duplication */
-            cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/product",
-                                              pszSysfsPath);
-            if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
-            {
-                RTStrPurgeEncoding(szBuf);
-                Dev->pszProduct = RTStrDup(szBuf);
-            }
-
-            cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/serial",
-                                              pszSysfsPath);
-            if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
-            {
-                RTStrPurgeEncoding(szBuf);
-                Dev->pszSerialNumber = RTStrDup(szBuf);
-                Dev->u64SerialHash = USBLibHashSerial(szBuf);
-            }
-
-            cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/manufacturer",
-                                              pszSysfsPath);
-            if (cchRead > 0 && (size_t) cchRead < sizeof(szBuf))
-            {
-                RTStrPurgeEncoding(szBuf);
-                Dev->pszManufacturer = RTStrDup(szBuf);
-            }
-
-            /* Work out the port number */
-            if (RT_FAILURE(usbGetPortFromSysfsPath(pszSysfsPath, &Dev->bPort)))
-                Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
-
-            /* Check the interfaces to see if we can support the device. */
-            char **ppszIf;
-            VEC_FOR_EACH(&pInfo->mvecpszInterfaces, char *, ppszIf)
-            {
-                ssize_t cb = RTLinuxSysFsGetLinkDest(szBuf, sizeof(szBuf), "%s/driver",
-                                                     *ppszIf);
-                if (cb > 0 && Dev->enmState != USBDEVICESTATE_UNSUPPORTED)
-                    Dev->enmState = (strcmp(szBuf, "hub") == 0)
-                                  ? USBDEVICESTATE_UNSUPPORTED
-                                  : USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
-                if (RTLinuxSysFsReadIntFile(16, "%s/bInterfaceClass",
-                                            *ppszIf) == 9 /* hub */)
-                    Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
-            }
-
-            /* We want a copy of the device node and sysfs paths guaranteed not to
-             * contain double slashes, since we use a double slash as a separator in
-             * the pszAddress field. */
-            char szDeviceClean[RTPATH_MAX];
-            char szSysfsClean[RTPATH_MAX];
-            char *pszAddress = NULL;
-            if (   RT_SUCCESS(RTPathReal(pInfo->mDevice, szDeviceClean,
-                                         sizeof(szDeviceClean)))
-                && RT_SUCCESS(RTPathReal(pszSysfsPath, szSysfsClean,
-                                         sizeof(szSysfsClean)))
-               )
-                RTStrAPrintf(&pszAddress, "sysfs:%s//device:%s", szSysfsClean,
-                             szDeviceClean);
-            Dev->pszAddress = pszAddress;
-
-            /* Work out from the data collected whether we can support this device. */
-            Dev->enmState = usbDeterminState(Dev);
-            usbLogDevice(Dev);
+            fillInDeviceFromSysfs(Dev, pInfo);
         }
         if (   RT_SUCCESS(rc)
             && Dev->enmState != USBDEVICESTATE_UNSUPPORTED
@@ -1483,7 +1527,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevicesFromSysfs(void)
                 pFirst = pLast = Dev;
         }
         else
-            freeDevice(Dev);
+            deviceFree(Dev);
         if (RT_FAILURE(rc))
             break;
     }
@@ -1491,36 +1535,30 @@ PUSBDEVICE USBProxyServiceLinux::getDevicesFromSysfs(void)
         while (pFirst)
         {
             PUSBDEVICE pNext = pFirst->pNext;
-            freeDevice(pFirst);
+            deviceFree(pFirst);
             pFirst = pNext;
         }
 
-    /* Eliminate any duplicates.  This was originally a sanity check, but it
-     * turned out that hal can get confused and return devices twice. */
-    for (PUSBDEVICE pDev = pFirst; pDev != NULL; pDev = pDev->pNext)
-        for (PUSBDEVICE pDev2 = pDev; pDev2 != NULL && pDev2->pNext != NULL;
-             pDev2 = pDev2->pNext)
-            while (   pDev2->pNext != NULL
-                   && RTStrCmp(pDev->pszAddress, pDev2->pNext->pszAddress) == 0)
-            {
-                PUSBDEVICE pDup = pDev2->pNext;
-                pDev2->pNext = pDup->pNext;
-                freeDevice(pDup);
-            }
+    VEC_CLEANUP_OBJ(&vecDevInfo);
     return pFirst;
 #else  /* !VBOX_USB_WITH_SYSFS */
     return NULL;
 #endif  /* !VBOX_USB_WITH_SYSFS */
 }
 
+static PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszUsbfsRoot)
+{
+    if (pcszUsbfsRoot)
+        return getDevicesFromUsbfs(pcszUsbfsRoot);
+    else
+        return getDevicesFromSysfs();
+}
 
 PUSBDEVICE USBProxyServiceLinux::getDevices(void)
 {
-    PUSBDEVICE pDevices;
     if (mUsingUsbfsDevices)
-        pDevices = getDevicesFromUsbfs();
+        return USBProxyLinuxGetDevices(mUsbfsRoot.c_str());
     else
-        pDevices = getDevicesFromSysfs();
-    return pDevices;
+        return USBProxyLinuxGetDevices(NULL);
 }
 
