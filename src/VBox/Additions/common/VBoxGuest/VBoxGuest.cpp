@@ -93,7 +93,7 @@ static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
 
     /*
      * The VMM will report back if there is nothing it wants to map, like for
-     * insance in VT-x and AMD-V mode.
+     * instance in VT-x and AMD-V mode.
      */
     if (pReq->hypervisorSize == 0)
         Log(("vboxGuestInitFixateGuestMappings: nothing to do\n"));
@@ -127,7 +127,13 @@ static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
                 uAlignment = PAGE_SIZE;
                 rc = RTR0MemObjReserveKernel(&hObj, (void *)-1, RT_ALIGN_32(cbHypervisor, _4M) + _4M, uAlignment);
             }
-            if (rc == VERR_NOT_SUPPORTED)
+            /*
+             * If both RTR0MemObjReserveKernel calls above failed because either not supported or
+             * not implemented at all at the current platform, try to map the memory object into the
+             * virtual kernel space.
+             */
+            if (   rc == VERR_NOT_SUPPORTED
+                || rc == VERR_NOT_IMPLEMENTED)
             {
                 if (hFictive == NIL_RTR0MEMOBJ)
                 {
