@@ -64,6 +64,9 @@ typedef struct FTM
 
     /** Current active socket. */
     RTSOCKET            hSocket;
+#if HC_ARCH_BITS == 32
+    RTSOCKET            hSocketAlignment;
+#endif
 
     /** State sync. */
     struct
@@ -79,7 +82,7 @@ typedef struct FTM
     struct
     {
         R3PTRTYPE(PRTTCPSERVER)    hServer;
-        AVLGCPHYSTREE              PhysPageTree;
+        R3PTRTYPE(AVLGCPHYSTREE)   pPhysPageTree;
     } standby;
 
     struct
