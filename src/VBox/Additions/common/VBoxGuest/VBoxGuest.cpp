@@ -40,6 +40,11 @@
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 # include "revision-generated.h"
 #endif
+#if defined(RT_OS_WINDOWS)
+RT_C_DECLS_BEGIN
+# include <ntddk.h>
+RT_C_DECLS_END
+#endif
 
 
 /*******************************************************************************
@@ -1572,6 +1577,27 @@ static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallbackInterruptible(VMMDevHGCMR
 }
 
 
+/**
+ * Helper to (re-)init the HGCM communication.
+ *
+ * @param pDevExt   Device extension
+ */
+int VBoxGuestHGCMInitCommunication(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType)
+{
+    int rc = VBoxGuestReportGuestInfo(enmOSType);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VBoxGuestReportDriverStatus(true /* Driver is active */);
+        if (RT_FAILURE(rc))
+            Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: could not report guest driver status, vrc = %d\n", rc));
+    }
+    else
+        Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: could not report guest information to host, vrc = %d\n", rc));
+    Log(("VBoxGuest::VBoxGuestInitHGCMCommunication: returned with vrc = %d\n", rc));
+    return rc;
+}
+
+
 static int VBoxGuestCommonIOCtl_HGCMConnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                                             VBoxGuestHGCMConnectInfo *pInfo, size_t *pcbDataReturned)
 {
@@ -1948,7 +1974,9 @@ static int VBoxGuestCommonIOCtl_ChangeMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, PV
 
         if (pDevExt->MemBalloon.pOwner == pSession)
         {
-            rc = vboxGuestSetBalloonSizeFromUser(pDevExt, pSession, pInfo->u64ChunkAddr, pInfo->fInflate);
+            rc = vboxGuestSetBalloonSizeFromUser(pDevExt, pSession,
+                                                 pInfo->u64ChunkAddr,
+                                                 pInfo->fInflate > 0 ? true : false);
             if (pcbDataReturned)
                 *pcbDataReturned = 0;
         }
@@ -1961,6 +1989,38 @@ static int VBoxGuestCommonIOCtl_ChangeMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, PV
     RTSemFastMutexRelease(pDevExt->MemBalloon.hMtx);
     return rc;
 }
+
+
+#ifdef VBOX_WITH_VRDP_SESSION_HANDLING
+/**
+ * Enables the VRDP session and saves its session ID.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevExt             The device extention.
+ * @param   pSession            The session.
+ */
+static int VBoxGuestCommonIOCtl_EnableVRDPSession(VBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
+{
+    /* Nothing to do here right now, since this only is supported on Windows at the moment. */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Disables the VRDP session.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevExt             The device extention.
+ * @param   pSession            The session.
+ */
+static int VBoxGuestCommonIOCtl_DisableVRDPSession(VBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
+{
+    /* Nothing to do here right now, since this only is supported on Windows at the moment. */
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_WITH_VRDP_SESSION_HANDLING */
 
 
 /**
@@ -2153,6 +2213,16 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
                 CHECKRET_MIN_SIZE("CHANGE_MEMORY_BALLOON", sizeof(VBoxGuestChangeBalloonInfo));
                 rc = VBoxGuestCommonIOCtl_ChangeMemoryBalloon(pDevExt, pSession, (VBoxGuestChangeBalloonInfo *)pvData, pcbDataReturned);
                 break;
+
+#ifdef VBOX_WITH_VRDP_SESSION_HANDLING
+            case VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION:
+                rc = VBoxGuestCommonIOCtl_EnableVRDPSession(pDevExt, pSession);
+                break;
+
+            case VBOXGUEST_IOCTL_DISABLE_VRDP_SESSION:
+                rc = VBoxGuestCommonIOCtl_DisableVRDPSession(pDevExt, pSession);
+                break;
+#endif /* VBOX_WITH_VRDP_SESSION_HANDLING */
 
             default:
             {
