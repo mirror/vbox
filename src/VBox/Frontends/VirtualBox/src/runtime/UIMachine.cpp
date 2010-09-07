@@ -495,7 +495,7 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualStateType)
     }
 }
 
-void UIMachine::closeVirtualMachine()
+void UIMachine::sltCloseVirtualMachine()
 {
     delete this;
 }

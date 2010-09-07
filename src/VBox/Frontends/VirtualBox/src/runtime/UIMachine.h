@@ -54,10 +54,10 @@ private slots:
     /* Visual state-change handler: */
     void sltChangeVisualState(UIVisualStateType visualStateType);
 
-private:
+    /* Close VM slot: */
+    void sltCloseVirtualMachine();
 
-    /* Close VM handler: */
-    void closeVirtualMachine();
+private:
 
     /* Move VM to default (normal) state: */
     void enterInitialVisualState();

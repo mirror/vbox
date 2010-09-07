@@ -24,6 +24,7 @@
 
 /* Qt icludes */
 #include <QObject>
+#include <QPointer>
 
 class VBoxMedium;
 
@@ -71,9 +72,11 @@ public:
 
     // helpers
 
+    bool isAnyWarningShown();
     bool isAlreadyShown(const QString &strGuardBlockName) const;
     void setShownStatus(const QString &strGuardBlockName);
     void clearShownStatus(const QString &strGuardBlockName);
+    void closeAllWarnings();
 
     int message (QWidget *aParent, Type aType, const QString &aMessage,
                  const QString &aDetails = QString::null,
@@ -403,6 +406,7 @@ public:
 signals:
 
     void sigDownloaderUserManualCreated();
+    void sigToCloseAllWarnings();
 
 public slots:
 
@@ -420,6 +424,7 @@ private:
                                       HRESULT aWrapperRC = S_OK);
 
     QStringList m_shownWarnings;
+    mutable QList<QPointer<QIMessageBox> > m_warnings;
 };
 
 /**
