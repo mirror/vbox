@@ -337,6 +337,7 @@ RuntimeR3_SOURCES       = \
 	common/string/ministring.cpp \
 	common/table/avlgcptr.cpp \
 	common/table/avlhcphys.cpp \
+	common/table/avlgcphys.cpp \
 	common/table/avllu32.cpp \
 	common/table/avlou32.cpp \
 	common/table/avlogcphys.cpp \
