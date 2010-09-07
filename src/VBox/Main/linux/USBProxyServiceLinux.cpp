@@ -86,7 +86,7 @@ static const USBSUFF s_aIntervalSuff[] =
  * Initialize data members.
  */
 USBProxyServiceLinux::USBProxyServiceLinux(Host *aHost, const char *aUsbfsRoot /* = "/proc/bus/usb" */)
-    : USBProxyService(aHost), mFile(NIL_RTFILE), mStream(NULL), mWakeupPipeR(NIL_RTFILE),
+    : USBProxyService(aHost), mFile(NIL_RTFILE), mWakeupPipeR(NIL_RTFILE),
       mWakeupPipeW(NIL_RTFILE), mUsbfsRoot(aUsbfsRoot), mUsingUsbfsDevices(true /* see init */), mUdevPolls(0)
 {
     LogFlowThisFunc(("aHost=%p aUsbfsRoot=%p:{%s}\n", aHost, aUsbfsRoot, aUsbfsRoot));
@@ -153,6 +153,32 @@ HRESULT USBProxyServiceLinux::init(void)
 }
 
 
+static int USBProxyLinuxCheckForUsbfs(const char *pcszDevices)
+{
+    RTFILE File;
+    int rc;
+
+    rc = RTFileOpen(&File, pcszDevices, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Check that we're actually on the usbfs.
+         */
+        struct statfs StFS;
+        if (!fstatfs(File, &StFS))
+        {
+            if (StFS.f_type == USBDEVICE_SUPER_MAGIC)
+                return VINF_SUCCESS;
+            else
+                return VERR_NOT_FOUND;
+        }
+        else
+            return RTErrConvertFromErrno(errno);
+    }
+    return rc;
+}
+
+
 /**
  * Initializiation routine for the usbfs based operation.
  *
@@ -170,74 +196,41 @@ int USBProxyServiceLinux::initUsbfs(void)
     RTStrAPrintf(&pszDevices, "%s/devices", mUsbfsRoot.c_str());
     if (pszDevices)
     {
-        rc = RTFileOpen(&mFile, pszDevices, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        rc = USBProxyLinuxCheckForUsbfs(pszDevices);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Check that we're actually on the usbfs.
-             */
-            struct statfs StFS;
-            if (!fstatfs(mFile, &StFS))
+            rc = RTFileOpen(&mFile, pszDevices, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+            if (RT_SUCCESS(rc))
             {
-                if (StFS.f_type == USBDEVICE_SUPER_MAGIC)
+                int pipes[2];
+                if (!pipe(pipes))
                 {
-                    int pipes[2];
-                    if (!pipe(pipes))
+                    mWakeupPipeR = pipes[0];
+                    mWakeupPipeW = pipes[1];
+                    /*
+                     * Start the poller thread.
+                     */
+                    rc = start();
+                    if (RT_SUCCESS(rc))
                     {
-                        mWakeupPipeR = pipes[0];
-                        mWakeupPipeW = pipes[1];
-                        mStream = fdopen(mFile, "r");
-                        if (mStream)
-                        {
-                            /*
-                             * Start the poller thread.
-                             */
-                            rc = start();
-                            if (RT_SUCCESS(rc))
-                            {
-                                RTStrFree(pszDevices);
-                                LogFlowThisFunc(("returns successfully - mFile=%d mStream=%p mWakeupPipeR/W=%d/%d\n",
-                                               mFile, mStream, mWakeupPipeR, mWakeupPipeW));
-                                /*
-                                 * Turn buffering off to work around rewind() problems, see getDevices().
-                                 */
-                                setvbuf(mStream, NULL, _IONBF, 0);
-                                return VINF_SUCCESS;
-                            }
-
-                            fclose(mStream);
-                            mStream = NULL;
-                            mFile = NIL_RTFILE;
-                        }
-                        else
-                        {
-                            rc = RTErrConvertFromErrno(errno);
-                            Log(("USBProxyServiceLinux::USBProxyServiceLinux: fdopen failed, errno=%d\n", errno));
-                        }
-
-                        RTFileClose(mWakeupPipeR);
-                        RTFileClose(mWakeupPipeW);
-                        mWakeupPipeW = mWakeupPipeR = NIL_RTFILE;
+                        RTStrFree(pszDevices);
+                        LogFlowThisFunc(("returns successfully - mWakeupPipeR/W=%d/%d\n",
+                                         mWakeupPipeR, mWakeupPipeW));
+                        return VINF_SUCCESS;
                     }
-                    else
-                    {
-                        rc = RTErrConvertFromErrno(errno);
-                        Log(("USBProxyServiceLinux::USBProxyServiceLinux: pipe failed, errno=%d\n", errno));
-                    }
+
+                    RTFileClose(mWakeupPipeR);
+                    RTFileClose(mWakeupPipeW);
+                    mWakeupPipeW = mWakeupPipeR = NIL_RTFILE;
                 }
                 else
                 {
-                    Log(("USBProxyServiceLinux::USBProxyServiceLinux: StFS.f_type=%d expected=%d\n", StFS.f_type, USBDEVICE_SUPER_MAGIC));
-                    rc = VERR_INVALID_PARAMETER;
+                    rc = RTErrConvertFromErrno(errno);
+                    Log(("USBProxyServiceLinux::USBProxyServiceLinux: pipe failed, errno=%d\n", errno));
                 }
+                RTFileClose(mFile);
             }
-            else
-            {
-                rc = RTErrConvertFromErrno(errno);
-                Log(("USBProxyServiceLinux::USBProxyServiceLinux: fstatfs failed, errno=%d\n", errno));
-            }
-            RTFileClose(mFile);
-            mFile = NIL_RTFILE;
+            
         }
         RTStrFree(pszDevices);
     }
@@ -308,13 +301,7 @@ void USBProxyServiceLinux::doUsbfsCleanupAsNeeded()
     /*
      * Free resources.
      */
-    if (mStream)
-    {
-        fclose(mStream);
-        mStream = NULL;
-        mFile = NIL_RTFILE;
-    }
-    else if (mFile != NIL_RTFILE)
+    if (mFile != NIL_RTFILE)
     {
         RTFileClose(mFile);
         mFile = NIL_RTFILE;
