@@ -92,6 +92,8 @@ typedef struct FTMTCPHDRMEM
 *******************************************************************************/
 static const char g_szWelcome[] = "VirtualBox-Fault-Tolerance-Sync-1.0\n";
 
+static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLOGCPHYSNODECORE pBaseNode, void *pvUser);
+
 /**
  * Initializes the FTM.
  *
@@ -169,6 +171,13 @@ VMMR3DECL(int) FTMR3Term(PVM pVM)
         RTMemFree(pVM->ftm.s.pszAddress);
     if (pVM->ftm.s.pszPassword)
         RTMemFree(pVM->ftm.s.pszPassword);
+
+    /* Remove all pending memory updates. */
+    if (pVM->ftm.s.standby.ppPhysPageTree)
+    {
+        RTAvloGCPhysDestroy(pVM->ftm.s.standby.ppPhysPageTree, ftmR3PageTreeDestroyCallback, NULL);
+        pVM->ftm.s.standby.ppPhysPageTree = NULL;
+    }
 
     pVM->ftm.s.pszAddress  = NULL;
     pVM->ftm.s.pszPassword = NULL;
@@ -796,6 +805,93 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
 }
 
 /**
+ * Syncs memory from the master VM
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ */
+static int ftmR3SyncMem(PVM pVM)
+{
+    while (true)
+    {
+        FTMTCPHDRMEM Hdr;
+        void *pPage;
+        RTGCPHYS GCPhys;
+
+        /* Read memory header. */
+        int rc = RTTcpRead(pVM->ftm.s.hSocket, &Hdr, sizeof(Hdr), NULL);
+        if (RT_FAILURE(rc))
+        {
+            Log(("RTTcpRead failed with %Rrc\n", rc));
+            break;
+        }
+        pVM->ftm.s.StatReceivedMem.c += sizeof(Hdr);
+
+        if (Hdr.cb == 0)
+            break;  /* end of sync. */
+
+        Assert(Hdr.cb == Hdr.cbPageRange);  /** @todo uncompress */
+        GCPhys = Hdr.GCPhys;
+
+        /* Must be a multiple of PAGE_SIZE. */
+        Assert((Hdr.cbPageRange & 0xfff) == 0);
+
+        while (Hdr.cbPageRange)
+        {
+            PFTMPHYSPAGETREENODE pNode = (PFTMPHYSPAGETREENODE)RTAvloGCPhysGet(pVM->ftm.s.standby.ppPhysPageTree, GCPhys);
+            if (!pNode)
+            {
+                /* Allocate memory for the node and page. */
+                pNode = (PFTMPHYSPAGETREENODE)RTMemAllocZ(sizeof(*pNode) + PAGE_SIZE);
+                AssertBreak(pNode);
+
+                /* Insert the node into the tree. */
+                pNode->Core.Key = GCPhys;
+                pNode->pPage = (void *)(pNode + 1);
+                bool fRet = RTAvloGCPhysInsert(pVM->ftm.s.standby.ppPhysPageTree, &pNode->Core);
+                Assert(fRet);
+            }
+            pPage = pNode->pPage;
+
+            /* Fetch the page. */
+            rc = RTTcpRead(pVM->ftm.s.hSocket, pPage, PAGE_SIZE, NULL);
+            if (RT_FAILURE(rc))
+            {
+                Log(("RTTcpRead page data (%d bytes) failed with %Rrc\n", Hdr.cb, rc));
+                break;
+            }
+            pVM->ftm.s.StatReceivedMem.c += PAGE_SIZE;
+            Hdr.cbPageRange -= PAGE_SIZE;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Callback handler for RTAvloGCPhysDestroy 
+ *
+ * @returns 0 to continue, otherwise stop
+ * @param   pBaseNode       Node to destroy
+ * @param   pvUser          User parameter
+ */
+static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLOGCPHYSNODECORE pBaseNode, void *pvUser)
+{
+    PVM pVM = (PVM)pvUser;
+    PFTMPHYSPAGETREENODE pNode = (PFTMPHYSPAGETREENODE)pBaseNode;
+
+    if (pVM)    /* NULL when the VM is destroyed. */
+    {
+        /* Update the guest memory of the standby VM. */
+        int rc = PGMR3PhysWriteExternal(pVM, pNode->Core.Key, pNode->pPage, PAGE_SIZE, "FTMemSync");
+        AssertRC(rc);
+    }
+    RTMemFree(pNode);
+    return 0;
+}
+
+
+/**
  * Listen for incoming traffic destined for the standby VM.
  *
  * @copydoc FNRTTCPSERVE
@@ -880,48 +976,8 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
             if (RT_FAILURE(rc))
                 continue;
 
-            while (true)
-            {
-                FTMTCPHDRMEM Hdr;
-                void *pPage;
-
-                /* Read memory header. */
-                rc = RTTcpRead(pVM->ftm.s.hSocket, &Hdr, sizeof(Hdr), NULL);
-                if (RT_FAILURE(rc))
-                {
-                    Log(("RTTcpRead failed with %Rrc\n", rc));
-                    break;
-                }
-                pVM->ftm.s.StatReceivedMem.c += sizeof(Hdr);
-
-                if (Hdr.cb == 0)
-                    break;  /* end of sync. */
-
-                Assert(Hdr.cb == Hdr.cbPageRange);  /** @todo uncompress */
-
-                /* Allocate memory to hold the page(s). */
-                pPage = RTMemAlloc(Hdr.cbPageRange);
-                AssertBreak(pPage);
-
-                /* Fetch the page(s). */
-                rc = RTTcpRead(pVM->ftm.s.hSocket, pPage, Hdr.cb, NULL);
-                if (RT_FAILURE(rc))
-                {
-                    Log(("RTTcpRead page data (%d bytes) failed with %Rrc\n", Hdr.cb, rc));
-                    break;
-                }
-                pVM->ftm.s.StatReceivedMem.c += Hdr.cb;
-
-                /* Update the guest memory of the standby VM. */
-#if 1
-                rc = PGMR3PhysWriteExternal(pVM, Hdr.GCPhys, pPage, Hdr.cbPageRange, "FTMemSync");
-#else
-                rc = PGMPhysWrite(pVM, Hdr.GCPhys, pPage, Hdr.cbPageRange);
-#endif
-                AssertRC(rc);
-
-                RTMemFree(pPage);
-            }
+            rc = ftmR3SyncMem(pVM);
+            AssertRC(rc);
 
             rc = ftmR3TcpWriteACK(pVM);
             AssertRC(rc);
@@ -935,6 +991,13 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 continue;
+
+            /* Flush all pending memory updates. */
+            if (pVM->ftm.s.standby.ppPhysPageTree)
+            {
+                RTAvloGCPhysDestroy(pVM->ftm.s.standby.ppPhysPageTree, ftmR3PageTreeDestroyCallback, pVM);
+                pVM->ftm.s.standby.ppPhysPageTree = NULL;
+            }
 
             RTSocketRetain(pVM->ftm.s.hSocket); /* For concurrent access by I/O thread and EMT. */
 
