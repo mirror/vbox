@@ -20,6 +20,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VD_ISCSI
+#define LOG_ENABLED
 #include <VBox/VBoxHDD-Plugin.h>
 #define VBOX_VDICORE_VD /* Signal that the header is included from here. */
 #include "VDICore.h"
@@ -1745,6 +1746,7 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
     uint32_t ExpDataSN = 0;
     bool final = false;
 
+
     LogFlowFunc(("entering, CmdSN=%d\n", pImage->CmdSN));
 
     Assert(pRequest->enmXfer != SCSIXFER_TO_FROM_TARGET);   /**< @todo not yet supported, would require AHS. */
@@ -3296,9 +3298,15 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
         RTMSINTERVAL msWait;
 
         if (pImage->cCmdsWaiting)
+        {
+            pImage->fPollEvents &= ~VD_INTERFACETCPNET_HINT_INTERRUPT;
             msWait = pImage->uReadTimeout;
+        }
         else
+        {
+            pImage->fPollEvents |= VD_INTERFACETCPNET_HINT_INTERRUPT;
             msWait = RT_INDEFINITE_WAIT;
+        }
 
         LogFlow(("Waiting for events fPollEvents=%#x\n", pImage->fPollEvents));
         rc = iscsiIoThreadWait(pImage, msWait, pImage->fPollEvents, &fEvents);
@@ -3330,17 +3338,19 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                 pIScsiCmd = iscsiCmdGet(pImage);
             }
         }
-        else if (rc == VERR_TIMEOUT)
+#if 0
+        else if ((rc == VERR_TIMEOUT) && pImage->cCmdsWaiting)
         {
             /*
              * We are waiting for a response from the target but
              * it didn't answered yet.
              * We assume the connection is broken and try to reconnect.
              */
-            LogFlow(("Timed out while waiting for an asnwer from the target, reconnecting\n"));
+            LogFlow(("Timed out while waiting for an answer from the target, reconnecting\n"));
             iscsiReattach(pImage);
         }
-        else if (RT_SUCCESS(rc))
+#endif
+        else if (RT_SUCCESS(rc) || rc == VERR_TIMEOUT)
         {
             Assert(pImage->state == ISCSISTATE_NORMAL);
             LogFlow(("Got socket events %#x\n", fEvents));
