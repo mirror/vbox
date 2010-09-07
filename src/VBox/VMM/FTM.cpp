@@ -173,10 +173,10 @@ VMMR3DECL(int) FTMR3Term(PVM pVM)
         RTMemFree(pVM->ftm.s.pszPassword);
 
     /* Remove all pending memory updates. */
-    if (&pVM->ftm.s.standby.PhysPageTree)
+    if (&pVM->ftm.s.standby.pPhysPageTree)
     {
-        RTAvlGCPhysDestroy(&pVM->ftm.s.standby.PhysPageTree, ftmR3PageTreeDestroyCallback, NULL);
-        pVM->ftm.s.standby.PhysPageTree = NULL;
+        RTAvlGCPhysDestroy(&pVM->ftm.s.standby.pPhysPageTree, ftmR3PageTreeDestroyCallback, NULL);
+        pVM->ftm.s.standby.pPhysPageTree = NULL;
     }
 
     pVM->ftm.s.pszAddress  = NULL;
@@ -837,7 +837,7 @@ static int ftmR3SyncMem(PVM pVM)
 
         while (Hdr.cbPageRange)
         {
-            PFTMPHYSPAGETREENODE pNode = (PFTMPHYSPAGETREENODE)RTAvlGCPhysGet(&pVM->ftm.s.standby.PhysPageTree, GCPhys);
+            PFTMPHYSPAGETREENODE pNode = (PFTMPHYSPAGETREENODE)RTAvlGCPhysGet(&pVM->ftm.s.standby.pPhysPageTree, GCPhys);
             if (!pNode)
             {
                 /* Allocate memory for the node and page. */
@@ -847,7 +847,7 @@ static int ftmR3SyncMem(PVM pVM)
                 /* Insert the node into the tree. */
                 pNode->Core.Key = GCPhys;
                 pNode->pPage = (void *)(pNode + 1);
-                bool fRet = RTAvlGCPhysInsert(&pVM->ftm.s.standby.PhysPageTree, &pNode->Core);
+                bool fRet = RTAvlGCPhysInsert(&pVM->ftm.s.standby.pPhysPageTree, &pNode->Core);
                 Assert(fRet);
             }
 
@@ -991,10 +991,10 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
                 continue;
 
             /* Flush all pending memory updates. */
-            if (&pVM->ftm.s.standby.PhysPageTree)
+            if (&pVM->ftm.s.standby.pPhysPageTree)
             {
-                RTAvlGCPhysDestroy(&pVM->ftm.s.standby.PhysPageTree, ftmR3PageTreeDestroyCallback, pVM);
-                pVM->ftm.s.standby.PhysPageTree = NULL;
+                RTAvlGCPhysDestroy(&pVM->ftm.s.standby.pPhysPageTree, ftmR3PageTreeDestroyCallback, pVM);
+                pVM->ftm.s.standby.pPhysPageTree = NULL;
             }
 
             RTSocketRetain(pVM->ftm.s.hSocket); /* For concurrent access by I/O thread and EMT. */
