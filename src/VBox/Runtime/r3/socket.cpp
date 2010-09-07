@@ -28,6 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_ENABLED
 #ifdef RT_OS_WINDOWS
 # include <winsock2.h>
 #else /* !RT_OS_WINDOWS */
@@ -292,6 +293,7 @@ DECLINLINE(int) rtSocketSwitchBlockingMode(RTSOCKETINT *pThis, bool fBlocking)
  * @returns IPRT status code.
  * @param   ppSocket        Where to return the IPRT socket handle.
  * @param   hNative         The native handle.
+
  */
 int rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative)
 {
@@ -979,6 +981,68 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
 }
 
 
+RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pfEvents,
+                                RTMSINTERVAL cMillies)
+{
+    /*
+     * Validate input.
+     */
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pfEvents, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fEvents & ~RTSOCKET_EVT_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
+
+    *pfEvents = 0;
+
+    /*
+     * Set up the file descriptor sets and do the select.
+     */
+    fd_set fdsetR;
+    fd_set fdsetW;
+    fd_set fdsetE;
+    FD_ZERO(&fdsetR);
+    FD_ZERO(&fdsetW);
+    FD_ZERO(&fdsetE);
+
+    if (fEvents & RTSOCKET_EVT_READ)
+        FD_SET(pThis->hNative, &fdsetR);
+    if (fEvents & RTSOCKET_EVT_WRITE)
+        FD_SET(pThis->hNative, &fdsetW);
+    if (fEvents & RTSOCKET_EVT_ERROR)
+        FD_SET(pThis->hNative, &fdsetE);
+
+    int rc;
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rc = select(pThis->hNative + 1, &fdsetR, &fdsetW, &fdsetE, NULL);
+    else
+    {
+        struct timeval timeout;
+        timeout.tv_sec = cMillies / 1000;
+        timeout.tv_usec = (cMillies % 1000) * 1000;
+        rc = select(pThis->hNative + 1, &fdsetR, &fdsetW, &fdsetE, &timeout);
+    }
+    if (rc > 0)
+    {
+        if (FD_ISSET(pThis->hNative, &fdsetR))
+            *pfEvents |= RTSOCKET_EVT_READ;
+        if (FD_ISSET(pThis->hNative, &fdsetW))
+            *pfEvents |= RTSOCKET_EVT_WRITE;
+        if (FD_ISSET(pThis->hNative, &fdsetE))
+            *pfEvents |= RTSOCKET_EVT_ERROR;
+
+        rc = VINF_SUCCESS;
+    }
+    else if (rc == 0)
+        rc = VERR_TIMEOUT;
+    else
+        rc = rtSocketError();
+
+    return rc;
+}
+
+
 RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite)
 {
     /*
@@ -1433,7 +1497,30 @@ static uint32_t rtSocketPollCheck(RTSOCKETINT *pThis, uint32_t fEvents)
     /* Fall back on select if we hit an error above. */
     if (RT_FAILURE(rc))
     {
-        /** @todo  */
+        WSAResetEvent(pThis->hEvent);
+        fd_set fdsetR;
+        fd_set fdsetW;
+        FD_ZERO(&fdsetR);
+        FD_ZERO(&fdsetW);
+        FD_SET(pThis->hNative, &fdsetR);
+        FD_SET(pThis->hNative, &fdsetW);
+
+        fd_set fdsetE = fdsetR;
+
+        struct timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 0;
+        rc = select(pThis->hNative + 1, &fdsetR, &fdsetW, &fdsetE, &timeout);
+        if (rc > 0)
+        {
+            rc = VINF_SUCCESS;
+            if (FD_ISSET(pThis->hNative, &fdsetR))
+                fRetEvents |= RTPOLL_EVT_READ;
+            if (FD_ISSET(pThis->hNative, &fdsetW))
+                fRetEvents |= RTPOLL_EVT_WRITE;
+            if (FD_ISSET(pThis->hNative, &fdsetE))
+                fRetEvents |= RTPOLL_EVT_ERROR;
+        }
     }
 
     LogFlowFunc(("fRetEvents=%#x\n", fRetEvents));

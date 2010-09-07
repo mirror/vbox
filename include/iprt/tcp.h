@@ -31,6 +31,7 @@
 #include <iprt/thread.h>
 #include <iprt/net.h>
 #include <iprt/sg.h>
+#include <iprt/socket.h>
 
 #ifdef IN_RING0
 # error "There are no RTFile APIs available Ring-0 Host Context!"
@@ -233,6 +234,20 @@ RTR3DECL(int)  RTTcpSetSendCoalescing(RTSOCKET Sock, bool fEnable);
  */
 RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies);
 
+/**
+ * Socket I/O multiplexing
+ * Checks if the socket is ready for one of the given events.
+ *
+ * @returns iprt status code.
+ * @param   Sock        Socket descriptor.
+ * @param   fEvents     Event mask to wait for.
+ *                      Use the RTSOCKET_EVT_* defines.
+ * @param   pfEvents    Where to store the event mask on return.
+ * @param   cMillies    Number of milliseconds to wait for the socket.
+ *                      Use RT_INDEFINITE_WAIT to wait for ever.
+ */
+RTR3DECL(int)  RTTcpSelectOneEx(RTSOCKET Sock, uint32_t fEvents, uint32_t *pfEvents,
+                                RTMSINTERVAL cMillies);
 
 #if 0 /* skipping these for now - RTTcpServer* handles this. */
 /**

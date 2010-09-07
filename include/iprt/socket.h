@@ -148,6 +148,32 @@ RTDECL(int) RTSocketWrite(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffe
  */
 RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies);
 
+/** @name Select events
+ * @{ */
+/** Readable without blocking. */
+#define RTSOCKET_EVT_READ         RT_BIT_32(0)
+/** Writable without blocking. */
+#define RTSOCKET_EVT_WRITE        RT_BIT_32(1)
+/** Error condition, hangup, exception or similar. */
+#define RTSOCKET_EVT_ERROR        RT_BIT_32(2)
+/** Mask of the valid bits. */
+#define RTSOCKET_EVT_VALID_MASK   UINT32_C(0x00000007)
+/** @} */
+
+/**
+ * Socket I/O multiplexing
+ * Checks if the socket is ready for one of the given events.
+ *
+ * @returns iprt status code.
+ * @param   Sock        Socket descriptor.
+ * @param   fEvents     Event mask to wait for.
+ * @param   pfEvents    Where to store the event mask on return.
+ * @param   cMillies    Number of milliseconds to wait for the socket.
+ *                      Use RT_INDEFINITE_WAIT to wait for ever.
+ */
+RTR3DECL(int)  RTSocketSelectOneEx(RTSOCKET Sock, uint32_t fEvents, uint32_t *pfEvents,
+                                   RTMSINTERVAL cMillies);
+
 /**
  * Shuts down one or both directions of communciation.
  *
