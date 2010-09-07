@@ -1193,6 +1193,8 @@ int main()
     GEN_CHECK_OFF(AHCIPort, uATATransferMode);
     GEN_CHECK_OFF(AHCIPort, abATAPISense);
     GEN_CHECK_OFF(AHCIPort, cNotifiedMediaChange);
+    GEN_CHECK_OFF(AHCIPort, MediaEventStatus);
+    GEN_CHECK_OFF(AHCIPort, MediaTrackType);
     GEN_CHECK_OFF(AHCIPort, iLUN);
     GEN_CHECK_OFF(AHCIPort, fResetDevice);
     GEN_CHECK_OFF(AHCIPort, u32TasksFinished);

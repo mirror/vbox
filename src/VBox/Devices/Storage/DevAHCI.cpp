@@ -63,7 +63,9 @@
 #define AHCI_NR_OF_ALLOWED_BIGGER_LISTS 100
 
 /** The current saved state version. */
-#define AHCI_SAVED_STATE_VERSION                3
+#define AHCI_SAVED_STATE_VERSION                4
+/** Saved state version before ATAPI support was added. */
+#define AHCI_SAVED_STATE_VERSION_PRE_ATAPI      3
 /** The saved state version use in VirtualBox 3.0 and earlier.
  * This was before the config was added and ahciIOTasks was dropped. */
 #define AHCI_SAVED_STATE_VERSION_VBOX_30        2
@@ -105,6 +107,11 @@
 #define ATA_EVENT_STATUS_MEDIA_REMOVED          2    /**< medium removed */
 #define ATA_EVENT_STATUS_MEDIA_CHANGED          3    /**< medium was removed + new medium was inserted */
 #define ATA_EVENT_STATUS_MEDIA_EJECT_REQUESTED  4    /**< medium eject requested (eject button pressed) */
+
+/* Media track type */
+#define ATA_MEDIA_TYPE_UNKNOWN                  0    /**< unknown CD type */
+#define ATA_MEDIA_TYPE_DATA                     1    /**< Data CD */
+#define ATA_MEDIA_TYPE_CDDA                     2    /**< CD-DA  (audio) CD type */
 
 /** ATAPI sense info size. */
 #define ATAPI_SENSE_SIZE 64
@@ -456,6 +463,8 @@ typedef struct AHCIPort
     uint8_t                         cNotifiedMediaChange;
     /** The same for GET_EVENT_STATUS for mechanism */
     volatile uint32_t               MediaEventStatus;
+    /** Media type if known. */
+    volatile uint32_t               MediaTrackType;
 
     /** The LUN. */
     RTUINT                          iLUN;
@@ -466,8 +475,6 @@ typedef struct AHCIPort
     volatile uint32_t               u32TasksFinished;
     /** Bitmask for finished queued tasks. */
     volatile uint32_t               u32QueuedTasksFinished;
-
-    uint32_t                        u32Alignment6;
 
     /**
      * Array of cached tasks. The tag number is the index value.
@@ -1902,6 +1909,7 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     pAhciPort->uActTasksActive = 0;
 
     ASMAtomicWriteU32(&pAhciPort->MediaEventStatus, ATA_EVENT_STATUS_UNCHANGED);
+    ASMAtomicWriteU32(&pAhciPort->MediaTrackType, ATA_MEDIA_TYPE_UNKNOWN);
 
     if (pAhciPort->pDrvBase)
     {
@@ -3465,6 +3473,14 @@ static int atapiReadTOCRawSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort pA
     return VINF_SUCCESS;
 }
 
+/**
+ * Sets the given media track type.
+ */
+static uint32_t ataMediumTypeSet(PAHCIPort pAhciPort, uint32_t MediaTrackType)
+{
+    return ASMAtomicXchgU32(&pAhciPort->MediaTrackType, MediaTrackType);
+}
+
 static int atapiPassthroughSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort pAhciPort, int *pcbData)
 {
     int rc = VINF_SUCCESS;
@@ -3623,6 +3639,35 @@ static int atapiPassthroughSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort p
                 ataSCSIPadStr((uint8_t *)pAhciPortTaskState->pSGListHead[0].pvSeg + 8, "VBOX", 8);
                 ataSCSIPadStr((uint8_t *)pAhciPortTaskState->pSGListHead[0].pvSeg + 16, "CD-ROM", 16);
                 ataSCSIPadStr((uint8_t *)pAhciPortTaskState->pSGListHead[0].pvSeg + 32, "1.0", 4);
+            }
+            else if (pAhciPortTaskState->aATAPICmd[0] == SCSI_READ_TOC_PMA_ATIP)
+            {
+                /* Set the media type if we can detect it. */
+                uint8_t *pbBuf = (uint8_t *)pAhciPortTaskState->pSGListHead[0].pvSeg;
+
+                /** @todo: Implemented only for formatted TOC now. */
+                if (   (pAhciPortTaskState->aATAPICmd[1] & 0xf) == 0
+                    && cbTransfer >= 6)
+                {
+                    uint32_t NewMediaType;
+                    uint32_t OldMediaType;
+
+                    if (pbBuf[5] & 0x4)
+                        NewMediaType = ATA_MEDIA_TYPE_DATA;
+                    else
+                        NewMediaType = ATA_MEDIA_TYPE_CDDA;
+
+                    OldMediaType = ataMediumTypeSet(pAhciPort, NewMediaType);
+
+                    if (OldMediaType != NewMediaType)
+                        LogRel(("AHCI: LUN#%d: CD-ROM passthrough, detected %s CD\n",
+                                pAhciPort->iLUN,
+                                NewMediaType == ATA_MEDIA_TYPE_DATA
+                                ? "data"
+                                : "audio"));
+                }
+                else /* Play safe and set to unknown. */
+                    ataMediumTypeSet(pAhciPort, ATA_MEDIA_TYPE_UNKNOWN);
             }
             if (cbTransfer)
                 Log3(("ATAPI PT data read (%d): %.*Rhxs\n", cbTransfer, cbTransfer, (uint8_t *)pAhciPortTaskState->pSGListHead[0].pvSeg));
@@ -4195,10 +4240,40 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIPORTTASKSTAT
             enmTxDir = AHCITXDIR_READ;
             goto sendcmd;
         case SCSI_READ_CD:
-            pAhciPortTaskState->cbATAPISector = 2048; /**< @todo this size is not always correct */
+        {
+            /* Get sector size based on the expected sector type field. */
+            switch ((pbPacket[1] >> 2) & 0x7)
+            {
+                case 0x0: /* All types. */
+                    if (ASMAtomicReadU32(&pAhciPort->MediaTrackType) == ATA_MEDIA_TYPE_CDDA)
+                        pAhciPortTaskState->cbATAPISector = 2352;
+                    else
+                        pAhciPortTaskState->cbATAPISector = 2048; /* Might be incorrect if we couldn't determine the type. */
+                    break;
+                case 0x1: /* CD-DA */
+                    pAhciPortTaskState->cbATAPISector = 2352;
+                    break;
+                case 0x2: /* Mode 1 */
+                    pAhciPortTaskState->cbATAPISector = 2048;
+                    break;
+                case 0x3: /* Mode 2 formless */
+                    pAhciPortTaskState->cbATAPISector = 2336;
+                    break;
+                case 0x4: /* Mode 2 form 1 */
+                    pAhciPortTaskState->cbATAPISector = 2048;
+                    break;
+                case 0x5: /* Mode 2 form 2 */
+                    pAhciPortTaskState->cbATAPISector = 2324;
+                    break;
+                default: /* Reserved */
+                    AssertMsgFailed(("Unknown sector type\n"));
+                    pAhciPortTaskState->cbATAPISector = 0; /** @todo we should probably fail the command here already. */
+            }
+
             cbTransfer = ataBE2H_U24(pbPacket + 6) * pAhciPortTaskState->cbATAPISector;
             enmTxDir = AHCITXDIR_READ;
             goto sendcmd;
+        }
         case SCSI_READ_CD_MSF:
             cSectors = ataMSF2LBA(pbPacket + 6) - ataMSF2LBA(pbPacket + 3);
             if (cSectors > 32)
@@ -6713,6 +6788,12 @@ static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         SSMR3PutBool(pSSM, pThis->ahciPort[i].fSpunUp);
         SSMR3PutU32(pSSM, pThis->ahciPort[i].u32TasksFinished);
         SSMR3PutU32(pSSM, pThis->ahciPort[i].u32QueuedTasksFinished);
+
+        /* ATAPI saved state. */
+        SSMR3PutBool(pSSM, pThis->ahciPort[i].fATAPI);
+        SSMR3PutMem(pSSM, &pThis->ahciPort[i].abATAPISense[0], sizeof(pThis->ahciPort[i].abATAPISense));
+        SSMR3PutU8(pSSM, pThis->ahciPort[i].cNotifiedMediaChange);
+        SSMR3PutU32(pSSM, pThis->ahciPort[i].MediaEventStatus);
     }
 
     /* Now the emulated ata controllers. */
@@ -6742,6 +6823,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     int rc;
 
     if (    uVersion != AHCI_SAVED_STATE_VERSION
+        &&  uVersion != AHCI_SAVED_STATE_VERSION_PRE_ATAPI
         &&  uVersion != AHCI_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
@@ -6867,6 +6949,16 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             SSMR3GetBool(pSSM, &pThis->ahciPort[i].fSpunUp);
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32TasksFinished);
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32QueuedTasksFinished);
+
+            if (uVersion > AHCI_SAVED_STATE_VERSION_PRE_ATAPI)
+            {
+                SSMR3GetBool(pSSM, &pThis->ahciPort[i].fATAPI);
+                SSMR3GetMem(pSSM, pThis->ahciPort[i].abATAPISense, sizeof(pThis->ahciPort[i].abATAPISense));
+                SSMR3GetU8(pSSM, &pThis->ahciPort[i].cNotifiedMediaChange);
+                SSMR3GetU32(pSSM, (uint32_t*)&pThis->ahciPort[i].MediaEventStatus);
+            }
+            else if (pThis->ahciPort[i].fATAPI)
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: atapi - saved=%false config=true"));
         }
 
         /* Now the emulated ata controllers. */
@@ -7033,6 +7125,7 @@ static DECLCALLBACK(void) ahciMountNotify(PPDMIMOUNTNOTIFY pInterface)
         if (pAhciPort->cNotifiedMediaChange < 2)
             pAhciPort->cNotifiedMediaChange = 2;
         ahciMediumInserted(pAhciPort);
+        ataMediumTypeSet(pAhciPort, ATA_MEDIA_TYPE_UNKNOWN);
     }
     else
     {
@@ -7070,6 +7163,7 @@ static DECLCALLBACK(void) ahciUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
          */
         pAhciPort->cNotifiedMediaChange = 4;
         ahciMediumRemoved(pAhciPort);
+        ataMediumTypeSet(pAhciPort, ATA_MEDIA_TYPE_UNKNOWN);
     }
     else
     {
