@@ -67,6 +67,9 @@ typedef struct FTM
     /** Current active socket. */
     RTSOCKET            hSocket;
 
+    /* Shutdown event semaphore. */
+    RTSEMEVENT          hShutdownEvent;
+
     /** State sync. */
     struct
     {
@@ -90,8 +93,6 @@ typedef struct FTM
     {
     } master;
     */
-
-    RTSEMEVENT          hShutdownEvent;
 
     /** FTM critical section.
      * This makes sure only the checkpoint or sync is active
