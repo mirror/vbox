@@ -70,6 +70,18 @@ bool VBoxProblemReporter::isValid() const
 // Helpers
 /////////////////////////////////////////////////////////////////////////////
 
+bool VBoxProblemReporter::isAnyWarningShown()
+{
+    /* Check if at least one warning is alive!
+     * All warnings are stored in m_warnings list as live pointers,
+     * thats why if some warning was deleted from another place,
+     * it's pointer here become equal NULL... */
+    for (int i = 0; i < m_warnings.size(); ++i)
+        if (m_warnings[i])
+            return true;
+    return false;
+}
+
 bool VBoxProblemReporter::isAlreadyShown(const QString &strWarningName) const
 {
     return m_shownWarnings.contains(strWarningName);
@@ -85,6 +97,13 @@ void VBoxProblemReporter::clearShownStatus(const QString &strWarningName)
 {
     if (m_shownWarnings.contains(strWarningName))
         m_shownWarnings.removeAll(strWarningName);
+}
+
+void VBoxProblemReporter::closeAllWarnings()
+{
+    /* Broadcast signal to perform emergent
+     * closing + deleting all the opened warnings. */
+    emit sigToCloseAllWarnings();
 }
 
 /**
@@ -200,6 +219,7 @@ int VBoxProblemReporter::message (QWidget *aParent, Type aType, const QString &a
 
     QPointer<QIMessageBox> box = new QIMessageBox (title, aMessage, icon, aButton1, aButton2,
                                                    aButton3, aParent, aAutoConfirmId);
+    connect(this, SIGNAL(sigToCloseAllWarnings()), box, SLOT(deleteLater()));
 
     if (!aText1.isNull())
         box->setButtonText (0, aText1);
@@ -217,7 +237,10 @@ int VBoxProblemReporter::message (QWidget *aParent, Type aType, const QString &a
         box->setFlagChecked (false);
     }
 
+    m_warnings << box;
     int rc = box->exec();
+    if (box && m_warnings.contains(box))
+        m_warnings.removeAll(box);
 
     if (aAutoConfirmId)
     {
