@@ -483,6 +483,8 @@ void UINewVMWzdPage4::getWithMediaManager()
             m_pDiskSelector->setCurrentItem(newId);
     }
 
+    hardDiskSourceChanged();
+
     m_pDiskSelector->setFocus();
 }
 
