@@ -358,6 +358,17 @@ DECLINLINE(void) PCIDevSetHeaderType(PPCIDEVICE pPciDev, uint8_t u8HdrType)
     pPciDev->config[VBOX_PCI_HEADER_TYPE] = u8HdrType;
 }
 
+/**
+ * Gets the header type config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @returns u8HdrType       The header type.
+ */
+DECLINLINE(uint8_t) PCIDevGetHeaderType(PPCIDEVICE pPciDev)
+{
+    return pPciDev->config[VBOX_PCI_HEADER_TYPE];
+}
+
 
 /**
  * Sets a base address config register.
@@ -469,7 +480,7 @@ DECLINLINE(void) PCIDevSetCapabilityList(PPCIDEVICE pPciDev, uint8_t u8Offset)
 DECLINLINE(uint8_t) PCIDevGetCapabilityList(PPCIDEVICE pPciDev)
 {
     return pPciDev->config[VBOX_PCI_CAPABILITY_LIST];
-} 
+}
 
 /**
  * Sets the interrupt line config register.
