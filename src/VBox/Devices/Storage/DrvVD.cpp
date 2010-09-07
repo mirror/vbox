@@ -34,6 +34,7 @@
 #include <iprt/sg.h>
 #include <iprt/poll.h>
 #include <iprt/pipe.h>
+#include <iprt/system.h>
 
 #ifdef VBOX_WITH_INIP
 /* All lwip header files are not C++ safe. So hack around this. */
@@ -1001,6 +1002,11 @@ static DECLCALLBACK(int) drvvdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
             AssertRC(rc2);
         }
     }
+    else
+    {
+        *pSock = pSockInt;
+        return VINF_SUCCESS;
+    }
 
     RTMemFree(pSockInt);
 
@@ -1019,7 +1025,7 @@ static DECLCALLBACK(int) drvvdTcpSocketDestroy(VDSOCKET Sock)
         if (pSockInt->hSocket != NIL_RTSOCKET)
         {
             rc = RTPollSetRemove(pSockInt->hPollSet, VDSOCKET_POLL_ID_SOCKET);
-            AssertRC(rc);
+            Assert(RT_SUCCESS(rc) || rc == VERR_POLL_HANDLE_ID_NOT_FOUND);
         }
         rc = RTPollSetRemove(pSockInt->hPollSet, VDSOCKET_POLL_ID_PIPE);
         AssertRC(rc);
@@ -1055,10 +1061,10 @@ static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET Sock, const char *pszAdd
 
             rc = RTPollSetAddSocket(pSockInt->hPollSet, pSockInt->hSocket,
                                     pSockInt->fEventsOld, VDSOCKET_POLL_ID_SOCKET);
-
-            if (RT_SUCCESS(rc))
-                return VINF_SUCCESS;
         }
+
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
 
         rc = RTTcpClientClose(pSockInt->hSocket);
     }
@@ -1180,9 +1186,8 @@ static DECLCALLBACK(int) drvvdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
     return RTTcpGetPeerAddress(pSockInt->hSocket, pAddr);
 }
 
-/** @copydoc VDINTERFACETCPNET::pfnSelectOneEx */
-static DECLCALLBACK(int) drvvdTcpSelectOneEx(VDSOCKET Sock, uint32_t fEvents,
-                                             uint32_t *pfEvents, RTMSINTERVAL cMillies)
+static int drvvdTcpSelectOneExPoll(VDSOCKET Sock, uint32_t fEvents,
+                                   uint32_t *pfEvents, RTMSINTERVAL cMillies)
 {
     int rc = VINF_SUCCESS;
     uint32_t id = 0;
@@ -1251,6 +1256,146 @@ static DECLCALLBACK(int) drvvdTcpSelectOneEx(VDSOCKET Sock, uint32_t fEvents,
             rc = VERR_INTERRUPTED;
         }
     }
+
+    return rc;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSelectOneEx */
+static DECLCALLBACK(int) drvvdTcpSelectOneExNoPoll(VDSOCKET Sock, uint32_t fEvents,
+                                                   uint32_t *pfEvents, RTMSINTERVAL cMillies)
+{
+    int rc = VINF_SUCCESS;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+
+    *pfEvents = 0;
+
+    ASMAtomicXchgBool(&pSockInt->fWaiting, true);
+    if (ASMAtomicXchgBool(&pSockInt->fWokenUp, false))
+    {
+        ASMAtomicXchgBool(&pSockInt->fWaiting, false);
+        return VERR_INTERRUPTED;
+    }
+
+    if (   pSockInt->hSocket == NIL_RTSOCKET
+        || !fEvents)
+    {
+        /*
+         * Only the pipe is configured or the caller doesn't wait for a socket event,
+         * wait until there is something to read from the pipe.
+         */
+        size_t cbRead = 0;
+        char ch = 0;
+        rc = RTPipeReadBlocking(pSockInt->hPipeR, &ch, 1, &cbRead);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(cbRead == 1);
+            rc = VERR_INTERRUPTED;
+            ASMAtomicXchgBool(&pSockInt->fWokenUp, false);
+        }
+    }
+    else
+    {
+        uint32_t fSelectEvents = 0;
+
+        if (fEvents & VD_INTERFACETCPNET_EVT_READ)
+            fSelectEvents |= RTSOCKET_EVT_READ;
+        if (fEvents & VD_INTERFACETCPNET_EVT_WRITE)
+            fSelectEvents |= RTSOCKET_EVT_WRITE;
+        if (fEvents & VD_INTERFACETCPNET_EVT_ERROR)
+            fSelectEvents |= RTSOCKET_EVT_ERROR;
+
+        if (fEvents & VD_INTERFACETCPNET_HINT_INTERRUPT)
+        {
+            uint32_t fEventsRecv = 0;
+
+            /* Make sure the socket is not in the pollset. */
+            rc = RTPollSetRemove(pSockInt->hPollSet, VDSOCKET_POLL_ID_SOCKET);
+            Assert(RT_SUCCESS(rc) || rc == VERR_POLL_HANDLE_ID_NOT_FOUND);
+
+            for (;;)
+            {
+                uint32_t id = 0;
+                rc = RTPoll(pSockInt->hPollSet, 5, &fEvents, &id);
+                if (rc == VERR_TIMEOUT)
+                {
+                    /* Check the socket. */
+                    rc = RTTcpSelectOneEx(pSockInt->hSocket, fSelectEvents, &fEventsRecv, 0);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (fEventsRecv & RTSOCKET_EVT_READ)
+                            *pfEvents |= VD_INTERFACETCPNET_EVT_READ;
+                        if (fEventsRecv & RTSOCKET_EVT_WRITE)
+                            *pfEvents |= VD_INTERFACETCPNET_EVT_WRITE;
+                        if (fEventsRecv & RTSOCKET_EVT_ERROR)
+                            *pfEvents |= VD_INTERFACETCPNET_EVT_ERROR;
+                        break; /* Quit */
+                    }
+                    else if (rc != VERR_TIMEOUT)
+                        break;
+                }
+                else if (RT_SUCCESS(rc))
+                {
+                    size_t cbRead = 0;
+                    uint8_t abBuf[10];
+                    Assert(id == VDSOCKET_POLL_ID_PIPE);
+                    Assert((fEventsRecv & RTPOLL_EVT_VALID_MASK) == RTPOLL_EVT_READ);
+
+                    /* We got interrupted, drain the pipe. */
+                    rc = RTPipeRead(pSockInt->hPipeR, abBuf, sizeof(abBuf), &cbRead);
+                    AssertRC(rc);
+
+                    ASMAtomicXchgBool(&pSockInt->fWokenUp, false);
+
+                    rc = VERR_INTERRUPTED;
+                    break;
+                }
+                else
+                    break;
+            }
+        }
+        else /* The caller waits for a socket event. */
+        {
+            uint32_t fEventsRecv = 0;
+
+            /* Loop until we got woken up or a socket event occurred. */
+            for (;;)
+            {
+                /** @todo find an adaptive wait algorithm based on the
+                 * number of wakeups in the past. */
+                rc = RTTcpSelectOneEx(pSockInt->hSocket, fSelectEvents, &fEventsRecv, 5);
+                if (rc == VERR_TIMEOUT)
+                {
+                    /* Check if there is an event pending. */
+                    size_t cbRead = 0;
+                    char ch = 0;
+                    rc = RTPipeRead(pSockInt->hPipeR, &ch, 1, &cbRead);
+                    if (RT_SUCCESS(rc) && rc != VINF_TRY_AGAIN)
+                    {
+                        Assert(cbRead == 1);
+                        rc = VERR_INTERRUPTED;
+                        ASMAtomicXchgBool(&pSockInt->fWokenUp, false);
+                        break; /* Quit */
+                    }
+                    else
+                        Assert(rc == VINF_TRY_AGAIN);
+                }
+                else if (RT_SUCCESS(rc))
+                {
+                    if (fEventsRecv & RTSOCKET_EVT_READ)
+                        *pfEvents |= VD_INTERFACETCPNET_EVT_READ;
+                    if (fEventsRecv & RTSOCKET_EVT_WRITE)
+                        *pfEvents |= VD_INTERFACETCPNET_EVT_WRITE;
+                    if (fEventsRecv & RTSOCKET_EVT_ERROR)
+                        *pfEvents |= VD_INTERFACETCPNET_EVT_ERROR;
+                    break; /* Quit */
+                }
+                else
+                    break;
+            }
+        }
+    }
+
+    ASMAtomicXchgBool(&pSockInt->fWaiting, false);
 
     return rc;
 }
@@ -1891,7 +2036,27 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             pThis->VDITcpNetCallbacks.pfnSetSendCoalescing = drvvdTcpSetSendCoalescing;
             pThis->VDITcpNetCallbacks.pfnGetLocalAddress = drvvdTcpGetLocalAddress;
             pThis->VDITcpNetCallbacks.pfnGetPeerAddress = drvvdTcpGetPeerAddress;
-            pThis->VDITcpNetCallbacks.pfnSelectOneEx = drvvdTcpSelectOneEx;
+
+            /*
+             * There is a 15ms delay between receiving the data and marking the socket
+             * as readable on Windows XP which hurts async I/O performance of
+             * TCP backends badly. Provide a different select method without
+             * using poll on XP.
+             * This is only used on XP because it is not as efficient as the one using poll
+             * and all other Windows versions are working fine.
+             */
+            char szOS[64];
+            memset(szOS, 0, sizeof(szOS));
+            rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, &szOS[0], sizeof(szOS));
+
+            if (RT_SUCCESS(rc) && !strncmp(szOS, "Windows XP", 10))
+            {
+                LogRel(("VD: Detected Windows XP, disabled poll based waiting for TCP\n"));
+                pThis->VDITcpNetCallbacks.pfnSelectOneEx = drvvdTcpSelectOneExNoPoll;
+            }
+            else
+                pThis->VDITcpNetCallbacks.pfnSelectOneEx = drvvdTcpSelectOneExPoll;
+
             pThis->VDITcpNetCallbacks.pfnPoke = drvvdTcpPoke;
         }
         else

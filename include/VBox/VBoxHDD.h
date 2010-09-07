@@ -1030,8 +1030,13 @@ typedef VDSOCKET *PVDSOCKET;
 #define VD_INTERFACETCPNET_EVT_WRITE        RT_BIT_32(1)
 /** Error condition, hangup, exception or similar. */
 #define VD_INTERFACETCPNET_EVT_ERROR        RT_BIT_32(2)
+/** Hint for the select that getting interrupted while waiting is more likely.
+ * The interface implementation can optimize the waiting strategy based on this.
+ * It is assumed that it is more likely to get one of the above socket events
+ * instead of being interrupted if the flag is not set. */
+#define VD_INTERFACETCPNET_HINT_INTERRUPT   RT_BIT_32(3)
 /** Mask of the valid bits. */
-#define VD_INTERFACETCPNET_EVT_VALID_MASK   UINT32_C(0x00000007)
+#define VD_INTERFACETCPNET_EVT_VALID_MASK   UINT32_C(0x0000000f)
 /** @} */
 
 /**
