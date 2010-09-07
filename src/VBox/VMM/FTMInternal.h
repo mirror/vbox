@@ -60,7 +60,9 @@ typedef struct FTM
     bool                fCheckpointingActive;
     /** Set when VM save/restore should only include changed pages. */
     bool                fDeltaLoadSaveActive;
-    bool                fAlignment[5];
+    /** Fallover to the standby VM. */
+    bool                fActivateStandby;
+    bool                fAlignment[4];
 
     /** Current active socket. */
     RTSOCKET            hSocket;
@@ -80,12 +82,16 @@ typedef struct FTM
     {
         R3PTRTYPE(PRTTCPSERVER)    hServer;
         R3PTRTYPE(AVLGCPHYSTREE)   pPhysPageTree;
+        uint64_t                   u64LastHeartbeat;
     } standby;
 
+    /* 
     struct
     {
-        RTSEMEVENT      hShutdownEvent;
     } master;
+    */
+
+    RTSEMEVENT          hShutdownEvent;
 
     /** FTM critical section.
      * This makes sure only the checkpoint or sync is active

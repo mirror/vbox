@@ -114,7 +114,7 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
     pVM->fFaultTolerantMaster           = false;
     pVM->ftm.s.fIsStandbyNode           = false;
     pVM->ftm.s.standby.hServer          = NIL_RTTCPSERVER;
-    pVM->ftm.s.master.hShutdownEvent    = NIL_RTSEMEVENT;
+    pVM->ftm.s.hShutdownEvent           = NIL_RTSEMEVENT;
     pVM->ftm.s.hSocket                  = NIL_RTSOCKET;
 
     /*
@@ -152,10 +152,10 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
  */
 VMMR3DECL(int) FTMR3Term(PVM pVM)
 {
-    if (pVM->ftm.s.master.hShutdownEvent != NIL_RTSEMEVENT)
+    if (pVM->ftm.s.hShutdownEvent != NIL_RTSEMEVENT)
     {
-        RTSemEventDestroy(pVM->ftm.s.master.hShutdownEvent);
-        pVM->ftm.s.master.hShutdownEvent = NIL_RTSEMEVENT;
+        RTSemEventDestroy(pVM->ftm.s.hShutdownEvent);
+        pVM->ftm.s.hShutdownEvent = NIL_RTSEMEVENT;
     }
     if (pVM->ftm.s.hSocket != NIL_RTSOCKET)
     {
@@ -741,7 +741,7 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
             /* Failed, so don't bother anymore. */
             return VINF_SUCCESS;
         }
-        rc = RTSemEventWait(pVM->ftm.s.master.hShutdownEvent, 1000 /* 1 second */);
+        rc = RTSemEventWait(pVM->ftm.s.hShutdownEvent, 1000 /* 1 second */);
         if (rc != VERR_TIMEOUT)
             return VINF_SUCCESS;    /* told to quit */            
     }
@@ -758,7 +758,7 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
 
     for (;;)
     {
-        rc = RTSemEventWait(pVM->ftm.s.master.hShutdownEvent, pVM->ftm.s.uInterval);
+        rc = RTSemEventWait(pVM->ftm.s.hShutdownEvent, pVM->ftm.s.uInterval);
         if (rc != VERR_TIMEOUT)
             break;    /* told to quit */
 
@@ -889,6 +889,45 @@ static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNo
     return 0;
 }
 
+/**
+ * Thread function which monitors the health of the master VM
+ *
+ * @param   Thread      The thread id.
+ * @param   pvUser      Not used
+ * @return  VINF_SUCCESS (ignored).
+ *
+ */
+static DECLCALLBACK(int) ftmR3StandbyThread(RTTHREAD Thread, void *pvUser)
+{
+    PVM pVM = (PVM)pvUser;
+
+    for (;;)
+    {
+        uint64_t u64TimeNow;
+
+        int rc = RTSemEventWait(pVM->ftm.s.hShutdownEvent, pVM->ftm.s.uInterval);
+        if (rc != VERR_TIMEOUT)
+            break;    /* told to quit */
+
+        if (pVM->ftm.s.standby.u64LastHeartbeat)
+        {
+            u64TimeNow = RTTimeMilliTS();
+
+            if (u64TimeNow > pVM->ftm.s.standby.u64LastHeartbeat + pVM->ftm.s.uInterval * 4)
+            {
+                /* Timeout; prepare to fallover. */
+                LogRel(("FTM: TIMEOUT (%RX64 vs %RX64): activate standby VM!\n", u64TimeNow, pVM->ftm.s.standby.u64LastHeartbeat + pVM->ftm.s.uInterval * 2));
+
+                pVM->ftm.s.fActivateStandby = true;
+                /** todo: prevent split-brain. */
+                break;
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Listen for incoming traffic destined for the standby VM.
@@ -968,6 +1007,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
         if (RT_FAILURE(rc))
             break;
 
+        pVM->ftm.s.standby.u64LastHeartbeat = RTTimeMilliTS();
         if (!strcmp(szCmd, "mem-sync"))
         {
             rc = ftmR3TcpWriteACK(pVM);
@@ -1073,12 +1113,13 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
     pVM->ftm.s.pszAddress       = RTStrDup(pszAddress);
     if (pszPassword)
         pVM->ftm.s.pszPassword  = RTStrDup(pszPassword);
+
+    rc = RTSemEventCreate(&pVM->ftm.s.hShutdownEvent);
+    if (RT_FAILURE(rc))
+        return rc;
+
     if (fMaster)
     {
-        rc = RTSemEventCreate(&pVM->ftm.s.master.hShutdownEvent);
-        if (RT_FAILURE(rc))
-            return rc;
-
         rc = RTThreadCreate(NULL, ftmR3MasterThread, pVM,
                             0, RTTHREADTYPE_IO /* higher than normal priority */, 0, "ftmMaster");
         if (RT_FAILURE(rc))
@@ -1098,6 +1139,11 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
     else
     {
         /* standby */
+        rc = RTThreadCreate(NULL, ftmR3StandbyThread, pVM,
+                            0, RTTHREADTYPE_DEFAULT, 0, "ftmStandby");
+        if (RT_FAILURE(rc))
+            return rc;
+
         rc = RTTcpServerCreateEx(pszAddress, uPort, &pVM->ftm.s.standby.hServer);
         if (RT_FAILURE(rc))
             return rc;
@@ -1105,6 +1151,10 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
 
         rc = RTTcpServerListen(pVM->ftm.s.standby.hServer, ftmR3StandbyServeConnection, pVM);
         /** @todo deal with the exit code to check if we should activate this standby VM. */
+        if (pVM->ftm.s.fActivateStandby)
+        {
+            /** @todo fallover. */
+        }
 
         if (pVM->ftm.s.standby.hServer)
         {
