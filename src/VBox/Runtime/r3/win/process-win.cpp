@@ -997,8 +997,14 @@ RTR3DECL(int) RTProcWaitNoResume(RTPROCESS Process, unsigned fFlags, PRTPROCSTAT
 
 RTR3DECL(int) RTProcTerminate(RTPROCESS Process)
 {
-    int     rc       = VINF_SUCCESS;
-    HANDLE  hProcess = rtProcWinFindPid(Process);
+    int rc = RTOnce(&g_rtProcWinInitOnce, rtProcWinInitOnce, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Try find the process among the ones we've spawned, otherwise, attempt
+     * opening the specified process.
+     */
+    HANDLE hProcess = rtProcWinFindPid(Process);
     if (hProcess != NULL)
     {
         if (!TerminateProcess(hProcess, 127))
