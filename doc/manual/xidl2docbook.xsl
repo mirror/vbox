@@ -425,6 +425,9 @@
         <xsl:value-of select="$tmp" />
       </xsl:when>
       <xsl:when test="//enum[@name=$enumNameFromCombinedName]">
+        <xsl:attribute name="linkend">
+          <xsl:value-of select="concat($enumNameFromCombinedName, '__', $enumValueFromCombinedName)" />
+        </xsl:attribute>
         <xsl:value-of select="$enumValueFromCombinedName" />
       </xsl:when>
       <xsl:otherwise>
