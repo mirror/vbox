@@ -68,7 +68,7 @@ ifdef VBOX_WITH_DOCS
  # Default language
  VBOX_MANUAL_LANGUAGES = en_US
 
- ifdef VBOX_ONLY_SDK
+ if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_DOCS_SDKREF)
   ## @todo make this an install target, drop the BLDDIRS.
   OTHERS += \
   	$(VBOX_PATH_SDK)/docs/SDKRef.pdf
@@ -309,14 +309,15 @@ VBOX_DOC_XIDL_SRC = $(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl
 VBOX_DOC_XIDL_SRC_TMP = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.xidl.tmp
 
 $(VBOX_DOC_XIDL_SRC_TMP): $(VBOX_DOC_XIDL_SRC) $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(SED) -e 's|@a \+\(\w\+\)|<tt>\1</tt>|g' \
+	$(call MSG_L1,Generating $@)
+	$(QUIET)$(SED) -e 's|@a \+\(\w\+\)|<tt>\1</tt>|g' \
 	       -e 's|@c \+\(\w\+\)|<tt>\1</tt>|g' \
 	       --output $@ $<
 
 # generate SDKRef_apiref.xml as a docbook file excerpt that will be referenced from the SDKRef.xml.
 $(VBOX_MANUAL_APIREF_TMP): $(VBOX_DOC_XIDL_SRC_TMP) $(VBOX_PATH_MANUAL_SRC)/xidl2docbook.xsl
 	$(call MSG_L1,Generating $@)
-	$(VBOX_XSLTPROC) --xinclude -o $@ $(VBOX_PATH_MANUAL_SRC)/xidl2docbook.xsl $(VBOX_DOC_XIDL_SRC_TMP)
+	$(QUIET)$(VBOX_XSLTPROC) --xinclude -o $@ $(VBOX_PATH_MANUAL_SRC)/xidl2docbook.xsl $(VBOX_DOC_XIDL_SRC_TMP)
 
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.xml: \
 		$(VBOX_PATH_MANUAL_SRC)/en_US/SDKRef.xml $(VBOX_MANUAL_APIREF_TMP) \
@@ -526,7 +527,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: $(addprefix $(VBOX_PATH_MANUAL_OUT
 	$(call MSG_L1,Generating $@ from DocBook XML)
 	$(QUIET)$(RM) -f $(addprefix $(@D/),$(VBOX_SDKREF_LATEX_FILES_TARGET))
 #	generate TeX source from processed docbook and store it in SDKRef.tex.tmp
-	$(VBOX_XSLTPROC) $(XSLTPROC_VERBOSE) --xinclude --nonet --stringparam TARGETLANG en_US -o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
+	$(QUIET)$(VBOX_XSLTPROC) $(XSLTPROC_VERBOSE) --xinclude --nonet --stringparam TARGETLANG en_US -o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
 #	for pretty quotes, replace " with `` or '' depending on whether it's at the start of a word;
 #   the \QUOTE{} was inserted by docbook2latex.xsl for all quotes _outside_ of screen sections
 	$(QUIET)$(SED) \
