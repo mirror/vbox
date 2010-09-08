@@ -497,12 +497,12 @@
   <xsl:template match="xref">
     <xsl:choose>
       <xsl:when test="@xreflabel">
-        <xsl:value-of select="concat('\hyperref[', @linkend, ']{', @xreflabel, '}')" />
+        <xsl:value-of select="concat('\hyperref[', @linkend, ']{\mbox{', @xreflabel, '}}')" />
       </xsl:when>
       <xsl:when test="@apiref='yes'">
-        <xsl:value-of select="concat('\hyperref[', @linkend, ']{')" />
+        <xsl:value-of select="concat('\hyperref[', @linkend, ']{\mbox{')" />
         <xsl:apply-templates />
-        <xsl:value-of select="'}'" />
+        <xsl:value-of select="'}}'" />
       </xsl:when>
       <xsl:otherwise>
         <xsl:value-of select="concat($g_nlsChapter, ' \ref{', @linkend, '}, \textit{\nameref{', @linkend, '}}, ', $g_nlsPage, ' \pageref{', @linkend, '}')" />
