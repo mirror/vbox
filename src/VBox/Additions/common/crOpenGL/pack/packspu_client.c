@@ -233,7 +233,7 @@ packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *ind
     if (ctx->clientState->extensions.ARB_vertex_buffer_object)
         serverArrays = crStateUseServerArrays();
 
-    if (!serverArrays && !ctx->clientState->client.array.locked && (count>3)
+    if (0 && !serverArrays && !ctx->clientState->client.array.locked && (count>3)
         && (!elementsBuffer || !elementsBuffer->id))
     {
         GLuint min, max;
@@ -388,7 +388,7 @@ packspu_DrawArrays( GLenum mode, GLint first, GLsizei count )
     if (ctx->clientState->extensions.ARB_vertex_buffer_object)
          serverArrays = crStateUseServerArrays();
 
-    if (!serverArrays && !ctx->clientState->client.array.locked && (count>3))
+    if (0 && !serverArrays && !ctx->clientState->client.array.locked && (count>3))
     {
         crStateLockArraysEXT(first, count);
         serverArrays = crStateUseServerArrays();
