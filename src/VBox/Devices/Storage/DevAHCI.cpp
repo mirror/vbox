@@ -1335,7 +1335,10 @@ static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u3
             /*
              * Set states in the Port Signature and SStatus registers.
              */
-            pAhciPort->regSIG  = 0x101; /* Signature for SATA device. */
+            if (pAhciPort->fATAPI)
+                pAhciPort->regSIG = AHCI_PORT_SIG_ATAPI;
+            else
+                pAhciPort->regSIG = AHCI_PORT_SIG_DISK;
             pAhciPort->regSSTS = (0x01 << 8) | /* Interface is active. */
                                  (0x02 << 4) | /* Generation 2 (3.0GBps) speed. */
                                  (0x03 << 0);  /* Device detected and communication established. */
@@ -1920,7 +1923,10 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
             /*
              * Set states in the Port Signature and SStatus registers.
              */
-            pAhciPort->regSIG  = 0x101; /* Signature for SATA device. */
+            if (pAhciPort->fATAPI)
+                pAhciPort->regSIG = AHCI_PORT_SIG_ATAPI;
+            else
+                pAhciPort->regSIG = AHCI_PORT_SIG_DISK;
             pAhciPort->regSSTS = (0x01 << 8) | /* Interface is active. */
                                  (0x02 << 4) | /* Generation 2 (3.0GBps) speed. */
                                  (0x03 << 0);  /* Device detected and communication established. */
@@ -2605,7 +2611,7 @@ static void ahciPostFirstD2HFisIntoMemory(PAHCIPort pAhciPort)
     d2hFis[AHCI_CMDFIS_SECTN] = 0x01;
     d2hFis[AHCI_CMDFIS_SECTC] = 0x01;
 
-    pAhciPort->regTFD = (1 << 8) | ATA_STAT_SEEK | ATA_STAT_WRERR;
+    pAhciPort->regTFD = (1 << 8) | ATA_STAT_READY | ATA_STAT_SEEK | ATA_STAT_WRERR;
 
     ahciPostFisIntoMemory(pAhciPort, AHCI_CMDFIS_TYPE_D2H, d2hFis);
 }
@@ -4477,7 +4483,10 @@ static void ahciFinishStorageDeviceReset(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE
         ahciPostFirstD2HFisIntoMemory(pAhciPort);
 
     /* As this is the first D2H FIS after the reset update the signature in the SIG register of the port. */
-    pAhciPort->regSIG  = 0x101;
+    if (pAhciPort->fATAPI)
+        pAhciPort->regSIG = AHCI_PORT_SIG_ATAPI;
+    else
+        pAhciPort->regSIG = AHCI_PORT_SIG_DISK;
     ASMAtomicOrU32(&pAhciPort->u32TasksFinished, (1 << pAhciPortTaskState->uTag));
 
     ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN);
