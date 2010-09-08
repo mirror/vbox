@@ -150,7 +150,8 @@ tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 tstHostHardwareLinux_TEMPLATE  = VBOXR3TSTNPEXE
 tstHostHardwareLinux_SOURCES   = \
 	tstHostHardwareLinux.cpp \
-	../linux/HostHardwareLinux.cpp
+	../linux/HostHardwareLinux.cpp \
+	../linux/USBGetDevices.cpp
 tstHostHardwareLinux_INCS      = . ../include
 tstHostHardwareLinux_DEFS      = \
 	VBOX_TEST_USB_LINUX \

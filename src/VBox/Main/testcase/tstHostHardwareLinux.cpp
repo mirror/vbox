@@ -18,6 +18,7 @@
  */
 
 #include <HostHardwareLinux.h>
+#include <USBGetDevices.h>
 
 #include <VBox/err.h>
 
@@ -51,6 +52,33 @@ int doHotplugEvent(VBoxMainHotplugWaiter *waiter, RTMSINTERVAL cMillies)
             break;
     }
     return rc;
+}
+
+void printDevices(PUSBDEVICE pDevices, const char *pcszAccess)
+{
+    PUSBDEVICE pDevice = pDevices;
+
+    RTPrintf("Enumerating usb devices using %s\n", pcszAccess);
+    while (pDevice)
+    {
+        RTPrintf("  Manufacturer: %s, product: %s, serial number string: %s\n",
+                    pDevice->pszManufacturer, pDevice->pszProduct,
+                    pDevice->pszSerialNumber);
+        RTPrintf("    Device address: %s\n", pDevice->pszAddress);
+        pDevice = pDevice->pNext;
+    }
+}
+
+void freeDevices(PUSBDEVICE pDevices)
+{
+    PUSBDEVICE pDevice = pDevices, pDeviceNext;
+
+    while (pDevice)
+    {
+        pDeviceNext = pDevice->pNext;
+        deviceFree(pDevice);
+        pDevice = pDeviceNext;
+    }
 }
 
 int main()
@@ -90,62 +118,21 @@ int main()
         RTPrintf ("\n");
     }
 #ifdef VBOX_USB_WITH_SYSFS
-    VECTOR_OBJ(USBDeviceInfo) vecDevInfo;
-    VEC_INIT_OBJ(&vecDevInfo, USBDeviceInfo, USBDevInfoCleanup);
-    rc = USBSysfsEnumerateHostDevices(&vecDevInfo);
-    if (RT_FAILURE(rc))
+    PUSBDEVICE pDevice = USBProxyLinuxGetDevices(NULL);
+    printDevices(pDevice, "sysfs");
+    freeDevices(pDevice);
+    if (USBProxyLinuxCheckForUsbfs("/proc/bus/usb/devices"))
     {
-        RTPrintf ("Failed to update the host USB device information, error %Rrc\n",
-                 rc);
-        return 1;
+        pDevice = USBProxyLinuxGetDevices("/proc/bus/usb");
+        printDevices(pDevice, "/proc/bus/usb");
+        freeDevices(pDevice);
     }
-    RTPrintf ("Listing USB devices detected:\n");
-    USBDeviceInfo *pInfo;
-    VEC_FOR_EACH(&vecDevInfo, USBDeviceInfo, pInfo)
+    if (USBProxyLinuxCheckForUsbfs("/dev/bus/usb/devices"))
     {
-        char szProduct[1024];
-        if (RTLinuxSysFsReadStrFile(szProduct, sizeof(szProduct),
-                                    "%s/product", pInfo->mSysfsPath) == -1)
-        {
-            if (errno != ENOENT)
-            {
-                RTPrintf ("Failed to get the product name for device %s: error %s\n",
-                          pInfo->mDevice, strerror(errno));
-                return 1;
-            }
-            else
-                szProduct[0] = '\0';
-        }
-        RTPrintf ("  device: %s (%s), sysfs path: %s\n", szProduct, pInfo->mDevice,
-                  pInfo->mSysfsPath);
-        RTPrintf ("    interfaces:\n");
-        char **ppszIf;
-        VEC_FOR_EACH(&pInfo->mvecpszInterfaces, char *, ppszIf)
-        {
-            char szDriver[RTPATH_MAX];
-            strcpy(szDriver, "none");
-            ssize_t size = RTLinuxSysFsGetLinkDest(szDriver, sizeof(szDriver),
-                                                   "%s/driver", *ppszIf);
-            if (size == -1 && errno != ENOENT)
-            {
-                RTPrintf ("Failed to get the driver for interface %s of device %s: error %s\n",
-                          *ppszIf, pInfo->mDevice, strerror(errno));
-                return 1;
-            }
-            if (RTLinuxSysFsExists("%s/driver", *ppszIf) != (size != -1))
-            {
-                RTPrintf ("RTLinuxSysFsExists did not return the expected value for the driver link of interface %s of device %s.\n",
-                          *ppszIf, pInfo->mDevice);
-                return 1;
-            }
-            uint64_t u64InterfaceClass;
-            u64InterfaceClass = RTLinuxSysFsReadIntFile(16, "%s/bInterfaceClass",
-                                                        *ppszIf);
-            RTPrintf ("      sysfs path: %s, driver: %s, interface class: 0x%x\n",
-                      *ppszIf, szDriver, u64InterfaceClass);
-        }
+        pDevice = USBProxyLinuxGetDevices("/dev/bus/usb");
+        printDevices(pDevice, "/dev/bus/usb");
+        freeDevices(pDevice);
     }
-    VEC_CLEANUP_OBJ(&vecDevInfo);
     VBoxMainHotplugWaiter waiter;
     RTPrintf ("Waiting for a hotplug event for five seconds...\n");
     doHotplugEvent(&waiter, 5000);

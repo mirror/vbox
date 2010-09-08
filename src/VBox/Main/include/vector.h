@@ -26,7 +26,15 @@
 #ifndef MAIN_VECTOR_H
 # define MAIN_VECTOR_H
 
-/*** Helper macros and deinitions ***/
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+
+#include <stdlib.h>
+
+/*******************************************************************************
+*   Helper macros and definitions                                              *
+*******************************************************************************/
 
 /** The unit by which the vector capacity is increased */
 #define VECTOR_ALLOC_UNIT 16
@@ -207,7 +215,9 @@ DECLINLINE(int) vecPushBackPtr(VECTOR_PTR *pvec, unsigned uTypeHash,
     return VINF_SUCCESS;
 }
 
-/*** Public interface macros ***/
+/*******************************************************************************
+*   Public interface macros                                                    *
+*******************************************************************************/
 
 /**
  * Initialise a vector structure.  Always succeeds.

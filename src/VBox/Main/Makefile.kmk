@@ -360,6 +360,7 @@ ifdef VBOX_WITH_USB
 	HostUSBDeviceImpl.cpp
  VBoxSVC_SOURCES.darwin  +=  darwin/USBProxyServiceDarwin.cpp
  VBoxSVC_SOURCES.linux   +=   linux/USBProxyServiceLinux.cpp
+ VBoxSVC_SOURCES.linux   +=   linux/USBGetDevices.cpp
  VBoxSVC_SOURCES.os2     +=     os2/USBProxyServiceOs2.cpp
  VBoxSVC_SOURCES.solaris += solaris/USBProxyServiceSolaris.cpp
  VBoxSVC_SOURCES.win     +=     win/USBProxyServiceWindows.cpp
