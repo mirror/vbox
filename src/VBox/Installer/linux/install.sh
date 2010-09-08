@@ -112,11 +112,19 @@ check_previous() {
 
 info "VirtualBox Version $VERSION r$SVNREV ($BUILD) installer"
 
-check_root      # Make sure that we were invoked as root...
-check_running   # ... and that no copy of VirtualBox was running at the time.
+
+# Make sure that we were invoked as root...
+check_root
 
 # Set up logging before anything else
 create_log $LOG
+
+# Now stop the web service otherwise it will keep VBoxSVC running
+stop_init_script vboxweb-service
+
+# Now check if no VBoxSVC daemon is running
+check_running
+
 log "VirtualBox $VERSION r$SVNREV installer, built $BUILD."
 log ""
 log "Testing system setup..."
@@ -452,6 +460,7 @@ if [ "$ACTION" = "install" ]; then
             MODULE_FAILED="true"
             RC_SCRIPT=1
         fi
+        start_init_script vboxweb-service
         log ""
         log "End of the output from the Linux kernel build system."
         cd $cur
