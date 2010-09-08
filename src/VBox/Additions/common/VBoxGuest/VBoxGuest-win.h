@@ -173,7 +173,13 @@ extern winVersion_t winVersion;
 #include "VBoxGuestInternal.h"
 
 RT_C_DECLS_BEGIN
-NTSTATUS   vboxguestwinCleanup(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+#ifdef TARGET_NT4
+NTSTATUS   vboxguestwinnt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath);
+NTSTATUS   vboxguestwinInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath);
+#else
+NTSTATUS   vboxguestwinInit(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+#endif
+NTSTATUS   vboxguestwinCleanup(PDEVICE_OBJECT pDevObj);
 NTSTATUS   vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 VOID       vboxguestwinDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext);
 BOOLEAN    vboxguestwinIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);
@@ -184,6 +190,15 @@ void       vboxguestwinUnmapVMMDevMemory(PVBOXGUESTDEVEXT pDevExt);
 VBOXOSTYPE vboxguestwinVersionToOSType(winVersion_t winVer);
 NTSTATUS   vboxguestwinPower(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 RT_C_DECLS_END
+
+#ifdef TARGET_NT4
+/*
+ * XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist
+ * on NT4, so... The same for ExAllocatePool.
+ */
+#undef ExAllocatePool
+#undef ExFreePool
+#endif
 
 #endif /* ___VBoxGuest_win_h */
 

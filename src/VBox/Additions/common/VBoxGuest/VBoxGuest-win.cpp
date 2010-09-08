@@ -170,7 +170,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         pDrvObj->MajorFunction[IRP_MJ_READ]                    = vboxguestwinNotSupportedStub;
         pDrvObj->MajorFunction[IRP_MJ_WRITE]                   = vboxguestwinNotSupportedStub;
 #ifdef TARGET_NT4
-        rc = vboxguestwinNT4CreateDevice(pDrvObj, NULL /* pDevObj */, pRegPath);
+        rc = vboxguestwinnt4CreateDevice(pDrvObj, NULL /* pDevObj */, pRegPath);
 #else
         pDrvObj->MajorFunction[IRP_MJ_PNP]                     = vboxguestwinPnP;
         pDrvObj->MajorFunction[IRP_MJ_POWER]                   = vboxguestwinPower;
@@ -273,20 +273,246 @@ static NTSTATUS vboxguestwinAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDe
 
 
 /**
+ * Debug helper to dump a device resource list.
+ *
+ * @param pResourceList  list of device resources.
+ */
+static VOID vboxguestwinShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
+{
+#ifdef LOG_ENABLED
+    PCM_PARTIAL_RESOURCE_DESCRIPTOR resource = pResourceList->PartialDescriptors;
+    ULONG nres = pResourceList->Count;
+    ULONG i;
+
+    for (i = 0; i < nres; ++i, ++resource)
+    {
+        ULONG uType = resource->Type;
+        static char* aszName[] =
+        {
+            "CmResourceTypeNull",
+            "CmResourceTypePort",
+            "CmResourceTypeInterrupt",
+            "CmResourceTypeMemory",
+            "CmResourceTypeDma",
+            "CmResourceTypeDeviceSpecific",
+            "CmResourceTypeBusNumber",
+            "CmResourceTypeDevicePrivate",
+            "CmResourceTypeAssignedResource",
+            "CmResourceTypeSubAllocateFrom",
+        };
+
+        Log(("VBoxGuest::vboxguestwinShowDeviceResources: Type %s",
+               uType < (sizeof(aszName) / sizeof(aszName[0]))
+             ? aszName[uType] : "Unknown"));
+
+        switch (uType)
+        {
+            case CmResourceTypePort:
+            case CmResourceTypeMemory:
+                Log(("VBoxGuest::vboxguestwinShowDeviceResources: Start %8X%8.8lX length %X\n",
+                         resource->u.Port.Start.HighPart, resource->u.Port.Start.LowPart,
+                         resource->u.Port.Length));
+                break;
+
+            case CmResourceTypeInterrupt:
+                Log(("VBoxGuest::vboxguestwinShowDeviceResources: Level %X, Vector %X, Affinity %X\n",
+                         resource->u.Interrupt.Level, resource->u.Interrupt.Vector,
+                         resource->u.Interrupt.Affinity));
+                break;
+
+            case CmResourceTypeDma:
+                Log(("VBoxGuest::vboxguestwinShowDeviceResources: Channel %d, Port %X\n",
+                         resource->u.Dma.Channel, resource->u.Dma.Port));
+                break;
+
+            default:
+                Log(("\n"));
+                break;
+        }
+    }
+#endif
+}
+
+
+/**
+ * Global initialisation stuff (PnP + NT4 legacy).
+ *
+ * @param  pDevObj    Device object.
+ * @param  pIrp       Request packet.
+ */
+#ifndef TARGET_NT4
+NTSTATUS vboxguestwinInit(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+#else
+NTSTATUS vboxguestwinInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath)
+#endif
+{
+    PVBOXGUESTDEVEXT pDevExt   = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
+#ifndef TARGET_NT4
+    PIO_STACK_LOCATION pStack  = IoGetCurrentIrpStackLocation(pIrp);
+#endif
+
+    Log(("VBoxGuest::vboxguestwinInit\n"));
+
+    int rc = STATUS_SUCCESS;
+#ifdef TARGET_NT4
+    /*
+     * Let's have a look at what our PCI adapter offers.
+     */
+    Log(("VBoxGuest::vboxguestwinInit: Starting to scan PCI resources of VBoxGuest ...\n"));
+
+    /* Assign the PCI resources. */
+    PCM_RESOURCE_LIST pResourceList = NULL;
+    UNICODE_STRING classNameString;
+    RtlInitUnicodeString(&classNameString, L"VBoxGuestAdapter");
+    rc = HalAssignSlotResources(pRegPath, &classNameString,
+                                pDrvObj, pDevObj,
+                                PCIBus, pDevExt->win.s.busNumber, pDevExt->win.s.slotNumber,
+                                &pResourceList);
+    if (pResourceList && pResourceList->Count > 0)
+        vboxguestwinShowDeviceResources(&pResourceList->List[0].PartialResourceList);
+    if (NT_SUCCESS(rc))
+        rc = vboxguestwinScanPCIResourceList(pResourceList, pDevExt);
+#else
+    if (pStack->Parameters.StartDevice.AllocatedResources->Count > 0)
+        vboxguestwinShowDeviceResources(&pStack->Parameters.StartDevice.AllocatedResources->List[0].PartialResourceList);
+    if (NT_SUCCESS(rc))
+        rc = vboxguestwinScanPCIResourceList(pStack->Parameters.StartDevice.AllocatedResourcesTranslated,
+                                             pDevExt);
+#endif
+    if (NT_SUCCESS(rc))
+    {
+        /*
+         * Map physical address of VMMDev memory into MMIO region
+         * and init the common device extension bits.
+         */
+        void *pvMMIOBase = NULL;
+        uint32_t cbMMIO = 0;
+        rc = vboxguestwinMapVMMDevMemory(pDevExt,
+                                         pDevExt->win.s.vmmDevPhysMemoryAddress,
+                                         pDevExt->win.s.vmmDevPhysMemoryLength,
+                                         &pvMMIOBase,
+                                         &cbMMIO);
+        if (NT_SUCCESS(rc))
+        {
+            pDevExt->pVMMDevMemory = (VMMDevMemory *)pvMMIOBase;
+
+            Log(("VBoxGuest::vboxguestwinInit: pvMMIOBase = 0x%p, pDevExt = 0x%p, pDevExt->pVMMDevMemory = 0x%p\n",
+                 pvMMIOBase, pDevExt, pDevExt ? pDevExt->pVMMDevMemory : NULL));
+
+            int vrc = VBoxGuestInitDevExt(pDevExt,
+                                          pDevExt->IOPortBase,
+                                          pvMMIOBase, cbMMIO,
+                                          vboxguestwinVersionToOSType(g_winVersion),
+                                          VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
+            if (RT_FAILURE(vrc))
+            {
+                Log(("VBoxGuest::vboxguestwinInit: Could not init device extension, rc = %Rrc!\n", vrc));
+                rc = STATUS_DEVICE_CONFIGURATION_ERROR;
+            }
+        }
+        else
+            Log(("VBoxGuest::vboxguestwinInit: Could not map physical address of VMMDev, rc = 0x%x!\n", rc));
+    }
+
+    if (NT_SUCCESS(rc))
+    {
+        int vrc = VbglGRAlloc((VMMDevRequestHeader **)&pDevExt->win.s.pPowerStateRequest,
+                              sizeof (VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
+        if (RT_FAILURE(vrc))
+        {
+            Log(("VBoxGuest::vboxguestwinInit: Alloc for pPowerStateRequest failed, rc = %Rrc\n", vrc));
+            rc = STATUS_UNSUCCESSFUL;
+        }
+    }
+
+    if (NT_SUCCESS(rc))
+    {
+        /*
+         * Register DPC and ISR.
+         */
+        Log(("VBoxGuest::vboxguestwinInit: Initializing DPC/ISR ...\n"));
+
+        IoInitializeDpcRequest(pDevExt->win.s.pDeviceObject, vboxguestwinDpcHandler);
+#ifdef TARGET_NT4
+        /* Get an interrupt vector. */
+        /* Only proceed if the device provides an interrupt. */
+        if (   pDevExt->win.s.interruptLevel
+            || pDevExt->win.s.interruptVector)
+        {
+            pDevExt->win.s.interruptVector = HalGetInterruptVector(PCIBus,
+                                                                   pDevExt->win.s.busNumber,
+                                                                   pDevExt->win.s.interruptLevel,
+                                                                   pDevExt->win.s.interruptVector,
+                                                                   (PKIRQL)pDevExt->win.s.interruptLevel,
+                                                                   &pDevExt->win.s.interruptAffinity);
+        }
+        else
+            Log(("VBoxGuest::vboxguestwinInit: Device does not provide an interrupt!\n"));
+#endif
+        if (pDevExt->win.s.interruptVector)
+        {
+            rc = IoConnectInterrupt(&pDevExt->win.s.pInterruptObject,          /* Out: interrupt object. */
+                                    (PKSERVICE_ROUTINE)vboxguestwinIsrHandler, /* Our ISR handler. */
+                                    pDevExt,                                   /* Device context. */
+                                    NULL,                                      /* Optional spinlock. */
+                                    pDevExt->win.s.interruptVector,            /* Interrupt vector. */
+                                    (KIRQL)pDevExt->win.s.interruptLevel,      /* Interrupt level. */
+                                    (KIRQL)pDevExt->win.s.interruptLevel,      /* Interrupt level. */
+                                    pDevExt->win.s.interruptMode,              /* LevelSensitive or Latched. */
+                                    TRUE,                                      /* Shareable interrupt. */
+                                    pDevExt->win.s.interruptAffinity,          /* CPU affinity. */
+                                    FALSE);                                    /* Don't save FPU stack. */
+            if (NT_ERROR(rc))
+                Log(("VBoxGuest::vboxguestwinInit: Could not connect interrupt, rc = 0x%x\n", rc));
+        }
+        else
+            Log(("VBoxGuest::vboxguestwinInit: No interrupt vector found!\n"));
+    }
+
+
+#ifdef VBOX_WITH_HGCM
+    /* Initialize the HGCM event notification semaphore. */
+    KeInitializeEvent(&pDevExt->win.s.hgcm.s.keventNotification, NotificationEvent, FALSE);
+
+    /* Preallocated constant timeout 250ms for HGCM async waiter. */
+    pDevExt->win.s.hgcm.s.WaitTimeout.QuadPart  = 250;
+    pDevExt->win.s.hgcm.s.WaitTimeout.QuadPart *= -10000; /* Relative in 100ns units. */
+
+    int vrc = VBoxGuestCreateKernelSession(pDevExt, &pDevExt->win.s.pKernelSession);
+    if (RT_FAILURE(vrc))
+    {
+        Log(("VBoxGuest::vboxguestwinInit: Failed to allocated kernel session data! rc = %Rrc\n", rc));
+        rc = STATUS_UNSUCCESSFUL;
+    }
+#endif
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Ready to rumble! */
+        Log(("VBoxGuest::vboxguestwinInit: Device is ready!\n"));
+        pDevExt->win.s.devState = WORKING;
+    }
+
+    Log(("VBoxGuest::vboxguestwinInit: Returned with rc = 0x%x\n", rc));
+    return rc;
+}
+
+
+/**
  * Cleans up all data (like device extension and guest mapping).
  *
  * @param   pDrvObj     Driver object.
- * @param   pIrp        Request packet.
  */
-NTSTATUS vboxguestwinCleanup(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+NTSTATUS vboxguestwinCleanup(PDEVICE_OBJECT pDevObj)
 {
     Log(("VBoxGuest::vboxguestwinCleanup\n"));
 
-    NOREF(pIrp);
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
-
     if (pDevExt)
     {
+#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+        hlpDeregisterBugCheckCallback(pDevExt); /* ignore failure! */
+#endif
         /* According to MSDN we have to unmap previously mapped memory. */
         vboxguestwinUnmapVMMDevMemory(pDevExt);
 
@@ -306,17 +532,7 @@ void vboxguestwinUnload(PDRIVER_OBJECT pDrvObj)
 {
     Log(("VBoxGuest::vboxguestwinGuestUnload\n"));
 #ifdef TARGET_NT4
-    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDrvObj->DeviceObject->DeviceExtension;
-    unreserveHypervisorMemory(pDevExt);
-
-    hlpVBoxUnmapVMMDevMemory (pDevExt);
-
-    VBoxCleanupMemBalloon(pDevExt);
-
-#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-    hlpDeregisterBugCheckCallback(pDevExt); /* ignore failure! */
-#endif
-
+    vboxguestwinCleanup(pDrvObj->DeviceObject);
     /*
      * I don't think it's possible to unload a driver which processes have
      * opened, at least we'll blindly assume that here.
@@ -507,48 +723,6 @@ NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 #else
         /* Add at least one (bogus) fall through case to shut up MSVC! */
         case 0:
-#endif
-
-#if 0
-#ifdef VBOX_WITH_MANAGEMENT
-        case VBOXGUEST_IOCTL_CHECK_BALLOON:
-        {
-            VBoxGuestCheckBalloonInfo *pInfo = (VBoxGuestCheckBalloonInfo *)pBuf;
-
-            if (pStack->Parameters.DeviceIoControl.OutputBufferLength != sizeof(VBoxGuestCheckBalloonInfo))
-            {
-                Log(("VBoxGuest::vboxguestwinGuestDeviceControl: OutputBufferLength %d != sizeof(ULONG) %d\n",
-                         pStack->Parameters.DeviceIoControl.OutputBufferLength, sizeof(VBoxGuestCheckBalloonInfo)));
-                Status = STATUS_INVALID_PARAMETER;
-                break;
-            }
-
-            ULONG cMemoryBalloonChunks;
-            int rc = VBoxGuestQueryMemoryBalloon(pDevExt, &cMemoryBalloonChunks);
-            if (RT_FAILURE(rc))
-            {
-                Log(("VBOXGUEST_IOCTL_CHECK_BALLOON: vbox rc = %Rrc\n", rc));
-                Status = STATUS_UNSUCCESSFUL;
-            }
-            else
-            {
-                cbOut = pStack->Parameters.DeviceIoControl.OutputBufferLength;
-                pInfo->cBalloonChunks = cMemoryBalloonChunks;
-                pInfo->fHandleInR3 = false;
-            }
-            break;
-        }
-#endif
-
-        case VBOXGUEST_IOCTL_LOG(0):    /* The size isn't relevant on NT. */
-        {
-            /* Enable this only for debugging:
-            Log(("VBoxGuest::vboxguestwinGuestDeviceControl: VBOXGUEST_IOCTL_LOG %.*s\n", (int)pStack->Parameters.DeviceIoControl.InputBufferLength, pBuf));
-             */
-            LogRel(("%.*s", (int)pStack->Parameters.DeviceIoControl.InputBufferLength, pBuf));
-            cbOut = 0;
-            break;
-        }
 #endif
         default:
         {
