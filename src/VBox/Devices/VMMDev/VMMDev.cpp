@@ -29,6 +29,7 @@
 #include <VBox/pgm.h>
 #include <VBox/err.h>
 #include <VBox/vm.h> /* for VM_IS_EMT */
+#include <VBox/dbg.h>
 
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
@@ -428,7 +429,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
        started with VMMDevReq_ReportGuestInfo. */
     if (   !pThis->fu32AdditionsOk
         && requestHeader.requestType != VMMDevReq_ReportGuestInfo2
-        && requestHeader.requestType != VMMDevReq_ReportGuestInfo)
+        && requestHeader.requestType != VMMDevReq_ReportGuestInfo
+        && requestHeader.requestType != VMMDevReq_WriteCoreDump)
     {
         Log(("VMMDev: guest has not yet reported to us. Refusing operation.\n"));
         requestHeader.rc = VERR_NOT_SUPPORTED;
@@ -525,6 +527,21 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                         pGuestInfo2->additionsRevision, sizeof(pGuestInfo2->szName), pGuestInfo2->szName));
                 pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, pGuestInfo2);
                 pRequestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
+
+        case VMMDevReq_WriteCoreDump:
+        {
+            if (pRequestHeader->size != sizeof(VMMDevReqWriteCoreDump))
+            {
+                AssertMsgFailed(("VMMDev WriteCoreDump structure has an invalid size!\n"));
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                PVM pVM = PDMDevHlpGetVM(pDevIns);
+                pRequestHeader->rc = DBGFR3CoreWrite(pVM, NULL /* pszDumpPath */);
             }
             break;
         }

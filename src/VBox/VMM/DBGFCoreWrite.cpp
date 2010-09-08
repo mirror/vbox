@@ -20,12 +20,16 @@
  * [ ELF 64 Header]  -- Only 1
  *
  * [ PT_NOTE ]       -- Only 1
- *    - Offset into list of Notes (Note Hdr + data) of VBox CPUs.
+ *    - Offset into CoreDescriptor followed by list of Notes (Note Hdr + data) of VBox CPUs.
  *    - (Any Additional custom Note sections)
  *
  * [ PT_LOAD ]       -- One for each contiguous memory chunk
  *    - Memory offset
  *    - File offset
+ *
+ * CoreDescriptor
+ *    - Magic, VBox version
+ *    - Number of CPus
  *
  * Per-CPU register dump
  *    - CPU 1 Note Hdr + Data
@@ -499,16 +503,14 @@ CoreWriteDone:
  *
  * @return VBox status code.
  * @param   pVM                 The VM handle.
- * @param   idCpu               The target CPU ID.
  * @param   pszDumpPath         The path of the file to dump into, cannot be
  *                              NULL.
  *
  * @remarks The VM must be suspended before calling this function.
  */
-VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, VMCPUID idCpu, const char *pszDumpPath)
+VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, const char *pszDumpPath)
 {
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
     AssertReturn(pszDumpPath, VERR_INVALID_HANDLE);
 
     /*
