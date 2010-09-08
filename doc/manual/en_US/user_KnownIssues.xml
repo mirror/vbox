@@ -195,8 +195,8 @@
             Mac OS X Server kernel to help you diagnose boot problems. Note
             that there is a lot of output and not all errors are fatal (they
             would also show on your physical Mac). You can turn off these
-            messages by issuing this command:<screen>VBoxManage setextradata vmname "VBoxInternal2/EfiBootArgs" "  "</screen>To
-            revert to the previous behavior, use:<screen>VBoxManage setextradata vmname "VBoxInternal2/EfiBootArgs" ""</screen></para>
+            messages by issuing this command:<screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" "  "</screen>To
+            revert to the previous behavior, use:<screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" ""</screen></para>
           </listitem>
         </itemizedlist></para>
     </listitem>

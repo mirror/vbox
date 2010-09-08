@@ -74,7 +74,7 @@
             (press the Windows key and "R") and typing "mstsc". You can also
             find it under "Start" -&gt; "All Programs" -&gt; "Accessories"
             -&gt; "Remote Desktop Connection". If you use the "Run" dialog,
-            you can type in options directly:<screen>mstsc 1.2.3.4[:3389] </screen></para>
+            you can type in options directly:<screen>mstsc 1.2.3.4[:3389]</screen></para>
 
             <para>Replace "1.2.3.4" with the host IP address, and 3389 with a
             different port if necessary.</para>
@@ -387,10 +387,10 @@
             VRDPAuthSimple, issue
             <computeroutput>VBoxManage setproperty vrdpauthlibrary "VRDPAuthSimple"</computeroutput>.
             To enable the library for a VM, switch authentication to external using
-            <computeroutput>VBoxManage modifyvm "VMNAME" --vrdpauthtype external</computeroutput>.
+            <computeroutput>VBoxManage modifyvm "VM name" --vrdpauthtype external</computeroutput>.
             Last but not least, you have to configure users and passwords. Here is an example
             for the user "john" with the password "secret":
-            <computeroutput>VBoxManage setextradata "VMNAME" "VRDPAuthSimple/users/john" "secret"</computeroutput>
+            <computeroutput>VBoxManage setextradata "VM name" "VRDPAuthSimple/users/john" "secret"</computeroutput>
             To specify an empty password, use the special reserved value
             <computeroutput>[NULL]</computeroutput>.
             </para>
@@ -527,14 +527,14 @@
 
       <para>The following commands change corresponding server settings:</para>
 
-      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableDisplay" 1</screen>
-      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableInput" 1</screen>
-      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableUSB" 1</screen>
-      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableAudio" 1</screen>
-      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableClipboard" 1</screen>
+      <screen>VBoxManage setextradata "VM name" "VRDP/Feature/Client/DisableDisplay" 1
+VBoxManage setextradata "VM name" "VRDP/Feature/Client/DisableInput" 1
+VBoxManage setextradata "VM name" "VRDP/Feature/Client/DisableUSB" 1
+VBoxManage setextradata "VM name" "VRDP/Feature/Client/DisableAudio" 1
+VBoxManage setextradata "VM name" "VRDP/Feature/Client/DisableClipboard" 1</screen>
 
       <para>To reenable a feature use a similar command without the trailing 1. For example:
-      <screen>VBoxManage setextradata VMNAME "VRDP/Feature/Client/DisableDisplay"</screen></para>
+      <screen>VBoxManage setextradata "VM name" "VRDP/Feature/Client/DisableDisplay"</screen></para>
     </sect2>
   </sect1>
 

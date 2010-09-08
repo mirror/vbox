@@ -328,9 +328,7 @@
         you can specify a command line parameter to the install
         launcher:</para>
 
-        <screen>
-        VBoxWindowsAdditions.exe /S
-      </screen>
+        <screen>VBoxWindowsAdditions.exe /S</screen>
 
         <para>This automatically installs the right files and drivers for the
         corresponding platform (32- or 64-bit).</para>
@@ -344,9 +342,7 @@
         <para>For more options regarding unattended guest installations,
         consult the command line help by using the command:</para>
 
-        <screen>
-        VBoxWindowsAdditions.exe /?
-      </screen>
+        <screen>VBoxWindowsAdditions.exe /?</screen>
       </sect3>
 
       <sect3 id="windows-guest-file-extraction">
@@ -781,9 +777,7 @@ EndSection</screen>
         virtual CD-ROM drive as described above and running the installer for
         the current Guest Additions with the "uninstall" parameter from the
         path that the CD image is mounted on in the guest:
-        <screen>
-        sh ./VBoxLinuxAdditions-x86.run uninstall
-        </screen>
+        <screen>sh ./VBoxLinuxAdditions-x86.run uninstall</screen>
         <para>(substituting <computeroutput>VBoxLinuxAdditions-amd64</computeroutput>
           on a 64-bit guest).  While this will normally work
         without issues, you may need to do some manual clean up of the guest
@@ -1396,8 +1390,7 @@ Name: /VirtualBox/GuestInfo/OS/Release, value: 2.6.28-18-generic,
     timestamp: 1265813265835667000, flags: &lt;NULL&gt;
 Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:03 UTC 2010,
     timestamp: 1265813265836305000, flags: &lt;NULL&gt;
-      ...
-</screen></para>
+      ...</screen></para>
 
     <para>For more complex needs, you can use the VirtualBox programming
     interfaces; see <xref linkend="VirtualBoxAPI" />.</para>

@@ -295,8 +295,7 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
       copy the file <computeroutput>VBoxGINA.dll</computeroutput> to the
       Windows <computeroutput>SYSTEM32</computeroutput> directory. Then, in
       the registry, create the following key:
-      <screen>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\
-           Winlogon\GinaDLL</screen>
+      <screen>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\GinaDLL</screen>
       with a value of <computeroutput>VBoxGINA.dll</computeroutput>.</para>
 
       <para><note>
@@ -309,8 +308,7 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
       Guest Additions (see <xref linkend="windows-guest-file-extraction" />)
       and copy the file <computeroutput>VBoxCredProv.dll</computeroutput> to
       the Windows <computeroutput>SYSTEM32</computeroutput> directory. Then,
-      in the registry, create the following keys:<screen>
-      HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\
+      in the registry, create the following keys:<screen>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\
            Authentication\Credential Providers\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}
 
       HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}
@@ -328,8 +326,7 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
       <para>To set credentials, use the following command on a
       <emphasis>running</emphasis> VM:</para>
 
-      <screen>VBoxManage controlvm "Windows XP"
-      setcredentials "John Doe" "secretpassword" "DOMTEST"</screen>
+      <screen>VBoxManage controlvm "Windows XP" setcredentials "John Doe" "secretpassword" "DOMTEST"</screen>
 
       <para>While the VM is running, the credentials can be queried by the
       VirtualBox logon modules (GINA or credential provider) using the
@@ -369,8 +366,7 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
         </orderedlist></para>
 
       <para>The following command forces VirtualBox to keep the credentials
-      after they were read by the guest and on VM reset: <screen>VBoxManage setextradata "Windows XP"
-      VBoxInternal/Devices/VMMDev/0/Config/KeepCredentials 1</screen>Note that
+      after they were read by the guest and on VM reset: <screen>VBoxManage setextradata "Windows XP" VBoxInternal/Devices/VMMDev/0/Config/KeepCredentials 1</screen>Note that
       this is a potential security risk as a malicious application running on
       the guest could request this information using the proper
       interface.</para>
@@ -534,20 +530,20 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
 
     <para>At this time, CPU hot-plugging requires using the VBoxManage
     command-line interface. First, hot-plugging needs to be enabled for a
-    virtual machine:<screen>VBoxManage modifyvm &lt;vmname&gt; --cpuhotplug on</screen></para>
+    virtual machine:<screen>VBoxManage modifyvm "VM name" --cpuhotplug on</screen></para>
 
     <para>After that, the --cpus option specifies the maximum number of CPUs
-    that the virtual machine can have:<screen>VBoxManage modifyvm &lt;vmname&gt; --cpus 8</screen>When
+    that the virtual machine can have:<screen>VBoxManage modifyvm "VM name" --cpus 8</screen>When
     the VM is off, you can then add and remove virtual CPUs with the modifyvm
     --plugcpu and --unplugcpu subcommands, which take the number of the
-    virtual CPU as a parameter, like this:<screen>VBoxManage modifyvm &lt;vmname&gt; --plugcpu 3
-VBoxManage modifyvm &lt;vmname&gt; --unplugcpu 3</screen>Note that CPU 0 can
+    virtual CPU as a parameter, like this:<screen>VBoxManage modifyvm "VM name" --plugcpu 3
+VBoxManage modifyvm "VM name" --unplugcpu 3</screen>Note that CPU 0 can
     never be removed.</para>
 
     <para>While the VM is running, CPUs can be added with the
     <computeroutput>controlvm plugcpu/unplugcpu</computeroutput> commands
-    instead:<screen>VBoxManage controlvm &lt;vmname&gt; plugcpu 3
-VBoxManage controlvm &lt;vmname&gt; unplugcpu 3</screen></para>
+    instead:<screen>VBoxManage controlvm "VM name" plugcpu 3
+VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
 
     <para>See <xref linkend="vboxmanage-modifyvm" /> and <xref
     linkend="vboxmanage-controlvm" /> for details.</para>
@@ -582,8 +578,7 @@ VBoxManage controlvm &lt;vmname&gt; unplugcpu 3</screen></para>
       following example adds a video mode that corresponds to the native
       display resolution of many notebook computers:</para>
 
-      <screen>VBoxManage setextradata "VM name"
-      "CustomVideoMode1" "1400x1050x16"</screen>
+      <screen>VBoxManage setextradata "VM name" "CustomVideoMode1" "1400x1050x16"</screen>
 
       <para>The VESA mode IDs for custom video modes start at
       <literal>0x160</literal>. In order to use the above defined custom video
@@ -613,8 +608,7 @@ vga = 864</screen>
 
       <para>will remove all limits on guest resolutions.</para>
 
-      <screen>VBoxManage setextradata global GUI/MaxGuestResolution
-      &gt;width,height&lt;</screen>
+      <screen>VBoxManage setextradata global GUI/MaxGuestResolution &gt;width,height&lt;</screen>
 
       <para>manually specifies a maximum resolution.</para>
 
@@ -895,13 +889,13 @@ VRDPAuthResult VRDPAUTHCALL VRDPAuth2(
       which consist of hard disk serial number, firmware revision and model
       number. These can be changed using the following commands:</para>
 
-      <screen>VBoxManage setextradata "My VM"
+      <screen>VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/ahci/0/Config/Port0/SerialNumber"
       "serial"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/ahci/0/Config/Port0/FirmwareRevision"
       "firmware"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/ahci/0/Config/Port0/ModelNumber"
       "model"</screen>
 
@@ -913,13 +907,13 @@ VBoxManage setextradata "My VM"
       <para>Additional three parameters are needed for CD/DVD drives to report
       the vendor product data:</para>
 
-      <screen>VBoxManage setextradata "My VM"
+      <screen>VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/ahci/0/Config/Port0/ATAPIVendorId"
       "vendor"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/ahci/0/Config/Port0/ATAPIProductId"
       "product"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/ahci/0/Config/Port0/ATAPIRevision"
       "revision"</screen>
 
@@ -966,18 +960,18 @@ VBoxManage setextradata "My VM"
       </note></para>
 
     <para>The old sequence of configuring a serial port used the following 6
-    commands:<screen>VBoxManage setextradata "YourVM"
+    commands:<screen>VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/serial/0/Config/IRQ" 4
-VBoxManage setextradata "YourVM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/serial/0/Config/IOBase" 0x3f8
-VBoxManage setextradata "YourVM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/serial/0/LUN#0/Driver" Char
-VBoxManage setextradata "YourVM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/serial/0/LUN#0/AttachedDriver/Driver" NamedPipe
-VBoxManage setextradata "YourVM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/serial/0/LUN#0/AttachedDriver/Config/Location"
       "\\.\pipe\vboxCOM1"
-VBoxManage setextradata "YourVM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/serial/0/LUN#0/AttachedDriver/Config/IsServer"
       1</screen>This sets up a serial port in the guest with the default
     settings for COM1 (IRQ 4, I/O address 0x3f8) and the
@@ -1012,12 +1006,12 @@ VBoxManage setextradata "YourVM"
       <para>If, for any reason, the NAT network needs to be changed, this can
       be achieved with the following command:</para>
 
-      <screen>VBoxManage modifyvm "My VM" --natnet1 "192.168/16"</screen>
+      <screen>VBoxManage modifyvm "VM name" --natnet1 "192.168/16"</screen>
 
       <para>This command would reserve the network addresses from
       <computeroutput>192.168.0.0</computeroutput> to
       <computeroutput>192.168.254.254</computeroutput> for the first NAT
-      network instance of "My VM". The guest IP would be assigned to
+      network instance of "VM name". The guest IP would be assigned to
       <computeroutput>192.168.0.15</computeroutput> and the default gateway
       could be found at <computeroutput>192.168.0.2</computeroutput>.</para>
     </sect2>
@@ -1030,8 +1024,8 @@ VBoxManage setextradata "YourVM"
       built-in TFTP server at the IP address 10.0.2.3. This default behavior
       should work fine for typical remote-booting scenarios. However, it is
       possible to change the boot server IP and the location of the boot image
-      with the following commands: <screen>VBoxManage modifyvm "My VM" --nattftpserver1 10.0.2.2
-VBoxManage modifyvm "My VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen></para>
+      with the following commands: <screen>VBoxManage modifyvm "VM name" --nattftpserver1 10.0.2.2
+VBoxManage modifyvm "VM name" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen></para>
     </sect2>
 
     <sect2 id="nat-adv-settings">
@@ -1043,7 +1037,7 @@ VBoxManage modifyvm "My VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen>
       <computeroutput>SO_SNDBUF</computeroutput>). For certain setups users
       might want to adjust the buffer size for a better performance. This can
       by achieved using the following commands (values are in kilobytes and
-      can range from 8 to 1024): <screen>VBoxManage modifyvm "My VM" --natsettings1 16000,128,128,0,0</screen>
+      can range from 8 to 1024): <screen>VBoxManage modifyvm "VM name" --natsettings1 16000,128,128,0,0</screen>
       This example illustrates tuning the NAT settings. The first parameter is
       the MTU, then the size of the socket's send buffer and the size of the
       socket's receive buffer, the initial size of the TCP send window, and
@@ -1062,7 +1056,7 @@ VBoxManage modifyvm "My VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen>
       technical reason for this is that the NAT engine uses sockets for
       communication.) If, for some reason, you want to change this behavior,
       you can tell the NAT engine to bind to a particular IP address instead.
-      Use the following command: <screen>VBoxManage modifyvm "My VM" --natbindip1 "10.45.0.2"</screen></para>
+      Use the following command: <screen>VBoxManage modifyvm "VM name" --natbindip1 "10.45.0.2"</screen></para>
 
       <para>After this, all outgoing traffic will be sent through the
       interface with the IP address 10.45.0.2. Please make sure that this
@@ -1077,7 +1071,7 @@ VBoxManage modifyvm "My VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen>
       to hide the DNS server IPs from the guest, for example when this
       information can change on the host due to expiring DHCP leases. In this
       case, you can tell the NAT engine to act as DNS proxy using the
-      following command: <screen>VBoxManage modifyvm "My VM" --natdnsproxy1 on</screen></para>
+      following command: <screen>VBoxManage modifyvm "VM name" --natdnsproxy1 on</screen></para>
     </sect2>
 
     <sect2 id="nat_host_resolver_proxy">
@@ -1088,7 +1082,7 @@ VBoxManage modifyvm "My VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen>
       you need to hide this DNS server list and use the host's resolver
       settings, thereby forcing the VirtualBox NAT engine to intercept DNS
       requests and forward them to host's resolver, use the following command:
-      <screen>VBoxManage modifyvm "My VM" --natdnshostresolver1 on</screen>
+      <screen>VBoxManage modifyvm "VM name" --natdnshostresolver1 on</screen>
       Note that this setting is similar to the DNS proxy mode, however whereas
       the proxy mode just forwards DNS requests to the appropriate servers,
       the resolver mode will interpret the DNS requests and use the host's DNS
@@ -1103,7 +1097,7 @@ VBoxManage modifyvm "My VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen>
       protocols like SSH, FTP and so on. Though some protocols might need a
       more transparent behavior or may depend on the real port number the
       packet was sent from. It is possible to change the NAT mode via the
-      VBoxManage frontend with the following commands: <screen>VBoxManage modifyvm "My VM" --nataliasmode proxyonly</screen>
+      VBoxManage frontend with the following commands: <screen>VBoxManage modifyvm "VM name" --nataliasmode proxyonly</screen>
       and <screen>VBoxManage modifyvm "Linux Guest" --nataliasmode sameports</screen>
       The first example disables aliasing and switches NAT into transparent
       mode, the second example enforces preserving of port values. These modes
@@ -1118,31 +1112,31 @@ VBoxManage modifyvm "My VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen>
     specific VM. Use the following commands to configure the DMI BIOS
     information:</para>
 
-    <screen>VBoxManage setextradata "My VM"
+    <screen>VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSVendor"        "BIOS Vendor"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSVersion"       "BIOS Version"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSReleaseDate"   "BIOS Release Date"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSReleaseMajor"  1
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSReleaseMinor"  2
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSFirmwareMajor" 3
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBIOSFirmwareMinor" 4
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemVendor"      "System Vendor"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemProduct"     "System Product"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemVersion"     "System Version"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemSerial"      "System Serial"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemFamily"      "System Family"
-VBoxManage setextradata "My VM"
+VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemUuid"
                                                "9852bf98-b83c-49db-a8de-182c42c7226b"</screen>
 
@@ -1156,7 +1150,7 @@ VBoxManage setextradata "My VM"
     the VM will most probably refuse to start with an
     <computeroutput>VERR_CFGM_NOT_STRING</computeroutput> error. In that case,
     use <computeroutput>"string:&lt;value&gt;"</computeroutput>, for instance
-    <screen>VBoxManage setextradata "My VM"
+    <screen>VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemSerial"      "string:1234"</screen></para>
 
     <para>Changing this information can be necessary to provide the DMI
@@ -1185,11 +1179,11 @@ VBoxManage setextradata "My VM"
       and for best results must be used only in combination with hardware
       virtualization. To enable this mode use the following command:</para>
 
-      <screen>VBoxManage setextradata "My VM" "VBoxInternal/TM/TSCTiedToExecution" 1</screen>
+      <screen>VBoxManage setextradata "VM name" "VBoxInternal/TM/TSCTiedToExecution" 1</screen>
 
       <para>To revert to the default TSC handling mode use:</para>
 
-      <screen>VBoxManage setextradata "My VM" "VBoxInternal/TM/TSCTiedToExecution"</screen>
+      <screen>VBoxManage setextradata "VM name" "VBoxInternal/TM/TSCTiedToExecution"</screen>
 
       <para>Note that if you use the special TSC handling mode with a guest
       operating system which is very strict about the consistency of time
@@ -1204,14 +1198,12 @@ VBoxManage setextradata "My VM"
       <para>For certain purposes it can be useful to accelerate or to slow
       down the (virtual) guest clock. This can be achieved as follows:</para>
 
-      <screen>VBoxManage setextradata "My VM"
-      "VBoxInternal/TM/WarpDrivePercentage" 200</screen>
+      <screen>VBoxManage setextradata "VM name" "VBoxInternal/TM/WarpDrivePercentage" 200</screen>
 
       <para>The above example will double the speed of the guest clock
       while</para>
 
-      <screen>VBoxManage setextradata "My VM"
-      "VBoxInternal/TM/WarpDrivePercentage" 50</screen>
+      <screen>VBoxManage setextradata "VM name" "VBoxInternal/TM/WarpDrivePercentage" 50</screen>
 
       <para>will halve the speed of the guest clock. Note that changing the
       rate of the virtual clock can confuse the guest and can even lead to
@@ -1391,7 +1383,7 @@ name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
 
     <para>Furthermore, you can disallow certain actions when terminating a VM
       from the GUI. To disallow specific actions, type:</para>
-    <para><screen>VBoxManage setextradata "My VM" GUI/RestrictedCloseActions OPTION[,OPTION...]</screen></para>
+    <para><screen>VBoxManage setextradata "VM name" GUI/RestrictedCloseActions OPTION[,OPTION...]</screen></para>
     <para>where <computeroutput>OPTION</computeroutput> is one of the following
       keywords:<glosslist>
         <glossentry>
