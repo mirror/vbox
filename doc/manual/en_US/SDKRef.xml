@@ -3390,8 +3390,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         </listitem>
 
         <listitem>
-          <para><xref linkend="IGuest__additionsActive"
-          xreflabel="additionsActive()" /> was replaced by
+          <para>additionsActive() was replaced by
           <xref linkend="IGuest__additionsRunLevel" xreflabel="additionsRunLevel()" />
           and <xref linkend="IGuest__getAdditionsStatus" xreflabel="getAdditionsStatus()" />
           in order to support a more detailed status of the current Guest
@@ -3489,9 +3488,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               </listitem>
 
               <listitem>
-                <para>IVirtualBoxCallback::onSnapshotDiscarded() is now <xref
-                linkend="IVirtualBoxCallback__onSnapshotDeleted"
-                xreflabel="IVirtualBoxCallback::onSnapshotDeleted()" />.</para>
+                <para>IVirtualBoxCallback::onSnapshotDiscarded() is now
+                IVirtualBoxCallback::onSnapshotDeleted.</para>
               </listitem>
             </itemizedlist></para>
         </listitem>
@@ -3548,9 +3546,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         </listitem>
 
         <listitem>
-          <para>The <computeroutput>shape</computeroutput> parameter of <xref
-          linkend="IConsoleCallback__onMousePointerShapeChange"
-          xreflabel="IConsoleCallback::onMousePointerShapeChange()" /> was
+          <para>The <computeroutput>shape</computeroutput> parameter of
+          IConsoleCallback::onMousePointerShapeChange was
           changed from a implementation-specific pointer to a safearray,
           enabling scripting languages to process pointer shapes.</para>
         </listitem>
@@ -3640,7 +3637,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         <listitem>
           <para>The <xref linkend="IVRDPServer" xreflabel="IVRDPServer" />,
           <xref linkend="IRemoteDisplayInfo" xreflabel="IRemoteDisplayInfo" />
-          and <xref linkend="IConsoleCallback" xreflabel="IConsoleCallback" />
+          and IConsoleCallback
           interfaces were changed to reflect VRDP server ability to bind to
           one of available ports from a list of ports.</para>
 
@@ -3653,8 +3650,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           xreflabel="IRemoteDisplayInfo::port" /> attribute has been added for
           querying the actual port VRDP server listens on.</para>
 
-          <para>An <xref linkend="IConsoleCallback__onRemoteDisplayInfoChange"
-          xreflabel="IConsoleCallback::onRemoteDisplayInfoChange()" />
+          <para>An IConsoleCallback::onRemoteDisplayInfoChange()
           notification callback has been added.</para>
         </listitem>
 
