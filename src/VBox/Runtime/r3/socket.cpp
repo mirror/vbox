@@ -28,7 +28,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_ENABLED
 #ifdef RT_OS_WINDOWS
 # include <winsock2.h>
 #else /* !RT_OS_WINDOWS */
@@ -293,7 +292,6 @@ DECLINLINE(int) rtSocketSwitchBlockingMode(RTSOCKETINT *pThis, bool fBlocking)
  * @returns IPRT status code.
  * @param   ppSocket        Where to return the IPRT socket handle.
  * @param   hNative         The native handle.
-
  */
 int rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative)
 {
@@ -1497,30 +1495,7 @@ static uint32_t rtSocketPollCheck(RTSOCKETINT *pThis, uint32_t fEvents)
     /* Fall back on select if we hit an error above. */
     if (RT_FAILURE(rc))
     {
-        WSAResetEvent(pThis->hEvent);
-        fd_set fdsetR;
-        fd_set fdsetW;
-        FD_ZERO(&fdsetR);
-        FD_ZERO(&fdsetW);
-        FD_SET(pThis->hNative, &fdsetR);
-        FD_SET(pThis->hNative, &fdsetW);
-
-        fd_set fdsetE = fdsetR;
-
-        struct timeval timeout;
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 0;
-        rc = select(pThis->hNative + 1, &fdsetR, &fdsetW, &fdsetE, &timeout);
-        if (rc > 0)
-        {
-            rc = VINF_SUCCESS;
-            if (FD_ISSET(pThis->hNative, &fdsetR))
-                fRetEvents |= RTPOLL_EVT_READ;
-            if (FD_ISSET(pThis->hNative, &fdsetW))
-                fRetEvents |= RTPOLL_EVT_WRITE;
-            if (FD_ISSET(pThis->hNative, &fdsetE))
-                fRetEvents |= RTPOLL_EVT_ERROR;
-        }
+        /** @todo  */
     }
 
     LogFlowFunc(("fRetEvents=%#x\n", fRetEvents));
