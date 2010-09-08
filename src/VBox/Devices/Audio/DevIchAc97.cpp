@@ -767,7 +767,7 @@ static void transfer_audio (AC97LinkState *s, int index, int elapsed)
 
         if (!r->picb)
         {
-            Log (("ac97: fresh bd %d is empty %#x %#x\n",
+            Log (("ac97: fresh bd %d is empty %#x %#x, skipping\n",
                   r->civ, r->bd.addr, r->bd.ctl_len));
             if (r->civ == r->lvi)
             {
@@ -779,7 +779,7 @@ static void transfer_audio (AC97LinkState *s, int index, int elapsed)
             r->civ = r->piv;
             r->piv = (r->piv + 1) % 32;
             fetch_bd (s, r);
-            return;
+            continue;
         }
 
         switch (index)
