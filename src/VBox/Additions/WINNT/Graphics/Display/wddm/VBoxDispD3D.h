@@ -195,5 +195,10 @@ typedef struct VBOXWDDMDISP_OVERLAY
 } VBOXWDDMDISP_OVERLAY, *PVBOXWDDMDISP_OVERLAY;
 
 #define VBOXDISPMODE_IS_3D(_p) (!!((_p)->pD3D9If))
+#ifdef VBOXDISP_EARLYCREATEDEVICE
+#define VBOXDISP_D3DEV(_p) (_p)->pDevice9If
+#else
+#define VBOXDISP_D3DEV(_p) vboxWddmD3DDeviceGetPrimary(_p)
+#endif
 
 #endif /* #ifndef ___VBoxDispD3D_h___ */

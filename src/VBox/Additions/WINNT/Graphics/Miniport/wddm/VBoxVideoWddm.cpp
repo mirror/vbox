@@ -4464,7 +4464,7 @@ DxgkDdiCreateContext(
         {
             Assert(pCreateContext->PrivateDriverDataSize == 0);
             Assert(!pCreateContext->pPrivateDriverData);
-            Assert(pCreateContext->Flags.Value == 1 || pCreateContext->Flags.Value == 0);
+            Assert(pCreateContext->Flags.Value <= 2); /* 2 is a GDI context in Win7 */
             pContext->enmType = VBOXWDDM_CONTEXT_TYPE_SYSTEM;
         }
         else
