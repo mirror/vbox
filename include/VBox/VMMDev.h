@@ -177,6 +177,7 @@ typedef enum
     VMMDevReq_GetPageSharingStatus       = 215,
     VMMDevReq_DebugIsPageShared          = 216,
     VMMDevReq_GetSessionId               = 217, /* since version 3.2.8 */
+    VMMDevReq_WriteCoreDump              = 218,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -1282,6 +1283,22 @@ typedef struct
 } VMMDevReqSessionId;
 AssertCompileSize(VMMDevReqSessionId, 24+8);
 
+
+/**
+ * Write Core Dump request.
+ *
+ * Used by VMMDevReq_WriteCoreDump.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** Flags (reserved, MBZ). */
+    uint32_t            fFlags;
+} VMMDevReqWriteCoreDump;
+AssertCompileSize(VMMDevReqWriteCoreDump, 24+4);
+
+
 #pragma pack()
 
 
@@ -1961,7 +1978,6 @@ AssertCompileSize(VMMDevMemory, 8+8 + (12 + (_4M-_1K) + 4*64 + 12) );
 
 /** Version of VMMDevMemory structure (VMMDevMemory::u32Version). */
 #define VMMDEV_MEMORY_VERSION   (1)
-
 
 /** @} */
 RT_C_DECLS_END
