@@ -109,36 +109,6 @@ typedef VBoxMainDriveInfo::DriveInfoList DriveInfoList;
 /** Convenience typedef. */
 typedef VBoxMainDriveInfo::DriveInfo DriveInfo;
 
-
-/** Structure describing a host USB device */
-typedef struct USBDeviceInfo
-{
-    /** The device node of the device. */
-    char *mDevice;
-    /** The system identifier of the device.  Specific to the probing
-     * method. */
-    char *mSysfsPath;
-    /** List of interfaces as sysfs paths */
-    VECTOR_PTR(char *) mvecpszInterfaces;
-} USBDeviceInfo;
-
-/** Destructor. */
-void USBDevInfoCleanup(USBDeviceInfo *pSelf);
-
-/** Constructor - the strings will be duplicated. */
-int USBDevInfoInit(USBDeviceInfo *pSelf, const char *aDevice,
-                   const char *aSystemID);
-
-/**
- * Enumerate USB devices attached to the host using sysfs and return them as a
- * vector
- * @returns iprt status code
- * @param pvecDevInfo  vector to add the devices onto the end of.  Should be
- *                     initialised and empty.
- */
-int USBSysfsEnumerateHostDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo);
-
-
 /** Implementation of the hotplug waiter class below */
 class VBoxMainHotplugWaiterImpl
 {
