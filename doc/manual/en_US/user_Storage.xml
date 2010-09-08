@@ -919,25 +919,17 @@
       the example below, adapt the name of the virtual machine, the MAC
       address, the IP configuration and the Internal Networking name
       ("MyIntNet") according to your needs. The following seven commands must
-      be issued:<screen>VBoxManage setextradata "VM name"
-      VBoxInternal/Devices/IntNetIP/0/Trusted 1
-VBoxManage setextradata "VM name"
-      VBoxInternal/Devices/IntNetIP/0/Config/MAC 08:00:27:01:02:0f
-VBoxManage setextradata "VM name"
-      VBoxInternal/Devices/IntNetIP/0/Config/IP 10.0.9.1
-VBoxManage setextradata "VM name"
-      VBoxInternal/Devices/IntNetIP/0/Config/Netmask 255.255.255.0
-VBoxManage setextradata "VM name"
-      VBoxInternal/Devices/IntNetIP/0/LUN#0/Driver IntNet
-VBoxManage setextradata "VM name"
-      VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/Network MyIntNet
-VBoxManage setextradata "VM name"
-      VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/IsService 1</screen></para>
+      be issued:<screen>VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Trusted 1
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/MAC 08:00:27:01:02:0f
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/IP 10.0.9.1
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/Netmask 255.255.255.0
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Driver IntNet
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/Network MyIntNet
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/IsService 1</screen></para>
 
       <para>Finally the iSCSI disk must be registered with the
       <code>--intnet</code> option to tell the iSCSI initiator to use internal
-      networking:<screen>VBoxManage addiscsidisk --server 10.0.9.30
-      --target iqn.2008-12.com.sun:sampletarget --intnet</screen></para>
+      networking:<screen>VBoxManage addiscsidisk --server 10.0.9.30 --target iqn.2008-12.com.sun:sampletarget --intnet</screen></para>
 
       <para>The target address must be specified as a numeric IP address, as
       there is no DNS resolver for internal networking.</para>

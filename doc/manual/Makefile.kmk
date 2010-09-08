@@ -478,6 +478,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.p
 	$(QUIET)$(REDIRECT) -C $(@D) -- $(PDFLATEX) UserManual.tex
 	$(QUIET)$(REDIRECT) -C $(@D) -- $(PDFLATEX) UserManual.tex
 	$(QUIET)$(REDIRECT) -C $(@D) -- $(PDFLATEX) UserManual.tex
+	$(QUIET)$(REDIRECT) -C $(@D) -- $(PDFLATEX) UserManual.tex
 ##@todo restore this when above has been converted to INSTALLS target.	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
 # generate temporary LaTeX source from processed XML

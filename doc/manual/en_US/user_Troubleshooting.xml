@@ -577,8 +577,7 @@
       interrupts. This delay can be configured for a VM using the following
       command:</para>
 
-      <screen>VBoxManage setextradata "VM name"
-      "VBoxInternal/Devices/piix3ide/0/Config/IRQDelay" 1</screen>
+      <screen>VBoxManage setextradata "VM name" "VBoxInternal/Devices/piix3ide/0/Config/IRQDelay" 1</screen>
 
       <para>This sets the delay to one millisecond. In case this doesn't help,
       increase it to a value between 1 and 5 milliseconds. Please note that
