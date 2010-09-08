@@ -221,30 +221,29 @@ DECLVBGL(int) vboxCallMapFolder(PVBSFCLIENT pClient, PSHFLSTRING szFolderName,
         pMap->root = data.root.u.value32;
         rc         = data.callInfo.result;
     }
-    else
-    if (rc == VERR_NOT_IMPLEMENTED)
+    else if (rc == VERR_NOT_IMPLEMENTED)
     {
         /* try the legacy interface too; temporary to assure backwards compatibility */
-        VBoxSFMapFolder_Old data;
+        VBoxSFMapFolder_Old OldData;
 
-        VBOX_INIT_CALL(&data.callInfo, MAP_FOLDER_OLD, pClient);
+        VBOX_INIT_CALL(&OldData.callInfo, MAP_FOLDER_OLD, pClient);
 
-        data.path.type                    = VMMDevHGCMParmType_LinAddr;
-        data.path.u.Pointer.size          = ShflStringSizeOfBuffer (szFolderName);
-        data.path.u.Pointer.u.linearAddr  = (uintptr_t)szFolderName;
+        OldData.path.type                    = VMMDevHGCMParmType_LinAddr;
+        OldData.path.u.Pointer.size          = ShflStringSizeOfBuffer (szFolderName);
+        OldData.path.u.Pointer.u.linearAddr  = (uintptr_t)szFolderName;
 
-        data.root.type                    = VMMDevHGCMParmType_32bit;
-        data.root.u.value32               = 0;
+        OldData.root.type                    = VMMDevHGCMParmType_32bit;
+        OldData.root.u.value32               = 0;
 
-        data.delimiter.type               = VMMDevHGCMParmType_32bit;
-        data.delimiter.u.value32          = RTPATH_DELIMITER;
+        OldData.delimiter.type               = VMMDevHGCMParmType_32bit;
+        OldData.delimiter.u.value32          = RTPATH_DELIMITER;
 
-        rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
+        rc = VbglHGCMCall (pClient->handle, &OldData.callInfo, sizeof (OldData));
 
         if (RT_SUCCESS (rc))
         {
-            pMap->root = data.root.u.value32;
-            rc         = data.callInfo.result;
+            pMap->root = OldData.root.u.value32;
+            rc         = OldData.callInfo.result;
         }
     }
     return rc;
