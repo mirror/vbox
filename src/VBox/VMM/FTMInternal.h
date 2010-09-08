@@ -108,7 +108,12 @@ typedef struct FTM
     STAMCOUNTER         StatFullSync;
     STAMCOUNTER         StatCheckpointNetwork;
     STAMCOUNTER         StatCheckpointStorage;
+#ifdef VBOX_WITH_STATISTICS
     STAMPROFILE         StatCheckpoint;
+    STAMCOUNTER         StatSentMemRAM;
+    STAMCOUNTER         StatSentMemMMIO2;
+    STAMCOUNTER         StatSentMemShwROM;
+#endif
 } FTM;
 AssertCompileMemberAlignment(FTM, CritSect, 8);
 

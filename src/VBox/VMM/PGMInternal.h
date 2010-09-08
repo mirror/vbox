@@ -669,36 +669,6 @@ typedef struct PGMVIRTHANDLER
 typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
 
 
-/**
- * Page type.
- *
- * @remarks This enum has to fit in a 3-bit field (see PGMPAGE::u3Type).
- * @remarks This is used in the saved state, so changes to it requires bumping
- *          the saved state version.
- * @todo    So, convert to \#defines!
- */
-typedef enum PGMPAGETYPE
-{
-    /** The usual invalid zero entry. */
-    PGMPAGETYPE_INVALID = 0,
-    /** RAM page. (RWX) */
-    PGMPAGETYPE_RAM,
-    /** MMIO2 page. (RWX) */
-    PGMPAGETYPE_MMIO2,
-    /** MMIO2 page aliased over an MMIO page. (RWX)
-     * See PGMHandlerPhysicalPageAlias(). */
-    PGMPAGETYPE_MMIO2_ALIAS_MMIO,
-    /** Shadowed ROM. (RWX) */
-    PGMPAGETYPE_ROM_SHADOW,
-    /** ROM page. (R-X) */
-    PGMPAGETYPE_ROM,
-    /** MMIO page. (---) */
-    PGMPAGETYPE_MMIO,
-    /** End of valid entries. */
-    PGMPAGETYPE_END
-} PGMPAGETYPE;
-AssertCompile(PGMPAGETYPE_END <= 7);
-
 /** @name Page type predicates.
  * @{ */
 #define PGMPAGETYPE_IS_READABLE(type)   ( (type) <= PGMPAGETYPE_ROM )

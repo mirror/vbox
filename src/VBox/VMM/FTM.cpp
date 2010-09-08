@@ -137,6 +137,9 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
     STAM_REL_REG(pVM, &pVM->ftm.s.StatCheckpointNetwork,         STAMTYPE_COUNTER, "/FT/Checkpoint/Network",            STAMUNIT_OCCURENCES, "Number of network checkpoints.");    
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM,     &pVM->ftm.s.StatCheckpoint,                STAMTYPE_PROFILE, "/FT/Checkpoint",                    STAMUNIT_TICKS_PER_CALL, "Profiling of FTMR3SetCheckpoint.");
+    STAM_REG(pVM,     &pVM->ftm.s.StatSentMemRAM,                STAMTYPE_COUNTER, "/FT/Sent/Mem/RAM",                  STAMUNIT_BYTES, "The amount of memory pages that was sent.");
+    STAM_REG(pVM,     &pVM->ftm.s.StatSentMemMMIO2,              STAMTYPE_COUNTER, "/FT/Sent/Mem/MMIO2",                STAMUNIT_BYTES, "The amount of memory pages that was sent.");
+    STAM_REG(pVM,     &pVM->ftm.s.StatSentMemShwROM,             STAMTYPE_COUNTER, "/FT/Sent/Mem/ShwROM",               STAMUNIT_BYTES, "The amount of memory pages that was sent.");
 #endif
     return VINF_SUCCESS;
 }
@@ -685,6 +688,32 @@ static DECLCALLBACK(int) ftmR3SyncDirtyPage(PVM pVM, RTGCPHYS GCPhys, uint8_t *p
         return rc;
     }
     pVM->ftm.s.StatSentMem.c += Hdr.cb + sizeof(Hdr);
+
+#ifdef VBOX_WITH_STATISTICS
+    switch (PGMPhysGetPageType(pVM, GCPhys))
+    {
+    case PGMPAGETYPE_RAM:
+        pVM->ftm.s.StatSentMemRAM.c    += Hdr.cb + sizeof(Hdr);
+        break;
+
+    case PGMPAGETYPE_MMIO2: 
+        pVM->ftm.s.StatSentMemMMIO2.c  += Hdr.cb + sizeof(Hdr);
+        break;
+
+    case PGMPAGETYPE_ROM_SHADOW:
+        pVM->ftm.s.StatSentMemShwROM.c += Hdr.cb + sizeof(Hdr);
+        break;
+
+    case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+        AssertFailed();
+        break;
+
+    default:
+        AssertFailed();
+        break;
+    }
+#endif
+
     return (pVM->ftm.s.fCheckpointingActive) ? VERR_INTERRUPTED : VINF_SUCCESS;
 }
 

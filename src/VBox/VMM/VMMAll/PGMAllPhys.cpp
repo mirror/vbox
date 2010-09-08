@@ -3596,3 +3596,19 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
     return rc;
 }
 
+/**
+ * Return the page type of the specified physical address
+ *
+ * @param   pVM             VM Handle.
+ * @param   GCPhys          Guest physical address
+ */
+VMMDECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys)
+{
+    PPGMPAGE pPage;
+
+    pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+    if (pPage)
+        return (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
+
+    return PGMPAGETYPE_INVALID;
+}
