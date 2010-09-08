@@ -220,6 +220,12 @@ typedef struct VMMDevState
     /** Heap enabled. */
     bool fHeapEnabled;
 
+    /** Guest Core Dumping enabled. */
+    bool fGuestCoreDump;
+
+    /** Alignment padding. */
+    bool afAlignment7[4];
+
 #ifdef VBOX_WITH_HGCM
     /** List of pending HGCM requests, used for saving the HGCM state. */
     R3PTRTYPE(PVBOXHGCMCMD) pHGCMCmdList;
