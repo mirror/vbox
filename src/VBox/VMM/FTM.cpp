@@ -137,6 +137,8 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
     STAM_REL_REG(pVM, &pVM->ftm.s.StatCheckpointNetwork,         STAMTYPE_COUNTER, "/FT/Checkpoint/Network",            STAMUNIT_OCCURENCES, "Number of network checkpoints.");    
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM,     &pVM->ftm.s.StatCheckpoint,                STAMTYPE_PROFILE, "/FT/Checkpoint",                    STAMUNIT_TICKS_PER_CALL, "Profiling of FTMR3SetCheckpoint.");
+    STAM_REG(pVM,     &pVM->ftm.s.StatCheckpointPause,           STAMTYPE_PROFILE, "/FT/Checkpoint/Pause",              STAMUNIT_TICKS_PER_CALL, "Profiling of FTMR3SetCheckpoint.");
+    STAM_REG(pVM,     &pVM->ftm.s.StatCheckpointResume,          STAMTYPE_PROFILE, "/FT/Checkpoint/Resume",             STAMUNIT_TICKS_PER_CALL, "Profiling of FTMR3SetCheckpoint.");
     STAM_REG(pVM,     &pVM->ftm.s.StatSentMemRAM,                STAMTYPE_COUNTER, "/FT/Sent/Mem/RAM",                  STAMUNIT_BYTES, "The amount of memory pages that was sent.");
     STAM_REG(pVM,     &pVM->ftm.s.StatSentMemMMIO2,              STAMTYPE_COUNTER, "/FT/Sent/Mem/MMIO2",                STAMUNIT_BYTES, "The amount of memory pages that was sent.");
     STAM_REG(pVM,     &pVM->ftm.s.StatSentMemShwROM,             STAMTYPE_COUNTER, "/FT/Sent/Mem/ShwROM",               STAMUNIT_BYTES, "The amount of memory pages that was sent.");
@@ -1231,10 +1233,12 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
     /** We don't call VMR3Suspend here to avoid the overhead of state changes and notifications. This 
      *  is only a short suspend.
      */
+    STAM_PROFILE_START(&pVM->ftm.s.StatCheckpointPause, a);
     PDMR3Suspend(pVM);
 
     /** Hack alert: as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
     EMR3NotifySuspend(pVM);
+    STAM_PROFILE_STOP(&pVM->ftm.s.StatCheckpointPause, a);
 
     STAM_REL_COUNTER_INC(&pVM->ftm.s.StatDeltaVM);
 
@@ -1267,11 +1271,14 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
     /** We don't call VMR3Resume here to avoid the overhead of state changes and notifications. This 
      *  is only a short suspend.
      */
+    STAM_PROFILE_START(&pVM->ftm.s.StatCheckpointResume, b);
     PGMR3ResetNoMorePhysWritesFlag(pVM);
     PDMR3Resume(pVM);
 
     /** Hack alert as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
     EMR3NotifyResume(pVM);
+    STAM_PROFILE_STOP(&pVM->ftm.s.StatCheckpointResume, b);
+
     return rc;
 }
 

@@ -110,6 +110,8 @@ typedef struct FTM
     STAMCOUNTER         StatCheckpointStorage;
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE         StatCheckpoint;
+    STAMPROFILE         StatCheckpointResume;
+    STAMPROFILE         StatCheckpointPause;
     STAMCOUNTER         StatSentMemRAM;
     STAMCOUNTER         StatSentMemMMIO2;
     STAMCOUNTER         StatSentMemShwROM;
