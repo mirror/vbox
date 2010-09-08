@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,6 +33,7 @@
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
+#include <iprt/string.h>
 
 
 
@@ -43,6 +44,9 @@ static volatile unsigned gcTicks;
 static volatile uint64_t gu64Min;
 static volatile uint64_t gu64Max;
 static volatile uint64_t gu64Prev;
+static volatile uint64_t gu64Norm;
+
+static uint32_t cFrequency[200];
 
 static DECLCALLBACK(void) TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
@@ -56,6 +60,10 @@ static DECLCALLBACK(void) TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t 
             gu64Min = u64Delta;
         if (u64Delta > gu64Max)
             gu64Max = u64Delta;
+        int i = (int)(  RT_ELEMENTS(cFrequency) 
+                      - (u64Delta * (RT_ELEMENTS(cFrequency) / 2) / gu64Norm));
+        if (i >= 0 && i < (int)RT_ELEMENTS(cFrequency))
+            cFrequency[i]++;
     }
     gu64Prev = u64Now;
 }
@@ -115,29 +123,33 @@ int main()
      */
     static struct
     {
-        unsigned uMilliesInterval;
+        unsigned uMicroInterval;
         unsigned uMilliesWait;
         unsigned cLower;
         unsigned cUpper;
     } aTests[] =
     {
-        { 32, 2000, 0, 0 },
-        { 20, 2000, 0, 0 },
-        { 10, 2000, 0, 0 },
-        { 8,  2000, 0, 0 },
-        { 2,  2000, 0, 0 },
-        { 1,  2000, 0, 0 }
+        { 32000, 2000, 0, 0 },
+        { 20000, 2000, 0, 0 },
+        { 10000, 2000, 0, 0 },
+        {  8000, 2000, 0, 0 },
+        {  2000, 2000, 0, 0 },
+        {  1000, 2000, 0, 0 },
+        {   500, 5000, 0, 0 },
+        {   200, 5000, 0, 0 },
+        {   100, 5000, 0, 0 }
     };
 
     unsigned i = 0;
     for (i = 0; i < RT_ELEMENTS(aTests); i++)
     {
-        aTests[i].cLower = (aTests[i].uMilliesWait - aTests[i].uMilliesWait / 10) / aTests[i].uMilliesInterval;
-        aTests[i].cUpper = (aTests[i].uMilliesWait + aTests[i].uMilliesWait / 10) / aTests[i].uMilliesInterval;
+        aTests[i].cLower = (aTests[i].uMilliesWait*1000 - aTests[i].uMilliesWait*100) / aTests[i].uMicroInterval;
+        aTests[i].cUpper = (aTests[i].uMilliesWait*1000 + aTests[i].uMilliesWait*100) / aTests[i].uMicroInterval;
+        gu64Norm = aTests[i].uMicroInterval*1000;
 
         RTPrintf("\n"
-                 "tstTimer: TESTING - %d ms interval, %d ms wait, expects %d-%d ticks.\n",
-                 aTests[i].uMilliesInterval, aTests[i].uMilliesWait, aTests[i].cLower, aTests[i].cUpper);
+                 "tstTimer: TESTING - %d us interval, %d ms wait, expects %d-%d ticks.\n",
+                 aTests[i].uMicroInterval, aTests[i].uMilliesWait, aTests[i].cLower, aTests[i].cUpper);
 
         /*
          * Start timer which ticks every 10ms.
@@ -147,14 +159,17 @@ int main()
         gu64Max = 0;
         gu64Min = UINT64_MAX;
         gu64Prev = 0;
+        RT_ZERO(cFrequency);
 #ifdef RT_OS_WINDOWS
-        rc = RTTimerCreate(&pTimer, aTests[i].uMilliesInterval, TimerCallback, NULL);
+        if (aTests[i].uMicroInterval < 1000)
+            continue;
+        rc = RTTimerCreate(&pTimer, aTests[i].uMicroInterval / 1000, TimerCallback, NULL);
 #else
-        rc = RTTimerCreateEx(&pTimer, aTests[i].uMilliesInterval * (uint64_t)1000000, 0, TimerCallback, NULL);
+        rc = RTTimerCreateEx(&pTimer, aTests[i].uMicroInterval * (uint64_t)1000, 0, TimerCallback, NULL);
 #endif
         if (RT_FAILURE(rc))
         {
-            RTPrintf("tstTimer: FAILURE - RTTimerCreateEx(,%u*1M,,,) -> %Rrc\n", aTests[i].uMilliesInterval, rc);
+            RTPrintf("tstTimer: FAILURE - RTTimerCreateEx(,%u*1M,,,) -> %Rrc\n", aTests[i].uMicroInterval, rc);
             cErrors++;
             continue;
         }
@@ -167,7 +182,7 @@ int main()
         rc = RTTimerStart(pTimer, 0);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("tstTimer: FAILURE - RTTimerStart(,0) -> %Rrc\n", aTests[i].uMilliesInterval, rc);
+            RTPrintf("tstTimer: FAILURE - RTTimerStart(,0) -> %Rrc\n", aTests[i].uMicroInterval, rc);
             cErrors++;
         }
 #endif
@@ -187,7 +202,7 @@ int main()
 
         RTPrintf("tstTimer: uTS=%RI64 (%RU64 - %RU64)\n", uTSDiff, uTSBegin, uTSEnd);
         unsigned cTicks = gcTicks;
-        RTThreadSleep(aTests[i].uMilliesInterval * 3);
+        RTThreadSleep(aTests[i].uMicroInterval/1000 * 3);
         if (gcTicks != cTicks)
         {
             RTPrintf("tstTimer: FAILURE - RTTimerDestroy() didn't really stop the timer! gcTicks=%d cTicks=%d\n", gcTicks, cTicks);
@@ -211,6 +226,16 @@ int main()
         else
             RTPrintf("tstTimer: OK      - gcTicks=%d",  gcTicks);
         RTPrintf(" min=%RU64 max=%RU64\n", gu64Min, gu64Max);
+
+        for (int j = 0; j < (int)RT_ELEMENTS(cFrequency); j++)
+        {
+            unsigned len = cFrequency[j] * 70 / gcTicks;
+            unsigned deviation = j - RT_ELEMENTS(cFrequency) / 2;
+            RTPrintf("%+4d%c %6u ", deviation, deviation == 0 ? ' ' : '%', cFrequency[j]);
+            for (unsigned k = 0; k < len; k++)
+                RTPrintf("*");
+            RTPrintf("\n");
+        }
     }
 
     /*
