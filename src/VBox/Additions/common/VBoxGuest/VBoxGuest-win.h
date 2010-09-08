@@ -173,6 +173,7 @@ extern winVersion_t winVersion;
 #include "VBoxGuestInternal.h"
 
 RT_C_DECLS_BEGIN
+NTSTATUS   vboxguestwinCleanup(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 NTSTATUS   vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 VOID       vboxguestwinDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext);
 BOOLEAN    vboxguestwinIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);

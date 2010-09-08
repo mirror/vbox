@@ -273,6 +273,31 @@ static NTSTATUS vboxguestwinAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDe
 
 
 /**
+ * Cleans up all data (like device extension and guest mapping).
+ *
+ * @param   pDrvObj     Driver object.
+ * @param   pIrp        Request packet.
+ */
+NTSTATUS vboxguestwinCleanup(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+{
+    Log(("VBoxGuest::vboxguestwinCleanup\n"));
+
+    NOREF(pIrp);
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
+
+    if (pDevExt)
+    {
+        /* According to MSDN we have to unmap previously mapped memory. */
+        vboxguestwinUnmapVMMDevMemory(pDevExt);
+
+        /* Destroy device extension and clean up everything else. */
+        VBoxGuestDeleteDevExt(pDevExt);
+    }
+    return STATUS_SUCCESS;
+}
+
+
+/**
  * Unload the driver.
  *
  * @param   pDrvObj     Driver object.
@@ -300,14 +325,11 @@ void vboxguestwinUnload(PDRIVER_OBJECT pDrvObj)
     RtlInitUnicodeString(&win32Name, VBOXGUEST_DEVICE_NAME_DOS);
     NTSTATUS rc = IoDeleteSymbolicLink(&win32Name);
 
-#ifdef VBOX_WITH_HGCM
-    if (pDevExt->SessionSpinlock != NIL_RTSPINLOCK)
-    {
-        int rc2 = RTSpinlockDestroy(pDevExt->SessionSpinlock);
-        Log(("VBoxGuest::vboxguestwinGuestUnload: spinlock destroyed with rc=%Rrc\n", rc2));
-    }
-#endif
     IoDeleteDevice(pDrvObj->DeviceObject);
+#else /* TARGET_NT4 */
+    /* On a PnP driver this routine will be called after
+     * IRP_MN_REMOVE_DEVICE (where we already did the cleanup),
+     * so don't do anything here (yet). */
 #endif
 
     Log(("VBoxGuest::vboxguestwinGuestUnload: returning\n"));
@@ -331,9 +353,6 @@ NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PVBOXGUESTDEVEXT   pDevExt  = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
     NTSTATUS           rc       = STATUS_SUCCESS;
 
-    pIrp->IoStatus.Information  = 0;
-    pIrp->IoStatus.Status = STATUS_SUCCESS;
-
     /*
      * We are not remotely similar to a directory...
      * (But this is possible.)
@@ -341,7 +360,7 @@ NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     if (pStack->Parameters.Create.Options & FILE_DIRECTORY_FILE)
     {
         Log(("VBoxGuest::vboxguestwinGuestCreate: Uhm, we're not a directory!\n"));
-        pIrp->IoStatus.Status = STATUS_NOT_A_DIRECTORY;
+        rc = STATUS_NOT_A_DIRECTORY;
     }
     else
     {
@@ -370,10 +389,12 @@ NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     }
 
     /* Complete the request! */
+    pIrp->IoStatus.Information  = 0;
+    pIrp->IoStatus.Status = rc;
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
-    Log(("VBoxGuest::vboxguestwinGuestCreate: Returning 0x%x\n", pIrp->IoStatus.Status));
-    return pIrp->IoStatus.Status;
+    Log(("VBoxGuest::vboxguestwinGuestCreate: Returning 0x%x\n", rc));
+    return rc;
 }
 
 
@@ -405,31 +426,6 @@ NTSTATUS vboxguestwinClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
     return STATUS_SUCCESS;
-}
-
-
-/** A quick implementation of AtomicTestAndClear for uint32_t and multiple
- *  bits.
- */
-static uint32_t guestAtomicBitsTestAndClear(void *pu32Bits, uint32_t u32Mask)
-{
-    AssertPtrReturn(pu32Bits, 0);
-    LogFlowFunc(("*pu32Bits=0x%x, u32Mask=0x%x\n", *(long *)pu32Bits,
-                 u32Mask));
-    uint32_t u32Result = 0;
-    uint32_t u32WorkingMask = u32Mask;
-    int iBitOffset = ASMBitFirstSetU32 (u32WorkingMask);
-
-    while (iBitOffset > 0)
-    {
-        bool fSet = ASMAtomicBitTestAndClear(pu32Bits, iBitOffset - 1);
-        if (fSet)
-            u32Result |= 1 << (iBitOffset - 1);
-        u32WorkingMask &= ~(1 << (iBitOffset - 1));
-        iBitOffset = ASMBitFirstSetU32 (u32WorkingMask);
-    }
-    LogFlowFunc(("Returning 0x%x\n", u32Result));
-    return u32Result;
 }
 
 
@@ -977,6 +973,30 @@ VBOXOSTYPE vboxguestwinVersionToOSType(winVersion_t winVer)
 
 
 #ifdef DEBUG
+/** A quick implementation of AtomicTestAndClear for uint32_t and multiple
+ *  bits.
+ */
+static uint32_t guestAtomicBitsTestAndClear(void *pu32Bits, uint32_t u32Mask)
+{
+    AssertPtrReturn(pu32Bits, 0);
+    LogFlowFunc(("*pu32Bits=0x%x, u32Mask=0x%x\n", *(long *)pu32Bits,
+                 u32Mask));
+    uint32_t u32Result = 0;
+    uint32_t u32WorkingMask = u32Mask;
+    int iBitOffset = ASMBitFirstSetU32 (u32WorkingMask);
+
+    while (iBitOffset > 0)
+    {
+        bool fSet = ASMAtomicBitTestAndClear(pu32Bits, iBitOffset - 1);
+        if (fSet)
+            u32Result |= 1 << (iBitOffset - 1);
+        u32WorkingMask &= ~(1 << (iBitOffset - 1));
+        iBitOffset = ASMBitFirstSetU32 (u32WorkingMask);
+    }
+    LogFlowFunc(("Returning 0x%x\n", u32Result));
+    return u32Result;
+}
+
 static VOID vboxguestwinTestAtomicTestAndClearBitsU32(uint32_t u32Mask, uint32_t u32Bits,
                                                       uint32_t u32Exp)
 {
