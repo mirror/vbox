@@ -133,6 +133,17 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_PHYS:
+            /* rtR0MemObjNativeEnterPhys? */
+            if (!pMemNt->Core.u.Phys.fAllocated)
+            {
+#ifndef IPRT_TARGET_NT4
+                Assert(!pMemNt->fAllocatedPagesForMdl);
+#endif
+                /* Nothing to do here. */
+                break;
+            }
+            /* fall thru */
+
         case RTR0MEMOBJTYPE_PHYS_NC:
 #ifndef IPRT_TARGET_NT4
             if (pMemNt->fAllocatedPagesForMdl)
