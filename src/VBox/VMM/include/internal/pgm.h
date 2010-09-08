@@ -20,6 +20,44 @@
 
 #include <VBox/pgm.h>
 
+/** @defgroup grp_pgm_int   Internals
+ * @ingroup grp_pgm
+ * @internal
+ * @{
+ */
+
+/**
+ * Page type.
+ *
+ * @remarks This enum has to fit in a 3-bit field (see PGMPAGE::u3Type).
+ * @remarks This is used in the saved state, so changes to it requires bumping
+ *          the saved state version.
+ * @todo    So, convert to \#defines!
+ */
+typedef enum PGMPAGETYPE
+{
+    /** The usual invalid zero entry. */
+    PGMPAGETYPE_INVALID = 0,
+    /** RAM page. (RWX) */
+    PGMPAGETYPE_RAM,
+    /** MMIO2 page. (RWX) */
+    PGMPAGETYPE_MMIO2,
+    /** MMIO2 page aliased over an MMIO page. (RWX)
+     * See PGMHandlerPhysicalPageAlias(). */
+    PGMPAGETYPE_MMIO2_ALIAS_MMIO,
+    /** Shadowed ROM. (RWX) */
+    PGMPAGETYPE_ROM_SHADOW,
+    /** ROM page. (R-X) */
+    PGMPAGETYPE_ROM,
+    /** MMIO page. (---) */
+    PGMPAGETYPE_MMIO,
+    /** End of valid entries. */
+    PGMPAGETYPE_END
+} PGMPAGETYPE;
+AssertCompile(PGMPAGETYPE_END <= 7);
+
+VMMDECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys);
+
 VMMDECL(int)        PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys);
 VMMDECL(int)        PGMPhysGCPtr2HCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHCPhys);
 VMMDECL(int)        PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
@@ -31,4 +69,7 @@ VMMDECL(int)        PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange
 VMMDECL(RTR3PTR)    PGMPhysGCPhys2R3PtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
 #endif
 VMMR3DECL(void)     PGMR3ResetNoMorePhysWritesFlag(PVM pVM);
+
+/** @} */
 #endif
+
