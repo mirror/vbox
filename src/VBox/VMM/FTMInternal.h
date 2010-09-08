@@ -115,6 +115,7 @@ typedef struct FTM
     STAMCOUNTER         StatSentMemRAM;
     STAMCOUNTER         StatSentMemMMIO2;
     STAMCOUNTER         StatSentMemShwROM;
+    STAMCOUNTER         StatSentStateWrite;
 #endif
 } FTM;
 AssertCompileMemberAlignment(FTM, CritSect, 8);

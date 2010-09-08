@@ -142,6 +142,7 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
     STAM_REG(pVM,     &pVM->ftm.s.StatSentMemRAM,                STAMTYPE_COUNTER, "/FT/Sent/Mem/RAM",                  STAMUNIT_BYTES, "The amount of memory pages that was sent.");
     STAM_REG(pVM,     &pVM->ftm.s.StatSentMemMMIO2,              STAMTYPE_COUNTER, "/FT/Sent/Mem/MMIO2",                STAMUNIT_BYTES, "The amount of memory pages that was sent.");
     STAM_REG(pVM,     &pVM->ftm.s.StatSentMemShwROM,             STAMTYPE_COUNTER, "/FT/Sent/Mem/ShwROM",               STAMUNIT_BYTES, "The amount of memory pages that was sent.");
+    STAM_REG(pVM,     &pVM->ftm.s.StatSentStateWrite,            STAMTYPE_COUNTER, "/FT/Sent/State/Writes",             STAMUNIT_BYTES, "The nr of write calls.");
 #endif
     return VINF_SUCCESS;
 }
@@ -349,6 +350,7 @@ static DECLCALLBACK(int) ftmR3TcpOpWrite(void *pvUser, uint64_t offStream, const
     AssertReturn(cbToWrite < UINT32_MAX, VERR_OUT_OF_RANGE);
     AssertReturn(pVM->fFaultTolerantMaster, VERR_INVALID_HANDLE);
 
+    STAM_COUNTER_INC(&pVM->ftm.s.StatSentStateWrite);
     for (;;)
     {
         FTMTCPHDR Hdr;
