@@ -27,15 +27,13 @@ if [ -z "VBOX_NO_UNINSTALL_MESSAGE" ]; then
     log ""
 fi
 
+check_root
+
 [ -z "$DKMS"       ]    && DKMS=`which dkms 2> /dev/null`
 [ -z "$CONFIG_DIR" ]    && CONFIG_DIR="/etc/vbox"
 [ -z "$CONFIG" ]        && CONFIG="vbox.cfg"
 [ -z "$CONFIG_FILES" ]  && CONFIG_FILES="filelist"
 [ -z "$DEFAULT_FILES" ] && DEFAULT_FILES=`pwd`/deffiles
-
-# Terminate Server and VBoxNetDHCP if running
-terminate_proc VBoxSVC
-terminate_proc VBoxNetDHCP
 
 # Find previous installation
 if [ -r $CONFIG_DIR/$CONFIG ]; then
@@ -51,6 +49,10 @@ fi
 
 # Stop the web service
 stop_init_script vboxweb-service
+# Do this check here after we terminated the web service
+check_running
+# Terminate VBoxNetDHCP if running
+terminate_proc VBoxNetDHCP
 delrunlevel vboxweb-service > /dev/null 2>&1
 remove_init_script vboxweb-service
 # Stop kernel module and uninstall runlevel script
