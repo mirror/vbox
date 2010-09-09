@@ -1085,8 +1085,18 @@ int VBoxProblemReporter::confirmMachineDeletion(const CMachine &machine)
         int cDisks = 0;
         const QVector<CMediumAttachment> &mediums = machine.GetMediumAttachments();
         for (int i=0; i < mediums.size(); ++i)
-            if (mediums.at(i).GetType() == KDeviceType_HardDisk)
-                ++cDisks;
+        {
+            const CMediumAttachment &m = mediums.at(i);
+            /* Check if the medium is a harddisk */
+            if (m.GetType() == KDeviceType_HardDisk)
+            {
+                /* Check if the disk isn't shared. If the disk is shared, it
+                 * will be *never* deleted. */
+                QVector <QString> ids = m.GetMedium().GetMachineIds();
+                if (ids.size() == 1)
+                    ++cDisks;
+            }
+        }
         const QString strDeleteBtn = tr("Delete", "machine");
         const QString strDeleteAllBtn = tr("Delete All", "machine");
         const QString strKeepHarddisksBtn = tr("Keep Harddisks", "machine");
