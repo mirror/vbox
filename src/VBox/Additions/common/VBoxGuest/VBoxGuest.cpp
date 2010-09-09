@@ -132,8 +132,7 @@ static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
              * not implemented at all at the current platform, try to map the memory object into the
              * virtual kernel space.
              */
-            if (   rc == VERR_NOT_SUPPORTED
-                || rc == VERR_NOT_IMPLEMENTED)
+            if (rc == VERR_NOT_SUPPORTED)
             {
                 if (hFictive == NIL_RTR0MEMOBJ)
                 {
