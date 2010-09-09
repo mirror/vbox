@@ -921,6 +921,7 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
 {
     uint32_t *paddr;
     uint16_t uDevClass, uVendor, uDevice;
+    uint8_t uCmd;
 
     uDevClass  = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_CLASS_DEVICE, 2);
     uVendor    = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_VENDOR_ID, 2);
@@ -949,7 +950,7 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
              * only the framebuffer (i.e., a memory region) is explicitly registered via
              * ich9pciSetRegionAddress, so I/O decoding must be enabled manually.
              */
-            uint8_t uCmd = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_COMMAND, 1);
+            uCmd = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_COMMAND, 1);
             ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_COMMAND,
                                /* Enable I/O space access. */
                                uCmd | PCI_COMMAND_IOACCESS,
