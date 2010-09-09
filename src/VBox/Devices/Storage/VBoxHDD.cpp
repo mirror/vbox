@@ -41,7 +41,7 @@
 #include <iprt/avl.h>
 
 #include <VBox/VBoxHDD-Plugin.h>
-
+#include <VBox/VBoxHDD-CachePlugin.h>
 
 #define VBOXHDDDISK_SIGNATURE 0x6f0e2a7d
 
@@ -100,6 +100,31 @@ typedef struct VDIMAGE
 #define VD_IMAGE_MODIFIED_FIRST                 RT_BIT(1)
 #define VD_IMAGE_MODIFIED_DISABLE_UUID_UPDATE   RT_BIT(2)
 
+
+/**
+ * VBox HDD Cache image descriptor.
+ */
+typedef struct VDCACHE
+{
+    /** Cache base filename. (UTF-8) */
+    char            *pszFilename;
+    /** Data managed by the backend which keeps the actual info. */
+    void            *pvBackendData;
+    /** Cached sanitized image flags. */
+    unsigned        uImageFlags;
+    /** Image open flags (only those handled generically in this code and which
+     * the backends will never ever see). */
+    unsigned        uOpenFlags;
+
+    /** Function pointers for the various backend methods. */
+    PCVDCACHEBACKEND    Backend;
+    /** Per image I/O interface. */
+    VDINTERFACE         VDIIO;
+    /** Pointer to list of VD interfaces, per-cache. */
+    PVDINTERFACE        pVDIfsCache;
+    /** Disk this image is part of */
+    PVBOXHDD            pDisk;
+} VDCACHE, *PVDCACHE;
 
 /**
  * VBox HDD Container main structure, private part.
@@ -169,6 +194,9 @@ struct VBOXHDD
     volatile bool       fGrowing;
     /** List of waiting requests. - Protected by the critical section. */
     RTLISTNODE          ListWriteGrowing;
+
+    /** Pointer to the L2 disk cache if any. */
+    PVDCACHE            pCache;
 };
 
 # define VD_THREAD_IS_CRITSECT_OWNER(Disk) \
@@ -418,6 +446,18 @@ static PVBOXHDDBACKEND aStaticBackends[] =
 };
 
 /**
+ * Supported backends for the disk cache.
+ */
+extern VDCACHEBACKEND g_VciCacheBackend;
+
+static unsigned g_cCacheBackends = 0;
+static PVDCACHEBACKEND *g_apCacheBackends = NULL;
+static PVDCACHEBACKEND aStaticCacheBackends[] =
+{
+    &g_VciCacheBackend
+};
+
+/**
  * internal: add several backends.
  */
 static int vdAddBackends(PVBOXHDDBACKEND *ppBackends, unsigned cBackends)
@@ -438,6 +478,29 @@ static int vdAddBackends(PVBOXHDDBACKEND *ppBackends, unsigned cBackends)
 DECLINLINE(int) vdAddBackend(PVBOXHDDBACKEND pBackend)
 {
     return vdAddBackends(&pBackend, 1);
+}
+
+/**
+ * internal: add several cache backends.
+ */
+static int vdAddCacheBackends(PVDCACHEBACKEND *ppBackends, unsigned cBackends)
+{
+    PVDCACHEBACKEND *pTmp = (PVDCACHEBACKEND*)RTMemRealloc(g_apCacheBackends,
+           (g_cCacheBackends + cBackends) * sizeof(PVDCACHEBACKEND));
+    if (RT_UNLIKELY(!pTmp))
+        return VERR_NO_MEMORY;
+    g_apCacheBackends = pTmp;
+    memcpy(&g_apCacheBackends[g_cCacheBackends], ppBackends, cBackends * sizeof(PVDCACHEBACKEND));
+    g_cCacheBackends += cBackends;
+    return VINF_SUCCESS;
+}
+
+/**
+ * internal: add single cache backend.
+ */
+DECLINLINE(int) vdAddCacheBackend(PVDCACHEBACKEND pBackend)
+{
+    return vdAddCacheBackends(&pBackend, 1);
 }
 
 /**
@@ -522,6 +585,29 @@ static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend)
 }
 
 /**
+ * internal: find cache format backend.
+ */
+static int vdFindCacheBackend(const char *pszBackend, PCVDCACHEBACKEND *ppBackend)
+{
+    int rc = VINF_SUCCESS;
+    PCVDCACHEBACKEND pBackend = NULL;
+
+    if (!g_apCacheBackends)
+        VDInit();
+
+    for (unsigned i = 0; i < g_cCacheBackends; i++)
+    {
+        if (!RTStrICmp(pszBackend, g_apCacheBackends[i]->pszBackendName))
+        {
+            pBackend = g_apCacheBackends[i];
+            break;
+        }
+    }
+    *ppBackend = pBackend;
+    return rc;
+}
+
+/**
  * internal: add image structure to the end of images list.
  */
 static void vdAddImageToList(PVBOXHDD pDisk, PVDIMAGE pImage)
@@ -586,13 +672,134 @@ static PVDIMAGE vdGetImageByNumber(PVBOXHDD pDisk, unsigned nImage)
 }
 
 /**
+ * Internal: Tries to read the desired range from the given cache.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_VD_BLOCK_FREE if the block is not in the cache.
+ *          pcbRead will be set to the number of bytes not in the cache.
+ *          Everything thereafter might be in the cache.
+ * @param   pCache   The cache to read from.
+ * @param   uOffset  Offset of the virtual disk to read.
+ * @param   pvBuf    Where to store the read data.
+ * @param   cbRead   How much to read.
+ * @param   pcbRead  Where to store the number of bytes actually read.
+ *                   On success this indicates the number of bytes read from the cache.
+ *                   If VERR_VD_BLOCK_FREE is returned this gives the number of bytes
+ *                   whih are not in the cache.
+ *                   In both cases everything beyond this value
+ *                   might or might not be in the cache.
+ */
+static int vdCacheReadHelper(PVDCACHE pCache, uint64_t uOffset,
+                             void *pvBuf, size_t cbRead, size_t *pcbRead)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pCache=%#p uOffset=%llu pvBuf=%#p cbRead=%zu pcbRead=%#p\n",
+                 pCache, uOffset, pvBuf, cbRead, pcbRead));
+
+    AssertPtr(pCache);
+    AssertPtr(pcbRead);
+
+    rc = pCache->Backend->pfnRead(pCache->pvBackendData, uOffset, pvBuf,
+                                  cbRead, pcbRead);
+
+    LogFlowFunc(("returns rc=%Rrc pcbRead=%zu\n", rc, *pcbRead));
+    return rc;
+}
+
+/**
+ * Internal: Writes data for the given block into the cache.
+ *
+ * @returns VBox status code.
+ * @param   pCache     The cache to write to.
+ * @param   uOffset    Offset of the virtual disk to write to teh cache.
+ * @param   pcvBuf     The data to write.
+ * @param   cbWrite    How much to write.
+ * @param   pcbWritten How much data could be written, optional.
+ */
+static int vdCacheWriteHelper(PVDCACHE pCache, uint64_t uOffset, const void *pcvBuf,
+                              size_t cbWrite, size_t *pcbWritten)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pCache=%#p uOffset=%llu pvBuf=%#p cbWrite=%zu pcbWritten=%#p\n",
+                 pCache, uOffset, pcvBuf, cbWrite, pcbWritten));
+
+    AssertPtr(pCache);
+    AssertPtr(pcvBuf);
+    Assert(cbWrite > 0);
+
+    if (pcbWritten)
+        rc = pCache->Backend->pfnWrite(pCache->pvBackendData, uOffset, pcvBuf,
+                                       cbWrite, pcbWritten);
+    else
+    {
+        size_t cbWritten = 0;
+
+        do
+        {
+            rc = pCache->Backend->pfnWrite(pCache->pvBackendData, uOffset, pcvBuf,
+                                           cbWrite, &cbWritten);
+            uOffset += cbWritten;
+            pcvBuf   = (char *)pcvBuf + cbWritten;
+            cbWrite -= cbWritten;
+        } while (   cbWrite
+                 && RT_SUCCESS(rc));
+    }
+
+    LogFlowFunc(("returns rc=%Rrc pcbWritten=%zu\n",
+                 rc, pcbWritten ? *pcbWritten : cbWrite));
+    return rc;
+}
+
+/**
+ * Internal: Reads a given amount of data from the image chain of the disk.
+ **/
+static int vdDiskReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
+                            uint64_t uOffset, void *pvBuf, size_t cbRead, size_t *pcbThisRead)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbThisRead = cbRead;
+
+    AssertPtr(pcbThisRead);
+
+    *pcbThisRead = 0;
+
+    /*
+     * Try to read from the given image.
+     * If the block is not allocated read from override chain if present.
+     */
+    rc = pImage->Backend->pfnRead(pImage->pvBackendData,
+                                  uOffset, pvBuf, cbThisRead,
+                                  &cbThisRead);
+
+    if (rc == VERR_VD_BLOCK_FREE)
+    {
+        for (PVDIMAGE pCurrImage = pImageParentOverride ? pImageParentOverride : pImage->pPrev;
+             pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
+             pCurrImage = pCurrImage->pPrev)
+        {
+            rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
+                                              uOffset, pvBuf, cbThisRead,
+                                              &cbThisRead);
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+        *pcbThisRead = cbThisRead;
+
+    return rc;
+}
+
+/**
  * internal: read the specified amount of data in whatever blocks the backend
  * will give us.
  */
 static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
-                        uint64_t uOffset, void *pvBuf, size_t cbRead, bool fHandleFreeBlocks)
+                        uint64_t uOffset, void *pvBuf, size_t cbRead,
+                        bool fZeroFreeBlocks, bool fUpdateCache)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     size_t cbThisRead;
     bool fAllFree = true;
     size_t cbBufClear = 0;
@@ -605,23 +812,49 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOv
          * stale data when different block sizes are used for the images. */
         cbThisRead = cbRead;
 
-        /*
-         * Try to read from the given image.
-         * If the block is not allocated read from override chain if present.
-         */
-        rc = pImage->Backend->pfnRead(pImage->pvBackendData,
-                                      uOffset, pvBuf, cbThisRead,
-                                      &cbThisRead);
-
-        if (rc == VERR_VD_BLOCK_FREE)
+        if (   pDisk->pCache
+            && !pImageParentOverride)
         {
-            for (PVDIMAGE pCurrImage = pImageParentOverride ? pImageParentOverride : pImage->pPrev;
-                 pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
-                 pCurrImage = pCurrImage->pPrev)
+            rc = vdCacheReadHelper(pDisk->pCache, uOffset, pvBuf,
+                                   cbThisRead, &cbThisRead);
+
+            if (rc == VERR_VD_BLOCK_FREE)
             {
-                rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
-                                                  uOffset, pvBuf, cbThisRead,
-                                                  &cbThisRead);
+                rc = vdDiskReadHelper(pDisk, pImage, pImageParentOverride,
+                                      uOffset, pvBuf, cbThisRead, &cbThisRead);
+
+                /* If the read was successful, write the data back into the cache. */
+                if (   RT_SUCCESS(rc)
+                    && fUpdateCache)
+                {
+                    rc = vdCacheWriteHelper(pDisk->pCache, uOffset, pvBuf,
+                                            cbThisRead, NULL);
+                }
+            }
+        }
+        else
+        {
+            /** @todo can be be replaced by vdDiskReadHelper if it proves to be reliable,
+             * don't want to be responsible for data corruption...
+             */
+            /*
+             * Try to read from the given image.
+             * If the block is not allocated read from override chain if present.
+             */
+            rc = pImage->Backend->pfnRead(pImage->pvBackendData,
+                                          uOffset, pvBuf, cbThisRead,
+                                          &cbThisRead);
+
+            if (rc == VERR_VD_BLOCK_FREE)
+            {
+                for (PVDIMAGE pCurrImage = pImageParentOverride ? pImageParentOverride : pImage->pPrev;
+                     pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
+                     pCurrImage = pCurrImage->pPrev)
+                {
+                    rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
+                                                      uOffset, pvBuf, cbThisRead,
+                                                      &cbThisRead);
+                }
             }
         }
 
@@ -630,7 +863,7 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOv
         {
             /* Fill the free space with 0 if we are told to do so
              * or a previous read returned valid data. */
-            if (fHandleFreeBlocks || !fAllFree)
+            if (fZeroFreeBlocks || !fAllFree)
                 memset(pvBuf, '\0', cbThisRead);
             else
                 cbBufClear += cbThisRead;
@@ -640,7 +873,7 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOv
         else if (RT_SUCCESS(rc))
         {
             /* First not free block, fill the space before with 0. */
-            if (!fHandleFreeBlocks)
+            if (!fZeroFreeBlocks)
             {
                 memset((char *)pvBuf - cbBufClear, '\0', cbBufClear);
                 cbBufClear = 0;
@@ -653,7 +886,7 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOv
         pvBuf = (char *)pvBuf + cbThisRead;
     } while (cbRead != 0 && RT_SUCCESS(rc));
 
-    return (!fHandleFreeBlocks && fAllFree) ? VERR_VD_BLOCK_FREE : rc;
+    return (!fZeroFreeBlocks && fAllFree) ? VERR_VD_BLOCK_FREE : rc;
 }
 
 DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
@@ -1018,7 +1251,8 @@ static int vdParentRead(void *pvUser, uint64_t uOffset, void *pvBuf,
 {
     PVDPARENTSTATEDESC pParentState = (PVDPARENTSTATEDESC)pvUser;
     return vdReadHelper(pParentState->pDisk, pParentState->pImage, NULL, uOffset,
-                        pvBuf, cbRead, true);
+                        pvBuf, cbRead, true /* fZeroFreeBlocks */,
+                        false /* fUpdateCache */);
 }
 
 /**
@@ -1036,6 +1270,10 @@ static void vdResetModifiedFlag(PVBOXHDD pDisk)
             RTUuidCreate(&Uuid);
             pDisk->pLast->Backend->pfnSetModificationUuid(pDisk->pLast->pvBackendData,
                                                           &Uuid);
+
+            if (pDisk->pCache)
+                pDisk->pCache->Backend->pfnSetModificationUuid(pDisk->pCache->pvBackendData,
+                                                               &Uuid);
         }
 
         pDisk->uModified &= ~VD_IMAGE_MODIFIED_FLAG;
@@ -1055,7 +1293,7 @@ static void vdSetModifiedFlag(PVBOXHDD pDisk)
         /* First modify, so create a UUID and ensure it's written to disk. */
         vdResetModifiedFlag(pDisk);
 
-        if (!(pDisk->uModified | VD_IMAGE_MODIFIED_DISABLE_UUID_UPDATE))
+        if (!(pDisk->uModified & VD_IMAGE_MODIFIED_DISABLE_UUID_UPDATE))
             pDisk->pLast->Backend->pfnFlush(pDisk->pLast->pvBackendData);
     }
 }
@@ -1078,8 +1316,14 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
     /* Read the data that goes before the write to fill the block. */
     if (cbPreRead)
     {
+        /*
+         * Updating the cache doesn't make sense here because
+         * this will be done after the complete block was written.
+         */
         rc = vdReadHelper(pDisk, pImage, pImageParentOverride,
-                          uOffset - cbPreRead, pvTmp, cbPreRead, true);
+                          uOffset - cbPreRead, pvTmp, cbPreRead,
+                          true /* fZeroFreeBlocks*/,
+                          false /* fUpdateCache */);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1116,7 +1360,8 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
             rc = vdReadHelper(pDisk, pImage, pImageParentOverride,
                               uOffset + cbThisWrite + cbWriteCopy,
                               (char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy,
-                              cbReadImage, true);
+                              cbReadImage, true /* fZeroFreeBlocks */,
+                              false /* fUpdateCache */);
         if (RT_FAILURE(rc))
             return rc;
         /* Zero out the remainder of this block. Will never be visible, as this
@@ -1176,7 +1421,9 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
     /* Read the entire data of the block so that we can compare whether it will
      * be modified by the write or not. */
     rc = vdReadHelper(pDisk, pImage, pImageParentOverride, uOffset - cbPreRead, pvTmp,
-                      cbPreRead + cbThisWrite + cbPostRead - cbFill, true);
+                      cbPreRead + cbThisWrite + cbPostRead - cbFill,
+                      true /* fZeroFreeBlocks */,
+                      false /* fUpdateCache */);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1223,12 +1470,16 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
  * write optimizations.
  */
 static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
-                         uint64_t uOffset, const void *pvBuf, size_t cbWrite)
+                         uint64_t uOffset, const void *pvBuf, size_t cbWrite,
+                         bool fUpdateCache)
 {
     int rc;
     unsigned fWrite;
     size_t cbThisWrite;
     size_t cbPreRead, cbPostRead;
+    uint64_t uOffsetCur = uOffset;
+    size_t cbWriteCur = cbWrite;
+    const void *pcvBufCur = pvBuf;
 
     /* Loop until all written. */
     do
@@ -1239,10 +1490,10 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentO
          * For image formats which don't support zero blocks, it's beneficial
          * to avoid unnecessarily allocating unchanged blocks. This prevents
          * unwanted expanding of images. VMDK is an example. */
-        cbThisWrite = cbWrite;
+        cbThisWrite = cbWriteCur;
         fWrite =   (pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME)
                  ? 0 : VD_WRITE_NO_ALLOC;
-        rc = pImage->Backend->pfnWrite(pImage->pvBackendData, uOffset, pvBuf,
+        rc = pImage->Backend->pfnWrite(pImage->pvBackendData, uOffsetCur, pcvBufCur,
                                        cbThisWrite, &cbThisWrite, &cbPreRead,
                                        &cbPostRead, fWrite);
         if (rc == VERR_VD_BLOCK_FREE)
@@ -1255,9 +1506,9 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentO
                 /* Optimized write, suppress writing to a so far unallocated
                  * block if the data is in fact not changed. */
                 rc = vdWriteHelperOptimized(pDisk, pImage, pImageParentOverride,
-                                            uOffset, cbWrite,
+                                            uOffsetCur, cbWriteCur,
                                             cbThisWrite, cbPreRead, cbPostRead,
-                                            pvBuf, pvTmp);
+                                            pcvBufCur, pvTmp);
             }
             else
             {
@@ -1266,19 +1517,25 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentO
                  * backend has some further optimization enabled) cause the
                  * block to be allocated. */
                 rc = vdWriteHelperStandard(pDisk, pImage, pImageParentOverride,
-                                           uOffset, cbWrite,
+                                           uOffsetCur, cbWriteCur,
                                            cbThisWrite, cbPreRead, cbPostRead,
-                                           pvBuf, pvTmp);
+                                           pcvBufCur, pvTmp);
             }
             RTMemTmpFree(pvTmp);
             if (RT_FAILURE(rc))
                 break;
         }
 
-        cbWrite -= cbThisWrite;
-        uOffset += cbThisWrite;
-        pvBuf = (char *)pvBuf + cbThisWrite;
-    } while (cbWrite != 0 && RT_SUCCESS(rc));
+        cbWriteCur -= cbThisWrite;
+        uOffsetCur += cbThisWrite;
+        pcvBufCur = (char *)pcvBufCur + cbThisWrite;
+    } while (cbWriteCur != 0 && RT_SUCCESS(rc));
+
+    /* Update the cache on success */
+    if (   RT_SUCCESS(rc)
+        && pDisk->pCache
+        && fUpdateCache)
+        rc = vdCacheWriteHelper(pDisk->pCache, uOffset, pvBuf, cbWrite, NULL);
 
     return rc;
 }
@@ -1730,8 +1987,7 @@ static int vdLoadDynamicBackends()
 
     /* To get all entries with VBoxHDD as prefix. */
     char *pszPluginFilter;
-    rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath,
-            VBOX_HDDFORMAT_PLUGIN_PREFIX);
+    rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath, VBOX_HDDFORMAT_PLUGIN_PREFIX);
     if (RT_FAILURE(rc))
     {
         rc = VERR_NO_MEMORY;
@@ -1808,6 +2064,127 @@ static int vdLoadDynamicBackends()
                 {
                     pBackend->hPlugin = hPlugin;
                     vdAddBackend(pBackend);
+                }
+                else
+                    LogFunc(("ignored plugin '%s': pBackend->cbSize=%d rc=%Rrc\n", pszPluginPath, pBackend->cbSize, rc));
+            }
+            else
+                LogFunc(("ignored plugin '%s': rc=%Rrc\n", pszPluginPath, rc));
+
+            if (RT_FAILURE(rc))
+                RTLdrClose(hPlugin);
+        }
+        RTStrFree(pszPluginPath);
+    }
+out:
+    if (rc == VERR_NO_MORE_FILES)
+        rc = VINF_SUCCESS;
+    RTStrFree(pszPluginFilter);
+    if (pPluginDirEntry)
+        RTMemFree(pPluginDirEntry);
+    if (pPluginDir)
+        RTDirClose(pPluginDir);
+    return rc;
+#else
+    return VINF_SUCCESS;
+#endif
+}
+
+/**
+ * internal: scans plugin directory and loads the cache backends have been found.
+ */
+static int vdLoadDynamicCacheBackends()
+{
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
+    int rc = VINF_SUCCESS;
+    PRTDIR pPluginDir = NULL;
+
+    /* Enumerate plugin backends. */
+    char szPath[RTPATH_MAX];
+    rc = RTPathAppPrivateArch(szPath, sizeof(szPath));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* To get all entries with VBoxHDD as prefix. */
+    char *pszPluginFilter;
+    rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath, VD_CACHEFORMAT_PLUGIN_PREFIX);
+    if (RT_FAILURE(rc))
+    {
+        rc = VERR_NO_MEMORY;
+        return rc;
+    }
+
+    PRTDIRENTRYEX pPluginDirEntry = NULL;
+    size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
+    /* The plugins are in the same directory as the other shared libs. */
+    rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
+    if (RT_FAILURE(rc))
+    {
+        /* On Windows the above immediately signals that there are no
+         * files matching, while on other platforms enumerating the
+         * files below fails. Either way: no plugins. */
+        goto out;
+    }
+
+    pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
+    if (!pPluginDirEntry)
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+
+    while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
+    {
+        RTLDRMOD hPlugin = NIL_RTLDRMOD;
+        PFNVDCACHEFORMATLOAD pfnVDCacheLoad = NULL;
+        PVDCACHEBACKEND pBackend = NULL;
+        char *pszPluginPath = NULL;
+
+        if (rc == VERR_BUFFER_OVERFLOW)
+        {
+            /* allocate new buffer. */
+            RTMemFree(pPluginDirEntry);
+            pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
+            /* Retry. */
+            rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+            if (RT_FAILURE(rc))
+                break;
+        }
+        else if (RT_FAILURE(rc))
+            break;
+
+        /* We got the new entry. */
+        if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
+            continue;
+
+        /* Prepend the path to the libraries. */
+        rc = RTStrAPrintf(&pszPluginPath, "%s/%s", szPath, pPluginDirEntry->szName);
+        if (RT_FAILURE(rc))
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        rc = SUPR3HardenedLdrLoad(pszPluginPath, &hPlugin);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTLdrGetSymbol(hPlugin, VD_CACHEFORMAT_LOAD_NAME, (void**)&pfnVDCacheLoad);
+            if (RT_FAILURE(rc) || !pfnVDCacheLoad)
+            {
+                LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnVDCacheLoad=%#p\n",
+                         VD_CACHEFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnVDCacheLoad));
+                if (RT_SUCCESS(rc))
+                    rc = VERR_SYMBOL_NOT_FOUND;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Get the function table. */
+                rc = pfnVDCacheLoad(&pBackend);
+                if (RT_SUCCESS(rc) && pBackend->cbSize == sizeof(VDCACHEBACKEND))
+                {
+                    pBackend->hPlugin = hPlugin;
+                    vdAddCacheBackend(pBackend);
                 }
                 else
                     LogFunc(("ignored plugin '%s': pBackend->cbSize=%d rc=%Rrc\n", pszPluginPath, pBackend->cbSize, rc));
@@ -2521,7 +2898,7 @@ static int vdIOReadMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
     {
 #ifdef RT_STRICT
         pMetaXfer = (PVDMETAXFER)RTAvlrFileOffsetGetBestFit(pIoStorage->pTreeMetaXfers, uOffset, false /* fAbove */);
-        AssertMsg(!pMetaXfer || (pMetaXfer->Core.Key + pMetaXfer->cbMeta <= (RTFOFF)uOffset),
+        AssertMsg(!pMetaXfer || (pMetaXfer->Core.Key + (RTFOFF)pMetaXfer->cbMeta <= (RTFOFF)uOffset),
                   ("Overlapping meta transfers!\n"));
 #endif
 
@@ -2949,7 +3326,15 @@ VBOXDDU_DECL(int) VDInit(void)
 {
     int rc = vdAddBackends(aStaticBackends, RT_ELEMENTS(aStaticBackends));
     if (RT_SUCCESS(rc))
-        rc = vdLoadDynamicBackends();
+    {
+        rc = vdAddCacheBackends(aStaticCacheBackends, RT_ELEMENTS(aStaticCacheBackends));
+        if (RT_SUCCESS(rc))
+        {
+            rc = vdLoadDynamicBackends();
+            if (RT_SUCCESS(rc))
+                rc = vdLoadDynamicCacheBackends();
+        }
+    }
     LogRel(("VDInit finished\n"));
     return rc;
 }
@@ -2962,6 +3347,7 @@ VBOXDDU_DECL(int) VDInit(void)
 VBOXDDU_DECL(int) VDShutdown(void)
 {
     PVBOXHDDBACKEND *pBackends = g_apBackends;
+    PVDCACHEBACKEND *pCacheBackends = g_apCacheBackends;
     unsigned cBackends = g_cBackends;
 
     if (!pBackends)
@@ -2976,6 +3362,19 @@ VBOXDDU_DECL(int) VDShutdown(void)
             RTLdrClose(pBackends[i]->hPlugin);
 #endif
 
+    /* Clear the supported cache backends. */
+    cBackends = g_cCacheBackends;
+    g_cCacheBackends = 0;
+    g_apCacheBackends = NULL;
+
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
+    for (unsigned i = 0; i < cBackends; i++)
+        if (pCacheBackends[i]->hPlugin != NIL_RTLDRMOD)
+            RTLdrClose(pCacheBackends[i]->hPlugin);
+#endif
+
+    if (pCacheBackends)
+        RTMemFree(pCacheBackends);
     RTMemFree(pBackends);
     return VINF_SUCCESS;
 }
@@ -3314,6 +3713,33 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, const char *pszFilename, 
         }
     }
 
+    /* Try the cache backends. */
+    if (rc == VERR_NOT_SUPPORTED)
+    {
+        for (unsigned i = 0; i < g_cCacheBackends; i++)
+        {
+            if (g_apCacheBackends[i]->pfnProbe)
+            {
+                rc = g_apCacheBackends[i]->pfnProbe(pszFilename, pVDIfsDisk);
+                if (    RT_SUCCESS(rc)
+                    ||  (rc != VERR_VD_GEN_INVALID_HEADER))
+                {
+                    /* Copy the name into the new string. */
+                    char *pszFormat = RTStrDup(g_apBackends[i]->pszBackendName);
+                    if (!pszFormat)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                    *ppszFormat = pszFormat;
+                    rc = VINF_SUCCESS;
+                    break;
+                }
+                rc = VERR_NOT_SUPPORTED;
+            }
+        }
+    }
+
     LogFlowFunc(("returns %Rrc *ppszFormat=\"%s\"\n", rc, *ppszFormat));
     return rc;
 }
@@ -3558,6 +3984,176 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             if (pImage->pszFilename)
                 RTStrFree(pImage->pszFilename);
             RTMemFree(pImage);
+        }
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Opens a cache image.
+ *
+ * @return  VBox status code.
+ * @param   pDisk           Pointer to the HDD container which should use the cache image.
+ * @param   pszBackend      Name of the cache file backend to use (case insensitive).
+ * @param   pszFilename     Name of the cache image to open.
+ * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+ * @param   pVDIfsCache     Pointer to the per-cache VD interface list.
+ */
+VBOXDDU_DECL(int) VDCacheOpen(PVBOXHDD pDisk, const char *pszBackend,
+                              const char *pszFilename, unsigned uOpenFlags,
+                              PVDINTERFACE pVDIfsCache)
+{
+    int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false;
+    PVDCACHE pCache = NULL;
+
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uOpenFlags=%#x, pVDIfsCache=%#p\n",
+                 pDisk, pszBackend, pszFilename, uOpenFlags, pVDIfsCache));
+
+    do
+    {
+        /* sanity check */
+        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        /* Check arguments. */
+        AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
+                           ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
+                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
+                           ("uOpenFlags=%#x\n", uOpenFlags),
+                           rc = VERR_INVALID_PARAMETER);
+
+        /* Set up image descriptor. */
+        pCache = (PVDCACHE)RTMemAllocZ(sizeof(VDCACHE));
+        if (!pCache)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        pCache->pszFilename = RTStrDup(pszFilename);
+        if (!pCache->pszFilename)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        pCache->pDisk       = pDisk;
+        pCache->pVDIfsCache = pVDIfsCache;
+
+        rc = vdFindCacheBackend(pszBackend, &pCache->Backend);
+        if (RT_FAILURE(rc))
+            break;
+        if (!pCache->Backend)
+        {
+            rc = vdError(pDisk, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                         N_("VD: unknown backend name '%s'"), pszBackend);
+            break;
+        }
+
+        /* Set up the I/O interface. */
+        rc = VDInterfaceAdd(&pCache->VDIIO, "VD_IO", VDINTERFACETYPE_IO,
+                            &pDisk->VDIIOCallbacks, pCache, &pCache->pVDIfsCache);
+        AssertRC(rc);
+
+        pCache->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
+        rc = pCache->Backend->pfnOpen(pCache->pszFilename,
+                                      uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
+                                      pDisk->pVDIfsDisk,
+                                      pCache->pVDIfsCache,
+                                      &pCache->pvBackendData);
+        /* If the open in read-write mode failed, retry in read-only mode. */
+        if (RT_FAILURE(rc))
+        {
+            if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY)
+                &&  (   rc == VERR_ACCESS_DENIED
+                     || rc == VERR_PERMISSION_DENIED
+                     || rc == VERR_WRITE_PROTECT
+                     || rc == VERR_SHARING_VIOLATION
+                     || rc == VERR_FILE_LOCK_FAILED))
+                rc = pCache->Backend->pfnOpen(pCache->pszFilename,
+                                                (uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME)
+                                               | VD_OPEN_FLAGS_READONLY,
+                                               pDisk->pVDIfsDisk,
+                                               pCache->pVDIfsCache,
+                                               &pCache->pvBackendData);
+            if (RT_FAILURE(rc))
+            {
+                rc = vdError(pDisk, rc, RT_SRC_POS,
+                             N_("VD: error %Rrc opening image file '%s'"), rc, pszFilename);
+                break;
+            }
+        }
+
+        /* Lock disk for writing, as we modify pDisk information below. */
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
+        /*
+         * Check that the modification UUID of the cache and last image
+         * match. If not the image was modified inbetween without the cache.
+         * The cache might contain stale data.
+         */
+        RTUUID UuidImage, UuidCache;
+
+        rc = pCache->Backend->pfnGetModificationUuid(pCache->pvBackendData,
+                                                     &UuidCache);
+        if (RT_SUCCESS(rc))
+        {
+            rc = pDisk->pLast->Backend->pfnGetModificationUuid(pDisk->pLast->pvBackendData,
+                                                               &UuidImage);
+            if (RT_SUCCESS(rc))
+            {
+                if (RTUuidCompare(&UuidImage, &UuidCache))
+                    rc = VERR_VD_CACHE_NOT_UP_TO_DATE;
+            }
+        }
+
+        /*
+         * We assume that the user knows what he is doing if one of the images
+         * doesn't support the modification uuid.
+         */
+        if (rc == VERR_NOT_SUPPORTED)
+            rc = VINF_SUCCESS;
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Cache successfully opened, make it the current one. */
+            if (!pDisk->pCache)
+                pDisk->pCache = pCache;
+            else
+                rc = VERR_VD_CACHE_ALREADY_EXISTS;
+        }
+
+        if (RT_FAILURE(rc))
+        {
+            /* Error detected, but image opened. Close image. */
+            rc2 = pCache->Backend->pfnClose(pCache->pvBackendData, false);
+            AssertRC(rc2);
+            pCache->pvBackendData = NULL;
+        }
+    } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (pCache)
+        {
+            if (pCache->pszFilename)
+                RTStrFree(pCache->pszFilename);
+            RTMemFree(pCache);
         }
     }
 
@@ -3855,9 +4451,8 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
     PVDIMAGE pImage = NULL;
     RTUUID uuid;
 
-    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid ParentUuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
-                 pDisk, pszBackend, pszFilename, uImageFlags, pszComment, pUuid, pParentUuid, uOpenFlags,
-                 pVDIfsImage, pVDIfsOperation));
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
+                 pDisk, pszBackend, pszFilename, uImageFlags, pszComment, pUuid, uOpenFlags, pVDIfsImage, pVDIfsOperation));
 
     PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
                                               VDINTERFACETYPE_PROGRESS);
@@ -4067,6 +4662,213 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
 
 
 /**
+ * Creates and opens new cache image file in HDD container.
+ *
+ * @return  VBox status code.
+ * @param   pDisk           Name of the cache file backend to use (case insensitive).
+ * @param   pszFilename     Name of the differencing cache file to create.
+ * @param   cbSize          Maximum size of the cache.
+ * @param   uImageFlags     Flags specifying special cache features.
+ * @param   pszComment      Pointer to image comment. NULL is ok.
+ * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
+ * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+ * @param   pVDIfsCache     Pointer to the per-cache VD interface list.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+ */
+VBOXDDU_DECL(int) VDCreateCache(PVBOXHDD pDisk, const char *pszBackend,
+                                const char *pszFilename, uint64_t cbSize,
+                                unsigned uImageFlags, const char *pszComment,
+                                PCRTUUID pUuid, unsigned uOpenFlags,
+                                PVDINTERFACE pVDIfsCache, PVDINTERFACE pVDIfsOperation)
+{
+    int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false, fLockRead = false;
+    PVDCACHE pCache = NULL;
+    RTUUID uuid;
+
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" cbSIze=%llu uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
+                 pDisk, pszBackend, pszFilename, cbSize, uImageFlags, pszComment, pUuid, uOpenFlags, pVDIfsCache, pVDIfsOperation));
+
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+
+    do
+    {
+        /* sanity check */
+        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        /* Check arguments. */
+        AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
+                           ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
+                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(cbSize,
+                           ("cbSize=%llu\n", cbSize),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0,
+                           ("uImageFlags=%#x\n", uImageFlags),
+                           rc = VERR_INVALID_PARAMETER);
+        /* The UUID may be NULL. */
+        AssertMsgBreakStmt(pUuid == NULL || VALID_PTR(pUuid),
+                           ("pUuid=%#p UUID=%RTuuid\n", pUuid, pUuid),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
+                           ("uOpenFlags=%#x\n", uOpenFlags),
+                           rc = VERR_INVALID_PARAMETER);
+
+        /* Check state. Needs a temporary read lock. Holding the write lock
+         * all the time would be blocking other activities for too long. */
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+        AssertMsgBreakStmt(pDisk->cImages != 0,
+                           ("Create diff image cannot be done without other images open\n"),
+                           rc = VERR_VD_INVALID_STATE);
+        AssertMsgBreakStmt(!pDisk->pCache,
+                           ("Create cache image cannot be done with a cache already attached\n"),
+                           rc = VERR_VD_CACHE_ALREADY_EXISTS);
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = false;
+
+        /* Set up image descriptor. */
+        pCache = (PVDCACHE)RTMemAllocZ(sizeof(VDCACHE));
+        if (!pCache)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        pCache->pszFilename = RTStrDup(pszFilename);
+        if (!pCache->pszFilename)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        rc = vdFindCacheBackend(pszBackend, &pCache->Backend);
+        if (RT_FAILURE(rc))
+            break;
+        if (!pCache->Backend)
+        {
+            rc = vdError(pDisk, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                         N_("VD: unknown backend name '%s'"), pszBackend);
+            break;
+        }
+
+        pCache->pDisk       = pDisk;
+        pCache->pVDIfsCache = pVDIfsCache;
+
+        /* Set up the I/O interface. */
+        rc = VDInterfaceAdd(&pCache->VDIIO, "VD_IO", VDINTERFACETYPE_IO,
+                            &pDisk->VDIIOCallbacks, pCache, &pCache->pVDIfsCache);
+        AssertRC(rc);
+
+        /* Create UUID if the caller didn't specify one. */
+        if (!pUuid)
+        {
+            rc = RTUuidCreate(&uuid);
+            if (RT_FAILURE(rc))
+            {
+                rc = vdError(pDisk, rc, RT_SRC_POS,
+                             N_("VD: cannot generate UUID for image '%s'"),
+                             pszFilename);
+                break;
+            }
+            pUuid = &uuid;
+        }
+
+        pCache->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
+        rc = pCache->Backend->pfnCreate(pCache->pszFilename, cbSize,
+                                        uImageFlags,
+                                        pszComment, pUuid,
+                                        uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
+                                        0, 99,
+                                        pDisk->pVDIfsDisk,
+                                        pCache->pVDIfsCache,
+                                        pVDIfsOperation,
+                                        &pCache->pvBackendData);
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Lock disk for writing, as we modify pDisk information below. */
+            rc2 = vdThreadStartWrite(pDisk);
+            AssertRC(rc2);
+            fLockWrite = true;
+
+            /* Re-check state, as the lock wasn't held and another image
+             * creation call could have been done by another thread. */
+            AssertMsgStmt(!pDisk->pCache,
+                          ("Create cache image cannot be done with another cache open\n"),
+                          rc = VERR_VD_CACHE_ALREADY_EXISTS);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            RTUUID UuidModification;
+
+            /* Set same modification Uuid as the last image. */
+            rc = pDisk->pLast->Backend->pfnGetModificationUuid(pDisk->pLast->pvBackendData,
+                                                               &UuidModification);
+            if (RT_SUCCESS(rc))
+            {
+                rc = pCache->Backend->pfnSetModificationUuid(pCache->pvBackendData,
+                                                             &UuidModification);
+            }
+
+            if (rc == VERR_NOT_SUPPORTED)
+                rc = VINF_SUCCESS;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Cache successfully created. */
+            pDisk->pCache = pCache;
+        }
+        else
+        {
+            /* Error detected, but image opened. Close and delete image. */
+            rc2 = pCache->Backend->pfnClose(pCache->pvBackendData, true);
+            AssertRC(rc2);
+            pCache->pvBackendData = NULL;
+        }
+    } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+    else if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (pCache)
+        {
+            if (pCache->pszFilename)
+                RTStrFree(pCache->pszFilename);
+            RTMemFree(pCache);
+        }
+    }
+
+    if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
+        pCbProgress->pfnProgress(pIfProgress->pvUser, 100);
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/**
  * Merges two images (not necessarily with direct parent/child relationship).
  * As a side effect the source image and potentially the other images which
  * are also merged to the destination are deleted from both the disk and the
@@ -4182,9 +4984,10 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                     {
                         if (RT_FAILURE(rc))
                             break;
+                        /* Updating the cache is required because this might be a live merge. */
                         rc = vdWriteHelper(pDisk, pImageTo, pImageFrom->pPrev,
-                                           uOffset, pvBuf,
-                                           cbThisRead);
+                                           uOffset, pvBuf, cbThisRead,
+                                           true /* fUpdateCache */);
                         if (RT_FAILURE(rc))
                             break;
                     }
@@ -4272,7 +5075,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                     if (RT_FAILURE(rc))
                         break;
                     rc = vdWriteHelper(pDisk, pImageTo, NULL, uOffset, pvBuf,
-                                       cbThisRead);
+                                       cbThisRead, true /* fUpdateCache */);
                     if (RT_FAILURE(rc))
                         break;
                 }
@@ -4669,8 +5472,13 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
             AssertRC(rc2);
             fLockReadFrom = true;
 
+            /*
+             * Updating the cache doesn't make any sense
+             * as we are looping once through the image.
+             */
             rc = vdReadHelper(pDiskFrom, pImageFrom, NULL, uOffset, pvBuf,
-                              cbThisRead, fRegularRead);
+                              cbThisRead, fRegularRead,
+                              false /* fUpdateCache */);
             if (RT_FAILURE(rc) && rc != VERR_VD_BLOCK_FREE)
                 break;
 
@@ -4685,7 +5493,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 fLockWriteTo = true;
 
                 rc = vdWriteHelper(pDiskTo, pImageTo, NULL, uOffset, pvBuf,
-                                   cbThisRead);
+                                   cbThisRead, false /* fUpdateCache */);
                 if (RT_FAILURE(rc))
                     break;
 
@@ -5147,6 +5955,54 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
 }
 
 /**
+ * Closes the currently opened cache image file in HDD container.
+ *
+ * @return  VBox status code.
+ * @return  VERR_VD_NOT_OPENED if no cache is opened in HDD container.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   fDelete         If true, delete the image from the host disk.
+ */
+VBOXDDU_DECL(int) VDCacheClose(PVBOXHDD pDisk, bool fDelete)
+{
+    int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false;
+    PVDCACHE pCache = NULL;
+
+    LogFlowFunc(("pDisk=%#p fDelete=%d\n", pDisk, fDelete));
+
+    do
+    {
+        /* sanity check */
+        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
+        AssertPtrBreakStmt(pDisk->pCache, rc = VERR_VD_CACHE_NOT_FOUND);
+
+        pCache = pDisk->pCache;
+        pDisk->pCache = NULL;
+
+        pCache->Backend->pfnClose(pCache->pvBackendData, fDelete);
+        if (pCache->pszFilename)
+            RTStrFree(pCache->pszFilename);
+        RTMemFree(pCache);
+    } while (0);
+
+    if (RT_LIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/**
  * Closes all opened image files in HDD container.
  *
  * @returns VBox status code.
@@ -5169,6 +6025,18 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
         fLockWrite = true;
+
+        PVDCACHE pCache = pDisk->pCache;
+        if (pCache)
+        {
+            rc2 = pCache->Backend->pfnClose(pCache->pvBackendData, false);
+            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                rc = rc2;
+
+            if (pCache->pszFilename)
+                RTStrFree(pCache->pszFilename);
+            RTMemFree(pCache);
+        }
 
         PVDIMAGE pImage = pDisk->pLast;
         while (VALID_PTR(pImage))
@@ -5243,7 +6111,9 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
-        rc = vdReadHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbRead, true);
+        rc = vdReadHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbRead,
+                          true /* fZeroFreeBlocks */,
+                          true /* fUpdateCache */);
     } while (0);
 
     if (RT_UNLIKELY(fLockRead))
@@ -5303,7 +6173,8 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
         vdSetModifiedFlag(pDisk);
-        rc = vdWriteHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbWrite);
+        rc = vdWriteHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbWrite,
+                           true /* fUpdateCache */);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
@@ -5345,6 +6216,10 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
 
         vdResetModifiedFlag(pDisk);
         rc = pImage->Backend->pfnFlush(pImage->pvBackendData);
+
+        if (   RT_SUCCESS(rc)
+            && pDisk->pCache)
+            rc = pDisk->pCache->Backend->pfnFlush(pDisk->pCache->pvBackendData);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
@@ -6887,17 +7762,3 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnCom
     return rc;
 }
 
-#if 0
-/** @copydoc VBOXHDDBACKEND::pfnComposeLocation */
-int genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
-{
-    return NULL;
-}
-
-
-/** @copydoc VBOXHDDBACKEND::pfnComposeName */
-int genericFileComposeName(PVDINTERFACE pConfig, char **pszName)
-{
-    return NULL;
-}
-#endif

@@ -1911,6 +1911,20 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                          PVDINTERFACE pVDIfsImage);
 
 /**
+ * Opens a cache image.
+ *
+ * @return  VBox status code.
+ * @param   pDisk           Pointer to the HDD container which should use the cache image.
+ * @param   pszBackend      Name of the cache file backend to use (case insensitive).
+ * @param   pszFilename     Name of the cache image to open.
+ * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+ * @param   pVDIfsCache     Pointer to the per-cache VD interface list.
+ */
+VBOXDDU_DECL(int) VDCacheOpen(PVBOXHDD pDisk, const char *pszBackend,
+                              const char *pszFilename, unsigned uOpenFlags,
+                              PVDINTERFACE pVDIfsCache);
+
+/**
  * Creates and opens a new base image file.
  *
  * @return  VBox status code.
@@ -1958,6 +1972,26 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                PCRTUUID pParentUuid, unsigned uOpenFlags,
                                PVDINTERFACE pVDIfsImage,
                                PVDINTERFACE pVDIfsOperation);
+
+/**
+ * Creates and opens new cache image file in HDD container.
+ *
+ * @return  VBox status code.
+ * @param   pDisk           Name of the cache file backend to use (case insensitive).
+ * @param   pszFilename     Name of the differencing cache file to create.
+ * @param   cbSize          Maximum size of the cache.
+ * @param   uImageFlags     Flags specifying special cache features.
+ * @param   pszComment      Pointer to image comment. NULL is ok.
+ * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
+ * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+ * @param   pVDIfsCache     Pointer to the per-cache VD interface list.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+ */
+VBOXDDU_DECL(int) VDCreateCache(PVBOXHDD pDisk, const char *pszBackend,
+                                const char *pszFilename, uint64_t cbSize,
+                                unsigned uImageFlags, const char *pszComment,
+                                PCRTUUID pUuid, unsigned uOpenFlags,
+                                PVDINTERFACE pVDIfsCache, PVDINTERFACE pVDIfsOperation);
 
 /**
  * Merges two images (not necessarily with direct parent/child relationship).
@@ -2043,7 +2077,7 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
                             PVDINTERFACE pVDIfsOperation);
 
 /**
- * Resizes the the given disk image to the given size.
+ * Resizes the given disk image to the given size.
  *
  * @return  VBox status 
  * @return  VERR_VD_IMAGE_READ_ONLY if image is not writable.
@@ -2072,6 +2106,16 @@ VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
  * @param   fDelete         If true, delete the image from the host disk.
  */
 VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete);
+
+/**
+ * Closes the currently opened cache image file in HDD container.
+ *
+ * @return  VBox status code.
+ * @return  VERR_VD_NOT_OPENED if no cache is opened in HDD container.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   fDelete         If true, delete the image from the host disk.
+ */
+VBOXDDU_DECL(int) VDCacheClose(PVBOXHDD pDisk, bool fDelete);
 
 /**
  * Closes all opened image files in HDD container.
