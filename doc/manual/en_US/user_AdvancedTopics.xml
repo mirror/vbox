@@ -298,11 +298,11 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
       with a value of <computeroutput>VBoxGINA.dll</computeroutput>.</para>
 
       <para><note>
-           The VirtualBox GINA is implemented as a wrapper around the standard Windows GINA (
+           The VirtualBox GINA is implemented as a wrapper around the standard Windows GINA ( 
 
           <computeroutput>MSGINA.DLL</computeroutput>
 
-          ), therefore it will most likely not work correctly with 3rd party GINA modules. 
+           ), therefore it will most likely not work correctly with 3rd party GINA modules. 
         </note></para>
 
       <para>To manually install the VirtualBox credential module, extract the
@@ -1306,10 +1306,10 @@ VBoxManage setextradata "VM name"
     <para>By default VirtualBox provides you with one host-only network
     interface. Adding more host-only network interfaces on Solaris hosts
     requires manual configuration. Here's how to add two more host-only
-    network interface.</para>
+    network interfaces.</para>
 
-    <para>First you need to stop all running VMs and unplumb all existing
-    "vboxnet" interfaces. Execute the following commands as root</para>
+    <para>You first need to stop all running VMs and unplumb all existing
+    "vboxnet" interfaces. Execute the following commands as root:</para>
 
     <screen>ifconfig vboxnet0 unplumb</screen>
 
@@ -1318,7 +1318,7 @@ VBoxManage setextradata "VM name"
 
     <para><screen>rem_drv vboxnet</screen>then edit the file
     <computeroutput>/platform/i86pc/kernel/drv/vboxnet.conf</computeroutput>
-    and add a line for the new interface:</para>
+    and add a line for the new interfaces:</para>
 
     <para><screen>name="vboxnet" parent="pseudo" instance=1;
 name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
