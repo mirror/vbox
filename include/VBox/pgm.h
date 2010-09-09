@@ -33,7 +33,7 @@
 #include <VBox/x86.h>
 #include <VBox/VMMDev.h>                /* for VMMDEVSHAREDREGIONDESC */
 #include <VBox/gmm.h>                   /* for PGMMREGISTERSHAREDMODULEREQ */
-#include <VBox/feature.h>
+#include <VBox/param.h>
 
 RT_C_DECLS_BEGIN
 

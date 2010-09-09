@@ -40,6 +40,16 @@
  * by various MM, PGM and SUP APIs. */
 #define VBOX_MAX_ALLOC_PAGE_COUNT   (256U * _1M / PAGE_SIZE)
 
+/** @def VBOX_WITH_PAGE_SHARING
+ * Enables the page sharing code.
+ * @remarks This must match GMMR0Init; currently we only support page fusion on
+ *          all 64-bit hosts except Mac OS X */
+#if (   HC_ARCH_BITS == 64 \
+     && (defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)) ) \
+ || defined(DOXYGEN_RUNNING)
+# define VBOX_WITH_PAGE_SHARING
+#endif
+
 
 /** @defgroup   grp_vbox_param_mm  Memory Monitor Parameters
  * @ingroup grp_vbox_param
