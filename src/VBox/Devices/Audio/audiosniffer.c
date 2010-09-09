@@ -25,7 +25,6 @@
 #include <iprt/uuid.h>
 #include <iprt/string.h>
 #include <iprt/alloc.h>
-#include <iprt/file.h>
 
 #include "Builtins.h"
 #include "../../vl_vbox.h"
@@ -54,144 +53,9 @@ typedef struct _AUDIOSNIFFERSTATE
     /** Audio Sniffer connector interface */
     PPDMIAUDIOSNIFFERCONNECTOR   pDrv;
 
-    void                         *pCapFileCtx;
 } AUDIOSNIFFERSTATE;
 
 static AUDIOSNIFFERSTATE *g_pData = NULL;
-
-typedef struct {
-    RTFILE      capFile;
-    int         curSampPerSec;
-    int         curBitsPerSmp;
-    int         curChannels;
-    uint64_t    lastChunk;
-} AUDCAPSTATE;
-
-typedef struct {
-    uint16_t    wFormatTag;
-    uint16_t    nChannels;
-    uint32_t    nSamplesPerSec;
-    uint32_t    nAvgBytesPerSec;
-    uint16_t    nBlockAlign;
-    uint16_t    wBitsPerSample;
-} WAVEFMTHDR;
-
-static update_prev_chunk(AUDCAPSTATE *pState)
-{
-    size_t          written;
-    uint64_t        cur_ofs;
-    uint64_t        new_ofs;
-    uint32_t        chunk_len;
-
-    Assert(pState);
-    /* Write the size of the previous data chunk, if there was one. */
-    if (pState->lastChunk)
-    {
-        cur_ofs = RTFileTell(pState->capFile);
-        chunk_len = cur_ofs - pState->lastChunk - sizeof(chunk_len);
-        RTFileWriteAt(pState->capFile, pState->lastChunk, &chunk_len, sizeof(chunk_len), &written);
-        RTFileSeek(pState->capFile, 0, RTFILE_SEEK_END, &new_ofs);
-    }
-}
-
-static int create_capture_file(AUDCAPSTATE *pState, const char *fname)
-{
-    int             rc;
-    size_t          written;
-
-    Assert(pState);
-    memset(pState, 0, sizeof(*pState));
-    /* Create the file and write the RIFF header. */
-    rc = RTFileOpen(&pState->capFile, fname, 
-                    RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
-    rc = RTFileWrite(pState->capFile, "RIFFxxxx", 8, &written);
-    return rc;
-}
-
-static int close_capture_file(AUDCAPSTATE *pState)
-{
-    int             rc;
-    size_t          written;
-    uint64_t        cur_ofs;
-    uint32_t        riff_len;
-
-    Assert(pState);
-    update_prev_chunk(pState);
-
-    /* Update the global RIFF header. */
-    cur_ofs = RTFileTell(pState->capFile);
-    riff_len = cur_ofs - 8;
-    RTFileWriteAt(pState->capFile, 4, &riff_len, sizeof(riff_len), &written);
-    
-    rc = RTFileClose(pState->capFile);
-    return rc;
-}
-
-static inline int16_t clip_natural_int16_t(int64_t v)
-{
-    if (v >= 0x7f000000) {
-        return 0x7fff;
-    }
-    else if (v < -2147483648LL) {
-        return (-32767-1);
-    }
-    return  ((int16_t) (v >> (32 - 16)));
-}
-
-static int update_capture_file(AUDCAPSTATE *pState, HWVoiceOut *hw, st_sample_t *pSamples, unsigned cSamples)
-{
-    size_t          written;
-    uint16_t        buff[16384];
-    unsigned        i;
-    uint16_t        *dst_smp;
-
-    Assert(pState);
-    /* If the audio format changed, start a new WAVE chunk. */
-    if (   hw->info.freq != pState->curSampPerSec
-        || hw->info.bits != pState->curBitsPerSmp
-        || hw->info.nchannels != pState->curChannels)
-    {
-        WAVEFMTHDR      wave_hdr;
-        uint32_t        chunk_len;
-
-        update_prev_chunk(pState);
-
-        /* Build a new format ('fmt ') chunk. */
-        wave_hdr.wFormatTag      = 1;    /* Linear PCM */
-        wave_hdr.nChannels       = hw->info.nchannels;
-        wave_hdr.nSamplesPerSec  = hw->info.freq;
-        wave_hdr.nAvgBytesPerSec = hw->info.bytes_per_second;
-        wave_hdr.nBlockAlign     = 4;
-        wave_hdr.wBitsPerSample  = hw->info.bits;
-
-        pState->curSampPerSec = hw->info.freq;
-        pState->curBitsPerSmp = hw->info.bits;
-        pState->curChannels   = hw->info.nchannels;
-
-        /* Write the header to file. */
-        RTFileWrite(pState->capFile, "WAVEfmt ", 8, &written);
-        chunk_len = sizeof(wave_hdr);
-        RTFileWrite(pState->capFile, &chunk_len, sizeof(chunk_len), &written);
-        RTFileWrite(pState->capFile, &wave_hdr, sizeof(wave_hdr), &written);
-        /* Write data chunk marker with dummy length. */
-        RTFileWrite(pState->capFile, "dataxxxx", 8, &written);
-        pState->lastChunk = RTFileTell(pState->capFile) - 4;
-    }
-
-    /* Convert the samples from internal format. */
-    //@todo: use mixer engine helpers instead?
-    for (i = 0, dst_smp = buff; i < cSamples; ++i)
-    {
-        *dst_smp++ = clip_natural_int16_t(pSamples->l); 
-        *dst_smp++ = clip_natural_int16_t(pSamples->r);
-        ++pSamples;
-    }
-
-//    LogRel(("Audio: captured %d samples\n", cSamples));
-    /* Write the audio data. */
-    RTFileWrite(pState->capFile, buff, cSamples * (hw->info.bits / 8) * hw->info.nchannels, &written);
-    return VINF_SUCCESS;
-}
 
 /*
  * Public sniffer callbacks to be called from audio driver.
@@ -216,9 +80,6 @@ DECLCALLBACK(bool) sniffer_run_out (HWVoiceOut *hw, void *pvSamples, unsigned cS
     int  nChannels;
     int  bitsPerSample;
     bool fUnsigned;
-
-    if (g_pData)
-        update_capture_file(g_pData->pCapFileCtx, hw, pvSamples, cSamples);
 
     if (!g_pData || !g_pData->pDrv || !g_pData->fEnabled)
     {
@@ -275,11 +136,7 @@ static DECLCALLBACK(void *) iface_QueryInterface(PPDMIBASE pInterface, const cha
  */
 static DECLCALLBACK(int) audioSnifferR3Destruct(PPDMDEVINS pDevIns)
 {
-    AUDIOSNIFFERSTATE *pThis = PDMINS_2_DATA(pDevIns, AUDIOSNIFFERSTATE *);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-
-    close_capture_file(pThis->pCapFileCtx);
-    RTMemFree(pThis->pCapFileCtx);
 
     /* Zero the global pointer. */
     g_pData = NULL;
@@ -353,9 +210,6 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
          */
         g_pData = pThis;
     }
-
-    pThis->pCapFileCtx = RTMemAlloc(sizeof(AUDCAPSTATE));
-    create_capture_file(pThis->pCapFileCtx, "c:\\vbox.wav");
 
     return rc;
 }
