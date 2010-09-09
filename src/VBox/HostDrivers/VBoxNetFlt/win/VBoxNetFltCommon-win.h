@@ -365,6 +365,8 @@ typedef struct _ADAPT
     PNDIS_PACKET                   aReceivedPackets[MAX_RECEIVE_PACKET_ARRAY_SIZE];
     /** number of packets in the aReceivedPackets array*/
     ULONG                          cReceivedPacketCount;
+    /** flag indicating whether rx packet queueing is allowed */
+    BOOLEAN                        bIsReceivePacketQueueingDisabled;
     /** packet filter flags set by the upper protocols */
     ULONG                          fUpperProtocolSetFilter;
     /** packet filter flags set by the upper protocols */
