@@ -1103,7 +1103,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
  *          Currently true, but keep in mind!
  *
  * @todo    Clean this up! Most of it is (or should be) no longer necessary as we catch all page table accesses.
- *          Should only required when PGMPOOL_WITH_OPTIMIZED_DIRTY_PT is active (PAE or AMD64 (for now))
+ *          Should only be required when PGMPOOL_WITH_OPTIMIZED_DIRTY_PT is active (PAE or AMD64 (for now))
  */
 PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 {
