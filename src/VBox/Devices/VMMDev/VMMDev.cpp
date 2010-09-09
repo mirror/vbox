@@ -540,7 +540,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                if (pThis->fGuestCoreDump)
+                if (pThis->fGuestCoreDumpEnabled)
                 {
                     PVM pVM = PDMDevHlpGetVM(pDevIns);
                     pRequestHeader->rc = DBGFR3CoreWrite(pVM, NULL /* pszDumpPath */);
@@ -2897,7 +2897,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "HeapEnabled|"
                                   "RamSize|"
                                   "RZEnabled|"
-                                  "GuestCoreDump|"
+                                  "GuestCoreDumpEnabled|"
                                   "TestingEnabled"
                                   ,
                                   "");
@@ -2932,10 +2932,10 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"RZEnabled\" as a boolean"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "GuestCoreDump", &pThis->fGuestCoreDump, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "GuestCoreDumpEnabled", &pThis->fGuestCoreDumpEnabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed querying \"GuestCoreDump\" as a boolean"));
+                                N_("Configuration error: Failed querying \"GuestCoreDumpEnabled\" as a boolean"));
 
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     rc = CFGMR3QueryBoolDef(pCfg, "TestingEnabled", &pThis->fTestingEnabled, false);
