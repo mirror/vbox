@@ -28,6 +28,7 @@
 
 #include <iprt/assert.h>
 #include <VBox/types.h>
+#include <VBox/cpumctx.h>
 
 
 RT_C_DECLS_BEGIN
