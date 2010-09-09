@@ -41,6 +41,7 @@ r3_only_hdrs := \
 	VBox/dbus.h \
 	VBox/uvm.h \
 	VBox/vscsi.h \
+	iprt/alloca.h \
 	iprt/tcp.h \
 	iprt/localipc.h \
 	iprt/linux/sysfs.h \
@@ -73,7 +74,6 @@ hdrs.rc := $(filter-out \
 	iprt/thread.h \
 	iprt/mem.h \
 	iprt/alloc.h \
-	iprt/alloca.h \
 	$(r3_cpp_hdrs) \
 	$(r3_only_hdrs) \
 	, $(hdrs))
