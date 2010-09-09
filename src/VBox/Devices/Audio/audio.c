@@ -142,7 +142,7 @@ static struct {
         }
     },
 
-    { 100 },                    /* period */
+    { 200 },                    /* frequency (in Hz) */
     0,                          /* plive */
 };
 
@@ -1525,8 +1525,8 @@ static struct audio_option audio_options[] = {
      "Number of voices for ADC", NULL, 0},
 
     /* Misc */
-    {"TIMER_PERIOD", AUD_OPT_INT, &conf.period.hz,
-     "Timer period in HZ (0 - use lowest possible)", NULL, 0},
+    {"TIMER_FREQ", AUD_OPT_INT, &conf.period.hz,
+     "Timer frequency in Hz (0 - use lowest possible)", NULL, 0},
 
     {"PLIVE", AUD_OPT_BOOL, &conf.plive,
      "(undocumented)", NULL, 0},
