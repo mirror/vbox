@@ -1085,10 +1085,14 @@ typedef struct SUPSEMOP
 
 /** @} */
 
-/** @name SUP_IOCTL_VT_CAPS Input.
+/** @name SUP_IOCTL_VT_CAPS
+ * Get the VT-x/AMD-V capabilities.
+ *
+ * @todo Intended for main, which means we need to relax the privilege requires
+ *       when accessing certain vboxdrv functions.
+ *
  * @{
  */
-/** Free contious memory. */
 #define SUP_IOCTL_VT_CAPS                               SUP_CTL_CODE_SIZE(26, SUP_IOCTL_VT_CAPS_SIZE)
 #define SUP_IOCTL_VT_CAPS_SIZE                          sizeof(SUPVTCAPS)
 #define SUP_IOCTL_VT_CAPS_SIZE_IN                       sizeof(SUPREQHDR)

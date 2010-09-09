@@ -953,6 +953,8 @@ SUPR3DECL(int) SUPR3QueryVTxSupported(void);
  *
  * @returns VINF_SUCCESS if supported, error code indicating why if not.
  * @param   pfCaps      Pointer to capability dword (out).
+ * @todo Intended for main, which means we need to relax the privilege requires
+ *       when accessing certain vboxdrv functions.
  */
 SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pfCaps);
 
