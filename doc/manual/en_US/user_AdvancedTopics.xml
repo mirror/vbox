@@ -1339,6 +1339,57 @@ name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
     "vboxnet0" interface it creates by default.</para>
   </sect1>
 
+  <sect1 id="addhostonlysolaris">
+    <title>Configuring VirtualBox CoreDumper on Solaris hosts</title>
+
+    <para>VirtualBox is capable of producing its own core files when things go
+    wrong and for more extensive debugging. Currently this is only available
+    on Solaris hosts.</para>
+
+    <para>The VirtualBox CoreDumper can be enabled using the following
+    command:</para>
+
+    <para><screen>VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpEnabled 1</screen></para>
+
+    <para>You can specify which directory to use for core dumps with this
+    command:</para>
+
+    <para><screen>VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpDir &lt;path-to-directory&gt;</screen>Make
+    sure the directory you specify is on a volume with sufficient free space
+    and that the VirtualBox process has sufficient permissions to write files
+    to this directory. If you skip this command and don't specify any core
+    dump directory, the current directory of the VirtualBox executable will be
+    used (which would most likely fail when writing cores as they are
+    protected with root permissions). It is recommended you explicity set a
+    core dump directory.</para>
+
+    <para>Next you need to specify when the VirtualBox CoreDumper should be
+    triggered. You can replace the system core dumper, or ask it to setup it's
+    core dumper for live, running processes without terminating the VM. This
+    is done using the following commands:</para>
+
+    <para><screen>VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpReplaceSystemDump 1
+VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
+    least one of the above two commands will have to be provided if you have
+    enabled the VirtualBox CoreDumper.</para>
+
+    <para>Setting <computeroutput>CoreDumpReplaceSystemDump</computeroutput>
+    overrides the host's core dumping mechanism and in the event of any crash
+    only the VirtualBox CoreDumper would be produced a core file.</para>
+
+    <para>Setting <computeroutput>CoreDumpLive</computeroutput> setups the VM
+    to produce cores whenever the VM receives a
+    <computeroutput>SIGUSR2</computeroutput> signal. After producing the core
+    file, the VM will not be terminated and will continue to run. You can thus
+    take cores of the VM process anytime using:</para>
+
+    <para><screen>kill -s SIGUSR2 &lt;VM-process-id&gt;</screen></para>
+
+    <para>Core files produced by the VirtualBox CoreDumper are of the form
+    <computeroutput>core.vb.&lt;ProcessName&gt;.&lt;ProcessID&gt;</computeroutput>,
+    e.g.<computeroutput>core.vb.VBoxHeadless.11321</computeroutput>.</para>
+  </sect1>
+
   <sect1 id="guitweaks">
     <title>Locking down the GUI</title>
 
