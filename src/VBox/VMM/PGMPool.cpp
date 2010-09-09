@@ -753,15 +753,15 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
     /* Note: we must do this *after* clearing all page references and shadow page tables as there might be stale references to
      *       recently removed MMIO ranges around that might otherwise end up asserting in pgmPoolTracDerefGCPhysHint
      */
-    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
     {
         PPGMPOOLPAGE pPage;
         unsigned     idxPage;
 
-        if (pPool->aIdxDirtyPages[i] == NIL_PGMPOOL_IDX)
+        if (pPool->aDirtyPages[i].uIdx == NIL_PGMPOOL_IDX)
             continue;
 
-        idxPage = pPool->aIdxDirtyPages[i];
+        idxPage = pPool->aDirtyPages[i].uIdx;
         AssertRelease(idxPage != NIL_PGMPOOL_IDX);
         pPage = &pPool->aPages[idxPage];
         Assert(pPage->idx == idxPage);
@@ -776,7 +776,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
         Assert(rc == VINF_SUCCESS);
         pPage->fDirty = false;
 
-        pPool->aIdxDirtyPages[i] = NIL_PGMPOOL_IDX;
+        pPool->aDirtyPages[i].uIdx = NIL_PGMPOOL_IDX;
     }
 
     /* Clear all dirty pages. */

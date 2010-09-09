@@ -2172,8 +2172,12 @@ typedef struct PGMPOOL
     /* Number of active dirty pages. */
     uint32_t                    cDirtyPages;
     /* Array of current dirty pgm pool page indices. */
-    uint16_t                    aIdxDirtyPages[16];
-    uint64_t                    aDirtyPages[16][512];
+    struct
+    {
+        uint16_t                    uIdx;
+        uint16_t                    Alignment[3];
+        uint64_t                    aPage[512];
+    } aDirtyPages[16];
     /** The number of pages currently in use. */
     uint16_t                    cUsedPages;
 #ifdef VBOX_WITH_STATISTICS
@@ -3827,6 +3831,7 @@ void            pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
 void            pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolResetDirtyPages(PVM pVM);
+void            pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage);
 
 int             pgmR3ExitShadowModeBeforePoolFlush(PVM pVM, PVMCPU pVCpu);
 int             pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu);

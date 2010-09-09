@@ -1487,11 +1487,11 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     PPGMPOOLPAGE pPage;
     unsigned     idxPage;
 
-    Assert(idxSlot < RT_ELEMENTS(pPool->aIdxDirtyPages));
-    if (pPool->aIdxDirtyPages[idxSlot] == NIL_PGMPOOL_IDX)
+    Assert(idxSlot < RT_ELEMENTS(pPool->aDirtyPages));
+    if (pPool->aDirtyPages[idxSlot].uIdx == NIL_PGMPOOL_IDX)
         return;
 
-    idxPage = pPool->aIdxDirtyPages[idxSlot];
+    idxPage = pPool->aDirtyPages[idxSlot].uIdx;
     AssertRelease(idxPage != NIL_PGMPOOL_IDX);
     pPage = &pPool->aPages[idxPage];
     Assert(pPage->idx == idxPage);
@@ -1529,7 +1529,7 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     rc = PGM_GCPHYS_2_PTR(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
     bool  fFlush;
     unsigned cChanges = pgmPoolTrackFlushPTPaePae(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PTPAE)pvGst,
-                                                  (PCX86PTPAE)&pPool->aDirtyPages[idxSlot][0], fAllowRemoval, &fFlush);
+                                                  (PCX86PTPAE)&pPool->aDirtyPages[idxSlot].aPage[0], fAllowRemoval, &fFlush);
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvShw);
     STAM_PROFILE_STOP(&pPool->StatTrackDeref,a);
@@ -1543,12 +1543,12 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
         pPage->cModifications = RT_MAX(1, pPage->cModifications / 2);
 
     STAM_COUNTER_INC(&pPool->StatResetDirtyPages);
-    if (pPool->cDirtyPages == RT_ELEMENTS(pPool->aIdxDirtyPages))
+    if (pPool->cDirtyPages == RT_ELEMENTS(pPool->aDirtyPages))
         pPool->idxFreeDirtyPage = idxSlot;
 
     pPool->cDirtyPages--;
-    pPool->aIdxDirtyPages[idxSlot] = NIL_PGMPOOL_IDX;
-    Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aIdxDirtyPages));
+    pPool->aDirtyPages[idxSlot].uIdx = NIL_PGMPOOL_IDX;
+    Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aDirtyPages));
     if (fFlush)
     {
         Assert(fAllowRemoval);
@@ -1577,20 +1577,20 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     unsigned idxFree;
 
     Assert(PGMIsLocked(pVM));
-    AssertCompile(RT_ELEMENTS(pPool->aIdxDirtyPages) == 8 || RT_ELEMENTS(pPool->aIdxDirtyPages) == 16);
+    AssertCompile(RT_ELEMENTS(pPool->aDirtyPages) == 8 || RT_ELEMENTS(pPool->aDirtyPages) == 16);
     Assert(!pPage->fDirty);
 
     idxFree = pPool->idxFreeDirtyPage;
-    Assert(idxFree < RT_ELEMENTS(pPool->aIdxDirtyPages));
+    Assert(idxFree < RT_ELEMENTS(pPool->aDirtyPages));
     Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX && pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
 
-    if (pPool->cDirtyPages >= RT_ELEMENTS(pPool->aIdxDirtyPages))
+    if (pPool->cDirtyPages >= RT_ELEMENTS(pPool->aDirtyPages))
     {
         STAM_COUNTER_INC(&pPool->StatDirtyPageOverFlowFlush);
         pgmPoolFlushDirtyPage(pVM, pPool, idxFree, true /* allow removal of reused page tables*/);
     }
-    Assert(pPool->cDirtyPages < RT_ELEMENTS(pPool->aIdxDirtyPages));
-    AssertMsg(pPool->aIdxDirtyPages[idxFree] == NIL_PGMPOOL_IDX, ("idxFree=%d cDirtyPages=%d\n", idxFree, pPool->cDirtyPages));
+    Assert(pPool->cDirtyPages < RT_ELEMENTS(pPool->aDirtyPages));
+    AssertMsg(pPool->aDirtyPages[idxFree].uIdx == NIL_PGMPOOL_IDX, ("idxFree=%d cDirtyPages=%d\n", idxFree, pPool->cDirtyPages));
 
     Log(("Add dirty page %RGp (slot=%d)\n", pPage->GCPhys, idxFree));
 
@@ -1601,7 +1601,7 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      */
     void *pvGst;
     int   rc  = PGM_GCPHYS_2_PTR(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
-    memcpy(&pPool->aDirtyPages[idxFree][0], pvGst, PAGE_SIZE);
+    memcpy(&pPool->aDirtyPages[idxFree].aPage[0], pvGst, PAGE_SIZE);
 #ifdef VBOX_STRICT
     void *pvShw = PGMPOOL_PAGE_2_PTR(pVM, pPage);
     pgmPoolTrackCheckPTPaePae(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PTPAE)pvGst);
@@ -1610,29 +1610,29 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
 
     STAM_COUNTER_INC(&pPool->StatDirtyPage);
-    pPage->fDirty                  = true;
-    pPage->idxDirty                = idxFree;
-    pPool->aIdxDirtyPages[idxFree] = pPage->idx;
+    pPage->fDirty                    = true;
+    pPage->idxDirty                  = idxFree;
+    pPool->aDirtyPages[idxFree].uIdx = pPage->idx;
     pPool->cDirtyPages++;
 
-    pPool->idxFreeDirtyPage        = (pPool->idxFreeDirtyPage + 1) & (RT_ELEMENTS(pPool->aIdxDirtyPages) - 1);
-    if (    pPool->cDirtyPages < RT_ELEMENTS(pPool->aIdxDirtyPages)
-        &&  pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] != NIL_PGMPOOL_IDX)
+    pPool->idxFreeDirtyPage        = (pPool->idxFreeDirtyPage + 1) & (RT_ELEMENTS(pPool->aDirtyPages) - 1);
+    if (    pPool->cDirtyPages < RT_ELEMENTS(pPool->aDirtyPages)
+        &&  pPool->aDirtyPages[pPool->idxFreeDirtyPage].uIdx != NIL_PGMPOOL_IDX)
     {
         unsigned i;
-        for (i = 1; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+        for (i = 1; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
         {
-            idxFree = (pPool->idxFreeDirtyPage + i) & (RT_ELEMENTS(pPool->aIdxDirtyPages) - 1);
-            if (pPool->aIdxDirtyPages[idxFree] == NIL_PGMPOOL_IDX)
+            idxFree = (pPool->idxFreeDirtyPage + i) & (RT_ELEMENTS(pPool->aDirtyPages) - 1);
+            if (pPool->aDirtyPages[idxFree].uIdx == NIL_PGMPOOL_IDX)
             {
                 pPool->idxFreeDirtyPage = idxFree;
                 break;
             }
         }
-        Assert(i != RT_ELEMENTS(pPool->aIdxDirtyPages));
+        Assert(i != RT_ELEMENTS(pPool->aDirtyPages));
     }
 
-    Assert(pPool->cDirtyPages == RT_ELEMENTS(pPool->aIdxDirtyPages) || pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] == NIL_PGMPOOL_IDX);
+    Assert(pPool->cDirtyPages == RT_ELEMENTS(pPool->aDirtyPages) || pPool->aDirtyPages[pPool->idxFreeDirtyPage].uIdx == NIL_PGMPOOL_IDX);
     return;
 }
 # endif /* !IN_RING3 */
@@ -1653,12 +1653,12 @@ bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
 
     GCPhys = GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
-    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
     {
-        if (pPool->aIdxDirtyPages[i] != NIL_PGMPOOL_IDX)
+        if (pPool->aDirtyPages[i].uIdx != NIL_PGMPOOL_IDX)
         {
             PPGMPOOLPAGE pPage;
-            unsigned     idxPage = pPool->aIdxDirtyPages[i];
+            unsigned     idxPage = pPool->aDirtyPages[i].uIdx;
 
             pPage = &pPool->aPages[idxPage];
             if (pPage->GCPhys == GCPhys)
@@ -1677,33 +1677,54 @@ void pgmPoolResetDirtyPages(PVM pVM)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     Assert(PGMIsLocked(pVM));
-    Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aIdxDirtyPages));
+    Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aDirtyPages));
 
     if (!pPool->cDirtyPages)
         return;
 
     Log(("pgmPoolResetDirtyPages\n"));
-    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
         pgmPoolFlushDirtyPage(pVM, pPool, i, true /* allow removal of reused page tables*/);
 
     pPool->idxFreeDirtyPage = 0;
-    if (    pPool->cDirtyPages != RT_ELEMENTS(pPool->aIdxDirtyPages)
-        &&  pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] != NIL_PGMPOOL_IDX)
+    if (    pPool->cDirtyPages != RT_ELEMENTS(pPool->aDirtyPages)
+        &&  pPool->aDirtyPages[pPool->idxFreeDirtyPage].uIdx != NIL_PGMPOOL_IDX)
     {
         unsigned i;
-        for (i = 1; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+        for (i = 1; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
         {
-            if (pPool->aIdxDirtyPages[i] == NIL_PGMPOOL_IDX)
+            if (pPool->aDirtyPages[i].uIdx == NIL_PGMPOOL_IDX)
             {
                 pPool->idxFreeDirtyPage = i;
                 break;
             }
         }
-        AssertMsg(i != RT_ELEMENTS(pPool->aIdxDirtyPages), ("cDirtyPages %d", pPool->cDirtyPages));
+        AssertMsg(i != RT_ELEMENTS(pPool->aDirtyPages), ("cDirtyPages %d", pPool->cDirtyPages));
     }
 
-    Assert(pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] == NIL_PGMPOOL_IDX || pPool->cDirtyPages == RT_ELEMENTS(pPool->aIdxDirtyPages));
+    Assert(pPool->aDirtyPages[pPool->idxFreeDirtyPage].uIdx == NIL_PGMPOOL_IDX || pPool->cDirtyPages == RT_ELEMENTS(pPool->aDirtyPages));
     return;
+}
+
+/**
+ * Invalidate the PT entry for the specified page
+ *
+ * @param   pVM             VM Handle.
+ * @param   GCPtrPage       Guest page to invalidate
+ */
+void pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage)
+{
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    Assert(PGMIsLocked(pVM));
+    Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aDirtyPages));
+
+    if (!pPool->cDirtyPages)
+        return;
+
+    Log(("pgmPoolResetDirtyPage %RGv\n", GCPtrPage));
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
+    {
+    }
 }
 
 /**
@@ -1716,19 +1737,19 @@ void pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     Assert(PGMIsLocked(pVM));
-    Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aIdxDirtyPages));
-    unsigned idxDirtyPage = RT_ELEMENTS(pPool->aIdxDirtyPages);
+    Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aDirtyPages));
+    unsigned idxDirtyPage = RT_ELEMENTS(pPool->aDirtyPages);
 
     if (!pPool->cDirtyPages)
         return;
 
     GCPhysPT = GCPhysPT & ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
-    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
     {
-        if (pPool->aIdxDirtyPages[i] != NIL_PGMPOOL_IDX)
+        if (pPool->aDirtyPages[i].uIdx != NIL_PGMPOOL_IDX)
         {
-            unsigned     idxPage = pPool->aIdxDirtyPages[i];
+            unsigned     idxPage = pPool->aDirtyPages[i].uIdx;
 
             PPGMPOOLPAGE pPage = &pPool->aPages[idxPage];
             if (pPage->GCPhys == GCPhysPT)
@@ -1739,22 +1760,22 @@ void pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT)
         }
     }
 
-    if (idxDirtyPage != RT_ELEMENTS(pPool->aIdxDirtyPages))
+    if (idxDirtyPage != RT_ELEMENTS(pPool->aDirtyPages))
     {
         pgmPoolFlushDirtyPage(pVM, pPool, idxDirtyPage, true /* allow removal of reused page tables*/);
-        if (    pPool->cDirtyPages != RT_ELEMENTS(pPool->aIdxDirtyPages)
-            &&  pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] != NIL_PGMPOOL_IDX)
+        if (    pPool->cDirtyPages != RT_ELEMENTS(pPool->aDirtyPages)
+            &&  pPool->aDirtyPages[pPool->idxFreeDirtyPage].uIdx != NIL_PGMPOOL_IDX)
         {
             unsigned i;
-            for (i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+            for (i = 0; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
             {
-                if (pPool->aIdxDirtyPages[i] == NIL_PGMPOOL_IDX)
+                if (pPool->aDirtyPages[i].uIdx == NIL_PGMPOOL_IDX)
                 {
                     pPool->idxFreeDirtyPage = i;
                     break;
                 }
             }
-            AssertMsg(i != RT_ELEMENTS(pPool->aIdxDirtyPages), ("cDirtyPages %d", pPool->cDirtyPages));
+            AssertMsg(i != RT_ELEMENTS(pPool->aDirtyPages), ("cDirtyPages %d", pPool->cDirtyPages));
         }
     }
 }
@@ -5203,8 +5224,8 @@ void pgmR3PoolReset(PVM pVM)
     /* Clear all dirty pages. */
     pPool->idxFreeDirtyPage = 0;
     pPool->cDirtyPages      = 0;
-    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
-        pPool->aIdxDirtyPages[i] = NIL_PGMPOOL_IDX;
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
+        pPool->aDirtyPages[i].uIdx = NIL_PGMPOOL_IDX;
 #endif
 
     /*

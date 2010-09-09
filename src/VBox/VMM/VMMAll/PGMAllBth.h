@@ -1103,6 +1103,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
  *          Currently true, but keep in mind!
  *
  * @todo    Clean this up! Most of it is (or should be) no longer necessary as we catch all page table accesses.
+ *          Should only required when PGMPOOL_WITH_OPTIMIZED_DIRTY_PT is active (PAE or AMD64 (for now))
  */
 PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 {
@@ -1118,6 +1119,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     LogFlow(("InvalidatePage %RGv\n", GCPtrPage));
 
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    /** @todo this shouldn't be necessary. */
     if (pPool->cDirtyPages)
         pgmPoolResetDirtyPages(pVM);
 # endif
@@ -1565,23 +1567,24 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint64_t
 DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc,
                                               PPGMPOOLPAGE pShwPage, unsigned iPTDst)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
+# if    defined(PGMPOOL_WITH_OPTIMIZED_DIRTY_PT) \
+     && PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) \
+     && (PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64)
+    if (pShwPage->fDirty)
+    {
+        PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+        PX86PTPAE pGstPT;
+
+        pGstPT = (PX86PTPAE)&pPool->aDirtyPages[pShwPage->idxDirty].aPage[0];
+        pGstPT->a[iPTDst].u = PteSrc.u;
+    }
+# endif
+
     if (   PteSrc.n.u1Present
         && GST_IS_PTE_VALID(pVCpu, PteSrc))
     {
-        PVM pVM = pVCpu->CTX_SUFF(pVM);
-
-# if defined(PGMPOOL_WITH_OPTIMIZED_DIRTY_PT) \
-  && PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) \
-  && (PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64)
-        if (pShwPage->fDirty)
-        {
-            PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-            PX86PTPAE pGstPT;
-
-            pGstPT = (PX86PTPAE)&pPool->aDirtyPages[pShwPage->idxDirty][0];
-            pGstPT->a[iPTDst].u = PteSrc.u;
-        }
-# endif
         /*
          * Find the ram range.
          */
