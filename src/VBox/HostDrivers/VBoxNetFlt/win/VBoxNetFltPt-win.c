@@ -327,6 +327,8 @@ vboxNetFltWinPtDoUnbinding(PADAPT pAdapt, bool bOnUnbind)
         NumberOfPackets = pAdapt->cReceivedPacketCount;
 
         pAdapt->cReceivedPacketCount = 0;
+        /* reset the value in case */
+        pAdapt->bIsReceivePacketQueueingDisabled = FALSE;
         ReturnPackets = TRUE;
     }
 
@@ -875,7 +877,8 @@ vboxNetFltWinPtQueueReceivedPacket(
          *  with resources, do the indicatin now.
          */
 
-        if ((pAdapt->cReceivedPacketCount == MAX_RECEIVE_PACKET_ARRAY_SIZE) || DoIndicate || bReturn)
+        if ((pAdapt->cReceivedPacketCount == MAX_RECEIVE_PACKET_ARRAY_SIZE) || DoIndicate || bReturn
+                || pAdapt->bIsReceivePacketQueueingDisabled)
         {
             NdisMoveMemory(PacketArray,
                            pAdapt->aReceivedPackets,
@@ -890,6 +893,7 @@ vboxNetFltWinPtQueueReceivedPacket(
             if(!bReturn)
             {
                 DoIndicate = TRUE;
+                pAdapt->bIsReceivePacketQueueingDisabled = TRUE;
             }
         }
         RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
@@ -899,7 +903,22 @@ vboxNetFltWinPtQueueReceivedPacket(
     {
         if(DoIndicate)
         {
+            /* the tcp stack can send ACK packets right in the context of its PtReceive for this packet,
+             * and thoose (tcp-sent) packets can be looped back again.
+             * If this happens there is a possibility that new RX packets are received by us
+             * after we do this NdisMIndicateReceivePacket and before we do a new NdisMIndicateReceivePacket
+             * for the looped back tcp-sent packet.
+             * If we queue those newly received packets and indicate them together with the looped back packet
+             * with the latter NdisMIndicateReceivePacket, we may end up tcp stack sending ACKs in the context of its PtReceive again.
+             * Thus this may lead to stack overflows on a heavy network loads.
+             * To prevent this we disable the RX packet queuing when we do NdisMIndicateReceivePacket here,
+             * thus if new packets arrive to us in another thread, we simply indicate them up instead of queuing them.
+             * */
+            Assert(pAdapt->bIsReceivePacketQueueingDisabled);
             NdisMIndicateReceivePacket(pAdapt->hMiniportHandle, PacketArray, NumberOfPackets);
+            RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
+            pAdapt->bIsReceivePacketQueueingDisabled = FALSE;
+            RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
         }
     }
     else
