@@ -745,6 +745,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         pVM->hwaccm.s.fTRPPatchingAllowed = false;
     }
 
+    bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
     if (pVM->hwaccm.s.vmx.fSupported)
     {
         Log(("pVM->hwaccm.s.vmx.fSupported = %d\n", pVM->hwaccm.s.vmx.fSupported));
@@ -1338,6 +1339,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     }
     if (pVM->fHWACCMEnabled)
         LogRel(("HWACCM:    VT-x/AMD-V init method: %s\n", (pVM->hwaccm.s.fGlobalInit) ? "GLOBAL" : "LOCAL"));
+    RTLogRelSetBuffering(fOldBuffered);
     return VINF_SUCCESS;
 }
 
