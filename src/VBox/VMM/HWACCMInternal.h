@@ -334,7 +334,13 @@ typedef struct HWACCM
 
         /** Set if unrestricted guest execution is allowed (real and protected mode without paging). */
         bool                        fUnrestrictedGuest;
-        bool                        uAlignment[3];
+
+        /** Whether we're using the preemption timer or not. */
+        bool                        fUsePreemptTimer;
+        /** The shift mask employed by the VMX-Preemption timer. */
+        uint8_t                     cPreemptTimerShift;
+
+        bool                        uAlignment[1];
 
         /** Virtual address of the TSS page used for real mode emulation. */
         R3PTRTYPE(PVBOXTSS)         pRealModeTSS;

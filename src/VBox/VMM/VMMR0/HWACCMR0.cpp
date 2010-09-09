@@ -48,6 +48,7 @@ static DECLCALLBACK(void) hwaccmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1
 static DECLCALLBACK(void) hwaccmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static              int   hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pidCpu);
+static bool               hwaccmR0IsSubjectToVmxPreemptionTimerErratum(void);
 static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser);
 
 /*******************************************************************************
@@ -79,6 +80,10 @@ static struct
         bool                        fSupported;
         /** Whether we're using SUPR0EnableVTx or not. */
         bool                        fUsingSUPR0EnableVTx;
+        /** Whether we're using the preemption timer or not. */
+        bool                        fUsePreemptTimer;
+        /** The shift mask employed by the VMX-Preemption timer. */
+        uint8_t                     cPreemptTimerShift;
 
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    hostCR4;
@@ -309,6 +314,19 @@ VMMR0DECL(int) HWACCMR0Init(void)
                             {
                                 HWACCMR0Globals.vmx.fSupported = true;
                                 VMXDisable();
+
+                                /*
+                                 * Check for the VMX-Preemption Timer and adjust for the
+                                 * "VMX-Preemption Timer Does Not Count Down at the Rate Specified" erratum.
+                                 */
+                                if (  HWACCMR0Globals.vmx.msr.vmx_pin_ctls.n.allowed1
+                                    & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
+                                {
+                                    HWACCMR0Globals.vmx.fUsePreemptTimer   = true;
+                                    HWACCMR0Globals.vmx.cPreemptTimerShift = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(HWACCMR0Globals.vmx.msr.vmx_misc);
+                                    if (hwaccmR0IsSubjectToVmxPreemptionTimerErratum())
+                                        HWACCMR0Globals.vmx.cPreemptTimerShift = 0; /* This is about right most of the time here. */
+                                }
                             }
 
                             /* Restore CR4 again; don't leave the X86_CR4_VMXE flag set if it wasn't so before (some software could incorrectly think it's in VMX mode) */
@@ -453,6 +471,52 @@ static int hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pid
     }
     return rc;
 }
+
+
+/**
+ * Checks if the CPU is subject to the "VMX-Preemption Timer Does Not Count
+ * Down at the Rate Specified" erratum.
+ *
+ * Errata names and related steppings:
+ *      - BA86   - D0.
+ *      - AAX65  - C2.
+ *      - AAU65  - C2, K0.
+ *      - AAO95  - B1.
+ *      - AAT59  - C2.
+ *      - AAK139 - D0.
+ *      - AAM126 - C0, C1, D0.
+ *      - AAN92  - B1.
+ *      - AAJ124 - C0, D0.
+ *
+ *      - AAP86  - B1.
+ *
+ * Steppings: B1, C0, C1, C2, D0, K0.
+ *
+ * @returns true if subject to it, false if not.
+ */
+static bool hwaccmR0IsSubjectToVmxPreemptionTimerErratum(void)
+{
+    uint32_t u = ASMCpuId_EAX(1);
+    u &= ~(RT_BIT_32(14) | RT_BIT_32(15) | RT_BIT_32(28) | RT_BIT_32(29) | RT_BIT_32(30) | RT_BIT_32(31));
+    if (   u == UINT32_C(0x000206E6) /* 323344.pdf - BA86   - D0 - Intel Xeon Processor 7500 Series */
+        || u == UINT32_C(0x00020652) /* 323056.pdf - AAX65  - C2 - Intel Xeon Processor L3406 */
+        || u == UINT32_C(0x00020652) /* 322814.pdf - AAT59  - C2 - Intel CoreTM i7-600, i5-500, i5-400 and i3-300 Mobile Processor Series */
+        || u == UINT32_C(0x00020652) /* 322911.pdf - AAU65  - C2 - Intel CoreTM i5-600, i3-500 Desktop Processor Series and Intel Pentium Processor G6950 */
+        || u == UINT32_C(0x00020655) /* 322911.pdf - AAU65  - K0 - Intel CoreTM i5-600, i3-500 Desktop Processor Series and Intel Pentium Processor G6950 */
+        || u == UINT32_C(0x000106E5) /* 322373.pdf - AAO95  - B1 - Intel Xeon Processor 3400 Series */
+        || u == UINT32_C(0x000106E5) /* 322166.pdf - AAN92  - B1 - Intel CoreTM i7-800 and i5-700 Desktop Processor Series */
+        || u == UINT32_C(0x000106E5) /* 320767.pdf - AAP86  - B1 - Intel Core i7-900 Mobile Processor Extreme Edition Series, Intel Core i7-800 and i7-700 Mobile Processor Series */
+        || u == UINT32_C(0x000106A0) /*?321333.pdf - AAM126 - C0 - Intel Xeon Processor 3500 Series Specification */
+        || u == UINT32_C(0x000106A1) /*?321333.pdf - AAM126 - C1 - Intel Xeon Processor 3500 Series Specification */
+        || u == UINT32_C(0x000106A4) /* 320836.pdf - AAJ124 - C0 - Intel Core i7-900 Desktop Processor Extreme Edition Series and Intel Core i7-900 Desktop Processor Series */
+        || u == UINT32_C(0x000106A5) /* 321333.pdf - AAM126 - D0 - Intel Xeon Processor 3500 Series Specification */
+        || u == UINT32_C(0x000106A5) /* 321324.pdf - AAK139 - D0 - Intel Xeon Processor 5500 Series Specification */
+        || u == UINT32_C(0x000106A5) /* 320836.pdf - AAJ124 - D0 - Intel Core i7-900 Desktop Processor Extreme Edition Series and Intel Core i7-900 Desktop Processor Series */
+        )
+        return true;
+    return false;
+}
+
 
 /**
  * Does global Ring-0 HWACCM termination.
@@ -898,6 +962,8 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     pVM->hwaccm.s.vmx.fSupported            = HWACCMR0Globals.vmx.fSupported;
     pVM->hwaccm.s.svm.fSupported            = HWACCMR0Globals.svm.fSupported;
 
+    pVM->hwaccm.s.vmx.fUsePreemptTimer      = HWACCMR0Globals.vmx.fUsePreemptTimer;
+    pVM->hwaccm.s.vmx.cPreemptTimerShift    = HWACCMR0Globals.vmx.cPreemptTimerShift;
     pVM->hwaccm.s.vmx.msr.feature_ctrl      = HWACCMR0Globals.vmx.msr.feature_ctrl;
     pVM->hwaccm.s.vmx.hostCR4               = HWACCMR0Globals.vmx.hostCR4;
     pVM->hwaccm.s.vmx.hostEFER              = HWACCMR0Globals.vmx.hostEFER;
