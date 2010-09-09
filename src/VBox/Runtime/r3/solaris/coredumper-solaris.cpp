@@ -2259,6 +2259,7 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
     /*
      * Validate flags.
      */
+    AssertReturn(fFlags, VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & ~(  RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP
                               | RTCOREDUMPER_FLAGS_LIVE_CORE)),
                  VERR_INVALID_PARAMETER);
