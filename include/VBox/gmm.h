@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2007-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,8 +30,9 @@
 #include <VBox/gvmm.h>
 #include <VBox/sup.h>
 #include <VBox/VMMDev.h> /* for VMMDEVSHAREDREGIONDESC */
-#include <VBox/feature.h>
+#include <VBox/param.h>
 #include <iprt/avl.h>
+
 RT_C_DECLS_BEGIN
 
 /** @defgroup   grp_gmm     GMM - The Global Memory Manager

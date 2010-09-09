@@ -1,5 +1,5 @@
 /** @file
- * FTM - Fault Tolerance Manager
+ * FTM - Fault Tolerance Manager. (VMM)
  */
 
 /*
