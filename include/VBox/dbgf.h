@@ -1365,7 +1365,6 @@ VMMR3DECL(int)      DBGFR3OSDeregister(PVM pVM, PCDBGFOSREG pReg);
 VMMR3DECL(int)      DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName);
 VMMR3DECL(int)      DBGFR3OSQueryNameAndVersion(PVM pVM, char *pszName, size_t cchName, char *pszVersion, size_t cchVersion);
 VMMR3DECL(void *)   DBGFR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf);
-VMMR3DECL(int)      DBGFR3CoreWrite(PVM pVM, const char *pszDumpPath);
 
 /** @} */
 

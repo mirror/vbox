@@ -310,27 +310,6 @@ typedef struct DBGFCPU
 typedef DBGFCPU *PDBGFCPU;
 
 
-/** DBGCORECOREDESCRIPTOR::u32Magic. */
-#define DBGFCORE_MAGIC      0xc01ac0de
-
-/**
- * The DBGF Core descriptor.
- */
-typedef struct DBGFCOREDESCRIPTOR
-{
-    /** The core file magic (DBGFCORE_MAGIC) */
-    uint32_t                u32Magic;
-    /** VirtualBox version. */
-    uint64_t                VBoxVersion;
-    /** VirtualBox revision. */
-    uint64_t                VBoxRevision;
-    /** Number of CPUs. */
-    uint32_t                cCpus;
-} DBGFCOREDESCRIPTOR;
-/** Pointer to DBGFCOREDESCRIPTOR data. */
-typedef DBGFCOREDESCRIPTOR  *PDBGFCOREDESCRIPTOR;
-
-
 int  dbgfR3AsInit(PVM pVM);
 void dbgfR3AsTerm(PVM pVM);
 void dbgfR3AsRelocate(PVM pVM, RTGCUINTPTR offDelta);
