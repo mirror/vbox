@@ -145,3 +145,21 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args)
 }
 RT_EXPORT_SYMBOL(RTLogRelPrintfV);
 
+
+/**
+ * Changes the buffering setting of the default release logger.
+ *
+ * This can be used for optimizing longish logging sequences.
+ *
+ * @returns The old state.
+ * @param   fBuffered       The new state.
+ */
+RTDECL(bool) RTLogRelSetBuffering(bool fBuffered)
+{
+    PRTLOGGER pLogger = RTLogRelDefaultInstance();
+    if (pLogger)
+        return RTLogSetBuffering(pLogger, fBuffered);
+    return false;
+}
+RT_EXPORT_SYMBOL(RTLogRelSetBuffering);
+
