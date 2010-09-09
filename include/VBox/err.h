@@ -1254,6 +1254,12 @@
 #define VERR_VD_NOT_ENOUGH_METADATA                 (-3272)
 /** Halt the current I/O context until further notification from the backend. */
 #define VERR_VD_IOCTX_HALT                          (-3273)
+/** The disk has a cache attached alreay. */
+#define VERR_VD_CACHE_ALREADY_EXISTS                (-3274)
+/** There is no cache attached to the disk. */
+#define VERR_VD_CACHE_NOT_FOUND                     (-3275)
+/** The cache is not up to date with the image. */
+#define VERR_VD_CACHE_NOT_UP_TO_DATE                (-3276)
 /** @} */
 
 

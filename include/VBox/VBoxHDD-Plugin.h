@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef __VBoxHDD_Internal_h__
-
+#ifndef __VBoxHDD_Plugin_h__
+#define __VBoxHDD_Plugin_h__
 
 #include <VBox/pdm.h>
 #include <VBox/VBoxHDD.h>
