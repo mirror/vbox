@@ -297,7 +297,7 @@ DevicesR3_SOURCES       = \
 	Input/UsbKbd.cpp \
 	Input/UsbMouse.cpp \
 	Bus/DevPCI.cpp \
-	$(if $(VBOX_WITH_NEWPCI),Bus/DevPciIch9.cpp,) \
+	Bus/DevPciIch9.cpp \
 	Graphics/DevVGA.cpp \
 	Storage/DevATA.cpp \
 	PC/DevPit-i8254.cpp \
@@ -550,7 +550,7 @@ ifdef VBOX_WITH_RAW_MODE
  	$(PATH_SUB_CURRENT)
  VBoxDDGC_SOURCES        = \
  	Bus/DevPCI.cpp \
-	$(if $(VBOX_WITH_NEWPCI),Bus/DevPciIch9.cpp,) \
+	Bus/DevPciIch9.cpp \
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
  	PC/DevACPI.cpp \
@@ -662,7 +662,7 @@ VBoxDDR0_INCS          := \
 	$(PATH_SUB_CURRENT)
 VBoxDDR0_SOURCES        = \
 	Bus/DevPCI.cpp \
-	$(if $(VBOX_WITH_NEWPCI),Bus/DevPciIch9.cpp,) \
+	Bus/DevPciIch9.cpp \
 	Graphics/DevVGA.cpp \
 	Input/DevPS2.cpp \
 	PC/DevACPI.cpp \

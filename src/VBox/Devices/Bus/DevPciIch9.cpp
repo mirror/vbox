@@ -799,6 +799,15 @@ static uint32_t ich9pciConfigRead(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
     uint32_t u32Val;
     int rc = ich9pciDataRead(pGlobals, addr & 3, len, &u32Val);
     AssertRC(rc);
+    switch (len)
+    {
+        case 1:
+            u32Val &= 0xff;
+            break;
+        case 2:
+            u32Val &= 0xffff;
+            break;
+    }
     return u32Val;
 }
 
@@ -911,7 +920,6 @@ static void ich9pciBiosInitBridge(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
 static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint8_t cBridgeDepth, uint8_t *paBridgePositions)
 {
     uint32_t *paddr;
-    int i, pin, pic_irq;
     uint16_t uDevClass, uVendor, uDevice;
 
     uDevClass  = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_CLASS_DEVICE, 2);
@@ -922,7 +930,7 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
     if (uVendor == 0xffff)
         return;
 
-    switch (uDevice)
+    switch (uDevClass)
     {
         case 0x0101:
             /* IDE controller */
@@ -1004,14 +1012,14 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
                 else
                     u32Size = (~u32Size) + 1;
 
-                Log(("%s: Size of region %u for device %d on bus %d is %u\n", __FUNCTION__, i, uDevFn, uBus, u32Size));
+                Log(("%s: Size of region %u for device %d on bus %d is %u\n", __FUNCTION__, iRegion, uDevFn, uBus, u32Size));
 
                 if (u32Size)
                 {
                     paddr = fIsPio ? &pGlobals->uPciBiosIo : &pGlobals->uPciBiosMmio;
                     *paddr = (*paddr + u32Size - 1) & ~(u32Size - 1);
-                    Log(("%s: Start address of %s region %u is %#x\n", __FUNCTION__, (fIsPio ? "I/O" : "MMIO"), i, *paddr));
-                    ich9pciSetRegionAddress(pGlobals, uBus, uDevFn, i, *paddr);
+                    Log(("%s: Start address of %s region %u is %#x\n", __FUNCTION__, (fIsPio ? "I/O" : "MMIO"), iRegion, *paddr));
+                    ich9pciSetRegionAddress(pGlobals, uBus, uDevFn, iRegion, *paddr);
                     *paddr += u32Size;
                     Log(("%s: New address is %#x\n", __FUNCTION__, *paddr));
                 }
@@ -1504,12 +1512,11 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     PCIDevSetHeaderType(&pBus->aPciDev,   0x00);
 
     pBus->aPciDev.pDevIns               = pDevIns;
-    pBus->aPciDev.Int.s.fRequestedDevFn = true;
     /* We register Host<->PCI controller on the bus */
-    ich9pciRegisterInternal(pBus, 0, &pBus->aPciDev, "i82801");
+    ich9pciRegisterInternal(pBus, -1, &pBus->aPciDev, "i82801");
 
-    /** @todo: ther chipset devices shall be registered too */
-    /** @todo: bridges? */
+    /** @todo: other chipset devices shall be registered too */
+    /** @todo: what to with bridges? */
 
     return VINF_SUCCESS;
 }
@@ -1573,6 +1580,12 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
  */
 static DECLCALLBACK(void) ich9pcibridgeReset(PPDMDEVINS pDevIns)
 {
+    PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
+
+    /* Reset config space to default values. */
+    pBus->aPciDev.config[VBOX_PCI_PRIMARY_BUS] = 0;
+    pBus->aPciDev.config[VBOX_PCI_SECONDARY_BUS] = 0;
+    pBus->aPciDev.config[VBOX_PCI_SUBORDINATE_BUS] = 0;
 }
 
 
@@ -1581,6 +1594,16 @@ static DECLCALLBACK(void) ich9pcibridgeReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ich9pcibridgeRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+    PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
+    pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+
+    /* Relocate RC pointers for the attached pci devices. */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
+    {
+        if (pBus->apDevices[i])
+            pBus->apDevices[i]->Int.s.pBusRC += offDelta;
+    }
+
 }
 
 /**

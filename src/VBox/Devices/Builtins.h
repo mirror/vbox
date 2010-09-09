@@ -35,6 +35,7 @@ extern const unsigned       g_cbEfiThunkBinary;
 
 
 extern const PDMDEVREG g_DevicePCI;
+extern const PDMDEVREG g_DevicePciIch9;
 extern const PDMDEVREG g_DevicePcArch;
 extern const PDMDEVREG g_DevicePcBios;
 extern const PDMDEVREG g_DevicePS2KeyboardMouse;
@@ -76,6 +77,7 @@ extern const PDMDEVREG g_DeviceAHCI;
 extern const PDMDEVREG g_DeviceBusLogic;
 #endif
 extern const PDMDEVREG g_DevicePCIBridge;
+extern const PDMDEVREG g_DevicePciIch9Bridge;
 #ifdef VBOX_WITH_LSILOGIC
 extern const PDMDEVREG g_DeviceLsiLogicSCSI;
 extern const PDMDEVREG g_DeviceLsiLogicSAS;
