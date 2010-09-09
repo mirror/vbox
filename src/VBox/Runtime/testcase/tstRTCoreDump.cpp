@@ -55,7 +55,7 @@ int main()
     /*
      * Setup core dumping.
      */
-    int rc = RTCoreDumperSetup(NULL, RTCOREDUMPER_FLAGS_OVERRIDE_SYS_DUMPER | RTCOREDUMPER_FLAGS_LIVE_CORE);
+    int rc = RTCoreDumperSetup(NULL, RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP | RTCOREDUMPER_FLAGS_LIVE_CORE);
     if (RT_SUCCESS(rc))
     {
         /*

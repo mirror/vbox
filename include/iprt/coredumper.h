@@ -39,7 +39,7 @@ RT_C_DECLS_BEGIN
 /** @name RTCoreDumperSetup flags
  * @{ */
 /** Override system core dumper. */
-#define RTCOREDUMPER_FLAGS_OVERRIDE_SYS_DUMPER     RT_BIT(0)
+#define RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP     RT_BIT(0)
 /** Allow taking live process dumps (without killing process). */
 #define RTCOREDUMPER_FLAGS_LIVE_CORE               RT_BIT(1)
 /** @}  */
