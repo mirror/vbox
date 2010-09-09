@@ -216,6 +216,8 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define DPLBASE(pState) (HDA_REG((pState), DPLBASE))
 #define ICH6_HDA_REG_DPUBASE  31 /* 0x74 */
 #define DPUBASE(pState) (HDA_REG((pState), DPUBASE))
+#define DPBASE_ENABLED          1
+#define DPBASE_ADDR_MASK        (~0x7f)
 
 #define HDA_STREAM_REG_DEF(name, num) (ICH6_HDA_REG_SD##num##name)
 #define HDA_STREAM_REG(pState, name, num) (HDA_REG((pState), N_(HDA_STREAM_REG_DEF(name, num))))
@@ -1163,7 +1165,7 @@ static void dump_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64Ba
     Log(("hda: sum: %d\n", sum));
     for (i = 0; i < 8; ++i)
     {
-        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pState->u64DPBase + i*8, &counter, 4);
+        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & DPBASE_ADDR_MASK) + i*8, &counter, sizeof(&counter));
         Log(("hda: %s stream[%d] counter=%x\n", i == SDCTL_NUM(pState, 4) || i == SDCTL_NUM(pState, 0)? "[C]": "   ",
              i , counter));
     }
@@ -1263,7 +1265,6 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
     uint64_t u64BaseDMA = 0;
     PHDABDLEDESC pBdle = NULL;
     INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pHDAState;
-    uint32_t u32Counter;
     uint32_t nBytes;
     uint32_t u32Ctl;
     uint32_t *pu32Sts;
@@ -1305,11 +1306,10 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
         || !avail
         || !u64BaseDMA)
         return;
+    /* Fetch the Buffer Descriptor Entry (BDE). */
     fetch_bd(pState, pBdle, u64BaseDMA);
-    while(   avail
-          && !fStop)
+    while( avail && !fStop)
     {
-        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1) + u8Strm*8, &u32Counter, 4);
         switch (src)
         {
             case PO_INDEX:
@@ -1320,43 +1320,37 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
                 break;
             default:
                 nBytes = 0;
+                fStop  = true;
                 AssertMsgFailed(("Unsupported"));
         }
-        if (   fStop 
-            && pBdle->u32BdleCviLen != pBdle->u32BdleCviPos)
-            break;
+        /* Update the buffer position and handle Cyclic Buffer Length (CBL) wraparound. */
         *pu32Lpib += nBytes;
         avail -= nBytes;
-        u32Counter += nBytes;
-        PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1) + u8Strm*8, &u32Counter, 4);
-        if (   pBdle->u32BdleCviPos == pBdle->u32BdleCviLen
-            || *pu32Lpib == u32Lcbl)
+        if (*pu32Lpib >= u32Lcbl)
+            *pu32Lpib  -= u32Lcbl;
+
+        /* Optionally write back the current DMA position. */
+        if (pState->u64DPBase & DPBASE_ENABLED)
+            PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), 
+                               (pState->u64DPBase & DPBASE_ADDR_MASK) + u8Strm*8, pu32Lpib, sizeof(*pu32Lpib));
+
+        /* Process end of buffer condition. */
+        if (pBdle->u32BdleCviPos == pBdle->u32BdleCviLen)
         {
-            if (   u32Ctl & HDA_REG_FIELD_FLAG_MASK(SDCTL, ICE)
-                && (   (   pBdle->u32BdleCviPos == pBdle->u32BdleCviLen
-                        && pBdle->fBdleCviIoc )
-                    || *pu32Lpib == u32Lcbl))
+            if (pBdle->fBdleCviIoc)
             {
                 *pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS);
                 hdaProcessInterrupt(pState);
-                if (*pu32Lpib == u32Lcbl)
-                {
-                    *pu32Lpib = 0;
-                    u32Counter = 0;
-                    PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), (pState->u64DPBase & ~0x1)  + u8Strm*8, &u32Counter, 4);
-                }
             }
-            if (pBdle->u32BdleCviPos == pBdle->u32BdleCviLen)
-            {
-                pBdle->u32BdleCviPos = 0;
-                pBdle->u32BdleCvi++;
-                if (pBdle->u32BdleCvi == pBdle->u32BdleMaxCvi + 1)
-                    pBdle->u32BdleCvi = 0;
-                fStop = true;   /* Give the guest a chance to refill buffers. */
-            }
-            else
-                fStop = false;
-            fetch_bd(pState, pBdle, u64BaseDMA);
+            pBdle->u32BdleCviPos = 0;
+            pBdle->u32BdleCvi++;
+            if (pBdle->u32BdleCvi == pBdle->u32BdleMaxCvi + 1)
+                pBdle->u32BdleCvi = 0;
+            fStop = true;   /* Give the guest a chance to refill (or empty) buffers. */
+
+            /* Read the next BDE unless we're exiting. */
+            if (!fStop)
+                fetch_bd(pState, pBdle, u64BaseDMA);
         }
     }
 }
