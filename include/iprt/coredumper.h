@@ -36,14 +36,26 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/** @name RTCoreDumperSetup flags
+ * @{ */
+/** Override system core dumper. */
+#define RTCOREDUMPER_FLAGS_OVERRIDE_SYS_DUMPER     RT_BIT(0)
+/** Allow taking live process dumps (without killing process). */
+#define RTCOREDUMPER_FLAGS_LIVE_CORE               RT_BIT(1)
+/** @}  */
+
 /**
  * Take a core dump of the current process without terminating it.
  *
  * @returns IPRT status code.
  * @param   pszOutputFile       Name of the core file.  If NULL use the
  *                              default naming scheme.
+ * @param   fLiveCore           When true, the process is not killed after
+ *                              taking a core. Otherwise it will be killed. This
+ *                              works in conjuction with the flags set during
+ *                              RTCoreDumperSetup().
  */
-RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile);
+RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore);
 
 /**
  * Sets up and enables the core dumper.
@@ -60,7 +72,7 @@ RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile);
  *                              the current directory will be used.
  * @param   pszBaseName         Base file name, no directory.  If NULL the
  *                              dumper will generate an appropriate name.
- * @param   fFlags              Reserved for later, MBZ.
+ * @param   fFlags              Setup flags, see RTCOREDUMPER_FLAGS_*.
  */
 RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags);
 

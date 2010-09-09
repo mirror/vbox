@@ -44,6 +44,7 @@
 #ifdef RT_OS_SOLARIS
 # include <syslog.h>
 # include <signal.h>
+# include <stdlib.h>
 # include <unistd.h>
 # include <errno.h>
 # include <zone.h>
@@ -63,6 +64,7 @@ volatile static uint64_t   g_CoreDumpThread = NIL_RTTHREAD;
 volatile static bool       g_fCoreDumpSignalSetup = false;
 volatile static bool       g_fCoreDumpDeliberate = false;
 volatile static bool       g_fCoreDumpInProgress = false;
+volatile static bool       g_fCoreDumpLiveCore = false;
 volatile static uint32_t   g_fCoreDumpFlags = 0;
 static char                g_szCoreDumpDir[PATH_MAX] = { 0 };
 static char                g_szCoreDumpFile[PATH_MAX] = { 0 };
@@ -2134,20 +2136,12 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
         ASMAtomicWriteBool(&g_fCoreDumpInProgress, false);
 
         if (RT_FAILURE(rc))
-        {
-            /*
-             * If it is NOT a deliberate dump taken by us & our handler fails we assume the
-             * worst, try to use the system signal handler and abort the process.
-             */
             CORELOGRELSYS((CORELOG_NAME "TakeDump failed! rc=%Rrc\n", rc));
-            if (ASMAtomicReadBool(&g_fCoreDumpDeliberate) == false)
-                fCallSystemDump = true;
-        }
     }
     else
     {
         /*
-         * Core dumping is already in  progress and we've somehow ended up being
+         * Core dumping is already in progress and we've somehow ended up being
          * signalled again.
          */
         rc = VERR_INTERNAL_ERROR;
@@ -2162,7 +2156,7 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
         {
             CORELOGRELSYS((CORELOG_NAME "SignalHandler: Core dump already in progress! Waiting before signalling Sig=%d.\n", Sig));
             int64_t iTimeout = 10000;  /* timeout (ms) */
-            while (ASMAtomicUoReadBool(&g_fCoreDumpInProgress) == true)
+            while (ASMAtomicReadBool(&g_fCoreDumpInProgress) == true)
             {
                 RTThreadSleep(200);
                 iTimeout -= 200;
@@ -2177,10 +2171,27 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
         }
     }
 
-    if (fCallSystemDump)
+    if (ASMAtomicReadBool(&g_fCoreDumpLiveCore) == false)
     {
-        signal(Sig, SIG_DFL);
-        raise(Sig);
+        /*
+         * Reset signal handlers, we're not a live core we will be blown away
+         * one way or another.
+         */
+        signal(SIGSEGV, SIG_DFL);
+        signal(SIGBUS, SIG_DFL);
+
+        /*
+         * Hard terminate the process if this is not a live dump without invoking
+         * the system core dumping behaviour.
+         */
+        if (RT_SUCCESS(rc))
+            raise(SIGKILL);
+
+        /*
+         * Something went wrong, fall back to the system core dumper.
+         */
+        if (fCallSystemDump)
+            abort();
     }
 }
 
@@ -2191,18 +2202,41 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
  * @returns IPRT status code.
  * @param   pszOutputFile       Name of the core file.  If NULL use the
  *                              default naming scheme.
+ * @param   fLiveCore           When true, the process is not killed after
+ *                              taking a core. Otherwise it will be killed. This
+ *                              works in conjuction with the flags set during
+ *                              RTCoreDumperSetup().
  */
-RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile)
+RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore)
 {
+    /*
+     * Validate input.
+     */
     if (ASMAtomicReadBool(&g_fCoreDumpSignalSetup) == false)
         return VERR_WRONG_ORDER;
+
+    uint32_t fFlags = ASMAtomicReadU32(&g_fCoreDumpFlags);
+    if (fLiveCore && !(fFlags & RTCOREDUMPER_FLAGS_LIVE_CORE))
+        return VERR_INVALID_PARAMETER;
+
+    if (!fLiveCore && !(fFlags & RTCOREDUMPER_FLAGS_OVERRIDE_SYS_DUMPER))
+        return VERR_INVALID_PARAMETER;
 
     RT_ZERO(g_szCoreDumpFile);
     if (pszOutputFile)
         RTStrCopy(g_szCoreDumpFile, sizeof(g_szCoreDumpFile), pszOutputFile);
 
     ASMAtomicWriteBool(&g_fCoreDumpDeliberate, true);
-    raise(SIGSEGV);
+    ASMAtomicWriteBool(&g_fCoreDumpLiveCore, fLiveCore);
+
+    if (fLiveCore == false)
+        raise(SIGSEGV);
+    else
+    {
+        raise(SIGUSR2);
+        ASMAtomicWriteBool(&g_fCoreDumpLiveCore, false);
+    }
+
     ASMAtomicWriteBool(&g_fCoreDumpDeliberate, false);
     return VINF_SUCCESS;
 }
@@ -2223,24 +2257,34 @@ RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile)
  *                              the current directory will be used.
  * @param   pszBaseName         Base file name, no directory.  If NULL the
  *                              dumper will generate an appropriate name.
- * @param   fFlags              Reserved for later, MBZ.
+ * @param   fFlags              Setup flags, see RTCOREDUMPER_FLAGS_*.
  */
 RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
 {
     /*
      * Validate flags.
      */
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(  RTCOREDUMPER_FLAGS_OVERRIDE_SYS_DUMPER
+                              | RTCOREDUMPER_FLAGS_LIVE_CORE)),
+                 VERR_INVALID_PARAMETER);
 
     /*
      * Install core dump signal handler.
      */
     struct sigaction sigAct;
+    RT_ZERO(sigAct);
     sigAct.sa_sigaction = &rtCoreDumperSignalHandler;
     sigemptyset(&sigAct.sa_mask);
     sigAct.sa_flags = SA_RESTART | SA_SIGINFO;
-    sigaction(SIGSEGV, &sigAct, NULL);
-    sigaction(SIGBUS, &sigAct, NULL);
+
+    if (fFlags & RTCOREDUMPER_FLAGS_OVERRIDE_SYS_DUMPER)
+    {
+        sigaction(SIGSEGV, &sigAct, NULL);
+        sigaction(SIGBUS, &sigAct, NULL);
+    }
+
+    if (fFlags & RTCOREDUMPER_FLAGS_LIVE_CORE)
+        sigaction(SIGUSR2, &sigAct, NULL);
 
     ASMAtomicWriteBool(&g_fCoreDumpSignalSetup, true);
 
