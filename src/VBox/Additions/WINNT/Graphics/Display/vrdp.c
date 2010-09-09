@@ -312,10 +312,12 @@ static int vrdpGetIntersectingClipRects (VRDPCLIPRECTS *pClipRects, SURFOBJ *pso
                     }
                 }
             }
-            else
+
+            if (pClipRects->rects.c == 0)
             {
                 pClipRects->rclDst.left = pClipRects->rclDst.right = 0;
             }
+            DISPDBG((1, "%d rects remains\n", pClipRects->rects.c));
         }
     }
 
