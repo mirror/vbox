@@ -2219,7 +2219,7 @@ RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore)
     if (fLiveCore && !(fFlags & RTCOREDUMPER_FLAGS_LIVE_CORE))
         return VERR_INVALID_PARAMETER;
 
-    if (!fLiveCore && !(fFlags & RTCOREDUMPER_FLAGS_OVERRIDE_SYS_DUMPER))
+    if (!fLiveCore && !(fFlags & RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP))
         return VERR_INVALID_PARAMETER;
 
     RT_ZERO(g_szCoreDumpFile);
@@ -2264,7 +2264,7 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
     /*
      * Validate flags.
      */
-    AssertReturn(!(fFlags & ~(  RTCOREDUMPER_FLAGS_OVERRIDE_SYS_DUMPER
+    AssertReturn(!(fFlags & ~(  RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP
                               | RTCOREDUMPER_FLAGS_LIVE_CORE)),
                  VERR_INVALID_PARAMETER);
 
@@ -2277,7 +2277,7 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
     sigemptyset(&sigAct.sa_mask);
     sigAct.sa_flags = SA_RESTART | SA_SIGINFO;
 
-    if (fFlags & RTCOREDUMPER_FLAGS_OVERRIDE_SYS_DUMPER)
+    if (fFlags & RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP)
     {
         sigaction(SIGSEGV, &sigAct, NULL);
         sigaction(SIGBUS, &sigAct, NULL);
