@@ -64,7 +64,6 @@ volatile static uint64_t   g_CoreDumpThread = NIL_RTTHREAD;
 volatile static bool       g_fCoreDumpSignalSetup = false;
 volatile static bool       g_fCoreDumpDeliberate = false;
 volatile static bool       g_fCoreDumpInProgress = false;
-volatile static bool       g_fCoreDumpLiveCore = false;
 volatile static uint32_t   g_fCoreDumpFlags = 0;
 static char                g_szCoreDumpDir[PATH_MAX] = { 0 };
 static char                g_szCoreDumpFile[PATH_MAX] = { 0 };
@@ -2171,7 +2170,7 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
         }
     }
 
-    if (ASMAtomicReadBool(&g_fCoreDumpLiveCore) == false)
+    if (Sig == SIGSEGV || Sig == SIGBUS)
     {
         /*
          * Reset signal handlers, we're not a live core we will be blown away
@@ -2227,15 +2226,11 @@ RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore)
         RTStrCopy(g_szCoreDumpFile, sizeof(g_szCoreDumpFile), pszOutputFile);
 
     ASMAtomicWriteBool(&g_fCoreDumpDeliberate, true);
-    ASMAtomicWriteBool(&g_fCoreDumpLiveCore, fLiveCore);
 
     if (fLiveCore == false)
         raise(SIGSEGV);
     else
-    {
         raise(SIGUSR2);
-        ASMAtomicWriteBool(&g_fCoreDumpLiveCore, false);
-    }
 
     ASMAtomicWriteBool(&g_fCoreDumpDeliberate, false);
     return VINF_SUCCESS;
