@@ -1,5 +1,5 @@
 /** @file
- * DBGF - Debugger Facility, VM Core Files. (VMM)
+ * DBGF - Debugger Facility, VM Core File Format. (VMM)
  */
 
 /*
@@ -33,7 +33,7 @@
 RT_C_DECLS_BEGIN
 
 
-/** @addgroup grp_dbgf      VM Core Files
+/** @addgroup grp_dbgf_corefmt  VM Core File Format
  * @ingroup grp_dbgf
  *
  * @todo Add description of the core file format and how the structures in this
@@ -69,9 +69,6 @@ typedef struct DBGFCOREDESCRIPTOR
 AssertCompileSizeAlignment(DBGFCOREDESCRIPTOR, 8);
 /** Pointer to DBGFCOREDESCRIPTOR data. */
 typedef DBGFCOREDESCRIPTOR  *PDBGFCOREDESCRIPTOR;
-
-
-VMMR3DECL(int)      DBGFR3CoreWrite(PVM pVM, const char *pszDumpPath);
 
 /** @}  */
 
