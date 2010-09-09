@@ -2896,6 +2896,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "KeepCredentials|"
                                   "HeapEnabled|"
                                   "RamSize|"
+                                  "RZEnabled|"
+                                  "GuestCoreDump|"
                                   "TestingEnabled"
                                   ,
                                   "");
