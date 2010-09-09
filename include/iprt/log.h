@@ -1180,6 +1180,15 @@ RTDECL(void) RTLogRelPrintf(const char *pszFormat, ...);
  */
 RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args);
 
+/**
+ * Changes the buffering setting of the default release logger.
+ *
+ * This can be used for optimizing longish logging sequences.
+ *
+ * @returns The old state.
+ * @param   fBuffered       The new state.
+ */
+RTDECL(bool) RTLogRelSetBuffering(bool fBuffered);
 
 /** @} */
 
@@ -1541,6 +1550,18 @@ RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszVar);
  * @param   pszVar      Value to parse.
  */
 RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar);
+
+/**
+ * Changes the buffering setting of the specified logger.
+ *
+ * This can be used for optimizing longish logging sequences.
+ *
+ * @returns The old state.
+ * @param   pLogger         The logger instance (NULL is an alias for the
+ *                          default logger).
+ * @param   fBuffered       The new state.
+ */
+RTDECL(bool) RTLogSetBuffering(PRTLOGGER pLogger, bool fBuffered);
 
 #ifndef IN_RC
 /**
