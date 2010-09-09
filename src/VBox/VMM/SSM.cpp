@@ -4786,7 +4786,7 @@ static int ssmR3WriteHeaderAndClearPerUnitData(PVM pVM, PSSMHANDLE pSSM)
     FileHdr.u16VerMajor  = VBOX_VERSION_MAJOR;
     FileHdr.u16VerMinor  = VBOX_VERSION_MINOR;
     FileHdr.u32VerBuild  = VBOX_VERSION_BUILD;
-    FileHdr.u32SvnRev    = VMMGetSvnRev(),
+    FileHdr.u32SvnRev    = VMMGetSvnRev();
     FileHdr.cHostBits    = HC_ARCH_BITS;
     FileHdr.cbGCPhys     = sizeof(RTGCPHYS);
     FileHdr.cbGCPtr      = sizeof(RTGCPTR);
@@ -4895,7 +4895,7 @@ static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS 
  *
  * @thread  EMT
  */
-VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, 
+VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
                          SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("SSMR3Save: pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
