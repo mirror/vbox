@@ -221,7 +221,7 @@ typedef struct VMMDevState
     bool fHeapEnabled;
 
     /** Guest Core Dumping enabled. */
-    bool fGuestCoreDump;
+    bool fGuestCoreDumpEnabled;
 
     /** Alignment padding. */
     bool afAlignment7[4];
