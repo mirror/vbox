@@ -55,7 +55,7 @@ int main()
     /*
      * Setup core dumping.
      */
-    int rc = RTCoreDumperSetup(NULL, 0);
+    int rc = RTCoreDumperSetup(NULL, RTCOREDUMPER_FLAGS_OVERRIDE_SYS_DUMPER | RTCOREDUMPER_FLAGS_LIVE_CORE);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -75,11 +75,11 @@ int main()
             }
         }
         RTPrintf("Spawned %d threads.\n", i);
-    
+
         /*
          * Write the core to disk.
          */
-        rc = RTCoreDumperTakeDump(NULL);
+        rc = RTCoreDumperTakeDump(NULL, false /* fLiveCore*/);
         if (RT_FAILURE(rc))
         {
             g_cErrors++;
