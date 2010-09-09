@@ -39,6 +39,8 @@
 #   include <stdio.h>
 #   include <stdlib.h>
 #   include <string.h>
+#elif defined(RT_OS_SOLARIS)
+#   include <iprt/coredumper.h>
 #endif
 
 #include "ConsoleImpl.h"
@@ -5379,6 +5381,55 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
     rc = consoleInitReleaseLog(mMachine);
     if (FAILED(rc)) return rc;
+
+#ifdef RT_OS_SOLARIS
+    /* setup host core dumper for the VM */
+    Bstr value;
+    HRESULT hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpEnabled"), value.asOutParam());
+    if (SUCCEEDED(hrc) && value == "1")
+    {
+        Bstr coreDumpDir, coreDumpReplaceSys, coreDumpLive;
+        mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpDir"), coreDumpDir.asOutParam());
+        mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpReplaceSystemDump"), coreDumpReplaceSys.asOutParam());
+        mMachine->GetExtraData(Bstr("VBoxInternal2/CoreDumpLive"), coreDumpLive.asOutParam());
+
+        uint32_t fCoreFlags = 0;
+        if (   coreDumpReplaceSys.isEmpty() == false
+            && Utf8Str(coreDumpReplaceSys).toUInt32() == 1)
+        {
+            fCoreFlags |= RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP;
+        }
+
+        if (   coreDumpLive.isEmpty() == false
+            && Utf8Str(coreDumpLive).toUInt32() == 1)
+        {
+            fCoreFlags |= RTCOREDUMPER_FLAGS_LIVE_CORE;
+        }
+
+        const char *pszDumpDir = Utf8Str(coreDumpDir).c_str();
+        if (   pszDumpDir
+            && *pszDumpDir == '\0')
+            pszDumpDir = NULL;
+
+        int vrc = VERR_GENERAL_FAILURE;
+        if (   pszDumpDir
+            && !RTDirExists(pszDumpDir))
+        {
+            /*
+             * Try create the directory.
+             */
+            vrc = RTDirCreateFullPath(pszDumpDir, 0777);
+            if (RT_FAILURE(vrc))
+                return setError(E_FAIL, "Failed to setup CoreDumper. Couldn't create dump directory '%s' (%Rrc)\n", pszDumpDir, vrc);
+        }
+
+        vrc = RTCoreDumperSetup(pszDumpDir, fCoreFlags);
+        if (RT_FAILURE(vrc))
+            return setError(E_FAIL, "Failed to setup CoreDumper (%Rrc)", vrc);
+        else
+            LogRel(("CoreDumper setup successful. pszDumpDir=%s fFlags=%#x\n", pszDumpDir ? pszDumpDir : ".", fCoreFlags));
+    }
+#endif
 
     /* pass the progress object to the caller if requested */
     if (aProgress)
