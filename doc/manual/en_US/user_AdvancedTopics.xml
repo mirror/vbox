@@ -1375,9 +1375,9 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
     <para>Setting <computeroutput>CoreDumpReplaceSystemDump</computeroutput>
     overrides the host's core dumping mechanism and in the event of any crash
-    only the VirtualBox CoreDumper would be produced a core file.</para>
+    only the VirtualBox CoreDumper would produced the core file.</para>
 
-    <para>Setting <computeroutput>CoreDumpLive</computeroutput> setups the VM
+    <para>Setting <computeroutput>CoreDumpLive</computeroutput> sets up the VM
     to produce cores whenever the VM receives a
     <computeroutput>SIGUSR2</computeroutput> signal. After producing the core
     file, the VM will not be terminated and will continue to run. You can thus
