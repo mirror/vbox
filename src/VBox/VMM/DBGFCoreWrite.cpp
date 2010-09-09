@@ -55,7 +55,7 @@
 #include <VBox/cpum.h>
 #include "CPUMInternal.h"
 #include <VBox/dbgf.h>
-#include <VBox/dbgfcore.h>
+#include <VBox/dbgfcorefmt.h>
 #include <VBox/vm.h>
 #include <VBox/pgm.h>
 #include <VBox/err.h>
