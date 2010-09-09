@@ -59,6 +59,9 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePCI);
     if (RT_FAILURE(rc))
         return rc;
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePciIch9);
+    if (RT_FAILURE(rc))
+        return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePcArch);
     if (RT_FAILURE(rc))
         return rc;
@@ -164,6 +167,9 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
         return rc;
 #endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePCIBridge);
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePciIch9Bridge);
     if (RT_FAILURE(rc))
         return rc;
 #ifdef VBOX_WITH_LSILOGIC
