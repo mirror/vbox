@@ -20,8 +20,8 @@ include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += VBox-zlib
 if1of ($(KBUILD_TARGET),os2 win)
- # only required for (now) disabled VBoxFidHdd
- # LIBRARIES += VBox-zlib-static
+ # only required for vbox-img
+ LIBRARIES += VBox-zlib-static
 endif
 VBox-zlib_TEMPLATE = VBOXR3
 VBox-zlib_DEFS = verbose=-1
