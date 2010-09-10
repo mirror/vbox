@@ -101,7 +101,9 @@ void UIMachineViewScale::takePauseShotSnapshot()
     QVector<BYTE> screenData = machine.ReadSavedScreenshotPNGToArray(0, width, height);
     if (screenData.size() != 0)
     {
-        QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(guestSizeHint());
+        ULONG guestWidth = 0, guestHeight = 0;
+        machine.QuerySavedGuestSize(0, guestWidth, guestHeight);
+        QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(guestWidth > 0 ? QSize(guestWidth, guestHeight) : guestSizeHint());
         m_pPauseImage = new QImage(shot);
         scalePauseShot();
     }
@@ -126,7 +128,7 @@ void UIMachineViewScale::scalePauseShot()
         QSize scaledSize = frameBuffer()->scaledSize();
         if (scaledSize.isValid())
         {
-            QImage tmpImg = m_pPauseImage->scaled(frameBuffer()->scaledSize(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            QImage tmpImg = m_pPauseImage->scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
             dimImage(tmpImg);
             m_pauseShot = QPixmap::fromImage(tmpImg);
         }
@@ -237,7 +239,7 @@ bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
     QMainWindow *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
                                qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
 
-    if (pWatched != 0 && pWatched == pMainDialog)
+    if (pWatched != 0 && pWatched == viewport())
     {
         switch (pEvent->type())
         {
@@ -247,6 +249,14 @@ bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
                 sltPerformGuestScale();
                 break;
             }
+            default:
+                break;
+        }
+    }
+    else if (pWatched != 0 && pWatched == pMainDialog)
+    {
+        switch (pEvent->type())
+        {
 #if defined (Q_WS_WIN32)
 # if defined (VBOX_GUI_USE_DDRAW)
             case QEvent::Move:
@@ -306,7 +316,6 @@ void UIMachineViewScale::prepareFrameBuffer()
         display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
     }
 
-#ifdef VBOX_TEST_IMAGE_ON_RESTORE
     QSize size;
 #ifdef Q_WS_X11
     /* Processing pseudo resize-event to synchronize frame-buffer with stored
@@ -321,16 +330,23 @@ void UIMachineViewScale::prepareFrameBuffer()
     CMachine machine = session().GetMachine();
     machine.QuerySavedScreenshotPNGSize(0, buffer, width, height);
     if (buffer > 0)
-        size = guestSizeHint();
+    {
+        /* Init with the screenshot size */
+        size = QSize(width, height);
+        /* Try to get the real guest dimensions from the save state */
+        ULONG guestWidth = 0, guestHeight = 0;
+        machine.QuerySavedGuestSize(0, guestWidth, guestHeight);
+        if (   guestWidth  > 0
+            && guestHeight > 0)
+            size = QSize(guestWidth, guestHeight);
+    }
     /* If we have a valid size, resize the framebuffer. */
     if (   size.width() > 0
         && size.height() > 0)
     {
         UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, size.width(), size.height());
         frameBuffer()->resizeEvent(&event);
-        QTimer::singleShot(0, this, SLOT(sltPerformGuestScale()));
     }
-#endif
 }
 
 void UIMachineViewScale::prepareConnections()
