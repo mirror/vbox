@@ -311,6 +311,7 @@ VBoxSVC_SOURCES = \
 	BIOSSettingsImpl.cpp \
 	HostPower.cpp \
 	EventImpl.cpp \
+	DisplayUtils.cpp \
 	DisplayPNGUtil.cpp \
 	DisplayResampleImage.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
@@ -639,6 +640,7 @@ VBoxC_SOURCES = \
 	KeyboardImpl.cpp \
 	MouseImpl.cpp \
 	DisplayImpl.cpp \
+	DisplayUtils.cpp \
 	DisplayPNGUtil.cpp \
 	DisplayResampleImage.cpp \
 	MachineDebuggerImpl.cpp \

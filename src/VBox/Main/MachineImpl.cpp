@@ -47,6 +47,7 @@
 #include "GuestImpl.h"
 #include "StorageControllerImpl.h"
 #include "DisplayImpl.h"
+#include "DisplayUtils.h"
 
 #ifdef VBOX_WITH_USB
 # include "USBProxyService.h"
@@ -5257,126 +5258,26 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     return S_OK;
 }
 
-/* @todo where is the right place for this? */
-#define sSSMDisplayScreenshotVer 0x00010001
-
-static int readSavedDisplayScreenshot(const Utf8Str &strStateFilePath, uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height)
+STDMETHODIMP Machine::QuerySavedGuestSize(ULONG uScreenId, ULONG *puWidth, ULONG *puHeight)
 {
-    LogFlowFunc(("u32Type = %d [%s]\n", u32Type, strStateFilePath.c_str()));
+    LogFlowThisFunc(("\n"));
 
-    /* @todo cache read data */
-    if (strStateFilePath.isEmpty())
-    {
-        /* No saved state data. */
-        return VERR_NOT_SUPPORTED;
-    }
+    CheckComArgNotNull(puWidth);
+    CheckComArgNotNull(puHeight);
 
-    uint8_t *pu8Data = NULL;
-    uint32_t cbData = 0;
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
 
-    PSSMHANDLE pSSM;
-    int vrc = SSMR3Open(strStateFilePath.c_str(), 0 /*fFlags*/, &pSSM);
-    if (RT_SUCCESS(vrc))
-    {
-        uint32_t uVersion;
-        vrc = SSMR3Seek(pSSM, "DisplayScreenshot", 1100 /*iInstance*/, &uVersion);
-        if (RT_SUCCESS(vrc))
-        {
-            if (uVersion == sSSMDisplayScreenshotVer)
-            {
-                uint32_t cBlocks;
-                vrc = SSMR3GetU32(pSSM, &cBlocks);
-                AssertRCReturn(vrc, vrc);
+    int vrc = readSavedGuestSize(mSSData->mStateFilePath, uScreenId, &u32Width, &u32Height);
+    if (RT_FAILURE(vrc))
+        return setError(VBOX_E_IPRT_ERROR,
+                        tr("Saved guest size is not available (%Rrc)"),
+                        vrc);
 
-                for (uint32_t i = 0; i < cBlocks; i++)
-                {
-                    uint32_t cbBlock;
-                    vrc = SSMR3GetU32(pSSM, &cbBlock);
-                    AssertRCBreak(vrc);
+    *puWidth = u32Width;
+    *puHeight = u32Height;
 
-                    uint32_t typeOfBlock;
-                    vrc = SSMR3GetU32(pSSM, &typeOfBlock);
-                    AssertRCBreak(vrc);
-
-                    LogFlowFunc(("[%d] type %d, size %d bytes\n", i, typeOfBlock, cbBlock));
-
-                    if (typeOfBlock == u32Type)
-                    {
-                        if (cbBlock > 2 * sizeof(uint32_t))
-                        {
-                            cbData = cbBlock - 2 * sizeof(uint32_t);
-                            pu8Data = (uint8_t *)RTMemAlloc(cbData);
-                            if (pu8Data == NULL)
-                            {
-                                vrc = VERR_NO_MEMORY;
-                                break;
-                            }
-
-                            vrc = SSMR3GetU32(pSSM, &u32Width);
-                            AssertRCBreak(vrc);
-                            vrc = SSMR3GetU32(pSSM, &u32Height);
-                            AssertRCBreak(vrc);
-                            vrc = SSMR3GetMem(pSSM, pu8Data, cbData);
-                            AssertRCBreak(vrc);
-                        }
-                        else
-                        {
-                            /* No saved state data. */
-                            vrc = VERR_NOT_SUPPORTED;
-                        }
-
-                        break;
-                    }
-                    else
-                    {
-                        /* displaySSMSaveScreenshot did not write any data, if
-                         * cbBlock was == 2 * sizeof (uint32_t).
-                         */
-                        if (cbBlock > 2 * sizeof (uint32_t))
-                        {
-                            vrc = SSMR3Skip(pSSM, cbBlock);
-                            AssertRCBreak(vrc);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                vrc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-            }
-        }
-
-        SSMR3Close(pSSM);
-    }
-
-    if (RT_SUCCESS(vrc))
-    {
-        if (u32Type == 0 && cbData % 4 != 0)
-        {
-            /* Bitmap is 32bpp, so data is invalid. */
-            vrc = VERR_SSM_UNEXPECTED_DATA;
-        }
-    }
-
-    if (RT_SUCCESS(vrc))
-    {
-        *ppu8Data = pu8Data;
-        *pcbData = cbData;
-        *pu32Width = u32Width;
-        *pu32Height = u32Height;
-        LogFlowFunc(("cbData %d, u32Width %d, u32Height %d\n", cbData, u32Width, u32Height));
-    }
-
-    LogFlowFunc(("vrc %Rrc\n", vrc));
-    return vrc;
-}
-
-static void freeSavedDisplayScreenshot(uint8_t *pu8Data)
-{
-    /* @todo not necessary when caching is implemented. */
-    RTMemFree(pu8Data);
+    return S_OK;
 }
 
 STDMETHODIMP Machine::QuerySavedThumbnailSize(ULONG aScreenId, ULONG *aSize, ULONG *aWidth, ULONG *aHeight)

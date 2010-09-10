@@ -3426,7 +3426,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="0cc41d01-a019-4a0c-9fc5-5606629dff48"
+     uuid="917a4c5f-9388-4848-bbeb-5f02bfebf3d6"
      wsmap="managed"
      >
     <desc>
@@ -5485,6 +5485,27 @@
         <desc>
           The flags of the properties returned.  The array entries match the
           corresponding entries in the @a name array.
+        </desc>
+      </param>
+    </method>
+
+    <method name="querySavedGuestSize">
+      <desc>
+        Returns the guest dimensions from the saved state.
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>
+          Saved guest screen to query info from.
+        </desc>
+      </param>
+      <param name="width" type="unsigned long" dir="out">
+        <desc>
+          Guest width at the time of the saved state was taken.
+        </desc>
+      </param>
+      <param name="height" type="unsigned long" dir="out">
+        <desc>
+          Guest height at the time of the saved state was taken.
         </desc>
       </param>
     </method>
