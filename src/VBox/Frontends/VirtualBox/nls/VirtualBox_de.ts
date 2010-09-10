@@ -1673,7 +1673,7 @@
     </message>
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
-        <translation>&amp;Automatisch zeige Dock &amp;&amp; Menubar im Fullscreen-Modus</translation>
+        <translation>Dock &amp;&amp; Menubar im Vollbildmodus &amp;automatisch zeigen</translation>
     </message>
 </context>
 <context>
