@@ -303,10 +303,15 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 rc = crVBoxServerClientWrite(u32InjectClientID, pBuffer, cbBuffer);
                 if (!RT_SUCCESS(rc))
                 {
-                    Assert(VERR_NOT_SUPPORTED==rc);
-                    svcClientVersionUnsupported(0, 0);
+                    if (VERR_NOT_SUPPORTED==rc)
+                    {
+                        svcClientVersionUnsupported(0, 0);
+                    }
+                    else
+                    {
+                        crWarning("SHCRGL_GUEST_FN_INJECT failed to inject for %i from %i", u32InjectClientID, u32ClientID);
+                    }
                 }
-
             }
             break;
         }

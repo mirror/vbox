@@ -10,11 +10,6 @@
 #include "stub.h"
 #include <iprt/thread.h>
 
-#ifdef GLX
-#include <X11/extensions/Xcomposite.h>
-#include <X11/extensions/Xfixes.h>
-#endif
-
 static void crForcedFlush()
 {
 #if 0
@@ -32,7 +27,7 @@ static void crForcedFlush()
 Display* stubGetWindowDisplay(WindowInfo *pWindow)
 {
 #if defined(CR_NEWWINTRACK)
-    if (RTThreadNativeSelf()==RTThreadGetNative(stub.hSyncThread))
+    if ((NIL_RTTHREAD!=stub.hSyncThread) && (RTThreadNativeSelf()==RTThreadGetNative(stub.hSyncThread)))
     {
         if (pWindow && pWindow->dpy && !pWindow->syncDpy)
         {
@@ -442,16 +437,20 @@ void stubUninstallWindowMessageHook()
 # endif /*# ifndef CR_NEWWINTRACK*/
 
 #elif defined(GLX) //#ifdef WINDOWS
-static GLboolean stubCheckXExtensions(WindowInfo *pWindow)
+void stubCheckXExtensions(WindowInfo *pWindow)
 {
     int evb, erb, vmi=0, vma=0;
     Display *dpy = stubGetWindowDisplay(pWindow);
+
+    stub.bXExtensionsChecked = GL_TRUE;
+    stub.trackWindowVisibleRgn = 0;
 
     XLOCK(dpy);
     if (XCompositeQueryExtension(dpy, &evb, &erb) 
         && XCompositeQueryVersion(dpy, &vma, &vmi) 
         && (vma>0 || vmi>=4))
     {
+        stub.bHaveXComposite = GL_TRUE;
         crDebug("XComposite %i.%i", vma, vmi);
         vma=0;
         vmi=0;
@@ -460,8 +459,10 @@ static GLboolean stubCheckXExtensions(WindowInfo *pWindow)
             && vma>=2)
         {
             crDebug("XFixes %i.%i", vma, vmi);
+            stub.bHaveXFixes = GL_TRUE;
+            stub.trackWindowVisibleRgn = 1;
             XUNLOCK(dpy);
-            return GL_TRUE;
+            return;
         }
         else
         {
@@ -473,7 +474,7 @@ static GLboolean stubCheckXExtensions(WindowInfo *pWindow)
         crWarning("XComposite not found or old version (%i.%i), no VisibilityTracking", vma, vmi);
     }
     XUNLOCK(dpy);
-    return GL_FALSE;
+    return;
 }
 
 /*
@@ -482,22 +483,20 @@ static GLboolean stubCheckXExtensions(WindowInfo *pWindow)
  */
 GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
 {
-    static GLboolean bExtensionsChecked = GL_FALSE;
-
     XserverRegion xreg;
     int cRects, i;
     XRectangle *pXRects;
     GLint* pGLRects;
     Display *dpy;
+    bool bNoUpdate = false;
 
-    if (bExtensionsChecked || stubCheckXExtensions(pWindow))
+    if (!stub.bXExtensionsChecked)
     {
-        bExtensionsChecked = GL_TRUE;
-    }
-    else
-    {
-        stub.trackWindowVisibleRgn = 0;
-        return GL_FALSE;
+        stubCheckXExtensions(pWindow);
+        if (!stub.trackWindowVisibleRgn)
+        {
+            return GL_FALSE;
+        }
     }
 
     dpy = stubGetWindowDisplay(pWindow);
@@ -511,15 +510,32 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
     XFixesDestroyRegion(dpy, xreg);
     XUNLOCK(dpy);
 
-    /* @todo For some odd reason *first* run of compiz on freshly booted VM gives us 0 cRects all the time.
-     * In (!pWindow->pVisibleRegions && cRects) "&& cRects" is a workaround for that case, especially as this
-     * information is useless for full screen composing managers anyway.
-     * If this is changed, make sure to change crVBoxServerLoadState accordingly.
-     */
-    if ((!pWindow->pVisibleRegions && cRects)
-        || pWindow->cVisibleRegions!=cRects 
-        || (pWindow->pVisibleRegions && crMemcmp(pWindow->pVisibleRegions, pXRects, cRects * sizeof(XRectangle))))
+    /* Check for compiz main window */
+    if (!pWindow->pVisibleRegions && !cRects)
     {
+#ifdef VBOX_TEST_MEGOO
+        XWindowAttributes attr;
+        XLOCK(dpy);
+        XSync(dpy, false);
+        XGetWindowAttributes(dpy, pWindow->drawable, &attr);
+        XUNLOCK(dpy);
+
+        bNoUpdate = attr.override_redirect;
+#else
+        bNoUpdate = true;
+#endif
+    }
+
+    if (!bNoUpdate
+        && (!pWindow->pVisibleRegions
+            || pWindow->cVisibleRegions!=cRects 
+            || (pWindow->pVisibleRegions && crMemcmp(pWindow->pVisibleRegions, pXRects, cRects * sizeof(XRectangle)))))
+    {
+        if (pWindow->pVisibleRegions)
+        {
+            XFree(pWindow->pVisibleRegions);
+        }
+
         pWindow->pVisibleRegions = pXRects;
         pWindow->cVisibleRegions = cRects;
 

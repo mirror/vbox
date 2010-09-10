@@ -43,6 +43,8 @@
 #include <X11/extensions/XShm.h>
 #include <sys/shm.h>
 #include <X11/extensions/Xdamage.h>
+#include <X11/extensions/Xcomposite.h>
+#include <X11/extensions/Xfixes.h>
 #endif
 
 #if defined(WINDOWS) || defined(Linux) || defined(SunOS)
@@ -52,6 +54,8 @@
 #if !defined(CHROMIUM_THREADSAFE) && defined(CR_NEWWINTRACK)
 # error CHROMIUM_THREADSAFE have to be defined
 #endif
+
+/*#define VBOX_TEST_MEGOO*/
 
 #if 0 && defined(CR_NEWWINTRACK) && !defined(WINDOWS)
 #define XLOCK(dpy) XLockDisplay(dpy)
@@ -231,6 +235,10 @@ typedef struct {
     GLboolean       bShmInitFailed;
 
     CRHashTable     *pGLXPixmapsHash;
+
+    GLboolean       bXExtensionsChecked;
+    GLboolean       bHaveXComposite;
+    GLboolean       bHaveXFixes;
 #endif
 
 #ifdef WINDOWS
@@ -283,6 +291,7 @@ extern WindowInfo *stubGetWindowInfo( Display *dpy, GLXDrawable drawable );
 extern void stubUseXFont( Display *dpy, Font font, int first, int count, int listbase );
 extern Display* stubGetWindowDisplay(WindowInfo *pWindow);
 
+extern void stubCheckXExtensions(WindowInfo *pWindow);
 #endif
 
 
