@@ -1130,11 +1130,13 @@ static DECLCALLBACK(void) ich9pciConfigWrite(PCIDevice *aDev, uint32_t u32Addres
                                              uint32_t val, unsigned len)
 {
     /* Fast case - update one of BARs or ROM address, 'while' only for 'break' */
-    while (len == 4 &&
-           (u32Address >= VBOX_PCI_BASE_ADDRESS_0 &&
-            u32Address < VBOX_PCI_BASE_ADDRESS_0 + 6 * 4)
-           ||
-           (u32Address >= VBOX_PCI_ROM_ADDRESS && u32Address < VBOX_PCI_ROM_ADDRESS+4))
+    while (   len == 4
+           && (   (   u32Address >= VBOX_PCI_BASE_ADDRESS_0
+                   && u32Address <  VBOX_PCI_BASE_ADDRESS_0 + 6 * 4)
+               || (   u32Address >= VBOX_PCI_ROM_ADDRESS
+                   && u32Address <  VBOX_PCI_ROM_ADDRESS+4)
+              )
+           )
     {
         PCIIORegion *pRegion;
         int reg, regionSize;
