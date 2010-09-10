@@ -5411,7 +5411,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             && *pszDumpDir == '\0')
             pszDumpDir = NULL;
 
-        int vrc = VERR_GENERAL_FAILURE;
+        int vrc;
         if (   pszDumpDir
             && !RTDirExists(pszDumpDir))
         {

@@ -60,13 +60,12 @@
 /*******************************************************************************
 *   Globals                                                                    *
 *******************************************************************************/
-volatile static uint64_t   g_CoreDumpThread = NIL_RTTHREAD;
-volatile static bool       g_fCoreDumpSignalSetup = false;
-volatile static bool       g_fCoreDumpDeliberate = false;
-volatile static bool       g_fCoreDumpInProgress = false;
-volatile static uint32_t   g_fCoreDumpFlags = 0;
-static char                g_szCoreDumpDir[PATH_MAX] = { 0 };
-static char                g_szCoreDumpFile[PATH_MAX] = { 0 };
+volatile static RTNATIVETHREAD volatile g_CoreDumpThread = NIL_RTNATIVETHREAD;
+volatile static bool volatile      g_fCoreDumpSignalSetup       = false;
+volatile static bool volatile      g_fCoreDumpDeliberate        = false;
+volatile static uint32_t volatile  g_fCoreDumpFlags             = 0;
+static char                        g_szCoreDumpDir[PATH_MAX]    = { 0 };
+static char                        g_szCoreDumpFile[PATH_MAX]   = { 0 };
 
 
 /*******************************************************************************
@@ -281,7 +280,7 @@ static int AllocMemoryArea(PVBOXCORE pVBoxCore)
      */
     cb += _128K;
     void *pv = mmap(NULL, cb, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1 /* fd */, 0 /* offset */);
-    if (pv)
+    if (pv != MAP_FAILED)
     {
         CORELOG((CORELOG_NAME "AllocMemoryArea: memory area of %u bytes allocated.\n", cb));
         pVBoxCore->pvCore = pv;
@@ -1151,7 +1150,7 @@ static int rtCoreDumperForEachThread(PVBOXCORE pVBoxCore,  uint64_t *pcThreads, 
         RTFileGetSize(hFile, &u64Size);
         size_t cbInfoHdrAndData = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
         void *pvInfoHdr = mmap(NULL, cbInfoHdrAndData, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1 /* fd */, 0 /* offset */);
-        if (pvInfoHdr)
+        if (pvInfoHdr != MAP_FAILED)
         {
             rc = RTFileRead(hFile, pvInfoHdr, cbInfoHdrAndData, NULL);
             if (RT_SUCCESS(rc))
@@ -2122,17 +2121,15 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
 {
     CORELOG((CORELOG_NAME "SignalHandler Sig=%d pvArg=%p\n", Sig, pvArg));
 
-    int rc = VERR_GENERAL_FAILURE;
-    bool fCallSystemDump = false;
-    if (ASMAtomicUoReadBool(&g_fCoreDumpInProgress) == false)
+    RTNATIVETHREAD  hCurNativeThread = RTThreadNativeSelf();
+    int             rc               = VERR_GENERAL_FAILURE;
+    bool            fCallSystemDump  = false;
+    bool            fRc;
+    ASMAtomicCmpXchgHandle(&g_CoreDumpThread, hCurNativeThread, NIL_RTNATIVETHREAD, fRc);
+    if (fRc)
     {
-        ASMAtomicWriteBool(&g_fCoreDumpInProgress, true);
-        ASMAtomicWriteU64(&g_CoreDumpThread, (uint64_t)RTThreadSelf());
-
         rc = rtCoreDumperTakeDump((ucontext_t *)pvArg);
-
-        ASMAtomicWriteU64(&g_CoreDumpThread, NIL_RTTHREAD);
-        ASMAtomicWriteBool(&g_fCoreDumpInProgress, false);
+        ASMAtomicWriteHandle(&g_CoreDumpThread, NIL_RTNATIVETHREAD);
 
         if (RT_FAILURE(rc))
             CORELOGRELSYS((CORELOG_NAME "TakeDump failed! rc=%Rrc\n", rc));
@@ -2149,7 +2146,9 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
          * If our dumper has crashed. No point in waiting, trigger the system one.
          * Wait only when the dumping thread is not the one generating this signal.
          */
-        if (ASMAtomicReadU64(&g_CoreDumpThread) == (uint64_t)RTThreadSelf())
+        RTNATIVETHREAD hNativeDumperThread;
+        ASMAtomicReadHandle(&g_CoreDumpThread, &hNativeDumperThread);
+        if (hNativeDumperThread == RTThreadNativeSelf())
         {
             CORELOGRELSYS((CORELOG_NAME "SignalHandler: Core dumper (thread %u) crashed Sig=%d. Triggering system dump\n",
                            RTThreadSelf(), Sig));
@@ -2163,8 +2162,11 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
              */
             CORELOGRELSYS((CORELOG_NAME "SignalHandler: Core dump already in progress! Waiting a while for completion Sig=%d.\n", Sig));
             int64_t iTimeout = 16000;  /* timeout (ms) */
-            while (ASMAtomicReadBool(&g_fCoreDumpInProgress) == true)
+            for (;;)
             {
+                ASMAtomicReadHandle(&g_CoreDumpThread, &hNativeDumperThread);
+                if (hNativeDumperThread == NIL_RTNATIVETHREAD)
+                    break;
                 RTThreadSleep(200);
                 iTimeout -= 200;
                 if (iTimeout <= 0)
@@ -2203,19 +2205,21 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
 }
 
 
-/**
- * Take a core dump of the current process without terminating it.
- *
- * @returns IPRT status code.
- * @param   pszOutputFile       Name of the core file.  If NULL use the
- *                              default naming scheme.
- * @param   fLiveCore           When true, the process is not killed after
- *                              taking a core. Otherwise it will be killed. This
- *                              works in conjuction with the flags set during
- *                              RTCoreDumperSetup().
- */
 RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore)
 {
+    /** @todo r=bird: No setup should be required for this call and it
+     * shouldn't change the globals.
+     *
+     * Would probably be best to serialize RTCoreDumperTakeDump callers using a
+     * lazily initialized critsect (see RTOnce) and use different globals to
+     * communicate with the signal handlers.
+     *
+     * Another improvement is to use getcontext() to get the thread context and
+     * call rtCoreDumperTakeDump directly.  Extend rtCoreDumperTakeDump so that
+     * it takes pszOutputFile as an optional argument.  Mask the other fatal +
+     * SIGUSR2 while doing this.
+     */
+
     /*
      * Validate input.
      */
@@ -2245,46 +2249,45 @@ RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore)
 }
 
 
-/**
- * Sets up and enables the core dumper.
- *
- * Installs signal / unhandled exception handlers for catching fatal errors
- * that should result in a core dump.  If you wish to install your own handlers
- * you should do that after calling this function and make sure you pass on
- * events you don't handle.
- *
- * This can be called multiple times to change the settings without needing to
- * call RTCoreDumperDisable in between.
- *
- * @param   pszOutputDir        The directory to store the cores in.  If NULL
- *                              the current directory will be used.
- * @param   pszBaseName         Base file name, no directory.  If NULL the
- *                              dumper will generate an appropriate name.
- * @param   fFlags              Setup flags, see RTCOREDUMPER_FLAGS_*.
- */
 RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
 {
     /*
      * Validate flags.
      */
-    AssertReturn(fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(fFlags, VERR_INVALID_PARAMETER); /** @todo r=bird: Update the function docs to reflect this.  It currently reads
+                                                   * as if RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP was standard behavior.
+                                                   * The SIGUSR2/RTCOREDUMPER_FLAGS_LIVE_CORE behavior isn't mentioned at all. */
     AssertReturn(!(fFlags & ~(  RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP
                               | RTCOREDUMPER_FLAGS_LIVE_CORE)),
                  VERR_INVALID_PARAMETER);
 
+/** @todo r=bird: The idea here was that we shouldn't register the handler
+ *        more than once.  I.e. skip it if g_fCoreDumpSignalSetup and the
+ *        flags didn't change in any way.  The rational/usecase is that that
+ *        allows the user to chain handlers before our SIGSEGV/SIGBUS/SIGTRAP
+ *        core dumping + crashing handler.  Since we're registering our stuff
+ *        in Main somewhere it's important that only the first call messes with
+ *        the signal handlers.  The front end could for instance do a
+ *        RTCoreDumperSetup(NULL, RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP |
+ *        RTCOREDUMPER_FLAGS_LIVE_CORE) call in it's main() before setting up
+ *        it's own SIGBUS/SIGSEGV/SIGTRAP handlers.
+ *
+ *        Adding the conditional registration via the two flags complicates
+ *        the implementation of this use case. */
     /*
      * Install core dump signal handler.
      */
     struct sigaction sigAct;
     RT_ZERO(sigAct);
     sigAct.sa_sigaction = &rtCoreDumperSignalHandler;
-    sigemptyset(&sigAct.sa_mask);
-    sigAct.sa_flags = SA_RESTART | SA_SIGINFO | SA_NODEFER;
+    sigemptyset(&sigAct.sa_mask); /** @todo r=bird: We're probably better off blocking all signals here. */
+    sigAct.sa_flags = SA_RESTART | SA_SIGINFO | SA_NODEFER; /** @todo r=bird: SA_NODEFER doesn't make sense for SIGUSR2. For the hardware triggered ones, I don't think you can efficiently mask them, but it doesn't hurt playing safe ofc. */
 
     if (fFlags & RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP)
     {
         sigaction(SIGSEGV, &sigAct, NULL);
         sigaction(SIGBUS, &sigAct, NULL);
+/** @todo Add SIGTRAP or release+fatal assertions. */
     }
 
     if (fFlags & RTCOREDUMPER_FLAGS_LIVE_CORE)
@@ -2302,11 +2305,6 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
 }
 
 
-/**
- * Disables the core dumper, i.e. undoes what RTCoreDumperSetup did.
- *
- * @returns IPRT status code.
- */
 RTDECL(int) RTCoreDumperDisable(void)
 {
     /*
