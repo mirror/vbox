@@ -377,7 +377,7 @@ void crVBoxServerRemoveClient(uint32_t u32ClientID)
 
 int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t cbBuffer)
 {
-    CRClient *pClient;
+    CRClient *pClient = NULL;
     int32_t i;
 
     /*crDebug("=>crServer: ClientWrite u32ClientID=%d", u32ClientID);*/
@@ -387,11 +387,11 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
         if (cr_server.clients[i] && cr_server.clients[i]->conn
             && cr_server.clients[i]->conn->u32ClientID==u32ClientID)
         {
+            pClient = cr_server.clients[i];
             break;
         }
     }
-    pClient = cr_server.clients[i];
-    CRASSERT(pClient);
+    if (!pClient) return VERR_INVALID_PARAMETER;
 
     if (!pClient->conn->vMajor) return VERR_NOT_SUPPORTED;
 

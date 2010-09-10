@@ -284,6 +284,18 @@ DECLEXPORT(void) crDebug( char *format, ... )
     if (first_time)
     {
         const char *fname = crGetenv( "CR_DEBUG_FILE" );
+        char str[1024];
+
+#if defined(Linux) && defined(IN_GUEST) && defined(DEBUG_leo)
+        if (!fname)
+        {
+            char pname[1024];
+            crGetProcName(pname, 1024);
+            sprintf(str, "/home/leo/crlog_%s.txt", pname);
+            fname = &str[0];
+        }
+#endif
+
         first_time = 0;
         if (fname)
         {

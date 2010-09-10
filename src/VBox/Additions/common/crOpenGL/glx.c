@@ -1031,10 +1031,100 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXQueryVersion)( Display *dpy, int *major, int *min
     return 1;
 }
 
+static XErrorHandler oldErrorHandler;
+static unsigned char lastXError = Success;
+
+static int 
+errorHandler (Display *dpy, XErrorEvent *e)
+{
+    lastXError = e->error_code;
+    return 0;
+}
+
 DECLEXPORT(void) VBOXGLXTAG(glXSwapBuffers)( Display *dpy, GLXDrawable drawable )
 {
     WindowInfo *window = stubGetWindowInfo(dpy, drawable);
     stubSwapBuffers( window, 0 );
+
+#ifdef VBOX_TEST_MEGOO
+    if (!stub.bXExtensionsChecked)
+    {
+        stubCheckXExtensions(window);
+    }
+
+    if (!stub.bHaveXComposite)
+    {
+        return;
+    }
+
+    {
+        Pixmap p;
+        XWindowAttributes attr;
+
+        XLOCK(dpy);
+        XGetWindowAttributes(dpy, window->drawable, &attr);
+        if (attr.override_redirect)
+        {
+            XUNLOCK(dpy);
+            return;
+        }
+
+        crLockMutex(&stub.mutex);
+
+        XSync(dpy, false);
+        oldErrorHandler = XSetErrorHandler(errorHandler);
+        /*@todo this creates new pixmap for window every call*/
+        /*p = XCompositeNameWindowPixmap(dpy, window->drawable);*/
+        XSync(dpy, false);
+        XSetErrorHandler(oldErrorHandler);
+        XUNLOCK(dpy);
+
+        if (lastXError==Success)
+        {
+            char *data, *imgdata;
+            GC gc;
+            XImage *image;
+            XVisualInfo searchvis, *pret;
+            int nvisuals;
+            XGCValues gcValues;
+            int i, rowsize;
+
+            XLOCK(dpy);
+
+            searchvis.visualid = attr.visual->visualid;
+            pret = XGetVisualInfo(dpy, VisualIDMask, &searchvis, &nvisuals);
+            if (nvisuals!=1) crWarning("XGetVisualInfo returned %i visuals for %x", nvisuals, (unsigned int) searchvis.visualid);
+            CRASSERT(pret);
+
+            gc = XCreateGC(dpy, window->drawable, 0, &gcValues);
+            if (!gc) crWarning("Failed to create gc!");                
+            
+            data = crCalloc(window->width * window->height * 4);
+            imgdata = crCalloc(window->width * window->height * 4);
+            CRASSERT(data && imgdata);
+            stub.spu->dispatch_table.ReadPixels(0, 0, window->width, window->height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            /*y-invert image*/
+            rowsize = 4*window->width;
+            for (i=0; i<window->height; ++i)
+            {
+                crMemcpy(imgdata+rowsize*i, data+rowsize*(window->height-i-1), rowsize);
+            }
+            crFree(data);
+
+            XSync(dpy, false);
+            image = XCreateImage(dpy, attr.visual, pret->depth, ZPixmap, 0, imgdata, window->width, window->height, 32, 0);
+            XPutImage(dpy, window->drawable, gc, image, 0, 0, 0, 0, window->width, window->height);
+
+            XFree(pret);
+            /*XFreePixmap(dpy, p);*/
+            XFreeGC(dpy, gc);
+            XDestroyImage(image);
+            XUNLOCK(dpy);
+        }
+        lastXError=Success;
+        crUnlockMutex(&stub.mutex);
+    }
+#endif
 }
 
 #ifndef VBOX_NO_NATIVEGL
@@ -1341,6 +1431,30 @@ VBOXGLXTAG(glXCreatePixmap)(Display *dpy, GLXFBConfig config, Pixmap pixmap, con
     GLX_Pixmap_t *pGlxPixmap;
     (void) dpy;
     (void) config;
+
+#if 0
+    {
+        int x, y;
+        unsigned int w, h;
+        unsigned int border;
+        unsigned int depth;
+        Window root;
+
+        crDebug("glXCreatePixmap called for %lu", pixmap);
+
+        XLOCK(dpy);
+        if (!XGetGeometry(dpy, pixmap, &root, &x, &y, &w, &h, &border, &depth))
+        {
+            XSync(dpy, False);
+            if (!XGetGeometry(dpy, pixmap, &root, &x, &y, &w, &h, &border, &depth))
+            {
+                crDebug("fail");
+            }
+        }
+        crDebug("root: %lu, [%i,%i %u,%u]", root, x, y, w, h);
+        XUNLOCK(dpy);
+    }
+#endif
 
     pGlxPixmap = crCalloc(sizeof(GLX_Pixmap_t));
     if (!pGlxPixmap)

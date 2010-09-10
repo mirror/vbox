@@ -149,6 +149,17 @@ stubNewWindow( const char *dpyName, GLint visBits )
     return spuWin;
 }
 
+#ifdef GLX
+static XErrorHandler oldErrorHandler;
+static unsigned char lastXError = Success;
+
+static int 
+errorHandler (Display *dpy, XErrorEvent *e)
+{
+    lastXError = e->error_code;
+    return 0;
+}
+#endif
 
 GLboolean
 stubIsWindowVisible(WindowInfo *win)
@@ -165,7 +176,64 @@ stubIsWindowVisible(WindowInfo *win)
         XLOCK(dpy);
         XGetWindowAttributes(dpy, win->drawable, &attr);
         XUNLOCK(dpy);
-        return (attr.map_state != IsUnmapped);
+
+        if (attr.map_state == IsUnmapped)
+        {
+            return GL_FALSE;
+        }
+# if 1
+        return GL_TRUE;
+# else
+        if (attr.override_redirect)
+        {
+            return GL_TRUE;
+        }
+
+        if (!stub.bXExtensionsChecked)
+        {
+            stubCheckXExtensions(win);
+        }
+
+        if (!stub.bHaveXComposite)
+        {
+            return GL_TRUE;
+        }
+        else
+        {
+            Pixmap p;
+
+            crLockMutex(&stub.mutex);
+
+            XLOCK(dpy);
+            XSync(dpy, false);
+            oldErrorHandler = XSetErrorHandler(errorHandler);
+            /*@todo this will create new pixmap for window every call*/
+            p = XCompositeNameWindowPixmap(dpy, win->drawable);
+            XSync(dpy, false);
+            XSetErrorHandler(oldErrorHandler);
+            XUNLOCK(dpy);
+
+            switch (lastXError)
+            {
+                case Success:
+                    XFreePixmap(dpy, p);
+                    crUnlockMutex(&stub.mutex);
+                    return GL_FALSE;
+                    break;
+                case BadMatch:
+                    /*Window isn't redirected*/
+                    lastXError = Success;
+                    break;
+                default:
+                    crWarning("Unexpected XError %i", (int)lastXError);
+                    lastXError = Success;
+            }
+
+            crUnlockMutex(&stub.mutex);
+
+            return GL_TRUE;
+        }
+# endif
     }
     else {
         /* probably created by crWindowCreate() */
@@ -881,7 +949,6 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
 #ifdef CR_NEWWINTRACK
                 window->u32ClientID = stub.spu->dispatch_table.VBoxPackGetInjectID();
 #endif
-
             }
         }
         else {
@@ -937,6 +1004,9 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
             {
                 /*crDebug("(2)stubMakeCurrent ctx=%p(%i) window=%p(%i)", context, context->spuContext, window, window->spuWindow);*/
                 window->spuWindow = stub.spu->dispatch_table.WindowCreate( window->dpyName, context->visBits );
+#ifdef CR_NEWWINTRACK
+                window->u32ClientID = stub.spu->dispatch_table.VBoxPackGetInjectID();
+#endif
                 if (context->currentDrawable && context->currentDrawable->type==CHROMIUM 
                     && context->currentDrawable->pOwner==context)
                 {

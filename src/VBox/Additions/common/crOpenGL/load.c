@@ -390,13 +390,16 @@ static void stubSPUSafeTearDown(void)
         }
     }
 #else
-    ASMAtomicWriteBool(&stub.bShutdownSyncThread, true);
+    if (stub.hSyncThread!=NIL_RTTHREAD)
     {
-        /*RTThreadWait might return too early, which cause our code being unloaded while RT thread wrapper is still running*/
-        int rc = pthread_join(RTThreadGetNative(stub.hSyncThread), NULL);
-        if (!rc)
+        ASMAtomicWriteBool(&stub.bShutdownSyncThread, true);
         {
-            crDebug("pthread_join failed %i", rc);
+            /*RTThreadWait might return too early, which cause our code being unloaded while RT thread wrapper is still running*/
+            int rc = pthread_join(RTThreadGetNative(stub.hSyncThread), NULL);
+            if (!rc)
+            {
+                crDebug("pthread_join failed %i", rc);
+            }
         }
     }
 #endif
@@ -1123,6 +1126,10 @@ raise(SIGINT);*/
     stub.xshmSI.shmid = -1;
     stub.bShmInitFailed = GL_FALSE;
     stub.pGLXPixmapsHash = crAllocHashtable();
+
+    stub.bXExtensionsChecked = GL_FALSE;
+    stub.bHaveXComposite = GL_FALSE;
+    stub.bHaveXFixes = GL_FALSE;
 #endif
 
     stub_initialized = 1;
