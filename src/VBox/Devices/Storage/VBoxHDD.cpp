@@ -5501,6 +5501,8 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 AssertRC(rc2);
                 fLockWriteTo = false;
             }
+            else /* Don't propagate the error to the outside */
+                rc = VINF_SUCCESS;
 
             uOffset += cbThisRead;
             cbRemaining -= cbThisRead;
