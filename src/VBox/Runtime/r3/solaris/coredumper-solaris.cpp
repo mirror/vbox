@@ -2256,7 +2256,7 @@ RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore)
     }
     else
     {
-        CORELOGRELSYS(("RTCoreDumperTakeDump: getcontext failed rc=%d.\n"));
+        CORELOGRELSYS(("RTCoreDumperTakeDump: getcontext failed rc=%d.\n", rc));
         rc = VERR_INVALID_CONTEXT;
     }
 
