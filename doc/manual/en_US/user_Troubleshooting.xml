@@ -464,8 +464,7 @@
       <para>To enable flushing for IDE disks, issue the following
       command:</para>
 
-      <screen>VBoxManage setextradata "VM name"
-      "VBoxInternal/Devices/piix3ide/0/LUN#[x]/Config/IgnoreFlush" 0</screen>
+      <screen>VBoxManage setextradata "VM name" "VBoxInternal/Devices/piix3ide/0/LUN#[x]/Config/IgnoreFlush" 0</screen>
 
       <para>The value [x] that selects the disk is 0 for the master device on
       the first channel, 1 for the slave device on the first channel, 2 for
@@ -475,8 +474,7 @@
       <para>To enable flushing for SATA disks, issue the following
       command:</para>
 
-      <screen>VBoxManage setextradata "VM name"
-      "VBoxInternal/Devices/ahci/0/LUN#[x]/Config/IgnoreFlush" 0</screen>
+      <screen>VBoxManage setextradata "VM name" "VBoxInternal/Devices/ahci/0/LUN#[x]/Config/IgnoreFlush" 0</screen>
 
       <para>The value [x] that selects the disk can be a value between 0 and
       29.</para>
@@ -807,13 +805,11 @@ VBoxClient --seamless</screen> when your X11 user session is started
       <para>Depending whether the setting should be changed for an individual
       user or for the system, either</para>
 
-      <screen>HKEY_CURRENT_USER\Software\Microsoft\Terminal Server
-        Client\Min Send Interval</screen>
+      <screen>HKEY_CURRENT_USER\Software\Microsoft\Terminal Server Client\Min Send Interval</screen>
 
       <para>or</para>
 
-      <screen>HKEY_LOCAL_MACHINE\Software\Microsoft\Terminal Server
-        Client\Min Send Interval</screen>
+      <screen>HKEY_LOCAL_MACHINE\Software\Microsoft\Terminal Server Client\Min Send Interval</screen>
 
       <para>can be set appropriately.</para>
     </sect2>
