@@ -379,10 +379,12 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
         SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32InformationSize);
         if (uVersion == sSSMDisplayVer2)
         {
-            uint32_t w = (uint32_t)that->maFramebuffers[i].w;
-            uint32_t h = (uint32_t)that->maFramebuffers[i].h;
+            uint32_t w;
+            uint32_t h;
             SSMR3GetU32(pSSM, &w);
             SSMR3GetU32(pSSM, &h);
+            that->maFramebuffers[i].w = w;
+            that->maFramebuffers[i].h = h;
         }
     }
 
