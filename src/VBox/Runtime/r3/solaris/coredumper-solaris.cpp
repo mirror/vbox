@@ -2137,7 +2137,7 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
         if (RT_FAILURE(rc))
             CORELOGRELSYS((CORELOG_NAME "TakeDump failed! rc=%Rrc\n", rc));
     }
-    else
+    else if (Sig == SIGSEGV || Sig == SIGBUS)
     {
         /*
          * Core dumping is already in progress and we've somehow ended up being
@@ -2150,11 +2150,19 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
          * Wait only when the dumping thread is not the one generating this signal.
          */
         if (ASMAtomicReadU64(&g_CoreDumpThread) != (uint64_t)RTThreadSelf())
+        {
+            CORELOGRELSYS((CORELOG_NAME "SignalHandler: Core dumper (thread %u) crashed Sig=%d. Triggering system dump\n",
+                           RTThreadSelf(), Sig));
             fCallSystemDump = true;
+        }
         else
         {
-            CORELOGRELSYS((CORELOG_NAME "SignalHandler: Core dump already in progress! Waiting before signalling Sig=%d.\n", Sig));
-            int64_t iTimeout = 10000;  /* timeout (ms) */
+            /*
+             * Some other thread in the process is triggering a crash, wait a while
+             * to let our core dumper finish, on timeout trigger system dump.
+             */
+            CORELOGRELSYS((CORELOG_NAME "SignalHandler: Core dump already in progress! Waiting a while for completion Sig=%d.\n", Sig));
+            int64_t iTimeout = 16000;  /* timeout (ms) */
             while (ASMAtomicReadBool(&g_fCoreDumpInProgress) == true)
             {
                 RTThreadSleep(200);
@@ -2165,7 +2173,7 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
             if (iTimeout <= 0)
             {
                 fCallSystemDump = true;
-                CORELOGRELSYS((CORELOG_NAME "SignalHandler: Core dump seems to be stuck. Signalling new signal %d\n", Sig));
+                CORELOGRELSYS((CORELOG_NAME "SignalHandler: Core dumper seems to be stuck. Signalling new signal %d\n", Sig));
             }
         }
     }
