@@ -5,7 +5,7 @@
 # webservice and calls various methods on it. Please refer to the SDK
 # programming reference (SDKRef.pdf) for how to use this sample.
 #
-# Copyright (C) 2008-2009 Sun Microsystems, Inc.
+# Copyright (C) 2008-2010 Oracle Corporation
 #
 # The following license applies to this file only:
 #

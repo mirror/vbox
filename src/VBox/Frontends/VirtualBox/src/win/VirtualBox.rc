@@ -37,7 +37,7 @@ BEGIN
     BEGIN
     VALUE "CompanyName",     VBOX_RC_COMPANY_NAME
     VALUE "FileDescription", "VirtualBox GUI\0"
-    VALUE "FileVersion",     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
+    VALUE "FileVersion",     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
     VALUE "InternalName",    "VirtualBox.exe\0"
     VALUE "LegalCopyright",  VBOX_RC_LEGAL_COPYRIGHT
     VALUE "OriginalFilename","VirtualBox.exe\0"
