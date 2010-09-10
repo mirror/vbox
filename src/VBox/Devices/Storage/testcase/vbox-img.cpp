@@ -46,7 +46,11 @@ static void showUsage(void)
                  "                --dstfilename <filename>\n"
                  "                [--srcformat VDI|VMDK|VHD|RAW|..]\n"
                  "                [--dstformat VDI|VMDK|VHD|RAW|..]\n"
-                 "                [--variant Standard,Fixed,Split2G,Stream,ESX]\n",
+                 "                [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
+                 "\n"
+                 "   info         --filename <filename>\n"
+                 "\n"
+                 "   compact      --filename <filename>\n",
                  g_pszProgName);
 }
 
@@ -72,7 +76,7 @@ static int handleVDMessage(void *pvUser, const char *pszFormat, ...)
     NOREF(pvUser);
     va_list args;
     va_start(args, pszFormat);
-    RTMsgWarningV(pszFormat, args);
+    RTPrintfV(pszFormat, args);
     va_end(args);
     return VINF_SUCCESS;
 }
@@ -88,8 +92,20 @@ int errorSyntax(const char *pszFormat, ...)
     RTPrintf("\n"
              "Syntax error: %N\n", pszFormat, &args);
     va_end(args);
+    showUsage();
     return 1;
 }
+int errorRuntime(const char *pszFormat, ...)
+{
+    va_list args;
+    
+    va_start(args, pszFormat);
+    RTPrintf("\n"
+             "Error: %N\n", pszFormat, &args);
+    va_end(args);
+    return 1;
+}
+
 
 
 int handleSetUUID(HandlerArg *a)
@@ -162,33 +178,33 @@ int handleSetUUID(HandlerArg *a)
          * because some backends fail to open the image. */
         rc = VDGetFormat(NULL, pszFilename, &pszFormat);
         if (RT_FAILURE(rc))
-            return errorSyntax("Format autodetect failed: %Rrc\n", rc);
+            return errorRuntime("Format autodetect failed: %Rrc\n", rc);
     }
     
     PVBOXHDD pVD = NULL;
     rc = VDCreate(pVDIfs, &pVD);
     if (RT_FAILURE(rc))
-        return errorSyntax("Cannot create the virtual disk container: %Rrc\n", rc);
+        return errorRuntime("Cannot create the virtual disk container: %Rrc\n", rc);
     
     
     rc = VDOpen(pVD, pszFormat, pszFilename, VD_OPEN_FLAGS_NORMAL, NULL);
     if (RT_FAILURE(rc))
-        return errorSyntax("Cannot open the virtual disk image \"%s\": %Rrc\n",
-                           pszFilename, rc);
+        return errorRuntime("Cannot open the virtual disk image \"%s\": %Rrc\n",
+                            pszFilename, rc);
     
     RTUUID oldImageUuid;
     rc = VDGetUuid(pVD, VD_LAST_IMAGE, &oldImageUuid);
     if (RT_FAILURE(rc))
-        return errorSyntax("Cannot get UUID of virtual disk image \"%s\": %Rrc\n",
-                           pszFilename, rc);
+        return errorRuntime("Cannot get UUID of virtual disk image \"%s\": %Rrc\n",
+                            pszFilename, rc);
     
     RTPrintf("Old image UUID:  %RTuuid\n", &oldImageUuid);
     
     RTUUID oldParentUuid;
     rc = VDGetParentUuid(pVD, VD_LAST_IMAGE, &oldParentUuid);
     if (RT_FAILURE(rc))
-        return errorSyntax("Cannot get parent UUID of virtual disk image \"%s\": %Rrc\n",
-                           pszFilename, rc);
+        return errorRuntime("Cannot get parent UUID of virtual disk image \"%s\": %Rrc\n",
+                            pszFilename, rc);
     
     RTPrintf("Old parent UUID: %RTuuid\n", &oldParentUuid);
     
@@ -197,8 +213,8 @@ int handleSetUUID(HandlerArg *a)
         RTPrintf("New image UUID:  %RTuuid\n", &imageUuid);
         rc = VDSetUuid(pVD, VD_LAST_IMAGE, &imageUuid);
         if (RT_FAILURE(rc))
-            return errorSyntax("Cannot set UUID of virtual disk image \"%s\": %Rrc\n",
-                               pszFilename, rc);
+            return errorRuntime("Cannot set UUID of virtual disk image \"%s\": %Rrc\n",
+                                pszFilename, rc);
     }
     
     if (fSetParentUuid)
@@ -206,13 +222,13 @@ int handleSetUUID(HandlerArg *a)
         RTPrintf("New parent UUID: %RTuuid\n", &parentUuid);
         rc = VDSetParentUuid(pVD, VD_LAST_IMAGE, &parentUuid);
         if (RT_FAILURE(rc))
-            return errorSyntax("Cannot set parent UUID of virtual disk image \"%s\": %Rrc\n",
-                               pszFilename, rc);
+            return errorRuntime("Cannot set parent UUID of virtual disk image \"%s\": %Rrc\n",
+                                pszFilename, rc);
     }
     
     rc = VDCloseAll(pVD);
     if (RT_FAILURE(rc))
-        return errorSyntax("Closing image failed! rc=%Rrc\n", rc);
+        return errorRuntime("Closing image failed! rc=%Rrc\n", rc);
     
     if (pszFormat)
     {
@@ -332,14 +348,14 @@ int handleConvert(HandlerArg *a)
         rc = VDCreate(pVDIfs, &pSrcDisk);
         if (RT_FAILURE(rc))
         {
-            errorSyntax("Error while creating source disk container: %Rrc\n", rc);
+            errorRuntime("Error while creating source disk container: %Rrc\n", rc);
             break;
         }
 
         rc = VDOpen(pSrcDisk, pszSrcFormat, pszSrcFilename, VD_OPEN_FLAGS_READONLY, NULL);
         if (RT_FAILURE(rc))
         {
-            errorSyntax("Error while opening source image: %Rrc\n", rc);
+            errorRuntime("Error while opening source image: %Rrc\n", rc);
             break;
         }
 
@@ -350,7 +366,7 @@ int handleConvert(HandlerArg *a)
         rc = VDCreate(pVDIfs, &pDstDisk);
         if (RT_FAILURE(rc))
         {
-            errorSyntax("Error while creating the destination disk container: %Rrc\n", rc);
+            errorRuntime("Error while creating the destination disk container: %Rrc\n", rc);
             break;
         }
         
@@ -362,7 +378,7 @@ int handleConvert(HandlerArg *a)
                     pszDstFilename, false, 0, uImageFlags, NULL, NULL, NULL, NULL);
         if (RT_FAILURE(rc))
         {
-            errorSyntax("Error while copying the image: %Rrc\n", rc);
+            errorRuntime("Error while copying the image: %Rrc\n", rc);
             break;
         }
             
@@ -375,6 +391,121 @@ int handleConvert(HandlerArg *a)
         VDCloseAll(pSrcDisk);
     
     return RT_SUCCESS(rc) ? 0 : 1;
+}
+
+
+int handleInfo(HandlerArg *a)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = NULL;
+    const char *pszFilename = NULL;
+
+    /* Parse the command line. */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--filename", 'f', RTGETOPT_REQ_STRING }
+    };
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'f':   // --filename
+                pszFilename = ValueUnion.psz;
+                break;
+                
+            default:
+                ch = RTGetOptPrintError(ch, &ValueUnion);
+                showUsage();
+                return ch;
+        }
+    }
+    
+    /* Check for mandatory parameters. */
+    if (!pszFilename)
+        return errorSyntax("Mandatory --filename option missing\n");
+    
+    /* just try it */
+    char *pszFormat = NULL;
+    rc = VDGetFormat(NULL, pszFilename, &pszFormat);
+    if (RT_FAILURE(rc))
+        return errorSyntax("Format autodetect failed: %Rrc\n", rc);
+
+    rc = VDCreate(pVDIfs, &pDisk);
+    if (RT_FAILURE(rc))
+        return errorRuntime("Error while creating the virtual disk container: %Rrc\n", rc);
+    
+    /* Open the image */
+    rc = VDOpen(pDisk, pszFormat, pszFilename, VD_OPEN_FLAGS_INFO, NULL);
+    if (RT_FAILURE(rc))
+        return errorRuntime("Error while opening the image: %Rrc\n", rc);
+    
+    VDDumpImages(pDisk);
+    
+    VDCloseAll(pDisk);
+    
+    return rc;
+}
+
+int handleCompact(HandlerArg *a)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = NULL;
+    const char *pszFilename = NULL;
+    
+    /* Parse the command line. */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--filename", 'f', RTGETOPT_REQ_STRING }
+    };
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'f':   // --filename
+                pszFilename = ValueUnion.psz;
+                break;
+                
+            default:
+                ch = RTGetOptPrintError(ch, &ValueUnion);
+                showUsage();
+                return ch;
+        }
+    }
+    
+    /* Check for mandatory parameters. */
+    if (!pszFilename)
+        return errorSyntax("Mandatory --filename option missing\n");
+    
+    /* just try it */
+    char *pszFormat = NULL;
+    rc = VDGetFormat(NULL, pszFilename, &pszFormat);
+    if (RT_FAILURE(rc))
+        return errorSyntax("Format autodetect failed: %Rrc\n", rc);
+    
+    rc = VDCreate(pVDIfs, &pDisk);
+    if (RT_FAILURE(rc))
+        return errorRuntime("Error while creating the virtual disk container: %Rrc\n", rc);
+    
+    /* Open the image */
+    rc = VDOpen(pDisk, pszFormat, pszFilename, VD_OPEN_FLAGS_NORMAL, NULL);
+    if (RT_FAILURE(rc))
+        return errorRuntime("Error while opening the image: %Rrc\n", rc);
+    
+    rc = VDCompact(pDisk, 0, NULL);
+    if (RT_FAILURE(rc))
+        errorRuntime("Error while compacting image: %Rrc\n", rc);
+    
+    VDCloseAll(pDisk);
+    
+    return rc;
 }
 
 
@@ -469,6 +600,8 @@ int main(int argc, char *argv[])
     {
         { "setuuid", handleSetUUID },
         { "convert", handleConvert },
+        { "info",    handleInfo    },
+        { "compact", handleCompact },
         { NULL,               NULL }
     };
 
