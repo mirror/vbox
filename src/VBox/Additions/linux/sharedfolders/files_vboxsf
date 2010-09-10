@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: $
+# $Id$
 ## @file
 # Shared file between Makefile.kmk and export_modules
 #
