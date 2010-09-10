@@ -2304,12 +2304,17 @@ RTDECL(int) RTCoreDumperDisable(void)
     /*
      * Remove core dump signal handler & reset variables.
      */
-    signal(SIGSEGV, SIG_DFL);
-    signal(SIGBUS, SIG_DFL);
-    ASMAtomicWriteBool(&g_fCoreDumpSignalSetup, false);
+    if (ASMAtomicReadBool(&g_fCoreDumpSignalSetup) == true)
+    {
+        signal(SIGSEGV, SIG_DFL);
+        signal(SIGBUS, SIG_DFL);
+        signal(SIGUSR2, SIG_DFL);
+        ASMAtomicWriteBool(&g_fCoreDumpSignalSetup, false);
+    }
 
     RT_ZERO(g_szCoreDumpDir);
     RT_ZERO(g_szCoreDumpFile);
+    ASMAtomicWriteU32(&g_fCoreDumpFlags, 0);
     return VINF_SUCCESS;
 }
 
