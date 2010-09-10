@@ -1118,12 +1118,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 
     LogFlow(("InvalidatePage %RGv\n", GCPtrPage));
 
-# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-    /** @todo this shouldn't be necessary. */
-    if (pPool->cDirtyPages)
-        pgmPoolResetDirtyPages(pVM);
-# endif
-
     /*
      * Get the shadow PD entry and skip out if this PD isn't present.
      * (Guessing that it is frequent for a shadow PDE to not be present, do this first.)
@@ -1277,7 +1271,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
             /* Reset the modification counter (OpenSolaris trashes tlb entries very often) */
-            if (pShwPage->cModifications)
+            if (    !pShwPage->fDirty 
+                &&  pShwPage->cModifications)
                 pShwPage->cModifications = 1;
 # endif
 
