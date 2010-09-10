@@ -1384,7 +1384,11 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/stringalloc.cpp \
 	common/string/utf-16.cpp \
 	common/string/utf-8.cpp \
+	common/table/avlgcptr.cpp \
+	common/table/avlhcphys.cpp \
+	common/table/avllu32.cpp \
 	common/table/avlpv.cpp \
+	common/table/avlu32.cpp \
 	common/time/time.cpp \
 	generic/RTLogWriteStdErr-stub-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
