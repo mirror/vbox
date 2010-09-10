@@ -48,60 +48,46 @@ endif
 # Basic testcases for the VD code.
 #
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable tstVDSetUuid
- if1of ($(KBUILD_TARGET), darwin freebsd linux win solaris)
- # disable as no longer required
- # PROGRAMS += VBoxFixHdd
- endif
- ifeq ($(KBUILD_TARGET),l4)
-  tstVD_TEMPLATE = VBOXLNXHOSTR3EXE
-  tstVD-2_TEMPLATE = VBOXLNXHOSTR3EXE
-  tstVDCopy_TEMPLATE = VBOXLNXHOSTR3EXE
-  tstVDSnap_TEMPLATE = VBOXLNXHOSTR3EXE
-  tstVDShareable_TEMPLATE = VBOXLNXHOSTR3EXE
-  tstVDSetUuid_TEMPLATE = VBOXLNXHOSTR3EXE
- else
-  tstVD_TEMPLATE = VBOXR3TSTEXE
-  tstVD-2_TEMPLATE = VBOXR3TSTEXE
-  tstVDCopy_TEMPLATE = VBOXR3TSTEXE
-  tstVDSnap_TEMPLATE = VBOXR3TSTEXE
-  tstVDShareable_TEMPLATE = VBOXR3TSTEXE
-  tstVDSetUuid_TEMPLATE = VBOXR3TSTEXE
-  VBoxFixHdd_TEMPLATE = VBOXR3STATIC
- endif
+ PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable vbox-img
+ tstVD_TEMPLATE = VBOXR3TSTEXE
+ tstVD-2_TEMPLATE = VBOXR3TSTEXE
+ tstVDCopy_TEMPLATE = VBOXR3TSTEXE
+ tstVDSnap_TEMPLATE = VBOXR3TSTEXE
+ tstVDShareable_TEMPLATE = VBOXR3TSTEXE
+ vbox-img_TEMPLATE = VBOXR3STATIC
  tstVD_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
  tstVD-2_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVDCopy_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVDSnap_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVDShareable_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVDSetUuid_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
- VBoxFixHdd_LIBS = \
+ vbox-img_LIBS = \
 	$(VBOX_LIB_RUNTIME_STATIC)
  if1of ($(KBUILD_TARGET),os2 win)
-  VBoxFixHdd_LIBS += \
+  vbox-img_LIBS += \
 	$(PATH_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBox-zlib-static$(VBOX_SUFF_LIB)
  else
-  VBoxFixHdd_LIBS += \
+  vbox-img_LIBS += \
 	$(PATH_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
 	$(SDK_VBOX_ZLIB_LIBS)
  endif
  ifeq ($(KBUILD_TARGET),linux)
-  VBoxFixHdd_LIBS += crypt
+  vbox-img_LIBS += crypt
  else ifeq ($(KBUILD_TARGET),darwin)
-  VBoxFixHdd_LIBS += iconv
+  vbox-img_LIBS += iconv
  else ifeq ($(KBUILD_TARGET),win)
-  VBoxFixHdd_SDKS.win = VBOX_NTDLL
+  vbox-img_SDKS.win = VBOX_NTDLL
  endif
  tstVD_SOURCES  = tstVD.cpp
  tstVD-2_SOURCES  = tstVD-2.cpp
  tstVDCopy_SOURCES  = tstVDCopy.cpp
  tstVDSnap_SOURCES  = tstVDSnap.cpp
  tstVDShareable_SOURCES = tstVDShareable.cpp
- tstVDSetUuid_SOURCES = tstVDSetUuid.cpp
- VBoxFixHdd_SOURCES = \
-	tstVDSetUuid.cpp \
-	tstVDSetUuidStubs.cpp \
+
+ vbox-img_SOURCES = \
+	vbox-img.cpp \
+	$(VBOX_PATH_DEVICES_SRC)/Storage/VCICacheCore.cpp \
 	$(VBOX_PATH_DEVICES_SRC)/Storage/VBoxHDD.cpp \
 	$(VBOX_PATH_DEVICES_SRC)/Storage/RawHDDCore.cpp \
 	$(VBOX_PATH_DEVICES_SRC)/Storage/VmdkHDDCore.cpp \
@@ -109,9 +95,9 @@ ifdef VBOX_WITH_TESTCASES
 	$(VBOX_PATH_DEVICES_SRC)/Storage/VHDHDDCore.cpp \
 	$(VBOX_PATH_DEVICES_SRC)/Storage/ParallelsHDDCore.cpp
  ifdef VBOX_WITH_NEW_IO_CODE
- VBoxFixHdd_DEFS += VBOX_WITH_NEW_IO_CODE
+ vbox-img_DEFS += VBOX_WITH_NEW_IO_CODE
  endif
- VBoxFixHdd_DEFS += VBOX_HDD_NO_DYNAMIC_BACKENDS IN_VBOXDDU IN_VBOXDDU_STATIC IN_RT_R3
+ vbox-img_DEFS += VBOX_HDD_NO_DYNAMIC_BACKENDS IN_VBOXDDU IN_VBOXDDU_STATIC IN_RT_R3
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
