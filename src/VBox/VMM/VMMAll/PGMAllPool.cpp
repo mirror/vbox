@@ -1246,7 +1246,11 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
      */
     if (    pPage->cModifications >= cMaxModifications
         &&  !fForcedFlush
-        &&  pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+# if 1 
+        &&  (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
+# else /* test code */
+        &&  (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT || pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_32BIT_PT)
+# endif
         &&  (   fNotReusedNotForking
              || (   !pgmPoolMonitorIsReused(pVM, pVCpu, pRegFrame, pDis, pvFault)
                  && !pgmPoolMonitorIsForking(pPool, pDis, GCPhysFault & PAGE_OFFSET_MASK))
@@ -1404,6 +1408,72 @@ static void pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMSH
     }
     AssertMsg(!cErrors, ("cErrors=%d: last rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", cErrors, LastRc, LastPTE, pGstPT->a[LastPTE].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[LastPTE]), LastHCPhys));
 }
+
+/**
+ * Check references to guest physical memory in a PAE / 32-bit page table.
+ *
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ * @param   pShwPT      The shadow page table (mapping of the page).
+ * @param   pGstPT      The guest page table.
+ */
+static void pgmPoolTrackCheckPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMSHWPTPAE pShwPT, PCX86PT pGstPT)
+{
+    unsigned cErrors    = 0;
+    int      LastRc     = -1;           /* initialized to shut up gcc */
+    unsigned LastPTE    = ~0U;          /* initialized to shut up gcc */
+    RTHCPHYS LastHCPhys = NIL_RTHCPHYS; /* initialized to shut up gcc */
+    PVM      pVM        = pPool->CTX_SUFF(pVM);
+
+#ifdef VBOX_STRICT
+    for (unsigned i = 0; i < RT_MIN(RT_ELEMENTS(pShwPT->a), pPage->iFirstPresent); i++)
+        AssertMsg(!PGMSHWPTEPAE_IS_P(pShwPT->a[i]), ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, PGMSHWPTEPAE_GET_LOG(pShwPT->a[i]),  pPage->iFirstPresent));
+#endif
+    for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
+    {
+        if (PGMSHWPTEPAE_IS_P(pShwPT->a[i]))
+        {
+            RTHCPHYS HCPhys = NIL_RTHCPHYS;
+            int rc = PGMPhysGCPhys2HCPhys(pVM, pGstPT->a[i].u & X86_PTE_PG_MASK, &HCPhys);
+            if (    rc != VINF_SUCCESS
+                ||  PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]) != HCPhys)
+            {
+                Log(("rc=%d idx=%d guest %x shw=%RX64 vs %RHp\n", rc, i, pGstPT->a[i].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[i]), HCPhys));
+                LastPTE     = i;
+                LastRc      = rc;
+                LastHCPhys  = HCPhys;
+                cErrors++;
+
+                RTHCPHYS HCPhysPT = NIL_RTHCPHYS;
+                rc = PGMPhysGCPhys2HCPhys(pVM, pPage->GCPhys, &HCPhysPT);
+                AssertRC(rc);
+
+                for (unsigned iPage = 0; iPage < pPool->cCurPages; iPage++)
+                {
+                    PPGMPOOLPAGE pTempPage = &pPool->aPages[iPage];
+
+                    if (pTempPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_32BIT_PT)
+                    {
+                        PPGMSHWPTPAE pShwPT2 = (PPGMSHWPTPAE)PGMPOOL_PAGE_2_PTR(pVM, pTempPage);
+
+                        for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
+                        {
+                            if (   PGMSHWPTEPAE_IS_P_RW(pShwPT2->a[j])
+                                && PGMSHWPTEPAE_GET_HCPHYS(pShwPT2->a[j]) == HCPhysPT)
+                            {
+                                Log(("GCPhys=%RGp idx=%d %RX64 vs %RX64\n", pTempPage->GCPhys, j, PGMSHWPTEPAE_GET_LOG(pShwPT->a[j]), PGMSHWPTEPAE_GET_LOG(pShwPT2->a[j])));
+                            }
+                        }
+
+                        PGM_DYNMAP_UNUSED_HINT_VM(pVM, pShwPT2);
+                    }
+                }
+            }
+        }
+    }
+    AssertMsg(!cErrors, ("cErrors=%d: last rc=%d idx=%d guest %x shw=%RX64 vs %RHp\n", cErrors, LastRc, LastPTE, pGstPT->a[LastPTE].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[LastPTE]), LastHCPhys));
+}
+
 #  endif /* VBOX_STRICT */
 
 /**
@@ -1473,6 +1543,72 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPag
     return cChanged;
 }
 
+/**
+ * Clear references to guest physical memory in a PAE / PAE page table.
+ *
+ * @returns nr of changed PTEs
+ * @param   pPool           The pool.
+ * @param   pPage           The page.
+ * @param   pShwPT          The shadow page table (mapping of the page).
+ * @param   pGstPT          The guest page table.
+ * @param   pOldGstPT       The old cached guest page table.
+ * @param   fAllowRemoval   Bail out as soon as we encounter an invalid PTE
+ * @param   pfFlush         Flush reused page table (out)
+ */
+DECLINLINE(unsigned) pgmPoolTrackFlushPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMSHWPTPAE pShwPT, PCX86PT pGstPT,
+                                                 PCX86PT pOldGstPT, bool fAllowRemoval, bool *pfFlush)
+{
+    unsigned cChanged = 0;
+
+#ifdef VBOX_STRICT
+    for (unsigned i = 0; i < RT_MIN(RT_ELEMENTS(pShwPT->a), pPage->iFirstPresent); i++)
+        AssertMsg(!PGMSHWPTEPAE_IS_P(pShwPT->a[i]), ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, PGMSHWPTEPAE_GET_LOG(pShwPT->a[i]),  pPage->iFirstPresent));
+#endif
+    *pfFlush = false;
+
+    for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
+    {
+        /* Check the new value written by the guest. If present and with a bogus physical address, then
+         * it's fairly safe to assume the guest is reusing the PT.
+         */
+        if (    fAllowRemoval
+            &&  pGstPT->a[i].n.u1Present)
+        {
+            if (!PGMPhysIsGCPhysValid(pPool->CTX_SUFF(pVM), pGstPT->a[i].u & X86_PTE_PG_MASK))
+            {
+                *pfFlush = true;
+                return ++cChanged;
+            }
+        }
+        if (PGMSHWPTEPAE_IS_P(pShwPT->a[i]))
+        {
+            /* If the old cached PTE is identical, then there's no need to flush the shadow copy. */
+            if ((pGstPT->a[i].u & X86_PTE_PG_MASK) == (pOldGstPT->a[i].u & X86_PTE_PG_MASK))
+            {
+#ifdef VBOX_STRICT
+                RTHCPHYS HCPhys = NIL_RTGCPHYS;
+                int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[i].u & X86_PTE_PG_MASK, &HCPhys);
+                AssertMsg(rc == VINF_SUCCESS && PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]) == HCPhys, ("rc=%d guest %x old %x shw=%RX64 vs %RHp\n", rc, pGstPT->a[i].u, pOldGstPT->a[i].u, PGMSHWPTEPAE_GET_LOG(pShwPT->a[i]), HCPhys));
+#endif
+                uint64_t uHostAttr  = PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & (X86_PTE_P | X86_PTE_US | X86_PTE_A | X86_PTE_D | X86_PTE_G);
+                bool     fHostRW    = !!(PGMSHWPTEPAE_GET_U(pShwPT->a[i]) & X86_PTE_RW);
+                uint64_t uGuestAttr = pGstPT->a[i].u & (X86_PTE_P | X86_PTE_US | X86_PTE_A | X86_PTE_D | X86_PTE_G);
+                bool     fGuestRW   = !!(pGstPT->a[i].u & X86_PTE_RW);
+
+                if (    uHostAttr == uGuestAttr
+                    &&  fHostRW <= fGuestRW)
+                    continue;
+            }
+            cChanged++;
+            /* Something was changed, so flush it. */
+            Log4(("pgmPoolTrackDerefPTPaePae: i=%d pte=%RX64 hint=%x\n",
+                  i, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), pOldGstPT->a[i].u & X86_PTE_PG_MASK));
+            pgmPoolTracDerefGCPhysHint(pPool, pPage, PGMSHWPTEPAE_GET_HCPHYS(pShwPT->a[i]), pOldGstPT->a[i].u & X86_PTE_PG_MASK, i);
+            PGMSHWPTEPAE_ATOMIC_SET(pShwPT->a[i], 0);
+        }
+    }
+    return cChanged;
+}
 
 /**
  * Flush a dirty page
@@ -1528,8 +1664,15 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     void *pvGst;
     rc = PGM_GCPHYS_2_PTR(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
     bool  fFlush;
-    unsigned cChanges = pgmPoolTrackFlushPTPaePae(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PTPAE)pvGst,
-                                                  (PCX86PTPAE)&pPool->aDirtyPages[idxSlot].aPage[0], fAllowRemoval, &fFlush);
+    unsigned cChanges;
+
+    if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
+        cChanges = pgmPoolTrackFlushPTPaePae(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PTPAE)pvGst,
+                                             (PCX86PTPAE)&pPool->aDirtyPages[idxSlot].aPage[0], fAllowRemoval, &fFlush);
+    else
+        cChanges = pgmPoolTrackFlushPTPae32Bit(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PT)pvGst,
+                                               (PCX86PT)&pPool->aDirtyPages[idxSlot].aPage[0], fAllowRemoval, &fFlush);
+
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvShw);
     STAM_PROFILE_STOP(&pPool->StatTrackDeref,a);
@@ -1604,7 +1747,10 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     memcpy(&pPool->aDirtyPages[idxFree].aPage[0], pvGst, PAGE_SIZE);
 #ifdef VBOX_STRICT
     void *pvShw = PGMPOOL_PAGE_2_PTR(pVM, pPage);
-    pgmPoolTrackCheckPTPaePae(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PTPAE)pvGst);
+    if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
+        pgmPoolTrackCheckPTPaePae(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PTPAE)pvGst);
+    else
+        pgmPoolTrackCheckPTPae32Bit(pPool, pPage, (PPGMSHWPTPAE)pvShw, (PCX86PT)pvGst);
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvShw);
 #endif
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pvGst);
