@@ -467,6 +467,7 @@ static int codecSetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *p
     }
     *pResp = 0;
     uint32_t *pu32Reg = NULL;
+    //** @todo r=michaln: Copy/paste bug? This can't be F08_parm!
     if (STAC9220_IS_PORT_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
     else if (STAC9220_IS_DIGINPIN_CMD(cmd))
@@ -1044,9 +1045,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             goto port_init;
         case 0xD:
             pNode->node.name = "PortD";
-            pNode->port.u32F09_param = 0;
             pNode->node.au32F00_param[0xC] = 0x173f;
+            pNode->port.u32F09_param = RT_BIT(31)|0x9920; /* 39.2 kOhm */
+            pNode->port.u32F07_param = 0x20;
             *(uint32_t *)pNode->node.au8F02_param = 0x2;
+            if (!pState->fInReset)
+                pNode->port.u32F1c_param = 0x01A13040;  /* Microphone */
         port_init:
             pNode->port.u32F08_param = 0;
             pNode->node.au32F00_param[9] = (4 << 20)|RT_BIT(8)|RT_BIT(7)|RT_BIT(0);
