@@ -369,7 +369,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
  */
 VMM_INT_DECL(uint64_t) TMVirtualGet(PVM pVM)
 {
-    return tmVirtualGet(pVM, true /* check timers */);
+    return tmVirtualGet(pVM, true /*fCheckTimers*/);
 }
 
 
@@ -391,14 +391,32 @@ VMM_INT_DECL(uint64_t) TMVirtualGetNoCheck(PVM pVM)
 
 
 /**
+ * Converts the dead line interval from TMCLOCK_VIRTUAL to host nano seconds.
+ *
+ * @returns Host nano second count.
+ * @param   pVM                     The VM handle.
+ * @param   cVirtTicksToDeadline    The TMCLOCK_VIRTUAL interval.
+ */
+DECLINLINE(uint64_t) tmVirtualVirtToNsDeadline(PVM pVM, uint64_t cVirtTicksToDeadline)
+{
+    if (RT_UNLIKELY(pVM->tm.s.fVirtualWarpDrive))
+        return ASMMultU64ByU32DivByU32(cVirtTicksToDeadline, 100, pVM->tm.s.u32VirtualWarpDrivePercentage);
+    return cVirtTicksToDeadline;
+}
+
+
+/**
  * tmVirtualSyncGetLocked worker for handling catch-up when owning the lock.
  *
  * @returns The timestamp.
  * @param   pVM                 VM handle.
  * @param   u64                 raw virtual time.
  * @param   off                 offVirtualSync.
+ * @param   pcNsToDeadline      Where to return the number of nano seconds to
+ *                              the next virtual sync timer deadline. Can be
+ *                              NULL.
  */
-DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, uint64_t off)
+DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, uint64_t off, uint64_t *pcNsToDeadline)
 {
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
 
@@ -450,6 +468,14 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
             ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
         if (fUpdatePrev)
             ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev, u64);
+        if (pcNsToDeadline)
+        {
+            uint64_t cNsToDeadline = u64Expire - u64;
+            if (pVM->tm.s.fVirtualSyncCatchUp)
+                cNsToDeadline = ASMMultU64ByU32DivByU32(cNsToDeadline, 100,
+                                                        pVM->tm.s.u32VirtualSyncCatchUpPercentage + 100);
+            *pcNsToDeadline = tmVirtualVirtToNsDeadline(pVM, cNsToDeadline);
+        }
         tmVirtualSyncUnlock(pVM);
     }
     else
@@ -465,6 +491,8 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
         Log4(("TM: %'RU64/-%'8RU64: exp tmr=>ff [vsghcul]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
         tmVirtualSyncUnlock(pVM);
 
+        if (pcNsToDeadline)
+            *pcNsToDeadline = 0;
 #ifdef IN_RING3
         REMR3NotifyTimerPending(pVM, pVCpuDst);
         VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
@@ -485,8 +513,11 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
  * @returns timesamp.
  * @param   pVM                 The VM handle.
  * @param   u64                 The virtual clock timestamp.
+ * @param   pcNsToDeadline      Where to return the number of nano seconds to
+ *                              the next virtual sync timer deadline.  Can be
+ *                              NULL.
  */
-DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64)
+DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcNsToDeadline)
 {
     /*
      * Not ticking?
@@ -495,6 +526,8 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64)
     {
         u64 = ASMAtomicUoReadU64(&pVM->tm.s.u64VirtualSync);
         tmVirtualSyncUnlock(pVM);
+        if (pcNsToDeadline)
+            *pcNsToDeadline = 0;
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
         Log6(("tmVirtualSyncGetLocked -> %'RU64 [stopped]\n", u64));
         return u64;
@@ -505,7 +538,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64)
      */
     uint64_t off = ASMAtomicUoReadU64(&pVM->tm.s.offVirtualSync);
     if (ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
-        return tmVirtualSyncGetHandleCatchUpLocked(pVM, u64, off);
+        return tmVirtualSyncGetHandleCatchUpLocked(pVM, u64, off, pcNsToDeadline);
 
     /*
      * Complete the calculation of the current TMCLOCK_VIRTUAL_SYNC time. The current
@@ -515,7 +548,11 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64)
     u64 -= off;
     uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
     if (u64 < u64Expire)
+    {
         tmVirtualSyncUnlock(pVM);
+        if (pcNsToDeadline)
+            *pcNsToDeadline = tmVirtualVirtToNsDeadline(pVM, u64Expire - u64);
+    }
     else
     {
         u64 = u64Expire;
@@ -533,6 +570,8 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64)
         REMR3NotifyTimerPending(pVM, pVCpuDst);
         VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
+        if (pcNsToDeadline)
+            *pcNsToDeadline = 0;
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetSetFF);
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetExpired);
     }
@@ -546,16 +585,23 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64)
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
  *
  * @returns The timestamp.
- * @param   pVM     VM handle.
- * @param   fCheckTimers    Check timers or not
+ * @param   pVM                 VM handle.
+ * @param   fCheckTimers        Check timers or not
+ * @param   pcNsToDeadline      Where to return the number of nano seconds to
+ *                              the next virtual sync timer deadline.  Can be
+ *                              NULL.
  * @thread  EMT.
  */
-DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
+DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pcNsToDeadline)
 {
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGet);
 
     if (!pVM->tm.s.fVirtualSyncTicking)
+    {
+        if (pcNsToDeadline)
+            *pcNsToDeadline = 0;
         return pVM->tm.s.u64VirtualSync;
+    }
 
     /*
      * Query the virtual clock and do the usual expired timer check.
@@ -593,8 +639,11 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
                           && off == ASMAtomicReadU64(&pVM->tm.s.offVirtualSync)))
             {
                 off = u64 - off;
-                if (off < ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire))
+                uint64_t const u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+                if (off < u64Expire)
                 {
+                    if (pcNsToDeadline)
+                        *pcNsToDeadline = tmVirtualVirtToNsDeadline(pVM, u64Expire - off);
                     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLockless);
                     Log6(("tmVirtualSyncGetEx -> %'RU64 [lockless]\n", off));
                     return off;
@@ -607,6 +656,8 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         off = ASMAtomicReadU64(&pVM->tm.s.u64VirtualSync);
         if (RT_LIKELY(!ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncTicking)))
         {
+            if (pcNsToDeadline)
+                *pcNsToDeadline = 0;
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLockless);
             Log6(("tmVirtualSyncGetEx -> %'RU64 [lockless/stopped]\n", off));
             return off;
@@ -638,7 +689,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         /* Try grab the lock, things get simpler when owning the lock. */
         int rcLock = tmVirtualSyncTryLock(pVM);
         if (RT_SUCCESS_NP(rcLock))
-            return tmVirtualSyncGetLocked(pVM, u64);
+            return tmVirtualSyncGetLocked(pVM, u64, pcNsToDeadline);
 
         /* Re-check the ticking flag. */
         if (!ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncTicking))
@@ -647,6 +698,8 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
             if (   ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncTicking)
                 && cOuterTries > 0)
                 continue;
+            if (pcNsToDeadline)
+                *pcNsToDeadline = 0;
             Log6(("tmVirtualSyncGetEx -> %'RU64 [stopped]\n", off));
             return off;
         }
@@ -726,7 +779,17 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         }
         else
             Log4(("TM: %'RU64/-%'8RU64: exp tmr [NoLock]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
+        if (pcNsToDeadline)
+            *pcNsToDeadline = 0;
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetExpired);
+    }
+    else if (pcNsToDeadline)
+    {
+        uint64_t cNsToDeadline = u64Expire - u64;
+        if (ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
+            cNsToDeadline = ASMMultU64ByU32DivByU32(cNsToDeadline, 100,
+                                                    ASMAtomicReadU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage) + 100);
+        *pcNsToDeadline = tmVirtualVirtToNsDeadline(pVM, cNsToDeadline);
     }
 
     Log6(("tmVirtualSyncGetEx -> %'RU64\n", u64));
@@ -744,7 +807,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
  */
 VMM_INT_DECL(uint64_t) TMVirtualSyncGet(PVM pVM)
 {
-    return tmVirtualSyncGetEx(pVM, true /* check timers */);
+    return tmVirtualSyncGetEx(pVM, true /*fCheckTimers*/, NULL /*pcNsToDeadline*/);
 }
 
 
@@ -759,7 +822,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGet(PVM pVM)
  */
 VMM_INT_DECL(uint64_t) TMVirtualSyncGetNoCheck(PVM pVM)
 {
-    return tmVirtualSyncGetEx(pVM, false /* check timers */);
+    return tmVirtualSyncGetEx(pVM, false /*fCheckTimers*/, NULL /*pcNsToDeadline*/);
 }
 
 
@@ -774,7 +837,43 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetNoCheck(PVM pVM)
  */
 VMM_INT_DECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
 {
-    return tmVirtualSyncGetEx(pVM, fCheckTimers);
+    return tmVirtualSyncGetEx(pVM, fCheckTimers, NULL /*pcNsToDeadline*/);
+}
+
+
+/**
+ * Gets the current TMCLOCK_VIRTUAL_SYNC time and ticks to the next deadline
+ * without checking timers running on TMCLOCK_VIRTUAL.
+ *
+ * @returns The timestamp.
+ * @param   pVM                 VM handle.
+ * @param   pcNsToDeadline      Where to return the number of nano seconds to
+ *                              the next virtual sync timer deadline.
+ * @thread  EMT.
+ * @remarks May set the timer and virtual sync FFs.
+ */
+VMM_INT_DECL(uint64_t) TMVirtualSyncGetWithDeadlineNoCheck(PVM pVM, uint64_t *pcNsToDeadline)
+{
+    uint64_t cNsToDeadlineTmp;       /* try convince the compiler to skip the if tests. */
+    uint64_t u64Now = tmVirtualSyncGetEx(pVM, false /*fCheckTimers*/, &cNsToDeadlineTmp);
+    *pcNsToDeadline = cNsToDeadlineTmp;
+    return u64Now;
+}
+
+
+/**
+ * Gets the number of nano seconds to the next virtual sync deadline.
+ *
+ * @returns The number of TMCLOCK_VIRTUAL ticks.
+ * @param   pVM                 VM handle.
+ * @thread  EMT.
+ * @remarks May set the timer and virtual sync FFs.
+ */
+VMM_INT_DECL(uint64_t) TMVirtualSyncGetNsToDeadline(PVM pVM)
+{
+    uint64_t cNsToDeadline;
+    tmVirtualSyncGetEx(pVM, false /*fCheckTimers*/, &cNsToDeadline);
+    return cNsToDeadline;
 }
 
 

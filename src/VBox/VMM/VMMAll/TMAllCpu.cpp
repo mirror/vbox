@@ -38,8 +38,12 @@
  */
 DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM, bool fCheckTimers)
 {
-    uint64_t u64 = TMVirtualSyncGetEx(pVM, fCheckTimers);
-    if (u64 != TMCLOCK_FREQ_VIRTUAL)
+    uint64_t u64;
+    if (fCheckTimers)
+        u64 = TMVirtualSyncGet(pVM);
+    else
+        u64 = TMVirtualSyncGetNoCheck(pVM);
+    if (u64 != TMCLOCK_FREQ_VIRTUAL) /* what's the use of this test, document! */
         u64 = ASMMultU64ByU32DivByU32(u64, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL);
     return u64;
 }
@@ -93,6 +97,42 @@ int tmCpuTickPause(PVM pVM, PVMCPU pVCpu)
     }
     AssertFailed();
     return VERR_INTERNAL_ERROR;
+}
+
+/**
+ * Record why we refused to use offsetted TSC.
+ *
+ * Used by TMCpuTickCanUseRealTSC and TMCpuTickGetDeadlineAndTscOffset.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The current CPU.
+ */
+DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
+{
+
+    /* Sample the reason for refusing. */
+    if (!pVM->tm.s.fMaybeUseOffsettedHostTSC)
+       STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotFixed);
+    else if (!pVCpu->tm.s.fTSCTicking)
+       STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotTicking);
+    else if (!pVM->tm.s.fTSCUseRealTSC)
+    {
+        if (pVM->tm.s.fVirtualSyncCatchUp)
+        {
+           if (pVM->tm.s.u32VirtualSyncCatchUpPercentage <= 10)
+               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupLE010);
+           else if (pVM->tm.s.u32VirtualSyncCatchUpPercentage <= 25)
+               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupLE025);
+           else if (pVM->tm.s.u32VirtualSyncCatchUpPercentage <= 100)
+               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupLE100);
+           else
+               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupOther);
+        }
+        else if (!pVM->tm.s.fVirtualSyncTicking)
+           STAM_COUNTER_INC(&pVM->tm.s.StatTSCSyncNotTicking);
+        else if (pVM->tm.s.fVirtualWarpDrive)
+           STAM_COUNTER_INC(&pVM->tm.s.StatTSCWarp);
+    }
 }
 
 
@@ -155,31 +195,105 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC)
     }
 
 #ifdef VBOX_WITH_STATISTICS
-    /* Sample the reason for refusing. */
-    if (!pVM->tm.s.fMaybeUseOffsettedHostTSC)
-       STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotFixed);
-    else if (!pVCpu->tm.s.fTSCTicking)
-       STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotTicking);
-    else if (!pVM->tm.s.fTSCUseRealTSC)
-    {
-        if (pVM->tm.s.fVirtualSyncCatchUp)
-        {
-           if (pVM->tm.s.u32VirtualSyncCatchUpPercentage <= 10)
-               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupLE010);
-           else if (pVM->tm.s.u32VirtualSyncCatchUpPercentage <= 25)
-               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupLE025);
-           else if (pVM->tm.s.u32VirtualSyncCatchUpPercentage <= 100)
-               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupLE100);
-           else
-               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupOther);
-        }
-        else if (!pVM->tm.s.fVirtualSyncTicking)
-           STAM_COUNTER_INC(&pVM->tm.s.StatTSCSyncNotTicking);
-        else if (pVM->tm.s.fVirtualWarpDrive)
-           STAM_COUNTER_INC(&pVM->tm.s.StatTSCWarp);
-    }
+    tmCpuTickRecordOffsettedTscRefusal(pVM, pVCpu);
 #endif
     return false;
+}
+
+
+/**
+ * Calculates the number of host CPU ticks till the next virtual sync deadline.
+ *
+ * @note    To save work, this function will not bother calculating the accurate
+ *          tick count for deadlines that are more than a second ahead.
+ *
+ * @returns The number of host cpu ticks to the next deadline.  Max one second.
+ * @param   cNsToDeadline       The number of nano seconds to the next virtual
+ *                              sync deadline.
+ */
+DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(uint64_t cNsToDeadline)
+{
+    AssertCompile(TMCLOCK_FREQ_VIRTUAL <= _4G);
+    if (RT_UNLIKELY(cNsToDeadline >= TMCLOCK_FREQ_VIRTUAL))
+        return SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
+    uint64_t cTicks = ASMMultU64ByU32DivByU32(SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage),
+                                              cNsToDeadline,
+                                              TMCLOCK_FREQ_VIRTUAL);
+    if (cTicks > 4000)
+        cTicks -= 4000; /* fudge to account for overhead */
+    else
+        cTicks >>= 1;
+    return cTicks;
+}
+
+
+/**
+ * Gets the next deadline in host CPU clock ticks and the TSC offset if we can
+ * use the raw TSC.
+ *
+ * @returns The number of host CPU clock ticks to the next timer deadline.
+ * @param   pVCpu           The current CPU.
+ * @param   poffRealTSC     The offset against the TSC of the current CPU.
+ * @thread  EMT(pVCpu).
+ * @remarks Superset of TMCpuTickCanUseRealTSC.
+ */
+VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOffsettedTsc, uint64_t *poffRealTSC)
+{
+    PVM         pVM = pVCpu->CTX_SUFF(pVM);
+    uint64_t    cTicksToDeadline;
+
+    /*
+     * We require:
+     *     1. A fixed TSC, this is checked at init time.
+     *     2. That the TSC is ticking (we shouldn't be here if it isn't)
+     *     3. Either that we're using the real TSC as time source or
+     *          a) we don't have any lag to catch up, and
+     *          b) the virtual sync clock hasn't been halted by an expired timer, and
+     *          c) we're not using warp drive (accelerated virtual guest time).
+     */
+    if (    pVM->tm.s.fMaybeUseOffsettedHostTSC
+        &&  RT_LIKELY(pVCpu->tm.s.fTSCTicking)
+        &&  (   pVM->tm.s.fTSCUseRealTSC
+             || (   !pVM->tm.s.fVirtualSyncCatchUp
+                 && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
+                 && !pVM->tm.s.fVirtualWarpDrive))
+       )
+    {
+        *pfOffsettedTsc = true;
+        if (!pVM->tm.s.fTSCUseRealTSC)
+        {
+            /* The source is the timer synchronous virtual clock. */
+            Assert(pVM->tm.s.fTSCVirtualized);
+
+            uint64_t cNsToDeadline;
+            uint64_t u64NowVirtSync = TMVirtualSyncGetWithDeadlineNoCheck(pVM, &cNsToDeadline);
+            uint64_t u64Now = u64NowVirtSync != TMCLOCK_FREQ_VIRTUAL /* what's the use of this? */
+                            ? ASMMultU64ByU32DivByU32(u64NowVirtSync, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL)
+                            : u64NowVirtSync;
+            u64Now -= pVCpu->tm.s.offTSCRawSrc;
+            *poffRealTSC = u64Now - ASMReadTSC();
+            cTicksToDeadline = tmCpuCalcTicksToDeadline(cNsToDeadline);
+        }
+        else
+        {
+            /* The source is the real TSC. */
+            if (pVM->tm.s.fTSCVirtualized)
+                *poffRealTSC = pVCpu->tm.s.offTSCRawSrc;
+            else
+                *poffRealTSC = 0;
+            cTicksToDeadline = tmCpuCalcTicksToDeadline(TMVirtualSyncGetNsToDeadline(pVM));
+        }
+    }
+    else
+    {
+#ifdef VBOX_WITH_STATISTICS
+        tmCpuTickRecordOffsettedTscRefusal(pVM, pVCpu);
+#endif
+        *pfOffsettedTsc  = false;
+        *poffRealTSC     = 0;
+        cTicksToDeadline = tmCpuCalcTicksToDeadline(TMVirtualSyncGetNsToDeadline(pVM));
+    }
+    return cTicksToDeadline;
 }
 
 
