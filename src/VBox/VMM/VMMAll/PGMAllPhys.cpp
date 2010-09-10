@@ -3261,6 +3261,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
                         Log(("PGMPhysInterpretedReadNoHandlers: pvDst=%p pvSrc=%p (%RGv) cb=%d\n",
                                pvDst, (const uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), GCPtrSrc, cb));
                         memcpy(pvDst, (const uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), cb);
+                        PGMPhysReleasePageMappingLock(pVM, &Lock);
                         break;
                     case VERR_PGM_PHYS_PAGE_RESERVED:
                     case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
@@ -3271,7 +3272,6 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
                         AssertReturn(RT_FAILURE(rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                         return rc;
                 }
-                PGMPhysReleasePageMappingLock(pVM, &Lock);
 
                 if (!(fFlags & X86_PTE_A))
                 {
