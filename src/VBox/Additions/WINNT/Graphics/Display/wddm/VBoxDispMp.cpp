@@ -138,11 +138,14 @@ DECLCALLBACK(HRESULT) vboxDispMpGetRegions(PVBOXDISPMP_REGIONS pRegions, DWORD d
         Assert(pHdr);
         VBOXWDDMDISP_CONTEXT *pContext = (VBOXWDDMDISP_CONTEXT*)pHdr->u64UmData;
         PVBOXVIDEOCM_CMD_RECTS_INTERNAL pCmdInternal = (PVBOXVIDEOCM_CMD_RECTS_INTERNAL)(((uint8_t*)pHdr) + sizeof (VBOXVIDEOCM_CMD_HDR));
-        UINT iScreen = pContext->pDevice->cScreens == 1 ? pContext->pDevice->iPrimaryScreen : pCmdInternal->VidPnSourceId;
-        PVBOXWDDMDISP_SCREEN pScreen = &pContext->pDevice->aScreens[iScreen];
-        Assert(pScreen->hWnd);
-        Assert(pScreen->pDevice9If);
-        pRegions->hWnd = pScreen->hWnd;
+//        UINT iScreen = pContext->pDevice->cScreens == 1 ? pContext->pDevice->iPrimaryScreen : pCmdInternal->VidPnSourceId;
+//        PVBOXWDDMDISP_SCREEN pScreen = &pContext->pDevice->aScreens[iScreen];
+//        Assert(pScreen->hWnd);
+//        Assert(pScreen->pDevice9If);
+//        pRegions->hWnd = pScreen->hWnd;
+        PVBOXWDDMDISP_SWAPCHAIN pSwapchain = RTListNodeGetLast(&pContext->pDevice->SwapchainList, VBOXWDDMDISP_SWAPCHAIN, ListEntry);
+        Assert(pSwapchain);
+        pRegions->hWnd = pSwapchain->hWnd;
         pRegions->pRegions = &pCmdInternal->Cmd;
     }
     return hr;

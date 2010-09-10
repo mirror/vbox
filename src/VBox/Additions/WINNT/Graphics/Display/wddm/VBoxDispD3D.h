@@ -22,6 +22,7 @@
 #include <iprt/list.h>
 
 #define VBOXWDDMDISP_MAX_VERTEX_STREAMS 16
+#define VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE 16
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 typedef struct VBOXDISPVHWA_INFO
@@ -90,28 +91,78 @@ typedef struct VBOXWDDMDISP_INDICES_INFO
   UINT   uiStride;
 } VBOXWDDMDISP_INDICES_INFO;
 
-typedef struct VBOXWDDMDISP_SCREEN
+typedef struct VBOXWDDMDISP_RENDERTGT_FLAGS
 {
-    IDirect3DDevice9 *pDevice9If;
-    struct VBOXWDDMDISP_RESOURCE *pRenderTargetRc;
-//    struct VBOXWDDMDISP_RESOURCE *pDstSharedRc;
-    uint32_t iRenderTargetFrontBuf;
+    union
+    {
+        struct
+        {
+            UINT bAdded : 1;
+            UINT bRemoved : 1;
+            UINT Reserved : 30;
+        };
+        uint32_t Value;
+    };
+}VBOXWDDMDISP_RENDERTGT_FLAGS;
+
+typedef struct VBOXWDDMDISP_RENDERTGT
+{
+    struct VBOXWDDMDISP_ALLOCATION *pAlloc;
+    UINT cNumFlips;
+    VBOXWDDMDISP_RENDERTGT_FLAGS fFlags;
+} VBOXWDDMDISP_RENDERTGT, *PVBOXWDDMDISP_RENDERTGT;
+
+#define VBOXWDDMDISP_INDEX_UNDEFINED (~0)
+typedef struct VBOXWDDMDISP_SWAPCHAIN_FLAGS
+{
+    union
+    {
+        struct
+        {
+            UINT bChanged : 1;
+            UINT bInited  : 1;
+            UINT Reserved : 30;
+        };
+        uint32_t Value;
+    };
+}VBOXWDDMDISP_SWAPCHAIN_FLAGS;
+
+typedef struct VBOXWDDMDISP_SWAPCHAIN
+{
+    RTLISTNODE ListEntry;
+    UINT iBB; /* Backbuffer index */
+    UINT cRTs; /* Number of render targets in the swapchain */
+    VBOXWDDMDISP_SWAPCHAIN_FLAGS fFlags;
+#ifndef VBOXWDDM_WITH_VISIBLE_FB
+    IDirect3DSurface9 *pRenderTargetFbCopy;
+#endif
+    IDirect3DSwapChain9 *pSwapChainIf;
     HWND hWnd;
-} VBOXWDDMDISP_SCREEN, *PVBOXWDDMDISP_SCREEN;
+    VBOXWDDMDISP_RENDERTGT aRTs[VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE];
+} VBOXWDDMDISP_SWAPCHAIN, *PVBOXWDDMDISP_SWAPCHAIN;
+
+
+//typedef struct VBOXWDDMDISP_SCREEN
+//{
+//    RTLISTNODE SwapchainList;
+//    IDirect3DDevice9 *pDevice9If;
+////    struct VBOXWDDMDISP_RESOURCE *pDstSharedRc;
+//    uint32_t iRenderTargetFrontBuf;
+//    HWND hWnd;
+//} VBOXWDDMDISP_SCREEN, *PVBOXWDDMDISP_SCREEN;
 
 typedef struct VBOXWDDMDISP_DEVICE
 {
     HANDLE hDevice;
     PVBOXWDDMDISP_ADAPTER pAdapter;
+    IDirect3DDevice9 *pDevice9If;
+    RTLISTNODE SwapchainList;
     UINT u32IfVersion;
     UINT uRtVersion;
     D3DDDI_DEVICECALLBACKS RtCallbacks;
     VOID *pvCmdBuffer;
     UINT cbCmdBuffer;
     D3DDDI_CREATEDEVICEFLAGS fFlags;
-#ifndef VBOXWDDM_WITH_VISIBLE_FB
-    IDirect3DSurface9 *pRenderTargetFbCopy;
-#endif
     /* number of StreamSources set */
     UINT cStreamSources;
     VBOXWDDMDISP_STREAMSOURCEUM aStreamSourceUm[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
@@ -127,10 +178,6 @@ typedef struct VBOXWDDMDISP_DEVICE
 
     CRITICAL_SECTION DirtyAllocListLock;
     RTLISTNODE DirtyAllocList;
-
-    UINT iPrimaryScreen;
-    UINT cScreens;
-    VBOXWDDMDISP_SCREEN aScreens[VBOX_VIDEO_MAX_SCREENS];
 } VBOXWDDMDISP_DEVICE, *PVBOXWDDMDISP_DEVICE;
 
 typedef struct VBOXWDDMDISP_LOCKINFO
@@ -158,6 +205,7 @@ typedef struct VBOXWDDMDISP_ALLOCATION
 {
     D3DKMT_HANDLE hAllocation;
     VBOXWDDM_ALLOC_TYPE enmType;
+    struct VBOXWDDMDISP_RESOURCE *pRc;
     void* pvMem;
     /* object type is defined by enmD3DIfType enum */
     IUnknown *pD3DIf;
@@ -168,6 +216,7 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     VBOXWDDMDISP_LOCKINFO LockInfo;
     VBOXWDDM_DIRTYREGION DirtyRegion; /* <- dirty region to notify host about */
     VBOXWDDM_SURFACE_DESC SurfDesc;
+    PVBOXWDDMDISP_SWAPCHAIN pSwapchain;
 } VBOXWDDMDISP_ALLOCATION, *PVBOXWDDMDISP_ALLOCATION;
 
 typedef struct VBOXWDDMDISP_RESOURCE
@@ -198,7 +247,7 @@ typedef struct VBOXWDDMDISP_OVERLAY
 #ifdef VBOXDISP_EARLYCREATEDEVICE
 #define VBOXDISP_D3DEV(_p) (_p)->pDevice9If
 #else
-#define VBOXDISP_D3DEV(_p) vboxWddmD3DDeviceGetPrimary(_p)
+#define VBOXDISP_D3DEV(_p) vboxWddmD3DDeviceGet(_p)
 #endif
 
 #endif /* #ifndef ___VBoxDispD3D_h___ */
