@@ -30,8 +30,8 @@ VBoxMouse.sys = 1
 DefaultDestDir = 12	; DIRID_DRIVERS
 
 [Manufacturer]
-;x86   %SUN%=VBoxMouse
-;amd64 %SUN%=VBoxMouse, NTamd64
+;x86   %ORACLE%=VBoxMouse
+;amd64 %ORACLE%=VBoxMouse, NTamd64
 
 [DefaultInstall]
 ;
@@ -58,7 +58,7 @@ ServiceBinary  = %12%\VBoxMouse.sys
 [Strings]
 VBoxMouse.SvcDesc       = "VirtualBox Guest Mouse Service"
 VBoxMouse.MediaDesc     = "VirtualBox Guest Mouse Driver Installation Media"
-SUN                     = "Sun Microsystems, Inc."
+ORACLE                  = "Oracle Corporation"
 
 ; Useful constants
 SERVICE_KERNEL_DRIVER = 1

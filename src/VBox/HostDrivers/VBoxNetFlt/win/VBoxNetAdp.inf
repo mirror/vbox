@@ -95,7 +95,7 @@ HKR, Ndi\Interfaces,              LowerRange,          0, "ethernet"
 ;HKR, Parameters, ParameterName2, 0x10001, 4
 
 [Strings]
-Provider = "Sun Microsystems, Inc."
+Provider = "Oracle Corporation"
 VBoxNetAdp_Desc = "VirtualBox Host-Only Ethernet Adapter"
 DiskDescription = "VirtualBox Host-Only Ethernet Adapter"
 

@@ -16,7 +16,7 @@
 Signature="$Windows NT$"
 Class=System
 ClassGuid={ce4a90b5-1d8c-435d-b349-232ce55cb17f}
-Provider=%SUN%
+Provider=%ORACLE%
 ;edit-DriverVer=08/26/2008,2.00.0000
 DriverPackageType=Network
 ;cat CatalogFile=VBoxSF.cat
@@ -32,8 +32,8 @@ DefaultDestDir      = 12 ; drivers
 VBoxMRXNP_CopyFiles = 11 ; system32
 
 [Manufacturer]
-;x86   %SUN%=VBoxSF
-;amd64 %SUN%=VBoxSF, NTamd64
+;x86   %ORACLE%=VBoxSF
+;amd64 %ORACLE%=VBoxSF, NTamd64
 
 ;x86   [VBoxSF]
 ;amd64 [VBoxSF.NTamd64]
@@ -74,7 +74,7 @@ vbcoinst.dll
 HKR,,CoInstallers32,0x00010000,"vbcoinst.dll,VBoxCoInstaller"
 
 [Strings]
-SUN = "Sun Microsystems, Inc."
+ORACLE = "Oracle Corporation"
 VBoxSF.DeviceDesc = "VirtualBox Device"
 VBoxSF_svcdesc = "VirtualBox Shared Folders Driver"
 VBoxMRXNP_svcdesc = "VirtualBox Network Provider Service"

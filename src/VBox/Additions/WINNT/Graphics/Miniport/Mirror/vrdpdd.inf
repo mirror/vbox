@@ -17,7 +17,7 @@
 
 [Version]
 Signature="$WINDOWS NT$"
-Provider=%Sun%
+Provider=%ORACLE%
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
 Class=Display
 ;edit-DriverVer=08/26/2008,2.00.0000
@@ -32,7 +32,7 @@ vrdpdd.Display   = 11  ; system32
 ;
 
 [Manufacturer]
-%Sun%=vrdpdd.Mfg,NT.5.1
+%ORACLE%=vrdpdd.Mfg,NT.5.1
 
 [vrdpdd.Mfg]
 ; Empty
@@ -138,4 +138,4 @@ DevDesc        = "VirtualBox Mirror Driver"
 
 DiskId       = "VirtualBox Mirror Driver Installation DISK (VIDEO)"
 GraphAdap    = "Graphics Adapter"
-Sun          = "Sun Microsystems, Inc."
+Oracle       = "Oracle Corporation"

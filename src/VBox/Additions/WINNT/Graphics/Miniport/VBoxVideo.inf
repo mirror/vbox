@@ -14,7 +14,7 @@
 
 [Version]
 Signature="$WINDOWS NT$"
-Provider=%SUN%
+Provider=%ORACLE%
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
 Class=Display
 ;edit-DriverVer=08/26/2008,2.00.0000
@@ -26,8 +26,8 @@ VBoxVideo.Miniport = 12 ; drivers
 VBoxVideo.Display  = 11 ; system32
 
 [Manufacturer]
-;x86   %SUN%=Model
-;amd64 %SUN%=Model, NTamd64, NTamd64.6.0
+;x86   %ORACLE%=Model
+;amd64 %ORACLE%=Model, NTamd64, NTamd64.6.0
 
 ;x86   [Model]
 ;amd64 [Model.NTamd64]
@@ -90,6 +90,6 @@ REG_EXPAND_SZ = 0x00020000
 REG_BINARY = 0x00000001
 REG_DWORD = 0x00010001
 
-SUN = "Sun Microsystems, Inc."
+ORACLE = "Oracle Corporation"
 VBoxVideo.Disk = "VirtualBox Video Driver Disk"
 VBoxVideo.SvcDesc = "VirtualBox Graphics Adapter"

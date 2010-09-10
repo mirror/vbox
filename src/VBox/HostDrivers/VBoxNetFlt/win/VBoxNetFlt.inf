@@ -140,7 +140,7 @@ HKR, Parameters, Param1, 0, 4
 
 ; ----------------------------------------------------------------------
 [Strings]
-Provider = "Sun Microsystems, Inc."
+Provider = "Oracle Corporation"
 DiskDescription = "VirtualBox Bridged Networking Driver"
 
 VBoxNetFlt_Desc = "VirtualBox Bridged Networking Driver"

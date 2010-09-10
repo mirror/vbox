@@ -16,7 +16,7 @@
 
 [Version]
 Signature         = "$Windows NT$"
-Provider          = %SUN%
+Provider          = %ORACLE%
 ;edit-DriverVer = 08/26/2008,2.00.0000
 DriverPackageType = KernelService
 Class             = System
@@ -24,8 +24,8 @@ ClassGuid         = {ce4a90b5-1d8c-435d-b349-232ce55cb17f}
 ;cat CatalogFile = VBoxUSBMon.cat
 
 [Manufacturer]
-;x86 %SUN%=SUN
-;amd64 %SUN%=SUN, NTamd64
+;x86 %ORACLE%=ORACLE
+;amd64 %ORACLE%=ORACLE, NTamd64
 
 [DefaultInstall.NT]
 CopyFiles = VBoxUSBMonitor.CopyFiles
@@ -54,9 +54,9 @@ VBoxUSBMon.sys = 1
 DefaultDestDir = 12	; DIRID_DRIVERS
 
 [Strings]
-SUN = "Sun Microsystems, Inc."
-VBoxUSBMon.SvcDesc	= "VirtualBox USB Monitor Driver"
-VBoxUSBMon.MediaDesc 	= "VirtualBox USB Monitor Driver Disc"
+ORACLE               = "Oracle Corporation"
+VBoxUSBMon.SvcDesc   = "VirtualBox USB Monitor Driver"
+VBoxUSBMon.MediaDesc = "VirtualBox USB Monitor Driver Disc"
 
 ; Useful constants
 SERVICE_KERNEL_DRIVER = 1

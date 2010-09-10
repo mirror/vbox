@@ -16,7 +16,7 @@
 Signature="$WINDOWS NT$"
 Class=System
 ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider=%SUN%
+Provider=%ORACLE%
 LayoutFile=layout.inf
 ;edit-DriverVer=08/26/2008,2.00.0000
 ;cat CatalogFile=VBoxGuest.cat
@@ -39,8 +39,8 @@ VBox_CoInstaller_CopyFiles = 11 ; system32
 VBoxTray_CopyFiles = 11 ; system32
 
 [Manufacturer]
-;x86   %SUN%=VBoxGuest
-;amd64 %SUN%=VBoxGuest, NTamd64
+;x86   %ORACLE%=VBoxGuest
+;amd64 %ORACLE%=VBoxGuest, NTamd64
 
 ;x86   [VBoxGuest]
 ;amd64 [VBoxGuest.NTamd64]
@@ -86,7 +86,7 @@ HKR,,CoInstallers32,0x00010000,"vbcoinst.dll,VBoxCoInstaller"
 ; This should fix the error 0xe0000101 (The required section was not found in the INF).
 
 [Strings]
-SUN = "Sun Microsystems, Inc."
+ORACLE = "Oracle Corporation"
 VBoxGuest.DeviceDesc = "VirtualBox Device"
 VBoxGuest_svcdesc = "VirtualBox Guest Driver"
 VBoxTray_svcdesc = "VirtualBox Guest Tray"
