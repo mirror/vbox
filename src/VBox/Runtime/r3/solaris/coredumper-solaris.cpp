@@ -2289,13 +2289,12 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
         struct sigaction sigAct;
         RT_ZERO(sigAct);
         sigAct.sa_sigaction = &rtCoreDumperSignalHandler;
-        sigfillset(&sigAct.sa_mask);                        /* Block all signals while in the signal handler */
-        sigAct.sa_flags = SA_RESTART | SA_SIGINFO;
 
         if (   (fFlags & RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP)
             && !(g_fCoreDumpFlags & RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP))
         {
-            sigAct.sa_flags |= SA_NODEFER;                  /* Don't block the below signal while in it's signal handler. */
+            sigemptyset(&sigAct.sa_mask);
+            sigAct.sa_flags = SA_RESTART | SA_SIGINFO | SA_NODEFER;
             sigaction(SIGSEGV, &sigAct, NULL);
             sigaction(SIGBUS, &sigAct, NULL);
             sigaction(SIGTRAP, &sigAct, NULL);
@@ -2304,6 +2303,7 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
         if (   fFlags & RTCOREDUMPER_FLAGS_LIVE_CORE
             && !(g_fCoreDumpFlags & RTCOREDUMPER_FLAGS_LIVE_CORE))
         {
+            sigfillset(&sigAct.sa_mask);                        /* Block all signals while in it's signal handler */
             sigAct.sa_flags = SA_RESTART | SA_SIGINFO;
             sigaction(SIGUSR2, &sigAct, NULL);
         }
