@@ -662,7 +662,7 @@ int main(int argc, char* argv[])
                 if (rc2)
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot open log file \"%s\" for writing: %Rrc", ValueUnion.psz, rc2);
 
-                WebLog("Sun VirtualBox Webservice Version %s\n"
+                WebLog(VBOX_PRODUCT " Webservice Version %s\n"
                        "Opened log file \"%s\"\n", VBOX_VERSION_STRING, ValueUnion.psz);
                 break;
             }

@@ -1,8 +1,8 @@
 #!/bin/sh
-# Sun VirtualBox
+#
 # VirtualBox pre-remove script for Solaris Guest Additions.
 #
-# Copyright (C) 2008-2009 Oracle Corporation
+# Copyright (C) 2008-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -13,7 +13,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-echo "Sun VirtualBox Guest Additions - preremove script"
+echo "VirtualBox Guest Additions - preremove script"
 echo "This script will unload the VirtualBox Guest kernel module..."
 
 # stop and unregister VBoxService daemon

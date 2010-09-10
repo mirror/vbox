@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sun VirtualBox
+#
 # VirtualBox VNIC setup script for Solaris hosts with Crossbow.
 #
 # Copyright (C) 2007-2009 Oracle Corporation
