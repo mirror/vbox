@@ -1354,10 +1354,8 @@ name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
     protected with root permissions). It is recommended you explicity set a
     core dump directory.</para>
 
-    <para>Next you need to specify when the VirtualBox CoreDumper should be
-    triggered. You can replace the system core dumper, or ask it to setup it's
-    core dumper for live, running processes without terminating the VM. This
-    is done using the following commands:</para>
+    <para>You must specify when the VirtualBox CoreDumper should be triggered.
+    This is done using the following commands:</para>
 
     <para><screen>VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpReplaceSystemDump 1
 VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
@@ -1365,14 +1363,15 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
     enabled the VirtualBox CoreDumper.</para>
 
     <para>Setting <computeroutput>CoreDumpReplaceSystemDump</computeroutput>
-    overrides the host's core dumping mechanism and in the event of any crash
-    only the VirtualBox CoreDumper would produced the core file.</para>
+    sets up the VM to override the host's core dumping mechanism and in the
+    event of any crash only the VirtualBox CoreDumper would produce the core
+    file.</para>
 
     <para>Setting <computeroutput>CoreDumpLive</computeroutput> sets up the VM
     to produce cores whenever the VM receives a
     <computeroutput>SIGUSR2</computeroutput> signal. After producing the core
-    file, the VM will not be terminated and will continue to run. You can thus
-    take cores of the VM process anytime using:</para>
+    file, the VM will not be terminated and will continue to run. You can then
+    take cores of the VM process using:</para>
 
     <para><screen>kill -s SIGUSR2 &lt;VM-process-id&gt;</screen></para>
 
