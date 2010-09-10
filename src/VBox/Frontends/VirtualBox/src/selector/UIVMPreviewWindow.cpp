@@ -240,7 +240,7 @@ void UIVMPreviewWindow::sltRecreatePreview()
                 QVector<BYTE> screenData = m_machine.ReadSavedScreenshotPNGToArray(0, width, height);
                 if (screenData.size() != 0)
                 {
-                    QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(m_vRect.size());
+                    QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(m_vRect.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
                     dimImage(shot);
                     painter.drawImage(m_vRect.x(), m_vRect.y(), shot);
                     fDone = true;
