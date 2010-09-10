@@ -77,7 +77,7 @@ ServiceBinary  = %12%\VBoxNetFlt.sys
 ;HKR, Parameters, ParameterName2, 0x10001, 4
 
 [Strings]
-Provider = "Sun Microsystems, Inc."
+Provider = "Oracle Corporation"
 VBoxNetFltMP_Desc = "VirtualBox Bridged Networking Driver Miniport"
 
 [SourceDisksNames]

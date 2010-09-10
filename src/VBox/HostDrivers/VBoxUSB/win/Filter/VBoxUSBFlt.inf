@@ -16,7 +16,7 @@
 
 [Version]
 Signature         = "$Windows NT$"
-Provider          = %sun%
+Provider          = %ORACLE%
 ;edit-DriverVer = 08/26/2008,2.00.0000
 DriverPackageType = ClassFilter
 ;cat CatalogFile = VBoxUSBFlt.cat
@@ -58,7 +58,7 @@ VBoxUSBFlt.sys = 1
 DefaultDestDir = 12	; DIRID_DRIVERS
 
 [Strings]
-sun                     = "Sun Microsystems, Inc."
+ORACLE                  = "Oracle Corporation"
 VBoxUSBFlt.SvcDesc	= "VirtualBox USB Filter Driver"
 VBoxUSBFlt.MediaDesc 	= "VirtualBox USB Filter Driver Disc"
 

@@ -28,7 +28,7 @@
 Signature="$Windows NT$"
 Class=System
 ClassGuid={ce4a90b5-1d8c-435d-b349-232ce55cb17f}
-Provider=%SUN%
+Provider=%ORACLE%
 ;edit-DriverVer=08/26/2008,2.00.0000
 DriverPackageType=KernelService
 ;cat CatalogFile=VBoxDrv.cat
@@ -43,8 +43,8 @@ CopyFiles=VBoxDrv.CopyFiles
 AddService=VBoxDrv,0x00000002,VBoxDrv_Service
 
 [Manufacturer]
-;x86 %SUN%=SUN
-;amd64 %SUN%=SUN, NTamd64
+;x86 %ORACLE%=ORACLE
+;amd64 %ORACLE%=ORACLE, NTamd64
 
 [SourceDisksFiles]
 VBoxDrv.sys=1
@@ -64,7 +64,7 @@ ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
 ServiceBinary  = %12%\VBoxDrv.sys
 
 [Strings]
-SUN = "Sun Microsystems, Inc."
+ORACLE = "Oracle Corporation"
 VBoxDrv.SVCDESC = "VirtualBox Service"
 VBoxDrv.DRVDESC = "VirtualBox Driver"
 DISK_NAME = "VirtualBox Driver Installation Disk"

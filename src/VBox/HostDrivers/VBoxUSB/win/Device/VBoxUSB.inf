@@ -16,7 +16,7 @@
 Signature="$Windows NT$"
 Class=USB
 ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
-provider=%sun%
+provider=%ORACLE%
 ;edit-DriverVer=08/26/2008,2.00.0000
 ;cat CatalogFile=VBoxUSB.cat
 
@@ -27,11 +27,11 @@ provider=%sun%
 VBoxUSB.sys = 1
 
 [Manufacturer]
-;x86   %MfgName%=sun
-;amd64 %MfgName%=sun, NTamd64
+;x86   %MfgName%=ORACLE
+;amd64 %MfgName%=ORACLE, NTamd64
 
-;x86   [sun]
-;amd64 [sun.NTamd64]
+;x86   [ORACLE]
+;amd64 [ORACLE.NTamd64]
 %USB\VID_80EE&PID_CAFE.DeviceDesc%=VBoxUSB.Dev, USB\VID_80EE&PID_CAFE
 
 [DestinationDirs]
@@ -62,8 +62,8 @@ VBoxUSB.sys
 ;---------------------------------------------------------------;
 
 [Strings]
-sun="Sun Microsystems, Inc."
-MfgName="Sun Microsystems, Inc."
+ORACLE="Oracle Corporation"
+MfgName="Oracle Corporation"
 Disk_Description="VBoxUSB Installation Disk"
 USB\VID_80EE&PID_CAFE.DeviceDesc="VirtualBox USB"
 VBoxUSB.SvcDesc="VirtualBox USB"
