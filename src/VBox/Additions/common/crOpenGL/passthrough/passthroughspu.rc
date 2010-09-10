@@ -1,9 +1,6 @@
 /* $Id$ */
-
 /** @file
- *
- * VBoxDisp -- Windows Guest crOpenGL ICD
- *
+ * VBoxService - Resouce file containing version info and icon.
  */
 
 /*
@@ -42,7 +39,7 @@ BEGIN
          VALUE "InternalName",     "VBoxOGLpassthroughspu\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VBoxOGLpassthroughspu.dll\0"
-         VALUE "ProductName",      "VirtualBox Guest Additions\0"
+         VALUE "ProductName",      VBOX_PRODUCT " Guest Additions\0"
          VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
       END
    END
