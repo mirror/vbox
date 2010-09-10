@@ -2149,7 +2149,7 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
          * If our dumper has crashed. No point in waiting, trigger the system one.
          * Wait only when the dumping thread is not the one generating this signal.
          */
-        if (ASMAtomicReadU64(&g_CoreDumpThread) != (uint64_t)RTThreadSelf())
+        if (ASMAtomicReadU64(&g_CoreDumpThread) == (uint64_t)RTThreadSelf())
         {
             CORELOGRELSYS((CORELOG_NAME "SignalHandler: Core dumper (thread %u) crashed Sig=%d. Triggering system dump\n",
                            RTThreadSelf(), Sig));
@@ -2279,7 +2279,7 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
     RT_ZERO(sigAct);
     sigAct.sa_sigaction = &rtCoreDumperSignalHandler;
     sigemptyset(&sigAct.sa_mask);
-    sigAct.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigAct.sa_flags = SA_RESTART | SA_SIGINFO | SA_NODEFER;
 
     if (fFlags & RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP)
     {
