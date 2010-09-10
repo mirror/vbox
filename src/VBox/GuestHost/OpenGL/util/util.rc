@@ -40,7 +40,7 @@ BEGIN
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VBoxOGLcrutil.dll\0"
          VALUE "ProductName",      VBOX_PRODUCT " Guest Additions\0"
-         VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
+         VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
       END
    END
    BLOCK "VarFileInfo"

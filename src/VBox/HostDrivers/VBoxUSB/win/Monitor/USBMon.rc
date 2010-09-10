@@ -35,7 +35,7 @@ BEGIN
       BEGIN
          VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
          VALUE "FileDescription",  "VirtualBox USB Monitor Driver\0"
-         VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
+         VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
          VALUE "InternalName",     "VBoxUSBMon.sys\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VBoxUSBMon.sys\0"

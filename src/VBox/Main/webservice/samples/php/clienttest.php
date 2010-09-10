@@ -6,7 +6,7 @@
  * Run the VirtualBox web service server first; see the VirtualBOx
  * SDK reference for details.
  *
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009-2010 Oracle Corporation
  * Contributed by James Lucas (mjlucas at eng.uts.edu.au).
  *
  * The following license applies to this file only:

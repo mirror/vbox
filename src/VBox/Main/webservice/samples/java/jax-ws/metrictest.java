@@ -4,7 +4,7 @@
  * Don't forget to run VBOX webserver
  * with 'vboxwebsrv -t 1000' command, to calm down watchdog thread.
  *
- * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * The following license applies to this file only:
  *
