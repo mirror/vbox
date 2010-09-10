@@ -16,6 +16,7 @@
  */
 
 #include "DisplayImpl.h"
+#include "DisplayUtils.h"
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
@@ -139,9 +140,6 @@ void Display::FinalRelease()
 
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
-
-#define sSSMDisplayScreenshotVer 0x00010001
-#define sSSMDisplayVer 0x00010001
 
 #define kMaxSizeThumbnail 64
 
@@ -354,6 +352,8 @@ Display::displaySSMSave(PSSMHANDLE pSSM, void *pvUser)
         SSMR3PutU32(pSSM, that->maFramebuffers[i].u32Offset);
         SSMR3PutU32(pSSM, that->maFramebuffers[i].u32MaxFramebufferSize);
         SSMR3PutU32(pSSM, that->maFramebuffers[i].u32InformationSize);
+        SSMR3PutU32(pSSM, that->maFramebuffers[i].w);
+        SSMR3PutU32(pSSM, that->maFramebuffers[i].h);
     }
 }
 
@@ -362,7 +362,8 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
 {
     Display *that = static_cast<Display*>(pvUser);
 
-    if (uVersion != sSSMDisplayVer)
+    if (!(   uVersion == sSSMDisplayVer
+          || uVersion == sSSMDisplayVer2))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
@@ -376,6 +377,11 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
         SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32Offset);
         SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32MaxFramebufferSize);
         SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32InformationSize);
+        if (uVersion == sSSMDisplayVer2)
+        {
+            SSMR3GetU32(pSSM, &that->maFramebuffers[i].w);
+            SSMR3GetU32(pSSM, &that->maFramebuffers[i].h);
+        }
     }
 
     return VINF_SUCCESS;
@@ -497,12 +503,20 @@ void Display::uninit()
  */
 int Display::registerSSM(PVM pVM)
 {
-    int rc = SSMR3RegisterExternal(pVM, "DisplayData", 0, sSSMDisplayVer,
-                                   mcMonitors * sizeof(uint32_t) * 3 + sizeof(uint32_t),
+    /* Newest version adds width and height of the framebuffer */
+    int rc = SSMR3RegisterExternal(pVM, "DisplayData", 0, sSSMDisplayVer2,
+                                   mcMonitors * sizeof(uint32_t) * 5 + sizeof(uint32_t),
                                    NULL, NULL, NULL,
                                    NULL, displaySSMSave, NULL,
                                    NULL, displaySSMLoad, NULL, this);
+    AssertRCReturn(rc, rc);
 
+    /* Old version for backward compatibility */
+//    rc = SSMR3RegisterExternal(pVM, "DisplayData", 0, sSSMDisplayVer,
+//                               mcMonitors * sizeof(uint32_t) * 3 + sizeof(uint32_t),
+//                               NULL, NULL, NULL,
+//                               NULL, NULL, NULL,
+//                               NULL, displaySSMLoad, NULL, this);
     AssertRCReturn(rc, rc);
 
     /*
