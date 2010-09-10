@@ -60,7 +60,7 @@
 /*******************************************************************************
 *   Globals                                                                    *
 *******************************************************************************/
-static RTNATIVETHREAD volatile  g_CoreDumpThread = NIL_RTNATIVETHREAD;
+static RTNATIVETHREAD volatile  g_CoreDumpThread             = NIL_RTNATIVETHREAD;
 static bool volatile            g_fCoreDumpSignalSetup       = false;
 static bool volatile            g_fCoreDumpDeliberate        = false;
 static uint32_t volatile        g_fCoreDumpFlags             = 0;
@@ -540,7 +540,8 @@ static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
             {
                 /* Terminate list of vectors */
                 pVBoxProc->cAuxVecs = cbAuxFile / sizeof(auxv_t);
-                CORELOG((CORELOG_NAME "ProcReadAuxVecs: cbAuxFile=%u auxv_t size %d cAuxVecs=%u\n", cbAuxFile, sizeof(auxv_t), pVBoxProc->cAuxVecs));
+                CORELOG((CORELOG_NAME "ProcReadAuxVecs: cbAuxFile=%u auxv_t size %d cAuxVecs=%u\n", cbAuxFile, sizeof(auxv_t),
+                         pVBoxProc->cAuxVecs));
                 if (pVBoxProc->cAuxVecs > 0)
                 {
                     pVBoxProc->pAuxVecs[pVBoxProc->cAuxVecs].a_type = AT_NULL;
@@ -665,7 +666,8 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
                                     int rc2 = ProcReadAddrSpace(pVBoxProc, pCur->pMap.pr_vaddr + k, &achBuf, cb);
                                     if (RT_FAILURE(rc2))
                                     {
-                                        CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: skipping mapping. vaddr=%#x rc=%Rrc\n", pCur->pMap.pr_vaddr, rc2));
+                                        CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: skipping mapping. vaddr=%#x rc=%Rrc\n",
+                                                       pCur->pMap.pr_vaddr, rc2));
 
                                         /*
                                          * Instead of storing the actual mapping data which we failed to read, the core
@@ -694,7 +696,8 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
                         }
                         else
                         {
-                            CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: GetMemoryChunk failed %u\n", pVBoxProc->cMappings * sizeof(VBOXSOLMAPINFO)));
+                            CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: GetMemoryChunk failed %u\n",
+                                           pVBoxProc->cMappings * sizeof(VBOXSOLMAPINFO)));
                             rc = VERR_NO_MEMORY;
                         }
                     }
@@ -872,7 +875,8 @@ static int ProcReadThreads(PVBOXCORE pVBoxCore)
             {
                 CORELOGRELSYS((CORELOG_NAME "ProcReadThreads: huh!? cbStatusHdrAndData=%u prheader_t=%u entsize=%u\n", cbStatusHdrAndData,
                             sizeof(prheader_t), pStatusHdr->pr_entsize));
-                CORELOGRELSYS((CORELOG_NAME "ProcReadThreads: huh!? cbInfoHdrAndData=%u entsize=%u\n", cbInfoHdrAndData, pStatusHdr->pr_entsize));
+                CORELOGRELSYS((CORELOG_NAME "ProcReadThreads: huh!? cbInfoHdrAndData=%u entsize=%u\n", cbInfoHdrAndData,
+                               pStatusHdr->pr_entsize));
                 rc = VERR_INVALID_STATE;
             }
         }
@@ -921,7 +925,8 @@ static int ProcReadMiscInfo(PVBOXCORE pVBoxCore)
     rc = getzonenamebyid(pVBoxProc->ProcInfo.pr_zoneid, pVBoxProc->szZoneName, sizeof(pVBoxProc->szZoneName));
     if (rc < 0)
     {
-        CORELOGRELSYS((CORELOG_NAME "ProcReadMiscInfo: getzonenamebyid failed. rc=%d errno=%d zoneid=%d\n", rc, errno, pVBoxProc->ProcInfo.pr_zoneid));
+        CORELOGRELSYS((CORELOG_NAME "ProcReadMiscInfo: getzonenamebyid failed. rc=%d errno=%d zoneid=%d\n", rc, errno,
+                       pVBoxProc->ProcInfo.pr_zoneid));
         return VERR_GENERAL_FAILURE;
     }
     pVBoxProc->szZoneName[sizeof(pVBoxProc->szZoneName) - 1] = '\0';
@@ -1777,7 +1782,8 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Create the core file.
      */
-    rc = RTFileOpen(&pVBoxCore->hCoreFile, pVBoxCore->szCorePath, RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_READWRITE | RTFILE_O_DENY_ALL);
+    rc = RTFileOpen(&pVBoxCore->hCoreFile, pVBoxCore->szCorePath,
+                    RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_READWRITE | RTFILE_O_DENY_ALL);
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: failed to open %s. rc=%Rrc\n", pVBoxCore->szCorePath, rc));
@@ -2134,7 +2140,7 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
         if (RT_FAILURE(rc))
             CORELOGRELSYS((CORELOG_NAME "TakeDump failed! rc=%Rrc\n", rc));
     }
-    else if (Sig == SIGSEGV || Sig == SIGBUS)
+    else if (Sig == SIGSEGV || Sig == SIGBUS || Sig == SIGTRAP)
     {
         /*
          * Core dumping is already in progress and we've somehow ended up being
@@ -2180,7 +2186,7 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
         }
     }
 
-    if (Sig == SIGSEGV || Sig == SIGBUS)
+    if (Sig == SIGSEGV || Sig == SIGBUS || Sig == SIGTRAP)
     {
         /*
          * Reset signal handlers, we're not a live core we will be blown away
@@ -2188,6 +2194,7 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
          */
         signal(SIGSEGV, SIG_DFL);
         signal(SIGBUS, SIG_DFL);
+        signal(SIGTRAP, SIG_DFL);
 
         /*
          * Hard terminate the process if this is not a live dump without invoking
@@ -2254,9 +2261,7 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
     /*
      * Validate flags.
      */
-    AssertReturn(fFlags, VERR_INVALID_PARAMETER); /** @todo r=bird: Update the function docs to reflect this.  It currently reads
-                                                   * as if RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP was standard behavior.
-                                                   * The SIGUSR2/RTCOREDUMPER_FLAGS_LIVE_CORE behavior isn't mentioned at all. */
+    AssertReturn(fFlags, VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & ~(  RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP
                               | RTCOREDUMPER_FLAGS_LIVE_CORE)),
                  VERR_INVALID_PARAMETER);
@@ -2274,32 +2279,42 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
  *
  *        Adding the conditional registration via the two flags complicates
  *        the implementation of this use case. */
+
     /*
      * Install core dump signal handler.
      */
-    struct sigaction sigAct;
-    RT_ZERO(sigAct);
-    sigAct.sa_sigaction = &rtCoreDumperSignalHandler;
-    sigemptyset(&sigAct.sa_mask); /** @todo r=bird: We're probably better off blocking all signals here. */
-    sigAct.sa_flags = SA_RESTART | SA_SIGINFO | SA_NODEFER; /** @todo r=bird: SA_NODEFER doesn't make sense for SIGUSR2. For the hardware triggered ones, I don't think you can efficiently mask them, but it doesn't hurt playing safe ofc. */
-
-    if (fFlags & RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP)
+    if (   ASMAtomicReadBool(&g_fCoreDumpSignalSetup) == false
+        || ASMAtomicReadU32(&g_fCoreDumpFlags) != fFlags)
     {
-        sigaction(SIGSEGV, &sigAct, NULL);
-        sigaction(SIGBUS, &sigAct, NULL);
-/** @todo Add SIGTRAP or release+fatal assertions. */
+        struct sigaction sigAct;
+        RT_ZERO(sigAct);
+        sigAct.sa_sigaction = &rtCoreDumperSignalHandler;
+        sigfillset(&sigAct.sa_mask);                        /* Block all signals while in the signal handler */
+        sigAct.sa_flags = SA_RESTART | SA_SIGINFO;
+
+        if (   (fFlags & RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP)
+            && !(g_fCoreDumpFlags & RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP))
+        {
+            sigAct.sa_flags |= SA_NODEFER;                  /* Don't block the below signal while in it's signal handler. */
+            sigaction(SIGSEGV, &sigAct, NULL);
+            sigaction(SIGBUS, &sigAct, NULL);
+            sigaction(SIGTRAP, &sigAct, NULL);
+        }
+
+        if (   fFlags & RTCOREDUMPER_FLAGS_LIVE_CORE
+            && !(g_fCoreDumpFlags & RTCOREDUMPER_FLAGS_LIVE_CORE))
+        {
+            sigAct.sa_flags = SA_RESTART | SA_SIGINFO;
+            sigaction(SIGUSR2, &sigAct, NULL);
+        }
+
+        ASMAtomicWriteU32(&g_fCoreDumpFlags, fFlags);
+        ASMAtomicWriteBool(&g_fCoreDumpSignalSetup, true);
     }
-
-    if (fFlags & RTCOREDUMPER_FLAGS_LIVE_CORE)
-        sigaction(SIGUSR2, &sigAct, NULL);
-
-    ASMAtomicWriteBool(&g_fCoreDumpSignalSetup, true);
 
     RT_ZERO(g_szCoreDumpDir);
     if (pszOutputDir)
         RTStrCopy(g_szCoreDumpDir, sizeof(g_szCoreDumpDir), pszOutputDir);
-
-    ASMAtomicWriteU32(&g_fCoreDumpFlags, fFlags);
 
     return VINF_SUCCESS;
 }
@@ -2314,6 +2329,7 @@ RTDECL(int) RTCoreDumperDisable(void)
     {
         signal(SIGSEGV, SIG_DFL);
         signal(SIGBUS, SIG_DFL);
+        signal(SIGTRAP, SIG_DFL);
         signal(SIGUSR2, SIG_DFL);
         ASMAtomicWriteBool(&g_fCoreDumpSignalSetup, false);
     }
