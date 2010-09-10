@@ -178,7 +178,7 @@ static int ExtractFile(const char *pszResourceName,
 
     do
     {
-        AssertBreakStmt(pszResourceName, "Resouce pointer invalid!");
+        AssertBreakStmt(pszResourceName, "Resource pointer invalid!");
         AssertBreakStmt(pszTempFile, "Temp file pointer invalid!");
 
         /* Read the data of the built-in resource. */
