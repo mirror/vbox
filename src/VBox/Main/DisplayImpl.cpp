@@ -511,14 +511,6 @@ int Display::registerSSM(PVM pVM)
                                    NULL, displaySSMLoad, NULL, this);
     AssertRCReturn(rc, rc);
 
-    /* Old version for backward compatibility */
-//    rc = SSMR3RegisterExternal(pVM, "DisplayData", 0, sSSMDisplayVer,
-//                               mcMonitors * sizeof(uint32_t) * 3 + sizeof(uint32_t),
-//                               NULL, NULL, NULL,
-//                               NULL, NULL, NULL,
-//                               NULL, displaySSMLoad, NULL, this);
-    AssertRCReturn(rc, rc);
-
     /*
      * Register loaders for old saved states where iInstance was 3 * sizeof(uint32_t *).
      */
