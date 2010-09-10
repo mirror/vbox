@@ -197,6 +197,28 @@ EXPORTS
     RTHandleTableFreeWithCtx
     RTHandleTableLookupWithCtx
 
+    RTAvlGCPtrDestroy
+    RTAvlGCPtrDoWithAll
+    RTAvlGCPtrGet
+    RTAvlGCPtrGetBestFit
+    RTAvlGCPtrInsert
+    RTAvlGCPtrRemove
+    RTAvlGCPtrRemoveBestFit
+    RTAvlHCPhysDestroy
+    RTAvlHCPhysDoWithAll
+    RTAvlHCPhysGet
+    RTAvlHCPhysGetBestFit
+    RTAvlHCPhysInsert
+    RTAvlHCPhysRemove
+    RTAvlHCPhysRemoveBestFit
+    RTAvlU32Destroy
+    RTAvlU32DoWithAll
+    RTAvlU32Get
+    RTAvlU32GetBestFit
+    RTAvlU32Insert
+    RTAvlU32Remove
+    RTAvlU32RemoveBestFit
+
     ; data
     g_pSUPGlobalInfoPage DATA ; NT
     g_SUPGlobalInfoPage  DATA ; OS2
