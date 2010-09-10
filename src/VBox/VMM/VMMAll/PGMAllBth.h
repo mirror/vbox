@@ -1571,7 +1571,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
 
 # if    defined(PGMPOOL_WITH_OPTIMIZED_DIRTY_PT) \
      && PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) \
-     && (PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64)
+     && (PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_SHW_TYPE == PGM_TYPE_PAE /* pae/32bit combo */)
     if (pShwPage->fDirty)
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -1580,6 +1580,8 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
         pGstPT = (PX86PTPAE)&pPool->aDirtyPages[pShwPage->idxDirty].aPage[0];
         pGstPT->a[iPTDst].u = PteSrc.u;
     }
+# else
+    Assert(!pShwPage->fDirty);
 # endif
 
     if (   PteSrc.n.u1Present
