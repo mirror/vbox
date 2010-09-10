@@ -1425,12 +1425,6 @@ static void pgmPoolTrackCheckPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGM
     RTHCPHYS LastHCPhys = NIL_RTHCPHYS; /* initialized to shut up gcc */
     PVM      pVM        = pPool->CTX_SUFF(pVM);
 
-    if ((pPage->GCPhys & PAGE_OFFSET_MASK) == 0x800)
-    {
-        /* Go to the 2nd half of the 32-bit PT. */
-        pGstPT = (PCX86PT)&pGstPT->a[512];
-    }
-
 #ifdef VBOX_STRICT
     for (unsigned i = 0; i < RT_MIN(RT_ELEMENTS(pShwPT->a), pPage->iFirstPresent); i++)
         AssertMsg(!PGMSHWPTEPAE_IS_P(pShwPT->a[i]), ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, PGMSHWPTEPAE_GET_LOG(pShwPT->a[i]),  pPage->iFirstPresent));
@@ -1566,12 +1560,6 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPae32Bit(PPGMPOOL pPool, PPGMPOOLPAGE pP
 {
     unsigned cChanged = 0;
 
-    if ((pPage->GCPhys & PAGE_OFFSET_MASK) == 0x800)
-    {
-        /* Go to the 2nd half of the 32-bit PT. */
-        pGstPT    = (PCX86PT)&pGstPT->a[512];
-        pOldGstPT = (PCX86PT)&pOldGstPT->a[512];
-    }
 #ifdef VBOX_STRICT
     for (unsigned i = 0; i < RT_MIN(RT_ELEMENTS(pShwPT->a), pPage->iFirstPresent); i++)
         AssertMsg(!PGMSHWPTEPAE_IS_P(pShwPT->a[i]), ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, PGMSHWPTEPAE_GET_LOG(pShwPT->a[i]),  pPage->iFirstPresent));
@@ -1755,8 +1743,8 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      * (The HCPhys linear lookup is *extremely* expensive!)
      */
     void *pvGst;
-    int   rc  = PGM_GCPHYS_2_PTR(pVM, pPage->GCPhys & PAGE_BASE_GC_MASK, &pvGst); AssertReleaseRC(rc);
-    memcpy(&pPool->aDirtyPages[idxFree].aPage[0], pvGst, PAGE_SIZE);
+    int   rc  = PGM_GCPHYS_2_PTR(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+    memcpy(&pPool->aDirtyPages[idxFree].aPage[0], pvGst, (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT) ? PAGE_SIZE : PAGE_SIZE/2);
 #ifdef VBOX_STRICT
     void *pvShw = PGMPOOL_PAGE_2_PTR(pVM, pPage);
     if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
