@@ -1296,7 +1296,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             pgmPoolAddDirtyPage(pVM, pPool, pPage);
 
             /* Temporarily allow write access to the page table again. */
-            rc = PGMHandlerPhysicalPageTempOff(pVM, pPage->GCPhys, pPage->GCPhys);
+            rc = PGMHandlerPhysicalPageTempOff(pVM, pPage->GCPhys, pPage->GCPhys & PAGE_BASE_GC_MASK);
             if (rc == VINF_SUCCESS)
             {
                 rc = PGMShwMakePageWritable(pVCpu, pvFault, PGM_MK_PG_IS_WRITE_FAULT);
@@ -1642,7 +1642,7 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
 #endif
 
     /* First write protect the page again to catch all write accesses. (before checking for changes -> SMP) */
-    int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys);
+    int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys & PAGE_BASE_GC_MASK);
     Assert(rc == VINF_SUCCESS);
     pPage->fDirty = false;
 
