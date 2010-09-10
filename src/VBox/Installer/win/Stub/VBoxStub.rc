@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,7 +40,7 @@ BEGIN
          VALUE "InternalName",     "VirtualBox\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VirtualBox.exe\0"
-         VALUE "ProductName",      "VirtualBox\0"
+         VALUE "ProductName",      VBOX_PRODUCT "\0"
          VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
       END
    END
