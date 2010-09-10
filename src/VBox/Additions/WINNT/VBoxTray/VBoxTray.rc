@@ -1,7 +1,10 @@
+/* $Id$ */
+/** @file
+ * VBoxTray - Resource file containing version info and icon.
+ */
+
 /*
- * VBoxService - Guest Additions Service
- *
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,7 +40,7 @@ BEGIN
          VALUE "InternalName",     "VBoxTray\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VBoxTray.exe\0"
-         VALUE "ProductName",      "VirtualBox Guest Additions\0"
+         VALUE "ProductName",      VBOX_PRODUCT " Guest Additions\0"
          VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
       END
    END
