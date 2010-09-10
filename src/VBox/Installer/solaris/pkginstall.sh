@@ -1,13 +1,14 @@
 #!/bin/sh
 ## @file
-# Sun VirtualBox - VirtualBox postinstall script for Solaris.
+#
+# VirtualBox postinstall script for Solaris.
 #
 # If you just installed VirtualBox using IPS/pkg(5), you should run this
 # script once to avoid rebooting the system before using VirtualBox.
 #
 
 #
-# Copyright (C) 2009 Oracle Corporation
+# Copyright (C) 2009-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;

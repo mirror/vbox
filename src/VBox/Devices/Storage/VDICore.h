@@ -46,7 +46,7 @@
 /** Image info, not handled anyhow.
  *  Must be less than 64 bytes in length, including the trailing 0.
  */
-#define VDI_IMAGE_FILE_INFO   "<<< Sun VirtualBox Disk Image >>>\n"
+#define VDI_IMAGE_FILE_INFO   "<<< Oracle VM VirtualBox Disk Image >>>\n"
 
 /** The Sector size.
  * Currently we support only 512 bytes sectors.

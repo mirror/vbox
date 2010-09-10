@@ -1,6 +1,6 @@
 #!/bin/sh
 ## @file
-# Sun VirtualBox
+#
 # VirtualBox package creation script, Solaris hosts.
 #
 

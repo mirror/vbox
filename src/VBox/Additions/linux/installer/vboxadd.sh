@@ -1,5 +1,5 @@
 #! /bin/sh
-# Sun VirtualBox
+#
 # Linux Additions kernel module init script ($Revision$)
 #
 

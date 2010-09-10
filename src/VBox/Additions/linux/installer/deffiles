@@ -1,10 +1,9 @@
 #!/bin/sh
 #
-# Sun VirtualBox
 # VirtualBox linux Guest Additions default files list
 
 #
-# Copyright (C) 2009 Sun Microsystems, Inc.
+# Copyright (C) 2009-2010 Sun Microsystems, Inc.
 #
 # Sun Microsystems, Inc. confidential
 # All rights reserved

@@ -1,8 +1,8 @@
 #!/bin/sh
-# Sun VirtualBox
+#
 # VirtualBox preremove script for VBI kernel package on Solaris hosts.
 #
-# Copyright (C) 2008-2009 Oracle Corporation
+# Copyright (C) 2008-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -13,7 +13,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-echo "Sun VirtualBox Kernel Package - preremove script"
+echo "VirtualBox Kernel Package - preremove script"
 echo "This script will unload the VirtualBox kernel interface module..."
 
 # check for vbi and force unload it

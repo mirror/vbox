@@ -428,7 +428,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
 #endif
     int rc = VINF_SUCCESS;
 
-    RTPrintf("Sun VirtualBox Simple SDL GUI built %s %s\n", __DATE__, __TIME__);
+    RTPrintf(VBOX_PRODUCT " Simple SDL GUI built %s %s\n", __DATE__, __TIME__);
 
     // less than one parameter is not possible
     if (argc < 2)

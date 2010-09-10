@@ -164,7 +164,7 @@ int main (int argc, char* argv[])
 
     do
     {
-        printf("Sun VirtualBox Stub Builder v%d.%d.%d.%d\n",
+        printf(VBOX_PRODUCT " Stub Builder v%d.%d.%d.%d\n",
                VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
 
         if (argc < 2)
