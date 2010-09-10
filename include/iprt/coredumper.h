@@ -38,9 +38,11 @@ RT_C_DECLS_BEGIN
 
 /** @name RTCoreDumperSetup flags
  * @{ */
-/** Override system core dumper. */
+/** Override system core dumper. Registers handlers for
+ *  SIGSEGV/SIGTRAP/SIGBUS.  */
 #define RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP     RT_BIT(0)
-/** Allow taking live process dumps (without killing process). */
+/** Allow taking live process dumps (without killing process). Registers handler
+ *  for SIGUSR2. */
 #define RTCOREDUMPER_FLAGS_LIVE_CORE               RT_BIT(1)
 /** @}  */
 
@@ -72,7 +74,8 @@ RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore);
  *                              the current directory will be used.
  * @param   pszBaseName         Base file name, no directory.  If NULL the
  *                              dumper will generate an appropriate name.
- * @param   fFlags              Setup flags, see RTCOREDUMPER_FLAGS_*.
+ * @param   fFlags              Setup flags, 0 in NOT a valid flag, it must be
+ *                              one or more of RTCOREDUMPER_FLAGS_*.
  */
 RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags);
 
