@@ -52,6 +52,7 @@
 # include <sys/sysmacros.h>
 # include <sys/systeminfo.h>
 # include <sys/mman.h>
+# include <ucontext.h>
 #endif  /* RT_OS_SOLARIS */
 
 #include "internal/ldrELF.h"
@@ -62,7 +63,6 @@
 *******************************************************************************/
 static RTNATIVETHREAD volatile  g_CoreDumpThread             = NIL_RTNATIVETHREAD;
 static bool volatile            g_fCoreDumpSignalSetup       = false;
-static bool volatile            g_fCoreDumpDeliberate        = false;
 static uint32_t volatile        g_fCoreDumpFlags             = 0;
 static char                     g_szCoreDumpDir[PATH_MAX]    = { 0 };
 static char                     g_szCoreDumpFile[PATH_MAX]   = { 0 };
@@ -1274,7 +1274,7 @@ static int rtCoreDumperSuspendThreads(PVBOXCORE pVBoxCore)
         && aThreads[cTries - 1] != aThreads[cTries - 2])
     {
         CORELOGRELSYS((CORELOG_NAME "rtCoreDumperSuspendThreads: possible thread bomb!?\n"));
-        rc = VERR_GENERAL_FAILURE;   /* @todo better error code */
+        rc = VERR_TIMEOUT;
     }
     return rc;
 #else
@@ -1928,11 +1928,12 @@ WriteCoreDone:
  *
  * @param pVBoxCore         Pointer to a core object.
  * @param pContext          Pointer to the caller context thread.
+ * @param pszCoreFilePath   Path to the core file (Optional, can be NULL).
  *
  * @remarks Halts all threads.
  * @return IPRT status code.
  */
-static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext)
+static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext, const char *pszCoreFilePath)
 {
     AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
     AssertReturn(pContext, VERR_INVALID_POINTER);
@@ -1957,19 +1958,27 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext)
     pVBoxProc->pszExecName = RTPathFilename(pVBoxProc->szExecPath);
 
     /*
-     * If no output directory is specified, use current directory.
+     * If a path has been specified, use it. Otherwise use the global path.
      */
-    if (g_szCoreDumpDir[0] == '\0')
-        g_szCoreDumpDir[0] = '.';
-
-    if (g_szCoreDumpFile[0] == '\0')
+    if (!pszCoreFilePath)
     {
-        /* We cannot call RTPathAbs*() as they call getcwd() which calls malloc. */
-        RTStrPrintf(pVBoxCore->szCorePath, sizeof(pVBoxCore->szCorePath), "%s/core.vb.%s.%d",
-                    g_szCoreDumpDir, pVBoxProc->pszExecName, (int)pVBoxProc->Process);
+        /*
+         * If no output directory is specified, use current directory.
+         */
+        if (g_szCoreDumpDir[0] == '\0')
+            g_szCoreDumpDir[0] = '.';
+
+        if (g_szCoreDumpFile[0] == '\0')
+        {
+            /* We cannot call RTPathAbs*() as they call getcwd() which calls malloc. */
+            RTStrPrintf(pVBoxCore->szCorePath, sizeof(pVBoxCore->szCorePath), "%s/core.vb.%s.%d",
+                        g_szCoreDumpDir, pVBoxProc->pszExecName, (int)pVBoxProc->Process);
+        }
+        else
+            RTStrPrintf(pVBoxCore->szCorePath, sizeof(pVBoxCore->szCorePath), "%s/core.vb.%s", g_szCoreDumpDir, g_szCoreDumpFile);
     }
     else
-        RTStrPrintf(pVBoxCore->szCorePath, sizeof(pVBoxCore->szCorePath), "%s/core.vb.%s", g_szCoreDumpDir, g_szCoreDumpFile);
+        RTStrCopy(pVBoxCore->szCorePath, sizeof(pVBoxCore->szCorePath), pszCoreFilePath);
 
     CORELOG((CORELOG_NAME  "CreateCore: Taking Core %s from Thread %d\n", pVBoxCore->szCorePath, (int)pVBoxProc->hCurThread));
 
@@ -2080,9 +2089,12 @@ static int rtCoreDumperDestroyCore(PVBOXCORE pVBoxCore)
  * because it can be called from signal handlers.
  *
  * @param   pContext            The context of the caller.
+ * @param   pszOutputFile       Path of the core file. If NULL is passed, the
+ *                              global path passed in RTCoreDumperSetup will
+ *                              be used.
  * @returns IPRT status code.
  */
-static int rtCoreDumperTakeDump(ucontext_t *pContext)
+static int rtCoreDumperTakeDump(ucontext_t *pContext, const char *pszOutputFile)
 {
     if (!pContext)
     {
@@ -2097,7 +2109,7 @@ static int rtCoreDumperTakeDump(ucontext_t *pContext)
      */
     VBOXCORE VBoxCore;
     RT_ZERO(VBoxCore);
-    int rc = rtCoreDumperCreateCore(&VBoxCore, pContext);
+    int rc = rtCoreDumperCreateCore(&VBoxCore, pContext, pszOutputFile);
     if (RT_SUCCESS(rc))
     {
         rc = rtCoreDumperWriteCore(&VBoxCore, &WriteFileNoIntr);
@@ -2134,7 +2146,7 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
     ASMAtomicCmpXchgHandle(&g_CoreDumpThread, hCurNativeThread, NIL_RTNATIVETHREAD, fRc);
     if (fRc)
     {
-        rc = rtCoreDumperTakeDump((ucontext_t *)pvArg);
+        rc = rtCoreDumperTakeDump((ucontext_t *)pvArg, NULL /* Use Global Core filepath */);
         ASMAtomicWriteHandle(&g_CoreDumpThread, NIL_RTNATIVETHREAD);
 
         if (RT_FAILURE(rc))
@@ -2214,45 +2226,40 @@ static void rtCoreDumperSignalHandler(int Sig, siginfo_t *pSigInfo, void *pvArg)
 
 RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore)
 {
-    /** @todo r=bird: No setup should be required for this call and it
-     * shouldn't change the globals.
-     *
-     * Would probably be best to serialize RTCoreDumperTakeDump callers using a
-     * lazily initialized critsect (see RTOnce) and use different globals to
-     * communicate with the signal handlers.
-     *
-     * Another improvement is to use getcontext() to get the thread context and
-     * call rtCoreDumperTakeDump directly.  Extend rtCoreDumperTakeDump so that
-     * it takes pszOutputFile as an optional argument.  Mask the other fatal +
-     * SIGUSR2 while doing this.
-     */
-
-    /*
-     * Validate input.
-     */
-    if (ASMAtomicReadBool(&g_fCoreDumpSignalSetup) == false)
-        return VERR_WRONG_ORDER;
-
-    uint32_t fFlags = ASMAtomicReadU32(&g_fCoreDumpFlags);
-    if (fLiveCore && !(fFlags & RTCOREDUMPER_FLAGS_LIVE_CORE))
-        return VERR_INVALID_PARAMETER;
-
-    if (!fLiveCore && !(fFlags & RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP))
-        return VERR_INVALID_PARAMETER;
-
-    RT_ZERO(g_szCoreDumpFile);
-    if (pszOutputFile)
-        RTStrCopy(g_szCoreDumpFile, sizeof(g_szCoreDumpFile), pszOutputFile);
-
-    ASMAtomicWriteBool(&g_fCoreDumpDeliberate, true);
-
-    if (fLiveCore == false)
-        raise(SIGSEGV);
+    ucontext_t Context;
+    int rc = getcontext(&Context);
+    if (!rc)
+    {
+        /*
+         * Block SIGSEGV and co. while we write the core.
+         */
+        sigset_t SigSet, OldSigSet;
+        sigemptyset(&SigSet);
+        sigaddset(&SigSet, SIGSEGV);
+        sigaddset(&SigSet, SIGBUS);
+        sigaddset(&SigSet, SIGTRAP);
+        sigaddset(&SigSet, SIGUSR2);
+        pthread_sigmask(SIG_BLOCK, &SigSet, &OldSigSet);
+        rc = rtCoreDumperTakeDump(&Context, pszOutputFile);
+        if (!fLiveCore)
+        {
+            signal(SIGSEGV, SIG_DFL);
+            signal(SIGBUS, SIG_DFL);
+            signal(SIGTRAP, SIG_DFL);
+            if (RT_SUCCESS(rc))
+                raise(SIGKILL);
+            else
+                abort();
+        }
+        pthread_sigmask(SIG_SETMASK, &OldSigSet, NULL);
+    }
     else
-        raise(SIGUSR2);
+    {
+        CORELOGRELSYS(("RTCoreDumperTakeDump: getcontext failed rc=%d.\n"));
+        rc = VERR_INVALID_CONTEXT;
+    }
 
-    ASMAtomicWriteBool(&g_fCoreDumpDeliberate, false);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -2266,22 +2273,8 @@ RTDECL(int) RTCoreDumperSetup(const char *pszOutputDir, uint32_t fFlags)
                               | RTCOREDUMPER_FLAGS_LIVE_CORE)),
                  VERR_INVALID_PARAMETER);
 
-/** @todo r=bird: The idea here was that we shouldn't register the handler
- *        more than once.  I.e. skip it if g_fCoreDumpSignalSetup and the
- *        flags didn't change in any way.  The rational/usecase is that that
- *        allows the user to chain handlers before our SIGSEGV/SIGBUS/SIGTRAP
- *        core dumping + crashing handler.  Since we're registering our stuff
- *        in Main somewhere it's important that only the first call messes with
- *        the signal handlers.  The front end could for instance do a
- *        RTCoreDumperSetup(NULL, RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP |
- *        RTCOREDUMPER_FLAGS_LIVE_CORE) call in it's main() before setting up
- *        it's own SIGBUS/SIGSEGV/SIGTRAP handlers.
- *
- *        Adding the conditional registration via the two flags complicates
- *        the implementation of this use case. */
-
     /*
-     * Install core dump signal handler.
+     * Install core dump signal handler only if the flags changed or if it's the first time.
      */
     if (   ASMAtomicReadBool(&g_fCoreDumpSignalSetup) == false
         || ASMAtomicReadU32(&g_fCoreDumpFlags) != fFlags)
