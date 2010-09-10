@@ -1,4 +1,4 @@
-/* $Id: VBoxServicePageSharing.cpp 62335 2010-06-03 14:40:59Z bird $ */
+/* $Id$ */
 /** @file
  * VBoxService - Guest page sharing testcase
  */

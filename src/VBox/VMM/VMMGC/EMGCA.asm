@@ -1,4 +1,4 @@
-; $Id: EMAllA.asm 20278 2007-04-09 11:56:29Z sandervl $
+; $Id$
 ;; @file
 ; EM Assembly Routines.
 ;

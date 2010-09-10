@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * DevVGA - VBox VGA/VESA device, code templates.
  */

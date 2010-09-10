@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 61727 2010-05-17 19:41:27Z fmehnert $
+# $Id$
 ## @file
 # Sub-Makefile for the Cross Platform Guest Addition test cases.
 #
