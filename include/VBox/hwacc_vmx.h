@@ -592,16 +592,16 @@ typedef union
 /** VMCS revision identifier used by the processor. */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_ID(a)                      (a & 0x7FFFFFFF)
 /** Size of the VMCS. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(a)                    ((a >> 32ULL) & 0xFFF)
+#define MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(a)                    (((a) >> 32) & 0xFFF)
 /** Width of physical address used for the VMCS.
  *  0 -> limited to the available amount of physical ram
  *  1 -> within the first 4 GB
  */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_PHYS_WIDTH(a)              ((a >> 48ULL) & 1)
+#define MSR_IA32_VMX_BASIC_INFO_VMCS_PHYS_WIDTH(a)              (((a) >> 48) & 1)
 /** Whether the processor supports the dual-monitor treatment of system-management interrupts and system-management code. (always 1) */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(a)                ((a >> 49ULL) & 1)
+#define MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(a)                (((a) >> 49) & 1)
 /** Memory type that must be used for the VMCS. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(a)                ((a >> 50ULL) & 0xF)
+#define MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xF)
 /** @} */
 
 
@@ -609,15 +609,15 @@ typedef union
  * @{
  */
 /** Relationship between the preemption timer and tsc; count down every time bit x of the tsc changes. */
-#define MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(a)                    (a & 0x1f)
+#define MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(a)                    ((a) & 0x1f)
 /** Activity states supported by the implementation. */
-#define MSR_IA32_VMX_MISC_ACTIVITY_STATES(a)                    ((a >> 6ULL) & 0x7)
+#define MSR_IA32_VMX_MISC_ACTIVITY_STATES(a)                    (((a) >> 6) & 0x7)
 /** Number of CR3 target values supported by the processor. (0-256) */
-#define MSR_IA32_VMX_MISC_CR3_TARGET(a)                         ((a >> 16ULL) & 0x1FF)
+#define MSR_IA32_VMX_MISC_CR3_TARGET(a)                         (((a) >> 16) & 0x1FF)
 /** Maximum nr of MSRs in the VMCS. (N+1)*512. */
-#define MSR_IA32_VMX_MISC_MAX_MSR(a)                            ((((a >> 25ULL) & 0x7) + 1) * 512)
+#define MSR_IA32_VMX_MISC_MAX_MSR(a)                            (((((a) >> 25) & 0x7) + 1) * 512)
 /** MSEG revision identifier used by the processor. */
-#define MSR_IA32_VMX_MISC_MSEG_ID(a)                            (a >> 32ULL)
+#define MSR_IA32_VMX_MISC_MSEG_ID(a)                            ((a) >> 32)
 /** @} */
 
 
@@ -625,7 +625,7 @@ typedef union
  * @{
  */
 /** Highest field index. */
-#define MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(a)                 ((a >> 1ULL) & 0x1FF)
+#define MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(a)                 (((a) >> 1) & 0x1FF)
 
 /** @} */
 
