@@ -1928,7 +1928,8 @@ WriteCoreDone:
  *
  * @param pVBoxCore         Pointer to a core object.
  * @param pContext          Pointer to the caller context thread.
- * @param pszCoreFilePath   Path to the core file (Optional, can be NULL).
+ * @param pszCoreFilePath   Path to the core file. If NULL is passed, the global
+ *                          path specified in RTCoreDumperSetup() would be used.
  *
  * @remarks Halts all threads.
  * @return IPRT status code.
