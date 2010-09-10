@@ -40,7 +40,6 @@
 #include <iprt/handletable.h>
 #include <iprt/mem.h>
 #include <iprt/mp.h>
-#include <iprt/avl.h>
 #include <iprt/power.h>
 #include <iprt/process.h>
 #include <iprt/semaphore.h>
@@ -340,27 +339,6 @@ static SUPFUNC g_aFunctions[] =
     { "RTCrc32Finish",                          (void *)RTCrc32Finish },
     { "RTCrc32Process",                         (void *)RTCrc32Process },
     { "RTCrc32Start",                           (void *)RTCrc32Start },
-    { "RTAvlGCPtrDestroy",                      (void *)RTAvlGCPtrDestroy },
-    { "RTAvlGCPtrDoWithAll",                    (void *)RTAvlGCPtrDoWithAll },
-    { "RTAvlGCPtrGet",                          (void *)RTAvlGCPtrGet },
-    { "RTAvlGCPtrGetBestFit",                   (void *)RTAvlGCPtrGetBestFit },
-    { "RTAvlGCPtrInsert",                       (void *)RTAvlGCPtrInsert },
-    { "RTAvlGCPtrRemove",                       (void *)RTAvlGCPtrRemove },
-    { "RTAvlGCPtrRemoveBestFit",                (void *)RTAvlGCPtrRemoveBestFit },
-    { "RTAvlHCPhysDestroy",                     (void *)RTAvlHCPhysDestroy },
-    { "RTAvlHCPhysDoWithAll",                   (void *)RTAvlHCPhysDoWithAll },
-    { "RTAvlHCPhysGet",                         (void *)RTAvlHCPhysGet },
-    { "RTAvlHCPhysGetBestFit",                  (void *)RTAvlHCPhysGetBestFit },
-    { "RTAvlHCPhysInsert",                      (void *)RTAvlHCPhysInsert },
-    { "RTAvlHCPhysRemove",                      (void *)RTAvlHCPhysRemove },
-    { "RTAvlHCPhysRemoveBestFit",               (void *)RTAvlHCPhysRemoveBestFit },
-    { "RTAvlU32Destroy",                        (void *)RTAvlU32Destroy },
-    { "RTAvlU32DoWithAll",                      (void *)RTAvlU32DoWithAll },
-    { "RTAvlU32Get",                            (void *)RTAvlU32Get },
-    { "RTAvlU32GetBestFit",                     (void *)RTAvlU32GetBestFit },
-    { "RTAvlU32Insert",                         (void *)RTAvlU32Insert },
-    { "RTAvlU32Remove",                         (void *)RTAvlU32Remove },
-    { "RTAvlU32RemoveBestFit",                  (void *)RTAvlU32RemoveBestFit },
 };
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
