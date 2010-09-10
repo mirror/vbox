@@ -25,6 +25,7 @@
 # define VBOXESC_GETVBOXVIDEOCMCMD          0xABCD9004
 # define VBOXESC_DBGPRINT                   0xABCD9005
 # define VBOXESC_SCREENLAYOUT               0xABCD9006
+# define VBOXESC_SWAPCHAININFO              0xABCD9007
 
 typedef struct
 {
