@@ -439,7 +439,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL
         /* Check if we got woken up. */
         if (lCompletionKey == AIO_CONTEXT_WAKEUP_EVENT)
         {
-            Assert(fSucceeded && !pOverlapped)
+            Assert(fSucceeded && !pOverlapped);
             break;
         }
 
