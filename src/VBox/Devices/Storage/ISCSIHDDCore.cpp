@@ -4648,7 +4648,7 @@ static int iscsiFlush(void *pBackendData)
     cdb[8] = 0;         /* transfer everything to disk */
     cdb[9] = 0;         /* control */
 
-    sr.enmXfer   = SCSIXFER_TO_TARGET;
+    sr.enmXfer   = SCSIXFER_NONE;
     sr.cbCmd     = sizeof(cdb);
     sr.pvCmd     = cdb;
     sr.cbI2TData = 0;
