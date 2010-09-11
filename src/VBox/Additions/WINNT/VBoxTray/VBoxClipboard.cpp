@@ -196,7 +196,7 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
             if (hViewer)
                 SendMessageCallback(hViewer, WM_CHANGECBCHAIN, (WPARAM)pCtx->hwndNextInChain, (LPARAM)pCtx->hwndNextInChain, CBChainPingProc, (ULONG_PTR) pCtx);
         } break;
-        
+
         case WM_CLOSE:
         {
             /* Do nothing. Ignore the message. */

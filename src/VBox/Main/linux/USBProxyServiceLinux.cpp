@@ -205,7 +205,7 @@ int USBProxyServiceLinux::initUsbfs(void)
                 }
                 RTFileClose(mFile);
             }
-            
+
         }
         RTStrFree(pszDevices);
     }

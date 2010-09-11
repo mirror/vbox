@@ -312,7 +312,7 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
 {
     HRESULT hrc;
     LogFlowThisFunc(("\n"));
-    
+
     NOREF(fEarly);
 
     /*

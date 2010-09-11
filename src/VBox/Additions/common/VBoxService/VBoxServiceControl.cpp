@@ -119,10 +119,10 @@ static int VBoxServiceControlHandleCmdStartProcess(uint32_t u32ClientId, uint32_
     uint32_t uTimeLimitMS;
 
 #if 0 /* for valgrind */
-    RT_ZERO(szCmd); 
-    RT_ZERO(szArgs); 
-    RT_ZERO(szEnv); 
-    RT_ZERO(szUser); 
+    RT_ZERO(szCmd);
+    RT_ZERO(szArgs);
+    RT_ZERO(szEnv);
+    RT_ZERO(szUser);
     RT_ZERO(szPassword);
 #endif
 

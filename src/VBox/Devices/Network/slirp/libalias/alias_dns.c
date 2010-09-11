@@ -209,11 +209,11 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
 
     QStr2CStr(qw_qname, cname, sizeof(cname));
     cname_len = RTStrNLen(cname, sizeof(cname));
-    /* Some guests like win-xp adds _dot_ after host name 
+    /* Some guests like win-xp adds _dot_ after host name
      * and after domain name (not passed with host resolver)
      * that confuses host resolver.
      */
-    if (   cname_len > 2 
+    if (   cname_len > 2
         && cname[cname_len - 1] == '.'
         && cname[cname_len - 2] == '.')
     {

@@ -128,9 +128,9 @@ tunable_mbinit(void *dummy)
 #ifndef VBOX
 	nmbjumbo16 = nmbjumbo9 / 2;
 #else
-    /* drvNATNetowrkUp_AllocBuf always requests mbuf from this 
+    /* drvNATNetowrkUp_AllocBuf always requests mbuf from this
      * zones, that require more buffers allocated on jumbo16 zone,
-     * in case of intensive communication like p2p and UDP benches. 
+     * in case of intensive communication like p2p and UDP benches.
      */
     nmbjumbo16 = nmbclusters;
 #endif

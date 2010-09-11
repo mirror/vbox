@@ -337,7 +337,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_
     if (rcNt != STATUS_SUCCESS)
     {
         ULONG ulError = LsaNtStatusToWinError(rcNt);
-        /* Skip session data which is not valid anymore because it may have been                 
+        /* Skip session data which is not valid anymore because it may have been
          * already terminated. */
         if (ulError != ERROR_NO_SUCH_LOGON_SESSION)
             VBoxServiceError("VMInfo/Users: LsaGetLogonSessionData failed, LSA error %u\n", ulError);

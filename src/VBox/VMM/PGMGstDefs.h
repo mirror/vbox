@@ -229,4 +229,3 @@
 # define BTH_IS_NP_ACTIVE(pVM)                  (false)
 #endif
 
-

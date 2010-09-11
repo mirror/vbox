@@ -88,7 +88,7 @@ typedef struct FTM
         uint64_t                   u64LastHeartbeat;
     } standby;
 
-    /* 
+    /*
     struct
     {
     } master;

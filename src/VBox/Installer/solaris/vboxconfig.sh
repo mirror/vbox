@@ -129,7 +129,7 @@ find_bin_path()
         errorprint "missing argument to find_bin_path()"
         exit 1
     fi
-    
+
     binfilename=`basename $1`
     binfilepath=`which $binfilename 2> /dev/null`
     if test -x "$binfilepath"; then

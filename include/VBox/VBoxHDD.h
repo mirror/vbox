@@ -2079,7 +2079,7 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
 /**
  * Resizes the given disk image to the given size.
  *
- * @return  VBox status 
+ * @return  VBox status
  * @return  VERR_VD_IMAGE_READ_ONLY if image is not writable.
  * @return  VERR_NOT_SUPPORTED if this kind of image can be compacted, but
  *

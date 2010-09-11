@@ -227,7 +227,7 @@ int main(int argc, char **argv)
     g_cMillies = 120*1000;
     RTTESTI_CHECK_RC(SUPSemEventMultiCreate(pSession, &hEvent), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTThreadCreate(&hThread, tstSupSemInterruptibleMRE, (void *)hEvent, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "IntSRE"), VINF_SUCCESS);
-    
+
     RTTHREAD hThread2 = NIL_RTTHREAD;
     RTTESTI_CHECK_RC(RTThreadCreate(&hThread2, tstSupSemInterruptibleMRE, (void *)hEvent, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "IntSRE"), VINF_SUCCESS);
 

@@ -407,4 +407,3 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGM
 #endif
 }
 
-

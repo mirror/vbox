@@ -215,8 +215,8 @@ static int codecGetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
 static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     AMPLIFIER *pAmplifier = NULL;
-    bool fIsLeft = false; 
-    bool fIsRight = false; 
+    bool fIsLeft = false;
+    bool fIsRight = false;
     bool fIsOut = false;
     bool fIsIn = false;
     uint8_t u8Index = 0;
@@ -239,10 +239,10 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
     Assert(pAmplifier);
     if (pAmplifier)
     {
-        fIsOut = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd); 
-        fIsIn = CODEC_SET_AMP_IS_IN_DIRECTION(cmd); 
-        fIsRight = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd); 
-        fIsLeft = CODEC_SET_AMP_IS_LEFT_SIDE(cmd); 
+        fIsOut = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd);
+        fIsIn = CODEC_SET_AMP_IS_IN_DIRECTION(cmd);
+        fIsRight = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd);
+        fIsLeft = CODEC_SET_AMP_IS_LEFT_SIDE(cmd);
         u8Index = CODEC_SET_AMP_INDEX(cmd);
         if (   (!fIsLeft && !fIsRight)
             || (!fIsOut && !fIsIn))
@@ -253,7 +253,7 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
                 codecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_LEFT, u8Index), cmd, 0);
             if (fIsRight)
                 codecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), cmd, 0);
-        } 
+        }
         if (fIsOut)
         {
             if (fIsLeft)

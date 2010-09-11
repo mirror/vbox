@@ -877,7 +877,7 @@ static int addIfDevice(const char *pcszNode,
                                        usbDeviceFromDevNum(devnum));
     if (cchDevPath < 0)
         return VINF_SUCCESS;
-    
+
     USBDeviceInfo info;
     if (USBDevInfoInit(&info, szDevPath, pcszNode))
         if (RT_SUCCESS(VEC_PUSH_BACK_OBJ(pvecDevInfo, USBDeviceInfo,
@@ -984,7 +984,7 @@ static int readFilePathsFromDir(const char *pcszPath, DIR *pDir,
  * Dump the names of a directory's entries into a vector of char pointers.
  *
  * @returns zero on success or (positive) posix error value.
- * @param   pcszPath      the path to dump.  
+ * @param   pcszPath      the path to dump.
  * @param   pvecpchDevs   an empty vector of char pointers - must be cleaned up
  *                        by the caller even on failure.
  * @param   withRealPath  whether to canonicalise the filename with realpath

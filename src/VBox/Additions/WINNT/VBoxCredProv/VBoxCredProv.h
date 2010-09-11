@@ -90,14 +90,14 @@ class VBoxCredProv : public ICredentialProvider
     private:
 
         /** Interface reference count. */
-        LONG                                     m_cRef;                              
+        LONG                                     m_cRef;
         /** Our one and only credential. */
-        VBoxCredential                          *m_pCred;  
-        /** Poller thread for credential lookup. */                           
+        VBoxCredential                          *m_pCred;
+        /** Poller thread for credential lookup. */
         VBoxCredPoller                          *m_pPoller;
         /** Used to tell our owner to re-enumerate credentials. */
         ICredentialProviderEvents               *m_pCredProvEvents;
-        /** Used to tell our owner who we are when asking to re-enumerate credentials. */           
+        /** Used to tell our owner who we are when asking to re-enumerate credentials. */
         UINT_PTR                                 m_upAdviseContext;
         /** Saved usage scenario. */
         CREDENTIAL_PROVIDER_USAGE_SCENARIO       m_cpUsageScenario;

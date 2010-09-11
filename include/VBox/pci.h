@@ -469,7 +469,7 @@ DECLINLINE(uint16_t) PCIDevGetSubSystemId(PPCIDEVICE pPciDev)
 DECLINLINE(void) PCIDevSetCapabilityList(PPCIDEVICE pPciDev, uint8_t u8Offset)
 {
     pPciDev->config[VBOX_PCI_CAPABILITY_LIST] = u8Offset;
-} 
+}
 
 /**
  * Returns offset to capability list.

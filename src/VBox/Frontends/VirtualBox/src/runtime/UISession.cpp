@@ -445,7 +445,7 @@ void UISession::sltCloseVirtualSession()
     /* Recursevely close all the opened warnings... */
     if (vboxProblem().isAnyWarningShown())
     {
-    	vboxProblem().closeAllWarnings();
+        vboxProblem().closeAllWarnings();
         QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
         return;
     }

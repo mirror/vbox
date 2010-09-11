@@ -21,7 +21,7 @@ class NullFB : VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 public:
     NullFB()
     :
-    mScreen(NULL), mBuffer(NULL), 
+    mScreen(NULL), mBuffer(NULL),
     mUsesGuestVRAM(false),
     mWidth(0), mHeight(0)
 #ifndef VBOX_WITH_XPCOM
