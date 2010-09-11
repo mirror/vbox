@@ -162,7 +162,7 @@ void UIVMPreviewWindow::paintEvent(QPaintEvent *pEvent)
 
         /* Paint the name in the center of the monitor */
         painter.fillRect(m_vRect, Qt::black);
-		QFont font = painter.font();
+                QFont font = painter.font();
         font.setBold(true);
         int fFlags = Qt::AlignCenter | Qt::TextWordWrap;
         float h = m_vRect.size().height() * .2;

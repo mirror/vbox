@@ -3764,7 +3764,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
                             if (pRec->aRegions[i].paHCPhysPageID)
                                 RTMemFree(pRec->aRegions[i].paHCPhysPageID);
 
-                        Assert(pRec->Core.Key == GCBaseAddr || pRec->enmGuestOS == VBOXOSFAMILY_Windows64);                        
+                        Assert(pRec->Core.Key == GCBaseAddr || pRec->enmGuestOS == VBOXOSFAMILY_Windows64);
                         Assert(pRec->cRegions == pRecVM->cRegions);
 #ifdef VBOX_STRICT
                         for (unsigned i = 0; i < pRecVM->cRegions; i++)

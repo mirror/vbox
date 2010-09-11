@@ -584,4 +584,3 @@ RTDECL(int) RTPollSetEventsChange(RTPOLLSET hPollSet, uint32_t id, uint32_t fEve
     return rc;
 }
 
-

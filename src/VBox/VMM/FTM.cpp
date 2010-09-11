@@ -134,7 +134,7 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
     STAM_REL_REG(pVM, &pVM->ftm.s.StatFullSync,                  STAMTYPE_COUNTER, "/FT/Sync/Full",                     STAMUNIT_OCCURENCES, "Number of full vm syncs.");
     STAM_REL_REG(pVM, &pVM->ftm.s.StatDeltaMem,                  STAMTYPE_COUNTER, "/FT/Sync/DeltaMem",                 STAMUNIT_OCCURENCES, "Number of delta mem syncs.");
     STAM_REL_REG(pVM, &pVM->ftm.s.StatCheckpointStorage,         STAMTYPE_COUNTER, "/FT/Checkpoint/Storage",            STAMUNIT_OCCURENCES, "Number of storage checkpoints.");
-    STAM_REL_REG(pVM, &pVM->ftm.s.StatCheckpointNetwork,         STAMTYPE_COUNTER, "/FT/Checkpoint/Network",            STAMUNIT_OCCURENCES, "Number of network checkpoints.");    
+    STAM_REL_REG(pVM, &pVM->ftm.s.StatCheckpointNetwork,         STAMTYPE_COUNTER, "/FT/Checkpoint/Network",            STAMUNIT_OCCURENCES, "Number of network checkpoints.");
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM,     &pVM->ftm.s.StatCheckpoint,                STAMTYPE_PROFILE, "/FT/Checkpoint",                    STAMUNIT_TICKS_PER_CALL, "Profiling of FTMR3SetCheckpoint.");
     STAM_REG(pVM,     &pVM->ftm.s.StatCheckpointPause,           STAMTYPE_PROFILE, "/FT/Checkpoint/Pause",              STAMUNIT_TICKS_PER_CALL, "Profiling of FTMR3SetCheckpoint.");
@@ -700,7 +700,7 @@ static DECLCALLBACK(int) ftmR3SyncDirtyPage(PVM pVM, RTGCPHYS GCPhys, uint8_t *p
         pVM->ftm.s.StatSentMemRAM.c    += Hdr.cb + sizeof(Hdr);
         break;
 
-    case PGMPAGETYPE_MMIO2: 
+    case PGMPAGETYPE_MMIO2:
         pVM->ftm.s.StatSentMemMMIO2.c  += Hdr.cb + sizeof(Hdr);
         break;
 
@@ -776,14 +776,14 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
         }
         rc = RTSemEventWait(pVM->ftm.s.hShutdownEvent, 1000 /* 1 second */);
         if (rc != VERR_TIMEOUT)
-            return VINF_SUCCESS;    /* told to quit */            
+            return VINF_SUCCESS;    /* told to quit */
     }
 
     /* Successfully initialized the connection to the standby node.
      * Start the sync process.
      */
 
-    /* First sync all memory and write protect everything so 
+    /* First sync all memory and write protect everything so
      * we can send changed pages later on.
      */
 
@@ -1232,7 +1232,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
     int rc = VINF_SUCCESS;
     bool fSuspended = false;
 
-    /** We don't call VMR3Suspend here to avoid the overhead of state changes and notifications. This 
+    /** We don't call VMR3Suspend here to avoid the overhead of state changes and notifications. This
      *  is only a short suspend.
      */
     STAM_PROFILE_START(&pVM->ftm.s.StatCheckpointPause, a);
@@ -1270,7 +1270,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
     rc = PGMR3PhysWriteProtectRAM(pVM);
     AssertRC(rc);
 
-    /** We don't call VMR3Resume here to avoid the overhead of state changes and notifications. This 
+    /** We don't call VMR3Resume here to avoid the overhead of state changes and notifications. This
      *  is only a short suspend.
      */
     STAM_PROFILE_START(&pVM->ftm.s.StatCheckpointResume, b);

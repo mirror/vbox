@@ -2542,7 +2542,7 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
     }
 
     /*
-     * Making the image smaller is not supported at the moment. 
+     * Making the image smaller is not supported at the moment.
      * Resizing is also not supported for fixed size images and
      * very old images.
      */

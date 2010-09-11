@@ -37,4 +37,3 @@
 
 #include "internal/magics.h"
 
-

@@ -2118,8 +2118,8 @@ typedef struct PDMIVMMDEVCONNECTOR
      *
      * @param   pInterface          Pointer to this interface.
      * @param   guestInfo           Pointer to Guest Additions information structure.
-	 * @thread  The emulation thread.
- 	 */
+     * @thread  The emulation thread.
+     */
     DECLR3CALLBACKMEMBER(void, pfnUpdateGuestInfo2,(PPDMIVMMDEVCONNECTOR pInterface, const struct VBoxGuestInfo2 *pGuestInfo));
 
     /**

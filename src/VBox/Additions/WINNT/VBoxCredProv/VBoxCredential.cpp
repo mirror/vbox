@@ -104,7 +104,7 @@ int VBoxCredential::Update(const char *pszUser,
 
     PWSTR *ppwszStored;
 
-    /* 
+    /*
      * Update domain name (can be NULL) and will
      * be later replaced by the local computer name in the
      * Kerberos authentication package or by the first part
@@ -137,8 +137,8 @@ int VBoxCredential::Update(const char *pszUser,
         }
         else
         {
-            /* 
-             * Oky, no display name, but mabye it's a 
+            /*
+             * Oky, no display name, but mabye it's a
              * principal name from which we have to extract the
              * domain from? (jdoe@my-domain.sub.net.com -> jdoe in
              * domain my-domain.sub.net.com.)
@@ -174,7 +174,7 @@ int VBoxCredential::Update(const char *pszUser,
 }
 
 
-/* 
+/*
  * Initializes one credential with the field information passed in.
  * Set the value of the SFI_USERNAME field to pwzUsername.
  * Optionally takes a password for the SetSerialization case.
@@ -189,9 +189,9 @@ HRESULT VBoxCredential::Initialize(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
 
     m_cpUS = cpus;
 
-    /* 
+    /*
      * Copy the field descriptors for each field. This is useful if you want to vary the
-     * field descriptors based on what Usage scenario the credential was created for. 
+     * field descriptors based on what Usage scenario the credential was created for.
      */
     for (DWORD i = 0; SUCCEEDED(hr) && i < ARRAYSIZE(m_rgCredProvFieldDescriptors); i++)
     {
@@ -206,9 +206,9 @@ HRESULT VBoxCredential::Initialize(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
 }
 
 
-/* 
+/*
  * LogonUI calls this in order to give us a callback in case we need to notify it of anything.
- * Store this callback pointer for later use. 
+ * Store this callback pointer for later use.
  */
 HRESULT VBoxCredential::Advise(ICredentialProviderCredentialEvents* pcpce)
 {
@@ -229,13 +229,13 @@ HRESULT VBoxCredential::UnAdvise()
 
     /*
      * We're done with the current iteration, trigger a refresh of ourselves
-     * to reset credentials and to keep the logon UI clean (no stale entries anymore). 
+     * to reset credentials and to keep the logon UI clean (no stale entries anymore).
      */
     Reset();
 
-    /* 
+    /*
      * Force a re-iteration of the provider (which will give zero credentials
-     * to try out because we just resetted our one and only a line above. 
+     * to try out because we just resetted our one and only a line above.
      */
     if (m_pProvider)
         m_pProvider->OnCredentialsProvided();
@@ -259,7 +259,7 @@ HRESULT VBoxCredential::SetSelected(BOOL* pbAutoLogon)
 {
     Log(("VBoxCredential::SetSelected\n"));
 
-    /* 
+    /*
      * Don't do auto logon here because it would retry too often with
      * every credential field (user name, password, domain, ...) which makes
      * winlogon wait before new login attempts can be made.
@@ -362,24 +362,24 @@ BOOL VBoxCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAcc
                               &dwEntriesRead,
                               &dwTotalEntries,
                               &dwResumeHandle);
-        if (   (nStatus == NERR_Success) 
+        if (   (nStatus == NERR_Success)
             || (nStatus == ERROR_MORE_DATA))
         {
             if ((pCurBuf = pBuf) != NULL)
             {
                 for (DWORD i = 0; i < dwEntriesRead; i++)
                 {
-                    /* 
-                     * Search for the "display name" - that might be 
+                    /*
+                     * Search for the "display name" - that might be
                      * "John Doe" or something similar the user recognizes easier
                      * and may not the same as the "account" name (e.g. "jdoe").
                      */
-                    if (   pCurBuf 
+                    if (   pCurBuf
                         && pCurBuf->usri2_full_name
                         && StrCmpI(pwszDisplayName, pCurBuf->usri2_full_name) == 0)
                     {
-                        /* 
-                         * Copy the real user name (e.g. "jdoe") to our 
+                        /*
+                         * Copy the real user name (e.g. "jdoe") to our
                          * output buffer.
                          */
                         LPWSTR pwszTemp;
@@ -410,7 +410,7 @@ BOOL VBoxCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAcc
         pBuf = NULL;
     }
 
-    Log(("VBoxCredential::TranslateAccountName: Returned nStatus=%ld, fFound=%s\n", 
+    Log(("VBoxCredential::TranslateAccountName: Returned nStatus=%ld, fFound=%s\n",
          nStatus, fFound ? "Yes" : "No"));
     return fFound;
 
@@ -426,7 +426,7 @@ BOOL VBoxCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAcc
         AssertPtrReturn(pwszName, FALSE);
         if (TranslateNameW(pwszName, NameUnknown, NameUserPrincipal, ppwszAccoutName, &cbLen))
         {
-            Log(("VBoxCredential::GetAccountName: Real ADS account name of '%ls' is '%ls'\n", 
+            Log(("VBoxCredential::GetAccountName: Real ADS account name of '%ls' is '%ls'\n",
                  pwszName, ppwszAccoutName));
         }
         else
@@ -441,7 +441,7 @@ BOOL VBoxCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAcc
     if (dwErr != NO_ERROR)
     {
         dwErr = NO_ERROR;
-        
+
     }
 #endif
 }
@@ -513,7 +513,7 @@ HRESULT VBoxCredential::GetStringValue(DWORD dwFieldID,
 {
     /* Check to make sure dwFieldID is a legitimate index. */
     HRESULT hr;
-    if (   dwFieldID < ARRAYSIZE(m_rgCredProvFieldDescriptors) 
+    if (   dwFieldID < ARRAYSIZE(m_rgCredProvFieldDescriptors)
         && ppwszString)
     {
         switch (dwFieldID)
@@ -523,7 +523,7 @@ HRESULT VBoxCredential::GetStringValue(DWORD dwFieldID,
             default:
 
                 /*
-                 * Make a copy of the string and return that, the caller is responsible for freeing it. 
+                 * Make a copy of the string and return that, the caller is responsible for freeing it.
                  * Note that there can be empty fields (like a missing domain name); handle them
                  * by writing an empty string.
                  */
@@ -569,14 +569,14 @@ HRESULT VBoxCredential::GetSubmitButtonValue(DWORD dwFieldID,
 }
 
 
-/* 
+/*
  * Sets the value of a field which can accept a string as a value.
  * This is called on each keystroke when a user types into an edit field.
  */
 HRESULT VBoxCredential::SetStringValue(DWORD dwFieldID,
                                        PCWSTR pcwzString)
 {
-    Log(("VBoxCredential::SetStringValue: dwFieldID=%ld, pcwzString=%ls\n", 
+    Log(("VBoxCredential::SetStringValue: dwFieldID=%ld, pcwzString=%ls\n",
          dwFieldID, pcwzString));
 
     HRESULT hr;
@@ -588,7 +588,7 @@ HRESULT VBoxCredential::SetStringValue(DWORD dwFieldID,
 #if 0
     /* Validate parameters. */
     if (   dwFieldID < ARRAYSIZE(m_rgCredProvFieldDescriptors)
-        && (   CPFT_EDIT_TEXT     == m_rgCredProvFieldDescriptors[dwFieldID].cpft 
+        && (   CPFT_EDIT_TEXT     == m_rgCredProvFieldDescriptors[dwFieldID].cpft
             || CPFT_PASSWORD_TEXT == m_rgCredProvFieldDescriptors[dwFieldID].cpft))
     {
         PWSTR* ppwszStored = &m_rgFieldStrings[dwFieldID];
@@ -708,7 +708,7 @@ HRESULT VBoxCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_R
         if (NULL == m_rgFieldStrings [SFI_DOMAINNAME])
             hr = UnicodeStringInitWithString(wszComputerName, &kil.LogonDomainName);
         else
-            hr = UnicodeStringInitWithString(m_rgFieldStrings [SFI_DOMAINNAME], 
+            hr = UnicodeStringInitWithString(m_rgFieldStrings [SFI_DOMAINNAME],
                                              &kil.LogonDomainName);
 
         /* Fill in the username and password. */
@@ -722,8 +722,8 @@ HRESULT VBoxCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_R
                 {
                     /* Allocate copies of, and package, the strings in a binary blob. */
                     kil.MessageType = KerbInteractiveLogon;
-                    hr = KerbInteractiveLogonPack(kil, 
-                                                  &pcpCredentialSerialization->rgbSerialization, 
+                    hr = KerbInteractiveLogonPack(kil,
+                                                  &pcpCredentialSerialization->rgbSerialization,
                                                   &pcpCredentialSerialization->cbSerialization);
                     if (SUCCEEDED(hr))
                     {
@@ -738,7 +738,7 @@ HRESULT VBoxCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_R
                              * At this point the credential has created the serialized credential used for logon
                              * By setting this to CPGSR_RETURN_CREDENTIAL_FINISHED we are letting logonUI know
                              * that we have all the information we need and it should attempt to submit the
-                             * serialized credential. 
+                             * serialized credential.
                              */
                             *pcpGetSerializationResponse = CPGSR_RETURN_CREDENTIAL_FINISHED;
                         }
@@ -758,7 +758,7 @@ HRESULT VBoxCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALIZATION_R
 }
 
 
-/* 
+/*
  * ReportResult is completely optional.  Its purpose is to allow a credential to customize the string
  * and the icon displayed in the case of a logon failure.  For example, we have chosen to
  * customize the error shown in the case of bad username/password and in the case of the account

@@ -761,7 +761,7 @@ static void usbProxyWinUrbCancel(PVUSBURB pUrb)
     cbReturned = 0;
     if (DeviceIoControl(pPriv->hDev, SUPUSB_IOCTL_USB_ABORT_ENDPOINT, &in, sizeof(in), NULL, 0, &cbReturned, NULL))
         return;
-    
+
     rc = GetLastError();
     if (    rc == ERROR_INVALID_HANDLE_STATE
         ||  rc == ERROR_BAD_COMMAND)

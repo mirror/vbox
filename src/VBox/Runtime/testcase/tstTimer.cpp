@@ -60,7 +60,7 @@ static DECLCALLBACK(void) TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t 
             gu64Min = u64Delta;
         if (u64Delta > gu64Max)
             gu64Max = u64Delta;
-        int i = (int)(  RT_ELEMENTS(cFrequency) 
+        int i = (int)(  RT_ELEMENTS(cFrequency)
                       - (u64Delta * (RT_ELEMENTS(cFrequency) / 2) / gu64Norm));
         if (i >= 0 && i < (int)RT_ELEMENTS(cFrequency))
             cFrequency[i]++;

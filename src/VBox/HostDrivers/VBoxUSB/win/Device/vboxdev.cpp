@@ -1950,7 +1950,7 @@ NTSTATUS VBoxUSBGetDeviceDescription(PDEVICE_EXTENSION pDevice)
 #ifdef DEBUG
         || devdescr->iProduct || devdescr->iManufacturer
 #endif
-       ) 
+       )
     {
         status = VBoxUSBGetLangID(pDevice, &langId);
         if (!NT_SUCCESS(status))
@@ -1970,10 +1970,10 @@ NTSTATUS VBoxUSBGetDeviceDescription(PDEVICE_EXTENSION pDevice)
             goto fail;
         }
         memset(pstrdescr, 0, uLength);
-    
+
         pstrdescr->bLength         = uLength;
         pstrdescr->bDescriptorType = USB_STRING_DESCRIPTOR_TYPE;
-    
+
         status = VBoxUSBGetDescriptor(pDevice, pstrdescr, uLength,  USB_STRING_DESCRIPTOR_TYPE, devdescr->iSerialNumber, langId);
         if (!NT_SUCCESS(status))
         {

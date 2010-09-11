@@ -434,7 +434,7 @@ static int sf_make_path(const char *caller, struct sf_inode_info *sf_i,
 /**
  * [dentry] contains string encoded in coding system that corresponds
  * to [sf_g]->nls, we must convert it to UTF8 here and pass down to
- * [sf_make_path] which will allocate SHFLSTRING and fill it in 
+ * [sf_make_path] which will allocate SHFLSTRING and fill it in
  */
 int sf_path_from_dentry(const char *caller, struct sf_glob_info *sf_g,
                         struct sf_inode_info *sf_i, struct dentry *dentry,

@@ -123,14 +123,14 @@ class VBoxCredential : public ICredentialProviderCredential
         /** Internal reference count. */
         LONG                                  m_cRef;
         /** The usage scenario for which we were enumerated. */
-        CREDENTIAL_PROVIDER_USAGE_SCENARIO    m_cpUS;      
+        CREDENTIAL_PROVIDER_USAGE_SCENARIO    m_cpUS;
         /** Holding type and name of each field in the tile. */
         CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR  m_rgCredProvFieldDescriptors[SFI_NUM_FIELDS];
         /** Holding state of each field in the tile. */
-        FIELD_STATE_PAIR                      m_rgFieldStatePairs[SFI_NUM_FIELDS];          
+        FIELD_STATE_PAIR                      m_rgFieldStatePairs[SFI_NUM_FIELDS];
         /** Holding string value of each field. This is different from the name of
             the field held in m_rgCredProvFieldDescriptors. */
-        PWSTR                                 m_rgFieldStrings[SFI_NUM_FIELDS];            
+        PWSTR                                 m_rgFieldStrings[SFI_NUM_FIELDS];
         ICredentialProviderCredentialEvents  *m_pCredProvCredentialEvents;
 
 };

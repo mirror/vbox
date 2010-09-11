@@ -1380,7 +1380,7 @@ struct arphdr
 AssertCompileSize(struct arphdr, 28);
 
 /**
- * @note This function will free m! 
+ * @note This function will free m!
  */
 static void arp_input(PNATState pData, struct mbuf *m)
 {

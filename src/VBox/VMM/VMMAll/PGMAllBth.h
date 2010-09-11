@@ -1271,7 +1271,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
             /* Reset the modification counter (OpenSolaris trashes tlb entries very often) */
-            if (    !pShwPage->fDirty 
+            if (    !pShwPage->fDirty
                 &&  pShwPage->cModifications)
                 pShwPage->cModifications = 1;
 # endif

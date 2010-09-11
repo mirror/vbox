@@ -776,7 +776,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
             }
 
             /* features are mapped to "VRDP/Feature/NAME" extra data. */
-            com::Utf8Str extraData("VRDP/Feature/"); 
+            com::Utf8Str extraData("VRDP/Feature/");
             extraData += pFeature->achInfo;
 
             com::Bstr bstrValue;

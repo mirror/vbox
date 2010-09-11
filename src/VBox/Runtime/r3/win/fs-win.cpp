@@ -338,10 +338,10 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
  * Internal helper for comparing a WCHAR string with a char string.
  *
  * @returns @c true if equal, @c false if not.
- * @param   pwsz1               The first string. 
+ * @param   pwsz1               The first string.
  * @param   cb1                 The length of the first string, in bytes.
- * @param   psz2                The second string. 
- * @param   cch2                The length of the second string. 
+ * @param   psz2                The second string.
+ * @param   cch2                The length of the second string.
  */
 static bool rtFsWinAreEqual(WCHAR const *pwsz1, size_t cch1, const char *psz2, size_t cch2)
 {

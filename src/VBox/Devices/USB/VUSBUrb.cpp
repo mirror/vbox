@@ -2010,7 +2010,7 @@ static void vusbUrbCompletion(PVUSBURB pUrb)
  * An URB which is in the cancel state after pfnCancel will remain in that
  * state and in the async list until its reaped. When it's finally reaped
  * it will be unlinked and freed without doing any completion.
- * 
+ *
  * There are different modes of canceling an URB. When devices are being
  * disconnected etc., they will be completed with an error (CRC). However,
  * when the HC needs to temporarily halt communication with a device, the

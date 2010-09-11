@@ -333,14 +333,14 @@ soread(PNATState pData, struct socket *so)
     DEBUG_ARG("so = %lx", (long)so);
 
     if (len > mss)
-        len -= len % mss; 
+        len -= len % mss;
     buf = RTMemAlloc(len);
     if (buf == NULL)
     {
         LogRel(("NAT: can't alloc enough memory\n"));
         return -1;
     }
-    
+
     n = recv(so->s, buf, len, (so->so_tcpcb->t_force? MSG_OOB:0));
     if (n <= 0)
     {
@@ -649,7 +649,7 @@ do_sosend(struct socket *so, int fUrg)
     DEBUG_ARG("so = %lx", (long)so);
 
     len = sbuf_len(sb);
-    
+
     n = send(so->s, sbuf_data(sb), len, (fUrg ? MSG_OOB : 0));
     if (n < 0)
     {

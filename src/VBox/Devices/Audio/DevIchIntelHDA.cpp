@@ -350,7 +350,7 @@ typedef struct HDABDLEDESC
     uint32_t    u32BdleCvi;
     uint32_t    u32BdleCviLen;
     uint32_t    u32BdleCviPos;
-    bool        fBdleCviIoc; 
+    bool        fBdleCviIoc;
 } HDABDLEDESC, *PHDABDLEDESC;
 
 typedef struct INTELHDLinkState
@@ -586,7 +586,7 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
 {
 #define IS_INTERRUPT_OCCURED_AND_ENABLED(pState, num)                       \
         (   INTCTL_SX((pState), num)                                        \
-         && (SDSTS(pState, num) & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS))) 
+         && (SDSTS(pState, num) & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS)))
     bool fIrq = false;
     if(   INTCTL_CIE(pState)
        && (   RIRBSTS_RINTFL(pState)
@@ -886,13 +886,13 @@ DECLCALLBACK(int)hdaRegReadINTSTS(INTELHDLinkState* pState, uint32_t offset, uin
     if (   RIRBSTS_RIRBOIS(pState)
         || RIRBSTS_RINTFL(pState)
         || HDA_REG_FLAG_VALUE(pState, CORBSTS, CMEI)
-        || STATESTS(pState)) 
+        || STATESTS(pState))
         v |= RT_BIT(30);
 #define HDA_IS_STREAM_EVENT(pState, stream)             \
        (   (SDSTS((pState),stream) & HDA_REG_FIELD_FLAG_MASK(SDSTS, DE))  \
         || (SDSTS((pState),stream) & HDA_REG_FIELD_FLAG_MASK(SDSTS, FE))  \
         || (SDSTS((pState),stream) & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS)))
-#define MARK_STREAM(pState, stream, v) do {(v) |= HDA_IS_STREAM_EVENT((pState),stream) ? RT_BIT((stream)) : 0;}while(0) 
+#define MARK_STREAM(pState, stream, v) do {(v) |= HDA_IS_STREAM_EVENT((pState),stream) ? RT_BIT((stream)) : 0;}while(0)
     MARK_STREAM(pState, 0, v);
     MARK_STREAM(pState, 1, v);
     MARK_STREAM(pState, 2, v);
@@ -1331,7 +1331,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
 
         /* Optionally write back the current DMA position. */
         if (pState->u64DPBase & DPBASE_ENABLED)
-            PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), 
+            PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState),
                                (pState->u64DPBase & DPBASE_ADDR_MASK) + u8Strm*8, pu32Lpib, sizeof(*pu32Lpib));
 
         /* Process end of buffer condition. */

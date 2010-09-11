@@ -68,10 +68,10 @@ VBoxCredProv::~VBoxCredProv(void)
 }
 
 
-/* 
+/*
  * SetUsageScenario is the provider's cue that it's going to be asked for tiles
  * in a subsequent call. This call happens after the user pressed CTRL+ALT+DEL
- * and we need to handle the CPUS_LOGON event. 
+ * and we need to handle the CPUS_LOGON event.
  */
 HRESULT VBoxCredProv::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpUsageScenario,
                                        DWORD                              dwFlags)
@@ -104,7 +104,7 @@ HRESULT VBoxCredProv::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpUsag
                 if (m_pCred != NULL)
                 {
                     hr = m_pCred->Initialize(m_cpUsageScenario,
-                                             s_rgCredProvFieldDescriptors, 
+                                             s_rgCredProvFieldDescriptors,
                                              s_rgFieldStatePairs);
                 }
                 else
@@ -133,7 +133,7 @@ HRESULT VBoxCredProv::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpUsag
         case CPUS_CHANGE_PASSWORD:
         case CPUS_CREDUI:
         case CPUS_PLAP:
-        
+
             hr = E_NOTIMPL;
             break;
 
@@ -148,7 +148,7 @@ HRESULT VBoxCredProv::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpUsag
 }
 
 
-/* 
+/*
  * SetSerialization takes the kind of buffer that you would normally return to LogonUI for
  * an authentication attempt.  It's the opposite of ICredentialProviderCredential::GetSerialization.
  * GetSerialization is implement by a credential and serializes that credential.  Instead,
@@ -167,10 +167,10 @@ STDMETHODIMP VBoxCredProv::SetSerialization(const CREDENTIAL_PROVIDER_CREDENTIAL
 }
 
 
-/* 
+/*
  * Called by LogonUI to give you a callback.  Providers often use the callback if they
  * some event would cause them to need to change the set of tiles (visible UI elements)
- * that they enumerated. 
+ * that they enumerated.
  */
 HRESULT VBoxCredProv::Advise(ICredentialProviderEvents *pcpEvents,
                              UINT_PTR                   upAdviseContext)
@@ -186,7 +186,7 @@ HRESULT VBoxCredProv::Advise(ICredentialProviderEvents *pcpEvents,
 
     /*
      * Save advice context for later use when binding to
-     * certain ICredentialProviderEvents events. 
+     * certain ICredentialProviderEvents events.
      */
     m_upAdviseContext = upAdviseContext;
     return S_OK;
@@ -198,7 +198,7 @@ HRESULT VBoxCredProv::UnAdvise()
 {
     Log(("VBoxCredProv::UnAdvise\n"));
     if (m_pCredProvEvents != NULL)
-    {      
+    {
         m_pCredProvEvents->Release();
         m_pCredProvEvents = NULL;
     }
@@ -207,7 +207,7 @@ HRESULT VBoxCredProv::UnAdvise()
 }
 
 
-/* 
+/*
  * Called by LogonUI to determine the number of fields in your tiles. This
  * does mean that all your tiles must have the same number of fields.
  * This number must include both visible and invisible fields. If you want a tile
@@ -247,7 +247,7 @@ HRESULT VBoxCredProv::GetFieldDescriptorAt(DWORD dwIndex,
 }
 
 
-/* 
+/*
  * Sets pdwCount to the number of tiles that we wish to show at this time.
  * Sets pdwDefault to the index of the tile which should be used as the default.
  *
@@ -316,7 +316,7 @@ HRESULT VBoxCredProv::GetCredentialAt(DWORD                           dwIndex,
     if(   dwIndex == 0
        && ppCredProvCredential)
     {
-        hr = m_pCred->QueryInterface(IID_ICredentialProviderCredential, 
+        hr = m_pCred->QueryInterface(IID_ICredentialProviderCredential,
                                      reinterpret_cast<void**>(ppCredProvCredential));
     }
     else

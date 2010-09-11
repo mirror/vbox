@@ -78,7 +78,7 @@ PFNRT g_VMMGCDeps[] =
 
 #if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
 /* Increase the size of the image to work around the refusal of Win64 to
- * load images in the 0x80000 range. 
+ * load images in the 0x80000 range.
  */
 static uint64_t u64BloatImage[8192] = {0};
 #endif

@@ -278,7 +278,7 @@ sbcopy(struct sbuf *sb, int off, int len, char *to)
     }
 }
 #else /* VBOX_WITH_SLIRP_BSD_SBUF */
-void 
+void
 sbappend (PNATState pData, struct socket *so, struct mbuf *m)
 {
     int ret = 0;
