@@ -173,6 +173,21 @@ typedef struct VBOXDISK
     unsigned            uMergeSource;
     /** Target image index for merging. */
     unsigned            uMergeTarget;
+
+    /** Flag whether boot acceleration is enabled. */
+    bool                fBootAccelEnabled;
+    /** Flag whether boot acceleration is currently active. */
+    bool                fBootAccelActive;
+    /** Size of the disk, used for read truncation. */
+    size_t              cbDisk;
+    /** Size of the configured buffer. */
+    size_t              cbBootAccelBuffer;
+    /** Start offset for which the buffer holds data. */
+    uint64_t            offDisk;
+    /** Number of valid bytes in the buffer. */
+    size_t              cbDataValid;
+    /** The disk buffer. */
+    uint8_t            *pbData;
 } VBOXDISK, *PVBOXDISK;
 
 
@@ -1427,10 +1442,46 @@ static DECLCALLBACK(int) drvvdTcpPoke(VDSOCKET Sock)
 static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
                                    uint64_t off, void *pvBuf, size_t cbRead)
 {
+    int rc = VINF_SUCCESS;
+
     LogFlow(("%s: off=%#llx pvBuf=%p cbRead=%d\n", __FUNCTION__,
              off, pvBuf, cbRead));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
-    int rc = VDRead(pThis->pDisk, off, pvBuf, cbRead);
+
+    if (!pThis->fBootAccelActive)
+        rc = VDRead(pThis->pDisk, off, pvBuf, cbRead);
+    else
+    {
+        /* Can we serve the request from the buffer? */
+        if (   off >= pThis->offDisk
+            && off - pThis->offDisk < pThis->cbDataValid)
+        {
+            size_t cbToCopy = RT_MIN(cbRead, pThis->offDisk + pThis->cbDataValid - off);
+
+            memcpy(pvBuf, pThis->pbData + (off - pThis->offDisk), cbToCopy);
+            cbRead -= cbToCopy;
+            off    += cbToCopy;
+            pvBuf   = (char *)pvBuf + cbToCopy;
+        }
+
+        if (   cbRead > 0
+            && cbRead < pThis->cbBootAccelBuffer)
+        {
+            /* Increase request to the buffer size and read. */
+            pThis->cbDataValid = RT_MIN(pThis->cbDisk - off, pThis->cbBootAccelBuffer);
+            pThis->offDisk = off;
+            rc = VDRead(pThis->pDisk, off, pThis->pbData, pThis->cbDataValid);
+            if (RT_FAILURE(rc))
+                pThis->cbDataValid = 0;
+            else
+                memcpy(pvBuf, pThis->pbData, cbRead);
+        }
+        else if (cbRead >= pThis->cbBootAccelBuffer)
+        {
+            pThis->fBootAccelActive = false; /* Deactiviate */
+        }
+    }
+
     if (RT_SUCCESS(rc))
         Log2(("%s: off=%#llx pvBuf=%p cbRead=%d %.*Rhxd\n", __FUNCTION__,
               off, pvBuf, cbRead, cbRead, pvBuf));
@@ -1448,6 +1499,14 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     Log2(("%s: off=%#llx pvBuf=%p cbWrite=%d %.*Rhxd\n", __FUNCTION__,
           off, pvBuf, cbWrite, cbWrite, pvBuf));
+
+    /* Invalidate any buffer if boot acceleration is enabled. */
+    if (pThis->fBootAccelActive)
+    {
+        pThis->cbDataValid = 0;
+        pThis->offDisk     = 0;
+    }
+
     int rc = VDWrite(pThis->pDisk, off, pvBuf, cbWrite);
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
@@ -1613,6 +1672,9 @@ static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOf
      LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbRead=%d\n pvUser=%#p", __FUNCTION__,
              uOffset, paSeg, cSeg, cbRead, pvUser));
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
+
+    pThis->fBootAccelActive = false;
+
     int rc = VDAsyncRead(pThis->pDisk, uOffset, cbRead, paSeg, cSeg,
                          drvvdAsyncReqComplete, pThis, pvUser);
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
@@ -1626,6 +1688,9 @@ static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uO
      LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbWrite=%d pvUser=%#p\n", __FUNCTION__,
              uOffset, paSeg, cSeg, cbWrite, pvUser));
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
+
+    pThis->fBootAccelActive = false;
+
     int rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, paSeg, cSeg,
                           drvvdAsyncReqComplete, pThis, pvUser);
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
@@ -1771,6 +1836,22 @@ static DECLCALLBACK(void) drvvdPowerOn(PPDMDRVINS pDrvIns)
 }
 
 /**
+ * @copydoc FNPDMDRVRESET
+ */
+static DECLCALLBACK(void) drvvdReset(PPDMDRVINS pDrvIns)
+{
+    LogFlow(("%s:\n", __FUNCTION__));
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+
+    if (pThis->fBootAccelEnabled)
+    {
+        pThis->fBootAccelActive = true;
+        pThis->cbDataValid      = 0;
+        pThis->offDisk          = 0;
+    }
+}
+
+/**
  * @copydoc FNPDMDRVDESTRUCT
  */
 static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
@@ -1807,6 +1888,8 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
         AssertRC(rc);
         pThis->MergeLock = NIL_RTSEMRW;
     }
+    if (pThis->pbData)
+        RTMemFree(pThis->pbData);
 }
 
 /**
@@ -1906,7 +1989,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             fValid = CFGMR3AreValuesValid(pCurNode,
                                           "Format\0Path\0"
                                           "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
-                                          "HostIPStack\0UseNewIo\0"
+                                          "HostIPStack\0UseNewIo\0BootAcceleration\0BootAccelerationBuffer\0"
                                           "SetupMerge\0MergeSource\0MergeTarget\0");
         }
         else
@@ -1997,6 +2080,20 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
                                       N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"MergePending\" are set"));
+                break;
+            }
+            rc = CFGMR3QueryBoolDef(pCurNode, "BootAcceleration", &pThis->fBootAccelEnabled, false);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"BootAcceleration\" as boolean failed"));
+                break;
+            }
+            rc = CFGMR3QueryU32Def(pCurNode, "BootAccelerationBuffer", (uint32_t *)&pThis->cbBootAccelBuffer, 16 * _1K);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"BootAccelerationBuffer\" as integer failed"));
                 break;
             }
         }
@@ -2311,6 +2408,22 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                     NULL /*pfnSavePrep*/, NULL /*pfnSaveExec*/, NULL /*pfnSaveDone*/,
                                     NULL /*pfnDonePrep*/, NULL /*pfnLoadExec*/, drvvdLoadDone);
 
+    /* Setup the boot acceleration stuff if enabled. */
+    if (RT_SUCCESS(rc) && pThis->fBootAccelEnabled)
+    {
+        pThis->cbDisk = VDGetSize(pThis->pDisk, VD_LAST_IMAGE);
+        Assert(pThis->cbDisk > 0);
+        pThis->pbData = (uint8_t *)RTMemAllocZ(pThis->cbBootAccelBuffer);
+        if (pThis->pbData)
+        {
+            pThis->fBootAccelActive = true;
+            pThis->offDisk          = 0;
+            pThis->cbDataValid      = 0;
+            LogRel(("VD: Boot acceleration enabled\n"));
+        }
+        else
+            LogRel(("VD: Boot acceleration, out of memory, disabled\n"));
+    }
 
     if (RT_FAILURE(rc))
     {
@@ -2359,7 +2472,7 @@ const PDMDRVREG g_DrvVD =
     /* pfnPowerOn */
     drvvdPowerOn,
     /* pfnReset */
-    NULL,
+    drvvdReset,
     /* pfnSuspend */
     drvvdSuspend,
     /* pfnResume */
