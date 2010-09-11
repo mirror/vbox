@@ -42,6 +42,9 @@ static PPDMACTASKFILE pdmacFileAioMgrNormalRangeLockFree(PPDMACEPFILEMGR pAioMgr
                                                          PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
                                                          PPDMACFILERANGELOCK pRangeLock);
 
+static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAIOREQ hReq,
+                                               int rc, size_t cbTransfered);
+
 int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr)
 {
     int rc = VINF_SUCCESS;
@@ -552,84 +555,72 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
     rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, pahReqs, cReqs);
     if (RT_FAILURE(rc))
     {
-        PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
-        unsigned cReqsResubmit = 0;
-        RTFILEAIOREQ ahReqsResubmit[20];
-
-        /*
-         * We run out of resources.
-         * Need to check which requests got queued
-         * and put the rest on the pending list again.
-         */
-        for (size_t i = 0; i < cReqs; i++)
+        if (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES)
         {
-            int rcReq = RTFileAioReqGetRC(pahReqs[i], NULL);
+            PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
 
-            if (rcReq != VERR_FILE_AIO_IN_PROGRESS)
+            /* Append any not submitted task to the waiting list. */
+            for (size_t i = 0; i < cReqs; i++)
             {
-                PPDMACTASKFILE pTask = (PPDMACTASKFILE)RTFileAioReqGetUser(pahReqs[i]);
+                int rcReq = RTFileAioReqGetRC(pahReqs[i], NULL);
 
-                if (pTask->enmTransferType == PDMACTASKFILETRANSFER_FLUSH)
+                if (rcReq != VERR_FILE_AIO_IN_PROGRESS)
                 {
-                    /* Mark as not supported. */
-                    if (rcReq != VERR_FILE_AIO_NOT_SUBMITTED)
+                    PPDMACTASKFILE pTask = (PPDMACTASKFILE)RTFileAioReqGetUser(pahReqs[i]);
+
+                    Assert(pTask->hReq == pahReqs[i]);
+                    pdmacFileAioMgrEpAddTask(pEndpoint, pTask);
+                    pAioMgr->cRequestsActive--;
+                    pEndpoint->AioMgr.cRequestsActive--;
+
+                    if (pTask->enmTransferType == PDMACTASKFILETRANSFER_FLUSH)
                     {
-                        LogFlow(("Async flushes are not supported for this endpoint, disabling\n"));
-                        pEndpoint->fAsyncFlushSupported = false;
-                        pdmacFileAioMgrNormalRequestFree(pAioMgr, pahReqs[i]);
-                        rc = VINF_SUCCESS;
-                    }
-                    else
-                    {
-                        AssertMsg(rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES, ("Flush wasn't submitted but we are not out of ressources\n"));
                         /* Clear the pending flush */
-                        pdmacFileAioMgrEpAddTask(pEndpoint, pTask);
                         Assert(pEndpoint->pFlushReq == pTask);
                         pEndpoint->pFlushReq = NULL;
                     }
                 }
-                else
-                {
-                    AssertMsg(rcReq == VERR_FILE_AIO_NOT_SUBMITTED,
-                              ("Request returned unexpected return code: rc=%Rrc\n", rcReq));
-
-                    if (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES)
-                    {
-                        pTask->hReq = pahReqs[i];
-                        pdmacFileAioMgrEpAddTask(pEndpoint, pTask);
-                    }
-                    else
-                    {
-                        ahReqsResubmit[cReqsResubmit] = pahReqs[i];
-                        cReqsResubmit++;
-                    }
-                }
-
-                pEndpoint->AioMgr.cRequestsActive--;
-                pAioMgr->cRequestsActive--;
-
-                if (cReqsResubmit == RT_ELEMENTS(ahReqsResubmit))
-                {
-                    int rc2 = RTFileAioCtxSubmit(pAioMgr->hAioCtx, ahReqsResubmit, cReqsResubmit);
-                    AssertRC(rc2);
-                    pEndpoint->AioMgr.cRequestsActive += cReqsResubmit;
-                    pAioMgr->cRequestsActive += cReqsResubmit;
-                    cReqsResubmit = 0;
-                }
             }
 
-            /* Resubmit tasks. */
-            if (cReqsResubmit)
+            pAioMgr->cRequestsActiveMax = pAioMgr->cRequestsActive;
+
+            /* Print an entry in the release log */
+            if (RT_UNLIKELY(!pEpClass->fOutOfResourcesWarningPrinted))
             {
-                int rc2 = RTFileAioCtxSubmit(pAioMgr->hAioCtx, ahReqsResubmit, cReqsResubmit);
-                AssertRC(rc2);
-                pEndpoint->AioMgr.cRequestsActive += cReqsResubmit;
-                pAioMgr->cRequestsActive += cReqsResubmit;
-                cReqsResubmit = 0;
+                pEpClass->fOutOfResourcesWarningPrinted = true;
+                LogRel(("AIOMgr: Host limits number of active IO requests to %u. Expect a performance impact.\n",
+                        pAioMgr->cRequestsActive));
             }
-            else if (    pEndpoint->pFlushReq
-                     && !pAioMgr->cRequestsActive
-                     && !pEndpoint->fAsyncFlushSupported)
+
+            LogFlow(("Removed requests. I/O manager has a total of %u active requests now\n", pAioMgr->cRequestsActive));
+            LogFlow(("Endpoint has a total of %u active requests now\n", pEndpoint->AioMgr.cRequestsActive));
+            rc = VINF_SUCCESS;
+        }
+        else /* Another kind of error happened (full disk, ...) */
+        {
+            /* An error happened. Find out which one caused the error and resubmit all other tasks. */
+            for (size_t i = 0; i < cReqs; i++)
+            {
+                int rcReq = RTFileAioReqGetRC(pahReqs[i], NULL);
+
+                if (rcReq == VERR_FILE_AIO_NOT_SUBMITTED)
+                {
+                    /* We call ourself again to do any error handling which might come up now. */
+                    rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, &pahReqs[i], 1);
+                    AssertRC(rc);
+                }
+                else if (rcReq != VERR_FILE_AIO_IN_PROGRESS)
+                {
+                    PPDMACTASKFILE pTask = (PPDMACTASKFILE)RTFileAioReqGetUser(pahReqs[i]);
+
+                    pdmacFileAioMgrNormalReqCompleteRc(pAioMgr, pahReqs[i], rcReq, 0);
+                }
+            }
+
+
+            if (    pEndpoint->pFlushReq
+                && !pAioMgr->cRequestsActive
+                && !pEndpoint->fAsyncFlushSupported)
             {
                 /*
                  * Complete a pending flush if we don't have requests enqueued and the host doesn't support
@@ -643,25 +634,9 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                 pdmacFileTaskFree(pEndpoint, pFlush);
             }
         }
-
-        if (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES)
-        {
-            pAioMgr->cRequestsActiveMax = pAioMgr->cRequestsActive;
-
-            /* Print an entry in the release log */
-            if (RT_UNLIKELY(!pEpClass->fOutOfResourcesWarningPrinted))
-            {
-                pEpClass->fOutOfResourcesWarningPrinted = true;
-                LogRel(("AIOMgr: Host limits number of active IO requests to %u. Expect a performance impact.\n",
-                        pAioMgr->cRequestsActive));
-            }
-        }
-
-        LogFlow(("Removed requests. I/O manager has a total of %u active requests now\n", pAioMgr->cRequestsActive));
-        LogFlow(("Endpoint has a total of %u active requests now\n", pEndpoint->AioMgr.cRequestsActive));
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 static bool pdmacFileAioMgrNormalIsRangeLocked(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
@@ -1332,12 +1307,22 @@ static int pdmacFileAioMgrNormalCheckEndpoints(PPDMACEPFILEMGR pAioMgr)
     return rc;
 }
 
+/**
+ * Wrapper around pdmacFileAioMgrNormalReqCompleteRc().
+ */
 static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOREQ hReq)
+{
+    size_t cbTransfered = 0;
+    int rcReq = RTFileAioReqGetRC(hReq, &cbTransfered);
+
+    pdmacFileAioMgrNormalReqCompleteRc(pAioMgr, hReq, rcReq, cbTransfered);
+}
+
+static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAIOREQ hReq,
+                                               int rcReq, size_t cbTransfered)
 {
     int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint;
-    size_t cbTransfered  = 0;
-    int rcReq            = RTFileAioReqGetRC(hReq, &cbTransfered);
     PPDMACTASKFILE pTask = (PPDMACTASKFILE)RTFileAioReqGetUser(hReq);
     PPDMACTASKFILE pTasksWaiting;
 
