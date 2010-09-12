@@ -26,6 +26,7 @@
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 # include "revision-generated.h"
 #endif
+#include "VBoxGuest2.h"
 
 /** @todo Remove and merge this file with VBoxGuest.cpp when the Windows driver
   *       also will be built from the common sources. */
