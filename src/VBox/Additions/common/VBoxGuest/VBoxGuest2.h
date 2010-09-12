@@ -18,8 +18,14 @@
 #ifndef ___VBoxGuest2_h
 #define ___VBoxGuest2_h
 
+#include <VBox/ostypes>
+
+RT_C_DECLS_BEGIN
+
 int VBoxGuestReportGuestInfo(VBOXOSTYPE enmOSType);
 int VBoxGuestReportDriverStatus(bool fActive);
+
+RT_C_DECLS_END
 
 #endif
 
