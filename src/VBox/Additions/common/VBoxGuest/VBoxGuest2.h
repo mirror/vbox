@@ -18,7 +18,7 @@
 #ifndef ___VBoxGuest2_h
 #define ___VBoxGuest2_h
 
-#include <VBox/ostypes>
+#include <VBox/ostypes.h>
 
 RT_C_DECLS_BEGIN
 
