@@ -93,7 +93,8 @@ ifdef VBOX_WITH_TESTCASES
 	$(VBOX_PATH_DEVICES_SRC)/Storage/VmdkHDDCore.cpp \
 	$(VBOX_PATH_DEVICES_SRC)/Storage/VDIHDDCore.cpp \
 	$(VBOX_PATH_DEVICES_SRC)/Storage/VHDHDDCore.cpp \
-	$(VBOX_PATH_DEVICES_SRC)/Storage/ParallelsHDDCore.cpp
+	$(VBOX_PATH_DEVICES_SRC)/Storage/ParallelsHDDCore.cpp \
+	$(VBOX_PATH_DEVICES_SRC)/Storage/DMGHDDCore.cpp
  ifdef VBOX_WITH_NEW_IO_CODE
  vbox-img_DEFS += VBOX_WITH_NEW_IO_CODE
  endif
