@@ -85,6 +85,7 @@ VBoxDDU_SOURCES          = \
 	Storage/VmdkHDDCore.cpp \
 	Storage/RawHDDCore.cpp \
 	Storage/ParallelsHDDCore.cpp \
+	Storage/DMGHDDCore.cpp \
 	Storage/VCICacheCore.cpp \
 	Storage/VSCSI/VSCSIDevice.cpp \
 	Storage/VSCSI/VSCSILun.cpp \
