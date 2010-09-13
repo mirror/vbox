@@ -2637,8 +2637,8 @@ QString VBoxGlobal::languageCountryEnglish() const
 /**
  *  Comma-separated list of authors of the currently installed translation.
  *  Returns "Oracle Corporation" if no translation is installed or if the
- *  translation file is invalid, or if the translation is supplied by Sun
- *  Microsystems, inc.
+ *  translation file is invalid, or if the translation is supplied by Oracle
+ *  Corporation
  */
 QString VBoxGlobal::languageTranslators() const
 {
@@ -3026,14 +3026,14 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
         Assert (qtSysTr);
         if (qtSysTr && qtSysTr->load (languageFileName))
             qApp->installTranslator (qtSysTr);
-        /* Note that the Qt translation supplied by Sun is always loaded
+        /* Note that the Qt translation supplied by Oracle is always loaded
          * afterwards to make sure it will take precedence over the system
          * translation (it may contain more decent variants of translation
          * that better correspond to VirtualBox UI). We need to load both
          * because a newer version of Qt may be installed on the user computer
-         * and the Sun version may not fully support it. We don't do it on
+         * and the Oracle version may not fully support it. We don't do it on
          * Win32 because we supply a Qt library there and therefore the
-         * Sun translation is always the best one. */
+         * Oracle translation is always the best one. */
 #endif
         languageFileName =  nlsDir.absoluteFilePath (QString ("qt_") +
                                                      sLoadedLangId +

@@ -3,7 +3,7 @@
  *  :tabSize=2:indentSize=2:noTabs=true:
  *  :folding=explicit:collapseFolds=1:
  *
- *  Sun VirtualBox Settings Schema Version 1.0-macosx
+ *  Oracle VM VirtualBox Settings Schema Version 1.0-macosx
 
      Copyright (C) 2004-2009 Oracle Corporation
 
@@ -26,8 +26,8 @@
 
 <xsd:annotation>
   <xsd:documentation xml:lang="en">
-    Sun VirtualBox Settings Schema (macosx).
-    Copyright (c) 2004-2009 Sun Microsystems, Inc.
+    Oracle VM VirtualBox Settings Schema (macosx).
+    Copyright (c) 2004-2010 Oracle Corporation
   </xsd:documentation>
 </xsd:annotation>
 

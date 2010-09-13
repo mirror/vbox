@@ -86,7 +86,7 @@ Index: MdeModulePkg/Universal/Disk/PartitionDxe/Apple.c
 +/** @file
 +  Decode an Apple formatted partition table
 +
-+  Copyright (c) 2009, Sun Microsystems.
++  Copyright (c) 2009-2010, Oracle Corporation
 +**/
 +
 +
