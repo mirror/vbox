@@ -106,6 +106,7 @@ static void tstRTListOrder(RTTEST hTest, PRTLISTNODE pList, unsigned cElements,
 static void tstRTListCreate(RTTEST hTest, unsigned cElements)
 {
     RTTestISubF("Creating and moving - %u elements", cElements);
+    Assert(cElements > 0);
 
     RTLISTNODE ListHead;
 
@@ -151,6 +152,7 @@ static void tstRTListCreate(RTTEST hTest, unsigned cElements)
         RTListNodeRemove(&pNode->Node);
         RTListAppend(&ListHead, &pNode->Node);
     }
+    RTTESTI_CHECK(RTListIsEmpty(&ListHeadNew) == true);
     tstRTListOrder(hTest, &ListHead, cElements, 0, cElements-1, 1);
 
     /* And the other way. */
@@ -159,6 +161,7 @@ static void tstRTListCreate(RTTEST hTest, unsigned cElements)
         RTListNodeRemove(&pNode->Node);
         RTListPrepend(&ListHeadNew, &pNode->Node);
     }
+    RTTESTI_CHECK(RTListIsEmpty(&ListHead) == true);
     tstRTListOrder(hTest, &ListHeadNew, cElements, 0, cElements-1, 1);
 
     /*
