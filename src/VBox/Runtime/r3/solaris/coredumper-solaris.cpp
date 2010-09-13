@@ -2242,6 +2242,9 @@ RTDECL(int) RTCoreDumperTakeDump(const char *pszOutputFile, bool fLiveCore)
         sigaddset(&SigSet, SIGUSR2);
         pthread_sigmask(SIG_BLOCK, &SigSet, &OldSigSet);
         rc = rtCoreDumperTakeDump(&Context, pszOutputFile);
+        if (RT_FAILURE(rc))
+            CORELOGRELSYS(("RTCoreDumperTakeDump: rtCoreDumperTakeDump failed rc=%Rrc\n", rc));
+
         if (!fLiveCore)
         {
             signal(SIGSEGV, SIG_DFL);
