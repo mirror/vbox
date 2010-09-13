@@ -47,8 +47,9 @@ struct Appliance::Data
     enum ApplianceState { ApplianceIdle, ApplianceImporting, ApplianceExporting };
 
     Data()
-      : state(ApplianceIdle),
-        pReader(NULL)
+      : state(ApplianceIdle)
+      , fManifest(true)
+      , pReader(NULL)
     {
     }
 
@@ -64,6 +65,7 @@ struct Appliance::Data
     ApplianceState      state;
 
     LocationInfo        locInfo;        // location info for the currently processed OVF
+    bool                fManifest;      // Create a manifest file on export
 
     ovf::OVFReader      *pReader;
 

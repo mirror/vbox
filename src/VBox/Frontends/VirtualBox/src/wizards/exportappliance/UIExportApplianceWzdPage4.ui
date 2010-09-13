@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <comment>
- VBox frontends: Qt4 GUI ("VirtualBox"):
+ VBox frontends: Qt4 GUI (&quot;VirtualBox&quot;):
 
      Copyright (C) 2009-2010 Oracle Corporation
 
@@ -9,7 +9,7 @@
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
      General Public License (GPL) as published by the Free Software
-     Foundation, in version 2 as it comes in the "COPYING" file of the
+     Foundation, in version 2 as it comes in the &quot;COPYING&quot; file of the
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
@@ -29,10 +29,7 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
-  <layout class="QVBoxLayout" name="m_pLayout1">
-   <property name="bottomMargin" >
-    <number>0</number>
-   </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QILabel" name="m_pPage4Text1">
      <property name="wordWrap">
@@ -139,11 +136,24 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="m_pSelectManifest">
+     <property name="toolTip">
+      <string>Create a Manifest file for automatic data integrity checks on import.</string>
+     </property>
+     <property name="text">
+      <string>Write &amp;Manifest file</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <spacer name="m_pSpacer1">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>0</width>
-       <height>174</height>
+       <width>579</width>
+       <height>144</height>
       </size>
      </property>
     </spacer>

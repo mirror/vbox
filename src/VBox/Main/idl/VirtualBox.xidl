@@ -2390,7 +2390,7 @@
 
   <interface
      name="IAppliance" extends="$unknown"
-     uuid="fb61a4fc-57e7-48d6-859b-71f37d484cf2"
+     uuid="7b148032-4124-4f46-b56a-b48ac1273f5a"
      wsmap="managed"
      >
     <desc>
@@ -2620,19 +2620,25 @@
             future versions of VirtualBox may support additional formats.
         </desc>
       </param>
+      <param name="manifest" type="boolean" dir="in">
+        <desc>
+            Indicate if the optional manifest file (.mf) should be written. The manifest file
+            is used for integrity checks prior import.
+        </desc>
+      </param>
       <param name="path" type="wstring" dir="in">
           <desc>
               Name of appliance file to open (either with an <tt>.ovf</tt> or <tt>.ova</tt> extension, depending
               on whether the appliance is distributed as a set of files or as a single file, respectively).
           </desc>
       </param>
-      <param name="aProgress" type="IProgress" dir="return">
+      <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 
     <method name="getWarnings">
-        <desc>Returns textual warnings which occured during execution of <link to="#interpret" />.</desc>
+        <desc>Returns textual warnings which occurred during execution of <link to="#interpret" />.</desc>
 
         <param name="aWarnings" type="wstring" dir="return" safearray="yes">
             <desc></desc>
