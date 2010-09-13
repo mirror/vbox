@@ -3660,7 +3660,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
 
     /* Lock the medium, which makes the behavior much more consistent */
-    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY || VD_OPEN_FLAGS_SHAREABLE))
+    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE))
         rc = LockRead(NULL);
     else
         rc = LockWrite(NULL);
@@ -3919,7 +3919,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         m->preLockState = MediumState_Inaccessible;
 
     HRESULT rc2;
-    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY || VD_OPEN_FLAGS_SHAREABLE))
+    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE))
         rc2 = UnlockRead(NULL);
     else
         rc2 = UnlockWrite(NULL);
