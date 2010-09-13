@@ -105,7 +105,7 @@ static void tstRTListOrder(RTTEST hTest, PRTLISTNODE pList, unsigned cElements,
 
 static void tstRTListCreate(RTTEST hTest, unsigned cElements)
 {
-    RTTestISubF("RTList - Test with %u elements", cElements);
+    RTTestISubF("Creating and moving - %u elements", cElements);
 
     RTLISTNODE ListHead;
 
@@ -139,13 +139,37 @@ static void tstRTListCreate(RTTEST hTest, unsigned cElements)
 
     tstRTListOrder(hTest, &ListHeadNew, cElements, 0, cElements-1, 1);
 
-    /* Remove elements now  */
+    /*
+     * Safe iteration w/ removal.
+     */
+    RTTestISubF("Safe iteration w/ removal - %u elements", cElements);
+
+    /* Move it element by element. */
+    PLISTELEM pNode, pSafe;
+    RTListForEachSafe(&ListHeadNew, pNode, pSafe, LISTELEM, Node)
+    {
+        RTListNodeRemove(&pNode->Node);
+        RTListAppend(&ListHead, &pNode->Node);
+    }
+    tstRTListOrder(hTest, &ListHead, cElements, 0, cElements-1, 1);
+
+    /* And the other way. */
+    RTListForEachReverseSafe(&ListHead, pNode, pSafe, LISTELEM, Node)
+    {
+        RTListNodeRemove(&pNode->Node);
+        RTListPrepend(&ListHeadNew, &pNode->Node);
+    }
+    tstRTListOrder(hTest, &ListHeadNew, cElements, 0, cElements-1, 1);
+
+    /*
+     * Remove elements now.
+     */
     if (cElements > 1)
     {
         /* Remove every second */
-        RTTestISub("Remove every second node");
+        RTTestISubF("Remove every second node - %u elements", cElements);
 
-        PLISTELEM pNode = RTListNodeGetFirst(&ListHeadNew, LISTELEM, Node);
+        pNode = RTListNodeGetFirst(&ListHeadNew, LISTELEM, Node);
         for (unsigned i = 0; i < cElements; i++)
         {
             PLISTELEM pNext = RTListNodeGetNext(&pNode->Node, LISTELEM, Node);
@@ -167,8 +191,8 @@ static void tstRTListCreate(RTTEST hTest, unsigned cElements)
     }
 
     /* Remove the rest now. */
-    RTTestISub("Remove all nodes");
-    PLISTELEM pNode = RTListNodeGetFirst(&ListHeadNew, LISTELEM, Node);
+    RTTestISubF("Remove all nodes - %u elements", cElements);
+    pNode = RTListNodeGetFirst(&ListHeadNew, LISTELEM, Node);
     for (unsigned i = 0; i < cElements; i++)
     {
         PLISTELEM pNext = RTListNodeGetNext(&pNode->Node, LISTELEM, Node);

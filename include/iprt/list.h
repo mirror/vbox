@@ -227,6 +227,25 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 
 
 /**
+ * Enumerate the list in head to tail order, safe against removal of the
+ * current node.
+ *
+ * @param   pList               List to enumerate.
+ * @param   pIterator           The iterator variable name.
+ * @param   pIterNext           The name of the variable saving the pointer to
+ *                              the next element.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member name.
+ */
+#define RTListForEachSafe(pList, pIterator, pIterNext, Type, Member) \
+    for (pIterator = RTListNodeGetNext(pList, Type, Member), \
+         pIterNext = RT_FROM_MEMBER((pIterator)->Member.pNext, Type, Member); \
+         !RTListNodeIsDummy(pList, pIterator, Type, Member); \
+         pIterator = pIterNext, \
+         pIterNext = RT_FROM_MEMBER((pIterator)->Member.pNext, Type, Member) )
+
+
+/**
  * Enumerate the list in reverse order (tail to head).
  *
  * @param   pList               List to enumerate.
@@ -238,6 +257,24 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
     for (pIterator = RTListNodeGetPrev(pList, Type, Member); \
          !RTListNodeIsDummy(pList, pIterator, Type, Member); \
          pIterator = RT_FROM_MEMBER((pIterator)->Member.pPrev, Type, Member) )
+
+
+/**
+ * Enumerate the list in reverse order (tail to head).
+ *
+ * @param   pList               List to enumerate.
+ * @param   pIterator           The iterator variable name.
+ * @param   pIterPrev           The name of the variable saving the pointer to
+ *                              the previous element.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member name.
+ */
+#define RTListForEachReverseSafe(pList, pIterator, pIterPrev, Type, Member) \
+    for (pIterator = RTListNodeGetPrev(pList, Type, Member), \
+         pIterPrev = RT_FROM_MEMBER((pIterator)->Member.pPrev, Type, Member); \
+         !RTListNodeIsDummy(pList, pIterator, Type, Member); \
+         pIterator = pIterPrev, \
+         pIterPrev = RT_FROM_MEMBER((pIterator)->Member.pPrev, Type, Member) )
 
 
 /**
