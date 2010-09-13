@@ -92,7 +92,7 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
      */
     pSpinlockInt->u32Magic = RTSPINLOCK_MAGIC;
 #ifdef RTSPINLOCK_NT_HACK_NOIRQ
-    pSpinlockInt->u32Hack  = RTSPINLOCK_NT_HACK_NOIRQ;
+    pSpinlockInt->u32Hack  = RTSPINLOCK_NT_HACK_NOIRQ_FREE;
 #endif
     KeInitializeSpinLock(&pSpinlockInt->Spinlock);
     Assert(sizeof(KIRQL) == sizeof(unsigned char));
