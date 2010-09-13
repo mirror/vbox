@@ -208,6 +208,11 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
         /* DMA work pending? */
         else if (VM_FF_ISPENDING(pVM, VM_FF_PDM_DMA))
             rc = VINF_EM_RAW_TO_R3;
+        /* Pending request packets might contain actions that need immediate
+           attention, such as pending hardware interrupts. */
+        else if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
+                 || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+            rc = VINF_EM_PENDING_REQUEST;
         /* Pending interrupt: dispatch it. */
         else if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
                  && !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
@@ -245,11 +250,6 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
             rc = VINF_PGM_SYNC_CR3;
 #endif
         }
-        /** @todo move up before SyncCR3 */
-        /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
-        else if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
-                 || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
-            rc = VINF_EM_PENDING_REQUEST;
     }
 
     AssertMsg(     rc != VINF_SUCCESS
