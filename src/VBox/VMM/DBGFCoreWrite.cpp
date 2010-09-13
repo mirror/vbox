@@ -79,8 +79,11 @@
  */
 static const int s_NoteAlign  = 4;      /* @todo see #5211 comment 3 */
 static const int s_cbNoteName = 16;
-static const char *s_pcszCoreVBoxCore = "VBOXCORE";
-static const char *s_pcszCoreVBoxCpu  = "VBOXCPU";
+
+/* These strings *HAVE* to be 8-byte aligned */
+static const char *s_pcszCoreVBoxCore = "VBCORE";
+static const char *s_pcszCoreVBoxCpu  = "VBCPU";
+
 
 /**
  * DBGFCOREDATA: Core data.
@@ -214,12 +217,28 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
     size_t cbNameAlign   = RT_ALIGN_Z(cbName, s_NoteAlign);
     uint64_t cbDataAlign = RT_ALIGN_64(cbData, s_NoteAlign);
 
+    /*
+     * Yell loudly and bail if we are going to be writing a core file that is not compatible with
+     * both Solaris and the 64-bit ELF spec. which dictates 8-byte alignment. See #5211 comment 3.
+     */
+    if (cbNameAlign % 8)
+    {
+        LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr pszName=%s cbNameAlign=%u, not 8-byte aligned!\n", pszName, cbNameAlign));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    if (cbDataAlign % 8)
+    {
+        LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr pszName=%s cbDataAlign=%u, not 8-byte aligned!\n", pszName, cbDataAlign));
+        return VERR_INVALID_PARAMETER;
+    }
+
     static const char s_achPad[7] = { 0, 0, 0, 0, 0, 0, 0 };
     AssertCompile(sizeof(s_achPad) >= s_NoteAlign - 1);
 
     Elf64_Nhdr ElfNoteHdr;
     RT_ZERO(ElfNoteHdr);
-    ElfNoteHdr.n_namesz = (Elf64_Word)cbName;   /* @todo fix this later to NOT include NULL terminator */
+    ElfNoteHdr.n_namesz = (Elf64_Word)cbName - 1;   /* Again a discrepancy between Elf64 and Solaris (#5211 comment 3) */
     ElfNoteHdr.n_type   = Type;
     ElfNoteHdr.n_descsz = (Elf64_Word)cbDataAlign;
 
@@ -321,7 +340,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     CoreDescriptor.u32VBoxRevision  = VMMGetSvnRev();
     CoreDescriptor.cCpus            = pVM->cCpus;
 
-    LogRel((DBGFLOG_NAME ":CoreDescriptor Version=%u Revision=%u\n", CoreDescriptor.u32VBoxVersion, CoreDescriptor.u32VBoxRevision));
+    Log((DBGFLOG_NAME ":CoreDescriptor Version=%u Revision=%u\n", CoreDescriptor.u32VBoxVersion, CoreDescriptor.u32VBoxRevision));
 
     /*
      * Compute total size of the note section.
@@ -393,7 +412,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
         uint64_t cbMemRange  = GCPhysEnd - GCPhysStart + 1;
         uint64_t cbFileRange = fIsMmio ? 0 : cbMemRange;
 
-        LogRel((DBGFLOG_NAME ": PGMR3PhysGetRange iRange=%u GCPhysStart=%#x GCPhysEnd=%#x cbMemRange=%u\n",
+        Log((DBGFLOG_NAME ": PGMR3PhysGetRange iRange=%u GCPhysStart=%#x GCPhysEnd=%#x cbMemRange=%u\n",
                 iRange, GCPhysStart, GCPhysEnd, cbMemRange));
 
         rc = Elf64WriteProgHdr(hFile, PT_LOAD, PF_R,
