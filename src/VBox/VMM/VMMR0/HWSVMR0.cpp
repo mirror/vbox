@@ -1029,7 +1029,7 @@ ResumeExecution:
 #endif
 
     /* Check for pending actions that force us to go back to ring 3. */
-    if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING)
+    if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_PDM_DMA)
         ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HWACCM_TO_R3_MASK | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_REQUEST))
     {
         /* Check if a sync operation is pending. */
@@ -1071,6 +1071,13 @@ ResumeExecution:
         if (VM_FF_ISPENDING(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
         {
             rc = VINF_PGM_POOL_FLUSH_PENDING;
+            goto end;
+        }
+
+        /* Check if DMA work is pending (2nd+ run). */
+        if (VM_FF_ISPENDING(pVM, VM_FF_PDM_DMA) && cResume > 1)
+        {
+            rc = VINF_EM_RAW_TO_R3;
             goto end;
         }
     }
