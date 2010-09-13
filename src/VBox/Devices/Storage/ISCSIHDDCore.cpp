@@ -3337,8 +3337,7 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                 pIScsiCmd = iscsiCmdGet(pImage);
             }
         }
-#if 0
-        else if ((rc == VERR_TIMEOUT) && pImage->cCmdsWaiting)
+        else if (rc == VERR_TIMEOU) && pImage->cCmdsWaiting)
         {
             /*
              * We are waiting for a response from the target but
@@ -3348,7 +3347,6 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
             LogFlow(("Timed out while waiting for an answer from the target, reconnecting\n"));
             iscsiReattach(pImage);
         }
-#endif
         else if (RT_SUCCESS(rc) || rc == VERR_TIMEOUT)
         {
             Assert(pImage->state == ISCSISTATE_NORMAL);
