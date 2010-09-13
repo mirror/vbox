@@ -20,7 +20,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VD_ISCSI
-#define LOG_ENABLED
 #include <VBox/VBoxHDD-Plugin.h>
 #define VBOX_VDICORE_VD /* Signal that the header is included from here. */
 #include "VDICore.h"
