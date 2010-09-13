@@ -895,13 +895,13 @@ BOOLEAN vboxguestwinIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext)
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)serviceContext;
     BOOLEAN fIRQTaken = FALSE;
 
-    Log(("VBoxGuest::vboxguestwinGuestIsrHandler: pDevExt = 0x%p, pVMMDevMemory = 0x%p\n",
-             pDevExt, pDevExt ? pDevExt->pVMMDevMemory : NULL));
+    /*Log(("VBoxGuest::vboxguestwinGuestIsrHandler: pDevExt = 0x%p, pVMMDevMemory = 0x%p\n",
+             pDevExt, pDevExt ? pDevExt->pVMMDevMemory : NULL));*/
 
     if (VBoxGuestCommonISR(pDevExt))
     {
-        Log(("VBoxGuest::vboxguestwinGuestIsrHandler: IRQ was taken! pDeviceObject = 0x%p, pCurrentIrp = 0x%p\n",
-                pDevExt->win.s.pDeviceObject, pDevExt->win.s.pCurrentIrp));
+        /*Log(("VBoxGuest::vboxguestwinGuestIsrHandler: IRQ was taken! pDeviceObject = 0x%p, pCurrentIrp = 0x%p\n",
+                pDevExt->win.s.pDeviceObject, pDevExt->win.s.pCurrentIrp));*/
 
         IoRequestDpc(pDevExt->win.s.pDeviceObject, pDevExt->win.s.pCurrentIrp, NULL);
         fIRQTaken = TRUE;
