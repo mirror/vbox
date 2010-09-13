@@ -841,8 +841,14 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
             FIXME("Add OpenGL context recreation support to context_validate_onscreen_formats\n");
         }
         swapchain->ds_format = getFormatDescEntry(WINED3DFMT_D24_UNORM_S8_UINT, gl_info);
+
+#ifdef VBOXWDDM
+        swapchain->context[0] = context_find_create(device, swapchain, (IWineD3DSurfaceImpl *)swapchain->frontBuffer,
+                swapchain->ds_format);
+#else
         swapchain->context[0] = context_create(swapchain, (IWineD3DSurfaceImpl *)swapchain->frontBuffer,
                 swapchain->ds_format);
+#endif
         if (!swapchain->context[0])
         {
             WARN("Failed to create context.\n");

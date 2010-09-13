@@ -7301,6 +7301,13 @@ interface IWineD3DDevice : public IWineD3DBase
     virtual void STDMETHODCALLTYPE ReleaseFocusWindow(
         ) = 0;
 
+#ifdef VBOXWDDM
+    virtual HRESULT STDMETHODCALLTYPE Flush(
+        ) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE AddSwapChain(
+        IWineD3DSwapChain *swapchain) = 0;
+#endif
 };
 #else
 typedef struct IWineD3DDeviceVtbl {
@@ -8064,6 +8071,10 @@ typedef struct IWineD3DDeviceVtbl {
 #ifdef VBOXWDDM
     HRESULT (STDMETHODCALLTYPE *Flush)(
         IWineD3DDevice* This);
+
+    HRESULT (STDMETHODCALLTYPE *AddSwapChain)(
+        IWineD3DDevice* This,
+        IWineD3DSwapChain *swapchain);
 #endif
 
     END_INTERFACE
@@ -8223,6 +8234,7 @@ interface IWineD3DDevice {
 #define IWineD3DDevice_ReleaseFocusWindow(This) (This)->lpVtbl->ReleaseFocusWindow(This)
 #ifdef VBOXWDDM
 #define IWineD3DDevice_Flush(This) (This)->lpVtbl->Flush(This)
+#define IWineD3DDevice_AddSwapChain(This,swapchain) (This)->lpVtbl->AddSwapChain(This,swapchain)
 #endif
 #endif
 
