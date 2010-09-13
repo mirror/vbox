@@ -597,17 +597,10 @@ def cmdAnyVm(ctx,mach,cmd, args=[],save=False):
     ctx['global'].closeMachineSession(session)
 
 def machById(ctx,id):
-    mach = None
-    for m in getMachines(ctx):
-        if m.name == id:
-            mach = m
-            break
-        mid = str(m.id)
-        if mid[0] == '{':
-            mid = mid[1:-1]
-        if mid == id:
-            mach = m
-            break
+    try:
+        mach = ctx['vb'].findMachine(id)
+    except:
+        mach = ctx['vb'].getMachine(id)
     return mach
 
 class XPathNode:
