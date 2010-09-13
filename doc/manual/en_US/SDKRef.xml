@@ -3265,7 +3265,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
     existing client code.</para>
 
     <sect1>
-      <title>Incompatible API changes with version 3.3</title>
+      <title>Incompatible API changes with version 4.0</title>
 
       <itemizedlist>
         <listitem>
@@ -3419,6 +3419,14 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           <computeroutput>autoMount</computeroutput> was added to the <xref
           linkend="ISharedFolder" xreflabel="ISharedFolder" />
           interface.</para>
+        </listitem>
+
+        <listitem>
+          <para><xref linkend="IAppliance__write"
+          xreflabel="IAppliance::write()" /> got an extra parameter
+          <computeroutput>manifest</computeroutput>. This allows to
+          enable/disable the manifest file creation on export.
+          </para>
         </listitem>
 
         <listitem>
