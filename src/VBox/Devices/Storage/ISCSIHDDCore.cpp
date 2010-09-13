@@ -3337,7 +3337,7 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                 pIScsiCmd = iscsiCmdGet(pImage);
             }
         }
-        else if (rc == VERR_TIMEOU) && pImage->cCmdsWaiting)
+        else if (rc == VERR_TIMEOUT && pImage->cCmdsWaiting)
         {
             /*
              * We are waiting for a response from the target but
