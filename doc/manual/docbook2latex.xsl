@@ -142,9 +142,11 @@
 \setcounter{secnumdepth}{3}
 % more space for the section numbers
 \makeatletter
-\renewcommand*\l@section{\@dottedtocline{1}{1.5em}{2.5em}}
-\renewcommand*\l@subsection{\@dottedtocline{2}{4.0em}{4.1em}}
-\renewcommand*\l@subsubsection{\@dottedtocline{3}{7.4em}{4.1em}}
+\renewcommand*\l@section{\@dottedtocline{1}{1.5em}{2.9em}}
+\renewcommand*\l@subsection{\@dottedtocline{2}{4.4em}{3.8em}}
+\renewcommand*\l@subsubsection{\@dottedtocline{3}{8.2em}{3.8em}}
+\renewcommand*\@pnumwidth{1.7em}
+\renewcommand*\@tocrmarg{5.0em}
 \makeatother
 
 % more tolerance at 2nd wrap stage:
