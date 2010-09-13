@@ -61,7 +61,7 @@ RT_C_DECLS_END
 *******************************************************************************/
 RT_C_DECLS_BEGIN
 #ifdef DEBUG
- static VOID    vboxguestwinDoTests(VOID);
+ static void    vboxguestwinDoTests(void);
 #endif
 RT_C_DECLS_END
 
@@ -277,7 +277,7 @@ static NTSTATUS vboxguestwinAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDe
  *
  * @param pResourceList  list of device resources.
  */
-static VOID vboxguestwinShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
+static void vboxguestwinShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
 {
 #ifdef LOG_ENABLED
     PCM_PARTIAL_RESOURCE_DESCRIPTOR resource = pResourceList->PartialDescriptors;
@@ -560,8 +560,6 @@ void vboxguestwinUnload(PDRIVER_OBJECT pDrvObj)
  */
 NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    Log(("VBoxGuest::vboxguestwinGuestCreate\n"));
-
     /** @todo AssertPtrReturn(pIrp); */
     PIO_STACK_LOCATION pStack   = IoGetCurrentIrpStackLocation(pIrp);
     /** @todo AssertPtrReturn(pStack); */
@@ -583,6 +581,9 @@ NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 #ifdef VBOX_WITH_HGCM
         if (pFileObj)
         {
+            Log(("VBoxGuest::vboxguestwinGuestCreate: File object type = %d\n",
+                 pFileObj->Type));
+
             int vrc;
             PVBOXGUESTSESSION pSession;
             if (pFileObj->Type == 5 /* File Object */)
@@ -837,76 +838,51 @@ NTSTATUS vboxguestwinNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
 
 /**
- * DPC handler
+ * DPC handler.
  *
- * @param   dpc         DPC descriptor.
+ * @param   pDPC        DPC descriptor.
  * @param   pDevObj     Device object.
- * @param   irp         Interrupt request packet.
- * @param   context     Context specific pointer.
+ * @param   pIrp        Interrupt request packet.
+ * @param   pContext    Context specific pointer.
  */
-VOID vboxguestwinDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj,
+void vboxguestwinDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj,
                             PIRP pIrp, PVOID pContext)
 {
-    /* Unblock handlers waiting for arrived events.
-     *
-     * Events are very low things, there is one event flag (1 or more bit)
-     * for each event. Each event is processed by exactly one handler.
-     *
-     * Assume that we trust additions and that other drivers will
-     * handle its respective events without trying to fetch all events.
-     *
-     * Anyway design assures that wrong event processing will affect only guest.
-     *
-     * Event handler calls VMMDev IOCTL for waiting an event.
-     * It supplies event mask. IOCTL blocks on EventNotification.
-     * Here we just signal an the EventNotification to all waiting
-     * threads, the IOCTL handler analyzes events and either
-     * return to caller or blocks again.
-     *
-     * If we do not have too many events this is a simple and good
-     * approach. Other way is to have as many Event objects as the callers
-     * and wake up only callers waiting for the specific event.
-     *
-     * Now with the 'wake up all' appoach we probably do not need the DPC
-     * handler and can signal event directly from ISR.
-     *
-     */
-
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
-
     Log(("VBoxGuest::vboxguestwinGuestDpcHandler: pDevExt=0x%p\n", pDevExt));
 
-#ifdef VBOX_WITH_HGCM
-    if (pDevExt)
-        KePulseEvent(&pDevExt->win.s.hgcm.s.keventNotification, 0, FALSE);
-#endif
+    /* Process the wake-up list we were asked by the scheduling a DPC
+     *  in vboxguestwinIsrHandler(). */
+    VBoxGuestWaitDoWakeUps(pDevExt);
 }
 
 
 /**
  * ISR handler.
  *
- * @return  BOOLEAN        Indicates whether the IRQ came from us (TRUE) or not (FALSE).
- * @param   interrupt      Interrupt that was triggered.
- * @param   serviceContext Context specific pointer.
+ * @return  BOOLEAN         Indicates whether the IRQ came from us (TRUE) or not (FALSE).
+ * @param   pInterrupt      Interrupt that was triggered.
+ * @param   pServiceContext Context specific pointer.
  */
-BOOLEAN vboxguestwinIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext)
+BOOLEAN vboxguestwinIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
 {
-    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)serviceContext;
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pServiceContext;
     BOOLEAN fIRQTaken = FALSE;
 
     /*Log(("VBoxGuest::vboxguestwinGuestIsrHandler: pDevExt = 0x%p, pVMMDevMemory = 0x%p\n",
              pDevExt, pDevExt ? pDevExt->pVMMDevMemory : NULL));*/
 
-    if (VBoxGuestCommonISR(pDevExt))
-    {
-        /*Log(("VBoxGuest::vboxguestwinGuestIsrHandler: IRQ was taken! pDeviceObject = 0x%p, pCurrentIrp = 0x%p\n",
-                pDevExt->win.s.pDeviceObject, pDevExt->win.s.pCurrentIrp));*/
+    /* Enter the common ISR routine and do the actual work. */
+    fIRQTaken = VBoxGuestCommonISR(pDevExt);
 
+    /* If we need to wake up some events we do that in a DPC to make
+     * sure we're called at the right IRQL. */
+    if (fIRQTaken && !RTListIsEmpty(&pDevExt->WakeUpList))
         IoRequestDpc(pDevExt->win.s.pDeviceObject, pDevExt->win.s.pCurrentIrp, NULL);
-        fIRQTaken = TRUE;
-    }
 
+    /*if (fIRQTaken)
+        Log(("VBoxGuest::vboxguestwinGuestIsrHandler: IRQ was taken! pDeviceObject = 0x%p, pCurrentIrp = 0x%p\n",
+             pDevExt->win.s.pDeviceObject, pDevExt->win.s.pCurrentIrp));*/
     return fIRQTaken;
 }
 
@@ -1056,6 +1032,17 @@ NTSTATUS vboxguestwinScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTD
 }
 
 
+/**
+ * Maps the I/O space from VMMDev to virtual kernel adress space.
+ *
+ * @return NTSTATUS
+ *
+ * @param pDevExt           The device extension.
+ * @param physicalAdr       Physical address to map.
+ * @param ulLength          Length (in bytes) to map.
+ * @param ppvMMIOBase       Pointer of mapped I/O base.
+ * @param pcbMMIO           Length of mapped I/O base.
+ */
 NTSTATUS vboxguestwinMapVMMDevMemory(PVBOXGUESTDEVEXT pDevExt, PHYSICAL_ADDRESS physicalAdr, ULONG ulLength,
                                      void **ppvMMIOBase, uint32_t *pcbMMIO)
 {
@@ -1101,6 +1088,11 @@ NTSTATUS vboxguestwinMapVMMDevMemory(PVBOXGUESTDEVEXT pDevExt, PHYSICAL_ADDRESS 
 }
 
 
+/**
+ * Unmaps the VMMDev I/O range from kernel space.
+ *
+ * @param   pDevExt     The device extension.
+ */
 void vboxguestwinUnmapVMMDevMemory(PVBOXGUESTDEVEXT pDevExt)
 {
     Log(("VBoxGuest::vboxguestwinUnmapVMMDevMemory: pVMMDevMemory = 0x%x\n", pDevExt->pVMMDevMemory));
@@ -1150,7 +1142,7 @@ VBOXOSTYPE vboxguestwinVersionToOSType(winVersion_t winVer)
 /** A quick implementation of AtomicTestAndClear for uint32_t and multiple
  *  bits.
  */
-static uint32_t guestAtomicBitsTestAndClear(void *pu32Bits, uint32_t u32Mask)
+static uint32_t vboxugestwinAtomicBitsTestAndClear(void *pu32Bits, uint32_t u32Mask)
 {
     AssertPtrReturn(pu32Bits, 0);
     LogFlowFunc(("*pu32Bits=0x%x, u32Mask=0x%x\n", *(long *)pu32Bits,
@@ -1171,11 +1163,12 @@ static uint32_t guestAtomicBitsTestAndClear(void *pu32Bits, uint32_t u32Mask)
     return u32Result;
 }
 
-static VOID vboxguestwinTestAtomicTestAndClearBitsU32(uint32_t u32Mask, uint32_t u32Bits,
+
+static void vboxguestwinTestAtomicTestAndClearBitsU32(uint32_t u32Mask, uint32_t u32Bits,
                                                       uint32_t u32Exp)
 {
     ULONG u32Bits2 = u32Bits;
-    uint32_t u32Result = guestAtomicBitsTestAndClear(&u32Bits2, u32Mask);
+    uint32_t u32Result = vboxugestwinAtomicBitsTestAndClear(&u32Bits2, u32Mask);
     if (   u32Result != u32Exp
         || (u32Bits2 & u32Mask)
         || (u32Bits2 & u32Result)
@@ -1186,7 +1179,8 @@ static VOID vboxguestwinTestAtomicTestAndClearBitsU32(uint32_t u32Mask, uint32_t
                                u32Result));
 }
 
-static VOID vboxguestwinDoTests(VOID)
+
+static void vboxguestwinDoTests()
 {
     vboxguestwinTestAtomicTestAndClearBitsU32(0x00, 0x23, 0);
     vboxguestwinTestAtomicTestAndClearBitsU32(0x11, 0, 0);
