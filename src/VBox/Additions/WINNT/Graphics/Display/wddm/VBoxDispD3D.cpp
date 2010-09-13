@@ -12,6 +12,8 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+#define INITGUID
+
 #include <iprt/initterm.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
@@ -869,6 +871,7 @@ static PVBOXWDDMDISP_RESOURCE vboxResourceAlloc(UINT cAllocs)
         pRc->cAllocations = cAllocs;
         for (UINT i = 0; i < cAllocs; ++i)
         {
+            pRc->aAllocations[i].iAlloc = i;
             pRc->aAllocations[i].pRc = pRc;
         }
         return pRc;
@@ -1328,8 +1331,50 @@ D3DTEXTUREFILTERTYPE vboxDDI2D3DBltFlags(D3DDDI_BLTFLAGS fFlags)
     return D3DTEXF_NONE;
 }
 
+/* on success increments the surface ref counter,
+ * i.e. one must call pSurf->Release() once the surface is not needed*/
+static HRESULT vboxWddmSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, IDirect3DSurface9 **ppSurf)
+{
+    HRESULT hr = S_OK;
+    Assert(pRc->cAllocations > iAlloc);
+    switch (pRc->aAllocations[0].enmD3DIfType)
+    {
+        case VBOXDISP_D3DIFTYPE_SURFACE:
+        {
+            IDirect3DSurface9 *pD3DIfSurf = (IDirect3DSurface9*)pRc->aAllocations[iAlloc].pD3DIf;
+            Assert(pD3DIfSurf);
+            pD3DIfSurf->AddRef();
+            *ppSurf = pD3DIfSurf;
+            break;
+        }
+        case VBOXDISP_D3DIFTYPE_TEXTURE:
+        {
+            Assert(pRc->cAllocations == 1); /* <- vboxWddmSurfGet is typically used in Blt & ColorFill functions
+                                             * in this case, if texture is used as a destination,
+                                             * we should update sub-layers as well which is not done currently
+                                             * so for now check vboxWddmSurfGet is used for one-level textures */
+            IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pRc->aAllocations[0].pD3DIf;
+            IDirect3DSurface9 *pSurfaceLevel;
+            Assert(pD3DIfTex);
+            hr = pD3DIfTex->GetSurfaceLevel(iAlloc, &pSurfaceLevel);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                *ppSurf = pSurfaceLevel;
+            }
+            break;
+        }
+        default:
+            Assert(0);
+            hr = E_FAIL;
+            break;
+    }
+    return hr;
+}
 
 /******/
+static HRESULT vboxWddmRenderTargetSet(PVBOXWDDMDISP_DEVICE pDevice, UINT iRt, PVBOXWDDMDISP_ALLOCATION pAlloc, BOOL bOnSwapchainSynch);
+
 DECLINLINE(VOID) vboxWddmSwapchainInit(PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
 {
     RTLISTNODE ListEntry = pSwapchain->ListEntry;
@@ -1710,7 +1755,7 @@ DECLINLINE(UINT) vboxWddmSwapchainIdxBb2Rt(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, u
     return iBb != (~0) ? (iBb + pSwapchain->iBB) % pSwapchain->cRTs : vboxWddmSwapchainIdxFb(pSwapchain);
 }
 
-static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain, uint32_t iBb, BOOL bSynchContents)
+static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain, uint32_t iBb)
 {
     IDirect3DSurface9 *pD3D9Surf;
     UINT iRt = vboxWddmSwapchainIdxBb2Rt(pSwapchain, iBb);
@@ -1724,29 +1769,47 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
         Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
         if (pAlloc->pD3DIf)
         {
-            if (bSynchContents)
+            if (pSwapchain->fFlags.bChanged)
             {
                 IDirect3DSurface9 *pD3D9OldSurf = (IDirect3DSurface9*)pAlloc->pD3DIf;
-                hr = pDevice->pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9Surf, NULL, D3DTEXF_NONE);
-                Assert(hr == S_OK);
+                if (pD3D9OldSurf)
+                {
+                    VOID *pvSwapchain = NULL;
+                    HRESULT tmpHr = pD3D9OldSurf->GetContainer(IID_IDirect3DSwapChain9, &pvSwapchain);
+                    if (tmpHr != S_OK || pvSwapchain != ((IDirect3DSwapChain9 *)pSwapchain->pSwapChainIf))
+                    {
+                        hr = pDevice->pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9Surf, NULL, D3DTEXF_NONE);
+                        Assert(hr == S_OK);
+                    }
+                }
             }
             pAlloc->pD3DIf->Release();
         }
         pAlloc->pD3DIf = pD3D9Surf;
         pRt->fFlags.Value = 0;
+
+        if (pSwapchain->fFlags.bChanged)
+        {
+            for (UINT i = 0; i < pDevice->cRTs; ++i)
+            {
+                if (pDevice->apRTs[i] == pAlloc)
+                {
+                    hr = vboxWddmRenderTargetSet(pDevice, i, pAlloc, TRUE);
+                    Assert(hr == S_OK);
+                }
+            }
+        }
     }
     return hr;
 }
 static HRESULT vboxWddmSwapchainSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
 {
-    BOOL bSynchContents = pSwapchain->fFlags.bChanged && pSwapchain->fFlags.bInited;
     for (int iBb = -1; iBb < int(pSwapchain->cRTs - 1); ++iBb)
     {
-        HRESULT hr = vboxWddmSwapchainRtSynch(pDevice, pSwapchain, (UINT)iBb, bSynchContents);
+        HRESULT hr = vboxWddmSwapchainRtSynch(pDevice, pSwapchain, (UINT)iBb);
         Assert(hr == S_OK);
     }
     pSwapchain->fFlags.bChanged = 0;
-    pSwapchain->fFlags.bInited = 1;
     return S_OK;
 }
 
@@ -1882,7 +1945,7 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
                     Assert(hr == S_OK);
                     if (hr == S_OK)
                     {
-                        Assert(pSwapchain->fFlags.Value == 2); /* bInited */
+                        Assert(pSwapchain->fFlags.Value == 0);
                         if (pOldIf)
                         {
                             Assert(hOldWnd);
@@ -1936,7 +1999,7 @@ static HRESULT vboxWddmSwapchainPresentPerform(PVBOXWDDMDISP_DEVICE pDevice, PVB
     if (hr == S_OK)
     {
         vboxWddmSwapchainFlip(pSwapchain);
-        Assert(pSwapchain->fFlags.Value == 2); /* bInited */
+        Assert(pSwapchain->fFlags.Value == 0);
         hr = vboxWddmSwapchainSynch(pDevice, pSwapchain);
         Assert(hr == S_OK);
     }
@@ -2310,6 +2373,53 @@ static HRESULT vboxWddmD3DDeviceUpdate(PVBOXWDDMDISP_DEVICE pDevice, UINT iScree
 }
 #endif
 /******/
+
+static HRESULT vboxWddmRenderTargetSet(PVBOXWDDMDISP_DEVICE pDevice, UINT iRt, PVBOXWDDMDISP_ALLOCATION pAlloc, BOOL bOnSwapchainSynch)
+{
+    IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
+    PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainForAlloc(pAlloc);
+    if (pSwapchain)
+    {
+        /* backbuffer */
+        Assert(vboxWddmSwapchainGetBb(pSwapchain)->pAlloc == pAlloc);
+    }
+
+    HRESULT hr = S_OK;
+    IDirect3DSurface9 *pD3D9Surf;
+    if (pSwapchain && vboxWddmSwapchainNumRTs(pSwapchain) == 1 && iRt == 0)
+    {
+        /* work-around wine double-buffering for the case we have no backbuffers */
+        Assert((!pSwapchain->fFlags.bChanged || bOnSwapchainSynch) && pSwapchain->pSwapChainIf);
+        if (!bOnSwapchainSynch)
+        {
+            vboxWddmSwapchainChkCreateIf(pDevice, pSwapchain);
+        }
+        hr = pSwapchain->pSwapChainIf->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pD3D9Surf);
+        Assert(hr == S_OK);
+        Assert(pD3D9Surf);
+    }
+    else
+    {
+        hr = vboxWddmSurfGet(pAlloc->pRc, pAlloc->iAlloc, &pD3D9Surf);
+        Assert(hr == S_OK);
+        Assert(pD3D9Surf);
+    }
+
+    if (hr == S_OK)
+    {
+        Assert(pD3D9Surf);
+        hr = pDevice9If->SetRenderTarget(iRt, pD3D9Surf);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            Assert(iRt < pDevice->cRTs);
+            pDevice->apRTs[iRt] = pAlloc;
+        }
+        pD3D9Surf->Release();
+    }
+
+    return hr;
+}
 
 
 static CRITICAL_SECTION g_VBoxCritSect;
@@ -4285,6 +4395,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
             CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
             pAllocation->hAllocation = NULL;
             pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
+            pAllocation->iAlloc = i;
             pAllocation->pRc = pRc;
             pAllocation->pvMem = (void*)pSurf->pSysMem;
             pAllocation->SurfDesc.pitch = pSurf->SysMemPitch;
@@ -5404,47 +5515,6 @@ static HRESULT vboxWddmUnlockRect(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc)
     return hr;
 }
 
-/* on success increments the surface ref counter,
- * i.e. one must call pSurf->Release() once the surface is not needed*/
-static HRESULT vboxWddmSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, IDirect3DSurface9 **ppSurf)
-{
-    HRESULT hr = S_OK;
-    Assert(pRc->cAllocations > iAlloc);
-    switch (pRc->aAllocations[0].enmD3DIfType)
-    {
-        case VBOXDISP_D3DIFTYPE_SURFACE:
-        {
-            IDirect3DSurface9 *pD3DIfSurf = (IDirect3DSurface9*)pRc->aAllocations[iAlloc].pD3DIf;
-            Assert(pD3DIfSurf);
-            pD3DIfSurf->AddRef();
-            *ppSurf = pD3DIfSurf;
-            break;
-        }
-        case VBOXDISP_D3DIFTYPE_TEXTURE:
-        {
-            Assert(pRc->cAllocations == 1); /* <- vboxWddmSurfGet is typically used in Blt & ColorFill functions
-                                             * in this case, if texture is used as a destination,
-                                             * we should update sub-layers as well which is not done currently
-                                             * so for now check vboxWddmSurfGet is used for one-level textures */
-            IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pRc->aAllocations[0].pD3DIf;
-            IDirect3DSurface9 *pSurfaceLevel;
-            Assert(pD3DIfTex);
-            hr = pD3DIfTex->GetSurfaceLevel(iAlloc, &pSurfaceLevel);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
-            {
-                *ppSurf = pSurfaceLevel;
-            }
-            break;
-        }
-        default:
-            Assert(0);
-            hr = E_FAIL;
-            break;
-    }
-    return hr;
-}
-
 static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pData)
 {
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
@@ -5778,42 +5848,13 @@ static HRESULT APIENTRY vboxWddmDDevSetRenderTarget(HANDLE hDevice, CONST D3DDDI
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
-//    PVBOXWDDMDISP_SCREEN pScreen = &pDevice->aScreens[pDevice->iPrimaryScreen];
     IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
     PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hRenderTarget;
     Assert(pRc);
     Assert(pData->SubResourceIndex < pRc->cAllocations);
     PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
-    PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainForAlloc(pAlloc);
-//    PVBOXWDDMDISP_SCREEN pVisibleScreen = pRc->RcDesc.fFlags.Primary ? &pDevice->aScreens[pRc->RcDesc.VidPnSourceId] : pScreen;
-    if (pSwapchain)
-    {
-        /* backbuffer */
-        Assert(vboxWddmSwapchainGetBb(pSwapchain)->pAlloc == pAlloc);
-    }
-
-    HRESULT hr = S_OK;
-    IDirect3DSurface9 *pD3D9Surf;
-    if (pSwapchain && vboxWddmSwapchainNumRTs(pSwapchain) == 1 && pData->RenderTargetIndex == 0)
-    {
-        /* work-around wine double-buffering for the case we have no backbuffers */
-        hr = pDevice9If->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pD3D9Surf);
-        Assert(hr == S_OK);
-        Assert(pD3D9Surf);
-    }
-    else
-    {
-        hr = vboxWddmSurfGet(pRc, pData->SubResourceIndex, &pD3D9Surf);
-        Assert(hr == S_OK);
-        Assert(pD3D9Surf);
-    }
-    if (hr == S_OK)
-    {
-        Assert(pD3D9Surf);
-        hr = pDevice9If->SetRenderTarget(pData->RenderTargetIndex, pD3D9Surf);
-        Assert(hr == S_OK);
-        pD3D9Surf->Release();
-    }
+    HRESULT hr = vboxWddmRenderTargetSet(pDevice, pData->RenderTargetIndex, pAlloc, FALSE);
+    Assert(hr == S_OK);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
@@ -6429,12 +6470,12 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p), Interface(%d), Version(%d)\n", hAdapter, pCreateData->Interface, pCreateData->Version));
 
 //    Assert(0);
+    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
 
-    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(sizeof (VBOXWDDMDISP_DEVICE));
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(RT_OFFSETOF(VBOXWDDMDISP_DEVICE, apRTs[pAdapter->cMaxSimRTs]));
     if (pDevice)
     {
-        PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
-
+        pDevice->cRTs = pAdapter->cMaxSimRTs;
         pDevice->hDevice = pCreateData->hDevice;
         pDevice->pAdapter = pAdapter;
         pDevice->u32IfVersion = pCreateData->Interface;
@@ -6609,6 +6650,10 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
                         hr = E_OUTOFMEMORY;
                     }
 #else
+//# define VBOXDISP_TEST_SWAPCHAIN
+# ifdef VBOXDISP_TEST_SWAPCHAIN
+                    VBOXDISP_D3DEV(pDevice);
+# endif
                     break;
 #endif
 
@@ -6740,12 +6785,22 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
                     Assert(hr == S_OK);
                     if (hr == S_OK)
                     {
-                        hr = VBoxDispWorkerCreate(&pAdapter->WndWorker);
+                        D3DCAPS9 Caps;
+                        memset(&Caps, 0, sizeof (Caps));
+                        hr = vboxWddmGetD3D9Caps(pAdapter, &Caps);
                         Assert(hr == S_OK);
                         if (hr == S_OK)
                         {
-                            vboxVDbgPrint((__FUNCTION__": SUCCESS 3D Enabled, pAdapter (0x%p)\n", pAdapter));
-                            break;
+                            pAdapter->cMaxSimRTs = Caps.NumSimultaneousRTs;
+                            Assert(pAdapter->cMaxSimRTs);
+                            Assert(pAdapter->cMaxSimRTs < UINT32_MAX/2);
+                            hr = VBoxDispWorkerCreate(&pAdapter->WndWorker);
+                            Assert(hr == S_OK);
+                            if (hr == S_OK)
+                            {
+                                vboxVDbgPrint((__FUNCTION__": SUCCESS 3D Enabled, pAdapter (0x%p)\n", pAdapter));
+                                break;
+                            }
                         }
                         pAdapter->pD3D9If->Release();
                     }
