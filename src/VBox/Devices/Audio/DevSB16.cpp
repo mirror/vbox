@@ -1443,9 +1443,13 @@ static DECLCALLBACK(uint32_t) SB_read_DMA (PPDMDEVINS pDevIns, void *opaque, uns
            dma_pos, free, till, dma_len);
 #endif
 
-    if (till <= copy) {
+    if (copy >= till) {
         if (0 == s->dma_auto) {
             copy = till;
+        } else {
+            if( copy >= till + s->block_size ) {
+                copy = till;    /* Make sure we won't skip IRQs. */
+            }
         }
     }
 
