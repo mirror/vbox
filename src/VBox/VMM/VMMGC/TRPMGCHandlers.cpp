@@ -185,7 +185,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
      * Or pending (A)PIC interrupt? Windows XP will crash if we delay APIC interrupts.
      */
     if (    rc == VINF_SUCCESS
-        &&  (   VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC | VM_FF_REQUEST | VM_FF_PGM_NO_MEMORY)
+        &&  (   VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC | VM_FF_REQUEST | VM_FF_PGM_NO_MEMORY | VM_FF_PDM_DMA)
              || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_TO_R3 | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_REQUEST | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
             )
        )
@@ -204,6 +204,9 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
             rc = VINF_EM_RAW_TIMER_PENDING;
         /* The Virtual Sync clock has stopped. */
         else if (VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
+            rc = VINF_EM_RAW_TO_R3;
+        /* DMA work pending? */
+        else if (VM_FF_ISPENDING(pVM, VM_FF_PDM_DMA))
             rc = VINF_EM_RAW_TO_R3;
         /* Pending interrupt: dispatch it. */
         else if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
@@ -242,6 +245,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
             rc = VINF_PGM_SYNC_CR3;
 #endif
         }
+        /** @todo move up before SyncCR3 */
         /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
         else if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
                  || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
