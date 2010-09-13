@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1825,8 +1825,10 @@
 #elif defined(RT_ARCH_SPARC)
 # ifdef IN_RING3
 #  ifdef RT_OS_SOLARIS
-/** Sparc user mode: According to Figure 9.4 (sun4u) in solaris internals. */
-#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x414000U >= 0x414000U + 0x10000U )
+/** Sparc user mode: According to
+ * http://cvs.opensolaris.org/source/xref/onnv/onnv-gate/usr/src/uts/sun4/os/startup.c#510 */
+#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x400000U >= 0x400000U + 0x2000U )
+
 #  else
 #   error "Port me"
 #  endif
