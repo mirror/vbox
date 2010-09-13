@@ -438,7 +438,7 @@ init_vga_card:
   ret
 
 msg_vga_init:
-.ascii "Sun VirtualBox Version "
+.ascii "Oracle VM VirtualBox Version "
 .ascii VBOX_VERSION_STRING
 .ascii " VGA BIOS"
 .byte 0x0d,0x0a,0x00

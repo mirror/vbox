@@ -1323,7 +1323,7 @@ Name: /VirtualBox/GuestInfo/OS/Release, value: 6.0.6001,
 Name: /VirtualBox/GuestInfo/OS/ServicePack, value: 1,
     timestamp: 1229098279122627000, flags:
 Name: /VirtualBox/GuestAdd/InstallDir,
-    value: C:/Program Files/Sun/xVM VirtualBox
+    value: C:/Program Files/Oracle/VirtualBox
     Guest Additions, timestamp: 1229098279269739000, flags:
 Name: /VirtualBox/GuestAdd/Revision, value: 40720,
     timestamp: 1229098279345664000, flags:
