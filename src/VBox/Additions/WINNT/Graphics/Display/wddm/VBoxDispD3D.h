@@ -53,6 +53,7 @@ typedef struct VBOXWDDMDISP_ADAPTER
     FORMATOP *paFormstOps;
     uint32_t cSurfDescs;
     DDSURFACEDESC *paSurfDescs;
+    UINT cMaxSimRTs;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     uint32_t cHeads;
     VBOXWDDMDISP_HEAD aHeads[1];
@@ -120,8 +121,7 @@ typedef struct VBOXWDDMDISP_SWAPCHAIN_FLAGS
         struct
         {
             UINT bChanged : 1;
-            UINT bInited  : 1;
-            UINT Reserved : 30;
+            UINT Reserved : 31;
         };
         uint32_t Value;
     };
@@ -166,10 +166,10 @@ typedef struct VBOXWDDMDISP_DEVICE
     /* number of StreamSources set */
     UINT cStreamSources;
     VBOXWDDMDISP_STREAMSOURCEUM aStreamSourceUm[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
-    VBOXWDDMDISP_ALLOCATION *aStreamSource[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
+    struct VBOXWDDMDISP_ALLOCATION *aStreamSource[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
     VBOXWDDMDISP_STREAM_SOURCE_INFO StreamSourceInfo[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
     VBOXWDDMDISP_INDICIESUM IndiciesUm;
-    VBOXWDDMDISP_ALLOCATION *pIndicesAlloc;
+    struct VBOXWDDMDISP_ALLOCATION *pIndicesAlloc;
     VBOXWDDMDISP_INDICES_INFO IndiciesInfo;
     /* need to cache the ViewPort data because IDirect3DDevice9::SetViewport
      * is split into two calls : SetViewport & SetZRange */
@@ -178,6 +178,8 @@ typedef struct VBOXWDDMDISP_DEVICE
 
     CRITICAL_SECTION DirtyAllocListLock;
     RTLISTNODE DirtyAllocList;
+    UINT cRTs;
+    struct VBOXWDDMDISP_ALLOCATION * apRTs[1];
 } VBOXWDDMDISP_DEVICE, *PVBOXWDDMDISP_DEVICE;
 
 typedef struct VBOXWDDMDISP_LOCKINFO
@@ -205,6 +207,7 @@ typedef struct VBOXWDDMDISP_ALLOCATION
 {
     D3DKMT_HANDLE hAllocation;
     VBOXWDDM_ALLOC_TYPE enmType;
+    UINT iAlloc;
     struct VBOXWDDMDISP_RESOURCE *pRc;
     void* pvMem;
     /* object type is defined by enmD3DIfType enum */
