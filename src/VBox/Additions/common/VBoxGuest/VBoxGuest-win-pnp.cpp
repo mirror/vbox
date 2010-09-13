@@ -444,8 +444,8 @@ NTSTATUS vboxguestwinPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                                 VbglGRFree(&pReq->header);
                             }
 
-                            /* Cleanup. */
-                            vboxguestwinCleanup(pDevObj);
+                            /* Don't do any cleanup here; there might be still coming in some IOCtls after we got this
+                             * power action and would assert/crash when we already cleaned up all the stuff! */
                             break;
                         }
 
