@@ -772,7 +772,11 @@ static void shader_glsl_load_constants(const struct wined3d_context *context,
         char usePixelShader, char useVertexShader)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
+#ifdef VBOXWDDM
+    IWineD3DDeviceImpl *device = context->device;
+#else
     IWineD3DDeviceImpl *device = context->swapchain->device;
+#endif
     IWineD3DStateBlockImpl* stateBlock = device->stateBlock;
     struct shader_glsl_priv *priv = device->shader_priv;
 
@@ -4615,7 +4619,11 @@ static GLhandleARB create_glsl_blt_shader(const struct wined3d_gl_info *gl_info,
 static void shader_glsl_select(const struct wined3d_context *context, BOOL usePS, BOOL useVS)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
+#ifdef VBOXWDDM
+    IWineD3DDeviceImpl *device = context->device;
+#else
     IWineD3DDeviceImpl *device = context->swapchain->device;
+#endif
     struct shader_glsl_priv *priv = device->shader_priv;
     GLhandleARB program_id = 0;
     GLenum old_vertex_color_clamp, current_vertex_color_clamp;

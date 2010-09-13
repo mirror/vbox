@@ -461,9 +461,13 @@ static BOOL     WINAPI  IDirect3DDevice9Impl_ShowCursor(LPDIRECT3DDEVICE9EX ifac
 
     return ret;
 }
-
+#ifdef VBOXWDDM
+static HRESULT IDirect3DDevice9Impl_DoCreateAdditionalSwapChain(IDirect3DDevice9Ex *iface,
+        D3DPRESENT_PARAMETERS *present_parameters, IDirect3DSwapChain9 **swapchain)
+#else
 static HRESULT WINAPI DECLSPEC_HOTPATCH IDirect3DDevice9Impl_CreateAdditionalSwapChain(IDirect3DDevice9Ex *iface,
         D3DPRESENT_PARAMETERS *present_parameters, IDirect3DSwapChain9 **swapchain)
+#endif
 {
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
     IDirect3DSwapChain9Impl *object;
@@ -492,6 +496,35 @@ static HRESULT WINAPI DECLSPEC_HOTPATCH IDirect3DDevice9Impl_CreateAdditionalSwa
 
     return D3D_OK;
 }
+
+#ifdef VBOXWDDM
+static HRESULT WINAPI DECLSPEC_HOTPATCH IDirect3DDevice9Impl_CreateAdditionalSwapChain(IDirect3DDevice9Ex *iface,
+        D3DPRESENT_PARAMETERS *present_parameters, IDirect3DSwapChain9 **swapchain)
+{
+    IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
+    IDirect3DSwapChain9Impl *newSwapchain;
+    HRESULT hr = IDirect3DDevice9Impl_DoCreateAdditionalSwapChain(iface, present_parameters, &newSwapchain);
+    if (FAILED(hr))
+    {
+        ERR("Failed to create additional swapchain, hr %#x.\n", hr);
+        return hr;
+    }
+
+    /* add swapchain to the swapchain list */
+    wined3d_mutex_lock();
+    hr = IWineD3DDevice_AddSwapChain(This->WineD3DDevice, newSwapchain->wineD3DSwapChain);
+    wined3d_mutex_unlock();
+    if (FAILED(hr))
+    {
+        ERR("Failed to add additional swapchain, hr %#x.\n", hr);
+        IUnknown_Release(newSwapchain);
+        return hr;
+    }
+
+    *swapchain = (IDirect3DSwapChain9 *)newSwapchain;
+    return D3D_OK;
+}
+#endif
 
 static HRESULT WINAPI reset_enum_callback(IWineD3DResource *resource, void *data) {
     BOOL *resources_ok = data;
@@ -2897,8 +2930,13 @@ static HRESULT STDMETHODCALLTYPE device_parent_CreateSwapChain(IWineD3DDevicePar
     local_parameters.FullScreen_RefreshRateInHz = present_parameters->FullScreen_RefreshRateInHz;
     local_parameters.PresentationInterval = present_parameters->PresentationInterval;
 
+#ifdef VBOXWDDM
+    hr = IDirect3DDevice9Impl_DoCreateAdditionalSwapChain((IDirect3DDevice9Ex *)This,
+            &local_parameters, (IDirect3DSwapChain9 **)&d3d_swapchain);
+#else
     hr = IDirect3DDevice9Impl_CreateAdditionalSwapChain((IDirect3DDevice9Ex *)This,
             &local_parameters, (IDirect3DSwapChain9 **)&d3d_swapchain);
+#endif
     if (FAILED(hr))
     {
         ERR("(%p) CreateAdditionalSwapChain failed, returning %#x\n", iface, hr);

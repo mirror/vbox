@@ -6856,6 +6856,20 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Flush(IWineD3DDevice *iface)
     return WINED3D_OK;
 }
 
+static HRESULT WINAPI IWineD3DDeviceImpl_AddSwapChain(IWineD3DDevice *iface, IWineD3DSwapChain *swapchain)
+{
+    IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
+    VOID *pvNewBuf = HeapReAlloc(GetProcessHeap(), 0, This->swapchains, (This->NumberOfSwapChains + 1) * sizeof(IWineD3DSwapChain *));
+    if(!pvNewBuf) {
+        ERR("Out of memory!\n");
+        return E_OUTOFMEMORY;
+    }
+    IUnknown_AddRef(swapchain);
+    This->swapchains = (IWineD3DSwapChain *)pvNewBuf;
+    This->swapchains[This->NumberOfSwapChains] = swapchain;
+    ++This->NumberOfSwapChains;
+    return WINED3D_OK;
+}
 #endif
 
 /**********************************************************
@@ -7013,6 +7027,7 @@ static const IWineD3DDeviceVtbl IWineD3DDevice_Vtbl =
 #ifdef VBOXWDDM
     /* VBox WDDM extensions */
     IWineD3DDeviceImpl_Flush,
+    IWineD3DDeviceImpl_AddSwapChain,
 #endif
 };
 
@@ -7120,7 +7135,11 @@ void get_drawable_size_fbo(struct wined3d_context *context, UINT *width, UINT *h
 
 void get_drawable_size_backbuffer(struct wined3d_context *context, UINT *width, UINT *height)
 {
+#ifdef VBOXWDDM
+    IWineD3DSwapChainImpl *swapchain = context->currentSwapchain;
+#else
     IWineD3DSwapChainImpl *swapchain = context->swapchain;
+#endif
     /* The drawable size of a backbuffer / aux buffer offscreen target is the size of the
      * current context's drawable, which is the size of the back buffer of the swapchain
      * the active context belongs to. */
