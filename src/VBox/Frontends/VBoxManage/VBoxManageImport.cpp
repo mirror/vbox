@@ -725,6 +725,7 @@ static const RTGETOPTDEF g_aExportOptions[]
     = {
         { "--output",             'o', RTGETOPT_REQ_STRING },
         { "--legacy09",           'l', RTGETOPT_REQ_NOTHING },
+        { "--manifest",           'm', RTGETOPT_REQ_NOTHING },
         { "--vsys",               's', RTGETOPT_REQ_UINT32 },
         { "--product",            'p', RTGETOPT_REQ_STRING },
         { "--producturl",         'P', RTGETOPT_REQ_STRING },
@@ -741,6 +742,7 @@ int handleExportAppliance(HandlerArg *a)
 
     Utf8Str strOutputFile;
     Utf8Str strOvfFormat("ovf-1.0"); // the default export version
+    bool fManifest = false; // the default
     std::list< ComPtr<IMachine> > llMachines;
 
     uint32_t ulCurVsys = (uint32_t)-1;
@@ -770,6 +772,10 @@ int handleExportAppliance(HandlerArg *a)
 
                 case 'l':   // --legacy09
                      strOvfFormat = "ovf-0.9";
+                break;
+
+                case 'm':   // --manifest
+                     fManifest = true;
                 break;
 
                 case 's':   // --vsys
@@ -949,7 +955,7 @@ int handleExportAppliance(HandlerArg *a)
             pszAbsFilePath = RTStrDup(strOutputFile.c_str());
         else
             pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());
-        CHECK_ERROR_BREAK(pAppliance, Write(Bstr(strOvfFormat), Bstr(pszAbsFilePath), progress.asOutParam()));
+        CHECK_ERROR_BREAK(pAppliance, Write(Bstr(strOvfFormat), fManifest, Bstr(pszAbsFilePath), progress.asOutParam()));
         RTStrFree(pszAbsFilePath);
 
         rc = showProgress(progress);

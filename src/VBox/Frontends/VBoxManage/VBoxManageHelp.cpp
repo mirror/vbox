@@ -341,6 +341,7 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage export           <machines> --output|-o <ovf>\n"
                  "                            [--legacy09]\n"
+                 "                            [--manifest]\n"
                  "                            [--vsys <number of virtual system>]\n"
                  "                                    [--product <product name>]\n"
                  "                                    [--producturl <product url>]\n"

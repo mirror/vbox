@@ -529,7 +529,8 @@ bool UIExportApplianceWzdPage4::exportAppliance()
     files << fi.fileName();
     if (fi.suffix().toLower() == "ovf")
     {
-        files << fi.baseName() + ".mf";
+        if (m_pSelectManifest->isChecked())
+            files << fi.baseName() + ".mf";
         CVirtualSystemDescriptionVector vsds = appliance->GetVirtualSystemDescriptions();
         for (int i = 0; i < vsds.size(); ++ i)
         {
@@ -599,7 +600,7 @@ bool UIExportApplianceWzdPage4::exportVMs(CAppliance &appliance)
 {
     /* Write the appliance */
     const QString version = m_pSelectOVF09->isChecked() ? "ovf-0.9" : "ovf-1.0";
-    CProgress progress = appliance.Write(version, uri());
+    CProgress progress = appliance.Write(version, m_pSelectManifest->isChecked() /* fManifest */, uri());
     bool fResult = appliance.isOk();
     if (fResult)
     {

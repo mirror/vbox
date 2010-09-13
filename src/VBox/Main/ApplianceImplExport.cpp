@@ -551,7 +551,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
  * @param aProgress
  * @return
  */
-STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgress)
+STDMETHODIMP Appliance::Write(IN_BSTR format, BOOL fManifest, IN_BSTR path, IProgress **aProgress)
 {
     if (!path) return E_POINTER;
     CheckComArgOutPointerValid(aProgress);
@@ -572,6 +572,7 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgres
         return setError(VBOX_E_FILE_ERROR,
                         tr("Appliance file must have .ovf or .ova extension"));
 
+    m->fManifest = !!fManifest;
     Utf8Str strFormat(format);
     OVFFormat ovfF;
     if (strFormat == "ovf-0.9")
@@ -1616,26 +1617,29 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
         xml::XmlFileWriter writer(doc);
         writer.write(pTask->locInfo.strPath.c_str(), false /*fSafe*/);
 
-        // Create & write the manifest file
-        Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath.c_str());
-        const char *pcszManifestFileOnly = RTPathFilename(strMfFile.c_str());
-        pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), pcszManifestFileOnly),
-                                           m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
+        if (m->fManifest)
+        {
+            // Create & write the manifest file
+            Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath.c_str());
+            const char *pcszManifestFileOnly = RTPathFilename(strMfFile.c_str());
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), pcszManifestFileOnly),
+                                               m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
 
-        const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*)*diskList.size() + 1);
-        ppManifestFiles[0] = pTask->locInfo.strPath.c_str();
-        list<Utf8Str>::const_iterator it1;
-        size_t i = 1;
-        for (it1 = diskList.begin();
-             it1 != diskList.end();
-             ++it1, ++i)
-            ppManifestFiles[i] = (*it1).c_str();
-        int vrc = RTManifestWriteFiles(strMfFile.c_str(), ppManifestFiles, diskList.size()+1, NULL, NULL);
-        RTMemFree(ppManifestFiles);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Could not create manifest file '%s' (%Rrc)"),
-                           pcszManifestFileOnly, vrc);
+            const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*)*diskList.size() + 1);
+            ppManifestFiles[0] = pTask->locInfo.strPath.c_str();
+            list<Utf8Str>::const_iterator it1;
+            size_t i = 1;
+            for (it1 = diskList.begin();
+                 it1 != diskList.end();
+                 ++it1, ++i)
+                ppManifestFiles[i] = (*it1).c_str();
+            int vrc = RTManifestWriteFiles(strMfFile.c_str(), ppManifestFiles, diskList.size()+1, NULL, NULL);
+            RTMemFree(ppManifestFiles);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not create manifest file '%s' (%Rrc)"),
+                               pcszManifestFileOnly, vrc);
+        }
     }
     catch (iprt::Error &x)  // includes all XML exceptions
     {
@@ -1719,12 +1723,17 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask)
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Cannot find source file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
+        ULONG ulWeight = m->ulWeightForXmlOperation;
         /* Add the OVF file */
         filesList.push_back(strTmpOvf); /* Use 1% of the total for the OVF file upload */
-        Utf8Str strMfFile = manifestFileName(strTmpOvf);
-        filesList.push_back(strMfFile); /* Use 1% of the total for the manifest file upload */
+        /* Add the manifest file */
+        if (m->fManifest)
+        {
+            Utf8Str strMfFile = manifestFileName(strTmpOvf);
+            filesList.push_back(strMfFile); /* Use 1% of the total for the manifest file upload */
+            ulWeight += m->ulWeightForXmlOperation;
+        }
 
-        ULONG ulWeight = 2 * m->ulWeightForXmlOperation;
         /* Now add every disks of every virtual system */
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
         for (it = m->virtualSystemDescriptions.begin();
@@ -1752,6 +1761,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask)
                 ulWeight += (*itH)->ulSizeMB;
             }
         }
+        ulWeight = m->ulTotalDisksMB;
         paFiles = (const char**)RTMemAlloc(sizeof(char*) * filesList.size());
         int i = 0;
         for (list<Utf8Str>::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1, ++i)
@@ -1873,8 +1883,12 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
                            tr("Cannot find source file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
         /* Add the OVF file */
         filesList.push_back(pair<Utf8Str, ULONG>(strTmpOvf, m->ulWeightForXmlOperation)); /* Use 1% of the total for the OVF file upload */
-        Utf8Str strMfFile = manifestFileName(strTmpOvf);
-        filesList.push_back(pair<Utf8Str, ULONG>(strMfFile , m->ulWeightForXmlOperation)); /* Use 1% of the total for the manifest file upload */
+        /* Add the manifest file */
+        if (m->fManifest)
+        {
+            Utf8Str strMfFile = manifestFileName(strTmpOvf);
+            filesList.push_back(pair<Utf8Str, ULONG>(strMfFile , m->ulWeightForXmlOperation)); /* Use 1% of the total for the manifest file upload */
+        }
 
         /* Now add every disks of every virtual system */
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
