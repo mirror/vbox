@@ -65,11 +65,13 @@
       </listitem>
 
       <listitem>
-        <para>3D support: guest app stack corruption when using glGetVertexAttrib[ifd]v (bug #7395)</para>
+        <para>3D support: guest application stack corruption when using
+          glGetVertexAttrib[ifd]v (bug #7395)</para>
       </listitem>
 
       <listitem>
-        <para>3D support: fixed broken 3d support when switching to fullscreen/seamless modes (bug #7314)</para>
+        <para>3D support: fixed broken 3D support when switching to
+          fullscreen/seamless modes (bug #7314)</para>
       </listitem>
 
       <listitem>
@@ -84,6 +86,10 @@
       <listitem>
         <para>Floppy: support readonly image files, taking this as the
           criteria for making the medium readonly (bug #5651)</para>
+      </listitem>
+
+      <listitem>
+        <para>OVF: creation of the manifest file on export is optional now</para>
       </listitem>
 
     </itemizedlist>
