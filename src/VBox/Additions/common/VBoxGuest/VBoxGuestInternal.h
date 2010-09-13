@@ -19,11 +19,18 @@
 #define ___VBoxGuestInternal_h
 
 #include <iprt/types.h>
+#include <iprt/list.h>
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
+
+/** @def VBOXGUEST_USE_WAKE_UP_LIST
+ * Defer wake-up of waiting thread when defined. */
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
+# define VBOXGUEST_USE_DEFERRED_WAKE_UP
+#endif
 
 
 /** Pointer to the VBoxGuest per session data. */
@@ -40,16 +47,22 @@ typedef struct VBOXGUESTWAIT *PVBOXGUESTWAIT;
  */
 typedef struct VBOXGUESTWAIT
 {
-    /** The next entry in the list. */
-    PVBOXGUESTWAIT volatile     pNext;
-    /** The previous entry in the list. */
-    PVBOXGUESTWAIT volatile     pPrev;
-    /** The event semaphore. */
-    RTSEMEVENTMULTI             Event;
+    /** The list node. */
+    RTLISTNODE                  ListNode;
     /** The events we are waiting on. */
     uint32_t                    fReqEvents;
     /** The events we received. */
     uint32_t volatile           fResEvents;
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+    /** Set by VBoxGuestWaitDoWakeUps before leaving the spinlock to call
+     *  RTSemEventMultiSignal. */
+    bool volatile               fPendingWakeUp;
+    /** Set by the requestor thread if it got the spinlock before the
+     * signaller.  Deals with the race in VBoxGuestWaitDoWakeUps. */
+    bool volatile               fFreeMe;
+#endif
+    /** The event semaphore. */
+    RTSEMEVENTMULTI             Event;
     /** The session that's waiting. */
     PVBOXGUESTSESSION           pSession;
 #ifdef VBOX_WITH_HGCM
@@ -57,19 +70,6 @@ typedef struct VBOXGUESTWAIT
     VMMDevHGCMRequestHeader volatile *pHGCMReq;
 #endif
 } VBOXGUESTWAIT;
-
-/**
- * VBox guest wait for event list.
- */
-typedef struct VBOXGUESTWAITLIST
-{
-    /** The head. */
-    PVBOXGUESTWAIT volatile     pHead;
-    /** The tail. */
-    PVBOXGUESTWAIT volatile     pTail;
-} VBOXGUESTWAITLIST;
-/** Pointer to a wait list. */
-typedef VBOXGUESTWAITLIST *PVBOXGUESTWAITLIST;
 
 
 /**
@@ -121,15 +121,21 @@ typedef struct VBOXGUESTDEVEXT
     /** The physical address of pIrqAckEvents. */
     RTCCPHYS                    PhysIrqAckEvents;
     /** Wait-for-event list for threads waiting for multiple events. */
-    VBOXGUESTWAITLIST           WaitList;
+    RTLISTNODE                  WaitList;
 #ifdef VBOX_WITH_HGCM
     /** Wait-for-event list for threads waiting on HGCM async completion.
      * The entire list is evaluated upon the arrival of an HGCM event, unlike
      * the other lists which are only evaluated till the first thread has been woken up. */
-    VBOXGUESTWAITLIST           HGCMWaitList;
+    RTLISTNODE                  HGCMWaitList;
 #endif
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+    /** List of wait-for-event entries that needs waking up. */
+    RTLISTNODE                  WakeUpList;
+#endif
+    /** List of wait-for-event entries that has been woken up. */
+    RTLISTNODE                  WokenUpList;
     /** List of free wait-for-event entries. */
-    VBOXGUESTWAITLIST           FreeList;
+    RTLISTNODE                  FreeList;
     /** Mask of pending events. */
     uint32_t volatile           f32PendingEvents;
     /** Current VMMDEV_EVENT_MOUSE_POSITION_CHANGED sequence number.
@@ -216,6 +222,9 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt);
 void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt);
 int  VBoxGuestReinitDevExtAfterHibernation(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType);
 int  VBoxGuestSetGuestCapabilities(uint32_t fOr, uint32_t fNot);
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+void VBoxGuestWaitDoWakeUps(PVBOXGUESTDEVEXT pDevExt);
+#endif
 
 int  VBoxGuestCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);
 int  VBoxGuestCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);

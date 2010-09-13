@@ -681,14 +681,15 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     pDevExt->EventSpinlock = NIL_RTSPINLOCK;
     pDevExt->pIrqAckEvents = NULL;
     pDevExt->PhysIrqAckEvents = NIL_RTCCPHYS;
-    pDevExt->WaitList.pHead = NULL;
-    pDevExt->WaitList.pTail = NULL;
+    RTListInit(&pDevExt->WaitList);
 #ifdef VBOX_WITH_HGCM
-    pDevExt->HGCMWaitList.pHead = NULL;
-    pDevExt->HGCMWaitList.pTail = NULL;
+    RTListInit(&pDevExt->HGCMWaitList);
 #endif
-    pDevExt->FreeList.pHead = NULL;
-    pDevExt->FreeList.pTail = NULL;
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+    RTListInit(&pDevExt->WakeUpList);
+#endif
+    RTListInit(&pDevExt->WokenUpList);
+    RTListInit(&pDevExt->FreeList);
     pDevExt->f32PendingEvents = 0;
     pDevExt->u32MousePosChangedSeq = 0;
     pDevExt->SessionSpinlock = NIL_RTSPINLOCK;
@@ -806,25 +807,21 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
 
 /**
  * Deletes all the items in a wait chain.
- * @param   pWait       The head of the chain.
+ * @param   pList       The head of the chain.
  */
-static void VBoxGuestDeleteWaitList(PVBOXGUESTWAITLIST pList)
+static void VBoxGuestDeleteWaitList(PRTLISTNODE pList)
 {
-    while (pList->pHead)
+    while (!RTListIsEmpty(pList))
     {
         int             rc2;
-        PVBOXGUESTWAIT  pWait = pList->pHead;
-        pList->pHead = pWait->pNext;
+        PVBOXGUESTWAIT  pWait = RTListNodeGetFirst(pList, VBOXGUESTWAIT, ListNode);
+        RTListNodeRemove(&pWait->ListNode);
 
-        pWait->pNext = NULL;
-        pWait->pPrev = NULL;
         rc2 = RTSemEventMultiDestroy(pWait->Event); AssertRC(rc2);
         pWait->Event = NIL_RTSEMEVENTMULTI;
         pWait->pSession = NULL;
         RTMemFree(pWait);
     }
-    pList->pHead = NULL;
-    pList->pTail = NULL;
 }
 
 
@@ -861,6 +858,10 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
 #ifdef VBOX_WITH_HGCM
     VBoxGuestDeleteWaitList(&pDevExt->HGCMWaitList);
 #endif
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+    VBoxGuestDeleteWaitList(&pDevExt->WakeUpList);
+#endif
+    VBoxGuestDeleteWaitList(&pDevExt->WokenUpList);
     VBoxGuestDeleteWaitList(&pDevExt->FreeList);
 
     VbglTerminate();
@@ -967,47 +968,7 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 
 
 /**
- * Links the wait-for-event entry into the tail of the given list.
- *
- * @param   pList           The list to link it into.
- * @param   pWait           The wait for event entry to append.
- */
-DECLINLINE(void) VBoxGuestWaitAppend(PVBOXGUESTWAITLIST pList, PVBOXGUESTWAIT pWait)
-{
-    const PVBOXGUESTWAIT pTail = pList->pTail;
-    pWait->pNext = NULL;
-    pWait->pPrev = pTail;
-    if (pTail)
-        pTail->pNext = pWait;
-    else
-        pList->pHead = pWait;
-    pList->pTail = pWait;
-}
-
-
-/**
- * Unlinks the wait-for-event entry.
- *
- * @param   pList           The list to unlink it from.
- * @param   pWait           The wait for event entry to unlink.
- */
-DECLINLINE(void) VBoxGuestWaitUnlink(PVBOXGUESTWAITLIST pList, PVBOXGUESTWAIT pWait)
-{
-    const PVBOXGUESTWAIT pPrev = pWait->pPrev;
-    const PVBOXGUESTWAIT pNext = pWait->pNext;
-    if (pNext)
-        pNext->pPrev = pPrev;
-    else
-        pList->pTail = pPrev;
-    if (pPrev)
-        pPrev->pNext = pNext;
-    else
-        pList->pHead = pNext;
-}
-
-
-/**
- * Allocates a wiat-for-event entry.
+ * Allocates a wait-for-event entry.
  *
  * @returns The wait-for-event entry.
  * @param   pDevExt         The device extension.
@@ -1018,15 +979,15 @@ static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
     /*
      * Allocate it one way or the other.
      */
-    PVBOXGUESTWAIT pWait = pDevExt->FreeList.pTail;
+    PVBOXGUESTWAIT pWait = RTListNodeGetFirst(&pDevExt->FreeList, VBOXGUESTWAIT, ListNode);
     if (pWait)
     {
         RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
         RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
 
-        pWait = pDevExt->FreeList.pTail;
+        pWait = RTListNodeGetFirst(&pDevExt->FreeList, VBOXGUESTWAIT, ListNode);
         if (pWait)
-            VBoxGuestWaitUnlink(&pDevExt->FreeList, pWait);
+            RTListNodeRemove(&pWait->ListNode);
 
         RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
     }
@@ -1051,15 +1012,20 @@ static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
             RTMemFree(pWait);
             return NULL;
         }
+
+        pWait->ListNode.pNext = NULL;
+        pWait->ListNode.pPrev = NULL;
     }
 
     /*
      * Zero members just as an precaution.
      */
-    pWait->pNext = NULL;
-    pWait->pPrev = NULL;
     pWait->fReqEvents = 0;
     pWait->fResEvents = 0;
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+    pWait->fPendingWakeUp = false;
+    pWait->fFreeMe = false;
+#endif
     pWait->pSession = pSession;
 #ifdef VBOX_WITH_HGCM
     pWait->pHGCMReq = NULL;
@@ -1071,7 +1037,9 @@ static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
 
 /**
  * Frees the wait-for-event entry.
- * The caller must own the wait spinlock!
+ *
+ * The caller must own the wait spinlock !
+ * The entry must be in a list!
  *
  * @param   pDevExt         The device extension.
  * @param   pWait           The wait-for-event entry to free.
@@ -1083,7 +1051,16 @@ static void VBoxGuestWaitFreeLocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTWAIT pWa
 #ifdef VBOX_WITH_HGCM
     pWait->pHGCMReq = NULL;
 #endif
-    VBoxGuestWaitAppend(&pDevExt->FreeList, pWait);
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+    Assert(!pWait->fFreeMe);
+    if (pWait->fPendingWakeUp)
+        pWait->fFreeMe = true;
+    else
+#endif
+    {
+        RTListNodeRemove(&pWait->ListNode);
+        RTListAppend(&pDevExt->FreeList, &pWait->ListNode);
+    }
 }
 
 
@@ -1100,6 +1077,52 @@ static void VBoxGuestWaitFreeUnlocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTWAIT p
     VBoxGuestWaitFreeLocked(pDevExt, pWait);
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
 }
+
+
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+/**
+ * Processes the wake-up list.
+ *
+ * All entries in the wake-up list gets signalled and moved to the woken-up
+ * list.
+ *
+ * @param   pDevExt         The device extension.
+ */
+void VBoxGuestWaitDoWakeUps(PVBOXGUESTDEVEXT pDevExt)
+{
+    if (!RTListIsEmpty(&pDevExt->WakeUpList))
+    {
+        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
+        for (;;)
+        {
+            int            rc;
+            PVBOXGUESTWAIT pWait = RTListNodeGetFirst(&pDevExt->WakeUpList, VBOXGUESTWAIT, ListNode);
+            if (!pWait)
+                break;
+            pWait->fPendingWakeUp = true;
+            RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+
+            rc = RTSemEventMultiSignal(pWait->Event);
+            AssertRC(rc);
+
+            RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
+            pWait->fPendingWakeUp = false;
+            if (!pWait->fFreeMe)
+            {
+                RTListNodeRemove(&pWait->ListNode);
+                RTListAppend(&pDevExt->WokenUpList, &pWait->ListNode);
+            }
+            else
+            {
+                pWait->fFreeMe = false;
+                VBoxGuestWaitFreeLocked(pDevExt, pWait);
+            }
+        }
+        RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+    }
+}
+#endif /* VBOXGUEST_USE_DEFERRED_WAKE_UP */
 
 
 /**
@@ -1176,7 +1199,8 @@ static int VBoxGuestCommonIOCtl_GetVMMDevPort(PVBOXGUESTDEVEXT pDevExt, VBoxGues
 
 /**
  * Worker VBoxGuestCommonIOCtl_WaitEvent.
- * The caller enters the spinlock, we may or may not leave it.
+ *
+ * The caller enters the spinlock, we leave it.
  *
  * @returns VINF_SUCCESS if we've left the spinlock and can return immediately.
  */
@@ -1197,6 +1221,7 @@ DECLINLINE(int) WaitEventCheckCondition(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWaitE
             Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns %#x/%d\n", pInfo->u32EventFlagsOut, iEvent));
         return VINF_SUCCESS;
     }
+    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, pTmp);
     return VERR_TIMEOUT;
 }
 
@@ -1233,7 +1258,6 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
     rc = WaitEventCheckCondition(pDevExt, pInfo, iEvent, fReqEvents, &Tmp);
     if (rc == VINF_SUCCESS)
         return rc;
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
 
     if (!pInfo->u32TimeoutIn)
     {
@@ -1253,14 +1277,13 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
      * Otherwise enter into the list and go to sleep waiting for the ISR to signal us.
      */
     RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
+    RTListAppend(&pDevExt->WaitList, &pWait->ListNode);
     rc = WaitEventCheckCondition(pDevExt, pInfo, iEvent, fReqEvents, &Tmp);
     if (rc == VINF_SUCCESS)
     {
         VBoxGuestWaitFreeUnlocked(pDevExt, pWait);
         return rc;
     }
-    VBoxGuestWaitAppend(&pDevExt->WaitList, pWait);
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
 
     if (fInterruptible)
         rc = RTSemEventMultiWaitNoResume(pWait->Event,
@@ -1281,7 +1304,6 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
      * Unlink the wait item and dispose of it.
      */
     RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
-    VBoxGuestWaitUnlink(&pDevExt->WaitList, pWait);
     fResEvents = pWait->fResEvents;
     VBoxGuestWaitFreeLocked(pDevExt, pWait);
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
@@ -1332,53 +1354,36 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
 static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
     RTSPINLOCKTMP           Tmp   = RTSPINLOCKTMP_INITIALIZER;
-#if defined(RT_OS_SOLARIS)
-    RTTHREADPREEMPTSTATE    State = RTTHREADPREEMPTSTATE_INITIALIZER;
-#endif
     PVBOXGUESTWAIT          pWait;
+    PVBOXGUESTWAIT          pSafe;
     int                     rc = 0;
 
     Log(("VBoxGuestCommonIOCtl: CANCEL_ALL_WAITEVENTS\n"));
 
     /*
      * Walk the event list and wake up anyone with a matching session.
-     *
-     * Note! On Solaris we have to do really ugly stuff here because
-     *       RTSemEventMultiSignal cannot be called with interrupts disabled.
-     *       The hack is racy, but what we can we do... (Eliminate this
-     *       termination hack, perhaps?)
      */
-#if defined(RT_OS_SOLARIS)
-    RTThreadPreemptDisable(&State);
     RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
-    do
+    RTListForEachSafe(&pDevExt->WaitList, pWait, pSafe, VBOXGUESTWAIT, ListNode)
     {
-        for (pWait = pDevExt->WaitList.pHead; pWait; pWait = pWait->pNext)
-            if (    pWait->pSession   == pSession
-                &&  pWait->fResEvents != UINT32_MAX)
-            {
-                RTSEMEVENTMULTI hEvent = pWait->Event;
-                pWait->fResEvents = UINT32_MAX;
-                RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
-                /* HACK ALRET! This races wakeup + reuse! */
-                rc |= RTSemEventMultiSignal(hEvent);
-                RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
-                break;
-            }
-    } while (pWait);
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
-    RTThreadPreemptDisable(&State);
-#else
-    RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
-    for (pWait = pDevExt->WaitList.pHead; pWait; pWait = pWait->pNext)
         if (pWait->pSession == pSession)
         {
             pWait->fResEvents = UINT32_MAX;
+            RTListNodeRemove(&pWait->ListNode);
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+            RTListAppend(&pDevExt->WakeUpList, &pWait->ListNode);
+#else
             rc |= RTSemEventMultiSignal(pWait->Event);
-        }
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+            RTListAppend(&pDevExt->WokenUpList, &pWait->ListNode);
 #endif
+        }
+    }
+    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
     Assert(rc == 0);
+
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+    VBoxGuestWaitDoWakeUps(pDevExt);
+#endif
 
     return VINF_SUCCESS;
 }
@@ -1529,13 +1534,13 @@ static int VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatile
      * Otherwise link us into the HGCM wait list and go to sleep.
      */
     RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
+    RTListAppend(&pDevExt->HGCMWaitList, &pWait->ListNode);
     if ((pHdr->fu32Flags & VBOX_HGCM_REQ_DONE) != 0)
     {
         VBoxGuestWaitFreeLocked(pDevExt, pWait);
         RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
         return VINF_SUCCESS;
     }
-    VBoxGuestWaitAppend(&pDevExt->HGCMWaitList, pWait);
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
 
     if (fInterruptible)
@@ -1554,10 +1559,7 @@ static int VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatile
              ||  rc != VERR_INTERRUPTED))
         LogRel(("VBoxGuestHGCMAsyncWaitCallback: wait failed! %Rrc\n", rc));
 
-    RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
-    VBoxGuestWaitUnlink(&pDevExt->HGCMWaitList, pWait);
-    VBoxGuestWaitFreeLocked(pDevExt, pWait);
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+    VBoxGuestWaitFreeUnlocked(pDevExt, pWait);
     return rc;
 }
 
@@ -2260,16 +2262,8 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
 
     /*
      * Enter the spinlock and check if it's our IRQ or not.
-     *
-     * Note! Solaris cannot do RTSemEventMultiSignal with interrupts disabled
-     *       so we're entering the spinlock without disabling them.  This works
-     *       fine as long as we never called in a nested fashion.
      */
-#if defined(RT_OS_SOLARIS)
-    RTSpinlockAcquire(pDevExt->EventSpinlock, &Tmp);
-#else
     RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
-#endif
     fOurIrq = pDevExt->pVMMDevMemory->V.V1_04.fHaveEvents;
     if (fOurIrq)
     {
@@ -2286,6 +2280,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
         {
             uint32_t        fEvents = pReq->events;
             PVBOXGUESTWAIT  pWait;
+            PVBOXGUESTWAIT  pSafe;
 
             Log(("VBoxGuestCommonISR: acknowledge events succeeded %#RX32\n", fEvents));
 
@@ -2304,13 +2299,20 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
              */
             if (fEvents & VMMDEV_EVENT_HGCM)
             {
-                for (pWait = pDevExt->HGCMWaitList.pHead; pWait; pWait = pWait->pNext)
-                    if (    !pWait->fResEvents
-                        &&  (pWait->pHGCMReq->fu32Flags & VBOX_HGCM_REQ_DONE))
+                RTListForEachSafe(&pDevExt->HGCMWaitList, pWait, pSafe, VBOXGUESTWAIT, ListNode)
+                {
+                    if (pWait->pHGCMReq->fu32Flags & VBOX_HGCM_REQ_DONE)
                     {
                         pWait->fResEvents = VMMDEV_EVENT_HGCM;
+                        RTListNodeRemove(&pWait->ListNode);
+# ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+                        RTListAppend(&pDevExt->WakeUpList, &pWait->ListNode);
+# else
+                        RTListAppend(&pDevExt->WokenUpList, &pWait->ListNode);
                         rc |= RTSemEventMultiSignal(pWait->Event);
+# endif
                     }
+                }
                 fEvents &= ~VMMDEV_EVENT_HGCM;
             }
 #endif
@@ -2319,16 +2321,24 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
              * Normal FIFO waiter evaluation.
              */
             fEvents |= pDevExt->f32PendingEvents;
-            for (pWait = pDevExt->WaitList.pHead; pWait; pWait = pWait->pNext)
+            RTListForEachSafe(&pDevExt->HGCMWaitList, pWait, pSafe, VBOXGUESTWAIT, ListNode)
+            {
                 if (    (pWait->fReqEvents & fEvents)
                     &&  !pWait->fResEvents)
                 {
                     pWait->fResEvents = pWait->fReqEvents & fEvents;
                     fEvents &= ~pWait->fResEvents;
+                    RTListNodeRemove(&pWait->ListNode);
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+                    RTListAppend(&pDevExt->WakeUpList, &pWait->ListNode);
+#else
+                    RTListAppend(&pDevExt->WokenUpList, &pWait->ListNode);
                     rc |= RTSemEventMultiSignal(pWait->Event);
+#endif
                     if (!fEvents)
                         break;
                 }
+            }
             ASMAtomicWriteU32(&pDevExt->f32PendingEvents, fEvents);
         }
         else /* something is serious wrong... */
@@ -2338,16 +2348,21 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
     else
         LogFlow(("VBoxGuestCommonISR: not ours\n"));
 
-    /*
-     * Work the poll and async notification queues on OSes that implements that.
-     * Do this outside the spinlock to prevent some recursive spinlocking.
-     */
-#if defined(RT_OS_SOLARIS)
-    RTSpinlockRelease(pDevExt->EventSpinlock, &Tmp);
-#else
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+
+#if defined(VBOXGUEST_USE_DEFERRED_WAKE_UP) && !defined(RT_OS_WINDOWS)
+    /*
+     * Do wake-ups.
+     * Note. On Windows this isn't possible at this IRQL, so a DPC will take
+     *       care of it.
+     */
+    VBoxGuestWaitDoWakeUps(pDevExt);
 #endif
 
+    /*
+     * Work the poll and async notification queues on OSes that implements that.
+     * (Do this outside the spinlock to prevent some recursive spinlocking.)
+     */
     if (fMousePositionChanged)
     {
         ASMAtomicIncU32(&pDevExt->u32MousePosChangedSeq);

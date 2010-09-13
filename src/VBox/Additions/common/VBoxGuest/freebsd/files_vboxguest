@@ -31,6 +31,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/include/iprt/heap.h=>include/iprt/heap.h \
     ${PATH_ROOT}/include/iprt/handletable.h=>include/iprt/handletable.h \
     ${PATH_ROOT}/include/iprt/initterm.h=>include/iprt/initterm.h \
+    ${PATH_ROOT}/include/iprt/list.h=>include/iprt/list.h \
     ${PATH_ROOT}/include/iprt/lockvalidator.h=>include/iprt/lockvalidator.h \
     ${PATH_ROOT}/include/iprt/log.h=>include/iprt/log.h \
     ${PATH_ROOT}/include/iprt/mem.h=>include/iprt/mem.h \
