@@ -1046,11 +1046,11 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 0xD:
             pNode->node.name = "PortD";
             pNode->node.au32F00_param[0xC] = 0x173f;
-            pNode->port.u32F09_param = RT_BIT(31)|0x9920; /* 39.2 kOhm */
-            pNode->port.u32F07_param = 0x20;
+            pNode->port.u32F09_param = 0;
+            pNode->port.u32F07_param = RT_BIT(6);
             *(uint32_t *)pNode->node.au8F02_param = 0x2;
             if (!pState->fInReset)
-                pNode->port.u32F1c_param = 0x01A13040;  /* Microphone */
+                pNode->port.u32F1c_param = 0x01013040;  /* Line Out */
         port_init:
             pNode->port.u32F08_param = 0;
             pNode->node.au32F00_param[9] = (4 << 20)|RT_BIT(8)|RT_BIT(7)|RT_BIT(0);
@@ -1064,8 +1064,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F07_param = RT_BIT(5);
             pNode->port.u32F09_param = RT_BIT(31);
             if (!pState->fInReset)
-                pNode->port.u32F1c_param = (0x2 << 30) /* built-in */ | (0xA << 20) /* mic. */
-                    | (0x1 << 16) | (0x30 << 8) | 0x51;
+                pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x50, 0x90, 0xA1, 0x02); /* Microphone */
             break;
         case 0xF:
             pNode->node.name = "PortF";
@@ -1132,7 +1131,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xc] = RT_BIT(5);
             pNode->cdnode.u32F07_param = 0;
             if (!pState->fInReset)
-                pNode->cdnode.u32F1c_param = RT_MAKE_U32_FROM_U8(0x52, 0x0, 0x33, 0x90);
+                pNode->cdnode.u32F1c_param = RT_MAKE_U32_FROM_U8(0x70, 0x0, 0x33, 0x90);
         break;
         case 0x16:
             pNode->node.name = "VolumeKnob";
