@@ -161,9 +161,10 @@ enum
     SYSTEM_INFO_INDEX_CPU_EVENT         = 14, /**< The CPU id the event is for */
     SYSTEM_INFO_INDEX_NIC_ADDRESS       = 15, /**< NIC PCI address, or 0 */
     SYSTEM_INFO_INDEX_AUDIO_ADDRESS     = 16, /**< Audio card PCI address, or 0 */
-    SYSTEM_INFO_INDEX_POWER_STATES      = 17, 
+    SYSTEM_INFO_INDEX_POWER_STATES      = 17,
     SYSTEM_INFO_INDEX_IOC_ADDRESS       = 18, /**< IO controller PCI address */
-    SYSTEM_INFO_INDEX_END               = 19,
+    SYSTEM_INFO_INDEX_HBC_ADDRESS       = 19, /**< host bus controller PCI address */
+    SYSTEM_INFO_INDEX_END               = 20, 
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -270,7 +271,8 @@ typedef struct ACPIState
     bool                fSetWakeupOnResume;
     /** PCI address of the IO controller device. */
     uint32_t            u32IocPciAddress;
-    uint32_t            pad0;
+    /** PCI address of the host bus controller device. */
+    uint32_t            u32HbcPciAddress;
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -1571,6 +1573,10 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                     *pu32 = s->u32IocPciAddress;
                     break;
 
+                case SYSTEM_INFO_INDEX_HBC_ADDRESS:
+                    *pu32 = s->u32HbcPciAddress;
+                    break;
+
                 /* This is only for compatability with older saved states that
                    may include ACPI code that read these values.  Legacy is
                    a wonderful thing, isn't it? :-) */
@@ -2464,6 +2470,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "NicPciAddress\0"
                               "AudioPciAddress\0"
                               "IocPciAddress\0"
+                              "HostBusPciAddress\0"
                               "EnableSuspendToDisk\0"
                               "PowerS1Enabled\0"
                               "PowerS4Enabled\0"
@@ -2532,6 +2539,12 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IocPciAddress\""));
+
+    /* query host bus controller PCI address */
+    rc = CFGMR3QueryU32Def(pCfg, "HostBusPciAddress", &s->u32HbcPciAddress, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"HostBusPciAddress\""));
 
     /* query whether S1 power state should be exposed */
     rc = CFGMR3QueryBoolDef(pCfg, "PowerS1Enabled", &s->fS1Enabled, true);

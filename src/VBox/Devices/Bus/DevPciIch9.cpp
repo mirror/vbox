@@ -1539,11 +1539,40 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     PCIDevSetRevisionId(&pBus->aPciDev,   0x92); /* rev. A2 */
     PCIDevSetClassSub(  &pBus->aPciDev,   0x00); /* Host/PCI bridge */
     PCIDevSetClassBase( &pBus->aPciDev,   0x06); /* bridge */
-    PCIDevSetHeaderType(&pBus->aPciDev,   0x00);
+    PCIDevSetHeaderType(&pBus->aPciDev,   0x00); /* normal device */
 
     pBus->aPciDev.pDevIns               = pDevIns;
     /* We register Host<->PCI controller on the bus */
     ich9pciRegisterInternal(pBus, -1, &pBus->aPciDev, "i82801");
+
+    /*
+     * Register I/O ports and save state.
+     */
+    rc = PDMDevHlpIOPortRegister(pDevIns, 0x0cf8, 1, NULL, ich9pciIOPortAddressWrite, ich9pciIOPortAddressRead, NULL, NULL, "ICH9 (PCI)");
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = PDMDevHlpIOPortRegister(pDevIns, 0x0cfc, 4, NULL, ich9pciIOPortDataWrite, ich9pciIOPortDataRead, NULL, NULL, "ICH9 (PCI)");
+    if (RT_FAILURE(rc))
+        return rc;
+    if (fGCEnabled)
+    {
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0x0cf8, 1, NIL_RTGCPTR, "ich9pciIOPortAddressWrite", "ich9pciIOPortAddressRead", NULL, NULL, "ICH9 (PCI)");
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0x0cfc, 4, NIL_RTGCPTR, "ich9pciIOPortDataWrite", "ich9pciIOPortDataRead", NULL, NULL, "ICH9 (PCI)");
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    if (fR0Enabled)
+    {
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x0cf8, 1, NIL_RTR0PTR, "ich9pciIOPortAddressWrite", "ich9pciIOPortAddressRead", NULL, NULL, "ICH9 (PCI)");
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x0cfc, 4, NIL_RTR0PTR, "ich9pciIOPortDataWrite", "ich9pciIOPortDataRead", NULL, NULL, "ICH9 (PCI)");
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
 
     /** @todo: other chipset devices shall be registered too */
     /** @todo: what to with bridges? */

@@ -145,7 +145,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         NICA,  32, // Primary NIC PCI address
         HDAA,  32, // HDA PCI address
         PWRS,  32, // power states
-        IOCA,  32, // Southbridge IO controller PCI address
+        IOCA,  32, // southbridge IO controller PCI address
+        HBCA,  32, // host bus controller address 
         Offset (0x80),
         ININ, 32,
         Offset (0x200),
@@ -510,8 +511,11 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         {
             
             Name (_HID, EisaId ("PNP0A03")) // PCI bus PNP id
-            Name (_ADR, 0x00) // address
-            Name (_BBN, 0x00) // base bus adddress
+            Method(_ADR, 0, NotSerialized)  // PCI address
+            {
+                 Return (HBCA)
+            }
+            Name (_BBN, 0x00) // base bus adddress (bus number)
             Name (_UID, 0x00)
 
             // Method that returns routing table; also opens PCI to I/O APIC 

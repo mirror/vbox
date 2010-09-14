@@ -244,7 +244,8 @@
 // define this if you want to make PCIBIOS working on a specific bridge only
 // undef enables PCIBIOS when at least one PCI device is found
 // i440FX is emulated by Bochs and QEMU
-#define PCI_FIXED_HOST_BRIDGE 0x12378086 ;; i440FX PCI bridge
+#define PCI_FIXED_HOST_BRIDGE_1  0x12378086 ;; i440FX PCI bridge
+#define PCI_FIXED_HOST_BRIDGE_2  0x244e8086 ;; ICH9 PCI bridge
 
 // #20  is dec 20
 // #$20 is hex 20 = 32
@@ -9819,19 +9820,29 @@ bios32_entry_point:
   pushfd
   cmp eax, #0x49435024 ;; "$PCI"
   jne unknown_service
+
+#ifdef PCI_FIXED_HOST_BRIDGE_1
   mov eax, #0x80000000
   mov dx, #0x0cf8
   out dx, eax
   mov dx, #0x0cfc
   in  eax, dx
-#ifdef PCI_FIXED_HOST_BRIDGE
-  cmp eax, #PCI_FIXED_HOST_BRIDGE
-  jne unknown_service
-#else
-  ;; say ok if a device is present
-  cmp eax, #0xffffffff
-  je unknown_service
+  cmp eax, #PCI_FIXED_HOST_BRIDGE_1
+  je device_ok
 #endif
+
+#ifdef PCI_FIXED_HOST_BRIDGE_2
+  /* 0x1e << 11 */
+  mov eax, #0x8000f000
+  mov dx, #0x0cf8
+  out dx, eax
+  mov dx, #0x0cfc
+  in  eax, dx
+  cmp eax, #PCI_FIXED_HOST_BRIDGE_2
+  je device_ok
+#endif
+  jmp unknown_service
+device_ok:
   mov ebx, #0x000f0000
   mov ecx, #0
   mov edx, #pcibios_protected
@@ -10010,18 +10021,25 @@ use16 386
 pcibios_real:
   push eax
   push dx
+#ifdef PCI_FIXED_HOST_BRIDGE_1
   mov eax, #0x80000000
   mov dx, #0x0cf8
   out dx, eax
   mov dx, #0x0cfc
   in  eax, dx
-#ifdef PCI_FIXED_HOST_BRIDGE
-  cmp eax, #PCI_FIXED_HOST_BRIDGE
-  je  pci_present
-#else
-  ;; say ok if a device is present
-  cmp eax, #0xffffffff
-  jne  pci_present
+  cmp eax, #PCI_FIXED_HOST_BRIDGE_1
+  je pci_present
+#endif
+
+#ifdef PCI_FIXED_HOST_BRIDGE_2
+  /* 0x1e << 11 */
+  mov eax, #0x8000f000
+  mov dx, #0x0cf8
+  out dx, eax
+  mov dx, #0x0cfc
+  in  eax, dx
+  cmp eax, #PCI_FIXED_HOST_BRIDGE_2
+  je pci_present
 #endif
   pop dx
   pop eax
