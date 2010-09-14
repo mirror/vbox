@@ -40,29 +40,31 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 RT_C_DECLS_BEGIN
+NTSTATUS vboxguestwinnt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath);
 static NTSTATUS vboxguestwinnt4FindPCIDevice(PULONG pBusNumber, PPCI_SLOT_NUMBER pSlotNumber);
-static void     vboxguestwinnt4FreeDeviceResources(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj);
 RT_C_DECLS_END
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, vboxguestwinnt4CreateDevice)
 #pragma alloc_text (INIT, vboxguestwinnt4FindPCIDevice)
-#pragma alloc_text (INIT, vboxguestwinnt4FreeDeviceResources)
 #endif
 
 
 /**
- * Helper function to create the device object
+ * Legacy helper function to create the device object.
  *
- * @returns NT status code
- * @param
+ * @returns NT status code.
+ *
+ * @param pDrvObj
+ * @param pDevObj
+ * @param pRegPath
  */
 NTSTATUS vboxguestwinnt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath)
 {
     int vrc = VINF_SUCCESS;
     NTSTATUS rc = STATUS_SUCCESS;
 
-    Log(("VBoxGuest::vboxguestwinnt4CreateDevice: pDrvObj=%x, pDevObj=%x, pRegPath=%x\n",
+    Log(("VBoxGuest::vboxguestwinnt4CreateDevice: pDrvObj=%p, pDevObj=%p, pRegPath=%p\n",
          pDrvObj, pDevObj, pRegPath));
 
     /*
@@ -73,6 +75,8 @@ NTSTATUS vboxguestwinnt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDev
     if (NT_ERROR(rc))
         Log(("VBoxGuest::vboxguestwinnt4CreateDevice: Device not found!\n"));
 
+    bool fSymbolicLinkCreated = false;
+    UNICODE_STRING szDosName;
     PDEVICE_OBJECT pDeviceObject = NULL;
     if (NT_SUCCESS(rc))
     {
@@ -86,15 +90,15 @@ NTSTATUS vboxguestwinnt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDev
         {
             Log(("VBoxGuest::vboxguestwinnt4CreateDevice: Device created\n"));
 
-            UNICODE_STRING DosName;
-            RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
-            rc = IoCreateSymbolicLink(&DosName, &szDevName);
-            if (NT_ERROR(rc))
+            RtlInitUnicodeString(&szDosName, VBOXGUEST_DEVICE_NAME_DOS);
+            rc = IoCreateSymbolicLink(&szDosName, &szDevName);
+            if (NT_SUCCESS(rc))
             {
-                Log(("VBoxGuest::vboxguestwinnt4CreateDevice: IoCreateSymbolicLink failed with rc = %#x\n", rc));
-                //IoDeleteDevice(pDeviceObject);
+                Log(("VBoxGuest::vboxguestwinnt4CreateDevice: Symlink created\n"));
+                fSymbolicLinkCreated = true;
             }
-            Log(("VBoxGuest::vboxguestwinnt4CreateDevice: Symlink created\n"));
+            else
+                Log(("VBoxGuest::vboxguestwinnt4CreateDevice: IoCreateSymbolicLink failed with rc = %#x\n", rc));
         }
         else
             Log(("VBoxGuest::vboxguestwinnt4CreateDevice: IoCreateDevice failed with rc = %#x\n", rc));
@@ -109,13 +113,13 @@ NTSTATUS vboxguestwinnt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDev
         Log(("VBoxGuest::vboxguestwinnt4CreateDevice: Setting up device extension ...\n"));
 
         pDevExt = (PVBOXGUESTDEVEXT)pDeviceObject->DeviceExtension;
-        Assert(pDevExt);
         RtlZeroMemory(pDevExt, sizeof(VBOXGUESTDEVEXT));
     }
 
-    if (   NT_SUCCESS(rc)
-        && pDevExt)
+    if (NT_SUCCESS(rc) && pDevExt)
     {
+        Log(("VBoxGuest::vboxguestwinnt4CreateDevice: Device extension created\n"));
+
         /* Store a reference to ourself. */
         pDevExt->win.s.pDeviceObject = pDeviceObject;
 
@@ -128,9 +132,17 @@ NTSTATUS vboxguestwinnt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDev
     #endif
     }
 
+    /* Do the actual VBox init ... */
     if (NT_SUCCESS(rc))
+        rc = vboxguestwinInit(pDrvObj, pDeviceObject, pRegPath);
+
+    /* Clean up in case of errors. */
+    if (NT_ERROR(rc))
     {
-        rc = vboxguestwinInit(pDrvObj, pDevObj, pRegPath);
+        if (fSymbolicLinkCreated && szDosName.Length > 0)
+            IoDeleteSymbolicLink(&szDosName);
+        if (pDeviceObject)
+            IoDeleteDevice(pDeviceObject);
     }
 
     Log(("VBoxGuest::vboxguestwinnt4CreateDevice: Returning rc = 0x%x\n", rc));
@@ -139,9 +151,13 @@ NTSTATUS vboxguestwinnt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDev
 
 
 /**
- * Helper function to handle the PCI device lookup
+ * Helper function to handle the PCI device lookup.
  *
- * @returns NT error codes
+ * @returns NT status code.
+ *
+ * @param pBusNumber
+ * @param pSlotNumber
+ *
  */
 static NTSTATUS vboxguestwinnt4FindPCIDevice(PULONG pBusNumber, PPCI_SLOT_NUMBER pSlotNumber)
 {
