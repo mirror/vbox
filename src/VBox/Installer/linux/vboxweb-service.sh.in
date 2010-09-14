@@ -134,7 +134,7 @@ if [ "$system" = "debian" ]; then
         shift
         bin="$1"
         shift
-        start-stop-daemon --background --chuid "$usr" --start --exec "$bin" -- $@
+        start-stop-daemon --chuid "$usr" --start --exec "$bin" -- $@
     }
     killproc() {
         start-stop-daemon --stop --exec $@
@@ -159,7 +159,7 @@ if [ "$system" = "gentoo" ]; then
         shift
         bin="$1"
         shift
-        start-stop-daemon --background --chuid "$usr" --start --exec "$bin" -- $@
+        start-stop-daemon --chuid "$usr" --start --exec "$bin" -- $@
     }
     killproc() {
         start-stop-daemon --stop --exec $@
@@ -286,7 +286,7 @@ start() {
             fail_msg "VirtualBox kernel module not loaded!"
             exit 0
         }
-        PARAMS=
+        PARAMS="--background"
         [ -n "$VBOXWEB_HOST" ]           && PARAMS="$PARAMS -H $VBOXWEB_HOST"
         [ -n "$VBOXWEB_PORT" ]           && PARAMS="$PARAMS -p $VBOXWEB_PORT"
         [ -n "$VBOXWEB_TIMEOUT" ]        && PARAMS="$PARAMS -t $VBOXWEB_TIMEOUT"
