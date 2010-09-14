@@ -459,7 +459,7 @@ static DECLCALLBACK(void) rtTimerLnxStartAllOnCpu(RTCPUID idCpu, void *pvUser1, 
 
 
 /**
- * Worker for RTTimerStart() that takes care of the ugly bit.s
+ * Worker for RTTimerStart() that takes care of the ugly bits.
  *
  * @returns RTTimerStart() return value.
  * @param   pTimer      The timer.
