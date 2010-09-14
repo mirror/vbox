@@ -54,6 +54,7 @@ EXPORTS
     TMTimerSetMillies
     TMTimerSetMicro
     TMTimerSetNano
+    TMTimerSetFrequencyHint
     TMTimerStop
     VMMGetSvnRev
     vmmR0LoggerFlush
