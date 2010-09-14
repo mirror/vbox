@@ -434,30 +434,46 @@ NTSTATUS vboxguestwinInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICO
 
         IoInitializeDpcRequest(pDevExt->win.s.pDeviceObject, vboxguestwinDpcHandler);
 #ifdef TARGET_NT4
+        ULONG uInterruptVector;
+        KIRQL irqLevel;
         /* Get an interrupt vector. */
         /* Only proceed if the device provides an interrupt. */
         if (   pDevExt->win.s.interruptLevel
             || pDevExt->win.s.interruptVector)
         {
-            pDevExt->win.s.interruptVector = HalGetInterruptVector(PCIBus,
-                                                                   pDevExt->win.s.busNumber,
-                                                                   pDevExt->win.s.interruptLevel,
-                                                                   pDevExt->win.s.interruptVector,
-                                                                   (PKIRQL)pDevExt->win.s.interruptLevel,
-                                                                   &pDevExt->win.s.interruptAffinity);
+            Log(("VBoxGuest::vboxguestwinInit: Getting interrupt vector (HAL): Bus: %u, IRQL: %u, Vector: %u\n",
+                 pDevExt->win.s.busNumber, pDevExt->win.s.interruptLevel, pDevExt->win.s.interruptVector));
+
+            uInterruptVector = HalGetInterruptVector(PCIBus,
+                                                     pDevExt->win.s.busNumber,
+                                                     pDevExt->win.s.interruptLevel,
+                                                     pDevExt->win.s.interruptVector,
+                                                     &irqLevel,
+                                                     &pDevExt->win.s.interruptAffinity);
+            Log(("VBoxGuest::vboxguestwinInit: HalGetInterruptVector returns vector %u\n", uInterruptVector));
+            if (uInterruptVector == 0)
+                Log(("VBoxGuest::vboxguestwinInit: No interrupt vector found!\n"));
         }
         else
             Log(("VBoxGuest::vboxguestwinInit: Device does not provide an interrupt!\n"));
 #endif
         if (pDevExt->win.s.interruptVector)
         {
+            Log(("VBoxGuest::vboxguestwinInit: Connecting interrupt ...\n"));
+
             rc = IoConnectInterrupt(&pDevExt->win.s.pInterruptObject,          /* Out: interrupt object. */
                                     (PKSERVICE_ROUTINE)vboxguestwinIsrHandler, /* Our ISR handler. */
                                     pDevExt,                                   /* Device context. */
                                     NULL,                                      /* Optional spinlock. */
+#ifdef TARGET_NT4
+                                    uInterruptVector,                          /* Interrupt vector. */
+                                    irqLevel,                                  /* Interrupt level. */
+                                    irqLevel,                                  /* Interrupt level. */
+#else
                                     pDevExt->win.s.interruptVector,            /* Interrupt vector. */
                                     (KIRQL)pDevExt->win.s.interruptLevel,      /* Interrupt level. */
                                     (KIRQL)pDevExt->win.s.interruptLevel,      /* Interrupt level. */
+#endif
                                     pDevExt->win.s.interruptMode,              /* LevelSensitive or Latched. */
                                     TRUE,                                      /* Shareable interrupt. */
                                     pDevExt->win.s.interruptAffinity,          /* CPU affinity. */
@@ -478,6 +494,7 @@ NTSTATUS vboxguestwinInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICO
     pDevExt->win.s.hgcm.s.WaitTimeout.QuadPart  = 250;
     pDevExt->win.s.hgcm.s.WaitTimeout.QuadPart *= -10000; /* Relative in 100ns units. */
 
+    Log(("VBoxGuest::vboxguestwinInit: Allocating kernel session data ...\n"));
     int vrc = VBoxGuestCreateKernelSession(pDevExt, &pDevExt->win.s.pKernelSession);
     if (RT_FAILURE(vrc))
     {
@@ -491,6 +508,10 @@ NTSTATUS vboxguestwinInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICO
         /* Ready to rumble! */
         Log(("VBoxGuest::vboxguestwinInit: Device is ready!\n"));
         pDevExt->win.s.devState = WORKING;
+    }
+    else
+    {
+        pDevExt->win.s.pInterruptObject = NULL;
     }
 
     Log(("VBoxGuest::vboxguestwinInit: Returned with rc = 0x%x\n", rc));
