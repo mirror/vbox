@@ -583,7 +583,7 @@ void UIMachineLogic::prepareDock()
      * this. */
     QList<QAction*> actions = actionsPool()->action(UIActionIndex_Menu_Machine)->menu()->actions();
     for (int i=0; i < actions.size(); ++i)
-        if (actions.at(i)->menuRole() == QAction::TextHeuristicRole)
+        if (actions.at(i)->menuRole() == QAction::NoRole)
             pDockMenu->addAction(actions.at(i));
     pDockMenu->addSeparator();
 
