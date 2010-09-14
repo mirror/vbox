@@ -45,12 +45,8 @@ extern DECLIMPORT(const unsigned)       g_cbVmiBiosBinary;
 #endif /* !IN_VBOXDD2 */
 extern const PDMDEVREG g_DeviceAPIC;
 extern const PDMDEVREG g_DeviceIOAPIC;
-#ifdef VBOX_WITH_SMC
 extern const PDMDEVREG g_DeviceSMC;
-#endif
-#ifdef VBOX_WITH_LPC
 extern const PDMDEVREG g_DeviceLPC;
-#endif
 
 RT_C_DECLS_END
 

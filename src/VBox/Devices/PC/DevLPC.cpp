@@ -207,6 +207,12 @@ static DECLCALLBACK(void) lpcInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
 {
     LPCState   *pThis = PDMINS_2_DATA(pDevIns, LPCState *);
     LogFlow(("lpcInfo: \n"));
+
+    if (pThis->dev.config[0xde] == 0xbe && pThis->dev.config[0xad] == 0xef)
+        pHlp->pfnPrintf(pHlp, "APIC backdoor activated\n");
+    else
+        pHlp->pfnPrintf(pHlp, "APIC backdoor closed: %02x %02x\n",
+                        pThis->dev.config[0xde], pThis->dev.config[0xad]);
 }
 
 /**

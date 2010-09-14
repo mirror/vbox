@@ -52,18 +52,12 @@
 #include "../PC/DevRTC.cpp"
 #undef LOG_GROUP
 #include "../PC/DevAPIC.cpp"
-#ifdef VBOX_WITH_HPET
-# undef LOG_GROUP
-# include "../PC/DevHPET.cpp"
-#endif
-#ifdef VBOX_WITH_LPC
-# undef LOG_GROUP
-# include "../PC/DevLPC.cpp"
-#endif
-#ifdef VBOX_WITH_SMC
-# undef LOG_GROUP
-# include "../PC/DevSMC.cpp"
-#endif
+#undef LOG_GROUP
+#include "../PC/DevHPET.cpp"
+#undef LOG_GROUP
+#include "../PC/DevLPC.cpp"
+#undef LOG_GROUP
+#include "../PC/DevSMC.cpp"
 #undef LOG_GROUP
 #include "../Storage/DevATA.cpp"
 #ifdef VBOX_WITH_USB

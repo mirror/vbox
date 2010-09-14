@@ -127,24 +127,25 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
     IndexField (IDX0, DAT0, DwordAcc, NoLock, Preserve)
     {
         MEML,  32,
-        UIOA,  32,
-        UHPT,  32,
-        USMC,  32,
-        UFDC,  32,
+        UIOA,  32, // if IO APIC enabled
+        UHPT,  32, // if HPET enabled
+        USMC,  32, // if SMC enabled
+        UFDC,  32, // if floppy controller enabled
         // UCP0-UCP3 no longer used and only kept here for saved state compatibilty
         UCP0,  32,
         UCP1,  32,
         UCP2,  32,
         UCP3,  32,
         MEMH,  32,
-        URTC,  32,
-        CPUL,  32,
-        CPUC,  32,
-        CPET,  32,
-        CPEV,  32,
-        NICA,  32,
-        HDAA,  32,
-        PWRS,  32,
+        URTC,  32, // if RTC shown in tables
+        CPUL,  32, // flag of CPU lock state
+        CPUC,  32, // CPU to check lock status
+        CPET,  32, // type of CPU hotplug event
+        CPEV,  32, // id of CPU event targets
+        NICA,  32, // Primary NIC PCI address
+        HDAA,  32, // HDA PCI address
+        PWRS,  32, // power states
+        IOCA,  32, // Southbridge IO controller PCI address
         Offset (0x80),
         ININ, 32,
         Offset (0x200),
@@ -507,7 +508,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         // PCI bus 0
         Device (PCI0)
         {
-            Name (_HID, EisaId ("PNP0A03"))
+            
+            Name (_HID, EisaId ("PNP0A03")) // PCI bus PNP id
             Name (_ADR, 0x00) // address
             Name (_BBN, 0x00) // base bus adddress
             Name (_UID, 0x00)
@@ -533,8 +535,11 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
 
             Device (SBRG)
             {
-                // Address of the PIIX3 (device 1 function 0)
-                Name (_ADR, 0x00010000)
+                // Address of the southbridge device (PIIX or ICH9)
+                Method(_ADR, 0, NotSerialized)
+                {
+                     Return (IOCA)
+                }
                 OperationRegion (PCIC, PCI_Config, 0x00, 0xff)
 
                 Field (PCIC, ByteAcc, NoLock, Preserve)

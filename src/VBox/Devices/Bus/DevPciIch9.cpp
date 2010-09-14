@@ -1267,7 +1267,7 @@ static const struct {
         "piix3ide", 1, 1 // do we really need it?
     },
     {
-        "lan",      25, 0
+        "lan",      25, 0 /* LAN controller */
     },
     {
         "hda",      27, 0 /* High Definition Audio */
@@ -1414,6 +1414,33 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Info handler, device version.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) ich9pciInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PPCIBUS pBus = DEVINS_2_PCIBUS(pDevIns);
+    uint32_t iBus = 0, iDev;
+
+
+    for (iDev = 0; iDev < RT_ELEMENTS(pBus->apDevices); iDev++)
+    {
+        PPCIDEVICE pPciDev = pBus->apDevices[iDev];
+        if (pPciDev != NULL)
+            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s: %x-%x\n",
+                            iBus, (iDev >> 3) & 0xff, iDev & 0x7,
+                            pPciDev->name,
+                            PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev)
+                            );
+    }
+}
+
+
 static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
                                           int        iInstance,
                                           PCFGMNODE  pCfg)
@@ -1520,6 +1547,8 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
 
     /** @todo: other chipset devices shall be registered too */
     /** @todo: what to with bridges? */
+
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pci", "Display PCI bus status. (no arguments)", ich9pciInfo);
 
     return VINF_SUCCESS;
 }
