@@ -2,11 +2,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxCloseVMDlg class implementation
+ * UIVMCloseDialog class implementation
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,7 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-#include "VBoxCloseVMDlg.h"
+#include "UIVMCloseDialog.h"
 #include "VBoxProblemReporter.h"
 #include "UIMachineWindowNormal.h"
 
@@ -32,36 +32,36 @@
 #include <QPushButton>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-VBoxCloseVMDlg::VBoxCloseVMDlg (QWidget *aParent)
-    : QIWithRetranslateUI<QIDialog> (aParent)
+UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent)
+    : QIWithRetranslateUI<QIDialog>(pParent)
 {
 #ifdef Q_WS_MAC
     /* No sheets in another mode than normal for now. Firstly it looks ugly and
      * secondly in some cases it is broken. */
-    if (vboxGlobal().isSheetWindowsAllowed(aParent))
-        setWindowFlags (Qt::Sheet);
+    if (vboxGlobal().isSheetWindowsAllowed(pParent))
+        setWindowFlags(Qt::Sheet);
 #endif /* Q_WS_MAC */
 
     /* Apply UI decorations */
-    Ui::VBoxCloseVMDlg::setupUi (this);
+    Ui::UIVMCloseDialog::setupUi(this);
 
 #ifdef Q_WS_MAC
     /* Make some more space around the content */
-    hboxLayout->setContentsMargins (40, 0, 40, 0);
-    vboxLayout2->insertSpacing (1, 20);
+    hboxLayout->setContentsMargins(40, 0, 40, 0);
+    vboxLayout2->insertSpacing(1, 20);
     /* and more space between the radio buttons */
-    gridLayout->setSpacing (15);
+    gridLayout->setSpacing(15);
 #endif /* Q_WS_MAC */
     /* Set fixed size */
-    setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    connect (mButtonBox, SIGNAL (helpRequested()),
-             &vboxProblem(), SLOT (showHelpHelpDialog()));
+    connect(mButtonBox, SIGNAL(helpRequested()),
+            &vboxProblem(), SLOT(showHelpHelpDialog()));
 }
 
-void VBoxCloseVMDlg::retranslateUi()
+void UIVMCloseDialog::retranslateUi()
 {
     /* Translate uic generated strings */
-    Ui::VBoxCloseVMDlg::retranslateUi (this);
+    Ui::UIVMCloseDialog::retranslateUi(this);
 }
 

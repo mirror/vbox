@@ -21,7 +21,6 @@ TEMPLATE	= app
 LANGUAGE	= C++
 
 FORMS = \
-    src/VBoxCloseVMDlg.ui \
     src/VBoxVMInformationDlg.ui \
     src/VBoxMediaManagerDlg.ui \
     src/VBoxSnapshotDetailsDlg.ui \
@@ -67,7 +66,8 @@ FORMS = \
     src/wizards/importappliance/UIImportApplianceWzdPage2.ui \
     src/wizards/registration/UIRegistrationWzdPage1.ui \
     src/widgets/VBoxApplianceEditorWgt.ui \
-    src/selector/VBoxSnapshotsWgt.ui
+    src/selector/VBoxSnapshotsWgt.ui \
+    src/runtime/UIVMCloseDialog.ui
 
 TRANSLATIONS = \
 	nls/VirtualBox_ar.ts \

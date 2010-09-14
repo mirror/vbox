@@ -2,7 +2,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2008 Oracle Corporation
+     Copyright (C) 2008-2010 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -12,8 +12,8 @@
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
- <class>VBoxCloseVMDlg</class>
- <widget class="QDialog" name="VBoxCloseVMDlg" >
+ <class>UIVMCloseDialog</class>
+ <widget class="QDialog" name="UIVMCloseDialog" >
   <property name="geometry" >
    <rect>
     <x>0</x>
@@ -254,7 +254,7 @@
   <connection>
    <sender>mButtonBox</sender>
    <signal>accepted()</signal>
-   <receiver>VBoxCloseVMDlg</receiver>
+   <receiver>UIVMCloseDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel" >
@@ -270,7 +270,7 @@
   <connection>
    <sender>mButtonBox</sender>
    <signal>rejected()</signal>
-   <receiver>VBoxCloseVMDlg</receiver>
+   <receiver>UIVMCloseDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel" >

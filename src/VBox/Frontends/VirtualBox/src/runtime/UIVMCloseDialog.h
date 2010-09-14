@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxCloseVMDlg class declaration
+ * UIVMCloseDialog class declaration
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,26 +16,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxCloseVMDlg_h__
-#define __VBoxCloseVMDlg_h__
+#ifndef __UIVMCloseDialog_h__
+#define __UIVMCloseDialog_h__
 
-#include "VBoxCloseVMDlg.gen.h"
+#include "UIVMCloseDialog.gen.h"
 #include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
 
-class VBoxCloseVMDlg : public QIWithRetranslateUI<QIDialog>,
-                       public Ui::VBoxCloseVMDlg
+class UIVMCloseDialog : public QIWithRetranslateUI<QIDialog>,
+                        public Ui::UIVMCloseDialog
 {
     Q_OBJECT;
 
 public:
 
-    VBoxCloseVMDlg (QWidget *aParent);
+    UIVMCloseDialog(QWidget *pParent);
 
 protected:
 
     void retranslateUi();
 };
 
-#endif // __VBoxCloseVMDlg_h__
+#endif // __UIVMCloseDialog_h__
 

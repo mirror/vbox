@@ -176,10 +176,10 @@ VBOX_GUI_INC_DIRS = \
 	./src/darwin \
 	./src/selector \
 	./src/runtime \
-	./src/runtime/normal \
 	./src/runtime/fullscreen \
-	./src/runtime/seamless \
-	./src/runtime/scale
+	./src/runtime/normal \
+	./src/runtime/scale \
+	./src/runtime/seamless
 
 ifdef VBOX_WITH_REGISTRATION
  VBOX_GUI_INC_DIRS += \
@@ -244,7 +244,6 @@ endif
 # Headers containing definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCHDRS = \
 	src/VBoxAboutDlg.h \
-	src/VBoxCloseVMDlg.h \
 	src/VBoxGlobalSettings.h \
 	src/VBoxMediaManagerDlg.h \
 	src/VBoxSnapshotDetailsDlg.h \
@@ -334,32 +333,33 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/selector/VBoxSelectorWnd.h \
 	src/selector/VBoxSnapshotsWgt.h \
-	src/runtime/UIMachine.h \
-	src/runtime/UISession.h \
 	src/runtime/UIActionsPool.h \
+	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIIndicatorsPool.h \
 	src/runtime/UIKeyboardHandler.h \
-	src/runtime/UIMouseHandler.h \
+	src/runtime/UIMachine.h \
 	src/runtime/UIMachineLogic.h \
 	src/runtime/UIMachineView.h \
+	src/runtime/UIMouseHandler.h \
 	src/runtime/UIMultiScreenLayout.h \
-	src/runtime/UIConsoleEventHandler.h \
-	src/runtime/normal/UIKeyboardHandlerNormal.h \
-	src/runtime/normal/UIMachineLogicNormal.h \
-	src/runtime/normal/UIMachineWindowNormal.h \
-	src/runtime/normal/UIMachineViewNormal.h \
+	src/runtime/UISession.h \
+	src/runtime/UIVMCloseDialog.h \
 	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.h \
 	src/runtime/fullscreen/UIMachineLogicFullscreen.h \
-	src/runtime/fullscreen/UIMachineWindowFullscreen.h \
 	src/runtime/fullscreen/UIMachineViewFullscreen.h \
-	src/runtime/seamless/UIKeyboardHandlerSeamless.h \
-	src/runtime/seamless/UIMachineLogicSeamless.h \
-	src/runtime/seamless/UIMachineWindowSeamless.h \
-	src/runtime/seamless/UIMachineViewSeamless.h \
+	src/runtime/fullscreen/UIMachineWindowFullscreen.h \
+	src/runtime/normal/UIKeyboardHandlerNormal.h \
+	src/runtime/normal/UIMachineLogicNormal.h \
+	src/runtime/normal/UIMachineViewNormal.h \
+	src/runtime/normal/UIMachineWindowNormal.h \
 	src/runtime/scale/UIKeyboardHandlerScale.h \
 	src/runtime/scale/UIMachineLogicScale.h \
+	src/runtime/scale/UIMachineViewScale.h \
 	src/runtime/scale/UIMachineWindowScale.h \
-	src/runtime/scale/UIMachineViewScale.h
+	src/runtime/seamless/UIKeyboardHandlerSeamless.h \
+	src/runtime/seamless/UIMachineLogicSeamless.h \
+	src/runtime/seamless/UIMachineViewSeamless.h \
+	src/runtime/seamless/UIMachineWindowSeamless.h
 
 ifdef VBOX_WITH_REGISTRATION
  VirtualBox_QT_MOCHDRS += \
@@ -396,7 +396,6 @@ endif
 VirtualBox_SOURCES = \
 	src/main.cpp \
 	src/VBoxAboutDlg.cpp \
-	src/VBoxCloseVMDlg.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxHelpActions.cpp \
 	src/VBoxMediaManagerDlg.cpp \
@@ -490,38 +489,39 @@ VirtualBox_SOURCES = \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/selector/VBoxSelectorWnd.cpp \
 	src/selector/VBoxSnapshotsWgt.cpp \
-	src/runtime/UIMachine.cpp \
-	src/runtime/UISession.cpp \
 	src/runtime/UIActionsPool.cpp \
-	src/runtime/UIIndicatorsPool.cpp \
-	src/runtime/UIKeyboardHandler.cpp \
-	src/runtime/UIMouseHandler.cpp \
+	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIFrameBufferQGL.cpp \
 	src/runtime/UIFrameBufferQImage.cpp \
 	src/runtime/UIFrameBufferSDL.cpp \
+	src/runtime/UIIndicatorsPool.cpp \
+	src/runtime/UIKeyboardHandler.cpp \
+	src/runtime/UIMachine.cpp \
 	src/runtime/UIMachineLogic.cpp \
-	src/runtime/UIMachineWindow.cpp \
-	src/runtime/UIMachineView.cpp \
 	src/runtime/UIMachineMenuBar.cpp \
+	src/runtime/UIMachineView.cpp \
+	src/runtime/UIMachineWindow.cpp \
+	src/runtime/UIMouseHandler.cpp \
 	src/runtime/UIMultiScreenLayout.cpp \
-	src/runtime/UIConsoleEventHandler.cpp \
-	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
-	src/runtime/normal/UIMachineLogicNormal.cpp \
-	src/runtime/normal/UIMachineWindowNormal.cpp \
-	src/runtime/normal/UIMachineViewNormal.cpp \
+	src/runtime/UISession.cpp \
+	src/runtime/UIVMCloseDialog.cpp \
 	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.cpp \
 	src/runtime/fullscreen/UIMachineLogicFullscreen.cpp \
-	src/runtime/fullscreen/UIMachineWindowFullscreen.cpp \
 	src/runtime/fullscreen/UIMachineViewFullscreen.cpp \
-	src/runtime/seamless/UIKeyboardHandlerSeamless.cpp \
-	src/runtime/seamless/UIMachineLogicSeamless.cpp \
-	src/runtime/seamless/UIMachineWindowSeamless.cpp \
-	src/runtime/seamless/UIMachineViewSeamless.cpp \
+	src/runtime/fullscreen/UIMachineWindowFullscreen.cpp \
+	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
+	src/runtime/normal/UIMachineLogicNormal.cpp \
+	src/runtime/normal/UIMachineViewNormal.cpp \
+	src/runtime/normal/UIMachineWindowNormal.cpp \
 	src/runtime/scale/UIKeyboardHandlerScale.cpp \
 	src/runtime/scale/UIMachineLogicScale.cpp \
+	src/runtime/scale/UIMachineViewScale.cpp \
 	src/runtime/scale/UIMachineWindowScale.cpp \
-	src/runtime/scale/UIMachineViewScale.cpp
+	src/runtime/seamless/UIKeyboardHandlerSeamless.cpp \
+	src/runtime/seamless/UIMachineLogicSeamless.cpp \
+	src/runtime/seamless/UIMachineViewSeamless.cpp \
+	src/runtime/seamless/UIMachineWindowSeamless.cpp
 VirtualBox_SOURCES.win += \
 	src/runtime/UIFrameBufferDirectDraw.cpp
 VirtualBox_SOURCES.darwin += \
