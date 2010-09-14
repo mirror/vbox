@@ -1434,7 +1434,7 @@ VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, R
  */
 VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
 {
-    Assert(!(ASMGetFlags() & X86_EFL_IF));
+    Assert(!(ASMGetFlags() & X86_EFL_IF) || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     *pfVTxDisabled = false;
 

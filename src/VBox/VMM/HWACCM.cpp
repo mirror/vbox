@@ -2435,6 +2435,19 @@ VMMR3DECL(bool) HWACCMR3IsEventPending(PVMCPU pVCpu)
 }
 
 /**
+ * Checks if the VMX-preemption timer is being used.
+ *
+ * @returns true if it is, false if it isn't.
+ * @param   pVM         The VM handle.
+ */
+VMMR3DECL(bool) HWACCMR3IsVmxPreemptionTimerUsed(PVM pVM)
+{
+    return HWACCMIsEnabled(pVM)
+        && pVM->hwaccm.s.vmx.fEnabled
+        && pVM->hwaccm.s.vmx.fUsePreemptTimer;
+}
+
+/**
  * Restart an I/O instruction that was refused in ring-0
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented

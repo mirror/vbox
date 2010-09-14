@@ -1887,6 +1887,21 @@ GVMMR0DECL(int) GVMMR0SchedPoll(PVM pVM, VMCPUID idCpu, bool fYield)
 
 
 /**
+ * Updates the periodic preemption timer for the calling CPU.
+ *
+ * The caller must have disabled preemption!
+ *
+ * @param   pVM         The VM handle.
+ * @param   idHostCpu   The current host CPU id.
+ * @param   uHz         The desired frequency.
+ */
+GVMMR0DECL(void) GVMMR0SchedUpdatePeriodicPreemptionTimer(PVM pVM, RTCPUID idHostCpu, uint32_t uHz)
+{
+
+}
+
+
+/**
  * Retrieves the GVMM statistics visible to the caller.
  *
  * @returns VBox status code.

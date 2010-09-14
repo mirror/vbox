@@ -138,6 +138,7 @@ VMMR3DECL(int)          HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsig
 VMMR3DECL(int)          HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3DECL(int)          HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR3DECL(bool)         HWACCMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx);
+VMMR3DECL(bool)         HWACCMR3IsVmxPreemptionTimerUsed(PVM pVM);
 
 /** @} */
 #endif /* IN_RING3 */

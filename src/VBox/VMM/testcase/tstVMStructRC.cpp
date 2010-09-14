@@ -991,6 +991,7 @@ int main()
     GEN_CHECK_OFF(VMM, cbRCLogger);
     GEN_CHECK_OFF(VMM, fRCLoggerFlushingDisabled);
     GEN_CHECK_OFF(VMM, fStackGuardsStationed);
+    GEN_CHECK_OFF(VMM, fUsePeriodicPreemptionTimers);
     GEN_CHECK_OFF(VMM, pYieldTimer);
     GEN_CHECK_OFF(VMM, cYieldResumeMillies);
     GEN_CHECK_OFF(VMM, cYieldEveryMillies);

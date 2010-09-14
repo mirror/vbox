@@ -91,6 +91,7 @@ VMMR3DECL(int)          TMR3NotifyResume(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)          TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent);
 #endif
 VMMDECL(uint32_t)       TMGetWarpDrive(PVM pVM);
+VMM_INT_DECL(uint32_t)  TMCalcHostTimerFrequency(PVM pVM, PVMCPU pVCpu);
 #ifdef IN_RING3
 VMMR3DECL(int)          TMR3GetCpuLoadTimes(PVM pVM, VMCPUID idCpu, uint64_t *pcNsTotal, uint64_t *pcNsExecuting,
                                             uint64_t *pcNsHalted, uint64_t *pcNsOther);
