@@ -821,7 +821,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         ChipsetType_T chipsetType;
         hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                H();
-        uint32_t u32IocPciAddress;
+        uint32_t u32IocPciAddress, u32HbcPciAddress;
 
         switch (chipsetType)
         {
@@ -829,10 +829,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 Assert(false);
             case ChipsetType_PIIX3:
                 InsertConfigNode(pDevices, "pci", &pDev);
+                u32HbcPciAddress = 0;
                 u32IocPciAddress = (0x1 << 16) | 0; // ISA controller
                 break;
             case ChipsetType_ICH9:
                 InsertConfigNode(pDevices, "ich9pci", &pDev);
+                u32HbcPciAddress = (0x1d << 16) | 0;
                 u32IocPciAddress = (0x1f << 16) | 0; // LPC controller
                 break;
         }
@@ -876,6 +878,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         hrc = pMachine->COMGETTER(HpetEnabled)(&fHpetEnabled);                              H();
         /* so always enable HPET in extended profile */
         fHpetEnabled |= fOsXGuest;
+        /* HPET is always present on ICH9 */
+        fHpetEnabled |= (chipsetType == ChipsetType_ICH9);
         if (fHpetEnabled)
         {
             InsertConfigNode(pDevices, "hpet", &pDev);
@@ -2278,6 +2282,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 InsertConfigInteger(pCfg, "AudioPciAddress",    u32AudioPciAddr);
             }
             InsertConfigInteger(pCfg,  "IocPciAddress", u32IocPciAddress);
+            InsertConfigInteger(pCfg,  "HostBusPciAddress", u32HbcPciAddress);
             InsertConfigInteger(pCfg,  "ShowCpu", fShowCpu);
             InsertConfigInteger(pCfg,  "CpuHotPlug", fCpuHotPlug);
             InsertConfigInteger(pInst, "PCIDeviceNo",          7);
