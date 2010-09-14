@@ -26,6 +26,10 @@
 
 
 
+#if defined(RT_OS_LINUX) /* PORTME: check for the _unlocked functions in stdio.h */
+#define HAVE_FWRITE_UNLOCKED
+#endif
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -33,7 +37,9 @@
 #include "internal/iprt.h"
 
 #include <iprt/asm.h>
-#include <iprt/critsect.h>
+#ifndef HAVE_FWRITE_UNLOCKED
+# include <iprt/critsect.h>
+#endif
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
@@ -46,10 +52,6 @@
 
 #include <stdio.h>
 #include <errno.h>
-
-#if defined(RT_OS_LINUX) /* PORTME: check for the _unlocked functions in stdio.h */
-#define HAVE_FWRITE_UNLOCKED
-#endif
 
 
 /*******************************************************************************
