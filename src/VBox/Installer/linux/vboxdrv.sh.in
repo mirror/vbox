@@ -160,7 +160,7 @@ running()
 
 start()
 {
-    begin_msg "Starting VirtualBox kernel module"
+    begin_msg "Starting VirtualBox kernel modules"
     if ! running vboxdrv; then
         if ! rm -f $DEVICE; then
             failure "Cannot remove $DEVICE"
@@ -212,7 +212,7 @@ start()
 
 stop()
 {
-    begin_msg "Stopping VirtualBox kernel module"
+    begin_msg "Stopping VirtualBox kernel modules"
     if running vboxnetadp; then
         if ! rmmod vboxnetadp 2>/dev/null; then
             failure "Cannot unload module vboxnetadp"
@@ -306,7 +306,7 @@ setup()
     begin_msg "Trying to register the VirtualBox kernel modules using DKMS"
     if ! $DODKMS install >> $LOG; then
       fail_msg "Failed, trying without DKMS"
-      begin_msg "Recompiling VirtualBox kernel module"
+      begin_msg "Recompiling VirtualBox kernel modules"
       if ! $BUILDVBOXDRV \
           --save-module-symvers /tmp/vboxdrv-Module.symvers \
           --no-print-directory install >> $LOG 2>&1; then

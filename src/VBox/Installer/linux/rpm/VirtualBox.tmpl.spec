@@ -260,8 +260,7 @@ fi
 /sbin/chkconfig --add vboxweb-service
 %endif
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
-%{fillup_and_insserv -fy vboxdrv}
-%{fillup_and_insserv -fy vboxweb-service}
+%{fillup_and_insserv -fy vboxdrv vboxweb-service}
 %endif
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}
 /sbin/ldconfig
@@ -310,11 +309,22 @@ fi
 
 
 %preun
+%if %{?rpm_suse:1}%{!?rpm_suse:0}
+%stop_on_removal vboxweb-service
+%endif
+%if %{?rpm_mdv:1}%{!?rpm_mdv:0}
+%_preun_service vboxweb-service
+%endif
+%if %{?rpm_redhat:1}%{!?rpm_redhat:0}
+if [ "$1" = 0 ]; then
+  /sbin/service vboxweb-service stop > /dev/null
+  /sbin/chkconfig --del vboxweb-service
+fi
+%endif
 # check for active VMs
 VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null || true`
 if [ -n "$VBOXSVC_PID" ]; then
-  # try graceful termination; terminate the webservice first
-  /etc/init.d/vboxweb-service stop || true
+  kill -USR1 $VBOXSVC_PID
   sleep 1
   if pidof VBoxSVC > /dev/null 2>&1; then
     echo "A copy of VirtualBox is currently running.  Please close it and try again. Please note"
@@ -323,21 +333,16 @@ if [ -n "$VBOXSVC_PID" ]; then
     exit 1
   fi
 fi
-
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
-%stop_on_removal vboxweb-service
 %stop_on_removal vboxdrv
 %endif
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}
-%_preun_service vboxweb-service
 %_preun_service vboxdrv
 %endif
 if [ "$1" = 0 ]; then
 %if %{?rpm_redhat:1}%{!?rpm_redhat:0}
   /sbin/service vboxdrv stop > /dev/null
   /sbin/chkconfig --del vboxdrv
-  /sbin/service vboxweb-service stop > /dev/null
-  /sbin/chkconfig --del vboxweb-service
 %endif
   rm -f /etc/udev/rules.d/10-vboxdrv.rules
   rm -f /etc/vbox/license_agreed

@@ -27,6 +27,7 @@
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 DEBIAN=%DEBIAN%
+NOLSB=%NOLSB%
 
 [ -f /lib/lsb/init-functions ] || NOLSB=yes
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
@@ -90,7 +91,9 @@ if [ "$system" = "redhat" ]; then
     . /etc/init.d/functions
     if [ -n "$NOLSB" ]; then
         start_daemon() {
-            daemon --user $1 $2 $3
+            usr="$1"
+            shift
+            daemon --user $usr $@
         }
         fail_msg() {
             echo_failure
@@ -111,7 +114,7 @@ if [ "$system" = "suse" ]; then
     start_daemon() {
         usr="$1"
         shift
-        startproc -u "$usr" $@
+        su - $usr -c "$*"
     }
     if [ -n "$NOLSB" ]; then
         fail_msg() {
@@ -134,7 +137,7 @@ if [ "$system" = "debian" ]; then
         shift
         bin="$1"
         shift
-        start-stop-daemon --chuid "$usr" --start --exec "$bin" -- $@
+        start-stop-daemon --chuid $usr --start --exec $bin -- $@
     }
     killproc() {
         start-stop-daemon --stop --exec $@
@@ -159,7 +162,7 @@ if [ "$system" = "gentoo" ]; then
         shift
         bin="$1"
         shift
-        start-stop-daemon --chuid "$usr" --start --exec "$bin" -- $@
+        start-stop-daemon --chuid $usr --start --exec $bin -- $@
     }
     killproc() {
         start-stop-daemon --stop --exec $@
@@ -184,7 +187,9 @@ if [ "$system" = "arch" ]; then
     USECOLOR=yes
     . /etc/rc.d/functions
     start_daemon() {
-        $@
+        usr="$1"
+        shift
+        su - $usr -c "$*"
         test $? -eq 0 && add_daemon rc.`basename $2`
     }
     killproc() {
@@ -221,10 +226,9 @@ if [ "$system" = "slackware" ]; then
         }
     fi
     start_daemon() {
-        # runuser
-        fail_msg "not supported on Slackware!"
-        return
-        $2 $3
+        usr="$1"
+        shift
+        su - $usr -c "$*"
     }
 fi
 
@@ -242,10 +246,9 @@ if [ "$system" = "lfs" ]; then
         }
     fi
     start_daemon() {
-        # runuser
-        fail_msg "not supported on LFS!"
-        return
-        loadproc $2 $3
+        usr="$1"
+        shift
+        su - $usr -c "$*"
     }
     status() {
         statusproc $1
