@@ -6,6 +6,7 @@ AC_PROG_CC
 if test "$GCC" = yes; then
     CFLAGS="$CFLAGS -Wall"
 fi
+AC_PROG_CXX
 
 AC_PROG_INSTALL
 AC_LANG_C
@@ -29,6 +30,7 @@ AC_PATH_PROG(PKG_CONFIG, pkg-config)
 
 AC_SEARCH_LIBS(socket, socket)
 AC_SEARCH_LIBS(inet_aton, resolv)
+AC_SEARCH_LIBS(clock_gettime, rt)
 
 AC_CHECK_HEADER(sys/select.h, AC_DEFINE(HAVE_SYS_SELECT_H))
 AC_CHECK_HEADER(sys/modem.h, AC_DEFINE(HAVE_SYS_MODEM_H))

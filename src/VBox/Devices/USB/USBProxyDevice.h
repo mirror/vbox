@@ -18,13 +18,8 @@
 #ifndef ___USBProxyDevice_h
 #define ___USBProxyDevice_h
 
-#ifndef RDESKTOP
-# include <VBox/cdefs.h>
-# include <VBox/vusb.h>
-#else
-# include "runtime.h"
-# include "vusb.h"
-#endif
+#include <VBox/cdefs.h>
+#include <VBox/vusb.h>
 
 RT_C_DECLS_BEGIN
 

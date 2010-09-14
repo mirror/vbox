@@ -16,7 +16,7 @@ KEYMAP_PATH = $(datadir)/rdesktop/keymaps/
 
 CC          = @CC@
 INSTALL     = @INSTALL@
-CFLAGS      = @CFLAGS@ @X_CFLAGS@ @DEFS@ -DKEYMAP_PATH=\"$(KEYMAP_PATH)\" -DWITH_RDPUSB=1 -DRDESKTOP
+CFLAGS      = @CFLAGS@ @X_CFLAGS@ @DEFS@ -Iinclude -DKEYMAP_PATH=\"$(KEYMAP_PATH)\" -DWITH_RDPUSB=1 -DRDESKTOP -DVBOX -DIN_RING3 -DRT_OS_LINUX -DLOG_DISABLED -DRTLOG_REL_DISABLED -DVBOX_USB_WITH_SYSFS
 LDFLAGS     = @LDFLAGS@ @LIBS@ @X_LIBS@ @X_EXTRA_LIBS@
 STRIP       = @STRIP@
 
@@ -27,7 +27,7 @@ VNCLINK     = @VNCLINK@
 SOUNDOBJ    = @SOUNDOBJ@
 SCARDOBJ    = @SCARDOBJ@
 
-RDPOBJ   = tcp.o iso.o mcs.o secure.o licence.o rdp.o orders.o bitmap.o cache.o rdp5.o channels.o rdpdr.o serial.o printer.o disk.o parallel.o printercache.o mppc.o pstcache.o lspci.o seamless.o ssl.o vrdp/rdpusb.o vrdp/USBProxyDevice-linux.o
+RDPOBJ   = tcp.o iso.o mcs.o secure.o licence.o rdp.o orders.o bitmap.o cache.o rdp5.o channels.o rdpdr.o serial.o printer.o disk.o parallel.o printercache.o mppc.o pstcache.o lspci.o seamless.o ssl.o Runtime/common/alloc/alloc.o Runtime/common/err/errmsg.o Runtime/common/err/errmsgxpcom.o Runtime/common/err/RTErrConvertFromErrno.o Runtime/common/err/RTErrConvertToErrno.o Runtime/common/path/RTPathAppend.o Runtime/common/path/RTPathCountComponents.o Runtime/common/path/RTPathFilename.o Runtime/common/path/rtPathRootSpecLen.o Runtime/common/path/RTPathStripFilename.o Runtime/common/path/RTPathStripTrailingSlash.o Runtime/common/path/rtPathVolumeSpecLen.o Runtime/common/string/RTStrCopy.o Runtime/common/string/RTStrNLen.o Runtime/common/string/straprintf.o Runtime/common/string/stringalloc.o Runtime/common/string/strformat.o Runtime/common/string/strformatrt.o Runtime/common/string/strformattype.o Runtime/common/string/strprintf.o Runtime/common/string/strstrip.o Runtime/common/string/strtonum.o Runtime/common/string/unidata.o Runtime/common/string/utf-16.o Runtime/common/string/utf-8.o Runtime/common/time/timesysalias.o Runtime/generic/pathhost-generic.o Runtime/r3/alloc.o Runtime/r3/dir.o Runtime/r3/fileio.o Runtime/r3/fs.o Runtime/r3/linux/sysfs.o Runtime/r3/linux/time-linux.o Runtime/r3/posix/dir-posix.o Runtime/r3/posix/env-posix.o Runtime/r3/posix/fileio-posix.o Runtime/r3/posix/path-posix.o Runtime/r3/posix/utf8-posix.o Runtime/r3/stream.o vrdp/rdpusb.o vrdp/USBGetDevices.o vrdp/USBLib.o vrdp/linux/USBProxyDevice-linux.o
 X11OBJ   = rdesktop.o xwin.o xkeymap.o ewmhints.o xclip.o cliprdr.o
 VNCOBJ   = vnc/rdp2vnc.o vnc/vnc.o vnc/xkeymap.o vnc/x11stubs.o
 
@@ -35,7 +35,7 @@ VNCOBJ   = vnc/rdp2vnc.o vnc/vnc.o vnc/xkeymap.o vnc/x11stubs.o
 all: $(TARGETS)
 
 rdesktop: $(X11OBJ) $(SOUNDOBJ) $(RDPOBJ) $(SCARDOBJ)
-	$(CC) $(CFLAGS) -o rdesktop $(X11OBJ) $(SOUNDOBJ) $(RDPOBJ) $(SCARDOBJ) $(LDFLAGS) -lX11
+	$(CXX) $(CFLAGS) -o rdesktop $(X11OBJ) $(SOUNDOBJ) $(RDPOBJ) $(SCARDOBJ) $(LDFLAGS) -lX11
 
 rdp2vnc: $(VNCOBJ) $(SOUNDOBJ) $(RDPOBJ) $(SCARDOBJ) 
 	$(VNCLINK) $(CFLAGS) -o rdp2vnc $(VNCOBJ) $(SOUNDOBJ) $(RDPOBJ) $(SCARDOBJ) $(LDFLAGS) $(LDVNC)
@@ -90,7 +90,7 @@ proto:
 
 .PHONY: clean
 clean:
-	rm -f *.o *~ vnc/*.o vnc/*~ rdesktop rdp2vnc
+	rm -f *.o *~ vnc/*.o vnc/*~ vrdp/*.o vrdp/*~ vrdp/linux/*.o vrdp/linux/*~ Runtime/common/*/*.o Runtime/common/*/*~ Runtime/generic/*.o Runtime/generic/*~ Runtime/r3/*.o Runtime/r3/*~ Runtime/r3/*/*.o Runtime/r3/*/*~ rdesktop rdp2vnc
 
 .PHONY: distclean
 distclean: clean
@@ -154,8 +154,10 @@ configure: configure.ac
 	./bootstrap
 
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .cpp .o
 
 .c.o:
 	$(CC) $(CFLAGS) -o $@ -c $<
 
+.cpp.o:
+	$(CXX) $(CFLAGS) -o $@ -c $<
