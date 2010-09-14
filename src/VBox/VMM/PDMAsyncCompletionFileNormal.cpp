@@ -806,7 +806,10 @@ static int pdmacFileAioMgrNormalTaskPrepareBuffered(PPDMACEPFILEMGR pAioMgr,
                                             pTask);
 
         if (RT_SUCCESS(rc))
+        {
+            pTask->hReq = hReq;
             *phReq = hReq;
+        }
     }
     else
         LogFlow(("Task %#p was deferred because the access range is locked\n", pTask));
@@ -934,7 +937,10 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
             rc = pdmacFileAioMgrNormalRangeLock(pAioMgr, pEndpoint, offStart, cbToTransfer, pTask);
 
             if (RT_SUCCESS(rc))
+            {
+                pTask->hReq = hReq;
                 *phReq = hReq;
+            }
             else
             {
                 /* Cleanup */
