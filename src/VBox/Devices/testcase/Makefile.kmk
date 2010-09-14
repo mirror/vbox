@@ -69,9 +69,6 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_LSILOGIC
   tstDeviceStructSizeRC_DEFS    += VBOX_WITH_LSILOGIC
  endif
- ifdef VBOX_WITH_HPET
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_HPET
- endif
  ifdef VBOX_WITH_HGSMI
   tstDeviceStructSizeRC_DEFS    += VBOX_WITH_HGSMI
  endif
@@ -108,15 +105,6 @@ ifdef VBOX_WITH_BUSLOGIC
 endif
 ifdef VBOX_WITH_LSILOGIC
  tstDeviceStructSize_DEFS   += VBOX_WITH_LSILOGIC
-endif
-ifdef VBOX_WITH_HPET
- tstDeviceStructSize_DEFS   += VBOX_WITH_HPET
-endif
-ifdef VBOX_WITH_SMC
- tstDeviceStructSize_DEFS   += VBOX_WITH_SMC
-endif
-ifdef VBOX_WITH_LPC
- tstDeviceStructSize_DEFS   += VBOX_WITH_LPC
 endif
 ifdef VBOX_WITH_HGSMI
  tstDeviceStructSize_DEFS   += VBOX_WITH_HGSMI

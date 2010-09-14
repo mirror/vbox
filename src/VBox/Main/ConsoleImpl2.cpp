@@ -821,6 +821,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         ChipsetType_T chipsetType;
         hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                H();
+        uint32_t u32IocPciAddress;
 
         switch (chipsetType)
         {
@@ -828,9 +829,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 Assert(false);
             case ChipsetType_PIIX3:
                 InsertConfigNode(pDevices, "pci", &pDev);
+                u32IocPciAddress = (0x1 << 16) | 0; // ISA controller
                 break;
             case ChipsetType_ICH9:
                 InsertConfigNode(pDevices, "ich9pci", &pDev);
+                u32IocPciAddress = (0x1f << 16) | 0; // LPC controller
                 break;
         }
         InsertConfigNode(pDev,     "0", &pInst);
@@ -869,14 +872,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          * High Precision Event Timer (HPET)
          */
         BOOL fHpetEnabled;
-#ifdef VBOX_WITH_HPET
         /* Other guests may wish to use HPET too, but MacOS X not functional without it */
         hrc = pMachine->COMGETTER(HpetEnabled)(&fHpetEnabled);                              H();
         /* so always enable HPET in extended profile */
         fHpetEnabled |= fOsXGuest;
-#else
-        fHpetEnabled = false;
-#endif
         if (fHpetEnabled)
         {
             InsertConfigNode(pDevices, "hpet", &pDev);
@@ -888,11 +887,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          * System Management Controller (SMC)
          */
         BOOL fSmcEnabled;
-#ifdef VBOX_WITH_SMC
         fSmcEnabled = fOsXGuest;
-#else
-        fSmcEnabled = false;
-#endif
         if (fSmcEnabled)
         {
             InsertConfigNode(pDevices, "smc", &pDev);
@@ -914,11 +909,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         BOOL fLpcEnabled;
         /** @todo: implement appropriate getter */
-#ifdef VBOX_WITH_LPC
-        fLpcEnabled = fOsXGuest;
-#else
-        fLpcEnabled = false;
-#endif
+        fLpcEnabled = fOsXGuest || (chipsetType == ChipsetType_ICH9);
         if (fLpcEnabled)
         {
             InsertConfigNode(pDevices, "lpc", &pDev);
@@ -2286,6 +2277,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 uint32_t u32AudioPciAddr = (5 << 16) | 0;
                 InsertConfigInteger(pCfg, "AudioPciAddress",    u32AudioPciAddr);
             }
+            InsertConfigInteger(pCfg,  "IocPciAddress", u32IocPciAddress);
             InsertConfigInteger(pCfg,  "ShowCpu", fShowCpu);
             InsertConfigInteger(pCfg,  "CpuHotPlug", fCpuHotPlug);
             InsertConfigInteger(pInst, "PCIDeviceNo",          7);

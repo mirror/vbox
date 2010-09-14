@@ -62,16 +62,12 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceIOAPIC);
     if (RT_FAILURE(rc))
         return rc;
-#ifdef VBOX_WITH_SMC
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceSMC);
     if (RT_FAILURE(rc))
         return rc;
-#endif
-#ifdef VBOX_WITH_LPC
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceLPC);
     if (RT_FAILURE(rc))
         return rc;
-#endif
 
     return VINF_SUCCESS;
 }

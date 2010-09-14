@@ -172,12 +172,6 @@ endif
 ifdef VBOX_WITH_LSILOGIC
  VBoxDD_DEFS           += VBOX_WITH_LSILOGIC
 endif
-ifdef VBOX_WITH_HPET
- VBoxDD_DEFS           += VBOX_WITH_HPET
-endif
-ifdef VBOX_WITH_SMC
- VBoxDD_DEFS           += VBOX_WITH_SMC
-endif
 ifdef VBOX_WITH_EFI
  VBoxDD_DEFS           += VBOX_WITH_EFI
 endif
@@ -254,16 +248,10 @@ VBoxDD2_DEFS            = IN_VBOXDD2
 VBoxDD2_INCS           := \
 	$(PATH_SUB_CURRENT)
 VBoxDD2_SOURCES         = \
-	Builtins2.cpp \
-	PC/DevAPIC.cpp
-ifdef VBOX_WITH_SMC
- VBoxDD2_DEFS          += VBOX_WITH_SMC
- VBoxDD2_SOURCES       += PC/DevSMC.cpp
-endif
-ifdef VBOX_WITH_LPC
- VBoxDD2_DEFS          += VBOX_WITH_LPC
- VBoxDD2_SOURCES       += PC/DevLPC.cpp
-endif
+	Builtins2.cpp  \
+	PC/DevAPIC.cpp \
+	PC/DevSMC.cpp  \
+	PC/DevLPC.cpp
 VBoxDD2_LIBS            = \
 	$(PATH_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
@@ -319,6 +307,9 @@ DevicesR3_SOURCES       = \
 	Audio/DevIchIntelHDA.cpp \
 	Audio/DevCodec.cpp \
 	PC/DevDMA.cpp \
+	PC/DevHPET.cpp \
+	PC/DevSMC.cpp \
+	PC/DevLPC.cpp \
 	Storage/fdc.c \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
@@ -424,11 +415,6 @@ ifdef VBOX_WITH_LSILOGIC
  DevicesR3_DEFS	       += VBOX_WITH_LSILOGIC
  DevicesR3_SOURCES     += \
 	Storage/DevLsiLogicSCSI.cpp
-endif
-
-ifdef VBOX_WITH_HPET
- DevicesR3_DEFS        += VBOX_WITH_HPET
- DevicesR3_SOURCES     += PC/DevHPET.cpp
 endif
 
 ifdef VBOX_WITH_EFI
@@ -559,6 +545,7 @@ ifdef VBOX_WITH_RAW_MODE
  	PC/DevPit-i8254.cpp \
  	PC/DevPIC.cpp \
  	PC/DevRTC.cpp \
+	PC/DevHPET.cpp \
  	Storage/DevATA.cpp \
  	Network/DevPCNet.cpp \
  	Serial/DevSerial.cpp \
@@ -641,11 +628,6 @@ ifdef VBOX_WITH_RAW_MODE
  	Storage/DevLsiLogicSCSI.cpp
  endif
 
- ifdef VBOX_WITH_HPET
- VBoxDDGC_DEFS         += VBOX_WITH_HPET
- VBoxDDGC_SOURCES      += PC/DevHPET.cpp
- endif
-
  if1of ($(VBOX_LDR_FMT32), pe lx)
  VBoxDDGC_LIBS           = \
  	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
@@ -671,6 +653,7 @@ VBoxDDR0_SOURCES        = \
 	PC/DevPit-i8254.cpp \
 	PC/DevPIC.cpp \
 	PC/DevRTC.cpp \
+	PC/DevHPET.cpp \
 	Storage/DevATA.cpp \
 	Network/DevPCNet.cpp \
 	Serial/DevSerial.cpp \
@@ -754,12 +737,6 @@ ifdef VBOXWDDM_WITH_VBVA
  VBoxDDR0_DEFS        += VBOXWDDM_WITH_VBVA
 endif
 
-
-ifdef VBOX_WITH_HPET
- VBoxDDR0_DEFS         += VBOX_WITH_HPET
- VBoxDDR0_SOURCES      += PC/DevHPET.cpp
-endif
-
 if1of ($(VBOX_LDR_FMT), pe lx)
 VBoxDDR0_LIBS           = \
 	$(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
@@ -776,7 +753,8 @@ ifdef VBOX_WITH_RAW_MODE
  VBoxDD2GC_INCS          := \
  	$(PATH_SUB_CURRENT)
  VBoxDD2GC_SOURCES        = \
- 	PC/DevAPIC.cpp
+	PC/DevAPIC.cpp      \
+	PC/DevSMC.cpp
  if1of ($(VBOX_LDR_FMT32), pe lx)
  VBoxDD2GC_LIBS           = \
  	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
@@ -792,12 +770,8 @@ VBoxDD2R0_DEFS           = IN_RT_R0
 VBoxDD2R0_INCS          := \
 	$(PATH_SUB_CURRENT)
 VBoxDD2R0_SOURCES        = \
-        PC/DevAPIC.cpp
-
-ifdef VBOX_WITH_SMC
- VBoxDD2R0_DEFS         += VBOX_WITH_SMC
- VBoxDD2R0_SOURCES      += PC/DevSMC.cpp
-endif
+        PC/DevAPIC.cpp     \
+        PC/DevSMC.cpp
 
 if1of ($(VBOX_LDR_FMT), pe lx)
 VBoxDD2R0_LIBS           = \

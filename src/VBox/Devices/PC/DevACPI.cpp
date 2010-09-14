@@ -161,8 +161,9 @@ enum
     SYSTEM_INFO_INDEX_CPU_EVENT         = 14, /**< The CPU id the event is for */
     SYSTEM_INFO_INDEX_NIC_ADDRESS       = 15, /**< NIC PCI address, or 0 */
     SYSTEM_INFO_INDEX_AUDIO_ADDRESS     = 16, /**< Audio card PCI address, or 0 */
-    SYSTEM_INFO_INDEX_POWER_STATES      = 17,
-    SYSTEM_INFO_INDEX_END               = 18,
+    SYSTEM_INFO_INDEX_POWER_STATES      = 17, 
+    SYSTEM_INFO_INDEX_IOC_ADDRESS       = 18, /**< IO controller PCI address */
+    SYSTEM_INFO_INDEX_END               = 19,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -267,6 +268,9 @@ typedef struct ACPIState
     bool                fSuspendToSavedState;
     /** Flag whether to set WAK_STS on resume (restore included). */
     bool                fSetWakeupOnResume;
+    /** PCI address of the IO controller device. */
+    uint32_t            u32IocPciAddress;
+    uint32_t            pad0;
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -1563,6 +1567,10 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                         *pu32 |= RT_BIT(4);
                     break;
 
+               case SYSTEM_INFO_INDEX_IOC_ADDRESS:
+                    *pu32 = s->u32IocPciAddress;
+                    break;
+
                 /* This is only for compatability with older saved states that
                    may include ACPI code that read these values.  Legacy is
                    a wonderful thing, isn't it? :-) */
@@ -2455,6 +2463,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "ShowCpu\0"
                               "NicPciAddress\0"
                               "AudioPciAddress\0"
+                              "IocPciAddress\0"
                               "EnableSuspendToDisk\0"
                               "PowerS1Enabled\0"
                               "PowerS4Enabled\0"
@@ -2517,6 +2526,12 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"AudioPciAddress\""));
+
+    /* query IO controller (southbridge) PCI address */
+    rc = CFGMR3QueryU32Def(pCfg, "IocPciAddress", &s->u32IocPciAddress, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"IocPciAddress\""));
 
     /* query whether S1 power state should be exposed */
     rc = CFGMR3QueryBoolDef(pCfg, "PowerS1Enabled", &s->fS1Enabled, true);

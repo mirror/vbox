@@ -88,10 +88,8 @@
 # undef LOG_GROUP
 # include "../Storage/DevLsiLogicSCSI.cpp"
 #endif
-#ifdef VBOX_WITH_HPET
-# undef LOG_GROUP
-# include "../PC/DevHPET.cpp"
-#endif
+#undef LOG_GROUP
+#include "../PC/DevHPET.cpp"
 
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
@@ -1626,7 +1624,6 @@ int main()
     GEN_CHECK_OFF(LSILOGICSCSI, fSignalIdle);
 #endif /* VBOX_WITH_LSILOGIC */
 
-#ifdef VBOX_WITH_HPET
     GEN_CHECK_SIZE(HpetState);
     GEN_CHECK_OFF(HpetState, pDevInsR3);
     GEN_CHECK_OFF(HpetState, pDevInsR0);
@@ -1650,7 +1647,6 @@ int main()
     GEN_CHECK_OFF(HpetTimer, u64Fsb);
     GEN_CHECK_OFF(HpetTimer, u64Period);
     GEN_CHECK_OFF(HpetTimer, u8Wrap);
-#endif
 
     return (0);
 }
