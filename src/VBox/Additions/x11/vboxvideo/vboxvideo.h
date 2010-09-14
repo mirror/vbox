@@ -184,9 +184,8 @@ extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,
 
 typedef struct _VBOXRec
 {
-    vbeInfoPtr pVbe;
+    vbeInfoPtr pVbe;  /** @todo do the VBE bits ourselves? */
     EntityInfoPtr pEnt;
-    VbeInfoBlock *vbeInfo;
 #ifdef PCIACCESS
     struct pci_device *pciInfo;
     struct pci_device *vmmDevInfo;
@@ -194,9 +193,8 @@ typedef struct _VBOXRec
     pciVideoPtr pciInfo;
     PCITAG pciTag;
 #endif
-    CARD16 maxBytesPerScanline;
-    unsigned long mapPhys, mapOff, mapSize;	/* video memory */
-    void *base, *VGAbase;
+    unsigned long mapSize;	/* video memory */
+    void *base;
     CARD8 *state, *pstate;	/* SVGA state */
     int statePage, stateSize, stateMode;
     CARD32 *savedPal;
@@ -208,15 +206,10 @@ typedef struct _VBOXRec
     /** Is access to the framebuffer currently allowed? */
     Bool accessEnabled;
     OptionInfoPtr Options;
-    IOADDRESS ioBase;
-    /** The width of the last resolution set, used to avoid resetting modes */
-    int cLastWidth;
-    /** The height of the last resolution set */
-    int cLastHeight;
-    VMMDevReqMousePointer *reqp;
-    xf86CursorInfoPtr pCurs;
+    VMMDevReqMousePointer *reqp;  /** @todo get rid of this */
     size_t pointerHeaderSize;
     size_t pointerSize;
+    xf86CursorInfoPtr pCurs;
     Bool useDevice;
     Bool forceSWCursor;
     /** Do we know that the guest can handle absolute co-ordinates? */
