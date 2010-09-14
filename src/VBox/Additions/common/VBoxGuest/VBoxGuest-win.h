@@ -68,16 +68,6 @@ typedef struct VBOXGUESTWINBASEADDRESS
 } VBOXGUESTWINBASEADDRESS, *PVBOXGUESTWINBASEADDRESS;
 
 
-/** Windows-specific HGCM device extension bits. */
-typedef struct VBOXGUESTDEVEXTWINHGCM
-{
-    /** The callback wait timeout. */
-    LARGE_INTEGER WaitTimeout;
-    /** Notification semaphore. */
-    KEVENT keventNotification;
-} VBOXGUESTDEVEXTWINHGCM, *PVBOXGUESTDEVEXTWINHGCM;
-
-
 /** Windows-specific device extension bits. */
 typedef struct VBOXGUESTDEVEXTWIN
 {
@@ -124,25 +114,6 @@ typedef struct VBOXGUESTDEVEXTWIN
     /** Pre-allocated kernel session data. This is needed
       * for handling kernel IOCtls. */
     PVBOXGUESTSESSION pKernelSession;
-
-    /** Align the next bit on a 64-byte boundary and make sure it starts at the same
-     *  offset in both 64-bit and 32-bit builds.
-     *
-     * @remarks The aligments of the members that are larger than 48 bytes should be
-     *          64-byte for cache line reasons. structs containing small amounts of
-     *          data could be lumped together at the end with a < 64 byte padding
-     *          following it (to grow into and align the struct size).
-     */
-    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 24 : 4];
-
-    /** HGCM stuff. */
-    union
-    {
-#ifdef VBOX_WITH_HGCM
-        VBOXGUESTDEVEXTWINHGCM          s;
-#endif
-        uint8_t                         padding[256];      /* Multiple of 64; fix me! */
-    } hgcm;
 } VBOXGUESTDEVEXTWIN, *PVBOXGUESTDEVEXTWIN;
 
 

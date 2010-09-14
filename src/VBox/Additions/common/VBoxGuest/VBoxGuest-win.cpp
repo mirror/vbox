@@ -487,13 +487,6 @@ NTSTATUS vboxguestwinInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICO
 
 
 #ifdef VBOX_WITH_HGCM
-    /* Initialize the HGCM event notification semaphore. */
-    KeInitializeEvent(&pDevExt->win.s.hgcm.s.keventNotification, NotificationEvent, FALSE);
-
-    /* Preallocated constant timeout 250ms for HGCM async waiter. */
-    pDevExt->win.s.hgcm.s.WaitTimeout.QuadPart  = 250;
-    pDevExt->win.s.hgcm.s.WaitTimeout.QuadPart *= -10000; /* Relative in 100ns units. */
-
     Log(("VBoxGuest::vboxguestwinInit: Allocating kernel session data ...\n"));
     int vrc = VBoxGuestCreateKernelSession(pDevExt, &pDevExt->win.s.pKernelSession);
     if (RT_FAILURE(vrc))
