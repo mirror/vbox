@@ -580,7 +580,8 @@ int main()
     GEN_CHECK_OFF(RTCState, RtcReg);
     GEN_CHECK_OFF(RTCState, pRtcHlpR3);
     GEN_CHECK_OFF(RTCState, cRelLogEntries);
-    GEN_CHECK_OFF(RTCState, CurPeriod);
+    GEN_CHECK_OFF(RTCState, CurLogPeriod);
+    GEN_CHECK_OFF(RTCState, CurHintPeriod);
 
     /* PC/apic.c */
     GEN_CHECK_SIZE(APICState);
@@ -612,6 +613,8 @@ int main()
     GEN_CHECK_OFF(APICState, pTimerR0);
     GEN_CHECK_OFF(APICState, pTimerRC);
     GEN_CHECK_OFF(APICState, fTimerArmed);
+    GEN_CHECK_OFF(APICState, uHintedInitialCount);
+    GEN_CHECK_OFF(APICState, uHintedCountShift);
     GEN_CHECK_OFF(APICState, pszDesc);
 #ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(APICState, StatTimerSetInitialCount);

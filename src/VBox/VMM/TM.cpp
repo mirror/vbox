@@ -2112,8 +2112,15 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                     break;
             }
 
-            /* change the state if it wasn't changed already in the handler. */
+            /* Change the state if it wasn't changed already in the handler.
+               Reset the Hz hint too since this is the same as TMTimerStop. */
             TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_EXPIRED_DELIVER, fRc);
+            if (fRc && pTimer->uHzHint)
+            {
+                if (pTimer->uHzHint >= pVM->tm.s.uMaxHzHint)
+                    ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, true);
+                pTimer->uHzHint = 0;
+            }
             Log2(("tmR3TimerQueueRun: new state %s\n", tmTimerState(pTimer->enmState)));
         }
         if (pCritSect)
@@ -2820,6 +2827,24 @@ static DECLCALLBACK(void) tmR3CpuLoadTimer(PVM pVM, PTMTIMER pTimer, void *pvUse
 
 #endif /* !VBOX_WITHOUT_NS_ACCOUNTING */
 
+/**
+ * Gets the 5 char clock name for the info tables.
+ *
+ * @returns The name.
+ * @param   enmClock        The clock.
+ */
+DECLINLINE(const char *) tmR3Get5CharClockName(TMCLOCK enmClock)
+{
+    switch (enmClock)
+    {
+        case TMCLOCK_REAL:          return "Real ";
+        case TMCLOCK_VIRTUAL:       return "Virt ";
+        case TMCLOCK_VIRTUAL_SYNC:  return "VrSy ";
+        case TMCLOCK_TSC:           return "TSC  ";
+        default:                    return "Bad  ";
+    }
+}
+
 
 /**
  * Display all timers.
@@ -2833,7 +2858,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
     NOREF(pszArgs);
     pHlp->pfnPrintf(pHlp,
                     "Timers (pVM=%p)\n"
-                    "%.*s %.*s %.*s %.*s Clock %-18s %-18s %-25s Description\n",
+                    "%.*s %.*s %.*s %.*s Clock %18s %18s %6 %-25s Description\n",
                     pVM,
                     sizeof(RTR3PTR) * 2,        "pTimerR3        ",
                     sizeof(int32_t) * 2,        "offNext         ",
@@ -2841,19 +2866,21 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                     sizeof(int32_t) * 2,        "offSched        ",
                                                 "Time",
                                                 "Expire",
+                                                "HzHint",
                                                 "State");
     tmTimerLock(pVM);
     for (PTMTIMERR3 pTimer = pVM->tm.s.pCreated; pTimer; pTimer = pTimer->pBigNext)
     {
         pHlp->pfnPrintf(pHlp,
-                        "%p %08RX32 %08RX32 %08RX32 %s %18RU64 %18RU64 %-25s %s\n",
+                        "%p %08RX32 %08RX32 %08RX32 %s %18RU64 %18RU64 %6RU32 %-25s %s\n",
                         pTimer,
                         pTimer->offNext,
                         pTimer->offPrev,
                         pTimer->offScheduleNext,
-                        pTimer->enmClock == TMCLOCK_REAL ? "Real " : "Virt ",
+                        tmR3Get5CharClockName(pTimer->enmClock),
                         TMTimerGet(pTimer),
                         pTimer->u64Expire,
+                        pTimer->uHzHint,
                         tmTimerState(pTimer->enmState),
                         pTimer->pszDesc);
     }
@@ -2873,7 +2900,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
     NOREF(pszArgs);
     pHlp->pfnPrintf(pHlp,
                     "Active Timers (pVM=%p)\n"
-                    "%.*s %.*s %.*s %.*s Clock %-18s %-18s %-25s Description\n",
+                    "%.*s %.*s %.*s %.*s Clock %18s %18s %6s %-25s Description\n",
                     pVM,
                     sizeof(RTR3PTR) * 2,        "pTimerR3        ",
                     sizeof(int32_t) * 2,        "offNext         ",
@@ -2881,6 +2908,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                     sizeof(int32_t) * 2,        "offSched        ",
                                                 "Time",
                                                 "Expire",
+                                                "HzHint",
                                                 "State");
     for (unsigned iQueue = 0; iQueue < TMCLOCK_MAX; iQueue++)
     {
@@ -2890,20 +2918,15 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
              pTimer = TMTIMER_GET_NEXT(pTimer))
         {
             pHlp->pfnPrintf(pHlp,
-                            "%p %08RX32 %08RX32 %08RX32 %s %18RU64 %18RU64 %-25s %s\n",
+                            "%p %08RX32 %08RX32 %08RX32 %s %18RU64 %18RU64 %6RU32 %-25s %s\n",
                             pTimer,
                             pTimer->offNext,
                             pTimer->offPrev,
                             pTimer->offScheduleNext,
-                            pTimer->enmClock == TMCLOCK_REAL
-                            ? "Real "
-                            : pTimer->enmClock == TMCLOCK_VIRTUAL
-                            ? "Virt "
-                            : pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC
-                            ? "VrSy "
-                            : "TSC  ",
+                            tmR3Get5CharClockName(pTimer->enmClock),
                             TMTimerGet(pTimer),
                             pTimer->u64Expire,
+                            pTimer->uHzHint,
                             tmTimerState(pTimer->enmState),
                             pTimer->pszDesc);
         }

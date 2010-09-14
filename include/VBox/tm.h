@@ -216,6 +216,7 @@ VMMDECL(int)            TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNex
 VMMDECL(int)            TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext);
 VMMDECL(int)            TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext);
 VMMDECL(int)            TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext);
+VMMDECL(int)            TMTimerSetFrequencyHint(PTMTIMER pTimer, uint32_t uHz);
 VMMDECL(uint64_t)       TMTimerGet(PTMTIMER pTimer);
 VMMDECL(uint64_t)       TMTimerGetNano(PTMTIMER pTimer);
 VMMDECL(uint64_t)       TMTimerGetMicro(PTMTIMER pTimer);

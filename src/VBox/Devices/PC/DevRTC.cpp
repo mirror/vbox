@@ -192,8 +192,11 @@ struct RTCState {
     R3PTRTYPE(PCPDMRTCHLP) pRtcHlpR3;
     /** Number of release log entries. Used to prevent flooding. */
     uint32_t cRelLogEntries;
-    /** The current/previous timer period. Used to prevent flooding changes. */
-    int32_t CurPeriod;
+    /** The current/previous logged timer period. */
+    int32_t CurLogPeriod;
+    /** The current/previous hinted timer period. */
+    int32_t CurHintPeriod;
+    uint32_t u32AlignmentPadding;
 
     /** HPET legacy mode notification interface. */
     PDMIHPETLEGACYNOTIFY  IHpetLegacyNotify;
@@ -225,13 +228,19 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         TMTimerSet(s->CTX_SUFF(pPeriodicTimer), s->next_periodic_time);
 
 #ifdef IN_RING3
-        if (period != s->CurPeriod)
+        if (RT_UNLIKELY(period != s->CurLogPeriod))
+#else
+        if (RT_UNLIKELY(period != s->CurHintPeriod))
+#endif
         {
+#ifdef IN_RING3
             if (s->cRelLogEntries++ < 64)
                 LogRel(("RTC: period=%#x (%d) %u Hz\n", period, period, _32K / period));
-            s->CurPeriod = period;
-        }
+            s->CurLogPeriod  = period;
 #endif
+            s->CurHintPeriod = period;
+            TMTimerSetFrequencyHint(s->CTX_SUFF(pPeriodicTimer), _32K / period);
+        }
     } else {
         if (TMTimerIsActive(s->CTX_SUFF(pPeriodicTimer)) && s->cRelLogEntries++ < 64)
             LogRel(("RTC: stopped the periodic timer\n"));
@@ -749,10 +758,13 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             period_code += 7;
         int period = 1 << (period_code - 1);
         LogRel(("RTC: period=%#x (%d) %u Hz (restore)\n", period, period, _32K / period));
-        pThis->CurPeriod = period;
+        TMTimerSetFrequencyHint(pThis->CTX_SUFF(pPeriodicTimer), _32K / period);
+        pThis->CurLogPeriod  = period;
+        pThis->CurHintPeriod = period;
     } else {
         LogRel(("RTC: stopped the periodic timer (restore)\n"));
-        pThis->CurPeriod = 0;
+        pThis->CurLogPeriod  = 0;
+        pThis->CurHintPeriod = 0;
     }
     pThis->cRelLogEntries = 0;
 
