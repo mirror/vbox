@@ -77,13 +77,15 @@ clean:
 	fi
 	rm -f vboxdrv.ko vboxnetflt.ko vboxnetadp.ko
 
-load:
+unload:
 	@for module in vboxnetadp vboxnetflt vboxdrv; do \
 		if grep "^$$module " /proc/modules >/dev/null; then \
 			echo "Removing previously installed $$module module"; \
 			/sbin/rmmod $$module; \
 		fi; \
 	done
+
+load: unload
 	@for module in vboxdrv vboxnetflt vboxnetadp; do \
 		if test -f $$module.ko; then \
 			echo "Installing $$module module"; \
