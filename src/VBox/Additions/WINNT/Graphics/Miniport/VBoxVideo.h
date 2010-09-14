@@ -117,6 +117,7 @@ typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 typedef struct _DEVICE_EXTENSION *PDEVICE_EXTENSION;
 #include <VBox/VBoxVideo.h>
 #include "wddm/VBoxVideoIf.h"
+#include "wddm/VBoxVideoMisc.h"
 #include "wddm/VBoxVideoShgsmi.h"
 #include "wddm/VBoxVideoCm.h"
 #include "wddm/VBoxVideoVdma.h"
@@ -307,9 +308,10 @@ typedef struct _DEVICE_EXTENSION
    uint8_t * pvVisibleVram;
 
    VBOXVIDEOCM_MGR CmMgr;
-   LIST_ENTRY ContextList3D;
+   LIST_ENTRY SwapchainList3D;
    /* mutex for context list operations */
    FAST_MUTEX ContextMutex;
+   KSPIN_LOCK SynchLock;
    volatile uint32_t cContexts3D;
    volatile uint32_t cDMACmdsOutstanding;
 

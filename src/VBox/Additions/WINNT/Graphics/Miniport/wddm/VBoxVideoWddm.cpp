@@ -634,9 +634,10 @@ NTSTATUS DxgkDdiStartDevice(
                     vboxVhwaInit(pContext);
 #endif
                     vboxVideoCmInit(&pContext->CmMgr);
-                    InitializeListHead(&pContext->ContextList3D);
+                    InitializeListHead(&pContext->SwapchainList3D);
                     pContext->cContexts3D = 0;
                     ExInitializeFastMutex(&pContext->ContextMutex);
+                    KeInitializeSpinLock(&pContext->SynchLock);
                 }
                 else
                 {
@@ -1471,6 +1472,13 @@ NTSTATUS vboxWddmDestroyAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATI
             break;
     }
 
+    PVBOXWDDM_SWAPCHAIN pSwapchain = vboxWddmSwapchainRetainByAlloc(pDevExt, pAllocation);
+    if (pSwapchain)
+    {
+        vboxWddmSwapchainAllocRemove(pDevExt, pSwapchain, pAllocation);
+        vboxWddmSwapchainRelease(pSwapchain);
+    }
+
     vboxWddmAllocationDeleteFromResource(pAllocation->pResource, pAllocation);
 
     return STATUS_SUCCESS;
@@ -2092,8 +2100,20 @@ NTSTATUS vboxWddmCallIsr(PDEVICE_EXTENSION pDevExt)
     return Status;
 }
 
-static void vboxWddmSubmitBltCmd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_DMA_PRESENT_BLT pBlt)
+static void vboxWddmSubmitBltCmd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAlloc, PVBOXWDDM_DMA_PRESENT_BLT pBlt)
 {
+    PVBOXWDDM_SWAPCHAIN pSwapchain;
+    if (pAlloc)
+    {
+        pSwapchain = vboxWddmSwapchainRetainByAlloc(pDevExt, pAlloc);
+        if (!pSwapchain)
+            return;
+    }
+    else
+    {
+        pSwapchain = NULL;
+    }
+
     PVBOXVDMAPIPE_CMD_RECTSINFO pRectsCmd = (PVBOXVDMAPIPE_CMD_RECTSINFO)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_RECTSINFO, RT_OFFSETOF(VBOXVDMAPIPE_CMD_RECTSINFO, ContextsRects.UpdateRects.aRects[pBlt->DstRects.UpdateRects.cRects]));
     Assert(pRectsCmd);
     if (pRectsCmd)
@@ -2101,7 +2121,7 @@ static void vboxWddmSubmitBltCmd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_DMA_PRESEN
         VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pBlt->Hdr.DstAllocInfo.srcId];
         VBOXWDDM_CONTEXT *pContext = pBlt->Hdr.pContext;
         pRectsCmd->pContext = pContext;
-        pRectsCmd->VidPnSourceId = pBlt->Hdr.SrcAllocInfo.srcId;
+        pRectsCmd->pSwapchain = pSwapchain;
         memcpy(&pRectsCmd->ContextsRects, &pBlt->DstRects, RT_OFFSETOF(VBOXVDMAPIPE_RECTS, UpdateRects.aRects[pBlt->DstRects.UpdateRects.cRects]));
         vboxWddmRectTranslate(&pRectsCmd->ContextsRects.ContextRect, pSource->VScreenPos.x, pSource->VScreenPos.y);
         for (UINT i = 0; i < pRectsCmd->ContextsRects.UpdateRects.cRects; ++i)
@@ -2215,7 +2235,7 @@ DxgkDdiSubmitCommand(
                                     Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
                                     VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, pSource, &rect);
                                 }
-                                vboxWddmSubmitBltCmd(pDevExt, pBlt);
+                                vboxWddmSubmitBltCmd(pDevExt, NULL, pBlt);
                                 break;
                             }
                             case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
@@ -2224,7 +2244,7 @@ DxgkDdiSubmitCommand(
                                 Assert(pSrcAlloc->fRcFlags.RenderTarget);
                                 if (pSrcAlloc->fRcFlags.RenderTarget)
                                 {
-                                    vboxWddmSubmitBltCmd(pDevExt, pBlt);
+                                    vboxWddmSubmitBltCmd(pDevExt, pSrcAlloc, pBlt);
                                 }
                                 break;
                             }
@@ -2262,28 +2282,37 @@ DxgkDdiSubmitCommand(
         {
             VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
             PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pSubmitCommand->hContext;
-            PVBOXVDMAPIPE_CMD_RECTSINFO pRectsCmd = (PVBOXVDMAPIPE_CMD_RECTSINFO)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_RECTSINFO, RT_OFFSETOF(VBOXVDMAPIPE_CMD_RECTSINFO, ContextsRects.UpdateRects.aRects[1]));
-            Assert(pRectsCmd);
-            if (pRectsCmd)
+            PVBOXWDDM_ALLOCATION pAlloc = pPrivateData->SrcAllocInfo.pAlloc;
+            PVBOXWDDM_SWAPCHAIN pSwapchain = vboxWddmSwapchainRetainByAlloc(pDevExt, pAlloc);
+            if (pSwapchain)
             {
-                PVBOXWDDM_ALLOCATION pAlloc = pPrivateData->SrcAllocInfo.pAlloc;
-                VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->SrcAllocInfo.srcId];
-                pRectsCmd->pContext = pContext;
-                pRectsCmd->VidPnSourceId = pPrivateData->SrcAllocInfo.srcId;
-                RECT r;
-                r.left = pSource->VScreenPos.x;
-                r.top = pSource->VScreenPos.y;
-                r.right = pAlloc->SurfDesc.width + pSource->VScreenPos.x;
-                r.bottom = pAlloc->SurfDesc.height + pSource->VScreenPos.y;
-                pRectsCmd->ContextsRects.ContextRect = r;
-                pRectsCmd->ContextsRects.UpdateRects.cRects = 1;
-                pRectsCmd->ContextsRects.UpdateRects.aRects[0] = r;
-                NTSTATUS tmpStatus = vboxVdmaGgCmdSubmit(&pDevExt->u.primary.Vdma.DmaGg, &pRectsCmd->Hdr);
-                Assert(tmpStatus == STATUS_SUCCESS);
-                if (tmpStatus != STATUS_SUCCESS)
-                    vboxVdmaGgCmdDestroy(&pRectsCmd->Hdr);
-            }
+                do
+                {
+                    PVBOXVDMAPIPE_CMD_RECTSINFO pRectsCmd = (PVBOXVDMAPIPE_CMD_RECTSINFO)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_RECTSINFO, RT_OFFSETOF(VBOXVDMAPIPE_CMD_RECTSINFO, ContextsRects.UpdateRects.aRects[1]));
+                    Assert(pRectsCmd);
+                    if (pRectsCmd)
+                    {
 
+                        VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->SrcAllocInfo.srcId];
+                        pRectsCmd->pContext = pContext;
+                        pRectsCmd->pSwapchain = pSwapchain;
+                        RECT r;
+                        r.left = pSource->VScreenPos.x;
+                        r.top = pSource->VScreenPos.y;
+                        r.right = pAlloc->SurfDesc.width + pSource->VScreenPos.x;
+                        r.bottom = pAlloc->SurfDesc.height + pSource->VScreenPos.y;
+                        pRectsCmd->ContextsRects.ContextRect = r;
+                        pRectsCmd->ContextsRects.UpdateRects.cRects = 1;
+                        pRectsCmd->ContextsRects.UpdateRects.aRects[0] = r;
+                        NTSTATUS tmpStatus = vboxVdmaGgCmdSubmit(&pDevExt->u.primary.Vdma.DmaGg, &pRectsCmd->Hdr);
+                        Assert(tmpStatus == STATUS_SUCCESS);
+                        if (tmpStatus == STATUS_SUCCESS)
+                            break;
+                        vboxVdmaGgCmdDestroy(&pRectsCmd->Hdr);
+                    }
+                    vboxWddmSwapchainRelease(pSwapchain);
+                } while (0);
+            }
             Status = vboxWddmDmaCmdNotifyCompletion(pDevExt, pPrivateData->pContext, pSubmitCommand->SubmissionFenceId);
             break;
         }
@@ -2940,6 +2969,13 @@ DxgkDdiEscape(
                     AssertBreakpoint();
                     Status = STATUS_INVALID_PARAMETER;
                 }
+            }
+            case VBOXESC_SWAPCHAININFO:
+            {
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+                Status = vboxWddmSwapchainCtxEscape(pDevExt, pContext, (PVBOXDISPIFESCAPE_SWAPCHAININFO)pEscapeHdr, pEscape->PrivateDriverDataSize);
+                Assert(Status == STATUS_SUCCESS);
+                break;
             }
             case VBOXESC_REINITVIDEOMODES:
                 VBoxWddmInvalidateModesTable(pDevExt);
@@ -4454,7 +4490,6 @@ DxgkDdiCreateContext(
     Assert(pContext);
     if (pContext)
     {
-        InitializeListHead(&pContext->ListEntry);
         pContext->pDevice = pDevice;
         pContext->hContext = pCreateContext->hContext;
         pContext->EngineAffinity = pCreateContext->EngineAffinity;
@@ -4477,16 +4512,25 @@ DxgkDdiCreateContext(
                 PVBOXWDDM_CREATECONTEXT_INFO pInfo = (PVBOXWDDM_CREATECONTEXT_INFO)pCreateContext->pPrivateDriverData;
                 if (pInfo->u32IsD3D)
                 {
-                    pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
-                    Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->CmMgr, &pContext->CmContext, (HANDLE)pInfo->hUmEvent, pInfo->u64UmInfo);
+                    ExInitializeFastMutex(&pContext->SwapchainMutex);
+                    Status = vboxWddmHTableCreate(&pContext->Swapchains, 4);
                     Assert(Status == STATUS_SUCCESS);
                     if (Status == STATUS_SUCCESS)
                     {
-                        Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-                        ExAcquireFastMutex(&pDevExt->ContextMutex);
-                        InsertHeadList(&pDevExt->ContextList3D, &pContext->ListEntry);
-                        ASMAtomicIncU32(&pDevExt->cContexts3D);
-                        ExReleaseFastMutex(&pDevExt->ContextMutex);
+                        pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
+                        Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->CmMgr, &pContext->CmContext, (HANDLE)pInfo->hUmEvent, pInfo->u64UmInfo);
+                        Assert(Status == STATUS_SUCCESS);
+                        if (Status == STATUS_SUCCESS)
+                        {
+//                            Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+//                            ExAcquireFastMutex(&pDevExt->ContextMutex);
+                            ASMAtomicIncU32(&pDevExt->cContexts3D);
+//                            ExReleaseFastMutex(&pDevExt->ContextMutex);
+                        }
+                        else
+                        {
+                            vboxWddmHTableDestroy(&pContext->Swapchains);
+                        }
                     }
                 }
                 else
@@ -4532,23 +4576,20 @@ DxgkDdiDestroyContext(
     if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D)
     {
         Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-        ExAcquireFastMutex(&pDevExt->ContextMutex);
-        RemoveEntryList(&pContext->ListEntry);
+//        ExAcquireFastMutex(&pDevExt->ContextMutex);
+//        RemoveEntryList(&pContext->ListEntry);
         uint32_t cContexts = ASMAtomicDecU32(&pDevExt->cContexts3D);
-        ExReleaseFastMutex(&pDevExt->ContextMutex);
+//        ExReleaseFastMutex(&pDevExt->ContextMutex);
         Assert(cContexts < UINT32_MAX/2);
-    }
-
-    if (pContext->pLastReportedRects)
-    {
-        vboxVideoCmCmdRelease(pContext->pLastReportedRects);
-        pContext->pLastReportedRects = NULL;
     }
 
     NTSTATUS Status = vboxVideoCmCtxRemove(&pContext->pDevice->pAdapter->CmMgr, &pContext->CmContext);
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
+    {
+        vboxWddmSwapchainCtxDestroyAll(pDevExt, pContext);
         vboxWddmMemFree(pContext);
+    }
 
     dfprintf(("<== "__FUNCTION__ ", hContext(0x%x)\n", hContext));
 

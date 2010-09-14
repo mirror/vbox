@@ -157,6 +157,45 @@ void vboxVideoCmCmdSubmit(void *pvCmd, uint32_t cbSize)
     vboxVideoCmCmdPostByHdr(pHdr->pContext->pSession, pHdr, cbSize);
 }
 
+NTSTATUS vboxVideoCmCmdVisit(PVBOXVIDEOCM_CTX pContext, BOOL bEntireSession, PFNVBOXVIDEOCMCMDVISITOR pfnVisitor, PVOID pvVisitor)
+{
+    PVBOXVIDEOCM_SESSION pSession = pContext->pSession;
+    PLIST_ENTRY pCurEntry = NULL;
+    PVBOXVIDEOCM_CMD_DR pHdr;
+
+    ExAcquireFastMutex(&pSession->Mutex);
+
+    pCurEntry = pSession->CommandsList.Blink;
+    do
+    {
+        if (pCurEntry != &pSession->CommandsList)
+        {
+            pHdr = VBOXCMENTRY_2_CMD(pCurEntry);
+            pCurEntry = pHdr->QueueList.Blink;
+            if (bEntireSession || pHdr->pContext == pContext)
+            {
+                void * pvBody = VBOXVIDEOCM_BODY(pHdr, void);
+                UINT fRet = pfnVisitor(pHdr->pContext, pvBody, pHdr->CmdHdr.cbCmd, pvVisitor);
+                if (fRet & VBOXVIDEOCMCMDVISITOR_RETURN_RMCMD)
+                {
+                    RemoveEntryList(&pHdr->QueueList);
+                }
+                if (!(fRet & VBOXVIDEOCMCMDVISITOR_RETURN_CONTINUE))
+                    break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    } while (1);
+
+
+    ExReleaseFastMutex(&pSession->Mutex);
+
+    return STATUS_SUCCESS;
+}
+
 void vboxVideoCmCtxInitEmpty(PVBOXVIDEOCM_CTX pContext)
 {
     InitializeListHead(&pContext->SessionEntry);
@@ -445,4 +484,14 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
     pCmd->Hdr.u32Reserved = 0;
 
     return STATUS_SUCCESS;
+}
+
+VOID vboxVideoCmLock(PVBOXVIDEOCM_CTX pContext)
+{
+    ExAcquireFastMutex(&pContext->pSession->Mutex);
+}
+
+VOID vboxVideoCmUnlock(PVBOXVIDEOCM_CTX pContext)
+{
+    ExReleaseFastMutex(&pContext->pSession->Mutex);
 }

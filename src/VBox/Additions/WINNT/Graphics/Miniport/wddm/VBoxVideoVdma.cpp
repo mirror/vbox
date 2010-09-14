@@ -306,6 +306,7 @@ DECLINLINE(bool) vboxVdmaDirtyRectsIsCover(const RECT *paRects, uint32_t cRects,
 static NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsInfo)
 {
     PVBOXWDDM_CONTEXT pContext = pRectsInfo->pContext;
+    PVBOXWDDM_SWAPCHAIN pSwapchain = pRectsInfo->pSwapchain;
     PDEVICE_EXTENSION pDevExt = pContext->pDevice->pAdapter;
     PVBOXWDDM_RECTS_INFO pRects = &pRectsInfo->ContextsRects.UpdateRects;
     NTSTATUS Status = STATUS_SUCCESS;
@@ -313,14 +314,14 @@ static NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsIn
     uint32_t cbCmdInternal = VBOXVIDEOCM_CMD_RECTS_INTERNAL_SIZE4CRECTS(pRects->cRects);
     Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
     ExAcquireFastMutex(&pDevExt->ContextMutex);
-    for (PLIST_ENTRY pCur = pDevExt->ContextList3D.Flink; pCur != &pDevExt->ContextList3D; pCur = pCur->Flink)
+    for (PLIST_ENTRY pCur = pDevExt->SwapchainList3D.Flink; pCur != &pDevExt->SwapchainList3D; pCur = pCur->Flink)
     {
-        if (pCur != &pContext->ListEntry)
+        if (pCur != &pSwapchain->DevExtListEntry)
         {
-            PVBOXWDDM_CONTEXT pCurContext = VBOXWDDMENTRY_2_CONTEXT(pCur);
+            PVBOXWDDM_SWAPCHAIN pCurSwapchain = VBOXWDDMENTRY_2_SWAPCHAIN(pCur);
             if (!pCmdInternal)
             {
-                pCmdInternal = (PVBOXVIDEOCM_CMD_RECTS_INTERNAL)vboxVideoCmCmdCreate(&pCurContext->CmContext, cbCmdInternal);
+                pCmdInternal = (PVBOXVIDEOCM_CMD_RECTS_INTERNAL)vboxVideoCmCmdCreate(&pCurSwapchain->pContext->CmContext, cbCmdInternal);
                 Assert(pCmdInternal);
                 if (!pCmdInternal)
                 {
@@ -330,30 +331,30 @@ static NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsIn
             }
             else
             {
-                pCmdInternal = (PVBOXVIDEOCM_CMD_RECTS_INTERNAL)vboxVideoCmCmdReinitForContext(pCmdInternal, &pCurContext->CmContext);
+                pCmdInternal = (PVBOXVIDEOCM_CMD_RECTS_INTERNAL)vboxVideoCmCmdReinitForContext(pCmdInternal, &pCurSwapchain->pContext->CmContext);
             }
 
-            vboxVdmaDirtyRectsCalcIntersection(&pCurContext->ViewRect, pRects, &pCmdInternal->Cmd.RectsInfo);
+            vboxVdmaDirtyRectsCalcIntersection(&pCurSwapchain->ViewRect, pRects, &pCmdInternal->Cmd.RectsInfo);
             if (pCmdInternal->Cmd.RectsInfo.cRects)
             {
                 bool bSend = false;
                 pCmdInternal->Cmd.fFlags.Value = 0;
                 pCmdInternal->Cmd.fFlags.bAddHiddenRects = 1;
-                if (pCurContext->pLastReportedRects)
+                if (pCurSwapchain->pLastReportedRects)
                 {
-                    if (pCurContext->pLastReportedRects->Cmd.fFlags.bSetVisibleRects)
+                    if (pCurSwapchain->pLastReportedRects->Cmd.fFlags.bSetVisibleRects)
                     {
                         RECT *paPrevRects;
                         uint32_t cPrevRects;
-                        if (pCurContext->pLastReportedRects->Cmd.fFlags.bSetViewRect)
+                        if (pCurSwapchain->pLastReportedRects->Cmd.fFlags.bSetViewRect)
                         {
-                            paPrevRects = &pCurContext->pLastReportedRects->Cmd.RectsInfo.aRects[1];
-                            cPrevRects = pCurContext->pLastReportedRects->Cmd.RectsInfo.cRects - 1;
+                            paPrevRects = &pCurSwapchain->pLastReportedRects->Cmd.RectsInfo.aRects[1];
+                            cPrevRects = pCurSwapchain->pLastReportedRects->Cmd.RectsInfo.cRects - 1;
                         }
                         else
                         {
-                            paPrevRects = &pCurContext->pLastReportedRects->Cmd.RectsInfo.aRects[0];
-                            cPrevRects = pCurContext->pLastReportedRects->Cmd.RectsInfo.cRects;
+                            paPrevRects = &pCurSwapchain->pLastReportedRects->Cmd.RectsInfo.aRects[0];
+                            cPrevRects = pCurSwapchain->pLastReportedRects->Cmd.RectsInfo.cRects;
                         }
 
                         if (vboxVdmaDirtyRectsHasIntersections(paPrevRects, cPrevRects,
@@ -364,9 +365,9 @@ static NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsIn
                     }
                     else
                     {
-                        Assert(pCurContext->pLastReportedRects->Cmd.fFlags.bAddHiddenRects);
-                        if (!vboxVdmaDirtyRectsIsCover(pCurContext->pLastReportedRects->Cmd.RectsInfo.aRects,
-                                pCurContext->pLastReportedRects->Cmd.RectsInfo.cRects,
+                        Assert(pCurSwapchain->pLastReportedRects->Cmd.fFlags.bAddHiddenRects);
+                        if (!vboxVdmaDirtyRectsIsCover(pCurSwapchain->pLastReportedRects->Cmd.RectsInfo.aRects,
+                                pCurSwapchain->pLastReportedRects->Cmd.RectsInfo.cRects,
                                 pCmdInternal->Cmd.RectsInfo.aRects, pCmdInternal->Cmd.RectsInfo.cRects))
                         {
                             bSend = true;
@@ -378,13 +379,13 @@ static NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsIn
 
                 if (bSend)
                 {
-                    if (pCurContext->pLastReportedRects)
-                        vboxVideoCmCmdRelease(pCurContext->pLastReportedRects);
+                    if (pCurSwapchain->pLastReportedRects)
+                        vboxVideoCmCmdRelease(pCurSwapchain->pLastReportedRects);
 
-                    pCmdInternal->VidPnSourceId = pRectsInfo->VidPnSourceId;
+                    pCmdInternal->hSwapchainUm = pCurSwapchain->hSwapchainUm;
 
                     vboxVideoCmCmdRetain(pCmdInternal);
-                    pCurContext->pLastReportedRects = pCmdInternal;
+                    pCurSwapchain->pLastReportedRects = pCmdInternal;
                     vboxVideoCmCmdSubmit(pCmdInternal, VBOXVIDEOCM_CMD_RECTS_INTERNAL_SIZE4CRECTS(pCmdInternal->Cmd.RectsInfo.cRects));
                     pCmdInternal = NULL;
                 }
@@ -393,10 +394,10 @@ static NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsIn
         else
         {
             RECT * pContextRect = &pRectsInfo->ContextsRects.ContextRect;
-            bool bRectShanged = (pContext->ViewRect.left != pContextRect->left
-                    || pContext->ViewRect.top != pContextRect->top
-                    || pContext->ViewRect.right != pContextRect->right
-                    || pContext->ViewRect.bottom != pContextRect->bottom);
+            bool bRectShanged = (pSwapchain->ViewRect.left != pContextRect->left
+                    || pSwapchain->ViewRect.top != pContextRect->top
+                    || pSwapchain->ViewRect.right != pContextRect->right
+                    || pSwapchain->ViewRect.bottom != pContextRect->bottom);
             PVBOXVIDEOCM_CMD_RECTS_INTERNAL pDrCmdInternal;
 
             bool bSend = false;
@@ -415,7 +416,7 @@ static NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsIn
                 pDrCmdInternal->Cmd.RectsInfo.cRects = pRects->cRects + 1;
                 pDrCmdInternal->Cmd.fFlags.bSetViewRect = 1;
                 pDrCmdInternal->Cmd.RectsInfo.aRects[0] = *pContextRect;
-                pContext->ViewRect = *pContextRect;
+                pSwapchain->ViewRect = *pContextRect;
                 memcpy(&pDrCmdInternal->Cmd.RectsInfo.aRects[1], pRects->aRects, sizeof (RECT) * pRects->cRects);
                 bSend = true;
             }
@@ -440,28 +441,28 @@ static NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsIn
                 pDrCmdInternal->Cmd.RectsInfo.cRects = pRects->cRects;
                 memcpy(&pDrCmdInternal->Cmd.RectsInfo.aRects[0], pRects->aRects, sizeof (RECT) * pRects->cRects);
 
-                if (pContext->pLastReportedRects)
+                if (pSwapchain->pLastReportedRects)
                 {
-                    if (pContext->pLastReportedRects->Cmd.fFlags.bSetVisibleRects)
+                    if (pSwapchain->pLastReportedRects->Cmd.fFlags.bSetVisibleRects)
                     {
                         RECT *paRects;
                         uint32_t cRects;
-                        if (pContext->pLastReportedRects->Cmd.fFlags.bSetViewRect)
+                        if (pSwapchain->pLastReportedRects->Cmd.fFlags.bSetViewRect)
                         {
-                            paRects = &pContext->pLastReportedRects->Cmd.RectsInfo.aRects[1];
-                            cRects = pContext->pLastReportedRects->Cmd.RectsInfo.cRects - 1;
+                            paRects = &pSwapchain->pLastReportedRects->Cmd.RectsInfo.aRects[1];
+                            cRects = pSwapchain->pLastReportedRects->Cmd.RectsInfo.cRects - 1;
                         }
                         else
                         {
-                            paRects = &pContext->pLastReportedRects->Cmd.RectsInfo.aRects[0];
-                            cRects = pContext->pLastReportedRects->Cmd.RectsInfo.cRects;
+                            paRects = &pSwapchain->pLastReportedRects->Cmd.RectsInfo.aRects[0];
+                            cRects = pSwapchain->pLastReportedRects->Cmd.RectsInfo.cRects;
                         }
                         bSend = (pDrCmdInternal->Cmd.RectsInfo.cRects != cRects)
                                 || memcmp(paRects, pDrCmdInternal->Cmd.RectsInfo.aRects, cRects * sizeof (RECT));
                     }
                     else
                     {
-                        Assert(pContext->pLastReportedRects->Cmd.fFlags.bAddHiddenRects);
+                        Assert(pSwapchain->pLastReportedRects->Cmd.fFlags.bAddHiddenRects);
                         bSend = true;
                     }
                 }
@@ -473,14 +474,14 @@ static NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsIn
             Assert(pRects->cRects);
             if (bSend)
             {
-                if (pContext->pLastReportedRects)
-                    vboxVideoCmCmdRelease(pContext->pLastReportedRects);
+                if (pSwapchain->pLastReportedRects)
+                    vboxVideoCmCmdRelease(pSwapchain->pLastReportedRects);
 
                 pDrCmdInternal->Cmd.fFlags.bSetVisibleRects = 1;
-                pDrCmdInternal->VidPnSourceId = pRectsInfo->VidPnSourceId;
+                pDrCmdInternal->hSwapchainUm = pSwapchain->hSwapchainUm;
 
                 vboxVideoCmCmdRetain(pDrCmdInternal);
-                pContext->pLastReportedRects = pDrCmdInternal;
+                pSwapchain->pLastReportedRects = pDrCmdInternal;
                 vboxVideoCmCmdSubmit(pDrCmdInternal, VBOXVIDEOCM_SUBMITSIZE_DEFAULT);
             }
             else
