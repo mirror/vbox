@@ -865,17 +865,17 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     VisualPtr visual;
     unsigned flags;
 
-    if (pVBox->mapPhys == 0) {
+    if (pScrn->memPhysBase == 0) {
 #ifdef PCIACCESS
-        pVBox->mapPhys = pVBox->pciInfo->regions[0].base_addr;
+        pScrn->memPhysBase = pVBox->pciInfo->regions[0].base_addr;
 #else
-        pVBox->mapPhys = pVBox->pciInfo->memBase[0];
+        pScrn->memPhysBase = pVBox->pciInfo->memBase[0];
 #endif
 /*        pVBox->mapSize = 1 << pVBox->pciInfo->size[0]; */
         /* Using the PCI information caused problems with
            non-powers-of-two sized video RAM configurations */
         pVBox->mapSize = inl(VBE_DISPI_IOPORT_DATA);
-        pVBox->mapOff = 0;
+        pScrn->fbOffset = 0;
     }
 
     if (!VBOXMapVidMem(pScrn))
@@ -1252,9 +1252,6 @@ VBOXMapVidMem(ScrnInfoPtr pScrn)
     TRACE_ENTRY();
     if (!pVBox->base)
     {
-        pScrn->memPhysBase = pVBox->mapPhys;
-        pScrn->fbOffset = pVBox->mapOff;
-
 #ifdef PCIACCESS
         (void) pci_device_map_range(pVBox->pciInfo,
                                     pScrn->memPhysBase,
@@ -1264,7 +1261,7 @@ VBOXMapVidMem(ScrnInfoPtr pScrn)
 #else
         pVBox->base = xf86MapPciMem(pScrn->scrnIndex,
                                     VIDMEM_FRAMEBUFFER,
-                                    pVBox->pciTag, pVBox->mapPhys,
+                                    pVBox->pciTag, pScrn->memPhysBase,
                                     (unsigned) pVBox->mapSize);
 #endif
         if (pVBox->base)
