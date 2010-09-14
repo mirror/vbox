@@ -1383,6 +1383,58 @@ DECLINLINE(VOID) vboxWddmSwapchainInit(PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
     pSwapchain->iBB = VBOXWDDMDISP_INDEX_UNDEFINED;
 }
 
+static HRESULT vboxWddmSwapchainKmSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
+{
+    struct
+    {
+        VBOXDISPIFESCAPE_SWAPCHAININFO SwapchainInfo;
+        D3DKMT_HANDLE ahAllocs[VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE];
+    } Buf;
+
+    memset(&Buf.SwapchainInfo, 0, sizeof (Buf.SwapchainInfo));
+    Buf.SwapchainInfo.EscapeHdr.escapeCode = VBOXESC_SWAPCHAININFO;
+    Buf.SwapchainInfo.SwapchainInfo.hSwapchainKm = pSwapchain->hSwapchainKm;
+    Buf.SwapchainInfo.SwapchainInfo.hSwapchainUm = (VBOXDISP_UMHANDLE)pSwapchain;
+//    Buf.SwapchainInfo.SwapchainInfo.Rect;
+//    Buf.SwapchainInfo.SwapchainInfo.u32Reserved;
+    Buf.SwapchainInfo.SwapchainInfo.cAllocs = pSwapchain->cRTs;
+    for (UINT i = 0; i < Buf.SwapchainInfo.SwapchainInfo.cAllocs; ++i)
+    {
+        Assert(pSwapchain->aRTs[i].pAlloc->hAllocation);
+        Buf.SwapchainInfo.SwapchainInfo.ahAllocs[i] = pSwapchain->aRTs[i].pAlloc->hAllocation;
+    }
+
+    D3DDDICB_ESCAPE DdiEscape = {0};
+    DdiEscape.hContext = pDevice->DefaultContext.ContextInfo.hContext;
+    DdiEscape.hDevice = pDevice->hDevice;
+//    DdiEscape.Flags.Value = 0;
+    DdiEscape.pPrivateDriverData = &Buf.SwapchainInfo;
+    DdiEscape.PrivateDriverDataSize = RT_OFFSETOF(VBOXDISPIFESCAPE_SWAPCHAININFO, SwapchainInfo.ahAllocs[Buf.SwapchainInfo.SwapchainInfo.cAllocs]);
+    HRESULT hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        pSwapchain->hSwapchainKm = Buf.SwapchainInfo.SwapchainInfo.hSwapchainKm;
+    }
+
+    return hr;
+}
+
+static HRESULT vboxWddmSwapchainKmDestroy(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
+{
+    HRESULT hr = S_OK;
+    if (pSwapchain->hSwapchainKm)
+    {
+        /* submit empty swapchain to destroy the KM one */
+        UINT cOldRTc = pSwapchain->cRTs;
+        pSwapchain->cRTs = 0;
+        hr = vboxWddmSwapchainKmSynch(pDevice, pSwapchain);
+        Assert(hr == S_OK);
+        Assert(!pSwapchain->hSwapchainKm);
+        pSwapchain->cRTs = cOldRTc;
+    }
+    return hr;
+}
 static HRESULT vboxWddmSwapchainDestroyIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
 {
     if (pSwapchain->pSwapChainIf)
@@ -1409,6 +1461,7 @@ DECLINLINE(VOID) vboxWddmSwapchainClear(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
         pSwapchain->aRTs[i].pAlloc->pSwapchain = NULL;
     }
     vboxWddmSwapchainDestroyIf(pDevice, pSwapchain);
+    vboxWddmSwapchainKmDestroy(pDevice, pSwapchain);
     vboxWddmSwapchainInit(pSwapchain);
 }
 
@@ -1802,15 +1855,25 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
     }
     return hr;
 }
+
 static HRESULT vboxWddmSwapchainSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
 {
+    HRESULT hr = S_OK;
     for (int iBb = -1; iBb < int(pSwapchain->cRTs - 1); ++iBb)
     {
-        HRESULT hr = vboxWddmSwapchainRtSynch(pDevice, pSwapchain, (UINT)iBb);
+        hr = vboxWddmSwapchainRtSynch(pDevice, pSwapchain, (UINT)iBb);
         Assert(hr == S_OK);
     }
-    pSwapchain->fFlags.bChanged = 0;
-    return S_OK;
+
+    if (pSwapchain->fFlags.bChanged)
+    {
+        hr = vboxWddmSwapchainKmSynch(pDevice, pSwapchain);
+        if (hr == S_OK)
+        {
+            pSwapchain->fFlags.bChanged = 0;
+        }
+    }
+    return hr;
 }
 
 static VOID vboxWddmSwapchainFillParams(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, D3DPRESENT_PARAMETERS *pParams)
@@ -4372,6 +4435,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
     if (pRc)
     {
         bool bIssueCreateResource = false;
+        bool bCreateSwapchain = false;
         bool bCreateKMResource = false;
 
         pRc->hResource = pResource->hResource;
@@ -4648,9 +4712,8 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 Assert(pResource->SurfCount);
                 if (RTListIsEmpty(&pDevice->SwapchainList))
                 {
-                    PVBOXWDDMDISP_SWAPCHAIN pSwapchain;
-                    hr = vboxWddmSwapchainCreateIfForRc(pDevice, pRc, &pSwapchain);
-                    Assert(hr == S_OK);
+                    bCreateSwapchain = true;
+                    Assert(bIssueCreateResource);
                 }
                 else
                 {
@@ -4824,6 +4887,13 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                         pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
                         pAllocation->pvMem = (void*)pSurf->pSysMem;
                         pAllocation->SurfDesc = pAllocInfo->SurfDesc;
+                    }
+
+                    if(bCreateSwapchain)
+                    {
+                        PVBOXWDDMDISP_SWAPCHAIN pSwapchain;
+                        hr = vboxWddmSwapchainCreateIfForRc(pDevice, pRc, &pSwapchain);
+                        Assert(hr == S_OK);
                     }
                 }
 

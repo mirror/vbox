@@ -102,6 +102,7 @@ ifdef VBOXWDDM
 	wddm/VBoxVideoVdma.cpp \
 	wddm/VBoxVideoShgsmi.cpp \
  	wddm/VBoxVideoCm.cpp \
+ 	wddm/VBoxVideoMisc.cpp \
  	wddm/VBoxVideoWddm.rc
  ifdef VBOXWDDM_WITH_VBVA
   VBoxVideoWddm_SOURCES   += \

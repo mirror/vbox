@@ -63,6 +63,8 @@ NTSTATUS vboxWddmCallIsr(PDEVICE_EXTENSION pDevExt);
 //#define VBOXWDDM_ALLOCATIONINDEX_VOID (~0U)
 typedef struct VBOXWDDM_ALLOCATION
 {
+    LIST_ENTRY SwapchainEntry;
+    struct VBOXWDDM_SWAPCHAIN *pSwapchain;
     VBOXWDDM_ALLOC_TYPE enmType;
 //    VBOXWDDM_ALLOCUSAGE_TYPE enmCurrentUsage;
     D3DDDI_RESOURCEFLAGS fRcFlags;
@@ -123,6 +125,25 @@ typedef struct VBOXWDDM_DEVICE
 
 typedef enum
 {
+    VBOXWDDM_OBJSTATE_TYPE_UNKNOWN = 0,
+    VBOXWDDM_OBJSTATE_TYPE_INITIALIZED,
+    VBOXWDDM_OBJSTATE_TYPE_TERMINATED
+} VBOXWDDM_OBJSTATE_TYPE;
+typedef struct VBOXWDDM_SWAPCHAIN
+{
+    LIST_ENTRY DevExtListEntry;
+    LIST_ENTRY AllocList;
+    struct VBOXWDDM_CONTEXT *pContext;
+    RECT ViewRect;
+    VBOXWDDM_OBJSTATE_TYPE enmState;
+    volatile uint32_t cRefs;
+    VBOXDISP_UMHANDLE hSwapchainUm;
+    VBOXDISP_KMHANDLE hSwapchainKm;
+    PVBOXVIDEOCM_CMD_RECTS_INTERNAL pLastReportedRects;
+}VBOXWDDM_SWAPCHAIN, *PVBOXWDDM_SWAPCHAIN;
+
+typedef enum
+{
     VBOXWDDM_CONTEXT_TYPE_UNDEFINED = 0,
     VBOXWDDM_CONTEXT_TYPE_SYSTEM,
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D,
@@ -131,19 +152,19 @@ typedef enum
 
 typedef struct VBOXWDDM_CONTEXT
 {
-    LIST_ENTRY ListEntry;
+//    LIST_ENTRY ListEntry;
     struct VBOXWDDM_DEVICE * pDevice;
     HANDLE hContext;
     VBOXWDDM_CONTEXT_TYPE enmType;
     UINT  NodeOrdinal;
     UINT  EngineAffinity;
     UINT uLastCompletedCmdFenceId;
-    RECT ViewRect;
-    PVBOXVIDEOCM_CMD_RECTS_INTERNAL pLastReportedRects;
+    FAST_MUTEX SwapchainMutex;
+    VBOXWDDM_HTABLE Swapchains;
     VBOXVIDEOCM_CTX CmContext;
 } VBOXWDDM_CONTEXT, *PVBOXWDDM_CONTEXT;
 
-#define VBOXWDDMENTRY_2_CONTEXT(_pE) ((PVBOXWDDM_CONTEXT)((uint8_t*)(_pE) - RT_OFFSETOF(VBOXWDDM_CONTEXT, ListEntry)))
+#define VBOXWDDMENTRY_2_SWAPCHAIN(_pE) ((PVBOXWDDM_SWAPCHAIN)((uint8_t*)(_pE) - RT_OFFSETOF(VBOXWDDM_SWAPCHAIN, DevExtListEntry)))
 
 typedef struct VBOXWDDM_DMA_ALLOCINFO
 {
