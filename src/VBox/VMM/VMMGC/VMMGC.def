@@ -50,6 +50,7 @@ EXPORTS
     TMTimerSetMillies
     TMTimerSetMicro
     TMTimerSetNano
+    TMTimerSetFrequencyHint
     TMTimerStop
     TRPMGCHandlerGeneric
     TRPMGCHandlerInterupt
