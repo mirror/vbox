@@ -26,12 +26,8 @@
 #ifndef ___VBox_vusb_h
 #define ___VBox_vusb_h
 
-#ifndef RDESKTOP
-# include <VBox/cdefs.h>
-# include <VBox/types.h>
-#else
-# include "runtime.h"
-#endif
+#include <VBox/cdefs.h>
+#include <VBox/types.h>
 
 struct PDMLED;
 

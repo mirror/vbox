@@ -29,10 +29,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_USBPROXY
-#ifndef RDESKTOP
-# include <iprt/stdint.h>
-# include <iprt/err.h>
-#endif
+
+#include <iprt/stdint.h>
+#include <iprt/err.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/vfs.h>
@@ -71,29 +71,29 @@
 
 #ifndef RDESKTOP
 # include <VBox/pdm.h>
-# include <VBox/err.h>
-# include <VBox/log.h>
-# include <iprt/alloc.h>
-# include <iprt/assert.h>
-# include <iprt/asm.h>
-# include <iprt/ctype.h>
-# include <iprt/file.h>
-# include <iprt/linux/sysfs.h>
-# include <iprt/stream.h>
-# include <iprt/string.h>
-# include <iprt/thread.h>
-# include <iprt/time.h>
-# include "../USBProxyDevice.h"
 #else
-
-# include "../rdesktop.h"
-# include "runtime.h"
-# include "USBProxyDevice.h"
-# ifdef VBOX_USB_WITH_SYSFS
-#  include "sysfs.h"
-# endif
+# define RTCRITSECT          void *
+static inline int rtcsNoop() { return VINF_SUCCESS; }
+# define RTCritSectInit(a)   rtcsNoop()
+# define RTCritSectDelete(a) rtcsNoop()
+# define RTCritSectEnter(a)  rtcsNoop()
+# define RTCritSectLeave(a)  rtcsNoop()
 #endif
-
+#include <VBox/err.h>
+#include <VBox/log.h>
+#include <iprt/alloc.h>
+#include <iprt/assert.h>
+#include <iprt/asm.h>
+#include <iprt/ctype.h>
+#include <iprt/file.h>
+#include <iprt/linux/sysfs.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
+#if defined(NO_PORT_RESET) && !defined(NO_LOGICAL_RECONNECT)
+# include <iprt/thread.h>
+#endif
+#include <iprt/time.h>
+#include "../USBProxyDevice.h"
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
