@@ -89,6 +89,9 @@ fi
 if [ "$system" = "redhat" ]; then
     . /etc/init.d/functions
     if [ -n "$NOLSB" ]; then
+        start_daemon() {
+            daemon --user $1 $2 $3
+        }
         fail_msg() {
             echo_failure
             echo
@@ -105,8 +108,10 @@ fi
 
 if [ "$system" = "suse" ]; then
     . /etc/rc.status
-    daemon() {
-        startproc ${1+"$@"}
+    start_daemon() {
+        usr="$1"
+        shift
+        startproc -u "$usr" $@
     }
     if [ -n "$NOLSB" ]; then
         fail_msg() {
@@ -124,8 +129,12 @@ if [ "$system" = "suse" ]; then
 fi
 
 if [ "$system" = "debian" ]; then
-    daemon() {
-        start-stop-daemon --background --chuid "$1" --start --exec $2 -- $3
+    start_daemon() {
+        usr="$1"
+        shift
+        bin="$1"
+        shift
+        start-stop-daemon --background --chuid "$usr" --start --exec "$bin" -- $@
     }
     killproc() {
         start-stop-daemon --stop --exec $@
@@ -145,8 +154,12 @@ fi
 
 if [ "$system" = "gentoo" ]; then
     . /sbin/functions.sh
-    daemon() {
-        start-stop-daemon --start --exec $2 -- $3
+    start_daemon() {
+        usr="$1"
+        shift
+        bin="$1"
+        shift
+        start-stop-daemon --background --chuid "$usr" --start --exec "$bin" -- $@
     }
     killproc() {
         start-stop-daemon --stop --exec $@
@@ -170,7 +183,7 @@ fi
 if [ "$system" = "arch" ]; then
     USECOLOR=yes
     . /etc/rc.d/functions
-    daemon() {
+    start_daemon() {
         $@
         test $? -eq 0 && add_daemon rc.`basename $2`
     }
@@ -192,9 +205,6 @@ if [ "$system" = "arch" ]; then
 fi
 
 if [ "$system" = "slackware" ]; then
-    daemon() {
-        $2 $3
-    }
     killproc() {
         killall $1
         rm -f $PIDFILE
@@ -210,13 +220,16 @@ if [ "$system" = "slackware" ]; then
             echo -n "$1"
         }
     fi
+    start_daemon() {
+        # runuser
+        fail_msg "not supported on Slackware!"
+        return
+        $2 $3
+    }
 fi
 
 if [ "$system" = "lfs" ]; then
     . /etc/rc.d/init.d/functions
-    daemon() {
-        loadproc $2 $3
-    }
     if [ -n "$NOLSB" ]; then
         fail_msg() {
             echo_failure
@@ -228,6 +241,12 @@ if [ "$system" = "lfs" ]; then
             echo $1
         }
     fi
+    start_daemon() {
+        # runuser
+        fail_msg "not supported on LFS!"
+        return
+        loadproc $2 $3
+    }
     status() {
         statusproc $1
     }
@@ -251,10 +270,18 @@ vboxdrvrunning() {
     lsmod | grep -q "vboxdrv[^_-]"
 }
 
+check_single_user() {
+    if [ -n "$2" ]; then
+        fail_msg "VBOXWEB_USER must not contain multiple users!"
+        exit 1
+    fi
+}
+
 start() {
     if ! test -f $PIDFILE; then
         [ -z "$VBOXWEB_USER" ] && exit 0
         begin_msg "Starting VirtualBox web service";
+        check_single_user $VBOXWEB_USER
         vboxdrvrunning || {
             fail_msg "VirtualBox kernel module not loaded!"
             exit 0
@@ -267,9 +294,7 @@ start() {
         [ -n "$VBOXWEB_THREADS" ]        && PARAMS="$PARAMS -T $VBOXWEB_THREADS"
         [ -n "$VBOXWEB_KEEPALIVE" ]      && PARAMS="$PARAMS -k $VBOXWEB_KEEPALIVE"
         [ -n "$VBOXWEB_LOGFILE" ]        && PARAMS="$PARAMS -F $VBOXWEB_LOGFILE"
-        for u in $VBOXWEB_USER; do
-            daemon $u $binary $PARAMS > /dev/null 2>&1
-        done
+        start_daemon $VBOXWEB_USER $binary $PARAMS > /dev/null 2>&1
         PID=`pidof $binary 2>/dev/null`
         [ -n "$PID" ] && echo "$PID" > $PIDFILE
         succ_msg
