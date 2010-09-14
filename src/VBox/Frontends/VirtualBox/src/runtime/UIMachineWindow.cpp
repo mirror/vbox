@@ -30,19 +30,19 @@
 #include "COMDefs.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
-#include "VBoxCloseVMDlg.h"
 
-#include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIKeyboardHandler.h"
-#include "UIMouseHandler.h"
 #include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
 #include "UIMachineView.h"
-#include "UIMachineWindowNormal.h"
+#include "UIMachineWindow.h"
 #include "UIMachineWindowFullscreen.h"
-#include "UIMachineWindowSeamless.h"
+#include "UIMachineWindowNormal.h"
 #include "UIMachineWindowScale.h"
+#include "UIMachineWindowSeamless.h"
+#include "UIMouseHandler.h"
+#include "UISession.h"
+#include "UIVMCloseDialog.h"
 
 #ifdef Q_WS_X11
 # include <X11/Xlib.h>
@@ -203,7 +203,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             CMachine machine = session().GetMachine();
 
             /* Prepare close dialog: */
-            VBoxCloseVMDlg dlg(machineWindow());
+            UIVMCloseDialog dlg(machineWindow());
 
             /* Assign close-dialog pixmap: */
             dlg.pmIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(machine.GetOSTypeId()));
