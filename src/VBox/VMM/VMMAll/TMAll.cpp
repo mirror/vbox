@@ -2274,7 +2274,7 @@ VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM)
  * @returns The highest frequency.  0 if no timers care.
  * @param   pVM         The VM handle.
  */
-VMMDECL(uint32_t) TMGetFrequencyHint(PVM pVM)
+static uint32_t tmGetFrequencyHint(PVM pVM)
 {
     /*
      * Query the value, recalculate it if necessary.
@@ -2325,9 +2325,56 @@ VMMDECL(uint32_t) TMGetFrequencyHint(PVM pVM)
                 }
             }
             ASMAtomicWriteU32(&pVM->tm.s.uMaxHzHint, uMaxHzHint);
-            Log(("TMGetFrequencyHint: New value %u Hz\n", uMaxHzHint));
+            Log(("tmGetFrequencyHint: New value %u Hz\n", uMaxHzHint));
             tmTimerUnlock(pVM);
         }
     }
     return uMaxHzHint;
+}
+
+
+/**
+ * Calculates a host timer frequency that would be suitable for the current
+ * timer load.
+ *
+ * This will take the highest timer frequency, adjust for catch-up and warp
+ * driver, and finally add a little fudge factor.  The caller (VMM) will use
+ * the result to adjust the per-cpu preemption timer.
+ *
+ * @returns The highest frequency.  0 if no important timers around.
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The current CPU.
+ */
+VMM_INT_DECL(uint32_t) TMCalcHostTimerFrequency(PVM pVM, PVMCPU pVCpu)
+{
+    uint32_t uHz = tmGetFrequencyHint(pVM);
+
+    /* Catch up. */
+    if (ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
+    {
+        uint32_t u32Pct = ASMAtomicReadU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage);
+        if (ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
+        {
+            uHz *= u32Pct + 100;
+            uHz /= 100;
+        }
+    }
+
+    /* Warp drive */
+    if (ASMAtomicUoReadBool(&pVM->tm.s.fVirtualWarpDrive))
+    {
+        uint32_t u32Pct = ASMAtomicReadU32(&pVM->tm.s.u32VirtualWarpDrivePercentage);
+        if (ASMAtomicReadBool(&pVM->tm.s.fVirtualWarpDrive))
+        {
+            uHz *= u32Pct;
+            uHz /= 100;
+        }
+    }
+
+    /* Fudge factor. */
+    /** @todo make this configurable. */
+    uHz *= 110 + pVCpu->idCpu == pVM->tm.s.idTimerCpu;
+    uHz /= 100;
+
+    return uHz;
 }

@@ -140,12 +140,26 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
     pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce  = NIL_RTSEMEVENTMULTI;
     pVM->vmm.s.hEvtMulRendezvousDone            = NIL_RTSEMEVENTMULTI;
     pVM->vmm.s.hEvtRendezvousDoneCaller         = NIL_RTSEMEVENT;
-    int rc = CFGMR3QueryU32(CFGMR3GetRoot(pVM), "YieldEMTInterval", &pVM->vmm.s.cYieldEveryMillies);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pVM->vmm.s.cYieldEveryMillies = 23; /* Value arrived at after experimenting with the grub boot prompt. */
-        //pVM->vmm.s.cYieldEveryMillies = 8; //debugging
-    else
-        AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"YieldEMTInterval\", rc=%Rrc\n", rc), rc);
+
+    /** @cfgm{YieldEMTInterval, uint32_t, 1, UINT32_MAX, 23, ms}
+     * The EMT yield interval.  The EMT yielding is a hack we employ to play a
+     * bit nicer with the rest of the system (like for instance the GUI).
+     */
+    int rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "YieldEMTInterval", &pVM->vmm.s.cYieldEveryMillies,
+                               23 /* Value arrived at after experimenting with the grub boot prompt. */);
+    AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"YieldEMTInterval\", rc=%Rrc\n", rc), rc);
+
+
+    /** @cfgm{VMM/UsePeriodicPreemptionTimers, boolean, true}
+     * Controls whether we employ per-cpu preemption timers to limit the time
+     * spent executing guest code.  This option is not available on all
+     * platforms and we will silently ignore this setting then.  If we are
+     * running in VT-x mode, we will use the VMX-preemption timer instead of
+     * this one when possible.
+     */
+    PCFGMNODE pCfgVMM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "VMM");
+    rc = CFGMR3QueryBoolDef(pCfgVMM, "UsePeriodicPreemptionTimers", &pVM->vmm.s.fUsePeriodicPreemptionTimers, true);
+    AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"VMM/UsePeriodicPreemptionTimers\", rc=%Rrc\n", rc), rc);
 
     /*
      * Initialize the VMM sync critical section and semaphores.
@@ -491,6 +505,15 @@ VMMR3DECL(int) VMMR3InitFinalize(PVM pVM)
     }
     pVM->vmm.s.fStackGuardsStationed = true;
 #endif
+
+    /*
+     * Disable the periodic preemption timers if we can use the VMX-preemption
+     * timer instead.
+     */
+    if (   pVM->vmm.s.fUsePeriodicPreemptionTimers
+        && HWACCMR3IsVmxPreemptionTimerUsed(pVM))
+        pVM->vmm.s.fUsePeriodicPreemptionTimers = false;
+    LogRel(("VMM: fUsePeriodicPreemptionTimers=%RTbool\n", pVM->vmm.s.fUsePeriodicPreemptionTimers));
 
     return VINF_SUCCESS;
 }

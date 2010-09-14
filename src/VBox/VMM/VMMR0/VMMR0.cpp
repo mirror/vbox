@@ -529,67 +529,67 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
          */
         case VMMR0_DO_RAW_RUN:
         {
-            /* Safety precaution as hwaccm disables the switcher. */
-            if (RT_LIKELY(!pVM->vmm.s.fSwitcherDisabled))
-            {
-                RTCCUINTREG uFlags = ASMIntDisableFlags();
-                int         rc;
-                bool        fVTxDisabled;
-
-                if (RT_UNLIKELY(pVM->cCpus > 1))
-                {
-                    pVCpu->vmm.s.iLastGZRc = VERR_RAW_MODE_INVALID_SMP;
-                    ASMSetFlags(uFlags);
-                    return;
-                }
-
+            /* Some safety precautions first. */
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-                if (RT_UNLIKELY(!PGMGetHyperCR3(pVCpu)))
-                {
-                    pVCpu->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
-                    ASMSetFlags(uFlags);
-                    return;
-                }
+            if (RT_LIKELY(   !pVM->vmm.s.fSwitcherDisabled /* hwaccm */
+                          && pVM->cCpus == 1               /* !smp */
+                          && PGMGetHyperCR3(pVCpu)))
+#else
+            if (RT_LIKELY(   !pVM->vmm.s.fSwitcherDisabled
+                          && pVM->cCpus == 1))
 #endif
+            {
+                /* Disable preemption and update the periodic preemption timer. */
+                RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+                RTThreadPreemptDisable(&PreemptState);
+                ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
+                if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
+                    GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
 
                 /* We might need to disable VT-x if the active switcher turns off paging. */
-                rc = HWACCMR0EnterSwitcher(pVM, &fVTxDisabled);
-                if (RT_FAILURE(rc))
+                bool fVTxDisabled;
+                int rc = HWACCMR0EnterSwitcher(pVM, &fVTxDisabled);
+                if (RT_SUCCESS(rc))
                 {
+                    RTCCUINTREG uFlags = ASMIntDisableFlags();
+                    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
+
+                    TMNotifyStartOfExecution(pVCpu);
+                    rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
                     pVCpu->vmm.s.iLastGZRc = rc;
+                    TMNotifyEndOfExecution(pVCpu);
+
+                    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+
+                    /* Re-enable VT-x if previously turned off. */
+                    HWACCMR0LeaveSwitcher(pVM, fVTxDisabled);
+
+                    if (    rc == VINF_EM_RAW_INTERRUPT
+                        ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
+                        TRPMR0DispatchHostInterrupt(pVM);
+
                     ASMSetFlags(uFlags);
-                    return;
-                }
-
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
-                VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-
-                TMNotifyStartOfExecution(pVCpu);
-                rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
-                pVCpu->vmm.s.iLastGZRc = rc;
-                TMNotifyEndOfExecution(pVCpu);
-
-                VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-
-                /* Re-enable VT-x if previously turned off. */
-                HWACCMR0LeaveSwitcher(pVM, fVTxDisabled);
-
-                if (    rc == VINF_EM_RAW_INTERRUPT
-                    ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
-                    TRPMR0DispatchHostInterrupt(pVM);
-
-                ASMSetFlags(uFlags);
 
 #ifdef VBOX_WITH_STATISTICS
-                STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
-                vmmR0RecordRC(pVM, pVCpu, rc);
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
+                    vmmR0RecordRC(pVM, pVCpu, rc);
 #endif
+                }
+                else
+                    pVCpu->vmm.s.iLastGZRc = rc;
+                ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+                RTThreadPreemptRestore(&PreemptState);
             }
             else
             {
                 Assert(!pVM->vmm.s.fSwitcherDisabled);
                 pVCpu->vmm.s.iLastGZRc = VERR_NOT_SUPPORTED;
+                if (pVM->cCpus != 1)
+                    pVCpu->vmm.s.iLastGZRc = VERR_RAW_MODE_INVALID_SMP;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+                if (!PGMGetHyperCR3(pVCpu))
+                    pVCpu->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
+#endif
             }
             break;
         }
@@ -603,10 +603,6 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
          */
         case VMMR0_DO_HWACC_RUN:
         {
-            int rc;
-
-            STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
-
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
             RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&PreemptState);
@@ -614,6 +610,8 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             RTCCUINTREG uFlags = ASMIntDisableFlags();
 #endif
             ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
+            if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
+                GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
 
 #ifdef LOG_ENABLED
             if (pVCpu->idCpu > 0)
@@ -628,6 +626,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 }
             }
 #endif
+            int rc;
             if (!HWACCMR0SuspendPending())
             {
                 rc = HWACCMR0Enter(pVM, pVCpu);
@@ -637,6 +636,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                     int rc2 = HWACCMR0Leave(pVM, pVCpu);
                     AssertRC(rc2);
                 }
+                STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
             }
             else
             {
