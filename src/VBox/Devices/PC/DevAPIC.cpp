@@ -242,6 +242,10 @@ typedef struct APICState {
     bool                    fTimerArmed;
     /** Alignment */
     bool                    afAlignment[3];
+    /** The initial_count value used for the current frequency hint. */
+    uint32_t                uHintedInitialCount;
+    /** The count_shift value used for the current frequency hint. */
+    uint32_t                uHintedCountShift;
     /** Timer description timer. */
     R3PTRTYPE(char *)       pszDesc;
 # ifdef VBOX_WITH_STATISTICS
@@ -1467,6 +1471,7 @@ static void apic_timer_update(APICDeviceInfo* dev, APICState *s, int64_t current
 # else
         TMTimerSet(s->CTX_SUFF(pTimer), next_time);
         s->fTimerArmed = true;
+        if ( s->initial_count
 # endif
         s->next_time = next_time;
     } else {
@@ -1492,6 +1497,26 @@ static void apic_timer(void *opaque)
 }
 
 #else  /* VBOX */
+
+/**
+ * Does the frequency hinting and logging.
+ *
+ * @param   pThis               The device state.
+ */
+DECLINLINE(void) acpiDoFrequencyHinting(APICState *pThis)
+{
+    if (   pThis->uHintedInitialCount != pThis->initial_count
+        || pThis->uHintedCountShift   != (uint32_t)pThis->count_shift)
+    {
+        pThis->uHintedInitialCount = pThis->initial_count;
+        pThis->uHintedCountShift   = pThis->count_shift;
+
+        uint64_t cTickPerPeriod = (uint64_t)pThis->initial_count << pThis->count_shift;
+        uint32_t uHz            = TMTimerGetFreq(pThis->CTX_SUFF(pTimer)) / cTickPerPeriod;
+        TMTimerSetFrequencyHint(pThis->CTX_SUFF(pTimer), uHz);
+        Log(("apic: %u Hz\n", uHz));
+    }
+}
 
 /**
  * Implementation of the 0380h access: Timer reset + new initial count.
@@ -1525,6 +1550,7 @@ static void apicTimerSetInitialCount(APICDeviceInfo *dev, APICState *pThis, uint
         TMTimerSetRelative(pThis->CTX_SUFF(pTimer), cTicksNext, &pThis->initial_count_load_time);
         pThis->next_time = pThis->initial_count_load_time + cTicksNext;
         pThis->fTimerArmed = true;
+        acpiDoFrequencyHinting(pThis);
         STAM_COUNTER_INC(&pThis->StatTimerSetInitialCountArm);
     }
     else
@@ -1535,6 +1561,7 @@ static void apicTimerSetInitialCount(APICDeviceInfo *dev, APICState *pThis, uint
             STAM_COUNTER_INC(&pThis->StatTimerSetInitialCountDisarm);
             TMTimerStop(pThis->CTX_SUFF(pTimer));
             pThis->fTimerArmed = false;
+            pThis->uHintedCountShift = pThis->uHintedInitialCount = 0;
         }
         pThis->initial_count_load_time = TMTimerGet(pThis->CTX_SUFF(pTimer));
     }
@@ -1579,6 +1606,7 @@ static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew
                 /* not first period, stop it. */
                 TMTimerStop(pThis->CTX_SUFF(pTimer));
                 pThis->fTimerArmed = false;
+                pThis->uHintedCountShift = pThis->uHintedInitialCount = 0;
             }
             /* else: first period, let it fire normally. */
         }
@@ -1622,6 +1650,7 @@ static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew
                     TMTimerSet(pThis->CTX_SUFF(pTimer), NextTS);
                     pThis->next_time = NextTS;
                     pThis->fTimerArmed = true;
+                    acpiDoFrequencyHinting(pThis);
                     break;
                 }
                 STAM_COUNTER_INC(&pThis->StatTimerSetLvtArmRetries);
@@ -1656,13 +1685,16 @@ static DECLCALLBACK(void) apicTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer,
             pThis->next_time += (((uint64_t)pThis->initial_count + 1) << pThis->count_shift);
             TMTimerSet(pThis->CTX_SUFF(pTimer), pThis->next_time);
             pThis->fTimerArmed = true;
+            acpiDoFrequencyHinting(pThis);
         } else {
             /* single shot. */
             pThis->fTimerArmed = false;
+            pThis->uHintedCountShift = pThis->uHintedInitialCount = 0;
         }
     } else {
         /* masked, do not rearm. */
         pThis->fTimerArmed = false;
+        pThis->uHintedCountShift = pThis->uHintedInitialCount = 0;
     }
 }
 # endif /* IN_RING3 */
@@ -2039,7 +2071,10 @@ static int apic_load(QEMUFile *f, void *opaque, int version_id)
 
 #ifdef VBOX
     int rc = TMR3TimerLoad(s->CTX_SUFF(pTimer), f);
+    s->uHintedCountShift = s->uHintedInitialCount = 0;
     s->fTimerArmed = TMTimerIsActive(s->CTX_SUFF(pTimer));
+    if (s->fTimerArmed)
+        acpiDoFrequencyHinting(s);
 #endif
 
     return VINF_SUCCESS; /** @todo darn mess! */

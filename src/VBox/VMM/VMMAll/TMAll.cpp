@@ -1425,6 +1425,32 @@ VMMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
 
 
 /**
+ * Drops a hint about the frequency of the timer.
+ *
+ * This is used by TM and the VMM to calculate how often guest execution needs
+ * to be interrupted.  The hint is automatically cleared by TMTimerStop.
+ *
+ * @returns VBox status code.
+ * @param   pTimer          Timer handle as returned by one of the create
+ *                          functions.
+ * @param   uHzHint         The frequency hint.  Pass 0 to clear the hint.
+ *
+ * @remarks We're using an integer hertz value here since anything above 1 HZ
+ *          is not going to be any trouble satisfying scheduling wise.  The
+ *          range where it makes sense is >= 100 HZ.
+ */
+VMMDECL(int) TMTimerSetFrequencyHint(PTMTIMER pTimer, uint32_t uHzHint)
+{
+    TMTIMER_ASSERT_CRITSECT(pTimer);
+    pTimer->uHzHint = uHzHint;
+    PVM pVM = pTimer->CTX_SUFF(pVM);
+    if (uHzHint >= pVM->tm.s.uMaxHzHint)
+        ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, true);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Stop the timer.
  * Use TMR3TimerArm() to "un-stop" the timer.
  *
@@ -1435,6 +1461,15 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
 {
     STAM_PROFILE_START(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerStop), a);
     TMTIMER_ASSERT_CRITSECT(pTimer);
+
+    /* Reset the HZ hint. */
+    if (pTimer->uHzHint)
+    {
+        PVM pVM = pTimer->CTX_SUFF(pVM);
+        if (pTimer->uHzHint >= pVM->tm.s.uMaxHzHint)
+            ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, true);
+        pTimer->uHzHint = 0;
+    }
 
     /** @todo see if this function needs optimizing. */
     int cRetries = 1000;
@@ -2232,3 +2267,67 @@ VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM)
     return pVM->tm.s.u32VirtualWarpDrivePercentage;
 }
 
+
+/**
+ * Gets the highest frequency hint for all the important timers.
+ *
+ * @returns The highest frequency.  0 if no timers care.
+ * @param   pVM         The VM handle.
+ */
+VMMDECL(uint32_t) TMGetFrequencyHint(PVM pVM)
+{
+    /*
+     * Query the value, recalculate it if necessary.
+     *
+     * The "right" highest frequency value isn't so important that we'll block
+     * waiting on the timer semaphore.
+     */
+    uint32_t uMaxHzHint = ASMAtomicUoReadU32(&pVM->tm.s.uMaxHzHint);
+    if (RT_UNLIKELY(ASMAtomicReadBool(&pVM->tm.s.fHzHintNeedsUpdating)))
+    {
+        if (RT_SUCCESS(tmTimerTryLock(pVM)))
+        {
+            ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, false);
+
+            /*
+             * Loop over the timers associated with each clock.
+             */
+            uMaxHzHint = 0;
+            for (int i = 0; i < TMCLOCK_MAX; i++)
+            {
+                PTMTIMERQUEUE pQueue = &pVM->tm.s.CTX_SUFF(paTimerQueues)[i];
+                for (PTMTIMER pCur = TMTIMER_GET_HEAD(pQueue); pCur; pCur = TMTIMER_GET_NEXT(pCur))
+                {
+                    uint32_t uHzHint = ASMAtomicUoReadU32(&pCur->uHzHint);
+                    if (uHzHint > uMaxHzHint)
+                    {
+                        switch (pCur->enmState)
+                        {
+                            case TMTIMERSTATE_ACTIVE:
+                            case TMTIMERSTATE_EXPIRED_GET_UNLINK:
+                            case TMTIMERSTATE_EXPIRED_DELIVER:
+                            case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
+                            case TMTIMERSTATE_PENDING_SCHEDULE:
+                            case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
+                            case TMTIMERSTATE_PENDING_RESCHEDULE:
+                                uMaxHzHint = uHzHint;
+                                break;
+
+                            case TMTIMERSTATE_STOPPED:
+                            case TMTIMERSTATE_PENDING_STOP:
+                            case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
+                            case TMTIMERSTATE_DESTROY:
+                            case TMTIMERSTATE_FREE:
+                                break;
+                            /* no default, want gcc warnings when adding more states. */
+                        }
+                    }
+                }
+            }
+            ASMAtomicWriteU32(&pVM->tm.s.uMaxHzHint, uMaxHzHint);
+            Log(("TMGetFrequencyHint: New value %u Hz\n", uMaxHzHint));
+            tmTimerUnlock(pVM);
+        }
+    }
+    return uMaxHzHint;
+}

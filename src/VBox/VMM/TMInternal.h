@@ -168,6 +168,15 @@ typedef struct TMTIMER
     /** Timer relative offset to the previous timer in the chain. */
     int32_t                 offPrev;
 
+    /** Pointer to the VM the timer belongs to - R3 Ptr. */
+    PVMR3                   pVMR3;
+    /** Pointer to the VM the timer belongs to - R0 Ptr. */
+    PVMR0                   pVMR0;
+    /** Pointer to the VM the timer belongs to - RC Ptr. */
+    PVMRC                   pVMRC;
+    /** The timer frequency hint.  This is 0 if not hint was given. */
+    uint32_t volatile       uHzHint;
+
     /** User argument. */
     RTR3PTR                 pvUser;
     /** The critical section associated with the lock. */
@@ -179,14 +188,8 @@ typedef struct TMTIMER
     PTMTIMERR3              pBigPrev;
     /** Pointer to the timer description. */
     R3PTRTYPE(const char *) pszDesc;
-    /** Pointer to the VM the timer belongs to - R3 Ptr. */
-    PVMR3                   pVMR3;
-    /** Pointer to the VM the timer belongs to - R0 Ptr. */
-    PVMR0                   pVMR0;
-    /** Pointer to the VM the timer belongs to - RC Ptr. */
-    PVMRC                   pVMRC;
-#if HC_ARCH_BITS == 64
-    RTRCPTR                 padding0; /**< pad structure to multiple of 8 bytes. */
+#if HC_ARCH_BITS == 32
+    uint32_t                padding0; /**< pad structure to multiple of 8 bytes. */
 #endif
 } TMTIMER;
 AssertCompileMemberSize(TMTIMER, enmState, sizeof(uint32_t));
@@ -416,6 +419,13 @@ typedef struct TM
         uint32_t                u32Alignment;   /**< Structure alignment */
     }                           aVirtualSyncCatchUpPeriods[TM_MAX_CATCHUP_PERIODS];
 
+    /** The current max timer Hz hint. */
+    uint32_t volatile           uMaxHzHint;
+    /** Whether to recalulate the HzHint next time its queried. */
+    bool volatile               fHzHintNeedsUpdating;
+    /** Alignment */
+    bool                        afAlignment2[3];
+
     /** The UTC offset in ns.
      * This is *NOT* for converting UTC to local time. It is for converting real
      * world UTC time to VM UTC time. This feature is indented for doing date
@@ -458,7 +468,7 @@ typedef struct TM
     /** Indicates that the virtual sync queue is being run. */
     bool volatile               fRunningVirtualSyncQueue;
     /** Alignment */
-    bool                        afAlignment2[2];
+    bool                        afAlignment3[2];
 
     /** Lock serializing access to the timer lists. */
     PDMCRITSECT                 TimerCritSect;

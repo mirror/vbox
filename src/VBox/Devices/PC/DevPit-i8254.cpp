@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -331,13 +331,20 @@ DECLINLINE(void) pit_load_count(PITChannelState *s, int val)
     pit_irq_timer_update(s, s->count_load_time, s->count_load_time);
 
     /* log the new rate (ch 0 only). */
-    if (    s->pTimerR3 /* ch 0 */
-        &&  s->cRelLogEntries++ < 32)
-        LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=0)\n",
-                s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100));
+    if (s->pTimerR3 /* ch 0 */)
+    {
+        if (s->cRelLogEntries++ < 32)
+            LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=0)\n",
+                    s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100));
+        else
+            Log(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=0)\n",
+                 s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100));
+        TMTimerSetFrequencyHint(s->CTX_SUFF(pTimer), PIT_FREQ / s->count);
+    }
     else
-        Log(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=0)\n",
-             s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100));
+        Log(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=%d)\n",
+             s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100,
+             s - &s->CTX_SUFF(pPit)->channels[0]));
 }
 
 /* return -1 if no transition will occur.  */
@@ -852,8 +859,9 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             TMR3TimerLoad(s->CTX_SUFF(pTimer), pSSM);
             LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=%d) (restore)\n",
                     s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100, i));
+            TMTimerSetFrequencyHint(s->CTX_SUFF(pTimer), PIT_FREQ / s->count);
         }
-        pThis->channels[0].cRelLogEntries = 0;
+        pThis->channels[i].cRelLogEntries = 0;
     }
 
     SSMR3GetS32(pSSM, &pThis->speaker_data_on);
