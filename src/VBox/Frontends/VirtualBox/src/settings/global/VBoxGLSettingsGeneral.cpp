@@ -37,10 +37,10 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
     mCbCheckPresentationMode->hide();
     mWtSpacer2->hide();
 #endif /* !Q_WS_MAC */
-#ifndef Q_WS_WIN
+//#ifndef Q_WS_WIN /* Checkbox hidden for now! */
     mCbDisableHostScreenSaver->hide();
     mWtSpacer3->hide();
-#endif /* !Q_WS_WIN */
+//#endif /* !Q_WS_WIN */
 
     if (mCbCheckTrayIcon->isHidden() &&
         mCbCheckPresentationMode->isHidden() &&
