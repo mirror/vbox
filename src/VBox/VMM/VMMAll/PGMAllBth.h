@@ -1269,13 +1269,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
             RTGCPHYS        GCPhys   = GST_GET_PDE_GCPHYS(PdeSrc);
 
-# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-            /* Reset the modification counter (OpenSolaris trashes tlb entries very often) */
-            if (    !pShwPage->fDirty
-                &&  pShwPage->cModifications)
-                pShwPage->cModifications = 1;
-# endif
-
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
             GCPhys |= (iPDDst & 1) * (PAGE_SIZE/2);
@@ -1389,13 +1382,35 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  * @param   pShwPage    The shadow page.
  * @param   HCPhys      The physical page we is being dereferenced.
  * @param   iPte        Shadow PTE index
+ * @param   GCPhysPage  Guest physical address (only valid if pShwPage->fDirty is set)
  */
-DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPAGE pShwPage, RTHCPHYS HCPhys, uint16_t iPte)
+DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPAGE pShwPage, RTHCPHYS HCPhys, uint16_t iPte, RTGCPHYS GCPhysPage)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackDeref, a);
     LogFlow(("SyncPageWorkerTrackDeref: Damn HCPhys=%RHp pShwPage->idx=%#x!!!\n", HCPhys, pShwPage->idx));
+
+# if    defined(PGMPOOL_WITH_OPTIMIZED_DIRTY_PT) \
+     && PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) \
+     && (PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_SHW_TYPE == PGM_TYPE_PAE /* pae/32bit combo */)
+
+    /* Use the hint we retrieved from the cached guest PT. */
+    if (pShwPage->fDirty)
+    {
+        PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
+        Assert(pShwPage->cPresent);
+        Assert(pPool->cPresent);
+        pShwPage->cPresent--;
+        pPool->cPresent--;
+
+        PPGMPAGE pPhysPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysPage);
+        AssertRelease(pPhysPage);
+        pgmTrackDerefGCPhys(pPool, pShwPage, pPhysPage, iPte);
+        return;    
+    }
+# endif
 
     /** @todo If this turns out to be a bottle neck (*very* likely) two things can be done:
      *      1. have a medium sized HCPhys -> GCPhys TLB (hash?)
@@ -1562,22 +1577,25 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint64_t
 DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc,
                                               PPGMPOOLPAGE pShwPage, unsigned iPTDst)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVM      pVM = pVCpu->CTX_SUFF(pVM);
+    RTGCPHYS GCPhysOldPage = NIL_RTGCPHYS;
 
-# if    defined(PGMPOOL_WITH_OPTIMIZED_DIRTY_PT) \
+#if    defined(PGMPOOL_WITH_OPTIMIZED_DIRTY_PT) \
      && PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) \
      && (PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_SHW_TYPE == PGM_TYPE_PAE /* pae/32bit combo */)
+
     if (pShwPage->fDirty)
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
         PGSTPT pGstPT;
 
         pGstPT = (PGSTPT)&pPool->aDirtyPages[pShwPage->idxDirty].aPage[0];
+        GCPhysOldPage = GST_GET_PTE_GCPHYS(pGstPT->a[iPTDst]);
         pGstPT->a[iPTDst].u = PteSrc.u;
     }
-# else
+#else
     Assert(!pShwPage->fDirty);
-# endif
+#endif
 
     if (   PteSrc.n.u1Present
         && GST_IS_PTE_VALID(pVCpu, PteSrc))
@@ -1691,14 +1709,14 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
                 else if (SHW_PTE_GET_HCPHYS(*pPteDst) != SHW_PTE_GET_HCPHYS(PteDst))
                 {
                     Log2(("SyncPageWorker: deref! *pPteDst=%RX64 PteDst=%RX64\n", SHW_PTE_LOG64(*pPteDst), SHW_PTE_LOG64(PteDst)));
-                    PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, SHW_PTE_GET_HCPHYS(*pPteDst), iPTDst);
+                    PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, SHW_PTE_GET_HCPHYS(*pPteDst), iPTDst, GCPhysOldPage);
                     PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVCpu, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
                 }
             }
             else if (SHW_PTE_IS_P(*pPteDst))
             {
                 Log2(("SyncPageWorker: deref! *pPteDst=%RX64\n", SHW_PTE_LOG64(*pPteDst)));
-                PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, SHW_PTE_GET_HCPHYS(*pPteDst), iPTDst);
+                PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, SHW_PTE_GET_HCPHYS(*pPteDst), iPTDst, GCPhysOldPage);
             }
 
             /*
@@ -1727,7 +1745,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
     if (SHW_PTE_IS_P(*pPteDst))
     {
         Log2(("SyncPageWorker: deref! *pPteDst=%RX64\n", SHW_PTE_LOG64(*pPteDst)));
-        PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, SHW_PTE_GET_HCPHYS(*pPteDst), iPTDst);
+        PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, SHW_PTE_GET_HCPHYS(*pPteDst), iPTDst, GCPhysOldPage);
     }
     SHW_PTE_ATOMIC_SET(*pPteDst, 0);
 }
