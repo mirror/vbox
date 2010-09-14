@@ -1383,7 +1383,7 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
                 continue;
             Log(("PCI: relocating '%s' from slot %#x to %#x\n", pBus->apDevices[iDev + i]->name, iDev + i, iRelDev + i));
             pBus->apDevices[iRelDev + i] = pBus->apDevices[iDev + i];
-            pBus->apDevices[iRelDev + i]->devfn = i;
+            pBus->apDevices[iRelDev + i]->devfn = iRelDev + i;
             pBus->apDevices[iDev + i] = NULL;
         }
     }
