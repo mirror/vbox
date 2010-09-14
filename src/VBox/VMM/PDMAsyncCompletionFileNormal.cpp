@@ -1010,6 +1010,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                     }
                     else
                     {
+                        pCurr->hReq = hReq;
                         apReqs[cRequests] = hReq;
                         pEndpoint->AioMgr.cReqsProcessed++;
                         cRequests++;
