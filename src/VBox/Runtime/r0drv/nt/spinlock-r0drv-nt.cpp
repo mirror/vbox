@@ -47,7 +47,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Apply the NoIrq hack if defined. */
-//#define RTSPINLOCK_NT_HACK_NOIRQ
+#define RTSPINLOCK_NT_HACK_NOIRQ
 
 #ifdef RTSPINLOCK_NT_HACK_NOIRQ
 /** Indicates that the spinlock is taken. */
