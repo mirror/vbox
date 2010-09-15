@@ -372,8 +372,8 @@ void UINewVMWzdPage4::retranslateUi()
 
     /* Translate recommended 'hdd' field value */
     QString strRecommendedHDD = field("type").value<CGuestOSType>().isNull() ? QString() :
-                                QString::number(field("type").value<CGuestOSType>().GetRecommendedHDD());
-    m_pPage4Text2->setText (tr ("The recommended size of the boot hard disk is <b>%1</b> MB.").arg (strRecommendedHDD));
+                                VBoxGlobal::formatSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
+    m_pPage4Text2->setText (tr ("The recommended size of the boot hard disk is <b>%1</b>.").arg (strRecommendedHDD));
 }
 
 void UINewVMWzdPage4::initializePage()

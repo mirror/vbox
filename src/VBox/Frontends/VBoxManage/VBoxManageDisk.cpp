@@ -152,6 +152,7 @@ static const RTGETOPTDEF g_aCreateHardDiskOptions[] =
     { "-filename",      'f', RTGETOPT_REQ_STRING },     // deprecated
     { "--size",         's', RTGETOPT_REQ_UINT64 },
     { "-size",          's', RTGETOPT_REQ_UINT64 },     // deprecated
+    { "--sizebyte",     'S', RTGETOPT_REQ_UINT64 },
     { "--format",       'o', RTGETOPT_REQ_STRING },
     { "-format",        'o', RTGETOPT_REQ_STRING },     // deprecated
     { "--static",       'F', RTGETOPT_REQ_NOTHING },
@@ -173,7 +174,7 @@ int handleCreateHardDisk(HandlerArg *a)
     HRESULT rc;
     int vrc;
     Bstr filename;
-    uint64_t sizeMB = 0;
+    uint64_t size = 0;
     Bstr format = "VDI";
     MediumVariant_T DiskVariant = MediumVariant_Standard;
     Bstr comment;
@@ -195,7 +196,11 @@ int handleCreateHardDisk(HandlerArg *a)
                 break;
 
             case 's':   // --size
-                sizeMB = ValueUnion.u64;
+                size = ValueUnion.u64 * _1M;
+                break;
+
+            case 'S':   // --sizebyte
+                size = ValueUnion.u64;
                 break;
 
             case 'o':   // --format
@@ -255,7 +260,7 @@ int handleCreateHardDisk(HandlerArg *a)
 
     /* check the outcome */
     if (   !filename
-        || sizeMB == 0)
+        || size == 0)
         return errorSyntax(USAGE_CREATEHD, "Parameters --filename and --size are required");
 
     /* check for filename extension */
@@ -286,7 +291,7 @@ int handleCreateHardDisk(HandlerArg *a)
         }
 
         ComPtr<IProgress> progress;
-        CHECK_ERROR(hardDisk, CreateBaseStorage(sizeMB, DiskVariant, progress.asOutParam()));
+        CHECK_ERROR(hardDisk, CreateBaseStorage(size, DiskVariant, progress.asOutParam()));
         if (SUCCEEDED(rc) && progress)
         {
             rc = showProgress(progress);

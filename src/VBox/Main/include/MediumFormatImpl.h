@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -57,7 +57,7 @@ public:
 
     struct Data
     {
-        Data() : capabilities (0) {}
+        Data() : capabilities(0) {}
 
         const Utf8Str       strId;
         const Utf8Str       strName;
@@ -68,37 +68,37 @@ public:
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(MediumFormat, IMediumFormat)
 
-    DECLARE_NOT_AGGREGATABLE (MediumFormat)
+    DECLARE_NOT_AGGREGATABLE(MediumFormat)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(MediumFormat)
-        COM_INTERFACE_ENTRY (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY (IMediumFormat)
-        COM_INTERFACE_ENTRY (IDispatch)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IMediumFormat)
+        COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (MediumFormat)
+    DECLARE_EMPTY_CTOR_DTOR(MediumFormat)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (const VDBACKENDINFO *aVDInfo);
+    HRESULT init(const VDBACKENDINFO *aVDInfo);
     void uninit();
 
     // IMediumFormat properties
-    STDMETHOD(COMGETTER(Id)) (BSTR *aId);
-    STDMETHOD(COMGETTER(Name)) (BSTR *aName);
-    STDMETHOD(COMGETTER(FileExtensions)) (ComSafeArrayOut (BSTR, aFileExtensions));
-    STDMETHOD(COMGETTER(Capabilities)) (ULONG *aCaps);
+    STDMETHOD(COMGETTER(Id))(BSTR *aId);
+    STDMETHOD(COMGETTER(Name))(BSTR *aName);
+    STDMETHOD(COMGETTER(FileExtensions))(ComSafeArrayOut(BSTR, aFileExtensions));
+    STDMETHOD(COMGETTER(Capabilities))(ULONG *aCaps);
 
     // IMediumFormat methods
-    STDMETHOD(DescribeProperties) (ComSafeArrayOut (BSTR, aNames),
-                                   ComSafeArrayOut (BSTR, aDescriptions),
-                                   ComSafeArrayOut (DataType_T, aTypes),
-                                   ComSafeArrayOut (ULONG, aFlags),
-                                   ComSafeArrayOut (BSTR, aDefaults));
+    STDMETHOD(DescribeProperties)(ComSafeArrayOut(BSTR, aNames),
+                                  ComSafeArrayOut(BSTR, aDescriptions),
+                                  ComSafeArrayOut(DataType_T, aTypes),
+                                  ComSafeArrayOut(ULONG, aFlags),
+                                  ComSafeArrayOut(BSTR, aDefaults));
 
     // public methods only for internal purposes
 

@@ -192,8 +192,8 @@ UINewHDWzdPage3::UINewHDWzdPage3()
     , m_strLocation(QString())
     , m_uInitialSize(2 * _1K)
     , m_uCurrentSize(0)
-    , m_uMinVDISize(4)
-    , m_uMaxVDISize(vboxGlobal().virtualBox().GetSystemProperties().GetMaxVDISize())
+    , m_uMinVDISize(_4M)
+    , m_uMaxVDISize(vboxGlobal().virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_iSliderScale(0)
 {
     /* Decorate page */
@@ -230,9 +230,9 @@ UINewHDWzdPage3::UINewHDWzdPage3()
     m_pSizeSlider->setSingleStep(m_iSliderScale / 8);
     m_pSizeSlider->setTickInterval(0);
     m_pSizeSlider->setMinimum(sizeMBToSlider(m_uMinVDISize, m_iSliderScale));
-    m_pSizeSlider->setMaximum(sizeMBToSlider (m_uMaxVDISize, m_iSliderScale));
-    m_pSizeMin->setText(vboxGlobal().formatSize(m_uMinVDISize * _1M));
-    m_pSizeMax->setText(vboxGlobal().formatSize(m_uMaxVDISize * _1M));
+    m_pSizeSlider->setMaximum(sizeMBToSlider(m_uMaxVDISize, m_iSliderScale));
+    m_pSizeMin->setText(vboxGlobal().formatSize(m_uMinVDISize));
+    m_pSizeMax->setText(vboxGlobal().formatSize(m_uMaxVDISize));
 
     /* Attach button icon */
     m_pLocationSelector->setIcon(UIIconPool::iconSet(":/select_file_16px.png",
@@ -343,9 +343,9 @@ void UINewHDWzdPage3::onSizeSliderValueChanged(int iValue)
     /* Update currently stored size: */
     m_uCurrentSize = sliderToSizeMB(iValue, m_iSliderScale);
     /* Update tooltip: */
-    updateSizeToolTip(m_uCurrentSize * _1M);
+    updateSizeToolTip(m_uCurrentSize);
     /* Notify size-editor about size is changed: */
-    emit sigToUpdateSizeEditor(vboxGlobal().formatSize(m_uCurrentSize * _1M));
+    emit sigToUpdateSizeEditor(vboxGlobal().formatSize(m_uCurrentSize));
     /* Notify wizard sub-system about complete status changed: */
     emit completeChanged();
 }
@@ -353,9 +353,9 @@ void UINewHDWzdPage3::onSizeSliderValueChanged(int iValue)
 void UINewHDWzdPage3::onSizeEditorTextChanged(const QString &strValue)
 {
     /* Update currently stored size: */
-    m_uCurrentSize = vboxGlobal().parseSize(strValue) / _1M;
+    m_uCurrentSize = vboxGlobal().parseSize(strValue);
     /* Update tooltip: */
-    updateSizeToolTip(m_uCurrentSize * _1M);
+    updateSizeToolTip(m_uCurrentSize);
     /* Notify size-slider about size is changed but prevent callback: */
     blockSignals(true);
     m_pSizeSlider->setValue(sizeMBToSlider(m_uCurrentSize, m_iSliderScale));
@@ -445,8 +445,8 @@ void UINewHDWzdPage4::retranslateUi()
 
     QString type = field("type").toString();
     QString location = UINewHDWzd::composeFullFileName(field("location").toString());
-    QString sizeFormatted = VBoxGlobal::formatSize(field("currentSize").toULongLong() * _1M);
-    QString sizeUnformatted = tr("%1 B").arg(field("currentSize").toULongLong() * _1M);
+    QString sizeFormatted = VBoxGlobal::formatSize(field("currentSize").toULongLong());
+    QString sizeUnformatted = tr("%1 B").arg(field("currentSize").toULongLong());
 
     summary += QString
     (

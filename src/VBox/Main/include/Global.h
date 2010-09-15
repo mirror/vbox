@@ -60,7 +60,7 @@ public:
         const uint32_t                 osHint;
         const uint32_t                 recommendedRAM;
         const uint32_t                 recommendedVRAM;
-        const uint32_t                 recommendedHDD;
+        const uint64_t                 recommendedHDD;
         const NetworkAdapterType_T     networkAdapterType;
         const uint32_t                 numSerialEnabled;
         const StorageControllerType_T  dvdStorageControllerType;

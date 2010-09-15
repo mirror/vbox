@@ -484,7 +484,7 @@ void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_CREATEHD)
     {
         RTPrintf("VBoxManage createhd         --filename <filename>\n"
-                 "                            --size <megabytes>\n"
+                 "                            --size <megabytes>|--sizebyte <bytes>\n"
                  "                            [--format VDI|VMDK|VHD] (default: VDI)\n"
                  "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
                  "                            [--type normal|writethrough|\n"

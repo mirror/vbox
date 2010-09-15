@@ -7203,7 +7203,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="ee9e41c6-8fbe-490b-8602-6272507ed98b"
+     uuid="5e54e767-293c-441b-a5e4-03a1fdbc0dcb"
      wsmap="managed"
      >
     <desc>
@@ -7243,8 +7243,9 @@
       <desc>Maximum of monitors which could be connected.</desc>
     </attribute>
 
-    <attribute name="maxVDISize" type="long long" readonly="yes">
-      <desc>Maximum size of a virtual disk image in Megabytes.</desc>
+    <attribute name="infoVDSize" type="long long" readonly="yes">
+      <desc>Maximum size of a virtual disk image in bytes. Informational value,
+      does not reflect the limits of any virtual disk image format.</desc>
     </attribute>
 
     <attribute name="networkAdapterCount" type="unsigned long" readonly="yes">
@@ -7414,7 +7415,7 @@
     <attribute name="freeDiskSpaceWarning" type="long long">
       <desc>Issue a warning if the free disk space is below (or in some disk
       intensive operation is expected to go below) the given size in
-      Megabytes.</desc>
+      bytes.</desc>
     </attribute>
 
     <attribute name="freeDiskSpacePercentWarning" type="unsigned long">
@@ -7425,7 +7426,7 @@
     <attribute name="freeDiskSpaceError" type="long long">
       <desc>Issue an error if the free disk space is below (or in some disk
       intensive operation is expected to go below) the given size in
-      Megabytes.</desc>
+      bytes.</desc>
     </attribute>
 
     <attribute name="freeDiskSpacePercentError" type="unsigned long">
@@ -7582,7 +7583,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="4fd9cc6e-f5d4-4d00-abad-5bcd1b942281"
+    uuid="432c1546-1354-4abf-bf08-878a32a373f5"
     wsmap="struct"
   >
     <desc>
@@ -7624,8 +7625,8 @@
       <desc>Recommended video RAM size in Megabytes.</desc>
     </attribute>
 
-    <attribute name="recommendedHDD" type="unsigned long" readonly="yes">
-      <desc>Recommended hard disk size in Megabytes.</desc>
+    <attribute name="recommendedHDD" type="long long" readonly="yes">
+      <desc>Recommended hard disk size in bytes.</desc>
     </attribute>
 
     <attribute name="adapterType" type="NetworkAdapterType" readonly="yes">
@@ -8559,7 +8560,7 @@
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="858ea9d3-9ade-4aa7-91b7-d8a40f8f9b16"
+    uuid="bfcf5b8c-5155-4f24-9414-9457054b16db"
     wsmap="managed"
   >
     <desc>
@@ -9132,7 +9133,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="logicalSize" type="long long" readonly="yes">
       <desc>
-        Logical size of this medium (in megabytes), as reported to the
+        Logical size of this medium (in bytes), as reported to the
         guest OS running inside the virtual machine this medium is
         attached to. The logical size is defined when the medium is created
         and cannot be changed later.
@@ -9643,7 +9644,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
       </desc>
       <param name="logicalSize" type="long long" dir="in">
-        <desc>Maximum logical size of the medium in megabytes.</desc>
+        <desc>Maximum logical size of the medium in bytes.</desc>
       </param>
       <param name="variant" type="MediumVariant" dir="in">
         <desc>Exact image variant which should be created.</desc>
@@ -9917,7 +9918,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
       </desc>
       <param name="logicalSize" type="long long" dir="in">
-        <desc>New nominal capacity of the medium in megabytes.</desc>
+        <desc>New nominal capacity of the medium in bytes.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -9980,7 +9981,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="MediumFormatCapabilities"
-    uuid="70fcf810-99e8-4edc-aee4-7f51d489e657"
+    uuid="be44ec10-9540-4d3f-aee5-4a4d4c4ad42c"
   >
     <desc>
        Medium format capability flags.
@@ -10041,7 +10042,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
-    <const name="CapabilityMask" value="0xFF"/>
+    <const name="TcpNetworking" value="0x100">
+      <desc>
+        The format backend uses the TCP networking interface for network access.
+      </desc>
+    </const>
+
+    <const name="CapabilityMask" value="0x1FF"/>
   </enum>
 
   <interface

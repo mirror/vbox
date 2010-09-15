@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,7 +28,7 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (MediumFormat)
+DEFINE_EMPTY_CTOR_DTOR(MediumFormat)
 
 HRESULT MediumFormat::FinalConstruct()
 {
@@ -48,15 +48,15 @@ void MediumFormat::FinalRelease()
  *
  * @param aVDInfo  Pointer to a backend info object.
  */
-HRESULT MediumFormat::init (const VDBACKENDINFO *aVDInfo)
+HRESULT MediumFormat::init(const VDBACKENDINFO *aVDInfo)
 {
-    LogFlowThisFunc (("aVDInfo=%p\n", aVDInfo));
+    LogFlowThisFunc(("aVDInfo=%p\n", aVDInfo));
 
     ComAssertRet(aVDInfo, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     /* The ID of the backend */
     unconst(m.strId) = aVDInfo->pszBackend;
@@ -83,9 +83,9 @@ HRESULT MediumFormat::init (const VDBACKENDINFO *aVDInfo)
         /* Walk through all available keys */
         while (pa->pszKey != NULL)
         {
-            Utf8Str defaultValue ("");
+            Utf8Str defaultValue("");
             DataType_T dt;
-            ULONG flags = static_cast <ULONG> (pa->uKeyFlags);
+            ULONG flags = static_cast <ULONG>(pa->uKeyFlags);
             /* Check for the configure data type */
             switch (pa->enmValueType)
             {
@@ -127,7 +127,7 @@ HRESULT MediumFormat::init (const VDBACKENDINFO *aVDInfo)
             /// limit (or make the argument ULONG64 after checking that COM is
             /// capable of defining enums (used to represent bit flags) that
             /// contain 64-bit values)
-            ComAssertRet(pa->uKeyFlags == ((ULONG) pa->uKeyFlags), E_FAIL);
+            ComAssertRet(pa->uKeyFlags == ((ULONG)pa->uKeyFlags), E_FAIL);
 
             /* Create one property structure */
             const Property prop = { Utf8Str(pa->pszKey),
@@ -152,10 +152,10 @@ HRESULT MediumFormat::init (const VDBACKENDINFO *aVDInfo)
  */
 void MediumFormat::uninit()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
@@ -228,7 +228,7 @@ STDMETHODIMP MediumFormat::COMGETTER(Capabilities)(ULONG *aCaps)
     /// limit (or make the argument ULONG64 after checking that COM is capable
     /// of defining enums (used to represent bit flags) that contain 64-bit
     /// values)
-    ComAssertRet(m.capabilities == ((ULONG) m.capabilities), E_FAIL);
+    ComAssertRet(m.capabilities == ((ULONG)m.capabilities), E_FAIL);
 
     *aCaps = (ULONG) m.capabilities;
 

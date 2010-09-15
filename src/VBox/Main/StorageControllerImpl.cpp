@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -54,7 +54,7 @@ struct BackupableStorageControllerData
 
     /** Unique name of the storage controller. */
     Utf8Str strName;
-    /** The connection type of thestorage controller. */
+    /** The connection type of the storage controller. */
     StorageBus_T mStorageBus;
     /** Type of the Storage controller. */
     StorageControllerType_T mStorageControllerType;
@@ -134,6 +134,14 @@ HRESULT StorageController::init(Machine *aParent,
         return setError(E_INVALIDARG,
                         tr("Invalid storage connection type"));
 
+    ULONG maxInstances;
+    HRESULT rc = aParent->getVirtualBox()->getSystemProperties()->GetMaxInstancesOfStorageBus(aStorageBus, &maxInstances);
+    if (FAILED(rc))
+        return rc;
+    if (aInstance >= maxInstances)
+        return setError(E_INVALIDARG,
+                        tr("Too many storage controllers of this type"));
+
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -172,7 +180,6 @@ HRESULT StorageController::init(Machine *aParent,
             m->bd->mStorageControllerType = StorageControllerType_LsiLogic;
             break;
         case StorageBus_Floppy:
-            /** @todo allow 2 floppies later */
             m->bd->mPortCount = 1;
             m->bd->mStorageControllerType = StorageControllerType_I82078;
             break;
@@ -428,18 +435,8 @@ STDMETHODIMP StorageController::COMGETTER(MinPortCount) (ULONG *aMinPortCount)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = m->pSystemProperties->GetMinPortCountForStorageBus(m->bd->mStorageBus, aMinPortCount);
 
-    ComPtr<IVirtualBox> VBox;
-    HRESULT rc = m->pParent->COMGETTER(Parent)(VBox.asOutParam());
-    if (FAILED(rc))
-        return rc;
-
-    ComPtr<ISystemProperties> sysProps;
-    rc = VBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
-    if (FAILED(rc))
-        return rc;
-
-    rc = sysProps->GetMinPortCountForStorageBus(m->bd->mStorageBus, aMinPortCount);
     return rc;
 }
 
@@ -451,18 +448,8 @@ STDMETHODIMP StorageController::COMGETTER(MaxPortCount) (ULONG *aMaxPortCount)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = m->pSystemProperties->GetMaxPortCountForStorageBus(m->bd->mStorageBus, aMaxPortCount);
 
-    ComPtr<IVirtualBox> VBox;
-    HRESULT rc = m->pParent->COMGETTER(Parent)(VBox.asOutParam());
-    if (FAILED(rc))
-        return rc;
-
-    ComPtr<ISystemProperties> sysProps;
-    rc = VBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
-    if (FAILED(rc))
-        return rc;
-
-    rc = sysProps->GetMaxPortCountForStorageBus(m->bd->mStorageBus, aMaxPortCount);
     return rc;
 }
 
@@ -524,7 +511,6 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
         }
         case StorageBus_Floppy:
         {
-            /** @todo allow 2 floppies later */
             /*
              * The port count is fixed to 1.
              */

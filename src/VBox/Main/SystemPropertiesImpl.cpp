@@ -239,9 +239,9 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestMonitors)(ULONG *maxMonitors)
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(LONG64 *maxVDISize)
+STDMETHODIMP SystemProperties::COMGETTER(InfoVDSize)(LONG64 *infoVDSize)
 {
-    CheckComArgOutPointerValid(maxVDISize);
+    CheckComArgOutPointerValid(infoVDSize);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -250,13 +250,13 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(LONG64 *maxVDISize)
      * 48 bit range is in theory trivial, but the crappy compiler makes things
      * more difficult). This translates to almost 2 TBytes (to be on the safe
      * side, the reported limit is 1 MiByte less than that, as the total number
-     * of sectors should fit in 32 bits, too), which should bei enough for
-     * the moment. The virtual ATA disks support complete LBA48 (although for
-     * example iSCSI is also currently limited to 32 bit LBA), so the
-     * theoretical maximum disk size is 128 PiByte. The user interface cannot
-     * cope with this in a reasonable way yet. */
+     * of sectors should fit in 32 bits, too), which should be enough for the
+     * moment. The virtual ATA/SATA disks support complete LBA48, and SCSI
+     * supports LBA64 (almost, more like LBA55 in practice), so the theoretical
+     * maximum disk size is 128 PiByte/16 EiByte. The GUI works nicely with 6
+     * orders of magnitude, but not with 11/13 orders of magnitude. */
     /* no need to lock, this is const */
-    *maxVDISize = 2048 * 1024 - 1;
+    *infoVDSize = (2048LL * 1024 - 1) * _1M;
 
     return S_OK;
 }
