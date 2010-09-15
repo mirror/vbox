@@ -264,7 +264,7 @@ fi
 /sbin/chkconfig --add vboxweb-service
 %endif
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
-%{fillup_and_insserv -fy vboxdrv vboxweb-service}
+%{fillup_and_insserv -f -y -Y vboxdrv vboxweb-service}
 %endif
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}
 /sbin/ldconfig
