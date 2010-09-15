@@ -787,7 +787,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
             case PGMMODE_PAE:           /* PAE paging. */
             case PGMMODE_PAE_NX:        /* PAE paging with NX enabled. */
-                /** @todo use normal 32 bits paging */
+                /** Must use PAE paging as we could use physical memory > 4 GB */
                 val |= X86_CR4_PAE;
                 break;
 
