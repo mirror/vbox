@@ -1398,26 +1398,35 @@ static HRESULT vboxWddmSwapchainKmSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
 //    Buf.SwapchainInfo.SwapchainInfo.Rect;
 //    Buf.SwapchainInfo.SwapchainInfo.u32Reserved;
     Buf.SwapchainInfo.SwapchainInfo.cAllocs = pSwapchain->cRTs;
+    UINT cAllocsKm = 0;
     for (UINT i = 0; i < Buf.SwapchainInfo.SwapchainInfo.cAllocs; ++i)
     {
-        Assert(pSwapchain->aRTs[i].pAlloc->hAllocation);
+//        Assert(pSwapchain->aRTs[i].pAlloc->hAllocation);
         Buf.SwapchainInfo.SwapchainInfo.ahAllocs[i] = pSwapchain->aRTs[i].pAlloc->hAllocation;
+        if (Buf.SwapchainInfo.SwapchainInfo.ahAllocs[i])
+            ++cAllocsKm;
     }
 
-    D3DDDICB_ESCAPE DdiEscape = {0};
-    DdiEscape.hContext = pDevice->DefaultContext.ContextInfo.hContext;
-    DdiEscape.hDevice = pDevice->hDevice;
-//    DdiEscape.Flags.Value = 0;
-    DdiEscape.pPrivateDriverData = &Buf.SwapchainInfo;
-    DdiEscape.PrivateDriverDataSize = RT_OFFSETOF(VBOXDISPIFESCAPE_SWAPCHAININFO, SwapchainInfo.ahAllocs[Buf.SwapchainInfo.SwapchainInfo.cAllocs]);
-    HRESULT hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
-    Assert(hr == S_OK);
-    if (hr == S_OK)
+    Assert(cAllocsKm == Buf.SwapchainInfo.SwapchainInfo.cAllocs || !cAllocsKm);
+
+    if (cAllocsKm)
     {
-        pSwapchain->hSwapchainKm = Buf.SwapchainInfo.SwapchainInfo.hSwapchainKm;
-    }
+        D3DDDICB_ESCAPE DdiEscape = {0};
+        DdiEscape.hContext = pDevice->DefaultContext.ContextInfo.hContext;
+        DdiEscape.hDevice = pDevice->hDevice;
+    //    DdiEscape.Flags.Value = 0;
+        DdiEscape.pPrivateDriverData = &Buf.SwapchainInfo;
+        DdiEscape.PrivateDriverDataSize = RT_OFFSETOF(VBOXDISPIFESCAPE_SWAPCHAININFO, SwapchainInfo.ahAllocs[Buf.SwapchainInfo.SwapchainInfo.cAllocs]);
+        HRESULT hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            pSwapchain->hSwapchainKm = Buf.SwapchainInfo.SwapchainInfo.hSwapchainKm;
+        }
 
-    return hr;
+        return hr;
+    }
+    return S_OK;
 }
 
 static HRESULT vboxWddmSwapchainKmDestroy(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
@@ -1737,7 +1746,7 @@ static PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE 
     }
     if (!pSwapchain)
     {
-        Assert(0);
+//        Assert(0);
         /* first search for the swapchain the alloc might be added to */
         PVBOXWDDMDISP_SWAPCHAIN pCur = RTListNodeGetFirst(&pDevice->SwapchainList, VBOXWDDMDISP_SWAPCHAIN, ListEntry);
         while (pCur)
@@ -1897,7 +1906,6 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
         return S_OK;
     /* preserve the old one */
     IDirect3DSwapChain9 * pOldIf = pSwapchain->pSwapChainIf;
-    HWND hOldWnd = pSwapchain->hWnd;
     /* first create the new one */
     D3DPRESENT_PARAMETERS Params;
     vboxWddmSwapchainFillParams(pSwapchain, &Params);
@@ -1905,19 +1913,23 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
     ///
     PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
     UINT cSurfs = pSwapchain->cRTs;
-    HRESULT hr;
-    HWND hWnd = NULL;
+    HRESULT hr = S_OK;
     IDirect3DDevice9 *pDevice9If = NULL;
-    hr = VBoxDispWndCreate(pAdapter, Params.BackBufferWidth, Params.BackBufferHeight, &hWnd);
-    Assert(hr == S_OK);
+    HWND hOldWnd = pSwapchain->hWnd;
+#ifndef VBOXDISP_NEWWND_ON_SWAPCHAINUPDATE
+    if (!hOldWnd)
+#endif
+    {
+        hr = VBoxDispWndCreate(pAdapter, Params.BackBufferWidth, Params.BackBufferHeight, &pSwapchain->hWnd);
+        Assert(hr == S_OK);
+    }
     if (hr == S_OK)
     {
-        pSwapchain->hWnd = hWnd;
         DWORD fFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
         if (pDevice->fFlags.AllowMultithreading)
             fFlags |= D3DCREATE_MULTITHREADED;
 
-        Params.hDeviceWindow = hWnd;
+        Params.hDeviceWindow = pSwapchain->hWnd;
                     /* @todo: it seems there should be a way to detect this correctly since
                      * our vboxWddmDDevSetDisplayMode will be called in case we are using full-screen */
         Params.Windowed = TRUE;
@@ -1928,7 +1940,7 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
         //            params.FullScreen_PresentationInterval;
         if (!pDevice->pDevice9If)
         {
-            hr = pAdapter->pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, fFlags, &Params, &pDevice9If);
+            hr = pAdapter->pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pSwapchain->hWnd, fFlags, &Params, &pDevice9If);
             Assert(hr == S_OK);
             if (hr == S_OK)
             {
@@ -2013,7 +2025,9 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
                         {
                             Assert(hOldWnd);
                             pOldIf->Release();
+#ifdef VBOXDISP_NEWWND_ON_SWAPCHAINUPDATE
                             VBoxDispWndDestroy(pAdapter, hOldWnd);
+#endif
                         }
                         else
                         {
@@ -2028,10 +2042,14 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
         }
 
         Assert(hr != S_OK);
-
-        HRESULT tmpHr = VBoxDispWndDestroy(pAdapter, hWnd);
-        Assert(tmpHr == S_OK);
-        pSwapchain->hWnd = hOldWnd;
+#ifndef VBOXDISP_NEWWND_ON_SWAPCHAINUPDATE
+        if (!hOldWnd)
+#endif
+        {
+            HRESULT tmpHr = VBoxDispWndDestroy(pAdapter, pSwapchain->hWnd);
+            Assert(tmpHr == S_OK);
+            pSwapchain->hWnd = hOldWnd;
+        }
     }
 
     return hr;
