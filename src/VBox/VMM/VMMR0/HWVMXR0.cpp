@@ -2617,6 +2617,7 @@ ResumeExecution:
     if (!pVCpu->hwaccm.s.fContextUseFlags)
     {
         VMXR0LoadMinimalGuestState(pVM, pVCpu, pCtx);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatLoadMinimal);
     }
     else
 #endif
@@ -2627,6 +2628,7 @@ ResumeExecution:
             VMMR0LogFlushEnable(pVCpu);
             goto end;
         }
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatLoadFull);
     }
 
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
