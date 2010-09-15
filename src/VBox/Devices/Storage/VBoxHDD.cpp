@@ -4914,7 +4914,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
          * might need it. After all the reopen is usually needed. */
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
-        fLockRead = true;
+        fLockWrite = true;
         PVDIMAGE pImageFrom = vdGetImageByNumber(pDisk, nImageFrom);
         PVDIMAGE pImageTo = vdGetImageByNumber(pDisk, nImageTo);
         if (!pImageFrom || !pImageTo)
@@ -4939,7 +4939,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         uint64_t cbSize = pImageTo->Backend->pfnGetSize(pImageTo->pvBackendData);
         rc2 = vdThreadFinishWrite(pDisk);
         AssertRC(rc2);
-        fLockRead = false;
+        fLockWrite = false;
 
         /* Allocate tmp buffer. */
         pvBuf = RTMemTmpAlloc(VD_MERGE_BUFFER_SIZE);
@@ -5035,6 +5035,11 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
             {
                 PVDIMAGE pImageChild = pImageFrom->pNext;
 
+                /* Take the write lock. */
+                rc2 = vdThreadStartWrite(pDisk);
+                AssertRC(rc2);
+                fLockWrite = true;
+
                 /* We need to open the image in read/write mode. */
                 uOpenFlags = pImageChild->Backend->pfnGetOpenFlags(pImageChild->pvBackendData);
 
@@ -5046,6 +5051,10 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                     if (RT_FAILURE(rc))
                         break;
                 }
+
+                rc2 = vdThreadFinishWrite(pDisk);
+                AssertRC(rc2);
+                fLockWrite = false;
             }
 
             /* Merge child state into parent. This means writing all blocks
@@ -5090,7 +5099,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
                 rc2 = vdThreadFinishWrite(pDisk);
                 AssertRC(rc2);
-                fLockWrite = true;
+                fLockWrite = false;
 
                 uOffset += cbThisRead;
                 cbRemaining -= cbThisRead;
@@ -5107,6 +5116,13 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 }
             } while (uOffset < cbSize);
         }
+
+        /*
+         * Leave in case of an error to avoid corrupted data in the image chain
+         * (includes cancelling the operation by the user).
+         */
+        if (RT_FIALURE(rc))
+            break;
 
         /* Need to hold the write lock while finishing the merge. */
         rc2 = vdThreadStartWrite(pDisk);
