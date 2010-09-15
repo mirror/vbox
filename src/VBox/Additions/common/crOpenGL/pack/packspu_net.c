@@ -119,6 +119,8 @@ void packspuFlush(void *arg )
     CRMessageOpcodes *hdr;
     CRPackBuffer *buf;
 
+    crLockMutex(&_PackMutex);
+
     /* we should _always_ pass a valid <arg> value */
     CRASSERT(thread);
     ctx = thread->currentContext;
@@ -142,6 +144,7 @@ void packspuFlush(void *arg )
            /* XXX these calls seem to help, but might be appropriate */
            crPackSetBuffer( thread->packer, buf );
            crPackResetPointers(thread->packer);
+           crUnlockMutex(&_PackMutex);
            return;
     }
 
@@ -168,7 +171,8 @@ void packspuFlush(void *arg )
     crPackSetBuffer( thread->packer, buf );
 
     crPackResetPointers(thread->packer);
-    (void) arg;
+
+    crUnlockMutex(&_PackMutex);
 }
 
 
