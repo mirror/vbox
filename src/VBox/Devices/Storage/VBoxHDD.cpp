@@ -2468,8 +2468,13 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
             }
             else
             {
-                if (pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE)
+                if (pIoCtx->enmTxDir != VDIOCTXTXDIR_READ)
+                {
+                    AssertMsg(   pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE
+                              || pIoCtx->enmTxDir == VDIOCTXTXDIR_FLUSH,
+                              ("Invalid transfer direction\n"));
                     vdThreadFinishWrite(pDisk);
+                }
                 else
                     vdThreadFinishRead(pDisk);
 
