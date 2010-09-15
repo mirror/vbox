@@ -4646,6 +4646,8 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
             uint32_t offStart;
             uint32_t uLineCompareIgn;
             vga_get_offsets(pThis, &cbLine, &offStart, &uLineCompareIgn);
+            if (!cbLine)
+                cbLine = 80 * 8;
 
             uint32_t cRows = offStart / cbLine + 25;
             uint32_t cCols = cbLine / 8;
