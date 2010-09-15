@@ -1600,7 +1600,7 @@ struct wined3d_context *context_find_create(IWineD3DDeviceImpl *device, IWineD3D
     DWORD tid = GetCurrentThreadId();
     struct wined3d_context *context = NULL;
 
-    Assert(0);
+//    Assert(0);
 
     for(i = 0 ; i < swapchains ; i ++)
     {

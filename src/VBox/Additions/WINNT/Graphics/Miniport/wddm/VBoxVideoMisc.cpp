@@ -74,6 +74,8 @@ VBOXWDDM_HANDLE vboxWddmHTablePut(PVBOXWDDM_HTABLE pTbl, PVOID pvData)
         if (!pTbl->paData[i])
         {
             pTbl->paData[i] = pvData;
+            ++pTbl->cData;
+            Assert(pTbl->cData <= pTbl->cSize);
             ++pTbl->iNext2Search;
             pTbl->iNext2Search %= pTbl->cSize;
             return vboxWddmHTableIndex2Handle(i);
@@ -91,6 +93,8 @@ PVOID vboxWddmHTableRemove(PVBOXWDDM_HTABLE pTbl, VBOXWDDM_HANDLE hHandle)
     {
         PVOID pvData = pTbl->paData[iIndex];
         pTbl->paData[iIndex] = NULL;
+        --pTbl->cData;
+        Assert(pTbl->cData <= pTbl->cSize);
         pTbl->iNext2Search = iIndex;
         return pvData;
     }
@@ -448,6 +452,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CONTEXT
     else
     {
         vboxWddmSwapchainDestroy(pDevExt, pSwapchain);
+        pSwapchainInfo->SwapchainInfo.hSwapchainKm = 0;
     }
 
     return STATUS_SUCCESS;
