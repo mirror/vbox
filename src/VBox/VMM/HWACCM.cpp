@@ -551,6 +551,9 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxContextSwitch,       "/HWACCM/CPU%d/Debug/ContextSwitch");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxIOCheck,             "/HWACCM/CPU%d/Debug/IOCheck");
 
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatLoadMinimal,            "/HWACCM/CPU%d/Load/Minimal");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatLoadFull,               "/HWACCM/CPU%d/Load/Full");
+
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFpu64SwitchBack,        "/HWACCM/CPU%d/Switch64/Fpu");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDebug64SwitchBack,      "/HWACCM/CPU%d/Switch64/Debug");
