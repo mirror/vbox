@@ -251,6 +251,7 @@ bool VBoxVMSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitle *
 
 void VBoxVMSettingsDisplay::setOrderAfter (QWidget *aWidget)
 {
+    /* Video tab-order */
     setTabOrder (aWidget, mTwDisplay->focusProxy());
     setTabOrder (mTwDisplay->focusProxy(), mSlMemory);
     setTabOrder (mSlMemory, mLeMemory);
@@ -263,6 +264,8 @@ void VBoxVMSettingsDisplay::setOrderAfter (QWidget *aWidget)
 #else
     setTabOrder (mCb3D, mCbVRDP);
 #endif
+
+    /* Remote display tab-order */
     setTabOrder (mCbVRDP, mLeVRDPPort);
     setTabOrder (mLeVRDPPort, mCbVRDPMethod);
     setTabOrder (mCbVRDPMethod, mLeVRDPTimeout);
