@@ -537,12 +537,18 @@ VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, const char *pszDumpPath)
 
     /*
      * Pass the core write request down to EMT rendezvous which makes sure
-     * other EMTs, if any, are not running.
+     * other EMTs, if any, are not running. IO threads could still be running
+     * but we don't care about them.
      */
     DBGFCOREDATA CoreData;
     RT_ZERO(CoreData);
     CoreData.pszDumpPath = pszDumpPath;
 
-    return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, dbgfR3CoreWrite, &CoreData);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, dbgfR3CoreWrite, &CoreData);
+    if (RT_SUCCESS(rc))
+        LogRel((DBGFLOG_NAME ":Successfully wrote guest core '%s'\n", pszDumpPath));
+    else
+        LogRel((DBGFLOG_NAME ":Failed to write guest core '%s' (%Rrc)\n", pszDumpPath, rc));
+    return rc;
 }
 
