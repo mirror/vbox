@@ -1502,7 +1502,7 @@ static void apic_timer(void *opaque)
  *
  * @param   pThis               The device state.
  */
-DECLINLINE(void) acpiDoFrequencyHinting(APICState *pThis)
+DECLINLINE(void) apciDoFrequencyHinting(APICState *pThis)
 {
     if (   pThis->uHintedInitialCount != pThis->initial_count
         || pThis->uHintedCountShift   != (uint32_t)pThis->count_shift)
@@ -1549,7 +1549,7 @@ static void apicTimerSetInitialCount(APICDeviceInfo *dev, APICState *pThis, uint
         TMTimerSetRelative(pThis->CTX_SUFF(pTimer), cTicksNext, &pThis->initial_count_load_time);
         pThis->next_time = pThis->initial_count_load_time + cTicksNext;
         pThis->fTimerArmed = true;
-        acpiDoFrequencyHinting(pThis);
+        apciDoFrequencyHinting(pThis);
         STAM_COUNTER_INC(&pThis->StatTimerSetInitialCountArm);
     }
     else
@@ -1649,7 +1649,7 @@ static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew
                     TMTimerSet(pThis->CTX_SUFF(pTimer), NextTS);
                     pThis->next_time = NextTS;
                     pThis->fTimerArmed = true;
-                    acpiDoFrequencyHinting(pThis);
+                    apciDoFrequencyHinting(pThis);
                     break;
                 }
                 STAM_COUNTER_INC(&pThis->StatTimerSetLvtArmRetries);
@@ -1684,7 +1684,7 @@ static DECLCALLBACK(void) apicTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer,
             pThis->next_time += (((uint64_t)pThis->initial_count + 1) << pThis->count_shift);
             TMTimerSet(pThis->CTX_SUFF(pTimer), pThis->next_time);
             pThis->fTimerArmed = true;
-            acpiDoFrequencyHinting(pThis);
+            apciDoFrequencyHinting(pThis);
         } else {
             /* single shot. */
             pThis->fTimerArmed = false;
@@ -2073,11 +2073,7 @@ static int apic_load(QEMUFile *f, void *opaque, int version_id)
     s->uHintedCountShift = s->uHintedInitialCount = 0;
     s->fTimerArmed = TMTimerIsActive(s->CTX_SUFF(pTimer));
     if (s->fTimerArmed)
-    {
-        PDMCritSectEnter(pThis->CTX_SUFF(pCritSect), VERR_SEM_BUSY);
-        acpiDoFrequencyHinting(s);
-        PDMCritSectLeave(pThis->CTX_SUFF(pCritSect));
-    }
+        apciDoFrequencyHinting(s);
 #endif
 
     return VINF_SUCCESS; /** @todo darn mess! */
@@ -2710,12 +2706,15 @@ static DECLCALLBACK(int) apicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
         return VINF_SUCCESS;
 
     /* load all APICs data */ /** @todo: is it correct? */
+    APIC_LOCK(pThis, VERR_INTERNAL_ERROR_3);
     foreach_apic(pThis, 0xffffffff,
                  if (apic_load(pSSM, apic, uVersion)) {
                       AssertFailed();
+                      APIC_UNLOCK(pThis);
                       return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
                  }
                  );
+    APIC_UNLOCK(pThis);
     return VINF_SUCCESS;
 }
 
