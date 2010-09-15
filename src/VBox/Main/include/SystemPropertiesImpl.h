@@ -38,47 +38,47 @@ class ATL_NO_VTABLE SystemProperties :
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (SystemProperties, ISystemProperties)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(SystemProperties, ISystemProperties)
 
     DECLARE_NOT_AGGREGATABLE(SystemProperties)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SystemProperties)
-        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY  (ISystemProperties)
-        COM_INTERFACE_ENTRY2 (IDispatch, ISystemProperties)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(ISystemProperties)
+        COM_INTERFACE_ENTRY2(IDispatch, ISystemProperties)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (SystemProperties)
+    DECLARE_EMPTY_CTOR_DTOR(SystemProperties)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (VirtualBox *aParent);
+    HRESULT init(VirtualBox *aParent);
     void uninit();
 
     // ISystemProperties properties
-    STDMETHOD(COMGETTER(MinGuestRAM) (ULONG *minRAM));
-    STDMETHOD(COMGETTER(MaxGuestRAM) (ULONG *maxRAM));
-    STDMETHOD(COMGETTER(MinGuestVRAM) (ULONG *minVRAM));
-    STDMETHOD(COMGETTER(MaxGuestVRAM) (ULONG *maxVRAM));
-    STDMETHOD(COMGETTER(MinGuestCPUCount) (ULONG *minCPUCount));
-    STDMETHOD(COMGETTER(MaxGuestCPUCount) (ULONG *maxCPUCount));
-    STDMETHOD(COMGETTER(MaxGuestMonitors) (ULONG *maxMonitors));
-    STDMETHOD(COMGETTER(MaxVDISize) (LONG64 *maxVDISize));
-    STDMETHOD(COMGETTER(NetworkAdapterCount) (ULONG *count));
-    STDMETHOD(COMGETTER(SerialPortCount) (ULONG *count));
-    STDMETHOD(COMGETTER(ParallelPortCount) (ULONG *count));
-    STDMETHOD(COMGETTER(MaxBootPosition) (ULONG *aMaxBootPosition));
-    STDMETHOD(COMGETTER(DefaultMachineFolder)) (BSTR *aDefaultMachineFolder);
-    STDMETHOD(COMSETTER(DefaultMachineFolder)) (IN_BSTR aDefaultMachineFolder);
-    STDMETHOD(COMGETTER(DefaultHardDiskFolder)) (BSTR *aDefaultHardDiskFolder);
-    STDMETHOD(COMSETTER(DefaultHardDiskFolder)) (IN_BSTR aDefaultHardDiskFolder);
-    STDMETHOD(COMGETTER(MediumFormats)) (ComSafeArrayOut (IMediumFormat *, aMediumFormats));
-    STDMETHOD(COMGETTER(DefaultHardDiskFormat)) (BSTR *aDefaultHardDiskFormat);
-    STDMETHOD(COMSETTER(DefaultHardDiskFormat)) (IN_BSTR aDefaultHardDiskFormat);
+    STDMETHOD(COMGETTER(MinGuestRAM))(ULONG *minRAM);
+    STDMETHOD(COMGETTER(MaxGuestRAM))(ULONG *maxRAM);
+    STDMETHOD(COMGETTER(MinGuestVRAM))(ULONG *minVRAM);
+    STDMETHOD(COMGETTER(MaxGuestVRAM))(ULONG *maxVRAM);
+    STDMETHOD(COMGETTER(MinGuestCPUCount))(ULONG *minCPUCount);
+    STDMETHOD(COMGETTER(MaxGuestCPUCount))(ULONG *maxCPUCount);
+    STDMETHOD(COMGETTER(MaxGuestMonitors))(ULONG *maxMonitors);
+    STDMETHOD(COMGETTER(InfoVDSize))(LONG64 *infoVDSize);
+    STDMETHOD(COMGETTER(NetworkAdapterCount))(ULONG *count);
+    STDMETHOD(COMGETTER(SerialPortCount))(ULONG *count);
+    STDMETHOD(COMGETTER(ParallelPortCount))(ULONG *count);
+    STDMETHOD(COMGETTER(MaxBootPosition))(ULONG *aMaxBootPosition);
+    STDMETHOD(COMGETTER(DefaultMachineFolder))(BSTR *aDefaultMachineFolder);
+    STDMETHOD(COMSETTER(DefaultMachineFolder))(IN_BSTR aDefaultMachineFolder);
+    STDMETHOD(COMGETTER(DefaultHardDiskFolder))(BSTR *aDefaultHardDiskFolder);
+    STDMETHOD(COMSETTER(DefaultHardDiskFolder))(IN_BSTR aDefaultHardDiskFolder);
+    STDMETHOD(COMGETTER(MediumFormats))(ComSafeArrayOut(IMediumFormat *, aMediumFormats));
+    STDMETHOD(COMGETTER(DefaultHardDiskFormat))(BSTR *aDefaultHardDiskFormat);
+    STDMETHOD(COMSETTER(DefaultHardDiskFormat))(IN_BSTR aDefaultHardDiskFormat);
     STDMETHOD(COMGETTER(FreeDiskSpaceWarning))(LONG64 *aFreeDiskSpace);
     STDMETHOD(COMSETTER(FreeDiskSpaceWarning))(LONG64 aFreeDiskSpace);
     STDMETHOD(COMGETTER(FreeDiskSpacePercentWarning))(ULONG *aFreeDiskSpacePercent);
@@ -87,17 +87,17 @@ public:
     STDMETHOD(COMSETTER(FreeDiskSpaceError))(LONG64 aFreeDiskSpace);
     STDMETHOD(COMGETTER(FreeDiskSpacePercentError))(ULONG *aFreeDiskSpacePercent);
     STDMETHOD(COMSETTER(FreeDiskSpacePercentError))(ULONG aFreeDiskSpacePercent);
-    STDMETHOD(COMGETTER(RemoteDisplayAuthLibrary)) (BSTR *aRemoteDisplayAuthLibrary);
-    STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary)) (IN_BSTR aRemoteDisplayAuthLibrary);
-    STDMETHOD(COMGETTER(WebServiceAuthLibrary)) (BSTR *aWebServiceAuthLibrary);
-    STDMETHOD(COMSETTER(WebServiceAuthLibrary)) (IN_BSTR aWebServiceAuthLibrary);
-    STDMETHOD(COMGETTER(LogHistoryCount)) (ULONG *count);
-    STDMETHOD(COMSETTER(LogHistoryCount)) (ULONG count);
-    STDMETHOD(COMGETTER(DefaultAudioDriver)) (AudioDriverType_T *aAudioDriver);
+    STDMETHOD(COMGETTER(RemoteDisplayAuthLibrary))(BSTR *aRemoteDisplayAuthLibrary);
+    STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary))(IN_BSTR aRemoteDisplayAuthLibrary);
+    STDMETHOD(COMGETTER(WebServiceAuthLibrary))(BSTR *aWebServiceAuthLibrary);
+    STDMETHOD(COMSETTER(WebServiceAuthLibrary))(IN_BSTR aWebServiceAuthLibrary);
+    STDMETHOD(COMGETTER(LogHistoryCount))(ULONG *count);
+    STDMETHOD(COMSETTER(LogHistoryCount))(ULONG count);
+    STDMETHOD(COMGETTER(DefaultAudioDriver))(AudioDriverType_T *aAudioDriver);
 
-    STDMETHOD(GetMaxDevicesPerPortForStorageBus) (StorageBus_T aBus, ULONG *aMaxDevicesPerPort);
-    STDMETHOD(GetMinPortCountForStorageBus) (StorageBus_T aBus, ULONG *aMinPortCount);
-    STDMETHOD(GetMaxPortCountForStorageBus) (StorageBus_T aBus, ULONG *aMaxPortCount);
+    STDMETHOD(GetMaxDevicesPerPortForStorageBus)(StorageBus_T aBus, ULONG *aMaxDevicesPerPort);
+    STDMETHOD(GetMinPortCountForStorageBus)(StorageBus_T aBus, ULONG *aMinPortCount);
+    STDMETHOD(GetMaxPortCountForStorageBus)(StorageBus_T aBus, ULONG *aMaxPortCount);
     STDMETHOD(GetMaxInstancesOfStorageBus)(StorageBus_T aBus, ULONG *aMaxInstances);
     STDMETHOD(GetDeviceTypesForStorageBus)(StorageBus_T aBus, ComSafeArrayOut(DeviceType_T, aDeviceTypes));
     STDMETHOD(GetDefaultIoCacheSettingForStorageController)(StorageControllerType_T aControllerType, BOOL *aEnabled);

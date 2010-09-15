@@ -838,8 +838,8 @@ int handleList(HandlerArg *a)
             RTPrintf("Minimum guest CPU count:         %u\n", ulValue);
             systemProperties->COMGETTER(MaxGuestCPUCount)(&ulValue);
             RTPrintf("Maximum guest CPU count:         %u\n", ulValue);
-            systemProperties->COMGETTER(MaxVDISize)(&i64Value);
-            RTPrintf("Maximum VDI size:                %lld Megabytes\n", i64Value);
+            systemProperties->COMGETTER(InfoVDSize)(&i64Value);
+            RTPrintf("Virtual disk limit (info):       %lld Bytes\n", i64Value);
             systemProperties->COMGETTER(NetworkAdapterCount)(&ulValue);
             RTPrintf("Maximum Network Adapter count:   %u\n", ulValue);
             systemProperties->COMGETTER(SerialPortCount)(&ulValue);

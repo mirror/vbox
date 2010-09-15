@@ -1828,7 +1828,7 @@ def listMediaCmd(ctx,args):
    for hdd in hdds:
        if hdd.state != ctx['global'].constants.MediumState_Created:
            hdd.refreshState()
-       print "   %s (%s)%s %s [logical %s]" %(colPath(ctx,hdd.location), hdd.format, optId(verbose,hdd.id),colSizeM(ctx,asSize(hdd.size, True)), colSizeM(ctx,asSize(hdd.logicalSize, False)))
+       print "   %s (%s)%s %s [logical %s]" %(colPath(ctx,hdd.location), hdd.format, optId(verbose,hdd.id),colSizeM(ctx,asSize(hdd.size, True)), colSizeM(ctx,asSize(hdd.logicalSize, True)))
 
    dvds = ctx['global'].getArray(ctx['vb'], 'DVDImages')
    print colCat(ctx,"CD/DVD disks:")

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,46 +40,46 @@ public:
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (GuestOSType)
+    DECLARE_EMPTY_CTOR_DTOR(GuestOSType)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (const char *aFamilyId, const char *aFamilyDescription,
-                  const char *aId, const char *aDescription,
-                  VBOXOSTYPE aOSType, uint32_t aOSHint,
-                  uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize,
-                  NetworkAdapterType_T aNetworkAdapterType, uint32_t numSerialEnabled,
-                  StorageControllerType_T aDvdStorageControllerType,
-                  StorageBus_T aDvdStorageBusType,
-                  StorageControllerType_T aHdStorageControllerType,
-                  StorageBus_T aHdStorageBusType,
-                  ChipsetType_T aChipsetType);
+    HRESULT init(const char *aFamilyId, const char *aFamilyDescription,
+                 const char *aId, const char *aDescription,
+                 VBOXOSTYPE aOSType, uint32_t aOSHint,
+                 uint32_t aRAMSize, uint32_t aVRAMSize, uint64_t aHDDSize,
+                 NetworkAdapterType_T aNetworkAdapterType, uint32_t numSerialEnabled,
+                 StorageControllerType_T aDvdStorageControllerType,
+                 StorageBus_T aDvdStorageBusType,
+                 StorageControllerType_T aHdStorageControllerType,
+                 StorageBus_T aHdStorageBusType,
+                 ChipsetType_T aChipsetType);
     void uninit();
 
     // IGuestOSType properties
-    STDMETHOD(COMGETTER(FamilyId)) (BSTR *aFamilyId);
-    STDMETHOD(COMGETTER(FamilyDescription)) (BSTR *aFamilyDescription);
-    STDMETHOD(COMGETTER(Id)) (BSTR *aId);
-    STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
-    STDMETHOD(COMGETTER(Is64Bit)) (BOOL *aIs64Bit);
-    STDMETHOD(COMGETTER(RecommendedIOAPIC)) (BOOL *aRecommendedIOAPIC);
-    STDMETHOD(COMGETTER(RecommendedVirtEx)) (BOOL *aRecommendedVirtEx);
-    STDMETHOD(COMGETTER(RecommendedRAM)) (ULONG *aRAMSize);
-    STDMETHOD(COMGETTER(RecommendedVRAM)) (ULONG *aVRAMSize);
-    STDMETHOD(COMGETTER(RecommendedHDD)) (ULONG *aHDDSize);
-    STDMETHOD(COMGETTER(AdapterType)) (NetworkAdapterType_T *aNetworkAdapterType);
-    STDMETHOD(COMGETTER(RecommendedFirmware)) (FirmwareType_T *aFirmwareType);
-    STDMETHOD(COMGETTER(RecommendedDvdStorageBus)) (StorageBus_T *aStorageBusType);
-    STDMETHOD(COMGETTER(RecommendedDvdStorageController)) (StorageControllerType_T *aStorageControllerType);
-    STDMETHOD(COMGETTER(RecommendedHdStorageBus)) (StorageBus_T *aStorageBusType);
-    STDMETHOD(COMGETTER(RecommendedHdStorageController)) (StorageControllerType_T *aStorageControllerType);
-    STDMETHOD(COMGETTER(RecommendedPae)) (BOOL *aRecommendedExtHw);
-    STDMETHOD(COMGETTER(RecommendedUsbHid)) (BOOL *aRecommendedUsbHid);
-    STDMETHOD(COMGETTER(RecommendedHpet)) (BOOL *aRecommendedHpet);
-    STDMETHOD(COMGETTER(RecommendedUsbTablet)) (BOOL *aRecommendedUsbTablet);
-    STDMETHOD(COMGETTER(RecommendedRtcUseUtc)) (BOOL *aRecommendedRtcUseUtc);
+    STDMETHOD(COMGETTER(FamilyId))(BSTR *aFamilyId);
+    STDMETHOD(COMGETTER(FamilyDescription))(BSTR *aFamilyDescription);
+    STDMETHOD(COMGETTER(Id))(BSTR *aId);
+    STDMETHOD(COMGETTER(Description))(BSTR *aDescription);
+    STDMETHOD(COMGETTER(Is64Bit))(BOOL *aIs64Bit);
+    STDMETHOD(COMGETTER(RecommendedIOAPIC))(BOOL *aRecommendedIOAPIC);
+    STDMETHOD(COMGETTER(RecommendedVirtEx))(BOOL *aRecommendedVirtEx);
+    STDMETHOD(COMGETTER(RecommendedRAM))(ULONG *aRAMSize);
+    STDMETHOD(COMGETTER(RecommendedVRAM))(ULONG *aVRAMSize);
+    STDMETHOD(COMGETTER(RecommendedHDD))(LONG64 *aHDDSize);
+    STDMETHOD(COMGETTER(AdapterType))(NetworkAdapterType_T *aNetworkAdapterType);
+    STDMETHOD(COMGETTER(RecommendedFirmware))(FirmwareType_T *aFirmwareType);
+    STDMETHOD(COMGETTER(RecommendedDvdStorageBus))(StorageBus_T *aStorageBusType);
+    STDMETHOD(COMGETTER(RecommendedDvdStorageController))(StorageControllerType_T *aStorageControllerType);
+    STDMETHOD(COMGETTER(RecommendedHdStorageBus))(StorageBus_T *aStorageBusType);
+    STDMETHOD(COMGETTER(RecommendedHdStorageController))(StorageControllerType_T *aStorageControllerType);
+    STDMETHOD(COMGETTER(RecommendedPae))(BOOL *aRecommendedExtHw);
+    STDMETHOD(COMGETTER(RecommendedUsbHid))(BOOL *aRecommendedUsbHid);
+    STDMETHOD(COMGETTER(RecommendedHpet))(BOOL *aRecommendedHpet);
+    STDMETHOD(COMGETTER(RecommendedUsbTablet))(BOOL *aRecommendedUsbTablet);
+    STDMETHOD(COMGETTER(RecommendedRtcUseUtc))(BOOL *aRecommendedRtcUseUtc);
     STDMETHOD(COMGETTER(RecommendedChipset)) (ChipsetType_T *aChipsetType);
 
     // public methods only for internal purposes
@@ -101,7 +101,7 @@ private:
     const uint32_t mOSHint;
     const uint32_t mRAMSize;
     const uint32_t mVRAMSize;
-    const uint32_t mHDDSize;
+    const uint64_t mHDDSize;
     const uint32_t mMonitorCount;
     const NetworkAdapterType_T mNetworkAdapterType;
     const uint32_t mNumSerialEnabled;

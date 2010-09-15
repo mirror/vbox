@@ -133,7 +133,7 @@ struct Medium::Data
 
     MediumType_T type;
     DeviceType_T devType;
-    uint64_t logicalSize;   /*< In MBytes. */
+    uint64_t logicalSize;
 
     HDDOpenMode hddOpenMode;
 
@@ -3873,7 +3873,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
             }
 
             mediumSize = VDGetFileSize(hdd, 0);
-            mediumLogicalSize = VDGetSize(hdd, 0) / _1M;
+            mediumLogicalSize = VDGetSize(hdd, 0);
 
             success = true;
         }
@@ -5613,7 +5613,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
             vrc = VDCreateBase(hdd,
                                format.c_str(),
                                location.c_str(),
-                               task.mSize * _1M,
+                               task.mSize,
                                task.mVariant,
                                NULL,
                                &geo,
@@ -5628,7 +5628,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
                                location.c_str(), vdError(vrc).c_str());
 
             size = VDGetFileSize(hdd, 0);
-            logicalSize = VDGetSize(hdd, 0) / _1M;
+            logicalSize = VDGetSize(hdd, 0);
             unsigned uImageFlags;
             vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
             if (RT_SUCCESS(vrc))
@@ -5796,7 +5796,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
                                 targetLocation.c_str(), vdError(vrc).c_str());
 
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
-            logicalSize = VDGetSize(hdd, VD_LAST_IMAGE) / _1M;
+            logicalSize = VDGetSize(hdd, VD_LAST_IMAGE);
             unsigned uImageFlags;
             vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
             if (RT_SUCCESS(vrc))
@@ -6343,7 +6343,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                                    targetLocation.c_str(), vdError(vrc).c_str());
 
                 size = VDGetFileSize(targetHdd, VD_LAST_IMAGE);
-                logicalSize = VDGetSize(targetHdd, VD_LAST_IMAGE) / _1M;
+                logicalSize = VDGetSize(targetHdd, VD_LAST_IMAGE);
                 unsigned uImageFlags;
                 vrc = VDGetImageFlags(targetHdd, 0, &uImageFlags);
                 if (RT_SUCCESS(vrc))
@@ -6613,7 +6613,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
                                location.c_str(), vdError(vrc).c_str());
 
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
-            logicalSize = VDGetSize(hdd, VD_LAST_IMAGE) / _1M;
+            logicalSize = VDGetSize(hdd, VD_LAST_IMAGE);
             unsigned uImageFlags;
             vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
             if (RT_SUCCESS(vrc))

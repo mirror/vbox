@@ -167,7 +167,7 @@ void VBoxMedium::refresh()
     {
         mSize = vboxGlobal().formatSize (mMedium.GetSize());
         if (mType == VBoxDefs::MediumType_HardDisk)
-            mLogicalSize = vboxGlobal().formatSize (mMedium.GetLogicalSize() * _1M);
+            mLogicalSize = vboxGlobal().formatSize(mMedium.GetLogicalSize());
         else
             mLogicalSize = mSize;
     }

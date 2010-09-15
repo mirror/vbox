@@ -3321,7 +3321,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
         <listitem>
           <para>Since the global media registry is no longer required, a
-          number of media-related APIs had to be modified again.<itemizedlist>
+          number of media-related APIs had to be modified again.
+            <itemizedlist>
               <listitem>
                 <para>Neither <xref linkend="IVirtualBox__createHardDisk"
                 xreflabel="IVirtualBox::createHardDisk()" /> nor <xref
@@ -3432,6 +3433,13 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         <listitem>
           <para>The long-deprecated IVirtualBox::createLegacyMachine() API has
           been removed.</para>
+        </listitem>
+
+        <listitem>
+          <para>ISystemProperties::getMaxVDISize() is now <xref
+          linkend="ISystemProperties__getMaxVDSize"
+          xreflabel="ISystemProperties::getMaxVDSize()" /> and the returned
+          unit has changed from megabytes to bytes.</para>
         </listitem>
 
         <listitem>

@@ -2629,7 +2629,6 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 LogRel(("File system of '%s' is %s\n", utfFile.c_str(), RTFsTypeName(enmFsTypeFile)));
                 LONG64 i64Size;
                 hrc = pMedium->COMGETTER(LogicalSize)(&i64Size);                            H();
-                i64Size *= _1M;
 #ifdef RT_OS_WINDOWS
                 if (   enmFsTypeFile == RTFSTYPE_FAT
                     && i64Size >= _4G)
