@@ -36,6 +36,8 @@
 #include "cr_threads.h"
 #include "net_internals.h"
 
+#include <iprt/thread.h>
+
 #if 1 /** @todo Try use the Vbgl interface instead of talking directly to the driver? */
 # include <VBox/VBoxGuest.h>
 #else
@@ -189,7 +191,34 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
     }
 #  ifdef RT_OS_LINUX
     if (rc >= 0) /* positive values are negated VBox error status codes. */
+    {
         crWarning("vboxCall failed with VBox status code %d\n", -rc);
+        if (rc==VINF_INTERRUPTED)
+        {
+            RTMSINTERVAL sl;
+            int i;
+
+            for (i=0, sl=50; i<6; i++, sl=sl*2)
+            {
+                RTThreadSleep(sl);
+                rc = ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CALL(cbData), pvData);
+                if (rc==0)
+                {
+                    crWarning("vboxCall retry(%i) succeded", i+1);
+                    return VINF_SUCCESS;
+                }
+                else if (rc==VINF_INTERRUPTED)
+                {
+                    continue;
+                }
+                else
+                {
+                    crWarning("vboxCall retry(%i) failed with VBox status code %d", i+1, -rc);
+                    break;
+                }
+            }
+        }
+    }
     else
 #  endif
         crWarning("vboxCall failed with %x\n", errno);
