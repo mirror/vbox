@@ -1246,6 +1246,10 @@
 #define VERR_VD_ISCSI_INVALID_TYPE                  (-3254)
 /** VHD: Invalid image file header. */
 #define VERR_VD_VHD_INVALID_HEADER                  (-3260)
+/** Parallels HDD: Invalid image file header. */
+#define VERR_VD_PARALLELS_INVALID_HEADER            (-3265)
+/** DMG: Invalid image file header. */
+#define VERR_VD_DMG_INVALID_HEADER                  (-3267)
 /** Raw: Invalid image file header. */
 #define VERR_VD_RAW_INVALID_HEADER                  (-3270)
 /** Raw: Invalid image file type. */

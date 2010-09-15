@@ -26,7 +26,6 @@
 #ifndef __VBoxHDD_Plugin_h__
 #define __VBoxHDD_Plugin_h__
 
-#include <VBox/pdm.h>
 #include <VBox/VBoxHDD.h>
 
 
@@ -86,8 +85,9 @@ typedef struct VBOXHDDBACKEND
      * @returns VBox status code.
      * @param   pszFilename     Name of the image file.
      * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+     * @param   pVDIfsImage     Pointer to the per-image VD interface list.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCheckIfValid, (const char *pszFilename, PVDINTERFACE pVDIfsDisk));
+    DECLR3CALLBACKMEMBER(int, pfnCheckIfValid, (const char *pszFilename, PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage));
 
     /**
      * Open a disk image.
@@ -98,11 +98,11 @@ typedef struct VBOXHDDBACKEND
      * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
      * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      * @param   pVDIfsImage     Pointer to the per-image VD interface list.
-     * @param   ppvBackendData  Opaque state data for this image.
+     * @param   ppBackendData   Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(int, pfnOpen, (const char *pszFilename, unsigned uOpenFlags,
                                         PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                                        void **ppvBackendData));
+                                        void **ppBackendData));
 
     /**
      * Create a disk image.
@@ -122,18 +122,18 @@ typedef struct VBOXHDDBACKEND
      * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      * @param   pVDIfsImage     Pointer to the per-image VD interface list.
      * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
-     * @param   ppvBackendData  Opaque state data for this image.
+     * @param   ppBackendData   Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, uint64_t cbSize,
                                           unsigned uImageFlags, const char *pszComment,
-                                          PCPDMMEDIAGEOMETRY pPCHSGeometry,
-                                          PCPDMMEDIAGEOMETRY pLCHSGeometry,
+                                          PCVDGEOMETRY pPCHSGeometry,
+                                          PCVDGEOMETRY pLCHSGeometry,
                                           PCRTUUID pUuid, unsigned uOpenFlags,
                                           unsigned uPercentStart, unsigned uPercentSpan,
                                           PVDINTERFACE pVDIfsDisk,
                                           PVDINTERFACE pVDIfsImage,
                                           PVDINTERFACE pVDIfsOperation,
-                                          void **ppvBackendData));
+                                          void **ppBackendData));
 
     /**
      * Rename a disk image. Only needs to work as long as the operating
@@ -141,23 +141,23 @@ typedef struct VBOXHDDBACKEND
      * rename an image to a location on another disk/filesystem, this function
      * may just fail with an appropriate error code (not changing the opened
      * image data at all). Also works only on images which actually refer to
-     * files (and not for raw disk images).
+     * regular files. May be NULL.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pszFilename     New name of the image file. Guaranteed to be available and
      *                          unchanged during the lifetime of this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRename, (void *pvBackendData, const char *pszFilename));
+    DECLR3CALLBACKMEMBER(int, pfnRename, (void *pBackendData, const char *pszFilename));
 
     /**
      * Close a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   fDelete         If true, delete the image from the host disk.
      */
-    DECLR3CALLBACKMEMBER(int, pfnClose, (void *pvBackendData, bool fDelete));
+    DECLR3CALLBACKMEMBER(int, pfnClose, (void *pBackendData, bool fDelete));
 
     /**
      * Read data from a disk image. The area read never crosses a block
@@ -165,13 +165,13 @@ typedef struct VBOXHDDBACKEND
      *
      * @returns VBox status code.
      * @returns VERR_VD_BLOCK_FREE if this image contains no data for this block.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uOffset         Offset to start reading from.
      * @param   pvBuf           Where to store the read bits.
      * @param   cbRead          Number of bytes to read.
      * @param   pcbActuallyRead Pointer to returned number of bytes read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pvBackendData, uint64_t uOffset, void *pvBuf,
+    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pBackendData, uint64_t uOffset, void *pvBuf,
                                         size_t cbRead, size_t *pcbActuallyRead));
 
     /**
@@ -185,7 +185,7 @@ typedef struct VBOXHDDBACKEND
      *          in the image stack. This might not be the most convenient interface,
      *          but it works with arbitrary block sizes, especially when the image
      *          stack uses different block sizes.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uOffset         Offset to start writing to.
      * @param   pvBuf           Where to retrieve the written bits.
      * @param   cbWrite         Number of bytes to write.
@@ -202,7 +202,7 @@ typedef struct VBOXHDDBACKEND
      * @param   fWrite          Flags which affect write behavior. Combination
      *                          of the VD_WRITE_* flags.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvBackendData, uint64_t uOffset,
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pBackendData, uint64_t uOffset,
                                          const void *pvBuf, size_t cbWrite,
                                          size_t *pcbWriteProcess, size_t *pcbPreRead,
                                          size_t *pcbPostRead, unsigned fWrite));
@@ -211,272 +211,272 @@ typedef struct VBOXHDDBACKEND
      * Flush data to disk.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pBackendData));
 
     /**
      * Get the version of a disk image.
      *
      * @returns version of disk image.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(unsigned, pfnGetVersion, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(unsigned, pfnGetVersion, (void *pBackendData));
 
     /**
      * Get the capacity of a disk image.
      *
      * @returns size of disk image in bytes.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(uint64_t, pfnGetSize, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetSize, (void *pBackendData));
 
     /**
      * Get the file size of a disk image.
      *
      * @returns size of disk image in bytes.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(uint64_t, pfnGetFileSize, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetFileSize, (void *pBackendData));
 
     /**
      * Get virtual disk PCHS geometry stored in a disk image.
      *
      * @returns VBox status code.
      * @returns VERR_VD_GEOMETRY_NOT_SET if no geometry present in the image.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pPCHSGeometry   Where to store the geometry. Not NULL.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetPCHSGeometry, (void *pvBackendData, PPDMMEDIAGEOMETRY pPCHSGeometry));
+    DECLR3CALLBACKMEMBER(int, pfnGetPCHSGeometry, (void *pBackendData, PVDGEOMETRY pPCHSGeometry));
 
     /**
      * Set virtual disk PCHS geometry stored in a disk image.
      * Only called if geometry is different than before.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pPCHSGeometry   Where to load the geometry from. Not NULL.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetPCHSGeometry, (void *pvBackendData, PCPDMMEDIAGEOMETRY pPCHSGeometry));
+    DECLR3CALLBACKMEMBER(int, pfnSetPCHSGeometry, (void *pBackendData, PCVDGEOMETRY pPCHSGeometry));
 
     /**
      * Get virtual disk LCHS geometry stored in a disk image.
      *
      * @returns VBox status code.
      * @returns VERR_VD_GEOMETRY_NOT_SET if no geometry present in the image.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pLCHSGeometry   Where to store the geometry. Not NULL.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetLCHSGeometry, (void *pvBackendData, PPDMMEDIAGEOMETRY pLCHSGeometry));
+    DECLR3CALLBACKMEMBER(int, pfnGetLCHSGeometry, (void *pBackendData,  PVDGEOMETRY pLCHSGeometry));
 
     /**
      * Set virtual disk LCHS geometry stored in a disk image.
      * Only called if geometry is different than before.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pLCHSGeometry   Where to load the geometry from. Not NULL.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetLCHSGeometry, (void *pvBackendData, PCPDMMEDIAGEOMETRY pLCHSGeometry));
+    DECLR3CALLBACKMEMBER(int, pfnSetLCHSGeometry, (void *pBackendData,  PCVDGEOMETRY pLCHSGeometry));
 
     /**
      * Get the image flags of a disk image.
      *
      * @returns image flags of disk image.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(unsigned, pfnGetImageFlags, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(unsigned, pfnGetImageFlags, (void *pBackendData));
 
     /**
      * Get the open flags of a disk image.
      *
      * @returns open flags of disk image.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(unsigned, pfnGetOpenFlags, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(unsigned, pfnGetOpenFlags, (void *pBackendData));
 
     /**
      * Set the open flags of a disk image. May cause the image to be locked
      * in a different mode or be reopened (which can fail).
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uOpenFlags      New open flags for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetOpenFlags, (void *pvBackendData, unsigned uOpenFlags));
+    DECLR3CALLBACKMEMBER(int, pfnSetOpenFlags, (void *pBackendData, unsigned uOpenFlags));
 
     /**
      * Get comment of a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pszComment      Where to store the comment.
      * @param   cbComment       Size of the comment buffer.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetComment, (void *pvBackendData, char *pszComment, size_t cbComment));
+    DECLR3CALLBACKMEMBER(int, pfnGetComment, (void *pBackendData, char *pszComment, size_t cbComment));
 
     /**
      * Set comment of a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pszComment      Where to get the comment from. NULL resets comment.
      *                          The comment is silently truncated if the image format
      *                          limit is exceeded.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetComment, (void *pvBackendData, const char *pszComment));
+    DECLR3CALLBACKMEMBER(int, pfnSetComment, (void *pBackendData, const char *pszComment));
 
     /**
      * Get UUID of a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to store the image UUID.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetUuid, (void *pvBackendData, PRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnGetUuid, (void *pBackendData, PRTUUID pUuid));
 
     /**
      * Set UUID of a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to get the image UUID from.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetUuid, (void *pvBackendData, PCRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnSetUuid, (void *pBackendData, PCRTUUID pUuid));
 
     /**
      * Get last modification UUID of a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to store the image modification UUID.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetModificationUuid, (void *pvBackendData, PRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnGetModificationUuid, (void *pBackendData, PRTUUID pUuid));
 
     /**
      * Set last modification UUID of a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to get the image modification UUID from.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetModificationUuid, (void *pvBackendData, PCRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnSetModificationUuid, (void *pBackendData, PCRTUUID pUuid));
 
     /**
      * Get parent UUID of a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to store the parent image UUID.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetParentUuid, (void *pvBackendData, PRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnGetParentUuid, (void *pBackendData, PRTUUID pUuid));
 
     /**
      * Set parent UUID of a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to get the parent image UUID from.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetParentUuid, (void *pvBackendData, PCRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnSetParentUuid, (void *pBackendData, PCRTUUID pUuid));
 
     /**
      * Get parent modification UUID of a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to store the parent image modification UUID.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetParentModificationUuid, (void *pvBackendData, PRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnGetParentModificationUuid, (void *pBackendData, PRTUUID pUuid));
 
     /**
      * Set parent modification UUID of a disk image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to get the parent image modification UUID from.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetParentModificationUuid, (void *pvBackendData, PCRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnSetParentModificationUuid, (void *pBackendData, PCRTUUID pUuid));
 
     /**
      * Dump information about a disk image.
      *
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(void, pfnDump, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(void, pfnDump, (void *pBackendData));
 
     /**
-     * Get a time stamp of a disk image.
+     * Get a time stamp of a disk image. May be NULL.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pTimeStamp      Where to store the time stamp.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetTimeStamp, (void *pvBackendData, PRTTIMESPEC pTimeStamp));
+    DECLR3CALLBACKMEMBER(int, pfnGetTimeStamp, (void *pBackendData, PRTTIMESPEC pTimeStamp));
 
     /**
-     * Get the parent time stamp of a disk image.
+     * Get the parent time stamp of a disk image. May be NULL.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pTimeStamp      Where to store the time stamp.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetParentTimeStamp, (void *pvBackendData, PRTTIMESPEC pTimeStamp));
+    DECLR3CALLBACKMEMBER(int, pfnGetParentTimeStamp, (void *pBackendData, PRTTIMESPEC pTimeStamp));
 
     /**
-     * Set the parent time stamp of a disk image.
+     * Set the parent time stamp of a disk image. May be NULL.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pTimeStamp      Where to get the time stamp from.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetParentTimeStamp, (void *pvBackendData, PCRTTIMESPEC pTimeStamp));
+    DECLR3CALLBACKMEMBER(int, pfnSetParentTimeStamp, (void *pBackendData, PCRTTIMESPEC pTimeStamp));
 
     /**
-     * Get the relative path to parent image.
+     * Get the relative path to parent image. May be NULL.
      *
      * @returns VBox status code.
-     * @param   pvBackendData     Opaque state data for this image.
+     * @param   pBackendData      Opaque state data for this image.
      * @param   pszParentFilename Where to store the path.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetParentFilename, (void *pvBackendData, char **ppszParentFilename));
+    DECLR3CALLBACKMEMBER(int, pfnGetParentFilename, (void *pBackendData, char **ppszParentFilename));
 
     /**
-     * Set the relative path to parent image.
+     * Set the relative path to parent image. May be NULL.
      *
      * @returns VBox status code.
-     * @param   pvBackendData     Opaque state data for this image.
+     * @param   pBackendData      Opaque state data for this image.
      * @param   pszParentFilename Where to get the path from.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetParentFilename, (void *pvBackendData, const char *pszParentFilename));
+    DECLR3CALLBACKMEMBER(int, pfnSetParentFilename, (void *pBackendData, const char *pszParentFilename));
 
     /**
      * Return whether asynchronous I/O operations are supported for this image.
      *
      * @returns true if asynchronous I/O is supported
      *          false otherwise.
-     * @param   pvBackendData    Opaque state data for this image.
+     * @param   pBackendData     Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(bool, pfnIsAsyncIOSupported, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(bool, pfnIsAsyncIOSupported, (void *pBackendData));
 
     /**
      * Start an asynchronous read request.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uOffset         The offset of the virtual disk to read from.
      * @param   cbRead          How many bytes to read.
      * @param   pIoCtx          I/O context associated with this request.
      * @param   pcbActuallyRead Pointer to returned number of bytes read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncRead, (void *pvBackendData, uint64_t uOffset, size_t cbRead,
+    DECLR3CALLBACKMEMBER(int, pfnAsyncRead, (void *pBackendData, uint64_t uOffset, size_t cbRead,
                                              PVDIOCTX pIoCtx, size_t *pcbActuallyRead));
 
     /**
      * Start an asynchronous write request.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uOffset         The offset of the virtual disk to write to.
      * @param   cbWrite         How many bytes to write.
      * @param   pIoCtx          I/O context associated with this request.
@@ -493,7 +493,7 @@ typedef struct VBOXHDDBACKEND
      * @param   fWrite          Flags which affect write behavior. Combination
      *                          of the VD_WRITE_* flags.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncWrite, (void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+    DECLR3CALLBACKMEMBER(int, pfnAsyncWrite, (void *pBackendData, uint64_t uOffset, size_t cbWrite,
                                               PVDIOCTX pIoCtx,
                                               size_t *pcbWriteProcess, size_t *pcbPreRead,
                                               size_t *pcbPostRead, unsigned fWrite));
@@ -502,10 +502,10 @@ typedef struct VBOXHDDBACKEND
      * Flush data to disk.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pIoCtx          I/O context associated with this request.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncFlush, (void *pvBackendData, PVDIOCTX pIoCtx));
+    DECLR3CALLBACKMEMBER(int, pfnAsyncFlush, (void *pBackendData, PVDIOCTX pIoCtx));
 
     /** Returns a human readable hard disk location string given a
      *  set of hard disk configuration keys. The returned string is an
@@ -526,14 +526,14 @@ typedef struct VBOXHDDBACKEND
      *
      * @returns VBox status code.
      * @returns VERR_NOT_SUPPORTED if this image cannot be compacted yet.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uPercentStart   Starting value for progress percentage.
      * @param   uPercentSpan    Span for varying progress percentage.
      * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      * @param   pVDIfsImage     Pointer to the per-image VD interface list.
      * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCompact, (void *pvBackendData,
+    DECLR3CALLBACKMEMBER(int, pfnCompact, (void *pBackendData,
                                            unsigned uPercentStart, unsigned uPercentSpan,
                                            PVDINTERFACE pVDIfsDisk,
                                            PVDINTERFACE pVDIfsImage,
@@ -545,7 +545,7 @@ typedef struct VBOXHDDBACKEND
      *
      * @returns VBox status code.
      * @returns VERR_NOT_SUPPORTED if this image cannot be compacted yet.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   cbSize          New size of the image.
      * @param   pPCHSGeometry   Pointer to the new physical disk geometry <= (16383,16,63). Not NULL.
      * @param   pLCHSGeometry   Pointer to the new logical disk geometry <= (x,255,63). Not NULL.
@@ -555,10 +555,10 @@ typedef struct VBOXHDDBACKEND
      * @param   pVDIfsImage     Pointer to the per-image VD interface list.
      * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
      */
-    DECLR3CALLBACKMEMBER(int, pfnResize, (void *pvBackendData,
+    DECLR3CALLBACKMEMBER(int, pfnResize, (void *pBackendData,
                                           uint64_t cbSize,
-                                          PCPDMMEDIAGEOMETRY pPCHSGeometry,
-                                          PCPDMMEDIAGEOMETRY pLCHSGeometry,
+                                          PCVDGEOMETRY pPCHSGeometry,
+                                          PCVDGEOMETRY pLCHSGeometry,
                                           unsigned uPercentStart, unsigned uPercentSpan,
                                           PVDINTERFACE pVDIfsDisk,
                                           PVDINTERFACE pVDIfsImage,

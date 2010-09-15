@@ -9981,7 +9981,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="MediumFormatCapabilities"
-    uuid="be44ec10-9540-4d3f-aee5-4a4d4c4ad42c"
+    uuid="7342ba79-7ce0-4d94-8f86-5ed5a185d9bd"
   >
     <desc>
        Medium format capability flags.
@@ -10048,7 +10048,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
-    <const name="CapabilityMask" value="0x1FF"/>
+    <const name="VFS" value="0x200">
+      <desc>
+        The format backend supports virtual filesystem functionality.
+      </desc>
+    </const>
+
+    <const name="CapabilityMask" value="0x3FF"/>
   </enum>
 
   <interface

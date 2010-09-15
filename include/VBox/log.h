@@ -171,10 +171,6 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_HOST_SERIAL,
     /** The internal networking transport driver group. */
     LOG_GROUP_DRV_INTNET,
-    /** iSCSI Initiator driver group. */
-    LOG_GROUP_DRV_ISCSI,
-    /** iSCSI TCP transport driver group. */
-    LOG_GROUP_DRV_ISCSI_TRANSPORT_TCP,
     /** ISO (CD/DVD) media driver group. */
     LOG_GROUP_DRV_ISO,
     /** Keyboard Queue driver group. */
@@ -325,6 +321,8 @@ typedef enum LOGGROUP
     LOG_GROUP_VD,
     /** iSCSI virtual disk backend. */
     LOG_GROUP_VD_ISCSI,
+    /** Parallels HDD virtual disk backend. */
+    LOG_GROUP_VD_PARALLELS,
     /** Raw virtual disk backend. */
     LOG_GROUP_VD_RAW,
     /** VDI virtual disk backend. */
@@ -420,8 +418,6 @@ typedef enum LOGGROUP
     "DRV_HOST_PARALLEL", \
     "DRV_HOST_SERIAL", \
     "DRV_INTNET",   \
-    "DRV_ISCSI",    \
-    "DRV_ISCSI_TRANSPORT_TCP", \
     "DRV_ISO",      \
     "DRV_KBD_QUEUE", \
     "DRV_LWIP",     \
@@ -497,6 +493,7 @@ typedef enum LOGGROUP
     "USB_MSD",      \
     "VD",           \
     "VD_ISCSI",     \
+    "VD_PARALLELS", \
     "VD_RAW",       \
     "VD_VDI",       \
     "VD_VHD",       \

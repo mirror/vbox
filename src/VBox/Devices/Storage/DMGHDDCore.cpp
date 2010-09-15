@@ -22,7 +22,6 @@
 #include <VBox/VBoxHDD-Plugin.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
-#include <iprt/file.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/mem.h>
@@ -292,30 +291,39 @@ typedef DMGEXTENT *PDMGEXTENT;
  */
 typedef struct DMGIMAGE
 {
+    /** Image name.
+     * Kept around for logging and delete-on-close purposes. */
+    const char         *pszFilename;
+    /** Storage handle. */
+    PVDIOSTORAGE        pStorage;
+    /** I/O interface. */
+    PVDINTERFACE        pInterfaceIO;
+    /** Async I/O interface callbacks. */
+    PVDINTERFACEIO      pInterfaceIOCallbacks;
+
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE        pVDIfsDisk;
     /** Pointer to the per-image VD interface list. */
     PVDINTERFACE        pVDIfsImage;
 
-    /** Storage handle. */
-    PVDIOSTORAGE        pStorage;
-    /** Size of the image. */
-    uint64_t            cbFile;
-    /** I/O interface. */
-    PVDINTERFACE        pInterfaceIO;
-    /** Async I/O interface callbacks. */
-    PVDINTERFACEIO      pInterfaceIOCallbacks;
     /** Error callback. */
     PVDINTERFACE        pInterfaceError;
     /** Opaque data for error callback. */
     PVDINTERFACEERROR   pInterfaceErrorCallbacks;
+
     /** Flags the image was opened with. */
     uint32_t            uOpenFlags;
     /** Image flags. */
     unsigned            uImageFlags;
-    /** The filename.
-     * Kept around for logging and delete-on-close purposes. */
-    const char         *pszFilename;
+    /** Total size of the virtual image. */
+    uint64_t            cbSize;
+    /** Size of the image. */
+    uint64_t            cbFile;
+    /** Physical geometry of this image. */
+    VDGEOMETRY          PCHSGeometry;
+    /** Logical geometry of this image. */
+    VDGEOMETRY          LCHSGeometry;
+
     /** The resources.
      * A lazy bird ASSUME there are only two arrays in the resource-fork section in
      * the XML, namely 'blkx' and 'plst'. These have been assigned fixed indexes. */
@@ -323,12 +331,6 @@ typedef struct DMGIMAGE
     /** The UDIF footer. */
     VBOXUDIF            Ftr;
 
-    /** Total size of the virtual image. */
-    uint64_t            cbSize;
-    /** Physical geometry of this image. */
-    PDMMEDIAGEOMETRY    PCHSGeometry;
-    /** Logical geometry of this image. */
-    PDMMEDIAGEOMETRY    LCHSGeometry;
     /** First extent in the list. */
     PDMGEXTENT          pExtentFirst;
     /** Last extent in the list. */
@@ -387,6 +389,17 @@ typedef DMGIMAGE *PDMGIMAGE;
 
 
 /*******************************************************************************
+*   Static Variables                                                           *
+*******************************************************************************/
+
+/** NULL-terminated array of supported file extensions. */
+static const char *const s_apszDmgFileExtensions[] =
+{
+    "dmg",
+    NULL
+};
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void vboxdmgUdifFtrHost2FileEndian(PVBOXUDIF pUdif);
@@ -402,86 +415,103 @@ static bool vboxdmgUdifCkSumIsValid(PCVBOXUDIFCKSUM pCkSum, const char *pszPrefi
 /**
  * Internal: signal an error to the frontend.
  */
-DECLINLINE(int) dmgError(PDMGIMAGE pImage, int rc, RT_SRC_POS_DECL,
+DECLINLINE(int) dmgError(PDMGIMAGE pThis, int rc, RT_SRC_POS_DECL,
                          const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks->pfnError(pImage->pInterfaceError->pvUser, rc, RT_SRC_POS_ARGS,
-                                                   pszFormat, va);
+    if (pThis->pInterfaceError)
+        pThis->pInterfaceErrorCallbacks->pfnError(pThis->pInterfaceError->pvUser, rc, RT_SRC_POS_ARGS,
+                                                  pszFormat, va);
     va_end(va);
     return rc;
 }
 
-static int dmgFileOpen(PDMGIMAGE pImage, bool fReadonly, bool fCreate)
-{
-    AssertMsg(!(fReadonly && fCreate), ("Image can't be opened readonly while being created\n"));
-
-    unsigned uOpenFlags = fReadonly ? VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY : 0;
-
-    if (fCreate)
-        uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE;
-
-    return pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
-                                                  pImage->pszFilename,
-                                                  uOpenFlags,
-                                                  &pImage->pStorage);
-}
-
-static int dmgFileClose(PDMGIMAGE pImage)
+/**
+ * Internal: signal an informational message to the frontend.
+ */
+DECLINLINE(int) dmgMessage(PDMGIMAGE pThis, const char *pszFormat, ...)
 {
     int rc = VINF_SUCCESS;
-
-    if (pImage->pStorage)
-        rc = pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage);
-
-    pImage->pStorage = NULL;
-
+    va_list va;
+    va_start(va, pszFormat);
+    if (pThis->pInterfaceError)
+        rc = pThis->pInterfaceErrorCallbacks->pfnMessage(pThis->pInterfaceError->pvUser,
+                                                         pszFormat, va);
+    va_end(va);
     return rc;
 }
 
-static int dmgFileFlushSync(PDMGIMAGE pImage)
+
+DECLINLINE(int) dmgFileOpen(PDMGIMAGE pThis, const char *pszFilename,
+                            uint32_t fOpen)
 {
-    return pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage);
+    return pThis->pInterfaceIOCallbacks->pfnOpen(pThis->pInterfaceIO->pvUser,
+                                                 pszFilename, fOpen,
+                                                 &pThis->pStorage);
 }
 
-static int dmgFileGetSize(PDMGIMAGE pImage, uint64_t *pcbSize)
+DECLINLINE(int) dmgFileClose(PDMGIMAGE pThis)
 {
-    return pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage,
-                                                     pcbSize);
+    return pThis->pInterfaceIOCallbacks->pfnClose(pThis->pInterfaceIO->pvUser,
+                                                  pThis->pStorage);
 }
 
-static int dmgFileSetSize(PDMGIMAGE pImage, uint64_t cbSize)
+DECLINLINE(int) dmgFileDelete(PDMGIMAGE pThis, const char *pszFilename)
 {
-    return pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage,
-                                                     cbSize);
+    return pThis->pInterfaceIOCallbacks->pfnDelete(pThis->pInterfaceIO->pvUser,
+                                                   pszFilename);
 }
 
-static int dmgFileWriteSync(PDMGIMAGE pImage, uint64_t off, const void *pcvBuf, size_t cbWrite, size_t *pcbWritten)
+DECLINLINE(int) dmgFileMove(PDMGIMAGE pThis, const char *pszSrc,
+                            const char *pszDst, unsigned fMove)
 {
-    return pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage,
-                                                       off, cbWrite, pcvBuf,
-                                                       pcbWritten);
+    return pThis->pInterfaceIOCallbacks->pfnMove(pThis->pInterfaceIO->pvUser,
+                                                 pszSrc, pszDst, fMove);
 }
 
-static int dmgFileReadSync(PDMGIMAGE pImage, uint64_t off, void *pvBuf, size_t cbRead, size_t *pcbRead)
+DECLINLINE(int) dmgFileGetFreeSpace(PDMGIMAGE pThis, const char *pszFilename,
+                                    int64_t *pcbFree)
 {
-    return pImage->pInterfaceIOCallbacks->pfnReadSync(pImage->pInterfaceIO->pvUser,
-                                                      pImage->pStorage,
-                                                      off, cbRead, pvBuf,
-                                                      pcbRead);
+    return pThis->pInterfaceIOCallbacks->pfnGetFreeSpace(pThis->pInterfaceIO->pvUser,
+                                                         pszFilename, pcbFree);
 }
 
-static bool dmgFileOpened(PDMGIMAGE pImage)
+DECLINLINE(int) dmgFileGetSize(PDMGIMAGE pThis, uint64_t *pcbSize)
 {
-    return pImage->pStorage != NULL;
+    return pThis->pInterfaceIOCallbacks->pfnGetSize(pThis->pInterfaceIO->pvUser,
+                                                    pThis->pStorage, pcbSize);
 }
+
+DECLINLINE(int) dmgFileSetSize(PDMGIMAGE pThis, uint64_t cbSize)
+{
+    return pThis->pInterfaceIOCallbacks->pfnSetSize(pThis->pInterfaceIO->pvUser,
+                                                    pThis->pStorage, cbSize);
+}
+
+DECLINLINE(int) dmgFileWriteSync(PDMGIMAGE pThis, uint64_t uOffset,
+                                 const void *pvBuffer, size_t cbBuffer,
+                                 size_t *pcbWritten)
+{
+    return pThis->pInterfaceIOCallbacks->pfnWriteSync(pThis->pInterfaceIO->pvUser,
+                                                      pThis->pStorage, uOffset,
+                                                      pvBuffer, cbBuffer, pcbWritten);
+}
+
+DECLINLINE(int) dmgFileReadSync(PDMGIMAGE pThis, uint64_t uOffset,
+                                void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+{
+    return pThis->pInterfaceIOCallbacks->pfnReadSync(pThis->pInterfaceIO->pvUser,
+                                                     pThis->pStorage, uOffset,
+                                                     pvBuffer, cbBuffer, pcbRead);
+}
+
+DECLINLINE(int) dmgFileFlushSync(PDMGIMAGE pThis)
+{
+    return pThis->pInterfaceIOCallbacks->pfnFlushSync(pThis->pInterfaceIO->pvUser,
+                                                      pThis->pStorage);
+}
+
 
 /**
  * Swaps endian.
@@ -711,52 +741,70 @@ static bool vboxdmgUdifCkSumIsValid(PCVBOXUDIFCKSUM pCkSum, const char *pszPrefi
 }
 
 
-/** @copydoc VBOXHDDBACKEND::pfnClose */
-static DECLCALLBACK(int) vboxdmgClose(void *pvBackendData, bool fDelete)
+/**
+ * Internal. Flush image data to disk.
+ */
+static int dmgFlushImage(PDMGIMAGE pThis)
 {
-    PDMGIMAGE pThis = (PDMGIMAGE)pvBackendData;
+    int rc = VINF_SUCCESS;
 
-    if (dmgFileOpened(pThis))
+    if (   pThis->pStorage
+        && !(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
     {
-        /*
-         * If writable, flush changes, fix checksums, ++.
-         */
-        /** @todo writable images. */
-
-        /*
-         * Close the file.
-         */
-        dmgFileClose(pThis);
+        /* @todo handle writable files, update checksums etc. */
     }
 
-    /*
-     * Delete the file if requested, then free the remaining resources.
-     */
+    return rc;
+}
+
+
+/**
+ * Internal. Free all allocated space for representing an image except pThis,
+ * and optionally delete the image from disk.
+ */
+static int dmgFreeImage(PDMGIMAGE pThis, bool fDelete)
+{
     int rc = VINF_SUCCESS;
-    if (fDelete)
-        rc = RTFileDelete(pThis->pszFilename);
 
-    for (unsigned iRsrc = 0; iRsrc < RT_ELEMENTS(pThis->aRsrcs); iRsrc++)
-        for (unsigned i = 0; i < pThis->aRsrcs[iRsrc].cEntries; i++)
+    /* Freeing a never allocated image (e.g. because the open failed) is
+     * not signalled as an error. After all nothing bad happens. */
+    if (pThis)
+    {
+        if (pThis->pStorage)
         {
-            if (pThis->aRsrcs[iRsrc].aEntries[i].pbData)
-            {
-                RTMemFree(pThis->aRsrcs[iRsrc].aEntries[i].pbData);
-                pThis->aRsrcs[iRsrc].aEntries[i].pbData = NULL;
-            }
-            if (pThis->aRsrcs[iRsrc].aEntries[i].pszName)
-            {
-                RTMemFree(pThis->aRsrcs[iRsrc].aEntries[i].pszName);
-                pThis->aRsrcs[iRsrc].aEntries[i].pszName = NULL;
-            }
-            if (pThis->aRsrcs[iRsrc].aEntries[i].pszCFName)
-            {
-                RTMemFree(pThis->aRsrcs[iRsrc].aEntries[i].pszCFName);
-                pThis->aRsrcs[iRsrc].aEntries[i].pszCFName = NULL;
-            }
-        }
-    RTMemFree(pThis);
+            /* No point updating the file that is deleted anyway. */
+            if (!fDelete)
+                dmgFlushImage(pThis);
 
+            dmgFileClose(pThis);
+            pThis->pStorage = NULL;
+        }
+
+        for (unsigned iRsrc = 0; iRsrc < RT_ELEMENTS(pThis->aRsrcs); iRsrc++)
+            for (unsigned i = 0; i < pThis->aRsrcs[iRsrc].cEntries; i++)
+            {
+                if (pThis->aRsrcs[iRsrc].aEntries[i].pbData)
+                {
+                    RTMemFree(pThis->aRsrcs[iRsrc].aEntries[i].pbData);
+                    pThis->aRsrcs[iRsrc].aEntries[i].pbData = NULL;
+                }
+                if (pThis->aRsrcs[iRsrc].aEntries[i].pszName)
+                {
+                    RTMemFree(pThis->aRsrcs[iRsrc].aEntries[i].pszName);
+                    pThis->aRsrcs[iRsrc].aEntries[i].pszName = NULL;
+                }
+                if (pThis->aRsrcs[iRsrc].aEntries[i].pszCFName)
+                {
+                    RTMemFree(pThis->aRsrcs[iRsrc].aEntries[i].pszCFName);
+                    pThis->aRsrcs[iRsrc].aEntries[i].pszCFName = NULL;
+                }
+            }
+
+        if (fDelete && pThis->pszFilename)
+            dmgFileDelete(pThis, pThis->pszFilename);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1277,7 +1325,7 @@ static int vboxdmgBlkxParse(PDMGIMAGE pThis, PVBOXBLKX pBlkx)
             case VBOXBLKXDESC_TYPE_TERMINATOR:
                 break;
             default:
-                rc = VERR_VD_GEN_INVALID_HEADER;
+                rc = VERR_VD_DMG_INVALID_HEADER;
                 break;
         }
 
@@ -1292,25 +1340,45 @@ static int vboxdmgBlkxParse(PDMGIMAGE pThis, PVBOXBLKX pBlkx)
 }
 
 /**
- * Worker for vboxdmgOpen that reads in and validates all the necessary
+ * Worker for dmgOpen that reads in and validates all the necessary
  * structures from the image.
- *
- * This worker is really just a construct to avoid gotos and do-break-while-zero
- * uglyness.
  *
  * @returns VBox status code.
  * @param   pThis       The DMG instance data.
+ * @param   uOpenFlags  Flags for defining the open type.
  */
-static int vboxdmgOpenWorker(PDMGIMAGE pThis)
+static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
 {
+    pThis->uOpenFlags  = uOpenFlags;
+
+    pThis->pInterfaceError = VDInterfaceGet(pThis->pVDIfsDisk, VDINTERFACETYPE_ERROR);
+    if (pThis->pInterfaceError)
+        pThis->pInterfaceErrorCallbacks = VDGetInterfaceError(pThis->pInterfaceError);
+
+    /* Get I/O interface. */
+    pThis->pInterfaceIO = VDInterfaceGet(pThis->pVDIfsImage, VDINTERFACETYPE_IO);
+    AssertPtrReturn(pThis->pInterfaceIO, VERR_INVALID_PARAMETER);
+    pThis->pInterfaceIOCallbacks = VDGetInterfaceIO(pThis->pInterfaceIO);
+    AssertPtrReturn(pThis->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+
+    int rc = dmgFileOpen(pThis, pThis->pszFilename,
+                         VDOpenFlagsToFileOpenFlags(uOpenFlags,
+                                                    false /* fCreate */));
+    if (RT_FAILURE(rc))
+    {
+        /* Do NOT signal an appropriate error here, as the VD layer has the
+         * choice of retrying the open if it failed. */
+        return rc;
+    }
+
     /*
      * Read the footer.
      */
-    int rc = dmgFileGetSize(pThis, &pThis->cbFile);
+    rc = dmgFileGetSize(pThis, &pThis->cbFile);
     if (RT_FAILURE(rc))
         return rc;
     if (pThis->cbFile < 1024)
-        return VERR_VD_GEN_INVALID_HEADER;
+        return VERR_VD_DMG_INVALID_HEADER;
     rc = dmgFileReadSync(pThis, pThis->cbFile - sizeof(pThis->Ftr), &pThis->Ftr, sizeof(pThis->Ftr), NULL);
     if (RT_FAILURE(rc))
         return rc;
@@ -1320,16 +1388,16 @@ static int vboxdmgOpenWorker(PDMGIMAGE pThis)
      * Do we recognize the footer structure? If so, is it valid?
      */
     if (pThis->Ftr.u32Magic != VBOXUDIF_MAGIC)
-        return VERR_VD_GEN_INVALID_HEADER;
+        return VERR_VD_DMG_INVALID_HEADER;
     if (pThis->Ftr.u32Version != VBOXUDIF_VER_CURRENT)
-        return VERR_VD_GEN_INVALID_HEADER;
+        return VERR_VD_DMG_INVALID_HEADER;
     if (pThis->Ftr.cbFooter != sizeof(pThis->Ftr))
-        return VERR_VD_GEN_INVALID_HEADER;
+        return VERR_VD_DMG_INVALID_HEADER;
 
     if (!vboxdmgUdifFtrIsValid(&pThis->Ftr, pThis->cbFile - sizeof(pThis->Ftr)))
     {
         VBOXDMG_PRINTF(("Bad DMG: '%s' cbFile=%RTfoff\n", pThis->pszFilename, pThis->cbFile));
-        return VERR_VD_GEN_INVALID_HEADER;
+        return VERR_VD_DMG_INVALID_HEADER;
     }
 
     pThis->cbSize = pThis->Ftr.cSectors * VBOXDMG_SECTOR_SIZE;
@@ -1359,7 +1427,7 @@ static int vboxdmgOpenWorker(PDMGIMAGE pThis)
 
                     if (pRsrcBlkx->aEntries[idxBlkx].cbData < sizeof(VBOXBLKX))
                     {
-                        rc = VERR_VD_GEN_INVALID_HEADER;
+                        rc = VERR_VD_DMG_INVALID_HEADER;
                         break;
                     }
 
@@ -1378,7 +1446,7 @@ static int vboxdmgOpenWorker(PDMGIMAGE pThis)
                         && pRsrcBlkx->aEntries[idxBlkx].cbData == pBlkx->cBlocksRunCount * sizeof(VBOXBLKXDESC) + sizeof(VBOXBLKX))
                         rc = vboxdmgBlkxParse(pThis, pBlkx);
                     else
-                        rc = VERR_VD_GEN_INVALID_HEADER;
+                        rc = VERR_VD_DMG_INVALID_HEADER;
 
                     if (RT_FAILURE(rc))
                     {
@@ -1388,7 +1456,7 @@ static int vboxdmgOpenWorker(PDMGIMAGE pThis)
                 }
             }
             else
-                rc = VERR_VD_GEN_INVALID_HEADER;
+                rc = VERR_VD_DMG_INVALID_HEADER;
         }
         else
         {
@@ -1399,19 +1467,103 @@ static int vboxdmgOpenWorker(PDMGIMAGE pThis)
         }
     }
     RTMemFree(pszXml);
+
     if (RT_FAILURE(rc))
-        return rc;
-
-
-    return VINF_SUCCESS;
+        dmgFreeImage(pThis, false);
+    return rc;
 }
 
 
-/** @copydoc VBOXHDDBACKEND::pfnOpen */
-static DECLCALLBACK(int) dmgOpen(const char *pszFilename, unsigned fOpenFlags,
-                                 PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                                 void **ppvBackendData)
+/** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
+static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                           PVDINTERFACE pVDIfsImage)
 {
+    LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
+    int rc;
+    PVDIOSTORAGE pStorage;
+    uint64_t cbFile, offFtr = 0;
+    VBOXUDIF Ftr;
+
+    /* Get I/O interface. */
+    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IO);
+    AssertPtrReturn(pInterfaceIO, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pInterfaceIOCallbacks = VDGetInterfaceIO(pInterfaceIO);
+    AssertPtrReturn(pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+
+    /*
+     * Open the file and read the footer.
+     */
+    rc = pInterfaceIOCallbacks->pfnOpen(pInterfaceIO->pvUser, pszFilename,
+                                        VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
+                                                                   false /* fCreate */),
+                                        &pStorage);
+    if (RT_SUCCESS(rc))
+        rc = pInterfaceIOCallbacks->pfnGetSize(pInterfaceIO->pvUser, pStorage,
+                                               &cbFile);
+    if (RT_SUCCESS(rc))
+    {
+        offFtr = cbFile - sizeof(Ftr);
+        rc = pInterfaceIOCallbacks->pfnReadSync(pInterfaceIO->pvUser, pStorage,
+                                                offFtr, &Ftr, sizeof(Ftr), NULL);
+    }
+    else
+    {
+        pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
+        rc = VERR_VD_DMG_INVALID_HEADER;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        vboxdmgUdifFtrFile2HostEndian(&Ftr);
+
+        /*
+         * Do we recognize this stuff? Does it look valid?
+         */
+        if (    Ftr.u32Magic    == VBOXUDIF_MAGIC
+            &&  Ftr.u32Version  == VBOXUDIF_VER_CURRENT
+            &&  Ftr.cbFooter    == sizeof(Ftr))
+        {
+            if (vboxdmgUdifFtrIsValid(&Ftr, offFtr))
+                rc = VINF_SUCCESS;
+            else
+            {
+                VBOXDMG_PRINTF(("Bad DMG: '%s' offFtr=%RTfoff\n", pszFilename, offFtr));
+                rc = VERR_VD_DMG_INVALID_HEADER;
+            }
+        }
+        else
+            rc = VERR_VD_DMG_INVALID_HEADER;
+    }
+
+    pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/** @copydoc VBOXHDDBACKEND::pfnOpen */
+static int dmgOpen(const char *pszFilename, unsigned uOpenFlags,
+                   PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                   void **ppBackendData)
+{
+    LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
+    int rc = VINF_SUCCESS;
+    PDMGIMAGE pThis;
+
+    /* Check open flags. All valid flags are (in principle) supported. */
+    if (uOpenFlags & ~VD_OPEN_FLAGS_MASK)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
+    /* Check remaining arguments. */
+    if (   !VALID_PTR(pszFilename)
+        || !*pszFilename)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
     /*
      * Reject combinations we don't currently support.
      *
@@ -1419,109 +1571,53 @@ static DECLCALLBACK(int) dmgOpen(const char *pszFilename, unsigned fOpenFlags,
      * simple backend and can expect the caller to be the only user and already
      * have validate what it passes thru to us.
      */
-    if (!(fOpenFlags & VD_OPEN_FLAGS_READONLY))
-        return VERR_NOT_SUPPORTED;
+    if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY))
+    {
+        rc = VERR_NOT_SUPPORTED;
+        goto out;
+    }
 
     /*
      * Create the basic instance data structure and open the file,
      * then hand it over to a worker function that does all the rest.
      */
-    PDMGIMAGE pThis = (PDMGIMAGE)RTMemAllocZ(sizeof(*pThis));
+    pThis = (PDMGIMAGE)RTMemAllocZ(sizeof(*pThis));
     if (!pThis)
-        return VERR_NO_MEMORY;
-    pThis->uOpenFlags  = fOpenFlags;
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+
     pThis->pszFilename = pszFilename;
     pThis->pStorage    = NULL;
     pThis->pVDIfsDisk  = pVDIfsDisk;
     pThis->pVDIfsImage = pVDIfsImage;
 
-    pThis->pInterfaceError = VDInterfaceGet(pThis->pVDIfsDisk, VDINTERFACETYPE_ERROR);
-    if (pThis->pInterfaceError)
-        pThis->pInterfaceErrorCallbacks = VDGetInterfaceError(pThis->pInterfaceError);
+    rc = dmgOpenImage(pThis, uOpenFlags);
+  if (RT_SUCCESS(rc))
+        *ppBackendData = pThis;
+    else
+        RTMemFree(pThis);
 
-    /* Try to get I/O interface. */
-    pThis->pInterfaceIO = VDInterfaceGet(pThis->pVDIfsImage, VDINTERFACETYPE_IO);
-    AssertPtr(pThis->pInterfaceIO);
-    pThis->pInterfaceIOCallbacks = VDGetInterfaceIO(pThis->pInterfaceIO);
-    AssertPtr(pThis->pInterfaceIOCallbacks);
-
-    int rc = dmgFileOpen(pThis, (fOpenFlags & VD_OPEN_FLAGS_READONLY ? true : false),
-                         false);
-    if (RT_SUCCESS(rc))
-    {
-        rc = vboxdmgOpenWorker(pThis);
-        if (RT_SUCCESS(rc))
-        {
-            *ppvBackendData = pThis;
-            return rc;
-        }
-    }
-
-    /* We failed, let the close method clean up. */
-    vboxdmgClose(pThis, false /* fDelete */);
-    return rc;
-}
-
-
-/** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
-static DECLCALLBACK(int) dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
-{
-    /*
-     * Open the file and read the footer.
-     */
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    VBOXUDIF Ftr;
-    uint64_t offFtr;
-    rc = RTFileSeek(hFile, -(RTFOFF)sizeof(Ftr), RTFILE_SEEK_END, &offFtr);
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTFileRead(hFile, &Ftr, sizeof(Ftr), NULL);
-        if (RT_SUCCESS(rc))
-        {
-            vboxdmgUdifFtrFile2HostEndian(&Ftr);
-
-            /*
-             * Do we recognize this stuff? Does it look valid?
-             */
-            if (    Ftr.u32Magic    == VBOXUDIF_MAGIC
-                &&  Ftr.u32Version  == VBOXUDIF_VER_CURRENT
-                &&  Ftr.cbFooter    == sizeof(Ftr))
-            {
-                if (vboxdmgUdifFtrIsValid(&Ftr, offFtr))
-                    rc = VINF_SUCCESS;
-                else
-                {
-                    VBOXDMG_PRINTF(("Bad DMG: '%s' offFtr=%RTfoff\n", pszFilename, offFtr));
-                    rc = VERR_VD_GEN_INVALID_HEADER;
-                }
-
-            }
-            else
-                rc = VERR_VD_GEN_INVALID_HEADER;
-        }
-    }
-
-    RTFileClose(hFile);
+out:
+    LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnCreate */
 static int dmgCreate(const char *pszFilename, uint64_t cbSize,
                      unsigned uImageFlags, const char *pszComment,
-                     PCPDMMEDIAGEOMETRY pPCHSGeometry,
-                     PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
-                     unsigned uOpenFlags, unsigned uPercentStart,
-                     unsigned uPercentSpan, PVDINTERFACE pVDIfsDisk,
-                     PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation,
-                     void **ppBackendData)
+                     PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
+                     PCRTUUID pUuid, unsigned uOpenFlags,
+                     unsigned uPercentStart, unsigned uPercentSpan,
+                     PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                     PVDINTERFACE pVDIfsOperation, void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p",
-                 pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
-    return VERR_NOT_SUPPORTED;
+    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
+    int rc = VERR_NOT_SUPPORTED;
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnRename */
@@ -1538,13 +1634,11 @@ static int dmgRename(void *pBackendData, const char *pszFilename)
 static int dmgClose(void *pBackendData, bool fDelete)
 {
     LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+    int rc;
 
-    /* Freeing a never allocated image (e.g. because the open failed) is
-     * not signalled as an error. After all nothing bad happens. */
-    if (pImage)
-        vboxdmgClose(pImage, fDelete);
+    rc = dmgFreeImage(pThis, fDelete);
+    RTMemFree(pThis);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1555,22 +1649,22 @@ static int dmgRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
                    size_t cbToRead, size_t *pcbActuallyRead)
 {
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n", pBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     PDMGEXTENT pExtent = NULL;
     int rc = VINF_SUCCESS;
 
-    Assert(pImage);
+    AssertPtr(pThis);
     Assert(uOffset % 512 == 0);
     Assert(cbToRead % 512 == 0);
 
-    if (   uOffset + cbToRead > pImage->cbSize
+    if (   uOffset + cbToRead > pThis->cbSize
         || cbToRead == 0)
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
     }
 
-    pExtent = dmgExtentGetFromOffset(pImage, uOffset);
+    pExtent = dmgExtentGetFromOffset(pThis, uOffset);
 
     if (pExtent)
     {
@@ -1583,7 +1677,7 @@ static int dmgRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         {
             case DMGEXTENTTYPE_RAW:
             {
-                rc = dmgFileReadSync(pImage, pExtent->offFileStart + offExtentRel, pvBuf, cbToRead, NULL);
+                rc = dmgFileReadSync(pThis, pExtent->offFileStart + offExtentRel, pvBuf, cbToRead, NULL);
                 break;
             }
             case DMGEXTENTTYPE_ZERO:
@@ -1613,14 +1707,14 @@ static int dmgWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
 {
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
                  pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc = VERR_NOT_IMPLEMENTED;
 
-    Assert(pImage);
+    AssertPtr(pThis);
     Assert(uOffset % 512 == 0);
     Assert(cbToWrite % 512 == 0);
 
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
         rc = VERR_VD_IMAGE_READ_ONLY;
         goto out;
@@ -1637,10 +1731,13 @@ out:
 static int dmgFlush(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+    int rc;
 
-    AssertMsgFailed(("Not implemented\n"));
+    AssertPtr(pThis);
+
+    rc = dmgFlushImage(pThis);
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1649,11 +1746,11 @@ static int dmgFlush(void *pBackendData)
 static unsigned dmgGetVersion(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
         return 1;
     else
         return 0;
@@ -1663,33 +1760,35 @@ static unsigned dmgGetVersion(void *pBackendData)
 static uint64_t dmgGetSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+    uint64_t cb = 0;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
-        return pImage->cbSize;
-    else
-        return 0;
+    if (pThis && pThis->pStorage)
+        cb = pThis->cbSize;
+
+    LogFlowFunc(("returns %llu\n", cb));
+    return cb;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetFileSize */
 static uint64_t dmgGetFileSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     uint64_t cb = 0;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
     {
         uint64_t cbFile;
-        if (dmgFileOpened(pImage))
+        if (pThis->pStorage)
         {
-            int rc = dmgFileGetSize(pImage, &cbFile);
+            int rc = dmgFileGetSize(pThis, &cbFile);
             if (RT_SUCCESS(rc))
-                cb += cbFile;
+                cb = cbFile;
         }
     }
 
@@ -1698,20 +1797,19 @@ static uint64_t dmgGetFileSize(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetPCHSGeometry */
-static int dmgGetPCHSGeometry(void *pBackendData,
-                              PPDMMEDIAGEOMETRY pPCHSGeometry)
+static int dmgGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
     {
-        if (pImage->PCHSGeometry.cCylinders)
+        if (pThis->PCHSGeometry.cCylinders)
         {
-            *pPCHSGeometry = pImage->PCHSGeometry;
+            *pPCHSGeometry = pThis->PCHSGeometry;
             rc = VINF_SUCCESS;
         }
         else
@@ -1725,25 +1823,24 @@ static int dmgGetPCHSGeometry(void *pBackendData,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetPCHSGeometry */
-static int dmgSetPCHSGeometry(void *pBackendData,
-                              PCPDMMEDIAGEOMETRY pPCHSGeometry)
+static int dmgSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n",
                  pBackendData, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
     {
-        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
         {
             rc = VERR_VD_IMAGE_READ_ONLY;
             goto out;
         }
 
-        pImage->PCHSGeometry = *pPCHSGeometry;
+        pThis->PCHSGeometry = *pPCHSGeometry;
         rc = VINF_SUCCESS;
     }
     else
@@ -1755,20 +1852,19 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetLCHSGeometry */
-static int dmgGetLCHSGeometry(void *pBackendData,
-                              PPDMMEDIAGEOMETRY pLCHSGeometry)
+static int dmgGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLCHSGeometry)
 {
      LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
     {
-        if (pImage->LCHSGeometry.cCylinders)
+        if (pThis->LCHSGeometry.cCylinders)
         {
-            *pLCHSGeometry = pImage->LCHSGeometry;
+            *pLCHSGeometry = pThis->LCHSGeometry;
             rc = VINF_SUCCESS;
         }
         else
@@ -1782,25 +1878,24 @@ static int dmgGetLCHSGeometry(void *pBackendData,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetLCHSGeometry */
-static int dmgSetLCHSGeometry(void *pBackendData,
-                               PCPDMMEDIAGEOMETRY pLCHSGeometry)
+static int dmgSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pLCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p LCHS=%u/%u/%u\n",
                  pBackendData, pLCHSGeometry, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
     {
-        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
         {
             rc = VERR_VD_IMAGE_READ_ONLY;
             goto out;
         }
 
-        pImage->LCHSGeometry = *pLCHSGeometry;
+        pThis->LCHSGeometry = *pLCHSGeometry;
         rc = VINF_SUCCESS;
     }
     else
@@ -1815,13 +1910,13 @@ out:
 static unsigned dmgGetImageFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     unsigned uImageFlags;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
-        uImageFlags = pImage->uImageFlags;
+    if (pThis)
+        uImageFlags = pThis->uImageFlags;
     else
         uImageFlags = 0;
 
@@ -1833,13 +1928,13 @@ static unsigned dmgGetImageFlags(void *pBackendData)
 static unsigned dmgGetOpenFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     unsigned uOpenFlags;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
-        uOpenFlags = pImage->uOpenFlags;
+    if (pThis)
+        uOpenFlags = pThis->uOpenFlags;
     else
         uOpenFlags = 0;
 
@@ -1851,22 +1946,22 @@ static unsigned dmgGetOpenFlags(void *pBackendData)
 static int dmgSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
     LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
     /* Image must be opened and the new flags must be valid. Just readonly and
      * info flags are supported. */
-    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO)))
+    if (!pThis || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO || VD_OPEN_FLAGS_SHAREABLE)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
     }
 
-#if 0
     /* Implement this operation via reopening the image. */
-    rawFreeImage(pImage, false);
-    rc = rawOpenImage(pImage, uOpenFlags);
-#endif
+    rc = dmgFreeImage(pThis, false);
+    if (RT_FAILURE(rc))
+        goto out;
+    rc = dmgOpenImage(pThis, uOpenFlags);
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -1878,17 +1973,13 @@ static int dmgGetComment(void *pBackendData, char *pszComment,
                          size_t cbComment)
 {
     LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
-    {
-        if (pszComment)
-            *pszComment = '\0';
-        rc = VINF_SUCCESS;
-    }
+    if (pThis)
+        rc = VERR_NOT_SUPPORTED;
     else
         rc = VERR_VD_NOT_OPENED;
 
@@ -1900,18 +1991,18 @@ static int dmgGetComment(void *pBackendData, char *pszComment,
 static int dmgSetComment(void *pBackendData, const char *pszComment)
 {
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
         rc = VERR_VD_IMAGE_READ_ONLY;
         goto out;
     }
 
-    if (pImage)
+    if (pThis)
         rc = VERR_NOT_SUPPORTED;
     else
         rc = VERR_VD_NOT_OPENED;
@@ -1925,12 +2016,12 @@ out:
 static int dmgGetUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
         rc = VERR_NOT_SUPPORTED;
     else
         rc = VERR_VD_NOT_OPENED;
@@ -1943,15 +2034,15 @@ static int dmgGetUuid(void *pBackendData, PRTUUID pUuid)
 static int dmgSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
     LogFlowFunc(("%RTuuid\n", pUuid));
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
     {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        if (!(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
             rc = VERR_NOT_SUPPORTED;
         else
             rc = VERR_VD_IMAGE_READ_ONLY;
@@ -1967,12 +2058,12 @@ static int dmgSetUuid(void *pBackendData, PCRTUUID pUuid)
 static int dmgGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
         rc = VERR_NOT_SUPPORTED;
     else
         rc = VERR_VD_NOT_OPENED;
@@ -1985,14 +2076,14 @@ static int dmgGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 static int dmgSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
     {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        if (!(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
             rc = VERR_NOT_SUPPORTED;
         else
             rc = VERR_VD_IMAGE_READ_ONLY;
@@ -2008,12 +2099,12 @@ static int dmgSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 static int dmgGetParentUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
         rc = VERR_NOT_SUPPORTED;
     else
         rc = VERR_VD_NOT_OPENED;
@@ -2026,14 +2117,14 @@ static int dmgGetParentUuid(void *pBackendData, PRTUUID pUuid)
 static int dmgSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
     {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        if (!(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
             rc = VERR_NOT_SUPPORTED;
         else
             rc = VERR_VD_IMAGE_READ_ONLY;
@@ -2049,12 +2140,12 @@ static int dmgSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 static int dmgGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
         rc = VERR_NOT_SUPPORTED;
     else
         rc = VERR_VD_NOT_OPENED;
@@ -2067,14 +2158,14 @@ static int dmgGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 static int dmgSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pThis);
 
-    if (pImage)
+    if (pThis)
     {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        if (!(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
             rc = VERR_NOT_SUPPORTED;
         else
             rc = VERR_VD_IMAGE_READ_ONLY;
@@ -2089,51 +2180,16 @@ static int dmgSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 /** @copydoc VBOXHDDBACKEND::pfnDump */
 static void dmgDump(void *pBackendData)
 {
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
 
-    Assert(pImage);
-    if (pImage)
+    AssertPtr(pThis);
+    if (pThis)
     {
-        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
-                    pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
-                    pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
-                    pImage->cbSize / 512);
+        dmgMessage(pThis, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
+                    pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors,
+                    pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors,
+                    pThis->cbSize / 512);
     }
-}
-
-static int dmgGetTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
-{
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
-    return rc;
-}
-
-static int dmgGetParentTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
-{
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
-    return rc;
-}
-
-static int dmgSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
-{
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
-    return rc;
-}
-
-static int dmgGetParentFilename(void *pvBackendData, char **ppszParentFilename)
-{
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
-    return rc;
-}
-
-static int dmgSetParentFilename(void *pvBackendData, const char *pszParentFilename)
-{
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
-    return rc;
 }
 
 
@@ -2144,9 +2200,9 @@ VBOXHDDBACKEND g_DmgBackend =
     /* cbSize */
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
-    VD_CAP_FILE,
+    VD_CAP_FILE | VD_CAP_VFS,
     /* papszFileExtensions */
-    NULL,
+    s_apszDmgFileExtensions,
     /* paConfigInfo */
     NULL,
     /* hPlugin */
@@ -2210,15 +2266,15 @@ VBOXHDDBACKEND g_DmgBackend =
     /* pfnDump */
     dmgDump,
     /* pfnGetTimeStamp */
-    dmgGetTimeStamp,
+    NULL,
     /* pfnGetParentTimeStamp */
-    dmgGetParentTimeStamp,
+    NULL,
     /* pfnSetParentTimeStamp */
-    dmgSetParentTimeStamp,
+    NULL,
     /* pfnGetParentFilename */
-    dmgGetParentFilename,
+    NULL,
     /* pfnSetParentFilename */
-    dmgSetParentFilename,
+    NULL,
     /* pfnIsAsyncIOSupported */
     NULL,
     /* pfnAsyncRead */
@@ -2236,4 +2292,3 @@ VBOXHDDBACKEND g_DmgBackend =
     /* pfnResize */
     NULL
 };
-

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VMDK Disk image, Core Code.
+ * VMDK disk image, core code.
  */
 
 /*
@@ -26,7 +26,6 @@
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/uuid.h>
-#include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/rand.h>
@@ -141,7 +140,7 @@ typedef struct VMDKMARKER
     uint64_t uSector;
     uint32_t cbSize;
     uint32_t uType;
-} VMDKMARKER;
+} VMDKMARKER, *PVMDKMARKER;
 #pragma pack()
 
 
@@ -228,17 +227,15 @@ typedef struct VMDKFILE
     const char      *pszFilename;
     /** File open flags for consistency checking. */
     unsigned         fOpen;
-    /** File handle. */
-    RTFILE           File;
-    /** Handle for asnychronous access if requested.*/
-    PVDIOSTORAGE     pStorage;
-    /** Flag whether to use File or pStorage. */
+    /** Flag whether this file has been opened for async I/O. */
     bool             fAsyncIO;
+    /** Handle for sync/async file abstraction.*/
+    PVDIOSTORAGE     pStorage;
     /** Reference counter. */
     unsigned         uReferences;
     /** Flag whether the file should be deleted on last close. */
     bool             fDelete;
-    /** Pointer to the image we belong to. */
+    /** Pointer to the image we belong to (for debugging purposes). */
     PVMDKIMAGE       pImage;
     /** Pointer to next file descriptor. */
     struct VMDKFILE *pNext;
@@ -403,18 +400,14 @@ typedef struct VMDKGTCACHE
  */
 typedef struct VMDKIMAGE
 {
-    /** Pointer to the image extents. */
-    PVMDKEXTENT     pExtents;
-    /** Number of image extents. */
-    unsigned        cExtents;
-    /** Pointer to the files list, for opening a file referenced multiple
-     * times only once (happens mainly with raw partition access). */
-    PVMDKFILE       pFiles;
-
-    /** Base image name. */
+    /** Image name. */
     const char      *pszFilename;
     /** Descriptor file if applicable. */
     PVMDKFILE       pFile;
+    /** I/O interface. */
+    PVDINTERFACE    pInterfaceIO;
+    /** I/O interface callbacks. */
+    PVDINTERFACEIO  pInterfaceIOCallbacks;
 
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE    pVDIfsDisk;
@@ -426,10 +419,14 @@ typedef struct VMDKIMAGE
     /** Error interface callbacks. */
     PVDINTERFACEERROR pInterfaceErrorCallbacks;
 
-    /** I/O interface. */
-    PVDINTERFACE    pInterfaceIO;
-    /** I/O interface callbacks. */
-    PVDINTERFACEIO  pInterfaceIOCallbacks;
+    /** Pointer to the image extents. */
+    PVMDKEXTENT     pExtents;
+    /** Number of image extents. */
+    unsigned        cExtents;
+    /** Pointer to the files list, for opening a file referenced multiple
+     * times only once (happens mainly with raw partition access). */
+    PVMDKFILE       pFiles;
+
     /**
      * Pointer to an array of segment entries for async I/O.
      * This is an optimization because the task number to submit is not known
@@ -447,9 +444,9 @@ typedef struct VMDKIMAGE
     /** Total size of the image. */
     uint64_t        cbSize;
     /** Physical geometry of this image. */
-    PDMMEDIAGEOMETRY   PCHSGeometry;
+    VDGEOMETRY      PCHSGeometry;
     /** Logical geometry of this image. */
-    PDMMEDIAGEOMETRY   LCHSGeometry;
+    VDGEOMETRY      LCHSGeometry;
     /** Image UUID. */
     RTUUID          ImageUuid;
     /** Image modification UUID. */
@@ -473,8 +470,10 @@ typedef struct VMDKIMAGE
 /** State for the input callout of the inflate reader. */
 typedef struct VMDKINFLATESTATE
 {
+    /* Image this operation relates to. */
+    PVMDKIMAGE pImage;
     /* File where the data is stored. */
-    PVMDKFILE File;
+    PVMDKFILE pFile;
     /* Total size of the data to read. */
     size_t cbSize;
     /* Offset in the file to read. */
@@ -486,8 +485,10 @@ typedef struct VMDKINFLATESTATE
 /** State for the output callout of the deflate writer. */
 typedef struct VMDKDEFLATESTATE
 {
+    /* Image this operation relates to. */
+    PVMDKIMAGE pImage;
     /* File where the data is to be stored. */
-    PVMDKFILE File;
+    PVMDKFILE pFile;
     /* Offset in the file to write at. */
     uint64_t uFileOffset;
     /* Current write position. */
@@ -519,8 +520,8 @@ typedef struct VMDKGRAINALLOCASYNC
 } VMDKGRAINALLOCASYNC, *PVMDKGRAINALLOCASYNC;
 
 /*******************************************************************************
- *   Static Variables                                                           *
- *******************************************************************************/
+*   Static Variables                                                           *
+*******************************************************************************/
 
 /** NULL-terminated array of supported file extensions. */
 static const char *const s_apszVmdkFileExtensions[] =
@@ -541,9 +542,9 @@ static void vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
 static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents);
 static int vmdkFlushImage(PVMDKIMAGE pImage);
 static int vmdkSetImageComment(PVMDKIMAGE pImage, const char *pszComment);
-static void vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete);
+static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete);
 
-static int vmdkAllocGrainAsyncComplete(void *pvBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq);
+static int vmdkAllocGrainAsyncComplete(void *pBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq);
 
 /**
  * Internal: signal an error to the frontend.
@@ -561,11 +562,26 @@ DECLINLINE(int) vmdkError(PVMDKIMAGE pImage, int rc, RT_SRC_POS_DECL,
 }
 
 /**
+ * Internal: signal an informational message to the frontend.
+ */
+DECLINLINE(int) vmdkMessage(PVMDKIMAGE pImage, const char *pszFormat, ...)
+{
+    int rc = VINF_SUCCESS;
+    va_list va;
+    va_start(va, pszFormat);
+    if (pImage->pInterfaceError && pImage->pInterfaceErrorCallbacks)
+        rc = pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser,
+                                                          pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+/**
  * Internal: open a file (using a file descriptor cache to ensure each file
  * is only opened once - anything else can cause locking problems).
  */
 static int vmdkFileOpen(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile,
-                        const char *pszFilename, unsigned fOpen, bool fAsyncIO)
+                        const char *pszFilename, uint32_t fOpen, bool fAsyncIO)
 {
     int rc = VINF_SUCCESS;
     PVMDKFILE pVmdkFile;
@@ -601,40 +617,11 @@ static int vmdkFileOpen(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile,
         return VERR_NO_MEMORY;
     }
     pVmdkFile->fOpen = fOpen;
-
-#ifndef VBOX_WITH_NEW_IO_CODE
-    if ((pImage->uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO) && (fAsyncIO))
-    {
-        rc = pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
-                                                         pszFilename,
-                                                         pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY
-                                                           ? VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY
-                                                           : 0,
-                                                         NULL,
-                                                         pImage->pVDIfsDisk,
-                                                         &pVmdkFile->pStorage);
-        pVmdkFile->fAsyncIO = true;
-    }
-    else
-    {
-        rc = RTFileOpen(&pVmdkFile->File, pszFilename, fOpen);
-        pVmdkFile->fAsyncIO = false;
-    }
-#else
-    unsigned uOpenFlags = 0;
-
-    if ((fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ)
-        uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY;
-    if ((fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE)
-        uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE;
-    if ((fOpen & RTFILE_O_DENY_MASK) == RTFILE_O_DENY_NONE)
-        uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_DONT_LOCK;
+    pVmdkFile->fAsyncIO = fAsyncIO;
 
     rc = pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
-                                                pszFilename,
-                                                uOpenFlags,
+                                                pszFilename, fOpen,
                                                 &pVmdkFile->pStorage);
-#endif
     if (RT_SUCCESS(rc))
     {
         pVmdkFile->uReferences = 1;
@@ -684,22 +671,11 @@ static int vmdkFileClose(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile, bool fDelete)
         else
             pImage->pFiles = pNext;
 
-#ifndef VBOX_WITH_NEW_IO_CODE
-        if (pVmdkFile->fAsyncIO)
-        {
-            rc = pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
-                                                              pVmdkFile->pStorage);
-        }
-        else
-        {
-            rc = RTFileClose(pVmdkFile->File);
-        }
-#else
         rc = pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
                                                      pVmdkFile->pStorage);
-#endif
         if (RT_SUCCESS(rc) && pVmdkFile->fDelete)
-            rc = RTFileDelete(pVmdkFile->pszFilename);
+            rc = pImage->pInterfaceIOCallbacks->pfnDelete(pImage->pInterfaceIO->pvUser,
+                                                          pVmdkFile->pszFilename);
         RTStrFree((char *)(void *)pVmdkFile->pszFilename);
         RTMemFree(pVmdkFile);
     }
@@ -709,124 +685,164 @@ static int vmdkFileClose(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile, bool fDelete)
 }
 
 /**
- * Internal: read from a file distinguishing between async and normal operation
+ * Internal: rename a file (sync)
  */
-DECLINLINE(int) vmdkFileReadAt(PVMDKFILE pVmdkFile,
-                               uint64_t uOffset, void *pvBuf,
-                               size_t cbToRead, size_t *pcbRead)
+DECLINLINE(int) vmdkFileMove(PVMDKIMAGE pImage, const char *pszSrc,
+                             const char *pszDst, unsigned fMove)
 {
-    PVMDKIMAGE pImage = pVmdkFile->pImage;
+    return pImage->pInterfaceIOCallbacks->pfnMove(pImage->pInterfaceIO->pvUser,
+                                                  pszSrc, pszDst, fMove);
+}
 
-#ifndef VBOX_WITH_NEW_IO_CODE
-    if (pVmdkFile->fAsyncIO)
-        return pImage->pInterfaceIOCallbacks->pfnReadSync(pImage->pInterfaceIO->pvUser,
-                                                          pVmdkFile->pStorage, uOffset,
-                                                          cbToRead, pvBuf, pcbRead);
-    else
-        return RTFileReadAt(pVmdkFile->File, uOffset, pvBuf, cbToRead, pcbRead);
-#else
+/**
+ * Internal: get the size of a file (sync/async)
+ */
+DECLINLINE(int) vmdkFileGetSize(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                uint64_t *pcbSize)
+{
+    return pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
+                                                     pVmdkFile->pStorage,
+                                                     pcbSize);
+}
+
+/**
+ * Internal: set the size of a file (sync/async)
+ */
+DECLINLINE(int) vmdkFileSetSize(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                uint64_t cbSize)
+{
+    return pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
+                                                     pVmdkFile->pStorage,
+                                                     cbSize);
+}
+
+/**
+ * Internal: read from a file (sync)
+ */
+DECLINLINE(int) vmdkFileReadSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                 uint64_t uOffset, void *pvBuf,
+                                 size_t cbToRead, size_t *pcbRead)
+{
     return pImage->pInterfaceIOCallbacks->pfnReadSync(pImage->pInterfaceIO->pvUser,
                                                       pVmdkFile->pStorage, uOffset,
-                                                      cbToRead, pvBuf, pcbRead);
-#endif
+                                                      pvBuf, cbToRead, pcbRead);
 }
 
 /**
- * Internal: write to a file distinguishing between async and normal operation
+ * Internal: write to a file (sync)
  */
-DECLINLINE(int) vmdkFileWriteAt(PVMDKFILE pVmdkFile,
-                                uint64_t uOffset, const void *pvBuf,
-                                size_t cbToWrite, size_t *pcbWritten)
+DECLINLINE(int) vmdkFileWriteSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                  uint64_t uOffset, const void *pvBuf,
+                                  size_t cbToWrite, size_t *pcbWritten)
 {
-    PVMDKIMAGE pImage = pVmdkFile->pImage;
-
-#ifndef VBOX_WITH_NEW_IO_CODE
-    if (pVmdkFile->fAsyncIO)
-        return pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
-                                                                pVmdkFile->pStorage, uOffset,
-                                                                cbToWrite, pvBuf, pcbWritten);
-    else
-        return RTFileWriteAt(pVmdkFile->File, uOffset, pvBuf, cbToWrite, pcbWritten);
-#else
-        return pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
-                                                                pVmdkFile->pStorage, uOffset,
-                                                                cbToWrite, pvBuf, pcbWritten);
-#endif
+    return pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
+                                                       pVmdkFile->pStorage, uOffset,
+                                                       pvBuf, cbToWrite, pcbWritten);
 }
 
 /**
- * Internal: get the size of a file distinguishing beween async and normal operation
+ * Internal: flush a file (sync)
  */
-DECLINLINE(int) vmdkFileGetSize(PVMDKFILE pVmdkFile, uint64_t *pcbSize)
+DECLINLINE(int) vmdkFileFlush(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile)
 {
-    PVMDKIMAGE pImage = pVmdkFile->pImage;
-
-#ifndef VBOX_WITH_NEW_IO_CODE
-    if (pVmdkFile->fAsyncIO)
-    {
-        return pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
-                                                              pVmdkFile->pStorage,
-                                                              pcbSize);
-    }
-    else
-        return RTFileGetSize(pVmdkFile->File, pcbSize);
-#else
-    return pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
-                                                            pVmdkFile->pStorage,
-                                                            pcbSize);
-#endif
-}
-
-/**
- * Internal: set the size of a file distinguishing beween async and normal operation
- */
-DECLINLINE(int) vmdkFileSetSize(PVMDKFILE pVmdkFile, uint64_t cbSize)
-{
-    PVMDKIMAGE pImage = pVmdkFile->pImage;
-
-#ifndef VBOX_WITH_NEW_IO_CODE
-    if (pVmdkFile->fAsyncIO)
-    {
-        return pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
-                                                              pVmdkFile->pStorage,
-                                                              cbSize);
-    }
-    else
-        return RTFileSetSize(pVmdkFile->File, cbSize);
-#else
-    return pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
-                                                          pVmdkFile->pStorage,
-                                                          cbSize);
-#endif
-}
-
-/**
- * Internal: flush a file distinguishing between async and normal operation
- */
-DECLINLINE(int) vmdkFileFlush(PVMDKFILE pVmdkFile)
-{
-    PVMDKIMAGE pImage = pVmdkFile->pImage;
-
-#ifndef VBOX_WITH_NEW_IO_CODE
-    if (pVmdkFile->fAsyncIO)
-        return pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
-                                                           pVmdkFile->pStorage);
-    else
-        return RTFileFlush(pVmdkFile->File);
-#else
     return pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
                                                        pVmdkFile->pStorage);
-#endif
 }
 
-
-DECLINLINE(int) vmdkFileFlushAsync(PVMDKFILE pVmdkFile, PVDIOCTX pIoCtx)
+/**
+ * Internal: read user data (async)
+ */
+DECLINLINE(int) vmdkFileReadUserAsync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                      uint64_t uOffset, PVDIOCTX pIoCtx,
+                                      size_t cbRead)
 {
-    PVMDKIMAGE pImage = pVmdkFile->pImage;
+    return pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
+                                                           pVmdkFile->pStorage,
+                                                           uOffset, pIoCtx,
+                                                           cbRead);
+}
 
+/**
+ * Internal: write user data (async)
+ */
+DECLINLINE(int) vmdkFileWriteUserAsync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                       uint64_t uOffset, PVDIOCTX pIoCtx,
+                                       size_t cbWrite,
+                                       PFNVDXFERCOMPLETED pfnComplete,
+                                       void *pvCompleteUser)
+{
+    return pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                            pVmdkFile->pStorage,
+                                                            uOffset, pIoCtx,
+                                                            cbWrite,
+                                                            pfnComplete,
+                                                            pvCompleteUser);
+}
+
+/**
+ * Internal: read metadata (async)
+ */
+DECLINLINE(int) vmdkFileReadMetaAsync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                      uint64_t uOffset, void *pvBuffer,
+                                      size_t cbBuffer, PVDIOCTX pIoCtx,
+                                      PPVDMETAXFER ppMetaXfer,
+                                      PFNVDXFERCOMPLETED pfnComplete,
+                                      void *pvCompleteUser)
+{
+    return pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
+                                                           pVmdkFile->pStorage,
+                                                           uOffset, pvBuffer,
+                                                           cbBuffer, pIoCtx,
+                                                           ppMetaXfer,
+                                                           pfnComplete,
+                                                           pvCompleteUser);
+}
+
+/**
+ * Internal: write metadata (async)
+ */
+DECLINLINE(int) vmdkFileWriteMetaAsync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                       uint64_t uOffset, void *pvBuffer,
+                                       size_t cbBuffer, PVDIOCTX pIoCtx,
+                                       PFNVDXFERCOMPLETED pfnComplete,
+                                       void *pvCompleteUser)
+{
+    return pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pImage->pInterfaceIO->pvUser,
+                                                            pVmdkFile->pStorage,
+                                                            uOffset, pvBuffer,
+                                                            cbBuffer, pIoCtx,
+                                                            pfnComplete,
+                                                            pvCompleteUser);
+}
+
+/**
+ * Internal: releases a metadata transfer handle (async)
+ */
+DECLINLINE(void) vmdkFileMetaXferRelease(PVMDKIMAGE pImage, PVDMETAXFER pMetaXfer)
+{
+    pImage->pInterfaceIOCallbacks->pfnMetaXferRelease(pImage->pInterfaceIO->pvUser,
+                                                      pMetaXfer);
+}
+
+/**
+ * Internal: flush a file (async)
+ */
+DECLINLINE(int) vmdkFileFlushAsync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                   PVDIOCTX pIoCtx)
+{
     return pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
                                                         pVmdkFile->pStorage, pIoCtx,
                                                         NULL, NULL);
+}
+
+/**
+ * Internal: sets the buffer to a specific byte (async)
+ */
+DECLINLINE(int) vmdkFileIoCtxSet(PVMDKIMAGE pImage, PVDIOCTX pIoCtx,
+                                 int ch, size_t cbSet)
+{
+    return pImage->pInterfaceIOCallbacks->pfnIoCtxSet(pImage->pInterfaceIO->pvUser,
+                                                      pIoCtx, ch, cbSet);
 }
 
 
@@ -844,7 +860,8 @@ static DECLCALLBACK(int) vmdkFileInflateHelper(void *pvUser, void *pvBuf, size_t
         return VINF_SUCCESS;
     }
     cbBuf = RT_MIN(cbBuf, pInflateState->cbSize);
-    int rc = vmdkFileReadAt(pInflateState->File, pInflateState->uFileOffset, pvBuf, cbBuf, NULL);
+    int rc = vmdkFileReadSync(pInflateState->pImage, pInflateState->pFile,
+                              pInflateState->uFileOffset, pvBuf, cbBuf, NULL);
     if (RT_FAILURE(rc))
         return rc;
     pInflateState->uFileOffset += cbBuf;
@@ -859,10 +876,10 @@ static DECLCALLBACK(int) vmdkFileInflateHelper(void *pvUser, void *pvBuf, size_t
  * Internal: read from a file and inflate the compressed data,
  * distinguishing between async and normal operation
  */
-DECLINLINE(int) vmdkFileInflateAt(PVMDKFILE pVmdkFile,
-                                  uint64_t uOffset, void *pvBuf,
-                                  size_t cbToRead, unsigned uMarker,
-                                  uint64_t *puLBA, uint32_t *pcbMarkerData)
+DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                    uint64_t uOffset, void *pvBuf,
+                                    size_t cbToRead, unsigned uMarker,
+                                    uint64_t *puLBA, uint32_t *pcbMarkerData)
 {
     if (pVmdkFile->fAsyncIO)
     {
@@ -881,7 +898,7 @@ DECLINLINE(int) vmdkFileInflateAt(PVMDKFILE pVmdkFile,
 
         if (uMarker == VMDK_MARKER_IGNORE)
             cbMarker -= sizeof(Marker.uType);
-        rc = vmdkFileReadAt(pVmdkFile, uOffset, &Marker, cbMarker, NULL);
+        rc = vmdkFileReadSync(pImage, pVmdkFile, uOffset, &Marker, cbMarker, NULL);
         if (RT_FAILURE(rc))
             return rc;
         Marker.uSector = RT_LE2H_U64(Marker.uSector);
@@ -923,7 +940,8 @@ DECLINLINE(int) vmdkFileInflateAt(PVMDKFILE pVmdkFile,
                 return VERR_VD_VMDK_INVALID_FORMAT;
             }
         }
-        InflateState.File = pVmdkFile;
+        InflateState.pImage = pImage;
+        InflateState.pFile = pVmdkFile;
         InflateState.cbSize = cbComp;
         InflateState.uFileOffset = uCompOffset;
         InflateState.iOffset = -1;
@@ -958,7 +976,8 @@ static DECLCALLBACK(int) vmdkFileDeflateHelper(void *pvUser, const void *pvBuf, 
     }
     if (!cbBuf)
         return VINF_SUCCESS;
-    int rc = vmdkFileWriteAt(pDeflateState->File, pDeflateState->uFileOffset, pvBuf, cbBuf, NULL);
+    int rc = vmdkFileWriteSync(pDeflateState->pImage, pDeflateState->pFile,
+                               pDeflateState->uFileOffset, pvBuf, cbBuf, NULL);
     if (RT_FAILURE(rc))
         return rc;
     pDeflateState->uFileOffset += cbBuf;
@@ -970,10 +989,10 @@ static DECLCALLBACK(int) vmdkFileDeflateHelper(void *pvUser, const void *pvBuf, 
  * Internal: deflate the uncompressed data and write to a file,
  * distinguishing between async and normal operation
  */
-DECLINLINE(int) vmdkFileDeflateAt(PVMDKFILE pVmdkFile,
-                                  uint64_t uOffset, const void *pvBuf,
-                                  size_t cbToWrite, unsigned uMarker,
-                                  uint64_t uLBA, uint32_t *pcbMarkerData)
+DECLINLINE(int) vmdkFileDeflateSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+                                    uint64_t uOffset, const void *pvBuf,
+                                    size_t cbToWrite, unsigned uMarker,
+                                    uint64_t uLBA, uint32_t *pcbMarkerData)
 {
     if (pVmdkFile->fAsyncIO)
     {
@@ -1001,7 +1020,8 @@ DECLINLINE(int) vmdkFileDeflateAt(PVMDKFILE pVmdkFile,
             /** @todo implement creating the other marker types */
             return VERR_NOT_IMPLEMENTED;
         }
-        DeflateState.File = pVmdkFile;
+        DeflateState.pImage = pImage;
+        DeflateState.pFile = pVmdkFile;
         DeflateState.uFileOffset = uCompOffset;
         DeflateState.iOffset = -1;
 
@@ -1027,18 +1047,18 @@ DECLINLINE(int) vmdkFileDeflateAt(PVMDKFILE pVmdkFile,
              * like XFS.
              */
             uint64_t cbOld;
-            rc = vmdkFileGetSize(pVmdkFile, &cbOld);
+            rc = vmdkFileGetSize(pImage, pVmdkFile, &cbOld);
             if (RT_FAILURE(rc))
                 return rc;
 
             if (cbOld != DeflateState.uFileOffset)
-                rc = vmdkFileSetSize(pVmdkFile, DeflateState.uFileOffset);
+                rc = vmdkFileSetSize(pImage, pVmdkFile, DeflateState.uFileOffset);
 
             if (uMarker == VMDK_MARKER_IGNORE)
             {
                 /* Compressed grain marker. */
                 Marker.cbSize = RT_H2LE_U32(DeflateState.iOffset);
-                rc = vmdkFileWriteAt(pVmdkFile, uOffset, &Marker, 12, NULL);
+                rc = vmdkFileWriteSync(pImage, pVmdkFile, uOffset, &Marker, 12, NULL);
                 if (RT_FAILURE(rc))
                     return rc;
             }
@@ -1069,11 +1089,7 @@ static int vmdkFileCheckAllClose(PVMDKIMAGE pImage)
                 pVmdkFile->pszFilename));
         pImage->pFiles = pVmdkFile->pNext;
 
-        if (pImage->uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
-            rc2 = pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
-                                                               pVmdkFile->pStorage);
-        else
-            rc2 = vmdkFileClose(pImage, &pVmdkFile, pVmdkFile->fDelete);
+        rc2 = vmdkFileClose(pImage, &pVmdkFile, pVmdkFile->fDelete);
 
         if (RT_SUCCESS(rc))
             rc = rc2;
@@ -1172,7 +1188,7 @@ static int vmdkDecodeString(const char *pszEncoded, char *psz, size_t cb)
     return rc;
 }
 
-static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
+static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 {
     int rc = VINF_SUCCESS;
     unsigned i;
@@ -1191,12 +1207,13 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
     pExtent->pGD = pGD;
     /* The VMDK 1.1 spec talks about compressed grain directories, but real
      * life files don't have them. The spec is wrong in creative ways. */
-    rc = vmdkFileReadAt(pExtent->pFile, VMDK_SECTOR2BYTE(pExtent->uSectorGD),
-                        pGD, cbGD, NULL);
+    rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                          VMDK_SECTOR2BYTE(pExtent->uSectorGD),
+                          pGD, cbGD, NULL);
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: could not read grain directory in '%s': %Rrc"), pExtent->pszFullname);
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not read grain directory in '%s': %Rrc"), pExtent->pszFullname);
         goto out;
     }
     for (i = 0, pGDTmp = pGD; i < pExtent->cGDEntries; i++, pGDTmp++)
@@ -1213,12 +1230,13 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
         pExtent->pRGD = pRGD;
         /* The VMDK 1.1 spec talks about compressed grain directories, but real
          * life files don't have them. The spec is wrong in creative ways. */
-        rc = vmdkFileReadAt(pExtent->pFile, VMDK_SECTOR2BYTE(pExtent->uSectorRGD),
-                            pRGD, cbGD, NULL);
+        rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                              VMDK_SECTOR2BYTE(pExtent->uSectorRGD),
+                              pRGD, cbGD, NULL);
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
-            rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: could not read redundant grain directory in '%s'"), pExtent->pszFullname);
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not read redundant grain directory in '%s'"), pExtent->pszFullname);
             goto out;
         }
         for (i = 0, pRGDTmp = pRGD; i < pExtent->cGDEntries; i++, pRGDTmp++)
@@ -1255,27 +1273,29 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
                  * grain table. Not allowed. */
                 RTMemTmpFree(pTmpGT1);
                 RTMemTmpFree(pTmpGT2);
-                rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent references to grain directory in '%s'"), pExtent->pszFullname);
+                rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistent references to grain directory in '%s'"), pExtent->pszFullname);
                 goto out;
             }
             /* The VMDK 1.1 spec talks about compressed grain tables, but real
              * life files don't have them. The spec is wrong in creative ways. */
-            rc = vmdkFileReadAt(pExtent->pFile, VMDK_SECTOR2BYTE(*pGDTmp),
-                                pTmpGT1, cbGT, NULL);
+            rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                                  VMDK_SECTOR2BYTE(*pGDTmp),
+                                  pTmpGT1, cbGT, NULL);
             if (RT_FAILURE(rc))
             {
-                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading grain table in '%s'"), pExtent->pszFullname);
+                rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading grain table in '%s'"), pExtent->pszFullname);
                 RTMemTmpFree(pTmpGT1);
                 RTMemTmpFree(pTmpGT2);
                 goto out;
             }
             /* The VMDK 1.1 spec talks about compressed grain tables, but real
              * life files don't have them. The spec is wrong in creative ways. */
-            rc = vmdkFileReadAt(pExtent->pFile, VMDK_SECTOR2BYTE(*pRGDTmp),
-                                pTmpGT2, cbGT, NULL);
+            rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                                  VMDK_SECTOR2BYTE(*pRGDTmp),
+                                  pTmpGT2, cbGT, NULL);
             if (RT_FAILURE(rc))
             {
-                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading backup grain table in '%s'"), pExtent->pszFullname);
+                rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading backup grain table in '%s'"), pExtent->pszFullname);
                 RTMemTmpFree(pTmpGT1);
                 RTMemTmpFree(pTmpGT2);
                 goto out;
@@ -1284,7 +1304,7 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
             {
                 RTMemTmpFree(pTmpGT1);
                 RTMemTmpFree(pTmpGT2);
-                rc = vmdkError(pExtent->pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistency between grain table and backup grain table in '%s'"), pExtent->pszFullname);
+                rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: inconsistency between grain table and backup grain table in '%s'"), pExtent->pszFullname);
                 goto out;
             }
         }
@@ -1294,7 +1314,7 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
         RTMemTmpFree(pTmpGT2);
     }
 
-    if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+    if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
     {
         uint32_t uLastGrainWritten = 0;
         uint32_t uLastGrainSector = 0;
@@ -1313,11 +1333,12 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
 
             /* The VMDK 1.1 spec talks about compressed grain tables, but real
              * life files don't have them. The spec is wrong in creative ways. */
-            rc = vmdkFileReadAt(pExtent->pFile, VMDK_SECTOR2BYTE(*pGDTmp),
-                                pTmpGT, cbGT, NULL);
+            rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                                  VMDK_SECTOR2BYTE(*pGDTmp),
+                                  pTmpGT, cbGT, NULL);
             if (RT_FAILURE(rc))
             {
-                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error reading grain table in '%s'"), pExtent->pszFullname);
+                rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading grain table in '%s'"), pExtent->pszFullname);
                 RTMemTmpFree(pTmpGT);
                 goto out;
             }
@@ -1333,7 +1354,7 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
 
                 if (uLastGrainSector && uLastGrainSector >= uGTTmp)
                 {
-                    rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: grain table in '%s' contains a violation of the ordering assumptions"), pExtent->pszFullname);
+                    rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: grain table in '%s' contains a violation of the ordering assumptions"), pExtent->pszFullname);
                     RTMemTmpFree(pTmpGT);
                     goto out;
                 }
@@ -1355,8 +1376,8 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
         {
             uint64_t uLBA = 0;
             uint32_t cbMarker = 0;
-            rc = vmdkFileInflateAt(pExtent->pFile, VMDK_SECTOR2BYTE(uLastGrainSector),
-                                   pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain), VMDK_MARKER_IGNORE, &uLBA, &cbMarker);
+            rc = vmdkFileInflateSync(pImage, pExtent->pFile, VMDK_SECTOR2BYTE(uLastGrainSector),
+                                     pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain), VMDK_MARKER_IGNORE, &uLBA, &cbMarker);
             if (RT_FAILURE(rc))
                 goto out;
 
@@ -1374,8 +1395,8 @@ out:
     return rc;
 }
 
-static int vmdkCreateGrainDirectory(PVMDKEXTENT pExtent, uint64_t uStartSector,
-                                    bool fPreAlloc)
+static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
+                                    uint64_t uStartSector, bool fPreAlloc)
 {
     int rc = VINF_SUCCESS;
     unsigned i;
@@ -1405,16 +1426,25 @@ static int vmdkCreateGrainDirectory(PVMDKEXTENT pExtent, uint64_t uStartSector,
     }
     pExtent->pRGD = pRGD;
 
-    cbOverhead = RT_ALIGN_64(VMDK_SECTOR2BYTE(uStartSector) + 2 * (cbGDRounded + cbGTRounded), VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
-    /* For streamOptimized extents put the end-of-stream marker at the end. */
-    if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
-        rc = vmdkFileSetSize(pExtent->pFile, cbOverhead + 512);
+    if (uStartSector != VMDK_GD_AT_END)
+    {
+        cbOverhead = RT_ALIGN_64(VMDK_SECTOR2BYTE(uStartSector) + 2 * (cbGDRounded + cbGTRounded), VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
+        /* For streamOptimized extents put the end-of-stream marker at the end. */
+        if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+            rc = vmdkFileSetSize(pImage, pExtent->pFile, cbOverhead + 512);
+        else
+            rc = vmdkFileSetSize(pImage, pExtent->pFile, cbOverhead);
+        if (RT_FAILURE(rc))
+            goto out;
+        pExtent->uSectorRGD = uStartSector;
+        pExtent->uSectorGD = uStartSector + VMDK_BYTE2SECTOR(cbGDRounded + cbGTRounded);
+    }
     else
-        rc = vmdkFileSetSize(pExtent->pFile, cbOverhead);
-    if (RT_FAILURE(rc))
-        goto out;
-    pExtent->uSectorRGD = uStartSector;
-    pExtent->uSectorGD = uStartSector + VMDK_BYTE2SECTOR(cbGDRounded + cbGTRounded);
+    {
+        cbOverhead =  VMDK_SECTOR2BYTE(uStartSector);
+        pExtent->uSectorRGD = uStartSector;
+        pExtent->uSectorGD = uStartSector;
+    }
 
     if (fPreAlloc)
     {
@@ -1427,12 +1457,12 @@ static int vmdkCreateGrainDirectory(PVMDKEXTENT pExtent, uint64_t uStartSector,
             pRGD[i] = uOffsetSectors;
             uGTSectorLE = RT_H2LE_U64(uOffsetSectors);
             /* Write the redundant grain directory entry to disk. */
-            rc = vmdkFileWriteAt(pExtent->pFile,
-                                 VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + i * sizeof(uGTSectorLE),
-                                 &uGTSectorLE, sizeof(uGTSectorLE), NULL);
+            rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                   VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + i * sizeof(uGTSectorLE),
+                                   &uGTSectorLE, sizeof(uGTSectorLE), NULL);
             if (RT_FAILURE(rc))
             {
-                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new redundant grain directory entry in '%s'"), pExtent->pszFullname);
+                rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new redundant grain directory entry in '%s'"), pExtent->pszFullname);
                 goto out;
             }
             uOffsetSectors += VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t));
@@ -1444,12 +1474,12 @@ static int vmdkCreateGrainDirectory(PVMDKEXTENT pExtent, uint64_t uStartSector,
             pGD[i] = uOffsetSectors;
             uGTSectorLE = RT_H2LE_U64(uOffsetSectors);
             /* Write the grain directory entry to disk. */
-            rc = vmdkFileWriteAt(pExtent->pFile,
-                                 VMDK_SECTOR2BYTE(pExtent->uSectorGD) + i * sizeof(uGTSectorLE),
-                                 &uGTSectorLE, sizeof(uGTSectorLE), NULL);
+            rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                   VMDK_SECTOR2BYTE(pExtent->uSectorGD) + i * sizeof(uGTSectorLE),
+                                   &uGTSectorLE, sizeof(uGTSectorLE), NULL);
             if (RT_FAILURE(rc))
             {
-                rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new grain directory entry in '%s'"), pExtent->pszFullname);
+                rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new grain directory entry in '%s'"), pExtent->pszFullname);
                 goto out;
             }
             uOffsetSectors += VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t));
@@ -1458,7 +1488,7 @@ static int vmdkCreateGrainDirectory(PVMDKEXTENT pExtent, uint64_t uStartSector,
     pExtent->cOverheadSectors = VMDK_BYTE2SECTOR(cbOverhead);
 
     /* streamOptimized extents need a grain decompress buffer. */
-    if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+    if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
     {
         pExtent->pvGrain = RTMemAlloc(VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
         if (!pExtent->pvGrain)
@@ -2042,7 +2072,7 @@ out:
 }
 
 static int vmdkDescSetPCHSGeometry(PVMDKIMAGE pImage,
-                                   PCPDMMEDIAGEOMETRY pPCHSGeometry)
+                                   PCVDGEOMETRY pPCHSGeometry)
 {
     int rc = vmdkDescDDBSetU32(pImage, &pImage->Descriptor,
                            VMDK_DDB_GEO_PCHS_CYLINDERS,
@@ -2061,7 +2091,7 @@ static int vmdkDescSetPCHSGeometry(PVMDKIMAGE pImage,
 }
 
 static int vmdkDescSetLCHSGeometry(PVMDKIMAGE pImage,
-                                   PCPDMMEDIAGEOMETRY pLCHSGeometry)
+                                   PCVDGEOMETRY pLCHSGeometry)
 {
     int rc = vmdkDescDDBSetU32(pImage, &pImage->Descriptor,
                            VMDK_DDB_GEO_LCHS_CYLINDERS,
@@ -2564,14 +2594,14 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
 
     if (RT_SUCCESS(rc))
     {
-        rc = vmdkFileWriteAt(pDescFile, uOffset, pszDescriptor, cbLimit ? cbLimit : offDescriptor, NULL);
+        rc = vmdkFileWriteSync(pImage, pDescFile, uOffset, pszDescriptor, cbLimit ? cbLimit : offDescriptor, NULL);
         if (RT_FAILURE(rc))
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor in '%s'"), pImage->pszFilename);
     }
 
     if (RT_SUCCESS(rc) && !cbLimit)
     {
-        rc = vmdkFileSetSize(pDescFile, offDescriptor);
+        rc = vmdkFileSetSize(pImage, pDescFile, offDescriptor);
         if (RT_FAILURE(rc))
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error truncating descriptor in '%s'"), pImage->pszFilename);
     }
@@ -2667,14 +2697,14 @@ static int vmdkWriteDescriptorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
 
     if (RT_SUCCESS(rc))
     {
-        rc = vmdkFileWriteAt(pDescFile, uOffset, pszDescriptor, cbLimit ? cbLimit : offDescriptor, NULL);
+        rc = vmdkFileWriteSync(pImage, pDescFile, uOffset, pszDescriptor, cbLimit ? cbLimit : offDescriptor, NULL);
         if (RT_FAILURE(rc))
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor in '%s'"), pImage->pszFilename);
     }
 
     if (RT_SUCCESS(rc) && !cbLimit)
     {
-        rc = vmdkFileSetSize(pDescFile, offDescriptor);
+        rc = vmdkFileSetSize(pImage, pDescFile, offDescriptor);
         if (RT_FAILURE(rc))
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error truncating descriptor in '%s'"), pImage->pszFilename);
     }
@@ -2724,7 +2754,7 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     SparseExtentHeader Header;
     uint64_t cSectorsPerGDE;
 
-    int rc = vmdkFileReadAt(pExtent->pFile, 0, &Header, sizeof(Header), NULL);
+    int rc = vmdkFileReadSync(pImage, pExtent->pFile, 0, &Header, sizeof(Header), NULL);
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
@@ -2741,7 +2771,7 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
          * end-of-stream marker. This is bending the VMDK 1.1 spec, but that's
          * VMware reality. Theory and practice have very little in common. */
         uint64_t cbSize;
-        rc = vmdkFileGetSize(pExtent->pFile, &cbSize);
+        rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbSize);
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
@@ -2749,7 +2779,7 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
             goto out;
         }
         cbSize = RT_ALIGN_64(cbSize, 512);
-        rc = vmdkFileReadAt(pExtent->pFile, cbSize - 2*512, &Header, sizeof(Header), NULL);
+        rc = vmdkFileReadSync(pImage, pExtent->pFile, cbSize - 2*512, &Header, sizeof(Header), NULL);
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
@@ -2831,7 +2861,7 @@ static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     /* The image must be a multiple of a sector in size and contain the data
      * area (flat images only). If not, it means the image is at least
      * truncated, or even seriously garbled. */
-    rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+    rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbExtentSize);
     if (RT_FAILURE(rc))
     {
         rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
@@ -2867,7 +2897,7 @@ static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         goto out;
     }
 
-    rc = vmdkReadGrainDirectory(pExtent);
+    rc = vmdkReadGrainDirectory(pImage, pExtent);
 
 out:
     if (RT_FAILURE(rc))
@@ -2879,7 +2909,8 @@ out:
 /**
  * Internal: write/update the metadata for a sparse extent.
  */
-static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent, uint64_t uOffset)
+static int vmdkWriteMetaSparseExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
+                                     uint64_t uOffset)
 {
     SparseExtentHeader Header;
 
@@ -2889,7 +2920,7 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent, uint64_t uOffset)
     Header.flags = RT_H2LE_U32(RT_BIT(0));
     if (pExtent->pRGD)
         Header.flags |= RT_H2LE_U32(RT_BIT(1));
-    if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+    if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
         Header.flags |= RT_H2LE_U32(RT_BIT(16) | RT_BIT(17));
     Header.capacity = RT_H2LE_U64(pExtent->cSectors);
     Header.grainSize = RT_H2LE_U64(pExtent->cSectorsPerGrain);
@@ -2930,10 +2961,10 @@ static int vmdkWriteMetaSparseExtent(PVMDKEXTENT pExtent, uint64_t uOffset)
     Header.doubleEndLineChar2 = '\n';
     Header.compressAlgorithm = RT_H2LE_U16(pExtent->uCompression);
 
-    int rc = vmdkFileWriteAt(pExtent->pFile, uOffset, &Header, sizeof(Header), NULL);
+    int rc = vmdkFileWriteSync(pImage, pExtent->pFile, uOffset, &Header, sizeof(Header), NULL);
     AssertRC(rc);
     if (RT_FAILURE(rc))
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error writing extent header in '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing extent header in '%s'"), pExtent->pszFullname);
     return rc;
 }
 
@@ -2951,7 +2982,7 @@ static int vmdkWriteMetaSparseExtentAsync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent
     Header.flags = RT_H2LE_U32(RT_BIT(0));
     if (pExtent->pRGD)
         Header.flags |= RT_H2LE_U32(RT_BIT(1));
-    if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+    if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
         Header.flags |= RT_H2LE_U32(RT_BIT(16) | RT_BIT(17));
     Header.capacity = RT_H2LE_U64(pExtent->cSectors);
     Header.grainSize = RT_H2LE_U64(pExtent->cSectorsPerGrain);
@@ -2992,12 +3023,11 @@ static int vmdkWriteMetaSparseExtentAsync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent
     Header.doubleEndLineChar2 = '\n';
     Header.compressAlgorithm = RT_H2LE_U16(pExtent->uCompression);
 
-    int rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pImage->pInterfaceIO->pvUser,
-                                                              pExtent->pFile->pStorage,
-                                                              uOffset, &Header, sizeof(Header),
-                                                              pIoCtx, NULL, NULL);
+    int rc = vmdkFileWriteMetaAsync(pImage, pExtent->pFile,
+                                    uOffset, &Header, sizeof(Header),
+                                    pIoCtx, NULL, NULL);
     if (RT_FAILURE(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error writing extent header in '%s'"), pExtent->pszFullname);
+        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing extent header in '%s'"), pExtent->pszFullname);
     return rc;
 }
 
@@ -3012,7 +3042,7 @@ static int vmdkReadMetaESXSparseExtent(PVMDKEXTENT pExtent)
     COWDisk_Header Header;
     uint64_t cSectorsPerGDE;
 
-    int rc = vmdkFileReadAt(pExtent->pFile, 0, &Header, sizeof(Header), NULL);
+    int rc = vmdkFileReadSync(pImage, pExtent->pFile, 0, &Header, sizeof(Header), NULL);
     AssertRC(rc);
     if (RT_FAILURE(rc))
         goto out;
@@ -3059,7 +3089,7 @@ static int vmdkReadMetaESXSparseExtent(PVMDKEXTENT pExtent)
     pExtent->uFreeSector = RT_LE2H_U32(Header.freeSector);
     pExtent->fUncleanShutdown = !!Header.uncleanShutdown;
 
-    rc = vmdkReadGrainDirectory(pExtent);
+    rc = vmdkReadGrainDirectory(pImage, pExtent);
 
 out:
     if (RT_FAILURE(rc))
@@ -3173,21 +3203,6 @@ static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents)
 }
 
 /**
- * Internal: Translate the VBoxHDD open flags to RTFile open flags.
- */
-static uint32_t vmdkFileOpenFlags(unsigned uOpenFlags)
-{
-    uint32_t fDeny =   uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE)
-                     ? RTFILE_O_DENY_NONE
-                     : RTFILE_O_DENY_WRITE;
-    uint32_t fOpen =   uOpenFlags & VD_OPEN_FLAGS_READONLY
-                     ? RTFILE_O_READ
-                     : RTFILE_O_READWRITE;
-    fOpen |= RTFILE_O_OPEN | fDeny;
-    return fOpen;
-}
-
-/**
  * Internal: Open an image, constructing all necessary data structures.
  */
 static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
@@ -3204,10 +3219,11 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
-    /* Try to get async I/O interface. */
+    /* Get I/O interface. */
     pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
-    if (pImage->pInterfaceIO)
-        pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
+    pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     /*
      * Open the image.
@@ -3217,7 +3233,8 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
      */
 
     rc = vmdkFileOpen(pImage, &pFile, pImage->pszFilename,
-                      vmdkFileOpenFlags(uOpenFlags), false);
+                      VDOpenFlagsToFileOpenFlags(uOpenFlags, false /* fCreate */),
+                      false /* fAsyncIO */);
     if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
@@ -3227,7 +3244,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     pImage->pFile = pFile;
 
     /* Read magic (if present). */
-    rc = vmdkFileReadAt(pFile, 0, &u32Magic, sizeof(u32Magic), NULL);
+    rc = vmdkFileReadSync(pImage, pFile, 0, &u32Magic, sizeof(u32Magic), NULL);
     if (RT_FAILURE(rc))
     {
         rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading the magic number in '%s'"), pImage->pszFilename);
@@ -3281,10 +3298,10 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
             rc = VERR_NO_MEMORY;
             goto out;
         }
-        rc = vmdkFileReadAt(pExtent->pFile,
-                            VMDK_SECTOR2BYTE(pExtent->uDescriptorSector),
-                            pExtent->pDescData,
-                            VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors), NULL);
+        rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                              VMDK_SECTOR2BYTE(pExtent->uDescriptorSector),
+                              pExtent->pDescData,
+                              VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors), NULL);
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
@@ -3315,7 +3332,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
          * alocate more than 128K, because that's no valid descriptor file
          * and will result in the correct "truncated read" error handling. */
         uint64_t cbFileSize;
-        rc = vmdkFileGetSize(pFile, &cbFileSize);
+        rc = vmdkFileGetSize(pImage, pFile, &cbFileSize);
         if (RT_FAILURE(rc))
             goto out;
 
@@ -3334,9 +3351,9 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         }
 
         size_t cbRead;
-        rc = vmdkFileReadAt(pImage->pFile, 0, pImage->pDescData,
-                            RT_MIN(pImage->cbDescAlloc, cbFileSize),
-                            &cbRead);
+        rc = vmdkFileReadSync(pImage, pImage->pFile, 0, pImage->pDescData,
+                              RT_MIN(pImage->cbDescAlloc, cbFileSize),
+                              &cbRead);
         if (RT_FAILURE(rc))
         {
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in '%s'"), pImage->pszFilename);
@@ -3432,7 +3449,9 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
             {
                 case VMDKETYPE_HOSTED_SPARSE:
                     rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      vmdkFileOpenFlags(uOpenFlags), false);
+                                      VDOpenFlagsToFileOpenFlags(uOpenFlags,
+                                                                 false /* fCreate */),
+                                      false /* fAsyncIO */);
                     if (RT_FAILURE(rc))
                     {
                         /* Do NOT signal an appropriate error here, as the VD
@@ -3457,7 +3476,9 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
                 case VMDKETYPE_VMFS:
                 case VMDKETYPE_FLAT:
                     rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      vmdkFileOpenFlags(uOpenFlags), true);
+                                      VDOpenFlagsToFileOpenFlags(uOpenFlags,
+                                                                 false /* fCreate */),
+                                      true /* fAsyncIO */);
                     if (RT_FAILURE(rc))
                     {
                         /* Do NOT signal an appropriate error here, as the VD
@@ -3538,19 +3559,6 @@ out:
 }
 
 /**
- * Internal: Translate the VBoxHDD open flags to RTFile open/create flags.
- */
-static uint32_t vmdkFileCreateFlags(unsigned uOpenFlags)
-{
-    uint32_t fDeny =   uOpenFlags & VD_OPEN_FLAGS_SHAREABLE
-                     ? RTFILE_O_DENY_NONE
-                     : RTFILE_O_DENY_WRITE;
-    uint32_t fOpen = RTFILE_O_READWRITE | RTFILE_O_NOT_CONTENT_INDEXED;
-    fOpen |= RTFILE_O_CREATE | fDeny;
-    return fOpen;
-}
-
-/**
  * Internal: create VMDK images for raw disk/partition access.
  */
 static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
@@ -3569,7 +3577,9 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
         pExtent = &pImage->pExtents[0];
         /* Create raw disk descriptor file. */
         rc = vmdkFileOpen(pImage, &pImage->pFile, pImage->pszFilename,
-                          vmdkFileCreateFlags(pImage->uOpenFlags), false);
+                          VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags,
+                                                     true /* fCreate */),
+                          false /* fAsyncIO */);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pImage->pszFilename);
 
@@ -3592,8 +3602,9 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
         /* Open flat image, the raw disk. */
         rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                          vmdkFileOpenFlags(pImage->uOpenFlags & ~VD_OPEN_FLAGS_READONLY),
-                          false);
+                          VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
+                                                     false /* fCreate */),
+                          false /* fAsyncIO */);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not open raw disk file '%s'"), pExtent->pszFullname);
     }
@@ -3629,7 +3640,9 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
         /* Create raw partition descriptor file. */
         rc = vmdkFileOpen(pImage, &pImage->pFile, pImage->pszFilename,
-                          vmdkFileCreateFlags(pImage->uOpenFlags), false);
+                          VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags,
+                                                     true /* fCreate */),
+                          false /* fAsyncIO */);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pImage->pszFilename);
 
@@ -3703,14 +3716,15 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
                 /* Create partition table flat image. */
                 rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                  vmdkFileCreateFlags(pImage->uOpenFlags),
-                                  false);
+                                  VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags,
+                                                             true /* fCreate */),
+                                  false /* fAsyncIO */);
                 if (RT_FAILURE(rc))
                     return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new partition data file '%s'"), pExtent->pszFullname);
-                rc = vmdkFileWriteAt(pExtent->pFile,
-                                     VMDK_SECTOR2BYTE(uPartOffset),
-                                     pPart->pvPartitionData,
-                                     pPart->cbData, NULL);
+                rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                       VMDK_SECTOR2BYTE(uPartOffset),
+                                       pPart->pvPartitionData,
+                                       pPart->cbData, NULL);
                 if (RT_FAILURE(rc))
                     return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not write partition data to '%s'"), pExtent->pszFullname);
                 uPartOffset += VMDK_BYTE2SECTOR(pPart->cbData);
@@ -3738,8 +3752,9 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
 
                     /* Open flat image, the raw partition. */
                     rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      vmdkFileOpenFlags(pImage->uOpenFlags & ~VD_OPEN_FLAGS_READONLY),
-                                      false);
+                                      VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
+                                                                 false /* fCreate */),
+                                      false /* fAsyncIO */);
                     if (RT_FAILURE(rc))
                         return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not open raw partition file '%s'"), pExtent->pszFullname);
                 }
@@ -3811,7 +3826,9 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
     if (cExtents != 1 || (uImageFlags & VD_IMAGE_FLAGS_FIXED))
     {
         rc = vmdkFileOpen(pImage, &pImage->pFile, pImage->pszFilename,
-                          vmdkFileCreateFlags(pImage->uOpenFlags), false);
+                          VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags,
+                                                     true /* fCreate */),
+                          false /* fAsyncIO */);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new sparse descriptor file '%s'"), pImage->pszFilename);
     }
@@ -3880,12 +3897,14 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
 
         /* Create file for extent. */
         rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                          vmdkFileCreateFlags(pImage->uOpenFlags), false);
+                          VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags,
+                                                     true /* fCreate */),
+                          false /* fAsyncIO */);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pExtent->pszFullname);
         if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
         {
-            rc = vmdkFileSetSize(pExtent->pFile, cbExtent);
+            rc = vmdkFileSetSize(pImage, pExtent->pFile, cbExtent);
             if (RT_FAILURE(rc))
                 return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not set size of new file '%s'"), pExtent->pszFullname);
 
@@ -3908,7 +3927,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
             {
                 unsigned cbChunk = (unsigned)RT_MIN(cbExtent, cbBuf);
 
-                rc = vmdkFileWriteAt(pExtent->pFile, uOff, pvBuf, cbChunk, NULL);
+                rc = vmdkFileWriteSync(pImage, pExtent->pFile, uOff, pvBuf, cbChunk, NULL);
                 if (RT_FAILURE(rc))
                 {
                     RTMemFree(pvBuf);
@@ -3945,8 +3964,8 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
         {
             uint64_t cSectorsPerGDE, cSectorsPerGD;
             pExtent->enmType = VMDKETYPE_HOSTED_SPARSE;
-            pExtent->cSectors = VMDK_BYTE2SECTOR(RT_ALIGN_64(cbExtent, 65536));
-            pExtent->cSectorsPerGrain = VMDK_BYTE2SECTOR(65536);
+            pExtent->cSectors = VMDK_BYTE2SECTOR(RT_ALIGN_64(cbExtent, _64K));
+            pExtent->cSectorsPerGrain = VMDK_BYTE2SECTOR(_64K);
             pExtent->cGTEntries = 512;
             cSectorsPerGDE = pExtent->cGTEntries * pExtent->cSectorsPerGrain;
             pExtent->cSectorsPerGDE = cSectorsPerGDE;
@@ -3978,7 +3997,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
         if (!(uImageFlags & VD_IMAGE_FLAGS_FIXED))
         {
             /* fPreAlloc should never be false because VMware can't use such images. */
-            rc = vmdkCreateGrainDirectory(pExtent,
+            rc = vmdkCreateGrainDirectory(pImage, pExtent,
                                           RT_MAX(  pExtent->uDescriptorSector
                                                  + pExtent->cDescriptorSectors,
                                                  1),
@@ -4035,8 +4054,8 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
  */
 static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
                            unsigned uImageFlags, const char *pszComment,
-                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
-                           PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
+                           PCVDGEOMETRY pPCHSGeometry,
+                           PCVDGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                            PFNVDPROGRESS pfnProgress, void *pvUser,
                            unsigned uPercentStart, unsigned uPercentSpan)
 {
@@ -4049,10 +4068,11 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
-    /* Try to get async I/O interface. */
+    /* Get I/O interface. */
     pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
-    if (pImage->pInterfaceIO)
-        pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
+    pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     rc = vmdkCreateDescriptor(pImage, pImage->pDescData, pImage->cbDescAlloc,
                               &pImage->Descriptor);
@@ -4081,7 +4101,6 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
     }
 
     if (RT_FAILURE(rc))
-
         goto out;
 
     if (RT_SUCCESS(rc) && pfnProgress)
@@ -4211,50 +4230,59 @@ static int vmdkSetImageComment(PVMDKIMAGE pImage, const char *pszComment)
  * Internal. Free all allocated space for representing an image, and optionally
  * delete the image from disk.
  */
-static void vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
+static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
 {
-    AssertPtr(pImage);
+    int rc = VINF_SUCCESS;
 
-    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+    /* Freeing a never allocated image (e.g. because the open failed) is
+     * not signalled as an error. After all nothing bad happens. */
+    if (pImage)
     {
-        /* Mark all extents as clean. */
-        for (unsigned i = 0; i < pImage->cExtents; i++)
+        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
         {
-            if ((   pImage->pExtents[i].enmType == VMDKETYPE_HOSTED_SPARSE
-#ifdef VBOX_WITH_VMDK_ESX
-                 || pImage->pExtents[i].enmType == VMDKETYPE_ESX_SPARSE
-#endif /* VBOX_WITH_VMDK_ESX */
-                )
-                &&  pImage->pExtents[i].fUncleanShutdown)
+            /* Mark all extents as clean. */
+            for (unsigned i = 0; i < pImage->cExtents; i++)
             {
-                pImage->pExtents[i].fUncleanShutdown = false;
-                pImage->pExtents[i].fMetaDirty = true;
+                if (   (   pImage->pExtents[i].enmType == VMDKETYPE_HOSTED_SPARSE
+#ifdef VBOX_WITH_VMDK_ESX
+                        || pImage->pExtents[i].enmType == VMDKETYPE_ESX_SPARSE
+#endif /* VBOX_WITH_VMDK_ESX */
+                       )
+                    && pImage->pExtents[i].fUncleanShutdown)
+                {
+                    pImage->pExtents[i].fUncleanShutdown = false;
+                    pImage->pExtents[i].fMetaDirty = true;
+                }
             }
         }
-    }
-    (void)vmdkFlushImage(pImage);
+        vmdkFlushImage(pImage);
 
-    if (pImage->pExtents != NULL)
-    {
-        for (unsigned i = 0 ; i < pImage->cExtents; i++)
-            vmdkFreeExtentData(pImage, &pImage->pExtents[i], fDelete);
-        RTMemFree(pImage->pExtents);
-        pImage->pExtents = NULL;
+        if (pImage->pExtents != NULL)
+        {
+            for (unsigned i = 0 ; i < pImage->cExtents; i++)
+                vmdkFreeExtentData(pImage, &pImage->pExtents[i], fDelete);
+            RTMemFree(pImage->pExtents);
+            pImage->pExtents = NULL;
+        }
+        pImage->cExtents = 0;
+        if (pImage->pFile != NULL)
+            vmdkFileClose(pImage, &pImage->pFile, fDelete);
+        vmdkFileCheckAllClose(pImage);
+
+        if (pImage->pGTCache)
+        {
+            RTMemFree(pImage->pGTCache);
+            pImage->pGTCache = NULL;
+        }
+        if (pImage->pDescData)
+        {
+            RTMemFree(pImage->pDescData);
+            pImage->pDescData = NULL;
+        }
     }
-    pImage->cExtents = 0;
-    if (pImage->pFile != NULL)
-        vmdkFileClose(pImage, &pImage->pFile, fDelete);
-    vmdkFileCheckAllClose(pImage);
-    if (pImage->pGTCache)
-    {
-        RTMemFree(pImage->pGTCache);
-        pImage->pGTCache = NULL;
-    }
-    if (pImage->pDescData)
-    {
-        RTMemFree(pImage->pDescData);
-        pImage->pDescData = NULL;
-    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 /**
@@ -4281,17 +4309,17 @@ static int vmdkFlushImage(PVMDKIMAGE pImage)
             switch (pExtent->enmType)
             {
                 case VMDKETYPE_HOSTED_SPARSE:
-                    rc = vmdkWriteMetaSparseExtent(pExtent, 0);
+                    rc = vmdkWriteMetaSparseExtent(pImage, pExtent, 0);
                     if (RT_FAILURE(rc))
                         goto out;
                     if (pExtent->fFooter)
                     {
                         uint64_t cbSize;
-                        rc = vmdkFileGetSize(pExtent->pFile, &cbSize);
+                        rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbSize);
                         if (RT_FAILURE(rc))
                             goto out;
                         cbSize = RT_ALIGN_64(cbSize, 512);
-                        rc = vmdkWriteMetaSparseExtent(pExtent, cbSize - 2*512);
+                        rc = vmdkWriteMetaSparseExtent(pImage, pExtent, cbSize - 2*512);
                         if (RT_FAILURE(rc))
                             goto out;
                     }
@@ -4324,7 +4352,7 @@ static int vmdkFlushImage(PVMDKIMAGE pImage)
                 if (   pExtent->pFile != NULL
                     && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
                     && !(pExtent->pszBasename[0] == RTPATH_SLASH))
-                    rc = vmdkFileFlush(pExtent->pFile);
+                    rc = vmdkFileFlush(pImage, pExtent->pFile);
                 break;
             case VMDKETYPE_ZERO:
                 /* No need to do anything for this extent. */
@@ -4393,7 +4421,7 @@ static int vmdkFlushImageAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
                 if (   pExtent->pFile != NULL
                     && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
                     && !(pExtent->pszBasename[0] == RTPATH_SLASH))
-                    rc = vmdkFileFlushAsync(pExtent->pFile, pIoCtx);
+                    rc = vmdkFileFlushAsync(pImage, pExtent->pFile, pIoCtx);
                 break;
             case VMDKETYPE_ZERO:
                 /* No need to do anything for this extent. */
@@ -4451,9 +4479,10 @@ static uint32_t vmdkGTCacheHash(PVMDKGTCACHE pCache, uint64_t uSector,
  * Internal. Get sector number in the extent file from the relative sector
  * number in the extent.
  */
-static int vmdkGetSector(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
+static int vmdkGetSector(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                          uint64_t uSector, uint64_t *puExtentSector)
 {
+    PVMDKGTCACHE pCache = pImage->pGTCache;
     uint64_t uGDIndex, uGTSector, uGTBlock;
     uint32_t uGTHash, uGTBlockIndex;
     PVMDKGTCACHEENTRY pGTCacheEntry;
@@ -4479,11 +4508,11 @@ static int vmdkGetSector(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         ||  pGTCacheEntry->uGTBlock != uGTBlock)
     {
         /* Cache miss, fetch data from disk. */
-        rc = vmdkFileReadAt(pExtent->pFile,
-                            VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
-                            aGTDataTmp, sizeof(aGTDataTmp), NULL);
+        rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                              VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                              aGTDataTmp, sizeof(aGTDataTmp), NULL);
         if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot read grain table entry in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot read grain table entry in '%s'"), pExtent->pszFullname);
         pGTCacheEntry->uExtent = pExtent->uExtent;
         pGTCacheEntry->uGTBlock = uGTBlock;
         for (unsigned i = 0; i < VMDK_GT_CACHELINE_SIZE; i++)
@@ -4503,9 +4532,10 @@ static int vmdkGetSector(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
  * number in the extent - version for async access.
  */
 static int vmdkGetSectorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx,
-                              PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
-                              uint64_t uSector, uint64_t *puExtentSector)
+                              PVMDKEXTENT pExtent, uint64_t uSector,
+                              uint64_t *puExtentSector)
 {
+    PVMDKGTCACHE pCache = pImage->pGTCache;
     uint64_t uGDIndex, uGTSector, uGTBlock;
     uint32_t uGTHash, uGTBlockIndex;
     PVMDKGTCACHEENTRY pGTCacheEntry;
@@ -4534,14 +4564,13 @@ static int vmdkGetSectorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx,
     {
         /* Cache miss, fetch data from disk. */
         PVDMETAXFER pMetaXfer;
-        rc = pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
-                                                             pExtent->pFile->pStorage,
-                                                             VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
-                                                             aGTDataTmp, sizeof(aGTDataTmp), pIoCtx, &pMetaXfer, NULL, NULL);
+        rc = vmdkFileReadMetaAsync(pImage, pExtent->pFile,
+                                   VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                                   aGTDataTmp, sizeof(aGTDataTmp), pIoCtx, &pMetaXfer, NULL, NULL);
         if (RT_FAILURE(rc))
             return rc;
         /* We can release the metadata transfer immediately. */
-        pImage->pInterfaceIOCallbacks->pfnMetaXferRelease(pImage->pInterfaceIO->pvUser, pMetaXfer);
+        vmdkFileMetaXferRelease(pImage, pMetaXfer);
         pGTCacheEntry->uExtent = pExtent->uExtent;
         pGTCacheEntry->uGTBlock = uGTBlock;
         for (unsigned i = 0; i < VMDK_GT_CACHELINE_SIZE; i++)
@@ -4562,10 +4591,11 @@ static int vmdkGetSectorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx,
  * This is separate from vmdkGetSector, because that should be as fast as
  * possible. Most code from vmdkGetSector also appears here.
  */
-static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
+static int vmdkAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                           uint64_t uSector, const void *pvBuf,
                           uint64_t cbWrite)
 {
+    PVMDKGTCACHE pCache = pImage->pGTCache;
     uint64_t uGDIndex, uGTSector, uRGTSector, uGTBlock;
     uint64_t cbExtentSize;
     uint32_t uGTHash, uGTBlockIndex;
@@ -4586,16 +4616,16 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         /* There is no grain table referenced by this grain directory
          * entry. So there is absolutely no data in this area. Allocate
          * a new grain table and put the reference to it in the GDs. */
-        rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+        rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbExtentSize);
         if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
         Assert(!(cbExtentSize % 512));
         cbExtentSize = RT_ALIGN_64(cbExtentSize, 512);
         uGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
         /* For writable streamOptimized extents the final sector is the
          * end-of-stream marker. Will be re-added after the grain table.
          * If the file has a footer it also will be re-added before EOS. */
-        if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+        if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
         {
             uint64_t uEOSOff = 0;
             uGTSector--;
@@ -4603,18 +4633,18 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
             {
                 uGTSector--;
                 uEOSOff = 512;
-                rc = vmdkWriteMetaSparseExtent(pExtent, VMDK_SECTOR2BYTE(uGTSector) + pExtent->cGTEntries * sizeof(uint32_t));
+                rc = vmdkWriteMetaSparseExtent(pImage, pExtent, VMDK_SECTOR2BYTE(uGTSector) + pExtent->cGTEntries * sizeof(uint32_t));
                 if (RT_FAILURE(rc))
-                    return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after grain table in '%s'"), pExtent->pszFullname);
+                    return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after grain table in '%s'"), pExtent->pszFullname);
             }
             pExtent->uLastGrainSector = 0;
             uint8_t aEOS[512];
             memset(aEOS, '\0', sizeof(aEOS));
-            rc = vmdkFileWriteAt(pExtent->pFile,
-                                 VMDK_SECTOR2BYTE(uGTSector) + pExtent->cGTEntries * sizeof(uint32_t) + uEOSOff,
-                                 aEOS, sizeof(aEOS), NULL);
+            rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                   VMDK_SECTOR2BYTE(uGTSector) + pExtent->cGTEntries * sizeof(uint32_t) + uEOSOff,
+                                   aEOS, sizeof(aEOS), NULL);
             if (RT_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after grain table in '%s'"), pExtent->pszFullname);
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after grain table in '%s'"), pExtent->pszFullname);
         }
         /* Normally the grain table is preallocated for hosted sparse extents
          * that support more than 32 bit sector numbers. So this shouldn't
@@ -4630,24 +4660,24 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
              i < pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE;
              i++)
         {
-            rc = vmdkFileWriteAt(pExtent->pFile,
-                                 VMDK_SECTOR2BYTE(uGTSector) + i * sizeof(aGTDataTmp),
-                                 aGTDataTmp, sizeof(aGTDataTmp), NULL);
+            rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                   VMDK_SECTOR2BYTE(uGTSector) + i * sizeof(aGTDataTmp),
+                                   aGTDataTmp, sizeof(aGTDataTmp), NULL);
             if (RT_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain table allocation in '%s'"), pExtent->pszFullname);
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain table allocation in '%s'"), pExtent->pszFullname);
         }
         if (pExtent->pRGD)
         {
             AssertReturn(!uRGTSector, VERR_VD_VMDK_INVALID_HEADER);
-            rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+            rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbExtentSize);
             if (RT_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
             Assert(!(cbExtentSize % 512));
             uRGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
             /* For writable streamOptimized extents the final sector is the
              * end-of-stream marker. Will be re-added after the grain table.
              * If the file has a footer it also will be re-added before EOS. */
-            if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+            if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
             {
                 uint64_t uEOSOff = 0;
                 uRGTSector--;
@@ -4655,18 +4685,18 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
                 {
                     uRGTSector--;
                     uEOSOff = 512;
-                    rc = vmdkWriteMetaSparseExtent(pExtent, VMDK_SECTOR2BYTE(uRGTSector) + pExtent->cGTEntries * sizeof(uint32_t));
+                    rc = vmdkWriteMetaSparseExtent(pImage, pExtent, VMDK_SECTOR2BYTE(uRGTSector) + pExtent->cGTEntries * sizeof(uint32_t));
                     if (RT_FAILURE(rc))
-                        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after redundant grain table in '%s'"), pExtent->pszFullname);
+                        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after redundant grain table in '%s'"), pExtent->pszFullname);
                 }
                 pExtent->uLastGrainSector = 0;
                 uint8_t aEOS[512];
                 memset(aEOS, '\0', sizeof(aEOS));
-                rc = vmdkFileWriteAt(pExtent->pFile,
-                                     VMDK_SECTOR2BYTE(uRGTSector) + pExtent->cGTEntries * sizeof(uint32_t) + uEOSOff,
-                                     aEOS, sizeof(aEOS), NULL);
+                rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                       VMDK_SECTOR2BYTE(uRGTSector) + pExtent->cGTEntries * sizeof(uint32_t) + uEOSOff,
+                                       aEOS, sizeof(aEOS), NULL);
                 if (RT_FAILURE(rc))
-                    return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after redundant grain table in '%s'"), pExtent->pszFullname);
+                    return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after redundant grain table in '%s'"), pExtent->pszFullname);
             }
             /* Normally the redundant grain table is preallocated for hosted
              * sparse extents that support more than 32 bit sector numbers. So
@@ -4681,11 +4711,11 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
                  i < pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE;
                  i++)
             {
-                rc = vmdkFileWriteAt(pExtent->pFile,
-                                     VMDK_SECTOR2BYTE(uRGTSector) + i * sizeof(aGTDataTmp),
-                                     aGTDataTmp, sizeof(aGTDataTmp), NULL);
+                rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                       VMDK_SECTOR2BYTE(uRGTSector) + i * sizeof(aGTDataTmp),
+                                       aGTDataTmp, sizeof(aGTDataTmp), NULL);
                 if (RT_FAILURE(rc))
-                    return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain table allocation in '%s'"), pExtent->pszFullname);
+                    return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain table allocation in '%s'"), pExtent->pszFullname);
             }
         }
 
@@ -4694,19 +4724,19 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
          * aborted for some reason. Otherwise the worst that can happen is
          * some unused sectors in the extent. */
         uint32_t uGTSectorLE = RT_H2LE_U64(uGTSector);
-        rc = vmdkFileWriteAt(pExtent->pFile,
-                             VMDK_SECTOR2BYTE(pExtent->uSectorGD) + uGDIndex * sizeof(uGTSectorLE),
-                             &uGTSectorLE, sizeof(uGTSectorLE), NULL);
+        rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                               VMDK_SECTOR2BYTE(pExtent->uSectorGD) + uGDIndex * sizeof(uGTSectorLE),
+                               &uGTSectorLE, sizeof(uGTSectorLE), NULL);
         if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain directory entry in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain directory entry in '%s'"), pExtent->pszFullname);
         if (pExtent->pRGD)
         {
             uint32_t uRGTSectorLE = RT_H2LE_U64(uRGTSector);
-            rc = vmdkFileWriteAt(pExtent->pFile,
-                                 VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + uGDIndex * sizeof(uRGTSectorLE),
-                                 &uRGTSectorLE, sizeof(uRGTSectorLE), NULL);
+            rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                   VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + uGDIndex * sizeof(uRGTSectorLE),
+                                   &uRGTSectorLE, sizeof(uRGTSectorLE), NULL);
             if (RT_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain directory entry in '%s'"), pExtent->pszFullname);
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain directory entry in '%s'"), pExtent->pszFullname);
         }
 
         /* As the final step update the in-memory copy of the GDs. */
@@ -4715,13 +4745,13 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
             pExtent->pRGD[uGDIndex] = uRGTSector;
     }
 
-    rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+    rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbExtentSize);
     if (RT_FAILURE(rc))
-        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
     Assert(!(cbExtentSize % 512));
 
     /* Write the data. Always a full grain, or we're in big trouble. */
-    if (pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+    if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
     {
         /* For streamOptimized extents this is a little more difficult, as the
          * cached data also needs to be updated, to handle updating the last
@@ -4737,14 +4767,14 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
             cbExtentSize = VMDK_SECTOR2BYTE(pExtent->uLastGrainSector) + pExtent->cbLastGrainWritten;
         Assert(cbWrite == VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
         uint32_t cbGrain = 0;
-        rc = vmdkFileDeflateAt(pExtent->pFile, cbExtentSize,
-                               pvBuf, cbWrite, VMDK_MARKER_IGNORE, uSector, &cbGrain);
+        rc = vmdkFileDeflateSync(pImage, pExtent->pFile, cbExtentSize,
+                                 pvBuf, cbWrite, VMDK_MARKER_IGNORE, uSector, &cbGrain);
         if (RT_FAILURE(rc))
         {
             pExtent->uGrainSector = 0;
             pExtent->uLastGrainSector = 0;
             AssertRC(rc);
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated compressed data block in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated compressed data block in '%s'"), pExtent->pszFullname);
         }
         cbGrain = RT_ALIGN(cbGrain, 512);
         pExtent->uLastGrainSector = VMDK_BYTE2SECTOR(cbExtentSize);
@@ -4757,22 +4787,23 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         if (pExtent->fFooter)
         {
             uEOSOff = 512;
-            rc = vmdkWriteMetaSparseExtent(pExtent, cbExtentSize + RT_ALIGN(cbGrain, 512));
+            rc = vmdkWriteMetaSparseExtent(pImage, pExtent, cbExtentSize + RT_ALIGN(cbGrain, 512));
             if (RT_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after allocated data block in '%s'"), pExtent->pszFullname);
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after allocated data block in '%s'"), pExtent->pszFullname);
         }
         uint8_t aEOS[512];
         memset(aEOS, '\0', sizeof(aEOS));
-        rc = vmdkFileWriteAt(pExtent->pFile, cbExtentSize + RT_ALIGN(cbGrain, 512) + uEOSOff,
-                             aEOS, sizeof(aEOS), NULL);
+        rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                               cbExtentSize + RT_ALIGN(cbGrain, 512) + uEOSOff,
+                               aEOS, sizeof(aEOS), NULL);
         if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after allocated data block in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after allocated data block in '%s'"), pExtent->pszFullname);
     }
     else
     {
-        rc = vmdkFileWriteAt(pExtent->pFile, cbExtentSize, pvBuf, cbWrite, NULL);
+        rc = vmdkFileWriteSync(pImage, pExtent->pFile, cbExtentSize, pvBuf, cbWrite, NULL);
         if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated data block in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated data block in '%s'"), pExtent->pszFullname);
     }
 
     /* Update the grain table (and the cache). */
@@ -4783,11 +4814,11 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         ||  pGTCacheEntry->uGTBlock != uGTBlock)
     {
         /* Cache miss, fetch data from disk. */
-        rc = vmdkFileReadAt(pExtent->pFile,
-                            VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
-                            aGTDataTmp, sizeof(aGTDataTmp), NULL);
+        rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                              VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                              aGTDataTmp, sizeof(aGTDataTmp), NULL);
         if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot read allocated grain table entry in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot read allocated grain table entry in '%s'"), pExtent->pszFullname);
         pGTCacheEntry->uExtent = pExtent->uExtent;
         pGTCacheEntry->uGTBlock = uGTBlock;
         for (unsigned i = 0; i < VMDK_GT_CACHELINE_SIZE; i++)
@@ -4804,19 +4835,19 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
     aGTDataTmp[uGTBlockIndex] = RT_H2LE_U32(VMDK_BYTE2SECTOR(cbExtentSize));
     pGTCacheEntry->aGTData[uGTBlockIndex] = VMDK_BYTE2SECTOR(cbExtentSize);
     /* Update grain table on disk. */
-    rc = vmdkFileWriteAt(pExtent->pFile,
-                         VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
-                         aGTDataTmp, sizeof(aGTDataTmp), NULL);
+    rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                           VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                           aGTDataTmp, sizeof(aGTDataTmp), NULL);
     if (RT_FAILURE(rc))
-        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated grain table in '%s'"), pExtent->pszFullname);
+        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated grain table in '%s'"), pExtent->pszFullname);
     if (pExtent->pRGD)
     {
         /* Update backup grain table on disk. */
-        rc = vmdkFileWriteAt(pExtent->pFile,
-                             VMDK_SECTOR2BYTE(uRGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
-                             aGTDataTmp, sizeof(aGTDataTmp), NULL);
+        rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                               VMDK_SECTOR2BYTE(uRGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                               aGTDataTmp, sizeof(aGTDataTmp), NULL);
         if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated backup grain table in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated backup grain table in '%s'"), pExtent->pszFullname);
     }
 #ifdef VBOX_WITH_VMDK_ESX
     if (RT_SUCCESS(rc) && pExtent->enmType == VMDKETYPE_ESX_SPARSE)
@@ -4832,10 +4863,11 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
  * Internal: Updates the grain table during a async grain allocation.
  */
 static int vmdkAllocGrainAsyncGTUpdate(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
-                                       PVMDKGTCACHE pCache, PVDIOCTX pIoCtx,
+                                       PVDIOCTX pIoCtx,
                                        PVMDKGRAINALLOCASYNC pGrainAlloc)
 {
     int rc = VINF_SUCCESS;
+    PVMDKGTCACHE pCache = pImage->pGTCache;
     uint32_t aGTDataTmp[VMDK_GT_CACHELINE_SIZE];
     uint32_t uGTHash, uGTBlockIndex;
     uint64_t uGTSector, uRGTSector, uGTBlock;
@@ -4859,12 +4891,10 @@ static int vmdkAllocGrainAsyncGTUpdate(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         /* Cache miss, fetch data from disk. */
         LogFlow(("Cache miss, fetch data from disk\n"));
         PVDMETAXFER pMetaXfer = NULL;
-        rc = pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
-                                                             pExtent->pFile->pStorage,
-                                                             VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
-                                                             aGTDataTmp, sizeof(aGTDataTmp), pIoCtx,
-                                                             &pMetaXfer,
-                                                             vmdkAllocGrainAsyncComplete, pGrainAlloc);
+        rc = vmdkFileReadMetaAsync(pImage, pExtent->pFile,
+                                   VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                                   aGTDataTmp, sizeof(aGTDataTmp), pIoCtx,
+                                   &pMetaXfer, vmdkAllocGrainAsyncComplete, pGrainAlloc);
         if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         {
             pGrainAlloc->cIoXfersPending++;
@@ -4874,8 +4904,8 @@ static int vmdkAllocGrainAsyncGTUpdate(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
             return rc;
         }
         else if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot read allocated grain table entry in '%s'"), pExtent->pszFullname);
-        pImage->pInterfaceIOCallbacks->pfnMetaXferRelease(pExtent->pImage->pInterfaceIO->pvUser, pMetaXfer);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot read allocated grain table entry in '%s'"), pExtent->pszFullname);
+        vmdkFileMetaXferRelease(pImage, pMetaXfer);
         pGTCacheEntry->uExtent = pExtent->uExtent;
         pGTCacheEntry->uGTBlock = uGTBlock;
         for (unsigned i = 0; i < VMDK_GT_CACHELINE_SIZE; i++)
@@ -4893,27 +4923,25 @@ static int vmdkAllocGrainAsyncGTUpdate(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     aGTDataTmp[uGTBlockIndex] = RT_H2LE_U32(VMDK_BYTE2SECTOR(pGrainAlloc->cbExtentSize));
     pGTCacheEntry->aGTData[uGTBlockIndex] = VMDK_BYTE2SECTOR(pGrainAlloc->cbExtentSize);
     /* Update grain table on disk. */
-    rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
-                                                          pExtent->pFile->pStorage,
-                                                          VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
-                                                          aGTDataTmp, sizeof(aGTDataTmp), pIoCtx,
-                                                          vmdkAllocGrainAsyncComplete, pGrainAlloc);
+    rc = vmdkFileWriteMetaAsync(pImage, pExtent->pFile,
+                                VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                                aGTDataTmp, sizeof(aGTDataTmp), pIoCtx,
+                                vmdkAllocGrainAsyncComplete, pGrainAlloc);
     if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         pGrainAlloc->cIoXfersPending++;
     else if (RT_FAILURE(rc))
-        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated grain table in '%s'"), pExtent->pszFullname);
+        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated grain table in '%s'"), pExtent->pszFullname);
     if (pExtent->pRGD)
     {
         /* Update backup grain table on disk. */
-        rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
-                                                              pExtent->pFile->pStorage,
-                                                              VMDK_SECTOR2BYTE(uRGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
-                                                              aGTDataTmp, sizeof(aGTDataTmp), pIoCtx,
-                                                              vmdkAllocGrainAsyncComplete, pGrainAlloc);
+        rc = vmdkFileWriteMetaAsync(pImage, pExtent->pFile,
+                                    VMDK_SECTOR2BYTE(uRGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                                    aGTDataTmp, sizeof(aGTDataTmp), pIoCtx,
+                                    vmdkAllocGrainAsyncComplete, pGrainAlloc);
         if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
             pGrainAlloc->cIoXfersPending++;
         else if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated backup grain table in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write updated backup grain table in '%s'"), pExtent->pszFullname);
     }
 #ifdef VBOX_WITH_VMDK_ESX
     if (RT_SUCCESS(rc) && pExtent->enmType == VMDKETYPE_ESX_SPARSE)
@@ -4931,19 +4959,19 @@ static int vmdkAllocGrainAsyncGTUpdate(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
 /**
  * Internal - complete the grain allocation by updating disk grain table if required.
  */
-static int vmdkAllocGrainAsyncComplete(void *pvBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq)
+static int vmdkAllocGrainAsyncComplete(void *pBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq)
 {
     int rc = VINF_SUCCESS;
-    PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     PVMDKGRAINALLOCASYNC pGrainAlloc = (PVMDKGRAINALLOCASYNC)pvUser;
     PVMDKEXTENT pExtent = pGrainAlloc->pExtent;
 
-    LogFlowFunc(("pvBackendData=%#p pIoCtx=%#p pvUser=%#p rcReq=%Rrc\n",
-                 pvBackendData, pIoCtx, pvUser, rcReq));
+    LogFlowFunc(("pBackendData=%#p pIoCtx=%#p pvUser=%#p rcReq=%Rrc\n",
+                 pBackendData, pIoCtx, pvUser, rcReq));
 
     pGrainAlloc->cIoXfersPending--;
     if (!pGrainAlloc->cIoXfersPending && pGrainAlloc->fGTUpdateNeeded)
-        rc = vmdkAllocGrainAsyncGTUpdate(pImage, pGrainAlloc->pExtent, pImage->pGTCache,
+        rc = vmdkAllocGrainAsyncGTUpdate(pImage, pGrainAlloc->pExtent,
                                          pIoCtx, pGrainAlloc);
 
     if (!pGrainAlloc->cIoXfersPending)
@@ -4959,20 +4987,20 @@ static int vmdkAllocGrainAsyncComplete(void *pvBackendData, PVDIOCTX pIoCtx, voi
 /**
  * Internal. Allocates a new grain table (if necessary) - async version.
  */
-static int vmdkAllocGrainAsync(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
+static int vmdkAllocGrainAsync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                                PVDIOCTX pIoCtx, uint64_t uSector,
                                uint64_t cbWrite)
 {
+    PVMDKGTCACHE pCache = pImage->pGTCache;
     uint64_t uGDIndex, uGTSector, uRGTSector;
     uint64_t cbExtentSize;
     PVMDKGRAINALLOCASYNC pGrainAlloc = NULL;
-    PVMDKIMAGE pImage = pExtent->pImage;
     int rc;
 
     LogFlowFunc(("pCache=%#p pExtent=%#p pIoCtx=%#p uSector=%llu cbWrite=%llu\n",
                  pCache, pExtent, pIoCtx, uSector, cbWrite));
 
-    AssertReturn(!(pExtent->pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED), VERR_NOT_SUPPORTED);
+    AssertReturn(!(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED), VERR_NOT_SUPPORTED);
 
     pGrainAlloc = (PVMDKGRAINALLOCASYNC)RTMemAllocZ(sizeof(VMDKGRAINALLOCASYNC));
     if (!pGrainAlloc)
@@ -4996,9 +5024,9 @@ static int vmdkAllocGrainAsync(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         /* There is no grain table referenced by this grain directory
          * entry. So there is absolutely no data in this area. Allocate
          * a new grain table and put the reference to it in the GDs. */
-        rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+        rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbExtentSize);
         if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
         Assert(!(cbExtentSize % 512));
 
         pGrainAlloc->cbExtentOld = cbExtentSize;
@@ -5023,25 +5051,24 @@ static int vmdkAllocGrainAsync(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
             return VERR_NO_MEMORY;
 
         memset(paGTDataTmp, '\0', cbGTDataTmp);
-        rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
-                                                              pExtent->pFile->pStorage,
-                                                              VMDK_SECTOR2BYTE(uGTSector),
-                                                              paGTDataTmp, cbGTDataTmp, pIoCtx,
-                                                              vmdkAllocGrainAsyncComplete, pGrainAlloc);
+        rc = vmdkFileWriteMetaAsync(pImage, pExtent->pFile,
+                                    VMDK_SECTOR2BYTE(uGTSector),
+                                    paGTDataTmp, cbGTDataTmp, pIoCtx,
+                                    vmdkAllocGrainAsyncComplete, pGrainAlloc);
         if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
             pGrainAlloc->cIoXfersPending++;
         else if (RT_FAILURE(rc))
         {
             RTMemTmpFree(paGTDataTmp);
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain table allocation in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain table allocation in '%s'"), pExtent->pszFullname);
         }
 
         if (pExtent->pRGD)
         {
             AssertReturn(!uRGTSector, VERR_VD_VMDK_INVALID_HEADER);
-            rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+            rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbExtentSize);
             if (RT_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
             Assert(!(cbExtentSize % 512));
             uRGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
 
@@ -5055,17 +5082,16 @@ static int vmdkAllocGrainAsync(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
             }
             /* Write backup grain table by writing the required number of grain
              * table cache chunks. */
-            rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
-                                                                  pExtent->pFile->pStorage,
-                                                                  VMDK_SECTOR2BYTE(uRGTSector),
-                                                                  paGTDataTmp, cbGTDataTmp, pIoCtx,
-                                                                  vmdkAllocGrainAsyncComplete, pGrainAlloc);
+            rc = vmdkFileWriteMetaAsync(pImage, pExtent->pFile,
+                                        VMDK_SECTOR2BYTE(uRGTSector),
+                                        paGTDataTmp, cbGTDataTmp, pIoCtx,
+                                        vmdkAllocGrainAsyncComplete, pGrainAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 pGrainAlloc->cIoXfersPending++;
             else if (RT_FAILURE(rc))
             {
                 RTMemTmpFree(paGTDataTmp);
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain table allocation in '%s'"), pExtent->pszFullname);
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain table allocation in '%s'"), pExtent->pszFullname);
             }
         }
 
@@ -5076,27 +5102,25 @@ static int vmdkAllocGrainAsync(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
          * aborted for some reason. Otherwise the worst that can happen is
          * some unused sectors in the extent. */
         uint32_t uGTSectorLE = RT_H2LE_U64(uGTSector);
-        rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
-                                                              pExtent->pFile->pStorage,
-                                                              VMDK_SECTOR2BYTE(pExtent->uSectorGD) + uGDIndex * sizeof(uGTSectorLE),
-                                                              &uGTSectorLE, sizeof(uGTSectorLE), pIoCtx,
-                                                              vmdkAllocGrainAsyncComplete, pGrainAlloc);
+        rc = vmdkFileWriteMetaAsync(pImage, pExtent->pFile,
+                                    VMDK_SECTOR2BYTE(pExtent->uSectorGD) + uGDIndex * sizeof(uGTSectorLE),
+                                    &uGTSectorLE, sizeof(uGTSectorLE), pIoCtx,
+                                    vmdkAllocGrainAsyncComplete, pGrainAlloc);
         if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
             pGrainAlloc->cIoXfersPending++;
         else if (RT_FAILURE(rc))
-            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain directory entry in '%s'"), pExtent->pszFullname);
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write grain directory entry in '%s'"), pExtent->pszFullname);
         if (pExtent->pRGD)
         {
             uint32_t uRGTSectorLE = RT_H2LE_U64(uRGTSector);
-            rc = pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pExtent->pImage->pInterfaceIO->pvUser,
-                                                                  pExtent->pFile->pStorage,
-                                                                  VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + uGDIndex * sizeof(uGTSectorLE),
-                                                                  &uRGTSectorLE, sizeof(uRGTSectorLE), pIoCtx,
-                                                                  vmdkAllocGrainAsyncComplete, pGrainAlloc);
+            rc = vmdkFileWriteMetaAsync(pImage, pExtent->pFile,
+                                        VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + uGDIndex * sizeof(uGTSectorLE),
+                                        &uRGTSectorLE, sizeof(uRGTSectorLE), pIoCtx,
+                                        vmdkAllocGrainAsyncComplete, pGrainAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 pGrainAlloc->cIoXfersPending++;
             else if (RT_FAILURE(rc))
-                return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain directory entry in '%s'"), pExtent->pszFullname);
+                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write backup grain directory entry in '%s'"), pExtent->pszFullname);
         }
 
         /* As the final step update the in-memory copy of the GDs. */
@@ -5109,9 +5133,9 @@ static int vmdkAllocGrainAsync(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
     pGrainAlloc->uGTSector = uGTSector;
     pGrainAlloc->uRGTSector = uRGTSector;
 
-    rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+    rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbExtentSize);
     if (RT_FAILURE(rc))
-        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
     Assert(!(cbExtentSize % 512));
 
     if (!pGrainAlloc->cbExtentOld)
@@ -5120,17 +5144,15 @@ static int vmdkAllocGrainAsync(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
     pGrainAlloc->cbExtentSize = cbExtentSize;
 
     /* Write the data. Always a full grain, or we're in big trouble. */
-    rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
-                                                          pExtent->pFile->pStorage,
-                                                          cbExtentSize,
-                                                          pIoCtx, cbWrite,
-                                                          vmdkAllocGrainAsyncComplete, pGrainAlloc);
+    rc = vmdkFileWriteUserAsync(pImage, pExtent->pFile,
+                                cbExtentSize, pIoCtx, cbWrite,
+                                vmdkAllocGrainAsyncComplete, pGrainAlloc);
     if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         pGrainAlloc->cIoXfersPending++;
     else if (RT_FAILURE(rc))
-        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated data block in '%s'"), pExtent->pszFullname);
+        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated data block in '%s'"), pExtent->pszFullname);
 
-    rc = vmdkAllocGrainAsyncGTUpdate(pImage, pExtent, pCache, pIoCtx, pGrainAlloc);
+    rc = vmdkAllocGrainAsyncGTUpdate(pImage, pExtent, pIoCtx, pGrainAlloc);
 
     if (!pGrainAlloc->cIoXfersPending)
     {
@@ -5143,9 +5165,41 @@ static int vmdkAllocGrainAsync(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
     return rc;
 }
 
+/**
+ * Replaces a fragment of a string with the specified string.
+ *
+ * @returns Pointer to the allocated UTF-8 string.
+ * @param   pszWhere        UTF-8 string to search in.
+ * @param   pszWhat         UTF-8 string to search for.
+ * @param   pszByWhat       UTF-8 string to replace the found string with.
+ */
+static char *vmdkStrReplace(const char *pszWhere, const char *pszWhat,
+                            const char *pszByWhat)
+{
+    AssertPtr(pszWhere);
+    AssertPtr(pszWhat);
+    AssertPtr(pszByWhat);
+    const char *pszFoundStr = strstr(pszWhere, pszWhat);
+    if (!pszFoundStr)
+        return NULL;
+    size_t cFinal = strlen(pszWhere) + 1 + strlen(pszByWhat) - strlen(pszWhat);
+    char *pszNewStr = (char *)RTMemAlloc(cFinal);
+    if (pszNewStr)
+    {
+        char *pszTmp = pszNewStr;
+        memcpy(pszTmp, pszWhere, pszFoundStr - pszWhere);
+        pszTmp += pszFoundStr - pszWhere;
+        memcpy(pszTmp, pszByWhat, strlen(pszByWhat));
+        pszTmp += strlen(pszByWhat);
+        strcpy(pszTmp, pszFoundStr + strlen(pszWhat));
+    }
+    return pszNewStr;
+}
+
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
-static int vmdkCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
+static int vmdkCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                            PVDINTERFACE pVDIfsImage)
 {
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
     int rc = VINF_SUCCESS;
@@ -5172,7 +5226,7 @@ static int vmdkCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
     pImage->pGTCache = NULL;
     pImage->pDescData = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
-    pImage->pVDIfsImage = pVDIfsDisk;
+    pImage->pVDIfsImage = pVDIfsImage;
     /** @todo speed up this test open (VD_OPEN_FLAGS_INFO) by skipping as
      * much as possible in vmdkOpenImage. */
     rc = vmdkOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
@@ -5237,12 +5291,11 @@ out:
 /** @copydoc VBOXHDDBACKEND::pfnCreate */
 static int vmdkCreate(const char *pszFilename, uint64_t cbSize,
                       unsigned uImageFlags, const char *pszComment,
-                      PCPDMMEDIAGEOMETRY pPCHSGeometry,
-                      PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
-                      unsigned uOpenFlags, unsigned uPercentStart,
-                      unsigned uPercentSpan, PVDINTERFACE pVDIfsDisk,
-                      PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation,
-                      void **ppBackendData)
+                      PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
+                      PCRTUUID pUuid, unsigned uOpenFlags,
+                      unsigned uPercentStart, unsigned uPercentSpan,
+                      PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                      PVDINTERFACE pVDIfsOperation, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
     int rc;
@@ -5345,36 +5398,6 @@ static int vmdkCreate(const char *pszFilename, uint64_t cbSize,
 out:
     LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
-}
-
-/**
- * Replaces a fragment of a string with the specified string.
- *
- * @returns Pointer to the allocated UTF-8 string.
- * @param   pszWhere        UTF-8 string to search in.
- * @param   pszWhat         UTF-8 string to search for.
- * @param   pszByWhat       UTF-8 string to replace the found string with.
- */
-static char * vmdkStrReplace(const char *pszWhere, const char *pszWhat, const char *pszByWhat)
-{
-    AssertPtr(pszWhere);
-    AssertPtr(pszWhat);
-    AssertPtr(pszByWhat);
-    const char *pszFoundStr = strstr(pszWhere, pszWhat);
-    if (!pszFoundStr)
-        return NULL;
-    size_t cFinal = strlen(pszWhere) + 1 + strlen(pszByWhat) - strlen(pszWhat);
-    char *pszNewStr = (char *)RTMemAlloc(cFinal);
-    if (pszNewStr)
-    {
-        char *pszTmp = pszNewStr;
-        memcpy(pszTmp, pszWhere, pszFoundStr - pszWhere);
-        pszTmp += pszFoundStr - pszWhere;
-        memcpy(pszTmp, pszByWhat, strlen(pszByWhat));
-        pszTmp += strlen(pszByWhat);
-        strcpy(pszTmp, pszFoundStr + strlen(pszWhat));
-    }
-    return pszNewStr;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnRename */
@@ -5485,7 +5508,7 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
     /* Make sure the descriptor gets written back. */
     pImage->Descriptor.fDirty = true;
     /* Flush the descriptor now, in case it is embedded. */
-    (void)vmdkFlushImage(pImage);
+    vmdkFlushImage(pImage);
 
     /* Close and rename/move extents. */
     for (i = 0; i < cExtents; i++)
@@ -5499,7 +5522,7 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
         /* Close the extent file. */
         vmdkFileClose(pImage, &pExtent->pFile, false);
         /* Rename the extent file. */
-        rc = RTFileMove(pExtent->pszFullname, apszNewName[i], 0);
+        rc = vmdkFileMove(pImage, pExtent->pszFullname, apszNewName[i], 0);
         if (RT_FAILURE(rc))
             goto rollback;
         /* Remember the old name. */
@@ -5517,7 +5540,7 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
     /* Rename the descriptor file if it's separate. */
     if (!fEmbeddedDesc)
     {
-        rc = RTFileMove(pImage->pszFilename, apszNewName[cExtents], 0);
+        rc = vmdkFileMove(pImage, pImage->pszFilename, apszNewName[cExtents], 0);
         if (RT_FAILURE(rc))
             goto rollback;
         /* Save old name only if we may need to change it back. */
@@ -5550,15 +5573,16 @@ rollback:
         {
             if (apszOldName[i])
             {
-                rrc = RTFileMove(apszNewName[i], apszOldName[i], 0);
+                rrc = vmdkFileMove(pImage, apszNewName[i], apszOldName[i], 0);
                 AssertRC(rrc);
             }
         }
         /* Restore the old descriptor. */
         PVMDKFILE pFile;
         rrc = vmdkFileOpen(pImage, &pFile, pszOldDescName,
-                           vmdkFileOpenFlags(VD_OPEN_FLAGS_NORMAL),
-                           false);
+                           VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_NORMAL,
+                                                      false /* fCreate */),
+                           false /* fAsyncIO */);
         AssertRC(rrc);
         if (fEmbeddedDesc)
         {
@@ -5630,15 +5654,10 @@ static int vmdkClose(void *pBackendData, bool fDelete)
 {
     LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
+    int rc;
 
-    /* Freeing a never allocated image (e.g. because the open failed) is
-     * not signalled as an error. After all nothing bad happens. */
-    if (pImage)
-    {
-        vmdkFreeImage(pImage, fDelete);
-        RTMemFree(pImage);
-    }
+    rc = vmdkFreeImage(pImage, fDelete);
+    RTMemFree(pImage);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -5689,7 +5708,7 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
 #ifdef VBOX_WITH_VMDK_ESX
         case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-            rc = vmdkGetSector(pImage->pGTCache, pExtent, uSectorExtentRel,
+            rc = vmdkGetSector(pImage, pExtent, uSectorExtentRel,
                                &uSectorExtentAbs);
             if (RT_FAILURE(rc))
                 goto out;
@@ -5707,8 +5726,8 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
                     uint64_t uLBA;
                     if (pExtent->uGrainSector != uSectorExtentAbs)
                     {
-                        rc = vmdkFileInflateAt(pExtent->pFile, VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                               pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain), VMDK_MARKER_IGNORE, &uLBA, NULL);
+                        rc = vmdkFileInflateSync(pImage, pExtent->pFile, VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                                 pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain), VMDK_MARKER_IGNORE, &uLBA, NULL);
                         if (RT_FAILURE(rc))
                         {
                             pExtent->uGrainSector = 0;
@@ -5722,17 +5741,17 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
                 }
                 else
                 {
-                    rc = vmdkFileReadAt(pExtent->pFile,
-                                        VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                        pvBuf, cbToRead, NULL);
+                    rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                                          VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                          pvBuf, cbToRead, NULL);
                 }
             }
             break;
         case VMDKETYPE_VMFS:
         case VMDKETYPE_FLAT:
-            rc = vmdkFileReadAt(pExtent->pFile,
-                                VMDK_SECTOR2BYTE(uSectorExtentRel),
-                                pvBuf, cbToRead, NULL);
+            rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                                  VMDK_SECTOR2BYTE(uSectorExtentRel),
+                                  pvBuf, cbToRead, NULL);
             break;
         case VMDKETYPE_ZERO:
             memset(pvBuf, '\0', cbToRead);
@@ -5800,7 +5819,7 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
 #ifdef VBOX_WITH_VMDK_ESX
         case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-            rc = vmdkGetSector(pImage->pGTCache, pExtent, uSectorExtentRel,
+            rc = vmdkGetSector(pImage, pExtent, uSectorExtentRel,
                                &uSectorExtentAbs);
             if (RT_FAILURE(rc))
                 goto out;
@@ -5821,8 +5840,8 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     if (!(fWrite & VD_WRITE_NO_ALLOC))
                     {
                         /* Allocate GT and find out where to store the grain. */
-                        rc = vmdkAllocGrain(pImage->pGTCache, pExtent,
-                                            uSectorExtentRel, pvBuf, cbToWrite);
+                        rc = vmdkAllocGrain(pImage, pExtent, uSectorExtentRel,
+                                            pvBuf, cbToWrite);
                     }
                     else
                         rc = VERR_VD_BLOCK_FREE;
@@ -5848,8 +5867,8 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     if (    pExtent->uGrainSector != uSectorExtentAbs
                         ||  pExtent->uGrainSector != pExtent->uLastGrainSector)
                     {
-                        rc = vmdkFileInflateAt(pExtent->pFile, VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                               pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain), VMDK_MARKER_IGNORE, &uLBA, NULL);
+                        rc = vmdkFileInflateSync(pImage, pExtent->pFile, VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                                 pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain), VMDK_MARKER_IGNORE, &uLBA, NULL);
                         if (RT_FAILURE(rc))
                         {
                             pExtent->uGrainSector = 0;
@@ -5863,16 +5882,16 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     }
                     memcpy((uint8_t *)pExtent->pvGrain + VMDK_SECTOR2BYTE(uSectorInGrain), pvBuf, cbToWrite);
                     uint32_t cbGrain = 0;
-                    rc = vmdkFileDeflateAt(pExtent->pFile,
-                                           VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                           pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
-                                           VMDK_MARKER_IGNORE, uLBA, &cbGrain);
+                    rc = vmdkFileDeflateSync(pImage, pExtent->pFile,
+                                             VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                             pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
+                                             VMDK_MARKER_IGNORE, uLBA, &cbGrain);
                     if (RT_FAILURE(rc))
                     {
                         pExtent->uGrainSector = 0;
                         pExtent->uLastGrainSector = 0;
                         AssertRC(rc);
-                        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write compressed data block in '%s'"), pExtent->pszFullname);
+                        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write compressed data block in '%s'"), pExtent->pszFullname);
                     }
                     cbGrain = RT_ALIGN(cbGrain, 512);
                     pExtent->uLastGrainSector = uSectorExtentAbs;
@@ -5883,23 +5902,23 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     if (pExtent->fFooter)
                     {
                         uEOSOff = 512;
-                        rc = vmdkWriteMetaSparseExtent(pExtent, VMDK_SECTOR2BYTE(uSectorExtentAbs) + RT_ALIGN(cbGrain, 512));
+                        rc = vmdkWriteMetaSparseExtent(pImage, pExtent, VMDK_SECTOR2BYTE(uSectorExtentAbs) + RT_ALIGN(cbGrain, 512));
                         if (RT_FAILURE(rc))
-                            return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after data block in '%s'"), pExtent->pszFullname);
+                            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write footer after data block in '%s'"), pExtent->pszFullname);
                     }
                     uint8_t aEOS[512];
                     memset(aEOS, '\0', sizeof(aEOS));
-                    rc = vmdkFileWriteAt(pExtent->pFile,
-                                         VMDK_SECTOR2BYTE(uSectorExtentAbs) + RT_ALIGN(cbGrain, 512) + uEOSOff,
-                                         aEOS, sizeof(aEOS), NULL);
+                    rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                           VMDK_SECTOR2BYTE(uSectorExtentAbs) + RT_ALIGN(cbGrain, 512) + uEOSOff,
+                                           aEOS, sizeof(aEOS), NULL);
                     if (RT_FAILURE(rc))
-                        return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after data block in '%s'"), pExtent->pszFullname);
+                        return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write end-of stream marker after data block in '%s'"), pExtent->pszFullname);
                 }
                 else
                 {
-                    rc = vmdkFileWriteAt(pExtent->pFile,
-                                         VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                         pvBuf, cbToWrite, NULL);
+                    rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                           VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                           pvBuf, cbToWrite, NULL);
                 }
             }
             break;
@@ -5907,15 +5926,16 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         case VMDKETYPE_FLAT:
             /* Clip write range to remain in this extent. */
             cbToWrite = RT_MIN(cbToWrite, VMDK_SECTOR2BYTE(pExtent->uSectorOffset + pExtent->cNominalSectors - uSectorExtentRel));
-            rc = vmdkFileWriteAt(pExtent->pFile,
-                                 VMDK_SECTOR2BYTE(uSectorExtentRel),
-                                 pvBuf, cbToWrite, NULL);
+            rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                   VMDK_SECTOR2BYTE(uSectorExtentRel),
+                                   pvBuf, cbToWrite, NULL);
             break;
         case VMDKETYPE_ZERO:
             /* Clip write range to remain in this extent. */
             cbToWrite = RT_MIN(cbToWrite, VMDK_SECTOR2BYTE(pExtent->uSectorOffset + pExtent->cNominalSectors - uSectorExtentRel));
             break;
     }
+
     if (pcbWriteProcess)
         *pcbWriteProcess = cbToWrite;
 
@@ -5980,7 +6000,7 @@ static uint64_t vmdkGetFileSize(void *pBackendData)
         uint64_t cbFile;
         if (pImage->pFile != NULL)
         {
-            int rc = vmdkFileGetSize(pImage->pFile, &cbFile);
+            int rc = vmdkFileGetSize(pImage, pImage->pFile, &cbFile);
             if (RT_SUCCESS(rc))
                 cb += cbFile;
         }
@@ -5988,7 +6008,7 @@ static uint64_t vmdkGetFileSize(void *pBackendData)
         {
             if (pImage->pExtents[i].pFile != NULL)
             {
-                int rc = vmdkFileGetSize(pImage->pExtents[i].pFile, &cbFile);
+                int rc = vmdkFileGetSize(pImage, pImage->pExtents[i].pFile, &cbFile);
                 if (RT_SUCCESS(rc))
                     cb += cbFile;
             }
@@ -6000,8 +6020,7 @@ static uint64_t vmdkGetFileSize(void *pBackendData)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetPCHSGeometry */
-static int vmdkGetPCHSGeometry(void *pBackendData,
-                               PPDMMEDIAGEOMETRY pPCHSGeometry)
+static int vmdkGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
@@ -6027,8 +6046,7 @@ static int vmdkGetPCHSGeometry(void *pBackendData,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetPCHSGeometry */
-static int vmdkSetPCHSGeometry(void *pBackendData,
-                               PCPDMMEDIAGEOMETRY pPCHSGeometry)
+static int vmdkSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pBackendData, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
@@ -6059,8 +6077,7 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetLCHSGeometry */
-static int vmdkGetLCHSGeometry(void *pBackendData,
-                               PPDMMEDIAGEOMETRY pLCHSGeometry)
+static int vmdkGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLCHSGeometry)
 {
      LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
@@ -6086,8 +6103,7 @@ static int vmdkGetLCHSGeometry(void *pBackendData,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetLCHSGeometry */
-static int vmdkSetLCHSGeometry(void *pBackendData,
-                               PCPDMMEDIAGEOMETRY pLCHSGeometry)
+static int vmdkSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pLCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pBackendData, pLCHSGeometry, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
@@ -6462,67 +6478,33 @@ static void vmdkDump(void *pBackendData)
     AssertPtr(pImage);
     if (pImage)
     {
-        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
+        vmdkMessage(pImage, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
                     pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
                     pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
                     VMDK_BYTE2SECTOR(pImage->cbSize));
-        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidCreation={%RTuuid}\n", &pImage->ImageUuid);
-        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidModification={%RTuuid}\n", &pImage->ModificationUuid);
-        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidParent={%RTuuid}\n", &pImage->ParentUuid);
-        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidParentModification={%RTuuid}\n", &pImage->ParentModificationUuid);
+        vmdkMessage(pImage, "Header: uuidCreation={%RTuuid}\n", &pImage->ImageUuid);
+        vmdkMessage(pImage, "Header: uuidModification={%RTuuid}\n", &pImage->ModificationUuid);
+        vmdkMessage(pImage, "Header: uuidParent={%RTuuid}\n", &pImage->ParentUuid);
+        vmdkMessage(pImage, "Header: uuidParentModification={%RTuuid}\n", &pImage->ParentModificationUuid);
     }
 }
 
-
-static int vmdkGetTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
+/** @copydoc VBOXHDDBACKEND::pfnIsAsyncIOSupported */
+static bool vmdkIsAsyncIOSupported(void *pBackendData)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
-    return rc;
-}
-
-static int vmdkGetParentTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
-{
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
-    return rc;
-}
-
-static int vmdkSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
-{
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
-    return rc;
-}
-
-static int vmdkGetParentFilename(void *pvBackendData, char **ppszParentFilename)
-{
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
-    return rc;
-}
-
-static int vmdkSetParentFilename(void *pvBackendData, const char *pszParentFilename)
-{
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
-    return rc;
-}
-
-static bool vmdkIsAsyncIOSupported(void *pvBackendData)
-{
-    PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
 
     /* We do not support async I/O for stream optimized VMDK images. */
     return (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED) == 0;
 }
 
-static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
+/** @copydoc VBOXHDDBACKEND::pfnAsyncRead */
+static int vmdkAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
                          PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    LogFlowFunc(("pvBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
-                 pvBackendData, uOffset, pIoCtx, cbRead, pcbActuallyRead));
-    PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
+                 pBackendData, uOffset, pIoCtx, cbRead, pcbActuallyRead));
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     PVMDKEXTENT pExtent;
     uint64_t uSectorExtentRel;
     uint64_t uSectorExtentAbs;
@@ -6561,7 +6543,7 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
 #ifdef VBOX_WITH_VMDK_ESX
         case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-            rc = vmdkGetSectorAsync(pImage, pIoCtx, pImage->pGTCache, pExtent,
+            rc = vmdkGetSectorAsync(pImage, pIoCtx, pExtent,
                                     uSectorExtentRel, &uSectorExtentAbs);
             if (RT_FAILURE(rc))
                 goto out;
@@ -6573,24 +6555,21 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
             else
             {
                 AssertMsg(!(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED), ("Async I/O is not supported for stream optimized VMDK's\n"));
-                rc = pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
-                                                                     pExtent->pFile->pStorage,
-                                                                     VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                                                     pIoCtx, cbRead);
+                rc = vmdkFileReadUserAsync(pImage, pExtent->pFile,
+                                           VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                           pIoCtx, cbRead);
             }
             break;
         case VMDKETYPE_VMFS:
         case VMDKETYPE_FLAT:
-            rc = pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
-                                                                 pExtent->pFile->pStorage,
-                                                                 VMDK_SECTOR2BYTE(uSectorExtentRel),
-                                                                 pIoCtx, cbRead);
+            rc = vmdkFileReadUserAsync(pImage, pExtent->pFile,
+                                       VMDK_SECTOR2BYTE(uSectorExtentRel),
+                                       pIoCtx, cbRead);
             break;
         case VMDKETYPE_ZERO:
             size_t cbSet;
 
-            cbSet = pImage->pInterfaceIOCallbacks->pfnIoCtxSet(pImage->pInterfaceIO->pvUser,
-                                                               pIoCtx, 0, cbRead);
+            cbSet = vmdkFileIoCtxSet(pImage, pIoCtx, 0, cbRead);
             Assert(cbSet == cbRead);
 
             rc = VINF_SUCCESS;
@@ -6604,14 +6583,15 @@ out:
     return rc;
 }
 
-static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+/** @copydoc VBOXHDDBACKEND::pfnAsyncWrite */
+static int vmdkAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
                           PVDIOCTX pIoCtx,
                           size_t *pcbWriteProcess, size_t *pcbPreRead,
                           size_t *pcbPostRead, unsigned fWrite)
 {
-    LogFlowFunc(("pvBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
-                 pvBackendData, uOffset, pIoCtx, cbWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
-    PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
+                 pBackendData, uOffset, pIoCtx, cbWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     PVMDKEXTENT pExtent;
     uint64_t uSectorExtentRel;
     uint64_t uSectorExtentAbs;
@@ -6659,7 +6639,7 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
 #ifdef VBOX_WITH_VMDK_ESX
         case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-            rc = vmdkGetSectorAsync(pImage, pIoCtx, pImage->pGTCache, pExtent, uSectorExtentRel,
+            rc = vmdkGetSectorAsync(pImage, pIoCtx, pExtent, uSectorExtentRel,
                                     &uSectorExtentAbs);
             if (RT_FAILURE(rc))
                 goto out;
@@ -6680,7 +6660,7 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                     if (!(fWrite & VD_WRITE_NO_ALLOC))
                     {
                         /* Allocate GT and find out where to store the grain. */
-                        rc = vmdkAllocGrainAsync(pImage->pGTCache, pExtent, pIoCtx,
+                        rc = vmdkAllocGrainAsync(pImage, pExtent, pIoCtx,
                                                  uSectorExtentRel, cbWrite);
                     }
                     else
@@ -6700,27 +6680,25 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
             else
             {
                 Assert(!(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED));
-                rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
-                                                                      pExtent->pFile->pStorage,
-                                                                      VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                                                      pIoCtx, cbWrite,
-                                                                      NULL, NULL);
+                rc = vmdkFileWriteUserAsync(pImage, pExtent->pFile,
+                                            VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                            pIoCtx, cbWrite, NULL, NULL);
             }
             break;
         case VMDKETYPE_VMFS:
         case VMDKETYPE_FLAT:
             /* Clip write range to remain in this extent. */
             cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->uSectorOffset + pExtent->cNominalSectors - uSectorExtentRel));
-            rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
-                                                                  pExtent->pFile->pStorage,
-                                                                  VMDK_SECTOR2BYTE(uSectorExtentRel),
-                                                                  pIoCtx, cbWrite, NULL, NULL);
+            rc = vmdkFileWriteUserAsync(pImage, pExtent->pFile,
+                                        VMDK_SECTOR2BYTE(uSectorExtentRel),
+                                        pIoCtx, cbWrite, NULL, NULL);
             break;
         case VMDKETYPE_ZERO:
             /* Clip write range to remain in this extent. */
             cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->uSectorOffset + pExtent->cNominalSectors - uSectorExtentRel));
             break;
     }
+
     if (pcbWriteProcess)
         *pcbWriteProcess = cbWrite;
 
@@ -6729,9 +6707,10 @@ out:
     return rc;
 }
 
-static int vmdkAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
+/** @copydoc VBOXHDDBACKEND::pfnAsyncFlush */
+static int vmdkAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
-    PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     PVMDKEXTENT pExtent;
     int rc = VINF_SUCCESS;
 
@@ -6752,11 +6731,11 @@ static int vmdkAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
                     if (pExtent->fFooter)
                     {
                         uint64_t cbSize;
-                        rc = vmdkFileGetSize(pExtent->pFile, &cbSize);
+                        rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbSize);
                         if (RT_FAILURE(rc))
                             goto out;
                         cbSize = RT_ALIGN_64(cbSize, 512);
-                        rc = vmdkWriteMetaSparseExtent(pExtent, cbSize - 2*512);
+                        rc = vmdkWriteMetaSparseExtent(pImage, pExtent, cbSize - 2*512);
                         if (RT_FAILURE(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
                             goto out;
                     }
@@ -6784,7 +6763,7 @@ static int vmdkAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
                 if (   pExtent->pFile != NULL
                     && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
                     && !(pExtent->pszBasename[0] == RTPATH_SLASH))
-                    rc = vmdkFileFlushAsync(pExtent->pFile, pIoCtx);
+                    rc = vmdkFileFlushAsync(pImage, pExtent->pFile, pIoCtx);
                 break;
             case VMDKETYPE_ZERO:
                 /* No need to do anything for this extent. */
@@ -6808,7 +6787,8 @@ VBOXHDDBACKEND g_VmdkBackend =
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
       VD_CAP_UUID | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC
-    | VD_CAP_CREATE_SPLIT_2G | VD_CAP_DIFF | VD_CAP_FILE |VD_CAP_ASYNC,
+    | VD_CAP_CREATE_SPLIT_2G | VD_CAP_DIFF | VD_CAP_FILE | VD_CAP_ASYNC
+    | VD_CAP_VFS,
     /* papszFileExtensions */
     s_apszVmdkFileExtensions,
     /* paConfigInfo */
@@ -6874,15 +6854,15 @@ VBOXHDDBACKEND g_VmdkBackend =
     /* pfnDump */
     vmdkDump,
     /* pfnGetTimeStamp */
-    vmdkGetTimeStamp,
+    NULL,
     /* pfnGetParentTimeStamp */
-    vmdkGetParentTimeStamp,
+    NULL,
     /* pfnSetParentTimeStamp */
-    vmdkSetParentTimeStamp,
+    NULL,
     /* pfnGetParentFilename */
-    vmdkGetParentFilename,
+    NULL,
     /* pfnSetParentFilename */
-    vmdkSetParentFilename,
+    NULL,
     /* pfnIsAsyncIOSupported */
     vmdkIsAsyncIOSupported,
     /* pfnAsyncRead */

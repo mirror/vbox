@@ -3521,13 +3521,15 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
             }
             if (RT_SUCCESS(vrc))
             {
-                vrc = VDGetFormat(NULL, locationFull.c_str(), &backendName);
+                vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                                  locationFull.c_str(), &backendName);
             }
             else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
             {
                 /* assume it's not a file, restore the original location */
                 location = locationFull = aLocation;
-                vrc = VDGetFormat(NULL, locationFull.c_str(), &backendName);
+                vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                                  locationFull.c_str(), &backendName);
             }
 
             if (RT_FAILURE(vrc))
@@ -5608,7 +5610,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
             if (FAILED(rc))
                 throw rc;
 
-            PDMMEDIAGEOMETRY geo = { 0, 0, 0 }; /* auto-detect */
+            VDGEOMETRY geo = { 0, 0, 0 }; /* auto-detect */
 
             vrc = VDCreateBase(hdd,
                                format.c_str(),
@@ -6808,7 +6810,7 @@ HRESULT Medium::taskResizeHandler(Medium::ResizeTask &task)
             /* unlock before the potentially lengthy operation */
             thisLock.release();
 
-            PDMMEDIAGEOMETRY geo = {0, 0, 0}; /* auto */
+            VDGEOMETRY geo = {0, 0, 0}; /* auto */
             vrc = VDResize(hdd, task.mSize, &geo, &geo, task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
             {

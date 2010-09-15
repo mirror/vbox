@@ -52,14 +52,10 @@ static void tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
     RTPrintf("\n");
 }
 
-static int tstVDMessage(void *pvUser, const char *pszFormat, ...)
+static int tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
-    va_list va;
-
     RTPrintf("tstVD: ");
-    va_start(va, pszFormat);
     RTPrintfV(pszFormat, va);
-    va_end(va);
     return VINF_SUCCESS;
 }
 
@@ -68,8 +64,8 @@ static int tstVDCreateShareDelete(const char *pszBackend, const char *pszFilenam
 {
     int rc;
     PVBOXHDD pVD = NULL, pVD2 = NULL;
-    PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
-    PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
+    VDGEOMETRY       PCHS = { 0, 0, 0 };
+    VDGEOMETRY       LCHS = { 0, 0, 0 };
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACE      VDIError;
     VDINTERFACEERROR VDIErrorCallbacks;

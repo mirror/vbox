@@ -507,14 +507,10 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
     RTPrintf("Error code %Rrc at %s(%u) in function %s\n", rc, RT_SRC_POS_ARGS);
 }
 
-static int handleVDMessage(void *pvUser, const char *pszFormat, ...)
+static int handleVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
     NOREF(pvUser);
-    va_list args;
-    va_start(args, pszFormat);
-    int rc = RTPrintfV(pszFormat, args);
-    va_end(args);
-    return rc;
+    return RTPrintfV(pszFormat, va);
 }
 
 static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
@@ -554,7 +550,8 @@ static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, 
 
     /* just try it */
     char *pszFormat = NULL;
-    int rc = VDGetFormat(NULL /* pVDIfsDisk */, argv[1], &pszFormat);
+    int rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                         argv[1], &pszFormat);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Format autodetect failed: %Rrc\n", rc);
@@ -615,7 +612,8 @@ static int CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
 
     /* just try it */
     char *pszFormat = NULL;
-    int rc = VDGetFormat(NULL /* pVDIfsDisk */, argv[0], &pszFormat);
+    int rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                         argv[0], &pszFormat);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Format autodetect failed: %Rrc\n", rc);
@@ -1436,7 +1434,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
 
     Assert(RT_MIN(cbSize / 512 / 16 / 63, 16383) -
            (unsigned int)RT_MIN(cbSize / 512 / 16 / 63, 16383) == 0);
-    PDMMEDIAGEOMETRY PCHS, LCHS;
+    VDGEOMETRY PCHS, LCHS;
     PCHS.cCylinders = (unsigned int)RT_MIN(cbSize / 512 / 16 / 63, 16383);
     PCHS.cHeads = 16;
     PCHS.cSectors = 63;
@@ -1640,7 +1638,8 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     if (srcformat.isEmpty())
     {
         char *pszFormat = NULL;
-        vrc = VDGetFormat(NULL /* pVDIfsDisk */, src.c_str(), &pszFormat);
+        vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                          src.c_str(), &pszFormat);
         if (RT_FAILURE(vrc))
         {
             VDCloseAll(pDisk);
@@ -1787,7 +1786,8 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
         if (srcformat.isEmpty())
         {
             char *pszFormat = NULL;
-            vrc = VDGetFormat(NULL /* pVDIfsDisk */, src.c_str(), &pszFormat);
+            vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                              src.c_str(), &pszFormat);
             if (RT_FAILURE(vrc))
             {
                 RTPrintf("No file format specified and autodetect failed - please specify format: %Rrc\n", vrc);

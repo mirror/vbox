@@ -331,7 +331,7 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
-                                          unsigned uOpenFlags,
+                                          uint32_t fOpen,
                                           PFNVDCOMPLETED pfnCompleted,
                                           PVDINTERFACE pVDIfsDisk,
                                           void **ppStorage)
@@ -359,12 +359,12 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                                                         drvvdAsyncTaskCompleted, pStorageBackend, "AsyncTaskCompleted");
             if (RT_SUCCESS(rc))
             {
-                uint32_t fFlags =    uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY
+                uint32_t fFlags =    (fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ
                                    ? PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_CACHING
                                    : 0;
                 if (pThis->fShareable)
                 {
-                    Assert(uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_DONT_LOCK);
+                    Assert((fOpen & RTFILE_O_DENY_MASK) == RTFILE_O_DENY_NONE);
 
                     fFlags |= PDMACEP_FILE_FLAGS_DONT_LOCK;
                 }
@@ -405,7 +405,7 @@ static DECLCALLBACK(int) drvvdAsyncIOClose(void *pvUser, void *pStorage)
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint64_t uOffset,
-                                              size_t cbRead, void *pvBuf, size_t *pcbRead)
+                                              void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
@@ -437,7 +437,7 @@ static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uint64_t uOffset,
-                                               size_t cbWrite, const void *pvBuf, size_t *pcbWritten)
+                                               const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
 {
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
@@ -1444,8 +1444,7 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
 {
     int rc = VINF_SUCCESS;
 
-    LogFlow(("%s: off=%#llx pvBuf=%p cbRead=%d\n", __FUNCTION__,
-             off, pvBuf, cbRead));
+    LogFlowFunc(("off=%#llx pvBuf=%p cbRead=%d\n", off, pvBuf, cbRead));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
 
     if (!pThis->fBootAccelActive)
@@ -1485,7 +1484,7 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
     if (RT_SUCCESS(rc))
         Log2(("%s: off=%#llx pvBuf=%p cbRead=%d %.*Rhxd\n", __FUNCTION__,
               off, pvBuf, cbRead, cbRead, pvBuf));
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1494,8 +1493,7 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
                                     uint64_t off, const void *pvBuf,
                                     size_t cbWrite)
 {
-    LogFlow(("%s: off=%#llx pvBuf=%p cbWrite=%d\n", __FUNCTION__,
-             off, pvBuf, cbWrite));
+    LogFlowFunc(("off=%#llx pvBuf=%p cbWrite=%d\n", off, pvBuf, cbWrite));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     Log2(("%s: off=%#llx pvBuf=%p cbWrite=%d %.*Rhxd\n", __FUNCTION__,
           off, pvBuf, cbWrite, cbWrite, pvBuf));
@@ -1508,17 +1506,17 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
     }
 
     int rc = VDWrite(pThis->pDisk, off, pvBuf, cbWrite);
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
 /** @copydoc PDMIMEDIA::pfnFlush */
 static DECLCALLBACK(int) drvvdFlush(PPDMIMEDIA pInterface)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDFlush(pThis->pDisk);
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1527,7 +1525,7 @@ static DECLCALLBACK(int) drvvdMerge(PPDMIMEDIA pInterface,
                                     PFNSIMPLEPROGRESS pfnProgress,
                                     void *pvUser)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VINF_SUCCESS;
 
@@ -1556,27 +1554,27 @@ static DECLCALLBACK(int) drvvdMerge(PPDMIMEDIA pInterface,
     }
     rc2 = RTSemFastMutexRelease(pThis->MergeCompleteMutex);
     AssertRC(rc2);
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
 /** @copydoc PDMIMEDIA::pfnGetSize */
 static DECLCALLBACK(uint64_t) drvvdGetSize(PPDMIMEDIA pInterface)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     uint64_t cb = VDGetSize(pThis->pDisk, VD_LAST_IMAGE);
-    LogFlow(("%s: returns %#llx (%llu)\n", __FUNCTION__, cb, cb));
+    LogFlowFunc(("returns %#llx (%llu)\n", cb, cb));
     return cb;
 }
 
 /** @copydoc PDMIMEDIA::pfnIsReadOnly */
 static DECLCALLBACK(bool) drvvdIsReadOnly(PPDMIMEDIA pInterface)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     bool f = VDIsReadOnly(pThis->pDisk);
-    LogFlow(("%s: returns %d\n", __FUNCTION__, f));
+    LogFlowFunc(("returns %d\n", f));
     return f;
 }
 
@@ -1584,16 +1582,23 @@ static DECLCALLBACK(bool) drvvdIsReadOnly(PPDMIMEDIA pInterface)
 static DECLCALLBACK(int) drvvdBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
                                                   PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
-    int rc = VDGetPCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, pPCHSGeometry);
-    if (RT_FAILURE(rc))
+    VDGEOMETRY geo;
+    int rc = VDGetPCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, &geo);
+    if (RT_SUCCESS(rc))
     {
-        Log(("%s: geometry not available.\n", __FUNCTION__));
+        pPCHSGeometry->cCylinders = geo.cCylinders;
+        pPCHSGeometry->cHeads = geo.cHeads;
+        pPCHSGeometry->cSectors = geo.cSectors;
+    }
+    else
+    {
+        LogFunc(("geometry not available.\n"));
         rc = VERR_PDM_GEOMETRY_NOT_SET;
     }
-    LogFlow(("%s: returns %Rrc (CHS=%d/%d/%d)\n", __FUNCTION__,
-             rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
+    LogFlowFunc(("returns %Rrc (CHS=%d/%d/%d)\n",
+                 rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     return rc;
 }
 
@@ -1601,13 +1606,17 @@ static DECLCALLBACK(int) drvvdBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
 static DECLCALLBACK(int) drvvdBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
                                                   PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
-    LogFlow(("%s: CHS=%d/%d/%d\n", __FUNCTION__,
-             pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
+    LogFlowFunc(("CHS=%d/%d/%d\n",
+                 pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
-    int rc = VDSetPCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, pPCHSGeometry);
+    VDGEOMETRY geo;
+    geo.cCylinders = pPCHSGeometry->cCylinders;
+    geo.cHeads = pPCHSGeometry->cHeads;
+    geo.cSectors = pPCHSGeometry->cSectors;
+    int rc = VDSetPCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, &geo);
     if (rc == VERR_VD_GEOMETRY_NOT_SET)
         rc = VERR_PDM_GEOMETRY_NOT_SET;
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1615,16 +1624,23 @@ static DECLCALLBACK(int) drvvdBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
 static DECLCALLBACK(int) drvvdBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
                                                   PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
-    int rc = VDGetLCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, pLCHSGeometry);
-    if (RT_FAILURE(rc))
+    VDGEOMETRY geo;
+    int rc = VDGetLCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, &geo);
+    if (RT_SUCCESS(rc))
     {
-        Log(("%s: geometry not available.\n", __FUNCTION__));
+        pLCHSGeometry->cCylinders = geo.cCylinders;
+        pLCHSGeometry->cHeads = geo.cHeads;
+        pLCHSGeometry->cSectors = geo.cSectors;
+    }
+    else
+    {
+        LogFunc(("geometry not available.\n"));
         rc = VERR_PDM_GEOMETRY_NOT_SET;
     }
-    LogFlow(("%s: returns %Rrc (CHS=%d/%d/%d)\n", __FUNCTION__,
-             rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
+    LogFlowFunc(("returns %Rrc (CHS=%d/%d/%d)\n",
+                 rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
 }
 
@@ -1632,23 +1648,27 @@ static DECLCALLBACK(int) drvvdBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
 static DECLCALLBACK(int) drvvdBiosSetLCHSGeometry(PPDMIMEDIA pInterface,
                                                   PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    LogFlow(("%s: CHS=%d/%d/%d\n", __FUNCTION__,
-             pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
+    LogFlowFunc(("CHS=%d/%d/%d\n",
+                 pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
-    int rc = VDSetLCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, pLCHSGeometry);
+    VDGEOMETRY geo;
+    geo.cCylinders = pLCHSGeometry->cCylinders;
+    geo.cHeads = pLCHSGeometry->cHeads;
+    geo.cSectors = pLCHSGeometry->cSectors;
+    int rc = VDSetLCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, &geo);
     if (rc == VERR_VD_GEOMETRY_NOT_SET)
         rc = VERR_PDM_GEOMETRY_NOT_SET;
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
 /** @copydoc PDMIMEDIA::pfnGetUuid */
 static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDGetUuid(pThis->pDisk, 0, pUuid);
-    LogFlow(("%s: returns %Rrc ({%RTuuid})\n", __FUNCTION__, rc, pUuid));
+    LogFlowFunc(("returns %Rrc ({%RTuuid})\n", rc, pUuid));
     return rc;
 }
 
@@ -1669,15 +1689,15 @@ static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOf
                                         PCRTSGSEG paSeg, unsigned cSeg,
                                         size_t cbRead, void *pvUser)
 {
-     LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbRead=%d\n pvUser=%#p", __FUNCTION__,
-             uOffset, paSeg, cSeg, cbRead, pvUser));
+    LogFlowFunc(("uOffset=%#llx paSeg=%#p cSeg=%u cbRead=%d\n pvUser=%#p",
+                 uOffset, paSeg, cSeg, cbRead, pvUser));
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
 
     pThis->fBootAccelActive = false;
 
     int rc = VDAsyncRead(pThis->pDisk, uOffset, cbRead, paSeg, cSeg,
                          drvvdAsyncReqComplete, pThis, pvUser);
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1685,24 +1705,24 @@ static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uO
                                          PCRTSGSEG paSeg, unsigned cSeg,
                                          size_t cbWrite, void *pvUser)
 {
-     LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbWrite=%d pvUser=%#p\n", __FUNCTION__,
-             uOffset, paSeg, cSeg, cbWrite, pvUser));
+    LogFlowFunc(("uOffset=%#llx paSeg=%#p cSeg=%u cbWrite=%d pvUser=%#p\n",
+                 uOffset, paSeg, cSeg, cbWrite, pvUser));
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
 
     pThis->fBootAccelActive = false;
 
     int rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, paSeg, cSeg,
                           drvvdAsyncReqComplete, pThis, pvUser);
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
 static DECLCALLBACK(int) drvvdStartFlush(PPDMIMEDIAASYNC pInterface, void *pvUser)
 {
-     LogFlow(("%s: pvUser=%#p\n", __FUNCTION__, pvUser));
+    LogFlowFunc(("pvUser=%#p\n", pvUser));
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
     int rc = VDAsyncFlush(pThis->pDisk, drvvdAsyncReqComplete, pThis, pvUser);
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1764,7 +1784,7 @@ static DECLCALLBACK(int) drvvdLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 
 static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
 
     /*
@@ -1790,7 +1810,7 @@ static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     drvvdSetWritable(pThis);
     pThis->fErrorUseRuntime = true;
@@ -1813,7 +1833,7 @@ static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     drvvdSetReadonly(pThis);
 }
@@ -1829,7 +1849,7 @@ static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvvdPowerOn(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     drvvdSetWritable(pThis);
     pThis->fErrorUseRuntime = true;
@@ -1840,7 +1860,7 @@ static DECLCALLBACK(void) drvvdPowerOn(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvvdReset(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
 
     if (pThis->fBootAccelEnabled)
@@ -1857,7 +1877,7 @@ static DECLCALLBACK(void) drvvdReset(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
 {
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     RTSEMFASTMUTEX mutex;
@@ -1901,7 +1921,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                         PCFGMNODE pCfg,
                                         uint32_t fFlags)
 {
-    LogFlow(("%s:\n", __FUNCTION__));
+    LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     int rc = VINF_SUCCESS;
     char *pszName = NULL;   /**< The path of the disk image file. */
@@ -2354,9 +2374,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
         if (RT_SUCCESS(rc))
         {
-            Log(("%s: %d - Opened '%s' in %s mode\n", __FUNCTION__,
-                 iLevel, pszName,
-                 VDIsReadOnly(pThis->pDisk) ? "read-only" : "read-write"));
+            LogFunc(("%d - Opened '%s' in %s mode\n",
+                     iLevel, pszName,
+                     VDIsReadOnly(pThis->pDisk) ? "read-only" : "read-write"));
             if (  VDIsReadOnly(pThis->pDisk)
                 && !fReadOnly
                 && !fMaybeReadOnly
@@ -2434,7 +2454,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         /* drvvdDestruct does the rest. */
     }
 
-    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 

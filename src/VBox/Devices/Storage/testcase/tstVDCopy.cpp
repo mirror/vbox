@@ -96,10 +96,12 @@ int main(int argc, char *argv[])
                         NULL, &pVDIfs);
     AssertRC(rc);
 
-    rc = VDGetFormat(NULL, argv[1], &pszVD1);
+    rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                     argv[1], &pszVD1);
     CHECK("VDGetFormat() hdd1");
 
-    rc = VDGetFormat(NULL, argv[2], &pszVD2);
+    rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                     argv[2], &pszVD2);
     CHECK("VDGetFormat() hdd2");
 
     rc = VDCreate(&VDIError, &pVD1);

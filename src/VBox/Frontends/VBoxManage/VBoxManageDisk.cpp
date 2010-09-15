@@ -889,7 +889,7 @@ int handleConvertFromRaw(int argc, char *argv[])
 
     Assert(RT_MIN(cbFile / 512 / 16 / 63, 16383) -
            (unsigned int)RT_MIN(cbFile / 512 / 16 / 63, 16383) == 0);
-    PDMMEDIAGEOMETRY PCHS, LCHS;
+    VDGEOMETRY PCHS, LCHS;
     PCHS.cCylinders = (unsigned int)RT_MIN(cbFile / 512 / 16 / 63, 16383);
     PCHS.cHeads = 16;
     PCHS.cSectors = 63;
