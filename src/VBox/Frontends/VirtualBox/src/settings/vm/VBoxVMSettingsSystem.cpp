@@ -349,6 +349,7 @@ bool VBoxVMSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle */
 
 void VBoxVMSettingsSystem::setOrderAfter (QWidget *aWidget)
 {
+    /* Motherboard tab-order */
     setTabOrder (aWidget, mTwSystem->focusProxy());
     setTabOrder (mTwSystem->focusProxy(), mSlMemory);
     setTabOrder (mSlMemory, mLeMemory);
@@ -357,11 +358,15 @@ void VBoxVMSettingsSystem::setOrderAfter (QWidget *aWidget)
     setTabOrder (mTbBootItemUp, mTbBootItemDown);
     setTabOrder (mTbBootItemDown, mCbApic);
     setTabOrder (mCbApic, mCbEFI);
+    setTabOrder (mCbEFI, mCbTCUseUTC);
+    setTabOrder (mCbTCUseUTC, mCbUseAbsHID);
 
-    setTabOrder (mCbEFI, mSlCPU);
+    /* Processor tab-order */
+    setTabOrder (mCbUseAbsHID, mSlCPU);
     setTabOrder (mSlCPU, mLeCPU);
     setTabOrder (mLeCPU, mCbPae);
 
+    /* Acceleration tab-order */
     setTabOrder (mCbPae, mCbVirt);
     setTabOrder (mCbVirt, mCbNestedPaging);
 }
