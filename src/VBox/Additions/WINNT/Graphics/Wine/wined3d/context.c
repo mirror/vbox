@@ -852,8 +852,8 @@ static void context_destroy_gl_resources(struct wined3d_context *context)
     restore_dc = pwglGetCurrentDC();
 
     context_validate(context
-#ifdef VBOXWDDM
-            , NULL//context->device->swapchains[0]
+#ifdef VBOXWDDM/* tmp work-around */
+            , context->device->swapchains[context->device->NumberOfSwapChains-1]
 #endif
             );
     if (context->valid && restore_ctx != context->glCtx) pwglMakeCurrent(context->hdc, context->glCtx);
@@ -1594,7 +1594,6 @@ static void context_setup_target(IWineD3DDeviceImpl *device, struct wined3d_cont
 struct wined3d_context *context_find_create(IWineD3DDeviceImpl *device, IWineD3DSwapChainImpl *swapchain, IWineD3DSurfaceImpl *target,
         const struct wined3d_format_desc *ds_format_desc)
 {
-    IWineD3DSwapChainImpl *swapChain = NULL;
     int i, j;
     int swapchains = IWineD3DDevice_GetNumberOfSwapChains(device);
     DWORD tid = GetCurrentThreadId();
@@ -1604,13 +1603,13 @@ struct wined3d_context *context_find_create(IWineD3DDeviceImpl *device, IWineD3D
 
     for(i = 0 ; i < swapchains ; i ++)
     {
-        IWineD3DDevice_GetSwapChain(device, i, &swapChain);
-        if (swapChain->ds_format == ds_format_desc)
+        IWineD3DSwapChainImpl *curSwapChain;
+        IWineD3DDevice_GetSwapChain(device, i, &curSwapChain);
+        if (curSwapChain->ds_format == ds_format_desc)
         {
-            for(j = 0; j < swapChain->num_contexts; j++) {
-                if(swapChain->context[j]->tid == tid
-                        && swapChain->context[j]->tid == tid) {
-                    context = swapChain->context[j];
+            for(j = 0; j < curSwapChain->num_contexts; j++) {
+                if(curSwapChain->context[j]->tid == tid) {
+                    context = curSwapChain->context[j];
                     break;
                 }
             }
@@ -1620,9 +1619,10 @@ struct wined3d_context *context_find_create(IWineD3DDeviceImpl *device, IWineD3D
             Assert(0);
         }
 
+        IWineD3DSwapChain_Release(curSwapChain);
+
         if (context)
             break;
-        IWineD3DSwapChain_Release(swapChain);
     }
 
     if (!context)
@@ -1632,12 +1632,10 @@ struct wined3d_context *context_find_create(IWineD3DDeviceImpl *device, IWineD3D
     }
     else
     {
-        Assert(swapChain);
-        context_validate(context, swapChain);
+        context_validate(context, swapchain);
         context_setup_target(device, context, target);
         context_enter(context);
         Assert(context->valid);
-        IWineD3DSwapChain_Release(swapChain);
     }
 
     return context;
@@ -1967,7 +1965,12 @@ static struct wined3d_context *FindContext(IWineD3DDeviceImpl *This, IWineD3DSur
         }
         else
         {
+#ifdef VBOXWDDM
+            /* tmp work-around */
+            IWineD3DSwapChainImpl *swapchain = (IWineD3DSwapChainImpl *)This->swapchains[This->NumberOfSwapChains-1];
+#else
             IWineD3DSwapChainImpl *swapchain = (IWineD3DSwapChainImpl *)This->swapchains[0];
+#endif
             if (swapchain->backBuffer) target = swapchain->backBuffer[0];
             else target = swapchain->frontBuffer;
         }
@@ -1975,11 +1978,19 @@ static struct wined3d_context *FindContext(IWineD3DDeviceImpl *This, IWineD3DSur
 
     if (current_context && current_context->current_rt == target)
     {
-        context_validate(current_context
 #ifdef VBOXWDDM
-                , NULL// current_context->device->swapchains[0]
+        IWineD3DSwapChainImpl *swapchain = NULL;
+        if (SUCCEEDED(IWineD3DSurface_GetContainer(target, &IID_IWineD3DSwapChain, (void **)&swapchain))) {
+            context_validate(current_context, swapchain);
+            IWineD3DSwapChain_Release(swapchain);
+        }
+        else {
+                                                                                                    /* tmp work-around */
+            context_validate(current_context, current_context->device->swapchains[current_context->device->NumberOfSwapChains-1]);
+        }
+#else
+        context_validate(current_context);
 #endif
-                                                    );
         return current_context;
     }
 
@@ -1987,10 +1998,10 @@ static struct wined3d_context *FindContext(IWineD3DDeviceImpl *This, IWineD3DSur
         TRACE("Rendering onscreen\n");
 
         context = findThreadContextForSwapChain(swapchain, tid);
-        IWineD3DSwapChain_Release(swapchain);
 #ifdef VBOXWDDM
         context_validate(context, swapchain);
 #endif
+        IWineD3DSwapChain_Release(swapchain);
     }
     else
     {
@@ -2015,11 +2026,15 @@ static struct wined3d_context *FindContext(IWineD3DDeviceImpl *This, IWineD3DSur
              *
              * Can also happen on thread switches - in that case findThreadContextForSwapChain
              * is perfect to call. */
+#ifdef VBOXWDDM /* tmp work-around */
+            context = findThreadContextForSwapChain(This->swapchains[This->NumberOfSwapChains-1], tid);
+#else
             context = findThreadContextForSwapChain(This->swapchains[0], tid);
+#endif
         }
 #ifdef VBOXWDDM
         context_validate(context,
-                NULL//This->swapchains[0]
+                This->swapchains[This->NumberOfSwapChains-1] /* tmp work-around */
                                  );
 #endif
     }
