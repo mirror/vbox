@@ -128,7 +128,7 @@ static void crRedirectIOToConsole()
 #endif
 
 
-DECLEXPORT(void) crError( char *format, ... )
+DECLEXPORT(void) crError(const char *format, ... )
 {
     va_list args;
     static char txt[8092];
@@ -217,7 +217,7 @@ void crEnableWarnings(int onOff)
     warnings_enabled = onOff;
 }
 
-DECLEXPORT(void) crWarning( char *format, ... )
+DECLEXPORT(void) crWarning(const char *format, ... )
 {
     if (warnings_enabled) {
         va_list args;
@@ -246,7 +246,7 @@ DECLEXPORT(void) crWarning( char *format, ... )
     }
 }
 
-DECLEXPORT(void) crInfo( char *format, ... )
+DECLEXPORT(void) crInfo(const char *format, ... )
 {
     va_list args;
     static char txt[8092];
@@ -269,7 +269,7 @@ DECLEXPORT(void) crInfo( char *format, ... )
     va_end( args );
 }
 
-DECLEXPORT(void) crDebug( char *format, ... )
+DECLEXPORT(void) crDebug(const char *format, ... )
 {
     va_list args;
     static char txt[8092];

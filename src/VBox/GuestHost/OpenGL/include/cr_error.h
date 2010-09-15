@@ -26,11 +26,11 @@ extern "C" {
 
 DECLEXPORT(void) crEnableWarnings(int onOff);
 
-DECLEXPORT(void) crDebug( char *format, ... ) PRINTF;
-DECLEXPORT(void) crWarning( char *format, ... ) PRINTF;
-DECLEXPORT(void) crInfo( char *format, ... ) PRINTF;
+DECLEXPORT(void) crDebug(const char *format, ... ) PRINTF;
+DECLEXPORT(void) crWarning(const char *format, ... ) PRINTF;
+DECLEXPORT(void) crInfo(const char *format, ... ) PRINTF;
 
-DECLEXPORT(void) crError( char *format, ... ) NORETURN_PRINTF;
+DECLEXPORT(void) crError(const char *format, ... ) NORETURN_PRINTF;
 
 /* Throw more info while opengl is not stable */
 #if defined(DEBUG) || 1
