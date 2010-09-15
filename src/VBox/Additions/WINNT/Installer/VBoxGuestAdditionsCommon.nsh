@@ -170,8 +170,8 @@ FunctionEnd
 !macro GetWindowsVer un
 Function ${un}GetWindowsVer
 
-  ; Check if we are running on w2k or above. For other windows versions (>XP) it may be necessary to change winver.nsh
-  ; Get the Windows version
+  ; Check if we are running on w2k or above.
+  ; For other windows versions (>XP) it may be necessary to change winver.nsh
   Call ${un}GetWindowsVersion
   Pop $R3     ; Windows Version
 
@@ -179,42 +179,23 @@ Function ${un}GetWindowsVer
   Push "NT"   ; String to search for. Win 2k family returns no string containing 'NT'
   Call ${un}StrStr
   Pop $R0
-  StrCmp $R0 '' no_nt4  ; Not NT 3.XX or 4.XX
+  StrCmp $R0 '' nt5plus       ; Not NT 3.XX or 4.XX
 
   ; Ok we know it is NT. Must be a string like NT X.XX
   Push $R3    ; The windows version string
   Push "4."   ; String to search for
   Call ${un}StrStr
   Pop $R0
-  StrCmp $R0 "" no_nt4 nt4   ; If empty -> not NT 4
+  StrCmp $R0 "" nt5plus nt4   ; If empty -> not NT 4
 
-no_nt4:
+nt5plus:    ; Windows 2000+ (XP, Vista, ...)
 
-  StrCmp $R3 "2000" w2k_xp
-  StrCmp $R3 "XP" w2k_xp
-  StrCmp $R3 "2003" w2k_xp
-  StrCmp $R3 "Vista" vista
-  StrCmp $R3 "7" vista
-  Goto unknown
+  StrCpy $g_strWinVersion $R3
+  goto exit
 
 nt4:        ; NT 4.0
 
-  StrCpy $g_strWinVersion "nt4"
-  goto exit
-
-w2k_xp:     ; NT 5.0, 5.1 or 5.2
-
-  StrCpy $g_strWinVersion "2k"
-  goto exit
-
-vista:      ; NT 6.0 or 6.1 (Vista or Windows 7)
-
-  StrCpy $g_strWinVersion "vista"
-  goto exit
-
-unknown:
-
-  StrCpy $g_strWinVersion "unknown"
+  StrCpy $g_strWinVersion "NT4"
   goto exit
 
 exit:
@@ -326,7 +307,7 @@ Function ${un}StopVBoxService
 svc_stop:
 
   LogText "Stopping VBoxService (as service) ..."
-  ${If} $g_strWinVersion == "nt4"
+  ${If} $g_strWinVersion == "NT4"
    nsExec::Exec '"$SYSDIR\net.exe" stop VBoxService'
   ${Else}
    nsExec::Exec '"$SYSDIR\SC.exe" stop VBoxService'
@@ -346,7 +327,7 @@ exe_stop_loop:
 
   LogText "Try: $3"
 
-  ${If} $g_strWinVersion == "nt4"
+  ${If} $g_strWinVersion == "NT4"
     StrCpy $2 "VBoxServiceNT.exe"
   ${Else}
     StrCpy $2 "VBoxService.exe"

@@ -5,7 +5,6 @@ Function W2K_SetVideoResolution
   Var /GLOBAL i
   Var /GLOBAL tmp
   Var /GLOBAL tmppath
-  Var /GLOBAL win_ver
   Var /GLOBAL dev_id
   Var /GLOBAL dev_desc
 
@@ -13,9 +12,6 @@ Function W2K_SetVideoResolution
   StrCmp $g_iScreenX "0" exit
   StrCmp $g_iScreenY "0" exit
   StrCmp $g_iScreenBpp "0" exit
-
-  Call GetWindowsVersion
-  Pop $win_ver ; Now contains Windows version
 
   DetailPrint "Setting display parameters ($g_iScreenXx$g_iScreenY, $g_iScreenBpp BPP) ..."
 
@@ -58,7 +54,9 @@ Function W2K_SetVideoResolution
 dev_found:
 
   ; If we're on Windows 2000, skip the ID detection ...
-  StrCmp $win_ver "2000" change_res
+  ${If} $g_strWinVersion == "2000"
+    Goto change_res
+  ${EndIf}
   Goto dev_found_detect_id
 
 dev_found_detect_id:
@@ -98,17 +96,17 @@ change_res:
   Var /GLOBAL reg_path_device
   Var /GLOBAL reg_path_monitor
 
-  DetailPrint "Custom mode set: Platform is '$win_ver'."
-  ${If} $win_ver == "2000"
-  ${OrIf} $win_ver == "Vista"
+  DetailPrint "Custom mode set: Platform is Windows $g_strWinVersion"
+  ${If} $g_strWinVersion == "2000"
+  ${OrIf} $g_strWinVersion == "Vista"
     StrCpy $reg_path_device "SYSTEM\CurrentControlSet\SERVICES\VBoxVideo\Device0"
     StrCpy $reg_path_monitor "SYSTEM\CurrentControlSet\SERVICES\VBoxVideo\Device0\Mon00000001"
-  ${ElseIf} $win_ver == "XP"
-  ${OrIf} $win_ver == "7"
+  ${ElseIf} $g_strWinVersion == "XP"
+  ${OrIf} $g_strWinVersion == "7"
     StrCpy $reg_path_device "SYSTEM\CurrentControlSet\Control\Video\$dev_id\0000"
     StrCpy $reg_path_monitor "SYSTEM\CurrentControlSet\Control\VIDEO\$dev_id\0000\Mon00000001"
   ${Else}
-    DetailPrint "Custom mode set: Platform '$win_ver' not supported yet."
+    DetailPrint "Custom mode set: Windows $g_strWinVersion not supported yet"
     Goto exit
   ${EndIf}
 
@@ -199,11 +197,11 @@ Function W2K_CopyFiles
       FILE "$%PATH_OUT%\bin\additions\VBoxOGLpackspu.dll"
       FILE "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu.dll"
       FILE "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"  
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
       FILE "$%PATH_OUT%\bin\additions\libWine.dll"
       FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"
       FILE "$%PATH_OUT%\bin\additions\wined3dwddm.dll"
-      SetOutPath $g_strSystemDir   
+      SetOutPath $g_strSystemDir
       Goto doneCr
     ${EndIf}
   !endif
@@ -363,19 +361,17 @@ cropengl:
     WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Flags" 1
     WriteRegStr   HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Dll" "VBoxOGL.dll"
 
-    ; Write additional keys required for Windows 7 & XP 64-bit (but for 32-bit stuff)
-    Push $R0
-    Call GetWindowsVersion
-    Pop $R0 ; Windows Version
-    ${If} $R0 == '7'
-    ${OrIf} $R0 == 'XP'
-    ${OrIf} $R0 == 'Vista'
+!if $%BUILD_TARGET_ARCH% == "amd64"
+    ; Write additional keys required for Windows XP, Vista and 7 64-bit (but for 32-bit stuff)
+    ${If} $g_strWinVersion   == '7'   
+    ${OrIf} $g_strWinVersion == 'Vista'
+    ${OrIf} $g_strWinVersion == 'XP'
       WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Version" 2
       WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "DriverVersion" 1
       WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Flags" 1
       WriteRegStr   HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Dll" "VBoxOGL.dll"
     ${EndIf}
-    Pop $R0
+!endif
   ${Endif}
 !endif
 
@@ -452,7 +448,7 @@ Function ${un}W2K_Uninstall
 
   Push $0
 !if $%VBOXWDDM% == "1"
-  ; First check whether wddm driver is installed
+  ; First check whether WDDM driver is installed
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /matchdrv "PCI\VEN_80EE&DEV_BEEF&SUBSYS_00000000&REV_00" "WDDM"'
   Pop $0    ; Ret value
   ${If} $0 == "0"
@@ -487,7 +483,7 @@ Function ${un}W2K_Uninstall
     Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxVideo.sys"
     Delete /REBOOTOK "$g_strSystemDir\VBoxDisp.dll"
   ${Endif}
-  
+
   ; Remove mouse driver
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /delsvc VBoxMouse'
   Pop $0    ; Ret value
@@ -595,9 +591,9 @@ Function ${un}W2K_Uninstall
       Rename /REBOOTOK "$SYSDIR\msd3d8.dll" "$SYSDIR\d3d8.dll"
     IfFileExists "$SYSDIR\msd3d9.dll" 0 +2
       Delete /REBOOTOK "$SYSDIR\d3d9.dll"
-      Rename /REBOOTOK "$SYSDIR\msd3d9.dll" "$SYSDIR\d3d9.dll"      
-    DeleteRegKey HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL"      
-    ${DisableX64FSRedirection}    
+      Rename /REBOOTOK "$SYSDIR\msd3d9.dll" "$SYSDIR\d3d9.dll"
+    DeleteRegKey HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL"
+    ${DisableX64FSRedirection}
   !endif ; amd64
 
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL"
