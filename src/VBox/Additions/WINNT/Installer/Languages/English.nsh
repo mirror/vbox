@@ -26,6 +26,7 @@ LangString VBOX_COMPONENT_AUTOLOGON_WARN_3RDPARTY ${LANG_ENGLISH}   "There alrea
 LangString VBOX_COMPONENT_D3D  ${LANG_ENGLISH}                      "Direct3D Support (Experimental)"
 LangString VBOX_COMPONENT_D3D_DESC  ${LANG_ENGLISH}                 "Enables Direct3D Support for guests (Experimental)"
 LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_ENGLISH}                 "Windows is currently not started in safe mode.$\r$\nTherefore the D3D support cannot be installed."
+LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_ENGLISH}         "Direct3D guest support not available on Windows $g_strWinVersion!"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_ENGLISH}         "The setup just has replaced some system files in order to make ${PRODUCT_NAME} work correctly.$\r$\nIn case Windows File Protection shows a warning dialog, please cancel its suggestion of restoring the original files."
 LangString VBOX_REBOOT_REQUIRED ${LANG_ENGLISH}          "To apply all changes, the system must be restarted. Restart Windows now?"

@@ -26,6 +26,7 @@ LangString VBOX_COMPONENT_AUTOLOGON_WARN_3RDPARTY ${LANG_GERMAN}    "Es ist bere
 LangString VBOX_COMPONENT_D3D  ${LANG_GERMAN}                       "Direct3D-Unterstützung (Experimentell)"
 LangString VBOX_COMPONENT_D3D_DESC  ${LANG_GERMAN}                  "Ermöglicht Direct3D-Unterstützung für Gäste (Experimentell)"
 LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_GERMAN}                  "Windows befindet sich aktuell nicht im abgesicherten Modus.$\r$\nDaher kann die D3D-Unterstützung nicht installiert werden."
+LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_GERMAN}          "Direct3D Gast-Unterstützung nicht verfügbar unter Windows $g_strWinVersion!"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_GERMAN}         "Das Setup hat gerade Systemdateien ersetzt um die ${PRODUCT_NAME} korrekt installieren zu können.$\r$\nFalls nun ein Warn-Dialog des Windows-Dateischutzes erscheint, diesen bitte abbrechen und die Dateien nicht wiederherstellen lassen!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_GERMAN}          "Um alle Änderungen durchführen zu können, muss das System neu gestartet werden. Jetzt neu starten?"

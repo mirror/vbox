@@ -114,15 +114,24 @@ FunctionEnd
 Function ${un}Uninstall
 
   DetailPrint "Uninstalling system files ..."
-  DetailPrint "Handled Windows version: $g_strWinVersion"
+!ifdef _DEBUG
+  DetailPrint "Detected OS version: Windows $g_strWinVersion"
   DetailPrint "System Directory: $g_strSystemDir"
+!endif
 
   ; Which OS are we using?
 !if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
-  StrCmp $g_strWinVersion "nt4" nt4
+  StrCmp $g_strWinVersion "NT4" nt4     ; Windows NT 4.0
 !endif
-  StrCmp $g_strWinVersion "2k" w2k
-  StrCmp $g_strWinVersion "vista" vista
+  StrCmp $g_strWinVersion "2000" w2k    ; Windows 2000
+  StrCmp $g_strWinVersion "XP" w2k      ; Windows XP
+  StrCmp $g_strWinVersion "2003" w2k    ; Windows 2003 Server
+  StrCmp $g_strWinVersion "Vista" vista ; Windows Vista
+  StrCmp $g_strWinVersion "7" vista     ; Windows 7
+
+  ${If} $g_bForceInstall == "true"
+    Goto vista ; Assume newer OS than we know of ...
+  ${EndIf}
 
   Goto notsupported
 
@@ -162,15 +171,24 @@ FunctionEnd
 Function ${un}UninstallInstDir
 
   DetailPrint "Uninstalling directory ..."
-  DetailPrint "Handled Windows version: $g_strWinVersion"
+!ifdef _DEBUG
+  DetailPrint "Detected OS version: Windows $g_strWinVersion"
   DetailPrint "System Directory: $g_strSystemDir"
+!endif
 
   ; Which OS are we using?
 !if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
-  StrCmp $g_strWinVersion "nt4" nt4
+  StrCmp $g_strWinVersion "NT4" nt4     ; Windows NT 4.0
 !endif
-  StrCmp $g_strWinVersion "2k" w2k
-  StrCmp $g_strWinVersion "vista" vista
+  StrCmp $g_strWinVersion "2000" w2k    ; Windows 2000
+  StrCmp $g_strWinVersion "XP" w2k      ; Windows XP
+  StrCmp $g_strWinVersion "2003" w2k    ; Windows 2003 Server
+  StrCmp $g_strWinVersion "Vista" vista ; Windows Vista
+  StrCmp $g_strWinVersion "7" vista     ; Windows 7
+
+  ${If} $g_bForceInstall == "true"
+    Goto vista ; Assume newer OS than we know of ...
+  ${EndIf}
 
   Goto notsupported
 

@@ -103,7 +103,7 @@ VIAddVersionKey "InternalName" "${PRODUCT_OUTPUT}"
   !insertmacro MUI_LANGUAGE "German"
 
   ; Set branding text which appears on the horizontal line at the bottom
-  BrandingText "VirtualBox Windows Additions"
+  BrandingText "VirtualBox Windows Additions $%VBOX_VERSION_STRING%"
 
   ; Set license language
   LicenseLangString VBOX_LICENSE ${LANG_ENGLISH} "$%VBOX_BRAND_LICENSE_RTF%"
@@ -164,6 +164,7 @@ Var g_strAddVerRev      ; Installed Guest Additions: SVN revision
 Var g_strWinVersion     ; Current Windows version we're running on
 Var g_bLogEnable        ; Do logging when installing? "true" or "false"
 Var g_bFakeWHQL         ; Cmd line: Fake Windows to install non WHQL certificated drivers (only for W2K and XP currently!!) ("/unsig_drv")
+Var g_bForceInstall     ; Cmd line: Force installation on unknown Windows OS version.
 Var g_bUninstall        ; Cmd line: Just uninstall any previous Guest Additions and exit
 Var g_bRebootOnExit     ; Cmd line: Auto-Reboot on successful installation. Good for unattended installations ("/reboot")
 Var g_iScreenBpp        ; Cmd line: Screen depth ("/depth=X")
@@ -238,6 +239,10 @@ Function HandleCommandLine
         StrCpy $g_bOnlyExtract "true"
         ${Break}
 
+      ${Case} '/force'
+        StrCpy $g_bForceInstall "true"
+        ${Break}
+
       ${Case} '/help'
       ${Case} '/H'
       ${Case} '/h'
@@ -309,7 +314,7 @@ Function HandleCommandLine
         StrCpy $g_iScreenY $5
         ${Break}
 
-      ${Default}                              ; Unknown parameter, print usage message
+      ${Default} ; Unknown parameter, print usage message
         goto usage
         ${Break}
 
@@ -326,6 +331,7 @@ usage:
                     Options:$\r$\n \
                     /depth=BPP$\tSets the guest's display color depth (bits per pixel)$\r$\n \
                     /extract$\t$\tOnly extract installation files$\r$\n \
+                    /force$\t$\tForce installation on unknown/undetected Windows versions$\r$\n \
                     /uninstall$\t$\tJust uninstalls the Guest Additions and exits$\r$\n \
                     /with_autologon$\tInstalls auto-logon support$\r$\n \
                     /with_d3d$\tInstalls D3D support$\r$\n \
@@ -482,8 +488,8 @@ v2:
 
 v1:
 
-  StrCmp $g_strAddVerMin "5" v1_5   ; Handle major version "v1.5.x"
-  StrCmp $g_strAddVerMin "6" v1_6   ; Handle major version "v1.6.x"
+  StrCmp $g_strAddVerMin "5" v1_5   ; Handle minor version "v1.5.x"
+  StrCmp $g_strAddVerMin "6" v1_6   ; Handle minor version "v1.6.x"
 
 v1_5:
 
@@ -530,29 +536,36 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
 !endif
 
   StrCpy $g_strSystemDir "$SYSDIR"
-  DetailPrint "System Directory: $g_strSystemDir"
 
   Call EnableLog
   Call PrepareForUpdate
 
-  DetailPrint "Version: $%VBOX_VERSION_STRING%"
+  DetailPrint "Version: $%VBOX_VERSION_STRING% ($%VBOX_VERSION_BUILD%)"
   ${If} $g_strAddVerMaj != ""
     DetailPrint "Previous version: $g_strAddVerMaj.$g_strAddVerMin.$g_strAddVerBuild (Rev $g_strAddVerRev)"
   ${Else}
     DetailPrint "No previous version of ${PRODUCT_NAME} detected."
   ${EndIf}
-  DetailPrint "Handled Windows version: $g_strWinVersion"
+  DetailPrint "Detected OS: Windows $g_strWinVersion"
+  DetailPrint "System Directory: $g_strSystemDir"
 
 !ifdef _DEBUG
   DetailPrint "Debug!"
 !endif
 
-  ; Which OS we are using?
+  ; Which OS are we using?
 !if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
-  StrCmp $g_strWinVersion "nt4" nt4
+  StrCmp $g_strWinVersion "NT4" nt4     ; Windows NT 4.0
 !endif
-  StrCmp $g_strWinVersion "2k" w2k
-  StrCmp $g_strWinVersion "vista" vista
+  StrCmp $g_strWinVersion "2000" w2k    ; Windows 2000
+  StrCmp $g_strWinVersion "XP" w2k      ; Windows XP
+  StrCmp $g_strWinVersion "2003" w2k    ; Windows 2003 Server
+  StrCmp $g_strWinVersion "Vista" vista ; Windows Vista
+  StrCmp $g_strWinVersion "7" vista     ; Windows 7
+
+  ${If} $g_bForceInstall == "true"
+    Goto vista ; Assume newer OS than we know of ...
+  ${EndIf}
 
   Goto notsupported
 
@@ -575,16 +588,16 @@ nt4:      ; Windows NT4
   goto success
 !endif
 
-vista:  ; Windows Vista (fall through, needs stuff from w2k label, too)
+vista: ; Windows Vista / Windows 7
 
   ; Copy some common files ...
   Call Common_CopyFiles
 
   Call W2K_Main     ; First install stuff from Windows 2000 / XP
-  Call Vista_Main   ; ... and some specific stuff for Vista
+  Call Vista_Main   ; ... and some specific stuff for Vista / Windows 7
   goto success
 
-w2k:    ; Windows 2000 and XP ...
+w2k: ; Windows 2000 and XP ...
 
   ; Copy some common files ...
   Call Common_CopyFiles
@@ -678,32 +691,12 @@ FunctionEnd
 !if $%VBOX_WITH_CROGL% == "1"
 Section /o $(VBOX_COMPONENT_D3D) SEC03
 
-  Push $R0
-
-  Call GetWindowsVersion
-  Pop $R0 ; Windows Version
-  
 !if $%VBOXWDDM% == "1"
   ${If} $g_bInstallWDDM == "true"
-    ; All D3D Components are installed with WDDM driver package, nothing to be done here 
+    ; All D3D components are installed with WDDM driver package, nothing to be done here
     Return
   ${EndIf}
 !endif
-
-  ; If we're not in safe mode, print a warning and do nothing here
-  ${If} $g_iSystemMode == '0'
-    DetailPrint "System is not in safe mode, D3D support will not be installed!"
-    Return
-  ${EndIf}
-
-  ; Do not install on < XP
-  ${If}   $R0 == 'NT 3'
-  ${OrIf} $R0 == 'NT 4'
-  ${OrIf} $R0 == '2000'
-  ${OrIf} $R0 == ''
-    DetailPrint "Direct3D guest support not available on this platform!"
-    Return
-  ${EndIf}
 
   !define LIBRARY_IGNORE_VERSION ; Install in every case
   SetOverwrite on
@@ -830,8 +823,6 @@ done:
   MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_WFP_WARN_REPLACE) /SD IDOK
   Goto exit
 
-  Pop $R0
-
 exit:
 
 SectionEnd
@@ -896,37 +887,46 @@ Function .onSelChange
 
   Push $0
 
-  ; Section: D3D
+  ; Handle selection of D3D component
   SectionGetFlags ${SEC03} $0
-
   ${If} $0 == ${SF_SELECTED}
+
 !if $%VBOXWDDM% == "1"
   !if $%BUILD_TARGET_ARCH% == "x86"
-      Push $R0
-      Call GetWindowsVersion
-      Pop $R0 ; Now contains Windows version
-      DetailPrint "WDDM: winver ($R0)"
-      ${If} $R0 == "Vista"
-      ${OrIf} $R0 == "7"
-        DetailPrint "WDDM: ENABLED!!"
-        StrCpy $g_bInstallWDDM "true"
-      ${EndIf}
-      Pop $R0
+    ; If we're on a 32-bit Windows Vista / 7 also install the WDDM bits
+    ${If} $g_strWinVersion == "Vista"
+    ${OrIf} $g_strWinVersion == "7"
+      StrCpy $g_bInstallWDDM "true"
+    ${EndIf}
   !endif
 !endif
-    ; Now check what need to be done here depending on WDDM flag
-    ${If} $g_bInstallWDDM == "true"
-      ; Nothing to be done here	 
-    ${Else}
-      ; If we're not in safe mode, print a warning and don't install D3D support
-      ${If} $g_iSystemMode == '0'
-        IntOp $0 $0 & ${SECTION_OFF} ; Unselect section again
-        SectionSetFlags ${SEC03} $0
-        MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_NO_SM) /SD IDOK
-        Return
+
+    ${If} $g_bForceInstall != "true"
+      ; Do not install on < XP
+      ${If}   $g_strWinVersion == "NT4"
+      ${OrIf} $g_strWinVersion == "2000"
+      ${OrIf} $g_strWinVersion == ""
+        MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_NOT_SUPPORTED) /SD IDOK
+        Goto d3d_disable
       ${EndIf}
     ${EndIf}
+
+    ; If we're not in safe mode, print a warning and don't install D3D support
+    ${If} $g_iSystemMode == '0'
+      MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_NO_SM) /SD IDOK
+      Goto d3d_disable
+    ${EndIf}
   ${EndIf}
+
+  Goto exit
+
+d3d_disable:
+
+  IntOp $0 $0 & ${SECTION_OFF} ; Unselect section again
+  SectionSetFlags ${SEC03} $0
+  Goto exit
+
+exit:
 
   Pop $0
 
@@ -961,6 +961,7 @@ Function .onInit
 
   StrCpy $g_bLogEnable "false"
   StrCpy $g_bFakeWHQL "false"
+  StrCpy $g_bForceInstall "false"
   StrCpy $g_bUninstall "false"
   StrCpy $g_bRebootOnExit "false"
   StrCpy $g_iScreenX "0"
@@ -973,6 +974,7 @@ Function .onInit
   StrCpy $g_bWithAutoLogon "false"
   StrCpy $g_bWithD3D "false"
   StrCpy $g_bOnlyExtract "false"
+  StrCpy $g_bInstallWDDM "false"
 
   SetErrorLevel 0
   ClearErrors
