@@ -119,7 +119,7 @@ vboxmouse_drv_14_INCS := \
 	$(VBOX_PATH_X11_XORG_1_4) \
 	$(VBOX_PATH_X11_XORG_1_4)/xorg \
 	$(PATH_SUB_CURRENT)
-ifeq ($(KBUILD_TARGET),linux)
+ifeq ($(KBUILD_TARGET),linux solaris)
 vboxmouse_drv_14_SOURCES = \
 	vboxmouse_15.c
 else  # Don't enable this for other platforms yet
