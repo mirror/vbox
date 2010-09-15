@@ -371,3 +371,9 @@ RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
     return VERR_NOT_SUPPORTED;
 }
 
+
+RTDECL(bool) RTTimerCanDoHighResolution(void)
+{
+    return false;
+}
+

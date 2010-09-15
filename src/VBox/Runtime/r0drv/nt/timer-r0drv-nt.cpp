@@ -444,3 +444,9 @@ RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
     return VINF_SUCCESS;
 }
 
+
+RTDECL(bool) RTTimerCanDoHighResolution(void)
+{
+    return false;
+}
+

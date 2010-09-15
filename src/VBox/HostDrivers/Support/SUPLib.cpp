@@ -268,7 +268,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
         const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00150000
-                                   ?  0x00150001
+                                   ?  0x00150002
                                    : SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -453,6 +453,15 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "RTThreadNativeSelf",                     0xefef0038 },
         { "RTThreadSleep",                          0xefef0039 },
         { "RTThreadYield",                          0xefef003a },
+        { "RTTimerCreate",                          0xefef003a },
+        { "RTTimerCreateEx",                        0xefef003a },
+        { "RTTimerDestroy",                         0xefef003a },
+        { "RTTimerStart",                           0xefef003a },
+        { "RTTimerStop",                            0xefef003a },
+        { "RTTimerGetSystemGranularity",            0xefef003a },
+        { "RTTimerRequestSystemGranularity",        0xefef003a },
+        { "RTTimerReleaseSystemGranularity",        0xefef003a },
+        { "RTTimerCanDoHighResolution",             0xefef003a },
         { "RTLogDefaultInstance",                   0xefef003b },
         { "RTLogRelDefaultInstance",                0xefef003c },
         { "RTLogSetDefaultInstanceThread",          0xefef003d },

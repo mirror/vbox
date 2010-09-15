@@ -2073,7 +2073,11 @@ static int apic_load(QEMUFile *f, void *opaque, int version_id)
     s->uHintedCountShift = s->uHintedInitialCount = 0;
     s->fTimerArmed = TMTimerIsActive(s->CTX_SUFF(pTimer));
     if (s->fTimerArmed)
+    {
+        PDMCritSectEnter(pThis->CTX_SUFF(pCritSect), VERR_SEM_BUSY);
         acpiDoFrequencyHinting(s);
+        PDMCritSectLeave(pThis->CTX_SUFF(pCritSect));
+    }
 #endif
 
     return VINF_SUCCESS; /** @todo darn mess! */

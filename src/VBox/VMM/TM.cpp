@@ -2858,7 +2858,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
     NOREF(pszArgs);
     pHlp->pfnPrintf(pHlp,
                     "Timers (pVM=%p)\n"
-                    "%.*s %.*s %.*s %.*s Clock %18s %18s %6 %-25s Description\n",
+                    "%.*s %.*s %.*s %.*s Clock %18s %18s %6s %-25s Description\n",
                     pVM,
                     sizeof(RTR3PTR) * 2,        "pTimerR3        ",
                     sizeof(int32_t) * 2,        "offNext         ",

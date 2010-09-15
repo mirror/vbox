@@ -324,3 +324,9 @@ RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
 }
 RT_EXPORT_SYMBOL(RTTimerReleaseSystemGranularity);
 
+
+RTDECL(bool) RTTimerCanDoHighResolution(void)
+{
+    return false;
+}
+RT_EXPORT_SYMBOL(RTTimerCanDoHighResolution);

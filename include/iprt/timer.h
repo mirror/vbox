@@ -215,6 +215,17 @@ RTDECL(int) RTTimerRequestSystemGranularity(uint32_t u32Request, uint32_t *pu32G
  */
 RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted);
 
+/**
+ * Checks if the system support high resolution timers.
+ *
+ * The kind of support we are checking for is the kind of dynamically
+ * reprogrammable timers employed by recent Solaris and Linux kernels.  It also
+ * implies that we can specify microsecond (or even better maybe) intervals
+ * without getting into trouble.
+ *
+ * @returns true if supported, false it not.
+ */
+RTDECL(bool) RTTimerCanDoHighResolution(void);
 
 
 /**
