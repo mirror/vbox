@@ -223,8 +223,13 @@ typedef struct VMMDevState
     /** Guest Core Dumping enabled. */
     bool fGuestCoreDumpEnabled;
 
-    /** Alignment padding. */
-    bool afAlignment7[4];
+    /** Guest Core Dump location. */
+    char szGuestCoreLocation[RTPATH_MAX];
+
+    /** Number of additional cores to keep around.   */
+    uint32_t cGuestCores;
+
+    bool afAlignment7[1];
 
 #ifdef VBOX_WITH_HGCM
     /** List of pending HGCM requests, used for saving the HGCM state. */

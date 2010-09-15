@@ -26,6 +26,9 @@
 #include <VBox/VMMDev.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
+#include <iprt/path.h>
+#include <iprt/dir.h>
+#include <iprt/file.h>
 #include <VBox/pgm.h>
 #include <VBox/err.h>
 #include <VBox/vm.h> /* for VM_IS_EMT */
@@ -383,6 +386,7 @@ static DECLCALLBACK(int) vmmdevTimesyncBackdoorRead(PPDMDEVINS pDevIns, void *pv
 }
 #endif /* TIMESYNC_BACKDOOR */
 
+
 /**
  * Port I/O Handler for the generic request interface
  * @see FNIOMIOPORTOUT for details.
@@ -543,7 +547,39 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 if (pThis->fGuestCoreDumpEnabled)
                 {
                     PVM pVM = PDMDevHlpGetVM(pDevIns);
-                    pRequestHeader->rc = DBGFR3CoreWrite(pVM, NULL /* pszDumpPath */);
+
+                    /*
+                     * User makes sure the directory exists.
+                     */
+                    if (!RTDirExists(pThis->szGuestCoreLocation))
+                        return VERR_FILE_NOT_FOUND;
+                    char szCorePath[RTPATH_MAX];
+                    const char *pszCoreDir = pThis->szGuestCoreLocation;
+                    RTStrPrintf(szCorePath, sizeof(szCorePath), "%s/VBox.core", pszCoreDir);
+
+                    /*
+                     * Rotate existing cores based on number of additional cores to keep around.
+                     */
+                    if (pThis->cGuestCores > 0)
+                        for (int64_t i = pThis->cGuestCores - 1; i >= 0; i--)
+                        {
+                            char szFilePathOld[RTPATH_MAX];
+                            if (i == 0)
+                                RTStrCopy(szFilePathOld, sizeof(szFilePathOld), szCorePath);
+                            else
+                                RTStrPrintf(szFilePathOld, sizeof(szFilePathOld), "%s.%d", szCorePath, i);
+
+                            char szFilePathNew[RTPATH_MAX];
+                            RTStrPrintf(szFilePathNew, sizeof(szFilePathNew), "%s.%d", szCorePath, i + 1);
+                            int vrc = RTFileMove(szFilePathOld, szFilePathNew, RTFILEMOVE_FLAGS_REPLACE);
+                            if (vrc == VERR_FILE_NOT_FOUND)
+                                RTFileDelete(szFilePathNew);
+                        }
+
+                    /*
+                     * Write the core file.
+                     */
+                    pRequestHeader->rc = DBGFR3CoreWrite(pVM, szCorePath);
                 }
                 else
                     pRequestHeader->rc = VERR_ACCESS_DENIED;
@@ -2898,6 +2934,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "RamSize|"
                                   "RZEnabled|"
                                   "GuestCoreDumpEnabled|"
+                                  "GuestCoreLocation|"
+                                  "GuestCoreCount|"
                                   "TestingEnabled"
                                   ,
                                   "");
@@ -2936,6 +2974,20 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"GuestCoreDumpEnabled\" as a boolean"));
+
+    /** @todo change this to Snapshots folder!!  */
+    char szDefaultCoreLocation[RTPATH_MAX];
+    RTPathUserHome(szDefaultCoreLocation, sizeof(szDefaultCoreLocation));
+    rc = CFGMR3QueryStringDef(pCfg, "GuestCoreLocation", pThis->szGuestCoreLocation, sizeof(pThis->szGuestCoreLocation),
+                              szDefaultCoreLocation);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"GuestCoreDumpLocation\" as a string"));
+
+    rc = CFGMR3QueryU32Def(pCfg, "GuestCoreCount", &pThis->cGuestCores, 3);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"GuestCoreCount\" as a 32-bit unsigned integer"));
 
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     rc = CFGMR3QueryBoolDef(pCfg, "TestingEnabled", &pThis->fTestingEnabled, false);
