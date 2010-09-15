@@ -49,6 +49,7 @@
 #include <iprt/net.h>
 #include <iprt/crc.h>
 #include <iprt/string.h>
+#include <iprt/timer.h>
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 # include <iprt/rand.h>
 # include <iprt/path.h>
@@ -269,6 +270,15 @@ static SUPFUNC g_aFunctions[] =
     { "RTThreadPreemptDisable",                 (void *)RTThreadPreemptDisable },
     { "RTThreadPreemptRestore",                 (void *)RTThreadPreemptRestore },
     { "RTThreadIsInInterrupt",                  (void *)RTThreadIsInInterrupt },
+    { "RTTimerCreate",                          (void *)RTTimerCreate },
+    { "RTTimerCreateEx",                        (void *)RTTimerCreateEx },
+    { "RTTimerDestroy",                         (void *)RTTimerDestroy },
+    { "RTTimerStart",                           (void *)RTTimerStart },
+    { "RTTimerStop",                            (void *)RTTimerStop },
+    { "RTTimerGetSystemGranularity",            (void *)RTTimerGetSystemGranularity },
+    { "RTTimerRequestSystemGranularity",        (void *)RTTimerRequestSystemGranularity },
+    { "RTTimerReleaseSystemGranularity",        (void *)RTTimerReleaseSystemGranularity },
+    { "RTTimerCanDoHighResolution",             (void *)RTTimerCanDoHighResolution },
 
     { "RTLogDefaultInstance",                   (void *)RTLogDefaultInstance },
     { "RTMpCpuId",                              (void *)RTMpCpuId },

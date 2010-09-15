@@ -971,3 +971,14 @@ RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
 }
 RT_EXPORT_SYMBOL(RTTimerReleaseSystemGranularity);
 
+
+RTDECL(bool) RTTimerCanDoHighResolution(void)
+{
+#ifdef RT_USE_LINUX_HRTIMER
+    return true;
+#else
+    return false;
+#endif
+}
+RT_EXPORT_SYMBOL(RTTimerCanDoHighResolution);
+

@@ -46,9 +46,8 @@
 #include <iprt/once.h>
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
-#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-# include <iprt/thread.h>
-#endif
+#include <iprt/thread.h>
+#include <iprt/timer.h>
 
 #if defined(_MSC_VER) && defined(RT_ARCH_AMD64) /** @todo check this with with VC7! */
 #  pragma intrinsic(_AddressOfReturnAddress)
@@ -241,6 +240,13 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
         pR0Logger->fRegistered = true;
     }
 #endif /* LOG_ENABLED */
+
+    /*
+     * Check if the host supports high resolution timers or not.
+     */
+    if (   pVM->vmm.s.fUsePeriodicPreemptionTimers
+        && !RTTimerCanDoHighResolution())
+        pVM->vmm.s.fUsePeriodicPreemptionTimers = false;
 
     /*
      * Initialize the per VM data for GVMM and GMM.
