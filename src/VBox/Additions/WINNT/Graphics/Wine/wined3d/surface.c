@@ -2136,7 +2136,12 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_GetDC(IWineD3DSurface *iface, HDC *pHD
         } else {
             IWineD3DSurfaceImpl *dds_primary;
             IWineD3DSwapChainImpl *swapchain;
+#ifdef VBOXWDDM
+            /* tmp work-around */
+            swapchain = (IWineD3DSwapChainImpl *)This->resource.device->swapchains[This->resource.device->NumberOfSwapChains-1];
+#else
             swapchain = (IWineD3DSwapChainImpl *)This->resource.device->swapchains[0];
+#endif
             dds_primary = (IWineD3DSurfaceImpl *)swapchain->frontBuffer;
             if (dds_primary && dds_primary->palette)
                 pal = dds_primary->palette->palents;
