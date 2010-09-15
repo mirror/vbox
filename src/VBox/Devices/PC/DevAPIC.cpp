@@ -1471,7 +1471,6 @@ static void apic_timer_update(APICDeviceInfo* dev, APICState *s, int64_t current
 # else
         TMTimerSet(s->CTX_SUFF(pTimer), next_time);
         s->fTimerArmed = true;
-        if ( s->initial_count
 # endif
         s->next_time = next_time;
     } else {
