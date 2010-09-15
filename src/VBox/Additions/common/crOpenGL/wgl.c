@@ -171,7 +171,7 @@ BOOL WINAPI wglMakeCurrent_prox( HDC hdc, HGLRC hglrc )
 
 HGLRC WINAPI wglGetCurrentContext_prox( void )
 {
-    return (HGLRC) stub.currentContext;
+    return (HGLRC) stub.currentContext ? stub.currentContext->id : 0;
 }
 
 HDC WINAPI wglGetCurrentDC_prox( void )
