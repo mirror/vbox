@@ -397,10 +397,6 @@ VBOX_BIOS_DMI_FALLBACK =
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_HOSTNETIF_API = 1
 endif
-# Enable the new storage I/O path.
-if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
- VBOX_WITH_NEW_IO_CODE = 1
-endif
 ## @}
 
 

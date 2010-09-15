@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -52,14 +52,10 @@ static void tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
     RTPrintf("\n");
 }
 
-static int tstVDMessage(void *pvUser, const char *pszFormat, ...)
+static int tstVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
-    va_list va;
-
     RTPrintf("tstVD: ");
-    va_start(va, pszFormat);
     RTPrintfV(pszFormat, va);
-    va_end(va);
     return VINF_SUCCESS;
 }
 
@@ -68,8 +64,8 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
 {
     int rc;
     PVBOXHDD pVD = NULL;
-    PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
-    PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
+    VDGEOMETRY       PCHS = { 0, 0, 0 };
+    VDGEOMETRY       LCHS = { 0, 0, 0 };
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACE      VDIError;
     VDINTERFACEERROR VDIErrorCallbacks;
@@ -126,8 +122,8 @@ static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
 {
     int rc;
     PVBOXHDD pVD = NULL;
-    PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
-    PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
+    VDGEOMETRY       PCHS = { 0, 0, 0 };
+    VDGEOMETRY       LCHS = { 0, 0, 0 };
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACE      VDIError;
     VDINTERFACEERROR VDIErrorCallbacks;
@@ -508,9 +504,9 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     int rc;
     PVBOXHDD pVD = NULL;
     char *pszFormat;
-    PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
-    PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
-    uint64_t u64DiskSize  = 1000 * _1M;
+    VDGEOMETRY PCHS = { 0, 0, 0 };
+    VDGEOMETRY LCHS = { 0, 0, 0 };
+    uint64_t u64DiskSize = 1000 * _1M;
     uint32_t u32SectorSize = 512;
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACE      VDIError;
@@ -550,7 +546,8 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     if (RT_SUCCESS(rc))
     {
         RTFileClose(File);
-        rc = VDGetFormat(NULL, pszBaseFilename, &pszFormat);
+        rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                         pszBaseFilename, &pszFormat);
         RTPrintf("VDGetFormat() pszFormat=%s rc=%Rrc\n", pszFormat, rc);
         if (RT_SUCCESS(rc) && strcmp(pszFormat, pszBackend))
         {
@@ -632,9 +629,9 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
 {
     int rc;
     PVBOXHDD pVD = NULL;
-    PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
-    PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
-    uint64_t u64DiskSize  = 1000 * _1M;
+    VDGEOMETRY PCHS = { 0, 0, 0 };
+    VDGEOMETRY LCHS = { 0, 0, 0 };
+    uint64_t u64DiskSize = 1000 * _1M;
     uint32_t u32SectorSize = 512;
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACE      VDIError;

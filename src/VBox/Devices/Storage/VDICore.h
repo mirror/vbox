@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,12 +21,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <VBox/VBoxHDD.h>
 #ifndef VBOX_VDICORE_VD
-#include <VBox/VBoxHDD.h>
-#else /* VBOX_VDICORE_VD */
-#include <VBox/VBoxHDD.h>
-#endif /* VBOX_VDICORE_VD */
 #include <VBox/pdm.h>
+#endif /* !VBOX_VDICORE_VD */
 #include <VBox/mm.h>
 #include <VBox/err.h>
 
@@ -34,7 +32,6 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
-#include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/asm.h>
 
@@ -191,7 +188,7 @@ typedef struct VDIHEADER1PLUS
     uint32_t        fFlags;
     /** Image comment. (UTF-8) */
     char            szComment[VDI_IMAGE_COMMENT_SIZE];
-    /** Offset of Blocks array from the begining of image file.
+    /** Offset of blocks array from the begining of image file.
      * Should be sector-aligned for HDD access optimization. */
     uint32_t        offBlocks;
     /** Offset of image data from the begining of image file.
@@ -239,6 +236,13 @@ typedef struct VDIHEADER
         VDIHEADER1PLUS v1plus;
     } u;
 } VDIHEADER, *PVDIHEADER;
+
+/**
+ * File alignment boundary for both the block array and data area. Should be
+ * at least the size of a physical sector on disk for performance reasons.
+ * With the growing market share of disks with 4K sectors this needs to be
+ * bumped, and maybe again later. */
+#define VDI_DATA_ALIGN _4K
 
 /** Block 'pointer'. */
 typedef uint32_t    VDIIMAGEBLOCKPOINTER;
@@ -554,20 +558,15 @@ typedef struct VDIIMAGEDESC
     /** Link to child image descriptor, if any. */
     struct VDIIMAGEDESC    *pNext;
 #endif /* !VBOX_VDICORE_VD */
-#ifndef VBOX_WITH_NEW_IO_CODE
-    /** File handle. */
-    RTFILE                  File;
-#else
     /** Opaque storage handle. */
     PVDIOSTORAGE            pStorage;
-#endif
 #ifndef VBOX_VDICORE_VD
     /** True if the image is operating in readonly mode. */
     bool                    fReadOnly;
     /** Image open flags, VDI_OPEN_FLAGS_*. */
     unsigned                fOpen;
 #else /* VBOX_VDICORE_VD */
-    /** Image open flags, VD__OPEN_FLAGS_*. */
+    /** Image open flags, VD_OPEN_FLAGS_*. */
     unsigned                uOpenFlags;
 #endif /* VBOX_VDICORE_VD */
     /** Image pre-header. */
@@ -609,7 +608,7 @@ typedef struct VDIIMAGEDESC
     /** Container filename. (UTF-8) */
     const char             *pszFilename;
     /** Physical geometry of this image (never actually stored). */
-    PDMMEDIAGEOMETRY        PCHSGeometry;
+    VDGEOMETRY              PCHSGeometry;
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE            pVDIfsDisk;
     /** Pointer to the per-image VD interface list. */
@@ -618,12 +617,10 @@ typedef struct VDIIMAGEDESC
     PVDINTERFACE            pInterfaceError;
     /** Error interface callback table. */
     PVDINTERFACEERROR       pInterfaceErrorCallbacks;
-# ifdef VBOX_WITH_NEW_IO_CODE
     /** I/O interface. */
     PVDINTERFACE            pInterfaceIO;
     /** I/O interface callbacks. */
     PVDINTERFACEIO          pInterfaceIOCallbacks;
-# endif
 #endif /* VBOX_VDICORE_VD */
 } VDIIMAGEDESC, *PVDIIMAGEDESC;
 
@@ -672,10 +669,12 @@ struct VDIDISK
      * away if possible. */
     bool            fHonorZeroWrites;
 
+#ifndef VBOX_VDICORE_VD
     /** The media interface. */
     PDMIMEDIA       IMedia;
     /** Pointer to the driver instance. */
     PPDMDRVINS      pDrvIns;
+#endif /* !VBOX_VDICORE_VD */
 };
 
 

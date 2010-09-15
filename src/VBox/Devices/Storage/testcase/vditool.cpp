@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -107,7 +107,7 @@ static int NewImage(const char *pszFilename, uint32_t cMBs)
     if (RT_FAILURE(rc))
         return PrintDone(rc);
 
-    PDMMEDIAGEOMETRY geo = { 0, 0, 0 }; /* auto-detect */
+    VDGEOMETRY geo = { 0, 0, 0 }; /* auto-detect */
     rc = VDCreateBase(hdd, "vdi", pszUtf8Filename,
                       (uint64_t)cMBs * _1M,
                       VD_IMAGE_FLAGS_NONE,
@@ -273,7 +273,7 @@ static int ResetImageGeometry(const char *pszFilename)
     rc = VDIDiskOpenImage(pVdi, pszUtf8Filename, VDI_OPEN_FLAGS_NORMAL);
     if (RT_SUCCESS(rc))
     {
-        PDMMEDIAGEOMETRY LCHSGeometry = {0, 0, 0};
+        VDGEOMETRY LCHSGeometry = {0, 0, 0};
         rc = VDIDiskSetLCHSGeometry(pVdi, &LCHSGeometry);
     }
     VDIDiskCloseImage(pVdi);

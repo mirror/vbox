@@ -73,9 +73,10 @@ typedef struct VDCACHEBACKEND
      *
      * @returns VBox status code.
      * @param   pszFilename     Name of the image file.
-     * @param   pVDIfsCache     Pointer to the per-cache VD interface list.
+     * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+     * @param   pVDIfsImage     Pointer to the per-image VD interface list.
      */
-    DECLR3CALLBACKMEMBER(int, pfnProbe, (const char *pszFilename, PVDINTERFACE pVDIfsCache));
+    DECLR3CALLBACKMEMBER(int, pfnProbe, (const char *pszFilename, PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage));
 
     /**
      * Open a cache image.
@@ -86,11 +87,11 @@ typedef struct VDCACHEBACKEND
      * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
      * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      * @param   pVDIfsImage     Pointer to the per-image VD interface list.
-     * @param   ppvBackendData  Opaque state data for this image.
+     * @param   ppBackendData   Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(int, pfnOpen, (const char *pszFilename, unsigned uOpenFlags,
                                         PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                                        void **ppvBackendData));
+                                        void **ppBackendData));
 
     /**
      * Create a cache image.
@@ -108,7 +109,7 @@ typedef struct VDCACHEBACKEND
      * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      * @param   pVDIfsImage     Pointer to the per-image VD interface list.
      * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
-     * @param   ppvBackendData  Opaque state data for this image.
+     * @param   ppBackendData   Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, uint64_t cbSize,
                                           unsigned uImageFlags, const char *pszComment,
@@ -117,16 +118,16 @@ typedef struct VDCACHEBACKEND
                                           PVDINTERFACE pVDIfsDisk,
                                           PVDINTERFACE pVDIfsImage,
                                           PVDINTERFACE pVDIfsOperation,
-                                          void **ppvBackendData));
+                                          void **ppBackendData));
 
     /**
      * Close a cache image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   fDelete         If true, delete the image from the host disk.
      */
-    DECLR3CALLBACKMEMBER(int, pfnClose, (void *pvBackendData, bool fDelete));
+    DECLR3CALLBACKMEMBER(int, pfnClose, (void *pBackendData, bool fDelete));
 
     /**
      * Read data from a cache image. The area read never crosses a block
@@ -134,13 +135,13 @@ typedef struct VDCACHEBACKEND
      *
      * @returns VBox status code.
      * @returns VERR_VD_BLOCK_FREE if this image contains no data for this block.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uOffset         Offset to start reading from.
      * @param   pvBuf           Where to store the read bits.
      * @param   cbRead          Number of bytes to read.
      * @param   pcbActuallyRead Pointer to returned number of bytes read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pvBackendData, uint64_t uOffset, void *pvBuf,
+    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pBackendData, uint64_t uOffset, void *pvBuf,
                                         size_t cbRead, size_t *pcbActuallyRead));
 
     /**
@@ -148,14 +149,14 @@ typedef struct VDCACHEBACKEND
      * boundary.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uOffset         Offset to start writing to.
      * @param   pvBuf           Where to retrieve the written bits.
      * @param   cbWrite         Number of bytes to write.
      * @param   pcbWriteProcess Pointer to returned number of bytes that could
      *                          be processed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvBackendData, uint64_t uOffset,
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pBackendData, uint64_t uOffset,
                                          const void *pvBuf, size_t cbWrite,
                                          size_t *pcbWriteProcess));
 
@@ -163,142 +164,142 @@ typedef struct VDCACHEBACKEND
      * Flush data to disk.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pBackendData));
 
     /**
      * Get the version of a cache image.
      *
      * @returns version of cache image.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(unsigned, pfnGetVersion, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(unsigned, pfnGetVersion, (void *pBackendData));
 
     /**
      * Get the capacity of a cache image.
      *
      * @returns size of cache image in bytes.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(uint64_t, pfnGetSize, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetSize, (void *pBackendData));
 
     /**
      * Get the file size of a cache image.
      *
      * @returns size of cache image in bytes.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(uint64_t, pfnGetFileSize, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetFileSize, (void *pBackendData));
 
     /**
      * Get the image flags of a cache image.
      *
      * @returns image flags of cache image.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(unsigned, pfnGetImageFlags, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(unsigned, pfnGetImageFlags, (void *pBackendData));
 
     /**
      * Get the open flags of a cache image.
      *
      * @returns open flags of cache image.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(unsigned, pfnGetOpenFlags, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(unsigned, pfnGetOpenFlags, (void *pBackendData));
 
     /**
      * Set the open flags of a cache image. May cause the image to be locked
      * in a different mode or be reopened (which can fail).
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uOpenFlags      New open flags for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetOpenFlags, (void *pvBackendData, unsigned uOpenFlags));
+    DECLR3CALLBACKMEMBER(int, pfnSetOpenFlags, (void *pBackendData, unsigned uOpenFlags));
 
     /**
      * Get comment of a cache image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pszComment      Where to store the comment.
      * @param   cbComment       Size of the comment buffer.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetComment, (void *pvBackendData, char *pszComment, size_t cbComment));
+    DECLR3CALLBACKMEMBER(int, pfnGetComment, (void *pBackendData, char *pszComment, size_t cbComment));
 
     /**
      * Set comment of a cache image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pszComment      Where to get the comment from. NULL resets comment.
      *                          The comment is silently truncated if the image format
      *                          limit is exceeded.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetComment, (void *pvBackendData, const char *pszComment));
+    DECLR3CALLBACKMEMBER(int, pfnSetComment, (void *pBackendData, const char *pszComment));
 
     /**
      * Get UUID of a cache image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to store the image UUID.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetUuid, (void *pvBackendData, PRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnGetUuid, (void *pBackendData, PRTUUID pUuid));
 
     /**
      * Set UUID of a cache image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to get the image UUID from.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetUuid, (void *pvBackendData, PCRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnSetUuid, (void *pBackendData, PCRTUUID pUuid));
 
     /**
      * Get last modification UUID of a cache image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to store the image modification UUID.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetModificationUuid, (void *pvBackendData, PRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnGetModificationUuid, (void *pBackendData, PRTUUID pUuid));
 
     /**
      * Set last modification UUID of a cache image.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pUuid           Where to get the image modification UUID from.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetModificationUuid, (void *pvBackendData, PCRTUUID pUuid));
+    DECLR3CALLBACKMEMBER(int, pfnSetModificationUuid, (void *pBackendData, PCRTUUID pUuid));
 
     /**
      * Dump information about a cache image.
      *
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(void, pfnDump, (void *pvBackendData));
+    DECLR3CALLBACKMEMBER(void, pfnDump, (void *pBackendData));
 
     /**
      * Start an asynchronous read request.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uOffset         The offset of the virtual disk to read from.
      * @param   cbRead          How many bytes to read.
      * @param   pIoCtx          I/O context associated with this request.
      * @param   pcbActuallyRead Pointer to returned number of bytes read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncRead, (void *pvBackendData, uint64_t uOffset, size_t cbRead,
+    DECLR3CALLBACKMEMBER(int, pfnAsyncRead, (void *pBackendData, uint64_t uOffset, size_t cbRead,
                                              PVDIOCTX pIoCtx, size_t *pcbActuallyRead));
 
     /**
      * Start an asynchronous write request.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   uOffset         The offset of the virtual disk to write to.
      * @param   cbWrite         How many bytes to write.
      * @param   pIoCtx          I/O context associated with this request.
@@ -309,17 +310,17 @@ typedef struct VDCACHEBACKEND
      *                          when prefixed/postfixed by the appropriate
      *                          amount of (previously read) padding data.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncWrite, (void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+    DECLR3CALLBACKMEMBER(int, pfnAsyncWrite, (void *pBackendData, uint64_t uOffset, size_t cbWrite,
                                               PVDIOCTX pIoCtx, size_t *pcbWriteProcess));
 
     /**
      * Flush data to disk.
      *
      * @returns VBox status code.
-     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pBackendData    Opaque state data for this image.
      * @param   pIoCtx          I/O context associated with this request.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncFlush, (void *pvBackendData, PVDIOCTX pIoCtx));
+    DECLR3CALLBACKMEMBER(int, pfnAsyncFlush, (void *pBackendData, PVDIOCTX pIoCtx));
 
     /** Returns a human readable hard disk location string given a
      *  set of hard disk configuration keys. The returned string is an

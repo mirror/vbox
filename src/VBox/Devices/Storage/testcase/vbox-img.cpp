@@ -71,13 +71,10 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
     RTMsgErrorV(pszFormat, va);
 }
 
-static int handleVDMessage(void *pvUser, const char *pszFormat, ...)
+static int handleVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
     NOREF(pvUser);
-    va_list args;
-    va_start(args, pszFormat);
-    RTPrintfV(pszFormat, args);
-    va_end(args);
+    RTPrintfV(pszFormat, va);
     return VINF_SUCCESS;
 }
 
@@ -176,7 +173,7 @@ int handleSetUUID(HandlerArg *a)
     {
         /* Don't pass error interface, as that would triggers error messages
          * because some backends fail to open the image. */
-        rc = VDGetFormat(NULL, pszFilename, &pszFormat);
+        rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat);
         if (RT_FAILURE(rc))
             return errorRuntime("Format autodetect failed: %Rrc\n", rc);
     }
@@ -245,7 +242,7 @@ int handleConvert(HandlerArg *a)
     const char *pszSrcFilename = NULL;
     const char *pszDstFilename = NULL;
     char *pszSrcFormat = NULL;
-    char *pszDstFormat = NULL;
+    const char *pszDstFormat = NULL;
     const char *pszVariant = NULL;
     PVBOXHDD pSrcDisk = NULL;
     PVBOXHDD pDstDisk = NULL;
@@ -337,7 +334,7 @@ int handleConvert(HandlerArg *a)
         /* try to determine input format if not specified */
         if (!pszSrcFormat)
         {
-            rc = VDGetFormat(NULL, pszSrcFilename, &pszSrcFormat);
+            rc = VDGetFormat(NULL, NULL, pszSrcFilename, &pszSrcFormat);
             if (RT_FAILURE(rc))
             {
                 errorSyntax("No file format specified, please specify format: %Rrc\n", rc);
@@ -430,7 +427,7 @@ int handleInfo(HandlerArg *a)
 
     /* just try it */
     char *pszFormat = NULL;
-    rc = VDGetFormat(NULL, pszFilename, &pszFormat);
+    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat);
     if (RT_FAILURE(rc))
         return errorSyntax("Format autodetect failed: %Rrc\n", rc);
 
@@ -486,7 +483,7 @@ int handleCompact(HandlerArg *a)
 
     /* just try it */
     char *pszFormat = NULL;
-    rc = VDGetFormat(NULL, pszFilename, &pszFormat);
+    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat);
     if (RT_FAILURE(rc))
         return errorSyntax("Format autodetect failed: %Rrc\n", rc);
 

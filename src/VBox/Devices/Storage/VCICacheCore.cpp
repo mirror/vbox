@@ -33,7 +33,7 @@
 *******************************************************************************/
 
 /**
- * Raw image data structure.
+ * VCI image data structure.
  */
 typedef struct VCICACHE
 {
@@ -80,10 +80,6 @@ static const char *const s_apszVciFileExtensions[] =
 *   Internal Functions                                                         *
 *******************************************************************************/
 
-static int vciFlushImage(PVCICACHE pImage);
-static void vciFreeImage(PVCICACHE pImage, bool fDelete);
-
-
 /**
  * Internal: signal an error to the frontend.
  */
@@ -99,78 +95,166 @@ DECLINLINE(int) vciError(PVCICACHE pImage, int rc, RT_SRC_POS_DECL,
     return rc;
 }
 
-static int vciFileOpen(PVCICACHE pImage, bool fReadonly, bool fCreate)
+/**
+ * Internal: signal an informational message to the frontend.
+ */
+DECLINLINE(int) vciMessage(PVCICACHE pImage, const char *pszFormat, ...)
 {
     int rc = VINF_SUCCESS;
-
-    AssertMsg(!(fReadonly && fCreate), ("Image can't be opened readonly while being created\n"));
-
-    unsigned uOpenFlags = fReadonly ? VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY : 0;
-
-    if (fCreate)
-        uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE;
-
-    rc = pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
-                                                pImage->pszFilename,
-                                                uOpenFlags,
-                                                &pImage->pStorage);
-
+    va_list va;
+    va_start(va, pszFormat);
+    if (pImage->pInterfaceError)
+        rc = pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser,
+                                                          pszFormat, va);
+    va_end(va);
     return rc;
 }
 
-static int vciFileClose(PVCICACHE pImage)
+
+DECLINLINE(int) vciFileOpen(PVCICACHE pImage, const char *pszFilename,
+                            uint32_t fOpen)
 {
-    int rc = VINF_SUCCESS;
-
-    if (pImage->pStorage)
-        rc = pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage);
-
-    pImage->pStorage = NULL;
-
-    return rc;
+    return pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
+                                                  pszFilename, fOpen,
+                                                  &pImage->pStorage);
 }
 
-static int vciFileFlushSync(PVCICACHE pImage)
+DECLINLINE(int) vciFileClose(PVCICACHE pImage)
+{
+    return pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
+                                                   pImage->pStorage);
+}
+
+DECLINLINE(int) vciFileDelete(PVCICACHE pImage, const char *pszFilename)
+{
+    return pImage->pInterfaceIOCallbacks->pfnDelete(pImage->pInterfaceIO->pvUser,
+                                                    pszFilename);
+}
+
+DECLINLINE(int) vciFileMove(PVCICACHE pImage, const char *pszSrc,
+                            const char *pszDst, unsigned fMove)
+{
+    return pImage->pInterfaceIOCallbacks->pfnMove(pImage->pInterfaceIO->pvUser,
+                                                  pszSrc, pszDst, fMove);
+}
+
+DECLINLINE(int) vciFileGetFreeSpace(PVCICACHE pImage, const char *pszFilename,
+                                    int64_t *pcbFree)
+{
+    return pImage->pInterfaceIOCallbacks->pfnGetFreeSpace(pImage->pInterfaceIO->pvUser,
+                                                          pszFilename, pcbFree);
+}
+
+DECLINLINE(int) vciFileGetSize(PVCICACHE pImage, uint64_t *pcbSize)
+{
+    return pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
+                                                     pImage->pStorage, pcbSize);
+}
+
+DECLINLINE(int) vciFileSetSize(PVCICACHE pImage, uint64_t cbSize)
+{
+    return pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
+                                                     pImage->pStorage, cbSize);
+}
+
+DECLINLINE(int) vciFileWriteSync(PVCICACHE pImage, uint64_t uOffset,
+                                 const void *pvBuffer, size_t cbBuffer,
+                                 size_t *pcbWritten)
+{
+    return pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
+                                                       pImage->pStorage, uOffset,
+                                                       pvBuffer, cbBuffer, pcbWritten);
+}
+
+DECLINLINE(int) vciFileReadSync(PVCICACHE pImage, uint64_t uOffset,
+                                void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+{
+    return pImage->pInterfaceIOCallbacks->pfnReadSync(pImage->pInterfaceIO->pvUser,
+                                                      pImage->pStorage, uOffset,
+                                                      pvBuffer, cbBuffer, pcbRead);
+}
+
+DECLINLINE(int) vciFileFlushSync(PVCICACHE pImage)
 {
     return pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
                                                        pImage->pStorage);
 }
 
-static int vciFileGetSize(PVCICACHE pImage, uint64_t *pcbSize)
+DECLINLINE(int) vciFileReadUserAsync(PVCICACHE pImage, uint64_t uOffset,
+                                     PVDIOCTX pIoCtx, size_t cbRead)
 {
-    return pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage,
-                                                     pcbSize);
+    return pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
+                                                           pImage->pStorage,
+                                                           uOffset, pIoCtx,
+                                                           cbRead);
 }
 
-static int vciFileSetSize(PVCICACHE pImage, uint64_t cbSize)
+DECLINLINE(int) vciFileWriteUserAsync(PVCICACHE pImage, uint64_t uOffset,
+                                      PVDIOCTX pIoCtx, size_t cbWrite,
+                                      PFNVDXFERCOMPLETED pfnComplete,
+                                      void *pvCompleteUser)
 {
-    return pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage,
-                                                     cbSize);
+    return pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                            pImage->pStorage,
+                                                            uOffset, pIoCtx,
+                                                            cbWrite,
+                                                            pfnComplete,
+                                                            pvCompleteUser);
+}
+
+DECLINLINE(int) vciFileFlushAsync(PVCICACHE pImage, PVDIOCTX pIoCtx,
+                                  PFNVDXFERCOMPLETED pfnComplete,
+                                  void *pvCompleteUser)
+{
+    return pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
+                                                        pImage->pStorage,
+                                                        pIoCtx, pfnComplete,
+                                                        pvCompleteUser);
 }
 
 
-static int vciFileWriteSync(PVCICACHE pImage, uint64_t off, const void *pcvBuf, size_t cbWrite, size_t *pcbWritten)
+/**
+ * Internal. Flush image data to disk.
+ */
+static int vciFlushImage(PVCICACHE pImage)
 {
-    return pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage,
-                                                       off, cbWrite, pcvBuf,
-                                                       pcbWritten);
+    int rc = VINF_SUCCESS;
+
+    if (   pImage->pStorage
+        && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        rc = vciFileFlushSync(pImage);
+
+    return rc;
 }
 
-static int vciFileReadSync(PVCICACHE pImage, uint64_t off, void *pvBuf, size_t cbRead, size_t *pcbRead)
+/**
+ * Internal. Free all allocated space for representing an image except pImage,
+ * and optionally delete the image from disk.
+ */
+static int vciFreeImage(PVCICACHE pImage, bool fDelete)
 {
-    return pImage->pInterfaceIOCallbacks->pfnReadSync(pImage->pInterfaceIO->pvUser,
-                                                      pImage->pStorage,
-                                                      off, cbRead, pvBuf,
-                                                      pcbRead);
-}
+    int rc = VINF_SUCCESS;
 
-static bool vciFileOpened(PVCICACHE pImage)
-{
-    return pImage->pStorage != NULL;
+    /* Freeing a never allocated image (e.g. because the open failed) is
+     * not signalled as an error. After all nothing bad happens. */
+    if (pImage)
+    {
+        if (pImage->pStorage)
+        {
+            /* No point updating the file that is deleted anyway. */
+            if (!fDelete)
+                vciFlushImage(pImage);
+
+            vciFileClose(pImage);
+            pImage->pStorage = NULL;
+        }
+
+        if (fDelete && pImage->pszFilename)
+            vciFileDelete(pImage, pImage->pszFilename);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 /**
@@ -180,27 +264,24 @@ static int vciOpenImage(PVCICACHE pImage, unsigned uOpenFlags)
 {
     int rc;
 
-    if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
-        return VERR_NOT_SUPPORTED;
-
     pImage->uOpenFlags = uOpenFlags;
 
     pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
-#ifdef VBOX_WITH_NEW_IO_CODE
-    /* Try to get I/O interface. */
+    /* Get I/O interface. */
     pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
-    AssertPtr(pImage->pInterfaceIO);
+    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
     pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
-    AssertPtr(pImage->pInterfaceIOCallbacks);
-#endif
+    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     /*
      * Open the image.
      */
-    rc = vciFileOpen(pImage, !!(uOpenFlags & VD_OPEN_FLAGS_READONLY), false);
+    rc = vciFileOpen(pImage, pImage->pszFilename,
+                     VDOpenFlagsToFileOpenFlags(uOpenFlags,
+                                                false /* fCreate */));
     if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
@@ -229,8 +310,9 @@ out:
  */
 static int vciCreateImage(PVCICACHE pImage, uint64_t cbSize,
                           unsigned uImageFlags, const char *pszComment,
-                          PFNVDPROGRESS pfnProgress, void *pvUser,
-                          unsigned uPercentStart, unsigned uPercentSpan)
+                          unsigned uOpenFlags, PFNVDPROGRESS pfnProgress,
+                          void *pvUser, unsigned uPercentStart,
+                          unsigned uPercentSpan)
 {
     int rc;
     RTFOFF cbFree = 0;
@@ -240,39 +322,41 @@ static int vciCreateImage(PVCICACHE pImage, uint64_t cbSize,
 
     if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
     {
-        rc = vciError(pImage, VERR_VD_RAW_INVALID_TYPE, RT_SRC_POS, N_("Raw: cannot create diff image '%s'"), pImage->pszFilename);
+        rc = vciError(pImage, VERR_VD_RAW_INVALID_TYPE, RT_SRC_POS, N_("VCI: cannot create diff image '%s'"), pImage->pszFilename);
         goto out;
     }
     uImageFlags |= VD_IMAGE_FLAGS_FIXED;
 
     pImage->uImageFlags = uImageFlags;
 
+    pImage->uOpenFlags = uOpenFlags & ~VD_OPEN_FLAGS_READONLY;
+
     pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
-#ifdef VBOX_WITH_NEW_IO_CODE
-    /* Try to get async I/O interface. */
+    /* Get I/O interface. */
     pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
-    AssertPtr(pImage->pInterfaceIO);
+    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
     pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
-    AssertPtr(pImage->pInterfaceIOCallbacks);
-#endif
+    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     /* Create image file. */
-    rc = vciFileOpen(pImage, false, true);
+    rc = vciFileOpen(pImage, pImage->pszFilename,
+                     VDOpenFlagsToFileOpenFlags(uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
+                                                true /* fCreate */));
     if (RT_FAILURE(rc))
     {
-        rc = vciError(pImage, rc, RT_SRC_POS, N_("Raw: cannot create image '%s'"), pImage->pszFilename);
+        rc = vciError(pImage, rc, RT_SRC_POS, N_("VCI: cannot create image '%s'"), pImage->pszFilename);
         goto out;
     }
 
     /* Check the free space on the disk and leave early if there is not
      * sufficient space available. */
-    rc = RTFsQuerySizes(pImage->pszFilename, NULL, &cbFree, NULL, NULL);
+    rc = vciFileGetFreeSpace(pImage, pImage->pszFilename, &cbFree);
     if (RT_SUCCESS(rc) /* ignore errors */ && ((uint64_t)cbFree < cbSize))
     {
-        rc = vciError(pImage, VERR_DISK_FULL, RT_SRC_POS, N_("Raw: disk would overflow creating image '%s'"), pImage->pszFilename);
+        rc = vciError(pImage, VERR_DISK_FULL, RT_SRC_POS, N_("VCI: disk would overflow creating image '%s'"), pImage->pszFilename);
         goto out;
     }
 
@@ -281,7 +365,7 @@ static int vciCreateImage(PVCICACHE pImage, uint64_t cbSize,
     rc = vciFileSetSize(pImage, cbSize);
     if (RT_FAILURE(rc))
     {
-        rc = vciError(pImage, rc, RT_SRC_POS, N_("Raw: setting image size failed for '%s'"), pImage->pszFilename);
+        rc = vciError(pImage, rc, RT_SRC_POS, N_("VCI: setting image size failed for '%s'"), pImage->pszFilename);
         goto out;
     }
 
@@ -305,7 +389,7 @@ static int vciCreateImage(PVCICACHE pImage, uint64_t cbSize,
         rc = vciFileWriteSync(pImage, uOff, pvBuf, cbChunk, NULL);
         if (RT_FAILURE(rc))
         {
-            rc = vciError(pImage, rc, RT_SRC_POS, N_("Raw: writing block failed for '%s'"), pImage->pszFilename);
+            rc = vciError(pImage, rc, RT_SRC_POS, N_("VCI: writing block failed for '%s'"), pImage->pszFilename);
             goto out;
         }
 
@@ -337,41 +421,10 @@ out:
     return rc;
 }
 
-/**
- * Internal. Free all allocated space for representing an image, and optionally
- * delete the image from disk.
- */
-static void vciFreeImage(PVCICACHE pImage, bool fDelete)
-{
-    Assert(pImage);
-
-    if (vciFileOpened(pImage))
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            vciFlushImage(pImage);
-        vciFileClose(pImage);
-    }
-    if (fDelete && pImage->pszFilename)
-        RTFileDelete(pImage->pszFilename);
-}
-
-/**
- * Internal. Flush image data to disk.
- */
-static int vciFlushImage(PVCICACHE pImage)
-{
-    int rc = VINF_SUCCESS;
-
-    if (   vciFileOpened(pImage)
-        && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rc = vciFileFlushSync(pImage);
-
-    return rc;
-}
-
 
 /** @copydoc VDCACHEBACKEND::pfnProbe */
-static int vciProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
+static int vciProbe(const char *pszFilename, PVDINTERFACE pVDIfsCache,
+                    PVDINTERFACE pVDIfsImage)
 {
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
     int rc = VINF_SUCCESS;
@@ -394,9 +447,9 @@ out:
 /** @copydoc VDCACHEBACKEND::pfnOpen */
 static int vciOpen(const char *pszFilename, unsigned uOpenFlags,
                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                   void **ppvBackendData)
+                   void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppvBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppvBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
     int rc;
     PVCICACHE pImage;
 
@@ -423,32 +476,31 @@ static int vciOpen(const char *pszFilename, unsigned uOpenFlags,
         goto out;
     }
     pImage->pszFilename = pszFilename;
-    pImage->pStorage    = NULL;
-    pImage->pVDIfsDisk  = pVDIfsDisk;
+    pImage->pStorage = NULL;
+    pImage->pVDIfsDisk = pVDIfsDisk;
     pImage->pVDIfsImage = pVDIfsImage;
 
     rc = vciOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
-        *ppvBackendData = pImage;
+        *ppBackendData = pImage;
     else
         RTMemFree(pImage);
 
 out:
-    LogFlowFunc(("returns %Rrc (pvBackendData=%#p)\n", rc, *ppvBackendData));
+    LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
 }
 
 /** @copydoc VDCACHEBACKEND::pfnCreate */
 static int vciCreate(const char *pszFilename, uint64_t cbSize,
                      unsigned uImageFlags, const char *pszComment,
-                     PCRTUUID pUuid,
-                     unsigned uOpenFlags, unsigned uPercentStart,
-                     unsigned uPercentSpan, PVDINTERFACE pVDIfsDisk,
-                     PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation,
-                     void **ppvBackendData)
+                     PCRTUUID pUuid, unsigned uOpenFlags,
+                     unsigned uPercentStart, unsigned uPercentSpan,
+                     PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                     PVDINTERFACE pVDIfsOperation, void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppvBackendData=%#p",
-                 pszFilename, cbSize, uImageFlags, pszComment, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppvBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p",
+                 pszFilename, cbSize, uImageFlags, pszComment, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
     int rc;
     PVCICACHE pImage;
 
@@ -487,11 +539,11 @@ static int vciCreate(const char *pszFilename, uint64_t cbSize,
         goto out;
     }
     pImage->pszFilename = pszFilename;
-    pImage->pStorage    = NULL;
-    pImage->pVDIfsDisk  = pVDIfsDisk;
+    pImage->pStorage = NULL;
+    pImage->pVDIfsDisk = pVDIfsDisk;
     pImage->pVDIfsImage = pVDIfsImage;
 
-    rc = vciCreateImage(pImage, cbSize, uImageFlags, pszComment,
+    rc = vciCreateImage(pImage, cbSize, uImageFlags, pszComment, uOpenFlags,
                         pfnProgress, pvUser, uPercentStart, uPercentSpan);
     if (RT_SUCCESS(rc))
     {
@@ -507,44 +559,39 @@ static int vciCreate(const char *pszFilename, uint64_t cbSize,
                 goto out;
             }
         }
-        *ppvBackendData = pImage;
+        *ppBackendData = pImage;
     }
     else
         RTMemFree(pImage);
 
 out:
-    LogFlowFunc(("returns %Rrc (pvBackendData=%#p)\n", rc, *ppvBackendData));
+    LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
 }
 
 /** @copydoc VDCACHEBACKEND::pfnClose */
-static int vciClose(void *pvBackendData, bool fDelete)
+static int vciClose(void *pBackendData, bool fDelete)
 {
-    LogFlowFunc(("pvBackendData=%#p fDelete=%d\n", pvBackendData, fDelete));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
-    int rc = VINF_SUCCESS;
+    LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
+    int rc;
 
-    /* Freeing a never allocated image (e.g. because the open failed) is
-     * not signalled as an error. After all nothing bad happens. */
-    if (pImage)
-    {
-        vciFreeImage(pImage, fDelete);
-        RTMemFree(pImage);
-    }
+    rc = vciFreeImage(pImage, fDelete);
+    RTMemFree(pImage);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
 /** @copydoc VDCACHEBACKEND::pfnRead */
-static int vciRead(void *pvBackendData, uint64_t uOffset, void *pvBuf,
+static int vciRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
                    size_t cbToRead, size_t *pcbActuallyRead)
 {
-    LogFlowFunc(("pvBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n", pvBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n", pBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
     Assert(cbToRead % 512 == 0);
 
@@ -564,15 +611,15 @@ out:
 }
 
 /** @copydoc VDCACHEBACKEND::pfnWrite */
-static int vciWrite(void *pvBackendData, uint64_t uOffset, const void *pvBuf,
+static int vciWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     size_t cbToWrite, size_t *pcbWriteProcess)
 {
-    LogFlowFunc(("pvBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p\n",
-                 pvBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p\n",
+                 pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
     Assert(cbToWrite % 512 == 0);
 
@@ -599,10 +646,10 @@ out:
 }
 
 /** @copydoc VDCACHEBACKEND::pfnFlush */
-static int vciFlush(void *pvBackendData)
+static int vciFlush(void *pBackendData)
 {
-    LogFlowFunc(("pvBackendData=%#p\n", pvBackendData));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     int rc;
 
     rc = vciFlushImage(pImage);
@@ -611,12 +658,12 @@ static int vciFlush(void *pvBackendData)
 }
 
 /** @copydoc VDCACHEBACKEND::pfnGetVersion */
-static unsigned vciGetVersion(void *pvBackendData)
+static unsigned vciGetVersion(void *pBackendData)
 {
-    LogFlowFunc(("pvBackendData=%#p\n", pvBackendData));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         return 1;
@@ -625,36 +672,38 @@ static unsigned vciGetVersion(void *pvBackendData)
 }
 
 /** @copydoc VDCACHEBACKEND::pfnGetSize */
-static uint64_t vciGetSize(void *pvBackendData)
+static uint64_t vciGetSize(void *pBackendData)
 {
-    LogFlowFunc(("pvBackendData=%#p\n", pvBackendData));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
+    uint64_t cb = 0;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
-    if (pImage)
-        return pImage->cbSize;
-    else
-        return 0;
+    if (pImage && pImage->pStorage)
+        cb = pImage->cbSize;
+
+    LogFlowFunc(("returns %llu\n", cb));
+    return cb;
 }
 
 /** @copydoc VDCACHEBACKEND::pfnGetFileSize */
-static uint64_t vciGetFileSize(void *pvBackendData)
+static uint64_t vciGetFileSize(void *pBackendData)
 {
-    LogFlowFunc(("pvBackendData=%#p\n", pvBackendData));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     uint64_t cb = 0;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
         uint64_t cbFile;
-        if (vciFileOpened(pImage))
+        if (pImage->pStorage)
         {
             int rc = vciFileGetSize(pImage, &cbFile);
             if (RT_SUCCESS(rc))
-                cb += cbFile;
+                cb = cbFile;
         }
     }
 
@@ -663,13 +712,13 @@ static uint64_t vciGetFileSize(void *pvBackendData)
 }
 
 /** @copydoc VDCACHEBACKEND::pfnGetImageFlags */
-static unsigned vciGetImageFlags(void *pvBackendData)
+static unsigned vciGetImageFlags(void *pBackendData)
 {
-    LogFlowFunc(("pvBackendData=%#p\n", pvBackendData));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     unsigned uImageFlags;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         uImageFlags = pImage->uImageFlags;
@@ -681,13 +730,13 @@ static unsigned vciGetImageFlags(void *pvBackendData)
 }
 
 /** @copydoc VDCACHEBACKEND::pfnGetOpenFlags */
-static unsigned vciGetOpenFlags(void *pvBackendData)
+static unsigned vciGetOpenFlags(void *pBackendData)
 {
-    LogFlowFunc(("pvBackendData=%#p\n", pvBackendData));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     unsigned uOpenFlags;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         uOpenFlags = pImage->uOpenFlags;
@@ -699,10 +748,10 @@ static unsigned vciGetOpenFlags(void *pvBackendData)
 }
 
 /** @copydoc VDCACHEBACKEND::pfnSetOpenFlags */
-static int vciSetOpenFlags(void *pvBackendData, unsigned uOpenFlags)
+static int vciSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
-    LogFlowFunc(("pvBackendData=%#p\n uOpenFlags=%#x", pvBackendData, uOpenFlags));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     int rc;
 
     /* Image must be opened and the new flags must be valid. Just readonly and
@@ -714,7 +763,9 @@ static int vciSetOpenFlags(void *pvBackendData, unsigned uOpenFlags)
     }
 
     /* Implement this operation via reopening the image. */
-    vciFreeImage(pImage, false);
+    rc = vciFreeImage(pImage, false);
+    if (RT_FAILURE(rc))
+        goto out;
     rc = vciOpenImage(pImage, uOpenFlags);
 
 out:
@@ -723,21 +774,17 @@ out:
 }
 
 /** @copydoc VDCACHEBACKEND::pfnGetComment */
-static int vciGetComment(void *pvBackendData, char *pszComment,
+static int vciGetComment(void *pBackendData, char *pszComment,
                           size_t cbComment)
 {
-    LogFlowFunc(("pvBackendData=%#p pszComment=%#p cbComment=%zu\n", pvBackendData, pszComment, cbComment));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
-    {
-        if (pszComment)
-            *pszComment = '\0';
-        rc = VINF_SUCCESS;
-    }
+        rc = VERR_NOT_SUPPORTED;
     else
         rc = VERR_VD_NOT_OPENED;
 
@@ -746,13 +793,13 @@ static int vciGetComment(void *pvBackendData, char *pszComment,
 }
 
 /** @copydoc VDCACHEBACKEND::pfnSetComment */
-static int vciSetComment(void *pvBackendData, const char *pszComment)
+static int vciSetComment(void *pBackendData, const char *pszComment)
 {
-    LogFlowFunc(("pvBackendData=%#p pszComment=\"%s\"\n", pvBackendData, pszComment));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
@@ -771,13 +818,13 @@ out:
 }
 
 /** @copydoc VDCACHEBACKEND::pfnGetUuid */
-static int vciGetUuid(void *pvBackendData, PRTUUID pUuid)
+static int vciGetUuid(void *pBackendData, PRTUUID pUuid)
 {
-    LogFlowFunc(("pvBackendData=%#p pUuid=%#p\n", pvBackendData, pUuid));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         rc = VERR_NOT_SUPPORTED;
@@ -789,14 +836,14 @@ static int vciGetUuid(void *pvBackendData, PRTUUID pUuid)
 }
 
 /** @copydoc VDCACHEBACKEND::pfnSetUuid */
-static int vciSetUuid(void *pvBackendData, PCRTUUID pUuid)
+static int vciSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pvBackendData=%#p Uuid=%RTuuid\n", pvBackendData, pUuid));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     int rc;
 
     LogFlowFunc(("%RTuuid\n", pUuid));
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -813,13 +860,13 @@ static int vciSetUuid(void *pvBackendData, PCRTUUID pUuid)
 }
 
 /** @copydoc VDCACHEBACKEND::pfnGetModificationUuid */
-static int vciGetModificationUuid(void *pvBackendData, PRTUUID pUuid)
+static int vciGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
-    LogFlowFunc(("pvBackendData=%#p pUuid=%#p\n", pvBackendData, pUuid));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         rc = VERR_NOT_SUPPORTED;
@@ -831,13 +878,13 @@ static int vciGetModificationUuid(void *pvBackendData, PRTUUID pUuid)
 }
 
 /** @copydoc VDCACHEBACKEND::pfnSetModificationUuid */
-static int vciSetModificationUuid(void *pvBackendData, PCRTUUID pUuid)
+static int vciSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
-    LogFlowFunc(("pvBackendData=%#p Uuid=%RTuuid\n", pvBackendData, pUuid));
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -854,49 +901,51 @@ static int vciSetModificationUuid(void *pvBackendData, PCRTUUID pUuid)
 }
 
 /** @copydoc VDCACHEBACKEND::pfnDump */
-static void vciDump(void *pvBackendData)
+static void vciDump(void *pBackendData)
 {
-    NOREF(pvBackendData);
+    NOREF(pBackendData);
 }
 
-static int vciAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
+/** @copydoc VDCACHEBACKEND::pfnAsyncRead */
+static int vciAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
                         PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
     int rc = VINF_SUCCESS;
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
 
-    rc = pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
-                                                         pImage->pStorage,
-                                                         uOffset, pIoCtx, cbRead);
+    rc = vciFileReadUserAsync(pImage, uOffset, pIoCtx, cbRead);
     if (RT_SUCCESS(rc))
         *pcbActuallyRead = cbRead;
 
     return rc;
 }
 
-static int vciAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+/** @copydoc VDCACHEBACKEND::pfnAsyncWrite */
+static int vciAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
                          PVDIOCTX pIoCtx, size_t *pcbWriteProcess)
 {
     int rc = VINF_SUCCESS;
-    PVCICACHE pImage = (PVCICACHE)pvBackendData;
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
 
-    rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
-                                                         pImage->pStorage,
-                                                         uOffset, pIoCtx, cbWrite,
-                                                         NULL, NULL);
-
+    rc = vciFileWriteUserAsync(pImage, uOffset, pIoCtx, cbWrite, NULL, NULL);
     if (RT_SUCCESS(rc))
         *pcbWriteProcess = cbWrite;
 
     return rc;
 }
 
-static int vciAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
+/** @copydoc VDCACHEBACKEND::pfnAsyncFlush */
+static int vciAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlowFunc(("returns %Rrc\n", rc));
+    int rc = VINF_SUCCESS;
+    PVCICACHE pImage = (PVCICACHE)pBackendData;
+
+    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        rc = vciFileFlushAsync(pImage, pIoCtx, NULL, NULL);
+
     return rc;
 }
+
 
 VDCACHEBACKEND g_VciCacheBackend =
 {
