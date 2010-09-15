@@ -143,17 +143,21 @@ mv VBox.png $RPM_BUILD_ROOT/usr/share/pixmaps/VBox.png
 # defaults
 [ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
-# check for active VMs
+# check for active VMs of the installed (old) package
 VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null || true`
 if [ -n "$VBOXSVC_PID" ]; then
-  # try graceful termination; terminate the webservice first
-  /etc/init.d/vboxweb-service stop || true
-  kill -USR1 $VBOXSVC_PID
+  # executed before the new package is installed!
+  if [ -f /etc/init.d/vboxweb-service ]; then
+    # try graceful termination; terminate the webservice first
+    /etc/init.d/vboxweb-service stop 2>/dev/null || true
+    # ask the daemon to terminate immediately
+    kill -USR1 $VBOXSVC_PID
+  fi
   sleep 1
   if pidof VBoxSVC > /dev/null 2>&1; then
-    echo "A copy of VirtualBox is currently running.  Please close it and try again. Please note"
-    echo "that it can take up to ten seconds for VirtualBox (in particular the VBoxSVC daemon) to"
-    echo "finish running."
+    echo "A copy of VirtualBox is currently running.  Please close it and try again."
+    echo "Please note that it can take up to ten seconds for VirtualBox (in particular"
+    echo "the VBoxSVC daemon) to finish running."
     exit 1
   fi
 fi
@@ -291,12 +295,12 @@ if [ "$INSTALL_NO_VBOXDRV" = "1" ]; then
   rm -f /lib/modules/*/misc/vboxnetflt.ko
   rm -f /lib/modules/*/misc/vboxnetadp.ko
 fi
-if lsmod | grep -q "vboxdrv[^_-]"; then
-  /etc/init.d/vboxdrv stop || true
-fi
 if [ $BUILD_MODULES -eq 1 ]; then
   /etc/init.d/vboxdrv setup || true
 else
+  if lsmod | grep -q "vboxdrv[^_-]"; then
+    /etc/init.d/vboxdrv stop || true
+  fi
   if [ $REGISTER_MODULES -eq 1 ]; then
     DKMS=`which dkms 2>/dev/null`
     if [ -n "$DKMS" ]; then
@@ -309,6 +313,9 @@ fi
 
 
 %preun
+# $1==0: remove the last version of the package
+# $1==1: install the first time
+# $1>=2: upgrade
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
 %stop_on_removal vboxweb-service
 %endif
@@ -321,16 +328,19 @@ if [ "$1" = 0 ]; then
   /sbin/chkconfig --del vboxweb-service
 fi
 %endif
-# check for active VMs
-VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null || true`
-if [ -n "$VBOXSVC_PID" ]; then
-  kill -USR1 $VBOXSVC_PID
-  sleep 1
-  if pidof VBoxSVC > /dev/null 2>&1; then
-    echo "A copy of VirtualBox is currently running.  Please close it and try again. Please note"
-    echo "that it can take up to ten seconds for VirtualBox (in particular the VBoxSVC daemon) to"
-    echo "finish running."
-    exit 1
+
+if [ "$1" = 0 ]; then
+  # check for active VMs
+  VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null || true`
+  if [ -n "$VBOXSVC_PID" ]; then
+    kill -USR1 $VBOXSVC_PID
+    sleep 1
+    if pidof VBoxSVC > /dev/null 2>&1; then
+      echo "A copy of VirtualBox is currently running.  Please close it and try again."
+      echo "Please note that it can take up to ten seconds for VirtualBox (in particular"
+      echo "the VBoxSVC daemon) to finish running."
+      exit 1
+    fi
   fi
 fi
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
@@ -362,8 +372,7 @@ if [ "$1" -ge 1 ]; then
 fi
 %endif
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
-%restart_on_update vboxdrv
-%restart_on_update vboxweb-service
+%restart_on_update vboxdrv vboxweb-service
 %insserv_cleanup
 %endif
 %if %{?rpm_mdv:1}%{!?rpm_mdv:0}

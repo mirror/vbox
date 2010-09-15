@@ -126,11 +126,6 @@ if [ "$1" = "configure" ]; then
   if [ -x "/etc/init.d/vboxdrv" ]; then
     update-rc.d vboxdrv defaults >/dev/null
 
-    # There might be an old module active (e.g. manually loaded)
-    if lsmod | grep -q "vboxdrv[^_-]"; then
-      /etc/init.d/vboxdrv stop || true
-    fi
-
     BUILD_MODULES=0
     REGISTER_MODULES=1
     # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
@@ -162,6 +157,9 @@ EOF
       fi
     else
       # shipped modules found, register sources at DKMS anyway
+      if lsmod | grep -q "vboxdrv[^_-]"; then
+        /etc/init.d/vboxdrv stop || true
+      fi
       if [ $REGISTER_MODULES -eq 1 ]; then
         DKMS=`which dkms 2>/dev/null`
         if [ -n "$DKMS" ]; then
