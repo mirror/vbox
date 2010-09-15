@@ -81,7 +81,7 @@ RT_C_DECLS_BEGIN
 #define HWACCM_CHANGED_GUEST_IDTR               RT_BIT(5)
 #define HWACCM_CHANGED_GUEST_LDTR               RT_BIT(6)
 #define HWACCM_CHANGED_GUEST_TR                 RT_BIT(7)
-#define HWACCM_CHANGED_GUEST_SYSENTER_MSR       RT_BIT(8)
+#define HWACCM_CHANGED_GUEST_MSR                RT_BIT(8)
 #define HWACCM_CHANGED_GUEST_SEGMENT_REGS       RT_BIT(9)
 #define HWACCM_CHANGED_GUEST_DEBUG              RT_BIT(10)
 #define HWACCM_CHANGED_HOST_CONTEXT             RT_BIT(11)
@@ -94,7 +94,7 @@ RT_C_DECLS_BEGIN
                                             |   HWACCM_CHANGED_GUEST_IDTR         \
                                             |   HWACCM_CHANGED_GUEST_LDTR         \
                                             |   HWACCM_CHANGED_GUEST_TR           \
-                                            |   HWACCM_CHANGED_GUEST_SYSENTER_MSR \
+                                            |   HWACCM_CHANGED_GUEST_MSR          \
                                             |   HWACCM_CHANGED_GUEST_FPU          \
                                             |   HWACCM_CHANGED_GUEST_DEBUG        \
                                             |   HWACCM_CHANGED_HOST_CONTEXT)
@@ -107,7 +107,7 @@ RT_C_DECLS_BEGIN
                                             |   HWACCM_CHANGED_GUEST_IDTR         \
                                             |   HWACCM_CHANGED_GUEST_LDTR         \
                                             |   HWACCM_CHANGED_GUEST_TR           \
-                                            |   HWACCM_CHANGED_GUEST_SYSENTER_MSR \
+                                            |   HWACCM_CHANGED_GUEST_MSR          \
                                             |   HWACCM_CHANGED_GUEST_DEBUG        \
                                             |   HWACCM_CHANGED_GUEST_FPU)
 
