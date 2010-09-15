@@ -1931,12 +1931,17 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                             iPTDst = 0;
                         else
                             iPTDst -= PGM_SYNC_NR_PAGES / 2;
+
+                        /* Paranoia: the faulting page can't be present. We assume that below. */
+                        Assert(!SHW_PTE_IS_P(pPTDst->a[iPTDstPage]));
+
                         for (; iPTDst < iPTDstEnd; iPTDst++)
                         {
-                            if (   !SHW_PTE_IS_P(pPTDst->a[iPTDst])
-                                || iPTDst == iPTDstPage)    /* always sync GCPtrPage */
+                            const PGSTPTE pPteSrc = &pPTSrc->a[offPTSrc + iPTDst];
+
+                            if (    pPteSrc->n.u1Present
+                                &&  !SHW_PTE_IS_P(pPTDst->a[iPTDst]))
                             {
-                                GSTPTE PteSrc = pPTSrc->a[offPTSrc + iPTDst];
                                 RTGCPTR GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
                                 NOREF(GCPtrCurPage);
 #ifndef IN_RING0
@@ -1946,19 +1951,19 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                                  * Also assume that if we're monitoring a page, it's of no interest to CSAM.
                                  */
                                 PPGMPAGE pPage;
-                                if (    ((PdeSrc.u & PteSrc.u) & (X86_PTE_RW | X86_PTE_US))
+                                if (    ((PdeSrc.u & pPteSrc->u) & (X86_PTE_RW | X86_PTE_US))
                                     ||  iPTDst == ((GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK)   /* always sync GCPtrPage */
                                     ||  !CSAMDoesPageNeedScanning(pVM, GCPtrCurPage)
-                                    ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK))
+                                    ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & GST_PTE_PG_MASK))
                                          && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                                    )
 #endif /* else: CSAM not active */
-                                   PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
+                                   PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, *pPteSrc, pShwPage, iPTDst);
                                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
-                                      GCPtrCurPage, PteSrc.n.u1Present,
-                                      PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                                      PteSrc.n.u1User  & PdeSrc.n.u1User,
-                                      (uint64_t)PteSrc.u,
+                                      GCPtrCurPage, pPteSrc->n.u1Present,
+                                      pPteSrc->n.u1Write & PdeSrc.n.u1Write,
+                                      pPteSrc->n.u1User  & PdeSrc.n.u1User,
+                                      (uint64_t)pPteSrc->u,
                                       SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                                       SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
                             }
