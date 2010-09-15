@@ -1559,12 +1559,15 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     /*
-     * Sysenter MSRs (unconditional)
+     * Sysenter MSRs
      */
-    rc  = VMXWriteVMCS(VMX_VMCS32_GUEST_SYSENTER_CS,    pCtx->SysEnter.cs);
-    rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_SYSENTER_EIP, pCtx->SysEnter.eip);
-    rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_SYSENTER_ESP, pCtx->SysEnter.esp);
-    AssertRC(rc);
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_MSR)
+    {
+        rc  = VMXWriteVMCS(VMX_VMCS32_GUEST_SYSENTER_CS,    pCtx->SysEnter.cs);
+        rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_SYSENTER_EIP, pCtx->SysEnter.eip);
+        rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_SYSENTER_ESP, pCtx->SysEnter.esp);
+        AssertRC(rc);
+    }
 
     /* Control registers */
     if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR0)
@@ -1829,11 +1832,14 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 # endif
         pVCpu->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM64;
 #endif
-        /* Unconditionally update these as wrmsr might have changed them. */
-        rc = VMXWriteVMCS64(VMX_VMCS64_GUEST_FS_BASE, pCtx->fsHid.u64Base);
-        AssertRC(rc);
-        rc = VMXWriteVMCS64(VMX_VMCS64_GUEST_GS_BASE, pCtx->gsHid.u64Base);
-        AssertRC(rc);
+        if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_MSR)
+        {
+            /* Update these as wrmsr might have changed them. */
+            rc = VMXWriteVMCS64(VMX_VMCS64_GUEST_FS_BASE, pCtx->fsHid.u64Base);
+            AssertRC(rc);
+            rc = VMXWriteVMCS64(VMX_VMCS64_GUEST_GS_BASE, pCtx->gsHid.u64Base);
+            AssertRC(rc);
+        }
     }
     else
     {
@@ -2613,14 +2619,12 @@ ResumeExecution:
     }
 
     /* Load the guest state */
-#if 0
     if (!pVCpu->hwaccm.s.fContextUseFlags)
     {
         VMXR0LoadMinimalGuestState(pVM, pVCpu, pCtx);
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatLoadMinimal);
     }
     else
-#endif
     {
         rc = VMXR0LoadGuestState(pVM, pVCpu, pCtx);
         if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -3611,6 +3615,7 @@ ResumeExecution:
             /* Only resume if successful. */
             goto ResumeExecution;
         }
+        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_MSR;
         /* no break */
     case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     {
