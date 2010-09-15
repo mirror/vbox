@@ -132,6 +132,16 @@ EXPORTS
     RTThreadPreemptRestore
     RTThreadPreemptPossible
     RTThreadIsInInterrupt
+    RTTimerCreate
+    RTTimerCreateEx
+    RTTimerDestroy
+    RTTimerStart
+    RTTimerStop
+    RTTimerGetSystemGranularity
+    RTTimerRequestSystemGranularity
+    RTTimerReleaseSystemGranularity
+    RTTimerCanDoHighResolution
+
     RTMpOnAll
     RTMpOnOthers
     RTMpOnSpecific
