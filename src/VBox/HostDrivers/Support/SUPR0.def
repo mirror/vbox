@@ -142,11 +142,16 @@ EXPORTS
     RTTimerRequestSystemGranularity
     RTTimerReleaseSystemGranularity
     RTTimerCanDoHighResolution
-
     RTMpCpuId
+    RTMpCpuIdFromSetIndex
     RTMpCpuIdToSetIndex
     RTMpGetArraySize
+    RTMpIsCpuPossible
     RTMpGetCount
+    RTMpGetMaxCpuId
+    RTMpGetOnlineCount
+    RTMpGetOnlineSet
+    RTMpGetSet
     RTMpIsCpuOnline
     RTMpIsCpuWorkPending
     RTMpOnAll
