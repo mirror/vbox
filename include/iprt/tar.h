@@ -68,6 +68,29 @@ RTR3DECL(int) RTTarQueryFileExists(const char *pszTarFile, const char *pszFile);
 RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcFiles);
 
 /**
+ * Extract a file from a Tar archive into a memory buffer.
+ *
+ * The caller is responsible for the deletion of the returned memory buffer.
+ *
+ * (The matching is case sensitive.)
+ *
+ * @note    Currently only regular files are supported. Also some of the header
+ *          fields are not used (uid, gid, uname, gname, mtime).
+ *
+ * @returns iprt status code.
+ *
+ * @param   pszTarFile           Tar file to extract files from.
+ * @param   ppBuf                The buffer which will held the extracted data.
+ * @param   pcbSize              The size (in bytes) of ppBuf after successful
+ *                               extraction.
+ * @param   pszFile              The file to extract.
+ * @param   pfnProgressCallback  Progress callback function. Optional.
+ * @param   pvUser               User defined data for the progress
+ *                               callback. Optional.
+ */
+RTR3DECL(int) RTTarExtractFileToBuf(const char *pszTarFile, void **ppvBuf, uint64_t *pcbSize, const char *pszFile, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
+
+/**
  * Extract a set of files from a Tar archive.
  *
  * Also note that this function is atomic. If an error occurs all previously
