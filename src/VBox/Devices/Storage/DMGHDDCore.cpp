@@ -299,7 +299,7 @@ typedef struct DMGIMAGE
     /** I/O interface. */
     PVDINTERFACE        pInterfaceIO;
     /** Async I/O interface callbacks. */
-    PVDINTERFACEIO      pInterfaceIOCallbacks;
+    PVDINTERFACEIOINT   pInterfaceIOCallbacks;
 
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE        pVDIfsDisk;
@@ -1356,9 +1356,9 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
         pThis->pInterfaceErrorCallbacks = VDGetInterfaceError(pThis->pInterfaceError);
 
     /* Get I/O interface. */
-    pThis->pInterfaceIO = VDInterfaceGet(pThis->pVDIfsImage, VDINTERFACETYPE_IO);
+    pThis->pInterfaceIO = VDInterfaceGet(pThis->pVDIfsImage, VDINTERFACETYPE_IOINT);
     AssertPtrReturn(pThis->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pThis->pInterfaceIOCallbacks = VDGetInterfaceIO(pThis->pInterfaceIO);
+    pThis->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pThis->pInterfaceIO);
     AssertPtrReturn(pThis->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     int rc = dmgFileOpen(pThis, pThis->pszFilename,
@@ -1485,9 +1485,9 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     VBOXUDIF Ftr;
 
     /* Get I/O interface. */
-    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IO);
+    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IOINT);
     AssertPtrReturn(pInterfaceIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pInterfaceIOCallbacks = VDGetInterfaceIO(pInterfaceIO);
+    PVDINTERFACEIOINT pInterfaceIOCallbacks = VDGetInterfaceIOInt(pInterfaceIO);
     AssertPtrReturn(pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     /*

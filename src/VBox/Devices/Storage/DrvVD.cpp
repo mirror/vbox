@@ -143,10 +143,10 @@ typedef struct VBOXDISK
     VDINTERFACE        VDITcpNet;
     /** Callback table for TCP network stack interface. */
     VDINTERFACETCPNET  VDITcpNetCallbacks;
-    /** Common structure for the supported async I/O interface. */
-    VDINTERFACE        VDIAsyncIO;
-    /** Callback table for async I/O interface. */
-    VDINTERFACEASYNCIO VDIAsyncIOCallbacks;
+    /** Common structure for the supported I/O interface. */
+    VDINTERFACE        VDIIO;
+    /** Callback table for I/O interface. */
+    VDINTERFACEIO      VDIIOCallbacks;
     /** Common structure for the supported thread synchronization interface. */
     VDINTERFACE        VDIThreadSync;
     /** Callback table for thread synchronization interface. */
@@ -2218,21 +2218,21 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         if (RT_SUCCESS(rc) && fUseNewIo)
         {
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-            pThis->VDIAsyncIOCallbacks.cbSize        = sizeof(VDINTERFACEASYNCIO);
-            pThis->VDIAsyncIOCallbacks.enmInterface  = VDINTERFACETYPE_ASYNCIO;
-            pThis->VDIAsyncIOCallbacks.pfnOpen       = drvvdAsyncIOOpen;
-            pThis->VDIAsyncIOCallbacks.pfnClose      = drvvdAsyncIOClose;
-            pThis->VDIAsyncIOCallbacks.pfnGetSize    = drvvdAsyncIOGetSize;
-            pThis->VDIAsyncIOCallbacks.pfnSetSize    = drvvdAsyncIOSetSize;
-            pThis->VDIAsyncIOCallbacks.pfnReadSync   = drvvdAsyncIOReadSync;
-            pThis->VDIAsyncIOCallbacks.pfnWriteSync  = drvvdAsyncIOWriteSync;
-            pThis->VDIAsyncIOCallbacks.pfnFlushSync  = drvvdAsyncIOFlushSync;
-            pThis->VDIAsyncIOCallbacks.pfnReadAsync  = drvvdAsyncIOReadAsync;
-            pThis->VDIAsyncIOCallbacks.pfnWriteAsync = drvvdAsyncIOWriteAsync;
-            pThis->VDIAsyncIOCallbacks.pfnFlushAsync = drvvdAsyncIOFlushAsync;
+            pThis->VDIIOCallbacks.cbSize        = sizeof(VDINTERFACEIO);
+            pThis->VDIIOCallbacks.enmInterface  = VDINTERFACETYPE_IO;
+            pThis->VDIIOCallbacks.pfnOpen       = drvvdAsyncIOOpen;
+            pThis->VDIIOCallbacks.pfnClose      = drvvdAsyncIOClose;
+            pThis->VDIIOCallbacks.pfnGetSize    = drvvdAsyncIOGetSize;
+            pThis->VDIIOCallbacks.pfnSetSize    = drvvdAsyncIOSetSize;
+            pThis->VDIIOCallbacks.pfnReadSync   = drvvdAsyncIOReadSync;
+            pThis->VDIIOCallbacks.pfnWriteSync  = drvvdAsyncIOWriteSync;
+            pThis->VDIIOCallbacks.pfnFlushSync  = drvvdAsyncIOFlushSync;
+            pThis->VDIIOCallbacks.pfnReadAsync  = drvvdAsyncIOReadAsync;
+            pThis->VDIIOCallbacks.pfnWriteAsync = drvvdAsyncIOWriteAsync;
+            pThis->VDIIOCallbacks.pfnFlushAsync = drvvdAsyncIOFlushAsync;
 
-            rc = VDInterfaceAdd(&pThis->VDIAsyncIO, "DrvVD_AsyncIO", VDINTERFACETYPE_ASYNCIO,
-                                &pThis->VDIAsyncIOCallbacks, pThis, &pThis->pVDIfsDisk);
+            rc = VDInterfaceAdd(&pThis->VDIIO, "DrvVD_IO", VDINTERFACETYPE_IO,
+                                &pThis->VDIIOCallbacks, pThis, &pThis->pVDIfsDisk);
 #else /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
             rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                      RT_SRC_POS, N_("DrvVD: Configuration error: Async Completion Framework not compiled in"));
