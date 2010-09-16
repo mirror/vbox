@@ -120,8 +120,8 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 #define VBOX_PCI_BASE_ADDRESS_4         0x20    /**< 32-bit  RW */
 #define VBOX_PCI_BASE_ADDRESS_5         0x24    /**< 32-bit  RW */
 #define VBOX_PCI_CARDBUS_CIS            0x28    /**< 32-bit  ?? */
-#define VBOX_PCI_SUBSYSTEM_VENDOR_ID    0x2c    /**< 16-bit  ?? */
-#define VBOX_PCI_SUBSYSTEM_ID           0x2e    /**< 16-bit  ?? */
+#define VBOX_PCI_SUBSYSTEM_VENDOR_ID    0x2c    /**< 16-bit  RO */
+#define VBOX_PCI_SUBSYSTEM_ID           0x2e    /**< 16-bit  RO */
 #define VBOX_PCI_ROM_ADDRESS            0x30    /**< 32-bit  ?? */
 /* #define VBOX_PCI_CAPABILITY_LIST        0x34 */  /**<  8-bit? ?? */
 #define VBOX_PCI_RESERVED_35            0x35    /**<  8-bit  ?? - - reserved */
