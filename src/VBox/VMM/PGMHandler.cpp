@@ -234,6 +234,10 @@ VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
     LogFlow(("PGMR3HandlerVirtualRegisterEx: enmType=%d GCPtr=%RGv GCPtrLast=%RGv pszHandlerRC=%p:{%s} pszModRC=%p:{%s} pszDesc=%s\n",
              enmType, GCPtr, GCPtrLast, pszHandlerRC, pszHandlerRC, pszModRC, pszModRC, pszDesc));
 
+    /* Not supported/relevant for VT-x and AMD-V. */
+    if (HWACCMIsEnabled(pVM))
+        return VERR_NOT_IMPLEMENTED;
+
     /*
      * Validate input.
      */
@@ -282,6 +286,10 @@ VMMDECL(int) PGMR3HandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
 {
     Log(("PGMR3HandlerVirtualRegister: enmType=%d GCPtr=%RGv GCPtrLast=%RGv pfnInvalidateR3=%RHv pfnHandlerR3=%RHv pfnHandlerRC=%RRv pszDesc=%s\n",
          enmType, GCPtr, GCPtrLast, pfnInvalidateR3, pfnHandlerR3, pfnHandlerRC, pszDesc));
+
+    /* Not supported/relevant for VT-x and AMD-V. */
+    if (HWACCMIsEnabled(pVM))
+        return VERR_NOT_IMPLEMENTED;
 
     /*
      * Validate input.
