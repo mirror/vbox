@@ -5644,7 +5644,7 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
 #ifndef VBOXWDDM_WITH_VISIBLE_FB
             if (pSrcSwapchain
                     && pSrcSwapchain->pRenderTargetFbCopy
-                    && vboxWddmSwapchainGetFb(pSrcSwapchain)->pAlloc != pSrcAlloc
+                    && vboxWddmSwapchainGetFb(pSrcSwapchain)->pAlloc == pSrcAlloc
                     && vboxWddmSwapchainNumRTs(pSrcSwapchain) > 1) /* work-around wine backbuffer */
             {
 //                Assert(pSrcAlloc->SurfDesc.width == pDstAlloc->SurfDesc.width);
