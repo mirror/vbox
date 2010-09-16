@@ -396,7 +396,7 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
 }
 
 
-RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
+RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_t fFlags, PFNRTTIMER pfnTimer, void *pvUser)
 {
     /*
      * We don't support the fancy MP features.
@@ -808,5 +808,13 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
 #endif /* IPRT_WITH_POSIX_TIMERS */
 
     return rc;
+}
+
+
+RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
+{
+    AssertPtrReturn(pTimer, VERR_INVALID_POINTER);
+    AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_MAGIC);
+    return VERR_NOT_SUPPORTED;
 }
 

@@ -137,20 +137,22 @@ EXPORTS
     RTTimerDestroy
     RTTimerStart
     RTTimerStop
+    RTTimerChangeInterval
     RTTimerGetSystemGranularity
     RTTimerRequestSystemGranularity
     RTTimerReleaseSystemGranularity
     RTTimerCanDoHighResolution
 
+    RTMpCpuId
+    RTMpCpuIdToSetIndex
+    RTMpGetArraySize
+    RTMpGetCount
+    RTMpIsCpuOnline
+    RTMpIsCpuWorkPending
     RTMpOnAll
     RTMpOnOthers
     RTMpOnSpecific
     RTMpPokeCpu
-    RTMpIsCpuOnline
-    RTMpGetCount
-    RTMpCpuIdToSetIndex
-    RTMpCpuId
-    RTMpIsCpuWorkPending
     RTPowerNotificationRegister
     RTPowerNotificationDeregister
     RTLogDefaultInstance

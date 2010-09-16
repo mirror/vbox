@@ -72,13 +72,23 @@ RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu);
 /**
  * Gets the max CPU identifier (inclusive).
  *
- * Inteded for brute force enumerations, but use with
+ * Intended for brute force enumerations, but use with
  * care as it may be expensive.
  *
  * @returns The current higest CPU identifier value.
  */
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void);
 
+/**
+ * Gets the size of a CPU array that is indexed by CPU set index.
+ *
+ * This takes both online, offline and hot-plugged cpus into account.
+ *
+ * @returns Number of elements.
+ *
+ * @remarks Use RTMpCpuIdToSetIndex to convert a RTCPUID into an array index.
+ */
+RTDECL(uint32_t) RTMpGetArraySize(void);
 
 /**
  * Checks if a CPU exists in the system or may possibly be hotplugged later.
@@ -101,7 +111,8 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet);
  * Get the count of CPUs present in the system plus any that may
  * possibly be hotplugged later.
  *
- * @return The count.
+ * @returns The count.
+ * @remarks Don't use this for CPU array sizing, use RTMpGetArraySize instead.
  */
 RTDECL(RTCPUID) RTMpGetCount(void);
 

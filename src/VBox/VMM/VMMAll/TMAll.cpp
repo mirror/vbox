@@ -2373,8 +2373,16 @@ VMM_INT_DECL(uint32_t) TMCalcHostTimerFrequency(PVM pVM, PVMCPU pVCpu)
 
     /* Fudge factor. */
     /** @todo make this configurable. */
+#if 0 /* what's wrong with this expression? I end up with uHz = 0 after this multiplication... */
     uHz *= 110 + pVCpu->idCpu == pVM->tm.s.idTimerCpu;
+#else
+    if (pVCpu->idCpu == pVM->tm.s.idTimerCpu)
+        uHz *= 111;
+    else
+        uHz *= 110;
+#endif
     uHz /= 100;
 
+    //LogAlways(("TMCalcHostTimerFrequency->%u\n", uHz));
     return uHz;
 }
