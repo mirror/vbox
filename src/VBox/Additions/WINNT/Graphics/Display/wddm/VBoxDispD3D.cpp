@@ -1746,7 +1746,9 @@ static PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE 
     }
     if (!pSwapchain)
     {
-//        Assert(0);
+#ifdef DEBUG_misha
+        Assert(0);
+#endif
         /* first search for the swapchain the alloc might be added to */
         PVBOXWDDMDISP_SWAPCHAIN pCur = RTListNodeGetFirst(&pDevice->SwapchainList, VBOXWDDMDISP_SWAPCHAIN, ListEntry);
         while (pCur)
@@ -1767,7 +1769,7 @@ static PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE 
                             && (pBbRc == pRtRc
                                     || (pBbRc->fFlags == pRtRc->fFlags
                                             && pBbRc->RcDesc.enmPool == pRtRc->RcDesc.enmPool
-                                            && pBbRc->RcDesc.fFlags.Value == pRtRc->RcDesc.fFlags.Value
+//                                            && pBbRc->RcDesc.fFlags.Value == pRtRc->RcDesc.fFlags.Value
                                         )
                                 ))
                 {
@@ -2348,8 +2350,8 @@ static HRESULT vboxWddmD3DDeviceCreateDummy(PVBOXWDDMDISP_DEVICE pDevice)
         for (UINT i = 0 ; i < pRc->cAllocations; ++i)
         {
             PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
-            pAlloc->SurfDesc.width = 0x400;
-            pAlloc->SurfDesc.height = 0x300;
+            pAlloc->SurfDesc.width = 0x4;
+            pAlloc->SurfDesc.height = 0x4;
             pAlloc->SurfDesc.format = D3DDDIFMT_A8R8G8B8;
         }
 
@@ -3613,35 +3615,47 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
     /* requirements for D3DDevice9::UpdateTexture */
     Assert(pSrcRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
     Assert(pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM);
-    IDirect3DTexture9 *pD3DIfSrcTex = (IDirect3DTexture9*)pSrcRc->aAllocations[0].pD3DIf;
-    IDirect3DTexture9 *pD3DIfDstTex = (IDirect3DTexture9*)pDstRc->aAllocations[0].pD3DIf;
-    Assert(pD3DIfSrcTex);
-    Assert(pD3DIfDstTex);
     HRESULT hr = S_OK;
 
     if (pSrcRc->aAllocations[0].SurfDesc.width == pDstRc->aAllocations[0].SurfDesc.width
             && pSrcRc->aAllocations[0].SurfDesc.height == pDstRc->aAllocations[0].SurfDesc.height
-            && pSrcRc->RcDesc.enmFormat == pDstRc->RcDesc.enmFormat)
-    {
-        /* first check if we can do IDirect3DDevice9::UpdateTexture */
-        if (pData->DstPoint.x == 0 && pData->DstPoint.y == 0
+            && pSrcRc->RcDesc.enmFormat == pDstRc->RcDesc.enmFormat
+                &&pData->DstPoint.x == 0 && pData->DstPoint.y == 0
                 && pData->SrcRect.left == 0 && pData->SrcRect.top == 0
                 && pData->SrcRect.right - pData->SrcRect.left == pSrcRc->aAllocations[0].SurfDesc.width
                 && pData->SrcRect.bottom - pData->SrcRect.top == pSrcRc->aAllocations[0].SurfDesc.height)
-        {
-            hr = pDevice9If->UpdateTexture(pD3DIfSrcTex, pD3DIfDstTex);
-            Assert(hr == S_OK);
-        }
-        else
-        {
-            Assert(0);
-            /* @todo: impl */
-        }
+    {
+        IDirect3DTexture9 *pD3DIfSrcTex = (IDirect3DTexture9*)pSrcRc->aAllocations[0].pD3DIf;
+        IDirect3DTexture9 *pD3DIfDstTex = (IDirect3DTexture9*)pDstRc->aAllocations[0].pD3DIf;
+        Assert(pD3DIfSrcTex);
+        Assert(pD3DIfDstTex);
+        hr = pDevice9If->UpdateTexture(pD3DIfSrcTex, pD3DIfDstTex);
+        Assert(hr == S_OK);
     }
     else
     {
-        Assert(0);
-        /* @todo: impl */
+        IDirect3DSurface9 *pSrcSurfIf = NULL;
+        IDirect3DSurface9 *pDstSurfIf = NULL;
+        hr = vboxWddmSurfGet(pDstRc, 0, &pDstSurfIf);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            hr = vboxWddmSurfGet(pSrcRc, 0, &pSrcSurfIf);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                RECT DstRect;
+                vboxWddmRectMoved(&DstRect, &pData->SrcRect, pData->DstPoint.x, pData->DstPoint.y);
+#ifdef DEBUG
+                RECT tstRect = {0,0, pDstRc->aAllocations[0].SurfDesc.width, pDstRc->aAllocations[0].SurfDesc.height};
+                Assert(vboxWddmRectIsCoveres(&tstRect, &DstRect));
+#endif
+                hr = pDevice9If->StretchRect(pSrcSurfIf, &pData->SrcRect, pDstSurfIf, &DstRect, D3DTEXF_NONE);
+                Assert(hr == S_OK);
+                pSrcSurfIf->Release();
+            }
+            pDstSurfIf->Release();
+        }
     }
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
@@ -4760,6 +4774,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                             Assert(hr == S_OK);
                             if (hr == S_OK)
                             {
+#if 0
                                 if(pResource->Flags.Primary)
                                 {
                                     for (UINT i = 0; i < pResource->SurfCount; ++i)
@@ -4768,6 +4783,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                                     }
                                     Assert(bIssueCreateResource);
                                 }
+#endif
                                 continue;
                             }
 
@@ -6751,7 +6767,7 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
                         hr = E_OUTOFMEMORY;
                     }
 #else
-# define VBOXDISP_TEST_SWAPCHAIN
+//# define VBOXDISP_TEST_SWAPCHAIN
 # ifdef VBOXDISP_TEST_SWAPCHAIN
                     VBOXDISP_D3DEV(pDevice);
 # endif
