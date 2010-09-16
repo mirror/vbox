@@ -74,10 +74,7 @@
 #endif
 #define DBGFLOG_NAME           "DBGFCoreWrite"
 
-/*
- * For now use Solaris-specific padding and namesz length (i.e. includes NULL terminator)
- */
-static const int s_NoteAlign  = 4;      /* @todo see #5211 comment 3 */
+static const int s_NoteAlign  = 8;
 static const int s_cbNoteName = 16;
 
 /* These strings *HAVE* to be 8-byte aligned */
@@ -182,10 +179,10 @@ static inline uint64_t Elf64NoteSectionSize(const char *pszName, uint64_t cbData
 {
     uint64_t cbNote = sizeof(Elf64_Nhdr);
 
-    size_t cbName = strlen(pszName) + 1;
-    size_t cbNameAlign = RT_ALIGN_Z(cbName, s_NoteAlign);
+    size_t cchName      = strlen(pszName) + 1;
+    size_t cchNameAlign = RT_ALIGN_Z(cchName, s_NoteAlign);
 
-    cbNote += cbNameAlign;
+    cbNote += cchNameAlign;
     cbNote += RT_ALIGN_64(cbData, s_NoteAlign);
     return cbNote;
 }
@@ -213,23 +210,25 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
     RT_ZERO(szNoteName);
     RTStrCopy(szNoteName, sizeof(szNoteName), pszName);
 
-    size_t cbName        = strlen(szNoteName) + 1;
-    size_t cbNameAlign   = RT_ALIGN_Z(cbName, s_NoteAlign);
+    size_t cchName       = strlen(szNoteName) + 1;
+    size_t cchNameAlign  = RT_ALIGN_Z(cchName, s_NoteAlign);
     uint64_t cbDataAlign = RT_ALIGN_64(cbData, s_NoteAlign);
 
     /*
      * Yell loudly and bail if we are going to be writing a core file that is not compatible with
      * both Solaris and the 64-bit ELF spec. which dictates 8-byte alignment. See #5211 comment 3.
      */
-    if (cbNameAlign % 8)
+    if (cchNameAlign - cchName > 3)
     {
-        LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr pszName=%s cbNameAlign=%u, not 8-byte aligned!\n", pszName, cbNameAlign));
+        LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr pszName=%s cchName=%u cchNameAlign=%u, cchName aligns to 4 not 8-bytes!\n", pszName, cchName,
+                cchNameAlign));
         return VERR_INVALID_PARAMETER;
     }
 
-    if (cbDataAlign % 8)
+    if (cbDataAlign - cbData > 3)
     {
-        LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr pszName=%s cbDataAlign=%u, not 8-byte aligned!\n", pszName, cbDataAlign));
+        LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr pszName=%s cbData=%u cbDataAlign=%u, cbData aligns to 4 not 8-bytes!\n", pszName, cbData,
+                cbDataAlign));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -238,7 +237,7 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
 
     Elf64_Nhdr ElfNoteHdr;
     RT_ZERO(ElfNoteHdr);
-    ElfNoteHdr.n_namesz = (Elf64_Word)cbName - 1;   /* Again a discrepancy between Elf64 and Solaris (#5211 comment 3) */
+    ElfNoteHdr.n_namesz = (Elf64_Word)cchName - 1; /* Again a discrepancy between ELF-64 and Solaris (#5211 comment 3), we will follow ELF-64 */
     ElfNoteHdr.n_type   = Type;
     ElfNoteHdr.n_descsz = (Elf64_Word)cbDataAlign;
 
@@ -251,14 +250,14 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
         /*
          * Write note name.
          */
-        rc = RTFileWrite(hFile, szNoteName, cbName, NULL /* all */);
+        rc = RTFileWrite(hFile, szNoteName, cchName, NULL /* all */);
         if (RT_SUCCESS(rc))
         {
             /*
              * Write note name padding if required.
              */
-            if (cbNameAlign > cbName)
-                rc = RTFileWrite(hFile, s_achPad, cbNameAlign - cbName, NULL);
+            if (cchNameAlign > cchName)
+                rc = RTFileWrite(hFile, s_achPad, cchNameAlign - cchName, NULL);
 
             if (RT_SUCCESS(rc))
             {
@@ -279,7 +278,8 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
     }
 
     if (RT_FAILURE(rc))
-        LogRel((DBGFLOG_NAME ":RTFileWrite failed. rc=%Rrc pszName=%s cbData=%u cbDataAlign=%u\n", rc, pszName, cbData, cbDataAlign));
+        LogRel((DBGFLOG_NAME ":RTFileWrite failed. rc=%Rrc pszName=%s cchName=%u cchNameAlign=%u cbData=%u cbDataAlign=%u\n",
+                rc, pszName, cchName, cchNameAlign, cbData, cbDataAlign));
 
     return rc;
 }
