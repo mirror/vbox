@@ -882,6 +882,7 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
                 else
                 {
                     crDebug("running with VBoxDispD3D");
+                    stub.trackWindowVisibleRgn = 0;
                 }
             }
             else
