@@ -554,27 +554,6 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_SetDestWindowOverride(IWineD3DSwapCh
     return WINED3D_OK;
 }
 
-#ifdef VBOXWDDM
-static HRESULT WINAPI IWineD3DSwapChainImpl_Flush(IWineD3DSwapChain *iface)
-{
-    IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl *)iface;
-    struct wined3d_context *context;
-    RECT src_rect, dst_rect;
-    BOOL render_to_fbo;
-    unsigned int sync;
-    int retval;
-
-    context = context_acquire(This->device, This->backBuffer[0], CTXUSAGE_RESOURCELOAD);
-
-    if (context->valid) wglFlush();
-    else  WARN("Invalid context, skipping flush.\n");
-
-    context_release(context);
-
-    return WINED3D_OK;
-}
-#endif
-
 static const IWineD3DSwapChainVtbl IWineD3DSwapChain_Vtbl =
 {
     /* IUnknown */
@@ -594,9 +573,6 @@ static const IWineD3DSwapChainVtbl IWineD3DSwapChain_Vtbl =
     IWineD3DBaseSwapChainImpl_GetPresentParameters,
     IWineD3DBaseSwapChainImpl_SetGammaRamp,
     IWineD3DBaseSwapChainImpl_GetGammaRamp,
-#ifdef VBOXWDDM
-    IWineD3DSwapChainImpl_Flush,
-#endif
 };
 
 static LONG fullscreen_style(LONG style)

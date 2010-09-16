@@ -418,23 +418,17 @@ DECLINLINE(bool) vboxWddmRectIsCoveres(const RECT *pRect, const RECT *pCovered)
     return true;
 }
 
-DECLINLINE(bool) vboxWddmRectIsEmpty(RECT * pRect)
+DECLINLINE(bool) vboxWddmRectIsEmpty(const RECT * pRect)
 {
     return pRect->left == pRect->right-1 && pRect->top == pRect->bottom-1;
 }
 
-DECLINLINE(bool) vboxWddmRectIsIntersect(RECT * pRect1, RECT * pRect2)
+DECLINLINE(bool) vboxWddmRectIsIntersect(const RECT * pRect1, const RECT * pRect2)
 {
     return !((pRect1->left < pRect2->left && pRect1->right < pRect2->left)
             || (pRect2->left < pRect1->left && pRect2->right < pRect1->left)
             || (pRect1->top < pRect2->top && pRect1->bottom < pRect2->top)
             || (pRect2->top < pRect1->top && pRect2->bottom < pRect1->top));
-}
-
-DECLINLINE(bool) vboxWddmRectIsInclude(RECT * pRect1, RECT * pRect2)
-{
-    return ((pRect1->left <= pRect2->left && pRect1->right >= pRect2->right)
-            && (pRect1->top <= pRect2->top && pRect1->bottom >= pRect2->bottom));
 }
 
 DECLINLINE(void) vboxWddmRectUnited(RECT * pDst, const RECT * pRect1, const RECT * pRect2)
@@ -451,6 +445,28 @@ DECLINLINE(void) vboxWddmRectTranslate(RECT * pRect, int x, int y)
     pRect->top    += y;
     pRect->right  += x;
     pRect->bottom += y;
+}
+
+DECLINLINE(void) vboxWddmRectMove(RECT * pRect, int x, int y)
+{
+    LONG w = pRect->right - pRect->left;
+    LONG h = pRect->bottom - pRect->top;
+    pRect->left   = x;
+    pRect->top    = y;
+    pRect->right  = w + x;
+    pRect->bottom = h + y;
+}
+
+DECLINLINE(void) vboxWddmRectTranslated(RECT *pDst, const RECT * pRect, int x, int y)
+{
+    *pDst = *pRect;
+    vboxWddmRectTranslate(pDst, x, y);
+}
+
+DECLINLINE(void) vboxWddmRectMoved(RECT *pDst, const RECT * pRect, int x, int y)
+{
+    *pDst = *pRect;
+    vboxWddmRectMove(pDst, x, y);
 }
 
 DECLINLINE(void) vboxWddmDirtyRegionAddRect(PVBOXWDDM_DIRTYREGION pInfo, const RECT *pRect)

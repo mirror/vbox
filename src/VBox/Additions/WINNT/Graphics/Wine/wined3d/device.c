@@ -6862,20 +6862,23 @@ static HRESULT WINAPI IWineD3DDeviceImpl_GetSurfaceFromDC(IWineD3DDevice *iface,
 #ifdef VBOXWDDM
 static HRESULT WINAPI IWineD3DDeviceImpl_Flush(IWineD3DDevice *iface)
 {
-    IWineD3DSwapChain *swapChain = NULL;
+    IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
+    struct wined3d_context *context;
     int i;
-    int swapchains = IWineD3DDeviceImpl_GetNumberOfSwapChains(iface);
-
-    TRACE("iface %p.\n", iface);
-
-    for(i = 0 ; i < swapchains ; i ++) {
-
-        IWineD3DDeviceImpl_GetSwapChain(iface, i, &swapChain);
-        TRACE("presentinng chain %d, %p\n", i, swapChain);
-        IWineD3DSwapChain_Flush(swapChain);
-        IWineD3DSwapChain_Release(swapChain);
+    for (i = 0; i < This->numContexts; ++i)
+    {
+        context = This->contexts[i];
+        if (context_acquire_context(context, NULL, CTXUSAGE_RESOURCELOAD, TRUE))
+        {
+            Assert(context->valid);
+            wglFlush();
+            context_release(context);
+        }
+        else
+        {
+            WARN("Invalid context, skipping flush.\n");
+        }
     }
-
     return WINED3D_OK;
 }
 
