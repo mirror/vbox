@@ -472,6 +472,12 @@ VBGLR3DECL(int)     VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleIn
 VBGLR3DECL(int)     VbglR3MemBalloonChange(void *pv, bool fInflate);
 /** @}  */
 
+/** @name Core Dump
+ * @{ */
+VBGLR3DECL(int)     VbglR3WriteCoreDump(void);
+
+/** @}  */
+
 # ifdef VBOX_WITH_GUEST_PROPS
 /** @name Guest properties
  * @{ */

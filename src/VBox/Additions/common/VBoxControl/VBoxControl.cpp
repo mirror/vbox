@@ -81,6 +81,7 @@ enum VBoxControlUsage
 #ifdef VBOX_WITH_SHARED_FOLDERS
     GUEST_SHAREDFOLDERS,
 #endif
+    WRITE_CORE_DUMP,
     TAKE_SNAPSHOT,
     SAVE_STATE,
     SUSPEND,
@@ -131,6 +132,8 @@ static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
     }
 #endif
 
+    if (eWhich == WRITE_CORE_DUMP || eWhich == USAGE_ALL)
+        doUsage("", g_pszProgName, "writecoredump");
     if (eWhich == TAKE_SNAPSHOT || eWhich == USAGE_ALL)
         doUsage("", g_pszProgName, "takesnapshot");
     if (eWhich == SAVE_STATE || eWhich == USAGE_ALL)
@@ -1405,6 +1408,24 @@ static RTEXITCODE handleSharedFolder(int argc, char *argv[])
 /**
  * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: takesnapshot}
  */
+static RTEXITCODE handleWriteCoreDump(int argc, char *argv[])
+{
+    int rc = VbglR3WriteCoreDump();
+    if (RT_SUCCESS(rc))
+    {
+        RTPrintf("Successfully taking guest core\n");
+        return RTEXITCODE_SUCCESS;
+    }
+    else
+    {
+        VBoxControlError("Error while taking guest core. rc=%Rrc\n", rc);
+        return RTEXITCODE_FAILURE;
+    }
+}
+
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: takesnapshot}
+ */
 static RTEXITCODE handleTakeSnapshot(int argc, char *argv[])
 {
     //VbglR3VmTakeSnapshot(argv[0], argv[1]);
@@ -1483,6 +1504,9 @@ struct COMMANDHANDLER
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
     { "sharedfolder",           handleSharedFolder },
+#endif
+#if !defined(VBOX_CONTROL_TEST)
+    { "writecoredump",          handleWriteCoreDump },
 #endif
     { "takesnapshot",           handleTakeSnapshot },
     { "savestate",              handleSaveState },

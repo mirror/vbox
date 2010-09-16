@@ -239,13 +239,6 @@ typedef struct VBoxGuestWaitEventInfo
 AssertCompileSize(VBoxGuestWaitEventInfo, 16);
 
 
-/** IOCTL to VBoxGuest to interrupt (cancel) any pending WAITEVENTs and return.
- * Handled inside the guest additions and not seen by the host at all.
- * @see VBOXGUEST_IOCTL_WAITEVENT */
-#define VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS       VBOXGUEST_IOCTL_CODE_(5, 0)
-
-
-
 /** IOCTL to VBoxGuest to perform a VMM request
  * @remark  The data buffer for this IOCtl has an variable size, keep this in mind
  *          on systems where this matters. */
@@ -264,6 +257,14 @@ typedef struct VBoxGuestFilterMaskInfo
 AssertCompileSize(VBoxGuestFilterMaskInfo, 8);
 #pragma pack()
 
+/** IOCTL to VBoxGuest to interrupt (cancel) any pending WAITEVENTs and return.
+ * Handled inside the guest additions and not seen by the host at all.
+ * @see VBOXGUEST_IOCTL_WAITEVENT */
+#define VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS       VBOXGUEST_IOCTL_CODE_(5, 0)
+
+/** IOCTL to VBoxGuest to perform backdoor logging.
+ * The argument is a string buffer of the specified size. */
+#define VBOXGUEST_IOCTL_LOG(Size)                   VBOXGUEST_IOCTL_CODE_(6, (Size))
 
 /** IOCTL to VBoxGuest to check memory ballooning.
  * The guest kernel module / device driver will ask the host for the current size of
@@ -302,10 +303,17 @@ typedef struct VBoxGuestChangeBalloonInfo
 } VBoxGuestChangeBalloonInfo;
 AssertCompileSize(VBoxGuestChangeBalloonInfo, 16);
 
+/** IOCTL to VBoxGuest to write guest core. */
+#define VBOXGUEST_IOCTL_WRITE_CORE_DUMP             VBOXGUEST_IOCTL_CODE(9, sizeof(VBoxGuestWriteCoreDump))
 
-/** IOCTL to VBoxGuest to perform backdoor logging.
- * The argument is a string buffer of the specified size. */
-#define VBOXGUEST_IOCTL_LOG(Size)                   VBOXGUEST_IOCTL_CODE_(6, (Size))
+/** Input and output buffer layout of the VBOXGUEST_IOCTL_WRITE_CORE
+ *  request. */
+typedef struct VBoxGuestWriteCoreDump
+{
+    /** Flags (reserved, MBZ). */
+    uint32_t fFlags;
+} VBoxGuestWriteCoreDump;
+AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 
 
 #ifdef VBOX_WITH_HGCM

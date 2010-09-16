@@ -93,6 +93,7 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibAdditions.cpp \
 	VBoxGuestR3LibBalloon.cpp \
 	VBoxGuestR3LibClipboard.cpp \
+	VBoxGuestR3LibCoreDump.cpp \
 	VBoxGuestR3LibCpuHotPlug.cpp \
 	VBoxGuestR3LibCredentials.cpp \
 	VBoxGuestR3LibEvent.cpp \
