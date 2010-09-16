@@ -1339,25 +1339,67 @@ XmlParserBase::~XmlParserBase()
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+// XmlMemParser class
+//
+////////////////////////////////////////////////////////////////////////////////
+
+XmlMemParser::XmlMemParser()
+    : XmlParserBase()
+{
+}
+
+XmlMemParser::~XmlMemParser()
+{
+}
+
+/**
+ * Parse the given buffer and fills the given Document object with its contents.
+ * Throws XmlError on parsing errors.
+ *
+ * The document that is passed in will be reset before being filled if not empty.
+ *
+ * @param pvBuf in: memory buffer to parse.
+ * @param cbSize in: size of the memory buffer.
+ * @param strFilename in: name fo file to parse.
+ * @param doc out: document to be reset and filled with data according to file contents.
+ */
+void XmlMemParser::read(const void* pvBuf, int cbSize,
+                        const iprt::MiniString &strFilename,
+                        Document &doc)
+{
+    GlobalLock lock;
+//     global.setExternalEntityLoader(ExternalEntityLoader);
+
+    const char *pcszFilename = strFilename.c_str();
+
+    doc.m->reset();
+    if (!(doc.m->plibDocument = xmlCtxtReadMemory(m_ctxt,
+                                                  (const char*)pvBuf,
+                                                  cbSize,
+                                                  pcszFilename,
+                                                  NULL,       // encoding = auto
+                                                  XML_PARSE_NOBLANKS)))
+        throw XmlError(xmlCtxtGetLastError(m_ctxt));
+
+    doc.refreshInternals();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
 // XmlFileParser class
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 struct XmlFileParser::Data
 {
-    xmlParserCtxtPtr ctxt;
     iprt::MiniString strXmlFilename;
 
     Data()
     {
-        if (!(ctxt = xmlNewParserCtxt()))
-            throw std::bad_alloc();
     }
 
     ~Data()
     {
-        xmlFreeParserCtxt(ctxt);
-        ctxt = NULL;
     }
 };
 
@@ -1430,14 +1472,14 @@ void XmlFileParser::read(const iprt::MiniString &strFilename,
 
     ReadContext context(pcszFilename);
     doc.m->reset();
-    if (!(doc.m->plibDocument = xmlCtxtReadIO(m->ctxt,
+    if (!(doc.m->plibDocument = xmlCtxtReadIO(m_ctxt,
                                               ReadCallback,
                                               CloseCallback,
                                               &context,
                                               pcszFilename,
                                               NULL,       // encoding = auto
                                               XML_PARSE_NOBLANKS)))
-        throw XmlError(xmlCtxtGetLastError(m->ctxt));
+        throw XmlError(xmlCtxtGetLastError(m_ctxt));
 
     doc.refreshInternals();
 }
