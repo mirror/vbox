@@ -732,9 +732,12 @@ static int pciR3CommonSaveExec(PPCIBUS pBus, PSSMHANDLE pSSM)
         PPCIDEVICE pDev = pBus->apDevices[i];
         if (pDev)
         {
+            /* Device position */
             SSMR3PutU32(pSSM, i);
+            /* PCI config registers */
             SSMR3PutMem(pSSM, pDev->config, sizeof(pDev->config));
 
+            /* IRQ pin state */
             int rc = SSMR3PutS32(pSSM, pDev->Int.s.uIrqPinState);
             if (RT_FAILURE(rc))
                 return rc;
@@ -756,9 +759,277 @@ static DECLCALLBACK(int) pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
     return pciR3CommonSaveExec(pThis, pSSM);
 }
 
+
+/**
+ * Common routine for restoring the config registers of a PCI device.
+ *
+ * @param   pDev                The PCI device.
+ * @param   pbSrcConfig         The configuration register values to be loaded.
+ * @param   fIsBridge           Whether this is a bridge device or not.
+ */
+static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig, bool fIsBridge)
+{
+    /*
+     * This table defines the fields for normal devices and bridge devices, and
+     * the order in which they need to be restored.
+     */
+    static const struct PciField
+    {
+        uint8_t     off;
+        uint8_t     cb;
+        uint8_t     fWritable;
+        uint8_t     fBridge;
+        const char *pszName;
+    } s_aFields[] =
+    {
+        /* off,cb,fW,fB, pszName */
+        { VBOX_PCI_VENDOR_ID, 2, 0, 3, "VENDOR_ID" },
+        { VBOX_PCI_DEVICE_ID, 2, 0, 3, "DEVICE_ID" },
+        { VBOX_PCI_STATUS, 2, 1, 3, "STATUS" },
+        { VBOX_PCI_REVISION_ID, 1, 0, 3, "REVISION_ID" },
+        { VBOX_PCI_CLASS_PROG, 1, 0, 3, "CLASS_PROG" },
+        { VBOX_PCI_CLASS_SUB, 1, 0, 3, "CLASS_SUB" },
+        { VBOX_PCI_CLASS_DEVICE, 1, 0, 3, "CLASS_BASE" },
+        { VBOX_PCI_CACHE_LINE_SIZE, 1, 1, 3, "CACHE_LINE_SIZE" },
+        { VBOX_PCI_LATENCY_TIMER, 1, 1, 3, "LATENCY_TIMER" },
+        { VBOX_PCI_HEADER_TYPE, 1, 0, 3, "HEADER_TYPE" },
+        { VBOX_PCI_BIST, 1, 1, 3, "BIST" },
+        { VBOX_PCI_BASE_ADDRESS_0, 4, 1, 3, "BASE_ADDRESS_0" },
+        { VBOX_PCI_BASE_ADDRESS_1, 4, 1, 3, "BASE_ADDRESS_1" },
+        { VBOX_PCI_BASE_ADDRESS_2, 4, 1, 1, "BASE_ADDRESS_2" },
+        { VBOX_PCI_PRIMARY_BUS, 1, 1, 2, "PRIMARY_BUS" },       // fWritable = ??
+        { VBOX_PCI_SECONDARY_BUS, 1, 1, 2, "SECONDARY_BUS" },     // fWritable = ??
+        { VBOX_PCI_SUBORDINATE_BUS, 1, 1, 2, "SUBORDINATE_BUS" },   // fWritable = ??
+        { VBOX_PCI_SEC_LATENCY_TIMER, 1, 1, 2, "SEC_LATENCY_TIMER" }, // fWritable = ??
+        { VBOX_PCI_BASE_ADDRESS_3, 4, 1, 1, "BASE_ADDRESS_3" },
+        { VBOX_PCI_IO_BASE, 1, 1, 2, "IO_BASE" },           // fWritable = ??
+        { VBOX_PCI_IO_LIMIT, 1, 1, 2, "IO_LIMIT" },          // fWritable = ??
+        { VBOX_PCI_SEC_STATUS, 2, 1, 2, "SEC_STATUS" },        // fWritable = ??
+        { VBOX_PCI_BASE_ADDRESS_4, 4, 1, 1, "BASE_ADDRESS_4" },
+        { VBOX_PCI_MEMORY_BASE, 2, 1, 2, "MEMORY_BASE" },       // fWritable = ??
+        { VBOX_PCI_MEMORY_LIMIT, 2, 1, 2, "MEMORY_LIMIT" },      // fWritable = ??
+        { VBOX_PCI_BASE_ADDRESS_4, 4, 1, 1, "BASE_ADDRESS_4" },
+        { VBOX_PCI_PREF_MEMORY_BASE, 2, 1, 2, "PREF_MEMORY_BASE" },  // fWritable = ??
+        { VBOX_PCI_PREF_MEMORY_LIMIT, 2, 1, 2, "PREF_MEMORY_LIMIT" }, // fWritable = ??
+        { VBOX_PCI_CARDBUS_CIS, 4, 1, 1, "CARDBUS_CIS" },       // fWritable = ??
+        { VBOX_PCI_PREF_BASE_UPPER32, 4, 1, 2, "PREF_BASE_UPPER32" }, // fWritable = ??
+        { VBOX_PCI_SUBSYSTEM_VENDOR_ID, 2, 0, 1, "SUBSYSTEM_VENDOR_ID" },// fWritable = !?
+        { VBOX_PCI_PREF_LIMIT_UPPER32, 4, 1, 2, "PREF_LIMIT_UPPER32" },// fWritable = ??
+        { VBOX_PCI_SUBSYSTEM_ID, 2, 0, 1, "SUBSYSTEM_ID" },      // fWritable = !?
+        { VBOX_PCI_ROM_ADDRESS, 4, 1, 1, "ROM_ADDRESS" },       // fWritable = ?!
+        { VBOX_PCI_IO_BASE_UPPER16, 2, 1, 2, "IO_BASE_UPPER16" },   // fWritable = ?!
+        { VBOX_PCI_IO_LIMIT_UPPER16, 2, 1, 2, "IO_LIMIT_UPPER16" },  // fWritable = ?!
+        { VBOX_PCI_CAPABILITY_LIST, 4, 0, 3, "CAPABILITY_LIST" },   // fWritable = !? cb=!?
+        { VBOX_PCI_RESERVED_38, 4, 1, 1, "RESERVED_38" },               // ???
+        { VBOX_PCI_ROM_ADDRESS_BR, 4, 1, 2, "ROM_ADDRESS_BR" },    // fWritable = !? cb=!? fBridge=!?
+        { VBOX_PCI_INTERRUPT_LINE, 1, 1, 3, "INTERRUPT_LINE" },    // fBridge=??
+        { VBOX_PCI_INTERRUPT_PIN, 1, 0, 3, "INTERRUPT_PIN" },     // fBridge=??
+        { VBOX_PCI_MIN_GNT, 1, 0, 1, "MIN_GNT" },
+        { VBOX_PCI_BRIDGE_CONTROL, 2, 1, 2, "BRIDGE_CONTROL" },    // fWritable = !? 
+        { VBOX_PCI_MAX_LAT, 1, 0, 3, "MAX_LAT" },           // fBridge=!?
+        /* The COMMAND register must come last as it requires the *ADDRESS*
+           registers to be restored before we pretent to change it from 0 to
+           whatever value the guest assigned it. */
+        { VBOX_PCI_COMMAND, 2, 1, 3, "COMMAND" },
+    };
+
+#ifdef RT_STRICT
+    /* Check that we've got full register coverage. */
+    uint32_t bmDevice[0x40 / 32];
+    uint32_t bmBridge[0x40 / 32];
+    RT_ZERO(bmDevice);
+    RT_ZERO(bmBridge);
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
+    {
+        uint8_t off = s_aFields[i].off;
+        uint8_t cb  = s_aFields[i].cb;
+        uint8_t f   = s_aFields[i].fBridge;
+        while (cb-- > 0)
+        {
+            if (f & 1) AssertMsg(!ASMBitTest(bmDevice, off), ("%#x\n", off));
+            if (f & 2) AssertMsg(!ASMBitTest(bmBridge, off), ("%#x\n", off));
+            if (f & 1) ASMBitSet(bmDevice, off);
+            if (f & 2) ASMBitSet(bmBridge, off);
+            off++;
+        }
+    }
+    for (uint32_t off = 0; off < 0x40; off++)
+    {
+        AssertMsg(ASMBitTest(bmDevice, off), ("%#x\n", off));
+        AssertMsg(ASMBitTest(bmBridge, off), ("%#x\n", off));
+    }
+#endif
+
+    /*
+     * Loop thru the fields covering the 64 bytes of standard registers.
+     */
+    uint8_t const fBridge = fIsBridge ? 2 : 1;
+    uint8_t *pbDstConfig = &pDev->config[0];
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
+        if (s_aFields[i].fBridge & fBridge)
+        {
+            uint8_t const   off = s_aFields[i].off;
+            uint8_t const   cb  = s_aFields[i].cb;
+            uint32_t        u32Src;
+            uint32_t        u32Dst;
+            switch (cb)
+            {
+                case 1:
+                    u32Src = pbSrcConfig[off];
+                    u32Dst = pbDstConfig[off];
+                    break;
+                case 2:
+                    u32Src = *(uint16_t const *)&pbSrcConfig[off];
+                    u32Dst = *(uint16_t const *)&pbDstConfig[off];
+                    break;
+                case 4:
+                    u32Src = *(uint32_t const *)&pbSrcConfig[off];
+                    u32Dst = *(uint32_t const *)&pbDstConfig[off];
+                    break;
+                default:
+                    AssertFailed();
+                    continue;
+            }
+
+            if (    u32Src != u32Dst
+                ||  off == VBOX_PCI_COMMAND)
+            {
+                if (u32Src != u32Dst)
+                {
+                    if (!s_aFields[i].fWritable)
+                        LogRel(("PCI: %8s/%u: %2u-bit field %s: %x -> %x - !READ ONLY!\n",
+                                pDev->name, pDev->pDevIns->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
+                    else
+                        LogRel(("PCI: %8s/%u: %2u-bit field %s: %x -> %x\n",
+                                pDev->name, pDev->pDevIns->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
+                }
+                if (off == VBOX_PCI_COMMAND)
+                    PCIDevSetCommand(pDev, 0); /* For remapping, see pciR3CommonLoadExec. */
+                pDev->Int.s.pfnConfigWrite(pDev, off, u32Src, cb);
+            }
+        }
+
+    /*
+     * The device dependent registers.
+     *
+     * We will not use ConfigWrite here as we have no clue about the size
+     * of the registers, so the device is responsible for correctly
+     * restoring functionality governed by these registers.
+     */
+    for (uint32_t off = 0x40; off < sizeof(pDev->config); off++)
+        if (pbDstConfig[off] != pbSrcConfig[off])
+        {
+            LogRel(("PCI: %8s/%u: register %02x: %02x -> %02x\n",
+                    pDev->name, pDev->pDevIns->iInstance, off, pbDstConfig[off], pbSrcConfig[off])); /** @todo make this Log() later. */
+            pbDstConfig[off] = pbSrcConfig[off];
+        }
+}
+
+/**
+ * Common worker for pciR3LoadExec and pcibridgeR3LoadExec.
+ *
+ * @returns VBox status code.
+ * @param   pBus                The bus which data is being loaded.
+ * @param   pSSM                The saved state handle.
+ * @param   uVersion            The data version.
+ * @param   uPass               The pass.
+ */
 static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    return 0;
+    uint32_t    u32;
+    uint32_t    i;
+    int         rc;
+
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+
+    /*
+     * Iterate thru all the devices and write 0 to the COMMAND register so
+     * that all the memory is unmapped before we start restoring the saved
+     * mapping locations.
+     *
+     * The register value is restored afterwards so we can do proper
+     * LogRels in pciR3CommonRestoreConfig.
+     */
+    for (i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
+    {
+        PPCIDEVICE pDev = pBus->apDevices[i];
+        if (pDev)
+        {
+            uint16_t u16 = PCIDevGetCommand(pDev);
+            pDev->Int.s.pfnConfigWrite(pDev, VBOX_PCI_COMMAND, 0, 2);
+            PCIDevSetCommand(pDev, u16);
+            Assert(PCIDevGetCommand(pDev) == u16);
+        }
+    }
+
+    /*
+     * Iterate all the devices.
+     */
+    for (i = 0;; i++)
+    {
+        PCIDEVICE   DevTmp;
+        PPCIDEVICE  pDev;
+
+        /* index / terminator */
+        rc = SSMR3GetU32(pSSM, &u32);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (u32 == (uint32_t)~0)
+            break;
+        if (    u32 >= RT_ELEMENTS(pBus->apDevices)
+            ||  u32 < i)
+        {
+            AssertMsgFailed(("u32=%#x i=%#x\n", u32, i));
+            return rc;
+        }
+
+        /* skip forward to the device checking that no new devices are present. */
+        for (; i < u32; i++)
+        {
+            pDev = pBus->apDevices[i];
+            if (pDev)
+            {
+                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pDev->name,
+                        PCIDevGetVendorId(pDev), PCIDevGetDeviceId(pDev)));
+                if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
+                    return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("New device in slot %#x, %s (vendor=%#06x device=%#06x)"),
+                                            i, pDev->name, PCIDevGetVendorId(pDev), PCIDevGetDeviceId(pDev));
+            }
+        }
+
+        /* get the data */
+        DevTmp.Int.s.uIrqPinState = ~0; /* Invalid value in case we have an older saved state to force a state change in pciSetIrq. */
+        SSMR3GetMem(pSSM, DevTmp.config, sizeof(DevTmp.config));
+
+        rc = SSMR3GetS32(pSSM, &DevTmp.Int.s.uIrqPinState);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* check that it's still around. */
+        pDev = pBus->apDevices[i];
+        if (!pDev)
+        {
+            LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
+                    PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp)));
+            if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
+                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x has been removed! vendor=%#06x device=%#06x"),
+                                        i, PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp));
+            continue;
+        }
+
+        /* match the vendor id assuming that this will never be changed. */
+        if (    DevTmp.config[0] != pDev->config[0]
+            ||  DevTmp.config[1] != pDev->config[1])
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs"),
+                                     i, pDev->name, DevTmp.config, pDev->config);
+
+        /* commit the loaded device config. */
+        pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
+
+        pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
+    }
+
+    return VINF_SUCCESS;
 }
 
 /**
