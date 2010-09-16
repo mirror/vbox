@@ -298,9 +298,17 @@ start() {
         [ -n "$VBOXWEB_KEEPALIVE" ]      && PARAMS="$PARAMS -k $VBOXWEB_KEEPALIVE"
         [ -n "$VBOXWEB_LOGFILE" ]        && PARAMS="$PARAMS -F $VBOXWEB_LOGFILE"
         start_daemon $VBOXWEB_USER $binary $PARAMS > /dev/null 2>&1
+        # ugly: wait until the final process has forked
+        sleep .1
         PID=`pidof $binary 2>/dev/null`
-        [ -n "$PID" ] && echo "$PID" > $PIDFILE
-        succ_msg
+        if [ -n "$PID" ]; then
+            echo "$PID" > $PIDFILE
+            RETVAL=0
+            succ_msg
+        else
+            RETVAL=1
+            fail_msg
+        fi
     fi
     return $RETVAL
 }
