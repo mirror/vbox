@@ -135,6 +135,59 @@ static int rtTarCheckHeader(PRTTARRECORD pRecord)
     return VERR_TAR_CHKSUM_MISMATCH;
 }
 
+static int rtTarCopyFileFromToBuf(RTFILE hFile, void **ppvBuf, uint64_t *pcbSize, PRTTARRECORD pRecord, const uint64_t cbOverallSize, uint64_t &cbOverallWritten, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+
+    uint64_t cbToCopy = RTStrToUInt64(pRecord->h.size);
+
+    *ppvBuf = RTMemAlloc(cbToCopy);
+    char* pcsTmp = (char*)*ppvBuf;
+    if (!pcsTmp)
+        return VERR_NO_MEMORY;
+
+    uint64_t cbAllWritten = 0;
+    RTTARRECORD record;
+    /* Copy the content from hFile over to the memory. This is done block
+     * wise in 512 byte steps. After this copying is finished hFile will be on
+     * a 512 byte boundary, regardless if the file copied is 512 byte size
+     * aligned. */
+    for (;;)
+    {
+        if (pfnProgressCallback)
+            pfnProgressCallback((unsigned)(100.0 / cbOverallSize * cbOverallWritten), pvUser);
+        /* Finished already? */
+        if (cbAllWritten == cbToCopy)
+            break;
+        /* Read one block */
+        rc = RTFileRead(hFile, &record, sizeof(record), NULL);
+        if (RT_FAILURE(rc))
+            break;
+        uint64_t cbToWrite = sizeof(record);
+        /* Check for the last block which has not to be 512 bytes in size. */
+        if (cbAllWritten + cbToWrite > cbToCopy)
+            cbToWrite = cbToCopy - cbAllWritten;
+        /* Write the block */
+        memcpy(pcsTmp, &record, cbToWrite);
+        /* Count how many bytes are written already */
+        cbAllWritten += cbToWrite;
+        cbOverallWritten += cbToWrite;
+        pcsTmp += cbToWrite;
+    }
+
+    /* Make sure the called doesn't mix truncated tar files with the official
+     * end indicated by rtTarCalcChkSum. */
+    if (rc == VERR_EOF)
+        rc = VERR_FILE_IO_ERROR;
+
+    if (RT_FAILURE(rc))
+        RTMemFree(*ppvBuf);
+    else
+        *pcbSize = cbToCopy;
+
+    return rc;
+}
+
 static int rtTarCopyFileFrom(RTFILE hFile, const char *pszTargetName, PRTTARRECORD pRecord, const uint64_t cbOverallSize, uint64_t &cbOverallWritten, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
 {
     RTFILE hNewFile;
@@ -515,6 +568,71 @@ RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcF
             RTStrFree(papszFiles[cFiles]);
         RTMemFree(papszFiles);
     }
+    return rc;
+}
+
+RTR3DECL(int) RTTarExtractFileToBuf(const char *pszTarFile, void **ppvBuf, uint64_t *pcbSize, const char *pszFile, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
+{
+    /* Validate input */
+    AssertPtrReturn(pszTarFile, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
+
+    /* Open the tar file */
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pszTarFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Get the overall size of all files to extract out of the tar archive
+       headers. Only necessary if there is a progress callback. */
+    uint64_t cbOverallSize = 0;
+    if (pfnProgressCallback)
+        rc = rtTarGetFilesOverallSize(hFile, &pszFile, 1, &cbOverallSize);
+    if (RT_SUCCESS(rc))
+    {
+        /* Iterate through the tar file record by record. */
+        RTTARRECORD record;
+        bool fFound = false;
+        uint64_t cbOverallWritten = 0;
+        for (;;)
+        {
+            rc = RTFileRead(hFile, &record, sizeof(record), NULL);
+            /* Check for error or EOF. */
+            if (RT_FAILURE(rc))
+                break;
+            /* Check for EOF & data integrity */
+            rc = rtTarCheckHeader(&record);
+            if (RT_FAILURE(rc))
+                break;
+            /* We support normal files only */
+            if (   record.h.linkflag == LF_OLDNORMAL
+                || record.h.linkflag == LF_NORMAL)
+            {
+                if (!RTStrCmp(record.h.name, pszFile))
+                {
+                    fFound = true;
+                    rc = rtTarCopyFileFromToBuf(hFile, ppvBuf, pcbSize, &record, cbOverallSize, cbOverallWritten, pfnProgressCallback, pvUser);
+                    /* We are finished */
+                    break;
+                }
+                else
+                {
+                    rc = rtTarSkipData(hFile, &record);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+            }
+        }
+
+        if (rc == VERR_EOF)
+            rc = VINF_SUCCESS;
+
+        /* If we didn't found the file, indicate an error */
+        if (!fFound && RT_SUCCESS(rc))
+            rc = VERR_FILE_NOT_FOUND;
+    }
+
+    RTFileClose(hFile);
     return rc;
 }
 
