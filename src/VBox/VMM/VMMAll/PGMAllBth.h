@@ -36,6 +36,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
 static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uErr);
 static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, GSTPDE const *pPdeSrc, RTGCPTR GCPtrPage);
 static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPD, PGSTPD pPDSrc, RTGCPTR GCPtrPage);
+static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc, PPGMPOOLPAGE pShwPage, unsigned iPTDst);
 PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR Addr, unsigned fPage, unsigned uErr);
 PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
 PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
@@ -1276,10 +1277,24 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             if (pShwPage->GCPhys == GCPhys)
             {
                 /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */
-                rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrc, GCPtrPage, 1, 0);
-                if (RT_SUCCESS(rc))
-                    rc = VINF_SUCCESS;
+                PSHWPT pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
 
+                PGSTPT pPTSrc;
+                int rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GST_GET_PDE_GCPHYS(PdeSrc), &pPTSrc);
+                if (RT_SUCCESS(rc))
+                {
+                    const unsigned iPTSrc = (GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK;
+                    GSTPTE PteSrc = pPTSrc->a[iPTSrc];
+                    const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
+                    PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
+                    Log2(("SyncPage: 4K  %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx %s\n",
+                            GCPtrPage, PteSrc.n.u1Present,
+                            PteSrc.n.u1Write & PdeSrc.n.u1Write,
+                            PteSrc.n.u1User  & PdeSrc.n.u1User,
+                            (uint64_t)PteSrc.u,
+                            SHW_PTE_LOG64(pPTDst->a[iPTDst]),
+                            SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
+                }
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePage4KBPages));
                 PGM_INVL_PG(pVCpu, GCPtrPage);
             }
@@ -1565,8 +1580,8 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint64_t
  *
  * @remark  Not used for 2/4MB pages!
  */
-DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc,
-                                              PPGMPOOLPAGE pShwPage, unsigned iPTDst)
+static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc,
+                                         PPGMPOOLPAGE pShwPage, unsigned iPTDst)
 {
     PVM      pVM = pVCpu->CTX_SUFF(pVM);
     RTGCPHYS GCPhysOldPage = NIL_RTGCPHYS;
