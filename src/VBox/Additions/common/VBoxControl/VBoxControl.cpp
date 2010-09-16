@@ -81,7 +81,9 @@ enum VBoxControlUsage
 #ifdef VBOX_WITH_SHARED_FOLDERS
     GUEST_SHAREDFOLDERS,
 #endif
+#if !defined(VBOX_CONTROL_TEST)
     WRITE_CORE_DUMP,
+#endif
     TAKE_SNAPSHOT,
     SAVE_STATE,
     SUSPEND,
@@ -132,8 +134,10 @@ static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
     }
 #endif
 
+#if !defined(VBOX_CONTROL_TEST)
     if (eWhich == WRITE_CORE_DUMP || eWhich == USAGE_ALL)
         doUsage("", g_pszProgName, "writecoredump");
+#endif
     if (eWhich == TAKE_SNAPSHOT || eWhich == USAGE_ALL)
         doUsage("", g_pszProgName, "takesnapshot");
     if (eWhich == SAVE_STATE || eWhich == USAGE_ALL)
@@ -1405,6 +1409,7 @@ static RTEXITCODE handleSharedFolder(int argc, char *argv[])
 }
 #endif
 
+#if !defined(VBOX_CONTROL_TEST)
 /**
  * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: takesnapshot}
  */
@@ -1422,6 +1427,7 @@ static RTEXITCODE handleWriteCoreDump(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
 }
+#endif
 
 /**
  * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: takesnapshot}
