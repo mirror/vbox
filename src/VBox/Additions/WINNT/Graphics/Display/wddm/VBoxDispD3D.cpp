@@ -6751,7 +6751,7 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
                         hr = E_OUTOFMEMORY;
                     }
 #else
-//# define VBOXDISP_TEST_SWAPCHAIN
+# define VBOXDISP_TEST_SWAPCHAIN
 # ifdef VBOXDISP_TEST_SWAPCHAIN
                     VBOXDISP_D3DEV(pDevice);
 # endif
