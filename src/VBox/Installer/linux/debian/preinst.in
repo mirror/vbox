@@ -38,7 +38,7 @@ if [ "$1" = "install" -o "$1" = "upgrade" ]; then
       kill -USR1 $VBOXSVC_PID
     fi
     sleep 1
-    if pidof VBoxSVC > /dev/null 2>&1; then   
+    if pidof VBoxSVC > /dev/null 2>&1; then
       db_fset virtualbox/old-running seen false || true
       db_input critical virtualbox/old-running || true
       db_go || true

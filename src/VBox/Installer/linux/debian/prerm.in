@@ -42,7 +42,7 @@ if [ "$1" = "upgrade" -o "$1" = "remove" -o "$1" = "failed-upgrade" ]; then
     fi
     kill -USR1 $VBOXSVC_PID
     sleep 1
-    if pidof VBoxSVC > /dev/null 2>&1; then   
+    if pidof VBoxSVC > /dev/null 2>&1; then
       if [ "$1" != "failed-upgrade" ]; then
         db_fset virtualbox/old-running seen false || true
         db_input critical virtualbox/old-running || true

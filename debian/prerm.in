@@ -32,13 +32,24 @@ if [ "$1" = "upgrade" -o "$1" = "remove" -o "$1" = "failed-upgrade" ]; then
   db_capb backup
 
   # check for active VMs
-  if pidof VBoxSVC > /dev/null 2>&1; then
-    if [ "$1" != "failed-upgrade" ]; then
-      db_fset virtualbox/old-running seen false || true
-      db_input critical virtualbox/old-running || true
-      db_go || true
+  VBOXSVC_PID=`pidof VBoxSVC 2>/dev/null`
+  if [ -n "$VBOXSVC_PID" ]; then
+    # try graceful termination; terminate the webservice first
+    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+      invoke-rc.d vboxweb-service stop || true
+    else
+      /etc/init.d/vboxweb-service stop || true
     fi
-    exit 1
+    kill -USR1 $VBOXSVC_PID
+    sleep 1
+    if pidof VBoxSVC > /dev/null 2>&1; then
+      if [ "$1" != "failed-upgrade" ]; then
+        db_fset virtualbox/old-running seen false || true
+        db_input critical virtualbox/old-running || true
+        db_go || true
+      fi
+      exit 1
+    fi
   fi
 fi
 
