@@ -690,7 +690,7 @@ HRESULT Appliance::readFSOVF(const LocationInfo &locInfo, ComObjPtr<Progress> & 
         m->pReader = new ovf::OVFReader(locInfo.strPath);
         /* Create the SHA1 sum of the OVF file for later validation */
         char *pszDigest;
-        int vrc = RTSha1Digest(locInfo.strPath.c_str(), &pszDigest, NULL, NULL);
+        int vrc = RTSha1DigestFromFile(locInfo.strPath.c_str(), &pszDigest, NULL, NULL);
         if (RT_FAILURE(vrc))
             DebugBreakThrow(setError(VBOX_E_FILE_ERROR,
                            tr("Couldn't calculate SHA1 digest for file '%s' (%Rrc)"),
@@ -723,91 +723,57 @@ HRESULT Appliance::readFSOVA(const LocationInfo &locInfo, ComObjPtr<Progress> &p
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
-
     HRESULT rc = S_OK;
-    int vrc = VINF_SUCCESS;
-    char szOSTmpDir[RTPATH_MAX];
-    RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
-    /* The template for the temporary directory created below */
-    char *pszTmpDir;
-    RTStrAPrintf(&pszTmpDir, "%s"RTPATH_SLASH_STR"vbox-ovf-XXXXXX", szOSTmpDir);
-    list< pair<Utf8Str, ULONG> > filesList;
-    Utf8Str strTmpOvf;
+    void *pvBuf = 0;
 
     try
     {
-        /* Extract the path */
         Utf8Str tmpPath = locInfo.strPath;
         /* Remove the ova extension */
         tmpPath.stripExt();
+        /* add the ovf extension. */
         tmpPath += ".ovf";
+        char* pcszOVFName = RTPathFilename(tmpPath.c_str());
 
-        /* We need a temporary directory which we can put the OVF file & all
-         * disk images in */
-        vrc = RTDirCreateTemp(pszTmpDir);
-        if (RT_FAILURE(vrc))
-            DebugBreakThrow(setError(VBOX_E_FILE_ERROR,
-                           tr("Cannot create temporary directory '%s' (%Rrc)"), pszTmpDir, vrc));
-
-        /* The temporary name of the target OVF file */
-        strTmpOvf = Utf8StrFmt("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
-
-        /* Next we have to download the OVF */
-        char *papszFile = RTPathFilename(strTmpOvf.c_str());
-        vrc = RTTarExtractFiles(locInfo.strPath.c_str(), pszTmpDir, &papszFile, 1, 0, 0);
+        /* Read the OVF into a memory buffer */
+        uint64_t cbSize;
+        int vrc = RTTarExtractFileToBuf(locInfo.strPath.c_str(), &pvBuf, &cbSize, pcszOVFName, 0, 0);
         if (RT_FAILURE(vrc))
         {
             if (vrc == VERR_FILE_NOT_FOUND)
-                DebugBreakThrow(setError(VBOX_E_IPRT_ERROR,
-                                         tr("Can't find ovf file '%s' in archive '%s' (%Rrc)"), papszFile, locInfo.strPath.c_str(), vrc));
+                throw setError(VBOX_E_IPRT_ERROR,
+                               tr("Can't find ovf file '%s' in archive '%s' (%Rrc)"), pcszOVFName, locInfo.strPath.c_str(), vrc);
             else
-                DebugBreakThrow(setError(VBOX_E_IPRT_ERROR,
-                                         tr("Can't unpack the archive file '%s' (%Rrc)"), locInfo.strPath.c_str(), vrc));
+                throw setError(VBOX_E_IPRT_ERROR,
+                               tr("Can't unpack the archive file '%s' (%Rrc)"), locInfo.strPath.c_str(), vrc);
         }
 
-        // todo: check this out
-//        pTask->pProgress->SetNextOperation(Bstr(tr("Reading")), 1);
+        /* Read & parse the XML structure of the OVF file */
+        m->pReader = new ovf::OVFReader(pvBuf, cbSize, locInfo.strPath);
+        /* Create the SHA1 sum of the OVF file for later validation */
+        char *pszDigest;
+        vrc = RTSha1Digest(pvBuf, cbSize, &pszDigest, 0, 0);
+        if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Couldn't calculate SHA1 digest for file '%s' (%Rrc)"),
+                           RTPathFilename(locInfo.strPath.c_str()), vrc);
+        m->strOVFSHA1Digest = pszDigest;
+        RTStrFree(pszDigest);
 
-        /* Prepare the temporary reading of the OVF */
-        ComObjPtr<Progress> progress;
-        LocationInfo li;
-        li.strPath = strTmpOvf;
-        /* Start the reading from the fs */
-        rc = readImpl(li, progress);
-        if (FAILED(rc)) DebugBreakThrow(rc);
-
-        /* Unlock the appliance for the reading thread */
-        appLock.release();
-        /* Wait until the reading is done, but report the progress back to the
-           caller */
-        ComPtr<IProgress> progressInt(progress);
-        waitForAsyncProgress(pProgress, progressInt); /* Any errors will be thrown */
-
-        /* Again lock the appliance for the next steps */
-        appLock.acquire();
     }
-    catch(HRESULT aRC)
+    catch (iprt::Error &x)      // includes all XML exceptions
+    {
+        rc = setError(VBOX_E_FILE_ERROR,
+                      x.what());
+    }
+    catch (HRESULT aRC)
     {
         rc = aRC;
     }
-    /* Delete all files which where temporary created */
-    if (RTPathExists(strTmpOvf.c_str()))
-    {
-        vrc = RTFileDelete(strTmpOvf.c_str());
-        if (RT_FAILURE(vrc))
-            rc = setError(VBOX_E_FILE_ERROR,
-                          tr("Cannot delete file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
-    }
-    /* Delete the temporary directory */
-    if (RTPathExists(pszTmpDir))
-    {
-        vrc = RTDirRemove(pszTmpDir);
-        if (RT_FAILURE(vrc))
-            rc = setError(VBOX_E_FILE_ERROR,
-                          tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
-    }
-    if (pszTmpDir)
-        RTStrFree(pszTmpDir);
+
+    /* Cleanup the OVF memory buffer */
+    if (pvBuf)
+        RTMemFree(pvBuf);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -1156,7 +1122,7 @@ HRESULT Appliance::manifestVerify(const LocationInfo &locInfo,
              ++it1, ++i)
         {
             char* pszDigest;
-            vrc = RTSha1Digest((*it1).c_str(), &pszDigest, NULL, NULL);
+            vrc = RTSha1DigestFromFile((*it1).c_str(), &pszDigest, NULL, NULL);
             pTestList[i].pszTestFile = (char*)(*it1).c_str();
             pTestList[i].pszTestDigest = pszDigest;
         }
