@@ -137,7 +137,7 @@ if [ "$system" = "debian" ]; then
         shift
         bin="$1"
         shift
-        start-stop-daemon --chuid $usr --start --exec $bin -- $@
+        start-stop-daemon --background --chuid $usr --start --exec $bin -- $@
     }
     killproc() {
         start-stop-daemon --stop --exec $@
@@ -162,7 +162,7 @@ if [ "$system" = "gentoo" ]; then
         shift
         bin="$1"
         shift
-        start-stop-daemon --chuid $usr --start --exec $bin -- $@
+        start-stop-daemon --background --chuid $usr --start --exec $bin -- $@
     }
     killproc() {
         start-stop-daemon --stop --exec $@
