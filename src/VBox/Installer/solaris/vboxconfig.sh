@@ -41,6 +41,7 @@ BIN_SVCCFG=/usr/sbin/svccfg
 BIN_IFCONFIG=/sbin/ifconfig
 BIN_SVCS=/usr/bin/svcs
 BIN_ID=/usr/bin/id
+BIN_PKILL=/usr/bin/pkill
 
 # "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
 MOD_VBOXDRV=vboxdrv
@@ -105,20 +106,21 @@ helpprint()
 printusage()
 {
     helpprint "VirtualBox Configuration Script"
-    helpprint "usage: $0 operation [options]"
+    helpprint "usage: $0 <operation> [options]"
     helpprint
-    helpprint "operation must be one of the following:"
-    helpprint "  --postinstall           Perform full post installation procedure"
-    helpprint "  --preremove             Perform full pre remove procedure"
-    helpprint "  --installdrivers        Only install the drivers"
-    helpprint "  --removedrivers         Only remove the drivers"
-    helpprint "  --setupdrivers          Set up drivers, reloads any existing drivers"
+    helpprint "<operation> must be one of the following:"
+    helpprint "  --postinstall      Perform full post installation procedure"
+    helpprint "  --preremove        Perform full pre remove procedure"
+    helpprint "  --installdrivers   Only install the drivers"
+    helpprint "  --removedrivers    Only remove the drivers"
+    helpprint "  --setupdrivers     Setup drivers, reloads existing drivers"
     helpprint
     helpprint "[options] are one or more of the following:"
-    helpprint "  --silent                Silent mode"
-    helpprint "  --fatal                 Make failures fatal, don't continue"
-    helpprint "  --ips                   An IPS package installation"
-    helpprint "  --altkerndir            Use /usr/kernel/drv as the driver directory"
+    helpprint "  --silent           Silent mode"
+    helpprint "  --fatal            Don't continue on failure (required for postinstall)"
+    helpprint "  --ips              This is an IPS package postinstall/preremove"
+    helpprint "  --altkerndir       Use /usr/kernel/drv as the driver directory"
+    helpprint
 }
 
 # find_bin_path()
@@ -192,6 +194,10 @@ find_bins()
 
     if test ! -x "$BIN_IFCONFIG"; then
         BIN_IFCONFIG=`find_bin_path "$BIN_IFCONFIG"`
+    fi
+
+    if test ! -x "$BIN_PKILL"; then
+        BIN_PKILL=`find_bin_path "$BIN_PKILL"`
     fi
 }
 
@@ -531,7 +537,7 @@ install_drivers()
     return $?
 }
 
-# remove_all([fatal])
+# remove_drivers([fatal])
 # failure: depends on [fatal]
 remove_drivers()
 {
@@ -628,6 +634,32 @@ install_python_bindings()
     return 1
 }
 
+# stop_process(processname)
+# failure: depends on [fatal]
+stop_process()
+{
+    if test -z "$1"; then
+        errorprint "missing argument to stop_process()"
+        exit 1
+    fi
+
+    procname=$1
+    procpid=`ps -eo pid,fname | grep $PROC_NAME | grep -v grep | awk '{ print $1 }'`
+    if test ! -z "procpid" && test "procpid" -ge 0; then
+        $BIN_PKILL "$procname"
+        sleep 2
+        procpid=`ps -eo pid,fname | grep $PROC_NAME | grep -v grep | awk '{ print $1 }'`
+        if test ! -z "procpid" && test "procpid" -ge 0; then
+            subprint "Terminating: $procname  ...FAILED!"
+            if test "$fatal" = "$FATALOP"; then
+                exit 1
+            fi
+        else
+            subprint "Terminated: $procname"
+        fi
+    fi
+}
+
 
 # cleanup_install([fatal])
 # failure: depends on [fatal]
@@ -694,6 +726,10 @@ cleanup_install()
 
         inst=`expr $inst + 1`
     done
+
+    # Stop our other daemons, non-fatal
+    stop_process VBoxSVC
+    stop_process VBoxNetDHCP
 }
 
 
