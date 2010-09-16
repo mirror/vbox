@@ -97,7 +97,9 @@ check_root() {
 check_running() {
     VBOXSVC_PID=`pidof VBoxSVC 2> /dev/null`
     if [ -n "$VBOXSVC_PID" ]; then
-        kill -USR1 $VBOXSVC_PID
+        if [ -f /etc/init.d/vboxweb-service ]; then
+            kill -USR1 $VBOXSVC_PID
+        fi
         sleep 1
         if pidof VBoxSVC > /dev/null 2>&1; then
             echo 1>&2 "A copy of VirtualBox is currently running.  Please close it and try again."
