@@ -79,7 +79,9 @@ static void WINAPI IWineGDISwapChainImpl_Destroy(IWineD3DSwapChain *iface)
         IWineD3DDevice_SetDisplayMode((IWineD3DDevice *)This->device, 0, &mode);
     }
 
+#ifndef VBOXWDDM
     HeapFree(GetProcessHeap(), 0, This->context);
+#endif
     HeapFree(GetProcessHeap(), 0, This);
 }
 

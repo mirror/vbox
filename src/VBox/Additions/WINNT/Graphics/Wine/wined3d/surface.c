@@ -487,7 +487,7 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
     {
         Assert(shared_handle);
         VBOXSHRC_SET_INITIALIZED(surface);
-        IWineD3DSurface_LoadLocation(surface, SFLAG_INTEXTURE, NULL);
+        IWineD3DSurface_LoadLocation((IWineD3DSurface*)surface, SFLAG_INTEXTURE, NULL);
         if (!VBOXSHRC_IS_SHARED_OPENED(surface))
         {
             Assert(!(*shared_handle));
@@ -3791,7 +3791,12 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
 
         if (wined3d_settings.strict_draw_ordering || (dstSwapchain
                 && ((IWineD3DSurface *)This == dstSwapchain->frontBuffer
-                || dstSwapchain->num_contexts > 1)))
+#ifdef VBOXWDDM
+                || dstSwapchain->device->numContexts > 1
+#else
+                || dstSwapchain->num_contexts > 1
+#endif
+                )))
             wglFlush(); /* Flush to ensure ordering across contexts. */
 
         context_release(context);
@@ -4401,7 +4406,12 @@ static inline void surface_blt_to_drawable(IWineD3DSurfaceImpl *This, const RECT
     swapchain = (This->Flags & SFLAG_SWAPCHAIN) ? (IWineD3DSwapChainImpl *)This->container : NULL;
     if (wined3d_settings.strict_draw_ordering || (swapchain
             && ((IWineD3DSurface *)This == swapchain->frontBuffer
-            || swapchain->num_contexts > 1)))
+#ifdef VBOXWDDM
+            || swapchain->device->numContexts > 1
+#else
+            || swapchain->num_contexts > 1
+#endif
+            )))
         wglFlush(); /* Flush to ensure ordering across contexts. */
 
     context_release(context);

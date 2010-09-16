@@ -6295,7 +6295,11 @@ static BOOL is_display_mode_supported(IWineD3DDeviceImpl *This, const WINED3DPRE
     return FALSE;
 }
 
-static void delete_opengl_contexts(IWineD3DDevice *iface, IWineD3DSwapChainImpl *swapchain)
+static void delete_opengl_contexts(IWineD3DDevice *iface
+#ifndef VBOXWDDM
+        , IWineD3DSwapChainImpl *swapchain
+#endif
+        )
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
     const struct wined3d_gl_info *gl_info;
@@ -6334,9 +6338,11 @@ static void delete_opengl_contexts(IWineD3DDevice *iface, IWineD3DSwapChainImpl 
     {
         context_destroy(This, This->contexts[0]);
     }
+#ifndef VBOXWDDM
     HeapFree(GetProcessHeap(), 0, swapchain->context);
     swapchain->context = NULL;
     swapchain->num_contexts = 0;
+#endif
 }
 
 static HRESULT create_primary_opengl_context(IWineD3DDevice *iface, IWineD3DSwapChainImpl *swapchain)
@@ -6346,6 +6352,7 @@ static HRESULT create_primary_opengl_context(IWineD3DDevice *iface, IWineD3DSwap
     HRESULT hr;
     IWineD3DSurfaceImpl *target;
 
+#ifndef VBOXWDDM
     /* Recreate the primary swapchain's context */
     swapchain->context = HeapAlloc(GetProcessHeap(), 0, sizeof(*swapchain->context));
     if (!swapchain->context)
@@ -6353,17 +6360,22 @@ static HRESULT create_primary_opengl_context(IWineD3DDevice *iface, IWineD3DSwap
         ERR("Failed to allocate memory for swapchain context array.\n");
         return E_OUTOFMEMORY;
     }
+#endif
 
     target = (IWineD3DSurfaceImpl *)(swapchain->backBuffer ? swapchain->backBuffer[0] : swapchain->frontBuffer);
     if (!(context = context_create(swapchain, target, swapchain->ds_format)))
     {
         WARN("Failed to create context.\n");
+#ifndef VBOXWDDM
         HeapFree(GetProcessHeap(), 0, swapchain->context);
+#endif
         return E_FAIL;
     }
 
+#ifndef VBOXWDDM
     swapchain->context[0] = context;
     swapchain->num_contexts = 1;
+#endif
     create_dummy_textures(This);
     context_release(context);
 
@@ -6398,8 +6410,10 @@ err:
     destroy_dummy_textures(This, context->gl_info);
     context_release(context);
     context_destroy(This, context);
+#ifndef VBOXWDDM
     HeapFree(GetProcessHeap(), 0, swapchain->context);
     swapchain->num_contexts = 0;
+#endif
     return hr;
 }
 
@@ -6410,6 +6424,11 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Reset(IWineD3DDevice* iface, WINED3DPRE
     BOOL DisplayModeChanged = FALSE;
     WINED3DDISPLAYMODE mode;
     TRACE("(%p)\n", This);
+
+#ifdef VBOXWDDM
+    /* todo: implement multi-swapchain handlling!!! */
+    Assert(0);
+#endif
 
     hr = IWineD3DDevice_GetSwapChain(iface, 0, (IWineD3DSwapChain **) &swapchain);
     if(FAILED(hr)) {
@@ -6498,7 +6517,11 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Reset(IWineD3DDevice* iface, WINED3DPRE
     IWineD3DStateBlock_Release((IWineD3DStateBlock *)This->updateStateBlock);
     IWineD3DStateBlock_Release((IWineD3DStateBlock *)This->stateBlock);
 
-    delete_opengl_contexts(iface, swapchain);
+    delete_opengl_contexts(iface
+#ifndef VBOXWDDM
+            , swapchain
+#endif
+            );
 
     if(pPresentationParameters->Windowed) {
         mode.Width = swapchain->orig_width;
@@ -6864,10 +6887,54 @@ static HRESULT WINAPI IWineD3DDeviceImpl_AddSwapChain(IWineD3DDevice *iface, IWi
         ERR("Out of memory!\n");
         return E_OUTOFMEMORY;
     }
-    IUnknown_AddRef(swapchain);
     This->swapchains = (IWineD3DSwapChain *)pvNewBuf;
     This->swapchains[This->NumberOfSwapChains] = swapchain;
     ++This->NumberOfSwapChains;
+    return WINED3D_OK;
+}
+
+static HRESULT WINAPI IWineD3DDeviceImpl_RemoveSwapChain(IWineD3DDevice *iface, IWineD3DSwapChain *swapchain)
+{
+    IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
+    int i;
+    for (i = 0; i < This->NumberOfSwapChains; ++i)
+    {
+        if (This->swapchains[i] == swapchain)
+        {
+            break;
+        }
+    }
+
+    if (i == This->NumberOfSwapChains)
+    {
+        WARN("swapchain 0x%p is not part of device 0x%p\n", swapchain, iface);
+        return E_INVALIDARG;
+    }
+
+    --This->NumberOfSwapChains;
+    if (This->NumberOfSwapChains)
+    {
+        IWineD3DSwapChain **pvNewBuf = (IWineD3DSwapChain **)HeapAlloc(GetProcessHeap(), 0, (This->NumberOfSwapChains) * sizeof(IWineD3DSwapChain *));
+        if(!pvNewBuf) {
+            ERR("Out of memory!\n");
+            return E_OUTOFMEMORY;
+        }
+        if (i) {
+            memcpy (pvNewBuf, This->swapchains, i*sizeof(IWineD3DSwapChain *));
+        }
+        if (i < This->NumberOfSwapChains) {
+            memcpy (pvNewBuf + i, This->swapchains +i+1, (This->NumberOfSwapChains - i)*sizeof(IWineD3DSwapChain *));
+        }
+
+        This->swapchains = (IWineD3DSwapChain *)pvNewBuf;
+    }
+    else
+    {
+        while (This->numContexts)
+        {
+            context_destroy(This, This->contexts[0]);
+        }
+    }
     return WINED3D_OK;
 }
 #endif
@@ -7028,6 +7095,7 @@ static const IWineD3DDeviceVtbl IWineD3DDevice_Vtbl =
     /* VBox WDDM extensions */
     IWineD3DDeviceImpl_Flush,
     IWineD3DDeviceImpl_AddSwapChain,
+    IWineD3DDeviceImpl_RemoveSwapChain,
 #endif
 };
 

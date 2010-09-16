@@ -1916,6 +1916,7 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
     HRESULT hr = S_OK;
     IDirect3DDevice9 *pDevice9If = NULL;
     HWND hOldWnd = pSwapchain->hWnd;
+//#define VBOXDISP_NEWWND_ON_SWAPCHAINUPDATE
 #ifndef VBOXDISP_NEWWND_ON_SWAPCHAINUPDATE
     if (!hOldWnd)
 #endif
@@ -4758,7 +4759,17 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                             hr = vboxWddmSurfSynchMem(pRc, pAllocation);
                             Assert(hr == S_OK);
                             if (hr == S_OK)
+                            {
+                                if(pResource->Flags.Primary)
+                                {
+                                    for (UINT i = 0; i < pResource->SurfCount; ++i)
+                                    {
+                                        vboxWddmSwapchainFindCreate(pDevice, &pRc->aAllocations[i]);
+                                    }
+                                    Assert(bIssueCreateResource);
+                                }
                                 continue;
+                            }
 
                             /* fail branch */
                             pD3D9Surf->Release();
@@ -5631,7 +5642,9 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
         do
         {
 #ifndef VBOXWDDM_WITH_VISIBLE_FB
-            if (pSrcSwapchain && vboxWddmSwapchainGetFb(pSrcSwapchain)->pAlloc != pSrcAlloc
+            if (pSrcSwapchain
+                    && pSrcSwapchain->pRenderTargetFbCopy
+                    && vboxWddmSwapchainGetFb(pSrcSwapchain)->pAlloc != pSrcAlloc
                     && vboxWddmSwapchainNumRTs(pSrcSwapchain) > 1) /* work-around wine backbuffer */
             {
 //                Assert(pSrcAlloc->SurfDesc.width == pDstAlloc->SurfDesc.width);
@@ -5670,7 +5683,7 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
                 {
                     pSrcSurfIf = pSrcSwapchain->pRenderTargetFbCopy;
                     Assert(pSrcSurfIf);
-                    hr = pDevice9If->GetFrontBufferData(0, pSrcSurfIf);
+                    hr = pSrcSwapchain->pSwapChainIf->GetFrontBufferData(pSrcSurfIf);
                     Assert(hr == S_OK);
                     if (hr == S_OK)
                     {

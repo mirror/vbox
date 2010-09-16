@@ -7307,6 +7307,9 @@ interface IWineD3DDevice : public IWineD3DBase
 
     virtual HRESULT STDMETHODCALLTYPE AddSwapChain(
         IWineD3DSwapChain *swapchain) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE RemoveSwapChain(
+        IWineD3DSwapChain *swapchain) = 0;
 #endif
 };
 #else
@@ -8075,6 +8078,10 @@ typedef struct IWineD3DDeviceVtbl {
     HRESULT (STDMETHODCALLTYPE *AddSwapChain)(
         IWineD3DDevice* This,
         IWineD3DSwapChain *swapchain);
+
+    HRESULT (STDMETHODCALLTYPE *RemoveSwapChain)(
+        IWineD3DDevice* This,
+        IWineD3DSwapChain *swapchain);
 #endif
 
     END_INTERFACE
@@ -8235,6 +8242,7 @@ interface IWineD3DDevice {
 #ifdef VBOXWDDM
 #define IWineD3DDevice_Flush(This) (This)->lpVtbl->Flush(This)
 #define IWineD3DDevice_AddSwapChain(This,swapchain) (This)->lpVtbl->AddSwapChain(This,swapchain)
+#define IWineD3DDevice_RemoveSwapChain(This,swapchain) (This)->lpVtbl->RemoveSwapChain(This,swapchain)
 #endif
 #endif
 
