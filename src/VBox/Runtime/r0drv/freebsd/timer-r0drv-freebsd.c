@@ -89,7 +89,7 @@ static void rtTimerFreeBSDCallback(void *pvTimer);
 
 
 
-RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
+RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_t fFlags, PFNRTTIMER pfnTimer, void *pvUser)
 {
     *ppTimer = NULL;
 
@@ -101,7 +101,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
         &&  (fFlags & RTTIMER_FLAGS_CPU_MASK) > mp_maxid)
-        return VERR_INVALID_PARAMETER;
+        return VERR_CPU_NOT_FOUND;
 
     /*
      * Allocate and initialize the timer handle.
@@ -165,6 +165,9 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         return VERR_INVALID_HANDLE;
     if (!pTimer->fSuspended)
         return VERR_TIMER_ACTIVE;
+    if (   pTimer->fSpecificCpu
+        && !RTMpIsCpuOnline(pTimer->idCpu))
+        return VERR_CPU_OFFLINE;
 
     /*
      * Calc when it should start fireing.
@@ -198,6 +201,14 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     callout_stop(&pTimer->Callout);
 
     return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
+{
+    if (!rtTimerIsValid(pTimer))
+        return VERR_INVALID_HANDLE;
+    return VERR_NOT_SUPPORTED;
 }
 
 

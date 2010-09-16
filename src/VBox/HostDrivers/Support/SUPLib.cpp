@@ -268,7 +268,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
         const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00150000
-                                   ?  0x00150002
+                                   ?  0x00150003
                                    : SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -423,6 +423,7 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "RTR0MemObjMapUser",                      0xefef001a },
         { "RTR0MemObjMapKernel",                    0xefef001b },
         { "RTR0MemObjMapKernelEx",                  0xefef001c },
+        { "RTMpGetArraySize",                       0xefef001c },
         { "RTProcSelf",                             0xefef001d },
         { "RTR0ProcHandleSelf",                     0xefef001e },
         { "RTSemEventCreate",                       0xefef001f },
@@ -458,6 +459,7 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "RTTimerDestroy",                         0xefef003a },
         { "RTTimerStart",                           0xefef003a },
         { "RTTimerStop",                            0xefef003a },
+        { "RTTimerChangeInterval",                  0xefef003a },
         { "RTTimerGetSystemGranularity",            0xefef003a },
         { "RTTimerRequestSystemGranularity",        0xefef003a },
         { "RTTimerReleaseSystemGranularity",        0xefef003a },

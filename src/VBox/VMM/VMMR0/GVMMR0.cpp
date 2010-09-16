@@ -56,6 +56,18 @@
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
 #include <iprt/mp.h>
+#include <iprt/cpuset.h>
+#include <iprt/spinlock.h>
+#include <iprt/timer.h>
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#ifdef DOXYGEN_RUNNING
+/** Define this to enable the periodic preemption timer. */
+# define GVMM_SCHED_WITH_PPT
+#endif
 
 
 /*******************************************************************************
@@ -96,6 +108,68 @@ typedef GVMHANDLE *PGVMHANDLE;
 #else
 # define GVMM_MAX_HANDLES   128
 #endif
+
+/**
+ * Per host CPU GVMM data.
+ */
+typedef struct GVMMHOSTCPU
+{
+    /** Magic number (GVMMHOSTCPU_MAGIC). */
+    uint32_t volatile   u32Magic;
+    /** The CPU ID. */
+    RTCPUID             idCpu;
+    /** The CPU set index. */
+    uint32_t            idxCpuSet;
+
+#ifdef GVMM_SCHED_WITH_PPT
+    /** Periodic preemption timer data. */
+    struct
+    {
+        /** The handle to the periodic preemption timer. */
+        PRTTIMER            pTimer;
+        /** Spinlock protecting the data below. */
+        RTSPINLOCK          hSpinlock;
+        /** The smalles Hz that we need to care about. (static) */
+        uint32_t            uMinHz;
+        /** The number of ticks between each historization. */
+        uint32_t            cTicksHistoriziationInterval;
+        /** The current historization tick (counting up to
+         * cTicksHistoriziationInterval and then resetting). */
+        uint32_t            iTickHistorization;
+        /** The current timer interval.  This is set to 0 when inactive. */
+        uint32_t            cNsInterval;
+        /** The current timer frequency.  This is set to 0 when inactive. */
+        uint32_t            uTimerHz;
+        /** The current max frequency reported by the EMTs.
+         * This gets historicize and reset by the timer callback.  This is
+         * read without holding the spinlock, so needs atomic updating. */
+        uint32_t volatile   uDesiredHz;
+        /** Whether the timer was started or not. */
+        bool volatile       fStarted;
+        /** Set if we're starting timer. */
+        bool volatile       fStarting;
+        /** The index of the next history entry (mod it). */
+        uint32_t            iHzHistory;
+        /** Hitoricized uDesiredHz values.  The array wraps around, new entries
+         * are added at iHzHistory. This is updated approximately every
+         * GVMMHOSTCPU_PPT_HIST_INTERVAL_NS by the timer callback. */
+        uint32_t            aHzHistory[32];
+        /** Statistics counter for recording the number of interval changes. */
+        uint64_t            cChanges;
+        /** Statistics counter for recording the number of timer starts. */
+        uint64_t            cStarts;
+    } Ppt;
+#endif /* GVMM_SCHED_WITH_PPT */
+
+} GVMMHOSTCPU;
+/** Pointer to the per host CPU GVMM data. */
+typedef GVMMHOSTCPU *PGVMMHOSTCPU;
+/** The GVMMHOSTCPU::u32Magic value (Petra, Tanya & Rachel Haden). */
+#define GVMMHOSTCPU_MAGIC   UINT32_C(0x19711011)
+/** The interval on history entry should cover (approximately) give in
+ *  nanoseconds. */
+#define GVMMHOSTCPU_PPT_HIST_INTERVAL_NS    UINT32_C(20000000)
+
 
 /**
  * The GVMM instance data.
@@ -147,6 +221,11 @@ typedef struct GVMM
      * The limit for the second round of early wakeups, given in nano seconds.
      */
     uint32_t            nsEarlyWakeUp2;
+
+    /** The number of entries in the host CPU array (aHostCpus). */
+    uint32_t            cHostCpus;
+    /** Per host CPU data (variable length). */
+    GVMMHOSTCPU         aHostCpus[1];
 } GVMM;
 /** Pointer to the GVMM instance data. */
 typedef GVMM *PGVMM;
@@ -197,6 +276,9 @@ static void gvmmR0InitPerVMData(PGVM pGVM);
 static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, void *pvHandle);
 static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock);
 static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM);
+#ifdef GVMM_SCHED_WITH_PPT
+static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+#endif
 
 
 /**
@@ -213,7 +295,10 @@ GVMMR0DECL(int) GVMMR0Init(void)
     /*
      * Allocate and initialize the instance data.
      */
-    PGVMM pGVMM = (PGVMM)RTMemAllocZ(sizeof(*pGVMM));
+    uint32_t cHostCpus = RTMpGetArraySize();
+    AssertMsgReturn(cHostCpus > 0 && cHostCpus < _64K, ("%d", (int)cHostCpus), VERR_INTERNAL_ERROR_2);
+
+    PGVMM pGVMM = (PGVMM)RTMemAllocZ(RT_UOFFSETOF(GVMM, aHostCpus[cHostCpus]));
     if (!pGVMM)
         return VERR_NO_MEMORY;
     int rc = RTSemFastMutexCreate(&pGVMM->CreateDestroyLock);
@@ -249,12 +334,74 @@ GVMMR0DECL(int) GVMMR0Init(void)
             pGVMM->nsEarlyWakeUp1    =  25000 /* ns (0.025 ms) */;
             pGVMM->nsEarlyWakeUp2    =  50000 /* ns (0.050 ms) */;
 
-            g_pGVMM = pGVMM;
-            LogFlow(("GVMMR0Init: pGVMM=%p\n", pGVMM));
-            return VINF_SUCCESS;
-        }
+            /* The host CPU data. */
+            pGVMM->cHostCpus = cHostCpus;
+            uint32_t    iCpu = cHostCpus;
+            RTCPUSET    PossibleSet;
+            RTMpGetSet(&PossibleSet);
+            while (iCpu-- > 0)
+            {
+                pGVMM->aHostCpus[iCpu].idxCpuSet        = iCpu;
+#ifdef GVMM_SCHED_WITH_PPT
+                pGVMM->aHostCpus[iCpu].Ppt.pTimer       = NULL;
+                pGVMM->aHostCpus[iCpu].Ppt.hSpinlock    = NIL_RTSPINLOCK;
+                pGVMM->aHostCpus[iCpu].Ppt.uMinHz       = 5; /** @todo Add some API which figures this one out. (not *that* important) */
+                pGVMM->aHostCpus[iCpu].Ppt.cTicksHistoriziationInterval = 1;
+                //pGVMM->aHostCpus[iCpu].Ppt.iTickHistorization           = 0;
+                //pGVMM->aHostCpus[iCpu].Ppt.cNsInterval  = 0;
+                //pGVMM->aHostCpus[iCpu].Ppt.uTimerHz     = 0;
+                //pGVMM->aHostCpus[iCpu].Ppt.uDesiredHz   = 0;
+                //pGVMM->aHostCpus[iCpu].Ppt.fStarted     = false;
+                //pGVMM->aHostCpus[iCpu].Ppt.fStarting    = false;
+                //pGVMM->aHostCpus[iCpu].Ppt.iHzHistory   = 0;
+                //pGVMM->aHostCpus[iCpu].Ppt.aHzHistory   = {0};
+#endif
 
+                if (RTCpuSetIsMember(&PossibleSet, iCpu))
+                {
+                    pGVMM->aHostCpus[iCpu].idCpu        = RTMpCpuIdFromSetIndex(iCpu);
+                    pGVMM->aHostCpus[iCpu].u32Magic     = GVMMHOSTCPU_MAGIC;
+
+#ifdef GVMM_SCHED_WITH_PPT
+                    rc = RTTimerCreateEx(&pGVMM->aHostCpus[iCpu].Ppt.pTimer,
+                                         50*1000*1000 /* whatever */,
+                                         RTTIMER_FLAGS_CPU(iCpu) | RTTIMER_FLAGS_HIGH_RES,
+                                         gvmmR0SchedPeriodicPreemptionTimerCallback,
+                                         &pGVMM->aHostCpus[iCpu]);
+                    if (RT_SUCCESS(rc))
+                        rc = RTSpinlockCreate(&pGVMM->aHostCpus[iCpu].Ppt.hSpinlock);
+                    if (RT_FAILURE(rc))
+                    {
+                        while (iCpu < cHostCpus)
+                        {
+                            RTTimerDestroy(pGVMM->aHostCpus[iCpu].Ppt.pTimer);
+                            RTSpinlockDestroy(pGVMM->aHostCpus[iCpu].Ppt.hSpinlock);
+                            pGVMM->aHostCpus[iCpu].Ppt.hSpinlock = NIL_RTSPINLOCK;
+                            iCpu++;
+                        }
+                        break;
+                    }
+#endif
+                }
+                else
+                {
+                    pGVMM->aHostCpus[iCpu].idCpu        = NIL_RTCPUID;
+                    pGVMM->aHostCpus[iCpu].u32Magic     = 0;
+                }
+            }
+            if (RT_SUCCESS(rc))
+            {
+                g_pGVMM = pGVMM;
+                LogFlow(("GVMMR0Init: pGVMM=%p cHostCpus=%u\n", pGVMM, cHostCpus));
+                return VINF_SUCCESS;
+            }
+
+            /* bail out. */
+            RTSemFastMutexDestroy(pGVMM->UsedLock);
+            pGVMM->UsedLock = NIL_RTSEMFASTMUTEX;
+        }
         RTSemFastMutexDestroy(pGVMM->CreateDestroyLock);
+        pGVMM->CreateDestroyLock = NIL_RTSEMFASTMUTEX;
     }
 
     RTMemFree(pGVMM);
@@ -281,8 +428,27 @@ GVMMR0DECL(void) GVMMR0Term(void)
         return;
     }
 
-    pGVMM->u32Magic++;
+    /*
+     * First of all, stop all active timers.
+     */
+    uint32_t cActiveTimers = 0;
+    uint32_t iCpu = pGVMM->cHostCpus;
+    while (iCpu-- > 0)
+    {
+        ASMAtomicWriteU32(&pGVMM->aHostCpus[iCpu].u32Magic, ~GVMMHOSTCPU_MAGIC);
+#ifdef GVMM_SCHED_WITH_PPT
+        if (    pGVMM->aHostCpus[iCpu].Ppt.pTimer != NULL
+            &&  RT_SUCCESS(RTTimerStop(pGVMM->aHostCpus[iCpu].Ppt.pTimer)))
+            cActiveTimers++;
+#endif
+    }
+    if (cActiveTimers)
+        RTThreadSleep(1); /* fudge */
 
+    /*
+     * Invalidate the and free resources.
+     */
+    pGVMM->u32Magic = ~GVMM_MAGIC;
     RTSemFastMutexDestroy(pGVMM->UsedLock);
     pGVMM->UsedLock = NIL_RTSEMFASTMUTEX;
     RTSemFastMutexDestroy(pGVMM->CreateDestroyLock);
@@ -294,6 +460,17 @@ GVMMR0DECL(void) GVMMR0Term(void)
         SUPR0Printf("GVMMR0Term: iUsedHead=%#x! (cVMs=%#x cEMTs=%#x)\n", pGVMM->iUsedHead, pGVMM->cVMs, pGVMM->cEMTs);
         pGVMM->iUsedHead = 0;
     }
+
+#ifdef GVMM_SCHED_WITH_PPT
+    iCpu = pGVMM->cHostCpus;
+    while (iCpu-- > 0)
+    {
+        RTTimerDestroy(pGVMM->aHostCpus[iCpu].Ppt.pTimer);
+        pGVMM->aHostCpus[iCpu].Ppt.pTimer = NULL;
+        RTSpinlockDestroy(pGVMM->aHostCpus[iCpu].Ppt.hSpinlock);
+        pGVMM->aHostCpus[iCpu].Ppt.hSpinlock = NIL_RTSPINLOCK;
+    }
+#endif
 
     RTMemFree(pGVMM);
 }
@@ -1885,11 +2062,95 @@ GVMMR0DECL(int) GVMMR0SchedPoll(PVM pVM, VMCPUID idCpu, bool fYield)
 }
 
 
+#ifdef GVMM_SCHED_WITH_PPT
+/**
+ * Timer callback for the periodic preemption timer.
+ *
+ * @param   pTimer      The timer handle.
+ * @param   pvUser      Pointer to the per cpu structure.
+ * @param   iTick       The current tick.
+ */
+static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    PGVMMHOSTCPU pCpu = (PGVMMHOSTCPU)pvUser;
+
+    /*
+     * Termination check
+     */
+    if (pCpu->u32Magic != GVMMHOSTCPU_MAGIC)
+        return;
+
+    /*
+     * Do the house keeping.
+     */
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+
+    if (++pCpu->Ppt.iTickHistorization >= pCpu->Ppt.cTicksHistoriziationInterval)
+    {
+        /*
+         * Historicize the max frequency.
+         */
+        uint32_t iHzHistory = ++pCpu->Ppt.iHzHistory % RT_ELEMENTS(pCpu->Ppt.aHzHistory);
+        pCpu->Ppt.aHzHistory[iHzHistory] = pCpu->Ppt.uDesiredHz;
+        pCpu->Ppt.iTickHistorization = 0;
+        pCpu->Ppt.uDesiredHz         = 0;
+
+        /*
+         * Check if the current timer frequency.
+         */
+        uint32_t uHistMaxHz = 0;
+        for (uint32_t i = 0; i < RT_ELEMENTS(pCpu->Ppt.aHzHistory); i++)
+            if (pCpu->Ppt.aHzHistory[i] > uHistMaxHz)
+                uHistMaxHz = pCpu->Ppt.aHzHistory[i];
+        if (uHistMaxHz == pCpu->Ppt.uTimerHz)
+            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+        else if (uHistMaxHz)
+        {
+            /*
+             * Reprogram it.
+             */
+            pCpu->Ppt.cChanges++;
+            pCpu->Ppt.iTickHistorization    = 0;
+            pCpu->Ppt.uTimerHz              = uHistMaxHz;
+            uint32_t const cNsInterval      = UINT32_C(1000000000) / uHistMaxHz;
+            pCpu->Ppt.cNsInterval           = cNsInterval;
+            if (cNsInterval < GVMMHOSTCPU_PPT_HIST_INTERVAL_NS)
+                pCpu->Ppt.cTicksHistoriziationInterval = (  GVMMHOSTCPU_PPT_HIST_INTERVAL_NS
+                                                          + GVMMHOSTCPU_PPT_HIST_INTERVAL_NS / 2 - 1)
+                                                       / cNsInterval;
+            else
+                pCpu->Ppt.cTicksHistoriziationInterval = 1;
+            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+
+            /*SUPR0Printf("Cpu%u: change to %u Hz / %u ns\n", pCpu->idxCpuSet, uHistMaxHz, cNsInterval);*/
+            RTTimerChangeInterval(pTimer, cNsInterval);
+        }
+        else
+        {
+            /*
+             * Stop it.
+             */
+            pCpu->Ppt.fStarted    = false;
+            pCpu->Ppt.uTimerHz    = 0;
+            pCpu->Ppt.cNsInterval = 0;
+            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+
+            /*SUPR0Printf("Cpu%u: stopping (%u Hz)\n", pCpu->idxCpuSet, uHistMaxHz);*/
+            RTTimerStop(pTimer);
+        }
+    }
+    else
+        RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+}
+#endif /* GVMM_SCHED_WITH_PPT */
+
 
 /**
  * Updates the periodic preemption timer for the calling CPU.
  *
  * The caller must have disabled preemption!
+ * The caller must check that the host can do high resolution timers.
  *
  * @param   pVM         The VM handle.
  * @param   idHostCpu   The current host CPU id.
@@ -1897,7 +2158,72 @@ GVMMR0DECL(int) GVMMR0SchedPoll(PVM pVM, VMCPUID idCpu, bool fYield)
  */
 GVMMR0DECL(void) GVMMR0SchedUpdatePeriodicPreemptionTimer(PVM pVM, RTCPUID idHostCpu, uint32_t uHz)
 {
+#ifdef GVMM_SCHED_WITH_PPT
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(RTTimerCanDoHighResolution());
 
+    /*
+     * Resolve the per CPU data.
+     */
+    uint32_t    iCpu  = RTMpCpuIdToSetIndex(idHostCpu);
+    PGVMM       pGVMM = g_pGVMM;
+    if (   !VALID_PTR(pGVMM)
+        || pGVMM->u32Magic != GVMM_MAGIC)
+        return;
+    AssertMsgReturnVoid(iCpu < pGVMM->cHostCpus, ("iCpu=%d cHostCpus=%d\n", iCpu, pGVMM->cHostCpus));
+    PGVMMHOSTCPU pCpu = &pGVMM->aHostCpus[iCpu];
+    AssertMsgReturnVoid(   pCpu->u32Magic == GVMMHOSTCPU_MAGIC
+                        && pCpu->idCpu    == idHostCpu,
+                        ("u32Magic=%#x idCpu=% idHostCpu=%d\n", pCpu->u32Magic, pCpu->idCpu, idHostCpu));
+
+    /*
+     * Check whether we need to do anything about the timer.
+     * We have to be a little bit careful since we might be race the timer
+     * callback here.
+     */
+    if (uHz > 20000)
+        uHz = 20000;
+    if (RT_UNLIKELY(   uHz > ASMAtomicReadU32(&pCpu->Ppt.uDesiredHz)
+                    && uHz >= pCpu->Ppt.uMinHz
+                    && !pCpu->Ppt.fStarting /* solaris paranoia */))
+    {
+        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquireNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+
+        pCpu->Ppt.uDesiredHz = uHz;
+        uint32_t cNsInterval = 0;
+        if (!pCpu->Ppt.fStarted)
+        {
+            pCpu->Ppt.cStarts++;
+            pCpu->Ppt.fStarted              = true;
+            pCpu->Ppt.fStarting             = true;
+            pCpu->Ppt.iTickHistorization    = 0;
+            pCpu->Ppt.uTimerHz              = uHz;
+            pCpu->Ppt.cNsInterval           = cNsInterval = UINT32_C(1000000000) / uHz;
+            if (cNsInterval < GVMMHOSTCPU_PPT_HIST_INTERVAL_NS)
+                pCpu->Ppt.cTicksHistoriziationInterval = (  GVMMHOSTCPU_PPT_HIST_INTERVAL_NS
+                                                          + GVMMHOSTCPU_PPT_HIST_INTERVAL_NS / 2 - 1)
+                                                       / cNsInterval;
+            else
+                pCpu->Ppt.cTicksHistoriziationInterval = 1;
+        }
+
+        RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+
+        if (cNsInterval)
+        {
+            RTTimerChangeInterval(pCpu->Ppt.pTimer, cNsInterval);
+            int rc = RTTimerStart(pCpu->Ppt.pTimer, cNsInterval);
+            AssertRC(rc);
+
+            RTSpinlockAcquireNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+            if (RT_FAILURE(rc))
+                pCpu->Ppt.fStarted = false;
+            pCpu->Ppt.fStarting = false;
+            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+        }
+    }
+#endif /* GVMM_SCHED_WITH_PPT */
 }
 
 

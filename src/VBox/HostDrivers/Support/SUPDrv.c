@@ -275,6 +275,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTTimerDestroy",                         (void *)RTTimerDestroy },
     { "RTTimerStart",                           (void *)RTTimerStart },
     { "RTTimerStop",                            (void *)RTTimerStop },
+    { "RTTimerChangeInterval",                  (void *)RTTimerChangeInterval },
     { "RTTimerGetSystemGranularity",            (void *)RTTimerGetSystemGranularity },
     { "RTTimerRequestSystemGranularity",        (void *)RTTimerRequestSystemGranularity },
     { "RTTimerReleaseSystemGranularity",        (void *)RTTimerReleaseSystemGranularity },
@@ -284,6 +285,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTMpCpuId",                              (void *)RTMpCpuId },
     { "RTMpCpuIdFromSetIndex",                  (void *)RTMpCpuIdFromSetIndex },
     { "RTMpCpuIdToSetIndex",                    (void *)RTMpCpuIdToSetIndex },
+    { "RTMpGetArraySize",                       (void *)RTMpGetArraySize },
     { "RTMpIsCpuPossible",                      (void *)RTMpIsCpuPossible },
     { "RTMpGetCount",                           (void *)RTMpGetCount },
     { "RTMpGetMaxCpuId",                        (void *)RTMpGetMaxCpuId },
@@ -4903,8 +4905,7 @@ static bool supdrvDetermineAsyncTsc(uint64_t *poffMin)
      * Just iterate all the cpus 8 times and make sure that the TSC is
      * ever increasing. We don't bother taking TSC rollover into account.
      */
-    RTCPUSET    CpuSet;
-    int         iLastCpu = RTCpuLastIndex(RTMpGetSet(&CpuSet));
+    int         iEndCpu = RTMpGetArraySize();
     int         iCpu;
     int         cLoops = 8;
     bool        fAsync = false;
@@ -4915,7 +4916,7 @@ static bool supdrvDetermineAsyncTsc(uint64_t *poffMin)
 
     while (cLoops-- > 0)
     {
-        for (iCpu = 0; iCpu <= iLastCpu; iCpu++)
+        for (iCpu = 0; iCpu < iEndCpu; iCpu++)
         {
             uint64_t CurTsc;
             rc = RTMpOnSpecific(RTMpCpuIdFromSetIndex(iCpu), supdrvDetermineAsyncTscWorker, &CurTsc, NULL);
@@ -4951,13 +4952,13 @@ static bool supdrvDetermineAsyncTsc(uint64_t *poffMin)
         }
 
         /* broke out of the loop. */
-        if (iCpu <= iLastCpu)
+        if (iCpu < iEndCpu)
             break;
     }
 
     *poffMin = offMin; /* Almost RTMpOnSpecific profiling. */
-    Log(("supdrvDetermineAsyncTsc: returns %d; iLastCpu=%d rc=%d offMin=%llx offMax=%llx\n",
-         fAsync, iLastCpu, rc, offMin, offMax));
+    Log(("supdrvDetermineAsyncTsc: returns %d; iEndCpu=%d rc=%d offMin=%llx offMax=%llx\n",
+         fAsync, iEndCpu, rc, offMin, offMax));
 #if !defined(RT_OS_SOLARIS) && !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)
     OSDBGPRINT(("vboxdrv: fAsync=%d offMin=%#lx offMax=%#lx\n", fAsync, (long)offMin, (long)offMax));
 #endif

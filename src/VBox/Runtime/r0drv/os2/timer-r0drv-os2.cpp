@@ -108,7 +108,7 @@ RT_C_DECLS_END
 
 
 
-RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
+RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_t fFlags, PFNRTTIMER pfnTimer, void *pvUser)
 {
     *ppTimer = NULL;
 
@@ -285,6 +285,15 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
 
     return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
+{
+    if (!rtTimerIsValid(pTimer))
+        return VERR_INVALID_HANDLE;
+
+    return VERR_NOT_SUPPORTED;
 }
 
 

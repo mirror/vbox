@@ -92,7 +92,8 @@ typedef FNRTTIMER *PFNRTTIMER;
  * @param   pfnTimer            Callback function which shall be scheduled for execution
  *                              on every timer tick.
  * @param   pvUser              User argument for the callback.
- * @see     RTTimerDestroy, RTTimerStop
+ * @see     RTTimerCreateEx, RTTimerStart, RTTimerStop, RTTimerChangeInterval,
+ *          RTTimerDestroy, RTTimerGetSystemGranularity
  */
 RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIMER pfnTimer, void *pvUser);
 
@@ -101,6 +102,7 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
  *
  * @returns iprt status code.
  * @retval  VERR_NOT_SUPPORTED if an unsupported flag was specfied.
+ * @retval  VERR_CPU_NOT_FOUND if the specified CPU
  *
  * @param   ppTimer             Where to store the timer handle.
  * @param   u64NanoInterval     The interval between timer ticks specified in nanoseconds if it's
@@ -110,26 +112,32 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
  * @param   pfnTimer            Callback function which shall be scheduled for execution
  *                              on every timer tick.
  * @param   pvUser              User argument for the callback.
- * @see     RTTimerStart, RTTimerStop, RTTimerDestroy, RTTimerGetSystemGranularity
+ * @see     RTTimerStart, RTTimerStop, RTTimerChangeInterval, RTTimerDestroy,
+ *          RTTimerGetSystemGranularity, RTTimerCanDoHighResolution
  */
-RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser);
+RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_t fFlags, PFNRTTIMER pfnTimer, void *pvUser);
 
 /** @name RTTimerCreateEx flags
  * @{ */
 /** Any CPU is fine. (Must be 0.) */
-#define RTTIMER_FLAGS_CPU_ANY        0
+#define RTTIMER_FLAGS_CPU_ANY       UINT32_C(0)
 /** One specific CPU */
-#define RTTIMER_FLAGS_CPU_SPECIFIC   RT_BIT(8)
+#define RTTIMER_FLAGS_CPU_SPECIFIC  RT_BIT(8)
 /** Omni timer, run on all online CPUs.
  * @remarks The timer callback isn't necessarily running at the time same time on each CPU. */
-#define RTTIMER_FLAGS_CPU_ALL        ( RTTIMER_FLAGS_CPU_MASK | RTTIMER_FLAGS_CPU_SPECIFIC )
+#define RTTIMER_FLAGS_CPU_ALL       ( RTTIMER_FLAGS_CPU_MASK | RTTIMER_FLAGS_CPU_SPECIFIC )
 /** CPU mask. */
-#define RTTIMER_FLAGS_CPU_MASK       0xff
-/** Convert a CPU number (0-based) to RTTimerCreateEx flags.
- * This will automatically OR in the RTTIMER_FLAG_CPU_SPECIFIC flag. */
-#define RTTIMER_FLAGS_CPU(iCpu)      ( (iCpu) | RTTIMER_FLAG_CPU_SPECIFIC )
+#define RTTIMER_FLAGS_CPU_MASK      UINT32_C(0xff)
+/** Desire a high resolution timer that works with RTTimerChangeInterval and
+ * isn't subject to RTTimerGetSystemGranularity rounding.
+ * @remarks This is quietly ignored if the feature isn't supported. */
+#define RTTIMER_FLAGS_HIGH_RES      RT_BIT(9)
+/** Convert a CPU set index (0-based) to RTTimerCreateEx flags.
+ * This will automatically OR in the RTTIMER_FLAGS_CPU_SPECIFIC flag. */
+#define RTTIMER_FLAGS_CPU(iCpu)     ( (iCpu) | RTTIMER_FLAGS_CPU_SPECIFIC )
 /** Macro that validates the flags. */
-#define RTTIMER_FLAGS_ARE_VALID(fFlags) ( !((fFlags) & ~((fFlags) & RTTIMER_FLAGS_CPU_SPECIFIC ? 0x1ffU : 0x100U)) )
+#define RTTIMER_FLAGS_ARE_VALID(fFlags) \
+    ( !((fFlags) & ~((fFlags) & RTTIMER_FLAGS_CPU_SPECIFIC ? UINT32_C(0x3ff) : UINT32_C(0x300))) )
 /** @} */
 
 /**
@@ -146,10 +154,16 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer);
  * @returns IPRT status code.
  * @retval  VERR_INVALID_HANDLE if pTimer isn't valid.
  * @retval  VERR_TIMER_ACTIVE if the timer isn't suspended.
+ * @retval  VERR_CPU_OFFLINE if the CPU the timer was created to run on is not
+ *          online (this include the case where it's not present in the
+ *          system).
  *
  * @param   pTimer      The timer to activate.
  * @param   u64First    The RTTimeSystemNanoTS() for when the timer should start
- *                      firing (relative). If 0 is specified, the timer will fire ASAP.
+ *                      firing (relative).  If 0 is specified, the timer will
+ *                      fire ASAP.
+ * @remarks When RTTimerCanDoHighResolution returns true, this API is
+ *          callable with preemption disabled in ring-0.
  * @see     RTTimerStop
  */
 RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First);
@@ -160,13 +174,34 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First);
  * @returns IPRT status code.
  * @retval  VERR_INVALID_HANDLE if pTimer isn't valid.
  * @retval  VERR_TIMER_SUSPENDED if the timer isn't active.
- * @retval  VERR_NOT_SUPPORTED if the IPRT implementation doesn't support stopping a timer.
+ * @retval  VERR_NOT_SUPPORTED if the IPRT implementation doesn't support
+ *          stopping a timer.
  *
  * @param   pTimer  The timer to suspend.
+ * @remarks Can be called from the timer callback function to stop it.
  * @see     RTTimerStart
  */
 RTDECL(int) RTTimerStop(PRTTIMER pTimer);
 
+/**
+ * Changes the interval of a periodic timer.
+ *
+ * If the timer is active, it is implementation dependent whether the change
+ * takes place immediately or after the next tick.  To get defined behavior,
+ * stop the timer before calling this API.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_HANDLE if pTimer isn't valid.
+ * @retval  VERR_NOT_SUPPORTED if not supported.
+ *
+ * @param   pTimer              The timer to activate.
+ * @param   u64NanoInterval     The interval between timer ticks specified in
+ *                              nanoseconds.  This is rounded to the fit the
+ *                              system timer granularity.
+ * @remarks Callable from the timer callback.  Callable with preemption
+ *          disabled in ring-0.
+ */
+RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval);
 
 /**
  * Gets the (current) timer granularity of the system.
@@ -224,6 +259,9 @@ RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted);
  * without getting into trouble.
  *
  * @returns true if supported, false it not.
+ *
+ * @remarks Returning true also means RTTimerChangeInterval must be implemented
+ *          and RTTimerStart be callable with preemption disabled.
  */
 RTDECL(bool) RTTimerCanDoHighResolution(void);
 

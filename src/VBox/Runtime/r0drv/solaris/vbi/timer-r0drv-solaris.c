@@ -102,7 +102,7 @@ static void rtTimerSolarisCallbackWrapper(PRTTIMER pTimer, uint64_t tick)
 
 
 
-RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
+RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_t fFlags, PFNRTTIMER pfnTimer, void *pvUser)
 {
     RT_ASSERT_PREEMPTIBLE();
     *ppTimer = NULL;
@@ -117,7 +117,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
 
     if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
-        &&  !RTMpIsCpuPossible((fFlags & RTTIMER_FLAGS_CPU_MASK)))
+        &&  !RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(fFlags & RTTIMER_FLAGS_CPU_MASK)))
         return VERR_CPU_NOT_FOUND;
 
     if ((fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL && u64NanoInterval == 0)
@@ -142,7 +142,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     {
         pTimer->fAllCpu = false;
         pTimer->fSpecificCpu = true;
-        pTimer->iCpu = fFlags & RTTIMER_FLAGS_CPU_MASK;
+        pTimer->iCpu = fFlags & RTTIMER_FLAGS_CPU_MASK; /* ASSUMES: index == cpuid */
     }
     else
     {
@@ -236,6 +236,16 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
 
 
 
+RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
+{
+    RTTIMER_ASSERT_VALID_RET(pTimer);
+
+    /** @todo implement me! */
+
+    return VERR_NOT_SUPPORTED;
+}
+
+
 RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
 {
     return vbi_timer_granularity();
@@ -256,6 +266,7 @@ RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
 
 RTDECL(bool) RTTimerCanDoHighResolution(void)
 {
-    return true;
+    /** @todo return true; - when missing bits have been implemented and tested*/
+    return false;
 }
 
