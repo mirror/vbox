@@ -161,6 +161,7 @@ static const RTGETOPTDEF g_aOptions[]
         { "--threads",          'T', RTGETOPT_REQ_UINT32 },
         { "--keepalive",        'k', RTGETOPT_REQ_UINT32 },
         { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
+        { "--pidfile",          'P', RTGETOPT_REQ_STRING },
         { "--logfile",          'F', RTGETOPT_REQ_STRING },
     };
 
@@ -216,6 +217,10 @@ void DisplayHelp()
 
             case 'v':
                 pcszDescr = "Be verbose.";
+                break;
+
+            case 'P':
+                pcszDescr = "Name of the PID file which is created when the daemon was started.";
                 break;
 
             case 'F':
@@ -633,6 +638,7 @@ int main(int argc, char* argv[])
                             "All rights reserved.\n");
 
     int c;
+    const char *pszPidFile = NULL;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0 /*fFlags*/);
@@ -666,6 +672,10 @@ int main(int argc, char* argv[])
                        "Opened log file \"%s\"\n", VBOX_VERSION_STRING, ValueUnion.psz);
                 break;
             }
+
+            case 'P':
+                pszPidFile = ValueUnion.psz;
+                break;
 
             case 'T':
                 g_cMaxWorkerThreads = ValueUnion.u32;
@@ -701,7 +711,7 @@ int main(int argc, char* argv[])
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     if (g_fDaemonize)
     {
-        rc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, NULL);
+        rc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, pszPidFile);
         if (RT_FAILURE(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to daemonize, rc=%Rrc. exiting.", rc);
     }
