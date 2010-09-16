@@ -1275,16 +1275,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 # endif
             if (pShwPage->GCPhys == GCPhys)
             {
-# if 0 /* likely cause of a major performance regression; must be SyncPageWorkerTrackDeref then */
-                const unsigned iPTEDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-                PSHWPT pPT = (PSHWPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
-                if (pPT->a[iPTEDst].n.u1Present)
-                {
-                    /* This is very unlikely with caching/monitoring enabled. */
-                    PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pShwPage, pPT->a[iPTEDst].u & SHW_PTE_PG_MASK, iPTEDst);
-                    ASMAtomicWriteSize(&pPT->a[iPTEDst], 0);
-                }
-# else /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */
+                /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */
                 rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrc, GCPtrPage, 1, 0);
                 if (RT_SUCCESS(rc))
                     rc = VINF_SUCCESS;
