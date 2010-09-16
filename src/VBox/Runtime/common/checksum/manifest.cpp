@@ -252,10 +252,10 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
         if (pfnProgressCallback)
         {
             callback.cCurrentFile = i;
-            rc = RTSha1Digest(papszFiles[i], &pszDigest, rtSHAProgressCallback, &callback);
+            rc = RTSha1DigestFromFile(papszFiles[i], &pszDigest, rtSHAProgressCallback, &callback);
         }
         else
-            rc = RTSha1Digest(papszFiles[i], &pszDigest, NULL, NULL);
+            rc = RTSha1DigestFromFile(papszFiles[i], &pszDigest, NULL, NULL);
         if (RT_FAILURE(rc))
             break;
         paFiles[i].pszTestFile = (char*)papszFiles[i];
@@ -300,10 +300,10 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * con
         if (pfnProgressCallback)
         {
             callback.cCurrentFile = i;
-            rc = RTSha1Digest(papszFiles[i], &pszDigest, rtSHAProgressCallback, &callback);
+            rc = RTSha1DigestFromFile(papszFiles[i], &pszDigest, rtSHAProgressCallback, &callback);
         }
         else
-            rc = RTSha1Digest(papszFiles[i], &pszDigest, NULL, NULL);
+            rc = RTSha1DigestFromFile(papszFiles[i], &pszDigest, NULL, NULL);
         if (RT_FAILURE(rc))
             break;
 

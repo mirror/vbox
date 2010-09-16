@@ -151,7 +151,7 @@ int main(int argc, char **argv)
                              case kDigestType_SHA1:
                              {
                                  char *pszDigest;
-                                 int rc = RTSha1Digest(ValueUnion.psz, &pszDigest, NULL, NULL);
+                                 int rc = RTSha1DigestFromFile(ValueUnion.psz, &pszDigest, NULL, NULL);
                                  if (RT_FAILURE(rc))
                                      return Error("RTSha1Digest(%s,) -> %Rrc\n", ValueUnion.psz, rc);
                                  RTPrintf("%s  %s\n", pszDigest, ValueUnion.psz);

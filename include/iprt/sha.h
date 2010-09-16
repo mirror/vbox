@@ -113,6 +113,19 @@ RTDECL(int) RTSha1ToString(uint8_t const pabDigest[RTSHA1_HASH_SIZE], char *pszD
 RTDECL(int) RTSha1FromString(char const *pszDigest, uint8_t pabDigest[RTSHA1_HASH_SIZE]);
 
 /**
+ * Creates a SHA1 digest for the given memory buffer.
+ *
+ * @returns iprt status code.
+ *
+ * @param   pvBuf                 Memory buffer to create a SHA1 digest for.
+ * @param   cbBuf                 The amount of data (in bytes).
+ * @param   ppszDigest            On success the SHA1 digest.
+ * @param   pfnProgressCallback   optional callback for the progress indication
+ * @param   pvUser                user defined pointer for the callback
+ */
+RTR3DECL(int) RTSha1Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, FNRTPROGRESS pfnProgressCallback, void *pvUser);
+
+/**
  * Creates a SHA1 digest for the given file.
  *
  * @returns iprt status code.
@@ -122,8 +135,7 @@ RTDECL(int) RTSha1FromString(char const *pszDigest, uint8_t pabDigest[RTSHA1_HAS
  * @param   pfnProgressCallback   optional callback for the progress indication
  * @param   pvUser                user defined pointer for the callback
  */
-RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, FNRTPROGRESS pfnProgressCallback, void *pvUser);
-
+RTR3DECL(int) RTSha1DigestFromFile(const char *pszFile, char **ppszDigest, FNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 
 /** The size of a SHA-256 hash. */

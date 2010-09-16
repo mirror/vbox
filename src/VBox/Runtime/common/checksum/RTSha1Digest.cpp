@@ -40,7 +40,75 @@
 #include <openssl/sha.h>
 
 
-RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
+RTR3DECL(int) RTSha1Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, FNRTPROGRESS pfnProgressCallback, void *pvUser)
+{
+    /* Validate input */
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppszDigest, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+    *ppszDigest = NULL;
+
+    /* Initialize OpenSSL. */
+    SHA_CTX ctx;
+    if (!SHA1_Init(&ctx))
+        return VERR_INTERNAL_ERROR;
+
+    /* Buffer size for progress callback */
+    double rdMulti = 100.0 / cbBuf;
+
+    /* Working buffer */
+    char *pvTmp = (char*)pvBuf;
+
+    /* Process the memory in blocks */
+    size_t cbRead;
+    size_t cbReadTotal = 0;
+    for (;;)
+    {
+        cbRead = RT_MIN(cbBuf - cbReadTotal, _1M);
+        if(!SHA1_Update(&ctx, pvTmp, cbRead))
+        {
+            rc = VERR_INTERNAL_ERROR;
+            break;
+        }
+        cbReadTotal += cbRead;
+        pvTmp += cbRead;
+
+        /* Call the progress callback if one is defined */
+        if (pfnProgressCallback)
+        {
+            rc = pfnProgressCallback((unsigned)(cbReadTotal * rdMulti), pvUser);
+            if (RT_FAILURE(rc))
+                break; /* canceled */
+        }
+        /* Finished? */
+        if (cbReadTotal == cbBuf)
+            break;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /* Finally calculate & format the SHA1 sum */
+        unsigned char auchDig[RTSHA1_HASH_SIZE];
+        if (!SHA1_Final(auchDig, &ctx))
+            return VERR_INTERNAL_ERROR;
+
+        char *pszDigest;
+        rc = RTStrAllocEx(&pszDigest, RTSHA1_DIGEST_LEN + 1);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTSha1ToString(auchDig, pszDigest, RTSHA1_DIGEST_LEN + 1);
+            if (RT_SUCCESS(rc))
+                *ppszDigest = pszDigest;
+            else
+                RTStrFree(pszDigest);
+        }
+    }
+
+    return rc;
+}
+
+RTR3DECL(int) RTSha1DigestFromFile(const char *pszFile, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
 {
     /* Validate input */
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
