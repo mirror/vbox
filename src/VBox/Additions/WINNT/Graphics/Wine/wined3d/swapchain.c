@@ -82,25 +82,36 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
         HeapFree(GetProcessHeap(), 0, This->backBuffer);
         This->backBuffer = NULL;
     }
-
+#ifndef VBOXWDDM
     for (i = 0; i < This->num_contexts; ++i)
     {
         context_destroy(This->device, This->context[i]);
     }
-    /* Restore the screen resolution if we rendered in fullscreen
-     * This will restore the screen resolution to what it was before creating the swapchain. In case of d3d8 and d3d9
-     * this will be the original desktop resolution. In case of d3d7 this will be a NOP because ddraw sets the resolution
-     * before starting up Direct3D, thus orig_width and orig_height will be equal to the modes in the presentation params
-     */
-    if(This->presentParms.Windowed == FALSE && This->presentParms.AutoRestoreDisplayMode) {
-        mode.Width = This->orig_width;
-        mode.Height = This->orig_height;
-        mode.RefreshRate = 0;
-        mode.Format = This->orig_fmt;
-        IWineD3DDevice_SetDisplayMode((IWineD3DDevice *)This->device, 0, &mode);
+#else
+    IWineD3DDevice_RemoveSwapChain(This->device, This);
+    if (!This->device->NumberOfSwapChains)
+#endif
+    {
+        /* Restore the screen resolution if we rendered in fullscreen
+         * This will restore the screen resolution to what it was before creating the swapchain. In case of d3d8 and d3d9
+         * this will be the original desktop resolution. In case of d3d7 this will be a NOP because ddraw sets the resolution
+         * before starting up Direct3D, thus orig_width and orig_height will be equal to the modes in the presentation params
+         */
+        if(This->presentParms.Windowed == FALSE && This->presentParms.AutoRestoreDisplayMode) {
+            mode.Width = This->orig_width;
+            mode.Height = This->orig_height;
+            mode.RefreshRate = 0;
+            mode.Format = This->orig_fmt;
+            IWineD3DDevice_SetDisplayMode((IWineD3DDevice *)This->device, 0, &mode);
+        }
     }
-
+#ifdef VBOXWDDM
+    if(This->device_window) {
+        ReleaseDC(This->device_window, This->hDC);
+    }
+#else
     HeapFree(GetProcessHeap(), 0, This->context);
+#endif
     HeapFree(GetProcessHeap(), 0, This);
 }
 
@@ -352,7 +363,11 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
         swapchain_blit(This, context, &src_rect, &dst_rect);
     }
 
+#ifdef VBOXWDDM
+    if (This->device->numContexts > 1) wglFinish();
+#else
     if (This->num_contexts > 1) wglFinish();
+#endif
     SwapBuffers(context->hdc); /* TODO: cycle through the swapchain buffers */
 
     TRACE("SwapBuffers called, Starting new frame\n");
@@ -719,6 +734,17 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
     swapchain->ref = 1;
     swapchain->win_handle = window;
     swapchain->device_window = window;
+#ifdef VBOXWDDM
+    Assert(window);
+    swapchain->hDC = GetDC(window);
+    if (!swapchain->hDC)
+    {
+        DWORD winEr = GetLastError();
+        WARN("Failed to get a window DC, winEr %d.\n", winEr);
+        Assert(0);
+        goto err;
+    }
+#endif
 
     if (!present_parameters->Windowed && window)
     {
@@ -811,6 +837,7 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
         displaymode_set = TRUE;
     }
 
+#ifndef VBOXWDDM
     swapchain->context = HeapAlloc(GetProcessHeap(), 0, sizeof(swapchain->context));
     if (!swapchain->context)
     {
@@ -819,9 +846,11 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
         goto err;
     }
     swapchain->num_contexts = 1;
+#endif
 
     if (surface_type == SURFACE_OPENGL)
     {
+        struct wined3d_context * swapchainContext;
         const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
 
         /* In WGL both color, depth and stencil are features of a pixel format. In case of D3D they are separate.
@@ -843,23 +872,30 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
         swapchain->ds_format = getFormatDescEntry(WINED3DFMT_D24_UNORM_S8_UINT, gl_info);
 
 #ifdef VBOXWDDM
-        swapchain->context[0] = context_find_create(device, swapchain, (IWineD3DSurfaceImpl *)swapchain->frontBuffer,
+        swapchainContext = context_find_create(device, swapchain, (IWineD3DSurfaceImpl *)swapchain->frontBuffer,
                 swapchain->ds_format);
+        if (!swapchainContext)
 #else
         swapchain->context[0] = context_create(swapchain, (IWineD3DSurfaceImpl *)swapchain->frontBuffer,
                 swapchain->ds_format);
-#endif
         if (!swapchain->context[0])
+#endif
         {
             WARN("Failed to create context.\n");
             hr = WINED3DERR_NOTAVAILABLE;
             goto err;
         }
+#ifdef VBOXWDDM
+        context_release(swapchainContext);
+#else
         context_release(swapchain->context[0]);
+#endif
     }
     else
     {
+#ifndef VBOXWDDM
         swapchain->context[0] = NULL;
+#endif
     }
 
     if (swapchain->presentParms.BackBufferCount > 0)
@@ -942,6 +978,15 @@ err:
         HeapFree(GetProcessHeap(), 0, swapchain->backBuffer);
     }
 
+#ifdef VBOXWDDM
+    if (!device->NumberOfSwapChains)
+    {
+        while (device->numContexts)
+        {
+            context_destroy(device, device->contexts[0]);
+        }
+    }
+#else
     if (swapchain->context)
     {
         if (swapchain->context[0])
@@ -952,6 +997,7 @@ err:
         }
         HeapFree(GetProcessHeap(), 0, swapchain->context);
     }
+#endif
 
     if (swapchain->frontBuffer) IWineD3DSurface_Release(swapchain->frontBuffer);
 
@@ -972,7 +1018,9 @@ struct wined3d_context *swapchain_create_context_for_thread(IWineD3DSwapChain *i
         return NULL;
     }
     context_release(ctx);
-
+#ifdef VBOXWDDM
+    /* no need to do anything since context gets added to the device context list within the context_create call */
+#else
     newArray = HeapAlloc(GetProcessHeap(), 0, sizeof(*newArray) * This->num_contexts + 1);
     if(!newArray) {
         ERR("Out of memory when trying to allocate a new context array\n");
@@ -984,7 +1032,7 @@ struct wined3d_context *swapchain_create_context_for_thread(IWineD3DSwapChain *i
     newArray[This->num_contexts] = ctx;
     This->context = newArray;
     This->num_contexts++;
-
+#endif
     TRACE("Returning context %p\n", ctx);
     return ctx;
 }

@@ -6968,7 +6968,12 @@ HRESULT arbfp_blit_surface(IWineD3DDeviceImpl *device, IWineD3DSurfaceImpl *src_
 
     if (wined3d_settings.strict_draw_ordering || (dst_swapchain
             && ((IWineD3DSurface *)dst_surface == dst_swapchain->frontBuffer
-            || dst_swapchain->num_contexts > 1)))
+#ifdef VBOXWDDM
+            || dst_swapchain->device->numContexts > 1
+#else
+            || dst_swapchain->num_contexts > 1
+#endif
+            )))
         wglFlush(); /* Flush to ensure ordering across contexts. */
 
     context_release(context);

@@ -756,6 +756,9 @@ static void context_update_window(struct wined3d_context *context
         )
 {
 #ifdef VBOXWDDM
+# ifdef DEBUG_misha
+    Assert(0);
+# endif
     TRACE("Updating context %p window from %p to %p.\n",
             context, context->win_handle, swapchain->win_handle);
 #else
@@ -775,17 +778,15 @@ static void context_update_window(struct wined3d_context *context
 
 #ifdef VBOXWDDM
     context->win_handle = swapchain->win_handle;
-    context->hdc = GetDC(context->win_handle);
     context->currentSwapchain = swapchain;
 #else
     context->win_handle = context->swapchain->win_handle;
-
+#endif
     if (!(context->hdc = GetDC(context->win_handle)))
     {
         ERR("Failed to get a device context for window %p.\n", context->win_handle);
         goto err;
     }
-#endif
 
     if (!context_set_pixel_format(context->gl_info, context->hdc, context->pixel_format))
     {
@@ -1594,40 +1595,23 @@ static void context_setup_target(IWineD3DDeviceImpl *device, struct wined3d_cont
 struct wined3d_context *context_find_create(IWineD3DDeviceImpl *device, IWineD3DSwapChainImpl *swapchain, IWineD3DSurfaceImpl *target,
         const struct wined3d_format_desc *ds_format_desc)
 {
-    int i, j;
-    int swapchains = IWineD3DDevice_GetNumberOfSwapChains(device);
+    int i;
     DWORD tid = GetCurrentThreadId();
     struct wined3d_context *context = NULL;
 
-//    Assert(0);
+    Assert(0);
 
-    for(i = 0 ; i < swapchains ; i ++)
+    for(i = 0 ; i < device->numContexts ; i ++)
     {
-        IWineD3DSwapChainImpl *curSwapChain;
-        IWineD3DDevice_GetSwapChain(device, i, &curSwapChain);
-        if (curSwapChain->ds_format == ds_format_desc)
-        {
-            for(j = 0; j < curSwapChain->num_contexts; j++) {
-                if(curSwapChain->context[j]->tid == tid) {
-                    context = curSwapChain->context[j];
-                    break;
-                }
-            }
-        }
-        else
-        {
-            Assert(0);
-        }
-
-        IWineD3DSwapChain_Release(curSwapChain);
-
-        if (context)
+        if(device->contexts[i]->tid == tid) {
+            context = device->contexts[i];
             break;
+        }
     }
 
     if (!context)
     {
-        Assert(!swapchains);
+        Assert(!device->NumberOfSwapChains);
         context = context_create(swapchain, target, ds_format_desc);
     }
     else
@@ -1914,15 +1898,19 @@ static void SetupForBlit(IWineD3DDeviceImpl *This, struct wined3d_context *conte
 static struct wined3d_context *findThreadContextForSwapChain(IWineD3DSwapChain *swapchain, DWORD tid)
 {
     unsigned int i;
-
+#ifdef VBOXWDDM
+    IWineD3DDeviceImpl *device = ((IWineD3DSwapChainImpl*)swapchain)->device;
+    for (i = 0; i < device->numContexts; ++i)
+    {
+        if (device->contexts[i]->tid == tid)
+            return device->contexts[i];
+    }
+#else
     for(i = 0; i < ((IWineD3DSwapChainImpl *) swapchain)->num_contexts; i++) {
         if(((IWineD3DSwapChainImpl *) swapchain)->context[i]->tid == tid) {
             return ((IWineD3DSwapChainImpl *) swapchain)->context[i];
         }
     }
-
-#ifdef VBOXWDDM
-    Assert(0);
 #endif
 
     /* Create a new context for the thread */

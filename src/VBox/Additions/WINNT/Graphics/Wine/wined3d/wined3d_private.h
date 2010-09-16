@@ -2642,11 +2642,16 @@ struct IWineD3DSwapChainImpl
     long prev_time, frames;   /* Performance tracking */
     unsigned int vSyncCounter;
 
+#ifndef VBOXWDDM
     struct wined3d_context **context;
     unsigned int            num_contexts;
+#endif
 
     HWND                    win_handle;
     HWND device_window;
+#ifdef VBOXWDDM
+    HDC hDC;
+#endif
 };
 
 const IWineD3DSwapChainVtbl IWineGDISwapChain_Vtbl DECLSPEC_HIDDEN;
