@@ -401,21 +401,21 @@ typedef struct VMDKGTCACHE
 typedef struct VMDKIMAGE
 {
     /** Image name. */
-    const char      *pszFilename;
+    const char        *pszFilename;
     /** Descriptor file if applicable. */
-    PVMDKFILE       pFile;
+    PVMDKFILE         pFile;
     /** I/O interface. */
-    PVDINTERFACE    pInterfaceIO;
+    PVDINTERFACE      pInterfaceIO;
     /** I/O interface callbacks. */
-    PVDINTERFACEIO  pInterfaceIOCallbacks;
+    PVDINTERFACEIOINT pInterfaceIOCallbacks;
 
     /** Pointer to the per-disk VD interface list. */
-    PVDINTERFACE    pVDIfsDisk;
+    PVDINTERFACE      pVDIfsDisk;
     /** Pointer to the per-image VD interface list. */
-    PVDINTERFACE    pVDIfsImage;
+    PVDINTERFACE      pVDIfsImage;
 
     /** Error interface. */
-    PVDINTERFACE    pInterfaceError;
+    PVDINTERFACE      pInterfaceError;
     /** Error interface callbacks. */
     PVDINTERFACEERROR pInterfaceErrorCallbacks;
 
@@ -3220,9 +3220,9 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
     AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
     AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     /*
@@ -4069,9 +4069,9 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
     AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
     AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     rc = vmdkCreateDescriptor(pImage, pImage->pDescData, pImage->cbDescAlloc,

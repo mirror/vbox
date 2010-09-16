@@ -252,8 +252,8 @@ typedef enum VDINTERFACETYPE
     VDINTERFACETYPE_FIRST = 0,
     /** Interface to pass error message to upper layers. Per-disk. */
     VDINTERFACETYPE_ERROR = VDINTERFACETYPE_FIRST,
-    /** Interface for asynchronous I/O operations. Per-disk. */
-    VDINTERFACETYPE_ASYNCIO,
+    /** Interface for I/O operations. Per-disk. */
+    VDINTERFACETYPE_IO,
     /** Interface for progress notification. Per-operation. */
     VDINTERFACETYPE_PROGRESS,
     /** Interface for configuration information. Per-image. */
@@ -264,8 +264,9 @@ typedef enum VDINTERFACETYPE
     VDINTERFACETYPE_PARENTSTATE,
     /** Interface for synchronizing accesses from several threads. Per-disk. */
     VDINTERFACETYPE_THREADSYNC,
-    /** Interface for I/O between the generic VBoxHDD code and the backend. Per-image. */
-    VDINTERFACETYPE_IO,
+    /** Interface for I/O between the generic VBoxHDD code and the backend. Per-image (internal).
+     * This interface is completely internal and must not be used elsewhere. */
+    VDINTERFACETYPE_IOINT,
     /** invalid interface. */
     VDINTERFACETYPE_INVALID
 } VDINTERFACETYPE;
@@ -505,11 +506,11 @@ typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser, int rcReq);
 typedef FNVDCOMPLETED *PFNVDCOMPLETED;
 
 /**
- * Support interface for asynchronous I/O
+ * Support interface for I/O
  *
- * Per-disk. Optional.
+ * Per-disk. Optional as input.
  */
-typedef struct VDINTERFACEASYNCIO
+typedef struct VDINTERFACEIO
 {
     /**
      * Size of the async interface.
@@ -552,6 +553,47 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pStorage        The opaque storage handle to close.
      */
     DECLR3CALLBACKMEMBER(int, pfnClose, (void *pvUser, void *pStorage));
+
+    /**
+     * Delete callback.
+     *
+     * @return  VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pcszFilename    Name of the file to delete.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDelete, (void *pvUser, const char *pcszFilename));
+
+    /**
+     * Move callback.
+     *
+     * @return  VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pcszSrc         The path to the source file.
+     * @param   pcszDst         The path to the destination file.
+     *                          This file will be created.
+     * @param   fMove           A combination of the RTFILEMOVE_* flags.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMove, (void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove));
+
+    /**
+     * Returns the free space on a disk.
+     *
+     * @return  VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pcszFilename    Name of a file to identify the disk.
+     * @param   pcbFreeSpace    Where to store the free space of the disk.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetFreeSpace, (void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace));
+
+    /**
+     * Returns the last modification timestamp of a file.
+     *
+     * @return  VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pcszFilename    Name of a file to identify the disk.
+     * @param   pModificationTime   Where to store the timestamp of the file.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetModificationTime, (void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime));
 
     /**
      * Returns the size of the opened storage backend.
@@ -659,7 +701,7 @@ typedef struct VDINTERFACEASYNCIO
     DECLR3CALLBACKMEMBER(int, pfnFlushAsync, (void *pvUser, void *pStorage,
                                               void *pvCompletion, void **ppTask));
 
-} VDINTERFACEASYNCIO, *PVDINTERFACEASYNCIO;
+} VDINTERFACEIO, *PVDINTERFACEIO;
 
 /**
  * Get async I/O interface from opaque callback table.
@@ -667,23 +709,23 @@ typedef struct VDINTERFACEASYNCIO
  * @return Pointer to the callback table.
  * @param  pInterface Pointer to the interface descriptor.
  */
-DECLINLINE(PVDINTERFACEASYNCIO) VDGetInterfaceAsyncIO(PVDINTERFACE pInterface)
+DECLINLINE(PVDINTERFACEIO) VDGetInterfaceIO(PVDINTERFACE pInterface)
 {
-    PVDINTERFACEASYNCIO pInterfaceAsyncIO;
+    PVDINTERFACEIO pInterfaceIO;
 
     /* Check that the interface descriptor is a async I/O interface. */
-    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_ASYNCIO)
+    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_IO)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
                     ("Not an async I/O interface"), NULL);
 
-    pInterfaceAsyncIO = (PVDINTERFACEASYNCIO)pInterface->pCallbacks;
+    pInterfaceIO = (PVDINTERFACEIO)pInterface->pCallbacks;
 
     /* Do basic checks. */
-    AssertMsgReturn(   (pInterfaceAsyncIO->cbSize == sizeof(VDINTERFACEASYNCIO))
-                    && (pInterfaceAsyncIO->enmInterface == VDINTERFACETYPE_ASYNCIO),
-                    ("A non async I/O callback table attached to a async I/O interface descriptor\n"), NULL);
+    AssertMsgReturn(   (pInterfaceIO->cbSize == sizeof(VDINTERFACEIO))
+                    && (pInterfaceIO->enmInterface == VDINTERFACETYPE_IO),
+                    ("A non async I/O callback table attached to a I/O interface descriptor\n"), NULL);
 
-    return pInterfaceAsyncIO;
+    return pInterfaceIO;
 }
 
 /**
@@ -1546,14 +1588,14 @@ typedef PVDMETAXFER *PPVDMETAXFER;
 
 
 /**
- * Support interface for file I/O
+ * Internal I/O interface between the generic VD layer and the backends.
  *
- * Per-image. Optional as input, always passed to backends.
+ * Per-image. Always passed to backends.
  */
-typedef struct VDINTERFACEIO
+typedef struct VDINTERFACEIOINT
 {
     /**
-     * Size of the I/O interface.
+     * Size of the internal I/O interface.
      */
     uint32_t    cbSize;
 
@@ -1855,28 +1897,28 @@ typedef struct VDINTERFACEIO
      */
     DECLR3CALLBACKMEMBER(void, pfnIoCtxCompleted, (void *pvUser, PVDIOCTX pIoCtx,
                                                    int rcReq, size_t cbCompleted));
-} VDINTERFACEIO, *PVDINTERFACEIO;
+} VDINTERFACEIOINT, *PVDINTERFACEIOINT;
 
 /**
- * Get async I/O interface from opaque callback table.
+ * Get internal I/O interface from opaque callback table.
  *
  * @return Pointer to the callback table.
  * @param  pInterface Pointer to the interface descriptor.
  */
-DECLINLINE(PVDINTERFACEIO) VDGetInterfaceIO(PVDINTERFACE pInterface)
+DECLINLINE(PVDINTERFACEIOINT) VDGetInterfaceIOInt(PVDINTERFACE pInterface)
 {
-    PVDINTERFACEIO pInterfaceIO;
+    PVDINTERFACEIOINT pInterfaceIO;
 
     /* Check that the interface descriptor is a async I/O interface. */
-    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_IO)
+    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_IOINT)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
                     ("Not an I/O interface"), NULL);
 
-    pInterfaceIO = (PVDINTERFACEIO)pInterface->pCallbacks;
+    pInterfaceIO = (PVDINTERFACEIOINT)pInterface->pCallbacks;
 
     /* Do basic checks. */
-    AssertMsgReturn(   (pInterfaceIO->cbSize == sizeof(VDINTERFACEIO))
-                    && (pInterfaceIO->enmInterface == VDINTERFACETYPE_IO),
+    AssertMsgReturn(   (pInterfaceIO->cbSize == sizeof(VDINTERFACEIOINT))
+                    && (pInterfaceIO->enmInterface == VDINTERFACETYPE_IOINT),
                     ("A non I/O callback table attached to a I/O interface descriptor\n"), NULL);
 
     return pInterfaceIO;

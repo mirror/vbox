@@ -66,7 +66,7 @@ typedef struct PARALLELSIMAGE
     /** I/O interface. */
     PVDINTERFACE        pInterfaceIO;
     /** I/O interface callbacks. */
-    PVDINTERFACEIO      pInterfaceIOCallbacks;
+    PVDINTERFACEIOINT   pInterfaceIOCallbacks;
 
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE        pVDIfsDisk;
@@ -330,9 +330,9 @@ static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
     AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
     AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     rc = parallelsFileOpen(pImage, pImage->pszFilename,
@@ -421,9 +421,9 @@ static int parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDis
     ParallelsHeader parallelsHeader;
 
     /* Get I/O interface. */
-    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IO);
+    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IOINT);
     AssertPtrReturn(pInterfaceIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pInterfaceIOCallbacks = VDGetInterfaceIO(pInterfaceIO);
+    PVDINTERFACEIOINT pInterfaceIOCallbacks = VDGetInterfaceIOInt(pInterfaceIO);
     AssertPtrReturn(pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     rc = pInterfaceIOCallbacks->pfnOpen(pInterfaceIO->pvUser, pszFilename,

@@ -620,7 +620,7 @@ typedef struct VDIIMAGEDESC
     /** I/O interface. */
     PVDINTERFACE            pInterfaceIO;
     /** I/O interface callbacks. */
-    PVDINTERFACEIO          pInterfaceIOCallbacks;
+    PVDINTERFACEIOINT       pInterfaceIOCallbacks;
 #endif /* VBOX_VDICORE_VD */
 } VDIIMAGEDESC, *PVDIIMAGEDESC;
 

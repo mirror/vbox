@@ -123,14 +123,14 @@ typedef struct VHDDynamicDiskHeader
 typedef struct VHDIMAGE
 {
     /** Image file name. */
-    const char      *pszFilename;
+    const char       *pszFilename;
     /** Opaque storage handle. */
-    PVDIOSTORAGE    pStorage;
+    PVDIOSTORAGE      pStorage;
 
     /** I/O interface. */
-    PVDINTERFACE    pInterfaceIO;
+    PVDINTERFACE      pInterfaceIO;
     /** I/O interface callbacks. */
-    PVDINTERFACEIO  pInterfaceIOCallbacks;
+    PVDINTERFACEIOINT pInterfaceIOCallbacks;
 
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE      pVDIfsDisk;
@@ -946,9 +946,9 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
     AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
     AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     /*
@@ -1385,9 +1385,9 @@ static int vhdCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     VHDFooter vhdFooter;
 
     /* Get I/O interface. */
-    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IO);
+    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IOINT);
     AssertPtrReturn(pInterfaceIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pInterfaceIOCallbacks = VDGetInterfaceIO(pInterfaceIO);
+    PVDINTERFACEIOINT pInterfaceIOCallbacks = VDGetInterfaceIOInt(pInterfaceIO);
     AssertPtrReturn(pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     rc = pInterfaceIOCallbacks->pfnOpen(pInterfaceIO->pvUser, pszFilename,
@@ -1515,9 +1515,9 @@ static int vhdCreate(const char *pszFilename, uint64_t cbSize,
     pImage->pVDIfsImage = pVDIfsImage;
 
     /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
     AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
     AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     rc = vhdCreateImage(pImage, cbSize, uImageFlags, pszComment,
