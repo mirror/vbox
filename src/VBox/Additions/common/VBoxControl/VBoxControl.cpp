@@ -1411,7 +1411,7 @@ static RTEXITCODE handleSharedFolder(int argc, char *argv[])
 
 #if !defined(VBOX_CONTROL_TEST)
 /**
- * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: takesnapshot}
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: writecoredump}
  */
 static RTEXITCODE handleWriteCoreDump(int argc, char *argv[])
 {
