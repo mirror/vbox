@@ -144,6 +144,8 @@ ifeq ($(BUILD_TARGET_ARCH),amd64)
 OBJS += common/alloc/heapsimple.o
 endif
 
+ifneq ($(MAKECMDGOALS),clean)
+
 ifeq ($(KERNELRELEASE),)
 
  #
@@ -274,5 +276,25 @@ install_rpm: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
 	install -m 0664 $(MODULE).$(MODULE_EXT) $(MODULE_DIR)
 
+else # eq ($(MAKECMDGOALS),clean)
+
+ ifndef KERN_DIR
+  KERN_DIR := /lib/modules/$(shell uname -r)/build
+  ifeq ($(wildcard $(KERN_DIR)/Makefile),)
+   KERN_DIR := /usr/src/linux
+  endif
+ endif
+ ifeq ($(wildcard $(KERN_DIR)/Makefile),)
+
+clean:
+	find . \( -name \*.o -o -name \*.cmd \) -print0 | xargs -0 rm -f
+	rm -rf .tmp_ver* $(MODULE).* Module.symvers Modules.symvers modules.order
+
+ else
+
 clean:
 	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) -C $(KERN_DIR) clean
+
+ endif
+
+endif # eq($(MAKECMDGOALS),clean)
