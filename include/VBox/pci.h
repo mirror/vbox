@@ -93,51 +93,91 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 
 /** @name PCI Configuration Space Registers
  * @{ */
-#define VBOX_PCI_VENDOR_ID              0x00    /**< 16-bit RO */
-#define VBOX_PCI_DEVICE_ID              0x02    /**< 16-bit RO */
-#define VBOX_PCI_COMMAND                0x04    /**< 16-bit RW */
-#define VBOX_PCI_STATUS                 0x06    /**< 16-bit RW */
-#define VBOX_PCI_REVISION_ID            0x08    /**<  8-bit RO */
-#define VBOX_PCI_CLASS_PROG             0x09    /**<  8-bit RO - - register-level programming class code (device specific). */
-#define VBOX_PCI_CLASS_SUB              0x0a    /**<  8-bit RO - - sub-class code. */
+/* Commented out values common for different header types */
+/* Common part of the header */
+#define VBOX_PCI_VENDOR_ID              0x00    /**< 16-bit  RO */
+#define VBOX_PCI_DEVICE_ID              0x02    /**< 16-bit  RO */
+#define VBOX_PCI_COMMAND                0x04    /**< 16-bit  RW, some bits RO */
+#define VBOX_PCI_STATUS                 0x06    /**< 16-bit  RW, some bits RO */
+#define VBOX_PCI_REVISION_ID            0x08    /**<  8-bit  RO  - - device revision */
+#define VBOX_PCI_CLASS_PROG             0x09    /**<  8-bit  RO  - - register-level programming class code (device specific). */
+#define VBOX_PCI_CLASS_SUB              0x0a    /**<  8-bit  RO  - - sub-class code. */
 #define VBOX_PCI_CLASS_DEVICE           VBOX_PCI_CLASS_SUB
-#define VBOX_PCI_CLASS_BASE             0x0b    /**<  8-bit RO - - base class code. */
-#define VBOX_PCI_CACHE_LINE_SIZE        0x0c    /**<  8-bit ?? */
-#define VBOX_PCI_LATENCY_TIMER          0x0d    /**<  8-bit ?? */
-#define VBOX_PCI_HEADER_TYPE            0x0e    /**<  8-bit ?? */
-#define VBOX_PCI_BIST                   0x0f    /**<  8-bit ?? */
-#define VBOX_PCI_BASE_ADDRESS_0         0x10    /**< 32-bit RW */
-#define VBOX_PCI_BASE_ADDRESS_1         0x14    /**< 32-bit RW */
-#define VBOX_PCI_BASE_ADDRESS_2         0x18    /**< 32-bit RW */
-#define VBOX_PCI_PRIMARY_BUS            0x18    /**<  8-bit ?? - bridge - primary bus number. */
-#define VBOX_PCI_SECONDARY_BUS          0x19    /**<  8-bit ?? - bridge - secondary bus number. */
-#define VBOX_PCI_SUBORDINATE_BUS        0x1a    /**<  8-bit ?? - bridge - highest subordinate bus number. (behind the bridge) */
-#define VBOX_PCI_SEC_LATENCY_TIMER      0x1b    /**<  8-bit ?? - bridge - secondary latency timer. */
-#define VBOX_PCI_BASE_ADDRESS_3         0x1c    /**< 32-bit RW */
-#define VBOX_PCI_IO_BASE                0x1c    /**<  8-bit ?? - bridge - I/O range base. */
-#define VBOX_PCI_IO_LIMIT               0x1d    /**<  8-bit ?? - bridge - I/O range limit. */
-#define VBOX_PCI_SEC_STATUS             0x1e    /**< 16-bit ?? - bridge - secondary status register. */
-#define VBOX_PCI_BASE_ADDRESS_4         0x20    /**< 32-bit RW */
-#define VBOX_PCI_MEMORY_BASE            0x20    /**< 16-bit ?? - bridge - memory range base. */
-#define VBOX_PCI_MEMORY_LIMIT           0x22    /**< 16-bit ?? - bridge - memory range limit. */
-#define VBOX_PCI_BASE_ADDRESS_5         0x24    /**< 32-bit RW */
-#define VBOX_PCI_PREF_MEMORY_BASE       0x24    /**< 16-bit ?? - bridge - Prefetchable memory range base. */
-#define VBOX_PCI_PREF_MEMORY_LIMIT      0x26    /**< 16-bit ?? - bridge - Prefetchable memory range limit. */
-#define VBOX_PCI_CARDBUS_CIS            0x28    /**< 32-bit ?? */
-#define VBOX_PCI_PREF_BASE_UPPER32      0x28    /**< 32-bit ?? - bridge - Prefetchable memory range high base.*/
-#define VBOX_PCI_PREF_LIMIT_UPPER32     0x2c    /**< 32-bit ?? - bridge - Prefetchable memory range high limit. */
-#define VBOX_PCI_SUBSYSTEM_VENDOR_ID    0x2c    /**< 16-bit ?? */
-#define VBOX_PCI_SUBSYSTEM_ID           0x2e    /**< 16-bit ?? */
-#define VBOX_PCI_ROM_ADDRESS            0x30    /**< 32-bit ?? */
-#define VBOX_PCI_IO_BASE_UPPER16        0x30    /**< 16-bit ?? - bridge - memory range high base. */
-#define VBOX_PCI_IO_LIMIT_UPPER16       0x32    /**< 16-bit ?? - bridge - memory range high limit. */
-#define VBOX_PCI_CAPABILITY_LIST        0x34    /**< 8-bit? ?? */
-#define VBOX_PCI_ROM_ADDRESS_BR         0x38    /**< 32-bit ?? - bridge */
-#define VBOX_PCI_INTERRUPT_LINE         0x3c    /**<  8-bit RW - Interrupt line. */
-#define VBOX_PCI_INTERRUPT_PIN          0x3d    /**<  8-bit RO - Interrupt pin.  */
-#define VBOX_PCI_MIN_GNT                0x3e    /**<  8-bit ?? */
-#define VBOX_PCI_BRIDGE_CONTROL         0x3e    /**< 8-bit? ?? - bridge */
-#define VBOX_PCI_MAX_LAT                0x3f    /**<  8-bit ?? */
+#define VBOX_PCI_CLASS_BASE             0x0b    /**<  8-bit  RO  - - base class code. */
+#define VBOX_PCI_CACHE_LINE_SIZE        0x0c    /**<  8-bit  RW  - - system cache line size */
+#define VBOX_PCI_LATENCY_TIMER          0x0d    /**<  8-bit  RW  - - master latency timer, hardwired to 0 for PCIe */
+#define VBOX_PCI_HEADER_TYPE            0x0e    /**<  8-bit  RO  - - header type (0 - device, 1 - bridge, 2  - CardBus bridge)  */
+#define VBOX_PCI_BIST                   0x0f    /**<  8-bit  RW  - - built-in self test control */
+#define VBOX_PCI_CAPABILITY_LIST        0x34    /**<  8-bit  RO? - - linked list of new capabilities implemented by the device, 2 bottom bits reserved */
+#define VBOX_PCI_INTERRUPT_LINE         0x3c    /**<  8-bit  RW  - - interrupt line. */
+#define VBOX_PCI_INTERRUPT_PIN          0x3d    /**<  8-bit  RO  - - interrupt pin.  */
+
+/* Type 0 header, device */
+#define VBOX_PCI_BASE_ADDRESS_0         0x10    /**< 32-bit  RW */
+#define VBOX_PCI_BASE_ADDRESS_1         0x14    /**< 32-bit  RW */
+#define VBOX_PCI_BASE_ADDRESS_2         0x18    /**< 32-bit  RW */
+#define VBOX_PCI_BASE_ADDRESS_3         0x1c    /**< 32-bit  RW */
+#define VBOX_PCI_BASE_ADDRESS_4         0x20    /**< 32-bit  RW */
+#define VBOX_PCI_BASE_ADDRESS_5         0x24    /**< 32-bit  RW */
+#define VBOX_PCI_CARDBUS_CIS            0x28    /**< 32-bit  ?? */
+#define VBOX_PCI_SUBSYSTEM_VENDOR_ID    0x2c    /**< 16-bit  ?? */
+#define VBOX_PCI_SUBSYSTEM_ID           0x2e    /**< 16-bit  ?? */
+#define VBOX_PCI_ROM_ADDRESS            0x30    /**< 32-bit  ?? */
+/* #define VBOX_PCI_CAPABILITY_LIST        0x34 */  /**<  8-bit? ?? */
+#define VBOX_PCI_RESERVED_35            0x35    /**<  8-bit  ?? - - reserved */
+#define VBOX_PCI_RESERVED_36            0x36    /**<  8-bit  ?? - - reserved */
+#define VBOX_PCI_RESERVED_37            0x37    /**<  8-bit  ?? - - reserved */
+#define VBOX_PCI_RESERVED_38            0x38    /**<  32-bit ?? - - reserved */
+/* #define VBOX_PCI_INTERRUPT_LINE         0x3c */   /**<  8-bit  RW  - - interrupt line. */
+/* #define VBOX_PCI_INTERRUPT_PIN          0x3d */   /**<  8-bit  RO  - - interrupt pin.  */
+#define VBOX_PCI_MIN_GNT                0x3e    /**<  8-bit  RO - - burst period length (in 1/4 microsecond units)  */
+#define VBOX_PCI_MAX_LAT                0x3f    /**<  8-bit  RO - - how often the device needs access to the PCI bus (in 1/4 microsecond units) */
+
+/* Type 1 header, PCI-to-PCI bridge */
+/* #define VBOX_PCI_BASE_ADDRESS_0         0x10 */    /**< 32-bit RW */
+/* #define VBOX_PCI_BASE_ADDRESS_1         0x14 */    /**< 32-bit RW */
+#define VBOX_PCI_PRIMARY_BUS            0x18    /**<  8-bit  ?? - - primary bus number. */
+#define VBOX_PCI_SECONDARY_BUS          0x19    /**<  8-bit  ?? - - secondary bus number. */
+#define VBOX_PCI_SUBORDINATE_BUS        0x1a    /**<  8-bit  ?? - - highest subordinate bus number. (behind the bridge) */
+#define VBOX_PCI_SEC_LATENCY_TIMER      0x1b    /**<  8-bit  ?? - - secondary latency timer. */
+#define VBOX_PCI_IO_BASE                0x1c    /**<  8-bit  ?? - - I/O range base. */
+#define VBOX_PCI_IO_LIMIT               0x1d    /**<  8-bit  ?? - - I/O range limit. */
+#define VBOX_PCI_SEC_STATUS             0x1e    /**< 16-bit  ?? - - secondary status register. */
+#define VBOX_PCI_MEMORY_BASE            0x20    /**< 16-bit  ?? - - memory range base. */
+#define VBOX_PCI_MEMORY_LIMIT           0x22    /**< 16-bit  ?? - - memory range limit. */
+#define VBOX_PCI_PREF_MEMORY_BASE       0x24    /**< 16-bit  ?? - - prefetchable memory range base. */
+#define VBOX_PCI_PREF_MEMORY_LIMIT      0x26    /**< 16-bit  ?? - - prefetchable memory range limit. */
+#define VBOX_PCI_PREF_BASE_UPPER32      0x28    /**< 32-bit  ?? - - prefetchable memory range high base.*/
+#define VBOX_PCI_PREF_LIMIT_UPPER32     0x2c    /**< 32-bit  ?? - - prefetchable memory range high limit. */
+#define VBOX_PCI_IO_BASE_UPPER16        0x30    /**< 16-bit  ?? - - memory range high base. */
+#define VBOX_PCI_IO_LIMIT_UPPER16       0x32    /**< 16-bit  ?? - - memory range high limit. */
+/* #define VBOX_PCI_CAPABILITY_LIST        0x34 */   /**<  8-bit? ?? */
+/* #define VBOX_PCI_RESERVED_35            0x35 */   /**<  8-bit ?? - - reserved */
+/* #define VBOX_PCI_RESERVED_36            0x36 */   /**<  8-bit ?? - - reserved */
+/* #define VBOX_PCI_RESERVED_37            0x37 */   /**<  8-bit ?? - - reserved */
+#define VBOX_PCI_ROM_ADDRESS_BR         0x38    /**< 32-bit  ?? - - expansion ROM base address  */
+#define VBOX_PCI_BRIDGE_CONTROL         0x3e    /**< 16-bit?  ?? - - bridge control  */
+
+/* Type 2 header, PCI-to-CardBus bridge */
+#define VBOX_PCI_CARDBUS_BASE_ADDRESS   0x10    /**< 32-bit  RW  - - CardBus Socket/ExCa base address */
+#define VBOX_PCI_CARDBUS_CAPLIST        0x14    /**<  8-bit  RO? - - offset of capabilities list */
+#define VBOX_PCI_CARDBUS_RESERVED_15    0x15    /**<  8-bit  ??  - - reserved */
+#define VBOX_PCI_CARDBUS_SEC_STATUS     0x16    /**< 16-bit  ??  - - secondary status  */
+#define VBOX_PCI_CARDBUS_PCIBUS_NUMBER  0x18    /**<  8-bit  ??  - - PCI bus number */
+#define VBOX_PCI_CARDBUS_CARDBUS_NUMBER 0x19    /**<  8-bit  ??  - - CardBus bus number */
+/* #define VBOX_PCI_SUBORDINATE_BUS        0x1a */    /**<  8-bit  ?? - - highest subordinate bus number. (behind the bridge) */
+/* #define VBOX_PCI_SEC_LATENCY_TIMER      0x1b */    /**<  8-bit  ?? - - secondary latency timer. */
+#define VBOX_PCI_CARDBUS_MEMORY_BASE0   0x1c     /**< 32-bit  RW  - - memory base address 0 */
+#define VBOX_PCI_CARDBUS_MEMORY_LIMIT0  0x20     /**< 32-bit  RW  - - memory limit 0 */
+#define VBOX_PCI_CARDBUS_MEMORY_BASE1   0x24     /**< 32-bit  RW  - - memory base address 1 */
+#define VBOX_PCI_CARDBUS_MEMORY_LIMIT1  0x28     /**< 32-bit  RW  - - memory limit 1 */
+#define VBOX_PCI_CARDBUS_IO_BASE0       0x2c     /**< 32-bit  RW  - - IO base address 0 */
+#define VBOX_PCI_CARDBUS_IO_LIMIT0      0x30     /**< 32-bit  RW  - - IO limit 0 */
+#define VBOX_PCI_CARDBUS_IO_BASE1       0x34     /**< 32-bit  RW  - - IO base address 1 */
+#define VBOX_PCI_CARDBUS_IO_LIMIT1      0x38     /**< 32-bit  RW  - - IO limit 1 */
+/* #define VBOX_PCI_INTERRUPT_LINE         0x3c */   /**<  8-bit  RW  - - interrupt line. */
+/* #define VBOX_PCI_INTERRUPT_PIN          0x3d */   /**<  8-bit  RO  - - interrupt pin.  */
+/* #define VBOX_PCI_BRIDGE_CONTROL         0x3e */   /**< 16-bit?  ?? - - bridge control  */
 /** @} */
 
 
