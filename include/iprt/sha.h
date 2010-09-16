@@ -123,7 +123,7 @@ RTDECL(int) RTSha1FromString(char const *pszDigest, uint8_t pabDigest[RTSHA1_HAS
  * @param   pfnProgressCallback   optional callback for the progress indication
  * @param   pvUser                user defined pointer for the callback
  */
-RTR3DECL(int) RTSha1Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, FNRTPROGRESS pfnProgressCallback, void *pvUser);
+RTR3DECL(int) RTSha1Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 /**
  * Creates a SHA1 digest for the given file.
@@ -135,7 +135,7 @@ RTR3DECL(int) RTSha1Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, FNRTPRO
  * @param   pfnProgressCallback   optional callback for the progress indication
  * @param   pvUser                user defined pointer for the callback
  */
-RTR3DECL(int) RTSha1DigestFromFile(const char *pszFile, char **ppszDigest, FNRTPROGRESS pfnProgressCallback, void *pvUser);
+RTR3DECL(int) RTSha1DigestFromFile(const char *pszFile, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 
 /** The size of a SHA-256 hash. */
