@@ -564,6 +564,7 @@ public:
     ElementNode* createRootElement(const char *pcszRootElementName);
 
 private:
+    friend class XmlMemParser;
     friend class XmlFileParser;
     friend class XmlFileWriter;
 
@@ -586,6 +587,20 @@ protected:
     ~XmlParserBase();
 
     xmlParserCtxtPtr m_ctxt;
+};
+
+/*
+ * XmlMemParser
+ *
+ */
+
+class RT_DECL_CLASS XmlMemParser : public XmlParserBase
+{
+public:
+    XmlMemParser();
+    ~XmlMemParser();
+
+    void read(const void* pvBuf, int cbSize, const iprt::MiniString &strFilename, Document &doc);
 };
 
 /*

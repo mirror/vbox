@@ -30,6 +30,24 @@ using namespace ovf;
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Constructor. This parses the given XML file out of the memory. Throws lots of exceptions
+ * on XML or OVF invalidity.
+ * @param pvBuf  the memory buffer to parse
+ * @param cbSize the size of the memory buffer
+ * @param path   path to a filename for error messages.
+ */
+OVFReader::OVFReader(const void *pvBuf, int cbSize, const MiniString &path)
+    : m_strPath(path)
+{
+    xml::XmlMemParser parser;
+    parser.read(pvBuf, cbSize,
+                m_strPath,
+                m_doc);
+    /* Start the parsing */
+    parse();
+}
+
+/**
  * Constructor. This opens the given XML file and parses it. Throws lots of exceptions
  * on XML or OVF invalidity.
  * @param path
@@ -40,7 +58,12 @@ OVFReader::OVFReader(const MiniString &path)
     xml::XmlFileParser parser;
     parser.read(m_strPath,
                 m_doc);
+    /* Start the parsing */
+    parse();
+}
 
+void OVFReader::parse()
+{
     const xml::ElementNode *pRootElem = m_doc.getRootElement();
     if (    !pRootElem
          || strcmp(pRootElem->getName(), "Envelope")

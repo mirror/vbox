@@ -402,6 +402,7 @@ struct VirtualSystem
 class OVFReader
 {
 public:
+    OVFReader(const void *pvBuf, int cbSize, const iprt::MiniString &path);
     OVFReader(const iprt::MiniString &path);
 
     // Data fields
@@ -412,6 +413,7 @@ public:
 private:
     xml::Document               m_doc;
 
+    void parse();
     void LoopThruSections(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pCurElem);
     void HandleDiskSection(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pSectionElem);
     void HandleNetworkSection(const xml::ElementNode *pSectionElem);
