@@ -3813,6 +3813,7 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                      && rc != VERR_VD_ISCSI_INVALID_HEADER
                      && rc != VERR_VD_VHD_INVALID_HEADER
                      && rc != VERR_VD_RAW_INVALID_HEADER
+                     && rc != VERR_VD_PARALLELS_INVALID_HEADER
                      && rc != VERR_VD_DMG_INVALID_HEADER))
             {
                 /* Copy the name into the new string. */
