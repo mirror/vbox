@@ -22,6 +22,9 @@ include $(KBUILD_PATH)/subheader.kmk
 DLLS += libWine
 
 libWine_TEMPLATE     = VBOXGUESTR3NPDLL
+if defined(VBOX_SIGNING_MODE) && defined(VBOXWDDM)
+ libWine_NOINST.win.x86 = true
+endif
 libWine_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK USE_WIN32_OPENGL __i386__ \
     DLLDIR=\"\" \
     BINDIR=\"\" \
@@ -171,6 +174,9 @@ wined3d_LIBS = \
 ifdef VBOXWDDM
 DLLS += wined3dwddm
 wined3dwddm_EXTENDS  = wined3d
+if defined(VBOX_SIGNING_MODE) && defined(VBOXWDDM)
+ wined3dwddm_NOINST.win.x86 = true
+endif
 wined3dwddm_DEFS    += $(wined3d_DEFS) VBOXWDDM
 wined3dwddm_SOURCES  = $(subst wined3d.def,wined3dwddm.def,$(wined3d_SOURCES))
 endif
@@ -252,6 +258,9 @@ VBoxD3D9_LIBS = \
 ifdef VBOXWDDM
 DLLS += VBoxD3D9wddm
 VBoxD3D9wddm_EXTENDS  = VBoxD3D9
+if defined(VBOX_SIGNING_MODE) && defined(VBOXWDDM)
+ VBoxD3D9wddm_NOINST.win.x86 = true
+endif
 VBoxD3D9wddm_DEFS += $(VBoxD3D9_DEFS) VBOXWDDM IN_VBOXWINEEX
 VBoxD3D9wddm_SOURCES  = $(subst d3d9.def,d3d9wddm.def,$(VBoxD3D9_SOURCES))
 VBoxD3D9wddm_LIBS = $(subst wined3d$(VBOX_SUFF_LIB),wined3dwddm$(VBOX_SUFF_LIB),$(VBoxD3D9_LIBS))
