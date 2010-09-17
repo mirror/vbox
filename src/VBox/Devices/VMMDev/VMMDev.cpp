@@ -554,8 +554,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     if (!RTDirExists(pThis->szGuestCoreDumpDir))
                         return VERR_FILE_NOT_FOUND;
                     char szCorePath[RTPATH_MAX];
-                    const char *pszCoreDir = pThis->szGuestCoreDumpDir;
-                    RTStrPrintf(szCorePath, sizeof(szCorePath), "%s/VBox.core", pszCoreDir);
+                    RTStrCopy(szCorePath, sizeof(szCorePath), pThis->szGuestCoreDumpDir);
+                    RTPathAppend(szCorePath, sizeof(szCorePath), "VBox.core");
 
                     /*
                      * Rotate existing cores based on number of additional cores to keep around.
