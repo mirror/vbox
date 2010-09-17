@@ -881,22 +881,27 @@ void vboxguestwinDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj,
 BOOLEAN vboxguestwinIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pServiceContext;
-    BOOLEAN fIRQTaken = FALSE;
+    if (pDevExt == NULL)
+        return FALSE;
 
     /*Log(("VBoxGuest::vboxguestwinGuestIsrHandler: pDevExt = 0x%p, pVMMDevMemory = 0x%p\n",
              pDevExt, pDevExt ? pDevExt->pVMMDevMemory : NULL));*/
 
     /* Enter the common ISR routine and do the actual work. */
-    fIRQTaken = VBoxGuestCommonISR(pDevExt);
+    BOOLEAN fIRQTaken = VBoxGuestCommonISR(pDevExt);
 
     /* If we need to wake up some events we do that in a DPC to make
      * sure we're called at the right IRQL. */
-    if (fIRQTaken && !RTListIsEmpty(&pDevExt->WakeUpList))
-        IoRequestDpc(pDevExt->win.s.pDeviceObject, pDevExt->win.s.pCurrentIrp, NULL);
-
-    /*if (fIRQTaken)
-        Log(("VBoxGuest::vboxguestwinGuestIsrHandler: IRQ was taken! pDeviceObject = 0x%p, pCurrentIrp = 0x%p\n",
-             pDevExt->win.s.pDeviceObject, pDevExt->win.s.pCurrentIrp));*/
+    if (fIRQTaken)
+    {
+        Log(("VBoxGuest::vboxguestwinGuestIsrHandler: IRQ was taken! pInterrupt = 0x%p, pDevExt = 0x%p\n",
+             pInterrupt, pDevExt));
+        if (!RTListIsEmpty(&pDevExt->WakeUpList))
+        {
+            Log(("VBoxGuest::vboxguestwinGuestIsrHandler: Requesting DPC ...\n"));
+            IoRequestDpc(pDevExt->win.s.pDeviceObject, pDevExt->win.s.pCurrentIrp, NULL);
+        }
+    }
     return fIRQTaken;
 }
 
