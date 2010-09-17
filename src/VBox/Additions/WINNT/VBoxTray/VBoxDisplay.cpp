@@ -454,11 +454,11 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        Log(("VBoxTray: VBoxDisplayThread : DeviceIOControl(CtlMask - or) succeeded\n"));
+        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
     else
     {
-        Log(("VBoxTray: VBoxDisplayThread : DeviceIOControl(CtlMask) failed, DisplayChangeThread exited\n"));
+        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask) failed, DisplayChangeThread exited\n"));
         return -1;
     }
 
@@ -470,15 +470,15 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            /*Log(("VBoxTray: VBoxDisplayThread : DeviceIOControl succeded\n"));*/
+            /*Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl succeded\n"));*/
 
             if (NULL == pCtx) {
-                Log(("VBoxTray: VBoxDisplayThread : Invalid context detected!\n"));
+                Log(("VBoxTray: VBoxDisplayThread: Invalid context detected!\n"));
                 break;
             }
 
             if (NULL == pCtx->pEnv) {
-                Log(("VBoxTray: VBoxDisplayThread : Invalid context environment detected!\n"));
+                Log(("VBoxTray: VBoxDisplayThread: Invalid context environment detected!\n"));
                 break;
             }
 
@@ -486,12 +486,12 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            /*Log(("VBoxTray: VBoxDisplayThread : checking event\n"));*/
+            /*Log(("VBoxTray: VBoxDisplayThread: checking event\n"));*/
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
             {
-                Log(("VBoxTray: VBoxDisplayThread : going to get display change information.\n"));
+                Log(("VBoxTray: VBoxDisplayThread: going to get display change information\n"));
 
                 /* We got at least one event. Read the requested resolution
                  * and try to set it until success. New events will not be seen
@@ -521,7 +521,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
 
                     if (fDisplayChangeQueried)
                     {
-                        Log(("VBoxTray: VBoxDisplayThread : VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
+                        Log(("VBoxTray: VBoxDisplayThread: VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
 
                         /* Horizontal resolution must be a multiple of 8, round down. */
                         displayChangeRequest.xres &= 0xfff8;
@@ -533,18 +533,18 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                         VBOXDISPLAY_DRIVER_TYPE enmDriverType = getVBoxDisplayDriverType (pCtx);
 
                         if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
-                            Log(("VBoxTray: VBoxDisplayThread : Detected WDDM Driver\n"));
+                            Log(("VBoxTray: VBoxDisplayThread: Detected WDDM Driver\n"));
 
                         if (enmDriverType != VBOXDISPLAY_DRIVER_TYPE_UNKNOWN)
 #else
                         if (isVBoxDisplayDriverActive (pCtx))
 #endif
                         {
-                            Log(("VBoxTray: VBoxDisplayThread : Display driver is active!\n"));
+                            Log(("VBoxTray: VBoxDisplayThread: Display driver is active!\n"));
 
                             if (pCtx->pfnChangeDisplaySettingsEx != 0)
                             {
-                                Log(("VBoxTray: VBoxDisplayThread : Detected W2K or later.\n"));
+                                Log(("VBoxTray: VBoxDisplayThread: Detected W2K or later\n"));
 
 #ifdef  VBOXWDDM
                                 if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
@@ -556,10 +556,10 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                                         displayChangeRequest.bpp);
                                     if (err == NO_ERROR)
                                     {
-                                        Log(("VBoxTray: VBoxDisplayThread : VBoxDispIfResize succeeded\n"));
+                                        Log(("VBoxTray: VBoxDisplayThread: VBoxDispIfResize succeeded\n"));
                                         break;
                                     }
-                                    Log(("VBoxTray: VBoxDisplayThread : VBoxDispIfResize failed err(%d)\n", err));
+                                    Log(("VBoxTray: VBoxDisplayThread: VBoxDispIfResize failed err(%d)\n", err));
                                 }
 #endif
                                 /* W2K or later. */
@@ -574,7 +574,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                             }
                             else
                             {
-                                Log(("VBoxTray: VBoxDisplayThread : Detected NT.\n"));
+                                Log(("VBoxTray: VBoxDisplayThread: Detected NT\n"));
 
                                 /* Single monitor NT. */
                                 DEVMODE devMode;
@@ -584,7 +584,8 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                 /* get the current screen setup */
                                 if (EnumDisplaySettings(NULL, ENUM_REGISTRY_SETTINGS, &devMode))
                                 {
-                                    Log(("VBoxTray: VBoxDisplayThread : Current mode: %dx%dx%d at %d,%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y));
+                                    Log(("VBoxTray: VBoxDisplayThread: Current mode: %d x %d x %d at %d,%d\n",
+                                          devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel, devMode.dmPosition.x, devMode.dmPosition.y));
 
                                     /* Check whether a mode reset or a change is requested. */
                                     if (displayChangeRequest.xres || displayChangeRequest.yres || displayChangeRequest.bpp)
@@ -602,7 +603,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                     else
                                     {
                                         /* All zero values means a forced mode reset. Do nothing. */
-                                        Log(("VBoxTray: VBoxDisplayThread : Forced mode reset.\n"));
+                                        Log(("VBoxTray: VBoxDisplayThread: Forced mode reset\n"));
                                     }
 
                                     /* Verify that the mode is indeed changed. */
@@ -610,7 +611,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                         && devMode.dmPelsHeight == displayChangeRequest.yres
                                         && devMode.dmBitsPerPel == displayChangeRequest.bpp)
                                     {
-                                        Log(("VBoxTray: VBoxDisplayThread : already at desired resolution.\n"));
+                                        Log(("VBoxTray: VBoxDisplayThread: already at desired resolution\n"));
                                         break;
                                     }
 
@@ -628,13 +629,14 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                     if (displayChangeRequest.bpp)
                                         devMode.dmBitsPerPel = displayChangeRequest.bpp;
 
-                                    Log(("VBoxTray: VBoxDisplayThread : setting the new mode %dx%dx%d\n", devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
+                                    Log(("VBoxTray: VBoxDisplayThread: setting new mode %d x %d, %d BPP\n",
+                                         devMode.dmPelsWidth, devMode.dmPelsHeight, devMode.dmBitsPerPel));
 
                                     /* set the new mode */
                                     LONG status = ChangeDisplaySettings(&devMode, CDS_UPDATEREGISTRY);
                                     if (status != DISP_CHANGE_SUCCESSFUL)
                                     {
-                                        Log(("VBoxTray: VBoxDisplayThread : error from ChangeDisplaySettings: %d\n", status));
+                                        Log(("VBoxTray: VBoxDisplayThread: error from ChangeDisplaySettings: %d\n", status));
 
                                         if (status == DISP_CHANGE_BADMODE)
                                         {
@@ -650,14 +652,14 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                 }
                                 else
                                 {
-                                    Log(("VBoxTray: VBoxDisplayThread : error from EnumDisplaySettings: %d\n", GetLastError ()));
+                                    Log(("VBoxTray: VBoxDisplayThread: error from EnumDisplaySettings: %d\n", GetLastError ()));
                                     break;
                                 }
                             }
                         }
                         else
                         {
-                            Log(("VBoxTray: VBoxDisplayThread : vboxDisplayDriver is not active.\n"));
+                            Log(("VBoxTray: VBoxDisplayThread: vboxDisplayDriver is not active\n"));
                         }
 
                         /* Retry the change a bit later. */
@@ -670,7 +672,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                     }
                     else
                     {
-                        Log(("VBoxTray: VBoxDisplayThread : error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
+                        Log(("VBoxTray: VBoxDisplayThread: error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
                         /* sleep a bit to not eat too much CPU while retrying */
                         /* are we supposed to stop? */
                         if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 50) == WAIT_OBJECT_0)
@@ -685,7 +687,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                 VBoxServiceReloadCursor();
         } else
         {
-            Log(("VBoxTray: VBoxDisplayThread : error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
+            Log(("VBoxTray: VBoxDisplayThread: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
             /* sleep a bit to not eat too much CPU in case the above call always fails */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
             {
@@ -699,13 +701,13 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
     maskInfo.u32NotMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        Log(("VBoxTray: VBoxDisplayThread : DeviceIOControl(CtlMask - not) succeeded\n"));
+        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - not) succeeded\n"));
     }
     else
     {
-        Log(("VBoxTray: VBoxDisplayThread : DeviceIOControl(CtlMask) failed\n"));
+        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask) failed\n"));
     }
 
-    Log(("VBoxTray: VBoxDisplayThread : finished display change request thread\n"));
+    Log(("VBoxTray: VBoxDisplayThread: finished display change request thread\n"));
     return 0;
 }

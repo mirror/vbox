@@ -282,7 +282,7 @@ void VBoxServiceReloadCursor(void)
 
 void WINAPI VBoxServiceStart(void)
 {
-    Log(("VBoxTray: Leaving service main function"));
+    Log(("VBoxTray: Entering service main function\n"));
 
     VBOXSERVICEENV svcEnv;
 
