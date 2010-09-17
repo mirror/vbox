@@ -211,6 +211,7 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     UINT iAlloc;
     struct VBOXWDDMDISP_RESOURCE *pRc;
     void* pvMem;
+    UINT D3DWidth;
     /* object type is defined by enmD3DIfType enum */
     IUnknown *pD3DIf;
     IUnknown *pSecondaryOpenedD3DIf;

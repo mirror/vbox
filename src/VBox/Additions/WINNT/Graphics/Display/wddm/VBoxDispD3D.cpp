@@ -3617,7 +3617,54 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
     Assert(pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM);
     HRESULT hr = S_OK;
 
-    if (pSrcRc->aAllocations[0].SurfDesc.width == pDstRc->aAllocations[0].SurfDesc.width
+#ifdef DEBUG_misha
+                bool bDo = false;
+                IDirect3DSurface9 *pTstSrcSurfIf = NULL;
+                IDirect3DSurface9 *pTstDstSurfIf = NULL;
+
+                if (g_VDbgTstDumpEnable)
+                {
+                    hr = vboxWddmSurfGet(pSrcRc, 0, &pTstSrcSurfIf);
+                    Assert(hr == S_OK);
+                    hr = vboxWddmSurfGet(pDstRc, 0, &pTstDstSurfIf);
+                    Assert(hr == S_OK);
+
+                    if (g_VDbgTstDumpOnSys2VidSameSizeEnable)
+                    {
+                        if (pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM
+                                && pSrcRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
+                        {
+                            D3DSURFACE_DESC SrcDesc;
+                            HRESULT hr = pTstSrcSurfIf->GetDesc(&SrcDesc);
+                            Assert(hr == S_OK);
+                            if (hr == S_OK)
+                            {
+                                D3DSURFACE_DESC DstDesc;
+                                hr = pTstDstSurfIf->GetDesc(&DstDesc);
+                                Assert(hr == S_OK);
+                                if (hr == S_OK)
+                                {
+                                    if (SrcDesc.Width == DstDesc.Width
+                                            && SrcDesc.Height == DstDesc.Height)
+                                    {
+                                        bDo = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (bDo)
+                {
+                    RECT DstRect;
+                    vboxWddmRectMoved(&DstRect, &pData->SrcRect, pData->DstPoint.x, pData->DstPoint.y);
+                    vboxVDbgDumpSurfData((pDevice, "TexBlt-pre Src:\n", pSrcRc, 0, &pData->SrcRect, pTstSrcSurfIf, "\n"));
+                    vboxVDbgDumpSurfData((pDevice, "TexBlt-pre Dst:\n", pDstRc, 0, &DstRect, pTstDstSurfIf, "\n"));
+                }
+#endif
+
+    if (pSrcRc->aAllocations[0].D3DWidth == pDstRc->aAllocations[0].D3DWidth
             && pSrcRc->aAllocations[0].SurfDesc.height == pDstRc->aAllocations[0].SurfDesc.height
             && pSrcRc->RcDesc.enmFormat == pDstRc->RcDesc.enmFormat
                 &&pData->DstPoint.x == 0 && pData->DstPoint.y == 0
@@ -3658,6 +3705,20 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
         }
     }
 
+#ifdef DEBUG_misha
+    if (bDo)
+    {
+        RECT DstRect;
+        vboxWddmRectMoved(&DstRect, &pData->SrcRect, pData->DstPoint.x, pData->DstPoint.y);
+        vboxVDbgDumpSurfData((pDevice, "TexBlt-post Src:\n", pSrcRc, 0, &pData->SrcRect, pTstSrcSurfIf, "\n"));
+        vboxVDbgDumpSurfData((pDevice, "TexBlt-post Dst:\n", pDstRc, 0, &DstRect, pTstDstSurfIf, "\n"));
+    }
+
+    if (pTstDstSurfIf)
+        pTstDstSurfIf->Release();
+    if (pTstSrcSurfIf)
+        pTstSrcSurfIf->Release();
+#endif
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
@@ -4494,6 +4555,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
             pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
             pAllocation->iAlloc = i;
             pAllocation->pRc = pRc;
+            pAllocation->D3DWidth = pSurf->Width;
             pAllocation->pvMem = (void*)pSurf->pSysMem;
             pAllocation->SurfDesc.pitch = pSurf->SysMemPitch;
             pAllocation->SurfDesc.slicePitch = pSurf->SysMemSlicePitch;
@@ -4672,9 +4734,30 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[0];
                 IDirect3DTexture9 *pD3DIfTex;
                 HANDLE hSharedHandle = NULL;
+                if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
+                {
+                    Assert(pSurf->pSysMem);
+                    Assert(pSurf->SysMemPitch);
+                    UINT bpp = vboxWddmCalcBitsPerPixel(pResource->Format);
+                    Assert(bpp);
+                    if (bpp)
+                    {
+                        pAllocation->D3DWidth = ((pSurf->SysMemPitch << 3) / bpp);
+                        if ((pSurf->SysMemPitch << 3) % bpp)
+                        {
+                            Assert(0);
+                            ++pAllocation->D3DWidth;
+                        }
+                        Assert(pAllocation->D3DWidth >= pSurf->Width);
+#ifdef DEBUG_misha
+                        /* break to test */
+                        Assert(pAllocation->D3DWidth == pSurf->Width);
+#endif
+                    }
+                }
 #if 0
                 hr = pDevice9If->CreateTexture(pSurf->Width,
-                                            pSurf->Height,
+                                            pAllocation->D3DWidth,
                                             pResource->SurfCount,
                                             vboxDDI2D3DUsage(pResource->Flags),
                                             vboxDDI2D3DFormat(pResource->Format),
@@ -4684,7 +4767,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                                             );
 #else
                 hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9CreateTexture((IDirect3DDevice9Ex *)pDevice9If,
-                                            pSurf->Width,
+                                            pAllocation->D3DWidth,
                                             pSurf->Height,
                                             pResource->SurfCount,
                                             vboxDDI2D3DUsage(pResource->Flags),
@@ -6998,7 +7081,7 @@ VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
 //        Assert(bpp == pAlloc->SurfDesc.bpp);
 //        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
         vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
-                Lr.pBits, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
+                Lr.pBits, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
         if (pRect)
         {
             vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
@@ -7055,8 +7138,8 @@ void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
         Assert(pSwapchain);
         bFrontBuf = (vboxWddmSwapchainGetBb(pSwapchain)->pAlloc == pAlloc);
     }
-    vboxVDbgDoMpPrintF(pDevice, "%s width(%d), height(%d), format(%d), usage(%s), %s", pPrefix,
-            pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, pAlloc->SurfDesc.format,
+    vboxVDbgDoMpPrintF(pDevice, "%s D3DWidth(%d), width(%d), height(%d), format(%d), usage(%s), %s", pPrefix,
+            pAlloc->D3DWidth, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, pAlloc->SurfDesc.format,
             bPrimary ?
                     (bFrontBuf ? "Front Buffer" : "Back Buffer")
                     : "?Everage? Alloc",
