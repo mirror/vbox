@@ -309,7 +309,7 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
         freeDeviceResources(pDrvObj, pDevObj);
     }
 
-    dprintf(("returning from ntCreateDevice with rc = 0x%x\n, vrc = %Rrc", rc, vrc));
+    dprintf(("returning from ntCreateDevice with rc = 0x%x, vrc = %Rrc\n", rc, vrc));
     return rc;
 }
 
