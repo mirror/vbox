@@ -196,7 +196,8 @@ bool UIImportApplianceWzdPage1::validatePage()
     /* Set the file path only if something had changed */
     if (m_pFileSelector->isModified())
     {
-        applianceWidget->setFile(m_pFileSelector->path());
+        if (!applianceWidget->setFile(m_pFileSelector->path()))
+            return false;
         /* Reset the modified bit afterwards */
         m_pFileSelector->resetModified();
     }
