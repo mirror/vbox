@@ -135,10 +135,13 @@ ifdef VBOXWDDM
 DRIVER_FILES += \
 	$(PATH_BIN)/additions/VBoxVideoWddm.sys \
 	$(PATH_BIN)/additions/VBoxVideoWddm.inf \
-	$(PATH_BIN)/additions/VBoxVideoWddm.cat \
 	$(PATH_BIN)/additions/VBoxDispD3D.dll \
 	$(PATH_BIN)/additions/wined3dwddm.dll \
 	$(PATH_BIN)/additions/VBoxD3D9wddm.dll
+  ifdef VBOX_SIGN_ADDITIONS
+DRIVER_FILES += \
+	$(PATH_BIN)/additions/VBoxVideoWddm.cat
+  endif
  endif
 endif
 
