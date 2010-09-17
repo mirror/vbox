@@ -53,7 +53,7 @@
 #include "wine/list.h"
 #include "wine/rbtree.h"
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 # include "vboxsharedrc.h"
 #endif
 
@@ -1073,7 +1073,7 @@ struct wined3d_context
     DWORD                   numDirtyEntries;
     DWORD isStateDirty[STATE_HIGHEST / (sizeof(DWORD) * CHAR_BIT) + 1]; /* Bitmap to find out quickly if a state is dirty */
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     IWineD3DDeviceImpl    *device;
     IWineD3DSwapChainImpl *currentSwapchain;
 #else
@@ -1245,7 +1245,7 @@ void context_attach_surface_fbo(const struct wined3d_context *context,
         GLenum fbo_target, DWORD idx, IWineD3DSurfaceImpl *surface) DECLSPEC_HIDDEN;
 struct wined3d_context *context_create(IWineD3DSwapChainImpl *swapchain, IWineD3DSurfaceImpl *target,
         const struct wined3d_format_desc *ds_format_desc) DECLSPEC_HIDDEN;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 struct wined3d_context *context_find_create(IWineD3DDeviceImpl *device, IWineD3DSwapChainImpl *swapchain, IWineD3DSurfaceImpl *target,
         const struct wined3d_format_desc *ds_format_desc) DECLSPEC_HIDDEN;
 BOOL context_acquire_context(struct wined3d_context * context, IWineD3DSurface *target, enum ContextUsage usage, BOOL bReValidate) DECLSPEC_HIDDEN;
@@ -1818,7 +1818,7 @@ typedef struct IWineD3DResourceClass
     DWORD                   priority;
     BYTE                   *allocatedMemory; /* Pointer to the real data location */
     BYTE                   *heapMemory; /* Pointer to the HeapAlloced block of memory */
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     DWORD                   sharerc_flags; /* shared resource flags */
     DWORD                   sharerc_handle;
 #endif
@@ -1843,7 +1843,7 @@ HRESULT resource_get_private_data(IWineD3DResource *iface, REFGUID guid,
 HRESULT resource_init(IWineD3DResource *iface, WINED3DRESOURCETYPE resource_type,
         IWineD3DDeviceImpl *device, UINT size, DWORD usage, const struct wined3d_format_desc *format_desc,
         WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -1940,7 +1940,7 @@ DWORD basetexture_get_lod(IWineD3DBaseTexture *iface) DECLSPEC_HIDDEN;
 HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DRESOURCETYPE resource_type,
         IWineD3DDeviceImpl *device, UINT size, DWORD usage, const struct wined3d_format_desc *format_desc,
         WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -1971,7 +1971,7 @@ typedef struct IWineD3DTextureImpl
 HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT levels,
         IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format, WINED3DPOOL pool,
         IUnknown *parent, const struct wined3d_parent_ops *parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -2165,7 +2165,7 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
         UINT width, UINT height, UINT level, BOOL lockable, BOOL discard, WINED3DMULTISAMPLE_TYPE multisample_type,
         UINT multisample_quality, IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format,
         WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -2251,7 +2251,7 @@ void flip_surface(IWineD3DSurfaceImpl *front, IWineD3DSurfaceImpl *back) DECLSPE
 #define SFLAG_INOVERLAYDRAW 0x00800000 /* Overlay drawing is in progress. Recursion prevention */
 #define SFLAG_SWAPCHAIN     0x01000000 /* The surface is part of a swapchain */
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 # define SFLAG_CLIENTMEM     0x10000000 /* SYSMEM surface using client-supplied memory buffer */
 # define SFLAG_DONOTFREE_VBOXWDDM SFLAG_CLIENTMEM
 #else
@@ -2643,14 +2643,14 @@ struct IWineD3DSwapChainImpl
     long prev_time, frames;   /* Performance tracking */
     unsigned int vSyncCounter;
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     struct wined3d_context **context;
     unsigned int            num_contexts;
 #endif
 
     HWND                    win_handle;
     HWND device_window;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     HDC hDC;
 #endif
 };

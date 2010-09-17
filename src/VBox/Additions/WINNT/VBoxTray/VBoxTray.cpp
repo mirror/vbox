@@ -420,7 +420,7 @@ void WINAPI VBoxServiceStart(void)
 
     /* initializes disp-if to default (XPDM) mode */
     status = VBoxDispIfInit(&svcEnv.dispIf);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     /*
      * For now the display mode will be adjusted to WDDM mode if needed
      * on display service initialization when it detects the display driver type.

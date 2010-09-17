@@ -125,14 +125,14 @@ struct glsl_shader_prog_link {
     struct vs_compile_args      vs_args;
     struct ps_compile_args      ps_args;
     UINT                        constant_version;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     UINT                        inp2Fixup_info;
 #else
     const struct ps_np2fixup_info *np2Fixup_info;
 #endif
 };
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 #define WINEFIXUPINFO_NOINDEX (~0UL)
 #define WINEFIXUPINFO_GET(_p) get_fixup_info((const IWineD3DPixelShaderImpl*)(_p)->pshader, (_p)->inp2Fixup_info)
 #define WINEFIXUPINFO_ISVALID(_p) ((_p)->inp2Fixup_info != WINEFIXUPINFO_NOINDEX)
@@ -687,7 +687,7 @@ static void reset_program_constant_version(struct wine_rb_entry *entry, void *co
     WINE_RB_ENTRY_VALUE(entry, struct glsl_shader_prog_link, program_lookup_entry)->constant_version = 0;
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 static const struct ps_np2fixup_info * get_fixup_info(const IWineD3DPixelShaderImpl *shader, UINT inp2fixup_info)
 {
     struct glsl_pshader_private    *shader_data = shader->baseShader.backend_data;
@@ -772,7 +772,7 @@ static void shader_glsl_load_constants(const struct wined3d_context *context,
         char usePixelShader, char useVertexShader)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     IWineD3DDeviceImpl *device = context->device;
 #else
     IWineD3DDeviceImpl *device = context->swapchain->device;
@@ -4182,7 +4182,7 @@ static GLuint shader_glsl_generate_vshader(const struct wined3d_context *context
 static GLhandleARB find_glsl_pshader(const struct wined3d_context *context,
         struct wined3d_shader_buffer *buffer, IWineD3DPixelShaderImpl *shader,
         const struct ps_compile_args *args,
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         UINT *inp2fixup_info
 #else
         const struct ps_np2fixup_info **np2fixup_info
@@ -4214,7 +4214,7 @@ static GLhandleARB find_glsl_pshader(const struct wined3d_context *context,
     for(i = 0; i < shader_data->num_gl_shaders; i++) {
         if(memcmp(&shader_data->gl_shaders[i].args, args, sizeof(*args)) == 0) {
             if(args->np2_fixup) {
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
                 *inp2fixup_info = i;
 #else
                 *np2fixup_info = &shader_data->gl_shaders[i].np2fixup;
@@ -4254,7 +4254,7 @@ static GLhandleARB find_glsl_pshader(const struct wined3d_context *context,
 
     shader_buffer_clear(buffer);
     ret = shader_glsl_generate_pshader(context, buffer, shader, args, np2fixup);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     *inp2fixup_info = shader_data->num_gl_shaders;
 #else
     *np2fixup_info = np2fixup;
@@ -4433,7 +4433,7 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
     {
         GLhandleARB pshader_id = find_glsl_pshader(context, &priv->shader_buffer,
                 (IWineD3DPixelShaderImpl *)pshader, &ps_compile_args,
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
                 &entry->inp2Fixup_info
 #else
                 &entry->np2Fixup_info
@@ -4619,7 +4619,7 @@ static GLhandleARB create_glsl_blt_shader(const struct wined3d_gl_info *gl_info,
 static void shader_glsl_select(const struct wined3d_context *context, BOOL usePS, BOOL useVS)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     IWineD3DDeviceImpl *device = context->device;
 #else
     IWineD3DDeviceImpl *device = context->swapchain->device;

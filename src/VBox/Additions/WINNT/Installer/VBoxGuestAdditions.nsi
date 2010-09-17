@@ -691,7 +691,7 @@ FunctionEnd
 !if $%VBOX_WITH_CROGL% == "1"
 Section /o $(VBOX_COMPONENT_D3D) SEC03
 
-!if $%VBOXWDDM% == "1"
+!if $%VBOX_WITH_WDDM% == "1"
   ${If} $g_bInstallWDDM == "true"
     ; All D3D components are installed with WDDM driver package, nothing to be done here
     Return
@@ -891,7 +891,7 @@ Function .onSelChange
   SectionGetFlags ${SEC03} $0
   ${If} $0 == ${SF_SELECTED}
 
-!if $%VBOXWDDM% == "1"
+!if $%VBOX_WITH_WDDM% == "1"
   !if $%BUILD_TARGET_ARCH% == "x86"
     ; If we're on a 32-bit Windows Vista / 7 also install the WDDM bits
     ${If} $g_strWinVersion == "Vista"

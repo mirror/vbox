@@ -341,8 +341,8 @@ ifdef VBOX_WITH_HGSMI
 	Graphics/HGSMI/HGSMIHostHlp.cpp
 
 endif
-ifdef VBOXWDDM
- DevicesR3_DEFS        += VBOXWDDM
+ifdef VBOX_WITH_WDDM
+ DevicesR3_DEFS        += VBOX_WITH_WDDM
  DevicesR3_SOURCES      += \
 	Graphics/HGSMI/SHGSMIHost.cpp
 endif
@@ -570,8 +570,8 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_HGSMI
   VBoxDDGC_DEFS        += VBOX_WITH_HGSMI
  endif
- ifdef VBOXWDDM
-  VBoxDDGC_DEFS        += VBOXWDDM
+ ifdef VBOX_WITH_WDDM
+  VBoxDDGC_DEFS        += VBOX_WITH_WDDM
  endif
  ifdef VBOXWDDM_WITH_VBVA
   VBoxDDGC_DEFS         += VBOXWDDM_WITH_VBVA
@@ -595,8 +595,8 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_HGSMI
   VBoxDDGC_DEFS        += VBOX_WITH_HGSMI
  endif
- ifdef VBOXWDDM
-  VBoxDDGC_DEFS        += VBOXWDDM
+ ifdef VBOX_WITH_WDDM
+  VBoxDDGC_DEFS        += VBOX_WITH_WDDM
  endif
  ifdef VBOXWDDM_WITH_VBVA
   VBoxDDGC_DEFS         += VBOXWDDM_WITH_VBVA
@@ -681,8 +681,8 @@ endif
 ifdef VBOX_WITH_HGSMI
  VBoxDDR0_DEFS         += VBOX_WITH_HGSMI
 endif
-ifdef VBOXWDDM
- VBoxDDR0_DEFS         += VBOXWDDM
+ifdef VBOX_WITH_WDDM
+ VBoxDDR0_DEFS         += VBOX_WITH_WDDM
 endif
 ifdef VBOXWDDM_WITH_VBVA
  VBoxDDR0_DEFS         += VBOXWDDM_WITH_VBVA
@@ -727,8 +727,8 @@ endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxDDR0_DEFS         += VBOX_WITH_VIDEOHWACCEL
 endif
-ifdef VBOXWDDM
- VBoxDDR0_DEFS         += VBOXWDDM
+ifdef VBOX_WITH_WDDM
+ VBoxDDR0_DEFS         += VBOX_WITH_WDDM
 endif
 ifdef VBOXWDDM_WITH_VBVA
  VBoxDDR0_DEFS        += VBOXWDDM_WITH_VBVA

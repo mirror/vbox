@@ -39,7 +39,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 HRESULT resource_init(IWineD3DResource *iface, WINED3DRESOURCETYPE resource_type,
         IWineD3DDeviceImpl *device, UINT size, DWORD usage, const struct wined3d_format_desc *format_desc,
         WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -59,7 +59,7 @@ HRESULT resource_init(IWineD3DResource *iface, WINED3DRESOURCETYPE resource_type
     resource->parent_ops = parent_ops;
     list_init(&resource->privateData);
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (pool == WINED3DPOOL_SYSTEMMEM && pvClientMem)
     {
         resource->allocatedMemory = pvClientMem;
@@ -68,7 +68,7 @@ HRESULT resource_init(IWineD3DResource *iface, WINED3DRESOURCETYPE resource_type
     else
 #endif
     {
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         if (pool == WINED3DPOOL_DEFAULT && shared_handle)
         {
             resource->sharerc_handle = *shared_handle;

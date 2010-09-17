@@ -5660,7 +5660,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     int         rc;
 
     if (    uVersion != VGA_SAVEDSTATE_VERSION
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         &&  uVersion != VGA_SAVEDSTATE_VERSION_PRE_WDDM
 #endif
         &&  uVersion != VGA_SAVEDSTATE_VERSION_HOST_HEAP

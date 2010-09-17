@@ -94,7 +94,7 @@
  * runtime heapsimple API. Use minimum 2 pages here, because the info area also may
  * contain other data (for example HGSMIHOSTFLAGS structure).
  */
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 # define VBVA_ADAPTER_INFORMATION_SIZE (64*_1K)
 #else
 #define VBVA_ADAPTER_INFORMATION_SIZE  (16*_1K)
@@ -281,7 +281,7 @@ typedef enum
     VBOXVHWACMD_TYPE_DISABLE,
     VBOXVHWACMD_TYPE_HH_CONSTRUCT,
     VBOXVHWACMD_TYPE_HH_RESET
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     , VBOXVHWACMD_TYPE_SURF_GETINFO
 #endif
 } VBOXVHWACMD_TYPE;
@@ -609,7 +609,7 @@ typedef struct _VBOXVHWACMD_SURF_CREATE
     VBOXVHWA_SURFACEDESC SurfInfo;
 } VBOXVHWACMD_SURF_CREATE;
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 typedef struct _VBOXVHWACMD_SURF_GETINFO
 {
     VBOXVHWA_SURFACEDESC SurfInfo;
@@ -1040,7 +1040,7 @@ typedef struct _VBVACAPS
 
 #endif /* VBOX_WITH_HGSMI */
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 # pragma pack(1)
 
 /*

@@ -1473,7 +1473,7 @@ HRESULT buffer_init(struct wined3d_buffer *buffer, IWineD3DDeviceImpl *device,
 
     hr = resource_init((IWineD3DResource *)buffer, WINED3DRTYPE_BUFFER,
             device, size, usage, format_desc, pool, parent, parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             , NULL, NULL /* <- no need this info here so far */
 #endif
             );

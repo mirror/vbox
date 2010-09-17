@@ -407,7 +407,7 @@ typedef struct VGAState {
 #ifdef VBOX_WITH_HGSMI
     /** Base port in the assigned PCI I/O space. */
     RTIOPORT                    IOPortBase;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     uint8_t                     Padding7[2];
     /* specifies guest driver caps, i.e. whether it can handle IRQs from the adapter,
      * the way it can handle async HGSMI command completion, etc. */

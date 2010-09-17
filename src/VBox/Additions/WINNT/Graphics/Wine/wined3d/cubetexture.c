@@ -489,7 +489,7 @@ HRESULT cubetexture_init(IWineD3DCubeTextureImpl *texture, UINT edge_length, UIN
 
     hr = basetexture_init((IWineD3DBaseTextureImpl *)texture, levels, WINED3DRTYPE_CUBETEXTURE,
             device, 0, usage, format_desc, pool, parent, parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , NULL
         , NULL
 #endif
@@ -539,7 +539,7 @@ HRESULT cubetexture_init(IWineD3DCubeTextureImpl *texture, UINT edge_length, UIN
                 GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB,
             };
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             hr = IWineD3DDeviceParent_CreateSurface(device->device_parent, parent, tmp_w, tmp_w,
                     format, usage, pool, i /* Level */, j, &texture->surfaces[j][i]
                     , NULL, NULL /* <- no need this info here */

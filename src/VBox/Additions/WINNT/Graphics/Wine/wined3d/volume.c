@@ -408,7 +408,7 @@ HRESULT volume_init(IWineD3DVolumeImpl *volume, IWineD3DDeviceImpl *device, UINT
 
     hr = resource_init((IWineD3DResource *)volume, WINED3DRTYPE_VOLUME, device,
             width * height * depth * format_desc->byte_count, usage, format_desc, pool, parent, parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             , NULL, NULL
 #endif
             );

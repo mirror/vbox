@@ -57,7 +57,7 @@ ULONG gCustomBPP  = 0;
 
 int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
 {
     VIDEO_HW_INITIALIZATION_DATA InitData;
@@ -164,7 +164,7 @@ VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val)
     return VideoPortSetRegistryParameters(Reg, pName, &Val, sizeof(Val));
 }
 
-#endif /* #ifndef VBOXWDDM */
+#endif /* #ifndef VBOX_WITH_WDDM */
 
 /*
  * Global list of supported standard video modes. It will be
@@ -251,7 +251,7 @@ static void initVideoModeInformation(VIDEO_MODE_INFORMATION *pVideoMode, ULONG x
 }
 #endif /* VBOX_WITH_MULTIMONITOR_FIX */
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 /* preferred mode index */
 static uint32_t gPreferredVideoMode = 0;
 
@@ -348,7 +348,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 
     /* size of the VRAM in bytes */
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     ULONG vramSize = DeviceExtension->pPrimary->u.primary.ulMaxFrameBufferSize;
 #else
     ULONG vramSize = vboxWddmVramCpuVisibleSegmentSize(DeviceExtension);
@@ -441,7 +441,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 VideoModes[gNumVideoModes].GreenMask                    = 0xFF00;
                 VideoModes[gNumVideoModes].BlueMask                     = 0xFF;
                 VideoModes[gNumVideoModes].AttributeFlags               = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
                 gPreferredVideoMode = gNumVideoModes;
 #endif
             } break;
@@ -486,7 +486,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         }
 
         /* does the host like that mode? */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         if (!vboxLikesVideoMode(DeviceExtension->iDevice, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 8))
 #else
         if (!vboxLikesVideoMode(0 /* @todo: */, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 8))
@@ -552,7 +552,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         }
 
         /* does the host like that mode? */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         if (!vboxLikesVideoMode(DeviceExtension->iDevice, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 16))
 #else
         if (!vboxLikesVideoMode(0 /* @todo: */, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 16))
@@ -617,7 +617,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         }
 
         /* does the host like that mode? */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         if (!vboxLikesVideoMode(DeviceExtension->iDevice, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 24))
 #else
         if (!vboxLikesVideoMode(0, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 24))
@@ -681,7 +681,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         }
 
         /* does the host like that mode? */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         if (!vboxLikesVideoMode(DeviceExtension->iDevice, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 32))
 #else
         if (!vboxLikesVideoMode(0, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 32))
@@ -723,7 +723,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
      * Next, check the registry for additional modes
      */
     int curKeyNo = 0;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     int fPreferredSet = 0;
 #endif
     do
@@ -769,7 +769,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             break;
 
         /* third test: does the host like the video mode? */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         if (!vboxLikesVideoMode(DeviceExtension->iDevice, xres, yres, bpp))
 #else
         if (!vboxLikesVideoMode(0, xres, yres, bpp))
@@ -778,7 +778,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 
         dprintf(("VBoxVideo: adding mode from registry: xres = %d, yres = %d, bpp = %d\n", xres, yres, bpp));
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         if (!fPreferredSet)
         {
             gPreferredVideoMode = gNumVideoModes;
@@ -824,7 +824,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 VideoModes[gNumVideoModes].RedMask              = 0xFF0000;
                 VideoModes[gNumVideoModes].GreenMask            = 0xFF00;
                 VideoModes[gNumVideoModes].BlueMask             = 0xFF;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
                 /* 32-bit mode is more preferable, select it if not yet */
                 if (fPreferredSet < 2)
                 {
@@ -944,7 +944,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     if (fDisplayChangeRequest || DeviceExtension->CurrentMode == 0)
 #endif /* VBOX_WITH_MULTIMONITOR_FIX */
     {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         dprintf(("VBoxVideo: adding custom video mode as #%d, current mode: %d \n", gNumVideoModes + 1, DeviceExtension->CurrentMode));
         /* handle the startup case */
         if (DeviceExtension->CurrentMode == 0)
@@ -978,7 +978,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             dprintf(("VBoxVideo: rounding down xres from %d to %d\n", xres, xres & 0xfff8));
         xres &= 0xfff8;
         /* take the current values for the fields that are not set */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         if (DeviceExtension->CurrentMode != 0)
         {
             if (!xres)
@@ -1005,7 +1005,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             bpp = 32;
 
         /* does the host like that mode? */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         if (vboxLikesVideoMode(DeviceExtension->iDevice, xres, yres, bpp))
 #else
         if (vboxLikesVideoMode(0, xres, yres, bpp))
@@ -1045,7 +1045,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 }
                 BOOLEAN fAlternatedIndex = FALSE;
 #endif /* VBOX_WITH_MULTIMONITOR_FIX */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
                 if (DeviceExtension->CurrentMode != 0)
 #else
                 if (DeviceExtension->u.primary.cDisplays && DeviceExtension->aSources[0].pPrimaryAllocation)
@@ -1079,7 +1079,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifdef VBOX_WITH_MULTIMONITOR_FIX
                 dprintf(("VBoxVideo: fNewInvocation = %d, fAlternatedIndex = %d\n", fNewInvocation, fAlternatedIndex));
 #endif /* VBOX_WITH_MULTIMONITOR_FIX */
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
                 /* assign host-supplied as the most preferable */
                 gPreferredVideoMode = gNumVideoModes;
 #endif
@@ -1151,7 +1151,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 ++gNumVideoModes;
 
                 /* for the startup case, we need this mode twice due to the alternating mode number */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
                 if (DeviceExtension->CurrentMode == 0)
 #else
                 if (!DeviceExtension->u.primary.cDisplays || !DeviceExtension->aSources[0].pPrimaryAllocation)
@@ -1238,7 +1238,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #if defined(LOG_ENABLED)
     {
         int i;
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         dprintf(("VBoxVideo: VideoModes (CurrentMode = %d, last #%d)\n", DeviceExtension->CurrentMode, gNumVideoModes));
 #endif
         for (i = 0; i < RT_ELEMENTS(VideoModes); i++)
@@ -1255,14 +1255,14 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     }
 #endif
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     vboxWddmBuildResolutionTable();
 #endif
 
     VBoxVideoCmnRegFini(Reg);
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 static bool g_bModesTableInitialized = false;
 /**
  * Helper function to dynamically build our table of standard video
@@ -1420,7 +1420,7 @@ int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG 
     PVOID VideoRamBase = NULL;
     ULONG VideoRamLength = ulSize;
     VP_STATUS Status;
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     ULONG inIoSpace = 0;
 
     Status = VideoPortMapMemory (PrimaryExtension, FrameBuffer,
@@ -1467,7 +1467,7 @@ void VBoxUnmapAdapterInformation(PDEVICE_EXTENSION PrimaryExtension)
     ppv = PrimaryExtension->u.primary.pvAdapterInformation;
     if (ppv)
     {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         /* The pHostFlags field is mapped through pvAdapterInformation. It must be cleared first,
          * and it must be done in a way which avoids races with the interrupt handler.
          */
@@ -1494,7 +1494,7 @@ void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULO
 
     if (*ppv)
     {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         VideoPortUnmapMemory(PrimaryExtension, *ppv, NULL);
 #else
         NTSTATUS ntStatus = PrimaryExtension->u.primary.DxgkInterface.DxgkCbUnmapMemory(PrimaryExtension->u.primary.DxgkInterface.DeviceHandle,
@@ -1508,7 +1508,7 @@ void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULO
 
 #ifndef VBOX_WITH_HGSMI
 
-# ifdef VBOXWDDM
+# ifdef VBOX_WITH_WDDM
 /* sanity check */
 #  error WDDM is supported only for HGSMI-based driver
 # endif
@@ -1796,7 +1796,7 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
 }
 #endif /* !VBOX_WITH_HGSMI */
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 
 VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
                                IN PVOID HwContext, IN PWSTR ArgumentString,
@@ -2104,7 +2104,7 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
     return FALSE;
 }
 # endif /* #if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL) */
-#endif  /* #ifndef VBOXWDDM */
+#endif  /* #ifndef VBOX_WITH_WDDM */
 /**
  * Send a request to the host to make the absolute pointer visible
  */
@@ -2114,7 +2114,7 @@ static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
 
     /* Use primary device extension, because the show pointer request should be processed
      * in vboxUpdatePointerShape regardless of the device. */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     PDEVICE_EXTENSION PrimaryExtension = ((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary;
 #else
     PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION)HwDeviceExtension;
@@ -2144,7 +2144,7 @@ static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
     return Result;
 }
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 /**
  * VBoxVideoStartIO
  *
@@ -2910,7 +2910,7 @@ VP_STATUS VBoxVideoSetPowerState(PVOID HwDeviceExtension, ULONG HwId,
     dprintf(("VBoxVideo::VBoxVideoSetPowerState\n"));
     return NO_ERROR;
 }
-#endif /* #ifndef VBOXWDDM */
+#endif /* #ifndef VBOX_WITH_WDDM */
 
 /**
  * VBoxVideoSetGraphicsCap
@@ -2946,7 +2946,7 @@ BOOLEAN FASTCALL VBoxVideoSetGraphicsCap(BOOLEAN isEnabled)
 
 BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtension,
         USHORT width, USHORT height, USHORT bpp
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , ULONG offDisplay
 #endif
         )
@@ -2961,7 +2961,7 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtensio
     /* enable the mode */
     VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
     VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     /* encode linear offDisplay to xOffset & yOffset to ensure offset fits USHORT */
     ULONG cbLine = VBOXWDDM_ROUNDBOUND(((width * bpp) + 7) / 8, 4);
     ULONG xOffset = offDisplay % cbLine;
@@ -2985,7 +2985,7 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtensio
     return TRUE;
 }
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 
 /**
  * VBoxVideoSetCurrentMode
@@ -3183,7 +3183,7 @@ BOOLEAN FASTCALL VBoxVideoQueryCurrentMode(PDEVICE_EXTENSION DeviceExtension,
 
     return TRUE;
 }
-#endif /* ifndef VBOXWDDM */
+#endif /* ifndef VBOX_WITH_WDDM */
 /*
  * VBoxVideoSetColorRegisters
  *
@@ -3218,7 +3218,7 @@ BOOLEAN FASTCALL VBoxVideoSetColorRegisters(
    return TRUE;
 }
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 
 VP_STATUS VBoxVideoGetChildDescriptor(
    PVOID HwDeviceExtension,

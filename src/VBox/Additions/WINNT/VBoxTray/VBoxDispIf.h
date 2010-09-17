@@ -16,7 +16,7 @@
 #include <iprt/cdefs.h>
 
 #include <windows.h>
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 # include <d3dkmthk.h>
 #endif
 
@@ -27,7 +27,7 @@ typedef enum
     VBOXDISPIF_MODE_UNKNOWN  = 0,
     VBOXDISPIF_MODE_XPDM_NT4 = 1,
     VBOXDISPIF_MODE_XPDM
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     , VBOXDISPIF_MODE_WDDM
 #endif
 } VBOXDISPIF_MODE;
@@ -49,7 +49,7 @@ typedef struct VBOXDISPIF
         {
             LONG (WINAPI * pfnChangeDisplaySettingsEx)(LPCSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
         } xpdm;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         struct
         {
             /* open adapter */

@@ -66,7 +66,7 @@ endif
 
 
 
-ifdef VBOXWDDM
+ifdef VBOX_WITH_WDDM
  #
  # VBoxVideoWddm
  #
@@ -78,7 +78,7 @@ ifdef VBOXWDDM
 
  VBoxVideoWddm_SDKS=WINDDKWLH
  VBoxVideoWddm_DEFS       += VBOX_WITH_8BPP_MODES
- VBoxVideoWddm_DEFS       += VBOX_WITH_HGSMI VBOXWDDM
+ VBoxVideoWddm_DEFS       += VBOX_WITH_HGSMI VBOX_WITH_WDDM
  ifdef VBOX_WITH_VIDEOHWACCEL
   VBoxVideoWddm_DEFS      += VBOX_WITH_VIDEOHWACCEL
  endif
@@ -123,7 +123,7 @@ ifdef VBOXWDDM
  	$(VBOX_LIB_VBGL_R0) \
  	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
  	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
-endif # VBOXWDDM
+endif # VBOX_WITH_WDDM
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

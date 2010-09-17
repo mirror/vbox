@@ -356,7 +356,7 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
         UINT width, UINT height, UINT level, BOOL lockable, BOOL discard, WINED3DMULTISAMPLE_TYPE multisample_type,
         UINT multisample_quality, IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format,
         WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -398,7 +398,7 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
 
     hr = resource_init((IWineD3DResource *)surface, WINED3DRTYPE_SURFACE,
             device, resource_size, usage, format_desc, pool, parent, parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             , shared_handle
             , pvClientMem
 #endif
@@ -421,7 +421,7 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
 
     /* Flags */
     surface->Flags = SFLAG_NORMCOORD; /* Default to normalized coords. */
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (pool == WINED3DPOOL_SYSTEMMEM && pvClientMem)  surface->Flags |= SFLAG_CLIENTMEM;
 #endif
     if (discard) surface->Flags |= SFLAG_DISCARD;
@@ -482,7 +482,7 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
         return hr;
     }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (VBOXSHRC_IS_SHARED(surface))
     {
         Assert(shared_handle);
@@ -512,7 +512,7 @@ static void surface_force_reload(IWineD3DSurface *iface)
 {
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
 
-#if defined(DEBUG_misha) && defined (VBOXWDDM)
+#if defined(DEBUG_misha) && defined (VBOX_WITH_WDDM)
     if (VBOXSHRC_IS_INITIALIZED(This))
     {
         Assert(0);
@@ -550,7 +550,7 @@ void surface_set_texture_name(IWineD3DSurface *iface, GLuint new_name, BOOL srgb
         IWineD3DSurface_ModifyLocation(iface, flag, FALSE);
     }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (VBOXSHRC_IS_SHARED(This))
     {
         VBOXSHRC_SET_SHAREHANDLE(This, new_name);
@@ -910,7 +910,7 @@ static void surface_allocate_surface(IWineD3DSurfaceImpl *This, const struct win
         }
     }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (!VBOXSHRC_IS_SHARED_OPENED(This))
 #endif
     {
@@ -1019,7 +1019,7 @@ GLenum surface_get_gl_buffer(IWineD3DSurface *iface)
     return GL_BACK;
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 static HRESULT WINAPI IWineD3DSurfaceImpl_LoadLocation(IWineD3DSurface *iface, DWORD flag, const RECT *rect);
 #endif
 
@@ -2041,7 +2041,7 @@ static void surface_release_client_storage(IWineD3DSurface *iface)
 
     ENTER_GL();
     glPixelStorei(GL_UNPACK_CLIENT_STORAGE_APPLE, GL_FALSE);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (!VBOXSHRC_IS_SHARED_OPENED(This))
 #endif
     {
@@ -2136,7 +2136,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_GetDC(IWineD3DSurface *iface, HDC *pHD
         } else {
             IWineD3DSurfaceImpl *dds_primary;
             IWineD3DSwapChainImpl *swapchain;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             /* tmp work-around */
             swapchain = (IWineD3DSwapChainImpl *)This->resource.device->swapchains[This->resource.device->NumberOfSwapChains-1];
 #else
@@ -2656,7 +2656,7 @@ static void WINAPI IWineD3DSurfaceImpl_BindTexture(IWineD3DSurface *iface, BOOL 
         if (!This->texture_level)
         {
             if (!*name) {
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
                 if (VBOXSHRC_IS_SHARED_OPENED(This))
                 {
                     *name = VBOXSHRC_GET_SHAREHANDLE(This);
@@ -2665,7 +2665,7 @@ static void WINAPI IWineD3DSurfaceImpl_BindTexture(IWineD3DSurface *iface, BOOL 
 #endif
                 {
                     glGenTextures(1, name);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
                     if (VBOXSHRC_IS_SHARED(This))
                     {
                         VBOXSHRC_SET_SHAREHANDLE(This, *name);
@@ -3791,7 +3791,7 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
 
         if (wined3d_settings.strict_draw_ordering || (dstSwapchain
                 && ((IWineD3DSurface *)This == dstSwapchain->frontBuffer
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
                 || dstSwapchain->device->numContexts > 1
 #else
                 || dstSwapchain->num_contexts > 1
@@ -4027,7 +4027,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_RealizePalette(IWineD3DSurface *iface)
     return WINED3D_OK;
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 static HRESULT WINAPI IWineD3DSurfaceImpl_LoadLocation(IWineD3DSurface *iface, DWORD flag, const RECT *rect);
 #endif
 
@@ -4353,7 +4353,7 @@ static void WINAPI IWineD3DSurfaceImpl_ModifyLocation(IWineD3DSurface *iface, DW
         This->Flags &= ~flag;
     }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if(VBOXSHRC_IS_INITIALIZED(This)) {
         /* with the shared resource only texture can be considered valid
          * to make sure changes done to the resource in the other device context are visible
@@ -4406,7 +4406,7 @@ static inline void surface_blt_to_drawable(IWineD3DSurfaceImpl *This, const RECT
     swapchain = (This->Flags & SFLAG_SWAPCHAIN) ? (IWineD3DSwapChainImpl *)This->container : NULL;
     if (wined3d_settings.strict_draw_ordering || (swapchain
             && ((IWineD3DSurface *)This == swapchain->frontBuffer
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             || swapchain->device->numContexts > 1
 #else
             || swapchain->num_contexts > 1
@@ -4672,7 +4672,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_LoadLocation(IWineD3DSurface *iface, D
         }
     }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (VBOXSHRC_IS_INITIALIZED(This))
     {
         /* with the shared resource only texture can be considered valid

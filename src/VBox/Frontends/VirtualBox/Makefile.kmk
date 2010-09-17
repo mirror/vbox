@@ -144,8 +144,8 @@ endif
 ifdef VBOX_WITH_VIRTIO
  VirtualBox_DEFS        += VBOX_WITH_VIRTIO
 endif
-ifdef VBOXWDDM
- VirtualBox_DEFS        += VBOXWDDM
+ifdef VBOX_WITH_WDDM
+ VirtualBox_DEFS        += VBOX_WITH_WDDM
 endif
 ifdef VBOX_BLEEDING_EDGE
 VirtualBox_src/selector/VBoxSelectorWnd.cpp_DEFS += \

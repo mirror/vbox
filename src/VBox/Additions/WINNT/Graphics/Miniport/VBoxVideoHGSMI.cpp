@@ -186,7 +186,7 @@ void* vboxHGSMIBufferAlloc(PDEVICE_EXTENSION PrimaryExtension,
                          uint8_t u8Ch,
                          uint16_t u16Op)
 {
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     /* @todo: add synchronization */
 #endif
     return HGSMIHeapAlloc (&PrimaryExtension->u.primary.hgsmiAdapterHeap, cbData, u8Ch, u16Op);
@@ -194,7 +194,7 @@ void* vboxHGSMIBufferAlloc(PDEVICE_EXTENSION PrimaryExtension,
 
 void vboxHGSMIBufferFree (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer)
 {
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     /* @todo: add synchronization */
 #endif
     HGSMIHeapFree (&PrimaryExtension->u.primary.hgsmiAdapterHeap, pvBuffer);
@@ -227,7 +227,7 @@ static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
     int rc = VINF_SUCCESS;
 
     /* Allocate the IO buffer. */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     if (PrimaryExtension->pPrimary != PrimaryExtension)
     {
         dprintf(("VBoxVideo::vboxCallChannel: not primary extension %p!!!\n", PrimaryExtension));
@@ -347,7 +347,7 @@ static int vboxQueryConfHGSMI (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32I
 
     return rc;
 }
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 static int vbvaInitInfoDisplay (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
 {
     NOREF (pvContext);
@@ -438,7 +438,7 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
     AssertRC(rc);
     if(RT_SUCCESS (rc))
     {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         rc = vboxCallVBVA (PrimaryExtension,
                                VBVA_INFO_VIEW,
                                sizeof (VBVAINFOVIEW) * PrimaryExtension->u.primary.cDisplays,
@@ -480,7 +480,7 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
     return rc;
 }
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 VP_STATUS vboxWaitForSingleObjectVoid(IN PVOID  HwDeviceExtension, IN PVOID  Object, IN PLARGE_INTEGER  Timeout  OPTIONAL)
 {
     return ERROR_INVALID_FUNCTION;
@@ -711,7 +711,7 @@ void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPO
  * to talk to the host.
  */
 VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         PVIDEO_PORT_CONFIG_INFO pConfigInfo,
 #endif
         ULONG AdapterMemorySize)
@@ -725,7 +725,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
      * Note: bVBoxVideoSupported is set to FALSE, because HGSMI is active instead.
      */
     PrimaryExtension->pNext                              = NULL;
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     PrimaryExtension->pPrimary                           = PrimaryExtension;
     PrimaryExtension->iDevice                            = 0;
     PrimaryExtension->ulFrameBufferOffset                = 0;
@@ -733,7 +733,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
 #endif
     PrimaryExtension->u.primary.ulVbvaEnabled            = 0;
     PrimaryExtension->u.primary.bVBoxVideoSupported      = FALSE;
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     PrimaryExtension->u.primary.cDisplays                = 1;
 #endif
     PrimaryExtension->u.primary.cbVRAM                   = AdapterMemorySize;
@@ -861,7 +861,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     /* Check whether the guest supports multimonitors. */
     if (PrimaryExtension->u.primary.bHGSMI)
     {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         typedef VP_STATUS (*PFNCREATESECONDARYDISPLAY)(PVOID, PVOID *, ULONG);
         PFNCREATESECONDARYDISPLAY pfnCreateSecondaryDisplay = NULL;
 
@@ -890,7 +890,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
                 cDisplays = 1;
             }
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
             PDEVICE_EXTENSION pPrev = PrimaryExtension;
 
             ULONG iDisplay;
@@ -931,7 +931,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         rc = NO_ERROR;
     }
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     /* Now when the number of monitors is known and extensions are created,
      * calculate the layout of framebuffers.
      */
@@ -949,7 +949,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         }
     }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (PrimaryExtension->u.primary.bHGSMI)
     {
         ULONG ulAvailable = PrimaryExtension->u.primary.cbVRAM
@@ -1060,7 +1060,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension)
 {
     int rc = VINF_SUCCESS;
@@ -1174,7 +1174,7 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength)
 {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     PDEVICE_EXTENSION PrimaryExtension = DeviceExtension->pPrimary;
 
     /* In multimonitor case the HW mouse pointer is the same on all screens,
@@ -1317,7 +1317,7 @@ static int vboxVBVADeleteChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBV
 
 static int vboxVBVACreateChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBVA_CHANNELCONTEXTS ** ppContext)
 {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     uint32_t cDisplays = (uint32_t)PrimaryExtension->u.primary.cDisplays;
 #else
     uint32_t cDisplays = (uint32_t)PrimaryExtension->u.primary.cDisplays;
@@ -1348,7 +1348,7 @@ static VBVADISP_CHANNELCONTEXT* vboxVBVAFindHandlerInfo(VBVA_CHANNELCONTEXTS *pC
     return NULL;
 }
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd)
 {
     PDEVICE_EXTENSION PrimaryExtension = ((PDEVICE_EXTENSION)hHGSMI)->pPrimary;
@@ -1446,7 +1446,7 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
                         case VBVAHG_EVENT:
                         {
                             VBVAHOSTCMDEVENT *pEventCmd = VBVAHOSTCMD_BODY(pCur, VBVAHOSTCMDEVENT);
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
                             PEVENT pEvent = (PEVENT)pEventCmd->pEvent;
                             pCallbacks->PrimaryExtension->u.primary.VideoPortProcs.pfnSetEvent(
                                     pCallbacks->PrimaryExtension,

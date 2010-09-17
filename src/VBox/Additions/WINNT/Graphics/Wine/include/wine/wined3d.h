@@ -2689,7 +2689,7 @@ typedef struct IWineD3DDeviceParentVtbl {
         UINT level,
         WINED3DCUBEMAP_FACES face,
         IWineD3DSurface **surface
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -2746,7 +2746,7 @@ interface IWineD3DDeviceParent {
 #define IWineD3DDeviceParent_Release(This) (This)->lpVtbl->Release(This)
 /*** IWineD3DDeviceParent methods ***/
 #define IWineD3DDeviceParent_WineD3DDeviceCreated(This,device) (This)->lpVtbl->WineD3DDeviceCreated(This,device)
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 #define IWineD3DDeviceParent_CreateSurface(This,superior,width,height,format,usage,pool,level,face,surface,shared_handle,pvClientMem) (This)->lpVtbl->CreateSurface(This,superior,width,height,format,usage,pool,level,face,surface,shared_handle,pvClientMem)
 #else
 #define IWineD3DDeviceParent_CreateSurface(This,superior,width,height,format,usage,pool,level,face,surface) (This)->lpVtbl->CreateSurface(This,superior,width,height,format,usage,pool,level,face,surface)
@@ -6125,7 +6125,7 @@ typedef struct IWineD3DSwapChainVtbl {
         IWineD3DSwapChain* This,
         WINED3DGAMMARAMP *ramp);
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     HRESULT (STDMETHODCALLTYPE *Flush)(
         IWineD3DSwapChain* This);
 #endif
@@ -6154,7 +6154,7 @@ interface IWineD3DSwapChain {
 #define IWineD3DSwapChain_GetPresentParameters(This,present_parameters) (This)->lpVtbl->GetPresentParameters(This,present_parameters)
 #define IWineD3DSwapChain_SetGammaRamp(This,flags,ramp) (This)->lpVtbl->SetGammaRamp(This,flags,ramp)
 #define IWineD3DSwapChain_GetGammaRamp(This,ramp) (This)->lpVtbl->GetGammaRamp(This,ramp)
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 #define IWineD3DSwapChain_Flush(This) (This)->lpVtbl->Flush(This)
 #endif
 #endif
@@ -7301,7 +7301,7 @@ interface IWineD3DDevice : public IWineD3DBase
     virtual void STDMETHODCALLTYPE ReleaseFocusWindow(
         ) = 0;
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     virtual HRESULT STDMETHODCALLTYPE Flush(
         ) = 0;
 
@@ -7382,7 +7382,7 @@ typedef struct IWineD3DDeviceVtbl {
         WINED3DSURFTYPE surface_type,
         IUnknown *parent,
         const struct wined3d_parent_ops *parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -7405,7 +7405,7 @@ typedef struct IWineD3DDeviceVtbl {
         IWineD3DTexture **texture,
         IUnknown *parent,
         const struct wined3d_parent_ops *parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -8071,7 +8071,7 @@ typedef struct IWineD3DDeviceVtbl {
     void (STDMETHODCALLTYPE *ReleaseFocusWindow)(
         IWineD3DDevice* This);
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     HRESULT (STDMETHODCALLTYPE *Flush)(
         IWineD3DDevice* This);
 
@@ -8102,13 +8102,13 @@ interface IWineD3DDevice {
 #define IWineD3DDevice_CreateVertexBuffer(This,length,usage,pool,vertex_buffer,parent,parent_ops) (This)->lpVtbl->CreateVertexBuffer(This,length,usage,pool,vertex_buffer,parent,parent_ops)
 #define IWineD3DDevice_CreateIndexBuffer(This,length,usage,pool,index_buffer,parent,parent_ops) (This)->lpVtbl->CreateIndexBuffer(This,length,usage,pool,index_buffer,parent,parent_ops)
 #define IWineD3DDevice_CreateStateBlock(This,type,stateblock,parent) (This)->lpVtbl->CreateStateBlock(This,type,stateblock,parent)
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 #define IWineD3DDevice_CreateSurface(This,width,height,format,lockable,discard,level,surface,usage,pool,multisample_type,multisample_quality,surface_type,parent,parent_ops,shared_handle,pvClientMem) (This)->lpVtbl->CreateSurface(This,width,height,format,lockable,discard,level,surface,usage,pool,multisample_type,multisample_quality,surface_type,parent,parent_ops,shared_handle,pvClientMem)
 #else
 #define IWineD3DDevice_CreateSurface(This,width,height,format,lockable,discard,level,surface,usage,pool,multisample_type,multisample_quality,surface_type,parent,parent_ops) (This)->lpVtbl->CreateSurface(This,width,height,format,lockable,discard,level,surface,usage,pool,multisample_type,multisample_quality,surface_type,parent,parent_ops)
 #endif
 #define IWineD3DDevice_CreateRendertargetView(This,resource,parent,rendertarget_view) (This)->lpVtbl->CreateRendertargetView(This,resource,parent,rendertarget_view)
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 #define IWineD3DDevice_CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pvClientMem) (This)->lpVtbl->CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pvClientMem)
 #else
 #define IWineD3DDevice_CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops)
@@ -8239,7 +8239,7 @@ interface IWineD3DDevice {
 #define IWineD3DDevice_GetSurfaceFromDC(This,dc,surface) (This)->lpVtbl->GetSurfaceFromDC(This,dc,surface)
 #define IWineD3DDevice_AcquireFocusWindow(This,window) (This)->lpVtbl->AcquireFocusWindow(This,window)
 #define IWineD3DDevice_ReleaseFocusWindow(This) (This)->lpVtbl->ReleaseFocusWindow(This)
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 #define IWineD3DDevice_Flush(This) (This)->lpVtbl->Flush(This)
 #define IWineD3DDevice_AddSwapChain(This,swapchain) (This)->lpVtbl->AddSwapChain(This,swapchain)
 #define IWineD3DDevice_RemoveSwapChain(This,swapchain) (This)->lpVtbl->RemoveSwapChain(This,swapchain)

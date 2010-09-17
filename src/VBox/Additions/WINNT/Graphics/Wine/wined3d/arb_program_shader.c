@@ -585,7 +585,7 @@ static inline void shader_arb_vs_local_constants(IWineD3DDeviceImpl* deviceImpl)
 /* GL locking is done by the caller (state handler) */
 static void shader_arb_load_constants(const struct wined3d_context *context, char usePixelShader, char useVertexShader)
 {
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     IWineD3DDeviceImpl *device = context->device;
 #else
     IWineD3DDeviceImpl *device = context->swapchain->device;
@@ -619,7 +619,7 @@ static void shader_arb_update_float_vertex_constants(IWineD3DDevice *iface, UINT
 
     /* We don't want shader constant dirtification to be an O(contexts), so just dirtify the active
      * context. On a context switch the old context will be fully dirtified */
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (!context || context->device != This) return;
 #else
     if (!context || context->swapchain->device != This) return;
@@ -636,7 +636,7 @@ static void shader_arb_update_float_pixel_constants(IWineD3DDevice *iface, UINT 
 
     /* We don't want shader constant dirtification to be an O(contexts), so just dirtify the active
      * context. On a context switch the old context will be fully dirtified */
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (!context || context->device != This) return;
 #else
     if (!context || context->swapchain->device != This) return;
@@ -4360,7 +4360,7 @@ static inline void find_arb_vs_compile_args(IWineD3DVertexShaderImpl *shader, IW
 /* GL locking is done by the caller */
 static void shader_arb_select(const struct wined3d_context *context, BOOL usePS, BOOL useVS)
 {
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     IWineD3DDeviceImpl *This = context->device;
 #else
     IWineD3DDeviceImpl *This = context->swapchain->device;
@@ -6968,7 +6968,7 @@ HRESULT arbfp_blit_surface(IWineD3DDeviceImpl *device, IWineD3DSurfaceImpl *src_
 
     if (wined3d_settings.strict_draw_ordering || (dst_swapchain
             && ((IWineD3DSurface *)dst_surface == dst_swapchain->frontBuffer
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             || dst_swapchain->device->numContexts > 1
 #else
             || dst_swapchain->num_contexts > 1
