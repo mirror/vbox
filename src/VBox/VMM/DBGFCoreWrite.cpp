@@ -220,14 +220,14 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
      */
     if (cchNameAlign - cchName > 3)
     {
-        LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr pszName=%s cchName=%u cchNameAlign=%u, cchName aligns to 4 not 8-bytes!\n", pszName, cchName,
+        LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr pszName=%s cchName=%u cchNameAlign=%u, cchName aligns to 4 not 8-bytes!\n", pszName, cchName,
                 cchNameAlign));
         return VERR_INVALID_PARAMETER;
     }
 
     if (cbDataAlign - cbData > 3)
     {
-        LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr pszName=%s cbData=%u cbDataAlign=%u, cbData aligns to 4 not 8-bytes!\n", pszName, cbData,
+        LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr pszName=%s cbData=%u cbDataAlign=%u, cbData aligns to 4 not 8-bytes!\n", pszName, cbData,
                 cbDataAlign));
         return VERR_INVALID_PARAMETER;
     }
@@ -278,7 +278,7 @@ static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, c
     }
 
     if (RT_FAILURE(rc))
-        LogRel((DBGFLOG_NAME ":RTFileWrite failed. rc=%Rrc pszName=%s cchName=%u cchNameAlign=%u cbData=%u cbDataAlign=%u\n",
+        LogRel((DBGFLOG_NAME ": RTFileWrite failed. rc=%Rrc pszName=%s cchName=%u cchNameAlign=%u cbData=%u cbDataAlign=%u\n",
                 rc, pszName, cchName, cchNameAlign, cbData, cbDataAlign));
 
     return rc;
@@ -340,7 +340,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     CoreDescriptor.u32VBoxRevision  = VMMGetSvnRev();
     CoreDescriptor.cCpus            = pVM->cCpus;
 
-    Log((DBGFLOG_NAME ":CoreDescriptor Version=%u Revision=%u\n", CoreDescriptor.u32VBoxVersion, CoreDescriptor.u32VBoxRevision));
+    Log((DBGFLOG_NAME ": CoreDescriptor Version=%u Revision=%u\n", CoreDescriptor.u32VBoxVersion, CoreDescriptor.u32VBoxRevision));
 
     /*
      * Compute total size of the note section.
@@ -356,7 +356,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     int rc = RTFileOpen(&hFile, pDbgfData->pszDumpPath, RTFILE_O_CREATE_REPLACE | RTFILE_O_READWRITE);
     if (RT_FAILURE(rc))
     {
-        LogRel((DBGFLOG_NAME ":RTFileOpen failed for '%s' rc=%Rrc\n", pDbgfData->pszDumpPath, rc));
+        LogRel((DBGFLOG_NAME ": RTFileOpen failed for '%s' rc=%Rrc\n", pDbgfData->pszDumpPath, rc));
         return rc;
     }
 
@@ -370,7 +370,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     off += cbElfHdr;
     if (RT_FAILURE(rc))
     {
-        LogRel((DBGFLOG_NAME ":Elf64WriteElfHdr failed. rc=%Rrc\n", rc));
+        LogRel((DBGFLOG_NAME ": Elf64WriteElfHdr failed. rc=%Rrc\n", rc));
         goto CoreWriteDone;
     }
 
@@ -388,7 +388,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
 
     if (RT_FAILURE(rc))
     {
-        LogRel((DBGFLOG_NAME ":Elf64WritreProgHdr failed for PT_NOTE. rc=%Rrc\n", rc));
+        LogRel((DBGFLOG_NAME ": Elf64WritreProgHdr failed for PT_NOTE. rc=%Rrc\n", rc));
         goto CoreWriteDone;
     }
 
@@ -424,7 +424,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
         Assert(cbProgHdr == sizeof(Elf64_Phdr));
         if (RT_FAILURE(rc))
         {
-            LogRel((DBGFLOG_NAME ":Elf64WriteProgHdr failed for memory range(%u) cbFileRange=%u cbMemRange=%u rc=%Rrc\n", iRange,
+            LogRel((DBGFLOG_NAME ": Elf64WriteProgHdr failed for memory range(%u) cbFileRange=%u cbMemRange=%u rc=%Rrc\n", iRange,
                     cbFileRange, cbMemRange, rc));
             goto CoreWriteDone;
         }
@@ -439,7 +439,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
                            NULL /* pcbNoteHdr */);
     if (RT_FAILURE(rc))
     {
-        LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr failed for Note '%s' rc=%Rrc\n", s_pcszCoreVBoxCore, rc));
+        LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr failed for Note '%s' rc=%Rrc\n", s_pcszCoreVBoxCore, rc));
         goto CoreWriteDone;
     }
 
@@ -452,7 +452,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
         rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, s_pcszCoreVBoxCpu, pCpuCtx, sizeof(CPUMCTX), NULL /* pcbNoteHdr */);
         if (RT_FAILURE(rc))
         {
-            LogRel((DBGFLOG_NAME ":Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", iCpu, rc));
+            LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", iCpu, rc));
             goto CoreWriteDone;
         }
     }
@@ -468,7 +468,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
         rc = PGMR3PhysGetRange(pVM, iRange, &GCPhysStart, &GCPhysEnd, NULL /* pszDesc */, &fIsMmio);
         if (RT_FAILURE(rc))
         {
-            LogRel((DBGFLOG_NAME ":PGMR3PhysGetRange(2) failed for iRange(%u) rc=%Rrc\n", iRange, rc));
+            LogRel((DBGFLOG_NAME ": PGMR3PhysGetRange(2) failed for iRange(%u) rc=%Rrc\n", iRange, rc));
             goto CoreWriteDone;
         }
 
@@ -486,7 +486,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
             void *pvBuf     = MMR3HeapAlloc(pVM, MM_TAG_DBGF_CORE_WRITE, cbBuf);
             if (RT_UNLIKELY(!pvBuf))
             {
-                LogRel((DBGFLOG_NAME ":MMR3HeapAlloc failed. iRange=%u iPage=%u\n", iRange, iPage));
+                LogRel((DBGFLOG_NAME ": MMR3HeapAlloc failed. iRange=%u iPage=%u\n", iRange, iPage));
                 goto CoreWriteDone;
             }
 
@@ -496,7 +496,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
                 /*
                  * For some reason this failed, write out a zero page instead.
                  */
-                LogRel((DBGFLOG_NAME ":PGMPhysRead failed for iRange=%u iPage=%u. rc=%Rrc. Ignoring...\n", iRange,
+                LogRel((DBGFLOG_NAME ": PGMPhysRead failed for iRange=%u iPage=%u. rc=%Rrc. Ignoring...\n", iRange,
                         iPage, rc));
                 memset(pvBuf, 0, cbBuf);
             }
@@ -504,7 +504,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
             rc = RTFileWrite(hFile, pvBuf, cbBuf, NULL /* all */);
             if (RT_FAILURE(rc))
             {
-                LogRel((DBGFLOG_NAME ":RTFileWrite failed. iRange=%u iPage=%u rc=%Rrc\n", iRange, iPage, rc));
+                LogRel((DBGFLOG_NAME ": RTFileWrite failed. iRange=%u iPage=%u rc=%Rrc\n", iRange, iPage, rc));
                 MMR3HeapFree(pvBuf);
                 goto CoreWriteDone;
             }
@@ -546,9 +546,9 @@ VMMR3DECL(int) DBGFR3CoreWrite(PVM pVM, const char *pszDumpPath)
 
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, dbgfR3CoreWrite, &CoreData);
     if (RT_SUCCESS(rc))
-        LogRel((DBGFLOG_NAME ":Successfully wrote guest core '%s'\n", pszDumpPath));
+        LogRel((DBGFLOG_NAME ": Successfully wrote guest core dump %s\n", pszDumpPath));
     else
-        LogRel((DBGFLOG_NAME ":Failed to write guest core '%s' (%Rrc)\n", pszDumpPath, rc));
+        LogRel((DBGFLOG_NAME ": Failed to write guest core dump %s. rc=%Rrc\n", pszDumpPath, rc));
     return rc;
 }
 
