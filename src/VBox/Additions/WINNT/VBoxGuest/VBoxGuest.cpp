@@ -735,18 +735,11 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
     dprintf(("VBoxGuestQueryMemoryBalloon\n"));
 
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevGetMemBalloonChangeRequest), VMMDevReq_GetMemBalloonChangeRequest);
-
     if (RT_SUCCESS(rc))
     {
         req->eventAck = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
         rc = VbglGRPerform(&req->header);
-
-        if (RT_FAILURE(rc))
-        {
-            dprintf(("VBoxGuest::VBoxGuestDeviceControl VBOXGUEST_IOCTL_CHECK_BALLOON: error issuing request to VMMDev! "
-                     "rc = %Rrc\n", rc));
-        }
-        else
+        if (RT_SUCCESS(rc))
         {
             if (!pDevExt->MemBalloon.paMdlMemBalloon)
             {
@@ -766,9 +759,18 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
             if (pMemBalloonSize)
                 *pMemBalloonSize = pDevExt->MemBalloon.cBalloonChunks;
         }
-
+        else if (   rc == VERR_NOT_SUPPORTED
+                 || rc == VERR_NOT_IMPLEMENTED)
+        {
+            dprintf(("VBoxGuest::VBoxGuestQueryMemoryBalloon: Memory ballooning not implemented/supported!\n"));
+            rc = VINF_SUCCESS;
+        }
+        else
+            dprintf(("VBoxGuest::VBoxGuestQueryMemoryBalloon: Performing VMMDEV_EVENT_BALLOON_CHANGE_REQUEST failed with rc=%Rrc\n", rc));
         VbglGRFree(&req->header);
     }
+    else
+        dprintf(("VBoxGuest::VBoxGuestQueryMemoryBalloon: VbglGRAlloc failed with rc=%Rrc\n", rc));
     return rc;
 }
 #endif
@@ -781,7 +783,6 @@ int VBoxInitMemBalloon(PVBOXGUESTDEVEXT pDevExt)
     pDevExt->MemBalloon.cBalloonChunks = 0;
     pDevExt->MemBalloon.cMaxBalloonChunks = 0;
     pDevExt->MemBalloon.paMdlMemBalloon = NULL;
-
     return VBoxGuestQueryMemoryBalloon(pDevExt, &dummy);
 #else
     return VINF_SUCCESS;
