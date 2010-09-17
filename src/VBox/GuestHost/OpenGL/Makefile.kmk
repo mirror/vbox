@@ -41,7 +41,7 @@ endif
 #
 VBoxOGLcrutil_TEMPLATE      = VBOXCROGLR3GUESTDLL
 if defined(VBOX_SIGNING_MODE) && defined(VBOXWDDM)
- VBoxOGLcrutil_NOINST.win.x86 = true
+# VBoxOGLcrutil_NOINST.win.x86 = true
 endif
 VBoxOGLcrutil_SDKS.win      = DXSDK
 VBoxOGLcrutil_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h
@@ -101,7 +101,7 @@ VBoxOGLhostcrutil_EXTENDS  = VBoxOGLcrutil
 VBoxOGLhostcrutil_TEMPLATE = VBOXCROGLR3HOSTDLL
 if defined(VBOX_SIGNING_MODE) && defined(VBOXWDDM)
  # need to reset the NOINST flag
- VBoxOGLhostcrutil_NOINST.win.x86 = false
+ # VBoxOGLhostcrutil_NOINST.win.x86 = false
 endif
 VBoxOGLhostcrutil_LDFLAGS.darwin = $(VBoxOGLcrutil_LDFLAGS.darwin) \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib
@@ -482,7 +482,7 @@ $(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h: $(addprefix $(PATH_SUB_CURREN
 #
 VBoxOGLerrorspu_TEMPLATE = VBOXCROGLR3GUESTDLL
 if defined(VBOX_SIGNING_MODE) && defined(VBOXWDDM)
- VBoxOGLerrorspu_NOINST.win.x86 = true
+# VBoxOGLerrorspu_NOINST.win.x86 = true
 endif
 VBoxOGLerrorspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
@@ -508,7 +508,7 @@ VBoxOGLhosterrorspu_EXTENDS  = VBoxOGLerrorspu
 VBoxOGLhosterrorspu_TEMPLATE = VBOXCROGLR3HOSTDLL
 if defined(VBOX_SIGNING_MODE) && defined(VBOXWDDM)
  # need to reset the NOINST flag
- VBoxOGLhosterrorspu_NOINST.win.x86 = false
+ # VBoxOGLhosterrorspu_NOINST.win.x86 = false
 endif
 VBoxOGLhosterrorspu_LDFLAGS.darwin += $(VBoxOGLerrorspu_LDFLAGS.darwin) \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib
