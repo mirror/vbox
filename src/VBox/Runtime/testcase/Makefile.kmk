@@ -143,12 +143,14 @@ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  	tstNoCrt-1 \
 	tstRTR0MemUserKernelDriver \
 	tstRTR0SemMutexDriver \
+	tstRTR0TimerDriver \
 	tstR0ThreadPreemptionDriver \
 	tstTSC
  SYSMODS += \
  	tstLdrObjR0 \
  	tstRTR0MemUserKernel \
  	tstRTR0SemMutex \
+ 	tstRTR0Timer \
  	tstR0ThreadPreemption
  ifdef VBOX_WITH_RAW_MODE
   SYSMODS += tstLdrObj
@@ -345,18 +347,6 @@ tstRTMemCache_SOURCES = tstRTMemCache.cpp
 tstRTMemPool_TEMPLATE = VBOXR3TSTEXE
 tstRTMemPool_SOURCES = tstRTMemPool.cpp
 
-tstRTR0MemUserKernel_TEMPLATE = VBoxR0
-tstRTR0MemUserKernel_INST = $(INST_TESTCASE)
-tstRTR0MemUserKernel_DEFS = IN_RT_R0
-tstRTR0MemUserKernel_SYSSUFF = .r0
-tstRTR0MemUserKernel_SOURCES = tstRTR0MemUserKernel.cpp
-tstRTR0MemUserKernel_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0MemUserKernel_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
-
-tstRTR0MemUserKernelDriver_SOURCES = tstRTR0MemUserKernelDriver.cpp
-
 tstMove_SOURCES = tstMove.cpp
 
 tstMp-1_SOURCES = tstMp-1.cpp
@@ -389,32 +379,6 @@ tstRTPoll_SOURCES  = tstRTPoll.cpp
 tstPrfRT_SOURCES = tstPrfRT.cpp
 
 tstRand_SOURCES = tstRand.cpp
-
-tstR0ThreadPreemption_TEMPLATE = VBoxR0
-tstR0ThreadPreemption_INST = $(INST_TESTCASE)
-tstR0ThreadPreemption_DEFS = IN_RT_R0
-tstR0ThreadPreemption_SYSSUFF = .r0
-tstR0ThreadPreemption_SOURCES = tstR0ThreadPreemption.cpp
-tstR0ThreadPreemption_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-if1of ($(VBOX_LDR_FMT), pe lx)
- tstR0ThreadPreemption_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
-
-tstR0ThreadPreemptionDriver_TEMPLATE = VBOXR3TSTEXE
-tstR0ThreadPreemptionDriver_SOURCES = tstR0ThreadPreemptionDriver.cpp
-
-tstRTR0SemMutex_TEMPLATE = VBoxR0
-tstRTR0SemMutex_INST = $(INST_TESTCASE)
-tstRTR0SemMutex_DEFS = IN_RT_R0
-tstRTR0SemMutex_SYSSUFF = .r0
-tstRTR0SemMutex_SOURCES = tstRTR0SemMutex.cpp
-tstRTR0SemMutex_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0SemMutex_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
-
-tstRTR0SemMutexDriver_TEMPLATE = VBOXR3TSTEXE
-tstRTR0SemMutexDriver_SOURCES = tstRTR0SemMutexDriver.cpp
 
 tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
 
@@ -498,8 +462,66 @@ tstUtf8_SOURCES = tstUtf8.cpp
 tstRTCoreDump_TEMPLACE = VBOXR3TSTEXE
 tstRTCoreDump_SOURCES = tstRTCoreDump.cpp
 
+
 #
-# odds and ends
+# Ring-0 testcases.
+#
+
+## @todo create a template for compiling the ring-0 part.
+tstRTR0MemUserKernel_TEMPLATE = VBoxR0
+tstRTR0MemUserKernel_INST = $(INST_TESTCASE)
+tstRTR0MemUserKernel_DEFS = IN_RT_R0
+tstRTR0MemUserKernel_SYSSUFF = .r0
+tstRTR0MemUserKernel_SOURCES = tstRTR0MemUserKernel.cpp
+tstRTR0MemUserKernel_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+if1of ($(VBOX_LDR_FMT), pe lx)
+ tstRTR0MemUserKernel_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+tstRTR0MemUserKernelDriver_TEMPLATE = VBOXR3TSTEXE
+tstRTR0MemUserKernelDriver_SOURCES = tstRTR0MemUserKernelDriver.cpp
+
+
+tstRTR0SemMutex_TEMPLATE = VBoxR0
+tstRTR0SemMutex_INST = $(INST_TESTCASE)
+tstRTR0SemMutex_DEFS = IN_RT_R0
+tstRTR0SemMutex_SYSSUFF = .r0
+tstRTR0SemMutex_SOURCES = tstRTR0SemMutex.cpp
+tstRTR0SemMutex_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+if1of ($(VBOX_LDR_FMT), pe lx)
+ tstRTR0SemMutex_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+tstRTR0SemMutexDriver_TEMPLATE = VBOXR3TSTEXE
+tstRTR0SemMutexDriver_SOURCES = tstRTR0SemMutexDriver.cpp
+
+
+tstRTR0Timer_TEMPLATE = VBoxR0
+tstRTR0Timer_INST = $(INST_TESTCASE)
+tstRTR0Timer_DEFS = IN_RT_R0
+tstRTR0Timer_SYSSUFF = .r0
+tstRTR0Timer_SOURCES = tstRTR0Timer.cpp
+tstRTR0Timer_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+if1of ($(VBOX_LDR_FMT), pe lx)
+ tstRTR0Timer_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+tstRTR0TimerDriver_TEMPLATE = VBOXR3TSTEXE
+tstRTR0TimerDriver_SOURCES = tstRTR0TimerDriver.cpp
+
+
+tstR0ThreadPreemption_TEMPLATE = VBoxR0
+tstR0ThreadPreemption_INST = $(INST_TESTCASE)
+tstR0ThreadPreemption_DEFS = IN_RT_R0
+tstR0ThreadPreemption_SYSSUFF = .r0
+tstR0ThreadPreemption_SOURCES = tstR0ThreadPreemption.cpp
+tstR0ThreadPreemption_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+if1of ($(VBOX_LDR_FMT), pe lx)
+ tstR0ThreadPreemption_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+tstR0ThreadPreemptionDriver_TEMPLATE = VBOXR3TSTEXE
+tstR0ThreadPreemptionDriver_SOURCES = tstR0ThreadPreemptionDriver.cpp
+
+
+#
+# Odds and ends.
 #
 
 tstDarwinSched_SOURCES = tstDarwinSched.cpp
