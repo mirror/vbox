@@ -386,7 +386,6 @@ DECLINLINE(void) PCIDevSetClassBase(PPCIDEVICE pPciDev, uint8_t u8BaseClass)
     pPciDev->config[VBOX_PCI_CLASS_BASE] = u8BaseClass;
 }
 
-
 /**
  * Sets the header type config register.
  *
@@ -407,6 +406,28 @@ DECLINLINE(void) PCIDevSetHeaderType(PPCIDEVICE pPciDev, uint8_t u8HdrType)
 DECLINLINE(uint8_t) PCIDevGetHeaderType(PPCIDEVICE pPciDev)
 {
     return pPciDev->config[VBOX_PCI_HEADER_TYPE];
+}
+
+/**
+ * Sets the BIST (built-in self-test)config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @param   u8Bist          The BIST value.
+ */
+DECLINLINE(void) PCIDevSetBIST(PPCIDEVICE pPciDev, uint8_t u8Bist)
+{
+    pPciDev->config[VBOX_PCI_BIST] = u8Bist;
+}
+
+/**
+ * Gets the BIST (built-in self-test)config register.
+ *
+ * @param   pPciDev         The PCI device.
+ * @returns u8Bist          The BIST.
+ */
+DECLINLINE(uint8_t) PCIDevGetBIST(PPCIDEVICE pPciDev)
+{
+    return pPciDev->config[VBOX_PCI_BIST];
 }
 
 
