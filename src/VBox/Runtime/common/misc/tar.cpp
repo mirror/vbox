@@ -359,7 +359,7 @@ static int rtTarAppendFileFromFile(RTFILE hFile, const char *pszSrcName, const u
         record.h.linkflag = LF_NORMAL;
 
         /* Create the checksum out of the new header */
-        uint32_t chksum;
+        uint32_t chksum = 0;
         rc = rtTarCalcChkSum(&record, &chksum);
         if (RT_FAILURE(rc))
             break;
