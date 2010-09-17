@@ -64,6 +64,8 @@ static VBOXDISPLAY_DRIVER_TYPE getVBoxDisplayDriverType (VBOXDISPLAYCONTEXT *pCt
 
 int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
+    Log(("VBoxTray: VBoxDisplayInit ...\n"));
+
     OSVERSIONINFO OSinfo;
     OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
     GetVersionEx (&OSinfo);
@@ -74,32 +76,32 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
 
     if (NULL == hUser)
     {
-        Log(("VBoxTray: Could not get module handle of USER32.DLL!\n"));
+        Log(("VBoxTray: VBoxDisplayInit: Could not get module handle of USER32.DLL!\n"));
         return VERR_NOT_IMPLEMENTED;
     }
     else if (OSinfo.dwMajorVersion >= 5)        /* APIs available only on W2K and up! */
     {
         *(uintptr_t *)&gCtx.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
-        Log(("VBoxTray: pfnChangeDisplaySettingsEx = %p\n", gCtx.pfnChangeDisplaySettingsEx));
+        Log(("VBoxTray: VBoxDisplayInit: pfnChangeDisplaySettingsEx = %p\n", gCtx.pfnChangeDisplaySettingsEx));
 
         *(uintptr_t *)&gCtx.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA");
-        Log(("VBoxTray: pfnEnumDisplayDevices = %p\n", gCtx.pfnEnumDisplayDevices));
+        Log(("VBoxTray: VBoxDisplayInit: pfnEnumDisplayDevices = %p\n", gCtx.pfnEnumDisplayDevices));
 
 #ifdef VBOXWDDM
         if (OSinfo.dwMajorVersion >= 6)
         {
             /* this is vista and up, check if we need to switch the display driver if to WDDM mode */
-            Log(("VBoxTray: this is vista and up\n"));
+            Log(("VBoxTray: VBoxDisplayInit: this is Windows Vista and up\n"));
             VBOXDISPLAY_DRIVER_TYPE enmType = getVBoxDisplayDriverType (&gCtx);
             if (enmType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
             {
-                Log(("VBoxTray: WDDM driver is installed, switching display driver if to WDDM mode\n"));
+                Log(("VBoxTray: VBoxDisplayInit: WDDM driver is installed, switching display driver if to WDDM mode\n"));
                 /* this is hacky, but the most easiest way */
                 DWORD err = VBoxDispIfSwitchMode(const_cast<PVBOXDISPIF>(&pEnv->dispIf), VBOXDISPIF_MODE_WDDM, NULL /* old mode, we don't care about it */);
                 if (err == NO_ERROR)
-                    Log(("VBoxTray: DispIf switched to WDDM mode successfully\n"));
+                    Log(("VBoxTray: VBoxDisplayInit: DispIf switched to WDDM mode successfully\n"));
                 else
-                    Log(("VBoxTray: failed to switch DispIf to WDDM mode, err (%d)\n", err));
+                    Log(("VBoxTray: VBoxDisplayInit: Failed to switch DispIf to WDDM mode, err (%d)\n", err));
             }
         }
 #endif
@@ -110,11 +112,11 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
     }
     else                                /* Unsupported platform */
     {
-        Log(("VBoxTray: Warning, display for platform not handled yet!\n"));
+        Log(("VBoxTray: VBoxDisplayInit: Warning, display for platform not handled yet!\n"));
         return VERR_NOT_IMPLEMENTED;
     }
 
-    Log(("VBoxTray: Display init successful.\n"));
+    Log(("VBoxTray: VBoxDisplayInit: Display init successful\n"));
 
     *pfStartThread = true;
     *ppInstance = (void *)&gCtx;
@@ -127,9 +129,9 @@ void VBoxDisplayDestroy (const VBOXSERVICEENV *pEnv, void *pInstance)
 }
 
 #ifdef VBOXWDDM
-static VBOXDISPLAY_DRIVER_TYPE getVBoxDisplayDriverType (VBOXDISPLAYCONTEXT *pCtx)
+static VBOXDISPLAY_DRIVER_TYPE getVBoxDisplayDriverType(VBOXDISPLAYCONTEXT *pCtx)
 #else
-static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
+static bool isVBoxDisplayDriverActive(VBOXDISPLAYCONTEXT *pCtx)
 #endif
 {
 #ifdef VBOXWDDM
@@ -145,14 +147,14 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
         FillMemory(&dispDevice, sizeof(DISPLAY_DEVICE), 0);
         dispDevice.cb = sizeof(DISPLAY_DEVICE);
 
-        Log(("VBoxTray: Checking for active VBox display driver (W2K+)...\n"));
+        Log(("VBoxTray: isVBoxDisplayDriverActive: Checking for active VBox display driver (W2K+) ...\n"));
 
         while (EnumDisplayDevices(NULL,
                                   devNum,
                                   &dispDevice,
                                   0))
         {
-            Log(("VBoxTray: DevNum:%d\nName:%s\nString:%s\nID:%s\nKey:%s\nFlags=%08X\n\n",
+            Log(("VBoxTray: isVBoxDisplayDriverActive: DevNum:%d\nName:%s\nString:%s\nID:%s\nKey:%s\nFlags=%08X\n\n",
                           devNum,
                           &dispDevice.DeviceName[0],
                           &dispDevice.DeviceString[0],
@@ -162,7 +164,7 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
 
             if (dispDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
             {
-                Log(("VBoxTray: Primary device.\n"));
+                Log(("VBoxTray: isVBoxDisplayDriverActive: Primary device\n"));
 
                 if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter") == 0)
 #ifndef VBOXWDDM
@@ -184,7 +186,7 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
     }
     else    /* This must be NT 4 or something really old, so don't use EnumDisplayDevices() here  ... */
     {
-        Log(("VBoxTray: Checking for active VBox display driver (NT or older)...\n"));
+        Log(("VBoxTray: isVBoxDisplayDriverActive: Checking for active VBox display driver (NT or older) ...\n"));
 
         DEVMODE tempDevMode;
         ZeroMemory (&tempDevMode, sizeof (tempDevMode));
@@ -208,9 +210,7 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
 }
 
 /* Returns TRUE to try again. */
-static BOOL ResizeDisplayDevice(
-        ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel
-        )
+static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel)
 {
     BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0);
 
@@ -224,7 +224,7 @@ static BOOL ResizeDisplayDevice(
     DWORD i = 0;
     while (EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
     {
-        Log(("VBoxTray: [%d] %s\n", i, DisplayDevice.DeviceName));
+        Log(("VBoxTray: ResizeDisplayDevice: [%d] %s\n", i, DisplayDevice.DeviceName));
 
         if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
         {
@@ -301,7 +301,7 @@ static BOOL ResizeDisplayDevice(
             if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
                  ENUM_REGISTRY_SETTINGS, &paDeviceModes[DevNum]))
             {
-                Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings err %d\n", GetLastError ()));
+                Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings error %d\n", GetLastError ()));
                 return FALSE;
             }
 
@@ -320,7 +320,7 @@ static BOOL ResizeDisplayDevice(
                      * for example a disabled secondary display.
                      * Do not return here, ignore the error and set the display info to 0x0x0.
                      */
-                    Log(("VBoxTray: EnumDisplaySettings(ENUM_CURRENT_SETTINGS) err %d\n", GetLastError ()));
+                    Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings(ENUM_CURRENT_SETTINGS) error %d\n", GetLastError ()));
                     ZeroMemory(&paDeviceModes[DevNum], sizeof(DEVMODE));
                 }
             }
@@ -442,8 +442,10 @@ static BOOL ResizeDisplayDevice(
  * Thread function to wait for and process display change
  * requests
  */
-unsigned __stdcall VBoxDisplayThread  (void *pInstance)
+unsigned __stdcall VBoxDisplayThread(void *pInstance)
 {
+    Log(("VBoxTray: VBoxDisplayThread: Entered\n"));
+
     VBOXDISPLAYCONTEXT *pCtx = (VBOXDISPLAYCONTEXT *)pInstance;
     HANDLE gVBoxDriver = pCtx->pEnv->hDriver;
     bool fTerminate = false;
@@ -452,7 +454,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
 
     maskInfo.u32OrMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
     maskInfo.u32NotMask = 0;
-    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - or) succeeded\n"));
     }
@@ -464,7 +466,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
 
     do
     {
-        /* wait for a display change event */
+        /* Wait for a display change event. */
         VBoxGuestWaitEventInfo waitEvent;
         waitEvent.u32TimeoutIn = 1000;
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
