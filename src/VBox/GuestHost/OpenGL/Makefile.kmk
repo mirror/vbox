@@ -101,7 +101,7 @@ VBoxOGLhostcrutil_EXTENDS  = VBoxOGLcrutil
 VBoxOGLhostcrutil_TEMPLATE = VBOXCROGLR3HOSTDLL
 if defined(VBOX_SIGNING_MODE) && defined(VBOXWDDM)
  # need to reset the NOINST flag
- VBoxOGLhostcrutil_NOINST.win.x86 =
+ VBoxOGLhostcrutil_NOINST.win.x86 = false
 endif
 VBoxOGLhostcrutil_LDFLAGS.darwin = $(VBoxOGLcrutil_LDFLAGS.darwin) \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib
@@ -508,7 +508,7 @@ VBoxOGLhosterrorspu_EXTENDS  = VBoxOGLerrorspu
 VBoxOGLhosterrorspu_TEMPLATE = VBOXCROGLR3HOSTDLL
 if defined(VBOX_SIGNING_MODE) && defined(VBOXWDDM)
  # need to reset the NOINST flag
- VBoxOGLhosterrorspu_NOINST.win.x86 =
+ VBoxOGLhosterrorspu_NOINST.win.x86 = false
 endif
 VBoxOGLhosterrorspu_LDFLAGS.darwin += $(VBoxOGLerrorspu_LDFLAGS.darwin) \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib
