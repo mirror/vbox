@@ -4734,7 +4734,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                 rc2 = pDisk->pLast->Backend->pfnGetTimeStamp(pDisk->pLast->pBackendData,
                                                              &ts);
             else
-                rc = VERR_NOT_IMPLEMENTED;
+                rc2 = VERR_NOT_IMPLEMENTED;
             if (RT_SUCCESS(rc2) && pImage->Backend->pfnSetParentTimeStamp)
                 pImage->Backend->pfnSetParentTimeStamp(pImage->pBackendData, &ts);
 
