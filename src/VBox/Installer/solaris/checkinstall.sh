@@ -67,7 +67,7 @@ fi
 
 # Check if VBoxNetDHCP is currently running
 VBOXNETDHCP_PID=`ps -eo pid,fname | grep VBoxNetDHCP | grep -v grep | awk '{ print $1 }'`
-if test ! -z "VBOXNETDHCP_PID" && test "VBOXNETDHCP_PID" -ge 0; then
+if test ! -z "$VBOXNETDHCP_PID" && test "$VBOXNETDHCP_PID" -ge 0; then
     errorprint "VirtualBox's VBoxNetDHCP (pid $VBOXNETDHCP_PID) still appears to be running."
     abort_error
 fi
