@@ -267,7 +267,12 @@ bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
                     frameBuffer()->moveEvent(static_cast<QMoveEvent*>(pEvent));
                 break;
             }
+# else
+            case 0: /* Fixes compiler warning, fall through. */
 # endif /* defined (VBOX_GUI_USE_DDRAW) */
+
+#else
+            case 0: /* Fixes compiler warning, fall through. */
 #endif /* defined (Q_WS_WIN32) */
             default:
                 break;
