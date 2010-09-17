@@ -452,7 +452,8 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
     pVM->selm.s.TssTrap08.offIoBitmap = sizeof(VBOXTSS);
     /* TRPM will be updating the eip */
 
-    if (!pVM->selm.s.fDisableMonitoring)
+    if (    !pVM->selm.s.fDisableMonitoring
+        &&  !VMMIsHwVirtExtForced(pVM))
     {
         /*
          * Update shadow GDT/LDT/TSS write access handlers.
