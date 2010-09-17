@@ -1418,12 +1418,12 @@ static RTEXITCODE handleWriteCoreDump(int argc, char *argv[])
     int rc = VbglR3WriteCoreDump();
     if (RT_SUCCESS(rc))
     {
-        RTPrintf("Successfully taking guest core\n");
+        RTPrintf("Guest core dump successful.\n");
         return RTEXITCODE_SUCCESS;
     }
     else
     {
-        VBoxControlError("Error while taking guest core. rc=%Rrc\n", rc);
+        VBoxControlError("Error while taking guest core dump. rc=%Rrc\n", rc);
         return RTEXITCODE_FAILURE;
     }
 }
