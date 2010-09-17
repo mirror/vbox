@@ -164,7 +164,7 @@ enum
     SYSTEM_INFO_INDEX_POWER_STATES      = 17,
     SYSTEM_INFO_INDEX_IOC_ADDRESS       = 18, /**< IO controller PCI address */
     SYSTEM_INFO_INDEX_HBC_ADDRESS       = 19, /**< host bus controller PCI address */
-    SYSTEM_INFO_INDEX_END               = 20, 
+    SYSTEM_INFO_INDEX_END               = 20,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -257,6 +257,8 @@ typedef struct ACPIState
     uint32_t            u32CpuEvent;
     /** Flag whether CPU hot plugging is enabled. */
     bool                fCpuHotPlug;
+    /** If MCFG ACPI table shown to the guest */
+    bool                fUseMcfg;
     /** Primary NIC PCI address. */
     uint32_t            u32NicPciAddress;
     /** Primary audio card PCI address. */
@@ -273,6 +275,8 @@ typedef struct ACPIState
     uint32_t            u32IocPciAddress;
     /** PCI address of the host bus controller device. */
     uint32_t            u32HbcPciAddress;
+    /* Physical address of PCI config space MMIO region */
+    uint64_t            u64PciConfigMMioAddress;
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -523,6 +527,25 @@ struct ACPITBLHPET
     uint8_t       u8Attributes;                 /**< page protextion and OEM attribute. */
 };
 AssertCompileSize(ACPITBLHPET, 56);
+
+/** MCFG Descriptor Structure */
+struct ACPITBLMCFG
+{
+    ACPITBLHEADER aHeader;
+    uint64_t      u64Reserved;
+};
+AssertCompileSize(ACPITBLMCFG, 44);
+
+/* Number of such entries can be computed from the whole table length in header */
+struct ACPITBLMCFGENTRY
+{
+    uint64_t      u64BaseAddress;
+    uint16_t      u16PciSegmentGroup;
+    uint8_t       u8StartBus;
+    uint8_t       u8EndBus;
+    uint32_t      u32Reserved;
+};
+AssertCompileSize(ACPITBLMCFGENTRY, 16);
 
 # ifdef IN_RING3 /** @todo r=bird: Move this down to where it's used. */
 
@@ -987,6 +1010,30 @@ static void acpiSetupHPET(ACPIState *s, RTGCPHYS32 addr)
     hpet.aHeader.u8Checksum = acpiChecksum((uint8_t *)&hpet, sizeof(hpet));
 
     acpiPhyscpy(s, addr, (const uint8_t *)&hpet, sizeof(hpet));
+}
+
+/** MMCONFIG PCI config space access (MCFG) descriptor */
+static void acpiSetupMCFG(ACPIState *s, RTGCPHYS32 addr,
+                          RTGCPHYS64 u64PciConfigBase,
+                          uint8_t    u8StartBus,
+                          uint8_t    u8EndBus)
+{
+    struct {
+        ACPITBLMCFG       hdr;
+        ACPITBLMCFGENTRY  entry;
+    } tbl;
+
+    memset(&tbl, 0, sizeof(tbl));
+
+    acpiPrepareHeader(&tbl.hdr.aHeader, "MCFG", sizeof(tbl), 1);
+    tbl.entry.u64BaseAddress = u64PciConfigBase;
+    tbl.entry.u8StartBus = u8StartBus;
+    tbl.entry.u8EndBus = u8EndBus;
+    // u16PciSegmentGroup must match _SEG in ACPI table
+
+    tbl.hdr.aHeader.u8Checksum = acpiChecksum((uint8_t *)&tbl, sizeof(tbl));
+
+    acpiPhyscpy(s, addr, (const uint8_t *)&tbl, sizeof(tbl));
 }
 
 /* SCI IRQ */
@@ -2121,11 +2168,11 @@ static int acpiPlantTables(ACPIState *s)
 {
     int        rc;
     RTGCPHYS32 GCPhysCur, GCPhysRsdt, GCPhysXsdt, GCPhysFadtAcpi1, GCPhysFadtAcpi2, GCPhysFacs, GCPhysDsdt;
-    RTGCPHYS32 GCPhysHpet = 0, GCPhysApic = 0, GCPhysSsdt = 0;
+    RTGCPHYS32 GCPhysHpet = 0, GCPhysApic = 0, GCPhysSsdt = 0, GCPhysMcfg = 0;
     uint32_t   addend = 0;
     RTGCPHYS32 aGCPhysRsdt[4];
     RTGCPHYS32 aGCPhysXsdt[4];
-    uint32_t   cAddr, iMadt = 0, iHpet = 0, iSsdt = 0;
+    uint32_t   cAddr, iMadt = 0, iHpet = 0, iSsdt = 0, iMcfg = 0;
     size_t     cbRsdt = sizeof(ACPITBLHEADER);
     size_t     cbXsdt = sizeof(ACPITBLHEADER);
 
@@ -2135,6 +2182,9 @@ static int acpiPlantTables(ACPIState *s)
 
     if (s->fUseHpet)
         iHpet = cAddr++;        /* HPET */
+
+    if (s->fUseMcfg)
+        iMcfg = cAddr++;        /* MCFG */
 
     iSsdt = cAddr++;            /* SSDT */
 
@@ -2192,6 +2242,12 @@ static int acpiPlantTables(ACPIState *s)
         GCPhysHpet = GCPhysCur;
         GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLHPET), 16);
     }
+    if (s->fUseMcfg)
+    {
+        GCPhysMcfg = GCPhysCur;
+        /* Assume one entry */
+        GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLMCFG) + sizeof(ACPITBLMCFGENTRY), 16);
+    }
 
     void*  pSsdtCode = NULL;
     size_t cbSsdtSize = 0;
@@ -2225,6 +2281,8 @@ static int acpiPlantTables(ACPIState *s)
         Log((" MADT 0x%08X", GCPhysApic + addend));
     if (s->fUseHpet)
         Log((" HPET 0x%08X", GCPhysHpet + addend));
+    if (s->fUseMcfg)
+        Log((" MCFG 0x%08X", GCPhysMcfg + addend));
     Log((" SSDT 0x%08X", GCPhysSsdt + addend));
     Log(("\n"));
 
@@ -2248,6 +2306,13 @@ static int acpiPlantTables(ACPIState *s)
         aGCPhysRsdt[iHpet] = GCPhysHpet + addend;
         aGCPhysXsdt[iHpet] = GCPhysHpet + addend;
     }
+    if (s->fUseMcfg)
+    {
+        acpiSetupMCFG(s, GCPhysMcfg + addend, s->u64PciConfigMMioAddress, 0, 1);
+        aGCPhysRsdt[iMcfg] = GCPhysMcfg + addend;
+        aGCPhysXsdt[iMcfg] = GCPhysMcfg + addend;
+    }
+
     acpiSetupSSDT(s, GCPhysSsdt + addend, pSsdtCode, cbSsdtSize);
     acpiCleanupSsdt(s->pDevIns, pSsdtCode);
     aGCPhysRsdt[iSsdt] = GCPhysSsdt + addend;
@@ -2463,6 +2528,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "GCEnabled\0"
                               "R0Enabled\0"
                               "HpetEnabled\0"
+                              "McfgEnabled\0"
                               "SmcEnabled\0"
                               "FdcEnabled\0"
                               "ShowRtc\0"
@@ -2504,6 +2570,13 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"HpetEnabled\""));
+    /* query whether we are supposed to present HPET */
+    rc = CFGMR3QueryU64Def(pCfg, "McfgBase", &s->u64PciConfigMMioAddress, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"McfgBase\""));
+    s->fUseMcfg = (s->u64PciConfigMMioAddress != 0);
+
     /* query whether we are supposed to present SMC */
     rc = CFGMR3QueryBoolDef(pCfg, "SmcEnabled", &s->fUseSmc, false);
     if (RT_FAILURE(rc))
@@ -2699,23 +2772,20 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     PCIDevSetDeviceId(dev, 0x7113); /* 82371AB */
 
     /* See p. 50 of PIIX4 manual */
-    dev->config[0x04] = 0x01; /* command */
-    dev->config[0x05] = 0x00;
+    PCIDevSetCommand(dev, 0x01);
+    PCIDevSetStatus(dev, 0x0280);
 
-    dev->config[0x06] = 0x80; /* status */
-    dev->config[0x07] = 0x02;
+    PCIDevSetRevisionId(dev, 0x08);
 
-    dev->config[0x08] = 0x08; /* revision number */
+    PCIDevSetClassProg(dev, 0x00);
+    PCIDevSetClassSub(dev, 0x80);
+    PCIDevSetClassBase(dev, 0x06);
 
-    dev->config[0x09] = 0x00; /* class code */
-    dev->config[0x0a] = 0x80;
-    dev->config[0x0b] = 0x06;
+    PCIDevSetHeaderType(dev, 0x80);
 
-    dev->config[0x0e] = 0x80; /* header type */
+    PCIDevSetBIST(dev, 0x00);
 
-    dev->config[0x0f] = 0x00; /* reserved */
-
-    dev->config[0x3c] = SCI_INT; /* interrupt line */
+    PCIDevSetInterruptLine(dev, SCI_INT);
 
 #if 0
     dev->config[0x3d] = 0x01;    /* interrupt pin */
