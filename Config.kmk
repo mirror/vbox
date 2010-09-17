@@ -345,6 +345,9 @@ VBOX_WITH_HGSMI=1
 if1of ($(KBUILD_TARGET), darwin linux win)
  VBOX_WITH_VIDEOHWACCEL = 1
 endif
+# Enable Wddm Video driver for Vista+ guests 
+VBOXWDDM = 1
+VBOXWDDM_WITH_VBVA=1
 # Enable VBVA lock
 VBOX_WITH_OLD_VBVA_LOCK = 1
 # Enable the Intel PXE ROM (replaces Etherboot).
