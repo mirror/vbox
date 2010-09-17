@@ -326,7 +326,21 @@ DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
         case D3DDDIFMT_A8P8:
             return 16;
         case D3DDDIFMT_P8:
+        case D3DDDIFMT_L8:
             return 8;
+        case D3DDDIFMT_A8L8:
+            return 16;
+        case D3DDDIFMT_A4L4:
+            return 8;
+        case D3DDDIFMT_V8U8:
+        case D3DDDIFMT_L6V5U5:
+            return 16;
+        case D3DDDIFMT_X8L8V8U8:
+        case D3DDDIFMT_Q8W8V8U8:
+        case D3DDDIFMT_V16U16:
+        case D3DDDIFMT_W11V11U10:
+        case D3DDDIFMT_A2W10V10U10:
+            return 32;
         case D3DDDIFMT_D16_LOCKABLE:
         case D3DDDIFMT_D16:
         case D3DDDIFMT_D15S1:
@@ -337,6 +351,7 @@ DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
         case D3DDDIFMT_D24X4S4:
         case D3DDDIFMT_D24FS8:
         case D3DDDIFMT_D32_LOCKABLE:
+        case D3DDDIFMT_D32F_LOCKABLE:
             return 32;
         case D3DDDIFMT_S8_LOCKABLE:
             return 8;
