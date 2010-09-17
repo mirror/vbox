@@ -22,7 +22,7 @@
 #ifndef ___Graphics_DevVGASavedState_h
 #define ___Graphics_DevVGASavedState_h
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 #define VGA_SAVEDSTATE_VERSION              7
 #define VGA_SAVEDSTATE_VERSION_PRE_WDDM     6
 #else

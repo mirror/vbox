@@ -20,7 +20,7 @@
 
 #define VBOXESC_SETVISIBLEREGION            0xABCD9001
 #define VBOXESC_ISVRDPACTIVE                0xABCD9002
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 # define VBOXESC_REINITVIDEOMODES           0xABCD9003
 # define VBOXESC_GETVBOXVIDEOCMCMD          0xABCD9004
 # define VBOXESC_DBGPRINT                   0xABCD9005
@@ -43,7 +43,7 @@ typedef struct
 
 #define VBOXWDDM_RECOMMENDVIDPN_SIZE(_c) (RT_OFFSETOF(VBOXWDDM_RECOMMENDVIDPN, aScreenInfos[_c]))
 
-#endif /* #ifdef VBOXWDDM */
+#endif /* #ifdef VBOX_WITH_WDDM */
 
 typedef struct VBOXDISPIFESCAPE
 {

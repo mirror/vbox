@@ -346,7 +346,7 @@ if1of ($(KBUILD_TARGET), darwin linux win)
  VBOX_WITH_VIDEOHWACCEL = 1
 endif
 # Enable Wddm Video driver for Vista+ guests 
-VBOXWDDM = 1
+VBOX_WITH_WDDM = 1
 VBOXWDDM_WITH_VBVA=1
 # Enable VBVA lock
 VBOX_WITH_OLD_VBVA_LOCK = 1

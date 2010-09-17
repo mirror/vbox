@@ -1842,7 +1842,7 @@ typedef enum wined3d_gl_extension
     WGL_ARB_PIXEL_FORMAT,
     WGL_WINE_PIXEL_FORMAT_PASSTHROUGH,
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     VBOX_SHARED_CONTEXTS,
 #endif
     /* Internally used */
@@ -3772,7 +3772,7 @@ typedef BOOL (WINAPI *WINED3D_PFNWGLCHOOSEPIXELFORMATARBPROC)(HDC hdc, const int
 typedef BOOL (WINAPI *WINED3D_PFNWGLSETPIXELFORMATWINE)(HDC hdc, int iPixelFormat,
         const PIXELFORMATDESCRIPTOR *ppfd);
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 #define GL_SHARE_CONTEXT_RESOURCES_CR 0x8B27
 typedef void (WINE_GLAPI *PGLFNCHROMIUMPARAMETERUCR)(GLenum param, GLint value);
 

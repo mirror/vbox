@@ -22,7 +22,7 @@ int                VBoxDisplayInit    (const VBOXSERVICEENV *pEnv, void **ppInst
 unsigned __stdcall VBoxDisplayThread  (void *pInstance);
 void               VBoxDisplayDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 static bool isVBoxDisplayDriverActive (void);
 #else
 /* @misha: getVBoxDisplayDriverType is used instead.

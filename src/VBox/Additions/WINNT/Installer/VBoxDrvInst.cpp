@@ -60,7 +60,7 @@ struct IdEntry
 #define EXIT_REBOOT  (1)
 #define EXIT_FAIL    (2)
 #define EXIT_USAGE   (3)
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 #define EXIT_FALSE   (4)
 #endif
 
@@ -1464,7 +1464,7 @@ int UninstallDriver (_TCHAR* a_pszHwID)
     return iRet;
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 /*++
 
  Routine Description:
@@ -2282,7 +2282,7 @@ int __cdecl _tmain (int argc, _TCHAR* argv[])
                     rc = EXIT_USAGE;
             }
         }
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         else if (0 == _tcsicmp(argv[1], _T("/matchdrv")))
         {
             if (argc < 4)

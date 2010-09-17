@@ -2181,7 +2181,7 @@ static BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
 
     gl_info->supported[WINED3D_GL_EXT_NONE] = TRUE;
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     gl_info->supported[VBOX_SHARED_CONTEXTS] = TRUE;
 #endif
 
@@ -5078,7 +5078,7 @@ static BOOL InitAdapters(IWineD3DImpl *This)
     if(!mod_gl) {
 #ifdef USE_WIN32_OPENGL
 #define USE_GL_FUNC(pfn) pfn = (void*)GetProcAddress(mod_gl, #pfn);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         BOOL (APIENTRY *pDrvValidateVersion)(DWORD) DECLSPEC_HIDDEN;
         mod_gl = LoadLibraryA("VBoxOGL.dll");
 #else
@@ -5088,7 +5088,7 @@ static BOOL InitAdapters(IWineD3DImpl *This)
             ERR("Can't load opengl32.dll!\n");
             goto nogl_adapter;
         }
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         /* init properly */
         pDrvValidateVersion = (void*)GetProcAddress(mod_gl, "DrvValidateVersion");
         if(!pDrvValidateVersion) {

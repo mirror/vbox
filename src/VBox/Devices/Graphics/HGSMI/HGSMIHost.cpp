@@ -147,7 +147,7 @@ typedef struct _HGSMIINSTANCE
     HGSMILIST hostFIFORead;            /* Host buffers readed by the guest. */
     HGSMILIST hostFIFOProcessed;       /* Processed by the guest. */
     HGSMILIST hostFIFOFree;            /* Buffers for reuse. */
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     HGSMILIST guestCmdCompleted;       /* list of completed guest commands to be returned to the guest*/
 #endif
     RTCRITSECT    hostFIFOCritSect;    /* FIFO serialization lock. */
@@ -209,7 +209,7 @@ typedef struct _HGSMIHOSTFIFOENTRY
 
 static DECLCALLBACK(void) hgsmiHostCommandFreeCallback (void *pvCallback);
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 
 typedef struct _HGSMIGUESTCOMPLENTRY
 {
@@ -368,7 +368,7 @@ void HGSMIGuestWrite (PHGSMIINSTANCE pIns,
     HGSMIBufferProcess (&pIns->area, &pIns->channelInfo, offBuffer);
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 static HGSMIOFFSET hgsmiProcessGuestCmdCompletion(HGSMIINSTANCE *pIns)
 {
     HGSMIOFFSET offCmd = HGSMIOFFSET_VOID;
@@ -413,7 +413,7 @@ HGSMIOFFSET HGSMIGuestRead (PHGSMIINSTANCE pIns)
 
     VM_ASSERT_EMT(pIns->pVM);
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     /* Currently there is no functionality here. */
     NOREF(pIns);
 
@@ -1258,7 +1258,7 @@ int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
             rc = hgsmiHostSaveFifoLocked (&pIns->hostFIFO, pSSM); AssertRC(rc);
             rc = hgsmiHostSaveFifoLocked (&pIns->hostFIFORead, pSSM); AssertRC(rc);
             rc = hgsmiHostSaveFifoLocked (&pIns->hostFIFOProcessed, pSSM); AssertRC(rc);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             rc = hgsmiHostSaveFifoLocked (&pIns->guestCmdCompleted, pSSM); AssertRC(rc);
 #endif
 
@@ -1324,7 +1324,7 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
                     rc = hgsmiHostLoadFifoLocked (pIns, &pIns->hostFIFORead, pSSM);
                 if (RT_SUCCESS(rc))
                     rc = hgsmiHostLoadFifoLocked (pIns, &pIns->hostFIFOProcessed, pSSM);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
                 if (RT_SUCCESS(rc) && u32Version > VGA_SAVEDSTATE_VERSION_PRE_WDDM)
                     rc = hgsmiHostLoadFifoLocked (pIns, &pIns->hostFIFOProcessed, pSSM);
 #endif
@@ -1649,7 +1649,7 @@ uint32_t HGSMIReset (PHGSMIINSTANCE pIns)
     /* .. and complete them */
     while(hgsmiProcessHostCmdCompletion (pIns, 0, true)) {}
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     while(hgsmiProcessGuestCmdCompletion(pIns) != HGSMIOFFSET_VOID) {}
 #endif
 
@@ -1687,7 +1687,7 @@ void HGSMIDestroy (PHGSMIINSTANCE pIns)
     LogFlowFunc(("leave\n"));
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 
 static int hgsmiGuestCommandComplete (HGSMIINSTANCE *pIns, HGSMIOFFSET offMem)
 {

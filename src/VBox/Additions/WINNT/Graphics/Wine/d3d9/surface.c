@@ -381,7 +381,7 @@ static const struct wined3d_parent_ops d3d9_surface_wined3d_parent_ops =
 HRESULT surface_init(IDirect3DSurface9Impl *surface, IDirect3DDevice9Impl *device,
         UINT width, UINT height, D3DFORMAT format, BOOL lockable, BOOL discard, UINT level,
         DWORD usage, D3DPOOL pool, D3DMULTISAMPLE_TYPE multisample_type, DWORD multisample_quality
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -416,7 +416,7 @@ HRESULT surface_init(IDirect3DSurface9Impl *surface, IDirect3DDevice9Impl *devic
     }
 
     wined3d_mutex_lock();
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     hr = IWineD3DDevice_CreateSurface(device->WineD3DDevice, width, height, wined3dformat_from_d3dformat(format),
             lockable, discard, level, &surface->wineD3DSurface, usage & WINED3DUSAGE_MASK, (WINED3DPOOL)pool,
             multisample_type, multisample_quality, SURFACE_OPENGL, (IUnknown *)surface,

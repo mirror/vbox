@@ -82,7 +82,7 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
         HeapFree(GetProcessHeap(), 0, This->backBuffer);
         This->backBuffer = NULL;
     }
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     for (i = 0; i < This->num_contexts; ++i)
     {
         context_destroy(This->device, This->context[i]);
@@ -105,7 +105,7 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
             IWineD3DDevice_SetDisplayMode((IWineD3DDevice *)This->device, 0, &mode);
         }
     }
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if(This->device_window) {
         ReleaseDC(This->device_window, This->hDC);
     }
@@ -363,7 +363,7 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
         swapchain_blit(This, context, &src_rect, &dst_rect);
     }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (This->device->numContexts > 1) wglFinish();
 #else
     if (This->num_contexts > 1) wglFinish();
@@ -710,7 +710,7 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
     swapchain->ref = 1;
     swapchain->win_handle = window;
     swapchain->device_window = window;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     Assert(window);
     swapchain->hDC = GetDC(window);
     if (!swapchain->hDC)
@@ -813,7 +813,7 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
         displaymode_set = TRUE;
     }
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     swapchain->context = HeapAlloc(GetProcessHeap(), 0, sizeof(swapchain->context));
     if (!swapchain->context)
     {
@@ -847,7 +847,7 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
         }
         swapchain->ds_format = getFormatDescEntry(WINED3DFMT_D24_UNORM_S8_UINT, gl_info);
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         swapchainContext = context_find_create(device, swapchain, (IWineD3DSurfaceImpl *)swapchain->frontBuffer,
                 swapchain->ds_format);
         if (!swapchainContext)
@@ -861,7 +861,7 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
             hr = WINED3DERR_NOTAVAILABLE;
             goto err;
         }
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         context_release(swapchainContext);
 #else
         context_release(swapchain->context[0]);
@@ -869,7 +869,7 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
     }
     else
     {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
         swapchain->context[0] = NULL;
 #endif
     }
@@ -954,7 +954,7 @@ err:
         HeapFree(GetProcessHeap(), 0, swapchain->backBuffer);
     }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (!device->NumberOfSwapChains)
     {
         while (device->numContexts)
@@ -994,7 +994,7 @@ struct wined3d_context *swapchain_create_context_for_thread(IWineD3DSwapChain *i
         return NULL;
     }
     context_release(ctx);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     /* no need to do anything since context gets added to the device context list within the context_create call */
 #else
     newArray = HeapAlloc(GetProcessHeap(), 0, sizeof(*newArray) * This->num_contexts + 1);

@@ -47,7 +47,7 @@
 #include "d3d9.h"
 #include "wine/wined3d.h"
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 #include "../vbox/VBoxWineEx.h"
 #endif
 
@@ -320,7 +320,7 @@ typedef struct IDirect3DSurface9Impl
 HRESULT surface_init(IDirect3DSurface9Impl *surface, IDirect3DDevice9Impl *device,
         UINT width, UINT height, D3DFORMAT format, BOOL lockable, BOOL discard, UINT level,
         DWORD usage, D3DPOOL pool, D3DMULTISAMPLE_TYPE multisample_type, DWORD multisample_quality
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -437,7 +437,7 @@ typedef struct IDirect3DTexture9Impl
 
 HRESULT texture_init(IDirect3DTexture9Impl *texture, IDirect3DDevice9Impl *device,
         UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif

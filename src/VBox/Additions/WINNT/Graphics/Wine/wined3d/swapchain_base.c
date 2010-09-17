@@ -102,7 +102,7 @@ HRESULT WINAPI IWineD3DBaseSwapChainImpl_GetBackBuffer(IWineD3DSwapChain *iface,
 
     IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl *)iface;
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (iBackBuffer == ~0UL)
     {
         *ppBackBuffer = This->frontBuffer;

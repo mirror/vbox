@@ -28,7 +28,7 @@
 #endif /* VBOX_WITH_HGSMI */
 
 RT_C_DECLS_BEGIN
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 #include "dderror.h"
 #include "devioctl.h"
 #include "miniport.h"
@@ -105,7 +105,7 @@ RT_C_DECLS_END
 #endif /* VBOX_WITH_HGSMI */
 
 /* common API types */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 typedef PSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
 typedef UCHAR VBOXVCMNIRQL, *PVBOXVCMNIRQL;
 
@@ -201,7 +201,7 @@ typedef struct _DEVICE_EXTENSION
    struct _DEVICE_EXTENSION *pNext;            /* Next extension in the DualView extension list.
                                                 * The primary extension is the first one.
                                                 */
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
    struct _DEVICE_EXTENSION *pPrimary;         /* Pointer to the primary device extension. */
 
    ULONG iDevice;                              /* Device index: 0 for primary, otherwise a secondary device. */
@@ -239,7 +239,7 @@ typedef struct _DEVICE_EXTENSION
            PVOID pvMiniportHeap;               /* The pointer to the miniport heap VRAM.
                                                 * This is mapped by miniport separately.
                                                 */
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
            VBOXVDMAINFO Vdma;
 # ifdef VBOXVDMA_WITH_VBVA
            VBOXVBVAINFO Vbva;
@@ -280,7 +280,7 @@ typedef struct _DEVICE_EXTENSION
 
            /* The IO Port Number for guest commands. */
            RTIOPORT IOPortGuest;
-# ifndef VBOXWDDM
+# ifndef VBOX_WITH_WDDM
            /* Video Port API dynamically picked up at runtime for binary backwards compatibility with older NT versions */
            VBOXVIDEOPORTPROCS VideoPortProcs;
 # else
@@ -302,7 +302,7 @@ typedef struct _DEVICE_EXTENSION
    HGSMIAREA areaDisplay;                      /* Entire VRAM chunk for this display device. */
 #endif /* VBOX_WITH_HGSMI */
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
    PDEVICE_OBJECT pPDO;
 
    uint8_t * pvVisibleVram;
@@ -330,7 +330,7 @@ typedef struct _DEVICE_EXTENSION
 #endif
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 #define DEV_MOUSE_HIDDEN(dev) ((dev)->pPrimary->u.primary.fMouseHidden)
 #define DEV_SET_MOUSE_HIDDEN(dev)   \
 do { \
@@ -353,7 +353,7 @@ do { \
 #endif
 extern "C"
 {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 /* XPDM-WDDM common API */
 
 typedef PEVENT VBOXVCMNEVENT;
@@ -800,7 +800,7 @@ int vboxHGSMIBufferSubmit (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer);
 
 BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtension,
         USHORT width, USHORT height, USHORT bpp
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , ULONG offDisplay
 #endif
         );
@@ -863,7 +863,7 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
  */
 DECLINLINE(void) VBoxHGSMIHostWrite(PDEVICE_EXTENSION PrimaryExtension, ULONG data)
 {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     VBoxVideoCmnPortWriteUlong((PULONG)PrimaryExtension->pPrimary->u.primary.IOPortHost, data);
 #else
     VBoxVideoCmnPortWriteUlong((PULONG)PrimaryExtension->u.primary.IOPortHost, data);
@@ -872,7 +872,7 @@ DECLINLINE(void) VBoxHGSMIHostWrite(PDEVICE_EXTENSION PrimaryExtension, ULONG da
 
 DECLINLINE(ULONG) VBoxHGSMIHostRead(PDEVICE_EXTENSION PrimaryExtension)
 {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     return VBoxVideoCmnPortReadUlong((PULONG)PrimaryExtension->pPrimary->u.primary.IOPortHost);
 #else
     return VBoxVideoCmnPortReadUlong((PULONG)PrimaryExtension->u.primary.IOPortHost);
@@ -881,7 +881,7 @@ DECLINLINE(ULONG) VBoxHGSMIHostRead(PDEVICE_EXTENSION PrimaryExtension)
 
 DECLINLINE(void) VBoxHGSMIGuestWrite(PDEVICE_EXTENSION PrimaryExtension, ULONG data)
 {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     VBoxVideoCmnPortWriteUlong((PULONG)PrimaryExtension->pPrimary->u.primary.IOPortGuest, data);
 #else
     VBoxVideoCmnPortWriteUlong((PULONG)PrimaryExtension->u.primary.IOPortGuest, data);
@@ -890,7 +890,7 @@ DECLINLINE(void) VBoxHGSMIGuestWrite(PDEVICE_EXTENSION PrimaryExtension, ULONG d
 
 DECLINLINE(ULONG) VBoxHGSMIGuestRead(PDEVICE_EXTENSION PrimaryExtension)
 {
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
     return VBoxVideoCmnPortReadUlong((PULONG)PrimaryExtension->pPrimary->u.primary.IOPortGuest);
 #else
     return VBoxVideoCmnPortReadUlong((PULONG)PrimaryExtension->u.primary.IOPortGuest);
@@ -900,7 +900,7 @@ DECLINLINE(ULONG) VBoxHGSMIGuestRead(PDEVICE_EXTENSION PrimaryExtension)
 BOOLEAN VBoxHGSMIIsSupported (PDEVICE_EXTENSION PrimaryExtension);
 
 VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
                              PVIDEO_PORT_CONFIG_INFO pConfigInfo,
 #endif
                              ULONG AdapterMemorySize);
@@ -908,7 +908,7 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension);
 #else
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd);

@@ -441,7 +441,7 @@ static const IWineD3DTextureVtbl IWineD3DTexture_Vtbl =
 HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT levels,
         IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format, WINED3DPOOL pool,
         IUnknown *parent, const struct wined3d_parent_ops *parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -513,7 +513,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
 
     hr = basetexture_init((IWineD3DBaseTextureImpl *)texture, levels, WINED3DRTYPE_TEXTURE,
             device, 0, usage, format_desc, pool, parent, parent_ops
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             , shared_handle, pvClientMem
 #endif
         );
@@ -585,7 +585,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
     tmp_h = height;
     for (i = 0; i < texture->baseTexture.levels; ++i)
     {
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         /* Use the callback to create the texture surface. */
         hr = IWineD3DDeviceParent_CreateSurface(device->device_parent, parent, tmp_w, tmp_h, format_desc->format,
                 usage, pool, i, WINED3DCUBEMAP_FACE_POSITIVE_X, &texture->surfaces[i]
@@ -617,7 +617,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
     }
     texture->baseTexture.internal_preload = texture_internal_preload;
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     if (VBOXSHRC_IS_SHARED(texture))
     {
         Assert(shared_handle);

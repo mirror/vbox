@@ -50,7 +50,7 @@ static DWORD vboxDispIfEscapeXPDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, i
     return ERROR_GEN_FAILURE;
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
 {
     DWORD err = NO_ERROR;
@@ -263,7 +263,7 @@ DWORD VBoxDispIfEscape(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
         case VBOXDISPIF_MODE_XPDM_NT4:
         case VBOXDISPIF_MODE_XPDM:
             return vboxDispIfEscapeXPDM(pIf, pEscape, cbData);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         case VBOXDISPIF_MODE_WDDM:
             return vboxDispIfEscapeWDDM(pIf, pEscape, cbData);
 #endif
@@ -286,7 +286,7 @@ DWORD VBoxDispIfResize(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width, DWORD Heig
             return ERROR_NOT_SUPPORTED;
         case VBOXDISPIF_MODE_XPDM:
             return vboxDispIfResizeXPDM(pIf, Id, Width, Height, BitsPerPixel);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         case VBOXDISPIF_MODE_WDDM:
             return vboxDispIfResizeWDDM(pIf, Id, Width, Height, BitsPerPixel);
 #endif
@@ -374,7 +374,7 @@ DWORD VBoxDispIfSwitchMode(PVBOXDISPIF pIf, VBOXDISPIF_MODE enmMode, VBOXDISPIF_
             else
                 Log((__FUNCTION__": failed to switch to XPDM mode, err (%d)\n", err));
             break;
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         case VBOXDISPIF_MODE_WDDM:
         {
             Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_WDDM\n"));

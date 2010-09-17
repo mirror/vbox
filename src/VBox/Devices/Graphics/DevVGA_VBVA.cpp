@@ -1247,7 +1247,7 @@ int vbvaVHWACommandCompleteAsynch(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHW
         PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
 
         Assert(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH);
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         if (pVGAState->fGuestCaps & VBVACAPS_COMPLETEGCMD_BY_IOREAD)
         {
             rc = HGSMICompleteGuestCommand(pIns, pCmd, !!(pCmd->Flags & VBOXVHWACMD_FLAG_GH_ASYNCH_IRQ));
@@ -1342,7 +1342,7 @@ int vbvaVHWACommandCompleteAsynch(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHW
 
 static DECLCALLBACK(void) vbvaNotifyGuest (void *pvCallback)
 {
-#if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOXVDMA) || defined(VBOXWDDM))
+#if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOXVDMA) || defined(VBOX_WITH_WDDM))
     PVGASTATE pVGAState = (PVGASTATE)pvCallback;
     PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
     PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
@@ -1638,7 +1638,7 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
         } break;
 #endif
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         case VBVA_INFO_CAPS:
         {
             if (cbBuffer < sizeof (VBVACAPS))

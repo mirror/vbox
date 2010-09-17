@@ -461,7 +461,7 @@ static BOOL     WINAPI  IDirect3DDevice9Impl_ShowCursor(LPDIRECT3DDEVICE9EX ifac
 
     return ret;
 }
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 static HRESULT IDirect3DDevice9Impl_DoCreateAdditionalSwapChain(IDirect3DDevice9Ex *iface,
         D3DPRESENT_PARAMETERS *present_parameters, IDirect3DSwapChain9 **swapchain)
 #else
@@ -497,7 +497,7 @@ static HRESULT WINAPI DECLSPEC_HOTPATCH IDirect3DDevice9Impl_CreateAdditionalSwa
     return D3D_OK;
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 static HRESULT WINAPI DECLSPEC_HOTPATCH IDirect3DDevice9Impl_CreateAdditionalSwapChain(IDirect3DDevice9Ex *iface,
         D3DPRESENT_PARAMETERS *present_parameters, IDirect3DSwapChain9 **swapchain)
 {
@@ -745,7 +745,7 @@ static void WINAPI IDirect3DDevice9Impl_GetGammaRamp(LPDIRECT3DDEVICE9EX iface, 
     wined3d_mutex_unlock();
 }
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
 //#pragma comment(linker, "/export:VBoxWineExD3DDev9Flush=_VBoxWineExD3DDev9Flush@4")
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Flush(IDirect3DDevice9Ex *iface)
@@ -814,7 +814,7 @@ static HRESULT WINAPI IDirect3DDevice9Impl_CreateTexture(IDirect3DDevice9Ex *ifa
         UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format,
         D3DPOOL pool, IDirect3DTexture9 **texture, HANDLE *shared_handle)
 {
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     return VBoxWineExD3DDev9CreateTexture(iface, width, height, levels, usage, format,
             pool, texture, shared_handle, NULL);
 #else
@@ -978,7 +978,7 @@ static HRESULT WINAPI IDirect3DDevice9Impl_CreateIndexBuffer(IDirect3DDevice9Ex 
 static HRESULT IDirect3DDevice9Impl_CreateSurface(LPDIRECT3DDEVICE9EX iface, UINT Width, UINT Height,
         D3DFORMAT Format, BOOL Lockable, BOOL Discard, UINT Level, IDirect3DSurface9 **ppSurface,
         UINT Usage, D3DPOOL Pool, D3DMULTISAMPLE_TYPE MultiSample, DWORD MultisampleQuality
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -1002,7 +1002,7 @@ static HRESULT IDirect3DDevice9Impl_CreateSurface(LPDIRECT3DDEVICE9EX iface, UIN
 
     hr = surface_init(object, This, Width, Height, Format, Lockable, Discard,
             Level, Usage, Pool, MultiSample, MultisampleQuality
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             , shared_handle
             , pvClientMem
 #endif
@@ -1033,7 +1033,7 @@ static HRESULT WINAPI IDirect3DDevice9Impl_CreateRenderTarget(IDirect3DDevice9Ex
 
     hr = IDirect3DDevice9Impl_CreateSurface(iface, Width, Height, Format, Lockable, FALSE /* Discard */,
             0 /* Level */, ppSurface, D3DUSAGE_RENDERTARGET, D3DPOOL_DEFAULT, MultiSample, MultisampleQuality
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             , pSharedHandle
             , NULL
 #endif
@@ -1055,7 +1055,7 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_CreateDepthStencilSurface(LPDIRECT3
 
     hr = IDirect3DDevice9Impl_CreateSurface(iface, Width, Height, Format, TRUE /* Lockable */, Discard,
             0 /* Level */, ppSurface, D3DUSAGE_DEPTHSTENCIL, D3DPOOL_DEFAULT, MultiSample, MultisampleQuality
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             , pSharedHandle
             , NULL
 #endif
@@ -1195,7 +1195,7 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_CreateOffscreenPlainSurface(LPDIREC
     hr = IDirect3DDevice9Impl_CreateSurface(iface, Width, Height, Format, TRUE /* Lockable */, FALSE /* Discard */,
             0 /* Level */, ppSurface, 0 /* Usage (undefined/none) */, (WINED3DPOOL)Pool, D3DMULTISAMPLE_NONE,
             0 /* MultisampleQuality */
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             , pSharedHandle
             , NULL
 #endif
@@ -2758,7 +2758,7 @@ static void STDMETHODCALLTYPE device_parent_WineD3DDeviceCreated(IWineD3DDeviceP
 static HRESULT STDMETHODCALLTYPE device_parent_CreateSurface(IWineD3DDeviceParent *iface,
         IUnknown *superior, UINT width, UINT height, WINED3DFORMAT format, DWORD usage,
         WINED3DPOOL pool, UINT level, WINED3DCUBEMAP_FACES face, IWineD3DSurface **surface
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
         , HANDLE *shared_handle
         , void *pvClientMem
 #endif
@@ -2779,7 +2779,7 @@ static HRESULT STDMETHODCALLTYPE device_parent_CreateSurface(IWineD3DDeviceParen
     hr = IDirect3DDevice9Impl_CreateSurface((IDirect3DDevice9Ex *)This, width, height,
             d3dformat_from_wined3dformat(format), lockable, FALSE /* Discard */, level,
             (IDirect3DSurface9 **)&d3d_surface, usage, pool, D3DMULTISAMPLE_NONE, 0 /* MultisampleQuality */
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
             , shared_handle
             , pvClientMem
 #endif
@@ -2930,7 +2930,7 @@ static HRESULT STDMETHODCALLTYPE device_parent_CreateSwapChain(IWineD3DDevicePar
     local_parameters.FullScreen_RefreshRateInHz = present_parameters->FullScreen_RefreshRateInHz;
     local_parameters.PresentationInterval = present_parameters->PresentationInterval;
 
-#ifdef VBOXWDDM
+#ifdef VBOX_WITH_WDDM
     hr = IDirect3DDevice9Impl_DoCreateAdditionalSwapChain((IDirect3DDevice9Ex *)This,
             &local_parameters, (IDirect3DSwapChain9 **)&d3d_swapchain);
 #else

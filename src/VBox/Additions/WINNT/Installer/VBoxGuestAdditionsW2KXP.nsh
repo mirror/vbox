@@ -184,7 +184,7 @@ Function W2K_CopyFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxService.exe" ; Only used by W2K and up (for Shared Folders at the moment)
 
 !if $%VBOX_WITH_CROGL% == "1"
-  !if $%VBOXWDDM% == "1"
+  !if $%VBOX_WITH_WDDM% == "1"
     !if $%BUILD_TARGET_ARCH% == "x86"
       ${If} $g_bInstallWDDM == "true"
         SetOutPath "$INSTDIR"
@@ -449,7 +449,7 @@ FunctionEnd
 Function ${un}W2K_Uninstall
 
   Push $0
-!if $%VBOXWDDM% == "1"
+!if $%VBOX_WITH_WDDM% == "1"
   ; First check whether WDDM driver is installed
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /matchdrv "PCI\VEN_80EE&DEV_BEEF&SUBSYS_00000000&REV_00" "WDDM"'
   Pop $0    ; Ret value

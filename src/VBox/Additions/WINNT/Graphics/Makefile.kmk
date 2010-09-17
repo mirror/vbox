@@ -64,7 +64,7 @@ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
 	$(call MSG_TOOL,Inf2Cat,VBoxVideo-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
-ifdef VBOXWDDM
+ifdef VBOX_WITH_WDDM
 VBOXWDDM_WITH_DISPD3D = 1
 ifeq ($(KBUILD_TARGET_ARCH), x86)
 VBOXWDDM_WITH_GL = 1

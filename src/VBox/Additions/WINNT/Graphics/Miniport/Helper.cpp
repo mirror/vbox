@@ -15,7 +15,7 @@
 
 // enable backdoor logging
 //#define LOG_ENABLED
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 extern "C"
 {
 # include <ntddk.h>
@@ -28,7 +28,7 @@ extern "C"
 
 #include <VBox/VBoxGuestLib.h>
 
-#ifndef VBOXWDDM
+#ifndef VBOX_WITH_WDDM
 /* the video miniport headers not compatible with the NT DDK headers */
 typedef struct _VIDEO_POINTER_ATTRIBUTES
 {
@@ -43,7 +43,7 @@ typedef struct _VIDEO_POINTER_ATTRIBUTES
 } VIDEO_POINTER_ATTRIBUTES, *PVIDEO_POINTER_ATTRIBUTES;
 #define VIDEO_MODE_COLOR_POINTER  0x04 // 1 if a color hardware pointer is
                                        // supported.
-#endif /* #ifndef VBOXWDDM */
+#endif /* #ifndef VBOX_WITH_WDDM */
 
 #include "Helper.h"
 
