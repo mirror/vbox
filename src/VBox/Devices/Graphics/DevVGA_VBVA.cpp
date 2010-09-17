@@ -332,9 +332,10 @@ static int vbvaFlushProcess (unsigned uScreenId, PVGASTATE pVGAState, VBVAPARTIA
         int32_t yTop;
         int32_t yBottom;
     } dirtyRect;
-    memset(&dirtyRect, 0, sizeof(dirtyRect));
+    RT_ZERO(dirtyRect);
 
     bool fUpdate = false; /* Whether there were any updates. */
+    bool fDirtyEmpty = true;
 
     for (;;)
     {
@@ -377,13 +378,14 @@ static int vbvaFlushProcess (unsigned uScreenId, PVGASTATE pVGAState, VBVAPARTIA
                            cbCmd, phdr->x, phdr->y, phdr->w, phdr->h));
 
             /* Collect all rects into one. */
-            if (dirtyRect.xRight == 0)
+            if (fDirtyEmpty)
             {
                 /* This is the first rectangle to be added. */
                 dirtyRect.xLeft   = phdr->x;
                 dirtyRect.yTop    = phdr->y;
                 dirtyRect.xRight  = xRight;
                 dirtyRect.yBottom = yBottom;
+                fDirtyEmpty       = false;
             }
             else
             {
@@ -415,7 +417,7 @@ static int vbvaFlushProcess (unsigned uScreenId, PVGASTATE pVGAState, VBVAPARTIA
 
     if (fUpdate)
     {
-        if(dirtyRect.xRight)
+        if (dirtyRect.xRight - dirtyRect.xLeft)
         {
             pVGAState->pDrv->pfnVBVAUpdateEnd (pVGAState->pDrv, uScreenId, dirtyRect.xLeft, dirtyRect.yTop,
                                                dirtyRect.xRight - dirtyRect.xLeft, dirtyRect.yBottom - dirtyRect.yTop);
