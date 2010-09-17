@@ -1255,6 +1255,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
  * @{ */
 /** The checksum of a tar header record doesn't match. */
 #define VERR_TAR_CHKSUM_MISMATCH                (-925)
+/** The tar end of file record was read. */
+#define VERR_TAR_END_OF_FILE                    (-926)
 /** @} */
 
 /** @name RTPoll status codes
