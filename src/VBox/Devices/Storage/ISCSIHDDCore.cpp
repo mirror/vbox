@@ -4369,7 +4369,7 @@ static int iscsiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
 
     /* iSCSI images can't be checked for validity this way, as the filename
      * just can't supply enough configuration information. */
-    int rc = VERR_NOT_SUPPORTED;
+    int rc = VERR_VD_ISCSI_INVALID_HEADER;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;

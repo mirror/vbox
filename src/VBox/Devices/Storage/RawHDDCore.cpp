@@ -447,7 +447,7 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     }
 
     /* Always return failure, to avoid opening everything as a raw image. */
-    rc = VERR_NOT_SUPPORTED;
+    rc = VERR_VD_RAW_INVALID_HEADER;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));

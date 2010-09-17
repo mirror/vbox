@@ -5636,7 +5636,7 @@ static int vmdksCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
 
     /* Always return failure, to avoid opening other VMDK files via this
      * special VMDK streamOptimized format backend. */
-    rc = VERR_NOT_SUPPORTED;
+    rc = VERR_VD_VMDK_INVALID_HEADER;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
