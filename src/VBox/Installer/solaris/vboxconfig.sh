@@ -645,11 +645,11 @@ stop_process()
 
     procname=$1
     procpid=`ps -eo pid,fname | grep $PROC_NAME | grep -v grep | awk '{ print $1 }'`
-    if test ! -z "procpid" && test "procpid" -ge 0; then
+    if test ! -z "$procpid" && test "$procpid" -ge 0; then
         $BIN_PKILL "$procname"
         sleep 2
         procpid=`ps -eo pid,fname | grep $PROC_NAME | grep -v grep | awk '{ print $1 }'`
-        if test ! -z "procpid" && test "procpid" -ge 0; then
+        if test ! -z "$procpid" && test "$procpid" -ge 0; then
             subprint "Terminating: $procname  ...FAILED!"
             if test "$fatal" = "$FATALOP"; then
                 exit 1
