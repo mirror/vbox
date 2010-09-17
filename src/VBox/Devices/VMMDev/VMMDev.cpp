@@ -551,17 +551,17 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     /*
                      * User makes sure the directory exists.
                      */
-                    if (!RTDirExists(pThis->szGuestCoreLocation))
+                    if (!RTDirExists(pThis->szGuestCoreDumpDir))
                         return VERR_FILE_NOT_FOUND;
                     char szCorePath[RTPATH_MAX];
-                    const char *pszCoreDir = pThis->szGuestCoreLocation;
+                    const char *pszCoreDir = pThis->szGuestCoreDumpDir;
                     RTStrPrintf(szCorePath, sizeof(szCorePath), "%s/VBox.core", pszCoreDir);
 
                     /*
                      * Rotate existing cores based on number of additional cores to keep around.
                      */
-                    if (pThis->cGuestCores > 0)
-                        for (int64_t i = pThis->cGuestCores - 1; i >= 0; i--)
+                    if (pThis->cGuestCoreDumps > 0)
+                        for (int64_t i = pThis->cGuestCoreDumps - 1; i >= 0; i--)
                         {
                             char szFilePathOld[RTPATH_MAX];
                             if (i == 0)
@@ -2934,8 +2934,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "RamSize|"
                                   "RZEnabled|"
                                   "GuestCoreDumpEnabled|"
-                                  "GuestCoreLocation|"
-                                  "GuestCoreCount|"
+                                  "GuestCoreDumpDir|"
+                                  "GuestCoreDumpCount|"
                                   "TestingEnabled"
                                   ,
                                   "");
@@ -2978,16 +2978,16 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /** @todo change this to Snapshots folder!!  */
     char szDefaultCoreLocation[RTPATH_MAX];
     RTPathUserHome(szDefaultCoreLocation, sizeof(szDefaultCoreLocation));
-    rc = CFGMR3QueryStringDef(pCfg, "GuestCoreLocation", pThis->szGuestCoreLocation, sizeof(pThis->szGuestCoreLocation),
+    rc = CFGMR3QueryStringDef(pCfg, "GuestCoreDumpDir", pThis->szGuestCoreDumpDir, sizeof(pThis->szGuestCoreDumpDir),
                               szDefaultCoreLocation);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed querying \"GuestCoreDumpLocation\" as a string"));
+                                N_("Configuration error: Failed querying \"GuestCoreDumpDir\" as a string"));
 
-    rc = CFGMR3QueryU32Def(pCfg, "GuestCoreCount", &pThis->cGuestCores, 3);
+    rc = CFGMR3QueryU32Def(pCfg, "GuestCoreDumpCount", &pThis->cGuestCoreDumps, 3);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed querying \"GuestCoreCount\" as a 32-bit unsigned integer"));
+                                N_("Configuration error: Failed querying \"GuestCoreDumpCount\" as a 32-bit unsigned integer"));
 
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     rc = CFGMR3QueryBoolDef(pCfg, "TestingEnabled", &pThis->fTestingEnabled, false);

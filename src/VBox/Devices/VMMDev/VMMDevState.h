@@ -224,10 +224,10 @@ typedef struct VMMDevState
     bool fGuestCoreDumpEnabled;
 
     /** Guest Core Dump location. */
-    char szGuestCoreLocation[RTPATH_MAX];
+    char szGuestCoreDumpDir[RTPATH_MAX];
 
     /** Number of additional cores to keep around.   */
-    uint32_t cGuestCores;
+    uint32_t cGuestCoreDumps;
 
     bool afAlignment7[1];
 
