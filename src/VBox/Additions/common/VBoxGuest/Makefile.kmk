@@ -169,6 +169,7 @@ ifeq ($(KBUILD_TARGET),linux)
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) \
 		-e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
+		-e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
 		--output $@ $<
 
  $$(vboxguest-sh_0_OUTDIR)/do_dkms: \
