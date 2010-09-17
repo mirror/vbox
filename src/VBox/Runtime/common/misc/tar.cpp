@@ -131,7 +131,7 @@ DECLINLINE(int) rtTarReadHeaderRecord(RTFILE hFile, PRTTARRECORD pRecord)
         return rc;
 
     /* Check for data integrity & an EOF record */
-    uint32_t check;
+    uint32_t check = 0;
     rc = rtTarCalcChkSum(pRecord, &check);
     /* EOF? */
     if (RT_FAILURE(rc))
