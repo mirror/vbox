@@ -546,13 +546,12 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 if (pThis->fGuestCoreDumpEnabled)
                 {
-                    PVM pVM = PDMDevHlpGetVM(pDevIns);
-
                     /*
                      * User makes sure the directory exists.
                      */
                     if (!RTDirExists(pThis->szGuestCoreDumpDir))
-                        return VERR_FILE_NOT_FOUND;
+                        return VERR_NOT_FOUND;
+
                     char szCorePath[RTPATH_MAX];
                     RTStrCopy(szCorePath, sizeof(szCorePath), pThis->szGuestCoreDumpDir);
                     RTPathAppend(szCorePath, sizeof(szCorePath), "VBox.core");
@@ -579,6 +578,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     /*
                      * Write the core file.
                      */
+                    PVM pVM = PDMDevHlpGetVM(pDevIns);
                     pRequestHeader->rc = DBGFR3CoreWrite(pVM, szCorePath);
                 }
                 else
