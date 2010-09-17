@@ -1418,22 +1418,40 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         goto out;
     }
     pExtent->pGD = pGD;
-    pRGD = (uint32_t *)RTMemAllocZ(cbGD);
-    if (!pRGD)
+    if (!(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
     {
-        rc = VERR_NO_MEMORY;
-        goto out;
+        pRGD = (uint32_t *)RTMemAllocZ(cbGD);
+        if (!pRGD)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+        pExtent->pRGD = pRGD;
     }
-    pExtent->pRGD = pRGD;
+    else
+        pExtent->pRGD = NULL;
 
     if (uStartSector != VMDK_GD_AT_END)
     {
-        cbOverhead = RT_ALIGN_64(VMDK_SECTOR2BYTE(uStartSector) + 2 * (cbGDRounded + cbGTRounded), VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
-        /* For streamOptimized extents put the end-of-stream marker at the end. */
+        cbOverhead = VMDK_SECTOR2BYTE(uStartSector) + cbGDRounded + cbGTRounded;
+        /* For streamOptimized extents there is only one grain directory,
+         * and for all others take redundant grain directory into account. */
         if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
-            rc = vmdkFileSetSize(pImage, pExtent->pFile, cbOverhead + 512);
+        {
+            cbOverhead = RT_ALIGN_64(cbOverhead,
+                                     VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
+            if (pExtent->fFooter)
+                rc = vmdkFileSetSize(pImage, pExtent->pFile, cbOverhead);
+            else
+                rc = vmdkFileSetSize(pImage, pExtent->pFile, cbOverhead + 512);
+        }
         else
+        {
+            cbOverhead += cbGDRounded + cbGTRounded;
+            cbOverhead = RT_ALIGN_64(cbOverhead,
+                                     VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
             rc = vmdkFileSetSize(pImage, pExtent->pFile, cbOverhead);
+        }
         if (RT_FAILURE(rc))
             goto out;
         pExtent->uSectorRGD = uStartSector;
@@ -1441,8 +1459,7 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     }
     else
     {
-        cbOverhead =  VMDK_SECTOR2BYTE(uStartSector);
-        pExtent->uSectorRGD = uStartSector;
+        cbOverhead = 512 + pImage->cbDescAlloc;
         pExtent->uSectorGD = uStartSector;
     }
 
@@ -4071,6 +4088,7 @@ static int vmdksFlushGT(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     uint64_t uFileOffset;
     rc = vmdkFileGetSize(pImage, pExtent->pFile, &uFileOffset);
     AssertRC(rc);
+    /* Align to sector, as the previous write could have been any size. */
     uFileOffset = RT_ALIGN_64(uFileOffset, 512);
 
     /* Grain table marker. */
@@ -4330,7 +4348,7 @@ static int vmdksCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
     pExtent->fFooter = true;
 
     pExtent->enmAccess = VMDKACCESS_READONLY;
-    pExtent->fUncleanShutdown = true;
+    pExtent->fUncleanShutdown = false;
     pExtent->cNominalSectors = VMDK_BYTE2SECTOR(cbSize);
     pExtent->uSectorOffset = 0;
     pExtent->fMetaDirty = true;
@@ -4444,6 +4462,10 @@ static int vmdksCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
     if (pfnProgress)
         pfnProgress(pvUser, uPercentStart + uPercentSpan * 50 / 100);
 
+    /* Now that all descriptor entries are complete, shrink it to the minimum
+     * size. It will never be changed afterwards anyway. */
+    pExtent->cDescriptorSectors = VMDK_BYTE2SECTOR(RT_ALIGN_64(  pImage->Descriptor.aLines[pImage->Descriptor.cLines]
+                                                               - pImage->Descriptor.aLines[0], 512));
     rc = vmdkWriteMetaSparseExtent(pImage, &pImage->pExtents[0], 0);
     if (RT_FAILURE(rc))
     {
@@ -5636,7 +5658,7 @@ static int vmdksCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
 
     /* Always return failure, to avoid opening other VMDK files via this
      * special VMDK streamOptimized format backend. */
-    rc = VERR_VD_VMDK_INVALID_HEADER;
+    rc = VERR_NOT_SUPPORTED;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -5872,11 +5894,8 @@ static int vmdksWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     rc = vmdkFileGetSize(pImage, pExtent->pFile, &uFileOffset);
     if (RT_FAILURE(rc))
         goto out;
-    if (uFileOffset % 512)
-    {
-        rc = VERR_INTERNAL_ERROR;
-        goto out;
-    }
+    /* Align to sector, as the previous write could have been any size. */
+    uFileOffset = RT_ALIGN_64(uFileOffset, 512);
 
     /* Paranoia check: extent type, grain table buffer presence and
      * grain table buffer space. Also grain table entry must be clear. */
