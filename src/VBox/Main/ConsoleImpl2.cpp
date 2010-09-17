@@ -2723,7 +2723,8 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
 
                 char szOsRelease[128];
                 rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szOsRelease, sizeof(szOsRelease));
-                bool fKernelHasODirectBug = RT_FAILURE(rc) || RTStrVersionCompare(szOsRelease, "2.6.36") < 0;
+                bool fKernelHasODirectBug =    RT_FAILURE(rc)
+                                            || (RTStrVersionCompare(szOsRelease, "2.6.36-rc4") < 0);
 
                 if (   (uCaps & MediumFormatCapabilities_Asynchronous)
                     && !fUseHostIOCache
