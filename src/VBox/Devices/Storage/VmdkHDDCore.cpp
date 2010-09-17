@@ -5674,7 +5674,7 @@ static int vmdksOpen(const char *pszFilename, unsigned uOpenFlags,
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
     int rc;
 
-    rc = VERR_NOT_SUPPORTED;
+    rc = VERR_VD_VMDK_INVALID_HEADER;
     LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
 }
