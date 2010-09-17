@@ -2355,7 +2355,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
              * Normal FIFO waiter evaluation.
              */
             fEvents |= pDevExt->f32PendingEvents;
-            RTListForEachSafe(&pDevExt->HGCMWaitList, pWait, pSafe, VBOXGUESTWAIT, ListNode)
+            RTListForEachSafe(&pDevExt->WaitList, pWait, pSafe, VBOXGUESTWAIT, ListNode)
             {
                 if (    (pWait->fReqEvents & fEvents)
                     &&  !pWait->fResEvents)
