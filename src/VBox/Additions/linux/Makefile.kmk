@@ -333,7 +333,7 @@ LnxAddTest-src_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_SHARE_DI
 LnxAddTest-src_MODE    = a+r,u+w
 LnxAddTest-src_SOURCES = \
 	$(VBOX_REL_LNX_ADD_INST)Makefile.test=>Makefile \
-	../../HostDrivers/linux/build_in_tmp \
+	$(PATH_BIN)/additions/src/vboxguest/build_in_tmp \
 	$(VBOX_REL_LNX_ADD_INST)test.c
 
 
@@ -347,7 +347,7 @@ LnxAddDRM-src_SOURCES = \
 	$(VBOX_REL_LNX_ADD_INST)Makefile.include.header \
 	$(VBOX_REL_LNX_ADD_INST)Makefile.include.footer \
 	$(VBOX_REL_LNX_ADD_INST)Makefile.test.drm=>Makefile \
-	../../HostDrivers/linux/build_in_tmp \
+	$(PATH_BIN)/additions/src/vboxguest/build_in_tmp \
 	$(VBOX_REL_LNX_ADD_INST)test_drm.c
 
 
