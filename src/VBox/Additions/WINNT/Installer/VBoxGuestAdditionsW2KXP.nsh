@@ -185,25 +185,27 @@ Function W2K_CopyFiles
 
 !if $%VBOX_WITH_CROGL% == "1"
   !if $%VBOXWDDM% == "1"
-    ${If} $g_bInstallWDDM == "true"
-      SetOutPath "$INSTDIR"
-      ; WDDM Video driver
-      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
-      FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLcrutil.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLpackspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
-      FILE "$%PATH_OUT%\bin\additions\libWine.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"
-      FILE "$%PATH_OUT%\bin\additions\wined3dwddm.dll"
-      SetOutPath $g_strSystemDir
-      Goto doneCr
-    ${EndIf}
+    !if $%BUILD_TARGET_ARCH% == "x86"
+      ${If} $g_bInstallWDDM == "true"
+        SetOutPath "$INSTDIR"
+        ; WDDM Video driver
+        FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
+        FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
+        FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxOGLcrutil.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxOGLpackspu.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
+        FILE "$%PATH_OUT%\bin\additions\libWine.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"
+        FILE "$%PATH_OUT%\bin\additions\wined3dwddm.dll"
+        SetOutPath $g_strSystemDir
+        Goto doneCr
+      ${EndIf}
+    !endif
   !endif
   ; crOpenGL
   SetOutPath $g_strSystemDir
