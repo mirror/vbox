@@ -34,7 +34,7 @@ abort_error()
 }
 
 # nothing to check for targetted install
-if test "x${BASEDIR}" != "x/"; then
+if test "x$PKG_INSTALL_ROOT" != "x/"; then
     exit 0
 fi
 

@@ -29,14 +29,15 @@ else
     ISIPS=""
 fi
 
-${BASEDIR}/opt/VirtualBox/vboxconfig.sh --preremove --fatal "$ISIPS"
+# If PKG_INSTALL_ROOT is undefined or NULL, redefine to '/' and carry on.
+${PKG_INSTALL_ROOT:=/}/opt/VirtualBox/vboxconfig.sh --preremove --fatal "$ISIPS"
 
 if test "$?" -eq 0; then
     echo "Installing new ones..."
-    ${BASEDIR}/opt/VirtualBox/vboxconfig.sh --postinstall
+    $PKG_INSTALL_ROOT/opt/VirtualBox/vboxconfig.sh --postinstall
     rc=$?
     if test "$rc" -ne 0; then
-        echo "Completed but with errors."
+        echo 1>&2 "## Completed but with errors."
         rc=1
     else
         if test "$1" != "--srv4"; then
@@ -44,7 +45,7 @@ if test "$?" -eq 0; then
         fi
     fi
 else
-    echo "## ERROR!! Failed to remove older/partially installed bits."
+    echo 1>&2 "## ERROR!! Failed to remove older/partially installed bits."
     rc=1
 fi
 
