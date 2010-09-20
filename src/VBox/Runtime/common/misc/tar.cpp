@@ -181,7 +181,7 @@ static int rtTarExtractFileToBuf(RTFILE hFile, void **ppvBuf, uint64_t *pcbSize,
 
         uint64_t cbAllWritten = 0; /* Already copied */
         uint64_t cbToRead = 0; /* What to read in the next step */
-        uint64_t cbRead = 0; /* Actually read in the last step */
+        size_t cbRead = 0; /* Actually read in the last step */
         /* Copy the content from hFile over to the memory. */
         for (;;)
         {
