@@ -68,7 +68,7 @@ VBOXWDDM_HANDLE vboxWddmHTablePut(PVBOXWDDM_HTABLE pTbl, PVOID pvData)
         if (Status != STATUS_SUCCESS)
             return VBOXWDDM_HANDLE_INVALID;
     }
-    for (UINT i = pTbl->iNext2Search; ++i, i %= pTbl->cSize;)
+    for (UINT i = pTbl->iNext2Search; ; ++i, i %= pTbl->cSize)
     {
         Assert(i < pTbl->cSize);
         if (!pTbl->paData[i])

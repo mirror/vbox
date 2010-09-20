@@ -2965,6 +2965,15 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtensio
     /* encode linear offDisplay to xOffset & yOffset to ensure offset fits USHORT */
     ULONG cbLine = VBOXWDDM_ROUNDBOUND(((width * bpp) + 7) / 8, 4);
     ULONG xOffset = offDisplay % cbLine;
+    if (bpp == 4)
+    {
+        xOffset <<= 1;
+    }
+    else
+    {
+        Assert(!(xOffset%((bpp + 7) >> 3)));
+        xOffset /= ((bpp + 7) >> 3);
+    }
     ULONG yOffset = offDisplay / cbLine;
     Assert(xOffset <= 0xffff);
     Assert(yOffset <= 0xffff);
