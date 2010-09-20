@@ -322,8 +322,10 @@ stop() {
         RETVAL=$?
         if ! pidof $binary > /dev/null 2>&1; then
             rm -f $PIDFILE
+            succ_msg
+        else
+            fail_msg
         fi
-        succ_msg
     fi
     return $RETVAL
 }
