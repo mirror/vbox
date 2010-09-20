@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT R0 Testcase - Timers, common header.
+ * IPRT R0 Testcase - Common header defining the request packet.
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,23 +25,33 @@
  */
 
 
-#include "tstRTR0CommonReq.h"
+#ifndef ___testcase_tstRTR0CommonReq_h
+#define ___testcase_tstRTR0CommonReq_h
 
-#ifdef IN_RING0
-RT_C_DECLS_BEGIN
-DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOperation,
-                                          uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr);
-RT_C_DECLS_END
-#endif
+#include <VBox/sup.h>
 
-typedef enum TSTRTR0TIMER
+/**
+ * Ring-0 test request packet.
+ */
+typedef struct RTTSTR0REQ
 {
-    TSTRTR0TIMER_ONE_SHOT_BASIC = RTTSTR0REQ_FIRST_USER,
-    TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES,
-    TSTRTR0TIMER_PERIODIC_BASIC,
-    TSTRTR0TIMER_PERIODIC_BASIC_HIRES,
-    TSTRTR0TIMER_ONE_SHOT_RESTART,
-    TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES,
-    TSTRTR0TIMER_END
-} TSTRTR0TIMER;
+    SUPR0SERVICEREQHDR  Hdr;
+    /** The message (output). */
+    char                szMsg[2048];
+} RTTSTR0REQ;
+/** Pointer to a test request packet. */
+typedef RTTSTR0REQ *PRTTSTR0REQ;
+
+
+/** @name Standard requests.
+ * @{ */
+/** Positive sanity check. */
+#define RTTSTR0REQ_SANITY_OK        1
+/** Negative sanity check. */
+#define RTTSTR0REQ_SANITY_FAILURE   2
+/** The first user request.  */
+#define RTTSTR0REQ_FIRST_USER       10
+/** @}  */
+
+#endif
 
