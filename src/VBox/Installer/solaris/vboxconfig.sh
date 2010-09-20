@@ -23,10 +23,10 @@ HOST_OS_MAJORVERSION=`uname -r`
 # Which OpenSolaris version (snv_xxx)?
 HOST_OS_MINORVERSION=`uname -v | grep 'snv' | sed -e "s/snv_//" -e "s/[^0-9]//"`
 
-DIR_VBOXBASE=${BASEDIR}/opt/VirtualBox
-DIR_CONF="${BASEDIR}/platform/i86pc/kernel/drv"
-DIR_MOD_32="${BASEDIR}/platform/i86pc/kernel/drv"
-DIR_MOD_64=$DIR_MOD_32/amd64
+DIR_VBOXBASE="$PKG_INSTALL_ROOT/opt/VirtualBox"
+DIR_CONF="$PKG_INSTALL_ROOT/platform/i86pc/kernel/drv"
+DIR_MOD_32="$PKG_INSTALL_ROOT/platform/i86pc/kernel/drv"
+DIR_MOD_64="$DIR_MOD_32/amd64"
 
 # Default paths, these will be overridden by 'which' if they don't exist
 BIN_ADDDRV=/usr/sbin/add_drv
@@ -219,18 +219,18 @@ check_root()
 get_sysinfo()
 {
     if test "$REMOTEINST" -eq 1 || test -z "$HOST_OS_MINORVERSION" || test -z "$HOST_OS_MAJORVERSION"; then
-        if test -f "${BASEDIR}/etc/release"; then
-            HOST_OS_MAJORVERSION=`cat ${BASEDIR}/etc/release | grep "Solaris 10"`
+        if test -f "$PKG_INSTALL_ROOT/etc/release"; then
+            HOST_OS_MAJORVERSION=`cat $PKG_INSTALL_ROOT/etc/release | grep "Solaris 10"`
             if test -n "$HOST_OS_MAJORVERSION"; then
                 HOST_OS_MAJORVERSION="5.10"
             else
-                HOST_OS_MAJORVERSION=`cat ${BASEDIR}/etc/release | grep "snv_"`
+                HOST_OS_MAJORVERSION=`cat $PKG_INSTALL_ROOT/etc/release | grep "snv_"`
                 if test -n "$HOST_OS_MAJORVERSION"; then
                     HOST_OS_MAJORVERSION="5.11"
                 fi
             fi
             if test "$HOST_OS_MAJORVERSION" != "5.10"; then
-                HOST_OS_MINORVERSION=`cat ${BASEDIR}/etc/release | tr ' ' '\n' | grep 'snv_' | sed -e "s/snv_//" -e "s/[^0-9]//"`
+                HOST_OS_MINORVERSION=`cat $PKG_INSTALL_ROOT/etc/release | tr ' ' '\n' | grep 'snv_' | sed -e "s/snv_//" -e "s/[^0-9]//"`
             else
                 HOST_OS_MINORVERSION=""
             fi
@@ -284,8 +284,8 @@ module_added()
     fi
 
     # Add a space at end of module name to make sure we have a perfect match to avoid
-    # any substring matches: e.g "vboxusb" & "vbo $BASEDIR_OPT xusbmon"
-    loadentry=`cat ${BASEDIR}/etc/name_to_major | grep "$1 "`
+    # any substring matches: e.g "vboxusb" & "vboxusbmon"
+    loadentry=`cat $PKG_INSTALL_ROOT/etc/name_to_major | grep "$1 "`
     if test -z "$loadentry"; then
         return 1
     fi
@@ -466,12 +466,12 @@ install_drivers()
     fi
 
     # Add vboxdrv to devlink.tab
-    if test -f "${BASEDIR}/etc/devlink.tab"; then
-        sed -e '/name=vboxdrv/d' ${BASEDIR}/etc/devlink.tab > ${BASEDIR}/etc/devlink.vbox
-        echo "type=ddi_pseudo;name=vboxdrv	\D" >> ${BASEDIR}/etc/devlink.vbox
-        mv -f ${BASEDIR}/etc/devlink.vbox ${BASEDIR}/etc/devlink.tab
+    if test -f "$PKG_INSTALL_ROOT/etc/devlink.tab"; then
+        sed -e '/name=vboxdrv/d' $PKG_INSTALL_ROOT/etc/devlink.tab > $PKG_INSTALL_ROOT/etc/devlink.vbox
+        echo "type=ddi_pseudo;name=vboxdrv	\D" >> $PKG_INSTALL_ROOT/etc/devlink.vbox
+        mv -f $PKG_INSTALL_ROOT/etc/devlink.vbox $PKG_INSTALL_ROOT/etc/devlink.tab
     else
-        errorprint "Missing ${BASEDIR}/etc/devlink.tab, aborting install"
+        errorprint "Missing $PKG_INSTALL_ROOT/etc/devlink.tab, aborting install"
         return 1
     fi
 
@@ -504,9 +504,9 @@ install_drivers()
             load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
 
             # Add vboxusbmon to devlink.tab
-            sed -e '/name=vboxusbmon/d' ${BASEDIR}/etc/devlink.tab > ${BASEDIR}/etc/devlink.vbox
-            echo "type=ddi_pseudo;name=vboxusbmon	\D" >> ${BASEDIR}/etc/devlink.vbox
-            mv -f ${BASEDIR}/etc/devlink.vbox ${BASEDIR}/etc/devlink.tab
+            sed -e '/name=vboxusbmon/d' $PKG_INSTALL_ROOT/etc/devlink.tab > $PKG_INSTALL_ROOT/etc/devlink.vbox
+            echo "type=ddi_pseudo;name=vboxusbmon	\D" >> $PKG_INSTALL_ROOT/etc/devlink.vbox
+            mv -f $PKG_INSTALL_ROOT/etc/devlink.vbox $PKG_INSTALL_ROOT/etc/devlink.tab
 
             # Create the device link for non-remote installs
             if test "$REMOTEINST" -eq 0; then
@@ -544,18 +544,18 @@ remove_drivers()
     fatal=$1
 
     # Remove vboxdrv from devlink.tab
-    if test -f ${BASEDIR}/etc/devlink.tab; then
-        devlinkfound=`cat ${BASEDIR}/etc/devlink.tab | grep vboxdrv`
+    if test -f $PKG_INSTALL_ROOT/etc/devlink.tab; then
+        devlinkfound=`cat $PKG_INSTALL_ROOT/etc/devlink.tab | grep vboxdrv`
         if test -n "$devlinkfound"; then
-            sed -e '/name=vboxdrv/d' ${BASEDIR}/etc/devlink.tab > ${BASEDIR}/etc/devlink.vbox
-            mv -f ${BASEDIR}/etc/devlink.vbox ${BASEDIR}/etc/devlink.tab
+            sed -e '/name=vboxdrv/d' $PKG_INSTALL_ROOT/etc/devlink.tab > $PKG_INSTALL_ROOT/etc/devlink.vbox
+            mv -f $PKG_INSTALL_ROOT/etc/devlink.vbox $PKG_INSTALL_ROOT/etc/devlink.tab
         fi
 
         # Remove vboxusbmon from devlink.tab
-        devlinkfound=`cat ${BASEDIR}/etc/devlink.tab | grep vboxusbmon`
+        devlinkfound=`cat $PKG_INSTALL_ROOT/etc/devlink.tab | grep vboxusbmon`
         if test -n "$devlinkfound"; then
-            sed -e '/name=vboxusbmon/d' ${BASEDIR}/etc/devlink.tab > ${BASEDIR}/etc/devlink.vbox
-            mv -f ${BASEDIR}/etc/devlink.vbox ${BASEDIR}/etc/devlink.tab
+            sed -e '/name=vboxusbmon/d' $PKG_INSTALL_ROOT/etc/devlink.tab > $PKG_INSTALL_ROOT/etc/devlink.vbox
+            mv -f $PKG_INSTALL_ROOT/etc/devlink.vbox $PKG_INSTALL_ROOT/etc/devlink.tab
         fi
     fi
 
@@ -578,15 +578,15 @@ remove_drivers()
 #    unload_module "$MOD_VBI" "$DESC_VBI" "$fatal"
 
     # remove devlinks
-    if test -h "${BASEDIR}/dev/vboxdrv" || test -f "${BASEDIR}/dev/vboxdrv"; then
-        rm -f ${BASEDIR}/dev/vboxdrv
+    if test -h "$PKG_INSTALL_ROOT/dev/vboxdrv" || test -f "$PKG_INSTALL_ROOT/dev/vboxdrv"; then
+        rm -f $PKG_INSTALL_ROOT/dev/vboxdrv
     fi
-    if test -h "${BASEDIR}/dev/vboxusbmon" || test -f "${BASEDIR}/dev/vboxusbmon"; then
-        rm -f ${BASEDIR}/dev/vboxusbmon
+    if test -h "$PKG_INSTALL_ROOT/dev/vboxusbmon" || test -f "$PKG_INSTALL_ROOT/dev/vboxusbmon"; then
+        rm -f $PKG_INSTALL_ROOT/dev/vboxusbmon
     fi
 
     # unpatch nwam/dhcpagent fix
-    nwamfile=${BASEDIR}/etc/nwam/llp
+    nwamfile=$PKG_INSTALL_ROOT/etc/nwam/llp
     nwambackupfile=$nwamfile.vbox
     if test -f "$nwamfile"; then
         sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
@@ -594,7 +594,7 @@ remove_drivers()
     fi
 
     # remove netmask configuration
-    nmaskfile=${BASEDIR}/etc/netmasks
+    nmaskfile=$PKG_INSTALL_ROOT/etc/netmasks
     nmaskbackupfile=$nmaskfile.vbox
     if test -f "$nmaskfile"; then
         sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
@@ -743,7 +743,7 @@ postinstall()
     if test "$?" -eq 0; then
         if test -f "$DIR_CONF/vboxnet.conf"; then
             # nwam/dhcpagent fix
-            nwamfile=${BASEDIR}/etc/nwam/llp
+            nwamfile=$PKG_INSTALL_ROOT/etc/nwam/llp
             nwambackupfile=$nwamfile.vbox
             if test -f "$nwamfile"; then
                 sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
@@ -766,7 +766,7 @@ postinstall()
                     $BIN_IFCONFIG vboxnet0 192.168.56.1 netmask 255.255.255.0 up
 
                     # add the netmask to stay persistent across host reboots
-                    nmaskfile=${BASEDIR}/etc/netmasks
+                    nmaskfile=$PKG_INSTALL_ROOT/etc/netmasks
                     nmaskbackupfile=$nmaskfile.vbox
                     if test -f $nmaskfile; then
                         sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
@@ -788,7 +788,7 @@ postinstall()
             fi
         fi
 
-        if test -f ${BASEDIR}/var/svc/manifest/application/virtualbox/virtualbox-webservice.xml || test -f ${BASEDIR}/var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml; then
+        if test -f $PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-webservice.xml || test -f $PKG_INSTALL_ROOT/var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml; then
             infoprint "Configuring services..."
             if test "$REMOTEINST" -eq 1; then
                 subprint "Skipped for targetted installs."
@@ -852,7 +852,7 @@ postinstall()
         if test "$REMOTEINST" -eq 0; then
             $BIN_BOOTADM update-archive > /dev/null
         else
-            $BIN_BOOTADM update-archive -R ${BASEDIR} > /dev/null
+            $BIN_BOOTADM update-archive -R $PKG_INSTALL_ROOT > /dev/null
         fi
 
         return 0
@@ -887,8 +887,8 @@ check_isa
 check_zone
 get_sysinfo
 
-if test "x${BASEDIR:=/}" != "x/"; then
-    BASEDIR_OPT="-b ${BASEDIR}"
+if test "x${PKG_INSTALL_ROOT:=/}" != "x/"; then
+    BASEDIR_OPT="-b $PKG_INSTALL_ROOT"
     REMOTEINST=1
 fi
 
