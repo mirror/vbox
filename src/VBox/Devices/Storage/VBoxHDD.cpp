@@ -4510,10 +4510,14 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         }
         else
         {
-            /* Error detected, but image opened. Close and delete image. */
-            rc2 = pImage->Backend->pfnClose(pImage->pBackendData, true);
-            AssertRC(rc2);
-            pImage->pBackendData = NULL;
+            /* Error detected, image may or may not be opened. Close and delete
+             * image if it was opened. */
+            if (pImage->pBackendData)
+            {
+                rc2 = pImage->Backend->pfnClose(pImage->pBackendData, true);
+                AssertRC(rc2);
+                pImage->pBackendData = NULL;
+            }
         }
     } while (0);
 
