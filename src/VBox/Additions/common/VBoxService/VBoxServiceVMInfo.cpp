@@ -76,8 +76,8 @@ static uint32_t                 g_uVMInfoGuestPropSvcClientID = 0;
 static uint32_t                 g_cVMInfoLoggedInUsers = UINT32_MAX;
 /** The guest property cache. */
 static VBOXSERVICEVEPROPCACHE   g_VMInfoPropCache;
-/** The session ID. Changes whenever the VM is restored or resetted. */
-static uint64_t                 g_idSession;
+/** The VM session ID. Changes whenever the VM is restored or reset. */
+static uint64_t                 g_idVMInfoSession;
 
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
@@ -114,9 +114,9 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
 
     int rc = RTSemEventMultiCreate(&g_hVMInfoEvent);
     AssertRCReturn(rc, rc);
-    
-    rc = VbglR3GetSessionId(&g_idSession);
-    /* The error ignored as this information is not available with VBox < 3.2.10. */
+
+    VbglR3GetSessionId(&g_idVMInfoSession);
+    /* The status code is ignored as this information is not available with VBox < 3.2.10. */
 
     rc = VbglR3GuestPropConnect(&g_uVMInfoGuestPropSvcClientID);
     if (RT_SUCCESS(rc))
@@ -745,14 +745,14 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         /*
          * Flush all properties if we were restored.
          */
-        uint64_t idNewSession = g_idSession;
+        uint64_t idNewSession = g_idVMInfoSession;
         VbglR3GetSessionId(&idNewSession);
-        if (idNewSession != g_idSession)
+        if (idNewSession != g_idVMInfoSession)
         {
-            VBoxServiceVerbose(3, "VMInfo: Session ID changed, flushing all properties.\n");
+            VBoxServiceVerbose(3, "VMInfo: The VM session ID changed, flushing all properties.\n");
             vboxserviceVMInfoWriteFixedProperties();
             VBoxServicePropCacheFlush(&g_VMInfoPropCache);
-            g_idSession = idNewSession;
+            g_idVMInfoSession = idNewSession;
         }
 
         /*

@@ -74,21 +74,27 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
     return rc;
 }
 
+
 /**
- * Query the session id of this VM; this is a unique id that gets changed for each VM start, reset or restore.
- * Useful for detection a VM restore.
+ * Query the session ID of this VM.
+ *
+ * The session id is an unique identifier that gets changed for each VM start,
+ * reset or restore.  Useful for detection a VM restore.
  *
  * @returns IPRT status code.
- * pu64IdSession    Session id (out)
- *
+ * @param   pu64IdSession       Session id (out).  This is NOT changed on
+ *                              failure, so the caller can depend on this to
+ *                              deal with backward compatability (see
+ *                              VBoxServiceVMInfoWorker() for an example.)
  */
 VBGLR3DECL(int) VbglR3GetSessionId(uint64_t *pu64IdSession)
 {
     VMMDevReqSessionId Req;
 
     vmmdevInitRequest(&Req.header, VMMDevReq_GetSessionId);
+    Req.idSession = 0;
     int rc = vbglR3GRPerform(&Req.header);
-    if (rc == VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
         *pu64IdSession = Req.idSession;
 
     return rc;
