@@ -750,7 +750,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         {
             if (pRequestHeader->size < sizeof(VMMDevReqMousePointer))
             {
-                AssertMsg(pRequestHeader->size == 0x10028 && pRequestHeader->version == 10000,  /* don't bitch about legacy!!! */
+                AssertMsg(pRequestHeader->size == 0x10028 && pRequestHeader->version == 10000,  /* don't complain about legacy!!! */
                           ("VMMDev mouse shape structure has invalid size %d (%#x) version=%d!\n",
                            pRequestHeader->size, pRequestHeader->size, pRequestHeader->size, pRequestHeader->version));
                 pRequestHeader->rc = VERR_INVALID_PARAMETER;
@@ -766,7 +766,11 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 Log(("VMMDevReq_SetPointerShape: visible: %d, alpha: %d, shape = %d, width: %d, height: %d\n",
                      fVisible, fAlpha, fShape, pointerShape->width, pointerShape->height));
 
-                if (pRequestHeader->size == sizeof(VMMDevReqMousePointer))
+                if (      pRequestHeader->size
+                       != vmmdevGetMousePointerReqSize(pointerShape->width,
+                                                       pointerShape->height)
+                    || !pointerShape->width
+                    || !pointerShape->height)
                 {
                     /* The guest did not provide the shape actually. */
                     fShape = false;
