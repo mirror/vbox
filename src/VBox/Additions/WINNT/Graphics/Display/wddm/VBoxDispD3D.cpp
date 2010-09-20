@@ -1836,15 +1836,11 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
             if (pSwapchain->fFlags.bChanged)
             {
                 IDirect3DSurface9 *pD3D9OldSurf = (IDirect3DSurface9*)pAlloc->pD3DIf;
-                if (pD3D9OldSurf)
+                if (pD3D9OldSurf && pD3D9OldSurf != pD3D9Surf)
                 {
-                    VOID *pvSwapchain = NULL;
-                    HRESULT tmpHr = pD3D9OldSurf->GetContainer(IID_IDirect3DSwapChain9, &pvSwapchain);
-                    if (tmpHr != S_OK || pvSwapchain != ((IDirect3DSwapChain9 *)pSwapchain->pSwapChainIf))
-                    {
-                        hr = pDevice->pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9Surf, NULL, D3DTEXF_NONE);
-                        Assert(hr == S_OK);
-                    }
+                    Assert(0);
+                    hr = pDevice->pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9Surf, NULL, D3DTEXF_NONE);
+                    Assert(hr == S_OK);
                 }
             }
             pAlloc->pD3DIf->Release();
@@ -1870,9 +1866,18 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
 static HRESULT vboxWddmSwapchainSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
 {
     HRESULT hr = S_OK;
-    for (int iBb = -1; iBb < int(pSwapchain->cRTs - 1); ++iBb)
+    if (pSwapchain->cRTs > 1)
     {
-        hr = vboxWddmSwapchainRtSynch(pDevice, pSwapchain, (UINT)iBb);
+        for (int iBb = -1; iBb < int(pSwapchain->cRTs - 1); ++iBb)
+        {
+            hr = vboxWddmSwapchainRtSynch(pDevice, pSwapchain, (UINT)iBb);
+            Assert(hr == S_OK);
+        }
+    }
+    else
+    {
+        /* work-around wine backbuffer */
+        hr = vboxWddmSwapchainRtSynch(pDevice, pSwapchain, 0);
         Assert(hr == S_OK);
     }
 
@@ -1908,78 +1913,106 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
         return S_OK;
     /* preserve the old one */
     IDirect3DSwapChain9 * pOldIf = pSwapchain->pSwapChainIf;
-    /* first create the new one */
+    HRESULT hr = S_OK;
+    BOOL bReuseSwapchain = FALSE;
     D3DPRESENT_PARAMETERS Params;
     vboxWddmSwapchainFillParams(pSwapchain, &Params);
+    /* check if we need to re-create the swapchain */
+    if (pOldIf)
+    {
+        D3DPRESENT_PARAMETERS OldParams;
+        hr = pOldIf->GetPresentParameters(&OldParams);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            if (OldParams.BackBufferCount == Params.BackBufferCount)
+            {
+                bReuseSwapchain = TRUE;
+            }
+        }
+    }
+
+  /* first create the new one */
     IDirect3DSwapChain9 * pNewIf;
     ///
     PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
     UINT cSurfs = pSwapchain->cRTs;
-    HRESULT hr = S_OK;
     IDirect3DDevice9 *pDevice9If = NULL;
     HWND hOldWnd = pSwapchain->hWnd;
+    if (!bReuseSwapchain)
+    {
 //#define VBOXDISP_NEWWND_ON_SWAPCHAINUPDATE
 #ifndef VBOXDISP_NEWWND_ON_SWAPCHAINUPDATE
-    if (!hOldWnd)
+        if (!hOldWnd)
 #endif
-    {
-        hr = VBoxDispWndCreate(pAdapter, Params.BackBufferWidth, Params.BackBufferHeight, &pSwapchain->hWnd);
-        Assert(hr == S_OK);
-    }
-    if (hr == S_OK)
-    {
-        DWORD fFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
-        if (pDevice->fFlags.AllowMultithreading)
-            fFlags |= D3DCREATE_MULTITHREADED;
-
-        Params.hDeviceWindow = pSwapchain->hWnd;
-                    /* @todo: it seems there should be a way to detect this correctly since
-                     * our vboxWddmDDevSetDisplayMode will be called in case we are using full-screen */
-        Params.Windowed = TRUE;
-        //            params.EnableAutoDepthStencil = FALSE;
-        //            params.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
-        //            params.Flags;
-        //            params.FullScreen_RefreshRateInHz;
-        //            params.FullScreen_PresentationInterval;
-        if (!pDevice->pDevice9If)
         {
-            hr = pAdapter->pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pSwapchain->hWnd, fFlags, &Params, &pDevice9If);
+            hr = VBoxDispWndCreate(pAdapter, Params.BackBufferWidth, Params.BackBufferHeight, &pSwapchain->hWnd);
             Assert(hr == S_OK);
-            if (hr == S_OK)
+        }
+        if (hr == S_OK)
+        {
+            DWORD fFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
+            if (pDevice->fFlags.AllowMultithreading)
+                fFlags |= D3DCREATE_MULTITHREADED;
+
+            Params.hDeviceWindow = pSwapchain->hWnd;
+                        /* @todo: it seems there should be a way to detect this correctly since
+                         * our vboxWddmDDevSetDisplayMode will be called in case we are using full-screen */
+            Params.Windowed = TRUE;
+            //            params.EnableAutoDepthStencil = FALSE;
+            //            params.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
+            //            params.Flags;
+            //            params.FullScreen_RefreshRateInHz;
+            //            params.FullScreen_PresentationInterval;
+            if (!pDevice->pDevice9If)
             {
-                pDevice->pDevice9If = pDevice9If;
-                hr = pDevice9If->GetSwapChain(0, &pNewIf);
+                hr = pAdapter->pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pSwapchain->hWnd, fFlags, &Params, &pDevice9If);
+                Assert(hr == S_OK);
+                if (hr == S_OK)
+                {
+                    pDevice->pDevice9If = pDevice9If;
+                    hr = pDevice9If->GetSwapChain(0, &pNewIf);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        Assert(pNewIf);
+                    }
+                    else
+                    {
+                        pDevice9If->Release();
+                    }
+                }
+            }
+            else
+            {
+                pDevice9If = pDevice->pDevice9If;
+                hr = pDevice->pDevice9If->CreateAdditionalSwapChain(&Params, &pNewIf);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
                     Assert(pNewIf);
                 }
-                else
-                {
-                    pDevice9If->Release();
-                }
             }
         }
-        else
-        {
-            pDevice9If = pDevice->pDevice9If;
-            hr = pDevice->pDevice9If->CreateAdditionalSwapChain(&Params, &pNewIf);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
-            {
-                Assert(pNewIf);
-            }
-        }
+    }
+    else
+    {
+        Assert(pOldIf);
+        Assert(hOldWnd);
+        pNewIf = pOldIf;
+        /* to ensure the swapchain is not deleted once we release the pOldIf */
+        pNewIf->AddRef();
+    }
 
-        if (hr == S_OK)
-        {
-            Assert(pNewIf);
-            pSwapchain->pSwapChainIf = pNewIf;
+    if (hr == S_OK)
+    {
+        Assert(pNewIf);
+        pSwapchain->pSwapChainIf = pNewIf;
 #ifndef VBOXWDDM_WITH_VISIBLE_FB
-            if (!pSwapchain->pRenderTargetFbCopy)
-            {
-                IDirect3DSurface9* pD3D9Surf;
-                hr = pDevice9If->CreateRenderTarget(
+        if (!pSwapchain->pRenderTargetFbCopy)
+        {
+            IDirect3DSurface9* pD3D9Surf;
+            hr = pDevice9If->CreateRenderTarget(
                                     Params.BackBufferWidth, Params.BackBufferHeight,
                                     Params.BackBufferFormat,
                                     Params.MultiSampleType,
@@ -1988,56 +2021,56 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
                                     &pD3D9Surf,
                                     NULL /* HANDLE* pSharedHandle */
                                     );
-                Assert(hr == S_OK);
-                if (hr == S_OK)
-                {
-                    Assert(pD3D9Surf);
-                    pSwapchain->pRenderTargetFbCopy = pD3D9Surf;
-                }
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                Assert(pD3D9Surf);
+                pSwapchain->pRenderTargetFbCopy = pD3D9Surf;
             }
+        }
 #endif
 
+        if (hr == S_OK)
+        {
+            for (UINT i = 0; i < cSurfs; ++i)
+            {
+                PVBOXWDDMDISP_RENDERTGT pRt = &pSwapchain->aRTs[i];
+                pRt->pAlloc->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
+            }
+
+            hr = vboxWddmSwapchainSynch(pDevice, pSwapchain);
+            Assert(hr == S_OK);
             if (hr == S_OK)
             {
                 for (UINT i = 0; i < cSurfs; ++i)
                 {
                     PVBOXWDDMDISP_RENDERTGT pRt = &pSwapchain->aRTs[i];
-                    pRt->pAlloc->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
+                    hr = vboxWddmSurfSynchMem(pRt->pAlloc->pRc, pRt->pAlloc);
+                    Assert(hr == S_OK);
+                    if (hr != S_OK)
+                    {
+                        break;
+                    }
                 }
 
-                hr = vboxWddmSwapchainSynch(pDevice, pSwapchain);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
-                    for (UINT i = 0; i < cSurfs; ++i)
+                    Assert(pSwapchain->fFlags.Value == 0);
+                    if (pOldIf)
                     {
-                        PVBOXWDDMDISP_RENDERTGT pRt = &pSwapchain->aRTs[i];
-                        hr = vboxWddmSurfSynchMem(pRt->pAlloc->pRc, pRt->pAlloc);
-                        Assert(hr == S_OK);
-                        if (hr != S_OK)
+                        Assert(hOldWnd);
+                        pOldIf->Release();
+                        if (hOldWnd != pSwapchain->hWnd)
                         {
-                            break;
-                        }
-                    }
-
-                    Assert(hr == S_OK);
-                    if (hr == S_OK)
-                    {
-                        Assert(pSwapchain->fFlags.Value == 0);
-                        if (pOldIf)
-                        {
-                            Assert(hOldWnd);
-                            pOldIf->Release();
-#ifdef VBOXDISP_NEWWND_ON_SWAPCHAINUPDATE
                             VBoxDispWndDestroy(pAdapter, hOldWnd);
-#endif
                         }
-                        else
-                        {
-                            Assert(!hOldWnd);
-                        }
-                        return S_OK;
                     }
+                    else
+                    {
+                        Assert(!hOldWnd);
+                    }
+                    return S_OK;
                 }
             }
             pNewIf->Release();
@@ -2045,9 +2078,7 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
         }
 
         Assert(hr != S_OK);
-#ifndef VBOXDISP_NEWWND_ON_SWAPCHAINUPDATE
-        if (!hOldWnd)
-#endif
+        if (hOldWnd != pSwapchain->hWnd)
         {
             HRESULT tmpHr = VBoxDispWndDestroy(pAdapter, pSwapchain->hWnd);
             Assert(tmpHr == S_OK);
@@ -5082,6 +5113,8 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
                 PVBOXWDDMDISP_RENDERTGT pRt = vboxWddmSwapchainRtForAlloc(pSwapchain, pAlloc);
                 vboxWddmSwapchainRtRemove(pSwapchain, pRt);
                 Assert(!vboxWddmSwapchainForAlloc(pAlloc));
+                if (!vboxWddmSwapchainNumRTs(pSwapchain))
+                    vboxWddmSwapchainDestroy(pDevice, pSwapchain);
             }
 
             EnterCriticalSection(&pDevice->DirtyAllocListLock);
