@@ -30,6 +30,7 @@
 #include <iprt/string.h>
 #include <iprt/rand.h>
 #include <iprt/zip.h>
+#include <iprt/asm.h>
 
 
 /*******************************************************************************
@@ -920,25 +921,8 @@ DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
         else
         {
             Marker.uType = RT_LE2H_U32(Marker.uType);
-            if (Marker.uType == VMDK_MARKER_EOS)
-            {
-                Assert(uMarker != VMDK_MARKER_EOS);
-                return VERR_VD_VMDK_INVALID_FORMAT;
-            }
-            else if (   Marker.uType == VMDK_MARKER_GT
-                     || Marker.uType == VMDK_MARKER_GD
-                     || Marker.uType == VMDK_MARKER_FOOTER)
-            {
-                uCompOffset = uOffset + 512;
-                cbComp = VMDK_SECTOR2BYTE(Marker.uSector);
-                if (pcbMarkerData)
-                    *pcbMarkerData = cbComp + 512;
-            }
-            else
-            {
-                AssertMsgFailed(("VMDK: unknown marker type %u\n", Marker.uType));
-                return VERR_VD_VMDK_INVALID_FORMAT;
-            }
+            AssertMsgFailed(("VMDK: unexpected marker type %u\n", Marker.uType));
+            return VERR_VD_VMDK_INVALID_FORMAT;
         }
         InflateState.pImage = pImage;
         InflateState.pFile = pVmdkFile;
@@ -1017,7 +1001,7 @@ DECLINLINE(int) vmdkFileDeflateSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
         }
         else
         {
-            /** @todo implement creating the other marker types */
+            /* The other markers don't contain compressed data. */
             return VERR_NOT_IMPLEMENTED;
         }
         DeflateState.pImage = pImage;
@@ -1064,7 +1048,7 @@ DECLINLINE(int) vmdkFileDeflateSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
             }
             else
             {
-                /** @todo implement creating the other marker types */
+                /* The other markers don't contain compressed data. */
                 return VERR_NOT_IMPLEMENTED;
             }
         }
@@ -1454,8 +1438,16 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         }
         if (RT_FAILURE(rc))
             goto out;
-        pExtent->uSectorRGD = uStartSector;
-        pExtent->uSectorGD = uStartSector + VMDK_BYTE2SECTOR(cbGDRounded + cbGTRounded);
+        if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+        {
+            pExtent->uSectorRGD = 0;
+            pExtent->uSectorGD = uStartSector;
+        }
+        else
+        {
+            pExtent->uSectorRGD = uStartSector;
+            pExtent->uSectorGD = uStartSector + VMDK_BYTE2SECTOR(cbGDRounded + cbGTRounded);
+        }
     }
     else
     {
@@ -1468,21 +1460,24 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         uint32_t uGTSectorLE;
         uint64_t uOffsetSectors;
 
-        uOffsetSectors = pExtent->uSectorRGD + VMDK_BYTE2SECTOR(cbGDRounded);
-        for (i = 0; i < pExtent->cGDEntries; i++)
+        if (pRGD)
         {
-            pRGD[i] = uOffsetSectors;
-            uGTSectorLE = RT_H2LE_U64(uOffsetSectors);
-            /* Write the redundant grain directory entry to disk. */
-            rc = vmdkFileWriteSync(pImage, pExtent->pFile,
-                                   VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + i * sizeof(uGTSectorLE),
-                                   &uGTSectorLE, sizeof(uGTSectorLE), NULL);
-            if (RT_FAILURE(rc))
+            uOffsetSectors = pExtent->uSectorRGD + VMDK_BYTE2SECTOR(cbGDRounded);
+            for (i = 0; i < pExtent->cGDEntries; i++)
             {
-                rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new redundant grain directory entry in '%s'"), pExtent->pszFullname);
-                goto out;
+                pRGD[i] = uOffsetSectors;
+                uGTSectorLE = RT_H2LE_U64(uOffsetSectors);
+                /* Write the redundant grain directory entry to disk. */
+                rc = vmdkFileWriteSync(pImage, pExtent->pFile,
+                                       VMDK_SECTOR2BYTE(pExtent->uSectorRGD) + i * sizeof(uGTSectorLE),
+                                       &uGTSectorLE, sizeof(uGTSectorLE), NULL);
+                if (RT_FAILURE(rc))
+                {
+                    rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write new redundant grain directory entry in '%s'"), pExtent->pszFullname);
+                    goto out;
+                }
+                uOffsetSectors += VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t));
             }
-            uOffsetSectors += VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t));
         }
 
         uOffsetSectors = pExtent->uSectorGD + VMDK_BYTE2SECTOR(cbGDRounded);
@@ -2784,9 +2779,7 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     if (    RT_LE2H_U32(Header.flags & RT_BIT(17))
         &&  RT_LE2H_U64(Header.gdOffset) == VMDK_GD_AT_END)
     {
-        /* Read the footer, which isn't compressed and comes before the
-         * end-of-stream marker. This is bending the VMDK 1.1 spec, but that's
-         * VMware reality. Theory and practice have very little in common. */
+        /* Read the footer, which comes before the end-of-stream marker. */
         uint64_t cbSize;
         rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbSize);
         AssertRC(rc);
@@ -4085,6 +4078,28 @@ static int vmdksFlushGT(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     int rc = VINF_SUCCESS;
     uint32_t cCacheLines = RT_ALIGN(pExtent->cGTEntries, VMDK_GT_CACHELINE_SIZE) / VMDK_GT_CACHELINE_SIZE;
 
+    /* VMware does not write out completely empty grain tables in the case
+     * of streamOptimized images, which according to my interpretation of
+     * the VMDK 1.1 spec is bending the rules. Since they do it and we can
+     * handle it without problems do it the same way and save some bytes. */
+    bool fAllZero = true;
+    for (uint32_t i = 0; i < cCacheLines; i++)
+    {
+        /* Convert the grain table to little endian in place, as it will not
+         * be used at all after this function has been called. */
+        uint32_t *pGTTmp = &pImage->pGTCache->aGTCache[i].aGTData[0];
+        for (uint32_t j = 0; j < VMDK_GT_CACHELINE_SIZE; j++, pGTTmp++)
+            if (*pGTTmp)
+            {
+                fAllZero = false;
+                break;
+            }
+        if (!fAllZero)
+            break;
+    }
+    if (fAllZero)
+        return VINF_SUCCESS;
+
     uint64_t uFileOffset;
     rc = vmdkFileGetSize(pImage, pExtent->pFile, &uFileOffset);
     AssertRC(rc);
@@ -4092,11 +4107,10 @@ static int vmdksFlushGT(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     uFileOffset = RT_ALIGN_64(uFileOffset, 512);
 
     /* Grain table marker. */
-    /** @todo check me! */
     uint8_t aMarker[512];
-    memset(aMarker, '\0', sizeof(aMarker));
     PVMDKMARKER pMarker = (PVMDKMARKER)&aMarker[0];
-    pMarker->cbSize = RT_H2LE_U32(pExtent->cGTEntries * sizeof(uint32_t));
+    memset(pMarker, '\0', sizeof(aMarker));
+    pMarker->uSector = RT_H2LE_U64(VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t)));
     pMarker->uType = RT_H2LE_U32(VMDK_MARKER_GT);
     rc = vmdkFileWriteSync(pImage, pExtent->pFile, uFileOffset,
                            aMarker, sizeof(aMarker), NULL);
@@ -4120,7 +4134,11 @@ static int vmdksFlushGT(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                                &pImage->pGTCache->aGTCache[i].aGTData[0],
                                VMDK_GT_CACHELINE_SIZE * sizeof(uint32_t),
                                NULL);
+        uFileOffset += VMDK_GT_CACHELINE_SIZE * sizeof(uint32_t);
+        if (RT_FAILURE(rc))
+            break;
     }
+    Assert(!(uFileOffset % 512));
     return rc;
 }
 
@@ -4145,12 +4163,13 @@ static int vmdksFreeImage(PVMDKIMAGE pImage, bool fDelete)
             }
         }
 
-        /* No need to write any pending data if the file will be deleted. */
-	if (!fDelete && pImage->pExtents)
+        /* No need to write any pending data if the file will be deleted or if
+         * the new file wasn't successfully created. */
+        if (!fDelete && pImage->pExtents && pImage->pExtents[0].cGTEntries)
         {
             PVMDKEXTENT pExtent = &pImage->pExtents[0];
             uint32_t uLastGDEntry = pExtent->uLastGrainWritten / pExtent->cGTEntries;
-            if (uLastGDEntry != pExtent->cGDEntries)
+            if (uLastGDEntry != pExtent->cGDEntries - 1)
             {
                 rc = vmdksFlushGT(pImage, pExtent, uLastGDEntry);
                 AssertRC(rc);
@@ -4168,11 +4187,10 @@ static int vmdksFreeImage(PVMDKIMAGE pImage, bool fDelete)
             uFileOffset = RT_ALIGN_64(uFileOffset, 512);
 
             /* Grain directory marker. */
-            /** @todo check me! */
             uint8_t aMarker[512];
-            memset(aMarker, '\0', sizeof(aMarker));
             PVMDKMARKER pMarker = (PVMDKMARKER)&aMarker[0];
-            pMarker->cbSize = RT_H2LE_U32(pExtent->cGDEntries * sizeof(uint32_t));
+            memset(pMarker, '\0', sizeof(aMarker));
+            pMarker->uSector = VMDK_BYTE2SECTOR(RT_ALIGN_64(RT_H2LE_U64(pExtent->cGDEntries * sizeof(uint32_t)), 512));
             pMarker->uType = RT_H2LE_U32(VMDK_MARKER_GD);
             rc = vmdkFileWriteSync(pImage, pExtent->pFile, uFileOffset,
                                    aMarker, sizeof(aMarker), NULL);
@@ -4194,15 +4212,23 @@ static int vmdksFreeImage(PVMDKIMAGE pImage, bool fDelete)
             pExtent->uSectorRGD = VMDK_BYTE2SECTOR(uFileOffset);
             uFileOffset = RT_ALIGN_64(uFileOffset + pExtent->cGDEntries * sizeof(uint32_t), 512);
 
-            /* End of stream marker. */
-            memset(aMarker, '\0', sizeof(aMarker));
-            /** @todo check me! */
+            /* Footer marker. */
+            memset(pMarker, '\0', sizeof(aMarker));
+            pMarker->uSector = VMDK_BYTE2SECTOR(512);
+            pMarker->uType = RT_H2LE_U32(VMDK_MARKER_FOOTER);
             rc = vmdkFileWriteSync(pImage, pExtent->pFile, uFileOffset,
                                    aMarker, sizeof(aMarker), NULL);
             AssertRC(rc);
 
             uFileOffset += 512;
             rc = vmdkWriteMetaSparseExtent(pImage, pExtent, uFileOffset);
+            AssertRC(rc);
+
+            uFileOffset += 512;
+            /* End-of-stream marker. */
+            memset(pMarker, '\0', sizeof(aMarker));
+            rc = vmdkFileWriteSync(pImage, pExtent->pFile, uFileOffset,
+                                   aMarker, sizeof(aMarker), NULL);
             AssertRC(rc);
         }
 
@@ -4997,8 +5023,6 @@ static int vmdkGetSectorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx,
         *puExtentSector = 0;
         return VINF_SUCCESS;
     }
-
-    LogFlowFunc(("uGTSector=%llu\n", uGTSector));
 
     uGTBlock = uSector / (pExtent->cSectorsPerGrain * VMDK_GT_CACHELINE_SIZE);
     uGTHash = vmdkGTCacheHash(pCache, uGTBlock, pExtent->uExtent);
@@ -5857,13 +5881,24 @@ static int vmdksWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
 
     /* Do not allow to go back. */
     uGrain = VMDK_BYTE2SECTOR(uOffset) / pExtent->cSectorsPerGrain;
-    uCacheLine = uGrain / VMDK_GT_CACHELINE_SIZE % VMDK_GT_CACHE_SIZE;
+    uCacheLine = uGrain % pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE;
     uCacheEntry = uGrain % VMDK_GT_CACHELINE_SIZE;
     uGDEntry = uGrain / pExtent->cGTEntries;
     uLastGDEntry = pExtent->uLastGrainWritten / pExtent->cGTEntries;
     if (uGrain < pExtent->uLastGrainWritten)
     {
         rc = VERR_VD_VMDK_INVALID_WRITE;
+        goto out;
+    }
+
+    /* Zero byte write optimization. Since we don't tell VBoxHDD that we need
+     * to allocate something, we also need to detect the situation ourself. */
+    if (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_ZEROES)
+        && ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)cbToWrite * 8) == -1)
+    {
+        rc = VINF_SUCCESS;
+        if (pcbWriteProcess)
+            *pcbWriteProcess = cbToWrite;
         goto out;
     }
 
