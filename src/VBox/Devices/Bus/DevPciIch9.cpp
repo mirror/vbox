@@ -102,6 +102,10 @@ typedef struct
     /** Actual bus number. */
     uint8_t             uBus;
 #endif
+    /* Physical address of PCI config space MMIO region */
+     uint64_t            u64PciConfigMMioAddress;
+    /* Length of PCI config space MMIO region */
+    uint64_t            u64PciConfigMMioLength;
 
 
     /** Config register. */
@@ -156,6 +160,8 @@ PDMBOTHCBDECL(int)  ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, 
 PDMBOTHCBDECL(int)  ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int)  ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int)  ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
+PDMBOTHCBDECL(int)  ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 
 RT_C_DECLS_END
 
@@ -497,6 +503,21 @@ static void ich9pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVI
 }
 
 #ifdef IN_RING3
+
+PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+{
+    //PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+    Assert(false);
+    return VINF_IOM_MMIO_UNUSED_FF;
+}
+
+PDMBOTHCBDECL(int)  ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+{
+    //PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+    Assert(false);
+    return VINF_IOM_MMIO_UNUSED_FF;
+}
+
 DECLINLINE(PPCIDEVICE) ich9pciFindBridge(PPCIBUS pBus, uint8_t iBus)
 {
     /* Search for a fitting bridge. */
@@ -825,7 +846,7 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
         { VBOX_PCI_INTERRUPT_LINE, 1, 1, 3, "INTERRUPT_LINE" },    // fBridge=??
         { VBOX_PCI_INTERRUPT_PIN, 1, 0, 3, "INTERRUPT_PIN" },     // fBridge=??
         { VBOX_PCI_MIN_GNT, 1, 0, 1, "MIN_GNT" },
-        { VBOX_PCI_BRIDGE_CONTROL, 2, 1, 2, "BRIDGE_CONTROL" },    // fWritable = !? 
+        { VBOX_PCI_BRIDGE_CONTROL, 2, 1, 2, "BRIDGE_CONTROL" },    // fWritable = !?
         { VBOX_PCI_MAX_LAT, 1, 0, 3, "MAX_LAT" },           // fBridge=!?
         /* The COMMAND register must come last as it requires the *ADDRESS*
            registers to be restored before we pretent to change it from 0 to
@@ -1722,7 +1743,13 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "IOAPIC\0" "GCEnabled\0" "R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfg, 
+                              "IOAPIC\0" 
+                              "GCEnabled\0" 
+                              "R0Enabled\0"
+                              "McfgBase\0"
+                              "McfgLength\0"
+                              ))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /* query whether we got an IOAPIC */
@@ -1745,6 +1772,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
+
     Log(("PCI: fUseIoApic=%RTbool fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fUseIoApic, fGCEnabled, fR0Enabled));
 
     /*
@@ -1758,6 +1786,15 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     if (!fUseIoApic)
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Must use IO-APIC with ICH9 chipset"));
+    rc = CFGMR3QueryU64Def(pCfg, "McfgBase", &pGlobals->u64PciConfigMMioAddress, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"McfgBase\""));
+    rc = CFGMR3QueryU64Def(pCfg, "McfgLength", &pGlobals->u64PciConfigMMioLength, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"McfgLength\""));
+
     pGlobals->pDevInsR3 = pDevIns;
     pGlobals->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pGlobals->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
@@ -1842,6 +1879,17 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x0cfc, 4, NIL_RTR0PTR, "ich9pciIOPortDataWrite", "ich9pciIOPortDataRead", NULL, NULL, "ICH9 (PCI)");
         if (RT_FAILURE(rc))
             return rc;
+    }
+
+    if (pGlobals->u64PciConfigMMioAddress != 0)
+    {
+        rc = PDMDevHlpMMIORegister(pDevIns, pGlobals->u64PciConfigMMioAddress, pGlobals->u64PciConfigMMioLength, pGlobals,
+                                   ich9pciMcfgMMIOWrite, ich9pciMcfgMMIORead, NULL, "MCFG ranges");
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgRC(rc, ("Cannot register MCFG MMIO: %Rrc\n", rc));
+            return rc;
+        }
     }
 
 

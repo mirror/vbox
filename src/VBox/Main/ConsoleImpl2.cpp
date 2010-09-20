@@ -528,7 +528,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         cRamMBs = RTStrToUInt64(RTEnvGet("VBOX_RAM_SIZE"));
 #endif
     uint64_t const cbRam = cRamMBs * (uint64_t)_1M;
-    uint32_t const cbRamHole = MM_RAM_HOLE_SIZE_DEFAULT;
+    uint32_t cbRamHole = MM_RAM_HOLE_SIZE_DEFAULT;
+    uint64_t u64McfgBase   = 0;
+    uint64_t u64McfgLength = 0;
+
+    ChipsetType_T chipsetType;
+    hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                               H();
+    if (chipsetType == ChipsetType_ICH9)
+    {
+        u64McfgLength = 0x10000000;
+        cbRamHole += u64McfgLength;
+        u64McfgBase = _4G -  cbRamHole;
+    }
 
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                        H();
@@ -2282,6 +2293,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 InsertConfigInteger(pCfg, "AudioPciAddress",    u32AudioPciAddr);
             }
             InsertConfigInteger(pCfg,  "IocPciAddress", u32IocPciAddress);
+            if (chipsetType == ChipsetType_ICH9)
+            {
+                InsertConfigInteger(pCfg,  "McfgBase",   u64McfgBase);
+                InsertConfigInteger(pCfg,  "McfgLength", u64McfgLength);
+            }
             InsertConfigInteger(pCfg,  "HostBusPciAddress", u32HbcPciAddress);
             InsertConfigInteger(pCfg,  "ShowCpu", fShowCpu);
             InsertConfigInteger(pCfg,  "CpuHotPlug", fCpuHotPlug);

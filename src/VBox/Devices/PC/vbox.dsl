@@ -146,7 +146,9 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         HDAA,  32, // HDA PCI address
         PWRS,  32, // power states
         IOCA,  32, // southbridge IO controller PCI address
-        HBCA,  32, // host bus controller address 
+        HBCA,  32, // host bus controller address
+        PCIB,  32, // PCI MCFG base start
+        PCIL,  32, // PCI MCFG length
         Offset (0x80),
         ININ, 32,
         Offset (0x200),
@@ -554,6 +556,37 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     APDE,   8,
                 }
 
+                // PCI MCFG MMIO ranges
+                Device (^PCIE)
+                {
+                    Name (_HID, EisaId ("PNP0C02"))
+                    Name (_UID, 0x11)
+                    Name (CRS, ResourceTemplate ()
+                    {
+                        Memory32Fixed (ReadOnly,
+                            0xE0000000,         // Address Base
+                            0x10000000,         // Address Length
+                            _Y13)
+                    })
+                    Method (_CRS, 0, NotSerialized)
+                    {
+                        CreateDWordField (CRS, \_SB.PCI0.PCIE._Y13._BAS, BAS1)
+                        CreateDWordField (CRS, \_SB.PCI0.PCIE._Y13._LEN, LEN1)
+                        Store (PCIB, BAS1)
+                        Store (PCIL, LEN1)
+                        Return (CRS)
+                    }
+                    Method (_STA, 0, NotSerialized)
+                    {
+                     if (LEqual (PCIB, Zero)) {
+                        Return (0x00)
+                     }
+                     else {
+                        Return (0x0E)
+                     }
+                    }
+                }
+
                 // Keyboard device
                 Device (PS2K)
                 {
@@ -823,7 +856,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                         Return (0x0F)
                     }
                  }
-            }
+            }            
+
 
             // Control method battery
             Device (BAT0)

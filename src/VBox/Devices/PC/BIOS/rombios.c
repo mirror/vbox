@@ -4808,12 +4808,28 @@ ASM_END
 #endif
                         set_e820_range(ES, regs.u.r16.di,
                                        0xfffc0000L, 0x00000000L, 0, 0, 2);
+                        /* Temporary disabled MCFG code */
+#if 0
+                        regs.u.r32.ebx = 6;
+                        break;
+                     case 6:
+                        /* PCI MMIO config space */
+                        set_e820_range(ES, regs.u.r16.di,
+                                       0xd0000000L, 0xe0000000L, 0, 0, 2);
+                        if (extra_highbits_memory_size || extra_lowbits_memory_size)
+                            regs.u.r32.ebx = 7;
+                        else
+                            regs.u.r32.ebx = 0;
+                        break;
+                    case 7:
+#else
                         if (extra_highbits_memory_size || extra_lowbits_memory_size)
                             regs.u.r32.ebx = 6;
                         else
                             regs.u.r32.ebx = 0;
                         break;
                     case 6:
+#endif
 #ifdef VBOX /* Don't succeeded if no memory above 4 GB.  */
                         /* Mapping of memory above 4 GB if present.
                            Note: set_e820_range needs do no borrowing in the
@@ -4824,8 +4840,8 @@ ASM_END
                                            0x00000000L, extra_lowbits_memory_size,
                                            1 /*GB*/, extra_highbits_memory_size + 1 /*GB*/, 1);
                             regs.u.r32.ebx = 0;
-                            break;
                         }
+                        break;
                         /* fall thru */
 #else  /* !VBOX */
                         /* Maping of memory above 4 GB */
