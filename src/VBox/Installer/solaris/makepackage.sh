@@ -211,6 +211,14 @@ $VBOX_AWK 'NF == 6 \
    { $4 = "4755" } { print }' prototype > prototype2
 mv -f prototype2 prototype
 
+# Our package is a non-relocatable package. pkgadd will take care of "relocating" them when they are used for
+# remote installations using $PKG_INSTALL_ROOT and not $BASEDIR. Seems this little subtlety led to it's own page:
+# http://docs.sun.com/app/docs/doc/820-4042/package-2?a=view
+filelist_fixup prototype  '$2 == "none"'                              '$3="/"$3'
+filelist_fixup prototype  '$2 == "manifest"'                          '$3="/"$3'
+symlink_fixup  prototype  '$2 == "none"'                              '$3="/"$3'
+hardlink_fixup prototype  '$2 == "none"'                              '$3="/"$3'
+
 echo " --- start of prototype  ---"
 cat prototype
 echo " --- end of prototype --- "
