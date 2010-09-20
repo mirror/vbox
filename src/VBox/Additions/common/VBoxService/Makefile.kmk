@@ -21,7 +21,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # Incldue testcases.
 #
-include	testcase/Makefile.kmk
+include	$(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 #
 # Target lists.
