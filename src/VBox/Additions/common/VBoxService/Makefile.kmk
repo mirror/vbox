@@ -19,6 +19,11 @@ SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
+# Incldue testcases.
+#
+include	testcase/Makefile.kmk
+
+#
 # Target lists.
 #
 PROGRAMS += VBoxService
