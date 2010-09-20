@@ -164,7 +164,9 @@ enum
     SYSTEM_INFO_INDEX_POWER_STATES      = 17,
     SYSTEM_INFO_INDEX_IOC_ADDRESS       = 18, /**< IO controller PCI address */
     SYSTEM_INFO_INDEX_HBC_ADDRESS       = 19, /**< host bus controller PCI address */
-    SYSTEM_INFO_INDEX_END               = 20,
+    SYSTEM_INFO_INDEX_PCI_BASE          = 20, /**< PCI bus MCFG MMIO range base */
+    SYSTEM_INFO_INDEX_PCI_LENGTH        = 21, /**< PCI bus MCFG MMIO range length */
+    SYSTEM_INFO_INDEX_END               = 22,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -277,6 +279,8 @@ typedef struct ACPIState
     uint32_t            u32HbcPciAddress;
     /* Physical address of PCI config space MMIO region */
     uint64_t            u64PciConfigMMioAddress;
+    /* Length of PCI config space MMIO region */
+    uint64_t            u64PciConfigMMioLength;
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -1013,10 +1017,7 @@ static void acpiSetupHPET(ACPIState *s, RTGCPHYS32 addr)
 }
 
 /** MMCONFIG PCI config space access (MCFG) descriptor */
-static void acpiSetupMCFG(ACPIState *s, RTGCPHYS32 addr,
-                          RTGCPHYS64 u64PciConfigBase,
-                          uint8_t    u8StartBus,
-                          uint8_t    u8EndBus)
+static void acpiSetupMCFG(ACPIState *s, RTGCPHYS32 addr, uint8_t    u8StartBus, uint8_t    u8EndBus)
 {
     struct {
         ACPITBLMCFG       hdr;
@@ -1026,7 +1027,7 @@ static void acpiSetupMCFG(ACPIState *s, RTGCPHYS32 addr,
     memset(&tbl, 0, sizeof(tbl));
 
     acpiPrepareHeader(&tbl.hdr.aHeader, "MCFG", sizeof(tbl), 1);
-    tbl.entry.u64BaseAddress = u64PciConfigBase;
+    tbl.entry.u64BaseAddress = s->u64PciConfigMMioAddress;
     tbl.entry.u8StartBus = u8StartBus;
     tbl.entry.u8EndBus = u8EndBus;
     // u16PciSegmentGroup must match _SEG in ACPI table
@@ -1622,6 +1623,18 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 
                 case SYSTEM_INFO_INDEX_HBC_ADDRESS:
                     *pu32 = s->u32HbcPciAddress;
+                    break;
+
+                case SYSTEM_INFO_INDEX_PCI_BASE:
+                    /** @todo: couldn't MCFG be in 64-bit range? */
+                    Assert(s->u64PciConfigMMioAddress< 0xffffffff);
+                    *pu32 = (uint32_t)s->u64PciConfigMMioAddress;
+                    break;
+
+                case SYSTEM_INFO_INDEX_PCI_LENGTH:
+                    /** @todo: couldn't MCFG be in 64-bit range? */
+                    Assert(s->u64PciConfigMMioLength< 0xffffffff);
+                    *pu32 = (uint32_t)s->u64PciConfigMMioLength;
                     break;
 
                 /* This is only for compatability with older saved states that
@@ -2308,7 +2321,7 @@ static int acpiPlantTables(ACPIState *s)
     }
     if (s->fUseMcfg)
     {
-        acpiSetupMCFG(s, GCPhysMcfg + addend, s->u64PciConfigMMioAddress, 0, 1);
+        acpiSetupMCFG(s, GCPhysMcfg + addend, 0, 255);
         aGCPhysRsdt[iMcfg] = GCPhysMcfg + addend;
         aGCPhysXsdt[iMcfg] = GCPhysMcfg + addend;
     }
@@ -2529,6 +2542,8 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "R0Enabled\0"
                               "HpetEnabled\0"
                               "McfgEnabled\0"
+                              "McfgBase\0"
+                              "McfgLength\0"
                               "SmcEnabled\0"
                               "FdcEnabled\0"
                               "ShowRtc\0"
@@ -2570,12 +2585,16 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"HpetEnabled\""));
-    /* query whether we are supposed to present HPET */
+    /* query MCFG configuartion */
     rc = CFGMR3QueryU64Def(pCfg, "McfgBase", &s->u64PciConfigMMioAddress, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"McfgBase\""));
-    s->fUseMcfg = (s->u64PciConfigMMioAddress != 0);
+    rc = CFGMR3QueryU64Def(pCfg, "McfgLength", &s->u64PciConfigMMioLength, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"McfgLength\""));
+    s->fUseMcfg = (s->u64PciConfigMMioAddress != 0) && (s->u64PciConfigMMioLength != 0);
 
     /* query whether we are supposed to present SMC */
     rc = CFGMR3QueryBoolDef(pCfg, "SmcEnabled", &s->fUseSmc, false);
