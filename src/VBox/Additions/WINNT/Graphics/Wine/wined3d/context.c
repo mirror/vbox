@@ -854,7 +854,7 @@ static void context_destroy_gl_resources(struct wined3d_context *context)
 
     context_validate(context
 #ifdef VBOX_WITH_WDDM/* tmp work-around */
-            , (IWineD3DSwapChainImpl*)context->device->swapchains[context->device->NumberOfSwapChains-1]
+            , NULL //(IWineD3DSwapChainImpl*)context->device->swapchains[context->device->NumberOfSwapChains-1]
 #endif
             );
     if (context->valid && restore_ctx != context->glCtx) pwglMakeCurrent(context->hdc, context->glCtx);
@@ -1610,7 +1610,9 @@ BOOL context_acquire_context(struct wined3d_context * context, IWineD3DSurface *
         }
         else {
                                                                                                     /* tmp work-around */
-            context_validate(current_context, (IWineD3DSwapChainImpl*)current_context->device->swapchains[current_context->device->NumberOfSwapChains-1]);
+            context_validate(current_context,
+                    NULL //(IWineD3DSwapChainImpl*)current_context->device->swapchains[current_context->device->NumberOfSwapChains-1]
+                                                                                );
         }
     }
     context_setup_target(device, context, target);
@@ -2042,7 +2044,9 @@ static struct wined3d_context *FindContext(IWineD3DDeviceImpl *This, IWineD3DSur
         }
         else {
                                                                                                     /* tmp work-around */
-            context_validate(current_context, (IWineD3DSwapChainImpl*)current_context->device->swapchains[current_context->device->NumberOfSwapChains-1]);
+            context_validate(current_context,
+                    NULL //(IWineD3DSwapChainImpl*)current_context->device->swapchains[current_context->device->NumberOfSwapChains-1]
+                                                                                );
         }
 #else
         context_validate(current_context);
@@ -2090,7 +2094,7 @@ static struct wined3d_context *FindContext(IWineD3DDeviceImpl *This, IWineD3DSur
         }
 #ifdef VBOX_WITH_WDDM
         context_validate(context,
-                (IWineD3DSwapChainImpl*)This->swapchains[This->NumberOfSwapChains-1] /* tmp work-around */
+                NULL //(IWineD3DSwapChainImpl*)This->swapchains[This->NumberOfSwapChains-1] /* tmp work-around */
                                  );
 #endif
     }
