@@ -263,14 +263,14 @@ start() {
 stop() {
     if test -f $PIDFILE; then
         begin "Stopping VirtualBox Guest Addition service ";
-        vboxaddrunning || {
-            echo "VirtualBox Additions module not loaded!"
-            exit 1
-        }
         killproc $binary
         RETVAL=$?
-        test $RETVAL -eq 0 && rm -f $PIDFILE
-        succ_msg
+        if ! pidof VBoxService > /dev/null 2>&1; then
+            rm -f $PIDFILE
+            succ_msg
+        else
+            fail_msg
+        fi
     fi
     return $RETVAL
 }
@@ -279,14 +279,14 @@ restart() {
     stop && start
 }
 
-    status() {
-        echo -n "Checking for VBoxService"
-        if [ -f $PIDFILE ]; then
-            echo " ...running"
-        else
-            echo " ...not running"
-        fi
-    }
+status() {
+    echo -n "Checking for VBoxService"
+    if [ -f $PIDFILE ]; then
+        echo " ...running"
+    else
+        echo " ...not running"
+    fi
+}
 
 case "$1" in
 start)
