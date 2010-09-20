@@ -830,10 +830,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * PCI buses.
          */
-        ChipsetType_T chipsetType;
-        hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                H();
         uint32_t u32IocPciAddress, u32HbcPciAddress;
-
         switch (chipsetType)
         {
             default:
