@@ -766,11 +766,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 Log(("VMMDevReq_SetPointerShape: visible: %d, alpha: %d, shape = %d, width: %d, height: %d\n",
                      fVisible, fAlpha, fShape, pointerShape->width, pointerShape->height));
 
-                if (      pRequestHeader->size
-                       != vmmdevGetMousePointerReqSize(pointerShape->width,
-                                                       pointerShape->height)
-                    || !pointerShape->width
-                    || !pointerShape->height)
+                if (pRequestHeader->size == sizeof(VMMDevReqMousePointer))
                 {
                     /* The guest did not provide the shape actually. */
                     fShape = false;
