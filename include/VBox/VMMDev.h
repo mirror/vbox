@@ -342,6 +342,24 @@ typedef struct VMMDevReqMousePointer
 } VMMDevReqMousePointer;
 AssertCompileSize(VMMDevReqMousePointer, 24+24);
 
+/**
+ * Get the size that a VMMDevReqMousePointer request should have for a given
+ * size of cursor, including the trailing cursor image and mask data.
+ * @note an "empty" request still has the four preallocated bytes of data
+ * 
+ * @returns the size
+ * @param  width   the cursor width
+ * @param  height  the cursor height
+ */
+DECLINLINE(size_t) vmmdevGetMousePointerReqSize(uint32_t width, uint32_t height)
+{
+    size_t cbBase = RT_OFFSETOF(VMMDevReqMousePointer, pointerData);
+    size_t cbMask = (width + 7) / 8 * height;
+    size_t cbArgb = width * height * 4;
+    return RT_MAX(cbBase + ((cbMask + 3) & ~3) + cbArgb,
+                  sizeof(VMMDevReqMousePointer));
+}
+
 /** @name VMMDevReqMousePointer::fFlags
  * @note The VBOX_MOUSE_POINTER_* flags are used in the guest video driver,
  *       values must be <= 0x8000 and must not be changed. (try make more sense

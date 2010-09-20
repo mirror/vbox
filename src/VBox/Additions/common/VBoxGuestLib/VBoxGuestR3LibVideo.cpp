@@ -98,7 +98,12 @@ VBGLR3DECL(int) VbglR3VideoAccelFlush(void)
 VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, const void *pvImg, size_t cbImg)
 {
     VMMDevReqMousePointer *pReq;
-    int rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq, RT_OFFSETOF(VMMDevReqMousePointer, pointerData) + cbImg, VMMDevReq_SetPointerShape);
+    size_t cbReq = vmmdevGetMousePointerReqSize(cx, cy);
+    AssertReturn(   !pvImg
+                 || cbReq == RT_OFFSETOF(VMMDevReqMousePointer, pointerData) + cbImg,
+                 VERR_INVALID_PARAMETER);
+    int rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq, cbReq,
+                           VMMDevReq_SetPointerShape);
     if (RT_SUCCESS(rc))
     {
         pReq->fFlags = fFlags;
@@ -110,9 +115,9 @@ VBGLR3DECL(int) VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t y
             memcpy(pReq->pointerData, pvImg, cbImg);
 
         rc = vbglR3GRPerform(&pReq->header);
-        vbglR3GRFree(&pReq->header);
         if (RT_SUCCESS(rc))
             rc = pReq->header.rc;
+        vbglR3GRFree(&pReq->header);
     }
     return rc;
 }
