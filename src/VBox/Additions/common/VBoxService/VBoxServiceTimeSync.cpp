@@ -256,7 +256,7 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncOption(const char **ppszShort, int a
         g_fTimeSyncSetNext = true;
         rc = VINF_SUCCESS;
     }
-    else if (!strcmp(argv[*pi], "----timesync-set-on-restore"))
+    else if (!strcmp(argv[*pi], "--timesync-set-on-restore"))
         rc = VBoxServiceArgUInt32(argc, argv, "", pi,
                                   &value, 1, 1);
     {
