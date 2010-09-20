@@ -895,6 +895,8 @@ static int codecSetConfigX(struct CODECState *pState, uint32_t cmd, uint8_t u8Of
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F1c_param;
     else if (STAC9220_IS_CD_CMD(cmd))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
+    else if (CODEC_NID(cmd) == 0x1B)
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
     Assert((pu32Reg));
     if (pu32Reg)
         codecSetRegisterU8(pu32Reg, cmd, u8Offset);
@@ -1172,6 +1174,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xE] = 0x1;
             pNode->node.au8F02_param[0] = 0x1a;
             pNode->reserved.u32F07_param = 0;
+            pNode->reserved.u32F1c_param = 0x400000fb; /* dumped from real stac9220 chip */
             break;
         default:
         break;

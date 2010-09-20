@@ -186,6 +186,7 @@ typedef struct RESNODE
 {
     CODECCOMMONNODE node;
     uint32_t    u32F07_param;
+    uint32_t    u32F1c_param;
 } RESNODE, *PRESNODE;
 
 typedef union CODECNODE
