@@ -40,6 +40,7 @@
 # include <VBox/sup.h>
 # include "tstRTR0Timer.h"
 #endif
+#include "tstRTR0CommonDriver.h"
 
 
 int main(int argc, char **argv)
@@ -51,153 +52,28 @@ int main(int argc, char **argv)
     /*
      * Init.
      */
-    RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstRTR0Timer", &hTest);
-    if (rc)
-        return rc;
-    RTTestBanner(hTest);
+    RTEXITCODE rcExit = RTR3TestR0CommonDriverInit("tstRTR0Timer");
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
 
-    PSUPDRVSESSION pSession;
-    rc = SUPR3Init(&pSession);
-    if (RT_FAILURE(rc))
-    {
-        RTTestFailed(hTest, "SUPR3Init failed with rc=%Rrc\n", rc);
-        return RTTestSummaryAndDestroy(hTest);
-    }
-
-    char szPath[RTPATH_MAX];
-    rc = RTPathExecDir(szPath, sizeof(szPath));
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szPath, sizeof(szPath), "tstRTR0Timer.r0");
-    if (RT_FAILURE(rc))
-    {
-        RTTestFailed(hTest, "Failed constructing .r0 filename (rc=%Rrc)", rc);
-        return RTTestSummaryAndDestroy(hTest);
-    }
-
-    void *pvImageBase;
-    rc = SUPR3LoadServiceModule(szPath, "tstRTR0Timer", "TSTRTR0TimerSrvReqHandler", &pvImageBase);
-    if (RT_FAILURE(rc))
-    {
-        RTTestFailed(hTest, "SUPR3LoadServiceModule(%s,,,) failed with rc=%Rrc\n", szPath, rc);
-        return RTTestSummaryAndDestroy(hTest);
-    }
-
-    /* test request */
-    struct
-    {
-        SUPR0SERVICEREQHDR  Hdr;
-        char                szMsg[256];
-    } Req;
-
-    /*
-     * Sanity checks.
-     */
-    RTTestSub(hTest, "Sanity");
-    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0Timer", sizeof("tstRTR0Timer") - 1,
-                                             TSTRTR0TIMER_SANITY_OK, 0, &Req.Hdr), VINF_SUCCESS);
-    if (RT_FAILURE(rc))
-        return RTTestSummaryAndDestroy(hTest);
-    RTTESTI_CHECK_MSG(Req.szMsg[0] == '\0', ("%s", Req.szMsg));
-    if (Req.szMsg[0] != '\0')
-        return RTTestSummaryAndDestroy(hTest);
-
-    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0Timer", sizeof("tstRTR0Timer") - 1,
-                                             TSTRTR0TIMER_SANITY_FAILURE, 0, &Req.Hdr), VINF_SUCCESS);
-    if (RT_FAILURE(rc))
-        return RTTestSummaryAndDestroy(hTest);
-    RTTESTI_CHECK_MSG(!strncmp(Req.szMsg, "!42failure42", sizeof("!42failure42") - 1), ("%s", Req.szMsg));
-    if (strncmp(Req.szMsg, "!42failure42", sizeof("!42failure42") - 1))
-        return RTTestSummaryAndDestroy(hTest);
-
-#if 0
     /*
      * Basic tests, bail out on failure.
      */
-    RTTestSub(hTest, "Basics");
-    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0Timer", sizeof("tstRTR0Timer") - 1,
-                                             TSTRTR0TIMER_BASIC, (uintptr_t)pbPage, &Req.Hdr), VINF_SUCCESS);
-    if (RT_FAILURE(rc))
-        return RTTestSummaryAndDestroy(hTest);
-    if (Req.szMsg[0] == '!')
+    RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_BASIC,       "Basic one shot");
+    RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES, "Basic hires one shot");
+    RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_BASIC,       "Basic periodic");
+    RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_BASIC_HIRES, "Basic hires periodic");
+    if (RTTestErrorCount(g_hTest) == 0)
     {
-        RTTestIFailed("%s", &Req.szMsg[1]);
-        return RTTestSummaryAndDestroy(hTest);
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART, "Restart one shot from callback");
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES, "Restart hires one shot from callback");
     }
-    if (Req.szMsg[0])
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
 
-    /*
-     * Good buffer, bail out on failure.
-     */
-    RTTestSub(hTest, "Good buffer");
-    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0Timer", sizeof("tstRTR0Timer") - 1,
-                                             TSTRTR0TIMER_GOOD, (uintptr_t)pbPage, &Req.Hdr), VINF_SUCCESS);
-    if (RT_FAILURE(rc))
-        return RTTestSummaryAndDestroy(hTest);
-    if (Req.szMsg[0] == '!')
-    {
-        RTTestIFailed("%s", &Req.szMsg[1]);
-        return RTTestSummaryAndDestroy(hTest);
-    }
-    if (Req.szMsg[0])
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
-
-    /*
-     * Bad buffer, bail out on failure.
-     */
-    RTTestSub(hTest, "Bad buffer");
-    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0Timer", sizeof("tstRTR0Timer") - 1,
-                                             TSTRTR0TIMER_BAD, (uintptr_t)pbPage + PAGE_SIZE, &Req.Hdr), VINF_SUCCESS);
-    if (RT_FAILURE(rc))
-        return RTTestSummaryAndDestroy(hTest);
-    if (Req.szMsg[0] == '!')
-    {
-        RTTestIFailed("%s", &Req.szMsg[1]);
-        return RTTestSummaryAndDestroy(hTest);
-    }
-    if (Req.szMsg[0])
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
-
-    /*
-     * Bad buffer, bail out on failure.
-     */
-    RTTestSub(hTest, "Kernel buffer");
-    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0Timer", sizeof("tstRTR0Timer") - 1,
-                                             TSTRTR0TIMER_INVALID_ADDRESS, (uintptr_t)pvImageBase, &Req.Hdr), VINF_SUCCESS);
-    if (RT_FAILURE(rc))
-        return RTTestSummaryAndDestroy(hTest);
-    if (Req.szMsg[0] == '!')
-    {
-        RTTestIFailed("%s", &Req.szMsg[1]);
-        return RTTestSummaryAndDestroy(hTest);
-    }
-    if (Req.szMsg[0])
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
-# endif
 
     /*
      * Done.
      */
-    return RTTestSummaryAndDestroy(hTest);
+    return RTTestSummaryAndDestroy(g_hTest);
 #endif
 }
 

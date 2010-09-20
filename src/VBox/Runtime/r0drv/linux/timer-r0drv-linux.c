@@ -50,21 +50,6 @@
 # define RTTIMER_LINUX_HAVE_HRTIMER
 #endif
 
-/** @def RTTIMER_LINUX_ONLY_HRTIMER
- * Whether to use high resolution timers for everything or not.  Implies
- * RTTIMER_LINUX_WITH_HRTIMER. */
-#if !defined(RTTIMER_LINUX_ONLY_HRTIMER) \
-    && defined(RTTIMER_LINUX_HAVE_HRTIMER) \
-    && 0 /* currently disabled */
-# define RTTIMER_LINUX_ONLY_HRTIMER
-#endif
-
-/* This check must match the ktime usage in rtTimeGetSystemNanoTS() / time-r0drv-linux.c. */
-#if defined(RTTIMER_LINUX_ONLY_HRTIMER) \
- && !defined(RTTIMER_LINUX_HAVE_HRTIMER)
-# error "RTTIMER_LINUX_ONLY_HRTIMER requires 2.6.28 or later, sorry."
-#endif
-
 /** @def RTTIMER_LINUX_WITH_HRTIMER
  * Whether to use high resolution timers.  */
 #if !defined(RTTIMER_LINUX_WITH_HRTIMER) \
@@ -97,6 +82,14 @@ typedef enum RTTIMERLNXSTATE
     RTTIMERLNXSTATE_MP_STARTING,
     /** Active. */
     RTTIMERLNXSTATE_ACTIVE,
+    /** Active and in callback; next ACTIVE, STOPPED or CALLBACK_DESTROYING. */
+    RTTIMERLNXSTATE_CALLBACK,
+    /** Stopped while in the callback; next STOPPED. */
+    RTTIMERLNXSTATE_CB_STOPPING,
+    /** Restarted while in the callback; next ACTIVE, STOPPED, DESTROYING. */
+    RTTIMERLNXSTATE_CB_RESTARTING,
+    /** The callback shall destroy the timer; next STOPPED. */
+    RTTIMERLNXSTATE_CB_DESTROYING,
     /** Transient state; next STOPPED. */
     RTTIMERLNXSTATE_STOPPING,
     /** Transient state; next STOPPED. */
@@ -122,7 +115,6 @@ typedef struct RTTIMERLNXSUBTIMER
             struct hrtimer          LnxTimer;
         } Hr;
 #endif
-#ifndef RTTIMER_LINUX_ONLY_HRTIMER
         /** Standard timer. */
         struct
         {
@@ -137,10 +129,12 @@ typedef struct RTTIMERLNXSUBTIMER
             /** The u64NextTS in jiffies. */
             unsigned long           ulNextJiffies;
         } Std;
-#endif
     } u;
     /** The current tick number (since u.Std.u64StartTS). */
     uint64_t                iTick;
+    /** Restart the single shot timer at this specific time.
+     * Used when a single shot timer is restarted from the callback. */
+    uint64_t volatile       uNsRestartAt;
     /** Pointer to the parent timer. */
     PRTTIMER                pParent;
     /** The current sub-timer state. */
@@ -182,11 +176,9 @@ typedef struct RTTIMER
     void                   *pvUser;
     /** The timer interval. 0 if one-shot. */
     uint64_t volatile       u64NanoInterval;
-#ifndef RTTIMER_LINUX_ONLY_HRTIMER
     /** This is set to the number of jiffies between ticks if the interval is
-     * an exact number of jiffies. */
+     * an exact number of jiffies. (Standard timers only.) */
     unsigned long           cJiffies;
-#endif
     /** Sub-timers.
      * Normally there is just one, but for RTTIMER_FLAGS_CPU_ALL this will contain
      * an entry for all possible cpus. In that case the index will be the same as
@@ -207,6 +199,14 @@ typedef struct RTTIMERLINUXSTARTONCPUARGS
 } RTTIMERLINUXSTARTONCPUARGS;
 /** Pointer to a rtTimerLinuxStartOnCpu argument package. */
 typedef RTTIMERLINUXSTARTONCPUARGS *PRTTIMERLINUXSTARTONCPUARGS;
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+#ifdef CONFIG_SMP
+static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
+#endif
 
 
 /**
@@ -269,7 +269,6 @@ DECLINLINE(uint64_t) rtTimerLnxKtToNano(ktime_t Kt)
 
 #endif /* RTTIMER_LINUX_WITH_HRTIMER */
 
-#ifndef RTTIMER_LINUX_ONLY_HRTIMER
 /**
  * Converts a nano second interval to jiffies.
  *
@@ -287,7 +286,6 @@ DECLINLINE(unsigned long) rtTimerLnxNanoToJiffies(uint64_t cNanoSecs)
 # endif
     return (cNanoSecs + (TICK_NSEC-1)) / TICK_NSEC;
 }
-#endif /* !RTTIMER_LINUX_ONLY_HRTIMER */
 
 
 /**
@@ -299,6 +297,7 @@ DECLINLINE(unsigned long) rtTimerLnxNanoToJiffies(uint64_t cNanoSecs)
  * @param   fPinned     true = timer pinned to a specific CPU,
  *                      false = timer can migrate between CPUs
  * @param   fHighRes    Whether the user requested a high resolution timer or not.
+ * @param   enmOldState The old timer state.
  */
 static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64Now, uint64_t u64First,
                                     bool fPinned, bool fHighRes)
@@ -307,67 +306,230 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
      * Calc when it should start firing.
      */
     uint64_t u64NextTS = u64Now + u64First;
-#ifndef RTTIMER_LINUX_ONLY_HRTIMER
     if (fHighRes)
     {
         pSubTimer->u.Std.u64StartTS = u64NextTS;
         pSubTimer->u.Std.u64NextTS  = u64NextTS;
     }
-#endif
 
     pSubTimer->iTick = 0;
 
 #ifdef RTTIMER_LINUX_WITH_HRTIMER
-# ifndef RTTIMER_LINUX_ONLY_HRTIMER
     if (fHighRes)
-# endif
         hrtimer_start(&pSubTimer->u.Hr.LnxTimer, rtTimerLnxNanoToKt(u64NextTS),
                       fPinned ? HRTIMER_MODE_ABS_PINNED : HRTIMER_MODE_ABS);
-# ifndef RTTIMER_LINUX_ONLY_HRTIMER
     else
-# endif
 #endif
-#ifndef RTTIMER_LINUX_ONLY_HRTIMER
     {
         unsigned long cJiffies = !u64First ? 0 : rtTimerLnxNanoToJiffies(u64First);
         pSubTimer->u.Std.ulNextJiffies = jiffies + cJiffies;
-# ifdef CONFIG_SMP
+#ifdef CONFIG_SMP
         if (fPinned)
             mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
         else
-# endif
+#endif
             mod_timer(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
     }
-#endif
 
-    rtTimerLnxSetState(&pSubTimer->enmState, RTTIMERLNXSTATE_ACTIVE);
+    /* Be a bit careful here since we could be racing the callback. */
+    if (!rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_ACTIVE, RTTIMERLNXSTATE_STARTING))
+        rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_ACTIVE, RTTIMERLNXSTATE_MP_STARTING);
 }
 
 
 /**
  * Stops a sub-timer (RTTimerStart and rtTimerLinuxMpEvent()).
  *
- * @param   pSubTimer       The sub-timer.
+ * The caller has already changed the state, so we will not be in a callback
+ * situation wrt to the calling thread.
+ *
+ * @param   pSubTimer   The sub-timer.
+ * @param   fHighRes    Whether the user requested a high resolution timer or not.
  */
-static void rtTimerLnxStopSubTimer(PRTTIMERLNXSUBTIMER pSubTimer)
+static void rtTimerLnxStopSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, bool fHighRes)
 {
 #ifdef RTTIMER_LINUX_WITH_HRTIMER
-# ifndef RTTIMER_LINUX_ONLY_HRTIMER
-    if (pSubTimer->pParent->fHighRes)
-# endif
+    if (fHighRes)
         hrtimer_cancel(&pSubTimer->u.Hr.LnxTimer);
-# ifndef RTTIMER_LINUX_ONLY_HRTIMER
     else
-# endif
 #endif
-# ifndef RTTIMER_LINUX_ONLY_HRTIMER
     {
         if (timer_pending(&pSubTimer->u.Std.LnxTimer))
             del_timer_sync(&pSubTimer->u.Std.LnxTimer);
     }
-#endif
 
     rtTimerLnxSetState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED);
+}
+
+
+/**
+ * Used by RTTimerDestroy and rtTimerLnxCallbackDestroy to do the actual work.
+ *
+ * @param   pTimer  The timer in question.
+ */
+static void rtTimerLnxDestroyIt(PRTTIMER pTimer)
+{
+    RTSPINLOCK hSpinlock = pTimer->hSpinlock;
+    Assert(pTimer->fSuspended);
+
+    /*
+     * Remove the MP notifications first because it'll reduce the risk of
+     * us overtaking any MP event that might theoretically be racing us here.
+     */
+#ifdef CONFIG_SMP
+    if (    pTimer->cCpus > 1
+        &&  hSpinlock != NIL_RTSPINLOCK)
+    {
+        int rc = RTMpNotificationDeregister(rtTimerLinuxMpEvent, pTimer);
+        AssertRC(rc);
+    }
+#endif /* CONFIG_SMP */
+
+    /*
+     * Uninitialize the structure and free the associated resources.
+     * The spinlock goes last.
+     */
+    ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
+    RTMemFree(pTimer);
+    if (hSpinlock != NIL_RTSPINLOCK)
+        RTSpinlockDestroy(hSpinlock);
+}
+
+
+/**
+ * Called when the timer was destroyed by the callback function.
+ *
+ * @param   pTimer      The timer.
+ * @param   pSubTimer   The sub-timer which we're handling, the state of this
+ *                      will be RTTIMERLNXSTATE_CALLBACK_DESTROYING.
+ */
+static void rtTimerLnxCallbackDestroy(PRTTIMER pTimer, PRTTIMERLNXSUBTIMER pSubTimer)
+{
+    /*
+     * If it's an omni timer, the last dude does the destroying.
+     */
+    if (pTimer->cCpus > 1)
+    {
+        bool            fAllStopped = true;
+        uint32_t        iCpu        = pTimer->cCpus;
+        RTSPINLOCKTMP   Tmp         = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
+
+        Assert(pSubTimer->enmState == RTTIMERLNXSTATE_CB_DESTROYING);
+        rtTimerLnxSetState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED);
+
+        while (iCpu-- > 0)
+            if (rtTimerLnxGetState(&pTimer->aSubTimers[iCpu].enmState) != RTTIMERLNXSTATE_STOPPED)
+            {
+                RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+                return;
+            }
+
+        RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+    }
+
+    rtTimerLnxDestroyIt(pTimer);
+}
+
+
+#ifdef CONFIG_SMP
+/**
+ * Deal with a sub-timer that has migrated.
+ *
+ * @param   pTimer          The timer.
+ * @param   pSubTimer       The sub-timer.
+ */
+static void rtTimerLnxCallbackHandleMigration(PRTTIMER pTimer, PRTTIMERLNXSUBTIMER pSubTimer)
+{
+    RTTIMERLNXSTATE enmState;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    if (pTimer->cCpus > 1)
+        RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
+
+    do
+    {
+        enmState = rtTimerLnxGetState(&pSubTimer->enmState);
+        switch (enmState)
+        {
+            case RTTIMERLNXSTATE_STOPPING:
+            case RTTIMERLNXSTATE_MP_STOPPING:
+                enmState = RTTIMERLNXSTATE_STOPPED;
+            case RTTIMERLNXSTATE_STOPPED:
+                break;
+
+            default:
+                AssertMsgFailed(("%d\n", enmState));
+            case RTTIMERLNXSTATE_STARTING:
+            case RTTIMERLNXSTATE_MP_STARTING:
+            case RTTIMERLNXSTATE_ACTIVE:
+            case RTTIMERLNXSTATE_CALLBACK:
+            case RTTIMERLNXSTATE_CB_STOPPING:
+            case RTTIMERLNXSTATE_CB_RESTARTING:
+                if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED, enmState))
+                    enmState = RTTIMERLNXSTATE_STOPPED;
+                break;
+
+            case RTTIMERLNXSTATE_CB_DESTROYING:
+            {
+                if (pTimer->cCpus > 1)
+                    RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+
+                rtTimerLnxCallbackDestroy(pTimer, pSubTimer);
+                return;
+            }
+        }
+    } while (enmState != RTTIMERLNXSTATE_STOPPED);
+
+    if (pTimer->cCpus > 1)
+        RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+}
+#endif /* CONFIG_SMP */
+
+
+/**
+ * The slow path of rtTimerLnxChangeToCallbackState.
+ *
+ * @returns true if changed successfully, false if not.
+ * @param   pSubTimer       The sub-timer.
+ */
+static bool rtTimerLnxChangeToCallbackStateSlow(PRTTIMERLNXSUBTIMER pSubTimer)
+{
+    for (;;)
+    {
+        RTTIMERLNXSTATE enmState = rtTimerLnxGetState(&pSubTimer->enmState);
+        switch (enmState)
+        {
+            case RTTIMERLNXSTATE_ACTIVE:
+            case RTTIMERLNXSTATE_STARTING:
+            case RTTIMERLNXSTATE_MP_STARTING:
+                if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_CALLBACK, enmState))
+                    return true;
+                break;
+
+            case RTTIMERLNXSTATE_CALLBACK:
+            case RTTIMERLNXSTATE_CB_STOPPING:
+            case RTTIMERLNXSTATE_CB_RESTARTING:
+            case RTTIMERLNXSTATE_CB_DESTROYING:
+                AssertMsgFailed(("%d\n", enmState));
+            default:
+                return false;
+        }
+        ASMNopPause();
+    }
+}
+
+
+/**
+ * Tries to change the sub-timer state to 'callback'.
+ *
+ * @returns true if changed successfully, false if not.
+ * @param   pSubTimer       The sub-timer.
+ */
+DECLINLINE(bool) rtTimerLnxChangeToCallbackState(PRTTIMERLNXSUBTIMER pSubTimer)
+{
+    if (RT_LIKELY(rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_CALLBACK, RTTIMERLNXSTATE_ACTIVE)))
+        return true;
+    return rtTimerLnxChangeToCallbackStateSlow(pSubTimer);
 }
 
 
@@ -383,62 +545,84 @@ static enum hrtimer_restart rtTimerLinuxHrCallback(struct hrtimer *pHrTimer)
 {
     PRTTIMERLNXSUBTIMER     pSubTimer = RT_FROM_MEMBER(pHrTimer, RTTIMERLNXSUBTIMER, u.Hr.LnxTimer);
     PRTTIMER                pTimer    = pSubTimer->pParent;
-    enum hrtimer_restart    rc;
 
-    /*
-     * Don't call the handler if the timer has been suspended.
-     * Also, when running on all CPUS, make sure we don't call out twice
-     * on a CPU because of timer migration.
-     *
-     * For the specific cpu case, we're just ignoring timer migration for now... (bad)
-     */
-    if (    ASMAtomicUoReadBool(&pTimer->fSuspended)
+
+    if (RT_UNLIKELY(!rtTimerLnxChangeToCallbackState(pSubTimer)))
+        return HRTIMER_NORESTART;
+
 #ifdef CONFIG_SMP
-        ||  (   pTimer->fAllCpus
-             && (RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) != RTMpCpuId())
-#endif
-       )
+    /*
+     * Check for unwanted migration.
+     */
+    if (   pTimer->fAllCpus
+        && RT_LIKELY((RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) == RTMpCpuId()))
     {
-        rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED, RTTIMERLNXSTATE_ACTIVE);
-        rc = HRTIMER_NORESTART;
+        rtTimerLnxCallbackHandleMigration(pTimer, pSubTimer);
+        return HRTIMER_NORESTART;
     }
-    else if (!pTimer->u64NanoInterval)
+#endif
+
+    if (pTimer->u64NanoInterval)
     {
         /*
-         * One shot timer, stop it before dispatching it.
+         * Periodic timer, run it and update the native timer afterwards so
+         * we can handle RTTimerStop and RTTimerChangeInterval from the
+         * callback as well as a racing control thread.
          */
-        if (pTimer->cCpus == 1)
-            ASMAtomicWriteBool(&pTimer->fSuspended, true);
-        rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED, RTTIMERLNXSTATE_ACTIVE);
-        rc = HRTIMER_NORESTART;
         pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pSubTimer->iTick);
+        hrtimer_add_expires_ns(&pSubTimer->u.Hr.LnxTimer, ASMAtomicReadU64(&pTimer->u64NanoInterval));
+        if (RT_LIKELY(rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_ACTIVE, RTTIMERLNXSTATE_CALLBACK)))
+            return HRTIMER_RESTART;
     }
     else
     {
         /*
-         * Run the timer.  Update the timer after calling the method.
+         * One shot timer (no omni), stop it before dispatching it.
+         * Allow RTTimerStart as well as RTTimerDestroy to be called from
+         * the callback.
          */
-        const uint64_t iTick = ++pSubTimer->iTick;
-        pTimer->pfnTimer(pTimer, pTimer->pvUser, iTick);
-
-        /** @todo Check reference counting wrt. RTTimerDestroy from the
-         *        callback? */
-        if (   pSubTimer->enmState == RTTIMERLNXSTATE_ACTIVE
-            || pSubTimer->enmState == RTTIMERLNXSTATE_MP_STARTING)
-        {
-            hrtimer_add_expires_ns(&pSubTimer->u.Hr.LnxTimer, ASMAtomicReadU64(&pTimer->u64NanoInterval));
-            rc = HRTIMER_RESTART;
-        }
-        else
-            rc = HRTIMER_NORESTART;
+        ASMAtomicWriteBool(&pTimer->fSuspended, true);
+        pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pSubTimer->iTick);
+        if (RT_LIKELY(rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED, RTTIMERLNXSTATE_CALLBACK)))
+            return HRTIMER_NORESTART;
     }
 
-    return rc;
+    /*
+     * Some state change occured while we were in the callback routine.
+     */
+    for (;;)
+    {
+        RTTIMERLNXSTATE enmState = rtTimerLnxGetState(&pSubTimer->enmState);
+        switch (enmState)
+        {
+            case RTTIMERLNXSTATE_CB_DESTROYING:
+                rtTimerLnxCallbackDestroy(pTimer, pSubTimer);
+                return HRTIMER_NORESTART;
+
+            case RTTIMERLNXSTATE_CB_STOPPING:
+                if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED, RTTIMERLNXSTATE_CB_STOPPING))
+                    return HRTIMER_NORESTART;
+                break;
+
+            case RTTIMERLNXSTATE_CB_RESTARTING:
+                if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_ACTIVE, RTTIMERLNXSTATE_CB_RESTARTING))
+                {
+                    pSubTimer->iTick = 0;
+                    hrtimer_set_expires(&pSubTimer->u.Hr.LnxTimer, rtTimerLnxNanoToKt(pSubTimer->uNsRestartAt));
+                    return HRTIMER_RESTART;
+                }
+                break;
+
+            default:
+                AssertMsgFailed(("%d\n", enmState));
+                return HRTIMER_NORESTART;
+        }
+        ASMNopPause();
+    }
 }
-#endif /* RTTIMER_LINUX_ONLY_HRTIMER */
+#endif /* RTTIMER_LINUX_WITH_HRTIMER */
 
 
-#ifndef RTTIMER_LINUX_ONLY_HRTIMER
 /**
  * Timer callback function for standard timers.
  *
@@ -449,43 +633,31 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
     PRTTIMERLNXSUBTIMER pSubTimer = (PRTTIMERLNXSUBTIMER)ulUser;
     PRTTIMER            pTimer    = pSubTimer->pParent;
 
-    /*
-     * Don't call the handler if the timer has been suspended.
-     * Also, when running on all CPUS, make sure we don't call out twice
-     * on a CPU because of timer migration.
-     *
-     * For the specific cpu case, we're just ignoring timer migration for now... (bad)
-     */
-    if (    ASMAtomicUoReadBool(&pTimer->fSuspended)
+    if (RT_UNLIKELY(!rtTimerLnxChangeToCallbackState(pSubTimer)))
+        return;
+
 #ifdef CONFIG_SMP
-        ||  (   pTimer->fAllCpus
-             && (RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) != RTMpCpuId())
-#endif
-       )
-        rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED, RTTIMERLNXSTATE_ACTIVE);
-    else if (!pTimer->u64NanoInterval)
+    /*
+     * Check for unwanted migration.
+     */
+    if (   pTimer->fAllCpus
+        && RT_LIKELY((RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) == RTMpCpuId()))
     {
-        /*
-         * One shot timer, stop it before dispatching it.
-         */
-        if (pTimer->cCpus == 1)
-            ASMAtomicWriteBool(&pTimer->fSuspended, true);
-        rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED, RTTIMERLNXSTATE_ACTIVE);
-        pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pSubTimer->iTick);
+        rtTimerLnxCallbackHandleMigration(pTimer, pSubTimer);
+        return;
     }
-    else
+#endif
+
+    if (pTimer->u64NanoInterval)
     {
         /*
          * Interval timer, calculate the next timeout and re-arm it.
          *
          * The first time around, we'll re-adjust the u.Std.u64StartTS to
          * try prevent some jittering if we were started at a bad time.
-         * This may of course backfire with highres timers...
-         *
-         * Note! u64NanoInterval won't change for standard timers.
          */
-        const uint64_t iTick            = ++pSubTimer->iTick;
         const uint64_t u64NanoInterval  = pTimer->u64NanoInterval;
+        const uint64_t iTick            = ++pSubTimer->iTick;
         const uint64_t u64NanoTS        = RTTimeNanoTS();
 
         if (RT_UNLIKELY(iTick == 1))
@@ -504,7 +676,7 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
             while (time_before(pSubTimer->u.Std.ulNextJiffies, jiffies))
             {
                 pSubTimer->u.Std.ulNextJiffies += pTimer->cJiffies;
-                pSubTimer->u.Std.u64NextTS += u64NanoInterval;
+                pSubTimer->u.Std.u64NextTS     += u64NanoInterval;
             }
         }
         else
@@ -514,21 +686,83 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
             pSubTimer->u.Std.ulNextJiffies = jiffies + rtTimerLnxNanoToJiffies(pSubTimer->u.Std.u64NextTS - u64NanoTS);
         }
 
-# ifdef CONFIG_SMP
+#ifdef CONFIG_SMP
         if (pTimer->fSpecificCpu || pTimer->fAllCpus)
             mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
         else
-# endif
+#endif
             mod_timer(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
 
         /*
          * Run the timer.
          */
         pTimer->pfnTimer(pTimer, pTimer->pvUser, iTick);
+        if (RT_LIKELY(rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_ACTIVE, RTTIMERLNXSTATE_CALLBACK)))
+            return;
+    }
+    else
+    {
+        /*
+         * One shot timer, stop it before dispatching it.
+         * Allow RTTimerStart as well as RTTimerDestroy to be called from
+         * the callback.
+         */
+        ASMAtomicWriteBool(&pTimer->fSuspended, true);
+        pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pSubTimer->iTick);
+        if (RT_LIKELY(rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED, RTTIMERLNXSTATE_CALLBACK)))
+            return;
+    }
+
+    /*
+     * Some state change occured while we were in the callback routine.
+     */
+    if (pTimer->u64NanoInterval)
+        del_timer_sync(&pSubTimer->u.Std.LnxTimer);
+    for (;;)
+    {
+        RTTIMERLNXSTATE enmState = rtTimerLnxGetState(&pSubTimer->enmState);
+        switch (enmState)
+        {
+            case RTTIMERLNXSTATE_CB_DESTROYING:
+                rtTimerLnxCallbackDestroy(pTimer, pSubTimer);
+                return;
+
+            case RTTIMERLNXSTATE_CB_STOPPING:
+                if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED, RTTIMERLNXSTATE_CB_STOPPING))
+                    return;
+                break;
+
+            case RTTIMERLNXSTATE_CB_RESTARTING:
+                if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_ACTIVE, RTTIMERLNXSTATE_CB_RESTARTING))
+                {
+                    const uint64_t u64NanoTS = RTTimeNanoTS();
+                    const uint64_t u64NextTS = pSubTimer->uNsRestartAt;
+                    if (pTimer->fHighRes)
+                    {
+                        pSubTimer->u.Std.u64StartTS = u64NextTS;
+                        pSubTimer->u.Std.u64NextTS  = u64NextTS;
+                    }
+                    pSubTimer->iTick = 0;
+                    pSubTimer->u.Std.ulNextJiffies = u64NextTS > u64NanoTS
+                                                   ? jiffies + rtTimerLnxNanoToJiffies(u64NextTS - u64NanoTS)
+                                                   : jiffies;
+#ifdef CONFIG_SMP
+                    if (pTimer->fSpecificCpu || pTimer->fAllCpus)
+                        mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
+                    else
+#endif
+                        mod_timer(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
+                    return;
+                }
+                break;
+
+            default:
+                AssertMsgFailed(("%d\n", enmState));
+                return;
+        }
+        ASMNopPause();
     }
 }
-#endif /* !RTTIMER_LINUX_ONLY_HRTIMER */
-
 
 
 #ifdef CONFIG_SMP
@@ -556,7 +790,7 @@ static DECLCALLBACK(void) rtTimerLnxStartAllOnCpu(RTCPUID idCpu, void *pvUser1, 
  * @param   pTimer      The timer.
  * @param   pArgs       The argument structure.
  */
-static int rtTimerLnxStartAll(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs)
+static int rtTimerLnxOmniStart(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs)
 {
     RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTCPUID         iCpu;
@@ -571,6 +805,14 @@ static int rtTimerLnxStartAll(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs
      * should something happen while we're looping.
      */
     RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
+
+    /* Just make it a omni timer restriction that no stop/start races are allowed. */
+    for (iCpu = 0; iCpu < pTimer->cCpus; iCpu++)
+        if (rtTimerLnxGetState(&pTimer->aSubTimers[iCpu].enmState) != RTTIMERLNXSTATE_STOPPED)
+        {
+            RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+            return VERR_TIMER_BUSY;
+        }
 
     do
     {
@@ -599,7 +841,6 @@ static int rtTimerLnxStartAll(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs
 
     /*
      * Reset the sub-timers who didn't start up (ALL CPUs case).
-     * CPUs that comes online between the
      */
     RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
 
@@ -621,11 +862,13 @@ static int rtTimerLnxStartAll(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs
 /**
  * Worker for RTTimerStop() that takes care of the ugly SMP bits.
  *
- * @returns RTTimerStop() return value.
+ * @returns true if there was any active callbacks, false if not.
  * @param   pTimer      The timer (valid).
+ * @param   fForDestroy Whether this is for RTTimerDestroy or not.
  */
-static int rtTimerLnxStopAll(PRTTIMER pTimer)
+static bool rtTimerLnxOmniStop(PRTTIMER pTimer, bool fForDestroy)
 {
+    bool            fActiveCallbacks = false;
     RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTCPUID         iCpu;
 
@@ -640,14 +883,33 @@ static int rtTimerLnxStopAll(PRTTIMER pTimer)
     for (iCpu = 0; iCpu < pTimer->cCpus; iCpu++)
     {
         RTTIMERLNXSTATE enmState;
-        do
+        for (;;)
         {
             enmState = rtTimerLnxGetState(&pTimer->aSubTimers[iCpu].enmState);
             if (    enmState == RTTIMERLNXSTATE_STOPPED
                 ||  enmState == RTTIMERLNXSTATE_MP_STOPPING)
                 break;
-            Assert(enmState == RTTIMERLNXSTATE_ACTIVE);
-        } while (!rtTimerLnxCmpXchgState(&pTimer->aSubTimers[iCpu].enmState, RTTIMERLNXSTATE_STOPPING, enmState));
+            if (   enmState == RTTIMERLNXSTATE_CALLBACK
+                || enmState == RTTIMERLNXSTATE_CB_STOPPING
+                || enmState == RTTIMERLNXSTATE_CB_RESTARTING)
+            {
+                Assert(enmState != RTTIMERLNXSTATE_CB_STOPPING || fForDestroy);
+                if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[iCpu].enmState,
+                                           !fForDestroy ? RTTIMERLNXSTATE_CB_STOPPING : RTTIMERLNXSTATE_CB_DESTROYING,
+                                           enmState))
+                {
+                    fActiveCallbacks = true;
+                    break;
+                }
+            }
+            else
+            {
+                Assert(enmState == RTTIMERLNXSTATE_ACTIVE);
+                if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[iCpu].enmState, RTTIMERLNXSTATE_STOPPING, enmState))
+                    break;
+            }
+            ASMNopPause();
+        }
     }
 
     RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
@@ -659,9 +921,9 @@ static int rtTimerLnxStopAll(PRTTIMER pTimer)
      */
     for (iCpu = 0; iCpu < pTimer->cCpus; iCpu++)
         if (rtTimerLnxGetState(&pTimer->aSubTimers[iCpu].enmState) == RTTIMERLNXSTATE_STOPPING)
-            rtTimerLnxStopSubTimer(&pTimer->aSubTimers[iCpu]);
+            rtTimerLnxStopSubTimer(&pTimer->aSubTimers[iCpu], pTimer->fHighRes);
 
-    return VINF_SUCCESS;
+    return fActiveCallbacks;
 }
 
 
@@ -714,10 +976,10 @@ static DECLCALLBACK(void) rtTimerLinuxMpStartOnCpu(RTCPUID idCpu, void *pvUser1,
  */
 static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser)
 {
-    PRTTIMER            pTimer = (PRTTIMER)pvUser;
+    PRTTIMER            pTimer    = (PRTTIMER)pvUser;
     PRTTIMERLNXSUBTIMER pSubTimer = &pTimer->aSubTimers[idCpu];
+    RTSPINLOCKTMP       Tmp       = RTSPINLOCKTMP_INITIALIZER;
     RTSPINLOCK          hSpinlock;
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     Assert(idCpu < pTimer->cCpus);
 
@@ -769,14 +1031,30 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
              * timer function is checking for this.
              */
             case RTMPEVENT_OFFLINE:
-                if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_MP_STOPPING, RTTIMERLNXSTATE_ACTIVE))
+            {
+                RTTIMERLNXSTATE enmState;
+                while (   (enmState = rtTimerLnxGetState(&pSubTimer->enmState)) == RTTIMERLNXSTATE_ACTIVE
+                       || enmState == RTTIMERLNXSTATE_CALLBACK
+                       || enmState == RTTIMERLNXSTATE_CB_RESTARTING)
                 {
-                    RTSpinlockRelease(hSpinlock, &Tmp);
+                    if (enmState == RTTIMERLNXSTATE_ACTIVE)
+                    {
+                        if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_MP_STOPPING, RTTIMERLNXSTATE_ACTIVE))
+                        {
+                            RTSpinlockRelease(hSpinlock, &Tmp);
 
-                    rtTimerLnxStopSubTimer(pSubTimer);
-                    return; /* we've left the spinlock */
+                            rtTimerLnxStopSubTimer(pSubTimer, pTimer->fHighRes);
+                            return; /* we've left the spinlock */
+                        }
+                    }
+                    else if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_CB_STOPPING, enmState))
+                        break;
+
+                    /* State not stable, try again. */
+                    ASMNopPause();
                 }
                 break;
+            }
         }
     }
 
@@ -787,8 +1065,8 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
 
 
 /**
- * Callback function use by RTTimerStart via RTMpOnSpecific to start
- * a timer running on a specific CPU.
+ * Callback function use by RTTimerStart via RTMpOnSpecific to start a timer
+ * running on a specific CPU.
  *
  * @param   idCpu       The current CPU.
  * @param   pvUser1     Pointer to the timer.
@@ -819,42 +1097,131 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     Args.u64First = u64First;
 #ifdef CONFIG_SMP
     /*
-     * Omnit timer?
+     * Omni timer?
      */
     if (pTimer->fAllCpus)
-        return rtTimerLnxStartAll(pTimer, &Args);
+        return rtTimerLnxOmniStart(pTimer, &Args);
 #endif
 
     /*
-     * Simple timer - Pretty straight forward.
+     * Simple timer - Pretty straight forward if it wasn't for restarting.
      */
     Args.u64Now = RTTimeNanoTS();
-    rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STARTING);
-    ASMAtomicWriteBool(&pTimer->fSuspended, false);
-    if (!pTimer->fSpecificCpu)
+    ASMAtomicWriteU64(&pTimer->aSubTimers[0].uNsRestartAt, Args.u64Now + u64First);
+    for (;;)
     {
-        rtTimerLnxStartSubTimer(&pTimer->aSubTimers[0], Args.u64Now, Args.u64First, false /*fPinned*/, pTimer->fHighRes);
-    }
-    else
-    {
-        rc2 = RTMpOnSpecific(pTimer->idCpu, rtTimerLnxStartOnSpecificCpu, pTimer, &Args);
-        if (RT_FAILURE(rc2))
+        RTTIMERLNXSTATE enmState = rtTimerLnxGetState(&pTimer->aSubTimers[0].enmState);
+        switch (enmState)
         {
-            /* Suspend it, the cpu id is probably invalid or offline. */
-            ASMAtomicWriteBool(&pTimer->fSuspended, true);
-            rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STOPPED);
-            return rc2;
-        }
-    }
+            case RTTIMERLNXSTATE_STOPPED:
+                if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STARTING, RTTIMERLNXSTATE_STOPPED))
+                {
+                    ASMAtomicWriteBool(&pTimer->fSuspended, false);
+                    if (!pTimer->fSpecificCpu)
+                        rtTimerLnxStartSubTimer(&pTimer->aSubTimers[0], Args.u64Now, Args.u64First,
+                                                false /*fPinned*/, pTimer->fHighRes);
+                    else
+                    {
+                        rc2 = RTMpOnSpecific(pTimer->idCpu, rtTimerLnxStartOnSpecificCpu, pTimer, &Args);
+                        if (RT_FAILURE(rc2))
+                        {
+                            /* Suspend it, the cpu id is probably invalid or offline. */
+                            ASMAtomicWriteBool(&pTimer->fSuspended, true);
+                            rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STOPPED);
+                            return rc2;
+                        }
+                    }
+                    return VINF_SUCCESS;
+                }
+                break;
 
-    return VINF_SUCCESS;
+            case RTTIMERLNXSTATE_CALLBACK:
+            case RTTIMERLNXSTATE_CB_STOPPING:
+                if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_ACTIVE, enmState))
+                {
+                    ASMAtomicWriteBool(&pTimer->fSuspended, false);
+                    return VINF_SUCCESS;
+                }
+                break;
+
+            default:
+                AssertMsgFailed(("%d\n", enmState));
+                return VERR_INTERNAL_ERROR_4;
+        }
+        ASMNopPause();
+    }
 }
 RT_EXPORT_SYMBOL(RTTimerStart);
 
 
+/**
+ * Common worker for RTTimerStop and RTTimerDestroy.
+ *
+ * @returns true if there was any active callbacks, false if not.
+ * @param   pTimer              The timer to stop.
+ * @param   fForDestroy         Whether it's RTTimerDestroy calling or not.
+ */
+static bool rtTimerLnxStop(PRTTIMER pTimer, bool fForDestroy)
+{
+#ifdef CONFIG_SMP
+    /*
+     * Omni timer?
+     */
+    if (pTimer->fAllCpus)
+        return rtTimerLnxOmniStop(pTimer, fForDestroy);
+#endif
+
+    /*
+     * Simple timer.
+     */
+    ASMAtomicWriteBool(&pTimer->fSuspended, true);
+    for (;;)
+    {
+        RTTIMERLNXSTATE enmState = rtTimerLnxGetState(&pTimer->aSubTimers[0].enmState);
+        switch (enmState)
+        {
+            case RTTIMERLNXSTATE_ACTIVE:
+                if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_MP_STOPPING, RTTIMERLNXSTATE_ACTIVE))
+                {
+                    rtTimerLnxStopSubTimer(&pTimer->aSubTimers[0], pTimer->fHighRes);
+                    return false;
+                }
+                break;
+
+            case RTTIMERLNXSTATE_CALLBACK:
+            case RTTIMERLNXSTATE_CB_RESTARTING:
+            case RTTIMERLNXSTATE_CB_STOPPING:
+                Assert(enmState != RTTIMERLNXSTATE_CB_STOPPING || fForDestroy);
+                if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[0].enmState,
+                                           !fForDestroy ? RTTIMERLNXSTATE_STOPPED : RTTIMERLNXSTATE_CB_DESTROYING,
+                                           enmState))
+                    return true;
+                break;
+
+            case RTTIMERLNXSTATE_STOPPED:
+                return VINF_SUCCESS;
+
+            case RTTIMERLNXSTATE_CB_DESTROYING:
+                AssertMsgFailed(("enmState=%d pTimer=%p\n", enmState, pTimer));
+                return true;
+
+            default:
+            case RTTIMERLNXSTATE_STARTING:
+            case RTTIMERLNXSTATE_MP_STARTING:
+            case RTTIMERLNXSTATE_STOPPING:
+            case RTTIMERLNXSTATE_MP_STOPPING:
+                AssertMsgFailed(("enmState=%d pTimer=%p\n", enmState, pTimer));
+                return false;
+        }
+
+        /* State not stable, try again. */
+        ASMNopPause();
+    }
+}
+
+
 RTDECL(int) RTTimerStop(PRTTIMER pTimer)
 {
-
     /*
      * Validate.
      */
@@ -864,21 +1231,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     if (ASMAtomicUoReadBool(&pTimer->fSuspended))
         return VERR_TIMER_SUSPENDED;
 
-#ifdef CONFIG_SMP
-    /*
-     * Omni timer?
-     */
-    if (pTimer->fAllCpus)
-        return rtTimerLnxStopAll(pTimer);
-#endif
-
-    /*
-     * Simple timer.
-     */
-    ASMAtomicWriteBool(&pTimer->fSuspended, true);
-    rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STOPPING);
-    rtTimerLnxStopSubTimer(&pTimer->aSubTimers[0]);
-
+    rtTimerLnxStop(pTimer, false /*fForDestroy*/);
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTTimerStop);
@@ -886,8 +1239,6 @@ RT_EXPORT_SYMBOL(RTTimerStop);
 
 RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
 {
-    int rc = VINF_SUCCESS;
-
     /*
      * Validate.
      */
@@ -895,65 +1246,87 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(u64NanoInterval, VERR_INVALID_PARAMETER);
 
-    /*
-     * Make the change.
-     */
 #ifdef RTTIMER_LINUX_WITH_HRTIMER
-# ifndef RTTIMER_LINUX_ONLY_HRTIMER
+    /*
+     * For the high resolution timers it is easy since we don't care so much
+     * about when it is applied to the sub-timers.
+     */
     if (pTimer->fHighRes)
-# endif
+    {
         ASMAtomicWriteU64(&pTimer->u64NanoInterval, u64NanoInterval);
-# ifndef RTTIMER_LINUX_ONLY_HRTIMER
-    else
-# endif
-#endif
-#ifndef RTTIMER_LINUX_ONLY_HRTIMER
-        rc = VERR_NOT_SUPPORTED; /** @todo Implement this if needed. */
+        return VINF_SUCCESS;
+    }
 #endif
 
-    return rc;
+    /*
+     * Standard timers have a bit more complicated way of calculating
+     * their interval and such. So, forget omni timers for now.
+     */
+    if (pTimer->cCpus > 1)
+        return VERR_NOT_SUPPORTED;
+    RTTimerStop(pTimer);
+    return RTTimerStart(pTimer, u64NanoInterval);
 }
 RT_EXPORT_SYMBOL(RTTimerChangeInterval);
 
 
 RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
 {
-    RTSPINLOCK hSpinlock;
+    bool fCanDestroy;
 
-    /* It's ok to pass NULL pointer. */
+    /*
+     * Validate. It's ok to pass NULL pointer.
+     */
     if (pTimer == /*NIL_RTTIMER*/ NULL)
         return VINF_SUCCESS;
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
 
     /*
-     * Remove the MP notifications first because it'll reduce the risk of
-     * us overtaking any MP event that might theoretically be racing us here.
-     */
-    hSpinlock = pTimer->hSpinlock;
-#ifdef CONFIG_SMP
-    if (    pTimer->cCpus > 1
-        &&  hSpinlock != NIL_RTSPINLOCK)
-    {
-        int rc = RTMpNotificationDeregister(rtTimerLinuxMpEvent, pTimer);
-        AssertRC(rc);
-    }
-#endif /* CONFIG_SMP */
-
-    /*
-     * Stop the timer if it's running.
+     * Stop the timer if it's still active, then destroy it if we can.
      */
     if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
-        RTTimerStop(pTimer);
+        fCanDestroy = rtTimerLnxStop(pTimer, true /*fForDestroy*/);
+    else
+    {
+        uint32_t        iCpu = pTimer->cCpus;
+        RTSPINLOCKTMP   Tmp  = RTSPINLOCKTMP_INITIALIZER;
+        if (pTimer->cCpus > 1)
+            RTSpinlockAcquireNoInts(pTimer->hSpinlock, &Tmp);
 
-    /*
-     * Uninitialize the structure and free the associated resources.
-     * The spinlock goes last.
-     */
-    ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
-    RTMemFree(pTimer);
-    if (hSpinlock != NIL_RTSPINLOCK)
-        RTSpinlockDestroy(hSpinlock);
+        fCanDestroy = true;
+        while (iCpu-- > 0)
+        {
+            for (;;)
+            {
+                RTTIMERLNXSTATE enmState = rtTimerLnxGetState(&pTimer->aSubTimers[iCpu].enmState);
+                switch (enmState)
+                {
+                    case RTTIMERLNXSTATE_CALLBACK:
+                    case RTTIMERLNXSTATE_CB_RESTARTING:
+                    case RTTIMERLNXSTATE_CB_STOPPING:
+                        if (!rtTimerLnxCmpXchgState(&pTimer->aSubTimers[iCpu].enmState, RTTIMERLNXSTATE_CB_DESTROYING, enmState))
+                            continue;
+                        fCanDestroy = false;
+                        break;
+
+                    case RTTIMERLNXSTATE_CB_DESTROYING:
+                        AssertMsgFailed(("%d\n", enmState));
+                        fCanDestroy = false;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            }
+        }
+
+        if (pTimer->cCpus > 1)
+            RTSpinlockReleaseNoInts(pTimer->hSpinlock, &Tmp);
+    }
+
+    if (fCanDestroy)
+        rtTimerLnxDestroyIt(pTimer);
 
     return VINF_SUCCESS;
 }
@@ -998,55 +1371,49 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     /*
      * Initialize it.
      */
-    pTimer->u32Magic = RTTIMER_MAGIC;
-    pTimer->hSpinlock = NIL_RTSPINLOCK;
-    pTimer->fSuspended = true;
-    pTimer->fHighRes = !!(fFlags & RTTIMER_FLAGS_HIGH_RES);
+    pTimer->u32Magic        = RTTIMER_MAGIC;
+    pTimer->hSpinlock       = NIL_RTSPINLOCK;
+    pTimer->fSuspended      = true;
+    pTimer->fHighRes        = !!(fFlags & RTTIMER_FLAGS_HIGH_RES);
 #ifdef CONFIG_SMP
-    pTimer->fSpecificCpu = (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC) && (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL;
-    pTimer->fAllCpus = (fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL;
-    pTimer->idCpu = pTimer->fSpecificCpu ? RTMpCpuIdFromSetIndex(fFlags & RTTIMER_FLAGS_CPU_MASK) : NIL_RTCPUID;
+    pTimer->fSpecificCpu    = (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC) && (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL;
+    pTimer->fAllCpus        = (fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL;
+    pTimer->idCpu           = pTimer->fSpecificCpu
+                            ? RTMpCpuIdFromSetIndex(fFlags & RTTIMER_FLAGS_CPU_MASK)
+                            : NIL_RTCPUID;
 #else
-    pTimer->fSpecificCpu = !!(fFlags & RTTIMER_FLAGS_CPU_SPECIFIC);
-    pTimer->idCpu = RTMpCpuId();
+    pTimer->fSpecificCpu    = !!(fFlags & RTTIMER_FLAGS_CPU_SPECIFIC);
+    pTimer->idCpu           = RTMpCpuId();
 #endif
-    pTimer->cCpus = cCpus;
-    pTimer->pfnTimer = pfnTimer;
-    pTimer->pvUser = pvUser;
+    pTimer->cCpus           = cCpus;
+    pTimer->pfnTimer        = pfnTimer;
+    pTimer->pvUser          = pvUser;
     pTimer->u64NanoInterval = u64NanoInterval;
-#ifndef RTTIMER_LINUX_ONLY_HRTIMER
-    pTimer->cJiffies = u64NanoInterval / RTTimerGetSystemGranularity();
+    pTimer->cJiffies        = u64NanoInterval / RTTimerGetSystemGranularity();
     if (pTimer->cJiffies * RTTimerGetSystemGranularity() != u64NanoInterval)
-        pTimer->cJiffies = 0;
-#endif
+        pTimer->cJiffies    = 0;
 
     for (iCpu = 0; iCpu < cCpus; iCpu++)
     {
 #ifdef RTTIMER_LINUX_WITH_HRTIMER
-# ifndef RTTIMER_LINUX_ONLY_HRTIMER
         if (pTimer->fHighRes)
-# endif
         {
             hrtimer_init(&pTimer->aSubTimers[iCpu].u.Hr.LnxTimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
-            pTimer->aSubTimers[iCpu].u.Hr.LnxTimer.function = rtTimerLinuxHrCallback;
+            pTimer->aSubTimers[iCpu].u.Hr.LnxTimer.function     = rtTimerLinuxHrCallback;
         }
-# ifndef RTTIMER_LINUX_ONLY_HRTIMER
         else
-# endif
 #endif
-#ifndef RTTIMER_LINUX_ONLY_HRTIMER
         {
             init_timer(&pTimer->aSubTimers[iCpu].u.Std.LnxTimer);
-            pTimer->aSubTimers[iCpu].u.Std.LnxTimer.data     = (unsigned long)&pTimer->aSubTimers[iCpu];
-            pTimer->aSubTimers[iCpu].u.Std.LnxTimer.function = rtTimerLinuxStdCallback;
-            pTimer->aSubTimers[iCpu].u.Std.LnxTimer.expires  = jiffies;
-            pTimer->aSubTimers[iCpu].u.Std.u64StartTS = 0;
-            pTimer->aSubTimers[iCpu].u.Std.u64NextTS = 0;
+            pTimer->aSubTimers[iCpu].u.Std.LnxTimer.data        = (unsigned long)&pTimer->aSubTimers[iCpu];
+            pTimer->aSubTimers[iCpu].u.Std.LnxTimer.function    = rtTimerLinuxStdCallback;
+            pTimer->aSubTimers[iCpu].u.Std.LnxTimer.expires     = jiffies;
+            pTimer->aSubTimers[iCpu].u.Std.u64StartTS           = 0;
+            pTimer->aSubTimers[iCpu].u.Std.u64NextTS            = 0;
         }
-#endif
-        pTimer->aSubTimers[iCpu].iTick = 0;
-        pTimer->aSubTimers[iCpu].pParent = pTimer;
-        pTimer->aSubTimers[iCpu].enmState = RTTIMERLNXSTATE_STOPPED;
+        pTimer->aSubTimers[iCpu].iTick      = 0;
+        pTimer->aSubTimers[iCpu].pParent    = pTimer;
+        pTimer->aSubTimers[iCpu].enmState   = RTTIMERLNXSTATE_STOPPED;
     }
 
 #ifdef CONFIG_SMP
@@ -1079,9 +1446,8 @@ RT_EXPORT_SYMBOL(RTTimerCreateEx);
 
 RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
 {
-#ifdef RTTIMER_LINUX_ONLY_HRTIMER
-    /** @todo Not sure if this is what we want or not... Add new API for
-     *        querying the resolution of the high res timers? */
+#if 0 /** @todo Not sure if this is what we want or not... Add new API for
+       *        querying the resolution of the high res timers? */
     struct timespec Ts;
     int rc = hrtimer_get_res(CLOCK_MONOTONIC, &Ts);
     if (!rc)
