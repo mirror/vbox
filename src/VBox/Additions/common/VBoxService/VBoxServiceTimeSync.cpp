@@ -125,12 +125,17 @@ static uint32_t g_TimeSyncSetThreshold = 20*60*1000;
 /** Whether the next adjustment should just set the time instead of trying to
  * adjust it. This is used to implement --timesync-set-start.  */
 static bool volatile g_fTimeSyncSetNext = false;
+/** Whether to set the time when the VM was restored. */
+static bool g_fTimeSyncSetOnRestore = true;
 
 /** Current error count. Used to knowing when to bitch and when not to. */
 static uint32_t g_cTimeSyncErrors = 0;
 
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI g_TimeSyncEvent = NIL_RTSEMEVENTMULTI;
+
+/** The VM session ID. Changes whenever the VM is restored or reset. */
+static uint64_t g_idTimeSyncSession;
 
 #ifdef RT_OS_WINDOWS
 /** Process token. */
@@ -201,6 +206,15 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncPreInit(void)
                 RTStrFree(pszValue);
             }
         }
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_NOT_FOUND)
+        {
+            uint32_t value;
+            rc = VBoxServiceReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore",
+                                           &value, 1, 1);
+            if (RT_SUCCESS(rc))
+                g_fTimeSyncSetOnRestore = !!value;
+        }
 
         VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
     }
@@ -219,6 +233,7 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncPreInit(void)
 static DECLCALLBACK(int) VBoxServiceTimeSyncOption(const char **ppszShort, int argc, char **argv, int *pi)
 {
     int rc = -1;
+    uint32_t value;
     if (ppszShort)
         /* no short options */;
     else if (!strcmp(argv[*pi], "--timesync-interval"))
@@ -241,6 +256,12 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncOption(const char **ppszShort, int a
         g_fTimeSyncSetNext = true;
         rc = VINF_SUCCESS;
     }
+    else if (!strcmp(argv[*pi], "----timesync-set-on-restore"))
+        rc = VBoxServiceArgUInt32(argc, argv, "", pi,
+                                  &value, 1, 1);
+    {
+        g_fTimeSyncSetOnRestore = !!value;
+    }
 
     return rc;
 }
@@ -257,6 +278,9 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncInit(void)
         g_TimeSyncInterval = g_DefaultInterval * 1000;
     if (!g_TimeSyncInterval)
         g_TimeSyncInterval = 10 * 1000;
+
+    VbglR3GetSessionId(&g_idTimeSyncSession);
+    /* The status code is ignored as this information is not available with VBox < 3.2.10. */
 
     int rc = RTSemEventMultiCreate(&g_TimeSyncEvent);
     AssertRC(rc);
@@ -502,6 +526,23 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
             if ((uint32_t)RTTimeSpecGetMilli(&GuestElapsed) < g_TimeSyncMaxLatency)
             {
                 /*
+                 * Set the time once after we were restored.
+                 * (Of course only if the drift is bigger than MinAdjust)
+                 */
+                uint32_t TimeSyncSetThreshold = g_TimeSyncSetThreshold;
+                if (g_fTimeSyncSetOnRestore)
+                {
+                    uint64_t idNewSession = g_idTimeSyncSession;
+                    VbglR3GetSessionId(&idNewSession);
+                    if (idNewSession != g_idTimeSyncSession)
+                    {
+                        VBoxServiceVerbose(3, "TimeSync: The VM session ID changed, forcing resync.\n");
+                        TimeSyncSetThreshold = 0;
+                        g_idTimeSyncSession  = idNewSession;
+                    }
+                }
+
+                /*
                  * Calculate the adjustment threshold and the current drift.
                  */
                 uint32_t MinAdjust = RTTimeSpecGetMilli(&GuestElapsed) * g_TimeSyncLatencyFactor;
@@ -534,7 +575,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                      * too big, fall back on just setting the time.
                      */
 
-                    if (    AbsDriftMilli > g_TimeSyncSetThreshold
+                    if (    AbsDriftMilli > TimeSyncSetThreshold
                         ||  g_fTimeSyncSetNext
                         ||  !VBoxServiceTimeSyncAdjust(&Drift))
                     {
@@ -626,6 +667,7 @@ VBOXSERVICE g_TimeSync =
     "              [--timesync-interval <ms>] [--timesync-min-adjust <ms>]\n"
     "              [--timesync-latency-factor <x>] [--timesync-max-latency <ms>]\n"
     "              [--timesync-set-threshold <ms>] [--timesync-set-start]"
+    "              [--timesync-set-restore 0|1]\n"
     ,
     /* pszOptions. */
     "    --timesync-interval     Specifies the interval at which to synchronize the\n"
@@ -644,6 +686,9 @@ VBOXSERVICE g_TimeSync =
     "                            where to start setting the time instead of trying to\n"
     "                            adjust it. The default is 20 min.\n"
     "    --timesync-set-start    Set the time when starting the time sync service.\n"
+    "    --timesync-set-on-restore 0|1\n"
+    "                            Immediately set the time when the VM was restored.\n"
+    "                            1 = set (default), 0 = don't set.\n"
     ,
     /* methods */
     VBoxServiceTimeSyncPreInit,
