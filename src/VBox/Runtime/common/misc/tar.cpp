@@ -168,7 +168,6 @@ static int rtTarExtractFileToBuf(RTFILE hFile, void **ppvBuf, uint64_t *pcbSize,
     uint64_t cbToCopy = RTStrToUInt64(pRecord->h.size);
 
     *ppvBuf = 0;
-    void *pvTmp = 0;
     do
     {
         /* Allocate the memory for the file content. */
@@ -180,21 +179,10 @@ static int rtTarExtractFileToBuf(RTFILE hFile, void **ppvBuf, uint64_t *pcbSize,
             break;
         }
 
-        /* Allocate a temporary buffer for reading the tar content in blocks. */
-        size_t cbTmp = 0;
-        pvTmp = rtTarMemTmpAlloc(&cbTmp);
-        if (!pvTmp)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
         uint64_t cbAllWritten = 0; /* Already copied */
+        uint64_t cbToRead = 0; /* What to read in the next step */
         uint64_t cbRead = 0; /* Actually read in the last step */
-        /* Copy the content from hFile over to the memory. This is done block
-         * wise in 512 byte aligned steps. After this copying is finished hFile
-         * will be on a 512 byte boundary, regardless if the file copied is 512
-         * byte size aligned. */
+        /* Copy the content from hFile over to the memory. */
         for (;;)
         {
             if (pfnProgressCallback)
@@ -202,26 +190,27 @@ static int rtTarExtractFileToBuf(RTFILE hFile, void **ppvBuf, uint64_t *pcbSize,
             /* Finished already? */
             if (cbAllWritten == cbToCopy)
                 break;
-            /* Read one block. This will be 512 aligned in any case. */
-            cbRead = RT_ALIGN(RT_MIN(cbToCopy - cbAllWritten, cbTmp), sizeof(RTTARRECORD));
-            rc = RTFileRead(hFile, pvTmp, cbRead, NULL);
+            /* Try to read all at once */
+            cbToRead = cbToCopy - cbAllWritten;
+            rc = RTFileRead(hFile, pcsTmp, cbToRead, &cbRead);
             if (RT_FAILURE(rc))
                 break;
-            /* Check for the last block which has not to be 512 bytes in size. */
-            if (cbAllWritten + cbRead > cbToCopy)
-                cbRead = cbToCopy - cbAllWritten;
-            /* Write the block */
-            memcpy(pcsTmp, pvTmp, cbRead);
             /* Count how many bytes are written already */
             cbAllWritten += cbRead;
             cbOverallWritten += cbRead;
             pcsTmp += cbRead;
         }
+        int64_t offSeek = RT_ALIGN(cbAllWritten, sizeof(RTTARRECORD)) - cbAllWritten;
+        /* We have to make sure the file pointer is 512 byte aligned. */
+        if (   RT_SUCCESS(rc)
+            && offSeek > 0)
+        {
+            rc = RTFileSeek(hFile, offSeek, RTFILE_SEEK_CURRENT, NULL);
+            if (RT_FAILURE(rc))
+                break;
+        }
     }
     while(0);
-
-    if (pvTmp)
-        RTMemTmpFree(pvTmp);
 
     if (   RT_FAILURE(rc)
         && *ppvBuf)
