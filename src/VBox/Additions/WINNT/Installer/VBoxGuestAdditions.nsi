@@ -544,7 +544,7 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
   Call EnableLog
   Call PrepareForUpdate
 
-  DetailPrint "Version: $%VBOX_VERSION_STRING% ($%VBOX_SVN_REV%)"
+  DetailPrint "Version: $%VBOX_VERSION_STRING% (Rev $%VBOX_SVN_REV%)"
   ${If} $g_strAddVerMaj != ""
     DetailPrint "Previous version: $g_strAddVerMaj.$g_strAddVerMin.$g_strAddVerBuild (Rev $g_strAddVerRev)"
   ${Else}
