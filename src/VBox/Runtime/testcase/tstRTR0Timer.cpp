@@ -48,8 +48,32 @@ typedef struct
     uint64_t volatile   aShotNsTSes[10];
     /** The number of shots. */
     uint32_t volatile   cShots;
+    /** The shot at which action is to be taken. */
+    uint32_t            iActionShot;
+    /** The RC of whatever operation performed in the handler. */
+    int volatile        rc;
 } TSTRTR0TIMERS1;
 typedef TSTRTR0TIMERS1 *PTSTRTR0TIMERS1;
+
+
+/**
+ * Callback which increments destroy the timer when it fires.
+ *
+ * @param   pTimer      The timer.
+ * @param   iTick       The current tick.
+ * @param   pvUser      The user argument.
+ */
+static DECLCALLBACK(void) tstRTR0TimerCallbackDestroyOnce(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    PTSTRTR0TIMERS1 pState = (PTSTRTR0TIMERS1)pvUser;
+    uint32_t        iShot  = ASMAtomicIncU32(&pState->cShots);
+
+    if (iShot <= RT_ELEMENTS(pState->aShotNsTSes))
+        pState->aShotNsTSes[iShot - 1] = RTTimeSystemNanoTS();
+
+    if (iShot == pState->iActionShot + 1)
+        RTR0TESTR0_CHECK_RC(pState->rc = RTTimerDestroy(pTimer), VINF_SUCCESS);
+}
 
 
 /**
@@ -67,8 +91,8 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackRestartOnce(PRTTIMER pTimer, void 
     if (iShot <= RT_ELEMENTS(pState->aShotNsTSes))
         pState->aShotNsTSes[iShot - 1] = RTTimeSystemNanoTS();
 
-    if (iShot == 1)
-        RTR0TESTR0_CHECK_RC(RTTimerStart(pTimer, 10000000 /* 10ms */), VINF_SUCCESS);
+    if (iShot == pState->iActionShot + 1)
+        RTR0TESTR0_CHECK_RC(pState->rc = RTTimerStart(pTimer, 10000000 /* 10ms */), VINF_SUCCESS);
 }
 
 
@@ -164,6 +188,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
     /*
      * The big switch.
      */
+    uint32_t const cNsSysHz = RTTimerGetSystemGranularity();
     TSTRTR0TIMERS1 State;
     switch (uOperation)
     {
@@ -173,6 +198,9 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
         case TSTRTR0TIMER_ONE_SHOT_BASIC:
         case TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES:
         {
+            /* Check that RTTimerGetSystemGranularity works. */
+            RTR0TESTR0_CHECK_MSG_BREAK(cNsSysHz > UINT32_C(0) && cNsSysHz < UINT32_C(1000000000), ("%u", cNsSysHz));
+
             /* Create a one-shot timer and take one shot. */
             PRTTIMER        pTimer;
             uint32_t        fFlags = uOperation != TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES ? RTTIMER_FLAGS_HIGH_RES : 0;
@@ -222,18 +250,52 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             /* Create a one-shot timer and restart it in the callback handler. */
             PRTTIMER            pTimer;
             uint32_t            fFlags = uOperation != TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES ? RTTIMER_FLAGS_HIGH_RES : 0;
-            RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackRestartOnce, &State),
-                                      VINF_SUCCESS);
-
-            do /* break loop */
+            for (uint32_t iTest = 0; iTest < 2; iTest++)
             {
+                RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackRestartOnce, &State),
+                                          VINF_SUCCESS);
+
                 RT_ZERO(State);
-                RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, 0), VINF_SUCCESS);
-                for (uint32_t i = 0; i < 1000 && ASMAtomicUoReadU32(&State.cShots) < 2; i++)
-                    RTThreadSleep(5);
-                RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicUoReadU32(&State.cShots) == 2, ("cShots=%u\n", State.cShots));
-            } while (0);
-            RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+                State.iActionShot = 0;
+                do /* break loop */
+                {
+                    RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, cNsSysHz * iTest), VINF_SUCCESS);
+                    for (uint32_t i = 0; i < 1000 && ASMAtomicUoReadU32(&State.cShots) < 2; i++)
+                        RTThreadSleep(5);
+                    RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicUoReadU32(&State.cShots) == 2, ("cShots=%u\n", State.cShots));
+                } while (0);
+                RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+            }
+            break;
+        }
+#endif
+
+#if 1 /* might have to disable this for some host... */
+        case TSTRTR0TIMER_ONE_SHOT_DESTROY:
+        case TSTRTR0TIMER_ONE_SHOT_DESTROY_HIRES:
+        {
+            /* Create a one-shot timer and destroy it in the callback handler. */
+            PRTTIMER            pTimer;
+            uint32_t            fFlags = uOperation != TSTRTR0TIMER_ONE_SHOT_DESTROY_HIRES ? RTTIMER_FLAGS_HIGH_RES : 0;
+            for (uint32_t iTest = 0; iTest < 2; iTest++)
+            {
+                RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackDestroyOnce, &State),
+                                          VINF_SUCCESS);
+
+                RT_ZERO(State);
+                State.rc = VERR_IPE_UNINITIALIZED_STATUS;
+                State.iActionShot = 0;
+                do /* break loop */
+                {
+                    RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, cNsSysHz * iTest), VINF_SUCCESS);
+                    for (uint32_t i = 0; i < 1000 && ASMAtomicUoReadU32(&State.cShots) < 1; i++)
+                        RTThreadSleep(5);
+                    RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicReadU32(&State.cShots) == 1, ("cShots=%u\n", State.cShots));
+                    RTR0TESTR0_CHECK_MSG_BREAK(State.rc == VINF_SUCCESS, ("rc=%Rrc\n", State.rc));
+                } while (0);
+                if (RT_FAILURE(State.rc))
+                    RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+            }
             break;
         }
 #endif
@@ -266,6 +328,30 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             RTR0TESTR0_CHECK_RC(RTTimerDestroy(NULL), VINF_SUCCESS);
             break;
         }
+
+        case TSTRTR0TIMER_PERIODIC_CSSD_LOOPS:
+        case TSTRTR0TIMER_PERIODIC_CSSD_LOOPS_HIRES:
+        {
+            /* create, start, stop & destroy high res timers a number of times. */
+            uint32_t fFlags = uOperation != TSTRTR0TIMER_PERIODIC_CSSD_LOOPS_HIRES ? RTTIMER_FLAGS_HIGH_RES : 0;
+            for (uint32_t i = 0; i < 40; i++)
+            {
+                PRTTIMER pTimer;
+                RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, cNsSysHz, fFlags, tstRTR0TimerCallbackU32Counter, &State),
+                                          VINF_SUCCESS);
+                for (uint32_t j = 0; j < 10; j++)
+                {
+                    RT_ZERO(State);
+                    RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, i < 20 ? 0 : cNsSysHz), VINF_SUCCESS);
+                    for (uint32_t k = 0; k < 1000 && ASMAtomicUoReadU32(&State.cShots) < 2; k++)
+                        RTThreadSleep(1);
+                    RTR0TESTR0_CHECK_RC_BREAK(RTTimerStop(pTimer), VINF_SUCCESS);
+                }
+                RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+            }
+            break;
+        }
+
     }
 
     RTR0TESTR0_SRV_REQ_EPILOG(pReqHdr);
