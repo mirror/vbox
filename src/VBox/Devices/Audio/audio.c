@@ -1964,6 +1964,12 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("drvAUDIODestruct:\n"));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
+    if (audio_streamname)
+    {
+        MMR3HeapFree(audio_streamname);
+        audio_streamname = NULL;
+    }
+
     audio_atexit ();
 }
 
