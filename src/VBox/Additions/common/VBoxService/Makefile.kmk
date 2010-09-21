@@ -120,6 +120,8 @@ if1of ($(KBUILD_TARGET), linux)
  VBoxService_LIBS        += \
 	crypt
 endif
+VBoxService_LIBS.win     += \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Userenv.lib
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_LIBS.win    += \
  	Secur32.lib \
