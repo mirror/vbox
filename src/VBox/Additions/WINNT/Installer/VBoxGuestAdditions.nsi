@@ -103,7 +103,11 @@ VIAddVersionKey "InternalName" "${PRODUCT_OUTPUT}"
   !insertmacro MUI_LANGUAGE "German"
 
   ; Set branding text which appears on the horizontal line at the bottom
+!ifdef _DEBUG
+  BrandingText "VirtualBox Windows Additions $%VBOX_VERSION_STRING% ($%VBOX_SVN_REV%) - Debug Build"
+!else
   BrandingText "VirtualBox Windows Additions $%VBOX_VERSION_STRING%"
+!endif
 
   ; Set license language
   LicenseLangString VBOX_LICENSE ${LANG_ENGLISH} "$%VBOX_BRAND_LICENSE_RTF%"
@@ -540,7 +544,7 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
   Call EnableLog
   Call PrepareForUpdate
 
-  DetailPrint "Version: $%VBOX_VERSION_STRING% ($%VBOX_VERSION_BUILD%)"
+  DetailPrint "Version: $%VBOX_VERSION_STRING% ($%VBOX_SVN_REV%)"
   ${If} $g_strAddVerMaj != ""
     DetailPrint "Previous version: $g_strAddVerMaj.$g_strAddVerMin.$g_strAddVerBuild (Rev $g_strAddVerRev)"
   ${Else}
