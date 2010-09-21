@@ -705,7 +705,11 @@ static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, PFNVBGLHGCMCALLBA
                 uint32_t cMilliesToWait = rc2 == VERR_NOT_FOUND || rc2 == VERR_SEM_DESTROYED ? 500 : 2000;
                 uint64_t cElapsed       = 0;
                 if (rc2 != VERR_NOT_FOUND)
-                    LogRel(("vbglR0HGCMInternalDoCall: Failed to cancel the HGCM call on %Rrc: rc2=%Rrc\n", rc, rc2));
+                {
+                    static unsigned s_cErrors = 0;
+                    if (s_cErrors++ < 32)
+                        LogRel(("vbglR0HGCMInternalDoCall: Failed to cancel the HGCM call on %Rrc: rc2=%Rrc\n", rc, rc2));
+                }
                 else
                     Log(("vbglR0HGCMInternalDoCall: Cancel race rc=%Rrc rc2=%Rrc\n", rc, rc2));
 
@@ -903,7 +907,11 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(VBoxGuestHGCMCallInfo *pCallInfo, uint32_
             {
                 if (   rc != VERR_INTERRUPTED
                     && rc != VERR_TIMEOUT)
-                    LogRel(("VbglR0HGCMInternalCall: vbglR0HGCMInternalDoCall failed. rc=%Rrc\n", rc));
+                {
+                    static unsigned s_cErrors = 0;
+                    if (s_cErrors++ < 32)
+                        LogRel(("VbglR0HGCMInternalCall: vbglR0HGCMInternalDoCall failed. rc=%Rrc\n", rc));
+                }
             }
 
             if (!fLeakIt)
@@ -1042,10 +1050,18 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32(VBoxGuestHGCMCallInfo *pCallInfo, uint3
             }
         }
         else
-            LogRel(("VbglR0HGCMInternalCall32: VbglR0HGCMInternalCall failed. rc=%Rrc\n", rc));
+        {
+            static unsigned s_cErrors = 0;
+            if (s_cErrors++ < 32)
+                LogRel(("VbglR0HGCMInternalCall32: VbglR0HGCMInternalCall failed. rc=%Rrc\n", rc));
+        }
     }
     else
-        LogRel(("VbglR0HGCMInternalCall32: failed. rc=%Rrc\n", rc));
+    {
+        static unsigned s_cErrors = 0;
+        if (s_cErrors++ < 32)
+            LogRel(("VbglR0HGCMInternalCall32: failed. rc=%Rrc\n", rc));
+    }
 
     RTMemTmpFree(pCallInfo64);
     return rc;
