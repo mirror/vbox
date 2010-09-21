@@ -1382,6 +1382,37 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         }
 #endif
 
+        case VBOXGUEST_IOCTL_WRITE_CORE_DUMP:
+        {
+            VBoxGuestWriteCoreDump *pInfo = (VBoxGuestWriteCoreDump *)pBuf;
+
+            if (pStack->Parameters.DeviceIoControl.OutputBufferLength != sizeof(VBoxGuestWriteCoreDump))
+            {
+                dprintf(("WRITE_CORE_DUMP: OutputBufferLength %d != sizeof(ULONG) %d\n",
+                         pStack->Parameters.DeviceIoControl.OutputBufferLength, sizeof(VBoxGuestWriteCoreDump)));
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            VMMDevReqWriteCoreDump *pReq = NULL;
+            int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_WriteCoreDump);
+            if (RT_FAILURE(rc))
+            {
+                Log(("WRITE_CORE_DUMP: failed to allocate %u (%#x) bytes to cache the request. rc=%Rrc!!\n",
+                     sizeof(*pReq), sizeof(*pReq), rc));
+                Status = STATUS_UNSUCCESSFUL;
+            }
+            else
+            {
+                pReq->fFlags = pInfo->fFlags;
+                rc = VbglGRPerform(&pReq->header);
+                if (RT_FAILURE(rc))
+                    Log(("WRITE_CORE_DUMP: VbglGRPerform failed, rc=%Rrc!\n", rc));
+                VbglGRFree(&pReq->header);
+            }
+            break;
+        }
+
 #ifdef VBOX_WITH_MANAGEMENT
         case VBOXGUEST_IOCTL_CHECK_BALLOON:
         {
