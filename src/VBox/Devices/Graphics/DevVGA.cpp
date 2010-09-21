@@ -6060,6 +6060,12 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
     }
 #endif
 
+    if (pThis->pszLogoFile)
+    {
+        MMR3HeapFree(pThis->pszLogoFile);
+        pThis->pszLogoFile = NULL;
+    }
+
     PDMR3CritSectDelete(&pThis->lock);
     return VINF_SUCCESS;
 }
