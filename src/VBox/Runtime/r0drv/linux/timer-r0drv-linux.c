@@ -208,12 +208,39 @@ typedef RTTIMERLINUXSTARTONCPUARGS *PRTTIMERLINUXSTARTONCPUARGS;
 static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
 #endif
 
+#if 0
+#define DEBUG_HACKING
+#include <iprt/string.h>
+#include <iprt/asm-amd64-x86.h>
+static void myLogBackdoorPrintf(const char *pszFormat, ...)
+{
+    char        szTmp[256];
+    va_list     args;
+    size_t      cb;
+
+    cb = RTStrPrintf(szTmp, sizeof(szTmp) - 10, "%d: ", RTMpCpuId());
+    va_start(args, pszFormat);
+    cb += RTStrPrintfV(&szTmp[cb], sizeof(szTmp) - cb, pszFormat, args);
+    va_end(args);
+
+    ASMOutStrU8(0x504, (uint8_t *)&szTmp[0], cb);
+}
+#define RTAssertMsg1Weak(pszExpr, uLine, pszFile, pszFunction) \
+    myLogBackdoorPrintf("\n!!Guest Assertion failed!!\n%s(%d) %s\n%s\n", uLine, pszFile, pszFunction, (pszExpr))
+#define RTAssertMsg2Weak myLogBackdoorPrintf
+#define dprintf(a)          myLogBackdoorPrintf a
+#else
+#define dprintf(a)          do { } while (0)
+#endif
 
 /**
  * Sets the state.
  */
 DECLINLINE(void) rtTimerLnxSetState(RTTIMERLNXSTATE volatile *penmState, RTTIMERLNXSTATE enmNewState)
 {
+#ifdef DEBUG_HACKING
+    dprintf(("set %d -> %d\n", *penmState, enmNewState));
+#endif
     ASMAtomicWriteU32((uint32_t volatile *)penmState, enmNewState);
 }
 
@@ -224,10 +251,23 @@ DECLINLINE(void) rtTimerLnxSetState(RTTIMERLNXSTATE volatile *penmState, RTTIMER
  * @return true if xchg was done.
  * @return false if xchg wasn't done.
  */
-DECLINLINE(bool) rtTimerLnxCmpXchgState(RTTIMERLNXSTATE volatile *penmState, RTTIMERLNXSTATE enmNewState, RTTIMERLNXSTATE enmCurState)
+#ifdef DEBUG_HACKING
+#define rtTimerLnxCmpXchgState(penmState, enmNewState, enmCurState) rtTimerLnxCmpXchgStateDebug(penmState, enmNewState, enmCurState, __LINE__)
+static bool rtTimerLnxCmpXchgStateDebug(RTTIMERLNXSTATE volatile *penmState, RTTIMERLNXSTATE enmNewState,
+                                        RTTIMERLNXSTATE enmCurState, uint32_t uLine)
+{
+    RTTIMERLNXSTATE enmOldState = enmCurState;
+    bool fRc = ASMAtomicCmpXchgExU32((uint32_t volatile *)penmState, enmNewState, enmCurState, (uint32_t *)&enmOldState);
+    dprintf(("cxg %d -> %d - %d at %u\n", enmOldState, enmNewState, fRc, uLine));
+    return fRc;
+}
+#else
+DECLINLINE(bool) rtTimerLnxCmpXchgState(RTTIMERLNXSTATE volatile *penmState, RTTIMERLNXSTATE enmNewState,
+                                        RTTIMERLNXSTATE enmCurState)
 {
     return ASMAtomicCmpXchgU32((uint32_t volatile *)penmState, enmNewState, enmCurState);
 }
+#endif
 
 
 /**
@@ -311,6 +351,7 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
         pSubTimer->u.Std.u64StartTS = u64NextTS;
         pSubTimer->u.Std.u64NextTS  = u64NextTS;
     }
+    dprintf(("startsubtimer %p\n", pSubTimer->pParent));
 
     pSubTimer->iTick = 0;
 
@@ -348,6 +389,7 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
  */
 static void rtTimerLnxStopSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, bool fHighRes)
 {
+    dprintf(("stopsubtimer %p %d\n", pSubTimer->pParent, fHighRes));
 #ifdef RTTIMER_LINUX_WITH_HRTIMER
     if (fHighRes)
         hrtimer_cancel(&pSubTimer->u.Hr.LnxTimer);
@@ -371,6 +413,7 @@ static void rtTimerLnxDestroyIt(PRTTIMER pTimer)
 {
     RTSPINLOCK hSpinlock = pTimer->hSpinlock;
     Assert(pTimer->fSuspended);
+    dprintf(("destroyit %p\n", pTimer));
 
     /*
      * Remove the MP notifications first because it'll reduce the risk of
@@ -390,7 +433,11 @@ static void rtTimerLnxDestroyIt(PRTTIMER pTimer)
      * The spinlock goes last.
      */
     ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
+#if 0 /*fixme*/
+    rtR0MemFreeNoCtxCheck(pTimer);
+#else
     RTMemFree(pTimer);
+#endif
     if (hSpinlock != NIL_RTSPINLOCK)
         RTSpinlockDestroy(hSpinlock);
 }
@@ -547,6 +594,7 @@ static enum hrtimer_restart rtTimerLinuxHrCallback(struct hrtimer *pHrTimer)
     PRTTIMER                pTimer    = pSubTimer->pParent;
 
 
+    dprintf(("hrcallback %p\n", pTimer));
     if (RT_UNLIKELY(!rtTimerLnxChangeToCallbackState(pSubTimer)))
         return HRTIMER_NORESTART;
 
@@ -633,6 +681,7 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
     PRTTIMERLNXSUBTIMER pSubTimer = (PRTTIMERLNXSUBTIMER)ulUser;
     PRTTIMER            pTimer    = pSubTimer->pParent;
 
+    dprintf(("hrcallback %p\n", pTimer));
     if (RT_UNLIKELY(!rtTimerLnxChangeToCallbackState(pSubTimer)))
         return;
 
@@ -1093,6 +1142,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 
     if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
         return VERR_TIMER_ACTIVE;
+    dprintf(("start %p\n", pTimer));
 
     Args.u64First = u64First;
 #ifdef CONFIG_SMP
@@ -1137,7 +1187,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 
             case RTTIMERLNXSTATE_CALLBACK:
             case RTTIMERLNXSTATE_CB_STOPPING:
-                if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_ACTIVE, enmState))
+                if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_CB_RESTARTING, enmState))
                 {
                     ASMAtomicWriteBool(&pTimer->fSuspended, false);
                     return VINF_SUCCESS;
@@ -1163,6 +1213,7 @@ RT_EXPORT_SYMBOL(RTTimerStart);
  */
 static bool rtTimerLnxStop(PRTTIMER pTimer, bool fForDestroy)
 {
+    dprintf(("lnxstop %p %d\n", pTimer, fForDestroy));
 #ifdef CONFIG_SMP
     /*
      * Omni timer?
@@ -1227,6 +1278,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
      */
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
+    dprintf(("stop %p\n", pTimer));
 
     if (ASMAtomicUoReadBool(&pTimer->fSuspended))
         return VERR_TIMER_SUSPENDED;
@@ -1245,6 +1297,7 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(u64NanoInterval, VERR_INVALID_PARAMETER);
+    dprintf(("change %p %llu\n", pTimer, u64NanoInterval));
 
 #ifdef RTTIMER_LINUX_WITH_HRTIMER
     /*
@@ -1281,6 +1334,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
         return VINF_SUCCESS;
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
+    dprintf(("destroy %p\n", pTimer));
 
     /*
      * Stop the timer if it's still active, then destroy it if we can.
@@ -1438,6 +1492,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     }
 #endif /* CONFIG_SMP */
 
+    dprintf(("create %p\n", pTimer));
     *ppTimer = pTimer;
     return VINF_SUCCESS;
 }
