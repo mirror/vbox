@@ -42,6 +42,8 @@
  */
 PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 {
+    AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
+
     PRTMEMHDR pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr));
     if (pHdr)
     {

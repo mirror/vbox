@@ -29,6 +29,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/mem.h>
 #include "internal/magics.h"
 
 RT_C_DECLS_BEGIN
@@ -51,17 +52,24 @@ typedef struct RTMEMHDR
 
 /** @name RTMEMHDR::fFlags.
  * @{ */
-#define RTMEMHDR_FLAG_ZEROED    RT_BIT(0)
-#define RTMEMHDR_FLAG_EXEC      RT_BIT(1)
+#define RTMEMHDR_FLAG_ZEROED        RT_BIT(0)
+#define RTMEMHDR_FLAG_EXEC          RT_BIT(1)
+#define RTMEMHDR_FLAG_ALLOC_ANY_CTX RT_BIT(2)
+#define RTMEMHDR_FLAG_FREE_ANY_CTX  RT_BIT(3)
+#define RTMEMHDR_FLAG_ANY_CTX       (RTMEMHDR_FLAG_ALLOC_ANY_CTX | RTMEMHDR_FLAG_FREE_ANY_CTX)
+#define RTMEMHDR_FLAG_ALLOC_EX      RT_BIT(4)
 #ifdef RT_OS_LINUX
-#define RTMEMHDR_FLAG_EXEC_HEAP RT_BIT(30)
-#define RTMEMHDR_FLAG_KMALLOC   RT_BIT(31)
+# define RTMEMHDR_FLAG_EXEC_HEAP    RT_BIT(30)
+# define RTMEMHDR_FLAG_KMALLOC      RT_BIT(31)
 #endif
 /** @} */
 
 
 PRTMEMHDR   rtR0MemAlloc(size_t cb, uint32_t fFlags);
 void        rtR0MemFree(PRTMEMHDR pHdr);
+#define rtR0MemAllocEx(cb, fFlags) rtR0MemAllocExTag((cb), (fFlags), RTMEM_TAG)
+void       *rtR0MemAllocExTag(size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW;
+void        rtR0MemFreeEx(void *pv) RT_NO_THROW;
 
 RT_C_DECLS_END
 #endif

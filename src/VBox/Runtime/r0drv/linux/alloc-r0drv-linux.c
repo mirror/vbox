@@ -112,12 +112,15 @@ RT_EXPORT_SYMBOL(RTR0MemExecDonate);
  */
 PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 {
+    PRTMEMHDR pHdr;
+
     /*
      * Allocate.
      */
-    PRTMEMHDR pHdr;
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
+        AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
+
 #if defined(RT_ARCH_AMD64)
 # ifdef RTMEMALLOC_EXEC_HEAP
         if (g_HeapExec != NIL_RTHEAPSIMPLE)
@@ -142,7 +145,7 @@ PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
     }
     else
     {
-        if (cb <= PAGE_SIZE)
+        if (cb <= PAGE_SIZE || (fFlags & RTMEMHDR_FLAG_ANY_CTX))
         {
             fFlags |= RTMEMHDR_FLAG_KMALLOC;
             pHdr = kmalloc(cb + sizeof(*pHdr), GFP_KERNEL);
