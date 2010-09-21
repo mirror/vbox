@@ -3426,10 +3426,11 @@ DxgkDdiSetVidPnSourceVisibility(
     {
         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceVisibility->VidPnSourceId];
         PVBOXWDDM_ALLOCATION pAllocation = pSource->pPrimaryAllocation;
-        Assert(pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
-                || pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC);
         if (pAllocation)
         {
+            Assert(pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
+                    || pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC);
+
             Assert(pAllocation->bVisible != pSetVidPnSourceVisibility->Visible);
             if (pAllocation->bVisible != pSetVidPnSourceVisibility->Visible)
             {
