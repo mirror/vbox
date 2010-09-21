@@ -625,6 +625,10 @@ static int rtProcEnvironmentCreateFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 
         }
         RTLdrClose(hUserenv);
     }
+    /* If we don't have the Userenv-API for whatever reason or something with the
+     * native environment block failed, try to return at least our own environment block. */
+    if (RT_FAILURE(rc))
+        rc = RTEnvQueryUtf16Block(hEnv, ppwszBlock);
     return rc;
 }
 
