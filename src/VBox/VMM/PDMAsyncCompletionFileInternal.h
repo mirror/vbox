@@ -221,7 +221,7 @@ typedef struct PDMACFILEBWMGR
     /** Step after each update */
     uint32_t          cbVMTransferPerSecStep;
     /** Number of bytes we are allowed to transfer till the next update.
-     * Resetted by the refresh timer. */
+     * Reset by the refresh timer. */
     volatile uint32_t cbVMTransferAllowed;
     /** Timestamp of the last update */
     volatile uint64_t tsUpdatedLast;

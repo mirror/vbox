@@ -235,7 +235,7 @@ HRESULT VBoxCredential::UnAdvise()
 
     /*
      * Force a re-iteration of the provider (which will give zero credentials
-     * to try out because we just resetted our one and only a line above.
+     * to try out because we just reset our one and only a line above.
      */
     if (m_pProvider)
         m_pProvider->OnCredentialsProvided();
