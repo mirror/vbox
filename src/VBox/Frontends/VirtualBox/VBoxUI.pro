@@ -27,7 +27,7 @@ FORMS = \
     src/VBoxTakeSnapshotDlg.ui \
     src/VBoxUpdateDlg.ui \
     src/VBoxVMLogViewer.ui \
-    src/settings/VBoxSettingsDialog.ui \
+    src/settings/UISettingsDialog.ui \
     src/settings/vm/VBoxVMSettingsGeneral.ui \
     src/settings/vm/VBoxVMSettingsSystem.ui \
     src/settings/vm/VBoxVMSettingsDisplay.ui \

@@ -33,7 +33,7 @@
 #include "VBoxMediaManagerDlg.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
-#include "VBoxSettingsDialogSpecific.h"
+#include "UISettingsDialogSpecific.h"
 #include "VBoxToolBar.h"
 #include "VBoxVMLogViewer.h"
 
@@ -519,7 +519,7 @@ void VBoxSelectorWnd::fileSettings()
     VBoxGlobalSettings settings = vboxGlobal().settings();
     CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
 
-    VBoxSettingsDialog *dlg = new VBoxGLSettingsDlg (this);
+    UISettingsDialog *dlg = new UIGLSettingsDlg (this);
     dlg->getFrom();
 
     if (dlg->exec() == QDialog::Accepted)
@@ -602,7 +602,7 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory /* = QString::null */
     CMachine m = session.GetMachine();
     AssertMsgReturn (!m.isNull(), ("Machine must not be null"), (void) 0);
 
-    VBoxSettingsDialog *dlg = new VBoxVMSettingsDlg (this, m, strCategory, strControl);
+    UISettingsDialog *dlg = new UIVMSettingsDlg (this, m, strCategory, strControl);
     dlg->getFrom();
 
     if (dlg->exec() == QDialog::Accepted)
