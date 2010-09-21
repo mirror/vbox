@@ -73,6 +73,6 @@ int main()
     RTPrintf("Environment:\n\n");
     RTPrintf("APPDATA = %s\n", getenv("APPDATA"));
 #endif
-    return VINF_SUCCESS(rc) ? 0 : 1;
+    return RT_SUCCESS(rc) ? 0 : 1;
 }
 
