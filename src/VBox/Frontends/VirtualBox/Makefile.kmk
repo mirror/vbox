@@ -280,8 +280,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QITreeWidget.h \
 	src/extensions/QIWidgetValidator.h \
 	src/extensions/QIWizard.h \
-	src/settings/VBoxSettingsDialog.h \
-	src/settings/VBoxSettingsDialogSpecific.h \
+	src/settings/UISettingsDialog.h \
+	src/settings/UISettingsDialogSpecific.h \
 	src/settings/VBoxSettingsPage.h \
 	src/settings/VBoxSettingsSelector.h \
 	src/settings/global/VBoxGLSettingsGeneral.h \
@@ -436,8 +436,8 @@ VirtualBox_SOURCES = \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \
 	src/extensions/QIWizard.cpp \
-	src/settings/VBoxSettingsDialog.cpp \
-	src/settings/VBoxSettingsDialogSpecific.cpp \
+	src/settings/UISettingsDialog.cpp \
+	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/VBoxSettingsSelector.cpp \
 	src/settings/global/VBoxGLSettingsGeneral.cpp \
 	src/settings/global/VBoxGLSettingsInput.cpp \
