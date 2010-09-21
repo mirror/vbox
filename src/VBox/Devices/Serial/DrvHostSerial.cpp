@@ -1273,6 +1273,12 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
     CloseHandle(pThis->hDeviceFile);
 
 #endif
+
+    if (pThis->pszDevicePath)
+    {
+        MMR3HeapFree(pThis->pszDevicePath);
+        pThis->pszDevicePath = NULL;
+    }
 }
 
 /**
