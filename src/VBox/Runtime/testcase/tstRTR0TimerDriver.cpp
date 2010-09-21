@@ -56,19 +56,33 @@ int main(int argc, char **argv)
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
+# if 1
     /*
      * Basic tests, bail out on failure.
      */
     RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_BASIC,       "Basic one shot");
-    RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES, "Basic hires one shot");
     RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_BASIC,       "Basic periodic");
-    RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_BASIC_HIRES, "Basic hires periodic");
     if (RTTestErrorCount(g_hTest) == 0)
     {
         RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART, "Restart one shot from callback");
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES, "Restart hires one shot from callback");
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_DESTROY, "Destroy one shot from callback");
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_CSSD_LOOPS, "Create-start-stop-destroy loops");
     }
+# endif
 
+# if 1
+    /*
+     * High resolution timers.
+     */
+    RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES, "Basic hires one shot");
+    RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_BASIC_HIRES, "Basic hires periodic");
+    if (RTTestErrorCount(g_hTest) == 0)
+    {
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES, "Restart hires one shot from callback");
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_DESTROY_HIRES, "Destroy hires one shot from callback");
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_CSSD_LOOPS_HIRES, "Create-start-stop-destroy loops, hires");
+    }
+# endif
 
     /*
      * Done.
