@@ -844,6 +844,24 @@ static DECLCALLBACK(int) pcbiosDestruct(PPDMDEVINS pDevIns)
         pThis->pszLanBootFile = NULL;
     }
 
+    if (pThis->pszHDDevice)
+    {
+        MMR3HeapFree(pThis->pszHDDevice);
+        pThis->pszHDDevice = NULL;
+    }
+
+    if (pThis->pszFDDevice)
+    {
+        MMR3HeapFree(pThis->pszFDDevice);
+        pThis->pszFDDevice = NULL;
+    }
+
+    if (pThis->pszSataDevice)
+    {
+        MMR3HeapFree(pThis->pszSataDevice);
+        pThis->pszSataDevice = NULL;
+    }
+
     return VINF_SUCCESS;
 }
 
