@@ -660,6 +660,30 @@ void SerialPort::applyDefaults (GuestOSType *aOsType)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    /* Set some more defaults */
+    switch (m->bd->ulSlot)
+    {
+        case 1:
+        {
+            m->bd->ulIOBase = 0x2F8;
+            m->bd->ulIRQ = 3;
+            break;
+        }
+        case 2:
+        {
+            m->bd->ulIOBase = 0x3e8;
+            m->bd->ulIRQ = 4;
+            break;
+        }
+        case 3:
+        {
+            m->bd->ulIOBase = 0x2e8;
+            m->bd->ulIRQ = 3;
+            break;
+        }
+        default: break;
+    }
+
     uint32_t numSerialEnabled = aOsType->numSerialEnabled();
 
     /* Enable port if requested */
