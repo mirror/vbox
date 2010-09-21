@@ -765,7 +765,11 @@ NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             {
                 if (   vrc == VERR_NOT_SUPPORTED
                     || vrc == VERR_INVALID_PARAMETER)
+                {
                     Status = STATUS_INVALID_PARAMETER;
+                }
+                else
+                    Status = STATUS_UNSUCCESSFUL;
             }
             break;
         }

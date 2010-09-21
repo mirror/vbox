@@ -1407,7 +1407,10 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 pReq->fFlags = pInfo->fFlags;
                 rc = VbglGRPerform(&pReq->header);
                 if (RT_FAILURE(rc))
+                {
                     Log(("WRITE_CORE_DUMP: VbglGRPerform failed, rc=%Rrc!\n", rc));
+                    Status = STATUS_UNSUCCESSFUL;
+                }
                 VbglGRFree(&pReq->header);
             }
             break;
