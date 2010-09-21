@@ -117,17 +117,14 @@ static int no_run_in (HWVoiceIn *hw)
         bytes = audio_MIN (bytes, INT_MAX);
         samples = bytes >> hw->info.shift;
         samples = audio_MIN (samples, dead);
+        hw->wpos = (hw->wpos + samples) % hw->samples;
     }
     return samples;
 }
 
 static int no_read (SWVoiceIn *sw, void *buf, int size)
 {
-    int samples = size >> sw->info.shift;
-    int total = sw->hw->total_samples_captured - sw->total_hw_samples_acquired;
-    int to_clear = audio_MIN (samples, total);
-    audio_pcm_info_clear_buf (&sw->info, buf, to_clear);
-    return to_clear << sw->info.shift;
+    return audio_pcm_sw_read (sw, buf, size);
 }
 
 static int no_ctl_in (HWVoiceIn *hw, int cmd, ...)
