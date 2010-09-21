@@ -277,6 +277,11 @@ static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
         AssertRC(rc);
         pThis->FileDevice = NIL_RTFILE;
     }
+    if (pThis->pszDevicePath)
+    {
+        MMR3HeapFree(pThis->pszDevicePath);
+        pThis->pszDevicePath = NULL;
+    }
 }
 
 /**
