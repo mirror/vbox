@@ -192,6 +192,7 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pS
     if (offVram == VBOXVIDEOOFFSET_VOID)
         return STATUS_INVALID_PARAMETER;
 
+    Assert(0);
     /*
      * Set the current mode into the hardware.
      */
@@ -220,6 +221,11 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pS
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
 bool vboxWddmCheckUpdateShadowAddress(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, UINT SegmentId, VBOXVIDEOOFFSET offVram)
 {
+    if (pSource->pPrimaryAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
+    {
+        Assert(pSource->offVram == VBOXVIDEOOFFSET_VOID);
+        return false;
+    }
     if (pSource->offVram == offVram)
         return false;
     pSource->offVram = offVram;
@@ -2172,6 +2178,9 @@ DxgkDdiSubmitCommand(
         {
             VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR *pPrivateData = (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR*)pPrivateDataBase;
             VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->SrcAllocInfo.srcId];
+            PVBOXWDDM_ALLOCATION pDstAlloc = pPrivateData->DstAllocInfo.pAlloc;
+            PVBOXWDDM_ALLOCATION pSrcAlloc = pPrivateData->SrcAllocInfo.pAlloc;
+            vboxWddmAssignShadow(pDevExt, pSource, pSrcAlloc, pDstAlloc->SurfDesc.VidPnSourceId);
             vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
             PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW pRFS = (PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW)pPrivateData;
             uint32_t cDMACmdsOutstanding = ASMAtomicReadU32(&pDevExt->cDMACmdsOutstanding);
@@ -3359,16 +3368,25 @@ DxgkDdiSetVidPnSourceAddress(
             pAllocation->SegmentId = pSetVidPnSourceAddress->PrimarySegment;
             Assert (pAllocation->SegmentId);
             Assert (!pAllocation->bVisible);
-#ifndef VBOXWDDM_RENDER_FROM_SHADOW
-            if (pAllocation->bVisible)
+            Assert(pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
+                    || pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC);
+            if (
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+                    /* this is the case of full-screen d3d, ensure we notify host */
+                    pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC &&
+#endif
+                    pAllocation->bVisible)
             {
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+                /* to ensure the resize request gets issued in case we exit a full-screen D3D mode */
+                pSource->offVram = VBOXVIDEOOFFSET_VOID;
+#endif
                 /* should not generally happen, but still inform host*/
                 Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource);
                 Assert(Status == STATUS_SUCCESS);
                 if (Status != STATUS_SUCCESS)
                     drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
             }
-#endif
         }
         else
         {
@@ -3408,21 +3426,33 @@ DxgkDdiSetVidPnSourceVisibility(
     {
         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceVisibility->VidPnSourceId];
         PVBOXWDDM_ALLOCATION pAllocation = pSource->pPrimaryAllocation;
-
+        Assert(pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
+                || pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC);
         if (pAllocation)
         {
             Assert(pAllocation->bVisible != pSetVidPnSourceVisibility->Visible);
             if (pAllocation->bVisible != pSetVidPnSourceVisibility->Visible)
             {
                 pAllocation->bVisible = pSetVidPnSourceVisibility->Visible;
-#ifndef VBOXWDDM_RENDER_FROM_SHADOW
                 if (pAllocation->bVisible)
                 {
-                    Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource);
-                    Assert(Status == STATUS_SUCCESS);
-                    if (Status != STATUS_SUCCESS)
-                        drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+                    if (/* this is the case of full-screen d3d, ensure we notify host */
+                        pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
+                    )
+#endif
+                    {
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+                        /* to ensure the resize request gets issued in case we exit a full-screen D3D mode */
+                        pSource->offVram = VBOXVIDEOOFFSET_VOID;
+#endif
+                        Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource);
+                        Assert(Status == STATUS_SUCCESS);
+                        if (Status != STATUS_SUCCESS)
+                            drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
+                    }
                 }
+#ifdef VBOXVDMA
                 else
                 {
                     vboxVdmaFlush (pDevExt, &pDevExt->u.primary.Vdma);
@@ -4069,8 +4099,7 @@ DxgkDdiPresent(
                                     /* we do not know the shadow address yet, perform dummy DMA cycle */
                                     pPrivateData->BaseHdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_SHADOW2PRIMARY;
                                     vboxWddmPopulateDmaAllocInfo(&pPrivateData->SrcAllocInfo, pSrcAlloc, pSrc);
-//                                  no need to fill dst surf info here
-//                                  vboxWddmPopulateDmaAllocInfo(&pPrivateData->DstAllocInfo, pDstAlloc, pDst);
+                                    vboxWddmPopulateDmaAllocInfo(&pPrivateData->DstAllocInfo, pDstAlloc, pDst);
                                     PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW pRFS = (PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW)pPrivateData;
                                     pRFS->rect = rect;
                                     break;

@@ -654,6 +654,8 @@ VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable
         VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, int32_t * pPreferrableMode,
         D3DKMDT_2DREGION **ppResolutions, uint32_t * pcResolutions);
 
+void vboxVideoInitCustomVideoModes(PDEVICE_EXTENSION pDevExt);
+
 VOID VBoxWddmInvalidateModesTable(PDEVICE_EXTENSION DeviceExtension);
 
 /* @return STATUS_BUFFER_TOO_SMALL - if buffer is too small, STATUS_SUCCESS - on success */

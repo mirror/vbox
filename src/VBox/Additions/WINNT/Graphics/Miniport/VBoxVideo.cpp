@@ -50,9 +50,9 @@ VIDEO_ACCESS_RANGE  VGARanges[] = {
  * custom resolution and Windows can use it again.
  */
 #ifndef VBOX_WITH_MULTIMONITOR_FIX
-ULONG gCustomXRes = 0;
-ULONG gCustomYRes = 0;
-ULONG gCustomBPP  = 0;
+uint32_t gCustomXRes = 0;
+uint32_t gCustomYRes = 0;
+uint32_t gCustomBPP  = 0;
 #endif /* !VBOX_WITH_MULTIMONITOR_FIX */
 
 int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
@@ -332,6 +332,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         { 1400, 1050 },
         { 1600, 1200 },
         { 1920, 1440 },
+#ifndef VBOX_WITH_WDDM
         /* multi screen modes with 1280x1024 */
         { 2560, 1024 },
         { 3840, 1024 },
@@ -340,6 +341,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         { 3200, 1200 },
         { 4800, 1200 },
         { 6400, 1200 },
+#endif
     };
     size_t matrixSize = sizeof(resolutionMatrix) / sizeof(resolutionMatrix[0]);
 
@@ -1796,6 +1798,110 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
 }
 #endif /* !VBOX_WITH_HGSMI */
 
+void vboxVideoInitCustomVideoModes(PDEVICE_EXTENSION pDevExt)
+{
+    VP_STATUS status;
+    VBOXCMNREG Reg;
+
+    VBoxVideoCmnRegInit(pDevExt, &Reg);
+
+    dprintf(("VBoxVideo::vboxVideoInitCustomVideoModes\n"));
+
+#ifndef VBOX_WITH_MULTIMONITOR_FIX
+    /*
+     * Get the last custom resolution
+     */
+    status = VBoxVideoCmnRegQueryDword(Reg, L"CustomXRes", &gCustomXRes);
+    if (status != NO_ERROR)
+        gCustomXRes = 0;
+
+    status = VBoxVideoCmnRegQueryDword(Reg, L"CustomYRes", &gCustomYRes);
+    if (status != NO_ERROR)
+        gCustomYRes = 0;
+    status = VBoxVideoCmnRegQueryDword(Reg, L"CustomBPP", &gCustomBPP);
+    if (status != NO_ERROR)
+        gCustomBPP = 0;
+
+   dprintf(("VBoxVideo: got stored custom resolution %dx%dx%d\n", gCustomXRes, gCustomYRes, gCustomBPP));
+#else
+    /* Initialize all custom modes to the 800x600x32. */
+    initVideoModeInformation(&CustomVideoModes[0], 800, 600, 32, 0, 0);
+
+    int iCustomMode;
+    for (iCustomMode = 1; iCustomMode < RT_ELEMENTS(CustomVideoModes); iCustomMode++)
+    {
+        CustomVideoModes[iCustomMode] = CustomVideoModes[0];
+    }
+
+    /* Load stored custom resolution from the registry. */
+    for (iCustomMode = 0;
+#ifdef VBOX_WITH_WDDM
+            iCustomMode < pDevExt->u.primary.cDisplays;
+#else
+            iCustomMode < pDevExt->pPrimary->u.primary.cDisplays;
+#endif
+            iCustomMode++)
+    {
+        /*
+         * Get the last custom resolution
+         */
+        uint32_t CustomXRes = 0, CustomYRes = 0, CustomBPP = 0;
+
+        if (iCustomMode == 0)
+        {
+            /* Name without a suffix */
+            status = VBoxVideoCmnRegQueryDword(Reg, L"CustomXRes", &CustomXRes);
+            if (status != NO_ERROR)
+                CustomXRes = 0;
+            status = VBoxVideoCmnRegQueryDword(Reg, L"CustomYRes", &CustomYRes);
+            if (status != NO_ERROR)
+                CustomYRes = 0;
+            status = VBoxVideoCmnRegQueryDword(Reg, L"CustomBPP", &CustomBPP);
+            if (status != NO_ERROR)
+                CustomBPP = 0;
+        }
+        else
+        {
+            wchar_t keyname[32];
+            swprintf(keyname, L"CustomXRes%d", iCustomMode);
+            status = VBoxVideoCmnRegQueryDword(Reg, keyname, &CustomXRes);
+            if (status != NO_ERROR)
+                CustomXRes = 0;
+            swprintf(keyname, L"CustomYRes%d", iCustomMode);
+            status = VBoxVideoCmnRegQueryDword(Reg, keyname, &CustomYRes);
+            if (status != NO_ERROR)
+                CustomYRes = 0;
+            swprintf(keyname, L"CustomBPP%d", iCustomMode);
+            status = VBoxVideoCmnRegQueryDword(Reg, keyname, &CustomBPP);
+            if (status != NO_ERROR)
+                CustomBPP = 0;
+        }
+
+        dprintf(("VBoxVideo: got stored custom resolution[%d] %dx%dx%d\n", iCustomMode, CustomXRes, CustomYRes, CustomBPP));
+
+        if (CustomXRes || CustomYRes || CustomBPP)
+        {
+            if (CustomXRes == 0)
+            {
+                CustomXRes = CustomVideoModes[iCustomMode].VisScreenWidth;
+            }
+            if (CustomYRes == 0)
+            {
+                CustomYRes = CustomVideoModes[iCustomMode].VisScreenHeight;
+            }
+            if (CustomBPP == 0)
+            {
+                CustomBPP = CustomVideoModes[iCustomMode].BitsPerPlane;
+            }
+
+            initVideoModeInformation(&CustomVideoModes[iCustomMode], CustomXRes, CustomYRes, CustomBPP, 0, 0);
+        }
+    }
+#endif /* VBOX_WITH_MULTIMONITOR_FIX */
+
+    VBoxVideoCmnRegFini(Reg);
+}
+
 #ifndef VBOX_WITH_WDDM
 
 VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
@@ -1942,8 +2048,6 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
  */
 BOOLEAN VBoxVideoInitialize(PVOID HwDeviceExtension)
 {
-    VP_STATUS status;
-
     dprintf(("VBoxVideo::VBoxVideoInitialize\n"));
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)HwDeviceExtension;
@@ -1951,127 +2055,7 @@ BOOLEAN VBoxVideoInitialize(PVOID HwDeviceExtension)
     /* Initialize the request pointer. */
     pDevExt->u.primary.pvReqFlush = NULL;
 
-#ifndef VBOX_WITH_MULTIMONITOR_FIX
-    /*
-     * Get the last custom resolution
-     */
-    status = VideoPortGetRegistryParameters(HwDeviceExtension,
-                                            L"CustomXRes",
-                                            FALSE,
-                                            VBoxRegistryCallback,
-                                            &gCustomXRes);
-    if (status != NO_ERROR)
-        gCustomXRes = 0;
-    status = VideoPortGetRegistryParameters(HwDeviceExtension,
-                                            L"CustomYRes",
-                                            FALSE,
-                                            VBoxRegistryCallback,
-                                            &gCustomYRes);
-    if (status != NO_ERROR)
-        gCustomYRes = 0;
-    status = VideoPortGetRegistryParameters(HwDeviceExtension,
-                                            L"CustomBPP",
-                                            FALSE,
-                                            VBoxRegistryCallback,
-                                            &gCustomBPP);
-    if (status != NO_ERROR)
-        gCustomBPP = 0;
-
-   dprintf(("VBoxVideo: got stored custom resolution %dx%dx%d\n", gCustomXRes, gCustomYRes, gCustomBPP));
-#else
-    /* Initialize all custom modes to the 800x600x32. */
-    initVideoModeInformation(&CustomVideoModes[0], 800, 600, 32, 0, 0);
-
-    int iCustomMode;
-    for (iCustomMode = 1; iCustomMode < RT_ELEMENTS(CustomVideoModes); iCustomMode++)
-    {
-        CustomVideoModes[iCustomMode] = CustomVideoModes[0];
-    }
-
-    /* Load stored custom resolution from the registry. */
-    PDEVICE_EXTENSION DeviceExtension = (PDEVICE_EXTENSION)HwDeviceExtension;
-    for (iCustomMode = 0; iCustomMode < DeviceExtension->pPrimary->u.primary.cDisplays; iCustomMode++)
-    {
-        /*
-         * Get the last custom resolution
-         */
-        ULONG CustomXRes = 0, CustomYRes = 0, CustomBPP = 0;
-
-        if (iCustomMode == 0)
-        {
-            /* Name without a suffix */
-            status = VideoPortGetRegistryParameters(HwDeviceExtension,
-                                                    L"CustomXRes",
-                                                    FALSE,
-                                                    VBoxRegistryCallback,
-                                                    &CustomXRes);
-            if (status != NO_ERROR)
-                CustomXRes = 0;
-            status = VideoPortGetRegistryParameters(HwDeviceExtension,
-                                                    L"CustomYRes",
-                                                    FALSE,
-                                                    VBoxRegistryCallback,
-                                                    &CustomYRes);
-            if (status != NO_ERROR)
-                CustomYRes = 0;
-            status = VideoPortGetRegistryParameters(HwDeviceExtension,
-                                                    L"CustomBPP",
-                                                    FALSE,
-                                                    VBoxRegistryCallback,
-                                                    &CustomBPP);
-            if (status != NO_ERROR)
-                CustomBPP = 0;
-        }
-        else
-        {
-            wchar_t keyname[32];
-            swprintf(keyname, L"CustomXRes%d", iCustomMode);
-            status = VideoPortGetRegistryParameters(HwDeviceExtension,
-                                                    keyname,
-                                                    FALSE,
-                                                    VBoxRegistryCallback,
-                                                    &CustomXRes);
-            if (status != NO_ERROR)
-                CustomXRes = 0;
-            swprintf(keyname, L"CustomYRes%d", iCustomMode);
-            status = VideoPortGetRegistryParameters(HwDeviceExtension,
-                                                    keyname,
-                                                    FALSE,
-                                                    VBoxRegistryCallback,
-                                                    &CustomYRes);
-            if (status != NO_ERROR)
-                CustomYRes = 0;
-            swprintf(keyname, L"CustomBPP%d", iCustomMode);
-            status = VideoPortGetRegistryParameters(HwDeviceExtension,
-                                                    keyname,
-                                                    FALSE,
-                                                    VBoxRegistryCallback,
-                                                    &CustomBPP);
-            if (status != NO_ERROR)
-                CustomBPP = 0;
-        }
-
-        dprintf(("VBoxVideo: got stored custom resolution[%d] %dx%dx%d\n", iCustomMode, CustomXRes, CustomYRes, CustomBPP));
-
-        if (CustomXRes || CustomYRes || CustomBPP)
-        {
-            if (CustomXRes == 0)
-            {
-                CustomXRes = CustomVideoModes[iCustomMode].VisScreenWidth;
-            }
-            if (CustomYRes == 0)
-            {
-                CustomYRes = CustomVideoModes[iCustomMode].VisScreenHeight;
-            }
-            if (CustomBPP == 0)
-            {
-                CustomBPP = CustomVideoModes[iCustomMode].BitsPerPlane;
-            }
-
-            initVideoModeInformation(&CustomVideoModes[iCustomMode], CustomXRes, CustomYRes, CustomBPP, 0, 0);
-        }
-    }
-#endif /* VBOX_WITH_MULTIMONITOR_FIX */
+    vboxVideoInitCustomVideoModes(pDevExt);
 
    return TRUE;
 }

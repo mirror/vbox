@@ -96,12 +96,14 @@ HRESULT resource_init(IWineD3DResource *iface, WINED3DRESOURCETYPE resource_type
     /* Check that we have enough video ram left */
     if (pool == WINED3DPOOL_DEFAULT)
     {
+#ifndef VBOX_WITH_WDDM
         if (size > IWineD3DDevice_GetAvailableTextureMem((IWineD3DDevice *)device))
         {
             ERR("Out of adapter memory\n");
             HeapFree(GetProcessHeap(), 0, resource->heapMemory);
             return WINED3DERR_OUTOFVIDEOMEMORY;
         }
+#endif
         WineD3DAdapterChangeGLRam(device, size);
     }
 
