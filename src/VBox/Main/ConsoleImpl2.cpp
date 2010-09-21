@@ -1794,6 +1794,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigInteger(pCfg, "RamSize",              cbRam);
         if (hwVersion.compare(Bstr("1")) == 0) /* <= 2.0.x */
             InsertConfigInteger(pCfg, "HeapEnabled", 0);
+        Bstr snapshotFolder;
+        hrc = pMachine->COMGETTER(SnapshotFolder)(snapshotFolder.asOutParam());            H();
+        InsertConfigString(pCfg, "GuestCoreDumpDir", snapshotFolder);
 
         /* the VMM device's Main driver */
         InsertConfigNode(pInst,    "LUN#0", &pLunL0);
