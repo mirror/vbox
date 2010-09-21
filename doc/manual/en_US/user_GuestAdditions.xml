@@ -1412,20 +1412,6 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     <para>This feature can be used to automate deployment of software within
     the guest.</para>
 
-    <note><para>On Windows guests, a process lauched via the guest control
-      execute support is only able to display a graphical user interface if the
-      user account it is started under, is currently logged in and has a desktop
-      session. Otherwise, the process will not be able to display its user
-      interface. </para>
-      <para>Also, for using accounts without or with an empty password specified,
-      the group policy needs to be changed on the guest. To do so, open the
-      group policy editor on the command line by typing
-      <computeroutput>gpedit.msc</computeroutput>, open the key
-      <emphasis>Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options</emphasis>
-      and change the value of <emphasis>Accounts: Limit local account use of blank passwords to console logon only</emphasis>
-      to <emphasis>Disabled</emphasis>.</para>
-    </note>
-
     <para>To use this feature, use the VirtualBox command line. See <xref
     linkend="vboxmanage-guestcontrol" /> for details.</para>
   </sect1>
