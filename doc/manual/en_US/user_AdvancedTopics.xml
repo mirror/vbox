@@ -300,7 +300,7 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
       <para><note>
           The VirtualBox GINA is implemented as a wrapper around the standard Windows
           GINA (<computeroutput>MSGINA.DLL</computeroutput>),
-          therefore it will most likely not work correctly with 3rd party GINA modules. 
+          therefore it will most likely not work correctly with 3rd party GINA modules.
         </note></para>
 
       <para>To manually install the VirtualBox credential module, extract the
@@ -1340,12 +1340,12 @@ name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
     <para>The VirtualBox CoreDumper can be enabled using the following
     command:</para>
 
-    <para><screen>VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpEnabled 1</screen></para>
+    <para><screen>VBoxManage setextradata "VM name" VBoxInternal2/GuestCoreDumpEnabled 1</screen></para>
 
     <para>You can specify which directory to use for core dumps with this
     command:</para>
 
-    <para><screen>VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpDir &lt;path-to-directory&gt;</screen>Make
+    <para><screen>VBoxManage setextradata "VM name" VBoxInternal2/GuestCoreDumpDir &lt;path-to-directory&gt;</screen>Make
     sure the directory you specify is on a volume with sufficient free space
     and that the VirtualBox process has sufficient permissions to write files
     to this directory. If you skip this command and don't specify any core
@@ -1357,17 +1357,17 @@ name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
     <para>You must specify when the VirtualBox CoreDumper should be triggered.
     This is done using the following commands:</para>
 
-    <para><screen>VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpReplaceSystemDump 1
-VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
+    <para><screen>VBoxManage setextradata "VM name" VBoxInternal2/GuestCoreDumpReplaceSystemDump 1
+VBoxManage setextradata "VM name" VBoxInternal2/GuestCoreDumpLive 1</screen>At
     least one of the above two commands will have to be provided if you have
     enabled the VirtualBox CoreDumper.</para>
 
-    <para>Setting <computeroutput>CoreDumpReplaceSystemDump</computeroutput>
+    <para>Setting <computeroutput>GuestCoreDumpReplaceSystemDump</computeroutput>
     sets up the VM to override the host's core dumping mechanism and in the
     event of any crash only the VirtualBox CoreDumper would produce the core
     file.</para>
 
-    <para>Setting <computeroutput>CoreDumpLive</computeroutput> sets up the VM
+    <para>Setting <computeroutput>GuestCoreDumpLive</computeroutput> sets up the VM
     to produce cores whenever the VM receives a
     <computeroutput>SIGUSR2</computeroutput> signal. After producing the core
     file, the VM will not be terminated and will continue to run. You can then
