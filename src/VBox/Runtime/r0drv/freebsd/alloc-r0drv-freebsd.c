@@ -51,8 +51,8 @@ MALLOC_DEFINE(M_IPRTCONT, "iprtcont", "IPRT - contiguous");
 
 PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 {
-    size_t cbAllocated = cb;
-    PRTMEMHDR pHdr = NULL;
+    size_t      cbAllocated = cb;
+    PRTMEMHDR   pHdr        = NULL;
 
     /*
      * Things are a bit more complicated on AMD64 for executable memory
@@ -61,6 +61,8 @@ PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 #ifdef RT_ARCH_AMD64
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
+        AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
+
 # ifdef USE_KMEM_ALLOC_PROT
         pHdr = (PRTMEMHDR)kmem_alloc_prot(kernel_map, cb + sizeof(*pHdr),
                                           VM_PROT_ALL, VM_PROT_ALL, KERNBASE);

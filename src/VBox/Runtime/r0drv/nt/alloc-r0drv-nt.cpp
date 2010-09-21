@@ -40,6 +40,8 @@
  */
 PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 {
+    AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
+
     PRTMEMHDR pHdr = (PRTMEMHDR)ExAllocatePoolWithTag(NonPagedPool, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
     if (pHdr)
     {

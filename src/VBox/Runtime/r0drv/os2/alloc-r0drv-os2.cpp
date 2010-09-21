@@ -42,6 +42,8 @@
 
 PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 {
+    AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
+
     void *pv = NULL;
     APIRET rc = KernVMAlloc(cb + sizeof(RTMEMHDR), VMDHA_FIXED, &pv, (void **)-1, NULL);
     if (!rc)
