@@ -114,7 +114,7 @@ ifdef VBOX_WITH_WDDM
     wddm/VBoxVideoVhwa.cpp
  endif
  VBoxVideoWddm_LIBS.x86   = \
- 	$(PATH_SDK_WINDDKWLH_LIB)/bufferoverflowk.lib
+ 	$(PATH_SDK_WINDDKWLH_LIB)/BufferOverflowK.lib
  #VBoxVideoWddm_LIBS.x86   += \
  #	$(PATH_SDK_WINDDKWLH_LIB)/exsup.lib
  VBoxVideoWddm_LIBS        = \
