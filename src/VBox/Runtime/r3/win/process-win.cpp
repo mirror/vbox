@@ -89,6 +89,18 @@ typedef FNENUMPROCESSES *PFNENUMPROCESSES;
 typedef DWORD FNGETMODULEBASENAME(HANDLE, HMODULE, LPTSTR, DWORD);
 typedef FNGETMODULEBASENAME *PFNGETMODULEBASENAME;
 
+typedef BOOL WINAPI FNCREATEENVIRONMENTBLOCK(LPVOID *, HANDLE, BOOL);
+typedef FNCREATEENVIRONMENTBLOCK *PFNCREATEENVIRONMENTBLOCK;
+
+typedef BOOL WINAPI FNPFNDESTROYENVIRONMENTBLOCK(LPVOID);
+typedef FNPFNDESTROYENVIRONMENTBLOCK *PFNPFNDESTROYENVIRONMENTBLOCK;
+
+typedef BOOL WINAPI FNLOADUSERPROFILEW(HANDLE, LPPROFILEINFOW);
+typedef FNLOADUSERPROFILEW *PFNLOADUSERPROFILEW;
+
+typedef BOOL WINAPI FNUNLOADUSERPROFILE(HANDLE, HANDLE);
+typedef FNUNLOADUSERPROFILE *PFNUNLOADUSERPROFILE;
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -589,15 +601,30 @@ static int rtProcEnvironmentCreateInternal(VOID *pvBlock, RTENV hEnv, PRTUTF16 *
  */
 static int rtProcEnvironmentCreateFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppwszBlock)
 {
-    int rc = VINF_SUCCESS;
-    LPVOID pEnvBlockProfile = NULL;
-    if (CreateEnvironmentBlock(&pEnvBlockProfile, hToken, FALSE /* Don't inherit from parent. */))
+    RTLDRMOD hUserenv;
+    int rc = RTLdrLoad("Userenv.dll", &hUserenv);
+    if (RT_SUCCESS(rc))
     {
-        rc = rtProcEnvironmentCreateInternal(pEnvBlockProfile, hEnv, ppwszBlock);
-        DestroyEnvironmentBlock(pEnvBlockProfile);
+        PFNCREATEENVIRONMENTBLOCK pfnCreateEnvironmentBlock;
+        rc = RTLdrGetSymbol(hUserenv, "CreateEnvironmentBlock", (void**)&pfnCreateEnvironmentBlock);
+        if (RT_SUCCESS(rc))
+        {
+            PFNPFNDESTROYENVIRONMENTBLOCK pfnDestroyEnvironmentBlock;
+            rc = RTLdrGetSymbol(hUserenv, "DestroyEnvironmentBlock", (void**)&pfnDestroyEnvironmentBlock);
+            if (RT_SUCCESS(rc))
+            {
+                LPVOID pEnvBlockProfile = NULL;
+                if (pfnCreateEnvironmentBlock(&pEnvBlockProfile, hToken, FALSE /* Don't inherit from parent. */))
+                {
+                    rc = rtProcEnvironmentCreateInternal(pEnvBlockProfile, hEnv, ppwszBlock);
+                    pfnDestroyEnvironmentBlock(pEnvBlockProfile);
+                }
+                else
+                    rc = RTErrConvertFromWin32(GetLastError());
+            }
+        }
+        RTLdrClose(hUserenv);
     }
-    else
-        rc = RTErrConvertFromWin32(GetLastError());
     return rc;
 }
 
@@ -806,46 +833,63 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
              */
             phToken = fFound ? &hTokenUserDesktop : &hTokenLogon;
 
-            PROFILEINFOW profileInfo;
-            ZeroMemory(&profileInfo, sizeof(profileInfo));
-            profileInfo.dwSize = sizeof(profileInfo);
-            profileInfo.lpUserName = pwszUser;
-            profileInfo.dwFlags = PI_NOUI; /* Prevents the display of profile error messages. */
-            if (LoadUserProfileW(*phToken, &profileInfo))
+            RTLDRMOD hUserenv;
+            int rc = RTLdrLoad("Userenv.dll", &hUserenv);
+            if (RT_SUCCESS(rc))
             {
-                PRTUTF16 pwszzBlock;
-                rc = rtProcEnvironmentCreateFromToken(*phToken, hEnv, &pwszzBlock);
+                PFNLOADUSERPROFILEW pfnLoadUserProfileW;
+                rc = RTLdrGetSymbol(hUserenv, "LoadUserProfileW", (void**)&pfnLoadUserProfileW);
                 if (RT_SUCCESS(rc))
                 {
-                    /*
-                     * Useful KB articles:
-                     *      http://support.microsoft.com/kb/165194/
-                     *      http://support.microsoft.com/kb/184802/
-                     *      http://support.microsoft.com/kb/327618/
-                     */
-                    fRc = CreateProcessAsUserW(*phToken,
-                                               pwszExec,
-                                               pwszCmdLine,
-                                               NULL,         /* pProcessAttributes */
-                                               NULL,         /* pThreadAttributes */
-                                               TRUE,         /* fInheritHandles */
-                                               dwCreationFlags,
-                                               pwszzBlock,
-                                               NULL,         /* pCurrentDirectory */
-                                               pStartupInfo,
-                                               pProcInfo);
-                    if (fRc)
-                        dwErr = NO_ERROR;
-                    else
-                        dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
-                    rtProcEnvironmentDestroy(pwszzBlock);
+                    PFNUNLOADUSERPROFILE pfnUnloadUserProfile;
+                    rc = RTLdrGetSymbol(hUserenv, "UnloadUserProfile", (void**)&pfnUnloadUserProfile);
+                    if (RT_SUCCESS(rc))
+                    {
+                        PROFILEINFOW profileInfo;
+                        ZeroMemory(&profileInfo, sizeof(profileInfo));
+                        profileInfo.dwSize = sizeof(profileInfo);
+                        profileInfo.lpUserName = pwszUser;
+                        profileInfo.dwFlags = PI_NOUI; /* Prevents the display of profile error messages. */
+
+                        if (pfnLoadUserProfileW(*phToken, &profileInfo))
+                        {
+                            PRTUTF16 pwszzBlock;
+                            rc = rtProcEnvironmentCreateFromToken(*phToken, hEnv, &pwszzBlock);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * Useful KB articles:
+                                 *      http://support.microsoft.com/kb/165194/
+                                 *      http://support.microsoft.com/kb/184802/
+                                 *      http://support.microsoft.com/kb/327618/
+                                 */
+                                fRc = CreateProcessAsUserW(*phToken,
+                                                           pwszExec,
+                                                           pwszCmdLine,
+                                                           NULL,         /* pProcessAttributes */
+                                                           NULL,         /* pThreadAttributes */
+                                                           TRUE,         /* fInheritHandles */
+                                                           dwCreationFlags,
+                                                           pwszzBlock,
+                                                           NULL,         /* pCurrentDirectory */
+                                                           pStartupInfo,
+                                                           pProcInfo);
+                                if (fRc)
+                                    dwErr = NO_ERROR;
+                                else
+                                    dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
+                                rtProcEnvironmentDestroy(pwszzBlock);
+                            }
+                            else
+                                dwErr = rc;
+                            pfnUnloadUserProfile(*phToken, profileInfo.hProfile);
+                        }
+                        else
+                            dwErr = GetLastError(); /* LoadUserProfileW() failed. */
+                    }
                 }
-                else
-                    dwErr = rc;
-                UnloadUserProfile(*phToken, profileInfo.hProfile);
+                RTLdrClose(hUserenv);
             }
-            else
-                dwErr = GetLastError(); /* LoadUserProfileW() failed. */
             if (hTokenUserDesktop != INVALID_HANDLE_VALUE)
                 CloseHandle(hTokenUserDesktop);
             rtProcUserLogoff(hTokenLogon);
