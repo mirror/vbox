@@ -411,3 +411,37 @@ FunctionEnd
 ; Insert function as an installer and uninstaller function.
 !insertmacro AbortShutdown ""
 !insertmacro AbortShutdown "un."
+
+!macro CheckForWDDMCapability un
+Function ${un}CheckForWDDMCapability
+
+  ; Note: This is done early at startup of the installer, so
+  ;       DetailPrint and friends won't work here!
+
+!if $%BUILD_TARGET_ARCH% == "x86"
+  ; If we're on a 32-bit Windows Vista / 7 we can use the WDDM driver
+  ${If} $g_strWinVersion == "Vista"
+  ${OrIf} $g_strWinVersion == "7"
+    StrCpy $g_bCapWDDM "true"
+  ${EndIf}
+!endif
+
+FunctionEnd
+!macroend
+
+; Insert function as an installer and uninstaller function.
+!insertmacro CheckForWDDMCapability ""
+!insertmacro CheckForWDDMCapability "un."
+
+!macro CheckForCapabilities un
+Function ${un}CheckForCapabilities
+
+    Call ${un}CheckForWDDMCapability
+
+FunctionEnd
+!macroend
+
+; Insert function as an installer and uninstaller function.
+!insertmacro CheckForCapabilities ""
+!insertmacro CheckForCapabilities "un."
+
