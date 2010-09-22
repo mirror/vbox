@@ -122,7 +122,7 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
   #
   SYSMODS.x86 += VBoxGuestNT
   VBoxGuestNT_EXTENDS = VBoxGuest
-  VBoxGuestNT_NOINST  = $(NO_SUCH_VARIABLE)
+  VBoxGuestNT_NOINST.win = $(NO_SUCH_VARIABLE)
   VBoxGuestNT_DEFS    = $(VBoxGuest_DEFS) TARGET_NT4
   VBoxGuestNT_SOURCES = \
   	VBoxGuest.cpp \
