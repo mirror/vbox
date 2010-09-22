@@ -134,7 +134,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     if (RT_FAILURE(rc))
         goto end;
 
-    for(;;)
+    for (;;)
     {
         size_t cbDirEntrySize = cbDirEntry;
 
@@ -142,13 +142,14 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
         if (rc == VERR_NO_MORE_FILES)
             break;
 
-        if (VINF_SUCCESS != rc && rc != VWRN_NO_DIRENT_INFO)
+        if (   rc != VINF_SUCCESS
+            && rc != VWRN_NO_DIRENT_INFO)
         {
             AssertFailed();
-            if (rc != VERR_NO_TRANSLATION)
-                break;
-            else
+            if (   rc == VERR_NO_TRANSLATION
+                || rc == VERR_INVALID_UTF8_ENCODING)
                 continue;
+            break;
         }
 
         Log2(("vbsfCorrectCasing: found %s\n", &pDirEntry->szName[0]));
@@ -526,7 +527,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
                     &&  RT_SUCCESS(rc))
                 {
                     src++;
-                    for(;;)
+                    for (;;)
                     {
                         char *end = src;
                         bool fEndOfString = true;
@@ -1533,13 +1534,14 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
                 break;
             }
 
-            if (VINF_SUCCESS != rc && rc != VWRN_NO_DIRENT_INFO)
+            if (   rc != VINF_SUCCESS
+                && rc != VWRN_NO_DIRENT_INFO)
             {
                 AssertFailed();
-                if (rc != VERR_NO_TRANSLATION)
-                    break;
-                else
+                if (   rc == VERR_NO_TRANSLATION
+                    || rc == VERR_INVALID_UTF8_ENCODING)
                     continue;
+                break;
             }
         }
 
