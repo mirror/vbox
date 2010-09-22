@@ -71,6 +71,55 @@ ifndef VBOX_ONLY_TESTSUITE
   include $(PATH_SUB_CURRENT)/darwin/Makefile.kmk
  endif
 
+ ifeq ($(KBUILD_TARGET),win)
+  #
+  # Inf2Cat requires all the files referenced in the .inf file
+  # to be present in the directory, so we have to do this from here,
+  # since VBoxGuest.sys is being built from the common sources.
+  #
+  INSTALLS += VBoxGuest-inf
+  VBoxGuest-inf_INST = $(INST_ADDITIONS)
+  VBoxGuest-inf_MODE = a+r,u+w
+  VBoxGuest-inf_SOURCES = \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf
+  ifdef VBOX_SIGN_ADDITIONS
+  VBoxGuest-inf_SOURCES += \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
+  endif # signing
+  VBoxGuest-inf_CLEAN = $(VBoxGuest-inf_SOURCES)
+  VBoxGuest-inf_BLDDIRS = \
+	$(PATH_TARGET)/VBoxGuestCat.dir
+
+  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf: $(PATH_SUB_CURRENT)/common/VBoxGuest/win/VBoxGuest.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+	$(call MSG_GENERATE,VBoxGuest-inf,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys:   $$(TARGET_VBoxGuest) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 644 $< $(@D)
+
+  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe: $$(TARGET_VBoxControl) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 755 $< $(@D)
+
+  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe:    $$(TARGET_VBoxTray) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 755 $< $(@D)
+
+  $(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll:    $$(TARGET_VBCoInst) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 644 $< $(@D)
+
+  $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe \
+		$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
+	$(call MSG_TOOL,Inf2Cat,VBoxGuest-inf,$@,$<)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+ endif # KBUILD_TARGET == win
+
  # The packing target rule, but only if we're on the local build box.
  # (VBOX_WITHOUT_ADDITIONS_ISO is used by the additions build box, see the root makefile.)
  ifndef VBOX_WITHOUT_ADDITIONS_ISO
