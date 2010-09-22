@@ -192,7 +192,6 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pS
     if (offVram == VBOXVIDEOOFFSET_VOID)
         return STATUS_INVALID_PARAMETER;
 
-    Assert(0);
     /*
      * Set the current mode into the hardware.
      */

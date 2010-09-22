@@ -628,7 +628,7 @@ static DDSURFACEDESC gVBoxSurfDescsBase[] = {
 
 static D3DDDIQUERYTYPE gVBoxQueryTypes[] = {
         D3DDDIQUERYTYPE_EVENT,
-        D3DDDIQUERYTYPE_OCCLUSION
+//        D3DDDIQUERYTYPE_OCCLUSION
 };
 
 #define VBOX_QUERYTYPE_COUNT() RT_ELEMENTS(gVBoxQueryTypes)
@@ -3764,9 +3764,8 @@ static HRESULT APIENTRY vboxWddmDDevStateSet(HANDLE hDevice, D3DDDIARG_STATESET*
 static HRESULT APIENTRY vboxWddmDDevSetPriority(HANDLE hDevice, CONST D3DDDIARG_SETPRIORITY* pData)
 {
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    return S_OK;
 }
 AssertCompile(sizeof (RECT) == sizeof (D3DRECT));
 AssertCompile(RT_SIZEOFMEMB(RECT, left) == RT_SIZEOFMEMB(D3DRECT, x1));
@@ -6050,31 +6049,71 @@ static HRESULT APIENTRY vboxWddmDDevDepthFill(HANDLE hDevice, CONST D3DDDIARG_DE
 }
 static HRESULT APIENTRY vboxWddmDDevCreateQuery(HANDLE hDevice, D3DDDIARG_CREATEQUERY* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    HRESULT hr = S_OK;
+    if (pData->QueryType == D3DDDIQUERYTYPE_EVENT)
+    {
+        PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)RTMemAllocZ(sizeof (VBOXWDDMDISP_QUERY));
+        Assert(pQuery);
+        if (pQuery)
+        {
+            pQuery->enmType = pData->QueryType;
+            pData->hQuery = pQuery;
+        }
+        else
+        {
+            hr = E_OUTOFMEMORY;
+        }
+    }
+    else
+    {
+        Assert(0);
+        hr = E_FAIL;
+    }
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevDestroyQuery(HANDLE hDevice, HANDLE hQuery)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    HRESULT hr = S_OK;
+    PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)hQuery;
+    Assert(pQuery);
+    RTMemFree(pQuery);
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevIssueQuery(HANDLE hDevice, CONST D3DDDIARG_ISSUEQUERY* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    HRESULT hr = S_OK;
+    PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)pData->hQuery;
+    Assert(pQuery);
+    pQuery->fQueryState.Value |= pData->Flags.Value;
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevGetQueryData(HANDLE hDevice, CONST D3DDDIARG_GETQUERYDATA* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    Assert(0);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    HRESULT hr = S_OK;
+    PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)pData->hQuery;
+    Assert(pQuery);
+    switch (pQuery->enmType)
+    {
+        case D3DDDIQUERYTYPE_EVENT:
+            Assert(0);
+            pQuery->data.bData = TRUE;
+            Assert(pData->pData);
+            *((BOOL*)pData->pData) = TRUE;
+            break;
+        default:
+            Assert(0);
+            hr = E_FAIL;
+            break;
+    }
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevSetRenderTarget(HANDLE hDevice, CONST D3DDDIARG_SETRENDERTARGET* pData)
 {
