@@ -157,13 +157,17 @@ int sf_stat(const char *caller, struct sf_glob_info *sf_g,
     LogFunc(("sf_stat: calling vboxCallCreate, file %s, flags %#x\n",
              path->String.utf8, params.CreateFlags));
     rc = vboxCallCreate(&client_handle, &sf_g->map, path, &params);
+    if (rc == VERR_INVALID_NAME)
+    {
+        /* this can happen for names like 'foo*' on a Windows host */
+        return -ENOENT;
+    }
     if (RT_FAILURE(rc))
     {
         LogFunc(("vboxCallCreate(%s) failed.  caller=%s, rc=%Rrc\n",
                     path->String.utf8, rc, caller));
         return -EPROTO;
     }
-
     if (params.Result != SHFL_FILE_EXISTS)
     {
         if (!ok_to_fail)
