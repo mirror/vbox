@@ -172,8 +172,8 @@ vbox_close(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     TRACE_ENTRY();
 
-    free (pVBox->reqp);
-    pVBox->reqp = NULL;
+    xf86DestroyCursorInfoRec(pVBox->pCurs);
+    pVBox->pCurs = NULL;
     TRACE_EXIT();
 }
 
@@ -418,41 +418,12 @@ vbox_init(int scrnIndex, VBOXPtr pVBox)
 Bool
 vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 {
-    int rc;
-    void *p;
-    size_t size;
-    int scrnIndex = pScrn->scrnIndex;
-
     TRACE_ENTRY();
 
     if (!pVBox->useDevice)
         return FALSE;
-
-    if (pVBox->reqp)
-    {
-        /* still open, just re-enable VBVA after CloseScreen was called */
-        pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
-        return TRUE;
-    }
-
-    size = vmmdevGetRequestSize(VMMDevReq_SetPointerShape);
-    p = calloc(1, size);
-    if (p)
-    {
-        rc = vmmdevInitRequest(p, VMMDevReq_SetPointerShape);
-        if (RT_SUCCESS(rc))
-        {
-            pVBox->reqp = p;
-            pVBox->pCurs = NULL;
-            pVBox->pointerHeaderSize = size;
-            pVBox->useVbva = vboxInitVbva(scrnIndex, pScreen, pVBox);
-            return TRUE;
-        }
-        xf86DrvMsg(scrnIndex, X_ERROR, "Could not init VMM request: rc = %d\n", rc);
-        free(p);
-    }
-    xf86DrvMsg(scrnIndex, X_ERROR, "Could not allocate %lu bytes for VMM request\n", (unsigned long)size);
-    return FALSE;
+    pVBox->useVbva = vboxInitVbva(pScrn->scrnIndex, pScreen, pVBox);
+    return TRUE;
 }
 
 Bool
@@ -466,11 +437,10 @@ vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
 
-    pVBox->reqp->fFlags = 0;
-    rc = VbglR3SetPointerShapeReq(pVBox->reqp);
+    rc = VbglR3SetPointerShape(0, 0, 0, 0, 0, NULL, 0);
     if (RT_FAILURE(rc))
     {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not hide the virtual mouse pointer.\n");
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not hide the virtual mouse pointer, VBox error %d.\n", rc);
         /* Play safe, and disable the hardware cursor until the next mode
          * switch, since obviously something happened that we didn't
          * anticipate. */
@@ -483,16 +453,15 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
 
-    if (vbox_host_uses_hwcursor(pScrn)) {
-        pVBox->reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE;
-        rc = VbglR3SetPointerShapeReq(pVBox->reqp);
-        if (RT_FAILURE(rc)) {
-            xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
-            /* Play safe, and disable the hardware cursor until the next mode
-             * switch, since obviously something happened that we didn't
-             * anticipate. */
-            pVBox->forceSWCursor = TRUE;
-        }
+    if (!vbox_host_uses_hwcursor(pScrn))
+        return;
+    rc = VbglR3SetPointerShape(VBOX_MOUSE_POINTER_VISIBLE, 0, 0, 0, 0, NULL, 0);
+    if (RT_FAILURE(rc)) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
+        /* Play safe, and disable the hardware cursor until the next mode
+         * switch, since obviously something happened that we didn't
+         * anticipate. */
+        pVBox->forceSWCursor = TRUE;
     }
 }
 
@@ -605,8 +574,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     dstPitch = (w + 7) / 8;
     sizeMask = ((dstPitch * h) + 3) & (size_t) ~3;
     sizeRgba = w * h * 4;
-    pVBox->pointerSize = sizeMask + sizeRgba;
-    sizeRequest = pVBox->pointerSize + pVBox->pointerHeaderSize;
+    sizeRequest = sizeMask + sizeRgba + sizeof(VMMDevReqMousePointer);
 
     p = c = calloc (1, sizeRequest);
     if (!c)
@@ -739,9 +707,12 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     unsigned short cx, cy;
     unsigned char *pm;
     CARD32 *pc;
-    size_t sizeRequest, sizeMask;
+    size_t sizeData, sizeMask;
     CARD8 *p;
     int scrnIndex;
+    uint32_t fFlags =   VBOX_MOUSE_POINTER_VISIBLE | VBOX_MOUSE_POINTER_SHAPE
+                      | VBOX_MOUSE_POINTER_ALPHA;
+    int rc;
 
     TRACE_ENTRY();
     pVBox = pScrn->driverPrivate;
@@ -763,28 +734,17 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
                  "Error invalid cursor hotspot location %dx%d (max %dx%d)\n",
                  bitsp->xhot, bitsp->yhot, w, h);
 
-    pVBox->pointerSize = w * h * 4 + sizeMask;
-    sizeRequest = pVBox->pointerSize + pVBox->pointerHeaderSize;
-    p = calloc(1, sizeRequest);
+    sizeData = w * h * 4 + sizeMask;
+    p = calloc(1, sizeData);
     if (!p)
         RETERROR(scrnIndex, ,
                  "Error failed to alloc %lu bytes for cursor\n",
-                 (unsigned long)sizeRequest);
+                 (unsigned long)sizeData);
 
-    reqp = (VMMDevReqMousePointer *)p;
-    *reqp = *pVBox->reqp;
-    reqp->width  = w;
-    reqp->height = h;
-    reqp->xHot   = bitsp->xhot;
-    reqp->yHot   = bitsp->yhot;
-    reqp->fFlags =   VBOX_MOUSE_POINTER_VISIBLE | VBOX_MOUSE_POINTER_SHAPE
-                   | VBOX_MOUSE_POINTER_ALPHA;
-    reqp->header.size = sizeRequest;
-
-    memcpy(p + offsetof(VMMDevReqMousePointer, pointerData) + sizeMask, bitsp->argb, w * h * 4);
+    memcpy(p + sizeMask, bitsp->argb, w * h * 4);
 
     /* Emulate the AND mask. */
-    pm = p + offsetof(VMMDevReqMousePointer, pointerData);
+    pm = p;
     pc = bitsp->argb;
 
     /* Init AND mask to 1 */
@@ -814,7 +774,8 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
         pm += (w + 7) / 8;
     }
 
-    VbglR3SetPointerShapeReq(reqp);
+    rc = VbglR3SetPointerShape(fFlags, bitsp->xhot, bitsp->yhot, w, h, p, sizeData);
+    TRACE_LOG(": leaving, returning %d\n", rc);
     free(p);
 }
 #endif
