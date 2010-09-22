@@ -1823,6 +1823,7 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
 {
     IDirect3DSurface9 *pD3D9Surf;
     UINT iRt = vboxWddmSwapchainIdxBb2Rt(pSwapchain, iBb);
+    Assert(iRt < pSwapchain->cRTs);
     PVBOXWDDMDISP_RENDERTGT pRt = &pSwapchain->aRTs[iRt];
     HRESULT hr = pSwapchain->pSwapChainIf->GetBackBuffer(iBb, D3DBACKBUFFER_TYPE_MONO, &pD3D9Surf);
     Assert(hr == S_OK);
@@ -1838,9 +1839,23 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
                 IDirect3DSurface9 *pD3D9OldSurf = (IDirect3DSurface9*)pAlloc->pD3DIf;
                 if (pD3D9OldSurf && pD3D9OldSurf != pD3D9Surf)
                 {
-                    Assert(0);
-                    hr = pDevice->pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9Surf, NULL, D3DTEXF_NONE);
-                    Assert(hr == S_OK);
+                    VOID *pvSwapchain = NULL;
+                    HRESULT tmpHr = pD3D9OldSurf->GetContainer(IID_IDirect3DSwapChain9, &pvSwapchain);
+                    if (tmpHr == S_OK)
+                    {
+                        Assert(pvSwapchain);
+                        ((IDirect3DSwapChain9 *)pvSwapchain)->Release();
+                    }
+                    else
+                    {
+                        Assert(!pvSwapchain);
+                    }
+                    if (pvSwapchain != pSwapchain->pSwapChainIf)
+                    {
+                        Assert(0);
+                        hr = pDevice->pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9Surf, NULL, D3DTEXF_NONE);
+                        Assert(hr == S_OK);
+                    }
                 }
             }
             pAlloc->pD3DIf->Release();
@@ -4779,10 +4794,6 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                             ++pAllocation->D3DWidth;
                         }
                         Assert(pAllocation->D3DWidth >= pSurf->Width);
-#ifdef DEBUG_misha
-                        /* break to test */
-                        Assert(pAllocation->D3DWidth == pSurf->Width);
-#endif
                     }
                 }
 #if 0

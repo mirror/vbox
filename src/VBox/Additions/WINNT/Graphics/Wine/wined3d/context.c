@@ -1660,10 +1660,6 @@ struct wined3d_context *context_find_create(IWineD3DDeviceImpl *device, IWineD3D
     DWORD tid = GetCurrentThreadId();
     struct wined3d_context *context = NULL;
 
-#ifdef DEBUG_misha
-    Assert(0);
-#endif
-
     for(i = 0 ; i < device->numContexts ; i ++)
     {
         if(device->contexts[i]->tid == tid) {

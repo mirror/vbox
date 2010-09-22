@@ -1471,7 +1471,7 @@ NTSTATUS vboxVidPnEnumTargetsForSource(PDEVICE_EXTENSION pDevExt, D3DKMDT_HVIDPN
 {
     SIZE_T cTgtPaths;
     NTSTATUS Status = pVidPnTopologyInterface->pfnGetNumPathsFromSource(hVidPnTopology, VidPnSourceId, &cTgtPaths);
-    Assert(Status == STATUS_SUCCESS);
+    Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_SOURCE_NOT_IN_TOPOLOGY);
     if (Status == STATUS_SUCCESS)
     {
         for (SIZE_T i = 0; i < cTgtPaths; ++i)
@@ -1491,7 +1491,7 @@ NTSTATUS vboxVidPnEnumTargetsForSource(PDEVICE_EXTENSION pDevExt, D3DKMDT_HVIDPN
             }
         }
     }
-    else
+    else if (Status != STATUS_GRAPHICS_SOURCE_NOT_IN_TOPOLOGY)
         drprintf((__FUNCTION__": pfnGetNumPathsFromSource failed Status(0x%x)\n", Status));
 
     return Status;
