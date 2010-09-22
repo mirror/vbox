@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +24,7 @@
 #include <iprt/assert.h>
 #include "helpers.h"
 #include <malloc.h>
+#include <VBoxGuestInternal.h>
 
 typedef struct _VBOXDISPLAYCONTEXT
 {
@@ -454,14 +455,17 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
 
     maskInfo.u32OrMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
     maskInfo.u32NotMask = 0;
-    if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - or) succeeded\n"));
+        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - or) failed, thead exiting\n"));
+        return 0;
     }
-    else
+
+    int rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0);
+    if (RT_FAILURE(rc))
     {
-        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask) failed, DisplayChangeThread exited\n"));
-        return -1;
+        LogRel(("VBoxTray: VBoxDisplayThread: Failed to set the graphics capability with rc=%Rrc, thead exiting\n", rc));
+        return 0;
     }
 
     do
@@ -699,16 +703,14 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
         }
     } while (!fTerminate);
 
+    /*
+     * Remove event filter and graphics capability report.
+     */
     maskInfo.u32OrMask = 0;
     maskInfo.u32NotMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
-    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
-    {
-        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - not) succeeded\n"));
-    }
-    else
-    {
-        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask) failed\n"));
-    }
+    if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - not) failed\n"));
+    VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
 
     Log(("VBoxTray: VBoxDisplayThread: finished display change request thread\n"));
     return 0;
