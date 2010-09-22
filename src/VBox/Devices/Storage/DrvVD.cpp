@@ -85,6 +85,10 @@ typedef struct VBOXIMAGE
     PVDINTERFACE       pVDIfsImage;
     /** Common structure for the configuration information interface. */
     VDINTERFACE        VDIConfig;
+    /** Common structure for the supported TCP network stack interface. */
+    VDINTERFACE        VDITcpNet;
+    /** Common structure for the supported I/O interface. */
+    VDINTERFACE        VDIIO;
 } VBOXIMAGE, *PVBOXIMAGE;
 
 /**
@@ -104,11 +108,6 @@ typedef struct DRVVDSTORAGEBACKEND
     int                         rcReqLast;
     /** Callback routine */
     PFNVDCOMPLETED              pfnCompleted;
-
-    /** Pointer to the optional thread synchronization interface of the disk. */
-    PVDINTERFACE        pInterfaceThreadSync;
-    /** Pointer to the optional thread synchronization callbacks of the disk. */
-    PVDINTERFACETHREADSYNC pInterfaceThreadSyncCallbacks;
 } DRVVDSTORAGEBACKEND, *PDRVVDSTORAGEBACKEND;
 
 /**
@@ -139,20 +138,18 @@ typedef struct VBOXDISK
     VDINTERFACE        VDIError;
     /** Callback table for error interface. */
     VDINTERFACEERROR   VDIErrorCallbacks;
-    /** Common structure for the supported TCP network stack interface. */
-    VDINTERFACE        VDITcpNet;
-    /** Callback table for TCP network stack interface. */
-    VDINTERFACETCPNET  VDITcpNetCallbacks;
-    /** Common structure for the supported I/O interface. */
-    VDINTERFACE        VDIIO;
-    /** Callback table for I/O interface. */
-    VDINTERFACEIO      VDIIOCallbacks;
     /** Common structure for the supported thread synchronization interface. */
     VDINTERFACE        VDIThreadSync;
     /** Callback table for thread synchronization interface. */
     VDINTERFACETHREADSYNC VDIThreadSyncCallbacks;
+
     /** Callback table for the configuration information interface. */
     VDINTERFACECONFIG  VDIConfigCallbacks;
+    /** Callback table for TCP network stack interface. */
+    VDINTERFACETCPNET  VDITcpNetCallbacks;
+    /** Callback table for I/O interface. */
+    VDINTERFACEIO      VDIIOCallbacks;
+
     /** Flag whether opened disk suppports async I/O operations. */
     bool               fAsyncIOSupported;
     /** The async media interface. */
@@ -333,7 +330,6 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
 static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                                           uint32_t fOpen,
                                           PFNVDCOMPLETED pfnCompleted,
-                                          PVDINTERFACE pVDIfsDisk,
                                           void **ppStorage)
 {
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
@@ -345,12 +341,6 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
         pStorageBackend->fSyncIoPending = false;
         pStorageBackend->rcReqLast      = VINF_SUCCESS;
         pStorageBackend->pfnCompleted   = pfnCompleted;
-        pStorageBackend->pInterfaceThreadSync = NULL;
-        pStorageBackend->pInterfaceThreadSyncCallbacks = NULL;
-
-        pStorageBackend->pInterfaceThreadSync = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_THREADSYNC);
-        if (RT_UNLIKELY(pStorageBackend->pInterfaceThreadSync))
-            pStorageBackend->pInterfaceThreadSyncCallbacks = VDGetInterfaceThreadSync(pStorageBackend->pInterfaceThreadSync);
 
         rc = RTSemEventCreate(&pStorageBackend->EventSem);
         if (RT_SUCCESS(rc))
@@ -2130,9 +2120,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      */
     if (RT_SUCCESS(rc))
     {
-        /* First of all figure out what kind of TCP networking stack interface
-         * to use. This is done unconditionally, as backends which don't need
-         * it will just ignore it. */
+        /* Construct TCPNET callback table depending on the config. This is
+         * done unconditionally, as uninterested backends will ignore it. */
         if (fHostIP)
         {
             pThis->VDITcpNetCallbacks.cbSize = sizeof(VDINTERFACETCPNET);
@@ -2201,13 +2190,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             pThis->VDITcpNetCallbacks.pfnPoke = drvvdINIPPoke;
 #endif /* VBOX_WITH_INIP */
         }
-        if (RT_SUCCESS(rc))
-        {
-            rc = VDInterfaceAdd(&pThis->VDITcpNet, "DrvVD_INIP",
-                                VDINTERFACETYPE_TCPNET,
-                                &pThis->VDITcpNetCallbacks, NULL,
-                                &pThis->pVDIfsDisk);
-        }
 
         /** @todo quick hack to work around problems in the async I/O
          * implementation (rw semaphore thread ownership problem)
@@ -2230,9 +2212,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             pThis->VDIIOCallbacks.pfnReadAsync  = drvvdAsyncIOReadAsync;
             pThis->VDIIOCallbacks.pfnWriteAsync = drvvdAsyncIOWriteAsync;
             pThis->VDIIOCallbacks.pfnFlushAsync = drvvdAsyncIOFlushAsync;
-
-            rc = VDInterfaceAdd(&pThis->VDIIO, "DrvVD_IO", VDINTERFACETYPE_IO,
-                                &pThis->VDIIOCallbacks, pThis, &pThis->pVDIfsDisk);
 #else /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
             rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                      RT_SRC_POS, N_("DrvVD: Configuration error: Async Completion Framework not compiled in"));
@@ -2347,6 +2326,26 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         rc = VDInterfaceAdd(&pImage->VDIConfig, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
                             &pThis->VDIConfigCallbacks, pCfgVDConfig, &pImage->pVDIfsImage);
         AssertRC(rc);
+
+        /* Unconditionally insert the TCPNET interface, don't bother to check
+         * if an image really needs it. Will be ignored. Since the TCPNET
+         * interface is per image we could make this more flexible in the
+         * future if we want to. */
+        rc = VDInterfaceAdd(&pImage->VDITcpNet, "DrvVD_TCPNET",
+                            VDINTERFACETYPE_TCPNET, &pThis->VDITcpNetCallbacks,
+                            NULL, &pImage->pVDIfsImage);
+        AssertRC(rc);
+
+        /* Insert the custom I/O interface only if we're told to use new IO.
+         * Since the I/O interface is per image we could make this more
+         * flexible in the future if we want to. */
+        if (fUseNewIo)
+        {
+            rc = VDInterfaceAdd(&pImage->VDIIO, "DrvVD_IO", VDINTERFACETYPE_IO,
+                                &pThis->VDIIOCallbacks, pThis,
+                                &pImage->pVDIfsImage);
+            AssertRC(rc);
+        }
 
         /*
          * Open the image.

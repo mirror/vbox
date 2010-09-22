@@ -252,13 +252,13 @@ typedef enum VDINTERFACETYPE
     VDINTERFACETYPE_FIRST = 0,
     /** Interface to pass error message to upper layers. Per-disk. */
     VDINTERFACETYPE_ERROR = VDINTERFACETYPE_FIRST,
-    /** Interface for I/O operations. Per-disk. */
+    /** Interface for I/O operations. Per-image. */
     VDINTERFACETYPE_IO,
     /** Interface for progress notification. Per-operation. */
     VDINTERFACETYPE_PROGRESS,
     /** Interface for configuration information. Per-image. */
     VDINTERFACETYPE_CONFIG,
-    /** Interface for TCP network stack. Per-disk. */
+    /** Interface for TCP network stack. Per-image. */
     VDINTERFACETYPE_TCPNET,
     /** Interface for getting parent image state. Per-operation. */
     VDINTERFACETYPE_PARENTSTATE,
@@ -428,7 +428,7 @@ DECLINLINE(int) VDInterfaceRemove(PVDINTERFACE pInterface, PVDINTERFACE *ppVDIfs
  * Interface to deliver error messages (and also informational messages)
  * to upper layers.
  *
- * Per disk interface. Optional, but think twice if you want to miss the
+ * Per-disk interface. Optional, but think twice if you want to miss the
  * opportunity of reporting better human-readable error messages.
  */
 typedef struct VDINTERFACEERROR
@@ -508,12 +508,12 @@ typedef FNVDCOMPLETED *PFNVDCOMPLETED;
 /**
  * Support interface for I/O
  *
- * Per-disk. Optional as input.
+ * Per-image. Optional as input.
  */
 typedef struct VDINTERFACEIO
 {
     /**
-     * Size of the async interface.
+     * Size of the I/O interface.
      */
     uint32_t    cbSize;
 
@@ -536,13 +536,11 @@ typedef struct VDINTERFACEIO
      *                          of the request initiator (ie the one who calls
      *                          VDAsyncRead or VDAsyncWrite) in pvCompletion
      *                          if this is NULL.
-     * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      * @param   ppStorage       Where to store the opaque storage handle.
      */
     DECLR3CALLBACKMEMBER(int, pfnOpen, (void *pvUser, const char *pszLocation,
                                         uint32_t fOpen,
                                         PFNVDCOMPLETED pfnCompleted,
-                                        PVDINTERFACE pVDIfsDisk,
                                         void **ppStorage));
 
     /**
@@ -704,7 +702,7 @@ typedef struct VDINTERFACEIO
 } VDINTERFACEIO, *PVDINTERFACEIO;
 
 /**
- * Get async I/O interface from opaque callback table.
+ * Get I/O interface from opaque callback table.
  *
  * @return Pointer to the callback table.
  * @param  pInterface Pointer to the interface descriptor.
@@ -713,17 +711,17 @@ DECLINLINE(PVDINTERFACEIO) VDGetInterfaceIO(PVDINTERFACE pInterface)
 {
     PVDINTERFACEIO pInterfaceIO;
 
-    /* Check that the interface descriptor is a async I/O interface. */
+    /* Check that the interface descriptor is an I/O interface. */
     AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_IO)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
-                    ("Not an async I/O interface"), NULL);
+                    ("Not an I/O interface"), NULL);
 
     pInterfaceIO = (PVDINTERFACEIO)pInterface->pCallbacks;
 
     /* Do basic checks. */
     AssertMsgReturn(   (pInterfaceIO->cbSize == sizeof(VDINTERFACEIO))
                     && (pInterfaceIO->enmInterface == VDINTERFACETYPE_IO),
-                    ("A non async I/O callback table attached to a I/O interface descriptor\n"), NULL);
+                    ("A non I/O callback table attached to an I/O interface descriptor\n"), NULL);
 
     return pInterfaceIO;
 }
@@ -1117,7 +1115,7 @@ typedef VDSOCKET *PVDSOCKET;
 /**
  * TCP network stack interface
  *
- * Per-disk. Mandatory for backends which have the VD_CAP_TCPNET bit set.
+ * Per-image. Mandatory for backends which have the VD_CAP_TCPNET bit set.
  */
 typedef struct VDINTERFACETCPNET
 {
@@ -1339,7 +1337,7 @@ DECLINLINE(PVDINTERFACETCPNET) VDGetInterfaceTcpNet(PVDINTERFACE pInterface)
 /**
  * Interface to get the parent state.
  *
- * Per operation interface. Optional, present only if there is a parent, and
+ * Per-operation interface. Optional, present only if there is a parent, and
  * used only internally for compacting.
  */
 typedef struct VDINTERFACEPARENTSTATE
@@ -1415,7 +1413,7 @@ DECLINLINE(PVDINTERFACEPARENTSTATE) VDGetInterfaceParentState(PVDINTERFACE pInte
  * sophisticated interface will be provided which has the necessary information
  * about worst case affected areas.
  *
- * Per disk interface. Optional, needed if the disk is accessed concurrently
+ * Per-disk interface. Optional, needed if the disk is accessed concurrently
  * by several threads, e.g. when merging diff images while a VM is running.
  */
 typedef struct VDINTERFACETHREADSYNC
@@ -1907,21 +1905,21 @@ typedef struct VDINTERFACEIOINT
  */
 DECLINLINE(PVDINTERFACEIOINT) VDGetInterfaceIOInt(PVDINTERFACE pInterface)
 {
-    PVDINTERFACEIOINT pInterfaceIO;
+    PVDINTERFACEIOINT pInterfaceIOInt;
 
-    /* Check that the interface descriptor is a async I/O interface. */
+    /* Check that the interface descriptor is an internal I/O interface. */
     AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_IOINT)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
-                    ("Not an I/O interface"), NULL);
+                    ("Not an internal I/O interface"), NULL);
 
-    pInterfaceIO = (PVDINTERFACEIOINT)pInterface->pCallbacks;
+    pInterfaceIOInt = (PVDINTERFACEIOINT)pInterface->pCallbacks;
 
     /* Do basic checks. */
-    AssertMsgReturn(   (pInterfaceIO->cbSize == sizeof(VDINTERFACEIOINT))
-                    && (pInterfaceIO->enmInterface == VDINTERFACETYPE_IOINT),
-                    ("A non I/O callback table attached to a I/O interface descriptor\n"), NULL);
+    AssertMsgReturn(   (pInterfaceIOInt->cbSize == sizeof(VDINTERFACEIOINT))
+                    && (pInterfaceIOInt->enmInterface == VDINTERFACETYPE_IOINT),
+                    ("A non internal I/O callback table attached to an internal I/O interface descriptor\n"), NULL);
 
-    return pInterfaceIO;
+    return pInterfaceIOInt;
 }
 
 /**
