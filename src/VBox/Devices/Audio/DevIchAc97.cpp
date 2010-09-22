@@ -788,6 +788,7 @@ static void transfer_audio (AC97LinkState *s, int index, int elapsed)
                 temp = write_audio (s, r, elapsed, &stop);
                 written += temp;
                 elapsed -= temp;
+                Assert((temp & 1) == 0);    /* Else the following shift won't work */
                 r->picb -= (temp >> 1);
                 break;
 
@@ -795,6 +796,7 @@ static void transfer_audio (AC97LinkState *s, int index, int elapsed)
             case MC_INDEX:
                 temp = read_audio (s, r, elapsed, &stop);
                 elapsed -= temp;
+                Assert((temp & 1) == 0);    /* Else the following shift won't work */
                 r->picb -= (temp >> 1);
                 break;
         }
