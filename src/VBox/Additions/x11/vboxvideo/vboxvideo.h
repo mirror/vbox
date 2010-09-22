@@ -206,9 +206,7 @@ typedef struct _VBOXRec
     /** Is access to the framebuffer currently allowed? */
     Bool accessEnabled;
     OptionInfoPtr Options;
-    VMMDevReqMousePointer *reqp;  /** @todo get rid of this */
-    size_t pointerHeaderSize;
-    size_t pointerSize;
+    /** @todo we never actually free this */
     xf86CursorInfoPtr pCurs;
     Bool useDevice;
     Bool forceSWCursor;

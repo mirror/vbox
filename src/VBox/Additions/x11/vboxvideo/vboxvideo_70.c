@@ -864,6 +864,9 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
     /* Destroy the VGA hardware record */
     vgaHWFreeHWRec(pScrn);
 
+    /* And do additional bits which are separate for historical reasons */
+    vbox_close(pScrn, pVBox);
+
     pScreen->CloseScreen = pVBox->CloseScreen;
     return pScreen->CloseScreen(scrnIndex, pScreen);
 }

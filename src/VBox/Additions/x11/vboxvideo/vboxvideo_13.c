@@ -1067,6 +1067,9 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
     /* Destroy the VGA hardware record */
     vgaHWFreeHWRec(pScrn);
 
+    /* And do additional bits which are separate for historical reasons */
+    vbox_close(pScrn, pVBox);
+
     /* Remove our observer functions from the X server call chains. */
     pScrn->EnableDisableFBAccess = pVBox->EnableDisableFBAccess;
     pScreen->CloseScreen = pVBox->CloseScreen;
