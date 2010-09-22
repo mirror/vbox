@@ -291,7 +291,12 @@ int main(int argc, char *argv[])
     {
         char *converted;
         RTStrCurrentCPToUtf8(&converted, argv[i]);
-        argv[i] = converted;
+        if (converted)
+            argv[i] = converted;
+        else
+            /* Conversion was not possible,probably due to invalid characters.
+             * Keep in mind that we do RTStrFree on the whole array below. */
+            argv[i] = RTStrDup(argv[i]);
     }
 
     do
