@@ -2739,4 +2739,3 @@ VBOXHDDBACKEND g_VDIBackend =
     /* pfnResize */
     vdiResize
 };
-
