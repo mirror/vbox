@@ -3,7 +3,7 @@
 # Sub-Makefile for the Windows NT++ Guest Additions.
 #
 
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -21,7 +21,6 @@ include $(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/Graphics/Makefile.kmk
 include $(PATH_SUB_CURRENT)/i8042prt/Makefile.kmk
 include $(PATH_SUB_CURRENT)/MouseFilter/Makefile.kmk
-include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxTray/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxGINA/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxCredProv/Makefile.kmk
@@ -35,52 +34,6 @@ endif
 ifneq ($(wildcard $(PATH_SUB_CURRENT)/Installer/Makefile.kmk),)
  include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
 endif
-
-#
-# Inf2Cat requires all the files referenced in the .inf file
-# to be present in the directory, so we have to do this from here.
-#
-INSTALLS += VBoxGuest-inf
-VBoxGuest-inf_INST = $(INST_ADDITIONS)
-VBoxGuest-inf_MODE = a+r,u+w
-VBoxGuest-inf_SOURCES = \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf
-ifdef VBOX_SIGN_ADDITIONS
-VBoxGuest-inf_SOURCES += \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
-endif # signing
-VBoxGuest-inf_CLEAN = $(VBoxGuest-inf_SOURCES)
-VBoxGuest-inf_BLDDIRS = \
-	$(PATH_TARGET)/VBoxGuestCat.dir
-
-$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf: $(PATH_SUB_CURRENT)/VBoxGuest/VBoxGuest.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
-	$(call MSG_GENERATE,VBoxGuest-inf,$@,$<)
-	$(call VBOX_EDIT_INF_FN,$<,$@)
-
-$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys:   $$(TARGET_VBoxGuest) | $$(call DIRDEP,$$(@D))
-	$(INSTALL) -m 644 $< $(@D)
-
-$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe: $$(TARGET_VBoxControl) | $$(call DIRDEP,$$(@D))
-	$(INSTALL) -m 755 $< $(@D)
-
-$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe:    $$(TARGET_VBoxTray) | $$(call DIRDEP,$$(@D))
-	$(INSTALL) -m 755 $< $(@D)
-
-$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll:    $$(TARGET_VBCoInst) | $$(call DIRDEP,$$(@D))
-	$(INSTALL) -m 644 $< $(@D)
-
-$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: \
-		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
-		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
-		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
-		$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe \
-		$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
-	$(call MSG_TOOL,Inf2Cat,VBoxGuest-inf,$@,$<)
-	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
 include $(KBUILD_PATH)/subfooter.kmk
 
