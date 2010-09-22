@@ -7,19 +7,14 @@ Upgrading:
 
 If you have an existing VirtualBox installation and you are upgrading to
 a newer version of VirtualBox, please uninstall the previous version
-completely before installing a newer one.
-
-You should uninstall BOTH the VirtualBox base package as well as the
-VirtualBox kernel interface package before installing the new ones.
-
-Please refer to the "Uninstalling" section at the end of this document
-for details.
+before installing a newer one. Please refer to the "Uninstalling" section
+at the end of this document for details.
 
  +--------+
  |  NOTE  |
  +--------+
 
- VirtualBox 3.1 includes experimental USB support and requires OpenSolaris
+ VirtualBox 3.1+ includes experimental USB support and requires OpenSolaris
  build 124 or higher. VirtualBox USB support on Solaris 10 is not supported
  due to limitations in the kernel.
 
