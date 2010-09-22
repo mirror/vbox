@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@
 #include <VBoxDisplay.h>
 #include <VBox/VMMDev.h>
 #include <iprt/assert.h>
+#include <VBoxGuestInternal.h>
 #include "helpers.h"
 
 typedef struct _VBOXSEAMLESSCONTEXT
@@ -60,62 +61,53 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
     OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
     GetVersionEx (&OSinfo);
 
+    int rc = VINF_SUCCESS;
+
     /* We have to jump out here when using NT4, otherwise it complains about
        a missing API function "UnhookWinEvent" used by the dynamically loaded VBoxHook.dll below */
     if (OSinfo.dwMajorVersion <= 4)         /* Windows NT 4.0 or older */
     {
         Log(("VBoxTray: VBoxSeamlessInit: Windows NT 4.0 or older not supported!\n"));
-        return VERR_NOT_SUPPORTED;
-    }
-
-    /* Will fail if SetWinEventHook is not present (version < NT4 SP6 apparently) */
-    gCtx.hModule = LoadLibrary(VBOXHOOK_DLL_NAME);
-    if (gCtx.hModule)
-    {
-        *(uintptr_t *)&gCtx.pfnVBoxInstallHook = (uintptr_t)GetProcAddress(gCtx.hModule, "VBoxInstallHook");
-        *(uintptr_t *)&gCtx.pfnVBoxRemoveHook  = (uintptr_t)GetProcAddress(gCtx.hModule, "VBoxRemoveHook");
-
-        /* inform the host that we support the seamless window mode */
-        VMMDevReqGuestCapabilities vmmreqGuestCaps = {0};
-        vmmdevInitRequest((VMMDevRequestHeader*)&vmmreqGuestCaps, VMMDevReq_ReportGuestCapabilities);
-        vmmreqGuestCaps.caps = VMMDEV_GUEST_SUPPORTS_SEAMLESS;
-
-        DWORD cbReturned;
-        if (!DeviceIoControl(pEnv->hDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(vmmreqGuestCaps)), &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
-                             &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
-        {
-            Log(("VBoxTray: VBoxSeamlessInit: VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
-            return VERR_INVALID_PARAMETER;
-        }
-
-        *pfStartThread = true;
-        *ppInstance = &gCtx;
-        return VINF_SUCCESS;
+        rc = VERR_NOT_SUPPORTED;
     }
     else
     {
-        Log(("VBoxTray: VBoxSeamlessInit: LoadLibrary failed with %d\n", GetLastError()));
-        return VERR_INVALID_PARAMETER;
+        /* Will fail if SetWinEventHook is not present (version < NT4 SP6 apparently) */
+        gCtx.hModule = LoadLibrary(VBOXHOOK_DLL_NAME);
+        if (gCtx.hModule)
+        {
+            *(uintptr_t *)&gCtx.pfnVBoxInstallHook = (uintptr_t)GetProcAddress(gCtx.hModule, "VBoxInstallHook");
+            *(uintptr_t *)&gCtx.pfnVBoxRemoveHook  = (uintptr_t)GetProcAddress(gCtx.hModule, "VBoxRemoveHook");
+
+            /* Inform the host that we support the seamless window mode. */
+            rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_SEAMLESS, 0);
+            if (RT_SUCCESS(rc))
+            {
+                *pfStartThread = true;
+                *ppInstance = &gCtx;
+            }
+            else
+                Log(("VBoxTray: VBoxSeamlessInit: Failed to set seamless capability\n"));
+        }
+        else
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+            Log(("VBoxTray: VBoxSeamlessInit: LoadLibrary of \"%s\" failed with rc=%Rrc\n", VBOXHOOK_DLL_NAME, rc));
+        }
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
 void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
     Log(("VBoxTray: VBoxSeamlessDestroy\n"));
-    /* inform the host that we no longer support the seamless window mode */
-    VMMDevReqGuestCapabilities vmmreqGuestCaps = {0};
-    vmmdevInitRequest((VMMDevRequestHeader*)&vmmreqGuestCaps, VMMDevReq_ReportGuestCapabilities);
-    vmmreqGuestCaps.caps = 0;
 
-    DWORD cbReturned;
-    if (!DeviceIoControl(pEnv->hDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(vmmreqGuestCaps)), &vmmreqGuestCaps, sizeof(vmmreqGuestCaps),
-                         &vmmreqGuestCaps, sizeof(vmmreqGuestCaps), &cbReturned, NULL))
-    {
-        Log(("VBoxTray: VMMDevReq_ReportGuestCapabilities: error doing IOCTL, last error: %d\n", GetLastError()));
-    }
+    /* Inform the host that we no longer support the seamless window mode. */
+    int rc = VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_SEAMLESS);
+    if (RT_FAILURE(rc))
+        Log(("VBoxTray: VBoxSeamlessDestroy: Failed to unset seamless capability, rc=%Rrc\n", rc));
 
     if (gCtx.pfnVBoxRemoveHook)
         gCtx.pfnVBoxRemoveHook();
