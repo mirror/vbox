@@ -29,9 +29,6 @@
 # include <VBox/com/EventQueue.h>
 
 # include <VBox/com/VirtualBox.h>
-
-# include <vector>
-# include <list>
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <VBox/err.h>
@@ -94,8 +91,8 @@ HRESULT showProgress(ComPtr<IProgress> progress)
 
     if (!g_fDetailedProgress)
     {
-        RTPrintf("0%%...");
-        RTStrmFlush(g_pStdOut);
+        RTStrmPrintf(g_pStdErr, "0%%...");
+        RTStrmFlush(g_pStdErr);
     }
 
     /* setup signal handling if cancelable */
@@ -136,7 +133,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
                 LONG lSecsRem;
                 progress->COMGETTER(TimeRemaining)(&lSecsRem);
 
-                RTPrintf("(%ld/%ld) %ls %ld%% => %ld%% (%d s remaining)\n", ulOperation + 1, cOperations, bstrOperationDescription.raw(), ulCurrentOperationPercent, ulCurrentPercent, lSecsRem);
+                RTStrmPrintf(g_pStdErr, "(%ld/%ld) %ls %ld%% => %ld%% (%d s remaining)\n", ulOperation + 1, cOperations, bstrOperationDescription.raw(), ulCurrentOperationPercent, ulCurrentPercent, lSecsRem);
                 ulLastPercent = ulCurrentPercent;
                 ulLastOperationPercent = ulCurrentOperationPercent;
             }
@@ -151,8 +148,8 @@ HRESULT showProgress(ComPtr<IProgress> progress)
                 {
                     if (curVal < 100)
                     {
-                        RTPrintf("%ld%%...", curVal);
-                        RTStrmFlush(g_pStdOut);
+                        RTStrmPrintf(g_pStdErr, "%ld%%...", curVal);
+                        RTStrmFlush(g_pStdErr);
                     }
                 }
                 ulLastPercent = (ulCurrentPercent / 10) * 10;
@@ -189,15 +186,15 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     if (SUCCEEDED(progress->COMGETTER(ResultCode)(&iRc)))
     {
         if (SUCCEEDED(iRc))
-            RTPrintf("100%%\n");
+            RTStrmPrintf(g_pStdErr, "100%%\n");
         else if (g_fCanceled)
-            RTPrintf("CANCELED\n");
+            RTStrmPrintf(g_pStdErr, "CANCELED\n");
         else
-            RTPrintf("FAILED\n");
+            RTStrmPrintf(g_pStdErr, "FAILED\n");
     }
     else
-        RTPrintf("\n");
-    RTStrmFlush(g_pStdOut);
+        RTStrmPrintf(g_pStdErr, "\n");
+    RTStrmFlush(g_pStdErr);
     return iRc;
 }
 
@@ -278,7 +275,7 @@ int main(int argc, char *argv[])
     rc = com::Initialize();
     if (FAILED(rc))
     {
-        RTPrintf("ERROR: failed to initialize COM!\n");
+        RTMsgError("Failed to initialize COM!");
         return rc;
     }
 
@@ -317,12 +314,12 @@ int main(int argc, char *argv[])
 
     rc = virtualBox.createLocalObject(CLSID_VirtualBox);
     if (FAILED(rc))
-        RTPrintf("ERROR: failed to create the VirtualBox object!\n");
+        RTMsgError("Failed to create the VirtualBox object!");
     else
     {
         rc = session.createInprocObject(CLSID_Session);
         if (FAILED(rc))
-            RTPrintf("ERROR: failed to create a session object!\n");
+            RTMsgError("Failed to create a session object!");
     }
 
     if (FAILED(rc))
@@ -331,7 +328,7 @@ int main(int argc, char *argv[])
         if (!info.isFullAvailable() && !info.isBasicAvailable())
         {
             com::GluePrintRCMessage(rc);
-            RTPrintf("Most likely, the VirtualBox COM server is not running or failed to start.\n");
+            RTMsgError("Most likely, the VirtualBox COM server is not running or failed to start.");
         }
         else
             com::GluePrintErrorInfo(info);

@@ -1092,7 +1092,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("uart%d=\"%#06x,%d\"\n", currentUART + 1,
                              ulIOBase, ulIRQ);
                 else
-                    RTPrintf("UART %d:          I/O base: 0x%04x, IRQ: %d",
+                    RTPrintf("UART %d:          I/O base: %#06x, IRQ: %d",
                              currentUART + 1, ulIOBase, ulIRQ);
                 switch (HostMode)
                 {
@@ -1493,7 +1493,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                         ULONG fMaskedIfs;
                         CHECK_ERROR_RET (DevPtr, COMGETTER (MaskedInterfaces) (&fMaskedIfs), rc);
                         if (fMaskedIfs)
-                            RTPrintf("Masked Interfaces: 0x%08x\n", fMaskedIfs);
+                            RTPrintf("Masked Interfaces: %#010x\n", fMaskedIfs);
                         RTPrintf("\n");
                     }
                 }
@@ -1542,8 +1542,8 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                      index + 1, bcdRevision >> 8, bcdRevision & 0xff);
                         else
                             RTPrintf("UUID:               %S\n"
-                                     "VendorId:           0x%04x (%04X)\n"
-                                     "ProductId:          0x%04x (%04X)\n"
+                                     "VendorId:           %#06x (%04X)\n"
+                                     "ProductId:          %#06x (%04X)\n"
                                      "Revision:           %u.%u (%02u%02u)\n",
                                      Utf8Str(id).c_str(),
                                      usVendorId, usVendorId, usProductId, usProductId,
@@ -1631,8 +1631,8 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                      index + 1, bcdRevision >> 8, bcdRevision & 0xff);
                         else
                             RTPrintf("UUID:               %S\n"
-                                     "VendorId:           0x%04x (%04X)\n"
-                                     "ProductId:          0x%04x (%04X)\n"
+                                     "VendorId:           %#06x (%04X)\n"
+                                     "ProductId:          %#06x (%04X)\n"
                                      "Revision:           %u.%u (%02u%02u)\n",
                                      Utf8Str(id).c_str(),
                                      usVendorId, usVendorId, usProductId, usProductId,

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxManage - The 'guestcontrol' command.
+ * VBoxManage - Implementation of guestcontrol command.
  */
 
 /*
@@ -64,14 +64,15 @@ static volatile bool    g_fExecCanceled = false;
 
 void usageGuestControl(void)
 {
-    RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
-             "                            <path to program>\n"
-             "                            --username <name> --password <password>\n"
-             "                            [--arguments \"<arguments>\"]\n"
-             "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
-             "                            [--flags <flags>] [--timeout <msec>]\n"
-             "                            [--verbose] [--wait-for exit,stdout,stderr||]\n"
-             "\n");
+    RTStrmPrintf(g_pStdErr,
+                 "VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
+                 "                            <path to program>\n"
+                 "                            --username <name> --password <password>\n"
+                 "                            [--arguments \"<arguments>\"]\n"
+                 "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
+                 "                            [--flags <flags>] [--timeout <msec>]\n"
+                 "                            [--verbose] [--wait-for exit,stdout,stderr||]\n"
+                 "\n");
 }
 
 /**
@@ -321,9 +322,9 @@ static int handleExecProgram(HandlerArg *a)
                 if (info.isFullAvailable())
                 {
                     if (rc == VBOX_E_IPRT_ERROR)
-                        RTPrintf("%ls.\n", info.getText().raw());
+                        RTMsgError("%ls.", info.getText().raw());
                     else
-                        RTPrintf("ERROR: %ls (%Rhrc).\n", info.getText().raw(), info.getResultCode());
+                        RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
                 }
                 break;
             }
@@ -391,13 +392,9 @@ static int handleExecProgram(HandlerArg *a)
                             if (info.isFullAvailable())
                             {
                                 if (rc == VBOX_E_IPRT_ERROR)
-                                {
-                                    RTPrintf("%ls.\n", info.getText().raw());
-                                }
+                                    RTMsgError("%ls.", info.getText().raw());
                                 else
-                                {
-                                    RTPrintf("ERROR: %ls (%Rhrc).\n", info.getText().raw(), info.getResultCode());
-                                }
+                                    RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
                             }
                             cbOutputData = 0;
                         }
@@ -488,14 +485,11 @@ static int handleExecProgram(HandlerArg *a)
                             /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
                              * because it contains more accurate info about what went wrong. */
                             if (info.getResultCode() == VBOX_E_IPRT_ERROR)
-                            {
-                                RTPrintf("%ls.\n", info.getText().raw());
-                            }
+                                RTMsgError("%ls.", info.getText().raw());
                             else
                             {
-                                RTPrintf("\n\nProcess error details:\n");
+                                RTMsgError("Process error details:");
                                 GluePrintErrorInfo(info);
-                                RTPrintf("\n");
                             }
                         }
                         else

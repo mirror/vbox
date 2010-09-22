@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,9 +26,6 @@
 #include <VBox/com/EventQueue.h>
 
 #include <VBox/com/VirtualBox.h>
-
-#include <vector>
-#include <list>
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/cidr.h>
@@ -72,9 +69,9 @@ static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
     {
         com::ProgressErrorInfo info(progress);
         if (info.isBasicAvailable())
-            RTPrintf("Error: failed to create the host-only adapter. Error message: %lS\n", info.getText().raw());
+            RTMsgError("Failed to create the host-only adapter. Error message: %lS", info.getText().raw());
         else
-            RTPrintf("Error: failed to create the host-only adapter. No error message available, HRESULT code: 0x%x\n", rc);
+            RTMsgError("Failed to create the host-only adapter. No error message available, code: %Rhrc", rc);
 
         return 1;
     }
@@ -116,9 +113,9 @@ static int handleRemove(HandlerArg *a, int iStart, int *pcProcessed)
     {
         com::ProgressErrorInfo info(progress);
         if (info.isBasicAvailable())
-            RTPrintf("Error: failed to remove the host-only adapter. Error message: %lS\n", info.getText().raw());
+            RTMsgError("Failed to remove the host-only adapter. Error message: %lS", info.getText().raw());
         else
-            RTPrintf("Error: failed to remove the host-only adapter. No error message available, HRESULT code: 0x%x\n", rc);
+            RTMsgError("Failed to remove the host-only adapter. No error message available, code: %Rhrc", rc);
 
         return 1;
     }
@@ -261,7 +258,7 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
         CHECK_ERROR(hif, COMGETTER(IPV6Supported)(&bIpV6Supported));
         if (!bIpV6Supported)
         {
-            RTPrintf("IPv6 setting is not supported for this adapter\n");
+            RTMsgError("IPv6 setting is not supported for this adapter");
             return 1;
         }
 
