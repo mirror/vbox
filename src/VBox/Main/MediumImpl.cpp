@@ -99,7 +99,8 @@ struct Medium::Data
           hostDrive(false),
           implicit(false),
           numCreateDiffTasks(0),
-          vdDiskIfaces(NULL)
+          vdDiskIfaces(NULL),
+          vdImageIfaces(NULL)
     { }
 
     /** weak VirtualBox parent */
@@ -162,6 +163,7 @@ struct Medium::Data
     VDINTERFACETCPNET vdIfCallsTcpNet;
 
     PVDINTERFACE vdDiskIfaces;
+    PVDINTERFACE vdImageIfaces;
 };
 
 typedef struct VDSOCKETINT
@@ -728,7 +730,8 @@ HRESULT Medium::FinalConstruct()
     m->vdIfCallsTcpNet.pfnSelectOneEx = NULL;
     m->vdIfCallsTcpNet.pfnPoke = NULL;
 
-    /* Initialize the per-disk interface chain */
+    /* Initialize the per-disk interface chain (could be done more globally,
+     * but it's not wasting much time or space so it's not worth it). */
     int vrc;
     vrc = VDInterfaceAdd(&m->vdIfError,
                          "Medium::vdInterfaceError",
@@ -736,16 +739,17 @@ HRESULT Medium::FinalConstruct()
                          &m->vdIfCallsError, this, &m->vdDiskIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
+    /* Initialize the per-image interface chain */
     vrc = VDInterfaceAdd(&m->vdIfConfig,
                          "Medium::vdInterfaceConfig",
                          VDINTERFACETYPE_CONFIG,
-                         &m->vdIfCallsConfig, this, &m->vdDiskIfaces);
+                         &m->vdIfCallsConfig, this, &m->vdImageIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
     vrc = VDInterfaceAdd(&m->vdIfTcpNet,
                          "Medium::vdInterfaceTcpNet",
                          VDINTERFACETYPE_TCPNET,
-                         &m->vdIfCallsTcpNet, this, &m->vdDiskIfaces);
+                         &m->vdIfCallsTcpNet, this, &m->vdImageIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
     vrc = RTSemEventMultiCreate(&m->queryInfoSem);
@@ -3714,7 +3718,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                          format.c_str(),
                          location.c_str(),
                          uOpenFlags,
-                         m->vdDiskIfaces);
+                         m->vdImageIfaces);
             if (RT_FAILURE(vrc))
             {
                 lastAccessError = Utf8StrFmt(tr("Could not open the medium '%s'%s"),
@@ -3954,7 +3958,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                              format.c_str(),
                              location.c_str(),
                              uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
-                             m->vdDiskIfaces);
+                             m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw S_OK;
 
@@ -5478,7 +5482,7 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
                              VD_OPEN_FLAGS_READONLY,
-                             pMedium->m->vdDiskIfaces);
+                             pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw vrc;
             }
@@ -5492,7 +5496,7 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
                              (*it)->m->strFormat.c_str(),
                              (*it)->m->strLocationFull.c_str(),
                              VD_OPEN_FLAGS_INFO,
-                             (*it)->m->vdDiskIfaces);
+                             (*it)->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw vrc;
 
@@ -5622,7 +5626,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
                                &geo,
                                id.raw(),
                                VD_OPEN_FLAGS_NORMAL,
-                               NULL,
+                               m->vdImageIfaces,
                                task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
@@ -5769,7 +5773,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
                              VD_OPEN_FLAGS_READONLY,
-                             pMedium->m->vdDiskIfaces);
+                             pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not open the medium storage unit '%s'%s"),
@@ -5790,7 +5794,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
                                targetId.raw(),
                                id.raw(),
                                VD_OPEN_FLAGS_NORMAL,
-                               pTarget->m->vdDiskIfaces,
+                               pTarget->m->vdImageIfaces,
                                task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
@@ -5973,7 +5977,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
                              uOpenFlags,
-                             pMedium->m->vdDiskIfaces);
+                             pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw vrc;
 
@@ -6005,7 +6009,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                                      (*it)->m->strFormat.c_str(),
                                      (*it)->m->strLocationFull.c_str(),
                                      VD_OPEN_FLAGS_INFO,
-                                     (*it)->m->vdDiskIfaces);
+                                     (*it)->m->vdImageIfaces);
                         if (RT_FAILURE(vrc))
                             throw vrc;
 
@@ -6254,7 +6258,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
                              VD_OPEN_FLAGS_READONLY,
-                             pMedium->m->vdDiskIfaces);
+                             pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not open the medium storage unit '%s'%s"),
@@ -6318,7 +6322,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                                  pMedium->m->strFormat.c_str(),
                                  pMedium->m->strLocationFull.c_str(),
                                  uOpenFlags,
-                                 pMedium->m->vdDiskIfaces);
+                                 pMedium->m->vdImageIfaces);
                     if (RT_FAILURE(vrc))
                         throw setError(VBOX_E_FILE_ERROR,
                                        tr("Could not open the medium storage unit '%s'%s"),
@@ -6332,12 +6336,12 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                              targetHdd,
                              targetFormat.c_str(),
                              (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
-                             false,
-                             0,
+                             false /* fMoveByRename */,
+                             0 /* cbSize */,
                              task.mVariant,
                              targetId.raw(),
-                             NULL,
-                             pTarget->m->vdDiskIfaces,
+                             NULL /* pVDIfsOperation */,
+                             pTarget->m->vdImageIfaces,
                              task.mVDOperationIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
@@ -6470,7 +6474,7 @@ HRESULT Medium::taskDeleteHandler(Medium::DeleteTask &task)
                          format.c_str(),
                          location.c_str(),
                          VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                         m->vdDiskIfaces);
+                         m->vdImageIfaces);
             if (RT_SUCCESS(vrc))
                 vrc = VDClose(hdd, true /* fDelete */);
 
@@ -6568,7 +6572,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
                              VD_OPEN_FLAGS_READONLY,
-                             pMedium->m->vdDiskIfaces);
+                             pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not open the medium storage unit '%s'%s"),
@@ -6592,7 +6596,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
                          parentFormat.c_str(),
                          parentLocation.c_str(),
                          VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                         m->vdDiskIfaces);
+                         m->vdImageIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not open the medium storage unit '%s'%s"),
@@ -6607,7 +6611,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
                                id.raw(),
                                parentId.raw(),
                                VD_OPEN_FLAGS_NORMAL,
-                               m->vdDiskIfaces,
+                               m->vdImageIfaces,
                                task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
@@ -6698,7 +6702,7 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
                              (it == mediumListLast) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
-                             pMedium->m->vdDiskIfaces);
+                             pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not open the medium storage unit '%s'%s"),
@@ -6795,7 +6799,7 @@ HRESULT Medium::taskResizeHandler(Medium::ResizeTask &task)
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
                              (it == mediumListLast) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
-                             pMedium->m->vdDiskIfaces);
+                             pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not open the medium storage unit '%s'%s"),

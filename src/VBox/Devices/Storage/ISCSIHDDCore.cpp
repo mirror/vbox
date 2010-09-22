@@ -526,10 +526,6 @@ typedef struct ISCSIIMAGE
     PVDINTERFACE        pInterfaceError;
     /** Error interface callback table. */
     PVDINTERFACEERROR   pInterfaceErrorCallbacks;
-    /** TCP network stack interface. */
-    PVDINTERFACE        pInterfaceNet;
-    /** TCP network stack interface callback table. */
-    PVDINTERFACETCPNET  pInterfaceNetCallbacks;
     /** Pointer to the per-image VD interface list. */
     PVDINTERFACE        pVDIfsImage;
     /** Config interface. */
@@ -540,6 +536,10 @@ typedef struct ISCSIIMAGE
     PVDINTERFACE        pInterfaceIo;
     /** I/O interface callback table. */
     PVDINTERFACEIOINT   pInterfaceIoCallbacks;
+    /** TCP network stack interface. */
+    PVDINTERFACE        pInterfaceNet;
+    /** TCP network stack interface callback table. */
+    PVDINTERFACETCPNET  pInterfaceNetCallbacks;
     /** Image open flags. */
     unsigned            uOpenFlags;
     /** Number of re-login retries when a connection fails. */
@@ -3732,7 +3732,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /* Get TCP network stack interface. */
-    pImage->pInterfaceNet = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_TCPNET);
+    pImage->pInterfaceNet = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_TCPNET);
     if (pImage->pInterfaceNet)
         pImage->pInterfaceNetCallbacks = VDGetInterfaceTcpNet(pImage->pInterfaceNet);
     else
