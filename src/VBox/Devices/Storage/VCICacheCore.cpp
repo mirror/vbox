@@ -274,8 +274,8 @@ typedef struct VCICACHE
 
     /** Offset of the B+-Tree in the image in bytes. */
     uint64_t          offTreeRoot;
-    /** Pointer to the root of the tree in memory. */
-    
+    /** @todo Pointer to the root of the tree in memory. */
+
 
     /** Offset to the block allocation bitmap in bytes. */
     uint64_t          offBlksBitmap;
@@ -844,7 +844,7 @@ static int vciCreateImage(PVCICACHE pImage, uint64_t cbSize,
 
         /*
          * Allocate space for the header in the block bitmap.
-         * Because the block map is empty the header has to start at block 0 
+         * Because the block map is empty the header has to start at block 0
          */
         uint64_t offHdr = 0;
         rc = vciBlkMapAllocate(pImage->pBlkMap, VCI_BYTE2BLOCK(sizeof(VciHdr)), &offHdr);
