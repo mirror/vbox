@@ -180,8 +180,9 @@ Var g_bNoGuestDrv       ; Cmd line: Do not install the VBoxGuest driver
 Var g_bNoMouseDrv       ; Cmd line: Do not install the VBoxMouse driver
 Var g_bWithAutoLogon    ; Cmd line: Install VBoxGINA / VBoxCredProv for auto logon support
 Var g_bWithD3D          ; Cmd line: Install Direct3D support
+Var g_bWithWDDM         ; Install the WDDM driver instead of the normal one
 Var g_bOnlyExtract      ; Cmd line: Only extract all files, do *not* install them. Only valid with param "/D" (target directory)
-Var g_bInstallWDDM      ; WDDM mode
+Var g_bCapWDDM          ; Capability: Is the guest able to handle/use our WDDM driver?
 
 ; Platform parts of this installer
 !include "VBoxGuestAdditionsCommon.nsh"
@@ -696,7 +697,7 @@ FunctionEnd
 Section /o $(VBOX_COMPONENT_D3D) SEC03
 
 !if $%VBOX_WITH_WDDM% == "1"
-  ${If} $g_bInstallWDDM == "true"
+  ${If} $g_bWithWDDM == "true"
     ; All D3D components are installed with WDDM driver package, nothing to be done here
     Return
   ${EndIf}
@@ -895,15 +896,12 @@ Function .onSelChange
   SectionGetFlags ${SEC03} $0
   ${If} $0 == ${SF_SELECTED}
 
-!if $%VBOX_WITH_WDDM% == "1"
-  !if $%BUILD_TARGET_ARCH% == "x86"
-    ; If we're on a 32-bit Windows Vista / 7 also install the WDDM bits
-    ${If} $g_strWinVersion == "Vista"
-    ${OrIf} $g_strWinVersion == "7"
-      StrCpy $g_bInstallWDDM "true"
+    ; If we're able to use the WDDM driver just use it instead of the replaced
+    ; D3D components below
+    ${If} $g_bCapWDDM == "true"
+      StrCpy $g_bWithWDDM "true"
+      Goto exit
     ${EndIf}
-  !endif
-!endif
 
     ${If} $g_bForceInstall != "true"
       ; Do not install on < XP
@@ -921,7 +919,6 @@ Function .onSelChange
       Goto d3d_disable
     ${EndIf}
   ${EndIf}
-
   Goto exit
 
 d3d_disable:
@@ -978,7 +975,8 @@ Function .onInit
   StrCpy $g_bWithAutoLogon "false"
   StrCpy $g_bWithD3D "false"
   StrCpy $g_bOnlyExtract "false"
-  StrCpy $g_bInstallWDDM "false"
+  StrCpy $g_bWithWDDM "false"
+  StrCpy $g_bCapWDDM "false"
 
   SetErrorLevel 0
   ClearErrors
@@ -990,6 +988,9 @@ Function .onInit
 
   ; Retrieve Windows version and store result in $g_strWinVersion
   Call GetWindowsVer
+
+  ; Retrieve capabilities
+  Call CheckForCapabilities
 
   ; Retrieve system mode and store result in
   System::Call 'user32::GetSystemMetrics(i ${SM_CLEANBOOT}) i .r0'
@@ -1127,6 +1128,9 @@ proceed:
 
   ; Retrieve Windows version we're running on and store it in $g_strWinVersion
   Call un.GetWindowsVer
+
+  ; Retrieve capabilities
+  Call un.CheckForCapabilities
 
 FunctionEnd
 

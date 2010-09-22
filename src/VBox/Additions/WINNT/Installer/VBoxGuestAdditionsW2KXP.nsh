@@ -185,27 +185,25 @@ Function W2K_CopyFiles
 
 !if $%VBOX_WITH_CROGL% == "1"
   !if $%VBOX_WITH_WDDM% == "1"
-    !if $%BUILD_TARGET_ARCH% == "x86"
-      ${If} $g_bInstallWDDM == "true"
-        SetOutPath "$INSTDIR"
-        ; WDDM Video driver
-        FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
-        FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLcrutil.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLpackspu.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
-        FILE "$%PATH_OUT%\bin\additions\libWine.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"
-        FILE "$%PATH_OUT%\bin\additions\wined3dwddm.dll"
-        SetOutPath $g_strSystemDir
-        Goto doneCr
-      ${EndIf}
-    !endif
+    ${If} $g_bWithWDDM == "true"
+      SetOutPath "$INSTDIR"
+      ; WDDM Video driver
+      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
+      FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLcrutil.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLpackspu.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
+      FILE "$%PATH_OUT%\bin\additions\libWine.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"
+      FILE "$%PATH_OUT%\bin\additions\wined3dwddm.dll"
+      SetOutPath $g_strSystemDir
+      Goto doneCr
+    ${EndIf}
   !endif
   ; crOpenGL
   SetOutPath $g_strSystemDir
@@ -287,11 +285,11 @@ drv_video:
 
   StrCmp $g_bNoVideoDrv "true" drv_guest
   SetOutPath "$INSTDIR"
-  DetailPrint "Installing video driver ..."
-  ${If} $g_bInstallWDDM == "true"
-    DetailPrint "WDDM Driver being installed ..."
+  ${If} $g_bWithWDDM == "true"
+    DetailPrint "Installing WDDM video driver ..."
     nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /i "PCI\VEN_80EE&DEV_BEEF&SUBSYS_00000000&REV_00" "$INSTDIR\VBoxVideoWddm.inf" "Display"'
   ${Else}
+    DetailPrint "Installing video driver ..."
     nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /i "PCI\VEN_80EE&DEV_BEEF&SUBSYS_00000000&REV_00" "$INSTDIR\VBoxVideo.inf" "Display"'
   ${EndIf}
   Pop $0                      ; Ret value
@@ -355,17 +353,17 @@ sf:
 
 !if $%VBOX_WITH_CROGL% == "1"
 cropengl:
-  ${If} $g_bInstallWDDM == "true"
+  ${If} $g_bWithWDDM == "true"
+    ; Nothing to do here
   ${Else}
     DetailPrint "Installing 3D OpenGL support ..."
     WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Version" 2
     WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "DriverVersion" 1
     WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Flags" 1
     WriteRegStr   HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Dll" "VBoxOGL.dll"
-
 !if $%BUILD_TARGET_ARCH% == "amd64"
     ; Write additional keys required for Windows XP, Vista and 7 64-bit (but for 32-bit stuff)
-    ${If} $g_strWinVersion   == '7'   
+    ${If} $g_strWinVersion   == '7'
     ${OrIf} $g_strWinVersion == 'Vista'
     ${OrIf} $g_strWinVersion == 'XP'
       WriteRegDWORD HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Version" 2
@@ -454,10 +452,10 @@ Function ${un}W2K_Uninstall
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /matchdrv "PCI\VEN_80EE&DEV_BEEF&SUBSYS_00000000&REV_00" "WDDM"'
   Pop $0    ; Ret value
   ${If} $0 == "0"
-    DetailPrint "WDDM Driver is installed"
-    StrCpy $g_bInstallWDDM "true"
+    DetailPrint "WDDM display driver is installed"
+    StrCpy $g_bWithWDDM "true"
   ${ElseIf} $0 == "4"
-    DetailPrint "Non-WDDM Driver is installed"
+    DetailPrint "Non-WDDM display driver is installed"
   ${Else}
     DetailPrint "Error occured"
     ; @todo Add error handling here!
@@ -476,7 +474,7 @@ Function ${un}W2K_Uninstall
   ; @todo restore old drivers
 
   ; Remove video driver
-  ${If} $g_bInstallWDDM == "true"
+  ${If} $g_bWithWDDM == "true"
     nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" /delsvc VBoxVideoWddm'
     Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxVideoWddm.sys"
     Delete /REBOOTOK "$g_strSystemDir\VBoxDispD3D.dll"
