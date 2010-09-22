@@ -33,8 +33,8 @@ abort_error()
     exit 1
 }
 
-# nothing to check for targetted install
-if test "x$PKG_INSTALL_ROOT" != "x/"; then
+# nothing to check for remote install
+if test "x${PKG_INSTALL_ROOT:=/}" != "x/"; then
     exit 0
 fi
 
