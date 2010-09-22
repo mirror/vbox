@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -264,7 +264,7 @@ int handleImportAppliance(HandlerArg *arg)
         CHECK_ERROR_BREAK(pAppliance, COMGETTER(Path)(path.asOutParam()));
         // call interpret(); this can yield both warnings and errors, so we need
         // to tinker with the error info a bit
-        RTPrintf("Interpreting %ls...\n", path.raw());
+        RTStrmPrintf(g_pStdErr, "Interpreting %ls...\n", path.raw());
         rc = pAppliance->Interpret();
         com::ErrorInfo info0(pAppliance, COM_IIDOF(IAppliance));
 
@@ -275,7 +275,7 @@ int handleImportAppliance(HandlerArg *arg)
             for (unsigned i = 0; i < cWarnings; ++i)
             {
                 Bstr bstrWarning(aWarnings[i]);
-                RTPrintf("WARNING: %ls.\n", bstrWarning.raw());
+                RTMsgWarning("%ls.", bstrWarning.raw());
             }
         }
 
@@ -286,7 +286,7 @@ int handleImportAppliance(HandlerArg *arg)
             break;
         }
 
-        RTPrintf("OK.\n");
+        RTStrmPrintf(g_pStdErr, "OK.\n");
 
         // fetch all disks
         com::SafeArray<BSTR> retDisks;
@@ -692,9 +692,9 @@ int handleImportAppliance(HandlerArg *arg)
             } // for (unsigned i = 0; i < cVirtualSystemDescriptions; ++i)
 
             if (cLicensesInTheWay == 1)
-                RTPrintf("ERROR: Cannot import until the license agreement listed above is accepted.\n");
+                RTMsgError("Cannot import until the license agreement listed above is accepted.");
             else if (cLicensesInTheWay > 1)
-                RTPrintf("ERROR: Cannot import until the %c license agreements listed above are accepted.\n", cLicensesInTheWay);
+                RTMsgError("Cannot import until the %c license agreements listed above are accepted.", cLicensesInTheWay);
 
             if (!cLicensesInTheWay && fExecute)
             {
@@ -934,9 +934,8 @@ int handleExportAppliance(HandlerArg *a)
                         }
                         else
                         {
-                            RTPrintf("ERROR: Cannot read license file \"%s\" which should be included in the virtual system %u.\n",
-                                     itD->second.c_str(),
-                                     i);
+                            RTMsgError("Cannot read license file \"%s\" which should be included in the virtual system %u.",
+                                       itD->second.c_str(), i);
                             return 1;
                         }
                     }

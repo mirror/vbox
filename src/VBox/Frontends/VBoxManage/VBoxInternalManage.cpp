@@ -131,113 +131,114 @@ bool g_fInternalMode;
  */
 void printUsageInternal(USAGECATEGORY u64Cmd)
 {
-    RTPrintf("Usage: VBoxManage internalcommands <command> [command arguments]\n"
-             "\n"
-             "Commands:\n"
-             "\n"
-             "%s%s%s%s%s%s%s%s%s%s%s%s"
-             "WARNING: This is a development tool and shall only be used to analyse\n"
-             "         problems. It is completely unsupported and will change in\n"
-             "         incompatible ways without warning.\n",
+    RTStrmPrintf(g_pStdErr,
+        "Usage: VBoxManage internalcommands <command> [command arguments]\n"
+        "\n"
+        "Commands:\n"
+        "\n"
+        "%s%s%s%s%s%s%s%s%s%s%s%s"
+        "WARNING: This is a development tool and shall only be used to analyse\n"
+        "         problems. It is completely unsupported and will change in\n"
+        "         incompatible ways without warning.\n",
 
-             (u64Cmd & USAGE_LOADSYMS)
-             ? "  loadsyms <vmname>|<uuid> <symfile> [delta] [module] [module address]\n"
-               "      This will instruct DBGF to load the given symbolfile\n"
-               "      during initialization.\n"
-               "\n"
-             : "",
-             (u64Cmd & USAGE_UNLOADSYMS)
-             ? "  unloadsyms <vmname>|<uuid> <symfile>\n"
-               "      Removes <symfile> from the list of symbol files that\n"
-               "      should be loaded during DBF initialization.\n"
-               "\n"
-             : "",
-             (u64Cmd & USAGE_SETHDUUID)
-             ? "  sethduuid <filepath> [<uuid>]\n"
-               "       Assigns a new UUID to the given image file. This way, multiple copies\n"
-               "       of a container can be registered.\n"
-               "\n"
-             : "",
-             (u64Cmd & USAGE_SETHDPARENTUUID)
-             ? "  sethdparentuuid <filepath> <uuid>\n"
-             "       Assigns a new parent UUID to the given image file.\n"
-             "\n"
-             : "",
-             (u64Cmd & USAGE_DUMPHDINFO)
-             ?  "  dumphdinfo <filepath>\n"
-                "       Prints information about the image at the given location.\n"
-                "\n"
-             : "",
-             (u64Cmd & USAGE_LISTPARTITIONS)
-             ? "  listpartitions -rawdisk <diskname>\n"
-               "       Lists all partitions on <diskname>.\n"
-               "\n"
-             : "",
-             (u64Cmd & USAGE_CREATERAWVMDK)
-             ? "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
-               "                [-partitions <list of partition numbers> [-mbr <filename>] ]\n"
-               "                [-register] [-relative]\n"
-               "       Creates a new VMDK image which gives access to an entite host disk (if\n"
-               "       the parameter -partitions is not specified) or some partitions of a\n"
-               "       host disk. If access to individual partitions is granted, then the\n"
-               "       parameter -mbr can be used to specify an alternative MBR to be used\n"
-               "       (the partitioning information in the MBR file is ignored).\n"
-               "       The diskname is on Linux e.g. /dev/sda, and on Windows e.g.\n"
-               "       \\\\.\\PhysicalDrive0).\n"
-               "       On Linux host the parameter -relative causes a VMDK file to be created\n"
-               "       which refers to individual partitions instead to the entire disk.\n"
-               "       Optionally the created image can be immediately registered.\n"
-               "       The necessary partition numbers can be queried with\n"
-               "         VBoxManage internalcommands listpartitions\n"
-               "\n"
-             : "",
-             (u64Cmd & USAGE_RENAMEVMDK)
-             ? "  renamevmdk -from <filename> -to <filename>\n"
-               "       Renames an existing VMDK image, including the base file and all its extents.\n"
-               "\n"
-             : "",
-             (u64Cmd & USAGE_CONVERTTORAW)
-             ? "  converttoraw [-format <fileformat>] <filename> <outputfile>"
+        (u64Cmd & USAGE_LOADSYMS)
+        ? "  loadsyms <vmname>|<uuid> <symfile> [delta] [module] [module address]\n"
+          "      This will instruct DBGF to load the given symbolfile\n"
+          "      during initialization.\n"
+          "\n"
+        : "",
+        (u64Cmd & USAGE_UNLOADSYMS)
+        ? "  unloadsyms <vmname>|<uuid> <symfile>\n"
+          "      Removes <symfile> from the list of symbol files that\n"
+          "      should be loaded during DBF initialization.\n"
+          "\n"
+        : "",
+        (u64Cmd & USAGE_SETHDUUID)
+        ? "  sethduuid <filepath> [<uuid>]\n"
+          "       Assigns a new UUID to the given image file. This way, multiple copies\n"
+          "       of a container can be registered.\n"
+          "\n"
+        : "",
+        (u64Cmd & USAGE_SETHDPARENTUUID)
+        ? "  sethdparentuuid <filepath> <uuid>\n"
+          "       Assigns a new parent UUID to the given image file.\n"
+          "\n"
+        : "",
+        (u64Cmd & USAGE_DUMPHDINFO)
+        ?  "  dumphdinfo <filepath>\n"
+           "       Prints information about the image at the given location.\n"
+           "\n"
+        : "",
+        (u64Cmd & USAGE_LISTPARTITIONS)
+        ? "  listpartitions -rawdisk <diskname>\n"
+          "       Lists all partitions on <diskname>.\n"
+          "\n"
+        : "",
+        (u64Cmd & USAGE_CREATERAWVMDK)
+        ? "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
+          "                [-partitions <list of partition numbers> [-mbr <filename>] ]\n"
+          "                [-register] [-relative]\n"
+          "       Creates a new VMDK image which gives access to an entite host disk (if\n"
+          "       the parameter -partitions is not specified) or some partitions of a\n"
+          "       host disk. If access to individual partitions is granted, then the\n"
+          "       parameter -mbr can be used to specify an alternative MBR to be used\n"
+          "       (the partitioning information in the MBR file is ignored).\n"
+          "       The diskname is on Linux e.g. /dev/sda, and on Windows e.g.\n"
+          "       \\\\.\\PhysicalDrive0).\n"
+          "       On Linux host the parameter -relative causes a VMDK file to be created\n"
+          "       which refers to individual partitions instead to the entire disk.\n"
+          "       Optionally the created image can be immediately registered.\n"
+          "       The necessary partition numbers can be queried with\n"
+          "         VBoxManage internalcommands listpartitions\n"
+          "\n"
+        : "",
+        (u64Cmd & USAGE_RENAMEVMDK)
+        ? "  renamevmdk -from <filename> -to <filename>\n"
+          "       Renames an existing VMDK image, including the base file and all its extents.\n"
+          "\n"
+        : "",
+        (u64Cmd & USAGE_CONVERTTORAW)
+        ? "  converttoraw [-format <fileformat>] <filename> <outputfile>"
 #ifdef ENABLE_CONVERT_RAW_TO_STDOUT
-               "|stdout"
+          "|stdout"
 #endif /* ENABLE_CONVERT_RAW_TO_STDOUT */
-               "\n"
-               "       Convert image to raw, writing to file"
+          "\n"
+          "       Convert image to raw, writing to file"
 #ifdef ENABLE_CONVERT_RAW_TO_STDOUT
-               " or stdout"
+          " or stdout"
 #endif /* ENABLE_CONVERT_RAW_TO_STDOUT */
-               ".\n"
-               "\n"
-             : "",
-             (u64Cmd & USAGE_CONVERTHD)
-             ? "  converthd [-srcformat VDI|VMDK|VHD|RAW]\n"
-               "            [-dstformat VDI|VMDK|VHD|RAW]\n"
-               "            <inputfile> <outputfile>\n"
-               "       converts hard disk images between formats\n"
-               "\n"
-             : "",
+          ".\n"
+          "\n"
+        : "",
+        (u64Cmd & USAGE_CONVERTHD)
+        ? "  converthd [-srcformat VDI|VMDK|VHD|RAW]\n"
+          "            [-dstformat VDI|VMDK|VHD|RAW]\n"
+          "            <inputfile> <outputfile>\n"
+          "       converts hard disk images between formats\n"
+          "\n"
+        : "",
 #ifdef RT_OS_WINDOWS
-             (u64Cmd & USAGE_MODINSTALL)
-             ? "  modinstall\n"
-               "       Installs the neccessary driver for the host OS\n"
-               "\n"
-             : "",
-             (u64Cmd & USAGE_MODUNINSTALL)
-             ? "  moduninstall\n"
-               "       Deinstalls the driver\n"
-               "\n"
-             : "",
+        (u64Cmd & USAGE_MODINSTALL)
+        ? "  modinstall\n"
+          "       Installs the neccessary driver for the host OS\n"
+          "\n"
+        : "",
+        (u64Cmd & USAGE_MODUNINSTALL)
+        ? "  moduninstall\n"
+          "       Deinstalls the driver\n"
+          "\n"
+        : "",
 #else
-             "",
-             "",
+        "",
+        "",
 #endif
-             (u64Cmd & USAGE_DEBUGLOG)
-             ? "  debuglog <vmname>|<uuid> [--enable|--disable] [--flags todo]\n"
-               "           [--groups todo] [--destinations todo]\n"
-               "       Controls debug logging.\n"
-               "\n"
-             : ""
-             );
+        (u64Cmd & USAGE_DEBUGLOG)
+        ? "  debuglog <vmname>|<uuid> [--enable|--disable] [--flags todo]\n"
+          "           [--groups todo] [--destinations todo]\n"
+          "       Controls debug logging.\n"
+          "\n"
+        : ""
+        );
 }
 
 /** @todo this is no longer necessary, we can enumerate extra data */
@@ -291,7 +292,7 @@ static HRESULT NewUniqueKey(ComPtr<IMachine> pMachine, const char *pszKeyBase, U
             return pMachine->SetExtraData(Bstr(pszKeyBase), Bstr(NewKeysUtf8));
         }
     }
-    RTPrintf("Error: Cannot find unique key for '%s'!\n", pszKeyBase);
+    RTMsgError("Cannot find unique key for '%s'!", pszKeyBase);
     return E_FAIL;
 }
 
@@ -354,8 +355,8 @@ static HRESULT RemoveKey(ComPtr<IMachine> pMachine, const char *pszKeyBase, cons
         return hrc;
     }
     else
-        RTPrintf("error: failed to delete key '%s' from '%s',  string conversion error %Rrc!\n",
-                 pszKey,  pszKeyBase, rc);
+        RTMsgError("Failed to delete key '%s' from '%s',  string conversion error %Rrc!",
+                   pszKey,  pszKeyBase, rc);
 
     return E_FAIL;
 }
@@ -376,8 +377,8 @@ static HRESULT SetString(ComPtr<IMachine> pMachine, const char *pszKeyBase, cons
 {
     HRESULT hrc = pMachine->SetExtraData(Bstr(Utf8StrFmt("%s/%s/%s", pszKeyBase, pszKey, pszAttribute)), Bstr(pszValue));
     if (FAILED(hrc))
-        RTPrintf("error: Failed to set '%s/%s/%s' to '%s'! hrc=%#x\n",
-                 pszKeyBase, pszKey, pszAttribute, pszValue, hrc);
+        RTMsgError("Failed to set '%s/%s/%s' to '%s'! hrc=%#x",
+                   pszKeyBase, pszKey, pszAttribute, pszValue, hrc);
     return hrc;
 }
 
@@ -501,10 +502,8 @@ static int CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, C
 
 static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
-    RTPrintf("ERROR: ");
-    RTPrintfV(pszFormat, va);
-    RTPrintf("\n");
-    RTPrintf("Error code %Rrc at %s(%u) in function %s\n", rc, RT_SRC_POS_ARGS);
+    RTMsgErrorV(pszFormat, va);
+    RTMsgError("Error code %Rrc at %s(%u) in function %s", rc, RT_SRC_POS_ARGS);
 }
 
 static int handleVDMessage(void *pvUser, const char *pszFormat, va_list va)
@@ -554,7 +553,7 @@ static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, 
                          argv[1], &pszFormat);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Format autodetect failed: %Rrc\n", rc);
+        RTMsgError("Format autodetect failed: %Rrc", rc);
         return 1;
     }
 
@@ -575,7 +574,7 @@ static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, 
     rc = VDCreate(pVDIfs, &pDisk);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Error while creating the virtual disk container: %Rrc\n", rc);
+        RTMsgError("Cannot create the virtual disk container: %Rrc", rc);
         return 1;
     }
 
@@ -583,7 +582,7 @@ static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, 
     rc = VDOpen(pDisk, pszFormat, argv[1], VD_OPEN_FLAGS_NORMAL, NULL);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Error while opening the image: %Rrc\n", rc);
+        RTMsgError("Cannot open the image: %Rrc", rc);
         return 1;
     }
 
@@ -592,7 +591,7 @@ static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, 
     else
       rc = VDSetParentUuid(pDisk, VD_LAST_IMAGE, uuid.raw());
     if (RT_FAILURE(rc))
-        RTPrintf("Error while setting a new UUID: %Rrc\n", rc);
+        RTMsgError("Cannot set a new UUID: %Rrc", rc);
     else
         RTPrintf("UUID changed to: %s\n", uuid.toString().c_str());
 
@@ -616,7 +615,7 @@ static int CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
                          argv[0], &pszFormat);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Format autodetect failed: %Rrc\n", rc);
+        RTMsgError("Format autodetect failed: %Rrc", rc);
         return 1;
     }
 
@@ -637,7 +636,7 @@ static int CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     rc = VDCreate(pVDIfs, &pDisk);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Error while creating the virtual disk container: %Rrc\n", rc);
+        RTMsgError("Cannot create the virtual disk container: %Rrc", rc);
         return 1;
     }
 
@@ -645,7 +644,7 @@ static int CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     rc = VDOpen(pDisk, pszFormat, argv[0], VD_OPEN_FLAGS_INFO, NULL);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Error while opening the image: %Rrc\n", rc);
+        RTMsgError("Cannot open the image: %Rrc", rc);
         return 1;
     }
 
@@ -696,7 +695,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
                 uExtended = (unsigned)(pCP - pPart->aPartitions);
             else
             {
-                RTPrintf("More than one extended partition. Aborting\n");
+                RTMsgError("More than one extended partition");
                 return VERR_INVALID_PARAMETER;
             }
         }
@@ -709,7 +708,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
         uint64_t uOffset = 0;
         if (!uStart)
         {
-            RTPrintf("Inconsistency for logical partition start. Aborting\n");
+            RTMsgError("Inconsistency for logical partition start");
             return VERR_INVALID_PARAMETER;
         }
 
@@ -721,14 +720,14 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
 
             if (aBuffer[510] != 0x55 || aBuffer[511] != 0xaa)
             {
-                RTPrintf("Logical partition without magic. Aborting\n");
+                RTMsgError("Logical partition without magic");
                 return VERR_INVALID_PARAMETER;
             }
             uint8_t *p = &aBuffer[0x1be];
 
             if (p[4] == 0)
             {
-                RTPrintf("Logical partition with type 0 encountered. Aborting\n");
+                RTMsgError("Logical partition with type 0 encountered");
                 return VERR_INVALID_PARAMETER;
             }
 
@@ -744,7 +743,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             uint32_t uStartOffset = RT_MAKE_U32_FROM_U8(p[8], p[9], p[10], p[11]);
             if (!uStartOffset)
             {
-                RTPrintf("Invalid partition start offset. Aborting\n");
+                RTMsgError("Invalid partition start offset");
                 return VERR_INVALID_PARAMETER;
             }
             pCP->uStart = uStart + uOffset + uStartOffset;
@@ -762,7 +761,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             }
             else
             {
-                RTPrintf("Logical partition chain broken. Aborting\n");
+                RTMsgError("Logical partition chain broken");
                 return VERR_INVALID_PARAMETER;
             }
         } while (uExtended != (unsigned)-1);
@@ -783,12 +782,12 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             }
             else if (pPart->aPartitions[j].uStart == uMinVal)
             {
-                RTPrintf("Two partitions start at the same place. Aborting\n");
+                RTMsgError("Two partitions start at the same place");
                 return VERR_INVALID_PARAMETER;
             }
             else if (pPart->aPartitions[j].uStart == 0)
             {
-                RTPrintf("Partition starts at sector 0. Aborting\n");
+                RTMsgError("Partition starts at sector 0");
                 return VERR_INVALID_PARAMETER;
             }
         }
@@ -817,7 +816,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             uPrevEnd = pPart->aPartitions[i].uPartDataStart + pPart->aPartitions[i].cPartDataSectors;
         if (pPart->aPartitions[i].uStart < uPrevEnd)
         {
-            RTPrintf("Overlapping partitions. Aborting\n");
+            RTMsgError("Overlapping partitions");
             return VERR_INVALID_PARAMETER;
         }
         if (!PARTTYPE_IS_EXTENDED(pPart->aPartitions[i].uType))
@@ -856,7 +855,7 @@ static int CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> aVirtual
     int vrc = RTFileOpen(&RawFile, rawdisk.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(vrc))
     {
-        RTPrintf("Error opening the raw disk: %Rrc\n", vrc);
+        RTMsgError("Cannnot open the raw disk: %Rrc", vrc);
         return vrc;
     }
 
@@ -986,7 +985,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     int vrc = RTFileOpen(&RawFile, rawdisk.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(vrc))
     {
-        RTPrintf("Error opening the raw disk '%s': %Rrc\n", rawdisk.c_str(), vrc);
+        RTMsgError("Cannot open the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);
         goto out;
     }
 
@@ -1015,7 +1014,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         }
         else
         {
-            RTPrintf("File '%s' is no fixed/removable medium device\n", rawdisk.c_str());
+            RTMsgError("File '%s' is no fixed/removable medium device", rawdisk.c_str());
             vrc = VERR_INVALID_PARAMETER;
             goto out;
         }
@@ -1033,7 +1032,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     else
     {
         vrc = RTErrConvertFromWin32(GetLastError());
-        RTPrintf("Error getting the geometry of the raw disk '%s': %Rrc\n", rawdisk.c_str(), vrc);
+        RTMsgError("Cannot get the geometry of the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);
         goto out;
     }
 #elif defined(RT_OS_LINUX)
@@ -1061,14 +1060,14 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
             else
             {
                 vrc = RTErrConvertFromErrno(errno);
-                RTPrintf("Error getting the size of the raw disk '%s': %Rrc\n", rawdisk.c_str(), vrc);
+                RTMsgError("Cannot get the size of the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);
                 goto out;
             }
         }
     }
     else
     {
-        RTPrintf("File '%s' is no block device\n", rawdisk.c_str());
+        RTMsgError("File '%s' is no block device", rawdisk.c_str());
         vrc = VERR_INVALID_PARAMETER;
         goto out;
     }
@@ -1084,7 +1083,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                 cbSize = cBlocks * cbBlock;
             else
             {
-                RTPrintf("Cannot get the block size for file '%s': %Rrc", rawdisk.c_str(), vrc);
+                RTMsgError("Cannot get the block size for file '%s': %Rrc", rawdisk.c_str(), vrc);
                 vrc = RTErrConvertFromErrno(errno);
                 goto out;
             }
@@ -1092,13 +1091,13 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         else
         {
             vrc = RTErrConvertFromErrno(errno);
-            RTPrintf("Cannot get the block count for file '%s': %Rrc", rawdisk.c_str(), vrc);
+            RTMsgError("Cannot get the block count for file '%s': %Rrc", rawdisk.c_str(), vrc);
             goto out;
         }
     }
     else
     {
-        RTPrintf("File '%s' is no block device\n", rawdisk.c_str());
+        RTMsgError("File '%s' is no block device", rawdisk.c_str());
         vrc = VERR_INVALID_PARAMETER;
         goto out;
     }
@@ -1113,13 +1112,13 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         else
         {
             vrc = RTErrConvertFromErrno(errno);
-            RTPrintf("Error getting the size of the raw disk '%s': %Rrc\n", rawdisk.c_str(), vrc);
+            RTMsgError("Cannot get the size of the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);
             goto out;
         }
     }
     else
     {
-        RTPrintf("File '%s' is no block or char device\n", rawdisk.c_str());
+        RTMsgError("File '%s' is no block or char device", rawdisk.c_str());
         vrc = VERR_INVALID_PARAMETER;
         goto out;
     }
@@ -1135,13 +1134,13 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         else
         {
             vrc = RTErrConvertFromErrno(errno);
-            RTPrintf("Cannot get the block count for file '%s': %Rrc", rawdisk.c_str(), vrc);
+            RTMsgError("Cannot get the block count for file '%s': %Rrc", rawdisk.c_str(), vrc);
             goto out;
         }
     }
     else
     {
-        RTPrintf("File '%s' is no character device\n", rawdisk.c_str());
+        RTMsgError("File '%s' is no character device", rawdisk.c_str());
         vrc = VERR_INVALID_PARAMETER;
         goto out;
     }
@@ -1151,7 +1150,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     vrc = RTFileGetSize(RawFile, &cbSize);
     if (RT_FAILURE(vrc))
     {
-        RTPrintf("Error getting the size of the raw disk '%s': %Rrc\n", rawdisk.c_str(), vrc);
+        RTMsgError("Cannot get the size of the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);
         goto out;
     }
 #endif
@@ -1159,7 +1158,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     /* Check whether cbSize is actually sensible. */
     if (!cbSize || cbSize % 512)
     {
-        RTPrintf("Detected size of raw disk '%s' is %s, an invalid value\n", rawdisk.c_str(), cbSize);
+        RTMsgError("Detected size of raw disk '%s' is %s, an invalid value", rawdisk.c_str(), cbSize);
         vrc = VERR_INVALID_PARAMETER;
         goto out;
     }
@@ -1190,7 +1189,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
             vrc = RTStrToUInt32Ex(p, &pszNext, 0, &u32);
             if (RT_FAILURE(vrc))
             {
-                RTPrintf("Incorrect value in partitions parameter\n");
+                RTMsgError("Incorrect value in partitions parameter");
                 goto out;
             }
             uPartitions |= RT_BIT(u32);
@@ -1199,7 +1198,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                 p++;
             else if (*p != '\0')
             {
-                RTPrintf("Incorrect separator in partitions parameter\n");
+                RTMsgError("Incorrect separator in partitions parameter");
                 vrc = VERR_INVALID_PARAMETER;
                 goto out;
             }
@@ -1209,7 +1208,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         vrc = partRead(RawFile, &partitions);
         if (RT_FAILURE(vrc))
         {
-            RTPrintf("Error reading the partition information from '%s'\n", rawdisk.c_str());
+            RTMsgError("Cannot read the partition information from '%s'", rawdisk.c_str());
             goto out;
         }
 
@@ -1222,9 +1221,10 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                  * Bad idea, as this would trigger an overlapping
                  * partitions error later during VMDK creation. So warn
                  * here and ignore what the user requested. */
-                RTPrintf("Warning: it is not possible (and necessary) to explicitly give access to the\n"
-                         "         extended partition %u. If required, enable access to all logical\n"
-                         "         partitions inside this extended partition.\n", partitions.aPartitions[i].uIndex);
+                RTMsgWarning("It is not possible (and necessary) to explicitly give access to the "
+                             "extended partition %u. If required, enable access to all logical "
+                             "partitions inside this extended partition.",
+                             partitions.aPartitions[i].uIndex);
                 uPartitions &= ~RT_BIT(partitions.aPartitions[i].uIndex);
             }
         }
@@ -1240,7 +1240,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                                            &RawDescriptor.pPartDescs);
                 if (!pPartDesc)
                 {
-                    RTPrintf("Out of memory allocating the partition list for '%s'\n", rawdisk.c_str());
+                    RTMsgError("Out of memory allocating the partition list for '%s'", rawdisk.c_str());
                     vrc = VERR_NO_MEMORY;
                     goto out;
                 }
@@ -1256,7 +1256,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                 void *pPartData = RTMemAlloc((size_t)pPartDesc->cbData);
                 if (!pPartData)
                 {
-                    RTPrintf("Out of memory allocating the partition descriptor for '%s'\n", rawdisk.c_str());
+                    RTMsgError("Out of memory allocating the partition descriptor for '%s'", rawdisk.c_str());
                     vrc = VERR_NO_MEMORY;
                     goto out;
                 }
@@ -1264,7 +1264,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                                    pPartData, (size_t)pPartDesc->cbData, NULL);
                 if (RT_FAILURE(vrc))
                 {
-                    RTPrintf("Cannot read partition data from raw device '%s': %Rrc\n", rawdisk.c_str(), vrc);
+                    RTMsgError("Cannot read partition data from raw device '%s': %Rrc", rawdisk.c_str(), vrc);
                     goto out;
                 }
                 /* Splice in the replacement MBR code if specified. */
@@ -1275,14 +1275,14 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                     vrc = RTFileOpen(&MBRFile, pszMBRFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
                     if (RT_FAILURE(vrc))
                     {
-                        RTPrintf("Cannot open replacement MBR file '%s' specified with -mbr: %Rrc\n", pszMBRFilename, vrc);
+                        RTMsgError("Cannot open replacement MBR file '%s' specified with -mbr: %Rrc", pszMBRFilename, vrc);
                         goto out;
                     }
                     vrc = RTFileReadAt(MBRFile, 0, pPartData, 0x1be, NULL);
                     RTFileClose(MBRFile);
                     if (RT_FAILURE(vrc))
                     {
-                        RTPrintf("Cannot read replacement MBR file '%s': %Rrc\n", pszMBRFilename, vrc);
+                        RTMsgError("Cannot read replacement MBR file '%s': %Rrc", pszMBRFilename, vrc);
                         goto out;
                     }
                 }
@@ -1305,7 +1305,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                                        &RawDescriptor.pPartDescs);
             if (!pPartDesc)
             {
-                RTPrintf("Out of memory allocating the partition list for '%s'\n", rawdisk.c_str());
+                RTMsgError("Out of memory allocating the partition list for '%s'", rawdisk.c_str());
                 vrc = VERR_NO_MEMORY;
                 goto out;
             }
@@ -1321,7 +1321,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                                        partitions.aPartitions[i].uIndex);
                     if (RT_FAILURE(vrc))
                     {
-                        RTPrintf("Error creating reference to individual partition %u, rc=%Rrc\n",
+                        RTMsgError("Cannot create reference to individual partition %u, rc=%Rrc",
                                  partitions.aPartitions[i].uIndex, vrc);
                         goto out;
                     }
@@ -1334,7 +1334,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                                        partitions.aPartitions[i].uIndex);
                     if (RT_FAILURE(vrc))
                     {
-                        RTPrintf("Error creating reference to individual partition %u, rc=%Rrc\n",
+                        RTMsgError("Cannot create reference to individual partition %u, rc=%Rrc",
                                  partitions.aPartitions[i].uIndex, vrc);
                         goto out;
                     }
@@ -1391,7 +1391,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                 RawDescriptor.pPartDescs[i].cbData = RT_MIN(RawDescriptor.pPartDescs[i+1].uStart - RawDescriptor.pPartDescs[i].uStart, RawDescriptor.pPartDescs[i].cbData);
                 if (!RawDescriptor.pPartDescs[i].cbData)
                 {
-                    RTPrintf("MBR/EPT overlaps with data area\n");
+                    RTMsgError("MBR/EPT overlaps with data area");
                     vrc = VERR_INVALID_PARAMETER;
                     goto out;
                 }
@@ -1428,7 +1428,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     vrc = VDCreate(pVDIfs, &pDisk);
     if (RT_FAILURE(vrc))
     {
-        RTPrintf("Error while creating the virtual disk container: %Rrc\n", vrc);
+        RTMsgError("Cannot create the virtual disk container: %Rrc", vrc);
         goto out;
     }
 
@@ -1447,7 +1447,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                        VD_OPEN_FLAGS_NORMAL, NULL, NULL);
     if (RT_FAILURE(vrc))
     {
-        RTPrintf("Error while creating the raw disk VMDK: %Rrc\n", vrc);
+        RTMsgError("Cannot create the raw disk VMDK: %Rrc", vrc);
         goto out;
     }
     RTPrintf("RAW host disk access VMDK file %s created successfully.\n", filename.c_str());
@@ -1478,7 +1478,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     return SUCCEEDED(rc) ? 0 : 1;
 
 out:
-    RTPrintf("The raw disk vmdk file was not created\n");
+    RTMsgError("The raw disk vmdk file was not created");
     return RT_SUCCESS(vrc) ? 0 : 1;
 }
 
@@ -1535,7 +1535,7 @@ static int CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     vrc = VDCreate(pVDIfs, &pDisk);
     if (RT_FAILURE(vrc))
     {
-        RTPrintf("Error while creating the virtual disk container: %Rrc\n", vrc);
+        RTMsgError("Cannot create the virtual disk container: %Rrc", vrc);
         return vrc;
     }
     else
@@ -1543,14 +1543,14 @@ static int CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
         vrc = VDOpen(pDisk, "VMDK", src.c_str(), VD_OPEN_FLAGS_NORMAL, NULL);
         if (RT_FAILURE(vrc))
         {
-            RTPrintf("Error while opening the source image: %Rrc\n", vrc);
+            RTMsgError("Cannot create the source image: %Rrc", vrc);
         }
         else
         {
             vrc = VDCopy(pDisk, 0, pDisk, "VMDK", dst.c_str(), true, 0, VD_IMAGE_FLAGS_NONE, NULL, NULL, NULL, NULL);
             if (RT_FAILURE(vrc))
             {
-                RTPrintf("Error while renaming the image: %Rrc\n", vrc);
+                RTMsgError("Cannot rename the image: %Rrc", vrc);
             }
         }
     }
@@ -1617,7 +1617,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     vrc = VDCreate(pVDIfs, &pDisk);
     if (RT_FAILURE(vrc))
     {
-        RTPrintf("Error while creating the virtual disk container: %Rrc\n", vrc);
+        RTMsgError("Cannot create the virtual disk container: %Rrc", vrc);
         return 1;
     }
 
@@ -1631,7 +1631,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     if (RT_FAILURE(vrc))
     {
         VDCloseAll(pDisk);
-        RTPrintf("Error while creating destination file \"%s\": %Rrc\n", dst.c_str(), vrc);
+        RTMsgError("Cannot create destination file \"%s\": %Rrc", dst.c_str(), vrc);
         return 1;
     }
 
@@ -1648,7 +1648,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
                 RTFileClose(outFile);
                 RTFileDelete(dst.c_str());
             }
-            RTPrintf("No file format specified and autodetect failed - please specify format: %Rrc\n", vrc);
+            RTMsgError("No file format specified and autodetect failed - please specify format: %Rrc", vrc);
             return 1;
         }
         srcformat = pszFormat;
@@ -1663,7 +1663,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
             RTFileClose(outFile);
             RTFileDelete(dst.c_str());
         }
-        RTPrintf("Error while opening the source image: %Rrc\n", vrc);
+        RTMsgError("Cannot open the source image: %Rrc", vrc);
         return 1;
     }
 
@@ -1674,7 +1674,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     void *pvBuf = RTMemAlloc(cbBuf);
     if (pvBuf)
     {
-        RTPrintf("Converting image \"%s\" with size %RU64 bytes (%RU64MB) to raw...\n", src.c_str(), cbSize, (cbSize + _1M - 1) / _1M);
+        RTStrmPrintf(g_pStdErr, "Converting image \"%s\" with size %RU64 bytes (%RU64MB) to raw...\n", src.c_str(), cbSize, (cbSize + _1M - 1) / _1M);
         while (offFile < cbSize)
         {
             size_t cb = (size_t)RT_MIN(cbSize - offFile, cbBuf);
@@ -1694,7 +1694,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
                 RTFileClose(outFile);
                 RTFileDelete(dst.c_str());
             }
-            RTPrintf("Error copying image data: %Rrc\n", vrc);
+            RTMsgError("Cannot copy image data: %Rrc", vrc);
             return 1;
         }
     }
@@ -1707,7 +1707,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
             RTFileClose(outFile);
             RTFileDelete(dst.c_str());
         }
-        RTPrintf("Error allocating read buffer: %Rrc\n", vrc);
+        RTMsgError("Out of memory allocating read buffer");
         return 1;
     }
 
@@ -1790,7 +1790,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
                               src.c_str(), &pszFormat);
             if (RT_FAILURE(vrc))
             {
-                RTPrintf("No file format specified and autodetect failed - please specify format: %Rrc\n", vrc);
+                RTMsgError("No file format specified and autodetect failed - please specify format: %Rrc", vrc);
                 break;
             }
             srcformat = pszFormat;
@@ -1800,7 +1800,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
         vrc = VDCreate(pVDIfs, &pSrcDisk);
         if (RT_FAILURE(vrc))
         {
-            RTPrintf("Error while creating the source virtual disk container: %Rrc\n", vrc);
+            RTMsgError("Cannot create the source virtual disk container: %Rrc", vrc);
             break;
         }
 
@@ -1808,7 +1808,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
         vrc = VDOpen(pSrcDisk, srcformat.c_str(), src.c_str(), VD_OPEN_FLAGS_READONLY, NULL);
         if (RT_FAILURE(vrc))
         {
-            RTPrintf("Error while opening the source image: %Rrc\n", vrc);
+            RTMsgError("Cannot open the source image: %Rrc", vrc);
             break;
         }
 
@@ -1819,12 +1819,12 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
         vrc = VDCreate(pVDIfs, &pDstDisk);
         if (RT_FAILURE(vrc))
         {
-            RTPrintf("Error while creating the destination virtual disk container: %Rrc\n", vrc);
+            RTMsgError("Cannot create the destination virtual disk container: %Rrc", vrc);
             break;
         }
 
         uint64_t cbSize = VDGetSize(pSrcDisk, VD_LAST_IMAGE);
-        RTPrintf("Converting image \"%s\" with size %RU64 bytes (%RU64MB)...\n", src.c_str(), cbSize, (cbSize + _1M - 1) / _1M);
+        RTStrmPrintf(g_pStdErr, "Converting image \"%s\" with size %RU64 bytes (%RU64MB)...\n", src.c_str(), cbSize, (cbSize + _1M - 1) / _1M);
 
         /* Create the output image */
         vrc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, dstformat.c_str(),
@@ -1832,7 +1832,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
                      NULL, NULL, NULL, NULL);
         if (RT_FAILURE(vrc))
         {
-            RTPrintf("Error while copying the image: %Rrc\n", vrc);
+            RTMsgError("Cannot copy the image: %Rrc", vrc);
             break;
         }
     }
@@ -1986,7 +1986,7 @@ int CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<I
 
     /** @todo flags, groups destination. */
     if (fFlagsPresent || fGroupsPresent || fDestsPresent)
-        RTPrintf("WARNING: One or more of the requested features are not implemented! Feel free to do this... :-)\n");
+        RTMsgWarning("One or more of the requested features are not implemented! Feel free to do this.");
 
     if (fEnablePresent && fEnable)
         CHECK_ERROR_RET(ptrDebugger, COMSETTER(LogEnabled)(TRUE), 1);

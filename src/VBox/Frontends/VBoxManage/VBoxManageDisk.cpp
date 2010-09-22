@@ -47,10 +47,8 @@ using namespace com;
 
 static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
-    RTPrintf("ERROR: ");
-    RTPrintfV(pszFormat, va);
-    RTPrintf("\n");
-    RTPrintf("Error code %Rrc at %s(%u) in function %s\n", rc, RT_SRC_POS_ARGS);
+    RTMsgError(pszFormat, va);
+    RTMsgError("Error code %Rrc at %s(%u) in function %s", rc, RT_SRC_POS_ARGS);
 }
 
 
@@ -299,9 +297,9 @@ int handleCreateHardDisk(HandlerArg *a)
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
-                    RTPrintf("Error: failed to create hard disk. Error message: %lS\n", info.getText().raw());
+                    RTMsgError("Failed to create hard disk. Error message: %lS", info.getText().raw());
                 else
-                    RTPrintf("Error: failed to create hard disk. No error message available!\n");
+                    RTMsgError("Failed to create hard disk. No error message available!");
             }
             else
             {
@@ -326,24 +324,6 @@ int handleCreateHardDisk(HandlerArg *a)
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
-
-#if 0 /* disabled until disk shrinking is implemented based on VBoxHDD */
-static DECLCALLBACK(int) hardDiskProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
-{
-    unsigned *pPercent = (unsigned *)pvUser;
-
-    if (*pPercent != uPercent)
-    {
-        *pPercent = uPercent;
-        RTPrintf(".");
-        if ((uPercent % 10) == 0 && uPercent)
-            RTPrintf("%d%%", uPercent);
-        RTStrmFlush(g_pStdOut);
-    }
-
-    return VINF_SUCCESS;
-}
-#endif
 
 static const RTGETOPTDEF g_aModifyHardDiskOptions[] =
 {
@@ -473,7 +453,7 @@ int handleModifyHardDisk(HandlerArg *a)
                 int irc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
                 if (RT_FAILURE(irc))
                 {
-                    RTPrintf("Cannot convert filename \"%s\" to absolute path\n", FilenameOrUuid);
+                    RTMsgError("Cannot convert filename \"%s\" to absolute path", FilenameOrUuid);
                     return 1;
                 }
                 CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs), DeviceType_HardDisk, AccessMode_ReadWrite, hardDisk.asOutParam()));
@@ -488,14 +468,9 @@ int handleModifyHardDisk(HandlerArg *a)
             if (FAILED(rc))
             {
                 if (rc == E_NOTIMPL)
-                {
-                    RTPrintf("Error: Compact hard disk operation is not implemented!\n");
-                    RTPrintf("The functionality will be restored later.\n");
-                }
+                    RTMsgError("Compact hard disk operation is not implemented!");
                 else if (rc == VBOX_E_NOT_SUPPORTED)
-                {
-                    RTPrintf("Error: Compact hard disk operation for this format is not implemented yet!\n");
-                }
+                    RTMsgError("Compact hard disk operation for this format is not implemented yet!");
                 else
                     com::GluePrintRCMessage(rc);
             }
@@ -518,7 +493,7 @@ int handleModifyHardDisk(HandlerArg *a)
                 int irc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
                 if (RT_FAILURE(irc))
                 {
-                    RTPrintf("Cannot convert filename \"%s\" to absolute path\n", FilenameOrUuid);
+                    RTMsgError("Cannot convert filename \"%s\" to absolute path", FilenameOrUuid);
                     return 1;
                 }
                 CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs), DeviceType_HardDisk, AccessMode_ReadWrite, hardDisk.asOutParam()));
@@ -533,14 +508,9 @@ int handleModifyHardDisk(HandlerArg *a)
             if (FAILED(rc))
             {
                 if (rc == E_NOTIMPL)
-                {
-                    RTPrintf("Error: Resize hard disk operation is not implemented!\n");
-                    RTPrintf("The functionality will be restored later.\n");
-                }
+                    RTMsgError("Resize hard disk operation is not implemented!");
                 else if (rc == VBOX_E_NOT_SUPPORTED)
-                {
-                    RTPrintf("Error: Resize hard disk operation for this format is not implemented yet!\n");
-                }
+                    RTMsgError("Resize hard disk operation for this format is not implemented yet!");
                 else
                     com::GluePrintRCMessage(rc);
             }
@@ -673,7 +643,7 @@ int handleCloneHardDisk(HandlerArg *a)
             int irc = RTPathAbs(Utf8Str(src).c_str(), szFilenameAbs, sizeof(szFilenameAbs));
             if (RT_FAILURE(irc))
             {
-                RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Utf8Str(src).c_str());
+                RTMsgError("Cannot convert filename \"%s\" to absolute path", Utf8Str(src).c_str());
                 return 1;
             }
             CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs), DeviceType_HardDisk, AccessMode_ReadWrite, srcDisk.asOutParam()));
@@ -701,7 +671,7 @@ int handleCloneHardDisk(HandlerArg *a)
                     int irc = RTPathAbs(Utf8Str(dst).c_str(), szFilenameAbs, sizeof(szFilenameAbs));
                     if (RT_FAILURE(irc))
                     {
-                        RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Utf8Str(dst).c_str());
+                        RTMsgError("Cannot convert filename \"%s\" to absolute path", Utf8Str(dst).c_str());
                         return 1;
                     }
                     CHECK_ERROR_BREAK(a->virtualBox, OpenMedium(Bstr(szFilenameAbs), DeviceType_HardDisk, AccessMode_ReadWrite, dstDisk.asOutParam()));
@@ -735,9 +705,9 @@ int handleCloneHardDisk(HandlerArg *a)
         {
             com::ProgressErrorInfo info(progress);
             if (info.isBasicAvailable())
-                RTPrintf("Error: failed to clone hard disk. Error message: %lS\n", info.getText().raw());
+                RTMsgError("Failed to clone hard disk. Error message: %lS", info.getText().raw());
             else
-                RTPrintf("Error: failed to clone hard disk. No error message available!\n");
+                RTMsgError("Failed to clone hard disk. No error message available!");
             break;
         }
 
@@ -836,8 +806,8 @@ int handleConvertFromRaw(int argc, char *argv[])
 
     if (!srcfilename || !dstfilename || (fReadFromStdIn && !filesize))
         return errorSyntax(USAGE_CONVERTFROMRAW, "Incorrect number of parameters");
-    RTPrintf("Converting from raw image file=\"%s\" to file=\"%s\"...\n",
-             srcfilename, dstfilename);
+    RTStrmPrintf(g_pStdErr, "Converting from raw image file=\"%s\" to file=\"%s\"...\n",
+                 srcfilename, dstfilename);
 
     PVBOXHDD pDisk = NULL;
 
@@ -861,7 +831,7 @@ int handleConvertFromRaw(int argc, char *argv[])
         rc = RTFileOpen(&File, srcfilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("File=\"%s\" open error: %Rrf\n", srcfilename, rc);
+        RTMsgError("Cannot open file \"%s\": %Rrc", srcfilename, rc);
         goto out;
     }
 
@@ -873,17 +843,18 @@ int handleConvertFromRaw(int argc, char *argv[])
         rc = RTFileGetSize(File, &cbFile);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Error getting image size for file \"%s\": %Rrc\n", srcfilename, rc);
+        RTMsgError("Cannot get image size for file \"%s\": %Rrc", srcfilename, rc);
         goto out;
     }
 
-    RTPrintf("Creating %s image with size %RU64 bytes (%RU64MB)...\n", (uImageFlags & VD_IMAGE_FLAGS_FIXED) ? "fixed" : "dynamic", cbFile, (cbFile + _1M - 1) / _1M);
+    RTStrmPrintf(g_pStdErr, "Creating %s image with size %RU64 bytes (%RU64MB)...\n",
+                 (uImageFlags & VD_IMAGE_FLAGS_FIXED) ? "fixed" : "dynamic", cbFile, (cbFile + _1M - 1) / _1M);
     char pszComment[256];
     RTStrPrintf(pszComment, sizeof(pszComment), "Converted image from %s", srcfilename);
     rc = VDCreate(pVDIfs, &pDisk);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Error while creating the virtual disk container: %Rrc\n", rc);
+        RTMsgError("Cannot create the virtual disk container: %Rrc", rc);
         goto out;
     }
 
@@ -901,7 +872,7 @@ int handleConvertFromRaw(int argc, char *argv[])
                       VD_OPEN_FLAGS_NORMAL, NULL, NULL);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Error while creating the disk image \"%s\": %Rrc\n", dstfilename, rc);
+        RTMsgError("Cannot create the disk image \"%s\": %Rrc", dstfilename, rc);
         goto out;
     }
 
@@ -911,7 +882,7 @@ int handleConvertFromRaw(int argc, char *argv[])
     if (!pvBuf)
     {
         rc = VERR_NO_MEMORY;
-        RTPrintf("Not enough memory allocating buffers for image \"%s\": %Rrc\n", dstfilename, rc);
+        RTMsgError("Out of memory allocating buffers for image \"%s\": %Rrc", dstfilename, rc);
         goto out;
     }
 
@@ -930,7 +901,7 @@ int handleConvertFromRaw(int argc, char *argv[])
         rc = VDWrite(pDisk, offFile, pvBuf, cbRead);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("Failed to write to disk image \"%s\": %Rrc\n", dstfilename, rc);
+            RTMsgError("Failed to write to disk image \"%s\": %Rrc", dstfilename, rc);
             goto out;
         }
         offFile += cbRead;
@@ -1200,7 +1171,7 @@ int handleShowHardDiskInfo(HandlerArg *a)
             int vrc = RTPathAbs(FilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
             if (RT_FAILURE(vrc))
             {
-                RTPrintf("Cannot convert filename \"%s\" to absolute path\n", FilenameOrUuid);
+                RTMsgError("Cannot convert filename \"%s\" to absolute path", FilenameOrUuid);
                 return 1;
             }
             CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs), DeviceType_HardDisk, AccessMode_ReadWrite, hardDisk.asOutParam()));
@@ -1274,6 +1245,8 @@ int handleShowHardDiskInfo(HandlerArg *a)
         Bstr format;
         hardDisk->COMGETTER(Format)(format.asOutParam());
         RTPrintf("Storage format:       %lS\n", format.raw());
+
+        /// @todo also dump config parameters (iSCSI)
 
         if (!unknown)
         {
@@ -1435,7 +1408,7 @@ int handleOpenMedium(HandlerArg *a)
         int irc = RTPathAbs(Filename, szFilenameAbs, sizeof(szFilenameAbs));
         if (RT_FAILURE(irc))
         {
-            RTPrintf("Cannot convert filename \"%s\" to absolute path\n", Filename);
+            RTMsgError("Cannot convert filename \"%s\" to absolute path", Filename);
             return 1;
         }
         CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(szFilenameAbs), devType, AccessMode_ReadWrite, pMedium.asOutParam()));
@@ -1570,13 +1543,13 @@ int handleCloseMedium(HandlerArg *a)
                 {
                     com::ProgressErrorInfo info(progress);
                     if (info.isBasicAvailable())
-                        RTPrintf("Error: failed to delete medium. Error message: %lS\n", info.getText().raw());
+                        RTMsgError("Failed to delete medium. Error message: %lS", info.getText().raw());
                     else
-                        RTPrintf("Error: failed to delete medium. No error message available!\n");
+                        RTMsgError("Failed to delete medium. No error message available!");
                 }
             }
             else
-                RTPrintf("Error: failed to delete medium. Error code %Rrc\n", rc);
+                RTMsgError("Failed to delete medium. Error code %Rrc", rc);
         }
         CHECK_ERROR(medium, Close());
     }

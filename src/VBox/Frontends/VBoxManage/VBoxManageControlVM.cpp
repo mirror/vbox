@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxManage - VirtualBox's command-line interface.
+ * VBoxManage - Implementation of controlvm command.
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,6 +38,8 @@
 #include <VBox/log.h>
 
 #include "VBoxManage.h"
+
+#include <list>
 
 
 /**
@@ -147,13 +149,9 @@ int handleControlVM(HandlerArg *a)
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
-                {
-                    RTPrintf("Error: failed to power off machine. Error message: %lS\n", info.getText().raw());
-                }
+                    RTMsgError("Failed to power off machine. Error message: %lS", info.getText().raw());
                 else
-                {
-                    RTPrintf("Error: failed to power off machine. No error message available!\n");
-                }
+                    RTMsgError("Failed to power off machine. No error message available!");
             }
         }
         else if (!strcmp(a->argv[1], "savestate"))
@@ -174,13 +172,9 @@ int handleControlVM(HandlerArg *a)
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
-                {
-                    RTPrintf("Error: failed to save machine state. Error message: %lS\n", info.getText().raw());
-                }
+                    RTMsgError("Failed to save machine state. Error message: %lS", info.getText().raw());
                 else
-                {
-                    RTPrintf("Error: failed to save machine state. No error message available!\n");
-                }
+                    RTMsgError("Failed to save machine state. No error message available!");
                 console->Resume();
             }
         }
@@ -211,13 +205,11 @@ int handleControlVM(HandlerArg *a)
                 break;
             }
 
-            /* Arbitrary restrict the length of a sequence of scancodes to 1024. */
-            LONG alScancodes[1024];
-            int cScancodes = 0;
+            std::list<LONG> llScancodes;
 
             /* Process the command line. */
             int i;
-            for (i = 1 + 1; i < a->argc && cScancodes < (int)RT_ELEMENTS(alScancodes); i++, cScancodes++)
+            for (i = 1 + 1; i < a->argc; i++)
             {
                 if (   RT_C_IS_XDIGIT (a->argv[i][0])
                     && RT_C_IS_XDIGIT (a->argv[i][1])
@@ -227,16 +219,16 @@ int handleControlVM(HandlerArg *a)
                     int irc = RTStrToUInt8Ex(a->argv[i], NULL, 16, &u8Scancode);
                     if (RT_FAILURE (irc))
                     {
-                        RTPrintf("Error: converting '%s' returned %Rrc!\n", a->argv[i], rc);
+                        RTMsgError("Converting '%s' returned %Rrc!", a->argv[i], rc);
                         rc = E_FAIL;
                         break;
                     }
 
-                    alScancodes[cScancodes] = u8Scancode;
+                    llScancodes.push_back(u8Scancode);
                 }
                 else
                 {
-                    RTPrintf("Error: '%s' is not a hex byte!\n", a->argv[i]);
+                    RTMsgError("Error: '%s' is not a hex byte!", a->argv[i]);
                     rc = E_FAIL;
                     break;
                 }
@@ -245,21 +237,16 @@ int handleControlVM(HandlerArg *a)
             if (FAILED(rc))
                 break;
 
-            if (   cScancodes == RT_ELEMENTS(alScancodes)
-                && i < a->argc)
+            /* Send scancodes to the VM. */
+            com::SafeArray<LONG> saScancodes(llScancodes);
+            ULONG codesStored = 0;
+            CHECK_ERROR_BREAK(keyboard, PutScancodes(ComSafeArrayAsInParam(saScancodes),
+                                                     &codesStored));
+            if (codesStored < saScancodes.size())
             {
-                RTPrintf("Error: too many scancodes, maximum %d allowed!\n", RT_ELEMENTS(alScancodes));
+                RTMsgError("Only %d scancodes were stored", codesStored);
                 rc = E_FAIL;
                 break;
-            }
-
-            /* Send scancodes to the VM.
-             * Note: 'PutScancodes' did not work here. Only the first scancode was transmitted.
-             */
-            for (i = 0; i < cScancodes; i++)
-            {
-                CHECK_ERROR_BREAK(keyboard, PutScancode(alScancodes[i]));
-                RTPrintf("Scancode[%d]: 0x%02X\n", i, alScancodes[i]);
             }
         }
         else if (!strncmp(a->argv[1], "setlinkstate", 12))
@@ -351,9 +338,7 @@ int handleControlVM(HandlerArg *a)
                     }
                 }
                 else
-                {
-                    RTPrintf("The NIC %d is currently disabled and thus can't change its tracefile\n", n);
-                }
+                    RTMsgError("The NIC %d is currently disabled and thus can't change its tracefile", n);
             }
         }
         else if (!strncmp(a->argv[1], "nictrace", 8))
@@ -402,9 +387,7 @@ int handleControlVM(HandlerArg *a)
                     }
                 }
                 else
-                {
-                    RTPrintf("The NIC %d is currently disabled and thus can't change its tracefile\n", n);
-                }
+                    RTMsgError("The NIC %d is currently disabled and thus can't change its trace flag", n);
             }
         }
         else if (!strncmp(a->argv[1], "nic", 3))
@@ -496,9 +479,7 @@ int handleControlVM(HandlerArg *a)
                     }
                 }
                 else
-                {
-                    RTPrintf("The NIC %d is currently disabled and thus can't change its attachment type\n", n);
-                }
+                    RTMsgError("The NIC %d is currently disabled and thus can't change its attachment type", n);
             }
         }
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
@@ -868,9 +849,9 @@ int handleControlVM(HandlerArg *a)
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
-                    RTPrintf("Error: teleportation failed. Error message: %lS\n", info.getText().raw());
+                    RTMsgError("Teleportation failed. Error message: %lS", info.getText().raw());
                 else
-                    RTPrintf("Error: teleportation failed. No error message available!\n");
+                    RTMsgError("Teleportation failed. No error message available!");
             }
         }
         else

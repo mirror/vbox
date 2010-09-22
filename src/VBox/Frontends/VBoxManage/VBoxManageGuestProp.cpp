@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxManage - The 'guestproperty' command.
+ * VBoxManage - Implementation of guestproperty command.
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,18 +50,22 @@ using namespace com;
 
 void usageGuestProperty(void)
 {
-    RTPrintf("VBoxManage guestproperty    get <vmname>|<uuid>\n"
-             "                            <property> [--verbose]\n"
-             "\n");
-    RTPrintf("VBoxManage guestproperty    set <vmname>|<uuid>\n"
-             "                            <property> [<value> [--flags <flags>]]\n"
-             "\n");
-    RTPrintf("VBoxManage guestproperty    enumerate <vmname>|<uuid>\n"
-             "                            [--patterns <patterns>]\n"
-             "\n");
-    RTPrintf("VBoxManage guestproperty    wait <vmname>|<uuid> <patterns>\n"
-             "                            [--timeout <msec>] [--fail-on-timeout]\n"
-             "\n");
+    RTStrmPrintf(g_pStdErr,
+                 "VBoxManage guestproperty    get <vmname>|<uuid>\n"
+                 "                            <property> [--verbose]\n"
+                 "\n");
+    RTStrmPrintf(g_pStdErr,
+                 "VBoxManage guestproperty    set <vmname>|<uuid>\n"
+                 "                            <property> [<value> [--flags <flags>]]\n"
+                 "\n");
+    RTStrmPrintf(g_pStdErr,
+                 "VBoxManage guestproperty    enumerate <vmname>|<uuid>\n"
+                 "                            [--patterns <patterns>]\n"
+                 "\n");
+    RTStrmPrintf(g_pStdErr,
+                 "VBoxManage guestproperty    wait <vmname>|<uuid> <patterns>\n"
+                 "                            [--timeout <msec>] [--fail-on-timeout]\n"
+                 "\n");
 }
 
 static int handleGetGuestProperty(HandlerArg *a)
@@ -356,7 +360,7 @@ static int handleWaitGuestProperty(HandlerArg *a)
     int rcRet = 0;
     if (!fSignalled)
     {
-        RTPrintf("Time out or interruption while waiting for a notification.\n");
+        RTMsgError("Time out or interruption while waiting for a notification.");
         if (fFailOnTimeout)
             rcRet = 2;
     }

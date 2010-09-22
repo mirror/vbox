@@ -702,13 +702,13 @@ int handleList(HandlerArg *a)
                     CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), 1);
 
                     RTPrintf("UUID:               %S\n"
-                            "VendorId:           0x%04x (%04X)\n"
-                            "ProductId:          0x%04x (%04X)\n"
-                            "Revision:           %u.%u (%02u%02u)\n",
-                            Utf8Str(id).c_str(),
-                            usVendorId, usVendorId, usProductId, usProductId,
-                            bcdRevision >> 8, bcdRevision & 0xff,
-                            bcdRevision >> 8, bcdRevision & 0xff);
+                             "VendorId:           %#06x (%04X)\n"
+                             "ProductId:          %#06x (%04X)\n"
+                             "Revision:           %u.%u (%02u%02u)\n",
+                             Utf8Str(id).c_str(),
+                             usVendorId, usVendorId, usProductId, usProductId,
+                             bcdRevision >> 8, bcdRevision & 0xff,
+                             bcdRevision >> 8, bcdRevision & 0xff);
 
                     /* optional stuff. */
                     Bstr bstr;

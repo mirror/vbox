@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,9 +29,6 @@
 #include <VBox/com/EventQueue.h>
 
 #include <VBox/com/VirtualBox.h>
-
-#include <vector>
-#include <list>
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/asm.h>
@@ -79,7 +76,7 @@ int handleRegisterVM(HandlerArg *a)
         int vrc = RTPathAbs(a->argv[0], szVMFileAbs, sizeof(szVMFileAbs));
         if (RT_FAILURE(vrc))
         {
-            RTPrintf("Cannot convert filename \"%s\" to absolute path\n", a->argv[0]);
+            RTMsgError("Cannot convert filename \"%s\" to absolute path", a->argv[0]);
             return 1;
         }
         CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(szVMFileAbs), machine.asOutParam()));
@@ -230,7 +227,9 @@ int handleCreateVM(HandlerArg *a)
         else
             return errorSyntax(USAGE_CREATEVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
     }
-    if (!name)
+
+    /* check for required options */
+    if (name)
         return errorSyntax(USAGE_CREATEVM, "Parameter --name is required");
 
     do

@@ -314,9 +314,9 @@ int handleSnapshot(HandlerArg *a)
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
-                    RTPrintf("Error: failed to take snapshot. Error message: %lS\n", info.getText().raw());
+                    RTMsgError("Failed to take snapshot. Error message: %lS", info.getText().raw());
                 else
-                    RTPrintf("Error: failed to take snapshot. No error message available!\n");
+                    RTMsgError("Failed to take snapshot. No error message available!");
             }
 
             if (fPause)
@@ -392,9 +392,9 @@ int handleSnapshot(HandlerArg *a)
             {
                 com::ProgressErrorInfo info(pProgress);
                 if (info.isBasicAvailable())
-                    RTPrintf("Error: snapshot operation failed. Error message: %lS\n", info.getText().raw());
+                    RTMsgError("Snapshot operation failed. Error message: %lS", info.getText().raw());
                 else
-                    RTPrintf("Error: snapshot operation failed. No error message available!\n");
+                    RTMsgError("Snapshot operation failed. No error message available!");
             }
         }
         else if (!strcmp(a->argv[1], "edit"))
