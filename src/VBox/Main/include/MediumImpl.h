@@ -242,6 +242,24 @@ public:
 
     HRESULT fixParentUuidOfChildren(const MediaList &childrenToReparent);
 
+    /**
+     * Used by IAppliance to export disk images.
+     *
+     * @param aFilename             Filename to create (UTF8).
+     * @param aFormat               Which medium format to use.
+     * @param aVariant              Which exact image format variant to use.
+     * @param aVDImageIOCallbacks   Pointer to the callback table for a
+     *                              VDINTERFACEIO interface. May be NULL.
+     * @param aVDImageIOUser        Opaque data for the callbacks.
+     * @param aProgress             Progress object to use.
+     * @return
+     */
+    HRESULT exportFile(const char *aFilename,
+                       ComObjPtr<MediumFormat> aFormat,
+                       MediumVariant_T aVariant,
+                       void *aVDImageIOCallbacks, void *aVDImageIOUser,
+                       ComObjPtr<Progress> aProgress);
+
     /** Returns a preferred format for a differencing hard disk. */
     Utf8Str getPreferredDiffFormat();
 
@@ -292,6 +310,7 @@ private:
     class ResetTask;
     class DeleteTask;
     class MergeTask;
+    class ExportTask;
     friend class Task;
     friend class CreateBaseTask;
     friend class CreateDiffTask;
@@ -301,6 +320,7 @@ private:
     friend class ResetTask;
     friend class DeleteTask;
     friend class MergeTask;
+    friend class ExportTask;
 
     HRESULT startThread(Medium::Task *pTask);
     HRESULT runNow(Medium::Task *pTask, bool *pfNeedsGlobalSaveSettings);
@@ -313,6 +333,7 @@ private:
     HRESULT taskResetHandler(Medium::ResetTask &task);
     HRESULT taskCompactHandler(Medium::CompactTask &task);
     HRESULT taskResizeHandler(Medium::ResizeTask &task);
+    HRESULT taskExportHandler(Medium::ExportTask &task);
 
     struct Data;            // opaque data struct, defined in MediumImpl.cpp
     Data *m;
