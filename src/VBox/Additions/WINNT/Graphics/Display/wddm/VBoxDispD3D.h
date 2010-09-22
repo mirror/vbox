@@ -235,6 +235,17 @@ typedef struct VBOXWDDMDISP_RESOURCE
     VBOXWDDMDISP_ALLOCATION aAllocations[1];
 } VBOXWDDMDISP_RESOURCE, *PVBOXWDDMDISP_RESOURCE;
 
+typedef struct VBOXWDDMDISP_QUERY
+{
+    D3DDDIQUERYTYPE enmType;
+    D3DDDI_ISSUEQUERYFLAGS fQueryState;
+    union
+    {
+        BOOL bData;
+        UINT u32Data;
+    } data ;
+} VBOXWDDMDISP_QUERY, *PVBOXWDDMDISP_QUERY;
+
 typedef struct VBOXWDDMDISP_TSS_LOOKUP
 {
     BOOL  bSamplerState;
