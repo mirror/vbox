@@ -160,8 +160,8 @@ struct VBoxDefs
 #endif
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    static const char* VBoxDefs::GUI_DbgEnabled;
-    static const char* VBoxDefs::GUI_DbgAutoShow;
+    static const char* GUI_DbgEnabled;
+    static const char* GUI_DbgAutoShow;
 #endif
 };
 
