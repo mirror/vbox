@@ -315,6 +315,9 @@ static int vboxserviceVMInfoWriteUsers(void)
     if (RT_FAILURE(rc))
         cUsersInList = 0;
 
+    VBoxServiceVerbose(4, "VMInfo: cUsersInList: %u, pszUserList: %s, rc=%Rrc\n",
+                       cUsersInList, pszUserList ? pszUserList : "<NULL>", rc);
+
     if (pszUserList && cUsersInList > 0)
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", pszUserList);
     else
