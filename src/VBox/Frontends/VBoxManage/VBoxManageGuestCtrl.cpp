@@ -130,8 +130,8 @@ static int handleExecProgram(HandlerArg *a)
 
     Utf8Str Utf8Cmd(a->argv[1]);
     uint32_t uFlags = 0;
-    com::SafeArray<CBSTR> args;
-    com::SafeArray<CBSTR> env;
+    com::SafeArray<BSTR> args;
+    com::SafeArray<BSTR> env;
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
     uint32_t u32TimeoutMS = 0;

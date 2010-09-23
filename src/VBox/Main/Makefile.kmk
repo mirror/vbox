@@ -73,6 +73,8 @@ VBOX_IDL_FILE.XPCOM    = $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.id
 VBOX_IDL_TYPELIB.XPCOM = $(PATH_BIN)/components/VirtualBox_XPCOM.xpt
 VBOX_IDL_HEADER.XPCOM  = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 
+OTHERS = $(PATH_TARGET)/VirtualBoxAPIClasses.tmp
+
 # The MS COM specific stuff.
 if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
  OTHERS         += \
@@ -153,6 +155,16 @@ docs.main docs.Main: $(PATH_TARGET)/docs.Main
 if !defined(VBOX_ONLY_DOCS)
 docs:                $(PATH_TARGET)/docs.Main
 endif
+
+
+#
+# Generate class definitions from the XIDL file.
+#
+$(PATH_TARGET)/VirtualBoxAPIClasses.tmp: \
+		$(VBOX_XIDL_FILE) \
+		$(VBOX_PATH_MAIN_SRC)/api-classgen.xsl \
+		| $$(dir $$@)
+	$(VBOX_XSLTPROC) -o $(PATH_TARGET)/VirtualBoxAPIClasses.tmp $(VBOX_PATH_MAIN_SRC)/api-classgen.xsl $<
 
 
 #
@@ -464,7 +476,7 @@ $(VBOX_XML_SCHEMADEFS_CPP): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUIL
 	$(call MSG_GENERATE,SchemaDefs,$@,$<)
 	$(QUIET)$(VBOX_XSLTPROC)  --stringparam mode define  -o $@ $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUILD_TARGET))
 
-OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
+OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP) $(PATH_TARGET)/VirtualBoxAPIClasses.tmp
 
 
 if (   defined(VBOX_WITH_QTGUI) \

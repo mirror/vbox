@@ -969,7 +969,7 @@ HRESULT Session::grabIPCSemaphore()
                     E_FAIL);
 
     void *data[3];
-    data[0] = (void*)(BSTR)ipcId;
+    data[0] = (void*)(BSTR)ipcId.raw();
     data[1] = (void*)mIPCThreadSem;
     data[2] = 0; /* will get an output from the thread */
 
