@@ -178,7 +178,7 @@
           </listitem>
         </itemizedlist></para>
 
-      <para>The debugger can be enabled in two ways:<itemizedlist>
+      <para>The debugger can be enabled in three ways:<itemizedlist>
           <listitem>
             <para>Start the <computeroutput>VirtualBox</computeroutput>
             process with a <computeroutput>--dbg</computeroutput>,
@@ -193,12 +193,20 @@
             <para>Set the
             <computeroutput>VBOX_GUI_DBG_ENABLED</computeroutput> or
             <computeroutput>VBOX_GUI_DBG_AUTO_SHOW</computeroutput>
-            environment variable to an arbitrary value before launching the
-            VirtualBox process. Setting these variables (only their presence
-            is checked) is effective even when the first VirtualBox process is
-            the VM selector window. VMs subsequently launched from the
-            selector will have the debugger enabled.</para>
+            environment variable to <computeroutput>true</computeroutput> 
+            before launching the VirtualBox process. Setting these variables 
+            (only their presence is checked) is effective even when the first
+            VirtualBox process is the VM selector window. VMs subsequently 
+            launched from the selector will have the debugger enabled.</para>
           </listitem>
+
+          <listitem>
+            <para>Set the
+            <computeroutput>GUI/Dbg/Enabled</computeroutput> extra data item to
+            <computeroutput>true</computeroutput> before launching the
+            VM.  This can be set globally or on a per VM basis.</para>
+          </listitem>
+
         </itemizedlist></para>
 
       <para>A new 'Debug' menu entry will be added to the VirtualBox

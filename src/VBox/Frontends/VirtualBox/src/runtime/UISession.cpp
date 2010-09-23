@@ -184,7 +184,7 @@ void UISession::powerUp()
     CConsole console = session().GetConsole();
 
     /* Power UP machine: */
-    CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
+    CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled(machine) ?
                          console.PowerUpPaused() : console.PowerUp();
 
     /* Check for immediate failure: */
