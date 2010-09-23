@@ -88,7 +88,7 @@ ifdef VBOX_WITH_WDDM
    VBoxVideoWddm_DEFS     += VBOXVDMA_WITH_VBVA
   endif
  endif
- VBoxVideoWddm_DEFS       += LOG_ENABLED
+ #VBoxVideoWddm_DEFS       += LOG_ENABLED
  #VBoxVideoWddm_DEFS       += VBOX_WITH_MULTIMONITOR_FIX
  #VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR
  VBoxVideoWddm_INCS       += ../../include
