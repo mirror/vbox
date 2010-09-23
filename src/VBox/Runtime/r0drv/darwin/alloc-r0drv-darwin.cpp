@@ -40,21 +40,24 @@
 /**
  * OS specific allocation function.
  */
-PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
+int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
-    AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
+    if (RT_UNLIKELY(fFlags & RTMEMHDR_FLAG_ANY_CTX))
+        return VERR_NOT_SUPPORTED;
 
-    PRTMEMHDR pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr));
-    if (pHdr)
+    PRTMEMHDR pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr))
+    if (RT_UNLIKELY(!pHdr))
     {
-        pHdr->u32Magic  = RTMEMHDR_MAGIC;
-        pHdr->fFlags    = fFlags;
-        pHdr->cb        = cb;
-        pHdr->cbReq     = cb;
+        printf("rtR0MemAllocEx(%#zx, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
+        return VERR_NO_MEMORY;
     }
-    else
-        printf("rmMemAlloc(%#zx, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
-    return pHdr;
+
+    pHdr->u32Magic  = RTMEMHDR_MAGIC;
+    pHdr->fFlags    = fFlags;
+    pHdr->cb        = cb;
+    pHdr->cbReq     = cb;
+    *ppHdr = pHdr;;
+    return VINF_SUCCESS;
 }
 
 

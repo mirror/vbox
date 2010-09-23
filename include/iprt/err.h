@@ -622,6 +622,11 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VINF_NO_CHANGE                      95
 /** Out of memory condition when allocating executable memory. */
 #define VERR_NO_EXEC_MEMORY                 (-96)
+/** The alignment is not supported. */
+#define VERR_UNSUPPORTED_ALIGNMENT          (-97)
+/** The alignment is not really supported, however we got lucky with this
+ * allocation. */
+#define VINF_UNSUPPORTED_ALIGNMENT          (97)
 
 /** @} */
 

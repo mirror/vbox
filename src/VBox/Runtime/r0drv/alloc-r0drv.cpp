@@ -35,22 +35,13 @@
 # include <iprt/asm-amd64-x86.h>
 #endif
 #include <iprt/assert.h>
+#ifdef RT_MORE_STRICT
+# include <iprt/mp.h>
+#endif
 #include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include "r0drv/alloc-r0drv.h"
-
-#undef RTMemTmpAlloc
-#undef RTMemTmpAllocZ
-#undef RTMemTmpFree
-#undef RTMemAlloc
-#undef RTMemAllocZ
-#undef RTMemAllocVar
-#undef RTMemAllocZVar
-#undef RTMemRealloc
-#undef RTMemFree
-#undef RTMemDup
-#undef RTMemDupEx
 
 
 /*******************************************************************************
@@ -64,19 +55,6 @@
 # define RTR0MEM_FENCE_EXTRA    16
 #else
 # define RTR0MEM_FENCE_EXTRA    0
-#endif
-
-
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-#ifdef RTR0MEM_STRICT
-/** Fence data. */
-static uint8_t const g_abFence[RTR0MEM_FENCE_EXTRA] =
-{
-    0x77, 0x88, 0x66, 0x99,  0x55, 0xaa, 0x44, 0xbb,
-    0x33, 0xcc, 0x22, 0xdd,  0x11, 0xee, 0x00, 0xff
-};
 #endif
 
 
@@ -100,7 +78,39 @@ static uint8_t const g_abFence[RTR0MEM_FENCE_EXTRA] =
 #undef RTMemDupTag
 #undef RTMemDupEx
 #undef RTMemDupExTag
+#undef rtR0MemAllocEx
+#undef rtR0MemAllocExTag
+#undef rtR0MemFreeEx
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef RTR0MEM_STRICT
+/** Fence data. */
+static uint8_t const g_abFence[RTR0MEM_FENCE_EXTRA] =
+{
+    0x77, 0x88, 0x66, 0x99,  0x55, 0xaa, 0x44, 0xbb,
+    0x33, 0xcc, 0x22, 0xdd,  0x11, 0xee, 0x00, 0xff
+};
+#endif
+
+
+/**
+ * Wrapper around rtR0MemAllocEx.
+ *
+ * @returns Pointer to the allocated memory block header.
+ * @param   cb                  The number of bytes to allocate (sans header).
+ * @param   fFlags              The allocation flags.
+ */
+DECLINLINE(PRTMEMHDR) rtR0MemAlloc(size_t cb, uint32_t fFlags)
+{
+    PRTMEMHDR pHdr;
+    int rc = rtR0MemAllocEx(cb, fFlags, &pHdr);
+    if (RT_FAILURE(rc))
+        return NULL;
+    return pHdr;
+}
 
 
 RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
@@ -246,6 +256,7 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
     pHdr = (PRTMEMHDR)pv - 1;
     if (pHdr->u32Magic == RTMEMHDR_MAGIC)
     {
+        Assert(!(pHdr->fFlags & RTMEMHDR_FLAG_ALLOC_EX));
         Assert(!(pHdr->fFlags & RTMEMHDR_FLAG_EXEC));
 #ifdef RTR0MEM_STRICT
         AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], RTR0MEM_FENCE_EXTRA),
@@ -301,6 +312,7 @@ RTDECL(void)      RTMemExecFree(void *pv) RT_NO_THROW
     pHdr = (PRTMEMHDR)pv - 1;
     if (pHdr->u32Magic == RTMEMHDR_MAGIC)
     {
+        Assert(!(pHdr->fFlags & RTMEMHDR_FLAG_ALLOC_EX));
 #ifdef RTR0MEM_STRICT
         AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], RTR0MEM_FENCE_EXTRA),
                          ("pHdr=%p pv=%p cb=%zu\n"
@@ -318,38 +330,89 @@ RTDECL(void)      RTMemExecFree(void *pv) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTMemExecFree);
 
 
-/**
- * Internal IPRT API for allocating special memory.
- *
- * @returns Pointer to the allocated memory, NULL on failure.
- * @param   cb                  The amount of memory to allocate.
- * @param   fFlags              Subset of the RTMEMHDR_FLAG_XXX flags.
- * @param   pszTag              The tag.
- */
-void *rtR0MemAllocExTag(size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW
+
+
+RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, const char *pszTag, void **ppv) RT_NO_THROW
 {
-    /** @todo continue later. */
-    return NULL;
+    uint32_t    fHdrFlags = RTMEMHDR_FLAG_ALLOC_EX;
+    PRTMEMHDR   pHdr;
+    int         rc;
+
+    RT_ASSERT_PREEMPT_CPUID_VAR();
+    if (!(fFlags & RTMEMHDR_FLAG_ANY_CTX_ALLOC))
+        RT_ASSERT_INTS_ON();
+
+    /*
+     * Fake up some alignment support.
+     */
+    AssertMsgReturn(cbAlignment <= sizeof(void *), ("%zu (%#x)\n", cbAlignment, cbAlignment), VERR_UNSUPPORTED_ALIGNMENT);
+    if (cb < cbAlignment)
+        cb = cbAlignment;
+
+    /*
+     * Validate and convert flags.
+     */
+    AssertMsgReturn(!(fFlags & ~RTMEMALLOCEX_FLAGS_VALID_MASK), ("%#x\n", fFlags), NULL);
+    if (fFlags & RTMEMALLOCEX_FLAGS_ZEROED)
+        fHdrFlags |= RTMEMHDR_FLAG_ZEROED;
+    if (fFlags & RTMEMALLOCEX_FLAGS_EXEC)
+        fHdrFlags |= RTMEMHDR_FLAG_EXEC;
+    if (fFlags & RTMEMALLOCEX_FLAGS_ANY_CTX_ALLOC)
+        fHdrFlags |= RTMEMHDR_FLAG_ANY_CTX_ALLOC;
+    if (fFlags & RTMEMALLOCEX_FLAGS_ANY_CTX_FREE)
+        fHdrFlags |= RTMEMHDR_FLAG_ANY_CTX_FREE;
+
+    /*
+     * Do the allocation.
+     */
+    rc = rtR0MemAllocEx(cb + RTR0MEM_FENCE_EXTRA, fHdrFlags, &pHdr);
+    if (RT_SUCCESS(rc))
+    {
+        void *pv;
+
+        Assert(pHdr->cbReq  == cb + RTR0MEM_FENCE_EXTRA);
+        Assert((pHdr->fFlags & fFlags) == fFlags);
+
+        /*
+         * Calc user pointer, initialize the memory if requested, and if
+         * memory strictness is enable set up the fence.
+         */
+        pv = pHdr + 1;
+        *ppv = pv;
+        if (fFlags & RTMEMHDR_FLAG_ZEROED)
+            memset(pv, 0, pHdr->cb);
+
+#ifdef RTR0MEM_STRICT
+        pHdr->cbReq = (uint32_t)cb;
+        memcpy((uint8_t *)pv + cb, &g_abFence[0], RTR0MEM_FENCE_EXTRA);
+#endif
+    }
+    else if (rc == VERR_NO_MEMORY && (fFlags & RTMEMALLOCEX_FLAGS_EXEC))
+        rc = VERR_NO_EXEC_MEMORY;
+
+    RT_ASSERT_PREEMPT_CPUID();
+    return rc;
 }
+RT_EXPORT_SYMBOL(RTMemAllocExTag);
 
 
-/**
- * For freeing memory allocated by rtR0MemAllocExTag.
- *
- * @param   pv                  What to free, NULL is fine.
- */
-void  rtR0MemFreeEx(void *pv) RT_NO_THROW
+RTDECL(void) RTMemFreeEx(void *pv, size_t cb) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
 
     if (!pv)
         return;
+
+    AssertPtr(pv);
     pHdr = (PRTMEMHDR)pv - 1;
     if (pHdr->u32Magic == RTMEMHDR_MAGIC)
     {
+        RT_ASSERT_PREEMPT_CPUID_VAR();
+
         Assert(pHdr->fFlags & RTMEMHDR_FLAG_ALLOC_EX);
-        if (!(pHdr->fFlags & RTMEMHDR_FLAG_FREE_ANY_CTX))
+        if (!(pHdr->fFlags & RTMEMHDR_FLAG_ANY_CTX_FREE))
             RT_ASSERT_INTS_ON();
+        AssertMsg(pHdr->cbReq == cb, ("cbReq=%zu cb=%zu\n", pHdr->cb, cb));
 
 #ifdef RTR0MEM_STRICT
         AssertReleaseMsg(!memcmp((uint8_t *)(pHdr + 1) + pHdr->cbReq, &g_abFence[0], RTR0MEM_FENCE_EXTRA),
@@ -361,8 +424,10 @@ void  rtR0MemFreeEx(void *pv) RT_NO_THROW
                           RTR0MEM_FENCE_EXTRA, &g_abFence[0]));
 #endif
         rtR0MemFree(pHdr);
+        RT_ASSERT_PREEMPT_CPUID();
     }
     else
         AssertMsgFailed(("pHdr->u32Magic=%RX32 pv=%p\n", pHdr->u32Magic, pv));
 }
+RT_EXPORT_SYMBOL(RTMemFreeEx);
 

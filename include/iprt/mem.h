@@ -292,6 +292,70 @@ RTDECL(void)    RTMemFree(void *pv) RT_NO_THROW;
 
 
 
+/** @def RTR0MemAllocEx and RTR0MemAllocExTag flags.
+ * @{ */
+/** The returned memory should be zeroed. */
+#define RTMEMALLOCEX_FLAGS_ZEROED           RT_BIT(0)
+/** It must be load code into the returned memory block and execute it. */
+#define RTMEMALLOCEX_FLAGS_EXEC             RT_BIT(1)
+/** Allocation from any context.
+ * Will return VERR_NOT_SUPPORTED if not supported.  */
+#define RTMEMALLOCEX_FLAGS_ANY_CTX_ALLOC    RT_BIT(2)
+/** Allocate the memory such that it can be freed from any context.
+ * Will return VERR_NOT_SUPPORTED if not supported. */
+#define RTMEMALLOCEX_FLAGS_ANY_CTX_FREE     RT_BIT(3)
+/** Allocate and free from any context.
+ * Will return VERR_NOT_SUPPORTED if not supported. */
+#define RTMEMALLOCEX_FLAGS_ANY_CTX          (RTMEMALLOCEX_FLAGS_ANY_CTX_ALLOC | RTMEMALLOCEX_FLAGS_ANY_CTX_FREE)
+/** Mask of valid flags. */
+#define RTMEMALLOCEX_FLAGS_VALID_MASK       UINT32_C(0x0000000f)
+/** @}  */
+
+/**
+ * Extended heap allocation API, default tag.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NO_MEMORY if we're out of memory.
+ * @retval  VERR_NO_EXEC_MEMORY if we're out of executable memory.
+ * @retval  VERR_NOT_SUPPORTED if any of the specified flags are unsupported.
+ *
+ * @param   cb                  The amount of memory to allocate.
+ * @param   cbAlignment         The alignment requirements.  Use 0 to indicate
+ *                              default alignment.
+ * @param   fFlags              A combination of the RTMEMALLOCEX_FLAGS_XXX
+ *                              defines.
+ * @param   ppv                 Where to return the memory.
+ */
+#define RTMemAllocEx(cb, cbAlignment, fFlags, ppv) RTMemAllocExTag((cb), (cbAlignment), (fFlags), RTMEM_TAG, (ppv))
+
+/**
+ * Extended heap allocation API, custom tag.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NO_MEMORY if we're out of memory.
+ * @retval  VERR_NO_EXEC_MEMORY if we're out of executable memory.
+ * @retval  VERR_NOT_SUPPORTED if any of the specified flags are unsupported.
+ *
+ * @param   cb                  The amount of memory to allocate.
+ * @param   cbAlignment         The alignment requirements.  Use 0 to indicate
+ *                              default alignment.
+ * @param   fFlags              A combination of the RTMEMALLOCEX_FLAGS_XXX
+ *                              defines.
+ * @param   pszTag              The tag.
+ * @param   ppv                 Where to return the memory.
+ */
+RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, const char *pszTag, void **ppv) RT_NO_THROW;
+
+/**
+ * For freeing memory allocated by RTMemAllocEx or RTMemAllocExTag.
+ *
+ * @param   pv                  What to free, NULL is fine.
+ * @param   cb                  The amount of allocated memory.
+ */
+RTDECL(void) RTMemFreeEx(void *pv, size_t cb) RT_NO_THROW;
+
+
+
 /**
  * Allocates memory which may contain code (default tag).
  *
