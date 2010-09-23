@@ -5545,7 +5545,8 @@ static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
 
     e1kPCICfgSetU16(pci, VBOX_PCI_COMMAND,            0x0000);
     /* DEVSEL Timing (medium device), 66 MHz Capable, New capabilities */
-    e1kPCICfgSetU16(pci, VBOX_PCI_STATUS,             0x0230);
+    e1kPCICfgSetU16(pci, VBOX_PCI_STATUS,
+                    VBOX_PCI_STATUS_DEVSEL_MEDIUM | VBOX_PCI_STATUS_CAP_LIST |  VBOX_PCI_STATUS_66MHZ);
     /* Stepping A2 */
     e1kPCICfgSetU8( pci, VBOX_PCI_REVISION_ID,          0x02);
     /* Ethernet adapter */
@@ -5571,11 +5572,12 @@ static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
 
     /* PCI Power Management Registers ****************************************/
     /* Capability ID: PCI Power Management Registers */
-    e1kPCICfgSetU8( pci, 0xDC,                          0x01);
+    e1kPCICfgSetU8( pci, 0xDC,                           VBOX_PCI_CAP_ID_PM);
     /* Next Item Pointer: PCI-X */
     e1kPCICfgSetU8( pci, 0xDC + 1,                      0xE4);
     /* Power Management Capabilities: PM disabled, DSI */
-    e1kPCICfgSetU16(pci, 0xDC + 2,                    0x0022);
+    e1kPCICfgSetU16(pci, 0xDC + 2,
+                    0x0002 | VBOX_PCI_PM_CAP_DSI);
     /* Power Management Control / Status Register: PM disabled */
     e1kPCICfgSetU16(pci, 0xDC + 4,                    0x0000);
     /* PMCSR_BSE Bridge Support Extensions: Not supported */
@@ -5585,12 +5587,13 @@ static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
 
     /* PCI-X Configuration Registers *****************************************/
     /* Capability ID: PCI-X Configuration Registers */
-    e1kPCICfgSetU8( pci, 0xE4,                          0x07);
+    e1kPCICfgSetU8( pci, 0xE4,                           VBOX_PCI_CAP_ID_PCIX);
     /* Next Item Pointer: None (Message Signalled Interrupts are disabled) */
     e1kPCICfgSetU8( pci, 0xE4 + 1,                      0x00);
     /* PCI-X Command: Enable Relaxed Ordering */
-    e1kPCICfgSetU16(pci, 0xE4 + 2,                    0x0002);
+    e1kPCICfgSetU16(pci, 0xE4 + 2,                    VBOX_PCI_X_CMD_ERO);
     /* PCI-X Status: 32-bit, 66MHz*/
+    /// @todo: is this value really correct? fff8 doesn't look like actual PCI address 
     e1kPCICfgSetU32(pci, 0xE4 + 4,                0x0040FFF8);
 }
 
@@ -5965,4 +5968,3 @@ const PDMDEVREG g_DeviceE1000 =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-
