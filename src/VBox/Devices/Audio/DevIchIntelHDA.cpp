@@ -1660,7 +1660,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetVendorId           (&pThis->dev, 0x8086); /* 00 ro - intel. */
     PCIDevSetDeviceId           (&pThis->dev, 0x2668); /* 02 ro - 82801 / 82801aa(?). */
     PCIDevSetCommand            (&pThis->dev, 0x0000); /* 04 rw,ro - pcicmd. */
-    PCIDevSetStatus             (&pThis->dev, 0x0010); /* 06 rwc?,ro? - pcists. */
+    PCIDevSetStatus             (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
     PCIDevSetRevisionId         (&pThis->dev, 0x01);   /* 08 ro - rid. */
     PCIDevSetClassProg          (&pThis->dev, 0x00);   /* 09 ro - pi. */
     PCIDevSetClassSub           (&pThis->dev, 0x03);   /* 0a ro - scc; 03 == HDA. */
@@ -1681,16 +1681,16 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     /* HDCTL off 0x40 bit 0 selects signaling mode (1-HDA, 0 - Ac97) 18.1.19 */
     pThis->dev.config[0x40] = 0x01;
 
-    pThis->dev.config[0x50] = 0x01;
-    pThis->dev.config[0x51] = 0x60; /* next */
-    pThis->dev.config[0x52] = 0x22;
+    pThis->dev.config[0x50] = VBOX_PCI_CAP_ID_PM;
+    pThis->dev.config[0x51] = 0x00; /* next */
+    pThis->dev.config[0x52] = VBOX_PCI_PM_CAP_DSI | 0x02;
     pThis->dev.config[0x53] = 0x00; /* PM - disabled,  */
 
 #if 0
-    pThis->dev.config[0x60] = 0x05;
+    pThis->dev.config[0x60] = VBOX_PCI_CAP_ID_MSI;
     pThis->dev.config[0x61] = 0x70; /* next */
     pThis->dev.config[0x62] = 0x00;
-    pThis->dev.config[0x63] = 0x80;
+    pThis->dev.config[0x63] = VBOX_PCI_MSIX_FLAGS_ENABLE >> 8;
 #endif
 
     /*
