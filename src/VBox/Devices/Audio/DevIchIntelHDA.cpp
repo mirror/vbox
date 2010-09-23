@@ -1693,6 +1693,45 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     pThis->dev.config[0x63] = VBOX_PCI_MSIX_FLAGS_ENABLE >> 8;
 #endif
 
+#if 0
+    pThis->dev.config[0x90] = VBOX_PCI_CAP_ID_EXP; /* PCI_Express */
+    pThis->dev.config[0x90+1] = 0x50; /* next */
+    /* Device flags */
+    PCIDevSetWord  (&pThis->dev, 0x90 + 2, /* version */ 0x1);
+    /* Device capabilities */
+    PCIDevSetDWord (&pThis->dev, 0x90 + 4, 0);
+    /* Device control */
+    PCIDevSetWord  (&pThis->dev, 0x90 + 8, 0);
+    /* Device status */
+    PCIDevSetWord  (&pThis->dev, 0x90 + 10, 0);
+    /* Link caps */
+    PCIDevSetDWord (&pThis->dev, 0x90 + 12, 0);
+    /* Link control */
+    PCIDevSetWord  (&pThis->dev, 0x90 + 16, 0);
+    /* Link status */
+    PCIDevSetWord  (&pThis->dev, 0x90 + 18, 0);
+    /* Slot capabilities */
+    PCIDevSetDWord (&pThis->dev, 0x90 + 20, 0);
+    /* Slot control */
+    PCIDevSetWord  (&pThis->dev, 0x90 + 24, 0);
+    /* Slot status */
+    PCIDevSetWord  (&pThis->dev, 0x90 + 26, 0);
+    /* Root control */
+    PCIDevSetWord  (&pThis->dev, 0x90 + 28, 0);
+    /* Root capabilities */
+    PCIDevSetWord  (&pThis->dev, 0x90 + 30, 0);
+    /* Root status */
+    PCIDevSetDWord (&pThis->dev, 0x90 + 32, 0);
+    /* Device capabilities 2 */
+    PCIDevSetDWord (&pThis->dev, 0x90 + 36, 0);
+    /* Device control 2 */
+    PCIDevSetQWord (&pThis->dev, 0x90 + 40, 0);
+    /* Link control 2 */
+    PCIDevSetQWord (&pThis->dev, 0x90 + 48, 0);
+    /* Slot control 2 */
+    PCIDevSetWord  (&pThis->dev, 0x90 + 56, 0);
+#endif
+
     /*
      * Register the PCI device.
      */
