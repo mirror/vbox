@@ -43,33 +43,56 @@ typedef struct RTMEMHDR
     uint32_t    u32Magic;
     /** Block flags (RTMEMHDR_FLAG_*). */
     uint32_t    fFlags;
-    /** The actual size of the block. */
+    /** The actual size of the block, header not included. */
     uint32_t    cb;
-    /** The request allocation size. */
+    /** The requested allocation size. */
     uint32_t    cbReq;
 } RTMEMHDR, *PRTMEMHDR;
 
 
 /** @name RTMEMHDR::fFlags.
  * @{ */
+/** Clear the allocated memory. */
 #define RTMEMHDR_FLAG_ZEROED        RT_BIT(0)
+/** Executable flag. */
 #define RTMEMHDR_FLAG_EXEC          RT_BIT(1)
-#define RTMEMHDR_FLAG_ALLOC_ANY_CTX RT_BIT(2)
-#define RTMEMHDR_FLAG_FREE_ANY_CTX  RT_BIT(3)
-#define RTMEMHDR_FLAG_ANY_CTX       (RTMEMHDR_FLAG_ALLOC_ANY_CTX | RTMEMHDR_FLAG_FREE_ANY_CTX)
+/** Use allocation method suitable for any context. */
+#define RTMEMHDR_FLAG_ANY_CTX_ALLOC RT_BIT(2)
+/** Use allocation method which allow for freeing in any context. */
+#define RTMEMHDR_FLAG_ANY_CTX_FREE  RT_BIT(3)
+/** Both alloc and free in any context (or we're just darn lazy). */
+#define RTMEMHDR_FLAG_ANY_CTX       (RTMEMHDR_FLAG_ANY_CTX_ALLOC | RTMEMHDR_FLAG_ANY_CTX_FREE)
+/** Indicate that it was allocated by rtR0MemAllocExTag. */
 #define RTMEMHDR_FLAG_ALLOC_EX      RT_BIT(4)
 #ifdef RT_OS_LINUX
+/** Linux: Allocated from the special heap for executable memory. */
 # define RTMEMHDR_FLAG_EXEC_HEAP    RT_BIT(30)
+/** Linux: Allocated by kmalloc() instead of vmalloc(). */
 # define RTMEMHDR_FLAG_KMALLOC      RT_BIT(31)
 #endif
 /** @} */
 
 
-PRTMEMHDR   rtR0MemAlloc(size_t cb, uint32_t fFlags);
+/**
+ * Heap allocation back end for ring-0.
+ *
+ * @returns IPRT status code.  VERR_NO_MEMORY suffices for RTMEMHDR_FLAG_EXEC,
+ *          the caller will change it to VERR_NO_EXEC_MEMORY when appropriate.
+ *
+ * @param   cb          The amount of memory requested by the user.  This does
+ *                      not include the header.
+ * @param   fFlags      The allocation flags and more.  These should be
+ *                      assigned to RTMEMHDR::fFlags together with any flags
+ *                      the backend might be using.
+ * @param   ppHdr       Where to return the memory header on success.
+ */
+int         rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr);
+
+/**
+ * Free memory allocated by rtR0MemAllocEx.
+ * @param   pHdr        The memory block to free.  (Never NULL.)
+ */
 void        rtR0MemFree(PRTMEMHDR pHdr);
-#define rtR0MemAllocEx(cb, fFlags) rtR0MemAllocExTag((cb), (fFlags), RTMEM_TAG)
-void       *rtR0MemAllocExTag(size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW;
-void        rtR0MemFreeEx(void *pv) RT_NO_THROW;
 
 RT_C_DECLS_END
 #endif

@@ -40,22 +40,23 @@
 #include "r0drv/alloc-r0drv.h" /** @todo drop the r0drv/alloc-r0drv.cpp stuff on OS/2. */
 
 
-PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
+int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
-    AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
+    if (fFlags & RTMEMHDR_FLAG_ANY_CTX)
+        return VERR_NOT_SUPPORTED;
 
     void *pv = NULL;
     APIRET rc = KernVMAlloc(cb + sizeof(RTMEMHDR), VMDHA_FIXED, &pv, (void **)-1, NULL);
-    if (!rc)
-    {
-        PRTMEMHDR pHdr = (PRTMEMHDR)pv;
-        pHdr->u32Magic   = RTMEMHDR_MAGIC;
-        pHdr->fFlags     = fFlags;
-        pHdr->cb         = cb;
-        pHdr->cbReq      = cb;
-        return pHdr;
-    }
-    return NULL;
+    if (RT_UNLIKELY(rc != NO_ERROR))
+        return RTErrConvertFromOS2(rc);
+
+    PRTMEMHDR   pHdr = (PRTMEMHDR)pv;
+    pHdr->u32Magic   = RTMEMHDR_MAGIC;
+    pHdr->fFlags     = fFlags;
+    pHdr->cb         = cb;
+    pHdr->cbReq      = cb;
+    *ppHdr = pHdr;
+    return VINF_SUCCESS;
 }
 
 

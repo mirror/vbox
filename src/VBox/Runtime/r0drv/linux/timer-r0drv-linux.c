@@ -433,11 +433,7 @@ static void rtTimerLnxDestroyIt(PRTTIMER pTimer)
      * The spinlock goes last.
      */
     ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
-#if 0 /*fixme*/
-    rtR0MemFreeNoCtxCheck(pTimer);
-#else
-    RTMemFree(pTimer);
-#endif
+    RTMemFreeEx(pTimer, RT_OFFSETOF(RTTIMER, aSubTimers[pTimer->cCpus]));
     if (hSpinlock != NIL_RTSPINLOCK)
         RTSpinlockDestroy(hSpinlock);
 }
@@ -1392,6 +1388,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     PRTTIMER    pTimer;
     RTCPUID     iCpu;
     unsigned    cCpus;
+    int         rc;
 
     *ppTimer = NULL;
 
@@ -1418,9 +1415,10 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     }
 #endif
 
-    pTimer = (PRTTIMER)RTMemAllocZ(RT_OFFSETOF(RTTIMER, aSubTimers[cCpus]));
-    if (!pTimer)
-        return VERR_NO_MEMORY;
+    rc = RTMemAllocEx(RT_OFFSETOF(RTTIMER, aSubTimers[cCpus]), 0,
+                      RTMEMALLOCEX_FLAGS_ZEROED | RTMEMALLOCEX_FLAGS_ANY_CTX_FREE, (void **)&pTimer);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Initialize it.

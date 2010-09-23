@@ -49,19 +49,20 @@ MALLOC_DEFINE(M_IPRTHEAP, "iprtheap", "IPRT - heap");
 MALLOC_DEFINE(M_IPRTCONT, "iprtcont", "IPRT - contiguous");
 
 
-PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
+int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
     size_t      cbAllocated = cb;
     PRTMEMHDR   pHdr        = NULL;
 
+#ifdef RT_ARCH_AMD64
     /*
      * Things are a bit more complicated on AMD64 for executable memory
      * because we need to be in the ~2GB..~0 range for code.
      */
-#ifdef RT_ARCH_AMD64
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
-        AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
+        if (fFlags & RTMEMHDR_FLAG_ANY_CTX)
+            return VERR_NOT_SUPPORTED;
 
 # ifdef USE_KMEM_ALLOC_PROT
         pHdr = (PRTMEMHDR)kmem_alloc_prot(kernel_map, cb + sizeof(*pHdr),
@@ -73,7 +74,7 @@ PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 
         pVmObject = vm_object_allocate(OBJT_DEFAULT, cbAllocated >> PAGE_SHIFT);
         if (!pVmObject)
-            return NULL;
+            return VERR_NO_EXEC_MEMORY;
 
         /* Addr contains a start address vm_map_find will start searching for suitable space at. */
         int rc = vm_map_find(kernel_map, pVmObject, 0, &Addr,
@@ -105,15 +106,16 @@ PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
                                  fFlags & RTMEMHDR_FLAG_ZEROED ? M_NOWAIT | M_ZERO : M_NOWAIT);
     }
 
-    if (pHdr)
-    {
-        pHdr->u32Magic   = RTMEMHDR_MAGIC;
-        pHdr->fFlags     = fFlags;
-        pHdr->cb         = cbAllocated;
-        pHdr->cbReq      = cb;
-        return pHdr;
-    }
-    return NULL;
+    if (RT_UNLIKELY(!pHdr))
+        return VERR_NO_MEMORY;
+
+    pHdr->u32Magic   = RTMEMHDR_MAGIC;
+    pHdr->fFlags     = fFlags;
+    pHdr->cb         = cbAllocated;
+    pHdr->cbReq      = cb;
+
+    *ppHdr = pHdr;
+    return VINF_SUCCESS;
 }
 
 

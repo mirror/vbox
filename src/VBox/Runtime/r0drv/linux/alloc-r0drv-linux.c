@@ -110,7 +110,7 @@ RT_EXPORT_SYMBOL(RTR0MemExecDonate);
 /**
  * OS specific allocation function.
  */
-PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
+int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
     PRTMEMHDR pHdr;
 
@@ -119,7 +119,8 @@ PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
      */
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
-        AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
+        if (fFlags & RTMEMHDR_FLAG_ANY_CTX)
+            return VERR_NOT_SUPPORTED;
 
 #if defined(RT_ARCH_AMD64)
 # ifdef RTMEMALLOC_EXEC_HEAP
@@ -148,23 +149,25 @@ PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
         if (cb <= PAGE_SIZE || (fFlags & RTMEMHDR_FLAG_ANY_CTX))
         {
             fFlags |= RTMEMHDR_FLAG_KMALLOC;
-            pHdr = kmalloc(cb + sizeof(*pHdr), GFP_KERNEL);
+            pHdr = kmalloc(cb + sizeof(*pHdr),
+                           (fFlags & RTMEMHDR_FLAG_ANY_CTX_ALLOC) ? GFP_ATOMIC : GFP_KERNEL);
         }
         else
             pHdr = vmalloc(cb + sizeof(*pHdr));
     }
+    if (RT_UNLIKELY(!pHdr))
+        return VERR_NO_MEMORY;
 
     /*
      * Initialize.
      */
-    if (pHdr)
-    {
-        pHdr->u32Magic  = RTMEMHDR_MAGIC;
-        pHdr->fFlags    = fFlags;
-        pHdr->cb        = cb;
-        pHdr->cbReq     = cb;
-    }
-    return pHdr;
+    pHdr->u32Magic  = RTMEMHDR_MAGIC;
+    pHdr->fFlags    = fFlags;
+    pHdr->cb        = cb;
+    pHdr->cbReq     = cb;
+
+    *ppHdr = pHdr;
+    return VINF_SUCCESS;
 }
 
 
