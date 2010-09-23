@@ -181,6 +181,103 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 /** @} */
 
 
+/* Possible values in status bitmask */
+#define  VBOX_PCI_STATUS_CAP_LIST    0x10    /* Support Capability List */
+#define  VBOX_PCI_STATUS_66MHZ       0x20    /* Support 66 Mhz PCI 2.1 bus */
+#define  VBOX_PCI_STATUS_UDF         0x40    /* Support User Definable Features [obsolete] */
+#define  VBOX_PCI_STATUS_FAST_BACK   0x80    /* Accept fast-back to back */
+#define  VBOX_PCI_STATUS_PARITY      0x100   /* Detected parity error */
+#define  VBOX_PCI_STATUS_DEVSEL_MASK 0x600   /* DEVSEL timing */
+#define  VBOX_PCI_STATUS_DEVSEL_FAST         0x000
+#define  VBOX_PCI_STATUS_DEVSEL_MEDIUM       0x200
+#define  VBOX_PCI_STATUS_DEVSEL_SLOW         0x400
+#define  VBOX_PCI_STATUS_SIG_TARGET_ABORT    0x800 /* Set on target abort */
+#define  VBOX_PCI_STATUS_REC_TARGET_ABORT    0x1000 /* Master ack of " */
+#define  VBOX_PCI_STATUS_REC_MASTER_ABORT    0x2000 /* Set on master abort */
+#define  VBOX_PCI_STATUS_SIG_SYSTEM_ERROR    0x4000 /* Set when we drive SERR */
+#define  VBOX_PCI_STATUS_DETECTED_PARITY     0x8000 /* Set on parity error */
+
+/* Capability list values (capability offset 0) */
+/* Next  value pointer in offset 1, or 0 if none */
+#define  VBOX_PCI_CAP_ID_PM          0x01    /* Power Management */
+#define  VBOX_PCI_CAP_ID_AGP         0x02    /* Accelerated Graphics Port */
+#define  VBOX_PCI_CAP_ID_VPD         0x03    /* Vital Product Data */
+#define  VBOX_PCI_CAP_ID_SLOTID      0x04    /* Slot Identification */
+#define  VBOX_PCI_CAP_ID_MSI         0x05    /* Message Signalled Interrupts */
+#define  VBOX_PCI_CAP_ID_CHSWP       0x06    /* CompactPCI HotSwap */
+#define  VBOX_PCI_CAP_ID_PCIX        0x07    /* PCI-X */
+#define  VBOX_PCI_CAP_ID_HT          0x08    /* HyperTransport */
+#define  VBOX_PCI_CAP_ID_VNDR        0x09    /* Vendor specific */
+#define  VBOX_PCI_CAP_ID_DBG         0x0A    /* Debug port */
+#define  VBOX_PCI_CAP_ID_CCRC        0x0B    /* CompactPCI Central Resource Control */
+#define  VBOX_PCI_CAP_ID_SHPC        0x0C    /* PCI Standard Hot-Plug Controller */
+#define  VBOX_PCI_CAP_ID_SSVID       0x0D    /* Bridge subsystem vendor/device ID */
+#define  VBOX_PCI_CAP_ID_AGP3        0x0E    /* AGP Target PCI-PCI bridge */
+#define  VBOX_PCI_CAP_ID_EXP         0x10    /* PCI Express */
+#define  VBOX_PCI_CAP_ID_MSIX        0x11    /* MSI-X */
+#define  VBOX_PCI_CAP_ID_AF          0x13    /* PCI Advanced Features */
+
+/* MSI flags (capability offset 2) */
+#define  VBOX_PCI_MSI_FLAGS_64BIT    0x80    /* 64-bit addresses allowed */
+#define  VBOX_PCI_MSI_FLAGS_QSIZE    0x70    /* Message queue size configured */
+#define  VBOX_PCI_MSI_FLAGS_QMASK    0x0e    /* Maximum queue size available */
+#define  VBOX_PCI_MSI_FLAGS_ENABLE   0x01    /* MSI feature enabled */
+#define  VBOX_PCI_MSI_FLAGS_MASKBIT  0x100   /* 64-bit mask bits allowed */
+
+/* MSI-X flags (capability offset 2) */
+#define  VBOX_PCI_MSIX_FLAGS_QSIZE   0x07FF
+#define  VBOX_PCI_MSIX_FLAGS_ENABLE  0x8000
+#define  PCI_MSIX_FLAGS_MASKALL      0x4000
+#define  PCI_MSIX_FLAGS_BIRMASK      0x0007
+
+/* Power management flags (2 bytes, capability offset 2) */
+#define  VBOX_PCI_PM_CAP_VER_MASK    0x0007  /* Version mask */
+#define  VBOX_PCI_PM_CAP_PME_CLOCK   0x0008  /* PME clock required */
+#define  VBOX_PCI_PM_CAP_RESERVED    0x0010  /* Reserved field */
+#define  VBOX_PCI_PM_CAP_DSI         0x0020  /* Device specific initialization */
+#define  VBOX_PCI_PM_CAP_AUX_POWER   0x01C0  /* Auxilliary power support mask */
+#define  VBOX_PCI_PM_CAP_D1          0x0200  /* D1 power state support */
+#define  VBOX_PCI_PM_CAP_D2          0x0400  /* D2 power state support */
+#define  VBOX_PCI_PM_CAP_PME         0x0800  /* PME pin supported */
+#define  VBOX_PCI_PM_CAP_PME_MASK    0xF800  /* PME Mask of all supported states */
+#define  VBOX_PCI_PM_CAP_PME_D0      0x0800  /* PME# from D0 */
+#define  VBOX_PCI_PM_CAP_PME_D1      0x1000  /* PME# from D1 */
+#define  VBOX_PCI_PM_CAP_PME_D2      0x2000  /* PME# from D2 */
+#define  VBOX_PCI_PM_CAP_PME_D3      0x4000  /* PME# from D3 (hot) */
+#define  VBOX_PCI_PM_CAP_PME_D3cold  0x8000  /* PME# from D3 (cold) */
+
+/* Power management control flags (2 bytes, capability offset 4) */
+#define  VBOX_PCI_PM_CTRL_STATE_MASK 0x0003  /* Current power state (D0 to D3) */
+#define  VBOX_PCI_PM_CTRL_NO_SOFT_RESET      0x0008  /* No reset for D3hot->D0 */
+#define  VBOX_PCI_PM_CTRL_PME_ENABLE 0x0100  /* PME pin enable */
+#define  VBOX_PCI_PM_CTRL_DATA_SEL_MASK      0x1e00  /* Data select (??) */
+#define  VBOX_PCI_PM_CTRL_DATA_SCALE_MASK    0x6000  /* Data scale (??) */
+#define  VBOX_PCI_PM_CTRL_PME_STATUS 0x8000  /* PME pin status */
+
+/* PCI-X config flags (2 bytes, capability offset 2) */
+#define  VBOX_PCI_X_CMD_DPERR_E      0x0001  /* Data Parity Error Recovery Enable */
+#define  VBOX_PCI_X_CMD_ERO          0x0002  /* Enable Relaxed Ordering */
+#define  VBOX_PCI_X_CMD_READ_512     0x0000  /* 512 byte maximum read byte count */
+#define  VBOX_PCI_X_CMD_READ_1K      0x0004  /* 1Kbyte maximum read byte count */
+#define  VBOX_PCI_X_CMD_READ_2K      0x0008  /* 2Kbyte maximum read byte count */
+#define  VBOX_PCI_X_CMD_READ_4K      0x000c  /* 4Kbyte maximum read byte count */
+#define  VBOX_PCI_X_CMD_MAX_READ     0x000c  /* Max Memory Read Byte Count */
+
+/* PCI-X config flags (4 bytes, capability offset 4) */
+#define  VBOX_PCI_X_STATUS_DEVFN     0x000000ff      /* A copy of devfn */
+#define  VBOX_PCI_X_STATUS_BUS       0x0000ff00      /* A copy of bus nr */
+#define  VBOX_PCI_X_STATUS_64BIT     0x00010000      /* 64-bit device */
+#define  VBOX_PCI_X_STATUS_133MHZ    0x00020000      /* 133 MHz capable */
+#define  VBOX_PCI_X_STATUS_SPL_DISC  0x00040000      /* Split Completion Discarded */
+#define  VBOX_PCI_X_STATUS_UNX_SPL   0x00080000      /* Unexpected Split Completion */
+#define  VBOX_PCI_X_STATUS_COMPLEX   0x00100000      /* Device Complexity */
+#define  VBOX_PCI_X_STATUS_MAX_READ  0x00600000      /* Designed Max Memory Read Count */
+#define  VBOX_PCI_X_STATUS_MAX_SPLIT 0x03800000      /* Designed Max Outstanding Split Transactions */
+#define  VBOX_PCI_X_STATUS_MAX_CUM   0x1c000000      /* Designed Max Cumulative Read Size */
+#define  VBOX_PCI_X_STATUS_SPL_ERR   0x20000000      /* Rcvd Split Completion Error Msg */
+#define  VBOX_PCI_X_STATUS_266MHZ    0x40000000      /* 266 MHz capable */
+#define  VBOX_PCI_X_STATUS_533MHZ    0x80000000      /* 533 MHz capable */
+
 /**
  * Callback function for reading from the PCI configuration space.
  *
