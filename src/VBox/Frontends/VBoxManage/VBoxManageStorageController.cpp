@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -163,11 +163,13 @@ int handleStorageAttach(HandlerArg *a)
     /* try to find the given machine */
     if (!Guid(machineuuid).isEmpty())
     {
-        CHECK_ERROR_RET(a->virtualBox, GetMachine(machineuuid, machine.asOutParam()), 1);
+        CHECK_ERROR_RET(a->virtualBox, GetMachine(machineuuid.raw(),
+                                                  machine.asOutParam()), 1);
     }
     else
     {
-        CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()), 1);
+        CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                                   machine.asOutParam()), 1);
         machine->COMGETTER(Id)(machineuuid.asOutParam());
     }
 
@@ -199,7 +201,8 @@ int handleStorageAttach(HandlerArg *a)
     a->session->COMGETTER(Machine)(machine.asOutParam());
 
     /* check if the storage controller is present */
-    rc = machine->GetStorageControllerByName(Bstr(pszCtl), storageCtl.asOutParam());
+    rc = machine->GetStorageControllerByName(Bstr(pszCtl).raw(),
+                                             storageCtl.asOutParam());
     if (FAILED(rc))
     {
         errorSyntax(USAGE_STORAGEATTACH, "Couldn't find the controller with the name: '%s'\n", pszCtl);
@@ -225,7 +228,7 @@ int handleStorageAttach(HandlerArg *a)
 
     if (!RTStrICmp(pszMedium, "none"))
     {
-        CHECK_ERROR(machine, DetachDevice(Bstr(pszCtl), port, device));
+        CHECK_ERROR(machine, DetachDevice(Bstr(pszCtl).raw(), port, device));
     }
     else if (!RTStrICmp(pszMedium, "emptydrive"))
     {
@@ -233,7 +236,8 @@ int handleStorageAttach(HandlerArg *a)
         {
             ComPtr<IMediumAttachment> mediumAttachment;
             DeviceType_T deviceType = DeviceType_Null;
-            rc = machine->GetMediumAttachment(Bstr(pszCtl), port, device, mediumAttachment.asOutParam());
+            rc = machine->GetMediumAttachment(Bstr(pszCtl).raw(), port, device,
+                                              mediumAttachment.asOutParam());
             if (SUCCEEDED(rc))
             {
                 mediumAttachment->COMGETTER(Type)(&deviceType);
@@ -242,7 +246,9 @@ int handleStorageAttach(HandlerArg *a)
                     || (deviceType == DeviceType_Floppy))
                 {
                     /* just unmount the floppy/dvd */
-                    CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, Bstr(""), fForceUnmount));
+                    CHECK_ERROR(machine, MountMedium(Bstr(pszCtl).raw(), port,
+                                                     device, Bstr("").raw(),
+                                                     fForceUnmount));
                 }
             }
 
@@ -285,8 +291,9 @@ int handleStorageAttach(HandlerArg *a)
                 deviceType = DeviceType_DVD;
 
             /* attach a empty floppy/dvd drive after removing previous attachment */
-            machine->DetachDevice(Bstr(pszCtl), port, device);
-            CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl), port, device, deviceType, NULL));
+            machine->DetachDevice(Bstr(pszCtl).raw(), port, device);
+            CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl).raw(), port, device,
+                                              deviceType, NULL));
         }
     }
     else
@@ -318,7 +325,9 @@ int handleStorageAttach(HandlerArg *a)
                  * else ask the user for the type.
                  */
                 ComPtr<IMediumAttachment> mediumAttachement;
-                rc = machine->GetMediumAttachment(Bstr(pszCtl), port, device, mediumAttachement.asOutParam());
+                rc = machine->GetMediumAttachment(Bstr(pszCtl).raw(), port,
+                                                  device,
+                                                  mediumAttachement.asOutParam());
                 if (SUCCEEDED(rc))
                 {
                     DeviceType_T deviceType;
@@ -327,7 +336,9 @@ int handleStorageAttach(HandlerArg *a)
                     if (deviceType == DeviceType_DVD)
                     {
                         ComPtr<IMedium> dvdMedium;
-                        rc = a->virtualBox->FindMedium(Bstr(pszMedium), DeviceType_DVD, dvdMedium.asOutParam());
+                        rc = a->virtualBox->FindMedium(Bstr(pszMedium).raw(),
+                                                       DeviceType_DVD,
+                                                       dvdMedium.asOutParam());
                         if (dvdMedium)
                             /*
                              * ok so the medium and attachment both are DVD's so it is
@@ -338,7 +349,9 @@ int handleStorageAttach(HandlerArg *a)
                     else if (deviceType == DeviceType_HardDisk)
                     {
                         ComPtr<IMedium> hardDisk;
-                        rc = a->virtualBox->FindMedium(Bstr(pszMedium), DeviceType_HardDisk, hardDisk.asOutParam());
+                        rc = a->virtualBox->FindMedium(Bstr(pszMedium).raw(),
+                                                       DeviceType_HardDisk,
+                                                       hardDisk.asOutParam());
                         if (hardDisk)
                             /*
                              * ok so the medium and attachment both are hdd's so it is
@@ -401,7 +414,9 @@ int handleStorageAttach(HandlerArg *a)
                 ComPtr<IMediumAttachment> mediumAttachement;
 
                 /* check if there is a dvd drive at the given location, if not attach one */
-                rc = machine->GetMediumAttachment(Bstr(pszCtl), port, device, mediumAttachement.asOutParam());
+                rc = machine->GetMediumAttachment(Bstr(pszCtl).raw(), port,
+                                                  device,
+                                                  mediumAttachement.asOutParam());
                 if (SUCCEEDED(rc))
                 {
                     DeviceType_T deviceType;
@@ -409,13 +424,15 @@ int handleStorageAttach(HandlerArg *a)
 
                     if (deviceType != DeviceType_DVD)
                     {
-                        machine->DetachDevice(Bstr(pszCtl), port, device);
-                        rc = machine->AttachDevice(Bstr(pszCtl), port, device, DeviceType_DVD, NULL);
+                        machine->DetachDevice(Bstr(pszCtl).raw(), port, device);
+                        rc = machine->AttachDevice(Bstr(pszCtl).raw(), port,
+                                                   device, DeviceType_DVD, NULL);
                     }
                 }
                 else
                 {
-                    rc = machine->AttachDevice(Bstr(pszCtl), port, device, DeviceType_DVD, NULL);
+                    rc = machine->AttachDevice(Bstr(pszCtl).raw(), port,
+                                               device, DeviceType_DVD, NULL);
                 }
             }
 
@@ -427,7 +444,8 @@ int handleStorageAttach(HandlerArg *a)
                 {
                     ComPtr<IHost> host;
                     CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                    rc = host->FindHostDVDDrive(Bstr(pszMedium + 5), dvdMedium.asOutParam());
+                    rc = host->FindHostDVDDrive(Bstr(pszMedium + 5).raw(),
+                                                dvdMedium.asOutParam());
                     if (!dvdMedium)
                     {
                         /* 2nd try: try with the real name, important on Linux+libhal */
@@ -438,7 +456,8 @@ int handleStorageAttach(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        rc = host->FindHostDVDDrive(Bstr(szPathReal), dvdMedium.asOutParam());
+                        rc = host->FindHostDVDDrive(Bstr(szPathReal).raw(),
+                                                    dvdMedium.asOutParam());
                         if (!dvdMedium)
                         {
                             errorArgument("Invalid host DVD drive name \"%s\"", pszMedium + 5);
@@ -449,13 +468,15 @@ int handleStorageAttach(HandlerArg *a)
                 }
                 else
                 {
-                    rc = a->virtualBox->FindMedium(Bstr(pszMedium), DeviceType_DVD, dvdMedium.asOutParam());
+                    rc = a->virtualBox->FindMedium(Bstr(pszMedium).raw(),
+                                                   DeviceType_DVD,
+                                                   dvdMedium.asOutParam());
                     if (FAILED(rc) || !dvdMedium)
                     {
                         /* not registered, do that on the fly */
                         Bstr emptyUUID;
                         CHECK_ERROR(a->virtualBox,
-                                    OpenMedium(Bstr(pszMedium),
+                                    OpenMedium(Bstr(pszMedium).raw(),
                                                DeviceType_DVD,
                                                AccessMode_ReadWrite,
                                                dvdMedium.asOutParam()));
@@ -472,7 +493,9 @@ int handleStorageAttach(HandlerArg *a)
             if (dvdMedium)
             {
                 dvdMedium->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, uuid, fForceUnmount));
+                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl).raw(), port,
+                                                 device, uuid.raw(),
+                                                 fForceUnmount));
             }
         }
         else if (   !RTStrICmp(pszType, "hdd")
@@ -481,18 +504,20 @@ int handleStorageAttach(HandlerArg *a)
             ComPtr<IMediumAttachment> mediumAttachement;
 
             /* if there is anything attached at the given location, remove it */
-            machine->DetachDevice(Bstr(pszCtl), port, device);
+            machine->DetachDevice(Bstr(pszCtl).raw(), port, device);
 
             /* first guess is that it's a UUID */
             ComPtr<IMedium> hardDisk;
-            rc = a->virtualBox->FindMedium(Bstr(pszMedium), DeviceType_HardDisk, hardDisk.asOutParam());
+            rc = a->virtualBox->FindMedium(Bstr(pszMedium).raw(),
+                                           DeviceType_HardDisk,
+                                           hardDisk.asOutParam());
 
             /* not successful? Then it must be a filename */
             if (!hardDisk)
             {
                 /* open the new hard disk object */
                 CHECK_ERROR(a->virtualBox,
-                            OpenMedium(Bstr(pszMedium),
+                            OpenMedium(Bstr(pszMedium).raw(),
                                        DeviceType_HardDisk,
                                        AccessMode_ReadWrite,
                                        hardDisk.asOutParam()));
@@ -500,7 +525,9 @@ int handleStorageAttach(HandlerArg *a)
 
             if (hardDisk)
             {
-                CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_HardDisk, hardDisk));
+                CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl).raw(), port,
+                                                  device, DeviceType_HardDisk,
+                                                  hardDisk));
             }
             else
             {
@@ -513,11 +540,14 @@ int handleStorageAttach(HandlerArg *a)
             Bstr uuid;
             ComPtr<IMedium> floppyMedium;
             ComPtr<IMediumAttachment> floppyAttachment;
-            machine->GetMediumAttachment(Bstr(pszCtl), port, device, floppyAttachment.asOutParam());
+            machine->GetMediumAttachment(Bstr(pszCtl).raw(), port, device,
+                                         floppyAttachment.asOutParam());
 
             if (   !fRunTime
                 && !floppyAttachment)
-                CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl), port, device, DeviceType_Floppy, NULL));
+                CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl).raw(), port,
+                                                  device, DeviceType_Floppy,
+                                                  NULL));
 
             /* host drive? */
             if (!RTStrNICmp(pszMedium, "host:", 5))
@@ -525,7 +555,8 @@ int handleStorageAttach(HandlerArg *a)
                 ComPtr<IHost> host;
 
                 CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                rc = host->FindHostFloppyDrive(Bstr(pszMedium + 5), floppyMedium.asOutParam());
+                rc = host->FindHostFloppyDrive(Bstr(pszMedium + 5).raw(),
+                                               floppyMedium.asOutParam());
                 if (!floppyMedium)
                 {
                     errorArgument("Invalid host floppy drive name \"%s\"", pszMedium + 5);
@@ -535,13 +566,15 @@ int handleStorageAttach(HandlerArg *a)
             else
             {
                 /* first assume it's a UUID */
-                rc = a->virtualBox->FindMedium(Bstr(pszMedium), DeviceType_Floppy, floppyMedium.asOutParam());
+                rc = a->virtualBox->FindMedium(Bstr(pszMedium).raw(),
+                                               DeviceType_Floppy,
+                                               floppyMedium.asOutParam());
                 if (FAILED(rc) || !floppyMedium)
                 {
                     /* not registered, do that on the fly */
                     Bstr emptyUUID;
                     CHECK_ERROR(a->virtualBox,
-                                 OpenMedium(Bstr(pszMedium),
+                                 OpenMedium(Bstr(pszMedium).raw(),
                                             DeviceType_Floppy,
                                             AccessMode_ReadWrite,
                                             floppyMedium.asOutParam()));
@@ -557,7 +590,9 @@ int handleStorageAttach(HandlerArg *a)
             if (floppyMedium)
             {
                 floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl), port, device, uuid, fForceUnmount));
+                CHECK_ERROR(machine, MountMedium(Bstr(pszCtl).raw(), port,
+                                                 device, uuid.raw(),
+                                                 fForceUnmount));
             }
         }
         else
@@ -572,17 +607,20 @@ int handleStorageAttach(HandlerArg *a)
     {
         ComPtr<IMediumAttachment> mattach;
 
-        CHECK_ERROR(machine, GetMediumAttachment(Bstr(pszCtl), port, device, mattach.asOutParam()));
+        CHECK_ERROR(machine, GetMediumAttachment(Bstr(pszCtl).raw(), port,
+                                                 device, mattach.asOutParam()));
 
         if (SUCCEEDED(rc))
         {
             if (!RTStrICmp(pszPassThrough, "on"))
             {
-                CHECK_ERROR(machine, PassthroughDevice(Bstr(pszCtl), port, device, TRUE));
+                CHECK_ERROR(machine, PassthroughDevice(Bstr(pszCtl).raw(),
+                                                       port, device, TRUE));
             }
             else if (!RTStrICmp(pszPassThrough, "off"))
             {
-                CHECK_ERROR(machine, PassthroughDevice(Bstr(pszCtl), port, device, FALSE));
+                CHECK_ERROR(machine, PassthroughDevice(Bstr(pszCtl).raw(),
+                                                       port, device, FALSE));
             }
             else
             {
@@ -715,11 +753,13 @@ int handleStorageController(HandlerArg *a)
     /* try to find the given machine */
     if (!Guid(machineuuid).isEmpty())
     {
-        CHECK_ERROR_RET(a->virtualBox, GetMachine (machineuuid, machine.asOutParam()), 1);
+        CHECK_ERROR_RET(a->virtualBox, GetMachine(machineuuid.raw(),
+                                                  machine.asOutParam()), 1);
     }
     else
     {
-        CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()), 1);
+        CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                                   machine.asOutParam()), 1);
         machine->COMGETTER(Id)(machineuuid.asOutParam());
     }
 
@@ -742,7 +782,7 @@ int handleStorageController(HandlerArg *a)
         com::SafeIfaceArray<IMediumAttachment> mediumAttachments;
 
         CHECK_ERROR(machine,
-                     GetMediumAttachmentsOfController(Bstr(pszCtl),
+                     GetMediumAttachmentsOfController(Bstr(pszCtl).raw(),
                                                       ComSafeArrayAsOutParam(mediumAttachments)));
         for (size_t i = 0; i < mediumAttachments.size(); ++ i)
         {
@@ -752,11 +792,11 @@ int handleStorageController(HandlerArg *a)
 
             CHECK_ERROR(mediumAttach, COMGETTER(Port)(&port));
             CHECK_ERROR(mediumAttach, COMGETTER(Device)(&device));
-            CHECK_ERROR(machine, DetachDevice(Bstr(pszCtl), port, device));
+            CHECK_ERROR(machine, DetachDevice(Bstr(pszCtl).raw(), port, device));
         }
 
         if (SUCCEEDED(rc))
-            CHECK_ERROR(machine, RemoveStorageController(Bstr(pszCtl)));
+            CHECK_ERROR(machine, RemoveStorageController(Bstr(pszCtl).raw()));
         else
             errorArgument("Can't detach the devices connected to '%s' Controller\n"
                           "and thus its removal failed.", pszCtl);
@@ -769,23 +809,33 @@ int handleStorageController(HandlerArg *a)
 
             if (!RTStrICmp(pszBusType, "ide"))
             {
-                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl), StorageBus_IDE, ctl.asOutParam()));
+                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl).raw(),
+                                                          StorageBus_IDE,
+                                                          ctl.asOutParam()));
             }
             else if (!RTStrICmp(pszBusType, "sata"))
             {
-                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl), StorageBus_SATA, ctl.asOutParam()));
+                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl).raw(),
+                                                          StorageBus_SATA,
+                                                          ctl.asOutParam()));
             }
             else if (!RTStrICmp(pszBusType, "scsi"))
             {
-                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl), StorageBus_SCSI, ctl.asOutParam()));
+                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl).raw(),
+                                                          StorageBus_SCSI,
+                                                          ctl.asOutParam()));
             }
             else if (!RTStrICmp(pszBusType, "floppy"))
             {
-                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl), StorageBus_Floppy, ctl.asOutParam()));
+                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl).raw(),
+                                                          StorageBus_Floppy,
+                                                          ctl.asOutParam()));
             }
             else if (!RTStrICmp(pszBusType, "sas"))
             {
-                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl), StorageBus_SAS, ctl.asOutParam()));
+                CHECK_ERROR(machine, AddStorageController(Bstr(pszCtl).raw(),
+                                                          StorageBus_SAS,
+                                                          ctl.asOutParam()));
             }
             else
             {
@@ -799,7 +849,8 @@ int handleStorageController(HandlerArg *a)
         {
             ComPtr<IStorageController> ctl;
 
-            CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl), ctl.asOutParam()));
+            CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl).raw(),
+                                                            ctl.asOutParam()));
 
             if (SUCCEEDED(rc))
             {
@@ -853,7 +904,8 @@ int handleStorageController(HandlerArg *a)
         {
             ComPtr<IStorageController> ctl;
 
-            CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl), ctl.asOutParam()));
+            CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl).raw(),
+                                                            ctl.asOutParam()));
 
             if (SUCCEEDED(rc))
             {
@@ -872,7 +924,8 @@ int handleStorageController(HandlerArg *a)
         {
             ComPtr<IStorageController> ctl;
 
-            CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl), ctl.asOutParam()));
+            CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl).raw(),
+                                                            ctl.asOutParam()));
 
             if (SUCCEEDED(rc))
             {
@@ -890,7 +943,8 @@ int handleStorageController(HandlerArg *a)
         {
             ComPtr<IStorageController> ctl;
 
-            CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl), ctl.asOutParam()));
+            CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl).raw(),
+                                                            ctl.asOutParam()));
 
             if (SUCCEEDED(rc))
             {

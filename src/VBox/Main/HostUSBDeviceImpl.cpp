@@ -577,7 +577,7 @@ void HostUSBDevice::detachFromVM(HostUSBDeviceState aFinalState)
      * out of people.
      */
     LogFlowThisFunc(("{%s} Calling machine->onUSBDeviceDetach()...\n", mName));
-    HRESULT hrc = mMachine->onUSBDeviceDetach(mId.toUtf16(), NULL);
+    HRESULT hrc = mMachine->onUSBDeviceDetach(mId.toUtf16().raw(), NULL);
     LogFlowThisFunc(("{%s} Done machine->onUSBDeviceDetach()=%Rhrc\n", mName, hrc));
     NOREF(hrc);
 

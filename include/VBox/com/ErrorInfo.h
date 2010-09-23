@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -54,10 +54,10 @@ namespace com
  *      IFoo *foo;
  *      ...
  *      HRESULT rc = foo->SomeMethod();
- *      if (FAILED (rc)) {
- *          ErrorInfo info (foo);
+ *      if (FAILED(rc)) {
+ *          ErrorInfo info(foo);
  *          if (info.isFullAvailable()) {
- *              printf ("error message = %ls\n", info.getText().raw());
+ *              printf("error message = %ls\n", info.getText().raw());
  *          }
  *      }
  *  </code>
@@ -226,8 +226,8 @@ public:
      *  Returns the IID of the interface that returned the error.
      *
      *  This method returns a non-null IID only if the instance was created
-     *  using #template <class I> ErrorInfo (I *i) or
-     *  template <class I> ErrorInfo (const ComPtr <I> &i) constructor.
+     *  using #template <class I> ErrorInfo(I *i) or
+     *  template <class I> ErrorInfo(const ComPtr<I> &i) constructor.
      */
     const Guid& getCalleeIID() const
     {
@@ -238,8 +238,8 @@ public:
      *  Returns the name of the interface that returned the error
      *
      *  This method returns a non-null name only if the instance was created
-     *  using #template <class I> ErrorInfo (I *i) or
-     *  template <class I> ErrorInfo (const ComPtr <I> &i) constructor.
+     *  using #template <class I> ErrorInfo(I *i) or
+     *  template <class I> ErrorInfo(const ComPtr<I> &i) constructor.
      */
     const Bstr& getCalleeName() const
     {
@@ -247,8 +247,8 @@ public:
     }
 
     /**
-     *  Resets all collected error information. #isNull() will
-     *  return @c true after this method is called.
+     *  Resets all collected error information. #isBasicAvailable() and
+     *  #isFullAvailable will return @c true after this method is called.
      */
     void setNull()
     {
@@ -326,7 +326,7 @@ public:
  *  The usage pattern is:
  *  <code>
  *      rc = foo->method();
- *      if (FAILED (rc))
+ *      if (FAILED(rc))
  *      {
  *           ErrorInfoKeeper eik;
  *           ...
@@ -352,11 +352,11 @@ public:
      *  @param aIsNull  @c true to prevent fetching error info and leave
      *                  the instance uninitialized.
      */
-    ErrorInfoKeeper (bool aIsNull = false)
-        : ErrorInfo (false), mForgot (aIsNull)
+    ErrorInfoKeeper(bool aIsNull = false)
+        : ErrorInfo(false), mForgot(aIsNull)
     {
         if (!aIsNull)
-            init (true /* aKeepObj */);
+            init(true /* aKeepObj */);
     }
 
     /**
@@ -398,7 +398,7 @@ public:
      *  being restored by #restore() or by the destructor, and returns the
      *  stored error info object to the caller.
      */
-    ComPtr <IUnknown> takeError() { mForgot = true; return mErrorInfo; }
+    ComPtr<IUnknown> takeError() { mForgot = true; return mErrorInfo; }
 
 private:
 

@@ -331,7 +331,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *aMACAddress)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    ComAssertRet(!!mData->mMACAddress, E_FAIL);
+    ComAssertRet(!mData->mMACAddress.isEmpty(), E_FAIL);
 
     mData->mMACAddress.cloneTo(aMACAddress);
 
@@ -469,7 +469,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
 {
     Bstr bstrEmpty("");
     if (!aHostInterface)
-        aHostInterface = bstrEmpty;
+        aHostInterface = bstrEmpty.raw();
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -576,7 +576,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
 {
     Bstr bstrEmpty("");
     if (!aNATNetwork)
-        aNATNetwork = bstrEmpty;
+        aNATNetwork = bstrEmpty.raw();
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -632,7 +632,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(VDENetwork) (IN_BSTR aVDENetwork)
 #if defined(VBOX_WITH_VDE)
     Bstr bstrEmpty("");
     if (!aVDENetwork)
-        aVDENetwork = bstrEmpty;
+        aVDENetwork = bstrEmpty.raw();
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1250,7 +1250,7 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     mData->mAdapterType = data.type;
     mData->mEnabled = data.fEnabled;
     /* MAC address (can be null) */
-    rc = COMSETTER(MACAddress)(Bstr(data.strMACAddress));
+    rc = COMSETTER(MACAddress)(Bstr(data.strMACAddress).raw());
     if (FAILED(rc)) return rc;
     /* cable (required) */
     mData->mCableConnected = data.fCableConnected;
@@ -1273,7 +1273,7 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
         break;
 
         case NetworkAttachmentType_Bridged:
-            rc = COMSETTER(HostInterface)(Bstr(data.strName));
+            rc = COMSETTER(HostInterface)(Bstr(data.strName).raw());
             if (FAILED(rc)) return rc;
             rc = AttachToBridgedInterface();
             if (FAILED(rc)) return rc;
@@ -1289,7 +1289,7 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
 
         case NetworkAttachmentType_HostOnly:
 #if defined(VBOX_WITH_NETFLT)
-            rc = COMSETTER(HostInterface)(Bstr(data.strName));
+            rc = COMSETTER(HostInterface)(Bstr(data.strName).raw());
             if (FAILED(rc)) return rc;
 #endif
             rc = AttachToHostOnlyInterface();

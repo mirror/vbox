@@ -288,7 +288,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             rc = pHDA->COMGETTER(Controller)(controllerName.asOutParam());
             if (FAILED(rc)) throw rc;
 
-            rc = GetStorageControllerByName(controllerName, ctl.asOutParam());
+            rc = GetStorageControllerByName(controllerName.raw(), ctl.asOutParam());
             if (FAILED(rc)) throw rc;
 
             StorageBus_T storageBus;
@@ -1501,7 +1501,7 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
             ComPtr<IProgress> pProgress2;
 
             Log(("Finding source disk \"%ls\"\n", bstrSrcFilePath.raw()));
-            rc = mVirtualBox->FindMedium(bstrSrcFilePath, DeviceType_HardDisk, pSourceDisk.asOutParam());
+            rc = mVirtualBox->FindMedium(bstrSrcFilePath.raw(), DeviceType_HardDisk, pSourceDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 
             Bstr uuidSource;
@@ -1522,8 +1522,8 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
 
             // create a new hard disk interface for the destination disk image
             Log(("Creating target disk \"%s\"\n", strTargetFilePath.c_str()));
-            rc = mVirtualBox->CreateHardDisk(bstrSrcFormat,
-                                             Bstr(strTargetFilePath),
+            rc = mVirtualBox->CreateHardDisk(bstrSrcFormat.raw(),
+                                             Bstr(strTargetFilePath).raw(),
                                              pTargetDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 
@@ -1536,7 +1536,7 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
                 if (FAILED(rc)) throw rc;
 
                 // advance to the next operation
-                pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), RTPathFilename(strTargetFilePath.c_str())),
+                pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), RTPathFilename(strTargetFilePath.c_str())).raw(),
                                                    pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
@@ -1622,7 +1622,7 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
             // Create & write the manifest file
             Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath.c_str());
             const char *pcszManifestFileOnly = RTPathFilename(strMfFile.c_str());
-            pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), pcszManifestFileOnly),
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), pcszManifestFileOnly).raw(),
                                                m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
 
             const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*)*diskList.size() + 1);
@@ -1766,7 +1766,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask)
         int i = 0;
         for (list<Utf8Str>::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1, ++i)
             paFiles[i] = (*it1).c_str();
-        pTask->pProgress->SetNextOperation(BstrFmt(tr("Packing into '%s'"), RTPathFilename(pTask->locInfo.strPath.c_str())), ulWeight);
+        pTask->pProgress->SetNextOperation(BstrFmt(tr("Packing into '%s'"), RTPathFilename(pTask->locInfo.strPath.c_str())).raw(), ulWeight);
         /* Create the tar file out of our file list. */
         vrc = RTTarCreate(pTask->locInfo.strPath.c_str(), paFiles, filesList.size(), pTask->updateProgress, &pTask);
         if (RT_FAILURE(vrc))
@@ -1929,7 +1929,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
             const pair<Utf8Str, ULONG> &s = (*it1);
             char *pszFilename = RTPathFilename(s.first.c_str());
             /* Advance to the next operation */
-            pTask->pProgress->SetNextOperation(BstrFmt(tr("Uploading file '%s'"), pszFilename), s.second);
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Uploading file '%s'"), pszFilename).raw(), s.second);
             vrc = RTS3PutKey(hS3, bucket.c_str(), pszFilename, s.first.c_str());
             if (RT_FAILURE(vrc))
             {

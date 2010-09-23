@@ -2265,8 +2265,8 @@ STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
         rc = pProgress->init(m->pVirtualBox,
                              static_cast<IMedium*>(this),
                              (aVariant & MediumVariant_Fixed)
-                               ? BstrFmt(tr("Creating fixed medium storage unit '%s'"), m->strLocationFull.c_str())
-                               : BstrFmt(tr("Creating dynamic medium storage unit '%s'"), m->strLocationFull.c_str()),
+                               ? BstrFmt(tr("Creating fixed medium storage unit '%s'"), m->strLocationFull.c_str()).raw()
+                               : BstrFmt(tr("Creating dynamic medium storage unit '%s'"), m->strLocationFull.c_str()).raw(),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
             throw rc;
@@ -2482,7 +2482,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("Creating clone medium '%s'"), pTarget->m->strLocationFull.c_str()),
+                             BstrFmt(tr("Creating clone medium '%s'"), pTarget->m->strLocationFull.c_str()).raw(),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
@@ -2561,7 +2561,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.c_str()),
+                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.c_str()).raw(),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
@@ -2634,7 +2634,7 @@ STDMETHODIMP Medium::Resize(LONG64 aLogicalSize, IProgress **aProgress)
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.c_str()),
+                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.c_str()).raw(),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
@@ -2717,7 +2717,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast<IMedium*>(this),
-                             BstrFmt(tr("Resetting differencing medium '%s'"), m->strLocationFull.c_str()),
+                             BstrFmt(tr("Resetting differencing medium '%s'"), m->strLocationFull.c_str()).raw(),
                              FALSE /* aCancelable */);
         if (FAILED(rc))
             throw rc;
@@ -4340,7 +4340,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
                 pProgress.createObject();
                 rc = pProgress->init(m->pVirtualBox,
                                      static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Deleting medium storage unit '%s'"), m->strLocationFull.c_str()),
+                                     BstrFmt(tr("Deleting medium storage unit '%s'"), m->strLocationFull.c_str()).raw(),
                                      FALSE /* aCancelable */);
                 if (FAILED(rc))
                     throw rc;
@@ -4561,7 +4561,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
                 pProgress.createObject();
                 rc = pProgress->init(m->pVirtualBox,
                                      static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Creating differencing medium storage unit '%s'"), aTarget->m->strLocationFull.c_str()),
+                                     BstrFmt(tr("Creating differencing medium storage unit '%s'"), aTarget->m->strLocationFull.c_str()).raw(),
                                      TRUE /* aCancelable */);
                 if (FAILED(rc))
                     throw rc;
@@ -5021,7 +5021,7 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
                                      static_cast<IMedium*>(this),
                                      BstrFmt(tr("Merging medium '%s' to '%s'"),
                                              getName().c_str(),
-                                             tgtName.c_str()),
+                                             tgtName.c_str()).raw(),
                                      TRUE /* aCancelable */);
                 if (FAILED(rc))
                     throw rc;

@@ -130,8 +130,8 @@ static int handleExecProgram(HandlerArg *a)
 
     Utf8Str Utf8Cmd(a->argv[1]);
     uint32_t uFlags = 0;
-    com::SafeArray <BSTR> args;
-    com::SafeArray <BSTR> env;
+    com::SafeArray<CBSTR> args;
+    com::SafeArray<CBSTR> env;
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
     uint32_t u32TimeoutMS = 0;
@@ -142,7 +142,7 @@ static int handleExecProgram(HandlerArg *a)
     bool fTimeout = false;
 
     /* Always use the actual command line as argv[0]. */
-    args.push_back(Bstr(Utf8Cmd));
+    args.push_back(Bstr(Utf8Cmd).raw());
 
     /* Iterate through all possible commands (if available). */
     bool usageOK = true;
@@ -163,7 +163,7 @@ static int handleExecProgram(HandlerArg *a)
                 if (RT_SUCCESS(vrc))
                 {
                     for (int j = 0; j < cArgs; j++)
-                        args.push_back(Bstr(papszArg[j]));
+                        args.push_back(Bstr(papszArg[j]).raw());
 
                     RTGetOptArgvFree(papszArg);
                 }
@@ -184,7 +184,7 @@ static int handleExecProgram(HandlerArg *a)
                 if (RT_SUCCESS(vrc))
                 {
                     for (int j = 0; j < cArgs; j++)
-                        env.push_back(Bstr(papszArg[j]));
+                        env.push_back(Bstr(papszArg[j]).raw());
 
                     RTGetOptArgvFree(papszArg);
                 }
@@ -276,11 +276,13 @@ static int handleExecProgram(HandlerArg *a)
     /* lookup VM. */
     ComPtr<IMachine> machine;
     /* assume it's an UUID */
-    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
+    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
     }
 
     if (machine)
@@ -316,9 +318,11 @@ static int handleExecProgram(HandlerArg *a)
             uint64_t u64StartMS = RTTimeMilliTS();
 
             /* Execute the process. */
-            rc = guest->ExecuteProcess(Bstr(Utf8Cmd), uFlags,
-                                       ComSafeArrayAsInParam(args), ComSafeArrayAsInParam(env),
-                                       Bstr(Utf8UserName), Bstr(Utf8Password), u32TimeoutMS,
+            rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(), uFlags,
+                                       ComSafeArrayAsInParam(args),
+                                       ComSafeArrayAsInParam(env),
+                                       Bstr(Utf8UserName).raw(),
+                                       Bstr(Utf8Password).raw(), u32TimeoutMS,
                                        &uPID, progress.asOutParam());
             if (FAILED(rc))
             {

@@ -1451,7 +1451,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
             LogFlowThisFunc(("Copying the execution state from '%s' to '%s'...\n",
                              stateFrom.c_str(), stateTo.c_str()));
 
-            aConsoleProgress->SetNextOperation(Bstr(tr("Copying the execution state")),
+            aConsoleProgress->SetNextOperation(Bstr(tr("Copying the execution state")).raw(),
                                                1);        // weight
 
             /* Leave the lock before a lengthy operation (machine is protected
@@ -1709,11 +1709,11 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
     ComObjPtr<Progress> pProgress;
     pProgress.createObject();
     pProgress->init(mParent, aInitiator,
-                    BstrFmt(tr("Restoring snapshot '%s'"), pSnapshot->getName().c_str()),
+                    BstrFmt(tr("Restoring snapshot '%s'"), pSnapshot->getName().c_str()).raw(),
                     FALSE /* aCancelable */,
                     ulOpCount,
                     ulTotalWeight,
-                    Bstr(tr("Restoring machine settings")),
+                    Bstr(tr("Restoring machine settings")).raw(),
                     1);
 
     /* create and start the task on a separate thread (note that it will not
@@ -1864,7 +1864,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
                 LogFlowThisFunc(("Copying saved state file from '%s' to '%s'...\n",
                                   snapStateFilePath.c_str(), stateFilePath.c_str()));
 
-                aTask.pProgress->SetNextOperation(Bstr(tr("Restoring the execution state")),
+                aTask.pProgress->SetNextOperation(Bstr(tr("Restoring the execution state")).raw(),
                                                   aTask.m_ulStateFileSizeMB);        // weight
 
                 /* leave the lock before the potentially lengthy operation */
@@ -2158,11 +2158,11 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     ComObjPtr<Progress> pProgress;
     pProgress.createObject();
     pProgress->init(mParent, aInitiator,
-                    BstrFmt(tr("Deleting snapshot '%s'"), pSnapshot->getName().c_str()),
+                    BstrFmt(tr("Deleting snapshot '%s'"), pSnapshot->getName().c_str()).raw(),
                     FALSE /* aCancelable */,
                     ulOpCount,
                     ulTotalWeight,
-                    Bstr(tr("Setting up")),
+                    Bstr(tr("Setting up")).raw(),
                     1);
 
     bool fDeleteOnline = (   (mData->mMachineState == MachineState_Running)
@@ -2394,7 +2394,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 // prevent online merging in general.
                 pOnlineMediumAttachment =
                     findAttachment(mMediaData->mAttachments,
-                                   pAttach->getControllerName(),
+                                   pAttach->getControllerName().raw(),
                                    pAttach->getPort(),
                                    pAttach->getDevice());
                 if (pOnlineMediumAttachment)
@@ -2509,7 +2509,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             Utf8Str stateFilePath = aTask.pSnapshot->stateFilePath();
             if (!stateFilePath.isEmpty())
             {
-                aTask.pProgress->SetNextOperation(Bstr(tr("Deleting the execution state")),
+                aTask.pProgress->SetNextOperation(Bstr(tr("Deleting the execution state")).raw(),
                                                   1);        // weight
 
                 aTask.pSnapshot->deleteStateFile();
@@ -2535,7 +2535,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             }
 
             aTask.pProgress->SetNextOperation(BstrFmt(tr("Merging differencing image '%s'"),
-                                              pMedium->getName().c_str()),
+                                              pMedium->getName().c_str()).raw(),
                                               ulWeight);
 
             bool fNeedSourceUninit = false;

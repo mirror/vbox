@@ -247,7 +247,8 @@ int handleImportAppliance(HandlerArg *arg)
         else
             pszAbsFilePath = RTPathAbsDup(strOvfFilename.c_str());
         ComPtr<IProgress> progressRead;
-        CHECK_ERROR_BREAK(pAppliance, Read(Bstr(pszAbsFilePath), progressRead.asOutParam()));
+        CHECK_ERROR_BREAK(pAppliance, Read(Bstr(pszAbsFilePath).raw(),
+                                           progressRead.asOutParam()));
         RTStrFree(pszAbsFilePath);
 
         rc = showProgress(progressRead);
@@ -830,11 +831,13 @@ int handleExportAppliance(HandlerArg *a)
                     // must be machine: try UUID or name
                     ComPtr<IMachine> machine;
                     /* assume it's a UUID */
-                    rc = a->virtualBox->GetMachine(Bstr(strMachine), machine.asOutParam());
+                    rc = a->virtualBox->GetMachine(Bstr(strMachine).raw(),
+                                                   machine.asOutParam());
                     if (FAILED(rc) || !machine)
                     {
                         /* must be a name */
-                        CHECK_ERROR_BREAK(a->virtualBox, FindMachine(Bstr(strMachine), machine.asOutParam()));
+                        CHECK_ERROR_BREAK(a->virtualBox, FindMachine(Bstr(strMachine).raw(),
+                                                                     machine.asOutParam()));
                     }
 
                     if (machine)
@@ -909,17 +912,29 @@ int handleExportAppliance(HandlerArg *a)
                      ++itD)
                 {
                     if (itD->first == "product")
-                        pVSD->AddDescription (VirtualSystemDescriptionType_Product, Bstr(itD->second), Bstr(itD->second));
+                        pVSD->AddDescription(VirtualSystemDescriptionType_Product,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
                     else if (itD->first == "producturl")
-                        pVSD->AddDescription (VirtualSystemDescriptionType_ProductUrl, Bstr(itD->second), Bstr(itD->second));
+                        pVSD->AddDescription(VirtualSystemDescriptionType_ProductUrl,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
                     else if (itD->first == "vendor")
-                        pVSD->AddDescription (VirtualSystemDescriptionType_Vendor, Bstr(itD->second), Bstr(itD->second));
+                        pVSD->AddDescription(VirtualSystemDescriptionType_Vendor,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
                     else if (itD->first == "vendorurl")
-                        pVSD->AddDescription (VirtualSystemDescriptionType_VendorUrl, Bstr(itD->second), Bstr(itD->second));
+                        pVSD->AddDescription(VirtualSystemDescriptionType_VendorUrl,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
                     else if (itD->first == "version")
-                        pVSD->AddDescription (VirtualSystemDescriptionType_Version, Bstr(itD->second), Bstr(itD->second));
+                        pVSD->AddDescription(VirtualSystemDescriptionType_Version,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
                     else if (itD->first == "eula")
-                        pVSD->AddDescription (VirtualSystemDescriptionType_License, Bstr(itD->second), Bstr(itD->second));
+                        pVSD->AddDescription(VirtualSystemDescriptionType_License,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
                     else if (itD->first == "eulafile")
                     {
                         Utf8Str strContent;
@@ -929,7 +944,9 @@ int handleExportAppliance(HandlerArg *a)
                         if (RT_SUCCESS(irc))
                         {
                             Bstr bstrContent((char*)pvFile);
-                            pVSD->AddDescription(VirtualSystemDescriptionType_License, bstrContent, bstrContent);
+                            pVSD->AddDescription(VirtualSystemDescriptionType_License,
+                                                 bstrContent.raw(),
+                                                 bstrContent.raw());
                             RTFileReadAllFree(pvFile, cbFile);
                         }
                         else
@@ -954,7 +971,10 @@ int handleExportAppliance(HandlerArg *a)
             pszAbsFilePath = RTStrDup(strOutputFile.c_str());
         else
             pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());
-        CHECK_ERROR_BREAK(pAppliance, Write(Bstr(strOvfFormat), fManifest, Bstr(pszAbsFilePath), progress.asOutParam()));
+        CHECK_ERROR_BREAK(pAppliance, Write(Bstr(strOvfFormat).raw(),
+                                            fManifest,
+                                            Bstr(pszAbsFilePath).raw(),
+                                            progress.asOutParam()));
         RTStrFree(pszAbsFilePath);
 
         rc = showProgress(progress);

@@ -3240,10 +3240,10 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
     progress.createObject();
     rc = progress->init(mParent,
                         static_cast<IMachine*>(this),
-                        Bstr(tr("Spawning session")),
+                        Bstr(tr("Spawning session")).raw(),
                         TRUE /* aCancelable */,
                         fTeleporterEnabled ? 20 : 10 /* uTotalOperationsWeight */,
-                        Bstr(tr("Spawning session")),
+                        Bstr(tr("Spawning session")).raw(),
                         2 /* uFirstOperationWeight */,
                         fTeleporterEnabled ? 3 : 1 /* cOtherProgressObjectOperations */);
     if (SUCCEEDED(rc))
@@ -4054,7 +4054,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
         Bstr error;
         Bstr bstrValue(aValue);
 
-        if (!mParent->onExtraDataCanChange(mData->mUuid, aKey, bstrValue, error))
+        if (!mParent->onExtraDataCanChange(mData->mUuid, aKey, bstrValue.raw(), error))
         {
             const char *sep = error.isEmpty() ? "" : ": ";
             CBSTR err = error.raw();
@@ -4339,10 +4339,10 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
     pTask->pProgress.createObject();
     pTask->pProgress->init(getVirtualBox(),
                            static_cast<IMachine*>(this) /* aInitiator */,
-                           Bstr(tr("Deleting files")),
+                           Bstr(tr("Deleting files")).raw(),
                            true /* fCancellable */,
                            pTask->llFilesToDelete.size() + 1,   // cOperations
-                           BstrFmt(tr("Deleting '%s'"), pTask->llFilesToDelete.front().c_str()));
+                           BstrFmt(tr("Deleting '%s'"), pTask->llFilesToDelete.front().c_str()).raw());
 
     int vrc = RTThreadCreate(NULL,
                              Machine::deleteThread,
@@ -4426,11 +4426,11 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
         ++it;
         if (it == task.llFilesToDelete.end())
         {
-            task.pProgress->SetNextOperation(Bstr(tr("Cleaning up machine directory")), 1);
+            task.pProgress->SetNextOperation(Bstr(tr("Cleaning up machine directory")).raw(), 1);
             break;
         }
 
-        task.pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), it->c_str()), 1);
+        task.pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), it->c_str()).raw(), 1);
     }
 
     /* delete the settings only when the file actually exists */
@@ -6822,7 +6822,7 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
 
     // look up the object by Id to check it is valid
     ComPtr<IGuestOSType> guestOSType;
-    HRESULT rc = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType),
+    HRESULT rc = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(),
                                          guestOSType.asOutParam());
     if (FAILED(rc)) return rc;
 
@@ -6842,7 +6842,7 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
     }
 
     // snapshot folder needs special processing so set it again
-    rc = COMSETTER(SnapshotFolder)(Bstr(config.machineUserData.strSnapshotFolder));
+    rc = COMSETTER(SnapshotFolder)(Bstr(config.machineUserData.strSnapshotFolder).raw());
     if (FAILED(rc)) return rc;
 
     /* currentStateModified (optional, default is true) */
@@ -7163,7 +7163,9 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
              ++it)
         {
             const settings::SharedFolder &sf = *it;
-            rc = CreateSharedFolder(Bstr(sf.strName), Bstr(sf.strHostPath), sf.fWritable, sf.fAutoMount);
+            rc = CreateSharedFolder(Bstr(sf.strName).raw(),
+                                    Bstr(sf.strHostPath).raw(),
+                                    sf.fWritable, sf.fAutoMount);
             if (FAILED(rc)) return rc;
         }
 
@@ -8305,7 +8307,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
 {
     MediaData::AttachmentList atts;
 
-    HRESULT rc = getMediumAttachmentsOfController(Bstr(aStorageController->getName()), atts);
+    HRESULT rc = getMediumAttachmentsOfController(Bstr(aStorageController->getName()).raw(), atts);
     if (FAILED(rc)) return rc;
 
     data.llAttachedDevices.clear();
@@ -8530,11 +8532,11 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                 if (devType == DeviceType_HardDisk)
                 {
                     if (pMedium == NULL)
-                        aProgress->SetNextOperation(Bstr(tr("Skipping attachment without medium")),
+                        aProgress->SetNextOperation(Bstr(tr("Skipping attachment without medium")).raw(),
                                                     aWeight);        // weight
                     else
                         aProgress->SetNextOperation(BstrFmt(tr("Skipping medium '%s'"),
-                                                            pMedium->getBase()->getName().c_str()),
+                                                            pMedium->getBase()->getName().c_str()).raw(),
                                                     aWeight);        // weight
                 }
 
@@ -8544,7 +8546,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
             /* need a diff */
             aProgress->SetNextOperation(BstrFmt(tr("Creating differencing hard disk for '%s'"),
-                                                pMedium->getBase()->getName().c_str()),
+                                                pMedium->getBase()->getName().c_str()).raw(),
                                         aWeight);        // weight
 
             ComObjPtr<Medium> diff;
@@ -10453,7 +10455,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
         progress.createObject();
         ComPtr<IUnknown> pPeer(mPeer);
         progress->init(mParent, pPeer,
-                       Bstr(tr("Closing session")),
+                       Bstr(tr("Closing session")).raw(),
                        FALSE /* aCancelable */);
         progress.queryInterfaceTo(aProgress);
         mData->mSession.mProgress = progress;

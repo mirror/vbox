@@ -290,7 +290,7 @@ public:
                     {
                         Bstr keyString;
                         edcev->COMGETTER(Key)(keyString.asOutParam());
-                        if (keyString && keyString == VBOXSDL_SECURELABEL_EXTRADATA)
+                        if (keyString == VBOXSDL_SECURELABEL_EXTRADATA)
                         {
                             /*
                              * Notify SDL thread of the string update
@@ -1341,7 +1341,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (vmName && uuidVM.isEmpty())
     {
         Bstr  bstrVMName = vmName;
-        rc = virtualBox->FindMachine(bstrVMName, pMachine.asOutParam());
+        rc = virtualBox->FindMachine(bstrVMName.raw(), pMachine.asOutParam());
         if ((rc == S_OK) && pMachine)
         {
             Bstr id;
@@ -1412,12 +1412,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          */
         Bstr hdaFileBstr = hdaFile;
         ComPtr<IMedium> hardDisk;
-        virtualBox->FindMedium(hdaFileBstr, DeviceType_HardDisk, hardDisk.asOutParam());
+        virtualBox->FindMedium(hdaFileBstr.raw(), DeviceType_HardDisk,
+                               hardDisk.asOutParam());
         if (!hardDisk)
         {
             /* we've not found the image */
             RTPrintf("Adding hard disk '%S'...\n", hdaFile);
-            virtualBox->OpenMedium(hdaFileBstr, DeviceType_HardDisk, AccessMode_ReadWrite, hardDisk.asOutParam());
+            virtualBox->OpenMedium(hdaFileBstr.raw(), DeviceType_HardDisk,
+                                   AccessMode_ReadWrite, hardDisk.asOutParam());
         }
         /* do we have the right image now? */
         if (hardDisk)
@@ -1449,18 +1451,19 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 if (storageCtl)
                 {
                     CHECK_ERROR(storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
-                    gMachine->DetachDevice(storageCtlName, 0, 0);
+                    gMachine->DetachDevice(storageCtlName.raw(), 0, 0);
                 }
                 else
                 {
                     storageCtlName = "IDE Controller";
-                    CHECK_ERROR(gMachine, AddStorageController(storageCtlName,
-                                                                StorageBus_IDE,
-                                                                storageCtl.asOutParam()));
+                    CHECK_ERROR(gMachine, AddStorageController(storageCtlName.raw(),
+                                                               StorageBus_IDE,
+                                                               storageCtl.asOutParam()));
                 }
             }
 
-            gMachine->AttachDevice(storageCtlName, 0, 0, DeviceType_HardDisk, hardDisk);
+            gMachine->AttachDevice(storageCtlName.raw(), 0, 0,
+                                   DeviceType_HardDisk, hardDisk);
             /// @todo why is this attachment saved?
         }
         else
@@ -1490,17 +1493,22 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             /* Assume it's a host drive name */
             ComPtr <IHost> host;
             CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
-            rc = host->FindHostFloppyDrive(medium, floppyMedium.asOutParam());
+            rc = host->FindHostFloppyDrive(medium.raw(),
+                                           floppyMedium.asOutParam());
             if (FAILED(rc))
             {
                 /* try to find an existing one */
-                rc = virtualBox->FindMedium(medium, DeviceType_Floppy, floppyMedium.asOutParam());
+                rc = virtualBox->FindMedium(medium.raw(), DeviceType_Floppy,
+                                            floppyMedium.asOutParam());
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
                     RTPrintf("Adding floppy image '%S'...\n", fdaFile);
                     CHECK_ERROR_BREAK(virtualBox,
-                                      OpenMedium(medium, DeviceType_Floppy, AccessMode_ReadWrite, floppyMedium.asOutParam()));
+                                      OpenMedium(medium.raw(),
+                                                 DeviceType_Floppy,
+                                                 AccessMode_ReadWrite,
+                                                 floppyMedium.asOutParam()));
                 }
             }
         }
@@ -1533,23 +1541,25 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 ComPtr<IMediumAttachment> floppyAttachment;
 
                 CHECK_ERROR(storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
-                rc = gMachine->GetMediumAttachment(storageCtlName, 0, 0, floppyAttachment.asOutParam());
+                rc = gMachine->GetMediumAttachment(storageCtlName.raw(), 0, 0,
+                                                   floppyAttachment.asOutParam());
                 if (FAILED(rc))
-                    CHECK_ERROR(gMachine, AttachDevice(storageCtlName, 0, 0,
+                    CHECK_ERROR(gMachine, AttachDevice(storageCtlName.raw(), 0, 0,
                                                        DeviceType_Floppy, NULL));
             }
             else
             {
                 storageCtlName = "Floppy Controller";
-                CHECK_ERROR(gMachine, AddStorageController(storageCtlName,
+                CHECK_ERROR(gMachine, AddStorageController(storageCtlName.raw(),
                                                            StorageBus_Floppy,
                                                            storageCtl.asOutParam()));
-                CHECK_ERROR(gMachine, AttachDevice(storageCtlName, 0, 0,
+                CHECK_ERROR(gMachine, AttachDevice(storageCtlName.raw(), 0, 0,
                                                    DeviceType_Floppy, NULL));
             }
         }
 
-        CHECK_ERROR(gMachine, MountMedium(storageCtlName, 0, 0, id, FALSE /* aForce */));
+        CHECK_ERROR(gMachine, MountMedium(storageCtlName.raw(), 0, 0, id.raw(),
+                                          FALSE /* aForce */));
     }
     while (0);
     if (FAILED(rc))
@@ -1575,16 +1585,20 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             /* Assume it's a host drive name */
             ComPtr <IHost> host;
             CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
-            rc = host->FindHostDVDDrive(medium,dvdMedium.asOutParam());
+            rc = host->FindHostDVDDrive(medium.raw(), dvdMedium.asOutParam());
             if (FAILED(rc))
             {
                 /* try to find an existing one */
-                rc = virtualBox->FindMedium(medium, DeviceType_DVD, dvdMedium.asOutParam());
+                rc = virtualBox->FindMedium(medium.raw(), DeviceType_DVD,
+                                            dvdMedium.asOutParam());
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
                     RTPrintf("Adding ISO image '%S'...\n", cdromFile);
-                    CHECK_ERROR_BREAK(virtualBox, OpenMedium(medium, DeviceType_DVD, AccessMode_ReadWrite, dvdMedium.asOutParam()));
+                    CHECK_ERROR_BREAK(virtualBox, OpenMedium(medium.raw(),
+                                                             DeviceType_DVD,
+                                                             AccessMode_ReadWrite,
+                                                             dvdMedium.asOutParam()));
                 }
             }
         }
@@ -1617,22 +1631,23 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 ComPtr<IMediumAttachment> dvdAttachment;
 
                 CHECK_ERROR(storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
-                gMachine->DetachDevice(storageCtlName, 1, 0);
-                CHECK_ERROR(gMachine, AttachDevice(storageCtlName, 1, 0,
+                gMachine->DetachDevice(storageCtlName.raw(), 1, 0);
+                CHECK_ERROR(gMachine, AttachDevice(storageCtlName.raw(), 1, 0,
                                                     DeviceType_DVD, NULL));
             }
             else
             {
                 storageCtlName = "IDE Controller";
-                CHECK_ERROR(gMachine, AddStorageController(storageCtlName,
+                CHECK_ERROR(gMachine, AddStorageController(storageCtlName.raw(),
                                                            StorageBus_IDE,
                                                            storageCtl.asOutParam()));
-                CHECK_ERROR(gMachine, AttachDevice(storageCtlName, 1, 0,
+                CHECK_ERROR(gMachine, AttachDevice(storageCtlName.raw(), 1, 0,
                                                    DeviceType_DVD, NULL));
             }
         }
 
-        CHECK_ERROR(gMachine, MountMedium(storageCtlName, 1, 0, id, FALSE /*aForce */));
+        CHECK_ERROR(gMachine, MountMedium(storageCtlName.raw(), 1, 0, id.raw(),
+                                          FALSE /*aForce */));
     }
     while (0);
     if (FAILED(rc))
@@ -1798,7 +1813,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
         Bstr key = VBOXSDL_SECURELABEL_EXTRADATA;
         Bstr label;
-        gMachine->GetExtraData(key, label.asOutParam());
+        gMachine->GetExtraData(key.raw(), label.asOutParam());
         Utf8Str labelUtf8 = label;
         /*
          * Now update the label
@@ -1873,7 +1888,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (portVRDP > 0)
             {
                 Bstr bstr = portVRDP;
-                rc = gVrdpServer->COMSETTER(Ports)(bstr);
+                rc = gVrdpServer->COMSETTER(Ports)(bstr.raw());
                 if (rc != S_OK)
                 {
                     RTPrintf("Error: could not set VRDP port! rc = 0x%x\n", rc);
@@ -2625,7 +2640,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                  */
                 Bstr key = VBOXSDL_SECURELABEL_EXTRADATA;
                 Bstr label;
-                gMachine->GetExtraData(key, label.asOutParam());
+                gMachine->GetExtraData(key.raw(), label.asOutParam());
                 Utf8Str labelUtf8 = label;
                 /*
                  * Now update the label
@@ -4024,7 +4039,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
     gMachine->COMGETTER(Name)(name.asOutParam());
 
     RTStrPrintf(szTitle, sizeof(szTitle), "%s - " VBOX_PRODUCT,
-                name ? Utf8Str(name).c_str() : "<noname>");
+                !name.isEmpty() ? Utf8Str(name).c_str() : "<noname>");
 
     /* which mode are we in? */
     switch (mode)
@@ -4633,7 +4648,8 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
             RTStrPrintf(pszSnapshotName, sizeof(pszSnapshotName), "Snapshot %d", cSnapshots + 1);
             gProgress = NULL;
             HRESULT rc;
-            CHECK_ERROR(gConsole, TakeSnapshot(Bstr(pszSnapshotName), Bstr("Taken by VBoxSDL"),
+            CHECK_ERROR(gConsole, TakeSnapshot(Bstr(pszSnapshotName).raw(),
+                                               Bstr("Taken by VBoxSDL").raw(),
                                                gProgress.asOutParam()));
             if (FAILED(rc))
             {

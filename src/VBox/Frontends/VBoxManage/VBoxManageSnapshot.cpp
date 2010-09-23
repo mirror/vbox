@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -171,7 +171,7 @@ void DumpSnapshot(ComPtr<IMachine> &pMachine)
     {
         // get root snapshot
         ComPtr<ISnapshot> pSnapshot;
-        CHECK_ERROR_BREAK(pMachine, GetSnapshot(Bstr(""), pSnapshot.asOutParam()));
+        CHECK_ERROR_BREAK(pMachine, GetSnapshot(Bstr("").raw(), pSnapshot.asOutParam()));
 
         // get current snapshot
         ComPtr<ISnapshot> pCurrentSnapshot;
@@ -227,11 +227,12 @@ int handleSnapshot(HandlerArg *a)
     Bstr bstrMachine(a->argv[0]);
     ComPtr<IMachine> pMachine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(bstrMachine, pMachine.asOutParam());
+    rc = a->virtualBox->GetMachine(bstrMachine.raw(), pMachine.asOutParam());
     if (FAILED(rc) || !pMachine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(bstrMachine, pMachine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(bstrMachine.raw(),
+                                               pMachine.asOutParam()));
     }
     if (!pMachine)
         return 1;
@@ -307,7 +308,8 @@ int handleSnapshot(HandlerArg *a)
             }
 
             ComPtr<IProgress> progress;
-            CHECK_ERROR_BREAK(console, TakeSnapshot(name, desc, progress.asOutParam()));
+            CHECK_ERROR_BREAK(console, TakeSnapshot(name.raw(), desc.raw(),
+                                                    progress.asOutParam()));
 
             rc = showProgress(progress);
             if (FAILED(rc))
@@ -368,17 +370,20 @@ int handleSnapshot(HandlerArg *a)
                 // restore or delete snapshot: then resolve cmd line argument to snapshot instance
                 // assume it's a UUID
                 bstrSnapGuid = a->argv[2];
-                if (FAILED(pMachine->GetSnapshot(bstrSnapGuid, pSnapshot.asOutParam())))
+                if (FAILED(pMachine->GetSnapshot(bstrSnapGuid.raw(),
+                                                 pSnapshot.asOutParam())))
                 {
                     // then it must be a name
-                    CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), pSnapshot.asOutParam()));
+                    CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                                                             pSnapshot.asOutParam()));
                     CHECK_ERROR_BREAK(pSnapshot, COMGETTER(Id)(bstrSnapGuid.asOutParam()));
                 }
             }
 
             if (fDelete)
             {
-                CHECK_ERROR_BREAK(console, DeleteSnapshot(bstrSnapGuid, pProgress.asOutParam()));
+                CHECK_ERROR_BREAK(console, DeleteSnapshot(bstrSnapGuid.raw(),
+                                                          pProgress.asOutParam()));
             }
             else
             {
@@ -416,11 +421,13 @@ int handleSnapshot(HandlerArg *a)
             else
             {
                 /* assume it's a UUID */
-                rc = pMachine->GetSnapshot(Bstr(a->argv[2]), snapshot.asOutParam());
+                rc = pMachine->GetSnapshot(Bstr(a->argv[2]).raw(),
+                                           snapshot.asOutParam());
                 if (FAILED(rc) || !snapshot)
                 {
                     /* then it must be a name */
-                    CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
+                    CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                                                             snapshot.asOutParam()));
                 }
             }
 
@@ -438,7 +445,7 @@ int handleSnapshot(HandlerArg *a)
                         break;
                     }
                     i++;
-                    snapshot->COMSETTER(Name)(Bstr(a->argv[i]));
+                    snapshot->COMSETTER(Name)(Bstr(a->argv[i]).raw());
                 }
                 else if (   !strcmp(a->argv[i], "--description")
                          || !strcmp(a->argv[i], "-description")
@@ -451,7 +458,7 @@ int handleSnapshot(HandlerArg *a)
                         break;
                     }
                     i++;
-                    snapshot->COMSETTER(Description)(Bstr(a->argv[i]));
+                    snapshot->COMSETTER(Description)(Bstr(a->argv[i]).raw());
                 }
                 else
                 {
@@ -475,11 +482,13 @@ int handleSnapshot(HandlerArg *a)
             ComPtr<ISnapshot> snapshot;
 
             /* assume it's a UUID */
-            rc = pMachine->GetSnapshot(Bstr(a->argv[2]), snapshot.asOutParam());
+            rc = pMachine->GetSnapshot(Bstr(a->argv[2]).raw(),
+                                       snapshot.asOutParam());
             if (FAILED(rc) || !snapshot)
             {
                 /* then it must be a name */
-                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                                                         snapshot.asOutParam()));
             }
 
             /* get the machine of the given snapshot */

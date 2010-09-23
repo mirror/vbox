@@ -114,14 +114,15 @@ int main (int argc, char **argv)
         ComPtr <IMachine> m;
 
         // find ID by name
-        CHECK_ERROR_BREAK(virtualBox, FindMachine(Bstr(name), m.asOutParam()));
+        CHECK_ERROR_BREAK(virtualBox, FindMachine(Bstr(name).raw(),
+                                                  m.asOutParam()));
 
         if (!strcmp(operation, "on"))
         {
             ComPtr <IProgress> progress;
             RTPrintf ("Opening a new (remote) session...\n");
             CHECK_ERROR_BREAK (m,
-                               LaunchVMProcess(session, Bstr("vrdp"),
+                               LaunchVMProcess(session, Bstr("vrdp").raw(),
                                                NULL, progress.asOutParam()));
 
             RTPrintf ("Waiting for the remote session to open...\n");

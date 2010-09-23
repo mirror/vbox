@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -98,7 +98,7 @@ void Keyboard::FinalRelease()
  * @returns COM result indicator
  * @param parent handle of our parent object
  */
-HRESULT Keyboard::init (Console *aParent)
+HRESULT Keyboard::init(Console *aParent)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
@@ -148,7 +148,7 @@ void Keyboard::uninit()
  * @returns COM status code
  * @param scancode The scancode to send
  */
-STDMETHODIMP Keyboard::PutScancode (LONG scancode)
+STDMETHODIMP Keyboard::PutScancode(LONG scancode)
 {
     HRESULT rc = S_OK;
 
@@ -192,12 +192,12 @@ STDMETHODIMP Keyboard::PutScancode (LONG scancode)
  *                    of scancodes that were sent to the keyboard.
                       This value can be NULL.
  */
-STDMETHODIMP Keyboard::PutScancodes (ComSafeArrayIn (LONG, scancodes),
-                                     ULONG *codesStored)
+STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn(LONG, scancodes),
+                                    ULONG *codesStored)
 {
     HRESULT rc = S_OK;
 
-    if (ComSafeArrayInIsNull (scancodes))
+    if (ComSafeArrayInIsNull(scancodes))
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);
@@ -223,7 +223,7 @@ STDMETHODIMP Keyboard::PutScancodes (ComSafeArrayIn (LONG, scancodes),
     if (!pUpPort)
         return rc;
 
-    com::SafeArray<LONG> keys (ComSafeArrayInArg (scancodes));
+    com::SafeArray<LONG> keys(ComSafeArrayInArg(scancodes));
     int vrc = VINF_SUCCESS;
 
     for (uint32_t i = 0; (i < keys.size()) && RT_SUCCESS(vrc); i++)
@@ -286,7 +286,7 @@ DECLCALLBACK(void *) Keyboard::drvQueryInterface(PPDMIBASE pInterface, const cha
  * @returns VBox status.
  * @param   pDrvIns     The driver instance data.
  */
-DECLCALLBACK(void) Keyboard::drvDestruct (PPDMDRVINS pDrvIns)
+DECLCALLBACK(void) Keyboard::drvDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVMAINKEYBOARD pData = PDMINS_2_DATA(pDrvIns, PDRVMAINKEYBOARD);
     LogFlow(("Keyboard::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
@@ -305,12 +305,13 @@ DECLCALLBACK(void) Keyboard::drvDestruct (PPDMDRVINS pDrvIns)
     }
 }
 
-DECLCALLBACK(void) keyboardLedStatusChange (PPDMIKEYBOARDCONNECTOR pInterface, PDMKEYBLEDS enmLeds)
+DECLCALLBACK(void) keyboardLedStatusChange(PPDMIKEYBOARDCONNECTOR pInterface,
+                                           PDMKEYBLEDS enmLeds)
 {
-    PDRVMAINKEYBOARD pDrv = PPDMIKEYBOARDCONNECTOR_2_MAINKEYBOARD (pInterface);
-    pDrv->pKeyboard->getParent()->onKeyboardLedsChange (!!(enmLeds & PDMKEYBLEDS_NUMLOCK),
-                                                        !!(enmLeds & PDMKEYBLEDS_CAPSLOCK),
-                                                        !!(enmLeds & PDMKEYBLEDS_SCROLLLOCK));
+    PDRVMAINKEYBOARD pDrv = PPDMIKEYBOARDCONNECTOR_2_MAINKEYBOARD(pInterface);
+    pDrv->pKeyboard->getParent()->onKeyboardLedsChange(!!(enmLeds & PDMKEYBLEDS_NUMLOCK),
+                                                       !!(enmLeds & PDMKEYBLEDS_CAPSLOCK),
+                                                       !!(enmLeds & PDMKEYBLEDS_SCROLLLOCK));
 }
 
 /**
@@ -330,16 +331,17 @@ DECLCALLBACK(void) Keyboard::keyboardSetActive(PPDMIKEYBOARDCONNECTOR pInterface
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
+DECLCALLBACK(int) Keyboard::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
+                                         uint32_t fFlags)
 {
-    PDRVMAINKEYBOARD pData = PDMINS_2_DATA (pDrvIns, PDRVMAINKEYBOARD);
+    PDRVMAINKEYBOARD pData = PDMINS_2_DATA(pDrvIns, PDRVMAINKEYBOARD);
     LogFlow(("Keyboard::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid (pCfg, "Object\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
@@ -359,7 +361,7 @@ DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pData->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIKEYBOARDPORT);
     if (!pData->pUpPort)
     {
-        AssertMsgFailed (("Configuration error: No keyboard port interface above!\n"));
+        AssertMsgFailed(("Configuration error: No keyboard port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
 
@@ -367,10 +369,10 @@ DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Get the Keyboard object pointer and update the mpDrv member.
      */
     void *pv;
-    int rc = CFGMR3QueryPtr (pCfg, "Object", &pv);
+    int rc = CFGMR3QueryPtr(pCfg, "Object", &pv);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed (("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
+        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
         return rc;
     }
     pData->pKeyboard = (Keyboard *)pv;        /** @todo Check this cast! */

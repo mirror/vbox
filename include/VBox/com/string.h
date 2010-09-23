@@ -178,9 +178,14 @@ public:
         return ::RTUtf16LocaleICmp((PRTUTF16)m_bstr, (PRTUTF16)str);
     }
 
-    int compare(BSTR str) const
+    int compare(BSTR str, CaseSensitivity cs = CaseSensitive) const
     {
-        return compare((CBSTR)str);
+        return compare((CBSTR)str, cs);
+    }
+
+    int compare(const Bstr &that, CaseSensitivity cs = CaseSensitive) const
+    {
+        return compare(that.m_bstr, cs);
     }
 
     bool operator==(const Bstr &that) const { return !compare(that.m_bstr); }
@@ -200,28 +205,11 @@ public:
      *
      * @note Always use this method to check if an instance is empty. Do not
      * use length() because that may need to run through the entire string
-     * (Bstr does not cache string lengths). Also do not use operator bool();
-     * for one, MSVC is really annoying with its thinking that that is ambiguous,
-     * and even though operator bool() is protected with Bstr, at least gcc uses
-     * operator CBSTR() when a construct like "if (string)" is encountered, which
-     * is always true now since it raw() never returns an empty string. Again,
-     * always use isEmpty() even though if (string) may compile!
+     * (Bstr does not cache string lengths).
      */
     bool isEmpty() const { return m_bstr == NULL || *m_bstr == 0; }
 
     size_t length() const { return isEmpty() ? 0 : ::RTUtf16Len((PRTUTF16)m_bstr); }
-
-    /**
-     * Returns true if the member string is not empty. I'd like to make this
-     * private but since we require operator BSTR() it's futile anyway because
-     * the compiler will then (wrongly) use that one instead. Also if this is
-     * private the odd WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP macro below
-     * will fail on Windows.
-     */
-    operator bool() const
-    {
-        return m_bstr != NULL;
-    }
 
     /**
      *  Returns a pointer to the raw member UTF-16 string. If the member string is empty,
@@ -235,19 +223,6 @@ public:
 
         return g_bstrEmpty;
     }
-
-    /**
-     * Convenience operator so that Bstr's can be passed to CBSTR input parameters
-     * of COM methods.
-     */
-    operator CBSTR() const { return raw(); }
-
-    /**
-     * Convenience operator so that Bstr's can be passed to CBSTR input parameters
-     * of COM methods. Unfortunately this is required for Windows since with
-     * MSCOM, input BSTR parameters of interface methods are not const.
-     */
-    operator BSTR() { return (BSTR)raw(); }
 
     /**
      *  Returns a non-const raw pointer that allows to modify the string directly.
@@ -396,8 +371,6 @@ inline bool operator!=(CBSTR l, const Bstr &r) { return r.operator!=(l); }
 inline bool operator==(BSTR l, const Bstr &r) { return r.operator==(l); }
 inline bool operator!=(BSTR l, const Bstr &r) { return r.operator!=(l); }
 
-// work around error C2593 of the stupid MSVC 7.x ambiguity resolver
-WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP(Bstr)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -430,7 +403,7 @@ public:
 
     Utf8Str(const Bstr &that)
     {
-        copyFrom(that);
+        copyFrom(that.raw());
     }
 
     Utf8Str(CBSTR that)
@@ -453,7 +426,7 @@ public:
     Utf8Str& operator=(const Bstr &that)
     {
         cleanup();
-        copyFrom(that);
+        copyFrom(that.raw());
         return *this;
     }
 

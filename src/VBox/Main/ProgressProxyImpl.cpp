@@ -226,7 +226,7 @@ bool ProgressProxy::setOtherProgressObject(IProgress *pOtherProgress)
 
         muOtherProgressStartWeight = m_ulOperationsCompletedWeight + m_ulCurrentOperationWeight;
         muOtherProgressWeight      = m_ulTotalOperationsWeight - muOtherProgressStartWeight;
-        Progress::SetNextOperation(bstrOperationDescription, muOtherProgressWeight);
+        Progress::SetNextOperation(bstrOperationDescription.raw(), muOtherProgressWeight);
 
         muOtherProgressStartOperation = m_ulCurrentOperation;
         m_cOperations = cOperations + m_ulCurrentOperation;

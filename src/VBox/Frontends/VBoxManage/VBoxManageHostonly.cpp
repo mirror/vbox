@@ -233,7 +233,8 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
     CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
 
     ComPtr<IHostNetworkInterface> hif;
-    CHECK_ERROR(host, FindHostNetworkInterfaceByName(name, hif.asOutParam()));
+    CHECK_ERROR(host, FindHostNetworkInterfaceByName(name.raw(),
+                                                     hif.asOutParam()));
 
     if (FAILED(rc))
         return errorArgument("Could not find interface '%s'", a->argv[iStart]);
@@ -247,7 +248,8 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
         if (!pNetmask)
             pNetmask = "255.255.255.0"; /* ?? */
 
-        CHECK_ERROR(hif, EnableStaticIpConfig(Bstr(pIp), Bstr(pNetmask)));
+        CHECK_ERROR(hif, EnableStaticIpConfig(Bstr(pIp).raw(),
+                                              Bstr(pNetmask).raw()));
     }
     else if (pIpv6)
     {
@@ -264,7 +266,8 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
 
 
         Bstr ipv6str(pIpv6);
-        CHECK_ERROR(hif, EnableStaticIpConfigV6(ipv6str, (ULONG)uNetmasklengthv6));
+        CHECK_ERROR(hif, EnableStaticIpConfigV6(ipv6str.raw(),
+                                                (ULONG)uNetmasklengthv6));
     }
     else
     {

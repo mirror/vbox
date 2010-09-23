@@ -88,11 +88,13 @@ static int handleGetGuestProperty(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
+                                   machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
     }
     if (machine)
     {
@@ -105,13 +107,14 @@ static int handleGetGuestProperty(HandlerArg *a)
         Bstr value;
         LONG64 i64Timestamp;
         Bstr flags;
-        CHECK_ERROR(machine, GetGuestProperty(Bstr(a->argv[1]), value.asOutParam(),
+        CHECK_ERROR(machine, GetGuestProperty(Bstr(a->argv[1]).raw(),
+                                              value.asOutParam(),
                                               &i64Timestamp, flags.asOutParam()));
-        if (!value)
+        if (value.isEmpty())
             RTPrintf("No value set!\n");
-        if (value)
+        else
             RTPrintf("Value: %lS\n", value.raw());
-        if (value && verbose)
+        if (!value.isEmpty() && verbose)
         {
             RTPrintf("Timestamp: %lld\n", i64Timestamp);
             RTPrintf("Flags: %lS\n", flags.raw());
@@ -153,11 +156,13 @@ static int handleSetGuestProperty(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
+                                   machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
     }
     if (machine)
     {
@@ -168,11 +173,15 @@ static int handleSetGuestProperty(HandlerArg *a)
         a->session->COMGETTER(Machine)(machine.asOutParam());
 
         if (!pszValue && !pszFlags)
-            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), Bstr("")));
+            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName).raw(),
+                                                       Bstr().raw()));
         else if (!pszFlags)
-            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), Bstr(pszValue)));
+            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName).raw(),
+                                                       Bstr(pszValue).raw()));
         else
-            CHECK_ERROR(machine, SetGuestProperty(Bstr(pszName), Bstr(pszValue), Bstr(pszFlags)));
+            CHECK_ERROR(machine, SetGuestProperty(Bstr(pszName).raw(),
+                                                  Bstr(pszValue).raw(),
+                                                  Bstr(pszFlags).raw()));
 
         if (SUCCEEDED(rc))
             CHECK_ERROR(machine, SaveSettings());
@@ -213,11 +222,13 @@ static int handleEnumGuestProperty(HandlerArg *a)
      */
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
+    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
     }
     if (machine)
     {
@@ -231,7 +242,7 @@ static int handleEnumGuestProperty(HandlerArg *a)
         com::SafeArray<BSTR> values;
         com::SafeArray<LONG64> timestamps;
         com::SafeArray<BSTR> flags;
-        CHECK_ERROR(machine, EnumerateGuestProperties(Bstr(Utf8Patterns),
+        CHECK_ERROR(machine, EnumerateGuestProperties(Bstr(Utf8Patterns).raw(),
                                                       ComSafeArrayAsOutParam(names),
                                                       ComSafeArrayAsOutParam(values),
                                                       ComSafeArrayAsOutParam(timestamps),
@@ -269,11 +280,13 @@ static int handleWaitGuestProperty(HandlerArg *a)
         pszPatterns = a->argv[1];
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
+    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
     }
     if (!machine)
         usageOK = false;

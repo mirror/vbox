@@ -230,7 +230,7 @@ static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str& 
     BOOL fPresent = FALSE;
     Bstr aFilePath, empty;
 
-    rc = vbox->CheckFirmwarePresent(aFirmwareType, empty,
+    rc = vbox->CheckFirmwarePresent(aFirmwareType, empty.raw(),
                                     empty.asOutParam(), aFilePath.asOutParam(), &fPresent);
     if (RT_FAILURE(rc))
         AssertComRCReturn(rc, VERR_FILE_NOT_FOUND);
@@ -250,7 +250,8 @@ static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRea
     /*
      * The extra data takes precedence (if non-zero).
      */
-    HRESULT hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/SmcDeviceKey"), aKey);
+    HRESULT hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/SmcDeviceKey").raw(),
+                                         aKey);
     if (FAILED(hrc))
         return Global::vboxStatusCodeFromCOM(hrc);
     if (   SUCCEEDED(hrc)
@@ -554,7 +555,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                             H();
 
     ComPtr<IGuestOSType> guestOSType;
-    hrc = virtualBox->GetGuestOSType(osTypeId, guestOSType.asOutParam());               H();
+    hrc = virtualBox->GetGuestOSType(osTypeId.raw(), guestOSType.asOutParam());         H();
 
     Bstr guestTypeFamilyId;
     hrc = guestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());             H();
@@ -658,7 +659,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
              mode and hv mode to optimize lookup times.
            - With more than one virtual CPU, raw-mode isn't a fallback option. */
         fHwVirtExtForced = fHWVirtExEnabled
-                        && (   cbRam > (_4G - cbRamHole)
+                        && (   cbRam + cbRamHole > _4G
                             || cCpus > 1);
 # endif
 #else  /* !VBOX_WITH_RAW_MODE */
@@ -1045,7 +1046,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigInteger(pCfg,  "LogoTime", logoDisplayTime);
         Bstr logoImagePath;
         hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());           H();
-        InsertConfigString(pCfg,   "LogoFile", Utf8Str(logoImagePath ? logoImagePath : "") );
+        InsertConfigString(pCfg,   "LogoFile", Utf8Str(!logoImagePath.isEmpty() ? logoImagePath : "") );
 
         /*
          * Boot menu
@@ -1067,7 +1068,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         {
             char szExtraDataKey[sizeof("CustomVideoModeXX")];
             RTStrPrintf(szExtraDataKey, sizeof(szExtraDataKey), "CustomVideoMode%u", iMode);
-            hrc = pMachine->GetExtraData(Bstr(szExtraDataKey), bstr.asOutParam());          H();
+            hrc = pMachine->GetExtraData(Bstr(szExtraDataKey).raw(), bstr.asOutParam());    H();
             if (bstr.isEmpty())
                 break;
             InsertConfigString(pCfg, szExtraDataKey, bstr);
@@ -1188,25 +1189,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
             /* Get boot args */
             Bstr bootArgs;
-            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiBootArgs"), bootArgs.asOutParam()); H();
+            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiBootArgs").raw(), bootArgs.asOutParam()); H();
 
             /* Get device props */
             Bstr deviceProps;
-            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiDeviceProps"), deviceProps.asOutParam()); H();
+            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiDeviceProps").raw(), deviceProps.asOutParam()); H();
             /* Get GOP mode settings */
             uint32_t u32GopMode = UINT32_MAX;
-            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiGopMode"), bstr.asOutParam()); H();
+            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiGopMode").raw(), bstr.asOutParam()); H();
             if (!bstr.isEmpty())
                 u32GopMode = Utf8Str(bstr).toUInt32();
 
             /* UGA mode settings */
             uint32_t u32UgaHorisontal = 0;
-            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiUgaHorizontalResolution"), bstr.asOutParam()); H();
+            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiUgaHorizontalResolution").raw(), bstr.asOutParam()); H();
             if (!bstr.isEmpty())
                 u32UgaHorisontal = Utf8Str(bstr).toUInt32();
 
             uint32_t u32UgaVertical = 0;
-            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiUgaVerticalResolution"), bstr.asOutParam()); H();
+            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiUgaVerticalResolution").raw(), bstr.asOutParam()); H();
             if (!bstr.isEmpty())
                 u32UgaVertical = Utf8Str(bstr).toUInt32();
 
@@ -1445,26 +1446,26 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
             /* Attach the media to the storage controllers. */
             com::SafeIfaceArray<IMediumAttachment> atts;
-            hrc = pMachine->GetMediumAttachmentsOfController(controllerName,
+            hrc = pMachine->GetMediumAttachmentsOfController(controllerName.raw(),
                                                             ComSafeArrayAsOutParam(atts)); H();
 
             for (size_t j = 0; j < atts.size(); ++j)
             {
                 rc = pConsole->configMediumAttachment(pCtlInst,
-                                                    pszCtrlDev,
-                                                    ulInstance,
-                                                    enmBus,
-                                                    fUseHostIOCache,
-                                                    false /* fSetupMerge */,
-                                                    0 /* uMergeSource */,
-                                                    0 /* uMergeTarget */,
-                                                    atts[j],
-                                                    pConsole->mMachineState,
-                                                    NULL /* phrc */,
-                                                    false /* fAttachDetach */,
-                                                    false /* fForceUnmount */,
-                                                    pVM,
-                                                    paLedDevType);
+                                                      pszCtrlDev,
+                                                      ulInstance,
+                                                      enmBus,
+                                                      fUseHostIOCache,
+                                                      false /* fSetupMerge */,
+                                                      0 /* uMergeSource */,
+                                                      0 /* uMergeTarget */,
+                                                      atts[j],
+                                                      pConsole->mMachineState,
+                                                      NULL /* phrc */,
+                                                      false /* fAttachDetach */,
+                                                      false /* fForceUnmount */,
+                                                      pVM,
+                                                      paLedDevType);
                 if (RT_FAILURE(rc))
                     return rc;
             }
@@ -1608,7 +1609,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
              */
             Bstr macAddr;
             hrc = networkAdapter->COMGETTER(MACAddress)(macAddr.asOutParam());              H();
-            Assert(macAddr);
+            Assert(!macAddr.isEmpty());
             Utf8Str macAddrUtf8 = macAddr;
             char *macStr = (char*)macAddrUtf8.c_str();
             Assert(strlen(macStr) == 12);
@@ -1792,7 +1793,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         Bstr hwVersion;
         hrc = pMachine->COMGETTER(HardwareVersion)(hwVersion.asOutParam());                 H();
         InsertConfigInteger(pCfg, "RamSize",              cbRam);
-        if (hwVersion.compare(Bstr("1")) == 0) /* <= 2.0.x */
+        if (hwVersion.compare(Bstr("1").raw()) == 0) /* <= 2.0.x */
             InsertConfigInteger(pCfg, "HeapEnabled", 0);
         Bstr snapshotFolder;
         hrc = pMachine->COMGETTER(SnapshotFolder)(snapshotFolder.asOutParam());            H();
@@ -2385,9 +2386,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             Bstr bstrExtraDataValue;
             if (i2 < cGlobalValues)
                 // this is still one of the global values:
-                hrc = virtualBox->GetExtraData(Bstr(strKey), bstrExtraDataValue.asOutParam());
+                hrc = virtualBox->GetExtraData(Bstr(strKey).raw(),
+                                               bstrExtraDataValue.asOutParam());
             else
-                hrc = pMachine->GetExtraData(Bstr(strKey), bstrExtraDataValue.asOutParam());
+                hrc = pMachine->GetExtraData(Bstr(strKey).raw(),
+                                             bstrExtraDataValue.asOutParam());
             if (FAILED(hrc))
                 LogRel(("Warning: Cannot get extra data key %s, rc = %Rrc\n", strKey.c_str(), hrc));
 
@@ -3863,7 +3866,8 @@ int Console::configNetwork(const char *pszDevice,
                 Utf8Str HifNameUtf8(HifName);
                 const char *pszHifName = HifNameUtf8.c_str();
                 ComPtr<IHostNetworkInterface> hostInterface;
-                rc = host->FindHostNetworkInterfaceByName(HifName, hostInterface.asOutParam());
+                rc = host->FindHostNetworkInterfaceByName(HifName.raw(),
+                                                          hostInterface.asOutParam());
                 if (!SUCCEEDED(rc))
                 {
                     LogRel(("NetworkAttachmentType_HostOnly: FindByName failed, rc (0x%x)\n", rc));
@@ -4004,31 +4008,40 @@ int Console::configNetwork(const char *pszDevice,
 
                 Bstr tmpAddr, tmpMask;
 
-                hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPAddress", pszHifName), tmpAddr.asOutParam());
+                hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPAddress",
+                                                       pszHifName).raw(),
+                                               tmpAddr.asOutParam());
                 if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
                 {
-                    hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPNetMask", pszHifName), tmpMask.asOutParam());
+                    hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPNetMask",
+                                                           pszHifName).raw(),
+                                                   tmpMask.asOutParam());
                     if (SUCCEEDED(hrc) && !tmpMask.isEmpty())
-                        hrc = hostInterface->EnableStaticIpConfig(tmpAddr, tmpMask);
+                        hrc = hostInterface->EnableStaticIpConfig(tmpAddr.raw(),
+                                                                  tmpMask.raw());
                     else
-                        hrc = hostInterface->EnableStaticIpConfig(tmpAddr,
-                                                                Bstr(VBOXNET_IPV4MASK_DEFAULT));
+                        hrc = hostInterface->EnableStaticIpConfig(tmpAddr.raw(),
+                                                                  Bstr(VBOXNET_IPV4MASK_DEFAULT).raw());
                 }
                 else
                 {
                     /* Grab the IP number from the 'vboxnetX' instance number (see netif.h) */
-                    hrc = hostInterface->EnableStaticIpConfig(getDefaultIPv4Address(Bstr(pszHifName)),
-                                                            Bstr(VBOXNET_IPV4MASK_DEFAULT));
+                    hrc = hostInterface->EnableStaticIpConfig(getDefaultIPv4Address(Bstr(pszHifName)).raw(),
+                                                              Bstr(VBOXNET_IPV4MASK_DEFAULT).raw());
                 }
 
                 ComAssertComRC(hrc); /** @todo r=bird: Why this isn't fatal? (H()) */
 
-                hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6Address", pszHifName), tmpAddr.asOutParam());
+                hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6Address",
+                                                       pszHifName).raw(),
+                                               tmpAddr.asOutParam());
                 if (SUCCEEDED(hrc))
-                    hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6NetMask", pszHifName), tmpMask.asOutParam());
+                    hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6NetMask", pszHifName).raw(),
+                                                   tmpMask.asOutParam());
                 if (SUCCEEDED(hrc) && !tmpAddr.isEmpty() && !tmpMask.isEmpty())
                 {
-                    hrc = hostInterface->EnableStaticIpConfigV6(tmpAddr, Utf8Str(tmpMask).toUInt32());
+                    hrc = hostInterface->EnableStaticIpConfigV6(tmpAddr.raw(),
+                                                                Utf8Str(tmpMask).toUInt32());
                     ComAssertComRC(hrc); /** @todo r=bird: Why this isn't fatal? (H()) */
                 }
 #endif
@@ -4096,7 +4109,8 @@ int Console::configNetwork(const char *pszDevice,
                          * by DHCPServerRunner destructor.
                          */
                         ComPtr<IDHCPServer> dhcpServer;
-                        hrc = virtualBox->FindDHCPServerByNetworkName(networkName, dhcpServer.asOutParam());
+                        hrc = virtualBox->FindDHCPServerByNetworkName(networkName.raw(),
+                                                                      dhcpServer.asOutParam());
                         if (SUCCEEDED(hrc))
                         {
                             /* there is a DHCP server available for this network */
@@ -4109,7 +4123,9 @@ int Console::configNetwork(const char *pszDevice,
                             }
 
                             if (fEnabled)
-                                hrc = dhcpServer->Start(networkName, trunkName, trunkType);
+                                hrc = dhcpServer->Start(networkName.raw(),
+                                                        trunkName.raw(),
+                                                        trunkType.raw());
                         }
                         else
                             hrc = S_OK;
