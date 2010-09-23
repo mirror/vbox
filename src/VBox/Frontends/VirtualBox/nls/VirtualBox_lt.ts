@@ -107,7 +107,7 @@
     <name>QIFileDialog</name>
     <message>
         <source>Select a directory</source>
-        <translation>Pasirinkti aplanką</translation>
+        <translation>Pasirinkti katalogą</translation>
     </message>
     <message>
         <source>Select a file</source>
@@ -496,11 +496,11 @@
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>Į&amp;renginiai</translation>
+        <translation>Į&amp;taisai</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
-        <translation>&amp;CD/DVD įrenginiai</translation>
+        <translation>&amp;CD/DVD įtaisai</translation>
     </message>
     <message>
         <source>&amp;Floppy Devices</source>
@@ -508,7 +508,7 @@
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>&amp;USB įrenginiai</translation>
+        <translation>&amp;USB įtaisai</translation>
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
@@ -722,6 +722,7 @@
     </message>
     <message>
         <source>&amp;Bucket:</source>
+        <translatorcomment>Virtual storage unit on a cloud-based bulk data storage, like Amazon S3.</translatorcomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -830,7 +831,7 @@
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jei aukščiau esantys duomenys yra tinkami, spauskite mygtuką &lt;b&gt;Užbaigti&lt;/b&gt;. Tuomet pasirinkta laikmena laikinai bus prijungta prie virtualios mašinos ir paleista.&lt;/p&gt;&lt;p&gt;Atminkite, kad užvėrus virtualią mašiną, ši laikmena bus atjungta, o įkrovos pirmenybė suteikta pirmajam standžiajam diskui.&lt;/p&gt;&lt;p&gt;Priklausomai nuo diegimo programos, gali tekti rankiniu būdu pašalinti (atjungti) laikmeną po sistemos persikrovimo, taip siekiant išvengti pakartotinio tos programos paleidimo. Tai galite padaryti pasirinkdami atitinkamą &lt;b&gt;Atjungti...&lt;/b&gt; veiksmą iš &lt;b&gt;Įrenginių&lt;/b&gt; meniu.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Jei aukščiau esantys duomenys yra tinkami, spauskite mygtuką &lt;b&gt;Užbaigti&lt;/b&gt;. Tuomet pasirinkta laikmena laikinai bus prijungta prie virtualios mašinos ir paleista.&lt;/p&gt;&lt;p&gt;Atminkite, kad užvėrus virtualią mašiną, ši laikmena bus atjungta, o įkrovos pirmenybė suteikta pirmajam standžiajam diskui.&lt;/p&gt;&lt;p&gt;Priklausomai nuo diegimo programos, gali tekti rankiniu būdu pašalinti (atjungti) laikmeną po sistemos paleidimo iš naujo, taip siekiant išvengti pakartotinio tos programos paleidimo. Tai galite padaryti pasirinkdami atitinkamą &lt;b&gt;Atjungti...&lt;/b&gt; veiksmą iš &lt;b&gt;Įtaisų&lt;/b&gt; meniu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
@@ -842,7 +843,7 @@
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation>CD/DVD įrenginys</translation>
+        <translation>CD/DVD įtaisas</translation>
     </message>
     <message>
         <source>Type</source>
@@ -945,13 +946,13 @@
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip
 </comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Rodo CD/DVD įrenginių aktyvumą:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Rodo CD/DVD įtaisų aktyvumą:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip
 </comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Rodo diskelių įrenginių aktyvumą:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Rodo diskelių įtaisų aktyvumą:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
@@ -986,13 +987,13 @@
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip
 </comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Rodo prijungtų USB įrenginių aktyvumą:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Rodo prijungtų USB įtaisų aktyvumą:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip
 </comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Neprijungtas joks USB įrenginys&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Neprijungtas joks USB įtaisas&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -1065,7 +1066,7 @@
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation>Atjungti CD/DVD įrenginį</translation>
+        <translation>Atjungti CD/DVD įtaisą</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
@@ -1073,7 +1074,7 @@
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation>Atjungti diskelių įrenginį</translation>
+        <translation>Atjungti diskelių įtaisą</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
@@ -1085,7 +1086,7 @@
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation>Neprijungtas joks diskelių įrenginys</translation>
+        <translation>Neprijungtas joks diskelių įtaisas</translation>
     </message>
     <message>
         <source>No floppy devices attached to that VM</source>
@@ -1093,11 +1094,11 @@
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation>Neprijungtas joks USB įrenginys</translation>
+        <translation>Neprijungtas joks USB įtaisas</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation>Prie kompiuterio nėra prijungtų palaikomų įrenginių</translation>
+        <translation>Prie kompiuterio nėra prijungtų palaikomų įtaisų</translation>
     </message>
 </context>
 <context>
@@ -2104,7 +2105,7 @@ IPv6.</translation>
         <source>Unknown device %1:%2</source>
         <comment>USB device details
 </comment>
-        <translation>Nežinomas įrenginys %1:%2</translation>
+        <translation>Nežinomas įtaisas %1:%2</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
@@ -2230,7 +2231,7 @@ IPv6.</translation>
         <source>Device Filters</source>
         <comment>details report (USB)
 </comment>
-        <translation>Įrenginių filtras</translation>
+        <translation>Įtaisų filtras</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
@@ -2362,11 +2363,13 @@ IPv6.</translation>
         <source>Immutable</source>
         <comment>DiskType
 </comment>
-        <translation>Nekintamas</translation>
+        <translatorcomment>the contents of immutable disk are read-only. Any data written by guest operating system to animmutable disk are stored in a separate diffirencing disk image. </translatorcomment>
+        <translation type="unfinished">Tik skaitomas</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>DiskType</comment>
+        <translatorcomment>Writetrough disk images allow read and write operations to be performed on the disk image. When virtual machine is powered off or reset, however, the state of disk image is not saved, thereby reverting to its original state next timethe virtual machine starts.</translatorcomment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2431,7 +2434,7 @@ IPv6.</translation>
     <message>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>CoreAudio</translation>
     </message>
     <message>
         <source>Not attached</source>
@@ -2442,7 +2445,7 @@ IPv6.</translation>
     <message>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>NAT</translation>
     </message>
     <message>
         <source>Internal Network</source>
@@ -2496,13 +2499,13 @@ IPv6.</translation>
         <source>Host To Guest</source>
         <comment>ClipboardType
 </comment>
-        <translation>Iš kompiuterio į svečią</translation>
+        <translation>Iš pagr. kompiuterio į svečią</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType
 </comment>
-        <translation>Iš svečio į kompiuterį</translation>
+        <translation>Iš svečio į pagr. kompiuterį</translation>
     </message>
     <message>
         <source>Bidirectional</source>
@@ -2562,13 +2565,13 @@ IPv6.</translation>
         <source>Host Pipe</source>
         <comment>PortMode
 </comment>
-        <translation>Kompiuterio kanalas</translation>
+        <translation>Pagr. kompiuterio kanalas</translation>
     </message>
     <message>
         <source>Host Device</source>
         <comment>PortMode
 </comment>
-        <translation>Kompiuterio įrenginys</translation>
+        <translation>Pagr. kompiuterio įtaisas</translation>
     </message>
     <message>
         <source>User-defined</source>
@@ -2616,7 +2619,7 @@ IPv6.</translation>
         <source>Host Driver</source>
         <comment>details report (audio)
 </comment>
-        <translation>Kompiuterio tvarkyklė</translation>
+        <translation>Pagr. kompiuterio tvarkyklė</translation>
     </message>
     <message>
         <source>Controller</source>
@@ -2838,7 +2841,7 @@ IPv6.</translation>
         <source>Differencing</source>
         <comment>DiskType
 </comment>
-        <translation>Vediniai</translation>
+        <translation>Vedinys</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -2908,7 +2911,7 @@ IPv6.</translation>
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tinklų tiltas, %1</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
@@ -2924,12 +2927,12 @@ IPv6.</translation>
     <message>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tinklų tiltas</translation>
     </message>
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Plokštė prisijungimui tik prie pagrindinio kompiuterio</translation>
+        <translation>Plokštė prisijungimui tik prie pagr. kompiuterio</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
@@ -3063,7 +3066,7 @@ IPv6.</translation>
         <source>Device %1</source>
         <comment>StorageBusDevice
 </comment>
-        <translation>%1 įrenginys</translation>
+        <translation>%1 įtaisas</translation>
     </message>
     <message>
         <source>IDE Primary Master</source>
@@ -3105,7 +3108,7 @@ IPv6.</translation>
         <source>Floppy Device %1</source>
         <comment>New Storage UI : Slot Name
 </comment>
-        <translation>%1 diskelių įrenginys</translation>
+        <translation>%1 diskelių įtaisas</translation>
     </message>
     <message>
         <source>Paravirtualized Network (virtio-net)</source>
@@ -3127,12 +3130,12 @@ IPv6.</translation>
     <message>
         <source>Host Drive &apos;%1&apos;</source>
         <comment>medium</comment>
-        <translation>Pagrindinio kompiuterio įrenginys „%1“</translation>
+        <translation>Pagrindinio kompiuterio įtaisas „%1“</translation>
     </message>
     <message>
         <source>Host Drive %1 (%2)</source>
         <comment>medium</comment>
-        <translation>Pagrindinio kompiuterio įrenginys %1 (%2)</translation>
+        <translation>Pagrindinio kompiuterio įtaisas %1 (%2)</translation>
     </message>
     <message>
         <source>&lt;p style=white-space:pre&gt;Type (Format):  %1 (%2)&lt;/p&gt;</source>
@@ -3337,7 +3340,7 @@ IPv6.</translation>
     <message>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation>Nežinomas įrenginys</translation>
+        <translation>Nežinomas įtaisas</translation>
     </message>
     <message>
         <source>SAS Port %1</source>
@@ -3771,11 +3774,11 @@ IPv6.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Nepavyko prijungti USB įrenginio &lt;b&gt;%1&lt;/b&gt; prie virtualios mašinos &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Nepavyko prijungti USB įtaiso &lt;b&gt;%1&lt;/b&gt; prie virtualios mašinos &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Nepavyko atjungti USB įrenginio &lt;b&gt;%1&lt;/b&gt; nuo virtualios mašinos &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Nepavyko atjungti USB įtaiso &lt;b&gt;%1&lt;/b&gt; nuo virtualios mašinos &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -3869,7 +3872,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta rasti &lt;b&gt;%1&lt;/b&gt; kalbos rinkmenos aplanke &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Laikinai bus naudojama sistemos numatytoji kalba. Eikite į &lt;b&gt;nuostatas&lt;/b&gt; per &lt;b&gt;rinkmenos&lt;/b&gt; meniu, esantį pagrindiniame VirtualBox lange, ir pasirinkite egzistuojančią kalbą &lt;b&gt;kalbos&lt;/b&gt; kortelėje.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nepavyksta rasti &lt;b&gt;%1&lt;/b&gt; kalbos rinkmenos kataloge &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Laikinai bus naudojama sistemos numatytoji kalba. Eikite į &lt;b&gt;nuostatas&lt;/b&gt; per &lt;b&gt;rinkmenos&lt;/b&gt; meniu, esantį pagrindiniame VirtualBox lange, ir pasirinkite egzistuojančią kalbą &lt;b&gt;kalbos&lt;/b&gt; kortelėje.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -3877,15 +3880,15 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai yra per seni: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Kai kurios funkcijos (pelės integravimas, svečio ekrano dydžio automatinis keitimas) gali neveikti tinkamai.&lt;/p&gt;&lt;p&gt;Atnaujinkite svečio papildinius iki tinkamos versijos nuspaudę &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įrenginių&lt;/b&gt; meniu.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai yra per seni: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Kai kurios funkcijos (pelės integravimas, svečio ekrano dydžio automatinis keitimas) gali neveikti tinkamai.&lt;/p&gt;&lt;p&gt;Atnaujinkite svečio papildinius iki tinkamos versijos nuspaudę &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įtaisų&lt;/b&gt; meniu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai nėra patys naujausi: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Kai kurios funkcijos (pelės integravimas, svečio ekrano dydžio automatinis keitimas) gali neveikti tinkamai.&lt;/p&gt;&lt;p&gt;Patariama atnaujinti svečio papildinius iki tinkamos versijos nuspaudus &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įrenginių&lt;/b&gt; meniu.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai nėra patys naujausi: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Kai kurios funkcijos (pelės integravimas, svečio ekrano dydžio automatinis keitimas) gali neveikti tinkamai.&lt;/p&gt;&lt;p&gt;Patariama atnaujinti svečio papildinius iki tinkamos versijos nuspaudus &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įtaisų&lt;/b&gt; meniu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai yra per nauji: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Negalima naudoti naujesnių svečio papildinių už versiją, kurią palaiko VirtualBox.&lt;/p&gt;&lt;p&gt;Atnaujinkite svečio papildinius iki tinkamos versijos nuspaudę &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įrenginių&lt;/b&gt; meniu.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai yra per nauji: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Negalima naudoti naujesnių svečio papildinių už versiją, kurią palaiko VirtualBox.&lt;/p&gt;&lt;p&gt;Atnaujinkite svečio papildinius iki tinkamos versijos nuspaudę &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įtaisų&lt;/b&gt; meniu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -4210,11 +4213,11 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vienas ar keli virtualūs standieji diskai, CD/DVD ar diskelių įrenginiai nebepasiekiami. Todėl negalėsite naudotis tomis virtualiomis mašinomis, kurios naudoja tas laikmenas tol, kol jos nebus pasiekiamos.&lt;/p&gt;&lt;p&gt;Norėdami atverti virtualių laikmenų tvarkytuvę ir pamatyti tas laikmenas, spauskite &lt;b&gt;Tikrinti&lt;/b&gt;, o norėdami nekreipti dėmesio į šį pranešimą, spauskite &lt;b&gt;Nepaisyti&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vienas ar keli virtualūs standieji diskai, CD/DVD ar diskelių įtaisai nebepasiekiami. Todėl negalėsite naudotis tomis virtualiomis mašinomis, kurios naudoja tas laikmenas tol, kol jos nebus pasiekiamos.&lt;/p&gt;&lt;p&gt;Norėdami atverti virtualių laikmenų tvarkytuvę ir pamatyti tas laikmenas, spauskite &lt;b&gt;Tikrinti&lt;/b&gt;, o norėdami nekreipti dėmesio į šį pranešimą, spauskite &lt;b&gt;Nepaisyti&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Virtualios mašinos veikimo metu įvyko kritinė klaida, tad mašina sustojo.&lt;/p&gt;&lt;p&gt;Norėdami gauti pagalbos, žiūrėkite „Bendruomenės“ (angl. „Community“) skyrių &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;  svetainėje arba palaikymo kontrakte. Prašom pateikti &lt;tt&gt;VBox.log&lt;/tt&gt; žurnalo rinkmenos turinį ir &lt;tt&gt;VBox.png&lt;/tt&gt; paveiksliuką, kuriuos galite rasti &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; kataloge, bei aprašyti, ką darėte, prieš atsirandant šiai klaidai. Beje, aukščiau nurodytas rinkmenas galite pasiekti iš pagrindinio VirtualBox lango&lt;b&gt;Mašinos&lt;/b&gt; meniu pasirinke &lt;b&gt;Rodyti žurnalą&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Jei norite išjungti mašiną, spauskite &lt;b&gt;Gerai&lt;/b&gt;, o jei norite palikti derinimui, spauskite &lt;b&gt;Nepaisyti&lt;b&gt;. Atminkite, kad derinimui reikia specialių žinių ir įrankių, tad dabar patartina spausti &lt;b&gt;Gerai&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
@@ -4230,7 +4233,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation>Nepavyksta pasiekti pagrindinio kompiuteryje esančių USB įrenginių, nes neprieinama nei USB rinkmenų sistema (usbfs), nei DBus su hal paslaugomis. Jei svečio sistemoje norite naudoti pagrindinio kompiuterio USB įrenginius, privalote pašalinti trūkumus ir iš naujo paleisti VirtualBox.</translation>
+        <translation>Nepavyksta pasiekti pagrindinio kompiuteryje esančių USB įtaisų, nes neprieinama nei USB rinkmenų sistema (usbfs), nei DBus su hal paslaugomis. Jei svečio sistemoje norite naudoti pagrindinio kompiuterio USB įtaisus, privalote pašalinti trūkumus ir iš naujo paleisti VirtualBox.</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
@@ -4238,7 +4241,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimas įgalintas, bet neveiks. Jūsų 64 bitų svečio sistema neaptiks 64 bitų procesoriaus ir negalės pasileisti.&lt;/p&gt;&lt;p&gt;Įsitikinkite, ar tinkamai įgalinote VT-x/AMD-V per savo pagrindinio kompiuterio BIOS.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Close VM</source>
@@ -4312,7 +4315,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimas įgalintas, bet neveiks. Kai kurioms svečio sistemoms (pvz., OS/2 ir QNX) reikia šios savybės.&lt;/p&gt;&lt;p&gt;Įsitikinkite, ar tinkamai įgalinote VT-x/AMD-V per savo pagrindinio kompiuterio BIOS.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
@@ -4332,7 +4335,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation type="unfinished"></translation>
+        <translation>Regis prie /sys/bus/usb/drivers prijungėte USBFS rinkmenų sistemą. Labai patariame pakeisti tokią būseną, nes tai gali būti rimta sistemos konfigūracijos problema, galinti lemti netikėtus USB įtaisų sutrikimus.</translation>
     </message>
     <message>
         <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
@@ -4340,7 +4343,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tikrai atkurti momentinę kopiją &lt;b&gt;%1&lt;/b&gt;? Tokiu atveju negrįžtamai prarasite dabartinę savo mašinos būseną.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore</source>
@@ -4412,11 +4415,11 @@ IPv6.</translation>
     </message>
     <message>
         <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation>Nepavyko išmesti disko iš virtualaus įrenginio. Įrenginį galbūt užblokavo svečio operacinė sistema. Patikrinkite ir bandykite iš naujo.</translation>
+        <translation>Nepavyko išmesti disko iš virtualaus įtaiso. Galbūt įtaisą užblokavo svečio operacinė sistema. Patikrinkite ir bandykite iš naujo.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta prijungti VirtualBox svečio papildinių diegimo CD atvaizdo prie virtualios mašinos &lt;b&gt;%1&lt;/b&gt;, nes mašina neturi CD/DVD įrenginio.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nepavyksta prijungti VirtualBox svečio papildinių diegimo CD atvaizdo prie virtualios mašinos &lt;b&gt;%1&lt;/b&gt;, nes mašina neturi CD/DVD įtaiso.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -4468,17 +4471,17 @@ IPv6.</translation>
         <source>CD/DVD device</source>
         <comment>failed to attach ...
 </comment>
-        <translation>CD/DVD įrenginio</translation>
+        <translation>CD/DVD įtaiso</translation>
     </message>
     <message>
         <source>floppy device</source>
         <comment>failed to close ...
 </comment>
-        <translation>diskelių įrenginio</translation>
+        <translation>diskelių įtaiso</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai pašalinti CD/DVD-ROM įrenginį?&lt;/p&gt;&lt;p&gt;Jei taip, negalėsite prijungti jokio CD ar ISO atvaizdo, negaėsite įdiegti svečio papildinių!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tikrai pašalinti CD/DVD-ROM įtaisą?&lt;/p&gt;&lt;p&gt;Jei taip, negalėsite prijungti jokio CD ar ISO atvaizdo, negalėsite įdiegti svečio papildinių!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -4488,11 +4491,11 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimo jūsų sistemoje nėra. Taigi 64 bitų svečio sistema neaptiks 64 bitų procesoriaus ir negalės pasileisti.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimo jūsų sistemoje nėra. Kai kurioms svečio sistemoms (pvz., OS/2 ir QNX) reikia šios savybės; be jos sistema nepasileis.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
@@ -4577,15 +4580,15 @@ IPv6.</translation>
     <name>VBoxScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
-        <translation>%1 momentinis būvis (%2)</translation>
+        <translation>%1 nuotrauka (%2)</translation>
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Spragtelėkite, norėdami matyti tikro dydžio nuotrauką.</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Spragtelėkite, norėdami matyti pritaikyto dydžio nuotrauką.</translation>
     </message>
 </context>
 <context>
@@ -5010,13 +5013,13 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <source>&lt;no devices available&gt;</source>
         <comment>USB devices
 </comment>
-        <translation>&lt;nėra įrenginių&gt;</translation>
+        <translation>&lt;nėra įtaisų&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip
 </comment>
-        <translation>Prie kompiuterio nėra prijungtų palaikomų įrenginių</translation>
+        <translation>Prie kompiuterio nėra prijungtų palaikomų įtaisų</translation>
     </message>
 </context>
 <context>
@@ -5210,11 +5213,11 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Storage Statistics</source>
-        <translation>Atminties įrenginių statistika</translation>
+        <translation>Atminties įtaisų statistika</translation>
     </message>
     <message>
         <source>No Storage Devices</source>
-        <translation>Atminties įrenginių nėra</translation>
+        <translation>Atminties įtaisų nėra</translation>
     </message>
     <message>
         <source>Network Statistics</source>
@@ -5509,7 +5512,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>įgalinote USB HID (žmogaus sąsajos įrenginį). Jis neveiks tol, kol neįgalinsite USB emuliacijos. Todėl pastaroji bus įgalinta automatiškai po to, kai patvirtinsite VM nuostatas mygtuku „Gerai“.</translation>
+        <translation>įgalinote USB HID (žmogaus sąsajos įtaisą). Jis neveiks tol, kol neįgalinsite USB emuliacijos. Todėl pastaroji bus įgalinta automatiškai po to, kai patvirtinsite VM nuostatas mygtuku „Gerai“.</translation>
     </message>
 </context>
 <context>
@@ -5556,7 +5559,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Jei pažymėta, bus įsimintas bet koks CD/DVD ar diskelių prijungimo pakeitimas mašinos veikimo metu. Šie pakeitimai bus įrašyti į nuostatas siekiant išlaikyti tą pačią pakeistą prijungtų įrenginių konfigūraciją sekantį kartą paleidus svečio OS.</translation>
+        <translation>Jei pažymėta, bus įsimintas bet koks CD/DVD ar diskelių prijungimo pakeitimas mašinos veikimo metu. Šie pakeitimai bus įrašyti į nuostatas siekiant išlaikyti tą pačią pakeistą prijungtų įtaisių konfigūraciją sekantį kartą paleidus svečio OS.</translation>
     </message>
     <message>
         <source>Removable Media:</source>
@@ -5607,11 +5610,11 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Pridėti&amp;nbsp;CD/DVD&amp;nbsp;įrenginį&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Pridėti&amp;nbsp;CD/DVD&amp;nbsp;įtaisą&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Pridėti&amp;nbsp;diskelių&amp;nbsp;įrenginį&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Pridėti&amp;nbsp;diskelių&amp;nbsp;įtaisą&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
@@ -5647,7 +5650,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation>Pridėti įrenginį</translation>
+        <translation>Pridėti įtaisą</translation>
     </message>
     <message>
         <source>Add Hard Disk</source>
@@ -5655,31 +5658,31 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Add CD/DVD Device</source>
-        <translation>pridėti CD/DVD įrenginį</translation>
+        <translation>Pridėti CD/DVD įtaisą</translation>
     </message>
     <message>
         <source>Add Floppy Device</source>
-        <translation>Pridėti diskelių įrenginį</translation>
+        <translation>Pridėti diskelių įtaisą</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation>Pašalinti įrenginį</translation>
+        <translation>Pašalinti įtaisą</translation>
     </message>
     <message>
         <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atminties įtaisų medžio gale prideda naują valdiklį.</translation>
     </message>
     <message>
         <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pašalina valdiklius, pažymėtus atminties įtaisų medyje.</translation>
     </message>
     <message>
         <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prie atminties įtaisų medžio prideda naują įtaisą pasirinktam valdikliui.</translation>
     </message>
     <message>
         <source>Removes the attachment highlighted in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pašalina įtaisą, pažymėtą atminties įtaisų medyje.</translation>
     </message>
     <message>
         <source>IDE Controller</source>
@@ -5703,7 +5706,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Device:</source>
-        <translation>&amp;CD/DVD įrenginys:</translation>
+        <translation>&amp;CD/DVD įtaisas:</translation>
     </message>
     <message>
         <source>&amp;Floppy Device:</source>
@@ -5715,7 +5718,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Talpina visus šios mašinos atminties įtaisų valdiklius, virtualius atvaizdus ir prie jų priskirtus pagrindinio įtaisus.</translation>
     </message>
     <message>
         <source>Information</source>
@@ -5723,7 +5726,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atminties įtaisų medis gali turėti kelis skirtingų tipų valdiklius. Šiuo metu ši mašina neturi jokio valdiklio.</translation>
     </message>
     <message>
         <source>Attributes</source>
@@ -5735,7 +5738,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakeičia pavadinimą to valdiklio, kuris yra pažymėtas atminties įtaisų medyje.</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
@@ -5743,7 +5746,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Parenka potipį to valdiklio, kuris yra pažymėtas atminties įtaisų medyje.</translation>
     </message>
     <message>
         <source>S&amp;lot:</source>
@@ -5751,15 +5754,15 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation>Leidžia pasirinkti šio įrenginio lizdą atminties įtaisų valdiklyje. Galimi lizdai priklauso nuo valdiklio tipo ir nuo jau jam priskirtų įrenginių.</translation>
+        <translation>Leidžia pasirinkti šio įtaiso lizdą atminties įtaisų valdiklyje. Galimi lizdai priklauso nuo valdiklio tipo ir nuo jau jam priskirtų įtaisų.</translation>
     </message>
     <message>
         <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šiam įtaisui parenka virtualaus disko atvaizdą arba pagrindinio kompiuterio atminties įtaisą.</translation>
     </message>
     <message>
         <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
-        <translation>Atveria virtualių laikmenų tvarkytuvę, leidžiančią pasirinkti virtualų atvaizdą šiam įrenginiui.</translation>
+        <translation>Atveria virtualių laikmenų tvarkytuvę, leidžiančią pasirinkti virtualų atvaizdą šiam įtaisui.</translation>
     </message>
     <message>
         <source>Open Virtual Media Manager</source>
@@ -5771,7 +5774,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Jei pažymėta, leidžia svečiui tiesiogiai siųsti ATAPI komandas į pagrindinio kompiuterio įrenginį. Pavyzdžiui, ši parinktis leidžia rašyti į pagrindinio kompiuterio CD/DVD iš virtualios mašinos. Atminkite, kad garso CD įrašymas iš virtualios mašinos dar nepalaikomas.</translation>
+        <translation>Jei pažymėta, leidžia svečiui tiesiogiai siųsti ATAPI komandas į pagrindinio kompiuterio įtaisą. Pavyzdžiui, ši parinktis leidžia rašyti į pagrindinio kompiuterio CD/DVD iš virtualios mašinos. Atminkite, kad garso CD įrašymas iš virtualios mašinos dar nepalaikomas.</translation>
     </message>
     <message>
         <source>&amp;Passthrough</source>
@@ -5854,7 +5857,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>nepasirinkta tinklo plokštė tiltiniam sujungimui</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
@@ -5876,7 +5879,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation type="unfinished"></translation>
+        <translation>Parenka &lt;b&gt;tinklų tilto&lt;/b&gt; plokštę ar &lt;b&gt;plokštę prisijungimui tik prie pagrindinio kompiuterio&lt;/b&gt; arba &lt;b&gt;vidinio tinklo&lt;/b&gt; vardą.</translation>
     </message>
     <message>
         <source>A&amp;dvanced</source>
@@ -5933,7 +5936,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
@@ -5945,11 +5948,11 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Displays the host parallel device name.</source>
-        <translation>Rodo pagrindinio kopiuterio lygiagrečiųjų įrenginių pavadinimus.</translation>
+        <translation>Rodo pagrindinio kopiuterio lygiagrečiųjų įtaisų vardus.</translation>
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodo šio lygiagrečiojo prievado IRQ numerį. Tai turi būti sveikasis skaičius iš intervalo nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;255&lt;/tt&gt;. Reikšmes, didesnes kaip &lt;tt&gt;15&lt;/tt&gt;, galima naudoti tik jei šiai virtualiai mašinai įgalinta &lt;b&gt;IO APIC&lt;/b&gt; nuostata.</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
@@ -6103,7 +6106,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
@@ -6127,7 +6130,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>Rodo kelią iki nuosekliojo prievado kanalo pagrindiniame kompiuteryje, kai dirbama &lt;b&gt;Pagrindinio kompiuterio kanalo&lt;/b&gt; veiksenoje, arba pagrindinio kompiuterio nuosekliojo įrenginio pavadinimą, kai dirbama &lt;b&gt;Pagrindinio kompiuterio įrenginio&lt;/b&gt; veiksenoje.</translation>
+        <translation>Rodo kelią iki nuosekliojo prievado kanalo pagrindiniame kompiuteryje, kai dirbama &lt;b&gt;Pagrindinio kompiuterio kanalo&lt;/b&gt; veiksenoje, arba pagrindinio kompiuterio nuosekliojo įtaiso vardą, kai dirbama &lt;b&gt;Pagrindinio kompiuterio įtaiso&lt;/b&gt; veiksenoje.</translation>
     </message>
     <message>
         <source>Port/File &amp;Path:</source>
@@ -6135,7 +6138,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodo šio nuosekliojo prievado IRQ numerį. Tai turi būti sveikasis skaičius iš intervalo nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;255&lt;/tt&gt;. Reikšmes, didesnes kaip &lt;tt&gt;15&lt;/tt&gt;, galima naudoti tik jei šiai virtualiai mašinai įgalinta &lt;b&gt;IO APIC&lt;/b&gt; nuostata.</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
@@ -6215,7 +6218,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Nurodo bandomų įkrauti įrenginių eiliškumą. Langeliuose kairėje pusėje įgalinkite arba uždrauskite pavienius įkrovimo įrenginius. Eiliškumą keisite elementus keldami arba nuleisdami.</translation>
+        <translation>Nurodo bandomų įkrauti įtaisų eiliškumą. Langeliuose kairėje pusėje įgalinkite arba uždrauskite pavienius paleidimo įtaisus. Eiliškumą keisite elementus keldami arba nuleisdami.</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
@@ -6223,7 +6226,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation>Nuleisti pasirinktą įrenginį žemiau.</translation>
+        <translation>Nuleisti pasirinktą įtaisą žemiau.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
@@ -6231,7 +6234,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation>Kelti pasirinktą įrenginį aukščiau.</translation>
+        <translation>Kelti pasirinktą įtaisą aukščiau.</translation>
     </message>
     <message>
         <source>Extended Features:</source>
@@ -6255,7 +6258,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pažymėjus, virtuali mašina galės naudoti pagrindinio kompiuterio procesoriaus fizinio adreso praplėtimo (PAE) funkciją.</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
@@ -6301,7 +6304,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation>Pažymėjus, RTC įrenginys laiką praneš pasauliniu formatu (UTC); priešingu atveju – vietiniu (pagrindinio kompiuterio) laiku. Unix sistemose aparatinis laikrodis paprastai nustatytas į pasaulinį.</translation>
+        <translation>Pažymėjus, RTC įtaisas laiką praneš pasauliniu formatu (UTC); priešingu atveju – vietiniu (pagrindinio kompiuterio) laiku. Unix sistemose aparatinis laikrodis paprastai nustatytas į pasaulinį.</translation>
     </message>
     <message>
         <source>Hardware clock in &amp;UTC time</source>
@@ -6328,7 +6331,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation>P&amp;ridėti filtrą iš įrenginio</translation>
+        <translation>P&amp;ridėti filtrą iš įtaiso</translation>
     </message>
     <message>
         <source>&amp;Edit Filter</source>
@@ -6348,11 +6351,11 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prideda naują USB filtrą, kurio visi laukeliai iš pradžių yra tušti. Atminkite, kad toks filtro atitikmenys bus visi USB įtaisai.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pridama naują USB filtrą, kurio laukeliai užpildyti pasirinkto USB įtaiso, prijungto prie pagr. kompiuterio, reikšmėmis.</translation>
     </message>
     <message>
         <source>Edits the selected USB filter.</source>
@@ -6386,7 +6389,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>Pažymėjus, įgalinamas šios mašinos virtualus USB EHCI valdiklis. USB EHCI valdiklis leidžia naudotis USB 2.0 įrenginiais.</translation>
+        <translation>Pažymėjus, įgalinamas šios mašinos virtualus USB EHCI valdiklis. USB EHCI valdiklis leidžia naudotis USB 2.0 įtaisais.</translation>
     </message>
     <message>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
@@ -6394,7 +6397,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
-        <translation>&amp;USB įrenginių filtrai</translation>
+        <translation>&amp;USB įtaisų filtrai</translation>
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
@@ -6504,7 +6507,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>Nurodo veiksmą, kurį atlieka pagrindinis kompiuteris, kai prijungiamas atitinkamas įrenginys: palikti pagrindinio kompiuterio žinioje (&lt;i&gt;Nepaisyti&lt;/i&gt;) arba atiduoti į virtualios mašinos valdymui (&lt;i&gt;Sulaikyti&lt;/i&gt;).</translation>
+        <translation>Nurodo veiksmą, kurį atlieka pagrindinis kompiuteris, kai prijungiamas atitinkamas įtaisas: palikti pagrindinio kompiuterio žinioje (&lt;i&gt;Nepaisyti&lt;/i&gt;) arba atiduoti į virtualios mašinos valdymui (&lt;i&gt;Sulaikyti&lt;/i&gt;).</translation>
     </message>
     <message>
         <source>USB Filter Details</source>
