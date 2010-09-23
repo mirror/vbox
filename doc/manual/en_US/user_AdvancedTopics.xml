@@ -1285,6 +1285,17 @@ VBoxManage setextradata "VM name"
               <para>Set the time when starting the time sync service.</para>
             </glossdef>
           </glossentry>
+
+          <glossentry>
+            <glossterm><computeroutput>--timesync-set-on-restore 0|1</computeroutput></glossterm>
+
+            <glossdef>
+              <para>Set the time after the VM was restored from a saved state
+                when passing 1 as parameter (default). Disable by passing 0.
+                In the latter case, the time will be adjusted smoothly which
+                can take a long time.</para>
+            </glossdef>
+          </glossentry>
         </glosslist></para>
 
       <para>All these parameters can be specified as command line parameters
