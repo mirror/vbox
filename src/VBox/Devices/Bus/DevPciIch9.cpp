@@ -105,7 +105,7 @@ typedef struct
     /* Physical address of PCI config space MMIO region */
      uint64_t            u64PciConfigMMioAddress;
     /* Length of PCI config space MMIO region */
-    uint64_t            u64PciConfigMMioLength;
+    uint64_t             u64PciConfigMMioLength;
 
 
     /** Config register. */
@@ -116,6 +116,12 @@ typedef struct
 
 } PCIGLOBALS, *PPCIGLOBALS;
 
+
+typedef struct {
+    uint8_t  iBus;
+    uint8_t  iDeviceFunc;
+    uint16_t iRegister;
+} PciAddress;
 
 /*******************************************************************************
  *   Defined Constants And Macros                                              *
@@ -174,6 +180,22 @@ static DECLCALLBACK(uint32_t) ich9pciConfigRead(PCIDevice *aDev, uint32_t u32Add
 DECLINLINE(PPCIDEVICE) ich9pciFindBridge(PPCIBUS pBus, uint8_t iBus);
 static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint8_t cBridgeDepth, uint8_t *paBridgePositions);
 #endif
+
+// See 7.2.2. PCI Express Enhanced Configuration Mechanism for details of address
+// mapping, we take n=8 approach
+DECLINLINE(void) ich9pciPhysToPciAddr(RTGCPHYS GCPhysAddr, PciAddress* pPciAddr)
+{
+    pPciAddr->iBus          = (GCPhysAddr >> 20) & ((1<<8)       - 1);
+    pPciAddr->iDeviceFunc   = (GCPhysAddr >> 15) & ((1<<(5+3))   - 1); // 5 bits - device, 3 bits - function
+    pPciAddr->iRegister     = (GCPhysAddr >>  0) & ((1<<(6+4+2)) - 1); // 6 bits - register, 4 bits - extended register, 2 bits -Byte Enable
+}
+
+DECLINLINE(void) ich9pciStateToPciAddr(PPCIGLOBALS pGlobals, RTGCPHYS addr, PciAddress* pPciAddr)
+{
+    pPciAddr->iBus         = (pGlobals->uConfigReg >> 16) & 0xff;
+    pPciAddr->iDeviceFunc  = (pGlobals->uConfigReg >> 8) & 0xff;
+    pPciAddr->iRegister    = (pGlobals->uConfigReg & 0xfc) | (addr & 3);
+}
 
 PDMBOTHCBDECL(void) ich9pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel)
 {
@@ -263,9 +285,43 @@ PDMBOTHCBDECL(int)  ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, R
     return VERR_IOM_IOPORT_UNUSED;
 }
 
+static int ich9pciDataWriteAddr(PPCIGLOBALS pGlobals, PciAddress* pAddr, uint32_t val, int len)
+{
+    if (pAddr->iBus != 0)
+    {
+        if (pGlobals->aPciBus.cBridges)
+        {
+#ifdef IN_RING3 /** @todo do lookup in R0/RC too! */
+            PPCIDEVICE pBridgeDevice = ich9pciFindBridge(&pGlobals->aPciBus, pAddr->iBus);
+            if (pBridgeDevice)
+            {
+                AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
+                pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, pAddr->iBus, pAddr->iDeviceFunc, pAddr->iRegister, val, len);
+            }
+#else
+            return VINF_IOM_HC_IOPORT_WRITE;
+#endif
+        }
+    }
+    else
+    {
+        if (pGlobals->aPciBus.apDevices[pAddr->iDeviceFunc])
+        {
+#ifdef IN_RING3
+            R3PTRTYPE(PCIDevice *) aDev = pGlobals->aPciBus.apDevices[pAddr->iDeviceFunc];
+            Log(("ich9pciConfigWrite: %s: addr=%02x val=%08x len=%d\n", aDev->name, pAddr->iRegister, val, len));
+            aDev->Int.s.pfnConfigWrite(aDev, pAddr->iRegister, val, len);
+#else
+            return VINF_IOM_HC_IOPORT_WRITE;
+#endif
+        }
+    }
+    return VINF_SUCCESS;
+}
+
 static int ich9pciDataWrite(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, int len)
 {
-    uint8_t iBus, iDevice;
+    PciAddress aPciAddr;
     uint32_t uConfigReg;
 
     Log(("ich9pciDataWrite: addr=%08x val=%08x len=%d\n", pGlobals->uConfigReg, val, len));
@@ -277,40 +333,9 @@ static int ich9pciDataWrite(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, i
         return VINF_SUCCESS;
 
     /* Compute destination device */
-    iBus = (pGlobals->uConfigReg >> 16) & 0xff;
-    iDevice = (pGlobals->uConfigReg >> 8) & 0xff;
-    /* And config register */
-    uConfigReg = (pGlobals->uConfigReg & 0xfc) | (addr & 3);
-    if (iBus != 0)
-    {
-        if (pGlobals->aPciBus.cBridges)
-        {
-#ifdef IN_RING3 /** @todo do lookup in R0/RC too! */
-            PPCIDEVICE pBridgeDevice = ich9pciFindBridge(&pGlobals->aPciBus, iBus);
-            if (pBridgeDevice)
-            {
-                AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-                pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, uConfigReg, val, len);
-            }
-#else
-            return VINF_IOM_HC_IOPORT_WRITE;
-#endif
-        }
-    }
-    else
-    {
-        if (pGlobals->aPciBus.apDevices[iDevice])
-        {
-#ifdef IN_RING3
-            R3PTRTYPE(PCIDevice *) aDev = pGlobals->aPciBus.apDevices[iDevice];
-            Log(("ich9pciConfigWrite: %s: addr=%02x val=%08x len=%d\n", aDev->name, uConfigReg, val, len));
-            aDev->Int.s.pfnConfigWrite(aDev, uConfigReg, val, len);
-#else
-            return VINF_IOM_HC_IOPORT_WRITE;
-#endif
-        }
-    }
-    return VINF_SUCCESS;
+    ich9pciStateToPciAddr(pGlobals, addr, &aPciAddr);
+
+    return ich9pciDataWriteAddr(pGlobals, &aPciAddr, val, len);
 }
 
 /**
@@ -340,9 +365,45 @@ PDMBOTHCBDECL(int)  ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
     return rc;
 }
 
+static int ich9pciDataReadAddr(PPCIGLOBALS pGlobals, PciAddress* pPciAddr, int len, uint32_t *pu32)
+{
+    if (pPciAddr->iBus != 0)
+    {
+        if (pGlobals->aPciBus.cBridges)
+        {
+#ifdef IN_RING3 /** @todo do lookup in R0/RC too! */
+            PPCIDEVICE pBridgeDevice = ich9pciFindBridge(&pGlobals->aPciBus, pPciAddr->iBus);
+            if (pBridgeDevice)
+            {
+                AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
+                *pu32 = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, pPciAddr->iBus, pPciAddr->iDeviceFunc, pPciAddr->iRegister, len);
+            }
+#else
+            return VINF_IOM_HC_IOPORT_READ;
+#endif
+        }
+    }
+    else
+    {
+        if (pGlobals->aPciBus.apDevices[pPciAddr->iDeviceFunc])
+        {
+#ifdef IN_RING3
+            R3PTRTYPE(PCIDevice *) aDev = pGlobals->aPciBus.apDevices[pPciAddr->iDeviceFunc];
+            *pu32 = aDev->Int.s.pfnConfigRead(aDev, pPciAddr->iRegister, len);
+            Log(("ich9pciConfigRead: %s: addr=%02x val=%08x len=%d\n", aDev->name, pPciAddr->iRegister, *pu32, len));
+#else
+            return VINF_IOM_HC_IOPORT_READ;
+#endif
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 static int ich9pciDataRead(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t *pu32)
 {
-    uint8_t iBus, iDevice;
+    PciAddress aPciAddr;
     uint32_t uConfigReg;
 
     *pu32 = 0xffffffff;
@@ -354,41 +415,9 @@ static int ich9pciDataRead(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_
         return VINF_SUCCESS;
 
     /* Compute destination device */
-    iBus = (pGlobals->uConfigReg >> 16) & 0xff;
-    iDevice = (pGlobals->uConfigReg >> 8) & 0xff;
-    /* And config register */
-    uConfigReg = (pGlobals->uConfigReg & 0xfc) | (addr & 3);
-    if (iBus != 0)
-    {
-        if (pGlobals->aPciBus.cBridges)
-        {
-#ifdef IN_RING3 /** @todo do lookup in R0/RC too! */
-            PPCIDEVICE pBridgeDevice = ich9pciFindBridge(&pGlobals->aPciBus, iBus);
-            if (pBridgeDevice)
-            {
-                AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
-                *pu32 = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, uConfigReg, len);
-            }
-#else
-            return VINF_IOM_HC_IOPORT_READ;
-#endif
-        }
-    }
-    else
-    {
-        if (pGlobals->aPciBus.apDevices[iDevice])
-        {
-#ifdef IN_RING3
-            R3PTRTYPE(PCIDevice *) aDev = pGlobals->aPciBus.apDevices[iDevice];
-            *pu32 = aDev->Int.s.pfnConfigRead(aDev, uConfigReg, len);
-            Log(("ich9pciConfigRead: %s: addr=%02x val=%08x len=%d\n", aDev->name, uConfigReg, *pu32, len));
-#else
-            return VINF_IOM_HC_IOPORT_READ;
-#endif
-        }
-    }
+    ich9pciStateToPciAddr(pGlobals, addr, &aPciAddr);
 
-    return VINF_SUCCESS;
+    return ich9pciDataReadAddr(pGlobals, &aPciAddr, len, pu32);
 }
 
 /**
@@ -502,21 +531,72 @@ static void ich9pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVI
     }
 }
 
-#ifdef IN_RING3
-
 PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    //PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+    PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+    PciAddress aDest;
+    uint32_t u32 = 0;
+
+    ich9pciPhysToPciAddr(GCPhysAddr, &aDest);
+
+    PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
+    switch (cb)
+    {
+        case 1:
+            u32 = *(uint8_t*)pv;
+            break;
+        case 2:
+            u32 = *(uint16_t*)pv;
+            break;
+        case 4:
+            u32 = *(uint32_t*)pv;
+            break;
+        default:
+            Assert(false);
+            break;
+    }
+    int rc = ich9pciDataWriteAddr(pGlobals, &aDest, u32, cb);
+    PCI_UNLOCK(pDevIns);
     Assert(false);
-    return VINF_IOM_MMIO_UNUSED_FF;
+
+    return rc;
 }
 
 PDMBOTHCBDECL(int)  ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    //PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+    PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+    PciAddress  aDest;
+    uint32_t    rv = 0;
+
+    ich9pciPhysToPciAddr(GCPhysAddr, &aDest);
+
+    PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
+    int rc = ich9pciDataReadAddr(pGlobals, &aDest, cb, &rv);
+    if (rc == VINF_SUCCESS)
+    {
+        switch (cb)
+        {
+            case 1:
+                *(uint8_t*)pv   = (uint8_t)rv;
+                break;
+            case 2:
+                *(uint16_t*)pv  = (uint16_t)rv;
+                break;
+            case 4:
+                *(uint32_t*)pv  = (uint32_t)rv;
+                break;
+            default:
+                Assert(false);
+                break;
+        }
+    }
+    PCI_UNLOCK(pDevIns);
+
     Assert(false);
-    return VINF_IOM_MMIO_UNUSED_FF;
+    return rc;
 }
+
+#ifdef IN_RING3
 
 DECLINLINE(PPCIDEVICE) ich9pciFindBridge(PPCIBUS pBus, uint8_t iBus)
 {
@@ -596,7 +676,7 @@ static void ich9pciUpdateMappings(PCIDevice* pDev)
                     /* XXX: as we cannot support really dynamic
                        mappings, we handle specific values as invalid
                        mappings. */
-                    if (uLast <= uNew || uNew == 0 || uLast == ~0U)
+                    if (uLast <= uNew || uNew == 0 || uLast == INVALID_PCI_ADDRESS)
                         uNew = INVALID_PCI_ADDRESS;
                 }
             } else
@@ -704,7 +784,7 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
      * Register the I/O region.
      */
     PPCIIOREGION pRegion = &pPciDev->Int.s.aIORegions[iRegion];
-    pRegion->addr        = ~0U;
+    pRegion->addr        = INVALID_PCI_ADDRESS;
     pRegion->size        = cbRegion;
     pRegion->type        = enmType;
     pRegion->map_func    = pfnCallback;
@@ -1399,6 +1479,11 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 
 static DECLCALLBACK(uint32_t) ich9pciConfigRead(PCIDevice *aDev, uint32_t u32Address, unsigned len)
 {
+    if ((u32Address + len) > 256 && (u32Address + len) < 4096)
+    {
+        AssertMsgReturn(false, ("Read from extended registers falled back to generic code\n"), 0);
+    }
+
     AssertMsgReturn(u32Address + len <= 256, ("Read after end of PCI config space\n"),
                     0);
     switch (len)
@@ -1421,6 +1506,13 @@ static DECLCALLBACK(uint32_t) ich9pciConfigRead(PCIDevice *aDev, uint32_t u32Add
 static DECLCALLBACK(void) ich9pciConfigWrite(PCIDevice *aDev, uint32_t u32Address,
                                              uint32_t val, unsigned len)
 {
+    if ((u32Address + len) > 256 && (u32Address + len) < 4096)
+    {
+        AssertMsgReturnVoid(false, ("Write to extended registers falled back to generic code\n"));
+    }
+
+    AssertMsgReturnVoid(u32Address + len <= 256, ("Write after end of PCI config space\n"));
+
     /* Fast case - update one of BARs or ROM address, 'while' only for 'break' */
     while (   len == 4
            && (   (   u32Address >= VBOX_PCI_BASE_ADDRESS_0
@@ -1743,9 +1835,9 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, 
-                              "IOAPIC\0" 
-                              "GCEnabled\0" 
+    if (!CFGMR3AreValuesValid(pCfg,
+                              "IOAPIC\0"
+                              "GCEnabled\0"
                               "R0Enabled\0"
                               "McfgBase\0"
                               "McfgLength\0"
@@ -1890,6 +1982,41 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
             AssertMsgRC(rc, ("Cannot register MCFG MMIO: %Rrc\n", rc));
             return rc;
         }
+
+         if (fGCEnabled)
+         {
+
+             rc = PDMDevHlpMMIORegisterRC(pDevIns,
+                                          pGlobals->u64PciConfigMMioAddress,
+                                          pGlobals->u64PciConfigMMioLength,
+                                          0,
+                                          "ich9pciMcfgMMIOWrite",
+                                          "ich9pciMcfgMMIORead",
+                                          NULL);
+             if (RT_FAILURE(rc))
+             {
+                 AssertMsgRC(rc, ("Cannot register MCFG MMIO (GC): %Rrc\n", rc));
+                 return rc;
+             }
+         }
+
+
+         if (fR0Enabled)
+         {
+
+             rc = PDMDevHlpMMIORegisterR0(pDevIns,
+                                          pGlobals->u64PciConfigMMioAddress,
+                                          pGlobals->u64PciConfigMMioLength,
+                                          0,
+                                          "ich9pciMcfgMMIOWrite",
+                                          "ich9pciMcfgMMIORead",
+                                          NULL);
+             if (RT_FAILURE(rc))
+             {
+                 AssertMsgRC(rc, ("Cannot register MCFG MMIO (R0): %Rrc\n", rc));
+                 return rc;
+             }
+         }
     }
 
 
