@@ -7661,22 +7661,27 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PCIDevSetVendorId    (&pThis->dev, 0x8086); /* Intel */
     PCIDevSetDeviceId    (&pThis->dev, 0x2829); /* ICH-8M */
     PCIDevSetCommand     (&pThis->dev, 0x0000);
+    // @todo: must be set, to use caps list
+    //PCIDevSetStatus      (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST);
     PCIDevSetRevisionId  (&pThis->dev, 0x02);
     PCIDevSetClassProg   (&pThis->dev, 0x01);
     PCIDevSetClassSub    (&pThis->dev, 0x06);
     PCIDevSetClassBase   (&pThis->dev, 0x01);
     PCIDevSetBaseAddress (&pThis->dev, 5, false, false, false, 0x00000000);
 
-    pThis->dev.config[0x34] = 0x80; /* Capability pointer. */
+    // @todo: maybe 0x70, as MSI currently not implemented
+    PCIDevSetCapabilityList(&pThis->dev, 0x80);
 
     PCIDevSetInterruptLine(&pThis->dev, 0x00);
     PCIDevSetInterruptPin (&pThis->dev, 0x01);
 
-    pThis->dev.config[0x70] = 0x01; /* Capability ID: PCI Power Management Interface */
-    pThis->dev.config[0x71] = 0x00;
-    pThis->dev.config[0x72] = 0x03;
+    pThis->dev.config[0x70] = VBOX_PCI_CAP_ID_PM; /* Capability ID: PCI Power Management Interface */
+    pThis->dev.config[0x71] = 0x00; /* next */
+    pThis->dev.config[0x72] = 0x03; /* version ? */
 
-    pThis->dev.config[0x80] = 0x05; /* Capability ID: Message Signaled Interrupts. Disabled. */
+    // @todo: this way it claims MSI *enabled*, not disabled, which is only
+    // compensated by above lack of VBOX_PCI_STATUS_CAP_LIST in status
+    pThis->dev.config[0x80] = VBOX_PCI_CAP_ID_MSI; /* Capability ID: Message Signaled Interrupts. Disabled. */
     pThis->dev.config[0x81] = 0x70; /* next. */
 
     pThis->dev.config[0x90] = 0x40; /* AHCI mode. */
