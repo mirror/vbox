@@ -5377,16 +5377,14 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pOhci->pDevInsR3 = pDevIns;
     pOhci->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pOhci->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    const uint16_t vid = 0x106b;
-    pOhci->PciDev.config[0x00] = vid & 0xff;
-    pOhci->PciDev.config[0x01] = (vid >> 8) & 0xff;
-    const uint16_t did = 0x003f;
-    pOhci->PciDev.config[0x02] = did & 0xff;
-    pOhci->PciDev.config[0x03] = (did >> 8) & 0xff;
-    pOhci->PciDev.config[0x09] = 0x10; /* OHCI */
-    pOhci->PciDev.config[0x0a] = 0x3;
-    pOhci->PciDev.config[0x0b] = 0xc;
-    pOhci->PciDev.config[0x3d] = 0x01;
+
+    PCIDevSetVendorId     (&pOhci->PciDev, 0x106b);
+    PCIDevSetDeviceId     (&pOhci->PciDev, 0x003f);
+    PCIDevSetClassProg    (&pOhci->PciDev, 0x10); /* OHCI */
+    PCIDevSetClassSub     (&pOhci->PciDev, 0x03);
+    PCIDevSetClassBase    (&pOhci->PciDev, 0x0c);
+    PCIDevSetInterruptPin (&pOhci->PciDev, 0x01);
+
     pOhci->RootHub.pOhci                         = pOhci;
     pOhci->RootHub.IBase.pfnQueryInterface       = ohciRhQueryInterface;
     pOhci->RootHub.IRhPort.pfnGetAvailablePorts  = ohciRhGetAvailablePorts;
