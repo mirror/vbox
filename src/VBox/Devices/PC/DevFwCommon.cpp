@@ -58,6 +58,7 @@ static const char   *s_szDefDmiSystemVendor     = "innotek GmbH";
 static const char   *s_szDefDmiSystemProduct    = "VirtualBox";
 static const char   *s_szDefDmiSystemVersion    = "1.2";
 static const char   *s_szDefDmiSystemSerial     = "0";
+static const char   *s_szDefDmiSystemSKU        = "";
 static const char   *s_szDefDmiSystemFamily     = "Virtual Machine";
 static const char   *s_szDefDmiChassisVendor    = "Sun Microsystems, Inc.";
 static const char   *s_szDefDmiChassisVersion   = "";
@@ -636,7 +637,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         memcpy(pSystemInf->au8Uuid, pUuid, sizeof(RTUUID));
 
         pSystemInf->u8WakeupType     = 6; /* Power Switch */
-        pSystemInf->u8SKUNumber      = 0;
+        READCFGSTR(pSystemInf->u8SKUNumber, DmiSystemSKU);
         READCFGSTR(pSystemInf->u8Family, DmiSystemFamily);
         TERM_STRUCT;
 
