@@ -215,7 +215,7 @@ static struct cb_ops g_VBoxNetFltSolarisCbOps =
     nochpoll,                       /* c poll */
     ddi_prop_op,                    /* property ops */
     &g_VBoxNetFltSolarisStreamTab,
-    D_NEW | D_MP | D_MTQPAIR,       /* compat. flag */
+    D_NEW | D_MP | D_MTQPAIR | D_MTOUTPERIM | D_MTOCEXCL, /* compat. flag */
     CB_REV                          /* revision */
 };
 
@@ -254,7 +254,7 @@ static struct fmodsw g_VBoxNetFltSolarisModOps =
 {
     DEVICE_NAME,
     &g_VBoxNetFltSolarisStreamTab,
-    D_NEW | D_MP | D_MTQPAIR
+    D_NEW | D_MP | D_MTQPAIR | D_MTOUTPERIM | D_MTOCEXCL
 };
 
 /**
@@ -343,7 +343,7 @@ typedef struct vboxnetflt_promisc_stream_t
     PRTTIMER pIp6Timer;                   /* ipv6 stream poll timer for dynamic ipv6 stream attachment */
 #endif
     size_t cLoopback;                     /* loopback queue size list */
-    timeout_id_t TimeoutId;               /* timeout id of promisc. req */
+    timeout_id_t volatile TimeoutId;      /* timeout id of promisc. req */
     PVBOXNETFLTPACKETID pHead;            /* loopback packet identifier head */
     PVBOXNETFLTPACKETID pTail;            /* loopback packet identifier tail */
 } vboxnetflt_promisc_stream_t;
@@ -896,6 +896,17 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
 
     if (pStream->Type == kPromiscStream)
     {
+        /*
+         * If there are any timeout scheduled, we need to make sure they are cancelled.
+         */
+        vboxnetflt_promisc_stream_t *pPromiscStream = (vboxnetflt_promisc_stream_t *)pStream;
+        timeout_id_t TimeoutId = ASMAtomicReadPtr(&pPromiscStream->TimeoutId);
+        if (TimeoutId)
+        {
+            quntimeout(WR(pPromiscStream->Stream.pReadQueue), TimeoutId);
+            ASMAtomicWritePtr(&pPromiscStream->TimeoutId, NULL);
+        }
+
         flushq(pQueue, FLUSHALL);
         flushq(WR(pQueue), FLUSHALL);
     }
@@ -1298,11 +1309,11 @@ static int vboxNetFltSolarisSetFastMode(queue_t *pQueue)
 
 
 /**
- * Send fake promiscous mode requests downstream.
+ * Callback function for qwriter to send promiscuous request messages
+ * downstream.
  *
- * @param   pQueue          Pointer to the read queue.
- * @param   fPromisc        Whether to enable promiscous mode or not.
- * @param   PromiscLevel    Promiscous level; DL_PROMISC_PHYS/SAP/MULTI.
+ * @param   pQueue          Pointer to the write queue.
+ * @param   fPromisc        Whether to send promiscuous ON or OFF requests.
  *
  * @returns VBox status code.
  */
@@ -1345,17 +1356,48 @@ static int vboxNetFltSolarisPromiscReq(queue_t *pQueue, bool fPromisc)
         ((dl_promiscoff_req_t *)pPromiscSapMsg->b_rptr)->dl_level = DL_PROMISC_SAP;
     }
 
-    qreply(pQueue, pPromiscPhysMsg);
-    qreply(pQueue, pPromiscSapMsg);
+    putnext(pQueue, pPromiscPhysMsg);
+    putnext(pQueue, pPromiscSapMsg);
 
     return VINF_SUCCESS;
 }
 
 
-/*
- * Callback wrapper for qtimeout to safely send promiscuous off request.
+/**
+ * Callback wrapper for qwriter() to safely send promiscuous requests. This is
+ * called at the outer perimeter with exclusive lock held.
  *
- * @param   pvData      Pointer to a vboxnetflt_promisc_params_t structure, will be freed by us.
+ * @param pQueue            Pointer to the write queue.
+ * @param pMsg              A one byte message indicates a Promisc ON, otherwise
+ *                          a promiscuous OFF request. See
+ *                          vboxNetFltSolarisPromiscReqWrap().
+ */
+static void vboxNetFltSolarisPromiscReqWrapExcl(queue_t *pQueue, mblk_t *pMsg)
+{
+    /*
+     * Paranoia.
+     */
+    AssertReturnVoid(pQueue);
+    if (RT_UNLIKELY(!pMsg))
+        LogRel((DEVICE_NAME ":VBoxNetFltSolarisPromiscReqWrapExcl pQueue=%p missing message!\n", pQueue));
+
+    bool fPromisc = (MBLKL(pMsg) == 1);
+    freemsg(pMsg);
+    pMsg = NULL;
+    int rc = vboxNetFltSolarisPromiscReq(pQueue, fPromisc);
+    if (RT_FAILURE(rc))
+        LogRel((DEVICE_NAME ":VBoxNetFltSolarisPromiscReqWrapExcl vboxNetFltSolarisPromiscReq failed. rc=%d\n", rc));
+    else
+        LogRel((DEVICE_NAME ":VBoxNetFltSolarisPromiscReqWrapExcl success fPromisc=%d\n", fPromisc));
+}
+
+
+/**
+ * Callback wrapper for qtimeout() to safely send promiscuous requests. This is
+ * called at the inner perimenter with shared lock.
+ *
+ * @param pvData            Pointer to vboxnetflt_promisc_params_t. See
+ *                          vboxNetFltPortOsSetActive().
  */
 static void vboxNetFltSolarisPromiscReqWrap(void *pvData)
 {
@@ -1367,8 +1409,31 @@ static void vboxNetFltSolarisPromiscReqWrap(void *pvData)
         if (   pPromiscStream
             && pPromiscStream->Stream.pReadQueue)
         {
-            pPromiscStream->TimeoutId = 0;
-            vboxNetFltSolarisPromiscReq(pPromiscStream->Stream.pReadQueue, pParams->fPromiscOn);
+            /*
+             * Use size of message to indicate to qwriter callback whether it must send
+             * promiscuous On or Off messages. This is ugly but easier and more efficient than
+             * scheduling two separate qwriter callbacks with prepared messages to putnext.
+             */
+            size_t cbMsg = pParams->fPromiscOn ? 1 : 2;
+            mblk_t *pMsg = allocb(cbMsg, BPRI_HI);
+            if (RT_UNLIKELY(!pMsg))
+            {
+                LogRel((DEVICE_NAME ":Failed to alloc message of %u bytes\n", cbMsg));
+                return;
+            }
+
+            /*
+             * Move the data pointer so we can use MBLKL, as MBLKSIZE gets the db_lim which is
+             * always aligned.
+             */
+            pMsg->b_wptr += cbMsg;
+
+            /*
+             * Upgrade inner perimeter lock to exclusive outer perimeter lock and
+             * then call putnext while we are at the outer perimeter.
+             */
+            qwriter(WR(pPromiscStream->Stream.pReadQueue), pMsg, vboxNetFltSolarisPromiscReqWrapExcl, PERIM_OUTER);
+            ASMAtomicWritePtr(&pPromiscStream->TimeoutId, NULL);
         }
         RTMemFree(pParams);
     }
@@ -2021,16 +2086,6 @@ static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
 
     if (pThis->u.s.hIface)
     {
-        /*
-         * If there are any timeout scheduled, we need to make sure they are cancelled.
-         */
-        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
-        if (   pPromiscStream
-            && pPromiscStream->TimeoutId)
-        {
-            quntimeout(WR(pPromiscStream->Stream.pReadQueue), pPromiscStream->TimeoutId);
-        }
-
         ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
         pThis->u.s.hIface = NULL;
     }
@@ -3622,17 +3677,23 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     vboxnetflt_promisc_params_t *pData = RTMemAllocZ(sizeof(vboxnetflt_promisc_params_t));
     if (RT_LIKELY(pData))
     {
+        /*
+         * See #5262 as to why we need to do all this qtimeout/qwriter tricks.
+         */
         vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
         if (   pPromiscStream
             && pPromiscStream->Stream.pReadQueue)
         {
             pData->pThis      = pThis;
             pData->fPromiscOn = fActive;
-            if (pPromiscStream->TimeoutId != 0)
+            if (ASMAtomicReadPtr(&pPromiscStream->TimeoutId))
                 quntimeout(WR(pPromiscStream->Stream.pReadQueue), pPromiscStream->TimeoutId);
-            pPromiscStream->TimeoutId = qtimeout(WR(pPromiscStream->Stream.pReadQueue), vboxNetFltSolarisPromiscReqWrap, pData, 1 /* ticks */);
-            return;
+            timeout_id_t TimeoutId = qtimeout(WR(pPromiscStream->Stream.pReadQueue), vboxNetFltSolarisPromiscReqWrap, pData, 1 /* ticks */);
+            ASMAtomicWritePtr(&pPromiscStream->TimeoutId, TimeoutId);
+            return; /* pData will be freed by vboxNetFltSolarisPromiscReqWrap() */
         }
+        else
+            LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive pThis=%p fActive=%d missing stream!\n", pThis, fActive));
         RTMemFree(pData);
     }
     else
