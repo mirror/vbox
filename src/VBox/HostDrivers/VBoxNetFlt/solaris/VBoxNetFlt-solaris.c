@@ -1387,8 +1387,6 @@ static void vboxNetFltSolarisPromiscReqWrapExcl(queue_t *pQueue, mblk_t *pMsg)
     int rc = vboxNetFltSolarisPromiscReq(pQueue, fPromisc);
     if (RT_FAILURE(rc))
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisPromiscReqWrapExcl vboxNetFltSolarisPromiscReq failed. rc=%d\n", rc));
-    else
-        LogRel((DEVICE_NAME ":VBoxNetFltSolarisPromiscReqWrapExcl success fPromisc=%d\n", fPromisc));
 }
 
 
