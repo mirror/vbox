@@ -947,6 +947,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "DmiBIOSReleaseMinor\0"
                               "DmiBIOSFirmwareMajor\0"
                               "DmiBIOSFirmwareMinor\0"
+                              "DmiSystemSKU\0"
                               "DmiSystemFamily\0"
                               "DmiSystemProduct\0"
                               "DmiSystemSerial\0"
