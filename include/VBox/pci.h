@@ -197,6 +197,21 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 #define  VBOX_PCI_STATUS_SIG_SYSTEM_ERROR    0x4000 /* Set when we drive SERR */
 #define  VBOX_PCI_STATUS_DETECTED_PARITY     0x8000 /* Set on parity error */
 
+
+/* Command bitmask */
+#define  VBOX_PCI_COMMAND_IO           0x1     /* Enable response in I/O space */
+#define  VBOX_PCI_COMMAND_MEMORY       0x2     /* Enable response in Memory space */
+#define  VBOX_PCI_COMMAND_MASTER       0x4     /* Enable bus mastering */
+#define  VBOX_PCI_COMMAND_SPECIAL      0x8     /* Enable response to special cycles */
+#define  VBOX_PCI_COMMAND_INVALIDATE   0x10    /* Use memory write and invalidate */
+#define  VBOX_PCI_COMMAND_VGA_PALETTE  0x20    /* Enable palette snooping */
+#define  VBOX_PCI_COMMAND_PARITY       0x40    /* Enable parity checking */
+#define  VBOX_PCI_COMMAND_WAIT         0x80    /* Enable address/data stepping */
+#define  VBOX_PCI_COMMAND_SERR         0x100   /* Enable SERR */
+#define  VBOX_PCI_COMMAND_FAST_BACK    0x200   /* Enable back-to-back writes */
+#define  VBOX_PCI_COMMAND_INTX_DISABLE 0x400   /* INTx Emulation Disable */
+
+
 /* Capability list values (capability offset 0) */
 /* Next  value pointer in offset 1, or 0 if none */
 #define  VBOX_PCI_CAP_ID_PM          0x01    /* Power Management */
@@ -217,18 +232,27 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 #define  VBOX_PCI_CAP_ID_MSIX        0x11    /* MSI-X */
 #define  VBOX_PCI_CAP_ID_AF          0x13    /* PCI Advanced Features */
 
-/* MSI flags (capability offset 2) */
+/* Extended Capabilities (PCI-X 2.0 and Express)*/
+#define  VBOX_PCI_EXT_CAP_ID_ERR     0x01
+#define  VBOX_PCI_EXT_CAP_ID_VC      0x02
+#define  VBOX_PCI_EXT_CAP_ID_DSN     0x03
+#define  VBOX_PCI_EXT_CAP_ID_PWR     0x04
+#define  VBOX_PCI_EXT_CAP_ID_ARI     0x0e
+#define  VBOX_PCI_EXT_CAP_ID_ATS     0x0f
+#define  VBOX_PCI_EXT_CAP_ID_SRIOV   0x10
+
+
+/* MSI flags (2 bytes, capability offset 2) */
 #define  VBOX_PCI_MSI_FLAGS_64BIT    0x80    /* 64-bit addresses allowed */
 #define  VBOX_PCI_MSI_FLAGS_QSIZE    0x70    /* Message queue size configured */
 #define  VBOX_PCI_MSI_FLAGS_QMASK    0x0e    /* Maximum queue size available */
 #define  VBOX_PCI_MSI_FLAGS_ENABLE   0x01    /* MSI feature enabled */
 #define  VBOX_PCI_MSI_FLAGS_MASKBIT  0x100   /* 64-bit mask bits allowed */
 
-/* MSI-X flags (capability offset 2) */
-#define  VBOX_PCI_MSIX_FLAGS_QSIZE   0x07FF
+/* MSI-X flags (2 bytes, capability offset 2) */
 #define  VBOX_PCI_MSIX_FLAGS_ENABLE  0x8000
-#define  PCI_MSIX_FLAGS_MASKALL      0x4000
-#define  PCI_MSIX_FLAGS_BIRMASK      0x0007
+#define  VBOX_PCI_MSIX_FLAGS_MASKALL      0x4000
+#define  VBOX_PCI_MSIX_FLAGS_BIRMASK      0x0007
 
 /* Power management flags (2 bytes, capability offset 2) */
 #define  VBOX_PCI_PM_CAP_VER_MASK    0x0007  /* Version mask */
@@ -350,6 +374,49 @@ typedef struct PCIDevice
     /**  @} */
 } PCIDEVICE;
 
+/* @todo: handle extended space access */
+DECLINLINE(void)     PCIDevSetByte(PPCIDEVICE pPciDev, uint32_t uOffset, uint8_t u8Value)
+{
+    pPciDev->config[uOffset]   = u8Value;
+}
+
+DECLINLINE(uint8_t)  PCIDevGetByte(PPCIDEVICE pPciDev, uint32_t uOffset)
+{
+    return pPciDev->config[uOffset];
+}
+
+DECLINLINE(void)     PCIDevSetWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint16_t u16Value)
+{
+    *(uint16_t*)&pPciDev->config[uOffset] = RT_H2LE_U16(u16Value);
+}
+
+DECLINLINE(uint16_t) PCIDevGetWord(PPCIDEVICE pPciDev, uint32_t uOffset)
+{
+    uint16_t u16Value = *(uint16_t*)&pPciDev->config[uOffset];
+    return RT_H2LE_U16(u16Value);
+}
+
+DECLINLINE(void)     PCIDevSetDWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint32_t u32Value)
+{
+    *(uint32_t*)&pPciDev->config[uOffset] = RT_H2LE_U32(u32Value);
+}
+
+DECLINLINE(uint32_t) PCIDevGetDWord(PPCIDEVICE pPciDev, uint32_t uOffset)
+{
+    uint32_t u32Value = *(uint32_t*)&pPciDev->config[uOffset];
+    return RT_H2LE_U32(u32Value);
+}
+
+DECLINLINE(void)     PCIDevSetQWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint64_t u64Value)
+{
+    *(uint64_t*)&pPciDev->config[uOffset] = RT_H2LE_U64(u64Value);
+}
+
+DECLINLINE(uint64_t) PCIDevGetQWord(PPCIDEVICE pPciDev, uint32_t uOffset)
+{
+    uint64_t u64Value = *(uint64_t*)&pPciDev->config[uOffset];
+    return RT_H2LE_U64(u64Value);
+}
 
 /**
  * Sets the vendor id config register.
@@ -358,9 +425,7 @@ typedef struct PCIDevice
  */
 DECLINLINE(void) PCIDevSetVendorId(PPCIDEVICE pPciDev, uint16_t u16VendorId)
 {
-    u16VendorId = RT_H2LE_U16(u16VendorId);
-    pPciDev->config[VBOX_PCI_VENDOR_ID]     = u16VendorId & 0xff;
-    pPciDev->config[VBOX_PCI_VENDOR_ID + 1] = u16VendorId >> 8;
+    PCIDevSetWord(pPciDev, VBOX_PCI_VENDOR_ID, u16VendorId);
 }
 
 /**
@@ -370,7 +435,7 @@ DECLINLINE(void) PCIDevSetVendorId(PPCIDEVICE pPciDev, uint16_t u16VendorId)
  */
 DECLINLINE(uint16_t) PCIDevGetVendorId(PPCIDEVICE pPciDev)
 {
-    return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_VENDOR_ID], pPciDev->config[VBOX_PCI_VENDOR_ID + 1]));
+    return PCIDevGetWord(pPciDev, VBOX_PCI_VENDOR_ID);
 }
 
 
@@ -381,9 +446,7 @@ DECLINLINE(uint16_t) PCIDevGetVendorId(PPCIDEVICE pPciDev)
  */
 DECLINLINE(void) PCIDevSetDeviceId(PPCIDEVICE pPciDev, uint16_t u16DeviceId)
 {
-    u16DeviceId = RT_H2LE_U16(u16DeviceId);
-    pPciDev->config[VBOX_PCI_DEVICE_ID]     = u16DeviceId & 0xff;
-    pPciDev->config[VBOX_PCI_DEVICE_ID + 1] = u16DeviceId >> 8;
+    PCIDevSetWord(pPciDev, VBOX_PCI_DEVICE_ID, u16DeviceId);
 }
 
 /**
@@ -393,9 +456,8 @@ DECLINLINE(void) PCIDevSetDeviceId(PPCIDEVICE pPciDev, uint16_t u16DeviceId)
  */
 DECLINLINE(uint16_t) PCIDevGetDeviceId(PPCIDEVICE pPciDev)
 {
-    return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_DEVICE_ID], pPciDev->config[VBOX_PCI_DEVICE_ID + 1]));
+    return PCIDevGetWord(pPciDev, VBOX_PCI_DEVICE_ID);
 }
-
 
 /**
  * Sets the command config register.
@@ -405,9 +467,7 @@ DECLINLINE(uint16_t) PCIDevGetDeviceId(PPCIDEVICE pPciDev)
  */
 DECLINLINE(void) PCIDevSetCommand(PPCIDEVICE pPciDev, uint16_t u16Command)
 {
-    u16Command = RT_H2LE_U16(u16Command);
-    pPciDev->config[VBOX_PCI_COMMAND]     = u16Command & 0xff;
-    pPciDev->config[VBOX_PCI_COMMAND + 1] = u16Command >> 8;
+    PCIDevSetWord(pPciDev, VBOX_PCI_COMMAND, u16Command);
 }
 
 
@@ -418,7 +478,7 @@ DECLINLINE(void) PCIDevSetCommand(PPCIDEVICE pPciDev, uint16_t u16Command)
  */
 DECLINLINE(uint16_t) PCIDevGetCommand(PPCIDEVICE pPciDev)
 {
-    return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_COMMAND], pPciDev->config[VBOX_PCI_COMMAND + 1]));
+    return PCIDevGetWord(pPciDev, VBOX_PCI_COMMAND);
 }
 
 
@@ -430,9 +490,7 @@ DECLINLINE(uint16_t) PCIDevGetCommand(PPCIDEVICE pPciDev)
  */
 DECLINLINE(void) PCIDevSetStatus(PPCIDEVICE pPciDev, uint16_t u16Status)
 {
-    u16Status = RT_H2LE_U16(u16Status);
-    pPciDev->config[VBOX_PCI_STATUS]     = u16Status & 0xff;
-    pPciDev->config[VBOX_PCI_STATUS + 1] = u16Status >> 8;
+    PCIDevSetWord(pPciDev, VBOX_PCI_STATUS, u16Status);
 }
 
 
@@ -444,7 +502,7 @@ DECLINLINE(void) PCIDevSetStatus(PPCIDEVICE pPciDev, uint16_t u16Status)
  */
 DECLINLINE(void) PCIDevSetRevisionId(PPCIDEVICE pPciDev, uint8_t u8RevisionId)
 {
-    pPciDev->config[VBOX_PCI_REVISION_ID] = u8RevisionId;
+    PCIDevSetByte(pPciDev, VBOX_PCI_REVISION_ID, u8RevisionId);
 }
 
 
@@ -456,7 +514,7 @@ DECLINLINE(void) PCIDevSetRevisionId(PPCIDEVICE pPciDev, uint8_t u8RevisionId)
  */
 DECLINLINE(void) PCIDevSetClassProg(PPCIDEVICE pPciDev, uint8_t u8ClassProg)
 {
-    pPciDev->config[VBOX_PCI_CLASS_PROG] = u8ClassProg;
+    PCIDevSetByte(pPciDev, VBOX_PCI_CLASS_PROG, u8ClassProg);
 }
 
 
@@ -468,7 +526,7 @@ DECLINLINE(void) PCIDevSetClassProg(PPCIDEVICE pPciDev, uint8_t u8ClassProg)
  */
 DECLINLINE(void) PCIDevSetClassSub(PPCIDEVICE pPciDev, uint8_t u8SubClass)
 {
-    pPciDev->config[VBOX_PCI_CLASS_SUB] = u8SubClass;
+    PCIDevSetByte(pPciDev, VBOX_PCI_CLASS_SUB, u8SubClass);
 }
 
 
@@ -480,7 +538,7 @@ DECLINLINE(void) PCIDevSetClassSub(PPCIDEVICE pPciDev, uint8_t u8SubClass)
  */
 DECLINLINE(void) PCIDevSetClassBase(PPCIDEVICE pPciDev, uint8_t u8BaseClass)
 {
-    pPciDev->config[VBOX_PCI_CLASS_BASE] = u8BaseClass;
+    PCIDevSetByte(pPciDev, VBOX_PCI_CLASS_BASE, u8BaseClass);
 }
 
 /**
@@ -491,7 +549,7 @@ DECLINLINE(void) PCIDevSetClassBase(PPCIDEVICE pPciDev, uint8_t u8BaseClass)
  */
 DECLINLINE(void) PCIDevSetHeaderType(PPCIDEVICE pPciDev, uint8_t u8HdrType)
 {
-    pPciDev->config[VBOX_PCI_HEADER_TYPE] = u8HdrType;
+    PCIDevSetByte(pPciDev, VBOX_PCI_HEADER_TYPE, u8HdrType);
 }
 
 /**
@@ -502,7 +560,7 @@ DECLINLINE(void) PCIDevSetHeaderType(PPCIDEVICE pPciDev, uint8_t u8HdrType)
  */
 DECLINLINE(uint8_t) PCIDevGetHeaderType(PPCIDEVICE pPciDev)
 {
-    return pPciDev->config[VBOX_PCI_HEADER_TYPE];
+    return PCIDevGetByte(pPciDev, VBOX_PCI_HEADER_TYPE);
 }
 
 /**
@@ -513,7 +571,7 @@ DECLINLINE(uint8_t) PCIDevGetHeaderType(PPCIDEVICE pPciDev)
  */
 DECLINLINE(void) PCIDevSetBIST(PPCIDEVICE pPciDev, uint8_t u8Bist)
 {
-    pPciDev->config[VBOX_PCI_BIST] = u8Bist;
+    PCIDevSetByte(pPciDev, VBOX_PCI_BIST, u8Bist);
 }
 
 /**
@@ -524,7 +582,7 @@ DECLINLINE(void) PCIDevSetBIST(PPCIDEVICE pPciDev, uint8_t u8Bist)
  */
 DECLINLINE(uint8_t) PCIDevGetBIST(PPCIDEVICE pPciDev)
 {
-    return pPciDev->config[VBOX_PCI_BIST];
+    return PCIDevGetByte(pPciDev, VBOX_PCI_BIST);
 }
 
 
@@ -563,11 +621,7 @@ DECLINLINE(void) PCIDevSetBaseAddress(PPCIDEVICE pPciDev, uint8_t iReg, bool fIO
         default: AssertFailedReturnVoid();
     }
 
-    u32Addr = RT_H2LE_U32(u32Addr);
-    pPciDev->config[iReg]     = u32Addr         & 0xff;
-    pPciDev->config[iReg + 1] = (u32Addr >>  8) & 0xff;
-    pPciDev->config[iReg + 2] = (u32Addr >> 16) & 0xff;
-    pPciDev->config[iReg + 3] = (u32Addr >> 24) & 0xff;
+    PCIDevSetDWord(pPciDev, iReg, u32Addr);
 }
 
 
@@ -579,9 +633,7 @@ DECLINLINE(void) PCIDevSetBaseAddress(PPCIDEVICE pPciDev, uint8_t iReg, bool fIO
  */
 DECLINLINE(void) PCIDevSetSubSystemVendorId(PPCIDEVICE pPciDev, uint16_t u16SubSysVendorId)
 {
-    u16SubSysVendorId = RT_H2LE_U16(u16SubSysVendorId);
-    pPciDev->config[VBOX_PCI_SUBSYSTEM_VENDOR_ID]     = u16SubSysVendorId & 0xff;
-    pPciDev->config[VBOX_PCI_SUBSYSTEM_VENDOR_ID + 1] = u16SubSysVendorId >> 8;
+    PCIDevSetWord(pPciDev, VBOX_PCI_SUBSYSTEM_VENDOR_ID, u16SubSysVendorId);
 }
 
 /**
@@ -591,7 +643,7 @@ DECLINLINE(void) PCIDevSetSubSystemVendorId(PPCIDEVICE pPciDev, uint16_t u16SubS
  */
 DECLINLINE(uint16_t) PCIDevGetSubSystemVendorId(PPCIDEVICE pPciDev)
 {
-    return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_SUBSYSTEM_VENDOR_ID], pPciDev->config[VBOX_PCI_SUBSYSTEM_VENDOR_ID + 1]));
+    return PCIDevGetWord(pPciDev, VBOX_PCI_SUBSYSTEM_VENDOR_ID);
 }
 
 
@@ -603,9 +655,7 @@ DECLINLINE(uint16_t) PCIDevGetSubSystemVendorId(PPCIDEVICE pPciDev)
  */
 DECLINLINE(void) PCIDevSetSubSystemId(PPCIDEVICE pPciDev, uint16_t u16SubSystemId)
 {
-    u16SubSystemId = RT_H2LE_U16(u16SubSystemId);
-    pPciDev->config[VBOX_PCI_SUBSYSTEM_ID]     = u16SubSystemId & 0xff;
-    pPciDev->config[VBOX_PCI_SUBSYSTEM_ID + 1] = u16SubSystemId >> 8;
+    PCIDevSetWord(pPciDev, VBOX_PCI_SUBSYSTEM_ID, u16SubSystemId);
 }
 
 /**
@@ -615,7 +665,7 @@ DECLINLINE(void) PCIDevSetSubSystemId(PPCIDEVICE pPciDev, uint16_t u16SubSystemI
  */
 DECLINLINE(uint16_t) PCIDevGetSubSystemId(PPCIDEVICE pPciDev)
 {
-    return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_SUBSYSTEM_ID], pPciDev->config[VBOX_PCI_SUBSYSTEM_ID + 1]));
+    return PCIDevGetWord(pPciDev, VBOX_PCI_SUBSYSTEM_ID);
 }
 
 /**
@@ -626,7 +676,7 @@ DECLINLINE(uint16_t) PCIDevGetSubSystemId(PPCIDEVICE pPciDev)
  */
 DECLINLINE(void) PCIDevSetCapabilityList(PPCIDEVICE pPciDev, uint8_t u8Offset)
 {
-    pPciDev->config[VBOX_PCI_CAPABILITY_LIST] = u8Offset;
+    PCIDevSetByte(pPciDev, VBOX_PCI_CAPABILITY_LIST, u8Offset);
 }
 
 /**
@@ -637,7 +687,7 @@ DECLINLINE(void) PCIDevSetCapabilityList(PPCIDEVICE pPciDev, uint8_t u8Offset)
  */
 DECLINLINE(uint8_t) PCIDevGetCapabilityList(PPCIDEVICE pPciDev)
 {
-    return pPciDev->config[VBOX_PCI_CAPABILITY_LIST];
+    return PCIDevGetByte(pPciDev, VBOX_PCI_CAPABILITY_LIST);
 }
 
 /**
@@ -648,7 +698,7 @@ DECLINLINE(uint8_t) PCIDevGetCapabilityList(PPCIDEVICE pPciDev)
  */
 DECLINLINE(void) PCIDevSetInterruptLine(PPCIDEVICE pPciDev, uint8_t u8Line)
 {
-    pPciDev->config[VBOX_PCI_INTERRUPT_LINE] = u8Line;
+    PCIDevSetByte(pPciDev, VBOX_PCI_INTERRUPT_LINE, u8Line);
 }
 
 /**
@@ -659,7 +709,7 @@ DECLINLINE(void) PCIDevSetInterruptLine(PPCIDEVICE pPciDev, uint8_t u8Line)
  */
 DECLINLINE(uint8_t) PCIDevGetInterruptLine(PPCIDEVICE pPciDev)
 {
-    return pPciDev->config[VBOX_PCI_INTERRUPT_LINE];
+    return PCIDevGetByte(pPciDev, VBOX_PCI_INTERRUPT_LINE);
 }
 
 /**
@@ -670,7 +720,7 @@ DECLINLINE(uint8_t) PCIDevGetInterruptLine(PPCIDEVICE pPciDev)
  */
 DECLINLINE(void) PCIDevSetInterruptPin(PPCIDEVICE pPciDev, uint8_t u8Pin)
 {
-    pPciDev->config[VBOX_PCI_INTERRUPT_PIN] = u8Pin;
+    PCIDevSetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN, u8Pin);
 }
 
 
@@ -682,11 +732,10 @@ DECLINLINE(void) PCIDevSetInterruptPin(PPCIDEVICE pPciDev, uint8_t u8Pin)
  */
 DECLINLINE(uint8_t) PCIDevGetInterruptPin(PPCIDEVICE pPciDev)
 {
-    return pPciDev->config[VBOX_PCI_INTERRUPT_PIN];
+    return PCIDevGetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN);
 }
 
 
 /** @} */
 
 #endif
-
