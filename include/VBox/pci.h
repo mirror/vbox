@@ -186,7 +186,7 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
  *
  * @returns The register value.
  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
- * @param   Address         The configuration space register address. [0..255]
+ * @param   Address         The configuration space register address. [0..4096]
  * @param   cb              The register size. [1,2,4]
  */
 typedef DECLCALLBACK(uint32_t) FNPCICONFIGREAD(PPCIDEVICE pPciDev, uint32_t Address, unsigned cb);
@@ -199,7 +199,7 @@ typedef PFNPCICONFIGREAD *PPFNPCICONFIGREAD;
  * Callback function for writing to the PCI configuration space.
  *
  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
- * @param   Address         The configuration space register address. [0..255]
+ * @param   Address         The configuration space register address. [0..4096]
  * @param   u32Value        The value that's being written. The number of bits actually used from
  *                          this value is determined by the cb parameter.
  * @param   cb              The register size. [1,2,4]
