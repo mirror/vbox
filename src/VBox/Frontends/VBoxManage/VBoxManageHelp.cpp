@@ -30,13 +30,13 @@
 
 
 
-void showLogo(void)
+void showLogo(PRTSTREAM pStrm)
 {
     static bool s_fShown; /* show only once */
 
     if (!s_fShown)
     {
-        RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Command Line Management Interface Version "
+        RTStrmPrintf(pStrm, VBOX_PRODUCT " Command Line Management Interface Version "
                      VBOX_VERSION_STRING "\n"
                      "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                      "All rights reserved.\n"
@@ -45,7 +45,7 @@ void showLogo(void)
     }
 }
 
-void printUsage(USAGECATEGORY u64Cmd)
+void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 {
     bool fDumpOpts = false;
 #ifdef RT_OS_LINUX
@@ -97,13 +97,13 @@ void printUsage(USAGECATEGORY u64Cmd)
         u64Cmd = USAGE_ALL;
     }
 
-    RTStrmPrintf(g_pStdErr,
+    RTStrmPrintf(pStrm,
                  "Usage:\n"
                  "\n");
 
     if (u64Cmd == USAGE_ALL)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage [-v|--version]    print version number and exit\n"
                      "VBoxManage [-q|--nologo] ... suppress the logo\n"
                      "\n");
@@ -111,7 +111,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_LIST)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage list [--long|-l] vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
 #if defined(VBOX_WITH_NETFLT)
                      "                            bridgedifs|hostonlyifs|dhcpservers|hostinfo|\n"
@@ -125,7 +125,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_SHOWVMINFO)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage showvminfo       <uuid>|<name> [--details] [--statistics]\n"
                      "                            [--machinereadable]\n"
                      "VBoxManage showvminfo       <uuid>|<name> --log <idx>\n"
@@ -134,21 +134,21 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_REGISTERVM)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage registervm       <filename>\n"
                      "\n");
     }
 
     if (u64Cmd & USAGE_UNREGISTERVM)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage unregistervm     <uuid>|<name> [--delete]\n"
                      "\n");
     }
 
     if (u64Cmd & USAGE_CREATEVM)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage createvm         --name <name>\n"
                      "                            [--ostype <ostype>]\n"
                      "                            [--register]\n"
@@ -159,7 +159,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_MODIFYVM)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage modifyvm         <uuid|name>\n"
                      "                            [--name <name>]\n"
                      "                            [--ostype <ostype>]\n"
@@ -258,14 +258,14 @@ void printUsage(USAGECATEGORY u64Cmd)
         if (fWin)
         {
 #ifdef VBOX_WITH_WINMM
-            RTStrmPrintf(g_pStdErr, "|winmm|dsound");
+            RTStrmPrintf(pStrm, "|winmm|dsound");
 #else
-            RTStrmPrintf(g_pStdErr, "|dsound");
+            RTStrmPrintf(pStrm, "|dsound");
 #endif
         }
         if (fSolaris)
         {
-            RTStrmPrintf(g_pStdErr, "|solaudio"
+            RTStrmPrintf(pStrm, "|solaudio"
 #ifdef VBOX_WITH_SOLARIS_OSS
                                     "|oss"
 #endif
@@ -273,7 +273,7 @@ void printUsage(USAGECATEGORY u64Cmd)
         }
         if (fLinux)
         {
-            RTStrmPrintf(g_pStdErr, "|oss"
+            RTStrmPrintf(pStrm, "|oss"
 #ifdef VBOX_WITH_ALSA
                                     "|alsa"
 #endif
@@ -287,27 +287,27 @@ void printUsage(USAGECATEGORY u64Cmd)
             /* Get the line break sorted when dumping all option variants. */
             if (fDumpOpts)
             {
-                RTStrmPrintf(g_pStdErr, "|\n"
+                RTStrmPrintf(pStrm, "|\n"
                      "                                     oss");
             }
             else
-                RTStrmPrintf(g_pStdErr, "|oss");
+                RTStrmPrintf(pStrm, "|oss");
 #ifdef VBOX_WITH_PULSE
-            RTStrmPrintf(g_pStdErr, "|pulse");
+            RTStrmPrintf(pStrm, "|pulse");
 #endif
         }
         if (fDarwin)
         {
-            RTStrmPrintf(g_pStdErr, "|coreaudio");
+            RTStrmPrintf(pStrm, "|coreaudio");
         }
-        RTStrmPrintf(g_pStdErr, "]\n");
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm, "]\n");
+        RTStrmPrintf(pStrm,
                      "                            [--audiocontroller ac97|hda|sb16]\n"
                      "                            [--clipboard disabled|hosttoguest|guesttohost|\n"
                      "                                         bidirectional]\n");
         if (fVRDP)
         {
-            RTStrmPrintf(g_pStdErr,
+            RTStrmPrintf(pStrm,
                      "                            [--vrdp on|off]\n"
                      "                            [--vrdpport default|<ports>]\n"
                      "                            [--vrdpaddress <host>]\n"
@@ -317,7 +317,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                      "                            [--vrdpvideochannel on|off]\n"
                      "                            [--vrdpvideochannelquality <percent>]\n");
         }
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "                            [--usb on|off]\n"
                      "                            [--usbehci on|off]\n"
                      "                            [--snapshotfolder default|<path>]\n"
@@ -339,7 +339,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_IMPORTAPPLIANCE)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage import           <ovf> [--dry-run|-n] [more options]\n"
                      "                            (run with -n to have options displayed\n"
                      "                             for a particular OVF)\n\n");
@@ -347,7 +347,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_EXPORTAPPLIANCE)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage export           <machines> --output|-o <ovf>\n"
                      "                            [--legacy09]\n"
                      "                            [--manifest]\n"
@@ -364,22 +364,22 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_STARTVM)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage startvm          <uuid>|<name>\n");
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "                            [--type gui");
         if (fVBoxSDL)
-            RTStrmPrintf(g_pStdErr, "|sdl");
+            RTStrmPrintf(pStrm, "|sdl");
         if (fVRDP)
-            RTStrmPrintf(g_pStdErr, "|vrdp");
-        RTStrmPrintf(g_pStdErr, "|headless]\n");
-        RTStrmPrintf(g_pStdErr,
+            RTStrmPrintf(pStrm, "|vrdp");
+        RTStrmPrintf(pStrm, "|headless]\n");
+        RTStrmPrintf(pStrm,
                      "\n");
     }
 
     if (u64Cmd & USAGE_CONTROLVM)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage controlvm        <uuid>|<name>\n"
                      "                            pause|resume|reset|poweroff|savestate|\n"
                      "                            acpipowerbutton|acpisleepbutton|\n"
@@ -403,13 +403,13 @@ void printUsage(USAGECATEGORY u64Cmd)
                      "                            usbdetach <uuid>|<address> |\n");
         if (fVRDP)
         {
-            RTStrmPrintf(g_pStdErr,
+            RTStrmPrintf(pStrm,
                      "                            vrdp on|off |\n");
-            RTStrmPrintf(g_pStdErr,
+            RTStrmPrintf(pStrm,
                      "                            vrdpport default|<ports> |\n"
                      "                            vrdpvideochannelquality <percent>\n");
         }
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "                            setvideomodehint <xres> <yres> <bpp> [display] |\n"
                      "                            setcredentials <username> <password> <domain>\n"
                      "                                           [--allowlocallogon <yes|no>] |\n"
@@ -422,21 +422,21 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_DISCARDSTATE)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage discardstate     <uuid>|<name>\n"
                      "\n");
     }
 
     if (u64Cmd & USAGE_ADOPTSTATE)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage adoptstate       <uuid>|<name> <state_file>\n"
                      "\n");
     }
 
     if (u64Cmd & USAGE_SNAPSHOT)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage snapshot         <uuid>|<name>\n"
                      "                            take <name> [--description <desc>] [--pause] |\n"
                      "                            delete <uuid>|<name> |\n"
@@ -451,7 +451,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_OPENMEDIUM)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage openmedium       disk|dvd|floppy <filename>\n"
                      "                            [--type normal|immutable|writethrough|\n"
                      "                                    shareable] (disk only)\n"
@@ -462,7 +462,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_CLOSEMEDIUM)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage closemedium      disk|dvd|floppy <uuid>|<filename>\n"
                      "                            [--delete]\n"
                      "\n");
@@ -470,7 +470,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_STORAGEATTACH)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage storageattach    <uuid|vmname>\n"
                      "                            --storagectl <name>\n"
                      "                            --port <number>\n"
@@ -485,7 +485,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_STORAGECONTROLLER)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage storagectl       <uuid|vmname>\n"
                      "                            --name <name>\n"
                      "                            [--add ide|sata|scsi|floppy|sas]\n"
@@ -500,14 +500,14 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_SHOWHDINFO)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage showhdinfo       <uuid>|<filename>\n"
                      "\n");
     }
 
     if (u64Cmd & USAGE_CREATEHD)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage createhd         --filename <filename>\n"
                      "                            --size <megabytes>|--sizebyte <bytes>\n"
                      "                            [--format VDI|VMDK|VHD] (default: VDI)\n"
@@ -521,7 +521,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_MODIFYHD)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage modifyhd         <uuid>|<filename>\n"
                      "                            [--type normal|writethrough|immutable|shareable]\n"
                      "                            [--autoreset on|off]\n"
@@ -532,7 +532,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_CLONEHD)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage clonehd          <uuid>|<filename> <outputfile>\n"
                      "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
@@ -543,7 +543,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_CONVERTFROMRAW)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage convertfromraw   <filename> <outputfile>\n"
                      "                            [--format VDI|VMDK|VHD]\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
@@ -557,7 +557,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_ADDISCSIDISK)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage addiscsidisk     --server <name>|<ip>\n"
                      "                            --target <target>\n"
                      "                            [--port <port>]\n"
@@ -572,7 +572,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_GETEXTRADATA)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage getextradata     global|<uuid>|<name>\n"
                      "                            <key>|enumerate\n"
                      "\n");
@@ -580,7 +580,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_SETEXTRADATA)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage setextradata     global|<uuid>|<name>\n"
                      "                            <key>\n"
                      "                            [<value>] (no value deletes key)\n"
@@ -589,7 +589,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_SETPROPERTY)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage setproperty      hdfolder default|<folder> |\n"
                      "                            machinefolder default|<folder> |\n"
                      "                            vrdpauthlibrary default|<library> |\n"
@@ -600,7 +600,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_USBFILTER_ADD)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage usbfilter        add <index,0-N>\n"
                      "                            --target <uuid>|<name>|global\n"
                      "                            --name <string>\n"
@@ -619,7 +619,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_USBFILTER_MODIFY)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage usbfilter        modify <index,0-N>\n"
                      "                            --target <uuid>|<name>|global\n"
                      "                            [--name <string>]\n"
@@ -638,7 +638,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_USBFILTER_REMOVE)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage usbfilter        remove <index,0-N>\n"
                      "                            --target <uuid>|<name>|global\n"
                      "\n");
@@ -646,7 +646,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_SHAREDFOLDER_ADD)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage sharedfolder     add <vmname>|<uuid>\n"
                      "                            --name <name> --hostpath <hostpath>\n"
                      "                            [--transient] [--readonly] [--automount]\n"
@@ -655,7 +655,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_SHAREDFOLDER_REMOVE)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage sharedfolder     remove <vmname>|<uuid>\n"
                      "                            --name <name> [--transient]\n"
                      "\n");
@@ -663,7 +663,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_VM_STATISTICS)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage vmstatistics     <vmname>|<uuid> [--reset]\n"
                      "                            [--pattern <pattern>] [--descriptions]\n"
                      "\n");
@@ -681,7 +681,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_METRICS)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage metrics          list [*|host|<vmname> [<metric_list>]]\n"
                      "                                                 (comma-separated)\n\n"
                      "VBoxManage metrics          setup\n"
@@ -707,7 +707,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 #if defined(VBOX_WITH_NETFLT)
     if (u64Cmd & USAGE_HOSTONLYIFS)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage hostonlyif       ipconfig <name>\n"
                      "                            [--dhcp |\n"
                      "                            --ip<ipv4> [--netmask<ipv4> (def: 255.255.255.0)] |\n"
@@ -722,7 +722,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_DHCPSERVER)
     {
-        RTStrmPrintf(g_pStdErr,
+        RTStrmPrintf(pStrm,
                      "VBoxManage dhcpserver       add|modify --netname <network_name> |\n"
 #if defined(VBOX_WITH_NETFLT)
                      "                                       --ifname <hostonly_if_name>\n"
@@ -746,12 +746,12 @@ void printUsage(USAGECATEGORY u64Cmd)
 int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
 {
     va_list args;
-    showLogo(); // show logo even if suppressed
+    showLogo(g_pStdErr); // show logo even if suppressed
 #ifndef VBOX_ONLY_DOCS
     if (g_fInternalMode)
-        printUsageInternal(u64Cmd);
+        printUsageInternal(u64Cmd, g_pStdErr);
     else
-        printUsage(u64Cmd);
+        printUsage(u64Cmd, g_pStdErr);
 #endif /* !VBOX_ONLY_DOCS */
     va_start(args, pszFormat);
     RTStrmPrintf(g_pStdErr, "\nSyntax error: %N\n", pszFormat, &args);
@@ -770,12 +770,12 @@ int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
  */
 int errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION const *pValueUnion)
 {
-    showLogo(); // show logo even if suppressed
+    showLogo(g_pStdErr); // show logo even if suppressed
 #ifndef VBOX_ONLY_DOCS
     if (g_fInternalMode)
-        printUsageInternal(fUsageCategory);
+        printUsageInternal(fUsageCategory, g_pStdErr);
     else
-        printUsage(fUsageCategory);
+        printUsage(fUsageCategory, g_pStdErr);
 #endif /* !VBOX_ONLY_DOCS */
 
     if (rc == VINF_GETOPT_NOT_OPTION)

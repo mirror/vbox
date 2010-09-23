@@ -208,7 +208,8 @@ int main(int argc, char *argv[])
      */
     RTR3Init();
 
-    bool fShowLogo = true;
+    bool fShowLogo = false;
+    bool fShowHelp = false;
     int  iCmd      = 1;
     int  iCmdArg;
 
@@ -222,9 +223,16 @@ int main(int argc, char *argv[])
             ||  !strcmp(argv[i], "-help")
             ||  !strcmp(argv[i], "--help"))
         {
-            showLogo();
-            printUsage(USAGE_ALL);
-            return 0;
+            if (i >= argc - 1)
+            {
+                showLogo(g_pStdOut);
+                printUsage(USAGE_ALL, g_pStdOut);
+                return 0;
+            }
+            fShowLogo = true;
+            fShowHelp = true;
+            iCmd++;
+            continue;
         }
 
         if (   !strcmp(argv[i], "-v")
@@ -242,7 +250,7 @@ int main(int argc, char *argv[])
         {
             /* Special option to dump really all commands,
              * even the ones not understood on this platform. */
-            printUsage(USAGE_DUMPOPTS);
+            printUsage(USAGE_DUMPOPTS, g_pStdOut);
             return 0;
         }
 
@@ -263,7 +271,7 @@ int main(int argc, char *argv[])
     iCmdArg = iCmd + 1;
 
     if (fShowLogo)
-        showLogo();
+        showLogo(g_pStdOut);
 
 
 #ifdef VBOX_ONLY_DOCS
@@ -343,56 +351,57 @@ int main(int argc, char *argv[])
     static const struct
     {
         const char *command;
+        USAGECATEGORY help;
         int (*handler)(HandlerArg *a);
     } s_commandHandlers[] =
     {
-        { "internalcommands", handleInternalCommands },
-        { "list",             handleList },
-        { "showvminfo",       handleShowVMInfo },
-        { "registervm",       handleRegisterVM },
-        { "unregistervm",     handleUnregisterVM },
-        { "createhd",         handleCreateHardDisk },
-        { "createvdi",        handleCreateHardDisk }, /* backward compatiblity */
-        { "modifyhd",         handleModifyHardDisk },
-        { "modifyvdi",        handleModifyHardDisk }, /* backward compatiblity */
-        { "clonehd",          handleCloneHardDisk },
-        { "clonevdi",         handleCloneHardDisk }, /* backward compatiblity */
-        { "addiscsidisk",     handleAddiSCSIDisk },
-        { "createvm",         handleCreateVM },
-        { "modifyvm",         handleModifyVM },
-        { "startvm",          handleStartVM },
-        { "controlvm",        handleControlVM },
-        { "discardstate",     handleDiscardState },
-        { "adoptstate",       handleAdoptState },
-        { "snapshot",         handleSnapshot },
-        { "openmedium",       handleOpenMedium },
-        { "registerimage",    handleOpenMedium }, /* backward compatiblity */
-        { "closemedium",      handleCloseMedium },
-        { "unregisterimage",  handleCloseMedium }, /* backward compatiblity */
-        { "storageattach",    handleStorageAttach },
-        { "storagectl",       handleStorageController },
-        { "showhdinfo",       handleShowHardDiskInfo },
-        { "showvdiinfo",      handleShowHardDiskInfo }, /* backward compatiblity */
-        { "getextradata",     handleGetExtraData },
-        { "setextradata",     handleSetExtraData },
-        { "setproperty",      handleSetProperty },
-        { "usbfilter",        handleUSBFilter },
-        { "sharedfolder",     handleSharedFolder },
-        { "vmstatistics",     handleVMStatistics },
+        { "internalcommands", 0,                       handleInternalCommands },
+        { "list",             USAGE_LIST,              handleList },
+        { "showvminfo",       USAGE_SHOWVMINFO,        handleShowVMInfo },
+        { "registervm",       USAGE_REGISTERVM,        handleRegisterVM },
+        { "unregistervm",     USAGE_UNREGISTERVM,      handleUnregisterVM },
+        { "createhd",         USAGE_CREATEHD,          handleCreateHardDisk },
+        { "createvdi",        USAGE_CREATEHD,          handleCreateHardDisk }, /* backward compatiblity */
+        { "modifyhd",         USAGE_MODIFYHD,          handleModifyHardDisk },
+        { "modifyvdi",        USAGE_MODIFYHD,          handleModifyHardDisk }, /* backward compatiblity */
+        { "clonehd",          USAGE_CLONEHD,           handleCloneHardDisk },
+        { "clonevdi",         USAGE_CLONEHD,           handleCloneHardDisk }, /* backward compatiblity */
+        { "addiscsidisk",     USAGE_ADDISCSIDISK,      handleAddiSCSIDisk },
+        { "createvm",         USAGE_CREATEVM,          handleCreateVM },
+        { "modifyvm",         USAGE_MODIFYVM,          handleModifyVM },
+        { "startvm",          USAGE_STARTVM,           handleStartVM },
+        { "controlvm",        USAGE_CONTROLVM,         handleControlVM },
+        { "discardstate",     USAGE_DISCARDSTATE,      handleDiscardState },
+        { "adoptstate",       USAGE_ADOPTSTATE,        handleAdoptState },
+        { "snapshot",         USAGE_SNAPSHOT,          handleSnapshot },
+        { "openmedium",       USAGE_OPENMEDIUM,        handleOpenMedium },
+        { "registerimage",    USAGE_OPENMEDIUM,        handleOpenMedium }, /* backward compatiblity */
+        { "closemedium",      USAGE_CLOSEMEDIUM,       handleCloseMedium },
+        { "unregisterimage",  USAGE_CLOSEMEDIUM,       handleCloseMedium }, /* backward compatiblity */
+        { "storageattach",    USAGE_STORAGEATTACH,     handleStorageAttach },
+        { "storagectl",       USAGE_STORAGECONTROLLER, handleStorageController },
+        { "showhdinfo",       USAGE_SHOWHDINFO,        handleShowHardDiskInfo },
+        { "showvdiinfo",      USAGE_SHOWHDINFO,        handleShowHardDiskInfo }, /* backward compatiblity */
+        { "getextradata",     USAGE_GETEXTRADATA,      handleGetExtraData },
+        { "setextradata",     USAGE_SETEXTRADATA,      handleSetExtraData },
+        { "setproperty",      USAGE_SETPROPERTY,       handleSetProperty },
+        { "usbfilter",        USAGE_USBFILTER,         handleUSBFilter },
+        { "sharedfolder",     USAGE_SHAREDFOLDER,      handleSharedFolder },
+        { "vmstatistics",     USAGE_VM_STATISTICS,     handleVMStatistics },
 #ifdef VBOX_WITH_GUEST_PROPS
-        { "guestproperty",    handleGuestProperty },
+        { "guestproperty",    USAGE_GUESTPROPERTY,     handleGuestProperty },
 #endif
 #ifdef VBOX_WITH_GUEST_CONTROL
-        { "guestcontrol",     handleGuestControl },
+        { "guestcontrol",     USAGE_GUESTCONTROL,      handleGuestControl },
 #endif
-        { "metrics",          handleMetrics },
-        { "import",           handleImportAppliance },
-        { "export",           handleExportAppliance },
+        { "metrics",          USAGE_METRICS,           handleMetrics },
+        { "import",           USAGE_IMPORTAPPLIANCE,   handleImportAppliance },
+        { "export",           USAGE_EXPORTAPPLIANCE,   handleExportAppliance },
 #ifdef VBOX_WITH_NETFLT
-        { "hostonlyif",       handleHostonlyIf },
+        { "hostonlyif",       USAGE_HOSTONLYIFS,       handleHostonlyIf },
 #endif
-        { "dhcpserver",       handleDHCPServer},
-        { NULL,               NULL }
+        { "dhcpserver",       USAGE_DHCPSERVER,        handleDHCPServer},
+        { NULL,               0,                       NULL }
     };
 
     int commandIndex;
@@ -403,7 +412,15 @@ int main(int argc, char *argv[])
             handlerArg.argc = argc - iCmdArg;
             handlerArg.argv = &argv[iCmdArg];
 
-            rc = s_commandHandlers[commandIndex].handler(&handlerArg);
+            if (   fShowHelp
+                || (   argc - iCmdArg == 0
+                    && s_commandHandlers[commandIndex].help))
+            {
+                printUsage(s_commandHandlers[commandIndex].help, g_pStdOut);
+                rc = 1; /* error */
+            }
+            else
+                rc = s_commandHandlers[commandIndex].handler(&handlerArg);
             break;
         }
     }
