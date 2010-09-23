@@ -72,6 +72,7 @@ VBGLR3DECL(int)     VbglR3GuestPropWriteValue(uint32_t u32ClientId,
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_GUEST_PROPS
 VBGLR3DECL(int)     VbglR3GuestPropRead(uint32_t u32ClientId,
                                         const char *pszName,
                                         void *pvBuf,
@@ -189,3 +190,4 @@ VBGLR3DECL(int)     VbglR3GuestPropWait(uint32_t u32ClientId,
     return VINF_SUCCESS;
 }
 
+#endif

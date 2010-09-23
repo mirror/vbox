@@ -11509,6 +11509,7 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
         stsFlags |= SaveSTS_StateFilePath;
     }
 
+#ifdef VBOX_WITH_GUEST_PROPS
     if (   aMachineState == MachineState_PoweredOff
         || aMachineState == MachineState_Aborted
         || aMachineState == MachineState_Teleported)
@@ -11533,6 +11534,7 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
             SaveSettings();     // @todo r=dj why the public method? why first SaveSettings and then saveStateSettings?
         }
     }
+#endif
 
     rc = saveStateSettings(stsFlags);
 
