@@ -3113,8 +3113,8 @@ ipcDConnectService::Shutdown()
   }
 
 #if defined(DCONNECT_STATS)
-  printf("ipcDConnectService Stats\n");
-  printf(" => number of worker threads: %d\n", mWorkers.Count());
+  fprintf(stderr, "ipcDConnectService Stats\n");
+  fprintf(stderr, " => number of worker threads: %d\n", mWorkers.Count());
   LOG(("ipcDConnectService Stats\n"));
   LOG((" => number of worker threads: %d\n", mWorkers.Count()));
 #endif

@@ -58,7 +58,7 @@ static const int  g_VERSION_MINOR          = 0;
 
 /***************************************************************************/
 
-static PRBool 
+static PRBool
 GetCurrentAppDirString(xptiInterfaceInfoManager* aMgr, nsACString &aStr)
 {
     nsCOMPtr<nsILocalFile> appDir;
@@ -68,8 +68,8 @@ GetCurrentAppDirString(xptiInterfaceInfoManager* aMgr, nsACString &aStr)
     return PR_FALSE;
 }
 
-static PRBool 
-CurrentAppDirMatchesPersistentDescriptor(xptiInterfaceInfoManager* aMgr, 
+static PRBool
+CurrentAppDirMatchesPersistentDescriptor(xptiInterfaceInfoManager* aMgr,
                                          const char *inStr)
 {
     nsCOMPtr<nsILocalFile> appDir;
@@ -83,7 +83,7 @@ CurrentAppDirMatchesPersistentDescriptor(xptiInterfaceInfoManager* aMgr,
     rv = descDir->SetPersistentDescriptor(nsDependentCString(inStr));
     if(NS_FAILED(rv))
         return PR_FALSE;
-    
+
     PRBool matches;
     rv = appDir->Equals(descDir, &matches);
     return NS_SUCCEEDED(rv) && matches;
@@ -107,7 +107,7 @@ xpti_InterfaceWriter(PLDHashTable *table, PLDHashEntryHdr *hdr,
                                  entry->GetTheName(),
                                  iidStr,
                                  (int) typelib.GetFileIndex(),
-                                 (int) (typelib.IsZip() ? 
+                                 (int) (typelib.IsZip() ?
                                  typelib.GetZipItemIndex() : -1),
                                  (int) entry->GetScriptableFlag());
 
@@ -128,7 +128,7 @@ PRBool xptiManifest::Write(xptiInterfaceInfoManager* aMgr,
     PRUint32 size32;
     PRIntn interfaceCount = 0;
     nsCAutoString appDirString;
-    
+
     nsCOMPtr<nsILocalFile> tempFile;
     if(!aMgr->GetCloneOfManifestLocation(getter_AddRefs(tempFile)) || !tempFile)
         return PR_FALSE;
@@ -159,7 +159,7 @@ PRBool xptiManifest::Write(xptiInterfaceInfoManager* aMgr,
     if(!PR_fprintf(fd, "\n[%s,%d]\n", g_TOKEN_Header, 2))
         goto out;
 
-    if(!PR_fprintf(fd, "%d,%s,%d,%d\n", 
+    if(!PR_fprintf(fd, "%d,%s,%d,%d\n",
                        0, g_TOKEN_Version, g_VERSION_MAJOR, g_VERSION_MINOR))
         goto out;
 
@@ -167,20 +167,20 @@ PRBool xptiManifest::Write(xptiInterfaceInfoManager* aMgr,
     if(appDirString.IsEmpty())
         goto out;
 
-    if(!PR_fprintf(fd, "%d,%s,%s\n", 
+    if(!PR_fprintf(fd, "%d,%s,%s\n",
                        1, g_TOKEN_AppDir, appDirString.get()))
         goto out;
 
     // write Directories list
 
-    if(!PR_fprintf(fd, "\n[%s,%d]\n", 
-                       g_TOKEN_Directories, 
+    if(!PR_fprintf(fd, "\n[%s,%d]\n",
+                       g_TOKEN_Directories,
                        (int) aWorkingSet->GetDirectoryCount()))
         goto out;
 
     for(i = 0; i < aWorkingSet->GetDirectoryCount(); i++)
     {
-        nsCOMPtr<nsILocalFile> dir;        
+        nsCOMPtr<nsILocalFile> dir;
         nsCAutoString str;
 
         aWorkingSet->GetDirectoryAt(i, getter_AddRefs(dir));
@@ -190,15 +190,15 @@ PRBool xptiManifest::Write(xptiInterfaceInfoManager* aMgr,
         dir->GetPersistentDescriptor(str);
         if(str.IsEmpty())
             goto out;
-        
+
         if(!PR_fprintf(fd, "%d,%s\n", (int) i, str.get()))
             goto out;
     }
 
     // write Files list
 
-    if(!PR_fprintf(fd, "\n[%s,%d]\n", 
-                       g_TOKEN_Files, 
+    if(!PR_fprintf(fd, "\n[%s,%d]\n",
+                       g_TOKEN_Files,
                        (int) aWorkingSet->GetFileCount()))
         goto out;
 
@@ -207,7 +207,7 @@ PRBool xptiManifest::Write(xptiInterfaceInfoManager* aMgr,
         const xptiFile& file = aWorkingSet->GetFileAt(i);
 
         LL_L2UI(size32, file.GetSize());
-    
+
         if(!PR_fprintf(fd, "%d,%s,%d,%u,%lld\n",
                            (int) i,
                            file.GetName(),
@@ -218,8 +218,8 @@ PRBool xptiManifest::Write(xptiInterfaceInfoManager* aMgr,
 
     // write ArchiveItems list
 
-    if(!PR_fprintf(fd, "\n[%s,%d]\n", 
-                       g_TOKEN_ArchiveItems, 
+    if(!PR_fprintf(fd, "\n[%s,%d]\n",
+                       g_TOKEN_ArchiveItems,
                        (int) aWorkingSet->GetZipItemCount()))
         goto out;
 
@@ -235,13 +235,13 @@ PRBool xptiManifest::Write(xptiInterfaceInfoManager* aMgr,
 
     interfaceCount = aWorkingSet->mNameTable->entryCount;
 
-    if(!PR_fprintf(fd, "\n[%s,%d]\n", 
-                       g_TOKEN_Interfaces, 
+    if(!PR_fprintf(fd, "\n[%s,%d]\n",
+                       g_TOKEN_Interfaces,
                        (int) interfaceCount))
         goto out;
 
     if(interfaceCount != (PRIntn)
-        PL_DHashTableEnumerate(aWorkingSet->mNameTable, 
+        PL_DHashTableEnumerate(aWorkingSet->mNameTable,
                                xpti_InterfaceWriter, fd))
         goto out;
 
@@ -255,36 +255,36 @@ PRBool xptiManifest::Write(xptiInterfaceInfoManager* aMgr,
 out:
     if(fd)
         PR_Close(fd);
-    
+
     if(succeeded)
     {
         // delete the old file and rename this
         nsCOMPtr<nsILocalFile> mainFile;
         if(!aMgr->GetCloneOfManifestLocation(getter_AddRefs(mainFile)) || !mainFile)
             return PR_FALSE;
-    
+
         PRBool exists;
         if(NS_FAILED(mainFile->Exists(&exists)))
             return PR_FALSE;
 
         if(exists && NS_FAILED(mainFile->Remove(PR_FALSE)))
             return PR_FALSE;
-    
+
         nsCOMPtr<nsIFile> parent;
         mainFile->GetParent(getter_AddRefs(parent));
-            
+
         // MoveTo means rename.
         if(NS_FAILED(tempFile->MoveToNative(parent, originalLeafName)))
             return PR_FALSE;
     }
 
     return succeeded;
-}        
+}
 
 /***************************************************************************/
 /***************************************************************************/
 
-static char* 
+static char*
 ReadManifestIntoMemory(xptiInterfaceInfoManager* aMgr,
                        PRUint32* pLength)
 {
@@ -301,14 +301,14 @@ ReadManifestIntoMemory(xptiInterfaceInfoManager* aMgr,
 #ifdef DEBUG
     {
         static PRBool shown = PR_FALSE;
-        
+
         nsCAutoString path;
         if(!shown && NS_SUCCEEDED(aFile->GetNativePath(path)) && !path.IsEmpty())
         {
-            printf("Type Manifest File: %s\n", path.get());
-            shown = PR_TRUE;        
-        } 
-    }            
+            fprintf(stderr, "Type Manifest File: %s\n", path.get());
+            shown = PR_TRUE;
+        }
+    }
 #endif
 
     if(NS_FAILED(aFile->GetFileSize(&fileSize)) || !(flen = nsInt64(fileSize)))
@@ -318,7 +318,7 @@ ReadManifestIntoMemory(xptiInterfaceInfoManager* aMgr,
     if (!whole)
         return nsnull;
 
-    // All exits from on here should be via 'goto out' 
+    // All exits from on here should be via 'goto out'
 
     if(NS_FAILED(aFile->OpenNSPRFileDesc(PR_RDONLY, 0444, &fd)) || !fd)
         goto out;
@@ -332,18 +332,18 @@ ReadManifestIntoMemory(xptiInterfaceInfoManager* aMgr,
     if(fd)
         PR_Close(fd);
 
-    if(!success)     
+    if(!success)
     {
         delete [] whole;
         return nsnull;
     }
 
     *pLength = flen;
-    return whole;    
+    return whole;
 }
 
 static
-PRBool ReadSectionHeader(nsManifestLineReader& reader, 
+PRBool ReadSectionHeader(nsManifestLineReader& reader,
                          const char *token, int minCount, int* count)
 {
     while(1)
@@ -368,7 +368,7 @@ PRBool ReadSectionHeader(nsManifestLineReader& reader,
 
             if((*count = atoi(values[1])) < minCount)
                 break;
-            
+
             return PR_TRUE;
         }
     }
@@ -405,8 +405,8 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
 
     reader.Init(whole, flen);
 
-    // All exits from here on should be via 'goto out' 
-    
+    // All exits from here on should be via 'goto out'
+
     // Look for "Header" section
 
     // This version accepts only version 1,0. We also freak if the header
@@ -480,7 +480,7 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
 
         PRUint32 searchPathCount;
         searchPath->Count(&searchPathCount);
-        
+
         if(dirCount != (int) searchPathCount)
             goto out;
     }
@@ -491,7 +491,7 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
     {
         if(!reader.NextLine())
             goto out;
-       
+
         // index,directoryname
         if(2 != reader.ParseLine(values, lengths, 2))
             goto out;
@@ -502,7 +502,7 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
 
         // directoryname
         if(!aWorkingSet->DirectoryAtMatchesPersistentDescriptor(i, values[1]))
-            goto out;    
+            goto out;
     }
 
     // Look for "Files" section
@@ -513,8 +513,8 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
 
     // Alloc room in the WorkingSet for the filearray.
 
-    if(!aWorkingSet->NewFileArray(fileCount))   
-        goto out;    
+    if(!aWorkingSet->NewFileArray(fileCount))
+        goto out;
 
     // Read the file records
 
@@ -550,7 +550,7 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
         date = nsCRT::atoll(values[4]);
         if(LL_IS_ZERO(date))
             goto out;
-        
+
         // Append a new file record to the array.
 
         aWorkingSet->AppendFile(
@@ -565,8 +565,8 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
     // Alloc room in the WorkingSet for the zipItemarray.
 
     if(zipItemCount)
-        if(!aWorkingSet->NewZipItemArray(zipItemCount))   
-            goto out;    
+        if(!aWorkingSet->NewZipItemArray(zipItemCount))
+            goto out;
 
     // Read the zipItem records
 
@@ -586,7 +586,7 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
         // filename
         if(!*values[1])
             goto out;
-        
+
         // Append a new zipItem record to the array.
 
         aWorkingSet->AppendZipItem(xptiZipItem(values[1], aWorkingSet));
@@ -640,34 +640,34 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
         flags = atoi(values[5]);
         if(flags != 0 && flags != 1)
             goto out;
-        
+
         // Build an InterfaceInfo and hook it in.
 
         if(zipItemIndex == -1)
             typelibRecord.Init(fileIndex);
         else
             typelibRecord.Init(fileIndex, zipItemIndex);
-        
+
         entry = xptiInterfaceEntry::NewEntry(values[1], lengths[1],
-                                             iid, typelibRecord, 
+                                             iid, typelibRecord,
                                              aWorkingSet);
         if(!entry)
-            goto out;    
-        
+            goto out;
+
         entry->SetScriptableFlag(flags==1);
 
         // Add our entry to the iid hashtable.
 
         hashEntry = (xptiHashEntry*)
-            PL_DHashTableOperate(aWorkingSet->mNameTable, 
+            PL_DHashTableOperate(aWorkingSet->mNameTable,
                                  entry->GetTheName(), PL_DHASH_ADD);
         if(hashEntry)
             hashEntry->value = entry;
-    
+
         // Add our entry to the name hashtable.
 
         hashEntry = (xptiHashEntry*)
-            PL_DHashTableOperate(aWorkingSet->mIIDTable, 
+            PL_DHashTableOperate(aWorkingSet->mIIDTable,
                                  entry->GetTheIID(), PL_DHASH_ADD);
         if(hashEntry)
             hashEntry->value = entry;
@@ -689,9 +689,9 @@ PRBool xptiManifest::Read(xptiInterfaceInfoManager* aMgr,
         aWorkingSet->ClearFiles();
     }
     return succeeded;
-}        
+}
 
-// static 
+// static
 PRBool xptiManifest::Delete(xptiInterfaceInfoManager* aMgr)
 {
     nsCOMPtr<nsILocalFile> aFile;
@@ -704,7 +704,7 @@ PRBool xptiManifest::Delete(xptiInterfaceInfoManager* aMgr)
 
     if(exists && NS_FAILED(aFile->Remove(PR_FALSE)))
         return PR_FALSE;
-    
+
     return PR_TRUE;
 }
 
