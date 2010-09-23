@@ -40,6 +40,10 @@
 # define VBOXWDDMDISP_DEBUG_DUMPSURFDATA
 #endif
 
+#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
+# define VBOXWDDMDISP_DEBUG_PRINT
+#endif
+
 #if 0
 # ifdef Assert
 #  undef Assert
@@ -55,6 +59,11 @@
 # endif
 #endif
 
+#ifdef VBOXWDDMDISP_DEBUG_PRINT
+VOID vboxVDbgDoMpPrintF(const PVBOXWDDMDISP_DEVICE pDevice, LPCSTR szString, ...);
+VOID vboxVDbgDoPrint(LPCSTR szString, ...);
+#endif
+
 #ifdef VBOXWDDMDISP_DEBUG
 extern bool g_VDbgTstDumpEnable;
 extern bool g_VDbgTstDumpOnSys2VidSameSizeEnable;
@@ -62,8 +71,6 @@ extern bool g_VDbgTstDumpOnSys2VidSameSizeEnable;
 VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const RECT *pRect, IDirect3DSurface9 *pSurf, const char* pSuffix);
 void vboxVDbgDoMpPrintRect(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const RECT *pRect, const char * pSuffix);
 void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix);
-VOID vboxVDbgDoPrint(LPCSTR szString, ...);
-VOID vboxVDbgDoMpPrintF(const PVBOXWDDMDISP_DEVICE pDevice, LPCSTR szString, ...);
 void vboxVDbgVEHandlerRegister();
 void vboxVDbgVEHandlerUnregister();
 

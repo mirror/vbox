@@ -84,6 +84,9 @@ endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxDispD3D_DEFS   += VBOX_WITH_VIDEOHWACCEL
 endif
+ifdef VBOX_WDDMDISP_WITH_PROFILE
+ VBoxDispD3D_DEFS   += VBOX_WDDMDISP_WITH_PROFILE
+endif
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
     wddm/VBoxDispD3DIf.cpp \
