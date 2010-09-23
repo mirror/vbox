@@ -129,9 +129,9 @@ bool g_fInternalMode;
 /**
  * Print the usage info.
  */
-void printUsageInternal(USAGECATEGORY u64Cmd)
+void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 {
-    RTStrmPrintf(g_pStdErr,
+    RTStrmPrintf(pStrm,
         "Usage: VBoxManage internalcommands <command> [command arguments]\n"
         "\n"
         "Commands:\n"
