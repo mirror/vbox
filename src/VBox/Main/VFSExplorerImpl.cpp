@@ -541,7 +541,7 @@ STDMETHODIMP VFSExplorer::Update(IProgress **aProgress)
 
         rc = progress->init(mVirtualBox,
                             static_cast<IVFSExplorer*>(this),
-                            progressDesc,
+                            progressDesc.raw(),
                             TRUE /* aCancelable */);
         if (FAILED(rc)) throw rc;
 
@@ -670,7 +670,7 @@ STDMETHODIMP VFSExplorer::Remove(ComSafeArrayIn(IN_BSTR, aNames), IProgress **aP
         progress.createObject();
 
         rc = progress->init(mVirtualBox, static_cast<IVFSExplorer*>(this),
-                            Bstr(tr("Delete files")),
+                            Bstr(tr("Delete files")).raw(),
                             TRUE /* aCancelable */);
         if (FAILED(rc)) throw rc;
 

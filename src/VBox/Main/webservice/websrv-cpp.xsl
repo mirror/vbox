@@ -768,6 +768,9 @@ const char *g_pcszIUnknown = "IUnknown";
     <xsl:choose>
       <xsl:when test="$attrdir='in'">
         <xsl:value-of select="concat('comcall_', $varprefix, @name)" />
+        <xsl:if test="$attrtype='wstring' or $attrtype='uuid'">
+          <xsl:text>.raw()</xsl:text>
+        </xsl:if>
       </xsl:when>
       <xsl:when test="$attrdir='return'">
         <xsl:call-template name="emitOutParam">
@@ -796,6 +799,9 @@ const char *g_pcszIUnknown = "IUnknown";
           </xsl:when>
           <xsl:otherwise>
             <xsl:value-of select="concat('comcall_', $varprefix, @name)" />
+            <xsl:if test="@type='wstring' or @type='uuid'">
+              <xsl:text>.raw()</xsl:text>
+            </xsl:if>
           </xsl:otherwise>
         </xsl:choose>
       </xsl:when>

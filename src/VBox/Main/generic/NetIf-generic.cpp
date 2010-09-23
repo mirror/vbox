@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -126,7 +126,7 @@ int NetIfEnableDynamicIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * /
 }
 
 
-int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress)
+int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress)
 {
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
     /* create a progress object */
@@ -138,7 +138,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
     if (SUCCEEDED(hrc))
     {
         hrc = progress->init(pVBox, host,
-                             Bstr ("Creating host only network interface"),
+                             Bstr("Creating host only network interface").raw(),
                              FALSE /* aCancelable */);
         if (SUCCEEDED(hrc))
         {
@@ -219,8 +219,8 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
 #endif
 }
 
-int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
-                                         IProgress **aProgress)
+int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
+                                        IProgress **aProgress)
 {
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
     /* create a progress object */
@@ -233,14 +233,14 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
     {
         Bstr ifname;
         ComPtr<IHostNetworkInterface> iface;
-        if (FAILED(host->FindHostNetworkInterfaceById (Guid(aId).toUtf16(), iface.asOutParam())))
+        if (FAILED(host->FindHostNetworkInterfaceById(Guid(aId).toUtf16().raw(), iface.asOutParam())))
             return VERR_INVALID_PARAMETER;
-        iface->COMGETTER(Name) (ifname.asOutParam());
+        iface->COMGETTER(Name)(ifname.asOutParam());
         if (ifname.isEmpty())
             return VERR_INTERNAL_ERROR;
 
-        rc = progress->init (pVBox, host,
-                            Bstr ("Removing host network interface"),
+        rc = progress->init(pVBox, host,
+                            Bstr("Removing host network interface").raw(),
                             FALSE /* aCancelable */);
         if(SUCCEEDED(rc))
         {

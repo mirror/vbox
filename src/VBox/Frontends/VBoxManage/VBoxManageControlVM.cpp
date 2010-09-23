@@ -77,11 +77,13 @@ int handleControlVM(HandlerArg *a)
     Bstr machineuuid(a->argv[0]);
     if (!Guid(machineuuid).isEmpty())
     {
-        CHECK_ERROR(a->virtualBox, GetMachine(machineuuid, machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, GetMachine(machineuuid.raw(),
+                                              machine.asOutParam()));
     }
     else
     {
-        CHECK_ERROR(a->virtualBox, FindMachine(machineuuid, machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(machineuuid.raw(),
+                                               machine.asOutParam()));
         if (SUCCEEDED (rc))
             machine->COMGETTER(Id)(machineuuid.asOutParam());
     }
@@ -328,7 +330,7 @@ int handleControlVM(HandlerArg *a)
                 {
                     if (a->argv[2])
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(TraceFile)(Bstr(a->argv[2])), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(TraceFile)(Bstr(a->argv[2]).raw()), 1);
                     }
                     else
                     {
@@ -429,7 +431,7 @@ int handleControlVM(HandlerArg *a)
                     {
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
                         if (a->argc == 4)
-                            CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3])), 1);
+                            CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3]).raw()), 1);
                         CHECK_ERROR_RET(adapter, AttachToNAT(), 1);
                     }
                     else if (  !strcmp(a->argv[2], "bridged")
@@ -442,7 +444,7 @@ int handleControlVM(HandlerArg *a)
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3]).raw()), 1);
                         CHECK_ERROR_RET(adapter, AttachToBridgedInterface(), 1);
                     }
                     else if (!strcmp(a->argv[2], "intnet"))
@@ -454,7 +456,7 @@ int handleControlVM(HandlerArg *a)
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3])), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3]).raw()), 1);
                         CHECK_ERROR_RET(adapter, AttachToInternalNetwork(), 1);
                     }
 #if defined(VBOX_WITH_NETFLT)
@@ -467,7 +469,7 @@ int handleControlVM(HandlerArg *a)
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3]).raw()), 1);
                         CHECK_ERROR_RET(adapter, AttachToHostOnlyInterface(), 1);
                     }
 #endif
@@ -533,9 +535,9 @@ int handleControlVM(HandlerArg *a)
                 if (!strcmp(a->argv[2], "default"))
                     vrdpports = "0";
                 else
-                    vrdpports = a->argv [2];
+                    vrdpports = a->argv[2];
 
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Ports)(vrdpports));
+                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Ports)(vrdpports.raw()));
             }
         }
         else if (!strcmp(a->argv[1], "vrdpvideochannelquality"))
@@ -570,7 +572,7 @@ int handleControlVM(HandlerArg *a)
 
             bool attach = !strcmp(a->argv[1], "usbattach");
 
-            Bstr usbId = a->argv [2];
+            Bstr usbId = a->argv[2];
             if (Guid(usbId).isEmpty())
             {
                 // assume address
@@ -581,7 +583,8 @@ int handleControlVM(HandlerArg *a)
                     SafeIfaceArray <IHostUSBDevice> coll;
                     CHECK_ERROR_BREAK(host, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)));
                     ComPtr <IHostUSBDevice> dev;
-                    CHECK_ERROR_BREAK(host, FindUSBDeviceByAddress(Bstr(a->argv [2]), dev.asOutParam()));
+                    CHECK_ERROR_BREAK(host, FindUSBDeviceByAddress(Bstr(a->argv[2]).raw(),
+                                                                   dev.asOutParam()));
                     CHECK_ERROR_BREAK(dev, COMGETTER(Id)(usbId.asOutParam()));
                 }
                 else
@@ -589,18 +592,19 @@ int handleControlVM(HandlerArg *a)
                     SafeIfaceArray <IUSBDevice> coll;
                     CHECK_ERROR_BREAK(console, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)));
                     ComPtr <IUSBDevice> dev;
-                    CHECK_ERROR_BREAK(console, FindUSBDeviceByAddress(Bstr(a->argv [2]),
-                                                       dev.asOutParam()));
+                    CHECK_ERROR_BREAK(console, FindUSBDeviceByAddress(Bstr(a->argv[2]).raw(),
+                                                                      dev.asOutParam()));
                     CHECK_ERROR_BREAK(dev, COMGETTER(Id)(usbId.asOutParam()));
                 }
             }
 
             if (attach)
-                CHECK_ERROR_BREAK(console, AttachUSBDevice(usbId));
+                CHECK_ERROR_BREAK(console, AttachUSBDevice(usbId.raw()));
             else
             {
                 ComPtr <IUSBDevice> dev;
-                CHECK_ERROR_BREAK(console, DetachUSBDevice(usbId, dev.asOutParam()));
+                CHECK_ERROR_BREAK(console, DetachUSBDevice(usbId.raw(),
+                                                           dev.asOutParam()));
             }
         }
         else if (!strcmp(a->argv[1], "setvideomodehint"))
@@ -646,7 +650,10 @@ int handleControlVM(HandlerArg *a)
 
             ComPtr<IGuest> guest;
             CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
-            CHECK_ERROR_BREAK(guest, SetCredentials(Bstr(a->argv[2]), Bstr(a->argv[3]), Bstr(a->argv[4]), fAllowLocalLogon));
+            CHECK_ERROR_BREAK(guest, SetCredentials(Bstr(a->argv[2]).raw(),
+                                                    Bstr(a->argv[3]).raw(),
+                                                    Bstr(a->argv[4]).raw(),
+                                                    fAllowLocalLogon));
         }
 #if 0 /* TODO: review & remove */
         else if (!strcmp(a->argv[1], "dvdattach"))
@@ -835,7 +842,10 @@ int handleControlVM(HandlerArg *a)
                 break;
 
             ComPtr<IProgress> progress;
-            CHECK_ERROR_BREAK(console, Teleport(bstrHostname, uPort, bstrPassword, uMaxDowntime, progress.asOutParam()));
+            CHECK_ERROR_BREAK(console, Teleport(bstrHostname.raw(), uPort,
+                                                bstrPassword.raw(),
+                                                uMaxDowntime,
+                                                progress.asOutParam()));
 
             if (cMsTimeout)
             {

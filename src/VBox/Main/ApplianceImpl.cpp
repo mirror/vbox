@@ -590,7 +590,7 @@ HRESULT Appliance::searchUniqueVMName(Utf8Str& aName) const
     char *tmpName = RTStrDup(aName.c_str());
     int i = 1;
     /* @todo: Maybe too cost-intensive; try to find a lighter way */
-    while (mVirtualBox->FindMachine(Bstr(tmpName), &machine) != VBOX_E_OBJECT_NOT_FOUND)
+    while (mVirtualBox->FindMachine(Bstr(tmpName).raw(), &machine) != VBOX_E_OBJECT_NOT_FOUND)
     {
         RTStrFree(tmpName);
         RTStrAPrintf(&tmpName, "%s_%d", aName.c_str(), i);
@@ -611,7 +611,7 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
      * already */
     /* @todo: Maybe too cost-intensive; try to find a lighter way */
     while (    RTPathExists(tmpName)
-            || mVirtualBox->FindMedium(Bstr(tmpName), DeviceType_HardDisk, &harddisk) != VBOX_E_OBJECT_NOT_FOUND
+            || mVirtualBox->FindMedium(Bstr(tmpName).raw(), DeviceType_HardDisk, &harddisk) != VBOX_E_OBJECT_NOT_FOUND
           )
     {
         RTStrFree(tmpName);
@@ -693,7 +693,7 @@ void Appliance::waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis,
                 if (FAILED(rc)) throw rc;
                 rc = pProgressAsync->COMGETTER(OperationWeight(&currentWeight));
                 if (FAILED(rc)) throw rc;
-                rc = pProgressThis->SetNextOperation(bstr, currentWeight);
+                rc = pProgressThis->SetNextOperation(bstr.raw(), currentWeight);
                 if (FAILED(rc)) throw rc;
                 ++cOp;
             }else
@@ -902,11 +902,11 @@ HRESULT Appliance::setUpProgress(const LocationInfo &locInfo,
          m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightForXmlOperation));
 
     rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                         bstrDescription,
+                         bstrDescription.raw(),
                          TRUE /* aCancelable */,
                          cOperations, // ULONG cOperations,
                          ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
-                         bstrDescription, // CBSTR bstrFirstOperationDescription,
+                         bstrDescription.raw(), // CBSTR bstrFirstOperationDescription,
                          m->ulWeightForXmlOperation); // ULONG ulFirstOperationWeight,
     return rc;
 }

@@ -104,8 +104,9 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
 
     unconst(mMachine) = aMachine;
 
-    HRESULT rc = protectedInit (aMachine, aThat->m.name,
-                                aThat->m.hostPath, aThat->m.writable, aThat->m.autoMount);
+    HRESULT rc = protectedInit(aMachine, aThat->m.name.raw(),
+                               aThat->m.hostPath.raw(), aThat->m.writable,
+                               aThat->m.autoMount);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))

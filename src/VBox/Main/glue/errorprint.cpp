@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,7 @@
 #include <VBox/log.h>
 
 #include <iprt/stream.h>
+#include <iprt/message.h>
 #include <iprt/path.h>
 
 namespace com
@@ -30,7 +31,7 @@ namespace com
 
 void GluePrintErrorInfo(com::ErrorInfo &info)
 {
-    Utf8Str str = Utf8StrFmt("ERROR: %ls\n"
+    Utf8Str str = Utf8StrFmt("%ls\n"
                              "Details: code %Rhrc (0x%RX32), component %ls, interface %ls, callee %ls\n"
                              ,
                              info.getText().raw(),
@@ -40,8 +41,8 @@ void GluePrintErrorInfo(com::ErrorInfo &info)
                              info.getInterfaceName().raw(),
                              info.getCalleeName().raw());
     // print and log
-    RTPrintf("%s", str.c_str());
-    Log(("%s", str.c_str()));
+    RTMsgError("%s", str.c_str());
+    Log(("ERROR: %s", str.c_str()));
 }
 
 void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, uint32_t ulLine)
@@ -54,16 +55,16 @@ void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, 
                                 ulLine,
                                 strFilename.c_str());
     // print and log
-    RTPrintf("%s", str.c_str());
+    RTStrmPrintf(g_pStdErr, "%s", str.c_str());
     Log(("%s", str.c_str()));
 }
 
 void GluePrintRCMessage(HRESULT rc)
 {
-    Utf8Str str = Utf8StrFmt("ERROR: code %Rhra (extended info not available)\n", rc);
+    Utf8Str str = Utf8StrFmt("Code %Rhra (extended info not available)\n", rc);
     // print and log
-    RTPrintf("%s", str.c_str());
-    Log(("%s", str.c_str()));
+    RTMsgError("%s", str.c_str());
+    Log(("ERROR: %s", str.c_str()));
 }
 
 void GlueHandleComError(ComPtr<IUnknown> iface,

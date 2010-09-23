@@ -610,7 +610,8 @@ void Console::uninit()
 bool Console::enabledGuestPropertiesVRDP(void)
 {
     Bstr value;
-    HRESULT hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/EnableGuestPropertiesVRDP"), value.asOutParam());
+    HRESULT hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/EnableGuestPropertiesVRDP").raw(),
+                                         value.asOutParam());
     if (hrc == S_OK)
     {
         if (value == "1")
@@ -630,6 +631,7 @@ void Console::updateGuestPropertiesVRDPLogon(uint32_t u32ClientId, const char *p
 
     int rc;
     char *pszPropertyName;
+    Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Name", u32ClientId);
     if (RT_SUCCESS(rc))
@@ -637,21 +639,27 @@ void Console::updateGuestPropertiesVRDPLogon(uint32_t u32ClientId, const char *p
         Bstr clientName;
         mRemoteDisplayInfo->COMGETTER(ClientName)(clientName.asOutParam());
 
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), clientName, Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName).raw(),
+                                   clientName.raw(),
+                                   bstrReadOnlyGuest.raw());
         RTStrFree(pszPropertyName);
     }
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/User", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(pszUser), Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName).raw(),
+                                   Bstr(pszUser).raw(),
+                                   bstrReadOnlyGuest.raw());
         RTStrFree(pszPropertyName);
     }
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Domain", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(pszDomain), Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName).raw(),
+                                   Bstr(pszDomain).raw(),
+                                   bstrReadOnlyGuest.raw());
         RTStrFree(pszPropertyName);
     }
 
@@ -659,7 +667,9 @@ void Console::updateGuestPropertiesVRDPLogon(uint32_t u32ClientId, const char *p
     rc = RTStrAPrintf(&pszClientId, "%d", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VRDP/LastConnectedClient"), Bstr(pszClientId), Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VRDP/LastConnectedClient").raw(),
+                                   Bstr(pszClientId).raw(),
+                                   bstrReadOnlyGuest.raw());
         RTStrFree(pszClientId);
     }
 
@@ -679,21 +689,24 @@ void Console::updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId)
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Name", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), bstrReadOnlyGuest);
+        mMachine->SetGuestProperty(Bstr(pszPropertyName).raw(), Bstr("").raw(),
+                                   bstrReadOnlyGuest.raw());
         RTStrFree(pszPropertyName);
     }
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/User", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), bstrReadOnlyGuest);
+        mMachine->SetGuestProperty(Bstr(pszPropertyName).raw(), Bstr("").raw(),
+                                   bstrReadOnlyGuest.raw());
         RTStrFree(pszPropertyName);
     }
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Domain", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), bstrReadOnlyGuest);
+        mMachine->SetGuestProperty(Bstr(pszPropertyName).raw(), Bstr("").raw(),
+                                   bstrReadOnlyGuest.raw());
         RTStrFree(pszPropertyName);
     }
 
@@ -701,7 +714,9 @@ void Console::updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId)
     rc = RTStrAPrintf(&pszClientId, "%d", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VRDP/LastDisconnectedClient"), Bstr(pszClientId), bstrReadOnlyGuest);
+        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VRDP/LastDisconnectedClient").raw(),
+                                   Bstr(pszClientId).raw(),
+                                   bstrReadOnlyGuest.raw());
         RTStrFree(pszClientId);
     }
 
@@ -907,7 +922,8 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     BOOL fProvideGuestCredentials = FALSE;
 
     Bstr value;
-    hrc = mMachine->GetExtraData(Bstr("VRDP/ProvideGuestCredentials"), value.asOutParam());
+    hrc = mMachine->GetExtraData(Bstr("VRDP/ProvideGuestCredentials").raw(),
+                                 value.asOutParam());
     if (SUCCEEDED(hrc) && value == "1")
     {
         /* Provide credentials only if there are no logged in users. */
@@ -915,7 +931,7 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
         LONG64 ul64Timestamp = 0;
         Bstr flags;
 
-        hrc = getGuestProperty(Bstr("/VirtualBox/GuestInfo/OS/NoLoggedInUsers"),
+        hrc = getGuestProperty(Bstr("/VirtualBox/GuestInfo/OS/NoLoggedInUsers").raw(),
                                noLoggedInUsersValue.asOutParam(), &ul64Timestamp, flags.asOutParam());
 
         if (SUCCEEDED(hrc) && noLoggedInUsersValue != Bstr("false"))
@@ -1295,7 +1311,8 @@ Console::loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
 
         ComObjPtr<SharedFolder> sharedFolder;
         sharedFolder.createObject();
-        HRESULT rc = sharedFolder->init(this, name, hostPath, writable, autoMount);
+        HRESULT rc = sharedFolder->init(this, name.raw(), hostPath.raw(),
+                                        writable, autoMount);
         AssertComRCReturn(rc, VERR_INTERNAL_ERROR);
 
         mSharedFolders.insert(std::make_pair(name, sharedFolder));
@@ -1331,10 +1348,10 @@ DECLCALLBACK(int) Console::doGuestPropNotification(void *pvExtension,
     Bstr value(pCBData->pcszValue);
     Bstr flags(pCBData->pcszFlags);
     ComObjPtr<Console> ptrConsole = reinterpret_cast<Console *>(pvExtension);
-    HRESULT hrc = ptrConsole->mControl->PushGuestProperty(name,
-                                                          value,
+    HRESULT hrc = ptrConsole->mControl->PushGuestProperty(name.raw(),
+                                                          value.raw(),
                                                           pCBData->u64Timestamp,
-                                                          flags);
+                                                          flags.raw());
     if (SUCCEEDED(hrc))
         rc = VINF_SUCCESS;
     else
@@ -1716,7 +1733,7 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
     ComObjPtr<Progress> progress;
     progress.createObject();
     progress->init(static_cast<IConsole *>(this),
-                   Bstr(tr("Stopping virtual machine")),
+                   Bstr(tr("Stopping virtual machine")).raw(),
                    FALSE /* aCancelable */);
 
     /* setup task object and thread to carry out the operation asynchronously */
@@ -2296,7 +2313,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
     ComObjPtr<Progress> progress;
     progress.createObject();
     progress->init(static_cast<IConsole *>(this),
-                   Bstr(tr("Saving the execution state of the virtual machine")),
+                   Bstr(tr("Saving the execution state of the virtual machine")).raw(),
                    FALSE /* aCancelable */);
 
     bool fBeganSavingState = false;
@@ -2896,11 +2913,11 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     ComObjPtr<Progress> pProgress;
     pProgress.createObject();
     rc = pProgress->init(static_cast<IConsole*>(this),
-                         Bstr(tr("Taking a snapshot of the virtual machine")),
+                         Bstr(tr("Taking a snapshot of the virtual machine")).raw(),
                          mMachineState == MachineState_Running /* aCancelable */,
                          cOperations,
                          ulTotalOperationsWeight,
-                         Bstr(tr("Setting up snapshot operation")),      // first sub-op description
+                         Bstr(tr("Setting up snapshot operation")).raw(),      // first sub-op description
                          1);        // ulFirstOperationWeight
 
     if (FAILED(rc))
@@ -5216,7 +5233,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     {
         rc = mMachine->COMGETTER(StateFilePath)(savedStateFile.asOutParam());
         if (FAILED(rc)) return rc;
-        ComAssertRet(!!savedStateFile, E_FAIL);
+        ComAssertRet(!savedStateFile.isEmpty(), E_FAIL);
         int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_FILE_ERROR,
@@ -5257,26 +5274,26 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     if (    mMachineState == MachineState_Saved
         ||  (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
         rc = powerupProgress->init(static_cast<IConsole *>(this),
-                                   progressDesc,
+                                   progressDesc.raw(),
                                    FALSE /* aCancelable */);
     else
     if (fTeleporterEnabled)
         rc = powerupProgress->init(static_cast<IConsole *>(this),
-                                   progressDesc,
+                                   progressDesc.raw(),
                                    TRUE /* aCancelable */,
                                    3    /* cOperations */,
                                    10   /* ulTotalOperationsWeight */,
-                                   Bstr(tr("Teleporting virtual machine")),
+                                   Bstr(tr("Teleporting virtual machine")).raw(),
                                    1    /* ulFirstOperationWeight */,
                                    NULL);
     else
     if (fFaultToleranceSyncEnabled)
         rc = powerupProgress->init(static_cast<IConsole *>(this),
-                                   progressDesc,
+                                   progressDesc.raw(),
                                    TRUE /* aCancelable */,
                                    3    /* cOperations */,
                                    10   /* ulTotalOperationsWeight */,
-                                   Bstr(tr("Fault Tolerance syncing of remote virtual machine")),
+                                   Bstr(tr("Fault Tolerance syncing of remote virtual machine")).raw(),
                                    1    /* ulFirstOperationWeight */,
                                    NULL);
 
@@ -5448,7 +5465,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             VMPowerUpTask::ProgressList progresses(task->hardDiskProgresses);
             progresses.push_back(ComPtr<IProgress> (powerupProgress));
             rc = progress->init(static_cast<IConsole *>(this),
-                                progressDesc, progresses.begin(),
+                                progressDesc.raw(), progresses.begin(),
                                 progresses.end());
             AssertComRCReturnRC(rc);
             progress.queryInterfaceTo(aProgress);
@@ -5942,9 +5959,12 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
                         if (it != oldFolders.end() ||
                             mGlobalSharedFolders.find(name) !=
                                 mGlobalSharedFolders.end())
-                            rc = removeSharedFolder(name);
+                            rc = removeSharedFolder(name.raw());
                         /* create the new machine folder */
-                        rc = createSharedFolder(name, SharedFolderData(hostPath, writable, autoMount));
+                        rc = createSharedFolder(name.raw(),
+                                                SharedFolderData(hostPath,
+                                                                 writable,
+                                                                 autoMount));
                     }
                 }
                 /* forget the processed (or identical) folder */
@@ -5969,12 +5989,12 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
                 else
                 {
                     /* remove the outdated machine folder */
-                    rc = removeSharedFolder(it->first);
+                    rc = removeSharedFolder(it->first.raw());
                     /* create the global folder if there is any */
                     SharedFolderDataMap::const_iterator git =
                         mGlobalSharedFolders.find(it->first);
                     if (git != mGlobalSharedFolders.end())
-                        rc = createSharedFolder(git->first, git->second);
+                        rc = createSharedFolder(git->first.raw(), git->second);
                 }
             }
 
@@ -6026,7 +6046,7 @@ bool Console::findOtherSharedFolder(IN_BSTR aName,
 HRESULT Console::createSharedFolder(CBSTR aName, SharedFolderData aData)
 {
     ComAssertRet(aName && *aName, E_FAIL);
-    ComAssertRet(aData.mHostPath, E_FAIL);
+    ComAssertRet(!aData.mHostPath.isEmpty(), E_FAIL);
 
     /* sanity checks */
     AssertReturn(mpVM, E_FAIL);
@@ -6038,12 +6058,12 @@ HRESULT Console::createSharedFolder(CBSTR aName, SharedFolderData aData)
 
     Log(("Adding shared folder '%ls' -> '%ls'\n", aName, aData.mHostPath.raw()));
 
-    cbString = (RTUtf16Len(aData.mHostPath) + 1) * sizeof(RTUTF16);
+    cbString = (RTUtf16Len(aData.mHostPath.raw()) + 1) * sizeof(RTUTF16);
     if (cbString >= UINT16_MAX)
         return setError(E_INVALIDARG, tr("The name is too long"));
     pFolderName = (SHFLSTRING *) RTMemAllocZ(sizeof(SHFLSTRING) + cbString);
     Assert(pFolderName);
-    memcpy(pFolderName->String.ucs2, aData.mHostPath, cbString);
+    memcpy(pFolderName->String.ucs2, aData.mHostPath.raw(), cbString);
 
     pFolderName->u16Size   = (uint16_t)cbString;
     pFolderName->u16Length = (uint16_t)cbString - sizeof(RTUTF16);
@@ -7051,7 +7071,8 @@ Console::setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFlags,
     LogRel(("Console: VM runtime error: fatal=%RTbool, errorID=%s message=\"%s\"\n",
              fFatal, pszErrorId, message.c_str()));
 
-    that->onRuntimeError(BOOL(fFatal), Bstr(pszErrorId), Bstr(message));
+    that->onRuntimeError(BOOL(fFatal), Bstr(pszErrorId).raw(),
+                         Bstr(message).raw());
 
     LogFlowFuncLeave();
 }
@@ -7270,7 +7291,7 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDPUSBDEVICEDESC *p
         {
             Bstr uuid;
             device->COMGETTER(Id)(uuid.asOutParam());
-            onUSBDeviceDetach(uuid, NULL);
+            onUSBDeviceDetach(uuid.raw(), NULL);
         }
 
         /* And remove it from the list. */
@@ -7484,7 +7505,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                          it != task->mSharedFolders.end();
                          ++ it)
                     {
-                        rc = console->createSharedFolder((*it).first, (*it).second);
+                        rc = console->createSharedFolder((*it).first.raw(),
+                                                         (*it).second);
                         if (FAILED(rc)) break;
                     }
                     if (FAILED(rc)) break;
@@ -7842,8 +7864,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
          * others from accessing this machine)
          */
         rc = that->mControl->BeginTakingSnapshot(that,
-                                                 pTask->bstrName,
-                                                 pTask->bstrDescription,
+                                                 pTask->bstrName.raw(),
+                                                 pTask->bstrDescription.raw(),
                                                  pTask->mProgress,
                                                  pTask->fTakingSnapshotOnline,
                                                  pTask->bstrSavedStateFile.asOutParam());
@@ -7872,7 +7894,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
         {
             Utf8Str strSavedStateFile(pTask->bstrSavedStateFile);
 
-            pTask->mProgress->SetNextOperation(Bstr(tr("Saving the machine state")),
+            pTask->mProgress->SetNextOperation(Bstr(tr("Saving the machine state")).raw(),
                                                pTask->ulMemSize);       // operation weight, same as computed when setting up progress object
             pTask->mProgress->setCancelCallback(takesnapshotProgressCancelCallback, that->mpVM);
 
@@ -7898,7 +7920,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
             // STEP 4: reattach hard disks
             LogFlowFunc(("Reattaching new differencing hard disks...\n"));
 
-            pTask->mProgress->SetNextOperation(Bstr(tr("Reconfiguring medium attachments")),
+            pTask->mProgress->SetNextOperation(Bstr(tr("Reconfiguring medium attachments")).raw(),
                                                1);       // operation weight, same as computed when setting up progress object
 
             com::SafeIfaceArray<IMediumAttachment> atts;
@@ -7926,7 +7948,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 if (FAILED(rc))
                     throw rc;
 
-                rc = that->mMachine->GetStorageControllerByName(controllerName, controller.asOutParam());
+                rc = that->mMachine->GetStorageControllerByName(controllerName.raw(),
+                                                                controller.asOutParam());
                 if (FAILED(rc))
                     throw rc;
 

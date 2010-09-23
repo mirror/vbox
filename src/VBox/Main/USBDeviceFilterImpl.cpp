@@ -256,7 +256,7 @@ HRESULT USBDeviceFilter::init(USBController *aParent,
         rc = usbFilterFieldSetter(USBFILTERIDX_PORT, data.strPort);
         if (FAILED(rc)) break;
 
-        rc = COMSETTER(Remote)(Bstr(data.strRemote));
+        rc = COMSETTER(Remote)(Bstr(data.strRemote).raw());
         if (FAILED(rc)) break;
 
         rc = COMSETTER(MaskedInterfaces)(data.ulMaskedInterfaces);

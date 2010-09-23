@@ -161,7 +161,8 @@ public:
                             if (id == machineId)
                             {
                                 Bstr value1;
-                                hrc = machine->GetExtraData(Bstr("VRDP/DisconnectOnGuestLogout"), value1.asOutParam());
+                                hrc = machine->GetExtraData(Bstr("VRDP/DisconnectOnGuestLogout").raw(),
+                                                            value1.asOutParam());
                                 if (SUCCEEDED(hrc) && value1 == "1")
                                 {
                                     fProcessDisconnectOnGuestLogout = TRUE;
@@ -797,7 +798,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         /* find ID by name */
         if (id.isEmpty())
         {
-            rc = virtualBox->FindMachine(Bstr(name), m.asOutParam());
+            rc = virtualBox->FindMachine(Bstr(name).raw(), m.asOutParam());
             if (FAILED(rc))
             {
                 LogError("Invalid machine name!\n", rc);
@@ -811,7 +812,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         else
         {
             /* Use the GUID. */
-            rc = virtualBox->GetMachine(id, m.asOutParam());
+            rc = virtualBox->GetMachine(id.raw(), m.asOutParam());
             if (FAILED(rc))
             {
                 LogError("Invalid machine uid!\n", rc);
@@ -1053,12 +1054,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (vrdpPort != NULL)
             {
                 Bstr bstr = vrdpPort;
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Ports)(bstr));
+                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Ports)(bstr.raw()));
             }
             /* set VRDP address if requested by the user */
             if (vrdpAddress != NULL)
             {
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(NetAddress)(Bstr(vrdpAddress)));
+                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(NetAddress)(Bstr(vrdpAddress).raw()));
             }
             /* enable VRDP server (only if currently disabled) */
             if (!fVRDPEnabled)

@@ -255,8 +255,9 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
  */
 static HRESULT NewUniqueKey(ComPtr<IMachine> pMachine, const char *pszKeyBase, Utf8Str &rKey)
 {
+    Bstr KeyBase(pszKeyBase);
     Bstr Keys;
-    HRESULT hrc = pMachine->GetExtraData(Bstr(pszKeyBase), Keys.asOutParam());
+    HRESULT hrc = pMachine->GetExtraData(KeyBase.raw(), Keys.asOutParam());
     if (FAILED(hrc))
         return hrc;
 
@@ -264,7 +265,7 @@ static HRESULT NewUniqueKey(ComPtr<IMachine> pMachine, const char *pszKeyBase, U
     if (Keys.isEmpty())
     {
         rKey = "1";
-        return pMachine->SetExtraData(Bstr(pszKeyBase), Bstr("1"));
+        return pMachine->SetExtraData(KeyBase.raw(), Bstr(rKey).raw());
     }
 
     /* find a unique number - brute force rulez. */
@@ -289,7 +290,8 @@ static HRESULT NewUniqueKey(ComPtr<IMachine> pMachine, const char *pszKeyBase, U
         {
             rKey = szKey;
             Utf8StrFmt NewKeysUtf8("%s %s", pszKeys, szKey);
-            return pMachine->SetExtraData(Bstr(pszKeyBase), Bstr(NewKeysUtf8));
+            return pMachine->SetExtraData(KeyBase.raw(),
+                                          Bstr(NewKeysUtf8).raw());
         }
     }
     RTMsgError("Cannot find unique key for '%s'!", pszKeyBase);
@@ -375,7 +377,9 @@ static HRESULT RemoveKey(ComPtr<IMachine> pMachine, const char *pszKeyBase, cons
  */
 static HRESULT SetString(ComPtr<IMachine> pMachine, const char *pszKeyBase, const char *pszKey, const char *pszAttribute, const char *pszValue)
 {
-    HRESULT hrc = pMachine->SetExtraData(Bstr(Utf8StrFmt("%s/%s/%s", pszKeyBase, pszKey, pszAttribute)), Bstr(pszValue));
+    HRESULT hrc = pMachine->SetExtraData(BstrFmt("%s/%s/%s", pszKeyBase,
+                                                 pszKey, pszAttribute).raw(),
+                                         Bstr(pszValue).raw());
     if (FAILED(hrc))
         RTMsgError("Failed to set '%s/%s/%s' to '%s'! hrc=%#x",
                    pszKeyBase, pszKey, pszAttribute, pszValue, hrc);
@@ -431,11 +435,12 @@ static int CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, C
      */
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = aVirtualBox->GetMachine(Bstr(argv[0]), machine.asOutParam());
+    rc = aVirtualBox->GetMachine(Bstr(argv[0]).raw(), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]), machine.asOutParam()), 1);
+        CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
+                                                 machine.asOutParam()), 1);
     }
 
     /*
@@ -1472,7 +1477,10 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     if (fRegister)
     {
         ComPtr<IMedium> hardDisk;
-        CHECK_ERROR(aVirtualBox, OpenMedium(Bstr(filename), DeviceType_HardDisk, AccessMode_ReadWrite, hardDisk.asOutParam()));
+        CHECK_ERROR(aVirtualBox, OpenMedium(Bstr(filename).raw(),
+                                            DeviceType_HardDisk,
+                                            AccessMode_ReadWrite,
+                                            hardDisk.asOutParam()));
     }
 
     return SUCCEEDED(rc) ? 0 : 1;
@@ -1889,9 +1897,11 @@ int CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<I
         return errorSyntax(USAGE_DEBUGLOG, "Missing VM name/UUID");
 
     ComPtr<IMachine> ptrMachine;
-    HRESULT rc = aVirtualBox->GetMachine(Bstr(argv[0]), ptrMachine.asOutParam());
+    HRESULT rc = aVirtualBox->GetMachine(Bstr(argv[0]).raw(),
+                                         ptrMachine.asOutParam());
     if (FAILED(rc) || ptrMachine.isNull())
-        CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]), ptrMachine.asOutParam()), 1);
+        CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
+                                                 ptrMachine.asOutParam()), 1);
 
     CHECK_ERROR_RET(ptrMachine, LockMachine(aSession, LockType_Shared), 1);
 

@@ -69,7 +69,8 @@ int handleRegisterVM(HandlerArg *a)
     /** @todo Ugly hack to get both the API interpretation of relative paths
      * and the client's interpretation of relative paths. Remove after the API
      * has been redesigned. */
-    rc = a->virtualBox->OpenMachine(Bstr(a->argv[0]), machine.asOutParam());
+    rc = a->virtualBox->OpenMachine(Bstr(a->argv[0]).raw(),
+                                    machine.asOutParam());
     if (rc == VBOX_E_FILE_ERROR)
     {
         char szVMFileAbs[RTPATH_MAX] = "";
@@ -79,10 +80,12 @@ int handleRegisterVM(HandlerArg *a)
             RTMsgError("Cannot convert filename \"%s\" to absolute path", a->argv[0]);
             return 1;
         }
-        CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(szVMFileAbs), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(szVMFileAbs).raw(),
+                                               machine.asOutParam()));
     }
     else if (FAILED(rc))
-        CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
     if (SUCCEEDED(rc))
     {
         ASSERT(machine);
@@ -147,11 +150,12 @@ int handleUnregisterVM(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Guid(VMName).toUtf16(), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Bstr(VMName).raw(), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMName), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMName).raw(),
+                                               machine.asOutParam()));
     }
     if (machine)
     {
@@ -229,7 +233,7 @@ int handleCreateVM(HandlerArg *a)
     }
 
     /* check for required options */
-    if (name)
+    if (name.isEmpty())
         return errorSyntax(USAGE_CREATEVM, "Parameter --name is required");
 
     do
@@ -237,10 +241,10 @@ int handleCreateVM(HandlerArg *a)
         ComPtr<IMachine> machine;
 
         CHECK_ERROR_BREAK(a->virtualBox,
-                          CreateMachine(name,
-                                        osTypeId,
-                                        baseFolder,
-                                        Guid(id).toUtf16(),
+                          CreateMachine(name.raw(),
+                                        osTypeId.raw(),
+                                        baseFolder.raw(),
+                                        Guid(id).toUtf16().raw(),
                                         FALSE,
                                         machine.asOutParam()));
 
@@ -346,11 +350,12 @@ int handleStartVM(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Guid(VMName).toUtf16(), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Bstr(VMName).raw(), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMName), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMName).raw(),
+                                               machine.asOutParam()));
     }
     if (machine)
     {
@@ -367,7 +372,8 @@ int handleStartVM(HandlerArg *a)
         env = str;
 #endif
         ComPtr<IProgress> progress;
-        CHECK_ERROR_RET(machine, LaunchVMProcess(a->session, sessionType, env, progress.asOutParam()), rc);
+        CHECK_ERROR_RET(machine, LaunchVMProcess(a->session, sessionType.raw(),
+                                                 env.raw(), progress.asOutParam()), rc);
         RTPrintf("Waiting for the VM to power on...\n");
         CHECK_ERROR_RET(progress, WaitForCompletion(-1), 1);
 
@@ -405,11 +411,13 @@ int handleDiscardState(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
+                                   machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
     }
     if (machine)
     {
@@ -439,11 +447,13 @@ int handleAdoptState(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
+                                   machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
     }
     if (machine)
     {
@@ -455,7 +465,7 @@ int handleAdoptState(HandlerArg *a)
             {
                 ComPtr<IConsole> console;
                 CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-                CHECK_ERROR_BREAK(console, AdoptSavedState(Bstr(a->argv[1])));
+                CHECK_ERROR_BREAK(console, AdoptSavedState(Bstr(a->argv[1]).raw()));
             } while (0);
             CHECK_ERROR_BREAK(a->session, UnlockMachine());
         } while (0);
@@ -486,7 +496,8 @@ int handleGetExtraData(HandlerArg *a)
             {
                 Bstr bstrKey(aKeys[i]);
                 Bstr bstrValue;
-                CHECK_ERROR(a->virtualBox, GetExtraData(bstrKey, bstrValue.asOutParam()));
+                CHECK_ERROR(a->virtualBox, GetExtraData(bstrKey.raw(),
+                                                        bstrValue.asOutParam()));
 
                 RTPrintf("Key: %lS, Value: %lS\n", bstrKey.raw(), bstrValue.raw());
             }
@@ -494,7 +505,8 @@ int handleGetExtraData(HandlerArg *a)
         else
         {
             Bstr value;
-            CHECK_ERROR(a->virtualBox, GetExtraData(Bstr(a->argv[1]), value.asOutParam()));
+            CHECK_ERROR(a->virtualBox, GetExtraData(Bstr(a->argv[1]).raw(),
+                                                    value.asOutParam()));
             if (!value.isEmpty())
                 RTPrintf("Value: %lS\n", value.raw());
             else
@@ -505,11 +517,13 @@ int handleGetExtraData(HandlerArg *a)
     {
         ComPtr<IMachine> machine;
         /* assume it's a UUID */
-        rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
+        rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
+                                       machine.asOutParam());
         if (FAILED(rc) || !machine)
         {
             /* must be a name */
-            CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                                   machine.asOutParam()));
         }
         if (machine)
         {
@@ -525,7 +539,8 @@ int handleGetExtraData(HandlerArg *a)
                 {
                     Bstr bstrKey(aKeys[i]);
                     Bstr bstrValue;
-                    CHECK_ERROR(machine, GetExtraData(bstrKey, bstrValue.asOutParam()));
+                    CHECK_ERROR(machine, GetExtraData(bstrKey.raw(),
+                                                      bstrValue.asOutParam()));
 
                     RTPrintf("Key: %lS, Value: %lS\n", bstrKey.raw(), bstrValue.raw());
                 }
@@ -533,7 +548,8 @@ int handleGetExtraData(HandlerArg *a)
             else
             {
                 Bstr value;
-                CHECK_ERROR(machine, GetExtraData(Bstr(a->argv[1]), value.asOutParam()));
+                CHECK_ERROR(machine, GetExtraData(Bstr(a->argv[1]).raw(),
+                                                  value.asOutParam()));
                 if (!value.isEmpty())
                     RTPrintf("Value: %lS\n", value.raw());
                 else
@@ -554,10 +570,13 @@ int handleSetExtraData(HandlerArg *a)
     /* global data? */
     if (!strcmp(a->argv[0], "global"))
     {
+        /** @todo passing NULL is deprecated */
         if (a->argc < 3)
-            CHECK_ERROR(a->virtualBox, SetExtraData(Bstr(a->argv[1]), NULL));
+            CHECK_ERROR(a->virtualBox, SetExtraData(Bstr(a->argv[1]).raw(),
+                                                    NULL));
         else if (a->argc == 3)
-            CHECK_ERROR(a->virtualBox, SetExtraData(Bstr(a->argv[1]), Bstr(a->argv[2])));
+            CHECK_ERROR(a->virtualBox, SetExtraData(Bstr(a->argv[1]).raw(),
+                                                    Bstr(a->argv[2]).raw()));
         else
             return errorSyntax(USAGE_SETEXTRADATA, "Too many parameters");
     }
@@ -565,18 +584,23 @@ int handleSetExtraData(HandlerArg *a)
     {
         ComPtr<IMachine> machine;
         /* assume it's a UUID */
-        rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
+        rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
+                                       machine.asOutParam());
         if (FAILED(rc) || !machine)
         {
             /* must be a name */
-            CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+            CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                       machine.asOutParam()));
         }
         if (machine)
         {
+            /** @todo passing NULL is deprecated */
             if (a->argc < 3)
-                CHECK_ERROR(machine, SetExtraData(Bstr(a->argv[1]), NULL));
+                CHECK_ERROR(machine, SetExtraData(Bstr(a->argv[1]).raw(),
+                                                  NULL));
             else if (a->argc == 3)
-                CHECK_ERROR(machine, SetExtraData(Bstr(a->argv[1]), Bstr(a->argv[2])));
+                CHECK_ERROR(machine, SetExtraData(Bstr(a->argv[1]).raw(),
+                                                  Bstr(a->argv[2]).raw()));
             else
                 return errorSyntax(USAGE_SETEXTRADATA, "Too many parameters");
         }
@@ -601,7 +625,7 @@ int handleSetProperty(HandlerArg *a)
         if (!strcmp(a->argv[1], "default"))
             CHECK_ERROR(systemProperties, COMSETTER(DefaultHardDiskFolder)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(DefaultHardDiskFolder)(Bstr(a->argv[1])));
+            CHECK_ERROR(systemProperties, COMSETTER(DefaultHardDiskFolder)(Bstr(a->argv[1]).raw()));
     }
     else if (!strcmp(a->argv[0], "machinefolder"))
     {
@@ -609,7 +633,7 @@ int handleSetProperty(HandlerArg *a)
         if (!strcmp(a->argv[1], "default"))
             CHECK_ERROR(systemProperties, COMSETTER(DefaultMachineFolder)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(DefaultMachineFolder)(Bstr(a->argv[1])));
+            CHECK_ERROR(systemProperties, COMSETTER(DefaultMachineFolder)(Bstr(a->argv[1]).raw()));
     }
     else if (!strcmp(a->argv[0], "vrdpauthlibrary"))
     {
@@ -617,7 +641,7 @@ int handleSetProperty(HandlerArg *a)
         if (!strcmp(a->argv[1], "default"))
             CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(Bstr(a->argv[1])));
+            CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(Bstr(a->argv[1]).raw()));
     }
     else if (!strcmp(a->argv[0], "websrvauthlibrary"))
     {
@@ -625,7 +649,7 @@ int handleSetProperty(HandlerArg *a)
         if (!strcmp(a->argv[1], "default"))
             CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(Bstr(a->argv[1])));
+            CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(Bstr(a->argv[1]).raw()));
     }
     else if (!strcmp(a->argv[0], "loghistorycount"))
     {
@@ -652,11 +676,13 @@ int handleSharedFolder(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[1]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Bstr(a->argv[1]).raw(),
+                                   machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[1]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[1]).raw(),
+                                               machine.asOutParam()));
     }
     if (!machine)
         return 1;
@@ -730,7 +756,8 @@ int handleSharedFolder(HandlerArg *a)
             /* get the session console */
             CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), 1);
 
-            CHECK_ERROR(console, CreateSharedFolder(Bstr(name), Bstr(hostpath),
+            CHECK_ERROR(console, CreateSharedFolder(Bstr(name).raw(),
+                                                    Bstr(hostpath).raw(),
                                                     fWritable, fAutoMount));
             if (console)
                 a->session->UnlockMachine();
@@ -744,7 +771,8 @@ int handleSharedFolder(HandlerArg *a)
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
 
-            CHECK_ERROR(machine, CreateSharedFolder(Bstr(name), Bstr(hostpath),
+            CHECK_ERROR(machine, CreateSharedFolder(Bstr(name).raw(),
+                                                    Bstr(hostpath).raw(),
                                                     fWritable, fAutoMount));
             if (SUCCEEDED(rc))
                 CHECK_ERROR(machine, SaveSettings());
@@ -795,7 +823,7 @@ int handleSharedFolder(HandlerArg *a)
             /* get the session console */
             CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), 1);
 
-            CHECK_ERROR(console, RemoveSharedFolder(Bstr(name)));
+            CHECK_ERROR(console, RemoveSharedFolder(Bstr(name).raw()));
 
             if (console)
                 a->session->UnlockMachine();
@@ -808,7 +836,7 @@ int handleSharedFolder(HandlerArg *a)
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
 
-            CHECK_ERROR(machine, RemoveSharedFolder(Bstr(name)));
+            CHECK_ERROR(machine, RemoveSharedFolder(Bstr(name).raw()));
 
             /* commit and close the session */
             CHECK_ERROR(machine, SaveSettings());
@@ -833,10 +861,12 @@ int handleVMStatistics(HandlerArg *a)
     ComPtr<IMachine> machine;
     Bstr uuid(a->argv[0]);
     if (!Guid(a->argv[0]).isEmpty())
-        CHECK_ERROR(a->virtualBox, GetMachine(uuid, machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, GetMachine(uuid.raw(),
+                                              machine.asOutParam()));
     else
     {
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
         if (SUCCEEDED(rc))
             machine->COMGETTER(Id)(uuid.asOutParam());
     }
@@ -887,11 +917,13 @@ int handleVMStatistics(HandlerArg *a)
             if (SUCCEEDED(rc))
             {
                 if (fReset)
-                    CHECK_ERROR(debugger, ResetStats(Bstr(pszPattern)));
+                    CHECK_ERROR(debugger, ResetStats(Bstr(pszPattern).raw()));
                 else
                 {
                     Bstr stats;
-                    CHECK_ERROR(debugger, GetStats(Bstr(pszPattern), fWithDescriptions, stats.asOutParam()));
+                    CHECK_ERROR(debugger, GetStats(Bstr(pszPattern).raw(),
+                                                   fWithDescriptions,
+                                                   stats.asOutParam()));
                     if (SUCCEEDED(rc))
                     {
                         /* if (fFormatted)

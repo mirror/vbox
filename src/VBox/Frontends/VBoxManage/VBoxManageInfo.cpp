@@ -96,14 +96,14 @@ void showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
     }
 }
 
-static void makeTimeStr (char *s, int cb, int64_t millies)
+static void makeTimeStr(char *s, int cb, int64_t millies)
 {
     RTTIME t;
     RTTIMESPEC ts;
 
     RTTimeSpecSetMilli(&ts, millies);
 
-    RTTimeExplode (&t, &ts);
+    RTTimeExplode(&t, &ts);
 
     RTStrPrintf(s, cb, "%04d/%02d/%02d %02d:%02d:%02d UTC",
                         t.i32Year, t.u8Month, t.u8MonthDay,
@@ -118,10 +118,10 @@ static void makeTimeStr (char *s, int cb, int64_t millies)
 # pragma optimize("g", off)
 #endif
 
-HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
-                    ComPtr<IMachine> machine,
-                    VMINFO_DETAILS details /*= VMINFO_NONE*/,
-                    ComPtr<IConsole> console /*= ComPtr <IConsole> ()*/)
+HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
+                   ComPtr<IMachine> machine,
+                   VMINFO_DETAILS details /*= VMINFO_NONE*/,
+                   ComPtr<IConsole> console /*= ComPtr <IConsole> ()*/)
 {
     HRESULT rc;
 
@@ -194,7 +194,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     Bstr osTypeId;
     rc = machine->COMGETTER(OSTypeId)(osTypeId.asOutParam());
     ComPtr<IGuestOSType> osType;
-    rc = virtualBox->GetGuestOSType (osTypeId, osType.asOutParam());
+    rc = virtualBox->GetGuestOSType(osTypeId.raw(), osType.asOutParam());
     Bstr osName;
     rc = osType->COMGETTER(Description)(osName.asOutParam());
     if (details == VMINFO_MACHINEREADABLE)
@@ -591,7 +591,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
      * Storage Controllers and their attached Mediums.
      */
     com::SafeIfaceArray<IStorageController> storageCtls;
-    CHECK_ERROR(machine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam (storageCtls)));
+    CHECK_ERROR(machine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(storageCtls)));
     for (size_t i = 0; i < storageCtls.size(); ++ i)
     {
         ComPtr<IStorageController> storageCtl = storageCtls[i];
@@ -675,13 +675,16 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         {
             for (ULONG k = 0; k < cDevices; ++ k)
             {
-                rc = machine->GetMedium(storageCtlName, i, k, medium.asOutParam());
+                rc = machine->GetMedium(storageCtlName.raw(), i, k,
+                                        medium.asOutParam());
                 if (SUCCEEDED(rc) && medium)
                 {
                     BOOL fPassthrough;
                     ComPtr<IMediumAttachment> mediumAttach;
 
-                    rc = machine->GetMediumAttachment(storageCtlName, i, k, mediumAttach.asOutParam());
+                    rc = machine->GetMediumAttachment(storageCtlName.raw(),
+                                                      i, k,
+                                                      mediumAttach.asOutParam());
                     if (SUCCEEDED(rc) && mediumAttach)
                         mediumAttach->COMGETTER(Passthrough)(&fPassthrough);
 
@@ -1291,7 +1294,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         do
         {
             ULONG xRes, yRes, bpp;
-            rc = display->GetScreenResolution (0, &xRes, &yRes, &bpp);
+            rc = display->GetScreenResolution(0, &xRes, &yRes, &bpp);
             if (rc == E_ACCESSDENIED)
                 break; /* VM not powered up */
             if (FAILED(rc))
@@ -1441,49 +1444,49 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                         RTPrintf("Index:            %zu\n", index);
 
                     BOOL bActive = FALSE;
-                    CHECK_ERROR_RET (DevPtr, COMGETTER (Active) (&bActive), rc);
+                    CHECK_ERROR_RET(DevPtr, COMGETTER(Active)(&bActive), rc);
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("USBFilterActive%zu=\"%s\"\n", index + 1, bActive ? "on" : "off");
                     else
                         RTPrintf("Active:           %s\n", bActive ? "yes" : "no");
 
                     Bstr bstr;
-                    CHECK_ERROR_RET (DevPtr, COMGETTER (Name) (bstr.asOutParam()), rc);
+                    CHECK_ERROR_RET(DevPtr, COMGETTER(Name)(bstr.asOutParam()), rc);
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("USBFilterName%zu=\"%lS\"\n", index + 1, bstr.raw());
                     else
                         RTPrintf("Name:             %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (DevPtr, COMGETTER (VendorId) (bstr.asOutParam()), rc);
+                    CHECK_ERROR_RET(DevPtr, COMGETTER(VendorId)(bstr.asOutParam()), rc);
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("USBFilterVendorId%zu=\"%lS\"\n", index + 1, bstr.raw());
                     else
                         RTPrintf("VendorId:         %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (DevPtr, COMGETTER (ProductId) (bstr.asOutParam()), rc);
+                    CHECK_ERROR_RET(DevPtr, COMGETTER(ProductId)(bstr.asOutParam()), rc);
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("USBFilterProductId%zu=\"%lS\"\n", index + 1, bstr.raw());
                     else
                         RTPrintf("ProductId:        %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (DevPtr, COMGETTER (Revision) (bstr.asOutParam()), rc);
+                    CHECK_ERROR_RET(DevPtr, COMGETTER(Revision)(bstr.asOutParam()), rc);
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("USBFilterRevision%zu=\"%lS\"\n", index + 1, bstr.raw());
                     else
                         RTPrintf("Revision:         %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (DevPtr, COMGETTER (Manufacturer) (bstr.asOutParam()), rc);
+                    CHECK_ERROR_RET(DevPtr, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("USBFilterManufacturer%zu=\"%lS\"\n", index + 1, bstr.raw());
                     else
                         RTPrintf("Manufacturer:     %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (DevPtr, COMGETTER (Product) (bstr.asOutParam()), rc);
+                    CHECK_ERROR_RET(DevPtr, COMGETTER(Product)(bstr.asOutParam()), rc);
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("USBFilterProduct%zu=\"%lS\"\n", index + 1, bstr.raw());
                     else
                         RTPrintf("Product:          %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (DevPtr, COMGETTER (Remote) (bstr.asOutParam()), rc);
+                    CHECK_ERROR_RET(DevPtr, COMGETTER(Remote)(bstr.asOutParam()), rc);
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("USBFilterRemote%zu=\"%lS\"\n", index + 1, bstr.raw());
                     else
                         RTPrintf("Remote:           %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (DevPtr, COMGETTER (SerialNumber) (bstr.asOutParam()), rc);
+                    CHECK_ERROR_RET(DevPtr, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
                     if (details == VMINFO_MACHINEREADABLE)
                         RTPrintf("USBFilterSerialNumber%zu=\"%lS\"\n", index + 1, bstr.raw());
                     else
@@ -1491,7 +1494,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     if (details != VMINFO_MACHINEREADABLE)
                     {
                         ULONG fMaskedIfs;
-                        CHECK_ERROR_RET (DevPtr, COMGETTER (MaskedInterfaces) (&fMaskedIfs), rc);
+                        CHECK_ERROR_RET(DevPtr, COMGETTER(MaskedInterfaces)(&fMaskedIfs), rc);
                         if (fMaskedIfs)
                             RTPrintf("Masked Interfaces: %#010x\n", fMaskedIfs);
                         RTPrintf("\n");
@@ -1508,7 +1511,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("Available remote USB devices:\n\n");
 
                 SafeIfaceArray <IHostUSBDevice> coll;
-                CHECK_ERROR_RET (console, COMGETTER(RemoteUSBDevices) (ComSafeArrayAsOutParam(coll)), rc);
+                CHECK_ERROR_RET(console, COMGETTER(RemoteUSBDevices)(ComSafeArrayAsOutParam(coll)), rc);
 
                 if (coll.size() == 0)
                 {
@@ -1523,13 +1526,13 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
                         /* Query info. */
                         Bstr id;
-                        CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(Id)(id.asOutParam()), rc);
                         USHORT usVendorId;
-                        CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(VendorId)(&usVendorId), rc);
                         USHORT usProductId;
-                        CHECK_ERROR_RET (dev, COMGETTER(ProductId)(&usProductId), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(ProductId)(&usProductId), rc);
                         USHORT bcdRevision;
-                        CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), rc);
 
                         if (details == VMINFO_MACHINEREADABLE)
                             RTPrintf("USBRemoteUUID%zu=\"%S\"\n"
@@ -1552,7 +1555,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
                         /* optional stuff. */
                         Bstr bstr;
-                        CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
                         if (!bstr.isEmpty())
                         {
                             if (details == VMINFO_MACHINEREADABLE)
@@ -1560,7 +1563,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                             else
                                 RTPrintf("Manufacturer:       %lS\n", bstr.raw());
                         }
-                        CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(Product)(bstr.asOutParam()), rc);
                         if (!bstr.isEmpty())
                         {
                             if (details == VMINFO_MACHINEREADABLE)
@@ -1568,7 +1571,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                             else
                                 RTPrintf("Product:            %lS\n", bstr.raw());
                         }
-                        CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
                         if (!bstr.isEmpty())
                         {
                             if (details == VMINFO_MACHINEREADABLE)
@@ -1576,7 +1579,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                             else
                                 RTPrintf("SerialNumber:       %lS\n", bstr.raw());
                         }
-                        CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(Address)(bstr.asOutParam()), rc);
                         if (!bstr.isEmpty())
                         {
                             if (details == VMINFO_MACHINEREADABLE)
@@ -1594,10 +1597,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             /* scope */
             {
                 if (details != VMINFO_MACHINEREADABLE)
-                    RTPrintf ("Currently Attached USB Devices:\n\n");
+                    RTPrintf("Currently Attached USB Devices:\n\n");
 
                 SafeIfaceArray <IUSBDevice> coll;
-                CHECK_ERROR_RET (console, COMGETTER(USBDevices) (ComSafeArrayAsOutParam(coll)), rc);
+                CHECK_ERROR_RET(console, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)), rc);
 
                 if (coll.size() == 0)
                 {
@@ -1612,13 +1615,13 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
                         /* Query info. */
                         Bstr id;
-                        CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(Id)(id.asOutParam()), rc);
                         USHORT usVendorId;
-                        CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(VendorId)(&usVendorId), rc);
                         USHORT usProductId;
-                        CHECK_ERROR_RET (dev, COMGETTER(ProductId)(&usProductId), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(ProductId)(&usProductId), rc);
                         USHORT bcdRevision;
-                        CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), rc);
 
                         if (details == VMINFO_MACHINEREADABLE)
                             RTPrintf("USBAttachedUUID%zu=\"%S\"\n"
@@ -1641,7 +1644,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
                         /* optional stuff. */
                         Bstr bstr;
-                        CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(Manufacturer)(bstr.asOutParam()), rc);
                         if (!bstr.isEmpty())
                         {
                             if (details == VMINFO_MACHINEREADABLE)
@@ -1649,7 +1652,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                             else
                                 RTPrintf("Manufacturer:       %lS\n", bstr.raw());
                         }
-                        CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(Product)(bstr.asOutParam()), rc);
                         if (!bstr.isEmpty())
                         {
                             if (details == VMINFO_MACHINEREADABLE)
@@ -1657,7 +1660,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                             else
                                 RTPrintf("Product:            %lS\n", bstr.raw());
                         }
-                        CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(SerialNumber)(bstr.asOutParam()), rc);
                         if (!bstr.isEmpty())
                         {
                             if (details == VMINFO_MACHINEREADABLE)
@@ -1665,7 +1668,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                             else
                                 RTPrintf("SerialNumber:       %lS\n", bstr.raw());
                         }
-                        CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), rc);
+                        CHECK_ERROR_RET(dev, COMGETTER(Address)(bstr.asOutParam()), rc);
                         if (!bstr.isEmpty())
                         {
                             if (details == VMINFO_MACHINEREADABLE)
@@ -1789,20 +1792,20 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         ULONG   ClientVersion;
         ULONG   EncryptionStyle;
 
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(Active)             (&Active), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(NumberOfClients)    (&NumberOfClients), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BeginTime)          (&BeginTime), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(EndTime)            (&EndTime), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesSent)          (&BytesSent), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesSentTotal)     (&BytesSentTotal), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesReceived)      (&BytesReceived), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesReceivedTotal) (&BytesReceivedTotal), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(User)               (User.asOutParam ()), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(Domain)             (Domain.asOutParam ()), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(ClientName)         (ClientName.asOutParam ()), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(ClientIP)           (ClientIP.asOutParam ()), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(ClientVersion)      (&ClientVersion), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(EncryptionStyle)    (&EncryptionStyle), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(Active)(&Active), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(NumberOfClients)(&NumberOfClients), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BeginTime)(&BeginTime), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(EndTime)(&EndTime), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesSent)(&BytesSent), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesSentTotal)(&BytesSentTotal), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesReceived)(&BytesReceived), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesReceivedTotal)(&BytesReceivedTotal), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(User)(User.asOutParam()), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(Domain)(Domain.asOutParam()), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(ClientName)(ClientName.asOutParam()), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(ClientIP)(ClientIP.asOutParam()), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(ClientVersion)(&ClientVersion), rc);
+        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(EncryptionStyle)(&EncryptionStyle), rc);
 
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("VRDPActiveConnection=\"%s\"\n", Active ? "on": "off");
@@ -1820,7 +1823,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
             if (Active)
             {
-                makeTimeStr (timestr, sizeof (timestr), BeginTime);
+                makeTimeStr(timestr, sizeof(timestr), BeginTime);
                 if (details == VMINFO_MACHINEREADABLE)
                     RTPrintf("VRDPStartTime=\"%s\"\n", timestr);
                 else
@@ -1828,12 +1831,12 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             }
             else
             {
-                makeTimeStr (timestr, sizeof (timestr), BeginTime);
+                makeTimeStr(timestr, sizeof(timestr), BeginTime);
                 if (details == VMINFO_MACHINEREADABLE)
                     RTPrintf("VRDPLastStartTime=\"%s\"\n", timestr);
                 else
                     RTPrintf("Last started:       %s\n", timestr);
-                makeTimeStr (timestr, sizeof (timestr), EndTime);
+                makeTimeStr(timestr, sizeof(timestr), EndTime);
                 if (details == VMINFO_MACHINEREADABLE)
                     RTPrintf("VRDPLastEndTime=\"%s\"\n", timestr);
                 else
@@ -1973,7 +1976,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
      * snapshots
      */
     ComPtr<ISnapshot> snapshot;
-    rc = machine->GetSnapshot(Bstr(), snapshot.asOutParam());
+    rc = machine->GetSnapshot(Bstr().raw(), snapshot.asOutParam());
     if (SUCCEEDED(rc) && snapshot)
     {
         ComPtr<ISnapshot> currentSnapshot;
@@ -2069,11 +2072,13 @@ int handleShowVMInfo(HandlerArg *a)
     Bstr uuid(VMNameOrUuid);
     if (!Guid(VMNameOrUuid).isEmpty())
     {
-        CHECK_ERROR(a->virtualBox, GetMachine(uuid, machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, GetMachine(uuid.raw(),
+                                              machine.asOutParam()));
     }
     else
     {
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMNameOrUuid), machine.asOutParam()));
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMNameOrUuid).raw(),
+                                               machine.asOutParam()));
         if (SUCCEEDED(rc))
             machine->COMGETTER(Id)(uuid.asOutParam());
     }

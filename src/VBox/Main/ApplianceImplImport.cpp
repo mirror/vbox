@@ -234,7 +234,7 @@ STDMETHODIMP Appliance::Interpret()
 
             /* Now that we know the OS type, get our internal defaults based on that. */
             ComPtr<IGuestOSType> pGuestOSType;
-            rc = mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox), pGuestOSType.asOutParam());
+            rc = mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox).raw(), pGuestOSType.asOutParam());
             if (FAILED(rc)) throw rc;
 
             /* CPU count */
@@ -624,17 +624,17 @@ HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &a
     if (aLocInfo.storageType == VFSType_File)
         /* 1 operation only */
         rc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                             bstrDesc,
+                             bstrDesc.raw(),
                              TRUE /* aCancelable */);
     else
         /* 4/5 is downloading, 1/5 is reading */
         rc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                             bstrDesc,
+                             bstrDesc.raw(),
                              TRUE /* aCancelable */,
                              2, // ULONG cOperations,
                              5, // ULONG ulTotalOperationsWeight,
                              BstrFmt(tr("Download appliance '%s'"),
-                                     aLocInfo.strPath.c_str()), // CBSTR bstrFirstOperationDescription,
+                                     aLocInfo.strPath.c_str()).raw(), // CBSTR bstrFirstOperationDescription,
                              4); // ULONG ulFirstOperationWeight,
     if (FAILED(rc)) throw rc;
 
@@ -858,7 +858,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
         RTS3Destroy(hS3);
         hS3 = NIL_RTS3;
 
-        pTask->pProgress->SetNextOperation(Bstr(tr("Reading")), 1);
+        pTask->pProgress->SetNextOperation(Bstr(tr("Reading")).raw(), 1);
 
         /* Prepare the temporary reading of the OVF */
         ComObjPtr<Progress> progress;
@@ -1082,7 +1082,7 @@ HRESULT Appliance::manifestVerify(const LocationInfo &locInfo,
     if (!strManifestFile.isEmpty())
     {
         const char *pcszManifestFileOnly = RTPathFilename(strManifestFile.c_str());
-        pProgress->SetNextOperation(BstrFmt(tr("Verifying manifest file '%s'"), pcszManifestFileOnly),
+        pProgress->SetNextOperation(BstrFmt(tr("Verifying manifest file '%s'"), pcszManifestFileOnly).raw(),
                                     m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally
 
         list<Utf8Str> filesList;
@@ -1328,7 +1328,7 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask)
             Guid guid = *itID;
             Bstr bstrGuid = guid.toUtf16();
             ComPtr<IMachine> failedMachine;
-            HRESULT rc2 = mVirtualBox->GetMachine(bstrGuid, failedMachine.asOutParam());
+            HRESULT rc2 = mVirtualBox->GetMachine(bstrGuid.raw(), failedMachine.asOutParam());
             if (SUCCEEDED(rc2))
             {
                 SafeIfaceArray<IMedium> aMedia;
@@ -1427,7 +1427,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask)
         for (list< pair<Utf8Str, ULONG> >::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1, ++i)
             paFiles[i] = RTPathFilename((*it1).first.c_str());
         if (!pTask->pProgress.isNull())
-            pTask->pProgress->SetNextOperation(BstrFmt(tr("Unpacking file '%s'"), RTPathFilename(pTask->locInfo.strPath.c_str())), ulWeight);
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Unpacking file '%s'"), RTPathFilename(pTask->locInfo.strPath.c_str())).raw(), ulWeight);
         vrc = RTTarExtractFiles(pTask->locInfo.strPath.c_str(), pszTmpDir, paFiles, filesList.size(), pTask->updateProgress, &pTask);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR,
@@ -1550,8 +1550,8 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                )
                 srcFormat = L"VMDK";
             // create an empty hard disk
-            rc = mVirtualBox->CreateHardDisk(srcFormat,
-                                             Bstr(strTargetPath),
+            rc = mVirtualBox->CreateHardDisk(srcFormat.raw(),
+                                             Bstr(strTargetPath).raw(),
                                              pTargetHD.asOutParam());
             if (FAILED(rc)) throw rc;
 
@@ -1560,7 +1560,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             if (FAILED(rc)) throw rc;
 
             // advance to the next operation
-            stack.pProgress->SetNextOperation(BstrFmt(tr("Creating disk image '%s'"), strTargetPath.c_str()),
+            stack.pProgress->SetNextOperation(BstrFmt(tr("Creating disk image '%s'"), strTargetPath.c_str()).raw(),
                                               di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally
         }
         else
@@ -1578,7 +1578,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             // attached already from a previous import)
 
             // First open the existing disk image
-            rc = mVirtualBox->OpenMedium(Bstr(strSrcFilePath),
+            rc = mVirtualBox->OpenMedium(Bstr(strSrcFilePath).raw(),
                                          DeviceType_HardDisk,
                                          AccessMode_ReadOnly,
                                          pSourceHD.asOutParam());
@@ -1590,8 +1590,8 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             rc = pSourceHD->COMGETTER(Format)(srcFormat.asOutParam());
             if (FAILED(rc)) throw rc;
             /* Create a new hard disk interface for the destination disk image */
-            rc = mVirtualBox->CreateHardDisk(srcFormat,
-                                             Bstr(strTargetPath),
+            rc = mVirtualBox->CreateHardDisk(srcFormat.raw(),
+                                             Bstr(strTargetPath).raw(),
                                              pTargetHD.asOutParam());
             if (FAILED(rc)) throw rc;
             /* Clone the source disk image */
@@ -1599,7 +1599,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             if (FAILED(rc)) throw rc;
 
             /* Advance to the next operation */
-            stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), RTPathFilename(strSrcFilePath.c_str())),
+            stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), RTPathFilename(strSrcFilePath.c_str())).raw(),
                                               di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally);
         }
 
@@ -1647,12 +1647,12 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     // Get the instance of IGuestOSType which matches our string guest OS type so we
     // can use recommended defaults for the new machine where OVF doesen't provice any
     ComPtr<IGuestOSType> osType;
-    rc = mVirtualBox->GetGuestOSType(Bstr(stack.strOsTypeVBox), osType.asOutParam());
+    rc = mVirtualBox->GetGuestOSType(Bstr(stack.strOsTypeVBox).raw(), osType.asOutParam());
     if (FAILED(rc)) throw rc;
 
     /* Create the machine */
-    rc = mVirtualBox->CreateMachine(Bstr(stack.strNameVBox),
-                                    Bstr(stack.strOsTypeVBox),
+    rc = mVirtualBox->CreateMachine(Bstr(stack.strNameVBox).raw(),
+                                    Bstr(stack.strOsTypeVBox).raw(),
                                     NULL,
                                     NULL,
                                     FALSE,
@@ -1662,7 +1662,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     // set the description
     if (!stack.strDescription.isEmpty())
     {
-        rc = pNewMachine->COMSETTER(Description)(Bstr(stack.strDescription));
+        rc = pNewMachine->COMSETTER(Description)(Bstr(stack.strDescription).raw());
         if (FAILED(rc)) throw rc;
     }
 
@@ -1798,7 +1798,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
                         if (FAILED(rc)) throw rc;
                         /* Set the interface name to attach to */
-                        pNetworkAdapter->COMSETTER(HostInterface)(name);
+                        pNetworkAdapter->COMSETTER(HostInterface)(name.raw());
                         if (FAILED(rc)) throw rc;
                         break;
                     }
@@ -1831,7 +1831,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
                         if (FAILED(rc)) throw rc;
                         /* Set the interface name to attach to */
-                        pNetworkAdapter->COMSETTER(HostInterface)(name);
+                        pNetworkAdapter->COMSETTER(HostInterface)(name.raw());
                         if (FAILED(rc)) throw rc;
                         break;
                     }
@@ -1852,7 +1852,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     {
         // one or two IDE controllers present in OVF: add one VirtualBox controller
         ComPtr<IStorageController> pController;
-        rc = pNewMachine->AddStorageController(Bstr("IDE Controller"), StorageBus_IDE, pController.asOutParam());
+        rc = pNewMachine->AddStorageController(Bstr("IDE Controller").raw(), StorageBus_IDE, pController.asOutParam());
         if (FAILED(rc)) throw rc;
 
         const char *pcszIDEType = vsdeHDCIDE.front()->strVboxCurrent.c_str();
@@ -1880,7 +1880,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         const Utf8Str &hdcVBox = vsdeHDCSATA.front()->strVboxCurrent;
         if (hdcVBox == "AHCI")
         {
-            rc = pNewMachine->AddStorageController(Bstr("SATA Controller"), StorageBus_SATA, pController.asOutParam());
+            rc = pNewMachine->AddStorageController(Bstr("SATA Controller").raw(), StorageBus_SATA, pController.asOutParam());
             if (FAILED(rc)) throw rc;
         }
         else
@@ -1917,7 +1917,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                            tr("Invalid SCSI controller type \"%s\""),
                            hdcVBox.c_str());
 
-        rc = pNewMachine->AddStorageController(bstrName, busType, pController.asOutParam());
+        rc = pNewMachine->AddStorageController(bstrName.raw(), busType, pController.asOutParam());
         if (FAILED(rc)) throw rc;
         rc = pController->COMSETTER(ControllerType)(controllerType);
         if (FAILED(rc)) throw rc;
@@ -1931,7 +1931,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (vsdeHDCSAS.size() > 0)
     {
         ComPtr<IStorageController> pController;
-        rc = pNewMachine->AddStorageController(Bstr(L"SAS Controller"), StorageBus_SAS, pController.asOutParam());
+        rc = pNewMachine->AddStorageController(Bstr(L"SAS Controller").raw(), StorageBus_SAS, pController.asOutParam());
         if (FAILED(rc)) throw rc;
         rc = pController->COMSETTER(ControllerType)(StorageControllerType_LsiLogicSas);
         if (FAILED(rc)) throw rc;
@@ -1976,7 +1976,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             if (vsdeFloppy.size() == 1)
             {
                 ComPtr<IStorageController> pController;
-                rc = sMachine->AddStorageController(Bstr("Floppy Controller"), StorageBus_Floppy, pController.asOutParam());
+                rc = sMachine->AddStorageController(Bstr("Floppy Controller").raw(), StorageBus_Floppy, pController.asOutParam());
                 if (FAILED(rc)) throw rc;
 
                 Bstr bstrName;
@@ -1992,7 +1992,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 Log(("Attaching floppy\n"));
 
-                rc = sMachine->AttachDevice(mhda.controllerType,
+                rc = sMachine->AttachDevice(mhda.controllerType.raw(),
                                             mhda.lControllerPort,
                                             mhda.lDevice,
                                             DeviceType_Floppy,
@@ -2040,7 +2040,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 Log(("Attaching CD-ROM to port %d on device %d\n", mhda.lControllerPort, mhda.lDevice));
 
-                rc = sMachine->AttachDevice(mhda.controllerType,
+                rc = sMachine->AttachDevice(mhda.controllerType.raw(),
                                             mhda.lControllerPort,
                                             mhda.lDevice,
                                             DeviceType_DVD,
@@ -2129,7 +2129,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 Log(("Attaching disk %s to port %d on device %d\n", vsdeHD->strVboxCurrent.c_str(), mhda.lControllerPort, mhda.lDevice));
 
-                rc = sMachine->AttachDevice(mhda.controllerType,    // wstring name
+                rc = sMachine->AttachDevice(mhda.controllerType.raw(),    // wstring name
                                             mhda.lControllerPort,          // long controllerPort
                                             mhda.lDevice,           // long device
                                             DeviceType_HardDisk,    // DeviceType_T type
@@ -2438,7 +2438,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
             char *pszFilename = RTPathFilename(strSrcFile.c_str());
             /* Advance to the next operation */
             if (!pTask->pProgress.isNull())
-                pTask->pProgress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), s.second);
+                pTask->pProgress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename).raw(), s.second);
 
             vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strSrcFile.c_str());
             if (RT_FAILURE(vrc))
@@ -2468,7 +2468,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
         Utf8Str strManifestFile = manifestFileName(strTmpOvf);
         char *pszFilename = RTPathFilename(strManifestFile.c_str());
         if (!pTask->pProgress.isNull())
-            pTask->pProgress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), 1);
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename).raw(), 1);
 
         /* Try to download it. If the error is VERR_S3_NOT_FOUND, it isn't fatal. */
         vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strManifestFile.c_str());
@@ -2495,7 +2495,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
         RTS3Destroy(hS3);
         hS3 = NIL_RTS3;
 
-        pTask->pProgress->SetNextOperation(BstrFmt(tr("Importing appliance")), m->ulWeightForXmlOperation);
+        pTask->pProgress->SetNextOperation(BstrFmt(tr("Importing appliance")).raw(), m->ulWeightForXmlOperation);
 
         ComObjPtr<Progress> progress;
         /* Import the whole temporary OVF & the disk images */

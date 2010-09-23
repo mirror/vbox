@@ -195,12 +195,12 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
         Bstr addVersion;
         LONG64 u64Timestamp;
         Bstr flags;
-        hr = mParent->machine()->GetGuestProperty(Bstr("/VirtualBox/GuestAdd/Version"),
+        hr = mParent->machine()->GetGuestProperty(Bstr("/VirtualBox/GuestAdd/Version").raw(),
                                                   addVersion.asOutParam(), &u64Timestamp, flags.asOutParam());
         if (hr == S_OK)
         {
             Bstr addRevision;
-            hr = mParent->machine()->GetGuestProperty(Bstr("/VirtualBox/GuestAdd/Revision"),
+            hr = mParent->machine()->GetGuestProperty(Bstr("/VirtualBox/GuestAdd/Revision").raw(),
                                                       addRevision.asOutParam(), &u64Timestamp, flags.asOutParam());
             if (   hr == S_OK
                 && !addVersion.isEmpty()
@@ -639,7 +639,7 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
             {
                 case PROC_STS_STARTED:
                     LogRel(("Guest process (PID %u) started\n", pCBData->u32PID)); /** @todo Add process name */
-                    hr = it->second.pProgress->SetNextOperation(BstrFmt(tr("Waiting for process to exit ...")), 1 /* Weight */);
+                    hr = it->second.pProgress->SetNextOperation(Bstr(tr("Waiting for process to exit ...")).raw(), 1 /* Weight */);
                     AssertComRC(hr);
                     break;
 
@@ -977,10 +977,10 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
         if (SUCCEEDED(rc))
         {
             rc = progress->init(static_cast<IGuest*>(this),
-                                BstrFmt(tr("Executing process")),
+                                Bstr(tr("Executing process")).raw(),
                                 TRUE,
-                                2,                                      /* Number of operations. */
-                                BstrFmt(tr("Starting process ...")));   /* Description of first stage. */
+                                2,                                          /* Number of operations. */
+                                Bstr(tr("Starting process ...")).raw());    /* Description of first stage. */
         }
         if (FAILED(rc)) return rc;
 
@@ -1275,7 +1275,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
         if (SUCCEEDED(rc))
         {
             rc = progress->init(static_cast<IGuest*>(this),
-                                BstrFmt(tr("Getting output of process")),
+                                Bstr(tr("Getting output of process")).raw(),
                                 TRUE);
         }
         if (FAILED(rc)) return rc;
