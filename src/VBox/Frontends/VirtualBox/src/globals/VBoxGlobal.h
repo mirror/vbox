@@ -165,10 +165,10 @@ public:
     const QRect availableGeometry(int iScreen = 0) const;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    bool isDebuggerEnabled() const { return mDbgEnabled; }
-    bool isDebuggerAutoShowEnabled() const { return mDbgAutoShow; }
-    bool isDebuggerAutoShowCommandLineEnabled() const { return mDbgAutoShowCommandLine; }
-    bool isDebuggerAutoShowStatisticsEnabled() const { return mDbgAutoShowStatistics; }
+    bool isDebuggerEnabled(CMachine &aMachine);
+    bool isDebuggerAutoShowEnabled(CMachine &aMachine);
+    bool isDebuggerAutoShowCommandLineEnabled(CMachine &aMachine);
+    bool isDebuggerAutoShowStatisticsEnabled(CMachine &aMachine);
     RTLDRMOD getDebuggerModule() const { return mhVBoxDbg; }
 
     bool isStartPausedEnabled() const { return mStartPaused; }
@@ -711,6 +711,11 @@ private:
     ~VBoxGlobal();
 
     void init();
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    void initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const char *pszExtraDataName, bool fDefault = false);
+    void setDebuggerVar(int *piDbgCfgVar, bool fState);
+    bool isDebuggerWorker(int *piDbgCfgVar, CMachine &rMachine, const char *pszExtraDataName);
+#endif
 
     bool mValid;
 
@@ -748,14 +753,14 @@ private:
     /** Whether the debugger should be accessible or not.
      * Use --dbg, the env.var. VBOX_GUI_DBG_ENABLED, --debug or the env.var.
      * VBOX_GUI_DBG_AUTO_SHOW to enable. */
-    bool mDbgEnabled;
+    int mDbgEnabled;
     /** Whether to show the debugger automatically with the console.
      * Use --debug or the env.var. VBOX_GUI_DBG_AUTO_SHOW to enable. */
-    bool mDbgAutoShow;
+    int mDbgAutoShow;
     /** Whether to show the command line window when mDbgAutoShow is set. */
-    bool mDbgAutoShowCommandLine;
+    int mDbgAutoShowCommandLine;
     /** Whether to show the statistics window when mDbgAutoShow is set. */
-    bool mDbgAutoShowStatistics;
+    int mDbgAutoShowStatistics;
     /** VBoxDbg module handle. */
     RTLDRMOD mhVBoxDbg;
 

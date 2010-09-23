@@ -158,6 +158,11 @@ struct VBoxDefs
     static const char* GUI_Accelerate2D_PixformatYUY2;
     static const char* GUI_Accelerate2D_PixformatAYUV;
 #endif
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    static const char* VBoxDefs::GUI_DbgEnabled;
+    static const char* VBoxDefs::GUI_DbgAutoShow;
+#endif
 };
 
 #define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)

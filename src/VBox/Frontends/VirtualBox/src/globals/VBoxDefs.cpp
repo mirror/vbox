@@ -79,4 +79,8 @@ const char* VBoxDefs::GUI_Accelerate2D_PixformatUYVY = "GUI/Accelerate2D/Pixform
 const char* VBoxDefs::GUI_Accelerate2D_PixformatYUY2 = "GUI/Accelerate2D/PixformatYUY2";
 const char* VBoxDefs::GUI_Accelerate2D_PixformatAYUV = "GUI/Accelerate2D/PixformatAYUV";
 #endif
+#ifdef VBOX_WITH_DEBUGGER_GUI
+const char* VBoxDefs::GUI_DbgEnabled = "GUI/Dbg/Enabled";
+const char* VBoxDefs::GUI_DbgAutoShow = "GUI/Dbg/AutoShow";
+#endif
 
