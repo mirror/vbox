@@ -41,6 +41,12 @@ RT_C_DECLS_BEGIN
 #include "../../linux/sharedfolders/vbsfmount.h"
 RT_C_DECLS_END
 
+#ifdef RT_OS_SOLARIS
+# define AUTO_MOUNT_POINT       "/mnt/%s%s"
+#else
+# define AUTO_MOUNT_POINT       "/media/%s%s"
+#endif
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -282,11 +288,7 @@ DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
                             VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Connecting share %u (%s) ...\n", i+1, pszShareName);
 
                             char *pszMountPoint = NULL;
-    #ifdef RT_OS_SOLARIS
-                            if (   RTStrAPrintf(&pszMountPoint, "/mnt/%s%s", pszSharePrefix, pszShareName) > 0
-    #else
-                            if (   RTStrAPrintf(&pszMountPoint, "/media/%s%s", pszSharePrefix, pszShareName) > 0
-    #endif
+                            if (   RTStrAPrintf(&pszMountPoint, AUTO_MOUNT_POINT, pszSharePrefix, pszShareName) > 0
                                 && pszMountPoint)
                             {
                                 struct group *grp_vboxsf = getgrnam("vboxsf");
@@ -326,9 +328,9 @@ DECLCALLBACK(int) VBoxServiceAutoMountWorker(bool volatile *pfShutdown)
                             VBoxServiceError("VBoxServiceAutoMountWorker: Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
                                              paMappings[i].u32Root, rc);
                     } /* for cMappings. */
-    #if 0
+#if 0
                 }
-    #endif
+#endif
                 RTStrFree(pszSharePrefix);
             } /* Mount prefix. */
             else
