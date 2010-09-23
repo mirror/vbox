@@ -21,6 +21,8 @@
 *******************************************************************************/
 #include "VBoxManage.h"
 
+#ifndef VBOX_ONLY_DOCS
+
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
 #include <VBox/com/array.h>
@@ -48,25 +50,29 @@
 
 using namespace com;
 
-void usageGuestProperty(void)
+#endif /* !VBOX_ONLY_DOCS */
+
+void usageGuestProperty(PRTSTREAM pStrm)
 {
-    RTStrmPrintf(g_pStdErr,
+    RTStrmPrintf(pStrm,
                  "VBoxManage guestproperty    get <vmname>|<uuid>\n"
                  "                            <property> [--verbose]\n"
                  "\n");
-    RTStrmPrintf(g_pStdErr,
+    RTStrmPrintf(pStrm,
                  "VBoxManage guestproperty    set <vmname>|<uuid>\n"
                  "                            <property> [<value> [--flags <flags>]]\n"
                  "\n");
-    RTStrmPrintf(g_pStdErr,
+    RTStrmPrintf(pStrm,
                  "VBoxManage guestproperty    enumerate <vmname>|<uuid>\n"
                  "                            [--patterns <patterns>]\n"
                  "\n");
-    RTStrmPrintf(g_pStdErr,
+    RTStrmPrintf(pStrm,
                  "VBoxManage guestproperty    wait <vmname>|<uuid> <patterns>\n"
                  "                            [--timeout <msec>] [--fail-on-timeout]\n"
                  "\n");
 }
+
+#ifndef VBOX_ONLY_DOCS
 
 static int handleGetGuestProperty(HandlerArg *a)
 {
@@ -395,3 +401,5 @@ int handleGuestProperty(HandlerArg *a)
     /* default: */
     return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 }
+
+#endif /* !VBOX_ONLY_DOCS */
