@@ -2024,8 +2024,8 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
             shExecInfo.fMask = NULL;
             shExecInfo.hwnd = NULL;
             shExecInfo.lpVerb = L"runas";
-            shExecInfo.lpFile = file;
-            shExecInfo.lpParameters = parameters;
+            shExecInfo.lpFile = file.raw();
+            shExecInfo.lpParameters = parameters.raw();
             shExecInfo.lpDirectory = NULL;
             shExecInfo.nShow = SW_NORMAL;
             shExecInfo.hInstApp = NULL;

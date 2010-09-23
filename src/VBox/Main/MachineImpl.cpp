@@ -9713,9 +9713,9 @@ HRESULT SessionMachine::init(Machine *aMachine)
 #if defined(RT_OS_WINDOWS)
     mIPCSemName = aMachine->mData->m_strConfigFileFull;
     for (size_t i = 0; i < mIPCSemName.length(); i++)
-        if (mIPCSemName[i] == '\\')
-            mIPCSemName[i] = '/';
-    mIPCSem = ::CreateMutex(NULL, FALSE, mIPCSemName);
+        if (mIPCSemName.raw()[i] == '\\')
+            mIPCSemName.raw()[i] = '/';
+    mIPCSem = ::CreateMutex(NULL, FALSE, mIPCSemName.raw());
     ComAssertMsgRet(mIPCSem,
                     ("Cannot create IPC mutex '%ls', err=%d",
                      mIPCSemName.raw(), ::GetLastError()),

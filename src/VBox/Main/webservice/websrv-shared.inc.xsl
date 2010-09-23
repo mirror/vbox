@@ -157,19 +157,19 @@
               select='"EnumCom2Soap_"' />
 
 <xsl:variable name="G_aSharedTypes">
-  <type idlname="octet"              xmlname="unsignedByte"  cname="unsigned char"    gluename="BYTE"    javaname="byte" />
-  <type idlname="boolean"            xmlname="boolean"       cname="bool"             gluename="BOOL"    javaname="Boolean" />
-  <type idlname="short"              xmlname="short"         cname="short"            gluename="SHORT"   javaname="Short" />
-  <type idlname="unsigned short"     xmlname="unsignedShort" cname="unsigned short"   gluename="USHORT"  javaname="Integer" />
-  <type idlname="long"               xmlname="int"           cname="int"              gluename="LONG"    javaname="Integer" />
-  <type idlname="unsigned long"      xmlname="unsignedInt"   cname="unsigned int"     gluename="ULONG"   javaname="Long" />
-  <type idlname="long long"          xmlname="long"          cname="LONG64"           gluename="LONG64"  javaname="Long" />
-  <type idlname="unsigned long long" xmlname="unsignedLong"  cname="ULONG64"          gluename="ULONG64" javaname="BigInteger" />
-  <type idlname="double"             xmlname="double"        cname="double"           gluename=""        javaname="Double" />
-  <type idlname="float"              xmlname="float"         cname="float"            gluename=""        javaname="Float" />
-  <type idlname="wstring"            xmlname="string"        cname="std::string"      gluename=""        javaname="String" />
-  <type idlname="uuid"               xmlname="string"        cname="std::string"      gluename=""        javaname="String" />
-  <type idlname="result"             xmlname="unsignedInt"   cname="unsigned int"     gluename="HRESULT" javaname="Long" />
+  <type idlname="octet"              xmlname="unsignedByte"  cname="unsigned char"    gluename="BYTE"    gluefmt="%RU8"      javaname="byte" />
+  <type idlname="boolean"            xmlname="boolean"       cname="bool"             gluename="BOOL"    gluefmt="%RTbool"   javaname="Boolean" />
+  <type idlname="short"              xmlname="short"         cname="short"            gluename="SHORT"   gluefmt="%RI16"     javaname="Short" />
+  <type idlname="unsigned short"     xmlname="unsignedShort" cname="unsigned short"   gluename="USHORT"  gluefmt="%RU16"     javaname="Integer" />
+  <type idlname="long"               xmlname="int"           cname="int"              gluename="LONG"    gluefmt="%RI32"     javaname="Integer" />
+  <type idlname="unsigned long"      xmlname="unsignedInt"   cname="unsigned int"     gluename="ULONG"   gluefmt="%RU32"     javaname="Long" />
+  <type idlname="long long"          xmlname="long"          cname="LONG64"           gluename="LONG64"  gluefmt="%RI64"     javaname="Long" />
+  <type idlname="unsigned long long" xmlname="unsignedLong"  cname="ULONG64"          gluename="ULONG64" gluefmt="%RU64"     javaname="BigInteger" />
+  <type idlname="double"             xmlname="double"        cname="double"           gluename="DOUBLE"  gluefmt="%#RX64"    javaname="Double" />
+  <type idlname="float"              xmlname="float"         cname="float"            gluename="FLOAT"   gluefmt="%#RX32"    javaname="Float" />
+  <type idlname="wstring"            xmlname="string"        cname="std::string"      gluename="BSTR"    gluefmt="%ls"       javaname="String" />
+  <type idlname="uuid"               xmlname="string"        cname="std::string"      gluename="BSTR"    gluefmt="%ls"       javaname="String" />
+  <type idlname="result"             xmlname="unsignedInt"   cname="unsigned int"     gluename="HRESULT" gluefmt="%Rhrc"     javaname="Long" />
 </xsl:variable>
 
 <!--

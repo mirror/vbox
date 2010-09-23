@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,22 +58,22 @@ SVCHlpClient::~SVCHlpClient()
     close();
 }
 
-int SVCHlpClient::create (const char *aName)
+int SVCHlpClient::create(const char *aName)
 {
     AssertReturn(aName, VERR_INVALID_PARAMETER);
 
     if (mIsOpen)
         return VERR_WRONG_ORDER;
 
-    Bstr pipeName = Utf8StrFmt ("\\\\.\\pipe\\%s", aName);
+    Bstr pipeName = Utf8StrFmt("\\\\.\\pipe\\%s", aName);
 
-    HANDLE pipe = CreateNamedPipe (pipeName,
-                                   PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE,
-                                   PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
-                                   1, // PIPE_UNLIMITED_INSTANCES,
-                                   PipeBufSize, PipeBufSize,
-                                   NMPWAIT_USE_DEFAULT_WAIT,
-                                   NULL);
+    HANDLE pipe = CreateNamedPipe(pipeName.raw(),
+                                  PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE,
+                                  PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+                                  1, // PIPE_UNLIMITED_INSTANCES,
+                                  PipeBufSize, PipeBufSize,
+                                  NMPWAIT_USE_DEFAULT_WAIT,
+                                  NULL);
 
     if (pipe == INVALID_HANDLE_VALUE)
         rtErrConvertFromWin32OnFailure();
@@ -87,22 +87,22 @@ int SVCHlpClient::create (const char *aName)
     return VINF_SUCCESS;
 }
 
-int SVCHlpClient::open (const char *aName)
+int SVCHlpClient::open(const char *aName)
 {
     AssertReturn(aName, VERR_INVALID_PARAMETER);
 
     if (mIsOpen)
         return VERR_WRONG_ORDER;
 
-    Bstr pipeName = Utf8StrFmt ("\\\\.\\pipe\\%s", aName);
+    Bstr pipeName = Utf8StrFmt("\\\\.\\pipe\\%s", aName);
 
-    HANDLE pipe = CreateFile (pipeName,
-                              GENERIC_READ | GENERIC_WRITE,
-                              0,
-                              NULL,
-                              OPEN_EXISTING,
-                              0,
-                              NULL);
+    HANDLE pipe = CreateFile(pipeName.raw(),
+                             GENERIC_READ | GENERIC_WRITE,
+                             0,
+                             NULL,
+                             OPEN_EXISTING,
+                             0,
+                             NULL);
 
     if (pipe == INVALID_HANDLE_VALUE)
         rtErrConvertFromWin32OnFailure();

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,7 +37,7 @@
 # define __STDC_CONSTANT_MACROS
 #endif
 
-#if defined (VBOX_WITH_XPCOM)
+#if defined(VBOX_WITH_XPCOM)
 # include <nsMemory.h>
 #endif
 
@@ -106,7 +106,7 @@ public:
         copyFrom((const OLECHAR *)that);
     }
 
-#if defined (VBOX_WITH_XPCOM)
+#if defined(VBOX_WITH_XPCOM)
     Bstr(const wchar_t *that)
     {
         AssertCompile(sizeof(wchar_t) == sizeof(OLECHAR));
@@ -143,7 +143,7 @@ public:
         return *this;
     }
 
-#if defined (VBOX_WITH_XPCOM)
+#if defined(VBOX_WITH_XPCOM)
     Bstr& operator=(const wchar_t *that)
     {
         cleanup();
@@ -211,6 +211,7 @@ public:
 
     size_t length() const { return isEmpty() ? 0 : ::RTUtf16Len((PRTUTF16)m_bstr); }
 
+#if defined(VBOX_WITH_XPCOM)
     /**
      *  Returns a pointer to the raw member UTF-16 string. If the member string is empty,
      *  returns a pointer to a global variable containing an empty BSTR with a proper zero
@@ -223,6 +224,24 @@ public:
 
         return g_bstrEmpty;
     }
+#else
+    /**
+     *  Windows-only hack, as the automatically generated headers use BSTR.
+     *  So if we don't want to cast like crazy we have to be more loose than
+     *  on XPCOM.
+     *
+     *  Returns a pointer to the raw member UTF-16 string. If the member string is empty,
+     *  returns a pointer to a global variable containing an empty BSTR with a proper zero
+     *  length prefix so that Windows is happy.
+     */
+    BSTR raw() const
+    {
+        if (m_bstr)
+            return m_bstr;
+
+        return g_bstrEmpty;
+    }
+#endif
 
     /**
      *  Returns a non-const raw pointer that allows to modify the string directly.
@@ -437,7 +456,7 @@ public:
         return *this;
     }
 
-#if defined (VBOX_WITH_XPCOM)
+#if defined(VBOX_WITH_XPCOM)
     /**
      * Intended to assign instances to |char *| out parameters from within the
      * interface method. Transfers the ownership of the duplicated string to the
@@ -536,7 +555,7 @@ protected:
  *
  *  The usage of this class is like the following:
  *  <code>
- *      Utf8StrFmt string ("program name = %s", argv[0]);
+ *      Utf8StrFmt string("program name = %s", argv[0]);
  *  </code>
  */
 class Utf8StrFmt : public Utf8Str
