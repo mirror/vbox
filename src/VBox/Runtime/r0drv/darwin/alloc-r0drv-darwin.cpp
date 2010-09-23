@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,6 +33,7 @@
 #include <iprt/mem.h>
 
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/thread.h>
 #include "r0drv/alloc-r0drv.h"
 
@@ -45,7 +46,7 @@ int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
     if (RT_UNLIKELY(fFlags & RTMEMHDR_FLAG_ANY_CTX))
         return VERR_NOT_SUPPORTED;
 
-    PRTMEMHDR pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr))
+    PRTMEMHDR pHdr = (PRTMEMHDR)IOMalloc(cb + sizeof(*pHdr));
     if (RT_UNLIKELY(!pHdr))
     {
         printf("rtR0MemAllocEx(%#zx, %#x) failed\n", cb + sizeof(*pHdr), fFlags);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,9 +30,10 @@
 *******************************************************************************/
 #include "the-linux-kernel.h"
 #include "internal/iprt.h"
-
 #include <iprt/mem.h>
+
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include "r0drv/alloc-r0drv.h"
 
 #if defined(RT_ARCH_AMD64) || defined(DOXYGEN_RUNNING)
