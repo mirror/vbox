@@ -165,31 +165,13 @@ RTEXITCODE RTR3TestR0CommonDriverInit(const char *pszTestServiceName)
 
 
 /**
- * Performs a common test.
+ * Processes the messages in the request.
  *
  * @returns true on success, false on failure.
- * @param   uOperation          The operation to perform.
- * @param   pszTest             The sub-test name.
+ * @param   pReq                The request.
  */
-bool RTR3TestR0SimpleTest(uint32_t uOperation, const char *pszTest)
+static bool rtR3TestR0ProcessMessages(PRTTSTR0REQ pReq)
 {
-    RTTestSub(g_hTest, pszTest);
-
-    /*
-     * Issue the request.
-     */
-    RTTSTR0REQ Req;
-    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    RT_ZERO(Req.szMsg);
-
-    int rc = SUPR3CallR0Service(g_szSrvName, g_cchSrvName, uOperation, 0, &Req.Hdr);
-    if (RT_FAILURE(rc))
-    {
-        RTTestFailed(g_hTest, "SUPR3CallR0Service failed with rc=%Rrc", rc);
-        return false;
-    }
-
     /*
      * Process the message strings.
      *
@@ -198,11 +180,11 @@ bool RTR3TestR0SimpleTest(uint32_t uOperation, const char *pszTest)
      * the first character, '!' means error and '?' means info message.
      */
     bool fRc = true;
-    if (Req.szMsg[0])
+    if (pReq->szMsg[0])
     {
-        Req.szMsg[sizeof(Req.szMsg) - 1] = '\0'; /* paranoia */
+        pReq->szMsg[sizeof(pReq->szMsg) - 1] = '\0'; /* paranoia */
 
-        char *pszNext = &Req.szMsg[0];
+        char *pszNext = &pReq->szMsg[0];
         do
         {
             char *pszCur = pszNext;
@@ -226,6 +208,67 @@ bool RTR3TestR0SimpleTest(uint32_t uOperation, const char *pszTest)
     }
 
     return fRc;
+}
+
+
+/**
+ * Performs a simple test with an argument (@a u64Arg).
+ *
+ * @returns true on success, false on failure.
+ * @param   uOperation          The operation to perform.
+ * @param   u64Arg              64-bit argument.
+ * @param   pszTestFmt          The sub-test name.
+ * @param   ...                 Format arguments.
+ */
+bool RTR3TestR0SimpleTestWithArg(uint32_t uOperation, uint64_t u64Arg, const char *pszTestFmt, ...)
+{
+    va_list va;
+    va_start(va, pszTestFmt);
+    RTTestSubV(g_hTest, pszTestFmt, va);
+    va_end(va);
+
+    RTTSTR0REQ Req;
+    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
+    Req.Hdr.cbReq = sizeof(Req);
+    RT_ZERO(Req.szMsg);
+    int rc = SUPR3CallR0Service(g_szSrvName, g_cchSrvName, uOperation, u64Arg, &Req.Hdr);
+    if (RT_FAILURE(rc))
+    {
+        RTTestFailed(g_hTest, "SUPR3CallR0Service failed with rc=%Rrc", rc);
+        return false;
+    }
+
+    return rtR3TestR0ProcessMessages(&Req);
+}
+
+
+/**
+ * Performs a simple test.
+ *
+ * @returns true on success, false on failure.
+ * @param   uOperation          The operation to perform.
+ * @param   pszTestFmt          The sub-test name.
+ * @param   ...                 Format arguments.
+ */
+bool RTR3TestR0SimpleTest(uint32_t uOperation, const char *pszTestFmt, ...)
+{
+    va_list va;
+    va_start(va, pszTestFmt);
+    RTTestSubV(g_hTest, pszTestFmt, va);
+    va_end(va);
+
+    RTTSTR0REQ Req;
+    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
+    Req.Hdr.cbReq = sizeof(Req);
+    RT_ZERO(Req.szMsg);
+    int rc = SUPR3CallR0Service(g_szSrvName, g_cchSrvName, uOperation, 0, &Req.Hdr);
+    if (RT_FAILURE(rc))
+    {
+        RTTestFailed(g_hTest, "SUPR3CallR0Service failed with rc=%Rrc", rc);
+        return false;
+    }
+
+    return rtR3TestR0ProcessMessages(&Req);
 }
 
 #endif

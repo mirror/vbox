@@ -38,13 +38,15 @@
 *******************************************************************************/
 /** Global error buffer used by macros and inline functions in this file. */
 static char g_szErr[2048];
+/** The number of errors reported in this g_szErr. */
+static uint32_t volatile g_cErrors;
 
 
 /**
  * Service request handler prolog.
  *
  * Returns if the input is invalid.  Initializes the return packet as well as
- * the globals (g_szErr).
+ * the globals (g_szErr, g_cErrors).
  *
  * @param   pReqHdr         The request packet header.
  */
@@ -62,6 +64,7 @@ static char g_szErr[2048];
         \
         /* Initialize the global buffer. */ \
         memset(&g_szErr[0], 0, sizeof(g_szErr)); \
+        ASMAtomicWriteU32(&g_cErrors, 0); \
     } while (0)
 
 
@@ -198,6 +201,7 @@ void RTR0TestR0Error(const char *pszFormat, ...)
         RTStrPrintfV(psz, cbLeft, pszFormat, va);
         va_end(va);
     }
+    ASMAtomicIncU32(&g_cErrors);
 }
 
 
@@ -238,6 +242,16 @@ void RTR0TestR0Info(const char *pszFormat, ...)
         RTStrPrintfV(psz, cbLeft, pszFormat, va);
         va_end(va);
     }
+}
+
+/**
+ * Checks if we have any error reports.
+ *
+ * @returns true if there are errors, false if none.
+ */
+bool RTR0TestR0HaveErrors(void)
+{
+    return ASMAtomicUoReadU32(&g_cErrors) > 0;
 }
 
 #endif

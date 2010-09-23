@@ -30,7 +30,9 @@
 #include <iprt/timer.h>
 
 #include <iprt/asm.h>
+#include <iprt/cpuset.h>
 #include <iprt/err.h>
+#include <iprt/mp.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
@@ -38,6 +40,7 @@
 #include <VBox/sup.h>
 #include "tstRTR0Timer.h"
 #include "tstRTR0Common.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -52,8 +55,115 @@ typedef struct
     uint32_t            iActionShot;
     /** The RC of whatever operation performed in the handler. */
     int volatile        rc;
+    /** Test specific stuff. */
+    union
+    {
+        /** tstRTR0TimerCallbackU32ChangeInterval parameters.  */
+        struct
+        {
+            /** The interval change step. */
+            uint32_t            cNsChangeStep;
+            /** The current timer interval. */
+            uint32_t            cNsCurInterval;
+            /** The minimum interval. */
+            uint32_t            cNsMinInterval;
+            /** The maximum interval. */
+            uint32_t            cNsMaxInterval;
+            /** Direction flag; false = decrement, true = increment. */
+            bool                fDirection;
+            /** The number of steps between each change. */
+            uint8_t             cStepsBetween;
+        } ChgInt;
+        /** tstRTR0TimerCallbackSpecific parameters.  */
+        struct
+        {
+            /** The expected CPU. */
+            RTCPUID             idCpu;
+            /** Set if this failed. */
+            bool                fFailed;
+        } Specific;
+        struct
+        {
+            /** Per CPU ticks, indexed by the CPU set index. */
+            uint32_t volatile * pacTickPerCpu;
+        } Omni;
+    } u;
 } TSTRTR0TIMERS1;
 typedef TSTRTR0TIMERS1 *PTSTRTR0TIMERS1;
+
+
+
+/**
+ * Callback which increments a 32-bit counter.
+ *
+ * @param   pTimer      The timer.
+ * @param   iTick       The current tick.
+ * @param   pvUser      The user argument.
+ */
+static DECLCALLBACK(void) tstRTR0TimerCallbackSpecific(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    PTSTRTR0TIMERS1 pState = (PTSTRTR0TIMERS1)pvUser;
+    uint32_t        iShot  = ASMAtomicIncU32(&pState->cShots);
+
+    if (iShot <= RT_ELEMENTS(pState->aShotNsTSes))
+        pState->aShotNsTSes[iShot - 1] = RTTimeSystemNanoTS();
+
+    RTCPUID idCpu = RTMpCpuId();
+    if (pState->u.Specific.idCpu != idCpu)
+        pState->u.Specific.fFailed = true;
+    RTR0TESTR0_CHECK_MSG(pState->u.Specific.idCpu == idCpu, ("idCpu=%u, expected %u\n", idCpu, pState->u.Specific.idCpu));
+}
+
+
+/**
+ * Callback which changes the interval at each invocation.
+ *
+ * The changes are goverened by TSTRTR0TIMERS1::ChangeInterval.  The callback
+ * calls RTTimerStop at iActionShot.
+ *
+ * @param   pTimer      The timer.
+ * @param   iTick       The current tick.
+ * @param   pvUser      The user argument.
+ */
+static DECLCALLBACK(void) tstRTR0TimerCallbackChangeInterval(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    PTSTRTR0TIMERS1 pState = (PTSTRTR0TIMERS1)pvUser;
+    uint32_t        iShot  = ASMAtomicIncU32(&pState->cShots) - 1;
+
+    if (iShot < RT_ELEMENTS(pState->aShotNsTSes))
+        pState->aShotNsTSes[iShot] = RTTimeSystemNanoTS();
+
+    if (!(iShot % pState->u.ChgInt.cStepsBetween))
+    {
+        if (pState->u.ChgInt.fDirection)
+        {
+            pState->u.ChgInt.cNsCurInterval += pState->u.ChgInt.cNsChangeStep;
+            if (   pState->u.ChgInt.cNsCurInterval > pState->u.ChgInt.cNsMaxInterval
+                || pState->u.ChgInt.cNsCurInterval < pState->u.ChgInt.cNsMinInterval
+                || !pState->u.ChgInt.cNsCurInterval)
+            {
+                pState->u.ChgInt.cNsCurInterval = pState->u.ChgInt.cNsMaxInterval;
+                pState->u.ChgInt.fDirection = false;
+            }
+        }
+        else
+        {
+            pState->u.ChgInt.cNsCurInterval -= pState->u.ChgInt.cNsChangeStep;
+            if (   pState->u.ChgInt.cNsCurInterval < pState->u.ChgInt.cNsMinInterval
+                || pState->u.ChgInt.cNsCurInterval > pState->u.ChgInt.cNsMaxInterval
+                || pState->u.ChgInt.cNsCurInterval)
+            {
+                pState->u.ChgInt.cNsCurInterval = pState->u.ChgInt.cNsMinInterval;
+                pState->u.ChgInt.fDirection = true;
+            }
+        }
+
+        RTR0TESTR0_CHECK_RC(RTTimerChangeInterval(pTimer, pState->u.ChgInt.cNsCurInterval), VINF_SUCCESS);
+    }
+
+    if (iShot == pState->iActionShot)
+        RTR0TESTR0_CHECK_RC(pState->rc = RTTimerStop(pTimer), VINF_SUCCESS);
+}
 
 
 /**
@@ -182,14 +292,27 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                                           uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr)
 {
     RTR0TESTR0_SRV_REQ_PROLOG_RET(pReqHdr);
-    if (u64Arg)
-        return VERR_INVALID_PARAMETER;
+
+    /*
+     * Common parameter and state variables.
+     */
+    uint32_t const cNsSysHz        = RTTimerGetSystemGranularity();
+    uint32_t const cNsMaxHighResHz = 10000; /** @todo need API for this */
+    TSTRTR0TIMERS1 State;
+    if (   cNsSysHz             < UINT32_C(1000)
+        || cNsSysHz             > UINT32_C(1000000000)
+        || cNsMaxHighResHz      < UINT32_C(1)
+        || cNsMaxHighResHz      > UINT32_C(1000000000))
+    {
+        RTR0TESTR0_CHECK_MSG(cNsSysHz        > UINT32_C(1000) && cNsSysHz     < UINT32_C(1000000000), ("%u", cNsSysHz));
+        RTR0TESTR0_CHECK_MSG(cNsMaxHighResHz > UINT32_C(1) && cNsMaxHighResHz < UINT32_C(1000000000), ("%u", cNsMaxHighResHz));
+        RTR0TESTR0_SRV_REQ_EPILOG(pReqHdr);
+        return VINF_SUCCESS;
+    }
 
     /*
      * The big switch.
      */
-    uint32_t const cNsSysHz = RTTimerGetSystemGranularity();
-    TSTRTR0TIMERS1 State;
     switch (uOperation)
     {
         RTR0TESTR0_IMPLEMENT_SANITY_CASES();
@@ -198,12 +321,9 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
         case TSTRTR0TIMER_ONE_SHOT_BASIC:
         case TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES:
         {
-            /* Check that RTTimerGetSystemGranularity works. */
-            RTR0TESTR0_CHECK_MSG_BREAK(cNsSysHz > UINT32_C(0) && cNsSysHz < UINT32_C(1000000000), ("%u", cNsSysHz));
-
             /* Create a one-shot timer and take one shot. */
-            PRTTIMER        pTimer;
-            uint32_t        fFlags = uOperation != TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES ? RTTIMER_FLAGS_HIGH_RES : 0;
+            PRTTIMER pTimer;
+            uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
             RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackU32Counter, &State),
                                       VINF_SUCCESS);
 
@@ -248,8 +368,8 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
         case TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES:
         {
             /* Create a one-shot timer and restart it in the callback handler. */
-            PRTTIMER            pTimer;
-            uint32_t            fFlags = uOperation != TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES ? RTTIMER_FLAGS_HIGH_RES : 0;
+            PRTTIMER pTimer;
+            uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
             for (uint32_t iTest = 0; iTest < 2; iTest++)
             {
                 RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackRestartOnce, &State),
@@ -275,8 +395,8 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
         case TSTRTR0TIMER_ONE_SHOT_DESTROY_HIRES:
         {
             /* Create a one-shot timer and destroy it in the callback handler. */
-            PRTTIMER            pTimer;
-            uint32_t            fFlags = uOperation != TSTRTR0TIMER_ONE_SHOT_DESTROY_HIRES ? RTTIMER_FLAGS_HIGH_RES : 0;
+            PRTTIMER pTimer;
+            uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
             for (uint32_t iTest = 0; iTest < 2; iTest++)
             {
                 RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackDestroyOnce, &State),
@@ -300,6 +420,56 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
         }
 #endif
 
+        case TSTRTR0TIMER_ONE_SHOT_SPECIFIC:
+        case TSTRTR0TIMER_ONE_SHOT_SPECIFIC_HIRES:
+        {
+            PRTTIMER pTimer = NULL;
+            RTCPUSET OnlineSet;
+            RTMpGetOnlineSet(&OnlineSet);
+            for (uint32_t iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+                if (RTCpuSetIsMemberByIndex(&OnlineSet, iCpu))
+                {
+                    RT_ZERO(State);
+                    State.iActionShot       = 0;
+                    State.rc                = VINF_SUCCESS;
+                    State.u.Specific.idCpu  = RTMpCpuIdFromSetIndex(iCpu);
+
+                    uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
+                    fFlags |= RTTIMER_FLAGS_CPU(iCpu);
+                    int rc = RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackSpecific, &State);
+                    if (rc == VERR_NOT_SUPPORTED)
+                    {
+                        RTR0TestR0Info("specific timer are not supported, skipping\n");
+                        break;
+                    }
+                    RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
+
+                    for (uint32_t i = 0; i < 5 && !RTR0TestR0HaveErrors(); i++)
+                    {
+                        ASMAtomicWriteU32(&State.cShots, 0);
+                        RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, (i & 2 ? cNsSysHz : cNsSysHz / 2) * (i & 1)), VINF_SUCCESS);
+                        uint64_t cNsElapsed = RTTimeSystemNanoTS();
+                        for (uint32_t j = 0; j < 1000 && ASMAtomicUoReadU32(&State.cShots) < 1; j++)
+                            RTThreadSleep(5);
+                        cNsElapsed = RTTimeSystemNanoTS() - cNsElapsed;
+                        RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicReadU32(&State.cShots) == 1,
+                                                   ("cShots=%u iCpu=%u i=%u iCurCpu=%u cNsElapsed=%'llu\n",
+                                                    State.cShots, iCpu, i, RTMpCpuIdToSetIndex(RTMpCpuId()), cNsElapsed ));
+                        RTR0TESTR0_CHECK_MSG_BREAK(State.rc == VINF_SUCCESS, ("rc=%Rrc\n", State.rc));
+                        RTR0TESTR0_CHECK_MSG_BREAK(!State.u.Specific.fFailed, ("iCpu=%u i=%u\n", iCpu, i));
+                    }
+
+                    RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+                    pTimer = NULL;
+                    if (RTR0TestR0HaveErrors())
+                        break;
+
+                    RTMpGetOnlineSet(&OnlineSet);
+                }
+            RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+            break;
+        }
+
         case TSTRTR0TIMER_PERIODIC_BASIC:
         case TSTRTR0TIMER_PERIODIC_BASIC_HIRES:
         {
@@ -308,7 +478,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             uint32_t const  u10HzAsNsMin = u10HzAsNs - u10HzAsNs / 2;
             uint32_t const  u10HzAsNsMax = u10HzAsNs + u10HzAsNs / 2;
             PRTTIMER        pTimer;
-            uint32_t        fFlags = uOperation != TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES ? RTTIMER_FLAGS_HIGH_RES : 0;
+            uint32_t        fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
             RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, u10HzAsNs, fFlags, tstRTR0TimerCallbackU32Counter, &State),
                                       VINF_SUCCESS);
 
@@ -333,7 +503,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
         case TSTRTR0TIMER_PERIODIC_CSSD_LOOPS_HIRES:
         {
             /* create, start, stop & destroy high res timers a number of times. */
-            uint32_t fFlags = uOperation != TSTRTR0TIMER_PERIODIC_CSSD_LOOPS_HIRES ? RTTIMER_FLAGS_HIGH_RES : 0;
+            uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
             for (uint32_t i = 0; i < 40; i++)
             {
                 PRTTIMER pTimer;
@@ -352,6 +522,155 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             break;
         }
 
+        case TSTRTR0TIMER_PERIODIC_CHANGE_INTERVAL:
+        case TSTRTR0TIMER_PERIODIC_CHANGE_INTERVAL_HIRES:
+        {
+            /* Initialize the test parameters, using the u64Arg value for selecting variations.  */
+            RT_ZERO(State);
+            State.cShots        = 0;
+            State.rc            = VERR_IPE_UNINITIALIZED_STATUS;
+            State.iActionShot   = 42;
+            State.u.ChgInt.fDirection     = !!(u64Arg & 1);
+            if (uOperation == TSTRTR0TIMER_PERIODIC_CHANGE_INTERVAL_HIRES)
+            {
+                State.u.ChgInt.cNsMaxInterval = RT_MAX(cNsMaxHighResHz * 10, 20000000); /* 10x / 20 ms */
+                State.u.ChgInt.cNsMinInterval = RT_MAX(cNsMaxHighResHz,         10000); /* min / 10 us */
+            }
+            else
+            {
+                State.u.ChgInt.cNsMaxInterval = cNsSysHz * 4;
+                State.u.ChgInt.cNsMinInterval = cNsSysHz;
+            }
+            State.u.ChgInt.cNsChangeStep  = (State.u.ChgInt.cNsMaxInterval - State.u.ChgInt.cNsMinInterval) / 10;
+            State.u.ChgInt.cNsCurInterval = State.u.ChgInt.fDirection
+                                          ? State.u.ChgInt.cNsMaxInterval : State.u.ChgInt.cNsMinInterval;
+            State.u.ChgInt.cStepsBetween  = u64Arg & 4 ? 1 : 3;
+            RTR0TESTR0_CHECK_MSG_BREAK(State.u.ChgInt.cNsMinInterval > 1000, ("%u\n", State.u.ChgInt.cNsMinInterval));
+            RTR0TESTR0_CHECK_MSG_BREAK(State.u.ChgInt.cNsMaxInterval > State.u.ChgInt.cNsMinInterval, ("max=%u min=%u\n", State.u.ChgInt.cNsMaxInterval, State.u.ChgInt.cNsMinInterval));
+
+            /* create the timer and check if RTTimerChangeInterval is supported. */
+            PRTTIMER pTimer;
+            uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
+            RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, cNsSysHz, fFlags, tstRTR0TimerCallbackChangeInterval, &State),
+                                      VINF_SUCCESS);
+            int rc = RTTimerChangeInterval(pTimer, State.u.ChgInt.cNsMinInterval);
+            if (rc == VERR_NOT_SUPPORTED)
+            {
+                RTR0TestR0Info("RTTimerChangeInterval not supported, skipped");
+                RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+                break;
+            }
+
+            /* do the test. */
+            RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, u64Arg & 2 ? State.u.ChgInt.cNsCurInterval : 0), VINF_SUCCESS);
+            for (uint32_t k = 0;
+                    k < 1000
+                 && ASMAtomicReadU32(&State.cShots) <= State.iActionShot
+                 && State.rc == VERR_IPE_UNINITIALIZED_STATUS;
+                 k++)
+                RTThreadSleep(10);
+
+            rc = RTTimerStop(pTimer);
+            RTR0TESTR0_CHECK_MSG_BREAK(rc == VERR_TIMER_SUSPENDED || rc == VINF_SUCCESS, ("rc = %Rrc (RTTimerStop)\n", rc));
+            RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+            break;
+        }
+
+        case TSTRTR0TIMER_PERIODIC_SPECIFIC:
+        case TSTRTR0TIMER_PERIODIC_SPECIFIC_HIRES:
+        {
+            PRTTIMER pTimer = NULL;
+            RTCPUSET OnlineSet;
+            RTMpGetOnlineSet(&OnlineSet);
+            for (uint32_t iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+                if (RTCpuSetIsMemberByIndex(&OnlineSet, iCpu))
+                {
+                    RT_ZERO(State);
+                    State.iActionShot       = 0;
+                    State.rc                = VINF_SUCCESS;
+                    State.u.Specific.idCpu  = RTMpCpuIdFromSetIndex(iCpu);
+
+                    uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
+                    fFlags |= RTTIMER_FLAGS_CPU(iCpu);
+                    int rc = RTTimerCreateEx(&pTimer, cNsSysHz, fFlags, tstRTR0TimerCallbackSpecific, &State);
+                    if (rc == VERR_NOT_SUPPORTED)
+                    {
+                        RTR0TestR0Info("specific timer are not supported, skipping\n");
+                        break;
+                    }
+                    RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
+
+                    for (uint32_t i = 0; i < 3 && !RTR0TestR0HaveErrors(); i++)
+                    {
+                        ASMAtomicWriteU32(&State.cShots, 0);
+                        RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, (i & 2 ? cNsSysHz : cNsSysHz / 2) * (i & 1)), VINF_SUCCESS);
+                        uint64_t cNsElapsed = RTTimeSystemNanoTS();
+                        for (uint32_t j = 0; j < 1000 && ASMAtomicUoReadU32(&State.cShots) < 8; j++)
+                            RTThreadSleep(5);
+                        cNsElapsed = RTTimeSystemNanoTS() - cNsElapsed;
+                        RTR0TESTR0_CHECK_RC_BREAK(RTTimerStop(pTimer), VINF_SUCCESS);
+                        RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicReadU32(&State.cShots) > 5,
+                                                   ("cShots=%u iCpu=%u i=%u iCurCpu=%u cNsElapsed=%'llu\n",
+                                                    State.cShots, iCpu, i, RTMpCpuIdToSetIndex(RTMpCpuId()), cNsElapsed));
+                        RTR0TESTR0_CHECK_MSG_BREAK(State.rc == VINF_SUCCESS, ("rc=%Rrc\n", State.rc));
+                        RTR0TESTR0_CHECK_MSG_BREAK(!State.u.Specific.fFailed, ("iCpu=%u i=%u\n", iCpu, i));
+                    }
+
+                    RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+                    pTimer = NULL;
+                    if (RTR0TestR0HaveErrors())
+                        break;
+
+                    RTMpGetOnlineSet(&OnlineSet);
+                }
+            RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+            break;
+        }
+
+
+        case TSTRTR0TIMER_PERIODIC_OMNI:
+        case TSTRTR0TIMER_PERIODIC_OMNI_HIRES:
+        {
+#if 0 /* To be continued... */
+            /* Create a periodic timer running at max host frequency, but no more than 1000 Hz. */
+            uint32_t        cNsInterval = cNsSysHz;
+            while (cNsInterval < UINT32_C(1000000))
+                cNsInterval *= 2;
+            State.u.Omni.pacTickPerCpu = RTMemAllocZ(sizeof(State.u.Omni.pacTickPerCpu[0]) * RTCPUSET_MAX_CPUS);
+            RTR0TESTR0_CHECK_MSG_BREAK(State.u.Omni.pacTickPerCpu, ("%d\n", RTCPUSET_MAX_CPUS));
+
+            PRTTIMER        pTimer;
+            uint32_t        fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
+            RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, cNsInterval, fFlags, tstRTR0TimerCallbackOmni, &State),
+                                      VINF_SUCCESS);
+
+            do /* break loop */
+            {
+                /* run it for 1 second. */
+                RTCPUSET OnlineSet;
+                uint64_t uStartNsTS = RTTimeSystemNanoTS();
+                RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, 0), VINF_SUCCESS);
+                RTMpGetOnlineSet(&OnlineSet);
+
+                for (uint32_t i = 0; i < 1000 && RTTimeSystemNanoTS() - uStartNsTS <= UINT32_C(1000000000); i++)
+                    RTThreadSleep(10);
+
+                RTR0TESTR0_CHECK_RC_BREAK(RTTimerStop(pTimer), VINF_SUCCESS);
+
+                for (uint32_t iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+                    if ()
+                    {
+                    }
+
+
+            } while (0);
+
+
+            RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+            RTMemFree(State.u.Omni.pacTickPerCpu);
+#endif
+            break;
+        }
     }
 
     RTR0TESTR0_SRV_REQ_EPILOG(pReqHdr);
