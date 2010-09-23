@@ -75,7 +75,8 @@
       </listitem>
 
       <listitem>
-        <para>SATA: allow to attach CD/DVD-ROM drives including passthrough</para>
+        <para>SATA: allow to attach CD/DVD-ROM drives including passthrough
+          (bug #7058)</para>
       </listitem>
 
       <listitem>
