@@ -598,8 +598,8 @@ static enum hrtimer_restart rtTimerLinuxHrCallback(struct hrtimer *pHrTimer)
     /*
      * Check for unwanted migration.
      */
-    if (   pTimer->fAllCpus
-        && RT_LIKELY((RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) == RTMpCpuId()))
+    if (   (pTimer->fSpecificCpu || pTimer->fAllCpus)
+        && RT_UNLIKELY((RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) != RTMpCpuId()))
     {
         rtTimerLnxCallbackHandleMigration(pTimer, pSubTimer);
         return HRTIMER_NORESTART;
@@ -685,8 +685,8 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
     /*
      * Check for unwanted migration.
      */
-    if (   pTimer->fAllCpus
-        && RT_LIKELY((RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) == RTMpCpuId()))
+    if (   (pTimer->fSpecificCpu || pTimer->fAllCpus)
+        && RT_UNLIKELY((RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) != RTMpCpuId()))
     {
         rtTimerLnxCallbackHandleMigration(pTimer, pSubTimer);
         return;
