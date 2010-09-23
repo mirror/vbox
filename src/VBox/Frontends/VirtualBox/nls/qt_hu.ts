@@ -2436,7 +2436,7 @@ Biztosan törlöd?</translation>
     </message>
     <message>
         <source>Unable to execute select statement</source>
-        <translation>A SELECT utasítás nem végrehajtható</translation>
+        <translation type="unfinished">A SELECT utasítás nem végrehajtható</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
@@ -3248,11 +3248,11 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Oldal felfelé</translation>
+        <translation>Egy oldalt fel</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation>Oldal jobbra</translation>
+        <translation>Egy oldalt jobbra</translation>
     </message>
     <message>
         <source>Page down</source>
