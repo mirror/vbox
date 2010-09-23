@@ -889,7 +889,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             Bstr machineName;
             machine->COMGETTER(Name)(machineName.asOutParam());
             g_pFramebufferVNC = new VNCFB(console, uVNCPort, pszVNCPassword);
-            rc = g_pFramebufferVNC->init(machineName ? Utf8Str(machineName).c_str() : "");
+            rc = g_pFramebufferVNC->init(machineName.raw() ? Utf8Str(machineName.raw()).c_str() : "");
             if (rc != S_OK)
             {
                 LogError("Failed to load the vnc server extension, possibly due to a damaged file\n", rc);
