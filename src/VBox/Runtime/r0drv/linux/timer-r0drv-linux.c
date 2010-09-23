@@ -122,15 +122,15 @@ typedef struct RTTIMERLNXSUBTIMER
             struct timer_list       LnxTimer;
             /** The start of the current run (ns).
              * This is used to calculate when the timer ought to fire the next time. */
-            uint64_t                u64StartTS;
-            /** The start of the current run (ns).
-             * This is used to calculate when the timer ought to fire the next time. */
             uint64_t                u64NextTS;
             /** The u64NextTS in jiffies. */
             unsigned long           ulNextJiffies;
+            /** Set when starting or changing the timer so that u64StartTs
+             *  and u64NextTS gets reinitialized (eliminating some jitter). */
+            bool volatile           fFirstAfterChg;
         } Std;
     } u;
-    /** The current tick number (since u.Std.u64StartTS). */
+    /** The current tick number. */
     uint64_t                iTick;
     /** Restart the single shot timer at this specific time.
      * Used when a single shot timer is restarted from the callback. */
@@ -178,7 +178,9 @@ typedef struct RTTIMER
     uint64_t volatile       u64NanoInterval;
     /** This is set to the number of jiffies between ticks if the interval is
      * an exact number of jiffies. (Standard timers only.) */
-    unsigned long           cJiffies;
+    unsigned long volatile  cJiffies;
+    /** The change interval spinlock for standard timers only. */
+    spinlock_t              ChgIntLock;
     /** Sub-timers.
      * Normally there is just one, but for RTTIMER_FLAGS_CPU_ALL this will contain
      * an entry for all possible cpus. In that case the index will be the same as
@@ -192,7 +194,7 @@ typedef struct RTTIMER
  */
 typedef struct RTTIMERLINUXSTARTONCPUARGS
 {
-    /** The current time (RTTimeNanoTS). */
+    /** The current time (RTTimeSystemNanoTS). */
     uint64_t                u64Now;
     /** When to start firing (delta). */
     uint64_t                u64First;
@@ -283,7 +285,7 @@ DECLINLINE(RTTIMERLNXSTATE) rtTimerLnxGetState(RTTIMERLNXSTATE volatile *penmSta
 /**
  * Converts a nano second time stamp to ktime_t.
  *
- * ASSUMES RTTimeNanoTS() is implemented using ktime_get_ts().
+ * ASSUMES RTTimeSystemNanoTS() is implemented using ktime_get_ts().
  *
  * @returns ktime_t.
  * @param   cNanoSecs   Nanoseconds.
@@ -297,7 +299,7 @@ DECLINLINE(ktime_t) rtTimerLnxNanoToKt(uint64_t cNanoSecs)
 /**
  * Converts ktime_t to a nano second time stamp.
  *
- * ASSUMES RTTimeNanoTS() is implemented using ktime_get_ts().
+ * ASSUMES RTTimeSystemNanoTS() is implemented using ktime_get_ts().
  *
  * @returns nano second time stamp.
  * @param   Kt          ktime_t.
@@ -332,7 +334,7 @@ DECLINLINE(unsigned long) rtTimerLnxNanoToJiffies(uint64_t cNanoSecs)
  * Starts a sub-timer (RTTimerStart).
  *
  * @param   pSubTimer   The sub-timer to start.
- * @param   u64Now      The current timestamp (RTTimeNanoTS()).
+ * @param   u64Now      The current timestamp (RTTimeSystemNanoTS()).
  * @param   u64First    The interval from u64Now to the first time the timer should fire.
  * @param   fPinned     true = timer pinned to a specific CPU,
  *                      false = timer can migrate between CPUs
@@ -347,10 +349,7 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
      */
     uint64_t u64NextTS = u64Now + u64First;
     if (fHighRes)
-    {
-        pSubTimer->u.Std.u64StartTS = u64NextTS;
-        pSubTimer->u.Std.u64NextTS  = u64NextTS;
-    }
+        pSubTimer->u.Std.u64NextTS = u64NextTS;
     dprintf(("startsubtimer %p\n", pSubTimer->pParent));
 
     pSubTimer->iTick = 0;
@@ -363,7 +362,8 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
 #endif
     {
         unsigned long cJiffies = !u64First ? 0 : rtTimerLnxNanoToJiffies(u64First);
-        pSubTimer->u.Std.ulNextJiffies = jiffies + cJiffies;
+        pSubTimer->u.Std.ulNextJiffies  = jiffies + cJiffies;
+        pSubTimer->u.Std.fFirstAfterChg = true;
 #ifdef CONFIG_SMP
         if (fPinned)
             mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
@@ -696,54 +696,65 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
     if (pTimer->u64NanoInterval)
     {
         /*
-         * Interval timer, calculate the next timeout and re-arm it.
+         * Interval timer, calculate the next timeout.
          *
-         * The first time around, we'll re-adjust the u.Std.u64StartTS to
+         * The first time around, we'll re-adjust the u.Std.u64NextTS to
          * try prevent some jittering if we were started at a bad time.
          */
-        const uint64_t u64NanoInterval  = pTimer->u64NanoInterval;
-        const uint64_t iTick            = ++pSubTimer->iTick;
-        const uint64_t u64NanoTS        = RTTimeNanoTS();
+        const uint64_t  iTick = ++pSubTimer->iTick;
+        uint64_t        u64NanoInterval;
+        unsigned long   cJiffies;
+        unsigned long   flFlags;
 
-        if (RT_UNLIKELY(iTick == 1))
+        spin_lock_irqsave(&pTimer->ChgIntLock, flFlags);
+        u64NanoInterval = pTimer->u64NanoInterval;
+        cJiffies        = pTimer->cJiffies;
+        if (RT_UNLIKELY(pSubTimer->u.Std.fFirstAfterChg))
         {
-            pSubTimer->u.Std.u64StartTS    = u64NanoTS;
-            pSubTimer->u.Std.u64NextTS     = u64NanoTS;
-            pSubTimer->u.Std.ulNextJiffies = jiffies;
+            pSubTimer->u.Std.fFirstAfterChg = false;
+            pSubTimer->u.Std.u64NextTS      = RTTimeSystemNanoTS();
+            pSubTimer->u.Std.ulNextJiffies  = jiffies;
         }
+        spin_unlock_irqrestore(&pTimer->ChgIntLock, flFlags);
 
         pSubTimer->u.Std.u64NextTS += u64NanoInterval;
-        if (pTimer->cJiffies)
+        if (cJiffies)
         {
-            pSubTimer->u.Std.ulNextJiffies += pTimer->cJiffies;
+            pSubTimer->u.Std.ulNextJiffies += cJiffies;
             /* Prevent overflows when the jiffies counter wraps around.
              * Special thanks to Ken Preslan for helping debugging! */
             while (time_before(pSubTimer->u.Std.ulNextJiffies, jiffies))
             {
-                pSubTimer->u.Std.ulNextJiffies += pTimer->cJiffies;
+                pSubTimer->u.Std.ulNextJiffies += cJiffies;
                 pSubTimer->u.Std.u64NextTS     += u64NanoInterval;
             }
         }
         else
         {
+            const uint64_t u64NanoTS = RTTimeSystemNanoTS();
             while (pSubTimer->u.Std.u64NextTS < u64NanoTS)
                 pSubTimer->u.Std.u64NextTS += u64NanoInterval;
             pSubTimer->u.Std.ulNextJiffies = jiffies + rtTimerLnxNanoToJiffies(pSubTimer->u.Std.u64NextTS - u64NanoTS);
         }
 
-#ifdef CONFIG_SMP
-        if (pTimer->fSpecificCpu || pTimer->fAllCpus)
-            mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
-        else
-#endif
-            mod_timer(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
-
         /*
-         * Run the timer.
+         * Run the timer and re-arm it unless the state changed                                                                                                        .
+         *                                                                                                                                                             .
+         * We must re-arm it afterwards as we're not in a position to undo this                                                                                        .
+         * operation if for instance someone stopped or destroyed us while we                                                                                          .
+         * were in the callback.  (Linux takes care of any races here.)
          */
         pTimer->pfnTimer(pTimer, pTimer->pvUser, iTick);
         if (RT_LIKELY(rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_ACTIVE, RTTIMERLNXSTATE_CALLBACK)))
+        {
+#ifdef CONFIG_SMP
+            if (pTimer->fSpecificCpu || pTimer->fAllCpus)
+                mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
+            else
+#endif
+                mod_timer(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
             return;
+        }
     }
     else
     {
@@ -761,8 +772,6 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
     /*
      * Some state change occured while we were in the callback routine.
      */
-    if (pTimer->u64NanoInterval)
-        del_timer_sync(&pSubTimer->u.Std.LnxTimer);
     for (;;)
     {
         RTTIMERLNXSTATE enmState = rtTimerLnxGetState(&pSubTimer->enmState);
@@ -780,17 +789,21 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
             case RTTIMERLNXSTATE_CB_RESTARTING:
                 if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_ACTIVE, RTTIMERLNXSTATE_CB_RESTARTING))
                 {
-                    const uint64_t u64NanoTS = RTTimeNanoTS();
-                    const uint64_t u64NextTS = pSubTimer->uNsRestartAt;
-                    if (pTimer->fHighRes)
-                    {
-                        pSubTimer->u.Std.u64StartTS = u64NextTS;
-                        pSubTimer->u.Std.u64NextTS  = u64NextTS;
-                    }
-                    pSubTimer->iTick = 0;
-                    pSubTimer->u.Std.ulNextJiffies = u64NextTS > u64NanoTS
-                                                   ? jiffies + rtTimerLnxNanoToJiffies(u64NextTS - u64NanoTS)
-                                                   : jiffies;
+                    uint64_t        u64NanoTS;
+                    uint64_t        u64NextTS;
+                    unsigned long   flFlags;
+
+                    spin_lock_irqsave(&pTimer->ChgIntLock, flFlags);
+                    u64NextTS = pSubTimer->uNsRestartAt;
+                    u64NanoTS = RTTimeSystemNanoTS();
+                    pSubTimer->iTick                = 0;
+                    pSubTimer->u.Std.u64NextTS      = u64NextTS;
+                    pSubTimer->u.Std.fFirstAfterChg = true;
+                    pSubTimer->u.Std.ulNextJiffies  = u64NextTS > u64NanoTS
+                                                    ? jiffies + rtTimerLnxNanoToJiffies(u64NextTS - u64NanoTS)
+                                                    : jiffies;
+                    spin_unlock_irqrestore(&pTimer->ChgIntLock, flFlags);
+
 #ifdef CONFIG_SMP
                     if (pTimer->fSpecificCpu || pTimer->fAllCpus)
                         mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
@@ -880,7 +893,7 @@ static int rtTimerLnxOmniStart(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArg
      * Start them (can't find any exported function that allows me to
      * do this without the cross calls).
      */
-    pArgs->u64Now = RTTimeNanoTS();
+    pArgs->u64Now = RTTimeSystemNanoTS();
     rc2 = RTMpOnAll(rtTimerLnxStartAllOnCpu, pTimer, pArgs);
     AssertRC(rc2); /* screw this if it fails. */
 
@@ -1053,7 +1066,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
                 if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_MP_STARTING, RTTIMERLNXSTATE_STOPPED))
                 {
                     RTTIMERLINUXSTARTONCPUARGS Args;
-                    Args.u64Now = RTTimeNanoTS();
+                    Args.u64Now = RTTimeSystemNanoTS();
                     Args.u64First = 0;
 
                     if (RTMpCpuId() == idCpu)
@@ -1152,7 +1165,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     /*
      * Simple timer - Pretty straight forward if it wasn't for restarting.
      */
-    Args.u64Now = RTTimeNanoTS();
+    Args.u64Now = RTTimeSystemNanoTS();
     ASMAtomicWriteU64(&pTimer->aSubTimers[0].uNsRestartAt, Args.u64Now + u64First);
     for (;;)
     {
@@ -1228,7 +1241,7 @@ static bool rtTimerLnxStop(PRTTIMER pTimer, bool fForDestroy)
         switch (enmState)
         {
             case RTTIMERLNXSTATE_ACTIVE:
-                if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_MP_STOPPING, RTTIMERLNXSTATE_ACTIVE))
+                if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STOPPING, RTTIMERLNXSTATE_ACTIVE))
                 {
                     rtTimerLnxStopSubTimer(&pTimer->aSubTimers[0], pTimer->fHighRes);
                     return false;
@@ -1240,7 +1253,7 @@ static bool rtTimerLnxStop(PRTTIMER pTimer, bool fForDestroy)
             case RTTIMERLNXSTATE_CB_STOPPING:
                 Assert(enmState != RTTIMERLNXSTATE_CB_STOPPING || fForDestroy);
                 if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[0].enmState,
-                                           !fForDestroy ? RTTIMERLNXSTATE_STOPPED : RTTIMERLNXSTATE_CB_DESTROYING,
+                                           !fForDestroy ? RTTIMERLNXSTATE_CB_STOPPING : RTTIMERLNXSTATE_CB_DESTROYING,
                                            enmState))
                     return true;
                 break;
@@ -1287,6 +1300,9 @@ RT_EXPORT_SYMBOL(RTTimerStop);
 
 RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
 {
+    unsigned long cJiffies;
+    unsigned long flFlags;
+
     /*
      * Validate.
      */
@@ -1313,8 +1329,17 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
      */
     if (pTimer->cCpus > 1)
         return VERR_NOT_SUPPORTED;
-    RTTimerStop(pTimer);
-    return RTTimerStart(pTimer, u64NanoInterval);
+
+    cJiffies = u64NanoInterval / RTTimerGetSystemGranularity();
+    if (cJiffies * RTTimerGetSystemGranularity() != u64NanoInterval)
+        cJiffies = 0;
+
+    spin_lock_irqsave(&pTimer->ChgIntLock, flFlags);
+    pTimer->aSubTimers[0].u.Std.fFirstAfterChg = true;
+    pTimer->cJiffies = cJiffies;
+    ASMAtomicWriteU64(&pTimer->u64NanoInterval, u64NanoInterval);
+    spin_unlock_irqrestore(&pTimer->ChgIntLock, flFlags);
+    return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTTimerChangeInterval);
 
@@ -1444,6 +1469,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     pTimer->cJiffies        = u64NanoInterval / RTTimerGetSystemGranularity();
     if (pTimer->cJiffies * RTTimerGetSystemGranularity() != u64NanoInterval)
         pTimer->cJiffies    = 0;
+    spin_lock_init(&pTimer->ChgIntLock);
 
     for (iCpu = 0; iCpu < cCpus; iCpu++)
     {
@@ -1460,7 +1486,6 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
             pTimer->aSubTimers[iCpu].u.Std.LnxTimer.data        = (unsigned long)&pTimer->aSubTimers[iCpu];
             pTimer->aSubTimers[iCpu].u.Std.LnxTimer.function    = rtTimerLinuxStdCallback;
             pTimer->aSubTimers[iCpu].u.Std.LnxTimer.expires     = jiffies;
-            pTimer->aSubTimers[iCpu].u.Std.u64StartTS           = 0;
             pTimer->aSubTimers[iCpu].u.Std.u64NextTS            = 0;
         }
         pTimer->aSubTimers[iCpu].iTick      = 0;
