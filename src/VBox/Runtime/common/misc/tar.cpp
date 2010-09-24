@@ -462,7 +462,7 @@ static int rtTarFindFile(RTFILE hFile, const char *pszFile, uint64_t *puOffset, 
                 if (RT_FAILURE(rc))
                     break;
                 /* Seek back, to positionate the file pointer at the start of the header. */
-                rc = RTFileSeek(hFile, -sizeof(RTTARRECORD), RTFILE_SEEK_CURRENT, puOffset);
+                rc = RTFileSeek(hFile, -(int64_t)sizeof(RTTARRECORD), RTFILE_SEEK_CURRENT, puOffset);
                 fFound = true;
                 break;
             }
@@ -805,7 +805,7 @@ RTR3DECL(int) RTTarFileWriteAt(RTTARFILE hFile, uint64_t uOffset, const void *pv
     PRTTARFILEINTERNAL pFileInt = hFile;
     RTTARFILE_VALID_RETURN(pFileInt);
 
-    if (!pFileInt->fOpenMode & RTFILE_O_WRITE)
+    if ((pFileInt->fOpenMode & RTFILE_O_WRITE) != RTFILE_O_WRITE)
         return VERR_WRITE_ERROR;
 
     size_t cbTmpWritten = 0;
@@ -833,7 +833,7 @@ RTR3DECL(int) RTTarFileSetSize(RTTARFILE hFile, uint64_t cbSize)
     PRTTARFILEINTERNAL pFileInt = hFile;
     RTTARFILE_VALID_RETURN(pFileInt);
 
-    if (!pFileInt->fOpenMode & RTFILE_O_WRITE)
+    if ((pFileInt->fOpenMode & RTFILE_O_WRITE) != RTFILE_O_WRITE)
         return VERR_WRITE_ERROR;
 
     /* Check if we already have that size. */
@@ -891,7 +891,7 @@ RTR3DECL(int) RTTarFileSetMode(RTTARFILE hFile, uint32_t fMode)
     PRTTARFILEINTERNAL pFileInt = hFile;
     RTTARFILE_VALID_RETURN(pFileInt);
 
-    if (!pFileInt->fOpenMode & RTFILE_O_WRITE)
+    if ((pFileInt->fOpenMode & RTFILE_O_WRITE) != RTFILE_O_WRITE)
         return VERR_WRITE_ERROR;
 
     /* Convert the mode to an string. */
@@ -926,7 +926,7 @@ RTR3DECL(int) RTTarFileSetTime(RTTARFILE hFile, PRTTIMESPEC pTime)
     PRTTARFILEINTERNAL pFileInt = hFile;
     RTTARFILE_VALID_RETURN(pFileInt);
 
-    if (!pFileInt->fOpenMode & RTFILE_O_WRITE)
+    if ((pFileInt->fOpenMode & RTFILE_O_WRITE) != RTFILE_O_WRITE)
         return VERR_WRITE_ERROR;
 
     /* Convert the time to an string. */
@@ -963,7 +963,7 @@ RTR3DECL(int) RTTarFileSetOwner(RTTARFILE hFile, uint32_t uid, uint32_t gid)
     PRTTARFILEINTERNAL pFileInt = hFile;
     RTTARFILE_VALID_RETURN(pFileInt);
 
-    if (!pFileInt->fOpenMode & RTFILE_O_WRITE)
+    if ((pFileInt->fOpenMode & RTFILE_O_WRITE) != RTFILE_O_WRITE)
         return VERR_WRITE_ERROR;
 
     int rc = VINF_SUCCESS;
