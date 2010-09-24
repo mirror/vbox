@@ -417,7 +417,7 @@
     </message>
     <message>
         <source>&amp;Details (%1 of %2)</source>
-        <translation>明细 (%1/%2)(&amp;D)</translation>
+        <translation>明细 (%2/%1)(&amp;D)</translation>
     </message>
 </context>
 <context>
