@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,7 +30,7 @@
 #include <QMainWindow>
 #ifdef VBOX_GUI_WITH_SYSTRAY
 # include <QSystemTrayIcon>
-#endif
+#endif /* VBOX_GUI_WITH_SYSTRAY */
 
 /* Local forward declarations */
 class QISplitter;
@@ -188,68 +188,6 @@ private:
 
     bool mDoneInaccessibleWarningOnce : 1;
 };
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-
-Q_DECLARE_METATYPE(QString);
-
-class VBoxTrayIcon : public QSystemTrayIcon
-{
-    Q_OBJECT;
-
-public:
-
-    VBoxTrayIcon (VBoxSelectorWnd* aParent, UIVMItemModel* aVMModel);
-    virtual ~VBoxTrayIcon ();
-
-    void refresh ();
-    void retranslateUi ();
-
-protected:
-
-    UIVMItem* GetItem (QObject* aObject);
-
-signals:
-
-public slots:
-
-    void trayIconShow (bool aShow = false);
-
-private slots:
-
-    void showSubMenu();
-    void hideSubMenu ();
-
-    void vmSettings();
-    void vmDelete();
-    void vmStart();
-    void vmDiscard();
-    void vmPause(bool aPause);
-    void vmRefresh();
-    void vmShowLogs();
-
-private:
-
-    bool mActive;           /* Is systray menu active/available? */
-
-    /* The vm list model */
-    UIVMItemModel *mVMModel;
-
-    VBoxSelectorWnd* mParent;
-    QMenu *mTrayIconMenu;
-
-    QAction *mShowSelectorAction;
-    QAction *mHideSystrayMenuAction;
-    QAction *mVmConfigAction;
-    QAction *mVmDeleteAction;
-    QAction *mVmStartAction;
-    QAction *mVmDiscardAction;
-    QAction *mVmPauseAction;
-    QAction *mVmRefreshAction;
-    QAction *mVmShowLogsAction;
-};
-
-#endif // VBOX_GUI_WITH_SYSTRAY
 
 #endif // __VBoxSelectorWnd_h__
 
