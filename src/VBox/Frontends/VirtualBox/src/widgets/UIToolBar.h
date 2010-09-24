@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIToolBar class declaration & implementation
+ * UIToolBar class declaration
  */
 
 /*
