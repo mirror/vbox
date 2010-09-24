@@ -540,6 +540,7 @@ RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char* pszTarname, uint32_t fMode)
         return VERR_NO_MEMORY;
 
     pInt->u32Magic = RTTAR_MAGIC;
+    pInt->fOpenMode = fMode;
 
     int rc;
     do
@@ -618,7 +619,7 @@ RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilena
 
     pFileInt->u32Magic = RTTARFILE_MAGIC;
 
-    int rc;
+    int rc = VINF_SUCCESS;
     do
     {
         pFileInt->pTar = pInt;
