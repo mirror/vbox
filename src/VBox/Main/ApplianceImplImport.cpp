@@ -736,7 +736,7 @@ HRESULT Appliance::readFSOVA(const LocationInfo &locInfo, ComObjPtr<Progress> &p
         char* pcszOVFName = RTPathFilename(tmpPath.c_str());
 
         /* Read the OVF into a memory buffer */
-        uint64_t cbSize;
+        size_t cbSize;
         int vrc = RTTarExtractFileToBuf(locInfo.strPath.c_str(), &pvBuf, &cbSize, pcszOVFName, 0, 0);
         if (RT_FAILURE(vrc))
         {
@@ -1037,7 +1037,7 @@ HRESULT Appliance::importImpl(const LocationInfo &locInfo,
         }
         else
         {
-            if (RTTarQueryFileExists(locInfo.strPath.c_str(), RTPathFilename(strMfFile.c_str())) == VINF_SUCCESS)
+            if (RTTarFileExists(locInfo.strPath.c_str(), RTPathFilename(strMfFile.c_str())) == VINF_SUCCESS)
                 mode = ImportFileWithManifest;
         }
     }
@@ -1392,7 +1392,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask)
         /* Add the manifest file to the list of files to extract, but only if
            one is in the archive. */
         Utf8Str strManifestFile = manifestFileName(strTmpOvf);
-        vrc = RTTarQueryFileExists(pTask->locInfo.strPath.c_str(), RTPathFilename(strManifestFile.c_str()));
+        vrc = RTTarFileExists(pTask->locInfo.strPath.c_str(), RTPathFilename(strManifestFile.c_str()));
         if (RT_SUCCESS(vrc))
             filesList.push_back(pair<Utf8Str, ULONG>(strManifestFile.c_str(), 1));
 

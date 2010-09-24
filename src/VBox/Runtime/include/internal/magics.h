@@ -152,6 +152,14 @@
 #define RTS3_MAGIC                      UINT32_C(0x18750401)
 /** The value of RTS3::u32Magic after RTS3Destroy().  */
 #define RTS3_MAGIC_DEAD                 UINT32_C(0x19320210)
+/** The value of RTTAR::u32Magic. (Donald Ervin Knuth) */
+#define RTTAR_MAGIC                     UINT32_C(0x19380110)
+/** The value of RTTAR::u32Magic after RTTarClose(). */
+#define RTTAR_MAGIC_DEAD                ~RTTAR_MAGIC
+/** The value of RTTARFILE::u32Magic. (Abraham Stoker) */
+#define RTTARFILE_MAGIC                 UINT32_C(0x18471108)
+/** The value of RTTARFILE::u32Magic after RTTarFileClose(). */
+#define RTTARFILE_MAGIC_DEAD            UINT32_C(0x19120420)
 
 /** @} */
 
