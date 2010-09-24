@@ -227,12 +227,12 @@ static void myLogBackdoorPrintf(const char *pszFormat, ...)
 
     ASMOutStrU8(0x504, (uint8_t *)&szTmp[0], cb);
 }
-#define RTAssertMsg1Weak(pszExpr, uLine, pszFile, pszFunction) \
+# define RTAssertMsg1Weak(pszExpr, uLine, pszFile, pszFunction) \
     myLogBackdoorPrintf("\n!!Guest Assertion failed!!\n%s(%d) %s\n%s\n", uLine, pszFile, pszFunction, (pszExpr))
-#define RTAssertMsg2Weak myLogBackdoorPrintf
-#define dprintf(a)          myLogBackdoorPrintf a
+# define RTAssertMsg2Weak myLogBackdoorPrintf
+# define RTTIMERLNX_LOG(a)          myLogBackdoorPrintf a
 #else
-#define dprintf(a)          do { } while (0)
+# define RTTIMERLNX_LOG(a)          do { } while (0)
 #endif
 
 /**
@@ -241,7 +241,7 @@ static void myLogBackdoorPrintf(const char *pszFormat, ...)
 DECLINLINE(void) rtTimerLnxSetState(RTTIMERLNXSTATE volatile *penmState, RTTIMERLNXSTATE enmNewState)
 {
 #ifdef DEBUG_HACKING
-    dprintf(("set %d -> %d\n", *penmState, enmNewState));
+    RTTIMERLNX_LOG(("set %d -> %d\n", *penmState, enmNewState));
 #endif
     ASMAtomicWriteU32((uint32_t volatile *)penmState, enmNewState);
 }
@@ -260,7 +260,7 @@ static bool rtTimerLnxCmpXchgStateDebug(RTTIMERLNXSTATE volatile *penmState, RTT
 {
     RTTIMERLNXSTATE enmOldState = enmCurState;
     bool fRc = ASMAtomicCmpXchgExU32((uint32_t volatile *)penmState, enmNewState, enmCurState, (uint32_t *)&enmOldState);
-    dprintf(("cxg %d -> %d - %d at %u\n", enmOldState, enmNewState, fRc, uLine));
+    RTTIMERLNX_LOG(("cxg %d -> %d - %d at %u\n", enmOldState, enmNewState, fRc, uLine));
     return fRc;
 }
 #else
@@ -350,7 +350,7 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
     uint64_t u64NextTS = u64Now + u64First;
     if (fHighRes)
         pSubTimer->u.Std.u64NextTS = u64NextTS;
-    dprintf(("startsubtimer %p\n", pSubTimer->pParent));
+    RTTIMERLNX_LOG(("startsubtimer %p\n", pSubTimer->pParent));
 
     pSubTimer->iTick = 0;
 
@@ -389,7 +389,7 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
  */
 static void rtTimerLnxStopSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, bool fHighRes)
 {
-    dprintf(("stopsubtimer %p %d\n", pSubTimer->pParent, fHighRes));
+    RTTIMERLNX_LOG(("stopsubtimer %p %d\n", pSubTimer->pParent, fHighRes));
 #ifdef RTTIMER_LINUX_WITH_HRTIMER
     if (fHighRes)
         hrtimer_cancel(&pSubTimer->u.Hr.LnxTimer);
@@ -413,7 +413,7 @@ static void rtTimerLnxDestroyIt(PRTTIMER pTimer)
 {
     RTSPINLOCK hSpinlock = pTimer->hSpinlock;
     Assert(pTimer->fSuspended);
-    dprintf(("destroyit %p\n", pTimer));
+    RTTIMERLNX_LOG(("destroyit %p\n", pTimer));
 
     /*
      * Remove the MP notifications first because it'll reduce the risk of
@@ -453,7 +453,6 @@ static void rtTimerLnxCallbackDestroy(PRTTIMER pTimer, PRTTIMERLNXSUBTIMER pSubT
      */
     if (pTimer->cCpus > 1)
     {
-        bool            fAllStopped = true;
         uint32_t        iCpu        = pTimer->cCpus;
         RTSPINLOCKTMP   Tmp         = RTSPINLOCKTMP_INITIALIZER;
         RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
@@ -590,7 +589,7 @@ static enum hrtimer_restart rtTimerLinuxHrCallback(struct hrtimer *pHrTimer)
     PRTTIMER                pTimer    = pSubTimer->pParent;
 
 
-    dprintf(("hrcallback %p\n", pTimer));
+    RTTIMERLNX_LOG(("hrcallback %p\n", pTimer));
     if (RT_UNLIKELY(!rtTimerLnxChangeToCallbackState(pSubTimer)))
         return HRTIMER_NORESTART;
 
@@ -598,11 +597,16 @@ static enum hrtimer_restart rtTimerLinuxHrCallback(struct hrtimer *pHrTimer)
     /*
      * Check for unwanted migration.
      */
-    if (   (pTimer->fSpecificCpu || pTimer->fAllCpus)
-        && RT_UNLIKELY((RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) != RTMpCpuId()))
+    if (pTimer->fAllCpus || pTimer->fSpecificCpu)
     {
-        rtTimerLnxCallbackHandleMigration(pTimer, pSubTimer);
-        return HRTIMER_NORESTART;
+        RTCPUID idCpu = RTMpCpuId();
+        if (RT_UNLIKELY(  pTimer->fAllCpus
+                        ? (RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) != idCpu
+                        : pTimer->idCpu != idCpu))
+        {
+            rtTimerLnxCallbackHandleMigration(pTimer, pSubTimer);
+            return HRTIMER_NORESTART;
+        }
     }
 #endif
 
@@ -677,7 +681,7 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
     PRTTIMERLNXSUBTIMER pSubTimer = (PRTTIMERLNXSUBTIMER)ulUser;
     PRTTIMER            pTimer    = pSubTimer->pParent;
 
-    dprintf(("hrcallback %p\n", pTimer));
+    RTTIMERLNX_LOG(("stdcallback %p\n", pTimer));
     if (RT_UNLIKELY(!rtTimerLnxChangeToCallbackState(pSubTimer)))
         return;
 
@@ -685,12 +689,18 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
     /*
      * Check for unwanted migration.
      */
-    if (   (pTimer->fSpecificCpu || pTimer->fAllCpus)
-        && RT_UNLIKELY((RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) != RTMpCpuId()))
+    if (pTimer->fAllCpus || pTimer->fSpecificCpu)
     {
-        rtTimerLnxCallbackHandleMigration(pTimer, pSubTimer);
-        return;
+        RTCPUID idCpu = RTMpCpuId();
+        if (RT_UNLIKELY(  pTimer->fAllCpus
+                        ? (RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) != idCpu
+                        : pTimer->idCpu != idCpu))
+        {
+            rtTimerLnxCallbackHandleMigration(pTimer, pSubTimer);
+            return;
+        }
     }
+
 #endif
 
     if (pTimer->u64NanoInterval)
@@ -909,6 +919,7 @@ static int rtTimerLnxOmniStart(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArg
              * we were between calls needs to nudged as the MP handler will ignore events for
              * them because of the STARTING state. This is an extremely unlikely case - not that
              * that means anything in my experience... ;-) */
+            RTTIMERLNX_LOG(("what!? iCpu=%u -> didn't start\n", iCpu));
         }
 
     RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
@@ -1151,7 +1162,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 
     if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
         return VERR_TIMER_ACTIVE;
-    dprintf(("start %p\n", pTimer));
+    RTTIMERLNX_LOG(("start %p cCpus=%d\n", pTimer, pTimer->cCpus));
 
     Args.u64First = u64First;
 #ifdef CONFIG_SMP
@@ -1222,7 +1233,7 @@ RT_EXPORT_SYMBOL(RTTimerStart);
  */
 static bool rtTimerLnxStop(PRTTIMER pTimer, bool fForDestroy)
 {
-    dprintf(("lnxstop %p %d\n", pTimer, fForDestroy));
+    RTTIMERLNX_LOG(("lnxstop %p %d\n", pTimer, fForDestroy));
 #ifdef CONFIG_SMP
     /*
      * Omni timer?
@@ -1287,7 +1298,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
      */
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
-    dprintf(("stop %p\n", pTimer));
+    RTTIMERLNX_LOG(("stop %p\n", pTimer));
 
     if (ASMAtomicUoReadBool(&pTimer->fSuspended))
         return VERR_TIMER_SUSPENDED;
@@ -1309,7 +1320,7 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(u64NanoInterval, VERR_INVALID_PARAMETER);
-    dprintf(("change %p %llu\n", pTimer, u64NanoInterval));
+    RTTIMERLNX_LOG(("change %p %llu\n", pTimer, u64NanoInterval));
 
 #ifdef RTTIMER_LINUX_WITH_HRTIMER
     /*
@@ -1355,7 +1366,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
         return VINF_SUCCESS;
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
-    dprintf(("destroy %p\n", pTimer));
+    RTTIMERLNX_LOG(("destroy %p\n", pTimer));
 
     /*
      * Stop the timer if it's still active, then destroy it if we can.
@@ -1515,7 +1526,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     }
 #endif /* CONFIG_SMP */
 
-    dprintf(("create %p\n", pTimer));
+    RTTIMERLNX_LOG(("create %p hires=%d fFlags=%#x cCpus=%u\n", pTimer, pTimer->fHighRes, fFlags, cCpus));
     *ppTimer = pTimer;
     return VINF_SUCCESS;
 }
