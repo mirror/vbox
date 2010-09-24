@@ -228,31 +228,38 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 #define  VBOX_PCI_CAP_ID_SHPC        0x0C    /* PCI Standard Hot-Plug Controller */
 #define  VBOX_PCI_CAP_ID_SSVID       0x0D    /* Bridge subsystem vendor/device ID */
 #define  VBOX_PCI_CAP_ID_AGP3        0x0E    /* AGP Target PCI-PCI bridge */
+#define  VBOX_PCI_CAP_ID_SECURE      0x0F    /* Secure device (?) */
 #define  VBOX_PCI_CAP_ID_EXP         0x10    /* PCI Express */
 #define  VBOX_PCI_CAP_ID_MSIX        0x11    /* MSI-X */
+#define  VBOX_PCI_CAP_ID_SATA        0x12    /* Serial-ATA HBA */
 #define  VBOX_PCI_CAP_ID_AF          0x13    /* PCI Advanced Features */
 
-/* Extended Capabilities (PCI-X 2.0 and Express)*/
-#define  VBOX_PCI_EXT_CAP_ID_ERR     0x01
-#define  VBOX_PCI_EXT_CAP_ID_VC      0x02
-#define  VBOX_PCI_EXT_CAP_ID_DSN     0x03
-#define  VBOX_PCI_EXT_CAP_ID_PWR     0x04
+/* Extended Capabilities (PCI-X 2.0 and Express), start at 0x100, next - bits [20..32] */
+#define  VBOX_PCI_EXT_CAP_ID_ERR     0x01    /* Advanced Error Reporting */
+#define  VBOX_PCI_EXT_CAP_ID_VC      0x02    /* Virtual Channel */
+#define  VBOX_PCI_EXT_CAP_ID_DSN     0x03    /* Device Serial Number */
+#define  VBOX_PCI_EXT_CAP_ID_PWR     0x04    /* Power Budgeting */
+#define  VBOX_PCI_EXT_CAP_ID_RCLINK  0x05    /* Root Complex Link Declaration */
+#define  VBOX_PCI_EXT_CAP_ID_RCILINK 0x06    /* Root Complex Internal Link Declaration */
+#define  VBOX_PCI_EXT_CAP_ID_RCECOLL 0x07    /* Root Complex Event Collector */
+#define  VBOX_PCI_EXT_CAP_ID_MFVC    0x08    /* Multi-Function Virtual Channel */
+#define  VBOX_PCI_EXT_CAP_ID_RBCB    0x0a    /* Root Bridge Control Block */
+#define  VBOX_PCI_EXT_CAP_ID_VNDR    0x0b    /* Vendor specific */
+#define  VBOX_PCI_EXT_CAP_ID_ACS     0x0d    /* Access Controls */
 #define  VBOX_PCI_EXT_CAP_ID_ARI     0x0e
 #define  VBOX_PCI_EXT_CAP_ID_ATS     0x0f
 #define  VBOX_PCI_EXT_CAP_ID_SRIOV   0x10
 
 
 /* MSI flags (2 bytes, capability offset 2) */
-#define  VBOX_PCI_MSI_FLAGS_64BIT    0x80    /* 64-bit addresses allowed */
-#define  VBOX_PCI_MSI_FLAGS_QSIZE    0x70    /* Message queue size configured */
-#define  VBOX_PCI_MSI_FLAGS_QMASK    0x0e    /* Maximum queue size available */
-#define  VBOX_PCI_MSI_FLAGS_ENABLE   0x01    /* MSI feature enabled */
+#define  VBOX_PCI_MSI_FLAGS_64BIT    0x0080  /* 64-bit addresses allowed */
+#define  VBOX_PCI_MSI_FLAGS_QSIZE    0x0070  /* Message queue size configured */
+#define  VBOX_PCI_MSI_FLAGS_QMASK    0x000e  /* Maximum queue size available */
+#define  VBOX_PCI_MSI_FLAGS_ENABLE   0x0001  /* MSI feature enabled */
 #define  VBOX_PCI_MSI_FLAGS_MASKBIT  0x100   /* 64-bit mask bits allowed */
 
 /* MSI-X flags (2 bytes, capability offset 2) */
 #define  VBOX_PCI_MSIX_FLAGS_ENABLE  0x8000
-#define  VBOX_PCI_MSIX_FLAGS_MASKALL      0x4000
-#define  VBOX_PCI_MSIX_FLAGS_BIRMASK      0x0007
 
 /* Power management flags (2 bytes, capability offset 2) */
 #define  VBOX_PCI_PM_CAP_VER_MASK    0x0007  /* Version mask */
@@ -271,16 +278,17 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 #define  VBOX_PCI_PM_CAP_PME_D3cold  0x8000  /* PME# from D3 (cold) */
 
 /* Power management control flags (2 bytes, capability offset 4) */
-#define  VBOX_PCI_PM_CTRL_STATE_MASK 0x0003  /* Current power state (D0 to D3) */
+#define  VBOX_PCI_PM_CTRL_STATE_MASK         0x0003  /* Current power state (D0 to D3) */
 #define  VBOX_PCI_PM_CTRL_NO_SOFT_RESET      0x0008  /* No reset for D3hot->D0 */
-#define  VBOX_PCI_PM_CTRL_PME_ENABLE 0x0100  /* PME pin enable */
+#define  VBOX_PCI_PM_CTRL_PME_ENABLE         0x0100  /* PME pin enable */
 #define  VBOX_PCI_PM_CTRL_DATA_SEL_MASK      0x1e00  /* Data select (??) */
 #define  VBOX_PCI_PM_CTRL_DATA_SCALE_MASK    0x6000  /* Data scale (??) */
-#define  VBOX_PCI_PM_CTRL_PME_STATUS 0x8000  /* PME pin status */
+#define  VBOX_PCI_PM_CTRL_PME_STATUS         0x8000  /* PME pin status */
 
 /* PCI-X config flags (2 bytes, capability offset 2) */
 #define  VBOX_PCI_X_CMD_DPERR_E      0x0001  /* Data Parity Error Recovery Enable */
 #define  VBOX_PCI_X_CMD_ERO          0x0002  /* Enable Relaxed Ordering */
+#define  VBOX_PCI_X_CMD_MAX_OUTSTANDING_SPLIT_TRANS          0x0070
 #define  VBOX_PCI_X_CMD_READ_512     0x0000  /* 512 byte maximum read byte count */
 #define  VBOX_PCI_X_CMD_READ_1K      0x0004  /* 1Kbyte maximum read byte count */
 #define  VBOX_PCI_X_CMD_READ_2K      0x0008  /* 2Kbyte maximum read byte count */
@@ -294,13 +302,153 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 #define  VBOX_PCI_X_STATUS_133MHZ    0x00020000      /* 133 MHz capable */
 #define  VBOX_PCI_X_STATUS_SPL_DISC  0x00040000      /* Split Completion Discarded */
 #define  VBOX_PCI_X_STATUS_UNX_SPL   0x00080000      /* Unexpected Split Completion */
-#define  VBOX_PCI_X_STATUS_COMPLEX   0x00100000      /* Device Complexity */
-#define  VBOX_PCI_X_STATUS_MAX_READ  0x00600000      /* Designed Max Memory Read Count */
+#define  VBOX_PCI_X_STATUS_COMPLEX   0x00100000      /* Device Complexity, 0 = simple device, 1 = bridge device */
+#define  VBOX_PCI_X_STATUS_MAX_READ  0x00600000      /* Designed Max Memory Read Count, 0 = 512 bytes, 1 = 1024, 2 = 2048, 3 = 4096 */
 #define  VBOX_PCI_X_STATUS_MAX_SPLIT 0x03800000      /* Designed Max Outstanding Split Transactions */
 #define  VBOX_PCI_X_STATUS_MAX_CUM   0x1c000000      /* Designed Max Cumulative Read Size */
 #define  VBOX_PCI_X_STATUS_SPL_ERR   0x20000000      /* Rcvd Split Completion Error Msg */
 #define  VBOX_PCI_X_STATUS_266MHZ    0x40000000      /* 266 MHz capable */
 #define  VBOX_PCI_X_STATUS_533MHZ    0x80000000      /* 533 MHz capable */
+
+/* PCI Express config flags (2 bytes, capability offset 2) */
+#define  VBOX_PCI_EXP_FLAGS_VERS        0x000f  /* Capability version */
+#define  VBOX_PCI_EXP_FLAGS_TYPE        0x00f0  /* Device/Port type */
+#define  VBOX_PCI_EXP_TYPE_ENDPOINT     0x0     /* Express Endpoint */
+#define  VBOX_PCI_EXP_TYPE_LEG_END      0x1     /* Legacy Endpoint */
+#define  VBOX_PCI_EXP_TYPE_ROOT_PORT    0x4     /* Root Port */
+#define  VBOX_PCI_EXP_TYPE_UPSTREAM     0x5     /* Upstream Port */
+#define  VBOX_PCI_EXP_TYPE_DOWNSTREAM   0x6     /* Downstream Port */
+#define  VBOX_PCI_EXP_TYPE_PCI_BRIDGE   0x7     /* PCI/PCI-X Bridge */
+#define  VBOX_PCI_EXP_TYPE_PCIE_BRIDGE  0x8     /* PCI/PCI-X to PCIE Bridge */
+#define  VBOX_PCI_EXP_TYPE_ROOT_INT_EP  0x9     /* Root Complex Integrated Endpoint */
+#define  VBOX_PCI_EXP_TYPE_ROOT_EC      0xa     /* Root Complex Event Collector */
+#define  VBOX_PCI_EXP_FLAGS_SLOT        0x0100  /* Slot implemented */
+#define  VBOX_PCI_EXP_FLAGS_IRQ         0x3e00  /* Interrupt message number */
+
+/* PCI Express device capabilities (4 bytes, capability offset 4) */
+#define  VBOX_PCI_EXP_DEVCAP_PAYLOAD 0x07        /* Max_Payload_Size */
+#define  VBOX_PCI_EXP_DEVCAP_PHANTOM 0x18        /* Phantom functions */
+#define  VBOX_PCI_EXP_DEVCAP_EXT_TAG 0x20        /* Extended tags */
+#define  VBOX_PCI_EXP_DEVCAP_L0S     0x1c0       /* L0s Acceptable Latency */
+#define  VBOX_PCI_EXP_DEVCAP_L1      0xe00       /* L1 Acceptable Latency */
+#define  VBOX_PCI_EXP_DEVCAP_ATN_BUT 0x1000      /* Attention Button Present */
+#define  VBOX_PCI_EXP_DEVCAP_ATN_IND 0x2000      /* Attention Indicator Present */
+#define  VBOX_PCI_EXP_DEVCAP_PWR_IND 0x4000      /* Power Indicator Present */
+#define  VBOX_PCI_EXP_DEVCAP_RBE     0x8000      /* Role-Based Error Reporting */
+#define  VBOX_PCI_EXP_DEVCAP_PWR_VAL 0x3fc0000   /* Slot Power Limit Value */
+#define  VBOX_PCI_EXP_DEVCAP_PWR_SCL 0xc000000   /* Slot Power Limit Scale */
+#define  VBOX_PCI_EXP_DEVCAP_FLRESET 0x10000000  /* Function-Level Reset */
+
+/* PCI Express device control (2 bytes, capability offset 8) */
+#define  VBOX_PCI_EXP_DEVCTL_CERE    0x0001      /* Correctable Error Reporting En. */
+#define  VBOX_PCI_EXP_DEVCTL_NFERE   0x0002      /* Non-Fatal Error Reporting Enable */
+#define  VBOX_PCI_EXP_DEVCTL_FERE    0x0004      /* Fatal Error Reporting Enable */
+#define  VBOX_PCI_EXP_DEVCTL_URRE    0x0008      /* Unsupported Request Reporting En. */
+#define  VBOX_PCI_EXP_DEVCTL_RELAXED 0x0010      /* Enable Relaxed Ordering */
+#define  VBOX_PCI_EXP_DEVCTL_PAYLOAD 0x00e0      /* Max_Payload_Size */
+#define  VBOX_PCI_EXP_DEVCTL_EXT_TAG 0x0100      /* Extended Tag Field Enable */
+#define  VBOX_PCI_EXP_DEVCTL_PHANTOM 0x0200      /* Phantom Functions Enable */
+#define  VBOX_PCI_EXP_DEVCTL_AUX_PME 0x0400      /* Auxiliary Power PM Enable */
+#define  VBOX_PCI_EXP_DEVCTL_NOSNOOP 0x0800      /* Enable No Snoop */
+#define  VBOX_PCI_EXP_DEVCTL_READRQ  0x7000      /* Max_Read_Request_Size */
+#define  VBOX_PCI_EXP_DEVCTL_BCRE    0x8000      /* Bridge Configuration Retry Enable */
+#define  VBOX_PCI_EXP_DEVCTL_FLRESET 0x8000      /* Function-Level Reset [bit shared with BCRE] */
+
+/* PCI Express device status (2 bytes, capability offset 10) */
+#define  VBOX_PCI_EXP_DEVSTA_CED     0x01         /* Correctable Error Detected */
+#define  VBOX_PCI_EXP_DEVSTA_NFED    0x02         /* Non-Fatal Error Detected */
+#define  VBOX_PCI_EXP_DEVSTA_FED     0x04         /* Fatal Error Detected */
+#define  VBOX_PCI_EXP_DEVSTA_URD     0x08         /* Unsupported Request Detected */
+#define  VBOX_PCI_EXP_DEVSTA_AUXPD   0x10         /* AUX Power Detected */
+#define  VBOX_PCI_EXP_DEVSTA_TRPND   0x20         /* Transactions Pending */
+
+/* PCI Express link capabilities (4 bytes, capability offset 12) */
+#define  VBOX_PCI_EXP_LNKCAP_SPEED   0x0000f       /* Maximum Link Speed */
+#define  VBOX_PCI_EXP_LNKCAP_WIDTH   0x003f0       /* Maximum Link Width */
+#define  VBOX_PCI_EXP_LNKCAP_ASPM    0x00c00       /* Active State Power Management */
+#define  VBOX_PCI_EXP_LNKCAP_L0S     0x07000       /* L0s Acceptable Latency */
+#define  VBOX_PCI_EXP_LNKCAP_L1      0x38000       /* L1 Acceptable Latency */
+#define  VBOX_PCI_EXP_LNKCAP_CLOCKPM 0x40000       /* Clock Power Management */
+#define  VBOX_PCI_EXP_LNKCAP_SURPRISE 0x80000      /* Surprise Down Error Reporting */
+#define  VBOX_PCI_EXP_LNKCAP_DLLA    0x100000      /* Data Link Layer Active Reporting */
+#define  VBOX_PCI_EXP_LNKCAP_LBNC    0x200000      /* Link Bandwidth Notification Capability */
+#define  VBOX_PCI_EXP_LNKCAP_PORT    0xff000000    /* Port Number */
+
+/* PCI Express link control (2 bytes, capability offset 16) */
+#define  VBOX_PCI_EXP_LNKCTL_ASPM    0x0003        /* ASPM Control */
+#define  VBOX_PCI_EXP_LNKCTL_RCB     0x0008        /* Read Completion Boundary */
+#define  VBOX_PCI_EXP_LNKCTL_DISABLE 0x0010        /* Link Disable */
+#define  VBOX_PCI_EXP_LNKCTL_RETRAIN 0x0020        /* Retrain Link */
+#define  VBOX_PCI_EXP_LNKCTL_CLOCK   0x0040        /* Common Clock Configuration */
+#define  VBOX_PCI_EXP_LNKCTL_XSYNCH  0x0080        /* Extended Synch */
+#define  VBOX_PCI_EXP_LNKCTL_CLOCKPM 0x0100        /* Clock Power Management */
+#define  VBOX_PCI_EXP_LNKCTL_HWAUTWD 0x0200        /* Hardware Autonomous Width Disable */
+#define  VBOX_PCI_EXP_LNKCTL_BWMIE   0x0400        /* Bandwidth Mgmt Interrupt Enable */
+#define  VBOX_PCI_EXP_LNKCTL_AUTBWIE 0x0800        /* Autonomous Bandwidth Mgmt Interrupt Enable */
+
+/* PCI Express link status (2 bytes, capability offset 18) */
+#define  VBOX_PCI_EXP_LNKSTA_SPEED   0x000f        /* Negotiated Link Speed */
+#define  VBOX_PCI_EXP_LNKSTA_WIDTH   0x03f0        /* Negotiated Link Width */
+#define  VBOX_PCI_EXP_LNKSTA_TR_ERR  0x0400        /* Training Error (obsolete) */
+#define  VBOX_PCI_EXP_LNKSTA_TRAIN   0x0800        /* Link Training */
+#define  VBOX_PCI_EXP_LNKSTA_SL_CLK  0x1000        /* Slot Clock Configuration */
+#define  VBOX_PCI_EXP_LNKSTA_DL_ACT  0x2000        /* Data Link Layer in DL_Active State */
+#define  VBOX_PCI_EXP_LNKSTA_BWMGMT  0x4000        /* Bandwidth Mgmt Status */
+#define  VBOX_PCI_EXP_LNKSTA_AUTBW   0x8000        /* Autonomous Bandwidth Mgmt Status */
+
+/* PCI Express slot capabilities (4 bytes, capability offset 20) */
+#define  VBOX_PCI_EXP_SLTCAP_ATNB    0x0001        /* Attention Button Present */
+#define  VBOX_PCI_EXP_SLTCAP_PWRC    0x0002        /* Power Controller Present */
+#define  VBOX_PCI_EXP_SLTCAP_MRL     0x0004        /* MRL Sensor Present */
+#define  VBOX_PCI_EXP_SLTCAP_ATNI    0x0008        /* Attention Indicator Present */
+#define  VBOX_PCI_EXP_SLTCAP_PWRI    0x0010        /* Power Indicator Present */
+#define  VBOX_PCI_EXP_SLTCAP_HPS     0x0020        /* Hot-Plug Surprise */
+#define  VBOX_PCI_EXP_SLTCAP_HPC     0x0040        /* Hot-Plug Capable */
+#define  VBOX_PCI_EXP_SLTCAP_PWR_VAL 0x00007f80    /* Slot Power Limit Value */
+#define  VBOX_PCI_EXP_SLTCAP_PWR_SCL 0x00018000    /* Slot Power Limit Scale */
+#define  VBOX_PCI_EXP_SLTCAP_INTERLOCK 0x020000    /* Electromechanical Interlock Present */
+#define  VBOX_PCI_EXP_SLTCAP_NOCMDCOMP 0x040000    /* No Command Completed Support */
+#define  VBOX_PCI_EXP_SLTCAP_PSN     0xfff80000    /* Physical Slot Number */
+
+/* PCI Express slot control (2 bytes, capability offset 24) */
+#define  VBOX_PCI_EXP_SLTCTL_ATNB    0x0001        /* Attention Button Pressed Enable */
+#define  VBOX_PCI_EXP_SLTCTL_PWRF    0x0002        /* Power Fault Detected Enable */
+#define  VBOX_PCI_EXP_SLTCTL_MRLS    0x0004        /* MRL Sensor Changed Enable */
+#define  VBOX_PCI_EXP_SLTCTL_PRSD    0x0008        /* Presence Detect Changed Enable */
+#define  VBOX_PCI_EXP_SLTCTL_CMDC    0x0010        /* Command Completed Interrupt Enable */
+#define  VBOX_PCI_EXP_SLTCTL_HPIE    0x0020        /* Hot-Plug Interrupt Enable */
+#define  VBOX_PCI_EXP_SLTCTL_ATNI    0x00c0        /* Attention Indicator Control */
+#define  VBOX_PCI_EXP_SLTCTL_PWRI    0x0300        /* Power Indicator Control */
+#define  VBOX_PCI_EXP_SLTCTL_PWRC    0x0400        /* Power Controller Control */
+#define  VBOX_PCI_EXP_SLTCTL_INTERLOCK 0x0800      /* Electromechanical Interlock Control */
+#define  VBOX_PCI_EXP_SLTCTL_LLCHG   0x1000        /* Data Link Layer State Changed Enable */
+
+/* PCI Express slot status (2 bytes, capability offset 26) */
+#define  VBOX_PCI_EXP_SLTSTA_ATNB    0x0001        /* Attention Button Pressed */
+#define  VBOX_PCI_EXP_SLTSTA_PWRF    0x0002        /* Power Fault Detected */
+#define  VBOX_PCI_EXP_SLTSTA_MRLS    0x0004        /* MRL Sensor Changed */
+#define  VBOX_PCI_EXP_SLTSTA_PRSD    0x0008        /* Presence Detect Changed */
+#define  VBOX_PCI_EXP_SLTSTA_CMDC    0x0010        /* Command Completed */
+#define  VBOX_PCI_EXP_SLTSTA_MRL_ST  0x0020        /* MRL Sensor State */
+#define  VBOX_PCI_EXP_SLTSTA_PRES    0x0040        /* Presence Detect State */
+#define  VBOX_PCI_EXP_SLTSTA_INTERLOCK 0x0080      /* Electromechanical Interlock Status */
+#define  VBOX_PCI_EXP_SLTSTA_LLCHG   0x0100        /* Data Link Layer State Changed */
+
+/* PCI Express root control (2 bytes, capability offset 28) */
+#define  VBOX_PCI_EXP_RTCTL_SECEE    0x0001        /* System Error on Correctable Error */
+#define  VBOX_PCI_EXP_RTCTL_SENFEE   0x0002        /* System Error on Non-Fatal Error */
+#define  VBOX_PCI_EXP_RTCTL_SEFEE    0x0004        /* System Error on Fatal Error */
+#define  VBOX_PCI_EXP_RTCTL_PMEIE    0x0008        /* PME Interrupt Enable */
+#define  VBOX_PCI_EXP_RTCTL_CRSVIS   0x0010        /* Configuration Request Retry Status Visible to SW */
+
+/* PCI Express root capabilities (2 bytes, capability offset 30) */
+#define  VBOX_PCI_EXP_RTCAP_CRSVIS   0x0010        /* Configuration Request Retry Status Visible to SW */
+
+/* PCI Express root status (4 bytes, capability offset 32) */
+#define  VBOX_PCI_EXP_RTSTA_PME_REQID   0x0000ffff /* PME Requester ID */
+#define  VBOX_PCI_EXP_RTSTA_PME_STATUS  0x00010000 /* PME Status */
+#define  VBOX_PCI_EXP_RTSTA_PME_PENDING 0x00020000 /* PME is Pending */
+
 
 /**
  * Callback function for reading from the PCI configuration space.
