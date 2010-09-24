@@ -1017,12 +1017,15 @@ static void acpiSetupHPET(ACPIState *s, RTGCPHYS32 addr)
 }
 
 /** MMCONFIG PCI config space access (MCFG) descriptor */
-static void acpiSetupMCFG(ACPIState *s, RTGCPHYS32 addr, uint8_t    u8StartBus, uint8_t    u8EndBus)
+static void acpiSetupMCFG(ACPIState *s, RTGCPHYS32 addr)
 {
     struct {
         ACPITBLMCFG       hdr;
         ACPITBLMCFGENTRY  entry;
     } tbl;
+
+    uint8_t    u8StartBus = 0;
+    uint8_t    u8EndBus   = (s->u64PciConfigMMioLength >> 20) - 1;
 
     memset(&tbl, 0, sizeof(tbl));
 
@@ -2321,7 +2324,7 @@ static int acpiPlantTables(ACPIState *s)
     }
     if (s->fUseMcfg)
     {
-        acpiSetupMCFG(s, GCPhysMcfg + addend, 0, 255);
+        acpiSetupMCFG(s, GCPhysMcfg + addend);
         aGCPhysRsdt[iMcfg] = GCPhysMcfg + addend;
         aGCPhysXsdt[iMcfg] = GCPhysMcfg + addend;
     }

@@ -183,8 +183,9 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
 
 // See 7.2.2. PCI Express Enhanced Configuration Mechanism for details of address
 // mapping, we take n=8 approach
-DECLINLINE(void) ich9pciPhysToPciAddr(RTGCPHYS GCPhysAddr, PciAddress* pPciAddr)
+DECLINLINE(void) ich9pciPhysToPciAddr(PPCIGLOBALS pGlobals, RTGCPHYS GCPhysAddr, PciAddress* pPciAddr)
 {
+    GCPhysAddr = GCPhysAddr - pGlobals->u64PciConfigMMioAddress;
     pPciAddr->iBus          = (GCPhysAddr >> 20) & ((1<<8)       - 1);
     pPciAddr->iDeviceFunc   = (GCPhysAddr >> 15) & ((1<<(5+3))   - 1); // 5 bits - device, 3 bits - function
     pPciAddr->iRegister     = (GCPhysAddr >>  0) & ((1<<(6+4+2)) - 1); // 6 bits - register, 4 bits - extended register, 2 bits -Byte Enable
@@ -287,6 +288,13 @@ PDMBOTHCBDECL(int)  ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, R
 
 static int ich9pciDataWriteAddr(PPCIGLOBALS pGlobals, PciAddress* pAddr, uint32_t val, int len)
 {
+
+    if (pAddr->iRegister > 0xff)
+    {
+        LogRel(("PCI: attempt to write extended register: %x (%d) <- val\n", pAddr->iRegister, len, val));
+        return 0;
+    }
+
     if (pAddr->iBus != 0)
     {
         if (pGlobals->aPciBus.cBridges)
@@ -366,6 +374,14 @@ PDMBOTHCBDECL(int)  ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
 
 static int ich9pciDataReadAddr(PPCIGLOBALS pGlobals, PciAddress* pPciAddr, int len, uint32_t *pu32)
 {
+    if (pPciAddr->iRegister > 0xff)
+    {
+        LogRel(("PCI: attempt to read extended register: %x\n", pPciAddr->iRegister));
+        *pu32 = 0;
+        return 0;
+    }
+
+
     if (pPciAddr->iBus != 0)
     {
         if (pGlobals->aPciBus.cBridges)
@@ -535,7 +551,7 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCP
     PciAddress aDest;
     uint32_t u32 = 0;
 
-    ich9pciPhysToPciAddr(GCPhysAddr, &aDest);
+    ich9pciPhysToPciAddr(pGlobals, GCPhysAddr, &aDest);
 
     PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
     switch (cb)
@@ -555,7 +571,6 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCP
     }
     int rc = ich9pciDataWriteAddr(pGlobals, &aDest, u32, cb);
     PCI_UNLOCK(pDevIns);
-    Assert(false);
 
     return rc;
 }
@@ -566,7 +581,7 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCP
     PciAddress  aDest;
     uint32_t    rv = 0;
 
-    ich9pciPhysToPciAddr(GCPhysAddr, &aDest);
+    ich9pciPhysToPciAddr(pGlobals, GCPhysAddr, &aDest);
 
     PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
     int rc = ich9pciDataReadAddr(pGlobals, &aDest, cb, &rv);
@@ -590,7 +605,6 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCP
     }
     PCI_UNLOCK(pDevIns);
 
-    Assert(false);
     return rc;
 }
 
