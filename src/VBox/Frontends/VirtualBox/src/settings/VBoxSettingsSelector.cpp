@@ -25,7 +25,7 @@
 #include "VBoxSettingsSelector.h"
 #include "VBoxSettingsPage.h"
 #include "VBoxGlobal.h"
-#include "VBoxToolBar.h"
+#include "UIToolBar.h"
 #include "QITreeWidget.h"
 #include "QITabWidget.h"
 
@@ -370,7 +370,7 @@ VBoxSettingsToolBarSelector::VBoxSettingsToolBarSelector (QWidget *aParent /* = 
     : VBoxSettingsSelector (aParent)
 {
     /* Init the toolbar */
-    mTbSelector = new VBoxToolBar (aParent);
+    mTbSelector = new UIToolBar (aParent);
     mTbSelector->setUsesTextLabel (true);
     mTbSelector->setIconSize (QSize (32, 32));
 #ifdef Q_WS_MAC

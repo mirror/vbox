@@ -37,7 +37,7 @@
 
 /* Mini-toolbar constructor */
 VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fActive, bool fAutoHide)
-    : VBoxToolBar(pParent)
+    : UIToolBar(pParent)
     , m_pAutoHideAction(0)
     , m_pDisplayLabel(0)
     , m_pMinimizeAction(0)
@@ -237,7 +237,7 @@ bool VBoxMiniToolBar::eventFilter(QObject *pObject, QEvent *pEvent)
         return true;
     }
     /* Base-class event-filter: */
-    return VBoxToolBar::eventFilter(pObject, pEvent);
+    return UIToolBar::eventFilter(pObject, pEvent);
 }
 
 /* Mouse-move event processor */
@@ -250,7 +250,7 @@ void VBoxMiniToolBar::mouseMoveEvent(QMouseEvent *pEvent)
         m_scrollTimer.start(m_iScrollDelay, this);
     }
     /* Base-class mouse-move event processing: */
-    VBoxToolBar::mouseMoveEvent(pEvent);
+    UIToolBar::mouseMoveEvent(pEvent);
 }
 
 /* Timer event processor
@@ -345,7 +345,7 @@ void VBoxMiniToolBar::showEvent(QShowEvent *pEvent)
         m_fPolished = true;
     }
     /* Base-class show event processing: */
-    VBoxToolBar::showEvent(pEvent);
+    UIToolBar::showEvent(pEvent);
 }
 
 /* Show event processor */
@@ -357,7 +357,7 @@ void VBoxMiniToolBar::paintEvent(QPaintEvent *pEvent)
     painter.fillRect(pEvent->rect(), palette().brush(QPalette::Window));
     painter.end();
     /* Base-class paint event processing: */
-    VBoxToolBar::paintEvent(pEvent);
+    UIToolBar::paintEvent(pEvent);
 }
 
 /* Toggle push-pin */

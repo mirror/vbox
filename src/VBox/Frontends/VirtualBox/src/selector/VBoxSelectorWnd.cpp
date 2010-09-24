@@ -34,13 +34,17 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
 #include "UISettingsDialogSpecific.h"
-#include "VBoxToolBar.h"
+#include "UIToolBar.h"
 #include "VBoxVMLogViewer.h"
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 # include "VBoxTrayIcon.h"
 # include "UIExtraDataEventHandler.h"
 #endif /* VBOX_GUI_WITH_SYSTRAY */
+
+#ifdef Q_WS_MAC
+# include "VBoxUtils.h"
+#endif
 
 /* Global includes */
 #include <QDesktopWidget>
@@ -161,7 +165,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mHelpActions.setup(this);
 
     /* VM list toolbar */
-    mVMToolBar = new VBoxToolBar(this);
+    mVMToolBar = new UIToolBar(this);
     mVMToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
 #ifndef Q_WS_MAC
     connect(mVMToolBar, SIGNAL(customContextMenuRequested(const QPoint&)),

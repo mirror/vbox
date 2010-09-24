@@ -96,7 +96,7 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="VBoxToolBar" name="mTbActions">
+       <widget class="UIToolBar" name="mTbActions">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -157,9 +157,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>VBoxToolBar</class>
+   <class>UIToolBar</class>
    <extends>QToolBar</extends>
-   <header>VBoxToolBar.h</header>
+   <header>UIToolBar.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

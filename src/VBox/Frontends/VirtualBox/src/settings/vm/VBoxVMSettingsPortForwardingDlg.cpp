@@ -32,7 +32,7 @@
 #include "VBoxVMSettingsPortForwardingDlg.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
-#include "VBoxToolBar.h"
+#include "UIToolBar.h"
 #include "QITableView.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
@@ -457,7 +457,7 @@ VBoxVMSettingsPortForwardingDlg::VBoxVMSettingsPortForwardingDlg(QWidget *pParen
     connect(m_pDelAction, SIGNAL(triggered(bool)), this, SLOT(sltDelRule()));
 
     /* Create toolbar: */
-    m_pToolBar = new VBoxToolBar(this);
+    m_pToolBar = new UIToolBar(this);
     m_pToolBar->setIconSize(QSize(16, 16));
     m_pToolBar->setOrientation(Qt::Vertical);
     m_pToolBar->addAction(m_pAddAction);

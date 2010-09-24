@@ -26,7 +26,7 @@
 
 /* Forward declarations: */
 class QITableView;
-class VBoxToolBar;
+class UIToolBar;
 class QIDialogButtonBox;
 class UIPortForwardingModel;
 
@@ -132,7 +132,7 @@ private:
 
     /* Widgets: */
     QITableView *m_pTableView;
-    VBoxToolBar *m_pToolBar;
+    UIToolBar *m_pToolBar;
     QIDialogButtonBox *m_pButtonBox;
 
     /* Model: */
