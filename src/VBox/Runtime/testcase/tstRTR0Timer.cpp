@@ -123,14 +123,14 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackOmni(PRTTIMER pTimer, void *pvUser
     RTR0TESTR0_CHECK_MSG(iCpu < RTCPUSET_MAX_CPUS, ("iCpu=%d idCpu=%u\n", iCpu, idCpu));
     if (iCpu < RTCPUSET_MAX_CPUS)
     {
-        uint32_t iCountedTick = ASMAtomicIncU32(&paStates[iCpu].cTicks) - 1;
-        RTR0TESTR0_CHECK_MSG(iCountedTick == iTick, 
+        uint32_t iCountedTick = ASMAtomicIncU32(&paStates[iCpu].cTicks);
+        RTR0TESTR0_CHECK_MSG(iCountedTick == iTick,
                              ("iCountedTick=%u iTick=%u iCpu=%d idCpu=%u\n", iCountedTick, iTick, iCpu, idCpu));
         paStates[iCpu].u64Last = RTTimeSystemNanoTS();
-        if (paStates[iCpu].u64Start)
+        if (!paStates[iCpu].u64Start)
         {
             paStates[iCpu].u64Start = paStates[iCpu].u64Last;
-            RTR0TESTR0_CHECK_MSG(iCountedTick == 0, ("iCountedTick=%u iCpu=%d idCpu=%u\n", iCountedTick, iCpu, idCpu));
+            RTR0TESTR0_CHECK_MSG(iCountedTick == 1, ("iCountedTick=%u iCpu=%d idCpu=%u\n", iCountedTick, iCpu, idCpu));
         }
     }
 }
@@ -706,7 +706,8 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             RTR0TESTR0_CHECK_MSG_BREAK(paStates, ("%d\n", RTCPUSET_MAX_CPUS));
 
             PRTTIMER        pTimer;
-            uint32_t        fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
+            uint32_t        fFlags = (TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0)
+                                   | RTTIMER_FLAGS_CPU_ALL;
             RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, cNsInterval, fFlags, tstRTR0TimerCallbackOmni, paStates),
                                       VINF_SUCCESS);
 
@@ -722,14 +723,15 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, 0), VINF_SUCCESS);
                 RTMpGetOnlineSet(&OnlineSet);
 
-                for (uint32_t i = 0; i < 1000 && RTTimeSystemNanoTS() - uStartNsTS <= UINT32_C(1000000000); i++)
-                    RTThreadSleep(10);
+                for (uint32_t i = 0; i < 5000 && RTTimeSystemNanoTS() - uStartNsTS <= UINT32_C(1000000000); i++)
+                    RTThreadSleep(2);
 
                 RTR0TESTR0_CHECK_RC_BREAK(RTTimerStop(pTimer), VINF_SUCCESS);
+                uint64_t    cNsElapsedX = RTTimeNanoTS() - uStartNsTS;
 
                 /* Do a min/max on the start and stop times and calculate the test period. */
-                uint64_t  u64MinStart = UINT64_MAX;
-                uint64_t  u64MaxStop  = 0;
+                uint64_t    u64MinStart = UINT64_MAX;
+                uint64_t    u64MaxStop  = 0;
                 for (uint32_t iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
                 {
                     if (paStates[iCpu].u64Start)
@@ -742,7 +744,8 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 }
                 RTR0TESTR0_CHECK_MSG(u64MinStart < u64MaxStop, ("%llu, %llu", u64MinStart, u64MaxStop));
                 uint64_t cNsElapsed = u64MaxStop - u64MinStart;
-                uint32_t cAvgTicks  = cNsElapsed / cNsInterval;
+                RTR0TESTR0_CHECK_MSG(cNsElapsed <= cNsElapsedX + 1000, ("%llu, %llu", cNsElapsed, cNsElapsedX));
+                uint32_t cAvgTicks  = cNsElapsed / cNsInterval + 1;
 
                 /* Check tick counts. ASSUMES no cpu on- or offlining.
                    This only catches really bad stuff. */
@@ -752,10 +755,10 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     if (paStates[iCpu].cTicks)
                     {
                         RTR0TESTR0_CHECK_MSG(RTCpuSetIsMemberByIndex(&OnlineSet, iCpu), ("%d\n", iCpu));
-                        RTR0TESTR0_CHECK_MSG(paStates[iCpu].cTicks >= cMinTicks,
-                                             ("%u, min=%u, iCpu=%u\n", paStates[iCpu].cTicks, cMinTicks, iCpu));
-                        RTR0TESTR0_CHECK_MSG(paStates[iCpu].cTicks <= cMaxTicks,
-                                              ("%u, max=%u, iCpu=%u\n", paStates[iCpu].cTicks, cMaxTicks, iCpu));
+                        RTR0TESTR0_CHECK_MSG(paStates[iCpu].cTicks <= cMaxTicks && paStates[iCpu].cTicks >= cMinTicks,
+                                             ("min=%u, ticks=%u, avg=%u max=%u, iCpu=%u, interval=%'u, elapsed=%'u/%'u\n",
+                                              cMinTicks, paStates[iCpu].cTicks, cAvgTicks, cMaxTicks, iCpu,
+                                              cNsInterval, cNsElapsed, cNsElapsedX));
                     }
                     else
                         RTR0TESTR0_CHECK_MSG(!RTCpuSetIsMemberByIndex(&OnlineSet, iCpu), ("%d\n", iCpu));
