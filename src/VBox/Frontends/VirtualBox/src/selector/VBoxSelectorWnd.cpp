@@ -75,10 +75,10 @@
  *               recursion in VBoxGlobal::selectorWnd())
  */
 VBoxSelectorWnd::
-VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
-                 Qt::WindowFlags aFlags /* = Qt::Window */)
-    : QIWithRetranslateUI2<QMainWindow> (aParent, aFlags)
-    , mDoneInaccessibleWarningOnce (false)
+VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
+                Qt::WindowFlags aFlags /* = Qt::Window */)
+    : QIWithRetranslateUI2<QMainWindow>(aParent, aFlags)
+    , mDoneInaccessibleWarningOnce(false)
 {
     VBoxGlobalSettings settings = vboxGlobal().settings();
 
@@ -90,75 +90,75 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
             this, SLOT(showViewContextMenu(const QPoint&)));
 
 #if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
-    qApp->installEventFilter (this);
+    qApp->installEventFilter(this);
 #endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
 
 #if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
     /* The application icon. On Win32, it's built-in to the executable. On Mac
      * OS X the icon referenced in info.plist is used. */
-    setWindowIcon (QIcon (":/VirtualBox_48px.png"));
+    setWindowIcon(QIcon(":/VirtualBox_48px.png"));
 #endif
 
     /* actions */
 
-    mFileMediaMgrAction = new QAction (this);
+    mFileMediaMgrAction = new QAction(this);
     mFileMediaMgrAction->setIcon(UIIconPool::iconSet(":/diskimage_16px.png"));
 
-    mFileApplianceImportAction = new QAction (this);
+    mFileApplianceImportAction = new QAction(this);
     mFileApplianceImportAction->setIcon(UIIconPool::iconSet(":/import_16px.png"));
 
-    mFileApplianceExportAction = new QAction (this);
+    mFileApplianceExportAction = new QAction(this);
     mFileApplianceExportAction->setIcon(UIIconPool::iconSet(":/export_16px.png"));
 
     mFileSettingsAction = new QAction(this);
-    mFileSettingsAction->setMenuRole (QAction::PreferencesRole);
+    mFileSettingsAction->setMenuRole(QAction::PreferencesRole);
     mFileSettingsAction->setIcon(UIIconPool::iconSet(":/global_settings_16px.png"));
-    mFileExitAction = new QAction (this);
-    mFileExitAction->setMenuRole (QAction::QuitRole);
+    mFileExitAction = new QAction(this);
+    mFileExitAction->setMenuRole(QAction::QuitRole);
     mFileExitAction->setIcon(UIIconPool::iconSet(":/exit_16px.png"));
 
-    mVmNewAction = new QAction (this);
+    mVmNewAction = new QAction(this);
     mVmNewAction->setIcon(UIIconPool::iconSetFull(
-        QSize (32, 32), QSize (16, 16),
+        QSize(32, 32), QSize(16, 16),
         ":/vm_new_32px.png", ":/new_16px.png"));
-    mVmConfigAction = new QAction (this);
+    mVmConfigAction = new QAction(this);
     mVmConfigAction->setIcon(UIIconPool::iconSetFull(
-        QSize (32, 32), QSize (16, 16),
+        QSize(32, 32), QSize(16, 16),
         ":/vm_settings_32px.png", ":/settings_16px.png",
         ":/vm_settings_disabled_32px.png", ":/settings_dis_16px.png"));
-    mVmDeleteAction = new QAction (this);
+    mVmDeleteAction = new QAction(this);
     mVmDeleteAction->setIcon(UIIconPool::iconSetFull(
-        QSize (32, 32), QSize (16, 16),
+        QSize(32, 32), QSize(16, 16),
         ":/vm_delete_32px.png", ":/delete_16px.png",
         ":/vm_delete_disabled_32px.png", ":/delete_dis_16px.png"));
-    mVmStartAction = new QAction (this);
+    mVmStartAction = new QAction(this);
     mVmStartAction->setIcon(UIIconPool::iconSetFull(
-        QSize (32, 32), QSize (16, 16),
+        QSize(32, 32), QSize(16, 16),
         ":/vm_start_32px.png", ":/start_16px.png",
         ":/vm_start_disabled_32px.png", ":/start_dis_16px.png"));
-    mVmDiscardAction = new QAction (this);
+    mVmDiscardAction = new QAction(this);
     mVmDiscardAction->setIcon(UIIconPool::iconSetFull(
-        QSize (32, 32), QSize (16, 16),
+        QSize(32, 32), QSize(16, 16),
         ":/vm_discard_32px.png", ":/discard_16px.png",
         ":/vm_discard_disabled_32px.png", ":/discard_dis_16px.png"));
-    mVmPauseAction = new QAction (this);
-    mVmPauseAction->setCheckable (true);
+    mVmPauseAction = new QAction(this);
+    mVmPauseAction->setCheckable(true);
     mVmPauseAction->setIcon(UIIconPool::iconSetFull(
-        QSize (32, 32), QSize (16, 16),
+        QSize(32, 32), QSize(16, 16),
         ":/vm_pause_32px.png", ":/pause_16px.png",
         ":/vm_pause_disabled_32px.png", ":/pause_disabled_16px.png"));
-    mVmRefreshAction = new QAction (this);
+    mVmRefreshAction = new QAction(this);
     mVmRefreshAction->setIcon(UIIconPool::iconSetFull(
-        QSize (32, 32), QSize (16, 16),
+        QSize(32, 32), QSize(16, 16),
         ":/refresh_32px.png", ":/refresh_16px.png",
         ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png"));
-    mVmShowLogsAction = new QAction (this);
+    mVmShowLogsAction = new QAction(this);
     mVmShowLogsAction->setIcon(UIIconPool::iconSetFull(
-        QSize (32, 32), QSize (16, 16),
+        QSize(32, 32), QSize(16, 16),
         ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
         ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
 
-    mHelpActions.setup (this);
+    mHelpActions.setup(this);
 
     /* VM list toolbar */
     mVMToolBar = new VBoxToolBar(this);
@@ -180,8 +180,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* Make non-possible to activate list elements by single click,
      * this hack should disable the current possibility to do it if present */
-    if (mVMListView->style()->styleHint (QStyle::SH_ItemView_ActivateItemOnSingleClick, 0, mVMListView))
-        mVMListView->setStyleSheet ("activate-on-singleclick : 0");
+    if (mVMListView->style()->styleHint(QStyle::SH_ItemView_ActivateItemOnSingleClick, 0, mVMListView))
+        mVMListView->setStyleSheet("activate-on-singleclick : 0");
 
     m_pSplitter = new QISplitter(this);
     m_pSplitter->setHandleType(QISplitter::Native);
@@ -189,15 +189,15 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 #define BIG_TOOLBAR
 #if MAC_LEOPARD_STYLE
     /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
-    addToolBar (mVMToolBar);
+    addToolBar(mVMToolBar);
     mVMToolBar->setMacToolbar();
     /* Central widget @ horizontal layout */
     setCentralWidget(m_pSplitter);
-    m_pSplitter->addWidget (mVMListView);
+    m_pSplitter->addWidget(mVMListView);
 #else /* MAC_LEOPARD_STYLE */
 //    mVMToolBar->setContentsMargins(5, 5, 0, 0);
-//    addToolBar (mVMToolBar);
-//    m_pSplitter->addWidget (mVMListView);
+//    addToolBar(mVMToolBar);
+//    m_pSplitter->addWidget(mVMListView);
     QWidget *pLeftWidget = new QWidget(this);
     QVBoxLayout *pLeftVLayout = new QVBoxLayout(pLeftWidget);
     pLeftVLayout->setContentsMargins(0, 0, 0, 0);
@@ -219,17 +219,17 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* add actions to the toolbar */
 
-    mVMToolBar->setIconSize (QSize (32, 32));
-    mVMToolBar->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
-//    mVMToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
+    mVMToolBar->setIconSize(QSize(32, 32));
+    mVMToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+//    mVMToolBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
-    mVMToolBar->addAction (mVmNewAction);
-    mVMToolBar->addAction (mVmConfigAction);
+    mVMToolBar->addAction(mVmNewAction);
+    mVMToolBar->addAction(mVmConfigAction);
 #if 0 /* delete action is really rare */
-    mVMToolBar->addAction (mVmDeleteAction);
+    mVMToolBar->addAction(mVmDeleteAction);
 #endif
-    mVMToolBar->addAction (mVmStartAction);
-    mVMToolBar->addAction (mVmDiscardAction);
+    mVMToolBar->addAction(mVmStartAction);
+    mVMToolBar->addAction(mVmDiscardAction);
 
     /* VM tab widget containing details and snapshots tabs */
     QWidget *w = new QWidget();
@@ -239,7 +239,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     m_pVMDesktop = new UIVMDesktop(mVMToolBar, mVmRefreshAction, this);
     pVBox->addWidget(m_pVMDesktop);
 
-    m_pSplitter->addWidget (w);
+    m_pSplitter->addWidget(w);
 
     /* Set the initial distribution. The right site is bigger. */
     m_pSplitter->setStretchFactor(0, 2);
@@ -251,55 +251,55 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
             this, SLOT(showViewContextMenu(const QPoint&)));
 
     /* add actions to menubar */
-    mFileMenu = menuBar()->addMenu (QString::null);
-    mFileMenu->addAction (mFileMediaMgrAction);
-    mFileMenu->addAction (mFileApplianceImportAction);
-    mFileMenu->addAction (mFileApplianceExportAction);
+    mFileMenu = menuBar()->addMenu(QString::null);
+    mFileMenu->addAction(mFileMediaMgrAction);
+    mFileMenu->addAction(mFileApplianceImportAction);
+    mFileMenu->addAction(mFileApplianceExportAction);
 #ifndef Q_WS_MAC
     mFileMenu->addSeparator();
 #endif /* Q_WS_MAC */
-    mFileMenu->addAction (mFileSettingsAction);
+    mFileMenu->addAction(mFileSettingsAction);
 #ifndef Q_WS_MAC
     mFileMenu->addSeparator();
 #endif /* Q_WS_MAC */
-    mFileMenu->addAction (mFileExitAction);
+    mFileMenu->addAction(mFileExitAction);
 
-    mVMMenu = menuBar()->addMenu (QString::null);
-    mVMMenu->addAction (mVmNewAction);
-    mVMMenu->addAction (mVmConfigAction);
-    mVMMenu->addAction (mVmDeleteAction);
+    mVMMenu = menuBar()->addMenu(QString::null);
+    mVMMenu->addAction(mVmNewAction);
+    mVMMenu->addAction(mVmConfigAction);
+    mVMMenu->addAction(mVmDeleteAction);
     mVMMenu->addSeparator();
-    mVMMenu->addAction (mVmStartAction);
-    mVMMenu->addAction (mVmDiscardAction);
-    mVMMenu->addAction (mVmPauseAction);
+    mVMMenu->addAction(mVmStartAction);
+    mVMMenu->addAction(mVmDiscardAction);
+    mVMMenu->addAction(mVmPauseAction);
     mVMMenu->addSeparator();
-    mVMMenu->addAction (mVmRefreshAction);
-    mVMMenu->addAction (mVmShowLogsAction);
+    mVMMenu->addAction(mVmRefreshAction);
+    mVMMenu->addAction(mVmShowLogsAction);
 
-    mVMCtxtMenu = new QMenu (this);
-    mVMCtxtMenu->addAction (mVmConfigAction);
-    mVMCtxtMenu->addAction (mVmDeleteAction);
+    mVMCtxtMenu = new QMenu(this);
+    mVMCtxtMenu->addAction(mVmConfigAction);
+    mVMCtxtMenu->addAction(mVmDeleteAction);
     mVMCtxtMenu->addSeparator();
-    mVMCtxtMenu->addAction (mVmStartAction);
-    mVMCtxtMenu->addAction (mVmDiscardAction);
-    mVMCtxtMenu->addAction (mVmPauseAction);
+    mVMCtxtMenu->addAction(mVmStartAction);
+    mVMCtxtMenu->addAction(mVmDiscardAction);
+    mVMCtxtMenu->addAction(mVmPauseAction);
     mVMCtxtMenu->addSeparator();
-    mVMCtxtMenu->addAction (mVmRefreshAction);
-    mVMCtxtMenu->addAction (mVmShowLogsAction);
+    mVMCtxtMenu->addAction(mVmRefreshAction);
+    mVMCtxtMenu->addAction(mVmShowLogsAction);
 
     /* Make sure every status bar hint from the context menu is cleared when
      * the menu is closed. */
-    connect (mVMCtxtMenu, SIGNAL(aboutToHide()),
-             statusBar(), SLOT(clearMessage()));
+    connect(mVMCtxtMenu, SIGNAL(aboutToHide()),
+            statusBar(), SLOT(clearMessage()));
 
-    mHelpMenu = menuBar()->addMenu (QString::null);
-    mHelpActions.addTo (mHelpMenu);
+    mHelpMenu = menuBar()->addMenu(QString::null);
+    mHelpActions.addTo(mHelpMenu);
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    mTrayIcon = new VBoxTrayIcon (this, mVMModel);
-    Assert (mTrayIcon);
-    connect (mTrayIcon, SIGNAL (activated (QSystemTrayIcon::ActivationReason)),
-             this, SLOT (trayIconActivated (QSystemTrayIcon::ActivationReason)));
+    mTrayIcon = new VBoxTrayIcon(this, mVMModel);
+    Assert(mTrayIcon);
+    connect(mTrayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
+            this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
 #endif
 
     retranslateUi();
@@ -307,40 +307,40 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     CVirtualBox vbox = vboxGlobal().virtualBox();
     /* Restore the position of the window */
     {
-        QString winPos = vbox.GetExtraData (VBoxDefs::GUI_LastWindowPosition);
+        QString winPos = vbox.GetExtraData(VBoxDefs::GUI_LastWindowPosition);
 
         bool ok = false, max = false;
         int x = 0, y = 0, w = 0, h = 0;
-        x = winPos.section (',', 0, 0).toInt (&ok);
+        x = winPos.section(',', 0, 0).toInt(&ok);
         if (ok)
-            y = winPos.section (',', 1, 1).toInt (&ok);
+            y = winPos.section(',', 1, 1).toInt(&ok);
         if (ok)
-            w = winPos.section (',', 2, 2).toInt (&ok);
+            w = winPos.section(',', 2, 2).toInt(&ok);
         if (ok)
-            h = winPos.section (',', 3, 3).toInt (&ok);
+            h = winPos.section(',', 3, 3).toInt(&ok);
         if (ok)
-            max = winPos.section (',', 4, 4) == VBoxDefs::GUI_LastWindowState_Max;
+            max = winPos.section(',', 4, 4) == VBoxDefs::GUI_LastWindowState_Max;
 
-        QRect ar = ok ? QApplication::desktop()->availableGeometry (QPoint (x, y)) :
-                        QApplication::desktop()->availableGeometry (this);
+        QRect ar = ok ? QApplication::desktop()->availableGeometry(QPoint(x, y)) :
+                        QApplication::desktop()->availableGeometry(this);
 
         if (ok /* previous parameters were read correctly */
             && (y > 0) && (y < ar.bottom()) /* check vertical bounds */
             && (x + w > ar.left()) && (x < ar.right()) /* & horizontal bounds */)
         {
-            mNormalGeo.moveTo (x, y);
-            mNormalGeo.setSize (QSize (w, h).expandedTo (minimumSizeHint())
-                                            .boundedTo (ar.size()));
-            setGeometry (mNormalGeo);
+            mNormalGeo.moveTo(x, y);
+            mNormalGeo.setSize(QSize(w, h).expandedTo(minimumSizeHint())
+                                          .boundedTo(ar.size()));
+            setGeometry(mNormalGeo);
             if (max) /* maximize if needed */
                 showMaximized();
         }
         else
         {
-            mNormalGeo.setSize (QSize (770, 550).expandedTo (minimumSizeHint())
-                                                .boundedTo (ar.size()));
-            mNormalGeo.moveCenter (ar.center());
-            setGeometry (mNormalGeo);
+            mNormalGeo.setSize(QSize(770, 550).expandedTo(minimumSizeHint())
+                                              .boundedTo(ar.size()));
+            mNormalGeo.moveCenter(ar.center());
+            setGeometry(mNormalGeo);
         }
     }
 
@@ -348,13 +348,13 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     refreshVMList();
 
     /* Reset to the first item */
-    mVMListView->selectItemByRow (0);
+    mVMListView->selectItemByRow(0);
 
     /* restore the position of vm selector */
     {
-        QString prevVMId = vbox.GetExtraData (VBoxDefs::GUI_LastVMSelected);
+        QString prevVMId = vbox.GetExtraData(VBoxDefs::GUI_LastVMSelected);
 
-        mVMListView->selectItemById (prevVMId);
+        mVMListView->selectItemById(prevVMId);
     }
 
     /* Read the splitter handle position */
@@ -382,57 +382,57 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     vmListViewCurrentChanged();
 
     /* signals and slots connections */
-    connect (mFileMediaMgrAction, SIGNAL (triggered()), this, SLOT (fileMediaMgr()));
-    connect (mFileApplianceImportAction, SIGNAL (triggered()), this, SLOT (fileImportAppliance()));
-    connect (mFileApplianceExportAction, SIGNAL (triggered()), this, SLOT (fileExportAppliance()));
-    connect (mFileSettingsAction, SIGNAL (triggered()), this, SLOT (fileSettings()));
-    connect (mFileExitAction, SIGNAL (triggered()), this, SLOT (fileExit()));
-    connect (mVmNewAction, SIGNAL (triggered()), this, SLOT (vmNew()));
+    connect(mFileMediaMgrAction, SIGNAL(triggered()), this, SLOT(fileMediaMgr()));
+    connect(mFileApplianceImportAction, SIGNAL(triggered()), this, SLOT(fileImportAppliance()));
+    connect(mFileApplianceExportAction, SIGNAL(triggered()), this, SLOT(fileExportAppliance()));
+    connect(mFileSettingsAction, SIGNAL(triggered()), this, SLOT(fileSettings()));
+    connect(mFileExitAction, SIGNAL(triggered()), this, SLOT(fileExit()));
+    connect(mVmNewAction, SIGNAL(triggered()), this, SLOT(vmNew()));
 
-    connect (mVmConfigAction, SIGNAL (triggered()), this, SLOT (vmSettings()));
-    connect (mVmDeleteAction, SIGNAL (triggered()), this, SLOT (vmDelete()));
-    connect (mVmStartAction, SIGNAL (triggered()), this, SLOT (vmStart()));
-    connect (mVmDiscardAction, SIGNAL (triggered()), this, SLOT (vmDiscard()));
-    connect (mVmPauseAction, SIGNAL (toggled (bool)), this, SLOT (vmPause (bool)));
-    connect (mVmRefreshAction, SIGNAL (triggered()), this, SLOT (vmRefresh()));
-    connect (mVmShowLogsAction, SIGNAL (triggered()), this, SLOT (vmShowLogs()));
+    connect(mVmConfigAction, SIGNAL(triggered()), this, SLOT(vmSettings()));
+    connect(mVmDeleteAction, SIGNAL(triggered()), this, SLOT(vmDelete()));
+    connect(mVmStartAction, SIGNAL(triggered()), this, SLOT(vmStart()));
+    connect(mVmDiscardAction, SIGNAL(triggered()), this, SLOT(vmDiscard()));
+    connect(mVmPauseAction, SIGNAL(toggled(bool)), this, SLOT(vmPause(bool)));
+    connect(mVmRefreshAction, SIGNAL(triggered()), this, SLOT(vmRefresh()));
+    connect(mVmShowLogsAction, SIGNAL(triggered()), this, SLOT(vmShowLogs()));
 
-    connect (mVMListView, SIGNAL (currentChanged()),
-             this, SLOT (vmListViewCurrentChanged()));
-    connect (mVMListView, SIGNAL (activated()),
-             this, SLOT (vmStart()));
-    connect (mVMListView, SIGNAL (customContextMenuRequested (const QPoint &)),
-             this, SLOT (showContextMenu (const QPoint &)));
+    connect(mVMListView, SIGNAL(currentChanged()),
+            this, SLOT(vmListViewCurrentChanged()));
+    connect(mVMListView, SIGNAL(activated()),
+            this, SLOT(vmStart()));
+    connect(mVMListView, SIGNAL(customContextMenuRequested(const QPoint &)),
+            this, SLOT(showContextMenu(const QPoint &)));
 
-    connect (m_pVMDesktop, SIGNAL(linkClicked(const QString &)),
-             this, SLOT(vmSettings(const QString &)));
+    connect(m_pVMDesktop, SIGNAL(linkClicked(const QString &)),
+            this, SLOT(vmSettings(const QString &)));
 
     /* listen to media enumeration signals */
-    connect (&vboxGlobal(), SIGNAL (mediumEnumStarted()),
-             this, SLOT (mediumEnumStarted()));
-    connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)),
-             this, SLOT (mediumEnumFinished (const VBoxMediaList &)));
+    connect(&vboxGlobal(), SIGNAL(mediumEnumStarted()),
+            this, SLOT(mediumEnumStarted()));
+    connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)),
+            this, SLOT(mediumEnumFinished(const VBoxMediaList &)));
 
     /* connect VirtualBox events */
-    connect (gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
-             this, SLOT(machineStateChanged(QString, KMachineState)));
-    connect (gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
-             this, SLOT(machineDataChanged(QString)));
-    connect (gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)),
-             this, SLOT(machineRegistered(QString, bool)));
-    connect (gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
-             this, SLOT(sessionStateChanged(QString, KSessionState)));
-    connect (gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)),
-             this, SLOT(snapshotChanged(QString, QString)));
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
+            this, SLOT(machineStateChanged(QString, KMachineState)));
+    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
+            this, SLOT(machineDataChanged(QString)));
+    connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)),
+            this, SLOT(machineRegistered(QString, bool)));
+    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
+            this, SLOT(sessionStateChanged(QString, KSessionState)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)),
+            this, SLOT(snapshotChanged(QString, QString)));
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    connect (gEDataEvents, SIGNAL(sigMainWindowCountChange(int)),
-             this, SLOT(mainWindowCountChanged(int)));
-    connect (gEDataEvents, SIGNAL(sigCanShowTrayIcon(bool)),
-             this, SLOT(trayIconCanShow(bool)));
-    connect (gEDataEvents, SIGNAL(sigTrayIconChange(bool)),
-             this, SLOT(trayIconChanged(bool)));
-    connect (&vboxGlobal(), SIGNAL(sigTrayIconShow(bool)),
-             this, SLOT(trayIconShow(bool)));
+    connect(gEDataEvents, SIGNAL(sigMainWindowCountChange(int)),
+            this, SLOT(mainWindowCountChanged(int)));
+    connect(gEDataEvents, SIGNAL(sigCanShowTrayIcon(bool)),
+            this, SLOT(trayIconCanShow(bool)));
+    connect(gEDataEvents, SIGNAL(sigTrayIconChange(bool)),
+            this, SLOT(trayIconChanged(bool)));
+    connect(&vboxGlobal(), SIGNAL(sigTrayIconShow(bool)),
+            this, SLOT(trayIconShow(bool)));
 #endif
 
     /* Listen to potential downloaders signals: */
@@ -452,27 +452,27 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
     /* Save the position of the window */
     {
         int y = mNormalGeo.y();
-        QString winPos = QString ("%1,%2,%3,%4")
-            .arg (mNormalGeo.x()).arg (y)
-            .arg (mNormalGeo.width()).arg (mNormalGeo.height());
+        QString winPos = QString("%1,%2,%3,%4")
+            .arg(mNormalGeo.x()).arg(y)
+            .arg(mNormalGeo.width()).arg(mNormalGeo.height());
 #ifdef Q_WS_MAC
         ::darwinUnregisterForUnifiedToolbarContextMenuEvents(this);
         if (::darwinIsWindowMaximized(this))
 #else /* Q_WS_MAC */
         if (isMaximized())
 #endif /* !Q_WS_MAC */
-            winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowState_Max);
+            winPos += QString(",%1").arg(VBoxDefs::GUI_LastWindowState_Max);
 
-        vbox.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);
+        vbox.SetExtraData(VBoxDefs::GUI_LastWindowPosition, winPos);
     }
 
     /* Save VM selector position */
     {
         UIVMItem *item = mVMListView->selectedItem();
         QString curVMId = item ?
-            QString (item->id()) :
+            QString(item->id()) :
             QString::null;
-        vbox.SetExtraData (VBoxDefs::GUI_LastVMSelected, curVMId);
+        vbox.SetExtraData(VBoxDefs::GUI_LastVMSelected, curVMId);
     }
 
     /* Save the splitter handle position */
@@ -496,12 +496,12 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 
 void VBoxSelectorWnd::fileMediaMgr()
 {
-    VBoxMediaManagerDlg::showModeless (this);
+    VBoxMediaManagerDlg::showModeless(this);
 }
 
 void VBoxSelectorWnd::fileImportAppliance()
 {
-    UIImportApplianceWzd wzd (this);
+    UIImportApplianceWzd wzd(this);
 
     wzd.exec();
 }
@@ -514,7 +514,7 @@ void VBoxSelectorWnd::fileExportAppliance()
     if (item)
         name = item->name();
 
-    UIExportApplianceWzd wzd (this, name);
+    UIExportApplianceWzd wzd(this, name);
 
     wzd.exec();
 }
@@ -524,7 +524,7 @@ void VBoxSelectorWnd::fileSettings()
     VBoxGlobalSettings settings = vboxGlobal().settings();
     CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
 
-    UISettingsDialog *dlg = new UIGLSettingsDlg (this);
+    UISettingsDialog *dlg = new UIGLSettingsDlg(this);
     dlg->getFrom();
 
     if (dlg->exec() == QDialog::Accepted)
@@ -539,7 +539,7 @@ void VBoxSelectorWnd::fileExit()
      * (e.g. VDM) and if so close them. Note that the default behavior is
      * different to Qt3 where a *mainWidget* exists & if this going to close
      * all other windows are closed automatically. We do the same below. */
-    foreach (QWidget *widget, QApplication::topLevelWidgets())
+    foreach(QWidget *widget, QApplication::topLevelWidgets())
     {
         if (widget->isVisible() &&
             widget != this)
@@ -551,33 +551,33 @@ void VBoxSelectorWnd::fileExit()
 
 void VBoxSelectorWnd::vmNew()
 {
-    UINewVMWzd wzd (this);
+    UINewVMWzd wzd(this);
     if (wzd.exec() == QDialog::Accepted)
     {
         CMachine m = wzd.machine();
 
         /* wait until the list is updated by OnMachineRegistered() */
         QModelIndex index;
-        while (!index.isValid())
+        while(!index.isValid())
         {
             qApp->processEvents();
-            index = mVMModel->indexById (m.GetId());
+            index = mVMModel->indexById(m.GetId());
         }
-        mVMListView->setCurrentIndex (index);
+        mVMListView->setCurrentIndex(index);
     }
 }
 
 /**
  *  Opens the VM settings dialog.
  */
-void VBoxSelectorWnd::vmSettings (const QString &aCategory /* = QString::null */,
-                                  const QString &aControl /* = QString::null */,
-                                  const QString &aUuid /* = QString::null */)
+void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
+                                 const QString &aControl /* = QString::null */,
+                                 const QString &aUuid /* = QString::null */)
 {
     if (!aCategory.isEmpty() && aCategory [0] != '#')
     {
         /* Assume it's a href from the Details HTML */
-        vboxGlobal().openURL (aCategory);
+        vboxGlobal().openURL(aCategory);
         return;
     }
     QString strCategory = aCategory;
@@ -594,20 +594,20 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory /* = QString::null */
     }
 
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
-                       mVMModel->itemById (aUuid);
+                       mVMModel->itemById(aUuid);
 
-    AssertMsgReturnVoid (item, ("Item must be always selected here"));
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
 
     // open a direct session to modify VM settings
     QString id = item->id();
-    CSession session = vboxGlobal().openSession (id);
+    CSession session = vboxGlobal().openSession(id);
     if (session.isNull())
         return;
 
     CMachine m = session.GetMachine();
-    AssertMsgReturn (!m.isNull(), ("Machine must not be null"), (void) 0);
+    AssertMsgReturn(!m.isNull(), ("Machine must not be null"), (void) 0);
 
-    UISettingsDialog *dlg = new UIVMSettingsDlg (this, m, strCategory, strControl);
+    UISettingsDialog *dlg = new UIVMSettingsDlg(this, m, strCategory, strControl);
     dlg->getFrom();
 
     if (dlg->exec() == QDialog::Accepted)
@@ -618,14 +618,14 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory /* = QString::null */
         m.SaveSettings();
         if (m.isOk())
         {
-            if (oldName.compare (m.GetName()))
+            if (oldName.compare(m.GetName()))
                 mVMModel->sort();
         }
         else
-            vboxProblem().cannotSaveMachineSettings (m);
+            vboxProblem().cannotSaveMachineSettings(m);
 
         /* To check use the result in future
-         * vboxProblem().cannotApplyMachineSettings (m, res); */
+         * vboxProblem().cannotApplyMachineSettings(m, res); */
     }
 
     delete dlg;
@@ -635,12 +635,12 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory /* = QString::null */
     session.UnlockMachine();
 }
 
-void VBoxSelectorWnd::vmDelete (const QString &aUuid /* = QString::null */)
+void VBoxSelectorWnd::vmDelete(const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
-                       mVMModel->itemById (aUuid);
+                       mVMModel->itemById(aUuid);
 
-    AssertMsgReturnVoid (item, ("Item must be always selected here"));
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
 
     CMachine machine = item->machine();
     int rc = vboxProblem().confirmMachineDeletion(machine);
@@ -666,13 +666,13 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /* = QString::null */)
     }
 }
 
-void VBoxSelectorWnd::vmStart (const QString &aUuid /* = QString::null */)
+void VBoxSelectorWnd::vmStart(const QString &aUuid /* = QString::null */)
 {
-    QUuid uuid (aUuid);
+    QUuid uuid(aUuid);
     UIVMItem *item = uuid.isNull() ? mVMListView->selectedItem() :
-                       mVMModel->itemById (aUuid);
+                       mVMModel->itemById(aUuid);
 
-    AssertMsgReturnVoid (item, ("Item must be always selected here"));
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
 
     /* Are we called from the mVMListView's activated() signal? */
     if (uuid.isNull())
@@ -683,8 +683,8 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /* = QString::null */)
             return;
     }
 
-    AssertMsg (!vboxGlobal().isVMConsoleProcess(),
-               ("Must NOT be a VM console process"));
+    AssertMsg(!vboxGlobal().isVMConsoleProcess(),
+              ("Must NOT be a VM console process"));
 
     /* just switch to the VM window if it already exists */
     if (item->canSwitchTo())
@@ -693,35 +693,35 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /* = QString::null */)
         return;
     }
 
-    AssertMsg (   item->machineState() == KMachineState_PoweredOff
-               || item->machineState() == KMachineState_Saved
-               || item->machineState() == KMachineState_Teleported
-               || item->machineState() == KMachineState_Aborted
-               , ("Machine must be PoweredOff/Saved/Aborted (%d)", item->machineState()));
+    AssertMsg(   item->machineState() == KMachineState_PoweredOff
+              || item->machineState() == KMachineState_Saved
+              || item->machineState() == KMachineState_Teleported
+              || item->machineState() == KMachineState_Aborted
+              , ("Machine must be PoweredOff/Saved/Aborted (%d)", item->machineState()));
 
     QString id = item->id();
     CVirtualBox vbox = vboxGlobal().virtualBox();
     CSession session;
 
-    session.createInstance (CLSID_Session);
+    session.createInstance(CLSID_Session);
     if (session.isNull())
     {
-        vboxProblem().cannotOpenSession (session);
+        vboxProblem().cannotOpenSession(session);
         return;
     }
 
-#if defined (Q_OS_WIN32)
+#if defined(Q_OS_WIN32)
     /* allow the started VM process to make itself the foreground window */
-    AllowSetForegroundWindow (ASFW_ANY);
+    AllowSetForegroundWindow(ASFW_ANY);
 #endif
 
     QString env;
-#if defined (Q_WS_X11)
+#if defined(Q_WS_X11)
     /* make sure the VM process will start on the same display as the Selector */
-    const char *display = RTEnvGet ("DISPLAY");
+    const char *display = RTEnvGet("DISPLAY");
     if (display)
         env.append(QString("DISPLAY=%1\n").arg(display));
-    const char *xauth = RTEnvGet ("XAUTHORITY");
+    const char *xauth = RTEnvGet("XAUTHORITY");
     if (xauth)
         env.append(QString("XAUTHORITY=%1\n").arg(xauth));
 #endif
@@ -743,21 +743,21 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /* = QString::null */)
     session.UnlockMachine();
 }
 
-void VBoxSelectorWnd::vmDiscard (const QString &aUuid /* = QString::null */)
+void VBoxSelectorWnd::vmDiscard(const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
-                       mVMModel->itemById (aUuid);
+                       mVMModel->itemById(aUuid);
 
-    AssertMsgReturnVoid (item, ("Item must be always selected here"));
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
 
-    if (!vboxProblem().confirmDiscardSavedState (item->machine()))
+    if (!vboxProblem().confirmDiscardSavedState(item->machine()))
         return;
 
     /* open a session to modify VM settings */
     QString id = item->id();
     CSession session;
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    session.createInstance (CLSID_Session);
+    session.createInstance(CLSID_Session);
     if (session.isNull())
     {
         vboxProblem().cannotOpenSession(session);
@@ -769,26 +769,26 @@ void VBoxSelectorWnd::vmDiscard (const QString &aUuid /* = QString::null */)
         foundMachine.LockMachine(session, KLockType_Write);
     if (!vbox.isOk())
     {
-        vboxProblem().cannotOpenSession (vbox, item->machine());
+        vboxProblem().cannotOpenSession(vbox, item->machine());
         return;
     }
 
     CConsole console = session.GetConsole();
     console.DiscardSavedState(true /* fDeleteFile */);
     if (!console.isOk())
-        vboxProblem().cannotDiscardSavedState (console);
+        vboxProblem().cannotDiscardSavedState(console);
 
     session.UnlockMachine();
 }
 
-void VBoxSelectorWnd::vmPause (bool aPause, const QString &aUuid /* = QString::null */)
+void VBoxSelectorWnd::vmPause(bool aPause, const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
-                       mVMModel->itemById (aUuid);
+                       mVMModel->itemById(aUuid);
 
-    AssertMsgReturnVoid (item, ("Item must be always selected here"));
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
 
-    CSession session = vboxGlobal().openExistingSession (item->id());
+    CSession session = vboxGlobal().openExistingSession(item->id());
     if (session.isNull())
         return;
 
@@ -805,36 +805,36 @@ void VBoxSelectorWnd::vmPause (bool aPause, const QString &aUuid /* = QString::n
     if (!ok)
     {
         if (aPause)
-            vboxProblem().cannotPauseMachine (console);
+            vboxProblem().cannotPauseMachine(console);
         else
-            vboxProblem().cannotResumeMachine (console);
+            vboxProblem().cannotResumeMachine(console);
     }
 
     session.UnlockMachine();
 }
 
-void VBoxSelectorWnd::vmRefresh (const QString &aUuid /* = QString::null */)
+void VBoxSelectorWnd::vmRefresh(const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
-                       mVMModel->itemById (aUuid);
+                       mVMModel->itemById(aUuid);
 
-    AssertMsgReturnVoid (item, ("Item must be always selected here"));
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
 
-    refreshVMItem (item->id(),
+    refreshVMItem(item->id(),
                    true /* aDetails */,
                    true /* aSnapshot */,
                    true /* aDescription */);
 }
 
-void VBoxSelectorWnd::vmShowLogs (const QString &aUuid /* = QString::null */)
+void VBoxSelectorWnd::vmShowLogs(const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
-                       mVMModel->itemById (aUuid);
+                       mVMModel->itemById(aUuid);
 
-    AssertMsgReturnVoid (item, ("Item must be always selected here"));
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
 
     CMachine machine = item->machine();
-    VBoxVMLogViewer::createLogViewer (this, machine);
+    VBoxVMLogViewer::createLogViewer(this, machine);
 }
 
 void VBoxSelectorWnd::refreshVMList()
@@ -843,7 +843,7 @@ void VBoxSelectorWnd::refreshVMList()
     CMachineVector vec = vbox.GetMachines();
     for (CMachineVector::ConstIterator m = vec.begin();
          m != vec.end(); ++ m)
-        mVMModel->addItem (new UIVMItem (*m));
+        mVMModel->addItem(new UIVMItem(*m));
     mVMModel->sort();
 
     vmListViewCurrentChanged();
@@ -859,28 +859,28 @@ void VBoxSelectorWnd::refreshVMItem(const QString &aID,
                                     bool aSnapshots,
                                     bool aDescription)
 {
-    UIVMItem *item = mVMModel->itemById (aID);
+    UIVMItem *item = mVMModel->itemById(aID);
     if (item)
     {
-        mVMModel->refreshItem (item);
+        mVMModel->refreshItem(item);
         if (item && item->id() == aID)
-            vmListViewCurrentChanged (aDetails, aSnapshots, aDescription);
+            vmListViewCurrentChanged(aDetails, aSnapshots, aDescription);
     }
 }
 
-void VBoxSelectorWnd::showContextMenu (const QPoint &aPoint)
+void VBoxSelectorWnd::showContextMenu(const QPoint &aPoint)
 {
     /* Send a context menu request */
-    const QModelIndex &index = mVMListView->indexAt (aPoint);
+    const QModelIndex &index = mVMListView->indexAt(aPoint);
     if (index.isValid())
-        if (mVMListView->model()->data (index,
+        if (mVMListView->model()->data(index,
             UIVMItemModel::UIVMItemPtrRole).value <UIVMItem*>())
-                mVMCtxtMenu->exec (mVMListView->mapToGlobal (aPoint));
+                mVMCtxtMenu->exec(mVMListView->mapToGlobal(aPoint));
 }
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 
-void VBoxSelectorWnd::trayIconActivated (QSystemTrayIcon::ActivationReason aReason)
+void VBoxSelectorWnd::trayIconActivated(QSystemTrayIcon::ActivationReason aReason)
 {
     switch (aReason)
     {
@@ -917,7 +917,7 @@ void VBoxSelectorWnd::showWindow()
 // Protected members
 /////////////////////////////////////////////////////////////////////////////
 
-bool VBoxSelectorWnd::event (QEvent *e)
+bool VBoxSelectorWnd::event(QEvent *e)
 {
     switch (e->type())
     {
@@ -930,14 +930,14 @@ bool VBoxSelectorWnd::event (QEvent *e)
             QResizeEvent *re = (QResizeEvent *) e;
             if ((windowState() & (Qt::WindowMaximized | Qt::WindowMinimized |
                                   Qt::WindowFullScreen)) == 0)
-                mNormalGeo.setSize (re->size());
+                mNormalGeo.setSize(re->size());
             break;
         }
         case QEvent::Move:
         {
             if ((windowState() & (Qt::WindowMaximized | Qt::WindowMinimized |
                                   Qt::WindowFullScreen)) == 0)
-                mNormalGeo.moveTo (geometry().x(), geometry().y());
+                mNormalGeo.moveTo(geometry().x(), geometry().y());
             break;
         }
         case QEvent::WindowDeactivate:
@@ -973,30 +973,30 @@ bool VBoxSelectorWnd::event (QEvent *e)
             break;
     }
 
-    return QMainWindow::event (e);
+    return QMainWindow::event(e);
 }
 
-void VBoxSelectorWnd::closeEvent (QCloseEvent *aEvent)
+void VBoxSelectorWnd::closeEvent(QCloseEvent *aEvent)
 {
 #ifdef VBOX_GUI_WITH_SYSTRAY
     /* Needed for breaking out of the while() loop in main(). */
     if (vboxGlobal().isTrayMenu())
-        vboxGlobal().setTrayMenu (false);
+        vboxGlobal().setTrayMenu(false);
 #endif
 
     emit closing();
-    QMainWindow::closeEvent (aEvent);
+    QMainWindow::closeEvent(aEvent);
 }
 
 #if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
-bool VBoxSelectorWnd::eventFilter (QObject *aObject, QEvent *aEvent)
+bool VBoxSelectorWnd::eventFilter(QObject *aObject, QEvent *aEvent)
 {
     if (!isActiveWindow())
-        return QIWithRetranslateUI2<QMainWindow>::eventFilter (aObject, aEvent);
+        return QIWithRetranslateUI2<QMainWindow>::eventFilter(aObject, aEvent);
 
-    if (qobject_cast<QWidget*> (aObject) &&
-        qobject_cast<QWidget*> (aObject)->window() != this)
-        return QIWithRetranslateUI2<QMainWindow>::eventFilter (aObject, aEvent);
+    if (qobject_cast<QWidget*>(aObject) &&
+        qobject_cast<QWidget*>(aObject)->window() != this)
+        return QIWithRetranslateUI2<QMainWindow>::eventFilter(aObject, aEvent);
 
     switch (aEvent->type())
     {
@@ -1011,7 +1011,7 @@ bool VBoxSelectorWnd::eventFilter (QObject *aObject, QEvent *aEvent)
         default:
             break;
     }
-    return QIWithRetranslateUI2<QMainWindow>::eventFilter (aObject, aEvent);
+    return QIWithRetranslateUI2<QMainWindow>::eventFilter(aObject, aEvent);
 }
 #endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
 
@@ -1022,9 +1022,9 @@ bool VBoxSelectorWnd::eventFilter (QObject *aObject, QEvent *aEvent)
 void VBoxSelectorWnd::retranslateUi()
 {
 #ifdef VBOX_OSE
-    QString title (tr ("VirtualBox OSE"));
+    QString title(tr("VirtualBox OSE"));
 #else
-    QString title (VBOX_PRODUCT);
+    QString title(VBOX_PRODUCT);
 #endif
 
 #ifdef VBOX_BLEEDING_EDGE
@@ -1035,22 +1035,22 @@ void VBoxSelectorWnd::retranslateUi()
           +  QString(" - "VBOX_BLEEDING_EDGE);
 #endif
 
-    setWindowTitle (title);
+    setWindowTitle(title);
 
     /* ensure the details and screenshot view are updated */
     vmListViewCurrentChanged();
 
-    mFileMediaMgrAction->setText (tr ("&Virtual Media Manager..."));
-    mFileMediaMgrAction->setShortcut (QKeySequence ("Ctrl+D"));
-    mFileMediaMgrAction->setStatusTip (tr ("Display the Virtual Media Manager dialog"));
+    mFileMediaMgrAction->setText(tr("&Virtual Media Manager..."));
+    mFileMediaMgrAction->setShortcut(QKeySequence("Ctrl+D"));
+    mFileMediaMgrAction->setStatusTip(tr("Display the Virtual Media Manager dialog"));
 
-    mFileApplianceImportAction->setText (tr ("&Import Appliance..."));
-    mFileApplianceImportAction->setShortcut (QKeySequence ("Ctrl+I"));
-    mFileApplianceImportAction->setStatusTip (tr ("Import an appliance into VirtualBox"));
+    mFileApplianceImportAction->setText(tr("&Import Appliance..."));
+    mFileApplianceImportAction->setShortcut(QKeySequence("Ctrl+I"));
+    mFileApplianceImportAction->setStatusTip(tr("Import an appliance into VirtualBox"));
 
-    mFileApplianceExportAction->setText (tr ("&Export Appliance..."));
-    mFileApplianceExportAction->setShortcut (QKeySequence ("Ctrl+E"));
-    mFileApplianceExportAction->setStatusTip (tr ("Export one or more VirtualBox virtual machines as an appliance"));
+    mFileApplianceExportAction->setText(tr("&Export Appliance..."));
+    mFileApplianceExportAction->setShortcut(QKeySequence("Ctrl+E"));
+    mFileApplianceExportAction->setStatusTip(tr("Export one or more VirtualBox virtual machines as an appliance"));
 
 #ifdef Q_WS_MAC
     /*
@@ -1063,67 +1063,67 @@ void VBoxSelectorWnd::retranslateUi()
      * Now, since both QMenuBar and we translate these strings, it's going to
      * be really interesting to see how this plays on non-english systems...
      */
-    mFileSettingsAction->setText (tr ("&Preferences...", "global settings"));
+    mFileSettingsAction->setText(tr("&Preferences...", "global settings"));
 #else
     /*
      * ...and on other platforms we use "Preferences" as well. The #ifdef is
      * left because of the possible localization problems on Mac we first need
      * to figure out.
      */
-    mFileSettingsAction->setText (tr ("&Preferences...", "global settings"));
+    mFileSettingsAction->setText(tr("&Preferences...", "global settings"));
 #endif
-    mFileSettingsAction->setShortcut (QKeySequence ("Ctrl+G"));
-    mFileSettingsAction->setStatusTip (tr ("Display the global settings dialog"));
+    mFileSettingsAction->setShortcut(QKeySequence("Ctrl+G"));
+    mFileSettingsAction->setStatusTip(tr("Display the global settings dialog"));
 
-    mFileExitAction->setText (tr ("E&xit"));
-    mFileExitAction->setShortcut (QKeySequence ("Ctrl+Q"));
-    mFileExitAction->setStatusTip (tr ("Close application"));
+    mFileExitAction->setText(tr("E&xit"));
+    mFileExitAction->setShortcut(QKeySequence("Ctrl+Q"));
+    mFileExitAction->setStatusTip(tr("Close application"));
 
-    mVmNewAction->setText (tr ("&New..."));
-    mVmNewAction->setShortcut (QKeySequence ("Ctrl+N"));
-    mVmNewAction->setStatusTip (tr ("Create a new virtual machine"));
-    mVmNewAction->setToolTip (mVmNewAction->text().remove ('&').remove ('.') +
-        QString (" (%1)").arg (mVmNewAction->shortcut().toString()));
+    mVmNewAction->setText(tr("&New..."));
+    mVmNewAction->setShortcut(QKeySequence("Ctrl+N"));
+    mVmNewAction->setStatusTip(tr("Create a new virtual machine"));
+    mVmNewAction->setToolTip(mVmNewAction->text().remove('&').remove('.') +
+        QString("(%1)").arg(mVmNewAction->shortcut().toString()));
 
-    mVmConfigAction->setText (tr ("&Settings..."));
-    mVmConfigAction->setShortcut (QKeySequence ("Ctrl+S"));
-    mVmConfigAction->setStatusTip (tr ("Configure the selected virtual machine"));
-    mVmConfigAction->setToolTip (mVmConfigAction->text().remove ('&').remove ('.') +
-        QString (" (%1)").arg (mVmConfigAction->shortcut().toString()));
+    mVmConfigAction->setText(tr("&Settings..."));
+    mVmConfigAction->setShortcut(QKeySequence("Ctrl+S"));
+    mVmConfigAction->setStatusTip(tr("Configure the selected virtual machine"));
+    mVmConfigAction->setToolTip(mVmConfigAction->text().remove('&').remove('.') +
+        QString("(%1)").arg(mVmConfigAction->shortcut().toString()));
 
-    mVmDeleteAction->setText (tr ("&Delete"));
-    mVmDeleteAction->setShortcut (QKeySequence ("Ctrl+R"));
-    mVmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
+    mVmDeleteAction->setText(tr("&Delete"));
+    mVmDeleteAction->setShortcut(QKeySequence("Ctrl+R"));
+    mVmDeleteAction->setStatusTip(tr("Delete the selected virtual machine"));
 
     /* Note: mVmStartAction text is set up in vmListViewCurrentChanged() */
 
-    mVmDiscardAction->setText (tr ("D&iscard"));
-    mVmDiscardAction->setStatusTip (
-        tr ("Discard the saved state of the selected virtual machine"));
+    mVmDiscardAction->setText(tr("D&iscard"));
+    mVmDiscardAction->setStatusTip(
+        tr("Discard the saved state of the selected virtual machine"));
 
-    mVmPauseAction->setText (tr ("&Pause"));
-    mVmPauseAction->setStatusTip (
-        tr ("Suspend the execution of the virtual machine"));
+    mVmPauseAction->setText(tr("&Pause"));
+    mVmPauseAction->setStatusTip(
+        tr("Suspend the execution of the virtual machine"));
 
-    mVmRefreshAction->setText (tr ("Re&fresh"));
-    mVmRefreshAction->setStatusTip (
-        tr ("Refresh the accessibility state of the selected virtual machine"));
+    mVmRefreshAction->setText(tr("Re&fresh"));
+    mVmRefreshAction->setStatusTip(
+        tr("Refresh the accessibility state of the selected virtual machine"));
 
-    mVmShowLogsAction->setText (tr ("Show &Log..."));
-    mVmShowLogsAction->setIconText (tr ("Log", "icon text"));
-    mVmShowLogsAction->setShortcut (QKeySequence ("Ctrl+L"));
-    mVmShowLogsAction->setStatusTip (
-        tr ("Show the log files of the selected virtual machine"));
+    mVmShowLogsAction->setText(tr("Show &Log..."));
+    mVmShowLogsAction->setIconText(tr("Log", "icon text"));
+    mVmShowLogsAction->setShortcut(QKeySequence("Ctrl+L"));
+    mVmShowLogsAction->setStatusTip(
+        tr("Show the log files of the selected virtual machine"));
 
     mHelpActions.retranslateUi();
 
 #ifdef Q_WS_MAC
-    mFileMenu->setTitle (tr("&File", "Mac OS X version"));
+    mFileMenu->setTitle(tr("&File", "Mac OS X version"));
 #else /* Q_WS_MAC */
-    mFileMenu->setTitle (tr("&File", "Non Mac OS X version"));
+    mFileMenu->setTitle(tr("&File", "Non Mac OS X version"));
 #endif /* !Q_WS_MAC */
-    mVMMenu->setTitle (tr ("&Machine"));
-    mHelpMenu->setTitle (tr ("&Help"));
+    mVMMenu->setTitle(tr("&Machine"));
+    mHelpMenu->setTitle(tr("&Help"));
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     if (vboxGlobal().isTrayMenu())
@@ -1150,9 +1150,9 @@ void VBoxSelectorWnd::retranslateUi()
 // Private slots
 /////////////////////////////////////////////////////////////////////////////
 
-void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
-                                                bool aRefreshSnapshots,
-                                                bool aRefreshDescription)
+void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
+                                               bool aRefreshSnapshots,
+                                               bool aRefreshDescription)
 {
     UIVMItem *item = mVMListView->selectedItem();
 
@@ -1190,7 +1190,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
             || state == KMachineState_Aborted
            )
         {
-            mVmStartAction->setText (tr ("S&tart"));
+            mVmStartAction->setText(tr("S&tart"));
 #ifdef QT_MAC_USE_COCOA
             /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
                the necessary size of the toolbar is increased. Also for some languages
@@ -1198,14 +1198,14 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
                after changing the text. */
             mVMToolBar->updateLayout();
 #endif /* QT_MAC_USE_COCOA */
-            mVmStartAction->setStatusTip (
-                tr ("Start the selected virtual machine"));
+            mVmStartAction->setStatusTip(
+                tr("Start the selected virtual machine"));
 
-            mVmStartAction->setEnabled (!running);
+            mVmStartAction->setEnabled(!running);
         }
         else
         {
-            mVmStartAction->setText (tr ("S&how"));
+            mVmStartAction->setText(tr("S&how"));
 #ifdef QT_MAC_USE_COCOA
             /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
                the necessary size of the toolbar is increased. Also for some languages
@@ -1213,10 +1213,10 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
                after changing the text. */
             mVMToolBar->updateLayout();
 #endif /* QT_MAC_USE_COCOA */
-            mVmStartAction->setStatusTip (
-                tr ("Switch to the window of the selected virtual machine"));
+            mVmStartAction->setStatusTip(
+                tr("Switch to the window of the selected virtual machine"));
 
-            mVmStartAction->setEnabled (item->canSwitchTo());
+            mVmStartAction->setEnabled(item->canSwitchTo());
         }
 
         /* change the Pause/Resume button text accordingly */
@@ -1224,30 +1224,30 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
             || state == KMachineState_TeleportingPausedVM /*?*/
            )
         {
-            mVmPauseAction->setText (tr ("R&esume"));
-            mVmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
-            mVmPauseAction->setStatusTip (
-                tr ("Resume the execution of the virtual machine"));
-            mVmPauseAction->blockSignals (true);
-            mVmPauseAction->setChecked (true);
-            mVmPauseAction->blockSignals (false);
+            mVmPauseAction->setText(tr("R&esume"));
+            mVmPauseAction->setShortcut(QKeySequence("Ctrl+P"));
+            mVmPauseAction->setStatusTip(
+                tr("Resume the execution of the virtual machine"));
+            mVmPauseAction->blockSignals(true);
+            mVmPauseAction->setChecked(true);
+            mVmPauseAction->blockSignals(false);
         }
         else
         {
-            mVmPauseAction->setText (tr ("&Pause"));
-            mVmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
-            mVmPauseAction->setStatusTip (
-                tr ("Suspend the execution of the virtual machine"));
-            mVmPauseAction->blockSignals (true);
-            mVmPauseAction->setChecked (false);
-            mVmPauseAction->blockSignals (false);
+            mVmPauseAction->setText(tr("&Pause"));
+            mVmPauseAction->setShortcut(QKeySequence("Ctrl+P"));
+            mVmPauseAction->setStatusTip(
+                tr("Suspend the execution of the virtual machine"));
+            mVmPauseAction->blockSignals(true);
+            mVmPauseAction->setChecked(false);
+            mVmPauseAction->blockSignals(false);
         }
 
         /* disable Refresh for accessible machines */
-        mVmRefreshAction->setEnabled (false);
+        mVmRefreshAction->setEnabled(false);
 
         /* enable the show log item for the selected vm */
-        mVmShowLogsAction->setEnabled (true);
+        mVmShowLogsAction->setEnabled(true);
     }
     else
     {
@@ -1280,7 +1280,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
                    "<p>You can press the <b>%1</b> key to get instant help, "
                    "or visit "
                    "<a href=http://www.virtualbox.org>www.virtualbox.org</a> "
-                   "for the latest information and news.</p>").arg (QKeySequence (QKeySequence::HelpContents).toString (QKeySequence::NativeText)));
+                   "for the latest information and news.</p>").arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
             mVmRefreshAction->setEnabled(false);
         }
 
@@ -1289,32 +1289,32 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
 //        m_pVMDesktop->updateDescription(0, CMachine());
 
         /* disable modify actions */
-        mVmConfigAction->setEnabled (false);
-        mVmDeleteAction->setEnabled (item != NULL);
-        mVmDiscardAction->setEnabled (false);
-        mVmPauseAction->setEnabled (false);
+        mVmConfigAction->setEnabled(false);
+        mVmDeleteAction->setEnabled(item != NULL);
+        mVmDiscardAction->setEnabled(false);
+        mVmPauseAction->setEnabled(false);
 
         /* change the Start button text accordingly */
-        mVmStartAction->setText (tr ("S&tart"));
-        mVmStartAction->setStatusTip (
-            tr ("Start the selected virtual machine"));
-        mVmStartAction->setEnabled (false);
+        mVmStartAction->setText(tr("S&tart"));
+        mVmStartAction->setStatusTip(
+            tr("Start the selected virtual machine"));
+        mVmStartAction->setEnabled(false);
 
         /* disable the show log item for the selected vm */
-        mVmShowLogsAction->setEnabled (false);
+        mVmShowLogsAction->setEnabled(false);
     }
 }
 
 void VBoxSelectorWnd::mediumEnumStarted()
 {
     /* refresh the current details to pick up hard disk sizes */
-    vmListViewCurrentChanged (true /* aRefreshDetails */);
+    vmListViewCurrentChanged(true /* aRefreshDetails */);
 }
 
-void VBoxSelectorWnd::mediumEnumFinished (const VBoxMediaList &list)
+void VBoxSelectorWnd::mediumEnumFinished(const VBoxMediaList &list)
 {
     /* refresh the current details to pick up hard disk sizes */
-    vmListViewCurrentChanged (true /* aRefreshDetails */);
+    vmListViewCurrentChanged(true /* aRefreshDetails */);
 
     /* we warn about inaccessible media only once (after media emumeration
      * started from main() at startup), to avoid annoying the user */
@@ -1336,7 +1336,7 @@ void VBoxSelectorWnd::mediumEnumFinished (const VBoxMediaList &list)
 
         /* ignore the signal if a VBoxMediaManagerDlg window is active */
         if (qApp->activeWindow() &&
-            !strcmp (qApp->activeWindow()->metaObject()->className(), "VBoxMediaManagerDlg"))
+            !strcmp(qApp->activeWindow()->metaObject()->className(), "VBoxMediaManagerDlg"))
             break;
 
         /* look for at least one inaccessible media */
@@ -1349,7 +1349,7 @@ void VBoxSelectorWnd::mediumEnumFinished (const VBoxMediaList &list)
         {
             /* Show the VDM dialog but don't refresh once more after a
              * just-finished refresh */
-            VBoxMediaManagerDlg::showModeless (this, false /* aRefresh */);
+            VBoxMediaManagerDlg::showModeless(this, false /* aRefresh */);
         }
     }
     while (0);
@@ -1370,10 +1370,10 @@ void VBoxSelectorWnd::machineStateChanged(QString strId, KMachineState /* state 
     }
 #endif
 
-    refreshVMItem (strId,
-                   false /* aDetails */,
-                   false /* aSnapshots */,
-                   false /* aDescription */);
+    refreshVMItem(strId,
+                  false /* aDetails */,
+                  false /* aSnapshots */,
+                  false /* aDescription */);
 
     /* simulate a state change signal */
 //    m_pVMDesktop->updateDescriptionState();
@@ -1381,10 +1381,10 @@ void VBoxSelectorWnd::machineStateChanged(QString strId, KMachineState /* state 
 
 void VBoxSelectorWnd::machineDataChanged(QString strId)
 {
-    refreshVMItem (strId,
-                   true  /* aDetails */,
-                   false /* aSnapshots */,
-                   true  /* aDescription */);
+    refreshVMItem(strId,
+                  true  /* aDetails */,
+                  false /* aSnapshots */,
+                  true  /* aDescription */);
 }
 
 void VBoxSelectorWnd::machineRegistered(QString strId, bool fRegistered)
@@ -1392,10 +1392,10 @@ void VBoxSelectorWnd::machineRegistered(QString strId, bool fRegistered)
     if (fRegistered)
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        CMachine m = vbox.GetMachine (strId);
+        CMachine m = vbox.GetMachine(strId);
         if (!m.isNull())
         {
-            mVMModel->addItem (new UIVMItem (m));
+            mVMModel->addItem(new UIVMItem(m));
             mVMModel->sort();
             /* Make sure the description, ... pages are properly updated.
              * Actualy we haven't call the next method, but unfortunately Qt
@@ -1408,13 +1408,13 @@ void VBoxSelectorWnd::machineRegistered(QString strId, bool fRegistered)
     }
     else
     {
-        UIVMItem *item = mVMModel->itemById (strId);
+        UIVMItem *item = mVMModel->itemById(strId);
         if (item)
         {
-            int row = mVMModel->rowById (item->id());
-            mVMModel->removeItem (item);
+            int row = mVMModel->rowById(item->id());
+            mVMModel->removeItem(item);
             delete item;
-            mVMListView->ensureSomeRowSelected (row);
+            mVMListView->ensureSomeRowSelected(row);
         }
 
         /* item = 0 is ok (if we originated this event then the item
@@ -1424,10 +1424,10 @@ void VBoxSelectorWnd::machineRegistered(QString strId, bool fRegistered)
 
 void VBoxSelectorWnd::sessionStateChanged(QString strId, KSessionState /* state */)
 {
-    refreshVMItem (strId,
-                   true  /* aDetails */,
-                   false /* aSnapshots */,
-                   false /* aDescription */);
+    refreshVMItem(strId,
+                  true  /* aDetails */,
+                  false /* aSnapshots */,
+                  false /* aDescription */);
 
     /* simulate a state change signal */
 //    m_pVMDesktop->updateDescriptionState();
@@ -1435,10 +1435,10 @@ void VBoxSelectorWnd::sessionStateChanged(QString strId, KSessionState /* state 
 
 void VBoxSelectorWnd::snapshotChanged(QString strId, QString /* strSnapshotId */)
 {
-    refreshVMItem (strId,
-                   false /* aDetails */,
-                   true  /* aSnapshot */,
-                   false /* aDescription */);
+    refreshVMItem(strId,
+                  false /* aDetails */,
+                  true  /* aSnapshot */,
+                  false /* aDescription */);
 }
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
@@ -1451,7 +1451,7 @@ void VBoxSelectorWnd::mainWindowCountChanged(int count)
 
 void VBoxSelectorWnd::trayIconCanShow(bool fEnabled)
 {
-    emit trayIconChanged(VBoxChangeTrayIconEvent (vboxGlobal().settings().trayIconEnabled()));
+    emit trayIconChanged(VBoxChangeTrayIconEvent(vboxGlobal().settings().trayIconEnabled()));
 }
 
 void VBoxSelectorWnd::trayIconShow(bool fEnabled)
