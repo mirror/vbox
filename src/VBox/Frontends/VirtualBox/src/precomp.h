@@ -243,7 +243,7 @@
 #include "VBoxSnapshotsWgt.h"
 #include "VBoxSpecialControls.h"
 #include "VBoxTakeSnapshotDlg.h"
-#include "VBoxToolBar.h"
+#include "UIToolBar.h"
 #include "VBoxUpdateDlg.h"
 #include "VBoxUtils-darwin.h"
 #include "VBoxUtils.h"

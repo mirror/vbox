@@ -30,7 +30,7 @@
 /* Local forwards */
 class MediaItem;
 class VBoxProgressBar;
-class VBoxToolBar;
+class UIToolBar;
 
 class VBoxMediaManagerDlg : public QIWithRetranslateUI2<QIMainDialog>,
                             public Ui::VBoxMediaManagerDlg
@@ -151,7 +151,7 @@ private:
     /* Menu & Toolbar */
     QMenu       *mActionsContextMenu;
     QMenu       *mActionsMenu;
-    VBoxToolBar *mToolBar;
+    UIToolBar *mToolBar;
     QAction     *mNewAction;
     QAction     *mAddAction;
     QAction     *mRemoveAction;

@@ -86,7 +86,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="VBoxToolBar" native="1" name="mTbStorageBar" />
+            <widget class="UIToolBar" native="1" name="mTbStorageBar" />
            </item>
           </layout>
          </item>
@@ -518,9 +518,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>VBoxToolBar</class>
+   <class>UIToolBar</class>
    <extends>QWidget</extends>
-   <header>VBoxToolBar.h</header>
+   <header>UIToolBar.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

@@ -38,7 +38,7 @@
 #include "VBoxMediaManagerDlg.h"
 #include "UINewHDWzd.h"
 #include "VBoxProblemReporter.h"
-#include "VBoxToolBar.h"
+#include "UIToolBar.h"
 #include "QIFileDialog.h"
 #include "QILabel.h"
 #include "UIIconPool.h"
@@ -317,7 +317,7 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
     mActionsContextMenu->addAction (mReleaseAction);
 
     /* Toolbar composing */
-    mToolBar = new VBoxToolBar (this);
+    mToolBar = new UIToolBar (this);
     mToolBar->setIconSize (QSize (22, 22));
     mToolBar->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
     mToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);

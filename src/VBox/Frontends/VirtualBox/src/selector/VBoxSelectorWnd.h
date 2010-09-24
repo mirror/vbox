@@ -39,7 +39,7 @@ class UIVMDesktop;
 class UIVMItem;
 class UIVMItemModel;
 class UIVMListView;
-class VBoxToolBar;
+class UIToolBar;
 class VBoxTrayIcon;
 class VBoxVMLogViewer;
 
@@ -143,7 +143,7 @@ private:
 #ifndef Q_WS_MAC
     UIBar *m_pBar;
 #endif /* !Q_WS_MAC */
-    VBoxToolBar *mVMToolBar;
+    UIToolBar *mVMToolBar;
 
     /* VM list context menu */
     QMenu *mVMCtxtMenu;

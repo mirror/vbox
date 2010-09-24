@@ -469,6 +469,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UIDownloaderUserManual.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UISpecialControls.cpp \
+	src/widgets/UIToolBar.cpp \
 	src/widgets/VBoxApplianceEditorWgt.cpp \
 	src/widgets/VBoxBootTable.cpp \
 	src/widgets/VBoxExportApplianceWgt.cpp \

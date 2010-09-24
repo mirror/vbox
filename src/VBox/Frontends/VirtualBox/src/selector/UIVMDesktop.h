@@ -32,7 +32,7 @@ class UIDetailsPagePrivate;
 class UITexturedSegmentedButton;
 class UIVMItem;
 class VBoxSnapshotsWgt;
-class VBoxToolBar;
+class UIToolBar;
 
 class UIVMDesktop: public QIWithRetranslateUI<QWidget>
 {
@@ -40,7 +40,7 @@ class UIVMDesktop: public QIWithRetranslateUI<QWidget>
 
 public:
 
-    UIVMDesktop(VBoxToolBar *pToolBar, QAction *pRefreshAction, QWidget *pParent = 0);
+    UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *pParent = 0);
 
     void updateDetails(UIVMItem *pVMItem, const CMachine& machine);
     void updateDetailsText(const QString &strText);

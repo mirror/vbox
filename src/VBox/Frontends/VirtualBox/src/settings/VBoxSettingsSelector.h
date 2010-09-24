@@ -23,7 +23,7 @@
 #include <QObject>
 
 class QITreeWidget;
-class VBoxToolBar;
+class UIToolBar;
 class VBoxSettingsPage;
 class SelectorItem;
 class SelectorActionItem;
@@ -167,7 +167,7 @@ private:
     SelectorActionItem *findActionItemByTabWidget (QTabWidget* aTabWidget, int aIndex) const;
 
     /* Private member vars */
-    VBoxToolBar *mTbSelector;
+    UIToolBar *mTbSelector;
     QActionGroup *mActionGroup;
 };
 
