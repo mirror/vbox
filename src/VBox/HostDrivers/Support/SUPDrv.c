@@ -90,6 +90,10 @@
 # define VBOX_SVN_REV 0
 #endif
 
+#if 0 /* Don't start the GIP timers. Useful when debugging the IPRT timer code. */
+# define DO_NOT_START_GIP
+#endif
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -3157,8 +3161,10 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                 else
                     RTMpOnAll(supdrvGipReInitCpuCallback, pGipR0, &u64NanoTS);
 
-                rc = RTTimerStart(pDevExt->pGipTimer, 0);
-                AssertRC(rc); rc = VINF_SUCCESS;
+#ifndef DO_NOT_START_GIP
+                rc = RTTimerStart(pDevExt->pGipTimer, 0); AssertRC(rc);
+#endif
+                rc = VINF_SUCCESS;
             }
         }
     }
@@ -3238,7 +3244,9 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
             &&  !--pDevExt->cGipUsers)
         {
             LogFlow(("SUPR0GipUnmap: Suspends GIP updating\n"));
+#ifndef DO_NOT_START_GIP
             rc = RTTimerStop(pDevExt->pGipTimer); AssertRC(rc); rc = VINF_SUCCESS;
+#endif
         }
     }
 
