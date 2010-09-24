@@ -743,7 +743,7 @@ sorecvfrom(PNATState pData, struct socket *so)
             signalled = 1;
         }
 
-        len = sizeof(struct udpiphdr) + ETH_HLEN;
+        len = sizeof(struct udpiphdr);
         if (n > (if_mtu - len))
         {
             n = if_mtu - len; /* can't read than we can put in the mbuf*/
