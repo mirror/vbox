@@ -1431,7 +1431,7 @@ static HRESULT vboxWddmSwapchainKmSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
 
     Assert(cAllocsKm == Buf.SwapchainInfo.SwapchainInfo.cAllocs || !cAllocsKm);
 
-    if (cAllocsKm)
+    if (cAllocsKm == Buf.SwapchainInfo.SwapchainInfo.cAllocs)
     {
         D3DDDICB_ESCAPE DdiEscape = {0};
         DdiEscape.hContext = pDevice->DefaultContext.ContextInfo.hContext;
