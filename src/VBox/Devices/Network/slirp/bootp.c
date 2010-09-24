@@ -246,9 +246,10 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
     q += 7; /* !cookie rfc 2132 + TYPE*/
 
     /*DHCP Offer specific*/
-    if (   tftp_prefix
-        && RTDirExists(tftp_prefix)
-        && bootp_filename)
+    /* 
+     * we're care in built-in tftp server about existence/validness of the boot file.
+     */
+    if (bootp_filename)
         RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
 
     Log(("NAT: DHCP: bp_file:%s\n", &rbp->bp_file));
