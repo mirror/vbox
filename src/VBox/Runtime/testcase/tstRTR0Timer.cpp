@@ -181,7 +181,7 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackChangeInterval(PRTTIMER pTimer, vo
     if (iShot < RT_ELEMENTS(pState->aShotNsTSes))
         pState->aShotNsTSes[iShot] = RTTimeSystemNanoTS();
     if (pState->fPeriodic)
-        RTR0TESTR0_CHECK_MSG(iShot == iTick, ("iShot=%u iTick=%u\n", iShot, iTick));
+        RTR0TESTR0_CHECK_MSG(iShot + 1 == iTick, ("iShot=%u iTick=%u\n", iShot, iTick));
     else
         RTR0TESTR0_CHECK_MSG(iTick == 1, ("iShot=%u iTick=%u\n", iShot, iTick));
 
@@ -715,7 +715,11 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             {
                 /* reset the state */
                 for (uint32_t iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+                {
+                    paStates[iCpu].u64Start = 0;
+                    paStates[iCpu].u64Last  = 0;
                     ASMAtomicWriteU32(&paStates[iCpu].cTicks, 0);
+                }
 
                 /* run it for 1 second. */
                 RTCPUSET OnlineSet;
@@ -756,7 +760,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     {
                         RTR0TESTR0_CHECK_MSG(RTCpuSetIsMemberByIndex(&OnlineSet, iCpu), ("%d\n", iCpu));
                         RTR0TESTR0_CHECK_MSG(paStates[iCpu].cTicks <= cMaxTicks && paStates[iCpu].cTicks >= cMinTicks,
-                                             ("min=%u, ticks=%u, avg=%u max=%u, iCpu=%u, interval=%'u, elapsed=%'u/%'u\n",
+                                             ("min=%u, ticks=%u, avg=%u max=%u, iCpu=%u, interval=%'u, elapsed=%'llu/%'llu\n",
                                               cMinTicks, paStates[iCpu].cTicks, cAvgTicks, cMaxTicks, iCpu,
                                               cNsInterval, cNsElapsed, cNsElapsedX));
                     }
