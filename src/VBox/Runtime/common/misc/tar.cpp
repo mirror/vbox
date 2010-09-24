@@ -441,7 +441,7 @@ static int rtTarSkipData(RTFILE hFile, PRTTARRECORD pRecord)
 static int rtTarFindFile(RTFILE hFile, const char *pszFile, uint64_t *puOffset, uint64_t *pcbSize)
 {
     /* Assume we are on the file head. */
-    int rc;
+    int rc = VINF_SUCCESS;
     bool fFound = false;
     RTTARRECORD record;
     for (;;)
@@ -485,7 +485,7 @@ static int rtTarFindFile(RTFILE hFile, const char *pszFile, uint64_t *puOffset, 
 
 static int rtTarGetFilesOverallSize(RTFILE hFile, const char * const *papszFiles, size_t cFiles, uint64_t *pcbOverallSize)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     size_t cFound = 0;
     RTTARRECORD record;
     for (;;)
@@ -542,7 +542,7 @@ RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char* pszTarname, uint32_t fMode)
     pInt->u32Magic = RTTAR_MAGIC;
     pInt->fOpenMode = fMode;
 
-    int rc;
+    int rc = VINF_SUCCESS;
     do
     {
         /* Open the tar file. */
@@ -849,7 +849,7 @@ RTR3DECL(int) RTTarFileSetSize(RTTARFILE hFile, uint64_t cbSize)
         return VERR_NO_MEMORY;
     RT_BZERO(pvTmp, cbTmp);
 
-    int rc;
+    int rc = VINF_SUCCESS;
     uint64_t cbAllWritten = 0;
     size_t cbToWrite = 0;
     size_t cbWritten = 0;
@@ -1128,7 +1128,7 @@ RTR3DECL(int) RTTarExtractFileToBuf(const char *pszTarFile, void **ppvBuf, size_
 
     /* Todo: progress bar */
 
-    int rc;
+    int rc = VINF_SUCCESS;
     RTTAR hTar = NIL_RTTAR;
     RTTARFILE hFile = NIL_RTTARFILE;
     char *pvTmp = 0;
