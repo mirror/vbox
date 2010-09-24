@@ -700,7 +700,6 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
             return;
         }
     }
-
 #endif
 
     if (pTimer->u64NanoInterval)
