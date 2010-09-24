@@ -1659,7 +1659,7 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     STAM_PROFILE_START(&pPool->StatTrackDeref,a);
     void *pvShw = PGMPOOL_PAGE_2_PTR(pVM, pPage);
     void *pvGst;
-    rc = PGM_GCPHYS_2_PTR(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+    rc = PGM_GCPHYS_2_PTR_EX(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
     bool  fFlush;
     unsigned cChanges;
 
@@ -1740,7 +1740,7 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      * (The HCPhys linear lookup is *extremely* expensive!)
      */
     void *pvGst;
-    int   rc  = PGM_GCPHYS_2_PTR(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+    int   rc  = PGM_GCPHYS_2_PTR_EX(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
     memcpy(&pPool->aDirtyPages[idxFree].aPage[0], pvGst, (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT) ? PAGE_SIZE : PAGE_SIZE/2);
 #ifdef VBOX_STRICT
     void *pvShw = PGMPOOL_PAGE_2_PTR(pVM, pPage);
