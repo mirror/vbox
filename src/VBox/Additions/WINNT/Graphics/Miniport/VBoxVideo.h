@@ -304,6 +304,8 @@ typedef struct _DEVICE_EXTENSION
 
 #ifdef VBOX_WITH_WDDM
    PDEVICE_OBJECT pPDO;
+   UNICODE_STRING RegKeyName;
+   UNICODE_STRING VideoGuid;
 
    uint8_t * pvVisibleVram;
 

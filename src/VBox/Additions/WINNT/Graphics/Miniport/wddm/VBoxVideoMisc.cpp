@@ -11,8 +11,11 @@
  */
 
 #include "../VBoxVideo.h"
+#include "../Helper.h"
 
 #include <iprt/asm.h>
+
+#include <stdio.h>
 
 NTSTATUS vboxWddmHTableCreate(PVBOXWDDM_HTABLE pTbl, uint32_t cSize)
 {
@@ -456,4 +459,299 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CONTEXT
     }
 
     return STATUS_SUCCESS;
+}
+
+#define VBOXWDDM_REG_DRVKEY_PREFIX L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Class\\"
+
+NTSTATUS vboxWddmRegQueryDrvKeyName(PDEVICE_EXTENSION pDevExt, ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
+{
+    WCHAR fallBackBuf[2];
+    PWCHAR pSuffix;
+    bool bFallback = false;
+
+    if (cbBuf > sizeof(VBOXWDDM_REG_DRVKEY_PREFIX))
+    {
+        memcpy(pBuf, VBOXWDDM_REG_DRVKEY_PREFIX, sizeof (VBOXWDDM_REG_DRVKEY_PREFIX));
+        pSuffix = pBuf + (sizeof (VBOXWDDM_REG_DRVKEY_PREFIX)-2)/2;
+        cbBuf -= sizeof (VBOXWDDM_REG_DRVKEY_PREFIX)-2;
+    }
+    else
+    {
+        pSuffix = fallBackBuf;
+        cbBuf = sizeof (fallBackBuf);
+        bFallback = true;
+    }
+
+    NTSTATUS Status = IoGetDeviceProperty (pDevExt->pPDO,
+                                  DevicePropertyDriverKeyName,
+                                  cbBuf,
+                                  pSuffix,
+                                  &cbBuf);
+    if (Status == STATUS_SUCCESS && bFallback)
+        Status = STATUS_BUFFER_TOO_SMALL;
+    if (Status == STATUS_BUFFER_TOO_SMALL)
+        *pcbResult = cbBuf + sizeof (VBOXWDDM_REG_DRVKEY_PREFIX)-2;
+
+    return Status;
+}
+
+#define VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_VISTA L"\\Registry\\Machine\\System\\CurrentControlSet\\Hardware Profiles\\Current\\System\\CurrentControlSet\\Control\\VIDEO\\"
+#define VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_WIN7 L"\\Registry\\Machine\\System\\CurrentControlSet\\Hardware Profiles\\UnitedVideo\\CONTROL\\VIDEO\\"
+
+#define VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_RELX L"Attach.RelativeX"
+#define VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_RELY L"Attach.RelativeY"
+#define VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_DESKTOP L"Attach.ToDesktop"
+
+NTSTATUS vboxWddmRegQueryDisplaySettingsKeyName(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId,
+        ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    PWCHAR pSuffix;
+    bool bFallback = false;
+    const WCHAR* pKeyPrefix;
+    UINT cbKeyPrefix;
+    winVersion_t ver = vboxQueryWinVersion();
+    if (ver == WINVISTA)
+    {
+        pKeyPrefix = VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_VISTA;
+        cbKeyPrefix = sizeof (VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_VISTA);
+    }
+    else
+    {
+        Assert(ver == WIN7);
+        pKeyPrefix = VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_WIN7;
+        cbKeyPrefix = sizeof (VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_WIN7);
+    }
+
+    ULONG cbResult = cbKeyPrefix + pDevExt->VideoGuid.Length + 2 + 8; // L"\\" + "XXXX"
+    if (cbBuf >= cbResult)
+    {
+        wcscpy(pBuf, pKeyPrefix);
+        pSuffix = pBuf + (cbKeyPrefix-2)/2;
+        memcpy(pSuffix, pDevExt->VideoGuid.Buffer, pDevExt->VideoGuid.Length);
+        pSuffix += pDevExt->VideoGuid.Length/2;
+        pSuffix[0] = L'\\';
+        pSuffix += 1;
+        swprintf(pSuffix, L"%04d", VidPnSourceId);
+    }
+    else
+    {
+        Status = STATUS_BUFFER_TOO_SMALL;
+    }
+
+    *pcbResult = cbResult;
+
+    return Status;
+}
+
+#define VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Video\\"
+#define VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY_SUBKEY L"\\Video"
+
+NTSTATUS vboxWddmRegQueryVideoGuidString(ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
+{
+    HANDLE hKey;
+    NTSTATUS Status = vboxWddmRegOpenKey(&hKey, VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY, GENERIC_READ);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        struct
+        {
+            KEY_BASIC_INFORMATION Name;
+            WCHAR Buf[256];
+        } Buf;
+        WCHAR KeyBuf[sizeof (VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY)/2 + 256 + 64];
+        wcscpy(KeyBuf, VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY);
+        ULONG ResultLength;
+        BOOL bFound = FALSE;
+        for (ULONG i = 0; !bFound; ++i)
+        {
+            RtlZeroMemory(&Buf, sizeof (Buf));
+            Status = ZwEnumerateKey(hKey, i, KeyBasicInformation, &Buf, sizeof (Buf), &ResultLength);
+            Assert(Status == STATUS_SUCCESS);
+            /* we should not encounter STATUS_NO_MORE_ENTRIES here since this would mean we did not find our entry */
+            if (Status != STATUS_SUCCESS)
+                break;
+
+            HANDLE hSubKey;
+            PWCHAR pSubBuf = KeyBuf + (sizeof (VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY) - 2)/2;
+            memcpy(pSubBuf, Buf.Name.Name, Buf.Name.NameLength);
+            pSubBuf += Buf.Name.NameLength/2;
+            memcpy(pSubBuf, VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY_SUBKEY, sizeof (VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY_SUBKEY));
+            Status = vboxWddmRegOpenKey(&hSubKey, KeyBuf, GENERIC_READ);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status == STATUS_SUCCESS)
+            {
+                struct
+                {
+                    KEY_VALUE_PARTIAL_INFORMATION Info;
+                    UCHAR Buf[sizeof (L"VBoxVideoWddm")]; /* should be enough */
+                } KeyData;
+                ULONG cbResult;
+                UNICODE_STRING RtlStr;
+                RtlInitUnicodeString(&RtlStr, L"Service");
+                Status = ZwQueryValueKey(hSubKey,
+                            &RtlStr,
+                            KeyValuePartialInformation,
+                            &KeyData.Info,
+                            sizeof(KeyData),
+                            &cbResult);
+                Assert(Status == STATUS_SUCCESS || STATUS_BUFFER_TOO_SMALL || STATUS_BUFFER_OVERFLOW);
+                if (Status == STATUS_SUCCESS)
+                {
+                    if (KeyData.Info.Type == REG_SZ)
+                    {
+                        if (KeyData.Info.DataLength == sizeof (L"VBoxVideoWddm"))
+                        {
+                            if (!wcscmp(L"VBoxVideoWddm", (PWCHAR)KeyData.Info.Data))
+                            {
+                                bFound = TRUE;
+                                *pcbResult = Buf.Name.NameLength + 2;
+                                if (cbBuf >= Buf.Name.NameLength + 2)
+                                {
+                                    memcpy(pBuf, Buf.Name.Name, Buf.Name.NameLength + 2);
+                                }
+                                else
+                                {
+                                    Status = STATUS_BUFFER_TOO_SMALL;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                NTSTATUS tmpStatus = ZwClose(hSubKey);
+                Assert(tmpStatus == STATUS_SUCCESS);
+            }
+            else
+                break;
+        }
+        NTSTATUS tmpStatus = ZwClose(hKey);
+        Assert(tmpStatus == STATUS_SUCCESS);
+    }
+
+    return Status;
+}
+
+NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK fAccess)
+{
+    OBJECT_ATTRIBUTES ObjAttr;
+    UNICODE_STRING RtlStr;
+
+    RtlInitUnicodeString(&RtlStr, pName);
+    InitializeObjectAttributes(&ObjAttr, &RtlStr, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+    return ZwOpenKey(phKey, fAccess, &ObjAttr);
+}
+
+NTSTATUS vboxWddmRegOpenDisplaySettingsKey(IN PDEVICE_EXTENSION pDeviceExtension, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, OUT PHANDLE phKey)
+{
+    WCHAR Buf[512];
+    ULONG cbBuf = sizeof(Buf);
+    NTSTATUS Status = vboxWddmRegQueryDisplaySettingsKeyName(pDeviceExtension, VidPnSourceId, cbBuf, Buf, &cbBuf);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        Status = vboxWddmRegOpenKey(phKey, Buf, GENERIC_READ);
+        Assert(Status == STATUS_SUCCESS);
+        if(Status == STATUS_SUCCESS)
+            return STATUS_SUCCESS;
+    }
+
+    /* fall-back to make the subsequent VBoxVideoCmnRegXxx calls treat the fail accordingly
+     * basically needed to make as less modifications to the current XPDM code as possible */
+    *phKey = NULL;
+
+    return Status;
+}
+
+NTSTATUS vboxWddmRegDisplaySettingsQueryRelX(HANDLE hKey, int * pResult)
+{
+    DWORD dwVal;
+    NTSTATUS Status = vboxWddmRegQueryValueDword(hKey, VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_RELX, &dwVal);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        *pResult = (int)dwVal;
+    }
+
+    return Status;
+}
+
+NTSTATUS vboxWddmRegDisplaySettingsQueryRelY(HANDLE hKey, int * pResult)
+{
+    DWORD dwVal;
+    NTSTATUS Status = vboxWddmRegQueryValueDword(hKey, VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_RELY, &dwVal);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        *pResult = (int)dwVal;
+    }
+
+    return Status;
+}
+
+NTSTATUS vboxWddmDisplaySettingsQueryPos(IN PDEVICE_EXTENSION pDeviceExtension, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, POINT * pPos)
+{
+    HANDLE hKey;
+    NTSTATUS Status = vboxWddmRegOpenDisplaySettingsKey(pDeviceExtension, VidPnSourceId, &hKey);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        int x, y;
+        Status = vboxWddmRegDisplaySettingsQueryRelX(hKey, &x);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            Status = vboxWddmRegDisplaySettingsQueryRelY(hKey, &y);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status == STATUS_SUCCESS)
+            {
+                pPos->x = x;
+                pPos->y = y;
+            }
+        }
+        NTSTATUS tmpStatus = ZwClose(hKey);
+        Assert(tmpStatus == STATUS_SUCCESS);
+    }
+    return Status;
+}
+
+NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT PDWORD pDword)
+{
+    struct
+    {
+        KEY_VALUE_PARTIAL_INFORMATION Info;
+        UCHAR Buf[32]; /* should be enough */
+    } Buf;
+    ULONG cbBuf;
+    UNICODE_STRING RtlStr;
+    RtlInitUnicodeString(&RtlStr, pName);
+    NTSTATUS Status = ZwQueryValueKey(hKey,
+                &RtlStr,
+                KeyValuePartialInformation,
+                &Buf.Info,
+                sizeof(Buf),
+                &cbBuf);
+    if (Status == STATUS_SUCCESS)
+    {
+        if (Buf.Info.Type == REG_DWORD)
+        {
+            Assert(Buf.Info.DataLength == 4);
+            *pDword = *((PULONG)Buf.Info.Data);
+            return STATUS_SUCCESS;
+        }
+    }
+
+    return STATUS_INVALID_PARAMETER;
+}
+
+NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT DWORD val)
+{
+    UNICODE_STRING RtlStr;
+    RtlInitUnicodeString(&RtlStr, pName);
+    return ZwSetValueKey(hKey, &RtlStr,
+            NULL, /* IN ULONG  TitleIndex  OPTIONAL, reserved */
+            REG_DWORD,
+            &val,
+            sizeof(val));
 }
