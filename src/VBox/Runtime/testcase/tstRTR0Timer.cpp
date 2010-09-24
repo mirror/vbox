@@ -748,7 +748,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 }
                 RTR0TESTR0_CHECK_MSG(u64MinStart < u64MaxStop, ("%llu, %llu", u64MinStart, u64MaxStop));
                 uint64_t cNsElapsed = u64MaxStop - u64MinStart;
-                RTR0TESTR0_CHECK_MSG(cNsElapsed <= cNsElapsedX + 1000, ("%llu, %llu", cNsElapsed, cNsElapsedX));
+                RTR0TESTR0_CHECK_MSG(cNsElapsed <= cNsElapsedX + 100000, ("%llu, %llu", cNsElapsed, cNsElapsedX)); /* the fudge factor is time drift */
                 uint32_t cAvgTicks  = cNsElapsed / cNsInterval + 1;
 
                 /* Check tick counts. ASSUMES no cpu on- or offlining.
