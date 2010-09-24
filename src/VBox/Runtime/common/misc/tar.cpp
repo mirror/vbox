@@ -25,10 +25,11 @@
  */
 
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+/******************************************************************************
+ *   Header Files                                                             *
+ ******************************************************************************/
 #include "internal/iprt.h"
+#include "internal/magics.h"
 #include <iprt/tar.h>
 
 #include <iprt/asm.h>
@@ -39,9 +40,9 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
+/******************************************************************************
+ *   Structures and Typedefs                                                  *
+ ******************************************************************************/
 
 /** @name RTTARRECORD::h::linkflag
  * @{  */
@@ -90,9 +91,68 @@ typedef struct RTTARFILELIST
 typedef RTTARFILELIST *PRTTARFILELIST;
 #endif
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
+typedef struct RTTARINTERNAL
+{
+    uint32_t        u32Magic;
+    RTFILE          hTarFile;
+    bool            fFileOpenForWrite;
+    uint32_t        fOpenMode;
+} RTTARINTERNAL;
+typedef RTTARINTERNAL* PRTTARINTERNAL;
+
+typedef struct RTTARFILEINTERNAL
+{
+    uint32_t        u32Magic;
+    PRTTARINTERNAL  pTar;
+    char           *pszFilename;
+    uint64_t        uStart;
+    uint64_t        cbSize;
+    uint64_t        uCurrentPos;
+    uint32_t        fOpenMode;
+} RTTARFILEINTERNAL;
+typedef RTTARFILEINTERNAL* PRTTARFILEINTERNAL;
+
+/******************************************************************************
+ *   Defined Constants And Macros                                             *
+ ******************************************************************************/
+
+/** Validates a handle and returns VERR_INVALID_HANDLE if not valid. */
+/* RTTAR */
+#define RTTAR_VALID_RETURN_RC(hHandle, rc) \
+    do { \
+        AssertPtrReturn((hHandle), (rc)); \
+        AssertReturn((hHandle)->u32Magic == RTTAR_MAGIC, (rc)); \
+    } while (0)
+/* RTTARFILE */
+#define RTTARFILE_VALID_RETURN_RC(hHandle, rc) \
+    do { \
+        AssertPtrReturn((hHandle), (rc)); \
+        AssertReturn((hHandle)->u32Magic == RTTARFILE_MAGIC, (rc)); \
+    } while (0)
+
+/** Validates a handle and returns VERR_INVALID_HANDLE if not valid. */
+/* RTTAR */
+#define RTTAR_VALID_RETURN(hHandle) RTTAR_VALID_RETURN_RC((hHandle), VERR_INVALID_HANDLE)
+/* RTTARFILE */
+#define RTTARFILE_VALID_RETURN(hHandle) RTTARFILE_VALID_RETURN_RC((hHandle), VERR_INVALID_HANDLE)
+
+/** Validates a handle and returns (void) if not valid. */
+/* RTTAR */
+#define RTTAR_VALID_RETURN_VOID(hHandle) \
+    do { \
+        AssertPtrReturnVoid(hHandle); \
+        AssertReturnVoid((hHandle)->u32Magic == RTTAR_MAGIC); \
+    } while (0)
+/* RTTARFILE */
+#define RTTARFILE_VALID_RETURN_VOID(hHandle) \
+    do { \
+        AssertPtrReturnVoid(hHandle); \
+        AssertReturnVoid((hHandle)->u32Magic == RTTARFILE_MAGIC); \
+    } while (0)
+
+/******************************************************************************
+ *   Internal Functions                                                       *
+ ******************************************************************************/
 
 DECLINLINE(int) rtTarCalcChkSum(PRTTARRECORD pRecord, uint32_t *pChkSum)
 {
@@ -145,6 +205,32 @@ DECLINLINE(int) rtTarReadHeaderRecord(RTFILE hFile, PRTTARRECORD pRecord)
     return VERR_TAR_CHKSUM_MISMATCH;
 }
 
+DECLINLINE(int) rtTarCreateHeaderRecord(PRTTARRECORD pRecord, const char *pszSrcName, uint64_t cbSize, RTUID uid, RTGID gid, RTFMODE fmode, int64_t mtime)
+{
+    /* Fill the header record */
+//    RT_ZERO(pRecord);
+    RTStrPrintf(pRecord->h.name,  sizeof(pRecord->h.name),  "%s",     pszSrcName);
+    RTStrPrintf(pRecord->h.mode,  sizeof(pRecord->h.mode),  "%0.7o",  fmode);
+    RTStrPrintf(pRecord->h.uid,   sizeof(pRecord->h.uid),   "%0.7o",  uid);
+    RTStrPrintf(pRecord->h.gid,   sizeof(pRecord->h.gid),   "%0.7o",  gid);
+    RTStrPrintf(pRecord->h.size,  sizeof(pRecord->h.size),  "%0.11o", cbSize);
+    RTStrPrintf(pRecord->h.mtime, sizeof(pRecord->h.mtime), "%0.11o", mtime);
+    RTStrPrintf(pRecord->h.magic, sizeof(pRecord->h.magic), "ustar  ");
+    RTStrPrintf(pRecord->h.uname, sizeof(pRecord->h.uname), "someone");
+    RTStrPrintf(pRecord->h.gname, sizeof(pRecord->h.gname), "someone");
+    pRecord->h.linkflag = LF_NORMAL;
+
+    /* Create the checksum out of the new header */
+    uint32_t chksum = 0;
+    int rc = rtTarCalcChkSum(pRecord, &chksum);
+    if (RT_FAILURE(rc))
+        return rc;
+    /* Format the checksum */
+    RTStrPrintf(pRecord->h.chksum, sizeof(pRecord->h.chksum), "%0.7o", chksum);
+
+    return VINF_SUCCESS;
+}
+
 DECLINLINE(void*) rtTarMemTmpAlloc(size_t *pcbSize)
 {
     *pcbSize = 0;
@@ -161,67 +247,7 @@ DECLINLINE(void*) rtTarMemTmpAlloc(size_t *pcbSize)
     return pvTmp;
 }
 
-static int rtTarExtractFileToBuf(RTFILE hFile, void **ppvBuf, uint64_t *pcbSize, PRTTARRECORD pRecord, const uint64_t cbOverallSize, uint64_t &cbOverallWritten, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
-{
-    int rc = VINF_SUCCESS;
-
-    uint64_t cbToCopy = RTStrToUInt64(pRecord->h.size);
-
-    *ppvBuf = 0;
-    do
-    {
-        /* Allocate the memory for the file content. */
-        *ppvBuf = RTMemAlloc(cbToCopy);
-        char* pcsTmp = (char*)*ppvBuf;
-        if (!pcsTmp)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        uint64_t cbAllWritten = 0; /* Already copied */
-        uint64_t cbToRead = 0; /* What to read in the next step */
-        size_t cbRead = 0; /* Actually read in the last step */
-        /* Copy the content from hFile over to the memory. */
-        for (;;)
-        {
-            if (pfnProgressCallback)
-                pfnProgressCallback((unsigned)(100.0 / cbOverallSize * cbOverallWritten), pvUser);
-            /* Finished already? */
-            if (cbAllWritten == cbToCopy)
-                break;
-            /* Try to read all at once */
-            cbToRead = cbToCopy - cbAllWritten;
-            rc = RTFileRead(hFile, pcsTmp, cbToRead, &cbRead);
-            if (RT_FAILURE(rc))
-                break;
-            /* Count how many bytes are written already */
-            cbAllWritten += cbRead;
-            cbOverallWritten += cbRead;
-            pcsTmp += cbRead;
-        }
-        int64_t offSeek = RT_ALIGN(cbAllWritten, sizeof(RTTARRECORD)) - cbAllWritten;
-        /* We have to make sure the file pointer is 512 byte aligned. */
-        if (   RT_SUCCESS(rc)
-            && offSeek > 0)
-        {
-            rc = RTFileSeek(hFile, offSeek, RTFILE_SEEK_CURRENT, NULL);
-            if (RT_FAILURE(rc))
-                break;
-        }
-    }
-    while(0);
-
-    if (   RT_FAILURE(rc)
-        && *ppvBuf)
-        RTMemFree(*ppvBuf);
-    else
-        *pcbSize = cbToCopy;
-
-    return rc;
-}
-
-static int rtTarExtractFileToFile(RTFILE hFile, const char *pszTargetName, PRTTARRECORD pRecord, const uint64_t cbOverallSize, uint64_t &cbOverallWritten, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
+static int rtTarExtractFileToFile(RTTARFILE hFile, const char *pszTargetName, const uint64_t cbOverallSize, uint64_t &cbOverallWritten, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
 {
     RTFILE hNewFile;
     /* Open the target file */
@@ -240,14 +266,14 @@ static int rtTarExtractFileToFile(RTFILE hFile, const char *pszTargetName, PRTTA
             rc = VERR_NO_MEMORY;
             break;
         }
-
-        uint64_t cbToCopy = RTStrToUInt64(pRecord->h.size);
+        /* Get the size of the source file */
+        uint64_t cbToCopy = 0;
+        rc = RTTarFileGetSize(hFile, &cbToCopy);
+        if (RT_FAILURE(rc))
+            break;
+        /* Copy the content from hFile over to pszTargetName. */
         uint64_t cbAllWritten = 0; /* Already copied */
         uint64_t cbRead = 0; /* Actually read in the last step */
-        /* Copy the content from hFile over to pszTargetName. This is done block
-         * wise in 512 byte aligned steps. After this copying is finished hFile
-         * will be on a 512 byte boundary, regardless if the file copied is 512
-         * byte size aligned. */
         for (;;)
         {
             if (pfnProgressCallback)
@@ -255,14 +281,11 @@ static int rtTarExtractFileToFile(RTFILE hFile, const char *pszTargetName, PRTTA
             /* Finished already? */
             if (cbAllWritten == cbToCopy)
                 break;
-            /* Read one block. This will be 512 aligned in any case. */
-            cbRead = RT_ALIGN(RT_MIN(cbToCopy - cbAllWritten, cbTmp), sizeof(RTTARRECORD));
-            rc = RTFileRead(hFile, pvTmp, cbRead, NULL);
+            /* Read one block. */
+            cbRead = RT_MIN(cbToCopy - cbAllWritten, cbTmp);
+            rc = RTTarFileRead(hFile, pvTmp, cbRead, NULL);
             if (RT_FAILURE(rc))
                 break;
-            /* Check for the last block which has not to be 512 bytes in size. */
-            if (cbAllWritten + cbRead > cbToCopy)
-                cbRead = cbToCopy - cbAllWritten;
             /* Write the block */
             rc = RTFileWrite(hNewFile, pvTmp, cbRead, NULL);
             if (RT_FAILURE(rc))
@@ -282,8 +305,8 @@ static int rtTarExtractFileToFile(RTFILE hFile, const char *pszTargetName, PRTTA
     /* Now set all file attributes */
     if (RT_SUCCESS(rc))
     {
-        int32_t mode;
-        rc = RTStrToInt32Full(pRecord->h.mode, 8, &mode);
+        uint32_t mode;
+        rc = RTTarFileGetMode(hFile, &mode);
         if (RT_SUCCESS(rc))
         {
             mode |= RTFS_TYPE_FILE; /* For now we support regular files only */
@@ -301,7 +324,7 @@ static int rtTarExtractFileToFile(RTFILE hFile, const char *pszTargetName, PRTTA
     return rc;
 }
 
-static int rtTarAppendFileFromFile(RTFILE hFile, const char *pszSrcName, const uint64_t cbOverallSize, uint64_t &cbOverallWritten, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
+static int rtTarAppendFileFromFile(RTTAR hTar, const char *pszSrcName, const uint64_t cbOverallSize, uint64_t &cbOverallWritten, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
 {
     RTFILE hOldFile;
     /* Open the source file */
@@ -309,6 +332,7 @@ static int rtTarAppendFileFromFile(RTFILE hFile, const char *pszSrcName, const u
     if (RT_FAILURE(rc))
         return rc;
 
+    RTTARFILE hFile = NIL_RTTARFILE;
     void *pvTmp = 0;
     do
     {
@@ -317,6 +341,11 @@ static int rtTarAppendFileFromFile(RTFILE hFile, const char *pszSrcName, const u
         rc = RTFileGetSize(hOldFile, &cbToCopy);
         if (RT_FAILURE(rc))
             break;
+
+        rc = RTTarFileOpen(hTar, &hFile, RTPathFilename(pszSrcName), RTFILE_O_OPEN | RTFILE_O_WRITE);
+        if (RT_FAILURE(rc))
+            break;
+
         /* Get some info from the source file */
         RTFSOBJINFO info;
         RTUID uid = 0;
@@ -332,30 +361,18 @@ static int rtTarAppendFileFromFile(RTFILE hFile, const char *pszSrcName, const u
             gid = info.Attr.u.Unix.gid;
             mtime = RTTimeSpecGetSeconds(&info.ModificationTime);
         }
-
-        /* Fill the header record */
-        RTTARRECORD record;
-        RT_ZERO(record);
-        RTStrPrintf(record.h.name,  sizeof(record.h.name),  "%s",     RTPathFilename(pszSrcName));
-        RTStrPrintf(record.h.mode,  sizeof(record.h.mode),  "%0.7o",  fmode);
-        RTStrPrintf(record.h.uid,   sizeof(record.h.uid),   "%0.7o",  uid);
-        RTStrPrintf(record.h.gid,   sizeof(record.h.gid),   "%0.7o",  gid);
-        RTStrPrintf(record.h.size,  sizeof(record.h.size),  "%0.11o", cbToCopy);
-        RTStrPrintf(record.h.mtime, sizeof(record.h.mtime), "%0.11o", mtime);
-        RTStrPrintf(record.h.magic, sizeof(record.h.magic), "ustar  ");
-        RTStrPrintf(record.h.uname, sizeof(record.h.uname), "someone");
-        RTStrPrintf(record.h.gname, sizeof(record.h.gname), "someone");
-        record.h.linkflag = LF_NORMAL;
-
-        /* Create the checksum out of the new header */
-        uint32_t chksum = 0;
-        rc = rtTarCalcChkSum(&record, &chksum);
+        /* Set the mode from the other file */
+        rc = RTTarFileSetMode(hFile, fmode);
         if (RT_FAILURE(rc))
             break;
-        /* Format the checksum */
-        RTStrPrintf(record.h.chksum, sizeof(record.h.chksum), "%0.7o", chksum);
-        /* Write the header first */
-        rc = RTFileWrite(hFile, &record, sizeof(record), NULL);
+        /* Set the modification time from the other file */
+        RTTIMESPEC time;
+        RTTimeSpecSetSeconds(&time, mtime);
+        rc = RTTarFileSetTime(hFile, &time);
+        if (RT_FAILURE(rc))
+            break;
+        /* Set the owner from the other file */
+        rc = RTTarFileSetOwner(hFile, uid, gid);
         if (RT_FAILURE(rc))
             break;
 
@@ -384,18 +401,12 @@ static int rtTarAppendFileFromFile(RTFILE hFile, const char *pszSrcName, const u
             /* Read one block. Either its the buffer size or the rest of the
              * file. */
             cbRead = RT_MIN(cbToCopy - cbAllWritten, cbTmp);
-            /* Write one block. This will be 512 byte aligned in any case. */
-            cbWrite = RT_ALIGN(cbRead, sizeof(RTTARRECORD));
-            /* Last record? */
-            if (cbRead != cbWrite)
-                /* Initialize the rest with zeros */
-                RT_BZERO(&((char*)pvTmp)[cbRead], cbWrite-cbRead);
             /* Read one block */
             rc = RTFileRead(hOldFile, pvTmp, cbRead, NULL);
             if (RT_FAILURE(rc))
                 break;
-            /* Write one block. Tar needs to be 512 byte aligned. */
-            rc = RTFileWrite(hFile, pvTmp, cbWrite, NULL);
+            /* Write one block. */
+            rc = RTTarFileWriteAt(hFile, cbAllWritten, pvTmp, cbRead, NULL);
             if (RT_FAILURE(rc))
                 break;
             /* Count how many bytes (of the original file) are written already */
@@ -409,7 +420,11 @@ static int rtTarAppendFileFromFile(RTFILE hFile, const char *pszSrcName, const u
     if (pvTmp)
         RTMemTmpFree(pvTmp);
 
+    if (hFile)
+        RTTarFileClose(hFile);
+
     RTFileClose(hOldFile);
+
     return rc;
 }
 
@@ -420,6 +435,51 @@ static int rtTarSkipData(RTFILE hFile, PRTTARRECORD pRecord)
     int64_t offSeek = RT_ALIGN(RTStrToInt64(pRecord->h.size), sizeof(RTTARRECORD));
     if (offSeek > 0)
         rc = RTFileSeek(hFile, offSeek, RTFILE_SEEK_CURRENT, NULL);
+    return rc;
+}
+
+static int rtTarFindFile(RTFILE hFile, const char *pszFile, uint64_t *puOffset, uint64_t *pcbSize)
+{
+    /* Assume we are on the file head. */
+    int rc;
+    bool fFound = false;
+    RTTARRECORD record;
+    for (;;)
+    {
+        /* Read & verify a header record */
+        rc = rtTarReadHeaderRecord(hFile, &record);
+        /* Check for error or EOF. */
+        if (RT_FAILURE(rc))
+            break;
+        /* We support normal files only */
+        if (   record.h.linkflag == LF_OLDNORMAL
+            || record.h.linkflag == LF_NORMAL)
+        {
+            if (!RTStrCmp(record.h.name, pszFile))
+            {
+                /* Get the file size */
+                rc = RTStrToUInt64Full(record.h.size, 8, pcbSize);
+                if (RT_FAILURE(rc))
+                    break;
+                /* Seek back, to positionate the file pointer at the start of the header. */
+                rc = RTFileSeek(hFile, -sizeof(RTTARRECORD), RTFILE_SEEK_CURRENT, puOffset);
+                fFound = true;
+                break;
+            }
+        }
+        rc = rtTarSkipData(hFile, &record);
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    if (rc == VERR_TAR_END_OF_FILE)
+        rc = VINF_SUCCESS;
+
+    /* Something found? */
+    if (    RT_SUCCESS(rc)
+        &&  !fFound)
+        rc = VERR_FILE_NOT_FOUND;
+
     return rc;
 }
 
@@ -469,55 +529,491 @@ static int rtTarGetFilesOverallSize(RTFILE hFile, const char * const *papszFiles
     return rc;
 }
 
-/*******************************************************************************
-*   Public Functions                                                         *
-*******************************************************************************/
+/******************************************************************************
+ *   Public Functions                                                         *
+ ******************************************************************************/
 
-RTR3DECL(int) RTTarQueryFileExists(const char *pszTarFile, const char *pszFile)
+RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char* pszTarname, uint32_t fMode)
+{
+    PRTTARINTERNAL pInt = (PRTTARINTERNAL)RTMemAllocZ(sizeof(RTTARINTERNAL));
+    if (!pInt)
+        return VERR_NO_MEMORY;
+
+    pInt->u32Magic = RTTAR_MAGIC;
+
+    int rc;
+    do
+    {
+        /* Open the tar file. */
+        rc = RTFileOpen(&pInt->hTarFile, pszTarname, fMode);
+        if (RT_FAILURE(rc))
+            break;
+    }
+    while(0);
+
+    if (RT_FAILURE(rc))
+    {
+        /* Todo: remove if created by us */
+        if (pInt->hTarFile)
+            RTFileClose(pInt->hTarFile);
+        RTMemFree(pInt);
+    }else
+        *phTar = (RTTAR)pInt;
+
+    return rc;
+}
+
+RTR3DECL(int) RTTarClose(RTTAR hTar)
+{
+    if (hTar == NIL_RTTAR)
+        return VINF_SUCCESS;
+
+    PRTTARINTERNAL pInt = hTar;
+    RTTAR_VALID_RETURN(pInt);
+
+    int rc = VINF_SUCCESS;
+
+    /* gtar gives a warning, but the documentation says EOF is indicated by a
+     * zero block. Disabled for now. */
+#if 0
+    {
+        /* Append the EOF record which is filled all by zeros */
+        RTTARRECORD record;
+        RT_ZERO(record);
+        rc = RTFileWrite(pInt->hTarFile, &record, sizeof(record), NULL);
+    }
+#endif
+
+    if (pInt->hTarFile)
+        rc = RTFileClose(pInt->hTarFile);
+
+    pInt->u32Magic = RTTAR_MAGIC_DEAD;
+
+    RTMemFree(pInt);
+
+    return rc;
+}
+
+RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilename, uint32_t fOpen)
+{
+    AssertReturn((fOpen & RTFILE_O_READ) || (fOpen & RTFILE_O_WRITE), VERR_INVALID_PARAMETER);
+
+    PRTTARINTERNAL pInt = hTar;
+    RTTAR_VALID_RETURN(pInt);
+
+    if (!pInt->hTarFile)
+        return VERR_INVALID_HANDLE;
+
+    if (fOpen & RTFILE_O_WRITE)
+    {
+        if (pInt->fOpenMode & RTFILE_O_READ)
+            return VERR_WRITE_PROTECT;
+        if (pInt->fFileOpenForWrite)
+            return VERR_TOO_MANY_OPEN_FILES;
+    }
+
+    PRTTARFILEINTERNAL pFileInt = (PRTTARFILEINTERNAL)RTMemAllocZ(sizeof(RTTARFILEINTERNAL));
+    if (!pFileInt)
+        return VERR_NO_MEMORY;
+
+    pFileInt->u32Magic = RTTARFILE_MAGIC;
+
+    int rc;
+    do
+    {
+        pFileInt->pTar = pInt;
+        pFileInt->pszFilename = RTStrDup(pszFilename);
+        pFileInt->uStart = 0;
+        pFileInt->cbSize = 0;
+        pFileInt->fOpenMode = fOpen;
+        pFileInt->uCurrentPos = 0;
+
+        if (pFileInt->fOpenMode & RTFILE_O_WRITE)
+        {
+            pInt->fFileOpenForWrite = true;
+            /* If we are in write mode, we also in append mode. Add an dummy
+             * header at the end of the current file. It will be filled by the
+             * close operation. */
+            rc = RTFileSeek(pFileInt->pTar->hTarFile, 0, RTFILE_SEEK_END, &pFileInt->uStart);
+            if (RT_FAILURE(rc))
+                break;
+            RTTARRECORD record;
+            RT_ZERO(record);
+            rc = RTFileWrite(pFileInt->pTar->hTarFile, &record, sizeof(RTTARRECORD), NULL);
+            if (RT_FAILURE(rc))
+                break;
+        }
+        else if (pFileInt->fOpenMode & RTFILE_O_READ)
+        {
+            /* We need to be on the start of the file */
+            rc = RTFileSeek(pFileInt->pTar->hTarFile, 0, RTFILE_SEEK_BEGIN, NULL);
+            if (RT_FAILURE(rc))
+                break;
+            /* Search for the file. */
+            rc = rtTarFindFile(pFileInt->pTar->hTarFile, pszFilename, &pFileInt->uStart, &pFileInt->cbSize);
+            if (RT_FAILURE(rc))
+                break;
+        }
+        else
+        {
+        }
+
+    }
+    while(0);
+
+    /* Cleanup on failure */
+    if (RT_FAILURE(rc))
+    {
+        if (pFileInt->pszFilename)
+            RTStrFree(pFileInt->pszFilename);
+        RTMemFree(pFileInt);
+    }
+    else
+        *phFile = (RTTARFILE)pFileInt;
+
+    return rc;
+}
+
+RTR3DECL(int) RTTarFileClose(RTTARFILE hFile)
+{
+    /* Already closed? */
+    if (hFile == NIL_RTTARFILE)
+        return VINF_SUCCESS;
+
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    int rc = VINF_SUCCESS;
+
+    /* In write mode: */
+    if (pFileInt->fOpenMode & RTFILE_O_WRITE)
+    {
+        pFileInt->pTar->fFileOpenForWrite = false;
+        do
+        {
+            RTTARRECORD record;
+            RT_ZERO(record);
+            /* If the written size isn't 512 byte aligned, we need to fix this. */
+            uint64_t cbSizeAligned = RT_ALIGN(pFileInt->cbSize, sizeof(RTTARRECORD));
+            if (cbSizeAligned != pFileInt->cbSize)
+            {
+                rc = RTFileWriteAt(pFileInt->pTar->hTarFile, pFileInt->uStart + 512 + pFileInt->cbSize, &record, cbSizeAligned - pFileInt->cbSize, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            /* Create a header record for the file */
+            /* Todo: mode, gid, uid, mtime should be setable (or detected myself) */
+            RTTIMESPEC time;
+            RTTimeNow(&time);
+            rc = rtTarCreateHeaderRecord(&record, pFileInt->pszFilename, pFileInt->cbSize, 0, 0, 0600, RTTimeSpecGetSeconds(&time));
+            if (RT_FAILURE(rc))
+                break;
+            /* Write this at the start of the file data */
+            rc = RTFileWriteAt(pFileInt->pTar->hTarFile, pFileInt->uStart, &record, sizeof(RTTARRECORD), NULL);
+            if (RT_FAILURE(rc))
+                break;
+        }
+        while(0);
+    }
+    /* Nothing special in readmode. */
+
+    /* Now cleanup and delete the handle */
+    RTStrFree(pFileInt->pszFilename);
+    pFileInt->u32Magic = RTTARFILE_MAGIC_DEAD;
+    RTMemFree(pFileInt);
+
+    return rc;
+}
+
+RTR3DECL(int) RTTarFileSeek(RTTARFILE hFile, uint64_t uOffset,  unsigned uMethod, uint64_t *poffActual)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    switch (uMethod)
+    {
+        case RTFILE_SEEK_BEGIN:
+        {
+            if (uOffset > pFileInt->cbSize)
+                return VERR_SEEK_ON_DEVICE;
+            pFileInt->uCurrentPos = uOffset;
+            break;
+        }
+        case RTFILE_SEEK_CURRENT:
+        {
+            if (pFileInt->uCurrentPos + uOffset > pFileInt->cbSize)
+                return VERR_SEEK_ON_DEVICE;
+            pFileInt->uCurrentPos += uOffset;
+            break;
+        }
+        case RTFILE_SEEK_END:
+        {
+            if ((int64_t)pFileInt->cbSize - (int64_t)uOffset < 0)
+                return VERR_NEGATIVE_SEEK;
+            pFileInt->uCurrentPos = pFileInt->cbSize - uOffset;
+            break;
+        }
+        default: AssertFailedReturn(VERR_INVALID_PARAMETER); break;
+    }
+
+    return VINF_SUCCESS;
+}
+
+RTR3DECL(uint64_t) RTTarFileTell(RTTARFILE hFile)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN_RC(pFileInt, ~0ULL);
+
+    return pFileInt->uCurrentPos;
+}
+
+RTR3DECL(int) RTTarFileRead(RTTARFILE hFile, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    /* Todo: optimize this, by checking the current pos */
+    return RTTarFileReadAt(hFile, pFileInt->uCurrentPos, pvBuf, cbToRead, pcbRead);
+}
+
+RTR3DECL(int) RTTarFileReadAt(RTTARFILE hFile, uint64_t uOffset, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    size_t cbTmpRead = 0;
+    int rc = RTFileReadAt(pFileInt->pTar->hTarFile, pFileInt->uStart + 512 + uOffset, pvBuf, cbToRead, &cbTmpRead);
+    pFileInt->uCurrentPos = uOffset + cbTmpRead;
+    if (pcbRead)
+        *pcbRead = cbTmpRead;
+
+    return rc;
+}
+
+RTR3DECL(int) RTTarFileWrite(RTTARFILE hFile, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    /* Todo: optimize this, by checking the current pos */
+    return RTTarFileWriteAt(hFile, pFileInt->uCurrentPos, pvBuf, cbToWrite, pcbWritten);
+}
+
+RTR3DECL(int) RTTarFileWriteAt(RTTARFILE hFile, uint64_t uOffset, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    if (!pFileInt->fOpenMode & RTFILE_O_WRITE)
+        return VERR_WRITE_ERROR;
+
+    size_t cbTmpWritten = 0;
+    int rc = RTFileWriteAt(pFileInt->pTar->hTarFile, pFileInt->uStart + 512 + uOffset, pvBuf, cbToWrite, &cbTmpWritten);
+    pFileInt->cbSize += cbTmpWritten;
+    pFileInt->uCurrentPos = uOffset + cbTmpWritten;
+    if (pcbWritten)
+        *pcbWritten = cbTmpWritten;
+
+    return rc;
+}
+
+RTR3DECL(int) RTTarFileGetSize(RTTARFILE hFile, uint64_t *pcbSize)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    *pcbSize = pFileInt->cbSize;
+
+    return VINF_SUCCESS;
+}
+
+RTR3DECL(int) RTTarFileSetSize(RTTARFILE hFile, uint64_t cbSize)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    if (!pFileInt->fOpenMode & RTFILE_O_WRITE)
+        return VERR_WRITE_ERROR;
+
+    /* Check if we already have that size. */
+    /* Todo: shrink files!!!! */
+    if ((int64_t)cbSize - (int64_t)pFileInt->cbSize <= 0)
+        return VINF_SUCCESS;
+    uint64_t cbToCopy = cbSize - pFileInt->cbSize;
+
+    /* Allocate a temporary buffer for copying the tar content in blocks. */
+    size_t cbTmp = 0;
+    void *pvTmp = rtTarMemTmpAlloc(&cbTmp);
+    if (!pvTmp)
+        return VERR_NO_MEMORY;
+    RT_BZERO(pvTmp, cbTmp);
+
+    int rc;
+    uint64_t cbAllWritten = 0;
+    size_t cbToWrite = 0;
+    size_t cbWritten = 0;
+    for (;;)
+    {
+        if (cbAllWritten >= cbToCopy)
+            break;
+        cbToWrite = RT_MIN(cbToCopy - cbAllWritten, cbTmp);
+        rc = RTTarFileWrite(hFile, pvTmp, cbToWrite, &cbWritten);
+        if (RT_FAILURE(rc))
+            break;
+        cbAllWritten += cbWritten;
+    }
+
+    RTMemTmpFree(pvTmp);
+
+    return rc;
+}
+
+RTR3DECL(int) RTTarFileGetMode(RTTARFILE hFile, uint32_t *pfMode)
+{
+    /* Validate input */
+    AssertPtrReturn(pfMode, VERR_INVALID_POINTER);
+
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    /* Read the mode out of the header entry */
+    char mode[8];
+    int rc = RTFileReadAt(pFileInt->pTar->hTarFile, pFileInt->uStart + RT_OFFSETOF(RTTARRECORD, h.mode), mode, 8, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    /* Convert it to an integer */
+    return RTStrToUInt32Full(mode, 8, pfMode);
+}
+
+RTR3DECL(int) RTTarFileSetMode(RTTARFILE hFile, uint32_t fMode)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    if (!pFileInt->fOpenMode & RTFILE_O_WRITE)
+        return VERR_WRITE_ERROR;
+
+    /* Convert the mode to an string. */
+    char mode[8];
+    RTStrPrintf(mode, sizeof(mode), "%0.7o", fMode);
+    /* Write it directly into the header */
+    return RTFileWriteAt(pFileInt->pTar->hTarFile, pFileInt->uStart + RT_OFFSETOF(RTTARRECORD, h.mode), mode, 8, NULL);
+}
+
+RTR3DECL(int) RTTarFileGetTime(RTTARFILE hFile, PRTTIMESPEC pTime)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    /* Read the time out of the header entry */
+    char mtime[12];
+    int rc = RTFileReadAt(pFileInt->pTar->hTarFile, pFileInt->uStart + RT_OFFSETOF(RTTARRECORD, h.mtime), mtime, 12, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    /* Convert it to an integer */
+    int64_t tmpSeconds;
+    rc = RTStrToInt64Full(mtime, 12, &tmpSeconds);
+    /* And back to our time structure */
+    if (RT_SUCCESS(rc))
+        RTTimeSpecSetSeconds(pTime, tmpSeconds);
+
+    return rc;
+}
+
+RTR3DECL(int) RTTarFileSetTime(RTTARFILE hFile, PRTTIMESPEC pTime)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    if (!pFileInt->fOpenMode & RTFILE_O_WRITE)
+        return VERR_WRITE_ERROR;
+
+    /* Convert the time to an string. */
+    char mtime[12];
+    RTStrPrintf(mtime, sizeof(mtime), "%0.11o", RTTimeSpecGetSeconds(pTime));
+    /* Write it directly into the header */
+    return RTFileWriteAt(pFileInt->pTar->hTarFile, pFileInt->uStart + RT_OFFSETOF(RTTARRECORD, h.mtime), mtime, 12, NULL);
+}
+
+RTR3DECL(int) RTTarFileGetOwner(RTTARFILE hFile, uint32_t *pUid, uint32_t *pGid)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    /* Read the uid and gid out of the header entry */
+    char uid[8];
+    int rc = RTFileReadAt(pFileInt->pTar->hTarFile, pFileInt->uStart + RT_OFFSETOF(RTTARRECORD, h.uid), uid, 8, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    char gid[8];
+    rc = RTFileReadAt(pFileInt->pTar->hTarFile, pFileInt->uStart + RT_OFFSETOF(RTTARRECORD, h.gid), gid, 8, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    /* Convert it to integer */
+    rc = RTStrToUInt32Full(uid, 8, pUid);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    return RTStrToUInt32Full(gid, 8, pGid);
+}
+
+RTR3DECL(int) RTTarFileSetOwner(RTTARFILE hFile, uint32_t uid, uint32_t gid)
+{
+    PRTTARFILEINTERNAL pFileInt = hFile;
+    RTTARFILE_VALID_RETURN(pFileInt);
+
+    if (!pFileInt->fOpenMode & RTFILE_O_WRITE)
+        return VERR_WRITE_ERROR;
+
+    int rc = VINF_SUCCESS;
+
+    if (uid != (uint32_t)-1)
+    {
+        /* Convert the uid to an string. */
+        char tmpUid[8];
+        RTStrPrintf(tmpUid, sizeof(tmpUid), "%0.7o", uid);
+        /* Write it directly into the header */
+        rc = RTFileWriteAt(pFileInt->pTar->hTarFile, pFileInt->uStart + RT_OFFSETOF(RTTARRECORD, h.uid), tmpUid, 8, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    if (gid != (uint32_t)-1)
+    {
+        /* Convert the gid to an string. */
+        char tmpGid[8];
+        RTStrPrintf(tmpGid, sizeof(tmpGid), "%0.7o", gid);
+        /* Write it directly into the header */
+        rc = RTFileWriteAt(pFileInt->pTar->hTarFile, pFileInt->uStart + RT_OFFSETOF(RTTARRECORD, h.gid), tmpGid, 8, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return rc;
+}
+
+/******************************************************************************
+ *   Convenience Functions                                                    *
+ ******************************************************************************/
+
+RTR3DECL(int) RTTarFileExists(const char *pszTarFile, const char *pszFile)
 {
     /* Validate input */
     AssertPtrReturn(pszTarFile, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
 
     /* Open the tar file */
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszTarFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    RTTAR hTar;
+    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
 
-    bool fFound = false;
-    RTTARRECORD record;
-    for (;;)
-    {
-        /* Read & verify a header record */
-        rc = rtTarReadHeaderRecord(hFile, &record);
-        /* Check for error or EOF. */
-        if (RT_FAILURE(rc))
-            break;
-        /* We support normal files only */
-        if (   record.h.linkflag == LF_OLDNORMAL
-            || record.h.linkflag == LF_NORMAL)
-        {
-            if (!RTStrCmp(record.h.name, pszFile))
-            {
-                fFound = true;
-                break;
-            }
-        }
-        rc = rtTarSkipData(hFile, &record);
-        if (RT_FAILURE(rc))
-            break;
-    }
+    /* Just try to open that file readonly. If this succeed the file exists. */
+    RTTARFILE hFile;
+    rc = RTTarFileOpen(hTar, &hFile, pszFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc))
+        RTTarFileClose(hFile);
 
-    RTFileClose(hFile);
-
-    if (rc == VERR_TAR_END_OF_FILE)
-        rc = VINF_SUCCESS;
-
-    /* Something found? */
-    if (    RT_SUCCESS(rc)
-        &&  !fFound)
-        rc = VERR_FILE_NOT_FOUND;
+    RTTarClose(hTar);
 
     return rc;
 }
@@ -530,66 +1026,73 @@ RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcF
     AssertPtrReturn(pcFiles, VERR_INVALID_POINTER);
 
     /* Open the tar file */
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszTarFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    RTTAR hTar;
+    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Initialize the file name array with one slot */
-    size_t cFilesAlloc = 1;
-    char **papszFiles = (char**)RTMemAlloc(sizeof(char *));
-    if (!papszFiles)
-    {
-        RTFileClose(hFile);
-        return VERR_NO_MEMORY;
-    }
+    /* This is done by internal methods, cause we didn't have a RTTARDIR
+     * interface, yet. This should be fixed somedays. */
 
-    /* Iterate through the tar file record by record. Skip data records as we
-     * didn't need them. */
-    RTTARRECORD record;
+    PRTTARINTERNAL pInt = hTar;
+    char **papszFiles = 0;
     size_t cFiles = 0;
-    for (;;)
+    do
     {
-        /* Read & verify a header record */
-        rc = rtTarReadHeaderRecord(hFile, &record);
-        /* Check for error or EOF. */
-        if (RT_FAILURE(rc))
-            break;
-        /* We support normal files only */
-        if (   record.h.linkflag == LF_OLDNORMAL
-            || record.h.linkflag == LF_NORMAL)
+        /* Initialize the file name array with one slot */
+        size_t cFilesAlloc = 1;
+        papszFiles = (char**)RTMemAlloc(sizeof(char *));
+        if (!papszFiles)
         {
-            if (cFiles >= cFilesAlloc)
+            return VERR_NO_MEMORY;
+            break;
+        }
+
+        /* Iterate through the tar file record by record. Skip data records as we
+         * didn't need them. */
+        RTTARRECORD record;
+        for (;;)
+        {
+            /* Read & verify a header record */
+            rc = rtTarReadHeaderRecord(pInt->hTarFile, &record);
+            /* Check for error or EOF. */
+            if (RT_FAILURE(rc))
+                break;
+            /* We support normal files only */
+            if (   record.h.linkflag == LF_OLDNORMAL
+                || record.h.linkflag == LF_NORMAL)
             {
-                /* Double the array size, make sure the size doesn't wrap. */
-                void  *pvNew = NULL;
-                size_t cbNew = cFilesAlloc * sizeof(char *) * 2;
-                if (cbNew / sizeof(char *) / 2 == cFilesAlloc)
-                    pvNew = RTMemRealloc(papszFiles, cbNew);
-                if (!pvNew)
+                if (cFiles >= cFilesAlloc)
+                {
+                    /* Double the array size, make sure the size doesn't wrap. */
+                    void  *pvNew = NULL;
+                    size_t cbNew = cFilesAlloc * sizeof(char *) * 2;
+                    if (cbNew / sizeof(char *) / 2 == cFilesAlloc)
+                        pvNew = RTMemRealloc(papszFiles, cbNew);
+                    if (!pvNew)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                    papszFiles = (char **)pvNew;
+                    cFilesAlloc *= 2;
+                }
+
+                /* Duplicate the name */
+                papszFiles[cFiles] = RTStrDup(record.h.name);
+                if (!papszFiles[cFiles])
                 {
                     rc = VERR_NO_MEMORY;
                     break;
                 }
-                papszFiles = (char **)pvNew;
-                cFilesAlloc *= 2;
+                cFiles++;
             }
-
-            /* Duplicate the name */
-            papszFiles[cFiles] = RTStrDup(record.h.name);
-            if (!papszFiles[cFiles])
-            {
-                rc = VERR_NO_MEMORY;
+            rc = rtTarSkipData(pInt->hTarFile, &record);
+            if (RT_FAILURE(rc))
                 break;
-            }
-            cFiles++;
         }
-        rc = rtTarSkipData(hFile, &record);
-        if (RT_FAILURE(rc))
-            break;
     }
-
-    RTFileClose(hFile);
+    while(0);
 
     if (rc == VERR_TAR_END_OF_FILE)
         rc = VINF_SUCCESS;
@@ -606,68 +1109,79 @@ RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcF
             RTStrFree(papszFiles[cFiles]);
         RTMemFree(papszFiles);
     }
+
+    RTTarClose(hTar);
+
     return rc;
 }
 
-RTR3DECL(int) RTTarExtractFileToBuf(const char *pszTarFile, void **ppvBuf, uint64_t *pcbSize, const char *pszFile, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
+RTR3DECL(int) RTTarExtractFileToBuf(const char *pszTarFile, void **ppvBuf, size_t *pcbSize, const char *pszFile, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
 {
     /* Validate input */
     AssertPtrReturn(pszTarFile, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppvBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pvUser, VERR_INVALID_POINTER);
 
-    /* Open the tar file */
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszTarFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    if (RT_FAILURE(rc))
-        return rc;
+    /* Todo: progress bar */
 
-    /* Get the overall size of all files to extract out of the tar archive
-       headers. Only necessary if there is a progress callback. */
-    uint64_t cbOverallSize = 0;
-    if (pfnProgressCallback)
-        rc = rtTarGetFilesOverallSize(hFile, &pszFile, 1, &cbOverallSize);
-    if (RT_SUCCESS(rc))
+    int rc;
+    RTTAR hTar = NIL_RTTAR;
+    RTTARFILE hFile = NIL_RTTARFILE;
+    char *pvTmp = 0;
+    uint64_t cbToCopy = 0;
+    do
     {
-        /* Iterate through the tar file record by record. */
-        RTTARRECORD record;
-        bool fFound = false;
-        uint64_t cbOverallWritten = 0;
+        rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+        if (RT_FAILURE(rc))
+            break;
+        rc = RTTarFileOpen(hTar, &hFile, pszFile, RTFILE_O_OPEN | RTFILE_O_READ);
+        if (RT_FAILURE(rc))
+            break;
+        rc = RTTarFileGetSize(hFile, &cbToCopy);
+        if (RT_FAILURE(rc))
+            break;
+        /* Allocate the memory for the file content. */
+        pvTmp = (char*)RTMemAlloc(cbToCopy);
+        if (!pvTmp)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        size_t cbRead = 0;
+        size_t cbAllRead = 0;
         for (;;)
         {
-            /* Read & verify a header record */
-            rc = rtTarReadHeaderRecord(hFile, &record);
-            /* Check for error or EOF. */
+            if (pfnProgressCallback)
+                pfnProgressCallback((unsigned)(100.0 / cbToCopy * cbAllRead), pvUser);
+            if (cbAllRead == cbToCopy)
+                break;
+            rc = RTTarFileReadAt(hFile, 0, &pvTmp[cbAllRead], cbToCopy - cbAllRead, &cbRead);
             if (RT_FAILURE(rc))
                 break;
-            /* We support normal files only */
-            if (   record.h.linkflag == LF_OLDNORMAL
-                || record.h.linkflag == LF_NORMAL)
-            {
-                if (!RTStrCmp(record.h.name, pszFile))
-                {
-                    fFound = true;
-                    rc = rtTarExtractFileToBuf(hFile, ppvBuf, pcbSize, &record, cbOverallSize, cbOverallWritten, pfnProgressCallback, pvUser);
-                    /* We are finished */
-                    break;
-                }
-                else
-                {
-                    rc = rtTarSkipData(hFile, &record);
-                    if (RT_FAILURE(rc))
-                        break;
-                }
-            }
+            cbAllRead += cbRead;
         }
+    }
+    while(0);
 
-        if (rc == VERR_TAR_END_OF_FILE)
-            rc = VINF_SUCCESS;
-
-        /* If we didn't found the file, indicate an error */
-        if (!fFound && RT_SUCCESS(rc))
-            rc = VERR_FILE_NOT_FOUND;
+    /* Set output values on success */
+    if (RT_SUCCESS(rc))
+    {
+        *pcbSize = cbToCopy;
+        *ppvBuf = pvTmp;
     }
 
-    RTFileClose(hFile);
+    /* Cleanup */
+    if (   RT_FAILURE(rc)
+        && pvTmp)
+        RTMemFree(pvTmp);
+    if (hFile)
+        RTTarFileClose(hFile);
+    if (hTar)
+        RTTarClose(hTar);
+
     return rc;
 }
 
@@ -677,168 +1191,49 @@ RTR3DECL(int) RTTarExtractFiles(const char *pszTarFile, const char *pszOutputDir
     AssertPtrReturn(pszTarFile, VERR_INVALID_POINTER);
     AssertPtrReturn(pszOutputDir, VERR_INVALID_POINTER);
     AssertPtrReturn(papszFiles, VERR_INVALID_POINTER);
+    AssertReturn(cFiles, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pvUser, VERR_INVALID_POINTER);
 
     /* Open the tar file */
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszTarFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    RTTAR hTar;
+    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Get the overall size of all files to extract out of the tar archive
-       headers. Only necessary if there is a progress callback. */
-    uint64_t cbOverallSize = 0;
-    if (pfnProgressCallback)
-        rc = rtTarGetFilesOverallSize(hFile, papszFiles, cFiles, &cbOverallSize);
-    if (RT_SUCCESS(rc))
+    do
     {
-        /* Iterate through the tar file record by record. */
-        RTTARRECORD record;
-        char **paExtracted = (char **)RTMemTmpAllocZ(sizeof(char *) * cFiles);
-        if (paExtracted)
+        /* Get the overall size of all files to extract out of the tar archive
+           headers. Only necessary if there is a progress callback. */
+        uint64_t cbOverallSize = 0;
+        if (pfnProgressCallback)
         {
-            size_t cExtracted = 0;
-            uint64_t cbOverallWritten = 0;
-            for (;;)
-            {
-                /* Read & verify a header record */
-                rc = rtTarReadHeaderRecord(hFile, &record);
-                /* Check for error or EOF. */
-                if (RT_FAILURE(rc))
-                    break;
-                /* We support normal files only */
-                if (   record.h.linkflag == LF_OLDNORMAL
-                    || record.h.linkflag == LF_NORMAL)
-                {
-                    bool fFound = false;
-                    for (size_t i = 0; i < cFiles; ++i)
-                    {
-                        if (!RTStrCmp(record.h.name, papszFiles[i]))
-                        {
-                            fFound = true;
-                            if (cExtracted < cFiles)
-                            {
-                                char *pszTargetFile;
-                                rc = RTStrAPrintf(&pszTargetFile, "%s/%s", pszOutputDir, papszFiles[i]);
-                                if (rc > 0)
-                                {
-                                    rc = rtTarExtractFileToFile(hFile, pszTargetFile, &record, cbOverallSize, cbOverallWritten, pfnProgressCallback, pvUser);
-                                    if (RT_SUCCESS(rc))
-                                        paExtracted[cExtracted++] = pszTargetFile;
-                                    else
-                                        RTStrFree(pszTargetFile);
-                                }
-                                else
-                                    rc = VERR_NO_MEMORY;
-                            }
-                            else
-                                rc = VERR_ALREADY_EXISTS;
-                            break;
-                        }
-                    }
-                    if (RT_FAILURE(rc))
-                        break;
-                    /* If the current record isn't a file in the file list we have to
-                     * skip the data */
-                    if (!fFound)
-                    {
-                        rc = rtTarSkipData(hFile, &record);
-                        if (RT_FAILURE(rc))
-                            break;
-                    }
-                }
-            }
-
-            if (rc == VERR_TAR_END_OF_FILE)
-                rc = VINF_SUCCESS;
-
-            /* If we didn't found all files, indicate an error */
-            if (cExtracted != cFiles && RT_SUCCESS(rc))
-                rc = VERR_FILE_NOT_FOUND;
-
-            /* Cleanup the names of the extracted files, deleting them on failure. */
-            while (cExtracted-- > 0)
-            {
-                if (RT_FAILURE(rc))
-                    RTFileDelete(paExtracted[cExtracted]);
-                RTStrFree(paExtracted[cExtracted]);
-            }
-            RTMemTmpFree(paExtracted);
+//            rc = rtTarGetFilesOverallSize(hFile, papszFiles, cFiles, &cbOverallSize);
+//            if (RT_FAILURE(rc))
+//                break;
         }
-        else
-            rc = VERR_NO_TMP_MEMORY;
-    }
 
-    RTFileClose(hFile);
-    return rc;
-}
-
-RTR3DECL(int) RTTarExtractByIndex(const char *pszTarFile, const char *pszOutputDir, size_t iIndex, char **ppszFileName, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
-{
-    /* Validate input */
-    AssertPtrReturn(pszTarFile, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszOutputDir, VERR_INVALID_POINTER);
-
-    /* Open the tar file */
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszTarFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* Iterate through the tar file record by record. */
-    RTTARRECORD record;
-    size_t iFile = 0;
-    bool fFound = false;
-    for (;;)
-    {
-        /* Read & verify a header record */
-        rc = rtTarReadHeaderRecord(hFile, &record);
-        /* Check for error or EOF. */
-        if (RT_FAILURE(rc))
-            break;
-        /* We support normal files only */
-        if (   record.h.linkflag == LF_OLDNORMAL
-            || record.h.linkflag == LF_NORMAL)
+        uint64_t cbOverallWritten = 0;
+        for(size_t i=0; i < cFiles; ++i)
         {
-            if (iIndex == iFile)
-            {
-                fFound = true;
-                char *pszTargetName;
-                rc = RTStrAPrintf(&pszTargetName, "%s/%s", pszOutputDir, record.h.name);
-                if (rc > 0)
-                {
-                    uint64_t cbOverallSize;
-                    uint64_t cbOverallWritten = 0;
-                    /* Get the file size */
-                    rc = RTStrToUInt64Full(record.h.size, 8, &cbOverallSize);
-                    if (RT_FAILURE(rc))
-                        break;
-                    rc = rtTarExtractFileToFile(hFile, pszTargetName, &record, cbOverallSize, cbOverallWritten, pfnProgressCallback, pvUser);
-                    /* On success pass on the filename if requested. */
-                    if (    RT_SUCCESS(rc)
-                        &&  ppszFileName)
-                        *ppszFileName = pszTargetName;
-                    else
-                        RTStrFree(pszTargetName);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
+            RTTARFILE hFile;
+            rc = RTTarFileOpen(hTar, &hFile, papszFiles[i], RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+            if (RT_FAILURE(rc))
                 break;
-            }
+            char *pszTargetFile;
+            rc = RTStrAPrintf(&pszTargetFile, "%s/%s", pszOutputDir, papszFiles[i]);
+            if (RT_FAILURE(rc))
+                break;
+            rc = rtTarExtractFileToFile(hFile, pszTargetFile, cbOverallSize, cbOverallWritten, pfnProgressCallback, pvUser);
+            RTStrFree(pszTargetFile);
+            RTTarFileClose(hFile);
+            if (RT_FAILURE(rc))
+                break;
         }
-        rc = rtTarSkipData(hFile, &record);
-        if (RT_FAILURE(rc))
-            break;
-        ++iFile;
     }
+    while(0);
 
-    RTFileClose(hFile);
-
-    if (rc == VERR_TAR_END_OF_FILE)
-        rc = VINF_SUCCESS;
-
-    /* If we didn't found the index, indicate an error */
-    if (!fFound && RT_SUCCESS(rc))
-        rc = VERR_FILE_NOT_FOUND;
+    RTTarClose(hTar);
 
     return rc;
 }
@@ -848,6 +1243,8 @@ RTR3DECL(int) RTTarExtractAll(const char *pszTarFile, const char *pszOutputDir, 
     /* Validate input */
     AssertPtrReturn(pszTarFile, VERR_INVALID_POINTER);
     AssertPtrReturn(pszOutputDir, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pvUser, VERR_INVALID_POINTER);
 
     char **papszFiles;
     size_t cFiles;
@@ -866,10 +1263,12 @@ RTR3DECL(int) RTTarCreate(const char *pszTarFile, const char * const *papszFiles
     /* Validate input */
     AssertPtrReturn(pszTarFile, VERR_INVALID_POINTER);
     AssertPtrReturn(papszFiles, VERR_INVALID_POINTER);
+    AssertReturn(cFiles, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pvUser, VERR_INVALID_POINTER);
 
-    /* Open the tar file */
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszTarFile, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+    RTTAR hTar;
+    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_CREATE | RTFILE_O_READWRITE | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -885,37 +1284,16 @@ RTR3DECL(int) RTTarCreate(const char *pszTarFile, const char * const *papszFiles
                 break;
             cbOverallSize += cbSize;
         }
-
-    if (RT_SUCCESS(rc))
+    uint64_t cbOverallWritten = 0;
+    for (size_t i = 0; i < cFiles; ++i)
     {
-        uint64_t cbOverallWritten = 0;
-
-        for (size_t i = 0; i < cFiles; ++i)
-        {
-            rc = rtTarAppendFileFromFile(hFile, papszFiles[i], cbOverallSize, cbOverallWritten, pfnProgressCallback, pvUser);
-            if (RT_FAILURE(rc))
-                break;
-        }
-
-        /* gtar gives a warning, but the documentation says EOF is indicated by a
-         * zero block. Disabled for now. */
-#if 0
-        if (RT_SUCCESS(rc))
-        {
-            /* Append the EOF record which is filled all by zeros */
-            RTTARRECORD record;
-            ASMMemFill32(&record, sizeof(record), 0);
-            rc = RTFileWrite(hFile, &record, sizeof(record), NULL);
-        }
-#endif
+        rc = rtTarAppendFileFromFile(hTar, papszFiles[i], cbOverallSize, cbOverallWritten, pfnProgressCallback, pvUser);
+        if (RT_FAILURE(rc))
+            break;
     }
 
-    /* Time to close the new tar archive */
-    RTFileClose(hFile);
-
-    /* Delete the freshly created tar archive on failure */
-    if (RT_FAILURE(rc))
-        RTFileDelete(pszTarFile);
+    /* Cleanup */
+    RTTarClose(hTar);
 
     return rc;
 }
