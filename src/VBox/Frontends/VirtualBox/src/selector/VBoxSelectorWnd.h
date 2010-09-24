@@ -49,9 +49,9 @@ class VBoxSelectorWnd : public QIWithRetranslateUI2<QMainWindow>
 
 public:
 
-    VBoxSelectorWnd (VBoxSelectorWnd **aSelf,
-                     QWidget* aParent = 0,
-                     Qt::WindowFlags aFlags = Qt::Window);
+    VBoxSelectorWnd(VBoxSelectorWnd **aSelf,
+                    QWidget* aParent = 0,
+                    Qt::WindowFlags aFlags = Qt::Window);
     virtual ~VBoxSelectorWnd();
 
 signals:
@@ -67,25 +67,21 @@ public slots:
     void fileExit();
 
     void vmNew();
-    void vmSettings (const QString &aCategory = QString::null,
-                     const QString &aControl = QString::null,
-                     const QString & = QString::null);
-    void vmDelete (const QString & = QString::null);
-    void vmStart (const QString & = QString::null);
-    void vmDiscard (const QString & = QString::null);
-    void vmPause (bool, const QString & = QString::null);
-    void vmRefresh (const QString & = QString::null);
-    void vmShowLogs (const QString & = QString::null);
+    void vmSettings(const QString &aCategory = QString::null, const QString &aControl = QString::null, const QString & = QString::null);
+    void vmDelete(const QString & = QString::null);
+    void vmStart(const QString & = QString::null);
+    void vmDiscard(const QString & = QString::null);
+    void vmPause(bool, const QString & = QString::null);
+    void vmRefresh(const QString & = QString::null);
+    void vmShowLogs(const QString & = QString::null);
 
     void refreshVMList();
-    void refreshVMItem (const QString &aID, bool aDetails,
-                                          bool aSnapshots,
-                                          bool aDescription);
+    void refreshVMItem(const QString &aID, bool aDetails, bool aSnapshots, bool aDescription);
 
-    void showContextMenu (const QPoint &aPoint);
+    void showContextMenu(const QPoint &aPoint);
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    void trayIconActivated (QSystemTrayIcon::ActivationReason aReason);
+    void trayIconActivated(QSystemTrayIcon::ActivationReason aReason);
     void showWindow();
 #endif
 
@@ -101,22 +97,19 @@ public slots:
 protected:
 
     /* Events */
-    bool event (QEvent *aEvent);
-    void closeEvent (QCloseEvent *aEvent);
+    bool event(QEvent *aEvent);
+    void closeEvent(QCloseEvent *aEvent);
 //#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
-//    bool eventFilter (QObject *aObject, QEvent *aEvent);
+//    bool eventFilter(QObject *aObject, QEvent *aEvent);
 //#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
 
     void retranslateUi();
 
 private slots:
 
-    void vmListViewCurrentChanged (bool aRefreshDetails = true,
-                                   bool aRefreshSnapshots = true,
-                                   bool aRefreshDescription = true);
-
+    void vmListViewCurrentChanged(bool aRefreshDetails = true, bool aRefreshSnapshots = true, bool aRefreshDescription = true);
     void mediumEnumStarted();
-    void mediumEnumFinished (const VBoxMediaList &);
+    void mediumEnumFinished(const VBoxMediaList &);
 
     /* VirtualBox callback events we're interested in */
 
