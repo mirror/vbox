@@ -184,7 +184,7 @@ NTSTATUS vboxWddmGhDisplayUpdateScreenPos(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_S
     return Status;
 }
 
-NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource)
+NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
     PVBOXWDDM_ALLOCATION pAllocation = VBOXWDDM_FB_ALLOCATION(pSource);
     VBOXVIDEOOFFSET offVram = vboxWddmValidatePrimary(pAllocation);
@@ -195,7 +195,9 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pS
     /*
      * Set the current mode into the hardware.
      */
-    NTSTATUS Status = vboxWddmGhDisplaySetMode(pDevExt, pAllocation);
+    NTSTATUS Status= vboxWddmDisplaySettingsQueryPos(pDevExt, VidPnSourceId, &pSource->VScreenPos);
+    Assert(Status == STATUS_SUCCESS);
+    Status = vboxWddmGhDisplaySetMode(pDevExt, pAllocation);
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
@@ -218,7 +220,8 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pS
 }
 
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
-bool vboxWddmCheckUpdateShadowAddress(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, UINT SegmentId, VBOXVIDEOOFFSET offVram)
+bool vboxWddmCheckUpdateShadowAddress(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource,
+        D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, UINT SegmentId, VBOXVIDEOOFFSET offVram)
 {
     if (pSource->pPrimaryAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
     {
@@ -231,7 +234,7 @@ bool vboxWddmCheckUpdateShadowAddress(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURC
     pSource->pShadowAllocation->SegmentId = SegmentId;
     pSource->pShadowAllocation->offVram = offVram;
 
-    NTSTATUS Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource);
+    NTSTATUS Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource, VidPnSourceId);
     Assert(Status == STATUS_SUCCESS);
     if (Status != STATUS_SUCCESS)
         drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
@@ -271,96 +274,6 @@ VBOXWDDM_HGSMICMD_TYPE vboxWddmHgsmiGetCmdTypeFromOffset(PDEVICE_EXTENSION pDevE
     return VBOXWDDM_HGSMICMD_TYPE_UNDEFINED;
 }
 
-
-#define VBOXWDDM_REG_DRVKEY_PREFIX L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Class\\"
-
-NTSTATUS vboxWddmRegQueryDrvKeyName(PDEVICE_EXTENSION pDevExt, ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
-{
-    WCHAR fallBackBuf[2];
-    PWCHAR pSuffix;
-    bool bFallback = false;
-
-    if (cbBuf > sizeof(VBOXWDDM_REG_DRVKEY_PREFIX))
-    {
-        wcscpy(pBuf, VBOXWDDM_REG_DRVKEY_PREFIX);
-        pSuffix = pBuf + (sizeof (VBOXWDDM_REG_DRVKEY_PREFIX)-2);
-        cbBuf -= sizeof (VBOXWDDM_REG_DRVKEY_PREFIX)-2;
-    }
-    else
-    {
-        pSuffix = fallBackBuf;
-        cbBuf = sizeof (fallBackBuf);
-        bFallback = true;
-    }
-
-    NTSTATUS Status = IoGetDeviceProperty (pDevExt->pPDO,
-                                  DevicePropertyDriverKeyName,
-                                  cbBuf,
-                                  pSuffix,
-                                  &cbBuf);
-    if (Status == STATUS_SUCCESS && bFallback)
-        Status = STATUS_BUFFER_TOO_SMALL;
-    if (Status == STATUS_BUFFER_TOO_SMALL)
-        *pcbResult = cbBuf + sizeof (VBOXWDDM_REG_DRVKEY_PREFIX)-2;
-
-    return Status;
-}
-
-NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK fAccess)
-{
-    OBJECT_ATTRIBUTES ObjAttr;
-    UNICODE_STRING RtlStr;
-    RtlStr.Buffer = pName;
-    RtlStr.Length = USHORT(wcslen(pName) * sizeof(WCHAR));
-    RtlStr.MaximumLength = RtlStr.Length + sizeof(WCHAR);
-
-    InitializeObjectAttributes(&ObjAttr, &RtlStr, OBJ_CASE_INSENSITIVE, NULL, NULL);
-
-    return ZwOpenKey(phKey, fAccess, &ObjAttr);
-}
-
-NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT PDWORD pDword)
-{
-    UCHAR Buf[32]; /* should be enough */
-    ULONG cbBuf;
-    PKEY_VALUE_PARTIAL_INFORMATION pInfo = (PKEY_VALUE_PARTIAL_INFORMATION)Buf;
-    UNICODE_STRING RtlStr;
-    RtlStr.Buffer = pName;
-    RtlStr.Length = USHORT(wcslen(pName) * sizeof(WCHAR));
-    RtlStr.MaximumLength = RtlStr.Length + sizeof(WCHAR);
-    NTSTATUS Status = ZwQueryValueKey(hKey,
-                &RtlStr,
-                KeyValuePartialInformation,
-                pInfo,
-                sizeof(Buf),
-                &cbBuf);
-    if (Status == STATUS_SUCCESS)
-    {
-        if (pInfo->Type == REG_DWORD)
-        {
-            Assert(pInfo->DataLength == 4);
-            *pDword = *((PULONG)pInfo->Data);
-            return STATUS_SUCCESS;
-        }
-    }
-
-    return STATUS_INVALID_PARAMETER;
-}
-
-NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT DWORD val)
-{
-    UCHAR Buf[32]; /* should be enough */
-    PKEY_VALUE_PARTIAL_INFORMATION pInfo = (PKEY_VALUE_PARTIAL_INFORMATION)Buf;
-    UNICODE_STRING RtlStr;
-    RtlStr.Buffer = pName;
-    RtlStr.Length = USHORT(wcslen(pName) * sizeof(WCHAR));
-    RtlStr.MaximumLength = RtlStr.Length + sizeof(WCHAR);
-    return ZwSetValueKey(hKey, &RtlStr,
-            NULL, /* IN ULONG  TitleIndex  OPTIONAL, reserved */
-            REG_DWORD,
-            &val,
-            sizeof(val));
-}
 
 VP_STATUS VBoxVideoCmnRegQueryDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t *pVal)
 {
@@ -541,6 +454,10 @@ static void vboxWddmDevExtZeroinit(PDEVICE_EXTENSION pDevExt, CONST PDEVICE_OBJE
 {
     memset(pDevExt, 0, sizeof (DEVICE_EXTENSION));
     pDevExt->pPDO = pPDO;
+    PWCHAR pName = (PWCHAR)(((uint8_t*)pDevExt) + VBOXWDDM_ROUNDBOUND(sizeof (DEVICE_EXTENSION), 8));
+    RtlInitUnicodeString(&pDevExt->RegKeyName, pName);
+    pName += (pDevExt->RegKeyName.Length + 2)/2;
+    RtlInitUnicodeString(&pDevExt->VideoGuid, pName);
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
     for (int i = 0; i < RT_ELEMENTS(pDevExt->aSources); ++i)
     {
@@ -563,20 +480,45 @@ NTSTATUS DxgkDdiAddDevice(
     vboxVDbgBreakFv();
 
     NTSTATUS Status = STATUS_SUCCESS;
+    PDEVICE_EXTENSION pDevExt;
 
-    PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(sizeof (DEVICE_EXTENSION));
-    if (pContext)
+    WCHAR RegKeyBuf[512];
+    ULONG cbRegKeyBuf = sizeof (RegKeyBuf);
+
+    Status = IoGetDeviceProperty (PhysicalDeviceObject,
+                                  DevicePropertyDriverKeyName,
+                                  cbRegKeyBuf,
+                                  RegKeyBuf,
+                                  &cbRegKeyBuf);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
     {
-        vboxWddmDevExtZeroinit(pContext, PhysicalDeviceObject);
-        *MiniportDeviceContext = pContext;
-    }
-    else
-    {
-        Status  = STATUS_NO_MEMORY;
-        drprintf(("VBoxVideoWddm: ERROR, failed to create context\n"));
+        WCHAR VideoGuidBuf[512];
+        ULONG cbVideoGuidBuf = sizeof (VideoGuidBuf);
+
+        Status = vboxWddmRegQueryVideoGuidString(cbVideoGuidBuf, VideoGuidBuf, &cbVideoGuidBuf);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            pDevExt = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(VBOXWDDM_ROUNDBOUND(sizeof (DEVICE_EXTENSION), 8) + cbRegKeyBuf + cbVideoGuidBuf);
+            if (pDevExt)
+            {
+                PWCHAR pName = (PWCHAR)(((uint8_t*)pDevExt) + VBOXWDDM_ROUNDBOUND(sizeof (DEVICE_EXTENSION), 8));
+                memcpy(pName, RegKeyBuf, cbRegKeyBuf);
+                pName += cbRegKeyBuf/2;
+                memcpy(pName, VideoGuidBuf, cbVideoGuidBuf);
+                vboxWddmDevExtZeroinit(pDevExt, PhysicalDeviceObject);
+                *MiniportDeviceContext = pDevExt;
+            }
+            else
+            {
+                Status  = STATUS_NO_MEMORY;
+                drprintf(("VBoxVideoWddm: ERROR, failed to create context\n"));
+            }
+        }
     }
 
-    dfprintf(("<== "__FUNCTION__ ", status(0x%x), pContext(0x%x)\n", Status, pContext));
+    dfprintf(("<== "__FUNCTION__ ", Status(0x%x), pDevExt(0x%x)\n", Status, pDevExt));
 
     return Status;
 }
@@ -2180,7 +2122,8 @@ DxgkDdiSubmitCommand(
             PVBOXWDDM_ALLOCATION pDstAlloc = pPrivateData->DstAllocInfo.pAlloc;
             PVBOXWDDM_ALLOCATION pSrcAlloc = pPrivateData->SrcAllocInfo.pAlloc;
             vboxWddmAssignShadow(pDevExt, pSource, pSrcAlloc, pDstAlloc->SurfDesc.VidPnSourceId);
-            vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
+            vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pDstAlloc->SurfDesc.VidPnSourceId,
+                    pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
             PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW pRFS = (PVBOXWDDM_DMA_PRESENT_RENDER_FROM_SHADOW)pPrivateData;
             uint32_t cDMACmdsOutstanding = ASMAtomicReadU32(&pDevExt->cDMACmdsOutstanding);
             if (!cDMACmdsOutstanding)
@@ -2223,7 +2166,8 @@ DxgkDdiSubmitCommand(
                                 RECT rect;
                                 Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_SYSTEM);
                                 vboxWddmAssignShadow(pDevExt, pSource, pSrcAlloc, pDstAlloc->SurfDesc.VidPnSourceId);
-                                vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
+                                vboxWddmCheckUpdateShadowAddress(pDevExt, pSource,
+                                        pDstAlloc->SurfDesc.VidPnSourceId, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
                                 if (pBlt->DstRects.UpdateRects.cRects)
                                 {
                                     rect = pBlt->DstRects.UpdateRects.aRects[0];
@@ -3381,7 +3325,7 @@ DxgkDdiSetVidPnSourceAddress(
                 pSource->offVram = VBOXVIDEOOFFSET_VOID;
 #endif
                 /* should not generally happen, but still inform host*/
-                Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource);
+                Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource, pSetVidPnSourceAddress->VidPnSourceId);
                 Assert(Status == STATUS_SUCCESS);
                 if (Status != STATUS_SUCCESS)
                     drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
@@ -3446,7 +3390,7 @@ DxgkDdiSetVidPnSourceVisibility(
                         /* to ensure the resize request gets issued in case we exit a full-screen D3D mode */
                         pSource->offVram = VBOXVIDEOOFFSET_VOID;
 #endif
-                        Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource);
+                        Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource, pSetVidPnSourceVisibility->VidPnSourceId);
                         Assert(Status == STATUS_SUCCESS);
                         if (Status != STATUS_SUCCESS)
                             drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
@@ -4530,6 +4474,10 @@ DxgkDdiCreateContext(
             Assert(!pCreateContext->pPrivateDriverData);
             Assert(pCreateContext->Flags.Value <= 2); /* 2 is a GDI context in Win7 */
             pContext->enmType = VBOXWDDM_CONTEXT_TYPE_SYSTEM;
+            for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
+            {
+                pDevExt->aSources[i].offVram = VBOXVIDEOOFFSET_VOID;
+            }
         }
         else
         {
