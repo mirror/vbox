@@ -1673,63 +1673,77 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetSubSystemVendorId  (&pThis->dev, 0x0000); /* 2c ro - intel.) */
     PCIDevSetSubSystemId        (&pThis->dev, 0x0000); /* 2e ro. */
     PCIDevSetInterruptLine      (&pThis->dev, 0x00);   /* 3c rw. */
-    PCIDevSetInterruptPin       (&pThis->dev, 0x01);   /* 3d ro - INTA#. */             Assert (pThis->dev.config[0x3d] == 0x01);
-    PCIDevSetCapabilityList(&pThis->dev, 0x50); /* ICH6 datasheet 18.1.16 */
+    PCIDevSetInterruptPin       (&pThis->dev, 0x01);   /* 3d ro - INTA#. */
+
+//#define HDA_AS_PCI_EXPRESS
+
+#ifdef HDA_AS_PCI_EXPRESS
+    PCIDevSetCapabilityList     (&pThis->dev, 0x80);
+#else
+    PCIDevSetCapabilityList     (&pThis->dev, 0x50);   /* ICH6 datasheet 18.1.16 */
+#endif
 
     //** @todo r=michaln: If there are really no PCIDevSetXx for these, the meaning
     // of these values needs to be properly documented!
     /* HDCTL off 0x40 bit 0 selects signaling mode (1-HDA, 0 - Ac97) 18.1.19 */
-    pThis->dev.config[0x40] = 0x01;
+    PCIDevSetByte(&pThis->dev, 0x40, 0x01);
 
-    pThis->dev.config[0x50] = VBOX_PCI_CAP_ID_PM;
-    pThis->dev.config[0x51] = 0x00; /* next */
-    pThis->dev.config[0x52] = VBOX_PCI_PM_CAP_DSI | 0x02;
-    pThis->dev.config[0x53] = 0x00; /* PM - disabled,  */
+    /* Power Management */
+    PCIDevSetByte(&pThis->dev, 0x50 + 0, VBOX_PCI_CAP_ID_PM);
+    PCIDevSetByte(&pThis->dev, 0x50 + 1, 0x0); /* next */
+    PCIDevSetWord(&pThis->dev, 0x50 + 2, VBOX_PCI_PM_CAP_DSI | 0x02 /* version, PM1.1 */ );
 
-#if 0
-    pThis->dev.config[0x60] = VBOX_PCI_CAP_ID_MSI;
-    pThis->dev.config[0x61] = 0x70; /* next */
-    pThis->dev.config[0x62] = 0x00;
-    pThis->dev.config[0x63] = VBOX_PCI_MSIX_FLAGS_ENABLE >> 8;
+#ifdef HDA_AS_PCI_EXPRESS
+    /* Message Signalled Interrupts, up to 28 bytes */
+    PCIDevSetByte(&pThis->dev,  0x60 + 0, VBOX_PCI_CAP_ID_MSI);
+    PCIDevSetByte(&pThis->dev,  0x60 + 1, 0x50); /* next */
+    PCIDevSetWord(&pThis->dev,  0x60 + 2, 0 ? VBOX_PCI_MSIX_FLAGS_ENABLE : 0);
+    /* Physical address of MSI, could be 64-bit if VBOX_PCI_MSI_FLAGS_64BIT */
+    PCIDevSetDWord(&pThis->dev, 0x60 + 4, 0 ? 0x00000001 : 0);
 #endif
 
-#if 0
-    pThis->dev.config[0x90] = VBOX_PCI_CAP_ID_EXP; /* PCI_Express */
-    pThis->dev.config[0x90+1] = 0x50; /* next */
+#ifdef HDA_AS_PCI_EXPRESS
+    /* PCI Express */
+    PCIDevSetByte  (&pThis->dev, 0x80 + 0, VBOX_PCI_CAP_ID_EXP); /* PCI_Express */
+    PCIDevSetByte  (&pThis->dev, 0x80 + 1, 0x60); /* next */
     /* Device flags */
-    PCIDevSetWord  (&pThis->dev, 0x90 + 2, /* version */ 0x1);
+    PCIDevSetWord  (&pThis->dev, 0x80 + 2,
+                    /* version */ 0x1     |
+                    /* Root Complex Integrated Endpoint */ (VBOX_PCI_EXP_TYPE_ROOT_INT_EP << 4) |
+                    /* MSI */ (100) << 9
+                    );
     /* Device capabilities */
-    PCIDevSetDWord (&pThis->dev, 0x90 + 4, 0);
+    PCIDevSetDWord (&pThis->dev, 0x80 + 4, VBOX_PCI_EXP_DEVCAP_FLRESET);
     /* Device control */
-    PCIDevSetWord  (&pThis->dev, 0x90 + 8, 0);
+    PCIDevSetWord  (&pThis->dev, 0x80 + 8, 0);
     /* Device status */
-    PCIDevSetWord  (&pThis->dev, 0x90 + 10, 0);
+    PCIDevSetWord  (&pThis->dev, 0x80 + 10, 0);
     /* Link caps */
-    PCIDevSetDWord (&pThis->dev, 0x90 + 12, 0);
+    PCIDevSetDWord (&pThis->dev, 0x80 + 12, 0);
     /* Link control */
-    PCIDevSetWord  (&pThis->dev, 0x90 + 16, 0);
+    PCIDevSetWord  (&pThis->dev, 0x80 + 16, 0);
     /* Link status */
-    PCIDevSetWord  (&pThis->dev, 0x90 + 18, 0);
+    PCIDevSetWord  (&pThis->dev, 0x80 + 18, 0);
     /* Slot capabilities */
-    PCIDevSetDWord (&pThis->dev, 0x90 + 20, 0);
+    PCIDevSetDWord (&pThis->dev, 0x80 + 20, 0);
     /* Slot control */
-    PCIDevSetWord  (&pThis->dev, 0x90 + 24, 0);
+    PCIDevSetWord  (&pThis->dev, 0x80 + 24, 0);
     /* Slot status */
-    PCIDevSetWord  (&pThis->dev, 0x90 + 26, 0);
+    PCIDevSetWord  (&pThis->dev, 0x80 + 26, 0);
     /* Root control */
-    PCIDevSetWord  (&pThis->dev, 0x90 + 28, 0);
+    PCIDevSetWord  (&pThis->dev, 0x80 + 28, 0);
     /* Root capabilities */
-    PCIDevSetWord  (&pThis->dev, 0x90 + 30, 0);
+    PCIDevSetWord  (&pThis->dev, 0x80 + 30, 0);
     /* Root status */
-    PCIDevSetDWord (&pThis->dev, 0x90 + 32, 0);
+    PCIDevSetDWord (&pThis->dev, 0x80 + 32, 0);
     /* Device capabilities 2 */
-    PCIDevSetDWord (&pThis->dev, 0x90 + 36, 0);
+    PCIDevSetDWord (&pThis->dev, 0x80 + 36, 0);
     /* Device control 2 */
-    PCIDevSetQWord (&pThis->dev, 0x90 + 40, 0);
+    PCIDevSetQWord (&pThis->dev, 0x80 + 40, 0);
     /* Link control 2 */
-    PCIDevSetQWord (&pThis->dev, 0x90 + 48, 0);
+    PCIDevSetQWord (&pThis->dev, 0x80 + 48, 0);
     /* Slot control 2 */
-    PCIDevSetWord  (&pThis->dev, 0x90 + 56, 0);
+    PCIDevSetWord  (&pThis->dev, 0x80 + 56, 0);
 #endif
 
     /*
