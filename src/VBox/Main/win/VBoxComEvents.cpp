@@ -39,7 +39,7 @@ HRESULT ComEventsHelper::init(const com::Guid &aGuid)
     if (FAILED(hr))
         return hr;
 
-    hr = ptlib->GetTypeInfoOfGuid(aGuid, &ptinfo);
+    hr = ptlib->GetTypeInfoOfGuid(aGuid.ref(), &ptinfo);
     if (FAILED(hr))
         return hr;
 

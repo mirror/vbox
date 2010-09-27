@@ -3790,12 +3790,12 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                  * not modified by other code, so no need to copy. */
                 if (fSetImageId)
                 {
-                    vrc = VDSetUuid(hdd, 0, m->uuidImage);
+                    vrc = VDSetUuid(hdd, 0, m->uuidImage.raw());
                     ComAssertRCThrow(vrc, E_FAIL);
                 }
                 if (fSetParentId)
                 {
-                    vrc = VDSetParentUuid(hdd, 0, m->uuidParentImage);
+                    vrc = VDSetParentUuid(hdd, 0, m->uuidParentImage.raw());
                     ComAssertRCThrow(vrc, E_FAIL);
                 }
                 /* zap the information, these are no long-term members */
@@ -5624,7 +5624,7 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
                 if (RT_FAILURE(vrc))
                     throw vrc;
 
-                vrc = VDSetParentUuid(hdd, VD_LAST_IMAGE, m->id);
+                vrc = VDSetParentUuid(hdd, VD_LAST_IMAGE, m->id.raw());
                 if (RT_FAILURE(vrc))
                     throw vrc;
 
@@ -6138,7 +6138,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                             throw vrc;
 
                         vrc = VDSetParentUuid(hdd, VD_LAST_IMAGE,
-                                              pTarget->m->id);
+                                              pTarget->m->id.raw());
                         if (RT_FAILURE(vrc))
                             throw vrc;
 

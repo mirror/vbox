@@ -305,7 +305,7 @@ int findComPtrFromId(struct soap *soap,
 
         // QueryInterface tests whether p actually supports the templated T interface desired by caller
         T *pT;
-        pobjUnknown->QueryInterface(guidCaller, (void**)&pT);      // this adds a reference count
+        pobjUnknown->QueryInterface(guidCaller.ref(), (void**)&pT);      // this adds a reference count
         if (pT)
         {
             // assign to caller's ComPtr<T>; use asOutParam() to avoid adding another reference, QueryInterface() already added one

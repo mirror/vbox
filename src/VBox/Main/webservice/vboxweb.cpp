@@ -953,7 +953,7 @@ void RaiseSoapRuntimeFault2(struct soap *soap,
                             IUnknown *pObj,
                             const com::Guid &iid)
 {
-    com::ErrorInfo info(pObj, iid);
+    com::ErrorInfo info(pObj, iid.ref());
 
     WEBDEBUG(("   error, raising SOAP exception\n"));
 
