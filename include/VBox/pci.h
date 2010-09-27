@@ -883,6 +883,42 @@ DECLINLINE(uint8_t) PCIDevGetInterruptPin(PPCIDEVICE pPciDev)
     return PCIDevGetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN);
 }
 
+#ifdef PCIDEVICEINT_DECLARED
+DECLINLINE(void) PCISetRequestedDevfunc(PPCIDEVICE pDev)
+{
+    pDev->Int.s.uFlags |= PCIDEV_FLAG_REQUESTED_DEVFUNC;
+}
+
+DECLINLINE(void) PCIClearRequestedDevfunc(PPCIDEVICE pDev)
+{
+    pDev->Int.s.uFlags &= ~PCIDEV_FLAG_REQUESTED_DEVFUNC;
+}
+
+DECLINLINE(bool) PCIIsRequestedDevfunc(PPCIDEVICE pDev)
+{
+    return (pDev->Int.s.uFlags & PCIDEV_FLAG_REQUESTED_DEVFUNC) != 0;
+}
+
+DECLINLINE(void) PCISetPci2PciBridge(PPCIDEVICE pDev)
+{
+    pDev->Int.s.uFlags |= PCIDEV_FLAG_PCI_TO_PCI_BRIDGE;
+}
+
+DECLINLINE(bool) PCIIsPci2PciBridge(PPCIDEVICE pDev)
+{
+    return (pDev->Int.s.uFlags & PCIDEV_FLAG_PCI_TO_PCI_BRIDGE) != 0;
+}
+
+DECLINLINE(void) PCISetPciExpress(PPCIDEVICE pDev)
+{
+    pDev->Int.s.uFlags |= PCIDEV_FLAG_PCI_EXPRESS_DEVICE;
+}
+
+DECLINLINE(bool) PCIIsPciExpress(PPCIDEVICE pDev)
+{
+    return (pDev->Int.s.uFlags & PCIDEV_FLAG_PCI_EXPRESS_DEVICE) != 0;
+}
+#endif
 
 /** @} */
 

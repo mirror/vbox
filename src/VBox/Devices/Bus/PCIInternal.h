@@ -71,6 +71,18 @@ typedef PFNPCIBRIDGECONFIGWRITE *PPFNPCIBRIDGECONFIGWRITE;
 /* Forward declaration */
 struct PCIBus;
 
+enum {
+    /** Set if the specific device fun was requested by PDM.
+     * If clear the device and it's functions can be relocated to satisfy the slot request of another device. */
+    PCIDEV_FLAG_REQUESTED_DEVFUNC = 1<<0,
+    /** Flag whether the device is a pci-to-pci bridge.
+     * This is set prior to device registration.  */
+    PCIDEV_FLAG_PCI_TO_PCI_BRIDGE = 1<<1,
+    /** Flag whether the device is a PCI Express device.
+     * This is set prior to device registration.  */
+    PCIDEV_FLAG_PCI_EXPRESS_DEVICE = 1<<2
+};
+
 /**
  * PCI Device - Internal data.
  */
@@ -93,12 +105,8 @@ typedef struct PCIDEVICEINT
     /** Write config callback. */
     R3PTRTYPE(PFNPCICONFIGWRITE)    pfnConfigWrite;
 
-    /** Set if the specific device fun was requested by PDM.
-     * If clear the device and it's functions can be relocated to satisfy the slot request of another device. */
-    bool                            fRequestedDevFn;
-    /** Flag whether the device is a pci-to-pci bridge.
-     * This is set prior to device registration.  */
-    bool                            fPciToPciBridge;
+    /* Flags of this PCI device, see PCIDEV_FLAG_ constants */
+    int32_t                         uFlags;
     /** Current state of the IRQ pin of the device. */
     int32_t                         uIrqPinState;
 

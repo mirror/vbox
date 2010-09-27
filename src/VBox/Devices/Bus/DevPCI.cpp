@@ -772,7 +772,7 @@ DECLINLINE(PPCIDEVICE) pciFindBridge(PPCIBUS pBus, uint8_t iBus)
          * If the target bus is in the range we pass the request on to the bridge.
          */
         PPCIDEVICE pBridgeTemp = pBus->papBridgesR3[iBridge];
-        AssertMsg(pBridgeTemp && pBridgeTemp->Int.s.fPciToPciBridge,
+        AssertMsg(pBridgeTemp && PCIIsPci2PciBridge(pBridgeTemp),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
 
         if (   iBus >= pBridgeTemp->config[VBOX_PCI_SECONDARY_BUS]
@@ -1720,7 +1720,7 @@ static int pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const
                 return VERR_PDM_TOO_PCI_MANY_DEVICES;
             }
         }
-        pPciDev->Int.s.fRequestedDevFn = false;
+        PCIClearRequestedDevfunc(pPciDev);
     }
     else
     {
@@ -1741,14 +1741,14 @@ static int pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const
             int iDevRel;
             AssertReleaseMsg(!(iDev % 8), ("PCI Configuration Conflict! iDev=%d pszName=%s clashes with %s\n",
                                            iDev, pszName, pBus->devices[iDev]->name));
-            if (    pBus->devices[iDev]->Int.s.fRequestedDevFn
-                ||  (pBus->devices[iDev + 1] && pBus->devices[iDev + 1]->Int.s.fRequestedDevFn)
-                ||  (pBus->devices[iDev + 2] && pBus->devices[iDev + 2]->Int.s.fRequestedDevFn)
-                ||  (pBus->devices[iDev + 3] && pBus->devices[iDev + 3]->Int.s.fRequestedDevFn)
-                ||  (pBus->devices[iDev + 4] && pBus->devices[iDev + 4]->Int.s.fRequestedDevFn)
-                ||  (pBus->devices[iDev + 5] && pBus->devices[iDev + 5]->Int.s.fRequestedDevFn)
-                ||  (pBus->devices[iDev + 6] && pBus->devices[iDev + 6]->Int.s.fRequestedDevFn)
-                ||  (pBus->devices[iDev + 7] && pBus->devices[iDev + 7]->Int.s.fRequestedDevFn))
+            if (    PCIIsRequestedDevfunc(pBus->devices[iDev])
+                ||  (pBus->devices[iDev + 1] && PCIIsRequestedDevfunc(pBus->devices[iDev + 1]))
+                ||  (pBus->devices[iDev + 2] && PCIIsRequestedDevfunc(pBus->devices[iDev + 2]))
+                ||  (pBus->devices[iDev + 3] && PCIIsRequestedDevfunc(pBus->devices[iDev + 3]))
+                ||  (pBus->devices[iDev + 4] && PCIIsRequestedDevfunc(pBus->devices[iDev + 4]))
+                ||  (pBus->devices[iDev + 5] && PCIIsRequestedDevfunc(pBus->devices[iDev + 5]))
+                ||  (pBus->devices[iDev + 6] && PCIIsRequestedDevfunc(pBus->devices[iDev + 6]))
+                ||  (pBus->devices[iDev + 7] && PCIIsRequestedDevfunc(pBus->devices[iDev + 7])))
             {
                 AssertReleaseMsgFailed(("Configuration error:'%s' and '%s' are both configured as device %d\n",
                                         pszName, pBus->devices[iDev]->name, iDev));
@@ -1785,7 +1785,7 @@ static int pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const
                 return VERR_PDM_TOO_PCI_MANY_DEVICES;
             }
         } /* if conflict */
-        pPciDev->Int.s.fRequestedDevFn = true;
+        PCISetRequestedDevfunc(pPciDev);
     }
 
     Assert(!pBus->devices[iDev]);
@@ -1797,7 +1797,7 @@ static int pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const
     pPciDev->Int.s.pfnConfigRead    = pci_default_read_config;
     pPciDev->Int.s.pfnConfigWrite   = pci_default_write_config;
     pBus->devices[iDev]             = pPciDev;
-    if (pPciDev->Int.s.fPciToPciBridge)
+    if (PCIIsPci2PciBridge(pPciDev))
     {
         AssertMsg(pBus->cBridges < RT_ELEMENTS(pBus->devices), ("Number of bridges exceeds the number of possible devices on the bus\n"));
         AssertMsg(pPciDev->Int.s.pfnBridgeConfigRead && pPciDev->Int.s.pfnBridgeConfigWrite,
@@ -2072,7 +2072,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PCIDevSetHeaderType(&pBus->PciDev,   0x00);
 
     pBus->PciDev.pDevIns              = pDevIns;
-    pBus->PciDev.Int.s.fRequestedDevFn= true;
+    PCISetRequestedDevfunc(&pBus->PciDev);
     pciRegisterInternal(pBus, 0, &pBus->PciDev, "i440FX");
 
     /* PIIX3 */
@@ -2083,7 +2083,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PCIDevSetHeaderType(&pGlobals->PIIX3State.dev,   0x80); /* PCI_multifunction, generic */
 
     pGlobals->PIIX3State.dev.pDevIns      = pDevIns;
-    pGlobals->PIIX3State.dev.Int.s.fRequestedDevFn= true;
+    PCISetRequestedDevfunc(&pGlobals->PIIX3State.dev);
     pciRegisterInternal(pBus, 8, &pGlobals->PIIX3State.dev, "PIIX3");
     piix3_reset(&pGlobals->PIIX3State);
 
@@ -2452,7 +2452,9 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetInterruptPin (&pBus->PciDev, 0x00);
 
     pBus->PciDev.pDevIns                    = pDevIns;
-    pBus->PciDev.Int.s.fPciToPciBridge      = true;
+
+    /* Bridge-specific data */
+    PCISetPci2PciBridge(&pBus->PciDev);
     pBus->PciDev.Int.s.pfnBridgeConfigRead  = pcibridgeConfigRead;
     pBus->PciDev.Int.s.pfnBridgeConfigWrite = pcibridgeConfigWrite;
 

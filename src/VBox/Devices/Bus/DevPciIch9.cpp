@@ -620,7 +620,7 @@ DECLINLINE(PPCIDEVICE) ich9pciFindBridge(PPCIBUS pBus, uint8_t iBus)
          * If the target bus is in the range we pass the request on to the bridge.
          */
         PPCIDEVICE pBridgeTemp = pBus->papBridgesR3[iBridge];
-        AssertMsg(pBridgeTemp && pBridgeTemp->Int.s.fPciToPciBridge,
+        AssertMsg(pBridgeTemp && PCIIsPci2PciBridge(pBridgeTemp),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
 
         if (   iBus >= pBridgeTemp->config[VBOX_PCI_SECONDARY_BUS]
@@ -770,7 +770,24 @@ static DECLCALLBACK(int) ich9pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev,
 
 static DECLCALLBACK(int) ich9pcibridgeRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev)
 {
-    return 0;
+
+    PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
+    
+    /*
+     * Check input.
+     */
+    if (    !pszName
+        ||  !pPciDev
+        ||  iDev >= (int)RT_ELEMENTS(pBus->apDevices))
+    {
+        AssertMsgFailed(("Invalid argument! pszName=%s pPciDev=%p iDev=%d\n", pszName, pPciDev, iDev));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * Register the device.
+     */
+    return ich9pciRegisterInternal(pBus, iDev, pPciDev, pszName);
 }
 
 static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
@@ -830,12 +847,12 @@ static DECLCALLBACK(void) ich9pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVI
  * @param   pPciDev         Pointer to PCI device.
  * @param   pSSM            The handle to save the state to.
  */
-static DECLCALLBACK(int) pciGenericSaveExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) ich9pciGenericSaveExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
 {
     return SSMR3PutMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
 }
 
-static int pciR3CommonSaveExec(PPCIBUS pBus, PSSMHANDLE pSSM)
+static int ich9pciR3CommonSaveExec(PPCIBUS pBus, PSSMHANDLE pSSM)
 {
     /*
      * Iterate thru all the devices.
@@ -859,17 +876,77 @@ static int pciR3CommonSaveExec(PPCIBUS pBus, PSSMHANDLE pSSM)
     return SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
 }
 
-static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) ich9pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PPCIBUS pThis = PDMINS_2_DATA(pDevIns, PPCIBUS);
-    return pciR3CommonSaveExec(pThis, pSSM);
+    return ich9pciR3CommonSaveExec(pThis, pSSM);
 }
 
 
-static DECLCALLBACK(int) pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) ich9pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PPCIBUS pThis = PDMINS_2_DATA(pDevIns, PPCIBUS);
-    return pciR3CommonSaveExec(pThis, pSSM);
+    return ich9pciR3CommonSaveExec(pThis, pSSM);
+}
+
+
+static void ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, uint32_t u32Value, unsigned cb)
+{
+    PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
+
+    LogFlowFunc((": pDevIns=%p iBus=%d iDevice=%d u32Address=%u u32Value=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, u32Value, cb));
+
+    /* If the current bus is not the target bus search for the bus which contains the device. */
+    if (iBus != PCIDevGetByte(&pBus->aPciDev, VBOX_PCI_SECONDARY_BUS))
+    {
+        PPCIDEVICE pBridgeDevice = ich9pciFindBridge(pBus, iBus);
+        if (pBridgeDevice)
+        {
+            AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
+            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, u32Value, cb);
+        }
+    }
+    else
+    {
+        /* This is the target bus, pass the write to the device. */
+        PPCIDEVICE pPciDev = pBus->apDevices[iDevice];
+        if (pPciDev)
+        {
+            Log(("%s: %s: addr=%02x val=%08x len=%d\n", __FUNCTION__, pPciDev->name, u32Address, u32Value, cb));
+            pPciDev->Int.s.pfnConfigWrite(pPciDev, u32Address, u32Value, cb);
+        }
+    }
+}
+
+static uint32_t ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, unsigned cb)
+{
+    PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
+    uint32_t u32Value = 0xffffffff; /* Return value in case there is no device. */
+
+    LogFlowFunc((": pDevIns=%p iBus=%d iDevice=%d u32Address=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, cb));
+
+    /* If the current bus is not the target bus search for the bus which contains the device. */
+    if (iBus != PCIDevGetByte(&pBus->aPciDev, VBOX_PCI_SECONDARY_BUS))
+    {
+        PPCIDEVICE pBridgeDevice = ich9pciFindBridge(pBus, iBus);
+        if (pBridgeDevice)
+        {
+            AssertPtr( pBridgeDevice->Int.s.pfnBridgeConfigRead);
+            u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, cb);
+        }
+    }
+    else
+    {
+        /* This is the target bus, pass the read to the device. */
+        PPCIDEVICE pPciDev = pBus->apDevices[iDevice];
+        if (pPciDev)
+        {
+            u32Value = pPciDev->Int.s.pfnConfigRead(pPciDev, u32Address, cb);
+            Log(("%s: %s: u32Address=%02x u32Value=%08x cb=%d\n", __FUNCTION__, pPciDev->name, u32Address, u32Value, cb));
+        }
+    }
+
+    return u32Value;
 }
 
 
@@ -1017,7 +1094,7 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
                                 pDev->name, pDev->pDevIns->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
                 }
                 if (off == VBOX_PCI_COMMAND)
-                    PCIDevSetCommand(pDev, 0); /* For remapping, see pciR3CommonLoadExec. */
+                    PCIDevSetCommand(pDev, 0); /* For remapping, see ich9pciR3CommonLoadExec. */
                 pDev->Int.s.pfnConfigWrite(pDev, off, u32Src, cb);
             }
         }
@@ -1039,7 +1116,7 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
 }
 
 /**
- * Common worker for pciR3LoadExec and pcibridgeR3LoadExec.
+ * Common worker for ich9pciR3LoadExec and ich9pcibridgeR3LoadExec.
  *
  * @returns VBox status code.
  * @param   pBus                The bus which data is being loaded.
@@ -1047,7 +1124,7 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
  * @param   uVersion            The data version.
  * @param   uPass               The pass.
  */
-static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     uint32_t    u32;
     uint32_t    i;
@@ -1153,25 +1230,25 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint
  * @param   pPciDev         Pointer to PCI device.
  * @param   pSSM            The handle to the saved state.
  */
-static DECLCALLBACK(int) pciGenericLoadExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) ich9pciGenericLoadExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
 {
     return SSMR3GetMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
 }
 
-static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) ich9pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PPCIBUS pThis = PDMINS_2_DATA(pDevIns, PPCIBUS);
     if (uVersion > VBOX_ICH9PCI_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    return pciR3CommonLoadExec(pThis, pSSM, uVersion, uPass);
+    return ich9pciR3CommonLoadExec(pThis, pSSM, uVersion, uPass);
 }
 
-static DECLCALLBACK(int) pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) ich9pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PPCIBUS pThis = PDMINS_2_DATA(pDevIns, PPCIBUS);
     if (uVersion > VBOX_ICH9PCI_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    return pciR3CommonLoadExec(pThis, pSSM, uVersion, uPass);
+    return ich9pciR3CommonLoadExec(pThis, pSSM, uVersion, uPass);
 }
 
 static uint32_t ich9pciConfigRead(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint32_t addr, uint32_t len)
@@ -1692,7 +1769,7 @@ static int assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName)
     {
         if (!strcmp(pszName, PciSlotAssignments[i].pszName))
         {
-            pPciDev->Int.s.fRequestedDevFn = true;
+            PCISetRequestedDevfunc(pPciDev);
             return (PciSlotAssignments[i].iSlot << 3) + PciSlotAssignments[i].iFunction;
         }
     }
@@ -1708,7 +1785,7 @@ static int assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName)
                 &&  !pBus->apDevices[iPos + 6]
                 &&  !pBus->apDevices[iPos + 7])
         {
-            pPciDev->Int.s.fRequestedDevFn = false;
+            PCIClearRequestedDevfunc(pPciDev);
             return iPos;
         }
 
@@ -1719,14 +1796,14 @@ static bool hasHardAssignedDevsInSlot(PPCIBUS pBus, int iSlot)
 {
     PCIDevice** aSlot = &pBus->apDevices[iSlot << 3];
 
-    return    (aSlot[0] && aSlot[0]->Int.s.fRequestedDevFn)
-           || (aSlot[1] && aSlot[1]->Int.s.fRequestedDevFn)
-           || (aSlot[2] && aSlot[2]->Int.s.fRequestedDevFn)
-           || (aSlot[3] && aSlot[3]->Int.s.fRequestedDevFn)
-           || (aSlot[4] && aSlot[4]->Int.s.fRequestedDevFn)
-           || (aSlot[5] && aSlot[5]->Int.s.fRequestedDevFn)
-           || (aSlot[6] && aSlot[6]->Int.s.fRequestedDevFn)
-           || (aSlot[7] && aSlot[7]->Int.s.fRequestedDevFn)
+    return     (aSlot[0] && PCIIsRequestedDevfunc(aSlot[0]))
+            || (aSlot[1] && PCIIsRequestedDevfunc(aSlot[1]))
+            || (aSlot[2] && PCIIsRequestedDevfunc(aSlot[2]))
+            || (aSlot[3] && PCIIsRequestedDevfunc(aSlot[3]))
+            || (aSlot[4] && PCIIsRequestedDevfunc(aSlot[4]))
+            || (aSlot[5] && PCIIsRequestedDevfunc(aSlot[5]))
+            || (aSlot[6] && PCIIsRequestedDevfunc(aSlot[6]))
+            || (aSlot[7] && PCIIsRequestedDevfunc(aSlot[7]))
            ;
 }
 
@@ -1749,9 +1826,9 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
      * Check if we can really take this slot, possibly by relocating
      * its current habitant, if it wasn't hard assigned too.
      */
-    if (pPciDev->Int.s.fRequestedDevFn &&
-        pBus->apDevices[iDev]            &&
-        pBus->apDevices[iDev]->Int.s.fRequestedDevFn)
+    if (PCIIsRequestedDevfunc(pPciDev) &&
+        pBus->apDevices[iDev]          &&
+        PCIIsRequestedDevfunc(pBus->apDevices[iDev]))
     {
         /*
          * Smth like hasHardAssignedDevsInSlot(pBus, iDev >> 3) shall be use to make
@@ -1795,7 +1872,7 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
     pPciDev->Int.s.pfnConfigRead    = ich9pciConfigRead;
     pPciDev->Int.s.pfnConfigWrite   = ich9pciConfigWrite;
     pBus->apDevices[iDev]           = pPciDev;
-    if (pPciDev->Int.s.fPciToPciBridge)
+    if (PCIIsPci2PciBridge(pPciDev))
     {
         AssertMsg(pBus->cBridges < RT_ELEMENTS(pBus->apDevices), ("Number of bridges exceeds the number of possible devices on the bus\n"));
         AssertMsg(pPciDev->Int.s.pfnBridgeConfigRead && pPciDev->Int.s.pfnBridgeConfigWrite,
@@ -1917,8 +1994,8 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     PciBusReg.pfnIORegionRegisterR3   = ich9pciIORegionRegister;
     PciBusReg.pfnSetConfigCallbacksR3 = ich9pciSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = ich9pciSetIrq;
-    PciBusReg.pfnSaveExecR3           = pciGenericSaveExec;
-    PciBusReg.pfnLoadExecR3           = pciGenericLoadExec;
+    PciBusReg.pfnSaveExecR3           = ich9pciGenericSaveExec;
+    PciBusReg.pfnLoadExecR3           = ich9pciGenericLoadExec;
     PciBusReg.pfnFakePCIBIOSR3        = ich9pciFakePCIBIOS;
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "ich9pciSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "ich9pciSetIrq" : NULL;
@@ -2090,6 +2167,94 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
     Log(("PCI: fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fGCEnabled, fR0Enabled));
+
+    /*
+     * Init data and register the PCI bus.
+     */
+    PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
+    pBus->pDevInsR3 = pDevIns;
+    pBus->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pBus->papBridgesR3 = (PPCIDEVICE *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPCIDEVICE) * RT_ELEMENTS(pBus->apDevices));
+
+    PDMPCIBUSREG PciBusReg;
+    PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
+    PciBusReg.pfnRegisterR3           = ich9pcibridgeRegister;
+    PciBusReg.pfnIORegionRegisterR3   = ich9pciIORegionRegister;
+    PciBusReg.pfnSetConfigCallbacksR3 = ich9pciSetConfigCallbacks;
+    PciBusReg.pfnSetIrqR3             = ich9pcibridgeSetIrq;
+    PciBusReg.pfnSaveExecR3           = ich9pciGenericSaveExec;
+    PciBusReg.pfnLoadExecR3           = ich9pciGenericLoadExec;
+    PciBusReg.pfnFakePCIBIOSR3        = NULL; /* Only needed for the first bus. */
+    PciBusReg.pszSetIrqRC             = fGCEnabled ? "ich9pcibridgeSetIrq" : NULL;
+    PciBusReg.pszSetIrqR0             = fR0Enabled ? "ich9pcibridgeSetIrq" : NULL;
+    rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Failed to register ourselves as a PCI Bus"));
+    if (pBus->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION)
+        return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
+                                   N_("PCI helper version mismatch; got %#x expected %#x"),
+                                   pBus->pPciHlpR3->u32Version, PDM_PCIHLPR3_VERSION);
+
+    pBus->pPciHlpRC = pBus->pPciHlpR3->pfnGetRCHelpers(pDevIns);
+    pBus->pPciHlpR0 = pBus->pPciHlpR3->pfnGetR0Helpers(pDevIns);
+
+    /*
+     * Fill in PCI configs and add them to the bus.
+     */
+    PCIDevSetVendorId(  &pBus->aPciDev, 0x8086); /* Intel */
+    PCIDevSetDeviceId(  &pBus->aPciDev, 0x2448); /* 82801 Mobile PCI bridge. */
+    PCIDevSetRevisionId(&pBus->aPciDev,   0xf2);
+    PCIDevSetClassSub(  &pBus->aPciDev,   0x04); /* pci2pci */
+    PCIDevSetClassBase( &pBus->aPciDev,   0x06); /* PCI_bridge */
+    PCIDevSetClassProg( &pBus->aPciDev,   0x01); /* Supports subtractive decoding. */
+    PCIDevSetHeaderType(&pBus->aPciDev,   0x01); /* Single function device which adheres to the PCI-to-PCI bridge spec. */
+    PCIDevSetCommand(   &pBus->aPciDev,   0x00);
+    PCIDevSetStatus(    &pBus->aPciDev,   0x20); /* 66MHz Capable. */
+    PCIDevSetInterruptLine(&pBus->aPciDev, 0x00); /* This device does not assert interrupts. */
+
+    /*
+     * This device does not generate interrupts. Interrupt delivery from
+     * devices attached to the bus is unaffected.
+     */
+    PCIDevSetInterruptPin (&pBus->aPciDev, 0x00);
+
+    pBus->aPciDev.pDevIns                    = pDevIns;
+
+    /* Bridge-specific data */
+    PCISetPci2PciBridge(&pBus->aPciDev);
+    pBus->aPciDev.Int.s.pfnBridgeConfigRead  = ich9pcibridgeConfigRead;
+    pBus->aPciDev.Int.s.pfnBridgeConfigWrite = ich9pcibridgeConfigWrite;
+
+    /*
+     * Register this PCI bridge. The called function will take care on which bus we will get registered.
+     */
+    rc = PDMDevHlpPCIRegister (pDevIns, &pBus->aPciDev);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * The iBus property doesn't really represent the bus number
+     * because the guest and the BIOS can choose different bus numbers
+     * for them.
+     * The bus number is mainly for the setIrq function to indicate
+     * when the host bus is reached which will have iBus = 0.
+     * Thathswhy the + 1.
+     */
+    pBus->iBus = iInstance + 1;
+
+    /*
+     * Register SSM handlers. We use the same saved state version as for the host bridge
+     * to make changes easier.
+     */
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_ICH9PCI_SAVED_STATE_VERSION, sizeof(*pBus) + 16*128, "pgm",
+                                NULL, NULL, NULL,
+                                NULL, ich9pcibridgeR3SaveExec, NULL,
+                                NULL, ich9pcibridgeR3LoadExec, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+
 
     return VINF_SUCCESS;
 }
