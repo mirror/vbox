@@ -1087,7 +1087,7 @@ STDMETHODIMP Host::RemoveHostOnlyNetworkInterface(IN_BSTR aId,
                             Guid (aId).raw());
     }
 
-    int r = NetIfRemoveHostOnlyNetworkInterface(m->pParent, Guid(aId), aProgress);
+    int r = NetIfRemoveHostOnlyNetworkInterface(m->pParent, Guid(aId).ref(), aProgress);
     if (RT_SUCCESS(r))
         return S_OK;
 

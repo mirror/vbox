@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -249,7 +249,7 @@ STDMETHODIMP DHCPServer::Start(IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BSTR
     Guid guid;
     guid.create();
     RTStrPrintf (strMAC, sizeof(strMAC), "08:00:27:%02X:%02X:%02X",
-                 guid.ptr()->au8[0], guid.ptr()->au8[1], guid.ptr()->au8[2]);
+                 guid.raw()->au8[0], guid.raw()->au8[1], guid.raw()->au8[2]);
     m.dhcp.setOption(DHCPCFG_MACADDRESS, strMAC, true);
     m.dhcp.setOption(DHCPCFG_IPADDRESS,  Utf8Str(m.IPAddress), true);
     //        DHCPCFG_LEASEDB,

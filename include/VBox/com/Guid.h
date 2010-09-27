@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -167,11 +167,6 @@ public:
         return ::RTUuidIsNull (&uuid);
     }
 
-    operator bool() const
-    {
-        return !isEmpty();
-    }
-
     bool operator==(const Guid &that) const { return ::RTUuidCompare (&uuid, &that.uuid) == 0; }
     bool operator==(const GUID &guid) const { return ::RTUuidCompare (&uuid, (PRTUUID) &guid) == 0; }
     bool operator!=(const Guid &that) const { return !operator==(that); }
@@ -179,28 +174,17 @@ public:
     bool operator<(const Guid &that) const { return ::RTUuidCompare (&uuid, &that.uuid) < 0; }
     bool operator<(const GUID &guid) const { return ::RTUuidCompare (&uuid, (PRTUUID) &guid) < 0; }
 
-    /* to pass instances as IN_GUID parameters to interface methods */
-    operator const GUID&() const
+    /* to directly copy the contents to a GUID, or for passing it as
+     * an input parameter of type (const GUID *), the compiler converts */
+    const GUID &ref() const
     {
-        return *(GUID *) &uuid;
-    }
-
-    /* to directly pass instances to RTPrintf("%RTuuid") */
-    PRTUUID ptr()
-    {
-        return &uuid;
+        return *(const GUID *)&uuid;
     }
 
     /* to pass instances to printf-like functions */
-    PCRTUUID raw() const
+    const PCRTUUID raw() const
     {
-        return &uuid;
-    }
-
-    /* to pass instances to RTUuid*() as a constant argument */
-    operator const RTUUID*() const
-    {
-        return &uuid;
+        return (PCRTUUID)&uuid;
     }
 
 #if !defined (VBOX_WITH_XPCOM)
@@ -309,10 +293,6 @@ inline bool isValidGuid(const Bstr& str)
    Guid guid(str);
    return  !guid.isEmpty();
 }
-
-
-/* work around error C2593 of the stupid MSVC 7.x ambiguity resolver */
-WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP (Guid)
 
 } /* namespace com */
 

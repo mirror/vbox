@@ -1573,7 +1573,7 @@ void NetworkAdapter::generateMACAddress()
     Guid guid;
     guid.create();
     RTStrPrintf (strMAC, sizeof(strMAC), "080027%02X%02X%02X",
-                 guid.ptr()->au8[0], guid.ptr()->au8[1], guid.ptr()->au8[2]);
+                 guid.raw()->au8[0], guid.raw()->au8[1], guid.raw()->au8[2]);
     LogFlowThisFunc(("generated MAC: '%s'\n", strMAC));
     mData->mMACAddress = strMAC;
 }

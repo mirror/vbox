@@ -1485,7 +1485,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, VRDPAuthGuestJu
 {
     VRDPAUTHUUID rawuuid;
 
-    memcpy(rawuuid, ((Guid &)uuid).ptr(), sizeof(rawuuid));
+    memcpy(rawuuid, uuid.raw(), sizeof(rawuuid));
 
     LogFlow(("ConsoleVRDPServer::Authenticate: uuid = %RTuuid, guestJudgement = %d, pszUser = %s, pszPassword = %s, pszDomain = %s, u32ClientId = %d\n",
              rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId));
@@ -1607,7 +1607,7 @@ void ConsoleVRDPServer::AuthDisconnect(const Guid &uuid, uint32_t u32ClientId)
 {
     VRDPAUTHUUID rawuuid;
 
-    memcpy(rawuuid, ((Guid &)uuid).ptr(), sizeof(rawuuid));
+    memcpy(rawuuid, uuid.raw(), sizeof(rawuuid));
 
     LogFlow(("ConsoleVRDPServer::AuthDisconnect: uuid = %RTuuid, u32ClientId = %d\n",
              rawuuid, u32ClientId));

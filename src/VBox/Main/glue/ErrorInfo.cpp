@@ -54,7 +54,7 @@ void ErrorInfo::copyFrom(const ErrorInfo &x)
     mText = x.mText;
 
     if (x.m_pNext != NULL)
-        m_pNext = new ErrorInfo(x.m_pNext);
+        m_pNext = new ErrorInfo(*x.m_pNext);
     else
         m_pNext = NULL;
 
@@ -111,7 +111,7 @@ void ErrorInfo::init(bool aKeepObj /* = false */)
             rc = err->GetGUID(mInterfaceID.asOutParam());
             gotSomething |= SUCCEEDED(rc);
             if (SUCCEEDED(rc))
-                GetInterfaceNameByIID(mInterfaceID, mInterfaceName.asOutParam());
+                GetInterfaceNameByIID(mInterfaceID.ref(), mInterfaceName.asOutParam());
 
             rc = err->GetSource(mComponent.asOutParam());
             gotSomething |= SUCCEEDED(rc);
@@ -239,7 +239,7 @@ void ErrorInfo::init(IVirtualBoxErrorInfo *info)
     if (SUCCEEDED(rc))
     {
         mInterfaceID = iid;
-        GetInterfaceNameByIID(mInterfaceID, mInterfaceName.asOutParam());
+        GetInterfaceNameByIID(mInterfaceID.ref(), mInterfaceName.asOutParam());
     }
 
     rc = info->COMGETTER(Component)(mComponent.asOutParam());
@@ -256,7 +256,7 @@ void ErrorInfo::init(IVirtualBoxErrorInfo *info)
     rc = info->COMGETTER(Next)(next.asOutParam());
     if (SUCCEEDED(rc) && !next.isNull())
     {
-        m_pNext = new ErrorInfo(next);
+        m_pNext = new ErrorInfo(next, COM_IIDOF(IVirtualBoxErrorInfo));
         Assert(m_pNext != NULL);
         if (!m_pNext)
             rc = E_OUTOFMEMORY;

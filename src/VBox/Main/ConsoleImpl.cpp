@@ -5175,7 +5175,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                 /* a valid host interface must have been set */
                 Bstr hostif;
                 adapter->COMGETTER(HostInterface)(hostif.asOutParam());
-                if (!hostif)
+                if (hostif.isEmpty())
                 {
                     return setError(VBOX_E_HOST_ERROR,
                         tr("VM cannot start because host interface networking requires a host interface name to be set"));
@@ -6523,14 +6523,14 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     LogFlowThisFunc(("Proxying USB device '%s' {%RTuuid}...\n",
-                      Address.c_str(), uuid.ptr()));
+                      Address.c_str(), uuid.raw()));
 
     /* leave the lock before a VMR3* call (EMT will call us back)! */
     alock.leave();
 
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
     int vrc = VMR3ReqCallWait(mpVM, VMCPUID_ANY,
-                              (PFNRT)usbAttachCallback, 6, this, aHostDevice, uuid.ptr(), fRemote, Address.c_str(), aMaskedIfs);
+                              (PFNRT)usbAttachCallback, 6, this, aHostDevice, uuid.raw(), fRemote, Address.c_str(), aMaskedIfs);
 
     /* restore the lock */
     alock.enter();
@@ -6540,7 +6540,7 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     if (RT_FAILURE(vrc))
     {
         LogWarningThisFunc(("Failed to create proxy device for '%s' {%RTuuid} (%Rrc)\n",
-                             Address.c_str(), uuid.ptr(), vrc));
+                             Address.c_str(), uuid.raw(), vrc));
 
         switch (vrc)
         {

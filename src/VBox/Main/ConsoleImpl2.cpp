@@ -1462,7 +1462,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                                       pszCtrlDev,
                                                       ulInstance,
                                                       enmBus,
-                                                      fUseHostIOCache,
+                                                      !!fUseHostIOCache,
                                                       false /* fSetupMerge */,
                                                       0 /* uMergeSource */,
                                                       0 /* uMergeTarget */,
@@ -3552,7 +3552,7 @@ int Console::configNetwork(const char *pszDevice,
                 if (hrc == S_OK)
                 {
                     /* get the adapter's INetCfgComponent*/
-                    hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.ptr(), pAdaptorComponent.asOutParam());
+                    hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.raw(), pAdaptorComponent.asOutParam());
                     if (hrc != S_OK)
                     {
                         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
@@ -3929,7 +3929,7 @@ int Console::configNetwork(const char *pszDevice,
                 if (hrc == S_OK)
                 {
                     /* get the adapter's INetCfgComponent*/
-                    hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.ptr(), pAdaptorComponent.asOutParam());
+                    hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.raw(), pAdaptorComponent.asOutParam());
                     if (hrc != S_OK)
                     {
                         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);

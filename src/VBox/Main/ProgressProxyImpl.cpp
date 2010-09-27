@@ -374,7 +374,7 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
                         Utf8Str strText(bstrText);
                         LogFlowThisFunc(("Got ErrorInfo(%s); hrcResult=%Rhrc\n", strText.c_str(), hrcResult));
                         Progress::notifyComplete((HRESULT)hrcResult,
-                                                 Guid(bstrIID),
+                                                 Guid(bstrIID).ref(),
                                                  Utf8Str(bstrComponent).c_str(),
                                                  "%s", strText.c_str());
                     }

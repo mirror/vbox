@@ -923,7 +923,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 return 1;
             }
             // first check if a UUID was supplied
-            if (RT_FAILURE(RTUuidFromStr(uuidVM.ptr(), argv[curArg])))
+            uuidVM = argv[curArg];
+            if (uuidVM.isEmpty())
             {
                 LogFlow(("invalid UUID format, assuming it's a VM name\n"));
                 vmName = argv[curArg];

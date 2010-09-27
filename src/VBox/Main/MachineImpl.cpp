@@ -299,7 +299,7 @@ HRESULT Machine::init(VirtualBox *aParent,
         unconst(mData->mUuid) = aId;
 
         mUserData->s.strName = strName;
-        mUserData->s.fNameSync = aNameSync;
+        mUserData->s.fNameSync = !!aNameSync;
 
         /* initialize the default snapshots folder
          * (note: depends on the name value set above!) */
@@ -889,7 +889,7 @@ STDMETHODIMP Machine::COMGETTER(AccessError)(IVirtualBoxErrorInfo **aAccessError
     if (SUCCEEDED(rc))
     {
         errorInfo->init(mData->mAccessError.getResultCode(),
-                        mData->mAccessError.getInterfaceID(),
+                        mData->mAccessError.getInterfaceID().ref(),
                         Utf8Str(mData->mAccessError.getComponent()).c_str(),
                         Utf8Str(mData->mAccessError.getText()));
         rc = errorInfo.queryInterfaceTo(aAccessError);
@@ -6951,7 +6951,7 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
     rc = pSnapshotMachine->init(this,
                                 data.hardware,
                                 data.storage,
-                                data.uuid,
+                                data.uuid.ref(),
                                 strStateFile);
     if (FAILED(rc)) return rc;
 
@@ -7462,7 +7462,7 @@ HRESULT Machine::findSnapshot(const Guid &aId,
     if (aId.isEmpty())
         aSnapshot = mData->mFirstSnapshot;
     else
-        aSnapshot = mData->mFirstSnapshot->findChildOrSelf(aId);
+        aSnapshot = mData->mFirstSnapshot->findChildOrSelf(aId.ref());
 
     if (!aSnapshot)
     {
@@ -8089,7 +8089,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
 
         // memory
         data.ulMemorySizeMB = mHWData->mMemorySize;
-        data.fPageFusionEnabled = mHWData->mPageFusionEnabled;
+        data.fPageFusionEnabled = !!mHWData->mPageFusionEnabled;
 
         // firmware
         data.firmwareType = mHWData->mFirmwareType;
@@ -10302,7 +10302,7 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice(IN_BSTR aId)
 
     USBProxyService *service = mParent->host()->usbProxyService();
     AssertReturn(service, E_FAIL);
-    return service->captureDeviceForVM(this, Guid(aId));
+    return service->captureDeviceForVM(this, Guid(aId).ref());
 #else
     NOREF(aId);
     return E_NOTIMPL;
@@ -10322,7 +10322,7 @@ STDMETHODIMP SessionMachine::DetachUSBDevice(IN_BSTR aId, BOOL aDone)
 #ifdef VBOX_WITH_USB
     USBProxyService *service = mParent->host()->usbProxyService();
     AssertReturn(service, E_FAIL);
-    return service->detachDeviceFromVM(this, Guid(aId), !!aDone);
+    return service->detachDeviceFromVM(this, Guid(aId).ref(), !!aDone);
 #else
     NOREF(aId);
     NOREF(aDone);
@@ -11218,7 +11218,7 @@ HRESULT SessionMachine::endSavingState(BOOL aSuccess)
     }
 
     /* remove the completed progress object */
-    mParent->removeProgress(mSnapshotData.mProgressId);
+    mParent->removeProgress(mSnapshotData.mProgressId.ref());
 
     /* clear out the temporary saved state data */
     mSnapshotData.mLastState = MachineState_Null;

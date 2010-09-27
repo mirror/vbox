@@ -366,13 +366,13 @@ HRESULT NATEngine::saveSettings(settings::NAT &data)
     data.strTftpBootFile = mData->mTftpBootFile;
     data.strTftpNextServer = mData->mTftpNextServer;
     /* DNS */
-    data.fDnsPassDomain = mData->mDnsPassDomain;
-    data.fDnsProxy = mData->mDnsProxy;
-    data.fDnsUseHostResolver = mData->mDnsUseHostResolver;
+    data.fDnsPassDomain = !!mData->mDnsPassDomain;
+    data.fDnsProxy = !!mData->mDnsProxy;
+    data.fDnsUseHostResolver = !!mData->mDnsUseHostResolver;
     /* Alias */
-    data.fAliasLog = mData->mAliasMode & NATAliasMode_AliasLog;
-    data.fAliasProxyOnly = mData->mAliasMode & NATAliasMode_AliasProxyOnly;
-    data.fAliasUseSamePorts = mData->mAliasMode & NATAliasMode_AliasUseSamePorts;
+    data.fAliasLog = !!(mData->mAliasMode & NATAliasMode_AliasLog);
+    data.fAliasProxyOnly = !!(mData->mAliasMode & NATAliasMode_AliasProxyOnly);
+    data.fAliasUseSamePorts = !!(mData->mAliasMode & NATAliasMode_AliasUseSamePorts);
 
     for (NATRuleMap::iterator it = mNATRules.begin();
         it != mNATRules.end(); ++it)
