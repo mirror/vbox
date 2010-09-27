@@ -1502,16 +1502,18 @@ static void apic_timer(void *opaque)
  *
  * @param   pThis               The device state.
  */
-DECLINLINE(void) apciDoFrequencyHinting(APICState *pThis)
+DECLINLINE(void) apicDoFrequencyHinting(APICState *pThis)
 {
     if (   pThis->uHintedInitialCount != pThis->initial_count
         || pThis->uHintedCountShift   != (uint32_t)pThis->count_shift)
     {
-        pThis->uHintedInitialCount = pThis->initial_count;
-        pThis->uHintedCountShift   = pThis->count_shift;
+        pThis->uHintedInitialCount  = pThis->initial_count;
+        pThis->uHintedCountShift    = pThis->count_shift;
 
         uint64_t cTickPerPeriod = (uint64_t)pThis->initial_count << pThis->count_shift;
-        uint32_t uHz            = TMTimerGetFreq(pThis->CTX_SUFF(pTimer)) / cTickPerPeriod;
+        uint32_t uHz = cTickPerPeriod > 0
+                     ? TMTimerGetFreq(pThis->CTX_SUFF(pTimer)) / cTickPerPeriod
+                     : 100 /*whatever*/;
         TMTimerSetFrequencyHint(pThis->CTX_SUFF(pTimer), uHz);
         Log(("apic: %u Hz\n", uHz));
     }
@@ -1549,7 +1551,7 @@ static void apicTimerSetInitialCount(APICDeviceInfo *dev, APICState *pThis, uint
         TMTimerSetRelative(pThis->CTX_SUFF(pTimer), cTicksNext, &pThis->initial_count_load_time);
         pThis->next_time = pThis->initial_count_load_time + cTicksNext;
         pThis->fTimerArmed = true;
-        apciDoFrequencyHinting(pThis);
+        apicDoFrequencyHinting(pThis);
         STAM_COUNTER_INC(&pThis->StatTimerSetInitialCountArm);
     }
     else
@@ -1649,7 +1651,7 @@ static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew
                     TMTimerSet(pThis->CTX_SUFF(pTimer), NextTS);
                     pThis->next_time = NextTS;
                     pThis->fTimerArmed = true;
-                    apciDoFrequencyHinting(pThis);
+                    apicDoFrequencyHinting(pThis);
                     break;
                 }
                 STAM_COUNTER_INC(&pThis->StatTimerSetLvtArmRetries);
@@ -1684,7 +1686,7 @@ static DECLCALLBACK(void) apicTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer,
             pThis->next_time += (((uint64_t)pThis->initial_count + 1) << pThis->count_shift);
             TMTimerSet(pThis->CTX_SUFF(pTimer), pThis->next_time);
             pThis->fTimerArmed = true;
-            apciDoFrequencyHinting(pThis);
+            apicDoFrequencyHinting(pThis);
         } else {
             /* single shot. */
             pThis->fTimerArmed = false;
@@ -2073,7 +2075,7 @@ static int apic_load(QEMUFile *f, void *opaque, int version_id)
     s->uHintedCountShift = s->uHintedInitialCount = 0;
     s->fTimerArmed = TMTimerIsActive(s->CTX_SUFF(pTimer));
     if (s->fTimerArmed)
-        apciDoFrequencyHinting(s);
+        apicDoFrequencyHinting(s);
 #endif
 
     return VINF_SUCCESS; /** @todo darn mess! */
