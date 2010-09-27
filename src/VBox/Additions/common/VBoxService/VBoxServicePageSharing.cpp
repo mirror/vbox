@@ -240,7 +240,7 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
         aRegions[idxRegion].cbRegion     = dwModuleSize;
         idxRegion++;
     }
-    VBoxServiceVerbose(3, "VbglR3RegisterSharedModule %s %s base=%p size=%x cregions=%d\n", pModule->Info.szModule, pModule->szFileVersion, pModule->Info.modBaseAddr, pModule->Info.modBaseSize, idxRegion);
+    VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VbglR3RegisterSharedModule %s %s base=%p size=%x cregions=%d\n", pModule->Info.szModule, pModule->szFileVersion, pModule->Info.modBaseAddr, pModule->Info.modBaseSize, idxRegion);
 #ifdef RT_ARCH_X86
     int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR32)pModule->Info.modBaseAddr,
                                         pModule->Info.modBaseSize, idxRegion, aRegions);
@@ -251,7 +251,7 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
 
 //    AssertRC(rc);
     if (RT_FAILURE(rc))
-        VBoxServiceVerbose(3, "VbglR3RegisterSharedModule failed with %d\n", rc);
+        VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VbglR3RegisterSharedModule failed with %d\n", rc);
 
 end:
     RTMemFree(pVersionInfo);
@@ -351,7 +351,7 @@ void VBoxServicePageSharingInspectGuest()
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE)
     {
-        VBoxServiceVerbose(3, "CreateToolhelp32Snapshot failed with %d\n", GetLastError());
+        VBoxServiceVerbose(3, "VBoxServicePageSharingInspectGuest: CreateToolhelp32Snapshot failed with %d\n", GetLastError());
         return;
     }
 
@@ -609,7 +609,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
             break;
         if (rc != VERR_TIMEOUT && RT_FAILURE(rc))
         {
-            VBoxServiceError("RTSemEventMultiWait failed; rc=%Rrc\n", rc);
+            VBoxServiceError("VBoxServicePageSharingWorker: RTSemEventMultiWait failed; rc=%Rrc\n", rc);
             break;
         }
 #if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
@@ -698,7 +698,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
                 papszArgs[2] = NULL;
                 rc = RTProcCreate(pszExeName, papszArgs, RTENV_DEFAULT, 0 /* normal child */, &hProcess);
                 if (RT_FAILURE(rc))
-                    VBoxServiceError("RTProcCreate %s failed; rc=%Rrc\n", pszExeName, rc);
+                    VBoxServiceError("VBoxServicePageSharingWorkerProcess: RTProcCreate %s failed; rc=%Rrc\n", pszExeName, rc);
             }
         }
 
@@ -715,7 +715,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
             break;
         if (rc != VERR_TIMEOUT && RT_FAILURE(rc))
         {
-            VBoxServiceError("RTSemEventMultiWait failed; rc=%Rrc\n", rc);
+            VBoxServiceError("VBoxServicePageSharingWorkerProcess: RTSemEventMultiWait failed; rc=%Rrc\n", rc);
             break;
         }
     }

@@ -169,9 +169,6 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
 
 /**
  * Gathers VM statistics and reports them to the host.
- *
- * @returns
- * @param   oid                 .
  */
 static void VBoxServiceVMStatsReport(void)
 {
@@ -236,7 +233,7 @@ static void VBoxServiceVMStatsReport(void)
                                         | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE;
         }
         else
-            VBoxServiceVerbose(3, "GetPerformanceInfo failed with %d\n", GetLastError());
+            VBoxServiceVerbose(3, "VBoxServiceVMStatsReport: GetPerformanceInfo failed with %d\n", GetLastError());
     }
 
     /* Query CPU load information */
@@ -666,7 +663,7 @@ DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
         {
-            VBoxServiceError("RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
+            VBoxServiceError("VBoxServiceVMStatsWorker: RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
             rc = rc2;
             break;
         }

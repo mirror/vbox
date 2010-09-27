@@ -375,7 +375,7 @@ DECLCALLBACK(int) VBoxServiceBalloonWorker(bool volatile *pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
         {
-            VBoxServiceError("RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
+            VBoxServiceError("VBoxServiceBalloonWorker: RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
             rc = rc2;
             break;
         }

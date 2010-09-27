@@ -440,9 +440,9 @@ static void VBoxServiceTimeSyncCancelAdjust(void)
     if (g_hTokenProcess == NULL) /* No process token (anymore)? */
         return;
     if (SetSystemTimeAdjustment(0, TRUE /* Periodic adjustments disabled. */))
-        VBoxServiceVerbose(3, "Windows Time Adjustment is now disabled.\n");
+        VBoxServiceVerbose(3, "VBoxServiceTimeSyncCancelAdjust: Windows Time Adjustment is now disabled.\n");
     else if (g_cTimeSyncErrors++ < 10)
-        VBoxServiceError("SetSystemTimeAdjustment(,disable) failed, error=%u\n", GetLastError());
+        VBoxServiceError("VBoxServiceTimeSyncCancelAdjust: SetSystemTimeAdjustment(,disable) failed, error=%u\n", GetLastError());
 #endif /* !RT_OS_WINDOWS */
 }
 
@@ -481,7 +481,7 @@ static void VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift)
         }
     }
     else if (g_cTimeSyncErrors++ < 10)
-        VBoxServiceError("RTTimeSet(%RDtimespec) failed: %Rrc\n", &NewGuestTime, rc);
+        VBoxServiceError("VBoxServiceTimeSyncSet: RTTimeSet(%RDtimespec) failed: %Rrc\n", &NewGuestTime, rc);
 }
 
 
@@ -515,7 +515,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
             if (RT_FAILURE(rc2))
             {
                 if (g_cTimeSyncErrors++ < 10)
-                    VBoxServiceError("VbglR3GetHostTime failed; rc2=%Rrc\n", rc2);
+                    VBoxServiceError("VBoxServiceTimeSyncWorker: VbglR3GetHostTime failed; rc2=%Rrc\n", rc2);
                 break;
             }
             RTTimeNow(&GuestNow);
@@ -536,7 +536,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                     VbglR3GetSessionId(&idNewSession);
                     if (idNewSession != g_idTimeSyncSession)
                     {
-                        VBoxServiceVerbose(3, "TimeSync: The VM session ID changed, forcing resync.\n");
+                        VBoxServiceVerbose(3, "VBoxServiceTimeSyncWorker: The VM session ID changed, forcing resync.\n");
                         TimeSyncSetThreshold = 0;
                         g_idTimeSyncSession  = idNewSession;
                     }
@@ -558,9 +558,9 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                 RTTimeSpecAbsolute(&AbsDrift);
                 if (g_cVerbosity >= 3)
                 {
-                    VBoxServiceVerbose(3, "Host:    %s    (MinAdjust: %RU32 ms)\n",
+                    VBoxServiceVerbose(3, "VBoxServiceTimeSyncWorker: Host:    %s    (MinAdjust: %RU32 ms)\n",
                                        RTTimeToString(RTTimeExplode(&Time, &HostNow), sz, sizeof(sz)), MinAdjust);
-                    VBoxServiceVerbose(3, "Guest: - %s => %RDtimespec drift\n",
+                    VBoxServiceVerbose(3, "VBoxServiceTimeSyncWorker: Guest: - %s => %RDtimespec drift\n",
                                        RTTimeToString(RTTimeExplode(&Time, &GuestNow), sz, sizeof(sz)),
                                        &Drift);
                 }
@@ -587,7 +587,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                     VBoxServiceTimeSyncCancelAdjust();
                 break;
             }
-            VBoxServiceVerbose(3, "%RDtimespec: latency too high (%RDtimespec) sleeping 1s\n", GuestElapsed);
+            VBoxServiceVerbose(3, "VBoxServiceTimeSyncWorker: %RDtimespec: latency too high (%RDtimespec) sleeping 1s\n", GuestElapsed);
             RTThreadSleep(1000);
         } while (--cTries > 0);
 
@@ -607,7 +607,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
         {
-            VBoxServiceError("RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
+            VBoxServiceError("VBoxServiceTimeSyncWorker: RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
             rc = rc2;
             break;
         }
@@ -639,7 +639,7 @@ static DECLCALLBACK(void) VBoxServiceTimeSyncTerm(void)
         if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &g_TkOldPrivileges, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
         {
             DWORD dwErr = GetLastError();
-            VBoxServiceError("Restoring token privileges (SE_SYSTEMTIME_NAME) failed with code %u!\n", dwErr);
+            VBoxServiceError("VBoxServiceTimeSyncTerm: Restoring token privileges (SE_SYSTEMTIME_NAME) failed with code %u!\n", dwErr);
         }
         CloseHandle(g_hTokenProcess);
         g_hTokenProcess = NULL;
