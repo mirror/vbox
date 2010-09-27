@@ -251,7 +251,7 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 #define  VBOX_PCI_EXT_CAP_ID_SRIOV   0x10
 
 
-/* MSI flags (2 bytes, capability offset 2) */
+/* MSI flags, aka Message Control (2 bytes, capability offset 2) */
 #define  VBOX_PCI_MSI_FLAGS_64BIT    0x0080  /* 64-bit addresses allowed */
 #define  VBOX_PCI_MSI_FLAGS_QSIZE    0x0070  /* Message queue size configured */
 #define  VBOX_PCI_MSI_FLAGS_QMASK    0x000e  /* Maximum queue size available */
