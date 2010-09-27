@@ -331,7 +331,7 @@ static int vboxserviceVMInfoWriteUsers(void)
     }
     if (RT_SUCCESS(rc) && pszUserList)
         RTStrFree(pszUserList);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
