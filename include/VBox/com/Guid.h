@@ -182,7 +182,7 @@ public:
     }
 
     /* to pass instances to printf-like functions */
-    const PCRTUUID raw() const
+    PCRTUUID raw() const
     {
         return (PCRTUUID)&uuid;
     }
