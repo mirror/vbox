@@ -3157,6 +3157,43 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     else
         AssertMsgFailedReturn(("rc=%Rrc\n", rc), VERR_INTERNAL_ERROR);
 
+    if (rc == VINF_SUCCESS)
+    {
+        /* New page table; fully set it up. */
+        Assert(pPTDst);
+
+        /* Mask away the page offset. */
+        GCPtrPage &= ~((RTGCPTR)0xfff);
+
+        for (unsigned iPTDst = 0; iPTDst < RT_ELEMENTS(pPTDst->a); iPTDst++)
+        {
+            RTGCPTR GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
+            GSTPTE  PteSrc;
+
+            /* Fake the page table entry */
+            PteSrc.u = GCPtrCurPage;
+            PteSrc.n.u1Present  = 1;
+            PteSrc.n.u1Dirty    = 1;
+            PteSrc.n.u1Accessed = 1;
+            PteSrc.n.u1Write    = 1;
+            PteSrc.n.u1User     = 1;
+
+            PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
+            Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
+                    GCPtrCurPage, PteSrc.n.u1Present,
+                    PteSrc.n.u1Write & PdeSrc.n.u1Write,
+                    PteSrc.n.u1User  & PdeSrc.n.u1User,
+                    (uint64_t)PteSrc.u,
+                    SHW_PTE_LOG64(pPTDst->a[iPTDst]),
+                    SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
+
+            if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+                break;
+        }
+    }
+    /* else cached entry; assume it's still fully valid. */
+
+    /* Save the new PDE. */
     PdeDst.u &= X86_PDE_AVL_MASK;
     PdeDst.u |= pShwPage->Core.Key;
     PdeDst.n.u1Present  = 1;
@@ -3169,7 +3206,6 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 # endif
     ASMAtomicWriteSize(pPdeDst, PdeDst.u);
 
-    rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrc, GCPtrPage, PGM_SYNC_NR_PAGES, 0 /* page not present */);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPT), a);
     return rc;
 
