@@ -80,7 +80,14 @@ enum {
     PCIDEV_FLAG_PCI_TO_PCI_BRIDGE = 1<<1,
     /** Flag whether the device is a PCI Express device.
      * This is set prior to device registration.  */
-    PCIDEV_FLAG_PCI_EXPRESS_DEVICE = 1<<2
+    PCIDEV_FLAG_PCI_EXPRESS_DEVICE = 1<<2,
+    /** Flag whether the device is capable of MSI.
+     * This is set prior to device registration.  */
+    PCIDEV_FLAG_PCI_MSI            = 1<<3,
+     /** Flag whether the device is capable of MSI-X.
+     * This is set prior to device registration.  */
+    PCIDEV_FLAG_PCI_MSIX           = 1<<4
+    
 };
 
 /**
