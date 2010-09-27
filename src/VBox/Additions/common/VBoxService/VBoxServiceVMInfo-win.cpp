@@ -469,12 +469,22 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
     /* This function can report stale or orphaned interactive logon sessions
        of already logged off users (especially in Windows 2000). */
     NTSTATUS rcNt = LsaEnumerateLogonSessions(&cSession, &paSessions);
-    VBoxServiceVerbose(3, "VMInfo/Users: Found %ld users\n", cSession);
     if (rcNt != STATUS_SUCCESS)
     {
-        VBoxServiceError("VMInfo/Users: LsaEnumerate failed with %lu\n", LsaNtStatusToWinError(rcNt));
-        return RTErrConvertFromWin32(LsaNtStatusToWinError(rcNt));
+        ULONG rcWin = LsaNtStatusToWinError(rcNt);
+
+        /* If we're about to shutdown when we were in the middle of enumerating the logon
+           sessions, skip the error to not confuse the user with an unnecessary log message. */
+        if (rcWin == ERROR_SHUTDOWN_IN_PROGRESS)
+        {
+            VBoxServiceVerbose(3, "VMInfo/Users: Shutdown in progress ...\n");
+            rcWin = ERROR_SUCCESS;
+        }
+        else
+            VBoxServiceError("VMInfo/Users: LsaEnumerate failed with %lu\n", rcWin);
+        return RTErrConvertFromWin32(rcWin);
     }
+    VBoxServiceVerbose(3, "VMInfo/Users: Found %ld users\n", cSession);
 
     PVBOXSERVICEVMINFOPROC  paProcs;
     DWORD                   cProcs;
