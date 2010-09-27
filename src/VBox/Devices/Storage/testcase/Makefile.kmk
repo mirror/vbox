@@ -74,7 +74,7 @@ ifdef VBOX_WITH_TESTCASES
  endif
  ifeq ($(KBUILD_TARGET),linux)
   vbox-img_LIBS += crypt
- else ifeq ($(KBUILD_TARGET),darwin)
+ else if1of ($(KBUILD_TARGET),darwin freebsd)
   vbox-img_LIBS += iconv
  else ifeq ($(KBUILD_TARGET),win)
   vbox-img_SDKS.win = VBOX_NTDLL
