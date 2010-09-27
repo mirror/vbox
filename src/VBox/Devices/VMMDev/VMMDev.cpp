@@ -551,7 +551,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                      * User makes sure the directory exists.
                      */
                     if (!RTDirExists(pThis->szGuestCoreDumpDir))
-                        return VERR_NOT_FOUND;
+                        return VERR_PATH_NOT_FOUND;
 
                     char szCorePath[RTPATH_MAX];
                     RTStrCopy(szCorePath, sizeof(szCorePath), pThis->szGuestCoreDumpDir);
