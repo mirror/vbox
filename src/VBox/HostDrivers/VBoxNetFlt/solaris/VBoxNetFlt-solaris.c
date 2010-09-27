@@ -65,15 +65,6 @@
 #include <sys/sunddi.h>
 #include <sys/sunldi.h>
 
-/*
- * Experimental: Using netinfo interfaces and queuing out packets.
- * This is for playing better with IPFilter.
- */
-#undef VBOXNETFLT_SOLARIS_USE_NETINFO
-#ifdef VBOXNETFLT_SOLARIS_USE_NETINFO
-# include <sys/neti.h>
-#endif
-
 // Workaround for very strange define in sys/user.h
 // #define u       (curproc->p_user)       /* user is now part of proc structure */
 #ifdef u
@@ -3838,75 +3829,6 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
     int rc = VINF_SUCCESS;
     if (fDst & INTNETTRUNKDIR_WIRE)
     {
-#ifdef VBOXNETFLT_SOLARIS_USE_NETINFO
-        /*
-         * @todo try find a way for IPFilter to accept ethernet frames (currently silently drops them).
-         */
-        mblk_t *pMsg = vboxNetFltSolarisMBlkFromSG(pThis, pSG, fDst);
-        if (RT_LIKELY(pMsg))
-        {
-            PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pMsg->b_rptr;
-            unsigned uProtocol;
-            if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
-                uProtocol = AF_INET6;
-            else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV4))
-                uProtocol = AF_INET;
-
-            /*
-             * Queue out using netinfo.
-             */
-            netstack_t *pNetStack = netstack_get_current();
-            if (pNetStack)
-            {
-                net_data_t pNetData = net_lookup_impl(NHF_INET, pNetStack);
-                if (pNetData)
-                {
-                    phy_if_t pInterface = net_phylookup(pNetData, pThis->szName);
-                    if (pInterface)
-                    {
-                        net_inject_t InjectData;
-                        InjectData.ni_packet = pMsg;
-                        InjectData.ni_physical = pInterface;
-                        bzero(&InjectData.ni_addr, sizeof(InjectData.ni_addr));
-                        InjectData.ni_addr.ss_family = uProtocol;
-
-                        /*
-                         * Queue out rather than direct out transmission.
-                         */
-                        int rc = net_inject(pNetData, NI_QUEUE_OUT, &InjectData);
-                        if (!rc)
-                            rc = VINF_SUCCESS;
-                        else
-                        {
-                            LogRel((DEVICE_NAME ":queuing IP packet for transmission failed. rc=%d\n", rc));
-                            rc = VERR_NET_IO_ERROR;
-                        }
-                    }
-                    else
-                    {
-                        LogRel((DEVICE_NAME ":vboxNetFltPortOsXmit failed to lookup physical interface.\n"));
-                        rc = VERR_NET_IO_ERROR;
-                    }
-                }
-                else
-                {
-                    LogRel((DEVICE_NAME ":vboxNetFltPortOsXmit failed to get IP hooks.\n"));
-                    rc = VERR_NET_IO_ERROR;
-                }
-                netstack_rele(pNetStack);
-            }
-            else
-            {
-                LogRel((DEVICE_NAME ":vboxNetFltPortOsXmit failed to get current net stack.\n"));
-                rc = VERR_NET_IO_ERROR;
-            }
-        }
-        else
-        {
-            LogRel((DEVICE_NAME ":vboxNetFltPortOsXmit vboxNetFltSolarisMBlkFromSG failed.\n"));
-            rc = VERR_NO_MEMORY;
-        }
-#else
         vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
         if (RT_LIKELY(pPromiscStream))
         {
@@ -3924,7 +3846,6 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
                 return VERR_NO_MEMORY;
             }
         }
-#endif
     }
 
     if (fDst & INTNETTRUNKDIR_HOST)
