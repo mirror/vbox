@@ -400,6 +400,9 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
     {
         if (MsProcessKilled == UINT64_MAX)
         {
+            VBoxServiceVerbose(3, "ControlExec: Process (PID=%u) is still alive and not killed yet\n",
+                               pData->uPID);
+
             MsProcessKilled = RTTimeMilliTS();
             RTProcTerminate(hProcess);
             RTThreadSleep(500);
@@ -407,16 +410,27 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
         for (size_t i = 0; i < 10; i++)
         {
+            VBoxServiceVerbose(4, "ControlExec: Kill attempt %d/10: Waiting for process (PID=%u) exit ...\n",
+                               i + 1, pData->uPID);
             rc2 = RTProcWait(hProcess, RTPROCWAIT_FLAGS_NOBLOCK, &ProcessStatus);
             if (RT_SUCCESS(rc2))
             {
+                VBoxServiceVerbose(4, "ControlExec: Kill attempt %d/10: Process (PID=%u) exited\n",
+                                   i + 1, pData->uPID);
                 fProcessAlive = false;
                 break;
             }
             if (i >= 5)
+            {
+                VBoxServiceVerbose(4, "ControlExec: Kill attempt %d/10: Try to terminate (PID=%u) ...\n",
+                                   i + 1, pData->uPID);
                 RTProcTerminate(hProcess);
+            }
             RTThreadSleep(i >= 5 ? 2000 : 500);
         }
+
+        if (fProcessAlive)
+            VBoxServiceVerbose(3, "ControlExec: Process (PID=%u) could not be killed\n", pData->uPID);
     }
 
     /*
