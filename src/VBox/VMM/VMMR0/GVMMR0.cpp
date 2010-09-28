@@ -18,15 +18,31 @@
 
 /** @page pg_gvmm   GVMM - The Global VM Manager
  *
- * The Global VM Manager lives in ring-0. It's main function at the moment
- * is to manage a list of all running VMs, keep a ring-0 only structure (GVM)
- * for each of them, and assign them unique identifiers (so GMM can track
- * page owners). The idea for the future is to add an idle priority kernel
- * thread that can take care of tasks like page sharing.
+ * The Global VM Manager lives in ring-0.  Its main function at the moment is
+ * to manage a list of all running VMs, keep a ring-0 only structure (GVM) for
+ * each of them, and assign them unique identifiers (so GMM can track page
+ * owners).  The GVMM also manage some of the host CPU resources, like the the
+ * periodic preemption timer.
  *
- * The GVMM will create a ring-0 object for each VM when it's registered,
- * this is both for session cleanup purposes and for having a point where
- * it's possible to implement usage polices later (in SUPR0ObjRegister).
+ * The GVMM will create a ring-0 object for each VM when it is registered, this
+ * is both for session cleanup purposes and for having a point where it is
+ * possible to implement usage polices later (in SUPR0ObjRegister).
+ *
+ *
+ * @section     Periodic Preemption Timer
+ *
+ * On system that sports a high resolution kernel timer API, we use per-cpu
+ * timers to generate interrupts that preempts VT-x, AMD-V and raw-mode guest
+ * execution.  The timer frequency is calculating by taking the max
+ * TMCalcHostTimerFrequency for all VMs running on a CPU for the last ~160 ms
+ * (RT_ELEMENTS((PGVMMHOSTCPU)0, Ppt.aHzHistory) *
+ * GVMMHOSTCPU_PPT_HIST_INTERVAL_NS).
+ *
+ * The TMCalcHostTimerFrequency() part of the things gets its takes the max
+ * TMTimerSetFrequencyHint() value and adjusts by the current catch-up percent,
+ * warp drive percent and some fudge factors.  VMMR0.cpp reports the result via
+ * GVMMR0SchedUpdatePeriodicPreemptionTimer() before switching to the VT-x,
+ * AMD-V and raw-mode execution environments.
  */
 
 
