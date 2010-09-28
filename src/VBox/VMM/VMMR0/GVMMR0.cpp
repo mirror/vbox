@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2007-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -64,7 +64,7 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#ifdef DOXYGEN_RUNNING
+#if defined(RT_OS_LINUX) || defined(DOXYGEN_RUNNING)
 /** Define this to enable the periodic preemption timer. */
 # define GVMM_SCHED_WITH_PPT
 #endif
