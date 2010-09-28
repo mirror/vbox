@@ -369,6 +369,7 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetToR3Rendezvous;
     STAMCOUNTER                 StatRZRetToR3Timer;
     STAMCOUNTER                 StatRZRetToR3DMA;
+    STAMCOUNTER                 StatRZRetToR3CritSect;
     STAMCOUNTER                 StatRZRetTimerPending;
     STAMCOUNTER                 StatRZRetInterruptPending;
     STAMCOUNTER                 StatRZRetCallRing3;
