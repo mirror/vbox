@@ -435,6 +435,9 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
             if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Rendezvous);
             else
+            if (VM_FF_ISPENDING(pVM, VM_FF_PDM_DMA))
+                STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3DMA);
+            else
             if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Timer);
             else
