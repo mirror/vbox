@@ -215,6 +215,8 @@ typedef enum STAMUNIT
     STAMUNIT_NS_PER_OCCURENCE,
     /** Percentage. */
     STAMUNIT_PCT,
+    /** Hertz. */
+    STAMUNIT_HZ,
     /** The end (exclusive). */
     STAMUNIT_END
 } STAMUNIT;

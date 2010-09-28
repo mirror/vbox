@@ -504,6 +504,39 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         LogRel(("TM: u32VirtualWarpDrivePercentage=%RI32\n", pVM->tm.s.u32VirtualWarpDrivePercentage));
 
     /*
+     * Gather the Host Hz configuration values.
+     */
+    rc = CFGMR3QueryU32Def(pCfgHandle, "HostHzMax", &pVM->tm.s.cHostHzMax, 20000);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying uint32_t value \"HostHzMax\""));
+
+    rc = CFGMR3QueryU32Def(pCfgHandle, "HostHzFudgeFactorTimerCpu", &pVM->tm.s.cPctHostHzFudgeFactorTimerCpu, 111);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying uint32_t value \"HostHzFudgeFactorTimerCpu\""));
+
+    rc = CFGMR3QueryU32Def(pCfgHandle, "HostHzFudgeFactorOtherCpu", &pVM->tm.s.cPctHostHzFudgeFactorOtherCpu, 110);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying uint32_t value \"HostHzFudgeFactorOtherCpu\""));
+
+    rc = CFGMR3QueryU32Def(pCfgHandle, "HostHzFudgeFactorCatchUp100", &pVM->tm.s.cPctHostHzFudgeFactorCatchUp100, 300);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying uint32_t value \"HostHzFudgeFactorCatchUp100\""));
+
+    rc = CFGMR3QueryU32Def(pCfgHandle, "HostHzFudgeFactorCatchUp200", &pVM->tm.s.cPctHostHzFudgeFactorCatchUp200, 250);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying uint32_t value \"HostHzFudgeFactorCatchUp200\""));
+
+    rc = CFGMR3QueryU32Def(pCfgHandle, "HostHzFudgeFactorCatchUp400", &pVM->tm.s.cPctHostHzFudgeFactorCatchUp400, 200);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying uint32_t value \"HostHzFudgeFactorCatchUp400\""));
+
+    /*
      * Start the timer (guard against REM not yielding).
      */
     /** @cfgm{TM/TimerMillies, uint32_t, ms, 1, 1000, 10}
@@ -545,6 +578,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.cBadPrev, STAMTYPE_U32, "/TM/RC/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
     STAM_REL_REG(     pVM,(void*)&pVM->tm.s.offVirtualSync,               STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset",               STAMUNIT_NS, "The current offset. (subtract GivenUp to get the lag)");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.offVirtualSyncGivenUp,        STAMTYPE_U64, "/TM/VirtualSync/GivenUp",                     STAMUNIT_NS, "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attemted caught up with.");
+    STAM_REL_REG(     pVM,(void*)&pVM->tm.s.uMaxHzHint,                   STAMTYPE_U32, "/TM/MaxHzHint",                               STAMUNIT_HZ, "Max guest timer frequency hint.");
 
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR3.cExpired,    STAMTYPE_U32, "/TM/R3/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
@@ -636,6 +670,9 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
 # if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsTotal,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,               "Resettable: Total CPU run time.",   "/TM/CPU/%02u", i);
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecuting,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code.",    "/TM/CPU/%02u/PrfExecuting", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecLong,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - long hauls.",    "/TM/CPU/%02u/PrfExecLong", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecShort,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - short streches.",    "/TM/CPU/%02u/PrfExecShort", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecTiny,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - tiny bits.",    "/TM/CPU/%02u/PrfExecTiny", i);
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsHalted,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent halted.",                  "/TM/CPU/%02u/PrfHalted", i);
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsOther,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent in the VMM or preempted.", "/TM/CPU/%02u/PrfOther", i);
 # endif

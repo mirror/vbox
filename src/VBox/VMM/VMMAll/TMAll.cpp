@@ -200,6 +200,12 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
 
 # if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
     STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsExecuting, cNsExecutingDelta);
+    if (cNsExecutingDelta < 5000)
+        STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsExecTiny, cNsExecutingDelta);
+    else if (cNsExecutingDelta < 50000)
+        STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsExecShort, cNsExecutingDelta);
+    else
+        STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->tm.s.StatNsExecLong, cNsExecutingDelta);
     STAM_REL_COUNTER_ADD(&pVCpu->tm.s.StatNsTotal, cNsTotalNew - pVCpu->tm.s.cNsTotal);
     int64_t  const cNsOtherNewDelta  = cNsOtherNew - pVCpu->tm.s.cNsOther;
     if (cNsOtherNewDelta > 0)
@@ -1442,10 +1448,16 @@ VMMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
 VMMDECL(int) TMTimerSetFrequencyHint(PTMTIMER pTimer, uint32_t uHzHint)
 {
     TMTIMER_ASSERT_CRITSECT(pTimer);
+
+    uint32_t const uHzOldHint = pTimer->uHzHint;
     pTimer->uHzHint = uHzHint;
+
     PVM pVM = pTimer->CTX_SUFF(pVM);
-    if (uHzHint >= pVM->tm.s.uMaxHzHint)
+    uint32_t const uMaxHzHint = pVM->tm.s.uMaxHzHint;
+    if (   uHzHint    >  uMaxHzHint
+        || uHzOldHint >= uMaxHzHint)
         ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, true);
+
     return VINF_SUCCESS;
 }
 
@@ -2349,18 +2361,25 @@ VMM_INT_DECL(uint32_t) TMCalcHostTimerFrequency(PVM pVM, PVMCPU pVCpu)
 {
     uint32_t uHz = tmGetFrequencyHint(pVM);
 
-    /* Catch up. */
+    /* Catch up, we have to be more aggressive than the % indicates at the
+       beginning of the effort. */
     if (ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
     {
         uint32_t u32Pct = ASMAtomicReadU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage);
         if (ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
         {
+            if (u32Pct <= 100)
+                u32Pct = u32Pct * pVM->tm.s.cPctHostHzFudgeFactorCatchUp100 / 100;
+            else if (u32Pct <= 200)
+                u32Pct = u32Pct * pVM->tm.s.cPctHostHzFudgeFactorCatchUp200 / 100;
+            else if (u32Pct <= 400)
+                u32Pct = u32Pct * pVM->tm.s.cPctHostHzFudgeFactorCatchUp400 / 100;
             uHz *= u32Pct + 100;
             uHz /= 100;
         }
     }
 
-    /* Warp drive */
+    /* Warp drive. */
     if (ASMAtomicUoReadBool(&pVM->tm.s.fVirtualWarpDrive))
     {
         uint32_t u32Pct = ASMAtomicReadU32(&pVM->tm.s.u32VirtualWarpDrivePercentage);
@@ -2372,17 +2391,15 @@ VMM_INT_DECL(uint32_t) TMCalcHostTimerFrequency(PVM pVM, PVMCPU pVCpu)
     }
 
     /* Fudge factor. */
-    /** @todo make this configurable. */
-#if 0 /* what's wrong with this expression? I end up with uHz = 0 after this multiplication... */
-    uHz *= 110 + pVCpu->idCpu == pVM->tm.s.idTimerCpu;
-#else
     if (pVCpu->idCpu == pVM->tm.s.idTimerCpu)
-        uHz *= 111;
+        uHz *= pVM->tm.s.cPctHostHzFudgeFactorTimerCpu;
     else
-        uHz *= 110;
-#endif
+        uHz *= pVM->tm.s.cPctHostHzFudgeFactorOtherCpu;
     uHz /= 100;
 
-    //LogAlways(("TMCalcHostTimerFrequency->%u\n", uHz));
+    /* Make sure it isn't too high. */
+    if (uHz > pVM->tm.s.cHostHzMax)
+        uHz = pVM->tm.s.cHostHzMax;
+
     return uHz;
 }
