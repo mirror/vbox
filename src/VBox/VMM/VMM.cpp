@@ -415,6 +415,7 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3Rendezvous,      STAMTYPE_COUNTER, "/VMM/RZRet/ToR3/Rendezvous",     STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3Timer,           STAMTYPE_COUNTER, "/VMM/RZRet/ToR3/Timer",          STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3DMA,             STAMTYPE_COUNTER, "/VMM/RZRet/ToR3/DMA",            STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");    
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3CritSect,        STAMTYPE_COUNTER, "/VMM/RZRet/ToR3/CritSect",       STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");        
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetTimerPending,        STAMTYPE_COUNTER, "/VMM/RZRet/TimerPending",        STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TIMER_PENDING returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetInterruptPending,    STAMTYPE_COUNTER, "/VMM/RZRet/InterruptPending",    STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_INTERRUPT_PENDING returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetPATMDuplicateFn,     STAMTYPE_COUNTER, "/VMM/RZRet/PATMDuplicateFn",     STAMUNIT_OCCURENCES, "Number of VINF_PATM_DUPLICATE_FUNCTION returns.");
