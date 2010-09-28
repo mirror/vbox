@@ -408,6 +408,12 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetPatchIretIRQ,        STAMTYPE_COUNTER, "/VMM/RZRet/PatchIret",           STAMUNIT_OCCURENCES, "Number of VINF_PATM_PENDING_IRQ_AFTER_IRET returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetRescheduleREM,       STAMTYPE_COUNTER, "/VMM/RZRet/ScheduleREM",         STAMUNIT_OCCURENCES, "Number of VINF_EM_RESCHEDULE_REM returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3,                STAMTYPE_COUNTER, "/VMM/RZRet/ToR3",                STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3Unknown,         STAMTYPE_COUNTER, "/VMM/RZRet/ToR3/Unknown",        STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3TMVirt,          STAMTYPE_COUNTER, "/VMM/RZRet/ToR3/TMVirt",         STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3HandyPages,      STAMTYPE_COUNTER, "/VMM/RZRet/ToR3/Handy",          STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3PDMQueues,       STAMTYPE_COUNTER, "/VMM/RZRet/ToR3/PDMQueue",       STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3Rendezvous,      STAMTYPE_COUNTER, "/VMM/RZRet/ToR3/Rendezvous",     STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3Timer,           STAMTYPE_COUNTER, "/VMM/RZRet/ToR3/Timer",          STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetTimerPending,        STAMTYPE_COUNTER, "/VMM/RZRet/TimerPending",        STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TIMER_PENDING returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetInterruptPending,    STAMTYPE_COUNTER, "/VMM/RZRet/InterruptPending",    STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_INTERRUPT_PENDING returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetPATMDuplicateFn,     STAMTYPE_COUNTER, "/VMM/RZRet/PATMDuplicateFn",     STAMUNIT_OCCURENCES, "Number of VINF_PATM_DUPLICATE_FUNCTION returns.");
