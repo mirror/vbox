@@ -36,7 +36,11 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
 static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uErr);
 static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, GSTPDE const *pPdeSrc, RTGCPTR GCPtrPage);
 static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPD, PGSTPD pPDSrc, RTGCPTR GCPtrPage);
+#if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
 static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc, PPGMPOOLPAGE pShwPage, unsigned iPTDst);
+#else
+static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, RTGCPHYS GCPhysPage, PPGMPOOLPAGE pShwPage, unsigned iPTDst);
+#endif
 PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR Addr, unsigned fPage, unsigned uErr);
 PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
 PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
@@ -1580,8 +1584,12 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVM pVM, PCPGMPAGE pPage, uint64_t
  *
  * @remark  Not used for 2/4MB pages!
  */
+#if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
 static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc,
                                          PPGMPOOLPAGE pShwPage, unsigned iPTDst)
+#else
+static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, RTGCPHYS GCPhysPage, PPGMPOOLPAGE pShwPage, unsigned iPTDst)
+#endif
 {
     PVM      pVM = pVCpu->CTX_SUFF(pVM);
     RTGCPHYS GCPhysOldPage = NIL_RTGCPHYS;
@@ -1603,14 +1611,19 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE P
     Assert(!pShwPage->fDirty);
 #endif
 
+#if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     if (   PteSrc.n.u1Present
         && GST_IS_PTE_VALID(pVCpu, PteSrc))
+#endif
     {
+# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+        RTGCPHYS GCPhysPage = GST_GET_PTE_GCPHYS(PteSrc);
+# endif
         /*
          * Find the ram range.
          */
         PPGMPAGE pPage;
-        int rc = pgmPhysGetPageEx(&pVM->pgm.s, GST_GET_PTE_GCPHYS(PteSrc), &pPage);
+        int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
         if (RT_SUCCESS(rc))
         {
             /* Ignore ballooned pages.
@@ -1626,7 +1639,11 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE P
             /* Make the page writable if necessary. */
             if (    PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
                 &&  (   PGM_PAGE_IS_ZERO(pPage)
+# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
                      || (   PteSrc.n.u1Write
+# else
+                     || (   1
+# endif
                          && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
 # ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
                          && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
@@ -1638,7 +1655,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE P
                      )
                )
             {
-                rc = pgmPhysPageMakeWritable(pVM, pPage, GST_GET_PTE_GCPHYS(PteSrc));
+                rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhysPage);
                 AssertRC(rc);
             }
 #endif
@@ -1647,8 +1664,13 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE P
              * Make page table entry.
              */
             SHWPTE PteDst;
+# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+            uint64_t fGstShwPteFlags = GST_GET_PTE_SHW_FLAGS(pVCpu, PteSrc);
+# else
+            uint64_t fGstShwPteFlags = X86_PTE_P | X86_PTE_RW | X86_PTE_US | X86_PTE_A | X86_PTE_D;
+# endif
             if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                PGM_BTH_NAME(SyncHandlerPte)(pVM, pPage, GST_GET_PTE_SHW_FLAGS(pVCpu, PteSrc), &PteDst);
+                PGM_BTH_NAME(SyncHandlerPte)(pVM, pPage, fGstShwPteFlags, &PteDst);
             else
             {
 #if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
@@ -1670,7 +1692,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE P
                 {
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPage));
                     SHW_PTE_SET(PteDst,
-                                  GST_GET_PTE_SHW_FLAGS(pVCpu, PteSrc)
+                                  fGstShwPteFlags
                                 | PGM_PAGE_GET_HCPHYS(pPage)
                                 | PGM_PTFLAGS_TRACK_DIRTY);
                     SHW_PTE_SET_RO(PteDst);
@@ -1688,7 +1710,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE P
                     PteDst.n.u3EMT       = VMX_EPT_MEMTYPE_WB;
                     /* PteDst.n.u1Size = 0 */
 #else
-                    SHW_PTE_SET(PteDst, GST_GET_PTE_SHW_FLAGS(pVCpu, PteSrc) | PGM_PAGE_GET_HCPHYS(pPage));
+                    SHW_PTE_SET(PteDst, fGstShwPteFlags | PGM_PAGE_GET_HCPHYS(pPage));
 #endif
                 }
 
@@ -1701,7 +1723,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE P
                     /* Still applies to shared pages. */
                     Assert(!PGM_PAGE_IS_ZERO(pPage));
                     SHW_PTE_SET_RO(PteDst);   /** @todo this isn't quite working yet. Why, isn't it? */
-                    Log3(("SyncPageWorker: write-protecting %RGp pPage=%R[pgmpage]at iPTDst=%d\n", (RTGCPHYS)GST_GET_PTE_GCPHYS(PteSrc), pPage, iPTDst));
+                    Log3(("SyncPageWorker: write-protecting %RGp pPage=%R[pgmpage]at iPTDst=%d\n", GCPhysPage, pPage, iPTDst));
                 }
             }
 
@@ -1739,10 +1761,12 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE P
 /** @todo count these three different kinds. */
         Log2(("SyncPageWorker: invalid address in Pte\n"));
     }
+#if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     else if (!PteSrc.n.u1Present)
         Log2(("SyncPageWorker: page not present in Pte\n"));
     else
         Log2(("SyncPageWorker: invalid Pte\n"));
+#endif
 
     /*
      * The page is not present or the PTE is bad. Replace the shadow PTE by
@@ -2207,22 +2231,10 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
             if (!SHW_PTE_IS_P(pPTDst->a[iPTDst]))
             {
                 RTGCPTR GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
-                GSTPTE  PteSrc;
 
-                /* Fake the page table entry */
-                PteSrc.u = GCPtrCurPage;
-                PteSrc.n.u1Present  = 1;
-                PteSrc.n.u1Dirty    = 1;
-                PteSrc.n.u1Accessed = 1;
-                PteSrc.n.u1Write    = 1;
-                PteSrc.n.u1User     = 1;
-
-                PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
-                Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
-                      GCPtrCurPage, PteSrc.n.u1Present,
-                      PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                      PteSrc.n.u1User  & PdeSrc.n.u1User,
-                      (uint64_t)PteSrc.u,
+                PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], GCPtrCurPage, pShwPage, iPTDst);
+                Log2(("SyncPage: 4K+ %RGv PteSrc:{P=1 RW=1 U=1} PteDst=%08llx%s\n",
+                      GCPtrCurPage, 
                       SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                       SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
 
@@ -2238,22 +2250,11 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     {
         const unsigned  iPTDst       = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
         RTGCPTR         GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
-        GSTPTE          PteSrc;
 
-        /* Fake the page table entry */
-        PteSrc.u = GCPtrCurPage;
-        PteSrc.n.u1Present  = 1;
-        PteSrc.n.u1Dirty    = 1;
-        PteSrc.n.u1Accessed = 1;
-        PteSrc.n.u1Write    = 1;
-        PteSrc.n.u1User     = 1;
-        PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
+        PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], GCPtrCurPage, pShwPage, iPTDst);
 
-        Log2(("SyncPage: 4K  %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}PteDst=%08llx%s\n",
-              GCPtrPage, PteSrc.n.u1Present,
-              PteSrc.n.u1Write & PdeSrc.n.u1Write,
-              PteSrc.n.u1User  & PdeSrc.n.u1User,
-              (uint64_t)PteSrc.u,
+        Log2(("SyncPage: 4K  %RGv PteSrc:{P=1 RW=1 U=1}PteDst=%08llx%s\n",
+              GCPtrPage, 
               SHW_PTE_LOG64(pPTDst->a[iPTDst]),
               SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
     }
@@ -3133,13 +3134,6 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     }
 # endif /* HC_ARCH_BITS == 64 */
 
-    GSTPDE PdeSrc;
-    PdeSrc.u            = 0; /* faked so we don't have to #ifdef everything */
-    PdeSrc.n.u1Present  = 1;
-    PdeSrc.n.u1Write    = 1;
-    PdeSrc.n.u1Accessed = 1;
-    PdeSrc.n.u1User     = 1;
-
     /*
      * Allocate & map the page table.
      */
@@ -3168,22 +3162,10 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
         for (unsigned iPTDst = 0; iPTDst < RT_ELEMENTS(pPTDst->a); iPTDst++)
         {
             RTGCPTR GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(SHW_PT_MASK << SHW_PT_SHIFT)) | (iPTDst << PAGE_SHIFT);
-            GSTPTE  PteSrc;
 
-            /* Fake the page table entry */
-            PteSrc.u = GCPtrCurPage;
-            PteSrc.n.u1Present  = 1;
-            PteSrc.n.u1Dirty    = 1;
-            PteSrc.n.u1Accessed = 1;
-            PteSrc.n.u1Write    = 1;
-            PteSrc.n.u1User     = 1;
-
-            PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
-            Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
-                    GCPtrCurPage, PteSrc.n.u1Present,
-                    PteSrc.n.u1Write & PdeSrc.n.u1Write,
-                    PteSrc.n.u1User  & PdeSrc.n.u1User,
-                    (uint64_t)PteSrc.u,
+            PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], GCPtrCurPage, pShwPage, iPTDst);
+            Log2(("SyncPage: 4K+ %RGv PteSrc:{P=1 RW=1 U=1} PteDst=%08llx%s\n",
+                    GCPtrCurPage,
                     SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                     SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
 
@@ -3207,6 +3189,8 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     ASMAtomicWriteSize(pPdeDst, PdeDst.u);
 
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPT), a);
+    if (RT_FAILURE(rc))
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPTFailed));
     return rc;
 
 #else
