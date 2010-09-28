@@ -362,6 +362,12 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetPatchIretIRQ;
     STAMCOUNTER                 StatRZRetRescheduleREM;
     STAMCOUNTER                 StatRZRetToR3;
+    STAMCOUNTER                 StatRZRetToR3Unknown;
+    STAMCOUNTER                 StatRZRetToR3TMVirt;
+    STAMCOUNTER                 StatRZRetToR3HandyPages;
+    STAMCOUNTER                 StatRZRetToR3PDMQueues;
+    STAMCOUNTER                 StatRZRetToR3Rendezvous;
+    STAMCOUNTER                 StatRZRetToR3Timer;
     STAMCOUNTER                 StatRZRetTimerPending;
     STAMCOUNTER                 StatRZRetInterruptPending;
     STAMCOUNTER                 StatRZRetCallRing3;
