@@ -245,6 +245,40 @@ DECLINLINE(void) rtSocketUnlock(RTSOCKETINT *pThis)
 
 
 /**
+ * The slow path of rtSocketSwitchBlockingMode that does the actual switching.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The socket structure.
+ * @param   fBlocking           The desired mode of operation.
+ * @remarks Do not call directly.
+ */
+static int rtSocketSwitchBlockingModeSlow(RTSOCKETINT *pThis, bool fBlocking)
+{
+    int     rc        = VINF_SUCCESS;
+#ifdef RT_OS_WINDOWS
+    u_long  uBlocking = fBlocking ? 0 : 1;
+    if (ioctlsocket(pThis->hNative, FIONBIO, &uBlocking))
+        return rtSocketError();
+
+#else
+    int     fFlags    = fcntl(pThis->hNative, F_GETFL, 0);
+    if (fFlags == -1)
+        return rtSocketError();
+
+    if (fBlocking)
+        fFlags &= ~O_NONBLOCK;
+    else
+        fFlags |= O_NONBLOCK;
+    if (fcntl(pThis->hNative, F_SETFL, fFlags) == -1)
+       return rtSocketError();
+#endif
+
+    pThis->fBlocking = fBlocking;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Switches the socket to the desired blocking mode if neccessary.
  *
  * The socket must be locked.
@@ -255,36 +289,11 @@ DECLINLINE(void) rtSocketUnlock(RTSOCKETINT *pThis)
  */
 DECLINLINE(int) rtSocketSwitchBlockingMode(RTSOCKETINT *pThis, bool fBlocking)
 {
-    int rc = VINF_SUCCESS;
-
     if (pThis->fBlocking != fBlocking)
-    {
-#ifdef RT_OS_WINDOWS
-        u_long uBlocking = fBlocking ? 0 : 1;
-        if (ioctlsocket(pThis->hNative, FIONBIO, &uBlocking))
-            rc = rtSocketError();
-#else
-        int fFlags = fcntl(pThis->hNative, F_GETFL, 0);
-        if (fFlags != -1)
-        {
-            if (fBlocking)
-                fFlags &= ~O_NONBLOCK;
-            else
-                fFlags |= O_NONBLOCK;
-
-            if (fcntl(pThis->hNative, F_SETFL, fFlags) == -1)
-                rc = rtSocketError();
-        }
-        else
-            rc = rtSocketError();
-#endif
-
-        if (RT_SUCCESS(rc))
-            pThis->fBlocking = fBlocking;
-    }
-
-    return rc;
+        return rtSocketSwitchBlockingModeSlow(pThis, fBlocking);
+    return VINF_SUCCESS;
 }
+
 
 /**
  * Creates an IPRT socket handle for a native one.
