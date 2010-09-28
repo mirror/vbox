@@ -101,6 +101,7 @@ PROGRAMS += \
 	tstRTStrVersion \
 	tstRTSystemQueryDmi \
 	tstRTSystemQueryOsInfo \
+	tstRTTcp-1 \
 	tstRTTemp \
 	tstTermCallbacks \
 	tstThread-1 \
@@ -428,6 +429,9 @@ tstRTSystemQueryDmi_SOURCES = tstRTSystemQueryDmi.cpp
 
 tstRTSystemQueryOsInfo_TEMPLATE = VBOXR3TSTEXE
 tstRTSystemQueryOsInfo_SOURCES = tstRTSystemQueryOsInfo.cpp
+
+tstRTTcp-1_TEMPLATE = VBOXR3TSTEXE
+tstRTTcp-1_SOURCES = tstRTTcp-1.cpp
 
 tstRTTemp_TEMPLATE = VBOXR3TSTEXE
 tstRTTemp_SOURCES = tstRTTemp.cpp
