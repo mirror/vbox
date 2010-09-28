@@ -44,6 +44,7 @@
 
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
+# include "UIWindowMenuManager.h"
 #endif
 
 /* Global includes */
@@ -280,6 +281,10 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMMenu->addAction(mVmRefreshAction);
     mVMMenu->addAction(mVmShowLogsAction);
 
+#ifdef Q_WS_MAC
+    menuBar()->addMenu(UIWindowMenuManager::instance(this)->createMenu(this));
+#endif /* Q_WS_MAC */
+
     mVMCtxtMenu = new QMenu(this);
     mVMCtxtMenu->addAction(mVmConfigAction);
     mVMCtxtMenu->addAction(mVmDeleteAction);
@@ -444,6 +449,10 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* bring the VM list to the focus */
     mVMListView->setFocus();
+
+#ifdef Q_WS_MAC
+    UIWindowMenuManager::instance()->addWindow(this);
+#endif /* Q_WS_MAC */
 }
 
 VBoxSelectorWnd::~VBoxSelectorWnd()
@@ -460,6 +469,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
             .arg(mNormalGeo.x()).arg(y)
             .arg(mNormalGeo.width()).arg(mNormalGeo.height());
 #ifdef Q_WS_MAC
+        UIWindowMenuManager::destroy();
         ::darwinUnregisterForUnifiedToolbarContextMenuEvents(this);
         if (::darwinIsWindowMaximized(this))
 #else /* Q_WS_MAC */

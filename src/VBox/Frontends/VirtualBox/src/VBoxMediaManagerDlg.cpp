@@ -45,6 +45,10 @@
 #include "UIVirtualBoxEventHandler.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+#ifdef Q_WS_MAC
+# include "UIWindowMenuManager.h"
+#endif /* Q_WS_MAC */
+
 class AddVDMUrlsEvent: public QEvent
 {
 public:
@@ -380,6 +384,13 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
 
 VBoxMediaManagerDlg::~VBoxMediaManagerDlg()
 {
+#ifdef Q_WS_MAC
+    if (!mDoSelect)
+    {
+        UIWindowMenuManager::instance()->removeWindow(this);
+        UIWindowMenuManager::instance()->destroyMenu(this);
+    }
+#endif /* Q_WS_MAC */
     delete mToolBar;
 }
 
@@ -495,6 +506,14 @@ void VBoxMediaManagerDlg::setup (VBoxDefs::MediumType aType, bool aDoSelect,
 
     /* Applying language settings */
     retranslateUi();
+
+#ifdef Q_WS_MAC
+    if (!mDoSelect)
+    {
+        menuBar()->addMenu(UIWindowMenuManager::instance()->createMenu(this));
+        UIWindowMenuManager::instance()->addWindow(this);
+    }
+#endif /* Q_WS_MAC */
 
     mSetupMode = false;
 }

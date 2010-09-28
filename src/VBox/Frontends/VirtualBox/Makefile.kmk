@@ -361,11 +361,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/seamless/UIMachineViewSeamless.h \
 	src/runtime/seamless/UIMachineWindowSeamless.h
 
-ifdef VBOX_WITH_REGISTRATION
- VirtualBox_QT_MOCHDRS += \
-	src/wizards/registration/UIRegistrationWzd.h
-endif
-
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
 	src/VBoxMediaManagerDlg.cpp \
@@ -378,6 +373,18 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIMachine.cpp \
 	src/runtime/UIMachineLogic.cpp \
 	src/runtime/UIMachineMenuBar.cpp
+
+ifeq ($(KBUILD_TARGET),darwin)
+ VirtualBox_QT_MOCHDRS += \
+    src/darwin/UIWindowMenuManager.h
+ VirtualBox_QT_MOCSRCS += \
+    src/darwin/UIWindowMenuManager.cpp
+endif
+
+ifdef VBOX_WITH_REGISTRATION
+ VirtualBox_QT_MOCHDRS += \
+	src/wizards/registration/UIRegistrationWzd.h
+endif
 
 ifdef VBOX_WITH_XPCOM
  VirtualBox_QT_MOCSRCS += \
@@ -528,6 +535,7 @@ VirtualBox_SOURCES.win += \
 VirtualBox_SOURCES.darwin += \
 	src/runtime/UIFrameBufferQuartz2D.cpp \
 	src/darwin/UIAbstractDockIconPreview.cpp \
+	src/darwin/UIWindowMenuManager.cpp \
 	src/darwin/UICocoaDockIconPreview.mm
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
