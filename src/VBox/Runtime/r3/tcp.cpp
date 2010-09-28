@@ -934,26 +934,30 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdo
         rc = RTSocketShutdown(Sock, false /*fRead*/, true /*fWrite*/);
         if (RT_SUCCESS(rc))
         {
-            uint64_t u64Start = RTTimeMilliTS();
-            for (;;)
+            size_t      cbReceived = 0;
+            uint64_t    u64Start   = RTTimeMilliTS();
+            while (   cbReceived < _1G
+                   && RTTimeMilliTS() - u64Start < 30000)
             {
-                rc = RTSocketSelectOne(Sock, 1000);
+                uint32_t fEvents;
+                rc = RTSocketSelectOneEx(Sock, RTSOCKET_EVT_READ | RTSOCKET_EVT_ERROR, &fEvents, 1000);
                 if (rc == VERR_TIMEOUT)
-                {
-                    if (RTTimeMilliTS() - u64Start > 30000)
-                        break;
-                }
-                else if (rc != VINF_SUCCESS)
+                    continue;
+                if (RT_FAILURE(rc))
                     break;
-                {
-                    char abBitBucket[16*_1K];
-                    ssize_t cbBytesRead = recv(RTSocketToNative(Sock), &abBitBucket[0], sizeof(abBitBucket), MSG_NOSIGNAL);
-                    if (cbBytesRead == 0)
-                        break; /* orderly shutdown in progress */
-                    if (cbBytesRead < 0)
-                        break; /* some kind of error, never mind which... */
-                }
-            }  /* forever */
+                if (fEvents & RTSOCKET_EVT_ERROR)
+                    break;
+
+                char abBitBucket[16*_1K];
+                size_t cbRead;
+                rc = RTSocketReadNB(Sock, &abBitBucket[0], sizeof(abBitBucket), &cbRead);
+                if (RT_FAILURE(rc))
+                    break; /* some kind of error, never mind which... */
+                if (rc != VINF_TRY_AGAIN && !cbRead)
+                    break; /* orderly shutdown in progress */
+
+                cbReceived += cbRead;
+            }
         }
     }
 
