@@ -3102,6 +3102,46 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         <computeroutput>div</computeroutput> elements.</para>
       </sect2>
     </sect1>
+
+    <sect1>
+      <title>RDPWeb change log</title>
+
+      <sect2>
+        <title>Version 1.1.26</title>
+
+        <itemizedlist>
+
+          <listitem>
+            <para><computeroutput>webclient.js</computeroutput> is a part of the
+            distribution package.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>lastError</computeroutput> property.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>keyboardSendScancodes</computeroutput> and
+            <computeroutput>keyboardSendCAD</computeroutput> methods.</para>
+          </listitem>
+
+        </itemizedlist>
+
+      </sect2>
+
+      <sect2>
+        <title>Version 1.0.24</title>
+
+        <itemizedlist>
+
+          <listitem>
+            <para>Initial release.</para>
+          </listitem>
+
+        </itemizedlist>
+
+      </sect2>
+    </sect1>
   </chapter>
 
   <chapter id="javaapi">
