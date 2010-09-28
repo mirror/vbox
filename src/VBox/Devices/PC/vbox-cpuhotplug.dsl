@@ -15,16 +15,16 @@
 
 DefinitionBlock ("SSDT-cpuhotplug.aml", "SSDT", 1, "VBOX  ", "VBOXCPUT", 2)
 {
-    External(\_SB.CPUC)
-    External(\_SB.CPUL)
-    External(\_SB.CPEV)
-    External(\_SB.CPET)
+    External(CPUC)
+    External(CPUL)
+    External(CPEV)
+    External(CPET)
 
     // Method to check for the CPU status
     Method(CPCK, 1)
     {
-        Store (Arg0, \_SB.CPUC)
-        Return(LEqual(\_SB.CPUL, 0x01))
+        Store (Arg0, CPUC)
+        Return(LEqual(CPUL, 0x01))
     }
 
     Scope (\_SB)
@@ -73,7 +73,7 @@ DefinitionBlock ("SSDT-cpuhotplug.aml", "SSDT", 1, "VBOX  ", "VBOXCPUT", 2)
             }                                                              \
             Method(_EJ0, 1)                                                \
             {                                                              \
-                Store(id, \_SB.CPUL) /* Unlock the CPU */                  \
+                Store(id, CPUL) /* Unlock the CPU */                       \
                 Return                                                     \
             }                                                              \
         }                                                                  \
@@ -130,8 +130,8 @@ DefinitionBlock ("SSDT-cpuhotplug.aml", "SSDT", 1, "VBOX  ", "VBOXCPUT", 2)
         // re-evaluated
         Method (_L01, 0, NotSerialized)
         {
-            Store(\_SB.CPEV, Local0)
-            Store(\_SB.CPET, Local1)
+            Store(CPEV, Local0)
+            Store(CPET, Local1)
 
             CHECK_CPU(0x01, SCK1, CPU1)
             CHECK_CPU(0x02, SCK2, CPU2)
