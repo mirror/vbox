@@ -124,7 +124,7 @@ typedef struct UVM
 #ifdef ___STAMInternal_h
         struct STAMUSERPERVM    s;
 #endif
-        uint8_t                 padding[256];
+        uint8_t                 padding[4096];
     } stam;
 
     /** Per virtual CPU data. */

@@ -153,11 +153,11 @@ typedef struct GVMMHOSTCPU
         /** Hitoricized uDesiredHz values.  The array wraps around, new entries
          * are added at iHzHistory. This is updated approximately every
          * GVMMHOSTCPU_PPT_HIST_INTERVAL_NS by the timer callback. */
-        uint32_t            aHzHistory[32];
+        uint32_t            aHzHistory[8];
         /** Statistics counter for recording the number of interval changes. */
-        uint64_t            cChanges;
+        uint32_t            cChanges;
         /** Statistics counter for recording the number of timer starts. */
-        uint64_t            cStarts;
+        uint32_t            cStarts;
     } Ppt;
 #endif /* GVMM_SCHED_WITH_PPT */
 
@@ -2181,8 +2181,8 @@ GVMMR0DECL(void) GVMMR0SchedUpdatePeriodicPreemptionTimer(PVM pVM, RTCPUID idHos
      * We have to be a little bit careful since we might be race the timer
      * callback here.
      */
-    if (uHz > 20000)
-        uHz = 20000;
+    if (uHz > 16384)
+        uHz = 16384;  /** @todo add a query method for this! */
     if (RT_UNLIKELY(   uHz > ASMAtomicReadU32(&pCpu->Ppt.uDesiredHz)
                     && uHz >= pCpu->Ppt.uMinHz
                     && !pCpu->Ppt.fStarting /* solaris paranoia */))
@@ -2307,6 +2307,33 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
             pStats->SchedSum.cPollWakeUps      += pGVM->gvmm.s.StatsSched.cPollWakeUps;
         }
     }
+
+    /*
+     * Copy out the per host CPU statistics.
+     */
+    uint32_t iDstCpu = 0;
+    uint32_t cSrcCpus = pGVMM->cHostCpus;
+    for (uint32_t iSrcCpu = 0; iSrcCpu < cSrcCpus; iSrcCpu++)
+    {
+        if (pGVMM->aHostCpus[iSrcCpu].idCpu != NIL_RTCPUID)
+        {
+            pStats->aHostCpus[iDstCpu].idCpu      = pGVMM->aHostCpus[iSrcCpu].idCpu;
+            pStats->aHostCpus[iDstCpu].idxCpuSet  = pGVMM->aHostCpus[iSrcCpu].idxCpuSet;
+#ifdef GVMM_SCHED_WITH_PPT
+            pStats->aHostCpus[iDstCpu].uDesiredHz = pGVMM->aHostCpus[iSrcCpu].Ppt.uDesiredHz;
+            pStats->aHostCpus[iDstCpu].uTimerHz   = pGVMM->aHostCpus[iSrcCpu].Ppt.uTimerHz;
+            pStats->aHostCpus[iDstCpu].cChanges   = pGVMM->aHostCpus[iSrcCpu].Ppt.cChanges;
+            pStats->aHostCpus[iDstCpu].cStarts    = pGVMM->aHostCpus[iSrcCpu].Ppt.cStarts;
+#else
+            pStats->aHostCpus[iDstCpu].uDesiredHz = 0;
+            pStats->aHostCpus[iDstCpu].uTimerHz   = 0;
+            pStats->aHostCpus[iDstCpu].cChanges   = 0;
+            pStats->aHostCpus[iDstCpu].cStarts    = 0;
+#endif
+            iDstCpu++;
+        }
+    }
+    pStats->cHostCpus = iDstCpu;
 
     gvmmR0UsedUnlock(pGVMM);
 

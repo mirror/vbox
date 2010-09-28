@@ -178,7 +178,7 @@ static const DBGCCMD    g_aCmds[] =
 
 
 /**
- * The GVMM mapping records.
+ * The GVMM mapping records - sans the host cpus.
  */
 static const STAMR0SAMPLE g_aGVMMStats[] =
 {
@@ -212,6 +212,7 @@ static const STAMR0SAMPLE g_aGVMMStats[] =
 
     { RT_UOFFSETOF(GVMMSTATS, cVMs),                      STAMTYPE_U32,       STAMUNIT_CALLS, "/GVMM/VMs", "The number of VMs accessible to the caller." },
     { RT_UOFFSETOF(GVMMSTATS, cEMTs),                     STAMTYPE_U32,       STAMUNIT_CALLS, "/GVMM/EMTs", "The number of emulation threads." },
+    { RT_UOFFSETOF(GVMMSTATS, cHostCpus),                 STAMTYPE_U32,       STAMUNIT_CALLS, "/GVMM/HostCPUs", "The number of host CPUs." },
 };
 
 
@@ -782,6 +783,10 @@ VMMR3DECL(int)  STAMR3ResetU(PUVM pUVM, const char *pszPat)
                 *((uint8_t *)&GVMMReq.Stats + g_aGVMMStats[i].offVar) = 0xff;
                 fGVMMMatched = true;
             }
+        if (!fGVMMMatched)
+        {
+            /** @todo match cpu leaves some rainy day.  */
+        }
 
         /* GMM */
 //        memset(&GMMReq.Stats, 0, sizeof(GMMReq.Stats));
@@ -942,9 +947,7 @@ VMMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapsho
      * Write the content.
      */
     stamR3SnapshotPrintf(&State, "<Statistics>\n");
-    STAM_LOCK_RD(pUVM);
     int rc = stamR3EnumU(pUVM, pszPat, true /* fUpdateRing0 */, stamR3SnapshotOne, &State);
-    STAM_UNLOCK_RD(pUVM);
     stamR3SnapshotPrintf(&State, "</Statistics>\n");
 
     if (RT_SUCCESS(rc))
@@ -1261,9 +1264,7 @@ VMMR3DECL(int)  STAMR3DumpU(PUVM pUVM, const char *pszPat)
     Args.pvArg = NULL;
     Args.pfnPrintf = stamR3EnumLogPrintf;
 
-    STAM_LOCK_RD(pUVM);
     stamR3EnumU(pUVM, pszPat, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
-    STAM_UNLOCK_RD(pUVM);
     return VINF_SUCCESS;
 }
 
@@ -1314,9 +1315,7 @@ VMMR3DECL(int)  STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat)
     Args.pvArg = NULL;
     Args.pfnPrintf = stamR3EnumRelLogPrintf;
 
-    STAM_LOCK_RD(pUVM);
     stamR3EnumU(pUVM, pszPat, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
-    STAM_UNLOCK_RD(pUVM);
     return VINF_SUCCESS;
 }
 
@@ -1367,9 +1366,7 @@ VMMR3DECL(int)  STAMR3PrintU(PUVM pUVM, const char *pszPat)
     Args.pvArg = NULL;
     Args.pfnPrintf = stamR3EnumPrintf;
 
-    STAM_LOCK_RD(pUVM);
     stamR3EnumU(pUVM, pszPat, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
-    STAM_UNLOCK_RD(pUVM);
     return VINF_SUCCESS;
 }
 
@@ -1537,10 +1534,7 @@ VMMR3DECL(int) STAMR3EnumU(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum,
     Args.pfnEnum = pfnEnum;
     Args.pvUser  = pvUser;
 
-    STAM_LOCK_RD(pUVM);
-    int rc = stamR3EnumU(pUVM, pszPat, true /* fUpdateRing0 */, stamR3EnumOne, &Args);
-    STAM_UNLOCK_RD(pUVM);
-    return rc;
+    return stamR3EnumU(pUVM, pszPat, true /* fUpdateRing0 */, stamR3EnumOne, &Args);
 }
 
 
@@ -1668,10 +1662,11 @@ static char **stamR3SplitPattern(const char *pszPat, unsigned *pcExpressions, ch
  * Enumerates the nodes selected by a pattern or all nodes if no pattern
  * is specified.
  *
- * The call must own at least a read lock to the STAM data.
+ * The call may lock STAM for writing before calling this function, however do
+ * not lock it for reading as this function may need to write lock STAM.
  *
  * @returns The rc from the callback.
- * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pszPat          Pattern.
  * @param   fUpdateRing0    Update the ring-0 .
  * @param   pfnCallback     Callback function which shall be called for matching nodes.
@@ -1679,7 +1674,8 @@ static char **stamR3SplitPattern(const char *pszPat, unsigned *pcExpressions, ch
  *                          terminated and the status code returned to the caller.
  * @param   pvArg           User parameter for the callback.
  */
-static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0, int (*pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg)
+static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
+                       int (*pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg)
 {
     int rc = VINF_SUCCESS;
 
@@ -1691,7 +1687,8 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0, int (*p
         if (fUpdateRing0)
             stamR3Ring0StatsUpdateU(pUVM, "*");
 
-        PSTAMDESC   pCur = pUVM->stam.s.pHead;
+        STAM_LOCK_RD(pUVM);
+        PSTAMDESC pCur = pUVM->stam.s.pHead;
         while (pCur)
         {
             rc = pfnCallback(pCur, pvArg);
@@ -1701,6 +1698,7 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0, int (*p
             /* next */
             pCur = pCur->pNext;
         }
+        STAM_UNLOCK_RD(pUVM);
     }
 
     /*
@@ -1711,6 +1709,7 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0, int (*p
         if (fUpdateRing0)
             stamR3Ring0StatsUpdateU(pUVM, pszPat);
 
+        STAM_LOCK_RD(pUVM);
         /** @todo This needs to be optimized since the GUI is using this path for the VM info dialog.
          * Note that it's doing exact matching. Organizing the samples in a tree would speed up thing
          * no end (at least for debug and profile builds). */
@@ -1721,6 +1720,7 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0, int (*p
                 if (rc)
                     break;
             }
+        STAM_UNLOCK_RD(pUVM);
     }
 
     /*
@@ -1743,6 +1743,7 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0, int (*p
         if (fUpdateRing0)
             stamR3Ring0StatsUpdateMultiU(pUVM, papszExpressions, cExpressions);
 
+        STAM_LOCK_RD(pUVM);
         unsigned iExpression = 0;
         for (PSTAMDESC pCur = pUVM->stam.s.pHead; pCur; pCur = pCur->pNext)
             if (stamR3MultiMatch(papszExpressions, cExpressions, &iExpression, pCur->pszName))
@@ -1751,6 +1752,7 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0, int (*p
                 if (rc)
                     break;
             }
+        STAM_UNLOCK_RD(pUVM);
 
         RTMemTmpFree(papszExpressions);
         RTStrFree(pszCopy);
@@ -1772,6 +1774,7 @@ static void stamR3Ring0StatsRegisterU(PUVM pUVM)
         stamR3RegisterU(pUVM, (uint8_t *)&pUVM->stam.s.GVMMStats + g_aGVMMStats[i].offVar, NULL, NULL,
                         g_aGVMMStats[i].enmType, STAMVISIBILITY_ALWAYS, g_aGVMMStats[i].pszName,
                         g_aGVMMStats[i].enmUnit, g_aGVMMStats[i].pszDesc);
+    pUVM->stam.s.cRegisteredHostCpus = 0;
 }
 
 
@@ -1790,8 +1793,8 @@ static void stamR3Ring0StatsUpdateU(PUVM pUVM, const char *pszPat)
 /**
  * Updates the ring-0 statistics.
  *
- * The ring-0 statistics aren't directly addressable from ring-3 and
- * must be copied when needed.
+ * The ring-0 statistics aren't directly addressable from ring-3 and must be
+ * copied when needed.
  *
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   pszPat      The pattern (for knowing when to skip).
@@ -1810,6 +1813,10 @@ static void stamR3Ring0StatsUpdateMultiU(PUVM pUVM, const char * const *papszExp
             fUpdate = true;
             break;
         }
+    if (!fUpdate)
+    {
+        /** @todo check the cpu leaves - rainy day.   */
+    }
     if (fUpdate)
     {
         GVMMQUERYSTATISTICSSREQ Req;
@@ -1818,7 +1825,46 @@ static void stamR3Ring0StatsUpdateMultiU(PUVM pUVM, const char * const *papszExp
         Req.pSession = pVM->pSession;
         int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_GVMM_QUERY_STATISTICS, 0, &Req.Hdr);
         if (RT_SUCCESS(rc))
+        {
             pUVM->stam.s.GVMMStats = Req.Stats;
+
+            /*
+             * Check if the number of host CPUs has changed (it will the first
+             * time around and normally never again).
+             */
+            if (RT_UNLIKELY(pUVM->stam.s.GVMMStats.cHostCpus > pUVM->stam.s.cRegisteredHostCpus))
+            {
+                STAM_LOCK_WR(pUVM);
+                if (RT_UNLIKELY(pUVM->stam.s.GVMMStats.cHostCpus > pUVM->stam.s.cRegisteredHostCpus))
+                {
+                    uint32_t cCpus = pUVM->stam.s.GVMMStats.cHostCpus;
+                    for (uint32_t iCpu  = pUVM->stam.s.cRegisteredHostCpus; iCpu < cCpus; iCpu++)
+                    {
+                        char   szName[120];
+                        size_t cchBase = RTStrPrintf(szName, sizeof(szName), "/GVMM/HostCpus/%u", iCpu);
+                        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aHostCpus[iCpu].idCpu, NULL, NULL,
+                                        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_NONE, "Host CPU ID");
+                        strcpy(&szName[cchBase], "/idxCpuSet");
+                        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aHostCpus[iCpu].idxCpuSet, NULL, NULL,
+                                        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_NONE, "CPU Set index");
+                        strcpy(&szName[cchBase], "/DesiredHz");
+                        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aHostCpus[iCpu].uDesiredHz, NULL, NULL,
+                                        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_HZ, "The desired frequency");
+                        strcpy(&szName[cchBase], "/CurTimerHz");
+                        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aHostCpus[iCpu].uTimerHz, NULL, NULL,
+                                        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_HZ, "The current timer frequency");
+                        strcpy(&szName[cchBase], "/PPTChanges");
+                        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aHostCpus[iCpu].cChanges, NULL, NULL,
+                                        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_OCCURENCES, "RTTimerChangeInterval calls");
+                        strcpy(&szName[cchBase], "/PPTStarts");
+                        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aHostCpus[iCpu].cStarts, NULL, NULL,
+                                        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_OCCURENCES, "RTTimerStart calls");
+                    }
+                    pUVM->stam.s.cRegisteredHostCpus = cCpus;
+                }
+                STAM_UNLOCK_WR(pUVM);
+            }
+        }
     }
 }
 
@@ -1850,6 +1896,7 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
         case STAMUNIT_NS_PER_CALL:          return "ns/call";
         case STAMUNIT_NS_PER_OCCURENCE:     return "ns/time";
         case STAMUNIT_PCT:                  return "%";
+        case STAMUNIT_HZ:                   return "Hz";
 
         default:
             AssertMsgFailed(("Unknown unit %d\n", enmUnit));
@@ -1888,11 +1935,7 @@ static DECLCALLBACK(int) stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     Args.pvArg = pCmdHlp;
     Args.pfnPrintf = stamR3EnumDbgfPrintf;
 
-    STAM_LOCK_RD(pUVM);
-    int rc = stamR3EnumU(pUVM, cArgs ? paArgs[0].u.pszString : NULL, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
-    STAM_UNLOCK_RD(pUVM);
-
-    return rc;
+    return stamR3EnumU(pUVM, cArgs ? paArgs[0].u.pszString : NULL, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
 }
 
 

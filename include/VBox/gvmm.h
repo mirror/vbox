@@ -30,6 +30,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/sup.h>
+#include <iprt/cpuset.h> /* RTCPUSET_MAX_CPUS */
 
 RT_C_DECLS_BEGIN
 
@@ -104,18 +105,45 @@ typedef struct GVMMSTATSSCHED
 typedef GVMMSTATSSCHED *PGVMMSTATSSCHED;
 
 /**
+ * Per host cpu statistics.
+ */
+typedef struct GVMMSTATSHOSTCPU
+{
+    /** The CPU ID. */
+    RTCPUID         idCpu;
+    /** The CPU's set index. */
+    uint32_t        idxCpuSet;
+    /** The desired PPT frequency. */
+    uint32_t        uDesiredHz;
+    /** The current PPT timer frequency.  */
+    uint32_t        uTimerHz;
+    /** The number of times the PPT was changed. */
+    uint32_t        cChanges;
+    /** The number of times the PPT was started. */
+    uint32_t        cStarts;
+} GVMMSTATSHOSTCPU;
+/** Pointer to the GVMM per host CPU statistics. */
+typedef GVMMSTATSHOSTCPU *PGVMMSTATSHOSTCPU;
+
+/**
  * The GMM statistics.
  */
 typedef struct GVMMSTATS
 {
     /** The VM statistics if a VM was specified. */
-    GVMMSTATSSCHED  SchedVM;
+    GVMMSTATSSCHED      SchedVM;
     /** The sum statistics of all VMs accessible to the caller. */
-    GVMMSTATSSCHED  SchedSum;
+    GVMMSTATSSCHED      SchedSum;
     /** The number of VMs accessible to the caller. */
-    uint32_t        cVMs;
+    uint32_t            cVMs;
     /** The number of emulation threads in those VMs. */
-    uint32_t        cEMTs;
+    uint32_t            cEMTs;
+    /** Padding.  */
+    uint32_t            u32Padding;
+    /** The number of valid entries in aHostCpus. */
+    uint32_t            cHostCpus;
+    /** Per host CPU statistics. */
+    GVMMSTATSHOSTCPU    aHostCpus[RTCPUSET_MAX_CPUS];
 } GVMMSTATS;
 /** Pointer to the GVMM statistics. */
 typedef GVMMSTATS *PGVMMSTATS;
