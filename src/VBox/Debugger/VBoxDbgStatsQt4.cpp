@@ -2258,6 +2258,7 @@ VBoxDbgStatsModel::strDeltaValue(PCDBGGUISTATSNODE pNode)
         case STAMTYPE_U32_RESET:
         case STAMTYPE_X32:
         case STAMTYPE_X32_RESET:
+        case STAMTYPE_U64:
         case STAMTYPE_U64_RESET:
         case STAMTYPE_X64:
         case STAMTYPE_X64_RESET:
