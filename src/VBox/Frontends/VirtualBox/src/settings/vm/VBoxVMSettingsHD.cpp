@@ -1985,7 +1985,7 @@ void VBoxVMSettingsHD::showEvent (QShowEvent *aEvent)
         mLtAttachment->setColumnMinimumWidth (1, maxWidth);
 #endif
     }
-    VBoxSettingsPage::showEvent (aEvent);
+    UISettingsPage::showEvent (aEvent);
 }
 
 void VBoxVMSettingsHD::mediumUpdated (const VBoxMedium &aMedium)

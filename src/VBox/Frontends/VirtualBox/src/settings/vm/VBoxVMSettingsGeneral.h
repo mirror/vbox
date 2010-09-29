@@ -19,11 +19,11 @@
 #ifndef __VBoxVMSettingsGeneral_h__
 #define __VBoxVMSettingsGeneral_h__
 
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxVMSettingsGeneral.gen.h"
 #include "COMDefs.h"
 
-class VBoxVMSettingsGeneral : public VBoxSettingsPage,
+class VBoxVMSettingsGeneral : public UISettingsPage,
                               public Ui::VBoxVMSettingsGeneral
 {
     Q_OBJECT;

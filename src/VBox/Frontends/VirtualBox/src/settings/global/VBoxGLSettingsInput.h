@@ -19,10 +19,10 @@
 #ifndef __VBoxGLSettingsInput_h__
 #define __VBoxGLSettingsInput_h__
 
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxGLSettingsInput.gen.h"
 
-class VBoxGLSettingsInput : public VBoxSettingsPage,
+class VBoxGLSettingsInput : public UISettingsPage,
                             public Ui::VBoxGLSettingsInput
 {
     Q_OBJECT;

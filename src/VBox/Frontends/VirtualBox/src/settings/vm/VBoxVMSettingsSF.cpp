@@ -165,7 +165,7 @@ private:
 };
 
 VBoxVMSettingsSF::VBoxVMSettingsSF (int aType, QWidget *aParent)
-    : VBoxSettingsPage (aParent)
+    : UISettingsPage (aParent)
     , mDialogType (aType)
     , mIsListViewChanged (false)
 {

@@ -180,6 +180,6 @@ void VBoxVMSettingsGeneral::retranslateUi()
 void VBoxVMSettingsGeneral::showEvent (QShowEvent *aEvent)
 {
     QCoreApplication::sendPostedEvents();
-    VBoxSettingsPage::showEvent (aEvent);
+    UISettingsPage::showEvent (aEvent);
 }
 

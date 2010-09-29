@@ -19,7 +19,7 @@
 #ifndef __VBoxVMSettingsSerial_h__
 #define __VBoxVMSettingsSerial_h__
 
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxVMSettingsSerial.gen.h"
 #include "COMDefs.h"
 
@@ -60,7 +60,7 @@ private:
     CSerialPort mPort;
 };
 
-class VBoxVMSettingsSerialPage : public VBoxSettingsPage
+class VBoxVMSettingsSerialPage : public UISettingsPage
 {
     Q_OBJECT;
 

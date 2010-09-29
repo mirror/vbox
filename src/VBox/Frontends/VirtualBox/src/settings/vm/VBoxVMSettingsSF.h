@@ -20,7 +20,7 @@
 #define __VBoxVMSettingsSF_h__
 
 /* Local includes */
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxVMSettingsSF.gen.h"
 
 /* Local forwards */
@@ -36,7 +36,7 @@ enum SFDialogType
 typedef QPair <QString, SFDialogType> SFolderName;
 typedef QList <SFolderName> SFoldersNameList;
 
-class VBoxVMSettingsSF : public VBoxSettingsPage, public Ui::VBoxVMSettingsSF
+class VBoxVMSettingsSF : public UISettingsPage, public Ui::VBoxVMSettingsSF
 {
     Q_OBJECT;
 

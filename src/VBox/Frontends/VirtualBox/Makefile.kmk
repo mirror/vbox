@@ -282,7 +282,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIWizard.h \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
-	src/settings/VBoxSettingsPage.h \
+	src/settings/UISettingsPage.h \
 	src/settings/VBoxSettingsSelector.h \
 	src/settings/global/VBoxGLSettingsGeneral.h \
 	src/settings/global/VBoxGLSettingsInput.h \

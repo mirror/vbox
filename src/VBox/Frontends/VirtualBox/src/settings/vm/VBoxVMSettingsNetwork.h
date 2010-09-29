@@ -21,7 +21,7 @@
 
 /* VBox Includes */
 #include "COMDefs.h"
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxVMSettingsNetwork.gen.h"
 #include "VBoxVMSettingsPortForwardingDlg.h"
 
@@ -84,7 +84,7 @@ private:
     UIPortForwardingDataList mPortForwardingRules;
 };
 
-class VBoxVMSettingsNetworkPage : public VBoxSettingsPage
+class VBoxVMSettingsNetworkPage : public UISettingsPage
 {
     Q_OBJECT;
 

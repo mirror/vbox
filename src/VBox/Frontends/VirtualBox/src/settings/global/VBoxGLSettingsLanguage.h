@@ -19,10 +19,10 @@
 #ifndef __VBoxGLSettingsLanguage_h__
 #define __VBoxGLSettingsLanguage_h__
 
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxGLSettingsLanguage.gen.h"
 
-class VBoxGLSettingsLanguage : public VBoxSettingsPage,
+class VBoxGLSettingsLanguage : public UISettingsPage,
                                public Ui::VBoxGLSettingsLanguage
 {
     Q_OBJECT;

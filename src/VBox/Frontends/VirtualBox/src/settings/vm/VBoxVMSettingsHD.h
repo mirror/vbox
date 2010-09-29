@@ -31,7 +31,7 @@
 #include <QPointer>
 
 /* Local includes */
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxVMSettingsHD.gen.h"
 #include "COMDefs.h"
 
@@ -533,7 +533,7 @@ private:
  * QWidget class reimplementation.
  * Used as HD Settings widget.
  */
-class VBoxVMSettingsHD : public VBoxSettingsPage,
+class VBoxVMSettingsHD : public UISettingsPage,
                          public Ui::VBoxVMSettingsHD
 {
     Q_OBJECT;

@@ -159,7 +159,7 @@ protected:
 
 private:
 
-    VBoxSettingsPage *m_pSettings;
+    UISettingsPage *m_pSettings;
     CSession &m_session;
 };
 

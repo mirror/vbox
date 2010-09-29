@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxSettingsPage class declaration
+ * UISettingsPage class declaration
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,26 +16,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxSettingsPage_h__
-#define __VBoxSettingsPage_h__
+#ifndef __UISettingsPage_h__
+#define __UISettingsPage_h__
 
+/* Global includes */
+#include <QWidget>
+
+/* Local includes */
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-#include <QWidget>
-
+/* Forward declarations */
 class VBoxGlobalSettings;
 class QIWidgetValidator;
 
-class VBoxSettingsPage : public QIWithRetranslateUI<QWidget>
+/* Settings page base class: */
+class UISettingsPage : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    VBoxSettingsPage (QWidget *aParent = 0)
-        : QIWithRetranslateUI<QWidget> (aParent)
-        , mFirstWidget (0) {}
+    /* Settings page constructor: */
+    UISettingsPage(QWidget *pParent = 0)
+        : QIWithRetranslateUI<QWidget>(pParent)
+        , m_pFirstWidget(0)
+    {
+    }
 
     /* Global settings set/get stuff */
     virtual void getFrom (const CSystemProperties & /* aProps */,
@@ -47,16 +54,17 @@ public:
     virtual void getFrom (const CMachine & /* aMachine */) {}
     virtual void putBackTo() {}
 
-    virtual void setValidator (QIWidgetValidator * /* aVal */) {}
-    virtual bool revalidate (QString & /* aWarnText */, QString & /* aTitle */)
-        { return true; }
+    /* Validation stuff: */
+    virtual void setValidator(QIWidgetValidator * /* pValidator */) {}
+    virtual bool revalidate(QString & /* strWarningText */, QString & /* strTitle */) { return true; }
 
-    virtual void setOrderAfter (QWidget *aWidget) { mFirstWidget = aWidget; }
+    /* Navigation stuff: */
+    virtual void setOrderAfter(QWidget *pWidget) { m_pFirstWidget = pWidget; }
 
 protected:
 
-    QWidget *mFirstWidget;
+    QWidget *m_pFirstWidget;
 };
 
-#endif // __VBoxSettingsPage_h__
+#endif // __UISettingsPage_h__
 

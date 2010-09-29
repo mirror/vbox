@@ -743,8 +743,8 @@ QStringList VBoxVMSettingsNetworkPage::hoiList (bool aRefresh)
 void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
 {
     /* Setup tab order */
-    Assert (mFirstWidget);
-    setTabOrder (mFirstWidget, mTwAdapters->focusProxy());
+    Assert (m_pFirstWidget);
+    setTabOrder (m_pFirstWidget, mTwAdapters->focusProxy());
     QWidget *lastFocusWidget = mTwAdapters->focusProxy();
 
     /* Cache data */

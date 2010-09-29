@@ -30,7 +30,7 @@ class QStackedWidget;
 class QTimer;
 class VBoxWarningPane;
 class VBoxSettingsSelector;
-class VBoxSettingsPage;
+class UISettingsPage;
 
 /* Base dialog class for both Global & VM settings which encapsulates most of their similar functionalities */
 class UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>, public Ui::UISettingsDialog
@@ -70,7 +70,7 @@ protected:
     void addItem(const QString &strBigIcon, const QString &strBigIconDisabled,
                  const QString &strSmallIcon, const QString &strSmallIconDisabled,
                  int cId, const QString &strLink,
-                 VBoxSettingsPage* pSettingsPage = 0, int iParentId = -1);
+                 UISettingsPage* pSettingsPage = 0, int iParentId = -1);
 
     /* Correlation handler: */
     virtual bool recorrelate(QWidget *pPage, QString &strWarning);
@@ -96,7 +96,7 @@ private:
     bool eventFilter(QObject *pObject, QEvent *pEvent);
     void showEvent(QShowEvent *pEvent);
 
-    void assignValidator(VBoxSettingsPage *pPage);
+    void assignValidator(UISettingsPage *pPage);
 
     /* Global Flags: */
     bool m_fPolished;

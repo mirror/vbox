@@ -19,11 +19,11 @@
 #ifndef __VBoxVMSettingsAudio_h__
 #define __VBoxVMSettingsAudio_h__
 
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxVMSettingsAudio.gen.h"
 #include "COMDefs.h"
 
-class VBoxVMSettingsAudio : public VBoxSettingsPage,
+class VBoxVMSettingsAudio : public UISettingsPage,
                             public Ui::VBoxVMSettingsAudio
 {
     Q_OBJECT;
