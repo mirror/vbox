@@ -3107,6 +3107,30 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
       <title>RDPWeb change log</title>
 
       <sect2>
+        <title>Version 1.2.28</title>
+
+        <itemizedlist>
+
+          <listitem>
+            <para><computeroutput>keyboardLayout</computeroutput>,
+            <computeroutput>keyboardLayouts</computeroutput>,
+            <computeroutput>UUID</computeroutput>
+            properties.</para>
+          </listitem>
+
+          <listitem>
+            <para>Support for German keyboard layout on the client.</para>
+          </listitem>
+
+          <listitem>
+            <para>Rebranding to Oracle.</para>
+          </listitem>
+
+        </itemizedlist>
+
+      </sect2>
+
+      <sect2>
         <title>Version 1.1.26</title>
 
         <itemizedlist>
