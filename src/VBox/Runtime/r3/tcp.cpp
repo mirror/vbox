@@ -918,6 +918,12 @@ RTR3DECL(int) RTTcpClientClose(RTSOCKET Sock)
 }
 
 
+RTR3DECL(int) RTTcpClientCloseEx(RTSOCKET Sock, bool fGracefulShutdown)
+{
+    return rtTcpClose(Sock, "RTTcpClientCloseEx", fGracefulShutdown);
+}
+
+
 #ifdef FIX_FOR_3_2
 /**
  * Changes the blocking mode of the socket.
