@@ -1019,14 +1019,14 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdo
 #endif
 
                 char abBitBucket[16*_1K];
-                size_t cbRead;
 #ifdef FIX_FOR_3_2
-                ssize_t cbBytesRead = recv(hNative, &abBitBucket[0], sizeof(abBitBucket), MSG_NOSIGNAL);
-                if (cbBytesRead == 0)
+                ssize_t cbRead = recv(hNative, &abBitBucket[0], sizeof(abBitBucket), MSG_NOSIGNAL);
+                if (cbRead == 0)
                     break; /* orderly shutdown in progress */
-                if (cbBytesRead < 0 && errno != EAGAIN)
+                if (cbRead < 0 && errno != EAGAIN)
                     break; /* some kind of error, never mind which... */
 #else
+                size_t cbRead;
                 rc = RTSocketReadNB(Sock, &abBitBucket[0], sizeof(abBitBucket), &cbRead);
                 if (RT_FAILURE(rc))
                     break; /* some kind of error, never mind which... */
