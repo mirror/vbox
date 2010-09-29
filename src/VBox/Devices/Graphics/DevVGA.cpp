@@ -836,6 +836,7 @@ static void vbe_ioport_write_index(void *opaque, uint32_t addr, uint32_t val)
 static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 {
     VGAState *s = (VGAState*)opaque;
+    uint32_t max_bank;
 
     if (s->vbe_index <= VBE_DISPI_INDEX_NB) {
 #ifdef DEBUG_BOCHS_VBE
@@ -908,8 +909,12 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             }
             break;
         case VBE_DISPI_INDEX_BANK:
-            if (val > s->vbe_bank_max)
-                val = s->vbe_bank_max;
+            if (s->vbe_regs[VBE_DISPI_INDEX_BPP] <= 4)
+                max_bank = s->vbe_bank_max >> 2;    /* Each bank really covers 256K */
+            else
+                max_bank = s->vbe_bank_max;
+            if (val > max_bank)
+                val = max_bank;
             s->vbe_regs[s->vbe_index] = val;
             s->bank_offset = (val << 16);
 
@@ -2719,7 +2724,7 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     qemu_get_be32s(f, &s->vbe_line_offset);
     if (version_id < 2)
         qemu_get_be32s(f, &u32Dummy);
-    s->vbe_bank_max = s->vram_size >> 16;
+    s->vbe_bank_max = (s->vram_size >> 16) - 1;
 #else
     if (is_vbe)
 # ifndef VBOX
@@ -2825,7 +2830,7 @@ int vga_initialize(PCIBus *bus, DisplayState *ds, uint8_t *vga_ram_base,
 
 #ifdef CONFIG_BOCHS_VBE
     s->vbe_regs[VBE_DISPI_INDEX_ID] = VBE_DISPI_ID0;
-    s->vbe_bank_max = s->vram_size >> 16;
+    s->vbe_bank_max = (s->vram_size >> 16) - 1;
 #if defined (TARGET_I386)
     register_ioport_read(0x1ce, 1, 2, vbe_ioport_read_index, s);
     register_ioport_read(0x1cf, 1, 2, vbe_ioport_read_data, s);
@@ -5857,7 +5862,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
 #ifdef CONFIG_BOCHS_VBE
     pThis->vbe_regs[VBE_DISPI_INDEX_ID] = VBE_DISPI_ID0;
     pThis->vbe_regs[VBE_DISPI_INDEX_VBOX_VIDEO] = 0;
-    pThis->vbe_bank_max   = pThis->vram_size >> 16;
+    pThis->vbe_bank_max   = (pThis->vram_size >> 16) - 1;
 #endif /* CONFIG_BOCHS_VBE */
 
     /*
@@ -6148,6 +6153,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pThis->vram_size < VGA_VRAM_MIN)
         return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
                                    "VRamSize is too small, %#x, max %#x", pThis->vram_size, VGA_VRAM_MIN);
+    if (pThis->vram_size & (_256K - 1)) /* Make sure there are no partial banks even in planar modes. */
+        return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                   "VRamSize is not a multiple of 256K (%#x)", pThis->vram_size);
 
     rc = CFGMR3QueryU32Def(pCfg, "MonitorCount", &pThis->cMonitors, 1);
     AssertLogRelRCReturn(rc, rc);
