@@ -1634,7 +1634,7 @@ VOID VBoxMRxReadRegistryParameters ()
     );
 
     Status = ZwOpenKey(&ParametersHandle, KEY_READ, &ObjectAttributes);
-    if (!NT_SUCCESS(Status))
+    if (NT_SUCCESS(Status))
     {
         Status = VBoxMRxGetUlongRegistryParameter(ParametersHandle,L"LogRate" ,
         (PULONG)&Temp,
