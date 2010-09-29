@@ -38,6 +38,9 @@
 # include <netinet/tcp.h>
 # include <arpa/inet.h>
 # include <netdb.h>
+# ifdef FIX_FOR_3_2
+#  include <fcntl.h>
+# endif
 #endif
 #include <limits.h>
 
@@ -915,6 +918,40 @@ RTR3DECL(int) RTTcpClientClose(RTSOCKET Sock)
 }
 
 
+#ifdef FIX_FOR_3_2
+/**
+ * Changes the blocking mode of the socket.
+ *
+ * @returns 0 on success, -1 on failure.
+ * @param   hSocket             The socket to work on.
+ * @param   fBlocking           The desired mode of operation.
+ */
+static int rtTcpSetBlockingMode(RTHCUINTPTR hSocket, bool fBlocking)
+{
+    int     rc        = VINF_SUCCESS;
+#ifdef RT_OS_WINDOWS
+    u_long  uBlocking = fBlocking ? 0 : 1;
+    if (ioctlsocket(hSocket, FIONBIO, &uBlocking))
+        return -1;
+
+#else
+    int     fFlags    = fcntl(hSocket, F_GETFL, 0);
+    if (fFlags == -1)
+        return -1;
+
+    if (fBlocking)
+        fFlags &= ~O_NONBLOCK;
+    else
+        fFlags |= O_NONBLOCK;
+    if (fcntl(hSocket, F_SETFL, fFlags) == -1)
+       return -1;
+#endif
+
+    return 0;
+}
+#endif
+
+
 /**
  * Internal close function which does all the proper bitching.
  */
@@ -932,13 +969,39 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdo
     if (fTryGracefulShutdown)
     {
         rc = RTSocketShutdown(Sock, false /*fRead*/, true /*fWrite*/);
+#ifdef FIX_FOR_3_2
+        RTHCUINTPTR hNative = RTSocketToNative(Sock);
+        if (RT_SUCCESS(rc) && rtTcpSetBlockingMode(hNative, false /*fBlocking*/) == 0)
+#else
         if (RT_SUCCESS(rc))
+#endif
         {
+
             size_t      cbReceived = 0;
             uint64_t    u64Start   = RTTimeMilliTS();
             while (   cbReceived < _1G
                    && RTTimeMilliTS() - u64Start < 30000)
             {
+#ifdef FIX_FOR_3_2
+                fd_set FdSetR;
+                FD_ZERO(&FdSetR);
+                FD_SET(hNative, &FdSetR);
+
+                fd_set FdSetE;
+                FD_ZERO(&FdSetE);
+                FD_SET(hNative, &FdSetE);
+
+                struct timeval TvTimeout;
+                TvTimeout.tv_sec  = 1;
+                TvTimeout.tv_usec = 0;
+                rc = select(hNative + 1, &FdSetR, NULL, &FdSetE, &TvTimeout);
+                if (rc == 0)
+                    continue;
+                if (rc < 0)
+                    break;
+                if (FD_ISSET(hNative, &FdSetE))
+                    break;
+#else
                 uint32_t fEvents;
                 rc = RTSocketSelectOneEx(Sock, RTSOCKET_EVT_READ | RTSOCKET_EVT_ERROR, &fEvents, 1000);
                 if (rc == VERR_TIMEOUT)
@@ -947,14 +1010,23 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdo
                     break;
                 if (fEvents & RTSOCKET_EVT_ERROR)
                     break;
+#endif
 
                 char abBitBucket[16*_1K];
                 size_t cbRead;
+#ifdef FIX_FOR_3_2
+                ssize_t cbBytesRead = recv(hNative, &abBitBucket[0], sizeof(abBitBucket), MSG_NOSIGNAL);
+                if (cbBytesRead == 0)
+                    break; /* orderly shutdown in progress */
+                if (cbBytesRead < 0 && errno != EAGAIN)
+                    break; /* some kind of error, never mind which... */
+#else
                 rc = RTSocketReadNB(Sock, &abBitBucket[0], sizeof(abBitBucket), &cbRead);
                 if (RT_FAILURE(rc))
                     break; /* some kind of error, never mind which... */
                 if (rc != VINF_TRY_AGAIN && !cbRead)
                     break; /* orderly shutdown in progress */
+#endif
 
                 cbReceived += cbRead;
             }
