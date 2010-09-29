@@ -74,7 +74,7 @@ VBoxReadInput(InputInfoPtr pInfo)
            miPointerGetScreen(pInfo->dev) != NULL
 #endif
         &&  RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy))
-        && (fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
+        && (fFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
     {
 #if ABI_XINPUT_VERSION == SET_ABI_VERSION(2, 0)
         /* Bug in the 1.4 X server series - conversion_proc was no longer
@@ -176,7 +176,7 @@ VBoxProc(DeviceIntPtr device, int what)
         if (RT_SUCCESS(rc))
             rc = VbglR3SetMouseStatus(  fFeatures
                                       | VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                      | VMMDEV_MOUSE_GUEST_USES_VMMDEV);
+                                      | VMMDEV_MOUSE_GUEST_USES_EVENT);
         if (!RT_SUCCESS(rc)) {
             xf86Msg(X_ERROR, "%s: Failed to switch guest mouse into absolute mode\n",
                     pInfo->name);
@@ -193,7 +193,7 @@ VBoxProc(DeviceIntPtr device, int what)
         if (RT_SUCCESS(rc))
             rc = VbglR3SetMouseStatus(  fFeatures
                                       & ~VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                      & ~VMMDEV_MOUSE_GUEST_USES_VMMDEV);
+                                      & ~VMMDEV_MOUSE_GUEST_USES_EVENT);
         xf86RemoveEnabledDevice(pInfo);
         device->public.on = FALSE;
         break;

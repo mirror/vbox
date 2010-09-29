@@ -441,9 +441,9 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
                  dx, dy, dz, dw));
         /* Make sure that the guest knows that we are sending real movement
          * events to the PS/2 device and not just dummy wake-up ones. */
-        if (mfHostCaps & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
+        if (mfHostCaps & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
         {
-            mfHostCaps &= ~VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
+            mfHostCaps &= ~VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE;
             fUpdateCaps = TRUE;
         }
 
@@ -535,10 +535,9 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     {
         AutoWriteLock aLock(this COMMA_LOCKVAL_SRC_POS);
 
-        /** @todo rename that capability to VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE */
-        if (mfVMMDevCanAbs && !(mfHostCaps & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
+        if (mfVMMDevCanAbs && !(mfHostCaps & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
         {
-            mfHostCaps |= VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
+            mfHostCaps |= VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE;
             fUpdateCaps = TRUE;
         }
     }
@@ -546,9 +545,8 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     if (fUpdateCaps)
         setVMMDevMouseCaps(mfHostCaps);
 
-    /** @todo rename that capability to VMMDEV_MOUSE_GUEST_USES_EVENT */
     rc = reportAbsEvent(mouseXAbs, mouseYAbs, dz, dw, fButtons,
-                        mouseCaps & VMMDEV_MOUSE_GUEST_USES_VMMDEV);
+                        mouseCaps & VMMDEV_MOUSE_GUEST_USES_EVENT);
 
     return rc;
 }

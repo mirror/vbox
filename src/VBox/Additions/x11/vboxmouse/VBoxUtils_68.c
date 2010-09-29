@@ -149,7 +149,7 @@ int VBoxMouseQueryPosition(unsigned int *abs_x, unsigned int *abs_y)
         if (RT_SUCCESS(g_vmmreqMouseStatus->header.rc))
         {
             /* does the host want absolute coordinates? */
-            if (g_vmmreqMouseStatus->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
+            if (g_vmmreqMouseStatus->mouseFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
             {
                 *abs_x = g_vmmreqMouseStatus->pointerXPos;
                 *abs_y = g_vmmreqMouseStatus->pointerYPos;

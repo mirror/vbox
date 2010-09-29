@@ -89,7 +89,7 @@ int VBoxMouseQueryPosition(unsigned int *pcx, unsigned int *pcy)
     if (RT_SUCCESS(rc))
         rc = VbglR3GetMouseStatus(&fFeatures, &cx, &cy);
     if (   RT_SUCCESS(rc)
-        && !(fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
+        && !(fFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
         rc = VERR_NOT_SUPPORTED;
     if (RT_SUCCESS(rc))
     {
