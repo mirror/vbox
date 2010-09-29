@@ -35,7 +35,7 @@
 #ifdef RT_OS_LINUX
 # include <mntent.h>
 #endif
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
 # include <sys/mount.h>
 #endif
 
@@ -268,7 +268,7 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
             else if (!strcmp("nfs", Stat.st_fstype))
                 *penmType = RTFSTYPE_NFS;
 
-#elif defined(RT_OS_DARWIN)
+#elif defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
             struct statfs statfsBuf;
             if (!statfs(pszNativeFsPath, &statfsBuf))
             {
@@ -285,6 +285,10 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
                     *penmType = RTFSTYPE_DEVFS;
                 else if (!strcmp("nfs", statfsBuf.f_fstypename))
                     *penmType = RTFSTYPE_NFS;
+                else if (!strcmp("ufs", statfsBuf.f_fstypename))
+                    *penmType = RTFSTYPE_UFS;
+                else if (!strcmp("zfs", statfsBuf.f_fstypename))
+                    *penmType = RTFSTYPE_ZFS;
             }
             else
                 rc = RTErrConvertFromErrno(errno);
