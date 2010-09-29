@@ -1498,7 +1498,7 @@ static DECLCALLBACK(int) hdaSaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     /* Save Codec nodes states */
-    stac9220SaveState(&pThis->hda.Codec, pSSMHandle);
+    codecSaveState(&pThis->hda.Codec, pSSMHandle);
     /* Save MMIO registers */
     SSMR3PutMem (pSSMHandle, pThis->hda.au32Regs, sizeof (pThis->hda.au32Regs));
     /* Save HDA dma counters */
@@ -1526,7 +1526,10 @@ static DECLCALLBACK(int) hdaLoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     /* Load Codec nodes states */
-    stac9220LoadState(&pThis->hda.Codec, pSSMHandle);
+    AssertMsgReturn (uVersion == HDA_SSM_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    Assert (uPass == SSM_PASS_FINAL); NOREF(uPass);
+
+    codecLoadState(&pThis->hda.Codec, pSSMHandle);
     /* Load MMIO registers */
     SSMR3GetMem (pSSMHandle, pThis->hda.au32Regs, sizeof (pThis->hda.au32Regs));
     /* Load HDA dma counters */
@@ -1778,7 +1781,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
 
 
     pThis->hda.Codec.pHDAState = (void *)&pThis->hda;
-    rc = stac9220Construct(&pThis->hda.Codec);
+    rc = codecConstruct(&pThis->hda.Codec, STAC9220_CODEC);
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
     hdaReset (pDevIns);
@@ -1802,7 +1805,7 @@ static DECLCALLBACK(int) hdaDestruct (PPDMDEVINS pDevIns)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
 
-    int rc = stac9220Destruct(&pThis->hda.Codec);
+    int rc = codecDestruct(&pThis->hda.Codec);
     AssertRC(rc);
     if (pThis->hda.pu32CorbBuf)
         RTMemFree(pThis->hda.pu32CorbBuf);
