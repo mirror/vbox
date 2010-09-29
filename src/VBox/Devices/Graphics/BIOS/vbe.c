@@ -408,6 +408,8 @@ dispi_get_bpp:
 #else
   in   ax, dx
 #endif
+  cmp  al, #4
+  jbe  get_bpp_noinc
   mov  ah, al
   shr  ah, 3
   test al, #0x07
