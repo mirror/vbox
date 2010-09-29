@@ -218,6 +218,10 @@ typedef enum
     LAST_INDEX
 } ENMSOUNDSOURCE;
 
+typedef enum
+{
+    STAC9220_CODEC
+} ENMCODEC;
 typedef struct CODECState
 {
     uint16_t                id;
@@ -231,6 +235,7 @@ typedef struct CODECState
     SWVoiceOut              *voice_po;
     /** Mic in */
     SWVoiceIn               *voice_mc;
+    ENMCODEC                enmCodec;
     void                    *pHDAState;
     bool                    fInReset;
     const uint8_t           cTotalNodes;
@@ -247,17 +252,20 @@ typedef struct CODECState
     const uint8_t           *au8Cds;
     const uint8_t           *au8VolKnobs;
     const uint8_t           *au8Reserveds;
+    const uint8_t           u8AdcVolsLineIn;
+    const uint8_t           u8DacLineOut;
     DECLR3CALLBACKMEMBER(int, pfnProcess, (struct CODECState *));
     DECLR3CALLBACKMEMBER(int, pfnLookup, (struct CODECState *pState, uint32_t verb, PPFNCODECVERBPROCESSOR));
     DECLR3CALLBACKMEMBER(int, pfnReset, (struct CODECState *pState));
     DECLR3CALLBACKMEMBER(void, pfnTransfer, (struct CODECState *pState, ENMSOUNDSOURCE, int avail));
+    DECLR3CALLBACKMEMBER(int, pfnCodecNodeReset, (struct CODECState *pState, uint8_t, PCODECNODE));
 
 } CODECState;
 
 
-int stac9220Construct(CODECState *pCodecState);
-int stac9220Destruct(CODECState *pCodecState);
-int stac9220SaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
-int stac9220LoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
+int codecConstruct(CODECState *pCodecState, ENMCODEC enmCodec);
+int codecDestruct(CODECState *pCodecState);
+int codecSaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
+int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
 
 #endif
