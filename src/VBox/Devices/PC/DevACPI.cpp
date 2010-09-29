@@ -533,22 +533,22 @@ struct ACPITBLHPET
 AssertCompileSize(ACPITBLHPET, 56);
 
 /** MCFG Descriptor Structure */
-struct ACPITBLMCFG
+typedef struct ACPITBLMCFG
 {
     ACPITBLHEADER aHeader;
     uint64_t      u64Reserved;
-};
+} ACPITBLMCFG;
 AssertCompileSize(ACPITBLMCFG, 44);
 
-/* Number of such entries can be computed from the whole table length in header */
-struct ACPITBLMCFGENTRY
+/** Number of such entries can be computed from the whole table length in header */
+typedef struct ACPITBLMCFGENTRY
 {
     uint64_t      u64BaseAddress;
     uint16_t      u16PciSegmentGroup;
     uint8_t       u8StartBus;
     uint8_t       u8EndBus;
     uint32_t      u32Reserved;
-};
+} ACPITBLMCFGENTRY;
 AssertCompileSize(ACPITBLMCFGENTRY, 16);
 
 # ifdef IN_RING3 /** @todo r=bird: Move this down to where it's used. */
