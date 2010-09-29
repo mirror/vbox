@@ -304,6 +304,7 @@ static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
  */
 uint32_t VBoxServiceBalloonQueryPages(uint32_t cbPage)
 {
+    Assert(cbPage > 0);
     return g_cMemBalloonChunks * (VMMDEV_MEMORY_BALLOON_CHUNK_SIZE / cbPage);
 }
 
