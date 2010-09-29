@@ -1492,6 +1492,7 @@ public:
     int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);
     int vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd);
     int vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd);
+    int vhwaSurfaceColorFill(struct _VBOXVHWACMD_SURF_COLORFILL *pCmd);
     int vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmf);
     int vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLAY_SETPOSITION *pCmd);
     int vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *pCmd);

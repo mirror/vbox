@@ -2240,6 +2240,14 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
         bNoPBO = true;
         bPrimary = true;
         VBoxVHWASurfaceBase * pVga = vgaSurface();
+#ifdef VBOX_WITH_WDDM
+        uchar * addr = vboxVRAMAddressFromOffset(pCmd->SurfInfo.offSurface);
+        Assert(addr);
+        if (addr)
+        {
+            pVga->setAddress(addr);
+        }
+#endif
 
         Assert((pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN) == 0);
 
@@ -2599,7 +2607,6 @@ int VBoxVHWAImage::vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd)
     vboxCheckUpdateAddress (pCurrSurf, pCmd->u.in.offCurrSurface);
     vboxCheckUpdateAddress (pTargSurf, pCmd->u.in.offTargSurface);
 
-
     if(pCmd->u.in.xUpdatedTargMemValid)
     {
         QRect r = VBOXVHWA_CONSTRUCT_QRECT_FROM_RECTL_WH(&pCmd->u.in.xUpdatedTargMemRect);
@@ -2614,6 +2621,11 @@ int VBoxVHWAImage::vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd)
 #endif
 
     return VINF_SUCCESS;
+}
+
+int VBoxVHWAImage::vhwaSurfaceColorFill(struct _VBOXVHWACMD_SURF_COLORFILL *pCmd)
+{
+    return VERR_NOT_IMPLEMENTED;
 }
 
 void VBoxVHWAImage::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd)
@@ -4630,6 +4642,16 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
             vboxDoCheckUpdateViewport();
             mNeedOverlayRepaint = true;
         } break;
+#ifdef VBOX_WITH_WDDM
+        case VBOXVHWACMD_TYPE_SURF_COLORFILL:
+        {
+            VBOXVHWACMD_SURF_COLORFILL * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_COLORFILL);
+            initGl();
+            makeCurrent();
+            pCmd->rc = mOverlayImage.vhwaSurfaceColorFill(pBody);
+            mNeedOverlayRepaint = true;
+        } break;
+#endif
         case VBOXVHWACMD_TYPE_SURF_COLORKEY_SET:
         {
             VBOXVHWACMD_SURF_COLORKEY_SET * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_COLORKEY_SET);

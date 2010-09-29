@@ -84,8 +84,9 @@ ifdef VBOX_WITH_WDDM
  endif
  ifdef VBOXWDDM_WITH_VBVA
   VBoxVideoWddm_DEFS      += VBOXWDDM_WITH_VBVA
+  VBoxVideoWddm_DEFS      += VBOXWDDM_RENDER_FROM_SHADOW
   ifdef VBOXVDMA_WITH_VBVA
-   VBoxVideoWddm_DEFS     += VBOXVDMA_WITH_VBVA
+   VBoxVideoWddm_DEFS     += VBOXVDMA_WITH_VBVA 
   endif
  endif
  ifdef DEBUG_misha

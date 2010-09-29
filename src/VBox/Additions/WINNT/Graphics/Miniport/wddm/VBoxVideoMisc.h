@@ -13,6 +13,25 @@
 #ifndef ___VBoxVideoMisc_h__
 #define ___VBoxVideoMisc_h__
 
+DECLINLINE(void) vboxVideoLeDetach(LIST_ENTRY *pList, LIST_ENTRY *pDstList)
+{
+    if (IsListEmpty(pList))
+    {
+        InitializeListHead(pDstList);
+    }
+    else
+    {
+        *pDstList = *pList;
+        Assert(pDstList->Flink->Blink == pList);
+        Assert(pDstList->Blink->Flink == pList);
+        /* pDstList->Flink & pDstList->Blink point to the "real| entries, never to pList
+         * since we've checked IsListEmpty(pList) above */
+        pDstList->Flink->Blink = pDstList;
+        pDstList->Blink->Flink = pDstList;
+        InitializeListHead(pList);
+    }
+}
+
 typedef struct _DEVICE_EXTENSION *PDEVICE_EXTENSION;
 typedef struct VBOXWDDM_SWAPCHAIN *PVBOXWDDM_SWAPCHAIN;
 typedef struct VBOXWDDM_CONTEXT *PVBOXWDDM_CONTEXT;

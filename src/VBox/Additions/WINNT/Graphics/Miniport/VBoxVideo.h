@@ -182,6 +182,9 @@ typedef struct VBOXWDDM_SOURCE
     /* @todo: in our case this seems more like a target property,
      * but keep it here for now */
     VBOXWDDM_VHWA Vhwa;
+    volatile uint32_t cOverlays;
+    LIST_ENTRY OverlayList;
+    KSPIN_LOCK OverlayListLock;
 #endif
     POINT VScreenPos;
     VBOXWDDM_POINTER_INFO PointerInfo;
@@ -310,12 +313,13 @@ typedef struct _DEVICE_EXTENSION
    uint8_t * pvVisibleVram;
 
    VBOXVIDEOCM_MGR CmMgr;
+   VBOXVDMADDI_CMD_QUEUE DdiCmdQueue;
    LIST_ENTRY SwapchainList3D;
    /* mutex for context list operations */
    FAST_MUTEX ContextMutex;
    KSPIN_LOCK SynchLock;
    volatile uint32_t cContexts3D;
-   volatile uint32_t cDMACmdsOutstanding;
+   volatile uint32_t cUnlockedVBVADisabled;
 
    VBOXWDDM_GLOBAL_POINTER_INFO PointerInfo;
 
@@ -774,24 +778,6 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOUR
     pSource->pPrimaryAllocation = pAllocation;
 }
 
-DECLINLINE(void) vboxVideoLeDetach(LIST_ENTRY *pList, LIST_ENTRY *pDstList)
-{
-    if (IsListEmpty(pList))
-    {
-        InitializeListHead(pDstList);
-    }
-    else
-    {
-        *pDstList = *pList;
-        Assert(pDstList->Flink->Blink == pList);
-        Assert(pDstList->Blink->Flink == pList);
-        /* pDstList->Flink & pDstList->Blink point to the "real| entries, never to pList
-         * since we've checked IsListEmpty(pList) above */
-        pDstList->Flink->Blink = pDstList;
-        pDstList->Blink->Flink = pDstList;
-        InitializeListHead(pList);
-    }
-}
 
 #endif
 

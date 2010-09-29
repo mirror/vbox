@@ -6542,9 +6542,12 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     VBOXDISPPROFILE_DDI_DUMPRESET(pDevice);
     PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
+    if (VBOXDISPMODE_IS_3D(pAdapter))
+    {
 //    Assert(!pDevice->cScreens);
-    vboxWddmSwapchainDestroyAll(pDevice);
-    pDevice->pDevice9If->Release();
+        vboxWddmSwapchainDestroyAll(pDevice);
+        pDevice->pDevice9If->Release();
+    }
 
     HRESULT hr = vboxDispCmCtxDestroy(pDevice, &pDevice->DefaultContext);
     Assert(hr == S_OK);
