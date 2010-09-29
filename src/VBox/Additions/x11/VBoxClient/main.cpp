@@ -26,6 +26,7 @@
 
 #include <X11/Xlib.h>
 
+#include <iprt/critsect.h>
 #include <iprt/env.h>
 #include <iprt/initterm.h>
 #include <iprt/path.h>
@@ -50,11 +51,24 @@ static char g_szPidFile[RTPATH_MAX];
 /** The file handle of our pidfile.  It is global for the benefit of the
  * cleanup routine. */
 static RTFILE g_hPidFile;
+/** Global critical section used to protect the clean-up routine, which can be
+ * called from different threads.
+ */
+RTCRITSECT g_critSect;
 
 /** Clean up if we get a signal or something.  This is extern so that we
  * can call it from other compilation units. */
 void VBoxClient::CleanUp()
 {
+    /* We never release this, as we end up with a call to exit(3) which is not
+     * async-safe.  Until we fix this application properly, we should be sure
+     * never to exit from anywhere except from this method. */
+    int rc = RTCritSectEnter(&g_critSect);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("VBoxClient: Failure while acquiring the global critical section, rc=%Rrc\n", rc);
+        _Exit(1);
+    }
     if (g_pService)
     {
         g_pService->cleanup();
@@ -148,7 +162,7 @@ void vboxClientUsage(const char *pcszFileName)
  */
 int main(int argc, char *argv[])
 {
-    int rcClipboard, rc = VINF_SUCCESS;
+    int rcClipboard, rc;
     const char *pszFileName = RTPathFilename(argv[0]);
     bool fDaemonise = true;
     /* Have any fatal errors occurred yet? */
@@ -160,7 +174,22 @@ int main(int argc, char *argv[])
         pszFileName = "VBoxClient";
 
     /* Initialise our runtime before all else. */
-    RTR3Init();
+    rc = RTR3Init();
+    if (RT_FAILURE(rc))
+    {
+        /* Of course, this should never happen. */
+        RTPrintf("%s: Failed to initialise the run-time library, rc=%Rrc\n", pszFileName, rc);
+        exit(1);
+    }
+
+    /* Initialise our global clean-up critical section */
+    rc = RTCritSectInit(&g_critSect);
+    if (RT_FAILURE(rc))
+    {
+        /* Of course, this should never happen. */
+        RTPrintf("%s: Failed to initialise the global critical section, rc=%Rrc\n", pszFileName, rc);
+        exit(1);
+    }
 
     /* Parse our option(s) */
     /** @todo Use RTGetOpt() if the arguments become more complex. */
