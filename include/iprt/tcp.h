@@ -179,6 +179,19 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
 RTR3DECL(int) RTTcpClientClose(RTSOCKET Sock);
 
 /**
+ * Close a socket returned by RTTcpClientConnect().
+ *
+ * @returns iprt status code.
+ * @param   hSocket             The socket handle.
+ * @param   fGracefulShutdown   If true, try do a graceful shutdown of the
+ *                              outgoing pipe and draining any lingering input.
+ *                              This is sometimes better for the server side.
+ *                              If false, just close the connection without
+ *                              further ado.
+ */
+RTR3DECL(int) RTTcpClientCloseEx(RTSOCKET Sock, bool fGracefulShutdown);
+
+/**
  * Receive data from a socket.
  *
  * @returns iprt status code.

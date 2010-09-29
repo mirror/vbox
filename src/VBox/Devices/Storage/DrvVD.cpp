@@ -1043,7 +1043,7 @@ static DECLCALLBACK(int) drvvdTcpSocketDestroy(VDSOCKET Sock)
     }
 
     if (pSockInt->hSocket != NIL_RTSOCKET)
-        rc = RTTcpClientClose(pSockInt->hSocket);
+        rc = RTTcpClientCloseEx(pSockInt->hSocket, false /*fGracefulShutdown*/);
 
     RTMemFree(pSockInt);
 
@@ -1071,7 +1071,7 @@ static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET Sock, const char *pszAdd
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
 
-        rc = RTTcpClientClose(pSockInt->hSocket);
+        rc = RTTcpClientCloseEx(pSockInt->hSocket, false /*fGracefulShutdown*/);
     }
 
     return rc;
@@ -1089,7 +1089,7 @@ static DECLCALLBACK(int) drvvdTcpClientClose(VDSOCKET Sock)
         AssertRC(rc);
     }
 
-    rc = RTTcpClientClose(pSockInt->hSocket);
+    rc = RTTcpClientCloseEx(pSockInt->hSocket, false /*fGracefulShutdown*/);
     pSockInt->hSocket = NIL_RTSOCKET;
 
     return rc;
