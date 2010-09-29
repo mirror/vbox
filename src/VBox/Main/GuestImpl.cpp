@@ -302,6 +302,9 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
     if (ret == S_OK)
     {
         mMemoryBalloonSize = aMemoryBalloonSize;
+        /* MUST release all locks before calling VMM device as its critsect
+         * has higher lock order than anything in Main. */
+        alock.release();
         /* forward the information to the VMM device */
         VMMDev *pVMMDev = mParent->getVMMDev();
         if (pVMMDev)
@@ -336,6 +339,9 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mStatUpdateInterval = aUpdateInterval;
+    /* MUST release all locks before calling VMM device as its critsect
+     * has higher lock order than anything in Main. */
+    alock.release();
     /* forward the information to the VMM device */
     VMMDev *pVMMDev = mParent->getVMMDev();
     if (pVMMDev)
@@ -381,6 +387,10 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
     *aMemCache   = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K);     /* page (4K) -> 1KB units */
     *aPageTotal  = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K);   /* page (4K) -> 1KB units */
 
+    /* MUST release all locks before calling any PGM statistics queries,
+     * as they are executed by EMT and that might deadlock us by VMM device
+     * activity which waits for the Guest object lock. */
+    alock.release();
     Console::SafeVMPtr pVM (mParent);
     if (pVM.isOk())
     {
