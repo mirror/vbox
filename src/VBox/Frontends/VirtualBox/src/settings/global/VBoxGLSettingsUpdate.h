@@ -19,11 +19,11 @@
 #ifndef __VBoxGLSettingsUpdate_h__
 #define __VBoxGLSettingsUpdate_h__
 
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxGLSettingsUpdate.gen.h"
 #include "VBoxUpdateDlg.h"
 
-class VBoxGLSettingsUpdate : public VBoxSettingsPage,
+class VBoxGLSettingsUpdate : public UISettingsPage,
                              public Ui::VBoxGLSettingsUpdate
 {
     Q_OBJECT;

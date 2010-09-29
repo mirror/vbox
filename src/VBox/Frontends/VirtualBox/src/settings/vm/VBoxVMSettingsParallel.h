@@ -19,7 +19,7 @@
 #ifndef __VBoxVMSettingsParallel_h__
 #define __VBoxVMSettingsParallel_h__
 
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxVMSettingsParallel.gen.h"
 #include "COMDefs.h"
 
@@ -59,7 +59,7 @@ private:
     CParallelPort mPort;
 };
 
-class VBoxVMSettingsParallelPage : public VBoxSettingsPage
+class VBoxVMSettingsParallelPage : public UISettingsPage
 {
     Q_OBJECT;
 

@@ -19,13 +19,13 @@
 #ifndef __VBoxVMSettingsUSB_h__
 #define __VBoxVMSettingsUSB_h__
 
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxVMSettingsUSB.gen.h"
 #include "COMDefs.h"
 
 class VBoxUSBMenu;
 
-class VBoxVMSettingsUSB : public VBoxSettingsPage,
+class VBoxVMSettingsUSB : public UISettingsPage,
                           public Ui::VBoxVMSettingsUSB
 {
     Q_OBJECT;

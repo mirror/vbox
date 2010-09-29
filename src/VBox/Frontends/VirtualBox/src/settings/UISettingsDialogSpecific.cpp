@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UISettingsDialog class implementation
+ * UISettingsDialogSpecific class implementation
  */
 
 /*
@@ -66,49 +66,55 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 /* General page: */
                 case GLSettingsPage_General:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxGLSettingsGeneral;
                     addItem(":/machine_32px.png", ":/machine_disabled_32px.png",
                             ":/machine_16px.png", ":/machine_disabled_16px.png",
-                            i, "#general", new VBoxGLSettingsGeneral);
+                            i, "#general", pSettingsPage);
                     break;
                 }
                 /* Input page: */
                 case GLSettingsPage_Input:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxGLSettingsInput;
                     addItem(":/hostkey_32px.png", ":/hostkey_disabled_32px.png",
                             ":/hostkey_16px.png", ":/hostkey_disabled_16px.png",
-                            i, "#input", new VBoxGLSettingsInput);
+                            i, "#input", pSettingsPage);
                     break;
                 }
                 /* Update page: */
                 case GLSettingsPage_Update:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxGLSettingsUpdate;
                     addItem(":/refresh_32px.png", ":/refresh_disabled_32px.png",
                             ":/refresh_16px.png", ":/refresh_disabled_16px.png",
-                            i, "#update", new VBoxGLSettingsUpdate);
+                            i, "#update", pSettingsPage);
                     break;
                 }
                 /* Language page: */
                 case GLSettingsPage_Language:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxGLSettingsLanguage;
                     addItem(":/site_32px.png", ":/site_disabled_32px.png",
                             ":/site_16px.png", ":/site_disabled_16px.png",
-                            i, "#language", new VBoxGLSettingsLanguage);
+                            i, "#language", pSettingsPage);
                     break;
                 }
                 /* USB page: */
                 case GLSettingsPage_USB:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsUSB(VBoxVMSettingsUSB::HostType);
                     addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
                             ":/usb_16px.png", ":/usb_disabled_16px.png",
-                            i, "#usb", new VBoxVMSettingsUSB(VBoxVMSettingsUSB::HostType));
+                            i, "#usb", pSettingsPage);
                     break;
                 }
                 /* Network page: */
                 case GLSettingsPage_Network:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxGLSettingsNetwork;
                     addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
                             ":/nw_16px.png", ":/nw_disabled_16px.png",
-                            i, "#language", new VBoxGLSettingsNetwork);
+                            i, "#language", pSettingsPage);
                     break;
                 }
                 default:
@@ -130,11 +136,11 @@ void UIGLSettingsDlg::getFrom()
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
     VBoxGlobalSettings settings = vboxGlobal().settings();
     /* Iterate over the settings pages: */
-    QList<VBoxSettingsPage*> pages = m_pSelector->settingPages();
+    QList<UISettingsPage*> pages = m_pSelector->settingPages();
     for (int i = 0; i < pages.size(); ++i)
     {
         /* For every page => load the settings: */
-        VBoxSettingsPage *pPage = pages[i];
+        UISettingsPage *pPage = pages[i];
         if (pPage->isEnabled())
             pPage->getFrom(properties, settings);
     }
@@ -147,11 +153,11 @@ void UIGLSettingsDlg::putBackTo()
     VBoxGlobalSettings oldSettings = vboxGlobal().settings();
     VBoxGlobalSettings newSettings = oldSettings;
     /* Iterate over the settings pages: */
-    QList<VBoxSettingsPage*> pages = m_pSelector->settingPages();
+    QList<UISettingsPage*> pages = m_pSelector->settingPages();
     for (int i = 0; i < pages.size(); ++i)
     {
         /* For every page => save the settings: */
-        VBoxSettingsPage *pPage = pages[i];
+        UISettingsPage *pPage = pages[i];
         if (pPage->isEnabled())
             pPage->putBackTo(properties, newSettings);
     }
@@ -263,53 +269,57 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* General page: */
                 case VMSettingsPage_General:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsGeneral;
                     addItem(":/machine_32px.png", ":/machine_disabled_32px.png",
                             ":/machine_16px.png", ":/machine_disabled_16px.png",
-                            i, "#general", new VBoxVMSettingsGeneral);
+                            i, "#general", pSettingsPage);
                     break;
                 }
                 /* System page: */
                 case VMSettingsPage_System:
                 {
-                    VBoxSettingsPage *pSystemPage = new VBoxVMSettingsSystem;
-                    connect(pSystemPage, SIGNAL(tableChanged()), this, SLOT(sltResetFirstRunFlag()));
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsSystem;
+                    connect(pSettingsPage, SIGNAL(tableChanged()), this, SLOT(sltResetFirstRunFlag()));
                     addItem(":/chipset_32px.png", ":/chipset_disabled_32px.png",
                             ":/chipset_16px.png", ":/chipset_disabled_16px.png",
-                            i, "#system", pSystemPage);
+                            i, "#system", pSettingsPage);
                     break;
                 }
                 /* Display page: */
                 case VMSettingsPage_Display:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsDisplay;
                     addItem(":/vrdp_32px.png", ":/vrdp_disabled_32px.png",
                             ":/vrdp_16px.png", ":/vrdp_disabled_16px.png",
-                            i, "#display", new VBoxVMSettingsDisplay);
+                            i, "#display", pSettingsPage);
                     break;
                 }
                 /* Storage page: */
                 case VMSettingsPage_Storage:
                 {
-                    VBoxSettingsPage *pStoragePage = new VBoxVMSettingsHD;
-                    connect(pStoragePage, SIGNAL(storageChanged()), this, SLOT(sltResetFirstRunFlag()));
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsHD;
+                    connect(pSettingsPage, SIGNAL(storageChanged()), this, SLOT(sltResetFirstRunFlag()));
                     addItem(":/hd_32px.png", ":/hd_disabled_32px.png",
                             ":/attachment_16px.png", ":/attachment_disabled_16px.png",
-                            i, "#storage", pStoragePage);
+                            i, "#storage", pSettingsPage);
                     break;
                 }
                 /* Audio page: */
                 case VMSettingsPage_Audio:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsAudio;
                     addItem(":/sound_32px.png", ":/sound_disabled_32px.png",
                             ":/sound_16px.png", ":/sound_disabled_16px.png",
-                            i, "#audio", new VBoxVMSettingsAudio);
+                            i, "#audio", pSettingsPage);
                     break;
                 }
                 /* Network page: */
                 case VMSettingsPage_Network:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsNetworkPage;
                     addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
                             ":/nw_16px.png", ":/nw_disabled_16px.png",
-                            i, "#network", new VBoxVMSettingsNetworkPage);
+                            i, "#network", pSettingsPage);
                     break;
                 }
                 /* Ports page: */
@@ -323,33 +333,37 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* Serial page: */
                 case VMSettingsPage_Serial:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsSerialPage;
                     addItem(":/serial_port_32px.png", ":/serial_port_disabled_32px.png",
                             ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
-                            i, "#serialPorts", new VBoxVMSettingsSerialPage, VMSettingsPage_Ports);
+                            i, "#serialPorts", pSettingsPage, VMSettingsPage_Ports);
                     break;
                 }
                 /* Parallel page: */
                 case VMSettingsPage_Parallel:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsParallelPage;
                     addItem(":/parallel_port_32px.png", ":/parallel_port_disabled_32px.png",
                             ":/parallel_port_16px.png", ":/parallel_port_disabled_16px.png",
-                            i, "#parallelPorts", new VBoxVMSettingsParallelPage, VMSettingsPage_Ports);
+                            i, "#parallelPorts", pSettingsPage, VMSettingsPage_Ports);
                     break;
                 }
                 /* USB page: */
                 case VMSettingsPage_USB:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsUSB(VBoxVMSettingsUSB::MachineType);
                     addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
                             ":/usb_16px.png", ":/usb_disabled_16px.png",
-                            i, "#usb", new VBoxVMSettingsUSB(VBoxVMSettingsUSB::MachineType), VMSettingsPage_Ports);
+                            i, "#usb", pSettingsPage, VMSettingsPage_Ports);
                     break;
                 }
                 /* Shared Folders page: */
                 case VMSettingsPage_SF:
                 {
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsSF(MachineType);
                     addItem(":/shared_folder_32px.png", ":/shared_folder_disabled_32px.png",
                             ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png",
-                            i, "#sfolders", new VBoxVMSettingsSF(MachineType));
+                            i, "#sfolders", pSettingsPage);
                     break;
                 }
             }
@@ -396,11 +410,11 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
 void UIVMSettingsDlg::getFrom()
 {
     /* Iterate over the settings pages: */
-    QList<VBoxSettingsPage*> pages = m_pSelector->settingPages();
+    QList<UISettingsPage*> pages = m_pSelector->settingPages();
     for (int i = 0; i < pages.size(); ++i)
     {
         /* For every page => load the settings: */
-        VBoxSettingsPage *pPage = pages[i];
+        UISettingsPage *pPage = pages[i];
         if (pPage->isEnabled())
             pPage->getFrom(m_machine);
     }
@@ -413,11 +427,11 @@ void UIVMSettingsDlg::getFrom()
 void UIVMSettingsDlg::putBackTo()
 {
     /* Iterate over the settings pages: */
-    QList<VBoxSettingsPage*> pages = m_pSelector->settingPages();
+    QList<UISettingsPage*> pages = m_pSelector->settingPages();
     for (int i = 0; i < pages.size(); ++i)
     {
         /* For every page => save the settings: */
-        VBoxSettingsPage *pPage = pages[i];
+        UISettingsPage *pPage = pages[i];
         if (pPage->isEnabled())
             pPage->putBackTo();
     }

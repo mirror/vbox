@@ -29,7 +29,7 @@
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
 #include "VBoxSettingsSelector.h"
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "UIToolBar.h"
 #include "UIIconPool.h"
 #ifdef Q_WS_MAC
@@ -136,7 +136,7 @@ UISettingsDialog::~UISettingsDialog()
 void UISettingsDialog::sltRevalidate(QIWidgetValidator *pValidator)
 {
     /* Get related settings page: */
-    VBoxSettingsPage *pSettingsPage = qobject_cast<VBoxSettingsPage*>(pValidator->widget());
+    UISettingsPage *pSettingsPage = qobject_cast<UISettingsPage*>(pValidator->widget());
     AssertMsg(pSettingsPage, ("Validator should corresponds a page!\n"));
 
     /* Prepare empty warning & title: */
@@ -179,7 +179,7 @@ void UISettingsDialog::retranslateUi()
     for (int i = 0; i < validatorsList.size(); ++i)
     {
         QIWidgetValidator *pValidator = validatorsList[i];
-        pValidator->setCaption(m_pSelector->itemTextByPage(qobject_cast<VBoxSettingsPage*>(pValidator->widget())));
+        pValidator->setCaption(m_pSelector->itemTextByPage(qobject_cast<UISettingsPage*>(pValidator->widget())));
     }
     /* Revalidate all pages to retranslate the warning messages also: */
     for (int i = 0; i < validatorsList.size(); ++i)
@@ -237,7 +237,7 @@ void UISettingsDialog::addItem(const QString &strBigIcon,
                                const QString &strSmallIconDisabled,
                                int cId,
                                const QString &strLink,
-                               VBoxSettingsPage *pSettingsPage /* = 0 */,
+                               UISettingsPage *pSettingsPage /* = 0 */,
                                int iParentId /* = -1 */)
 {
     QWidget *pPage = m_pSelector->addItem(strBigIcon, strBigIconDisabled,
@@ -492,7 +492,7 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
 #endif /* Q_WS_MAC */
 }
 
-void UISettingsDialog::assignValidator(VBoxSettingsPage *pPage)
+void UISettingsDialog::assignValidator(UISettingsPage *pPage)
 {
     QIWidgetValidator *pValidator = new QIWidgetValidator(m_pSelector->itemTextByPage(pPage), pPage, this);
     connect(pValidator, SIGNAL(validityChanged(const QIWidgetValidator*)), this, SLOT(sltHandleValidityChanged(const QIWidgetValidator*)));

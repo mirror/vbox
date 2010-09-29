@@ -23,7 +23,7 @@
 
 /* Local includes */
 #include "VBoxSettingsSelector.h"
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxGlobal.h"
 #include "UIToolBar.h"
 #include "QITreeWidget.h"
@@ -40,7 +40,7 @@ enum
 class SelectorItem
 {
 public:
-    SelectorItem (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, VBoxSettingsPage* aPage, int aParentId)
+    SelectorItem (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, UISettingsPage* aPage, int aParentId)
         : mIcon (aIcon)
         , mText (aText)
         , mId (aId)
@@ -54,7 +54,7 @@ public:
     void setText (const QString &aText) { mText = aText; }
     int id() const { return mId; }
     QString link() const { return mLink; }
-    VBoxSettingsPage *page() const { return mPage; }
+    UISettingsPage *page() const { return mPage; }
     int parentId() const { return mParentId; }
 
 protected:
@@ -63,7 +63,7 @@ protected:
     QString mText;
     int mId;
     QString mLink;
-    VBoxSettingsPage* mPage;
+    UISettingsPage* mPage;
     int mParentId;
 };
 
@@ -84,7 +84,7 @@ void VBoxSettingsSelector::setItemText (int aId, const QString &aText)
         item->setText (aText);
 }
 
-QString VBoxSettingsSelector::itemTextByPage (VBoxSettingsPage *aPage) const
+QString VBoxSettingsSelector::itemTextByPage (UISettingsPage *aPage) const
 {
     QString text;
     if (SelectorItem *item = findItemByPage (aPage))
@@ -94,15 +94,15 @@ QString VBoxSettingsSelector::itemTextByPage (VBoxSettingsPage *aPage) const
 
 QWidget *VBoxSettingsSelector::idToPage (int aId) const
 {
-    VBoxSettingsPage *page = NULL;
+    UISettingsPage *page = NULL;
     if (SelectorItem *item = findItem (aId))
         page = item->page();
     return page;
 }
 
-QList<VBoxSettingsPage*> VBoxSettingsSelector::settingPages() const
+QList<UISettingsPage*> VBoxSettingsSelector::settingPages() const
 {
-    QList<VBoxSettingsPage*> list;
+    QList<UISettingsPage*> list;
     foreach (SelectorItem *item, mItemList)
         if (item->page())
             list << item->page();
@@ -143,7 +143,7 @@ SelectorItem *VBoxSettingsSelector::findItemByLink (const QString &aLink) const
     return result;
 }
 
-SelectorItem *VBoxSettingsSelector::findItemByPage (VBoxSettingsPage* aPage) const
+SelectorItem *VBoxSettingsSelector::findItemByPage (UISettingsPage* aPage) const
 {
     SelectorItem *result = NULL;
     foreach (SelectorItem *item, mItemList)
@@ -212,7 +212,7 @@ QWidget *VBoxSettingsTreeViewSelector::addItem (const QString & /* aBigIcon */,
                                                 const QString &aSmallIconDisabled,
                                                 int aId,
                                                 const QString &aLink,
-                                                VBoxSettingsPage* aPage /* = NULL */,
+                                                UISettingsPage* aPage /* = NULL */,
                                                 int aParentId /* = -1 */)
 {
     QWidget *result = NULL;
@@ -347,7 +347,7 @@ QString VBoxSettingsTreeViewSelector::idToString (int aId) const
 class SelectorActionItem: public SelectorItem
 {
 public:
-    SelectorActionItem (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, VBoxSettingsPage* aPage, int aParentId, QObject *aParent)
+    SelectorActionItem (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, UISettingsPage* aPage, int aParentId, QObject *aParent)
         : SelectorItem (aIcon, aText, aId, aLink, aPage, aParentId)
         , mAction (new QAction (aIcon, aText, aParent))
         , mTabWidget (NULL)
@@ -399,7 +399,7 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
                                                const QString &aSmallIconDisabled,
                                                int aId,
                                                const QString &aLink,
-                                               VBoxSettingsPage* aPage /* = NULL */,
+                                               UISettingsPage* aPage /* = NULL */,
                                                int aParentId /* = -1 */)
 {
     QIcon icon (aBigIcon);
@@ -597,7 +597,7 @@ void VBoxSettingsToolBarSelector::settingsGroupChanged (QAction *aAction)
 //            item->tabWidget()->blockSignals (false);
 //            printf ("%s\n", qPrintable(item->text()));
 //            SelectorActionItem *child = static_cast<SelectorActionItem*> (
-//                findItemByPage (static_cast<VBoxSettingsPage*> (item->tabWidget()->currentWidget())));
+//                findItemByPage (static_cast<UISettingsPage*> (item->tabWidget()->currentWidget())));
 //            if (child)
 //                emit categoryChanged (child->id());
 //        }
@@ -615,7 +615,7 @@ void VBoxSettingsToolBarSelector::settingsGroupChanged (int aIndex)
         else
         {
             SelectorActionItem *child = static_cast<SelectorActionItem*> (
-                findItemByPage (static_cast<VBoxSettingsPage*> (item->tabWidget()->currentWidget())));
+                findItemByPage (static_cast<UISettingsPage*> (item->tabWidget()->currentWidget())));
             if (child)
                 emit categoryChanged (child->id());
         }
@@ -635,7 +635,7 @@ SelectorActionItem *VBoxSettingsToolBarSelector::findActionItemByTabWidget (QTab
         {
             QTabWidget *tw = static_cast<SelectorActionItem*> (item)->tabWidget();
             result = static_cast<SelectorActionItem*> (
-                findItemByPage (static_cast<VBoxSettingsPage*> (tw->widget (aIndex))));
+                findItemByPage (static_cast<UISettingsPage*> (tw->widget (aIndex))));
             break;
         }
 

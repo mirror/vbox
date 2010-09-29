@@ -20,10 +20,10 @@
 #define __VBoxVMSettingsSystem_h__
 
 #include "COMDefs.h"
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxVMSettingsSystem.gen.h"
 
-class VBoxVMSettingsSystem : public VBoxSettingsPage,
+class VBoxVMSettingsSystem : public UISettingsPage,
                              public Ui::VBoxVMSettingsSystem
 {
     Q_OBJECT;

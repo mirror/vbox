@@ -237,7 +237,7 @@
 #include "VBoxSelectorWnd.h"
 #include "UISettingsDialog.h"
 #include "UISettingsDialogSpecific.h"
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxSettingsSelector.h"
 #include "VBoxSnapshotDetailsDlg.h"
 #include "VBoxSnapshotsWgt.h"

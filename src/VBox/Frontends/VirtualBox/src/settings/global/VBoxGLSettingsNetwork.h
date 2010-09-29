@@ -19,7 +19,7 @@
 #ifndef __VBoxGLSettingsNetwork_h__
 #define __VBoxGLSettingsNetwork_h__
 
-#include "VBoxSettingsPage.h"
+#include "UISettingsPage.h"
 #include "VBoxGLSettingsNetwork.gen.h"
 
 class NetworkItem : public QTreeWidgetItem
@@ -93,7 +93,7 @@ private:
     QString mDhcpUpperAddress;
 };
 
-class VBoxGLSettingsNetwork : public VBoxSettingsPage,
+class VBoxGLSettingsNetwork : public UISettingsPage,
                               public Ui::VBoxGLSettingsNetwork
 {
     Q_OBJECT;

@@ -132,7 +132,7 @@ void VBoxGLSettingsUpdate::toggledBranch()
 
 void VBoxGLSettingsUpdate::showEvent (QShowEvent *aEvent)
 {
-    VBoxSettingsPage::showEvent (aEvent);
+    UISettingsPage::showEvent (aEvent);
 
     /* That little hack allows avoid one of qt4 children focusing bug */
     QWidget *current = QApplication::focusWidget();
