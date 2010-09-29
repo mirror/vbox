@@ -12,7 +12,6 @@ NTSTATUS VBoxRxRegisterMinirdr (PRDBSS_DEVICE_OBJECT *DeviceObject, PDRIVER_OBJE
                                 DEVICE_TYPE DeviceType, ULONG DeviceCharacteristics)
 {
     return RxRegisterMinirdr(DeviceObject, DriverObject, MrdrDispatch, Controls, DeviceName, DeviceExtensionSize, DeviceType, DeviceCharacteristics);
-    return STATUS_SUCCESS;
 }
 
 VOID VBoxRxUnregisterMinirdr (PRDBSS_DEVICE_OBJECT RxDeviceObject)
@@ -23,13 +22,11 @@ VOID VBoxRxUnregisterMinirdr (PRDBSS_DEVICE_OBJECT RxDeviceObject)
 NTSTATUS VBoxRxStartMinirdr (PRX_CONTEXT RxContext, PBOOLEAN PostToFsp)
 {
     return RxStartMinirdr(RxContext, PostToFsp);
-    return STATUS_SUCCESS;
 }
 
 NTSTATUS VBoxRxStopMinirdr (PRX_CONTEXT RxContext, PBOOLEAN PostToFsp)
 {
     return RxStopMinirdr(RxContext, PostToFsp);
-    return STATUS_SUCCESS;
 }
 
 PRX_CONTEXT VBoxRxCreateRxContext (PIRP Irp, PRDBSS_DEVICE_OBJECT RxDeviceObject, ULONG InitialContextFlags)
@@ -45,13 +42,11 @@ VOID VBoxRxDereferenceAndDeleteRxContext (PRX_CONTEXT RxContext)
 NTSTATUS VBoxRxFinalizeConnection (OUT PNET_ROOT NetRoot, OUT PV_NET_ROOT VNetRoot, LOGICAL Level)
 {
     return RxFinalizeConnection(NetRoot, VNetRoot, Level);
-    return STATUS_SUCCESS;
 }
 
 NTSTATUS VBoxRxFsdDispatch (PRDBSS_DEVICE_OBJECT RxDeviceObject, PIRP Irp)
 {
     return RxFsdDispatch(RxDeviceObject, Irp);
-    return STATUS_SUCCESS;
 }
 
 VOID VBoxRxGetFileSizeWithLock (PFCB Fcb, OUT PLONGLONG FileSize)
@@ -67,7 +62,6 @@ PVOID VBoxRxLowIoGetBufferAddress (IN PRX_CONTEXT RxContext)
 NTSTATUS VBoxRxDispatchToWorkerThread (OUT PRDBSS_DEVICE_OBJECT pMRxDeviceObject, WORK_QUEUE_TYPE WorkQueueType, PRX_WORKERTHREAD_ROUTINE Routine, PVOID pContext)
 {
     return RxDispatchToWorkerThread(pMRxDeviceObject, WorkQueueType, Routine, pContext);
-    return STATUS_SUCCESS;
 }
 
 /* FCB stuff */
@@ -80,7 +74,6 @@ VOID VboxRxFinishFcbInitialization (PMRX_FCB MrxFcb, RDBSS_STORAGE_TYPE_CODES Rd
 NTSTATUS VboxRxAcquireExclusiveFcbResourceInMRx (PMRX_FCB pFcb)
 {
     return RxAcquireExclusiveFcbResourceInMRx(pFcb);
-    return STATUS_SUCCESS;
 }
 
 BOOLEAN VBoxRxIsFcbAcquiredExclusive (PMRX_FCB pFcb)
@@ -94,6 +87,5 @@ BOOLEAN VBoxRxIsFcbAcquiredExclusive (PMRX_FCB pFcb)
 PMRX_FOBX VboxRxCreateNetFobx (OUT PRX_CONTEXT RxContext, IN PMRX_SRV_OPEN MrxSrvOpen)
 {
     return RxCreateNetFobx(RxContext, MrxSrvOpen);
-    return NULL;
 }
 
