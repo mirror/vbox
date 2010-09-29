@@ -754,11 +754,10 @@ static int codecSetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *p
     }
     *pResp = 0;
     uint32_t *pu32Reg = NULL;
-    //** @todo r=michaln: Copy/paste bug? This can't be F08_parm!
     if (codecIsPortNode(pState, CODEC_NID(cmd)))
-        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F09_param;
     else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
-        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F09_param;
     Assert(pu32Reg);
     if(pu32Reg)
         codecSetRegisterU8(pu32Reg, cmd, 0);
