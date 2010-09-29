@@ -30,3 +30,5 @@ NTSTATUS VboxRxAcquireExclusiveFcbResourceInMRx (PMRX_FCB pFcb);
 BOOLEAN VBoxRxIsFcbAcquiredExclusive (PMRX_FCB pFcb);
 
 PMRX_FOBX VboxRxCreateNetFobx (OUT PRX_CONTEXT RxContext, IN PMRX_SRV_OPEN MrxSrvOpen);
+
+VOID VBoxRxDereferenceAndDeleteRxContext (PRX_CONTEXT RxContext);
