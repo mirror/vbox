@@ -21,6 +21,7 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/asm.h>
+#include <iprt/cpp/utils.h>
 
 #include "../Builtins.h"
 extern "C" {
@@ -72,55 +73,19 @@ extern "C" {
 #define CODEC_SET_AMP_IS_RIGHT_SIDE(cmd)     (((cmd) & CODEC_VERB_SET_AMP_RIGHT_SIDE) != 0)
 #define CODEC_SET_AMP_INDEX(cmd)             (((cmd) & CODEC_VERB_SET_AMP_INDEX) >> 7)
 
-
-#define STAC9220_NODE_COUNT 0x1C
-
-#define STAC9220_IS_AFG_CMD(cmd) (  \
-    CODEC_NID(cmd) == 0x1)
-
-#define STAC9220_IS_PORT_CMD(cmd) (  \
-       CODEC_NID(cmd) == 0xA    \
-    || CODEC_NID(cmd) == 0xB    \
-    || CODEC_NID(cmd) == 0xC    \
-    || CODEC_NID(cmd) == 0xD    \
-    || CODEC_NID(cmd) == 0xE    \
-    || CODEC_NID(cmd) == 0xF)
-
-#define STAC9220_IS_DAC_CMD(cmd) (  \
-       CODEC_NID(cmd) == 0x2    \
-    || CODEC_NID(cmd) == 0x3    \
-    || CODEC_NID(cmd) == 0x4    \
-    || CODEC_NID(cmd) == 0x5)
-
-#define STAC9220_IS_ADCVOL_CMD(cmd) (   \
-       CODEC_NID(cmd) == 0x17           \
-    || CODEC_NID(cmd) == 0x18)
-
-#define STAC9220_IS_ADC_CMD(cmd) (     \
-       CODEC_NID(cmd) == 0x6           \
-    || CODEC_NID(cmd) == 0x7)
-
-#define STAC9220_IS_ADCMUX_CMD(cmd) (   \
-       CODEC_NID(cmd) == 0x12           \
-    || CODEC_NID(cmd) == 0x13)
-
-#define STAC9220_IS_PCBEEP_CMD(cmd) (CODEC_NID((cmd)) == 0x14)
-#define STAC9220_IS_SPDIFOUT_CMD(cmd) (CODEC_NID((cmd)) == 0x8)
-#define STAC9220_IS_SPDIFIN_CMD(cmd) (CODEC_NID((cmd)) == 0x9)
-
-#define STAC9220_IS_DIGINPIN_CMD(cmd) (CODEC_NID((cmd)) == 0x11)
-#define STAC9220_IS_DIGOUTPIN_CMD(cmd) (CODEC_NID((cmd)) == 0x10)
-
-#define STAC9220_IS_CD_CMD(cmd) (CODEC_NID((cmd)) == 0x15)
-
-#define STAC9220_IS_VOLKNOB_CMD(cmd) (CODEC_NID((cmd)) == 0x16)
-
-/* STAC9220 6.2 & 6.12 */
-#define STAC9220_IS_RESERVED_CMD(cmd) ( \
-       CODEC_NID((cmd)) == 0x9          \
-    || CODEC_NID((cmd)) == 0x19         \
-    || CODEC_NID((cmd)) == 0x1A         \
-    || CODEC_NID((cmd)) == 0x1B)
+const static uint8_t au8Stac9220Ports[] = { 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0};
+const static uint8_t au8Stac9220Dacs[] = { 0x2, 0x3, 0x4, 0x5, 0};
+const static uint8_t au8Stac9220Adcs[] = { 0x6, 0x7, 0};
+const static uint8_t au8Stac9220SpdifOuts[] = { 0x8, 0 };
+const static uint8_t au8Stac9220SpdifIns[] = { 0x9, 0 };
+const static uint8_t au8Stac9220DigOutPins[] = { 0x10, 0 };
+const static uint8_t au8Stac9220DigInPins[] = { 0x11, 0 };
+const static uint8_t au8Stac9220AdcVols[] = { 0x17, 0x18, 0};
+const static uint8_t au8Stac9220AdcMuxs[] = { 0x12, 0x13, 0};
+const static uint8_t au8Stac9220Pcbeeps[] = { 0x14, 0 };
+const static uint8_t au8Stac9220Cds[] = { 0x15, 0 };
+const static uint8_t au8Stac9220VolKnobs[] = { 0x16, 0 };
+const static uint8_t au8Stac9220Reserveds[] = { 0x9, 0x19, 0x1a, 0x1b, 0 };
 
 #define CODEC_POWER_MASK        0x3
 #define CODEC_POWER_ACT_SHIFT   (4)
@@ -134,6 +99,42 @@ extern "C" {
         node.u32F05_param &= (CODEC_POWER_MASK);                                                    \
         node.u32F05_param |= (node.u32F05_param & CODEC_POWER_MASK) << CODEC_POWER_ACT_SHIFT;     \
     }while(0)
+
+#define DECLISNODEOFTYPE(type)                                                                  \
+    static inline int codecIs##type##Node(struct CODECState *pState, uint8_t cNode)             \
+    {                                                                                           \
+        Assert(pState->au8##type##s);                                                           \
+        for(int i = 0; pState->au8##type##s[i] != 0; ++i)                                       \
+            if (pState->au8##type##s[i] == cNode)                                               \
+                return 1;                                                                       \
+        return 0;                                                                               \
+    }
+/* codecIsPortNode */
+DECLISNODEOFTYPE(Port)
+/* codecIsDacNode */
+DECLISNODEOFTYPE(Dac)
+/* codecIsAdcVolNode */
+DECLISNODEOFTYPE(AdcVol)
+/* codecIsAdcNode */
+DECLISNODEOFTYPE(Adc)
+/* codecIsAdcMuxNode */
+DECLISNODEOFTYPE(AdcMux)
+/* codecIsPcbeepNode */
+DECLISNODEOFTYPE(Pcbeep)
+/* codecIsSpdifOutNode */
+DECLISNODEOFTYPE(SpdifOut)
+/* codecIsSpdifInNode */
+DECLISNODEOFTYPE(SpdifIn)
+/* codecIsDigInPinNode */
+DECLISNODEOFTYPE(DigInPin)
+/* codecIsDigOutPinNode */
+DECLISNODEOFTYPE(DigOutPin)
+/* codecIsCdNode */
+DECLISNODEOFTYPE(Cd)
+/* codecIsVolKnobNode */
+DECLISNODEOFTYPE(VolKnob)
+/* codecIsReservedNode */
+DECLISNODEOFTYPE(Reserved)
 
 static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode);
 static int codecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt);
@@ -174,8 +175,8 @@ static int codecBreak(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 static int codecGetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
@@ -186,22 +187,22 @@ static int codecGetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
     uint8_t u8Index = CODEC_GET_AMP_DIRECTION(cmd) == AMPLIFIER_OUT? 0 : CODEC_GET_AMP_INDEX(cmd);
 
     PCODECNODE pNode = &pState->pNodes[CODEC_NID(cmd)];
-    if (STAC9220_IS_DAC_CMD(cmd))
+    if (codecIsDacNode(pState, CODEC_NID(cmd)))
         *pResp = AMPLIFIER_REGISTER(pNode->dac.B_params,
                             CODEC_GET_AMP_DIRECTION(cmd),
                             CODEC_GET_AMP_SIDE(cmd),
                             u8Index);
-    else if (STAC9220_IS_ADCVOL_CMD(cmd))
+    else if (codecIsAdcVolNode(pState, CODEC_NID(cmd)))
         *pResp = AMPLIFIER_REGISTER(pNode->adcvol.B_params,
                             CODEC_GET_AMP_DIRECTION(cmd),
                             CODEC_GET_AMP_SIDE(cmd),
                             u8Index);
-    else if (STAC9220_IS_ADCMUX_CMD(cmd))
+    else if (codecIsAdcMuxNode(pState, CODEC_NID(cmd)))
         *pResp = AMPLIFIER_REGISTER(pNode->adcmux.B_params,
                             CODEC_GET_AMP_DIRECTION(cmd),
                             CODEC_GET_AMP_SIDE(cmd),
                             u8Index);
-    else if (STAC9220_IS_PCBEEP_CMD(cmd))
+    else if (codecIsPcbeepNode(pState, CODEC_NID(cmd)))
         *pResp = AMPLIFIER_REGISTER(pNode->pcbeep.B_params,
                             CODEC_GET_AMP_DIRECTION(cmd),
                             CODEC_GET_AMP_SIDE(cmd),
@@ -221,20 +222,20 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
     bool fIsIn = false;
     uint8_t u8Index = 0;
     Assert((CODEC_CAD(cmd) == pState->id));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
     PCODECNODE pNode = &pState->pNodes[CODEC_NID(cmd)];
-    if (STAC9220_IS_DAC_CMD(cmd))
+    if (codecIsDacNode(pState, CODEC_NID(cmd)))
         pAmplifier = &pNode->dac.B_params;
-    else if (STAC9220_IS_ADCVOL_CMD(cmd))
+    else if (codecIsAdcVolNode(pState, CODEC_NID(cmd)))
         pAmplifier = &pNode->adcvol.B_params;
-    else if (STAC9220_IS_ADCMUX_CMD(cmd))
+    else if (codecIsAdcMuxNode(pState, CODEC_NID(cmd)))
         pAmplifier = &pNode->adcmux.B_params;
-    else if (STAC9220_IS_PCBEEP_CMD(cmd))
+    else if (codecIsPcbeepNode(pState, CODEC_NID(cmd)))
         pAmplifier = &pNode->pcbeep.B_params;
     Assert(pAmplifier);
     if (pAmplifier)
@@ -272,7 +273,7 @@ static int codecSetAmplifier(struct CODECState *pState, uint32_t cmd, uint64_t *
 static int codecGetParameter(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
@@ -292,16 +293,16 @@ static int codecGetParameter(struct CODECState *pState, uint32_t cmd, uint64_t *
 static int codecGetConSelectCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_ADCMUX_CMD(cmd))
+    if (codecIsAdcMuxNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].adcmux.u32F01_param;
-    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+    else if (codecIsDigOutPinNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F01_param;
     return VINF_SUCCESS;
 }
@@ -310,16 +311,16 @@ static int codecGetConSelectCtrl(struct CODECState *pState, uint32_t cmd, uint64
 static int codecSetConSelectCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     uint32_t *pu32Reg = NULL;
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_ADCMUX_CMD(cmd))
+    if (codecIsAdcMuxNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].adcmux.u32F01_param;
-    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+    else if (codecIsDigOutPinNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F01_param;
     Assert((pu32Reg));
     if (pu32Reg)
@@ -331,22 +332,22 @@ static int codecSetConSelectCtrl(struct CODECState *pState, uint32_t cmd, uint64
 static int codecGetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_PORT_CMD(cmd))
+    if (codecIsPortNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F07_param;
-    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+    else if (codecIsDigOutPinNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F07_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F07_param;
-    else if (STAC9220_IS_CD_CMD(cmd))
+    else if (codecIsCdNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
-    else if (   STAC9220_IS_RESERVED_CMD(cmd)
+    else if (   codecIsReservedNode(pState, CODEC_NID(cmd))
              && CODEC_NID(cmd) == 0x1b)
         *pResp = pState->pNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     else
@@ -358,23 +359,23 @@ static int codecGetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
 static int codecSetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
     uint32_t *pu32Reg = NULL;
-    if (STAC9220_IS_PORT_CMD(cmd))
+    if (codecIsPortNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F07_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F07_param;
-    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+    else if (codecIsDigOutPinNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F07_param;
-    else if (STAC9220_IS_CD_CMD(cmd))
+    else if (codecIsCdNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
-    else if (   STAC9220_IS_RESERVED_CMD(cmd)
+    else if (   codecIsReservedNode(pState, CODEC_NID(cmd))
              && CODEC_NID(cmd) == 0x1b)
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     Assert((pu32Reg));
@@ -387,20 +388,20 @@ static int codecSetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
 static int codecGetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_PORT_CMD(cmd))
+    if (codecIsPortNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
-    else if (STAC9220_IS_AFG_CMD(cmd))
+    else if ((cmd) == 1 /* AFG */)
         *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F08_param;
-    else if (STAC9220_IS_VOLKNOB_CMD(cmd))
+    else if (codecIsVolKnobNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
     else
         AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
@@ -411,21 +412,21 @@ static int codecGetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, u
 static int codecSetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
     uint32_t *pu32Reg = NULL;
-    if (STAC9220_IS_PORT_CMD(cmd))
+    if (codecIsPortNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
-    else if (STAC9220_IS_AFG_CMD(cmd))
+    else if (CODEC_NID(cmd) == 1 /* AFG */)
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].afg.u32F08_param;
-    else if (STAC9220_IS_VOLKNOB_CMD(cmd))
+    else if (codecIsVolKnobNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
     else
         AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
@@ -439,16 +440,16 @@ static int codecSetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, u
 static int codecGetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_PORT_CMD(cmd))
+    if (codecIsPortNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F09_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F09_param;
     else
         AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
@@ -459,8 +460,8 @@ static int codecGetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *p
 static int codecSetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
@@ -468,9 +469,9 @@ static int codecSetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *p
     *pResp = 0;
     uint32_t *pu32Reg = NULL;
     //** @todo r=michaln: Copy/paste bug? This can't be F08_parm!
-    if (STAC9220_IS_PORT_CMD(cmd))
+    if (codecIsPortNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F08_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
     Assert(pu32Reg);
     if(pu32Reg)
@@ -481,8 +482,8 @@ static int codecSetPinSense(struct CODECState *pState, uint32_t cmd, uint64_t *p
 static int codecGetConnectionListEntry(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
@@ -499,14 +500,14 @@ static int codecGetConnectionListEntry(struct CODECState *pState, uint32_t cmd, 
 static int codecGetProcessingState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_ADC_CMD(cmd))
+    if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param;
     return VINF_SUCCESS;
 }
@@ -515,14 +516,14 @@ static int codecGetProcessingState(struct CODECState *pState, uint32_t cmd, uint
 static int codecSetProcessingState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_ADC_CMD(cmd))
+    if (codecIsAdcNode(pState, CODEC_NID(cmd)))
     {
         codecSetRegisterU8(&pState->pNodes[CODEC_NID(cmd)].adc.u32F03_param, cmd, 0);
     }
@@ -533,16 +534,16 @@ static int codecSetProcessingState(struct CODECState *pState, uint32_t cmd, uint
 static int codecGetDigitalConverter(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+    if (codecIsSpdifOutNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param;
-    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
+    else if (codecIsSpdifInNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].spdifin.u32F0d_param;
     return VINF_SUCCESS;
 }
@@ -550,16 +551,16 @@ static int codecGetDigitalConverter(struct CODECState *pState, uint32_t cmd, uin
 static int codecSetDigitalConverter(struct CODECState *pState, uint32_t cmd, uint8_t u8Offset, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+    if (codecIsSpdifOutNode(pState, CODEC_NID(cmd)))
         codecSetRegisterU8(&pState->pNodes[CODEC_NID(cmd)].spdifout.u32F0d_param, cmd, u8Offset);
-    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
+    else if (codecIsSpdifInNode(pState, CODEC_NID(cmd)))
         codecSetRegisterU8(&pState->pNodes[CODEC_NID(cmd)].spdifin.u32F0d_param, cmd, u8Offset);
     return VINF_SUCCESS;
 }
@@ -579,14 +580,14 @@ static int codecSetDigitalConverter2(struct CODECState *pState, uint32_t cmd, ui
 static int codecGetSubId(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_AFG_CMD(cmd))
+    if (CODEC_NID(cmd) == 1 /* AFG */)
     {
         *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F20_param;
     }
@@ -596,12 +597,12 @@ static int codecGetSubId(struct CODECState *pState, uint32_t cmd, uint64_t *pRes
 static int codecReset(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert(STAC9220_IS_AFG_CMD(cmd));
-    if(STAC9220_IS_AFG_CMD(cmd))
+    Assert(CODEC_NID(cmd) == 1 /* AFG */);
+    if(CODEC_NID(cmd) == 1 /* AFG */)
     {
         uint8_t i;
         Log(("HDAcodec: enters reset\n"));
-        for (i = 0; i < STAC9220_NODE_COUNT; ++i)
+        for (i = 0; i < pState->cTotalNodes; ++i)
         {
             stac9220ResetNode(pState, i, &pState->pNodes[i]);
         }
@@ -616,20 +617,20 @@ static int codecReset(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 static int codecGetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_AFG_CMD(cmd))
+    if (CODEC_NID(cmd) == 1 /* AFG */)
         *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F05_param;
-    else if (STAC9220_IS_DAC_CMD(cmd))
+    else if (codecIsDacNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].dac.u32F05_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F05_param;
-    else if (STAC9220_IS_ADC_CMD(cmd))
+    else if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F05_param;
     return VINF_SUCCESS;
 }
@@ -638,27 +639,27 @@ static int codecGetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
 static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     uint32_t *pu32Reg = NULL;
     *pResp = 0;
-    if (STAC9220_IS_AFG_CMD(cmd))
+    if (CODEC_NID(cmd) == 1 /* AFG */)
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].afg.u32F05_param;
-    else if (STAC9220_IS_DAC_CMD(cmd))
+    else if (codecIsDacNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].dac.u32F05_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F05_param;
-    else if (STAC9220_IS_ADC_CMD(cmd))
+    else if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].adc.u32F05_param;
     Assert((pu32Reg));
     if (!pu32Reg)
         return VINF_SUCCESS;
 
-    if (!STAC9220_IS_AFG_CMD(cmd))
+    if (!CODEC_NID(cmd) == 1 /* AFG */)
     {
         *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
         *pu32Reg |= (pState->pNodes[1].afg.u32F05_param & (CODEC_VERB_4BIT_DATA << 4));
@@ -668,12 +669,12 @@ static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
 
     *pu32Reg |= cmd & CODEC_VERB_4BIT_DATA;
     /* Propogate next power state only if AFG is on or verb modifies AFG power state */
-    if (   STAC9220_IS_AFG_CMD(cmd)
+    if (   CODEC_NID(cmd) == 1 /* AFG */
         || !pState->pNodes[1].afg.u32F05_param)
     {
         *pu32Reg &= ~(CODEC_POWER_MASK << CODEC_POWER_ACT_SHIFT);
         *pu32Reg |= (cmd & CODEC_VERB_4BIT_DATA) << 4;
-        if (   STAC9220_IS_AFG_CMD(cmd)
+        if (   CODEC_NID(cmd) == 1 /* AFG */
             && (cmd & CODEC_POWER_MASK) == CODEC_POWER_D0)
         {
             CODEC_POWER_PROPOGATE_STATE(pState->pNodes[2].dac);
@@ -691,28 +692,30 @@ static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
 static int codecGetStreamId(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_DAC_CMD(cmd))
+    if (codecIsDacNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].dac.u32F06_param;
-    else if (STAC9220_IS_ADC_CMD(cmd))
+    else if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F06_param;
-    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
+    else if (codecIsSpdifInNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
-    else if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+    else if (codecIsSpdifOutNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
+    else if (CODEC_NID(cmd) == 0x1A)
+        *pResp = pState->pNodes[CODEC_NID(cmd)].reserved.u32F06_param;
     return VINF_SUCCESS;
 }
 static int codecSetStreamId(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
@@ -720,14 +723,16 @@ static int codecSetStreamId(struct CODECState *pState, uint32_t cmd, uint64_t *p
     *pResp = 0;
     uint32_t *pu32addr = NULL;
     *pResp = 0;
-    if (STAC9220_IS_DAC_CMD(cmd))
+    if (codecIsDacNode(pState, CODEC_NID(cmd)))
         pu32addr = &pState->pNodes[CODEC_NID(cmd)].dac.u32F06_param;
-    else if (STAC9220_IS_ADC_CMD(cmd))
+    else if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         pu32addr = &pState->pNodes[CODEC_NID(cmd)].adc.u32F06_param;
-    else if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+    else if (codecIsSpdifOutNode(pState, CODEC_NID(cmd)))
         pu32addr = &pState->pNodes[CODEC_NID(cmd)].spdifout.u32F06_param;
-    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
+    else if (codecIsSpdifInNode(pState, CODEC_NID(cmd)))
         pu32addr = &pState->pNodes[CODEC_NID(cmd)].spdifin.u32F06_param;
+    else if (codecIsReservedNode(pState, CODEC_NID(cmd)))
+        pu32addr = &pState->pNodes[CODEC_NID(cmd)].reserved.u32F06_param;
     Assert((pu32addr));
     if (pu32addr)
         codecSetRegisterU8(pu32addr, cmd, 0);
@@ -736,20 +741,20 @@ static int codecSetStreamId(struct CODECState *pState, uint32_t cmd, uint64_t *p
 static int codecGetConverterFormat(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_DAC_CMD(cmd))
+    if (codecIsDacNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].dac.u32A_param;
-    else if (STAC9220_IS_ADC_CMD(cmd))
+    else if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32A_param;
-    else if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+    else if (codecIsSpdifOutNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].spdifout.u32A_param;
-    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
+    else if (codecIsSpdifInNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].spdifin.u32A_param;
     return VINF_SUCCESS;
 }
@@ -757,20 +762,20 @@ static int codecGetConverterFormat(struct CODECState *pState, uint32_t cmd, uint
 static int codecSetConverterFormat(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_DAC_CMD(cmd))
+    if (codecIsDacNode(pState, CODEC_NID(cmd)))
         codecSetRegisterU16(&pState->pNodes[CODEC_NID(cmd)].dac.u32A_param, cmd, 0);
-    else if (STAC9220_IS_ADC_CMD(cmd))
+    else if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         codecSetRegisterU16(&pState->pNodes[CODEC_NID(cmd)].adc.u32A_param, cmd, 0);
-    else if (STAC9220_IS_SPDIFOUT_CMD(cmd))
+    else if (codecIsSpdifOutNode(pState, CODEC_NID(cmd)))
         codecSetRegisterU16(&pState->pNodes[CODEC_NID(cmd)].spdifout.u32A_param, cmd, 0);
-    else if (STAC9220_IS_SPDIFIN_CMD(cmd))
+    else if (codecIsSpdifInNode(pState, CODEC_NID(cmd)))
         codecSetRegisterU16(&pState->pNodes[CODEC_NID(cmd)].spdifin.u32A_param, cmd, 0);
     return VINF_SUCCESS;
 }
@@ -779,18 +784,18 @@ static int codecSetConverterFormat(struct CODECState *pState, uint32_t cmd, uint
 static int codecGetEAPD_BTLEnabled(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_ADCVOL_CMD(cmd))
+    if (codecIsAdcVolNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].adcvol.u32F0c_param;
-    else if (STAC9220_IS_DAC_CMD(cmd))
+    else if (codecIsDacNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].dac.u32F0c_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F0c_param;
     return VINF_SUCCESS;
 }
@@ -799,19 +804,19 @@ static int codecGetEAPD_BTLEnabled(struct CODECState *pState, uint32_t cmd, uint
 static int codecSetEAPD_BTLEnabled(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
     uint32_t *pu32Reg = NULL;
-    if (STAC9220_IS_ADCVOL_CMD(cmd))
+    if (codecIsAdcVolNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].adcvol.u32F0c_param;
-    else if (STAC9220_IS_DAC_CMD(cmd))
+    else if (codecIsDacNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].dac.u32F0c_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F0c_param;
     *pResp = 0;
     Assert((pu32Reg));
@@ -824,14 +829,14 @@ static int codecSetEAPD_BTLEnabled(struct CODECState *pState, uint32_t cmd, uint
 static int codecGetVolumeKnobCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_VOLKNOB_CMD(cmd))
+    if (codecIsVolKnobNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
     return VINF_SUCCESS;
 }
@@ -840,15 +845,15 @@ static int codecGetVolumeKnobCtrl(struct CODECState *pState, uint32_t cmd, uint6
 static int codecSetVolumeKnobCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     uint32_t *pu32Reg = NULL;
     *pResp = 0;
-    if (STAC9220_IS_VOLKNOB_CMD(cmd))
+    if (codecIsVolKnobNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F0f_param;
     Assert((pu32Reg));
     if (pu32Reg)
@@ -860,40 +865,40 @@ static int codecSetVolumeKnobCtrl(struct CODECState *pState, uint32_t cmd, uint6
 static int codecGetConfig (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
-    if (STAC9220_IS_PORT_CMD(cmd))
+    if (codecIsPortNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F1c_param;
-    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+    else if (codecIsDigOutPinNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F1c_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F1c_param;
-    else if (STAC9220_IS_CD_CMD(cmd))
+    else if (codecIsCdNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
     return VINF_SUCCESS;
 }
 static int codecSetConfigX(struct CODECState *pState, uint32_t cmd, uint8_t u8Offset)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
-    Assert((CODEC_NID(cmd) < STAC9220_NODE_COUNT));
-    if (CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     uint32_t *pu32Reg = NULL;
-    if (STAC9220_IS_PORT_CMD(cmd))
+    if (codecIsPortNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F1c_param;
-    else if (STAC9220_IS_DIGINPIN_CMD(cmd))
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F1c_param;
-    else if (STAC9220_IS_DIGOUTPIN_CMD(cmd))
+    else if (codecIsDigOutPinNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F1c_param;
-    else if (STAC9220_IS_CD_CMD(cmd))
+    else if (codecIsCdNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
     else if (CODEC_NID(cmd) == 0x1B)
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
@@ -1249,12 +1254,12 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
 {
     int rc = VINF_SUCCESS;
     Assert(CODEC_CAD(cmd) == pState->id);
-    if (STAC9220_IS_RESERVED_CMD(cmd))
+    if (codecIsReservedNode(pState, CODEC_NID(cmd)))
     {
         LogRel(("HDAcodec: cmd %x was addressed to reseved node\n", cmd));
     }
     if (   CODEC_VERBDATA(cmd) == 0
-        || CODEC_NID(cmd) >= STAC9220_NODE_COUNT)
+        || CODEC_NID(cmd) >= pState->cTotalNodes)
     {
         *pfn = codecUnimplemented;
         //** @todo r=michaln: There needs to be a counter to avoid log flooding (see e.g. DevRTC.cpp)
@@ -1310,10 +1315,27 @@ int stac9220Construct(CODECState *pState)
     pState->pVerbs = (CODECVERB *)&STAC9220VERB;
     pState->cVerbs = sizeof(STAC9220VERB)/sizeof(CODECVERB);
     pState->pfnLookup = codecLookup;
-    pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * STAC9220_NODE_COUNT);
+    unconst(pState->cTotalNodes) = 0x1C;
+    pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * pState->cTotalNodes);
     pState->fInReset = false;
+#define STAC9220WIDGET(type) pState->au8##type##s = au8Stac9220##type##s
+    STAC9220WIDGET(Port);
+    STAC9220WIDGET(Dac);
+    STAC9220WIDGET(Adc);
+    STAC9220WIDGET(AdcVol);
+    STAC9220WIDGET(AdcMux);
+    STAC9220WIDGET(Pcbeep);
+    STAC9220WIDGET(SpdifIn);
+    STAC9220WIDGET(SpdifOut);
+    STAC9220WIDGET(DigInPin);
+    STAC9220WIDGET(DigOutPin);
+    STAC9220WIDGET(Cd);
+    STAC9220WIDGET(VolKnob);
+    STAC9220WIDGET(Reserved);
+#undef STAC9220WIDGET
+    
     uint8_t i;
-    for (i = 0; i < STAC9220_NODE_COUNT; ++i)
+    for (i = 0; i < pState->cTotalNodes; ++i)
     {
         stac9220ResetNode(pState, i, &pState->pNodes[i]);
     }
@@ -1335,6 +1357,7 @@ int stac9220Construct(CODECState *pState)
         LogRel (("HDAcodec: WARNING: Unable to open PCM OUT!\n"));
     codecToAudVolume(&pState->pNodes[2].dac.B_params, AUD_MIXER_VOLUME);
     codecToAudVolume(&pState->pNodes[0x17].adcvol.B_params, AUD_MIXER_LINE_IN);
+
     return VINF_SUCCESS;
 }
 int stac9220Destruct(CODECState *pCodecState)
@@ -1345,12 +1368,12 @@ int stac9220Destruct(CODECState *pCodecState)
 
 int stac9220SaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
 {
-    SSMR3PutMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * STAC9220_NODE_COUNT);
+    SSMR3PutMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * pCodecState->cTotalNodes);
     return VINF_SUCCESS;
 }
 int stac9220LoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
 {
-    SSMR3GetMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * STAC9220_NODE_COUNT);
+    SSMR3GetMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * pCodecState->cTotalNodes);
     codecToAudVolume(&pCodecState->pNodes[2].dac.B_params, AUD_MIXER_VOLUME);
     codecToAudVolume(&pCodecState->pNodes[0x17].adcvol.B_params, AUD_MIXER_LINE_IN);
     return VINF_SUCCESS;
