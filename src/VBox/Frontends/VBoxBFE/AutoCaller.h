@@ -43,6 +43,12 @@ public:
     int rc() { return S_OK; }
 };
 
+class AutoReadLock
+{
+public:
+    AutoReadLock(VirtualBoxBase *) {}
+};
+
 class AutoWriteLock
 {
 public:

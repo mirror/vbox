@@ -119,8 +119,10 @@ private:
     HRESULT reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
                                  int32_t dz, int32_t dw, uint32_t fButtons);
     HRESULT reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs);
-    HRESULT convertDisplayWidth(LONG x, uint32_t *pcX);
-    HRESULT convertDisplayHeight(LONG y, uint32_t *pcY);
+    HRESULT reportAbsEvent(uint32_t mouseXAbs, uint32_t mouseYAbs,
+                           int32_t dz, int32_t dw, uint32_t fButtons,
+                           bool fUsesVMMDevEvent);
+    HRESULT convertDisplayRes(LONG x, LONG y, uint32_t *pcX, uint32_t *pcY);
 
     void sendMouseCapsNotifications(void);
 
