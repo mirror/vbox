@@ -1629,11 +1629,14 @@ static DECLCALLBACK(void *) hdaQueryInterface (struct PDMIBASE *pInterface,
     return NULL;
 }
 
+//#define HDA_AS_PCI_EXPRESS
+//#define HDA_WITH_MSI
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
-                                           PCFGMNODE pCfgHandle)
+                                       PCFGMNODE pCfgHandle)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     INTELHDLinkState    *s     = &pThis->hda;
@@ -1660,8 +1663,14 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     s->IBase.pfnQueryInterface  = hdaQueryInterface;
 
     /* PCI Device (the assertions will be removed later) */
+#if 0
+    /* Linux kernel has whitelist for MSI-enabled HDA, this card seems to be there. */
+    PCIDevSetVendorId           (&pThis->dev, 0x103c); /* HP. */
+    PCIDevSetDeviceId           (&pThis->dev, 0x30f7); /* HP Pavilion dv4t-1300 */
+#else
     PCIDevSetVendorId           (&pThis->dev, 0x8086); /* 00 ro - intel. */
     PCIDevSetDeviceId           (&pThis->dev, 0x2668); /* 02 ro - 82801 / 82801aa(?). */
+#endif
     PCIDevSetCommand            (&pThis->dev, 0x0000); /* 04 rw,ro - pcicmd. */
     PCIDevSetStatus             (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
     PCIDevSetRevisionId         (&pThis->dev, 0x01);   /* 08 ro - rid. */
@@ -1678,10 +1687,10 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetInterruptLine      (&pThis->dev, 0x00);   /* 3c rw. */
     PCIDevSetInterruptPin       (&pThis->dev, 0x01);   /* 3d ro - INTA#. */
 
-//#define HDA_AS_PCI_EXPRESS
-
-#ifdef HDA_AS_PCI_EXPRESS
+#if defined(HDA_AS_PCI_EXPRESS)
     PCIDevSetCapabilityList     (&pThis->dev, 0x80);
+#elif defined(HDA_WITH_MSI)
+    PCIDevSetCapabilityList     (&pThis->dev, 0x60);
 #else
     PCIDevSetCapabilityList     (&pThis->dev, 0x50);   /* ICH6 datasheet 18.1.16 */
 #endif
@@ -1695,15 +1704,6 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetByte(&pThis->dev, 0x50 + 0, VBOX_PCI_CAP_ID_PM);
     PCIDevSetByte(&pThis->dev, 0x50 + 1, 0x0); /* next */
     PCIDevSetWord(&pThis->dev, 0x50 + 2, VBOX_PCI_PM_CAP_DSI | 0x02 /* version, PM1.1 */ );
-
-#ifdef HDA_AS_PCI_EXPRESS
-    /* Message Signalled Interrupts, up to 28 bytes */
-    PCIDevSetByte(&pThis->dev,  0x60 + 0, VBOX_PCI_CAP_ID_MSI);
-    PCIDevSetByte(&pThis->dev,  0x60 + 1, 0x50); /* next */
-    PCIDevSetWord(&pThis->dev,  0x60 + 2, 0 ? VBOX_PCI_MSIX_FLAGS_ENABLE : 0);
-    /* Physical address of MSI, could be 64-bit if VBOX_PCI_MSI_FLAGS_64BIT */
-    PCIDevSetDWord(&pThis->dev, 0x60 + 4, 0 ? 0x00000001 : 0);
-#endif
 
 #ifdef HDA_AS_PCI_EXPRESS
     /* PCI Express */
@@ -1760,6 +1760,18 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
                                        hdaMap);
     if (RT_FAILURE (rc))
         return rc;
+
+#ifdef HDA_WITH_MSI
+    PDMMSIREG aMsiReg;
+    aMsiReg.cVectors = 1;
+    aMsiReg.iCapOffset = 0x60;
+    aMsiReg.iNextOffset = 0x50;
+    aMsiReg.iMsiFlags = 0;
+    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
+    AssertRC(rc);
+    if (RT_FAILURE (rc))
+        return rc;
+#endif
 
     rc = PDMDevHlpSSMRegister (pDevIns, HDA_SSM_VERSION, sizeof(*pThis), hdaSaveExec, hdaLoadExec);
     if (RT_FAILURE (rc))

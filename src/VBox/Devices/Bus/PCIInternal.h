@@ -74,20 +74,19 @@ struct PCIBus;
 enum {
     /** Set if the specific device fun was requested by PDM.
      * If clear the device and it's functions can be relocated to satisfy the slot request of another device. */
-    PCIDEV_FLAG_REQUESTED_DEVFUNC = 1<<0,
+    PCIDEV_FLAG_REQUESTED_DEVFUNC  = 1<<0,
     /** Flag whether the device is a pci-to-pci bridge.
      * This is set prior to device registration.  */
-    PCIDEV_FLAG_PCI_TO_PCI_BRIDGE = 1<<1,
+    PCIDEV_FLAG_PCI_TO_PCI_BRIDGE  = 1<<1,
     /** Flag whether the device is a PCI Express device.
      * This is set prior to device registration.  */
     PCIDEV_FLAG_PCI_EXPRESS_DEVICE = 1<<2,
     /** Flag whether the device is capable of MSI.
-     * This is set prior to device registration.  */
-    PCIDEV_FLAG_PCI_MSI            = 1<<3,
-     /** Flag whether the device is capable of MSI-X.
-     * This is set prior to device registration.  */
-    PCIDEV_FLAG_PCI_MSIX           = 1<<4
-    
+     * This one is set by analyzing device capabilities, or explicitly.  */
+    PCIDEV_FLAG_MSI_CAPABLE        = 1<<3,
+    /** Flag whether the device is capable of MSI-X.
+     * This one is set by analyzing device capabilities.  */
+    PCIDEV_FLAG_MSIX_CAPABLE       = 1<<4
 };
 
 /**
@@ -116,6 +115,17 @@ typedef struct PCIDEVICEINT
     int32_t                         uFlags;
     /** Current state of the IRQ pin of the device. */
     int32_t                         uIrqPinState;
+
+    /* Offset of MSI PCI capability in config space, or 0 */
+    uint8_t                         u8MsiCapOffset;
+    /* Size of MSI PCI capability in config space, or 0 */
+    uint8_t                         u8MsiCapSize;
+    /* Offset of MSI-X PCI capability in config space, or 0 */
+    uint8_t                         u8MsixCapOffset;
+    /* Size of MSI-X PCI capability in config space, or 0 */
+    uint8_t                         u8MsixCapSize;
+
+    uint32_t                        Alignment1;
 
     /** Read config callback for PCI bridges to pass requests
      *  to devices on another bus.

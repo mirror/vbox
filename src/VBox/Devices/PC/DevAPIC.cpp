@@ -1448,6 +1448,13 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr)
 
     index = (addr >> 4) & 0xff;
 
+    if (addr > 0xfff || (index == 0))
+    {
+        /* MSR area read, undefined result by spec */
+        Log(("APIC: MSR area read: %x\n", index));
+        return 0;
+    }
+
     switch(index) {
     case 0x02: /* id */
         val = s->id << 24;
@@ -1522,7 +1529,11 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr)
 #endif
     return val;
 }
-
+/**
+ * See chapter 10.11 MESSAGE SIGNALLED INTERRUPTS of IA-32 Intel Architecture
+ * Software Developer’s Manual, Volume 3A: System Programming Guide, Part 1
+ * for details on MSI and LAPIC interaction.
+ */
 static int apicSendMsi(APICDeviceInfo* dev, RTGCPHYS addr, uint32_t val)
 {
     uint8_t  dest = (addr & VBOX_MSI_ADDR_DEST_ID_MASK) >> VBOX_MSI_ADDR_DEST_ID_SHIFT;
@@ -1530,7 +1541,12 @@ static int apicSendMsi(APICDeviceInfo* dev, RTGCPHYS addr, uint32_t val)
     uint8_t  dest_mode = (addr >> VBOX_MSI_ADDR_DEST_MODE_SHIFT) & 0x1;
     uint8_t  trigger_mode = (val >> VBOX_MSI_DATA_TRIGGER_SHIFT) & 0x1;
     uint8_t  delivery_mode = (val >> VBOX_MSI_DATA_DELIVERY_MODE_SHIFT) & 0x7;
-
+    /**
+     * This bit indicates whether the message should be directed to the
+     * processor with the lowest interrupt priority among
+     * processors that can receive the interrupt, ignored ATM.
+     */
+    uint8_t  redir_hint = (addr >> VBOX_MSI_ADDR_REDIRECTION_SHIFT) & 0x1;
     uint32_t deliver_bitmask = apic_get_delivery_bitmask(dev, dest, dest_mode);
 
     return apic_bus_deliver(dev, deliver_bitmask, delivery_mode,
