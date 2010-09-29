@@ -1640,10 +1640,10 @@ VOID VBoxMRxReadRegistryParameters ()
         (PULONG)&Temp,
         FALSE
         );
+
+        ZwClose(ParametersHandle);
     }
     if (NT_SUCCESS(Status)) LogRate = Temp;
-
-    ZwClose(ParametersHandle);
 }
 
 #if defined(DEBUG) || defined (LOG_ENABLED)
