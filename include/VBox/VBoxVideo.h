@@ -283,6 +283,7 @@ typedef enum
     VBOXVHWACMD_TYPE_HH_RESET
 #ifdef VBOX_WITH_WDDM
     , VBOXVHWACMD_TYPE_SURF_GETINFO
+    , VBOXVHWACMD_TYPE_SURF_COLORFILL
 #endif
 } VBOXVHWACMD_TYPE;
 
@@ -677,6 +678,23 @@ typedef struct _VBOXVHWACMD_SURF_BLT
         } in;
     } u;
 } VBOXVHWACMD_SURF_BLT;
+
+#ifdef VBOX_WITH_WDDM
+typedef struct _VBOXVHWACMD_SURF_COLORFILL
+{
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFHANDLE hSurf;
+            uint64_t offSurface;
+            uint32_t u32Reserved;
+            uint32_t cRects;
+            VBOXVHWA_RECTL aRects[1];
+        } in;
+    } u;
+} VBOXVHWACMD_SURF_COLORFILL;
+#endif
 
 typedef struct _VBOXVHWACMD_SURF_FLIP
 {
