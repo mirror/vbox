@@ -28,24 +28,6 @@ enum { MOUSE_MAX_DEVICES = 3 };
 /** Mouse driver instance data. */
 typedef struct DRVMAINMOUSE DRVMAINMOUSE, *PDRVMAINMOUSE;
 
-/** Simple mouse event class. */
-class MouseEvent
-{
-public:
-    MouseEvent() : dx(0), dy(0), dz(0), dw(0), state(-1) {}
-    MouseEvent(int32_t _dx, int32_t _dy, int32_t _dz, int32_t _dw, int32_t _state) :
-        dx(_dx), dy(_dy), dz(_dz), dw(_dw), state(_state) {}
-    bool isValid()
-    {
-        return state != -1;
-    }
-    /* Note: dw is the horizontal scroll wheel */
-    int32_t dx, dy, dz, dw;
-    int32_t state;
-};
-// template instantiation
-typedef ConsoleEventBuffer<MouseEvent> MouseEventBuffer;
-
 class ATL_NO_VTABLE Mouse :
     public VirtualBoxBase
 #ifndef VBOXBFE_WITHOUT_COM
@@ -103,7 +85,7 @@ public:
      * cursor on demand */
     void onVMMDevNeedsHostChange(bool needsHost)
     {
-        fVMMDevNeedsHostCursor = needsHost;
+        mfVMMDevNeedsHostCursor = needsHost;
         sendMouseCapsNotifications();
     }
 
@@ -136,9 +118,9 @@ private:
     /** Pointer to the associated mouse driver. */
     struct DRVMAINMOUSE    *mpDrv[MOUSE_MAX_DEVICES];
 
-    LONG uHostCaps;
-    bool fVMMDevCanAbs;
-    bool fVMMDevNeedsHostCursor;
+    LONG mfHostCaps;
+    bool mfVMMDevCanAbs;
+    bool mfVMMDevNeedsHostCursor;
     uint32_t mLastAbsX;
     uint32_t mLastAbsY;
     uint32_t mLastButtons;

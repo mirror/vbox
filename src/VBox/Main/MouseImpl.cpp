@@ -75,8 +75,8 @@ Mouse::~Mouse()
 HRESULT Mouse::FinalConstruct()
 {
     RT_ZERO(mpDrv);
-    fVMMDevCanAbs = false;
-    fVMMDevNeedsHostCursor = false;
+    mfVMMDevCanAbs = false;
+    mfVMMDevNeedsHostCursor = false;
     mLastAbsX = 0x8000;
     mLastAbsY = 0x8000;
     mLastButtons = 0;
@@ -109,7 +109,7 @@ HRESULT Mouse::init (Console *parent)
 
     unconst(mParent) = parent;
 
-    uHostCaps = 0;
+    mfHostCaps = 0;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -198,7 +198,7 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     bool fAbs = false;
 
-    if (fVMMDevCanAbs)
+    if (mfVMMDevCanAbs)
         fAbs = TRUE;
 
     for (unsigned i = 0; i < MOUSE_MAX_DEVICES; ++i)
@@ -250,7 +250,7 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *pfNeedsHostCursor)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    *pfNeedsHostCursor = fVMMDevNeedsHostCursor;
+    *pfNeedsHostCursor = mfVMMDevNeedsHostCursor;
     return S_OK;
 }
 
@@ -392,7 +392,7 @@ HRESULT Mouse::reportAbsEvent(uint32_t mouseXAbs, uint32_t mouseYAbs,
      * relative mouse device to alert the guest to changes. */
     LONG cJiggle = 0;
 
-    if (fVMMDevCanAbs)
+    if (mfVMMDevCanAbs)
     {
         /*
          * Send the absolute mouse position to the VMM device.
@@ -441,9 +441,9 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
                  dx, dy, dz, dw));
         /* Make sure that the guest knows that we are sending real movement
          * events to the PS/2 device and not just dummy wake-up ones. */
-        if (uHostCaps & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
+        if (mfHostCaps & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
         {
-            uHostCaps &= ~VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
+            mfHostCaps &= ~VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
             fUpdateCaps = TRUE;
         }
 
@@ -451,7 +451,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
     }
     /** @note we drop the lock before calling out of the object! */
     if (fUpdateCaps)
-        setVMMDevMouseCaps(uHostCaps);
+        setVMMDevMouseCaps(mfHostCaps);
     rc = reportRelEventToMouseDev(dx, dy, dz, dw, fButtons);
 
     return rc;
@@ -536,15 +536,15 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
         AutoWriteLock aLock(this COMMA_LOCKVAL_SRC_POS);
 
         /** @todo rename that capability to VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE */
-        if (fVMMDevCanAbs && !(uHostCaps & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
+        if (mfVMMDevCanAbs && !(mfHostCaps & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
         {
-            uHostCaps |= VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
+            mfHostCaps |= VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
             fUpdateCaps = TRUE;
         }
     }
     /** @note we drop the lock again before calling out! */
     if (fUpdateCaps)
-        setVMMDevMouseCaps(uHostCaps);
+        setVMMDevMouseCaps(mfHostCaps);
 
     /** @todo rename that capability to VMMDEV_MOUSE_GUEST_USES_EVENT */
     rc = reportAbsEvent(mouseXAbs, mouseYAbs, dz, dw, fButtons,
@@ -578,25 +578,25 @@ void Mouse::sendMouseCapsNotifications(void)
                if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_RELATIVE)
                    fRelDev = true;
             }
-        if (fAbsDev && !(uHostCaps & VMMDEV_MOUSE_HOST_HAS_ABS_DEV))
-            uHostCaps |= VMMDEV_MOUSE_HOST_HAS_ABS_DEV;
-        if (!fAbsDev && (uHostCaps & VMMDEV_MOUSE_HOST_HAS_ABS_DEV))
-            uHostCaps &= ~VMMDEV_MOUSE_HOST_HAS_ABS_DEV;
+        if (fAbsDev && !(mfHostCaps & VMMDEV_MOUSE_HOST_HAS_ABS_DEV))
+            mfHostCaps |= VMMDEV_MOUSE_HOST_HAS_ABS_DEV;
+        if (!fAbsDev && (mfHostCaps & VMMDEV_MOUSE_HOST_HAS_ABS_DEV))
+            mfHostCaps &= ~VMMDEV_MOUSE_HOST_HAS_ABS_DEV;
     }
     /** @note we drop the lock again before calling out! */
     if (SUCCEEDED(getVMMDevMouseCaps(&u32MouseCaps)))
-        fVMMDevCanAbs =    (u32MouseCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
+        mfVMMDevCanAbs =    (u32MouseCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
                         && fRelDev;
     else
-        fVMMDevCanAbs = false;
+        mfVMMDevCanAbs = false;
     /** @todo this call takes the Console lock in order to update the cached
      * callback data atomically.  However I can't see any sign that the cached
      * data is ever used again. */
-    mParent->onMouseCapabilityChange(fAbsDev || fVMMDevCanAbs, fRelDev,
-                                     fVMMDevNeedsHostCursor);
+    mParent->onMouseCapabilityChange(fAbsDev || mfVMMDevCanAbs, fRelDev,
+                                     mfVMMDevNeedsHostCursor);
     /** @todo if this gets called during device initialisation we get an
      * error due to VMMDev not being initialised yet. */
-    setVMMDevMouseCaps(uHostCaps);
+    setVMMDevMouseCaps(mfHostCaps);
 }
 
 
