@@ -141,7 +141,7 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
             pVBox->guestCanAbsolute = TRUE;
         if (   (fFeatures & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
             || !pVBox->guestCanAbsolute
-            || !(fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
+            || !(fFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
            )
             rc = FALSE;
     }

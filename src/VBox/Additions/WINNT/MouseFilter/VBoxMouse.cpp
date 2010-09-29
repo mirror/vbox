@@ -1120,7 +1120,7 @@ Return Value:
 
         if (RT_SUCCESS(rc))
         {
-            if (req->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
+            if (req->mouseFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
             {
                 PMOUSE_INPUT_DATA inputData = InputDataStart;
                 while (inputData < InputDataEnd)

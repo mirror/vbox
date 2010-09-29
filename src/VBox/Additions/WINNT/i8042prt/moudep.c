@@ -541,7 +541,7 @@ Return Value:
 
                     if (RT_SUCCESS(rc))
                     {
-                        if (req->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
+                        if (req->mouseFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
                         {
                             // make it an absolute move
                             deviceExtension->MouseExtension.CurrentInput.Flags = MOUSE_MOVE_ABSOLUTE;
@@ -607,7 +607,7 @@ Return Value:
 
                     if (RT_SUCCESS(rc))
                     {
-                        if (req->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
+                        if (req->mouseFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
                         {
                             // make it an absolute move
                             deviceExtension->MouseExtension.CurrentInput.Flags = MOUSE_MOVE_ABSOLUTE;
