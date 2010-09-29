@@ -93,12 +93,14 @@ public:
         return mParent;
     }
 
-    // for VMMDevInterface
+    /** notify the front-end that the guest now supports absolute reporting */
     void onVMMDevCanAbsChange(bool)
     {
         sendMouseCapsNotifications();
     }
 
+    /** notify the front-end as to whether the guest can start drawing its own
+     * cursor on demand */
     void onVMMDevNeedsHostChange(bool needsHost)
     {
         fVMMDevNeedsHostCursor = needsHost;
