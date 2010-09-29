@@ -186,6 +186,7 @@ typedef struct RESNODE
 {
     CODECCOMMONNODE node;
     uint32_t    u32F07_param;
+    uint32_t    u32F06_param;
     uint32_t    u32F1c_param;
 } RESNODE, *PRESNODE;
 
@@ -232,11 +233,27 @@ typedef struct CODECState
     SWVoiceIn               *voice_mc;
     void                    *pHDAState;
     bool                    fInReset;
+    const uint8_t           cTotalNodes;
+    const uint8_t           *au8Ports;
+    const uint8_t           *au8Dacs;
+    const uint8_t           *au8AdcVols;
+    const uint8_t           *au8Adcs;
+    const uint8_t           *au8AdcMuxs;
+    const uint8_t           *au8Pcbeeps;
+    const uint8_t           *au8SpdifIns;
+    const uint8_t           *au8SpdifOuts;
+    const uint8_t           *au8DigInPins;
+    const uint8_t           *au8DigOutPins;
+    const uint8_t           *au8Cds;
+    const uint8_t           *au8VolKnobs;
+    const uint8_t           *au8Reserveds;
     DECLR3CALLBACKMEMBER(int, pfnProcess, (struct CODECState *));
     DECLR3CALLBACKMEMBER(int, pfnLookup, (struct CODECState *pState, uint32_t verb, PPFNCODECVERBPROCESSOR));
     DECLR3CALLBACKMEMBER(int, pfnReset, (struct CODECState *pState));
     DECLR3CALLBACKMEMBER(void, pfnTransfer, (struct CODECState *pState, ENMSOUNDSOURCE, int avail));
+
 } CODECState;
+
 
 int stac9220Construct(CODECState *pCodecState);
 int stac9220Destruct(CODECState *pCodecState);
