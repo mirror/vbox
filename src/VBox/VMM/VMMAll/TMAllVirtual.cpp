@@ -1000,7 +1000,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks)
  */
 VMM_INT_DECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks)
 {
-        AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
+    AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64VirtualTicks / 1000000;
 }
 
