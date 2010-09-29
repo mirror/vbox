@@ -252,11 +252,21 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 
 
 /* MSI flags, aka Message Control (2 bytes, capability offset 2) */
-#define  VBOX_PCI_MSI_FLAGS_64BIT    0x0080  /* 64-bit addresses allowed */
-#define  VBOX_PCI_MSI_FLAGS_QSIZE    0x0070  /* Message queue size configured */
-#define  VBOX_PCI_MSI_FLAGS_QMASK    0x000e  /* Maximum queue size available */
 #define  VBOX_PCI_MSI_FLAGS_ENABLE   0x0001  /* MSI feature enabled */
-#define  VBOX_PCI_MSI_FLAGS_MASKBIT  0x100   /* 64-bit mask bits allowed */
+#define  VBOX_PCI_MSI_FLAGS_64BIT    0x0080  /* 64-bit addresses allowed */
+#define  VBOX_PCI_MSI_FLAGS_MASKBIT  0x0100  /* Per-vector masking support */
+/* Encoding for 3-bit patterns for message queue (per chapter 6.8.1 of PCI spec),
+   someone very similar to log_2().
+   000 1
+   001 2
+   010 4
+   011 8
+   100 16
+   101 32
+   110 Reserved
+   111 Reserved */
+#define  VBOX_PCI_MSI_FLAGS_QSIZE    0x0070  /* Message queue size configured (i.e. vectors per device allocated) */
+#define  VBOX_PCI_MSI_FLAGS_QMASK    0x000e  /* Maximum queue size available (i.e. vectors per device possible) */
 
 /* MSI-X flags (2 bytes, capability offset 2) */
 #define  VBOX_PCI_MSIX_FLAGS_ENABLE  0x8000
@@ -871,7 +881,6 @@ DECLINLINE(void) PCIDevSetInterruptPin(PPCIDEVICE pPciDev, uint8_t u8Pin)
     PCIDevSetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN, u8Pin);
 }
 
-
 /**
  * Gets the interrupt pin config register.
  *
@@ -917,6 +926,36 @@ DECLINLINE(void) PCISetPciExpress(PPCIDEVICE pDev)
 DECLINLINE(bool) PCIIsPciExpress(PPCIDEVICE pDev)
 {
     return (pDev->Int.s.uFlags & PCIDEV_FLAG_PCI_EXPRESS_DEVICE) != 0;
+}
+
+DECLINLINE(void) PCISetMsiCapable(PPCIDEVICE pDev)
+{
+    pDev->Int.s.uFlags |= PCIDEV_FLAG_MSI_CAPABLE;
+}
+
+DECLINLINE(void) PCIClearMsiCapable(PPCIDEVICE pDev)
+{
+    pDev->Int.s.uFlags &= ~PCIDEV_FLAG_MSI_CAPABLE;
+}
+
+DECLINLINE(bool) PCIIsMsiCapable(PPCIDEVICE pDev)
+{
+    return (pDev->Int.s.uFlags & PCIDEV_FLAG_MSI_CAPABLE) != 0;
+}
+
+DECLINLINE(void) PCISetMsixCapable(PPCIDEVICE pDev)
+{
+    pDev->Int.s.uFlags |= PCIDEV_FLAG_MSIX_CAPABLE;
+}
+
+DECLINLINE(void) PCIClearMsixCapable(PPCIDEVICE pDev)
+{
+    pDev->Int.s.uFlags &= ~PCIDEV_FLAG_MSIX_CAPABLE;
+}
+
+DECLINLINE(bool) PCIIsMsixCapable(PPCIDEVICE pDev)
+{
+    return (pDev->Int.s.uFlags & PCIDEV_FLAG_MSIX_CAPABLE) != 0;
 }
 #endif
 

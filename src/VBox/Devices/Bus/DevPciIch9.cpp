@@ -22,12 +22,15 @@
 /* Hack to get PCIDEVICEINT declare at the right point - include "PCIInternal.h". */
 #define PCI_INCLUDE_PRIVATE
 #include <VBox/pci.h>
+#include <VBox/msi.h>
 #include <VBox/pdmdev.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
 #include "../Builtins.h"
+
+#include "MsiCommon.h"
 
 /**
  * PCI Bus instance.
@@ -175,14 +178,14 @@ RT_C_DECLS_END
 static void ich9pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev, int iIrq, int iLevel);
 #ifdef IN_RING3
 static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const char *pszName);
-static void ich9pciUpdateMappings(PCIDevice *d);
+static void ich9pciUpdateMappings(PCIDevice *pDev);
 static DECLCALLBACK(uint32_t) ich9pciConfigRead(PCIDevice *aDev, uint32_t u32Address, unsigned len);
 DECLINLINE(PPCIDEVICE) ich9pciFindBridge(PPCIBUS pBus, uint8_t iBus);
 static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint8_t cBridgeDepth, uint8_t *paBridgePositions);
 #endif
 
 // See 7.2.2. PCI Express Enhanced Configuration Mechanism for details of address
-// mapping, we take n=8 approach
+// mapping, we take n=6 approach
 DECLINLINE(void) ich9pciPhysToPciAddr(PPCIGLOBALS pGlobals, RTGCPHYS GCPhysAddr, PciAddress* pPciAddr)
 {
     GCPhysAddr = GCPhysAddr - pGlobals->u64PciConfigMMioAddress;
@@ -522,6 +525,13 @@ static void ich9pciApicSetIrq(PPCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, 
 
 static void ich9pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev, int iIrq, int iLevel)
 {
+    if (MSIIsEnabled(pPciDev))
+    {
+        Log2(("Raise a MSI interrupt: %d\n", iIrq));
+        MSINotify(pGlobals->aPciBus.CTX_SUFF(pDevIns), pPciDev, iIrq);
+        return;
+    }
+
     PPCIBUS     pBus =     &pGlobals->aPciBus;
     const bool  fIsAcpiDevice = PCIDevGetDeviceId(pPciDev) == 0x7113;
 
@@ -768,11 +778,18 @@ static DECLCALLBACK(int) ich9pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev,
     return ich9pciRegisterInternal(pBus, iDev, pPciDev, pszName);
 }
 
+
+static DECLCALLBACK(int) ich9pciRegisterMsi(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PPDMMSIREG pMsiReg)
+{
+    return MSIInit(pPciDev, pMsiReg);
+}
+
+
 static DECLCALLBACK(int) ich9pcibridgeRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev)
 {
 
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
-    
+
     /*
      * Check input.
      */
@@ -1573,17 +1590,25 @@ static DECLCALLBACK(uint32_t) ich9pciConfigRead(PCIDevice *aDev, uint32_t u32Add
         AssertMsgReturn(false, ("Read from extended registers falled back to generic code\n"), 0);
     }
 
+    if (   PCIIsMsiCapable(aDev)
+        && (u32Address >= aDev->Int.s.u8MsiCapOffset)
+        && (u32Address <  aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize)
+       )
+    {
+        return MSIPciConfigRead(aDev, u32Address, len);
+    }
+
     AssertMsgReturn(u32Address + len <= 256, ("Read after end of PCI config space\n"),
                     0);
     switch (len)
     {
         case 1:
-            return aDev->config[u32Address];
+            return PCIDevGetByte(aDev,  u32Address);
         case 2:
-            return RT_LE2H_U16(*(uint16_t *)(aDev->config + u32Address));
+            return PCIDevGetWord(aDev,  u32Address);
         default:
         case 4:
-            return RT_LE2H_U32(*(uint32_t *)(aDev->config + u32Address));
+            return PCIDevGetDWord(aDev, u32Address);
     }
 }
 
@@ -1601,6 +1626,16 @@ static DECLCALLBACK(void) ich9pciConfigWrite(PCIDevice *aDev, uint32_t u32Addres
     }
 
     AssertMsgReturnVoid(u32Address + len <= 256, ("Write after end of PCI config space\n"));
+
+    if (   PCIIsMsiCapable(aDev)
+        && (u32Address >= aDev->Int.s.u8MsiCapOffset)
+        && (u32Address <  aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize)
+       )
+    {
+        MSIPciConfigWrite(aDev, u32Address, val, len);
+        return;
+    }
+
 
     /* Fast case - update one of BARs or ROM address, 'while' only for 'break' */
     while (   len == 4
@@ -1627,7 +1662,7 @@ static DECLCALLBACK(void) ich9pciConfigWrite(PCIDevice *aDev, uint32_t u32Addres
             val &= ~(regionSize - 1);
             val |= pRegion->type;
         }
-        *(uint32_t *)(aDev->config + u32Address) = RT_H2LE_U32(val);
+        PCIDevSetDWord(aDev, u32Address, val);
         ich9pciUpdateMappings(aDev);
         return;
     }
@@ -1643,7 +1678,7 @@ static DECLCALLBACK(void) ich9pciConfigWrite(PCIDevice *aDev, uint32_t u32Addres
             case 0x80: /* multi-function device */
                 switch (addr)
                 {
-                    /* Read-only registers, see  */
+                    /* Read-only registers  */
                     case VBOX_PCI_VENDOR_ID: case VBOX_PCI_VENDOR_ID+1:
                     case VBOX_PCI_DEVICE_ID: case VBOX_PCI_DEVICE_ID+1:
                     case VBOX_PCI_REVISION_ID:
@@ -1991,6 +2026,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     PDMPCIBUSREG PciBusReg;
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
     PciBusReg.pfnRegisterR3           = ich9pciRegister;
+    PciBusReg.pfnRegisterMsiR3        = ich9pciRegisterMsi;
     PciBusReg.pfnIORegionRegisterR3   = ich9pciIORegionRegister;
     PciBusReg.pfnSetConfigCallbacksR3 = ich9pciSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = ich9pciSetIrq;
@@ -2180,6 +2216,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
     PDMPCIBUSREG PciBusReg;
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
     PciBusReg.pfnRegisterR3           = ich9pcibridgeRegister;
+    PciBusReg.pfnRegisterMsiR3        = ich9pciRegisterMsi;
     PciBusReg.pfnIORegionRegisterR3   = ich9pciIORegionRegister;
     PciBusReg.pfnSetConfigCallbacksR3 = ich9pciSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = ich9pcibridgeSetIrq;

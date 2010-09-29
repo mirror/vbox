@@ -416,6 +416,21 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 #define PDM_IRQ_LEVEL_FLIP_FLOP                 (RT_BIT(1) | PDM_IRQ_LEVEL_HIGH)
 /** @} */
 
+/**
+ * Registration record for MSI.
+ */
+typedef struct PDMMSIREG
+{
+    /** Number of interrupt vectors */
+    uint16_t   cVectors;
+    /** Offset of MSI capability */
+    uint8_t    iCapOffset;
+    /** Offset of next capability */
+    uint8_t    iNextOffset;
+    /** Value to initialize message control register */
+    uint16_t   iMsiFlags;
+} PDMMSIREG;
+typedef PDMMSIREG *PPDMMSIREG;
 
 /**
  * PCI Bus registration structure.
@@ -439,6 +454,16 @@ typedef struct PDMPCIBUSREG
      *                          If negative, the pci bus device will assign one.
      */
     DECLR3CALLBACKMEMBER(int, pfnRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev));
+
+    /**
+     * Initialize MSI support in a PCI device.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         Device instance of the PCI Bus.
+     * @param   pPciDev         The PCI device structure.
+     * @param   pMsiReg         MSI registration structure
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRegisterMsiR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PPDMMSIREG pMsiReg));
 
     /**
      * Registers a I/O region (memory mapped or I/O ports) for a PCI device.
@@ -522,7 +547,7 @@ typedef struct PDMPCIBUSREG
 typedef PDMPCIBUSREG *PPDMPCIBUSREG;
 
 /** Current PDMPCIBUSREG version number. */
-#define PDM_PCIBUSREG_VERSION                   PDM_VERSION_MAKE(0xfffe, 1, 0)
+#define PDM_PCIBUSREG_VERSION                   PDM_VERSION_MAKE(0xfffe, 2, 0)
 
 /**
  * PCI Bus RC helpers.
@@ -2596,6 +2621,15 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnPCIRegister,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev));
 
     /**
+     * Initialize MSI support in a PCI device.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         The device instance.
+     * @param   pMsiReg         MSI registartion structure.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPCIRegisterMsi,(PPDMDEVINS pDevIns, PPDMMSIREG pMsiReg));
+
+    /**
      * Registers a I/O region (memory mapped or I/O ports) for a PCI device.
      *
      * @returns VBox status code.
@@ -3164,7 +3198,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 2, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 3, 0)
 
 
 /**
@@ -4109,6 +4143,15 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, ui
 {
     return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, iRegion, cbRegion, enmType, pfnCallback);
 }
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIRegisterMsi
+ */
+DECLINLINE(int) PDMDevHlpPCIRegisterMsi(PPDMDEVINS pDevIns, PPDMMSIREG pMsiReg)
+{
+    return pDevIns->pHlpR3->pfnPCIRegisterMsi(pDevIns, pMsiReg);
+}
+
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPCISetConfigCallbacks

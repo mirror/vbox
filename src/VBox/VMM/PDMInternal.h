@@ -577,6 +577,8 @@ typedef struct PDMPCIBUS
     DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel));
     /** @copydoc PDMPCIBUSREG::pfnRegisterR3 */
     DECLR3CALLBACKMEMBER(int,       pfnRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev));
+    /** @copydoc PDMPCIBUSREG::pfnPCIRegisterMsiR3 */
+    DECLR3CALLBACKMEMBER(int,       pfnRegisterMsiR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PPDMMSIREG pMsiReg));
     /** @copydoc PDMPCIBUSREG::pfnIORegionRegisterR3 */
     DECLR3CALLBACKMEMBER(int,       pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion,
                                                            PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));

@@ -1292,6 +1292,37 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrqNoWait(PPDMDEVINS pDevIns, int iI
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIRegisterMsi} */
+static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPDMMSIREG pMsiReg)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_PCIRegisterMsi: caller='%s'/%d: %d vectors\n", pDevIns->pReg->szName, pDevIns->iInstance, pMsiReg->cVectors));
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Must have a PCI device registered!
+     */
+    PPCIDEVICE pPciDev = pDevIns->Internal.s.pPciDeviceR3;
+    if (pPciDev)
+    {
+        PPDMPCIBUS pBus = pDevIns->Internal.s.pPciBusR3; /** @todo the bus should be associated with the PCI device not the PDM device. */
+        Assert(pBus);
+
+        PVM pVM = pDevIns->Internal.s.pVMR3;
+        pdmLock(pVM);
+        if (!pBus->pfnRegisterMsiR3)
+            rc = VERR_NOT_IMPLEMENTED;
+        else
+            rc = pBus->pfnRegisterMsiR3(pBus->pDevInsR3, pPciDev, pMsiReg);
+        pdmUnlock(pVM);
+    }
+    else
+        AssertReleaseMsgFailed(("No PCI device registered!\n"));
+
+    LogFlow(("pdmR3DevHlp_PCISetIrq: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    return rc;
+}
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnISASetIrq} */
 static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
@@ -2041,6 +2072,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     pPciBus->iBus                    = iBus;
     pPciBus->pDevInsR3               = pDevIns;
     pPciBus->pfnRegisterR3           = pPciBusReg->pfnRegisterR3;
+    pPciBus->pfnRegisterMsiR3        = pPciBusReg->pfnRegisterMsiR3;
     pPciBus->pfnIORegionRegisterR3   = pPciBusReg->pfnIORegionRegisterR3;
     pPciBus->pfnSetConfigCallbacksR3 = pPciBusReg->pfnSetConfigCallbacksR3;
     pPciBus->pfnSetIrqR3             = pPciBusReg->pfnSetIrqR3;
@@ -3014,6 +3046,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_STAMRegisterF,
     pdmR3DevHlp_STAMRegisterV,
     pdmR3DevHlp_PCIRegister,
+    pdmR3DevHlp_PCIRegisterMsi,
     pdmR3DevHlp_PCIIORegionRegister,
     pdmR3DevHlp_PCISetConfigCallbacks,
     pdmR3DevHlp_PCISetIrq,
@@ -3220,6 +3253,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_STAMRegisterF,
     pdmR3DevHlp_STAMRegisterV,
     pdmR3DevHlp_PCIRegister,
+    pdmR3DevHlp_PCIRegisterMsi,
     pdmR3DevHlp_PCIIORegionRegister,
     pdmR3DevHlp_PCISetConfigCallbacks,
     pdmR3DevHlp_PCISetIrq,

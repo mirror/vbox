@@ -285,6 +285,7 @@ DevicesR3_SOURCES       = \
 	Input/UsbMouse.cpp \
 	Bus/DevPCI.cpp \
 	Bus/DevPciIch9.cpp \
+	Bus/MsiCommon.cpp \
 	Graphics/DevVGA.cpp \
 	Storage/DevATA.cpp \
 	PC/DevPit-i8254.cpp \
@@ -516,6 +517,7 @@ PC/ACPI/VBoxAcpi.cpp_INCS = $(PATH_DevicesR3)
 # For finding PCIInternal.h from VBox/pci.h.
 Bus/DevPCI.cpp_INCS      = Bus
 Bus/DevPciIch9.cpp_INCS  = Bus
+Bus/MsiCommon.cpp_INCS  = Bus
 
 # For finding and generating vbetables.h (see Graphics/BIOS/Makefile.kmk).
 Graphics/DevVGA.cpp_INCS = $(PATH_VgaBiosBin)
@@ -536,6 +538,7 @@ ifdef VBOX_WITH_RAW_MODE
  VBoxDDGC_SOURCES        = \
  	Bus/DevPCI.cpp \
 	Bus/DevPciIch9.cpp \
+	Bus/MsiCommon.cpp \
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
  	PC/DevACPI.cpp \
@@ -644,6 +647,7 @@ VBoxDDR0_INCS          := \
 VBoxDDR0_SOURCES        = \
 	Bus/DevPCI.cpp \
 	Bus/DevPciIch9.cpp \
+	Bus/MsiCommon.cpp \
 	Graphics/DevVGA.cpp \
 	Input/DevPS2.cpp \
 	PC/DevACPI.cpp \

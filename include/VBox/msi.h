@@ -51,9 +51,9 @@
 
 /**
  * MSI region, actually same as LAPIC MMIO region, but listens on bus,
- * not CPU, accesses. 
+ * not CPU, accesses.
  * Works for us (as we don't differentiate who originated access)
- * as MSI registers are reserved in LAPIC, and vice versa, so we 
+ * as MSI registers are reserved in LAPIC, and vice versa, so we
  * can just use same handler.
  */
 #define VBOX_MSI_ADDR_BASE                   0xfee00000
@@ -79,5 +79,37 @@
 #define VBOX_MSI_ADDR_IR_SHV                 (1 << 3)
 #define VBOX_MSI_ADDR_IR_INDEX1(index)       ((index & 0x8000) >> 13)
 #define VBOX_MSI_ADDR_IR_INDEX2(index)       ((index & 0x7fff) << 5)
+
+/* Maximum number of vectors, per device/function */
+#define VBOX_MSI_MAX_ENTRIES                  32
+
+/* Offsets in MSI PCI capability structure (VBOX_PCI_CAP_ID_MSI) */
+#define VBOX_MSI_CAP_MESSAGE_CONTROL          0x02
+#define VBOX_MSI_CAP_MESSAGE_ADDRESS_32       0x04
+#define VBOX_MSI_CAP_MESSAGE_ADDRESS_LO       0x04
+#define VBOX_MSI_CAP_MESSAGE_ADDRESS_HI       0x08
+#define VBOX_MSI_CAP_MESSAGE_DATA_32          0x08
+#define VBOX_MSI_CAP_MESSAGE_DATA_64          0x0c
+#define VBOX_MSI_CAP_MASK_BITS_32             0x0c
+#define VBOX_MSI_CAP_PENDING_BITS_32          0x10
+#define VBOX_MSI_CAP_MASK_BITS_64             0x10
+#define VBOX_MSI_CAP_PENDING_BITS_64          0x14
+
+/* At the moment, we implement MSI without per-vector masking */
+#define VBOX_MSI_CAP_SIZE_32                  0x0a
+#define VBOX_MSI_CAP_SIZE_64                  0x0c
+
+/**
+ * MSI-X different from MSI by the fact that dedicated physical page
+ * (in device memory) is assigned for MSI-X table, and Pending Bit Array (PBA),
+ * which is recommended to be separated from the main table by at least 2K.
+ */
+/* Size of a MSI-X page */
+#define VBOX_MSIX_PAGE_SIZE                   0x1000
+/* Pending interrupts (PBA) */
+#define VBOX_MSIX_PAGE_PENDING                (VBOX_MSIX_PAGE_SIZE / 2)
+/* Maximum number of vectors, per device/function */
+#define VBOX_MSIX_MAX_ENTRIES                 32
+#define VBOX_MSIX_ENTRY_SIZE                  16
 
 #endif
