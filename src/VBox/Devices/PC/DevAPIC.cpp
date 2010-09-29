@@ -1531,7 +1531,7 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr)
 }
 /**
  * See chapter 10.11 MESSAGE SIGNALLED INTERRUPTS of IA-32 Intel Architecture
- * Software Developer’s Manual, Volume 3A: System Programming Guide, Part 1
+ * Software Developer's Manual, Volume 3A: System Programming Guide, Part 1
  * for details on MSI and LAPIC interaction.
  */
 static int apicSendMsi(APICDeviceInfo* dev, RTGCPHYS addr, uint32_t val)
