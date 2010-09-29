@@ -4798,6 +4798,33 @@ static DECLCALLBACK(void) vgaInfoDAC(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     }
 }
 
+/**
+ * Info handler, device version. Dumps VBE registers.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) vgaInfoVBE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+
+    if (!(s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED))
+    {
+        pHlp->pfnPrintf(pHlp, "VBE disabled\n");
+        return;
+    }
+    
+    pHlp->pfnPrintf(pHlp, "VBE state (chip ID 0x%04x):\n", s->vbe_regs[VBE_DISPI_INDEX_ID]);
+    pHlp->pfnPrintf(pHlp, " Display resolution: %d x %d @ %dbpp\n",
+                    s->vbe_regs[VBE_DISPI_INDEX_XRES], s->vbe_regs[VBE_DISPI_INDEX_YRES],
+                    s->vbe_regs[VBE_DISPI_INDEX_BPP]);
+    pHlp->pfnPrintf(pHlp, " Virtual resolution: %d x %d\n",
+                    s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH], s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT]);
+    pHlp->pfnPrintf(pHlp, " Display start addr: %d, %d\n",
+                    s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET], s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET]);
+    pHlp->pfnPrintf(pHlp, " Selected bank: 0x%04x\n", s->vbe_regs[VBE_DISPI_INDEX_BANK]);
+}
 
 /* -=-=-=-=-=- Ring 3: IBase -=-=-=-=-=- */
 
@@ -6662,6 +6689,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgasr", "Dump VGA Sequencer registers.", vgaInfoSR);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgaar", "Dump VGA Attribute Controller registers.", vgaInfoAR);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgadac", "Dump VGA DAC registers.", vgaInfoDAC);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "vbe", "Dump VGA VBE registers.", vgaInfoVBE);
 
     /*
      * Construct the logo header.
