@@ -494,6 +494,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /* Save the VM pointer in the machine object */
     pConsole->mpVM = pVM;
 
+    VMMDev *pVMMDev = pConsole->m_pVMMDev;
+    Assert(pVMMDev);
+
     ComPtr<IMachine> pMachine = pConsole->machine();
 
     int             rc;
@@ -1810,7 +1813,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigNode(pInst,    "LUN#0", &pLunL0);
         InsertConfigString(pLunL0, "Driver",               "HGCM");
         InsertConfigNode(pLunL0,   "Config", &pCfg);
-        VMMDev *pVMMDev = pConsole->mVMMDev;
         InsertConfigInteger(pCfg,  "Object", (uintptr_t)pVMMDev);
 
         /*
@@ -2144,7 +2146,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             if (mode != ClipboardMode_Disabled)
             {
                 /* Load the service */
-                rc = pConsole->mVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
+                rc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
 
                 if (RT_FAILURE(rc))
                 {
@@ -2188,7 +2190,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         }
                     }
 
-                    pConsole->mVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
+                    pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
 
                     Log(("Set VBoxSharedClipboard mode\n"));
                 }
@@ -2206,7 +2208,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             if (fEnabled)
             {
                 /* Load the service */
-                rc = pConsole->mVMMDev->hgcmLoadService("VBoxSharedCrOpenGL", "VBoxSharedCrOpenGL");
+                rc = pVMMDev->hgcmLoadService("VBoxSharedCrOpenGL", "VBoxSharedCrOpenGL");
                 if (RT_FAILURE(rc))
                 {
                     LogRel(("Failed to load Shared OpenGL service %Rrc\n", rc));
@@ -2224,15 +2226,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     parm.u.pointer.addr = (IConsole*) (Console*) pConsole;
                     parm.u.pointer.size = sizeof(IConsole *);
 
-                    rc = pConsole->mVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_CONSOLE,
-                                                        SHCRGL_CPARMS_SET_CONSOLE, &parm);
+                    rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_CONSOLE, SHCRGL_CPARMS_SET_CONSOLE, &parm);
                     if (!RT_SUCCESS(rc))
                         AssertMsgFailed(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));
 
                     parm.u.pointer.addr = pVM;
                     parm.u.pointer.size = sizeof(pVM);
-                    rc = pConsole->mVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VM,
-                                                        SHCRGL_CPARMS_SET_VM, &parm);
+                    rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VM, SHCRGL_CPARMS_SET_VM, &parm);
                     if (!RT_SUCCESS(rc))
                         AssertMsgFailed(("SHCRGL_HOST_FN_SET_VM failed with %Rrc\n", rc));
                 }
@@ -4186,15 +4186,19 @@ static void configSetProperties(VMMDev * const pVMMDev,
     parms[3].u.pointer.addr = flags;
     parms[3].u.pointer.size = 0;  /* We don't actually care. */
 
-    pVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_PROPS_HOST, 4,
-                           &parms[0]);
+    pVMMDev->hgcmHostCall("VBoxGuestPropSvc",
+                          guestProp::SET_PROPS_HOST,
+                          4,
+                          &parms[0]);
 }
 
 /**
  * Set a single guest property
  */
-static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
-                              const char *pszValue, const char *pszFlags)
+static void configSetProperty(VMMDev * const pVMMDev,
+                              const char *pszName,
+                              const char *pszValue,
+                              const char *pszFlags)
 {
     VBOXHGCMSVCPARM parms[4];
 
@@ -4250,9 +4254,10 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
 #ifdef VBOX_WITH_GUEST_PROPS
     AssertReturn(pvConsole, VERR_GENERAL_FAILURE);
     ComObjPtr<Console> pConsole = static_cast<Console *>(pvConsole);
+    AssertReturn(pConsole->m_pVMMDev, VERR_GENERAL_FAILURE);
 
     /* Load the service */
-    int rc = pConsole->mVMMDev->hgcmLoadService("VBoxGuestPropSvc", "VBoxGuestPropSvc");
+    int rc = pConsole->m_pVMMDev->hgcmLoadService("VBoxGuestPropSvc", "VBoxGuestPropSvc");
 
     if (RT_FAILURE(rc))
     {
@@ -4270,10 +4275,10 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
          */
 
         /* Sysprep execution by VBoxService. */
-        configSetProperty(pConsole->mVMMDev,
+        configSetProperty(pConsole->m_pVMMDev,
                           "/VirtualBox/HostGuest/SysprepExec", "",
                           "TRANSIENT, RDONLYGUEST");
-        configSetProperty(pConsole->mVMMDev,
+        configSetProperty(pConsole->m_pVMMDev,
                           "/VirtualBox/HostGuest/SysprepArgs", "",
                           "TRANSIENT, RDONLYGUEST");
 
@@ -4326,7 +4331,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
                     papszFlags[i] = szEmpty;
             }
             if (RT_SUCCESS(rc))
-                configSetProperties(pConsole->mVMMDev,
+                configSetProperties(pConsole->m_pVMMDev,
                                     (void *)papszNames,
                                     (void *)papszValues,
                                     (void *)pai64Timestamps,
@@ -4354,10 +4359,10 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
          * will override them.
          */
         /* Set the VBox version string as a guest property */
-        configSetProperty(pConsole->mVMMDev, "/VirtualBox/HostInfo/VBoxVer",
+        configSetProperty(pConsole->m_pVMMDev, "/VirtualBox/HostInfo/VBoxVer",
                           VBOX_VERSION_STRING, "TRANSIENT, RDONLYGUEST");
         /* Set the VBox SVN revision as a guest property */
-        configSetProperty(pConsole->mVMMDev, "/VirtualBox/HostInfo/VBoxRev",
+        configSetProperty(pConsole->m_pVMMDev, "/VirtualBox/HostInfo/VBoxRev",
                           RTBldCfgRevisionStr(), "TRANSIENT, RDONLYGUEST");
 
         /*
@@ -4392,7 +4397,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
     ComObjPtr<Console> pConsole = static_cast<Console *>(pvConsole);
 
     /* Load the service */
-    int rc = pConsole->mVMMDev->hgcmLoadService("VBoxGuestControlSvc", "VBoxGuestControlSvc");
+    int rc = pConsole->m_pVMMDev->hgcmLoadService("VBoxGuestControlSvc", "VBoxGuestControlSvc");
 
     if (RT_FAILURE(rc))
     {

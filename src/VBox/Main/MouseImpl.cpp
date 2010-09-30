@@ -564,7 +564,7 @@ void Mouse::sendMouseCapsNotifications(void)
     bool fAbsDev = false;
     bool fRelDev = false;
     uint32_t u32MouseCaps;
-    
+
     {
         AutoWriteLock aLock(this COMMA_LOCKVAL_SRC_POS);
 

@@ -112,8 +112,8 @@ public:
     virtual void     eventQuit();
     virtual void     resetCursor();
     virtual void     resetKeys(void);
-    virtual VMMDev  *getVMMDev();
-    virtual Display *getDisplay();
+    virtual VMMDev   *getVMMDev();
+    virtual Display  *getDisplay();
 
 private:
 

@@ -302,11 +302,11 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
     if (ret == S_OK)
     {
         mMemoryBalloonSize = aMemoryBalloonSize;
+        /* forward the information to the VMM device */
+        VMMDev *pVMMDev = mParent->getVMMDev();
         /* MUST release all locks before calling VMM device as its critsect
          * has higher lock order than anything in Main. */
         alock.release();
-        /* forward the information to the VMM device */
-        VMMDev *pVMMDev = mParent->getVMMDev();
         if (pVMMDev)
         {
             PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
@@ -339,11 +339,11 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mStatUpdateInterval = aUpdateInterval;
+    /* forward the information to the VMM device */
+    VMMDev *pVMMDev = mParent->getVMMDev();
     /* MUST release all locks before calling VMM device as its critsect
      * has higher lock order than anything in Main. */
     alock.release();
-    /* forward the information to the VMM device */
-    VMMDev *pVMMDev = mParent->getVMMDev();
     if (pVMMDev)
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
