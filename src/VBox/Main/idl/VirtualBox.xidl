@@ -7701,6 +7701,23 @@
     </const>
   </enum>
 
+  <enum
+    name="ExecuteProcessFlag"
+    uuid="9a24c17d-bd46-4207-b247-517fdd6d6b8f"
+  >
+    <desc>
+      Guest process execution flags.
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>No flag set.</desc>
+    </const>
+
+    <const name="IgnoreOrphanedProcesses" value="2">
+      <desc>Do not report an error when executed processes are still alive when VBoxService or the guest OS is shutting down.</desc>
+    </const>
+  </enum>
+
   <interface
      name="IGuest" extends="$unknown"
      uuid="cd80e5b8-faef-4be3-8d0e-d68fee10708d"
