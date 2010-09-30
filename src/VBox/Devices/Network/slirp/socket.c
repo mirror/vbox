@@ -613,7 +613,7 @@ sowrite(PNATState pData, struct socket *so)
             if (ret > 0 && ret != iov[1].iov_len)
             {
                 STAM_COUNTER_INC(&pData->StatIOWrite_rest);
-                STAM_COUNTER_ADD(&pData->StatIOWrite_rest_bytes, (ret - iov[1].iov_len));
+                STAM_COUNTER_ADD(&pData->StatIOWrite_rest_bytes, (iov[1].iov_len - ret));
             }
         });
     }
