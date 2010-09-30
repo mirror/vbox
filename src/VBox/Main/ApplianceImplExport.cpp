@@ -31,6 +31,9 @@
 
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
+#include "MediumImpl.h"
+#include "MediumFormatImpl.h"
+#include "SystemPropertiesImpl.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -1614,6 +1617,18 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
             writer.write(pTask->locInfo.strPath.c_str(), false /*fSafe*/);
         }
 
+        // We need a proper format description
+        ComObjPtr<MediumFormat> format;
+        { // Scope for the AutoReadLock
+            SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
+            AutoReadLock propsLock(pSysProps COMMA_LOCKVAL_SRC_POS);
+            // We are always exporting to VMDK stream optimized for now
+            format = pSysProps->mediumFormat("VMDK");
+            if (format.isNull())
+                throw setError(VBOX_E_NOT_SUPPORTED,
+                               tr("Invalid medium storage format"));
+        }
+
         // Finally, write out the disks!
         list<Utf8Str> diskList;
         map<Utf8Str, const VirtualSystemDescriptionEntry*>::const_iterator itS;
@@ -1633,12 +1648,10 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
                                strSrcFilePath.c_str());
 
             // clone the disk:
-            ComPtr<IMedium> pSourceDisk;
-            ComPtr<IMedium> pTargetDisk;
-            ComPtr<IProgress> pProgress2;
+            ComObjPtr<Medium> pSourceDisk;
 
             Log(("Finding source disk \"%ls\"\n", bstrSrcFilePath.raw()));
-            rc = mVirtualBox->FindMedium(bstrSrcFilePath.raw(), DeviceType_HardDisk, pSourceDisk.asOutParam());
+            rc = mVirtualBox->findHardDisk(NULL, bstrSrcFilePath.raw(), true, &pSourceDisk);
             if (FAILED(rc)) throw rc;
 
             Bstr uuidSource;
@@ -1654,64 +1667,35 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
             strTargetFilePath.append("/");
             strTargetFilePath.append(strTargetFileNameOnly);
 
-            // We are always exporting to VMDK stream optimized for now
-            Bstr bstrSrcFormat = L"VMDK";
-
-            // create a new hard disk interface for the destination disk image
-            Log(("Creating target disk \"%s\"\n", strTargetFilePath.c_str()));
-            rc = mVirtualBox->CreateHardDisk(bstrSrcFormat.raw(),
-                                             Bstr(strTargetFilePath).raw(),
-                                             pTargetDisk.asOutParam());
-            if (FAILED(rc)) throw rc;
-
-            // The cloning requests a lock on the media tree. So leave our lock temporary.
+            // The exporting requests a lock on the media tree. So leave our lock temporary.
             multiLock.release();
-            // the target disk is now registered and needs to be removed again,
-            // both after successful cloning or if anything goes bad!
             try
             {
+                ComObjPtr<Progress> pProgress2;
+                pProgress2.createObject();
+                rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"), strTargetFilePath.c_str()).raw(), TRUE);
+                if (FAILED(rc)) throw rc;
                 // create a flat copy of the source disk image
-                rc = pSourceDisk->CloneTo(pTargetDisk, MediumVariant_VmdkStreamOptimized, NULL, pProgress2.asOutParam());
+                rc = pSourceDisk->exportFile(strTargetFilePath.c_str(), format, MediumVariant_VmdkStreamOptimized, NULL, NULL, pProgress2);
                 if (FAILED(rc)) throw rc;
 
                 // advance to the next operation
                 pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), RTPathFilename(strTargetFilePath.c_str())).raw(),
                                                    pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
+                ComPtr<IProgress> pProgress3(pProgress2);
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
-                waitForAsyncProgress(pTask->pProgress, pProgress2);
+                waitForAsyncProgress(pTask->pProgress, pProgress3);
             }
             catch (HRESULT rc3)
             {
-                // upon error after registering, close the disk or
-                // it'll stick in the registry forever
-                pTargetDisk->Close();
+                // Todo: file deletion on error? If not, we can remove that whole try/catch block.
                 throw rc3;
             }
             // Finished, lock again (so nobody mess around with the medium tree
             // in the meantime)
             multiLock.acquire();
             diskList.push_back(strTargetFilePath);
-
-            // we need the following for the XML
-            LONG64 cbFile = 0;        // actual file size
-            rc = pTargetDisk->COMGETTER(Size)(&cbFile);
-            if (FAILED(rc)) throw rc;
-
-            LONG64 cbCapacity = 0;     // size reported to guest
-            rc = pTargetDisk->COMGETTER(LogicalSize)(&cbCapacity);
-            if (FAILED(rc)) throw rc;
-            // capacity is reported in megabytes, so...
-            cbCapacity *= _1M;
-
-            Bstr uuidTarget;
-            rc = pTargetDisk->COMGETTER(Id)(uuidTarget.asOutParam());
-            if (FAILED(rc)) throw rc;
-            Guid guidTarget(uuidTarget);
-
-            // upon success, close the disk as well
-            rc = pTargetDisk->Close();
-            if (FAILED(rc)) throw rc;
         }
 
         if (m->fManifest)
