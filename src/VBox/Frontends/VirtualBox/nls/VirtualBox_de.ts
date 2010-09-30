@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="de_DE">
+<!DOCTYPE TS><TS version="1.1" language="de_DE">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -616,6 +616,309 @@
         <comment>debug action</comment>
         <translation>&amp;Logging deaktivieren...</translation>
     </message>
+    <message>
+        <source>Enter &amp;Scale Mode</source>
+        <translation>&amp;Skalierten Modus aktivieren</translation>
+    </message>
+    <message>
+        <source>Switch to scale mode</source>
+        <translation>Den skalierten Modus aktivieren</translation>
+    </message>
+    <message>
+        <source>Exit &amp;Scale Mode</source>
+        <translation>&amp;Skalierten Modus verlassen</translation>
+    </message>
+</context>
+<context>
+    <name>UIDescriptionPagePrivate</name>
+    <message>
+        <source>No description. Press the Edit button below to add it.</source>
+        <translation>Noch keine Beschreibung. Betätigen Sie den Edit-Knopf um eine Beschreibung zu erstellen.</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>Editieren</translation>
+    </message>
+    <message>
+        <source>Edit (Ctrl+E)</source>
+        <translation>Editieren (Strg+E)</translation>
+    </message>
+</context>
+<context>
+    <name>UIDetailsPagePrivate</name>
+    <message>
+        <source>Name</source>
+        <comment>details report</comment>
+        <translation>Name</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>details report</comment>
+        <translation>OS-Typ</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details report</comment>
+        <translation>Hauptspeicher</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details report</comment>
+        <translation>Prozessoren</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details report</comment>
+        <translation>Bootreihenfolge</translation>
+    </message>
+    <message>
+        <source>ACPI</source>
+        <comment>details report</comment>
+        <translation>ACPI</translation>
+    </message>
+    <message>
+        <source>IO APIC</source>
+        <comment>details report</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>BIOS</source>
+        <comment>details report</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation>VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation>Nested Paging</translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details report</comment>
+        <translation>Beschleunigung</translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details report</comment>
+        <translation>Grafikspeicher</translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation>Bildschirme</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details report</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>3D</source>
+        <comment>details report</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Remote Display Server Port</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation>Port für Fernsteuerung</translation>
+    </message>
+    <message>
+        <source>Remote Display Server</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation>Fernsteuerung</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation>deaktiviert</translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation>(CD/DVD)</translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details report (Storage)</comment>
+        <translation>nicht angeschlossen</translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details report (audio)</comment>
+        <translation>Host-Treiber</translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details report (audio)</comment>
+        <translation>Controller</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (audio)</comment>
+        <translation>deaktiviert</translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation>Netzwerkbrücke, %1</translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation>Internes Netzwerk, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation>Host-only Adapter, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation>VDE-Netzwerk, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>details report (network)</comment>
+        <translation>Adapter %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (network)</comment>
+        <translation>deaktiviert</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (serial ports)</comment>
+        <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (serial ports)</comment>
+        <translation>deaktiviert</translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (parallel ports)</comment>
+        <translation>Port %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (parallel ports)</comment>
+        <translation>deaktiviert</translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details report (USB)</comment>
+        <translation>Gerätefilter</translation>
+    </message>
+    <message>
+        <source>%1 (%2 active)</source>
+        <comment>details report (USB)</comment>
+        <translation>%1 (%2 aktiv)</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (USB)</comment>
+        <translation>deaktiviert</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report (shared folders)</comment>
+        <translation>Gemeinsame Ordner</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (shared folders)</comment>
+        <translation>keine</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (description)</comment>
+        <translation>keine</translation>
+    </message>
+    <message>
+        <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
+        <translation>Die ausgewählte virtuelle Maschine ist &lt;i&gt;nicht zugreifbar&lt;/i&gt;. Bitte beachten Sie die Fehlermeldung, die unten gezeigt wird und betätigen Sie den &lt;b&gt;Refreshknopf&lt;/b&gt;, falls Sie den Test wiederholen wollen:</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>details report</comment>
+        <translation>Allgemein</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>details report</comment>
+        <translation>System</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <comment>details report</comment>
+        <translation>Vorschau</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>details report</comment>
+        <translation>Anzeige</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <comment>details report</comment>
+        <translation>Massenspeicher</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <comment>details report</comment>
+        <translation>Audio</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <comment>details report</comment>
+        <translation>Netzwerk</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <comment>details report</comment>
+        <translation>Serielle Schnittstellen</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>details report</comment>
+        <translation>USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report</comment>
+        <translation>Gemeinsame Ordner</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <comment>details report</comment>
+        <translation>Beschreibung</translation>
+    </message>
 </context>
 <context>
     <name>UIDownloader</name>
@@ -768,6 +1071,14 @@
         <source>Exporting Appliance ...</source>
         <translation>Exportiere Appliance ...</translation>
     </message>
+    <message>
+        <source>Create a Manifest file for automatic data integrity checks on import.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write &amp;Manifest file</source>
+        <translation>Schreibe &amp;Manifest-Datei</translation>
+    </message>
 </context>
 <context>
     <name>UIFirstRunWzd</name>
@@ -845,6 +1156,44 @@
     <message>
         <source>CD/DVD-ROM Device</source>
         <translation>CD/DVD-ROM-Gerät</translation>
+    </message>
+</context>
+<context>
+    <name>UIGLSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation>Allgemein</translation>
+    </message>
+    <message>
+        <source>Input</source>
+        <translation>Eingabe</translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation>Update</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation>Sprache</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation>USB</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>Netzwerk</translation>
+    </message>
+    <message>
+        <source>VirtualBox - %1</source>
+        <translation></translation>
+    </message>
+</context>
+<context>
+    <name>UIHelpButton</name>
+    <message>
+        <source>&amp;Help</source>
+        <translation>&amp;Hilfe</translation>
     </message>
 </context>
 <context>
@@ -1297,11 +1646,6 @@
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Die empfohlene Hauptspeichergröße beträgt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation>MB</translation>
-    </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
@@ -1323,11 +1667,15 @@
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>Die empfohlene Größe der Bootplatte beträgt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation type="obsolete">Die empfohlene Größe der Bootplatte beträgt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
         <translation>Boot&amp;festplatte</translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Die empfohlene Größe der Bootplatte beträgt &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -1364,10 +1712,224 @@
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Klicken Sie auf &lt;b&gt;%1&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Maschine erzeugt.&lt;/p&gt;&lt;/p&gt;Sie können diese und andere Einstellungen der virtuellen Maschine jederzeit im Dialog &lt;b&gt;Einstellungen&lt;/b&gt; ausgehend vom Hauptfenster ändern.&lt;/p&gt;</translation>
     </message>
+</context>
+<context>
+    <name>UIPortForwardingModel</name>
     <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <source>Name</source>
+        <translation>Name</translation>
+    </message>
+    <message>
+        <source>Protocol</source>
+        <translation>Protokoll</translation>
+    </message>
+    <message>
+        <source>Host IP</source>
+        <translation>Host-IP</translation>
+    </message>
+    <message>
+        <source>Host Port</source>
+        <translation>Host-Port</translation>
+    </message>
+    <message>
+        <source>Guest IP</source>
+        <translation>Gast-IP</translation>
+    </message>
+    <message>
+        <source>Guest Port</source>
+        <translation>Gast-Port</translation>
+    </message>
+</context>
+<context>
+    <name>UISettingsDialog</name>
+    <message>
+        <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
+        <translation>Auf der Seite &lt;b&gt;%1&lt;/b&gt; %2</translation>
+    </message>
+    <message>
+        <source>Invalid settings detected</source>
+        <translation>Ungültige Einstellungen erkannt</translation>
+    </message>
+    <message>
+        <source>Non-optimal settings detected</source>
+        <translation>Einige Einstellungen sind nicht optimal</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation>Ändern</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information.&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMCloseDialog</name>
+    <message>
+        <source>Close Virtual Machine</source>
+        <translation>Beenden der virtuellen Maschine</translation>
+    </message>
+    <message>
+        <source>You want to:</source>
+        <translation>Sie möchten:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Sichert den aktuellen Ausführungszustand der virtuellen Maschine auf die physische Festplatte des Host-PCs.&lt;/p&gt;&lt;p&gt;Beim nächsten Start wird sie aus diesem Zustand wieder hergestellt und an der selben Stelle fortgesetzt, an der Sie den Zustand gesichert haben.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass das Sichern des Zustandes eine längere Zeit in Anspruch nehmen kann. Die benötigte Zeit ist abhängig vom Gastsystem und von der Größe dem Gastsystem zugewiesenen Speichers.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Save the machine state</source>
+        <translation>den Zustand der virtuellen Maschine &amp;speichern</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Sendet das ACPI-Ereignis &apos;Netztaste gedrückt&apos; an die virtuelle Maschine.&lt;/p&gt;&lt;p&gt;Übliche Gastsysteme werden dieses Ereignis empfangen und die Maschine in Folge dessen sauber herunterfahren. Dies ist das empfohlene Vorgehen, um die Maschine auszuschalten, weil alle Anwendungen innerhalb der Maschine Gelegenheit zum Sichern Ihrer Daten bekommen.&lt;/p&gt;&lt;p&gt;Falls der Gast nicht auf dieses Ereignis reagiert, ist dieser entweder falsch konfiguriert oder versteht dieses Ereignis generell nicht. In diesem Fall sollten Sie &lt;b&gt;die virtuelle Maschine ausschalten&lt;/b&gt; wählen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>S&amp;end the shutdown signal</source>
+        <translation>die virtuelle Maschine mittels ACPI-Event &amp;herunterfahren</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Schaltet die virtuelle Maschine aus.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass dadurch die Ausführung der Maschine sofort unterbrochen wird und das Gastsystem somit keine Gelegenheit hat, sich sauber zu beenden. Dadurch kann es zu &lt;i&gt;Datenverlust&lt;/i&gt; innerhalb der virtuellen Maschine kommen. Diese Aktion sollte nur dann durchgeführt werden, wenn die virtuelle Maschine nicht auf &lt;b&gt;Sende Signal zum Herunterfahren&lt;/b&gt; reagiert.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Power off the machine</source>
+        <translation>die virtuelle Maschine &amp;ausschalten</translation>
+    </message>
+    <message>
+        <source>Restore the machine state stored in the current snapshot</source>
+        <translation>Der Ausführungszustand wird auf den aktuellen Sicherungspunkt zurückgesetzt.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ist dieses Kästchen aktiviert, dann wird sofort nach dem Ausschalten der Maschinenzustand aus dem aktuellen Sicherungspunkt wieder hergestellt. Dies ist dann empfehlenswert, wenn Sie die Arbeit der letzten Sitzung verwerfen und zum aktuellen Sicherungspunkt zurückkehren wollen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Restore current snapshot &apos;%1&apos;</source>
+        <translation>&amp;Zurückkehren auf Sicherungspunkt &apos;%1&apos;</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMDesktop</name>
+    <message>
+        <source>&amp;Details</source>
+        <translation>&amp;Details</translation>
+    </message>
+    <message>
+        <source>&amp;Snapshots</source>
+        <translation>&amp;Sicherungspunkte</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMListView</name>
+    <message>
+        <source>Inaccessible</source>
+        <translation>Nicht zugreifbar</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
+        <comment>VM tooltip (name, last state change, session state)</comment>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 seit %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
+        <comment>Inaccessible VM tooltip (name, last state change)</comment>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Nicht zugreifbar seit %2&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMPreviewWindow</name>
+    <message>
+        <source>Update Disabled</source>
+        <translation>Update deaktiviert</translation>
+    </message>
+    <message>
+        <source>Every 0.5 s</source>
+        <translation>alle 0.5 Sekunden</translation>
+    </message>
+    <message>
+        <source>Every 1 s</source>
+        <translation>jede Sekunde</translation>
+    </message>
+    <message>
+        <source>Every 2 s</source>
+        <translation>alle 2 Sekunden</translation>
+    </message>
+    <message>
+        <source>Every 5 s</source>
+        <translation>alle 5 Sekunden</translation>
+    </message>
+    <message>
+        <source>Every 10 s</source>
+        <translation>alle 10 Sekunden</translation>
+    </message>
+    <message>
+        <source>No Preview</source>
+        <translation>Keine Voransicht</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMSettingsDlg</name>
+    <message>
+        <source>General</source>
+        <translation>Allgemein</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation>System</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation>Anzeige</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation>Massenspeicher</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation>Audio</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>Netzwerk</translation>
+    </message>
+    <message>
+        <source>Ports</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <translation>Serielle Schnittstellen</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation>USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <translation>Gemeinsame Ordner</translation>
+    </message>
+    <message>
+        <source>%1 - %2</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation>haben Sie ein 64-Bit-Gastbestriebssystem ausgewählt. Da solche Gäste Hardwarevirtualisierung benötigen (VT-x/AMD-V), wird diese VM-Einstellung automatisch aktiviert.</translation>
+    </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation>haben Sie 2D-Video-Beschleunigung aktiviert. Diese Funktion wird momentan nur für Windows-Gäste unterstützt und wird daher deaktiviert.</translation>
+    </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation>haben Sie ein USB HID (Human Interface Device) aktiviert. Dieses benötigt die USB-Emulation. Wenn Sie die Einstellungen bestätigen, wird die USB-Emulation für diese VM aktiviert.</translation>
     </message>
 </context>
 <context>
@@ -1488,11 +2050,6 @@
         <translation>Warnungen:</translation>
     </message>
     <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation>MB</translation>
-    </message>
-    <message>
         <source>Hard Disk Controller (SAS)</source>
         <translation>Festplatten-Controller SAS</translation>
     </message>
@@ -1501,47 +2058,47 @@
     <name>VBoxCloseVMDlg</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>Beenden der virtuellen Maschine</translation>
+        <translation type="obsolete">Beenden der virtuellen Maschine</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation>Sie möchten:</translation>
+        <translation type="obsolete">Sie möchten:</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation>den Zustand der virtuellen Maschine &amp;speichern</translation>
+        <translation type="obsolete">den Zustand der virtuellen Maschine &amp;speichern</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation>die virtuelle Maschine &amp;ausschalten</translation>
+        <translation type="obsolete">die virtuelle Maschine &amp;ausschalten</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation>die virtuelle Maschine mittels ACPI-Event &amp;herunterfahren</translation>
+        <translation type="obsolete">die virtuelle Maschine mittels ACPI-Event &amp;herunterfahren</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ist dieses Kästchen aktiviert, dann wird sofort nach dem Ausschalten der Maschinenzustand aus dem aktuellen Sicherungspunkt wieder hergestellt. Dies ist dann empfehlenswert, wenn Sie die Arbeit der letzten Sitzung verwerfen und zum aktuellen Sicherungspunkt zurückkehren wollen.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ist dieses Kästchen aktiviert, dann wird sofort nach dem Ausschalten der Maschinenzustand aus dem aktuellen Sicherungspunkt wieder hergestellt. Dies ist dann empfehlenswert, wenn Sie die Arbeit der letzten Sitzung verwerfen und zum aktuellen Sicherungspunkt zurückkehren wollen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sichert den aktuellen Ausführungszustand der virtuellen Maschine auf die physische Festplatte des Host-PCs.&lt;/p&gt;&lt;p&gt;Beim nächsten Start wird sie aus diesem Zustand wieder hergestellt und an der selben Stelle fortgesetzt, an der Sie den Zustand gesichert haben.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass das Sichern des Zustandes eine längere Zeit in Anspruch nehmen kann. Die benötigte Zeit ist abhängig vom Gastsystem und von der Größe dem Gastsystem zugewiesenen Speichers.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Sichert den aktuellen Ausführungszustand der virtuellen Maschine auf die physische Festplatte des Host-PCs.&lt;/p&gt;&lt;p&gt;Beim nächsten Start wird sie aus diesem Zustand wieder hergestellt und an der selben Stelle fortgesetzt, an der Sie den Zustand gesichert haben.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass das Sichern des Zustandes eine längere Zeit in Anspruch nehmen kann. Die benötigte Zeit ist abhängig vom Gastsystem und von der Größe dem Gastsystem zugewiesenen Speichers.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sendet das ACPI-Ereignis &apos;Netztaste gedrückt&apos; an die virtuelle Maschine.&lt;/p&gt;&lt;p&gt;Übliche Gastsysteme werden dieses Ereignis empfangen und die Maschine in Folge dessen sauber herunterfahren. Dies ist das empfohlene Vorgehen, um die Maschine auszuschalten, weil alle Anwendungen innerhalb der Maschine Gelegenheit zum Sichern Ihrer Daten bekommen.&lt;/p&gt;&lt;p&gt;Falls der Gast nicht auf dieses Ereignis reagiert, ist dieser entweder falsch konfiguriert oder versteht dieses Ereignis generell nicht. In diesem Fall sollten Sie &lt;b&gt;die virtuelle Maschine ausschalten&lt;/b&gt; wählen.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Sendet das ACPI-Ereignis &apos;Netztaste gedrückt&apos; an die virtuelle Maschine.&lt;/p&gt;&lt;p&gt;Übliche Gastsysteme werden dieses Ereignis empfangen und die Maschine in Folge dessen sauber herunterfahren. Dies ist das empfohlene Vorgehen, um die Maschine auszuschalten, weil alle Anwendungen innerhalb der Maschine Gelegenheit zum Sichern Ihrer Daten bekommen.&lt;/p&gt;&lt;p&gt;Falls der Gast nicht auf dieses Ereignis reagiert, ist dieser entweder falsch konfiguriert oder versteht dieses Ereignis generell nicht. In diesem Fall sollten Sie &lt;b&gt;die virtuelle Maschine ausschalten&lt;/b&gt; wählen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Schaltet die virtuelle Maschine aus.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass dadurch die Ausführung der Maschine sofort unterbrochen wird und das Gastsystem somit keine Gelegenheit hat, sich sauber zu beenden. Dadurch kann es zu &lt;i&gt;Datenverlust&lt;/i&gt; innerhalb der virtuellen Maschine kommen. Diese Aktion sollte nur dann durchgeführt werden, wenn die virtuelle Maschine nicht auf &lt;b&gt;Sende Signal zum Herunterfahren&lt;/b&gt; reagiert.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Schaltet die virtuelle Maschine aus.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass dadurch die Ausführung der Maschine sofort unterbrochen wird und das Gastsystem somit keine Gelegenheit hat, sich sauber zu beenden. Dadurch kann es zu &lt;i&gt;Datenverlust&lt;/i&gt; innerhalb der virtuellen Maschine kommen. Diese Aktion sollte nur dann durchgeführt werden, wenn die virtuelle Maschine nicht auf &lt;b&gt;Sende Signal zum Herunterfahren&lt;/b&gt; reagiert.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation>Der Ausführungszustand wird auf den aktuellen Sicherungspunkt zurückgesetzt.</translation>
+        <translation type="obsolete">Der Ausführungszustand wird auf den aktuellen Sicherungspunkt zurückgesetzt.</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation>&amp;Zurückkehren auf Sicherungspunkt &apos;%1&apos;</translation>
+        <translation type="obsolete">&amp;Zurückkehren auf Sicherungspunkt &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -1610,31 +2167,27 @@
     <name>VBoxGLSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>Allgemein</translation>
+        <translation type="obsolete">Allgemein</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>Eingabe</translation>
+        <translation type="obsolete">Eingabe</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Update</translation>
+        <translation type="obsolete">Update</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>Sprache</translation>
+        <translation type="obsolete">Sprache</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
-    </message>
-    <message>
-        <source>VirtualBox - %1</source>
-        <translation></translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Netzwerk</translation>
+        <translation type="obsolete">Netzwerk</translation>
     </message>
 </context>
 <context>
@@ -1674,6 +2227,14 @@
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>Dock &amp;&amp; Menubar im Vollbildmodus &amp;automatisch zeigen</translation>
+    </message>
+    <message>
+        <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable Host &amp;ScreenSaver</source>
+        <translation>Host-Bildschirm&amp;schoner deaktivieren</translation>
     </message>
 </context>
 <context>
@@ -2234,12 +2795,12 @@
     <message>
         <source>Closed</source>
         <comment>SessionState</comment>
-        <translation>Geschlossen</translation>
+        <translation type="obsolete">Geschlossen</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>SessionState</comment>
-        <translation>Geöffnet</translation>
+        <translation type="obsolete">Geöffnet</translation>
     </message>
     <message>
         <source>Spawning</source>
@@ -2249,7 +2810,7 @@
     <message>
         <source>Closing</source>
         <comment>SessionState</comment>
-        <translation>Schließe</translation>
+        <translation type="obsolete">Schließe</translation>
     </message>
     <message>
         <source>None</source>
@@ -3070,11 +3631,6 @@
         <translation>Nested Paging</translation>
     </message>
     <message>
-        <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
-        <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
-        <translation></translation>
-    </message>
-    <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
         <translation></translation>
@@ -3107,7 +3663,7 @@
     <message>
         <source>Shareable</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Gemeinsam benutzbar</translation>
     </message>
     <message>
         <source>Unknown device</source>
@@ -3118,6 +3674,46 @@
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
         <translation>SAS-Port %1</translation>
+    </message>
+    <message>
+        <source>Fault Tolerant Syncing</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unlocked</source>
+        <comment>SessionState</comment>
+        <translation>entsperrt</translation>
+    </message>
+    <message>
+        <source>Locked</source>
+        <comment>SessionState</comment>
+        <translation>gesperrt</translation>
+    </message>
+    <message>
+        <source>Unlocking</source>
+        <comment>SessionState</comment>
+        <translation>wird entsperrt</translation>
+    </message>
+    <message>
+        <source>Intel HD Audio</source>
+        <comment>AudioControllerType</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>UDP</source>
+        <comment>NATProtocolType</comment>
+        <translation>UDP</translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <comment>NATProtocolType</comment>
+        <translation>TCP</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation>MB</translation>
     </message>
 </context>
 <context>
@@ -3139,7 +3735,7 @@
     <name>VBoxHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Hilfe</translation>
+        <translation type="obsolete">&amp;Hilfe</translation>
     </message>
 </context>
 <context>
@@ -3383,6 +3979,10 @@
         <source>Close VM</source>
         <translation>VM beenden</translation>
     </message>
+    <message>
+        <source>Minimize Window</source>
+        <translation>Anwendung minimieren</translation>
+    </message>
 </context>
 <context>
     <name>VBoxNetworkDialog</name>
@@ -3524,7 +4124,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Möchten Sie die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; wirklich dauerhaft löschen?&lt;/p&gt;&lt;p&gt;Dieser Vorgang kann nicht rückgängig gemacht werden.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Möchten Sie die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; wirklich dauerhaft löschen?&lt;/p&gt;&lt;p&gt;Dieser Vorgang kann nicht rückgängig gemacht werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
@@ -4263,6 +4863,40 @@
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Für das Löschen des Sicherungspunktes %1 wird vorübergehend mehr Platz auf der Festplatte benötigt. Im schlimmsten Fall wird die Größe des Abbildes %2 um %3 wachsen. Auf diesem Dateisystem sind aber nur noch %4 frei.&lt;/p&gt;&lt;p&gt;Falls während der Operation der Plattenplatz nicht ausreicht kann dies zu Fehlern im Abbild und in der VM-Konfiguration führen, im schlimmsten Fall zum Verlust von VM und VM-Abbild.&lt;/p&gt;&lt;p&gt;Sie können auf eigenes Risiko fortfahren.&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Delete All</source>
+        <comment>machine</comment>
+        <translation>Alles löschen</translation>
+    </message>
+    <message>
+        <source>Keep Harddisks</source>
+        <comment>machine</comment>
+        <translation>Festplatten behalten</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation &lt;i&gt;cannot&lt;/i&gt; be undone.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If you select &lt;b&gt;%1&lt;/b&gt; both the machine itself and the virtual disks attached to it will be removed. If you wish to preserve the virtual disks for later use, select &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have more than one virtual disk attached. Please make sure that you do not need any of them before continuing.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -4323,7 +4957,7 @@
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>&amp;Details</translation>
+        <translation type="obsolete">&amp;Details</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
@@ -4384,15 +5018,15 @@
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation>&amp;Sicherungspunkte</translation>
+        <translation type="obsolete">&amp;Sicherungspunkte</translation>
     </message>
     <message>
         <source>D&amp;escription</source>
-        <translation>&amp;Beschreibung</translation>
+        <translation type="obsolete">&amp;Beschreibung</translation>
     </message>
     <message>
         <source>D&amp;escription *</source>
-        <translation>&amp;Beschreibung *</translation>
+        <translation type="obsolete">&amp;Beschreibung *</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -4485,28 +5119,36 @@
         <comment>Non Mac OS X version</comment>
         <translation>&amp;Datei</translation>
     </message>
+    <message>
+        <source>Show Toolbar</source>
+        <translation>Toolbar zeigen</translation>
+    </message>
+    <message>
+        <source>Show Statusbar</source>
+        <translation>Statusleiste-Zeigen</translation>
+    </message>
 </context>
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;Wählen Sie eine Kategorie aus der Liste auf der linken Seite und fahren Sie mit der Maus über eine Einstellung, um mehr Informationen zu erhalten&lt;/i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;Wählen Sie eine Kategorie aus der Liste auf der linken Seite und fahren Sie mit der Maus über eine Einstellung, um mehr Informationen zu erhalten&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation>Ungültige Einstellungen erkannt</translation>
+        <translation type="obsolete">Ungültige Einstellungen erkannt</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Ändern</translation>
+        <translation type="obsolete">Ändern</translation>
     </message>
     <message>
         <source>Non-optimal settings detected</source>
-        <translation>Einige Einstellungen sind nicht optimal</translation>
+        <translation type="obsolete">Einige Einstellungen sind nicht optimal</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>Auf der Seite &lt;b&gt;%1&lt;/b&gt; %2</translation>
+        <translation type="obsolete">Auf der Seite &lt;b&gt;%1&lt;/b&gt; %2</translation>
     </message>
 </context>
 <context>
@@ -4695,24 +5337,24 @@
     <name>VBoxTrayIcon</name>
     <message>
         <source>Show Selector Window</source>
-        <translation>Selektor-Fenster zeigen</translation>
+        <translation type="obsolete">Selektor-Fenster zeigen</translation>
     </message>
     <message>
         <source>Show the selector window assigned to this menu</source>
-        <translation>Zeigt das diesem Menü zugeordnete Selektor-Fenster</translation>
+        <translation type="obsolete">Zeigt das diesem Menü zugeordnete Selektor-Fenster</translation>
     </message>
     <message>
         <source>Hide Tray Icon</source>
-        <translation>Tray-Icon verstecken</translation>
+        <translation type="obsolete">Tray-Icon verstecken</translation>
     </message>
     <message>
         <source>Remove this icon from the system tray</source>
-        <translation>Entfernt das Icon aus dem Systray</translation>
+        <translation type="obsolete">Entfernt das Icon aus dem Systray</translation>
     </message>
     <message>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation>&amp;Andere Maschinen...</translation>
+        <translation type="obsolete">&amp;Andere Maschinen...</translation>
     </message>
 </context>
 <context>
@@ -4819,22 +5461,22 @@
     <name>VBoxVMDescriptionPage</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Noch keine Beschreibung. Betätigen Sie den Edit-Knopf um eine Beschreibung zu erstellen.</translation>
+        <translation type="obsolete">Noch keine Beschreibung. Betätigen Sie den Edit-Knopf um eine Beschreibung zu erstellen.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>Editieren</translation>
+        <translation type="obsolete">Editieren</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation>Editieren (Strg+E)</translation>
+        <translation type="obsolete">Editieren (Strg+E)</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDetailsView</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>Die ausgewählte virtuelle Maschine ist &lt;i&gt;nicht zugreifbar&lt;/i&gt;. Bitte beachten Sie die Fehlermeldung, die unten gezeigt wird und betätigen Sie den &lt;b&gt;Refreshknopf&lt;/b&gt;, falls Sie den Test wiederholen wollen:</translation>
+        <translation type="obsolete">Die ausgewählte virtuelle Maschine ist &lt;i&gt;nicht zugreifbar&lt;/i&gt;. Bitte beachten Sie die Fehlermeldung, die unten gezeigt wird und betätigen Sie den &lt;b&gt;Refreshknopf&lt;/b&gt;, falls Sie den Test wiederholen wollen:</translation>
     </message>
 </context>
 <context>
@@ -4925,55 +5567,6 @@
     <message>
         <source>Network Statistics</source>
         <translation>Netzwerkadapter</translation>
-    </message>
-</context>
-<context>
-    <name>UIVMListView</name>
-    <message>
-        <source>Inaccessible</source>
-        <translation>Nicht zugreifbar</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
-        <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 seit %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
-        <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Nicht zugreifbar seit %2&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>S&amp;how</source>
-        <translation>&amp;Zeigen</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Wechselt zum Fenster der ausgewählten virtuellen Maschine</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>&amp;Starten</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Starten der virtuellen Maschine</translation>
-    </message>
-    <message>
-        <source>R&amp;esume</source>
-        <translation>&amp;Fortfahren</translation>
-    </message>
-    <message>
-        <source>Resume the execution of the virtual machine</source>
-        <translation>Fährt mit der Ausführung der virtuellen Maschine fort</translation>
-    </message>
-    <message>
-        <source>&amp;Pause</source>
-        <translation>&amp;Pause</translation>
-    </message>
-    <message>
-        <source>Suspend the execution of the virtual machine</source>
-        <translation>Suspendiert die Ausführung der virtuellen Maschine</translation>
     </message>
 </context>
 <context>
@@ -5136,84 +5729,84 @@
         <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
         <translation></translation>
     </message>
+    <message>
+        <source>Specifies whether multiple simultaneous connections to the VM are permitted.</source>
+        <translation>Legt fest ob mehrere gleichzeitige Verbindungen zur VM erlaubt sind.</translation>
+    </message>
+    <message>
+        <source>&amp;Allow Multiple Connections</source>
+        <translation>&amp;Gleichzeitige Verbindungen erlauben</translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>Allgemein</translation>
+        <translation type="obsolete">Allgemein</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation>Massenspeicher</translation>
+        <translation type="obsolete">Massenspeicher</translation>
     </message>
     <message>
         <source>Hard Disks</source>
-        <translation>Festplatten</translation>
+        <translation type="obsolete">Festplatten</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
-        <translation>CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation>Diskette</translation>
+        <translation type="obsolete">Diskette</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>Audio</translation>
+        <translation type="obsolete">Audio</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Netzwerk</translation>
-    </message>
-    <message>
-        <source>Ports</source>
-        <translation></translation>
+        <translation type="obsolete">Netzwerk</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation>Serielle Schnittstellen</translation>
+        <translation type="obsolete">Serielle Schnittstellen</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
-        <translation>Parallele Schnittstellen</translation>
+        <translation type="obsolete">Parallele Schnittstellen</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>Gemeinsame Ordner</translation>
-    </message>
-    <message>
-        <source>%1 - %2</source>
-        <translation></translation>
+        <translation type="obsolete">Gemeinsame Ordner</translation>
     </message>
     <message>
         <source>System</source>
-        <translation>System</translation>
+        <translation type="obsolete">System</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>Anzeige</translation>
+        <translation type="obsolete">Anzeige</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>haben Sie ein 64-Bit-Gastbestriebssystem ausgewählt. Da solche Gäste Hardwarevirtualisierung benötigen (VT-x/AMD-V), wird diese VM-Einstellung automatisch aktiviert.</translation>
+        <translation type="obsolete">haben Sie ein 64-Bit-Gastbestriebssystem ausgewählt. Da solche Gäste Hardwarevirtualisierung benötigen (VT-x/AMD-V), wird diese VM-Einstellung automatisch aktiviert.</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation>haben Sie einen 64-Bit Gastbetriebssystem für diese VM ausgewählt. VirtualBox unterstützt momentan nur eine virtuelle CPU für 64-Bit-Gäste auf 32-Bit Hosts.</translation>
+        <translation type="obsolete">haben Sie einen 64-Bit Gastbetriebssystem für diese VM ausgewählt. VirtualBox unterstützt momentan nur eine virtuelle CPU für 64-Bit-Gäste auf 32-Bit Hosts.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation>haben Sie 2D-Video-Beschleunigung aktiviert. Diese Funktion wird momentan nur für Windows-Gäste unterstützt und wird daher deaktiviert.</translation>
+        <translation type="obsolete">haben Sie 2D-Video-Beschleunigung aktiviert. Diese Funktion wird momentan nur für Windows-Gäste unterstützt und wird daher deaktiviert.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>haben Sie ein USB HID (Human Interface Device) aktiviert. Dieses benötigt die USB-Emulation. Wenn Sie die Einstellungen bestätigen, wird die USB-Emulation für diese VM aktiviert.</translation>
+        <translation type="obsolete">haben Sie ein USB HID (Human Interface Device) aktiviert. Dieses benötigt die USB-Emulation. Wenn Sie die Einstellungen bestätigen, wird die USB-Emulation für diese VM aktiviert.</translation>
     </message>
 </context>
 <context>
@@ -5514,10 +6107,6 @@
         <translation>SAS-Controller</translation>
     </message>
     <message>
-        <source>Storage Controller</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Allows to use host I/O caching capabilities.</source>
         <translation>Benutze den Host-I/O-Cache.</translation>
     </message>
@@ -5527,7 +6116,7 @@
     </message>
     <message>
         <source>Storage Controller 1</source>
-        <translation>Speicher-Controller 1</translation>
+        <translation type="obsolete">Speicher-Controller 1</translation>
     </message>
 </context>
 <context>
@@ -5609,6 +6198,14 @@
         <source>&amp;Cable connected</source>
         <translation>&amp;Kabel verbunden</translation>
     </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation>&amp;Port-Weiterleitung</translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsParallel</name>
@@ -5671,6 +6268,37 @@
     <message>
         <source>Duplicate port path entered </source>
         <translation>Doppelter Portpfad ist ausgewählt</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation>Regel für Port-Weiterleitung</translation>
+    </message>
+    <message>
+        <source>This table contains a list of port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert new rule</source>
+        <translation>Neue Regel hinzufügen</translation>
+    </message>
+    <message>
+        <source>Copy selected rule</source>
+        <translation>Ausgewählte Regel kopieren</translation>
+    </message>
+    <message>
+        <source>Delete selected rule</source>
+        <translation>Ausgewählte Regel entfernen</translation>
+    </message>
+    <message>
+        <source>This button adds new port forwarding rule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This button deletes selected port forwarding rule.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5739,6 +6367,14 @@
         <source>&amp;Folders List</source>
         <translation>Ordner&amp;liste</translation>
     </message>
+    <message>
+        <source>Yes</source>
+        <translation>Ja</translation>
+    </message>
+    <message>
+        <source>Auto-Mount</source>
+        <translation>automatisch einbinden</translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsSFDetails</name>
@@ -5777,6 +6413,14 @@
     <message>
         <source>&amp;Make Permanent</source>
         <translation>&amp;Permanent erzeugen</translation>
+    </message>
+    <message>
+        <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Auto-mount</source>
+        <translation>&amp;Automatisch einbinden</translation>
     </message>
 </context>
 <context>
