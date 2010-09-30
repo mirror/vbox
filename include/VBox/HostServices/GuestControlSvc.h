@@ -61,7 +61,7 @@ enum eProcessStatus
     PROC_STS_TOK = 5,
     /** Process timed out and was not killed successfully. */
     PROC_STS_TOA = 6,
-    /** Service is stopping, process was killed. */
+    /** Service/OS is stopping, process was killed. */
     PROC_STS_DWN = 7,
     /** Something went wrong (error code in flags). */
     PROC_STS_ERROR = 8
@@ -87,7 +87,7 @@ typedef struct _VBoxGuestCtrlCallbackDataExecStatus
     uint32_t u32PID;
     /* The process status. */
     uint32_t u32Status;
-    /** Optional flags (not used atm). */
+    /** Optional flags, varies, based on u32Status. */
     uint32_t u32Flags;
     /** Optional data buffer (not used atm). */
     void *pvData;

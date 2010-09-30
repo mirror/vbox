@@ -686,8 +686,23 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
                     break;
 
                 case PROC_STS_DWN:
-                    LogRel(("Guest process (PID %u) exited because system is shutting down\n", pCBData->u32PID)); /** @todo Add process name */
-                    errMsg = Utf8StrFmt(Guest::tr("Process exited because system is shutting down"));
+                    LogRel(("Guest process (PID %u) killed because system is shutting down\n", pCBData->u32PID)); /** @todo Add process name */
+                    /*
+                     * If u32Flags has ExecuteProcessFlag_IgnoreOrphanedProcesses set, we don't report an error to
+                     * our progress object. This is helpful for waiters which rely on the success of our progress object
+                     * even if the executed process was killed because the system/VBoxService is shutting down.
+                     *
+                     * In this case u32Flags contains the actual execution flags reached in via Guest::ExecuteProcess().
+                     */
+                    if (pData->u32Flags & ExecuteProcessFlag_IgnoreOrphanedProcesses)
+                    {
+                        hr = it->second.pProgress->notifyComplete(S_OK);
+                        AssertComRC(hr);
+                    }
+                    else
+                    {
+                        errMsg = Utf8StrFmt(Guest::tr("Process killed because system is shutting down"));
+                    }
                     break;
 
                 case PROC_STS_ERROR:
@@ -733,6 +748,30 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
             if (   errMsg.length()
                 || fCanceled) /* If canceled we have to report E_FAIL! */
             {
+                /* Destroy all callbacks which are still waiting on something
+                 * which is related to the current PID. */
+                CallbackMapIter it2;
+                for (it2 = mCallbackMap.begin(); it2 != mCallbackMap.end(); it2++)
+                {
+                    switch(it2->second.mType)
+                    {
+                        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_START:
+                            break;
+
+                        /* When waiting for process output while the process is destroyed,
+                         * make sure we also destroy the actual waiting operation (internal progress object)
+                         * in order to not block the caller. */
+                        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT:
+                        {
+                            PCALLBACKDATAEXECOUT pItData = (CALLBACKDATAEXECOUT*)it2->second.pvData;
+                            AssertPtr(pItData);
+                            if (pItData->u32PID == pCBData->u32PID)
+                                destroyCtrlCallbackContext(it2);
+                            break;
+                        }
+                    }
+                }
+
                 HRESULT hr2 = it->second.pProgress->notifyComplete(VBOX_E_IPRT_ERROR,
                                                                    COM_IIDOF(IGuest),
                                                                    Guest::getStaticComponentName(),
@@ -966,8 +1005,12 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    if (aFlags != 0) /* Flags are not supported at the moment. */
-        return E_INVALIDARG;
+    /* Validate flags. */
+    if (aFlags)
+    {
+        if (!(aFlags & ExecuteProcessFlag_IgnoreOrphanedProcesses))
+            return E_INVALIDARG;
+    }
 
     HRESULT rc = S_OK;
 
@@ -1276,7 +1319,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
     {
         /*
          * Create progress object.
-         * This progress object, compared to the one in executeProgress() above,
+         * This progress object, compared to the one in executeProgress() above
          * is only local and is used to determine whether the operation finished
          * or got canceled.
          */
@@ -1298,6 +1341,10 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
         PCALLBACKDATAEXECOUT pData = (CALLBACKDATAEXECOUT*)RTMemAlloc(sizeof(CALLBACKDATAEXECOUT));
         AssertReturn(pData, VBOX_E_IPRT_ERROR);
         RT_ZERO(*pData);
+        /* Save PID + output flags for later use. */
+        pData->u32PID = aPID;
+        pData->u32Flags = aFlags;
+        /* Add job to callback contexts. */
         uint32_t uContextID = addCtrlCallbackContext(VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT,
                                                      pData, sizeof(CALLBACKDATAEXECOUT), progress);
         Assert(uContextID > 0);

@@ -194,11 +194,17 @@ static int handleExecProgram(HandlerArg *a)
         }
         else if (!strcmp(a->argv[i], "--flags"))
         {
-            if (   i + 1 >= a->argc
-                || RTStrToUInt32Full(a->argv[i + 1], 10, &uFlags) != VINF_SUCCESS)
+            if (i + 1 >= a->argc)
                 usageOK = false;
             else
+            {
+                /** @todo Needs a bit better processing as soon as we have more flags. */
+                if (!strcmp(a->argv[i + 1], "ignoreorphanedchilds"))
+                    uFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
+                else
+                    usageOK = false;
                 ++i;
+            }
         }
         else if (   !strcmp(a->argv[i], "--username")
                  || !strcmp(a->argv[i], "--user"))
@@ -408,6 +414,7 @@ static int handleExecProgram(HandlerArg *a)
                                     RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
                             }
                             cbOutputData = 0;
+                            fCompleted = true; /* rc contains a failure, so we'll go into aborted state down below. */
                         }
                         else
                         {
@@ -488,10 +495,9 @@ static int handleExecProgram(HandlerArg *a)
                     CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
                     if (FAILED(iRc))
                     {
-                        ComPtr<IVirtualBoxErrorInfo> execError;
-                        rc = progress->COMGETTER(ErrorInfo)(execError.asOutParam());
-                        com::ErrorInfo info(execError, COM_IIDOF(IVirtualBoxErrorInfo));
-                        if (SUCCEEDED(rc) && info.isFullAvailable())
+                        com::ProgressErrorInfo info(progress);
+                        if (   info.isFullAvailable()
+                            || info.isBasicAvailable())
                         {
                             /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
                              * because it contains more accurate info about what went wrong. */
@@ -504,7 +510,12 @@ static int handleExecProgram(HandlerArg *a)
                             }
                         }
                         else
-                            AssertMsgFailed(("Full error description is missing!\n"));
+                        {
+                            if (RT_FAILURE(rc))
+                                RTMsgError("Error while looking up error code, rc=%Rrc", rc);
+                            else
+                                com::GluePrintRCMessage(iRc);
+                        }
                     }
                     else if (fVerbose)
                     {
