@@ -413,11 +413,11 @@ protected:
  *  @code
  *
  *  {
- *      ComObjPtr<Progress> pProgress;          // create the server side object
- *      pProgress.createObject();               // ...
- *      pProgress->init(...);                   // ...
- *      ComPtr<IProgress> pProgress2;           // create an interface pointer
- *      pProgress.queryInterfaceTo(pProgress2); // transfer the interface
+ *      ComObjPtr<Progress> pProgress;                       // create the server side object
+ *      pProgress.createObject();                            // ...
+ *      pProgress->init(...);                                // ...
+ *      ComPtr<IProgress> pProgress2;                        // create an interface pointer
+ *      pProgress.queryInterfaceTo(pProgress2.asOutParam()); // transfer the interface
  *  }
  *
  *  @endcode
