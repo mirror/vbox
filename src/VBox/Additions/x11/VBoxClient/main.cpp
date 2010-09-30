@@ -67,13 +67,10 @@ void VBoxClient::CleanUp()
     if (RT_FAILURE(rc))
     {
         RTPrintf("VBoxClient: Failure while acquiring the global critical section, rc=%Rrc\n", rc);
-        _Exit(1);
+        abort();
     }
     if (g_pService)
-    {
         g_pService->cleanup();
-        delete g_pService;
-    }
     if (g_szPidFile[0] && g_hPidFile)
         VbglR3ClosePidFile(g_szPidFile, g_hPidFile);
     VbglR3Term();
@@ -129,7 +126,6 @@ void vboxClientSetSignalHandlers(void)
     sigaction(SIGHUP, &sigAction, NULL);
     sigaction(SIGINT, &sigAction, NULL);
     sigaction(SIGQUIT, &sigAction, NULL);
-    sigaction(SIGABRT, &sigAction, NULL);
     sigaction(SIGPIPE, &sigAction, NULL);
     sigaction(SIGALRM, &sigAction, NULL);
     sigaction(SIGTERM, &sigAction, NULL);
