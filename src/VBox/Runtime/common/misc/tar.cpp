@@ -607,7 +607,7 @@ RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilena
 
     if (fOpen & RTFILE_O_WRITE)
     {
-        if (pInt->fOpenMode & RTFILE_O_READ)
+        if (!(pInt->fOpenMode & RTFILE_O_WRITE))
             return VERR_WRITE_PROTECT;
         if (pInt->fFileOpenForWrite)
             return VERR_TOO_MANY_OPEN_FILES;
