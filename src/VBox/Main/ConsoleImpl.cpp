@@ -356,7 +356,7 @@ Console::Console()
     , mfSnapshotFolderSizeWarningShown(false)
     , mfSnapshotFolderExt4WarningShown(false)
     , mpVmm2UserMethods(NULL)
-    , mVMMDev(NULL)
+    , m_pVMMDev(NULL)
     , mAudioSniffer(NULL)
     , mVMStateChangeCallbackDisabled(false)
     , mMachineState(MachineState_PoweredOff)
@@ -472,8 +472,13 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     mcVRDPClients = 0;
     mu32SingleRDPClientId = 0;
 
-    unconst(mVMMDev) = new VMMDev(this);
-    AssertReturn(mVMMDev, E_FAIL);
+    // VirtualBox 4.0: We no longer initialize the VMMDev instance here,
+    // which starts the HGCM thread. Instead, this is now done in the
+    // power-up thread when a VM is actually being powered up to avoid
+    // having HGCM threads all over the place every time a session is
+    // opened, even if that session will not run a VM.
+    //     unconst(m_pVMMDev) = new VMMDev(this);
+    //     AssertReturn(mVMMDev, E_FAIL);
 
     unconst(mAudioSniffer) = new AudioSniffer(this);
     AssertReturn(mAudioSniffer, E_FAIL);
@@ -535,10 +540,11 @@ void Console::uninit()
         unconst(mAudioSniffer) = NULL;
     }
 
-    if (mVMMDev)
+    // if the VM had a VMMDev with an HGCM thread, then remove that here
+    if (m_pVMMDev)
     {
-        delete mVMMDev;
-        unconst(mVMMDev) = NULL;
+        delete m_pVMMDev;
+        unconst(m_pVMMDev) = NULL;
     }
 
     mGlobalSharedFolders.clear();
@@ -799,20 +805,23 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
         {
             guestJudgement = VRDPAuthGuestNotReacted;
 
-            if (mVMMDev)
+            // @todo r=dj locking required here for m_pVMMDev?
+            PPDMIVMMDEVPORT pDevPort;
+            if (    (m_pVMMDev)
+                 && ((pDevPort = m_pVMMDev->getVMMDevPort()))
+               )
             {
                 /* Issue the request to guest. Assume that the call does not require EMT. It should not. */
 
                 /* Ask the guest to judge these credentials. */
                 uint32_t u32GuestFlags = VMMDEV_SETCREDENTIALS_JUDGE;
 
-                int rc = mVMMDev->getVMMDevPort()->pfnSetCredentials(mVMMDev->getVMMDevPort(),
-                             pszUser, pszPassword, pszDomain, u32GuestFlags);
+                int rc = pDevPort->pfnSetCredentials(pDevPort, pszUser, pszPassword, pszDomain, u32GuestFlags);
 
                 if (RT_SUCCESS(rc))
                 {
                     /* Wait for guest. */
-                    rc = mVMMDev->WaitCredentialsJudgement(authTimeout, &u32GuestFlags);
+                    rc = m_pVMMDev->WaitCredentialsJudgement(authTimeout, &u32GuestFlags);
 
                     if (RT_SUCCESS(rc))
                     {
@@ -940,12 +949,13 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
         }
     }
 
+    // @todo r=dj locking required here for m_pVMMDev?
     if (   fProvideGuestCredentials
-        && mVMMDev)
+        && m_pVMMDev)
     {
         uint32_t u32GuestFlags = VMMDEV_SETCREDENTIALS_GUESTLOGON;
 
-        int rc = mVMMDev->getVMMDevPort()->pfnSetCredentials(mVMMDev->getVMMDevPort(),
+        int rc = m_pVMMDev->getVMMDevPort()->pfnSetCredentials(m_pVMMDev->getVMMDevPort(),
                      pszUser, pszPassword, pszDomain, u32GuestFlags);
         AssertRC(rc);
     }
@@ -962,12 +972,16 @@ void Console::VRDPClientConnect(uint32_t u32ClientId)
 
 #ifdef VBOX_WITH_VRDP
     uint32_t u32Clients = ASMAtomicIncU32(&mcVRDPClients);
-
-    if (u32Clients == 1)
+    VMMDev *pDev;
+    PPDMIVMMDEVPORT pPort;
+    if (    (u32Clients == 1)
+         && ((pDev = getVMMDev()))
+         && ((pPort = pDev->getVMMDevPort()))
+       )
     {
-        getVMMDev()->getVMMDevPort()->
-            pfnVRDPChange(getVMMDev()->getVMMDevPort(),
-                          true, VRDP_EXPERIENCE_LEVEL_FULL); // @todo configurable
+        pPort->pfnVRDPChange(pPort,
+                             true,
+                             VRDP_EXPERIENCE_LEVEL_FULL); // @todo configurable
     }
 
     NOREF(u32ClientId);
@@ -990,12 +1004,17 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
 
 #ifdef VBOX_WITH_VRDP
     uint32_t u32Clients = ASMAtomicDecU32(&mcVRDPClients);
+    VMMDev *pDev;
+    PPDMIVMMDEVPORT pPort;
 
-    if (u32Clients == 0)
+    if (    (u32Clients == 0)
+         && ((pDev = getVMMDev()))
+         && ((pPort = pDev->getVMMDevPort()))
+       )
     {
-        getVMMDev()->getVMMDevPort()->
-            pfnVRDPChange(getVMMDev()->getVMMDevPort(),
-                          false, 0);
+        pPort->pfnVRDPChange(pPort,
+                             false,
+                             0);
     }
 
     mDisplay->VideoAccelVRDP(false);
@@ -1369,6 +1388,8 @@ HRESULT Console::doEnumerateGuestProperties(CBSTR aPatterns,
                                             ComSafeArrayOut(LONG64, aTimestamps),
                                             ComSafeArrayOut(BSTR, aFlags))
 {
+    AssertReturn(m_pVMMDev, E_FAIL);
+
     using namespace guestProp;
 
     VBOXHGCMSVCPARM parm[3];
@@ -1401,8 +1422,8 @@ HRESULT Console::doEnumerateGuestProperties(CBSTR aPatterns,
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
         parm[1].u.pointer.addr = Utf8Buf.mutableRaw();
         parm[1].u.pointer.size = (uint32_t)cchBuf + 1024;
-        vrc = mVMMDev->hgcmHostCall("VBoxGuestPropSvc", ENUM_PROPS_HOST, 3,
-                                    &parm[0]);
+        vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", ENUM_PROPS_HOST, 3,
+                                      &parm[0]);
         Utf8Buf.jolt();
         if (parm[2].type != VBOX_HGCM_SVC_PARM_32BIT)
             return setError(E_FAIL, tr("Internal application error"));
@@ -1823,6 +1844,10 @@ HRESULT Console::doCPURemove(ULONG aCpu)
      * asking for deadlocks. Code MUST drop any lock before touching VMMDev. */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    AssertReturn(m_pVMMDev, E_FAIL);
+    PPDMIVMMDEVPORT pDevPort = m_pVMMDev->getVMMDevPort();
+    AssertReturn(pDevPort, E_FAIL);
+
     if (   mMachineState != MachineState_Running
         && mMachineState != MachineState_Teleporting
         && mMachineState != MachineState_LiveSnapshotting
@@ -1858,7 +1883,7 @@ HRESULT Console::doCPURemove(ULONG aCpu)
 
         PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
 
-        vrc = getVMMDev()->getVMMDevPort()->pfnCpuHotUnplug(getVMMDev()->getVMMDevPort(), idCpuCore, idCpuPackage);
+        vrc = pDevPort->pfnCpuHotUnplug(pDevPort, idCpuCore, idCpuPackage);
         if (RT_SUCCESS(vrc))
         {
             unsigned cTries = 100;
@@ -1984,6 +2009,10 @@ HRESULT Console::doCPUAdd(ULONG aCpu)
        )
         return setInvalidMachineStateError();
 
+    AssertReturn(m_pVMMDev, E_FAIL);
+    PPDMIVMMDEVPORT pDevPort = m_pVMMDev->getVMMDevPort();
+    AssertReturn(pDevPort, E_FAIL);
+
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
     if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
@@ -2032,7 +2061,7 @@ HRESULT Console::doCPUAdd(ULONG aCpu)
         vrc = VMR3GetCpuCoreAndPackageIdFromCpuId(mpVM, aCpu, &idCpuCore, &idCpuPackage);
         AssertRC(vrc);
 
-        vrc = getVMMDev()->getVMMDevPort()->pfnCpuHotPlug(getVMMDev()->getVMMDevPort(), idCpuCore, idCpuPackage);
+        vrc = pDevPort->pfnCpuHotPlug(pDevPort, idCpuCore, idCpuPackage);
         /** @todo warning if the guest doesn't support it */
     }
 
@@ -2761,7 +2790,11 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BO
     /* protect mpVM (if not NULL) */
     AutoVMCallerQuietWeak autoVMCaller(this);
 
-    if (mpVM && autoVMCaller.isOk() && mVMMDev->isShFlActive())
+    if (    mpVM
+         && autoVMCaller.isOk()
+         && m_pVMMDev
+         && m_pVMMDev->isShFlActive()
+       )
     {
         /* If the VM is online and supports shared folders, share this folder
          * under the specified name. */
@@ -2817,7 +2850,11 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
     /* protect mpVM (if not NULL) */
     AutoVMCallerQuietWeak autoVMCaller(this);
 
-    if (mpVM && autoVMCaller.isOk() && mVMMDev->isShFlActive())
+    if (    mpVM
+         && autoVMCaller.isOk()
+         && m_pVMMDev
+         && m_pVMMDev->isShFlActive()
+       )
     {
         /* if the VM is online and supports shared folders, UNshare this
          * folder. */
@@ -3178,10 +3215,9 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
         }
     }
     if (ctrl.isNull())
-    {
         return setError(E_FAIL,
                         tr("Could not find storage controller '%ls'"), attCtrlName.raw());
-    }
+
     StorageControllerType_T enmCtrlType;
     rc = ctrl->COMGETTER(ControllerType)(&enmCtrlType);
     AssertComRC(rc);
@@ -3242,12 +3278,12 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
 
     if (!pMedium)
         return setError(E_FAIL,
-            tr("Could not mount the media/drive '%ls' (%Rrc)"),
-            mediumLocation.raw(), vrc);
+                        tr("Could not mount the media/drive '%ls' (%Rrc)"),
+                        mediumLocation.raw(), vrc);
 
     return setError(E_FAIL,
-        tr("Could not unmount the currently mounted media/drive (%Rrc)"),
-        vrc);
+                    tr("Could not unmount the currently mounted media/drive (%Rrc)"),
+                    vrc);
 }
 
 /**
@@ -3574,8 +3610,8 @@ HRESULT Console::doNetworkAdapterChange(const char *pszDevice,
     }
 
     return setError(E_FAIL,
-        tr("Could not change the network adaptor attachement type (%Rrc)"),
-        vrc);
+                    tr("Could not change the network adaptor attachement type (%Rrc)"),
+                    vrc);
 }
 
 
@@ -3950,13 +3986,9 @@ HRESULT Console::onVRDPServerChange(BOOL aRestart)
                 mConsoleVRDPServer->Stop();
 
                 if (RT_FAILURE(mConsoleVRDPServer->Launch()))
-                {
                     rc = E_FAIL;
-                }
                 else
-                {
                     mConsoleVRDPServer->EnableConnections();
-                }
             }
             else
             {
@@ -4258,8 +4290,8 @@ HRESULT Console::getGuestProperty(IN_BSTR aName, BSTR *aValue,
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
         parm[1].u.pointer.addr = pszBuffer;
         parm[1].u.pointer.size = sizeof(pszBuffer);
-        int vrc = mVMMDev->hgcmHostCall("VBoxGuestPropSvc", GET_PROP_HOST,
-                                        4, &parm[0]);
+        int vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GET_PROP_HOST,
+                                          4, &parm[0]);
         /* The returned string should never be able to be greater than our buffer */
         AssertLogRel(vrc != VERR_BUFFER_OVERFLOW);
         AssertLogRel(RT_FAILURE(vrc) || VBOX_HGCM_SVC_PARM_64BIT == parm[2].type);
@@ -4345,13 +4377,13 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
         parm[2].u.pointer.size = (uint32_t)Utf8Flags.length() + 1;
     }
     if ((aValue != NULL) && (aFlags != NULL))
-        vrc = mVMMDev->hgcmHostCall("VBoxGuestPropSvc", SET_PROP_HOST,
-                                    3, &parm[0]);
+        vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", SET_PROP_HOST,
+                                      3, &parm[0]);
     else if (aValue != NULL)
-        vrc = mVMMDev->hgcmHostCall("VBoxGuestPropSvc", SET_PROP_VALUE_HOST,
+        vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", SET_PROP_VALUE_HOST,
                                     2, &parm[0]);
     else
-        vrc = mVMMDev->hgcmHostCall("VBoxGuestPropSvc", DEL_PROP_HOST,
+        vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", DEL_PROP_HOST,
                                     1, &parm[0]);
     if (RT_SUCCESS(vrc))
         rc = S_OK;
@@ -4484,10 +4516,10 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         }
     }
     if (ctrl.isNull())
-    {
         return setError(E_FAIL,
-                        tr("Could not find storage controller '%ls'"), attCtrlName.raw());
-    }
+                        tr("Could not find storage controller '%ls'"),
+                        attCtrlName.raw());
+
     StorageControllerType_T enmCtrlType;
     rc = ctrl->COMGETTER(ControllerType)(&enmCtrlType);
     AssertComRC(rc);
@@ -4945,7 +4977,7 @@ HRESULT Console::addVMCaller(bool aQuiet /* = false */,
             tr("The virtual machine is not powered up"));
     }
 
-    ++ mVMCallers;
+    ++mVMCallers;
 
     return S_OK;
 }
@@ -5685,14 +5717,14 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
 
 #ifdef VBOX_WITH_HGCM
     /* Shutdown HGCM services before destroying the VM. */
-    if (mVMMDev)
+    if (m_pVMMDev)
     {
         LogFlowThisFunc(("Shutdown HGCM...\n"));
 
         /* Leave the lock since EMT will call us back as addVMCaller() */
         alock.leave();
 
-        mVMMDev->hgcmShutdown();
+        m_pVMMDev->hgcmShutdown();
 
         alock.enter();
     }
@@ -5908,7 +5940,10 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
 
     HRESULT rc = S_OK;
 
-    bool online = mpVM && autoVMCaller.isOk() && mVMMDev->isShFlActive();
+    bool online =    mpVM
+                  && autoVMCaller.isOk()
+                  && m_pVMMDev
+                  && m_pVMMDev->isShFlActive();
 
     if (aGlobal)
     {
@@ -6055,7 +6090,7 @@ HRESULT Console::createSharedFolder(CBSTR aName, SharedFolderData aData)
 
     /* sanity checks */
     AssertReturn(mpVM, E_FAIL);
-    AssertReturn(mVMMDev->isShFlActive(), E_FAIL);
+    AssertReturn(m_pVMMDev && m_pVMMDev->isShFlActive(), E_FAIL);
 
     VBOXHGCMSVCPARM parms[SHFL_CPARMS_ADD_MAPPING2];
     SHFLSTRING *pFolderName, *pMapName;
@@ -6106,9 +6141,9 @@ HRESULT Console::createSharedFolder(CBSTR aName, SharedFolderData aData)
     parms[3].type = VBOX_HGCM_SVC_PARM_32BIT;
     parms[3].u.uint32 = aData.mAutoMount;
 
-    int vrc = mVMMDev->hgcmHostCall("VBoxSharedFolders",
-                                    SHFL_FN_ADD_MAPPING,
-                                    SHFL_CPARMS_ADD_MAPPING2, &parms[0]);
+    int vrc = m_pVMMDev->hgcmHostCall("VBoxSharedFolders",
+                                      SHFL_FN_ADD_MAPPING,
+                                      SHFL_CPARMS_ADD_MAPPING2, &parms[0]);
     RTMemFree(pFolderName);
     RTMemFree(pMapName);
 
@@ -6134,7 +6169,7 @@ HRESULT Console::removeSharedFolder(CBSTR aName)
 
     /* sanity checks */
     AssertReturn(mpVM, E_FAIL);
-    AssertReturn(mVMMDev->isShFlActive(), E_FAIL);
+    AssertReturn(m_pVMMDev && m_pVMMDev->isShFlActive(), E_FAIL);
 
     VBOXHGCMSVCPARM parms;
     SHFLSTRING *pMapName;
@@ -6156,9 +6191,9 @@ HRESULT Console::removeSharedFolder(CBSTR aName)
     parms.u.pointer.addr = pMapName;
     parms.u.pointer.size = sizeof(SHFLSTRING) + (uint16_t)cbString;
 
-    int vrc = mVMMDev->hgcmHostCall("VBoxSharedFolders",
-                                    SHFL_FN_REMOVE_MAPPING,
-                                    1, &parms);
+    int vrc = m_pVMMDev->hgcmHostCall("VBoxSharedFolders",
+                                      SHFL_FN_REMOVE_MAPPING,
+                                      1, &parms);
     RTMemFree(pMapName);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL,
@@ -7370,6 +7405,16 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
     try
     {
+        // Create the VMM device object, which starts the HGCM thread; do this only
+        // once for the console, for the pathologican case that the same console
+        // object is used to power up a VM twice. VirtualBox 4.0: we now do that
+        // here instead of the Console constructor (see Console::init())
+        if (!console->m_pVMMDev)
+        {
+            console->m_pVMMDev = new VMMDev(console);
+            AssertReturn(console->m_pVMMDev, E_FAIL);
+        }
+
         /* wait for auto reset ops to complete so that we can successfully lock
          * the attached hard disks by calling LockMedia() below */
         for (VMPowerUpTask::ProgressList::const_iterator
@@ -7456,9 +7501,12 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
          */
         alock.leave();
 
-        vrc = VMR3Create(cCpus, console->mpVmm2UserMethods,
-                         Console::genericVMSetErrorCallback, &task->mErrorMsg,
-                         task->mConfigConstructor, static_cast<Console *>(console),
+        vrc = VMR3Create(cCpus,
+                         console->mpVmm2UserMethods,
+                         Console::genericVMSetErrorCallback,
+                         &task->mErrorMsg,
+                         task->mConfigConstructor,
+                         static_cast<Console *>(console),
                          &pVM);
 
         alock.enter();
@@ -7492,23 +7540,20 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                  */
                 MachineDebugger *machineDebugger = console->getMachineDebugger();
                 if (machineDebugger)
-                {
                     machineDebugger->flushQueuedSettings();
-                }
 
                 /*
                  * Shared Folders
                  */
-                if (console->getVMMDev()->isShFlActive())
+                if (console->m_pVMMDev->isShFlActive())
                 {
                     /* Does the code below call Console from the other thread?
                      * Not sure, so leave the lock just in case. */
                     alock.leave();
 
-                    for (SharedFolderDataMap::const_iterator
-                             it = task->mSharedFolders.begin();
+                    for (SharedFolderDataMap::const_iterator it = task->mSharedFolders.begin();
                          it != task->mSharedFolders.end();
-                         ++ it)
+                         ++it)
                     {
                         rc = console->createSharedFolder((*it).first.raw(),
                                                          (*it).second);

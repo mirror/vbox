@@ -792,8 +792,9 @@ void Display::handleResizeCompletedEMT (void)
                 parm.type = VBOX_HGCM_SVC_PARM_32BIT;
                 parm.u.uint32 = uScreenId;
 
-                mParent->getVMMDev()->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED,
-                                                   SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
+                VMMDev *pVMMDev = mParent->getVMMDev();
+                if (pVMMDev)
+                    pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED, SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
             }
         }
 #endif /* VBOX_WITH_CROGL */
@@ -1300,9 +1301,7 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     Assert((fEnable && pVbvaMemory) || (!fEnable && pVbvaMemory == NULL));
 
     if (!VideoAccelAllowed ())
-    {
         return VERR_NOT_SUPPORTED;
-    }
 
     /*
      * Verify that the VM is in running state. If it is not,
@@ -1325,9 +1324,7 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
 
     /* Check that current status is not being changed */
     if (mfVideoAccelEnabled == fEnable)
-    {
         return rc;
-    }
 
     if (mfVideoAccelEnabled)
     {
@@ -1340,9 +1337,7 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     }
 
     if (!fEnable && mpVbvaMemory)
-    {
         mpVbvaMemory->fu32ModeFlags &= ~VBVA_F_MODE_ENABLED;
-    }
 
     /* Safety precaution. There is no more VBVA until everything is setup! */
     mpVbvaMemory = NULL;
@@ -1350,20 +1345,19 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
 
     /* Update entire display. */
     if (maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].u32ResizeStatus == ResizeStatus_Void)
-    {
         mpDrv->pUpPort->pfnUpdateDisplayAll(mpDrv->pUpPort);
-    }
 
     /* Everything OK. VBVA status can be changed. */
 
     /* Notify the VMMDev, which saves VBVA status in the saved state,
      * and needs to know current status.
      */
-    PPDMIVMMDEVPORT pVMMDevPort = mParent->getVMMDev()->getVMMDevPort ();
-
-    if (pVMMDevPort)
+    VMMDev *pVMMDev = mParent->getVMMDev();
+    if (pVMMDev)
     {
-        pVMMDevPort->pfnVBVAChange (pVMMDevPort, fEnable);
+        PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
+        if (pVMMDevPort)
+            pVMMDevPort->pfnVBVAChange(pVMMDevPort, fEnable);
     }
 
     if (fEnable)
@@ -1372,11 +1366,11 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
         mfVideoAccelEnabled = true;
 
         /* Initialize the hardware memory. */
-        vbvaSetMemoryFlags (mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders, maFramebuffers, mcMonitors);
+        vbvaSetMemoryFlags(mpVbvaMemory, mfVideoAccelEnabled, mfVideoAccelVRDP, mfu32SupportedOrders, maFramebuffers, mcMonitors);
         mpVbvaMemory->off32Data = 0;
         mpVbvaMemory->off32Free = 0;
 
-        memset (mpVbvaMemory->aRecords, 0, sizeof (mpVbvaMemory->aRecords));
+        memset(mpVbvaMemory->aRecords, 0, sizeof (mpVbvaMemory->aRecords));
         mpVbvaMemory->indexRecordFirst = 0;
         mpVbvaMemory->indexRecordFree = 0;
 
@@ -2026,10 +2020,12 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
                 parm.type = VBOX_HGCM_SVC_PARM_32BIT;
                 parm.u.uint32 = aScreenId;
 
+                VMMDev *pVMMDev = mParent->getVMMDev();
+
                 alock.leave ();
 
-                vrc = mParent->getVMMDev()->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED,
-                                                         SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
+                if (pVMMDev)
+                    vrc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED, SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
                 /*ComAssertRCRet (vrc, E_FAIL);*/
 
                 alock.enter ();
@@ -2120,10 +2116,14 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight,
     /* Have to leave the lock because the pfnRequestDisplayChange
      * will call EMT.  */
     alock.leave ();
-    if (mParent->getVMMDev())
-        mParent->getVMMDev()->getVMMDevPort()->
-            pfnRequestDisplayChange (mParent->getVMMDev()->getVMMDevPort(),
-                                     aWidth, aHeight, aBitsPerPixel, aDisplay);
+
+    VMMDev *pVMMDev = mParent->getVMMDev();
+    if (pVMMDev)
+    {
+        PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
+        if (pVMMDevPort)
+            pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, aWidth, aHeight, aBitsPerPixel, aDisplay);
+    }
     return S_OK;
 }
 
@@ -2136,10 +2136,14 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
 
     /* Have to leave the lock because the pfnRequestSeamlessChange will call EMT.  */
     alock.leave ();
-    if (mParent->getVMMDev())
-        mParent->getVMMDev()->getVMMDevPort()->
-            pfnRequestSeamlessChange (mParent->getVMMDev()->getVMMDevPort(),
-                                      !!enabled);
+
+    VMMDev *pVMMDev = mParent->getVMMDev();
+    if (pVMMDev)
+    {
+        PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
+        if (pVMMDevPort)
+            pVMMDevPort->pfnRequestSeamlessChange(pVMMDevPort, !!enabled);
+    }
     return S_OK;
 }
 
@@ -3729,8 +3733,10 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
             parm.type = VBOX_HGCM_SVC_PARM_32BIT;
             parm.u.uint32 = pScreen->u32ViewIndex;
 
-            pThis->mParent->getVMMDev()->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED,
-                                                      SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
+            VMMDev *pVMMDev = pThis->mParent->getVMMDev();
+
+            if (pVMMDev)
+                pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED, SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
         }
     }
 #endif /* VBOX_WITH_CROGL */

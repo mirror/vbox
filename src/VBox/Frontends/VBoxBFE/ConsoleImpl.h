@@ -149,8 +149,8 @@ public:
             bool     initialized() { return mfInitialized; }
     virtual void     progressInfo(PVM pVM, unsigned uPercent, void *pvUser) = 0;
     virtual void     resetKeys(void) = 0;
-    virtual VMMDev  *getVMMDev() = 0;
-    virtual Display *getDisplay() = 0;
+    virtual VMMDev   *getVMMDev() = 0;
+    virtual Display  *getDisplay() = 0;
 
 protected:
     HKEYSTATE enmHKeyState;

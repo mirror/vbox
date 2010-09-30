@@ -200,7 +200,7 @@ public:
                               BOOL aMergeForward, IMedium *aParentForTarget,
                               ComSafeArrayIn(IMedium *, aChildrenToReparent),
                               IProgress *aProgress);
-    VMMDev *getVMMDev() { return mVMMDev; }
+    VMMDev *getVMMDev() { return m_pVMMDev; }
     AudioSniffer *getAudioSniffer() { return mAudioSniffer; }
 
     int VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
@@ -640,7 +640,7 @@ private:
      */
     NetworkAttachmentType_T meAttachmentType[SchemaDefs::NetworkAdapterCount];
 
-    VMMDev * const mVMMDev;
+    VMMDev * m_pVMMDev;
     AudioSniffer * const mAudioSniffer;
 
     enum
