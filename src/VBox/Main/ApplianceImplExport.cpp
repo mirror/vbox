@@ -657,15 +657,251 @@ HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, Co
 }
 
 /**
- * Called from Appliance::writeFS() for each virtual system (machine) that needs XML written out.
+ * Called from Appliance::writeFS() for creating a XML document for this
+ * Appliance.
  *
- * @param elmToAddVirtualSystemsTo XML element to append elements to.
- * @param pllElementsWithUuidAttributes out: list of XML elements produced here with UUID attributes for quick fixing by caller later
- * @param vsdescThis The IVirtualSystemDescription instance for which to write XML.
- * @param enFormat OVF format (0.9 or 1.0).
- * @param stack Structure for temporary private data shared with caller.
+ * @param writeLock                          The current write lock.
+ * @param doc                                The xml document to fill.
+ * @param stack                              Structure for temporary private
+ *                                           data shared with caller.
+ * @param strPath                            Path to the target OVF.
+ *                                           instance for which to write XML.
+ * @param enFormat                           OVF format (0.9 or 1.0).
  */
-void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSystemsTo,
+void Appliance::buildXML(AutoWriteLockBase& writeLock,
+                         xml::Document &doc,
+                         XMLStack &stack,
+                         const Utf8Str &strPath,
+                         OVFFormat enFormat)
+{
+    xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
+
+    pelmRoot->setAttribute("ovf:version", (enFormat == OVF_1_0) ? "1.0" : "0.9");
+    pelmRoot->setAttribute("xml:lang", "en-US");
+
+    Utf8Str strNamespace = (enFormat == OVF_0_9)
+        ? "http://www.vmware.com/schema/ovf/1/envelope"     // 0.9
+        : "http://schemas.dmtf.org/ovf/envelope/1";         // 1.0
+    pelmRoot->setAttribute("xmlns", strNamespace);
+    pelmRoot->setAttribute("xmlns:ovf", strNamespace);
+
+    //         pelmRoot->setAttribute("xmlns:ovfstr", "http://schema.dmtf.org/ovf/strings/1");
+    pelmRoot->setAttribute("xmlns:rasd", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData");
+    pelmRoot->setAttribute("xmlns:vssd", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData");
+    pelmRoot->setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+    pelmRoot->setAttribute("xmlns:vbox", "http://www.virtualbox.org/ovf/machine");
+    //         pelmRoot->setAttribute("xsi:schemaLocation", "http://schemas.dmtf.org/ovf/envelope/1 ../ovf-envelope.xsd");
+
+    // <Envelope>/<References>
+    xml::ElementNode *pelmReferences = pelmRoot->createChild("References");     // 0.9 and 1.0
+
+    /* <Envelope>/<DiskSection>:
+       <DiskSection>
+       <Info>List of the virtual disks used in the package</Info>
+       <Disk ovf:capacity="4294967296" ovf:diskId="lamp" ovf:format="..." ovf:populatedSize="1924967692"/>
+       </DiskSection> */
+    xml::ElementNode *pelmDiskSection;
+    if (enFormat == OVF_0_9)
+    {
+        // <Section xsi:type="ovf:DiskSection_Type">
+        pelmDiskSection = pelmRoot->createChild("Section");
+        pelmDiskSection->setAttribute("xsi:type", "ovf:DiskSection_Type");
+    }
+    else
+        pelmDiskSection = pelmRoot->createChild("DiskSection");
+
+    xml::ElementNode *pelmDiskSectionInfo = pelmDiskSection->createChild("Info");
+    pelmDiskSectionInfo->addContent("List of the virtual disks used in the package");
+
+    /* <Envelope>/<NetworkSection>:
+       <NetworkSection>
+       <Info>Logical networks used in the package</Info>
+       <Network ovf:name="VM Network">
+       <Description>The network that the LAMP Service will be available on</Description>
+       </Network>
+       </NetworkSection> */
+    xml::ElementNode *pelmNetworkSection;
+    if (enFormat == OVF_0_9)
+    {
+        // <Section xsi:type="ovf:NetworkSection_Type">
+        pelmNetworkSection = pelmRoot->createChild("Section");
+        pelmNetworkSection->setAttribute("xsi:type", "ovf:NetworkSection_Type");
+    }
+    else
+        pelmNetworkSection = pelmRoot->createChild("NetworkSection");
+
+    xml::ElementNode *pelmNetworkSectionInfo = pelmNetworkSection->createChild("Info");
+    pelmNetworkSectionInfo->addContent("Logical networks used in the package");
+
+    // and here come the virtual systems:
+
+    // write a collection if we have more than one virtual system _and_ we're
+    // writing OVF 1.0; otherwise fail since ovftool can't import more than
+    // one machine, it seems
+    xml::ElementNode *pelmToAddVirtualSystemsTo;
+    if (m->virtualSystemDescriptions.size() > 1)
+    {
+        if (enFormat == OVF_0_9)
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Cannot export more than one virtual system with OVF 0.9, use OVF 1.0"));
+
+        pelmToAddVirtualSystemsTo = pelmRoot->createChild("VirtualSystemCollection");
+        pelmToAddVirtualSystemsTo->setAttribute("ovf:name", "ExportedVirtualBoxMachines");      // whatever
+    }
+    else
+        pelmToAddVirtualSystemsTo = pelmRoot;       // add virtual system directly under root element
+
+    // this list receives pointers to the XML elements in the machine XML which
+    // might have UUIDs that need fixing after we know the UUIDs of the exported images
+    std::list<xml::ElementNode*> llElementsWithUuidAttributes;
+
+    list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+    /* Iterate throughs all virtual systems of that appliance */
+    for (it = m->virtualSystemDescriptions.begin();
+         it != m->virtualSystemDescriptions.end();
+         ++it)
+    {
+        ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
+        buildXMLForOneVirtualSystem(writeLock,
+                                    *pelmToAddVirtualSystemsTo,
+                                    &llElementsWithUuidAttributes,
+                                    vsdescThis,
+                                    enFormat,
+                                    stack);         // disks and networks stack
+    }
+
+    // now, fill in the network section we set up empty above according
+    // to the networks we found with the hardware items
+    map<Utf8Str, bool>::const_iterator itN;
+    for (itN = stack.mapNetworks.begin();
+         itN != stack.mapNetworks.end();
+         ++itN)
+    {
+        const Utf8Str &strNetwork = itN->first;
+        xml::ElementNode *pelmNetwork = pelmNetworkSection->createChild("Network");
+        pelmNetwork->setAttribute("ovf:name", strNetwork.c_str());
+        pelmNetwork->createChild("Description")->addContent("Logical network used by this appliance.");
+    }
+
+    // Finally, write out the disk info
+    list<Utf8Str> diskList;
+    map<Utf8Str, const VirtualSystemDescriptionEntry*>::const_iterator itS;
+    uint32_t ulFile = 1;
+    for (itS = stack.mapDisks.begin();
+         itS != stack.mapDisks.end();
+         ++itS)
+    {
+        const Utf8Str &strDiskID = itS->first;
+        const VirtualSystemDescriptionEntry *pDiskEntry = itS->second;
+
+        // source path: where the VBox image is
+        const Utf8Str &strSrcFilePath = pDiskEntry->strVboxCurrent;
+        Bstr bstrSrcFilePath(strSrcFilePath);
+        if (!RTPathExists(strSrcFilePath.c_str()))
+            /* This isn't allowed */
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Source virtual disk image file '%s' doesn't exist"),
+                           strSrcFilePath.c_str());
+
+        // We need some info from the source disks
+        ComPtr<IMedium> pSourceDisk;
+
+        Log(("Finding source disk \"%ls\"\n", bstrSrcFilePath.raw()));
+        HRESULT rc = mVirtualBox->FindMedium(bstrSrcFilePath.raw(), DeviceType_HardDisk, pSourceDisk.asOutParam());
+        if (FAILED(rc)) throw rc;
+
+        Bstr uuidSource;
+        rc = pSourceDisk->COMGETTER(Id)(uuidSource.asOutParam());
+        if (FAILED(rc)) throw rc;
+        Guid guidSource(uuidSource);
+
+        // output filename
+        const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
+        // target path needs to be composed from where the output OVF is
+        Utf8Str strTargetFilePath(strPath);
+        strTargetFilePath.stripFilename();
+        strTargetFilePath.append("/");
+        strTargetFilePath.append(strTargetFileNameOnly);
+
+        // We are always exporting to VMDK stream optimized for now
+        Bstr bstrSrcFormat = L"VMDK";
+
+        diskList.push_back(strTargetFilePath);
+
+        LONG64 cbCapacity = 0;     // size reported to guest
+        rc = pSourceDisk->COMGETTER(LogicalSize)(&cbCapacity);
+        if (FAILED(rc)) throw rc;
+        // Todo r=poetzsch: wrong it is reported in bytes ...
+        // capacity is reported in megabytes, so...
+        //cbCapacity *= _1M;
+
+        Guid guidTarget; /* Creates a new uniq number for the target disk. */
+        guidTarget.create();
+
+        // now handle the XML for the disk:
+        Utf8StrFmt strFileRef("file%RI32", ulFile++);
+        // <File ovf:href="WindowsXpProfessional-disk1.vmdk" ovf:id="file1" ovf:size="1710381056"/>
+        xml::ElementNode *pelmFile = pelmReferences->createChild("File");
+        pelmFile->setAttribute("ovf:href", strTargetFileNameOnly);
+        pelmFile->setAttribute("ovf:id", strFileRef);
+        // Todo: the actual size is not available at this point of time,
+        // cause the disk will be compressed. The 1.0 standard says this is
+        // optional! 1.1 isn't fully clear if the "gzip" format is used.
+        // Need to be checked. */
+        //            pelmFile->setAttribute("ovf:size", Utf8StrFmt("%RI64", cbFile).c_str());
+
+        // add disk to XML Disks section
+        // <Disk ovf:capacity="8589934592" ovf:diskId="vmdisk1" ovf:fileRef="file1" ovf:format="..."/>
+        xml::ElementNode *pelmDisk = pelmDiskSection->createChild("Disk");
+        pelmDisk->setAttribute("ovf:capacity", Utf8StrFmt("%RI64", cbCapacity).c_str());
+        pelmDisk->setAttribute("ovf:diskId", strDiskID);
+        pelmDisk->setAttribute("ovf:fileRef", strFileRef);
+        pelmDisk->setAttribute("ovf:format",
+                               (enFormat == OVF_0_9)
+                               ?  "http://www.vmware.com/specifications/vmdk.html#sparse"      // must be sparse or ovftool chokes
+                               :  "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized"
+                               // correct string as communicated to us by VMware (public bug #6612)
+                              );
+
+        // add the UUID of the newly target image to the OVF disk element, but in the
+        // vbox: namespace since it's not part of the standard
+        pelmDisk->setAttribute("vbox:uuid", Utf8StrFmt("%RTuuid", guidTarget.raw()).c_str());
+
+        // now, we might have other XML elements from vbox:Machine pointing to this image,
+        // but those would refer to the UUID of the _source_ image (which we created the
+        // export image from); those UUIDs need to be fixed to the export image
+        Utf8Str strGuidSourceCurly = guidSource.toStringCurly();
+        for (std::list<xml::ElementNode*>::iterator eit = llElementsWithUuidAttributes.begin();
+             eit != llElementsWithUuidAttributes.end();
+             ++eit)
+        {
+            xml::ElementNode *pelmImage = *eit;
+            Utf8Str strUUID;
+            pelmImage->getAttributeValue("uuid", strUUID);
+            if (strUUID == strGuidSourceCurly)
+                // overwrite existing uuid attribute
+                pelmImage->setAttribute("uuid", guidTarget.toStringCurly());
+        }
+    }
+}
+
+/**
+ * Called from Appliance::buildXML() for each virtual system (machine) that
+ * needs XML written out.
+ *
+ * @param writeLock                          The current write lock.
+ * @param elmToAddVirtualSystemsTo           XML element to append elements to.
+ * @param pllElementsWithUuidAttributes out: list of XML elements produced here
+ *                                           with UUID attributes for quick
+ *                                           fixing by caller later
+ * @param vsdescThis                         The IVirtualSystemDescription
+ *                                           instance for which to write XML.
+ * @param enFormat                           OVF format (0.9 or 1.0).
+ * @param stack                              Structure for temporary private
+ *                                           data shared with caller.
+ */
+void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
+                                            xml::ElementNode &elmToAddVirtualSystemsTo,
                                             std::list<xml::ElementNode*> *pllElementsWithUuidAttributes,
                                             ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                             OVFFormat enFormat,
@@ -1298,6 +1534,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
     // create an empty machine config
     settings::MachineConfigFile *pConfig = new settings::MachineConfigFile(NULL);
 
+    writeLock.release();
     try
     {
         AutoWriteLock machineLock(vsdescThis->m->pMachine COMMA_LOCKVAL_SRC_POS);
@@ -1313,9 +1550,11 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
     }
     catch (...)
     {
+        writeLock.acquire();
         delete pConfig;
         throw;
     }
+    writeLock.acquire();
 }
 
 /**
@@ -1352,138 +1591,36 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
 
     try
     {
+        // Lock the media tree early to make sure nobody else tries to make changes
+        // to the tree. Also lock the IAppliance object for writing.
         AutoMultiWriteLock2 multiLock(&mVirtualBox->getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
-
-        xml::Document doc;
-        xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
-
-        pelmRoot->setAttribute("ovf:version", (pTask->enFormat == OVF_1_0) ? "1.0" : "0.9");
-        pelmRoot->setAttribute("xml:lang", "en-US");
-
-        Utf8Str strNamespace = (pTask->enFormat == OVF_0_9)
-            ? "http://www.vmware.com/schema/ovf/1/envelope"     // 0.9
-            : "http://schemas.dmtf.org/ovf/envelope/1";         // 1.0
-        pelmRoot->setAttribute("xmlns", strNamespace);
-        pelmRoot->setAttribute("xmlns:ovf", strNamespace);
-
-//         pelmRoot->setAttribute("xmlns:ovfstr", "http://schema.dmtf.org/ovf/strings/1");
-        pelmRoot->setAttribute("xmlns:rasd", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData");
-        pelmRoot->setAttribute("xmlns:vssd", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData");
-        pelmRoot->setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-        pelmRoot->setAttribute("xmlns:vbox", "http://www.virtualbox.org/ovf/machine");
-//         pelmRoot->setAttribute("xsi:schemaLocation", "http://schemas.dmtf.org/ovf/envelope/1 ../ovf-envelope.xsd");
-
-        // <Envelope>/<References>
-        xml::ElementNode *pelmReferences = pelmRoot->createChild("References");     // 0.9 and 1.0
-
-        /* <Envelope>/<DiskSection>:
-            <DiskSection>
-                <Info>List of the virtual disks used in the package</Info>
-                <Disk ovf:capacity="4294967296" ovf:diskId="lamp" ovf:format="..." ovf:populatedSize="1924967692"/>
-            </DiskSection> */
-        xml::ElementNode *pelmDiskSection;
-        if (pTask->enFormat == OVF_0_9)
-        {
-            // <Section xsi:type="ovf:DiskSection_Type">
-            pelmDiskSection = pelmRoot->createChild("Section");
-            pelmDiskSection->setAttribute("xsi:type", "ovf:DiskSection_Type");
-        }
-        else
-            pelmDiskSection = pelmRoot->createChild("DiskSection");
-
-        xml::ElementNode *pelmDiskSectionInfo = pelmDiskSection->createChild("Info");
-        pelmDiskSectionInfo->addContent("List of the virtual disks used in the package");
+        // Additional protect the IAppliance object, cause we leave the lock
+        // when starting the disk export and we don't won't block other
+        // callers on this lengthy operations.
+        m->state = Data::ApplianceExporting;
 
         // the XML stack contains two maps for disks and networks, which allows us to
         // a) have a list of unique disk names (to make sure the same disk name is only added once)
         // and b) keep a list of all networks
         XMLStack stack;
-
-        /* <Envelope>/<NetworkSection>:
-            <NetworkSection>
-                <Info>Logical networks used in the package</Info>
-                <Network ovf:name="VM Network">
-                    <Description>The network that the LAMP Service will be available on</Description>
-                </Network>
-            </NetworkSection> */
-        xml::ElementNode *pelmNetworkSection;
-        if (pTask->enFormat == OVF_0_9)
+        // Scope this to free the memory as soon as this is finished
         {
-            // <Section xsi:type="ovf:NetworkSection_Type">
-            pelmNetworkSection = pelmRoot->createChild("Section");
-            pelmNetworkSection->setAttribute("xsi:type", "ovf:NetworkSection_Type");
-        }
-        else
-            pelmNetworkSection = pelmRoot->createChild("NetworkSection");
-
-        xml::ElementNode *pelmNetworkSectionInfo = pelmNetworkSection->createChild("Info");
-        pelmNetworkSectionInfo->addContent("Logical networks used in the package");
-
-        // and here come the virtual systems:
-
-        // This can take a very long time so leave the locks; in particular, we have the media tree
-        // lock which Medium::CloneTo() will request, and that would deadlock. Instead, protect
-        // the appliance by resetting its state so we can safely leave the lock
-        m->state = Data::ApplianceExporting;
-        multiLock.release();
-
-        // write a collection if we have more than one virtual system _and_ we're
-        // writing OVF 1.0; otherwise fail since ovftool can't import more than
-        // one machine, it seems
-        xml::ElementNode *pelmToAddVirtualSystemsTo;
-        if (m->virtualSystemDescriptions.size() > 1)
-        {
-            if (pTask->enFormat == OVF_0_9)
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Cannot export more than one virtual system with OVF 0.9, use OVF 1.0"));
-
-            pelmToAddVirtualSystemsTo = pelmRoot->createChild("VirtualSystemCollection");
-            pelmToAddVirtualSystemsTo->setAttribute("ovf:name", "ExportedVirtualBoxMachines");      // whatever
-        }
-        else
-            pelmToAddVirtualSystemsTo = pelmRoot;       // add virtual system directly under root element
-
-        // this list receives pointers to the XML elements in the machine XML which
-        // might have UUIDs that need fixing after we know the UUIDs of the exported images
-        std::list<xml::ElementNode*> llElementsWithUuidAttributes;
-
-        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
-        /* Iterate throughs all virtual systems of that appliance */
-        for (it = m->virtualSystemDescriptions.begin();
-             it != m->virtualSystemDescriptions.end();
-             ++it)
-        {
-            ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
-            buildXMLForOneVirtualSystem(*pelmToAddVirtualSystemsTo,
-                                        &llElementsWithUuidAttributes,
-                                        vsdescThis,
-                                        pTask->enFormat,
-                                        stack);         // disks and networks stack
-        }
-
-        // now, fill in the network section we set up empty above according
-        // to the networks we found with the hardware items
-        map<Utf8Str, bool>::const_iterator itN;
-        for (itN = stack.mapNetworks.begin();
-             itN != stack.mapNetworks.end();
-             ++itN)
-        {
-            const Utf8Str &strNetwork = itN->first;
-            xml::ElementNode *pelmNetwork = pelmNetworkSection->createChild("Network");
-            pelmNetwork->setAttribute("ovf:name", strNetwork.c_str());
-            pelmNetwork->createChild("Description")->addContent("Logical network used by this appliance.");
+            // Create a xml document
+            xml::Document doc;
+            // Now fully build a valid ovf document in memory
+            buildXML(multiLock, doc, stack, pTask->locInfo.strPath, pTask->enFormat);
+            // Write the XML
+            xml::XmlFileWriter writer(doc);
+            writer.write(pTask->locInfo.strPath.c_str(), false /*fSafe*/);
         }
 
         // Finally, write out the disks!
-
         list<Utf8Str> diskList;
         map<Utf8Str, const VirtualSystemDescriptionEntry*>::const_iterator itS;
-        uint32_t ulFile = 1;
         for (itS = stack.mapDisks.begin();
              itS != stack.mapDisks.end();
              ++itS)
         {
-            const Utf8Str &strDiskID = itS->first;
             const VirtualSystemDescriptionEntry *pDiskEntry = itS->second;
 
             // source path: where the VBox image is
@@ -1527,6 +1664,8 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
                                              pTargetDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 
+            // The cloning requests a lock on the media tree. So leave our lock temporary.
+            multiLock.release();
             // the target disk is now registered and needs to be removed again,
             // both after successful cloning or if anything goes bad!
             try
@@ -1549,6 +1688,9 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
                 pTargetDisk->Close();
                 throw rc3;
             }
+            // Finished, lock again (so nobody mess around with the medium tree
+            // in the meantime)
+            multiLock.acquire();
             diskList.push_back(strTargetFilePath);
 
             // we need the following for the XML
@@ -1570,52 +1712,7 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
             // upon success, close the disk as well
             rc = pTargetDisk->Close();
             if (FAILED(rc)) throw rc;
-
-            // now handle the XML for the disk:
-            Utf8StrFmt strFileRef("file%RI32", ulFile++);
-            // <File ovf:href="WindowsXpProfessional-disk1.vmdk" ovf:id="file1" ovf:size="1710381056"/>
-            xml::ElementNode *pelmFile = pelmReferences->createChild("File");
-            pelmFile->setAttribute("ovf:href", strTargetFileNameOnly);
-            pelmFile->setAttribute("ovf:id", strFileRef);
-            pelmFile->setAttribute("ovf:size", Utf8StrFmt("%RI64", cbFile).c_str());
-
-            // add disk to XML Disks section
-            // <Disk ovf:capacity="8589934592" ovf:diskId="vmdisk1" ovf:fileRef="file1" ovf:format="..."/>
-            xml::ElementNode *pelmDisk = pelmDiskSection->createChild("Disk");
-            pelmDisk->setAttribute("ovf:capacity", Utf8StrFmt("%RI64", cbCapacity).c_str());
-            pelmDisk->setAttribute("ovf:diskId", strDiskID);
-            pelmDisk->setAttribute("ovf:fileRef", strFileRef);
-            pelmDisk->setAttribute("ovf:format",
-                    (pTask->enFormat == OVF_0_9)
-                        ?  "http://www.vmware.com/specifications/vmdk.html#sparse"      // must be sparse or ovftool chokes
-                        :  "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized"
-                                                                                    // correct string as communicated to us by VMware (public bug #6612)
-                                  );
-
-            // add the UUID of the newly created target image to the OVF disk element, but in the
-            // vbox: namespace since it's not part of the standard
-            pelmDisk->setAttribute("vbox:uuid", Utf8StrFmt("%RTuuid", guidTarget.raw()).c_str());
-
-            // now, we might have other XML elements from vbox:Machine pointing to this image,
-            // but those would refer to the UUID of the _source_ image (which we created the
-            // export image from); those UUIDs need to be fixed to the export image
-            Utf8Str strGuidSourceCurly = guidSource.toStringCurly();
-            for (std::list<xml::ElementNode*>::iterator eit = llElementsWithUuidAttributes.begin();
-                 eit != llElementsWithUuidAttributes.end();
-                 ++eit)
-            {
-                xml::ElementNode *pelmImage = *eit;
-                Utf8Str strUUID;
-                pelmImage->getAttributeValue("uuid", strUUID);
-                if (strUUID == strGuidSourceCurly)
-                    // overwrite existing uuid attribute
-                    pelmImage->setAttribute("uuid", guidTarget.toStringCurly());
-            }
         }
-
-        // now go write the XML
-        xml::XmlFileWriter writer(doc);
-        writer.write(pTask->locInfo.strPath.c_str(), false /*fSafe*/);
 
         if (m->fManifest)
         {
