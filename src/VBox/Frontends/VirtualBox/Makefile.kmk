@@ -362,6 +362,9 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/seamless/UIMachineViewSeamless.h \
 	src/runtime/seamless/UIMachineWindowSeamless.h
 
+VirtualBox_QT_MOCHDRS.darwin += \
+    src/darwin/UIWindowMenuManager.h
+
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
 	src/VBoxMediaManagerDlg.cpp \
@@ -375,12 +378,10 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIMachineLogic.cpp \
 	src/runtime/UIMachineMenuBar.cpp
 
-ifeq ($(KBUILD_TARGET),darwin)
- VirtualBox_QT_MOCHDRS += \
-    src/darwin/UIWindowMenuManager.h
- VirtualBox_QT_MOCSRCS += \
+VirtualBox_QT_MOCSRCS.darwin += \
     src/darwin/UIWindowMenuManager.cpp
-endif
+VirtualBox_QT_MOCSRCS.win += \
+	src/extensions/QIFileDialog.cpp
 
 ifdef VBOX_WITH_REGISTRATION
  VirtualBox_QT_MOCHDRS += \
@@ -390,10 +391,6 @@ endif
 ifdef VBOX_WITH_XPCOM
  VirtualBox_QT_MOCSRCS += \
 	src/globals/COMDefs.cpp
-endif
-ifeq ($(KBUILD_TARGET),win)
-VirtualBox_QT_MOCSRCS += \
-	src/extensions/QIFileDialog.cpp
 endif
 
 ifdef VBOX_WITH_REGISTRATION
@@ -531,6 +528,7 @@ VirtualBox_SOURCES = \
 	src/runtime/seamless/UIMachineLogicSeamless.cpp \
 	src/runtime/seamless/UIMachineViewSeamless.cpp \
 	src/runtime/seamless/UIMachineWindowSeamless.cpp
+
 VirtualBox_SOURCES.win += \
 	src/runtime/UIFrameBufferDirectDraw.cpp
 VirtualBox_SOURCES.darwin += \
@@ -583,7 +581,7 @@ ifdef VBOX_WITH_COCOA_QT
  	src/darwin/UICocoaApplication.mm \
  	src/darwin/VBoxUtils-darwin-cocoa.mm \
  	src/darwin/UICocoaSpecialControls.mm
- VirtualBox_QT_MOCHDRS.darwin = \
+ VirtualBox_QT_MOCHDRS.darwin += \
  	src/darwin/UICocoaSpecialControls.h
 endif
 
