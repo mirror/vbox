@@ -38,6 +38,7 @@ namespace ovf
 
 namespace xml
 {
+    class Document;
     class ElementNode;
 }
 
@@ -173,7 +174,9 @@ private:
     HRESULT writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     struct XMLStack;
-    void buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSystemsTo,
+    void buildXML(AutoWriteLockBase& writeLock, xml::Document &doc, XMLStack &stack, const Utf8Str &strPath, OVFFormat enFormat);
+    void buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
+                                     xml::ElementNode &elmToAddVirtualSystemsTo,
                                      std::list<xml::ElementNode*> *pllElementsWithUuidAttributes,
                                      ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                      OVFFormat enFormat,
