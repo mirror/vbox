@@ -532,7 +532,7 @@ int main(int argc, char **argv)
     {
         rc = g_aServices[j].pDesc->pfnPreInit();
         if (RT_FAILURE(rc))
-            return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName);
+            return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName, rc);
     }
 
 #ifdef RT_OS_WINDOWS
