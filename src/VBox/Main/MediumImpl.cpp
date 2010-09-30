@@ -5118,8 +5118,6 @@ HRESULT Medium::exportFile(const char *aFilename,
                            void *aVDImageIOCallbacks, void *aVDImageIOUser,
                            ComObjPtr<Progress> aProgress)
 {
-    return E_FAIL;
-
     AssertPtrReturn(aFilename, E_INVALIDARG);
     AssertReturn(!aFormat.isNull(), E_INVALIDARG);
     AssertReturn(!aProgress.isNull(), E_INVALIDARG);
