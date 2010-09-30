@@ -405,6 +405,22 @@ protected:
  *
  * The methods behave the same except that ComObjPtr has the additional createObject()
  * method which allows for instantiating a new implementation object.
+ *
+ * Note: To convert a ComObjPtr<InterfaceImpl> to a ComObj<IInterface> you have
+ * to query the interface. See the following example code for the IProgress
+ * interface:
+ *
+ *  @code
+ *
+ *  {
+ *      ComObjPtr<Progress> pProgress;          // create the server side object
+ *      pProgress.createObject();               // ...
+ *      pProgress->init(...);                   // ...
+ *      ComPtr<IProgress> pProgress2;           // create an interface pointer
+ *      pProgress.queryInterfaceTo(pProgress2); // transfer the interface
+ *  }
+ *
+ *  @endcode
  */
 template <class T>
 class ComObjPtr : public ComPtr<T>
