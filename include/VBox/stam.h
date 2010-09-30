@@ -602,7 +602,7 @@ typedef const STAMCOUNTER *PCSTAMCOUNTER;
 /** @def STAM_COUNTER_RESET
  * Resets the statistics sample.
  */
-#ifndef VBOX_WITH_STATISTICS
+#ifdef VBOX_WITH_STATISTICS
 # define STAM_COUNTER_RESET(pCounter) STAM_REL_COUNTER_RESET(pCounter)
 #else
 # define STAM_COUNTER_RESET(pCounter) do { } while (0)
