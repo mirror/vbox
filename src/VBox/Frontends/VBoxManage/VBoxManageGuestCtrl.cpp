@@ -199,7 +199,7 @@ static int handleExecProgram(HandlerArg *a)
             else
             {
                 /** @todo Needs a bit better processing as soon as we have more flags. */
-                if (!strcmp(a->argv[i + 1], "ignoreorphanedchilds"))
+                if (!strcmp(a->argv[i + 1], "ignoreorphanedprocesses"))
                     uFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
                 else
                     usageOK = false;
