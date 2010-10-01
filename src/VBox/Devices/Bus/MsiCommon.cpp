@@ -34,6 +34,20 @@ DECLINLINE(bool) msiIs64Bit(PPCIDEVICE pDev)
     return (msiGetMessageControl(pDev) & VBOX_PCI_MSI_FLAGS_64BIT) != 0;
 }
 
+DECLINLINE(uint32_t*) msiGetMaskBits(PPCIDEVICE pDev)
+{
+    uint8_t iOff = msiIs64Bit(pDev) ? VBOX_MSI_CAP_MASK_BITS_64 : VBOX_MSI_CAP_MASK_BITS_32;
+    iOff += pDev->Int.s.u8MsiCapOffset;
+    return (uint32_t*)(pDev->config + iOff);
+}
+
+DECLINLINE(uint32_t*) msiGetPendingBits(PPCIDEVICE pDev)
+{
+    uint8_t iOff = msiIs64Bit(pDev) ? VBOX_MSI_CAP_PENDING_BITS_64 : VBOX_MSI_CAP_PENDING_BITS_32;
+    iOff += pDev->Int.s.u8MsiCapOffset;
+    return (uint32_t*)(pDev->config + iOff);
+}
+
 DECLINLINE(bool) msiIsEnabled(PPCIDEVICE pDev)
 {
     return (msiGetMessageControl(pDev) & VBOX_PCI_MSI_FLAGS_ENABLE) != 0;
@@ -69,7 +83,15 @@ DECLINLINE(uint32_t) msiGetMsiData(PPCIDEVICE pDev, int32_t iVector)
     return RT_MAKE_U32(lo, 0);
 }
 
-void     MSIPciConfigWrite(PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len)
+DECLINLINE(bool) msiBitJustCleared(uint32_t u32OldValue,
+                                   uint32_t u32NewValue,
+                                   uint32_t u32Mask)
+{
+    return (!!(u32OldValue & u32Mask) && !(u32NewValue & u32Mask));
+}
+
+
+void     MSIPciConfigWrite(PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsiCapOffset;
     Assert(iOff >= 0 && (PCIIsMsiCapable(pDev) && iOff < pDev->Int.s.u8MsiCapSize));
@@ -77,47 +99,93 @@ void     MSIPciConfigWrite(PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, u
     Log2(("MSIPciConfigWrite: %d <- %x (%d)\n", iOff, val, len));
 
     uint32_t uAddr = u32Address;
+    bool f64Bit = msiIs64Bit(pDev);
+
     for (uint32_t i = 0; i < len; i++)
     {
-        switch (i + iOff)
+        uint32_t reg = i + iOff;
+        switch (reg)
         {
             case 0: /* Capability ID, ro */
             case 1: /* Next pointer,  ro */
                 break;
-            case 2:
+            case VBOX_MSI_CAP_MESSAGE_CONTROL:
                 /* don't change read-only bits: 1-3,7 */
                 val &= UINT32_C(~0x8e);
                 pDev->config[uAddr] &= ~val;
                 break;
-            case 3:
+            case VBOX_MSI_CAP_MESSAGE_CONTROL + 1:
                 /* don't change read-only bit 8, and reserved 9-15 */
                 break;
             default:
-                pDev->config[uAddr] = val;
+                if (pDev->config[uAddr] != val)
+                {
+                    int32_t maskUpdated = -1;
+
+                    /* If we're enabling masked vector, and have pending messages
+                       for this vector, we have to send this message now */
+                    if (    !f64Bit
+                         && (reg >= VBOX_MSI_CAP_MASK_BITS_32)
+                         && (reg < VBOX_MSI_CAP_MASK_BITS_32 + 4)
+                        )
+                    {
+                        maskUpdated = reg - VBOX_MSI_CAP_MASK_BITS_32;
+                    }
+                    if (    f64Bit
+                         && (reg >= VBOX_MSI_CAP_MASK_BITS_64)
+                         && (reg < VBOX_MSI_CAP_MASK_BITS_64 + 4)
+                       )
+                    {
+                        maskUpdated = reg - VBOX_MSI_CAP_MASK_BITS_64;
+                    }
+
+                    if (maskUpdated != -1)
+                    {
+                        for (int iBitNum = 0; i<8; i++)
+                        {
+                            int32_t iBit = 1 << iBitNum;
+                            if (msiBitJustCleared(pDev->config[uAddr], val, iBit))
+                            {
+                                /* To ensure that we're no longer masked */
+                                pDev->config[uAddr] &= ~iBit;
+                                MSINotify(pDevIns, pDev, maskUpdated*8 + iBitNum);
+                            }
+                        }
+                    }
+
+                    pDev->config[uAddr] = val;
+                }
         }
         uAddr++;
         val >>= 8;
     }
 }
 
-uint32_t MSIPciConfigRead (PPCIDEVICE pDev, uint32_t u32Address, unsigned len)
+uint32_t MSIPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsiCapOffset;
 
-    Log2(("MSIPciConfigRead: %d (%d)\n", iOff, len));
-
     Assert(iOff >= 0 && (PCIIsMsiCapable(pDev) && iOff < pDev->Int.s.u8MsiCapSize));
+    uint32_t rv = 0;
 
     switch (len)
     {
         case 1:
-            return PCIDevGetByte(pDev, u32Address);
+            rv = PCIDevGetByte(pDev, u32Address);
+            break;
         case 2:
-            return PCIDevGetWord(pDev, u32Address);
-        default:
+            rv = PCIDevGetWord(pDev, u32Address);
+            break;
         case 4:
-            return PCIDevGetDWord(pDev, u32Address);
+            rv = PCIDevGetDWord(pDev, u32Address);
+            break;
+        default:
+            Assert(false);
     }
+
+    Log2(("MSIPciConfigRead: %d (%d) -> %x\n", iOff, len, rv));
+
+    return rv;
 }
 
 
@@ -136,6 +204,8 @@ int MSIInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
     Assert(iCapOffset != 0 && iCapOffset < 0xff && iNextOffset < 0xff);
 
     bool f64bit = (iMsiFlags & VBOX_PCI_MSI_FLAGS_64BIT) != 0;
+    /* We always support per-vector masking */
+    iMsiFlags |= VBOX_PCI_MSI_FLAGS_MASKBIT;
 
     pDev->Int.s.u8MsiCapOffset = iCapOffset;
     pDev->Int.s.u8MsiCapSize   = f64bit ? VBOX_MSI_CAP_SIZE_64 : VBOX_MSI_CAP_SIZE_32;
@@ -161,8 +231,19 @@ void MSINotify(PPDMDEVINS pDevIns, PPCIDEVICE pDev, int iVector)
 
     AssertMsg(msiIsEnabled(pDev), ("Must be enabled to use that"));
 
+    uint32_t   uMask = *msiGetMaskBits(pDev);
+    uint32_t*  upPending = msiGetPendingBits(pDev);
+
+    if ((uMask & (1<<iVector)) != 0)
+    {
+        *upPending |= (1<<iVector);
+        return;
+    }
+
     RTGCPHYS   GCAddr = msiGetMsiAddress(pDev);
     uint32_t   u32Value = msiGetMsiData(pDev, iVector);
+
+    *upPending &= ~(1<<iVector);
 
     PDMDevHlpPhysWrite(pDevIns, GCAddr, &u32Value, sizeof(u32Value));
 }

@@ -23,5 +23,5 @@ bool     MSIIsEnabled(PPCIDEVICE pDev);
 void     MSINotify(PPDMDEVINS pDevIns, PPCIDEVICE pDev, int iVector);
 
 /* PCI config space accessors for MSI registers */
-void     MSIPciConfigWrite(PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
-uint32_t MSIPciConfigRead (PPCIDEVICE pDev, uint32_t u32Address, unsigned len);
+void     MSIPciConfigWrite(PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
+uint32_t MSIPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len);

@@ -1380,7 +1380,7 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
         { 0x20, 4, 1, 1, "BASE_ADDRESS_4" },
         { 0x20, 2, 1, 2, "MEMORY_BASE" },       // fWritable = ??
         { 0x22, 2, 1, 2, "MEMORY_LIMIT" },      // fWritable = ??
-        { 0x24, 4, 1, 1, "BASE_ADDRESS_4" },
+        { 0x24, 4, 1, 1, "BASE_ADDRESS_5" },
         { 0x24, 2, 1, 2, "PREF_MEMORY_BASE" },  // fWritable = ??
         { 0x26, 2, 1, 2, "PREF_MEMORY_LIMIT" }, // fWritable = ??
         { 0x28, 4, 1, 1, "CARDBUS_CIS" },       // fWritable = ??
