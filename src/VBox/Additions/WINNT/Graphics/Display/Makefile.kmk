@@ -75,7 +75,7 @@ DLLS += VBoxDispD3D
 VBoxDispD3D_NOINST = true
  endif
 VBoxDispD3D_TEMPLATE = VBOXGUESTR3DLL
-VBoxDispD3D_DEFS     = UNICODE _UNICODE VBOX_WITH_WDDM VBOXVDMA VBOXWDDMDISP
+VBoxDispD3D_DEFS     = UNICODE _UNICODE VBOX_WITH_WDDM VBOXWDDMDISP
 # VBoxDispD3D_DEFS    += VBOXDISPMP_TEST
 ifdef VBOXWDDM_WITH_VBVA
 VBoxDispD3D_DEFS    += VBOXWDDM_WITH_VBVA
@@ -93,6 +93,7 @@ VBoxDispD3D_SOURCES  = \
     wddm/VBoxDispCm.cpp \
     wddm/VBoxDispMp.cpp \
     wddm/VBoxScreen.cpp \
+    wddm/VBoxUhgsmiDisp.cpp \
     wddm/VBoxDispMpTst.cpp \
 	wddm/VBoxDispD3D.def \
 	wddm/VBoxDispD3D.rc

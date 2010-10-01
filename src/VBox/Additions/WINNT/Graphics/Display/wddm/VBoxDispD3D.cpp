@@ -5510,13 +5510,14 @@ static HRESULT vboxWddmNSCAddAlloc(PVBOXWDDMDISP_NSCADD pData, PVBOXWDDMDISP_ALL
         --pData->cAllocationList;
         --pData->cPatchLocationList;
         ++pData->cAllocations;
+
+        ++pData->pAllocationList;
+        ++pData->pPatchLocationList;
+        pData->pvCommandBuffer = (VOID*)(((uint8_t*)pData->pvCommandBuffer) + 4);
+
     }
     else
         hr = S_FALSE;
-
-    ++pData->pAllocationList;
-    ++pData->pPatchLocationList;
-    pData->pvCommandBuffer = (VOID*)(((uint8_t*)pData->pvCommandBuffer) + 4);
 
     return hr;
 }
@@ -5537,6 +5538,14 @@ static HRESULT vboxWddmNotifySharedChange(PVBOXWDDMDISP_DEVICE pDevice)
             NscAdd.pPatchLocationList = pDevice->DefaultContext.ContextInfo.pPatchLocationList;
             NscAdd.cPatchLocationList = pDevice->DefaultContext.ContextInfo.PatchLocationListSize;
             NscAdd.cAllocations = 0;
+            Assert(NscAdd.cbCommandBuffer >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR));
+            if (NscAdd.cbCommandBuffer < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR))
+                return E_FAIL;
+
+            PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pHdr = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)NscAdd.pvCommandBuffer;
+            pHdr->enmCmd = VBOXVDMACMD_TYPE_DMA_NOP;
+            NscAdd.pvCommandBuffer = (VOID*)(((uint8_t*)NscAdd.pvCommandBuffer) + sizeof (*pHdr));
+            NscAdd.cbCommandBuffer -= sizeof (*pHdr);
             bReinitRenderData = FALSE;
         }
 
@@ -5573,9 +5582,9 @@ static HRESULT vboxWddmNotifySharedChange(PVBOXWDDMDISP_DEVICE pDevice)
         Assert(RenderData.NumAllocations == NscAdd.cAllocations);
         RenderData.NumPatchLocations = pDevice->DefaultContext.ContextInfo.PatchLocationListSize - NscAdd.cPatchLocationList;
         Assert(RenderData.NumPatchLocations == NscAdd.cAllocations);
-        RenderData.NewCommandBufferSize = sizeof (VBOXVDMACMD) + 4 * (100);
-        RenderData.NewAllocationListSize = 100;
-        RenderData.NewPatchLocationListSize = 100;
+//        RenderData.NewCommandBufferSize = sizeof (VBOXVDMACMD) + 4 * (100);
+//        RenderData.NewAllocationListSize = 100;
+//        RenderData.NewPatchLocationListSize = 100;
         RenderData.hContext = pDevice->DefaultContext.ContextInfo.hContext;
 
         HRESULT hr = pDevice->RtCallbacks.pfnRenderCb(pDevice->hDevice, &RenderData);

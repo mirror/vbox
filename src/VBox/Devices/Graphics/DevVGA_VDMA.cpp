@@ -289,6 +289,11 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pvBuffer, uint32_
         uint32_t cbCmd = 0;
         switch (pCmd->enmType)
         {
+            case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
+            {
+                /* todo: post the buffer to chromium */
+                return VINF_SUCCESS;
+            }
             case VBOXVDMACMD_TYPE_DMA_PRESENT_BLT:
             {
                 const PVBOXVDMACMD_DMA_PRESENT_BLT pBlt = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_DMA_PRESENT_BLT);

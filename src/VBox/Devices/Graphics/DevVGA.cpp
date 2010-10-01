@@ -2135,8 +2135,9 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
     const unsigned cBits = s->get_bpp(s);
 
     int rc;
-#ifdef VBOXVDMA
-    /* do not do pfnResize in case VBVA is on since all mode changes are poerofmed over VBVA
+#if 0 //def VBOX_WITH_VDMA
+    /* @todo: we get a second resize here when VBVA is on, while we actually should not */
+    /* do not do pfnResize in case VBVA is on since all mode changes are performed over VBVA
      * we are checking for VDMA state here to ensure this code works only for WDDM driver,
      * although we should avoid calling pfnResize for XPDM as well, since pfnResize is actually an extra resize
      * event and generally only pfnVBVAxxx calls should be used with HGSMI + VBVA
@@ -6850,7 +6851,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     VBVAInit (pThis);
 #endif /* VBOX_WITH_HGSMI */
 
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
     if(rc == VINF_SUCCESS)
     {
         /* @todo: perhaps this should be done from some guest->host callback,

@@ -835,7 +835,7 @@ typedef struct _VBVABUFFER
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # define VBVA_VHWA_CMD    9
 #endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
 # define VBVA_VDMA_CTL   10 /* setup G<->H DMA channel info */
 # define VBVA_VDMA_CMD    11 /* G->H DMA command             */
 #endif
@@ -844,7 +844,7 @@ typedef struct _VBVABUFFER
 /* host->guest commands */
 # define VBVAHG_EVENT              1
 # define VBVAHG_DISPLAY_CUSTOM     2
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
 # define VBVAHG_SHGSMI_COMPLETION  3
 #endif
 
@@ -1124,13 +1124,14 @@ typedef enum
     VBOXVDMACMD_TYPE_DMA_PRESENT_SHADOW2PRIMARY,
     VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL,
     VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP,
-    VBOXVDMACMD_TYPE_DMA_NOP
+    VBOXVDMACMD_TYPE_DMA_NOP,
+    VBOXVDMACMD_TYPE_CHROMIUM_CMD
 } VBOXVDMACMD_TYPE;
 
 # pragma pack()
 #endif
 
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
 # pragma pack(1)
 
 /* VDMA - Video DMA */
@@ -1231,19 +1232,18 @@ typedef uint64_t VBOXVDMASURFHANDLE;
  * so the only way is to */
 typedef struct VBOXVDMACBUF_DR
 {
-    uint32_t fFlags;
-    uint32_t cbBuf;
-    uint32_t u32FenceId;
+    uint32_t fFlags : 16;
+    uint32_t cbBuf  : 16;
     /* RT_SUCCESS()     - on success
      * VERR_INTERRUPTED - on preemption
      * VERR_xxx         - on error */
     int32_t  rc;
-    uint64_t u64GuestContext;
     union
     {
         uint64_t phBuf;
         VBOXVIDEOOFFSET offVramBuf;
     } Location;
+    uint64_t aGuestData[6];
 } VBOXVDMACBUF_DR, *PVBOXVDMACBUF_DR;
 
 #define VBOXVDMACBUF_DR_TAIL(_pCmd, _t) ( (_t*)(((uint8_t*)(_pCmd)) + sizeof (VBOXVDMACBUF_DR)) )
@@ -1303,8 +1303,22 @@ typedef struct VBOXVDMACMD_DMA_BPB_FILL
     uint32_t u32FillPattern;
 } VBOXVDMACMD_DMA_BPB_FILL, *PVBOXVDMACMD_DMA_BPB_FILL;
 
+typedef struct VBOXVDMACMD_CHROMIUM_BUFFER
+{
+    VBOXVIDEOOFFSET offBuffer;
+    uint32_t cbBuffer;
+    uint32_t u32GuesData;
+    uint64_t u64GuesData;
+} VBOXVDMACMD_CHROMIUM_BUFFER, *PVBOXVDMACMD_CHROMIUM_BUFFER;
+
+typedef struct VBOXVDMACMD_CHROMIUM_CMD
+{
+    /* the number of buffers is specified in the VBOXVDMACMD::u32CmdSpecific*/
+    VBOXVDMACMD_CHROMIUM_BUFFER aBuffers[1];
+} VBOXVDMACMD_CHROMIUM_CMD, *PVBOXVDMACMD_CHROMIUM_CMD;
+
 # pragma pack()
-#endif /* #ifdef VBOXVDMA */
+#endif /* #ifdef VBOX_WITH_VDMA */
 
 #ifdef VBOXVDMA_WITH_VBVA
 # pragma pack(1)
