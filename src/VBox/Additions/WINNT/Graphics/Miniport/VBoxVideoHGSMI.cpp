@@ -958,7 +958,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
 
         ULONG ulSize;
         ULONG offset;
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
         ulSize = ulAvailable / 2;
         if (ulSize > VBOXWDDM_C_VDMA_BUFFER_SIZE)
             ulSize = VBOXWDDM_C_VDMA_BUFFER_SIZE;
@@ -972,7 +972,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         offset = ulAvailable;
 #endif
         rc = vboxVdmaCreate (PrimaryExtension, &PrimaryExtension->u.primary.Vdma
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
                 , offset, ulSize
 #endif
                 );

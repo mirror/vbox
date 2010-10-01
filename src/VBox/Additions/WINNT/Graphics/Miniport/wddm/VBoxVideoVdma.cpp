@@ -716,6 +716,7 @@ static NTSTATUS vboxVdmaGgDmaCmdProcess(VBOXVDMAPIPE_CMD_DMACMD *pDmaCmd)
     PDEVICE_EXTENSION pDevExt = pDmaCmd->pDevExt;
     PVBOXWDDM_CONTEXT pContext = pDmaCmd->DdiCmd.pContext;
     NTSTATUS Status = STATUS_SUCCESS;
+    DXGK_INTERRUPT_TYPE enmComplType = DXGK_INTERRUPT_DMA_COMPLETED;
     switch (pDmaCmd->enmCmd)
     {
         case VBOXVDMACMD_TYPE_DMA_PRESENT_BLT:
@@ -868,7 +869,7 @@ static NTSTATUS vboxVdmaGgDmaCmdProcess(VBOXVDMAPIPE_CMD_DMACMD *pDmaCmd)
         Assert(cNew < UINT32_MAX/2);
     }
 
-    Status = vboxVdmaDdiCmdCompleted(pDevExt, &pDevExt->DdiCmdQueue, &pDmaCmd->DdiCmd);
+    Status = vboxVdmaDdiCmdCompleted(pDevExt, &pDevExt->DdiCmdQueue, &pDmaCmd->DdiCmd, enmComplType);
     Assert(Status == STATUS_SUCCESS);
 
     return Status;
@@ -973,7 +974,7 @@ NTSTATUS vboxVdmaGgCmdSubmit(PVBOXVDMAGG pVdma, PVBOXVDMAPIPE_CMD_DR pCmd)
 
 /* end */
 
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
 /*
  * This is currently used by VDMA. It is invisible for Vdma API clients since
  * Vdma transport may change if we choose to use another (e.g. more light-weight)
@@ -1062,7 +1063,7 @@ static int vboxVdmaInformHost(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, VB
 
 /* create a DMACommand buffer */
 int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
         , ULONG offBuffer, ULONG cbBuffer
 #endif
         )
@@ -1070,7 +1071,7 @@ int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo
     int rc;
     pInfo->fEnabled           = FALSE;
 
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
     Assert((offBuffer & 0xfff) == 0);
     Assert((cbBuffer & 0xfff) == 0);
     Assert(offBuffer);
@@ -1109,7 +1110,7 @@ int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo
                 return VINF_SUCCESS;
             rc = VERR_GENERAL_FAILURE;
         }
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
         else
             drprintf((__FUNCTION__": HGSMIHeapSetup failed rc = 0x%x\n", rc));
 
@@ -1131,7 +1132,7 @@ int vboxVdmaDisable (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
 
     /* ensure nothing else is submitted */
     pInfo->fEnabled        = FALSE;
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
     int rc = vboxVdmaInformHost (pDevExt, pInfo, VBOXVDMA_CTL_TYPE_DISABLE);
     AssertRC(rc);
     return rc;
@@ -1147,7 +1148,7 @@ int vboxVdmaEnable (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
     Assert(!pInfo->fEnabled);
     if (pInfo->fEnabled)
         return VINF_ALREADY_INITIALIZED;
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
     int rc = vboxVdmaInformHost (pDevExt, pInfo, VBOXVDMA_CTL_TYPE_ENABLE);
     Assert(RT_SUCCESS(rc));
     if (RT_SUCCESS(rc))
@@ -1159,7 +1160,7 @@ int vboxVdmaEnable (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
 #endif
 }
 
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
 int vboxVdmaFlush (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
 {
     dfprintf((__FUNCTION__"\n"));
@@ -1185,7 +1186,7 @@ int vboxVdmaDestroy (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
         Assert(!pInfo->fEnabled);
         if (pInfo->fEnabled)
             rc = vboxVdmaDisable (pDevExt, pInfo);
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
         VBoxUnmapAdapterMemory (pDevExt, (void**)&pInfo->CmdHeap.area.pu8Base, pInfo->CmdHeap.area.cbArea);
 #endif
     }
@@ -1194,7 +1195,7 @@ int vboxVdmaDestroy (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
     return rc;
 }
 
-#ifdef VBOXVDMA
+#ifdef VBOX_WITH_VDMA
 void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
 {
     VBoxSHGSMICommandFree (&pInfo->CmdHeap, pDr);
@@ -1226,61 +1227,30 @@ static DECLCALLBACK(void) vboxVdmaCBufDrCompletionIrq(struct _HGSMIHEAP * pHeap,
 {
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)pvContext;
     PVBOXVDMAINFO pVdma = &pDevExt->u.primary.Vdma;
-    DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
     PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)pvCmd;
 
-    memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
-
-    PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pDr->u64GuestContext;
+    DXGK_INTERRUPT_TYPE enmComplType;
 
     if (RT_SUCCESS(pDr->rc))
     {
-        notify.InterruptType = DXGK_INTERRUPT_DMA_COMPLETED;
-        notify.DmaCompleted.SubmissionFenceId = pDr->u32FenceId;
-        if (pContext)
-        {
-            notify.DmaCompleted.NodeOrdinal = pContext->NodeOrdinal;
-            notify.DmaCompleted.EngineOrdinal = 0;
-            pContext->uLastCompletedCmdFenceId = pDr->u32FenceId;
-        }
-        else
-            pVdma->uLastCompletedPagingBufferCmdFenceId = pDr->u32FenceId;
-        pDevExt->bSetNotifyDxDpc = TRUE;
+        enmComplType = DXGK_INTERRUPT_DMA_COMPLETED;
     }
     else if (pDr->rc == VERR_INTERRUPTED)
     {
-        notify.InterruptType = DXGK_INTERRUPT_DMA_PREEMPTED;
-        notify.DmaPreempted.PreemptionFenceId = pDr->u32FenceId;
-        if (pContext)
-        {
-            notify.DmaPreempted.LastCompletedFenceId = pContext->uLastCompletedCmdFenceId;
-            notify.DmaPreempted.NodeOrdinal = pContext->NodeOrdinal;
-            notify.DmaPreempted.EngineOrdinal = 0;
-        }
-        else
-            notify.DmaPreempted.LastCompletedFenceId = pVdma->uLastCompletedPagingBufferCmdFenceId;
-
-        pDevExt->bSetNotifyDxDpc = TRUE;
+        Assert(0);
+        enmComplType = DXGK_INTERRUPT_DMA_PREEMPTED;
     }
     else
     {
-        AssertBreakpoint();
-        notify.InterruptType = DXGK_INTERRUPT_DMA_FAULTED;
-        notify.DmaFaulted.FaultedFenceId = pDr->u32FenceId;
-        notify.DmaFaulted.Status = STATUS_UNSUCCESSFUL; /* @todo: better status ? */
-        if (pContext)
-        {
-            notify.DmaFaulted.NodeOrdinal = pContext->NodeOrdinal;
-            notify.DmaFaulted.EngineOrdinal = 0;
-        }
-        pDevExt->bSetNotifyDxDpc = TRUE;
+        Assert(0);
+        enmComplType = DXGK_INTERRUPT_DMA_FAULTED;
     }
 
-    pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
+    vboxVdmaDdiCmdCompletedIrq(pDevExt, &pDevExt->DdiCmdQueue, VBOXVDMADDI_CMD_FROM_BUF_DR(pDr), enmComplType);
 
-    /* inform SHGSMI we want to be called at DPC later */
-    *ppfnCompletion = vboxVdmaCBufDrCompletion;
-    *ppvCompletion = pvContext;
+    /* inform SHGSMI we DO NOT want to be called at DPC later */
+    *ppfnCompletion = NULL;
+//    *ppvCompletion = pvContext;
 }
 
 int vboxVdmaCBufDrSubmit(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
@@ -1329,19 +1299,59 @@ DECLCALLBACK(VOID) vboxVdmaDdiCmdCompletionCbFree(PDEVICE_EXTENSION pDevExt, PVB
     vboxWddmMemFree(pCmd);
 }
 
-static VOID vboxVdmaDdiCmdNotifyCompletedIrq(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd)
+static VOID vboxVdmaDdiCmdNotifyCompletedIrq(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd, DXGK_INTERRUPT_TYPE enmComplType)
 {
     DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
     memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
-    notify.InterruptType = DXGK_INTERRUPT_DMA_COMPLETED;
-    notify.DmaCompleted.SubmissionFenceId = pCmd->u32FenceId;
-    notify.DmaCompleted.NodeOrdinal = pCmd->pContext->NodeOrdinal;
-    notify.DmaCompleted.EngineOrdinal = 0;
-    pCmd->pContext->uLastCompletedCmdFenceId = pCmd->u32FenceId;
+    switch (enmComplType)
+    {
+        case DXGK_INTERRUPT_DMA_COMPLETED:
+            notify.InterruptType = DXGK_INTERRUPT_DMA_COMPLETED;
+            notify.DmaCompleted.SubmissionFenceId = pCmd->u32FenceId;
+            if (pCmd->pContext)
+            {
+                notify.DmaCompleted.NodeOrdinal = pCmd->pContext->NodeOrdinal;
+                pCmd->pContext->uLastCompletedCmdFenceId = pCmd->u32FenceId;
+            }
+            else
+            {
+                pDevExt->u.primary.Vdma.uLastCompletedPagingBufferCmdFenceId = pCmd->u32FenceId;
+            }
+
+            InsertTailList(&pQueue->DpcCmdQueue, &pCmd->QueueEntry);
+
+            break;
+        case DXGK_INTERRUPT_DMA_PREEMPTED:
+            Assert(0);
+            notify.InterruptType = DXGK_INTERRUPT_DMA_PREEMPTED;
+            notify.DmaPreempted.PreemptionFenceId = pCmd->u32FenceId;
+            if (pCmd->pContext)
+            {
+                notify.DmaPreempted.LastCompletedFenceId = pCmd->pContext->uLastCompletedCmdFenceId;
+                notify.DmaPreempted.NodeOrdinal = pCmd->pContext->NodeOrdinal;
+            }
+            else
+            {
+                notify.DmaPreempted.LastCompletedFenceId = pDevExt->u.primary.Vdma.uLastCompletedPagingBufferCmdFenceId;
+            }
+            break;
+
+        case DXGK_INTERRUPT_DMA_FAULTED:
+            Assert(0);
+            notify.InterruptType = DXGK_INTERRUPT_DMA_FAULTED;
+            notify.DmaFaulted.FaultedFenceId = pCmd->u32FenceId;
+            notify.DmaFaulted.Status = STATUS_UNSUCCESSFUL; /* @todo: better status ? */
+            if (pCmd->pContext)
+            {
+                notify.DmaFaulted.NodeOrdinal = pCmd->pContext->NodeOrdinal;
+            }
+            break;
+        default:
+            Assert(0);
+            break;
+    }
 
     pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
-
-    InsertTailList(&pQueue->DpcCmdQueue, &pCmd->QueueEntry);
 }
 
 DECLINLINE(VOID) vboxVdmaDdiCmdDequeueIrq(PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd)
@@ -1363,7 +1373,7 @@ VOID vboxVdmaDdiQueueInit(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQue
     InitializeListHead(&pQueue->DpcCmdQueue);
 }
 
-BOOLEAN vboxVdmaDdiCmdCompletedIrq(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd)
+BOOLEAN vboxVdmaDdiCmdCompletedIrq(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd, DXGK_INTERRUPT_TYPE enmComplType)
 {
     BOOLEAN bQueued = pCmd->enmState > VBOXVDMADDI_STATE_NOT_QUEUED;
     BOOLEAN bComplete = FALSE;
@@ -1389,7 +1399,7 @@ BOOLEAN vboxVdmaDdiCmdCompletedIrq(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_Q
 
     if (bComplete)
     {
-        vboxVdmaDdiCmdNotifyCompletedIrq(pDevExt, pQueue, pCmd);
+        vboxVdmaDdiCmdNotifyCompletedIrq(pDevExt, pQueue, pCmd, enmComplType);
 
         while (!IsListEmpty(&pQueue->CmdQueue))
         {
@@ -1397,7 +1407,7 @@ BOOLEAN vboxVdmaDdiCmdCompletedIrq(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_Q
             if (pCmd->enmState == VBOXVDMADDI_STATE_COMPLETED)
             {
                 vboxVdmaDdiCmdDequeueIrq(pQueue, pCmd);
-                vboxVdmaDdiCmdNotifyCompletedIrq(pDevExt, pQueue, pCmd);
+                vboxVdmaDdiCmdNotifyCompletedIrq(pDevExt, pQueue, pCmd, pCmd->enmComplType);
             }
             else
                 break;
@@ -1406,6 +1416,7 @@ BOOLEAN vboxVdmaDdiCmdCompletedIrq(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_Q
     else
     {
         pCmd->enmState = VBOXVDMADDI_STATE_COMPLETED;
+        pCmd->enmComplType = enmComplType;
     }
 
     return bComplete;
@@ -1425,23 +1436,25 @@ typedef struct VBOXVDMADDI_CMD_COMPLETED_CB
     PDEVICE_EXTENSION pDevExt;
     PVBOXVDMADDI_CMD_QUEUE pQueue;
     PVBOXVDMADDI_CMD pCmd;
+    DXGK_INTERRUPT_TYPE enmComplType;
 } VBOXVDMADDI_CMD_COMPLETED_CB, *PVBOXVDMADDI_CMD_COMPLETED_CB;
 
 static BOOLEAN vboxVdmaDdiCmdCompletedCb(PVOID Context)
 {
     PVBOXVDMADDI_CMD_COMPLETED_CB pdc = (PVBOXVDMADDI_CMD_COMPLETED_CB)Context;
-    BOOLEAN bNeedDps = vboxVdmaDdiCmdCompletedIrq(pdc->pDevExt, pdc->pQueue, pdc->pCmd);
+    BOOLEAN bNeedDps = vboxVdmaDdiCmdCompletedIrq(pdc->pDevExt, pdc->pQueue, pdc->pCmd, pdc->enmComplType);
     pdc->pDevExt->bNotifyDxDpc |= bNeedDps;
 
     return bNeedDps;
 }
 
-NTSTATUS vboxVdmaDdiCmdCompleted(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd)
+NTSTATUS vboxVdmaDdiCmdCompleted(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd, DXGK_INTERRUPT_TYPE enmComplType)
 {
     VBOXVDMADDI_CMD_COMPLETED_CB context;
     context.pDevExt = pDevExt;
     context.pQueue = pQueue;
     context.pCmd = pCmd;
+    context.enmComplType = enmComplType;
     BOOLEAN bNeedDps;
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
             pDevExt->u.primary.DxgkInterface.DeviceHandle,
@@ -1534,7 +1547,7 @@ static NTSTATUS vboxVdmaDdiCmdFenceNotifyComplete(PDEVICE_EXTENSION pDevExt, PVB
     return Status;
 }
 
-NTSTATUS vboxVdmaDdiCmdFenceComplete(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CONTEXT pContext, uint32_t u32FenceId)
+NTSTATUS vboxVdmaDdiCmdFenceComplete(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CONTEXT pContext, uint32_t u32FenceId, DXGK_INTERRUPT_TYPE enmComplType)
 {
     if (vboxVdmaDdiCmdCanComplete(&pDevExt->DdiCmdQueue))
         return vboxVdmaDdiCmdFenceNotifyComplete(pDevExt, pContext, u32FenceId);
@@ -1544,7 +1557,7 @@ NTSTATUS vboxVdmaDdiCmdFenceComplete(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CONTEX
     if (pCmd)
     {
         vboxVdmaDdiCmdInit(pCmd, u32FenceId, pContext, vboxVdmaDdiCmdCompletionCbFree, NULL);
-        NTSTATUS Status = vboxVdmaDdiCmdCompleted(pDevExt, &pDevExt->DdiCmdQueue, pCmd);
+        NTSTATUS Status = vboxVdmaDdiCmdCompleted(pDevExt, &pDevExt->DdiCmdQueue, pCmd, enmComplType);
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
             return STATUS_SUCCESS;

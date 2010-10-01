@@ -23,12 +23,13 @@
 
 #include <VBox/VBoxVideo.h>
 #include "../../../include/VBoxDisplay.h"
+#include "VBoxUhgsmi.h"
 
 #include <iprt/assert.h>
 
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 5
+#define VBOXVIDEOIF_VERSION 6
 
 /* create allocation func */
 typedef enum
@@ -41,6 +42,7 @@ typedef enum
     VBOXWDDM_ALLOC_TYPE_STD_GDISURFACE
     /* custom allocation types requested from user-mode d3d module will go here */
     , VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
+    , VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER
 } VBOXWDDM_ALLOC_TYPE;
 
 /* usage */
@@ -68,9 +70,22 @@ typedef struct VBOXWDDM_SURFACE_DESC
 typedef struct VBOXWDDM_ALLOCINFO
 {
     VBOXWDDM_ALLOC_TYPE enmType;
-    D3DDDI_RESOURCEFLAGS fFlags;
-    HANDLE hSharedHandle;
-    VBOXWDDM_SURFACE_DESC SurfDesc;
+    union
+    {
+        struct
+        {
+            D3DDDI_RESOURCEFLAGS fFlags;
+            HANDLE hSharedHandle;
+            VBOXWDDM_SURFACE_DESC SurfDesc;
+        };
+
+        struct
+        {
+            uint32_t cbBuffer;
+            HANDLE hSynch;
+            VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
+        };
+    };
 } VBOXWDDM_ALLOCINFO, *PVBOXWDDM_ALLOCINFO;
 
 /* this resource is OpenResource'd rather than CreateResource'd */
@@ -99,6 +114,42 @@ typedef struct VBOXWDDM_RCINFO
     uint32_t cAllocInfos;
 //    VBOXWDDM_ALLOCINFO aAllocInfos[1];
 } VBOXWDDM_RCINFO, *PVBOXWDDM_RCINFO;
+
+typedef struct VBOXWDDM_DMA_PRIVATEDATA_FLAFS
+{
+    union
+    {
+        struct
+        {
+            UINT bCmdInDmaBuffer : 1;
+            UINT bReserved : 31;
+        };
+        uint32_t Value;
+    };
+} VBOXWDDM_DMA_PRIVATEDATA_FLAFS, *PVBOXWDDM_DMA_PRIVATEDATA_FLAFS;
+
+typedef struct VBOXWDDM_DMA_PRIVATEDATA_BASEHDR
+{
+    VBOXVDMACMD_TYPE enmCmd;
+    union
+    {
+        VBOXWDDM_DMA_PRIVATEDATA_FLAFS fFlags;
+        uint32_t u32CmdReserved;
+    };
+} VBOXWDDM_DMA_PRIVATEDATA_BASEHDR, *PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR;
+
+typedef struct VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO
+{
+    VBOXUHGSMI_BUFFER_SUBMIT_FLAGS fSubFlags;
+    uint32_t offData;
+    uint32_t cbData;
+} VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO, *PVBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO;
+
+typedef struct VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD
+{
+    VBOXWDDM_DMA_PRIVATEDATA_BASEHDR Base;
+    VBOXWDDM_UHGSMI_BUFFER_UI_SUBMIT_INFO aBufInfos[1];
+} VBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD, *PVBOXWDDM_DMA_PRIVATEDATA_UM_CHROMIUM_CMD;
 
 #define VBOXVHWA_F_ENABLED  0x00000001
 #define VBOXVHWA_F_CKEY_DST 0x00000002
