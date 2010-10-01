@@ -4463,7 +4463,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86
             {
                 Log4(("pgmPoolTrackDerefPDPae: i=%d pde=%RX64 GCPhys=%RX64\n",
                       i, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK, pPage->GCPhys));
-                pgmPoolTracDerefGCPhys(pPool, pPage, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK, pPage->GCPhys + i * 2 * _1M /* pPage->GCPhys = base address of the memory described by the PDE */, i);
+                pgmPoolTracDerefGCPhys(pPool, pPage, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK, pPage->GCPhys + i * 2 * _1M /* pPage->GCPhys = base address of the memory described by the PD */, i);
             }
             else
 #endif
@@ -4574,7 +4574,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
             {
                 Log4(("pgmPoolTrackDerefPDEPT: i=%d pde=%RX64 GCPhys=%RX64\n",
                       i, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK, pPage->GCPhys));
-                pgmPoolTracDerefGCPhys(pPool, pPage, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK, pPage->GCPhys + i * 2 * _1M /* pPage->GCPhys = base address of the memory described by the PDE */, i);
+                pgmPoolTracDerefGCPhys(pPool, pPage, pShwPD->a[i].u & X86_PDE2M_PAE_PG_MASK, pPage->GCPhys + i * 2 * _1M /* pPage->GCPhys = base address of the memory described by the PD */, i);
             }
             else
 #endif
