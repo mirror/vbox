@@ -236,5 +236,7 @@ static const unsigned sun_key_scan[256] =
     0, 0, 0, 0, 0, 0, 0, 0                                      /* 1005FFF8 */
 };
 
+#include "xkbtoscan.h"
+
 #endif /* !___VBox_keyboard_tables_h */
 

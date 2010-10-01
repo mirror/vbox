@@ -41,6 +41,7 @@
 
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
+#include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 #include <X11/Xresource.h>
 #include <X11/Xutil.h>
@@ -544,6 +545,43 @@ X11DRV_InitKeyboardByType(Display *display)
 }
 
 /**
+ * Checks for the XKB extension, and if it is found initialises the X11 keycode
+ * to XT scan code mapping by looking at the XKB names for each keycode.
+ */
+static unsigned
+X11DRV_InitKeyboardByXkb(Display *pDisplay)
+{
+    int major = XkbMajorVersion, minor = XkbMinorVersion;
+    XkbDescPtr pKBDesc;
+    if (!XkbLibraryVersion(&major, &minor))
+        return 0;
+    if (!XkbQueryExtension(pDisplay, NULL, NULL, &major, &minor, NULL))
+        return 0;
+    pKBDesc = XkbGetKeyboard(pDisplay, XkbAllComponentsMask, XkbUseCoreKbd);
+    if (!pKBDesc)
+        return 0;
+    if (XkbGetNames(pDisplay, XkbKeyNamesMask, pKBDesc) != Success)
+        return 0;
+    {
+        unsigned i, j;
+
+        memset(keyc2scan, 0, sizeof(keyc2scan));
+        for (i = pKBDesc->min_key_code; i < pKBDesc->max_key_code; ++i)
+            for (j = 0; j < sizeof(xkbMap) / sizeof(xkbMap[0]); ++j)
+                if (!memcmp(xkbMap[j].cszName,
+                            &pKBDesc->names->keys->name[i * XKB_NAME_SIZE],
+                            XKB_NAME_SIZE))
+                {
+                    keyc2scan[i] = xkbMap[j].uScan;
+                    break;
+                }
+    }
+    XkbFreeNames(pKBDesc, XkbKeyNamesMask, True);
+    XkbFreeKeyboard(pKBDesc, XkbAllComponentsMask, True);
+    return 1;
+}
+
+/**
  * Initialise the X11 keyboard driver by finding which X11 keycodes correspond
  * to which PC scan codes.  If the keyboard being used is not a PC keyboard,
  * the X11 keycodes will be mapped to the scan codes which the equivalent keys
@@ -566,13 +604,16 @@ X11DRV_InitKeyboardByType(Display *display)
  *                           succeeded, and to 0 otherwise
  * @param   byTypeOK         diagnostic - set to one if detection by type
  *                           succeeded, and to 0 otherwise
+ * @param   byXkbOK          diagnostic - set to one if detection using XKB
+ *                           succeeded, and to 0 otherwise
  * @param   remapScancode    array of tuples that remap the keycode (first
  *                           part) to a scancode (second part)
  */
-unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK, unsigned *byTypeOK, int (*remapScancodes)[2])
+unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK,
+                             unsigned *byTypeOK, unsigned *byXkbOK,
+                             int (*remapScancodes)[2])
 {
-    unsigned byLayout;
-    unsigned byType;
+    unsigned byLayout, byType, byXkb;
 
     byLayout = X11DRV_InitKeyboardByLayout(display);
     if (byLayoutOK)
@@ -581,6 +622,10 @@ unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK, unsigned *b
     byType = X11DRV_InitKeyboardByType(display);
     if (byTypeOK)
         *byTypeOK = byType;
+
+    byXkb = X11DRV_InitKeyboardByXkb(display);
+    if (byXkbOK)
+        *byXkbOK = byXkb;
 
     /* Remap keycodes after initialization. Remapping stops after an
        identity mapping is seen */

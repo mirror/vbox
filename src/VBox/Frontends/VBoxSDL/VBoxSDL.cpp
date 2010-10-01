@@ -1986,7 +1986,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 #  endif
     /* Initialise the keyboard */
-    X11DRV_InitKeyboard(gSdlInfo.info.x11.display, NULL, NULL, NULL);
+    X11DRV_InitKeyboard(gSdlInfo.info.x11.display, NULL, NULL, NULL, NULL);
 # endif /* VBOXSDL_WITH_X11 */
 
     /* create a fake empty cursor */
