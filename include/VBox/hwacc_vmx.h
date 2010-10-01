@@ -246,7 +246,7 @@ typedef struct EPTPDE2MBITS
 AssertCompileSize(EPTPDE2MBITS, 8);
 
 /** Bits 21-51 - - EPT - Physical Page number of the next level. */
-#define EPT_PDE2M_PG_MASK       ( 0x000fffffffe00000ULL )
+#define EPT_PDE2M_PG_MASK       X86_PDE2M_PAE_PG_MASK
 
 /**
  * EPT Page Directory Table Entry.
