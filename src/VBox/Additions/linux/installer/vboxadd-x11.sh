@@ -477,7 +477,7 @@ setup()
                 # This is normally silent.  I have purposely not redirected
                 # error output as I want to know if something goes wrong,
                 # particularly if the command syntax ever changes.
-                udevadm trigger --action=change
+                udevadm trigger --action=change --subsystem-match=misc --subsystem-match=input
             fi
             test -d /usr/share/X11/xorg.conf.d &&
                 install -o 0 -g 0 -m 0644 "$share_dir/50-vboxmouse.conf" /usr/share/X11/xorg.conf.d
@@ -625,7 +625,7 @@ EOF
     # Remove other files
     rm /etc/hal/fdi/policy/90-vboxguest.fdi 2>/dev/null
     rm /etc/udev/rules.d/70-xorg-vboxmouse.rules 2>/dev/null
-    udevadm trigger --action=change 2>/dev/null
+    udevadm trigger --action=change --subsystem-match=misc --subsystem-match=input 2>/dev/null
     rm /usr/lib/X11/xorg.conf.d/50-vboxmouse.conf 2>/dev/null
     rm /usr/share/X11/xorg.conf.d/50-vboxmouse.conf 2>/dev/null
     rm /usr/share/xserver-xorg/pci/vboxvideo.ids 2>/dev/null
