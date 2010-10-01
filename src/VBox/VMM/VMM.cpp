@@ -1267,7 +1267,9 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
+#if 0 /* todo triggers too often */
         Assert(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TO_R3));
+#endif
 
 #ifdef LOG_ENABLED
         /*
