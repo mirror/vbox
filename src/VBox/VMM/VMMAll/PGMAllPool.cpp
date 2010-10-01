@@ -4184,11 +4184,13 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
                 pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage], iPte);
                 return;
             }
+            AssertFatalMsgFailed(("HCPhys=%RHp GCPhys=%RGp; found page index %x HCPhys=%RHp\n", HCPhys, GCPhys, iPage, PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage])));
             break;
         }
         pRam = pRam->CTX_SUFF(pNext);
     }
-    AssertFatalMsgFailed(("HCPhys=%RHp GCPhys=%RGp\n", HCPhys, GCPhys));
+    if (!pRam)
+        AssertFatalMsgFailed(("HCPhys=%RHp GCPhys=%RGp\n", HCPhys, GCPhys));
 }
 
 
