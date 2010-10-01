@@ -29,6 +29,7 @@
 
 static unsigned gfByLayoutOK = 1;
 static unsigned gfByTypeOK = 1;
+static unsigned gfByXkbOK = 1;
 
 /**
  * DEBUG function
@@ -187,7 +188,8 @@ static void dumpType(Display *display)
  */
 bool initXKeyboard(Display *dpy, int (*remapScancodes)[2])
 {
-    X11DRV_InitKeyboard(dpy, &gfByLayoutOK, &gfByTypeOK, remapScancodes);
+    X11DRV_InitKeyboard(dpy, &gfByLayoutOK, &gfByTypeOK, &gfByXkbOK,
+                        remapScancodes);
     /* It will almost always work to some extent */
     return true;
 }
@@ -197,11 +199,11 @@ bool initXKeyboard(Display *dpy, int (*remapScancodes)[2])
  */
 void doXKeyboardLogging(Display *dpy)
 {
-    if ((gfByLayoutOK != 1) && (1 == gfByTypeOK))
+    if (((1 == gfByTypeOK) || (1 == gfByXkbOK)) && (gfByLayoutOK != 1))
         dumpLayout(dpy);
-    if ((1 == gfByLayoutOK) && (gfByTypeOK != 1))
+    if (((1 == gfByLayoutOK) || (1 == gfByXkbOK)) && (gfByTypeOK != 1))
         dumpType(dpy);
-    if ((gfByLayoutOK != 1) && (gfByTypeOK != 1))
+    if ((gfByLayoutOK != 1) && (gfByTypeOK != 1) && (gfByXkbOK != 1))
     {
         LogRel(("Failed to recognize the keyboard mapping or to guess it based on\n"
                 "the keyboard layout.  It is very likely that some keys will not\n"
