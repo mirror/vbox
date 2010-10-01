@@ -507,10 +507,12 @@ static void vboxNetFltClassWalk(struct Qdisc *sch, struct qdisc_walker *walker)
     }
 }
 
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
 static struct tcf_proto **vboxNetFltClassFindTcf(struct Qdisc *sch, unsigned long cl)
 {
     return NULL;
 }
+# endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32) */
 
 static int vboxNetFltClassDump(struct Qdisc *sch, unsigned long cl,
                                struct sk_buff *skb, struct tcmsg *tcm)
@@ -536,7 +538,9 @@ static struct Qdisc_class_ops g_VBoxNetFltClassOps =
     .change    = vboxNetFltClassChange,
     .delete    = vboxNetFltClassDelete,
     .walk      = vboxNetFltClassWalk,
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
     .tcf_chain = vboxNetFltClassFindTcf,
+# endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32) */
     .dump      = vboxNetFltClassDump,
 };
 
