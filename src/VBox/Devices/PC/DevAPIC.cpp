@@ -1447,6 +1447,7 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr)
     int index;
 
     index = (addr >> 4) & 0xff;
+    addr -= (s->apicbase & ~0xfff);
 
     if (addr > 0xfff || (index == 0))
     {
