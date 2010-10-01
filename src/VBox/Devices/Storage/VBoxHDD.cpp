@@ -5595,7 +5595,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                                   uImageFlags, szComment, &ImageUuid,
                                   NULL /* pParentUuid */,
                                   uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY,
-                                  NULL, NULL);
+                                  pDstVDIfsImage, NULL);
 
                 rc2 = vdThreadStartWrite(pDiskTo);
                 AssertRC(rc2);
@@ -5624,7 +5624,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, cbSize,
                                   uImageFlags, szComment,
                                   &PCHSGeometryFrom, &LCHSGeometryFrom,
-                                  NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
+                                  NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, pDstVDIfsImage, NULL);
 
                 rc2 = vdThreadStartWrite(pDiskTo);
                 AssertRC(rc2);
