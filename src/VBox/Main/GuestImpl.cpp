@@ -32,7 +32,10 @@
 # include <VBox/com/array.h>
 #endif
 #include <iprt/cpp/utils.h>
+#include <iprt/dir.h>
 #include <iprt/getopt.h>
+#include <iprt/list.h>
+#include <iprt/path.h>
 #include <VBox/pgm.h>
 
 // defines
@@ -1536,6 +1539,488 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
     }
     return rc;
 #endif
+}
+
+#ifdef VBOX_WITH_COPYTOGUEST
+int Guest::directoryEntryAppend(const char *pszPath, PRTLISTNODE pList)
+{
+    using namespace guestControl;
+
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("Appending to pList=%p: %s\n", pList, pszPath));
+
+    DirEntry *pNode = (DirEntry*)RTMemAlloc(sizeof(DirEntry));
+    if (pNode == NULL)
+        return VERR_NO_MEMORY;
+
+    if (RT_SUCCESS(RTStrAAppend(&pNode->pszPath, pszPath)))
+    {
+        pNode->Node.pPrev = NULL;
+        pNode->Node.pNext = NULL;
+        RTListAppend(pList, &pNode->Node);
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_MEMORY;
+}
+
+int Guest::directoryRead(const char *pszDirectory, const char *pszFilter,
+                         ULONG uFlags, ULONG *pcObjects, PRTLISTNODE pList)
+{
+    using namespace guestControl;
+
+    AssertPtrReturn(pszDirectory, VERR_INVALID_POINTER);
+    /* Filter is optional. */
+    AssertPtrReturn(pcObjects, VERR_INVALID_POINTER);
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("Reading directory: %s, filter: %s\n",
+                 pszDirectory, pszFilter ? pszFilter : "<None>"));
+
+    char *pszDirWithFilter = NULL;
+    PRTDIR pDir;
+    int rc = RTStrAAppend(&pszDirWithFilter, pszDirectory);
+    if (RT_SUCCESS(rc))
+    {
+        if (pszFilter)
+        {
+            RTStrAAppend(&pszDirWithFilter, pszDirectory);
+            rc = RTDirOpenFiltered(&pDir, pszDirectory, RTDIRFILTER_WINNT);
+        }
+        else
+            rc = RTDirOpen(&pDir, pszDirectory);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = directoryEntryAppend(pszDirectory, pList);
+        if (RT_SUCCESS(rc))
+        {
+            *pcObjects = *pcObjects + 1;
+            for (;;)
+            {
+                RTDIRENTRY DirEntry;
+                rc = RTDirRead(pDir, &DirEntry, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+                switch (DirEntry.enmType)
+                {
+                    case RTDIRENTRYTYPE_DIRECTORY:
+                        if (uFlags & CopyFileFlag_Recursive)
+                            rc = directoryRead(DirEntry.szName, pszFilter,
+                                               uFlags, pcObjects, pList);
+                        break;
+
+                    case RTDIRENTRYTYPE_FILE:
+                    {
+                        char *pszFile;
+                        if (RTStrAPrintf(&pszFile, "%s/%s",
+                                         pszDirectory, DirEntry.szName))
+                        {
+                            rc = directoryEntryAppend(pszFile, pList);
+                            if (RT_SUCCESS(rc))
+                                *pcObjects = *pcObjects + 1;
+                            RTStrFree(pszFile);
+                        }
+                        break;
+                    }
+
+                    case RTDIRENTRYTYPE_SYMLINK:
+                        if (   (uFlags & CopyFileFlag_Recursive)
+                            && (uFlags & CopyFileFlag_FollowLinks))
+                        {
+                            rc = directoryRead(DirEntry.szName, pszFilter,
+                                               uFlags, pcObjects, pList);
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+        RTDirClose(pDir);
+    }
+    if (pszDirWithFilter)
+        RTStrFree(pszDirWithFilter);
+    return rc;
+}
+#endif
+
+STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags,
+                                IProgress **aProgress)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else  /* VBOX_WITH_GUEST_CONTROL */
+#ifndef VBOX_WITH_COPYTOGUEST
+    ReturnComNotImplemented();
+#else
+    using namespace guestControl;
+
+    CheckComArgStrNotEmptyOrNull(aSource);
+    CheckComArgStrNotEmptyOrNull(aDest);
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Validate flags. */
+    if (aFlags)
+    {
+        if (   !(aFlags & CopyFileFlag_Recursive)
+            && !(aFlags & CopyFileFlag_Update)
+            && !(aFlags & CopyFileFlag_FollowLinks))
+            return E_INVALIDARG;
+    }
+
+    HRESULT rc = S_OK;
+
+    try
+    {
+        char szSourceAbs[RTPATH_MAX];
+        Utf8Str Utf8Dest(aDest);
+
+        int vrc = RTPathAbs(Utf8Str(aSource).c_str(),
+                            szSourceAbs, sizeof(szSourceAbs));
+        if (RT_SUCCESS(vrc))
+        {
+            LogRel(("Copying \"%s\" to guest into \"%s\" ...\n",
+                    szSourceAbs, Utf8Dest.c_str()));
+        }
+        else
+            rc = setError(VBOX_E_IPRT_ERROR,
+                          tr("Could not determine absolute path! rc=%Rrc"), vrc);
+
+        ULONG cObjectsToCopy = 0;
+        RTLISTNODE listEntries;
+        if (SUCCEEDED(rc))
+        {
+            /*
+             * Count objects to copy.
+             * This is needed for have multi operation progress object.
+             * Examples:
+             *     D:\ -> D:\*
+             *     E:\asdf\qwer\ -> E:\asdf\qwer\*
+             *     C:\temp.txt
+             *     C:\Foo\bar\*.txt
+             *     /home/foo/bar/movie.avi
+             */
+            char *pszFileName = RTPathFilename(szSourceAbs);
+            RTListInit(&listEntries);
+
+            vrc = directoryRead(szSourceAbs, pszFileName /* Filter */,
+                                    aFlags, &cObjectsToCopy, &listEntries);
+            if (RT_FAILURE(vrc))
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              tr("Could not open source directory! rc=%Rrc"), vrc);
+        }
+
+        if (SUCCEEDED(rc))
+        {
+            /*
+             * Create progress object.  Note that this is a multi operation
+             * object to perform an operation per the following steps:
+             * - Operation 1 (0): Create/start process.
+             * - Operation 2 (1): Wait for process to exit.
+             * If this progress completed successfully (S_OK), the process
+             * started and exited normally. In any other case an error/exception
+             * occured.
+             */
+            ComObjPtr <Progress> progress;
+            rc = progress.createObject();
+            if (SUCCEEDED(rc))
+            {
+                rc = progress->init(static_cast<IGuest*>(this),
+                                    Bstr(tr("Executing process")).raw(),
+                                    TRUE,
+                                    cObjectsToCopy,                             /* Number of operations. */
+                                    Bstr(tr("Starting process ...")).raw());    /* Description of first stage. */
+            }
+            if (FAILED(rc)) return rc;
+        }
+
+        /* Destroy list. */
+        DirEntry *pNode = RTListNodeGetFirst(&listEntries, DirEntry, Node);
+        while (pNode)
+        {
+            DirEntry *pNext = RTListNodeGetNext(&pNode->Node, DirEntry, Node);
+            bool fLast = RTListNodeIsLast(&listEntries, &pNode->Node);
+
+            if (pNode->pszPath)
+                RTStrFree(pNode->pszPath);
+            RTListNodeRemove(&pNode->Node);
+            RTMemFree(pNode);
+
+            if (fLast)
+                break;
+
+            pNode = pNext;
+        }
+    }
+
+#if 0
+
+        /*
+         * Prepare process execution.
+         */
+        int vrc = VINF_SUCCESS;
+        Utf8Str Utf8Command(aCommand);
+
+        /* Adjust timeout */
+        if (aTimeoutMS == 0)
+            aTimeoutMS = UINT32_MAX;
+
+        /* Prepare arguments. */
+        char **papszArgv = NULL;
+        uint32_t uNumArgs = 0;
+        if (aArguments > 0)
+        {
+            com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
+            uNumArgs = args.size();
+            papszArgv = (char**)RTMemAlloc(sizeof(char*) * (uNumArgs + 1));
+            AssertReturn(papszArgv, E_OUTOFMEMORY);
+            for (unsigned i = 0; RT_SUCCESS(vrc) && i < uNumArgs; i++)
+                vrc = RTUtf16ToUtf8(args[i], &papszArgv[i]);
+            papszArgv[uNumArgs] = NULL;
+        }
+
+        Utf8Str Utf8UserName(aUserName);
+        Utf8Str Utf8Password(aPassword);
+        if (RT_SUCCESS(vrc))
+        {
+            uint32_t uContextID = 0;
+
+            char *pszArgs = NULL;
+            if (uNumArgs > 0)
+                vrc = RTGetOptArgvToString(&pszArgs, papszArgv, 0);
+            if (RT_SUCCESS(vrc))
+            {
+                uint32_t cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
+
+                /* Prepare environment. */
+                void *pvEnv = NULL;
+                uint32_t uNumEnv = 0;
+                uint32_t cbEnv = 0;
+                if (aEnvironment > 0)
+                {
+                    com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
+
+                    for (unsigned i = 0; i < env.size(); i++)
+                    {
+                        vrc = prepareExecuteEnv(Utf8Str(env[i]).c_str(), &pvEnv, &cbEnv, &uNumEnv);
+                        if (RT_FAILURE(vrc))
+                            break;
+                    }
+                }
+
+                LogRel(("Executing guest process \"%s\" as user \"%s\" ...\n",
+                        Utf8Command.c_str(), Utf8UserName.c_str()));
+
+                if (RT_SUCCESS(vrc))
+                {
+                    PCALLBACKDATAEXECSTATUS pData = (PCALLBACKDATAEXECSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECSTATUS));
+                    AssertReturn(pData, VBOX_E_IPRT_ERROR);
+                    RT_ZERO(*pData);
+                    uContextID = addCtrlCallbackContext(VBOXGUESTCTRLCALLBACKTYPE_EXEC_START,
+                                                        pData, sizeof(CALLBACKDATAEXECSTATUS), progress);
+                    Assert(uContextID > 0);
+
+                    VBOXHGCMSVCPARM paParms[15];
+                    int i = 0;
+                    paParms[i++].setUInt32(uContextID);
+                    paParms[i++].setPointer((void*)Utf8Command.c_str(), (uint32_t)Utf8Command.length() + 1);
+                    paParms[i++].setUInt32(aFlags);
+                    paParms[i++].setUInt32(uNumArgs);
+                    paParms[i++].setPointer((void*)pszArgs, cbArgs);
+                    paParms[i++].setUInt32(uNumEnv);
+                    paParms[i++].setUInt32(cbEnv);
+                    paParms[i++].setPointer((void*)pvEnv, cbEnv);
+                    paParms[i++].setPointer((void*)Utf8UserName.c_str(), (uint32_t)Utf8UserName.length() + 1);
+                    paParms[i++].setPointer((void*)Utf8Password.c_str(), (uint32_t)Utf8Password.length() + 1);
+                    paParms[i++].setUInt32(aTimeoutMS);
+
+                    VMMDev *vmmDev;
+                    {
+                        /* Make sure mParent is valid, so set the read lock while using.
+                         * Do not keep this lock while doing the actual call, because in the meanwhile
+                         * another thread could request a write lock which would be a bad idea ... */
+                        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                        /* Forward the information to the VMM device. */
+                        AssertPtr(mParent);
+                        vmmDev = mParent->getVMMDev();
+                    }
+
+                    if (vmmDev)
+                    {
+                        LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
+                        vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
+                                                   i, paParms);
+                    }
+                    else
+                        vrc = VERR_INVALID_VM_HANDLE;
+                    RTMemFree(pvEnv);
+                }
+                RTStrFree(pszArgs);
+            }
+            if (RT_SUCCESS(vrc))
+            {
+                LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
+
+                /*
+                 * Wait for the HGCM low level callback until the process
+                 * has been started (or something went wrong). This is necessary to
+                 * get the PID.
+                 */
+                CallbackMapIter it = getCtrlCallbackContextByID(uContextID);
+                BOOL fCanceled = FALSE;
+                if (it != mCallbackMap.end())
+                {
+                    ComAssert(!it->second.pProgress.isNull());
+
+                    /*
+                     * Wait for the first stage (=0) to complete (that is starting the process).
+                     */
+                    PCALLBACKDATAEXECSTATUS pData = NULL;
+                    rc = it->second.pProgress->WaitForOperationCompletion(0, aTimeoutMS);
+                    if (SUCCEEDED(rc))
+                    {
+                        /* Was the operation canceled by one of the parties? */
+                        rc = it->second.pProgress->COMGETTER(Canceled)(&fCanceled);
+                        if (FAILED(rc)) throw rc;
+
+                        if (!fCanceled)
+                        {
+                            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                            pData = (PCALLBACKDATAEXECSTATUS)it->second.pvData;
+                            Assert(it->second.cbData == sizeof(CALLBACKDATAEXECSTATUS));
+                            AssertPtr(pData);
+
+                            /* Did we get some status? */
+                            switch (pData->u32Status)
+                            {
+                                case PROC_STS_STARTED:
+                                    /* Process is (still) running; get PID. */
+                                    *aPID = pData->u32PID;
+                                    break;
+
+                                /* In any other case the process either already
+                                 * terminated or something else went wrong, so no PID ... */
+                                case PROC_STS_TEN: /* Terminated normally. */
+                                case PROC_STS_TEA: /* Terminated abnormally. */
+                                case PROC_STS_TES: /* Terminated through signal. */
+                                case PROC_STS_TOK:
+                                case PROC_STS_TOA:
+                                case PROC_STS_DWN:
+                                    /*
+                                     * Process (already) ended, but we want to get the
+                                     * PID anyway to retrieve the output in a later call.
+                                     */
+                                    *aPID = pData->u32PID;
+                                    break;
+
+                                case PROC_STS_ERROR:
+                                    vrc = pData->u32Flags; /* u32Flags member contains IPRT error code. */
+                                    break;
+
+                                case PROC_STS_UNDEFINED:
+                                    vrc = VERR_TIMEOUT;    /* Operation did not complete within time. */
+                                    break;
+
+                                default:
+                                    vrc = VERR_INVALID_PARAMETER; /* Unknown status, should never happen! */
+                                    break;
+                            }
+                        }
+                        else /* Operation was canceled. */
+                            vrc = VERR_CANCELLED;
+                    }
+                    else /* Operation did not complete within time. */
+                        vrc = VERR_TIMEOUT;
+
+                    /*
+                     * Do *not* remove the callback yet - we might wait with the IProgress object on something
+                     * else (like end of process) ...
+                     */
+                    if (RT_FAILURE(vrc))
+                    {
+                        if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
+                            rc = setError(VBOX_E_IPRT_ERROR,
+                                          tr("The file '%s' was not found on guest"), Utf8Command.c_str());
+                        else if (vrc == VERR_PATH_NOT_FOUND)
+                            rc = setError(VBOX_E_IPRT_ERROR,
+                                          tr("The path to file '%s' was not found on guest"), Utf8Command.c_str());
+                        else if (vrc == VERR_BAD_EXE_FORMAT)
+                            rc = setError(VBOX_E_IPRT_ERROR,
+                                          tr("The file '%s' is not an executable format on guest"), Utf8Command.c_str());
+                        else if (vrc == VERR_AUTHENTICATION_FAILURE)
+                            rc = setError(VBOX_E_IPRT_ERROR,
+                                          tr("The specified user '%s' was not able to logon on guest"), Utf8UserName.c_str());
+                        else if (vrc == VERR_TIMEOUT)
+                            rc = setError(VBOX_E_IPRT_ERROR,
+                                          tr("The guest did not respond within time (%ums)"), aTimeoutMS);
+                        else if (vrc == VERR_CANCELLED)
+                            rc = setError(VBOX_E_IPRT_ERROR,
+                                          tr("The execution operation was canceled"));
+                        else if (vrc == VERR_PERMISSION_DENIED)
+                            rc = setError(VBOX_E_IPRT_ERROR,
+                                          tr("Invalid user/password credentials"));
+                        else
+                        {
+                            if (pData && pData->u32Status == PROC_STS_ERROR)
+                                rc = setError(VBOX_E_IPRT_ERROR,
+                                              tr("Process could not be started: %Rrc"), pData->u32Flags);
+                            else
+                                rc = setError(E_UNEXPECTED,
+                                              tr("The service call failed with error %Rrc"), vrc);
+                        }
+                    }
+                    else /* Execution went fine. */
+                    {
+                        /* Return the progress to the caller. */
+                        progress.queryInterfaceTo(aProgress);
+                    }
+                }
+                else /* Callback context not found; should never happen! */
+                    AssertMsg(it != mCallbackMap.end(), ("Callback context with ID %u not found!", uContextID));
+            }
+            else /* HGCM related error codes .*/
+            {
+                if (vrc == VERR_INVALID_VM_HANDLE)
+                    rc = setError(VBOX_E_VM_ERROR,
+                                  tr("VMM device is not available (is the VM running?)"));
+                else if (vrc == VERR_TIMEOUT)
+                    rc = setError(VBOX_E_VM_ERROR,
+                                  tr("The guest execution service is not ready"));
+                else if (vrc == VERR_HGCM_SERVICE_NOT_FOUND)
+                    rc = setError(VBOX_E_VM_ERROR,
+                                  tr("The guest execution service is not available"));
+                else /* HGCM call went wrong. */
+                    rc = setError(E_UNEXPECTED,
+                                  tr("The HGCM call failed with error %Rrc"), vrc);
+            }
+
+            for (unsigned i = 0; i < uNumArgs; i++)
+                RTMemFree(papszArgv[i]);
+            RTMemFree(papszArgv);
+        }
+
+        if (RT_FAILURE(vrc))
+            LogRel(("Executing guest process \"%s\" as user \"%s\" failed with %Rrc\n",
+                    Utf8Command.c_str(), Utf8UserName.c_str(), vrc));
+#endif
+    catch (std::bad_alloc &)
+    {
+        rc = E_OUTOFMEMORY;
+    }
+    return rc;
+#endif /* VBOX_WITH_COPYTOGUEST */
+#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 // public methods only for internal purposes

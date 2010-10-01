@@ -19,6 +19,7 @@
 #define ____H_GUESTIMPL
 
 #include "VirtualBoxBase.h"
+#include <iprt/list.h>
 #include <VBox/ostypes.h>
 
 #ifdef VBOX_WITH_GUEST_CONTROL
@@ -98,6 +99,7 @@ public:
                               ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress);
     STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, LONG64 aSize, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ULONG *aStatus);
+    STDMETHOD(CopyToGuest)(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags, IProgress **aProgress);
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
@@ -147,6 +149,20 @@ private:
     typedef std::map< uint32_t, GuestProcess > GuestProcessMap;
     typedef std::map< uint32_t, GuestProcess >::iterator GuestProcessMapIter;
     typedef std::map< uint32_t, GuestProcess >::const_iterator GuestProcessMapIterConst;
+
+#ifdef VBOX_WITH_COPYTOGUEST
+    /*
+     *
+     */
+    struct DirEntry
+    {
+        char       *pszPath;
+        RTLISTNODE  Node;
+    };
+
+    int directoryEntryAppend(const char *pszPath, PRTLISTNODE pList);
+    int directoryRead(const char *pszDirectory, const char *pszFilter, ULONG uFlags, ULONG *pcObjects, PRTLISTNODE pList);
+#endif
 
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
     /** Handler for guest execution control notifications. */

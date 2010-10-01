@@ -7718,9 +7718,34 @@
     </const>
   </enum>
 
+  <enum
+    name="CopyFileFlag"
+    uuid="23f79fdf-738a-493d-b80b-42d607c9b916"
+  >
+    <desc>
+      Host/Guest copy flags.
+    </desc>
+
+    <const name="None"        value="0">
+      <desc>No flag set.</desc>
+    </const>
+
+    <const name="Recursive"   value="2">
+      <desc>Copy directories recursively.</desc>
+    </const>
+
+    <const name="Update"      value="4">
+      <desc>Copy only when the source file is newer than the destination file or when the destination file is missing.</desc>
+    </const>
+
+    <const name="FollowLinks" value="4">
+      <desc>Follow symbolic links.</desc>
+    </const>
+  </enum>
+
   <interface
      name="IGuest" extends="$unknown"
-     uuid="cd80e5b8-faef-4be3-8d0e-d68fee10708d"
+     uuid="6e3113ac-ed90-4864-8c2c-942c8022324d"
      wsmap="managed"
      >
     <desc>
@@ -8006,6 +8031,35 @@
         <desc>
           The current process status.
         </desc>
+      </param>
+    </method>
+
+    <method name="copyToGuest">
+      <desc>
+        Copies files/directories from host to the guest.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while copying.
+        </result>
+
+      </desc>
+      <param name="source" type="wstring" dir="in">
+        <desc>
+          Foo.
+        </desc>
+      </param>
+      <param name="dest" type="wstring" dir="in">
+        <desc>
+          Bar.
+        </desc>
+      </param>
+      <param name="flags" type="unsigned long" dir="in">
+        <desc>
+          Copy flags.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 

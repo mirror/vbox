@@ -63,6 +63,7 @@ using namespace com;
 
 /** Set by the signal handler. */
 static volatile bool    g_fExecCanceled = false;
+static volatile bool    g_fCopyCanceled = false;
 
 #endif /* VBOX_ONLY_DOCS */
 
@@ -76,6 +77,12 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
                  "                            [--flags <flags>] [--timeout <msec>]\n"
                  "                            [--verbose] [--wait-for exit,stdout,stderr||]\n"
+#ifdef VBOX_WITH_COPYTOGUEST
+                 "\n"
+                 "                            copyto <vmname>|<uuid>\n"
+                 "                            <source on host> <destination on guest>\n"
+                 "                            [--recursive] [--verbose] [--flags <flags>]\n"
+#endif
                  "\n");
 }
 
@@ -88,13 +95,13 @@ void usageGuestControl(PRTSTREAM pStrm)
  * a thread dedicated to delivering this signal.  Do not doing anything
  * unnecessary here.
  */
-static void execProcessSignalHandler(int iSignal)
+static void ctrlExecProcessSignalHandler(int iSignal)
 {
     NOREF(iSignal);
     ASMAtomicWriteBool(&g_fExecCanceled, true);
 }
 
-static const char *getStatus(ULONG uStatus)
+static const char *ctrlExecGetStatus(ULONG uStatus)
 {
     switch (uStatus)
     {
@@ -119,7 +126,7 @@ static const char *getStatus(ULONG uStatus)
     }
 }
 
-static int handleExecProgram(HandlerArg *a)
+static int handleCtrlExecProgram(HandlerArg *a)
 {
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
@@ -378,9 +385,9 @@ static int handleExecProgram(HandlerArg *a)
                     fCancelable = FALSE;
                 if (fCancelable)
                 {
-                    signal(SIGINT,   execProcessSignalHandler);
+                    signal(SIGINT,   ctrlExecProcessSignalHandler);
             #ifdef SIGBREAK
-                    signal(SIGBREAK, execProcessSignalHandler);
+                    signal(SIGBREAK, ctrlExecProcessSignalHandler);
             #endif
                 }
 
@@ -517,8 +524,7 @@ static int handleExecProgram(HandlerArg *a)
                         ULONG uRetStatus, uRetExitCode, uRetFlags;
                         rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
                         if (SUCCEEDED(rc))
-                            RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n",
-                                    uRetExitCode, uRetStatus, getStatus(uRetStatus), uRetFlags);
+                            RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, ctrlExecGetStatus(uRetStatus), uRetFlags);
                     }
                 }
                 else
@@ -532,6 +538,242 @@ static int handleExecProgram(HandlerArg *a)
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
+
+#ifdef VBOX_WITH_COPYTOGUEST
+/**
+ * Signal handler that sets g_fCopyCanceled.
+ *
+ * This can be executed on any thread in the process, on Windows it may even be
+ * a thread dedicated to delivering this signal.  Do not doing anything
+ * unnecessary here.
+ */
+static void ctrlCopySignalHandler(int iSignal)
+{
+    NOREF(iSignal);
+    ASMAtomicWriteBool(&g_fCopyCanceled, true);
+}
+
+static int handleCtrlCopyTo(HandlerArg *a)
+{
+    /*
+     * Check the syntax.  We can deduce the correct syntax from the number of
+     * arguments.
+     */
+    if (a->argc < 3) /* At least the source + destination should be present :-). */
+        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+
+    Utf8Str Utf8Source(a->argv[1]);
+    Utf8Str Utf8Dest(a->argv[2]);
+    uint32_t uFlags = 0;
+    bool fVerbose = false;
+    bool fCopyRecursive = false;
+
+    /* Iterate through all possible commands (if available). */
+    bool usageOK = true;
+    for (int i = 2; usageOK && i < a->argc; i++)
+    {
+        if (!strcmp(a->argv[i], "--flags"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                /* Nothing to do here yet. */
+                ++i;
+            }
+        }
+        else if (   !strcmp(a->argv[i], "--recursive")
+                 || !strcmp(a->argv[i], "--r"))
+        {
+            uFlags |= CopyFileFlag_Recursive;
+        }
+        else if (   !strcmp(a->argv[i], "--update")
+                 || !strcmp(a->argv[i], "--u"))
+        {
+            uFlags |= CopyFileFlag_Update;
+        }
+        else if (   !strcmp(a->argv[i], "--follow")
+                 || !strcmp(a->argv[i], "--f"))
+        {
+            uFlags |= CopyFileFlag_FollowLinks;
+        }
+        /** @todo Add force flag for overwriting existing stuff. */
+        else if (!strcmp(a->argv[i], "--verbose"))
+            fVerbose = true;
+        else
+            return errorSyntax(USAGE_GUESTCONTROL,
+                               "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
+    }
+
+    if (!usageOK)
+        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+
+    if (Utf8Source.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL,
+                           "No source specified!");
+
+    if (Utf8Dest.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL,
+                           "No destination specified!");
+
+    /* lookup VM. */
+    ComPtr<IMachine> machine;
+    /* assume it's an UUID */
+    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam());
+    if (FAILED(rc) || !machine)
+    {
+        /* must be a name */
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
+    }
+
+    if (machine)
+    {
+        do
+        {
+            /* open an existing session for VM */
+            CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Shared));
+            // @todo r=dj assert that it's an existing session
+
+            /* get the mutable session machine */
+            a->session->COMGETTER(Machine)(machine.asOutParam());
+
+            /* get the associated console */
+            ComPtr<IConsole> console;
+            CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
+
+            ComPtr<IGuest> guest;
+            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
+
+            ComPtr<IProgress> progress;
+            ULONG uPID = 0;
+
+            if (fVerbose)
+            {
+                if (fCopyRecursive)
+                    RTPrintf("Recursively copying \"%s\" to \"%s\" ...\n", Utf8Source, Utf8Dest);
+                else
+                    RTPrintf("Copying \"%s\" to \"%s\" ...\n", Utf8Source, Utf8Dest);
+            }
+
+            /* Do the copy. */
+            rc = guest->CopyToGuest(Bstr(Utf8Source).raw(), Bstr(Utf8Dest).raw(),
+                                    uFlags, progress.asOutParam());
+            if (FAILED(rc))
+            {
+                /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+                 * because it contains more accurate info about what went wrong. */
+                ErrorInfo info(guest, COM_IIDOF(IGuest));
+                if (info.isFullAvailable())
+                {
+                    if (rc == VBOX_E_IPRT_ERROR)
+                        RTMsgError("%ls.", info.getText().raw());
+                    else
+                        RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
+                }
+                break;
+            }
+            else
+            {
+                /* setup signal handling if cancelable */
+                ASSERT(progress);
+                bool fCanceledAlready = false;
+                BOOL fCancelable;
+                HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
+                if (FAILED(hrc))
+                    fCancelable = FALSE;
+                if (fCancelable)
+                {
+                    signal(SIGINT,   ctrlCopySignalHandler);
+            #ifdef SIGBREAK
+                    signal(SIGBREAK, ctrlCopySignalHandler);
+            #endif
+                }
+
+                /* Wait for process to exit ... */
+                BOOL fCompleted = FALSE;
+                BOOL fCanceled = FALSE;
+                while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+                {
+                    /* Process async cancelation */
+                    if (g_fCopyCanceled && !fCanceledAlready)
+                    {
+                        hrc = progress->Cancel();
+                        if (SUCCEEDED(hrc))
+                            fCanceledAlready = TRUE;
+                        else
+                            g_fCopyCanceled = false;
+                    }
+
+                    /* Progress canceled by Main API? */
+                    if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
+                        && fCanceled)
+                    {
+                        break;
+                    }
+                }
+
+                /* Undo signal handling */
+                if (fCancelable)
+                {
+                    signal(SIGINT,   SIG_DFL);
+            #ifdef SIGBREAK
+                    signal(SIGBREAK, SIG_DFL);
+            #endif
+                }
+
+                if (fCanceled)
+                {
+                    if (fVerbose)
+                        RTPrintf("Copy operation canceled!\n");
+                }
+                else if (   fCompleted
+                         && SUCCEEDED(rc))
+                {
+                    LONG iRc = false;
+                    CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+                    if (FAILED(iRc))
+                    {
+                        com::ProgressErrorInfo info(progress);
+                        if (   info.isFullAvailable()
+                            || info.isBasicAvailable())
+                        {
+                            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+                             * because it contains more accurate info about what went wrong. */
+                            if (info.getResultCode() == VBOX_E_IPRT_ERROR)
+                                RTMsgError("%ls.", info.getText().raw());
+                            else
+                            {
+                                RTMsgError("Copy operation error details:");
+                                GluePrintErrorInfo(info);
+                            }
+                        }
+                        else
+                        {
+                            if (RT_FAILURE(rc))
+                                RTMsgError("Error while looking up error code, rc=%Rrc", rc);
+                            else
+                                com::GluePrintRCMessage(iRc);
+                        }
+                    }
+                    else if (fVerbose)
+                    {
+                        RTPrintf("Copy operation successful!\n");
+                    }
+                }
+                else
+                {
+                    if (fVerbose)
+                        RTPrintf("Copy operation aborted!\n");
+                }
+            }
+            a->session->UnlockMachine();
+        } while (0);
+    }
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+#endif
 
 /**
  * Access the guest control store.
@@ -551,7 +793,16 @@ int handleGuestControl(HandlerArg *a)
     /* switch (cmd) */
     if (   strcmp(a->argv[0], "exec") == 0
         || strcmp(a->argv[0], "execute") == 0)
-        return handleExecProgram(&arg);
+    {
+        return handleCtrlExecProgram(&arg);
+    }
+#ifdef VBOX_WITH_COPYTOGUEST
+    else if (   strcmp(a->argv[0], "copyto")  == 0
+             || strcmp(a->argv[0], "copy_to") == 0)
+    {
+        return handleCtrlCopyTo(&arg);
+    }
+#endif
 
     /* default: */
     return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
