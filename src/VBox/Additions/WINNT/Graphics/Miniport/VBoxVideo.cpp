@@ -1968,8 +1968,9 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
       dprintf(("VBoxVideo::VBoxVideoFindAdapter: calling VideoPortGetAccessRanges\n"));
 
 #ifdef VBOX_WITH_HGSMI
-      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
-      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+      /* pPrimary is not yet set */
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.hgsmiInfo.IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.hgsmiInfo.IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
 #endif /* VBOX_WITH_HGSMI */
 
       VIDEO_ACCESS_RANGE tmpRanges[4];
@@ -2023,7 +2024,7 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
        */
       VBoxSetupDisplaysHGSMI((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo, AdapterMemorySize);
 
-      if (((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.bHGSMI)
+      if (hgsmiFromDeviceExt((PDEVICE_EXTENSION)HwDeviceExtension)->bHGSMI)
       {
           LogRel(("VBoxVideo: using HGSMI\n"));
       }
@@ -2674,7 +2675,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 return FALSE;
             }
 
-            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            if (!hgsmiFromDeviceExt(pDevExt)->bHGSMI)
             {
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
                 return FALSE;
@@ -2691,7 +2692,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             pInfo->u32DisplayInfoSize   = VBVA_DISPLAY_INFORMATION_SIZE;
             pInfo->u32MinVBVABufferSize = VBVA_MIN_BUFFER_SIZE;
 
-            pInfo->IOPortGuestCommand = pDevExt->pPrimary->u.primary.IOPortGuest;
+            pInfo->IOPortGuestCommand = hgsmiFromDeviceExt(pDevExt)->IOPortGuest;
 
             RequestPacket->StatusBlock->Information = sizeof(QUERYHGSMIRESULT);
             Result = TRUE;
@@ -2710,7 +2711,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 return FALSE;
             }
 
-            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            if (!hgsmiFromDeviceExt(pDevExt)->bHGSMI)
             {
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
                 return FALSE;
@@ -2738,7 +2739,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 return FALSE;
             }
 
-            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            if (!hgsmiFromDeviceExt(pDevExt)->bHGSMI)
             {
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
                 return FALSE;
@@ -2764,7 +2765,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 return FALSE;
             }
 
-            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            if (!hgsmiFromDeviceExt(pDevExt)->bHGSMI)
             {
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
                 return FALSE;
@@ -2785,7 +2786,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
         case IOCTL_VIDEO_HGSMI_HANDLER_DISABLE:
         {
             /* TODO: implement */
-            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            if (!hgsmiFromDeviceExt(pDevExt)->bHGSMI)
             {
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
                 return FALSE;
@@ -2803,7 +2804,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 return FALSE;
             }
 
-            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            if (!hgsmiFromDeviceExt(pDevExt)->bHGSMI)
             {
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
                 return FALSE;

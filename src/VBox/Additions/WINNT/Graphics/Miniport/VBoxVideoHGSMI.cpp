@@ -34,17 +34,17 @@
 
 void HGSMINotifyHostCmdComplete (PDEVICE_EXTENSION PrimaryExtension, HGSMIOFFSET offt)
 {
-    VBoxHGSMIHostWrite(PrimaryExtension, offt);
+    VBoxHGSMIHostWrite(hgsmiFromDeviceExt(PrimaryExtension), offt);
 }
 
 void HGSMIClearIrq (PDEVICE_EXTENSION PrimaryExtension)
 {
-    VBoxHGSMIHostWrite(PrimaryExtension, HGSMIOFFSET_VOID);
+    VBoxHGSMIHostWrite(hgsmiFromDeviceExt(PrimaryExtension), HGSMIOFFSET_VOID);
 }
 
 static void HGSMIHostCmdComplete (PDEVICE_EXTENSION PrimaryExtension, void * pvMem)
 {
-    HGSMIOFFSET offMem = HGSMIPointerToOffset (&PrimaryExtension->u.primary.areaHostHeap, HGSMIBufferHeaderFromData (pvMem));
+    HGSMIOFFSET offMem = HGSMIPointerToOffset (&hgsmiFromDeviceExt(PrimaryExtension)->areaHostHeap, HGSMIBufferHeaderFromData (pvMem));
     Assert(offMem != HGSMIOFFSET_VOID);
     if(offMem != HGSMIOFFSET_VOID)
     {
@@ -54,8 +54,8 @@ static void HGSMIHostCmdComplete (PDEVICE_EXTENSION PrimaryExtension, void * pvM
 
 static void hgsmiHostCmdProcess(PDEVICE_EXTENSION PrimaryExtension, HGSMIOFFSET offBuffer)
 {
-    int rc = HGSMIBufferProcess (&PrimaryExtension->u.primary.areaHostHeap,
-                                &PrimaryExtension->u.primary.channels,
+    int rc = HGSMIBufferProcess (&hgsmiFromDeviceExt(PrimaryExtension)->areaHostHeap,
+                                &hgsmiFromDeviceExt(PrimaryExtension)->channels,
                                 offBuffer);
     Assert(!RT_FAILURE(rc));
     if(RT_FAILURE(rc))
@@ -69,7 +69,7 @@ static void hgsmiHostCmdProcess(PDEVICE_EXTENSION PrimaryExtension, HGSMIOFFSET 
 
 static HGSMIOFFSET hgsmiGetHostBuffer (PDEVICE_EXTENSION PrimaryExtension)
 {
-    return VBoxHGSMIHostRead(PrimaryExtension);
+    return VBoxHGSMIHostRead(hgsmiFromDeviceExt(PrimaryExtension));
 }
 
 static void hgsmiHostCommandQueryProcess (PDEVICE_EXTENSION PrimaryExtension)
@@ -189,7 +189,7 @@ void* vboxHGSMIBufferAlloc(PDEVICE_EXTENSION PrimaryExtension,
 #ifdef VBOX_WITH_WDDM
     /* @todo: add synchronization */
 #endif
-    return HGSMIHeapAlloc (&PrimaryExtension->u.primary.hgsmiAdapterHeap, cbData, u8Ch, u16Op);
+    return HGSMIHeapAlloc (&hgsmiFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap, cbData, u8Ch, u16Op);
 }
 
 void vboxHGSMIBufferFree (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer)
@@ -197,19 +197,19 @@ void vboxHGSMIBufferFree (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer)
 #ifdef VBOX_WITH_WDDM
     /* @todo: add synchronization */
 #endif
-    HGSMIHeapFree (&PrimaryExtension->u.primary.hgsmiAdapterHeap, pvBuffer);
+    HGSMIHeapFree (&hgsmiFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap, pvBuffer);
 }
 
 int vboxHGSMIBufferSubmit (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer)
 {
     /* Initialize the buffer and get the offset for port IO. */
-    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&PrimaryExtension->u.primary.hgsmiAdapterHeap, pvBuffer);
+    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&hgsmiFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap, pvBuffer);
 
     Assert(offBuffer != HGSMIOFFSET_VOID);
     if (offBuffer != HGSMIOFFSET_VOID)
     {
         /* Submit the buffer to the host. */
-        VBoxHGSMIGuestWrite(PrimaryExtension, offBuffer);
+        VBoxHGSMIGuestWrite(hgsmiFromDeviceExt(PrimaryExtension), offBuffer);
         return VINF_SUCCESS;
     }
 
@@ -235,7 +235,7 @@ static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
     }
 #endif
 
-    void *p = HGSMIHeapAlloc (&PrimaryExtension->u.primary.hgsmiAdapterHeap, cbData, u8Ch, u16Op);
+    void *p = HGSMIHeapAlloc (&hgsmiFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap, cbData, u8Ch, u16Op);
 
     if (!p)
     {
@@ -252,11 +252,11 @@ static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
         if (RT_SUCCESS (rc))
         {
             /* Initialize the buffer and get the offset for port IO. */
-            HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&PrimaryExtension->u.primary.hgsmiAdapterHeap,
+            HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&hgsmiFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap,
                                                            p);
 
             /* Submit the buffer to the host. */
-            VBoxHGSMIGuestWrite(PrimaryExtension, offBuffer);
+            VBoxHGSMIGuestWrite(hgsmiFromDeviceExt(PrimaryExtension), offBuffer);
 
             if (pfnFinalize)
             {
@@ -270,7 +270,7 @@ static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
         }
 
         /* Free the IO buffer. */
-        HGSMIHeapFree (&PrimaryExtension->u.primary.hgsmiAdapterHeap, p);
+        HGSMIHeapFree (&hgsmiFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap, p);
     }
 
     return rc;
@@ -742,16 +742,16 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     PrimaryExtension->u.primary.pvAdapterInformation     = NULL;
     PrimaryExtension->u.primary.pHostFlags               = NULL;
     PrimaryExtension->u.primary.ulMaxFrameBufferSize     = 0;
-    PrimaryExtension->u.primary.bHGSMI                   = VBoxHGSMIIsSupported (PrimaryExtension);
-    VBoxVideoCmnMemZero(&PrimaryExtension->u.primary.areaHostHeap, sizeof(HGSMIAREA));
+    hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI         = VBoxHGSMIIsSupported (PrimaryExtension);
+    VBoxVideoCmnMemZero(&hgsmiFromDeviceExt(PrimaryExtension)->areaHostHeap, sizeof(HGSMIAREA));
     VBoxVideoCmnMemZero(&PrimaryExtension->areaDisplay, sizeof(HGSMIAREA));
 
-    if (PrimaryExtension->u.primary.IOPortGuest == 0)
+    if (hgsmiFromDeviceExt(PrimaryExtension)->IOPortGuest == 0)
     {
-        PrimaryExtension->u.primary.bHGSMI = false;
+        hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI = false;
     }
 
-    if (PrimaryExtension->u.primary.bHGSMI)
+    if (hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
         /* Map the adapter information. It will be needed for HGSMI IO. */
         rc = VBoxMapAdapterMemory (PrimaryExtension,
@@ -764,12 +764,12 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
             dprintf(("VBoxVideo::VBoxSetupDisplays: VBoxMapAdapterMemory pvAdapterInfoirrmation failed rc = %d\n",
                      rc));
 
-            PrimaryExtension->u.primary.bHGSMI = FALSE;
+            hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
         }
         else
         {
             /* Setup a HGSMI heap within the adapter information area. */
-            rc = HGSMIHeapSetup (&PrimaryExtension->u.primary.hgsmiAdapterHeap,
+            rc = HGSMIHeapSetup (&hgsmiFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap,
                                  PrimaryExtension->u.primary.pvAdapterInformation,
                                  VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS),
                                  PrimaryExtension->u.primary.cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE,
@@ -780,7 +780,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
                 dprintf(("VBoxVideo::VBoxSetupDisplays: HGSMIHeapSetup failed rc = %d\n",
                          rc));
 
-                PrimaryExtension->u.primary.bHGSMI = FALSE;
+                hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
             }
             else
             {
@@ -791,7 +791,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     }
 
     /* Setup the host heap and the adapter memory. */
-    if (PrimaryExtension->u.primary.bHGSMI)
+    if (hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
         /* The miniport heap is used for the host buffers. */
         ULONG cbMiniportHeap = 0;
@@ -835,7 +835,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
             {
                 PrimaryExtension->u.primary.pvMiniportHeap = NULL;
                 PrimaryExtension->u.primary.cbMiniportHeap = 0;
-                PrimaryExtension->u.primary.bHGSMI = FALSE;
+                hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
             }
             else
             {
@@ -844,7 +844,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
                                       - PrimaryExtension->u.primary.cbMiniportHeap;
 
                 /* Init the host hap area. Buffers from the host will be placed there. */
-                HGSMIAreaInitialize (&PrimaryExtension->u.primary.areaHostHeap,
+                HGSMIAreaInitialize (&hgsmiFromDeviceExt(PrimaryExtension)->areaHostHeap,
                                      PrimaryExtension->u.primary.pvMiniportHeap,
                                      PrimaryExtension->u.primary.cbMiniportHeap,
                                      offBase);
@@ -859,7 +859,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     }
 
     /* Check whether the guest supports multimonitors. */
-    if (PrimaryExtension->u.primary.bHGSMI)
+    if (hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
 #ifndef VBOX_WITH_WDDM
         typedef VP_STATUS (*PFNCREATESECONDARYDISPLAY)(PVOID, PVOID *, ULONG);
@@ -938,19 +938,19 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     VBoxComputeFrameBufferSizes (PrimaryExtension);
 #endif
 
-    if (PrimaryExtension->u.primary.bHGSMI)
+    if (hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
         /* Setup the information for the host. */
         rc = vboxSetupAdapterInfoHGSMI (PrimaryExtension);
 
         if (RT_FAILURE (rc))
         {
-            PrimaryExtension->u.primary.bHGSMI = FALSE;
+            hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
         }
     }
 
 #ifdef VBOX_WITH_WDDM
-    if (PrimaryExtension->u.primary.bHGSMI)
+    if (hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
         ULONG ulAvailable = PrimaryExtension->u.primary.cbVRAM
                             - PrimaryExtension->u.primary.cbMiniportHeap
@@ -1039,20 +1039,20 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
             PrimaryExtension->pvVisibleVram = NULL;
 
         if (RT_FAILURE(rc))
-            PrimaryExtension->u.primary.bHGSMI = FALSE;
+            hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
     }
 #endif
 
-    if (!PrimaryExtension->u.primary.bHGSMI)
+    if (!hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
         /* Unmap the memory if VBoxVideo is not supported. */
         VBoxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvMiniportHeap, PrimaryExtension->u.primary.cbMiniportHeap);
         VBoxUnmapAdapterInformation (PrimaryExtension);
 
-        HGSMIHeapDestroy (&PrimaryExtension->u.primary.hgsmiAdapterHeap);
+        HGSMIHeapDestroy (&hgsmiFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap);
     }
 
-    if (PrimaryExtension->u.primary.bHGSMI)
+    if (hgsmiFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
         VBoxVideoCmnSpinLockCreate(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock);
     }
@@ -1098,7 +1098,7 @@ int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension)
             if (RT_SUCCESS(rc))
 */
             {
-                HGSMIHeapDestroy(&PrimaryExtension->u.primary.hgsmiAdapterHeap);
+                HGSMIHeapDestroy(&hgsmiFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap);
 
                 /* Map the adapter information. It will be needed for HGSMI IO. */
                 /*rc = */VBoxUnmapAdapterInformation(PrimaryExtension);
@@ -1368,7 +1368,7 @@ DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel
     /* pick up the host commands */
     VBoxVideoHGSMIDpc(PrimaryExtension, NULL);
 
-    HGSMICHANNEL * pChannel = HGSMIChannelFindById (&PrimaryExtension->u.primary.channels, u8Channel);
+    HGSMICHANNEL * pChannel = HGSMIChannelFindById (&hgsmiFromDeviceExt(PrimaryExtension)->channels, u8Channel);
     if(pChannel)
     {
         VBVA_CHANNELCONTEXTS * pContexts = (VBVA_CHANNELCONTEXTS *)pChannel->handler.pvHandler;
@@ -1546,7 +1546,7 @@ int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
         uint8_t u8Channel)
 {
     VBVA_CHANNELCONTEXTS * pContexts;
-    HGSMICHANNEL * pChannel = HGSMIChannelFindById (&PrimaryExtension->u.primary.channels, u8Channel);
+    HGSMICHANNEL * pChannel = HGSMIChannelFindById (&hgsmiFromDeviceExt(PrimaryExtension)->channels, u8Channel);
     if(!pChannel)
     {
         int rc = vboxVBVACreateChannelContexts(PrimaryExtension, &pContexts);
@@ -1583,7 +1583,7 @@ int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
             int rc = VINF_SUCCESS;
             if(!pChannel)
             {
-                rc = HGSMIChannelRegister (&PrimaryExtension->u.primary.channels,
+                rc = HGSMIChannelRegister (&hgsmiFromDeviceExt(PrimaryExtension)->channels,
                                            u8Channel,
                                            "VGA Miniport HGSMI channel",
                                            vboxVBVAChannelGenericHandler,

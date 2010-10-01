@@ -249,8 +249,8 @@ HGSMIHEAP* vboxWddmHgsmiGetHeapFromCmdOffset(PDEVICE_EXTENSION pDevExt, HGSMIOFF
     if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.area, offCmd))
         return &pDevExt->u.primary.Vdma.CmdHeap;
 #endif
-    if (HGSMIAreaContainsOffset(&pDevExt->u.primary.hgsmiAdapterHeap.area, offCmd))
-        return &pDevExt->u.primary.hgsmiAdapterHeap;
+    if (HGSMIAreaContainsOffset(&hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap.area, offCmd))
+        return &hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap;
     return NULL;
 }
 
@@ -269,7 +269,7 @@ VBOXWDDM_HGSMICMD_TYPE vboxWddmHgsmiGetCmdTypeFromOffset(PDEVICE_EXTENSION pDevE
     if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.area, offCmd))
         return VBOXWDDM_HGSMICMD_TYPE_DMACMD;
 #endif
-    if (HGSMIAreaContainsOffset(&pDevExt->u.primary.hgsmiAdapterHeap.area, offCmd))
+    if (HGSMIAreaContainsOffset(&hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap.area, offCmd))
         return VBOXWDDM_HGSMICMD_TYPE_CTL;
     return VBOXWDDM_HGSMICMD_TYPE_UNDEFINED;
 }
@@ -402,8 +402,8 @@ NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDe
        *pAdapterMemorySize = VBoxVideoCmnPortReadUlong((PULONG)VBE_DISPI_IOPORT_DATA);
        if (VBoxHGSMIIsSupported (pContext))
        {
-           pContext->u.primary.IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
-           pContext->u.primary.IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+           hgsmiFromDeviceExt(pContext)->IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+           hgsmiFromDeviceExt(pContext)->IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
 
            PCM_RESOURCE_LIST pRcList = pDeviceInfo->TranslatedResourceList;
            /* @todo: verify resources */
@@ -571,7 +571,7 @@ NTSTATUS DxgkDdiStartDevice(
                  * with old guest additions.
                  */
                 VBoxSetupDisplaysHGSMI(pContext, AdapterMemorySize);
-                if ((pContext)->u.primary.bHGSMI)
+                if (hgsmiFromDeviceExt(pContext)->bHGSMI)
                 {
                     drprintf(("VBoxVideoWddm: using HGSMI\n"));
                     *NumberOfVideoPresentSources = pContext->u.primary.cDisplays;
@@ -783,7 +783,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
             if (flags & HGSMIHOSTFLAGS_GCOMMAND_COMPLETED)
             {
                 /* read the command offset */
-                HGSMIOFFSET offCmd = VBoxHGSMIGuestRead(pDevExt);
+                HGSMIOFFSET offCmd = VBoxHGSMIGuestRead(hgsmiFromDeviceExt(pDevExt));
                 Assert(offCmd != HGSMIOFFSET_VOID);
                 if (offCmd != HGSMIOFFSET_VOID)
                 {
@@ -800,7 +800,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
 #endif
                         case VBOXWDDM_HGSMICMD_TYPE_CTL:
                             pList = &CtlList;
-                            pHeap = &pDevExt->u.primary.hgsmiAdapterHeap;
+                            pHeap = &hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap;
                             break;
                         default:
                             AssertBreakpoint();
@@ -963,7 +963,7 @@ VOID DxgkDdiDpcRoutine(
 
     if (!vboxSHGSMIListIsEmpty(&context.data.CtlList))
     {
-        int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.hgsmiAdapterHeap, &context.data.CtlList);
+        int rc = VBoxSHGSMICommandPostprocessCompletion (&hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap, &context.data.CtlList);
         AssertRC(rc);
     }
 #ifdef VBOXVDMA
