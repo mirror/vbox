@@ -112,7 +112,7 @@ typedef struct PCIDEVICEINT
     R3PTRTYPE(PFNPCICONFIGWRITE)    pfnConfigWrite;
 
     /* Flags of this PCI device, see PCIDEV_FLAG_ constants */
-    int32_t                         uFlags;
+    uint32_t                        uFlags;
     /** Current state of the IRQ pin of the device. */
     int32_t                         uIrqPinState;
 
