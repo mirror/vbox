@@ -42,6 +42,7 @@
 //#define E1K_INT_STATS
 //#define E1K_REL_STATS
 //#define E1K_USE_SUPLIB_SEMEVENT
+//#define E1K_WITH_MSI
 
 #include <iprt/crc.h>
 #include <iprt/ctype.h>
@@ -144,7 +145,14 @@ struct E1kChips
 } g_Chips[] =
 {
     /* Vendor Device SSVendor SubSys  Name */
-    { 0x8086, 0x100E, 0x8086, 0x001E, "82540EM" }, /* Intel 82540EM-A in Intel PRO/1000 MT Desktop */
+    { 0x8086,
+      /* Temporary code, as MSI-aware driver dislike 0x100E. How to do that right? */
+#ifdef E1K_WITH_MSI
+      0x105E,
+#else
+      0x100E,
+#endif
+                      0x8086, 0x001E, "82540EM" }, /* Intel 82540EM-A in Intel PRO/1000 MT Desktop */
     { 0x8086, 0x1004, 0x8086, 0x1004, "82543GC" }, /* Intel 82543GC   in Intel PRO/1000 T  Server */
     { 0x8086, 0x100F, 0x15AD, 0x0750, "82545EM" }  /* Intel 82545EM-A in VMWare Network Adapter */
 };
@@ -5588,12 +5596,16 @@ static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
     /* PCI-X Configuration Registers *****************************************/
     /* Capability ID: PCI-X Configuration Registers */
     e1kPCICfgSetU8( pci, 0xE4,                           VBOX_PCI_CAP_ID_PCIX);
+#ifdef E1K_WITH_MSI
+    e1kPCICfgSetU8( pci, 0xE4 + 1,                      0x80);
+#else
     /* Next Item Pointer: None (Message Signalled Interrupts are disabled) */
     e1kPCICfgSetU8( pci, 0xE4 + 1,                      0x00);
+#endif
     /* PCI-X Command: Enable Relaxed Ordering */
     e1kPCICfgSetU16(pci, 0xE4 + 2,                    VBOX_PCI_X_CMD_ERO);
     /* PCI-X Status: 32-bit, 66MHz*/
-    /// @todo: is this value really correct? fff8 doesn't look like actual PCI address 
+    /// @todo: is this value really correct? fff8 doesn't look like actual PCI address
     e1kPCICfgSetU32(pci, 0xE4 + 4,                0x0040FFF8);
 }
 
@@ -5729,6 +5741,19 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = PDMDevHlpPCIRegister(pDevIns, &pState->pciDevice);
     if (RT_FAILURE(rc))
         return rc;
+
+#ifdef E1K_WITH_MSI
+    PDMMSIREG aMsiReg;
+    aMsiReg.cVectors = 1;
+    aMsiReg.iCapOffset = 0x80;
+    aMsiReg.iNextOffset = 0x0;
+    aMsiReg.iMsiFlags = 0;
+    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
+    AssertRC(rc);
+    if (RT_FAILURE (rc))
+        return rc;
+#endif
+
 
     /* Map our registers to memory space (region 0, see e1kConfigurePCI)*/
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, E1K_MM_SIZE,
