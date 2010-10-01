@@ -34,10 +34,10 @@
 
 
 /**
- * Checks if a path have an extension.
+ * Checks if a path has an extension.
  *
  * @returns true if extension present.
- * @returns false if no extension.
+ * @returns false if no extension present.
  * @param   pszPath     Path to check.
  */
 RTDECL(bool) RTPathHaveExt(const char *pszPath)
