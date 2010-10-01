@@ -95,9 +95,9 @@
 #define VBOX_MSI_CAP_MASK_BITS_64             0x10
 #define VBOX_MSI_CAP_PENDING_BITS_64          0x14
 
-/* At the moment, we implement MSI without per-vector masking */
-#define VBOX_MSI_CAP_SIZE_32                  0x0a
-#define VBOX_MSI_CAP_SIZE_64                  0x0c
+/* We implement MSI with per-vector masking */
+#define VBOX_MSI_CAP_SIZE_32                  0x14
+#define VBOX_MSI_CAP_SIZE_64                  0x18
 
 /**
  * MSI-X different from MSI by the fact that dedicated physical page
