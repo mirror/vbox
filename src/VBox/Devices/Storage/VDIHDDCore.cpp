@@ -289,7 +289,7 @@ static void vdiInitPreHeader(PVDIPREHEADER pPreHdr)
     pPreHdr->u32Signature = VDI_IMAGE_SIGNATURE;
     pPreHdr->u32Version = VDI_IMAGE_VERSION;
     memset(pPreHdr->szFileInfo, 0, sizeof(pPreHdr->szFileInfo));
-    strncat(pPreHdr->szFileInfo, VDI_IMAGE_FILE_INFO, sizeof(pPreHdr->szFileInfo));
+    strncat(pPreHdr->szFileInfo, VDI_IMAGE_FILE_INFO, sizeof(pPreHdr->szFileInfo)-1);
 }
 
 /**
@@ -360,7 +360,7 @@ static void vdiInitHeader(PVDIHEADER pHeader, uint32_t uImageFlags,
     {
         AssertMsg(strlen(pszComment) < sizeof(pHeader->u.v1.szComment),
                   ("HDD Comment is too long, cb=%d\n", strlen(pszComment)));
-        strncat(pHeader->u.v1.szComment, pszComment, sizeof(pHeader->u.v1.szComment));
+        strncat(pHeader->u.v1.szComment, pszComment, sizeof(pHeader->u.v1.szComment)-1);
     }
 
     /* Mark the legacy geometry not-calculated. */
