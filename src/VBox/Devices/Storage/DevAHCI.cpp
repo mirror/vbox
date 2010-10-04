@@ -5927,6 +5927,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
         case ATA_SECURITY_FREEZE_LOCK:
         case ATA_SMART:
         case ATA_NV_CACHE:
+        case ATA_IDLE:
             pAhciPortTaskState->uATARegError = ABRT_ERR;
             pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
             break;
@@ -6069,6 +6070,9 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
         AssertMsg(fXchg, ("Task is already active\n"));
 #endif
 
+        pAhciPortTaskState->uATARegStatus = 0;
+        pAhciPortTaskState->uATARegError  = 0;
+
         /** Set current command slot */
         pAhciPortTaskState->uTag = pNotifierItem->iTask;
         pAhciPort->regCMD |= (AHCI_PORT_CMD_CCS_SHIFT(pAhciPortTaskState->uTag));
@@ -6114,64 +6118,66 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
                 AssertMsgFailed(("%s: Update the control register\n", __FUNCTION__));
             }
         }
-
-        enmTxDir = ahciProcessCmd(pAhciPort, pAhciPortTaskState, pAhciPortTaskState->cmdFis);
-
-        if (enmTxDir != AHCITXDIR_NONE)
+        else
         {
-            pAhciPortTaskState->enmTxDir = enmTxDir;
+            enmTxDir = ahciProcessCmd(pAhciPort, pAhciPortTaskState, pAhciPortTaskState->cmdFis);
 
-            ahciLog(("%s: Before increment uActTasksActive=%u\n", __FUNCTION__, pAhciPort->uActTasksActive));
-            ASMAtomicIncU32(&pAhciPort->uActTasksActive);
-            ahciLog(("%s: After increment uActTasksActive=%u\n", __FUNCTION__, pAhciPort->uActTasksActive));
-
-            if (enmTxDir != AHCITXDIR_FLUSH)
+            if (enmTxDir != AHCITXDIR_NONE)
             {
-                STAM_REL_COUNTER_INC(&pAhciPort->StatDMA);
+                pAhciPortTaskState->enmTxDir = enmTxDir;
 
-                rc = ahciScatterGatherListCreate(pAhciPort, pAhciPortTaskState, (enmTxDir == AHCITXDIR_READ) ? false : true);
-                if (RT_FAILURE(rc))
-                    AssertMsgFailed(("%s: Failed to process command %Rrc\n", __FUNCTION__, rc));
-            }
+                ahciLog(("%s: Before increment uActTasksActive=%u\n", __FUNCTION__, pAhciPort->uActTasksActive));
+                ASMAtomicIncU32(&pAhciPort->uActTasksActive);
+                ahciLog(("%s: After increment uActTasksActive=%u\n", __FUNCTION__, pAhciPort->uActTasksActive));
 
-            if (enmTxDir == AHCITXDIR_FLUSH)
-            {
-                rc = pAhciPort->pDrvBlockAsync->pfnStartFlush(pAhciPort->pDrvBlockAsync,
-                                                              pAhciPortTaskState);
-            }
-            else if (enmTxDir == AHCITXDIR_READ)
-            {
-                pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
-                rc = pAhciPort->pDrvBlockAsync->pfnStartRead(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->uOffset,
-                                                             pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed,
-                                                             pAhciPortTaskState->cbTransfer,
-                                                             pAhciPortTaskState);
+                if (enmTxDir != AHCITXDIR_FLUSH)
+                {
+                    STAM_REL_COUNTER_INC(&pAhciPort->StatDMA);
+
+                    rc = ahciScatterGatherListCreate(pAhciPort, pAhciPortTaskState, (enmTxDir == AHCITXDIR_READ) ? false : true);
+                    if (RT_FAILURE(rc))
+                        AssertMsgFailed(("%s: Failed to process command %Rrc\n", __FUNCTION__, rc));
+                }
+
+                if (enmTxDir == AHCITXDIR_FLUSH)
+                {
+                    rc = pAhciPort->pDrvBlockAsync->pfnStartFlush(pAhciPort->pDrvBlockAsync,
+                                                                  pAhciPortTaskState);
+                }
+                else if (enmTxDir == AHCITXDIR_READ)
+                {
+                    pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
+                    rc = pAhciPort->pDrvBlockAsync->pfnStartRead(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->uOffset,
+                                                                 pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed,
+                                                                 pAhciPortTaskState->cbTransfer,
+                                                                 pAhciPortTaskState);
+                }
+                else
+                {
+                    pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
+                    rc = pAhciPort->pDrvBlockAsync->pfnStartWrite(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->uOffset,
+                                                                  pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed,
+                                                                  pAhciPortTaskState->cbTransfer,
+                                                                  pAhciPortTaskState);
+                }
+                if (rc == VINF_VD_ASYNC_IO_FINISHED)
+                    rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, VINF_SUCCESS);
+
+                if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+                    rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, rc);
             }
             else
             {
-                pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                rc = pAhciPort->pDrvBlockAsync->pfnStartWrite(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->uOffset,
-                                                              pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed,
-                                                              pAhciPortTaskState->cbTransfer,
-                                                              pAhciPortTaskState);
-            }
-            if (rc == VINF_VD_ASYNC_IO_FINISHED)
-                rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, VINF_SUCCESS);
-
-            if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-                rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, rc);
-        }
-        else
-        {
 #ifdef RT_STRICT
-            fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
-            AssertMsg(fXchg, ("Task is not active\n"));
+                fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
+                AssertMsg(fXchg, ("Task is not active\n"));
 #endif
 
-            /* There is nothing left to do. Notify the guest. */
-            ahciSendD2HFis(pAhciPort, pAhciPortTaskState, &pAhciPortTaskState->cmdFis[0], true);
-            /* Add the task to the cache. */
-            pAhciPort->aCachedTasks[pAhciPortTaskState->uTag] = pAhciPortTaskState;
+                /* There is nothing left to do. Notify the guest. */
+                ahciSendD2HFis(pAhciPort, pAhciPortTaskState, &pAhciPortTaskState->cmdFis[0], true);
+                /* Add the task to the cache. */
+                pAhciPort->aCachedTasks[pAhciPortTaskState->uTag] = pAhciPortTaskState;
+            }
         }
     }
 
