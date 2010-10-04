@@ -570,7 +570,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
 
     /* Iterate through all possible commands (if available). */
     bool usageOK = true;
-    for (int i = 2; usageOK && i < a->argc; i++)
+    for (int i = 3; usageOK && i < a->argc; i++)
     {
         if (!strcmp(a->argv[i], "--flags"))
         {
