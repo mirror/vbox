@@ -1346,7 +1346,7 @@ STDMETHODIMP Machine::COMSETTER(CPUExecutionCap)(ULONG aExecutionCap)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     alock.release();
-    rc = onCpuExecutionCapChange(aExecutionCap);
+    rc = onCPUExecutionCapChange(aExecutionCap);
     alock.acquire();
     if (FAILED(rc)) return rc;
 
