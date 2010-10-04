@@ -330,11 +330,13 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--iocache on|off]\n"
                      "                            [--iocachesize <I/O cache size in MB>]\n"
 #endif
+#if 0
                      "                            [--faulttolerance master|standby]\n"
                      "                            [--faulttoleranceaddress <name>]\n"
                      "                            [--faulttoleranceport <port>]\n"
                      "                            [--faulttolerancesyncinterval <msec>]\n"
                      "                            [--faulttolerancepassword <password>]\n"
+#endif
                      "\n");
     }
 
