@@ -692,7 +692,7 @@ struct Hardware
     bool                fCpuHotPlug;            // requires settings version 1.10 (VirtualBox 3.2)
     CpuList             llCpus;                 // requires settings version 1.10 (VirtualBox 3.2)
     bool                fHpetEnabled;           // requires settings version 1.10 (VirtualBox 3.2)
-    uint32_t            ulCpuPriority;          // requires settings version 1.11 (VirtualBox 3.3)
+    uint32_t            ulCpuExecutionCap;      // requires settings version 1.11 (VirtualBox 3.3)
 
     CpuIdLeafsList      llCpuIdLeafs;
 

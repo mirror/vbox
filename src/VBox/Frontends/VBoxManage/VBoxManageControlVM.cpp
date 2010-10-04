@@ -141,6 +141,19 @@ int handleControlVM(HandlerArg *a)
 
             CHECK_ERROR_BREAK(sessionMachine, HotPlugCPU(n));
         }
+        else if (!strcmp(a->argv[1], "cpuexecutioncap"))
+        {
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'. Expected execution cap number.", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            unsigned n = parseNum(a->argv[2], 100, "ExecutionCap");
+
+            CHECK_ERROR_BREAK(machine, COMSETTER(CPUExecutionCap)(n));
+        }
         else if (!strcmp(a->argv[1], "poweroff"))
         {
             ComPtr<IProgress> progress;

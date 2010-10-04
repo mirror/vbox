@@ -3432,7 +3432,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="917a4c5f-9388-4848-bbeb-5f02bfebf3d6"
+     uuid="5c91359b-5bdb-4518-9bd1-5f2c50a3c129"
      wsmap="managed"
      >
     <desc>
@@ -3620,11 +3620,11 @@
         hotplugging for this machine.</desc>
     </attribute>
 
-    <attribute name="CPUPriority" type="unsigned long">
+    <attribute name="CPUExecutionCap" type="unsigned long">
        <desc>
-         Priority of the virtual CPUs. Means to limit the number of CPU cycles
-         a guest can use. The unit is percentage of host CPU cycles per second.
-         The valid range is 1 - 100. 100 (the default) implies no limit.
+         Means to limit the number of CPU cycles a guest can use. The unit 
+         is percentage of host CPU cycles per second. The valid range 
+         is 1 - 100. 100 (the default) implies no limit.
        </desc>
     </attribute>
 
@@ -12524,7 +12524,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="ef059f1d-2273-4f81-9342-c152a0d2cd40"
+     uuid="0431ef9e-2c2e-42af-87d7-c8f52455f28a"
      internal="yes"
      wsmap="suppress"
      >
@@ -12704,12 +12704,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="onCPUPriorityChange">
+    <method name="onCPUExecutionCapChange">
       <desc>
-         Notification when the CPU priority changes.
+         Notification when the CPU execution cap changes.
       </desc>
-      <param name="priority" type="unsigned long" dir="in">
-         <desc>The new CPU priority value. (1-100)</desc>
+      <param name="executionCap" type="unsigned long" dir="in">
+         <desc>The new CPU execution cap value. (1-100)</desc>
       </param>
     </method>
 
@@ -13933,7 +13933,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
      name="VBoxEventType"
-     uuid="2c76667e-6981-4122-a71a-cdfd6a6eb575">
+     uuid="d00980f3-bfcb-4e7d-a20e-08cabf3eb89f">
 
     <desc>
       Type of an event.
@@ -14145,9 +14145,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IEventSourceChangedEvent">IEventSourceChangedEvent</link>.
       </desc>
     </const>
-    <const name="OnCPUPriorityChanged" value="63">
+    <const name="OnCPUExecutionCapChanged" value="63">
       <desc>
-        See <link to="ICPUPriorityChangedEvent">ICPUPriorityChangedEvent</link>.
+        See <link to="ICPUExecutionCapChangedEvent">ICPUExecutionCapChangedEvent</link>.
       </desc>
     </const>
     <!-- Last event marker -->
@@ -14888,16 +14888,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-    name="ICPUPriorityChangedEvent" extends="IEvent"
-    uuid="657fe2fe-a75a-4cb6-8cf9-072aa41e7d75"
-    wsmap="managed" autogen="VBoxEvent" id="OnCPUPriorityChanged"
+    name="ICPUExecutionCapChangedEvent" extends="IEvent"
+    uuid="dfa7e4f5-b4a4-44ce-85a8-127ac5eb59dc"
+    wsmap="managed" autogen="VBoxEvent" id="OnCPUExecutionCapChanged"
     >
    <desc>
-      Notification when the CPU priority changes.
+      Notification when the CPU execution cap changes.
    </desc>
-     <attribute name="priority" type="unsigned long" readonly="yes">
+     <attribute name="executionCap" type="unsigned long" readonly="yes">
        <desc>
-         The new CPU priority value. (1-100)
+         The new CPU execution cap value. (1-100)
        </desc>
      </attribute>
   </interface>

@@ -1539,7 +1539,7 @@ Hardware::Hardware()
           cCPUs(1),
           fCpuHotPlug(false),
           fHpetEnabled(false),
-          ulCpuPriority(100),
+          ulCpuExecutionCap(100),
           ulMemorySizeMB((uint32_t)-1),
           ulVRAMSizeMB(8),
           cMonitors(1),
@@ -1586,7 +1586,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fPAE                      == h.fPAE)
                   && (cCPUs                     == h.cCPUs)
                   && (fCpuHotPlug               == h.fCpuHotPlug)
-                  && (ulCpuPriority             == h.ulCpuPriority)
+                  && (ulCpuExecutionCap         == h.ulCpuExecutionCap)
                   && (fHpetEnabled              == h.fHpetEnabled)
                   && (llCpus                    == h.llCpus)
                   && (llCpuIdLeafs              == h.llCpuIdLeafs)
@@ -2248,7 +2248,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             }
 
             pelmHwChild->getAttributeValue("hotplug", hw.fCpuHotPlug);
-            pelmHwChild->getAttributeValue("priority", hw.ulCpuPriority);
+            pelmHwChild->getAttributeValue("executionCap", hw.ulCpuExecutionCap);
 
             const xml::ElementNode *pelmCPUChild;
             if (hw.fCpuHotPlug)
@@ -3193,8 +3193,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     if (hw.fSyntheticCpu)
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     pelmCPU->setAttribute("count", hw.cCPUs);
-    if (hw.ulCpuPriority != 100)
-        pelmCPU->setAttribute("priority", hw.ulCpuPriority);
+    if (hw.ulCpuExecutionCap != 100)
+        pelmCPU->setAttribute("executionCap", hw.ulCpuExecutionCap);
 
     if (hw.fLargePages)
         pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
@@ -4231,7 +4231,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     {
         // VirtualBox 4.0 adds HD audio, CPU priorities, fault tolerance and per-machine media registries
         if (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
-             || hardwareMachine.ulCpuPriority != 100
+             || hardwareMachine.ulCpuExecutionCap != 100
              || machineUserData.enmFaultToleranceState != FaultToleranceState_Inactive
              || machineUserData.uFaultTolerancePort
              || machineUserData.uFaultToleranceInterval

@@ -157,7 +157,8 @@ enum
     MODIFYVM_FAULT_TOLERANCE_ADDRESS,
     MODIFYVM_FAULT_TOLERANCE_PORT,
     MODIFYVM_FAULT_TOLERANCE_PASSWORD,
-    MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL
+    MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL,
+    MODIFYVM_CPU_EXECTUION_CAP
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -184,6 +185,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--cpuhotplug",               MODIFYVM_CPUHOTPLUG,                RTGETOPT_REQ_BOOL_ONOFF },
     { "--plugcpu",                  MODIFYVM_PLUGCPU,                   RTGETOPT_REQ_UINT32 },
     { "--unplugcpu",                MODIFYVM_UNPLUGCPU,                 RTGETOPT_REQ_UINT32 },
+    { "--cpuexecutioncap",          MODIFYVM_CPU_EXECTUION_CAP,         RTGETOPT_REQ_UINT32 },
     { "--rtcuseutc",                MODIFYVM_RTCUSEUTC,                 RTGETOPT_REQ_BOOL_ONOFF },
     { "--monitorcount",             MODIFYVM_MONITORCOUNT,              RTGETOPT_REQ_UINT32 },
     { "--accelerate3d",             MODIFYVM_ACCELERATE3D,              RTGETOPT_REQ_BOOL_ONOFF },
@@ -514,6 +516,11 @@ int handleModifyVM(HandlerArg *a)
             {
                 CHECK_ERROR(machine, HotUnplugCPU(ValueUnion.u32));
                 break;
+            }
+
+            case MODIFYVM_CPU_EXECTUION_CAP:
+            {
+                CHECK_ERROR(machine, COMSETTER(CPUExecutionCap)(ValueUnion.u32));
             }
 
             case MODIFYVM_MONITORCOUNT:
