@@ -145,6 +145,7 @@ HRESULT vboxDispMpTstStop()
     return hr;
 }
 
+#ifdef VBOXWDDM_TEST_UHGSMI
 int vboxUhgsmiTst(PVBOXUHGSMI pUhgsmi, uint32_t cbBuf, uint32_t cNumCals, uint64_t * pTimeMs)
 {
     PVBOXUHGSMI_BUFFER pBuf;
@@ -195,3 +196,4 @@ int vboxUhgsmiTst(PVBOXUHGSMI pUhgsmi, uint32_t cbBuf, uint32_t cNumCals, uint64
     }
     return rc;
 }
+#endif
