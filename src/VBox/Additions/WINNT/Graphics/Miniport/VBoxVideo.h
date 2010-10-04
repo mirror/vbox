@@ -335,7 +335,7 @@ typedef struct _DEVICE_EXTENSION
 #ifdef VBOX_WITH_VIDEOHWACCEL
    VBOXSHGSMILIST VhwaCmdList;
 #endif
-   BOOL bSetNotifyDxDpc;
+//   BOOL bSetNotifyDxDpc;
    BOOL bNotifyDxDpc;
 
    VBOXWDDM_SOURCE aSources[VBOX_VIDEO_MAX_SCREENS];

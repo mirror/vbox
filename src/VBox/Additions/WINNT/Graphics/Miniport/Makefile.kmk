@@ -89,8 +89,8 @@ ifdef VBOX_WITH_WDDM
    VBoxVideoWddm_DEFS     += VBOXVDMA_WITH_VBVA 
   endif
  endif
- ifdef VBOXVDMA_WITH_VDMA
-  VBoxVideoWddm_DEFS     += VBOXVDMA_WITH_VDMA 
+ ifdef VBOX_WITH_VDMA
+  VBoxVideoWddm_DEFS     += VBOX_WITH_VDMA 
  endif
  ifdef DEBUG_misha
   VBoxVideoWddm_DEFS       += LOG_ENABLED

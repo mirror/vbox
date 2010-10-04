@@ -1232,8 +1232,8 @@ typedef uint64_t VBOXVDMASURFHANDLE;
  * so the only way is to */
 typedef struct VBOXVDMACBUF_DR
 {
-    uint32_t fFlags : 16;
-    uint32_t cbBuf  : 16;
+    uint16_t fFlags;
+    uint16_t cbBuf;
     /* RT_SUCCESS()     - on success
      * VERR_INTERRUPTED - on preemption
      * VERR_xxx         - on error */
@@ -1243,7 +1243,7 @@ typedef struct VBOXVDMACBUF_DR
         uint64_t phBuf;
         VBOXVIDEOOFFSET offVramBuf;
     } Location;
-    uint64_t aGuestData[6];
+    uint64_t aGuestData[7];
 } VBOXVDMACBUF_DR, *PVBOXVDMACBUF_DR;
 
 #define VBOXVDMACBUF_DR_TAIL(_pCmd, _t) ( (_t*)(((uint8_t*)(_pCmd)) + sizeof (VBOXVDMACBUF_DR)) )

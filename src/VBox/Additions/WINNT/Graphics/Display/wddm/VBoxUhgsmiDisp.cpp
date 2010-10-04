@@ -12,7 +12,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#include "VBoxUhgsmiDisp.h"
+#include "VBoxDispD3DCmn.h"
 
 #include <iprt/mem.h>
 #include <iprt/err.h>
@@ -53,52 +53,65 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
 DECLCALLBACK(int) vboxUhgsmiD3DBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags, void**pvLock)
 {
     PVBOXUHGSMI_BUFFER_PRIVATE_D3D pBuffer = VBOXUHGSMID3D_GET_BUFFER(pBuf);
-    if (!cbLock)
-    {
-        Assert(0);
-        return VERR_INVALID_PARAMETER;
-    }
-    if (offLock + cbLock > pBuf->cbBuffer)
-    {
-        Assert(0);
-        return VERR_INVALID_PARAMETER;
-    }
-    uint32_t iFirstPage = offLock >> 0x1000;
-    uint32_t iAfterLastPage = (cbLock + 0xfff) >> 0x1000;
-    uint32_t cPages = iAfterLastPage - iFirstPage;
-    uint32_t cBufPages = pBuf->cbBuffer >> 0x1000;
-    Assert(cPages <= (cBufPages));
     D3DDDICB_LOCK DdiLock;
     DdiLock.hAllocation = pBuffer->hAllocation;
     DdiLock.PrivateDriverData = 0;
-    if (cPages == cBufPages)
+
+    if (fFlags.bLockEntire)
     {
-        DdiLock.NumPages = 0;
-        DdiLock.pPages = NULL;
+        offLock = 0;
         DdiLock.Flags.Value = 0;
         DdiLock.Flags.LockEntire = 1;
     }
     else
     {
-        DdiLock.NumPages = cPages;
-        DdiLock.pPages = pBuffer->aLockPageIndices;
-        DdiLock.Flags.Value = 0;
-        for (UINT i = 0, j = iFirstPage; i < cPages; ++i, ++j)
+        if (!cbLock)
         {
-            pBuffer->aLockPageIndices[i] = j;
+            Assert(0);
+            return VERR_INVALID_PARAMETER;
         }
+        if (offLock + cbLock > pBuf->cbBuffer)
+        {
+            Assert(0);
+            return VERR_INVALID_PARAMETER;
+        }
+
+        uint32_t iFirstPage = offLock >> 0x1000;
+        uint32_t iAfterLastPage = (cbLock + 0xfff) >> 0x1000;
+        uint32_t cPages = iAfterLastPage - iFirstPage;
+        uint32_t cBufPages = pBuf->cbBuffer >> 0x1000;
+        Assert(cPages <= (cBufPages));
+
+        if (cPages == cBufPages)
+        {
+            DdiLock.NumPages = 0;
+            DdiLock.pPages = NULL;
+            DdiLock.Flags.Value = 0;
+            DdiLock.Flags.LockEntire = 1;
+        }
+        else
+        {
+            DdiLock.NumPages = cPages;
+            DdiLock.pPages = pBuffer->aLockPageIndices;
+            DdiLock.Flags.Value = 0;
+            for (UINT i = 0, j = iFirstPage; i < cPages; ++i, ++j)
+            {
+                pBuffer->aLockPageIndices[i] = j;
+            }
+        }
+
     }
     DdiLock.pData = NULL;
     DdiLock.Flags.ReadOnly = fFlags.bReadOnly;
     DdiLock.Flags.WriteOnly = fFlags.bWriteOnly;
     DdiLock.Flags.DonotWait = fFlags.bDonotWait;
-    DdiLock.Flags.Discard = fFlags.bDiscard;
+//    DdiLock.Flags.Discard = fFlags.bDiscard;
 
     HRESULT hr = pBuffer->pDevice->RtCallbacks.pfnLockCb(pBuffer->pDevice->hDevice, &DdiLock);
     Assert(hr == S_OK);
     if (hr == S_OK)
     {
-        *pvLock = (void*)(((uint8_t*)DdiLock.pPages) + (offLock & 0xfff));
+        *pvLock = (void*)(((uint8_t*)DdiLock.pData) + (offLock & 0xfff));
         return VINF_SUCCESS;
     }
     return VERR_GENERAL_FAILURE;
@@ -216,6 +229,9 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
 
             pBuf->pDevice = pPrivate->pDevice;
             pBuf->hAllocation = Buf.DdiAllocInfo.hAllocation;
+
+            *ppBuf = &pBuf->Base;
+
             return VINF_SUCCESS;
         }
 
@@ -263,8 +279,16 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferSubmitAsynch(PVBOXUHGSMI pHgsmi, PVBOXUHGSM
         pAllocationList->WriteOperation = !pBufInfo->fFlags.bHostReadOnly;
         pAllocationList->DoNotRetireInstance = pBufInfo->fFlags.bDoNotRetire;
         pBufSubmInfo->fSubFlags = pBufInfo->fFlags;
-        pBufSubmInfo->offData = pBufInfo->offData;
-        pBufSubmInfo->cbData = pBufInfo->cbData;
+        if (pBufInfo->fFlags.bEntireBuffer)
+        {
+            pBufSubmInfo->offData = 0;
+            pBufSubmInfo->cbData = pBuffer->Base.cbBuffer;
+        }
+        else
+        {
+            pBufSubmInfo->offData = pBufInfo->offData;
+            pBufSubmInfo->cbData = pBufInfo->cbData;
+        }
 
         ++pAllocationList;
         ++pBufSubmInfo;

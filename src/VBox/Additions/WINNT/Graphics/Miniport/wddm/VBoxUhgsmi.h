@@ -33,11 +33,12 @@ typedef struct VBOXUHGSMI_BUFFER_LOCK_FLAGS
     {
         struct
         {
-            uint32_t bReadOnly  : 1;
-            uint32_t bWriteOnly : 1;
-            uint32_t bDonotWait : 1;
-            uint32_t bDiscard   : 1;
-            uint32_t Reserved   : 28;
+            uint32_t bReadOnly   : 1;
+            uint32_t bWriteOnly  : 1;
+            uint32_t bDonotWait  : 1;
+            uint32_t bDiscard    : 1;
+            uint32_t bLockEntire : 1;
+            uint32_t Reserved    : 27;
         };
         uint32_t Value;
     };
@@ -53,7 +54,8 @@ typedef struct VBOXUHGSMI_BUFFER_SUBMIT_FLAGS
             uint32_t bHostWriteOnly         : 1;
             uint32_t bDoNotRetire           : 1; /* <- the buffer will be used in a subsequent command */
             uint32_t bDoNotSignalCompletion : 1; /* <- do not signal notification object on completion for this alloc */
-            uint32_t Reserved               : 28;
+            uint32_t bEntireBuffer          : 1; /* <- do not signal notification object on completion for this alloc */
+            uint32_t Reserved               : 27;
         };
         uint32_t Value;
     };

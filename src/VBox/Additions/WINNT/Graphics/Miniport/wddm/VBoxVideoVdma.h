@@ -78,6 +78,11 @@ DECLINLINE(VOID) vboxVdmaDdiCmdGetCompletedListIsr(PVBOXVDMADDI_CMD_QUEUE pQueue
     vboxVideoLeDetach(&pQueue->DpcCmdQueue, pList);
 }
 
+DECLINLINE(BOOLEAN) vboxVdmaDdiCmdIsCompletedListEmptyIsr(PVBOXVDMADDI_CMD_QUEUE pQueue)
+{
+    return IsListEmpty(&pQueue->DpcCmdQueue);
+}
+
 #define VBOXVDMADDI_CMD_FROM_ENTRY(_pEntry) ((PVBOXVDMADDI_CMD)(((uint8_t*)(_pEntry)) - RT_OFFSETOF(VBOXVDMADDI_CMD, QueueEntry)))
 
 DECLINLINE(VOID) vboxVdmaDdiCmdHandleCompletedList(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, LIST_ENTRY *pList)

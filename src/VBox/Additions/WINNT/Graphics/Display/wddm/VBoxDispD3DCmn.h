@@ -32,6 +32,7 @@
 #include "VBoxDispD3DIf.h"
 #include "../../Miniport/wddm/VBoxVideoIf.h"
 #include "VBoxDispCm.h"
+#include "VBoxUhgsmiDisp.h"
 #include "VBoxDispD3D.h"
 
 #ifdef DEBUG
@@ -40,7 +41,7 @@
 # define VBOXWDDMDISP_DEBUG_DUMPSURFDATA
 #endif
 
-#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
+#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE) || defined(VBOXWDDM_TEST_UHGSMI)
 # define VBOXWDDMDISP_DEBUG_PRINT
 #endif
 

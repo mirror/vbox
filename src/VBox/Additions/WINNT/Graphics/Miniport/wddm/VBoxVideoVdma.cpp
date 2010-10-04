@@ -1001,7 +1001,7 @@ static int vboxWddmVdmaSubmitVbva(struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAIN
 #else
 static int vboxWddmVdmaSubmitHgsmi(struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, HGSMIOFFSET offDr)
 {
-    VBoxHGSMIGuestWrite(pDevExt, offDr);
+    VBoxHGSMIGuestWrite(hgsmiFromDeviceExt(pDevExt), offDr);
     return VINF_SUCCESS;
 }
 #define vboxWddmVdmaSubmit vboxWddmVdmaSubmitHgsmi
@@ -1011,20 +1011,20 @@ static int vboxVdmaInformHost(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, VB
 {
     int rc = VINF_SUCCESS;
 
-    PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMICommandAlloc(&pDevExt->u.primary.hgsmiAdapterHeap, sizeof (VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
+    PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMICommandAlloc(&hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap, sizeof (VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
     if (pCmd)
     {
         pCmd->enmCtl = enmCtl;
         pCmd->u32Offset = pInfo->CmdHeap.area.offBase;
         pCmd->i32Result = VERR_NOT_SUPPORTED;
 
-        const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepSynch(&pDevExt->u.primary.hgsmiAdapterHeap, pCmd);
+        const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepSynch(&hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap, pCmd);
         Assert(pHdr);
         if (pHdr)
         {
             do
             {
-                HGSMIOFFSET offCmd = VBoxSHGSMICommandOffset(&pDevExt->u.primary.hgsmiAdapterHeap, pHdr);
+                HGSMIOFFSET offCmd = VBoxSHGSMICommandOffset(&hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap, pHdr);
                 Assert(offCmd != HGSMIOFFSET_VOID);
                 if (offCmd != HGSMIOFFSET_VOID)
                 {
@@ -1032,7 +1032,7 @@ static int vboxVdmaInformHost(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, VB
                     AssertRC(rc);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = VBoxSHGSMICommandDoneSynch(&pDevExt->u.primary.hgsmiAdapterHeap, pHdr);
+                        rc = VBoxSHGSMICommandDoneSynch(&hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap, pHdr);
                         AssertRC(rc);
                         if (RT_SUCCESS(rc))
                         {
@@ -1045,11 +1045,11 @@ static int vboxVdmaInformHost(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, VB
                 else
                     rc = VERR_INVALID_PARAMETER;
                 /* fail to submit, cancel it */
-                VBoxSHGSMICommandCancelSynch(&pDevExt->u.primary.hgsmiAdapterHeap, pHdr);
+                VBoxSHGSMICommandCancelSynch(&hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap, pHdr);
             } while (0);
         }
 
-        VBoxSHGSMICommandFree (&pDevExt->u.primary.hgsmiAdapterHeap, pCmd);
+        VBoxSHGSMICommandFree (&hgsmiFromDeviceExt(pDevExt)->hgsmiAdapterHeap, pCmd);
     }
     else
     {
@@ -1246,7 +1246,10 @@ static DECLCALLBACK(void) vboxVdmaCBufDrCompletionIrq(struct _HGSMIHEAP * pHeap,
         enmComplType = DXGK_INTERRUPT_DMA_FAULTED;
     }
 
-    vboxVdmaDdiCmdCompletedIrq(pDevExt, &pDevExt->DdiCmdQueue, VBOXVDMADDI_CMD_FROM_BUF_DR(pDr), enmComplType);
+    if (vboxVdmaDdiCmdCompletedIrq(pDevExt, &pDevExt->DdiCmdQueue, VBOXVDMADDI_CMD_FROM_BUF_DR(pDr), enmComplType))
+    {
+        pDevExt->bNotifyDxDpc = TRUE;
+    }
 
     /* inform SHGSMI we DO NOT want to be called at DPC later */
     *ppfnCompletion = NULL;

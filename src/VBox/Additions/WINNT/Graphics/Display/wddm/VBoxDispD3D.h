@@ -17,6 +17,7 @@
 
 #include "VBoxDispD3DIf.h"
 #include "../../Miniport/wddm/VBoxVideoIf.h"
+#include "VBoxUhgsmiDisp.h"
 
 #include <iprt/cdefs.h>
 #include <iprt/list.h>
@@ -176,6 +177,7 @@ typedef struct VBOXWDDMDISP_DEVICE
      * is split into two calls : SetViewport & SetZRange */
     D3DVIEWPORT9 ViewPort;
     VBOXWDDMDISP_CONTEXT DefaultContext;
+    VBOXUHGSMI_PRIVATE_D3D Uhgsmi;
 
     CRITICAL_SECTION DirtyAllocListLock;
     RTLISTNODE DirtyAllocList;
