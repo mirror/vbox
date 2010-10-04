@@ -313,6 +313,10 @@ typedef struct VMDKEXTENT
     uint32_t    cbLastGrainWritten;
     /** Starting sector of the decompressed grain buffer. */
     uint32_t    uGrainSector;
+    /** Size of compressed grain buffer for streamOptimized extents. */
+    size_t      cbCompGrain;
+    /** Compressed grain buffer for streamOptimized extents, with marker. */
+    void        *pvCompGrain;
     /** Decompressed grain buffer for streamOptimized extents. */
     void        *pvGrain;
     /** Reference to the image in which this extent is used. Do not use this
@@ -473,14 +477,12 @@ typedef struct VMDKINFLATESTATE
 {
     /* Image this operation relates to. */
     PVMDKIMAGE pImage;
-    /* File where the data is stored. */
-    PVMDKFILE pFile;
-    /* Total size of the data to read. */
-    size_t cbSize;
-    /* Offset in the file to read. */
-    uint64_t uFileOffset;
     /* Current read position. */
     ssize_t iOffset;
+    /* Size of the compressed grain buffer (available data). */
+    size_t cbCompGrain;
+    /* Pointer to the compressed grain buffer. */
+    void *pvCompGrain;
 } VMDKINFLATESTATE;
 
 /** State for the output callout of the deflate writer. */
@@ -488,12 +490,12 @@ typedef struct VMDKDEFLATESTATE
 {
     /* Image this operation relates to. */
     PVMDKIMAGE pImage;
-    /* File where the data is to be stored. */
-    PVMDKFILE pFile;
-    /* Offset in the file to write at. */
-    uint64_t uFileOffset;
     /* Current write position. */
     ssize_t iOffset;
+    /* Size of the compressed grain buffer. */
+    size_t cbCompGrain;
+    /* Pointer to the compressed grain buffer. */
+    void *pvCompGrain;
 } VMDKDEFLATESTATE;
 
 /** Tracks async grain allocation. */
@@ -850,26 +852,30 @@ DECLINLINE(int) vmdkFileIoCtxSet(PVMDKIMAGE pImage, PVDIOCTX pIoCtx,
 static DECLCALLBACK(int) vmdkFileInflateHelper(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbBuf)
 {
     VMDKINFLATESTATE *pInflateState = (VMDKINFLATESTATE *)pvUser;
+    size_t cbInjected = 0;
 
     Assert(cbBuf);
     if (pInflateState->iOffset < 0)
     {
         *(uint8_t *)pvBuf = RTZIPTYPE_ZLIB;
+        pvBuf = (uint8_t *)pvBuf + 1;
+        cbBuf--;
+        cbInjected = 1;
+        pInflateState->iOffset = RT_OFFSETOF(VMDKMARKER, uType);
+    }
+    if (!cbBuf)
+    {
         if (pcbBuf)
-            *pcbBuf = 1;
-        pInflateState->iOffset = 0;
+            *pcbBuf = cbInjected;
         return VINF_SUCCESS;
     }
-    cbBuf = RT_MIN(cbBuf, pInflateState->cbSize);
-    int rc = vmdkFileReadSync(pInflateState->pImage, pInflateState->pFile,
-                              pInflateState->uFileOffset, pvBuf, cbBuf, NULL);
-    if (RT_FAILURE(rc))
-        return rc;
-    pInflateState->uFileOffset += cbBuf;
+    cbBuf = RT_MIN(cbBuf, pInflateState->cbCompGrain - pInflateState->iOffset);
+    memcpy(pvBuf,
+           (uint8_t *)pInflateState->pvCompGrain + pInflateState->iOffset,
+           cbBuf);
     pInflateState->iOffset += cbBuf;
-    pInflateState->cbSize -= cbBuf;
     Assert(pcbBuf);
-    *pcbBuf = cbBuf;
+    *pcbBuf = cbBuf + cbInjected;
     return VINF_SUCCESS;
 }
 
@@ -877,12 +883,12 @@ static DECLCALLBACK(int) vmdkFileInflateHelper(void *pvUser, void *pvBuf, size_t
  * Internal: read from a file and inflate the compressed data,
  * distinguishing between async and normal operation
  */
-DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                                     uint64_t uOffset, void *pvBuf,
-                                    size_t cbToRead, unsigned uMarker,
-                                    uint64_t *puLBA, uint32_t *pcbMarkerData)
+                                    size_t cbToRead, uint64_t *puLBA,
+                                    uint32_t *pcbMarkerData)
 {
-    if (pVmdkFile->fAsyncIO)
+    if (pExtent->pFile->fAsyncIO)
     {
         AssertMsgFailed(("TODO\n"));
         return VERR_NOT_SUPPORTED;
@@ -891,48 +897,47 @@ DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
     {
         int rc;
         PRTZIPDECOMP pZip = NULL;
-        VMDKMARKER Marker;
-        uint64_t uCompOffset, cbComp;
-        VMDKINFLATESTATE InflateState;
-        size_t cbActuallyRead;
-        size_t cbMarker = sizeof(Marker);
+        VMDKMARKER *pMarker = (VMDKMARKER *)pExtent->pvCompGrain;
+        size_t cbCompSize, cbActuallyRead;
 
-        if (uMarker == VMDK_MARKER_IGNORE)
-            cbMarker -= sizeof(Marker.uType);
-        rc = vmdkFileReadSync(pImage, pVmdkFile, uOffset, &Marker, cbMarker, NULL);
+        rc = vmdkFileReadSync(pImage, pExtent->pFile, uOffset, pMarker,
+                              RT_OFFSETOF(VMDKMARKER, uType), NULL);
         if (RT_FAILURE(rc))
             return rc;
-        Marker.uSector = RT_LE2H_U64(Marker.uSector);
-        Marker.cbSize = RT_LE2H_U32(Marker.cbSize);
-        if (    uMarker != VMDK_MARKER_IGNORE
-            &&  (   RT_LE2H_U32(Marker.uType) != uMarker
-                 || Marker.cbSize != 0))
-            return VERR_VD_VMDK_INVALID_FORMAT;
-        if (Marker.cbSize != 0)
+        cbCompSize = RT_LE2H_U32(pMarker->cbSize);
+        if (cbCompSize == 0)
         {
-            /* Compressed grain marker. Data follows immediately. */
-            uCompOffset = uOffset + 12;
-            cbComp = Marker.cbSize;
-            if (puLBA)
-                *puLBA = Marker.uSector;
-            if (pcbMarkerData)
-                *pcbMarkerData = cbComp + 12;
-        }
-        else
-        {
-            Marker.uType = RT_LE2H_U32(Marker.uType);
-            AssertMsgFailed(("VMDK: unexpected marker type %u\n", Marker.uType));
+            AssertMsgFailed(("VMDK: corrupted marker\n"));
             return VERR_VD_VMDK_INVALID_FORMAT;
         }
-        InflateState.pImage = pImage;
-        InflateState.pFile = pVmdkFile;
-        InflateState.cbSize = cbComp;
-        InflateState.uFileOffset = uCompOffset;
-        InflateState.iOffset = -1;
+
         /* Sanity check - the expansion ratio should be much less than 2. */
-        Assert(cbComp < 2 * cbToRead);
-        if (cbComp >= 2 * cbToRead)
+        Assert(cbCompSize < 2 * cbToRead);
+        if (cbCompSize >= 2 * cbToRead)
             return VERR_VD_VMDK_INVALID_FORMAT;
+
+        /* Compressed grain marker. Data follows immediately. */
+        rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                              uOffset + RT_OFFSETOF(VMDKMARKER, uType),
+                                (uint8_t *)pExtent->pvCompGrain
+                              + RT_OFFSETOF(VMDKMARKER, uType),
+                                RT_ALIGN_Z(  cbCompSize
+                                           + RT_OFFSETOF(VMDKMARKER, uType),
+                                           512)
+                              - RT_OFFSETOF(VMDKMARKER, uType), NULL);
+
+        if (puLBA)
+            *puLBA = RT_LE2H_U64(pMarker->uSector);
+        if (pcbMarkerData)
+            *pcbMarkerData = RT_ALIGN(  cbCompSize
+                                      + RT_OFFSETOF(VMDKMARKER, uType),
+                                      512);
+
+        VMDKINFLATESTATE InflateState;
+        InflateState.pImage = pImage;
+        InflateState.iOffset = -1;
+        InflateState.cbCompGrain = cbCompSize + RT_OFFSETOF(VMDKMARKER, uType);
+        InflateState.pvCompGrain = pExtent->pvCompGrain;
 
         rc = RTZipDecompCreate(&pZip, &InflateState, vmdkFileInflateHelper);
         if (RT_FAILURE(rc))
@@ -956,15 +961,14 @@ static DECLCALLBACK(int) vmdkFileDeflateHelper(void *pvUser, const void *pvBuf, 
     {
         pvBuf = (const uint8_t *)pvBuf + 1;
         cbBuf--;
-        pDeflateState->iOffset = 0;
+        pDeflateState->iOffset = RT_OFFSETOF(VMDKMARKER, uType);
     }
     if (!cbBuf)
         return VINF_SUCCESS;
-    int rc = vmdkFileWriteSync(pDeflateState->pImage, pDeflateState->pFile,
-                               pDeflateState->uFileOffset, pvBuf, cbBuf, NULL);
-    if (RT_FAILURE(rc))
-        return rc;
-    pDeflateState->uFileOffset += cbBuf;
+    if (pDeflateState->iOffset + cbBuf > pDeflateState->cbCompGrain)
+        return VERR_BUFFER_OVERFLOW;
+    memcpy((uint8_t *)pDeflateState->pvCompGrain + pDeflateState->iOffset,
+           pvBuf, cbBuf);
     pDeflateState->iOffset += cbBuf;
     return VINF_SUCCESS;
 }
@@ -973,12 +977,12 @@ static DECLCALLBACK(int) vmdkFileDeflateHelper(void *pvUser, const void *pvBuf, 
  * Internal: deflate the uncompressed data and write to a file,
  * distinguishing between async and normal operation
  */
-DECLINLINE(int) vmdkFileDeflateSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
+DECLINLINE(int) vmdkFileDeflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                                     uint64_t uOffset, const void *pvBuf,
-                                    size_t cbToWrite, unsigned uMarker,
-                                    uint64_t uLBA, uint32_t *pcbMarkerData)
+                                    size_t cbToWrite, uint64_t uLBA,
+                                    uint32_t *pcbMarkerData)
 {
-    if (pVmdkFile->fAsyncIO)
+    if (pExtent->pFile->fAsyncIO)
     {
         AssertMsgFailed(("TODO\n"));
         return VERR_NOT_SUPPORTED;
@@ -987,70 +991,60 @@ DECLINLINE(int) vmdkFileDeflateSync(PVMDKIMAGE pImage, PVMDKFILE pVmdkFile,
     {
         int rc;
         PRTZIPCOMP pZip = NULL;
-        VMDKMARKER Marker;
-        uint64_t uCompOffset, cbDecomp;
         VMDKDEFLATESTATE DeflateState;
 
-        Marker.uSector = RT_H2LE_U64(uLBA);
-        Marker.cbSize = RT_H2LE_U32((uint32_t)cbToWrite);
-        if (uMarker == VMDK_MARKER_IGNORE)
-        {
-            /* Compressed grain marker. Data follows immediately. */
-            uCompOffset = uOffset + 12;
-            cbDecomp = cbToWrite;
-        }
-        else
-        {
-            /* The other markers don't contain compressed data. */
-            return VERR_NOT_IMPLEMENTED;
-        }
         DeflateState.pImage = pImage;
-        DeflateState.pFile = pVmdkFile;
-        DeflateState.uFileOffset = uCompOffset;
         DeflateState.iOffset = -1;
+        DeflateState.cbCompGrain = pExtent->cbCompGrain;
+        DeflateState.pvCompGrain = pExtent->pvCompGrain;
 
         rc = RTZipCompCreate(&pZip, &DeflateState, vmdkFileDeflateHelper, RTZIPTYPE_ZLIB, RTZIPLEVEL_DEFAULT);
         if (RT_FAILURE(rc))
             return rc;
-        rc = RTZipCompress(pZip, pvBuf, cbDecomp);
+        rc = RTZipCompress(pZip, pvBuf, cbToWrite);
         if (RT_SUCCESS(rc))
             rc = RTZipCompFinish(pZip);
         RTZipCompDestroy(pZip);
         if (RT_SUCCESS(rc))
         {
-            if (pcbMarkerData)
-                *pcbMarkerData = 12 + DeflateState.iOffset;
-            /* Set the file size to remove old garbage in case the block is
-             * rewritten. Cannot cause data loss as the code calling this
-             * guarantees that data gets only appended. */
-            Assert(DeflateState.uFileOffset > uCompOffset);
+            Assert(   DeflateState.iOffset > 0
+                   && (size_t)DeflateState.iOffset <= DeflateState.cbCompGrain);
 
-            /*
-             * Change the file size only if the size really changed,
-             * because this is very expensive on some filesystems
-             * like XFS.
-             */
-            uint64_t cbOld;
-            rc = vmdkFileGetSize(pImage, pVmdkFile, &cbOld);
+            /* pad with zeroes to get to a full sector size */
+            uint32_t uSize = DeflateState.iOffset;
+            if (uSize % 512)
+            {
+                uint32_t uSizeAlign = RT_ALIGN(uSize, 512);
+                memset((uint8_t *)pExtent->pvCompGrain + uSize, '\0',
+                       uSizeAlign - uSize);
+                uSize = uSizeAlign;
+            }
+
+            if (pcbMarkerData)
+                *pcbMarkerData = uSize;
+
+            /* Compressed grain marker. Data follows immediately. */
+            VMDKMARKER *pMarker = (VMDKMARKER *)pExtent->pvCompGrain;
+            pMarker->uSector = RT_H2LE_U64(uLBA);
+            pMarker->cbSize = RT_H2LE_U32(  DeflateState.iOffset
+                                          - RT_OFFSETOF(VMDKMARKER, uType));
+            rc = vmdkFileWriteSync(pImage, pExtent->pFile, uOffset, pMarker,
+                                   uSize, NULL);
             if (RT_FAILURE(rc))
                 return rc;
 
-            if (cbOld != DeflateState.uFileOffset)
-                rc = vmdkFileSetSize(pImage, pVmdkFile, DeflateState.uFileOffset);
+            /* Set the file size to remove old garbage in case the block is
+             * rewritten. Cannot cause data loss as the code calling this
+             * guarantees that data gets only appended. Change the file size
+             * only if the size really changed, because this is very expensive
+             * on some filesystems such as XFS. */
+            uint64_t cbOld;
+            rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbOld);
+            if (RT_FAILURE(rc))
+                return rc;
 
-            if (uMarker == VMDK_MARKER_IGNORE)
-            {
-                /* Compressed grain marker. */
-                Marker.cbSize = RT_H2LE_U32(DeflateState.iOffset);
-                rc = vmdkFileWriteSync(pImage, pVmdkFile, uOffset, &Marker, 12, NULL);
-                if (RT_FAILURE(rc))
-                    return rc;
-            }
-            else
-            {
-                /* The other markers don't contain compressed data. */
-                return VERR_NOT_IMPLEMENTED;
-            }
+            if (cbOld != uOffset + uSize)
+                rc = vmdkFileSetSize(pImage, pExtent->pFile, uOffset + uSize);
         }
         return rc;
     }
@@ -1348,7 +1342,19 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         }
         RTMemTmpFree(pTmpGT);
 
-        /* streamOptimized extents need a grain decompress buffer. */
+        /* streamOptimized extents need a compressed grain buffer, which must
+         * be big enough to hold uncompressible data (which needs ~8 bytes
+         * more than the uncompressed data), the marker and padding. */
+        pExtent->cbCompGrain = RT_ALIGN_Z(  VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain)
+                                          + 8 + sizeof(VMDKMARKER), 512);
+        pExtent->pvCompGrain = RTMemAlloc(pExtent->cbCompGrain);
+        if (!pExtent->pvCompGrain)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+
+        /* streamOptimized extents need a decompressed grain buffer. */
         pExtent->pvGrain = RTMemAlloc(VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
         if (!pExtent->pvGrain)
         {
@@ -1360,14 +1366,17 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         {
             uint64_t uLBA = 0;
             uint32_t cbMarker = 0;
-            rc = vmdkFileInflateSync(pImage, pExtent->pFile, VMDK_SECTOR2BYTE(uLastGrainSector),
-                                     pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain), VMDK_MARKER_IGNORE, &uLBA, &cbMarker);
+            rc = vmdkFileInflateSync(pImage, pExtent,
+                                     VMDK_SECTOR2BYTE(uLastGrainSector),
+                                     pExtent->pvGrain,
+                                     VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
+                                     &uLBA, &cbMarker);
             if (RT_FAILURE(rc))
                 goto out;
 
             Assert(uLBA == uLastGrainWritten * pExtent->cSectorsPerGrain);
             pExtent->uGrainSector = uLastGrainSector;
-            pExtent->cbLastGrainWritten = RT_ALIGN(cbMarker, 512);
+            pExtent->cbLastGrainWritten = cbMarker;
         }
         pExtent->uLastGrainWritten = uLastGrainWritten;
         pExtent->uLastGrainSector = uLastGrainSector;
@@ -1424,9 +1433,7 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         {
             cbOverhead = RT_ALIGN_64(cbOverhead,
                                      VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
-            if (pExtent->fFooter)
-                rc = vmdkFileSetSize(pImage, pExtent->pFile, cbOverhead);
-            else
+            if (!pExtent->fFooter)
                 rc = vmdkFileSetSize(pImage, pExtent->pFile, cbOverhead + 512);
         }
         else
@@ -1498,6 +1505,18 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         }
     }
     pExtent->cOverheadSectors = VMDK_BYTE2SECTOR(cbOverhead);
+
+    /* streamOptimized extents need a compressed grain buffer, which must
+     * be big enough to hold uncompressible data (which needs ~8 bytes
+     * more than the uncompressed data), the marker and padding. */
+    pExtent->cbCompGrain = RT_ALIGN_Z(  VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain)
+                                      + 8 + sizeof(VMDKMARKER), 512);
+    pExtent->pvCompGrain = RTMemAlloc(pExtent->cbCompGrain);
+    if (!pExtent->pvCompGrain)
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
 
     /* streamOptimized extents need a grain decompress buffer. */
     if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
@@ -4499,6 +4518,10 @@ static int vmdksCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
         goto out;
     }
 
+    /* Skip over the overhead area. */
+    rc = vmdkFileSetSize(pImage, pExtent->pFile,
+                         VMDK_SECTOR2BYTE(pExtent->cOverheadSectors));
+
     if (pfnProgress)
         pfnProgress(pvUser, uPercentStart + uPercentSpan * 70 / 100);
 
@@ -5235,8 +5258,8 @@ static int vmdkAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
             cbExtentSize = VMDK_SECTOR2BYTE(pExtent->uLastGrainSector) + pExtent->cbLastGrainWritten;
         Assert(cbWrite == VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
         uint32_t cbGrain = 0;
-        rc = vmdkFileDeflateSync(pImage, pExtent->pFile, cbExtentSize,
-                                 pvBuf, cbWrite, VMDK_MARKER_IGNORE, uSector, &cbGrain);
+        rc = vmdkFileDeflateSync(pImage, pExtent, cbExtentSize,
+                                 pvBuf, cbWrite, uSector, &cbGrain);
         if (RT_FAILURE(rc))
         {
             pExtent->uGrainSector = 0;
@@ -5244,7 +5267,6 @@ static int vmdkAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
             AssertRC(rc);
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated compressed data block in '%s'"), pExtent->pszFullname);
         }
-        cbGrain = RT_ALIGN(cbGrain, 512);
         pExtent->uLastGrainSector = VMDK_BYTE2SECTOR(cbExtentSize);
         pExtent->uLastGrainWritten = uSector / pExtent->cSectorsPerGrain;
         pExtent->cbLastGrainWritten = cbGrain;
@@ -5953,9 +5975,9 @@ static int vmdksWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain) - cbToWrite);
         pData = pExtent->pvGrain;
     }
-    rc = vmdkFileDeflateSync(pImage, pExtent->pFile, uFileOffset,
-                             pData, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
-                             VMDK_MARKER_IGNORE, uSector, &cbGrain);
+    rc = vmdkFileDeflateSync(pImage, pExtent, uFileOffset, pData,
+                             VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
+                             uSector, &cbGrain);
     if (RT_FAILURE(rc))
     {
         pExtent->uGrainSector = 0;
@@ -5963,7 +5985,6 @@ static int vmdksWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         AssertRC(rc);
         return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write compressed data block in '%s'"), pExtent->pszFullname);
     }
-    cbGrain = RT_ALIGN(cbGrain, 512);
     pExtent->uLastGrainSector = VMDK_BYTE2SECTOR(uFileOffset);
     pExtent->uLastGrainWritten = uGrain;
     pExtent->cbLastGrainWritten = cbGrain;
@@ -6702,8 +6723,11 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
                     uint64_t uLBA;
                     if (pExtent->uGrainSector != uSectorExtentAbs)
                     {
-                        rc = vmdkFileInflateSync(pImage, pExtent->pFile, VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                                 pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain), VMDK_MARKER_IGNORE, &uLBA, NULL);
+                        rc = vmdkFileInflateSync(pImage, pExtent,
+                                                 VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                                 pExtent->pvGrain,
+                                                 VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
+                                                 &uLBA, NULL);
                         if (RT_FAILURE(rc))
                         {
                             pExtent->uGrainSector = 0;
@@ -6843,8 +6867,11 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     if (    pExtent->uGrainSector != uSectorExtentAbs
                         ||  pExtent->uGrainSector != pExtent->uLastGrainSector)
                     {
-                        rc = vmdkFileInflateSync(pImage, pExtent->pFile, VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                                 pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain), VMDK_MARKER_IGNORE, &uLBA, NULL);
+                        rc = vmdkFileInflateSync(pImage, pExtent,
+                                                 VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                                 pExtent->pvGrain,
+                                                 VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
+                                                 &uLBA, NULL);
                         if (RT_FAILURE(rc))
                         {
                             pExtent->uGrainSector = 0;
@@ -6858,10 +6885,11 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     }
                     memcpy((uint8_t *)pExtent->pvGrain + VMDK_SECTOR2BYTE(uSectorInGrain), pvBuf, cbToWrite);
                     uint32_t cbGrain = 0;
-                    rc = vmdkFileDeflateSync(pImage, pExtent->pFile,
+                    rc = vmdkFileDeflateSync(pImage, pExtent,
                                              VMDK_SECTOR2BYTE(uSectorExtentAbs),
-                                             pExtent->pvGrain, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
-                                             VMDK_MARKER_IGNORE, uLBA, &cbGrain);
+                                             pExtent->pvGrain,
+                                             VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
+                                             uLBA, &cbGrain);
                     if (RT_FAILURE(rc))
                     {
                         pExtent->uGrainSector = 0;
@@ -6869,7 +6897,6 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                         AssertRC(rc);
                         return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write compressed data block in '%s'"), pExtent->pszFullname);
                     }
-                    cbGrain = RT_ALIGN(cbGrain, 512);
                     pExtent->uLastGrainSector = uSectorExtentAbs;
                     pExtent->uLastGrainWritten = uSectorExtentRel / pExtent->cSectorsPerGrain;
                     pExtent->cbLastGrainWritten = cbGrain;
