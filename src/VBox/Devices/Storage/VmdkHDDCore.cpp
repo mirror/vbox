@@ -537,8 +537,6 @@ static const char *const s_apszVmdkFileExtensions[] =
 *   Internal Functions                                                         *
 *******************************************************************************/
 
-static void vmdkFreeGrainDirectory(PVMDKEXTENT pExtent);
-
 static void vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                                bool fDelete);
 
@@ -998,7 +996,8 @@ DECLINLINE(int) vmdkFileDeflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         DeflateState.cbCompGrain = pExtent->cbCompGrain;
         DeflateState.pvCompGrain = pExtent->pvCompGrain;
 
-        rc = RTZipCompCreate(&pZip, &DeflateState, vmdkFileDeflateHelper, RTZIPTYPE_ZLIB, RTZIPLEVEL_DEFAULT);
+        rc = RTZipCompCreate(&pZip, &DeflateState, vmdkFileDeflateHelper,
+                             RTZIPTYPE_ZLIB, RTZIPLEVEL_DEFAULT);
         if (RT_FAILURE(rc))
             return rc;
         rc = RTZipCompress(pZip, pvBuf, cbToWrite);
@@ -1033,6 +1032,7 @@ DECLINLINE(int) vmdkFileDeflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
             if (RT_FAILURE(rc))
                 return rc;
 
+/** @todo remove this code */
             /* Set the file size to remove old garbage in case the block is
              * rewritten. Cannot cause data loss as the code calling this
              * guarantees that data gets only appended. Change the file size
@@ -1166,15 +1166,41 @@ static int vmdkDecodeString(const char *pszEncoded, char *psz, size_t cb)
     return rc;
 }
 
-static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
+/**
+ * Internal: free all buffers associated with grain directories.
+ */
+static void vmdkFreeGrainDirectory(PVMDKEXTENT pExtent)
 {
-    int rc = VINF_SUCCESS;
-    unsigned i;
-    uint32_t *pGD = NULL, *pRGD = NULL, *pGDTmp, *pRGDTmp;
-    size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
+    if (pExtent->pGD)
+    {
+        RTMemFree(pExtent->pGD);
+        pExtent->pGD = NULL;
+    }
+    if (pExtent->pRGD)
+    {
+        RTMemFree(pExtent->pRGD);
+        pExtent->pRGD = NULL;
+    }
+    if (pExtent->pvCompGrain)
+    {
+        RTMemFree(pExtent->pvCompGrain);
+        pExtent->pvCompGrain = NULL;
+    }
+    if (pExtent->pvGrain)
+    {
+        RTMemFree(pExtent->pvGrain);
+        pExtent->pvGrain = NULL;
+    }
+}
 
-    if (pExtent->enmType != VMDKETYPE_HOSTED_SPARSE)
-        goto out;
+/**
+ * Internal: allocate all buffers associated with grain directories. This
+ * includes the compressed/uncompressed buffers for streamOptimized images.
+ */
+static int vmdkAllocGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
+{
+    size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
+    uint32_t *pGD = NULL, *pRGD = NULL;
 
     pGD = (uint32_t *)RTMemAllocZ(cbGD);
     if (!pGD)
@@ -1183,6 +1209,61 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         goto out;
     }
     pExtent->pGD = pGD;
+
+    if (pExtent->uSectorRGD)
+    {
+        pRGD = (uint32_t *)RTMemAllocZ(cbGD);
+        if (!pRGD)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+        pExtent->pRGD = pRGD;
+    }
+
+    if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+    {
+        /* streamOptimized extents need a compressed grain buffer, which must
+         * be big enough to hold uncompressible data (which needs ~8 bytes
+         * more than the uncompressed data), the marker and padding. */
+        pExtent->cbCompGrain = RT_ALIGN_Z(  VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain)
+                                          + 8 + sizeof(VMDKMARKER), 512);
+        pExtent->pvCompGrain = RTMemAlloc(pExtent->cbCompGrain);
+        if (!pExtent->pvCompGrain)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+
+        /* streamOptimized extents need a decompressed grain buffer. */
+        pExtent->pvGrain = RTMemAlloc(VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
+        if (!pExtent->pvGrain)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+    }
+
+out:
+    if (RT_FAILURE(rc))
+        vmdkFreeGrainDirectory(pExtent);
+    return rc;
+}
+
+static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
+{
+    int rc = VINF_SUCCESS;
+    unsigned i;
+    uint32_t *pGDTmp, *pRGDTmp;
+    size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
+
+    if (pExtent->enmType != VMDKETYPE_HOSTED_SPARSE)
+        goto out;
+
+    rc = vmdkAllocGrainDirectory(pImage, pExtent);
+    if (RT_FAILED(rc))
+        goto out;
+
     /* The VMDK 1.1 spec seems to talk about compressed grain directories,
      * but in reality they are not compressed. */
     rc = vmdkFileReadSync(pImage, pExtent->pFile,
@@ -1199,12 +1280,6 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 
     if (pExtent->uSectorRGD)
     {
-        pRGD = (uint32_t *)RTMemAllocZ(cbGD);
-        if (!pRGD)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
         pExtent->pRGD = pRGD;
         /* The VMDK 1.1 spec seems to talk about compressed grain directories,
          * but in reality they are not compressed. */
@@ -1342,26 +1417,6 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         }
         RTMemTmpFree(pTmpGT);
 
-        /* streamOptimized extents need a compressed grain buffer, which must
-         * be big enough to hold uncompressible data (which needs ~8 bytes
-         * more than the uncompressed data), the marker and padding. */
-        pExtent->cbCompGrain = RT_ALIGN_Z(  VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain)
-                                          + 8 + sizeof(VMDKMARKER), 512);
-        pExtent->pvCompGrain = RTMemAlloc(pExtent->cbCompGrain);
-        if (!pExtent->pvCompGrain)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-
-        /* streamOptimized extents need a decompressed grain buffer. */
-        pExtent->pvGrain = RTMemAlloc(VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
-        if (!pExtent->pvGrain)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-
         if (uLastGrainSector)
         {
             uint64_t uLBA = 0;
@@ -1393,7 +1448,6 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
 {
     int rc = VINF_SUCCESS;
     unsigned i;
-    uint32_t *pGD = NULL, *pRGD = NULL;
     size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
     size_t cbGDRounded = RT_ALIGN_64(pExtent->cGDEntries * sizeof(uint32_t), 512);
     size_t cbGTRounded;
@@ -1403,26 +1457,6 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         cbGTRounded = RT_ALIGN_64(pExtent->cGDEntries * pExtent->cGTEntries * sizeof(uint32_t), 512);
     else
         cbGTRounded = 0;
-
-    pGD = (uint32_t *)RTMemAllocZ(cbGD);
-    if (!pGD)
-    {
-        rc = VERR_NO_MEMORY;
-        goto out;
-    }
-    pExtent->pGD = pGD;
-    if (!(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
-    {
-        pRGD = (uint32_t *)RTMemAllocZ(cbGD);
-        if (!pRGD)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-        pExtent->pRGD = pRGD;
-    }
-    else
-        pExtent->pRGD = NULL;
 
     if (uStartSector != VMDK_GD_AT_END)
     {
@@ -1461,6 +1495,10 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         cbOverhead = 512 + pImage->cbDescAlloc;
         pExtent->uSectorGD = uStartSector;
     }
+
+    rc = vmdkAllocGrainDirectory(pImage, pExtent);
+    if (RT_FAILED(rc))
+        goto out;
 
     if (fPreAlloc)
     {
@@ -1506,47 +1544,10 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     }
     pExtent->cOverheadSectors = VMDK_BYTE2SECTOR(cbOverhead);
 
-    /* streamOptimized extents need a compressed grain buffer, which must
-     * be big enough to hold uncompressible data (which needs ~8 bytes
-     * more than the uncompressed data), the marker and padding. */
-    pExtent->cbCompGrain = RT_ALIGN_Z(  VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain)
-                                      + 8 + sizeof(VMDKMARKER), 512);
-    pExtent->pvCompGrain = RTMemAlloc(pExtent->cbCompGrain);
-    if (!pExtent->pvCompGrain)
-    {
-        rc = VERR_NO_MEMORY;
-        goto out;
-    }
-
-    /* streamOptimized extents need a grain decompress buffer. */
-    if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
-    {
-        pExtent->pvGrain = RTMemAlloc(VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain));
-        if (!pExtent->pvGrain)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-    }
-
 out:
     if (RT_FAILURE(rc))
         vmdkFreeGrainDirectory(pExtent);
     return rc;
-}
-
-static void vmdkFreeGrainDirectory(PVMDKEXTENT pExtent)
-{
-    if (pExtent->pGD)
-    {
-        RTMemFree(pExtent->pGD);
-        pExtent->pGD = NULL;
-    }
-    if (pExtent->pRGD)
-    {
-        RTMemFree(pExtent->pRGD);
-        pExtent->pRGD = NULL;
-    }
 }
 
 static int vmdkStringUnquote(PVMDKIMAGE pImage, const char *pszStr,
@@ -4518,10 +4519,6 @@ static int vmdksCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
         goto out;
     }
 
-    /* Skip over the overhead area. */
-    rc = vmdkFileSetSize(pImage, pExtent->pFile,
-                         VMDK_SECTOR2BYTE(pExtent->cOverheadSectors));
-
     if (pfnProgress)
         pfnProgress(pvUser, uPercentStart + uPercentSpan * 70 / 100);
 
@@ -4531,6 +4528,10 @@ static int vmdksCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
         rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write VMDK descriptor in '%s'"), pImage->pszFilename);
         goto out;
     }
+
+    /* Skip over the overhead area. */
+    rc = vmdkFileSetSize(pImage, pExtent->pFile,
+                         VMDK_SECTOR2BYTE(pExtent->cOverheadSectors));
 
 out:
     if (RT_SUCCESS(rc) && pfnProgress)
